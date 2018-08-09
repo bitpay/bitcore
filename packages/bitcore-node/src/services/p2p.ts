@@ -294,6 +294,7 @@ export class P2pService {
       let currentHeight = tip ? tip.height : 0;
       let lastLog = 0;
       logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
+      let prevPromise: Promise<any> | null = null;
       for (const header of headers) {
         try {
           const block = await this.getBlock(header.hash);
@@ -319,7 +320,12 @@ export class P2pService {
               network,
               height: currentHeight
             });
-            await BlockModel.processBlockOps(blockBatch);
+            if (prevPromise === null) {
+              prevPromise = BlockModel.processBlockOps(blockBatch);
+            } else {
+              await prevPromise;
+              prevPromise = BlockModel.processBlockOps(blockBatch);
+            }
 
             blockBatch = new Array<any>();
             mintBatch = new Array<any>();

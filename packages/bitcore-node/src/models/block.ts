@@ -168,8 +168,10 @@ export class Block extends BaseModel<IBlock> {
       const { mintOps, spendOps, blockOp, txOps } = blockOps;
       const block = blockOp.$set;
       const { chain, network, hash } = block;
-      await BlockModel.collection.update({ hash, chain, network }, blockOp, { upsert: true });
-      await TransactionModel.processBatches({ mintOps, spendOps, txOps });
+      await Promise.all([
+        BlockModel.collection.update({ hash, chain, network }, blockOp, { upsert: true }),
+        TransactionModel.processBatches({ mintOps, spendOps, txOps })
+      ]);
       await BlockModel.collection.update({ hash: hash, chain, network }, { $set: { processed: true } });
     }
   }
