@@ -288,13 +288,13 @@ export class P2pService {
     let spendBatch = new Array<any>();
     let txBatch = new Array<any>();
     let prevBlock: IBlock | null = null;
+    let prevPromise: Promise<any> | null = null;
     while (!headers || headers.length > 0) {
       headers = await getHeaders();
       tip = await ChainStateProvider.getLocalTip({ chain, network });
       let currentHeight = tip ? tip.height : 0;
       let lastLog = 0;
       logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
-      let prevPromise: Promise<any> | null = null;
       for (const header of headers) {
         try {
           const block = await this.getBlock(header.hash);
@@ -320,17 +320,7 @@ export class P2pService {
               network,
               height: currentHeight
             });
-            if (prevPromise === null) {
-              prevPromise = BlockModel.processBlockOps(blockBatch);
-            } else {
-              await prevPromise;
-              prevPromise = BlockModel.processBlockOps(blockBatch);
-            }
-
-            blockBatch = new Array<any>();
-            mintBatch = new Array<any>();
-            spendBatch = new Array<any>();
-            txBatch = new Array<any>();
+            await this.processBatch(blockBatch, mintBatch, spendBatch, txBatch, prevPromise);
           }
 
           currentHeight++;
@@ -346,11 +336,7 @@ export class P2pService {
           network,
           height: currentHeight
         });
-        await BlockModel.processBlockOps(blockBatch);
-        blockBatch = new Array<any>();
-        mintBatch = new Array<any>();
-        spendBatch = new Array<any>();
-        txBatch = new Array<any>();
+        await this.processBatch(blockBatch, mintBatch, spendBatch, txBatch, prevPromise);
       }
     }
     logger.info(`${chain}:${network} up to date.`);
@@ -361,6 +347,25 @@ export class P2pService {
       { upsert: true }
     );
     return true;
+  }
+
+  async processBatch(
+    blockBatch: Array<any>,
+    mintBatch: Array<any>,
+    spendBatch: Array<any>,
+    txBatch: Array<any>,
+    prevPromise: Promise<any> | null
+  ) {
+    if (prevPromise === null) {
+      prevPromise = BlockModel.processBlockOps(blockBatch);
+    } else {
+      await prevPromise;
+      prevPromise = BlockModel.processBlockOps(blockBatch);
+    }
+    blockBatch.length = 0;
+    mintBatch.length = 0;
+    spendBatch.length = 0;
+    txBatch.length = 0;
   }
 
   async start() {
