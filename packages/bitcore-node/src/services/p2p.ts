@@ -288,10 +288,10 @@ export class P2pService {
     let spendBatch = new Array<any>();
     let txBatch = new Array<any>();
     let prevBlock: IBlock | null = null;
+    let prevPromise: Promise<any> | null = null;
     while (!headers || headers.length > 0) {
       headers = await getHeaders();
       tip = await ChainStateProvider.getLocalTip({ chain, network });
-      let prevPromise: Promise<any> | null = null;
       let currentHeight = tip ? tip.height : 0;
       let lastLog = 0;
       logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
@@ -320,7 +320,7 @@ export class P2pService {
               network,
               height: currentHeight
             });
-            if (prevPromise === null) {
+            if (!prevPromise) {
               prevPromise = BlockModel.processBlockOps(blockBatch);
             } else {
               await prevPromise;
@@ -345,8 +345,10 @@ export class P2pService {
           network,
           height: currentHeight
         });
-        if (prevPromise) await prevPromise;
-        await BlockModel.processBlockOps(blockBatch);
+        if (prevPromise) {
+          await prevPromise;
+        }
+        prevPromise = BlockModel.processBlockOps(blockBatch);
         blockBatch = new Array<any>();
         mintBatch = new Array<any>();
         spendBatch = new Array<any>();
