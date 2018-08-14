@@ -9,5 +9,4 @@ echo "copying ionic.config.json template..."
 cp .docker/templates/ionic.config.json .
 npm install
 npm rebuild node-sass
-npm install -g replace
 npm start

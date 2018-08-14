@@ -1,9 +1,10 @@
 {
   "name": "insight",
+  "app_id": "",
+  "type": "ionic-angular",
   "integrations": {
     "cordova": {}
   },
-  "type": "ionic-angular",
   "proxies": [
     {
       "path": "/api",
