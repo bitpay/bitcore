@@ -1,7 +1,7 @@
 import config from '../config';
 import logger from '../logger';
 import { EventEmitter } from 'events';
-import { BlockModel } from '../models/block';
+import { BlockModel, IBlock } from '../models/block';
 import { ChainStateProvider } from '../providers/chain-state';
 import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
@@ -205,6 +205,21 @@ export class P2pService {
     return best;
   }
 
+  async getBlockOperations(block, mintOps, spendOps, txOps, previousBlock) {
+    return BlockModel.getBlockOp({
+      chain: this.chain,
+      network: this.network,
+      forkHeight: this.chainConfig.forkHeight,
+      parentChain: this.chainConfig.parentChain,
+      initialSyncComplete: this.initialSyncComplete,
+      block,
+      mintOps,
+      spendOps,
+      txOps,
+      previousBlock
+    });
+  }
+
   async processBlock(block): Promise<any> {
     return new Promise(async (resolve, reject) => {
       try {
@@ -268,6 +283,12 @@ export class P2pService {
     };
 
     let headers;
+    let blockBatch = new Array<any>();
+    let mintBatch = new Array<any>();
+    let spendBatch = new Array<any>();
+    let txBatch = new Array<any>();
+    let prevBlock: IBlock | null = null;
+    let prevPromise: Promise<any> | null = null;
     while (!headers || headers.length > 0) {
       headers = await getHeaders();
       tip = await ChainStateProvider.getLocalTip({ chain, network });
@@ -277,20 +298,61 @@ export class P2pService {
       for (const header of headers) {
         try {
           const block = await this.getBlock(header.hash);
-          await this.processBlock(block);
-          currentHeight++;
+          const blockUpdates = await this.getBlockOperations(block, mintBatch, spendBatch, txBatch, prevBlock);
+          blockBatch = blockBatch.concat(blockUpdates);
+          mintBatch = mintBatch.concat(blockUpdates.mintOps);
+          spendBatch = spendBatch.concat(blockUpdates.spendOps);
+          txBatch = txBatch.concat(blockUpdates.txOps);
+          prevBlock = blockUpdates.blockOp.$set;
           if (Date.now() - lastLog > 100) {
             logger.info(`Sync `, {
               chain,
               network,
-              height: currentHeight
+              height: currentHeight,
+              mintQueue: mintBatch.length
             });
             lastLog = Date.now();
           }
+
+          if (mintBatch.length > 100000) {
+            logger.info(`Writing ${blockBatch.length} blocks `, {
+              chain,
+              network,
+              height: currentHeight
+            });
+            if (!prevPromise) {
+              prevPromise = BlockModel.processBlockOps(blockBatch);
+            } else {
+              await prevPromise;
+              prevPromise = BlockModel.processBlockOps(blockBatch);
+            }
+            blockBatch = new Array<any>();
+            mintBatch = new Array<any>();
+            spendBatch = new Array<any>();
+            txBatch = new Array<any>();
+          }
+
+          currentHeight++;
         } catch (err) {
           logger.error(`Error syncing ${chain} ${network}`, err);
           return this.sync();
         }
+      }
+      if (mintBatch.length > 0) {
+        // clear out the remaining at the end of sync
+        logger.info(`Writing ${blockBatch.length} blocks `, {
+          chain,
+          network,
+          height: currentHeight
+        });
+        if (prevPromise) {
+          await prevPromise;
+        }
+        prevPromise = BlockModel.processBlockOps(blockBatch);
+        blockBatch = new Array<any>();
+        mintBatch = new Array<any>();
+        spendBatch = new Array<any>();
+        txBatch = new Array<any>();
       }
     }
     logger.info(`${chain}:${network} up to date.`);
