@@ -17,8 +17,5 @@
     "lerna": "^2.9.1",
     "typescript": "^2.8.3",
     "typescript-eslint-parser": "^15.0.0"
-  },
-  "dependencies": {
-    "ionic": "3.20.0"
   }
 }
