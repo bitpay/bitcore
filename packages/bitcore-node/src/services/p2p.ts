@@ -2,7 +2,7 @@ import config from '../config';
 import logger from '../logger';
 import { EventEmitter } from 'events';
 import { BlockModel } from '../models/block';
-import { ChainStateProvider } from '../providers/chain-state';
+import { InternalState } from '../providers/chain-state';
 import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { StateModel } from '../models/state';
@@ -250,27 +250,27 @@ export class P2pService {
     const state = await StateModel.collection.findOne({});
     this.initialSyncComplete =
       state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
-    let tip = await ChainStateProvider.getLocalTip({ chain, network });
+    let tip = await InternalState.getLocalTip({chain, network});
     if (parentChain && (!tip || tip.height < forkHeight)) {
-      let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
+      let parentTip = await InternalState.getLocalTip({ chain: parentChain, network });
       while (!parentTip || parentTip.height < forkHeight) {
         logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
         await new Promise(resolve => {
           setTimeout(resolve, 5000);
         });
-        parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
+        parentTip = await InternalState.getLocalTip({ chain: parentChain, network });
       }
     }
 
     const getHeaders = async () => {
-      const locators = await ChainStateProvider.getLocatorHashes({ chain, network });
+      const locators = await InternalState.getLocatorHashes({ chain, network });
       return this.getHeaders(locators);
     };
 
     let headers;
     while (!headers || headers.length > 0) {
       headers = await getHeaders();
-      tip = await ChainStateProvider.getLocalTip({ chain, network });
+      tip = await InternalState.getLocalTip({ chain, network });
       let currentHeight = tip ? tip.height : 0;
       let lastLog = 0;
       logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);

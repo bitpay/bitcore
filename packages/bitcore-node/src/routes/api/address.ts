@@ -1,12 +1,10 @@
 import express = require('express');
 const router = express.Router({ mergeParams: true });
-import { ChainStateProvider } from '../../providers/chain-state';
-
-
+import { InternalState } from '../../providers/chain-state';
 
 router.get('/:address/txs', function(req, res) {
   let { address, chain, network } = req.params;
-  let { unspent, limit=10 } = req.query;
+  let { unspent, limit = 10 } = req.query;
   let payload = {
     chain,
     network,
@@ -15,12 +13,12 @@ router.get('/:address/txs', function(req, res) {
     stream: res,
     args: { unspent }
   };
-  ChainStateProvider.streamAddressTransactions(payload);
+  InternalState.streamAddressTransactions(payload);
 });
 
 router.get('/:address', function(req, res) {
   let { address, chain, network } = req.params;
-  let { unspent, limit=10 } = req.query;
+  let { unspent, limit = 10 } = req.query;
   let payload = {
     chain,
     network,
@@ -29,13 +27,13 @@ router.get('/:address', function(req, res) {
     stream: res,
     args: { unspent }
   };
-  ChainStateProvider.streamAddressUtxos(payload);
+  InternalState.streamAddressUtxos(payload);
 });
 
 router.get('/:address/balance', async function(req, res) {
   let { address, chain, network } = req.params;
   try {
-    let result = await ChainStateProvider.getBalanceForAddress({
+    let result = await InternalState.getBalanceForAddress({
       chain,
       network,
       address

@@ -48,7 +48,7 @@ class Coin extends BaseModel<ICoin> {
         {
           $group: {
             _id: null,
-            balance: { $sum: '$value' }
+            balance: { $sum: '$value' },
           }
         },
         { $project: { _id: false } }
