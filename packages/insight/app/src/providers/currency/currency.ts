@@ -23,7 +23,7 @@ export class CurrencyProvider {
   constructor(
     private defaults: DefaultProvider
   ) {
-    this.defaultCurrency = defaults.getDefault('%DEFAULT_CURRENCY%');
+    this.defaultCurrency = defaults.getDefault('%CHAIN%');
     this.selectedCurrency = this.defaultCurrency.toLowerCase();
     this.currencySymbol = this.defaultCurrency;
   }
