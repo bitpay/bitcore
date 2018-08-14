@@ -29,7 +29,7 @@ export class P2pService {
     this.bitcoreP2p = Chain[this.chain].p2p;
     this.chainConfig = chainConfig;
     this.events = new EventEmitter();
-    this.syncing = true;
+    this.syncing = false;
     this.initialSyncComplete = false;
     this.invCache = new LRU({ max: 10000 });
     this.messages = new this.bitcoreP2p.Messages({
@@ -102,7 +102,7 @@ export class P2pService {
             this.events.emit('block', message.block);
           } catch (err) {
             logger.error(`Error syncing ${chain} ${network}`, err);
-            return this.sync();
+            this.sync();
           }
         }
       }
@@ -244,9 +244,12 @@ export class P2pService {
   }
 
   async sync() {
+    if (this.syncing) {
+      return;
+    }
+    this.syncing = true;
     const { chain, chainConfig, network } = this;
     const { parentChain, forkHeight } = chainConfig;
-    this.syncing = true;
     const state = await StateModel.collection.findOne({});
     this.initialSyncComplete =
       state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
@@ -289,6 +292,7 @@ export class P2pService {
           }
         } catch (err) {
           logger.error(`Error syncing ${chain} ${network}`, err);
+          this.syncing = false;
           return this.sync();
         }
       }
