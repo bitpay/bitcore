@@ -102,7 +102,7 @@ export class P2pService {
             this.events.emit('block', message.block);
           } catch (err) {
             logger.error(`Error syncing ${chain} ${network}`, err);
-            await this.sync();
+            this.sync();
           }
         }
       }
