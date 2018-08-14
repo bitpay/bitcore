@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ChainStateProvider } from '../../providers/chain-state';
+import { InternalState } from '../../providers/chain-state';
 const router = require('express').Router({ mergeParams: true });
 
 router.get('/', async function(req: Request, res: Response) {
@@ -13,7 +13,7 @@ router.get('/', async function(req: Request, res: Response) {
       args: { date, limit, since, direction, paging },
       stream: res
     };
-    return ChainStateProvider.streamBlocks(payload);
+    return InternalState.streamBlocks(payload);
   } catch (err) {
     return res.status(500).send(err);
   }
@@ -22,7 +22,7 @@ router.get('/', async function(req: Request, res: Response) {
 router.get('/tip', async function(req: Request, res: Response) {
   let { chain, network } = req.params;
   try {
-    let tip = await ChainStateProvider.getBlock({ chain, network });
+    let tip = await InternalState.getLocalTip({ chain, network });
     return res.json(tip);
   } catch (err) {
     return res.status(500).send(err);
@@ -32,7 +32,7 @@ router.get('/tip', async function(req: Request, res: Response) {
 router.get('/:blockId', async function(req: Request, res: Response) {
   let { blockId, chain, network } = req.params;
   try {
-    let block = await ChainStateProvider.getBlock({ chain, network, blockId });
+    let block = await InternalState.getBlock({ chain, network, blockId });
     if (!block) {
       return res.status(404).send('block not found');
     }

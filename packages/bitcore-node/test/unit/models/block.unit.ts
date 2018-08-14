@@ -7,7 +7,7 @@ import { TEST_BLOCK } from '../../data/test-block';
 import { Storage } from '../../../src/services/storage';
 import { mockStorage } from '../../helpers';
 import { mockCollection } from "../../helpers/index.js";
-import { ChainStateProvider } from '../../../src/providers/chain-state';
+import { InternalState } from '../../../src/providers/chain-state';
 
 describe('Block Model', function() {
   describe('addBlock', () => {
@@ -50,7 +50,7 @@ describe('Block Model', function() {
     it('should return null if there are no blocks', async () => {
       mockStorage(null);
       const params = { chain: 'BTC', network: 'regtest' };
-      const result = await ChainStateProvider.getLocalTip(params);
+      const result = await InternalState.getLocalTip(params);
       expect(result).to.deep.equal(null);
     });
   });
@@ -69,7 +69,7 @@ describe('Block Model', function() {
     });
     it('should return 65 zeros if there are no processed blocks for the chain and network', async () => {
       const params = { chain: 'BTC', network: 'regtest' };
-      const result = await ChainStateProvider.getLocatorHashes(params);
+      const result = await InternalState.getLocatorHashes(params);
       expect(result).to.deep.equal([Array(65).join('0')]);
     });
   });

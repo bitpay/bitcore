@@ -2,10 +2,11 @@ import config from '../config';
 import logger from '../logger';
 import { EventEmitter } from 'events';
 import { BlockModel } from '../models/block';
-import { ChainStateProvider } from '../providers/chain-state';
+import { InternalState } from '../providers/chain-state';
 import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { StateModel } from '../models/state';
+import { CoinModel } from '../models/coin';
 const Chain = require('../chain');
 const LRU = require('lru-cache');
 
@@ -52,17 +53,18 @@ export class P2pService {
   }
 
   setupListeners() {
+    const { chain, network } = this;
     this.pool.on('peerready', peer => {
       logger.info(`Connected to peer ${peer.host}`, {
-        chain: this.chain,
-        network: this.network
+        chain: chain,
+        network: network
       });
     });
 
     this.pool.on('peerdisconnect', peer => {
       logger.warn(`Not connected to peer ${peer.host}`, {
-        chain: this.chain,
-        network: this.network,
+        chain: chain,
+        network: network,
         port: peer.port
       });
     });
@@ -71,8 +73,8 @@ export class P2pService {
       const hash = message.transaction.hash;
       logger.debug('peer tx received', {
         peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
-        network: this.network,
+        chain: chain,
+        network: network,
         hash
       });
       if (!this.invCache.get(hash)) {
@@ -88,8 +90,8 @@ export class P2pService {
       const { chain, network } = this;
       logger.debug('peer block received', {
         peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
-        network: this.network,
+        chain: chain,
+        network: network,
         hash
       });
 
@@ -111,7 +113,7 @@ export class P2pService {
     this.pool.on('peerheaders', (peer, message) => {
       logger.debug('peerheaders message received', {
         peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
+        chain: chain,
         network: this.network,
         count: message.headers.length
       });
@@ -250,27 +252,31 @@ export class P2pService {
     const state = await StateModel.collection.findOne({});
     this.initialSyncComplete =
       state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
-    let tip = await ChainStateProvider.getLocalTip({ chain, network });
+    let tip = await InternalState.getLocalTip({ chain, network });
     if (parentChain && (!tip || tip.height < forkHeight)) {
-      let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
+      let parentTip = await InternalState.getLocalTip({ chain: parentChain, network });
       while (!parentTip || parentTip.height < forkHeight) {
         logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
         await new Promise(resolve => {
           setTimeout(resolve, 5000);
         });
-        parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
+        parentTip = await InternalState.getLocalTip({ chain: parentChain, network });
+      }
+      if (parentTip.height > forkHeight && (!tip || tip.height < forkHeight)) {
+        // fork copy logic
+        await this.createFork(chain, parentChain, forkHeight);
       }
     }
 
     const getHeaders = async () => {
-      const locators = await ChainStateProvider.getLocatorHashes({ chain, network });
+      const locators = await InternalState.getLocatorHashes({ chain, network });
       return this.getHeaders(locators);
     };
 
     let headers;
     while (!headers || headers.length > 0) {
       headers = await getHeaders();
-      tip = await ChainStateProvider.getLocalTip({ chain, network });
+      tip = await InternalState.getLocalTip({ chain, network });
       let currentHeight = tip ? tip.height : 0;
       let lastLog = 0;
       logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
@@ -301,6 +307,72 @@ export class P2pService {
       { upsert: true }
     );
     return true;
+  }
+
+  async createFork(newChain: string, parentChain: string, forkHeight: number) {
+    const tip = await InternalState.getLocalTip({ chain: newChain, network: this.network });
+    const currentHeight = tip ? tip.height : 0;
+    const blockCursor = BlockModel.collection
+      .find(
+        { chain: parentChain, network: this.network, height: { $lt: forkHeight, $gte: currentHeight } },
+        { batchSize: 100 }
+      )
+      .sort({ height: 1 });
+
+    while (blockCursor.hasNext()) {
+      const block = await blockCursor.next();
+      if (block) {
+        const newBlock = Object.assign({}, block, { chain: newChain, processed: false });
+        const mongoOperations = new Array();
+        mongoOperations.push(BlockModel.collection.insert(newBlock));
+
+        const blockTransactions = await TransactionModel.collection
+          .find({
+            chain: parentChain,
+            network: this.network,
+            blockHash: block.hash
+          })
+          .toArray();
+
+        const newTransactions = blockTransactions.map(tx => {
+          return Object.assign({}, tx, {
+            _id: null,
+            chain: newChain
+          });
+        });
+        mongoOperations.push(TransactionModel.collection.insertMany(newTransactions));
+
+        // find coins that were spent past the fork, or not spent at the time of fork
+        const blockCoins = await CoinModel.collection
+          .find({
+            chain: parentChain,
+            mintHeight: block.height,
+            spentHeight: { $or: [{ $gt: forkHeight }, { $eq: -2 }] }
+          })
+          .toArray();
+
+        const newCoins = blockCoins.map(coin => {
+          const legacyAddress = new Chain[parentChain].lib.Address(coin.address);
+          const newAddress = this.bitcoreLib.Address(legacyAddress);
+          return Object.assign({}, coin, {
+            _id: null,
+            chain: newChain,
+            spentHeight: -2,
+            spentTxid: null,
+            address: newAddress
+          });
+        });
+
+        mongoOperations.push(CoinModel.collection.insertMany(newCoins));
+
+        await Promise.all(mongoOperations);
+        logger.info(`Forking block ${block.height}`);
+        BlockModel.collection.updateOne(
+          { chain: newChain, network: this.network, hash: block.hash },
+          { processed: true }
+        );
+      }
+    }
   }
 
   async start() {

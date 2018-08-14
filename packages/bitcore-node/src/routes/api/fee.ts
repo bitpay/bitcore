@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { ChainStateProvider } from '../../providers/chain-state';
+import { InternalState } from '../../providers/chain-state';
 const router = require('express').Router({ mergeParams: true });
 
 router.get('/:target', async (req: Request, res: Response) => {
@@ -8,7 +8,7 @@ router.get('/:target', async (req: Request, res: Response) => {
     return res.json({ feerate: 0.0002 }); // default 20 sat/byte for regtest
   }
   try {
-    let fee = await ChainStateProvider.getFee({ chain, network, target});
+    let fee = await InternalState.getFee({ chain, network, target });
     if (!fee) {
       return res.status(404).send('not available right now');
     }

@@ -1,6 +1,6 @@
 import { LoggifyClass } from '../decorators/Loggify';
 import { BaseModel } from './base';
-import { ObjectID } from 'mongodb';
+import { ObjectId } from "mongodb";
 
 const Chain = require('../chain');
 
@@ -14,7 +14,7 @@ export type ICoin = {
   value: number;
   address?: string;
   script: Buffer;
-  wallets: Set<ObjectID>;
+  wallets: Array<ObjectId>;
   spentTxid: string;
   spentHeight: number;
 };
@@ -48,7 +48,7 @@ class Coin extends BaseModel<ICoin> {
         {
           $group: {
             _id: null,
-            balance: { $sum: '$value' }
+            balance: { $sum: '$value' },
           }
         },
         { $project: { _id: false } }
