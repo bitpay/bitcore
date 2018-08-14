@@ -21,5 +21,5 @@ npm start
 To use a specific network / chain set the `NETWORK` and  `CHAIN` environment variable, e.g.:
 
 ```bash
-NETWORK=testnet DEFAULT_CURRENCY=BCH npm start
+NETWORK=testnet CHAIN=BCH npm start
 ```
