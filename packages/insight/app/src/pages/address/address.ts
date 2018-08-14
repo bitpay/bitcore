@@ -37,28 +37,20 @@ export class AddressPage {
   }
 
   public ionViewDidLoad(): void {
-    let url: string = this.apiProvider.apiPrefix + '/address/' + this.addrStr;
-    this.http.get(url).subscribe(
-      data => {
-        let apiCoin: ApiInput[] = data.json() as ApiInput[];
-        let add: (prev: number, cur: number) => number = (prev, cur) => prev + cur;
-        let sentCoin: ApiInput[] = apiCoin.filter(coin => coin.spentTxid);
-        let totalReceived: number = apiCoin.map(c => c.value).reduce(add, 0);
-        let totalSent: number = sentCoin.map(c => c.value).reduce(add, 0);
-        let balance: number = totalReceived - totalSent;
-        this.address = {
-          addrStr: this.addrStr,
-          totalReceived,
-          totalSent,
-          balance,
-          txAppearances: apiCoin.length
-        };
-        this.loading = false;
-      },
-      err => {
-        console.error('err is', err);
-      }
-    );
+    const url: string = `${this.apiProvider.apiPrefix}/address/${this.addrStr}/balance`;
+    this.http.get(url).subscribe(data => {
+      const json: {
+        balance: number;
+        numberTxs: number;
+      } = data.json();
+      this.address = {
+        balance: json.balance,
+        addrStr: this.addrStr,
+      };
+      this.loading = false;
+    }, err => {
+      console.error('err is', err);
+    });
 
     let txurl: string = this.apiProvider.apiPrefix + '/address/' + this.addrStr + '/txs';
     this.http.get(txurl).subscribe(
