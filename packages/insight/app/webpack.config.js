@@ -6,7 +6,7 @@ const customConfig = {
     new webpack.DefinePlugin({
       'process.env': JSON.stringify({
         NETWORK: process.env.NETWORK,
-        DEFAULT_CURRENCY: process.env.DEFAULT_CURRENCY,
+        CHAIN: process.env.CHAIN,
         API_PREFIX: process.env.API_PREFIX
       }),
     })
