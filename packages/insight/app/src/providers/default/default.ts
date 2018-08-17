@@ -11,12 +11,12 @@ import 'rxjs/add/operator/map';
 @Injectable()
 export class DefaultProvider {
   private defaults: {
-    '%DEFAULT_CURRENCY%': string,
+    '%CHAIN%': string,
     '%API_PREFIX%': string,
     '%NETWORK%': string,
     '%NUM_BLOCKS%': string
   }= {
-    '%DEFAULT_CURRENCY%': process.env.DEFAULT_CURRENCY || 'BTC',
+    '%CHAIN%': process.env.CHAIN || 'BTC',
     '%API_PREFIX%': process.env.API_PREFIX || '/api',
     '%NETWORK%': process.env.NETWORK || 'regtest',
     '%NUM_BLOCKS%': process.env.NUM_BLOCKS || '15'

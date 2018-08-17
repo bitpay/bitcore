@@ -102,7 +102,7 @@ export class P2pService {
             this.events.emit('block', message.block);
           } catch (err) {
             logger.error(`Error syncing ${chain} ${network}`, err);
-            await this.sync();
+            this.sync();
           }
         }
       }
@@ -259,10 +259,12 @@ export class P2pService {
   }
 
   async sync() {
-    if (!this.syncing) {
+    if (this.syncing) {
+      return;
+    }
+    this.syncing = true;
       const { chain, chainConfig, network } = this;
       const { parentChain, forkHeight } = chainConfig;
-      this.syncing = true;
       const state = await StateModel.collection.findOne({});
       this.initialSyncComplete =
         state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
@@ -336,7 +338,7 @@ export class P2pService {
             currentHeight++;
           } catch (err) {
             logger.error(`Error syncing ${chain} ${network}`, err);
-            this.syncing = false;
+          this.syncing = false;
             return this.sync();
           }
         }

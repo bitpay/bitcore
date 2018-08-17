@@ -23,6 +23,7 @@
     "tsc": "npm run clean && ./node_modules/.bin/tsc",
     "tsc:test": "npm run clean && ./node_modules/.bin/tsc",
     "test": "npm run tsc:test && node ./build/test/runners/unit.js && node ./build/test/runners/integration.js",
+    "test:verify": "npm run tsc:test && node ./build/test/util/verify.js",
     "test:unit": "npm run tsc:test && node ./build/test/runners/unit.js",
     "test:integration": "npm run tsc:test && node ./build/test/runners/integration.js",
     "test:ci": "npm run test:ci:build && npm run test:ci:unit && npm run test:ci:integration",

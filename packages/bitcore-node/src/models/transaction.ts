@@ -381,6 +381,7 @@ export class Transaction extends BaseModel<ITransaction> {
       blockTime: tx.blockTime,
       blockTimeNormalized: tx.blockTimeNormalized,
       coinbase: tx.coinbase,
+      locktime: tx.locktime,
       size: tx.size,
       fee: tx.fee
     };

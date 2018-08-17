@@ -3,7 +3,7 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { TxsProvider, ApiInput, ApiTx } from '../../providers/transactions/transactions';
+import { TxsProvider, ApiTx } from '../../providers/transactions/transactions';
 
 /**
  * Generated class for the AddressPage page.
@@ -37,21 +37,16 @@ export class AddressPage {
   }
 
   public ionViewDidLoad(): void {
-    let url: string = this.apiProvider.apiPrefix + '/address/' + this.addrStr;
+    const url: string = `${this.apiProvider.apiPrefix}/address/${this.addrStr}/balance`;
     this.http.get(url).subscribe(
       data => {
-        let apiCoin: ApiInput[] = data.json() as ApiInput[];
-        let add: (prev: number, cur: number) => number = (prev, cur) => prev + cur;
-        let sentCoin: ApiInput[] = apiCoin.filter(coin => coin.spentTxid);
-        let totalReceived: number = apiCoin.map(c => c.value).reduce(add, 0);
-        let totalSent: number = sentCoin.map(c => c.value).reduce(add, 0);
-        let balance: number = totalReceived - totalSent;
+        const json: {
+          balance: number;
+          numberTxs: number;
+        } = data.json();
         this.address = {
-          addrStr: this.addrStr,
-          totalReceived,
-          totalSent,
-          balance,
-          txAppearances: apiCoin.length
+          balance: json.balance,
+          addrStr: this.addrStr
         };
         this.loading = false;
       },

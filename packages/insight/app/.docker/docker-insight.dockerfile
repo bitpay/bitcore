@@ -4,7 +4,7 @@ COPY . /var/www
 #WORKDIR /var/www
 
 COPY ./.docker/scripts /scripts
-RUN chmod +rx /scripts/replace.sh
+RUN chmod +rx /scripts/start.sh
 
 EXPOSE 8100
-ENTRYPOINT ["/scripts/replace.sh"]
+ENTRYPOINT ["/scripts/start.sh"]

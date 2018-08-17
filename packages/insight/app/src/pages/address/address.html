@@ -14,27 +14,9 @@
 
     <ion-list class="list--summary">
       <ion-item>
-        Total Received
-        <ion-note item-end>
-          {{ currencyProvider.getConvertedNumber(address.totalReceived) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
-        </ion-note>
-      </ion-item>
-      <ion-item>
-        Total Sent
-        <ion-note item-end>
-          {{ currencyProvider.getConvertedNumber(address.totalSent) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
-        </ion-note>
-      </ion-item>
-      <ion-item>
         Final Balance
         <ion-note item-end>
           {{ currencyProvider.getConvertedNumber(address.balance) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
-        </ion-note>
-      </ion-item>
-      <ion-item>
-        No. Transactions
-        <ion-note item-end>
-          {{ address.txAppearances }}
         </ion-note>
       </ion-item>
     </ion-list>
