@@ -9,6 +9,7 @@ import { WalletAddressModel } from '../../src/models/walletAddress';
 import { Storage } from '../../src/services/storage';
 import config from '../../src/config';
 import logger from '../../src/logger';
+import { ChainStateProvider } from '../../src/providers/chain-state';
 
 
 const SATOSHI = 100000000.0;
@@ -21,7 +22,7 @@ export async function blocks(info: ChainNetwork, creds: {
   port: number;
 }) {
   const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
-  const tip = await BlockModel.getLocalTip(info);
+  const tip = await ChainStateProvider.getLocalTip({chain:info.chain, network:info.network});
   const heights = new Array(tip.height).fill(false);
   const times = new Array(tip.height).fill(0);
   const normalizedTimes = new Array(tip.height).fill(0);
@@ -33,7 +34,7 @@ export async function blocks(info: ChainNetwork, creds: {
   });
 
   while (true) {
-    const block: IBlock = await cursor.next();
+    const block: IBlock | null = await cursor.next();
     if (!block) break;
     if (!block.processed) continue;
     logger.info(`verifying block ${block.hash}: ${block.height}`);
@@ -151,7 +152,7 @@ export async function transactions(info: ChainNetwork, creds: {
   });
 
   while (true) {
-    const tx: ITransaction = await txcursor.next();
+    const tx: ITransaction | null = await txcursor.next();
     if (!tx) {
       break;
     }
