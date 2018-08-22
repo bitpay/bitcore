@@ -215,13 +215,16 @@ export class InternalStateProvider implements CSP.IChainStateService {
       if (args.endBlock) {
         query.blockHeight = query.blockHeight || {};
         query.blockHeight.$lte = Number(args.endBlock);
+        query.blockHeight.$gt = -1;
       }
       if (args.startDate) {
         query.blockTimeNormalized = { $gte: new Date(args.startDate) };
       }
       if (args.endDate) {
+        query.blockHeight = query.blockHeight || {};
         query.blockTimeNormalized = query.blockTimeNormalized || {};
         query.blockTimeNormalized.$lt = new Date(args.endDate);
+        query.blockHeight.$gt = -1;
       }
     }
     let transactionStream = TransactionModel.getTransactions({ query });

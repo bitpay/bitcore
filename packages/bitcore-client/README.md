@@ -17,6 +17,7 @@ Currently we have the following features
 ### Wallet Create
 ```
 ./wallet-create --name TestWalletBTC --chain BTC --network mainnet
+./wallet-create  --chain BCH --network regtest --baseUrl http://localhost:3000/api --name myregtestwallet
 ```
 
 ### Wallet Import
