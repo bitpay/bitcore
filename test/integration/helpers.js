@@ -66,6 +66,9 @@ helpers.beforeEach = function(cb) {
   storage.db.dropDatabase(function(err) {
     if (err) return cb(err);
     blockchainExplorer = sinon.stub();
+    blockchainExplorer.supportsGrouping = function () {
+      return false;
+    }
     var opts = {
       storage: storage,
       blockchainExplorer: blockchainExplorer,
