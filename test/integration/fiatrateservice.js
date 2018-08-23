@@ -105,7 +105,7 @@ describe('Fiat rate service', function() {
     });
 
     it('should get rate for specific ts', function(done) {
-      var clock = sinon.useFakeTimers(0, 'Date');
+      var clock = sinon.useFakeTimers({toFake: ['Date']});
       clock.tick(20);
       service.storage.storeFiatRate('BitPay', [{
         code: 'USD',
@@ -134,7 +134,7 @@ describe('Fiat rate service', function() {
     });
 
     it('should get rates for a series of ts', function(done) {
-      var clock = sinon.useFakeTimers(0, 'Date');
+      var clock = sinon.useFakeTimers({toFake: ['Date']});
       async.each([1.00, 2.00, 3.00, 4.00], function(value, next) {
         clock.tick(100);
         service.storage.storeFiatRate('BitPay', [{
@@ -176,7 +176,7 @@ describe('Fiat rate service', function() {
     });
 
     it('should not get rate older than 2hs', function(done) {
-      var clock = sinon.useFakeTimers(0, 'Date');
+      var clock = sinon.useFakeTimers({toFake: ['Date']});
       service.storage.storeFiatRate('BitPay', [{
         code: 'USD',
         value: 123.45,
@@ -207,7 +207,7 @@ describe('Fiat rate service', function() {
 
   describe('#fetch', function() {
     it('should fetch rates from all providers', function(done) {
-      var clock = sinon.useFakeTimers(100, 'Date');
+      var clock = sinon.useFakeTimers({now:100, toFake: ['Date']});
       var bitpay = [{
         code: 'USD',
         rate: 123.45,
@@ -257,7 +257,7 @@ describe('Fiat rate service', function() {
     });
 
     it('should not stop when failing to fetch provider', function(done) {
-      var clock = sinon.useFakeTimers(100, 'Date');
+      var clock = sinon.useFakeTimers({now:100, toFake: ['Date']});
       var bitstamp = {
         last: 120.00,
       };
