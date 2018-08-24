@@ -1,4 +1,5 @@
 const Bcrypt = require('bcrypt');
+const { PrivateKey } = require('bitcore-lib');
 const Encrypter = require('./encryption');
 const Mnemonic = require('bitcore-mnemonic');
 const Client = require('./client');
@@ -37,7 +38,7 @@ class Wallet {
     const mnemonic = new Mnemonic(phrase);
     const hdPrivKey = mnemonic.toHDPrivateKey(password);
     const privKeyObj = hdPrivKey.toObject();
-    const authKey = hdPrivKey.deriveChild('m/2').privateKey.toString();
+    const authKey = new PrivateKey();
 
     // Generate public keys
     const hdPubKey = hdPrivKey.hdPublicKey;
