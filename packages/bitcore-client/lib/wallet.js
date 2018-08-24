@@ -34,12 +34,14 @@ class Wallet {
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
-    // Generate private keys
+    // Generate wallet private keys
     const mnemonic = new Mnemonic(phrase);
     const hdPrivKey = mnemonic.toHDPrivateKey(password);
     const privKeyObj = hdPrivKey.toObject();
+
+    // Generate authentication keys
     const authKey = new PrivateKey();
-    const authPubKey = authKey.toPublicKey().toString('hex');
+    const authPubKey = authKey.toPublicKey().toString();
 
     // Generate public keys
     const hdPubKey = hdPrivKey.hdPublicKey;
