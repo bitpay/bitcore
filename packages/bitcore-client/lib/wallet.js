@@ -39,7 +39,7 @@ class Wallet {
     const hdPrivKey = mnemonic.toHDPrivateKey(password);
     const privKeyObj = hdPrivKey.toObject();
     const authKey = new PrivateKey();
-    const authPubKey = new PrivateKey(this.authKey).toPublicKey();
+    const authPubKey = authKey.toPublicKey().toString('hex');
 
     // Generate public keys
     const hdPubKey = hdPrivKey.hdPublicKey;
