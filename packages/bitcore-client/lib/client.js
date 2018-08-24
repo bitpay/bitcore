@@ -8,7 +8,6 @@ const { URL } = require('url');
 
 const Client = function (params) {
   Object.assign(this, params);
-  this.pubKey = this.authKey.toPublicKey();
 };
 
 Client.prototype.sign = function (params) {
@@ -22,7 +21,9 @@ Client.prototype.sign = function (params) {
 
 Client.prototype.register = async function (params) {
   const { payload } = params;
-  const url = `${this.baseUrl}/wallet`;
+  // allow you to overload the client's baseUrl
+  const { baseUrl = this.baseUrl } = payload;
+  const url = `${baseUrl}/wallet`;
   const signature = this.sign({ method: 'POST', url, payload });
   return request.post(url, {
     headers: { 'x-signature': signature },
