@@ -26,9 +26,7 @@ type AuthenticatedRequest = {
 
 const verifyRequestSignature = (params: VerificationPayload): boolean => {
   const { message, pubKey, signature } = params;
-  const pub = new bitcoreLib.HDPublicKey(pubKey)
-    .deriveChild('m/2')
-    .publicKey.toBuffer();
+  const pub = new bitcoreLib.PublicKey(pubKey).toBuffer();
   const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
   if (typeof signature === 'string') {
     return secp256k1.verify(messageHash, Buffer.from(signature, 'hex'), pub);
