@@ -82,7 +82,7 @@ Client.prototype.getFee = async function (params) {
 };
 
 Client.prototype.importAddresses = async function(params) {
-  const { payload } = params;
+  const { payload, pubKey } = params;
   const url = `${this.baseUrl}/wallet/${pubKey}`;
   const signature = this.sign({ method: 'POST', url, payload});
 
