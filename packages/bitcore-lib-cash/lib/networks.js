@@ -179,7 +179,6 @@ var liveNetwork = {
   dnsSeeds: dnsSeeds
 };
 
-// network magic, port, prefix, and dnsSeeds are overloaded by enableRegtest
 var testNetwork = {
   name: 'testnet',
   prefix: 'bchtest',
