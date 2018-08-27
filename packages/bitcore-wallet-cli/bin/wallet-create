@@ -38,8 +38,10 @@ utils.getClient(program, {
     language: 'en',
     coin: coin,
   });
+
   client.createWallet(walletName, copayerName, mn[0], mn[1], {
-    network: network
+    network: network,
+    coin: coin,
   }, function(err, secret) {
     utils.die(err);
     console.log(' * ' + _.capitalize(network) + ' Wallet Created.');

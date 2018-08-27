@@ -13,12 +13,10 @@
     "url": "git@github.com:bitpay/bitcore-wallet.git",
     "type": "git"
   },
-  "bugs": {
-    "url": "https://github.com/bitpay/bitcore-wallet/issues"
-  },
+  "bugs": {},
   "dependencies": {
     "async": "^2.5.0",
-    "bitcore-wallet-client": "^6.6.3",
+    "bitcore-wallet-client": "^6.7.4",
     "commander": "^2.6.0",
     "lodash": "^3.3.1",
     "moment": "^2.9.0",
