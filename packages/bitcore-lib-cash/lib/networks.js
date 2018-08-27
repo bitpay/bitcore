@@ -157,12 +157,6 @@ function removeNetwork(network) {
   unindexNetworkBy(network, Object.keys(networkMaps));
 }
 
-var networkMagic = {
-  livenet: 0xe3e1f3e8,
-  testnet: 0xf4e5f3f4,
-  regtest: 0xdab5bffa,
-};
-
 var dnsSeeds = [
   'seed.bitcoinabc.org',
   'seed-abc.bitcoinforks.org',
@@ -170,20 +164,6 @@ var dnsSeeds = [
   'seed.bitprim.org ',
   'seed.deadalnix.me'
 ];
-
-var TESTNET = {
-  PORT: 18333,
-  NETWORK_MAGIC: networkMagic.testnet,
-  DNS_SEEDS: dnsSeeds,
-  PREFIX: 'bchtest'
-};
-
-var REGTEST = {
-  PORT: 18444,
-  NETWORK_MAGIC: networkMagic.regtest,
-  DNS_SEEDS: [],
-  PREFIX: 'bchreg'
-};
 
 var liveNetwork = {
   name: 'livenet',
@@ -194,7 +174,7 @@ var liveNetwork = {
   scripthash: 40,
   xpubkey: 0x0488b21e,
   xprivkey: 0x0488ade4,
-  networkMagic: networkMagic.livenet,
+  networkMagic: 0xe3e1f3e8,
   port: 8333,
   dnsSeeds: dnsSeeds
 };
@@ -202,25 +182,27 @@ var liveNetwork = {
 // network magic, port, prefix, and dnsSeeds are overloaded by enableRegtest
 var testNetwork = {
   name: 'testnet',
-  prefix: TESTNET.PREFIX,
+  prefix: 'bchtest',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
-  networkMagic: TESTNET.NETWORK_MAGIC,
+  networkMagic: 0xf4e5f3f4,
+  port: 18333,
+  dnsSeeds: dnsSeeds
 };
 
 var regtestNetwork = {
   name: 'regtest',
-  prefix: REGTEST.PREFIX,
+  prefix: 'bchreg',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
-  networkMagic: REGTEST.NETWORK_MAGIC,
-  port: REGTEST.PORT,
+  networkMagic: 0xdab5bffa,
+  port: 18444,
   dnsSeeds: [],
   indexBy: [
     'port',
