@@ -40,7 +40,7 @@ describe('Blockchain explorer', function() {
       exp2.should.respondTo('initSocket');
       exp2.should.respondTo('supportsGrouping');
       exp2.should.respondTo('register');
-      exp2.should.respondTo('addAddress');
+      exp2.should.respondTo('addAddresses');
  
     });
     it('should fail on unsupported provider', function() {

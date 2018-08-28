@@ -58,8 +58,8 @@ var config = {
         addressFormat: 'cashaddr',  // copay, cashaddr, or legacy
       },
       testnet: {
-        provider: 'insight',
-        url: 'https://test-bch-insight.bitpay.com:443',
+        provider: 'v8',
+        url: 'http://localhost:3000',
         addressFormat: 'cashaddr',  // copay, cashaddr, or legacy
       },
 
