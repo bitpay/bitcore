@@ -1,4 +1,9 @@
-import { CoinModel } from '../models/coin';
+import config from '../config';
+import through2 from 'through2';
+
+import { MongoBound } from '../models/base';
+import { ObjectId } from 'mongodb';
+import { CoinModel, ICoin } from '../models/coin';
 import { BlockModel } from '../models/block';
 import { WalletModel, IWallet } from '../models/wallet';
 import { WalletAddressModel } from '../models/walletAddress';
@@ -6,12 +11,10 @@ import { CSP } from '../types/namespaces/ChainStateProvider';
 import { Storage } from '../services/storage';
 import { RPC } from '../rpc';
 import { LoggifyClass } from '../decorators/Loggify';
-import config from '../config';
-
 import { TransactionModel } from '../models/transaction';
 import { StateModel } from '../models/state';
-
-const ListTransactionsStream = require('./transforms');
+import { ListTransactionsStream } from './transforms';
+import { StringifyJsonStream } from '../utils/stringifyJsonStream';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -188,6 +191,49 @@ export class InternalStateProvider implements CSP.IChainStateService {
     let { walletId, limit = 1000, stream } = params;
     let query = { wallet: walletId };
     Storage.apiStreamingFind(WalletAddressModel, query, { limit }, stream);
+  }
+
+  async streamMissingWalletAddresses(params: CSP.StreamWalletMissingAddressesParams) {
+    const { chain, network, pubKey, stream } = params;
+    const wallet = await WalletModel.collection.findOne({ pubKey });
+    const walletId = wallet!._id;
+    const query = { chain, network, wallets: walletId, spentHeight: { $gte: 0 } };
+    const cursor = CoinModel.collection.find(query);
+    const seen = {};
+    const stringifyWallets = (wallets: Array<ObjectId>) => wallets.map(w => w.toHexString());
+    const allMissingAddresses = new Array<string>();
+    let totalMissingValue = 0;
+    const missingStream = cursor.pipe(
+      through2(
+        { objectMode: true },
+        async (spentCoin: MongoBound<ICoin>, _, done) => {
+          if (!seen[spentCoin.spentTxid]) {
+            seen[spentCoin.spentTxid] = true;
+            // find coins that were spent with my coins
+            const spends = await CoinModel.collection
+              .find({ chain, network, spentTxid: spentCoin.spentTxid })
+              .toArray();
+            const missing = spends
+              .filter(coin => !stringifyWallets(coin.wallets).includes(walletId.toHexString()))
+              .map(coin => {
+                const { _id, wallets, address, value } = coin;
+                totalMissingValue += value;
+                allMissingAddresses.push(address);
+                return { _id, wallets, address, value, expected: walletId.toHexString() };
+              });
+            if (missing.length > 0) {
+              return done(null, { txid: spentCoin.spentTxid, missing });
+            }
+          }
+          return done();
+        },
+        function(done) {
+          this.push({ allMissingAddresses, totalMissingValue });
+          done();
+        }
+      )
+    );
+    missingStream.pipe(new StringifyJsonStream()).pipe(stream);
   }
 
   async updateWallet(params: CSP.UpdateWalletParams) {
