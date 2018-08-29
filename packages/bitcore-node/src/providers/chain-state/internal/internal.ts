@@ -1,23 +1,29 @@
-import config from '../config';
+import config from '../../../config';
 import through2 from 'through2';
 
-import { MongoBound } from '../models/base';
+import { MongoBound } from '../../../models/base';
 import { ObjectId } from 'mongodb';
-import { CoinModel, ICoin } from '../models/coin';
-import { BlockModel } from '../models/block';
-import { WalletModel, IWallet } from '../models/wallet';
-import { WalletAddressModel } from '../models/walletAddress';
-import { CSP } from '../types/namespaces/ChainStateProvider';
-import { Storage } from '../services/storage';
-import { RPC } from '../rpc';
-import { LoggifyClass } from '../decorators/Loggify';
-import { TransactionModel } from '../models/transaction';
-import { StateModel } from '../models/state';
+import { CoinModel, ICoin } from '../../../models/coin';
+import { BlockModel } from '../../../models/block';
+import { WalletModel, IWallet } from '../../../models/wallet';
+import { WalletAddressModel } from '../../../models/walletAddress';
+import { CSP } from '../../../types/namespaces/ChainStateProvider';
+import { Storage } from '../../../services/storage';
+import { RPC } from '../../../rpc';
+import { LoggifyClass } from '../../../decorators/Loggify';
+import { TransactionModel } from '../../../models/transaction';
+import { StateModel } from '../../../models/state';
 import { ListTransactionsStream } from './transforms';
-import { StringifyJsonStream } from '../utils/stringifyJsonStream';
+import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
+  chain: string;
+  constructor(chain: string) {
+    this.chain = chain;
+    this.chain = this.chain.toUpperCase();
+  }
+
   getRPC(chain: string, network: string) {
     const RPC_PEER = config.chains[chain][network].rpc;
     if (!RPC_PEER) {
@@ -351,5 +357,3 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return locatorBlocks.map(block => block.hash);
   }
 }
-
-export const InternalState = new InternalStateProvider();

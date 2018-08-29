@@ -29,6 +29,7 @@ export declare namespace CSP {
   };
   export type GetBlockParams = ChainNetwork & {
     blockId?: string;
+    sinceBlock?: number | string;
     args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBlock>>;
   };
   export type StreamBlocksParams = ChainNetwork & {
@@ -114,6 +115,7 @@ export declare namespace CSP {
     streamWalletAddresses(params: StreamWalletAddressesParams): any;
     streamWalletTransactions(params: StreamWalletTransactionsParams): any;
     streamWalletUtxos(params: StreamWalletUtxosParams): any;
+    streamMissingWalletAddresses(params: StreamWalletMissingAddressesParams);
     getCoinsForTx(params: { chain: string; network: string; txid: string }): Promise<any>;
     getLocalTip(params): Promise<any>;
     getLocatorHashes(params): Promise<any>;

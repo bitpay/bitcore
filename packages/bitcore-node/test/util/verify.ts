@@ -184,7 +184,7 @@ export async function transactions(info: ChainNetwork, creds: {
 
         // wallets
         expect(tx.wallets).to.include.members(Array.from(our.wallets));
-        if (our.wallets.size > 0) {
+        if (our.wallets.length > 0) {
           const wallets = await WalletAddressModel.collection.find({
             wallet: {
               $in: our.wallets,

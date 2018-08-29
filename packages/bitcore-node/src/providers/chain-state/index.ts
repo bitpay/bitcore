@@ -103,5 +103,9 @@ class ChainStateProxy implements CSP.ChainStateProvider {
   async getLocatorHashes(params) {
     return this.get(params).getLocatorHashes(params);
   }
+
+  streamMissingWalletAddresses(params) {
+    return this.get(params).streamMissingWalletAddresses(params);
+  }
 }
 export let ChainStateProvider = new ChainStateProxy();
