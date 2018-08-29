@@ -23,13 +23,14 @@ export class RPC {
       function(err, res) {
         if (err) {
           return callback(err);
-        }
-        if (res) {
+        } else if (res) {
           const { body } = res;
           if (res.body && res.body.error) {
             return callback(body.error);
           }
-          callback(null, body && body.result);
+          return callback(null, body && body.result);
+        } else {
+          return callback('No response or error returned by rpc call');
         }
       }
     );
@@ -51,7 +52,7 @@ export class RPC {
       if (err) {
         return callback(err);
       }
-      callback(null, result[0]);
+      return callback(null, result[0]);
     });
   }
 
@@ -87,7 +88,7 @@ export class RPC {
       if (err) {
         return callback(err);
       }
-      callback(null, result);
+      return callback(null, result);
     });
   }
 
