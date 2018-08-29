@@ -8586,7 +8586,7 @@ console.log('[server.js.425:err:]',err); //TODO
         blockchainExplorer.supportsGrouping = function () {
           return true;
         }
-        blockchainExplorer.register = sinon.stub().callsArgWith(2, null, null);
+        blockchainExplorer.register = sinon.stub().callsArgWith(1, null, null);
         blockchainExplorer.addAddresses = sinon.stub().callsArgWith(2, null, null);
         w.copayers[0].id.should.equal(TestData.copayers[0].id44btc);
         done();
