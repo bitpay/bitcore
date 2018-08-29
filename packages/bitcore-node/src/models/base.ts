@@ -1,6 +1,8 @@
 import { Storage } from '../services/storage';
 import { Collection, MongoClient, Db } from 'mongodb';
+import { ObjectID } from "bson";
 
+export type MongoBound<T> = T & {_id: ObjectID};
 export abstract class BaseModel<T> {
   connected = false;
   client?: MongoClient;
@@ -27,7 +29,7 @@ export abstract class BaseModel<T> {
 
   abstract async onConnect();
 
-  get collection(): Collection<T> {
+  get collection(): Collection<MongoBound<T>> {
     if (Storage.db) {
       return Storage.db.collection(this.collectionName);
     } else {
