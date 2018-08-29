@@ -12,7 +12,7 @@ export type ICoin = {
   mintHeight: number;
   coinbase: boolean;
   value: number;
-  address?: string;
+  address: string;
   script: Buffer;
   wallets: Array<ObjectId>;
   spentTxid: string;
