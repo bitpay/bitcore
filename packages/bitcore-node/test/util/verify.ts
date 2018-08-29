@@ -11,18 +11,19 @@ import config from '../../src/config';
 import logger from '../../src/logger';
 import { ChainStateProvider } from '../../src/providers/chain-state';
 
-
 const SATOSHI = 100000000.0;
 
-
-export async function blocks(info: ChainNetwork, creds: {
-  username: string;
-  password: string;
-  host: string;
-  port: number;
-}) {
+export async function blocks(
+  info: ChainNetwork,
+  creds: {
+    username: string;
+    password: string;
+    host: string;
+    port: number;
+  }
+) {
   const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
-  const tip = await ChainStateProvider.getLocalTip({chain:info.chain, network:info.network});
+  const tip = await ChainStateProvider.getLocalTip({ chain: info.chain, network: info.network });
   const heights = new Array(tip.height).fill(false);
   const times = new Array(tip.height).fill(0);
   const normalizedTimes = new Array(tip.height).fill(0);
@@ -30,7 +31,7 @@ export async function blocks(info: ChainNetwork, creds: {
   // check each block
   const cursor = BlockModel.collection.find({
     chain: info.chain,
-    network: info.network,
+    network: info.network
   });
 
   while (true) {
@@ -75,20 +76,23 @@ export async function blocks(info: ChainNetwork, creds: {
       expect(block.reward, 'block reward').to.equal(Math.round(reward * SATOSHI));
 
       // Check block only has all `truth`'s transactions
-      const ours = await TransactionModel.collection.find({
-        chain: info.chain,
-        network: info.network,
-        txid: {
-          $in: truth.tx.map(tx => tx.txid),
-        },
-      }).project({
-        txid: true,
-        coinbase: true,
-        blockHash: true,
-        blockHeight: true,
-        blockTime: true,
-        blockTimeNormalized: true,
-      }).toArray();
+      const ours = await TransactionModel.collection
+        .find({
+          chain: info.chain,
+          network: info.network,
+          txid: {
+            $in: truth.tx.map(tx => tx.txid)
+          }
+        })
+        .project({
+          txid: true,
+          coinbase: true,
+          blockHash: true,
+          blockHeight: true,
+          blockTime: true,
+          blockTimeNormalized: true
+        })
+        .toArray();
 
       // Check coinbase flag
       const ourCoinbase = ours.filter(tx => tx.coinbase);
@@ -116,14 +120,16 @@ export async function blocks(info: ChainNetwork, creds: {
       }
 
       // Check no other tx points to our block hash
-      const extra = await TransactionModel.collection.find({
-        chain: info.chain,
-        network: info.network,
-        blockHash: block.hash,
-        txid: {
-          $nin: truth.tx.map(tx => tx.txid),
-        },
-      }).count();
+      const extra = await TransactionModel.collection
+        .find({
+          chain: info.chain,
+          network: info.network,
+          blockHash: block.hash,
+          txid: {
+            $nin: truth.tx.map(tx => tx.txid)
+          }
+        })
+        .count();
       expect(extra, 'number of extra transactions').to.equal(0);
     }
   }
@@ -132,23 +138,25 @@ export async function blocks(info: ChainNetwork, creds: {
   expect(heights.filter(h => !h).length, 'no duplicate heights').to.equal(0);
 
   // Check increasing times
-  const increases = l => !!l.reduce((prev, curr) => prev < curr? curr : undefined);
+  const increases = l => !!l.reduce((prev, curr) => (prev < curr ? curr : undefined));
   expect(increases(times), 'block times only increase').to.be.true;
   expect(increases(normalizedTimes), 'normalized block times only increase').to.be.true;
 }
 
-
-export async function transactions(info: ChainNetwork, creds: {
-  username: string;
-  password: string;
-  host: string;
-  port: number;
-}) {
+export async function transactions(
+  info: ChainNetwork,
+  creds: {
+    username: string;
+    password: string;
+    host: string;
+    port: number;
+  }
+) {
   const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
   const txcursor = TransactionModel.collection.find({
     chain: info.chain,
-    network: info.network,
+    network: info.network
   });
 
   while (true) {
@@ -162,48 +170,53 @@ export async function transactions(info: ChainNetwork, creds: {
     expect(tx.size, 'tx size').to.equal(truth.size);
     expect(tx.locktime, 'tx locktime').to.equal(truth.locktime);
 
-    { // Minted by this transaction
-      const ours = await CoinModel.collection.find({
-        network: info.network,
-        chain: info.chain,
-        mintTxid: tx.txid,
-      }).toArray();
+    {
+      // Minted by this transaction
+      const ours = await CoinModel.collection
+        .find({
+          network: info.network,
+          chain: info.chain,
+          mintTxid: tx.txid
+        })
+        .toArray();
       expect(ours.length, 'number mint txids').to.equal(truth.vout.length);
       for (const our of ours) {
         // coins
         expect(our.mintHeight, 'tx mint height').to.equal(tx.blockHeight);
-        expect(our.value, 'tx mint value').to.equal(
-          Math.round(truth.vout[our.mintIndex].value * SATOSHI)
-        );
+        expect(our.value, 'tx mint value').to.equal(Math.round(truth.vout[our.mintIndex].value * SATOSHI));
         // TODO: why?
         if (our.address && our.address !== 'false') {
-          expect(truth.vout[our.mintIndex].scriptPubKey.addresses,
-                 'tx mint address').to.include(our.address);
+          expect(truth.vout[our.mintIndex].scriptPubKey.addresses, 'tx mint address').to.include(our.address);
         }
         expect(our.coinbase).to.equal(tx.coinbase);
 
         // wallets
         expect(tx.wallets).to.include.members(Array.from(our.wallets));
         if (our.wallets.length > 0) {
-          const wallets = await WalletAddressModel.collection.find({
-            wallet: {
-              $in: our.wallets,
-            },
-            address: our.address,
-            chain: info.chain,
-            network: info.network,
-          }).toArray();
+          const wallets = await WalletAddressModel.collection
+            .find({
+              wallet: {
+                $in: our.wallets
+              },
+              address: our.address,
+              chain: info.chain,
+              network: info.network
+            })
+            .toArray();
           expect(wallets.length, 'wallet exists').to.be.greaterThan(0);
         }
       }
     }
 
-    { // Spent by this transaction
-      const ours = await CoinModel.collection.find({
-        network: info.network,
-        chain: info.chain,
-        spentTxid: tx.txid,
-      }).toArray();
+    {
+      // Spent by this transaction
+      const ours = await CoinModel.collection
+        .find({
+          network: info.network,
+          chain: info.chain,
+          spentTxid: tx.txid
+        })
+        .toArray();
       const nspent = truth.vin.length + (tx.coinbase ? -1 : 0);
       expect(ours.length, 'number spent txids').to.equal(nspent);
       for (const our of ours) {
@@ -214,20 +227,20 @@ export async function transactions(info: ChainNetwork, creds: {
   }
 }
 
+if (require.main === module)
+  (async () => {
+    const info = {
+      chain: process.env.CHAIN || 'BTC',
+      network: process.env.NETWORK || 'testnet'
+    };
+    const creds = config.chains[info.chain][info.network].rpc;
 
-if (require.main === module) (async () => {
-  const info = {
-    chain: process.env.CHAIN || 'BTC',
-    network: process.env.NETWORK || 'testnet',
-  };
-  const creds = config.chains[info.chain][info.network].rpc;
-
-  await Storage.start({});
-  logger.info('verifying blocks');
-  await blocks(info, creds);
-  logger.info('verifying transactions');
-  await transactions(info, creds);
-})().catch(err => {
-  logger.error(err);
-  process.exit(1);
-});
+    await Storage.start({});
+    logger.info('verifying blocks');
+    await blocks(info, creds);
+    logger.info('verifying transactions');
+    await transactions(info, creds);
+  })().catch(err => {
+    logger.error(err);
+    process.exit(1);
+  });
