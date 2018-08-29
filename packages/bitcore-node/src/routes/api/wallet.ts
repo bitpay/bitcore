@@ -2,13 +2,12 @@ import { Request, Response, Router } from 'express';
 import { ChainNetwork } from '../../types/ChainNetwork';
 import { IWallet } from '../../models/wallet';
 import { RequestHandler } from 'express-serve-static-core';
-import { ChainStateProvider } from "../../providers/chain-state";
+import { ChainStateProvider } from '../../providers/chain-state';
 import logger from '../../logger';
-import { MongoBound } from "../../models/base";
+import { MongoBound } from '../../models/base';
 const router = Router({ mergeParams: true });
 const secp256k1 = require('secp256k1');
 const bitcoreLib = require('bitcore-lib');
-
 
 type VerificationPayload = {
   message: string;
@@ -36,15 +35,11 @@ const verifyRequestSignature = (params: VerificationPayload): boolean => {
   }
 };
 
-const authenticate: RequestHandler = async (
-  req: PreAuthRequest,
-  res: Response,
-  next: any
-) => {
+const authenticate: RequestHandler = async (req: PreAuthRequest, res: Response, next: any) => {
   const { chain, network, pubKey } = req.params as SignedApiRequest;
   logger.debug('Authenticating request with pubKey: ', pubKey);
   const wallet = await ChainStateProvider.getWallet({ chain, network, pubKey });
-  if(req.is('application/octet-stream')) {
+  if (req.is('application/octet-stream')) {
     req.body = JSON.parse(req.body.toString());
   }
   if (!wallet) {
@@ -53,9 +48,7 @@ const authenticate: RequestHandler = async (
   Object.assign(req, { wallet });
   try {
     const validRequestSignature = verifyRequestSignature({
-      message: [req.method, req.originalUrl, JSON.stringify(req.body)].join(
-        '|'
-      ),
+      message: [req.method, req.originalUrl, JSON.stringify(req.body)].join('|'),
       pubKey: wallet.pubKey,
       signature: req.headers['x-signature']
     });
@@ -95,7 +88,7 @@ router.post('/', async function(req, res) {
   }
 });
 
-router.get('/:pubKey/addresses/missing', async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/addresses/missing', authenticate, async (req: AuthenticatedRequest, res) => {
   try {
     let { chain, network, pubKey } = req.params;
     let payload = {
@@ -129,89 +122,70 @@ router.get('/:pubKey/addresses', authenticate, async (req: AuthenticatedRequest,
 });
 
 // update wallet
-router.post(
-  '/:pubKey',
-  authenticate,
-  async (req: AuthenticatedRequest, res) => {
-    let { chain, network } = req.params;
-    let addressLines: { address: string }[] = req.body;
-    try {
-      let addresses = addressLines.map(({ address }) => address);
-      await ChainStateProvider.updateWallet({
-        chain,
-        network,
-        wallet: req.wallet!,
-        addresses
-      });
-      return res.send({ success: true });
-    } catch (err) {
-      return res.status(500).send(err);
-    }
+router.post('/:pubKey', authenticate, async (req: AuthenticatedRequest, res) => {
+  let { chain, network } = req.params;
+  let addressLines: { address: string }[] = req.body;
+  try {
+    let addresses = addressLines.map(({ address }) => address);
+    await ChainStateProvider.updateWallet({
+      chain,
+      network,
+      wallet: req.wallet!,
+      addresses
+    });
+    return res.send({ success: true });
+  } catch (err) {
+    return res.status(500).send(err);
   }
-);
+});
 
-router.get(
-  '/:pubKey/transactions',
-  authenticate,
-  async (req: AuthenticatedRequest, res) => {
-    let { chain, network } = req.params;
-    try {
-      return ChainStateProvider.streamWalletTransactions({
-        chain,
-        network,
-        wallet: req.wallet!,
-        stream: res,
-        args: req.query
-      });
-    } catch (err) {
-      return res.status(500).send(err);
-    }
+router.get('/:pubKey/transactions', authenticate, async (req: AuthenticatedRequest, res) => {
+  let { chain, network } = req.params;
+  try {
+    return ChainStateProvider.streamWalletTransactions({
+      chain,
+      network,
+      wallet: req.wallet!,
+      stream: res,
+      args: req.query
+    });
+  } catch (err) {
+    return res.status(500).send(err);
   }
-);
+});
 
-router.get(
-  '/:pubKey/balance',
-  authenticate,
-  async (req: AuthenticatedRequest, res) => {
-    let { chain, network } = req.params;
-    try {
-      const result = await ChainStateProvider.getWalletBalance({
-        chain,
-        network,
-        wallet: req.wallet!
-      });
-      return res.send((result && result[0]) || { balance: 0 });
-    } catch (err) {
-      return res.status(500).json(err);
-    }
+router.get('/:pubKey/balance', authenticate, async (req: AuthenticatedRequest, res) => {
+  let { chain, network } = req.params;
+  try {
+    const result = await ChainStateProvider.getWalletBalance({
+      chain,
+      network,
+      wallet: req.wallet!
+    });
+    return res.send((result && result[0]) || { balance: 0 });
+  } catch (err) {
+    return res.status(500).json(err);
   }
-);
+});
 
-router.get(
-  '/:pubKey/utxos',
-  authenticate,
-  async (req: AuthenticatedRequest, res) => {
-    let { chain, network } = req.params;
-    let { limit=1000 } = req.query;
-    try {
-      return ChainStateProvider.streamWalletUtxos({
-        chain,
-        network,
-        wallet: req.wallet!,
-        limit,
-        stream: res,
-        args: req.query
-      });
-    } catch (err) {
-      return res.status(500).send(err);
-    }
+router.get('/:pubKey/utxos', authenticate, async (req: AuthenticatedRequest, res) => {
+  let { chain, network } = req.params;
+  let { limit = 1000 } = req.query;
+  try {
+    return ChainStateProvider.streamWalletUtxos({
+      chain,
+      network,
+      wallet: req.wallet!,
+      limit,
+      stream: res,
+      args: req.query
+    });
+  } catch (err) {
+    return res.status(500).send(err);
   }
-);
+});
 
-router.get('/:pubKey', authenticate, async function (
-  req: AuthenticatedRequest,
-  res: Response
-) {
+router.get('/:pubKey', authenticate, async function(req: AuthenticatedRequest, res: Response) {
   try {
     let wallet = req.wallet;
     return res.send(wallet);
