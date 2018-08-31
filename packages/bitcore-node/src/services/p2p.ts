@@ -1,7 +1,7 @@
 import config from '../config';
 import logger from '../logger';
 import { EventEmitter } from 'events';
-import { BlockModel } from '../models/block';
+import { BlockModel, IBlock } from '../models/block';
 import { ChainStateProvider } from '../providers/chain-state';
 import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
@@ -205,6 +205,21 @@ export class P2pService {
     return best;
   }
 
+  async getBlockOperations(block, mintOps, spendOps, txOps, previousBlock) {
+    return BlockModel.getBlockOp({
+      chain: this.chain,
+      network: this.network,
+      forkHeight: this.chainConfig.forkHeight,
+      parentChain: this.chainConfig.parentChain,
+      initialSyncComplete: this.initialSyncComplete,
+      block,
+      mintOps,
+      spendOps,
+      txOps,
+      previousBlock
+    });
+  }
+
   async processBlock(block): Promise<any> {
     return new Promise(async (resolve, reject) => {
       try {
@@ -248,63 +263,111 @@ export class P2pService {
       return;
     }
     this.syncing = true;
-    const { chain, chainConfig, network } = this;
-    const { parentChain, forkHeight } = chainConfig;
-    const state = await StateModel.collection.findOne({});
-    this.initialSyncComplete =
-      state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
-    let tip = await ChainStateProvider.getLocalTip({ chain, network });
-    if (parentChain && (!tip || tip.height < forkHeight)) {
-      let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
-      while (!parentTip || parentTip.height < forkHeight) {
-        logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
-        await new Promise(resolve => {
-          setTimeout(resolve, 5000);
-        });
-        parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
-      }
-    }
-
-    const getHeaders = async () => {
-      const locators = await ChainStateProvider.getLocatorHashes({ chain, network });
-      return this.getHeaders(locators);
-    };
-
-    let headers;
-    while (!headers || headers.length > 0) {
-      headers = await getHeaders();
-      tip = await ChainStateProvider.getLocalTip({ chain, network });
-      let currentHeight = tip ? tip.height : 0;
-      let lastLog = 0;
-      logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
-      for (const header of headers) {
-        try {
-          const block = await this.getBlock(header.hash);
-          await this.processBlock(block);
-          currentHeight++;
-          if (Date.now() - lastLog > 100) {
-            logger.info(`Sync `, {
-              chain,
-              network,
-              height: currentHeight
-            });
-            lastLog = Date.now();
-          }
-        } catch (err) {
-          logger.error(`Error syncing ${chain} ${network}`, err);
-          this.syncing = false;
-          return this.sync();
+      const { chain, chainConfig, network } = this;
+      const { parentChain, forkHeight } = chainConfig;
+      const state = await StateModel.collection.findOne({});
+      this.initialSyncComplete =
+        state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
+      let tip = await ChainStateProvider.getLocalTip({ chain, network });
+      if (parentChain && (!tip || tip.height < forkHeight)) {
+        let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
+        while (!parentTip || parentTip.height < forkHeight) {
+          logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
+          await new Promise(resolve => {
+            setTimeout(resolve, 5000);
+          });
+          parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
         }
       }
+
+      const getHeaders = async () => {
+        const locators = await ChainStateProvider.getLocatorHashes({ chain, network });
+        return this.getHeaders(locators);
+      };
+
+      let headers;
+      let blockBatch = new Array<any>();
+      let mintBatch = new Array<any>();
+      let spendBatch = new Array<any>();
+      let txBatch = new Array<any>();
+      let prevBlock: IBlock | null = null;
+      while (!headers || headers.length > 0) {
+        headers = await getHeaders();
+        tip = await ChainStateProvider.getLocalTip({ chain, network });
+        let prevPromise: Promise<any> | null = null;
+        let currentHeight = tip ? tip.height : 0;
+        let lastLog = 0;
+        logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
+        for (const header of headers) {
+          try {
+            const block = await this.getBlock(header.hash);
+            const blockUpdates = await this.getBlockOperations(block, mintBatch, spendBatch, txBatch, prevBlock);
+            blockBatch = blockBatch.concat(blockUpdates);
+            mintBatch = mintBatch.concat(blockUpdates.mintOps);
+            spendBatch = spendBatch.concat(blockUpdates.spendOps);
+            txBatch = txBatch.concat(blockUpdates.txOps);
+            prevBlock = blockUpdates.blockOp.$set;
+            if (Date.now() - lastLog > 100) {
+              logger.info(`Sync `, {
+                chain,
+                network,
+                height: currentHeight,
+                mintQueue: mintBatch.length
+              });
+              lastLog = Date.now();
+            }
+
+            if (mintBatch.length > 25000) {
+              logger.info(`Writing ${blockBatch.length} blocks `, {
+                chain,
+                network,
+                height: currentHeight
+              });
+              if (prevPromise === null) {
+                prevPromise = BlockModel.processBlockOps(blockBatch);
+              } else {
+                await prevPromise;
+                prevPromise = BlockModel.processBlockOps(blockBatch);
+              }
+              blockBatch = new Array<any>();
+              mintBatch = new Array<any>();
+              spendBatch = new Array<any>();
+              txBatch = new Array<any>();
+            }
+
+            currentHeight++;
+          } catch (err) {
+            logger.error(`Error syncing ${chain} ${network}`, err);
+          this.syncing = false;
+            return this.sync();
+          }
+        }
+        if (mintBatch.length > 0) {
+          // clear out the remaining at the end of sync
+          logger.info(`Writing ${blockBatch.length} blocks `, {
+            chain,
+            network,
+            height: currentHeight
+          });
+          if (prevPromise) await prevPromise;
+          await BlockModel.processBlockOps(blockBatch);
+          blockBatch = new Array<any>();
+          mintBatch = new Array<any>();
+          spendBatch = new Array<any>();
+          txBatch = new Array<any>();
+        }
+      }
+      logger.info(`${chain}:${network} up to date.`);
+      this.syncing = false;
+      StateModel.collection.findOneAndUpdate(
+        {},
+        { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
+        { upsert: true }
+      );
+      return true;
+    } else {
+      return false;
     }
-    logger.info(`${chain}:${network} up to date.`);
-    this.syncing = false;
-    StateModel.collection.findOneAndUpdate(
-      {},
-      { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
-      { upsert: true }
-    );
-    return true;
   }
 
   async start() {
