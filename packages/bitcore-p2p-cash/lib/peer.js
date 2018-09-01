@@ -107,7 +107,7 @@ function Peer(options) {
 }
 util.inherits(Peer, EventEmitter);
 
-Peer.MAX_RECEIVE_BUFFER = 10000000;
+Peer.MAX_RECEIVE_BUFFER = 128000000;
 Peer.STATUS = {
   DISCONNECTED: 'disconnected',
   CONNECTING: 'connecting',
