@@ -14,14 +14,16 @@ Client.prototype.sign = function (params) {
   const { method, url, payload = {} } = params;
   const parsedUrl = new URL(url);
   const message = [method, parsedUrl.pathname + parsedUrl.search, JSON.stringify(payload)].join('|');
-  const privateKey = new bitcoreLib.PrivateKey(this.authKey).toBuffer();
+  const privateKey = this.authKey.toBuffer();
   const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
   return secp256k1.sign(messageHash, privateKey).signature.toString('hex');
 };
 
 Client.prototype.register = async function (params) {
   const { payload } = params;
-  const url = `${this.baseUrl}/wallet`;
+  // allow you to overload the client's baseUrl
+  const { baseUrl = this.baseUrl } = payload;
+  const url = `${baseUrl}/wallet`;
   const signature = this.sign({ method: 'POST', url, payload });
   return request.post(url, {
     headers: { 'x-signature': signature },

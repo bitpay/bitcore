@@ -5,20 +5,13 @@ type CallbackType = (err: any, data?: any) => any;
 
 @LoggifyClass
 export class RPC {
-  constructor(
-    private username: string,
-    private password: string,
-    private host: string,
-    private port: number
-  ) {}
+  constructor(private username: string, private password: string, private host: string, private port: number) {}
 
   public callMethod(method: string, params: any, callback: CallbackType) {
     request(
       {
         method: 'POST',
-        url: `http://${this.username}:${this.password}@${this.host}:${
-          this.port
-        }`,
+        url: `http://${this.username}:${this.password}@${this.host}:${this.port}`,
         body: {
           jsonrpc: '1.0',
           id: Date.now(),
@@ -28,14 +21,17 @@ export class RPC {
         json: true
       },
       function(err, res) {
-        const {body} = res;
         if (err) {
           return callback(err);
+        } else if (res) {
+          const { body } = res;
+          if (res.body && res.body.error) {
+            return callback(body.error);
+          }
+          return callback(null, body && body.result);
+        } else {
+          return callback('No response or error returned by rpc call');
         }
-        if (body && body.error) {
-          return callback(body.error);
-        }
-        callback(null, body && body.result);
       }
     );
   }
@@ -56,7 +52,7 @@ export class RPC {
       if (err) {
         return callback(err);
       }
-      callback(null, result[0]);
+      return callback(null, result[0]);
     });
   }
 
@@ -92,7 +88,7 @@ export class RPC {
       if (err) {
         return callback(err);
       }
-      callback(null, result);
+      return callback(null, result);
     });
   }
 
@@ -112,19 +108,13 @@ export class RPC {
   async getEstimateSmartFee(target: number) {
     return this.asyncCall('estimatesmartfee', [target]);
   }
-
 }
 
 @LoggifyClass
 export class AsyncRPC {
   private rpc: RPC;
 
-  constructor(
-    username: string,
-    password: string,
-    host: string,
-    port: number
-  ) {
+  constructor(username: string, password: string, host: string, port: number) {
     this.rpc = new RPC(username, password, host, port);
   }
 
@@ -140,15 +130,15 @@ export class AsyncRPC {
   }
 
   async block(hash: string): Promise<RPCBlock<string>> {
-    return await this.call('getblock', [hash, 1]) as RPCBlock<string>;
+    return (await this.call('getblock', [hash, 1])) as RPCBlock<string>;
   }
 
   async verbose_block(hash: string): Promise<RPCBlock<RPCTransaction>> {
-    return await this.call('getblock', [hash, 2]) as RPCBlock<RPCTransaction>;
+    return (await this.call('getblock', [hash, 2])) as RPCBlock<RPCTransaction>;
   }
 
   async generate(n: number): Promise<string[]> {
-    return await this.call('generate', [n]) as string[];
+    return (await this.call('generate', [n])) as string[];
   }
 
   async transaction(txid: string, block?: string): Promise<RPCTransaction> {
@@ -156,7 +146,7 @@ export class AsyncRPC {
     if (block) {
       args.push(block);
     }
-    return await this.call('getrawtransaction', args) as RPCTransaction;
+    return (await this.call('getrawtransaction', args)) as RPCTransaction;
   }
 }
 
@@ -209,10 +199,10 @@ export type RPCTransaction = {
       reqSigs: number;
       type: string;
       addresses: string[];
-    }
+    };
   }[];
   blockhash: string;
   confirmations: number;
   time: number;
   blocktime: number;
-}
+};

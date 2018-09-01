@@ -1,4 +1,5 @@
 const Bcrypt = require('bcrypt');
+const { PrivateKey } = require('bitcore-lib');
 const Encrypter = require('./encryption');
 const Mnemonic = require('bitcore-mnemonic');
 const Client = require('./client');
@@ -33,15 +34,18 @@ class Wallet {
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
-    // Generate private keys
+    // Generate wallet private keys
     const mnemonic = new Mnemonic(phrase);
     const hdPrivKey = mnemonic.toHDPrivateKey(password);
     const privKeyObj = hdPrivKey.toObject();
-    const authKey = hdPrivKey.deriveChild('m/2').privateKey.toString();
+
+    // Generate authentication keys
+    const authKey = new PrivateKey();
+    const authPubKey = authKey.toPublicKey().toString();
 
     // Generate public keys
     const hdPubKey = hdPrivKey.hdPublicKey;
-    const pubKey = hdPrivKey.hdPublicKey.publicKey.toString();
+    const pubKey = hdPubKey.publicKey.toString();
 
     // Generate and encrypt the encryption key and private key
     const walletEncryptionKey = Encrypter.generateEncryptionKey();
@@ -65,6 +69,7 @@ class Wallet {
     const wallet = Object.assign(params, {
       encryptionKey,
       authKey,
+      authPubKey,
       masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
       xPubKey: hdPubKey.xpubkey,
@@ -111,26 +116,31 @@ class Wallet {
 
   async register(params = {}) {
     const { baseUrl } = params;
+    let registerBaseUrl = this.baseUrl;
     if (baseUrl) {
+      // save the new url without chain and network
+      // then use the new url with chain and network below
       this.baseUrl = baseUrl;
+      registerBaseUrl = `${this.baseUrl}/${this.chain}/${this.network}`;
       await this.saveWallet();
     }
     const payload = {
       name: this.name,
-      pubKey: this.xPubKey,
+      pubKey: this.authPubKey,
       path: this.derivationPath,
       network: this.network,
-      chain: this.chain
+      chain: this.chain,
+      baseUrl: registerBaseUrl 
     };
     return this.client.register({ payload });
   }
 
   getAuthSigningKey() {
-    return this.authKey;
+    return new PrivateKey(this.authKey);
   }
 
   getBalance() {
-    return this.client.getBalance({ pubKey: this.xPubKey});
+    return this.client.getBalance({ pubKey: this.authPubKey});
   }
 
   getNetworkFee(params) {
@@ -140,7 +150,7 @@ class Wallet {
 
   getUtxos() {
     return this.client.getCoins({
-      pubKey: this.xPubKey,
+      pubKey: this.authPubKey,
       includeSpent: false
     });
   }
@@ -148,7 +158,7 @@ class Wallet {
   listTransactions(params) {
     return this.client.listTransactions({
       ...params,
-      pubKey: this.xPubKey
+      pubKey: this.authPubKey
     });
   }
 
@@ -185,7 +195,7 @@ class Wallet {
       return { address: key.address };
     });
     return this.client.importAddresses({
-      pubKey: this.xPubKey,
+      pubKey: this.authPubKey,
       payload: addedAddresses
     });
   }

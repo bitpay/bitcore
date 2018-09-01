@@ -3,6 +3,8 @@ import * as sinon from 'sinon';
 import { WalletModel, IWallet } from '../../../src/models/wallet';
 import { WalletAddressModel } from '../../../src/models/walletAddress';
 import { mockCollection } from "../../helpers/index.js";
+import { ObjectID } from "bson";
+import { MongoBound } from "../../../src/models/base";
 
 describe('Wallet Model', function () {
 
@@ -55,13 +57,14 @@ describe('Wallet Model', function () {
       });
 
       let wallet = {
+        _id: new ObjectID(),
         name: 'Wallet1',
         singleAddress: true,
         pubKey: 'xpub661MyMwAqRbcFa63vSTa3vmRiVWbpLWhgUsyvjfMFP7ePR5osC1rtPUkgJrB94V1YEQathfWLm9U5zaZttYPDPWhASwJGUvYvPGtofqnTGN',
         path: 'm/44\'/0\'/0\'',
         chain: 'BTC',
         network: 'regtest'
-      } as IWallet;
+      } as MongoBound<IWallet>;
 
       await WalletModel.updateCoins(wallet);
       expect(walletAddressModelSpy.calledOnce).to.be.true;
