@@ -82,9 +82,9 @@ export class RPC {
     });
   }
 
-  getTransaction(txid: string, callback: CallbackType) {
+  getTransaction(txid: string, verbose:boolean, callback: CallbackType) {
     var self = this;
-    self.callMethod('getrawtransaction', [txid, true], function(err, result) {
+    self.callMethod('getrawtransaction', [txid, verbose], function(err, result) {
       if (err) {
         return callback(err);
       }
