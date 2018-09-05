@@ -117,7 +117,7 @@ export class StorageService {
     });
   }
 
-  apiStreamingFind<T>(model: TransformableModel<T>, query: any, options: StreamingFindOptions<T>, res: Response, transform?: (data: T) => any) {
+  apiStreamingFind<T>(model: TransformableModel<T>, query: any, options: StreamingFindOptions<T>, res: Response, transform?: (data: T) => string | Buffer) {
     if (options.since !== undefined && options.paging && this.validPagingProperty(model, options.paging)) {
       options.since = this.typecastForDb(model, options.paging, options.since);
       if (options.direction && Number(options.direction) === 1) {
