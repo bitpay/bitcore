@@ -20,15 +20,19 @@ export class RPC {
         },
         json: true
       },
-      function(err, res) {
+      (err, res) => {
         if (err) {
           return callback(err);
         } else if (res) {
-          const { body } = res;
-          if (res.body && res.body.error) {
-            return callback(body.error);
+          if (res.body) {
+            if (res.body.error) {
+              return callback(res.body.error);
+            } else if (res.body.result) {
+              return callback(null, res.body && res.body.result);
+            } else {
+              return callback({ msg: 'No error or body found', body: res.body });
+            }
           }
-          return callback(null, body && body.result);
         } else {
           return callback('No response or error returned by rpc call');
         }
@@ -48,7 +52,7 @@ export class RPC {
   }
 
   getChainTip(callback: CallbackType) {
-    this.callMethod('getchaintips', [], function(err, result) {
+    this.callMethod('getchaintips', [], (err, result) => {
       if (err) {
         return callback(err);
       }
@@ -73,18 +77,16 @@ export class RPC {
   }
 
   getBlockByHeight(height: number, callback: CallbackType) {
-    var self = this;
-    self.getBlockHash(height, function(err, hash) {
+    this.getBlockHash(height, (err, hash) => {
       if (err) {
         return callback(err);
       }
-      self.getBlock(hash, false, callback);
+      this.getBlock(hash, false, callback);
     });
   }
 
   getTransaction(txid: string, callback: CallbackType) {
-    var self = this;
-    self.callMethod('getrawtransaction', [txid, true], function(err, result) {
+    this.callMethod('getrawtransaction', [txid, true], (err, result) => {
       if (err) {
         return callback(err);
       }
@@ -93,8 +95,7 @@ export class RPC {
   }
 
   sendTransaction(rawTx: string, callback: CallbackType) {
-    var self = this;
-    self.callMethod('sendrawtransaction', [rawTx], callback);
+    this.callMethod('sendrawtransaction', [rawTx], callback);
   }
 
   decodeScript(hex: string, callback: CallbackType) {
