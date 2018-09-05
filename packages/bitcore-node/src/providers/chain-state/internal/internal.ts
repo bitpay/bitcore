@@ -157,7 +157,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return Storage.apiStreamingFind(TransactionModel, query, { limit }, stream, t => {
       const txHeight = t.blockHeight || 0;
       const convertedTx = TransactionModel._apiTransform(t, { object: true }) as Partial<ITransaction>;
-      return { ...convertedTx, confirmations: tipHeight - txHeight };
+      return JSON.stringify({ ...convertedTx, confirmations: tipHeight - txHeight });
     });
   }
 
@@ -173,7 +173,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return Storage.apiStreamingFind(TransactionModel, query, { limit: 100 }, stream, t => {
       const txHeight = t.blockHeight || 0;
       const convertedTx = TransactionModel._apiTransform(t, { object: true }) as Partial<ITransaction>;
-      return { ...convertedTx, confirmations: tipHeight - txHeight };
+      return JSON.stringify({ ...convertedTx, confirmations: tipHeight - txHeight });
     });
   }
 
