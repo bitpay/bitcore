@@ -59,7 +59,7 @@ export class Transaction extends BaseModel<ITransaction> {
   }) {
     let mintOps = await this.getMintOps(params);
     logger.debug('Minting Coins', mintOps.length);
-   
+
     params.mintOps = mintOps || [];
     let spendOps = this.getSpendOps(params);
     logger.debug('Spending Coins', spendOps.length);
@@ -310,7 +310,7 @@ export class Transaction extends BaseModel<ITransaction> {
     return this.collection.find(query).addCursorFlag('noCursorTimeout', true);
   }
 
-  _apiTransform(tx: ITransaction, options: TransformOptions) {
+  _apiTransform(tx: ITransaction, options: TransformOptions): Partial<ITransaction> | string {
     let transform = {
       txid: tx.txid,
       network: tx.network,

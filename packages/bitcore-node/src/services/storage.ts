@@ -117,7 +117,7 @@ export class StorageService {
     });
   }
 
-  apiStreamingFind<T>(model: TransformableModel<T>, query: any, options: StreamingFindOptions<T>, res: Response) {
+  apiStreamingFind<T>(model: TransformableModel<T>, query: any, options: StreamingFindOptions<T>, res: Response, transform?: (data: T) => string | Buffer) {
     if (options.since !== undefined && options.paging && this.validPagingProperty(model, options.paging)) {
       options.since = this.typecastForDb(model, options.paging, options.since);
       if (options.direction && Number(options.direction) === 1) {
@@ -130,9 +130,9 @@ export class StorageService {
     }
     options.limit = Math.min(options.limit || 100, 1000);
     let cursor = model.collection.find(query, options).stream({
-      transform: model._apiTransform
+      transform: transform || model._apiTransform
     });
-    this.apiStream(cursor, res);
+    return this.apiStream(cursor, res);
   }
 }
 
