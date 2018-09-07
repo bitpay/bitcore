@@ -2,32 +2,60 @@
 
 const program = require('../lib/program');
 const Wallet = require('../lib/wallet');
+const fs = require('fs');
 const promptly = require('promptly');
+const LineByLineReader = require('line-by-line');
 
 program
   .version(require('../package.json').version)
   .option('--name <name>', 'REQUIRED - Wallet Name')
   .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--tx <tx>', 'REQUIRED - The transaction to sign')
+  .option('--tx <tx>', 'optional - The transaction to sign or one is read from stdin')
   .parse(process.argv);
 
 const main = async () => {
   const { name, path, tx } = program;
-  let wallet;
   try {
-    const password = await promptly.password('Wallet Password:');
-    wallet = await Wallet.loadWallet({ name, path });
-    wallet = await wallet.unlock(password);
-    let signedTx = await wallet.signTx({ tx });
+    const lockedWallet = await Wallet.loadWallet({ name, path });
+    const wallet = await lockedWallet.unlock(await password());
 
-    console.log(
-      JSON.stringify({
-        signedTx: signedTx.uncheckedSerialize()
-      })
-    );
+    if (tx) {
+      return await sign(wallet, tx);
+    }
+
+    const pipe = new LineByLineReader(process.stdin);
+
+    pipe.on('line', line => {
+      pipe.pause();
+      sign(wallet, line).then(() => pipe.resume());
+    });
+
+    pipe.on('error', e => console.error(e));
+    pipe.on('end', () => process.exit(0));
+
   } catch (e) {
     console.error(e);
   }
 };
+
+const password = async () => {
+  const ttyin = fs.openSync('/dev/tty', 'r');
+  if (!tty.isatty(ttyin)) {
+    throw new Error(`Could not get access to ${ttyin}`);
+  }
+  const ttyout = fs.openSync('/dev/tty', 'w');
+  if (!tty.isatty(ttyout)) {
+    throw new Error(`Could not get access to ${ttyout}`);
+  }
+  return await promptly.password('Wallet Password:', {
+    silent: true,
+    input: new tty.ReadStream(ttyin),
+    output: new tty.ReadStream(ttyout),
+  });
+};
+
+const sign = async (wallet, tx) => console.log(JSON.stringify({
+  signedTx: (await wallet.signTx({ tx })).uncheckedSerialize()
+}));
 
 main();

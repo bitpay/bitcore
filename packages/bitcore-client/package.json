@@ -23,6 +23,7 @@
         "commander": "^2.15.1",
         "leveldown": "^3.0.0",
         "levelup": "^2.0.2",
+        "line-by-line": "^0.1.6",
         "mkdirp": "^0.5.1",
         "progress": "^2.0.0",
         "promptly": "^3.0.3",
