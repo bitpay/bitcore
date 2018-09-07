@@ -110,5 +110,3 @@ export class ListTransactionsStream extends Transform {
     done();
   }
 }
-
-module.exports = ListTransactionsStream;
