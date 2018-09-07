@@ -40,9 +40,9 @@ export class ListTransactionsStream extends Transform {
       return total + output.value;
     }, 0);
     var fee = totalInputs - totalOutputs;
-    var sending = _.some(transaction.inputs, function(input) {
+    var sending = transaction.inputs.some(function(input) {
       var contains = false;
-      _.each(input.wallets, function(inputWallet) {
+      input.wallets.forEach(function(inputWallet) {
         if (inputWallet.equals(wallet)) {
           contains = true;
         }
@@ -51,9 +51,9 @@ export class ListTransactionsStream extends Transform {
     });
 
     if (sending) {
-      _.each(transaction.outputs, function(output) {
+      transaction.outputs.forEach(function(output) {
         var contains = false;
-        _.each(output.wallets, function(outputWallet) {
+        output.wallets.forEach(function(outputWallet) {
           if (outputWallet.equals(wallet)) {
             contains = true;
           }
@@ -86,9 +86,9 @@ export class ListTransactionsStream extends Transform {
       return done();
     }
 
-    _.each(transaction.outputs, function(output) {
+    transaction.outputs.forEach(function(output) {
       var contains = false;
-      _.each(output.wallets, function(outputWallet) {
+      output.wallets.forEach(function(outputWallet) {
         if (outputWallet.equals(wallet)) {
           contains = true;
         }
