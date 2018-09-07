@@ -11,7 +11,7 @@ import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { Storage } from '../../../services/storage';
 import { RPC } from '../../../rpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
-import { TransactionModel } from '../../../models/transaction';
+import { TransactionModel, ITransaction } from '../../../models/transaction';
 import { StateModel } from '../../../models/state';
 import { ListTransactionsStream } from './transforms';
 import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
@@ -136,7 +136,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return blocks[0];
   }
 
-  streamTransactions(params: CSP.StreamTransactionsParams) {
+  async streamTransactions(params: CSP.StreamTransactionsParams) {
     const { chain, network, stream, args } = params;
     let { limit = 100, blockHash, blockHeight } = args;
     if (!chain || !network) {
@@ -152,17 +152,29 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (blockHash) {
       query.blockHash = blockHash;
     }
-    Storage.apiStreamingFind(TransactionModel, query, { limit }, stream);
+    const tip = await this.getLocalTip(params);
+    const tipHeight = tip ? tip.height : 0;
+    return Storage.apiStreamingFind(TransactionModel, query, { limit }, stream, t => {
+      const txHeight = t.blockHeight || 0;
+      const convertedTx = TransactionModel._apiTransform(t, { object: true }) as Partial<ITransaction>;
+      return JSON.stringify({ ...convertedTx, confirmations: tipHeight - txHeight });
+    });
   }
 
-  streamTransaction(params: CSP.StreamTransactionParams) {
+  async streamTransaction(params: CSP.StreamTransactionParams) {
     let { chain, network, txId, stream } = params;
     if (typeof txId !== 'string' || !chain || !network || !stream) {
       throw 'Missing required param';
     }
     network = network.toLowerCase();
     let query = { chain: chain, network, txid: txId };
-    Storage.apiStreamingFind(TransactionModel, query, { limit: 100 }, stream);
+    const tip = await this.getLocalTip(params);
+    const tipHeight = tip ? tip.height : 0;
+    return Storage.apiStreamingFind(TransactionModel, query, { limit: 100 }, stream, t => {
+      const txHeight = t.blockHeight || 0;
+      const convertedTx = TransactionModel._apiTransform(t, { object: true }) as Partial<ITransaction>;
+      return JSON.stringify({ ...convertedTx, confirmations: tipHeight - txHeight });
+    });
   }
 
   async createWallet(params: CSP.CreateWalletParams) {
