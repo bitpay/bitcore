@@ -13,7 +13,7 @@ import { BlocksProvider } from '../blocks/blocks';
   for more info on providers and Angular DI.
  */
 
-type CoinsApiResponse = { inputs: ApiInput[]; outputs: ApiInput[] };
+type CoinsApiResponse = { inputs: ApiCoin[]; outputs: ApiCoin[] };
 export type ApiTx = {
   address: string;
   chain: string;
@@ -26,8 +26,8 @@ export type ApiTx = {
   coinbase: boolean;
   size: number;
   locktime: number;
-  inputs: Array<ApiInput>;
-  outputs: Array<ApiInput>;
+  inputs: Array<ApiCoin>;
+  outputs: Array<ApiCoin>;
   mintTxid: string;
   mintHeight: number;
   spentTxid: string;
@@ -36,17 +36,30 @@ export type ApiTx = {
   version: number;
 };
 
-export type ApiInput = {
+export type ApiCoin = {
   txid: string;
+  mintTxid: string;
   coinbase: boolean;
   vout: number;
   address: string;
   script: {
     asm: string;
-    type: string
+    type: string;
   };
   spentTxid: string;
+  mintHeight: number;
+  spentHeight: number
   value: number;
+};
+
+export type AppCoin = {
+  txid: string;
+  valueOut: number;
+  value: number;
+  spentTxid: string;
+  mintTxid: string;
+  mintHeight: number;
+  spentHeight: number;
 };
 
 export type AppInput = {
@@ -103,7 +116,12 @@ export type AppTx = {
 
 @Injectable()
 export class TxsProvider {
-  constructor(public http: Http, private api: ApiProvider, public currency: CurrencyProvider, public blocks: BlocksProvider) {}
+  constructor(
+    public http: Http,
+    private api: ApiProvider,
+    public currency: CurrencyProvider,
+    public blocks: BlocksProvider
+  ) {}
 
   public getFee(tx: AppTx): number {
     const sumSatoshis: any = (arr: any): number => arr.reduce((prev, cur) => prev + cur.value, 0);
@@ -127,8 +145,20 @@ export class TxsProvider {
       locktime: tx.locktime,
       vin: [], // populated when coins are retrieved
       vout: [], // populated when coins are retrieved
-      valueOut: null,
+      valueOut: tx.value,
       version: tx.version
+    };
+  }
+
+  public toAppCoin(coin: ApiCoin): AppCoin {
+    return {
+      txid: coin.txid,
+      mintTxid: coin.mintTxid,
+      mintHeight: coin.mintHeight,
+      spentHeight: coin.spentHeight,
+      valueOut: coin.value,
+      value: coin.value,
+      spentTxid: coin.spentTxid
     };
   }
 

@@ -54,15 +54,12 @@ export class InternalStateProvider implements CSP.IChainStateService {
   async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
     const { limit = 10, stream } = params;
     const query = this.getAddressQuery(params);
-    const coins = await CoinModel.collection.find(query, { limit }).toArray();
-    const txids = coins.map(coin => coin.mintTxid);
-    const txQuery = { txid: { $in: txids } };
-    Storage.apiStreamingFind(TransactionModel, txQuery, {}, stream);
+    Storage.apiStreamingFind(CoinModel, query, { limit }, stream);
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { chain, network, address } = params;
-    let query = { chain: chain, network, address };
+    let query = { chain, network, address };
     let balance = await CoinModel.getBalance({ query });
     return balance;
   }

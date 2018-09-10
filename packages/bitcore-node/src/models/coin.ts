@@ -64,6 +64,9 @@ class Coin extends BaseModel<ICoin> {
       coinbase: coin.coinbase,
       vout: coin.mintIndex,
       spentTxid: coin.spentTxid,
+      mintTxid: coin.mintTxid,
+      mintHeight: coin.mintHeight,
+      spentHeight: coin.spentHeight,
       address: coin.address,
       script: {
         type: script.classify(),

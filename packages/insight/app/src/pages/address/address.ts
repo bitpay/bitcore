@@ -3,7 +3,8 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { TxsProvider, ApiTx } from '../../providers/transactions/transactions';
+import { TxsProvider, ApiTx, ApiCoin } from '../../providers/transactions/transactions';
+import { BlocksProvider } from '../../providers/blocks/blocks';
 
 /**
  * Generated class for the AddressPage page.
@@ -23,7 +24,7 @@ export class AddressPage {
   public loading: boolean = true;
   private addrStr: string;
   public address: any = {};
-  public transactions: any[];
+  public transactions: any[] = [];
 
   constructor(
     public navCtrl: NavController,
@@ -31,7 +32,8 @@ export class AddressPage {
     private http: Http,
     private apiProvider: ApiProvider,
     public currencyProvider: CurrencyProvider,
-    public txProvider: TxsProvider
+    public txProvider: TxsProvider,
+    public blocks: BlocksProvider
   ) {
     this.addrStr = navParams.get('addrStr');
   }
@@ -48,6 +50,7 @@ export class AddressPage {
           balance: json.balance,
           addrStr: this.addrStr
         };
+        console.log(this.address);
         this.loading = false;
       },
       err => {
@@ -56,15 +59,19 @@ export class AddressPage {
     );
 
     let txurl: string = this.apiProvider.apiPrefix + '/address/' + this.addrStr + '/txs';
-    this.http.get(txurl).subscribe(
-      data => {
-        let apiTx: ApiTx[] = data.json() as ApiTx[];
-        this.transactions = apiTx.map(this.txProvider.toAppTx);
-      },
-      err => {
-        console.error('err is', err);
-        this.loading = false;
-      }
-    );
+    this.blocks.getCurrentHeight().subscribe(height => {
+      console.log(height);
+      this.http.get(txurl).subscribe(
+        data => {
+          let apiTx: ApiCoin[] = data.json() as ApiCoin[];
+          this.transactions = apiTx.map(this.txProvider.toAppCoin);
+          console.log(this.transactions);
+        },
+        err => {
+          console.error('err is', err);
+          this.loading = false;
+        }
+      );
+    });
   }
 }

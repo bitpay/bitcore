@@ -1,0 +1,16 @@
+<ion-grid>
+  <ion-row>
+    <ion-col col-7>
+      <span>
+        Minted {{ currency.getConvertedNumber(coin.value) | number:'1.0-8' }}
+          <a (click)="goToTx(coin.mintTxid)">{{ coin.mintTxid }}</a>
+        </span>
+    </ion-col>
+    <ion-col col-5 text-right>
+      <ion-note [hidden]="!coin.spentTxid">
+        Spent
+        <a (click)="goToTx(coin.spentTxid)">{{ coin.spentTxid }}</a>
+      </ion-note>
+    </ion-col>
+  </ion-row>
+</ion-grid>

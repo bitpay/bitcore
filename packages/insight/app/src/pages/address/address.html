@@ -26,7 +26,7 @@
       <p>
 
         <h2>Transactions</h2>
-
+        <coin *ngIf="transactions[0]" [coin]="transactions[0]"></coin>
         <transaction-list [transactions]="transactions"></transaction-list>
   </div>
 
