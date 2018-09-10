@@ -152,9 +152,12 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
     return Storage.apiStreamingFind(TransactionModel, query, { limit }, stream, t => {
-      const txHeight = t.blockHeight || 0;
+      let confirmations = 0;
+      if (t.blockHeight && t.blockHeight >= 0){
+        confirmations = tipHeight - t.blockHeight + 1;
+      }
       const convertedTx = TransactionModel._apiTransform(t, { object: true }) as Partial<ITransaction>;
-      return JSON.stringify({ ...convertedTx, confirmations: tipHeight - txHeight });
+      return JSON.stringify({ ...convertedTx, confirmations: confirmations });
     });
   }
 
@@ -168,9 +171,12 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
     return Storage.apiStreamingFind(TransactionModel, query, { limit: 100 }, stream, t => {
-      const txHeight = t.blockHeight || 0;
+      let confirmations = 0;
+      if (t.blockHeight && t.blockHeight >= 0){
+        confirmations = tipHeight - t.blockHeight + 1;
+      }
       const convertedTx = TransactionModel._apiTransform(t, { object: true }) as Partial<ITransaction>;
-      return JSON.stringify({ ...convertedTx, confirmations: tipHeight - txHeight });
+      return JSON.stringify({ ...convertedTx, confirmations: confirmations });
     });
   }
 
