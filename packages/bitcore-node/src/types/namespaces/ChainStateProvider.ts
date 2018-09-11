@@ -15,6 +15,7 @@ export declare namespace CSP {
 
   export type StreamAddressUtxosArgs = {
     unspent: boolean;
+    limit: number;
   };
 
   export type GetBlockArgs = { limit: null | number };
@@ -59,7 +60,6 @@ export declare namespace CSP {
   export type StreamAddressUtxosParams = ChainNetwork & {
     address: string;
     stream: Response;
-    limit: number;
     args: StreamAddressUtxosArgs;
   };
 

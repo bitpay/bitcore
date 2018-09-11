@@ -4,13 +4,13 @@ import { AddressPage } from './address';
 import { TransactionListComponentModule } from '../../components/transaction-list/transaction-list.module';
 import { HeadNavComponentModule } from '../../components/head-nav/head-nav.module';
 import { QRCodeModule } from 'angular2-qrcode';
-import { CoinComponentModule } from '../../components/coin/coin.module';
+import { CoinListComponentModule } from '../../components/coin-list/coin-list.module';
 
 @NgModule({
   declarations: [AddressPage],
   imports: [
     IonicPageModule.forChild(AddressPage),
-    CoinComponentModule,
+    CoinListComponentModule,
     TransactionListComponentModule,
     HeadNavComponentModule,
     QRCodeModule

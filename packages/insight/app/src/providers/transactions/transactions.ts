@@ -25,6 +25,7 @@ export type ApiTx = {
   blockTimeNormalized: Date;
   coinbase: boolean;
   size: number;
+  confirmations: number;
   locktime: number;
   inputs: Array<ApiCoin>;
   outputs: Array<ApiCoin>;
@@ -136,7 +137,7 @@ export class TxsProvider {
       txid: tx.txid,
       fee: null, // calculated later, when coins are retrieved
       blockheight: tx.blockHeight,
-      confirmations: bestHeight - tx.blockHeight,
+      confirmations: tx.confirmations,
       blockhash: tx.blockHash,
       blocktime: new Date(tx.blockTime).getTime() / 1000,
       time: new Date(tx.blockTime).getTime() / 1000,

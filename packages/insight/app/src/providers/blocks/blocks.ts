@@ -17,6 +17,7 @@ export type ApiBlock = {
   nonce: number;
   bits: number;
   size: number;
+  confirmations: number;
   hash: string;
   merkleRoot: string;
   nextBlockHash: string;
@@ -62,7 +63,7 @@ export class BlocksProvider {
     let difficulty: number = 0x1d00ffff / block.bits;
     return {
       height: block.height,
-      confirmations: bestHeight - block.height,
+      confirmations: block.confirmations,
       nonce: block.nonce,
       size: block.size,
       virtualSize: block.size,

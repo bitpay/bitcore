@@ -58,7 +58,7 @@ export class AddressPage {
       }
     );
 
-    let txurl: string = this.apiProvider.apiPrefix + '/address/' + this.addrStr + '/txs';
+    let txurl: string = this.apiProvider.apiPrefix + '/address/' + this.addrStr + '/txs?limit=1000';
     this.blocks.getCurrentHeight().subscribe(height => {
       console.log(height);
       this.http.get(txurl).subscribe(
