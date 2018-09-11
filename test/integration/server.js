@@ -7907,19 +7907,16 @@ console.log('[server.js.6215:err:]',err); //TODO
     });
   });
 
-  describe('Sync wallet with grouping block explorer', function() {
+  describe.only('Sync wallet with grouping block explorer', function() {
     var server , wallet;
     beforeEach(function(done) {
   
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
-        blockchainExplorer.supportsGrouping = function () {
-          return true;
-        }
-        blockchainExplorer.register = sinon.stub().callsArgWith(1, null, null);
-        blockchainExplorer.addAddresses = sinon.stub().callsArgWith(2, null, null);
-        w.copayers[0].id.should.equal(TestData.copayers[0].id44btc);
+
+        helpers.setupGroupingBE(blockchainExplorer);
+          w.copayers[0].id.should.equal(TestData.copayers[0].id44btc);
         done();
       });
     });
@@ -8006,4 +8003,5 @@ console.log('[server.js.6215:err:]',err); //TODO
       });
     });
   });
+
 });

@@ -534,4 +534,14 @@ helpers.historyCacheTest = function(items) {
   return ret;
 };
 
+helpers.setupGroupingBE = function (be) {
+  be.supportsGrouping = function () {
+    return true;
+  }
+  be.register = sinon.stub().callsArgWith(1, null, null);
+  be.addAddresses = sinon.stub().callsArgWith(2, null, null);
+
+
+};
+
 module.exports = helpers;
