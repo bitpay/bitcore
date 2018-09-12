@@ -3,7 +3,7 @@ import { TransactionModel } from './transaction';
 import { TransformOptions } from '../types/TransformOptions';
 import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { BaseModel } from './base';
+import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
 import { ChainStateProvider } from '../providers/chain-state';
 
@@ -154,8 +154,9 @@ export class Block extends BaseModel<IBlock> {
     return true;
   }
 
-  _apiTransform(block: IBlock, options: TransformOptions): any {
+  _apiTransform(block: MongoBound<IBlock>, options: TransformOptions): any {
     const transform = {
+      _id: block._id,
       chain: block.chain,
       network: block.network,
       hash: block.hash,

@@ -5,7 +5,7 @@ import { ObjectID } from 'bson';
 import { TransformOptions } from '../types/TransformOptions';
 import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { BaseModel } from './base';
+import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
 import config from '../config';
 import { BulkWriteOpResultObject } from 'mongodb';
@@ -310,8 +310,9 @@ export class Transaction extends BaseModel<ITransaction> {
     return this.collection.find(query).addCursorFlag('noCursorTimeout', true);
   }
 
-  _apiTransform(tx: ITransaction, options: TransformOptions): Partial<ITransaction> | string {
+  _apiTransform(tx: MongoBound<ITransaction>, options: TransformOptions): Partial<ITransaction> | string {
     let transform = {
+      _id: tx._id,
       txid: tx.txid,
       network: tx.network,
       blockHeight: tx.blockHeight,
