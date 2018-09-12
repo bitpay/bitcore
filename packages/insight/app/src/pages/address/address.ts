@@ -50,7 +50,6 @@ export class AddressPage {
           balance: json.balance,
           addrStr: this.addrStr
         };
-        console.log(this.address);
         this.loading = false;
       },
       err => {
@@ -60,12 +59,10 @@ export class AddressPage {
 
     let txurl: string = this.apiProvider.apiPrefix + '/address/' + this.addrStr + '/txs?limit=1000';
     this.blocks.getCurrentHeight().subscribe(height => {
-      console.log(height);
       this.http.get(txurl).subscribe(
         data => {
           let apiTx: ApiCoin[] = data.json() as ApiCoin[];
           this.transactions = apiTx.map(this.txProvider.toAppCoin);
-          console.log(this.transactions);
         },
         err => {
           console.error('err is', err);
