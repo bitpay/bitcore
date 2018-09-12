@@ -3,8 +3,7 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { TxsProvider, ApiTx, ApiCoin } from '../../providers/transactions/transactions';
-import { BlocksProvider } from '../../providers/blocks/blocks';
+import { TxsProvider, ApiCoin } from '../../providers/transactions/transactions';
 
 /**
  * Generated class for the AddressPage page.
@@ -32,8 +31,7 @@ export class AddressPage {
     private http: Http,
     private apiProvider: ApiProvider,
     public currencyProvider: CurrencyProvider,
-    public txProvider: TxsProvider,
-    public blocks: BlocksProvider
+    public txProvider: TxsProvider
   ) {
     this.addrStr = navParams.get('addrStr');
   }
@@ -58,17 +56,15 @@ export class AddressPage {
     );
 
     let txurl: string = this.apiProvider.apiPrefix + '/address/' + this.addrStr + '/txs?limit=1000';
-    this.blocks.getCurrentHeight().subscribe(height => {
-      this.http.get(txurl).subscribe(
-        data => {
-          let apiTx: ApiCoin[] = data.json() as ApiCoin[];
-          this.transactions = apiTx.map(this.txProvider.toAppCoin);
-        },
-        err => {
-          console.error('err is', err);
-          this.loading = false;
-        }
-      );
-    });
+    this.http.get(txurl).subscribe(
+      data => {
+        let apiTx: ApiCoin[] = data.json() as ApiCoin[];
+        this.transactions = apiTx.map(this.txProvider.toAppCoin);
+      },
+      err => {
+        console.error('err is', err);
+        this.loading = false;
+      }
+    );
   }
 }
