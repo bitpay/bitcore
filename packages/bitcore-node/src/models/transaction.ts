@@ -310,7 +310,7 @@ export class Transaction extends BaseModel<ITransaction> {
     return this.collection.find(query).addCursorFlag('noCursorTimeout', true);
   }
 
-  _apiTransform(tx: MongoBound<ITransaction>, options: TransformOptions): Partial<ITransaction> | string {
+  _apiTransform(tx: Partial<MongoBound<ITransaction>>, options: TransformOptions): Partial<ITransaction> | string {
     let transform = {
       _id: tx._id,
       txid: tx.txid,

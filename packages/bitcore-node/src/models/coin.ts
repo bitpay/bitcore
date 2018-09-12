@@ -54,7 +54,7 @@ class Coin extends BaseModel<ICoin> {
       .toArray();
   }
 
-  _apiTransform(coin: MongoBound<ICoin>, options: { object: boolean }) {
+  _apiTransform(coin: Partial<MongoBound<ICoin>>, options: { object: boolean }) {
     let transform = {
       _id: coin._id,
       txid: coin.mintTxid,
