@@ -13,7 +13,7 @@ import { BlocksProvider } from '../blocks/blocks';
   for more info on providers and Angular DI.
  */
 
-type CoinsApiResponse = { inputs: ApiInput[]; outputs: ApiInput[] };
+type CoinsApiResponse = { inputs: ApiCoin[]; outputs: ApiCoin[] };
 export type ApiTx = {
   address: string;
   chain: string;
@@ -25,9 +25,10 @@ export type ApiTx = {
   blockTimeNormalized: Date;
   coinbase: boolean;
   size: number;
+  confirmations: number;
   locktime: number;
-  inputs: Array<ApiInput>;
-  outputs: Array<ApiInput>;
+  inputs: Array<ApiCoin>;
+  outputs: Array<ApiCoin>;
   mintTxid: string;
   mintHeight: number;
   spentTxid: string;
@@ -36,17 +37,30 @@ export type ApiTx = {
   version: number;
 };
 
-export type ApiInput = {
+export type ApiCoin = {
   txid: string;
+  mintTxid: string;
   coinbase: boolean;
   vout: number;
   address: string;
   script: {
     asm: string;
-    type: string
+    type: string;
   };
   spentTxid: string;
+  mintHeight: number;
+  spentHeight: number;
   value: number;
+};
+
+export type AppCoin = {
+  txid: string;
+  valueOut: number;
+  value: number;
+  spentTxid: string;
+  mintTxid: string;
+  mintHeight: number;
+  spentHeight: number;
 };
 
 export type AppInput = {
@@ -103,7 +117,12 @@ export type AppTx = {
 
 @Injectable()
 export class TxsProvider {
-  constructor(public http: Http, private api: ApiProvider, public currency: CurrencyProvider, public blocks: BlocksProvider) {}
+  constructor(
+    public http: Http,
+    private api: ApiProvider,
+    public currency: CurrencyProvider,
+    public blocks: BlocksProvider
+  ) {}
 
   public getFee(tx: AppTx): number {
     const sumSatoshis: any = (arr: any): number => arr.reduce((prev, cur) => prev + cur.value, 0);
@@ -113,12 +132,12 @@ export class TxsProvider {
     return fee;
   }
 
-  public toAppTx(tx: ApiTx, bestHeight: number): AppTx {
+  public toAppTx(tx: ApiTx): AppTx {
     return {
       txid: tx.txid,
       fee: null, // calculated later, when coins are retrieved
       blockheight: tx.blockHeight,
-      confirmations: bestHeight - tx.blockHeight,
+      confirmations: tx.confirmations,
       blockhash: tx.blockHash,
       blocktime: new Date(tx.blockTime).getTime() / 1000,
       time: new Date(tx.blockTime).getTime() / 1000,
@@ -127,8 +146,20 @@ export class TxsProvider {
       locktime: tx.locktime,
       vin: [], // populated when coins are retrieved
       vout: [], // populated when coins are retrieved
-      valueOut: null,
+      valueOut: tx.value,
       version: tx.version
+    };
+  }
+
+  public toAppCoin(coin: ApiCoin): AppCoin {
+    return {
+      txid: coin.txid,
+      mintTxid: coin.mintTxid,
+      mintHeight: coin.mintHeight,
+      spentHeight: coin.spentHeight,
+      valueOut: coin.value,
+      value: coin.value,
+      spentTxid: coin.spentTxid
     };
   }
 
@@ -137,29 +168,25 @@ export class TxsProvider {
     if (args.blockHash) {
       queryString += `?blockHash=${args.blockHash}`;
     }
-    let url: string = this.api.apiPrefix + '/tx' + queryString;
-    return this.blocks.getCurrentHeight().flatMap(height => {
-      return this.http.get(url).map(data => {
-        let txs: Array<ApiTx> = data.json();
-        let appTxs: Array<AppTx> = txs.map(tx => this.toAppTx(tx, height));
-        return { txs: appTxs };
-      });
+    let url: string = this.api.getUrl() + '/tx' + queryString;
+    return this.http.get(url).map(data => {
+      let txs: Array<ApiTx> = data.json();
+      let appTxs: Array<AppTx> = txs.map(tx => this.toAppTx(tx));
+      return { txs: appTxs };
     });
   }
 
   public getTx(hash: string): Observable<{ tx: AppTx }> {
-    let url: string = this.api.apiPrefix + '/tx/' + hash;
-    return this.blocks.getCurrentHeight().flatMap(height => {
-      return this.http.get(url).flatMap(async data => {
-        let apiTx: ApiTx = data.json()[0];
-        let appTx: AppTx = this.toAppTx(apiTx, height);
-        return { tx: appTx };
-      });
+    let url: string = this.api.getUrl() + '/tx/' + hash;
+    return this.http.get(url).flatMap(async data => {
+      let apiTx: ApiTx = data.json()[0];
+      let appTx: AppTx = this.toAppTx(apiTx);
+      return { tx: appTx };
     });
   }
 
   public getCoins(txId: string): Observable<CoinsApiResponse> {
-    let url: string = this.api.apiPrefix + '/tx/' + txId + '/coins';
+    let url: string = this.api.getUrl() + '/tx/' + txId + '/coins';
     return this.http.get(url).map(data => {
       return data.json() as CoinsApiResponse;
     });

@@ -39,7 +39,7 @@ export class HeadNavComponent {
 
   public search(): void {
     this.showSearch = false;
-    let apiPrefix: string = this.api.apiPrefix;
+    let apiPrefix: string = this.api.getUrl();
 
     this.http.get(apiPrefix + 'block/' + this.q).subscribe(
       function(data: any): void {

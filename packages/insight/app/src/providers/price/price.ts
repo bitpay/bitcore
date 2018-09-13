@@ -19,7 +19,7 @@ export class PriceProvider {
     localStorage.setItem('insight-currency', currency);
 
     if (currency === 'USD') {
-      this.api.http.get(this.api.apiPrefix + '/currency').subscribe(
+      this.api.http.get(this.api.getUrl() + '/currency').subscribe(
         (data) => {
           let currencyParsed: any = JSON.parse(data['_body']);
           if (currencyParsed.data.bitstamp) {

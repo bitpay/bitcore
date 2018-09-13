@@ -4,7 +4,7 @@ import through2 from 'through2';
 import { MongoBound } from '../../../models/base';
 import { ObjectId } from 'mongodb';
 import { CoinModel, ICoin } from '../../../models/coin';
-import { BlockModel } from '../../../models/block';
+import { BlockModel, IBlock } from '../../../models/block';
 import { WalletModel, IWallet } from '../../../models/wallet';
 import { WalletAddressModel } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
@@ -46,23 +46,22 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   streamAddressUtxos(params: CSP.StreamAddressUtxosParams) {
-    const { limit = 10, stream } = params;
+    const { stream, args } = params;
+    const { limit } = args;
     const query = this.getAddressQuery(params);
     Storage.apiStreamingFind(CoinModel, query, { limit }, stream);
   }
 
   async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
-    const { limit = 10, stream } = params;
+    const { args, stream } = params;
+    const { limit = 10 } = args;
     const query = this.getAddressQuery(params);
-    const coins = await CoinModel.collection.find(query, { limit }).toArray();
-    const txids = coins.map(coin => coin.mintTxid);
-    const txQuery = { txid: { $in: txids } };
-    Storage.apiStreamingFind(TransactionModel, txQuery, {}, stream);
+    Storage.apiStreamingFind(CoinModel, query, { limit }, stream);
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { chain, network, address } = params;
-    let query = { chain: chain, network, address };
+    let query = { chain, network, address };
     let balance = await CoinModel.getBalance({ query });
     return balance;
   }
@@ -81,8 +80,18 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getBlocks(params: CSP.GetBlockParams) {
     const { query, options } = this.getBlocksQuery(params);
-    let blocks = await BlockModel.collection.find(query, options).toArray();
-    return blocks.map(block => BlockModel._apiTransform(block, { object: true }));
+    let blocks = await BlockModel.collection.find<IBlock>(query, options).toArray();
+    const tip = await this.getLocalTip(params);
+    const tipHeight = tip ? tip.height : 0;
+    const blockTransform = (b: IBlock) => {
+      let confirmations = 0;
+      if (b.height && b.height >= 0) {
+        confirmations = tipHeight - b.height + 1;
+      }
+      const convertedBlock = BlockModel._apiTransform(b, { object: true }) as IBlock;
+      return { ...convertedBlock, confirmations };
+    };
+    return blocks.map(blockTransform);
   }
 
   private getBlocksQuery(params: CSP.GetBlockParams | CSP.StreamBlocksParams) {
@@ -156,7 +165,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const tipHeight = tip ? tip.height : 0;
     return Storage.apiStreamingFind(TransactionModel, query, { limit }, stream, t => {
       let confirmations = 0;
-      if (t.blockHeight && t.blockHeight >= 0){
+      if (t.blockHeight && t.blockHeight >= 0) {
         confirmations = tipHeight - t.blockHeight + 1;
       }
       const convertedTx = TransactionModel._apiTransform(t, { object: true }) as Partial<ITransaction>;
@@ -175,7 +184,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const tipHeight = tip ? tip.height : 0;
     return Storage.apiStreamingFind(TransactionModel, query, { limit: 100 }, stream, t => {
       let confirmations = 0;
-      if (t.blockHeight && t.blockHeight >= 0){
+      if (t.blockHeight && t.blockHeight >= 0) {
         confirmations = tipHeight - t.blockHeight + 1;
       }
       const convertedTx = TransactionModel._apiTransform(t, { object: true }) as Partial<ITransaction>;
@@ -202,7 +211,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       path,
       singleAddress
     };
-    await WalletModel.collection.insert(wallet);
+    await WalletModel.collection.insertOne(wallet);
     return wallet;
   }
 

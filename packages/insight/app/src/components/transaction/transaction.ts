@@ -2,7 +2,7 @@ import { Component } from '@angular/core';
 import { Input } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { TxsProvider, ApiInput } from '../../providers/transactions/transactions';
+import { TxsProvider, ApiCoin} from '../../providers/transactions/transactions';
 
 /**
  * Generated class for the TransactionComponent component.
@@ -43,7 +43,7 @@ export class TransactionComponent {
     });
   }
 
-  public getAddress(vout: ApiInput): string {
+  public getAddress(vout: ApiCoin): string {
     if (vout.address === 'false') {
       return 'Unparsed address';
     }

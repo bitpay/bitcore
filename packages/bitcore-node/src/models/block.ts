@@ -3,7 +3,7 @@ import { TransactionModel } from './transaction';
 import { TransformOptions } from '../types/TransformOptions';
 import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { BaseModel } from './base';
+import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
 import { ChainStateProvider } from '../providers/chain-state';
 
@@ -78,7 +78,7 @@ export class Block extends BaseModel<IBlock> {
     const height = (previousBlock && previousBlock.height + 1) || 1;
     logger.debug('Setting blockheight', height);
 
-    await this.collection.update(
+    await this.collection.updateOne(
       { hash: header.hash, chain, network },
       {
         $set: {
@@ -122,7 +122,7 @@ export class Block extends BaseModel<IBlock> {
       initialSyncComplete
     });
 
-    return this.collection.update({ hash: header.hash, chain, network }, { $set: { processed: true } });
+    return this.collection.updateOne({ hash: header.hash, chain, network }, { $set: { processed: true } });
   }
 
   getPoolInfo(coinbase: string) {
@@ -141,21 +141,21 @@ export class Block extends BaseModel<IBlock> {
       return false;
     }
     logger.info(`Resetting tip to ${localTip.previousBlockHash}`, { chain, network });
-    await this.collection.remove({ chain, network, height: { $gte: localTip.height } });
-    await TransactionModel.collection.remove({ chain, network, blockHeight: { $gte: localTip.height } });
-    await CoinModel.collection.remove({ chain, network, mintHeight: { $gte: localTip.height } });
-    await CoinModel.collection.update(
+    await this.collection.deleteMany({ chain, network, height: { $gte: localTip.height } });
+    await TransactionModel.collection.deleteMany({ chain, network, blockHeight: { $gte: localTip.height } });
+    await CoinModel.collection.deleteMany({ chain, network, mintHeight: { $gte: localTip.height } });
+    await CoinModel.collection.updateMany(
       { chain, network, spentHeight: { $gte: localTip.height } },
-      { $set: { spentTxid: null, spentHeight: -1 } },
-      { multi: true }
+      { $set: { spentTxid: null, spentHeight: -1 } }
     );
 
     logger.debug('Removed data from above blockHeight: ', localTip.height);
     return true;
   }
 
-  _apiTransform(block: IBlock, options: TransformOptions): any {
+  _apiTransform(block: Partial<MongoBound<IBlock>>, options: TransformOptions): any {
     const transform = {
+      _id: block._id,
       chain: block.chain,
       network: block.network,
       hash: block.hash,
