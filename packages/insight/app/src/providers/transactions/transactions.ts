@@ -49,7 +49,7 @@ export type ApiCoin = {
   };
   spentTxid: string;
   mintHeight: number;
-  spentHeight: number
+  spentHeight: number;
   value: number;
 };
 
@@ -132,7 +132,7 @@ export class TxsProvider {
     return fee;
   }
 
-  public toAppTx(tx: ApiTx, bestHeight: number): AppTx {
+  public toAppTx(tx: ApiTx): AppTx {
     return {
       txid: tx.txid,
       fee: null, // calculated later, when coins are retrieved
@@ -168,29 +168,25 @@ export class TxsProvider {
     if (args.blockHash) {
       queryString += `?blockHash=${args.blockHash}`;
     }
-    let url: string = this.api.apiPrefix + '/tx' + queryString;
-    return this.blocks.getCurrentHeight().flatMap(height => {
-      return this.http.get(url).map(data => {
-        let txs: Array<ApiTx> = data.json();
-        let appTxs: Array<AppTx> = txs.map(tx => this.toAppTx(tx, height));
-        return { txs: appTxs };
-      });
+    let url: string = this.api.getUrl() + '/tx' + queryString;
+    return this.http.get(url).map(data => {
+      let txs: Array<ApiTx> = data.json();
+      let appTxs: Array<AppTx> = txs.map(tx => this.toAppTx(tx));
+      return { txs: appTxs };
     });
   }
 
   public getTx(hash: string): Observable<{ tx: AppTx }> {
-    let url: string = this.api.apiPrefix + '/tx/' + hash;
-    return this.blocks.getCurrentHeight().flatMap(height => {
-      return this.http.get(url).flatMap(async data => {
-        let apiTx: ApiTx = data.json()[0];
-        let appTx: AppTx = this.toAppTx(apiTx, height);
-        return { tx: appTx };
-      });
+    let url: string = this.api.getUrl() + '/tx/' + hash;
+    return this.http.get(url).flatMap(async data => {
+      let apiTx: ApiTx = data.json()[0];
+      let appTx: AppTx = this.toAppTx(apiTx);
+      return { tx: appTx };
     });
   }
 
   public getCoins(txId: string): Observable<CoinsApiResponse> {
-    let url: string = this.api.apiPrefix + '/tx/' + txId + '/coins';
+    let url: string = this.api.getUrl() + '/tx/' + txId + '/coins';
     return this.http.get(url).map(data => {
       return data.json() as CoinsApiResponse;
     });
