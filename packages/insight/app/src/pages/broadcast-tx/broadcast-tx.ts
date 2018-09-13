@@ -13,7 +13,6 @@ import { ApiProvider } from '../../providers/api/api';
   templateUrl: 'broadcast-tx.html'
 })
 export class BroadcastTxPage {
-
   public title: string;
   public transaction: string;
   public txForm: FormGroup;
@@ -24,7 +23,7 @@ export class BroadcastTxPage {
     private toastCtrl: ToastController,
     public formBuilder: FormBuilder,
     private http: Http,
-    private api: ApiProvider,
+    private api: ApiProvider
   ) {
     this.title = 'Broadcast Transaction';
     this.txForm = formBuilder.group({
@@ -38,8 +37,7 @@ export class BroadcastTxPage {
     };
     this.status = 'loading';
 
-    this.http.post(this.api.apiPrefix + 'tx/send', postData)
-    .subscribe(
+    this.http.post(this.api.getUrl() + 'tx/send', postData).subscribe(
       response => {
         this.presentToast(true, response);
       },
@@ -50,7 +48,9 @@ export class BroadcastTxPage {
   }
 
   private presentToast(success: boolean, response: any): void {
-    let message: string = (success) ? 'Transaction successfully broadcast. Trasaction id: ' + JSON.parse(response._body).txid : 'An error occurred: ' + response._body;
+    let message: string = success
+      ? 'Transaction successfully broadcast. Trasaction id: ' + JSON.parse(response._body).txid
+      : 'An error occurred: ' + response._body;
     if (this.toast) {
       this.toast.dismiss();
     }

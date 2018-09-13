@@ -211,7 +211,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       path,
       singleAddress
     };
-    await WalletModel.collection.insert(wallet);
+    await WalletModel.collection.insertOne(wallet);
     return wallet;
   }
 

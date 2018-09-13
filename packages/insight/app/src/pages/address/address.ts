@@ -37,7 +37,7 @@ export class AddressPage {
   }
 
   public ionViewDidLoad(): void {
-    const url: string = `${this.apiProvider.apiPrefix}/address/${this.addrStr}/balance`;
+    const url: string = `${this.apiProvider.getUrl()}/address/${this.addrStr}/balance`;
     this.http.get(url).subscribe(
       data => {
         const json: {
@@ -55,7 +55,7 @@ export class AddressPage {
       }
     );
 
-    let txurl: string = this.apiProvider.apiPrefix + '/address/' + this.addrStr + '/txs?limit=1000';
+    let txurl: string = this.apiProvider.getUrl() + '/address/' + this.addrStr + '/txs?limit=1000';
     this.http.get(txurl).subscribe(
       data => {
         let apiTx: ApiCoin[] = data.json() as ApiCoin[];

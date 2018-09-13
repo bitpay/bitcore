@@ -88,7 +88,7 @@ export class BlocksProvider {
   }
 
   public getCurrentHeight(): Observable<number> {
-    let heightUrl: string = this.api.apiPrefix + '/block/tip';
+    let heightUrl: string = this.api.getUrl() + '/block/tip';
     return this.http.get(heightUrl).map(blockResp => {
       const block: ApiBlock = blockResp.json();
       return block.height;
@@ -96,7 +96,7 @@ export class BlocksProvider {
   }
 
   public getBlocks(numBlocks: number = 10): Observable<{ blocks: Array<AppBlock> }> {
-    let url: string = this.api.apiPrefix + '/block?limit=' + numBlocks;
+    let url: string = this.api.getUrl() + '/block?limit=' + numBlocks;
     return this.getCurrentHeight().flatMap(height => {
       return this.http.get(url).map(data => {
         let blocks: Array<ApiBlock> = data.json();
@@ -110,7 +110,7 @@ export class BlocksProvider {
    * example: http://localhost:8100/api/BTC/regtest/block?since=582&limit=100&paging=height&direction=1
    */
   public pageBlocks(since: number, numBlocks: number = 10): Observable<{ blocks: Array<AppBlock> }> {
-    let url: string = `${this.api.apiPrefix}/block?since=${since}&limit=${numBlocks}&paging=height&direction=-1`;
+    let url: string = `${this.api.getUrl()}/block?since=${since}&limit=${numBlocks}&paging=height&direction=-1`;
     return this.getCurrentHeight().flatMap(height => {
       return this.http.get(url).map(data => {
         let blocks: Array<ApiBlock> = data.json();
@@ -121,7 +121,7 @@ export class BlocksProvider {
   }
 
   public getBlock(hash: string): Observable<{ block: AppBlock }> {
-    let url: string = this.api.apiPrefix + '/block/' + hash;
+    let url: string = this.api.getUrl() + '/block/' + hash;
     return this.getCurrentHeight().flatMap(height => {
       return this.http.get(url).map(data => {
         let block: ApiBlock = data.json();

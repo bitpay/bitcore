@@ -141,9 +141,9 @@ export class Block extends BaseModel<IBlock> {
       return false;
     }
     logger.info(`Resetting tip to ${localTip.previousBlockHash}`, { chain, network });
-    await this.collection.remove({ chain, network, height: { $gte: localTip.height } });
-    await TransactionModel.collection.remove({ chain, network, blockHeight: { $gte: localTip.height } });
-    await CoinModel.collection.remove({ chain, network, mintHeight: { $gte: localTip.height } });
+    await this.collection.deleteMany({ chain, network, height: { $gte: localTip.height } });
+    await TransactionModel.collection.deleteMany({ chain, network, blockHeight: { $gte: localTip.height } });
+    await CoinModel.collection.deleteMany({ chain, network, mintHeight: { $gte: localTip.height } });
     await CoinModel.collection.updateMany(
       { chain, network, spentHeight: { $gte: localTip.height } },
       { $set: { spentTxid: null, spentHeight: -1 } }

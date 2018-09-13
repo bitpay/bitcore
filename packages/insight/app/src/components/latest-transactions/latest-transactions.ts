@@ -43,7 +43,7 @@ export class LatestTransactionsComponent {
   }
 
   private loadTransactions(): void {
-    let url: string = this.api.apiPrefix + 'txs';
+    let url: string = this.api.getUrl() + 'txs';
 
     this.http.get(url).subscribe(
       (data) => {

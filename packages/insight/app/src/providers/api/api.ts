@@ -12,12 +12,13 @@ import { CurrencyProvider } from '../../providers/currency/currency';
 */
 @Injectable()
 export class ApiProvider {
-  public apiPrefix: string;
+  constructor(public http: Http, private defaults: DefaultProvider, public currency: CurrencyProvider) {}
 
-  constructor(public http: Http, private defaults: DefaultProvider, public currency: CurrencyProvider) {
-    const prefix: string = defaults.getDefault('%API_PREFIX%');
+  public getUrl(): string {
+    const prefix: string = this.defaults.getDefault('%API_PREFIX%');
     const chain: string = this.currency.selectedCurrency.toUpperCase();
     const network: string = this.defaults.getDefault('%NETWORK%');
-    this.apiPrefix = `${prefix}/${chain}/${network}`;
+    const apiPrefix: string = `${prefix}/${chain}/${network}`;
+    return apiPrefix;
   }
 }
