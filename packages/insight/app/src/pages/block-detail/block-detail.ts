@@ -14,16 +14,15 @@ import { BlocksProvider } from '../../providers/blocks/blocks';
   segment: ':selectedCurrency/block/:blockHash'
 })
 @Component({
-    selector: 'page-block-detail',
-    templateUrl: 'block-detail.html'
+  selector: 'page-block-detail',
+  templateUrl: 'block-detail.html'
 })
 export class BlockDetailPage {
-
-    public loading: boolean = true;
-    private blockHash: string;
-    public block: any = {
-        tx: []
-    };
+  public loading: boolean = true;
+  private blockHash: string;
+  public block: any = {
+    tx: []
+  };
 
   constructor(
     public navCtrl: NavController,
@@ -34,31 +33,31 @@ export class BlockDetailPage {
     this.blockHash = navParams.get('blockHash');
   }
 
-    public ionViewDidLoad(): void {
-        this.blockProvider.getBlock(this.blockHash).subscribe(
-            (data) => {
-              console.log(data.block);
-                this.block = data.block;
-                this.loading = false;
-            },
-            (err) => {
-                console.log('err is', err);
-                this.loading = false;
-            }
-        );
-    }
+  public ionViewDidLoad(): void {
+    this.blockProvider.getBlock(this.blockHash).subscribe(
+      data => {
+        console.log(data.block);
+        this.block = data.block;
+        this.loading = false;
+      },
+      err => {
+        console.log('err is', err);
+        this.loading = false;
+      }
+    );
+  }
 
   public goToPreviousBlock(): void {
     this.navCtrl.push('block-detail', {
-      'selectedCurrency': this.currency.selectedCurrency,
-      'blockHash': this.block.previousblockhash
+      selectedCurrency: this.currency.selectedCurrency,
+      blockHash: this.block.previousblockhash
     });
   }
 
   public goToNextBlock(): void {
     this.navCtrl.push('block-detail', {
-      'selectedCurrency': this.currency.selectedCurrency,
-      'blockHash': this.block.nextblockhash
+      selectedCurrency: this.currency.selectedCurrency,
+      blockHash: this.block.nextblockhash
     });
   }
 }
