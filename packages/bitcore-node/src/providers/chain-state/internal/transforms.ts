@@ -62,6 +62,8 @@ export class ListTransactionsStream extends Transform {
           self.push(
             JSON.stringify({
               txid: transaction.txid,
+              fee: transaction.fee,
+              size: transaction.size,
               category: 'send',
               satoshis: -output.value,
               height: transaction.blockHeight,
@@ -74,6 +76,8 @@ export class ListTransactionsStream extends Transform {
           self.push(
             JSON.stringify({
               txid: transaction.txid,
+              fee: transaction.fee,
+              size: transaction.size,
               category: 'move',
               satoshis: -output.value,
               height: transaction.blockHeight,
@@ -108,6 +112,8 @@ export class ListTransactionsStream extends Transform {
           self.push(
             JSON.stringify({
               txid: transaction.txid,
+              fee: transaction.fee,
+              size: transaction.size,
               category: 'receive',
               satoshis: output.value,
               height: transaction.blockHeight,
