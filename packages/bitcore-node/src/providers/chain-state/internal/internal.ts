@@ -8,7 +8,7 @@ import { BlockModel, IBlock } from '../../../models/block';
 import { WalletModel, IWallet } from '../../../models/wallet';
 import { WalletAddressModel } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
-import { Storage } from '../../../services/storage';
+import { Storage, StreamingFindOptions } from '../../../services/storage';
 import { RPC } from '../../../rpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { TransactionModel, ITransaction } from '../../../models/transaction';
@@ -276,28 +276,32 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
     let { chain, network, wallet, stream, args } = params;
-    let query: any = {
+    let finalQuery: any = {
       chain: chain,
       network,
       wallets: wallet._id
     };
+    let finalOptions: StreamingFindOptions<ITransaction> = {};
     if (args) {
       if (args.startBlock) {
-        query.blockHeight = { $gte: Number(args.startBlock) };
+        finalQuery.blockHeight = { $gte: Number(args.startBlock) };
       }
       if (args.endBlock) {
-        query.blockHeight = query.blockHeight || {};
-        query.blockHeight.$lte = Number(args.endBlock);
+        finalQuery.blockHeight = finalQuery.blockHeight || {};
+        finalQuery.blockHeight.$lte = Number(args.endBlock);
       }
       if (args.startDate) {
-        query.blockTimeNormalized = { $gte: new Date(args.startDate) };
+        finalQuery.blockTimeNormalized = { $gte: new Date(args.startDate) };
       }
       if (args.endDate) {
-        query.blockTimeNormalized = query.blockTimeNormalized || {};
-        query.blockTimeNormalized.$lt = new Date(args.endDate);
+        finalQuery.blockTimeNormalized = finalQuery.blockTimeNormalized || {};
+        finalQuery.blockTimeNormalized.$lt = new Date(args.endDate);
       }
+      const { query, options } = Storage.getFindOptions(TransactionModel, args);
+      finalQuery = Object.assign({}, finalQuery, query);
+      finalOptions = options;
     }
-    let transactionStream = TransactionModel.getTransactions({ query });
+    let transactionStream = TransactionModel.getTransactions({ query: finalQuery, options: finalOptions });
     let listTransactionsStream = new ListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(stream);
   }

@@ -9,6 +9,7 @@ import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
 import config from '../config';
 import { BulkWriteOpResultObject } from 'mongodb';
+import { StreamingFindOptions, Storage } from '../services/storage';
 
 const Chain = require('../chain');
 
@@ -81,7 +82,9 @@ export class Transaction extends BaseModel<ITransaction> {
       let txOps = await this.addTransactions(params);
       logger.debug('Writing Transactions', txOps.length);
       const txBatches = partition(txOps, txOps.length / config.maxPoolSize);
-      txs = txBatches.map((txBatch: Array<any>) => this.collection.bulkWrite(txBatch, { ordered: false, j: false, w: 0 }));
+      txs = txBatches.map((txBatch: Array<any>) =>
+        this.collection.bulkWrite(txBatch, { ordered: false, j: false, w: 0 })
+      );
     }
 
     await Promise.all(txs);
@@ -107,7 +110,7 @@ export class Transaction extends BaseModel<ITransaction> {
     let mintWallets;
     let spentWallets;
 
-    if (initialSyncComplete){
+    if (initialSyncComplete) {
       mintWallets = await CoinModel.collection
         .aggregate<TaggedCoin>([
           { $match: { mintTxid: { $in: txids }, chain, network } },
@@ -118,17 +121,16 @@ export class Transaction extends BaseModel<ITransaction> {
 
       spentWallets = await CoinModel.collection
         .aggregate<TaggedCoin>([
-       { $match: { spentTxid: { $in: txids }, chain, network } },
+          { $match: { spentTxid: { $in: txids }, chain, network } },
           { $unwind: '$wallets' },
           { $group: { _id: '$spentTxid', wallets: { $addToSet: '$wallets' } } }
         ])
         .toArray();
     }
 
-
     let txOps = txs.map((tx, index) => {
       let wallets = new Array<ObjectID>();
-      if (initialSyncComplete){
+      if (initialSyncComplete) {
         for (let wallet of mintWallets.concat(spentWallets).filter(wallet => wallet._id === txids[index])) {
           for (let walletMatch of wallet.wallets) {
             if (!wallets.find(wallet => wallet.toHexString() === walletMatch.toHexString())) {
@@ -258,7 +260,7 @@ export class Transaction extends BaseModel<ITransaction> {
     network: string;
     mintOps?: Array<any>;
   }): Array<any> {
-    let { chain, network, height, txs, parentChain, forkHeight, mintOps=[] } = params;
+    let { chain, network, height, txs, parentChain, forkHeight, mintOps = [] } = params;
     let spendOps: any[] = [];
     if (parentChain && forkHeight && height < forkHeight) {
       return spendOps;
@@ -276,7 +278,7 @@ export class Transaction extends BaseModel<ITransaction> {
       for (let input of tx.inputs) {
         let inputObj = input.toObject();
         let sameBlockSpend = mintMap[inputObj.prevTxId] && mintMap[inputObj.prevTxId][inputObj.outputIndex];
-        if (sameBlockSpend){
+        if (sameBlockSpend) {
           sameBlockSpend.updateOne.update.$set.spentHeight = height;
           sameBlockSpend.updateOne.update.$set.spentTxid = txid;
           if (config.pruneSpentScripts && height > 0) {
@@ -305,9 +307,11 @@ export class Transaction extends BaseModel<ITransaction> {
     return spendOps;
   }
 
-  getTransactions(params: { query: any }) {
-    let query = params.query;
-    return this.collection.find(query).addCursorFlag('noCursorTimeout', true);
+  getTransactions(params: { query: any; options: StreamingFindOptions<ITransaction> }) {
+    let originalQuery = params.query;
+    const { query, options } = Storage.getFindOptions(this, params.options);
+    const finalQuery = Object.assign({}, originalQuery, query);
+    return this.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true);
   }
 
   _apiTransform(tx: Partial<MongoBound<ITransaction>>, options: TransformOptions): Partial<ITransaction> | string {
