@@ -5,7 +5,7 @@
     </ion-note>
   </ion-col>
   <ion-col col-3 text-right>
-    {{ currency.getConvertedNumber(coin.value) | number:'1.0-8' }} {{ currency.currencySymbol }}
+    {{ currencyProvider.getConvertedNumber(coin.value) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
   </ion-col>
   <ion-col col-4 text-left>
     <ion-note [hidden]="!coin.spentTxid">

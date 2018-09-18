@@ -2,7 +2,8 @@ import { Component } from '@angular/core';
 import { Input } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { TxsProvider, ApiCoin} from '../../providers/transactions/transactions';
+import { TxsProvider, ApiCoin } from '../../providers/transactions/transactions';
+import { ApiProvider } from '../../providers/api/api';
 
 /**
  * Generated class for the TransactionComponent component.
@@ -24,9 +25,9 @@ export class TransactionComponent {
   constructor(
     private navCtrl: NavController,
     public currency: CurrencyProvider,
+    public apiProvider: ApiProvider,
     public txProvider: TxsProvider
-  ) {
-  }
+  ) {}
 
   public ngOnInit(): void {
     if (this.showCoins) {
@@ -53,14 +54,16 @@ export class TransactionComponent {
 
   public goToTx(txId: string): void {
     this.navCtrl.push('transaction', {
-      selectedCurrency: this.currency.selectedCurrency,
+      chain: this.apiProvider.selectedChain,
+      network: this.apiProvider.selectedNetwork,
       txId: txId
     });
   }
 
   public goToAddress(addrStr: string): void {
     this.navCtrl.push('address', {
-      selectedCurrency: this.currency.selectedCurrency,
+      chain: this.apiProvider.selectedChain,
+      network: this.apiProvider.selectedNetwork,
       addrStr: addrStr
     });
   }

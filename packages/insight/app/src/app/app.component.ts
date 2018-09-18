@@ -1,11 +1,10 @@
+import { ApiProvider } from '../providers/api/api';
 import { Component, ViewChild } from '@angular/core';
 import { Platform, MenuController, Nav } from 'ionic-angular';
 import { StatusBar } from '@ionic-native/status-bar';
 import { SplashScreen } from '@ionic-native/splash-screen';
 import { CurrencyProvider } from '../providers/currency/currency';
-import {
-  HomePage
-} from '../pages';
+import { HomePage } from '../pages';
 
 @Component({
   templateUrl: './app.html'
@@ -26,6 +25,7 @@ export class InsightApp {
     menu: MenuController,
     splash: SplashScreen,
     public currency: CurrencyProvider,
+    public apiProvider: ApiProvider,
     status: StatusBar
   ) {
     this.menu = menu;
@@ -38,7 +38,7 @@ export class InsightApp {
 
     // set our app's pages
     this.pages = [
-      { title: 'Home', component: HomePage },
+      { title: 'Home', component: 'home' },
       { title: 'Blocks', component: 'blocks' },
       { title: 'Broadcast Transaction', component: 'BroadcastTxPage' }
     ];
@@ -57,8 +57,9 @@ export class InsightApp {
     // close the menu when clicking a link from the menu
     this.menu.close();
     // navigate to the new page if it is not the current page
-    this.nav.setRoot(page.component, {
-      'selectedCurrency': this.currency.selectedCurrency
+    this.nav.push(page.component, {
+      chain: this.apiProvider.selectedChain,
+      network: this.apiProvider.selectedNetwork
     });
   }
 }

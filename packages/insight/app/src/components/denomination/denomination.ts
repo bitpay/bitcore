@@ -1,9 +1,11 @@
 import { Component } from '@angular/core';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { ViewController } from 'ionic-angular';
+import { Nav, App, NavController, ViewController } from 'ionic-angular';
 import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
 import { PriceProvider } from '../../providers/price/price';
+
+type ChainNetwork = { chain: string; network: string };
 
 @Component({
   selector: 'denomination',
@@ -12,26 +14,34 @@ import { PriceProvider } from '../../providers/price/price';
 export class DenominationComponent {
   public switcherOn: boolean;
   public units: any = [];
+  public enabledChains: Array<ChainNetwork> = [];
+  public selected: ChainNetwork;
 
   constructor(
     public currencyProvider: CurrencyProvider,
     public priceProvider: PriceProvider,
     public viewCtrl: ViewController,
+    public navCtrl: NavController,
+    public app: App,
     public http: Http,
     public api: ApiProvider
   ) {
-    this.units = ['USD', this.currencyProvider.defaultCurrency, 'm' + this.currencyProvider.defaultCurrency, 'bits'];
-
-    this.switcherOn = currencyProvider.explorers.length > 1;
+    this.http.get(api.getUrlPrefix() + '/status/enabled-chains').subscribe(data => {
+      this.enabledChains = data.json() as Array<ChainNetwork>;
+      this.switcherOn = this.enabledChains.length > 1;
+      console.log('switcher', this.switcherOn);
+    });
+    this.units = ['USD', this.api.selectedChain, 'm' + this.api.selectedChain];
   }
 
   public close(): void {
     this.viewCtrl.dismiss();
   }
 
-  public changeExplorer(explorer: any): void {
-    this.close();
-    let theUrl: string = explorer.url;
-    window.location.href = theUrl;
+  public changeExplorer(chainNetwork: ChainNetwork): void {
+    this.selected = chainNetwork;
+    const { chain, network } = chainNetwork;
+    this.viewCtrl.dismiss();
+    this.app.getRootNav().push('home', { chain, network});
   }
 }

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { BlocksProvider } from '../../providers/blocks/blocks';
+import { ApiProvider } from '../../providers/api/api';
 
 /**
  * Generated class for the BlockDetailPage page.
@@ -11,7 +12,7 @@ import { BlocksProvider } from '../../providers/blocks/blocks';
  */
 @IonicPage({
   name: 'block-detail',
-  segment: ':selectedCurrency/block/:blockHash'
+  segment: ':chain/:network/block/:blockHash'
 })
 @Component({
   selector: 'page-block-detail',
@@ -28,9 +29,13 @@ export class BlockDetailPage {
     public navCtrl: NavController,
     public navParams: NavParams,
     private blockProvider: BlocksProvider,
+    private apiProvider: ApiProvider,
     public currency: CurrencyProvider
   ) {
     this.blockHash = navParams.get('blockHash');
+    const chain: string = navParams.get('chain');
+    const network: string = navParams.get('network');
+    this.apiProvider.changeChain(chain, network);
   }
 
   public ionViewDidLoad(): void {
@@ -49,14 +54,16 @@ export class BlockDetailPage {
 
   public goToPreviousBlock(): void {
     this.navCtrl.push('block-detail', {
-      selectedCurrency: this.currency.selectedCurrency,
+      chain: this.apiProvider.selectedChain,
+      network: this.apiProvider.selectedNetwork,
       blockHash: this.block.previousblockhash
     });
   }
 
   public goToNextBlock(): void {
     this.navCtrl.push('block-detail', {
-      selectedCurrency: this.currency.selectedCurrency,
+      chain: this.apiProvider.selectedChain,
+      network: this.apiProvider.selectedNetwork,
       blockHash: this.block.nextblockhash
     });
   }
