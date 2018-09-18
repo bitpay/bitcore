@@ -6,6 +6,7 @@ import { ChainStateProvider } from '../providers/chain-state';
 import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { StateModel } from '../models/state';
+import { CoinModel } from '../models/coin';
 const Chain = require('../chain');
 const LRU = require('lru-cache');
 
@@ -263,6 +264,10 @@ export class P2pService {
         });
         parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
       }
+      if (parentTip.height > forkHeight && (!tip || tip.height < forkHeight)) {
+        // fork copy logic
+        await this.createFork(chain, parentChain, forkHeight);
+      }
     }
 
     const getHeaders = async () => {
@@ -305,6 +310,65 @@ export class P2pService {
       { upsert: true }
     );
     return true;
+  }
+
+  async createFork(newChain: string, parentChain: string, forkHeight: number) {
+    const tip = await ChainStateProvider.getLocalTip({ chain: newChain, network: this.network });
+    const currentHeight = tip ? tip.height : 0;
+    const blockCursor = BlockModel.collection
+      .find(
+        { chain: parentChain, network: this.network, height: { $lt: forkHeight, $gte: currentHeight } },
+        { batchSize: 100 }
+      )
+      .sort({ height: 1 });
+    while (blockCursor.hasNext()) {
+      const block = await blockCursor.next();
+      if (block) {
+        const newBlock = Object.assign({}, block, { chain: newChain, processed: false });
+        const mongoOperations = new Array();
+        mongoOperations.push(BlockModel.collection.insert(newBlock));
+        const blockTransactions = await TransactionModel.collection
+          .find({
+            chain: parentChain,
+            network: this.network,
+            blockHash: block.hash
+          })
+          .toArray();
+        const newTransactions = blockTransactions.map(tx => {
+          return Object.assign({}, tx, {
+            _id: null,
+            chain: newChain
+          });
+        });
+        mongoOperations.push(TransactionModel.collection.insertMany(newTransactions));
+        // find coins that were spent past the fork, or not spent at the time of fork
+        const blockCoins = await CoinModel.collection
+          .find({
+            chain: parentChain,
+            mintHeight: block.height,
+            spentHeight: { $or: [{ $gt: forkHeight }, { $eq: -2 }] }
+          })
+          .toArray();
+        const newCoins = blockCoins.map(coin => {
+          const legacyAddress = new Chain[parentChain].lib.Address(coin.address);
+          const newAddress = this.bitcoreLib.Address(legacyAddress);
+          return Object.assign({}, coin, {
+            _id: null,
+            chain: newChain,
+            spentHeight: -2,
+            spentTxid: null,
+            address: newAddress
+          });
+        });
+        mongoOperations.push(CoinModel.collection.insertMany(newCoins));
+        await Promise.all(mongoOperations);
+        logger.info(`Forking block ${block.height}`);
+        BlockModel.collection.updateOne(
+          { chain: newChain, network: this.network, hash: block.hash },
+          { processed: true }
+        );
+      }
+    }
   }
 
   async start() {
