@@ -29,7 +29,7 @@ export class HeadNavComponent {
   constructor(
     private navCtrl: NavController,
     private http: Http,
-    private api: ApiProvider,
+    private apiProvider: ApiProvider,
     public currency: CurrencyProvider,
     public price: PriceProvider,
     public actionSheetCtrl: ActionSheetController,
@@ -39,7 +39,7 @@ export class HeadNavComponent {
 
   public search(): void {
     this.showSearch = false;
-    let apiPrefix: string = this.api.getUrl();
+    let apiPrefix: string = this.apiProvider.getUrl();
 
     this.http.get(apiPrefix + 'block/' + this.q).subscribe(
       function(data: any): void {
@@ -47,7 +47,8 @@ export class HeadNavComponent {
         console.log('block', data);
         let parsedData: any = JSON.parse(data._body);
         this.navCtrl.push('block-detail', {
-          selectedCurrency: this.currency.selectedCurrency,
+          chain: this.apiProvider.selectedChain,
+          network: this.apiProvider.selectedNetwork,
           blockHash: parsedData.hash
         });
       }.bind(this),
@@ -58,7 +59,8 @@ export class HeadNavComponent {
             console.log('tx', data);
             let parsedData: any = JSON.parse(data._body);
             this.navCtrl.push('transaction', {
-              selectedCurrency: this.currency.selectedCurrency,
+              chain: this.apiProvider.selectedChain,
+              network: this.apiProvider.selectedNetwork,
               txId: parsedData.txid
             });
           }.bind(this),
@@ -69,7 +71,8 @@ export class HeadNavComponent {
                 console.log('addr', data);
                 let parsedData: any = JSON.parse(data._body);
                 this.navCtrl.push('address', {
-                  selectedCurrency: this.currency.selectedCurrency,
+                  chain: this.apiProvider.selectedChain,
+                  network: this.apiProvider.selectedNetwork,
                   addrStr: parsedData.addrStr
                 });
               }.bind(this),
@@ -80,7 +83,8 @@ export class HeadNavComponent {
                     console.log('height', data);
                     let parsedData: any = JSON.parse(data._body);
                     this.navCtrl.push('block-detail', {
-                      selectedCurrency: this.currency.selectedCurrency,
+                      chain: this.apiProvider.selectedChain,
+                      network: this.apiProvider.selectedNetwork,
                       blockHash: parsedData.blockHash
                     });
                   }.bind(this),
