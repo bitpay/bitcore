@@ -60,7 +60,8 @@ export class StorageService {
   stop() {}
 
   validPagingProperty<T>(model: TransformableModel<T>, property: keyof T) {
-    return model.allowedPaging.some(prop => prop.key === property);
+    const defaultCase = property === "_id";
+    return defaultCase || model.allowedPaging.some(prop => prop.key === property);
   }
 
   /**
