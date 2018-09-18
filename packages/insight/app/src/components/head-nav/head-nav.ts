@@ -71,7 +71,8 @@ export class HeadNavComponent {
                 console.log('addr', data);
                 let parsedData: any = JSON.parse(data._body);
                 this.navCtrl.push('address', {
-                  chain: this.apiProvider.selectedChain, network: this.apiProvider.selectedNetwork,
+                  chain: this.apiProvider.selectedChain,
+                  network: this.apiProvider.selectedNetwork,
                   addrStr: parsedData.addrStr
                 });
               }.bind(this),
@@ -82,7 +83,8 @@ export class HeadNavComponent {
                     console.log('height', data);
                     let parsedData: any = JSON.parse(data._body);
                     this.navCtrl.push('block-detail', {
-                      chain: this.apiProvider.selectedChain, network: this.apiProvider.selectedNetwork,
+                      chain: this.apiProvider.selectedChain,
+                      network: this.apiProvider.selectedNetwork,
                       blockHash: parsedData.blockHash
                     });
                   }.bind(this),

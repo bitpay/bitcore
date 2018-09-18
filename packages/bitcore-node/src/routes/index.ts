@@ -44,7 +44,6 @@ function getRouterFromFile(path) {
   });
 
   var route = require('./' + path);
-  console.log('using', route.path);
   router.use(route.path, route.router);
   return router;
 }
