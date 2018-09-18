@@ -16,7 +16,7 @@
       <ion-item>
         Final Balance
         <ion-note item-end>
-          {{ currencyProvider.getConvertedNumber(address.balance) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+          {{ getBalance() | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
         </ion-note>
       </ion-item>
     </ion-list>

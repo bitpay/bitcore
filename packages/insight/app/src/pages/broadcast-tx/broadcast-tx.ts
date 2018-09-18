@@ -4,9 +4,10 @@ import { ToastController } from 'ionic-angular';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
+import { NavParams } from 'ionic-angular/navigation/nav-params';
 
 @IonicPage({
-  segment: ':selectedCurrency/broadcast-tx'
+  segment: ':chain/:network/broadcast-tx'
 })
 @Component({
   selector: 'page-broadcast-tx',
@@ -22,9 +23,14 @@ export class BroadcastTxPage {
   constructor(
     private toastCtrl: ToastController,
     public formBuilder: FormBuilder,
+    public navParams: NavParams,
     private http: Http,
-    private api: ApiProvider
+    private apiProvider: ApiProvider
   ) {
+    const chain: string = navParams.get('chain');
+    const network: string = navParams.get('network');
+    this.apiProvider.changeChain(chain, network);
+
     this.title = 'Broadcast Transaction';
     this.txForm = formBuilder.group({
       rawData: ['', Validators.pattern(/^[0-9A-Fa-f]+$/)]
@@ -37,7 +43,7 @@ export class BroadcastTxPage {
     };
     this.status = 'loading';
 
-    this.http.post(this.api.getUrl() + 'tx/send', postData).subscribe(
+    this.http.post(this.apiProvider.getUrl() + 'tx/send', postData).subscribe(
       response => {
         this.presentToast(true, response);
       },

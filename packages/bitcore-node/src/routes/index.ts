@@ -48,7 +48,11 @@ function getRouterFromFile(path) {
   return router;
 }
 
-app.use('/api/:chain/:network', cors(), (req: Request, resp: Response, next: any) => {
+app.use(cors());
+
+app.use('/api', getRouterFromFile('status'));
+
+app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
   let { chain, network } = req.params;
   const hasChain = chains.includes(chain);
   const chainNetworks = networks[chain] || null;
@@ -71,6 +75,5 @@ app.use('/api/:chain/:network', cors(), (req: Request, resp: Response, next: any
 });
 
 app.use('/api/:chain/:network', bootstrap('api'));
-app.use('/', getRouterFromFile('admin'));
 
 export default app;

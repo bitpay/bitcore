@@ -13,7 +13,6 @@ import { BlocksProvider } from '../providers/blocks/blocks';
 import { TxsProvider } from '../providers/transactions/transactions';
 import { DefaultProvider } from '../providers/default/default';
 import { PriceProvider } from '../providers/price/price';
-import { CoinListComponent } from '../components/coin-list/coin-list';
 
 @NgModule({
   declarations: [

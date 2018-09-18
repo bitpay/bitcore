@@ -11,8 +11,7 @@ import 'rxjs/add/operator/map';
 */
 @Injectable()
 export class PriceProvider {
-  constructor(public currency: CurrencyProvider, public api: ApiProvider) {
-  }
+  constructor(public currency: CurrencyProvider, public api: ApiProvider) {}
 
   public setCurrency(currency: string): void {
     this.currency.currencySymbol = currency;
@@ -20,7 +19,7 @@ export class PriceProvider {
 
     if (currency === 'USD') {
       this.api.http.get(this.api.getUrl() + '/currency').subscribe(
-        (data) => {
+        data => {
           let currencyParsed: any = JSON.parse(data['_body']);
           if (currencyParsed.data.bitstamp) {
             this.currency.factor = this.currency.bitstamp = currencyParsed.data.bitstamp;
@@ -29,15 +28,13 @@ export class PriceProvider {
           }
           this.currency.loading = false;
         },
-        (err) => {
+        err => {
           this.currency.loading = false;
           console.error('err getting currency', err);
         }
       );
-    } else if (currency === 'm' + this.currency.defaultCurrency) {
+    } else if (currency === 'm' + this.api.selectedChain) {
       this.currency.factor = 1000;
-    } else if (currency === 'bits') {
-      this.currency.factor = 1000000;
     } else {
       this.currency.factor = 1;
     }

@@ -3,6 +3,7 @@ import { BlocksProvider } from '../../providers/blocks/blocks';
 import { NavController } from 'ionic-angular';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { DefaultProvider } from '../../providers/default/default';
+import { ApiProvider } from '../../providers/api/api';
 
 /**
  * Generated class for the LatestBlocksComponent component.
@@ -15,7 +16,6 @@ import { DefaultProvider } from '../../providers/default/default';
   templateUrl: 'latest-blocks.html'
 })
 export class LatestBlocksComponent {
-
   public loading: boolean = true;
   public blocks: Array<any> = [];
   @Input() public numBlocks: number;
@@ -26,6 +26,7 @@ export class LatestBlocksComponent {
 
   constructor(
     private blocksProvider: BlocksProvider,
+    private apiProvider: ApiProvider,
     private navCtrl: NavController,
     private ngZone: NgZone,
     public currency: CurrencyProvider,
@@ -39,10 +40,12 @@ export class LatestBlocksComponent {
     const seconds: number = 15;
     this.ngZone.runOutsideAngular(() => {
       this.reloadInterval = setInterval(
-        function (): void {
-          this.ngZone.run(function (): void {
-            this.loadBlocks.call(this);
-          }.bind(this));
+        function(): void {
+          this.ngZone.run(
+            function(): void {
+              this.loadBlocks.call(this);
+            }.bind(this)
+          );
         }.bind(this),
         1000 * seconds
       );
@@ -51,11 +54,11 @@ export class LatestBlocksComponent {
 
   private loadBlocks(): void {
     this.blocksProvider.getBlocks(this.numBlocks).subscribe(
-      ({blocks}) => {
+      ({ blocks }) => {
         this.blocks = blocks;
         this.loading = false;
       },
-      (err) => {
+      err => {
         console.log('err', err);
         this.loading = false;
       }
@@ -66,11 +69,11 @@ export class LatestBlocksComponent {
     clearInterval(this.reloadInterval);
     let since: number = this.blocks[this.blocks.length - 1].height;
     this.blocksProvider.pageBlocks(since, this.numBlocks).subscribe(
-      ({blocks}) => {
+      ({ blocks }) => {
         this.blocks = this.blocks.concat(blocks);
         this.loading = false;
       },
-      (err) => {
+      err => {
         console.log('err', err);
         this.loading = false;
       }
@@ -79,8 +82,9 @@ export class LatestBlocksComponent {
 
   public goToBlock(blockHash: string): void {
     this.navCtrl.push('block-detail', {
-      'selectedCurrency': this.currency.selectedCurrency,
-      'blockHash': blockHash
+      chain: this.apiProvider.selectedChain,
+      network: this.apiProvider.selectedNetwork,
+      blockHash: blockHash
     });
   }
 
@@ -90,7 +94,8 @@ export class LatestBlocksComponent {
 
   public goToBlocks(): void {
     this.navCtrl.push('blocks', {
-      'selectedCurrency': this.currency.selectedCurrency
+      chain: this.apiProvider.selectedChain,
+      network: this.apiProvider.selectedNetwork
     });
   }
 

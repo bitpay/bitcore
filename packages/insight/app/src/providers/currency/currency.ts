@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { DefaultProvider } from '../../providers/default/default';
+import { ApiProvider } from '../api/api';
 import 'rxjs/add/operator/map';
 
 /*
@@ -10,7 +10,6 @@ import 'rxjs/add/operator/map';
  */
 @Injectable()
 export class CurrencyProvider {
-
   public defaultCurrency: string;
   public selectedCurrency: string;
   public currencySymbol: string;
@@ -20,12 +19,8 @@ export class CurrencyProvider {
   public loading: boolean;
   public explorers: any = [];
 
-  constructor(
-    private defaults: DefaultProvider
-  ) {
-    this.defaultCurrency = defaults.getDefault('%CHAIN%');
-    this.selectedCurrency = this.defaultCurrency.toLowerCase();
-    this.currencySymbol = this.defaultCurrency;
+  constructor(private apiProvider: ApiProvider) {
+    this.currencySymbol = this.apiProvider.selectedChain.toUpperCase();
   }
 
   public roundFloat(aFloat: number, decimalPlaces: number): number {
@@ -35,21 +30,21 @@ export class CurrencyProvider {
   public getConvertedNumber(value: number): number {
     // TODO: Change this function to make use of satoshis so that we don't have to do all these roundabout conversions.
     value = value * 1e-8;
-    if (value === 0.00000000) return 0;
+    if (value === 0.0) return 0;
 
     let response: number;
 
     if (this.currencySymbol === 'USD') {
-      response = this.roundFloat((value * this.factor), 2);
-    } else if (this.currencySymbol === 'm' + this.defaultCurrency) {
+      response = this.roundFloat(value * this.factor, 2);
+    } else if (this.currencySymbol === 'm' + this.apiProvider.selectedChain) {
       this.factor = 1000;
-      response = this.roundFloat((value * this.factor), 5);
+      response = this.roundFloat(value * this.factor, 5);
     } else if (this.currencySymbol === 'bits') {
       this.factor = 1000000;
-      response = this.roundFloat((value * this.factor), 2);
+      response = this.roundFloat(value * this.factor, 2);
     } else {
       this.factor = 1;
-      response = this.roundFloat((value * this.factor), 8);
+      response = this.roundFloat(value * this.factor, 8);
     }
 
     return response;
@@ -59,21 +54,21 @@ export class CurrencyProvider {
    * @deprecated use getConvertedNumber
    */
   public getConversion(value: number): string {
-    if (value === 0.00000000) return '0 ' + this.currencySymbol; // fix value to show
+    if (value === 0.0) return '0 ' + this.currencySymbol; // fix value to show
 
     let response: number;
 
     if (this.currencySymbol === 'USD') {
-      response = this.roundFloat((value * this.factor), 2);
+      response = this.roundFloat(value * this.factor, 2);
     } else if (this.currencySymbol === 'm' + this.defaultCurrency) {
       this.factor = 1000;
-      response = this.roundFloat((value * this.factor), 5);
+      response = this.roundFloat(value * this.factor, 5);
     } else if (this.currencySymbol === 'bits') {
       this.factor = 1000000;
-      response = this.roundFloat((value * this.factor), 2);
+      response = this.roundFloat(value * this.factor, 2);
     } else {
       this.factor = 1;
-      response = this.roundFloat((value * this.factor), 8);
+      response = this.roundFloat(value * this.factor, 8);
     }
     return response + ' ' + this.currencySymbol;
   }

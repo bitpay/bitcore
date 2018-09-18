@@ -13,7 +13,7 @@ import { TxsProvider, ApiCoin } from '../../providers/transactions/transactions'
  */
 @IonicPage({
   name: 'address',
-  segment: ':selectedCurrency/address/:addrStr'
+  segment: ':chain/:network/address/:addrStr'
 })
 @Component({
   selector: 'page-address',
@@ -29,11 +29,14 @@ export class AddressPage {
     public navCtrl: NavController,
     public navParams: NavParams,
     private http: Http,
-    private apiProvider: ApiProvider,
     public currencyProvider: CurrencyProvider,
+    private apiProvider: ApiProvider,
     public txProvider: TxsProvider
   ) {
     this.addrStr = navParams.get('addrStr');
+    const chain: string = navParams.get('chain');
+    const network: string = navParams.get('network');
+    this.apiProvider.changeChain(chain, network);
   }
 
   public ionViewDidLoad(): void {
@@ -66,5 +69,9 @@ export class AddressPage {
         this.loading = false;
       }
     );
+  }
+
+  public getBalance(): number {
+    return this.currencyProvider.getConvertedNumber(this.address.balance);
   }
 }
