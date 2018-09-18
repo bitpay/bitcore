@@ -173,23 +173,25 @@ export class InternalStateProvider implements CSP.IChainStateService {
     });
   }
 
-  async streamTransaction(params: CSP.StreamTransactionParams) {
-    let { chain, network, txId, stream } = params;
-    if (typeof txId !== 'string' || !chain || !network || !stream) {
+  async getTransaction(params: CSP.StreamTransactionParams) {
+    let { chain, network, txId } = params;
+    if (typeof txId !== 'string' || !chain || !network) {
       throw 'Missing required param';
     }
     network = network.toLowerCase();
     let query = { chain: chain, network, txid: txId };
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
-    return Storage.apiStreamingFind(TransactionModel, query, { limit: 100 }, stream, t => {
-      let confirmations = 0;
-      if (t.blockHeight && t.blockHeight >= 0) {
-        confirmations = tipHeight - t.blockHeight + 1;
-      }
-      const convertedTx = TransactionModel._apiTransform(t, { object: true }) as Partial<ITransaction>;
-      return JSON.stringify({ ...convertedTx, confirmations: confirmations });
-    });
+    const found = await TransactionModel.collection.findOne(query);
+    if (!found) {
+      throw new Error(`txid ${txId} could not be found`);
+    }
+    let confirmations = 0;
+    if (found.blockHeight && found.blockHeight >= 0) {
+      confirmations = tipHeight - found.blockHeight + 1;
+    }
+    const convertedTx = TransactionModel._apiTransform(found, { object: true }) as Partial<ITransaction>;
+    return { ...convertedTx, confirmations: confirmations };
   }
 
   async createWallet(params: CSP.CreateWalletParams) {

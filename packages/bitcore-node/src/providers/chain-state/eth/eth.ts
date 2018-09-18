@@ -45,11 +45,11 @@ export class ETHStateProvider extends InternalStateProvider
     return this.getRPC(network).getBlock(blockId);
   }
 
-  async streamTransaction(params: CSP.StreamTransactionParams) {
-    const { network, txId, stream } = params;
+  async getTransaction(params: CSP.StreamTransactionParams) {
+    const { network, txId } = params;
     const transaction = await this.getRPC(network).getTransaction(txId);
-    const transactions = transaction !== null ? [transaction] : [];
-    stream.send(JSON.stringify(transactions));
+    const transactions = transaction !== null ? transaction : null;
+    return transactions;
   }
 
   async getWalletAddresses(walletId: ObjectID) {
