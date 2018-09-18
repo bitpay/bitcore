@@ -540,8 +540,6 @@ helpers.setupGroupingBE = function (be) {
   }
   be.register = sinon.stub().callsArgWith(1, null, null);
   be.addAddresses = sinon.stub().callsArgWith(2, null, null);
-
-
 };
 
 module.exports = helpers;
