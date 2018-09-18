@@ -43,7 +43,7 @@ router.get('/:txId', async (req, res) => {
     if (!tx) {
       return res.status(404).send(`txid ${txId} could not be found`);
     } else {
-      return res.send(tx);
+      return res.send([tx]);
     }
   } catch (err) {
     return res.status(500).send(err);
