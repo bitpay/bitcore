@@ -7907,7 +7907,7 @@ console.log('[server.js.6215:err:]',err); //TODO
     });
   });
 
-  describe.only('Sync wallet with grouping block explorer', function() {
+  describe('Sync wallet with grouping block explorer', function() {
     var server , wallet;
     beforeEach(function(done) {
   
@@ -7937,18 +7937,35 @@ console.log('[server.js.6215:err:]',err); //TODO
           should.not.exist(err);
           blockchainExplorer.register.calledOnce.should.equal(true);
           blockchainExplorer.addAddresses.calledTwice.should.equal(true);
-          var calls= blockchainExplorer.addAddresses.getCalls();
+         var calls= blockchainExplorer.addAddresses.getCalls();
 
-          // TODO should only sync address 2
-          calls[1].args[1].should.deep.equal([address1.address, address2.address]);
+          //  should only sync address 2
+          calls[1].args[1].should.deep.equal([address2.address]);
           done();
         });
       });
     });
 
+    it('should sync all wallet address if a first sync failed', function(done) {
+      blockchainExplorer.addAddresses = sinon.stub().callsArgWith(2, 'error');
+      server.createAddress({}, function(err, address1) {
+        blockchainExplorer.addAddresses = sinon.stub().callsArgWith(2, null, null);
+        server.createAddress({}, function(err, address2) {
+          should.not.exist(err);
+          var calls= blockchainExplorer.addAddresses.getCalls();
+          // should sync both addresses, since it failed the first time
+          // (call is 0 becuase the stub was rewritten)
+          calls[0].args[1].should.deep.equal([address1.address, address2.address]);
+          done();
+        });
+      });
+    });
+
+
+    it.skip('TODO:  should sync address in batch', function(done) {});
+
+
   });
-
-
 
   describe('BTC & BCH wallets with same seed', function() {
     var server = {},
