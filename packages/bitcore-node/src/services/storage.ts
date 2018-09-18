@@ -5,6 +5,7 @@ import logger from '../logger';
 import config from '../config';
 import { LoggifyClass } from '../decorators/Loggify';
 import { MongoClient, Db, Cursor } from 'mongodb';
+import { MongoBound } from '../models/base';
 import '../models';
 
 export type StreamingFindOptions<T> = Partial<{
@@ -59,8 +60,8 @@ export class StorageService {
 
   stop() {}
 
-  validPagingProperty<T>(model: TransformableModel<T>, property: keyof T) {
-    const defaultCase = property === "_id";
+  validPagingProperty<T>(model: TransformableModel<T>, property: keyof MongoBound<T>) {
+    const defaultCase = property === '_id';
     return defaultCase || model.allowedPaging.some(prop => prop.key === property);
   }
 

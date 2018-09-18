@@ -8,6 +8,8 @@ import { Storage } from '../../../src/services/storage';
 import { mockStorage } from '../../helpers';
 import { mockCollection } from '../../helpers/index.js';
 import { ChainStateProvider } from '../../../src/providers/chain-state';
+import { ObjectID } from 'mongodb';
+import { MongoBound } from '../../../src/models/base';
 
 describe('Block Model', function() {
   describe('addBlock', () => {
@@ -34,6 +36,46 @@ describe('Block Model', function() {
 
       const result = await BlockModel.addBlock(addBlockParams);
       expect(result);
+    });
+  });
+
+  describe('BlockModel find options', () => {
+    it('should be able to create query options', () => {
+      const id = new ObjectID();
+      const { query, options } = Storage.getFindOptions<MongoBound<IBlock>>(BlockModel, {
+        since: id,
+        paging: '_id',
+        limit: 100,
+        direction: -1
+      });
+      expect(options.limit).to.be.eq(100);
+      expect(query._id).to.be.deep.eq({ $lt: id });
+      expect(options.sort).to.be.deep.eq({ _id: -1 });
+    });
+
+    it('should default to descending', () => {
+      const id = new ObjectID();
+      const { query, options } = Storage.getFindOptions<MongoBound<IBlock>>(BlockModel, {
+        since: id,
+        paging: '_id',
+        limit: 100,
+      });
+      expect(options.sort).to.be.deep.eq({ _id: -1 });
+      expect(options.limit).to.be.eq(100);
+      expect(query._id).to.be.deep.eq({ $lt: id });
+    });
+
+    it('should allow ascending', () => {
+      const id = new ObjectID();
+      const { query, options } = Storage.getFindOptions<MongoBound<IBlock>>(BlockModel, {
+        since: id,
+        paging: '_id',
+        limit: 100,
+        direction: 1
+      });
+      expect(options.sort).to.be.deep.eq({ _id: 1 });
+      expect(options.limit).to.be.eq(100);
+      expect(query._id).to.be.deep.eq({ $gt: id });
     });
   });
 
