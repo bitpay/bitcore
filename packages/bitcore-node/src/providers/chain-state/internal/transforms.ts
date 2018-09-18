@@ -52,17 +52,29 @@ export class ListTransactionsStream extends Transform {
 
     if (sending) {
       transaction.outputs.forEach(function(output) {
-        var contains = false;
+        var sendingToOurself = false;
         output.wallets.forEach(function(outputWallet) {
           if (outputWallet.equals(wallet)) {
-            contains = true;
+            sendingToOurself = true;
           }
         });
-        if (!contains) {
+        if (!sendingToOurself) {
           self.push(
             JSON.stringify({
               txid: transaction.txid,
               category: 'send',
+              satoshis: -output.value,
+              height: transaction.blockHeight,
+              address: output.address,
+              outputIndex: output.vout,
+              blockTime: transaction.blockTimeNormalized
+            }) + '\n'
+          );
+        } else {
+          self.push(
+            JSON.stringify({
+              txid: transaction.txid,
+              category: 'move',
               satoshis: -output.value,
               height: transaction.blockHeight,
               address: output.address,
@@ -84,29 +96,29 @@ export class ListTransactionsStream extends Transform {
         );
       }
       return done();
-    }
-
-    transaction.outputs.forEach(function(output) {
-      var contains = false;
-      output.wallets.forEach(function(outputWallet) {
-        if (outputWallet.equals(wallet)) {
-          contains = true;
+    } else {
+      transaction.outputs.forEach(function(output) {
+        var weReceived = false;
+        output.wallets.forEach(function(outputWallet) {
+          if (outputWallet.equals(wallet)) {
+            weReceived = true;
+          }
+        });
+        if (weReceived) {
+          self.push(
+            JSON.stringify({
+              txid: transaction.txid,
+              category: 'receive',
+              satoshis: output.value,
+              height: transaction.blockHeight,
+              address: output.address,
+              outputIndex: output.vout,
+              blockTime: transaction.blockTimeNormalized
+            }) + '\n'
+          );
         }
       });
-      if (contains) {
-        self.push(
-          JSON.stringify({
-            txid: transaction.txid,
-            category: 'receive',
-            satoshis: output.value,
-            height: transaction.blockHeight,
-            address: output.address,
-            outputIndex: output.vout,
-            blockTime: transaction.blockTimeNormalized
-          }) + '\n'
-        );
-      }
-    });
+    }
     done();
   }
 }
