@@ -29,7 +29,6 @@ export class DenominationComponent {
     this.http.get(api.getUrlPrefix() + '/status/enabled-chains').subscribe(data => {
       this.enabledChains = data.json() as Array<ChainNetwork>;
       this.switcherOn = this.enabledChains.length > 1;
-      console.log('switcher', this.switcherOn);
     });
     this.units = ['USD', this.api.selectedChain, 'm' + this.api.selectedChain];
   }

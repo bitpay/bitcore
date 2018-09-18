@@ -7,7 +7,7 @@ import { ApiProvider } from '../../providers/api/api';
 import { NavParams } from 'ionic-angular/navigation/nav-params';
 
 @IonicPage({
-  segment: ':selectedCurrency/:selectedNetwork/broadcast-tx'
+  segment: ':chain/:network/broadcast-tx'
 })
 @Component({
   selector: 'page-broadcast-tx',

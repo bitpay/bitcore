@@ -41,7 +41,6 @@ export class BlockDetailPage {
   public ionViewDidLoad(): void {
     this.blockProvider.getBlock(this.blockHash).subscribe(
       data => {
-        console.log(data.block);
         this.block = data.block;
         this.loading = false;
       },
