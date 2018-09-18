@@ -183,15 +183,16 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
     const found = await TransactionModel.collection.findOne(query);
-    if (!found) {
-      throw new Error(`txid ${txId} could not be found`);
+    if (found) {
+      let confirmations = 0;
+      if (found.blockHeight && found.blockHeight >= 0) {
+        confirmations = tipHeight - found.blockHeight + 1;
+      }
+      const convertedTx = TransactionModel._apiTransform(found, { object: true }) as Partial<ITransaction>;
+      return { ...convertedTx, confirmations: confirmations };
+    } else {
+      return null;
     }
-    let confirmations = 0;
-    if (found.blockHeight && found.blockHeight >= 0) {
-      confirmations = tipHeight - found.blockHeight + 1;
-    }
-    const convertedTx = TransactionModel._apiTransform(found, { object: true }) as Partial<ITransaction>;
-    return { ...convertedTx, confirmations: confirmations };
   }
 
   async createWallet(params: CSP.CreateWalletParams) {
