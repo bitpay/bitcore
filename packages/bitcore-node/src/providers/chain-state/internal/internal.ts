@@ -311,13 +311,24 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return CoinModel.getBalance({ query });
   }
 
-  streamWalletUtxos(params: CSP.StreamWalletUtxosParams) {
+  async streamWalletUtxos(params: CSP.StreamWalletUtxosParams) {
     const { wallet, limit, args = {}, stream } = params;
     let query: any = { wallets: wallet._id };
     if (args.includeSpent !== 'true') {
       query.spentHeight = { $lt: -1 };
     }
-    Storage.apiStreamingFind(CoinModel, query, { limit }, stream);
+    const tip = await this.getLocalTip(params);
+    const tipHeight = tip ? tip.height : 0;
+    const utxoTransform = (c: ICoin) => {
+      let confirmations = 0;
+      if (c.mintHeight && c.mintHeight >= 0) {
+        confirmations = tipHeight - c.mintHeight + 1;
+      }
+      const convertedCoin = CoinModel._apiTransform(c, { object: true }) as Partial<ICoin>;
+      return JSON.stringify({ ...convertedCoin, confirmations });
+    };
+
+    Storage.apiStreamingFind(CoinModel, query, { limit }, stream, utxoTransform);
   }
 
   async getFee(params: CSP.GetEstimateSmartFeeParams) {
