@@ -64,18 +64,18 @@ export class HeadNavComponent {
               network: this.apiProvider.selectedNetwork,
               txId: parsedData[0].txid
             });
-          }.bind(this),
+          },
           () => {
             this.http.get(apiPrefix + '/address/' + this.q).subscribe(
               (data: any): void => {
+                this.resetSearch();
                 console.log('addr', data);
                 let parsedData: any = JSON.parse(data._body);
                 this.navCtrl.push('address', {
                   chain: this.apiProvider.selectedChain,
                   network: this.apiProvider.selectedNetwork,
-                  addrStr: this.q
+                  addrStr: parsedData[0].address
                 });
-                this.resetSearch();
               },
               () => {
                 this.http.get(apiPrefix + 'block-index/' + this.q).subscribe(
