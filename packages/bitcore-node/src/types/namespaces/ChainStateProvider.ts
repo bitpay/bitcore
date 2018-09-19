@@ -69,7 +69,6 @@ export declare namespace CSP {
   };
   export type StreamTransactionParams = ChainNetwork & {
     txId: string;
-    stream: Response;
   };
   export type StreamWalletAddressesParams = ChainNetwork & {
     walletId: ObjectId;
@@ -111,7 +110,7 @@ export declare namespace CSP {
     streamAddressUtxos(params: StreamAddressUtxosParams): any;
     streamAddressTransactions(params: StreamAddressUtxosParams): any;
     streamTransactions(params: StreamTransactionsParams): any;
-    streamTransaction(params: StreamTransactionParams): any;
+    getTransaction(params: StreamTransactionParams): Promise<any>;
     streamWalletAddresses(params: StreamWalletAddressesParams): any;
     streamWalletTransactions(params: StreamWalletTransactionsParams): any;
     streamWalletUtxos(params: StreamWalletUtxosParams): any;
