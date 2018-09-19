@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
 import 'rxjs/add/operator/map';
 import { DefaultProvider } from '../../providers/default/default';
-import { CurrencyProvider } from '../../providers/currency/currency';
 
 /*
   Generated class for the ApiProvider provider.

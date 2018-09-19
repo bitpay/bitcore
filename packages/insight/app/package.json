@@ -7,6 +7,9 @@
   "scripts": {
     "clean": "ionic-app-scripts clean",
     "build": "ionic-app-scripts build",
+    "build:prod": "CHAIN=BTC NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:build",
+    "serve:prod": "npm run build:prod && npm run serve",
+    "serve": "./node_modules/.bin/serve www",
     "ionic:build": "ionic-app-scripts build",
     "ionic:serve": "ionic-app-scripts serve",
     "e2e": "ionic-app-scripts build && protractor",
@@ -56,6 +59,7 @@
     "karma-jasmine-html-reporter": "0.2.2",
     "opn-cli": "^3.1.0",
     "protractor": "5.1.2",
+    "serve": "^10.0.1",
     "serve-static": "1.12.3",
     "ts-node": "3.0.4",
     "tslint": "5.3.2",
