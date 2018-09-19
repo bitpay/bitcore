@@ -3,7 +3,7 @@ import through2 from 'through2';
 
 import { MongoBound } from '../../../models/base';
 import { ObjectId } from 'mongodb';
-import { CoinModel, ICoin } from '../../../models/coin';
+import { CoinModel, ICoin, SpentHeightIndicators } from '../../../models/coin';
 import { BlockModel, IBlock } from '../../../models/block';
 import { WalletModel, IWallet } from '../../../models/wallet';
 import { WalletAddressModel } from '../../../models/walletAddress';
@@ -40,7 +40,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
     const query = { chain: chain, network: network.toLowerCase(), address } as any;
     if (args.unspent) {
-      query.spentHeight = { $lt: 0 };
+      query.spentHeight = { $lt: SpentHeightIndicators.minimum };
     }
     return query;
   }
@@ -230,7 +230,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const { chain, network, pubKey, stream } = params;
     const wallet = await WalletModel.collection.findOne({ pubKey });
     const walletId = wallet!._id;
-    const query = { chain, network, wallets: walletId, spentHeight: { $gte: 0 } };
+    const query = { chain, network, wallets: walletId, spentHeight: { $gte: SpentHeightIndicators.minimum } };
     const cursor = CoinModel.collection.find(query);
     const seen = {};
     const stringifyWallets = (wallets: Array<ObjectId>) => wallets.map(w => w.toHexString());
@@ -311,7 +311,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const { wallet, limit, args = {}, stream } = params;
     let query: any = { wallets: wallet._id };
     if (args.includeSpent !== 'true') {
-      query.spentHeight = { $lt: -1 };
+      query.spentHeight = { $lt: SpentHeightIndicators.pending };
     }
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;

@@ -1,4 +1,4 @@
-import { CoinModel } from './coin';
+import { CoinModel, SpentHeightIndicators } from './coin';
 import { TransactionModel } from './transaction';
 import { TransformOptions } from '../types/TransformOptions';
 import { LoggifyClass } from '../decorators/Loggify';
@@ -149,7 +149,7 @@ export class Block extends BaseModel<IBlock> {
     await CoinModel.collection.deleteMany({ chain, network, mintHeight: { $gte: localTip.height } });
     await CoinModel.collection.updateMany(
       { chain, network, spentHeight: { $gte: localTip.height } },
-      { $set: { spentTxid: null, spentHeight: -1 } }
+      { $set: { spentTxid: null, spentHeight: SpentHeightIndicators.pending } }
     );
 
     logger.debug('Removed data from above blockHeight: ', localTip.height);

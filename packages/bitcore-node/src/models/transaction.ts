@@ -1,4 +1,4 @@
-import { CoinModel, ICoin } from './coin';
+import { CoinModel, ICoin, SpentHeightIndicators } from './coin';
 import { WalletAddressModel } from './walletAddress';
 import { partition } from '../utils/partition';
 import { ObjectID } from 'bson';
@@ -81,7 +81,9 @@ export class Transaction extends BaseModel<ITransaction> {
       let txOps = await this.addTransactions(params);
       logger.debug('Writing Transactions', txOps.length);
       const txBatches = partition(txOps, txOps.length / config.maxPoolSize);
-      txs = txBatches.map((txBatch: Array<any>) => this.collection.bulkWrite(txBatch, { ordered: false, j: false, w: 0 }));
+      txs = txBatches.map((txBatch: Array<any>) =>
+        this.collection.bulkWrite(txBatch, { ordered: false, j: false, w: 0 })
+      );
     }
 
     await Promise.all(txs);
@@ -107,7 +109,7 @@ export class Transaction extends BaseModel<ITransaction> {
     let mintWallets;
     let spentWallets;
 
-    if (initialSyncComplete){
+    if (initialSyncComplete) {
       mintWallets = await CoinModel.collection
         .aggregate<TaggedCoin>([
           { $match: { mintTxid: { $in: txids }, chain, network } },
@@ -118,17 +120,16 @@ export class Transaction extends BaseModel<ITransaction> {
 
       spentWallets = await CoinModel.collection
         .aggregate<TaggedCoin>([
-       { $match: { spentTxid: { $in: txids }, chain, network } },
+          { $match: { spentTxid: { $in: txids }, chain, network } },
           { $unwind: '$wallets' },
           { $group: { _id: '$spentTxid', wallets: { $addToSet: '$wallets' } } }
         ])
         .toArray();
     }
 
-
     let txOps = txs.map((tx, index) => {
       let wallets = new Array<ObjectID>();
-      if (initialSyncComplete){
+      if (initialSyncComplete) {
         for (let wallet of mintWallets.concat(spentWallets).filter(wallet => wallet._id === txids[index])) {
           for (let walletMatch of wallet.wallets) {
             if (!wallets.find(wallet => wallet.toHexString() === walletMatch.toHexString())) {
@@ -182,7 +183,7 @@ export class Transaction extends BaseModel<ITransaction> {
           chain: parentChain,
           network,
           mintHeight: height,
-          spentHeight: { $gt: -2, $lt: forkHeight }
+          spentHeight: { $gt: SpentHeightIndicators.unspent, $lt: forkHeight }
         })
         .toArray();
     }
@@ -209,7 +210,13 @@ export class Transaction extends BaseModel<ITransaction> {
 
         mintOps.push({
           updateOne: {
-            filter: { mintTxid: txid, mintIndex: index, spentHeight: { $lt: 0 }, chain, network },
+            filter: {
+              mintTxid: txid,
+              mintIndex: index,
+              spentHeight: { $lt: SpentHeightIndicators.minimum },
+              chain,
+              network
+            },
             update: {
               $set: {
                 chain,
@@ -219,7 +226,7 @@ export class Transaction extends BaseModel<ITransaction> {
                 value: output.satoshis,
                 address,
                 script: scriptBuffer,
-                spentHeight: -2,
+                spentHeight: SpentHeightIndicators.unspent,
                 wallets: []
               }
             },
@@ -258,7 +265,7 @@ export class Transaction extends BaseModel<ITransaction> {
     network: string;
     mintOps?: Array<any>;
   }): Array<any> {
-    let { chain, network, height, txs, parentChain, forkHeight, mintOps=[] } = params;
+    let { chain, network, height, txs, parentChain, forkHeight, mintOps = [] } = params;
     let spendOps: any[] = [];
     if (parentChain && forkHeight && height < forkHeight) {
       return spendOps;
@@ -276,7 +283,7 @@ export class Transaction extends BaseModel<ITransaction> {
       for (let input of tx.inputs) {
         let inputObj = input.toObject();
         let sameBlockSpend = mintMap[inputObj.prevTxId] && mintMap[inputObj.prevTxId][inputObj.outputIndex];
-        if (sameBlockSpend){
+        if (sameBlockSpend) {
           sameBlockSpend.updateOne.update.$set.spentHeight = height;
           sameBlockSpend.updateOne.update.$set.spentTxid = txid;
           if (config.pruneSpentScripts && height > 0) {
@@ -289,7 +296,7 @@ export class Transaction extends BaseModel<ITransaction> {
             filter: {
               mintTxid: inputObj.prevTxId,
               mintIndex: inputObj.outputIndex,
-              spentHeight: { $lt: 0 },
+              spentHeight: { $lt: SpentHeightIndicators.minimum },
               chain,
               network
             },

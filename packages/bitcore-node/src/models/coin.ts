@@ -17,6 +17,25 @@ export type ICoin = {
   spentHeight: number;
 };
 
+/**
+ * Number values less than 0 which indicate the spent state of a coin.
+ */
+export enum SpentHeightIndicators {
+  /**
+   * The value below which numbers are simply used as indicators.
+   */
+  minimum = 0,
+  /**
+   * The coin is spent by a transaction currently in the mempool but not yet
+   * included in a block.
+   */
+  pending = -1,
+  /**
+   * The coin is unspent, and no transactions spending it have been seen.
+   */
+  unspent = -2
+}
+
 @LoggifyClass
 class Coin extends BaseModel<ICoin> {
   constructor() {
