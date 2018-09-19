@@ -31,22 +31,30 @@ router.get('/', function(req, res) {
   return ChainStateProvider.streamTransactions(payload);
 });
 
-router.get('/:txId', function(req, res) {
+router.get('/:txId', async (req, res) => {
   let { chain, network, txId } = req.params;
   if (typeof txId !== 'string' || !chain || !network) {
     return res.status(400).send('Missing required param');
   }
   chain = chain.toUpperCase();
   network = network.toLowerCase();
-  return ChainStateProvider.streamTransaction({ chain, network, txId, stream: res });
+  try {
+    const tx = await ChainStateProvider.getTransaction({ chain, network, txId });
+    if (!tx) {
+      return res.status(404).send(`txid ${txId} could not be found`);
+    } else {
+      return res.send([tx]);
+    }
+  } catch (err) {
+    return res.status(500).send(err);
+  }
 });
 
 router.get('/:txid/coins', (req, res, next) => {
   let { chain, network, txid } = req.params;
   if (typeof txid !== 'string' || typeof chain !== 'string' || typeof network !== 'string') {
     res.status(400).send('Missing required param');
-  }
-  else {
+  } else {
     chain = chain.toUpperCase();
     network = network.toLowerCase();
     ChainStateProvider.getCoinsForTx({ chain, network, txid })

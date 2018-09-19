@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { Nav, App, NavController, ViewController } from 'ionic-angular';
+import { App, NavController, ViewController } from 'ionic-angular';
 import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
 import { PriceProvider } from '../../providers/price/price';
@@ -39,7 +39,7 @@ export class DenominationComponent {
 
   public changeExplorer(chainNetwork: ChainNetwork): void {
     this.selected = chainNetwork;
-    const { chain, network } = chainNetwork;
+    const { chain, network }: ChainNetwork = chainNetwork;
     this.viewCtrl.dismiss();
     this.app.getRootNav().push('home', { chain, network});
   }
