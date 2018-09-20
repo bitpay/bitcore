@@ -5,13 +5,14 @@ import { IWallet } from '../../models/wallet';
 import { ChainNetwork } from '../../types/ChainNetwork';
 import { StreamingFindOptions } from '../../services/storage';
 import { MongoBound } from "../../models/base";
+import { ITransaction } from "../../models/transaction";
 export declare namespace CSP {
   export type StreamWalletTransactionsArgs = {
     startBlock: number;
     endBlock: number;
     startDate: Date;
     endDate: Date;
-  };
+  } & StreamingFindOptions<ITransaction>;
 
   export type StreamAddressUtxosArgs = {
     unspent: boolean;
