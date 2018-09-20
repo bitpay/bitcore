@@ -317,7 +317,6 @@ export class Transaction extends BaseModel<ITransaction> {
     let originalQuery = params.query;
     const { query, options } = Storage.getFindOptions(this, params.options);
     const finalQuery = Object.assign({}, originalQuery, query);
-    console.log('final', finalQuery, options);
     return this.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true);
   }
 
