@@ -6,6 +6,7 @@ import { ChainStateProvider } from '../providers/chain-state';
 import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { StateModel } from '../models/state';
+import { SpentHeightIndicators } from '../models/coin';
 const Chain = require('../chain');
 const LRU = require('lru-cache');
 
@@ -235,7 +236,7 @@ export class P2pService {
       chain: this.chain,
       network: this.network,
       txs: [tx],
-      height: -1,
+      height: SpentHeightIndicators.pending,
       mempoolTime: now,
       blockTime: now,
       blockTimeNormalized: now,

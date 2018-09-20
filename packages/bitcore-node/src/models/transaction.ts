@@ -1,4 +1,4 @@
-import { CoinModel, ICoin } from './coin';
+import { CoinModel, ICoin, SpentHeightIndicators } from './coin';
 import { WalletAddressModel } from './walletAddress';
 import { partition } from '../utils/partition';
 import { ObjectID } from 'bson';
@@ -184,7 +184,7 @@ export class Transaction extends BaseModel<ITransaction> {
           chain: parentChain,
           network,
           mintHeight: height,
-          spentHeight: { $gt: -2, $lt: forkHeight }
+          spentHeight: { $gt: SpentHeightIndicators.unspent, $lt: forkHeight }
         })
         .toArray();
     }
@@ -211,7 +211,13 @@ export class Transaction extends BaseModel<ITransaction> {
 
         mintOps.push({
           updateOne: {
-            filter: { mintTxid: txid, mintIndex: index, spentHeight: { $lt: 0 }, chain, network },
+            filter: {
+              mintTxid: txid,
+              mintIndex: index,
+              spentHeight: { $lt: SpentHeightIndicators.minimum },
+              chain,
+              network
+            },
             update: {
               $set: {
                 chain,
@@ -221,7 +227,7 @@ export class Transaction extends BaseModel<ITransaction> {
                 value: output.satoshis,
                 address,
                 script: scriptBuffer,
-                spentHeight: -2,
+                spentHeight: SpentHeightIndicators.unspent,
                 wallets: []
               }
             },
@@ -291,7 +297,7 @@ export class Transaction extends BaseModel<ITransaction> {
             filter: {
               mintTxid: inputObj.prevTxId,
               mintIndex: inputObj.outputIndex,
-              spentHeight: { $lt: 0 },
+              spentHeight: { $lt: SpentHeightIndicators.minimum },
               chain,
               network
             },

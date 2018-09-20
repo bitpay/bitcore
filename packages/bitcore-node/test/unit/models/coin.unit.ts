@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { CoinModel, ICoin } from '../../../src/models/coin';
+import { CoinModel, ICoin, SpentHeightIndicators } from '../../../src/models/coin';
 import { ObjectId } from 'mongodb';
 
 describe('Coin Model', function() {
@@ -19,7 +19,7 @@ describe('Coin Model', function() {
         script: Buffer.from(''),
         wallets: [],
         spentTxid: '',
-        spentHeight: -2
+        spentHeight: SpentHeightIndicators.unspent
       } as ICoin;
 
       const result = CoinModel._apiTransform(coin, { object: false });
@@ -35,7 +35,7 @@ describe('Coin Model', function() {
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
         coinbase: true,
         script: coin.script.toJSON(),
-        spentHeight: -2,
+        spentHeight: SpentHeightIndicators.unspent,
         value: 5000000000.0
       });
     });
@@ -54,7 +54,7 @@ describe('Coin Model', function() {
         script: Buffer.from(''),
         wallets: [],
         spentTxid: '',
-        spentHeight: -2
+        spentHeight: SpentHeightIndicators.unspent
       } as ICoin;
 
       const result = CoinModel._apiTransform(coin, { object: true });
@@ -65,7 +65,7 @@ describe('Coin Model', function() {
         vout: 0,
         spentTxid: '',
         mintHeight: 1,
-        spentHeight: -2,
+        spentHeight: SpentHeightIndicators.unspent,
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
         coinbase: true,
         script: coin.script,
