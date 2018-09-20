@@ -294,11 +294,17 @@ export class InternalStateProvider implements CSP.IChainStateService {
         finalQuery.blockHeight.$lte = Number(args.endBlock);
       }
       if (args.startDate) {
-        finalQuery.blockTimeNormalized = { $gte: new Date(args.startDate) };
+        const startDate = new Date(args.startDate);
+        if (startDate.getTime()) {
+          finalQuery.blockTimeNormalized = { $gte: new Date(args.startDate) };
+        }
       }
       if (args.endDate) {
-        finalQuery.blockTimeNormalized = finalQuery.blockTimeNormalized || {};
-        finalQuery.blockTimeNormalized.$lt = new Date(args.endDate);
+        const endDate = new Date(args.endDate);
+        if (endDate.getTime()) {
+          finalQuery.blockTimeNormalized = finalQuery.blockTimeNormalized || {};
+          finalQuery.blockTimeNormalized.$lt = new Date(args.endDate);
+        }
       }
       const { query, options } = Storage.getFindOptions(TransactionModel, args);
       finalQuery = Object.assign({}, finalQuery, query);
