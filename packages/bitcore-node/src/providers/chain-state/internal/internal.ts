@@ -307,9 +307,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
         }
       }
       const { query, options } = Storage.getFindOptions(TransactionModel, args);
-      console.log('before', finalQuery, query, options);
       finalQuery = Object.assign({}, finalQuery, query);
-      console.log('after', finalQuery);
       finalOptions = options;
     }
     let transactionStream = TransactionModel.getTransactions({ query: finalQuery, options: finalOptions });
