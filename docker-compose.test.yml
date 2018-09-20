@@ -21,7 +21,7 @@ services:
     image: mongo
 
   bitcoin:
-    image: ruimarinho/bitcoin-core:0.16.0-alpine
+    image: ruimarinho/bitcoin-core:0.16
     command:
       -printtoconsole
       -regtest=1
