@@ -117,25 +117,29 @@ export class StorageService {
       res.end();
     });
   }
-
   getFindOptions<T>(model: TransformableModel<T>, originalOptions: StreamingFindOptions<T>) {
     let options: StreamingFindOptions<T> = {};
     let query: any = {};
-    if (
-      originalOptions.since !== undefined &&
-      originalOptions.paging &&
+    if ( originalOptions.paging &&
       this.validPagingProperty(model, originalOptions.paging)
     ) {
-      options.since = this.typecastForDb(model, originalOptions.paging, originalOptions.since);
+      //if (originalOptions.since !== undefined) {
+      //  options.since = this.typecastForDb(model, originalOptions.paging, originalOptions.since);
+      //}
       if (originalOptions.direction && Number(originalOptions.direction) === 1) {
-        query[originalOptions.paging] = { $gt: originalOptions.since };
+        if (originalOptions.since !== undefined) {
+          query[originalOptions.paging] = { $gt: originalOptions.since };
+        }
         options.sort = { [originalOptions.paging]: 1 };
       } else {
-        query[originalOptions.paging] = { $lt: originalOptions.since };
+        if (originalOptions.since !== undefined) {
+          query[originalOptions.paging] = { $lt: originalOptions.since };
+        }
         options.sort = { [originalOptions.paging]: -1 };
       }
     }
     options.limit = Math.min(originalOptions.limit || 100, 1000);
+console.log('[storage.ts.138:options:]',options); //TODO
     return { query, options };
   }
 
@@ -148,6 +152,7 @@ export class StorageService {
   ) {
     const { query, options } = this.getFindOptions(model, originalOptions);
     const finalQuery = Object.assign({}, originalQuery, query);
+    console.log('[storage.ts.153:options:]',options); //TODO
     let cursor = model.collection.find(finalQuery, options).stream({
       transform: transform || model._apiTransform
     });
