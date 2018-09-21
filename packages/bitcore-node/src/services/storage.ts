@@ -4,6 +4,7 @@ import { TransformableModel } from '../types/TransformableModel';
 import logger from '../logger';
 import config from '../config';
 import { LoggifyClass } from '../decorators/Loggify';
+import { ObjectID } from 'bson';
 import { MongoClient, Db, Cursor } from 'mongodb';
 import { MongoBound } from '../models/base';
 import '../models';
@@ -87,6 +88,9 @@ export class StorageService {
             typecastedValue = new Date(oldValue) as any;
             break;
         }
+      // TODO: Micah check this!
+      } else if (modelKey == "_id") {
+        typecastedValue = new ObjectID(oldValue) as any;
       }
     }
     return typecastedValue;
@@ -119,27 +123,30 @@ export class StorageService {
   }
   getFindOptions<T>(model: TransformableModel<T>, originalOptions: StreamingFindOptions<T>) {
     let options: StreamingFindOptions<T> = {};
-    let query: any = {};
+    let query: any = {}, since: any;
     if ( originalOptions.paging &&
       this.validPagingProperty(model, originalOptions.paging)
     ) {
-      //if (originalOptions.since !== undefined) {
-      //  options.since = this.typecastForDb(model, originalOptions.paging, originalOptions.since);
-      //}
+
+
+      if (originalOptions.since !== undefined) {
+        since = this.typecastForDb(model, originalOptions.paging, originalOptions.since);
+      }
+
+
       if (originalOptions.direction && Number(originalOptions.direction) === 1) {
-        if (originalOptions.since !== undefined) {
-          query[originalOptions.paging] = { $gt: originalOptions.since };
+        if (since) {
+          query[originalOptions.paging] = { $gt: since };
         }
         options.sort = { [originalOptions.paging]: 1 };
       } else {
-        if (originalOptions.since !== undefined) {
-          query[originalOptions.paging] = { $lt: originalOptions.since };
+        if (since) {
+          query[originalOptions.paging] = { $lt: since };
         }
         options.sort = { [originalOptions.paging]: -1 };
       }
     }
     options.limit = Math.min(originalOptions.limit || 100, 1000);
-console.log('[storage.ts.138:options:]',options); //TODO
     return { query, options };
   }
 
@@ -152,7 +159,6 @@ console.log('[storage.ts.138:options:]',options); //TODO
   ) {
     const { query, options } = this.getFindOptions(model, originalOptions);
     const finalQuery = Object.assign({}, originalQuery, query);
-    console.log('[storage.ts.153:options:]',options); //TODO
     let cursor = model.collection.find(finalQuery, options).stream({
       transform: transform || model._apiTransform
     });

@@ -304,8 +304,6 @@ export class InternalStateProvider implements CSP.IChainStateService {
       //finalQuery = Object.assign({}, finalQuery, query);
       finalOptions = args;
     }
-    console.log('[internal.ts.307:finalQuery:]',finalQuery); //TODO
-console.log('[internal.ts.308:finalOptions:]',finalOptions); //TODO
     let transactionStream = TransactionModel.getTransactions({ query: finalQuery, options: finalOptions });
     let listTransactionsStream = new ListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(stream);

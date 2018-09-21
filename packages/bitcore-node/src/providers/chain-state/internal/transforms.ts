@@ -61,6 +61,7 @@ export class ListTransactionsStream extends Transform {
         if (!sendingToOurself) {
           self.push(
             JSON.stringify({
+              id: transaction._id,
               txid: transaction.txid,
               fee: transaction.fee,
               size: transaction.size,
@@ -75,6 +76,7 @@ export class ListTransactionsStream extends Transform {
         } else {
           self.push(
             JSON.stringify({
+              id: transaction._id,
               txid: transaction.txid,
               fee: transaction.fee,
               size: transaction.size,
@@ -91,6 +93,7 @@ export class ListTransactionsStream extends Transform {
       if (fee > 0) {
         self.push(
           JSON.stringify({
+            id: transaction._id,
             txid: transaction.txid,
             category: 'fee',
             satoshis: -fee,
@@ -111,6 +114,7 @@ export class ListTransactionsStream extends Transform {
         if (weReceived) {
           self.push(
             JSON.stringify({
+              id: transaction._id,
               txid: transaction.txid,
               fee: transaction.fee,
               size: transaction.size,
