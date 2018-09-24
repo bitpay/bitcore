@@ -9,5 +9,6 @@
       "path": "/api",
       "proxyUrl": "http://localhost:3000/api"
     }
-  ]
+  ],
+  "hooks": {}
 }
