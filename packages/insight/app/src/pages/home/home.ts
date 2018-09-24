@@ -24,9 +24,9 @@ export class HomePage {
     private apiProvider: ApiProvider,
     private priceProvider: PriceProvider
   ) {
-    const chain: string = navParams.get('chain') || apiProvider.selectedChain;
-    const network: string = navParams.get('network') || apiProvider.selectedNetwork;
+    const chain: string = navParams.get('chain') || apiProvider.networkSettings.value.selectedNetwork.chain;
+    const network: string = navParams.get('network') || apiProvider.networkSettings.value.selectedNetwork.network;
     this.priceProvider.setCurrency(chain);
-    this.apiProvider.changeChain(chain, network);
+    this.apiProvider.changeNetwork({ chain, network });
   }
 }

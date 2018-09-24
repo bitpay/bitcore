@@ -82,8 +82,8 @@ export class LatestBlocksComponent {
 
   public goToBlock(blockHash: string): void {
     this.navCtrl.push('block-detail', {
-      chain: this.apiProvider.selectedChain,
-      network: this.apiProvider.selectedNetwork,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
       blockHash: blockHash
     });
   }
@@ -94,8 +94,8 @@ export class LatestBlocksComponent {
 
   public goToBlocks(): void {
     this.navCtrl.push('blocks', {
-      chain: this.apiProvider.selectedChain,
-      network: this.apiProvider.selectedNetwork
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
     });
   }
 

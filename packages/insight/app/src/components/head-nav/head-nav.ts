@@ -48,8 +48,8 @@ export class HeadNavComponent {
         console.log('block', data);
         let parsedData: any = JSON.parse(data._body);
         this.navCtrl.push('block-detail', {
-          chain: this.apiProvider.selectedChain,
-          network: this.apiProvider.selectedNetwork,
+          chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+          network: this.apiProvider.networkSettings.value.selectedNetwork.network,
           blockHash: parsedData.hash
         });
       },
@@ -60,8 +60,8 @@ export class HeadNavComponent {
             console.log('tx', data);
             let parsedData: any = JSON.parse(data._body);
             this.navCtrl.push('transaction', {
-              chain: this.apiProvider.selectedChain,
-              network: this.apiProvider.selectedNetwork,
+              chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+              network: this.apiProvider.networkSettings.value.selectedNetwork.network,
               txId: parsedData[0].txid
             });
           },
@@ -72,8 +72,8 @@ export class HeadNavComponent {
                 console.log('addr', data);
                 let parsedData: any = JSON.parse(data._body);
                 this.navCtrl.push('address', {
-                  chain: this.apiProvider.selectedChain,
-                  network: this.apiProvider.selectedNetwork,
+                  chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+                  network: this.apiProvider.networkSettings.value.selectedNetwork.network,
                   addrStr: parsedData[0].address
                 });
               },
@@ -84,8 +84,8 @@ export class HeadNavComponent {
                     console.log('height', data);
                     let parsedData: any = JSON.parse(data._body);
                     this.navCtrl.push('block-detail', {
-                      chain: this.apiProvider.selectedChain,
-                      network: this.apiProvider.selectedNetwork,
+                      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+                      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
                       blockHash: parsedData.blockHash
                     });
                   },

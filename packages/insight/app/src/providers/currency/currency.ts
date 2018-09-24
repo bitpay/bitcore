@@ -20,7 +20,7 @@ export class CurrencyProvider {
   public explorers: any = [];
 
   constructor(private apiProvider: ApiProvider) {
-    this.currencySymbol = this.apiProvider.selectedChain.toUpperCase();
+    this.currencySymbol = this.apiProvider.networkSettings.value.selectedNetwork.chain.toUpperCase();
   }
 
   public roundFloat(aFloat: number, decimalPlaces: number): number {
@@ -36,7 +36,7 @@ export class CurrencyProvider {
 
     if (this.currencySymbol === 'USD') {
       response = this.roundFloat(value * this.factor, 2);
-    } else if (this.currencySymbol === 'm' + this.apiProvider.selectedChain) {
+    } else if (this.currencySymbol === 'm' + this.apiProvider.networkSettings.value.selectedNetwork.chain) {
       this.factor = 1000;
       response = this.roundFloat(value * this.factor, 5);
     } else if (this.currencySymbol === 'bits') {

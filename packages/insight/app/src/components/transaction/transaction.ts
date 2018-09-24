@@ -54,16 +54,16 @@ export class TransactionComponent {
 
   public goToTx(txId: string): void {
     this.navCtrl.push('transaction', {
-      chain: this.apiProvider.selectedChain,
-      network: this.apiProvider.selectedNetwork,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
       txId: txId
     });
   }
 
   public goToAddress(addrStr: string): void {
     this.navCtrl.push('address', {
-      chain: this.apiProvider.selectedChain,
-      network: this.apiProvider.selectedNetwork,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
       addrStr: addrStr
     });
   }

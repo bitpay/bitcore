@@ -29,7 +29,7 @@ export class BroadcastTxPage {
   ) {
     const chain: string = navParams.get('chain');
     const network: string = navParams.get('network');
-    this.apiProvider.changeChain(chain, network);
+    this.apiProvider.changeNetwork({ chain, network });
 
     this.title = 'Broadcast Transaction';
     this.txForm = formBuilder.group({
