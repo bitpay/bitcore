@@ -306,9 +306,9 @@ export class InternalStateProvider implements CSP.IChainStateService {
           finalQuery.blockTimeNormalized.$lt = new Date(args.endDate);
         }
       }
-      const { query, options } = Storage.getFindOptions(TransactionModel, args);
-      finalQuery = Object.assign({}, finalQuery, query);
-      finalOptions = options;
+      //const { query, options } = Storage.getFindOptions(TransactionModel, args);
+      //finalQuery = Object.assign({}, finalQuery, query);
+      finalOptions = args;
     }
     let transactionStream = TransactionModel.getTransactions({ query: finalQuery, options: finalOptions });
     let listTransactionsStream = new ListTransactionsStream(wallet);
@@ -342,7 +342,11 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getFee(params: CSP.GetEstimateSmartFeeParams) {
     const { chain, network, target } = params;
-    return this.getRPC(chain, network).getEstimateSmartFee(Number(target));
+    if (chain === 'BCH') {
+      return this.getRPC(chain, network).getEstimateFee(Number(target));
+    } else {
+      return this.getRPC(chain, network).getEstimateSmartFee(Number(target));
+    }
   }
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {

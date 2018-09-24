@@ -4,6 +4,7 @@ import { TransformableModel } from '../types/TransformableModel';
 import logger from '../logger';
 import config from '../config';
 import { LoggifyClass } from '../decorators/Loggify';
+import { ObjectID } from 'bson';
 import { MongoClient, Db, Cursor } from 'mongodb';
 import { MongoBound } from '../models/base';
 import '../models';
@@ -87,6 +88,9 @@ export class StorageService {
             typecastedValue = new Date(oldValue) as any;
             break;
         }
+      // TODO: Micah check this!
+      } else if (modelKey == "_id") {
+        typecastedValue = new ObjectID(oldValue) as any;
       }
     }
     return typecastedValue;
@@ -117,21 +121,28 @@ export class StorageService {
       res.end();
     });
   }
-
   getFindOptions<T>(model: TransformableModel<T>, originalOptions: StreamingFindOptions<T>) {
     let options: StreamingFindOptions<T> = {};
-    let query: any = {};
-    if (
-      originalOptions.since !== undefined &&
-      originalOptions.paging &&
+    let query: any = {}, since: any;
+    if ( originalOptions.paging &&
       this.validPagingProperty(model, originalOptions.paging)
     ) {
-      options.since = this.typecastForDb(model, originalOptions.paging, originalOptions.since);
+
+
+      if (originalOptions.since !== undefined) {
+        since = this.typecastForDb(model, originalOptions.paging, originalOptions.since);
+      }
+
+
       if (originalOptions.direction && Number(originalOptions.direction) === 1) {
-        query[originalOptions.paging] = { $gt: originalOptions.since };
+        if (since) {
+          query[originalOptions.paging] = { $gt: since };
+        }
         options.sort = { [originalOptions.paging]: 1 };
       } else {
-        query[originalOptions.paging] = { $lt: originalOptions.since };
+        if (since) {
+          query[originalOptions.paging] = { $lt: since };
+        }
         options.sort = { [originalOptions.paging]: -1 };
       }
     }
