@@ -58,8 +58,8 @@ export class InsightApp {
     this.menu.close();
     // navigate to the new page if it is not the current page
     this.nav.push(page.component, {
-      chain: this.apiProvider.selectedChain,
-      network: this.apiProvider.selectedNetwork
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
     });
   }
 }

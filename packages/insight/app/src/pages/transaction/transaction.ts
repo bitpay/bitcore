@@ -33,7 +33,7 @@ export class TransactionPage {
     this.txId = navParams.get('txId');
     const chain: string = navParams.get('chain');
     const network: string = navParams.get('network');
-    this.apiProvider.changeChain(chain, network);
+    this.apiProvider.changeNetwork({ chain, network });
   }
 
   public ionViewDidLoad(): void {
@@ -52,8 +52,8 @@ export class TransactionPage {
 
   public goToBlock(blockHash: string): void {
     this.navCtrl.push('block-detail', {
-      chain: this.apiProvider.selectedChain,
-      network: this.apiProvider.selectedNetwork,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
       blockHash: blockHash
     });
   }

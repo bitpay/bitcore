@@ -17,8 +17,8 @@ export class CoinComponent {
 
   public goToTx(txId: string): void {
     this.navCtrl.push('transaction', {
-      chain: this.apiProvider.selectedChain,
-      network: this.apiProvider.selectedNetwork,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
       txId: txId
     });
   }

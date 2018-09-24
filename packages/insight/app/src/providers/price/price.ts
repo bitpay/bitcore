@@ -33,7 +33,7 @@ export class PriceProvider {
           console.error('err getting currency', err);
         }
       );
-    } else if (currency === 'm' + this.api.selectedChain) {
+    } else if (currency === 'm' + this.api.networkSettings.value.selectedNetwork.chain) {
       this.currency.factor = 1000;
     } else {
       this.currency.factor = 1;

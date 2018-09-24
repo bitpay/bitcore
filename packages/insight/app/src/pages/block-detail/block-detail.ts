@@ -35,7 +35,7 @@ export class BlockDetailPage {
     this.blockHash = navParams.get('blockHash');
     const chain: string = navParams.get('chain');
     const network: string = navParams.get('network');
-    this.apiProvider.changeChain(chain, network);
+    this.apiProvider.changeNetwork({ chain, network });
   }
 
   public ionViewDidLoad(): void {
@@ -53,16 +53,16 @@ export class BlockDetailPage {
 
   public goToPreviousBlock(): void {
     this.navCtrl.push('block-detail', {
-      chain: this.apiProvider.selectedChain,
-      network: this.apiProvider.selectedNetwork,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
       blockHash: this.block.previousblockhash
     });
   }
 
   public goToNextBlock(): void {
     this.navCtrl.push('block-detail', {
-      chain: this.apiProvider.selectedChain,
-      network: this.apiProvider.selectedNetwork,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
       blockHash: this.block.nextblockhash
     });
   }

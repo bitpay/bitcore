@@ -36,7 +36,7 @@ export class AddressPage {
     this.addrStr = navParams.get('addrStr');
     const chain: string = navParams.get('chain');
     const network: string = navParams.get('network');
-    this.apiProvider.changeChain(chain, network);
+    this.apiProvider.changeNetwork({ chain, network });
   }
 
   public ionViewDidLoad(): void {

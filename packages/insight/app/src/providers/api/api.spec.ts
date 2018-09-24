@@ -23,7 +23,7 @@ describe('ApiProvider', () => {
     api = provider;
   }));
 
-  it('initialises', () => {
+  it('initializes', () => {
     expect(api).not.toBeNull();
     expect(api.apiPrefix).toBe('/api');
   });
