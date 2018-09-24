@@ -99,7 +99,7 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
         }
       });
       await Promise.all(
-        partition(txUpdates, txUpdates.length/8).map(txUpdate => {
+        partition(txUpdates, txUpdates.length/16).map(txUpdate => {
           return TransactionModel.collection.bulkWrite(txUpdate, { ordered: false });
         })
       )
