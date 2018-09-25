@@ -25,6 +25,7 @@ export type ITransaction = {
   fee: number;
   size: number;
   locktime: number;
+  raw: string;
   wallets: ObjectID[];
 };
 
@@ -152,6 +153,7 @@ export class Transaction extends BaseModel<ITransaction> {
               blockTime,
               blockTimeNormalized,
               coinbase: tx.isCoinbase(),
+              raw: tx.toBuffer().toString('hex'),
               size: tx.toBuffer().length,
               locktime: tx.nLockTime,
               wallets
