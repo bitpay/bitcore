@@ -15,8 +15,10 @@ const main = async () => {
   const { name, path, startDate, endDate } = program;
   try {
     const wallet = await Wallet.loadWallet({ name, path });
-    const txStream = wallet.listTransactions({ startDate, endDate });
-    txStream.pipe(process.stdout);
+    const txStream = await wallet.listTransactions({ startDate, endDate });
+    for(let tx of txStream) {
+      console.log(tx);
+    }
   } catch (e) {
     console.error(e);
   }

@@ -69,8 +69,8 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
     const { walletUpdates, coinUpdates } = updates;
     const { chain, network } = wallet;
 
-    let walletUpdateBatches = partition(walletUpdates, 500);
-    let coinUpdateBatches = partition(coinUpdates, 500);
+    let walletUpdateBatches = partition(walletUpdates, walletUpdates.length/8);
+    let coinUpdateBatches = partition(coinUpdates, coinUpdates.length/8);
 
     return new Promise(async resolve => {
       await Promise.all(
@@ -99,7 +99,7 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
         }
       });
       await Promise.all(
-        partition(txUpdates, 500).map(txUpdate => {
+        partition(txUpdates, txUpdates.length/16).map(txUpdate => {
           return TransactionModel.collection.bulkWrite(txUpdate, { ordered: false });
         })
       )
