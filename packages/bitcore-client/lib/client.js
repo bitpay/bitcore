@@ -61,7 +61,7 @@ Client.prototype.getCoins = async function (params) {
   });
 };
 
-Client.prototype.listTransactions = async function*(params) {
+Client.prototype.listTransactions = async function(params) {
   const getTransactions = ({pubKey, startDate, endDate, since}) => {
     let url = `${this.baseUrl}/wallet/${pubKey}/transactions?startDate=${startDate}&endDate=${endDate}&paging=_id&limit=1000`;
     if(since) {
@@ -83,7 +83,6 @@ Client.prototype.listTransactions = async function*(params) {
       if(!results) {
         throw new Error('No more results');
       }
-      yield results;
       splitResults = results.split('\n').filter(r => r!= '');
       totalResults = totalResults.concat(splitResults);
       const last = JSON.parse(splitResults[splitResults.length - 1]);

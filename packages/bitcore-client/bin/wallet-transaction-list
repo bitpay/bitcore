@@ -1,4 +1,4 @@
-#!/usr/bin/env node --harmony-async-iteration
+#!/usr/bin/env node
 
 const program = require('../lib/program');
 const Wallet = require('../lib/wallet');
@@ -16,7 +16,7 @@ const main = async () => {
   try {
     const wallet = await Wallet.loadWallet({ name, path });
     const txStream = await wallet.listTransactions({ startDate, endDate });
-    for await(let tx of txStream) {
+    for(let tx of txStream) {
       console.log(tx);
     }
   } catch (e) {
