@@ -1,10 +1,9 @@
 {
-  "extends": "../tsconfig.ng-cli.json",
+  "extends": "../tsconfig.json",
   "compilerOptions": {
     "outDir": "../out-tsc/spec",
+    "baseUrl": "./",
     "module": "commonjs",
-    "target": "es5",
-    "baseUrl": "",
     "types": [
       "jasmine",
       "node"
@@ -14,6 +13,7 @@
     "test.ts"
   ],
   "include": [
+    "polyfills.ts",
     "**/*.spec.ts",
     "**/*.d.ts"
   ]
