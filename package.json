@@ -1,8 +1,7 @@
 {
   "version": "8.0.0",
   "prettier": {
-    "singleQuote": true,
-    "printWidth": 120
+    "singleQuote": true
   },
   "scripts": {
     "build": "docker build -t bitcore-node .",
@@ -11,11 +10,18 @@
     "node": "cd packages/bitcore-node && npm start"
   },
   "devDependencies": {
+    "cz-conventional-changelog": "^2.1.0",
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
     "lerna": "^2.9.1",
+    "prettier": "^1.14.3",
     "typescript": "^2.8.3",
     "typescript-eslint-parser": "^15.0.0"
+  },
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
   }
 }

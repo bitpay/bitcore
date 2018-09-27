@@ -5,8 +5,5 @@
     "baseUrl": "./",
     "module": "es2015"
   },
-  "exclude": [
-    "test.ts",
-    "**/*.spec.ts"
-  ]
+  "exclude": ["test.ts", "**/*.spec.ts"]
 }
