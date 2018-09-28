@@ -12,8 +12,8 @@ const routes: Routes = [
     loadChildren: './home/home.module#HomePageModule'
   },
   {
-    path: 'list',
-    loadChildren: './list/list.module#ListPageModule'
+    path: 'blocks',
+    loadChildren: './blocks/blocks.module#BlocksPageModule'
   }
 ];
 
