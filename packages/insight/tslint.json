@@ -9,7 +9,8 @@
       "@angular",
       "zone.js",
       "@ionic-native",
-      "core-js"
+      "core-js",
+      "rxjs"
     ],
     "component-class-suffix": [true, "Component", "Page"]
   }

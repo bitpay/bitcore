@@ -1,8 +1,11 @@
-export interface ChainNetwork {
-  chain: string;
-  network: string;
+export type Ticker = 'BTC' | 'BCH';
+export type Network = 'mainnet' | 'testnet' | 'regtest';
+
+export interface Chain {
+  ticker: Ticker;
+  network: Network;
 }
 export interface NetworkSettings {
-  availableNetworks: ChainNetwork[];
-  selectedNetwork: ChainNetwork;
+  availableNetworks: Chain[];
+  selectedNetwork: Chain;
 }

@@ -1,10 +1,10 @@
 export interface Block {
-  public readonly height: number;
-  public readonly size: number;
-  public readonly hash: string;
-  public readonly timestamp: number;
-  public readonly transactionCount: number;
-  public readonly poolName: string;
+  readonly height: number;
+  readonly size: number;
+  readonly hash: string;
+  readonly timestamp: number;
+  readonly transactionCount: number;
+  readonly poolName: string;
 }
 
 export interface InsightBlockObject {
