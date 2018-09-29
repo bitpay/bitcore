@@ -333,6 +333,7 @@ export class Transaction extends BaseModel<ITransaction> {
       blockTimeNormalized: tx.blockTimeNormalized,
       coinbase: tx.coinbase,
       locktime: tx.locktime,
+      raw: tx.raw,
       size: tx.size,
       fee: tx.fee
     };

@@ -151,7 +151,6 @@ export class Block extends BaseModel<IBlock> {
         localTip = prevBlock;
       } else {
         logger.error(`Previous block isn't in the DB need to roll back until we have a block in common`);
-        localTip.height = Math.max(localTip.height - 100, 0);
       }
     }
     logger.info(`Resetting tip to ${localTip.height}`, { chain, network });
@@ -185,6 +184,7 @@ export class Block extends BaseModel<IBlock> {
       timeNormalized: block.timeNormalized,
       nonce: block.nonce,
       bits: block.bits,
+      raw: block.raw,
       /*
        *difficulty: block.difficulty,
        */
