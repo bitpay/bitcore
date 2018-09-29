@@ -58,7 +58,9 @@ export async function blocks(
     expect(block.nonce, 'block nonce').to.equal(truth.nonce);
     expect(block.previousBlockHash, 'block prev hash').to.equal(truth.previousblockhash);
     expect(block.transactionCount, 'block tx count').to.equal(truth.tx.length);
-    expect(block.size, 'block size').to.lte(truth.size);
+    if (info.network !== 'regtest') {
+      expect(block.size, 'block size').to.equal(truth.size);
+    }
     expect(block.bits.toString(16), 'block bits').to.equal(truth.bits);
     expect(block.processed, 'block processed').to.equal(true);
     expect(block.time.getTime(), 'block time').to.equal(truth.time * 1000);
@@ -138,8 +140,7 @@ export async function blocks(
   expect(heights.filter(h => !h).length, 'no duplicate heights').to.equal(0);
 
   // Check increasing times
-  const increases = l => !!l.reduce((prev, curr) => (prev <= curr ? curr : undefined));
-  expect(increases(times), 'block times only increase').to.be.true;
+  const increases = l => !!l.reduce((prev, curr) => (prev < curr ? curr : undefined));
   expect(increases(normalizedTimes), 'normalized block times only increase').to.be.true;
 }
 
@@ -167,7 +168,9 @@ export async function transactions(
     logger.info(`verifying tx ${tx.txid}: ${tx.blockHeight}`);
     const truth = await rpc.transaction(tx.txid, tx.blockHash);
 
-    expect(tx.size, 'tx size').to.lte(truth.size);
+    if (info.network !== 'regtest') {
+      expect(tx.size, 'tx size').to.equal(truth.size);
+    }
     expect(tx.locktime, 'tx locktime').to.equal(truth.locktime);
 
     {
