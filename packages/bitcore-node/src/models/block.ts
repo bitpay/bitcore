@@ -58,7 +58,7 @@ export class Block extends BaseModel<IBlock> {
     const header = block.header.toObject();
     const blockTime = header.time * 1000;
 
-    let reorg = await this.handleReorg({ header, chain, network });
+    const reorg = await this.handleReorg({ header, chain, network });
 
     if (reorg) {
       return Promise.reject('reorg');
