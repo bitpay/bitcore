@@ -23,6 +23,7 @@ export type IBlock = {
   bits: number;
   reward: number;
   processed: boolean;
+  raw: string;
 };
 
 @LoggifyClass
@@ -85,6 +86,7 @@ export class Block extends BaseModel<IBlock> {
           network,
           hash: block.hash,
           height,
+          raw: block.toBuffer().toString('hex'),
           version: header.version,
           previousBlockHash: header.prevHash,
           merkleRoot: header.merkleRoot,
@@ -136,17 +138,29 @@ export class Block extends BaseModel<IBlock> {
 
   async handleReorg(params: { header?: Bitcoin.Block.HeaderObj; chain: string; network: string }): Promise<boolean> {
     const { header, chain, network } = params;
-    const localTip = await this.getLocalTip(params);
+    let localTip = await this.getLocalTip(params);
     if (header && localTip && localTip.hash === header.prevHash) {
       return false;
     }
     if (!localTip || localTip.height === 0) {
       return false;
     }
-    logger.info(`Resetting tip to ${localTip.previousBlockHash}`, { chain, network });
-    await this.collection.deleteMany({ chain, network, height: { $gte: localTip.height } });
-    await TransactionModel.collection.deleteMany({ chain, network, blockHeight: { $gte: localTip.height } });
-    await CoinModel.collection.deleteMany({ chain, network, mintHeight: { $gte: localTip.height } });
+    if (header) {
+      const prevBlock = await this.collection.findOne({ chain, network, hash: header.prevHash });
+      if (prevBlock) {
+        localTip = prevBlock;
+      } else {
+        logger.error(`Previous block isn't in the DB need to roll back until we have a block in common`);
+      }
+    }
+    logger.info(`Resetting tip to ${localTip.height}`, { chain, network });
+    const reorgOps = [
+      this.collection.deleteMany({ chain, network, height: { $gte: localTip.height } }),
+      TransactionModel.collection.deleteMany({ chain, network, blockHeight: { $gte: localTip.height } }),
+      CoinModel.collection.deleteMany({ chain, network, mintHeight: { $gte: localTip.height } })
+    ];
+    await Promise.all(reorgOps);
+
     await CoinModel.collection.updateMany(
       { chain, network, spentHeight: { $gte: localTip.height } },
       { $set: { spentTxid: null, spentHeight: SpentHeightIndicators.pending } }
@@ -170,6 +184,7 @@ export class Block extends BaseModel<IBlock> {
       timeNormalized: block.timeNormalized,
       nonce: block.nonce,
       bits: block.bits,
+      raw: block.raw,
       /*
        *difficulty: block.difficulty,
        */

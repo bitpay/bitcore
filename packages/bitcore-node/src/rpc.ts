@@ -183,6 +183,7 @@ export type RPCTransaction = {
   hex: string;
   txid: string;
   hash: string;
+  strippedsize: number;
   size: number;
   vsize: number;
   version: number;

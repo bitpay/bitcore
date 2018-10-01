@@ -266,6 +266,7 @@ describe('Block Model', function() {
         time: new Date(),
         timeNormalized: new Date(),
         nonce: 1,
+        raw: '',
         previousBlockHash: 'aabb',
         nextBlockHash: 'bbcc',
         transactionCount: 1,
