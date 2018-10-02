@@ -104,41 +104,49 @@ export class Transaction extends BaseModel<ITransaction> {
     network: string;
     mintOps?: Array<any>;
   }) {
-    let { blockHash, blockTime, blockTimeNormalized, chain, height, network, txs, initialSyncComplete } = params;
+    let { blockHash, blockTime, blockTimeNormalized, chain, height, network, txs } = params;
     let txids = txs.map(tx => tx._hash);
 
-    type TaggedCoin = ICoin & { _id: string };
-    let mintWallets;
-    let spentWallets;
+    const mintedPromise = CoinModel.collection.find({ mintTxid: { $in: txids }, chain, network }).toArray();
+    const spentPromise = CoinModel.collection.find({ spentTxid: { $in: txids }, chain, network }).toArray();
+    const [minted, spent] = await Promise.all([mintedPromise, spentPromise]);
+    type CoinGroup = { [txid: string]: { total: number; wallets: Array<ObjectID> } };
+    const groupedMints = minted.reduce<CoinGroup>((agg, current) => {
+      if (!agg[current.mintTxid]) {
+        agg[current.mintTxid] = {
+          total: current.value,
+          wallets: current.wallets || []
+        };
+      } else {
+        agg[current.mintTxid].total += current.value;
+        agg[current.mintTxid].wallets.push(...current.wallets);
+      }
+      return agg;
+    }, {});
 
-    if (initialSyncComplete) {
-      mintWallets = await CoinModel.collection
-        .aggregate<TaggedCoin>([
-          { $match: { mintTxid: { $in: txids }, chain, network } },
-          { $unwind: '$wallets' },
-          { $group: { _id: '$mintTxid', wallets: { $addToSet: '$wallets' } } }
-        ])
-        .toArray();
-
-      spentWallets = await CoinModel.collection
-        .aggregate<TaggedCoin>([
-          { $match: { spentTxid: { $in: txids }, chain, network } },
-          { $unwind: '$wallets' },
-          { $group: { _id: '$spentTxid', wallets: { $addToSet: '$wallets' } } }
-        ])
-        .toArray();
-    }
+    const groupedSpends = spent.reduce<CoinGroup>((agg, current) => {
+      if (!agg[current.spentTxid]) {
+        agg[current.spentTxid] = {
+          total: current.value,
+          wallets: current.wallets || []
+        };
+      } else {
+        agg[current.spentTxid].total += current.value;
+        agg[current.spentTxid].wallets.push(...current.wallets);
+      }
+      return agg;
+    }, {});
 
     let txOps = txs.map((tx, index) => {
-      let wallets = new Array<ObjectID>();
-      if (initialSyncComplete) {
-        for (let wallet of mintWallets.concat(spentWallets).filter(wallet => wallet._id === txids[index])) {
-          for (let walletMatch of wallet.wallets) {
-            if (!wallets.find(wallet => wallet.toHexString() === walletMatch.toHexString())) {
-              wallets.push(walletMatch);
-            }
-          }
-        }
+      const txid = tx._hash!;
+      const minted = groupedMints[txid] || {};
+      const spent = groupedSpends[txid] || {};
+      const mintedWallets = minted.wallets || [];
+      const spentWallets = spent.wallets || [];
+      const wallets = mintedWallets.concat(spentWallets);
+      let fee = 0;
+      if (groupedMints[txid] && groupedSpends[txid]) {
+        fee = groupedSpends[txid].total - groupedMints[txid].total;
       }
 
       return {
@@ -153,6 +161,7 @@ export class Transaction extends BaseModel<ITransaction> {
               blockTime,
               blockTimeNormalized,
               coinbase: tx.isCoinbase(),
+              fee,
               raw: tx.toBuffer().toString('hex'),
               size: tx.toBuffer().length,
               locktime: tx.nLockTime,
