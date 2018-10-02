@@ -336,7 +336,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
 
       blockchainExplorer.getUtxos = function(addresses, cb) {
         var selected = _.filter(helpers._utxos, function(utxo) {
-          return _.contains(addresses, utxo.address);
+          return _.includes(addresses, utxo.address);
         });
         return cb(null, selected);
       };
@@ -382,7 +382,7 @@ helpers.stubHistory = function(txs) {
 
 helpers.stubFeeLevels = function(levels) {
   blockchainExplorer.estimateFee = function(nbBlocks, cb) {
-    var result = _.zipObject(_.map(_.pick(levels, nbBlocks), function(fee, n) {
+    var result = _.fromPairs(_.map(_.pick(levels, nbBlocks), function(fee, n) {
       return [+n, fee > 0 ? fee / 1e8 : fee];
     }));
     return cb(null, result);
@@ -405,7 +405,7 @@ helpers.stubAddressActivity = function(activeAddresses, failsOn) {
 
     stubAddressActivityFailsOnCount++;
 
-    return cb(null, _.contains(activeAddresses, address));
+    return cb(null, _.includes(activeAddresses, address));
   };
 };
 
