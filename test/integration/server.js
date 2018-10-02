@@ -6244,7 +6244,6 @@ console.log('[server.js.425:err:]',err); //TODO
     it('should get tx history from insight', function(done) {
       helpers.stubHistory(TestData.history);
       server.getTxHistory({}, function(err, txs) {
-console.log('[server.js.6215:err:]',err); //TODO
         should.not.exist(err);
         should.exist(txs);
         txs.length.should.equal(TestData.history.length);

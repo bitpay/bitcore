@@ -81,6 +81,8 @@ helpers.beforeEach = function(cb) {
 };
 
 helpers.after = function(cb) {
+
+console.log('[helpers.js.80]'); //TODO
   WalletService.shutDown(cb);
 };
 
@@ -386,6 +388,42 @@ helpers.stubHistory = function(txs) {
     return cb(null, page, totalItems);
   };
 };
+
+
+helpers.stubHistoryV8 = function(nr) {
+  var txs = [], i = 0;
+
+  while(i < nr) {
+    txs.push({
+       id: 'id' + i,
+        txid:
+        'txid' + i,
+        size: 226,
+        category: 'receive',
+        satoshis: 30000,
+        height: 1258355,
+        address: 'muFJi3ZPfR5nhxyD7dfpx2nYZA8Wmwzgck',
+        blockTime: '2018-09-21T18:08:31.000Z',
+    });
+    i++;
+  }
+  blockchainExplorer.getTransactions = function(walletId, since, limit, cb) {
+    var MAX_BATCH_SIZE = 100;
+    var nbTxs = txs.length;
+
+    var idx = 0;
+   
+    if (since) {
+      idx = _.findIndex(txs, {id: since});
+      if (idx < 0) return cb(null,[]);
+      idx++;
+    }
+
+    var page = txs.slice(idx, idx+limit);
+    return cb(null, page);
+  };
+};
+
 
 helpers.stubFeeLevels = function(levels) {
   blockchainExplorer.estimateFee = function(nbBlocks, cb) {
