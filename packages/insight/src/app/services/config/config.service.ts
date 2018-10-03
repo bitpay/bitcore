@@ -15,6 +15,7 @@ export class ConfigService {
     environment.expectedNetworks
   );
   public apiPrefix = new BehaviorSubject<string>(environment.apiPrefix);
+  public ratesApi = new BehaviorSubject<string>(environment.ratesApi);
   constructor(private logger: NGXLogger) {
     this.logger.debug(
       `ConfigService initialized in ${

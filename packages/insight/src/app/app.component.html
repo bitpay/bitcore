@@ -1,18 +1,25 @@
 <ion-app>
-  <ion-split-pane when="lg">
-    <ion-menu>
-      <ion-content>
-        <ion-list>
-          <ion-menu-toggle auto-hide="false" *ngFor="let p of appPages">
-            <ion-item [routerDirection]="'root'" [routerLink]="[p.url]">
-              <ion-label>
-                {{ p.title }}
-              </ion-label>
-            </ion-item>
-          </ion-menu-toggle>
-        </ion-list>
-      </ion-content>
-    </ion-menu>
-    <ion-router-outlet main></ion-router-outlet>
-  </ion-split-pane>
+    <ion-split-pane when="lg">
+        <ion-menu>
+            <ion-content
+                class="dark-theme"
+                padding
+            >
+                <ion-list>
+                    <ion-menu-toggle
+                        auto-hide="false"
+                        *ngFor="let p of appPages"
+                    >
+                        <ion-item
+                            [routerDirection]="'root'"
+                            [routerLink]="[p.url]"
+                        >
+                            <ion-label>{{ p.title }}</ion-label>
+                        </ion-item>
+                    </ion-menu-toggle>
+                </ion-list>
+            </ion-content>
+        </ion-menu>
+        <ion-router-outlet main></ion-router-outlet>
+    </ion-split-pane>
 </ion-app>

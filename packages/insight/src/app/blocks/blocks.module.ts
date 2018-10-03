@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
 
+import { SharedModule } from '../shared/shared.module';
 import { BlockListComponent } from './block-list/block-list.component';
+import { BlockComponent } from './block/block.component';
 import { BlocksPage } from './blocks.page';
 
 @NgModule({
@@ -17,8 +19,9 @@ import { BlocksPage } from './blocks.page';
         path: '',
         component: BlocksPage
       }
-    ])
+    ]),
+    SharedModule
   ],
-  declarations: [BlocksPage, BlockListComponent]
+  declarations: [BlocksPage, BlockListComponent, BlockComponent]
 })
 export class BlocksPageModule {}

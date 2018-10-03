@@ -1,0 +1,4 @@
+<span title="{{value | date:'long'}}">
+    <ng-container *ngIf="inThePastDay; else fullDate">{{value | date:'shortTime'}}</ng-container>
+    <ng-template #fullDate>{{value | date:'short'}}</ng-template>
+</span>

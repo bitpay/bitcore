@@ -53,6 +53,7 @@
     "@ionic/angular": "^4.0.0-beta.12",
     "backoff-rxjs": "0.0.10",
     "core-js": "^2.5.3",
+    "fast-deep-equal": "^2.0.1",
     "ngx-logger": "^3.3.2",
     "rxjs": "~6.3.3",
     "zone.js": "^0.8.26"

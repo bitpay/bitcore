@@ -1,29 +1,42 @@
-import { Component, Input, OnDestroy, OnInit } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  Input,
+  OnInit
+} from '@angular/core';
+import * as equal from 'fast-deep-equal';
+import { combineLatest, Observable } from 'rxjs';
+import { distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
 import { ApiService } from '../../services/api/api.service';
-import { IBlock } from '../../types/bitcore-node';
-import { Network, Ticker } from '../../types/configuration';
+import { IBlock, StreamingFindOptions } from '../../types/bitcore-node';
+import { Chain } from '../../types/configuration';
 
 @Component({
   selector: 'app-block-list',
   templateUrl: './block-list.component.html',
-  styleUrls: ['./block-list.component.scss']
+  styleUrls: ['./block-list.component.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class BlockListComponent {
+export class BlockListComponent implements OnInit {
   @Input()
-  public ticker: Ticker;
+  chain: Observable<Chain>;
   @Input()
-  public network: Network;
+  query: Observable<StreamingFindOptions<IBlock>>;
   @Input()
-  public blocks: number;
-  @Input()
-  public paging: keyof IBlock = 'height';
-
-  public blockStream = this.apiService.streamBlocks(
-    { ticker: this.ticker, network: this.network },
-    {
-      paging: this.paging
-    }
-  );
+  displayValueIn = 'BCH';
+  block$: Observable<IBlock>;
 
   constructor(private apiService: ApiService) {}
+  ngOnInit() {
+    this.block$ = combineLatest(this.chain, this.query).pipe(
+      distinctUntilChanged((x, y) => equal(x, y)),
+      switchMap(([chain, query]) => this.apiService.streamBlocks(chain, query)),
+      distinctUntilChanged((x, y) => equal(x, y))
+    );
+  }
+
+  goToBlock(block: IBlock) {
+    // tslint:disable-next-line:no-console
+    console.log('TODO: navigate to block', block.hash);
+  }
 }

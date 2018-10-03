@@ -30,6 +30,7 @@ const expectedNetworks: Chain[] = [
 
 export const environment = {
   apiPrefix: 'https://api.bitcore.io/api',
+  ratesApi: 'https://bitpay.com/api/rates/bch',
   production: true,
   loggingSettings,
   initialNetwork,
