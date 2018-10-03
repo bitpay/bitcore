@@ -10,6 +10,7 @@ import logger from '../logger';
 import config from '../config';
 import { BulkWriteOpResultObject } from 'mongodb';
 import { StreamingFindOptions, Storage } from '../services/storage';
+import * as lodash from 'lodash';
 
 const Chain = require('../chain');
 
@@ -143,7 +144,8 @@ export class Transaction extends BaseModel<ITransaction> {
       const spent = groupedSpends[txid] || {};
       const mintedWallets = minted.wallets || [];
       const spentWallets = spent.wallets || [];
-      const wallets = mintedWallets.concat(spentWallets);
+      const txWallets = mintedWallets.concat(spentWallets);
+      const wallets = lodash.uniqBy(txWallets, wallet => wallet.toHexString());
       let fee = 0;
       if (groupedMints[txid] && groupedSpends[txid]) {
         fee = groupedSpends[txid].total - groupedMints[txid].total;
