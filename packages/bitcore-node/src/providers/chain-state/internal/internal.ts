@@ -8,7 +8,7 @@ import { BlockModel, IBlock } from '../../../models/block';
 import { WalletModel, IWallet } from '../../../models/wallet';
 import { WalletAddressModel } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
-import { Storage, StreamingFindOptions } from '../../../services/storage';
+import { Storage } from '../../../services/storage';
 import { RPC } from '../../../rpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { TransactionModel, ITransaction } from '../../../models/transaction';
@@ -284,7 +284,6 @@ export class InternalStateProvider implements CSP.IChainStateService {
       network,
       wallets: wallet._id
     };
-    let finalOptions: StreamingFindOptions<ITransaction> = {};
     if (args) {
       if (args.startBlock) {
         finalQuery.blockHeight = { $gte: Number(args.startBlock) };
@@ -306,11 +305,8 @@ export class InternalStateProvider implements CSP.IChainStateService {
           finalQuery.blockTimeNormalized.$lt = new Date(args.endDate);
         }
       }
-      //const { query, options } = Storage.getFindOptions(TransactionModel, args);
-      //finalQuery = Object.assign({}, finalQuery, query);
-      finalOptions = args;
     }
-    let transactionStream = TransactionModel.getTransactions({ query: finalQuery, options: finalOptions });
+    let transactionStream = TransactionModel.getTransactions({ query: finalQuery, options: args });
     let listTransactionsStream = new ListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(stream);
   }
@@ -342,11 +338,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getFee(params: CSP.GetEstimateSmartFeeParams) {
     const { chain, network, target } = params;
-    if (chain === 'BCH') {
-      return this.getRPC(chain, network).getEstimateFee(Number(target));
-    } else {
-      return this.getRPC(chain, network).getEstimateSmartFee(Number(target));
-    }
+    return this.getRPC(chain, network).getEstimateSmartFee(Number(target));
   }
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {

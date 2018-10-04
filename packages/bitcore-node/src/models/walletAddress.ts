@@ -69,21 +69,18 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
     const { walletUpdates, coinUpdates } = updates;
     const { chain, network } = wallet;
 
-    let walletUpdateBatches = partition(walletUpdates, walletUpdates.length/8);
-    let coinUpdateBatches = partition(coinUpdates, coinUpdates.length/8);
+    let walletUpdateBatches = partition(walletUpdates, 1000);
+    let coinUpdateBatches = partition(coinUpdates, 1000);
 
     return new Promise(async resolve => {
-      await Promise.all(
-        walletUpdateBatches.map(walletUpdateBatch => {
-          return WalletAddressModel.collection.bulkWrite(walletUpdateBatch, { ordered: false });
-        })
-      );
+      for (const walletUpdateBatch of walletUpdateBatches) {
+        await WalletAddressModel.collection.bulkWrite(walletUpdateBatch, { ordered: false });
+      }
 
-      await Promise.all(
-        coinUpdateBatches.map(coinUpdateBatch => {
-          return CoinModel.collection.bulkWrite(coinUpdateBatch, { ordered: false });
-        })
-      );
+      for (const coinUpdateBatch of coinUpdateBatches) {
+        await CoinModel.collection.bulkWrite(coinUpdateBatch, { ordered: false });
+      }
+
       let coins = await CoinModel.collection.find({ wallets: wallet._id }, { batchSize: 100 }).project({ spentTxid: 1, mintTxid: 1 }).toArray();
       let txids = {};
       for (let coin of coins) {
@@ -98,11 +95,10 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
           }
         }
       });
-      await Promise.all(
-        partition(txUpdates, txUpdates.length/16).map(txUpdate => {
-          return TransactionModel.collection.bulkWrite(txUpdate, { ordered: false });
-        })
-      )
+      const txUpdateBatches = partition(txUpdates, 1000);
+      for (const txUpdate of txUpdateBatches) {
+        await TransactionModel.collection.bulkWrite(txUpdate, { ordered: false });
+      }
       resolve();
     });
   }

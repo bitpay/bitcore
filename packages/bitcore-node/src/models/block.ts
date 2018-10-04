@@ -23,7 +23,6 @@ export type IBlock = {
   bits: number;
   reward: number;
   processed: boolean;
-  raw: string;
 };
 
 @LoggifyClass
@@ -86,7 +85,6 @@ export class Block extends BaseModel<IBlock> {
           network,
           hash: block.hash,
           height,
-          raw: block.toBuffer().toString('hex'),
           version: header.version,
           previousBlockHash: header.prevHash,
           merkleRoot: header.merkleRoot,
@@ -184,7 +182,6 @@ export class Block extends BaseModel<IBlock> {
       timeNormalized: block.timeNormalized,
       nonce: block.nonce,
       bits: block.bits,
-      raw: block.raw,
       /*
        *difficulty: block.difficulty,
        */
