@@ -81,8 +81,6 @@ helpers.beforeEach = function(cb) {
 };
 
 helpers.after = function(cb) {
-
-console.log('[helpers.js.80]'); //TODO
   WalletService.shutDown(cb);
 };
 
@@ -390,18 +388,24 @@ helpers.stubHistory = function(txs) {
 };
 
 
-helpers.stubHistoryV8 = function(nr) {
+helpers.stubHistoryV8 = function(nr, bcHeight) {
   var txs = [], i = 0;
+
+  // Will generate
+  // order / confirmations  / height / txid
+  //  0.  => -1     / -1            /   txid0   / id0  <=  LAST ONE!
+  //  1.  => 1      / bcHeight      /   txid1
+  //  2.  => 2      / bcHeight - 1  /   txid2
+  //  3.  => 3...   / bcHeight - 2  /   txid3
 
   while(i < nr) {
     txs.push({
-       id: 'id' + i,
-        txid:
-        'txid' + i,
+        id: 'id' + i,
+        txid: 'txid' + i,
         size: 226,
         category: 'receive',
-        satoshis: 30000,
-        height: 1258355,
+        satoshis: 30001,
+        height: (i == 0) ? -1 :  bcHeight - i + 1,
         address: 'muFJi3ZPfR5nhxyD7dfpx2nYZA8Wmwzgck',
         blockTime: '2018-09-21T18:08:31.000Z',
     });
@@ -412,14 +416,13 @@ helpers.stubHistoryV8 = function(nr) {
     var nbTxs = txs.length;
 
     var idx = 0;
-   
     if (since) {
       idx = _.findIndex(txs, {id: since});
       if (idx < 0) return cb(null,[]);
       idx++;
     }
 
-    var page = txs.slice(idx, idx+limit);
+    var page = txs.slice(idx, idx + limit);
     return cb(null, page);
   };
 };

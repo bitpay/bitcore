@@ -47,15 +47,15 @@ describe('History V8', function() {
     });
   });
   after(function(done) {
-
-console.log('[historyV8.js.50]'); //TODO
     helpers.after(done);
   });
+
+  var BCHEIGHT =  1000;
 
   describe('#getTxHistoryV8', function() {
     var server, wallet, mainAddresses, changeAddresses;
     beforeEach(function(done) {
-      blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000);
+      blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, BCHEIGHT);
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
@@ -73,27 +73,141 @@ console.log('[historyV8.js.50]'); //TODO
     it('should get tx history from insight, 3 items page', function(done) {
       var _page = Defaults.V8_TX_PAGE_SIZE;
       Defaults.V8_TX_PAGE_SIZE = 3;
-      helpers.stubHistoryV8(450);
-      server.getTxHistory({limit: 10}, function(err, txs) {
+      helpers.stubHistoryV8(50, BCHEIGHT);
+      server.getTxHistory({limit: 20}, function(err, txs, fromCache) {
         should.not.exist(err);
+        fromCache.should.equal(false);
         should.exist(txs);
-        txs.length.should.equal(10);
+        txs.length.should.equal(20);
         var i = 0;
         _.each(txs, function(tx) {
-          tx.txid.should.equal('txid' + i++);
+          tx.txid.should.equal('txid' + i);
+          tx.confirmations.should.equal(i);
+          if (i) { 
+            tx.blockheight.should.equal(BCHEIGHT - i + 1);
+          }  else {
+
+            // The first one is unconfirmed
+            should.not.exist(tx.blockheight);
+          }
+          i++;
         });
         Defaults.V8_TX_PAGE_SIZE = _page;
         done();
       });
     });
+
+    it('should get tx history from cache', function(done) {
+      var _page = Defaults.V8_TX_PAGE_SIZE;
+      var _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
+      Defaults.V8_TX_PAGE_SIZE = 3;
+      Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
+      helpers.stubHistoryV8(50, BCHEIGHT); //(0->49)
+
+      // this call is to fill the cache
+      server.getTxHistory({limit: 20}, function(err, txs, fromCache) {
+        should.not.exist(err);
+        fromCache.should.equal(false);
+        should.exist(txs);
+        txs.length.should.equal(20);
+        _.first(txs).id.should.equal('id0');
+        server.getTxHistory({skip: 20, limit: 10}, function(err, txs, fromCache) {
+          // first TX result should be:
+          // txid: 19 
+          // confirmations: 19
+          should.not.exist(err);
+          fromCache.should.equal(true);
+          should.exist(txs);
+          txs.length.should.equal(10);
+          _.first(txs).id.should.equal('id20');
+
+          var i = 20;
+          _.each(txs, function(tx) {
+            tx.txid.should.equal('txid' + i);
+            tx.confirmations.should.equal(i);
+            tx.blockheight.should.equal(BCHEIGHT - i + 1);
+            i++;
+          });
+          Defaults.V8_TX_PAGE_SIZE = _page;
+          Defaults.CONFIRMATIONS_TO_START_CACHING = _cache;
+          done();
+        });
+      });
+    });
+
+    it('should get tx history from cache and bc mixed', function(done) {
+      var _page = Defaults.V8_TX_PAGE_SIZE;
+      var _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
+      Defaults.V8_TX_PAGE_SIZE = 3;
+      Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
+      helpers.stubHistoryV8(50, BCHEIGHT); //(0->49)
+
+      // this call is to fill the cache
+      server.getTxHistory({limit: 20}, function(err, txs, fromCache) {
+        should.not.exist(err);
+        fromCache.should.equal(false);
+        should.exist(txs);
+        txs.length.should.equal(20);
+        _.first(txs).id.should.equal('id0');
+        server.getTxHistory({skip: 5, limit: 20}, function(err, txs, fromCache) {
+          // first TX result should be:
+          // txid: 19 
+          // confirmations: 19
+          should.not.exist(err);
+          fromCache.should.equal(true);
+          should.exist(txs);
+          txs.length.should.equal(20);
+          _.first(txs).id.should.equal('id5');
+
+          var i = 5;
+          _.each(txs, function(tx) {
+            tx.txid.should.equal('txid' + i);
+            tx.confirmations.should.equal(i);
+            tx.blockheight.should.equal(BCHEIGHT - i + 1);
+            i++;
+          });
+          Defaults.V8_TX_PAGE_SIZE = _page;
+          Defaults.CONFIRMATIONS_TO_START_CACHING = _cache;
+          done();
+        });
+      });
+    });
+
     it('should get tx history from insight, in 2 overlapping pages', function(done) {
-      helpers.stubHistoryV8(450);
-      server.getTxHistory({limit: 10}, function(err, txs) {
+      helpers.stubHistoryV8(300);
+      server.getTxHistory({limit: 25}, function(err, txs, fromCache) {
         console.log('[server.js.6215:err:]',err); //TODO
         should.not.exist(err);
-        server.getTxHistory({skip:5, limit: 8}, function(err, txs2) {
+        fromCache.should.equal(false);
+
+        // no cache
+        server.getTxHistory({skip:5, limit: 21}, function(err, txs2, fromCache) {
+          should.not.exist(err);
+          fromCache.should.equal(false);
+//console.log('[historyV8.js.96:txs2:]',txs2); //TODO
           should.exist(txs2);
-          txs2.length.should.equal(8);
+          txs2.length.should.equal(21);
+          var i = 0;
+          _.each(txs, function(tx) {
+            tx.txid.should.equal('txid' + i++);
+          });
+          var i = 5;
+          _.each(txs2, function(tx) {
+            tx.txid.should.equal('txid' + i++);
+          });
+          done();
+        });
+      });
+    });
+
+    it('should get tx history from cache', function(done) {
+      helpers.stubHistoryV8(300);
+      server.getTxHistory({limit: 25}, function(err, txs) {
+        should.not.exist(err);
+        server.getTxHistory({skip:200, limit: 50}, function(err, txs2, fromCache) {
+          should.exist(txs2);
+          fromCache.should.equal(true);
+          txs2.length.should.equal(50);
           var i = 0;
           _.each(txs, function(tx) {
             tx.txid.should.equal('txid' + i++);
@@ -106,7 +220,7 @@ console.log('[historyV8.js.50]'); //TODO
         done();
       });
     });
- 
+
     it.skip('should get tx history with accepted proposal', function(done) {
       server._normalizeTxHistory = sinon.stub().returnsArg(0);
       var external = '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7';
@@ -410,9 +524,6 @@ console.log('[historyV8.js.50]'); //TODO
 
 
 //console.log('[server.js.7149]',HugeTxs[1].vin); //TODO
-
-
-
       server.getTxHistory({}, function(err, txs) {
         should.not.exist(err);
         should.exist(txs);
