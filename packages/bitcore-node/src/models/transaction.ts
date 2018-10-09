@@ -23,10 +23,10 @@ export type ITransaction = {
   blockTime?: Date;
   blockTimeNormalized?: Date;
   coinbase: boolean;
+  value: number;
   fee: number;
   size: number;
   locktime: number;
-  raw: string;
   wallets: ObjectID[];
 };
 
@@ -58,35 +58,34 @@ export class Transaction extends BaseModel<ITransaction> {
     chain: string;
     network: string;
     initialSyncComplete: boolean;
-    mintOps?: Array<any>;
   }) {
-    let mintOps = await this.getMintOps(params);
-    logger.debug('Minting Coins', mintOps.length);
+    const mintOps = await this.getMintOps(params);
+    const spendParams = { ...params, mintOps };
+    const spendOps = this.getSpendOps(spendParams);
 
-    params.mintOps = mintOps || [];
-    let spendOps = this.getSpendOps(params);
-    logger.debug('Spending Coins', spendOps.length);
+    logger.debug('Minting Coins', mintOps.length);
+    let mintWrites = new Array<Promise<BulkWriteOpResultObject>>();
     if (mintOps.length) {
-      mintOps = partition(mintOps, mintOps.length / config.maxPoolSize);
-      mintOps = mintOps.map((mintBatch: Array<any>) => CoinModel.collection.bulkWrite(mintBatch, { ordered: false }));
+      const mintBatches = partition(mintOps, mintOps.length / config.maxPoolSize);
+      mintWrites = mintBatches.map(mintBatch => CoinModel.collection.bulkWrite(mintBatch, { ordered: false }));
     }
+    await Promise.all(mintWrites);
+
+    logger.debug('Spending Coins', spendOps.length);
+    let spendWrites = new Array<Promise<BulkWriteOpResultObject>>();
     if (spendOps.length) {
-      spendOps = partition(spendOps, spendOps.length / config.maxPoolSize);
-      spendOps = spendOps.map((spendBatch: Array<any>) =>
-        CoinModel.collection.bulkWrite(spendBatch, { ordered: false })
-      );
+      const spendBatches = partition(spendOps, spendOps.length / config.maxPoolSize);
+      spendWrites = spendBatches.map(spendBatch => CoinModel.collection.bulkWrite(spendBatch, { ordered: false }));
     }
-    const coinOps = mintOps.concat(spendOps);
-    await Promise.all(coinOps);
+    await Promise.all(spendWrites);
 
     let txs: Promise<BulkWriteOpResultObject>[] = [];
     if (mintOps) {
-      let txOps = await this.addTransactions(params);
+      const addTxParams = { ...params, mintOps };
+      let txOps = await this.addTransactions(addTxParams);
       logger.debug('Writing Transactions', txOps.length);
       const txBatches = partition(txOps, txOps.length / config.maxPoolSize);
-      txs = txBatches.map((txBatch: Array<any>) =>
-        this.collection.bulkWrite(txBatch, { ordered: false, j: false, w: 0 })
-      );
+      txs = txBatches.map(txBatch => this.collection.bulkWrite(txBatch, { ordered: false, j: false, w: 0 }));
     }
 
     await Promise.all(txs);
@@ -103,37 +102,38 @@ export class Transaction extends BaseModel<ITransaction> {
     initialSyncComplete: boolean;
     chain: string;
     network: string;
-    mintOps?: Array<any>;
+    mintOps: Array<any>;
   }) {
     let { blockHash, blockTime, blockTimeNormalized, chain, height, network, txs } = params;
     let txids = txs.map(tx => tx._hash);
 
-    const mintedPromise = CoinModel.collection.find({ mintTxid: { $in: txids }, chain, network }).toArray();
-    const spentPromise = CoinModel.collection.find({ spentTxid: { $in: txids }, chain, network }).toArray();
-    const [minted, spent] = await Promise.all([mintedPromise, spentPromise]);
+    const spent = await CoinModel.collection.find({ spentTxid: { $in: txids }, chain, network }).toArray();
     type CoinGroup = { [txid: string]: { total: number; wallets: Array<ObjectID> } };
-    const groupedMints = minted.reduce<CoinGroup>((agg, current) => {
-      if (!agg[current.mintTxid]) {
-        agg[current.mintTxid] = {
-          total: current.value,
-          wallets: current.wallets || []
+    const groupedMints = params.mintOps.reduce<CoinGroup>((agg, coinOp) => {
+      const mintTxid = coinOp.updateOne.filter.mintTxid;
+      const coin = coinOp.updateOne.update.$set;
+      const { value, wallets } = coin;
+      if (!agg[mintTxid]) {
+        agg[mintTxid] = {
+          total: value,
+          wallets: wallets || []
         };
       } else {
-        agg[current.mintTxid].total += current.value;
-        agg[current.mintTxid].wallets.push(...current.wallets);
+        agg[mintTxid].total += value;
+        agg[mintTxid].wallets.push(...wallets);
       }
       return agg;
     }, {});
 
-    const groupedSpends = spent.reduce<CoinGroup>((agg, current) => {
-      if (!agg[current.spentTxid]) {
-        agg[current.spentTxid] = {
-          total: current.value,
-          wallets: current.wallets || []
+    const groupedSpends = spent.reduce<CoinGroup>((agg, coin) => {
+      if (!agg[coin.spentTxid]) {
+        agg[coin.spentTxid] = {
+          total: coin.value,
+          wallets: coin.wallets || []
         };
       } else {
-        agg[current.spentTxid].total += current.value;
-        agg[current.spentTxid].wallets.push(...current.wallets);
+        agg[coin.spentTxid].total += coin.value;
+        agg[coin.spentTxid].wallets.push(...coin.wallets);
       }
       return agg;
     }, {});
@@ -149,6 +149,9 @@ export class Transaction extends BaseModel<ITransaction> {
       let fee = 0;
       if (groupedMints[txid] && groupedSpends[txid]) {
         fee = groupedSpends[txid].total - groupedMints[txid].total;
+        if (fee < 0) {
+          console.error(txid, groupedSpends[txid], groupedMints[txid]);
+        }
       }
 
       return {
@@ -164,9 +167,9 @@ export class Transaction extends BaseModel<ITransaction> {
               blockTimeNormalized,
               coinbase: tx.isCoinbase(),
               fee,
-              raw: tx.toBuffer().toString('hex'),
               size: tx.toBuffer().length,
               locktime: tx.nLockTime,
+              value: tx.outputAmount,
               wallets
             }
           },
@@ -187,7 +190,7 @@ export class Transaction extends BaseModel<ITransaction> {
     chain: string;
     network: string;
     mintOps?: Array<any>;
-  }): Promise<any> {
+  }): Promise<Array<any>> {
     let { chain, height, network, txs, parentChain, forkHeight, initialSyncComplete } = params;
     let mintOps = new Array<any>();
     let parentChainCoins = new Array<ICoin>();
@@ -210,6 +213,7 @@ export class Transaction extends BaseModel<ITransaction> {
           (parentChainCoin: ICoin) => parentChainCoin.mintTxid === txid && parentChainCoin.mintIndex === index
         );
         if (parentChainCoin) {
+          console.warn('Skipping coin');
           continue;
         }
         let address = '';
@@ -235,10 +239,10 @@ export class Transaction extends BaseModel<ITransaction> {
               $set: {
                 chain,
                 network,
+                address,
                 mintHeight: height,
                 coinbase: isCoinbase,
                 value: output.satoshis,
-                address,
                 script: scriptBuffer,
                 spentHeight: SpentHeightIndicators.unspent,
                 wallets: []
@@ -279,13 +283,13 @@ export class Transaction extends BaseModel<ITransaction> {
     network: string;
     mintOps?: Array<any>;
   }): Array<any> {
-    let { chain, network, height, txs, parentChain, forkHeight, mintOps = [] } = params;
+    let { chain, network, height, txs, parentChain, forkHeight, mintOps } = params;
     let spendOps: any[] = [];
     if (parentChain && forkHeight && height < forkHeight) {
       return spendOps;
     }
     let mintMap = {};
-    for (let mintOp of mintOps) {
+    for (let mintOp of mintOps || []) {
       mintMap[mintOp.updateOne.filter.mintTxid] = mintMap[mintOp.updateOne.filter.mintIndex] || {};
       mintMap[mintOp.updateOne.filter.mintTxid][mintOp.updateOne.filter.mintIndex] = mintOp;
     }
@@ -344,7 +348,6 @@ export class Transaction extends BaseModel<ITransaction> {
       blockTimeNormalized: tx.blockTimeNormalized,
       coinbase: tx.coinbase,
       locktime: tx.locktime,
-      raw: tx.raw,
       size: tx.size,
       fee: tx.fee
     };
