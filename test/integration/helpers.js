@@ -332,6 +332,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
           address: address.address,
           confirmations: parsed.confirmations,
           publicKeys: address.publicKeys,
+          wallet: wallet.id,
         };
       }));
 
@@ -341,10 +342,16 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
         helpers._utxos = utxos;
       }
 
-      blockchainExplorer.getUtxos = function(addresses, cb) {
-        var selected = _.filter(helpers._utxos, function(utxo) {
-          return _.includes(addresses, utxo.address);
-        });
+      blockchainExplorer.getUtxos = function(param1, cb) {
+        
+        var selected;
+        if (blockchainExplorer.supportsGrouping()) {
+          selected = _.filter(helpers._utxos, {'wallet': param1.id});
+        } else {
+          selected = _.filter(helpers._utxos, function(utxo) {
+            return _.includes(param1, utxo.address);
+          });
+        }
         return cb(null, selected);
       };
 
@@ -388,8 +395,9 @@ helpers.stubHistory = function(txs) {
 };
 
 
-helpers.stubHistoryV8 = function(nr, bcHeight) {
-  var txs = [], i = 0;
+helpers.stubHistoryV8 = function(nr, bcHeight, txs) {
+  txs = txs || [];
+  var  i = 0;
 
   // Will generate
   // order / confirmations  / height / txid
@@ -398,8 +406,9 @@ helpers.stubHistoryV8 = function(nr, bcHeight) {
   //  2.  => 2      / bcHeight - 1  /   txid2
   //  3.  => 3...   / bcHeight - 2  /   txid3
 
-  while(i < nr) {
-    txs.push({
+  if (_.isEmpty(txs)) {
+    while(i < nr) {
+      txs.push({
         id: 'id' + i,
         txid: 'txid' + i,
         size: 226,
@@ -408,20 +417,24 @@ helpers.stubHistoryV8 = function(nr, bcHeight) {
         height: (i == 0) ? -1 :  bcHeight - i + 1,
         address: 'muFJi3ZPfR5nhxyD7dfpx2nYZA8Wmwzgck',
         blockTime: '2018-09-21T18:08:31.000Z',
-    });
-    i++;
+      });
+      i++;
+    }
   }
   blockchainExplorer.getTransactions = function(walletId, since, limit, cb) {
     var MAX_BATCH_SIZE = 100;
     var nbTxs = txs.length;
+console.log('[helpers.js.421:nbTxs:]',nbTxs); //TODO
 
     var idx = 0;
+console.log('[helpers.js.424:since:]',since); //TODO
     if (since) {
       idx = _.findIndex(txs, {id: since});
       if (idx < 0) return cb(null,[]);
       idx++;
     }
 
+console.log('[helpers.js.423:idx:]',idx, limit); //TODO
     var page = txs.slice(idx, idx + limit);
     return cb(null, page);
   };
@@ -514,6 +527,7 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 
 helpers.createAndPublishTx = function(server, txOpts, signingKey, cb) {
   server.createTx(txOpts, function(err, txp) {
+console.log('[helpers.js.512:err:]',err); //TODO
     should.not.exist(err, "Error creating a TX");
     should.exist(txp,"Error... no txp");
     var publishOpts = helpers.getProposalSignatureOpts(txp, signingKey);

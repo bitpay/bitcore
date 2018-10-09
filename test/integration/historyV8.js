@@ -221,7 +221,7 @@ describe('History V8', function() {
       });
     });
 
-    it.skip('should get tx history with accepted proposal', function(done) {
+    it('should get tx history with accepted proposal, multisend', function(done) {
       server._normalizeTxHistory = sinon.stub().returnsArg(0);
       var external = '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7';
 
@@ -257,29 +257,41 @@ describe('History V8', function() {
               txProposalId: tx.id
             }, function(err, txp) {
               should.not.exist(err);
+              var t = (new Date).toISOString();
               var txs = [{
+                id: 1,
                 txid: txp.txid,
                 confirmations: 1,
-                fees: 5460,
-                time: Date.now() / 1000,
-                inputs: [{
-                  address: tx.inputs[0].address,
-                  amount: utxos[0].satoshis,
-                }],
-                outputs: [{
-                  address: changeAddresses[0].address,
-                  amount: 0.2e8 - 5460,
-                }, {
-                  address: external,
-                  amount: 0.5e8,
-                }, {
-                  address: external,
-                  amount: 0.3e8,
-                }]
-              }];
-              helpers.stubHistoryV8(txs);
+                blockTime: t,
+                size: 226,
+                category: 'send',
+                toAddress: external,
+                satoshis: 0.5e8,
+               },
+              {
+                id: 2,
+                txid: txp.txid,
+                confirmations: 1,
+                category: 'send',
+                blockTime: t,
+                satoshis: 0.3e8,
+                toAddress: external,
+              },
+              {
+                id: 3,
+                txid: txp.txid,
+                confirmations: 1,
+                blockTime: t,
+                satoshis: 5460,
+                category: 'fee',
+               },
+              ]; 
+ 
+              helpers.stubHistoryV8(null, null,txs);
 
               server.getTxHistory({}, function(err, txs) {
+console.log('[historyV8.js.282:txs:]',txs); //TODO
+console.log('[historyV8.js.283:err:]',err); //TODO
                 should.not.exist(err);
                 should.exist(txs);
                 txs.length.should.equal(1);
