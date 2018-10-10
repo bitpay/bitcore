@@ -81,7 +81,13 @@ helpers.beforeEach = function(cb) {
 };
 
 helpers.after = function(cb) {
-  WalletService.shutDown(cb);
+
+console.log('[helpers.js.80]'); //TODO
+  WalletService.shutDown(() => {
+    setImmediate(cb);
+  });
+
+console.log('[helpers.js.83]'); //TODO
 };
 
 helpers.getBlockchainExplorer = function() {

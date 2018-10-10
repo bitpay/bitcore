@@ -47,6 +47,8 @@ describe('History V8', function() {
     });
   });
   after(function(done) {
+
+console.log('[historyV8.js.50]'); //TODO
     helpers.after(done);
   });
 
@@ -200,7 +202,7 @@ describe('History V8', function() {
       });
     });
 
-    it('should get tx history from cache', function(done) {
+    it.only('should get tx history from cache', function(done) {
       helpers.stubHistoryV8(300);
       server.getTxHistory({limit: 25}, function(err, txs) {
         should.not.exist(err);
@@ -216,8 +218,8 @@ describe('History V8', function() {
           _.each(txs2, function(tx) {
             tx.txid.should.equal('txid' + i++);
           });
+          done();
         });
-        done();
       });
     });
 
@@ -591,6 +593,8 @@ console.log('[historyV8.js.283:err:]',err); //TODO
     });
     afterEach(function() {
       Defaults.HISTORY_CACHE_ADDRESS_THRESOLD = _threshold;
+
+console.log('[historyV8.js.596]'); //TODO
     });
 
     it('should store partial cache tx history from insight', function(done) {
