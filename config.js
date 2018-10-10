@@ -40,8 +40,10 @@ var config = {
   blockchainExplorerOpts: {
     btc: {
       livenet: {
-        provider: 'insight',
-        url: 'https://insight.bitpay.com:443',
+        provider: 'v8',
+//        provider: 'insight',
+//        url: 'https://insight.bitpay.com:443',
+        url: 'https://api.bitcore.io',
       },
       testnet: {
         provider: 'insight',
