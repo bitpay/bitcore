@@ -47,8 +47,6 @@ describe('History V8', function() {
     });
   });
   after(function(done) {
-
-console.log('[historyV8.js.50]'); //TODO
     helpers.after(done);
   });
 
@@ -202,27 +200,6 @@ console.log('[historyV8.js.50]'); //TODO
       });
     });
 
-    it.only('should get tx history from cache', function(done) {
-      helpers.stubHistoryV8(300);
-      server.getTxHistory({limit: 25}, function(err, txs) {
-        should.not.exist(err);
-        server.getTxHistory({skip:200, limit: 50}, function(err, txs2, fromCache) {
-          should.exist(txs2);
-          fromCache.should.equal(true);
-          txs2.length.should.equal(50);
-          var i = 0;
-          _.each(txs, function(tx) {
-            tx.txid.should.equal('txid' + i++);
-          });
-          var i = 5;
-          _.each(txs2, function(tx) {
-            tx.txid.should.equal('txid' + i++);
-          });
-          done();
-        });
-      });
-    });
-
     it('should get tx history with accepted proposal, multisend', function(done) {
       server._normalizeTxHistory = sinon.stub().returnsArg(0);
       var external = '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7';
@@ -292,8 +269,6 @@ console.log('[historyV8.js.50]'); //TODO
               helpers.stubHistoryV8(null, null,txs);
 
               server.getTxHistory({}, function(err, txs) {
-console.log('[historyV8.js.282:txs:]',txs); //TODO
-console.log('[historyV8.js.283:err:]',err); //TODO
                 should.not.exist(err);
                 should.exist(txs);
                 txs.length.should.equal(1);

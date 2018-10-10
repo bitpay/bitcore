@@ -81,13 +81,9 @@ helpers.beforeEach = function(cb) {
 };
 
 helpers.after = function(cb) {
-
-console.log('[helpers.js.80]'); //TODO
   WalletService.shutDown(() => {
     setImmediate(cb);
   });
-
-console.log('[helpers.js.83]'); //TODO
 };
 
 helpers.getBlockchainExplorer = function() {
@@ -430,17 +426,13 @@ helpers.stubHistoryV8 = function(nr, bcHeight, txs) {
   blockchainExplorer.getTransactions = function(walletId, since, limit, cb) {
     var MAX_BATCH_SIZE = 100;
     var nbTxs = txs.length;
-console.log('[helpers.js.421:nbTxs:]',nbTxs); //TODO
 
     var idx = 0;
-console.log('[helpers.js.424:since:]',since); //TODO
     if (since) {
       idx = _.findIndex(txs, {id: since});
       if (idx < 0) return cb(null,[]);
       idx++;
     }
-
-console.log('[helpers.js.423:idx:]',idx, limit); //TODO
     var page = txs.slice(idx, idx + limit);
     return cb(null, page);
   };
