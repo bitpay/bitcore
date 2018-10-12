@@ -65,7 +65,7 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
     return new Promise(async resolve => {
       for (const address of addresses) {
         await Promise.all([
-          WalletAddressModel.collection.updateOne({ wallet: wallet._id, address }, { wallet: wallet._id, address: address, chain, network }, { upsert: true }),
+          WalletAddressModel.collection.updateOne({ wallet: wallet._id, address }, { $set: { wallet: wallet._id, address: address, chain, network } }, { upsert: true }),
           CoinModel.collection.updateMany({ chain, network, address }, { $addToSet: { wallets: wallet._id }})
         ]);
       }
