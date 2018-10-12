@@ -84,22 +84,16 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
       let coinStream = CoinModel.collection.find({ wallets: wallet._id }).project({ spentTxid: 1, mintTxid: 1 }).addCursorFlag('noCursorTimeout', true);
       let txids = {};
       coinStream.on('data', (coin: ICoin) => {
+        if (!txids[coin.mintTxid]) {
+          TransactionModel.collection.update({ txid: coin.mintTxid, network, chain }, { $addToSet: { wallets: wallet._id }});
+        }
         txids[coin.mintTxid] = true;
+        if (!txids[coin.spentTxid]) {
+          TransactionModel.collection.update({ txid: coin.spentTxid, network, chain }, { $addToSet: { wallets: wallet._id } });
+        }
         txids[coin.spentTxid] = true;
       });
       coinStream.on('end', async () => {
-        let txUpdates = Object.keys(txids).map(txid => {
-          return {
-            updateOne: {
-              filter: { chain, network, txid },
-              update: { $addToSet: { wallets: wallet._id } }
-            }
-          }
-        });
-        const txUpdateBatches = partition(txUpdates, 1000);
-        for (const txUpdate of txUpdateBatches) {
-          await TransactionModel.collection.bulkWrite(txUpdate, { ordered: false });
-        }
         resolve();
       });
     });
