@@ -43,7 +43,7 @@ export class Transaction extends BaseModel<ITransaction> {
     this.collection.createIndex({ blockHeight: 1, chain: 1, network: 1 });
     this.collection.createIndex({ blockHash: 1 });
     this.collection.createIndex({ blockTimeNormalized: 1, chain: 1, network: 1 });
-    this.collection.createIndex({ wallets: 1 }, { sparse: true });
+    this.collection.createIndex({ wallets: 1, blockTimeNormalized: 1, _id: -1 }, { sparse: true });
   }
 
   async batchImport(params: {
