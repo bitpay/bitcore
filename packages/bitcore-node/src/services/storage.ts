@@ -122,7 +122,7 @@ export class StorageService {
   }
   getFindOptions<T>(model: TransformableModel<T>, originalOptions: StreamingFindOptions<T>) {
     let query: any = {};
-    let since: any = {};
+    let since: any = null;
     let options: StreamingFindOptions<T> = {};
     if (originalOptions.paging && this.validPagingProperty(model, originalOptions.paging)) {
       if (originalOptions.since !== undefined) {
