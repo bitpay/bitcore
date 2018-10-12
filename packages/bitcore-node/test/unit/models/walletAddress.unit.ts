@@ -1,8 +1,5 @@
 import { expect } from 'chai';
 import { IWalletAddress, WalletAddressModel } from "../../../src/models/walletAddress";
-import { IWallet } from "../../../src/models/wallet";
-import { ObjectID } from "bson";
-import { MongoBound } from "../../../src/models/base";
 
 describe('WalletAddress Model', function () {
 
