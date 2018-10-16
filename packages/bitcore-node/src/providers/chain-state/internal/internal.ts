@@ -210,7 +210,6 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (!initialSyncComplete) {
       throw 'Wallet creation not permitted before intitial sync is complete';
     }
-
     const wallet: IWallet = {
       chain: chain,
       network,
