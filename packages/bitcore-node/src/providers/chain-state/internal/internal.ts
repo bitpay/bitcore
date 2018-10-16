@@ -12,7 +12,6 @@ import { Storage } from '../../../services/storage';
 import { RPC } from '../../../rpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { TransactionModel, ITransaction } from '../../../models/transaction';
-import { StateModel } from '../../../models/state';
 import { ListTransactionsStream } from './transforms';
 import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
 
@@ -80,7 +79,11 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getBlocks(params: CSP.GetBlockParams) {
     const { query, options } = this.getBlocksQuery(params);
-    let blocks = await BlockModel.collection.find<IBlock>(query, options).toArray();
+    let cursor = BlockModel.collection.find<IBlock>(query, options);
+    if (options.sort) {
+      cursor = cursor.sort(options.sort);
+    }
+    let blocks = await cursor.toArray();
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
     const blockTransform = (b: IBlock) => {
@@ -199,12 +202,6 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const { chain, network, name, pubKey, path, singleAddress } = params;
     if (typeof name !== 'string' || !network) {
       throw 'Missing required param';
-    }
-    const state = await StateModel.collection.findOne({});
-    const initialSyncComplete =
-      state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
-    if (!initialSyncComplete) {
-      throw 'Wallet creation not permitted before intitial sync is complete';
     }
     const wallet: IWallet = {
       chain: chain,
