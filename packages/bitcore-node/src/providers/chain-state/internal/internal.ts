@@ -12,9 +12,9 @@ import { Storage } from '../../../services/storage';
 import { RPC } from '../../../rpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { TransactionModel, ITransaction } from '../../../models/transaction';
-import { StateModel } from '../../../models/state';
 import { ListTransactionsStream } from './transforms';
 import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
+import { StateModel } from '../../../models/state';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -80,7 +80,11 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getBlocks(params: CSP.GetBlockParams) {
     const { query, options } = this.getBlocksQuery(params);
-    let blocks = await BlockModel.collection.find<IBlock>(query, options).toArray();
+    let cursor = BlockModel.collection.find<IBlock>(query, options);
+    if (options.sort) {
+      cursor = cursor.sort(options.sort);
+    }
+    let blocks = await cursor.toArray();
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
     const blockTransform = (b: IBlock) => {
