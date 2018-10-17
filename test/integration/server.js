@@ -7351,6 +7351,29 @@ console.log('[server.js.425:err:]',err); //TODO
       });
 
 
+      it.only('scan step: should add skipped addresses', function(done) {
+        helpers.stubAddressActivity(
+          ['1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG', // m/0/0
+            '1GdXraZ1gtoVAvBh49D4hK9xLm6SKgesoE', // m/0/2
+            '1FUzgKcyPJsYwDLUEVJYeE2N3KVaoxTjGS', // m/1/0
+          ]);
+
+        // First without activity
+        var addr = '1KbTiFvjbN6B5reCVS4tTT49vPQkvsqnE2'; // m/0/3
+
+        server.scan({ startingStep: 10 }, function(err) {
+console.log('[server.js.7333:err:]',err); //TODO
+          should.not.exist(err);
+          server.getWallet({}, function(err, wallet) {
+console.log('[server.js.7337:err:]',err); //TODO
+            should.not.exist(err);
+            wallet.addressManager.receiveAddressIndex.should.equal(3);
+            wallet.addressManager.changeAddressIndex.should.equal(1);
+            done();
+          });
+        });
+      });
+
 
     });
 
