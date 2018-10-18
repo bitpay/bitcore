@@ -98,9 +98,8 @@ describe('V8', () => {
               super(options);
               var txStr = '{ "id": 1, "txid": "txid1", "confirmations": 1, "blockTime": "'+ 
                 t + '", "size": 226, "category": "send", "toAddress": "'+
-                external +'", "satoshis": 0.5e8 } { "id": 2, "txid": "txid2", "confirmations": 1, "category": "send", "blockTime": "'+
-                t + '", "satoshis": 0.3e8, "toAddress": "'+external + '"}:"'; 
-console.log('[v8.js.99:txStr:]',txStr); //TODO
+                external +'", "satoshis": 0.5e8 } \n { "id": 2, "txid": "txid2", "confirmations": 1, "category": "send", "blockTime": "'+
+                t + '", "satoshis": 0.3e8, "toAddress": "'+external + '"}'; 
               this.push(txStr.substr(0,10));
               this.push(txStr.substr(10));
               this.push(null);
