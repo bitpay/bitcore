@@ -1,5 +1,5 @@
 import { LoggerConfig, NgxLoggerLevel } from 'ngx-logger';
-import { Chain } from '../app/types/configuration';
+import { BCH, BTC, Chain, tBCH, tBTC } from '../app/types/chains';
 
 const loggingSettings: LoggerConfig = {
   serverLoggingUrl: '/api/logs/insight',
@@ -7,32 +7,16 @@ const loggingSettings: LoggerConfig = {
   serverLogLevel: NgxLoggerLevel.ERROR
 };
 
-const initialNetwork: Chain = {
-  ticker: 'BCH',
-  network: 'mainnet'
-};
+const initialChain: Chain = BCH;
 
-const expectedNetworks: Chain[] = [
-  initialNetwork,
-  {
-    ticker: 'BCH',
-    network: 'testnet'
-  },
-  {
-    ticker: 'BTC',
-    network: 'mainnet'
-  },
-  {
-    ticker: 'BTC',
-    network: 'testnet'
-  }
-];
+const expectedChains: Chain[] = [BCH, tBCH, BTC, tBTC];
 
 export const environment = {
   apiPrefix: 'https://api.bitcore.io/api',
   ratesApi: 'https://bitpay.com/api/rates/bch',
   production: true,
   loggingSettings,
-  initialNetwork,
-  expectedNetworks
+  initialDisplayValueCode: initialChain.code,
+  initialChain,
+  expectedChains
 };

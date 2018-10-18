@@ -1,14 +1,17 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { retryBackoff } from 'backoff-rxjs';
-import { BehaviorSubject, timer } from 'rxjs';
-import { finalize, switchMap } from 'rxjs/operators';
+import { NGXLogger } from 'ngx-logger';
+import { BehaviorSubject, Observable, timer } from 'rxjs';
+import { finalize, map, shareReplay, switchMap } from 'rxjs/operators';
 import { IBlock, StreamingFindOptions } from '../../types/bitcore-node';
-import { Chain } from '../../types/configuration';
+import { Chain, Chains } from '../../types/chains';
+import { RateListing } from '../../types/units';
 import { ConfigService } from '../config/config.service';
 
 // TODO: expose this setting as a BehaviorSubject, tone it down when the window isn't active?
-const streamPollingPeriod = timer(0, 15 * 1000);
+const streamPollingPeriod = () => timer(0, 5 * 1000);
+const ratesStreamPollingPeriod = () => timer(0, 60 * 1000);
 
 /**
  * Convert any object into an object with only elements of type `string`.
@@ -22,19 +25,54 @@ const stringifyForQuery = (object: any) =>
     {}
   );
 
+const temporaryChainBase = (chain: Chain) =>
+  chain.code === 'BCH'
+    ? 'BCH/mainnet'
+    : chain.code === 'tBCH'
+      ? 'BCH/testnet'
+      : chain.code === 'BTC'
+        ? 'BTC/mainnet'
+        : chain.code === 'tBTC'
+          ? 'BTC/testnet'
+          : 'unknownTemporaryChainBase';
+
+const temporaryChainNetworkToCode = (chainNetwork: {
+  chain: string;
+  network: string;
+}) =>
+  Chains[
+    `${chainNetwork.network === 'testnet' ? 't' : ''}${chainNetwork.chain}`
+  ];
+
 @Injectable({
   providedIn: 'root'
 })
 export class ApiService {
-  constructor(private config: ConfigService, private http: HttpClient) {}
+  constructor(
+    private config: ConfigService,
+    private http: HttpClient,
+    private logger: NGXLogger
+  ) {}
 
   private _bitcoreAvailable = new BehaviorSubject(true);
   // TODO: service down notification (if NetworkService is up but the service is unreachable)
+
   /**
    * Emits when availability of the service appears to change, e.g. when an API
    * call doesn't return, or when a retry is successful.
    */
   public bitcoreAvailable = this._bitcoreAvailable.asObservable();
+
+  streamRates = ratesStreamPollingPeriod().pipe(
+    switchMap(() =>
+      this.http.get<RateListing>(this.config.ratesApi$.getValue()).pipe(
+        retryBackoff({
+          initialInterval: 1 * 1000
+        })
+      )
+    ),
+    shareReplay(1)
+  );
 
   /**
    * Everything before the API route itself, without the trailing `/`.
@@ -42,24 +80,19 @@ export class ApiService {
    * Usage example: `${apiBase}/route`
    */
   apiBase = (chain: Chain) =>
-    `${this.config.apiPrefix.getValue()}/${chain.ticker}/${chain.network}`;
+    // TODO: pull Chain type into Bitcore
+    // `${this.config.apiPrefix$.getValue()}/${chain.code}/${chain.network}`;
+    `${this.config.apiPrefix$.getValue()}/${temporaryChainBase(chain)}`;
 
-  private getBlocks = (chain: Chain, params: StreamingFindOptions<IBlock>) =>
-    this.http.get<IBlock>(`${this.apiBase(chain)}/block`, {
-      params: stringifyForQuery(params)
-    });
-
-  streamBlocks = (chain: Chain, params: StreamingFindOptions<IBlock>) =>
-    streamPollingPeriod.pipe(
-      switchMap(() => this.getBlocks(chain, params)),
+  streamFromBitcore = <T>(call: () => Observable<T>) =>
+    streamPollingPeriod().pipe(
+      switchMap(() => call()),
       retryBackoff({
         initialInterval: 5 * 1000,
         shouldRetry: error => {
-          // TODO: retry only if ERR_CONNECTION_REFUSED or 5xx error code
-          if (!!error) {
-            this._bitcoreAvailable.next(false);
-            return true;
-          }
+          this.logger.error(error);
+          this._bitcoreAvailable.next(false);
+          return true;
         }
       }),
       finalize(() => {
@@ -69,6 +102,27 @@ export class ApiService {
       })
     );
 
-  // TODO: rates API:
-  // consumers subscribe to an observable – only if a consumer is listening, poll this.config.ratesApi for the rates object. If everyone unsubscribes, polling should stop, and the last rates object thrown away (we don't want to use old rates on a resubscription). If someone subscribes again, start from scratch.
+  streamChains = () =>
+    this.streamFromBitcore(() =>
+      this.http
+        .get<Array<{ chain: string; network: string }>>(
+          `${this.config.apiPrefix$.getValue()}/status/enabled-chains`
+        )
+        .pipe(map(response => response.map<Chain>(temporaryChainNetworkToCode)))
+    );
+
+  streamBlocks = (chain: Chain, params: StreamingFindOptions<IBlock>) =>
+    this.streamFromBitcore(() =>
+      this.http.get<IBlock>(`${this.apiBase(chain)}/block`, {
+        params: stringifyForQuery(params)
+      })
+    );
+
+  streamBlock = (chain: Chain, hash: string) =>
+    this.streamFromBitcore(() =>
+      // TODO: `confirmations` should be in a proper type (e.g. IBlockExtended)
+      this.http.get<IBlock & { confirmations: number }>(
+        `${this.apiBase(chain)}/block/${hash}`
+      )
+    );
 }

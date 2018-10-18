@@ -43,9 +43,9 @@
             <span class="value">
                 <app-currency-value
                     class="reward"
-                    inAtomicUnits="{{block.reward}}"
-                    ticker="{{block.chain}}"
-                    displayAs="displayValueIn"
+                    amount="{{block.reward}}"
+                    code="{{block.chain}}_satoshis"
+                    displayAs="{{displayValueCode}}"
                 ></app-currency-value>
             </span>
         </div>

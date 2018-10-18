@@ -4,14 +4,11 @@
             <ion-menu-button></ion-menu-button>
             <ion-back-button></ion-back-button>
         </ion-buttons>
-        <ion-title>Blocks</ion-title>
+        <ion-title>Page Not Found</ion-title>
     </ion-toolbar>
 </ion-header>
 
 <ion-content padding>
-    <app-block-list
-        [chain$]="config.currentChain$"
-        [query$]="query$"
-        [displayValueCode]="config.displayValueCode$ | async"
-    ></app-block-list>
+    <!-- TODO: better 404 -->
+    404
 </ion-content>

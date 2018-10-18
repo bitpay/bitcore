@@ -6,10 +6,10 @@ import {
 } from '@angular/core';
 import * as equal from 'fast-deep-equal';
 import { combineLatest, Observable } from 'rxjs';
-import { distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+import { distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { ApiService } from '../../services/api/api.service';
 import { IBlock, StreamingFindOptions } from '../../types/bitcore-node';
-import { Chain } from '../../types/configuration';
+import { Chain } from '../../types/chains';
 
 @Component({
   selector: 'app-block-list',
@@ -19,24 +19,19 @@ import { Chain } from '../../types/configuration';
 })
 export class BlockListComponent implements OnInit {
   @Input()
-  chain: Observable<Chain>;
+  chain$: Observable<Chain>;
   @Input()
-  query: Observable<StreamingFindOptions<IBlock>>;
+  query$: Observable<StreamingFindOptions<IBlock>>;
   @Input()
-  displayValueIn = 'BCH';
-  block$: Observable<IBlock>;
+  displayValueCode = 'BCH';
+  blocks$: Observable<IBlock>;
 
   constructor(private apiService: ApiService) {}
   ngOnInit() {
-    this.block$ = combineLatest(this.chain, this.query).pipe(
-      distinctUntilChanged((x, y) => equal(x, y)),
+    this.blocks$ = combineLatest(this.chain$, this.query$).pipe(
+      distinctUntilChanged(equal),
       switchMap(([chain, query]) => this.apiService.streamBlocks(chain, query)),
-      distinctUntilChanged((x, y) => equal(x, y))
+      distinctUntilChanged(equal)
     );
-  }
-
-  goToBlock(block: IBlock) {
-    // tslint:disable-next-line:no-console
-    console.log('TODO: navigate to block', block.hash);
   }
 }

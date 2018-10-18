@@ -17,7 +17,13 @@ export const environment = {
    * Usage example: `${apiPrefix}/BCH/mainnet/block/tip`
    */
   apiPrefix: '/api',
-  production: false
+  production: false,
+  ...{
+    loggingSettings: {
+      ...environmentProd.loggingSettings,
+      serverLoggingUrl: undefined
+    }
+  }
 };
 
 /*

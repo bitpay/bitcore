@@ -2,4 +2,8 @@
   --ion-background-color: #3d3d4d;
   --ion-item-background-color-active: lighten(--ion-background-color, 15%);
   --ion-text-color: rgba(255, 255, 255, 0.9);
+
+  ion-item.active {
+    border-left: 3px solid rgba(119, 209, 255, 0.79);
+  }
 }

@@ -15,7 +15,7 @@ export class BlockComponent {
    * this chain or an alternative currency in which to estimate value.
    */
   @Input()
-  displayValueIn = 'BCH';
+  displayValueCode: string;
 
   @Input()
   summary = true;

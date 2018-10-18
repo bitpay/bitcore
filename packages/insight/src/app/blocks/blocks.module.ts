@@ -6,7 +6,6 @@ import { IonicModule } from '@ionic/angular';
 
 import { SharedModule } from '../shared/shared.module';
 import { BlockListComponent } from './block-list/block-list.component';
-import { BlockComponent } from './block/block.component';
 import { BlocksPage } from './blocks.page';
 
 @NgModule({
@@ -22,6 +21,6 @@ import { BlocksPage } from './blocks.page';
     ]),
     SharedModule
   ],
-  declarations: [BlocksPage, BlockListComponent, BlockComponent]
+  declarations: [BlocksPage, BlockListComponent]
 })
 export class BlocksPageModule {}
