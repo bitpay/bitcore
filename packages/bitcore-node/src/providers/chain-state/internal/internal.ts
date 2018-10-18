@@ -8,13 +8,13 @@ import { BlockModel, IBlock } from '../../../models/block';
 import { WalletModel, IWallet } from '../../../models/wallet';
 import { WalletAddressModel } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
-import { Storage, StreamingFindOptions } from '../../../services/storage';
+import { Storage } from '../../../services/storage';
 import { RPC } from '../../../rpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { TransactionModel, ITransaction } from '../../../models/transaction';
-import { StateModel } from '../../../models/state';
 import { ListTransactionsStream } from './transforms';
 import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
+import { StateModel } from '../../../models/state';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -80,7 +80,11 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getBlocks(params: CSP.GetBlockParams) {
     const { query, options } = this.getBlocksQuery(params);
-    let blocks = await BlockModel.collection.find<IBlock>(query, options).toArray();
+    let cursor = BlockModel.collection.find<IBlock>(query, options);
+    if (options.sort) {
+      cursor = cursor.sort(options.sort);
+    }
+    let blocks = await cursor.toArray();
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
     const blockTransform = (b: IBlock) => {
@@ -284,7 +288,6 @@ export class InternalStateProvider implements CSP.IChainStateService {
       network,
       wallets: wallet._id
     };
-    let finalOptions: StreamingFindOptions<ITransaction> = {};
     if (args) {
       if (args.startBlock) {
         finalQuery.blockHeight = { $gte: Number(args.startBlock) };
@@ -306,11 +309,8 @@ export class InternalStateProvider implements CSP.IChainStateService {
           finalQuery.blockTimeNormalized.$lt = new Date(args.endDate);
         }
       }
-      //const { query, options } = Storage.getFindOptions(TransactionModel, args);
-      //finalQuery = Object.assign({}, finalQuery, query);
-      finalOptions = args;
     }
-    let transactionStream = TransactionModel.getTransactions({ query: finalQuery, options: finalOptions });
+    let transactionStream = TransactionModel.getTransactions({ query: finalQuery, options: args });
     let listTransactionsStream = new ListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(stream);
   }
@@ -342,11 +342,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getFee(params: CSP.GetEstimateSmartFeeParams) {
     const { chain, network, target } = params;
-    if (chain === 'BCH') {
-      return this.getRPC(chain, network).getEstimateFee(Number(target));
-    } else {
-      return this.getRPC(chain, network).getEstimateSmartFee(Number(target));
-    }
+    return this.getRPC(chain, network).getEstimateSmartFee(Number(target));
   }
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
