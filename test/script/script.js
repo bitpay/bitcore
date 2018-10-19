@@ -198,6 +198,19 @@ describe('Script', function() {
       script.chunks[3].opcodenum.should.equal(Opcode.OP_EQUALVERIFY);
       script.chunks[4].opcodenum.should.equal(Opcode.OP_CHECKSIG);
     });
+
+    it('should parse this known problematic script in ASM', function () {
+      var asm = 'OP_RETURN 026d02 0568656c6c6f';
+      var script = Script.fromASM(asm);
+      script.toASM().should.equal(asm);
+    });
+
+    it('should parse this long script in ASM', function () {
+      var asm = 'OP_RETURN 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
+      var script = Script.fromASM(asm);
+      script.chunks[1].opcodenum.should.equal(Opcode.OP_PUSHDATA1)
+      script.toASM().should.equal(asm);
+    });
   });
 
   describe('#fromString', function() {
@@ -265,11 +278,16 @@ describe('Script', function() {
       Script('OP_RETURN').isDataOut().should.equal(true);
     });
 
+    it('validates that this two part OP_RETURN is standard', function() {
+      Script.fromASM('OP_RETURN 026d02 0568656c6c6f').isDataOut().should.equal(true);
+    });
+
     it('validates that this 40-byte OP_RETURN is standard', function() {
       var buf = new Buffer(40);
       buf.fill(0);
       Script('OP_RETURN 40 0x' + buf.toString('hex')).isDataOut().should.equal(true);
     });
+
     it('validates that this 80-byte OP_RETURN is standard', function() {
       var buf = new Buffer(80);
       buf.fill(0);
