@@ -7068,7 +7068,7 @@ console.log('[server.js.425:err:]',err); //TODO
     });
   });
 
-  describe('#scan', function() {
+  describe.only('#scan', function() {
     var server, wallet;
 
     describe('1-of-1 wallet (BIP44 & P2PKH)', function() {
@@ -7351,7 +7351,8 @@ console.log('[server.js.425:err:]',err); //TODO
       });
 
 
-      it('powerScan: should add not add skipped addresses', function(done) {
+      it('powerScan: should add not add skipped addresses if there is no activity', function(done) {
+        Defaults.SCAN_ADDRESS_GAP = 5;
         helpers.stubAddressActivity(
           ['1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG', // m/0/0
             '1GdXraZ1gtoVAvBh49D4hK9xLm6SKgesoE', // m/0/2
@@ -7377,29 +7378,35 @@ console.log('[server.js.425:err:]',err); //TODO
       });
 
       it('powerScan: should add skipped addresses', function(done) {
+        Defaults.SCAN_ADDRESS_GAP = 5;
         this.timeout(10000);
         helpers.stubAddressActivity(
           ['1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG', // m/0/0
             '1GdXraZ1gtoVAvBh49D4hK9xLm6SKgesoE', // m/0/2
-            '1FUzgKcyPJsYwDLUEVJYeE2N3KVaoxTjGS', // m/1/0
             '1Lz4eBV8xVkSGkjhHSRkgQvi79ieYgWJWc', //m/0/99
             '1HhAmuUfUszfAdK1jyumvBQoSj9tLB3PE', //m/0/199
             '1PTrZzp5Kk78uVxnPUHYEHBktADgv3RhrC', //m/0/200
-            '19ESL9NG2hcARsaBZBEnAumRLrpxfgAN75', //m/1/9
+            '1FUzgKcyPJsYwDLUEVJYeE2N3KVaoxTjGS', // m/1/0
+            '12vSXvVzY1KjAVRz18KrsKgMoy89fQ7Xo4', //m/1/9
           ]);
 
         // First without activity
         var addr = '1KbTiFvjbN6B5reCVS4tTT49vPQkvsqnE2'; // m/0/3
 
         server.scan({ startingStep: 1000 }, function(err) {
+console.log('[server.js.7365:err:]',err); //TODO
           should.not.exist(err);
           server.getWallet({}, function(err, wallet) {
+console.log('[server.js.7368:err:]',err); //TODO
             should.not.exist(err);
             wallet.addressManager.receiveAddressIndex.should.equal(201);
-            wallet.addressManager.changeAddressIndex.should.equal(1);
+            wallet.addressManager.changeAddressIndex.should.equal(10);
             server.getMainAddresses({}, function(err, addr) {
+console.log('[server.js.7373:err:]',err); //TODO
               should.not.exist(err);
-              addr.length.should.equal(201 - 1);
+
+              //201 MAIN addresses (0 to 200)
+              addr.length.should.equal(201);
               done();
             });
           });
