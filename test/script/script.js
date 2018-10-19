@@ -205,10 +205,27 @@ describe('Script', function() {
       script.toASM().should.equal(asm);
     });
 
-    it('should parse this long script in ASM', function () {
-      var asm = 'OP_RETURN 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000';
+    it('should parse this long PUSHDATA1 script in ASM', function () {
+      var buf = Buffer.alloc(220, 0);
+      var asm = 'OP_RETURN ' + buf.toString('hex');
       var script = Script.fromASM(asm);
       script.chunks[1].opcodenum.should.equal(Opcode.OP_PUSHDATA1)
+      script.toASM().should.equal(asm);
+    });
+
+    it('should parse this long PUSHDATA2 script in ASM', function () {
+      var buf = Buffer.alloc(1024, 0);
+      var asm = 'OP_RETURN ' + buf.toString('hex');
+      var script = Script.fromASM(asm);
+      script.chunks[1].opcodenum.should.equal(Opcode.OP_PUSHDATA2)
+      script.toASM().should.equal(asm);
+    });
+
+    it('should parse this long PUSHDATA4 script in ASM', function () {
+      var buf = Buffer.alloc(Math.pow(2, 17), 0);
+      var asm = 'OP_RETURN ' + buf.toString('hex');
+      var script = Script.fromASM(asm);
+      script.chunks[1].opcodenum.should.equal(Opcode.OP_PUSHDATA4)
       script.toASM().should.equal(asm);
     });
   });
