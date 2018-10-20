@@ -489,6 +489,8 @@ describe('Script', function() {
       Script('OP_0').isPushOnly().should.equal(true);
       Script('OP_0 OP_RETURN').isPushOnly().should.equal(false);
       Script('OP_PUSHDATA1 5 0x1010101010').isPushOnly().should.equal(true);
+      Script('OP_PUSHDATA2 5 0x1010101010').isPushOnly().should.equal(true);
+      Script('OP_PUSHDATA4 5 0x1010101010').isPushOnly().should.equal(true);
       // like bitcoind, we regard OP_RESERVED as being "push only"
       Script('OP_RESERVED').isPushOnly().should.equal(true);
     });
