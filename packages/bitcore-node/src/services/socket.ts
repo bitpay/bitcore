@@ -3,7 +3,6 @@ import { IBlock } from '../models/block';
 import { ITransaction } from '../models/transaction';
 import { LoggifyClass } from '../decorators/Loggify';
 
-
 @LoggifyClass
 export class SocketService {
   io?: SocketIO.Server;
@@ -16,19 +15,22 @@ export class SocketService {
 
   signalBlock(block: IBlock) {
     if (this.io) {
-      this.io.of('inv').emit('block', block);
+      const { chain, network } = block;
+      this.io.of(`${chain}/${network}/inv`).emit('block', block);
     }
   }
 
   signalTx(tx: ITransaction) {
     if (this.io) {
-      this.io.of('inv').emit('tx', tx);
+      const { chain, network } = tx;
+      this.io.of(`${chain}/${network}/inv`).emit('tx', tx);
     }
   }
 
   signalAddressTx(address: string, tx: ITransaction) {
     if (this.io) {
-      this.io.of(address).emit(address, tx);
+      const { chain, network } = tx;
+      this.io.of(`${chain}/${network}/${address}`).emit(address, tx);
     }
   }
 }

@@ -7,6 +7,7 @@ import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { StateModel } from '../models/state';
 import { SpentHeightIndicators } from '../models/coin';
+import { Socket } from './socket';
 const Chain = require('../chain');
 const LRU = require('lru-cache');
 
@@ -143,11 +144,18 @@ export class P2pService {
         if (chainConfig.chainSource && chainConfig.chainSource !== 'p2p') {
           continue;
         }
-        new P2pService({
+        const p2p = new P2pService({
           chain,
           network,
           chainConfig
-        }).start();
+        });
+        p2p.start();
+        p2p.events.on('block', block => {
+          Socket.signalBlock(block);
+        });
+        p2p.events.on('transaction', transaction => {
+          Socket.signalTx(transaction);
+        });
       }
     }
   }
