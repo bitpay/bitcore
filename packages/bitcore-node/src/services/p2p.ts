@@ -86,7 +86,6 @@ export class P2pService {
     this.pool.on('peerblock', async (peer, message) => {
       const { block } = message;
       const { hash } = block;
-      const { chain, network } = this;
       logger.debug('peer block received', {
         peer: `${peer.host}:${peer.port}`,
         chain: this.chain,
@@ -97,15 +96,8 @@ export class P2pService {
       if (!this.invCache.get(hash)) {
         this.invCache.set(hash);
         this.events.emit(hash, message.block);
-        if (!this.syncing) {
-          try {
-            await this.processBlock(block);
-            this.events.emit('block', message.block);
-          } catch (err) {
-            logger.error(`Error syncing ${chain} ${network}`, err);
-            this.sync();
-          }
-        }
+        this.events.emit('block', message.block);
+        this.sync();
       }
     });
 

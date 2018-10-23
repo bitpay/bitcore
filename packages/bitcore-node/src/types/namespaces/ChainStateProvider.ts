@@ -10,8 +10,8 @@ export declare namespace CSP {
   export type StreamWalletTransactionsArgs = {
     startBlock: number;
     endBlock: number;
-    startDate: Date;
-    endDate: Date;
+    startDate: string;
+    endDate: string;
   } & StreamingFindOptions<ITransaction>;
 
   export type StreamAddressUtxosArgs = {

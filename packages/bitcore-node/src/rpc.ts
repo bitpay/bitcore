@@ -109,6 +109,12 @@ export class RPC {
   async getEstimateSmartFee(target: number) {
     return this.asyncCall('estimatesmartfee', [target]);
   }
+
+
+  async getEstimateFee(target: number) {
+    return this.asyncCall('estimatefee', [target]);
+  }
+
 }
 
 @LoggifyClass
@@ -177,6 +183,7 @@ export type RPCTransaction = {
   hex: string;
   txid: string;
   hash: string;
+  strippedsize: number;
   size: number;
   vsize: number;
   version: number;

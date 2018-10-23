@@ -1,6 +1,5 @@
-import { CoinModel } from './coin';
+import { CoinModel, ICoin } from './coin';
 import { TransformOptions } from '../types/TransformOptions';
-import { partition } from '../utils/partition';
 import { ObjectID } from 'mongodb';
 import { BaseModel } from './base';
 import { IWallet } from './wallet';
@@ -32,78 +31,60 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
     return JSON.stringify(transform);
   }
 
-  getUpdateCoinsObj(params: { wallet: IWallet; addresses: string[] }) {
-    const { wallet, addresses } = params;
+  getUpdateCoinsObj(params: { wallet: IWallet; address: string }) {
+    const { wallet, address } = params;
     const { chain, network } = wallet;
 
-    let walletUpdates = addresses.map((address: string) => {
-      return {
-        updateOne: {
-          filter: { wallet: wallet._id, address: address },
-          update: { wallet: wallet._id, address: address, chain, network },
-          upsert: true
+    return {
+      updateMany: {
+        filter: { chain, network, address },
+        update: {
+          $addToSet: { wallets: wallet._id }
         }
-      };
-    });
+      }
+    };
+  }
 
-    let coinUpdates = addresses.map((address: string) => {
-      return {
-        updateMany: {
-          filter: { chain, network, address },
-          update: {
-            $addToSet: { wallets: wallet._id }
-          }
-        }
-      };
-    });
+  getUpdateWalletAddressObj(params: { wallet: IWallet; address: string }) {
+    const { wallet, address } = params;
+    const { chain, network } = wallet;
 
     return {
-      walletUpdates,
-      coinUpdates
+      updateOne: {
+        filter: { wallet: wallet._id, address: address },
+        update: { wallet: wallet._id, address: address, chain, network },
+        upsert: true
+      }
     };
   }
 
   async updateCoins(params: { wallet: IWallet; addresses: string[] }) {
-    const { wallet } = params;
-    const updates = WalletAddressModel.getUpdateCoinsObj(params);
-    const { walletUpdates, coinUpdates } = updates;
+    const { wallet, addresses } = params;
     const { chain, network } = wallet;
 
-    let walletUpdateBatches = partition(walletUpdates, 500);
-    let coinUpdateBatches = partition(coinUpdates, 500);
-
     return new Promise(async resolve => {
-      await Promise.all(
-        walletUpdateBatches.map(walletUpdateBatch => {
-          return WalletAddressModel.collection.bulkWrite(walletUpdateBatch, { ordered: false });
-        })
-      );
-
-      await Promise.all(
-        coinUpdateBatches.map(coinUpdateBatch => {
-          return CoinModel.collection.bulkWrite(coinUpdateBatch, { ordered: false });
-        })
-      );
-      let coins = await CoinModel.collection.find({ wallets: wallet._id }, { batchSize: 100 }).project({ spentTxid: 1, mintTxid: 1 }).toArray();
-      let txids = {};
-      for (let coin of coins) {
-        txids[coin.mintTxid] = true;
-        txids[coin.spentTxid] = true;
+      for (const address of addresses) {
+        await Promise.all([
+          WalletAddressModel.collection.updateOne({ wallet: wallet._id, address }, { $set: { wallet: wallet._id, address: address, chain, network } }, { upsert: true }),
+          CoinModel.collection.updateMany({ chain, network, address }, { $addToSet: { wallets: wallet._id }})
+        ]);
       }
-      let txUpdates = Object.keys(txids).map(txid => {
-        return {
-          updateOne: {
-            filter: { chain, network, txid },
-            update: { $addToSet: { wallets: wallet._id } }
-          }
+
+      let coinStream = CoinModel.collection.find({ wallets: wallet._id }).project({ spentTxid: 1, mintTxid: 1 }).addCursorFlag('noCursorTimeout', true);
+      let txids = {};
+      coinStream.on('data', (coin: ICoin) => {
+        if (!txids[coin.mintTxid]) {
+          TransactionModel.collection.update({ txid: coin.mintTxid, network, chain }, { $addToSet: { wallets: wallet._id } });
         }
+        txids[coin.mintTxid] = true;
+        if (!txids[coin.spentTxid]) {
+          TransactionModel.collection.update({ txid: coin.spentTxid, network, chain }, { $addToSet: { wallets: wallet._id } });
+        }
+        txids[coin.spentTxid] = true;
       });
-      await Promise.all(
-        partition(txUpdates, 500).map(txUpdate => {
-          return TransactionModel.collection.bulkWrite(txUpdate, { ordered: false });
-        })
-      )
-      resolve();
+      coinStream.on('end', async () => {
+        resolve();
+      });
     });
   }
 }

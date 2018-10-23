@@ -4,6 +4,7 @@ import { TransformableModel } from '../types/TransformableModel';
 import logger from '../logger';
 import config from '../config';
 import { LoggifyClass } from '../decorators/Loggify';
+import { ObjectID } from 'bson';
 import { MongoClient, Db, Cursor } from 'mongodb';
 import { MongoBound } from '../models/base';
 import '../models';
@@ -87,6 +88,8 @@ export class StorageService {
             typecastedValue = new Date(oldValue) as any;
             break;
         }
+      } else if (modelKey == '_id') {
+        typecastedValue = new ObjectID(oldValue) as any;
       }
     }
     return typecastedValue;
@@ -117,22 +120,27 @@ export class StorageService {
       res.end();
     });
   }
-
   getFindOptions<T>(model: TransformableModel<T>, originalOptions: StreamingFindOptions<T>) {
-    let options: StreamingFindOptions<T> = {};
     let query: any = {};
-    if (
-      originalOptions.since !== undefined &&
-      originalOptions.paging &&
-      this.validPagingProperty(model, originalOptions.paging)
-    ) {
-      options.since = this.typecastForDb(model, originalOptions.paging, originalOptions.since);
+    let since: any = null;
+    let options: StreamingFindOptions<T> = {};
+    if(originalOptions.sort) {
+      options.sort = originalOptions.sort;
+    }
+    if (originalOptions.paging && this.validPagingProperty(model, originalOptions.paging)) {
+      if (originalOptions.since !== undefined) {
+        since = this.typecastForDb(model, originalOptions.paging, originalOptions.since);
+      }
       if (originalOptions.direction && Number(originalOptions.direction) === 1) {
-        query[originalOptions.paging] = { $gt: originalOptions.since };
-        options.sort = { [originalOptions.paging]: 1 };
+        if (since) {
+          query[originalOptions.paging] = { $gt: since };
+        }
+        options.sort = Object.assign({}, originalOptions.sort, { [originalOptions.paging]: 1 });
       } else {
-        query[originalOptions.paging] = { $lt: originalOptions.since };
-        options.sort = { [originalOptions.paging]: -1 };
+        if (since) {
+          query[originalOptions.paging] = { $lt: since };
+        }
+        options.sort = Object.assign({}, originalOptions.sort, { [originalOptions.paging]: -1 });
       }
     }
     options.limit = Math.min(originalOptions.limit || 100, 1000);
@@ -151,6 +159,9 @@ export class StorageService {
     let cursor = model.collection.find(finalQuery, options).stream({
       transform: transform || model._apiTransform
     });
+    if(options.sort) {
+      cursor = cursor.sort(options.sort);
+    }
     return this.apiStream(cursor, res);
   }
 }
