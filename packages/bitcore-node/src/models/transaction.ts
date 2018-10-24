@@ -155,26 +155,22 @@ export class Transaction extends BaseModel<ITransaction> {
       }
 
       return {
-        updateOne: {
-          filter: { txid: txids[index], chain, network },
-          update: {
-            $set: {
-              chain,
-              network,
-              blockHeight: height,
-              blockHash,
-              blockTime,
-              blockTimeNormalized,
-              coinbase: tx.isCoinbase(),
-              fee,
-              size: tx.toBuffer().length,
-              locktime: tx.nLockTime,
-              value: tx.outputAmount,
-              wallets
-            }
-          },
-          upsert: true,
-          forceServerObjectId: true
+        insertOne: {
+          document: {
+            txid: txids[index],
+            chain,
+            network,
+            blockHeight: height,
+            blockHash,
+            blockTime,
+            blockTimeNormalized,
+            coinbase: tx.isCoinbase(),
+            fee,
+            size: tx.toBuffer().length,
+            locktime: tx.nLockTime,
+            value: tx.outputAmount,
+            wallets
+          }
         }
       };
     });
