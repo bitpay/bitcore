@@ -210,29 +210,20 @@ export class Transaction extends BaseModel<ITransaction> {
         }
 
         mintOps.push({
-          updateOne: {
-            filter: {
+          insertOne: {
+            document: {
+              chain,
+              network,
               mintTxid: txid,
               mintIndex: index,
-              spentHeight: { $lt: SpentHeightIndicators.minimum },
-              chain,
-              network
-            },
-            update: {
-              $set: {
-                chain,
-                network,
-                mintHeight: height,
-                coinbase: isCoinbase,
-                value: output.satoshis,
-                address,
-                script: scriptBuffer,
-                spentHeight: SpentHeightIndicators.unspent,
-                wallets: []
-              }
-            },
-            upsert: true,
-            forceServerObjectId: true
+              mintHeight: height,
+              address,
+              coinbase: isCoinbase,
+              value: output.satoshis,
+              script: scriptBuffer,
+              spentHeight: SpentHeightIndicators.unspent,
+              wallets: []
+            }
           }
         });
       }
