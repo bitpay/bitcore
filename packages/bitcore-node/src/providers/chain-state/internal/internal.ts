@@ -236,7 +236,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   async streamMissingWalletAddresses(params: CSP.StreamWalletMissingAddressesParams) {
     const { chain, network, pubKey, stream } = params;
     const wallet = await WalletModel.collection.findOne({ pubKey });
-    const walletId = wallet!._id;
+    const walletId = wallet!._id!;
     const query = { chain, network, wallets: walletId, spentHeight: { $gte: SpentHeightIndicators.minimum } };
     const cursor = CoinModel.collection.find(query);
     const seen = {};
