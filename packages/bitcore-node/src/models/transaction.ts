@@ -110,8 +110,8 @@ export class Transaction extends BaseModel<ITransaction> {
     const spent = await CoinModel.collection.find({ spentTxid: { $in: txids }, chain, network }).toArray();
     type CoinGroup = { [txid: string]: { total: number; wallets: Array<ObjectID> } };
     const groupedMints = params.mintOps.reduce<CoinGroup>((agg, coinOp) => {
-      const mintTxid = coinOp.updateOne.filter.mintTxid;
-      const coin = coinOp.updateOne.update.$set;
+      const mintTxid = coinOp.insertOne.document.mintTxid;
+      const coin = coinOp.insertOne.document;
       const { value, wallets } = coin;
       if (!agg[mintTxid]) {
         agg[mintTxid] = {
@@ -246,16 +246,16 @@ export class Transaction extends BaseModel<ITransaction> {
     }
 
     if (initialSyncComplete) {
-      let mintOpsAddresses = mintOps.map(mintOp => mintOp.updateOne.update.$set.address);
+      let mintOpsAddresses = mintOps.map(mintOp => mintOp.insertOne.document.address);
       let wallets = await WalletAddressModel.collection
         .find({ address: { $in: mintOpsAddresses }, chain, network }, { batchSize: 100 })
         .toArray();
       if (wallets.length) {
         mintOps = mintOps.map(mintOp => {
           let transformedWallets = wallets
-            .filter(wallet => wallet.address === mintOp.updateOne.update.$set.address)
+            .filter(wallet => wallet.address === mintOp.insertOne.document.address)
             .map(wallet => wallet.wallet);
-          mintOp.updateOne.update.$set.wallets = transformedWallets;
+          mintOp.insertOne.document.wallets = transformedWallets;
           return mintOp;
         });
       }
@@ -280,8 +280,8 @@ export class Transaction extends BaseModel<ITransaction> {
     }
     let mintMap = {};
     for (let mintOp of mintOps || []) {
-      mintMap[mintOp.updateOne.filter.mintTxid] = mintMap[mintOp.updateOne.filter.mintIndex] || {};
-      mintMap[mintOp.updateOne.filter.mintTxid][mintOp.updateOne.filter.mintIndex] = mintOp;
+      mintMap[mintOp.insertOne.document.mintTxid] = mintMap[mintOp.insertOne.document.mintIndex] || {};
+      mintMap[mintOp.insertOne.document.mintTxid][mintOp.insertOne.document.mintIndex] = mintOp;
     }
     for (let tx of txs) {
       if (tx.isCoinbase()) {
@@ -292,10 +292,10 @@ export class Transaction extends BaseModel<ITransaction> {
         let inputObj = input.toObject();
         let sameBlockSpend = mintMap[inputObj.prevTxId] && mintMap[inputObj.prevTxId][inputObj.outputIndex];
         if (sameBlockSpend) {
-          sameBlockSpend.updateOne.update.$set.spentHeight = height;
-          sameBlockSpend.updateOne.update.$set.spentTxid = txid;
+          sameBlockSpend.insertOne.document.spentHeight = height;
+          sameBlockSpend.insertOne.document.spentTxid = txid;
           if (config.pruneSpentScripts && height > 0) {
-            delete sameBlockSpend.updateOne.update.$set.script;
+            delete sameBlockSpend.insertOne.document.script;
           }
           continue;
         }
