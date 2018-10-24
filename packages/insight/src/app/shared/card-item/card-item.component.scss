@@ -1,0 +1,42 @@
+:host {
+  display: block;
+}
+
+.header {
+  font-size: 1.1rem;
+  display: flex;
+  justify-content: space-between;
+}
+
+.header,
+.content {
+  padding: 1em;
+  :host-context(.detail-view) & {
+    padding: 1.5em;
+  }
+}
+
+.header + .content {
+  padding-top: 0 !important;
+}
+
+.header-divider {
+  font-weight: 100;
+}
+
+.icon {
+  display: inline-flex;
+  align-self: center;
+}
+
+.clickable {
+  cursor: pointer;
+}
+
+svg {
+  fill: currentColor;
+}
+
+.link {
+  color: var(--app-link-color);
+}

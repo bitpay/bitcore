@@ -24,4 +24,11 @@ export class BlockComponent {
     // tslint:disable-next-line:no-console
     console.log('TODO: jump to transaction listing for block:', block.hash);
   }
+  listBlocksBySameMiner(block: IBlock) {
+    // tslint:disable-next-line:no-console
+    console.log(
+      'TODO: jump to block listing of blocks by the same miner as block:',
+      block.hash
+    );
+  }
 }

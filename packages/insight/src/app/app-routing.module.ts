@@ -9,7 +9,7 @@ import {
 const routes: Routes = [
   {
     path: '',
-    redirectTo: `${environment.initialChain.code}/home`,
+    redirectTo: `${environment.initialChain.code}`,
     pathMatch: 'full'
   },
   {
@@ -18,11 +18,6 @@ const routes: Routes = [
     children: [
       {
         path: '',
-        redirectTo: `home`,
-        pathMatch: 'full'
-      },
-      {
-        path: 'home',
         loadChildren: './home/home.module#HomePageModule'
       },
       {

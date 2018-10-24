@@ -1,0 +1,77 @@
+<div
+    [ngClass]="{'header': true, clickable: type === CardItemType.forward || type === CardItemType.back || type === CardItemType.expandCollapse, 'link': type === CardItemType.forward || type === CardItemType.back}"
+    *ngIf="header !== ''"
+    (click)="isOpen = !isOpen"
+>
+    <span>
+        {{header}}
+        <span
+            class="header-divider"
+            *ngIf="headerValue !== ''"
+        >
+            |
+        </span>
+        {{headerValue}}
+    </span>
+    <span
+        class="icon"
+        [ngSwitch]="type"
+    >
+        <ng-container *ngSwitchCase="CardItemType.forward">
+            <svg
+                width="8"
+                height="12"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path
+                    d="M0 1.4L1.4 0l6 6-6 6L0 10.6 4.6 6z"
+                    fill-rule="evenodd"
+                ></path>
+            </svg>
+        </ng-container>
+        <ng-container *ngSwitchCase="CardItemType.back">
+            <svg
+                width="8"
+                height="12"
+                xmlns="http://www.w3.org/2000/svg"
+            >
+                <path
+                    d="M7.4 10.6L6 12 0 6l6-6 1.4 1.4L2.8 6z"
+                    fill-rule="evenodd"
+                ></path>
+            </svg>
+        </ng-container>
+        <ng-container *ngSwitchCase="CardItemType.expandCollapse">
+            <ng-container *ngIf="isOpen; else expand">
+                <svg
+                    width="14"
+                    height="2"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
+                    <path
+                        d="M0 0v2h14V0z"
+                        fill-rule="evenodd"
+                    ></path>
+                </svg>
+            </ng-container>
+            <ng-template #expand>
+                <svg
+                    width="14"
+                    height="14"
+                    xmlns="http://www.w3.org/2000/svg"
+                >
+                    <path
+                        d="M6 0v6H0v2h6v6h2V8h6V6H8V0z"
+                        fill-rule="evenodd"
+                    ></path>
+                </svg>
+            </ng-template>
+        </ng-container>
+    </span>
+</div>
+<div
+    class="content"
+    *ngIf="isOpen === true && type === CardItemType.expandCollapse || type === CardItemType.none"
+>
+    <ng-content></ng-content>
+</div>

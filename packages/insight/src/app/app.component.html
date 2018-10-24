@@ -9,10 +9,11 @@
                     <ion-menu-toggle auto-hide="false">
                         <ion-item
                             [routerDirection]="'root'"
-                            [routerLink]="['/' + (config.currentChain$ | async).code + '/home']"
+                            [routerLink]="['/' + (config.currentChain$ | async).code]"
+                            [routerLinkActiveOptions]="{exact: true}"
                             routerLinkActive="active"
                         >
-                            <ion-label>Home</ion-label>
+                            <ion-label>Chain</ion-label>
                         </ion-item>
                         <ion-item
                             [routerDirection]="'root'"

@@ -1,5 +1,6 @@
 export type IBlock = {
   chain: string;
+  confirmations?: number;
   network: string;
   height: number;
   hash: string;
