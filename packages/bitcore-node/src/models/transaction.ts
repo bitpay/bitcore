@@ -213,7 +213,6 @@ export class Transaction extends BaseModel<ITransaction> {
           (parentChainCoin: ICoin) => parentChainCoin.mintTxid === txid && parentChainCoin.mintIndex === index
         );
         if (parentChainCoin) {
-          console.warn('Skipping coin');
           continue;
         }
         let address = '';
