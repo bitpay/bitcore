@@ -10,7 +10,13 @@
     "insight": "cd packages/insight && npm start",
     "node": "cd packages/bitcore-node && npm start"
   },
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-customizable"
+    }
+  },
   "devDependencies": {
+    "cz-customizable": "^5.2.0",
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
