@@ -6,7 +6,7 @@ const router = Router({ mergeParams: true });
 
 router.get('/', function(req, res) {
   let { chain, network } = req.params;
-  let { blockHeight, blockHash } = req.query;
+  let { blockHeight, blockHash, limit, since, direction, paging } = req.query;
   if (!chain || !network) {
     return res.status(400).send('Missing required param');
   }
@@ -19,7 +19,7 @@ router.get('/', function(req, res) {
     chain,
     network,
     stream: res,
-    args: {}
+    args: { limit, since, direction, paging }
   };
 
   if (blockHeight) {
