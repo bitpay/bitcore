@@ -1,0 +1,11 @@
+.placeholder {
+  text-align: center;
+  border: 1px solid #aac;
+  background-color: #fefeff;
+  &.top-element {
+    padding: 100px 0;
+  }
+  &.heatmap {
+    padding: 50px 0;
+  }
+}

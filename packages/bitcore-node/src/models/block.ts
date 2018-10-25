@@ -5,25 +5,9 @@ import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
+import { IBlock } from '../types/Block';
 
-export type IBlock = {
-  chain: string;
-  network: string;
-  height: number;
-  hash: string;
-  version: number;
-  merkleRoot: string;
-  time: Date;
-  timeNormalized: Date;
-  nonce: number;
-  previousBlockHash: string;
-  nextBlockHash: string;
-  transactionCount: number;
-  size: number;
-  bits: number;
-  reward: number;
-  processed: boolean;
-};
+export { IBlock };
 
 @LoggifyClass
 export class Block extends BaseModel<IBlock> {
