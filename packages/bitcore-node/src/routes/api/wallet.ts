@@ -125,16 +125,23 @@ router.get('/:pubKey/addresses', authenticate, async (req: AuthenticatedRequest,
 router.post('/:pubKey', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
   let addressLines: { address: string }[] = req.body;
+  let keepAlive;
   try {
     let addresses = addressLines.map(({ address }) => address);
+    res.status(200);
+    keepAlive = setInterval(() => {
+      res.write('\n');
+    }, 1000);
     await ChainStateProvider.updateWallet({
       chain,
       network,
       wallet: req.wallet!,
       addresses
     });
-    return res.send({ success: true });
+    clearInterval(keepAlive);
+    return res.end();
   } catch (err) {
+    clearInterval(keepAlive);
     return res.status(500).send(err);
   }
 });
