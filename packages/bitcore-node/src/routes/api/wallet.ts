@@ -111,7 +111,7 @@ router.get('/:pubKey/addresses', authenticate, async (req: AuthenticatedRequest,
     let payload = {
       chain,
       network,
-      walletId: wallet!._id,
+      walletId: wallet!._id!,
       limit,
       stream: res
     };
