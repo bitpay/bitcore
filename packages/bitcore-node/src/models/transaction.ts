@@ -23,7 +23,7 @@ function getCachedAddress(chain: string, network: string, script: string){
   const result = addressCacheStore.map.get(`${chain}:${network}:${script}`);
   if (result) {
     addressCacheStore.list.push(`${chain}:${network}:${script}`);
-    if (addressCacheStore.list.length > 10000) {
+    if (addressCacheStore.list.length > 1000000) {
       addressCacheStore.map.delete(addressCacheStore.list.shift());
     }
   }
@@ -33,7 +33,7 @@ function getCachedAddress(chain: string, network: string, script: string){
 function setCachedAddress(chain: string, network: string, script: any, address: any) {
   addressCacheStore.map.set(`${chain}:${network}:${script}`, address);
   addressCacheStore.list.push(`${chain}:${network}:${script}`);
-  if (addressCacheStore.list.length > 10000) {
+  if (addressCacheStore.list.length > 1000000) {
     addressCacheStore.map.delete(addressCacheStore.list.shift());
   }
 }
