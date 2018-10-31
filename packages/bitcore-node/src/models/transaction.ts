@@ -218,6 +218,7 @@ export class Transaction extends BaseModel<ITransaction> {
     let { chain, height, network, txs, parentChain, forkHeight, initialSyncComplete } = params;
     let mintOps = new Array<any>();
     let parentChainCoins = new Array<ICoin>();
+    let parentChainCoinsMap = new Map();
     if (parentChain && forkHeight && height < forkHeight) {
       parentChainCoins = await CoinModel.collection
         .find({
@@ -227,16 +228,16 @@ export class Transaction extends BaseModel<ITransaction> {
           spentHeight: { $gt: SpentHeightIndicators.unspent, $lt: forkHeight }
         })
         .toArray();
+        for (const parentChainCoin of parentChainCoins) {
+          parentChainCoinsMap.set(`${parentChainCoin.mintTxid}:${parentChainCoin.mintIndex}`, true);
+        }
     }
     for (let tx of txs) {
       tx._hash = tx.hash;
       let txid = tx._hash;
       let isCoinbase = tx.isCoinbase();
       for (let [index, output] of tx.outputs.entries()) {
-        let parentChainCoin = parentChainCoins.find(
-          (parentChainCoin: ICoin) => parentChainCoin.mintTxid === txid && parentChainCoin.mintIndex === index
-        );
-        if (parentChainCoin) {
+        if (parentChainCoins.length && parentChainCoinsMap.get(`${txid}:${index}`)) {
           continue;
         }
         let address = '';
