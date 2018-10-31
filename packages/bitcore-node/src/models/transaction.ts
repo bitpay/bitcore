@@ -131,7 +131,7 @@ export class Transaction extends BaseModel<ITransaction> {
     let { blockHash, blockTime, blockTimeNormalized, chain, height, network, txs } = params;
     let txids = txs.map(tx => tx._hash);
 
-    const spent = await CoinModel.collection.find({ spentTxid: { $in: txids }, chain, network }).toArray();
+    const spent = await CoinModel.collection.find({ spentHeight: height, chain, network }).project({spentTxid: 1, value: 1, wallets: 1}).toArray();
     type CoinGroup = { [txid: string]: { total: number; wallets: Array<ObjectID> } };
     const groupedMints = params.mintOps.reduce<CoinGroup>((agg, coinOp) => {
       const mintTxid = coinOp.updateOne.filter.mintTxid;
