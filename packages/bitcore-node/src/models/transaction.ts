@@ -225,7 +225,7 @@ export class Transaction extends BaseModel<ITransaction> {
           chain: parentChain,
           network,
           mintHeight: height,
-          spentHeight: { $lt: SpentHeightIndicators.minimum, $gt: forkHeight }
+          spentHeight: { $lt: SpentHeightIndicators.minimum, $gte: forkHeight }
         }).project({mintTxid:1, mintIndex: 1})
         .toArray();
         for (const parentChainCoin of parentChainCoins) {
