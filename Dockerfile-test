@@ -11,7 +11,6 @@ COPY ./packages/bitcore-wallet-client/package.json ./packages/bitcore-wallet-cli
 COPY ./packages/bitcore-wallet/package.json ./packages/bitcore-wallet/package.json
 COPY ./packages/bitcore-node/package.json ./packages/bitcore-node/package.json
 COPY ./packages/insight/package.json ./packages/insight/package.json
-COPY ./packages/insight/app/package.json ./packages/insight/app/package.json
 COPY ./packages/bitcore-mnemonic/package.json ./packages/bitcore-mnemonic/package.json
 COPY ./package.json package.json
 COPY ./package-lock.json package-lock.json
