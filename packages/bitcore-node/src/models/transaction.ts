@@ -225,7 +225,7 @@ export class Transaction extends BaseModel<ITransaction> {
           chain: parentChain,
           network,
           mintHeight: height,
-          spentHeight: { $gt: SpentHeightIndicators.unspent, $lt: forkHeight }
+          spentHeight: { $lt: SpentHeightIndicators.minimum, $gt: forkHeight }
         }).project({mintTxid:1, mintIndex: 1})
         .toArray();
         for (const parentChainCoin of parentChainCoins) {
@@ -237,7 +237,7 @@ export class Transaction extends BaseModel<ITransaction> {
       let txid = tx._hash;
       let isCoinbase = tx.isCoinbase();
       for (let [index, output] of tx.outputs.entries()) {
-        if (parentChainCoins.length && parentChainCoinsMap.get(`${txid}:${index}`)) {
+        if ((parentChain && forkHeight && height < forkHeight) && (!parentChainCoins.length || !parentChainCoinsMap.get(`${txid}:${index}`))) {
           continue;
         }
         let address = '';
