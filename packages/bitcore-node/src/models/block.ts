@@ -23,10 +23,10 @@ export class Block extends BaseModel<IBlock> {
   ];
 
   async onConnect() {
-    this.collection.createIndex({ hash: 1 });
-    this.collection.createIndex({ chain: 1, network: 1, processed: 1, height: -1 });
-    this.collection.createIndex({ chain: 1, network: 1, timeNormalized: 1 });
-    this.collection.createIndex({ previousBlockHash: 1 });
+    this.collection.createIndex({ hash: 1 }, { background: true });
+    this.collection.createIndex({ chain: 1, network: 1, processed: 1, height: -1 }, { background: true });
+    this.collection.createIndex({ chain: 1, network: 1, timeNormalized: 1 }, { background: true });
+    this.collection.createIndex({ previousBlockHash: 1 }, { background: true });
   }
 
   async addBlock(params: {
