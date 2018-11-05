@@ -3,6 +3,7 @@ export type BitcoinAddress = {
 };
 export type BitcoinScript = {
   toBuffer: () => Buffer;
+  toHex: () => string;
   classify: () => string;
   chunks: Array<{ buf: Buffer }>;
   toAddress: (network: string) => BitcoinAddress;

@@ -104,81 +104,110 @@ export class Transaction extends BaseModel<ITransaction> {
     network: string;
     mintOps: Array<any>;
   }) {
-    let { blockHash, blockTime, blockTimeNormalized, chain, height, network, txs } = params;
-    let txids = txs.map(tx => tx._hash);
+    let { blockHash, blockTime, blockTimeNormalized, chain, height, network, txs, parentChain, forkHeight } = params;
 
-    const spent = await CoinModel.collection.find({ spentTxid: { $in: txids }, chain, network }).toArray();
-    type CoinGroup = { [txid: string]: { total: number; wallets: Array<ObjectID> } };
-    const groupedMints = params.mintOps.reduce<CoinGroup>((agg, coinOp) => {
-      const mintTxid = coinOp.updateOne.filter.mintTxid;
-      const coin = coinOp.updateOne.update.$set;
-      const { value, wallets } = coin;
-      if (!agg[mintTxid]) {
-        agg[mintTxid] = {
-          total: value,
-          wallets: wallets || []
+    if (parentChain && forkHeight && height < forkHeight) {
+      const parentTxs = await TransactionModel.collection.find({blockHeight: height, chain: parentChain, network}).toArray();
+      return parentTxs.map(parentTx => {
+        return {
+          updateOne: {
+            filter: { txid: parentTx.txid, chain, network },
+            update: {
+              $set: {
+                chain,
+                network,
+                blockHeight: height,
+                blockHash,
+                blockTime,
+                blockTimeNormalized,
+                coinbase: parentTx.coinbase,
+                fee: parentTx.fee,
+                size: parentTx.size,
+                locktime: parentTx.locktime,
+                value: parentTx.value,
+                wallets: []
+              }
+            },
+            upsert: true,
+              forceServerObjectId: true
+          }
         };
-      } else {
-        agg[mintTxid].total += value;
-        agg[mintTxid].wallets.push(...wallets);
-      }
-      return agg;
-    }, {});
+      });
+    } else {
+      let txids = txs.map(tx => tx._hash);
+      const spent = await CoinModel.collection.find({ spentHeight: height, chain, network }).project({ spentTxid: 1, value: 1, wallets: 1 }).toArray();
+      type CoinGroup = { [txid: string]: { total: number; wallets: Array<ObjectID> } };
+      const groupedMints = params.mintOps.reduce<CoinGroup>((agg, coinOp) => {
+        const mintTxid = coinOp.updateOne.filter.mintTxid;
+        const coin = coinOp.updateOne.update.$set;
+        const { value, wallets } = coin;
+        if (!agg[mintTxid]) {
+          agg[mintTxid] = {
+            total: value,
+            wallets: wallets || []
+          };
+        } else {
+          agg[mintTxid].total += value;
+          agg[mintTxid].wallets.push(...wallets);
+        }
+        return agg;
+      }, {});
 
-    const groupedSpends = spent.reduce<CoinGroup>((agg, coin) => {
-      if (!agg[coin.spentTxid]) {
-        agg[coin.spentTxid] = {
-          total: coin.value,
-          wallets: coin.wallets || []
+      const groupedSpends = spent.reduce<CoinGroup>((agg, coin) => {
+        if (!agg[coin.spentTxid]) {
+          agg[coin.spentTxid] = {
+            total: coin.value,
+            wallets: coin.wallets || []
+          };
+        } else {
+          agg[coin.spentTxid].total += coin.value;
+          agg[coin.spentTxid].wallets.push(...coin.wallets);
+        }
+        return agg;
+      }, {});
+
+      let txOps = txs.map((tx, index) => {
+        const txid = tx._hash!;
+        const minted = groupedMints[txid] || {};
+        const spent = groupedSpends[txid] || {};
+        const mintedWallets = minted.wallets || [];
+        const spentWallets = spent.wallets || [];
+        const txWallets = mintedWallets.concat(spentWallets);
+        const wallets = lodash.uniqBy(txWallets, wallet => wallet.toHexString());
+        let fee = 0;
+        if (groupedMints[txid] && groupedSpends[txid]) {
+          fee = groupedSpends[txid].total - groupedMints[txid].total;
+          if (fee < 0) {
+            console.error(txid, groupedSpends[txid], groupedMints[txid]);
+          }
+        }
+
+        return {
+          updateOne: {
+            filter: { txid: txids[index], chain, network },
+            update: {
+              $set: {
+                chain,
+                network,
+                blockHeight: height,
+                blockHash,
+                blockTime,
+                blockTimeNormalized,
+                coinbase: tx.isCoinbase(),
+                fee,
+                size: tx.toBuffer().length,
+                locktime: tx.nLockTime,
+                value: tx.outputAmount,
+                wallets
+              }
+            },
+            upsert: true,
+            forceServerObjectId: true
+          }
         };
-      } else {
-        agg[coin.spentTxid].total += coin.value;
-        agg[coin.spentTxid].wallets.push(...coin.wallets);
-      }
-      return agg;
-    }, {});
-
-    let txOps = txs.map((tx, index) => {
-      const txid = tx._hash!;
-      const minted = groupedMints[txid] || {};
-      const spent = groupedSpends[txid] || {};
-      const mintedWallets = minted.wallets || [];
-      const spentWallets = spent.wallets || [];
-      const txWallets = mintedWallets.concat(spentWallets);
-      const wallets = lodash.uniqBy(txWallets, wallet => wallet.toHexString());
-      let fee = 0;
-      if (groupedMints[txid] && groupedSpends[txid]) {
-        fee = groupedSpends[txid].total - groupedMints[txid].total;
-        if (fee < 0) {
-          console.error(txid, groupedSpends[txid], groupedMints[txid]);
-        }
-      }
-
-      return {
-        updateOne: {
-          filter: { txid: txids[index], chain, network },
-          update: {
-            $set: {
-              chain,
-              network,
-              blockHeight: height,
-              blockHash,
-              blockTime,
-              blockTimeNormalized,
-              coinbase: tx.isCoinbase(),
-              fee,
-              size: tx.toBuffer().length,
-              locktime: tx.nLockTime,
-              value: tx.outputAmount,
-              wallets
-            }
-          },
-          upsert: true,
-          forceServerObjectId: true
-        }
-      };
-    });
-    return txOps;
+      });
+      return txOps;
+    }
   }
 
   async getMintOps(params: {
@@ -194,30 +223,33 @@ export class Transaction extends BaseModel<ITransaction> {
     let { chain, height, network, txs, parentChain, forkHeight, initialSyncComplete } = params;
     let mintOps = new Array<any>();
     let parentChainCoins = new Array<ICoin>();
+    let parentChainCoinsMap = new Map();
     if (parentChain && forkHeight && height < forkHeight) {
       parentChainCoins = await CoinModel.collection
         .find({
           chain: parentChain,
           network,
           mintHeight: height,
-          spentHeight: { $gt: SpentHeightIndicators.unspent, $lt: forkHeight }
-        })
+          $or: [
+            { spentHeight: { $lt: SpentHeightIndicators.minimum }},
+            { spentHeight: { $gte: forkHeight }},
+          ]
+        }).project({mintTxid:1, mintIndex: 1})
         .toArray();
+        for (const parentChainCoin of parentChainCoins) {
+          parentChainCoinsMap.set(`${parentChainCoin.mintTxid}:${parentChainCoin.mintIndex}`, true);
+        }
     }
     for (let tx of txs) {
       tx._hash = tx.hash;
       let txid = tx._hash;
       let isCoinbase = tx.isCoinbase();
       for (let [index, output] of tx.outputs.entries()) {
-        let parentChainCoin = parentChainCoins.find(
-          (parentChainCoin: ICoin) => parentChainCoin.mintTxid === txid && parentChainCoin.mintIndex === index
-        );
-        if (parentChainCoin) {
+        if ((parentChain && forkHeight && height < forkHeight) && (!parentChainCoinsMap.size || !parentChainCoinsMap.get(`${txid}:${index}`))) {
           continue;
         }
         let address = '';
-        let scriptBuffer = output.script && output.script.toBuffer();
-        if (scriptBuffer) {
+        if (output.script) {
           address = output.script.toAddress(network).toString(true);
           if (address === 'false' && output.script.classify() === 'Pay to public key') {
             let hash = Chain[chain].lib.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
@@ -242,7 +274,7 @@ export class Transaction extends BaseModel<ITransaction> {
                 mintHeight: height,
                 coinbase: isCoinbase,
                 value: output.satoshis,
-                script: scriptBuffer,
+                script: output.script.toBuffer(),
                 spentHeight: SpentHeightIndicators.unspent,
                 wallets: []
               }
