@@ -14,30 +14,6 @@ import * as lodash from 'lodash';
 
 const Chain = require('../chain');
 
-const addressCacheStore = {
-  list: [] as Array<any>,
-  map: new Map() as Map<any, string>
-};
-
-function getCachedAddress(chain: string, network: string, script: string){
-  const result = addressCacheStore.map.get(`${chain}:${network}:${script}`);
-  if (result) {
-    addressCacheStore.list.push(`${chain}:${network}:${script}`);
-    if (addressCacheStore.list.length > 100000) {
-      addressCacheStore.map.delete(addressCacheStore.list.shift());
-    }
-  }
-  return result;
-}
-
-function setCachedAddress(chain: string, network: string, script: any, address: any) {
-  addressCacheStore.map.set(`${chain}:${network}:${script}`, address);
-  addressCacheStore.list.push(`${chain}:${network}:${script}`);
-  if (addressCacheStore.list.length > 100000) {
-    addressCacheStore.map.delete(addressCacheStore.list.shift());
-  }
-}
-
 export type ITransaction = {
   txid: string;
   chain: string;
@@ -242,17 +218,10 @@ export class Transaction extends BaseModel<ITransaction> {
         }
         let address = '';
         if (output.script) {
-          const hexScript = output.script.toHex();
-          const cachedAddress = getCachedAddress(chain, network, hexScript);
-          if (cachedAddress) {
-            address = cachedAddress;
-          } else {
-            address = output.script.toAddress(network).toString(true);
-            if (address === 'false' && output.script.classify() === 'Pay to public key') {
-              let hash = Chain[chain].lib.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
-              address = Chain[chain].lib.Address(hash, network).toString(true);
-            }
-            setCachedAddress(chain, network, output.script.toHex(), address);
+          address = output.script.toAddress(network).toString(true);
+          if (address === 'false' && output.script.classify() === 'Pay to public key') {
+            let hash = Chain[chain].lib.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
+            address = Chain[chain].lib.Address(hash, network).toString(true);
           }
         }
 
