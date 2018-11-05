@@ -1,5 +1,4 @@
 export default interface Config {
-  pruneSpentScripts: boolean;
   maxPoolSize: number;
   port: number;
   dbHost: string;

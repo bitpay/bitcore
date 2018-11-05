@@ -9,7 +9,6 @@ _Requirements_:
 ```
 {
   "bitcoreNode": {
-    "pruneSpentScripts": true,
     "chains": {
       "BTC": {
         "regtest": {

@@ -335,9 +335,6 @@ export class Transaction extends BaseModel<ITransaction> {
         if (sameBlockSpend) {
           sameBlockSpend.updateOne.update.$set.spentHeight = height;
           sameBlockSpend.updateOne.update.$set.spentTxid = txid;
-          if (config.pruneSpentScripts && height > 0) {
-            delete sameBlockSpend.updateOne.update.$set.script;
-          }
           continue;
         }
         const updateQuery: any = {
@@ -352,9 +349,6 @@ export class Transaction extends BaseModel<ITransaction> {
             update: { $set: { spentTxid: txid, spentHeight: height } }
           }
         };
-        if (config.pruneSpentScripts && height > 0) {
-          updateQuery.updateOne.update.$unset = { script: null };
-        }
         spendOps.push(updateQuery);
       }
     }
