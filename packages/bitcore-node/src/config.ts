@@ -52,7 +52,6 @@ function setTrustedPeers(config: ConfigType): ConfigType {
 const Config = function(): ConfigType {
   let config: ConfigType = {
     maxPoolSize: 50,
-    pruneSpentScripts: true,
     port: 3000,
     dbHost: process.env.DB_HOST || '127.0.0.1',
     dbName: process.env.DB_NAME || 'bitcore',
