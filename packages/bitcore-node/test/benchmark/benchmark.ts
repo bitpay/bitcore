@@ -7,7 +7,11 @@ import { Storage } from '../../src/services/storage';
 import { BlockModel } from '../../src/models/block';
 import { BitcoinBlockType } from '../../src/types/namespaces/Bitcoin/Block';
 import { resetDatabase } from "../helpers/index.js";
+import * as crypto from 'crypto';
 
+function randomBytes() {
+return crypto.randomBytes(32).toString('hex')
+}
 function * generateBlocks(blockCount: number, blockSizeMb: number) {
   let prevBlock: BitcoinBlockType | undefined = undefined;
   for (let i = 0; i < blockCount; i++) {
@@ -21,7 +25,7 @@ function generateBlock(blockSizeMb: number, previousBlock?: BitcoinBlockType): B
   const txAmount = 100000;
   const prevHash = previousBlock ? previousBlock.hash : '';
   let block: BitcoinBlockType = {
-    hash: Buffer.from((Math.random() * 10000).toString()).toString('hex'),
+    hash: randomBytes(),
     transactions: [],
     toBuffer: () => {
       return { length: 264 } as Buffer;
@@ -29,7 +33,7 @@ function generateBlock(blockSizeMb: number, previousBlock?: BitcoinBlockType): B
     header: {
       toObject: () => {
         return {
-          hash: Buffer.from((Math.random() * 10000).toString()).toString('hex'),
+          hash: randomBytes(),
           confirmations: 1,
           strippedsize: 228,
           size: 264,
@@ -37,8 +41,8 @@ function generateBlock(blockSizeMb: number, previousBlock?: BitcoinBlockType): B
           height: 1355,
           version: '536870912',
           versionHex: '20000000',
-          merkleRoot: '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
-          tx: ['08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08'],
+          merkleRoot: randomBytes(),
+          tx: [randomBytes()],
           time: 1526756523,
           mediantime: 1526066375,
           nonce: '2',
@@ -53,6 +57,7 @@ function generateBlock(blockSizeMb: number, previousBlock?: BitcoinBlockType): B
   let transactions = new Array<any>();
   if (previousBlock) {
     for (let transaction of previousBlock.transactions) {
+      // each transaction should have one input and one output
       const utxos = transaction.outputs.map((output) => {
         return new UnspentOutput({
           txid: transaction.hash,
