@@ -198,6 +198,36 @@ describe('Script', function() {
       script.chunks[3].opcodenum.should.equal(Opcode.OP_EQUALVERIFY);
       script.chunks[4].opcodenum.should.equal(Opcode.OP_CHECKSIG);
     });
+
+    it('should parse this known problematic script in ASM', function () {
+      var asm = 'OP_RETURN 026d02 0568656c6c6f';
+      var script = Script.fromASM(asm);
+      script.toASM().should.equal(asm);
+    });
+
+    it('should parse this long PUSHDATA1 script in ASM', function () {
+      var buf = Buffer.alloc(220, 0);
+      var asm = 'OP_RETURN ' + buf.toString('hex');
+      var script = Script.fromASM(asm);
+      script.chunks[1].opcodenum.should.equal(Opcode.OP_PUSHDATA1)
+      script.toASM().should.equal(asm);
+    });
+
+    it('should parse this long PUSHDATA2 script in ASM', function () {
+      var buf = Buffer.alloc(1024, 0);
+      var asm = 'OP_RETURN ' + buf.toString('hex');
+      var script = Script.fromASM(asm);
+      script.chunks[1].opcodenum.should.equal(Opcode.OP_PUSHDATA2)
+      script.toASM().should.equal(asm);
+    });
+
+    it('should parse this long PUSHDATA4 script in ASM', function () {
+      var buf = Buffer.alloc(Math.pow(2, 17), 0);
+      var asm = 'OP_RETURN ' + buf.toString('hex');
+      var script = Script.fromASM(asm);
+      script.chunks[1].opcodenum.should.equal(Opcode.OP_PUSHDATA4)
+      script.toASM().should.equal(asm);
+    });
   });
 
   describe('#fromString', function() {
@@ -265,11 +295,16 @@ describe('Script', function() {
       Script('OP_RETURN').isDataOut().should.equal(true);
     });
 
+    it('validates that this two part OP_RETURN is standard', function() {
+      Script.fromASM('OP_RETURN 026d02 0568656c6c6f').isDataOut().should.equal(true);
+    });
+
     it('validates that this 40-byte OP_RETURN is standard', function() {
       var buf = new Buffer(40);
       buf.fill(0);
       Script('OP_RETURN 40 0x' + buf.toString('hex')).isDataOut().should.equal(true);
     });
+
     it('validates that this 80-byte OP_RETURN is standard', function() {
       var buf = new Buffer(80);
       buf.fill(0);
@@ -454,6 +489,8 @@ describe('Script', function() {
       Script('OP_0').isPushOnly().should.equal(true);
       Script('OP_0 OP_RETURN').isPushOnly().should.equal(false);
       Script('OP_PUSHDATA1 5 0x1010101010').isPushOnly().should.equal(true);
+      Script('OP_PUSHDATA2 5 0x1010101010').isPushOnly().should.equal(true);
+      Script('OP_PUSHDATA4 5 0x1010101010').isPushOnly().should.equal(true);
       // like bitcoind, we regard OP_RESERVED as being "push only"
       Script('OP_RESERVED').isPushOnly().should.equal(true);
     });
