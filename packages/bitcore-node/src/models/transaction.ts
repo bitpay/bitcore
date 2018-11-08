@@ -68,7 +68,7 @@ export class Transaction extends BaseModel<ITransaction> {
           .map(mintBatch => CoinModel.collection.bulkWrite(mintBatch, { ordered: false }))
       );
     }
-    
+
     logger.debug('Spending Coins', spendOps.length);
     if (spendOps.length) {
       await Promise.all(
@@ -76,7 +76,7 @@ export class Transaction extends BaseModel<ITransaction> {
           .map(spendBatch => CoinModel.collection.bulkWrite(spendBatch, { ordered: false }))
       );
     }
-    
+
     if (mintOps) {
       const txOps = await this.addTransactions({ ...params, mintOps });
       logger.debug('Writing Transactions', txOps.length);
@@ -268,7 +268,7 @@ export class Transaction extends BaseModel<ITransaction> {
                 mintHeight: height,
                 coinbase: isCoinbase,
                 value: output.satoshis,
-                script: output.script.toBuffer(),
+                script: output.script && output.script.toBuffer(),
                 spentHeight: SpentHeightIndicators.unspent,
                 wallets: []
               }
