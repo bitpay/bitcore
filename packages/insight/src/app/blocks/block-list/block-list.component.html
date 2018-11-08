@@ -1,0 +1,6 @@
+<app-block
+    *ngFor="let block of blocks$ | async"
+    [block]="block"
+    [routerLink]="['/' + (chain$ | async).code + '/block/' + block.hash]"
+    [displayValueCode]="displayValueCode"
+></app-block>

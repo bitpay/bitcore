@@ -1,0 +1,17 @@
+{
+  "extends": ["tslint:latest", "tslint-angular", "tslint-config-prettier"],
+  "rules": {
+    // workaround for dev dependencies used in tests
+    "no-implicit-dependencies": [true, "dev"],
+    "interface-name": [true, "never-prefix"],
+    "no-submodule-imports": [
+      true,
+      "@angular",
+      "zone.js",
+      "@ionic-native",
+      "core-js",
+      "rxjs"
+    ],
+    "component-class-suffix": [true, "Component", "Page"]
+  }
+}

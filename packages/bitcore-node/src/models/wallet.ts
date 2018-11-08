@@ -20,7 +20,7 @@ export class Wallet extends BaseModel<IWallet> {
   allowedPaging = [];
 
   onConnect() {
-    this.collection.createIndex({ pubKey: 1 });
+    this.collection.createIndex({ pubKey: 1 }, { background: true });
   }
 
   _apiTransform(wallet: IWallet, options: TransformOptions) {

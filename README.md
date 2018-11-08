@@ -1,4 +1,4 @@
-# Installing 
+# Installing
 ```
 npm install
 ```
@@ -41,7 +41,7 @@ Eg:
 ```
 
 ## Bitcore-Node Config
-Bitcore-Node can access a bitcore.config.json file from 
+Bitcore-Node can access a bitcore.config.json file from
 * Environment Variable
   * $BITCORE_CONFIG_PATH=some/path/to/config
 * node arguments
@@ -54,23 +54,36 @@ Bitcore-Node can access a bitcore.config.json file from
 ```
 {
   "bitcoreNode": {
+    "dbHost": "OPTIONAL IP FOR REMOTE DB",
     "pruneSpentScripts": true,
     "chains": {
       "BTC": {
-        "regtest": {
+        "mainnet": {
           "chainSource": "p2p",
           "trustedPeers": [
             {
               "host": "127.0.0.1",
-              "port": 30000
+              "port": 8333
             }
           ],
           "rpc": {
             "host": "127.0.0.1",
-            "port": 30001,
-            "username": "bitpaytest",
-            "password": "local321"
+            "port": 44444,
+            "username": "RPCUSER",
+            "password": "RPCPASS"
           }
+        }
+      },
+      "BCH": {
+        "mainnet": {
+          "parentChain": "BTC",
+          "forkHeight": 478558,
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 8433
+            }
+          ]
         }
       }
     }
@@ -97,5 +110,5 @@ Create a wallet
 
 Register a wallet
 ```
-./bin/wallet-import 
+./bin/wallet-import
 ```

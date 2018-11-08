@@ -1,7 +1,7 @@
 import { Storage } from '../services/storage';
 import {  ObjectID, Collection, MongoClient, Db } from 'mongodb';
 
-export type MongoBound<T> = T & {_id: ObjectID};
+export type MongoBound<T> = T & Partial<{_id: ObjectID}>;
 export abstract class BaseModel<T> {
   connected = false;
   client?: MongoClient;

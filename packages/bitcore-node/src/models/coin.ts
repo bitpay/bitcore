@@ -48,16 +48,25 @@ class Coin extends BaseModel<ICoin> {
   ];
 
   onConnect() {
-    this.collection.createIndex({ mintTxid: 1, mintIndex: 1 });
+    this.collection.createIndex({ mintTxid: 1, mintIndex: 1 }, { background: true });
     this.collection.createIndex(
-      { address: 1, chain: 1, network: 1 },
+      { mintTxid: 1, mintIndex: 1, chain: 1, network: 1 },
       { partialFilterExpression: { spentHeight: { $lt: 0 } } }
     );
-    this.collection.createIndex({ address: 1 });
-    this.collection.createIndex({ mintHeight: 1, chain: 1, network: 1 });
-    this.collection.createIndex({ spentTxid: 1 }, { sparse: true });
-    this.collection.createIndex({ spentHeight: 1, chain: 1, network: 1 });
-    this.collection.createIndex({ wallets: 1, spentHeight: 1 }, { sparse: true });
+    this.collection.createIndex(
+      { address: 1, chain: 1, network: 1 },
+      {
+        background: true,
+        partialFilterExpression: {
+          spentHeight: { $lt: 0 }
+        }
+      }
+    );
+    this.collection.createIndex({ address: 1 }, { background: true });
+    this.collection.createIndex({ mintHeight: 1, chain: 1, network: 1 }, { background: true });
+    this.collection.createIndex({ spentTxid: 1 }, { background: true, sparse: true });
+    this.collection.createIndex({ spentHeight: 1, chain: 1, network: 1 }, { background: true });
+    this.collection.createIndex({ wallets: 1, spentHeight: 1 }, { background: true, sparse: true });
   }
 
   getBalance(params: { query: any }) {

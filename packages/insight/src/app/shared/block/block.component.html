@@ -1,0 +1,82 @@
+<div [ngClass]="{'card': true, 'detail-view': !summary}">
+    <div class="section header">
+        <div class="identifiers">
+            <div class="height" title="The height of this block, i.e. its position in the chain.">
+                {{block.height}}
+            </div>
+            <span *ngIf="!block.nextBlockHash" class="tip-tag" title="This is the latest block on the network.">
+                Tip
+            </span>
+        </div>
+        <app-date-time [value]="block.timeNormalized" class="time">
+        </app-date-time>
+    </div>
+    <app-card-item class="section">
+        <div class="property">
+            <span class="key">Block Hash</span>
+            <span class="value">{{block.hash}}</span>
+        </div>
+        <div class="property">
+            <span class="key">Transaction Count</span>
+            <span class="value link" (click)="listTransactionsInBlock(block)">
+                {{block.transactionCount}}
+            </span>
+        </div>
+        <div class="property">
+            <span class="key">Block Revenue</span>
+            <span class="value">
+                <app-currency-value class="reward" amount="{{block.reward}}" code="{{block.chain}}_satoshis" displayAs="{{displayValueCode}}"></app-currency-value>
+            </span>
+        </div>
+        <ng-container *ngIf="!summary">
+            <div class="property">
+                <span class="key">Mining Pool Claim</span>
+                <span class="value link" (click)="listBlocksBySameMiner(block)">
+                    Unknown
+                </span>
+            </div>
+            <div class="property">
+                <span class="key">Block Size</span>
+                <span class="value">{{block.size | bytes}}</span>
+            </div>
+            <div class="property">
+                <span class="key">Confirmations</span>
+                <span class="value">{{block.confirmations}}</span>
+            </div>
+        </ng-container>
+    </app-card-item>
+    <ng-container *ngIf="!summary">
+        <app-card-item class="section" header="Block Header" type="expand-collapse" [isOpen]='true'>
+            <table>
+                <tr>
+                    <th>Version</th>
+                    <td>{{block.version}}</td>
+                </tr>
+                <tr>
+                    <th>Previous Block Hash</th>
+                    <td>{{block.previousBlockHash}}</td>
+                </tr>
+                <tr>
+                    <th>Merkle Root</th>
+                    <td>{{block.merkleRoot}}</td>
+                </tr>
+                <tr>
+                    <th>Block Time</th>
+                    <td>{{block.time | date:'medium'}}</td>
+                </tr>
+                <tr>
+                    <th>Bits</th>
+                    <td>{{block.bits}}</td>
+                </tr>
+                <tr>
+                    <th>Nonce</th>
+                    <td>{{block.nonce | number}}</td>
+                </tr>
+            </table>
+        </app-card-item>
+        <app-card-item class="section" header="Previous Block" headerValue="{{block.height - 1}}" type="forward"
+            [routerLink]="['/' + block.chain + '/block/' + block.previousBlockHash]"></app-card-item>
+        <app-card-item *ngIf="block.nextBlockHash" class="section" header="Next Block" headerValue="{{block.height + 1}}"
+            type="forward" [routerLink]="['/' + block.chain + '/block/' + block.nextBlockHash]"></app-card-item>
+    </ng-container>
+</div>

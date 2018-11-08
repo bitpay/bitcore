@@ -5,25 +5,9 @@ import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
+import { IBlock } from '../types/Block';
 
-export type IBlock = {
-  chain: string;
-  network: string;
-  height: number;
-  hash: string;
-  version: number;
-  merkleRoot: string;
-  time: Date;
-  timeNormalized: Date;
-  nonce: number;
-  previousBlockHash: string;
-  nextBlockHash: string;
-  transactionCount: number;
-  size: number;
-  bits: number;
-  reward: number;
-  processed: boolean;
-};
+export { IBlock };
 
 @LoggifyClass
 export class Block extends BaseModel<IBlock> {
@@ -39,10 +23,10 @@ export class Block extends BaseModel<IBlock> {
   ];
 
   async onConnect() {
-    this.collection.createIndex({ hash: 1 });
-    this.collection.createIndex({ chain: 1, network: 1, processed: 1, height: -1 });
-    this.collection.createIndex({ chain: 1, network: 1, timeNormalized: 1 });
-    this.collection.createIndex({ previousBlockHash: 1 });
+    this.collection.createIndex({ hash: 1 }, { background: true });
+    this.collection.createIndex({ chain: 1, network: 1, processed: 1, height: -1 }, { background: true });
+    this.collection.createIndex({ chain: 1, network: 1, timeNormalized: 1 }, { background: true });
+    this.collection.createIndex({ previousBlockHash: 1 }, { background: true });
   }
 
   async addBlock(params: {

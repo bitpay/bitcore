@@ -8,14 +8,10 @@ import { ObjectID } from 'bson';
 import { MongoClient, Db, Cursor } from 'mongodb';
 import { MongoBound } from '../models/base';
 import '../models';
+import { StreamingFindOptions } from '../types/Query';
 
-export type StreamingFindOptions<T> = Partial<{
-  paging: keyof T;
-  since: T[keyof T];
-  sort: any;
-  direction: 1 | -1;
-  limit: number;
-}>;
+export { StreamingFindOptions };
+
 @LoggifyClass
 export class StorageService {
   client?: MongoClient;
@@ -124,6 +120,7 @@ export class StorageService {
     let query: any = {};
     let since: any = null;
     let options: StreamingFindOptions<T> = {};
+
     if(originalOptions.sort) {
       options.sort = originalOptions.sort;
     }

@@ -151,7 +151,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async streamTransactions(params: CSP.StreamTransactionsParams) {
     const { chain, network, stream, args } = params;
-    let { limit = 100, blockHash, blockHeight } = args;
+    let { blockHash, blockHeight } = args;
     if (!chain || !network) {
       throw 'Missing chain or network';
     }
@@ -167,7 +167,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
-    return Storage.apiStreamingFind(TransactionModel, query, { limit }, stream, t => {
+    return Storage.apiStreamingFind(TransactionModel, query, args, stream, t => {
       let confirmations = 0;
       if (t.blockHeight && t.blockHeight >= 0) {
         confirmations = tipHeight - t.blockHeight + 1;
@@ -236,7 +236,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   async streamMissingWalletAddresses(params: CSP.StreamWalletMissingAddressesParams) {
     const { chain, network, pubKey, stream } = params;
     const wallet = await WalletModel.collection.findOne({ pubKey });
-    const walletId = wallet!._id;
+    const walletId = wallet!._id!;
     const query = { chain, network, wallets: walletId, spentHeight: { $gte: SpentHeightIndicators.minimum } };
     const cursor = CoinModel.collection.find(query);
     const seen = {};

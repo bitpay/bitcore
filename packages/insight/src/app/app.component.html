@@ -1,0 +1,126 @@
+<ion-app>
+    <ion-split-pane when="lg">
+        <ion-menu>
+            <ion-content
+                class="dark-theme"
+                padding
+            >
+                <ion-list>
+                    <ion-menu-toggle auto-hide="false">
+                        <ion-item
+                            [routerDirection]="'root'"
+                            [routerLink]="['/' + (config.currentChain$ | async).code]"
+                            [routerLinkActiveOptions]="{exact: true}"
+                            routerLinkActive="active"
+                        >
+                            <ion-label>Chain</ion-label>
+                        </ion-item>
+                        <ion-item
+                            [routerDirection]="'root'"
+                            [routerLink]="['/' + (config.currentChain$ | async).code + '/blocks']"
+                            routerLinkActive="active"
+                        >
+                            <ion-label>Blocks</ion-label>
+                        </ion-item>
+                        <ion-item
+                            [routerDirection]="'root'"
+                            [routerLink]="['/' + (config.currentChain$ | async).code + '/transactions']"
+                            routerLinkActive="active"
+                        >
+                            <ion-label>Transactions</ion-label>
+                        </ion-item>
+                        <ion-item
+                            [routerDirection]="'root'"
+                            [routerLink]="['/' + (config.currentChain$ | async).code + '/broadcast']"
+                            routerLinkActive="active"
+                        >
+                            <ion-label>Broadcast</ion-label>
+                        </ion-item>
+
+                        <ion-item-divider>
+                            <ion-label>Chains</ion-label>
+                        </ion-item-divider>
+
+                        <ion-item
+                            [routerDirection]="'root'"
+                            [routerLink]="['/BCH']"
+                            routerLinkActive="active"
+                        >
+                            <ion-label>BCH</ion-label>
+                        </ion-item>
+                        <ion-item
+                            [routerDirection]="'root'"
+                            [routerLink]="['/tBCH']"
+                            routerLinkActive="active"
+                        >
+                            <ion-label>tBCH</ion-label>
+                        </ion-item>
+                        <ion-item
+                            [routerDirection]="'root'"
+                            [routerLink]="['/BTC']"
+                            routerLinkActive="active"
+                        >
+                            <ion-label>BTC</ion-label>
+                        </ion-item>
+                        <ion-item
+                            [routerDirection]="'root'"
+                            [routerLink]="['/tBTC']"
+                            routerLinkActive="active"
+                        >
+                            <ion-label>tBTC</ion-label>
+                        </ion-item>
+
+                        <ion-item-divider>
+                            <ion-label>Display Currency</ion-label>
+                        </ion-item-divider>
+                        <ion-item
+                            (click)="config.displayValueCode$.next('BCH')"
+                            [ngClass]="{'active': (config.displayValueCode$ | async) === 'BCH'}"
+                        >
+                            <ion-label>BCH</ion-label>
+                        </ion-item>
+                        <ion-item
+                            (click)="config.displayValueCode$.next('BCH_bits')"
+                            [ngClass]="{'active': (config.displayValueCode$ | async) === 'BCH_bits'}"
+                        >
+                            <ion-label>Bits (BCH)</ion-label>
+                        </ion-item>
+                        <ion-item
+                            (click)="config.displayValueCode$.next('BTC')"
+                            [ngClass]="{'active': (config.displayValueCode$ | async) === 'BTC'}"
+                        >
+                            <ion-label>BTC</ion-label>
+                        </ion-item>
+                        <ion-item
+                            (click)="config.displayValueCode$.next('USD')"
+                            [ngClass]="{'active': (config.displayValueCode$ | async) === 'USD'}"
+                        >
+                            <ion-label>USD</ion-label>
+                        </ion-item>
+                        <ion-item
+                            (click)="config.displayValueCode$.next('EUR')"
+                            [ngClass]="{'active': (config.displayValueCode$ | async) === 'EUR'}"
+                        >
+                            <ion-label>EUR</ion-label>
+                        </ion-item>
+                        <ion-item
+                            (click)="config.displayValueCode$.next('GBP')"
+                            [ngClass]="{'active': (config.displayValueCode$ | async) === 'GBP'}"
+                        >
+                            <ion-label>GBP</ion-label>
+                        </ion-item>
+                        <ion-item
+                            (click)="config.displayValueCode$.next('CNY')"
+                            [ngClass]="{'active': (config.displayValueCode$ | async) === 'CNY'}"
+                        >
+                            <ion-label>CNY</ion-label>
+                        </ion-item>
+
+                    </ion-menu-toggle>
+                </ion-list>
+            </ion-content>
+        </ion-menu>
+        <ion-router-outlet main></ion-router-outlet>
+    </ion-split-pane>
+</ion-app>
+<app-status-notifier></app-status-notifier>
