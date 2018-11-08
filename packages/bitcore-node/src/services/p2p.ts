@@ -151,10 +151,12 @@ export class P2pService {
         });
         p2p.start();
         p2p.events.on('block', block => {
+          console.log('Signaling block', block.hash);
           Socket.signalBlock(block);
         });
         p2p.events.on('transaction', transaction => {
           Socket.signalTx(transaction);
+          console.log('Signaling tx', transaction.txid);
         });
       }
     }
