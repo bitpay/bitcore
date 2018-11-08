@@ -7,6 +7,8 @@ var moment = require('moment');
 var async = require('async');
 program = utils.configureCommander(program);
 var N = 100;
+var bitcoreCash = require('bitcore-wallet-client').BitcoreCash;
+
 
 program
   .option('-t, --testnet', 'Query testnet wallet')
@@ -24,6 +26,12 @@ var network = program.testnet ? 'testnet' : 'livenet';
 var trim = program.full ? false : true; 
 var format = (amount, coin) => {
   return utils.renderAmount(amount, coin);
+};
+
+try {
+  identifier = (new bitcoreCash.Address(identifier)).toString();
+//  console.log('Cashaddr detected. Changed to :' + identifier);
+} catch (e) {
 };
 
 utils.getClient(program, {
@@ -106,6 +114,10 @@ function displayStatus(status) {
     console.log('  By address:');
   }
   _.each(x.byAddress, function(item) {
+
+    if (w.coin='bch') {
+      item.address = (new bitcoreCash.Address(item.address).toCashAddress());
+    }
     console.log('    %s (%s): %s', item.address, item.path, format(item.amount, w.coin));
   });
 
@@ -141,13 +153,16 @@ function displaySendMaxInfo(info, wallet) {
   });
 };
 
-function displayAddresses(addresses) {
+function displayAddresses(addresses, w) {
   if (_.isEmpty(addresses)) {
     console.log('\n* No addresses.');
     return;
   }
   console.log('\n* Main addresses (not including change addresses)');
   _.each(addresses, function(a) {
+    if (w.coin='bch') {
+      a.address = (new bitcoreCash.Address(a.address).toCashAddress());
+    }
     console.log('  [%s] %s (%s)', moment(a.createdOn * 1000), a.address, a.path);
   });
 };

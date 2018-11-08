@@ -24,6 +24,7 @@ utils.getClient(program, { mustExist: true }, function (client) {
       var amount = utils.renderAmount(tx.amount);
       var confirmations = tx.confirmations || 0;
       var proposal = tx.proposalId ? '["' + tx.message + '" by ' + tx.creatorName + '] ' : '';
+      var direction;
       switch (tx.action) {
         case 'received':
           direction = '<=';
@@ -34,6 +35,9 @@ utils.getClient(program, { mustExist: true }, function (client) {
         case 'sent':
           direction = '=>';
         break;
+        default:
+          direction = tx.action;
+          break;
       }
 
       console.log("\t%s: %s %s %s %s(%s confirmations)", time, direction, tx.action, amount, proposal, confirmations);
