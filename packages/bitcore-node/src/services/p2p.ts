@@ -11,12 +11,12 @@ const Chain = require('../chain');
 const LRU = require('lru-cache');
 
 export class P2pService {
-  public events: EventEmitter;
   private chain: string;
   private network: string;
   private bitcoreLib: any;
   private bitcoreP2p: any;
   private chainConfig: any;
+  private events: EventEmitter;
   private syncing: boolean;
   private messages: any;
   private pool: any;
@@ -143,12 +143,11 @@ export class P2pService {
         if (chainConfig.chainSource && chainConfig.chainSource !== 'p2p') {
           continue;
         }
-        const p2p = new P2pService({
+        new P2pService({
           chain,
           network,
           chainConfig
-        });
-        p2p.start();
+        }).start();
       }
     }
   }
