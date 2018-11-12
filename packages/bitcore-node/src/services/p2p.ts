@@ -7,7 +7,6 @@ import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { StateModel } from '../models/state';
 import { SpentHeightIndicators } from '../models/coin';
-import { Socket } from './socket';
 const Chain = require('../chain');
 const LRU = require('lru-cache');
 
@@ -150,14 +149,6 @@ export class P2pService {
           chainConfig
         });
         p2p.start();
-        p2p.events.on('block', block => {
-          console.log('Signaling block', block.hash);
-          Socket.signalBlock(block);
-        });
-        p2p.events.on('transaction', transaction => {
-          Socket.signalTx(transaction);
-          console.log('Signaling tx', transaction.txid);
-        });
       }
     }
   }

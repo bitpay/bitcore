@@ -1,7 +1,7 @@
 import { Storage } from '../services/storage';
-import {  ObjectID, Collection, MongoClient, Db } from 'mongodb';
+import { ObjectID, Collection, MongoClient, Db } from 'mongodb';
 
-export type MongoBound<T> = T & Partial<{_id: ObjectID}>;
+export type MongoBound<T> = T & Partial<{ _id: ObjectID }>;
 export abstract class BaseModel<T> {
   connected = false;
   client?: MongoClient;
@@ -21,6 +21,7 @@ export abstract class BaseModel<T> {
     Storage.connection.on('CONNECTED', async () => {
       if (Storage.db != undefined) {
         this.connected = true;
+        this.db = Storage.db;
         await this.onConnect();
       }
     });

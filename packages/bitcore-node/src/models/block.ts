@@ -6,6 +6,7 @@ import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
 import { IBlock } from '../types/Block';
+import { Socket } from '../services/socket';
 
 export { IBlock };
 
@@ -61,25 +62,26 @@ export class Block extends BaseModel<IBlock> {
     const height = (previousBlock && previousBlock.height + 1) || 1;
     logger.debug('Setting blockheight', height);
 
+    const convertedBlock = {
+      chain,
+      network,
+      hash: block.hash,
+      height,
+      version: header.version,
+      previousBlockHash: header.prevHash,
+      merkleRoot: header.merkleRoot,
+      time: new Date(blockTime),
+      timeNormalized: new Date(blockTimeNormalized),
+      bits: header.bits,
+      nonce: header.nonce,
+      transactionCount: block.transactions.length,
+      size: block.toBuffer().length,
+      reward: block.transactions[0].outputAmount
+    };
     await this.collection.updateOne(
       { hash: header.hash, chain, network },
       {
-        $set: {
-          chain,
-          network,
-          hash: block.hash,
-          height,
-          version: header.version,
-          previousBlockHash: header.prevHash,
-          merkleRoot: header.merkleRoot,
-          time: new Date(blockTime),
-          timeNormalized: new Date(blockTimeNormalized),
-          bits: header.bits,
-          nonce: header.nonce,
-          transactionCount: block.transactions.length,
-          size: block.toBuffer().length,
-          reward: block.transactions[0].outputAmount
-        }
+        $set: convertedBlock
       },
       { upsert: true }
     );
@@ -104,6 +106,8 @@ export class Block extends BaseModel<IBlock> {
       forkHeight,
       initialSyncComplete
     });
+
+    Socket.signalBlock(convertedBlock);
 
     return this.collection.updateOne({ hash: header.hash, chain, network }, { $set: { processed: true } });
   }

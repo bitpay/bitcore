@@ -1,8 +1,13 @@
-import socket = require( 'socket.io-client');
+import io = require('socket.io-client');
 console.log('Attempting socket connection');
-const connection = socket.connect('http://localhost:3000/BTC/regtest/inv');
-connection.on('connect', () => {
+const socket = io.connect('http://localhost:3000', {transports: ['websocket']});
+socket.on('connect', () => {
   console.log('Connected to socket');
+  socket.emit('room', '/BTC/regtest/inv');
 });
-connection.on('block', console.log)
-
+socket.on('block', payload => {
+  console.log(payload);
+});
+socket.on('disconnect', () => {
+  console.log('Socket disconnected');
+});
