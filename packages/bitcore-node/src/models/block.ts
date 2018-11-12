@@ -107,7 +107,9 @@ export class Block extends BaseModel<IBlock> {
       initialSyncComplete
     });
 
-    Socket.signalBlock(convertedBlock);
+    if (initialSyncComplete) {
+      Socket.signalBlock(convertedBlock);
+    }
 
     return this.collection.updateOne({ hash: header.hash, chain, network }, { $set: { processed: true } });
   }
