@@ -200,6 +200,7 @@ export class Transaction extends BaseModel<ITransaction> {
         const wallets = lodash.uniqBy(txWallets, wallet => wallet.toHexString());
         let fee = 0;
         if (groupedMints[txid] && groupedSpends[txid]) {
+          // TODO: Fee is negative for mempool txs
           fee = groupedSpends[txid].total - groupedMints[txid].total;
           if (fee < 0) {
             console.error(txid, groupedSpends[txid], groupedMints[txid]);
@@ -298,7 +299,7 @@ export class Transaction extends BaseModel<ITransaction> {
                 mintHeight: height,
                 coinbase: isCoinbase,
                 value: output.satoshis,
-                script: output.script.toBuffer(),
+                script: output.script && output.script.toBuffer(),
                 spentHeight: SpentHeightIndicators.unspent,
                 wallets: []
               }
@@ -337,11 +338,7 @@ export class Transaction extends BaseModel<ITransaction> {
     chain: string;
     network: string;
     mintOps?: Array<any>;
-    mempoolTime?: Date;
-    blockTime?: Date;
-    blockHash?: string;
-    blockTimeNormalized?: Date;
-    initialSyncComplete?: boolean;
+    [rest: string]: any;
   }): Array<any> {
     let { chain, network, height, parentChain, forkHeight } = params;
     let spendOps: any[] = [];
