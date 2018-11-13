@@ -1,15 +1,16 @@
 import { BaseModel } from './base';
 import { ITransaction } from './transaction';
 import { IBlock } from '../types/Block';
+import { ICoin } from './coin';
 
 export namespace IEvent {
   export type BlockEvent = Partial<IBlock>;
   export type TxEvent = Partial<ITransaction>;
-  export type AddressTxEvent = { tx: IEvent.TxEvent; address: string };
+  export type CoinEvent = { coin: Partial<ICoin>; address: string };
 }
 interface IEvent {
-  payload: IEvent.BlockEvent | IEvent.TxEvent | IEvent.AddressTxEvent;
-  type: 'block' | 'tx' | 'addresstx';
+  payload: IEvent.BlockEvent | IEvent.TxEvent | IEvent.CoinEvent;
+  type: 'block' | 'tx' | 'coin';
   emitTime: Date;
 }
 class Event extends BaseModel<IEvent> {
@@ -36,8 +37,8 @@ class Event extends BaseModel<IEvent> {
     this.collection.insertOne({ payload: tx, emitTime: new Date(), type: 'tx' });
   }
 
-  public signalAddressTx(address: string, tx: IEvent.TxEvent) {
-    this.collection.insertOne({ payload: { tx, address }, emitTime: new Date(), type: 'addresstx' });
+  public signalCoin(payload: IEvent.CoinEvent) {
+    this.collection.insertOne({ payload, emitTime: new Date(), type: 'coin' });
   }
 
   public getBlockTail(lastSeen: Date) {
@@ -48,8 +49,8 @@ class Event extends BaseModel<IEvent> {
     return this.collection.find({ type: 'tx', emitTime: { $gte: lastSeen } });
   }
 
-  getAddressTxTail(lastSeen: Date) {
-    return this.collection.find({ type: 'addresstx', emitTime: { $gte: lastSeen } });
+  getCoinTail(lastSeen: Date) {
+    return this.collection.find({ type: 'coin', emitTime: { $gte: lastSeen } });
   }
 }
 export const EventModel = new Event();

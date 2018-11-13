@@ -92,13 +92,15 @@ export class Transaction extends BaseModel<ITransaction> {
       // Create events for mempool txs
       if (params.height < SpentHeightIndicators.minimum) {
         txOps.forEach(op => {
-          const tx = op.updateOne.update.$set;
-          const txid = op.updateOne.filter.txid;
+          const filter = op.updateOne.filter;
+          const tx = { ...op.updateOne.update.$set, ...filter };
           Socket.signalTx(tx);
           mintOps
-            .filter(coinOp => coinOp.updateOne.filter.mintTxid === txid)
+            .filter(coinOp => coinOp.updateOne.filter.mintTxid === filter.txid)
             .forEach(coinOp => {
-              Socket.signalAddressTx(coinOp.updateOne.update.$set.address, tx);
+              const address = coinOp.updateOne.update.$set.address;
+              const coin = coinOp.updateOne.update.$set;
+              Socket.signalAddressCoin({address, coin});
             });
         });
       }

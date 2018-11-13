@@ -11,7 +11,7 @@ export class SocketService {
     this.setServer = this.setServer.bind(this);
     this.signalTx = this.signalTx.bind(this);
     this.signalBlock = this.signalBlock.bind(this);
-    this.signalAddressTx = this.signalAddressTx.bind(this);
+    this.signalAddressCoin = this.signalAddressCoin.bind(this);
   }
 
   setServer(io: SocketIO.Server) {
@@ -60,13 +60,13 @@ export class SocketService {
     retryBlockCursor();
 
     const retryAddressTxCursor = async () => {
-      const addressTxCursor = EventModel.getAddressTxTail(lastAddressTxUpdate);
+      const addressTxCursor = EventModel.getCoinTail(lastAddressTxUpdate);
       while (await addressTxCursor.hasNext()) {
         const addressTx = await addressTxCursor.next();
         if (this.io && addressTx) {
-          const { address, tx } = <IEvent.AddressTxEvent>addressTx.payload;
-          const { chain, network } = tx;
-          this.io.sockets.in(`/${chain}/${network}/address`).emit(address, tx);
+          const { address, coin } = <IEvent.CoinEvent>addressTx.payload;
+          const { chain, network } = coin;
+          this.io.sockets.in(`/${chain}/${network}/address`).emit(address, coin);
           lastAddressTxUpdate = new Date();
         }
       }
@@ -83,8 +83,8 @@ export class SocketService {
     await EventModel.signalTx(tx);
   }
 
-  async signalAddressTx(address: string, tx: IEvent.TxEvent) {
-    await EventModel.signalAddressTx(address, tx);
+  async signalAddressCoin(payload: IEvent.CoinEvent) {
+    await EventModel.signalCoin(payload);
   }
 }
 
