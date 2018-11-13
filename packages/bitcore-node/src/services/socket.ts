@@ -66,7 +66,7 @@ export class SocketService {
         if (this.io && addressTx) {
           const { address, tx } = <IEvent.AddressTxEvent>addressTx.payload;
           const { chain, network } = tx;
-          this.io.sockets.in(`/${chain}/${network}/${address}`).emit(address, tx);
+          this.io.sockets.in(`/${chain}/${network}/address`).emit(address, tx);
           lastAddressTxUpdate = new Date();
         }
       }
