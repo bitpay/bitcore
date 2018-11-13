@@ -8,38 +8,40 @@ export class ListTransactionsStream extends Transform {
   }
 
   async _transform(transaction, _, done) {
-    transaction.inputs = await CoinModel.collection
-      .find(
-        {
-          chain: transaction.chain,
-          network: transaction.network,
-          spentTxid: transaction.txid
-        },
-        { batchSize: 100 }
-      )
-      .addCursorFlag('noCursorTimeout', true)
-      .toArray();
-    transaction.outputs = await CoinModel.collection
-      .find(
-        {
-          chain: transaction.chain,
-          network: transaction.network,
-          mintTxid: transaction.txid
-        },
-        { batchSize: 100 }
-      )
-      .addCursorFlag('noCursorTimeout', true)
-      .toArray();
-
+    const [ inputs, outputs ] = await Promise.all([
+      CoinModel.collection
+        .find(
+          {
+            chain: transaction.chain,
+            network: transaction.network,
+            spentTxid: transaction.txid
+          },
+          { batchSize: 10000 }
+        )
+        .addCursorFlag('noCursorTimeout', true)
+        .toArray(),
+      CoinModel.collection
+        .find(
+          {
+            chain: transaction.chain,
+            network: transaction.network,
+            mintTxid: transaction.txid
+          },
+          { batchSize: 10000 }
+        )
+        .addCursorFlag('noCursorTimeout', true)
+        .toArray()
+    ]);
+    
     const wallet = this.wallet._id!.toString();
-    const sending = transaction.inputs.some((input) => {
+    const sending = inputs.some((input) => {
       return input.wallets.some((inputWallet) => {
         return inputWallet.equals(wallet);
       });
     });
 
     if (sending) {
-      transaction.outputs.forEach((output) => {
+      outputs.forEach((output) => {
         const sendingToOurself = output.wallets.some((outputWallet) => {
           return outputWallet.equals(wallet);
         });
@@ -54,7 +56,7 @@ export class ListTransactionsStream extends Transform {
               satoshis: -output.value,
               height: transaction.blockHeight,
               address: output.address,
-              outputIndex: output.vout,
+              outputIndex: output.mintIndex,
               blockTime: transaction.blockTimeNormalized
             }) + '\n'
           );
@@ -69,7 +71,7 @@ export class ListTransactionsStream extends Transform {
               satoshis: -output.value,
               height: transaction.blockHeight,
               address: output.address,
-              outputIndex: output.vout,
+              outputIndex: output.mintIndex,
               blockTime: transaction.blockTimeNormalized
             }) + '\n'
           );
@@ -89,7 +91,7 @@ export class ListTransactionsStream extends Transform {
       }
       return done();
     } else {
-      transaction.outputs.forEach((output) => {
+      outputs.forEach((output) => {
         const weReceived = output.wallets.some((outputWallet) => {
           return outputWallet.equals(wallet);
         });
@@ -104,7 +106,7 @@ export class ListTransactionsStream extends Transform {
               satoshis: output.value,
               height: transaction.blockHeight,
               address: output.address,
-              outputIndex: output.vout,
+              outputIndex: output.mintIndex,
               blockTime: transaction.blockTimeNormalized
             }) + '\n'
           );
