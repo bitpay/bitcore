@@ -18,6 +18,7 @@ export class ListTransactionsStream extends Transform {
           },
           { batchSize: 10000 }
         )
+        .project({ address: 1, wallets: 1, value: 1, mintIndex: 1})
         .addCursorFlag('noCursorTimeout', true)
         .toArray(),
       CoinModel.collection
@@ -29,6 +30,7 @@ export class ListTransactionsStream extends Transform {
           },
           { batchSize: 10000 }
         )
+        .project({ address: 1, wallets: 1, value: 1, mintIndex: 1 })
         .addCursorFlag('noCursorTimeout', true)
         .toArray()
     ]);
