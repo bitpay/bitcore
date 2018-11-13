@@ -1,4 +1,5 @@
 const request = require('request-promise-native');
+const requestStream = require('request');
 const bitcoreLib = require('bitcore-lib');
 const secp256k1 = require('secp256k1');
 const stream = require('stream');
@@ -61,38 +62,14 @@ Client.prototype.getCoins = async function (params) {
   });
 };
 
-Client.prototype.listTransactions = async function(params) {
-  const getTransactions = ({pubKey, startDate, endDate, since}) => {
-    let url = `${this.baseUrl}/wallet/${pubKey}/transactions?startDate=${startDate}&endDate=${endDate}&paging=_id&limit=1000`;
-    if(since) {
-      url += `&since=${since}`;
-    }
-    const signature = this.sign({ method: 'GET', url});
-    return request.get(url, {
-      headers: { 'x-signature': signature },
-      json: true
-    });
-  };
-
-  let totalResults = [];
-  let since = '';
-  let splitResults = null;
-  do {
-    try {
-      let results = await getTransactions({...params, since });
-      if(!results) {
-        throw new Error('No more results');
-      }
-      splitResults = results.split('\n').filter(r => r!= '');
-      totalResults = totalResults.concat(splitResults);
-      const last = JSON.parse(splitResults[splitResults.length - 1]);
-      since = last.id;
-    } catch (e) {
-      splitResults = null;
-    }
-  }
-  while(splitResults && splitResults != []);
-  return totalResults;
+Client.prototype.listTransactions = function(params) {
+  const { pubKey, startDate, endDate } = params;
+  const url = `${this.baseUrl}/wallet/${pubKey}/transactions?startDate=${startDate}&endDate=${endDate}`;
+  const signature = this.sign({ method: 'GET', url });
+  return requestStream.get(url, {
+    headers: { 'x-signature': signature },
+    json: true
+  });
 };
 
 Client.prototype.getFee = async function (params) {

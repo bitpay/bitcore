@@ -8,58 +8,47 @@ export class ListTransactionsStream extends Transform {
   }
 
   async _transform(transaction, _, done) {
-    var self = this;
-    transaction.inputs = await CoinModel.collection
-      .find(
-        {
-          chain: transaction.chain,
-          network: transaction.network,
-          spentTxid: transaction.txid
-        },
-        { batchSize: 100 }
-      )
-      .addCursorFlag('noCursorTimeout', true)
-      .toArray();
-    transaction.outputs = await CoinModel.collection
-      .find(
-        {
-          chain: transaction.chain,
-          network: transaction.network,
-          mintTxid: transaction.txid
-        },
-        { batchSize: 100 }
-      )
-      .addCursorFlag('noCursorTimeout', true)
-      .toArray();
-
-    var wallet = this.wallet._id!.toString();
-    var totalInputs = transaction.inputs.reduce((total, input) => {
-      return total + input.value;
-    }, 0);
-    var totalOutputs = transaction.outputs.reduce((total, output) => {
-      return total + output.value;
-    }, 0);
-    var fee = totalInputs - totalOutputs;
-    var sending = transaction.inputs.some(function(input) {
-      var contains = false;
-      input.wallets.forEach(function(inputWallet) {
-        if (inputWallet.equals(wallet)) {
-          contains = true;
-        }
+    const [ inputs, outputs ] = await Promise.all([
+      CoinModel.collection
+        .find(
+          {
+            chain: transaction.chain,
+            network: transaction.network,
+            spentTxid: transaction.txid
+          },
+          { batchSize: 10000 }
+        )
+        .project({ address: 1, wallets: 1, value: 1, mintIndex: 1})
+        .addCursorFlag('noCursorTimeout', true)
+        .toArray(),
+      CoinModel.collection
+        .find(
+          {
+            chain: transaction.chain,
+            network: transaction.network,
+            mintTxid: transaction.txid
+          },
+          { batchSize: 10000 }
+        )
+        .project({ address: 1, wallets: 1, value: 1, mintIndex: 1 })
+        .addCursorFlag('noCursorTimeout', true)
+        .toArray()
+    ]);
+    
+    const wallet = this.wallet._id!.toString();
+    const sending = inputs.some((input) => {
+      return input.wallets.some((inputWallet) => {
+        return inputWallet.equals(wallet);
       });
-      return contains;
     });
 
     if (sending) {
-      transaction.outputs.forEach(function(output) {
-        var sendingToOurself = false;
-        output.wallets.forEach(function(outputWallet) {
-          if (outputWallet.equals(wallet)) {
-            sendingToOurself = true;
-          }
+      outputs.forEach((output) => {
+        const sendingToOurself = output.wallets.some((outputWallet) => {
+          return outputWallet.equals(wallet);
         });
         if (!sendingToOurself) {
-          self.push(
+          this.push(
             JSON.stringify({
               id: transaction._id,
               txid: transaction.txid,
@@ -69,12 +58,12 @@ export class ListTransactionsStream extends Transform {
               satoshis: -output.value,
               height: transaction.blockHeight,
               address: output.address,
-              outputIndex: output.vout,
+              outputIndex: output.mintIndex,
               blockTime: transaction.blockTimeNormalized
             }) + '\n'
           );
         } else {
-          self.push(
+          this.push(
             JSON.stringify({
               id: transaction._id,
               txid: transaction.txid,
@@ -84,19 +73,19 @@ export class ListTransactionsStream extends Transform {
               satoshis: -output.value,
               height: transaction.blockHeight,
               address: output.address,
-              outputIndex: output.vout,
+              outputIndex: output.mintIndex,
               blockTime: transaction.blockTimeNormalized
             }) + '\n'
           );
         }
       });
-      if (fee > 0) {
-        self.push(
+      if (transaction.fee > 0) {
+        this.push(
           JSON.stringify({
             id: transaction._id,
             txid: transaction.txid,
             category: 'fee',
-            satoshis: -fee,
+            satoshis: -transaction.fee,
             height: transaction.blockHeight,
             blockTime: transaction.blockTimeNormalized
           }) + '\n'
@@ -104,15 +93,12 @@ export class ListTransactionsStream extends Transform {
       }
       return done();
     } else {
-      transaction.outputs.forEach(function(output) {
-        var weReceived = false;
-        output.wallets.forEach(function(outputWallet) {
-          if (outputWallet.equals(wallet)) {
-            weReceived = true;
-          }
+      outputs.forEach((output) => {
+        const weReceived = output.wallets.some((outputWallet) => {
+          return outputWallet.equals(wallet);
         });
         if (weReceived) {
-          self.push(
+          this.push(
             JSON.stringify({
               id: transaction._id,
               txid: transaction.txid,
@@ -122,7 +108,7 @@ export class ListTransactionsStream extends Transform {
               satoshis: output.value,
               height: transaction.blockHeight,
               address: output.address,
-              outputIndex: output.vout,
+              outputIndex: output.mintIndex,
               blockTime: transaction.blockTimeNormalized
             }) + '\n'
           );
