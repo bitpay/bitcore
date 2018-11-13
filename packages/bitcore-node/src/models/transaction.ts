@@ -10,6 +10,7 @@ import logger from '../logger';
 import config from '../config';
 import { StreamingFindOptions, Storage } from '../services/storage';
 import * as lodash from 'lodash';
+import { Socket } from '../services/socket';
 
 const Chain = require('../chain');
 
@@ -88,6 +89,20 @@ export class Transaction extends BaseModel<ITransaction> {
           this.collection.bulkWrite(txBatch, { ordered: false })
         )
       );
+
+      // Create events for mempool txs
+      if (params.height < SpentHeightIndicators.minimum) {
+        txOps.forEach(op => {
+          const tx = op.updateOne.update.$set;
+          const txid = op.updateOne.filter.txid;
+          Socket.signalTx(tx);
+          mintOps
+            .filter(coinOp => coinOp.updateOne.filter.mintTxid === txid)
+            .forEach(coinOp => {
+              Socket.signalAddressTx(coinOp.updateOne.update.$set.address, tx);
+            });
+        });
+      }
     }
   }
 
@@ -136,10 +151,12 @@ export class Transaction extends BaseModel<ITransaction> {
         };
       });
     } else {
-      const spentQuery =
-        height > 0
-          ? { spentHeight: height, chain, network }
-          : { spentTxid: { $in: params.txs.map(tx => tx._hash) }, chain, network };
+      let spentQuery;
+      if (height > 0) {
+        spentQuery = { spentHeight: height, chain, network };
+      } else {
+        spentQuery = { spentTxid: { $in: params.txs.map(tx => tx._hash) }, chain, network };
+      }
       const spent = await CoinModel.collection
         .find(spentQuery)
         .project({ spentTxid: 1, value: 1, wallets: 1 })
@@ -228,7 +245,7 @@ export class Transaction extends BaseModel<ITransaction> {
     chain: string;
     network: string;
     mintOps?: Array<any>;
-  }): Promise<Array<any>> {
+  }) {
     let { chain, height, network, parentChain, forkHeight, initialSyncComplete } = params;
     let mintOps = new Array<any>();
     let parentChainCoinsMap = new Map();
@@ -266,7 +283,6 @@ export class Transaction extends BaseModel<ITransaction> {
             address = Chain[chain].lib.Address(hash, network).toString(true);
           }
         }
-
         mintOps.push({
           updateOne: {
             filter: {
