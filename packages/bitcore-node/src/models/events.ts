@@ -37,7 +37,7 @@ class Event extends BaseModel<IEvent> {
     this.collection.insertOne({ payload: tx, emitTime: new Date(), type: 'tx' });
   }
 
-  public signalCoin(payload: IEvent.CoinEvent) {
+  public signalAddressCoin(payload: IEvent.CoinEvent) {
     this.collection.insertOne({ payload, emitTime: new Date(), type: 'coin' });
   }
 

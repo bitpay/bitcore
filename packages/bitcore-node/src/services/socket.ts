@@ -84,7 +84,7 @@ export class SocketService {
   }
 
   async signalAddressCoin(payload: IEvent.CoinEvent) {
-    await EventModel.signalCoin(payload);
+    await EventModel.signalAddressCoin(payload);
   }
 }
 
