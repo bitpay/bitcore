@@ -62,7 +62,7 @@ Client.prototype.getCoins = async function (params) {
   });
 };
 
-Client.prototype.listTransactions = async function(params) {
+Client.prototype.listTransactions = function(params) {
   const { pubKey, startDate, endDate } = params;
   const url = `${this.baseUrl}/wallet/${pubKey}/transactions?startDate=${startDate}&endDate=${endDate}`;
   const signature = this.sign({ method: 'GET', url });
