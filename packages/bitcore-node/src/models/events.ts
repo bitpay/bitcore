@@ -49,7 +49,7 @@ class Event extends BaseModel<IEvent> {
   }
 
   getAddressTxTail(lastSeen: Date) {
-    return this.collection.find({ type: 'tx', emitTime: { $gte: lastSeen } });
+    return this.collection.find({ type: 'addresstx', emitTime: { $gte: lastSeen } });
   }
 }
 export const EventModel = new Event();
