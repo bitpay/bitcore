@@ -8,7 +8,6 @@ export class ListTransactionsStream extends Transform {
   }
 
   async _transform(transaction, _, done) {
-    var self = this;
     transaction.inputs = await CoinModel.collection
       .find(
         {
@@ -32,34 +31,20 @@ export class ListTransactionsStream extends Transform {
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
 
-    var wallet = this.wallet._id!.toString();
-    var totalInputs = transaction.inputs.reduce((total, input) => {
-      return total + input.value;
-    }, 0);
-    var totalOutputs = transaction.outputs.reduce((total, output) => {
-      return total + output.value;
-    }, 0);
-    var fee = totalInputs - totalOutputs;
-    var sending = transaction.inputs.some(function(input) {
-      var contains = false;
-      input.wallets.forEach(function(inputWallet) {
-        if (inputWallet.equals(wallet)) {
-          contains = true;
-        }
+    const wallet = this.wallet._id!.toString();
+    const sending = transaction.inputs.some((input) => {
+      return input.wallets.some((inputWallet) => {
+        return inputWallet.equals(wallet);
       });
-      return contains;
     });
 
     if (sending) {
-      transaction.outputs.forEach(function(output) {
-        var sendingToOurself = false;
-        output.wallets.forEach(function(outputWallet) {
-          if (outputWallet.equals(wallet)) {
-            sendingToOurself = true;
-          }
+      transaction.outputs.forEach((output) => {
+        const sendingToOurself = output.wallets.some((outputWallet) => {
+          return outputWallet.equals(wallet);
         });
         if (!sendingToOurself) {
-          self.push(
+          this.push(
             JSON.stringify({
               id: transaction._id,
               txid: transaction.txid,
@@ -74,7 +59,7 @@ export class ListTransactionsStream extends Transform {
             }) + '\n'
           );
         } else {
-          self.push(
+          this.push(
             JSON.stringify({
               id: transaction._id,
               txid: transaction.txid,
@@ -90,13 +75,13 @@ export class ListTransactionsStream extends Transform {
           );
         }
       });
-      if (fee > 0) {
-        self.push(
+      if (transaction.fee > 0) {
+        this.push(
           JSON.stringify({
             id: transaction._id,
             txid: transaction.txid,
             category: 'fee',
-            satoshis: -fee,
+            satoshis: -transaction.fee,
             height: transaction.blockHeight,
             blockTime: transaction.blockTimeNormalized
           }) + '\n'
@@ -104,15 +89,12 @@ export class ListTransactionsStream extends Transform {
       }
       return done();
     } else {
-      transaction.outputs.forEach(function(output) {
-        var weReceived = false;
-        output.wallets.forEach(function(outputWallet) {
-          if (outputWallet.equals(wallet)) {
-            weReceived = true;
-          }
+      transaction.outputs.forEach((output) => {
+        const weReceived = output.wallets.some((outputWallet) => {
+          return outputWallet.equals(wallet);
         });
         if (weReceived) {
-          self.push(
+          this.push(
             JSON.stringify({
               id: transaction._id,
               txid: transaction.txid,

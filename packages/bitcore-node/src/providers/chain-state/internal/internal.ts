@@ -282,36 +282,43 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
-    let { chain, network, wallet, stream, args } = params;
-    let finalQuery: any = {
-      chain: chain,
+    const { chain, network, wallet, stream, args } = params;
+    const query: any = {
+      chain,
       network,
       wallets: wallet._id
     };
+    const options: any = {};
     if (args) {
-      if (args.startBlock) {
-        finalQuery.blockHeight = { $gte: Number(args.startBlock) };
-      }
-      if (args.endBlock) {
-        finalQuery.blockHeight = finalQuery.blockHeight || {};
-        finalQuery.blockHeight.$lte = Number(args.endBlock);
-      }
-      if (args.startDate) {
-        const startDate = new Date(args.startDate);
-        if (startDate.getTime()) {
-          finalQuery.blockTimeNormalized = { $gte: new Date(args.startDate) };
+      if (args.startBlock || args.endBlock) {
+        options.sort = {blockHeight: args.direction || -1};
+        if (args.startBlock) {
+          query.blockHeight = { $gte: Number(args.startBlock) };
         }
-      }
-      if (args.endDate) {
-        const endDate = new Date(args.endDate);
-        if (endDate.getTime()) {
-          finalQuery.blockTimeNormalized = finalQuery.blockTimeNormalized || {};
-          finalQuery.blockTimeNormalized.$lt = new Date(args.endDate);
+        if (args.endBlock) {
+          query.blockHeight = query.blockHeight || {};
+          query.blockHeight.$lte = Number(args.endBlock);
+        }
+      } else {
+        options.sort = { blockTimeNormalized: args.direction || -1 };
+        if (args.startDate) {
+          const startDate = new Date(args.startDate);
+          if (startDate.getTime()) {
+            query.blockTimeNormalized = { $gte: new Date(args.startDate) };
+          }
+        }
+        if (args.endDate) {
+          const endDate = new Date(args.endDate);
+          if (endDate.getTime()) {
+            query.blockTimeNormalized = query.blockTimeNormalized || {};
+            query.blockTimeNormalized.$lt = new Date(args.endDate);
+          }
         }
       }
     }
-    let transactionStream = TransactionModel.getTransactions({ query: finalQuery, options: args });
-    let listTransactionsStream = new ListTransactionsStream(wallet);
+    
+    const transactionStream = TransactionModel.collection.find(query, options).addCursorFlag('noCursorTimeout', true);
+    const listTransactionsStream = new ListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(stream);
   }
 
