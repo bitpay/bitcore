@@ -286,14 +286,12 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const query: any = {
       chain,
       network,
-      wallets: wallet._id
+      wallets: wallet._id,
+      'wallets.0': { $exists: true }
     };
-    let hint = '';
-    const options: any = {};
+
     if (args) {
       if (args.startBlock || args.endBlock) {
-        hint = 'wallets_1_blockHeight_1';
-        options.sort = { blockHeight: args.direction || -1 };
         if (args.startBlock) {
           query.blockHeight = { $gte: Number(args.startBlock) };
         }
@@ -302,9 +300,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
           query.blockHeight.$lte = Number(args.endBlock);
         }
       } else {
-        options.sort = { blockTimeNormalized: args.direction || -1 };
         if (args.startDate) {
-          hint = 'wallets_1_blockTimeNormalized_1';
           const startDate = new Date(args.startDate);
           if (startDate.getTime()) {
             query.blockTimeNormalized = { $gte: new Date(args.startDate) };
@@ -321,8 +317,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
 
     const transactionStream = TransactionModel.collection
-      .find(query, options)
-      .hint(hint)
+      .find(query)
       .addCursorFlag('noCursorTimeout', true);
     const listTransactionsStream = new ListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(stream);
