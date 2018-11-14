@@ -75,6 +75,7 @@ class Coin extends BaseModel<ICoin> {
     return this.collection
       .aggregate<{ balance: number }>([
         { $match: query },
+        { $project: { value: 1, _id: 0 }},
         {
           $group: {
             _id: null,
