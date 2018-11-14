@@ -36,7 +36,13 @@ describe('Blockchain monitor', function() {
     helpers.beforeEach(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
-      blockchainExplorer.initSocket = sinon.stub().returns(socket);
+      blockchainExplorer.initSocket = function(callbacks) {
+        socket.handlers['tx']= function(data) {
+          callbacks.onTx;
+          callbacks.onIncomingPayments(data);
+        };
+        socket.handlers['block'] =  callbacks.onBlock;
+      }
 
       helpers.createAndJoinWallet(2, 3, function(s, w) {
         server = s;
