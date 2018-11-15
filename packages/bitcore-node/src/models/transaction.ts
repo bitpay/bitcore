@@ -99,8 +99,8 @@ export class Transaction extends BaseModel<ITransaction> {
             .filter(coinOp => coinOp.updateOne.filter.mintTxid === filter.txid)
             .forEach(coinOp => {
               const address = coinOp.updateOne.update.$set.address;
-              const coin = coinOp.updateOne.update.$set;
-              Socket.signalAddressCoin({address, coin});
+              const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
+              Socket.signalAddressCoin({ address, coin });
             });
         });
       }

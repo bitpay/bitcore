@@ -67,6 +67,7 @@ export class SocketService {
           const { address, coin } = <IEvent.CoinEvent>addressTx.payload;
           const { chain, network } = coin;
           this.io.sockets.in(`/${chain}/${network}/address`).emit(address, coin);
+          this.io.sockets.in(`/${chain}/${network}/inv`).emit('coin', coin);
           lastAddressTxUpdate = new Date();
         }
       }
