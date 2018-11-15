@@ -64,9 +64,9 @@ export class SocketService {
       while (await addressTxCursor.hasNext()) {
         const addressTx = await addressTxCursor.next();
         if (this.io && addressTx) {
-          const { address, coin } = <IEvent.CoinEvent>addressTx.payload;
+          const { coin } = <IEvent.CoinEvent>addressTx.payload;
           const { chain, network } = coin;
-          this.io.sockets.in(`/${chain}/${network}/address`).emit(address, coin);
+          this.io.sockets.in(`/${chain}/${network}/inv`).emit('coin', coin);
           lastAddressTxUpdate = new Date();
         }
       }
