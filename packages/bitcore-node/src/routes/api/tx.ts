@@ -2,9 +2,10 @@ import { Router } from 'express';
 import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { ChainStateProvider } from '../../providers/chain-state';
 import logger from '../../logger';
+import { LogRequest } from "../middleware";
 const router = Router({ mergeParams: true });
 
-router.get('/', function(req, res) {
+router.get('/', LogRequest, function(req, res) {
   let { chain, network } = req.params;
   let { blockHeight, blockHash, limit, since, direction, paging } = req.query;
   if (!chain || !network) {
@@ -31,7 +32,7 @@ router.get('/', function(req, res) {
   return ChainStateProvider.streamTransactions(payload);
 });
 
-router.get('/:txId', async (req, res) => {
+router.get('/:txId', LogRequest, async (req, res) => {
   let { chain, network, txId } = req.params;
   if (typeof txId !== 'string' || !chain || !network) {
     return res.status(400).send('Missing required param');
@@ -50,7 +51,7 @@ router.get('/:txId', async (req, res) => {
   }
 });
 
-router.get('/:txid/coins', (req, res, next) => {
+router.get('/:txid/coins', LogRequest, (req, res, next) => {
   let { chain, network, txid } = req.params;
   if (typeof txid !== 'string' || typeof chain !== 'string' || typeof network !== 'string') {
     res.status(400).send('Missing required param');
@@ -66,7 +67,7 @@ router.get('/:txid/coins', (req, res, next) => {
   }
 });
 
-router.post('/send', async function(req, res) {
+router.post('/send', LogRequest, async function(req, res) {
   try {
     let { chain, network } = req.params;
     let { rawTx } = req.body;
