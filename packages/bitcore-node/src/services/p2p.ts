@@ -152,8 +152,8 @@ export class P2pService {
     }
   }
 
-  public async getHeaders(candidateHashes: string[]) {
-    return new Promise(resolve => {
+  public async getHeaders(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
+    return new Promise<Bitcoin.Block.HeaderObj[]>(resolve => {
       const _getHeaders = () => {
         this.pool.sendMessage(
           this.messages.GetHeaders({
@@ -263,9 +263,8 @@ export class P2pService {
       return this.getHeaders(locators);
     };
 
-    let headers;
-    while (!headers || headers.length > 0) {
-      headers = await getHeaders();
+    let headers = await getHeaders();
+    while (headers.length > 0) {
       tip = await ChainStateProvider.getLocalTip({ chain, network });
       let currentHeight = tip ? tip.height : 0;
       let lastLog = 0;
@@ -289,6 +288,7 @@ export class P2pService {
           return this.sync();
         }
       }
+      headers = await getHeaders();
     }
     logger.info(`${chain}:${network} up to date.`);
     this.syncing = false;
