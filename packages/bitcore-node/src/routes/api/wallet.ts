@@ -5,7 +5,6 @@ import { RequestHandler } from 'express-serve-static-core';
 import { ChainStateProvider } from '../../providers/chain-state';
 import logger from '../../logger';
 import { MongoBound } from '../../models/base';
-import { LogRequest } from '../middleware';
 const router = Router({ mergeParams: true });
 const secp256k1 = require('secp256k1');
 const bitcoreLib = require('bitcore-lib');
@@ -63,7 +62,7 @@ const authenticate: RequestHandler = async (req: PreAuthRequest, res: Response, 
 };
 
 // create wallet
-router.post('/', LogRequest, async function(req, res) {
+router.post('/', async function(req, res) {
   let { chain, network } = req.params;
   let { name, pubKey, path, singleAddress } = req.body;
   try {
@@ -89,7 +88,7 @@ router.post('/', LogRequest, async function(req, res) {
   }
 });
 
-router.get('/:pubKey/addresses/missing', LogRequest, authenticate, async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/addresses/missing', authenticate, async (req: AuthenticatedRequest, res) => {
   try {
     let { chain, network, pubKey } = req.params;
     let payload = {
@@ -104,7 +103,7 @@ router.get('/:pubKey/addresses/missing', LogRequest, authenticate, async (req: A
   }
 });
 
-router.get('/:pubKey/addresses', LogRequest, authenticate, async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/addresses', authenticate, async (req: AuthenticatedRequest, res) => {
   try {
     const { wallet } = req;
     let { chain, network } = req.params;
@@ -123,7 +122,7 @@ router.get('/:pubKey/addresses', LogRequest, authenticate, async (req: Authentic
 });
 
 // update wallet
-router.post('/:pubKey', LogRequest, authenticate, async (req: AuthenticatedRequest, res) => {
+router.post('/:pubKey', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
   let addressLines: { address: string }[] = req.body;
   let keepAlive;
@@ -147,7 +146,7 @@ router.post('/:pubKey', LogRequest, authenticate, async (req: AuthenticatedReque
   }
 });
 
-router.get('/:pubKey/transactions', LogRequest, authenticate, async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/transactions', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
   try {
     return ChainStateProvider.streamWalletTransactions({
@@ -162,7 +161,7 @@ router.get('/:pubKey/transactions', LogRequest, authenticate, async (req: Authen
   }
 });
 
-router.get('/:pubKey/balance', LogRequest, authenticate, async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/balance', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
   try {
     const result = await ChainStateProvider.getWalletBalance({
@@ -176,7 +175,7 @@ router.get('/:pubKey/balance', LogRequest, authenticate, async (req: Authenticat
   }
 });
 
-router.get('/:pubKey/utxos', LogRequest, authenticate, async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/utxos', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
   let { limit = 1000 } = req.query;
   try {
@@ -193,7 +192,7 @@ router.get('/:pubKey/utxos', LogRequest, authenticate, async (req: Authenticated
   }
 });
 
-router.get('/:pubKey', LogRequest, authenticate, async function(req: AuthenticatedRequest, res: Response) {
+router.get('/:pubKey', authenticate, async function(req: AuthenticatedRequest, res: Response) {
   try {
     let wallet = req.wallet;
     return res.send(wallet);

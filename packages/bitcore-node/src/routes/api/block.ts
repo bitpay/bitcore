@@ -1,9 +1,8 @@
-import { LogRequest } from '../middleware';
 import { Request, Response } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
 const router = require('express').Router({ mergeParams: true });
 
-router.get('/', LogRequest, async function(req: Request, res: Response) {
+router.get('/', async function(req: Request, res: Response) {
   let { chain, network } = req.params;
   const { sinceBlock, date, limit, since, direction, paging } = req.query;
   try {
@@ -20,7 +19,7 @@ router.get('/', LogRequest, async function(req: Request, res: Response) {
   }
 });
 
-router.get('/tip', LogRequest, async function(req: Request, res: Response) {
+router.get('/tip',  async function(req: Request, res: Response) {
   let { chain, network } = req.params;
   try {
     let tip = await ChainStateProvider.getBlock({ chain, network });
@@ -30,7 +29,7 @@ router.get('/tip', LogRequest, async function(req: Request, res: Response) {
   }
 });
 
-router.get('/:blockId', LogRequest, async function(req: Request, res: Response) {
+router.get('/:blockId',  async function(req: Request, res: Response) {
   let { blockId, chain, network } = req.params;
   try {
     let block = await ChainStateProvider.getBlock({ chain, network, blockId });

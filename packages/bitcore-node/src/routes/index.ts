@@ -2,6 +2,7 @@ import config from '../config';
 import { Request, Response } from 'express';
 import express from 'express';
 import cors from 'cors';
+import { LogRequest } from "./middleware";
 
 const app = express();
 const bodyParser = require('body-parser');
@@ -49,7 +50,7 @@ function getRouterFromFile(path) {
 }
 
 app.use(cors());
-
+app.use(LogRequest);
 app.use('/api', getRouterFromFile('status'));
 
 app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
