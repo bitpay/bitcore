@@ -1,9 +1,10 @@
 import { Request, Response } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
+import { LogRequest } from "../middleware";
 const router = require('express').Router({ mergeParams: true });
 const feeCache = {};
 
-router.get('/:target', async (req: Request, res: Response) => {
+router.get('/:target', LogRequest, async (req: Request, res: Response) => {
   let { target, chain, network } = req.params;
   if (target < 0 || target > 100) {
     return res.status(400).send('invalid target specified');
@@ -13,7 +14,7 @@ router.get('/:target', async (req: Request, res: Response) => {
     return res.json(cachedFee.fee);
   }
   try {
-    let fee = await ChainStateProvider.getFee({ chain, network, target});
+    let fee = await ChainStateProvider.getFee({ chain, network, target });
     if (!fee) {
       return res.status(404).send('not available right now');
     }
