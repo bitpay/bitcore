@@ -1,6 +1,6 @@
 {
   "name": "bitcore-lib-cash",
-  "version": "0.18.1",
+  "version": "0.19.0",
   "description": "A pure and powerful JavaScript Bitcoin Cash library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -42,11 +42,12 @@
     "lodash": "=4.17.11"
   },
   "devDependencies": {
+    "base-x": "=3.0.4",
     "bitcore-build": "https://github.com/bitpay/bitcore-build.git#d4e8b2b2f1e2c065c3a807dcb6a6250f61d67ab3",
     "brfs": "^1.2.0",
     "chai": "^1.10.0",
-    "gulp": "^3.8.10",
-    "phantomjs-prebuilt": "^2.1.16",
+    "gulp": "^3.9.1",
+    "phantomjs": "^2.1.7",
     "sinon": "^1.13.0"
   },
   "license": "MIT"
