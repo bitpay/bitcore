@@ -43,9 +43,9 @@
   },
   "devDependencies": {
     "bitcore-build": "https://github.com/bitpay/bitcore-build.git#d4e8b2b2f1e2c065c3a807dcb6a6250f61d67ab3",
-    "brfs": "^1.2.0",
+    "brfs": "^2.0.1",
     "chai": "^1.10.0",
-    "gulp": "^3.8.10",
+    "gulp": "^4.0.0",
     "phantomjs-prebuilt": "^2.1.16",
     "sinon": "^1.13.0"
   },
