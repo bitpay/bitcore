@@ -147,6 +147,7 @@ describe('Interpreter', function() {
       var scriptSig = Script.buildPublicKeyHashIn(publicKey, signature);
       var flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_STRICTENC;
       var verified = Interpreter().verify(scriptSig, scriptPubkey, tx, inputIndex, flags);
+
       verified.should.equal(true);
     });
   });
@@ -203,8 +204,8 @@ describe('Interpreter', function() {
       flags = flags | Interpreter.SCRIPT_ENABLE_REPLAY_PROTECTION;
     }
 
-    if (flagstr.indexOf('MONOLITH') !== -1) {
-      flags = flags | Interpreter.SCRIPT_ENABLE_MONOLITH_OPCODES;
+    if (flagstr.indexOf('CHECKDATASIG') !== -1) {
+      flags = flags | Interpreter.SCRIPT_ENABLE_CHECKDATASIG;
     }
 
     if (flagstr.indexOf('MINIMALIF') !== -1) {

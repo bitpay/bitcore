@@ -264,7 +264,7 @@ describe('Signature', function() {
             var interp = Interpreter();
             interp.flags = Interpreter.SCRIPT_VERIFY_DERSIG |
               Interpreter.SCRIPT_VERIFY_STRICTENC;
-            var result = interp.checkSignatureEncoding(new Buffer(sighex, 'hex'));
+            var result = interp.checkTxSignatureEncoding(new Buffer(sighex, 'hex'));
             result.should.equal(expected);
           });
           i++;
