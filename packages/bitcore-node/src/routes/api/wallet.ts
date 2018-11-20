@@ -177,7 +177,7 @@ router.get('/:pubKey/balance', authenticate, async (req: AuthenticatedRequest, r
 
 router.get('/:pubKey/utxos', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
-  let { limit = 1000 } = req.query;
+  let { limit } = req.query;
   try {
     return ChainStateProvider.streamWalletUtxos({
       chain,
