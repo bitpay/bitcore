@@ -336,13 +336,13 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
-    const utxoTransform = (c: ICoin) => {
+    const utxoTransform = (c: ICoin) : string => {
       let confirmations = 0;
       if (c.mintHeight && c.mintHeight >= 0) {
         confirmations = tipHeight - c.mintHeight + 1;
       }
-      const convertedCoin = CoinModel._apiTransform(c, { object: true }) as Partial<ICoin>;
-      return JSON.stringify({ ...convertedCoin, confirmations });
+      c.confirmations = confirmations;
+      return CoinModel._apiTransform(c) as string;
     };
 
     Storage.apiStreamingFind(CoinModel, query, { limit }, stream, utxoTransform);

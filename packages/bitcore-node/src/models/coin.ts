@@ -15,6 +15,7 @@ export type ICoin = {
   wallets: Array<ObjectID>;
   spentTxid: string;
   spentHeight: number;
+  confirmations?: number;
 };
 
 /**
@@ -86,7 +87,7 @@ class Coin extends BaseModel<ICoin> {
       .toArray();
   }
 
-  _apiTransform(coin: Partial<MongoBound<ICoin>>, options: { object: boolean }) {
+  _apiTransform(coin: Partial<MongoBound<ICoin>>, options?: { object: boolean }) {
     let transform = {
       _id: coin._id,
       txid: coin.mintTxid,
@@ -98,7 +99,8 @@ class Coin extends BaseModel<ICoin> {
       spentHeight: coin.spentHeight,
       address: coin.address,
       script: coin.script,
-      value: coin.value
+      value: coin.value,
+      confirmations: coin.confirmations
     };
     if (options && options.object) {
       return transform;
