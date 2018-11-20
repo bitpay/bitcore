@@ -148,10 +148,11 @@ class Wallet {
     return this.client.getFee({ target });
   }
 
-  getUtxos() {
+  getUtxos(params) {
+    const { includeSpent = false } = params;
     return this.client.getCoins({
       pubKey: this.authPubKey,
-      includeSpent: false
+      includeSpent
     });
   }
 

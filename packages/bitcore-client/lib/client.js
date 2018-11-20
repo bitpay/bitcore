@@ -51,11 +51,11 @@ Client.prototype.getAddressTxos = async function (params) {
   });
 };
 
-Client.prototype.getCoins = async function (params) {
+Client.prototype.getCoins = function (params) {
   const { payload, pubKey, includeSpent } = params;
   const url = `${this.baseUrl}/wallet/${pubKey}/utxos?includeSpent=${includeSpent}`;
   const signature = this.sign({ method: 'GET', url, payload });
-  return request.get(url, {
+  return requestStream.get(url, {
     headers: { 'x-signature': signature },
     body: payload,
     json: true
