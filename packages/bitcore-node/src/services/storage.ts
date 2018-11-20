@@ -140,7 +140,9 @@ export class StorageService {
         options.sort = Object.assign({}, originalOptions.sort, { [originalOptions.paging]: -1 });
       }
     }
-    options.limit = originalOptions.limit === undefined ? 100 : originalOptions.limit;
+    if (originalOptions.limit !== undefined) {
+      options.limit = originalOptions.limit;
+    }
     return { query, options };
   }
 
