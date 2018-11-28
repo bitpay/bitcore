@@ -64,10 +64,10 @@ class Coin extends BaseModel<ICoin> {
       }
     );
     this.collection.createIndex({ address: 1 }, { background: true });
-    this.collection.createIndex({ mintHeight: 1, chain: 1, network: 1 }, { background: true });
+    this.collection.createIndex({ chain: 1, network: 1, mintHeight: 1 }, { background: true });
     this.collection.createIndex({ spentTxid: 1 }, { background: true, sparse: true });
-    this.collection.createIndex({ spentHeight: 1, chain: 1, network: 1 }, { background: true });
-    this.collection.createIndex({ wallets: 1, spentHeight: 1 }, { background: true, sparse: true });
+    this.collection.createIndex({ chain: 1, network: 1, spentHeight: 1 }, { background: true });
+    this.collection.createIndex({ wallets: 1, spentHeight: 1, value: 1 }, { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } });
   }
 
   getBalance(params: { query: any }) {
@@ -76,6 +76,7 @@ class Coin extends BaseModel<ICoin> {
     return this.collection
       .aggregate<{ balance: number }>([
         { $match: query },
+        { $project: { value: 1, _id: 0 }},
         {
           $group: {
             _id: null,
