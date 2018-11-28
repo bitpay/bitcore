@@ -121,7 +121,7 @@ export class StorageService {
     let since: any = null;
     let options: StreamingFindOptions<T> = {};
 
-    if(originalOptions.sort) {
+    if (originalOptions.sort) {
       options.sort = originalOptions.sort;
     }
     if (originalOptions.paging && this.validPagingProperty(model, originalOptions.paging)) {
@@ -140,7 +140,9 @@ export class StorageService {
         options.sort = Object.assign({}, originalOptions.sort, { [originalOptions.paging]: -1 });
       }
     }
-    options.limit = Math.min(originalOptions.limit || 100, 1000);
+    if (originalOptions.limit) {
+      options.limit = originalOptions.limit;
+    }
     return { query, options };
   }
 
@@ -156,7 +158,7 @@ export class StorageService {
     let cursor = model.collection.find(finalQuery, options).stream({
       transform: transform || model._apiTransform
     });
-    if(options.sort) {
+    if (options.sort) {
       cursor = cursor.sort(options.sort);
     }
     return this.apiStream(cursor, res);
