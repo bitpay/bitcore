@@ -324,13 +324,13 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {
-    let query = { wallets: params.wallet._id };
+    let query = { wallets: params.wallet._id, 'wallets.0': { $exists: true } };
     return CoinModel.getBalance({ query });
   }
 
   async streamWalletUtxos(params: CSP.StreamWalletUtxosParams) {
     const { wallet, limit, args = {}, stream } = params;
-    let query: any = { wallets: wallet._id, mintHeight: { $gt: SpentHeightIndicators.conflicting } };
+    let query: any = { wallets: wallet._id, 'wallets.0': { $exists: true }, mintHeight: { $gt: SpentHeightIndicators.conflicting } };
     if (args.includeSpent !== 'true') {
       query.spentHeight = { $lt: SpentHeightIndicators.pending };
     }
