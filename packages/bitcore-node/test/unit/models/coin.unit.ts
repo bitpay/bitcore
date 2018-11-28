@@ -68,6 +68,7 @@ describe('Coin Model', function() {
         spentHeight: SpentHeightIndicators.unspent,
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
         coinbase: true,
+        confirmations: undefined,
         script: coin.script,
         value: 5000000000.0
       });

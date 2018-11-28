@@ -62,6 +62,7 @@ export class Transaction extends BaseModel<ITransaction> {
   }) {
     const mintOps = await this.getMintOps(params);
     const spendOps = this.getSpendOps({ ...params, mintOps });
+    this.pruneMempool({...params, mintOps, spendOps});
 
     logger.debug('Minting Coins', mintOps.length);
     if (mintOps.length) {
@@ -381,6 +382,46 @@ export class Transaction extends BaseModel<ITransaction> {
       }
     }
     return spendOps;
+  }
+
+  async pruneMempool(params: {
+    txs: Array<Bitcoin.Transaction>;
+    height: number;
+    parentChain?: string;
+    forkHeight?: number;
+    chain: string;
+    network: string;
+    mintOps: Array<any>;
+    spendOps: Array<any>;
+    initialSyncComplete: boolean;
+    [rest: string]: any;
+  }) {
+    const { chain, network, spendOps, initialSyncComplete } = params;
+    if (!initialSyncComplete || !spendOps.length) {
+      return;
+    }
+    const spentCoinsQuery = {
+      chain, network, spentHeight: SpentHeightIndicators.pending, $or: spendOps.map(spendOp => {
+        return {
+          mintTxid: spendOp.updateOne.filter.mintTxid,
+          mintIndex: spendOp.updateOne.filter.mintIndex,
+          spentTxid: { $ne: spendOp.updateOne.update.$set.spentTxid }
+        }
+      })
+    };
+    const spendingCoins = await CoinModel.collection.find(spentCoinsQuery).toArray();
+    if (spendingCoins.length) {
+      let prunedTxs = {};
+      for (const coin of spendingCoins) {
+        prunedTxs[coin.spentTxid] = true;
+      }
+      prunedTxs = Object.keys(prunedTxs);
+      await Promise.all([
+        this.collection.update({ txid: { $in: prunedTxs } }, { $set: { blockHeight: SpentHeightIndicators.conflicting } }, { w: 0, j: false, multi: true }),
+        CoinModel.collection.update({ mintTxid: { $in: prunedTxs } }, { $set: { mintHeight: SpentHeightIndicators.conflicting } }, { w: 0, j: false, multi: true })
+      ]);
+    }
+    return;
   }
 
   getTransactions(params: { query: any; options: StreamingFindOptions<ITransaction> }) {
