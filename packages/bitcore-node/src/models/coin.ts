@@ -38,7 +38,7 @@ export enum SpentHeightIndicators {
   /**
    * The coin was minted by a transaction which can no longer confirm.
    */
-  conflicting = -3,
+  conflicting = -3
 }
 
 @LoggifyClass
@@ -76,7 +76,10 @@ class Coin extends BaseModel<ICoin> {
 
   getBalance(params: { query: any }) {
     let { query } = params;
-    query = Object.assign(query, { spentHeight: { $lt: SpentHeightIndicators.minimum }, mintHeight: { $gt: SpentHeightIndicators.conflicting } });
+    query = Object.assign(query, {
+      spentHeight: { $lt: SpentHeightIndicators.minimum },
+      mintHeight: { $gt: SpentHeightIndicators.conflicting }
+    });
     return this.collection
       .aggregate<{ balance: number }>([
         { $match: query },
