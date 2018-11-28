@@ -4,15 +4,19 @@
 module.exports = function(config) {
 
   config.set({
-    browsers: ['PhantomJS'],
+    browsers: ['ChromeHeadless'],
     frameworks: ['mocha'],
-    singleRun: true,
+    singleRun: false,
+    reporters: ['progress'],
+    logLevel: config.LOG_INFO,
+//    port: 9876,  // karma web server port
+    autoWatch: false,
     files: [
-      './../../tests.js' // project root
+      '../../tests.js'
     ],
     plugins: [
       'karma-mocha',
-      'karma-phantomjs-launcher'
+      'karma-chrome-launcher',
     ]
   });
 
