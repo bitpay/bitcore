@@ -400,21 +400,21 @@ export class Transaction extends BaseModel<ITransaction> {
     if (!initialSyncComplete || !spendOps.length) {
       return;
     }
-    const spentCoinsQuery = {
-      chain, network, spentHeight: SpentHeightIndicators.pending, $or: spendOps.map(spendOp => {
-        return {
-          mintTxid: spendOp.updateOne.filter.mintTxid,
-          mintIndex: spendOp.updateOne.filter.mintIndex,
-          spentTxid: { $ne: spendOp.updateOne.update.$set.spentTxid }
-        }
-      })
-    };
-    const spendingCoins = await CoinModel.collection.find(spentCoinsQuery).toArray();
-    if (spendingCoins.length) {
-      let prunedTxs = {};
-      for (const coin of spendingCoins) {
+    let prunedTxs = {};
+    for (const spendOp of spendOps) {
+      let coin = await CoinModel.collection.findOne({
+        chain, 
+        network, 
+        spentHeight: SpentHeightIndicators.pending,
+        mintTxid: spendOp.updateOne.filter.mintTxid,
+        mintIndex: spendOp.updateOne.filter.mintIndex,
+        spentTxid: { $ne: spendOp.updateOne.update.$set.spentTxid }
+      }, { projection: { spentTxid: 1 }});
+      if (coin) {
         prunedTxs[coin.spentTxid] = true;
       }
+    }
+    if (Object.keys(prunedTxs).length) {
       prunedTxs = Object.keys(prunedTxs);
       await Promise.all([
         this.collection.update({ txid: { $in: prunedTxs } }, { $set: { blockHeight: SpentHeightIndicators.conflicting } }, { w: 0, j: false, multi: true }),
