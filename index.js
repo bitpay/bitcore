@@ -347,6 +347,5 @@ function startGulp(name, opts) {
   return  task;
 }
 
+module.exports = startGulp;
 
-
-Object.assign(exports, startGulp('lib'))
