@@ -92,28 +92,39 @@ export class StorageService {
   }
 
   apiStream<T>(cursor: Cursor<T>, res: Response) {
+    let closed = false;
+    res.on('close', function () {
+      closed = true;
+    });
     cursor.on('error', function(err) {
-      return res.status(500).end(err.message);
+      if (!closed) {
+        closed = true;
+        return res.status(500).end(err.message);
+      }
     });
     let isFirst = true;
     res.type('json');
     cursor.on('data', function(data) {
-      if (isFirst) {
-        res.write('[\n');
-        isFirst = false;
-      } else {
-        res.write(',\n');
+      if (!closed) {
+        if (isFirst) {
+          res.write('[\n');
+          isFirst = false;
+        } else {
+          res.write(',\n');
+        }
+        res.write(data);
       }
-      res.write(data);
     });
     cursor.on('end', function() {
-      if (isFirst) {
-        // there was no data
-        res.write('[]');
-      } else {
-        res.write(']');
+      if (!closed) {
+        if (isFirst) {
+          // there was no data
+          res.write('[]');
+        } else {
+          res.write(']');
+        }
+        res.end();
       }
-      res.end();
     });
   }
   getFindOptions<T>(model: TransformableModel<T>, originalOptions: StreamingFindOptions<T>) {
