@@ -316,7 +316,11 @@ export class Transaction extends BaseModel<ITransaction> {
     }
 
     if (initialSyncComplete) {
-      let mintOpsAddresses = mintOps.map(mintOp => mintOp.updateOne.update.$set.address);
+      let mintOpsAddresses = {};
+      for (const mintOp of mintOps) {
+        mintOpsAddresses[mintOp.updateOne.update.$set.address] = true;
+      }
+      mintOpsAddresses = Object.keys(mintOpsAddresses);
       let wallets = await WalletAddressModel.collection
         .find({ address: { $in: mintOpsAddresses }, chain, network }, { batchSize: 100 })
         .toArray();
