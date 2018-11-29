@@ -1,6 +1,6 @@
 import { ObjectId } from 'mongodb';
 import { IBlock } from '../../models/block';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { IWallet } from '../../models/wallet';
 import { ChainNetwork } from '../../types/ChainNetwork';
 import { StreamingFindOptions } from '../../services/storage';
@@ -38,7 +38,8 @@ export declare namespace CSP {
     blockId?: string;
     sinceBlock: number | string;
     args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBlock>>;
-    stream: Response;
+    req: Request;
+    res: Response;
   };
   export type GetEstimateSmartFeeParams = ChainNetwork & {
     target: number;
@@ -60,12 +61,14 @@ export declare namespace CSP {
 
   export type StreamAddressUtxosParams = ChainNetwork & {
     address: string;
-    stream: Response;
+    req: Request;
+    res: Response;
     args: StreamAddressUtxosArgs;
   };
 
   export type StreamTransactionsParams = ChainNetwork & {
-    stream: Response;
+    req: Request;
+    res: Response;
     args: any;
   };
   export type StreamTransactionParams = ChainNetwork & {
@@ -73,18 +76,21 @@ export declare namespace CSP {
   };
   export type StreamWalletAddressesParams = ChainNetwork & {
     walletId: ObjectId;
-    stream: Response;
+    req: Request;
+    res: Response;
     limit: number;
   };
 
   export type StreamWalletMissingAddressesParams = ChainNetwork & {
     pubKey: string;
-    stream: Response;
+    req: Request;
+    res: Response;
   };
 
   export type StreamWalletTransactionsParams = ChainNetwork & {
     wallet: MongoBound<IWallet>;
-    stream: Response;
+    req: Request;
+    res: Response;
     args: StreamWalletTransactionsArgs;
   };
   export type StreamWalletUtxosArgs = { includeSpent: 'true' | undefined };
@@ -92,7 +98,8 @@ export declare namespace CSP {
     wallet: MongoBound<IWallet>;
     limit: number;
     args: Partial<StreamWalletUtxosArgs>;
-    stream: Response;
+    req: Request;
+    res: Response;
   };
 
   export type Provider<T> = { get(params: { chain: string }): T };

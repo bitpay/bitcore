@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { TransformableModel } from '../types/TransformableModel';
 import logger from '../logger';
 import config from '../config';
@@ -91,10 +91,15 @@ export class StorageService {
     return typecastedValue;
   }
 
-  apiStream<T>(cursor: Cursor<T>, res: Response) {
+  apiStream<T>(cursor: Cursor<T>, req: Request, res: Response) {
     let closed = false;
+    req.on('close', function () {
+      closed = true;
+      cursor.close();
+    });
     res.on('close', function () {
       closed = true;
+      cursor.close();
     });
     cursor.on('error', function(err) {
       if (!closed) {
@@ -113,6 +118,8 @@ export class StorageService {
           res.write(',\n');
         }
         res.write(data);
+      } else {
+        cursor.close();
       }
     });
     cursor.on('end', function() {
@@ -161,6 +168,7 @@ export class StorageService {
     model: TransformableModel<T>,
     originalQuery: any,
     originalOptions: StreamingFindOptions<T>,
+    req: Request,
     res: Response,
     transform?: (data: T) => string | Buffer
   ) {
@@ -172,7 +180,7 @@ export class StorageService {
     if (options.sort) {
       cursor = cursor.sort(options.sort);
     }
-    return this.apiStream(cursor, res);
+    return this.apiStream(cursor, req, res);
   }
 }
 

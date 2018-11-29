@@ -113,7 +113,8 @@ router.get('/:pubKey/addresses', authenticate, async (req: AuthenticatedRequest,
       network,
       walletId: wallet!._id!,
       limit,
-      stream: res
+      req,
+      res
     };
     return ChainStateProvider.streamWalletAddresses(payload);
   } catch (err) {
@@ -153,7 +154,8 @@ router.get('/:pubKey/transactions', authenticate, async (req: AuthenticatedReque
       chain,
       network,
       wallet: req.wallet!,
-      stream: res,
+      req,
+      res,
       args: req.query
     });
   } catch (err) {
@@ -184,7 +186,8 @@ router.get('/:pubKey/utxos', authenticate, async (req: AuthenticatedRequest, res
       network,
       wallet: req.wallet!,
       limit,
-      stream: res,
+      req,
+      res,
       args: req.query
     });
   } catch (err) {

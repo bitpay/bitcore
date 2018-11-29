@@ -9,7 +9,8 @@ router.get('/:address/txs',  function(req, res) {
     chain,
     network,
     address,
-    stream: res,
+    req,
+    res,
     args: { unspent, limit }
   };
   ChainStateProvider.streamAddressTransactions(payload);
@@ -22,7 +23,8 @@ router.get('/:address',  function(req, res) {
     chain,
     network,
     address,
-    stream: res,
+    req,
+    res,
     args: { unspent, limit }
   };
   ChainStateProvider.streamAddressUtxos(payload);

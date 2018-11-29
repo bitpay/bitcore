@@ -18,7 +18,8 @@ router.get('/',  function(req, res) {
   let payload: CSP.StreamTransactionsParams = {
     chain,
     network,
-    stream: res,
+    req,
+    res,
     args: { limit, since, direction, paging }
   };
 

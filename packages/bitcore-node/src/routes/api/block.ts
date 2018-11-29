@@ -14,7 +14,8 @@ router.get('/', async function(req: Request, res: Response) {
       network,
       sinceBlock,
       args: { date, limit, since, direction, paging },
-      stream: res
+      req,
+      res
     };
     return ChainStateProvider.streamBlocks(payload);
   } catch (err) {
