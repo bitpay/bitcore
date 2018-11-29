@@ -3,14 +3,13 @@
 var gulp = require('gulp');
 
 var coveralls = require('@kollavarsham/gulp-coveralls');
-var gutil = require('gulp-util');
-var jshint = require('gulp-jshint');
+//var jshint = require('gulp-jshint');
 var mocha = require('gulp-mocha');
 var rename = require('gulp-rename');
 var shell = require('gulp-shell');
 var uglify = require('gulp-uglify');
-var bump = require('gulp-bump');
-var git = require('gulp-git');
+//var bump = require('gulp-bump');
+//var git = require('gulp-git');
 var fs = require('fs');
 
 function ignoreerror() {
@@ -105,7 +104,7 @@ function startGulp(name, opts) {
         }))
         .pipe(rename(fullname + '.min.js'))
         .pipe(gulp.dest('.'))
-        .on('error', gutil.log);
+        .on('error', console.error);
     };
 
     task['browser:compressed'] =
@@ -122,13 +121,13 @@ function startGulp(name, opts) {
    * code quality and documentation
    */
 
-  task['lint']= function() {
-    return gulp.src(alljs)
-      .pipe(jshint())
-      .pipe(jshint.reporter('default'));
-  };
+//  task['lint']= function() {
+//    return gulp.src(alljs)
+//      .pipe(jshint())
+//      .pipe(jshint.reporter('default'));
+//  };
 
-  task['plato']= shell.task([platoPath + ' -d report -r -l .jshintrc -t ' + fullname + ' lib']);
+//  task['plato']= shell.task([platoPath + ' -d report -r -l .jshintrc -t ' + fullname + ' lib']);
 
   task['coverage']= shell.task([istanbulPath + ' cover ' + mochaPath + ' -- --recursive']);
 
