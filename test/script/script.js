@@ -906,15 +906,15 @@ describe('Script', function() {
     it('for a P2PKH address', function() {
       var address = Address.fromString('Ce3M4ysH6XH7RMK1RYu4wLujcC7sv4EhNU');
       var script = Script.buildPublicKeyHashOut(address);
-      expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.true();
+      expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.equal(true);
     });
     it('for a P2SH address', function() {
       var address = Address.fromString('bitcoincash:pzjt8lxnl977xtexlycnl5fyt0al9gcnauyjtqh68n');
       var script = new Script(address);
-      expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.true();
+      expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.equal(true);
     });
     it('for a standard opreturn output', function() {
-      expect(BufferUtil.equal(Script('OP_RETURN 1 0xFF').getData(), new Buffer([255]))).to.be.true();
+      expect(BufferUtil.equal(Script('OP_RETURN 1 0xFF').getData(), new Buffer([255]))).to.be.equal(true);
     });
     it('fails if content is not recognized', function() {
       expect(function() {
