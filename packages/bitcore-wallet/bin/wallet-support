@@ -160,7 +160,7 @@ function displayAddresses(addresses, w) {
   }
   console.log('\n* Main addresses (not including change addresses)');
   _.each(addresses, function(a) {
-    if (w.coin='bch') {
+    if (w.coin == 'bch') {
       a.address = (new bitcoreCash.Address(a.address).toCashAddress());
     }
     console.log('  [%s] %s (%s)', moment(a.createdOn * 1000), a.address, a.path);
