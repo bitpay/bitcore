@@ -1,0 +1,15 @@
+<ion-row>
+  <ion-col col-5>
+    <ion-note text-left>
+      <a class="ellipsis" (click)="goToTx(coin.mintTxid)">{{ coin.mintTxid }}</a>
+    </ion-note>
+  </ion-col>
+  <ion-col col-3 text-right>
+    {{ currencyProvider.getConvertedNumber(coin.value) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+  </ion-col>
+  <ion-col col-4 text-left>
+    <ion-note [hidden]="!coin.spentTxid">
+      <a class="ellipsis" (click)="goToTx(coin.spentTxid)">{{ coin.spentTxid }}</a>
+    </ion-note>
+  </ion-col>
+</ion-row>

@@ -1,0 +1,14 @@
+<div *ngIf="loading">
+  <ion-spinner name="crescent"></ion-spinner>
+</div>
+
+
+<div *ngIf="!loading">
+  <ion-grid>
+    <ion-row *ngFor="let tx of transactions">
+      <ion-col col-12>
+        <transaction [tx]="tx"></transaction>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</div>
