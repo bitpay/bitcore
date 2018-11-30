@@ -9,17 +9,13 @@ A module for [bitcore](https://github.com/bitpay/bitcore) that implements [Payme
 
 ## Getting Started
 
-This library is distributed in both the npm and bower packaging systems.
+This library is distributed in both the npm  packaging systems.
 
 ```sh
 npm install bitcore-lib
 npm install bitcore-payment-protocol
 ```
 
-```sh
-bower install bitcore-lib
-bower install bitcore-payment-protocol
-```
 
 There are many examples of how to use it on the developer guide [section for payment protocol](https://bitcore.io/api/paypro). For example, the following code would verify a payment request:
 

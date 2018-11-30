@@ -1,5 +1,3 @@
-'use strict';
+var startGulp = require('bitcore-build');
+Object.assign(exports, startGulp('payment-protocol'))
 
-var gulp_bitcore = require('bitcore-build');
-
-gulp_bitcore('payment-protocol');
