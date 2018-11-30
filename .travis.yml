@@ -3,6 +3,7 @@ sudo: false
 node_js:
 - '8'
 install:
+  - npm install bitcore-lib
   - npm ci
 after_script:
   - gulp coveralls
