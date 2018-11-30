@@ -9594,13 +9594,18 @@ var TransactionSignature = require('../signature');
 /**
  * @constructor
  */
-function MultiSigInput(input, pubkeys, threshold, signatures) {
+function MultiSigInput(input, pubkeys, threshold, signatures, opts) {
+  opts = opts || {};
   Input.apply(this, arguments);
   var self = this;
   pubkeys = pubkeys || input.publicKeys;
   threshold = threshold || input.threshold;
   signatures = signatures || input.signatures;
-  this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+  if (opts.noSorting) {
+    this.publicKeys = pubkeys
+  } else  {
+    this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+  }
   $.checkState(Script.buildMultisigOut(this.publicKeys, threshold).equals(this.output.script),
     'Provided public keys don\'t match to the provided output script');
   this.publicKeyIndex = {};
@@ -9807,13 +9812,19 @@ var TransactionSignature = require('../signature');
 /**
  * @constructor
  */
-function MultiSigScriptHashInput(input, pubkeys, threshold, signatures) {
+function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, opts) {
+  /* jshint maxstatements:20 */
+  opts = opts || {};
   Input.apply(this, arguments);
   var self = this;
   pubkeys = pubkeys || input.publicKeys;
   threshold = threshold || input.threshold;
   signatures = signatures || input.signatures;
-  this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+  if (opts.noSorting) {
+    this.publicKeys = pubkeys
+  } else  {
+    this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+  }
   this.redeemScript = Script.buildMultisigOut(this.publicKeys, threshold);
   $.checkState(Script.buildScriptHashOut(this.redeemScript).equals(this.output.script),
                'Provided public keys don\'t hash to the provided output');
@@ -11250,8 +11261,11 @@ Transaction.prototype._newTransaction = function() {
  * @param {(Array.<Transaction~fromObject>|Transaction~fromObject)} utxo
  * @param {Array=} pubkeys
  * @param {number=} threshold
+ * @param {Object=} opts - Several options:
+ *        - noSorting: defaults to false, if true and is multisig, don't
+ *                      sort the given public keys before creating the script
  */
-Transaction.prototype.from = function(utxo, pubkeys, threshold) {
+Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
   if (_.isArray(utxo)) {
     var self = this;
     _.each(utxo, function(utxo) {
@@ -11267,7 +11281,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold) {
     return this;
   }
   if (pubkeys && threshold) {
-    this._fromMultisigUtxo(utxo, pubkeys, threshold);
+    this._fromMultisigUtxo(utxo, pubkeys, threshold, opts);
   } else {
     this._fromNonP2SH(utxo);
   }
@@ -11295,7 +11309,7 @@ Transaction.prototype._fromNonP2SH = function(utxo) {
   }));
 };
 
-Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold) {
+Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, opts) {
   $.checkArgument(threshold <= pubkeys.length,
     'Number of required signatures must be greater than the number of public keys');
   var clazz;
@@ -11315,7 +11329,7 @@ Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold) {
     prevTxId: utxo.txId,
     outputIndex: utxo.outputIndex,
     script: Script.empty()
-  }, pubkeys, threshold));
+  }, pubkeys, threshold, opts));
 };
 
 /**
@@ -11543,13 +11557,11 @@ Transaction.prototype._getOutputAmount = function() {
  */
 Transaction.prototype._getInputAmount = function() {
   if (_.isUndefined(this._inputAmount)) {
-    var self = this;
-    this._inputAmount = 0;
-    _.each(this.inputs, function(input) {
+    this._inputAmount = _.sumBy(this.inputs, function(input) {
       if (_.isUndefined(input.output)) {
         throw new errors.Transaction.Input.MissingPreviousOutput();
       }
-      self._inputAmount += input.output.satoshis;
+      return input.output.satoshis;
     });
   }
   return this._inputAmount;
