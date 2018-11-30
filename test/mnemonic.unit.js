@@ -85,6 +85,11 @@ describe('Mnemonic', function() {
       Mnemonic.Words.JAPANESE[0].should.equal('あいこくしん');
     });
 
+    it('korean wordlist is complete', function() {
+      Mnemonic.Words.KOREAN.length.should.equal(2048);
+      Mnemonic.Words.KOREAN[0].should.equal('가격');
+    });
+
     it('chinese wordlist is complete', function() {
       Mnemonic.Words.CHINESE.length.should.equal(2048);
       Mnemonic.Words.CHINESE[0].should.equal('的');
