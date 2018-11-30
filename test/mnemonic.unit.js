@@ -181,6 +181,12 @@ describe('Mnemonic', function() {
       }).should.throw(errors.InvalidArgument);
     });
 
+    it('should fail with invalid entropy', function() {
+      (function() {
+        return Mnemonic.fromSeed(Buffer.alloc(512), Mnemonic.Words.ENGLISH);
+      }).should.throw(errors.InvalidArgument);
+    });
+
     it('Constructor should fail with invalid seed', function() {
       (function() {
         return new Mnemonic(new Buffer(1));
