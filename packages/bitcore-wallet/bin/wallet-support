@@ -115,7 +115,7 @@ function displayStatus(status) {
   }
   _.each(x.byAddress, function(item) {
 
-    if (w.coin='bch') {
+    if (w.coin =='bch') {
       item.address = (new bitcoreCash.Address(item.address).toCashAddress());
     }
     console.log('    %s (%s): %s', item.address, item.path, format(item.amount, w.coin));
