@@ -3,7 +3,7 @@
   "description": "A service for Mutisig HD Bitcoin Wallets",
   "author": "BitPay Inc",
   "version": "2.4.0",
-  "licence": "MIT",
+  "license": "MIT",
   "keywords": [
     "bitcoin",
     "copay",
