@@ -3374,7 +3374,12 @@ describe('Wallet service', function() {
                 should.not.exist(err);
                 should.exist(tx);
                 var t = tx.getBitcoreTx();
-                t.getChangeOutput().script.toAddress().toString().should.equal(txOpts.changeAddress);
+
+                if (coin == 'bch') { 
+                  t.getChangeOutput().script.toAddress().toLegacyAddress().should.equal(txOpts.changeAddress);
+                } else {
+                  t.getChangeOutput().script.toAddress().toString().should.equal(txOpts.changeAddress);
+                }
                 done();
               });
             });
