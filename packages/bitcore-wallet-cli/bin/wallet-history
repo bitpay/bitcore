@@ -3,44 +3,90 @@
 var _ = require('lodash');
 var fs = require('fs');
 var moment = require('moment');
+var async = require('async');
 var program = require('commander');
 var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program
+  .option('-o, --output <file>', 'get JSON output in file')
+  .option('-l, --limit <n>', 'limit history to n transactions')
+  .option('-i, --info', 'get extra history info')
   .parse(process.argv);
 
 var args = program.args;
 
+var skip = 0, total = 0 ,
+  limit = program.limit, got, page = 10;
+console.warn("* TX History:")
+
+
+var allTxs=[];
+
 utils.getClient(program, { mustExist: true }, function (client) {
-  client.getTxHistory({}, function (err, txs) {
-    if (_.isEmpty(txs))
-    return;
+ async.doWhilst(
+   function(cb) {
+     client.getTxHistory({
+       skip: skip,
+       limit: page+ 1,
+       includeExtendedInfo: program.info,
+     }, function(err, txs) {
+       if (err) return cb(err);
 
-    console.log("* TX History:")
+       if (_.isEmpty(txs))
+        return;
 
-    _.each(txs, function(tx) {
-      var time = moment(tx.time * 1000).fromNow();
-      var amount = utils.renderAmount(tx.amount);
-      var confirmations = tx.confirmations || 0;
-      var proposal = tx.proposalId ? '["' + tx.message + '" by ' + tx.creatorName + '] ' : '';
-      var direction;
-      switch (tx.action) {
-        case 'received':
-          direction = '<=';
-        break;
-        case 'moved':
-          direction = '==';
-        break;
-        case 'sent':
-          direction = '=>';
-        break;
-        default:
-          direction = tx.action;
-          break;
-      }
+       got =  txs.length;
+       if (got > page) {
+         txs.pop();
+       }
 
-      console.log("\t%s: %s %s %s %s(%s confirmations)", time, direction, tx.action, amount, proposal, confirmations);
-    });
-  });
+       if (program.output) {
+         allTxs.push(txs);
+         fs.writeFile(program.output,JSON.stringify(txs), {
+           encoding: 'utf8'
+         }, function(err) {
+           if (err) console.error(err);
+           console.warn('Output file updated')
+         });
+       } else {
+         _.each(txs, function(tx) {
+           var time = moment(tx.time * 1000).fromNow();
+           var amount = utils.renderAmount(tx.amount);
+           var confirmations = tx.confirmations || 0;
+           var proposal = tx.proposalId ? '["' + tx.message + '" by ' + tx.creatorName + '] ' : '';
+           var direction;
+           switch (tx.action) {
+             case 'received':
+               direction = '<=';
+               break;
+             case 'moved':
+               direction = '==';
+               break;
+             case 'sent':
+               direction = '=>';
+               break;
+             default:
+               direction = tx.action;
+               break;
+           }
+           console.log("\t%s: %s %s %s %s(%s confirmations)", time, direction, tx.action, amount, proposal, confirmations);
+         });
+       }
+       return cb();
+     });
+   },
+   function() {
+     total = total + got;
+     var cont = got > page && (!limit || total < limit);
+     if (cont) {
+       skip+= page;
+       console.warn('* Skip:', skip);
+     }
+     return cont;
+   },
+   function (err) {
+     if (err) console.log(err);
+   }
+ );
 });

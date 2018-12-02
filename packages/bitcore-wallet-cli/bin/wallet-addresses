@@ -2,6 +2,7 @@
 
 var _ = require('lodash');
 var program = require('commander');
+var bitcoreCash = require('bitcore-wallet-client').BitcoreCash;
 var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
@@ -19,6 +20,11 @@ utils.getClient(program, { mustExist: true }, function (client) {
     if (x.length > 0) {
       console.log('* Addresses:');
       _.each(x, function(a) {
+        if (client.credentials.coin == 'bch') {
+          a.address = (new bitcoreCash.Address(a.address)).toCashAddress();
+        }
+
+
         console.log('      ', a.address);
       });
     } else {

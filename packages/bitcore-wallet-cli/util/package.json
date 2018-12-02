@@ -1,0 +1,7 @@
+{
+  "name": "processTxJson",
+  "dependencies": {
+    "csv-parse": "^1.1.0",
+    "lodash": "^4.11.2"
+  }
+}
