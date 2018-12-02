@@ -15,7 +15,10 @@ node_js:
   - '8'
 before_install:
   - export CXX="g++-4.8" CC="gcc-4.8"
+  # - mongo mydb_test --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
 install:
   - npm install
 after_success:
   - npm run coveralls
+services:
+  - mongodb
