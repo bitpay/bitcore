@@ -144,6 +144,31 @@ describe('Utils', function() {
     });
   });
  
+  describe.only('#parseVersion', function() {
+    it('should parse version', function() {
+      Utils.parseVersion('bwc-2.3.1').should.deep.equal({
+        agent:'bwc',
+        major:2,
+        minor:3,
+        patch:1,
+      });
+    });
+    it('should parse version case 2', function() {
+      Utils.parseVersion('xxss').should.deep.equal({
+        agent:'xxss',
+      });
+    });
+    it('should parse version case 3', function() {
+      Utils.parseVersion('xxss-32').should.deep.equal({
+        agent:'xxss',
+        major:32,
+        minor:null,
+        patch:null,
+      });
+    });
+
+
+  });
 
   describe('#translateAddress', function() {
     it('should translate address from btc to bch', function() {
