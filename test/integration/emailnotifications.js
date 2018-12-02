@@ -100,7 +100,7 @@ describe('Email notifications', function() {
             var emails = _.map(calls, function(c) {
               return c.args[0];
             });
-            _.difference(['copayer2@domain.com', 'copayer3@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+            _.difference(['copayer2@domain.com', 'copayer3@domain.com'], _.map(emails, 'to')).should.be.empty;
             var one = emails[0];
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('New payment proposal');
@@ -201,7 +201,7 @@ describe('Email notifications', function() {
             var emails = _.map(_.takeRight(calls, 3), function(c) {
               return c.args[0];
             });
-            _.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+            _.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], _.map(emails, 'to')).should.be.empty;
             var one = emails[0];
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('Payment sent');
@@ -256,7 +256,7 @@ describe('Email notifications', function() {
             var emails = _.map(_.takeRight(calls, 2), function(c) {
               return c.args[0];
             });
-            _.difference(['copayer1@domain.com', 'copayer2@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+            _.difference(['copayer1@domain.com', 'copayer2@domain.com'], _.map(emails, 'to')).should.be.empty;
             var one = emails[0];
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('Payment proposal rejected');
@@ -286,7 +286,7 @@ describe('Email notifications', function() {
             var emails = _.map(calls, function(c) {
               return c.args[0];
             });
-            _.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+            _.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], _.map(emails, 'to')).should.be.empty;
             var one = emails[0];
             one.from.should.equal('bws@dummy.net');
             one.subject.should.contain('New payment received');
@@ -353,7 +353,7 @@ describe('Email notifications', function() {
               var emails = _.map(calls, function(c) {
                 return c.args[0];
               });
-              _.difference(['copayer2@domain.com', 'copayer3@domain.com'], _.pluck(emails, 'to')).should.be.empty;
+              _.difference(['copayer2@domain.com', 'copayer3@domain.com'], _.map(emails, 'to')).should.be.empty;
               var one = emails[0];
               one.from.should.equal('bws@dummy.net');
               one.subject.should.contain('New payment received');

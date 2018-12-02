@@ -221,7 +221,7 @@ describe('Storage', function() {
             should.not.exist(err);
             should.exist(txs);
             txs.length.should.equal(3);
-            _.any(txs, {
+            _.some(txs, {
               id: proposals[0].id
             }).should.be.false;
             done();
