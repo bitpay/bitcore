@@ -144,7 +144,7 @@ describe('Utils', function() {
     });
   });
  
-  describe.only('#parseVersion', function() {
+  describe('#parseVersion', function() {
     it('should parse version', function() {
       Utils.parseVersion('bwc-2.3.1').should.deep.equal({
         agent:'bwc',
@@ -169,6 +169,40 @@ describe('Utils', function() {
 
 
   });
+ 
+  describe('#parseAppVersion', function() {
+    it('should parse user version', function() {
+      Utils.parseAppVersion('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Copay/5.2.2 Chrome/66.0.3359.181 Electron/3.0.8 Safari/537.36').should.deep.equal({
+        app:'copay',
+        major:5,
+        minor:2,
+        patch:2,
+      });
+    });
+    it('should parse version case 2', function() {
+      Utils.parseAppVersion('bitpay 5.2.2 (Android 8.0.0 - SM-N950U)').should.deep.equal({
+        app:'bitpay',
+        major:5,
+        minor:2,
+        patch:2,
+      });
+    });
+    it('should parse version case 3', function() {
+      Utils.parseAppVersion('bitpay 5.2.2 (iOS 12.0 - iPhone9,2)').should.deep.equal({
+        app:'bitpay',
+        major:5,
+        minor:2,
+        patch:2,
+      });
+    });
+    it('should parse version case 4', function() {
+      Utils.parseAppVersion('node-superagent/3.8.3').should.deep.equal({
+        app:'other',
+      });
+    });
+
+  });
+
 
   describe('#translateAddress', function() {
     it('should translate address from btc to bch', function() {
