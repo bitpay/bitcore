@@ -2,14 +2,16 @@
 
 var program = require('commander');
 var fs = require('fs');
+var sjcl = require('sjcl');
 var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program
   .option('-t, --testnet', 'testnet network')
-  .option('-b, --backupexport', 'import from export file')
+  .option('-i, --input', 'import from file')
   .option('-q, --qr', 'import from a QR code')
   .option('-e, --exportpassword <password>', 'a password to decrypt the data being imported')
+  .option('-k, --keypassword <password>', 'password to decrypt private key from imported file')
   .option('-p, --password', 'Encrypt wallet. Will ask password interactively')
   .usage('[options] <"backup-words"> <passphrase>')
   .parse(process.argv);
@@ -22,19 +24,34 @@ if (!args[0])
 utils.getClient(program, {
   mustBeNew: true
 }, function(client) {
-  if (program.backupexport) {
+
+  if (program.input) {
     var file = args[0];
-    var str = fs.readFileSync(file, {
-      encoding: 'utf8'
-    });
+    var str;
+
+    try {
+      str = fs.readFileSync(file, {
+        encoding: 'utf8'
+      });
+    } catch (e) {
+      utils.die('Could not import: ' + e);
+    };
+    if (str.substr(0,6) == '{"iv":')  {
+      console.log('Backup is encrypted');
+      try {
+        str = sjcl.decrypt( program.exportpassword, str);
+      } catch (e) {
+        utils.die('Could not decrypt import: ' + e);
+      };
+    };
 
     try {
       client.import(str, {
         compressed: !!program.qr,
-        password: program.exportpassword,
+        password: program.keypassword,
       });
     } catch (ex) {
-      utils.die('Could not import. Check input file and password');
+      utils.die('Could not import. Check input file and password:' + ex.message);
     }
 
     utils.saveClient(program, client, function() {
