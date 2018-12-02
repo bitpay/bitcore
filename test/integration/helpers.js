@@ -8,6 +8,8 @@ var sinon = require('sinon');
 var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
+
+var config = require('../test-config');
 // var tingodb = require('tingodb')({
 //   memStore: true
 // });
@@ -41,7 +43,7 @@ helpers.before = function(cb) {
   function getDb(cb) {
     if (useMongoDb) {
       var mongodb = require('mongodb');
-      mongodb.MongoClient.connect('mongodb://localhost:27017/bws_test', function(err, db) {
+      mongodb.MongoClient.connect(config.mongoDb.uri, function(err, db) {
         if (err) throw err;
         return cb(db);
       });

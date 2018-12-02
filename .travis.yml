@@ -13,9 +13,12 @@ addons:
     - clang
 node_js:
   - '8'
+before_script:
+  - sleep 30  # suggested in https://docs.travis-ci.com/user/database-setup/#mongodb
+  # - mongo mydb_test --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
+  
 before_install:
   - export CXX="g++-4.8" CC="gcc-4.8"
-  # - mongo mydb_test --eval 'db.createUser({user:"travis",pwd:"test",roles:["readWrite"]});'
 install:
   - npm install
 after_success:

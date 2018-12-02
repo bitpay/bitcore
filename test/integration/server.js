@@ -10,6 +10,8 @@ var log = require('npmlog');
 log.debug = log.verbose;
 log.level = 'info';
 
+var config = require('../test-config');
+
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
@@ -34,7 +36,11 @@ var storage, blockchainExplorer, request;
 
 
 describe('Wallet service', function() {
+
   before(function(done) {
+    if (process.env.TRAVIS) {
+      this.timeout(5000); // for travis
+    }
     helpers.before(done);
   });
   beforeEach(function(done) {
@@ -416,6 +422,7 @@ describe('Wallet service', function() {
             should.exist(err);
             err.message.should.equal('Invalid combination of required copayers / total copayers');
           } else {
+console.log('[server.js.425:err:]',err); //TODO
             should.not.exist(err);
           }
           return cb();
@@ -3199,6 +3206,10 @@ describe('Wallet service', function() {
     describe('#createTx ' + coin, function() {
       var addressStr, idKey;
       before(function() {
+        if (process.env.TRAVIS) {
+          this.timeout(5000); // for travis
+        }
+
         addressStr = addrMap[coin];
         idKey = idKeyMap[coin];
       });
@@ -4206,6 +4217,10 @@ describe('Wallet service', function() {
       });
 
       it('should follow backoff time after consecutive rejections', function(done) {
+        if (process.env.TRAVIS) {
+          this.timeout(5000); // for travis
+        }
+
         clock = sinon.useFakeTimers(Date.now(), 'Date');
         var txOpts = {
           outputs: [{
