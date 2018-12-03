@@ -20,6 +20,10 @@ describe('Email notifications', function() {
   var server, wallet, mailerStub, emailService;
 
   before(function(done) {
+    if (process.env.TRAVIS) {
+      this.timeout(5000); // for travis
+    }
+ 
     helpers.before(done);
   });
   after(function(done) {

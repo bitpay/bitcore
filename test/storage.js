@@ -4,27 +4,13 @@ var _ = require('lodash');
 var async = require('async');
 var chai = require('chai');
 var sinon = require('sinon');
+var mongodb = require('mongodb');
 var should = chai.should();
-var tingodb = require('tingodb')({
-  memStore: true
-});
-
 var Storage = require('../lib/storage');
 var Model = require('../lib/model');
+var config = require('./test-config');
 
 var db, storage;
-
-function openDb(cb) {
-  db = new tingodb.Db('./db/test', {});
-  // HACK: There appears to be a bug in TingoDB's close function where the callback is not being executed
-  db.__close = db.close;
-  db.close = function(force, cb) {
-    this.__close(force, cb);
-    return cb();
-  };
-  return cb();
-};
-
 
 function resetDb(cb) {
   if (!db) return cb();
@@ -36,9 +22,11 @@ function resetDb(cb) {
 
 describe('Storage', function() {
   before(function(done) {
-    openDb(function() {
+    mongodb.MongoClient.connect(config.mongoDb.uri, function(err, db1) {
+      if (err) throw err;
+      db = db1;
       storage = new Storage({
-        db: db
+        db: db1
       });
       done();
     });

@@ -8,9 +8,11 @@ var sinon = require('sinon');
 var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
-var tingodb = require('tingodb')({
-  memStore: true
-});
+
+var config = require('../test-config');
+// var tingodb = require('tingodb')({
+//   memStore: true
+// });
 
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
@@ -30,7 +32,8 @@ var TestData = require('../testdata');
 
 var storage, blockchainExplorer;
 
-var useMongoDb = !!process.env.USE_MONGO_DB;
+// tinodb not longer supported
+var useMongoDb =  true; // !!process.env.USE_MONGO_DB;
 
 var helpers = {};
 
@@ -40,13 +43,14 @@ helpers.before = function(cb) {
   function getDb(cb) {
     if (useMongoDb) {
       var mongodb = require('mongodb');
-      mongodb.MongoClient.connect('mongodb://localhost:27017/bws_test', function(err, db) {
+      mongodb.MongoClient.connect(config.mongoDb.uri, function(err, db) {
         if (err) throw err;
         return cb(db);
       });
     } else {
-      var db = new tingodb.Db('./db/test', {});
-      return cb(db);
+      throw "tingodb not longer supported";
+      //var db = new tingodb.Db('./db/test', {});
+      //return cb(db);
     }
   }
   getDb(function(db) {
