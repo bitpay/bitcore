@@ -218,7 +218,7 @@ describe('Blockchain monitor', function() {
             done();
           });
         }, 100);
-      }, 50);
+      }, 200);
     });
   });
 
