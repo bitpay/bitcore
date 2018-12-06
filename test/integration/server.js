@@ -230,7 +230,7 @@ describe('Wallet service', function() {
       });
     });
     it('should create a new session if the previous one has expired', function(done) {
-      var timer = sinon.useFakeTimers('Date');
+      var timer = sinon.useFakeTimers({toFake:['Date']});
       var token;
       async.series([
 
@@ -2119,7 +2119,7 @@ console.log('[server.js.425:err:]',err); //TODO
     var server, wallet, clock;
     var _threshold = Defaults.TWO_STEP_BALANCE_THRESHOLD;
     beforeEach(function(done) {
-      clock = sinon.useFakeTimers(Date.now(), 'Date');
+      clock = sinon.useFakeTimers({now:Date.now(), toFake:['Date']});
       Defaults.TWO_STEP_BALANCE_THRESHOLD = 0;
 
       helpers.createAndJoinWallet(1, 1, function(s, w) {
@@ -2764,7 +2764,7 @@ console.log('[server.js.425:err:]',err); //TODO
     var server, wallet, clock;
     var _old = Defaults.BALANCE_CACHE_ADDRESS_THRESOLD;
     beforeEach(function(done) {
-      clock = sinon.useFakeTimers(Date.now(), 'Date');
+      clock = sinon.useFakeTimers({now:Date.now(), toFake:['Date']});
       Defaults.BALANCE_CACHE_ADDRESS_THRESOLD = 0;
 
       helpers.createAndJoinWallet(1, 1, function(s, w) {
@@ -2901,7 +2901,7 @@ console.log('[server.js.425:err:]',err); //TODO
         wallet = w;
         done();
       });
-      clock = sinon.useFakeTimers(Date.now(), 'Date');
+      clock = sinon.useFakeTimers({now:Date.now(), toFake: ['Date']});
     });
 
     afterEach(function() {
@@ -4211,7 +4211,7 @@ console.log('[server.js.425:err:]',err); //TODO
 
       it('should follow backoff time after consecutive rejections', function(done) {
 
-        clock = sinon.useFakeTimers(Date.now(), 'Date');
+        clock = sinon.useFakeTimers({now:Date.now(), toFake:['Date']});
         var txOpts = {
           outputs: [{
             toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
@@ -4817,7 +4817,7 @@ console.log('[server.js.425:err:]',err); //TODO
       });
     });
     it('should preserve last edit', function(done) {
-      var clock = sinon.useFakeTimers('Date');
+      var clock = sinon.useFakeTimers({toFake:['Date']});
       server.editTxNote({
         txid: '123',
         body: 'note body'
@@ -5001,7 +5001,7 @@ console.log('[server.js.425:err:]',err); //TODO
       });
     });
     it('should get all notes edited past a given date', function(done) {
-      var clock = sinon.useFakeTimers('Date');
+      var clock = sinon.useFakeTimers({toFake:['Date']});
       async.series([
 
         function(next) {
@@ -5907,7 +5907,7 @@ console.log('[server.js.425:err:]',err); //TODO
     });
 
     it('should broadcast a tx', function(done) {
-      var clock = sinon.useFakeTimers(1234000, 'Date');
+      var clock = sinon.useFakeTimers({now:1234000, toFake: ['Date']});
       helpers.stubBroadcast();
       server.broadcastTx({
         txProposalId: txpid
@@ -6354,7 +6354,8 @@ console.log('[server.js.425:err:]',err); //TODO
     var server, wallet, clock;
 
     beforeEach(function(done) {
-      clock = sinon.useFakeTimers('Date');
+      clock = sinon.useFakeTimers({toFake:['Date']});
+
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
@@ -6370,6 +6371,7 @@ console.log('[server.js.425:err:]',err); //TODO
           async.eachSeries(_.range(10), function(i, next) {
             clock.tick(10 * 1000);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
+
               next();
             });
           }, function(err) {
@@ -6380,7 +6382,7 @@ console.log('[server.js.425:err:]',err); //TODO
       });
     });
     afterEach(function() {
-      clock.restore();
+ //     clock.restore();
     });
     it('should pull 4 txs, down to to time 60', function(done) {
       server.getTxs({
@@ -6441,7 +6443,7 @@ console.log('[server.js.425:err:]',err); //TODO
     var server, wallet;
 
     beforeEach(function(done) {
-      clock = sinon.useFakeTimers(10 * 1000, 'Date');
+      clock = sinon.useFakeTimers({now: 10 * 1000, toFake:['Date']});
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;
@@ -6837,7 +6839,7 @@ console.log('[server.js.425:err:]',err); //TODO
             should.not.exist(err);
             txs[0].deleteLockTime.should.be.above(Defaults.DELETE_LOCKTIME - 10);
 
-            var clock = sinon.useFakeTimers(Date.now() + 1 + 24 * 3600 * 1000, 'Date');
+            var clock = sinon.useFakeTimers({now: Date.now() + 1 + 24 * 3600 * 1000, toFake: ['Date']});
             server.removePendingTx({
               txProposalId: txp.id
             }, function(err) {
@@ -6858,7 +6860,7 @@ console.log('[server.js.425:err:]',err); //TODO
         }, function(err) {
           should.not.exist(err);
 
-          var clock = sinon.useFakeTimers(Date.now() + 2000 + Defaults.DELETE_LOCKTIME * 1000, 'Date');
+          var clock = sinon.useFakeTimers({now: Date.now() + 2000 + Defaults.DELETE_LOCKTIME * 1000, toFake: ['Date']});
           server2.removePendingTx({
             txProposalId: txp.id
           }, function(err) {
