@@ -40,9 +40,10 @@
     "bitcore-wallet-service": "2.5.0",
     "browserify": "^13.1.0",
     "chai": "^1.9.1",
-    "coveralls": "^2.11.2",
+    "coveralls": "^3.0.2",
     "istanbul": "*",
     "mocha": "^5.2.0",
+    "mongodb": "^2.0.27",
     "sinon": "^7.1.1",
     "supertest": "^3.0.0",
     "uuid": "^2.0.1"

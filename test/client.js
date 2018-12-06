@@ -10,11 +10,9 @@ var async = require('async');
 var request = require('supertest');
 var Uuid = require('uuid');
 var sjcl = require('sjcl');
-var tingodb = require('tingodb')({
-  memStore: true
-});
-
 var log = require('../lib/log');
+var mongodb = require('mongodb');
+var config = require('./test-config');
 
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
@@ -75,10 +73,6 @@ helpers.stubRequest = function(err, res) {
 };
 
 
-helpers.newDb = function() {
-  this.dbCounter = (this.dbCounter || 0) + 1;
-  return new tingodb.Db('./db/test' + this.dbCounter, {});
-};
 
 helpers.generateUtxos = function(scriptType, publicKeyRing, path, requiredSignatures, amounts) {
   var amounts = [].concat(amounts);
@@ -273,36 +267,51 @@ blockchainExplorerMock.reset = function() {
 
 
 
+var db;
 describe('client API', function() {
-  var clients, app, sandbox;
+  var clients, app, sandbox ;
   var i = 0;
-  beforeEach(function(done) {
-    var storage = new Storage({
-      db: helpers.newDb(),
+
+  before((done) => {
+    mongodb.MongoClient.connect(config.mongoDb.uri, function(err, in_db) {
+      if (err) return  done(err);
+      db=in_db;
+    console.log("db object points to the database : "+ db.databaseName);
+
+      return done();
     });
-    var expressApp = new ExpressApp();
-    expressApp.start({
-        ignoreRateLimiter: true,
-        storage: storage,
-        blockchainExplorer: blockchainExplorerMock,
-        disableLogs: true,
-      },
-      function() {
-        app = expressApp.app;
+  });
 
-        // Generates 5 clients
-        clients = _.map(_.range(5), function(i) {
-          return helpers.newClient(app);
+  beforeEach(function(done) {
+    db.dropDatabase(function(err) {
+      if (err) return done(err);
+      var storage = new Storage({
+        db: db,
+      });
+      var expressApp = new ExpressApp();
+      expressApp.start({
+          ignoreRateLimiter: true,
+          storage: storage,
+          blockchainExplorer: blockchainExplorerMock,
+          disableLogs: true,
+        },
+        function() {
+          app = expressApp.app;
+
+          // Generates 5 clients
+          clients = _.map(_.range(5), function(i) {
+            return helpers.newClient(app);
+          });
+          blockchainExplorerMock.reset();
+          sandbox = sinon.createSandbox();
+
+          if (!process.env.BWC_SHOW_LOGS) {
+            sandbox.stub(log, 'warn');
+            sandbox.stub(log, 'info');
+            sandbox.stub(log, 'error');
+          }
+          done();
         });
-        blockchainExplorerMock.reset();
-        sandbox = sinon.sandbox.create();
-
-        if (!process.env.BWC_SHOW_LOGS) {
-          sandbox.stub(log, 'warn');
-          sandbox.stub(log, 'info');
-          sandbox.stub(log, 'error');
-        }
-        done();
       });
   });
   afterEach(function(done) {
@@ -1042,7 +1051,7 @@ describe('client API', function() {
   describe('Notification polling', function() {
     var clock, interval;
     beforeEach(function() {
-      clock = sinon.useFakeTimers(1234000, 'Date');
+      clock = sinon.useFakeTimers({now:1234000, toFake:[ 'Date']});
     });
     afterEach(function() {
       clock.restore();
@@ -1199,6 +1208,7 @@ describe('client API', function() {
         should.not.exist(err);
 
         clients[0].createAddress(function(err, x) {
+console.log('[client.js.1210:err:]',err); //TODO
           should.not.exist(err);
           should.not.exist(err);
           x.coin.should.equal('bch');
@@ -2004,7 +2014,7 @@ describe('client API', function() {
     var clock;
     beforeEach(function(done) {
       this.timeout(5000);
-      clock = sinon.useFakeTimers(1234000, 'Date');
+      clock = sinon.useFakeTimers({now:1234000, toFake:[ 'Date']});
       helpers.createAndJoinWallet(clients, 2, 2, function() {
         clock.tick(25 * 1000);
         clients[0].createAddress(function(err, x) {
@@ -3876,7 +3886,7 @@ describe('client API', function() {
       });
     });
     it('should get all notes edited past a given date', function(done) {
-      var clock = sinon.useFakeTimers('Date');
+      var clock = sinon.useFakeTimers({toFake:[ 'Date']});
       async.series([
 
         function(next) {
