@@ -20,10 +20,6 @@ describe('Email notifications', function() {
   var server, wallet, mailerStub, emailService;
 
   before(function(done) {
-    if (process.env.TRAVIS) {
-      this.timeout(5000); // for travis
-    }
- 
     helpers.before(done);
   });
   after(function(done) {
@@ -48,8 +44,9 @@ describe('Email notifications', function() {
             should.not.exist(err);
 
             mailerStub = sinon.stub();
-            mailerStub.sendMail = sinon.stub();
-            mailerStub.sendMail.yields();
+            mailerStub.send = sinon.stub();
+            mailerStub.send.returns(Promise.resolve('ok'));
+            //mailerStub.returns(Promise.reject('err'));
 
             emailService = new EmailService();
             emailService.start({
@@ -99,7 +96,7 @@ describe('Email notifications', function() {
         };
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
           setTimeout(function() {
-            var calls = mailerStub.sendMail.getCalls();
+            var calls = mailerStub.send.getCalls();
             calls.length.should.equal(2);
             var emails = _.map(calls, function(c) {
               return c.args[0];
@@ -136,7 +133,7 @@ describe('Email notifications', function() {
         };
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
           setTimeout(function() {
-            var calls = mailerStub.sendMail.getCalls();
+            var calls = mailerStub.send.getCalls();
             calls.length.should.equal(0);
             server.storage.fetchUnsentEmails(function(err, unsent) {
               should.not.exist(err);
@@ -201,7 +198,7 @@ describe('Email notifications', function() {
           should.not.exist(err);
 
           setTimeout(function() {
-            var calls = mailerStub.sendMail.getCalls();
+            var calls = mailerStub.send.getCalls();
             var emails = _.map(_.takeRight(calls, 3), function(c) {
               return c.args[0];
             });
@@ -256,7 +253,7 @@ describe('Email notifications', function() {
           should.not.exist(err);
 
           setTimeout(function() {
-            var calls = mailerStub.sendMail.getCalls();
+            var calls = mailerStub.send.getCalls();
             var emails = _.map(_.takeRight(calls, 2), function(c) {
               return c.args[0];
             });
@@ -285,7 +282,7 @@ describe('Email notifications', function() {
           amount: 12300000,
         }, function(err) {
           setTimeout(function() {
-            var calls = mailerStub.sendMail.getCalls();
+            var calls = mailerStub.send.getCalls();
             calls.length.should.equal(3);
             var emails = _.map(calls, function(c) {
               return c.args[0];
@@ -319,7 +316,7 @@ describe('Email notifications', function() {
             txid: '123',
           }, function(err) {
             setTimeout(function() {
-              var calls = mailerStub.sendMail.getCalls();
+              var calls = mailerStub.send.getCalls();
               calls.length.should.equal(1);
               var email = calls[0].args[0];
               email.to.should.equal('copayer1@domain.com');
@@ -352,7 +349,7 @@ describe('Email notifications', function() {
             amount: 12300000,
           }, function(err) {
             setTimeout(function() {
-              var calls = mailerStub.sendMail.getCalls();
+              var calls = mailerStub.send.getCalls();
               calls.length.should.equal(2);
               var emails = _.map(calls, function(c) {
                 return c.args[0];
@@ -390,7 +387,7 @@ describe('Email notifications', function() {
             amount: 12300000,
           }, function(err) {
             setTimeout(function() {
-              var calls = mailerStub.sendMail.getCalls();
+              var calls = mailerStub.send.getCalls();
               calls.length.should.equal(3);
               var emails = _.map(calls, function(c) {
                 return c.args[0];
@@ -436,7 +433,7 @@ describe('Email notifications', function() {
           };
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
             setTimeout(function() {
-              var calls = mailerStub.sendMail.getCalls();
+              var calls = mailerStub.send.getCalls();
               calls.length.should.equal(2);
               server.storage.fetchUnsentEmails(function(err, unsent) {
                 should.not.exist(err);
@@ -448,6 +445,44 @@ describe('Email notifications', function() {
         });
       });
     });
+
+    it('should handler mailer errors ', function(done) {
+      mailerStub.send.rejects('err');
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+        // Simulate incoming tx notification
+        server._notify('NewIncomingTx', {
+          txid: '999',
+          address: address,
+          amount: 12300000,
+        }, function(err) {
+          setTimeout(function() {
+            var calls = mailerStub.send.getCalls();
+            calls.length.should.equal(3);
+            var emails = _.map(calls, function(c) {
+              return c.args[0];
+            });
+            _.difference(['copayer1@domain.com', 'copayer2@domain.com', 'copayer3@domain.com'], _.map(emails, 'to')).should.be.empty;
+            var one = emails[0];
+            one.from.should.equal('bws@dummy.net');
+            one.subject.should.contain('New payment received');
+            one.text.should.contain('123,000');
+            server.storage.fetchUnsentEmails(function(err, unsent) {
+              should.not.exist(err);
+              unsent.length.should.equal(3);
+              unsent[0].from.should.equal('bws@dummy.net');
+              unsent[1].from.should.equal('bws@dummy.net');
+              unsent[2].from.should.equal('bws@dummy.net');
+              done();
+            });
+          }, 100);
+        });
+      });
+    });
+
+
+
   });
 
   describe('1-of-N wallet', function() {
@@ -469,8 +504,8 @@ describe('Email notifications', function() {
             should.not.exist(err);
 
             mailerStub = sinon.stub();
-            mailerStub.sendMail = sinon.stub();
-            mailerStub.sendMail.yields();
+            mailerStub.send = sinon.stub();
+            mailerStub.send.resolves('ok');
 
             emailService = new EmailService();
             emailService.start({
@@ -511,7 +546,7 @@ describe('Email notifications', function() {
           };
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
             setTimeout(function() {
-              var calls = mailerStub.sendMail.getCalls();
+              var calls = mailerStub.send.getCalls();
               calls.length.should.equal(0);
               done();
             }, 100);
