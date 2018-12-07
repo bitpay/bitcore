@@ -10,11 +10,9 @@ var async = require('async');
 var request = require('supertest');
 var Uuid = require('uuid');
 var sjcl = require('sjcl');
-var tingodb = require('tingodb')({
-  memStore: true
-});
-
 var log = require('../lib/log');
+var mongodb = require('mongodb');
+var config = require('./test-config');
 
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
@@ -75,10 +73,6 @@ helpers.stubRequest = function(err, res) {
 };
 
 
-helpers.newDb = function() {
-  this.dbCounter = (this.dbCounter || 0) + 1;
-  return new tingodb.Db('./db/test' + this.dbCounter, {});
-};
 
 helpers.generateUtxos = function(scriptType, publicKeyRing, path, requiredSignatures, amounts) {
   var amounts = [].concat(amounts);
@@ -272,13 +266,31 @@ blockchainExplorerMock.reset = function() {
 };
 
 
+helpers.newDb = (extra, cb) => {
+  extra = extra || '';
+  mongodb.MongoClient.connect(config.mongoDb.uri + extra, function(err, in_db) {
+    if (err) return  done(err);
+    in_db.dropDatabase(function(err) {
+      return cb(err, in_db);
+    });
+  });
+}
 
+var db;
 describe('client API', function() {
-  var clients, app, sandbox;
+  var clients, app, sandbox ;
   var i = 0;
+
+  before((done) => {
+    helpers.newDb('', (err, in_db) => {
+      db = in_db;
+      return done(err);
+    });
+  });
+
   beforeEach(function(done) {
     var storage = new Storage({
-      db: helpers.newDb(),
+      db: db,
     });
     var expressApp = new ExpressApp();
     expressApp.start({
@@ -295,7 +307,7 @@ describe('client API', function() {
           return helpers.newClient(app);
         });
         blockchainExplorerMock.reset();
-        sandbox = sinon.sandbox.create();
+        sandbox = sinon.createSandbox();
 
         if (!process.env.BWC_SHOW_LOGS) {
           sandbox.stub(log, 'warn');
@@ -1042,7 +1054,7 @@ describe('client API', function() {
   describe('Notification polling', function() {
     var clock, interval;
     beforeEach(function() {
-      clock = sinon.useFakeTimers(1234000, 'Date');
+      clock = sinon.useFakeTimers({now:1234000, toFake:[ 'Date']});
     });
     afterEach(function() {
       clock.restore();
@@ -1087,6 +1099,13 @@ describe('client API', function() {
   });
 
   describe('Wallet Creation', function() {
+
+    beforeEach((done) => {
+      db.dropDatabase(function(err) {
+        return done(err);
+      });
+    });
+
     it('should fail to create wallet in bogus device', function(done) {
       clients[0].seedFromRandomWithMnemonic();
       clients[0].keyDerivationOk = false;
@@ -1548,6 +1567,7 @@ describe('client API', function() {
     });
 
     it('should create a 2-3 wallet with given mnemonic', function(done) {
+
       var words = 'forget announce travel fury farm alpha chaos choice talent sting eagle supreme';
       clients[0].seedFromMnemonic(words);
       clients[0].createWallet('mywallet', 'creator', 2, 3, {
@@ -2004,7 +2024,7 @@ describe('client API', function() {
     var clock;
     beforeEach(function(done) {
       this.timeout(5000);
-      clock = sinon.useFakeTimers(1234000, 'Date');
+      clock = sinon.useFakeTimers({now:1234000, toFake:[ 'Date']});
       helpers.createAndJoinWallet(clients, 2, 2, function() {
         clock.tick(25 * 1000);
         clients[0].createAddress(function(err, x) {
@@ -2062,14 +2082,17 @@ describe('client API', function() {
   describe('Transaction Proposals Creation and Locked funds', function() {
     var myAddress;
     beforeEach(function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, {}, function(w) {
-        clients[0].createAddress(function(err, address) {
-          should.not.exist(err);
-          myAddress = address;
-          blockchainExplorerMock.setUtxo(address, 2, 2);
-          blockchainExplorerMock.setUtxo(address, 2, 2);
-          blockchainExplorerMock.setUtxo(address, 1, 2, 0);
-          done();
+      db.dropDatabase(function(err) {
+        helpers.createAndJoinWallet(clients, 2, 3, {}, function(w) {
+
+          clients[0].createAddress(function(err, address) {
+            should.not.exist(err);
+            myAddress = address;
+            blockchainExplorerMock.setUtxo(address, 2, 2);
+            blockchainExplorerMock.setUtxo(address, 2, 2);
+            blockchainExplorerMock.setUtxo(address, 1, 2, 0);
+            done(err);
+          });
         });
       });
     });
@@ -2213,7 +2236,7 @@ describe('client API', function() {
           toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         }],
         feePerKb: 123e2,
-        changeAddress: myAddress,
+        changeAddress: myAddress.address,
         message: 'hello',
       };
 
@@ -2260,7 +2283,7 @@ describe('client API', function() {
       async.each(tamperings, function(tamperFn, next) {
         helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', args, tamperFn, function() {
           clients[0].createTxProposal(opts, function(err, txp) {
-            should.exist(err, tamperFn);
+            should.exist(err, 'For tamper function ' + tamperFn);
             err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             next();
           });
@@ -2753,6 +2776,11 @@ describe('client API', function() {
 
   describe('Payment Protocol', function() {
     var http;
+    beforeEach((done) => {
+      db.dropDatabase(function(err) {
+        done();
+      });
+    });
 
     describe('Shared wallet', function() {
       beforeEach(function(done) {
@@ -3174,7 +3202,8 @@ describe('client API', function() {
               var s = refund_to.get('script');
               s = new Bitcore_['bch'].Script(s.buffer.slice(s.offset, s.limit));
               var addr = new Bitcore_['bch'].Address.fromScript(s);
-              addr.toString().should.equal(changeAddress);
+              var addrStr = addr.toLegacyAddress();
+              addrStr.should.equal(changeAddress);
               done();
             });
           });
@@ -3876,7 +3905,7 @@ describe('client API', function() {
       });
     });
     it('should get all notes edited past a given date', function(done) {
-      var clock = sinon.useFakeTimers('Date');
+      var clock = sinon.useFakeTimers({toFake:[ 'Date']});
       async.series([
 
         function(next) {
@@ -4264,6 +4293,16 @@ describe('client API', function() {
     });
 
     describe('Recovery', function() {
+      var db2; 
+      before( (done) => {
+        helpers.newDb(2,(err,in_db) => {
+          db2 = in_db;
+          return done(err);
+        });
+      });
+
+
+
       it('should be able to gain access to a 1-1 wallet with just the xPriv', function(done) {
         helpers.createAndJoinWallet(clients, 1, 1, function() {
           var xpriv = clients[0].credentials.xPrivKey;
@@ -4329,7 +4368,7 @@ describe('client API', function() {
             should.exist(addr);
 
             var storage = new Storage({
-              db: helpers.newDb(),
+              db: db2,
             });
 
             var newApp;
@@ -4397,7 +4436,7 @@ describe('client API', function() {
             blockchainExplorerMock.setUtxo(addr, 1, 2);
 
             var storage = new Storage({
-              db: helpers.newDb(),
+              db: db2,
             });
             var newApp;
             var expressApp = new ExpressApp();
@@ -4452,7 +4491,7 @@ describe('client API', function() {
             should.exist(addr);
 
             var storage = new Storage({
-              db: helpers.newDb(),
+              db: db2,
             });
             var newApp;
             var expressApp = new ExpressApp();
@@ -4515,7 +4554,7 @@ describe('client API', function() {
             should.exist(addr);
 
             var storage = new Storage({
-              db: helpers.newDb(),
+              db: db2,
             });
 
             var newApp;
@@ -4847,6 +4886,14 @@ describe('client API', function() {
   });
 
   describe('Legacy Copay Import', function() {
+    var db2; 
+    before( (done) => {
+      helpers.newDb(2,(err,in_db) => {
+        db2 = in_db;
+        return done(err);
+      });
+    });
+
     it('Should get wallets from profile', function(done) {
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
@@ -5014,7 +5061,7 @@ describe('client API', function() {
 
           // New BWS server...
           var storage = new Storage({
-            db: helpers.newDb(),
+            db: db2,
           });
           var newApp;
           var expressApp = new ExpressApp();
@@ -5462,7 +5509,7 @@ describe('client API', function() {
       it('should handle tx serialization error when building tx', function(done) {
         var sandbox = sinon.sandbox.create();
 
-        var se = sandbox.stub(B.Transaction.prototype, 'serialize', function() {
+        var se = sandbox.stub(B.Transaction.prototype, 'serialize').callsFake(function() {
           throw new Error('this is an error');
         });
 
@@ -5545,7 +5592,7 @@ describe('client API', function() {
 
       var client = new Client();
 
-      var _f = sandbox.stub(client, '_fetchLatestNotifications', function(interval, cb) {
+      var _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake(function(interval, cb) {
         cb(new Errors.NOT_FOUND);
       });
 
@@ -5565,7 +5612,7 @@ describe('client API', function() {
 
       var client = new Client();
 
-      var _f = sandbox.stub(client, '_fetchLatestNotifications', function(interval, cb) {
+      var _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake(function(interval, cb) {
         cb(new Errors.NOT_AUTHORIZED);
       });
 
@@ -5599,15 +5646,15 @@ describe('client API', function() {
         var client = new Client();
         client.credentials = {};
 
-        var ow = sandbox.stub(client, 'openWallet', function(callback) {
+        var ow = sandbox.stub(client, 'openWallet').callsFake(function(callback) {
           callback(new Error());
         });
 
-        var ip = sandbox.stub(client, 'isPrivKeyExternal', function() {
+        var ip = sandbox.stub(client, 'isPrivKeyExternal').callsFake(function() {
           return false;
         });
 
-        var aa = sandbox.stub(client, 'addAccess', function(options, callback) {
+        var aa = sandbox.stub(client, 'addAccess').callsFake(function(options, callback) {
           callback(new Error());
         });
 
