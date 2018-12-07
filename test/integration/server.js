@@ -3388,6 +3388,27 @@ console.log('[server.js.425:err:]',err); //TODO
               });
             });
           });
+          it('should be fail if specified change address is not from the wallet', function(done) {
+
+            helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
+
+              var addr = (new Bitcore_[coin].PrivateKey()).toAddress();
+              var txOpts = {
+                outputs: [{
+                  toAddress: addressStr,
+                  amount: 0.8e8,
+                }],
+                feePerKb: 100e2,
+                changeAddress: addr.toString(),
+              };
+              server.createTx(txOpts, function(err, tx) {
+                should.exist(err);
+                err.code.should.equal('INVALID_CHANGE_ADDRESS');
+                done();
+              });
+            });
+          });
+ 
           it('should be able to specify inputs & absolute fee', function(done) {
             helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
               var txOpts = {
