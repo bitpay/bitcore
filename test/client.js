@@ -266,6 +266,15 @@ blockchainExplorerMock.reset = function() {
 };
 
 
+helpers.newDb = (extra, cb) => {
+  extra = extra || '';
+  mongodb.MongoClient.connect(config.mongoDb.uri + extra, function(err, in_db) {
+    if (err) return  done(err);
+    in_db.dropDatabase(function(err) {
+      return cb(err, in_db);
+    });
+  });
+}
 
 var db;
 describe('client API', function() {
@@ -273,45 +282,39 @@ describe('client API', function() {
   var i = 0;
 
   before((done) => {
-    mongodb.MongoClient.connect(config.mongoDb.uri, function(err, in_db) {
-      if (err) return  done(err);
-      db=in_db;
-    console.log("db object points to the database : "+ db.databaseName);
-
-      return done();
+    helpers.newDb('', (err, in_db) => {
+      db = in_db;
+      return done(err);
     });
   });
 
   beforeEach(function(done) {
-    db.dropDatabase(function(err) {
-      if (err) return done(err);
-      var storage = new Storage({
-        db: db,
-      });
-      var expressApp = new ExpressApp();
-      expressApp.start({
-          ignoreRateLimiter: true,
-          storage: storage,
-          blockchainExplorer: blockchainExplorerMock,
-          disableLogs: true,
-        },
-        function() {
-          app = expressApp.app;
+    var storage = new Storage({
+      db: db,
+    });
+    var expressApp = new ExpressApp();
+    expressApp.start({
+        ignoreRateLimiter: true,
+        storage: storage,
+        blockchainExplorer: blockchainExplorerMock,
+        disableLogs: true,
+      },
+      function() {
+        app = expressApp.app;
 
-          // Generates 5 clients
-          clients = _.map(_.range(5), function(i) {
-            return helpers.newClient(app);
-          });
-          blockchainExplorerMock.reset();
-          sandbox = sinon.createSandbox();
-
-          if (!process.env.BWC_SHOW_LOGS) {
-            sandbox.stub(log, 'warn');
-            sandbox.stub(log, 'info');
-            sandbox.stub(log, 'error');
-          }
-          done();
+        // Generates 5 clients
+        clients = _.map(_.range(5), function(i) {
+          return helpers.newClient(app);
         });
+        blockchainExplorerMock.reset();
+        sandbox = sinon.createSandbox();
+
+        if (!process.env.BWC_SHOW_LOGS) {
+          sandbox.stub(log, 'warn');
+          sandbox.stub(log, 'info');
+          sandbox.stub(log, 'error');
+        }
+        done();
       });
   });
   afterEach(function(done) {
@@ -1096,6 +1099,13 @@ describe('client API', function() {
   });
 
   describe('Wallet Creation', function() {
+
+    beforeEach((done) => {
+      db.dropDatabase(function(err) {
+        return done(err);
+      });
+    });
+
     it('should fail to create wallet in bogus device', function(done) {
       clients[0].seedFromRandomWithMnemonic();
       clients[0].keyDerivationOk = false;
@@ -1208,7 +1218,6 @@ describe('client API', function() {
         should.not.exist(err);
 
         clients[0].createAddress(function(err, x) {
-console.log('[client.js.1210:err:]',err); //TODO
           should.not.exist(err);
           should.not.exist(err);
           x.coin.should.equal('bch');
@@ -1558,6 +1567,7 @@ console.log('[client.js.1210:err:]',err); //TODO
     });
 
     it('should create a 2-3 wallet with given mnemonic', function(done) {
+
       var words = 'forget announce travel fury farm alpha chaos choice talent sting eagle supreme';
       clients[0].seedFromMnemonic(words);
       clients[0].createWallet('mywallet', 'creator', 2, 3, {
@@ -2072,14 +2082,17 @@ console.log('[client.js.1210:err:]',err); //TODO
   describe('Transaction Proposals Creation and Locked funds', function() {
     var myAddress;
     beforeEach(function(done) {
-      helpers.createAndJoinWallet(clients, 2, 3, {}, function(w) {
-        clients[0].createAddress(function(err, address) {
-          should.not.exist(err);
-          myAddress = address;
-          blockchainExplorerMock.setUtxo(address, 2, 2);
-          blockchainExplorerMock.setUtxo(address, 2, 2);
-          blockchainExplorerMock.setUtxo(address, 1, 2, 0);
-          done();
+      db.dropDatabase(function(err) {
+        helpers.createAndJoinWallet(clients, 2, 3, {}, function(w) {
+
+          clients[0].createAddress(function(err, address) {
+            should.not.exist(err);
+            myAddress = address;
+            blockchainExplorerMock.setUtxo(address, 2, 2);
+            blockchainExplorerMock.setUtxo(address, 2, 2);
+            blockchainExplorerMock.setUtxo(address, 1, 2, 0);
+            done(err);
+          });
         });
       });
     });
@@ -2223,7 +2236,7 @@ console.log('[client.js.1210:err:]',err); //TODO
           toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         }],
         feePerKb: 123e2,
-        changeAddress: myAddress,
+        changeAddress: myAddress.address,
         message: 'hello',
       };
 
@@ -2270,7 +2283,7 @@ console.log('[client.js.1210:err:]',err); //TODO
       async.each(tamperings, function(tamperFn, next) {
         helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', args, tamperFn, function() {
           clients[0].createTxProposal(opts, function(err, txp) {
-            should.exist(err, tamperFn);
+            should.exist(err, 'For tamper function ' + tamperFn);
             err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             next();
           });
@@ -2763,6 +2776,11 @@ console.log('[client.js.1210:err:]',err); //TODO
 
   describe('Payment Protocol', function() {
     var http;
+    beforeEach((done) => {
+      db.dropDatabase(function(err) {
+        done();
+      });
+    });
 
     describe('Shared wallet', function() {
       beforeEach(function(done) {
@@ -3184,7 +3202,8 @@ console.log('[client.js.1210:err:]',err); //TODO
               var s = refund_to.get('script');
               s = new Bitcore_['bch'].Script(s.buffer.slice(s.offset, s.limit));
               var addr = new Bitcore_['bch'].Address.fromScript(s);
-              addr.toString().should.equal(changeAddress);
+              var addrStr = addr.toLegacyAddress();
+              addrStr.should.equal(changeAddress);
               done();
             });
           });
@@ -4274,6 +4293,16 @@ console.log('[client.js.1210:err:]',err); //TODO
     });
 
     describe('Recovery', function() {
+      var db2; 
+      before( (done) => {
+        helpers.newDb(2,(err,in_db) => {
+          db2 = in_db;
+          return done(err);
+        });
+      });
+
+
+
       it('should be able to gain access to a 1-1 wallet with just the xPriv', function(done) {
         helpers.createAndJoinWallet(clients, 1, 1, function() {
           var xpriv = clients[0].credentials.xPrivKey;
@@ -4339,7 +4368,7 @@ console.log('[client.js.1210:err:]',err); //TODO
             should.exist(addr);
 
             var storage = new Storage({
-              db: helpers.newDb(),
+              db: db2,
             });
 
             var newApp;
@@ -4407,7 +4436,7 @@ console.log('[client.js.1210:err:]',err); //TODO
             blockchainExplorerMock.setUtxo(addr, 1, 2);
 
             var storage = new Storage({
-              db: helpers.newDb(),
+              db: db2,
             });
             var newApp;
             var expressApp = new ExpressApp();
@@ -4462,7 +4491,7 @@ console.log('[client.js.1210:err:]',err); //TODO
             should.exist(addr);
 
             var storage = new Storage({
-              db: helpers.newDb(),
+              db: db2,
             });
             var newApp;
             var expressApp = new ExpressApp();
@@ -4525,7 +4554,7 @@ console.log('[client.js.1210:err:]',err); //TODO
             should.exist(addr);
 
             var storage = new Storage({
-              db: helpers.newDb(),
+              db: db2,
             });
 
             var newApp;
@@ -4857,6 +4886,14 @@ console.log('[client.js.1210:err:]',err); //TODO
   });
 
   describe('Legacy Copay Import', function() {
+    var db2; 
+    before( (done) => {
+      helpers.newDb(2,(err,in_db) => {
+        db2 = in_db;
+        return done(err);
+      });
+    });
+
     it('Should get wallets from profile', function(done) {
       var t = ImportData.copayers[0];
       var c = helpers.newClient(app);
@@ -5024,7 +5061,7 @@ console.log('[client.js.1210:err:]',err); //TODO
 
           // New BWS server...
           var storage = new Storage({
-            db: helpers.newDb(),
+            db: db2,
           });
           var newApp;
           var expressApp = new ExpressApp();
@@ -5472,7 +5509,7 @@ console.log('[client.js.1210:err:]',err); //TODO
       it('should handle tx serialization error when building tx', function(done) {
         var sandbox = sinon.sandbox.create();
 
-        var se = sandbox.stub(B.Transaction.prototype, 'serialize', function() {
+        var se = sandbox.stub(B.Transaction.prototype, 'serialize').callsFake(function() {
           throw new Error('this is an error');
         });
 
@@ -5555,7 +5592,7 @@ console.log('[client.js.1210:err:]',err); //TODO
 
       var client = new Client();
 
-      var _f = sandbox.stub(client, '_fetchLatestNotifications', function(interval, cb) {
+      var _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake(function(interval, cb) {
         cb(new Errors.NOT_FOUND);
       });
 
@@ -5575,7 +5612,7 @@ console.log('[client.js.1210:err:]',err); //TODO
 
       var client = new Client();
 
-      var _f = sandbox.stub(client, '_fetchLatestNotifications', function(interval, cb) {
+      var _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake(function(interval, cb) {
         cb(new Errors.NOT_AUTHORIZED);
       });
 
@@ -5609,15 +5646,15 @@ console.log('[client.js.1210:err:]',err); //TODO
         var client = new Client();
         client.credentials = {};
 
-        var ow = sandbox.stub(client, 'openWallet', function(callback) {
+        var ow = sandbox.stub(client, 'openWallet').callsFake(function(callback) {
           callback(new Error());
         });
 
-        var ip = sandbox.stub(client, 'isPrivKeyExternal', function() {
+        var ip = sandbox.stub(client, 'isPrivKeyExternal').callsFake(function() {
           return false;
         });
 
-        var aa = sandbox.stub(client, 'addAccess', function(options, callback) {
+        var aa = sandbox.stub(client, 'addAccess').callsFake(function(options, callback) {
           callback(new Error());
         });
 
