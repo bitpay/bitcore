@@ -5,6 +5,7 @@ import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
 import { BlocksPage, HomePage, PagesModule } from '../pages';
 import { ApiProvider } from '../providers/api/api';
 import { BlocksProvider } from '../providers/blocks/blocks';
+import { BwcProvider } from '../providers/bwc/bwc';
 import { CurrencyProvider } from '../providers/currency/currency';
 import { DefaultProvider } from '../providers/default/default';
 import { PriceProvider } from '../providers/price/price';
@@ -28,7 +29,8 @@ import { InsightApp } from './app.component';
     BlocksProvider,
     TxsProvider,
     DefaultProvider,
-    PriceProvider
+    PriceProvider,
+    BwcProvider
   ]
 })
-export class AppModule {}
+export class AppModule { }
