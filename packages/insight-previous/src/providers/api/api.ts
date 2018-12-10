@@ -45,6 +45,14 @@ export class ApiProvider {
     return apiPrefix;
   }
 
+  public getConfig(): ChainNetwork {
+    const config = {
+      chain: this.networkSettings.value.selectedNetwork.chain,
+      network: this.networkSettings.value.selectedNetwork.network
+    }
+    return config;
+  }
+
   public changeNetwork(network: ChainNetwork): void {
     this.networkSettings.next({
       availableNetworks: this.networkSettings.value.availableNetworks,

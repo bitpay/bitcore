@@ -31,4 +31,4 @@ import { InsightApp } from './app.component';
     PriceProvider
   ]
 })
-export class AppModule {}
+export class AppModule { }
