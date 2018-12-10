@@ -93,11 +93,11 @@ export class StorageService {
 
   apiStream<T>(cursor: Cursor<T>, req: Request, res: Response) {
     let closed = false;
-    req.on('close', function () {
+    req.on('close', function() {
       closed = true;
       cursor.close();
     });
-    res.on('close', function () {
+    res.on('close', function() {
       closed = true;
       cursor.close();
     });
@@ -159,7 +159,7 @@ export class StorageService {
       }
     }
     if (originalOptions.limit) {
-      options.limit = originalOptions.limit;
+      options.limit = Number(originalOptions.limit);
     }
     return { query, options };
   }
