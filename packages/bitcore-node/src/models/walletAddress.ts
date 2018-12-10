@@ -75,7 +75,7 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
       }
 
       let coinStream = CoinModel.collection
-        .find({ wallets: wallet._id })
+        .find({ wallets: wallet._id, 'wallets.0': { $exists: true } })
         .project({ spentTxid: 1, mintTxid: 1 })
         .addCursorFlag('noCursorTimeout', true);
       let txids = {};
