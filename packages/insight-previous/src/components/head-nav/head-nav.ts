@@ -70,6 +70,7 @@ export class HeadNavComponent {
             () => {
               this.http.get(apiPrefix + '/address/' + this.q).subscribe(
                 (data: any): void => {
+                  const addrStr = this.q;
                   this.resetSearch();
                   console.log('addr', data);
                   const parsedData: any = JSON.parse(data._body);
@@ -78,7 +79,7 @@ export class HeadNavComponent {
                       .chain,
                     network: this.apiProvider.networkSettings.value
                       .selectedNetwork.network,
-                    addrStr: parsedData[0].address
+                    addrStr
                   });
                 },
                 () => {
