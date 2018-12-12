@@ -1,9 +1,9 @@
 import { Component } from '@angular/core';
-import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { Http } from '@angular/http';
+import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { TxsProvider, ApiCoin } from '../../providers/transactions/transactions';
+import { ApiCoin, TxsProvider } from '../../providers/transactions/transactions';
 
 /**
  * Generated class for the AddressPage page.
@@ -20,10 +20,11 @@ import { TxsProvider, ApiCoin } from '../../providers/transactions/transactions'
   templateUrl: 'address.html'
 })
 export class AddressPage {
-  public loading: boolean = true;
+  public loading = true;
   private addrStr: string;
   public address: any = {};
   public transactions: any[] = [];
+  public showTransactions: boolean;
 
   constructor(
     public navCtrl: NavController,
@@ -40,7 +41,7 @@ export class AddressPage {
   }
 
   public ionViewDidLoad(): void {
-    const url: string = `${this.apiProvider.getUrl()}/address/${this.addrStr}/balance`;
+    const url = `${this.apiProvider.getUrl()}/address/${this.addrStr}/balance`;
     this.http.get(url).subscribe(
       data => {
         const json: {
@@ -58,15 +59,17 @@ export class AddressPage {
       }
     );
 
-    let txurl: string = this.apiProvider.getUrl() + '/address/' + this.addrStr + '/txs?limit=1000';
+    const txurl: string = this.apiProvider.getUrl() + '/address/' + this.addrStr + '/txs?limit=1000';
     this.http.get(txurl).subscribe(
       data => {
-        let apiTx: ApiCoin[] = data.json() as ApiCoin[];
+        const apiTx: ApiCoin[] = data.json() as ApiCoin[];
         this.transactions = apiTx.map(this.txProvider.toAppCoin);
+        this.showTransactions = true;
       },
       err => {
         console.error('err is', err);
         this.loading = false;
+        this.showTransactions = false;
       }
     );
   }
