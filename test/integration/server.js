@@ -822,7 +822,7 @@ console.log('[server.js.425:err:]',err); //TODO
         };
         server.joinWallet(copayerOpts, function(err) {
           should.exist(err);
-          err.message.should.contain('argument copayerSignature missing');
+          err.message.should.contain('argument: copayerSignature missing');
           done();
         });
       });
@@ -4449,6 +4449,7 @@ console.log('[server.js.425:err:]',err); //TODO
           should.not.exist(err);
           should.exist(a.address);
           firstAddress = a;
+          blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000);
           done();
         });
       });
@@ -4545,7 +4546,7 @@ console.log('[server.js.425:err:]',err); //TODO
           txid: '1',
           confirmations: 1,
           fees: 150,
-          time: Date.now() / 1000,
+          time: Math.floor(Date.now() / 1000),
           inputs: [{
             address: firstAddress.address,
             amount: 550,

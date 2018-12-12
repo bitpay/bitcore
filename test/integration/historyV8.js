@@ -33,7 +33,7 @@ var helpers = require('./helpers');
 var storage, blockchainExplorer, request;
 
 
-describe('History V8', function() {
+describe.skip('History V8', function() {
   before(function(done) {
     helpers.before(done);
   });
