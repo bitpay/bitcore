@@ -33,7 +33,7 @@ var helpers = require('./helpers');
 var storage, blockchainExplorer, request;
 
 
-describe.skip('History V8', function() {
+describe('History V8', function() {
   before(function(done) {
     helpers.before(done);
   });
@@ -106,6 +106,7 @@ describe.skip('History V8', function() {
 
       // this call is to fill the cache
       server.getTxHistory({limit: 20}, function(err, txs, fromCache) {
+        fromCache = !!fromCache;
         should.not.exist(err);
         fromCache.should.equal(false);
         should.exist(txs);
@@ -174,17 +175,17 @@ describe.skip('History V8', function() {
     });
 
     it('should get tx history from insight, in 2 overlapping pages', function(done) {
-      helpers.stubHistoryV8(300);
+      helpers.stubHistoryV8(300, BCHEIGHT);
       server.getTxHistory({limit: 25}, function(err, txs, fromCache) {
-        console.log('[server.js.6215:err:]',err); //TODO
         should.not.exist(err);
         fromCache.should.equal(false);
+        txs.length.should.equal(25);
 
         // no cache
         server.getTxHistory({skip:5, limit: 21}, function(err, txs2, fromCache) {
           should.not.exist(err);
+          fromCache = !!fromCache;
           fromCache.should.equal(false);
-//console.log('[historyV8.js.96:txs2:]',txs2); //TODO
           should.exist(txs2);
           txs2.length.should.equal(21);
           var i = 0;
@@ -246,6 +247,7 @@ describe.skip('History V8', function() {
                 category: 'send',
                 toAddress: external,
                 satoshis: 0.5e8,
+                blockheight: 1000,
                },
               {
                 id: 2,
@@ -255,6 +257,7 @@ describe.skip('History V8', function() {
                 blockTime: t,
                 satoshis: 0.3e8,
                 toAddress: external,
+                blockheight: 1000,
               },
               {
                 id: 3,
@@ -263,6 +266,7 @@ describe.skip('History V8', function() {
                 blockTime: t,
                 satoshis: 5460,
                 category: 'fee',
+                blockheight: 1000,
                },
               ]; 
  
@@ -395,7 +399,7 @@ describe.skip('History V8', function() {
       h.push({
         txid: 'xx'
       })
-      helpers.stubHistoryV8(h);
+      helpers.stubHistoryV8(h, BCHEIGHT);
       var l = TestData.history.length;
 
       server.getTxHistory({}, function(err, txs) {
@@ -462,7 +466,7 @@ describe.skip('History V8', function() {
         }],
         size: 500,
       }];
-      helpers.stubHistoryV8(txs);
+      helpers.stubHistoryV8(txs, BCHEIGHT);
       server.getTxHistory({}, function(err, txs) {
         should.not.exist(err);
         var tx = txs[0];
@@ -810,7 +814,7 @@ console.log('[historyV8.js.596]'); //TODO
       beforeEach(function(done) {
         blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000);
         h = helpers.historyCacheTest(200);
-        helpers.stubHistoryV8(h);
+        helpers.stubHistoryV8(h, BCHEIGHT);
         server.storage.clearTxHistoryCache(server.walletId, function() {
           done();
         });

@@ -397,10 +397,9 @@ helpers.stubHistory = function(txs) {
 };
 
 
-helpers.stubHistoryV8 = function(nr, bcHeight, txs) {
-  txs = txs || [];
-  var  i = 0;
 
+helpers.createTxsV8 = function(nr, bcHeight, txs) {
+  txs = txs || [];
   // Will generate
   // order / confirmations  / height / txid
   //  0.  => -1     / -1            /   txid0   / id0  <=  LAST ONE!
@@ -408,6 +407,7 @@ helpers.stubHistoryV8 = function(nr, bcHeight, txs) {
   //  2.  => 2      / bcHeight - 1  /   txid2
   //  3.  => 3...   / bcHeight - 2  /   txid3
 
+  var  i = 0;
   if (_.isEmpty(txs)) {
     while(i < nr) {
       txs.push({
@@ -416,24 +416,27 @@ helpers.stubHistoryV8 = function(nr, bcHeight, txs) {
         size: 226,
         category: 'receive',
         satoshis: 30001,
-        height: (i == 0) ? -1 :  bcHeight - i + 1,
+        blockheight: (i == 0) ? -1 :  bcHeight - i + 1,
         address: 'muFJi3ZPfR5nhxyD7dfpx2nYZA8Wmwzgck',
         blockTime: '2018-09-21T18:08:31.000Z',
       });
       i++;
     }
   }
-  blockchainExplorer.getTransactions = function(walletId, since, limit, cb) {
+
+  return txs;
+};
+
+
+helpers.stubHistoryV8 = function(nr, bcHeight, txs) {
+  txs= helpers.createTxsV8(nr,bcHeight, txs);
+  blockchainExplorer.getTransactions = function(walletId, startBlock, endBlock, cb) {
     var MAX_BATCH_SIZE = 100;
     var nbTxs = txs.length;
 
-    var idx = 0;
-    if (since) {
-      idx = _.findIndex(txs, {id: since});
-      if (idx < 0) return cb(null,[]);
-      idx++;
-    }
-    var page = txs.slice(idx, idx + limit);
+    var page = _.filter(txs, (x) => { 
+      return x.blockheight >=startBlock && x.blockheight <= endBlock
+    });
     return cb(null, page);
   };
 };
