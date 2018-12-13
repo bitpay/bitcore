@@ -1,0 +1,23 @@
+page-blocks {
+  ion-grid {
+    // border: 2px solid green;
+    margin: 10px 0 20px;
+
+    ion-row {
+      border-top: 1px solid #ccc;
+    }
+
+    ion-row:nth-child(even) {
+      background-color: #f4f4f4;
+    }
+
+    ion-row:first-child {
+      background-color: white;
+      border-top: none;
+    }
+
+    ion-row:last-child {
+      background-color: white;
+    }
+  }
+}

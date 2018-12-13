@@ -1,0 +1,15 @@
+.page-content {
+  max-width: 1280px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media screen and (min-width: $desktop-min-width) {
+  .page-content {
+    margin-top: 1.5em;
+  }
+
+  ion-navbar.toolbar-md {
+    padding: 4px calc((100vw - 1244px) / 2) 4px calc((100vw - 1332px) / 2);
+  }
+}

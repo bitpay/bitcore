@@ -1,0 +1,21 @@
+<!-- Generated template for the CoinListComponent component -->
+<ion-grid>
+  <ion-row>
+    <ion-col col-5>
+      <ion-note text-left>
+        Received
+      </ion-note>
+    </ion-col>
+    <ion-col col-3 text-right>
+      <ion-note>
+        Value
+      </ion-note>
+    </ion-col>
+    <ion-col col-4 text-left>
+      <ion-note>
+        Spent
+      </ion-note>
+    </ion-col>
+  </ion-row>
+  <coin *ngFor="let coin of coins"[coin]="coin"></coin>
+</ion-grid>
