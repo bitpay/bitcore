@@ -7,6 +7,9 @@ program
   .option('-c, --coin <coin>', 'coin (btc/bch)')
   .parse(process.argv);
 
+
+program.option = function(){};;
+
 var args = program.args;
 
 
