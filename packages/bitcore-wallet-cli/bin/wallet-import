@@ -14,6 +14,7 @@ program
   .option('-k, --keypassword <password>', 'password to decrypt private key from imported file')
   .option('-p, --password', 'Encrypt wallet. Will ask password interactively')
   .usage('[options] <"backup-words"> <passphrase>')
+  .usage('or [options] <"filename">')
   .parse(process.argv);
 
 var args = program.args;
@@ -38,6 +39,8 @@ utils.getClient(program, {
     };
     if (str.substr(0,6) == '{"iv":')  {
       console.log('Backup is encrypted');
+      if (!program.exportpassword) 
+        utils.die('Provide export\'s password with -e ');
       try {
         str = sjcl.decrypt( program.exportpassword, str);
       } catch (e) {
