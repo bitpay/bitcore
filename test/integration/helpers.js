@@ -433,9 +433,6 @@ helpers.createTxsV8 = function(nr, bcHeight, txs) {
 helpers.stubHistoryV8 = function(nr, bcHeight, txs) {
   txs= helpers.createTxsV8(nr,bcHeight, txs);
   blockchainExplorer.getTransactions = function(walletId, startBlock, endBlock, cb) {
-    var MAX_BATCH_SIZE = 100;
-    var nbTxs = txs.length;
-
     startBlock = startBlock || 0;
     var page = _.filter(txs, (x) => { 
       return x.height >=startBlock && x.height <= endBlock
