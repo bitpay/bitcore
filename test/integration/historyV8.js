@@ -247,7 +247,7 @@ describe('History V8', function() {
                 category: 'send',
                 toAddress: external,
                 satoshis: 0.5e8,
-                blockheight: 1000,
+                height: 1000,
                },
               {
                 id: 2,
@@ -257,7 +257,7 @@ describe('History V8', function() {
                 blockTime: t,
                 satoshis: 0.3e8,
                 toAddress: external,
-                blockheight: 1000,
+                height: 1000,
               },
               {
                 id: 3,
@@ -266,7 +266,7 @@ describe('History V8', function() {
                 blockTime: t,
                 satoshis: 5460,
                 category: 'fee',
-                blockheight: 1000,
+                height: 1000,
                },
               ]; 
  

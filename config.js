@@ -54,9 +54,9 @@ var config = {
     },
     bch: {
       livenet: {
-        provider: 'insight',
+        provider: 'v8',
         //url: 'https://cashexplorer.bitcoin.com',
-        url: 'https://bch-insight.bitpay.com:443',
+        url: 'https://api.bitcore.io',
         addressFormat: 'cashaddr',  // copay, cashaddr, or legacy
       },
       testnet: {

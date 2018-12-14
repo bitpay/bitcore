@@ -416,7 +416,9 @@ helpers.createTxsV8 = function(nr, bcHeight, txs) {
         size: 226,
         category: 'receive',
         satoshis: 30001,
-        blockheight: (i == 0) ? -1 :  bcHeight - i + 1,
+        // this is translated on V8.prototype.getTransactions 
+        amount: 30001 /1e8,
+        height: (i == 0) ? -1 :  bcHeight - i + 1,
         address: 'muFJi3ZPfR5nhxyD7dfpx2nYZA8Wmwzgck',
         blockTime: '2018-09-21T18:08:31.000Z',
       });
@@ -434,8 +436,9 @@ helpers.stubHistoryV8 = function(nr, bcHeight, txs) {
     var MAX_BATCH_SIZE = 100;
     var nbTxs = txs.length;
 
+    startBlock = startBlock || 0;
     var page = _.filter(txs, (x) => { 
-      return x.blockheight >=startBlock && x.blockheight <= endBlock
+      return x.height >=startBlock && x.height <= endBlock
     });
     return cb(null, page);
   };
