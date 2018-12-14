@@ -8,20 +8,16 @@ export class ListTransactionsStream extends Transform {
   }
 
   async _transform(transaction, _, done) {
-    const [ inputs, outputs ] = await Promise.all([
-      CoinModel.collection
-        .find(
-          {
-            chain: transaction.chain,
-            network: transaction.network,
-            spentTxid: transaction.txid
-          },
-          { batchSize: 10000 }
-        )
-        .project({ address: 1, wallets: 1, value: 1, mintIndex: 1})
-        .addCursorFlag('noCursorTimeout', true)
-        .toArray(),
-      CoinModel.collection
+    const sending = !! await CoinModel.collection.count({
+      wallets: this.wallet._id,
+      'wallets.0': { $exists: true },
+      spentTxid: transaction.txid
+    });
+    
+    const wallet = this.wallet._id!.toString();
+
+    if (sending) {
+      const outputs = await CoinModel.collection
         .find(
           {
             chain: transaction.chain,
@@ -32,17 +28,7 @@ export class ListTransactionsStream extends Transform {
         )
         .project({ address: 1, wallets: 1, value: 1, mintIndex: 1 })
         .addCursorFlag('noCursorTimeout', true)
-        .toArray()
-    ]);
-    
-    const wallet = this.wallet._id!.toString();
-    const sending = inputs.some((input) => {
-      return input.wallets.some((inputWallet) => {
-        return inputWallet.equals(wallet);
-      });
-    });
-
-    if (sending) {
+        .toArray();
       outputs.forEach((output) => {
         const sendingToOurself = output.wallets.some((outputWallet) => {
           return outputWallet.equals(wallet);
@@ -93,6 +79,14 @@ export class ListTransactionsStream extends Transform {
       }
       return done();
     } else {
+      const outputs = await CoinModel.collection.find({
+        wallets: this.wallet._id,
+        'wallets.0': { $exists: true },
+        mintTxid: transaction.txid
+      })
+        .project({ address: 1, wallets: 1, value: 1, mintIndex: 1 })
+        .addCursorFlag('noCursorTimeout', true)
+        .toArray();
       outputs.forEach((output) => {
         const weReceived = output.wallets.some((outputWallet) => {
           return outputWallet.equals(wallet);
