@@ -53,10 +53,6 @@ var expressApp = new ExpressApp();
 function startInstance(cb) {
   var server = config.https ? serverModule.createServer(serverOpts, expressApp.app) : serverModule.Server(expressApp.app);
 
-  server.on('connection', function(socket) {
-    socket.setTimeout(Defaults.SERVER_EXE_TIME);
-  })
-
   expressApp.start(config, function(err) {
     if (err) {
       log.error('Could not start BWS instance', err);
