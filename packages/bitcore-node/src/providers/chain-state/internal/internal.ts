@@ -292,13 +292,18 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
     if (args) {
       if (args.startBlock || args.endBlock) {
+        query.$or = [];
+        if (args.includeMempool) {
+          query.$or.push({ blockHeight: SpentHeightIndicators.pending });
+        }
+        let blockRangeQuery = {} as any;
         if (args.startBlock) {
-          query.blockHeight = { $gte: Number(args.startBlock) };
+          blockRangeQuery.$gte = Number(args.startBlock);
         }
         if (args.endBlock) {
-          query.blockHeight = query.blockHeight || {};
-          query.blockHeight.$lte = Number(args.endBlock);
+          blockRangeQuery.$lte = Number(args.endBlock);
         }
+        query.$or.push({ blockHeight: blockRangeQuery });
       } else {
         if (args.startDate) {
           const startDate = new Date(args.startDate);

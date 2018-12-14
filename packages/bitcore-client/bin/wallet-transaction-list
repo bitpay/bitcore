@@ -9,13 +9,16 @@ program
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--startDate [startDate]')
   .option('--endDate [endDate]')
+  .option('--startBlock [startBlock]')
+  .option('--endBlock [endBlock]')
+  .option('--includeMempool')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, startDate, endDate } = program;
+  const { name, path, startBlock, startDate, endBlock, endDate, includeMempool } = program;
   try {
     const wallet = await Wallet.loadWallet({ name, path });
-    wallet.listTransactions({ startDate, endDate }).pipe(process.stdout);
+    wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool }).pipe(process.stdout);
   } catch (e) {
     console.error(e);
   }

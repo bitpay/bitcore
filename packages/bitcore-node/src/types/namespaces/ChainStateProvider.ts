@@ -12,6 +12,7 @@ export declare namespace CSP {
     endBlock: number;
     startDate: string;
     endDate: string;
+    includeMempool: boolean;
   } & StreamingFindOptions<ITransaction>;
 
   export type StreamAddressUtxosArgs = {

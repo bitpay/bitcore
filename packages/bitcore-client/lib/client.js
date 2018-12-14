@@ -63,8 +63,23 @@ Client.prototype.getCoins = function (params) {
 };
 
 Client.prototype.listTransactions = function(params) {
-  const { pubKey, startDate, endDate } = params;
-  const url = `${this.baseUrl}/wallet/${pubKey}/transactions?startDate=${startDate}&endDate=${endDate}`;
+  const { pubKey, startBlock, startDate, endBlock, endDate, includeMempool } = params;
+  let url = `${this.baseUrl}/wallet/${pubKey}/transactions?`;
+  if (startBlock) {
+    url += `startBlock=${startBlock}&`;
+  }
+  if (endBlock) {
+    url += `endBlock=${endBlock}&`;
+  }
+  if (startDate) {
+    url += `startDate=${startDate}&`;
+  }
+  if (endDate) {
+    url += `endDate=${endDate}&`;
+  }
+  if (includeMempool) {
+    url += 'includeMempool=true';
+  }
   const signature = this.sign({ method: 'GET', url });
   return requestStream.get(url, {
     headers: { 'x-signature': signature },
