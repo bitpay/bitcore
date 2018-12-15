@@ -38,7 +38,13 @@ const verifyRequestSignature = (params: VerificationPayload): boolean => {
 const authenticate: RequestHandler = async (req: PreAuthRequest, res: Response, next: any) => {
   const { chain, network, pubKey } = req.params as SignedApiRequest;
   logger.debug('Authenticating request with pubKey: ', pubKey);
-  const wallet = await ChainStateProvider.getWallet({ chain, network, pubKey });
+  let wallet;
+  try {
+    wallet = await ChainStateProvider.getWallet({ chain, network, pubKey });
+  } catch (err) {
+    return res.status(500).send(new Error('Problem authenticating wallet'));
+  }
+  
   if (req.is('application/octet-stream')) {
     req.body = JSON.parse(req.body.toString());
   }
