@@ -80,6 +80,7 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
         .addCursorFlag('noCursorTimeout', true);
       let txids = {};
       coinStream.on('data', (coin: ICoin) => {
+        coinStream.pause();
         if (!txids[coin.mintTxid]) {
           TransactionModel.collection.updateMany(
             { txid: coin.mintTxid, network, chain },
@@ -94,6 +95,7 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
           );
         }
         txids[coin.spentTxid] = true;
+        coinStream.resume();
       });
       coinStream.on('end', async () => {
         resolve();
