@@ -174,7 +174,7 @@ export class StorageService {
   ) {
     const { query, options } = this.getFindOptions(model, originalOptions);
     const finalQuery = Object.assign({}, originalQuery, query);
-    let cursor = model.collection.find(finalQuery, options).stream({
+    let cursor = model.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true).stream({
       transform: transform || model._apiTransform
     });
     if (options.sort) {

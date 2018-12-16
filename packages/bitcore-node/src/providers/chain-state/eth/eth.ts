@@ -54,7 +54,7 @@ export class ETHStateProvider extends InternalStateProvider
 
   async getWalletAddresses(walletId: ObjectID) {
     let query = { wallet: walletId };
-    return WalletAddressModel.collection.find(query).toArray();
+    return WalletAddressModel.collection.find(query).addCursorFlag('noCursorTimeout', true).toArray();
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {

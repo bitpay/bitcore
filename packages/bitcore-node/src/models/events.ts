@@ -42,15 +42,15 @@ class Event extends BaseModel<IEvent> {
   }
 
   public getBlockTail(lastSeen: Date) {
-    return this.collection.find({ type: 'block', emitTime: { $gte: lastSeen } });
+    return this.collection.find({ type: 'block', emitTime: { $gte: lastSeen } }).addCursorFlag('noCursorTimeout', true);
   }
 
   public getTxTail(lastSeen: Date) {
-    return this.collection.find({ type: 'tx', emitTime: { $gte: lastSeen } });
+    return this.collection.find({ type: 'tx', emitTime: { $gte: lastSeen } }).addCursorFlag('noCursorTimeout', true);
   }
 
   getCoinTail(lastSeen: Date) {
-    return this.collection.find({ type: 'coin', emitTime: { $gte: lastSeen } });
+    return this.collection.find({ type: 'coin', emitTime: { $gte: lastSeen } }).addCursorFlag('noCursorTimeout', true);
   }
 }
 export const EventModel = new Event();
