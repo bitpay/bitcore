@@ -87,7 +87,7 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
           );
         }
         txids[coin.mintTxid] = true;
-        if (!txids[coin.spentTxid]) {
+        if (coin.spentTxid && !txids[coin.spentTxid]) {
           TransactionModel.collection.updateMany(
             { txid: coin.spentTxid, network, chain },
             { $addToSet: { wallets: wallet._id } }
