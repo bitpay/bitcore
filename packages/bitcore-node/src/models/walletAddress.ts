@@ -81,14 +81,14 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
       let txids = {};
       coinStream.on('data', (coin: ICoin) => {
         if (!txids[coin.mintTxid]) {
-          TransactionModel.collection.update(
+          TransactionModel.collection.updateMany(
             { txid: coin.mintTxid, network, chain },
             { $addToSet: { wallets: wallet._id } }
           );
         }
         txids[coin.mintTxid] = true;
         if (!txids[coin.spentTxid]) {
-          TransactionModel.collection.update(
+          TransactionModel.collection.updateMany(
             { txid: coin.spentTxid, network, chain },
             { $addToSet: { wallets: wallet._id } }
           );
