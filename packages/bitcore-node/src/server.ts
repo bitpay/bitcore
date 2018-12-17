@@ -6,6 +6,10 @@ import cluster = require('cluster');
 import parseArgv from './utils/parseArgv';
 let args = parseArgv([], ['DEBUG']);
 
+process.on('unhandledRejection', (error) => {
+  console.error('Unhandled Rejection at:', error.stack || error)
+});
+
 const startServices = async () => {
   await Storage.start({});
   await Worker.start();
