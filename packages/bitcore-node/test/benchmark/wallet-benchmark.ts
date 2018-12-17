@@ -81,7 +81,7 @@ async function bench(iteration = 0, startBlock = 0, endBlock = 100) {
 }
 
 async function main() {
-  for (let i = 1; i < 5; i++) {
+  for (let i = 1; i < 6; i++) {
     await bench(i, 0, Math.pow(10, i));
   }
   process.exit();
