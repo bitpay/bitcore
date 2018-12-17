@@ -63,15 +63,30 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
     const { chain, network } = wallet;
 
     return new Promise(async resolve => {
+      let batch = new Array<string>();
+      const UpdateCoins = addresses => {
+        return CoinModel.collection.updateMany(
+          { chain, network, address: { $in: addresses } },
+          { $addToSet: { wallets: wallet._id } }
+        );
+      };
+
       for (const address of addresses) {
-        await Promise.all([
-          WalletAddressModel.collection.updateOne(
-            { wallet: wallet._id, address },
-            { $set: { wallet: wallet._id, address: address, chain, network } },
+        batch.push(address);
+        if (batch.length > 1000) {
+          await WalletAddressModel.collection.updateMany(
+            { wallet: wallet._id, address: { $in: batch } },
+            { $set: { wallet: wallet._id, chain, network } },
             { upsert: true }
-          ),
-          CoinModel.collection.updateMany({ chain, network, address }, { $addToSet: { wallets: wallet._id } })
-        ]);
+          );
+
+          await UpdateCoins(batch);
+          batch = new Array<string>();
+        }
+      }
+      if (batch.length > 0) {
+        await UpdateCoins(batch);
+        batch = new Array<string>();
       }
 
       let coinStream = CoinModel.collection
