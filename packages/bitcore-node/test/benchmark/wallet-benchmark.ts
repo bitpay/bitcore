@@ -44,6 +44,7 @@ async function createWallet(addresses: string[], iteration) {
 }
 
 async function bench(iteration = 0, startBlock = 0, endBlock = 100) {
+  console.log('Benchmark', iteration, 'START');
   const addresses = await getAllAddressesFromBlocks(startBlock, endBlock);
   console.log('Collected', addresses.length, 'addresses');
 
@@ -84,6 +85,6 @@ async function main() {
   for (let i = 1; i < 6; i++) {
     await bench(i, 0, Math.pow(10, i));
   }
-  process.exit();
+  process.exit(0);
 }
 main();
