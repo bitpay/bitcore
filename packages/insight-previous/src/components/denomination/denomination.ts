@@ -24,6 +24,7 @@ export class DenominationComponent {
     public http: Http,
     public api: ApiProvider
   ) {
+    this.switcherOn = this.api.networkSettings.value.availableNetworks.length > 0 ? true : false;
     this.units = [
       'USD',
       this.api.networkSettings.value.selectedNetwork.chain,
@@ -37,8 +38,6 @@ export class DenominationComponent {
 
   public changeExplorer(chainNetwork: ChainNetwork): void {
     this.selected = chainNetwork;
-    const { chain, network }: ChainNetwork = chainNetwork;
-    this.viewCtrl.dismiss();
-    this.app.getRootNav().push('home', { chain, network });
+    this.viewCtrl.dismiss(chainNetwork);
   }
 }
