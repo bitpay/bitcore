@@ -1,18 +1,49 @@
-const Bcrypt = require('bcrypt');
-const { PrivateKey } = require('bitcore-lib');
-const Encrypter = require('./encryption');
+import * as Bcrypt from 'bcrypt';
+import { Encryption } from './encryption';
+import { Client } from './client';
+import { Storage } from './storage';
+import { Request } from 'request';
+import TxProvider from './providers/tx-provider';
 const Mnemonic = require('bitcore-mnemonic');
-const Client = require('./client');
-const Storage = require('./storage');
-const txProvider = require('../lib/providers/tx-provider');
+const { PrivateKey } = require('bitcore-lib');
 
-class Wallet {
-  constructor(params) {
+export namespace Wallet {
+  export type KeyImport = {
+    address: string;
+    privKey: string;
+    pubKey: string;
+  };
+  export type WalletObj = {
+    name: string;
+    baseUrl: string;
+    chain: string;
+    network: string;
+    path: string;
+    phrase: string;
+    password: string;
+    storage: Storage;
+  };
+}
+export class Wallet {
+  masterKey: any;
+  baseUrl: string;
+  chain: string;
+  network: string;
+  client: Client;
+  storage: Storage;
+  unlocked?: { encryptionKey: string; masterKey: string };
+  password: string;
+  encryptionKey: string;
+  authPubKey: string;
+  pubKey: string;
+  name: string;
+  path: string;
+  authKey: string;
+  derivationPath: string;
+
+  constructor(params: Wallet | Wallet.WalletObj) {
     Object.assign(this, params);
-    if (!this.masterKey) {
-      return new Wallet(this.create(params));
-    }
-    if(this.baseUrl) {
+    if (this.baseUrl) {
       this.baseUrl = `${this.baseUrl}/${this.chain}/${this.network}`;
     } else {
       this.baseUrl = `https://api.bitcore.io/api/${this.chain}/${this.network}`;
@@ -28,7 +59,7 @@ class Wallet {
     return this.storage.saveWallet({ wallet: this });
   }
 
-  static async create(params) {
+  static async create(params: Partial<Wallet.WalletObj>) {
     const { chain, network, name, phrase, password, path } = params;
     let { storage } = params;
     if (!chain || !network || !name) {
@@ -48,15 +79,24 @@ class Wallet {
     const pubKey = hdPubKey.publicKey.toString();
 
     // Generate and encrypt the encryption key and private key
-    const walletEncryptionKey = Encrypter.generateEncryptionKey();
-    const encryptionKey = Encrypter.encryptEncryptionKey(walletEncryptionKey, password);
-    const encPrivateKey = Encrypter.encryptPrivateKey(JSON.stringify(privKeyObj), pubKey, walletEncryptionKey);
+    const walletEncryptionKey = Encryption.generateEncryptionKey();
+    const encryptionKey = Encryption.encryptEncryptionKey(
+      walletEncryptionKey,
+      password
+    );
+    const encPrivateKey = Encryption.encryptPrivateKey(
+      JSON.stringify(privKeyObj),
+      pubKey,
+      walletEncryptionKey
+    );
 
-    storage = storage || new Storage({
-      path,
-      errorIfExists: false,
-      createIfMissing: true
-    });
+    storage =
+      storage ||
+      new Storage({
+        path,
+        errorIfExists: false,
+        createIfMissing: true
+      });
 
     let alreadyExists;
     try {
@@ -77,19 +117,40 @@ class Wallet {
     });
     // save wallet to storage and then bitcore-node
     await storage.saveWallet({ wallet });
-    const loadedWallet = await this.loadWallet({ storage, name, chain, network });
+    const loadedWallet = await this.loadWallet({
+      storage,
+      name,
+      chain,
+      network
+    });
     console.log(mnemonic.toString());
-    await loadedWallet.register().catch((e) => {
+    await loadedWallet.register().catch(e => {
       console.debug(e);
       console.error('Failed to register wallet with bitcore-node.');
     });
     return loadedWallet;
   }
 
+  static async exists(params) {
+    const { storage, name, chain, network } = params;
+    let alreadyExists;
+    try {
+      alreadyExists = await Wallet.loadWallet({
+        storage,
+        name,
+        chain,
+        network
+      });
+    } catch (err) {}
+    return alreadyExists != undefined;
+  }
+
   static async loadWallet(params) {
     const { chain, network, name, path } = params;
     let { storage } = params;
-    storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path });
+    storage =
+      storage ||
+      new Storage({ errorIfExists: false, createIfMissing: false, path });
     const loadedWallet = await storage.loadWallet({ chain, network, name });
     return new Wallet(Object.assign(loadedWallet, { storage }));
   }
@@ -100,12 +161,21 @@ class Wallet {
 
   async unlock(password) {
     const encMasterKey = this.masterKey;
-    let validPass = await Bcrypt.compare(password, this.password).catch(() => false);
+    let validPass = await Bcrypt.compare(password, this.password).catch(
+      () => false
+    );
     if (!validPass) {
       throw new Error('Incorrect Password');
     }
-    const encryptionKey = await Encrypter.decryptEncryptionKey(this.encryptionKey, password);
-    const masterKeyStr = await Encrypter.decryptPrivateKey(encMasterKey, this.pubKey, encryptionKey);
+    const encryptionKey = await Encryption.decryptEncryptionKey(
+      this.encryptionKey,
+      password
+    );
+    const masterKeyStr = await Encryption.decryptPrivateKey(
+      encMasterKey,
+      this.pubKey,
+      encryptionKey
+    );
     const masterKey = JSON.parse(masterKeyStr);
     this.unlocked = {
       encryptionKey,
@@ -114,7 +184,7 @@ class Wallet {
     return this;
   }
 
-  async register(params = {}) {
+  async register(params: { baseUrl?: string } = {}) {
     const { baseUrl } = params;
     let registerBaseUrl = this.baseUrl;
     if (baseUrl) {
@@ -130,7 +200,7 @@ class Wallet {
       path: this.derivationPath,
       network: this.network,
       chain: this.chain,
-      baseUrl: registerBaseUrl 
+      baseUrl: registerBaseUrl
     };
     return this.client.register({ payload });
   }
@@ -140,7 +210,7 @@ class Wallet {
   }
 
   getBalance() {
-    return this.client.getBalance({ pubKey: this.authPubKey});
+    return this.client.getBalance({ pubKey: this.authPubKey });
   }
 
   getNetworkFee(params) {
@@ -173,7 +243,7 @@ class Wallet {
       fee: params.fee,
       utxos
     };
-    return txProvider.create(payload);
+    return TxProvider.create(payload);
   }
 
   async broadcast(params) {
@@ -184,13 +254,16 @@ class Wallet {
     };
     return this.client.broadcast({ payload });
   }
-
-  async importKeys(params) {
+  async importKeys(params: { keys: Partial<Wallet.KeyImport>[] }) {
     const { keys } = params;
     const { encryptionKey } = this.unlocked;
     const keysToSave = keys.filter(key => typeof key.privKey === 'string');
     if (keysToSave.length) {
-      await this.storage.addKeys({ keys: keysToSave, encryptionKey, name: this.name });
+      await this.storage.addKeys({
+        keys: keysToSave,
+        encryptionKey,
+        name: this.name
+      });
     }
     const addedAddresses = keys.map(key => {
       return { address: key.address };
@@ -211,7 +284,7 @@ class Wallet {
       utxos
     };
     const { encryptionKey } = this.unlocked;
-    let inputAddresses = txProvider.getSigningAddresses(payload);
+    let inputAddresses = TxProvider.getSigningAddresses(payload);
     let keyPromises = inputAddresses.map(address => {
       return this.storage.getKey({
         address,
@@ -222,8 +295,6 @@ class Wallet {
       });
     });
     let keys = await Promise.all(keyPromises);
-    return txProvider.sign({ ...payload, keys });
+    return TxProvider.sign({ ...payload, keys });
   }
 }
-
-module.exports = Wallet;

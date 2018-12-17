@@ -1,10 +1,8 @@
-const bitcoreLib = require('bitcore-lib');
+export class BTCTxProvder {
+  lib = require('bitcore-lib');
 
-class BTCTxProvder {
   create({ recipients, utxos, change, fee }) {
-    let tx = new bitcoreLib.Transaction()
-      .from(utxos)
-      .fee(Number(fee));
+    let tx = new this.lib.Transaction().from(utxos).fee(Number(fee));
     for (const recipient of recipients) {
       tx.to(recipient.address, recipient.amount);
     }
@@ -15,13 +13,13 @@ class BTCTxProvder {
   }
 
   sign({ tx, keys, utxos }) {
-    let bitcoreTx = new bitcoreLib.Transaction(tx);
+    let bitcoreTx = new this.lib.Transaction(tx);
     let applicableUtxos = this.getRelatedUtxos({
       outputs: bitcoreTx.inputs,
       utxos
     });
 
-    let newTx = new bitcoreLib.Transaction()
+    let newTx = new this.lib.Transaction()
       .from(applicableUtxos)
       .to(this.getOutputsFromTx({ tx: bitcoreTx }));
     const privKeys = keys.map(key => key.privKey.toString('hex'));
@@ -42,7 +40,7 @@ class BTCTxProvder {
   }
 
   getSigningAddresses({ tx, utxos }) {
-    let bitcoreTx = new bitcoreLib.Transaction(tx);
+    let bitcoreTx = new this.lib.Transaction(tx);
     let applicableUtxos = this.getRelatedUtxos({
       outputs: bitcoreTx.inputs,
       utxos
@@ -50,4 +48,4 @@ class BTCTxProvder {
     return applicableUtxos.map(utxo => utxo.address);
   }
 }
-module.exports = new BTCTxProvder();
+export default new BTCTxProvder();

@@ -207,7 +207,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const state = await StateModel.collection.findOne({});
     const initialSyncComplete =
       state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
-    if (!initialSyncComplete) {
+    if (!initialSyncComplete && !config.api.wallets.allowCreationBeforeCompleteSync) {
       throw 'Wallet creation not permitted before intitial sync is complete';
     }
     const wallet: IWallet = {
