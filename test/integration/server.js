@@ -6545,7 +6545,7 @@ console.log('[server.js.425:err:]',err); //TODO
     });
     it('should handle exceeded limit', function(done) {
       server.getTxHistory({
-        limit: 1000
+        limit: 2000
       }, function(err, txs) {
         err.code.should.equal('HISTORY_LIMIT_EXCEEDED');
         done();
@@ -6831,6 +6831,9 @@ console.log('[server.js.425:err:]',err); //TODO
         }, function(err, txs) {
           should.not.exist(err);
           txs.length.should.equal(20);
+          // tx.height -> 1000
+          // bcHeight -> 1500
+          // => 501 confirmations.
           _.head(txs).confirmations.should.equal(501);
           _.last(txs).confirmations.should.equal(520);
 

@@ -167,7 +167,7 @@ describe('History V8', function() {
 
 
     
-    describe.only("Stream cache", () => {
+    describe("Stream cache", () => {
       it('should get tx history from cache and bc mixed', function(done) {
         this.timeout(10000);
         var _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
