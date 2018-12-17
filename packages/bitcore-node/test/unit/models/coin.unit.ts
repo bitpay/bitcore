@@ -1,5 +1,6 @@
 import { expect } from 'chai';
-import { CoinModel, ICoin, SpentHeightIndicators } from '../../../src/models/coin';
+import { CoinModel, ICoin } from '../../../src/models/coin';
+import { SpentHeightIndicators } from '../../../src/types/Coin';
 import { ObjectId } from 'mongodb';
 
 describe('Coin Model', function() {
