@@ -19,11 +19,11 @@ COPY ./packages/bitcore-wallet/package.json ./packages/bitcore-wallet/package.js
 COPY ./packages/bitcore-node/package.json ./packages/bitcore-node/package.json
 COPY ./packages/insight/package.json ./packages/insight/package.json
 
+RUN ./node_modules/.bin/lerna bootstrap
+RUN ./node_modules/.bin/lerna run compile
 
 # Add source
 ADD . .
-RUN ./node_modules/.bin/lerna bootstrap
-RUN ./node_modules/.bin/lerna run compile
 
 # Run test script
 WORKDIR ./packages/bitcore-node
