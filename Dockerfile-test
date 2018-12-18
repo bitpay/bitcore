@@ -18,7 +18,6 @@ COPY ./packages/bitcore-client/package.json ./packages/bitcore-client/package.js
 COPY ./packages/bitcore-wallet/package.json ./packages/bitcore-wallet/package.json
 COPY ./packages/bitcore-node/package.json ./packages/bitcore-node/package.json
 COPY ./packages/insight/package.json ./packages/insight/package.json
-COPY ./packages/insight/app/package.json ./packages/insight/app/package.json
 
 RUN ./node_modules/.bin/lerna bootstrap
 
