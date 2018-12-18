@@ -19,15 +19,12 @@ COPY ./packages/bitcore-wallet/package.json ./packages/bitcore-wallet/package.js
 COPY ./packages/bitcore-node/package.json ./packages/bitcore-node/package.json
 COPY ./packages/insight/package.json ./packages/insight/package.json
 
-RUN ./node_modules/.bin/lerna bootstrap
-
 
 # Add source
-ADD . /bitcore
-
-# Add config file
-ADD ./packages/bitcore-node/test/ci/bitcore-node/bitcore-test.config.json /bitcore
+ADD . .
+RUN ./node_modules/.bin/lerna bootstrap
+RUN ./node_modules/.bin/lerna run compile
 
 # Run test script
-WORKDIR /bitcore/packages/bitcore-node
+WORKDIR ./packages/bitcore-node
 CMD npm run test
