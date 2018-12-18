@@ -3,7 +3,6 @@ import { Wallet } from 'bitcore-client';
 import { Storage } from '../../src/services/storage';
 
 async function getAllAddressesFromBlocks(start, end) {
-  // should fetch 1248170 addresses
   if (!Storage.connected) await Storage.start({});
   const addresses = await CoinModel.collection
     .find({ chain:'BTC', network: 'mainnet', mintHeight: { $gte: start, $lte: end } })
