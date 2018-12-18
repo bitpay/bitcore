@@ -158,7 +158,7 @@ class Coin extends BaseModel<ICoin> {
       address: valueOrDefault(coin.address, ''),
       script: valueOrDefault(coin.script, Buffer.alloc(0)).toString('hex'),
       value: valueOrDefault(coin.value, -1),
-      confirmations: coin.confirmations || -1
+      confirmations: valueOrDefault(coin.confirmations, -1)
     };
     if (options && options.object) {
       return transform;
