@@ -315,7 +315,7 @@ export class Transaction extends BaseModel<ITransaction> {
       }
     }
 
-    if (initialSyncComplete) {
+    if (initialSyncComplete || config.api.wallets.allowCreationBeforeCompleteSync) {
       let mintOpsAddresses = {};
       for (const mintOp of mintOps) {
         mintOpsAddresses[mintOp.updateOne.update.$set.address] = true;
@@ -407,8 +407,8 @@ export class Transaction extends BaseModel<ITransaction> {
     let prunedTxs = {};
     for (const spendOp of spendOps) {
       let coin = await CoinModel.collection.findOne({
-        chain, 
-        network, 
+        chain,
+        network,
         spentHeight: SpentHeightIndicators.pending,
         mintTxid: spendOp.updateOne.filter.mintTxid,
         mintIndex: spendOp.updateOne.filter.mintIndex,
