@@ -3,7 +3,7 @@ import through2 from 'through2';
 
 import { MongoBound } from '../../../models/base';
 import { ObjectId } from 'mongodb';
-import { CoinModel, ICoin, SpentHeightIndicators } from '../../../models/coin';
+import { CoinModel, ICoin } from '../../../models/coin';
 import { BlockModel, IBlock } from '../../../models/block';
 import { WalletModel, IWallet } from '../../../models/wallet';
 import { WalletAddressModel } from '../../../models/walletAddress';
@@ -15,6 +15,7 @@ import { TransactionModel, ITransaction } from '../../../models/transaction';
 import { ListTransactionsStream } from './transforms';
 import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
 import { StateModel } from '../../../models/state';
+import { SpentHeightIndicators, CoinJSON } from '../../../types/Coin';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -159,17 +160,18 @@ export class InternalStateProvider implements CSP.IChainStateService {
       chain: chain,
       network: network.toLowerCase()
     };
-    if (blockHeight) {
+    if (blockHeight !== undefined) {
       query.blockHeight = Number(blockHeight);
     }
-    if (blockHash) {
+    if (blockHash !== undefined) {
       query.blockHash = blockHash;
     }
+    // TODO: we should get this from a cache rather than waiting for this database call
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
     return Storage.apiStreamingFind(TransactionModel, query, args, req, res, t => {
       let confirmations = 0;
-      if (t.blockHeight && t.blockHeight >= 0) {
+      if (t.blockHeight !== undefined && t.blockHeight >= 0) {
         confirmations = tipHeight - t.blockHeight + 1;
       }
       const convertedTx = TransactionModel._apiTransform(t, { object: true }) as Partial<ITransaction>;
@@ -195,7 +197,28 @@ export class InternalStateProvider implements CSP.IChainStateService {
       const convertedTx = TransactionModel._apiTransform(found, { object: true }) as Partial<ITransaction>;
       return { ...convertedTx, confirmations: confirmations };
     } else {
-      return null;
+      return undefined;
+    }
+  }
+
+  async getAuthhead(params: CSP.StreamTransactionParams) {
+    let { chain, network, txId } = params;
+    if (typeof txId !== 'string') {
+      throw 'Missing required param';
+    }
+    const found = (await CoinModel.resolveAuthhead(txId, chain, network))[0];
+    if (found) {
+      const transformedCoins = found.identityOutputs.map<CoinJSON>(output =>
+        CoinModel._apiTransform(output, { object: true })
+      );
+      return {
+        chain: found.chain,
+        network: found.network,
+        authbase: found.authbase,
+        identityOutputs: transformedCoins
+      };
+    } else {
+      return undefined;
     }
   }
 
@@ -263,7 +286,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
                 return { _id, wallets, address, value, expected: walletId.toHexString() };
               });
             if (missing.length > 0) {
-              return done(null, { txid: spentCoin.spentTxid, missing });
+              return done(undefined, { txid: spentCoin.spentTxid, missing });
             }
           }
           return done();
@@ -401,6 +424,58 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return {
       inputs: inputs.map(input => CoinModel._apiTransform(input, { object: true })),
       outputs: outputs.map(output => CoinModel._apiTransform(output, { object: true }))
+    };
+  }
+
+  async getDailyTransactions({ chain, network }: { chain: string; network: string }) {
+    const beforeBitcoin = new Date('2009-01-09T00:00:00.000Z');
+    const todayTruncatedUTC = new Date(new Date().toISOString().split('T')[0]);
+    const results = await BlockModel.collection
+      .aggregate<{
+        date: string;
+        transactionCount: number;
+      }>([
+        {
+          $match: {
+            chain,
+            network,
+            timeNormalized: {
+              $gte: beforeBitcoin,
+              $lt: todayTruncatedUTC
+            }
+          }
+        },
+        {
+          $group: {
+            _id: {
+              $dateToString: {
+                format: '%Y-%m-%d',
+                date: '$timeNormalized'
+              }
+            },
+            transactionCount: {
+              $sum: '$transactionCount'
+            }
+          }
+        },
+        {
+          $project: {
+            _id: 0,
+            date: '$_id',
+            transactionCount: '$transactionCount'
+          }
+        },
+        {
+          $sort: {
+            date: 1
+          }
+        }
+      ])
+      .toArray();
+    return {
+      chain,
+      network,
+      results
     };
   }
 

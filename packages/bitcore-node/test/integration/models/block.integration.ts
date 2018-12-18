@@ -2,8 +2,9 @@ import { expect } from 'chai';
 import { resetDatabase } from '../../helpers';
 import { BlockModel } from '../../../src/models/block';
 import { TransactionModel } from '../../../src/models/transaction';
-import { CoinModel, SpentHeightIndicators } from '../../../src/models/coin';
+import { CoinModel } from '../../../src/models/coin';
 import { TEST_BLOCK } from '../../data/test-block';
+import { SpentHeightIndicators } from '../../../src/types/Coin';
 import logger from '../../../src/logger';
 
 describe('Block Model', function() {
@@ -295,6 +296,8 @@ describe('Block Model', function() {
         coinbase: true,
         locktime: 0,
         size: 145,
+        inputCount: 1,
+        outputCount: 1,
         wallets: [],
         blockHeight: 5
       });
@@ -310,6 +313,8 @@ describe('Block Model', function() {
         coinbase: true,
         locktime: 0,
         size: 145,
+        inputCount: 1,
+        outputCount: 1,
         wallets: [],
         blockHeight: 6
       });
@@ -325,6 +330,8 @@ describe('Block Model', function() {
         coinbase: true,
         locktime: 0,
         size: 145,
+        inputCount: 1,
+        outputCount: 1,
         wallets: [],
         blockHeight: 7
       });
@@ -340,6 +347,8 @@ describe('Block Model', function() {
         coinbase: true,
         locktime: 0,
         size: 145,
+        inputCount: 1,
+        outputCount: 1,
         wallets: [],
         blockHeight: 7
       });
@@ -488,7 +497,7 @@ describe('Block Model', function() {
       expect(unspentCoins.length).equal(1);
       expect(unspentCoins[0].chain).to.equal('BTC');
       expect(unspentCoins[0].network).to.equal('regtest');
-      expect(unspentCoins[0].mintTxid).to.equal('a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919g'),
+      expect(unspentCoins[0].mintTxid).to.equal('a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919g');
       expect(unspentCoins[0].mintIndex).to.equal(0);
       expect(unspentCoins[0].mintHeight).to.equal(5);
       expect(unspentCoins[0].coinbase).to.equal(true);

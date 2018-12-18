@@ -3,16 +3,8 @@
   "configurations": [
     {
       "type": "node",
-      "request": "attach",
-      "name": "Attach",
-      "port": 9229,
-      "sourceMaps": true,
-      "outFiles": ["${workspaceFolder}/build/**/*"]
-    },
-    {
-      "type": "node",
       "request": "launch",
-      "name": "Launch Program",
+      "name": "Launch & Debug Node",
       "program": "${workspaceFolder}/build/src/server.js",
       "args": ["--DEBUG", "true"],
       "sourceMaps": true,
@@ -22,8 +14,16 @@
     },
     {
       "type": "node",
+      "request": "attach",
+      "name": "Attach to Node",
+      "port": 9229,
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/build/**/*"]
+    },
+    {
+      "type": "node",
       "request": "launch",
-      "name": "UnitTests",
+      "name": "Debug Unit Tests",
       "program": "${workspaceRoot}/build/test/runners/unit.js",
       "protocol": "auto",
       "preLaunchTask": "npm: tsc:test"
@@ -31,7 +31,7 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "IntegrationTests",
+      "name": "Debug Integration Tests",
       "program": "${workspaceRoot}/build/test/runners/integration.js",
       "protocol": "auto",
       "preLaunchTask": "npm: tsc:test"

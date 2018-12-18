@@ -1,4 +1,4 @@
-import { CoinModel, SpentHeightIndicators } from './coin';
+import { CoinModel } from './coin';
 import { TransactionModel } from './transaction';
 import { TransformOptions } from '../types/TransformOptions';
 import { LoggifyClass } from '../decorators/Loggify';
@@ -7,6 +7,7 @@ import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
 import { IBlock } from '../types/Block';
 import { Socket } from '../services/socket';
+import { SpentHeightIndicators } from '../types/Coin';
 
 export { IBlock };
 
