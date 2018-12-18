@@ -197,7 +197,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       const convertedTx = TransactionModel._apiTransform(found, { object: true }) as Partial<ITransaction>;
       return { ...convertedTx, confirmations: confirmations };
     } else {
-      return null;
+      return undefined;
     }
   }
 
@@ -286,7 +286,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
                 return { _id, wallets, address, value, expected: walletId.toHexString() };
               });
             if (missing.length > 0) {
-              return done(null, { txid: spentCoin.spentTxid, missing });
+              return done(undefined, { txid: spentCoin.spentTxid, missing });
             }
           }
           return done();

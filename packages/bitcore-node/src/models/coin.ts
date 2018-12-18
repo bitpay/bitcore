@@ -96,8 +96,8 @@ class Coin extends BaseModel<ICoin> {
           $match: {
             mintTxid: mintTxid.toLowerCase(),
             mintIndex: 0,
-            ...(typeof chain === 'string' ? { chain: chain.toString() } : {}),
-            ...(typeof network === 'string' ? { network: network.toString() } : {})
+            ...(typeof chain === 'string' ? { chain } : {}),
+            ...(typeof network === 'string' ? { network } : {})
           }
         },
         {

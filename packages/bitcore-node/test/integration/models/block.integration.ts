@@ -497,8 +497,8 @@ describe('Block Model', function() {
       expect(unspentCoins.length).equal(1);
       expect(unspentCoins[0].chain).to.equal('BTC');
       expect(unspentCoins[0].network).to.equal('regtest');
-      expect(unspentCoins[0].mintTxid).to.equal('a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919g'),
-        expect(unspentCoins[0].mintIndex).to.equal(0);
+      expect(unspentCoins[0].mintTxid).to.equal('a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919g');
+      expect(unspentCoins[0].mintIndex).to.equal(0);
       expect(unspentCoins[0].mintHeight).to.equal(5);
       expect(unspentCoins[0].coinbase).to.equal(true);
       expect(unspentCoins[0].value).to.equal(500.0);
