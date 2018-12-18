@@ -3,7 +3,7 @@ import { ChainStateProvider } from '../../providers/chain-state';
 const router = require('express').Router({ mergeParams: true });
 const feeCache = {};
 
-router.get('/:target',  async (req: Request, res: Response) => {
+router.get('/:target', async (req: Request, res: Response) => {
   let { target, chain, network } = req.params;
   if (target < 0 || target > 100) {
     return res.status(400).send('invalid target specified');
@@ -20,7 +20,7 @@ router.get('/:target',  async (req: Request, res: Response) => {
     feeCache[`${chain}:${network}:${target}`] = { fee, date: Date.now() };
     return res.json(fee);
   } catch (err) {
-    return res.status(500).send(err);
+    return res.status(500).send("Error getting fee from RPC");
   }
 });
 
