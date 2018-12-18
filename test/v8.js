@@ -82,7 +82,7 @@ describe('V8', () => {
         client: PartialJson,
       });
 
-      be.getTransactions(wallet, 0, 10, (err, txs) => {
+      be.getTransactions(wallet, 0, (err, txs) => {
         should.not.exist(err);
         should.exist(txs);
         txs.length.should.equal(3);
@@ -118,7 +118,7 @@ describe('V8', () => {
         addressFormat: null,
         client: PartialJsonL,
       });
-      be2.getTransactions(wallet, 0, 10, (err, txs) => {
+      be2.getTransactions(wallet, 0, (err, txs) => {
         should.not.exist(err);
         should.exist(txs);
         txs.length.should.equal(2);
