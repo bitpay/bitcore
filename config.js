@@ -46,16 +46,21 @@ var config = {
         url: 'https://api.bitcore.io',
       },
       testnet: {
-        provider: 'insight',
-        url: 'https://test-insight.bitpay.com:443',
+        //provider: 'insight',
+        //url: 'https://test-insight.bitpay.com:443',
         // Multiple servers (in priority order)
         // url: ['http://a.b.c', 'https://test-insight.bitpay.com:443'],
+        provider: 'v8',
+        url: 'https://api.bitcore.io',
       },
     },
     bch: {
       livenet: {
-        provider: 'v8',
+        //provider: 'v8',
         //url: 'https://cashexplorer.bitcoin.com',
+        //url: 'https://api.bitcore.io',
+        //addressFormat: 'cashaddr',  // copay, cashaddr, or legacy
+        provider: 'v8',
         url: 'https://api.bitcore.io',
         addressFormat: 'cashaddr',  // copay, cashaddr, or legacy
       },
