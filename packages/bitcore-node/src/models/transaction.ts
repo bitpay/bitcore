@@ -1,4 +1,4 @@
-import { CoinModel, SpentHeightIndicators } from './coin';
+import { CoinModel } from './coin';
 import { WalletAddressModel } from './walletAddress';
 import { partition } from '../utils/partition';
 import { ObjectID } from 'bson';
@@ -11,6 +11,8 @@ import config from '../config';
 import { StreamingFindOptions, Storage } from '../services/storage';
 import * as lodash from 'lodash';
 import { Socket } from '../services/socket';
+import { TransactionJSON } from '../types/Transaction';
+import { SpentHeightIndicators } from '../types/Coin';
 
 const Chain = require('../chain');
 
@@ -23,10 +25,12 @@ export type ITransaction = {
   blockTime?: Date;
   blockTimeNormalized?: Date;
   coinbase: boolean;
-  value: number;
   fee: number;
   size: number;
   locktime: number;
+  inputCount: number;
+  outputCount: number;
+  value: number;
   wallets: ObjectID[];
 };
 
@@ -36,15 +40,26 @@ export class Transaction extends BaseModel<ITransaction> {
     super('transactions');
   }
 
-  allowedPaging = [{ key: 'blockHeight' as 'blockHeight', type: 'number' as 'number' }];
+  allowedPaging = [
+    { key: 'blockHash' as 'blockHash', type: 'string' as 'string' },
+    { key: 'blockHeight' as 'blockHeight', type: 'number' as 'number' },
+    { key: 'blockTimeNormalized' as 'blockTimeNormalized', type: 'date' as 'date' },
+    { key: 'txid' as 'txid', type: 'string' as 'string' }
+  ];
 
   onConnect() {
     this.collection.createIndex({ txid: 1 }, { background: true });
     this.collection.createIndex({ chain: 1, network: 1, blockHeight: 1 }, { background: true });
     this.collection.createIndex({ blockHash: 1 }, { background: true });
     this.collection.createIndex({ chain: 1, network: 1, blockTimeNormalized: 1 }, { background: true });
-    this.collection.createIndex({ wallets: 1, blockTimeNormalized: 1 }, { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } });
-    this.collection.createIndex({ wallets: 1, blockHeight: 1 }, { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } });
+    this.collection.createIndex(
+      { wallets: 1, blockTimeNormalized: 1 },
+      { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } }
+    );
+    this.collection.createIndex(
+      { wallets: 1, blockHeight: 1 },
+      { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } }
+    );
   }
 
   async batchImport(params: {
@@ -62,7 +77,7 @@ export class Transaction extends BaseModel<ITransaction> {
   }) {
     const mintOps = await this.getMintOps(params);
     const spendOps = this.getSpendOps({ ...params, mintOps });
-    await this.pruneMempool({...params, mintOps, spendOps});
+    await this.pruneMempool({ ...params, mintOps, spendOps });
 
     logger.debug('Minting Coins', mintOps.length);
     if (mintOps.length) {
@@ -144,6 +159,8 @@ export class Transaction extends BaseModel<ITransaction> {
                 fee: parentTx.fee,
                 size: parentTx.size,
                 locktime: parentTx.locktime,
+                inputCount: parentTx.inputCount,
+                outputCount: parentTx.inputCount,
                 value: parentTx.value,
                 wallets: []
               }
@@ -226,6 +243,8 @@ export class Transaction extends BaseModel<ITransaction> {
                 fee,
                 size: tx.toBuffer().length,
                 locktime: tx.nLockTime,
+                inputCount: tx.inputs.length,
+                outputCount: tx.outputs.length,
                 value: tx.outputAmount,
                 wallets
               }
@@ -406,14 +425,17 @@ export class Transaction extends BaseModel<ITransaction> {
     }
     let prunedTxs = {};
     for (const spendOp of spendOps) {
-      let coin = await CoinModel.collection.findOne({
-        chain,
-        network,
-        spentHeight: SpentHeightIndicators.pending,
-        mintTxid: spendOp.updateOne.filter.mintTxid,
-        mintIndex: spendOp.updateOne.filter.mintIndex,
-        spentTxid: { $ne: spendOp.updateOne.update.$set.spentTxid }
-      }, { projection: { spentTxid: 1 }});
+      let coin = await CoinModel.collection.findOne(
+        {
+          chain,
+          network,
+          spentHeight: SpentHeightIndicators.pending,
+          mintTxid: spendOp.updateOne.filter.mintTxid,
+          mintIndex: spendOp.updateOne.filter.mintIndex,
+          spentTxid: { $ne: spendOp.updateOne.update.$set.spentTxid }
+        },
+        { projection: { spentTxid: 1 } }
+      );
       if (coin) {
         prunedTxs[coin.spentTxid] = true;
       }
@@ -421,8 +443,16 @@ export class Transaction extends BaseModel<ITransaction> {
     if (Object.keys(prunedTxs).length) {
       prunedTxs = Object.keys(prunedTxs);
       await Promise.all([
-        this.collection.update({ txid: { $in: prunedTxs } }, { $set: { blockHeight: SpentHeightIndicators.conflicting } }, { w: 0, j: false, multi: true }),
-        CoinModel.collection.update({ mintTxid: { $in: prunedTxs } }, { $set: { mintHeight: SpentHeightIndicators.conflicting } }, { w: 0, j: false, multi: true })
+        this.collection.update(
+          { txid: { $in: prunedTxs } },
+          { $set: { blockHeight: SpentHeightIndicators.conflicting } },
+          { w: 0, j: false, multi: true }
+        ),
+        CoinModel.collection.update(
+          { mintTxid: { $in: prunedTxs } },
+          { $set: { mintHeight: SpentHeightIndicators.conflicting } },
+          { w: 0, j: false, multi: true }
+        )
       ]);
     }
     return;
@@ -435,24 +465,28 @@ export class Transaction extends BaseModel<ITransaction> {
     return this.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true);
   }
 
-  _apiTransform(tx: Partial<MongoBound<ITransaction>>, options: TransformOptions): Partial<ITransaction> | string {
-    let transform = {
-      _id: tx._id,
-      txid: tx.txid,
-      network: tx.network,
-      blockHeight: tx.blockHeight,
-      blockHash: tx.blockHash,
-      blockTime: tx.blockTime,
-      blockTimeNormalized: tx.blockTimeNormalized,
-      coinbase: tx.coinbase,
-      locktime: tx.locktime,
-      size: tx.size,
-      fee: tx.fee
+  _apiTransform(tx: Partial<MongoBound<ITransaction>>, options: TransformOptions): TransactionJSON | string {
+    const transaction: TransactionJSON = {
+      _id: tx._id ? tx._id.toString() : '',
+      txid: tx.txid || '',
+      network: tx.network || '',
+      chain: tx.chain || '',
+      blockHeight: tx.blockHeight || -1,
+      blockHash: tx.blockHash || '',
+      blockTime: tx.blockTime ? tx.blockTime.toISOString() : '',
+      blockTimeNormalized: tx.blockTimeNormalized ? tx.blockTimeNormalized.toISOString() : '',
+      coinbase: tx.coinbase || false,
+      locktime: tx.locktime || -1,
+      inputCount: tx.inputCount || -1,
+      outputCount: tx.outputCount || -1,
+      size: tx.size || -1,
+      fee: tx.fee || -1,
+      value: tx.value || -1
     };
     if (options && options.object) {
-      return transform;
+      return transaction;
     }
-    return JSON.stringify(transform);
+    return JSON.stringify(transaction);
   }
 }
 export let TransactionModel = new Transaction();

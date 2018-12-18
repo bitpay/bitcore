@@ -6,7 +6,7 @@ import { ChainStateProvider } from '../providers/chain-state';
 import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { StateModel } from '../models/state';
-import { SpentHeightIndicators } from '../models/coin';
+import { SpentHeightIndicators } from '../types/Coin';
 const Chain = require('../chain');
 const LRU = require('lru-cache');
 

@@ -4,8 +4,11 @@ import { Request, Response } from 'express';
 import { IWallet } from '../../models/wallet';
 import { ChainNetwork } from '../../types/ChainNetwork';
 import { StreamingFindOptions } from '../../services/storage';
-import { MongoBound } from "../../models/base";
-import { ITransaction } from "../../models/transaction";
+import { MongoBound } from '../../models/base';
+import { ITransaction } from '../../models/transaction';
+import { AuthheadJSON } from '../Authhead';
+import { CoinListingJSON } from '../Coin';
+import { DailyTransactionsJSON } from '../stats';
 export declare namespace CSP {
   export type StreamWalletTransactionsArgs = {
     startBlock: number;
@@ -109,7 +112,7 @@ export declare namespace CSP {
     getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{ balance: number }[]>;
     getBalanceForWallet(params: GetBalanceForWalletParams): Promise<{ balance: number }[]>;
     getBlock(params: GetBlockParams): Promise<IBlock | string>;
-    streamBlocks(paramStreamBlocksParamsams): any;
+    streamBlocks(params: StreamBlocksParams): any;
     getFee(params: GetEstimateSmartFeeParams): any;
     broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
     createWallet(params: CreateWalletParams): Promise<IWallet>;
@@ -119,12 +122,14 @@ export declare namespace CSP {
     streamAddressUtxos(params: StreamAddressUtxosParams): any;
     streamAddressTransactions(params: StreamAddressUtxosParams): any;
     streamTransactions(params: StreamTransactionsParams): any;
+    getAuthhead(params: StreamTransactionParams): Promise<AuthheadJSON | undefined>;
+    getDailyTransactions(params: { chain: string; network: string }): Promise<DailyTransactionsJSON>;
     getTransaction(params: StreamTransactionParams): Promise<any>;
     streamWalletAddresses(params: StreamWalletAddressesParams): any;
     streamWalletTransactions(params: StreamWalletTransactionsParams): any;
     streamWalletUtxos(params: StreamWalletUtxosParams): any;
     streamMissingWalletAddresses(params: StreamWalletMissingAddressesParams);
-    getCoinsForTx(params: { chain: string; network: string; txid: string }): Promise<any>;
+    getCoinsForTx(params: { chain: string; network: string; txid: string }): Promise<CoinListingJSON>;
     getLocalTip(params): Promise<any>;
     getLocatorHashes(params): Promise<any>;
   }
