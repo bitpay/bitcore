@@ -1818,9 +1818,7 @@ console.log('[server.js.425:err:]',err); //TODO
         server.getUtxos({
           addresses: [address]
         }, function(err, utxos) {
-          should.not.exist(err);
-          should.exist(utxos);
-          _.sumBy(utxos, 'satoshis').should.equal(amount);
+          err.message.should.contain('no longer supported');
           done();
         });
       });

@@ -168,19 +168,19 @@ describe('History V8', function() {
 
     
     describe("Stream cache", () => {
-      it.only('should not stream cache on first call', function(done) {
+      it('should not stream cache on first call', function(done) {
         this.timeout(10000);
         var _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
         Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
-        helpers.stubHistoryV8(40, 10000); //(0->49)
+        helpers.stubHistoryV8(100, 10000);
         let limit =20;
         let allTxs = [];
 
-console.log('[historyV8.js.178]'); //TODO
         // this call is to fill the cache
-        server.getTxHistory({limit: limit}, function(err, txs, fromCache) {
+        server.getTxHistory({limit: limit}, function(err, txs, fromCache, useStream) {
           should.not.exist(err);
           fromCache.should.equal(false);
+          useStream.should.equal(false);
           should.exist(txs);
           txs.length.should.equal(limit);
           _.first(txs).id.should.equal('id0');
@@ -190,16 +190,18 @@ console.log('[historyV8.js.178]'); //TODO
           let i=limit;
           let cont = true;
 
-console.log('[historyV8.js.192]'); //TODO
+          let x=false;
           async.doWhilst(
             (next) => {
-              server.getTxHistory({skip: i, limit: limit}, function(err, txs, fromCache) {
+              server.getTxHistory({skip: i, limit: limit}, function(err, txs, fromCache, useStream) {
                 should.not.exist(err);
                 if (txs && txs.length < 20) {
                   cont = false;
                   return next();
                 }
                 fromCache.should.equal(true);
+                useStream.should.equal(x);
+                x=true;
                 should.exist(txs);
                 allTxs = allTxs.concat(txs);
                 _.first(txs).id.should.equal('id' + i);
