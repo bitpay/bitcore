@@ -322,9 +322,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       }
     }
 
-    const transactionStream = TransactionModel.collection
-      .find(query)
-      .addCursorFlag('noCursorTimeout', true);
+    const transactionStream = TransactionModel.collection.find(query).addCursorFlag('noCursorTimeout', true);
     const listTransactionsStream = new ListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(res);
   }
@@ -336,13 +334,17 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async streamWalletUtxos(params: CSP.StreamWalletUtxosParams) {
     const { wallet, limit, args = {}, req, res } = params;
-    let query: any = { wallets: wallet._id, 'wallets.0': { $exists: true }, mintHeight: { $gt: SpentHeightIndicators.conflicting } };
+    let query: any = {
+      wallets: wallet._id,
+      'wallets.0': { $exists: true },
+      mintHeight: { $gt: SpentHeightIndicators.conflicting }
+    };
     if (args.includeSpent !== 'true') {
       query.spentHeight = { $lt: SpentHeightIndicators.pending };
     }
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
-    const utxoTransform = (c: ICoin) : string => {
+    const utxoTransform = (c: ICoin): string => {
       let confirmations = 0;
       if (c.mintHeight && c.mintHeight >= 0) {
         confirmations = tipHeight - c.mintHeight + 1;
