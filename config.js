@@ -62,13 +62,11 @@ var config = {
         //addressFormat: 'cashaddr',  // copay, cashaddr, or legacy
         provider: 'v8',
         url: 'https://api.bitcore.io',
-        addressFormat: 'cashaddr',  // copay, cashaddr, or legacy
       },
       testnet: {
         provider: 'v8',
-        //url: 'http://localhost:3000',
-        url: 'https://api.bitcore.io',
-        addressFormat: 'cashaddr',  // copay, cashaddr, or legacy
+        url: 'http://localhost:3000',
+        //url: 'https://api.bitcore.io',
       },
 
     },

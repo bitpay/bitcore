@@ -127,4 +127,6 @@ describe('V8', () => {
     });
 
   });
+  describe.skip('#deregistedwallet', () => {
+  });
 });

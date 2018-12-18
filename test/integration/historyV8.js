@@ -168,6 +168,63 @@ describe('History V8', function() {
 
     
     describe("Stream cache", () => {
+      it.only('should not stream cache on first call', function(done) {
+        this.timeout(10000);
+        var _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
+        Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
+        helpers.stubHistoryV8(40, 10000); //(0->49)
+        let limit =20;
+        let allTxs = [];
+
+console.log('[historyV8.js.178]'); //TODO
+        // this call is to fill the cache
+        server.getTxHistory({limit: limit}, function(err, txs, fromCache) {
+          should.not.exist(err);
+          fromCache.should.equal(false);
+          should.exist(txs);
+          txs.length.should.equal(limit);
+          _.first(txs).id.should.equal('id0');
+
+          allTxs = allTxs.concat(txs);
+
+          let i=limit;
+          let cont = true;
+
+console.log('[historyV8.js.192]'); //TODO
+          async.doWhilst(
+            (next) => {
+              server.getTxHistory({skip: i, limit: limit}, function(err, txs, fromCache) {
+                should.not.exist(err);
+                if (txs && txs.length < 20) {
+                  cont = false;
+                  return next();
+                }
+                fromCache.should.equal(true);
+                should.exist(txs);
+                allTxs = allTxs.concat(txs);
+                _.first(txs).id.should.equal('id' + i);
+                i+=limit;
+                next();
+              });
+            },
+            () => {
+              return cont;
+            },
+            (err) => {
+              should.not.exist(err);
+              let i = 0;
+              _.each(allTxs, function(x) {
+                x.id.should.equal('id' + i);
+                i++;
+              });
+              Defaults.CONFIRMATIONS_TO_START_CACHING = _cache;
+              done();
+            });
+          });
+      });
+
+
+
       it('should get tx history from cache and bc mixed', function(done) {
         this.timeout(10000);
         var _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
