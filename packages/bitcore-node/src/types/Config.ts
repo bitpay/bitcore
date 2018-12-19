@@ -12,6 +12,7 @@ export default interface Config {
   api: {
     wallets: {
       allowCreationBeforeCompleteSync?: boolean;
+      allowUnauthenticatedCalls?: boolean;
     };
   };
 }
