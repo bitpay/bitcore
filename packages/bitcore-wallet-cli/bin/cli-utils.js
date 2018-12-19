@@ -215,7 +215,7 @@ Utils.findOneTxProposal = function(txps, id) {
   if (matches.length > 1) {
     console.log('More than one TX Proposals match:' + id);
     Utils.renderTxProposals(txps);
-    program.exit(1);
+    process.exit(1);
   }
 
   return matches[0];
