@@ -57,33 +57,21 @@ Bitcore-Node can access a bitcore.config.json file from
     "dbHost": "OPTIONAL IP FOR REMOTE DB",
     "pruneSpentScripts": true,
     "chains": {
-      "BTC": {
+      "XVG": {
         "mainnet": {
           "chainSource": "p2p",
           "trustedPeers": [
             {
               "host": "127.0.0.1",
-              "port": 8333
+              "port": 21102
             }
           ],
           "rpc": {
             "host": "127.0.0.1",
-            "port": 44444,
+            "port": 20102,
             "username": "RPCUSER",
             "password": "RPCPASS"
           }
-        }
-      },
-      "BCH": {
-        "mainnet": {
-          "parentChain": "BTC",
-          "forkHeight": 478558,
-          "trustedPeers": [
-            {
-              "host": "127.0.0.1",
-              "port": 8433
-            }
-          ]
         }
       }
     }
