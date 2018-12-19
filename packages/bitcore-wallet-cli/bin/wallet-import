@@ -7,14 +7,14 @@ var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program
+  .option('-c, --coin <coin>', 'coin (btc/bch)')
   .option('-t, --testnet', 'testnet network')
   .option('-i, --input', 'import from file')
   .option('-q, --qr', 'import from a QR code')
   .option('-e, --exportpassword <password>', 'a password to decrypt the data being imported')
   .option('-k, --keypassword <password>', 'password to decrypt private key from imported file')
   .option('-p, --password', 'Encrypt wallet. Will ask password interactively')
-  .usage('[options] <"backup-words"> <passphrase>')
-  .usage('or [options] <"filename">')
+  .usage('[options]  [<"backup-words"> <passphrase> | <filename> ] ')
   .parse(process.argv);
 
 var args = program.args;
@@ -65,9 +65,11 @@ utils.getClient(program, {
     var mnemonics = args[0];
     var passphrase = args[1];
     var network = program.testnet ? 'testnet' : 'livenet';
+    var coin  = program.coin ? program.coin : 'btc';
     client.importFromMnemonic(mnemonics, {
       network: network,
       passphrase: passphrase,
+      coin: coin,
     }, function(err) {
       if (err)
         utils.die('Could not import' + err);
