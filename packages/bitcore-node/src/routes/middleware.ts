@@ -27,7 +27,7 @@ export function LogRequest(req: TimedRequest, res: express.Response, next: expre
   };
   LogObj(logOut);
 
-  const logClose = (phase: string) => () => {
+  const LogPhase = (phase: string) => () => {
     const endTime = new Date();
     const startTime = req.startTime ? req.startTime : endTime;
     const totalTime = endTime.getTime() - startTime.getTime();
@@ -38,7 +38,7 @@ export function LogRequest(req: TimedRequest, res: express.Response, next: expre
     LogObj(logOut);
   };
 
-  res.on('finish', logClose('END'));
-  res.on('close', logClose('CLOSED'));
+  res.on('finish', LogPhase('END'));
+  res.on('close', LogPhase('CLOSED'));
   next();
 }
