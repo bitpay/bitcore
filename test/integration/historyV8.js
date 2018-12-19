@@ -424,6 +424,7 @@ describe('History V8', function() {
       var external = '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7';
 
       helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
+
         var txOpts = {
           outputs: [{
             toAddress: external,
@@ -440,6 +441,7 @@ describe('History V8', function() {
             "test": true
           },
         };
+
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
           should.exist(tx);
 
@@ -448,6 +450,7 @@ describe('History V8', function() {
             txProposalId: tx.id,
             signatures: signatures,
           }, function(err, tx) {
+console.log('[historyV8.js.450:err:]',err); //TODO
             should.not.exist(err);
 
             helpers.stubBroadcast();
@@ -463,7 +466,7 @@ describe('History V8', function() {
                 blockTime: t,
                 size: 226,
                 category: 'send',
-                toAddress: external,
+                address: external,
                 satoshis: 0.5e8,
                 height: 1000,
                },
@@ -474,7 +477,7 @@ describe('History V8', function() {
                 category: 'send',
                 blockTime: t,
                 satoshis: 0.3e8,
-                toAddress: external,
+                address: external,
                 height: 1000,
               },
               {

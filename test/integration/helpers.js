@@ -528,7 +528,6 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 
 helpers.createAndPublishTx = function(server, txOpts, signingKey, cb) {
   server.createTx(txOpts, function(err, txp) {
-console.log('[helpers.js.512:err:]',err); //TODO
     should.not.exist(err, "Error creating a TX");
     should.exist(txp,"Error... no txp");
     var publishOpts = helpers.getProposalSignatureOpts(txp, signingKey);
