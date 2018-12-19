@@ -59,7 +59,8 @@ const Config = function(): ConfigType {
     numWorkers: cpus().length,
     api: {
       wallets: {
-        allowCreationBeforeCompleteSync: false
+        allowCreationBeforeCompleteSync: false,
+        allowUnauthenticatedCalls: false
       }
     },
     chains: {}

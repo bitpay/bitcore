@@ -5,6 +5,7 @@ import { RequestHandler } from 'express-serve-static-core';
 import { ChainStateProvider } from '../../providers/chain-state';
 import logger from '../../logger';
 import { MongoBound } from '../../models/base';
+import config from '../../config';
 const router = Router({ mergeParams: true });
 const secp256k1 = require('secp256k1');
 const bitcoreLib = require('bitcore-lib');
@@ -44,7 +45,7 @@ const authenticate: RequestHandler = async (req: PreAuthRequest, res: Response, 
   } catch (err) {
     return res.status(500).send(new Error('Problem authenticating wallet'));
   }
-  
+
   if (req.is('application/octet-stream')) {
     req.body = JSON.parse(req.body.toString());
   }
@@ -52,6 +53,9 @@ const authenticate: RequestHandler = async (req: PreAuthRequest, res: Response, 
     return res.status(404).send(new Error('Wallet not found'));
   }
   Object.assign(req, { wallet });
+  if(config.api.wallets.allowUnauthenticatedCalls) {
+    return next();
+  }
   try {
     const validRequestSignature = verifyRequestSignature({
       message: [req.method, req.originalUrl, JSON.stringify(req.body)].join('|'),
