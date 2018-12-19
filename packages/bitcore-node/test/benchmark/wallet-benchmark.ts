@@ -5,7 +5,7 @@ import { Storage } from '../../src/services/storage';
 async function getAllAddressesFromBlocks(start, end) {
   if (!Storage.connected) await Storage.start({});
   const addresses = await CoinModel.collection
-    .find({ chain:'BTC', network: 'mainnet', mintHeight: { $gte: start, $lte: end } })
+    .find({ chain: 'BTC', network: 'mainnet', mintHeight: { $gte: start, $lte: end } })
     .project({ address: 1 })
     .toArray();
   return addresses.map(a => a.address);
@@ -57,24 +57,54 @@ async function bench(iteration = 0, startBlock = 0, endBlock = 100) {
     ' ms'
   );
 
+  const utxoListStart = new Date();
+  const utxoStream = unlockedWallet.getUtxos();
+
+  const utxoBenchmark = new Promise(resolve => {
+    const utxos = new Array<string>();
+    utxoStream
+      .on('data', data => {
+        const stringData = data.toString().replace(',\n', '');
+        if (stringData.includes('{') && stringData.includes('}')) {
+          utxos.push(JSON.parse(stringData));
+        }
+      })
+      .on('complete', () => {
+        console.log(
+          'Listed ',
+          (utxos || []).length,
+          ' utxos for a wallet with',
+          addresses.length,
+          'addresses. Took ',
+          new Date().getTime() - utxoListStart.getTime(),
+          ' ms'
+        );
+        resolve(utxos);
+      });
+  });
+  await utxoBenchmark;
+
   const walletTxListStart = new Date();
   const txStream = unlockedWallet.listTransactions({ startBlock, endBlock });
-  let txcount = 0;
   let benchmarkComplete = new Promise(resolve => {
-    txStream.on('data', () => {
-      txcount++;
+    const txs = new Array<any>();
+    txStream.on('data', data => {
+      const stringData = data.toString().replace(',\n', '');
+      if (stringData.includes('{') && stringData.includes('}')) {
+        txs.push(JSON.parse(stringData));
+      }
     });
-    txStream.on('end', () => {
+    txStream.on('complete', () => {
       console.log(
         'Listed ',
-        txcount,
+        txs.length,
         ' txs for a wallet with',
         addresses.length,
         'addresses. Took ',
         new Date().getTime() - walletTxListStart.getTime(),
         ' ms'
       );
-      resolve();
+      resolve(txs);
     });
   });
   await benchmarkComplete;
