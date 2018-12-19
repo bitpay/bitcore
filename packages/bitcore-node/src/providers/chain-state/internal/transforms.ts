@@ -13,7 +13,7 @@ export class ListTransactionsStream extends Transform {
       'wallets.0': { $exists: true },
       spentTxid: transaction.txid
     });
-    
+
     const wallet = this.wallet._id!.toString();
 
     if (sending) {

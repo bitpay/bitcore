@@ -34,7 +34,8 @@ export function mockCollection(toReturn, collectionMethods = {}) {
       findOne: sinon.stub().resolves(toReturn),
       update: sinon.stub().resolves({ result: toReturn }),
       updateOne: sinon.stub().resolves(toReturn),
-      updateMany: sinon.stub().resolves({ nModified: 1 })
+      updateMany: sinon.stub().resolves({ nModified: 1 }),
+      addCursorFlag: sinon.stub().returnsThis()
     },
     collectionMethods
   );

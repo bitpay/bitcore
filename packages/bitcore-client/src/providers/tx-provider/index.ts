@@ -3,7 +3,7 @@ const providers = {
   BCH: require('./bch')
 };
 
-class TxProvider {
+export class TxProvider {
   get({ chain }) {
     return providers[chain];
   }
@@ -21,4 +21,4 @@ class TxProvider {
   }
 }
 
-module.exports = new TxProvider();
+export default new TxProvider();

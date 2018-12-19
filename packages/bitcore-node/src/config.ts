@@ -57,6 +57,11 @@ const Config = function(): ConfigType {
     dbName: process.env.DB_NAME || 'bitcore',
     dbPort: process.env.DB_PORT || '27017',
     numWorkers: cpus().length,
+    api: {
+      wallets: {
+        allowCreationBeforeCompleteSync: false
+      }
+    },
     chains: {}
   };
 

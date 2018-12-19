@@ -2,6 +2,7 @@ import { LoggifyClass } from '../decorators/Loggify';
 import { BaseModel, MongoBound } from './base';
 import { ObjectID } from 'mongodb';
 import { SpentHeightIndicators, CoinJSON } from '../types/Coin';
+import { valueOrDefault } from '../utils/check';
 
 export type ICoin = {
   network: string;
@@ -145,19 +146,19 @@ class Coin extends BaseModel<ICoin> {
 
   _apiTransform(coin: Partial<MongoBound<ICoin>>, options?: { object: boolean }): any {
     const transform: CoinJSON = {
-      _id: coin._id ? coin._id.toString() : '',
-      chain: coin.chain ? coin.chain.toString() : '',
-      network: coin.network ? coin.network.toString() : '',
-      coinbase: coin.coinbase || false,
-      mintIndex: coin.mintIndex || -1,
-      spentTxid: coin.spentTxid ? coin.spentTxid.toString() : '',
-      mintTxid: coin.mintTxid ? coin.mintTxid.toString() : '',
-      mintHeight: coin.mintHeight || -1,
-      spentHeight: coin.spentHeight || SpentHeightIndicators.error,
-      address: coin.address ? coin.address.toString() : '',
-      script: coin.script ? coin.script.toString('hex') : '',
-      value: coin.value || -1,
-      confirmations: coin.confirmations || -1
+      _id: valueOrDefault(coin._id, new ObjectID()).toHexString(),
+      chain: valueOrDefault(coin.chain, ''),
+      network: valueOrDefault(coin.network, ''),
+      coinbase: valueOrDefault(coin.coinbase, false),
+      mintIndex: valueOrDefault(coin.mintIndex, -1),
+      spentTxid: valueOrDefault(coin.spentTxid, ''),
+      mintTxid: valueOrDefault(coin.mintTxid, ''),
+      mintHeight: valueOrDefault(coin.mintHeight, -1),
+      spentHeight: valueOrDefault(coin.spentHeight, SpentHeightIndicators.error),
+      address: valueOrDefault(coin.address, ''),
+      script: valueOrDefault(coin.script, Buffer.alloc(0)).toString('hex'),
+      value: valueOrDefault(coin.value, -1),
+      confirmations: valueOrDefault(coin.confirmations, -1)
     };
     if (options && options.object) {
       return transform;

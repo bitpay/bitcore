@@ -7,6 +7,11 @@ export default interface Config {
   numWorkers: number;
 
   chains: {
-    [currency: string]: any
-  }
+    [currency: string]: any;
+  };
+  api: {
+    wallets: {
+      allowCreationBeforeCompleteSync?: boolean;
+    };
+  };
 }

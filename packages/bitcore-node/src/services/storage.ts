@@ -4,7 +4,7 @@ import { TransformableModel } from '../types/TransformableModel';
 import logger from '../logger';
 import config from '../config';
 import { LoggifyClass } from '../decorators/Loggify';
-import { ObjectID } from 'bson';
+import { ObjectID } from 'mongodb';
 import { MongoClient, Db, Cursor } from 'mongodb';
 import { MongoBound } from '../models/base';
 import '../models';

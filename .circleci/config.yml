@@ -1,0 +1,31 @@
+# Javascript Node CircleCI 2.0 configuration file
+# Check https://circleci.com/docs/2.0/language-javascript/ for more details
+version: 2
+jobs:
+	bitcore:
+		 docker:
+			image: circleci/node:10
+		 working_directory: ~/bitcore
+		 steps:
+			- checkout
+				# This should go into custom primary image, here's only for the sake of explanation
+			- setup_remote_docker:
+				docker_layer_caching: true
+			- run:
+					name: Install Docker client
+					command: |
+						set -x
+						VER="17.03.0-ce"
+						curl -L -o /tmp/docker-$VER.tgz https://get.docker.com/builds/Linux/x86_64/docker-$VER.tgz
+						tar -xz -C /tmp -f /tmp/docker-$VER.tgz
+						mv /tmp/docker/* /usr/bin
+						# This should go into custom primary image, here's only for the sake of explanation
+			- run:
+					name: Install Docker Compose
+					command: |
+						set -x
+						curl -L https://github.com/docker/compose/releases/download/1.11.2/docker-compose-`uname -s`-`uname -m` > /usr/local/bin/docker-compose
+						chmod +x /usr/local/bin/docker-compose
+			- run:
+					name: Build service
+					command: npm run test:ci

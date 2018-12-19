@@ -5,9 +5,15 @@
   },
   "scripts": {
     "build": "docker build -t bitcore-node .",
-    "postinstall": "./node_modules/.bin/lerna bootstrap",
+    "postinstall": "npm run bootstrap",
+    "bootstrap": "./node_modules/.bin/lerna bootstrap",
     "insight": "cd packages/insight && npm start",
-    "node": "cd packages/bitcore-node && npm start"
+    "node": "cd packages/bitcore-node && npm start",
+    "compile":"./node_modules/.bin/lerna run compile",
+    "test:ci": "npm run test:ci:build && npm run test:ci:unit && npm run test:ci:integration",
+    "test:ci:build": "docker-compose -f docker-compose.test.yml build",
+    "test:ci:unit": "docker-compose -f docker-compose.test.yml run --entrypoint 'npm run test:unit' test_runner",
+    "test:ci:integration": "docker-compose -f docker-compose.test.yml run --entrypoint 'npm run test:integration' test_runner"
   },
   "config": {
     "commitizen": {
@@ -19,9 +25,8 @@
     "eslint": "^4.19.1",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
-    "lerna": "^2.9.1",
+    "lerna": "^3.6.0",
     "prettier": "^1.14.3",
-    "typescript": "^2.8.3",
     "typescript-eslint-parser": "^15.0.0"
   }
 }
