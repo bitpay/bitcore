@@ -7,4 +7,4 @@ services:
   - docker
 install: true
 script:
-  - "cd ./packages/bitcore-node && npm run test:ci"
+  - "npm run test:ci"

@@ -27,10 +27,6 @@
     "test:verify": "npm run tsc:test && node ./build/test/util/verify.js",
     "test:unit": "npm run tsc:test && node ./build/test/runners/unit.js",
     "test:integration": "npm run tsc:test && node ./build/test/runners/integration.js",
-    "test:ci": "npm run test:ci:build && npm run test:ci:unit && npm run test:ci:integration",
-    "test:ci:build": "cd ../.. && docker-compose -f docker-compose.test.yml build",
-    "test:ci:unit": "cd ../.. && docker-compose -f docker-compose.test.yml run --entrypoint 'npm run test:unit' test_runner",
-    "test:ci:integration": "cd ../.. && docker-compose -f docker-compose.test.yml run --entrypoint 'npm run test:integration' test_runner",
     "benchmark": "npm run tsc && node build/test/benchmark/benchmark.js"
   },
   "keywords": [
