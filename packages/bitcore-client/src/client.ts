@@ -60,7 +60,7 @@ export class Client {
     });
   };
 
-  getCoins(params) {
+  getCoins(params: {payload?: any, pubKey: string, includeSpent: boolean}) {
     const { payload, pubKey, includeSpent } = params;
     const url = `${
       this.baseUrl
