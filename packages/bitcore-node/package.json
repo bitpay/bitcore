@@ -20,6 +20,7 @@
     "start": "npm run tsc && node build/src/server.js",
     "debug": "npm run tsc && node --inspect build/src/server.js --DEBUG true",
     "clean": "rm -rf build",
+    "compile": "npm run tsc",
     "tsc": "npm run clean && ./node_modules/.bin/tsc",
     "tsc:test": "npm run clean && ./node_modules/.bin/tsc",
     "test": "npm run tsc:test && node ./build/test/runners/unit.js && node ./build/test/runners/integration.js",
