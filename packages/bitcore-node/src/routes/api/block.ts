@@ -1,3 +1,4 @@
+import { CacheMiddleware } from "../middleware";
 import { Request, Response } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
 const router = require('express').Router({ mergeParams: true });
@@ -23,7 +24,7 @@ router.get('/', async function(req: Request, res: Response) {
   }
 });
 
-router.get('/tip',  async function(req: Request, res: Response) {
+router.get('/tip', CacheMiddleware(100),  async function(req: Request, res: Response) {
   let { chain, network } = req.params;
   try {
     let tip = await ChainStateProvider.getBlock({ chain, network });
