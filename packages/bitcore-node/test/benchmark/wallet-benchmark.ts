@@ -42,6 +42,35 @@ async function createWallet(addresses: string[], iteration) {
   return lockedWallet;
 }
 
+async function benchMarkUtxoList(unlockedWallet: Wallet, addresses, includeSpent = false) {
+  const utxoListStart = new Date();
+  const utxoStream = unlockedWallet.getUtxos({ includeSpent });
+  const utxoBenchmark = new Promise(resolve => {
+    const utxos = new Array<string>();
+    utxoStream
+      .on('data', data => {
+        const stringData = data.toString().replace(',\n', '');
+        if (stringData.includes('{') && stringData.includes('}')) {
+          utxos.push(JSON.parse(stringData));
+        }
+      })
+      .on('complete', () => {
+        const includeUnspentMsg = includeSpent ? '(+spent)' : '';
+        console.log(
+          `Listed ${includeUnspentMsg} `,
+          (utxos || []).length,
+          ' utxos for a wallet with',
+          addresses.length,
+          'addresses. Took ',
+          new Date().getTime() - utxoListStart.getTime(),
+          ' ms'
+        );
+        resolve(utxos);
+      });
+  });
+  await utxoBenchmark;
+}
+
 async function bench(iteration = 0, startBlock = 0, endBlock = 100) {
   console.log('Benchmark', iteration, 'START');
   const addresses = await getAllAddressesFromBlocks(startBlock, endBlock);
@@ -57,32 +86,8 @@ async function bench(iteration = 0, startBlock = 0, endBlock = 100) {
     ' ms'
   );
 
-  const utxoListStart = new Date();
-  const utxoStream = unlockedWallet.getUtxos();
-
-  const utxoBenchmark = new Promise(resolve => {
-    const utxos = new Array<string>();
-    utxoStream
-      .on('data', data => {
-        const stringData = data.toString().replace(',\n', '');
-        if (stringData.includes('{') && stringData.includes('}')) {
-          utxos.push(JSON.parse(stringData));
-        }
-      })
-      .on('complete', () => {
-        console.log(
-          'Listed ',
-          (utxos || []).length,
-          ' utxos for a wallet with',
-          addresses.length,
-          'addresses. Took ',
-          new Date().getTime() - utxoListStart.getTime(),
-          ' ms'
-        );
-        resolve(utxos);
-      });
-  });
-  await utxoBenchmark;
+  await benchMarkUtxoList(unlockedWallet, addresses);
+  await benchMarkUtxoList(unlockedWallet, addresses, true);
 
   const walletTxListStart = new Date();
   const txStream = unlockedWallet.listTransactions({ startBlock, endBlock });
