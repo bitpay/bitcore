@@ -34,7 +34,7 @@ module.exports = utils = {
   },
   writeAddr: function writeAddr(addr, bw) {
     if (_.isUndefined(addr)) {
-      var pad = new Buffer(Array(26));
+      var pad = new Buffer(Array(30));
       bw.write(pad);
       return;
     }
