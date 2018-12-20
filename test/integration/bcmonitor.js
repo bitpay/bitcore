@@ -101,26 +101,54 @@ describe('Blockchain monitor', function() {
 
       var incoming = {
         txid: '123',
-        vout: [{}],
+        outs: [{}],
       };
-      incoming.vout[0][address.address] = 1500;
+      incoming.outs[0] = {address : address.address, amount: 0.0001500};
       socket.handlers['tx'](incoming);
       setTimeout(function() {
-        socket.handlers['tx'](incoming);
+      socket.handlers['tx'](incoming);
 
-        setTimeout(function() {
-          server.getNotifications({}, function(err, notifications) {
-            should.not.exist(err);
-            var notification = _.filter(notifications, {
-              type: 'NewIncomingTx'
-            });
-            notification.length.should.equal(1);
-            done();
+      setTimeout(function() {
+        server.getNotifications({}, function(err, notifications) {
+          should.not.exist(err);
+          var notification = _.filter(notifications, {
+            type: 'NewIncomingTx'
           });
-        }, 100);
-      }, 200);
+          notification[0].data.amount.should.equal(15000);
+          notification.length.should.equal(1);
+          done();
+        });
+      }, 100);
+    }, 200);
+  });
+});
+
+
+it('should parse v8 amount ', function(done) {
+  server.createAddress({}, function(err, address) {
+    should.not.exist(err);
+
+    var incoming = {
+      txid: '123',
+      vout: [{}],
+    };
+    incoming.vout[0][address.address] = 1500;
+    socket.handlers['tx'](incoming);
+      setTimeout(function() {
+        server.getNotifications({}, function(err, notifications) {
+          should.not.exist(err);
+          var notification = _.filter(notifications, {
+            type: 'NewIncomingTx'
+          });
+          notification[0].data.amount.should.equal(1500);
+          notification.length.should.equal(1);
+          done();
+        });
+      }, 100);
     });
   });
+
+ 
 
   it('should notify copayers of tx confirmation', function(done) {
     server.createAddress({}, function(err, address) {
