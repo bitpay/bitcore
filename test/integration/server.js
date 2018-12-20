@@ -5834,6 +5834,45 @@ console.log('[server.js.425:err:]',err); //TODO
         done();
       });
     });
+    it('should pull new payment notifications with correct format', function(done) {
+
+      var s2, w2, addr;
+
+      helpers.createAndJoinWallet(1, 1, {coin:'bch'}, function(s, w) {
+        s2 = s;
+        w2 = w;
+        helpers.createAddresses(s2, w2, 1, 1, function(main, change) {
+          addr = main[0].address;
+          // Simulate new block notification
+          s2.walletId = w2.id;
+          s2._notify('NewIncomingTx', {
+              txid: 'txid',
+              address: addr,
+              amount: 5435,  // 5434 sats
+            hash: 'dummy hash',
+          }, {
+            isGlobal: true
+          }, function(err) {
+            should.not.exist(err);
+            s2.getNotifications({
+              minTs: +Date.now() - (60 * 1000),
+            }, function(err, notifications) {
+              should.not.exist(err);
+              var types = _.map(notifications, 'type');
+              types.should.deep.equal(['NewCopayer', 'NewIncomingTx']);
+              var walletIds = _.uniq(_.map(notifications, 'walletId'));
+              walletIds.length.should.equal(1);
+              walletIds[0].should.equal(w2.id);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+
+
+
     it('should pull new block notifications along with wallet notifications in the last 60 seconds', function(done) {
       // Simulate new block notification
       server.walletId = 'livenet';
