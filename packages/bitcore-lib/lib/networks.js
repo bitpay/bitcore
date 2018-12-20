@@ -137,13 +137,13 @@ addNetwork({
   networkMagic: 0xf7a77eff,
   port: 21102,
   dnsSeeds: [
-    '5n4gl3kvntyanp63.onion',
-    '5onui2lfl3iwdhrf.onion',
-    '7sfrhwc6l4oohb5h.onion',
-    'plxs66tqlzbnh3ua.onion',
-    'ie4vffvggaz6xhbj.onion',
-    'kw5bdikypbbxaf2g.onion',
-    'n5ln6ke2vc47glpl.onion'
+    '159.89.202.56',
+    '138.197.68.130',
+    '165.227.31.52',
+    '159.89.202.56',
+    '188.40.78.31',
+    '176.9.143.143',
+    '198.27.82.41'
   ]
 });
 

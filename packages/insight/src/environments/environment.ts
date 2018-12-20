@@ -14,7 +14,7 @@ export const environment = {
    *
    * For relative paths, begin with a `/`. (E.g. `/api`)
    *
-   * Usage example: `${apiPrefix}/BCH/mainnet/block/tip`
+   * Usage example: `${apiPrefix}/XVG/mainnet/block/tip`
    */
   apiPrefix: '/api',
   production: false,

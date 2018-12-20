@@ -19,7 +19,7 @@ function builder(options) {
   options.BlockHeader = options.BlockHeader || bitcore.BlockHeader;
   options.Transaction = options.Transaction || bitcore.Transaction;
   options.MerkleBlock = options.MerkleBlock || bitcore.MerkleBlock;
-  options.protocolVersion = options.protocolVersion || 90007;
+  options.protocolVersion = options.protocolVersion || 90001;
 
   var exported = {
     constructors: {
