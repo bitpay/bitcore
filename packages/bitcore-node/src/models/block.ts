@@ -1,3 +1,4 @@
+import { valueOrDefault } from '../utils/check';
 import { CoinModel } from './coin';
 import { TransactionModel } from './transaction';
 import { TransformOptions } from '../types/TransformOptions';
@@ -16,6 +17,8 @@ export class Block extends BaseModel<IBlock> {
   constructor() {
     super('blocks');
   }
+
+  chainTips: Mapping<Mapping<IBlock>> = {};
 
   allowedPaging = [
     {
@@ -63,12 +66,13 @@ export class Block extends BaseModel<IBlock> {
     const height = (previousBlock && previousBlock.height + 1) || 1;
     logger.debug('Setting blockheight', height);
 
-    const convertedBlock = {
+    const convertedBlock: IBlock = {
       chain,
       network,
       hash: block.hash,
       height,
       version: header.version,
+      nextBlockHash: '',
       previousBlockHash: header.prevHash,
       merkleRoot: header.merkleRoot,
       time: new Date(blockTime),
@@ -77,7 +81,8 @@ export class Block extends BaseModel<IBlock> {
       nonce: header.nonce,
       transactionCount: block.transactions.length,
       size: block.toBuffer().length,
-      reward: block.transactions[0].outputAmount
+      reward: block.transactions[0].outputAmount,
+      processed: false
     };
     await this.collection.updateOne(
       { hash: header.hash, chain, network },
@@ -110,6 +115,12 @@ export class Block extends BaseModel<IBlock> {
 
     if (initialSyncComplete) {
       Socket.signalBlock(convertedBlock);
+    }
+
+    this.chainTips[chain] = valueOrDefault(this.chainTips[chain], {});
+    this.chainTips[chain][network] = valueOrDefault(this.chainTips[chain][network], convertedBlock);
+    if (this.chainTips[chain][network].height < convertedBlock.height) {
+      this.chainTips[chain][network] = convertedBlock;
     }
 
     return this.collection.updateOne({ hash: header.hash, chain, network }, { $set: { processed: true } });
