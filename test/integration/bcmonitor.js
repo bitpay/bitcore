@@ -36,7 +36,13 @@ describe('Blockchain monitor', function() {
     helpers.beforeEach(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
-      blockchainExplorer.initSocket = sinon.stub().returns(socket);
+      blockchainExplorer.initSocket = function(callbacks) {
+        socket.handlers['tx']= function(data) {
+          callbacks.onTx;
+          callbacks.onIncomingPayments(data);
+        };
+        socket.handlers['block'] =  callbacks.onBlock;
+      }
 
       helpers.createAndJoinWallet(2, 3, function(s, w) {
         server = s;
@@ -88,112 +94,6 @@ describe('Blockchain monitor', function() {
       }, 100);
     });
   });
-
-  it('should update addressWithBalance cache on 1 incoming tx', function(done) {
-    server.createAddress({}, function(err, address) {
-      should.not.exist(err);
-      var incoming = {
-        txid: '123',
-        vout: [{}],
-      };
-      server.storage.fetchAddressesWithBalance(wallet.id, function(err,ret) {
-        should.not.exist(err);
-        _.isEmpty(ret).should.equal(true);
-        incoming.vout[0][address.address] = 1500;
-        socket.handlers['tx'](incoming);
-        setTimeout(function() {
-          server.storage.fetchAddressesWithBalance(wallet.id, function(err,ret) {
-            should.not.exist(err);
-            ret.length.should.equal(1);
-            ret[0].address.should.equal(address.address);
-            done();
-          });
-        }, 100);
-      });
-    });
-  });
-
-  it('should update addressWithBalance cache on 2 incoming tx, same address', function(done) {
-    server.createAddress({}, function(err, address) {
-      should.not.exist(err);
-
-      server.storage.fetchAddressesWithBalance(wallet.id, function(err,ret) {
-        should.not.exist(err);
-        _.isEmpty(ret).should.equal(true);
-
-        var incoming = {
-          txid: '123',
-          vout: [{}],
-        };
-        incoming.vout[0][address.address] = 1500;
-
-        socket.handlers['tx'](incoming);
-        setTimeout(function() {
-
-
-          var incoming2 = {
-            txid: '456',
-            vout: [{}],
-          };
-          incoming2.vout[0][address.address] = 2500;
-          socket.handlers['tx'](incoming2);
-
-          setTimeout(function() {
-            server.storage.fetchAddressesWithBalance(wallet.id, function(err,ret) {
-              should.not.exist(err);
-              ret.length.should.equal(1);
-              ret[0].address.should.equal(address.address);
-              done();
-            });
-          }, 100);
-        }, 100);
-      });
-    });
-  });
-
-
-  it('should update addressWithBalance cache on 2 incoming tx, different address', function(done) {
-    server.createAddress({}, function(err, address) {
-      should.not.exist(err);
-      server.createAddress({}, function(err, address2) {
-        should.not.exist(err);
-        server.storage.fetchAddressesWithBalance(wallet.id, function(err,ret) {
-          should.not.exist(err);
-          _.isEmpty(ret).should.equal(true);
-
-          var incoming = {
-            txid: '123',
-            vout: [{}],
-          };
-          incoming.vout[0][address.address] = 1500;
-          socket.handlers['tx'](incoming);
-
-          setTimeout(function() {
-
-            var incoming2 = {
-              txid: '456',
-              vout: [{}],
-            };
-            incoming2.vout[0][address2.address] = 500;
-            socket.handlers['tx'](incoming2);
-
-            setTimeout(function() {
-              server.storage.fetchAddressesWithBalance(wallet.id, function(err,ret) {
-                should.not.exist(err);
-                ret.length.should.equal(2);
-                ret[0].address.should.equal(address.address);
-                done();
-              });
-            }, 100);
-          }, 100);
-        });
-      });
-    });
-  });
-
-
-
-
 
   it('should not notify copayers of incoming txs more than once', function(done) {
     server.createAddress({}, function(err, address) {

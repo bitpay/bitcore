@@ -66,6 +66,9 @@ helpers.beforeEach = function(cb) {
   storage.db.dropDatabase(function(err) {
     if (err) return cb(err);
     blockchainExplorer = sinon.stub();
+    blockchainExplorer.supportsGrouping = function () {
+      return false;
+    }
     var opts = {
       storage: storage,
       blockchainExplorer: blockchainExplorer,
@@ -78,7 +81,9 @@ helpers.beforeEach = function(cb) {
 };
 
 helpers.after = function(cb) {
-  WalletService.shutDown(cb);
+  WalletService.shutDown(() => {
+    setImmediate(cb);
+  });
 };
 
 helpers.getBlockchainExplorer = function() {
@@ -329,6 +334,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
           address: address.address,
           confirmations: parsed.confirmations,
           publicKeys: address.publicKeys,
+          wallet: wallet.id,
         };
       }));
 
@@ -338,10 +344,16 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
         helpers._utxos = utxos;
       }
 
-      blockchainExplorer.getUtxos = function(addresses, cb) {
-        var selected = _.filter(helpers._utxos, function(utxo) {
-          return _.includes(addresses, utxo.address);
-        });
+      blockchainExplorer.getUtxos = function(param1, cb) {
+        
+        var selected;
+        if (blockchainExplorer.supportsGrouping()) {
+          selected = _.filter(helpers._utxos, {'wallet': param1.id});
+        } else {
+          selected = _.filter(helpers._utxos, function(utxo) {
+            return _.includes(param1, utxo.address);
+          });
+        }
         return cb(null, selected);
       };
 
@@ -383,6 +395,52 @@ helpers.stubHistory = function(txs) {
     return cb(null, page, totalItems);
   };
 };
+
+
+
+helpers.createTxsV8 = function(nr, bcHeight, txs) {
+  txs = txs || [];
+  // Will generate
+  // order / confirmations  / height / txid
+  //  0.  => -1     / -1            /   txid0   / id0  <=  LAST ONE!
+  //  1.  => 1      / bcHeight      /   txid1
+  //  2.  => 2      / bcHeight - 1  /   txid2
+  //  3.  => 3...   / bcHeight - 2  /   txid3
+
+  var  i = 0;
+  if (_.isEmpty(txs)) {
+    while(i < nr) {
+      txs.push({
+        id: 'id' + i,
+        txid: 'txid' + i,
+        size: 226,
+        category: 'receive',
+        satoshis: 30001,
+        // this is translated on V8.prototype.getTransactions 
+        amount: 30001 /1e8,
+        height: (i == 0) ? -1 :  bcHeight - i + 1,
+        address: 'muFJi3ZPfR5nhxyD7dfpx2nYZA8Wmwzgck',
+        blockTime: '2018-09-21T18:08:31.000Z',
+      });
+      i++;
+    }
+  }
+
+  return txs;
+};
+
+
+helpers.stubHistoryV8 = function(nr, bcHeight, txs) {
+  txs= helpers.createTxsV8(nr,bcHeight, txs);
+  blockchainExplorer.getTransactions = function(walletId, startBlock, cb) {
+    startBlock = startBlock || 0;
+    var page = _.filter(txs, (x) => { 
+      return x.height >=startBlock || x.height == -1
+    });
+    return cb(null, page);
+  };
+};
+
 
 helpers.stubFeeLevels = function(levels) {
   blockchainExplorer.estimateFee = function(nbBlocks, cb) {
@@ -470,7 +528,8 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 
 helpers.createAndPublishTx = function(server, txOpts, signingKey, cb) {
   server.createTx(txOpts, function(err, txp) {
-    should.not.exist(err);
+    should.not.exist(err, "Error creating a TX");
+    should.exist(txp,"Error... no txp");
     var publishOpts = helpers.getProposalSignatureOpts(txp, signingKey);
     server.publishTx(publishOpts, function(err) {
       should.not.exist(err);
@@ -528,6 +587,14 @@ helpers.historyCacheTest = function(items) {
   });
 
   return ret;
+};
+
+helpers.setupGroupingBE = function (be) {
+  be.supportsGrouping = function () {
+    return true;
+  }
+  be.register = sinon.stub().callsArgWith(1, null, null);
+  be.addAddresses = sinon.stub().callsArgWith(2, null, null);
 };
 
 module.exports = helpers;

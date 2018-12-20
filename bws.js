@@ -8,6 +8,9 @@ var config = require('./config');
 var log = require('npmlog');
 log.debug = log.verbose;
 log.disableColor();
+var Common = require('./lib/common');
+var Defaults = Common.Defaults;
+
 
 
 
@@ -49,10 +52,6 @@ var expressApp = new ExpressApp();
 
 function startInstance(cb) {
   var server = config.https ? serverModule.createServer(serverOpts, expressApp.app) : serverModule.Server(expressApp.app);
-
-  server.on('connection', function(socket) {
-    socket.setTimeout(300 * 1000);
-  })
 
   expressApp.start(config, function(err) {
     if (err) {

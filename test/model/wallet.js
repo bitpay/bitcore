@@ -55,6 +55,34 @@ describe('Wallet', function() {
       a.createdOn.should.be.above(1);
     });
   });
+
+  describe('#createBEKeys', function() {
+    it('create BE keys based on xPubkeys', function() {
+      var w = Wallet.fromObj(testWallet);
+      var a = w.updateBEKeys();
+      w.beAuthPrivateKey.should.be.equal('a570f480fbf204136d43434ee9861f0a09192e191ceba567c5a24311bbc40d79');
+    });
+
+    it('key should change depending on the network', function() {
+      var t = _.clone(testWallet);
+      t.isTestnet = true;
+      var w = Wallet.fromObj(t);
+      var a = w.updateBEKeys();
+      w.beAuthPrivateKey.should.be.equal('971f5eb2b8b7d6ad38ba17ea74cce0c26f866f46e3e2634a22dbebc72c650eaf');
+    });
+
+    it('key should depend on xpubs', function() {
+      var t = _.clone(testWallet);
+  
+      t.copayers[0].xPubKey = 'xpub661MyMwAqRbcF3Q3BRNic47PusMzQbG3TDmxKJJT2k7vGLg7STrmdfYporfSgmCefUkLDnaQrMrVZf9knKBR9bYkwQxCaEpK611mZV8VNkN';
+      var w = Wallet.fromObj(t);
+      var a = w.updateBEKeys();
+      w.beAuthPrivateKey.should.be.equal('46127b9d662111519403febe00471e3e6ee533bcb516f04c245287549d988aca');
+    });
+ 
+ 
+  });
+
 });
 
 

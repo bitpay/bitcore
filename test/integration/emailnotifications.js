@@ -78,6 +78,7 @@ describe('Email notifications', function() {
     });
 
     it('should notify copayers a new tx proposal has been created', function(done) {
+
       var _readTemplateFile_old = emailService._readTemplateFile;
       emailService._readTemplateFile = function(language, filename, cb) {
         if (_.endsWith(filename, '.html')) {
@@ -86,6 +87,7 @@ describe('Email notifications', function() {
           _readTemplateFile_old.call(emailService, language, filename, cb);
         }
       };
+
       helpers.stubUtxos(server, wallet, [1, 1], function() {
         var txOpts = {
           outputs: [{
@@ -94,6 +96,7 @@ describe('Email notifications', function() {
           }],
           feePerKb: 100e2
         };
+
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
           setTimeout(function() {
             var calls = mailerStub.send.getCalls();

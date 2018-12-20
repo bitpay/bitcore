@@ -266,6 +266,8 @@ var history = [{
 }];
 
 
+
+
 module.exports.keyPair = keyPair;
 module.exports.copayers = copayers;
 module.exports.history = history;
