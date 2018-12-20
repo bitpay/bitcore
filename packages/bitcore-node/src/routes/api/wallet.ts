@@ -6,7 +6,6 @@ import { ChainStateProvider } from '../../providers/chain-state';
 import logger from '../../logger';
 import { MongoBound } from '../../models/base';
 import config from '../../config';
-import { CacheMiddleware } from '../middleware';
 const router = Router({ mergeParams: true });
 const secp256k1 = require('secp256k1');
 const bitcoreLib = require('bitcore-lib');
@@ -54,7 +53,7 @@ const authenticate: RequestHandler = async (req: PreAuthRequest, res: Response, 
     return res.status(404).send(new Error('Wallet not found'));
   }
   Object.assign(req, { wallet });
-  if (config.api.wallets.allowUnauthenticatedCalls) {
+  if(config.api.wallets.allowUnauthenticatedCalls) {
     return next();
   }
   try {
@@ -99,7 +98,7 @@ router.post('/', async function(req, res) {
   }
 });
 
-router.get('/:pubKey/addresses/missing', authenticate, CacheMiddleware(10), async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/addresses/missing', authenticate, async (req: AuthenticatedRequest, res) => {
   try {
     let { chain, network, pubKey } = req.params;
     let payload = {
@@ -114,7 +113,7 @@ router.get('/:pubKey/addresses/missing', authenticate, CacheMiddleware(10), asyn
   }
 });
 
-router.get('/:pubKey/addresses', authenticate, CacheMiddleware(10), async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/addresses', authenticate, async (req: AuthenticatedRequest, res) => {
   try {
     const { wallet } = req;
     let { chain, network } = req.params;
@@ -134,7 +133,7 @@ router.get('/:pubKey/addresses', authenticate, CacheMiddleware(10), async (req: 
 });
 
 // update wallet
-router.post('/:pubKey', authenticate, CacheMiddleware(10), async (req: AuthenticatedRequest, res) => {
+router.post('/:pubKey', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
   let addressLines: { address: string }[] = req.body;
   let keepAlive;
@@ -158,7 +157,7 @@ router.post('/:pubKey', authenticate, CacheMiddleware(10), async (req: Authentic
   }
 });
 
-router.get('/:pubKey/transactions', authenticate, CacheMiddleware(10), async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/transactions', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
   try {
     return ChainStateProvider.streamWalletTransactions({
@@ -174,7 +173,7 @@ router.get('/:pubKey/transactions', authenticate, CacheMiddleware(10), async (re
   }
 });
 
-router.get('/:pubKey/balance', authenticate, CacheMiddleware(10), async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/balance', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
   try {
     const result = await ChainStateProvider.getWalletBalance({
@@ -188,7 +187,7 @@ router.get('/:pubKey/balance', authenticate, CacheMiddleware(10), async (req: Au
   }
 });
 
-router.get('/:pubKey/utxos', authenticate, CacheMiddleware(10), async (req: AuthenticatedRequest, res) => {
+router.get('/:pubKey/utxos', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
   let { limit } = req.query;
   try {
@@ -206,7 +205,7 @@ router.get('/:pubKey/utxos', authenticate, CacheMiddleware(10), async (req: Auth
   }
 });
 
-router.get('/:pubKey', authenticate, CacheMiddleware(10), async function(req: AuthenticatedRequest, res: Response) {
+router.get('/:pubKey', authenticate, async function(req: AuthenticatedRequest, res: Response) {
   try {
     let wallet = req.wallet;
     return res.send(wallet);
