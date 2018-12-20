@@ -1,15 +1,14 @@
 
 module.exports = function(wallet, appName, appVersion){
-  if (wallet.network == 'livenet' && appName == 'copay' 
-    && appVersion.major==5 && createdOn < 1543461026 ) {
+  if (wallet.network == 'livenet' && appVersion.major==5 && wallet.createdOn < 1443461026 ) {
     return {
-      title: 'Critical Security Update for Copay v5.0.2-5.1.0',
-      body: 'Please review our security advisory for instructions on how to protect your funds from a critical known private key vulnerability',
-      link: 'https://blog.bitpay.com/npm-package-vulnerability-copay/',
-      id: 'copay-npm',
+      title: 'Test message',
+      body: 'Only for bitpay, old wallets',
+      link: 'http://bitpay.com',
+      id: 'bitpay1',
       dismissible: true,
       category: 'critical',
-      app: 'copay',
+      app: 'bitpay',
     };
   }
 };
