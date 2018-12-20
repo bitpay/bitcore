@@ -106,6 +106,19 @@ describe('Utils', function() {
         args: [1299, 'btc'],
         expected: '0.000013',
       }, {
+        args: [1299, 'bch'],
+        expected: '0.000013',
+       }, {
+        args: [12940, 'bch'],
+        expected: '0.000129',
+      }, {
+        args: [12960, 'bch'],
+        expected: '0.00013',
+      }, {
+         args: [129900000, 'bch'],
+        expected: '1.299',
+      }, {
+ 
         args: [1234567899999, 'btc'],
         expected: '12,345.679',
       }, {
