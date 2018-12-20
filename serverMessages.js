@@ -1,5 +1,7 @@
 
-module.exports = function(wallet, appName, appVersion){
+module.exports = function(wallet, appName, appVersion) {
+  if (!appVersion || !appName) return;
+
   if (wallet.network == 'livenet' && appVersion.major==5 && wallet.createdOn < 1443461026 ) {
     return {
       title: 'Test message',
