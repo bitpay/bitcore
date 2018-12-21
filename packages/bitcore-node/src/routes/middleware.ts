@@ -19,7 +19,7 @@ export function LogMiddleware() {
     const ip = req.header('CF-Connecting-IP') || req.socket.remoteAddress || req.hostname;
     const logOut = {
       time: req.startTime.toTimeString(),
-      ip: ip.padStart(12, ' '),
+      ip: ip.padStart(22, ' '),
       phase: 'START'.padStart(8, ' '),
       method: req.method.padStart(6, ' '),
       status: '...'.padStart(5, ' '),
