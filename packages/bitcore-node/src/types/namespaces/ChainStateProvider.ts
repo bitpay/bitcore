@@ -1,3 +1,4 @@
+import { TransactionJSON } from '../Transaction';
 import { ObjectId } from 'mongodb';
 import { IBlock } from '../../models/block';
 import { Request, Response } from 'express';
@@ -124,7 +125,7 @@ export declare namespace CSP {
     streamTransactions(params: StreamTransactionsParams): any;
     getAuthhead(params: StreamTransactionParams): Promise<AuthheadJSON | undefined>;
     getDailyTransactions(params: { chain: string; network: string }): Promise<DailyTransactionsJSON>;
-    getTransaction(params: StreamTransactionParams): Promise<any>;
+    getTransaction(params: StreamTransactionParams): Promise<TransactionJSON | string | undefined>;
     streamWalletAddresses(params: StreamWalletAddressesParams): any;
     streamWalletTransactions(params: StreamWalletTransactionsParams): any;
     streamWalletUtxos(params: StreamWalletUtxosParams): any;
