@@ -28,6 +28,7 @@ utils.getClient(program, {
 
   if (program.input) {
     var file = args[0];
+    console.log("Importing from file:" + file);
     var str;
 
     try {
@@ -62,6 +63,7 @@ utils.getClient(program, {
       console.log('Wallet Imported ' + access + '.');
     });
   } else {
+    console.log("Importing from mnemonic");
     var mnemonics = args[0];
     var passphrase = args[1];
     var network = program.testnet ? 'testnet' : 'livenet';

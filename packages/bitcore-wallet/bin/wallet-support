@@ -53,6 +53,7 @@ utils.getClient(program, {
       walletId: status.wallet.id,
     }, (client) => {
 
+      displayStatus(status);
       async.parallel([
         function(done) {
           client.getSendMaxInfo({
@@ -68,9 +69,7 @@ utils.getClient(program, {
          client.getTxHistory({}, done);
         },
       ], (err, res) => {
-        utils.die(err);
 
-        displayStatus(status);
         if (trim) {
           if ((res[1] && res[1].length>N) ||  (res[2] && res[2].length> N))
             console.log('\n Trimming results to %s items', N );
@@ -82,9 +81,16 @@ utils.getClient(program, {
             res[2] = res[2].splice(0,N);
         };
 
-        displaySendMaxInfo(res[0], status.wallet);
-        displayAddresses(res[1], status.wallet);
-        displayHistory(res[2], status.wallet);
+        if (res[0])
+          displaySendMaxInfo(res[0], status.wallet);
+
+        if (res[1])
+          displayAddresses(res[1], status.wallet);
+
+        if (res[2])
+          displayHistory(res[2], status.wallet);
+
+        if (err) utils.die(err);
       });
     });
   });
