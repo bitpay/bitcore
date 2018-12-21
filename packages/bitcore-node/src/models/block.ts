@@ -7,8 +7,10 @@ import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
 import { IBlock } from '../types/Block';
-import { Socket } from '../services/socket';
 import { SpentHeightIndicators } from '../types/Coin';
+import { EventModel } from './events';
+import config from '../config';
+import { Event } from '../services/event';
 
 export { IBlock };
 
@@ -32,6 +34,29 @@ export class Block extends BaseModel<IBlock> {
     this.collection.createIndex({ chain: 1, network: 1, processed: 1, height: -1 }, { background: true });
     this.collection.createIndex({ chain: 1, network: 1, timeNormalized: 1 }, { background: true });
     this.collection.createIndex({ previousBlockHash: 1 }, { background: true });
+    this.wireup();
+  }
+
+  async wireup() {
+    for (let chain of Object.keys(config.chains)) {
+      for (let network of Object.keys(config.chains[chain])) {
+        const tip = await this.getLocalTip({ chain, network });
+        if (tip) {
+          this.chainTips[chain] = { [network]: tip };
+        }
+      }
+    }
+
+    Event.blockStream.on('data', (block: IBlock) => {
+      if (block) {
+        const { chain, network, height } = block;
+        this.chainTips[chain] = valueOrDefault(this.chainTips[chain], {});
+        this.chainTips[chain][network] = valueOrDefault(this.chainTips[chain][network], block);
+        if (this.chainTips[chain][network].height < height) {
+          this.chainTips[chain][network] = block;
+        }
+      }
+    });
   }
 
   async addBlock(params: {
@@ -114,13 +139,7 @@ export class Block extends BaseModel<IBlock> {
     });
 
     if (initialSyncComplete) {
-      Socket.signalBlock(convertedBlock);
-    }
-
-    this.chainTips[chain] = valueOrDefault(this.chainTips[chain], {});
-    this.chainTips[chain][network] = valueOrDefault(this.chainTips[chain][network], convertedBlock);
-    if (this.chainTips[chain][network].height < convertedBlock.height) {
-      this.chainTips[chain][network] = convertedBlock;
+      EventModel.signalBlock(convertedBlock);
     }
 
     return this.collection.updateOne({ hash: header.hash, chain, network }, { $set: { processed: true } });
