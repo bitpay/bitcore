@@ -52,7 +52,7 @@ var txs = [{
 describe('V8', () => {
   var wallet={};
 
-  wallet.beAuthPrivateKey= new B.PrivateKey();
+  wallet.beAuthPrivateKey2= new B.PrivateKey();
 
   describe('#listTransactions', () => {
     it('should handle partial json results', (done) => {
