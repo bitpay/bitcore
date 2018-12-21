@@ -2,6 +2,15 @@ import SocketIO = require('socket.io');
 import { LoggifyClass } from '../decorators/Loggify';
 import { EventModel, IEvent } from '../models/events';
 import { Event } from './event';
+import { ObjectID } from 'mongodb';
+
+function SanitizeWallet(x: { wallets: ObjectID[] }) {
+  const sanitized = Object.assign({}, x, { wallets: undefined });
+  if (sanitized.wallets && sanitized.wallets.length > 0) {
+    delete sanitized.wallets;
+  }
+  return sanitized;
+}
 
 @LoggifyClass
 export class SocketService {
@@ -29,7 +38,8 @@ export class SocketService {
     Event.txStream.on('data', (tx: IEvent.TxEvent) => {
       if (this.io) {
         const { chain, network } = tx;
-        this.io.sockets.in(`/${chain}/${network}/inv`).emit('tx', tx);
+        const sanitizedTx = SanitizeWallet(tx);
+        this.io.sockets.in(`/${chain}/${network}/inv`).emit('tx', sanitizedTx);
       }
     });
 
@@ -44,8 +54,9 @@ export class SocketService {
       if (this.io) {
         const { coin, address } = addressCoin;
         const { chain, network } = coin;
-        this.io.sockets.in(`/${chain}/${network}/address`).emit(address, coin);
-        this.io.sockets.in(`/${chain}/${network}/inv`).emit('coin', coin);
+        const sanitizedCoin = SanitizeWallet(coin);
+        this.io.sockets.in(`/${chain}/${network}/address`).emit(address, sanitizedCoin);
+        this.io.sockets.in(`/${chain}/${network}/inv`).emit('coin', sanitizedCoin);
       }
     });
   }
