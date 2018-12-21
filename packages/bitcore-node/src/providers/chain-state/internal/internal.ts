@@ -483,7 +483,11 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getLocalTip({ chain, network }) {
-    return BlockModel.chainTips[chain][network];
+    if (BlockModel.chainTips[chain] && BlockModel.chainTips[chain][network]) {
+      return BlockModel.chainTips[chain][network];
+    } else {
+      return null;
+    }
   }
 
   async getLocatorHashes(params) {
