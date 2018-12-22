@@ -21,6 +21,14 @@ function* generateBlocks(blockCount: number, blockSizeMb: number) {
   }
 }
 
+function preGenerateBlocks(blockCount: number, blockSizeMb: number) {
+  const blocks = new Array<BitcoinBlockType>();
+  for (let block of generateBlocks(blockCount, blockSizeMb)) {
+    blocks.push(block);
+  }
+  return blocks;
+}
+
 function generateBlock(blockSizeMb: number, previousBlock?: BitcoinBlockType): BitcoinBlockType {
   const txAmount = 100000;
   const prevHash = previousBlock ? previousBlock.hash : '';
@@ -109,9 +117,11 @@ function startBenchmarkDatabase() {
 
 async function benchmark(blockCount: number, blockSizeMb: number) {
   await resetDatabase();
+  console.log('Generating blocks');
+  const blocks = preGenerateBlocks(blockCount, blockSizeMb);
   const startTime = new Date();
   console.log('Adding blocks');
-  for (let block of generateBlocks(blockCount, blockSizeMb)) {
+  for (let block of blocks) {
     process.stdout.write('.');
     await BlockModel.addBlock({ block, chain: 'BENCH', network: 'MARK', initialSyncComplete: false });
   }
@@ -125,6 +135,6 @@ async function benchmark(blockCount: number, blockSizeMb: number) {
 }
 
 startBenchmarkDatabase()
-  .then(() => benchmark(160, 1))
+  .then(() => benchmark(80, 1))
   .then(() => benchmark(5, 32))
   .then(() => process.exit());
