@@ -110,10 +110,12 @@ function startBenchmarkDatabase() {
 async function benchmark(blockCount: number, blockSizeMb: number) {
   await resetDatabase();
   const startTime = new Date();
+  console.log('Adding blocks');
   for (let block of generateBlocks(blockCount, blockSizeMb)) {
-    console.log('Adding block', block.hash);
+    process.stdout.write('.');
     await BlockModel.addBlock({ block, chain: 'BENCH', network: 'MARK', initialSyncComplete: false });
   }
+  process.stdout.write('\n');
   const endTime = new Date();
   const time = endTime.getTime() - startTime.getTime();
   const seconds = time / 1000;
