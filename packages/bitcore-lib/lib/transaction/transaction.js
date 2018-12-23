@@ -26,7 +26,6 @@ var Output = require('./output');
 var Script = require('../script');
 var PrivateKey = require('../privatekey');
 var BN = require('../crypto/bn');
-var scrypt = require('scryptsy');
 
 /**
  * Represents a transaction, a set of inputs and outputs to change ownership of tokens
@@ -137,18 +136,16 @@ Object.defineProperty(Transaction.prototype, 'outputAmount', ioProperty);
  * Retrieve the little endian hash of the transaction (used for serialization)
  * @return {Buffer}
  */
-Transaction.prototype._getHash = function() {
-  let buf = this.toBuffer(true);
-  return scrypt(buf, buf, 1024, 1, 1, 32);
+Transaction.prototype._getHash = function () {
+  return Hash.sha256sha256(this.toBuffer(true));
 };
 
 /**
  * Retrieve the little endian hash of the transaction including witness data
  * @return {Buffer}
  */
-Transaction.prototype._getWitnessHash = function() {
-  let buf = this.toBuffer(true);
-  return scrypt(buf, buf, 1024, 1, 1, 32);
+Transaction.prototype._getWitnessHash = function () {
+  return Hash.sha256sha256(this.toBuffer(false));
 };
 
 /**
@@ -311,6 +308,7 @@ Transaction.prototype.hasWitnesses = function() {
 
 Transaction.prototype.toBufferWriter = function(writer, noWitness) {
   writer.writeInt32LE(this.version);
+  writer.writeInt32LE(this.network);
 
   var hasWitnesses = this.hasWitnesses();
 
