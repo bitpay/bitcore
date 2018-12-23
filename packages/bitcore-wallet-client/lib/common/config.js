@@ -11,6 +11,9 @@ module.exports = {
     },
     eth: {
       main: true
+    },
+    xvg: {
+      livenet: true,
     }
   }
 };

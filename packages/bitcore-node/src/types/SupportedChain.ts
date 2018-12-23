@@ -1,6 +1,7 @@
 export const SupportedChainSet = {
   BTC: true,
   BCH: true,
+  XVG: true,
 }
 
 export type SupportedChain = keyof typeof SupportedChainSet;
