@@ -10,6 +10,9 @@ export default interface Config {
     [currency: string]: any;
   };
   api: {
+    rateLimiter: {
+      whitelist: [string]; 
+    },
     wallets: {
       allowCreationBeforeCompleteSync?: boolean;
       allowUnauthenticatedCalls?: boolean;
