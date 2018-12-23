@@ -218,7 +218,7 @@ export class Wallet {
     return this.client.getFee({ target });
   }
 
-  getUtxos(params) {
+  getUtxos(params: {includeSpent?: boolean} = {}) {
     const { includeSpent = false } = params;
     return this.client.getCoins({
       pubKey: this.authPubKey,

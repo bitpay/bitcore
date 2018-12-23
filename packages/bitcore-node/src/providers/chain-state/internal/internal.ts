@@ -1,3 +1,4 @@
+import { TransactionJSON } from "../../../types/Transaction";
 import config from '../../../config';
 import through2 from 'through2';
 
@@ -166,7 +167,6 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (blockHash !== undefined) {
       query.blockHash = blockHash;
     }
-    // TODO: we should get this from a cache rather than waiting for this database call
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
     return Storage.apiStreamingFind(TransactionModel, query, args, req, res, t => {
@@ -194,7 +194,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       if (found.blockHeight && found.blockHeight >= 0) {
         confirmations = tipHeight - found.blockHeight + 1;
       }
-      const convertedTx = TransactionModel._apiTransform(found, { object: true }) as Partial<ITransaction>;
+      const convertedTx = TransactionModel._apiTransform(found, { object: true }) as TransactionJSON;
       return { ...convertedTx, confirmations: confirmations };
     } else {
       return undefined;
@@ -345,7 +345,10 @@ export class InternalStateProvider implements CSP.IChainStateService {
       }
     }
 
-    const transactionStream = TransactionModel.collection.find(query).addCursorFlag('noCursorTimeout', true);
+    const transactionStream = TransactionModel.collection
+      .find(query)
+      .sort({ blockTimeNormalized: 1 })
+      .addCursorFlag('noCursorTimeout', true);
     const listTransactionsStream = new ListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(res);
   }
@@ -480,7 +483,11 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getLocalTip({ chain, network }) {
-    return BlockModel.collection.findOne({ chain, network, processed: true }, { sort: { height: -1 } });
+    if (BlockModel.chainTips[chain] && BlockModel.chainTips[chain][network]) {
+      return BlockModel.chainTips[chain][network];
+    } else {
+      return BlockModel.getLocalTip({ chain, network });
+    }
   }
 
   async getLocatorHashes(params) {

@@ -64,6 +64,13 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
 
     return new Promise(async resolve => {
       let batch = new Array<string>();
+      const AddAddresses = addresses => {
+        return WalletAddressModel.collection.updateMany(
+          { wallet: wallet._id, address: { $in: addresses } },
+          { $set: { wallet: wallet._id, chain, network } },
+          { upsert: true }
+        );
+      };
       const UpdateCoins = addresses => {
         return CoinModel.collection.updateMany(
           { chain, network, address: { $in: addresses } },
@@ -71,21 +78,19 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
         );
       };
 
+      const ProcessBatch = batch => {
+        return Promise.all([ AddAddresses(batch), UpdateCoins(batch)]);
+      };
+
       for (const address of addresses) {
         batch.push(address);
-        if (batch.length > 1000) {
-          await WalletAddressModel.collection.updateMany(
-            { wallet: wallet._id, address: { $in: batch } },
-            { $set: { wallet: wallet._id, chain, network } },
-            { upsert: true }
-          );
-
-          await UpdateCoins(batch);
+        if (batch.length > 10000) {
+          await ProcessBatch(batch);
           batch = new Array<string>();
         }
       }
       if (batch.length > 0) {
-        await UpdateCoins(batch);
+        await ProcessBatch(batch);
         batch = new Array<string>();
       }
 

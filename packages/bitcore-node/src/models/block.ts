@@ -1,3 +1,4 @@
+import { valueOrDefault } from '../utils/check';
 import { CoinModel } from './coin';
 import { TransactionModel } from './transaction';
 import { TransformOptions } from '../types/TransformOptions';
@@ -6,8 +7,10 @@ import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
 import { IBlock } from '../types/Block';
-import { Socket } from '../services/socket';
 import { SpentHeightIndicators } from '../types/Coin';
+import { EventModel } from './events';
+import config from '../config';
+import { Event } from '../services/event';
 
 export { IBlock };
 
@@ -16,6 +19,8 @@ export class Block extends BaseModel<IBlock> {
   constructor() {
     super('blocks');
   }
+
+  chainTips: Mapping<Mapping<IBlock>> = {};
 
   allowedPaging = [
     {
@@ -29,6 +34,29 @@ export class Block extends BaseModel<IBlock> {
     this.collection.createIndex({ chain: 1, network: 1, processed: 1, height: -1 }, { background: true });
     this.collection.createIndex({ chain: 1, network: 1, timeNormalized: 1 }, { background: true });
     this.collection.createIndex({ previousBlockHash: 1 }, { background: true });
+    this.wireup();
+  }
+
+  async wireup() {
+    for (let chain of Object.keys(config.chains)) {
+      for (let network of Object.keys(config.chains[chain])) {
+        const tip = await this.getLocalTip({ chain, network });
+        if (tip) {
+          this.chainTips[chain] = { [network]: tip };
+        }
+      }
+    }
+
+    Event.blockStream.on('data', (block: IBlock) => {
+      if (block) {
+        const { chain, network, height } = block;
+        this.chainTips[chain] = valueOrDefault(this.chainTips[chain], {});
+        this.chainTips[chain][network] = valueOrDefault(this.chainTips[chain][network], block);
+        if (this.chainTips[chain][network].height < height) {
+          this.chainTips[chain][network] = block;
+        }
+      }
+    });
   }
 
   async addBlock(params: {
@@ -63,12 +91,13 @@ export class Block extends BaseModel<IBlock> {
     const height = (previousBlock && previousBlock.height + 1) || 1;
     logger.debug('Setting blockheight', height);
 
-    const convertedBlock = {
+    const convertedBlock: IBlock = {
       chain,
       network,
       hash: block.hash,
       height,
       version: header.version,
+      nextBlockHash: '',
       previousBlockHash: header.prevHash,
       merkleRoot: header.merkleRoot,
       time: new Date(blockTime),
@@ -77,7 +106,8 @@ export class Block extends BaseModel<IBlock> {
       nonce: header.nonce,
       transactionCount: block.transactions.length,
       size: block.toBuffer().length,
-      reward: block.transactions[0].outputAmount
+      reward: block.transactions[0].outputAmount,
+      processed: false
     };
     await this.collection.updateOne(
       { hash: header.hash, chain, network },
@@ -109,7 +139,7 @@ export class Block extends BaseModel<IBlock> {
     });
 
     if (initialSyncComplete) {
-      Socket.signalBlock(convertedBlock);
+      EventModel.signalBlock(convertedBlock);
     }
 
     return this.collection.updateOne({ hash: header.hash, chain, network }, { $set: { processed: true } });
