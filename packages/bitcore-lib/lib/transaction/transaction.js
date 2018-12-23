@@ -26,6 +26,7 @@ var Output = require('./output');
 var Script = require('../script');
 var PrivateKey = require('../privatekey');
 var BN = require('../crypto/bn');
+var scrypt = require('scryptsy');
 
 /**
  * Represents a transaction, a set of inputs and outputs to change ownership of tokens
@@ -69,7 +70,7 @@ Transaction.DUST_AMOUNT = 546;
 Transaction.FEE_SECURITY_MARGIN = 150;
 
 // max amount of satoshis in circulation
-Transaction.MAX_MONEY = 21000000 * 1e8;
+Transaction.MAX_MONEY = 16555000000 * 1e8;
 
 // nlocktime limit to be considered block height rather than a timestamp
 Transaction.NLOCKTIME_BLOCKHEIGHT_LIMIT = 5e8;
@@ -137,7 +138,8 @@ Object.defineProperty(Transaction.prototype, 'outputAmount', ioProperty);
  * @return {Buffer}
  */
 Transaction.prototype._getHash = function() {
-  return Hash.sha256sha256(this.toBuffer(true));
+  let buf = this.toBuffer(true);
+  return scrypt(buf, buf, 1024, 1, 1, 32);
 };
 
 /**
@@ -145,7 +147,8 @@ Transaction.prototype._getHash = function() {
  * @return {Buffer}
  */
 Transaction.prototype._getWitnessHash = function() {
-  return Hash.sha256sha256(this.toBuffer(false));
+  let buf = this.toBuffer(true);
+  return scrypt(buf, buf, 1024, 1, 1, 32);
 };
 
 /**
@@ -348,8 +351,8 @@ Transaction.prototype.fromBuffer = function(buffer) {
 
 Transaction.prototype.fromBufferReader = function(reader) {
   $.checkArgument(!reader.finished(), 'No transaction data received');
-
   this.version = reader.readInt32LE();
+  this.network = reader.readInt32LE();
   var sizeTxIns = reader.readVarintNum();
 
   // check for segwit
