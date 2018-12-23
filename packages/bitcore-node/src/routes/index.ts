@@ -2,7 +2,7 @@ import config from '../config';
 import { Request, Response } from 'express';
 import express from 'express';
 import cors from 'cors';
-import { LogRequest, RateLimiter } from "./middleware";
+import { LogMiddleware, CacheMiddleware, CacheTimes, RateLimiter } from './middleware';
 
 const app = express();
 const bodyParser = require('body-parser');
@@ -51,7 +51,8 @@ function getRouterFromFile(path) {
 }
 
 app.use(cors());
-app.use(LogRequest);
+app.use(LogMiddleware());
+app.use(CacheMiddleware(CacheTimes.Second));
 app.use('/api', getRouterFromFile('status'));
 
 app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
@@ -62,16 +63,10 @@ app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
   const hasNetworkForChain = hasChainNetworks ? chainNetworks[network] : false;
 
   if (chain && !hasChain) {
-    return resp
-      .status(500)
-      .send(`This node is not configured for the chain ${chain}`);
+    return resp.status(500).send(`This node is not configured for the chain ${chain}`);
   }
   if (network && (!hasChainNetworks || !hasNetworkForChain)) {
-    return resp
-      .status(500)
-      .send(
-        `This node is not configured for the network ${network} on chain ${chain}`
-      );
+    return resp.status(500).send(`This node is not configured for the network ${network} on chain ${chain}`);
   }
   return next();
 });

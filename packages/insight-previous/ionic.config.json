@@ -7,7 +7,7 @@
   "proxies": [
     {
       "path": "/api",
-      "proxyUrl": "http://zeus.bitjson.me:3000/api"
+      "proxyUrl": "http://localhost:3000/api"
     }
   ],
   "hooks": {}

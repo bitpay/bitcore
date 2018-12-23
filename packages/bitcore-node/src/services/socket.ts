@@ -1,6 +1,16 @@
 import SocketIO = require('socket.io');
 import { LoggifyClass } from '../decorators/Loggify';
 import { EventModel, IEvent } from '../models/events';
+import { Event } from './event';
+import { ObjectID } from 'mongodb';
+
+function SanitizeWallet(x: { wallets: ObjectID[] }) {
+  const sanitized = Object.assign({}, x, { wallets: undefined });
+  if (sanitized.wallets && sanitized.wallets.length > 0) {
+    delete sanitized.wallets;
+  }
+  return sanitized;
+}
 
 @LoggifyClass
 export class SocketService {
@@ -21,59 +31,34 @@ export class SocketService {
         socket.join(room);
       });
     });
-    this.wireupCursors();
+    this.wireup();
   }
 
-  async wireupCursors() {
-    let lastBlockUpdate = new Date();
-    let lastTxUpdate = new Date();
-    let lastAddressTxUpdate = new Date();
-
-    const retryTxCursor = async () => {
-      const txCursor = EventModel.getTxTail(lastTxUpdate);
-      while (await txCursor.hasNext()) {
-        const txEvent = await txCursor.next();
-        if (this.io && txEvent) {
-          const tx = <IEvent.TxEvent>txEvent.payload;
-          const { chain, network } = tx;
-          this.io.sockets.in(`/${chain}/${network}/inv`).emit('tx', tx);
-          lastTxUpdate = new Date();
-        }
+  async wireup() {
+    Event.txStream.on('data', (tx: IEvent.TxEvent) => {
+      if (this.io) {
+        const { chain, network } = tx;
+        const sanitizedTx = SanitizeWallet(tx);
+        this.io.sockets.in(`/${chain}/${network}/inv`).emit('tx', sanitizedTx);
       }
-      setTimeout(retryTxCursor, 5000);
-    };
-    retryTxCursor();
+    });
 
-    const retryBlockCursor = async () => {
-      const blockCursor = EventModel.getBlockTail(lastBlockUpdate);
-      while (await blockCursor.hasNext()) {
-        const blockEvent = await blockCursor.next();
-        if (this.io && blockEvent) {
-          const block = <IEvent.BlockEvent>blockEvent.payload;
-          const { chain, network } = block;
-          this.io.sockets.in(`/${chain}/${network}/inv`).emit('block', block);
-          lastBlockUpdate = new Date();
-        }
+    Event.blockStream.on('data', (block: IEvent.BlockEvent) => {
+      if (this.io) {
+        const { chain, network } = block;
+        this.io.sockets.in(`/${chain}/${network}/inv`).emit('block', block);
       }
-      setTimeout(retryBlockCursor, 5000);
-    };
-    retryBlockCursor();
+    });
 
-    const retryAddressTxCursor = async () => {
-      const addressTxCursor = EventModel.getCoinTail(lastAddressTxUpdate);
-      while (await addressTxCursor.hasNext()) {
-        const addressTx = await addressTxCursor.next();
-        if (this.io && addressTx) {
-          const { address, coin } = <IEvent.CoinEvent>addressTx.payload;
-          const { chain, network } = coin;
-          this.io.sockets.in(`/${chain}/${network}/address`).emit(address, coin);
-          this.io.sockets.in(`/${chain}/${network}/inv`).emit('coin', coin);
-          lastAddressTxUpdate = new Date();
-        }
+    Event.addressCoinStream.on('data', (addressCoin: IEvent.CoinEvent) => {
+      if (this.io) {
+        const { coin, address } = addressCoin;
+        const { chain, network } = coin;
+        const sanitizedCoin = SanitizeWallet(coin);
+        this.io.sockets.in(`/${chain}/${network}/address`).emit(address, sanitizedCoin);
+        this.io.sockets.in(`/${chain}/${network}/inv`).emit('coin', sanitizedCoin);
       }
-      setTimeout(retryAddressTxCursor, 5000);
-    };
-    retryAddressTxCursor();
+    });
   }
 
   async signalBlock(block: IEvent.BlockEvent) {

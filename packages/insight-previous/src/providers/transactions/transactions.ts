@@ -176,7 +176,7 @@ export class TxsProvider {
   public getTx(hash: string): Observable<{ tx: AppTx }> {
     const url: string = this.api.getUrl() + '/tx/' + hash;
     return this.http.get(url).flatMap(async data => {
-      const apiTx: ApiTx = data.json()[0];
+      const apiTx: ApiTx = data.json();
       const appTx: AppTx = this.toAppTx(apiTx);
       return { tx: appTx };
     });

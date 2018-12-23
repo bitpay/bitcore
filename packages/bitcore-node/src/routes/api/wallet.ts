@@ -43,14 +43,14 @@ const authenticate: RequestHandler = async (req: PreAuthRequest, res: Response, 
   try {
     wallet = await ChainStateProvider.getWallet({ chain, network, pubKey });
   } catch (err) {
-    return res.status(500).send(new Error('Problem authenticating wallet'));
+    return res.status(500).send('Problem authenticating wallet');
   }
 
   if (req.is('application/octet-stream')) {
     req.body = JSON.parse(req.body.toString());
   }
   if (!wallet) {
-    return res.status(404).send(new Error('Wallet not found'));
+    return res.status(404).send('Wallet not found');
   }
   Object.assign(req, { wallet });
   if(config.api.wallets.allowUnauthenticatedCalls) {
@@ -63,11 +63,11 @@ const authenticate: RequestHandler = async (req: PreAuthRequest, res: Response, 
       signature: req.headers['x-signature']
     });
     if (!validRequestSignature) {
-      return res.status(401).send(new Error('Authentication failed'));
+      return res.status(401).send('Authentication failed');
     }
     return next();
   } catch (e) {
-    return res.status(401).send(new Error('Authentication failed'));
+    return res.status(401).send('Authentication failed');
   }
 };
 

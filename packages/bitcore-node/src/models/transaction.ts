@@ -224,7 +224,7 @@ export class Transaction extends BaseModel<ITransaction> {
           // TODO: Fee is negative for mempool txs
           fee = groupedSpends[txid].total - groupedMints[txid].total;
           if (fee < 0) {
-            console.error(txid, groupedSpends[txid], groupedMints[txid]);
+            logger.debug('negative fee', txid, groupedSpends[txid], groupedMints[txid]);
           }
         }
 
