@@ -58,6 +58,11 @@ const Config = function(): ConfigType {
     dbPort: process.env.DB_PORT || '27017',
     numWorkers: cpus().length,
     api: {
+      rateLimiter: {
+        whitelist: [
+          '::ffff:127.0.0.1'
+        ]
+      },
       wallets: {
         allowCreationBeforeCompleteSync: false,
         allowUnauthenticatedCalls: false
