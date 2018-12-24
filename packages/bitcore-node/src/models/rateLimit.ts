@@ -43,7 +43,7 @@ export class RateLimit extends BaseModel<IRateLimit> {
       this.collection.findOneAndUpdate(
         { identifier, method, period: 'hour', time: { $gt: new Date(Date.now() - 60 * 60 * 1000) } },
         {
-          $setOnInsert: { time: new Date(), expireAt: new Date(Date.now() + 2 * 60 * 1000) },
+          $setOnInsert: { time: new Date(), expireAt: new Date(Date.now() + 62 * 60 * 1000) },
           $inc: { count: 1 }
         },
         { upsert: true, returnOriginal: false }
