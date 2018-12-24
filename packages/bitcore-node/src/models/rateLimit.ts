@@ -9,7 +9,6 @@ export type IRateLimit = {
   count: number;
   time?: Date;
   expireAt?: Date;
-  value?: any;
 };
 
 export class RateLimit extends BaseModel<IRateLimit> {
