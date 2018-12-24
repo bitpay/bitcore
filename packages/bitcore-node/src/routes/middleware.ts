@@ -74,16 +74,20 @@ export function RateLimiter(method: string, perSecond: number, perMinute: number
       if (config.api.rateLimiter.whitelist.includes(identifier)) {
         return next();
       }
-      let [perSecondResult, perMinuteResult, perHourResult] = await RateLimitModel.incrementAndCheck(identifier, method);
+      let [perSecondResult, perMinuteResult, perHourResult] = await RateLimitModel.incrementAndCheck(
+        identifier,
+        method
+      );
       if (
-        (perSecondResult.value as any).count > perSecond ||
-        (perMinuteResult.value as any).count > perMinute ||
-        (perHourResult.value as any).count > perHour) {
+        perSecondResult.value!.count > perSecond ||
+        perMinuteResult.value!.count > perMinute ||
+        perHourResult.value!.count > perHour
+      ) {
         return res.status(429).send('Rate Limited');
       }
     } catch (err) {
       logger.error('Rate Limiter failed');
     }
     return next();
-  }
+  };
 }

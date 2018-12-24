@@ -48,7 +48,7 @@ export class RateLimit extends BaseModel<IRateLimit> {
         },
         { upsert: true, returnOriginal: false }
       ),
-    ]); 
+    ]);
   }
 }
 
