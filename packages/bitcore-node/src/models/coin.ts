@@ -2,7 +2,7 @@ import { LoggifyClass } from '../decorators/Loggify';
 import { BaseModel, MongoBound } from './base';
 import { ObjectID } from 'mongodb';
 import { SpentHeightIndicators, CoinJSON } from '../types/Coin';
-import { valueOrDefault } from '../utils/check';
+import { valueOrDefault, transformOrDefault } from '../utils/check';
 
 export type ICoin = {
   network: string;
@@ -17,7 +17,6 @@ export type ICoin = {
   wallets: Array<ObjectID>;
   spentTxid: string;
   spentHeight: number;
-  confirmations?: number;
 };
 
 @LoggifyClass
@@ -146,7 +145,7 @@ class Coin extends BaseModel<ICoin> {
 
   _apiTransform(coin: Partial<MongoBound<ICoin>>, options?: { object: boolean }): any {
     const transform: CoinJSON = {
-      _id: valueOrDefault(coin._id, new ObjectID()).toHexString(),
+      _id: transformOrDefault(coin._id, c => c.toHexString(), ''),
       chain: valueOrDefault(coin.chain, ''),
       network: valueOrDefault(coin.network, ''),
       coinbase: valueOrDefault(coin.coinbase, false),
@@ -156,14 +155,14 @@ class Coin extends BaseModel<ICoin> {
       mintHeight: valueOrDefault(coin.mintHeight, -1),
       spentHeight: valueOrDefault(coin.spentHeight, SpentHeightIndicators.error),
       address: valueOrDefault(coin.address, ''),
-      script: valueOrDefault(coin.script, Buffer.alloc(0)).toString('hex'),
-      value: valueOrDefault(coin.value, -1),
-      confirmations: valueOrDefault(coin.confirmations, -1)
+      script: transformOrDefault(coin.script, c => c.toString('hex'), ''),
+      value: valueOrDefault(coin.value, -1)
     };
     if (options && options.object) {
       return transform;
+    } else {
+      return JSON.stringify(transform);
     }
-    return JSON.stringify(transform);
   }
 }
 export let CoinModel = new Coin();

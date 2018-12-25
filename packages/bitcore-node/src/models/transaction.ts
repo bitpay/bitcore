@@ -1,3 +1,4 @@
+import { transformOrDefault } from '../utils/check';
 import { CoinModel } from './coin';
 import { WalletAddressModel } from './walletAddress';
 import { partition } from '../utils/partition';
@@ -13,6 +14,7 @@ import * as lodash from 'lodash';
 import { Socket } from '../services/socket';
 import { TransactionJSON } from '../types/Transaction';
 import { SpentHeightIndicators } from '../types/Coin';
+import { valueOrDefault } from '../utils/check';
 
 const Chain = require('../chain');
 
@@ -467,21 +469,21 @@ export class Transaction extends BaseModel<ITransaction> {
 
   _apiTransform(tx: Partial<MongoBound<ITransaction>>, options: TransformOptions): TransactionJSON | string {
     const transaction: TransactionJSON = {
-      _id: tx._id ? tx._id.toString() : '',
-      txid: tx.txid || '',
-      network: tx.network || '',
-      chain: tx.chain || '',
-      blockHeight: tx.blockHeight || -1,
-      blockHash: tx.blockHash || '',
-      blockTime: tx.blockTime ? tx.blockTime.toISOString() : '',
-      blockTimeNormalized: tx.blockTimeNormalized ? tx.blockTimeNormalized.toISOString() : '',
-      coinbase: tx.coinbase || false,
-      locktime: tx.locktime || -1,
-      inputCount: tx.inputCount || -1,
-      outputCount: tx.outputCount || -1,
-      size: tx.size || -1,
-      fee: tx.fee || -1,
-      value: tx.value || -1
+      _id: transformOrDefault(tx._id, t => t.toHexString(), ''),
+      txid: valueOrDefault(tx.txid, ''),
+      network: valueOrDefault(tx.network, ''),
+      chain: valueOrDefault(tx.chain, ''),
+      blockHeight: valueOrDefault(tx.blockHeight, -1),
+      blockHash: valueOrDefault(tx.blockHash, ''),
+      blockTime: transformOrDefault(tx.blockTime, t => t.toISOString(), ''),
+      blockTimeNormalized: transformOrDefault(tx.blockTimeNormalized, t => t.toISOString(), ''),
+      coinbase: valueOrDefault(tx.coinbase, false),
+      locktime: valueOrDefault(tx.locktime, -1),
+      inputCount: valueOrDefault(tx.inputCount, -1),
+      outputCount: valueOrDefault(tx.outputCount, -1),
+      size: valueOrDefault(tx.size, -1),
+      fee: valueOrDefault(tx.fee, -1),
+      value: valueOrDefault(tx.value, -1)
     };
     if (options && options.object) {
       return transaction;
