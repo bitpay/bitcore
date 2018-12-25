@@ -1,4 +1,4 @@
-import { BCH, BTC, Chain, tBCH, tBTC } from './chains';
+import { XVG, BTC, Chain, tXVG, tBTC } from './chains';
 
 export interface ChainDenomination {
   [k: string]: Unit;
@@ -30,14 +30,14 @@ const generateBitcoinDenomination = (chain: Chain): ChainDenomination => ({
   }
 });
 
-export const BCHDenomination = generateBitcoinDenomination(BCH);
-export const tBCHDenomination = generateBitcoinDenomination(tBCH);
+export const XVGDenomination = generateBitcoinDenomination(XVG);
+export const tXVGDenomination = generateBitcoinDenomination(tXVG);
 export const BTCDenomination = generateBitcoinDenomination(BTC);
 export const tBTCDenomination = generateBitcoinDenomination(tBTC);
 
 export const ChainDenominations = {
-  BCH: BCHDenomination,
-  tBCH: tBCHDenomination,
+  XVG: XVGDenomination,
+  tXVG: tXVGDenomination,
   BTC: BTCDenomination,
   tBTC: tBTCDenomination
 };

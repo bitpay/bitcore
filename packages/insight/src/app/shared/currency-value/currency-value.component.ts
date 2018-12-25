@@ -84,15 +84,15 @@ export class CurrencyValueComponent implements OnChanges {
   @Input()
   amount: number;
   /**
-   * The currency code/ticker symbol of the value. (E.g. when displaying a BCH
-   * value from the Bitcore API, this should likely be `BCH_satoshis`, even if
+   * The currency code/ticker symbol of the value. (E.g. when displaying a XVG
+   * value from the Bitcore API, this should likely be `XVG_satoshis`, even if
    * values will be displayed in an alternative currency.)
    */
   @Input()
   code: string;
   /**
    * Either the alternative ticker/currency code, or the `ChainDenomination`
-   * unit in which to display the value. (E.g. `BCH_bits`, `BCH`, `USD`, etc.)
+   * unit in which to display the value. (E.g. `XVG_bits`, `XVG`, `USD`, etc.)
    *
    * If an alternative ticker is provided, the value will be estimated using
    * market exchange rates.

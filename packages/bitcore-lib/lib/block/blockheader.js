@@ -5,7 +5,7 @@ var BN = require('../crypto/bn');
 var BufferUtil = require('../util/buffer');
 var BufferReader = require('../encoding/bufferreader');
 var BufferWriter = require('../encoding/bufferwriter');
-var Hash = require('../crypto/hash');
+var scrypt = require('scryptsy');
 var JSUtil = require('../util/js');
 var $ = require('../util/preconditions');
 
@@ -236,7 +236,7 @@ BlockHeader.prototype.getDifficulty = function getDifficulty() {
  */
 BlockHeader.prototype._getHash = function hash() {
   var buf = this.toBuffer();
-  return Hash.sha256sha256(buf);
+  return scrypt(buf, buf, 1024, 1, 1, 32);
 };
 
 var idProperty = {

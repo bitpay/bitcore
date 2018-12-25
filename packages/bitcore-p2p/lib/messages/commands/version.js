@@ -50,11 +50,13 @@ VersionMessage.prototype.setPayload = function(payload) {
   this.timestamp = new Date(parser.readUInt64LEBN().toNumber() * 1000);
 
   this.addrMe = {
+    time: parser.readUInt32LE(),
     services: parser.readUInt64LEBN(),
     ip: utils.parseIP(parser),
     port: parser.readUInt16BE()
   };
   this.addrYou = {
+    time: parser.readUInt32LE(),
     services: parser.readUInt64LEBN(),
     ip: utils.parseIP(parser),
     port: parser.readUInt16BE()

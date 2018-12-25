@@ -69,7 +69,7 @@ Transaction.DUST_AMOUNT = 546;
 Transaction.FEE_SECURITY_MARGIN = 150;
 
 // max amount of satoshis in circulation
-Transaction.MAX_MONEY = 21000000 * 1e8;
+Transaction.MAX_MONEY = 16555000000 * 1e8;
 
 // nlocktime limit to be considered block height rather than a timestamp
 Transaction.NLOCKTIME_BLOCKHEIGHT_LIMIT = 5e8;
@@ -136,7 +136,7 @@ Object.defineProperty(Transaction.prototype, 'outputAmount', ioProperty);
  * Retrieve the little endian hash of the transaction (used for serialization)
  * @return {Buffer}
  */
-Transaction.prototype._getHash = function() {
+Transaction.prototype._getHash = function () {
   return Hash.sha256sha256(this.toBuffer(true));
 };
 
@@ -144,7 +144,7 @@ Transaction.prototype._getHash = function() {
  * Retrieve the little endian hash of the transaction including witness data
  * @return {Buffer}
  */
-Transaction.prototype._getWitnessHash = function() {
+Transaction.prototype._getWitnessHash = function () {
   return Hash.sha256sha256(this.toBuffer(false));
 };
 
@@ -308,6 +308,7 @@ Transaction.prototype.hasWitnesses = function() {
 
 Transaction.prototype.toBufferWriter = function(writer, noWitness) {
   writer.writeInt32LE(this.version);
+  writer.writeInt32LE(this.network);
 
   var hasWitnesses = this.hasWitnesses();
 
@@ -348,8 +349,8 @@ Transaction.prototype.fromBuffer = function(buffer) {
 
 Transaction.prototype.fromBufferReader = function(reader) {
   $.checkArgument(!reader.finished(), 'No transaction data received');
-
   this.version = reader.readInt32LE();
+  this.network = reader.readInt32LE();
   var sizeTxIns = reader.readVarintNum();
 
   // check for segwit
