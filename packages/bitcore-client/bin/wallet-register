@@ -6,16 +6,18 @@ const Wallet = require('../ts_build/wallet');
 program
   .version(require('../package.json').version)
   .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--chain <chain>', 'REQUIRED - Chain to register for')
+  .option('--chain <network>', 'REQUIRED - Network to register for')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--baseUrl <url>', 'optional - Change configured wallet baseUrl')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, baseUrl } = program;
+  const { name, path, baseUrl, chain, network } = program;
   let wallet;
   try {
     wallet = await Wallet.loadWallet({ name, path });
-    await wallet.register({ baseUrl });
+    await wallet.register({ baseUrl, chain, network });
     console.log('Wallet registered!');
   } catch (e) {
     console.error(e);

@@ -12,6 +12,11 @@ export class Client {
     Object.assign(this, params);
   }
 
+  getUrl(payload: { chain; network; baseUrl?: string }) {
+    const { baseUrl = this.baseUrl, chain, network } = payload;
+    return `${baseUrl}/${chain}/${network}`;
+  }
+
   sign(params) {
     const { method, url, payload = {} } = params;
     const parsedUrl = new URL(url);
@@ -27,53 +32,71 @@ export class Client {
     return secp256k1.sign(messageHash, privateKey).signature.toString('hex');
   }
 
-  async register(params) {
-    const { payload } = params;
+  async register(params: { chain: string; network: string; baseUrl: string }) {
     // allow you to overload the client's baseUrl
-    const { baseUrl = this.baseUrl } = payload;
-    const url = `${baseUrl}/wallet`;
-    const signature = this.sign({ method: 'POST', url, payload });
+    const { baseUrl = this.baseUrl, chain, network } = params;
+    const url = `${this.getUrl(params)}/wallet`;
+    const signature = this.sign({ method: 'POST', url, payload: '' });
     return request.post(url, {
       headers: { 'x-signature': signature },
-      body: payload,
+      body: '',
       json: true
     });
   }
 
-  async getBalance(params) {
-    const { payload, pubKey } = params;
-    const url = `${this.baseUrl}/wallet/${pubKey}/balance`;
-    const signature = this.sign({ method: 'GET', url, payload });
+  async getBalance(params: { pubKey: string; chain: string; network: string }) {
+    const { pubKey } = params;
+    const url = `${this.getUrl(params)}/wallet/${pubKey}/balance`;
+    const signature = this.sign({ method: 'GET', url, payload: '' });
     return request.get(url, {
       headers: { 'x-signature': signature },
-      body: payload,
+      body: '',
       json: true
     });
   }
 
-  getAddressTxos = async function(params) {
+  getAddressTxos = async function(params: {
+    unspent: boolean;
+    address: string;
+    chain: string;
+    network: string;
+  }) {
     const { unspent, address } = params;
     const args = unspent ? `?unspent=${unspent}` : '';
-    const url = `${this.baseUrl}/address/${address}${args}`;
+    const url = `${this.getUrl(params)}/address/${address}${args}`;
     return request.get(url, {
       json: true
     });
   };
 
-  getCoins(params: {payload?: any, pubKey: string, includeSpent: boolean}) {
-    const { payload, pubKey, includeSpent } = params;
-    const url = `${
-      this.baseUrl
-    }/wallet/${pubKey}/utxos?includeSpent=${includeSpent}`;
-    const signature = this.sign({ method: 'GET', url, payload });
+  getCoins(params: {
+    pubKey: string;
+    includeSpent: boolean;
+    chain: string;
+    network: string;
+  }) {
+    const { pubKey, includeSpent } = params;
+    const url = `${this.getUrl(
+      params
+    )}/wallet/${pubKey}/utxos?includeSpent=${includeSpent}`;
+    const signature = this.sign({ method: 'GET', url, payload: '' });
     return requestStream.get(url, {
       headers: { 'x-signature': signature },
-      body: payload,
+      body: '',
       json: true
     });
   }
 
-  listTransactions(params) {
+  listTransactions(params: {
+    chain: string;
+    network: string;
+    pubKey: string;
+    startBlock: string | number;
+    startDate: string;
+    endBlock: string | number;
+    endDate: string;
+    includeMempool: boolean;
+  }) {
     const {
       pubKey,
       startBlock,
@@ -82,7 +105,7 @@ export class Client {
       endDate,
       includeMempool
     } = params;
-    let url = `${this.baseUrl}/wallet/${pubKey}/transactions?`;
+    let url = `${this.getUrl(params)}/wallet/${pubKey}/transactions?`;
     if (startBlock) {
       url += `startBlock=${startBlock}&`;
     }
@@ -105,17 +128,22 @@ export class Client {
     });
   }
 
-  async getFee(params) {
+  async getFee(params: { target: number; chain: string; network: string }) {
     const { target } = params;
-    const url = `${this.baseUrl}/fee/${target}`;
+    const url = `${this.getUrl(params)}/fee/${target}`;
     return request.get(url, {
       json: true
     });
   }
 
-  async importAddresses(params) {
+  async importAddresses(params: {
+    payload: Array<{ address: string }>;
+    pubKey: string;
+    chain: string;
+    network: string;
+  }) {
     const { payload, pubKey } = params;
-    const url = `${this.baseUrl}/wallet/${pubKey}`;
+    const url = `${this.getUrl(params)}/wallet/${pubKey}`;
     const signature = this.sign({ method: 'POST', url, payload });
 
     return new Promise(resolve => {
@@ -138,7 +166,7 @@ export class Client {
 
   async broadcast(params) {
     const { payload } = params;
-    const url = `${this.baseUrl}/tx/send`;
+    const url = `${this.getUrl(params)}/tx/send`;
     return request.post(url, { body: payload, json: true });
   }
 }
