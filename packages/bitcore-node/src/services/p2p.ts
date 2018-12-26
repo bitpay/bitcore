@@ -7,6 +7,7 @@ import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { StateModel } from '../models/state';
 import { SpentHeightIndicators } from '../types/Coin';
+import os from 'os';
 const Chain = require('../chain');
 const LRU = require('lru-cache');
 
@@ -22,6 +23,7 @@ export class P2pService {
   private pool: any;
   private invCache: any;
   private initialSyncComplete: boolean;
+  private isSyncingNode: boolean;
   constructor(params) {
     const { chain, network, chainConfig } = params;
     this.chain = chain;
@@ -32,6 +34,7 @@ export class P2pService {
     this.events = new EventEmitter();
     this.syncing = false;
     this.initialSyncComplete = false;
+    this.isSyncingNode = false;
     this.invCache = new LRU({ max: 10000 });
     this.messages = new this.bitcoreP2p.Messages({
       network: this.bitcoreLib.Networks.get(this.network)
@@ -76,7 +79,7 @@ export class P2pService {
         network: this.network,
         hash
       });
-      if (!this.invCache.get(hash)) {
+      if (this.isSyncingNode && !this.invCache.get(hash)) {
         this.processTransaction(message.transaction);
         this.events.emit('transaction', message.transaction);
       }
@@ -93,7 +96,7 @@ export class P2pService {
         hash
       });
 
-      if (!this.invCache.get(hash)) {
+      if (this.isSyncingNode && !this.invCache.get(hash)) {
         this.invCache.set(hash);
         this.events.emit(hash, message.block);
         this.events.emit('block', message.block);
@@ -112,7 +115,7 @@ export class P2pService {
     });
 
     this.pool.on('peerinv', (peer, message) => {
-      if (!this.syncing) {
+      if (this.isSyncingNode && !this.syncing) {
         const filtered = message.inventory.filter(inv => {
           const hash = this.bitcoreLib.encoding
             .BufferReader(inv.hash)
@@ -304,6 +307,22 @@ export class P2pService {
     logger.debug(`Started worker for chain ${this.chain}`);
     this.setupListeners();
     await this.connect();
-    this.sync();
+    setInterval(async () => {
+      const syncingNode = await StateModel.getSyncingNode({chain: this.chain, network: this.network});
+      const [hostname, pid] = syncingNode.split(':');
+      const amSyncingNode = (hostname === os.hostname() && pid === process.pid.toString());
+      if (amSyncingNode) {
+        StateModel.selfNominateSyncingNode({ chain: this.chain, network: this.network, lastHeartBeat: syncingNode });
+        if (!this.isSyncingNode) {
+          logger.info(`This worker is now the syncing node for ${this.chain} ${this.network}`);
+          this.isSyncingNode = true;
+          this.sync();
+        }
+      } else {
+        setTimeout(() => {
+          StateModel.selfNominateSyncingNode({ chain: this.chain, network: this.network, lastHeartBeat: syncingNode });
+        }, 5000)
+      }
+    }, 1000);
   }
 }
