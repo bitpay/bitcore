@@ -5,7 +5,6 @@ import { EventModel, IEvent, EventSchema } from '../models/events';
 import { PassThrough } from 'stream';
 import { Storage } from './storage';
 import { Config, ConfigService } from './config';
-import { ConfigType } from '../types/Config';
 
 @LoggifyClass
 export class EventService {
@@ -14,7 +13,6 @@ export class EventService {
   addressCoinStream = new PassThrough({ objectMode: true });
   storageService: StorageService;
   configService: ConfigService;
-  serviceConfig: ConfigType['services']['event'];
   eventModel: EventSchema;
   stopped = false;
 
@@ -25,11 +23,10 @@ export class EventService {
     this.signalTx = this.signalTx.bind(this);
     this.signalBlock = this.signalBlock.bind(this);
     this.signalAddressCoin = this.signalAddressCoin.bind(this);
-    this.serviceConfig = this.configService.for('event');
   }
 
-  start(config: ConfigType = this.configService.current) {
-    if (!config.services.event.enabled) {
+  start() {
+    if (!this.configService.isEnabled('event')) {
       return;
     }
     logger.info('Starting Event Service');

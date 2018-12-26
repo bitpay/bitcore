@@ -82,7 +82,7 @@ export class TransactionSchema extends BaseModel<ITransaction> {
     logger.debug('Minting Coins', mintOps.length);
     if (mintOps.length) {
       await Promise.all(
-        partition(mintOps, mintOps.length / Config.current.maxPoolSize).map(mintBatch =>
+        partition(mintOps, mintOps.length / Config.get().maxPoolSize).map(mintBatch =>
           CoinModel.collection.bulkWrite(mintBatch, { ordered: false })
         )
       );
@@ -91,7 +91,7 @@ export class TransactionSchema extends BaseModel<ITransaction> {
     logger.debug('Spending Coins', spendOps.length);
     if (spendOps.length) {
       await Promise.all(
-        partition(spendOps, spendOps.length / Config.current.maxPoolSize).map(spendBatch =>
+        partition(spendOps, spendOps.length / Config.get().maxPoolSize).map(spendBatch =>
           CoinModel.collection.bulkWrite(spendBatch, { ordered: false })
         )
       );
@@ -101,7 +101,7 @@ export class TransactionSchema extends BaseModel<ITransaction> {
       const txOps = await this.addTransactions({ ...params, mintOps });
       logger.debug('Writing Transactions', txOps.length);
       await Promise.all(
-        partition(txOps, txOps.length / Config.current.maxPoolSize).map(txBatch =>
+        partition(txOps, txOps.length / Config.get().maxPoolSize).map(txBatch =>
           this.collection.bulkWrite(txBatch, { ordered: false })
         )
       );

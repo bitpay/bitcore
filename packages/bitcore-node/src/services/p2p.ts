@@ -27,15 +27,15 @@ export class P2pManager {
     }
   }
 
-  async start({ config = this.configService.current, blockModel = BlockModel } = {}) {
-    if (!config.services.p2p.enabled) {
+  async start({ blockModel = BlockModel } = {}) {
+    if (!this.configService.isEnabled('p2p')) {
       return;
     }
     logger.info('Starting P2P Manager');
     const p2pWorkers = new Array<P2pWorker>();
-    for (let chain of Object.keys(config.chains)) {
-      for (let network of Object.keys(config.chains[chain])) {
-        const chainConfig = config.chains[chain][network];
+    for (let chain of Object.keys(Config.get().chains)) {
+      for (let network of Object.keys(Config.get().chains[chain])) {
+        const chainConfig = Config.get().chains[chain][network];
         if (chainConfig.chainSource && chainConfig.chainSource !== 'p2p') {
           continue;
         }
@@ -47,7 +47,7 @@ export class P2pManager {
         });
         p2pWorkers.push(p2pWorker);
         try {
-          p2pWorker.start(config);
+          p2pWorker.start(Config.get());
         } catch (e) {
           logger.error('P2P Worker died with', e);
         }

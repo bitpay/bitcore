@@ -11,22 +11,21 @@ export class ConfigService {
     this._config = _config;
   }
 
-  public get current() {
+  public get() {
     return this._config;
   }
 
   public updateConfig(partialConfig: RecursivePartial<ConfigType>) {
-    const newConfig = Object.assign({}, this.current, partialConfig);
+    const newConfig = Object.assign({}, this.get(), partialConfig);
     this._config = newConfig;
-    console.log('Writing', newConfig);
   }
 
   public for<T extends keyof ConfigType['services']>(service: T): ConfigType['services'][T] {
-    return this.current.services[service];
+    return this.get().services[service];
   }
 
   public isEnabled(service: ServiceName) {
-    return this.current.services[service].enabled;
+    return this.get().services[service].enabled;
   }
 }
 

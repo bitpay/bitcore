@@ -27,7 +27,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   getRPC(chain: string, network: string) {
-    const RPC_PEER = Config.current.chains[chain][network].rpc;
+    const RPC_PEER = Config.get().chains[chain][network].rpc;
     if (!RPC_PEER) {
       throw new Error(`RPC not configured for ${chain} ${network}`);
     }

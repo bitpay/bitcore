@@ -37,7 +37,7 @@ export class SocketService {
     this.signalAddressCoin = this.signalAddressCoin.bind(this);
   }
 
-  start({ server, config = this.configService.current }: { server: http.Server; config: ConfigType }) {
+  start({ server, config = this.configService.get() }: { server: http.Server; config: ConfigType }) {
     if (!config.services.socket.enabled) {
       return;
     }

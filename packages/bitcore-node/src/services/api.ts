@@ -6,14 +6,12 @@ import { LoggifyClass } from '../decorators/Loggify';
 import { Storage, StorageService } from './storage';
 import { Socket, SocketService } from './socket';
 import { ConfigService, Config } from './config';
-import { ConfigType } from '../types/Config';
 
 @LoggifyClass
 export class ApiService {
   port: number;
   timeout: number;
   configService: ConfigService;
-  serviceConfig: ConfigType['services']['api'];
   storageService: StorageService;
   socketService: SocketService;
   httpServer: http.Server;
@@ -28,14 +26,13 @@ export class ApiService {
     this.port = port;
     this.timeout = timeout;
     this.configService = configService;
-    this.serviceConfig = this.configService.for('api');
     this.storageService = storageService;
     this.socketService = socketService;
     this.httpServer = new http.Server(app);
   }
 
-  async start({ config = Config.current } = {}) {
-    if (!config.services.api.enabled) {
+  async start() {
+    if (!this.configService.isEnabled('api')) {
       return;
     }
     if (!this.storageService.connected) {
