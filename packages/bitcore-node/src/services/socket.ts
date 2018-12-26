@@ -1,8 +1,12 @@
+import logger from '../logger';
 import SocketIO = require('socket.io');
+import * as http from 'http';
 import { LoggifyClass } from '../decorators/Loggify';
-import { EventModel, IEvent } from '../models/events';
-import { Event } from './event';
+import { EventModel, IEvent, EventSchema } from '../models/events';
+import { Event, EventService } from './event';
 import { ObjectID } from 'mongodb';
+import { Config, ConfigService } from './config';
+import { ConfigType } from '../types/Config';
 
 function SanitizeWallet(x: { wallets: ObjectID[] }) {
   const sanitized = Object.assign({}, x, { wallets: undefined });
@@ -14,18 +18,32 @@ function SanitizeWallet(x: { wallets: ObjectID[] }) {
 
 @LoggifyClass
 export class SocketService {
+  httpServer?: http.Server;
   io?: SocketIO.Server;
   id: number = Math.random();
+  configService: ConfigService;
+  serviceConfig: ConfigType['services']['socket'];
+  eventService: EventService;
+  eventModel: EventSchema;
 
-  constructor() {
-    this.setServer = this.setServer.bind(this);
+  constructor({ eventService = Event, eventModel = EventModel, configService = Config } = {}) {
+    this.eventService = eventService;
+    this.configService = configService;
+    this.serviceConfig = this.configService.for('socket');
+    this.eventModel = eventModel;
+    this.start = this.start.bind(this);
     this.signalTx = this.signalTx.bind(this);
     this.signalBlock = this.signalBlock.bind(this);
     this.signalAddressCoin = this.signalAddressCoin.bind(this);
   }
 
-  setServer(io: SocketIO.Server) {
-    this.io = io;
+  start({ server, config = this.configService.current }: { server: http.Server; config: ConfigType }) {
+    if (!config.services.socket.enabled) {
+      return;
+    }
+    logger.info('Starting Socket Service');
+    this.httpServer = server;
+    this.io = SocketIO(server);
     this.io.sockets.on('connection', socket => {
       socket.on('room', room => {
         socket.join(room);
@@ -34,8 +52,19 @@ export class SocketService {
     this.wireup();
   }
 
+  stop() {
+    logger.info('Stopping Socket Service');
+    return new Promise(resolve => {
+      if (this.io) {
+        this.io.close(resolve);
+      } else {
+        resolve();
+      }
+    });
+  }
+
   async wireup() {
-    Event.txStream.on('data', (tx: IEvent.TxEvent) => {
+    this.eventService.txStream.on('data', (tx: IEvent.TxEvent) => {
       if (this.io) {
         const { chain, network } = tx;
         const sanitizedTx = SanitizeWallet(tx);
@@ -43,14 +72,14 @@ export class SocketService {
       }
     });
 
-    Event.blockStream.on('data', (block: IEvent.BlockEvent) => {
+    this.eventService.blockStream.on('data', (block: IEvent.BlockEvent) => {
       if (this.io) {
         const { chain, network } = block;
         this.io.sockets.in(`/${chain}/${network}/inv`).emit('block', block);
       }
     });
 
-    Event.addressCoinStream.on('data', (addressCoin: IEvent.CoinEvent) => {
+    this.eventService.addressCoinStream.on('data', (addressCoin: IEvent.CoinEvent) => {
       if (this.io) {
         const { coin, address } = addressCoin;
         const { chain, network } = coin;

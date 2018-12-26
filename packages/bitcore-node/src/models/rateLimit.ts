@@ -1,5 +1,6 @@
 import { BaseModel } from './base';
 import { ObjectID } from 'mongodb';
+import { StorageService } from '../services/storage';
 
 export type IRateLimit = {
   _id?: ObjectID;
@@ -11,9 +12,9 @@ export type IRateLimit = {
   expireAt?: Date;
 };
 
-export class RateLimit extends BaseModel<IRateLimit> {
-  constructor() {
-    super('ratelimits');
+export class RateLimitSchema extends BaseModel<IRateLimit> {
+  constructor(storage?: StorageService) {
+    super('ratelimits', storage);
   }
   allowedPaging = [];
 
@@ -25,9 +26,9 @@ export class RateLimit extends BaseModel<IRateLimit> {
   incrementAndCheck(identifier: string, method: string) {
     return Promise.all([
       this.collection.findOneAndUpdate(
-        { identifier, method, period: 'second', time: {$gt: new Date(Date.now() - 1000)} },
+        { identifier, method, period: 'second', time: { $gt: new Date(Date.now() - 1000) } },
         {
-          $setOnInsert: { time: new Date(), expireAt: new Date(Date.now() + 10 * 1000)  },
+          $setOnInsert: { time: new Date(), expireAt: new Date(Date.now() + 10 * 1000) },
           $inc: { count: 1 }
         },
         { upsert: true, returnOriginal: false }
@@ -47,9 +48,9 @@ export class RateLimit extends BaseModel<IRateLimit> {
           $inc: { count: 1 }
         },
         { upsert: true, returnOriginal: false }
-      ),
+      )
     ]);
   }
 }
 
-export let RateLimitModel = new RateLimit();
+export let RateLimitModel = new RateLimitSchema();

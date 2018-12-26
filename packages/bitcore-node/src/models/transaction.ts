@@ -7,12 +7,12 @@ import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
-import config from '../config';
-import { StreamingFindOptions, Storage } from '../services/storage';
+import { StreamingFindOptions, Storage, StorageService } from '../services/storage';
 import * as lodash from 'lodash';
 import { Socket } from '../services/socket';
 import { TransactionJSON } from '../types/Transaction';
 import { SpentHeightIndicators } from '../types/Coin';
+import { Config } from '../services/config';
 
 const Chain = require('../chain');
 
@@ -35,9 +35,9 @@ export type ITransaction = {
 };
 
 @LoggifyClass
-export class Transaction extends BaseModel<ITransaction> {
-  constructor() {
-    super('transactions');
+export class TransactionSchema extends BaseModel<ITransaction> {
+  constructor(storage?: StorageService) {
+    super('transactions', storage);
   }
 
   allowedPaging = [
@@ -82,7 +82,7 @@ export class Transaction extends BaseModel<ITransaction> {
     logger.debug('Minting Coins', mintOps.length);
     if (mintOps.length) {
       await Promise.all(
-        partition(mintOps, mintOps.length / config.maxPoolSize).map(mintBatch =>
+        partition(mintOps, mintOps.length / Config.current.maxPoolSize).map(mintBatch =>
           CoinModel.collection.bulkWrite(mintBatch, { ordered: false })
         )
       );
@@ -91,7 +91,7 @@ export class Transaction extends BaseModel<ITransaction> {
     logger.debug('Spending Coins', spendOps.length);
     if (spendOps.length) {
       await Promise.all(
-        partition(spendOps, spendOps.length / config.maxPoolSize).map(spendBatch =>
+        partition(spendOps, spendOps.length / Config.current.maxPoolSize).map(spendBatch =>
           CoinModel.collection.bulkWrite(spendBatch, { ordered: false })
         )
       );
@@ -101,7 +101,7 @@ export class Transaction extends BaseModel<ITransaction> {
       const txOps = await this.addTransactions({ ...params, mintOps });
       logger.debug('Writing Transactions', txOps.length);
       await Promise.all(
-        partition(txOps, txOps.length / config.maxPoolSize).map(txBatch =>
+        partition(txOps, txOps.length / Config.current.maxPoolSize).map(txBatch =>
           this.collection.bulkWrite(txBatch, { ordered: false })
         )
       );
@@ -334,7 +334,7 @@ export class Transaction extends BaseModel<ITransaction> {
       }
     }
 
-    if (initialSyncComplete || config.api.wallets.allowCreationBeforeCompleteSync) {
+    if (initialSyncComplete || Config.for('api').wallets.allowCreationBeforeCompleteSync) {
       let mintOpsAddresses = {};
       for (const mintOp of mintOps) {
         mintOpsAddresses[mintOp.updateOne.update.$set.address] = true;
@@ -489,4 +489,4 @@ export class Transaction extends BaseModel<ITransaction> {
     return JSON.stringify(transaction);
   }
 }
-export let TransactionModel = new Transaction();
+export let TransactionModel = new TransactionSchema();

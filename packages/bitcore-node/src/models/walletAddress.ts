@@ -4,6 +4,7 @@ import { ObjectID } from 'mongodb';
 import { BaseModel } from './base';
 import { IWallet } from './wallet';
 import { TransactionModel } from './transaction';
+import { StorageService } from '../services/storage';
 
 export type IWalletAddress = {
   wallet: ObjectID;
@@ -12,9 +13,9 @@ export type IWalletAddress = {
   network: string;
 };
 
-export class WalletAddress extends BaseModel<IWalletAddress> {
-  constructor() {
-    super('walletaddresses');
+export class WalletAddressSchema extends BaseModel<IWalletAddress> {
+  constructor(storage?: StorageService) {
+    super('walletaddresses', storage);
   }
 
   allowedPaging = [];
@@ -79,7 +80,7 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
       };
 
       const ProcessBatch = batch => {
-        return Promise.all([ AddAddresses(batch), UpdateCoins(batch)]);
+        return Promise.all([AddAddresses(batch), UpdateCoins(batch)]);
       };
 
       for (const address of addresses) {
@@ -124,4 +125,4 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
   }
 }
 
-export let WalletAddressModel = new WalletAddress();
+export let WalletAddressModel = new WalletAddressSchema();

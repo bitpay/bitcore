@@ -1,16 +1,62 @@
-import config from '../config';
 import logger from '../logger';
 import { EventEmitter } from 'events';
-import { BlockModel } from '../models/block';
+import { BlockModel, BlockSchema } from '../models/block';
 import { ChainStateProvider } from '../providers/chain-state';
 import { TransactionModel } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { StateModel } from '../models/state';
 import { SpentHeightIndicators } from '../types/Coin';
+import { Config, ConfigService } from './config';
+import { ConfigType } from '../types/Config';
 const Chain = require('../chain');
 const LRU = require('lru-cache');
 
-export class P2pService {
+export class P2pManager {
+  workers = new Array<P2pWorker>();
+
+  private configService: ConfigService;
+
+  constructor({ configService = Config } = {}) {
+    this.configService = configService;
+  }
+
+  async stop() {
+    logger.info('Stopping P2P Manager');
+    for (const worker of this.workers) {
+      await worker.stop();
+    }
+  }
+
+  async start({ config = this.configService.current, blockModel = BlockModel } = {}) {
+    if (!config.services.p2p.enabled) {
+      return;
+    }
+    logger.info('Starting P2P Manager');
+    const p2pWorkers = new Array<P2pWorker>();
+    for (let chain of Object.keys(config.chains)) {
+      for (let network of Object.keys(config.chains[chain])) {
+        const chainConfig = config.chains[chain][network];
+        if (chainConfig.chainSource && chainConfig.chainSource !== 'p2p') {
+          continue;
+        }
+        const p2pWorker = new P2pWorker({
+          chain,
+          network,
+          chainConfig,
+          blockModel
+        });
+        p2pWorkers.push(p2pWorker);
+        try {
+          p2pWorker.start(config);
+        } catch (e) {
+          logger.error('P2P Worker died with', e);
+        }
+      }
+    }
+  }
+}
+
+export class P2pWorker {
   private chain: string;
   private network: string;
   private bitcoreLib: any;
@@ -20,10 +66,14 @@ export class P2pService {
   private syncing: boolean;
   private messages: any;
   private pool: any;
+  private connectInterval?: NodeJS.Timer;
   private invCache: any;
   private initialSyncComplete: boolean;
-  constructor(params) {
-    const { chain, network, chainConfig } = params;
+  private stopped: boolean;
+  private blockModel: BlockSchema;
+  constructor({ chain, network, chainConfig, blockModel = BlockModel }) {
+    this.blockModel = blockModel;
+    this.stopped = true;
     this.chain = chain;
     this.network = network;
     this.bitcoreLib = Chain[this.chain].lib;
@@ -130,25 +180,17 @@ export class P2pService {
 
   async connect() {
     this.pool.connect();
-    setInterval(this.pool.connect.bind(this.pool), 5000);
+    this.connectInterval = setInterval(this.pool.connect.bind(this.pool), 5000);
     return new Promise<void>(resolve => {
       this.pool.once('peerready', () => resolve());
     });
   }
 
-  static startConfiguredChains() {
-    for (let chain of Object.keys(config.chains)) {
-      for (let network of Object.keys(config.chains[chain])) {
-        const chainConfig = config.chains[chain][network];
-        if (chainConfig.chainSource && chainConfig.chainSource !== 'p2p') {
-          continue;
-        }
-        new P2pService({
-          chain,
-          network,
-          chainConfig
-        }).start();
-      }
+  async disconnect() {
+    this.pool.removeAllListeners();
+    this.pool.disconnect();
+    if (this.connectInterval) {
+      clearInterval(this.connectInterval);
     }
   }
 
@@ -201,7 +243,7 @@ export class P2pService {
   async processBlock(block): Promise<any> {
     return new Promise(async (resolve, reject) => {
       try {
-        await BlockModel.addBlock({
+        await this.blockModel.addBlock({
           chain: this.chain,
           network: this.network,
           forkHeight: this.chainConfig.forkHeight,
@@ -237,7 +279,7 @@ export class P2pService {
   }
 
   async sync() {
-    if (this.syncing) {
+    if (this.syncing || this.stopped) {
       return;
     }
     this.syncing = true;
@@ -271,6 +313,9 @@ export class P2pService {
       logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
       for (const header of headers) {
         try {
+          if (!this.stopped) {
+            throw new Error('Stopped');
+          }
           const block = await this.getBlock(header.hash);
           await this.processBlock(block);
           currentHeight++;
@@ -285,7 +330,9 @@ export class P2pService {
         } catch (err) {
           logger.error(`Error syncing ${chain} ${network}`, err);
           this.syncing = false;
-          return this.sync();
+          if (!this.stopped) {
+            return this.sync();
+          }
         }
       }
       headers = await getHeaders();
@@ -300,10 +347,22 @@ export class P2pService {
     return true;
   }
 
-  async start() {
+  async stop() {
+    logger.debug(`Stopping worker for chain ${this.chain}`);
+    this.stopped = true;
+    await this.disconnect();
+  }
+
+  async start(config: ConfigType) {
+    if (!config.services.p2p.enabled) {
+      return;
+    }
+    this.stopped = false;
     logger.debug(`Started worker for chain ${this.chain}`);
     this.setupListeners();
     await this.connect();
     this.sync();
   }
 }
+
+export const P2P = new P2pManager();

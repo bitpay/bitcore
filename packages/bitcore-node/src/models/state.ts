@@ -1,3 +1,4 @@
+import { StorageService } from '../services/storage';
 import { BaseModel } from './base';
 import { ObjectID } from 'mongodb';
 
@@ -6,13 +7,13 @@ export type IState = {
   initialSyncComplete: any;
 };
 
-export class State extends BaseModel<IState> {
-  constructor() {
-    super('state');
+export class StateSchema extends BaseModel<IState> {
+  constructor(storage?: StorageService) {
+    super('state', storage);
   }
   allowedPaging = [];
 
   onConnect() {}
 }
 
-export let StateModel = new State();
+export let StateModel = new StateSchema();

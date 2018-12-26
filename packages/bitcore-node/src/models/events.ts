@@ -2,6 +2,7 @@ import { BaseModel } from './base';
 import { ITransaction } from './transaction';
 import { IBlock } from '../types/Block';
 import { ICoin } from './coin';
+import { StorageService } from '../services/storage';
 
 export namespace IEvent {
   export type BlockEvent = IBlock;
@@ -13,9 +14,9 @@ interface IEvent {
   type: 'block' | 'tx' | 'coin';
   emitTime: Date;
 }
-class Event extends BaseModel<IEvent> {
-  constructor() {
-    super('events');
+export class EventSchema extends BaseModel<IEvent> {
+  constructor(storage?: StorageService) {
+    super('events', storage);
   }
 
   allowedPaging = [];
@@ -53,4 +54,4 @@ class Event extends BaseModel<IEvent> {
     return this.collection.find({ type: 'coin', emitTime: { $gte: lastSeen } }).addCursorFlag('noCursorTimeout', true);
   }
 }
-export const EventModel = new Event();
+export const EventModel = new EventSchema();

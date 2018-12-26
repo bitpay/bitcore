@@ -11,13 +11,14 @@ import { SpentHeightIndicators } from '../types/Coin';
 import { EventModel } from './events';
 import config from '../config';
 import { Event } from '../services/event';
+import { StorageService } from "../services/storage";
 
 export { IBlock };
 
 @LoggifyClass
-export class Block extends BaseModel<IBlock> {
-  constructor() {
-    super('blocks');
+export class BlockSchema extends BaseModel<IBlock> {
+  constructor(storage?: StorageService) {
+    super('blocks', storage);
   }
 
   chainTips: Mapping<Mapping<IBlock>> = {};
@@ -227,4 +228,4 @@ export class Block extends BaseModel<IBlock> {
   }
 }
 
-export let BlockModel = new Block();
+export let BlockModel = new BlockSchema();

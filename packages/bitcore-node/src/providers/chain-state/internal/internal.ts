@@ -1,5 +1,4 @@
-import { TransactionJSON } from "../../../types/Transaction";
-import config from '../../../config';
+import { TransactionJSON } from '../../../types/Transaction';
 import through2 from 'through2';
 
 import { MongoBound } from '../../../models/base';
@@ -17,6 +16,7 @@ import { ListTransactionsStream } from './transforms';
 import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
 import { StateModel } from '../../../models/state';
 import { SpentHeightIndicators, CoinJSON } from '../../../types/Coin';
+import { Config } from '../../../services/config';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -27,7 +27,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   getRPC(chain: string, network: string) {
-    const RPC_PEER = config.chains[chain][network].rpc;
+    const RPC_PEER = Config.current.chains[chain][network].rpc;
     if (!RPC_PEER) {
       throw new Error(`RPC not configured for ${chain} ${network}`);
     }
@@ -230,7 +230,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const state = await StateModel.collection.findOne({});
     const initialSyncComplete =
       state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
-    if (!initialSyncComplete && !config.api.wallets.allowCreationBeforeCompleteSync) {
+    if (!initialSyncComplete && !Config.for('api').wallets.allowCreationBeforeCompleteSync) {
       throw 'Wallet creation not permitted before intitial sync is complete';
     }
     const wallet: IWallet = {
