@@ -4197,7 +4197,6 @@ console.log('[server.js.425:err:]',err); //TODO
           customData: 'some custom data',
           feePerKb: 123e2,
         };
-console.log('[server.js.4138:txOpts:]',txOpts); //TODO
         s.createTx(txOpts, function(err, tx) {
           should.not.exist(err);
           should.exist(tx);
