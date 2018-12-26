@@ -25,7 +25,7 @@ export class ConfigService {
   }
 
   public isEnabled(service: ServiceName) {
-    return this.get().services[service].enabled;
+    return this.for(service).enabled;
   }
 }
 
