@@ -4137,7 +4137,8 @@ console.log('[server.js.425:err:]',err); //TODO
 
   it('should create a BCH tx proposal with cashaddr outputs (w/o prefix) and return Copay addr', function(done) {
 
-    let addr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
+    let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
+    let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
     let amount =  0.8 * 1e8;
     helpers.createAndJoinWallet(1, 1, { 
       coin: 'bch',
@@ -4145,7 +4146,7 @@ console.log('[server.js.425:err:]',err); //TODO
       helpers.stubUtxos(s, w, [1, 2], function() {
         var txOpts = {
           outputs: [{
-            toAddress: BCHAddressTranslator.translate(addr,'cashaddr'),
+            toAddress: cashAddr,
             amount: amount,
           }],
           message: 'some message',
@@ -4164,16 +4165,24 @@ console.log('[server.js.425:err:]',err); //TODO
           tx.isPending().should.equal.true;
           tx.isTemporary().should.equal.true;
           tx.outputs.should.deep.equal([{
-            toAddress: addr,
+            toAddress: cashAddr,
             amount: amount,
           }]);
           tx.amount.should.equal(helpers.toSatoshi(0.8));
           tx.feePerKb.should.equal(123e2);
           should.not.exist(tx.feeLevel);
-          s.getPendingTxs({}, function(err, txs) {
-            should.not.exist(err);
-            txs.should.be.empty;
-            done();
+          var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
+          s.publishTx(publishOpts, function(err) {
+            s.getPendingTxs({}, function(err, txs) {
+              should.not.exist(err);
+              txs.length.should.equal(1);
+              txs[0].outputs.should.deep.equal([{
+                toAddress: copayAddr,
+                amount: amount,
+              }]);
+
+              done();
+            });
           });
         });
       });
@@ -4182,7 +4191,8 @@ console.log('[server.js.425:err:]',err); //TODO
 
   it('should create a BCH tx proposal with cashaddr outputs (w/ prefix) and return Copay addr', function(done) {
 
-    let addr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
+    let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
+    let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
     let amount =  0.8 * 1e8;
     helpers.createAndJoinWallet(1, 1, { 
       coin: 'bch',
@@ -4190,7 +4200,7 @@ console.log('[server.js.425:err:]',err); //TODO
       helpers.stubUtxos(s, w, [1, 2], function() {
         var txOpts = {
           outputs: [{
-            toAddress: 'bitcoincash:'+BCHAddressTranslator.translate(addr,'cashaddr'),
+            toAddress: 'bitcoincash:'+cashAddr,
             amount: amount,
           }],
           message: 'some message',
@@ -4209,16 +4219,25 @@ console.log('[server.js.425:err:]',err); //TODO
           tx.isPending().should.equal.true;
           tx.isTemporary().should.equal.true;
           tx.outputs.should.deep.equal([{
-            toAddress: addr,
+            toAddress: 'bitcoincash:'+cashAddr,
             amount: amount,
           }]);
           tx.amount.should.equal(helpers.toSatoshi(0.8));
           tx.feePerKb.should.equal(123e2);
           should.not.exist(tx.feeLevel);
-          s.getPendingTxs({}, function(err, txs) {
-            should.not.exist(err);
-            txs.should.be.empty;
-            done();
+
+          var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
+          s.publishTx(publishOpts, function(err) {
+            s.getPendingTxs({}, function(err, txs) {
+              should.not.exist(err);
+              txs.length.should.equal(1);
+              txs[0].outputs.should.deep.equal([{
+                toAddress: copayAddr,
+                amount: amount,
+              }]);
+
+              done();
+            });
           });
         });
       });
