@@ -13,15 +13,15 @@ export abstract class BaseModel<T> {
     key: keyof T;
   }>;
 
-  constructor(private collectionName: string) {
+  constructor(private collectionName: string, private storageService = Storage) {
     this.handleConnection();
   }
 
   private async handleConnection() {
-    Storage.connection.on('CONNECTED', async () => {
-      if (Storage.db != undefined) {
+    this.storageService.connection.on('CONNECTED', async () => {
+      if (this.storageService.db != undefined) {
         this.connected = true;
-        this.db = Storage.db;
+        this.db = this.storageService.db;
         await this.onConnect();
       }
     });
@@ -30,8 +30,8 @@ export abstract class BaseModel<T> {
   abstract async onConnect();
 
   get collection(): Collection<MongoBound<T>> {
-    if (Storage.db) {
-      return Storage.db.collection(this.collectionName);
+    if (this.storageService.db) {
+      return this.storageService.db.collection(this.collectionName);
     } else {
       throw new Error('Not connected to the database yet');
     }

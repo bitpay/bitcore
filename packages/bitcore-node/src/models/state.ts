@@ -1,3 +1,4 @@
+import { StorageService } from '../services/storage';
 import { BaseModel } from './base';
 import { ObjectID } from 'mongodb';
 import os from 'os';
@@ -7,9 +8,9 @@ export type IState = {
   initialSyncComplete: any;
 };
 
-export class State extends BaseModel<IState> {
-  constructor() {
-    super('state');
+export class StateModel extends BaseModel<IState> {
+  constructor(storage?: StorageService) {
+    super('state', storage);
   }
   allowedPaging = [];
 
@@ -39,4 +40,4 @@ export class State extends BaseModel<IState> {
   }
 }
 
-export let StateModel = new State();
+export let StateStorage = new StateModel();

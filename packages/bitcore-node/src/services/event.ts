@@ -1,21 +1,48 @@
+import logger from '../logger';
+import { StorageService } from './storage';
 import { LoggifyClass } from '../decorators/Loggify';
-import { EventModel, IEvent } from '../models/events';
+import { EventStorage, IEvent, EventModel } from '../models/events';
 import { PassThrough } from 'stream';
 import { Storage } from './storage';
+import { Config, ConfigService } from './config';
 
 @LoggifyClass
 export class EventService {
   txStream = new PassThrough({ objectMode: true });
   blockStream = new PassThrough({ objectMode: true });
   addressCoinStream = new PassThrough({ objectMode: true });
+  storageService: StorageService;
+  configService: ConfigService;
+  eventModel: EventModel;
+  stopped = false;
 
-  constructor() {
+  constructor({ storageService = Storage, eventModel = EventStorage, configService = Config } = {}) {
+    this.storageService = storageService;
+    this.configService = configService;
+    this.eventModel = eventModel;
     this.signalTx = this.signalTx.bind(this);
     this.signalBlock = this.signalBlock.bind(this);
     this.signalAddressCoin = this.signalAddressCoin.bind(this);
-    Storage.connection.on('CONNECTED', () => {
+  }
+
+  start() {
+    if (!this.configService.isEnabled('event')) {
+      return;
+    }
+    logger.info('Starting Event Service');
+    this.stopped = false;
+    if (this.storageService.connected) {
       this.wireup();
-    });
+    } else {
+      this.storageService.connection.on('CONNECTED', () => {
+        this.wireup();
+      });
+    }
+  }
+
+  stop() {
+    logger.info('Stopping Event Service');
+    this.stopped = true;
   }
 
   async wireup() {
@@ -24,7 +51,7 @@ export class EventService {
     let lastAddressTxUpdate = new Date();
 
     const retryTxCursor = async () => {
-      const txCursor = EventModel.getTxTail(lastTxUpdate);
+      const txCursor = this.eventModel.getTxTail(lastTxUpdate);
       while (await txCursor.hasNext()) {
         const txEvent = await txCursor.next();
         if (txEvent) {
@@ -33,12 +60,14 @@ export class EventService {
           lastTxUpdate = new Date();
         }
       }
-      setTimeout(retryTxCursor, 5000);
+      if (!this.stopped) {
+        setTimeout(retryTxCursor, 5000);
+      }
     };
     retryTxCursor();
 
     const retryBlockCursor = async () => {
-      const blockCursor = EventModel.getBlockTail(lastBlockUpdate);
+      const blockCursor = this.eventModel.getBlockTail(lastBlockUpdate);
       while (await blockCursor.hasNext()) {
         const blockEvent = await blockCursor.next();
         if (blockEvent) {
@@ -47,12 +76,14 @@ export class EventService {
           lastBlockUpdate = new Date();
         }
       }
-      setTimeout(retryBlockCursor, 5000);
+      if (!this.stopped) {
+        setTimeout(retryBlockCursor, 5000);
+      }
     };
     retryBlockCursor();
 
     const retryAddressTxCursor = async () => {
-      const addressTxCursor = EventModel.getCoinTail(lastAddressTxUpdate);
+      const addressTxCursor = this.eventModel.getCoinTail(lastAddressTxUpdate);
       while (await addressTxCursor.hasNext()) {
         const addressTx = await addressTxCursor.next();
         if (addressTx) {
@@ -61,21 +92,23 @@ export class EventService {
           lastAddressTxUpdate = new Date();
         }
       }
-      setTimeout(retryAddressTxCursor, 5000);
+      if (!this.stopped) {
+        setTimeout(retryAddressTxCursor, 5000);
+      }
     };
     retryAddressTxCursor();
   }
 
   async signalBlock(block: IEvent.BlockEvent) {
-    await EventModel.signalBlock(block);
+    await this.eventModel.signalBlock(block);
   }
 
   async signalTx(tx: IEvent.TxEvent) {
-    await EventModel.signalTx(tx);
+    await this.eventModel.signalTx(tx);
   }
 
   async signalAddressCoin(payload: IEvent.CoinEvent) {
-    await EventModel.signalAddressCoin(payload);
+    await this.eventModel.signalAddressCoin(payload);
   }
 }
 

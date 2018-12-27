@@ -9,7 +9,7 @@
     "bootstrap": "./node_modules/.bin/lerna bootstrap",
     "insight": "cd packages/insight && npm start",
     "node": "cd packages/bitcore-node && npm start",
-    "compile":"./node_modules/.bin/lerna run compile",
+    "compile": "./node_modules/.bin/lerna run compile",
     "test:ci": "npm run test:ci:build && npm run test:ci:unit && npm run test:ci:integration",
     "test:ci:build": "docker-compose -f docker-compose.test.yml build",
     "test:ci:unit": "docker-compose -f docker-compose.test.yml run --entrypoint 'npm run test:unit' test_runner",
