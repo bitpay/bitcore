@@ -270,7 +270,6 @@ Address.createMultisig = function(publicKeys, threshold, network) {
   return Address.payingTo(Script.buildMultisigOut(publicKeys, threshold), network);
 };
 
-
 function decodeCashAddress(address) {
 
 
@@ -292,7 +291,7 @@ function decodeCashAddress(address) {
     }
 
     var prefixData = prefixToArray(prefix).concat([0]);
-    return polymod(prefixData.concat(payload)).eqn(0);
+    return polymod(prefixData.concat(payload)) === 0;
   }
 
   $.checkArgument(hasSingleCase(address), 'Mixed case');
@@ -362,7 +361,7 @@ function decodeCashAddress(address) {
   return info;
 }
 
-
+Address._decodeCashAddress = decodeCashAddress
 
 /**
  * Internal function to transform a bitcoin cash address string
@@ -726,14 +725,13 @@ function getHashSize(versionByte) {
  * Returns an array representation of the given checksum to be encoded
  * within the address' payload.
  *
- * @param {BigInteger} checksum Computed checksum.
+ * @param {number} checksum Computed checksum.
  */
 function checksumToArray(checksum) {
   var result = [];
-  var N31 = new BN(31);
   for (var i = 0; i < 8; ++i) {
-    result.push(checksum.and(N31).toNumber());
-    checksum = checksum.shrn(5);
+    result.push(checksum & 31);
+    checksum /= 32;
   }
   return result.reverse();
 }
@@ -744,32 +742,43 @@ function checksumToArray(checksum) {
  *
  * @param {Array} data Array of 5-bit integers over which the checksum is to be computed.
  */
- var GENERATOR = _.map(
-  [0x98f2bc8e61, 0x79b76d99e2, 0xf33e5fb3c4, 0xae2eabe2a8, 0x1e4f43e470], function(x){
-    return new BN(x);
-  }
-);
+var GENERATOR1 = [0x98, 0x79, 0xf3, 0xae, 0x1e];
+var GENERATOR2 = [0xf2bc8e61, 0xb76d99e2, 0x3e5fb3c4, 0x2eabe2a8, 0x4f43e470];
 
 function polymod(data) {
-
-  var checksum = new BN(1);
-  var C = new BN(0x07ffffffff);
-
-  for (var j=0; j<data.length; j++) {
-    var value = data[j];
-    var topBits = checksum.shrn(35);
-
-    checksum = checksum.and(C);
-    checksum = checksum.shln(5).xor(new BN(value));
-
-    for (var i = 0; i < GENERATOR.length; ++i) {
-      var D = topBits.shrn(i).and(BN.One);
-      if (D.eqn(1)) {
-        checksum = checksum.xor(GENERATOR[i]);
+  // Treat c as 8 bits + 32 bits
+  var c0 = 0, c1 = 1, C = 0;
+  for (var j = 0; j < data.length; j++) {
+    // Set C to c shifted by 35
+    C = c0 >>> 3;
+    // 0x[07]ffffffff
+    c0 &= 0x07;
+    // Shift as a whole number
+    c0 <<= 5;
+    c0 |= c1 >>> 27;
+    // 0xffffffff >>> 5
+    c1 &= 0x07ffffff;
+    c1 <<= 5;
+    // xor the last 5 bits
+    c1 ^= data[j];
+    for (var i = 0; i < GENERATOR1.length; ++i) {
+      if (C & (1 << i)) {
+        c0 ^= GENERATOR1[i];
+        c1 ^= GENERATOR2[i];
       }
     }
   }
-  return checksum.xor(BN.One);
+  c1 ^= 1;
+  // Negative numbers -> large positive numbers
+  if (c1 < 0) {
+    c1 ^= 1 << 31;
+    c1 += (1 << 30) * 2;
+  }
+  // Unless bitwise operations are used,
+  // numbers are consisting of 52 bits, except
+  // the sign bit. The result is max 40 bits,
+  // so it fits perfectly in one number!
+  return c0 * (1 << 30) * 4 + c1;
 }
 
 module.exports = Address;
