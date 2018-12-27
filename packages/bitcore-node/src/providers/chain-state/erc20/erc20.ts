@@ -23,6 +23,6 @@ export class ERC20StateProvider extends ETHStateProvider
     const balance= await this.erc20For(network)
       .methods.balanceOf(address)
       .call();
-    return { confirmed: balance, unconfirmed: 0};
+    return { confirmed: balance, unconfirmed: 0, balance };
   };
 }

@@ -34,7 +34,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { network, address } = params;
     const balance = Number(await this.getRPC(network).getBalance(address));
-    return { confirmed: balance, unconfirmed: 0 };
+    return { confirmed: balance, unconfirmed: 0, balance };
   }
 
   async getBlock(params: CSP.GetBlockParams) {
@@ -66,10 +66,10 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     let addressBalancePromises = addresses.map(({ address }) =>
       this.getBalanceForAddress({ chain: this.chain, network, address })
     );
-    let addressBalances = await Promise.all<{ confirmed: number; unconfirmed: number }>(addressBalancePromises);
+    let addressBalances = await Promise.all<{ confirmed: number; unconfirmed: number, balance: number }>(addressBalancePromises);
     let balance = addressBalances.reduce(
-      (prev, cur) => ({ unconfirmed: prev.unconfirmed + cur.unconfirmed, confirmed: prev.confirmed + cur.confirmed }),
-      { unconfirmed: 0, confirmed: 0 }
+      (prev, cur) => ({ unconfirmed: prev.unconfirmed + cur.unconfirmed, confirmed: prev.confirmed + cur.confirmed, balance: prev.balance + cur.balance }),
+      { unconfirmed: 0, confirmed: 0, balance: 0 }
     );
     return balance;
   }

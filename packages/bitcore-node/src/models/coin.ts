@@ -64,7 +64,7 @@ class Coin extends BaseModel<ICoin> {
     );
   }
 
-  async getBalance(params: { query: any }): Promise<{ confirmed: number, unconfirmed: number }> {
+  async getBalance(params: { query: any }): Promise<{ confirmed: number, unconfirmed: number, balance: number }> {
     let { query } = params;
     query = Object.assign(query, {
       spentHeight: { $lt: SpentHeightIndicators.minimum },
@@ -89,7 +89,11 @@ class Coin extends BaseModel<ICoin> {
         }
       ])
       .toArray();
-    return result.reduce((acc, cur) => { acc[cur._id] = cur.balance; return acc; }, {confirmed: 0, unconfirmed: 0}) as {confirmed: number, unconfirmed: number};
+    return result.reduce((acc, cur) => { 
+      acc[cur._id] = cur.balance; 
+      acc.balance += cur.balance;
+      return acc; 
+    }, { confirmed: 0, unconfirmed: 0, balance: 0 }) as { confirmed: number, unconfirmed: number, balance: number };
   }
 
   resolveAuthhead(mintTxid: string, chain?: string, network?: string) {
