@@ -6,8 +6,7 @@ import { ObjectID } from 'mongodb';
 
 const Web3 = require('web3-eth');
 
-export class ETHStateProvider extends InternalStateProvider
-  implements CSP.IChainStateService {
+export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
 
   constructor(public chain: string = 'ETH') {
@@ -32,12 +31,10 @@ export class ETHStateProvider extends InternalStateProvider
     return new Web3(new ProviderType(connUrl));
   }
 
-  async getBalanceForAddress(
-    params: CSP.GetBalanceForAddressParams
-  ) {
+  async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { network, address } = params;
     const balance = Number(await this.getRPC(network).getBalance(address));
-    return {confirmed: balance, unconfirmed: 0};
+    return { confirmed: balance, unconfirmed: 0 };
   }
 
   async getBlock(params: CSP.GetBlockParams) {
@@ -54,27 +51,26 @@ export class ETHStateProvider extends InternalStateProvider
 
   async getWalletAddresses(walletId: ObjectID) {
     let query = { wallet: walletId };
-    return WalletAddressModel.collection.find(query).addCursorFlag('noCursorTimeout', true).toArray();
+    return WalletAddressModel.collection
+      .find(query)
+      .addCursorFlag('noCursorTimeout', true)
+      .toArray();
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {
     const { network } = params;
     if (params.wallet._id === undefined) {
-      throw new Error(
-        'Wallet balance can only be retrieved for wallets with the _id property'
-      );
+      throw new Error('Wallet balance can only be retrieved for wallets with the _id property');
     }
     let addresses = await this.getWalletAddresses(params.wallet._id);
     let addressBalancePromises = addresses.map(({ address }) =>
       this.getBalanceForAddress({ chain: this.chain, network, address })
     );
-    let addressBalances = await Promise.all<{ confirmed: number, unconfirmed: number }>(
-      addressBalancePromises
-    );
+    let addressBalances = await Promise.all<{ confirmed: number; unconfirmed: number }>(addressBalancePromises);
     let balance = addressBalances.reduce(
-      (prev, cur) => Number(prev) + Number(cur[0].balance),
-      0
+      (prev, cur) => ({ unconfirmed: prev.unconfirmed + cur.unconfirmed, confirmed: prev.confirmed + cur.confirmed }),
+      { unconfirmed: 0, confirmed: 0 }
     );
-    return {confirmed: balance, unconfirmed: 0};
+    return balance;
   }
 }
