@@ -69,11 +69,9 @@ export class P2pWorker {
   private connectInterval?: NodeJS.Timer;
   private invCache: any;
   private initialSyncComplete: boolean;
-  private stopped: boolean;
   private blockModel: BlockSchema;
   constructor({ chain, network, chainConfig, blockModel = BlockModel }) {
     this.blockModel = blockModel;
-    this.stopped = true;
     this.chain = chain;
     this.network = network;
     this.bitcoreLib = Chain[this.chain].lib;
@@ -279,7 +277,7 @@ export class P2pWorker {
   }
 
   async sync() {
-    if (this.syncing || this.stopped) {
+    if (this.syncing) {
       return;
     }
     this.syncing = true;
@@ -313,9 +311,6 @@ export class P2pWorker {
       logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
       for (const header of headers) {
         try {
-          if (!this.stopped) {
-            throw new Error('Stopped');
-          }
           const block = await this.getBlock(header.hash);
           await this.processBlock(block);
           currentHeight++;
@@ -330,9 +325,7 @@ export class P2pWorker {
         } catch (err) {
           logger.error(`Error syncing ${chain} ${network}`, err);
           this.syncing = false;
-          if (!this.stopped) {
-            return this.sync();
-          }
+          return this.sync();
         }
       }
       headers = await getHeaders();
@@ -349,7 +342,6 @@ export class P2pWorker {
 
   async stop() {
     logger.debug(`Stopping worker for chain ${this.chain}`);
-    this.stopped = true;
     await this.disconnect();
   }
 
@@ -357,7 +349,6 @@ export class P2pWorker {
     if (!config.services.p2p.enabled) {
       return;
     }
-    this.stopped = false;
     logger.debug(`Started worker for chain ${this.chain}`);
     this.setupListeners();
     await this.connect();
