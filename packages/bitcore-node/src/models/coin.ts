@@ -64,25 +64,32 @@ class Coin extends BaseModel<ICoin> {
     );
   }
 
-  getBalance(params: { query: any }) {
+  async getBalance(params: { query: any }): Promise<{ confirmed: number, unconfirmed: number }> {
     let { query } = params;
     query = Object.assign(query, {
       spentHeight: { $lt: SpentHeightIndicators.minimum },
       mintHeight: { $gt: SpentHeightIndicators.conflicting }
     });
-    return this.collection
-      .aggregate<{ balance: number }>([
+    const result =  await this.collection
+      .aggregate<{ _id: string, balance: number }>([
         { $match: query },
-        { $project: { value: 1, _id: 0 } },
+        { 
+          $project: { 
+            value: 1, 
+            status: {$cond: { if: { $gte: ['$mintHeight', SpentHeightIndicators.minimum]}, then: 'confirmed', else: 'unconfirmed' }}, 
+            _id: 0 
+          } 
+        },
         {
           $group: {
-            _id: null,
+            _id: '$status',
             balance: { $sum: '$value' }
+
           }
-        },
-        { $project: { _id: false } }
+        }
       ])
       .toArray();
+    return result.reduce((acc, cur) => { acc[cur._id] = cur.balance; return acc; }, {confirmed: 0, unconfirmed: 0}) as {confirmed: number, unconfirmed: number};
   }
 
   resolveAuthhead(mintTxid: string, chain?: string, network?: string) {

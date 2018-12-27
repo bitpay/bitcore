@@ -110,8 +110,8 @@ export declare namespace CSP {
   export type Provider<T> = { get(params: { chain: string }): T };
   export type ChainStateProvider = Provider<IChainStateService> & IChainStateService;
   export interface IChainStateService {
-    getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{ balance: number }[]>;
-    getBalanceForWallet(params: GetBalanceForWalletParams): Promise<{ balance: number }[]>;
+    getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{ confirmed: number, unconfirmed: number }>;
+    getBalanceForWallet(params: GetBalanceForWalletParams): Promise<{ confirmed: number, unconfirmed: number }>;
     getBlock(params: GetBlockParams): Promise<IBlock | string>;
     streamBlocks(params: StreamBlocksParams): any;
     getFee(params: GetEstimateSmartFeeParams): any;
@@ -119,7 +119,7 @@ export declare namespace CSP {
     createWallet(params: CreateWalletParams): Promise<IWallet>;
     getWallet(params: GetWalletParams): Promise<IWallet | null>;
     updateWallet(params: UpdateWalletParams): Promise<{}>;
-    getWalletBalance(params: GetWalletBalanceParams): Promise<{ balance: number }[]>;
+    getWalletBalance(params: GetWalletBalanceParams): Promise<{ confirmed: number, unconfirmed: number }>;
     streamAddressUtxos(params: StreamAddressUtxosParams): any;
     streamAddressTransactions(params: StreamAddressUtxosParams): any;
     streamTransactions(params: StreamTransactionsParams): any;

@@ -34,10 +34,10 @@ export class ETHStateProvider extends InternalStateProvider
 
   async getBalanceForAddress(
     params: CSP.GetBalanceForAddressParams
-  ): Promise<{ balance: number }[]> {
+  ) {
     const { network, address } = params;
     const balance = Number(await this.getRPC(network).getBalance(address));
-    return [{ balance }];
+    return {confirmed: balance, unconfirmed: 0};
   }
 
   async getBlock(params: CSP.GetBlockParams) {
@@ -68,13 +68,13 @@ export class ETHStateProvider extends InternalStateProvider
     let addressBalancePromises = addresses.map(({ address }) =>
       this.getBalanceForAddress({ chain: this.chain, network, address })
     );
-    let addressBalances = await Promise.all<{ balance: number }[]>(
+    let addressBalances = await Promise.all<{ confirmed: number, unconfirmed: number }>(
       addressBalancePromises
     );
     let balance = addressBalances.reduce(
       (prev, cur) => Number(prev) + Number(cur[0].balance),
       0
     );
-    return [{ balance }];
+    return {confirmed: balance, unconfirmed: 0};
   }
 }
