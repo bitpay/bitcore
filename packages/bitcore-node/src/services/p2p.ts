@@ -33,24 +33,23 @@ export class P2pManager {
     }
     logger.info('Starting P2P Manager');
     const p2pWorkers = new Array<P2pWorker>();
-    for (let chain of Object.keys(Config.get().chains)) {
-      for (let network of Object.keys(Config.get().chains[chain])) {
-        const chainConfig = Config.get().chains[chain][network];
-        if (chainConfig.chainSource && chainConfig.chainSource !== 'p2p') {
-          continue;
-        }
-        const p2pWorker = new P2pWorker({
-          chain,
-          network,
-          chainConfig,
-          blockModel
-        });
-        p2pWorkers.push(p2pWorker);
-        try {
-          p2pWorker.start(Config.get());
-        } catch (e) {
-          logger.error('P2P Worker died with', e);
-        }
+    for (let chainNetwork of Config.chainNetworks()) {
+      const chainConfig = Config.chainConfig(chainNetwork);
+      if (chainConfig.chainSource && chainConfig.chainSource !== 'p2p') {
+        continue;
+      }
+      const { chain, network } = chainConfig;
+      const p2pWorker = new P2pWorker({
+        chain,
+        network,
+        chainConfig,
+        blockModel
+      });
+      p2pWorkers.push(p2pWorker);
+      try {
+        p2pWorker.start(Config.get());
+      } catch (e) {
+        logger.error('P2P Worker died with', e);
       }
     }
   }
