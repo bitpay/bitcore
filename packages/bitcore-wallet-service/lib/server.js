@@ -478,6 +478,7 @@ WalletService.prototype.createWallet = function(opts, cb) {
         singleAddress: !!opts.singleAddress,
         derivationStrategy: derivationStrategy,
         addressType: addressType,
+        nativeCashAddr: opts.nativeCashAddr,
       });
       self.storage.storeWallet(wallet, function(err) {
         self.logi('Wallet created', wallet.id, opts.network);
@@ -501,7 +502,24 @@ WalletService.prototype.getWallet = function(opts, cb) {
   self.storage.fetchWallet(self.walletId, function(err, wallet) {
     if (err) return cb(err);
     if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
-    return cb(null, wallet);
+
+    // cashAddress migration
+    if (wallet.coin != 'bch' || wallet.nativeCashAddr)  
+      return cb(null, wallet);
+
+    // only for testing
+    if (opts.doNotMigrate) return cb(null, wallet);
+
+    // remove someday...
+    log.info(`Migrating wallet ${wallet.id} to cashAddr`);
+    self.storage.migrateToCashAddr(self.walletId,(e)=> {
+      if (e) return cb(e);
+      wallet.nativeCashAddr=true;
+      return self.storage.storeWallet(wallet, (e)=> {
+        if (e) return cb(e);
+        return cb(e, wallet);
+      });
+    });
   });
 };
 
@@ -1074,7 +1092,6 @@ WalletService.prototype._canCreateAddress = function(ignoreMaxGap, cb) {
       bc.getAddressActivity(latestAddresses[--i].address, function(err, res) {
         if (err) return next(err);
         activityFound = !!res;
-console.log('[server.js.1050:activityFound:]',activityFound); //TODO
         return next();
       });
     }, function(err) {
@@ -1147,7 +1164,7 @@ WalletService.prototype.createAddress = function(opts, cb) {
     if (!canCreate) return cb(Errors.MAIN_ADDRESS_GAP_REACHED);
 
     self._runLocked(cb, function(cb) {
-      self.getWallet({}, function(err, wallet) {
+      self.getWallet({doNotMigrate: opts.doNotMigrate}, function(err, wallet) {
         if (err) return cb(err);
         if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
         if (wallet.scanStatus == 'error') 
@@ -1315,7 +1332,7 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
         if (wallet.scanStatus == 'error') 
           return cb(Errors.WALLET_NEED_SCAN);
 
-        coin = opts.coin || wallet.coin;
+        coin = wallet.coin;
 
         var bc = self._getBlockchainExplorer(coin, wallet.network);
         if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
@@ -1339,21 +1356,8 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
       });
     },
     function(next) {
-
       addressStrs = _.map(allAddresses, 'address');
-      if (!opts.coin) return next();
-
-      coin = opts.coin;
-      if (coin != 'bch') return next();
-
-      if (Utils.getAddressCoin(addressStrs[0]) == 'bch') 
-        return next();
-
-      // because some old BCH walelts could have legacy addresses?
-      addressStrs =  _.map(addressStrs, function(a) {
-        return Utils.translateAddress(a, coin);
-      });
-      next();
+      return next();
     },
     function(next) {
       if (!wallet.isComplete()) return next();
@@ -1408,7 +1412,6 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
       });
     },
     function(next) {
-      if (opts.coin) return next();
       // Needed for the clients to sign UTXOs
       var addressToPath = _.keyBy(allAddresses, 'address');
       _.each(allUtxos, function(utxo) {
@@ -1434,7 +1437,6 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
 /**
  * Returns list of UTXOs
  * @param {Object} opts
- * @param {String} [opts.coin='btc'] (optional)
  * @returns {Array} utxos - List of UTXOs.
  */
 WalletService.prototype.getUtxos = function(opts, cb) {
@@ -1447,13 +1449,10 @@ WalletService.prototype.getUtxos = function(opts, cb) {
   }
 
   if (opts.coin) {
-    if (!Utils.checkValueInCollection(opts.coin, Constants.COINS))
-      return cb(new ClientError('Invalid coin'));
+    return cb(new ClientError('coins option no longer supported'));
   }
 
-  self._getUtxosForCurrentWallet({
-    coin: opts.coin
-  }, cb);
+  self._getUtxosForCurrentWallet({}, cb);
 };
 
 WalletService.prototype._totalizeUtxos = function(utxos) {
@@ -1474,7 +1473,6 @@ WalletService.prototype._getBalanceCached = function(opts, cb, i) {
   var self = this;
   var opts = opts || {};
   opts.addresses = opts.addresses || [];
-
 
   function checkBalanceCache(cb) {
     if (opts.addresses.length < Defaults.BALANCE_CACHE_ADDRESS_THRESOLD || !opts.fastCache)
@@ -1508,7 +1506,6 @@ WalletService.prototype._getBalanceCached = function(opts, cb, i) {
       }
 
       self._getUtxosForCurrentWallet({
-        coin: opts.coin,
         addresses: opts.addresses
       }, function(err, utxos) {
         if (err) return cb(err);
@@ -1540,7 +1537,6 @@ WalletService.prototype._getBalanceCached = function(opts, cb, i) {
 /**
  * Get wallet balance.
  * @param {Object} opts
- * @param {string} [opts.coin] - Override wallet coin (default wallet's coin).
  * @returns {Object} balance - Total amount & locked amount.
  */
 
@@ -1549,7 +1545,7 @@ WalletService.prototype.getBalance = function(opts, cb, i) {
   opts = opts || {};
 
   if (opts.coin) {
-    return cb(new ClientError('opts.coin no longer supported'));
+    return cb(new ClientError('coin is not longer supported in getBalance'));
   }
   opts.fastCache = Defaults.BALANCE_CACHE_DIRECT_DURATION;
 
@@ -1586,7 +1582,6 @@ WalletService.prototype.getBalance = function(opts, cb, i) {
       if (err) return cb(err);
 
       self._getBalanceCached({
-        coin: opts.coin,
         addresses: addresses,
         fastCache: opts.fastCache,
       }, function(err, balance, cacheUsed) {

@@ -16,8 +16,6 @@ var Bitcore_ = {
   bch: require('bitcore-lib-cash')
 };
 
-
-
 var Common = require('../../lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
