@@ -58,24 +58,26 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
     class TxUpdaterStream extends Writable {
       txids: { [key:string] : boolean};
       constructor() {
-        super({ objectMode: true, highWaterMark: 4 });
+        super({ objectMode: true });
         this.txids = {};
       }
       async _write(coin, _, callback) {
+        let ops: Promise<any>[] = [];
         if (!this.txids[coin.mintTxid]) {
-          await TransactionStorage.collection.updateMany(
+          ops.push(TransactionStorage.collection.updateMany(
             { txid: coin.mintTxid, network, chain },
             { $addToSet: { wallets: wallet._id } }
-          );
+          ));
         }
         this.txids[coin.mintTxid] = true;
         if (coin.spentTxid && !this.txids[coin.spentTxid]) {
-          await TransactionStorage.collection.updateMany(
+          ops.push(TransactionStorage.collection.updateMany(
             { txid: coin.spentTxid, network, chain },
             { $addToSet: { wallets: wallet._id } }
-          );
+          ))
         }
         this.txids[coin.spentTxid] = true;
+        await Promise.all(ops);
         callback();
       }
     }
