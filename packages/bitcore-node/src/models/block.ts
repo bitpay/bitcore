@@ -1,6 +1,6 @@
 import { valueOrDefault } from '../utils/check';
-import { CoinModel } from './coin';
-import { TransactionModel } from './transaction';
+import { CoinStorage } from './coin';
+import { TransactionStorage } from './transaction';
 import { TransformOptions } from '../types/TransformOptions';
 import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
@@ -8,7 +8,7 @@ import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
 import { IBlock } from '../types/Block';
 import { SpentHeightIndicators } from '../types/Coin';
-import { EventModel } from './events';
+import { EventStorage } from './events';
 import config from '../config';
 import { Event } from '../services/event';
 import { StorageService } from "../services/storage";
@@ -16,7 +16,7 @@ import { StorageService } from "../services/storage";
 export { IBlock };
 
 @LoggifyClass
-export class BlockSchema extends BaseModel<IBlock> {
+export class BlockModel extends BaseModel<IBlock> {
   constructor(storage?: StorageService) {
     super('blocks', storage);
   }
@@ -126,7 +126,7 @@ export class BlockSchema extends BaseModel<IBlock> {
       logger.debug('Updating previous block.nextBlockHash ', header.hash);
     }
 
-    await TransactionModel.batchImport({
+    await TransactionStorage.batchImport({
       txs: block.transactions,
       blockHash: header.hash,
       blockTime: new Date(blockTime),
@@ -140,7 +140,7 @@ export class BlockSchema extends BaseModel<IBlock> {
     });
 
     if (initialSyncComplete) {
-      EventModel.signalBlock(convertedBlock);
+      EventStorage.signalBlock(convertedBlock);
     }
 
     return this.collection.updateOne({ hash: header.hash, chain, network }, { $set: { processed: true } });
@@ -153,7 +153,7 @@ export class BlockSchema extends BaseModel<IBlock> {
   }
 
   getLocalTip({ chain, network }) {
-    return BlockModel.collection.findOne({ chain, network, processed: true }, { sort: { height: -1 } });
+    return BlockStorage.collection.findOne({ chain, network, processed: true }, { sort: { height: -1 } });
   }
 
   async handleReorg(params: { header?: Bitcoin.Block.HeaderObj; chain: string; network: string }): Promise<boolean> {
@@ -176,12 +176,12 @@ export class BlockSchema extends BaseModel<IBlock> {
     logger.info(`Resetting tip to ${localTip.height}`, { chain, network });
     const reorgOps = [
       this.collection.deleteMany({ chain, network, height: { $gte: localTip.height } }),
-      TransactionModel.collection.deleteMany({ chain, network, blockHeight: { $gte: localTip.height } }),
-      CoinModel.collection.deleteMany({ chain, network, mintHeight: { $gte: localTip.height } })
+      TransactionStorage.collection.deleteMany({ chain, network, blockHeight: { $gte: localTip.height } }),
+      CoinStorage.collection.deleteMany({ chain, network, mintHeight: { $gte: localTip.height } })
     ];
     await Promise.all(reorgOps);
 
-    await CoinModel.collection.updateMany(
+    await CoinStorage.collection.updateMany(
       { chain, network, spentHeight: { $gte: localTip.height } },
       { $set: { spentTxid: null, spentHeight: SpentHeightIndicators.pending } }
     );
@@ -228,4 +228,4 @@ export class BlockSchema extends BaseModel<IBlock> {
   }
 }
 
-export let BlockModel = new BlockSchema();
+export let BlockStorage = new BlockModel();

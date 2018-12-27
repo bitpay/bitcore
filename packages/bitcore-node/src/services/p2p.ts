@@ -1,10 +1,10 @@
 import logger from '../logger';
 import { EventEmitter } from 'events';
-import { BlockModel, BlockSchema } from '../models/block';
+import { BlockStorage, BlockModel } from '../models/block';
 import { ChainStateProvider } from '../providers/chain-state';
-import { TransactionModel } from '../models/transaction';
+import { TransactionStorage } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { StateModel } from '../models/state';
+import { StateStorage } from '../models/state';
 import { SpentHeightIndicators } from '../types/Coin';
 import { Config, ConfigService } from './config';
 import { ConfigType } from '../types/Config';
@@ -27,7 +27,7 @@ export class P2pManager {
     }
   }
 
-  async start({ blockModel = BlockModel } = {}) {
+  async start({ blockModel = BlockStorage } = {}) {
     if (!this.configService.isEnabled('p2p')) {
       return;
     }
@@ -68,8 +68,8 @@ export class P2pWorker {
   private connectInterval?: NodeJS.Timer;
   private invCache: any;
   private initialSyncComplete: boolean;
-  private blockModel: BlockSchema;
-  constructor({ chain, network, chainConfig, blockModel = BlockModel }) {
+  private blockModel: BlockModel;
+  constructor({ chain, network, chainConfig, blockModel = BlockStorage }) {
     this.blockModel = blockModel;
     this.chain = chain;
     this.network = network;
@@ -263,7 +263,7 @@ export class P2pWorker {
 
   async processTransaction(tx: Bitcoin.Transaction): Promise<any> {
     const now = new Date();
-    TransactionModel.batchImport({
+    TransactionStorage.batchImport({
       chain: this.chain,
       network: this.network,
       txs: [tx],
@@ -282,7 +282,7 @@ export class P2pWorker {
     this.syncing = true;
     const { chain, chainConfig, network } = this;
     const { parentChain, forkHeight } = chainConfig;
-    const state = await StateModel.collection.findOne({});
+    const state = await StateStorage.collection.findOne({});
     this.initialSyncComplete =
       state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
     let tip = await ChainStateProvider.getLocalTip({ chain, network });
@@ -331,7 +331,7 @@ export class P2pWorker {
     }
     logger.info(`${chain}:${network} up to date.`);
     this.syncing = false;
-    StateModel.collection.findOneAndUpdate(
+    StateStorage.collection.findOneAndUpdate(
       {},
       { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
       { upsert: true }

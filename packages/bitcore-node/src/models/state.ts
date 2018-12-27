@@ -7,7 +7,7 @@ export type IState = {
   initialSyncComplete: any;
 };
 
-export class StateSchema extends BaseModel<IState> {
+export class StateModel extends BaseModel<IState> {
   constructor(storage?: StorageService) {
     super('state', storage);
   }
@@ -16,4 +16,4 @@ export class StateSchema extends BaseModel<IState> {
   onConnect() {}
 }
 
-export let StateModel = new StateSchema();
+export let StateStorage = new StateModel();

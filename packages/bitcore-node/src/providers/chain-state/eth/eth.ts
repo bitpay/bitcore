@@ -1,5 +1,5 @@
 import Config from '../../../config';
-import { WalletAddressModel } from '../../../models/walletAddress';
+import { WalletAddressStorage } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { InternalStateProvider } from '../internal/internal';
 import { ObjectID } from 'mongodb';
@@ -54,7 +54,7 @@ export class ETHStateProvider extends InternalStateProvider
 
   async getWalletAddresses(walletId: ObjectID) {
     let query = { wallet: walletId };
-    return WalletAddressModel.collection.find(query).addCursorFlag('noCursorTimeout', true).toArray();
+    return WalletAddressStorage.collection.find(query).addCursorFlag('noCursorTimeout', true).toArray();
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {

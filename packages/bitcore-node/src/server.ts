@@ -11,16 +11,14 @@ process.on('unhandledRejection', error => {
   console.error('Unhandled Rejection at:', error.stack || error);
 });
 
-const startServices = async () => {
-  await Worker.start();
-  await P2P.start();
-};
 
 const runMaster = async () => {
-  await startServices();
+  await Worker.start();
+  P2P.start();
+
   // start the API on master if we are in debug
   if (args.DEBUG) {
-    await Api.start();
+    Api.start();
   }
 };
 
@@ -28,13 +26,13 @@ const runWorker = async () => {
   // don't run any workers when in debug mode
   if (!args.DEBUG) {
     // Api will automatically start storage if it isn't already running
-    await Api.start();
+    Api.start();
   }
 };
 
 const start = async () => {
   await Storage.start({});
-  await Event.start();
+  Event.start();
   if (cluster.isMaster) {
     await runMaster();
   } else {

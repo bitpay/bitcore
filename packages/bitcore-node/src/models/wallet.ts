@@ -1,4 +1,4 @@
-import { WalletAddressModel } from '../models/walletAddress';
+import { WalletAddressStorage } from '../models/walletAddress';
 import { BaseModel } from './base';
 import { TransformOptions } from '../types/TransformOptions';
 import { ObjectID } from 'mongodb';
@@ -33,12 +33,12 @@ export class WalletSchema extends BaseModel<IWallet> {
   }
 
   async updateCoins(wallet: IWallet) {
-    let addressModels = await WalletAddressModel.collection
+    let addressModels = await WalletAddressStorage.collection
       .find({ wallet: wallet._id })
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
     let addresses = addressModels.map(model => model.address);
-    return WalletAddressModel.updateCoins({ wallet, addresses });
+    return WalletAddressStorage.updateCoins({ wallet, addresses });
   }
 }
 

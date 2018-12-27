@@ -14,7 +14,7 @@ interface IEvent {
   type: 'block' | 'tx' | 'coin';
   emitTime: Date;
 }
-export class EventSchema extends BaseModel<IEvent> {
+export class EventModel extends BaseModel<IEvent> {
   constructor(storage?: StorageService) {
     super('events', storage);
   }
@@ -54,4 +54,4 @@ export class EventSchema extends BaseModel<IEvent> {
     return this.collection.find({ type: 'coin', emitTime: { $gte: lastSeen } }).addCursorFlag('noCursorTimeout', true);
   }
 }
-export const EventModel = new EventSchema();
+export const EventStorage = new EventModel();

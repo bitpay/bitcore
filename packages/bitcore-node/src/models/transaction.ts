@@ -1,5 +1,5 @@
-import { CoinModel } from './coin';
-import { WalletAddressModel } from './walletAddress';
+import { CoinStorage } from './coin';
+import { WalletAddressStorage } from './walletAddress';
 import { partition } from '../utils/partition';
 import { ObjectID } from 'bson';
 import { TransformOptions } from '../types/TransformOptions';
@@ -35,7 +35,7 @@ export type ITransaction = {
 };
 
 @LoggifyClass
-export class TransactionSchema extends BaseModel<ITransaction> {
+export class TransactionModel extends BaseModel<ITransaction> {
   constructor(storage?: StorageService) {
     super('transactions', storage);
   }
@@ -83,7 +83,7 @@ export class TransactionSchema extends BaseModel<ITransaction> {
     if (mintOps.length) {
       await Promise.all(
         partition(mintOps, mintOps.length / Config.get().maxPoolSize).map(mintBatch =>
-          CoinModel.collection.bulkWrite(mintBatch, { ordered: false })
+          CoinStorage.collection.bulkWrite(mintBatch, { ordered: false })
         )
       );
     }
@@ -92,7 +92,7 @@ export class TransactionSchema extends BaseModel<ITransaction> {
     if (spendOps.length) {
       await Promise.all(
         partition(spendOps, spendOps.length / Config.get().maxPoolSize).map(spendBatch =>
-          CoinModel.collection.bulkWrite(spendBatch, { ordered: false })
+          CoinStorage.collection.bulkWrite(spendBatch, { ordered: false })
         )
       );
     }
@@ -140,7 +140,7 @@ export class TransactionSchema extends BaseModel<ITransaction> {
   }) {
     let { blockHash, blockTime, blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
     if (parentChain && forkHeight && height < forkHeight) {
-      const parentTxs = await TransactionModel.collection
+      const parentTxs = await TransactionStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
         .toArray();
       return parentTxs.map(parentTx => {
@@ -177,7 +177,7 @@ export class TransactionSchema extends BaseModel<ITransaction> {
       } else {
         spentQuery = { spentTxid: { $in: params.txs.map(tx => tx._hash) }, chain, network };
       }
-      const spent = await CoinModel.collection
+      const spent = await CoinStorage.collection
         .find(spentQuery)
         .project({ spentTxid: 1, value: 1, wallets: 1 })
         .toArray();
@@ -272,7 +272,7 @@ export class TransactionSchema extends BaseModel<ITransaction> {
     let mintOps = new Array<any>();
     let parentChainCoinsMap = new Map();
     if (parentChain && forkHeight && height < forkHeight) {
-      let parentChainCoins = await CoinModel.collection
+      let parentChainCoins = await CoinStorage.collection
         .find({
           chain: parentChain,
           network,
@@ -340,7 +340,7 @@ export class TransactionSchema extends BaseModel<ITransaction> {
         mintOpsAddresses[mintOp.updateOne.update.$set.address] = true;
       }
       mintOpsAddresses = Object.keys(mintOpsAddresses);
-      let wallets = await WalletAddressModel.collection
+      let wallets = await WalletAddressStorage.collection
         .find({ address: { $in: mintOpsAddresses }, chain, network }, { batchSize: 100 })
         .toArray();
       if (wallets.length) {
@@ -425,7 +425,7 @@ export class TransactionSchema extends BaseModel<ITransaction> {
     }
     let prunedTxs = {};
     for (const spendOp of spendOps) {
-      let coin = await CoinModel.collection.findOne(
+      let coin = await CoinStorage.collection.findOne(
         {
           chain,
           network,
@@ -448,7 +448,7 @@ export class TransactionSchema extends BaseModel<ITransaction> {
           { $set: { blockHeight: SpentHeightIndicators.conflicting } },
           { w: 0, j: false, multi: true }
         ),
-        CoinModel.collection.update(
+        CoinStorage.collection.update(
           { mintTxid: { $in: prunedTxs } },
           { $set: { mintHeight: SpentHeightIndicators.conflicting } },
           { w: 0, j: false, multi: true }
@@ -489,4 +489,4 @@ export class TransactionSchema extends BaseModel<ITransaction> {
     return JSON.stringify(transaction);
   }
 }
-export let TransactionModel = new TransactionSchema();
+export let TransactionStorage = new TransactionModel();

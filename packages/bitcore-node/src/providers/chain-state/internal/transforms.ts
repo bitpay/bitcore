@@ -1,4 +1,4 @@
-import { CoinModel } from '../../../models/coin';
+import { CoinStorage } from '../../../models/coin';
 import { Transform } from 'stream';
 import { IWallet } from '../../../models/wallet';
 
@@ -8,7 +8,7 @@ export class ListTransactionsStream extends Transform {
   }
 
   async _transform(transaction, _, done) {
-    const sending = !! await CoinModel.collection.count({
+    const sending = !! await CoinStorage.collection.count({
       wallets: this.wallet._id,
       'wallets.0': { $exists: true },
       spentTxid: transaction.txid
@@ -17,7 +17,7 @@ export class ListTransactionsStream extends Transform {
     const wallet = this.wallet._id!.toString();
 
     if (sending) {
-      const outputs = await CoinModel.collection
+      const outputs = await CoinStorage.collection
         .find(
           {
             chain: transaction.chain,
@@ -79,7 +79,7 @@ export class ListTransactionsStream extends Transform {
       }
       return done();
     } else {
-      const outputs = await CoinModel.collection.find({
+      const outputs = await CoinStorage.collection.find({
         wallets: this.wallet._id,
         'wallets.0': { $exists: true },
         mintTxid: transaction.txid

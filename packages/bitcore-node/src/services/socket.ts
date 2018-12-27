@@ -2,7 +2,7 @@ import logger from '../logger';
 import SocketIO = require('socket.io');
 import * as http from 'http';
 import { LoggifyClass } from '../decorators/Loggify';
-import { EventModel, IEvent, EventSchema } from '../models/events';
+import { EventStorage, EventModel, IEvent } from '../models/events';
 import { Event, EventService } from './event';
 import { ObjectID } from 'mongodb';
 import { Config, ConfigService } from './config';
@@ -24,9 +24,9 @@ export class SocketService {
   configService: ConfigService;
   serviceConfig: ConfigType['services']['socket'];
   eventService: EventService;
-  eventModel: EventSchema;
+  eventModel: EventModel;
 
-  constructor({ eventService = Event, eventModel = EventModel, configService = Config } = {}) {
+  constructor({ eventService = Event, eventModel = EventStorage, configService = Config } = {}) {
     this.eventService = eventService;
     this.configService = configService;
     this.serviceConfig = this.configService.for('socket');
@@ -91,15 +91,15 @@ export class SocketService {
   }
 
   async signalBlock(block: IEvent.BlockEvent) {
-    await EventModel.signalBlock(block);
+    await EventStorage.signalBlock(block);
   }
 
   async signalTx(tx: IEvent.TxEvent) {
-    await EventModel.signalTx(tx);
+    await EventStorage.signalTx(tx);
   }
 
   async signalAddressCoin(payload: IEvent.CoinEvent) {
-    await EventModel.signalAddressCoin(payload);
+    await EventStorage.signalAddressCoin(payload);
   }
 }
 

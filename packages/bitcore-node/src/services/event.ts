@@ -1,7 +1,7 @@
 import logger from '../logger';
 import { StorageService } from './storage';
 import { LoggifyClass } from '../decorators/Loggify';
-import { EventModel, IEvent, EventSchema } from '../models/events';
+import { EventStorage, IEvent, EventModel } from '../models/events';
 import { PassThrough } from 'stream';
 import { Storage } from './storage';
 import { Config, ConfigService } from './config';
@@ -13,10 +13,10 @@ export class EventService {
   addressCoinStream = new PassThrough({ objectMode: true });
   storageService: StorageService;
   configService: ConfigService;
-  eventModel: EventSchema;
+  eventModel: EventModel;
   stopped = false;
 
-  constructor({ storageService = Storage, eventModel = EventModel, configService = Config } = {}) {
+  constructor({ storageService = Storage, eventModel = EventStorage, configService = Config } = {}) {
     this.storageService = storageService;
     this.configService = configService;
     this.eventModel = eventModel;

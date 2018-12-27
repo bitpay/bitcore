@@ -12,7 +12,7 @@ export type IRateLimit = {
   expireAt?: Date;
 };
 
-export class RateLimitSchema extends BaseModel<IRateLimit> {
+export class RateLimitModel extends BaseModel<IRateLimit> {
   constructor(storage?: StorageService) {
     super('ratelimits', storage);
   }
@@ -53,4 +53,4 @@ export class RateLimitSchema extends BaseModel<IRateLimit> {
   }
 }
 
-export let RateLimitModel = new RateLimitSchema();
+export let RateLimitStorage = new RateLimitModel();

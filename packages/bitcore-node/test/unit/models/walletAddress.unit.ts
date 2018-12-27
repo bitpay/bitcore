@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { IWalletAddress, WalletAddressModel } from "../../../src/models/walletAddress";
+import { IWalletAddress, WalletAddressStorage } from "../../../src/models/walletAddress";
 
 describe('WalletAddress Model', function () {
 
@@ -9,7 +9,7 @@ describe('WalletAddress Model', function () {
         address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf',
       } as IWalletAddress;
 
-      const result = WalletAddressModel._apiTransform(walletAddress, {
+      const result = WalletAddressStorage._apiTransform(walletAddress, {
         object: false
       }).toString();
 
@@ -24,7 +24,7 @@ describe('WalletAddress Model', function () {
         address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf',
       } as IWalletAddress;
 
-      const result = WalletAddressModel._apiTransform(walletAddress, {
+      const result = WalletAddressStorage._apiTransform(walletAddress, {
         object: true
       });
       expect(result).to.deep.equal({ address: '2NA2xTdQH6CG73Gc26oQZ7FEmvTx9Kwo7uf' });

@@ -1,17 +1,17 @@
 import * as sinon from 'sinon';
-import { BlockModel } from '../../src/models/block';
-import { TransactionModel } from '../../src/models/transaction';
-import { CoinModel } from '../../src/models/coin';
-import { WalletAddressModel } from '../../src/models/walletAddress';
+import { BlockStorage } from '../../src/models/block';
+import { TransactionStorage } from '../../src/models/transaction';
+import { CoinStorage } from '../../src/models/coin';
+import { WalletAddressStorage } from '../../src/models/walletAddress';
 import { WalletModel } from '../../src/models/wallet';
 import { Storage } from '../../src/services/storage';
 import { BaseModel } from '../../src/models/base';
 
 export async function resetDatabase() {
-  await resetModel(BlockModel);
-  await resetModel(TransactionModel);
-  await resetModel(CoinModel);
-  await resetModel(WalletAddressModel);
+  await resetModel(BlockStorage);
+  await resetModel(TransactionStorage);
+  await resetModel(CoinStorage);
+  await resetModel(WalletAddressStorage);
   await resetModel(WalletModel);
 }
 

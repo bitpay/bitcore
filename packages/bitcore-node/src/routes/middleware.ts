@@ -1,6 +1,6 @@
 import logger from '../logger';
 import * as express from 'express';
-import { RateLimitModel } from '../models/rateLimit';
+import { RateLimitStorage } from '../models/rateLimit';
 import { Config } from "../services/config";
 
 type TimedRequest = {
@@ -74,7 +74,7 @@ export function RateLimiter(method: string, perSecond: number, perMinute: number
       if (Config.for('api').rateLimiter.whitelist.includes(identifier)) {
         return next();
       }
-      let [perSecondResult, perMinuteResult, perHourResult] = await RateLimitModel.incrementAndCheck(
+      let [perSecondResult, perMinuteResult, perHourResult] = await RateLimitStorage.incrementAndCheck(
         identifier,
         method
       );
