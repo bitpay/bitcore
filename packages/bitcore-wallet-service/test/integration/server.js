@@ -2514,27 +2514,36 @@ console.log('[server.js.425:err:]',err); //TODO
     });
   });
 
-  var addrMap = {
-    btc: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
-    bch: 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X',
-  }
+  let testSet = [
+    {
+      coin: 'btc',
+      key: 'id44btc',
+      addr: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+      flags: {},
+    }, 
+    {
+      coin: 'bch',
+      key: 'id44bch',
+      addr: 'qpgjyj728rhu4gca2dqfzlpl8acnhzequshhgvev53',
+      flags: {},
+    }, 
+    {
+      coin: 'bch',
+      key: 'id44bch',
+      addr: 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X',
+      flags: { noCashAddr: true },
+    }, 
+ 
+  ];
 
-  var idKeyMap = {
-      btc: 'id44btc',
-      bch: 'id44bch',
-  };
+  _.each(testSet, function(x) {
 
-  _.each(['bch', 'btc'], function(coin) {
+    let coin = x.coin;
+    let idKey = x.key;
+    let addressStr = x.addr;
+    let flags = x.flags;
   
-    describe('#createTx ' + coin, function() {
-      var addressStr, idKey;
-      before(function() {
-        addressStr = addrMap[coin];
-        idKey = idKeyMap[coin];
-      });
-
-
-
+    describe('#createTx ' + coin + ' flags' + JSON.stringify(flags), function() {
       describe('Tx proposal creation & publishing ' + coin, function() {
         var server, wallet;
         beforeEach(function(done) {
@@ -2560,6 +2569,7 @@ console.log('[server.js.425:err:]',err); //TODO
               customData: 'some custom data',
               feePerKb: 123e2,
             };
+            txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(err);
               should.exist(tx);
@@ -2595,6 +2605,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 outputs: [],
                 feePerKb: 123e2,
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, tx) {
                 should.exist(err);
                 should.not.exist(tx);
@@ -2603,6 +2614,7 @@ console.log('[server.js.425:err:]',err); //TODO
               });
             });
           });
+    
           it('should fail to create tx for invalid address', function(done) {
             helpers.stubUtxos(server, wallet, 1, function() {
               var txOpts = {
@@ -2612,6 +2624,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 }],
                 feePerKb: 100e2,
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, tx) {
                 should.exist(err);
                 should.not.exist(tx);
@@ -2629,6 +2642,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 }],
                 feePerKb: 100e2,
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, tx) {
                 should.not.exist(tx);
                 should.exist(err);
@@ -2646,6 +2660,7 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
+              txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(tx);
               should.exist(err);
@@ -2663,6 +2678,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 feeLevel: 'normal',
                 feePerKb: 123e2,
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, txp) {
                 should.exist(err);
                 should.not.exist(txp);
@@ -2684,6 +2700,7 @@ console.log('[server.js.425:err:]',err); //TODO
                   feePerKb: 100e2,
                   inputs: inputs,
                 };
+              txOpts = Object.assign(txOpts, flags);
                 server.createTx(txOpts, function(err, tx) {
                   should.not.exist(err);
                   should.exist(tx);
@@ -2706,6 +2723,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 feePerKb: 100e2,
                 changeAddress: utxos[0].address,
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, tx) {
                 should.not.exist(err);
                 should.exist(tx);
@@ -2727,8 +2745,9 @@ console.log('[server.js.425:err:]',err); //TODO
                   amount: 0.8e8,
                 }],
                 feePerKb: 100e2,
-                changeAddress: addr.toString(),
+                changeAddress: addr.toString(true),
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, tx) {
                 should.exist(err);
                 err.code.should.equal('INVALID_CHANGE_ADDRESS');
@@ -2747,6 +2766,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 inputs: utxos,
                 fee: 1000e2,
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, tx) {
                 should.not.exist(err);
                 should.exist(tx);
@@ -2773,6 +2793,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 }],
                 feePerKb: 100e2,
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, tx) {
                 should.not.exist(err);
                 should.exist(tx);
@@ -2791,10 +2812,12 @@ console.log('[server.js.425:err:]',err); //TODO
                 }],
                 feePerKb: 100e2,
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, tx) {
                 should.not.exist(err);
                 should.exist(tx);
                 tx.id.should.equal('123');
+              txOpts = Object.assign(txOpts, flags);
                 server.createTx(txOpts, function(err, tx) {
                   should.not.exist(err);
                   should.exist(tx);
@@ -2819,6 +2842,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 }],
                 feePerKb: 100e2,
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, tx) {
                 should.not.exist(err);
                 should.exist(tx);
@@ -2827,6 +2851,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 server.publishTx(publishOpts, function(err, tx) {
                   should.not.exist(err);
                   should.exist(tx);
+              txOpts = Object.assign(txOpts, flags);
                   server.createTx(txOpts, function(err, tx) {
                     should.not.exist(err);
                     should.exist(tx);
@@ -2856,6 +2881,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 message: 'some message',
                 customData: 'some custom data',
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, txp) {
                 should.not.exist(err);
                 should.exist(txp);
@@ -2882,6 +2908,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 feePerKb: 100e2,
                 dryRun: true,
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, txp) {
                 should.not.exist(err);
                 should.exist(txp);
@@ -2908,6 +2935,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 feePerKb: 100e2,
                 message: 'some message',
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, txp) {
                 should.not.exist(err);
                 should.exist(txp);
@@ -2958,6 +2986,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 feePerKb: 100e2,
                 message: 'some message',
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, txp) {
                 should.not.exist(err);
                 should.exist(txp);
@@ -2982,6 +3011,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 feePerKb: 100e2,
                 message: 'some message',
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, txp) {
                 should.not.exist(err);
                 should.exist(txp);
@@ -3018,10 +3048,12 @@ console.log('[server.js.425:err:]',err); //TODO
                 });
               },
               function(next) {
+              txOpts = Object.assign(txOpts, flags);
                 server.createTx(txOpts, next);
               },
               function(txp, next) {
                 txp1 = txp;
+              txOpts = Object.assign(txOpts, flags);
                 server.createTx(txOpts, next);
               },
               function(txp, next) {
@@ -3048,6 +3080,7 @@ console.log('[server.js.425:err:]',err); //TODO
               },
               function(next) {
                 // A new tx proposal should use the next available UTXO
+              txOpts = Object.assign(txOpts, flags);
                 server.createTx(txOpts, next);
               },
               function(txp3, next) {
@@ -3086,10 +3119,12 @@ console.log('[server.js.425:err:]',err); //TODO
                 });
               },
               function(next) {
+              txOpts = Object.assign(txOpts, flags);
                 server.createTx(txOpts, next);
               },
               function(txp, next) {
                 txp1 = txp;
+              txOpts = Object.assign(txOpts, flags);
                 server.createTx(txOpts, next);
               },
               function(txp, next) {
@@ -3154,6 +3189,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 // ToDo
                 feeLevel: level,
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, txp) {
                 should.not.exist(err);
                 should.exist(txp);
@@ -3172,6 +3208,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 }],
                 feeLevel: 'madeUpLevel',
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, txp) {
                 should.exist(err);
                 should.not.exist(txp);
@@ -3194,6 +3231,7 @@ console.log('[server.js.425:err:]',err); //TODO
                   amount: 1e8,
                 }],
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, txp) {
                 should.not.exist(err);
                 should.exist(txp);
@@ -3213,9 +3251,11 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
+              txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, tx1) {
               should.not.exist(err);
               should.exist(tx1);
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, tx2) {
                 should.not.exist(err);
                 should.exist(tx2);
@@ -3235,6 +3275,7 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
+              txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, txp) {
               should.not.exist(err);
               should.exist(txp);
@@ -3256,6 +3297,7 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
+              txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
               err.toString().should.equal('dummy error');
@@ -3277,6 +3319,7 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
+              txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
               err.message.should.equal('dummy exception');
@@ -3296,6 +3339,7 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
+              txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
               err.code.should.equal('TX_MAX_SIZE_EXCEEDED');
@@ -3313,12 +3357,14 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
+            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               server.getBalance({}, function(err, balance) {
                 should.not.exist(err);
                 balance.totalAmount.should.equal(2e8);
                 balance.lockedAmount.should.equal(2e8);
                 txOpts.outputs[0].amount = 0.8e8;
+                txOpts = Object.assign(txOpts, flags);
                 server.createTx(txOpts, function(err, tx) {
                   should.exist(err);
                   err.code.should.equal('LOCKED_FUNDS');
@@ -3338,6 +3384,7 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
+              txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
               err.code.should.equal('DUST_AMOUNT');
@@ -3358,6 +3405,7 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
+            txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(err);
               should.exist(tx);
@@ -3377,9 +3425,11 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
+            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               should.exist(tx);
               txOpts.outputs[0].amount = 0.8e8;
+              txOpts = Object.assign(txOpts, flags);
               helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
                 should.exist(tx);
                 server.getPendingTxs({}, function(err, txs) {
@@ -3405,9 +3455,11 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
+            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               should.exist(tx);
               txOpts.outputs[0].amount = 1.8e8;
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, tx) {
                 err.code.should.equal('LOCKED_FUNDS');
                 should.not.exist(tx);
@@ -3452,6 +3504,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 message: 'some message',
                 feePerKb: 100e2,
               };
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, txp) {
                 should.not.exist(err);
                 should.exist(txp);
@@ -3487,6 +3540,7 @@ console.log('[server.js.425:err:]',err); //TODO
               feePerKb: 10000,
               sendMax: true,
             };
+              txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(err);
               should.exist(tx);
@@ -3513,6 +3567,7 @@ console.log('[server.js.425:err:]',err); //TODO
               }),
               feePerKb: 123e2,
             };
+              txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, txp) {
               should.not.exist(err);
               should.exist(txp);
@@ -3522,6 +3577,7 @@ console.log('[server.js.425:err:]',err); //TODO
 
               outputs.should.not.deep.equal(_.map(txOpts.outputs, 'amount'));
               txOpts.noShuffleOutputs = true;
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, txp) {
                 should.not.exist(err);
                 should.exist(txp);
@@ -3571,6 +3627,7 @@ console.log('[server.js.425:err:]',err); //TODO
 
           function(next) {
             async.each(_.range(3), function(i, next) {
+                txOpts = Object.assign(txOpts, flags);
                 helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
                   server.rejectTx({
                     txProposalId: tx.id,
@@ -3582,6 +3639,7 @@ console.log('[server.js.425:err:]',err); //TODO
           },
           function(next) {
             // Allow a 4th tx
+            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               server.rejectTx({
                 txProposalId: tx.id,
@@ -3591,6 +3649,7 @@ console.log('[server.js.425:err:]',err); //TODO
           },
           function(next) {
             // Do not allow before backoff time
+              txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
               err.code.should.equal('TX_CANNOT_CREATE');
@@ -3599,6 +3658,7 @@ console.log('[server.js.425:err:]',err); //TODO
           },
           function(next) {
             clock.tick((Defaults.BACKOFF_TIME + 1) * 1000);
+            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               server.rejectTx({
                 txProposalId: tx.id,
@@ -3609,6 +3669,7 @@ console.log('[server.js.425:err:]',err); //TODO
           function(next) {
             // Do not allow a 5th tx before backoff time
             clock.tick((Defaults.BACKOFF_TIME - 1) * 1000);
+              txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
               err.code.should.equal('TX_CANNOT_CREATE');
@@ -3617,6 +3678,7 @@ console.log('[server.js.425:err:]',err); //TODO
           },
           function(next) {
             clock.tick(2000);
+            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               server.rejectTx({
                 txProposalId: tx.id,
@@ -3655,11 +3717,13 @@ console.log('[server.js.425:err:]',err); //TODO
             feePerKb: 100e2,
             excludeUnconfirmedUtxos: true,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, tx) {
             should.exist(err);
             err.code.should.equal('INSUFFICIENT_FUNDS');
             err.message.should.equal('Insufficient funds');
             txOpts.outputs[0].amount = 2.5e8;
+              txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
               err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
@@ -3679,6 +3743,7 @@ console.log('[server.js.425:err:]',err); //TODO
             feePerKb: 100e2,
             excludeUnconfirmedUtxos: true,
           };
+          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
             should.exist(tx);
             tx.inputs.length.should.equal(2);
@@ -3687,6 +3752,7 @@ console.log('[server.js.425:err:]',err); //TODO
               balance.lockedConfirmedAmount.should.equal(helpers.toSatoshi(2.5));
               balance.availableConfirmedAmount.should.equal(0);
               txOpts.outputs[0].amount = 0.01e8;
+              txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, tx) {
                 should.exist(err);
                 err.code.should.equal('LOCKED_FUNDS');
@@ -3706,11 +3772,13 @@ console.log('[server.js.425:err:]',err); //TODO
             feePerKb: 100e2,
             utxosToExclude: [utxos[2].txid + ':' + utxos[2].vout],
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, tx) {
             should.exist(err);
             err.code.should.equal('INSUFFICIENT_FUNDS');
             err.message.should.equal('Insufficient funds');
             txOpts.utxosToExclude = [utxos[0].txid + ':' + utxos[0].vout];
+              txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(err);
               should.exist(tx);
@@ -3728,6 +3796,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 10e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -3748,6 +3817,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 100e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -3770,6 +3840,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 10e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -3789,6 +3860,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 10e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -3809,6 +3881,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 10e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -3831,6 +3904,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 1200e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -3852,6 +3926,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 20e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -3871,6 +3946,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 10e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -3894,6 +3970,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 120e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -3914,11 +3991,13 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 80e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
             txp.inputs.length.should.equal(3);
             txOpts.feePerKb = 160e2;
+              txOpts = Object.assign(txOpts, flags);
             server.createTx(txOpts, function(err, txp) {
               should.exist(err);
               should.not.exist(txp);
@@ -3936,6 +4015,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 10e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.exist(err);
             should.not.exist(txp);
@@ -3953,6 +4033,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 10e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.exist(err);
             should.not.exist(txp);
@@ -3972,6 +4053,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 10e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -3991,6 +4073,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 100e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -4011,6 +4094,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 90e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -4030,6 +4114,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 10e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -4047,6 +4132,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 100e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             txp.inputs.length.should.equal(1);
@@ -4068,6 +4154,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 80e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.exist(err);
             err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
@@ -4084,6 +4171,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 100e2,
           };
+              txOpts = Object.assign(txOpts, flags);
           server.createTx(txOpts, function(err, txp) {
             should.not.exist(err);
             should.exist(txp);
@@ -4100,6 +4188,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 100e2,
           };
+          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
             should.exist(txp);
             var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
@@ -4117,6 +4206,7 @@ console.log('[server.js.425:err:]',err); //TODO
                 should.not.exist(err);
                 should.exist(txp.txid);
                 txp.status.should.equal('broadcasted');
+              txOpts = Object.assign(txOpts, flags);
                 server.createTx(txOpts, function(err, txp) {
                   should.exist(err);
                   err.code.should.equal('INSUFFICIENT_FUNDS');
@@ -4131,53 +4221,172 @@ console.log('[server.js.425:err:]',err); //TODO
     });
   });
 
-  it('should create a BCH tx proposal with cashaddr outputs (w/o prefix) and return Copay addr', function(done) {
+  describe("cashAddr backwards compat", (x) => {
+    /// LEGACY MODE
+    it('should create a BCH tx proposal with cashaddr outputs (w/o prefix) and return Copay addr', function(done) {
 
-    let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
-    let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
-    let amount =  0.8 * 1e8;
-    helpers.createAndJoinWallet(1, 1, { 
-      coin: 'bch',
-    },  function(s, w) {
-      helpers.stubUtxos(s, w, [1, 2], function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: cashAddr,
-            amount: amount,
-          }],
-          message: 'some message',
-          customData: 'some custom data',
-          feePerKb: 123e2,
-        };
-        s.createTx(txOpts, function(err, tx) {
-          should.not.exist(err);
-          should.exist(tx);
-          tx.walletM.should.equal(1);
-          tx.walletN.should.equal(1);
-          tx.requiredRejections.should.equal(1);
-          tx.requiredSignatures.should.equal(1);
-          tx.isAccepted().should.equal.false;
-          tx.isRejected().should.equal.false;
-          tx.isPending().should.equal.true;
-          tx.isTemporary().should.equal.true;
-          tx.outputs.should.deep.equal([{
-            toAddress: cashAddr,
-            amount: amount,
-          }]);
-          tx.amount.should.equal(helpers.toSatoshi(0.8));
-          tx.feePerKb.should.equal(123e2);
-          should.not.exist(tx.feeLevel);
-          var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
-          s.publishTx(publishOpts, function(err) {
-            s.getPendingTxs({}, function(err, txs) {
-              should.not.exist(err);
-              txs.length.should.equal(1);
-              txs[0].outputs.should.deep.equal([{
-                toAddress: copayAddr,
-                amount: amount,
-              }]);
+      let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
+      let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
+      let amount =  0.8 * 1e8;
+      helpers.createAndJoinWallet(1, 1, { 
+        coin: 'bch',
+      },  function(s, w) {
+        helpers.stubUtxos(s, w, [1, 2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: cashAddr,
+              amount: amount,
+            }],
+            message: 'some message',
+            customData: 'some custom data',
+            feePerKb: 123e2,
+            noCashAddr:true,
+          };
+          s.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            tx.walletM.should.equal(1);
+            tx.walletN.should.equal(1);
+            tx.requiredRejections.should.equal(1);
+            tx.requiredSignatures.should.equal(1);
+            tx.isAccepted().should.equal.false;
+            tx.isRejected().should.equal.false;
+            tx.isPending().should.equal.true;
+            tx.isTemporary().should.equal.true;
+            tx.outputs.should.deep.equal([{
+              toAddress: cashAddr,
+              amount: amount,
+            }]);
+            tx.amount.should.equal(helpers.toSatoshi(0.8));
+            tx.feePerKb.should.equal(123e2);
+            should.not.exist(tx.feeLevel);
+            var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
+            s.publishTx(publishOpts, function(err) {
+              s.getPendingTxs({noCashAddr: true}, function(err, txs) {
+                should.not.exist(err);
+                txs.length.should.equal(1);
+                txs[0].outputs.should.deep.equal([{
+                  toAddress: copayAddr,
+                  amount: amount,
+                }]);
 
-              done();
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should create a BCH tx proposal with cashaddr outputs (w/ prefix) and return Copay addr', function(done) {
+
+      let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
+      let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
+      let amount =  0.8 * 1e8;
+      helpers.createAndJoinWallet(1, 1, { 
+        coin: 'bch',
+      },  function(s, w) {
+        helpers.stubUtxos(s, w, [1, 2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: 'bitcoincash:'+cashAddr,
+              amount: amount,
+            }],
+            message: 'some message',
+            customData: 'some custom data',
+            feePerKb: 123e2,
+            noCashAddr: true,
+          };
+          s.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            tx.walletM.should.equal(1);
+            tx.walletN.should.equal(1);
+            tx.requiredRejections.should.equal(1);
+            tx.requiredSignatures.should.equal(1);
+            tx.isAccepted().should.equal.false;
+            tx.isRejected().should.equal.false;
+            tx.isPending().should.equal.true;
+            tx.isTemporary().should.equal.true;
+            tx.outputs.should.deep.equal([{
+              toAddress: 'bitcoincash:'+cashAddr,
+              amount: amount,
+            }]);
+            tx.amount.should.equal(helpers.toSatoshi(0.8));
+            tx.feePerKb.should.equal(123e2);
+            should.not.exist(tx.feeLevel);
+
+            var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
+            s.publishTx(publishOpts, function(err) {
+              s.getPendingTxs({noCashAddr: true}, function(err, txs) {
+            
+                should.not.exist(err);
+                txs.length.should.equal(1);
+                txs[0].outputs.should.deep.equal([{
+                  toAddress: copayAddr,
+                  amount: amount,
+                }]);
+
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+    it('should create a BCH tx proposal with cashaddr and keep message', function(done) {
+
+      let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
+      let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
+      let amount =  0.8 * 1e8;
+      helpers.createAndJoinWallet(1, 1, { 
+        coin: 'bch',
+      },  function(s, w) {
+        helpers.stubUtxos(s, w, [1, 2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: cashAddr,
+              amount: amount,
+              message: 'xxx',
+            }],
+            message: 'some message',
+            customData: 'some custom data',
+            feePerKb: 123e2,
+            noCashAddr: true,
+          };
+          s.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            tx.walletM.should.equal(1);
+            tx.walletN.should.equal(1);
+            tx.requiredRejections.should.equal(1);
+            tx.requiredSignatures.should.equal(1);
+            tx.isAccepted().should.equal.false;
+            tx.isRejected().should.equal.false;
+            tx.isPending().should.equal.true;
+            tx.isTemporary().should.equal.true;
+            tx.outputs.should.deep.equal([{
+              toAddress: cashAddr,
+              amount: amount,
+              message: 'xxx',
+            }]);
+            tx.amount.should.equal(helpers.toSatoshi(0.8));
+            tx.feePerKb.should.equal(123e2);
+            should.not.exist(tx.feeLevel);
+            var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
+            s.publishTx(publishOpts, function(err) {
+              s.getPendingTxs({noCashAddr: true}, function(err, txs) {
+                should.not.exist(err);
+                txs.length.should.equal(1);
+                txs[0].outputs.should.deep.equal([{
+                  toAddress: copayAddr,
+                  message: 'xxx',
+                  amount: amount,
+                }]);
+
+                done();
+              });
             });
           });
         });
@@ -4185,110 +4394,107 @@ console.log('[server.js.425:err:]',err); //TODO
     });
   });
 
-  it('should create a BCH tx proposal with cashaddr outputs (w/ prefix) and return Copay addr', function(done) {
+  describe("cashAddr edge cases (v3 api)", (x) => {
+    it('should fail to create BCH tx proposal with cashaddr w/prefix', function(done) {
+      let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
+      let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
+      let amount =  0.8 * 1e8;
+      helpers.createAndJoinWallet(1, 1, { 
+        coin: 'bch',
+      },  function(s, w) {
+        helpers.stubUtxos(s, w, [1, 2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: 'bitcoincash:'+ cashAddr,
+              amount: amount,
+            }],
+            message: 'some message',
+            customData: 'some custom data',
+            feePerKb: 123e2,
+          };
+          s.createTx(txOpts, function(err, tx) {
+            err.message.should.contain('cashaddr wo prefix');
+            done();
+          });
+        });
+      });
+    });
+    it('should fail to create BCH tx proposal with  legacy addr  ', function(done) {
+      let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
+      let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
+      let amount =  0.8 * 1e8;
+      helpers.createAndJoinWallet(1, 1, { 
+        coin: 'bch',
+      },  function(s, w) {
+        helpers.stubUtxos(s, w, [1, 2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: copayAddr,
+              amount: amount,
+            }],
+            message: 'some message',
+            customData: 'some custom data',
+            feePerKb: 123e2,
+          };
+          s.createTx(txOpts, function(err, tx) {
+            err.message.should.contain('cashaddr wo prefix');
+            done();
+          });
+        });
+      });
+    });
 
-    let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
-    let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
-    let amount =  0.8 * 1e8;
-    helpers.createAndJoinWallet(1, 1, { 
-      coin: 'bch',
-    },  function(s, w) {
-      helpers.stubUtxos(s, w, [1, 2], function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: 'bitcoincash:'+cashAddr,
-            amount: amount,
-          }],
-          message: 'some message',
-          customData: 'some custom data',
-          feePerKb: 123e2,
-        };
-        s.createTx(txOpts, function(err, tx) {
-          should.not.exist(err);
-          should.exist(tx);
-          tx.walletM.should.equal(1);
-          tx.walletN.should.equal(1);
-          tx.requiredRejections.should.equal(1);
-          tx.requiredSignatures.should.equal(1);
-          tx.isAccepted().should.equal.false;
-          tx.isRejected().should.equal.false;
-          tx.isPending().should.equal.true;
-          tx.isTemporary().should.equal.true;
-          tx.outputs.should.deep.equal([{
-            toAddress: 'bitcoincash:'+cashAddr,
-            amount: amount,
-          }]);
-          tx.amount.should.equal(helpers.toSatoshi(0.8));
-          tx.feePerKb.should.equal(123e2);
-          should.not.exist(tx.feeLevel);
-
-          var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
-          s.publishTx(publishOpts, function(err) {
-            s.getPendingTxs({}, function(err, txs) {
-              should.not.exist(err);
-              txs.length.should.equal(1);
-              txs[0].outputs.should.deep.equal([{
-                toAddress: copayAddr,
+    it('should allow cashaddr on change address', function(done) {
+      let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
+      let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
+      let amount =  0.8 * 1e8;
+      helpers.createAndJoinWallet(1, 1, { 
+        coin: 'bch',
+      },  function(s, w) {
+        helpers.createAddresses(s, w, 1, 1, function(mainAddresses, changeAddress) {
+          helpers.stubUtxos(s, w, [1, 2], function() {
+            var txOpts = {
+              outputs: [{
+                toAddress: cashAddr,
                 amount: amount,
-              }]);
-
+              }],
+              message: 'some message',
+              customData: 'some custom data',
+              feePerKb: 123e2,
+              changeAddress: changeAddress[0].address,
+            };
+            s.createTx(txOpts, function(err, tx) {
+              should.not.exist(err);
+              tx.changeAddress.address.should.equal(changeAddress[0].address);
+              tx.changeAddress.address.should.equal('qz0d6gueltx0feta7z9777yk97sz9p6peu98mg5vac');
               done();
             });
           });
         });
       });
     });
-  });
 
-  it('should create a BCH tx proposal with cashaddr and keep message', function(done) {
-
-    let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
-    let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
-    let amount =  0.8 * 1e8;
-    helpers.createAndJoinWallet(1, 1, { 
-      coin: 'bch',
-    },  function(s, w) {
-      helpers.stubUtxos(s, w, [1, 2], function() {
-        var txOpts = {
-          outputs: [{
-            toAddress: cashAddr,
-            amount: amount,
-            message: 'xxx',
-          }],
-          message: 'some message',
-          customData: 'some custom data',
-          feePerKb: 123e2,
-        };
-        s.createTx(txOpts, function(err, tx) {
-          should.not.exist(err);
-          should.exist(tx);
-          tx.walletM.should.equal(1);
-          tx.walletN.should.equal(1);
-          tx.requiredRejections.should.equal(1);
-          tx.requiredSignatures.should.equal(1);
-          tx.isAccepted().should.equal.false;
-          tx.isRejected().should.equal.false;
-          tx.isPending().should.equal.true;
-          tx.isTemporary().should.equal.true;
-          tx.outputs.should.deep.equal([{
-            toAddress: cashAddr,
-            amount: amount,
-            message: 'xxx',
-          }]);
-          tx.amount.should.equal(helpers.toSatoshi(0.8));
-          tx.feePerKb.should.equal(123e2);
-          should.not.exist(tx.feeLevel);
-          var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
-          s.publishTx(publishOpts, function(err) {
-            s.getPendingTxs({}, function(err, txs) {
-              should.not.exist(err);
-              txs.length.should.equal(1);
-              txs[0].outputs.should.deep.equal([{
-                toAddress: copayAddr,
-                message: 'xxx',
+    it('should not allow cashaddr w prefix on change address', function(done) {
+      let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
+      let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
+      let amount =  0.8 * 1e8;
+      helpers.createAndJoinWallet(1, 1, { 
+        coin: 'bch',
+      },  function(s, w) {
+        helpers.createAddresses(s, w, 1, 1, function(mainAddresses, changeAddress) {
+          helpers.stubUtxos(s, w, [1, 2], function() {
+            var txOpts = {
+              outputs: [{
+                toAddress: cashAddr,
                 amount: amount,
-              }]);
-
+              }],
+              message: 'some message',
+              customData: 'some custom data',
+              feePerKb: 123e2,
+              changeAddress: 'bitcoincash:' + changeAddress[0].address,
+            };
+            s.createTx(txOpts, function(err, tx) {
+              err.message.should.contain('wo prefix');
               done();
             });
           });
@@ -5041,6 +5247,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 100e2,
           };
+          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
             should.exist(tx);
             txid = tx.id;
@@ -5136,6 +5343,7 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
+            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               should.exist(tx);
               tx.addressType.should.equal('P2PKH');
@@ -5190,6 +5398,7 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
+            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               should.exist(tx);
               txid = tx.id;
@@ -5402,6 +5611,7 @@ console.log('[server.js.425:err:]',err); //TODO
             message: 'some message',
             feePerKb: 100e2,
           };
+          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
             should.exist(txp);
             var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
@@ -5492,6 +5702,7 @@ console.log('[server.js.425:err:]',err); //TODO
         }],
         feePerKb: 100e2,
       };
+      txOpts = Object.assign(txOpts, flags);
       helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
         server.getPendingTxs({}, function(err, txs) {
           should.not.exist(err);
@@ -5518,6 +5729,7 @@ console.log('[server.js.425:err:]',err); //TODO
         }],
         feePerKb: 100e2,
       };
+      txOpts = Object.assign(txOpts, flags);
       helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
         should.exist(txp);
         server.broadcastTx({
@@ -5613,6 +5825,7 @@ console.log('[server.js.425:err:]',err); //TODO
         feePerKb: 100e2,
         message: 'some message',
       };
+      txOpts = Object.assign(txOpts, flags);
       helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
         should.exist(txp);
         helpers.getAuthServer(wallet.copayers[1].id, function(server2, wallet) {
@@ -5639,6 +5852,7 @@ console.log('[server.js.425:err:]',err); //TODO
             feePerKb: 100e2,
             message: 'some message',
           };
+          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
             txpId = txp.id;
             should.exist(txp);
@@ -5732,6 +5946,7 @@ console.log('[server.js.425:err:]',err); //TODO
             feePerKb: 100e2,
             message: 'some message',
           };
+          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
             txpId = txp.id;
             should.exist(txp);
@@ -5820,6 +6035,7 @@ console.log('[server.js.425:err:]',err); //TODO
             feePerKb: 100e2,
             message: 'some message',
           };
+          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
             should.exist(txp);
             txpid = txp.id;
@@ -5886,6 +6102,7 @@ console.log('[server.js.425:err:]',err); //TODO
           };
           async.eachSeries(_.range(10), function(i, next) {
             clock.tick(10 * 1000);
+            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
 
               next();
@@ -5974,6 +6191,7 @@ console.log('[server.js.425:err:]',err); //TODO
           };
           async.eachSeries(_.range(3), function(i, next) {
             clock.tick(25 * 1000);
+            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
               next();
             });
@@ -6243,6 +6461,7 @@ console.log('[server.js.425:err:]',err); //TODO
             feePerKb: 100e2,
             message: 'some message',
           };
+            txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function() {
             server.getPendingTxs({}, function(err, txs) {
               txp = txs[0];
@@ -6572,6 +6791,7 @@ console.log('[server.js.425:err:]',err); //TODO
             "test": true
           },
         };
+        txOpts = Object.assign(txOpts, flags);
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
           should.exist(tx);
 
@@ -8117,6 +8337,7 @@ console.log('[server.js.7446:err:]',err); //TODO
           feePerKb: 100e2,
           message: 'some message',
         };
+        txOpts = Object.assign(txOpts, flags);
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
           should.exist(txp);
           var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);

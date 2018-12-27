@@ -1125,7 +1125,7 @@ WalletService.prototype._store = function(wallet, address, cb) {
  * Creates a new address.
  * @param {Object} opts
  * @param {Boolean} [opts.ignoreMaxGap=false] - Ignore constraint of maximum number of consecutive addresses without activity
- * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch
+ * @param {Boolean} opts.noCashAddr (do not use cashaddr, only for backwards compat)
  * @returns {Address} address
  */
 WalletService.prototype.createAddress = function(opts, cb) {
@@ -2156,8 +2156,30 @@ WalletService.prototype._canCreateTx = function(cb) {
   });
 };
 
-WalletService.prototype._validateOutputs = function(opts, wallet, cb) {
+
+WalletService.prototype._validateAddr = function(wallet, inaddr, opts) {
   var A = Bitcore_[wallet.coin].Address;
+
+  var addr = {};
+  try {
+    addr = new A(inaddr);
+  } catch (ex) {
+    return Errors.INVALID_ADDRESS;
+  }
+  if (addr.network.toString() != wallet.network) {
+    return Errors.INCORRECT_ADDRESS_NETWORK;
+  }
+
+  if (wallet.coin == 'bch' && !opts.noCashAddr) {
+    if (addr.toString(true) !=  inaddr)
+    return Errors.ONLY_CASHADDR;
+  }
+
+  return;
+};
+
+WalletService.prototype._validateOutputs = function(opts, wallet, cb) {
+  var self = this;
   var dustThreshold = Math.max(Defaults.MIN_OUTPUT_AMOUNT, Bitcore_[wallet.coin].Transaction.DUST_AMOUNT);
 
   if (_.isEmpty(opts.outputs)) return new ClientError('No outputs were specified');
@@ -2166,24 +2188,13 @@ WalletService.prototype._validateOutputs = function(opts, wallet, cb) {
     var output = opts.outputs[i];
     output.valid = false;
 
+    let addrErr = self._validateAddr(wallet, output.toAddress, opts);
+    if (addrErr) return addrErr;
+
+    
+
     if (!checkRequired(output, ['toAddress', 'amount'])) {
       return new ClientError('Argument missing in output #' + (i + 1) + '.');
-    }
-
-    var toAddress = {};
-    try {
-      toAddress = new A(output.toAddress);
-    } catch (ex) {
-      return Errors.INVALID_ADDRESS;
-    }
-    if (toAddress.network != wallet.network) {
-      return Errors.INCORRECT_ADDRESS_NETWORK;
-    }
-
-    if (toAddress.network == 'bch' ) {
-      let stripped = _.last(output.toAddress.split(':'));
-      if (toAddress.network.toString() !=  stripped)
-        return Errors.ONLY_CASHADDR;
     }
 
     if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount <= 0) {
@@ -2265,7 +2276,8 @@ WalletService.prototype._validateAndSanitizeTxOpts = function(wallet, opts, cb) 
     },
     function(next) {
       // check outputs are on 'copay' format for BCH
-      if (wallet.coin != 'bch' || opts.onlyCashAddr) return next();
+      if (wallet.coin != 'bch') return next();
+      if (!opts.noCashAddr) return next();
 
       // TODO remove one cashaddr is used internally (noCashAddr flag)?
       opts.origAddrOutputs = _.map(opts.outputs, (x) => {
@@ -2340,8 +2352,7 @@ WalletService.prototype._getFeePerKb = function(wallet, opts, cb) {
  * @param {Array} opts.inputs - Optional. Inputs for this TX
  * @param {number} opts.fee - Optional. Use an fixed fee for this TX (only when opts.inputs is specified)
  * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
- * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch in RESPONSE changeAddress
- * @param {Boolean} [opts.onlyCashAddr] - do not allow non cashAddr outputs
+ * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch
  * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
  */
 WalletService.prototype.createTx = function(opts, cb) {
@@ -2358,6 +2369,12 @@ WalletService.prototype.createTx = function(opts, cb) {
       });
     } else {
       if (opts.changeAddress) {
+
+        // 
+
+        let addrErr = self._validateAddr(wallet, opts.changeAddress, opts);
+        if (addrErr) return cb(addrErr);
+
         self.storage.fetchAddressByWalletId(wallet.id, opts.changeAddress, function(err, address) {
           if (err || !address) return cb(Errors.INVALID_CHANGE_ADDRESS);
           return cb(null, address);
@@ -2988,10 +3005,16 @@ WalletService.prototype.getPendingTxs = function(opts, cb) {
       })
 
       if (opts.noCashAddr && txps[0] && txps[0].coin == 'bch') {
+console.log('## [server.js.2989]'); //TODO
         _.each(txps, (x) => {
           if (x.changeAddress) {
             x.changeAddress.address= BCHAddressTranslator.translate(x.changeAddress.address,'copay');
           }
+          _.each(x.outputs, (x) => {
+            if (x.toAddress) {
+              x.toAddress= BCHAddressTranslator.translate(x.toAddress,'copay');
+            }
+          });
         });
       }
 
