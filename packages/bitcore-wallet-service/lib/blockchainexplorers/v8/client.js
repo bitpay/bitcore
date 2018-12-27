@@ -106,7 +106,7 @@ Client.prototype.importAddresses = async function(params) {
   const { payload, pubKey } = params;
   const url = `${this.baseUrl}/wallet/${pubKey}`;
 
-  console.log('add addresses:',url); //TODO
+  console.log('addAddresses:',url, payload); //TODO
   const signature = this.sign({ method: 'POST', url, payload});
   let h = { 'x-signature': signature};
   return request.post(url, {

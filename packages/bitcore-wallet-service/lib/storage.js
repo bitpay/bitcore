@@ -500,6 +500,7 @@ Storage.prototype.migrateToCashAddr = function(walletId, cb) {
 
   cursor.on("end", function() {
     console.log(`Migration to cash address of ${walletId} Finished`);
+    self.clearWalletCache(walletId,cb);
     return cb();
   }); 
 
@@ -876,6 +877,17 @@ Storage.prototype.softResetTxHistoryCache = function(walletId, cb) {
     upsert: true,
   }, cb);
 };
+
+
+Storage.prototype.clearWalletCache = function(walletId, cb) {
+  var self = this;
+  self.db.collection(collections.CACHE).remove({
+    walletId: walletId,
+  }, {
+    multi: 1
+  }, cb);
+};
+
 
 Storage.prototype.clearTxHistoryCache = function(walletId, cb) {
   var self = this;

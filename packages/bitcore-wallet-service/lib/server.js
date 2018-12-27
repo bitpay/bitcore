@@ -5,6 +5,7 @@ var $ = require('preconditions').singleton();
 var async = require('async');
 var log = require('npmlog');
 var serverMessages = require('../serverMessages');
+var BCHAddressTranslator = require('./bchaddresstranslator');
 
 log.debug = log.verbose;
 log.disableColor();
@@ -1124,6 +1125,7 @@ WalletService.prototype._store = function(wallet, address, cb) {
  * Creates a new address.
  * @param {Object} opts
  * @param {Boolean} [opts.ignoreMaxGap=false] - Ignore constraint of maximum number of consecutive addresses without activity
+ * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch
  * @returns {Address} address
  */
 WalletService.prototype.createAddress = function(opts, cb) {
@@ -1175,6 +1177,10 @@ WalletService.prototype.createAddress = function(opts, cb) {
         return createFn(wallet, (err, address) => {
           if (err) {
             return cb(err);
+          }
+
+          if (wallet.coin == 'bch' && opts.noCashAddr) {
+            address.address = BCHAddressTranslator.translate(address.address, 'copay');
           }
 
           return cb(err, address);
@@ -3073,6 +3079,8 @@ WalletService.prototype._normalizeV8TxHistory = function(txs, bcHeight) {
     };
     switch (tx.category) {
       case 'send':
+
+console.log('[server.js.3038]', tx.outputs); //TODO
         ret.action = 'sent';
         ret.amount= Math.abs(_.sumBy(tx.outputs,'amount'));
         ret.addressTo= tx.outputs ? tx.outputs[0].address : null;
@@ -3821,7 +3829,6 @@ WalletService.prototype.getTxHistory = function(opts, cb) {
         } else {
           self.logi(`History from bc ${from}/${to}: ${finalTxs.length} txs`);
         }
-        //console.log('[server.js.3504:finalTxs:]',finalTxs); //TODO
         return cb(null, finalTxs, !!res.txs.fromCache, !!res.txs.useStream);
       });
     });
