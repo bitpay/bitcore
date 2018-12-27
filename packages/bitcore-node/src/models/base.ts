@@ -18,13 +18,20 @@ export abstract class BaseModel<T> {
   }
 
   private async handleConnection() {
-    this.storageService.connection.on('CONNECTED', async () => {
+    const doConnect = async () => {
       if (this.storageService.db != undefined) {
         this.connected = true;
         this.db = this.storageService.db;
         await this.onConnect();
       }
-    });
+    };
+    if (this.storageService.connected) {
+      await doConnect();
+    } else {
+      this.storageService.connection.on('CONNECTED', async () => {
+        await doConnect();
+      });
+    }
   }
 
   abstract async onConnect();
