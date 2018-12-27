@@ -2180,6 +2180,12 @@ WalletService.prototype._validateOutputs = function(opts, wallet, cb) {
       return Errors.INCORRECT_ADDRESS_NETWORK;
     }
 
+    if (toAddress.network == 'bch' ) {
+      let stripped = _.last(output.toAddress.split(':'));
+      if (toAddress.network.toString() !=  stripped)
+        return Errors.ONLY_CASHADDR;
+    }
+
     if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount <= 0) {
       return new ClientError('Invalid amount');
     }
@@ -2259,7 +2265,7 @@ WalletService.prototype._validateAndSanitizeTxOpts = function(wallet, opts, cb) 
     },
     function(next) {
       // check outputs are on 'copay' format for BCH
-      if (wallet.coin != 'bch') return next();
+      if (wallet.coin != 'bch' || opts.onlyCashAddr) return next();
 
       // TODO remove one cashaddr is used internally (noCashAddr flag)?
       opts.origAddrOutputs = _.map(opts.outputs, (x) => {
@@ -2334,7 +2340,9 @@ WalletService.prototype._getFeePerKb = function(wallet, opts, cb) {
  * @param {Array} opts.inputs - Optional. Inputs for this TX
  * @param {number} opts.fee - Optional. Use an fixed fee for this TX (only when opts.inputs is specified)
  * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
- * @returns {TxProposal} Transaction proposal.
+ * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch in RESPONSE changeAddress
+ * @param {Boolean} [opts.onlyCashAddr] - do not allow non cashAddr outputs
+ * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
  */
 WalletService.prototype.createTx = function(opts, cb) {
   var self = this;
@@ -2449,11 +2457,18 @@ WalletService.prototype.createTx = function(opts, cb) {
         ], function(err) {
           if (err) return cb(err);
 
-          //
-          if (opts.returnOrigAddrOutputs) {
-            log.info('Returning Orig BCH address outputs for compat');
-            txp.outputs = opts.origAddrOutputs;
+          if (txp.coin == 'bch') {
+
+            if (opts.returnOrigAddrOutputs) {
+              log.info('Returning Orig BCH address outputs for compat');
+              txp.outputs = opts.origAddrOutputs;
+            }
+
+            if (opts.noCashAddr && txp.changeAddress) {
+              txp.changeAddress.address= BCHAddressTranslator.translate(txp.changeAddress.address,'copay');
+            }
           }
+
           return cb(null, txp);
         });
 
@@ -2471,6 +2486,7 @@ WalletService.prototype._verifyRequestPubKey = function(requestPubKey, signature
  * @param {Object} opts
  * @param {string} opts.txProposalId - The tx id.
  * @param {string} opts.proposalSignature - S(raw tx). Used by other copayers to verify the proposal.
+ * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch
  */
 WalletService.prototype.publishTx = function(opts, cb) {
   var self = this;
@@ -2532,6 +2548,15 @@ WalletService.prototype.publishTx = function(opts, cb) {
             if (err) return cb(err);
 
             self._notifyTxProposalAction('NewTxProposal', txp, function() {
+
+
+              if (opts.noCashAddr && txp.coin == 'bch') {
+                if (txp.changeAddress) {
+                  txp.changeAddress.address= BCHAddressTranslator.translate(txp.changeAddress.address,'copay');
+                }
+              }
+
+
               return cb(null, txp);
             });
           });
@@ -2934,6 +2959,7 @@ WalletService.prototype.rejectTx = function(opts, cb) {
 /**
  * Retrieves pending transaction proposals.
  * @param {Object} opts
+ * @param {Boolean} opts.noCashAddr (do not use cashaddr, only for backwards compat)
  * @returns {TxProposal[]} Transaction proposal.
  */
 WalletService.prototype.getPendingTxs = function(opts, cb) {
@@ -2956,9 +2982,20 @@ WalletService.prototype.getPendingTxs = function(opts, cb) {
         }, next);
       });
     }, function(err) {
-      return cb(err, _.reject(txps, function(txp) {
+
+      txps = _.reject(txps, function(txp) {
         return txp.status == 'broadcasted';
-      }));
+      })
+
+      if (opts.noCashAddr && txps[0] && txps[0].coin == 'bch') {
+        _.each(txps, (x) => {
+          if (x.changeAddress) {
+            x.changeAddress.address= BCHAddressTranslator.translate(x.changeAddress.address,'copay');
+          }
+        });
+      }
+
+      return cb(err, txps);
     });
   });
 };

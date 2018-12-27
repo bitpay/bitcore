@@ -12,6 +12,7 @@ var errors = {
   COPAYER_VOTED: 'Copayer already voted on this transaction proposal',
   DUST_AMOUNT: 'Amount below dust threshold',
   INCORRECT_ADDRESS_NETWORK: 'Incorrect address network',
+  ONLY_CASHADDR: 'Only cashaddr wo prefix is allowed for outputs',
   INSUFFICIENT_FUNDS: 'Insufficient funds',
   INSUFFICIENT_FUNDS_FOR_FEE: 'Insufficient funds for fee',
   INVALID_ADDRESS: 'Invalid address',
