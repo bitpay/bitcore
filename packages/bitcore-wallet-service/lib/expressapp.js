@@ -387,7 +387,6 @@ ExpressApp.prototype.start = function(opts, cb) {
 
   router.post('/v3/txproposals/', function(req, res) {
     getServerWithAuth(req, res, function(server) {
-      req.body.onlyCashAddr = true;
       server.createTx(req.body, function(err, txp) {
         if (err) return returnError(err, res, req);
         res.json(txp);
