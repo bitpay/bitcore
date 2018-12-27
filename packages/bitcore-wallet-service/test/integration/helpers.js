@@ -202,6 +202,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     singleAddress: !!opts.singleAddress,
     coin: opts.coin || 'btc',
     network: opts.network || 'livenet',
+    nativeCashAddr: opts.nativeCashAddr,
   };
   if (_.isBoolean(opts.supportBIP44AndP2PKH))
     walletOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
@@ -238,6 +239,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     }, function(err) {
       if (err) return new Error('Could not generate wallet');
       helpers.getAuthServer(copayerIds[0], function(s) {
+        if (opts.earlyRet) return cb(s);
         s.getWallet({}, function(err, w) {
 
           sinon.stub(s, 'checkWalletSync').callsArgWith(2, null, true);

@@ -1364,7 +1364,7 @@ describe('Wallet service', function() {
           should.exist(address);
           address.walletId.should.equal(wallet.id);
           address.network.should.equal('livenet');
-          address.address.should.equal('HBf8isgS8EXG1r3X6GP89FmooUmiJ42wHS');
+          address.address.should.equal('pqu9c0xe7g0ngz9hzpky64nva9790m64esxxjmcv2k');
           address.isChange.should.be.false;
           address.path.should.equal('m/0/0');
           address.type.should.equal('P2SH');
@@ -1433,7 +1433,7 @@ describe('Wallet service', function() {
           should.exist(address);
           address.walletId.should.equal(wallet.id);
           address.network.should.equal('livenet');
-          address.address.should.equal('HBf8isgS8EXG1r3X6GP89FmooUmiJ42wHS');
+          address.address.should.equal('pqu9c0xe7g0ngz9hzpky64nva9790m64esxxjmcv2k');
           address.isChange.should.be.false;
           address.path.should.equal('m/0/0');
           address.type.should.equal('P2SH');
@@ -1504,7 +1504,7 @@ describe('Wallet service', function() {
           should.exist(address);
           address.walletId.should.equal(wallet.id);
           address.network.should.equal('testnet');
-          address.address.should.equal('mrM5kMkqZccK5MxZYSsM3SjqdMaNKLJgrJ');
+          address.address.should.equal('qpmvku3x8j9pz7mee89c590xsl3k5l02mqeyfhf3ce');
           address.isChange.should.be.false;
           address.path.should.equal('m/0/0');
           address.type.should.equal('P2PKH');
@@ -2167,7 +2167,7 @@ describe('Wallet service', function() {
         server.getBalance({
           coin: 'bch'
         }, function(err, balance) {
-          err.message.should.contain('no longer supported');
+          err.message.should.contain('not longer supported');
           done();
         });
       });
@@ -2697,11 +2697,7 @@ describe('Wallet service', function() {
                 should.exist(tx);
                 var t = tx.getBitcoreTx();
 
-                if (coin == 'bch') { 
-                  t.getChangeOutput().script.toAddress().toLegacyAddress().should.equal(txOpts.changeAddress);
-                } else {
-                  t.getChangeOutput().script.toAddress().toString().should.equal(txOpts.changeAddress);
-                }
+                t.getChangeOutput().script.toAddress().toString(true).should.equal(txOpts.changeAddress);
                 done();
               });
             });
@@ -7307,7 +7303,7 @@ describe('Wallet service', function() {
           address.walletId.should.equal(wallet.bch.id);
           address.coin.should.equal('bch');
           address.network.should.equal('livenet');
-          address.address.should.equal('CbWsiNjh18ynQYc5jfYhhespEGrAaW8YUq');
+          address.address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
           server.btc.getMainAddresses({}, function(err, addresses) {
             should.not.exist(err);
             addresses.length.should.equal(1);
@@ -7319,7 +7315,7 @@ describe('Wallet service', function() {
               addresses.length.should.equal(1);
               addresses[0].coin.should.equal('bch');
               addresses[0].walletId.should.equal(wallet.bch.id);
-              addresses[0].address.should.equal('CbWsiNjh18ynQYc5jfYhhespEGrAaW8YUq');
+              addresses[0].address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
               done();
             });
           });

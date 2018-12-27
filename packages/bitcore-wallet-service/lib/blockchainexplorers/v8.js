@@ -9,7 +9,7 @@ var io = require('socket.io-client');
 const request = require('request-promise-native');
 var Common = require('../common');
 var Client;
-  var BCHAddressTranslator = require('../bchaddresstranslator');
+var BCHAddressTranslator = require('../bchaddresstranslator');
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
@@ -98,7 +98,6 @@ V8.prototype.translateTx = function(tx) {
       x.scriptPubKey.addresses = self.translateResultAddresses(x.scriptPubKey.addresses);
     }
   });
-
 };
 
 V8.prototype._getClient = function () {
@@ -121,10 +120,6 @@ V8.prototype.addAddresses = function (wallet, addresses, cb) {
   var client = this._getAuthClient(wallet);
 
   const payload = _.map(addresses,  a => {
-    if (self.addressFormat) {
-        a = self.translateQueryAddresses(a);
-    }
-
     return {
       address: a,
     }
@@ -214,6 +209,9 @@ V8.prototype._transformUtxos = function(unspent, bcheight) {
 
 /**
  * Retrieve a list of unspent outputs associated with an address or set of addresses
+ *
+ *
+ * This is for internal usage, address should be on internal representaion
  */
 V8.prototype.getUtxos = function(wallet, height, cb) {
   $.checkArgument(cb);
@@ -273,6 +271,8 @@ console.log('[v8.js.221:err:]',err); //TODO
     });
 };
 
+
+// This is for internal usage, addresses should be returned on internal representation
 V8.prototype.getTransaction = function(txid, cb) {
   var self = this;
 console.log('[v8.js.207] GET TX', txid); //TODO
@@ -282,7 +282,6 @@ console.log('[v8.js.207] GET TX', txid); //TODO
       if (!tx || _.isEmpty(tx)) {
         return cb();
       }
-      self.translateTx(tx);
       return cb(null, tx);
     })
     .catch((err) =>{ 
@@ -353,9 +352,6 @@ console.time('V8 getTxs');
         log.error('v8 error at JSON.parse:' + e  + ' Parsing:' + rawTx + ":");
         return cb(e);
       }
-      if (tx.address && self.addressFormat) {
-        tx.address = self.translateResultAddresses(tx.address);
-      }
       // v8 field name differences
       if (tx.value)
         tx.amount = tx.satoshis / 1e8;
@@ -381,7 +377,7 @@ console.time('V8 getTxs');
 V8.prototype.getAddressActivity = function(address, cb) {
   var self = this;
 
-  var url = this.baseUrl + '/address/' + this.translateQueryAddresses(address) + '/txs?limit=1';
+  var url = this.baseUrl + '/address/' + address + '/txs?limit=1';
 console.log('[v8.js.328:url:] CHECKING ADDRESS ACTIVITY',url); //TODO
   this.request.get(url, {})
     .then( (ret) => {
@@ -471,7 +467,7 @@ V8.prototype.initSocket = function(callbacks) {
     try {
       let addr = self.coin == 'bch' ? BCHAddressTranslator.translate(data.address, 'copay', 'cashaddr') : data.address;
       out = { 
-        address: addr,
+        address: data.address,
         amount: data.value / 1e8,
       };
     } catch (e) {
