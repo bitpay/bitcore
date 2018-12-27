@@ -1,3 +1,4 @@
+import { Config } from "../../services/config";
 import { Request, Response, Router } from 'express';
 import { ChainNetwork } from '../../types/ChainNetwork';
 import { IWallet } from '../../models/wallet';
@@ -5,7 +6,6 @@ import { RequestHandler } from 'express-serve-static-core';
 import { ChainStateProvider } from '../../providers/chain-state';
 import logger from '../../logger';
 import { MongoBound } from '../../models/base';
-import config from '../../config';
 const router = Router({ mergeParams: true });
 const secp256k1 = require('secp256k1');
 const bitcoreLib = require('bitcore-lib');
@@ -53,7 +53,7 @@ const authenticate: RequestHandler = async (req: PreAuthRequest, res: Response, 
     return res.status(404).send('Wallet not found');
   }
   Object.assign(req, { wallet });
-  if(config.api.wallets.allowUnauthenticatedCalls) {
+  if(Config.for('api').wallets.allowUnauthenticatedCalls) {
     return next();
   }
   try {

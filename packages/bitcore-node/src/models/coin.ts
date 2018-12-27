@@ -3,6 +3,7 @@ import { BaseModel, MongoBound } from './base';
 import { ObjectID } from 'mongodb';
 import { SpentHeightIndicators, CoinJSON } from '../types/Coin';
 import { valueOrDefault } from '../utils/check';
+import { StorageService } from '../services/storage';
 
 export type ICoin = {
   network: string;
@@ -21,9 +22,9 @@ export type ICoin = {
 };
 
 @LoggifyClass
-class Coin extends BaseModel<ICoin> {
-  constructor() {
-    super('coins');
+class CoinModel extends BaseModel<ICoin> {
+  constructor(storage?: StorageService) {
+    super('coins', storage);
   }
 
   allowedPaging = [
@@ -177,4 +178,4 @@ class Coin extends BaseModel<ICoin> {
     return JSON.stringify(transform);
   }
 }
-export let CoinModel = new Coin();
+export let CoinStorage = new CoinModel();

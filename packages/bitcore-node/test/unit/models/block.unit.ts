@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { BlockModel, IBlock } from '../../../src/models/block';
-import { TransactionModel } from '../../../src/models/transaction';
-import { CoinModel } from '../../../src/models/coin';
+import { BlockStorage, IBlock } from '../../../src/models/block';
+import { TransactionStorage } from '../../../src/models/transaction';
+import { CoinStorage } from '../../../src/models/coin';
 import * as sinon from 'sinon';
 import { TEST_BLOCK } from '../../data/test-block';
 import { Storage } from '../../../src/services/storage';
@@ -28,13 +28,13 @@ describe('Block Model', function() {
       sandbox.restore();
     });
     it('should be able to add a block', async () => {
-      let newBlock = Object.assign({ save: () => Promise.resolve() }, BlockModel, addBlockParams);
+      let newBlock = Object.assign({ save: () => Promise.resolve() }, BlockStorage, addBlockParams);
 
       mockStorage(newBlock);
-      sandbox.stub(BlockModel, 'handleReorg').resolves();
-      sandbox.stub(TransactionModel, 'batchImport').resolves();
+      sandbox.stub(BlockStorage, 'handleReorg').resolves();
+      sandbox.stub(TransactionStorage, 'batchImport').resolves();
 
-      const result = await BlockModel.addBlock(addBlockParams);
+      const result = await BlockStorage.addBlock(addBlockParams);
       expect(result);
     });
   });
@@ -42,7 +42,7 @@ describe('Block Model', function() {
   describe('BlockModel find options', () => {
     it('should be able to create query options', () => {
       const id = new ObjectID();
-      const { query, options } = Storage.getFindOptions<MongoBound<IBlock>>(BlockModel, {
+      const { query, options } = Storage.getFindOptions<MongoBound<IBlock>>(BlockStorage, {
         since: id,
         paging: '_id',
         limit: 100,
@@ -55,7 +55,7 @@ describe('Block Model', function() {
 
     it('should default to descending', () => {
       const id = new ObjectID();
-      const { query, options } = Storage.getFindOptions<MongoBound<IBlock>>(BlockModel, {
+      const { query, options } = Storage.getFindOptions<MongoBound<IBlock>>(BlockStorage, {
         since: id,
         paging: '_id',
         limit: 100,
@@ -67,7 +67,7 @@ describe('Block Model', function() {
 
     it('should allow ascending', () => {
       const id = new ObjectID();
-      const { query, options } = Storage.getFindOptions<MongoBound<IBlock>>(BlockModel, {
+      const { query, options } = Storage.getFindOptions<MongoBound<IBlock>>(BlockStorage, {
         since: id,
         paging: '_id',
         limit: 100,
@@ -124,13 +124,13 @@ describe('Block Model', function() {
     });
 
     it('should return if localTip hash equals the previous hash', async () => {
-      Object.assign(BlockModel.collection, mockCollection(null));
-      Object.assign(TransactionModel.collection, mockCollection(null));
-      Object.assign(CoinModel.collection, mockCollection(null));
-      let blockModelRemoveSpy = BlockModel.collection.deleteMany as sinon.SinonSpy;
-      let transactionModelRemoveSpy = TransactionModel.collection.deleteMany as sinon.SinonSpy;
-      let coinModelRemoveSpy = CoinModel.collection.deleteMany as sinon.SinonSpy;
-      let coinModelUpdateSpy = CoinModel.collection.updateMany as sinon.SinonSpy;
+      Object.assign(BlockStorage.collection, mockCollection(null));
+      Object.assign(TransactionStorage.collection, mockCollection(null));
+      Object.assign(CoinStorage.collection, mockCollection(null));
+      let blockModelRemoveSpy = BlockStorage.collection.deleteMany as sinon.SinonSpy;
+      let transactionModelRemoveSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
+      let coinModelRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
+      let coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 
       const params = {
         header: {
@@ -146,7 +146,7 @@ describe('Block Model', function() {
         network: 'regtest'
       };
 
-      await BlockModel.handleReorg(params);
+      await BlockStorage.handleReorg(params);
       expect(blockModelRemoveSpy.notCalled).to.be.true;
       expect(transactionModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelRemoveSpy.notCalled).to.be.true;
@@ -154,10 +154,10 @@ describe('Block Model', function() {
     });
 
     it('should return if localTip height is zero', async () => {
-      let blockModelRemoveSpy = BlockModel.collection.deleteMany as sinon.SinonSpy;
-      let transactionModelRemoveSpy = TransactionModel.collection.deleteMany as sinon.SinonSpy;
-      let coinModelRemoveSpy = CoinModel.collection.deleteMany as sinon.SinonSpy;
-      let coinModelUpdateSpy = CoinModel.collection.updateMany as sinon.SinonSpy;
+      let blockModelRemoveSpy = BlockStorage.collection.deleteMany as sinon.SinonSpy;
+      let transactionModelRemoveSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
+      let coinModelRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
+      let coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 
       let blockMethodParams = {
         chain: 'BTC',
@@ -165,9 +165,9 @@ describe('Block Model', function() {
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BlockModel, blockMethodParams);
+      let params = Object.assign(BlockStorage, blockMethodParams);
 
-      await BlockModel.handleReorg(params);
+      await BlockStorage.handleReorg(params);
       expect(blockModelRemoveSpy.notCalled).to.be.true;
       expect(transactionModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelRemoveSpy.notCalled).to.be.true;
@@ -185,10 +185,10 @@ describe('Block Model', function() {
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BlockModel, blockMethodParams);
-      const removeSpy = BlockModel.collection.deleteMany as sinon.SinonSpy;
+      let params = Object.assign(BlockStorage, blockMethodParams);
+      const removeSpy = BlockStorage.collection.deleteMany as sinon.SinonSpy;
 
-      await BlockModel.handleReorg(params);
+      await BlockStorage.handleReorg(params);
       expect(removeSpy.called).to.be.true;
     });
 
@@ -204,10 +204,10 @@ describe('Block Model', function() {
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BlockModel, blockMethodParams);
-      const removeSpy = TransactionModel.collection.deleteMany as sinon.SinonSpy;
+      let params = Object.assign(BlockStorage, blockMethodParams);
+      const removeSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
 
-      await BlockModel.handleReorg(params);
+      await BlockStorage.handleReorg(params);
       expect(removeSpy.called).to.be.true;
     });
 
@@ -223,11 +223,11 @@ describe('Block Model', function() {
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BlockModel, blockMethodParams);
+      let params = Object.assign(BlockStorage, blockMethodParams);
       const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
-      const removeSpy = CoinModel.collection.deleteMany as sinon.SinonSpy;
+      const removeSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
 
-      await BlockModel.handleReorg(params);
+      await BlockStorage.handleReorg(params);
       expect(collectionSpy.calledOnceWith('coins'));
       expect(removeSpy.callCount).to.eq(3);
     });
@@ -244,11 +244,11 @@ describe('Block Model', function() {
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BlockModel, blockMethodParams);
+      let params = Object.assign(BlockStorage, blockMethodParams);
       const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
-      const updateSpy = CoinModel.collection.updateMany as sinon.SinonSpy;
+      const updateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 
-      await BlockModel.handleReorg(params);
+      await BlockStorage.handleReorg(params);
       expect(collectionSpy.calledOnceWith('coins'));
       expect(updateSpy.called).to.be.true;
     });
@@ -275,7 +275,7 @@ describe('Block Model', function() {
         processed: true
       };
 
-      const result = BlockModel._apiTransform(block, { object: true });
+      const result = BlockStorage._apiTransform(block, { object: true });
 
       expect(result.hash).to.be.equal(block.hash);
       expect(result.height).to.be.equal(block.height);

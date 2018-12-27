@@ -1,10 +1,10 @@
-import { CoinModel } from '../../src/models/coin';
+import { CoinStorage } from '../../src/models/coin';
 import { Wallet } from 'bitcore-client';
 import { Storage } from '../../src/services/storage';
 
 async function getAllAddressesFromBlocks(start, end) {
   if (!Storage.connected) await Storage.start({});
-  const addresses = await CoinModel.collection
+  const addresses = await CoinStorage.collection
     .find({ chain: 'BTC', network: 'mainnet', mintHeight: { $gte: start, $lte: end } })
     .project({ address: 1 })
     .toArray();
