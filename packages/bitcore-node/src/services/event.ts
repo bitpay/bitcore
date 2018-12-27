@@ -31,9 +31,13 @@ export class EventService {
     }
     logger.info('Starting Event Service');
     this.stopped = false;
-    this.storageService.connection.on('CONNECTED', () => {
+    if (this.storageService.connected) {
       this.wireup();
-    });
+    } else {
+      this.storageService.connection.on('CONNECTED', () => {
+        this.wireup();
+      });
+    }
   }
 
   stop() {

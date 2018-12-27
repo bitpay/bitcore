@@ -31,7 +31,7 @@ const runWorker = async () => {
 };
 
 const start = async () => {
-  await Storage.start({});
+  await Storage.start();
   Event.start();
   if (cluster.isMaster) {
     await runMaster();
