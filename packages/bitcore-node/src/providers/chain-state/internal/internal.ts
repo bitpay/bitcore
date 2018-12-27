@@ -5,7 +5,7 @@ import { MongoBound } from '../../../models/base';
 import { ObjectId } from 'mongodb';
 import { CoinStorage, ICoin } from '../../../models/coin';
 import { BlockStorage, IBlock } from '../../../models/block';
-import { WalletModel, IWallet } from '../../../models/wallet';
+import { WalletStorage, IWallet } from '../../../models/wallet';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { Storage } from '../../../services/storage';
@@ -241,13 +241,13 @@ export class InternalStateProvider implements CSP.IChainStateService {
       path,
       singleAddress
     };
-    await WalletModel.collection.insertOne(wallet);
+    await WalletStorage.collection.insertOne(wallet);
     return wallet;
   }
 
   async getWallet(params: CSP.GetWalletParams) {
     const { pubKey } = params;
-    return WalletModel.collection.findOne({ pubKey });
+    return WalletStorage.collection.findOne({ pubKey });
   }
 
   streamWalletAddresses(params: CSP.StreamWalletAddressesParams) {
@@ -258,7 +258,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async streamMissingWalletAddresses(params: CSP.StreamWalletMissingAddressesParams) {
     const { chain, network, pubKey, res } = params;
-    const wallet = await WalletModel.collection.findOne({ pubKey });
+    const wallet = await WalletStorage.collection.findOne({ pubKey });
     const walletId = wallet!._id!;
     const query = { chain, network, wallets: walletId, spentHeight: { $gte: SpentHeightIndicators.minimum } };
     const cursor = CoinStorage.collection.find(query).addCursorFlag('noCursorTimeout', true);

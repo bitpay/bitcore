@@ -3,7 +3,7 @@ import { BlockStorage } from '../../src/models/block';
 import { TransactionStorage } from '../../src/models/transaction';
 import { CoinStorage } from '../../src/models/coin';
 import { WalletAddressStorage } from '../../src/models/walletAddress';
-import { WalletModel } from '../../src/models/wallet';
+import { WalletStorage } from '../../src/models/wallet';
 import { Storage } from '../../src/services/storage';
 import { BaseModel } from '../../src/models/base';
 
@@ -12,7 +12,7 @@ export async function resetDatabase() {
   await resetModel(TransactionStorage);
   await resetModel(CoinStorage);
   await resetModel(WalletAddressStorage);
-  await resetModel(WalletModel);
+  await resetModel(WalletStorage);
 }
 
 export async function resetModel(model: BaseModel<any>) {

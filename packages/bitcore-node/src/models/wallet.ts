@@ -14,7 +14,7 @@ export type IWallet = {
   path: string;
 };
 
-export class WalletSchema extends BaseModel<IWallet> {
+export class WalletModel extends BaseModel<IWallet> {
   constructor(storage?: StorageService) {
     super('wallets', storage);
   }
@@ -42,4 +42,4 @@ export class WalletSchema extends BaseModel<IWallet> {
   }
 }
 
-export let WalletModel = new WalletSchema();
+export let WalletStorage = new WalletModel();
