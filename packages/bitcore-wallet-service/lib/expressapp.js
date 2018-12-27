@@ -346,6 +346,8 @@ ExpressApp.prototype.start = function(opts, cb) {
     });
   });
 
+
+  
   router.get('/v1/txproposals/', function(req, res) {
     getServerWithAuth(req, res, function(server) {
       server.getPendingTxs({}, function(err, pendings) {
@@ -396,7 +398,21 @@ ExpressApp.prototype.start = function(opts, cb) {
     });
   });
 
+  // DEPRECATED (no cashaddr by default)
   router.post('/v3/addresses/', function(req, res) {
+    getServerWithAuth(req, res, function(server) {
+      var opts = req.body;
+      opts = opts || {};
+      opts.noCashAddr = true;
+      server.createAddress(opts, function(err, address) {
+        if (err) return returnError(err, res, req);
+        res.json(address);
+      });
+    });
+  });
+
+
+  router.post('/v4/addresses/', function(req, res) {
     getServerWithAuth(req, res, function(server) {
       server.createAddress(req.body, function(err, address) {
         if (err) return returnError(err, res, req);
@@ -404,6 +420,7 @@ ExpressApp.prototype.start = function(opts, cb) {
       });
     });
   });
+
 
   router.get('/v1/addresses/', function(req, res) {
     getServerWithAuth(req, res, function(server) {
