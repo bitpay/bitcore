@@ -34,11 +34,11 @@ export class P2pManager {
     logger.info('Starting P2P Manager');
     const p2pWorkers = new Array<P2pWorker>();
     for (let chainNetwork of Config.chainNetworks()) {
+      const { chain, network } = chainNetwork;
       const chainConfig = Config.chainConfig(chainNetwork);
       if (chainConfig.chainSource && chainConfig.chainSource !== 'p2p') {
         continue;
       }
-      const { chain, network } = chainConfig;
       const p2pWorker = new P2pWorker({
         chain,
         network,
