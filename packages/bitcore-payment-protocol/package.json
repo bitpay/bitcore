@@ -1,0 +1,70 @@
+{
+  "name": "bitcore-payment-protocol",
+  "version": "1.8.0",
+  "description": "Payment Protocol (BIP70 and related) support for bitcore",
+  "author": "BitPay <dev@bitpay.com>",
+  "main": "index.js",
+  "scripts": {
+    "lint": "gulp lint",
+    "test": "gulp test",
+    "coverage": "gulp coverage",
+    "build": "gulp",
+    "rootcerts": "node ./update-rootcerts.js"
+  },
+  "contributors": [
+    {
+      "name": "Christopher Jeffrey",
+      "email": "chjeffrey@gmail.com"
+    },
+    {
+      "name": "Manuel Araoz",
+      "email": "manuelaraoz@gmail.com"
+    },
+    {
+      "name": "Ryan X. Charles",
+      "email": "ryan@bitpay.com"
+    },
+    {
+      "name": "Linus Unnebäck",
+      "email": "linus@folkdatorn.se"
+    },
+    {
+      "name": "Esteban Ordano",
+      "email": "eordano@gmail.com"
+    },
+    {
+      "name": "Matias Alejo Garcia",
+      "email": "ematiu@gmail.com"
+    }
+  ],
+  "keywords": [
+    "bitcoin",
+    "bitcore",
+    "payment protocol",
+    "BIP70"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore-payment-protocol.git"
+  },
+  "browser": "lib/browser.js",
+  "dependencies": {
+    "asn1.js": "^5.0.1",
+    "asn1.js-rfc3280": "^4.0.0",
+    "asn1.js-rfc5280": "^3.0.0",
+    "bs58": "^4.0.1",
+    "jsrsasign": "^8.0.12",
+    "protobufjs": "=5.0.3"
+  },
+  "peerDependencies": {
+    "bitcore-lib": "=0.16.0"
+  },
+  "devDependencies": {
+    "bitcore-build": "https://github.com/bitpay/bitcore-build.git#1023e8a99cd42b9241ccafe8e34c52f308c10284",
+    "brfs": "^2.0.1",
+    "chai": "^4.2.0",
+    "gulp": "^4.0.0",
+    "sinon": "^7.1.1"
+  },
+  "license": "MIT"
+}
