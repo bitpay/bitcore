@@ -308,7 +308,7 @@ Transaction.prototype.hasWitnesses = function() {
 
 Transaction.prototype.toBufferWriter = function(writer, noWitness) {
   writer.writeInt32LE(this.version);
-  writer.writeInt32LE(this.network);
+  writer.writeInt32LE(this.timestamp);
 
   var hasWitnesses = this.hasWitnesses();
 
@@ -350,7 +350,7 @@ Transaction.prototype.fromBuffer = function(buffer) {
 Transaction.prototype.fromBufferReader = function(reader) {
   $.checkArgument(!reader.finished(), 'No transaction data received');
   this.version = reader.readInt32LE();
-  this.network = reader.readInt32LE();
+  this.timestamp = reader.readInt32LE();
   var sizeTxIns = reader.readVarintNum();
 
   // check for segwit
@@ -401,6 +401,7 @@ Transaction.prototype.toObject = Transaction.prototype.toJSON = function toObjec
   var obj = {
     hash: this.hash,
     version: this.version,
+    timestamp: this.timestamp,
     inputs: inputs,
     outputs: outputs,
     nLockTime: this.nLockTime
@@ -461,6 +462,7 @@ Transaction.prototype.fromObject = function fromObject(arg) {
   }
   this.nLockTime = transaction.nLockTime;
   this.version = transaction.version;
+  this.timestamp = transaction.timestamp;
   this._checkConsistency(arg);
   return this;
 };
