@@ -500,8 +500,7 @@ Storage.prototype.migrateToCashAddr = function(walletId, cb) {
 
   cursor.on("end", function() {
     console.log(`Migration to cash address of ${walletId} Finished`);
-    self.clearWalletCache(walletId,cb);
-    return cb();
+    return self.clearWalletCache(walletId,cb);
   }); 
 
   cursor.on("err", function(err) {
