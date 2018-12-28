@@ -16,6 +16,7 @@
     "test:ci:unit:all": "docker-compose -f docker-compose.test.yml run --entrypoint 'npm run lerna:ci:unit' test_runner",
     "test:ci:integration": "docker-compose -f docker-compose.test.yml run --entrypoint 'npm run lerna:ci:integration' test_runner",
     "test:bitcore-wallet-service": "cd ./packages/bitcore-wallet-service && npm run test",
+    "test:bitcore-wallet-client": "cd ./packages/bitcore-wallet-client && npm run test",
     "test:bitcore-node": "cd ./packages/bitcore-node && npm run test",
     "test:bitcore-lib": "cd ./packages/bitcore-lib && npm run test",
     "test:bitcore-lib-cash": "cd ./packages/bitcore-lib-cash && npm run test",
