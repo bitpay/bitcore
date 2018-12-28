@@ -165,23 +165,6 @@ API._encryptMessage = function(message, encryptingKey) {
   return Utils.encryptMessage(message, encryptingKey);
 };
 
-/**
- * Decrypt a message
- * @private
- * @static
- * @memberof Client.API
- * @param {String} message
- * @param {String} encryptingKey
- */
-API._decryptMessage = function(message, encryptingKey) {
-  if (!message) return '';
-  try {
-    return Utils.decryptMessage(message, encryptingKey);
-  } catch (ex) {
-    return '<ECANNOTDECRYPT>';
-  }
-};
-
 API.prototype._processTxNotes = function(notes) {
   var self = this;
 
@@ -190,9 +173,9 @@ API.prototype._processTxNotes = function(notes) {
   var encryptingKey = self.credentials.sharedEncryptingKey;
   _.each([].concat(notes), function(note) {
     note.encryptedBody = note.body;
-    note.body = API._decryptMessage(note.body, encryptingKey);
+    note.body = Utils.decryptMessageNoThrow(note.body, encryptingKey);
     note.encryptedEditedByName = note.editedByName;
-    note.editedByName = API._decryptMessage(note.editedByName, encryptingKey);
+    note.editedByName = Utils.decryptMessageNoThrow(note.editedByName, encryptingKey);
   });
 };
 
@@ -211,18 +194,21 @@ API.prototype._processTxps = function(txps) {
   var encryptingKey = self.credentials.sharedEncryptingKey;
   _.each([].concat(txps), function(txp) {
     txp.encryptedMessage = txp.message;
-    txp.message = API._decryptMessage(txp.message, encryptingKey) || null;
-    txp.creatorName = API._decryptMessage(txp.creatorName, encryptingKey);
+    txp.message = Utils.decryptMessageNoThrow(txp.message, encryptingKey) || null;
+    txp.creatorName = Utils.decryptMessageNoThrow(txp.creatorName, encryptingKey);
 
     _.each(txp.actions, function(action) {
-      action.copayerName = API._decryptMessage(action.copayerName, encryptingKey);
-      action.comment = API._decryptMessage(action.comment, encryptingKey);
+
+      // CopayerName encryption is optional (not available in older wallets)
+      action.copayerName = Utils.decryptMessageNoThrow(action.copayerName, encryptingKey);
+
+      action.comment = Utils.decryptMessageNoThrow(action.comment, encryptingKey);
       // TODO get copayerName from Credentials -> copayerId to copayerName
       // action.copayerName = null;
     });
     _.each(txp.outputs, function(output) {
       output.encryptedMessage = output.message;
-      output.message = API._decryptMessage(output.message, encryptingKey) || null;
+      output.message = Utils.decryptMessageNoThrow(output.message, encryptingKey) || null;
     });
     txp.hasUnconfirmedInputs = _.some(txp.inputs, function(input) {
       return input.confirmations == 0;
@@ -304,7 +290,7 @@ var _deviceValidated;
  *
  * @param {Object} opts
  * @param {String} opts.passphrase
- * @param {String} opts.skipDeviceValidation
+ * @param {Boolean} opts.skipDeviceValidation
  */
 API.prototype.validateKeyDerivation = function(opts, cb) {
   var self = this;
@@ -665,7 +651,7 @@ API.prototype.getBalanceFromPrivateKey = function(privateKey, coin, cb) {
   var privateKey = new B.PrivateKey(privateKey);
   var address = privateKey.publicKey.toAddress();
   self.getUtxos({
-    addresses: address.toString(),
+    addresses: coin == 'bch' ? address.toLegacyAddress() : address.toString(),
   }, function(err, utxos) {
     if (err) return cb(err);
     return cb(null, _.sumBy(utxos, 'satoshis'));
@@ -686,7 +672,7 @@ API.prototype.buildTxFromPrivateKey = function(privateKey, destinationAddress, o
 
     function(next) {
       self.getUtxos({
-        addresses: address.toString(),
+        addresses: coin == 'bch' ?  address.toLegacyAddress() : address.toString(),
       }, function(err, utxos) {
         return next(err, utxos);
       });
@@ -1503,13 +1489,13 @@ API.prototype._processWallet = function(wallet) {
 
   var encryptingKey = self.credentials.sharedEncryptingKey;
 
-  var name = Utils.decryptMessage(wallet.name, encryptingKey);
+  var name = Utils.decryptMessageNoThrow(wallet.name, encryptingKey);
   if (name != wallet.name) {
     wallet.encryptedName = wallet.name;
   }
   wallet.name = name;
   _.each(wallet.copayers, function(copayer) {
-    var name = Utils.decryptMessage(copayer.name, encryptingKey);
+    var name = Utils.decryptMessageNoThrow(copayer.name, encryptingKey);
     if (name != copayer.name) {
       copayer.encryptedName = copayer.name;
     }
@@ -1517,7 +1503,7 @@ API.prototype._processWallet = function(wallet) {
     _.each(copayer.requestPubKeys, function(access) {
       if (!access.name) return;
 
-      var name = Utils.decryptMessage(access.name, encryptingKey);
+      var name = Utils.decryptMessageNoThrow(access.name, encryptingKey);
       if (name != access.name) {
         access.encryptedName = access.name;
       }
@@ -1765,7 +1751,6 @@ API.prototype.createTxProposal = function(opts, cb) {
     if (err) return cb(err);
 
     self._processTxps(txp);
-
     if (!Verifier.checkProposalCreation(args, txp, self.credentials.sharedEncryptingKey)) {
       return cb(new Errors.SERVER_COMPROMISED);
     }
@@ -2251,9 +2236,12 @@ API.prototype.broadcastTxProposal = function(txp, cb) {
         }),
         coin: txp.coin || 'btc',
       }, function(err, ack, memo) {
-        if (err) return cb(err);
-        self._doBroadcast(txp, function(err, txp) {
-          return cb(err, txp, memo);
+        log.warn('Merchant rejected the payment. Broadcasting it any ways.', err);
+        if (memo) {
+          log.debug('Merchant memo:', memo);
+        }
+        self._doBroadcast(txp, function(err2, txp) {
+          return cb(err2, txp, memo, err);
         });
       });
     } else {

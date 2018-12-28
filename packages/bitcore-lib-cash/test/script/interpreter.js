@@ -147,6 +147,7 @@ describe('Interpreter', function() {
       var scriptSig = Script.buildPublicKeyHashIn(publicKey, signature);
       var flags = Interpreter.SCRIPT_VERIFY_P2SH | Interpreter.SCRIPT_VERIFY_STRICTENC;
       var verified = Interpreter().verify(scriptSig, scriptPubkey, tx, inputIndex, flags);
+
       verified.should.equal(true);
     });
   });
@@ -203,8 +204,8 @@ describe('Interpreter', function() {
       flags = flags | Interpreter.SCRIPT_ENABLE_REPLAY_PROTECTION;
     }
 
-    if (flagstr.indexOf('MONOLITH') !== -1) {
-      flags = flags | Interpreter.SCRIPT_ENABLE_MONOLITH_OPCODES;
+    if (flagstr.indexOf('CHECKDATASIG') !== -1) {
+      flags = flags | Interpreter.SCRIPT_ENABLE_CHECKDATASIG;
     }
 
     if (flagstr.indexOf('MINIMALIF') !== -1) {
@@ -277,7 +278,7 @@ describe('Interpreter', function() {
         var expected = vector[3] == 'OK';
         var descstr = vector[4];
         var comment = descstr ? (' (' + descstr + ')') : '';
-        var txt = 'should ' + vector[3] + ' script_tests ' +
+        var txt = 'should ' +( vector[3] == 'OK' ? 'PASS' : 'FAIL') + ' script_tests ' +
             'vector #' + c + '/ ' + l + ': ' + fullScriptString + comment;
 
         it(txt, function() { testFixture(vector, expected, extraData); });
@@ -333,6 +334,7 @@ describe('Interpreter', function() {
           var txVerified = tx.verify();
           txVerified = (txVerified === true) ? true : false;
           allInputsVerified = allInputsVerified && txVerified;
+
           allInputsVerified.should.equal(expected);
 
         });
