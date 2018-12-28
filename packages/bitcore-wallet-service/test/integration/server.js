@@ -5247,7 +5247,6 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 100e2,
           };
-          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
             should.exist(tx);
             txid = tx.id;
@@ -5343,7 +5342,6 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
-            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               should.exist(tx);
               tx.addressType.should.equal('P2PKH');
@@ -5398,7 +5396,6 @@ console.log('[server.js.425:err:]',err); //TODO
               }],
               feePerKb: 100e2,
             };
-            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               should.exist(tx);
               txid = tx.id;
@@ -5611,7 +5608,6 @@ console.log('[server.js.425:err:]',err); //TODO
             message: 'some message',
             feePerKb: 100e2,
           };
-          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
             should.exist(txp);
             var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
@@ -5702,7 +5698,6 @@ console.log('[server.js.425:err:]',err); //TODO
         }],
         feePerKb: 100e2,
       };
-      txOpts = Object.assign(txOpts, flags);
       helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
         server.getPendingTxs({}, function(err, txs) {
           should.not.exist(err);
@@ -5729,7 +5724,6 @@ console.log('[server.js.425:err:]',err); //TODO
         }],
         feePerKb: 100e2,
       };
-      txOpts = Object.assign(txOpts, flags);
       helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
         should.exist(txp);
         server.broadcastTx({
@@ -5825,7 +5819,6 @@ console.log('[server.js.425:err:]',err); //TODO
         feePerKb: 100e2,
         message: 'some message',
       };
-      txOpts = Object.assign(txOpts, flags);
       helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
         should.exist(txp);
         helpers.getAuthServer(wallet.copayers[1].id, function(server2, wallet) {
@@ -5852,7 +5845,6 @@ console.log('[server.js.425:err:]',err); //TODO
             feePerKb: 100e2,
             message: 'some message',
           };
-          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
             txpId = txp.id;
             should.exist(txp);
@@ -5946,7 +5938,6 @@ console.log('[server.js.425:err:]',err); //TODO
             feePerKb: 100e2,
             message: 'some message',
           };
-          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
             txpId = txp.id;
             should.exist(txp);
@@ -6035,7 +6026,6 @@ console.log('[server.js.425:err:]',err); //TODO
             feePerKb: 100e2,
             message: 'some message',
           };
-          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
             should.exist(txp);
             txpid = txp.id;
@@ -6102,7 +6092,6 @@ console.log('[server.js.425:err:]',err); //TODO
           };
           async.eachSeries(_.range(10), function(i, next) {
             clock.tick(10 * 1000);
-            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
 
               next();
@@ -6191,7 +6180,6 @@ console.log('[server.js.425:err:]',err); //TODO
           };
           async.eachSeries(_.range(3), function(i, next) {
             clock.tick(25 * 1000);
-            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
               next();
             });
@@ -6461,7 +6449,6 @@ console.log('[server.js.425:err:]',err); //TODO
             feePerKb: 100e2,
             message: 'some message',
           };
-            txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function() {
             server.getPendingTxs({}, function(err, txs) {
               txp = txs[0];
@@ -6791,7 +6778,6 @@ console.log('[server.js.425:err:]',err); //TODO
             "test": true
           },
         };
-        txOpts = Object.assign(txOpts, flags);
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
           should.exist(tx);
 
@@ -8337,7 +8323,6 @@ console.log('[server.js.7446:err:]',err); //TODO
           feePerKb: 100e2,
           message: 'some message',
         };
-        txOpts = Object.assign(txOpts, flags);
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
           should.exist(txp);
           var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
