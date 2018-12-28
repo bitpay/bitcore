@@ -2651,6 +2651,12 @@ describe('client API', function() {
       }, function(w) {
         clients[0].createAddress(function(err, address) {
           should.not.exist(err);
+
+          // BWS not uses cashaddress internally
+          if (coin == 'bch') {
+            address.address = Bitcore_['bch'].Address(address.address).toString(true);
+          }
+          
           blockchainExplorerMock.setUtxo(address, 2, 2);
           blockchainExplorerMock.setUtxo(address, 2, 2);
           blockchainExplorerMock.setUtxo(address, 1, 2, 0);
@@ -3191,6 +3197,9 @@ describe('client API', function() {
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
             should.exist(x0.address);
+
+            // cash addr internally
+            x0.address = Bitcore_['bch'].Address(x0.address).toString(true);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             var opts = {
