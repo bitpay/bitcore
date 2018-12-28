@@ -54625,6 +54625,7 @@ module.exports={
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
+    "karma-phantomjs-launcher": "^1.0.4",
     "sinon": "^7.1.1"
   },
   "license": "MIT"

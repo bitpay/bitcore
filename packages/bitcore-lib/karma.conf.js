@@ -16,8 +16,10 @@ module.exports = function(config) {
     ],
     plugins: [
       'karma-mocha',
+      'karma-phantomjs-launcher',
       'karma-chrome-launcher',
-    ]
+    ],
+    browsers: ['PhantomJS', 'Chrome']
   });
 
 };
