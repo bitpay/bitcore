@@ -83,6 +83,9 @@ Tx proposal need to be:
  4. Then broadcasted to the p2p network via /v?/txproposal/:id/broadcast
 
 
+The are plenty example creating and sending proposals in the `/test/integration` code.
+
+
 # REST API
 
 Note: all currency amounts are in units of satoshis (1/100,000,000 of a bitcoin).
