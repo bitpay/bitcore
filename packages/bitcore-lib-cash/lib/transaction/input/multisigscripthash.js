@@ -16,13 +16,19 @@ var TransactionSignature = require('../signature');
 /**
  * @constructor
  */
-function MultiSigScriptHashInput(input, pubkeys, threshold, signatures) {
+function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, opts) {
+  /* jshint maxstatements:20 */
+  opts = opts || {};
   Input.apply(this, arguments);
   var self = this;
   pubkeys = pubkeys || input.publicKeys;
   threshold = threshold || input.threshold;
   signatures = signatures || input.signatures;
-  this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+  if (opts.noSorting) {
+    this.publicKeys = pubkeys
+  } else  {
+    this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+  }
   this.redeemScript = Script.buildMultisigOut(this.publicKeys, threshold);
   $.checkState(Script.buildScriptHashOut(this.redeemScript).equals(this.output.script),
                'Provided public keys don\'t hash to the provided output');

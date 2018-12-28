@@ -8,6 +8,7 @@ var BN = require('../crypto/bn');
 var Hash = require('../crypto/hash');
 var Signature = require('../crypto/signature');
 var PublicKey = require('../publickey');
+var ECDSA = require('../crypto/ecdsa');
 
 
 /**
@@ -270,8 +271,7 @@ Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 7);
 // Require that only a single stack element remains after evaluation. This
 // changes the success criterion from "At least one stack element must
 // remain, and when interpreted as a boolean, it must be true" to "Exactly
-// one stack element must remain, and when interpreted as a boolean, it must
-// be true".
+// one stack element must remain, and when interpreted as a boolean, it must // be true".
 // (softfork safe, BIP62 rule 6)
 // Note: CLEANSTACK should never be used without P2SH or WITNESS.
 Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8),
@@ -306,7 +306,8 @@ Interpreter.SCRIPT_ENABLE_REPLAY_PROTECTION = (1 << 17);
 
 // Enable new opcodes.
 //
-Interpreter.SCRIPT_ENABLE_MONOLITH_OPCODES = (1 << 18);
+Interpreter.SCRIPT_ENABLE_CHECKDATASIG = (1 << 18),
+
 
 
 
@@ -347,16 +348,11 @@ Interpreter.castToBool = function(buf) {
 /**
  * Translated from bitcoind's CheckSignatureEncoding
  */
-Interpreter.prototype.checkSignatureEncoding = function(buf) {
+Interpreter.prototype.checkRawSignatureEncoding = function(buf) {
   var sig;
 
-    // Empty signature. Not strictly DER encoded, but allowed to provide a
-    // compact way to provide an invalid signature for use with CHECK(MULTI)SIG
-    if (buf.length == 0) {
-        return true;
-    }
+  if ((this.flags & (Interpreter.SCRIPT_VERIFY_DERSIG | Interpreter.SCRIPT_VERIFY_LOW_S | Interpreter.SCRIPT_VERIFY_STRICTENC)) !== 0 && !Signature.isDER(buf)) {
 
-  if ((this.flags & (Interpreter.SCRIPT_VERIFY_DERSIG | Interpreter.SCRIPT_VERIFY_LOW_S | Interpreter.SCRIPT_VERIFY_STRICTENC)) !== 0 && !Signature.isTxDER(buf)) {
     this.errstr = 'SCRIPT_ERR_SIG_DER_INVALID_FORMAT';
     return false;
   } else if ((this.flags & Interpreter.SCRIPT_VERIFY_LOW_S) !== 0) {
@@ -365,29 +361,60 @@ Interpreter.prototype.checkSignatureEncoding = function(buf) {
       this.errstr = 'SCRIPT_ERR_SIG_DER_HIGH_S';
       return false;
     }
-  } else if ((this.flags & Interpreter.SCRIPT_VERIFY_STRICTENC) !== 0) {
-
-    sig = Signature.fromTxFormat(buf);
-    if (!sig.hasDefinedHashtype()) {
-      this.errstr = 'SCRIPT_ERR_SIG_HASHTYPE';
-      return false;
-    }
-
-    if (!(this.flags & Interpreter.SCRIPT_ENABLE_SIGHASH_FORKID) &&
-        (sig.nhashtype & Signature.SIGHASH_FORKID)) {
-      this.errstr = 'SCRIPT_ERR_ILLEGAL_FORKID';
-      return false;
-    }
-
-    if ( (this.flags & Interpreter.SCRIPT_ENABLE_SIGHASH_FORKID) &&
-        !(sig.nhashtype & Signature.SIGHASH_FORKID)) {
-      this.errstr = 'SCRIPT_ERR_MUST_USE_FORKID';
-      return false;
-    }
-  }
-
+  } 
+ 
   return true;
 };
+
+
+// Back compat
+Interpreter.prototype.checkSignatureEncoding = 
+Interpreter.prototype.checkTxSignatureEncoding = function(buf) {
+
+    // Empty signature. Not strictly DER encoded, but allowed to provide a
+    // compact way to provide an invalid signature for use with CHECK(MULTI)SIG
+    if (buf.length == 0) {
+        return true;
+    }
+
+    if (!this.checkRawSignatureEncoding(buf.slice(0,buf.length-1))) {
+      return false;
+    }
+ 
+    if ((this.flags & Interpreter.SCRIPT_VERIFY_STRICTENC) !== 0) {
+      var sig = Signature.fromTxFormat(buf);
+      if (!sig.hasDefinedHashtype()) {
+        this.errstr = 'SCRIPT_ERR_SIG_HASHTYPE';
+        return false;
+      }
+      if (!(this.flags & Interpreter.SCRIPT_ENABLE_SIGHASH_FORKID) &&
+        (sig.nhashtype & Signature.SIGHASH_FORKID)) {
+        this.errstr = 'SCRIPT_ERR_ILLEGAL_FORKID';
+        return false;
+      }
+
+      if ( (this.flags & Interpreter.SCRIPT_ENABLE_SIGHASH_FORKID) &&
+        !(sig.nhashtype & Signature.SIGHASH_FORKID)) {
+        this.errstr = 'SCRIPT_ERR_MUST_USE_FORKID';
+        return false;
+      }
+    }
+
+    return true;
+};
+
+Interpreter.prototype.checkDataSignatureEncoding = function(buf) {
+    // Empty signature. Not strictly DER encoded, but allowed to provide a
+    // compact way to provide an invalid signature for use with CHECK(MULTI)SIG
+    if (buf.length == 0) {
+        return true;
+    }
+
+    return this.checkRawSignatureEncoding(buf);
+};
+
+
+
 
 /**
  * Translated from bitcoind's CheckPubKeyEncoding
@@ -663,10 +690,8 @@ Interpreter.prototype.step = function() {
       case Opcode.OP_XOR:
       case Opcode.OP_BIN2NUM:
       case Opcode.OP_NUM2BIN:
-        // Opcodes that have been reenabled.
-        if ((self.flags & Interpreter.SCRIPT_ENABLE_MONOLITH_OPCODES) == 0) {
-          return true;
-        }
+        // Opcodes that have been reenabled and do not need any flag as for Nov 14,2018
+        return false;
 
       default:
         break;
@@ -679,7 +704,7 @@ Interpreter.prototype.step = function() {
 
   //bool fExec = !count(vfExec.begin(), vfExec.end(), false);
   var fExec = (this.vfExec.indexOf(false) === -1);
-  var buf, buf1, buf2, spliced, n, x1, x2, bn, bn1, bn2, bufSig, bufPubkey, subscript;
+  var buf, buf1, buf2, spliced, n, x1, x2, bn, bn1, bn2, bufSig, bufPubkey, bufMessage, subscript;
   var sig, pubkey;
   var fValue, fSuccess;
 
@@ -1507,7 +1532,7 @@ Interpreter.prototype.step = function() {
           bufSig = stacktop(-2);
           bufPubkey = stacktop(-1);
 
-          if (!this.checkSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
+          if (!this.checkTxSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
 
             return false;
           }
@@ -1551,6 +1576,67 @@ Interpreter.prototype.step = function() {
               return false;
             }
           }
+        }
+        break;
+
+      case Opcode.OP_CHECKDATASIG:
+      case Opcode.OP_CHECKDATASIGVERIFY: 
+        {
+
+          // Make sure this remains an error before activation.
+          if ((this.flags & Interpreter.SCRIPT_ENABLE_CHECKDATASIG) == 0) {
+            this.errstr = 'SCRIPT_ERR_CHECKDATASIG';
+            return false;
+          }
+
+
+          // (sig message pubkey -- bool)
+          if (this.stack.length < 3) {
+            this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
+            return false;
+          }
+
+          bufSig = stacktop(-3);
+          bufMessage = stacktop(-2);
+          bufPubkey = stacktop(-1);
+
+          if (!this.checkDataSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
+            return false;
+          }
+
+          fSuccess = false;
+
+
+          try {
+            sig = Signature.fromDataFormat(bufSig);
+            pubkey = PublicKey.fromBuffer(bufPubkey, false);
+            bufHash = Hash.sha256(bufMessage);
+            fSuccess = ECDSA.verify(bufHash, sig, pubkey, 'big');
+          } catch (e) {
+            //invalid sig or pubkey
+            fSuccess = false;
+          }
+
+          if (!fSuccess && (this.flags & Interpreter.SCRIPT_VERIFY_NULLFAIL) &&
+            bufSig.length) {
+            this.errstr = 'SCRIPT_ERR_NULLFAIL';
+            return false;
+          }
+
+          this.stack.pop();
+          this.stack.pop();
+          this.stack.pop();
+
+          this.stack.push(fSuccess ? Interpreter.true : Interpreter.false);
+          if (opcodenum === Opcode.OP_CHECKDATASIGVERIFY) {
+            if (fSuccess) {
+              this.stack.pop();
+            } else {
+              this.errstr = 'SCRIPT_ERR_CHECKDATASIGVERIFY';
+              return false;
+            }
+          }
+
         }
         break;
 
@@ -1621,7 +1707,7 @@ Interpreter.prototype.step = function() {
             // valtype& vchPubKey = stacktop(-ikey);
             bufPubkey = stacktop(-ikey);
 
-            if (!this.checkSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
+            if (!this.checkTxSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
 
               return false;
             }
