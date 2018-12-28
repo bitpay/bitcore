@@ -5198,7 +5198,6 @@ describe('Wallet service', function() {
             }],
             feePerKb: 100e2,
           };
-          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
             should.exist(tx);
             txid = tx.id;
@@ -5294,7 +5293,6 @@ describe('Wallet service', function() {
               }],
               feePerKb: 100e2,
             };
-            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               should.exist(tx);
               tx.addressType.should.equal('P2PKH');
@@ -5349,7 +5347,6 @@ describe('Wallet service', function() {
               }],
               feePerKb: 100e2,
             };
-            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               should.exist(tx);
               txid = tx.id;
@@ -5562,7 +5559,6 @@ describe('Wallet service', function() {
             message: 'some message',
             feePerKb: 100e2,
           };
-          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
             should.exist(txp);
             var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
@@ -5653,7 +5649,6 @@ describe('Wallet service', function() {
         }],
         feePerKb: 100e2,
       };
-      txOpts = Object.assign(txOpts, flags);
       helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
         server.getPendingTxs({}, function(err, txs) {
           should.not.exist(err);
@@ -5680,7 +5675,6 @@ describe('Wallet service', function() {
         }],
         feePerKb: 100e2,
       };
-      txOpts = Object.assign(txOpts, flags);
       helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
         should.exist(txp);
         server.broadcastTx({
@@ -5776,7 +5770,6 @@ describe('Wallet service', function() {
         feePerKb: 100e2,
         message: 'some message',
       };
-      txOpts = Object.assign(txOpts, flags);
       helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
         should.exist(txp);
         helpers.getAuthServer(wallet.copayers[1].id, function(server2, wallet) {
@@ -5803,7 +5796,6 @@ describe('Wallet service', function() {
             feePerKb: 100e2,
             message: 'some message',
           };
-          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
             txpId = txp.id;
             should.exist(txp);
@@ -5897,7 +5889,6 @@ describe('Wallet service', function() {
             feePerKb: 100e2,
             message: 'some message',
           };
-          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
             txpId = txp.id;
             should.exist(txp);
@@ -5986,7 +5977,6 @@ describe('Wallet service', function() {
             feePerKb: 100e2,
             message: 'some message',
           };
-          txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
             should.exist(txp);
             txpid = txp.id;
@@ -6053,7 +6043,6 @@ describe('Wallet service', function() {
           };
           async.eachSeries(_.range(10), function(i, next) {
             clock.tick(10 * 1000);
-            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
 
               next();
@@ -6142,7 +6131,6 @@ describe('Wallet service', function() {
           };
           async.eachSeries(_.range(3), function(i, next) {
             clock.tick(25 * 1000);
-            txOpts = Object.assign(txOpts, flags);
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
               next();
             });
@@ -6412,7 +6400,6 @@ describe('Wallet service', function() {
             feePerKb: 100e2,
             message: 'some message',
           };
-            txOpts = Object.assign(txOpts, flags);
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function() {
             server.getPendingTxs({}, function(err, txs) {
               txp = txs[0];
@@ -7393,7 +7380,6 @@ describe('Wallet service', function() {
           feePerKb: 100e2,
           message: 'some message',
         };
-        txOpts = Object.assign(txOpts, flags);
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
           should.exist(txp);
           var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
