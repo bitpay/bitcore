@@ -70,6 +70,7 @@ export class P2pWorker {
   private invCache: any;
   private initialSyncComplete: boolean;
   private isSyncingNode: boolean;
+  private syncingNodeHeartBeat?: NodeJS.Timer;
   private blockModel: BlockModel;
   constructor({ chain, network, chainConfig, blockModel = BlockStorage }) {
     this.blockModel = blockModel;
@@ -342,20 +343,12 @@ export class P2pWorker {
     return true;
   }
 
-  async stop() {
-    logger.debug(`Stopping worker for chain ${this.chain}`);
-    await this.disconnect();
-  }
-
-  async start(config: ConfigType) {
-    if (!config.services.p2p.enabled) {
-      return;
-    }
-    logger.debug(`Started worker for chain ${this.chain}`);
-    this.setupListeners();
-    await this.connect();
-    setInterval(async () => {
-      const syncingNode = await StateStorage.getSyncingNode({chain: this.chain, network: this.network});
+  registerSyncingNode() {
+    this.syncingNodeHeartBeat = setInterval(async () => {
+      const syncingNode = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
+      if (!syncingNode) {
+        return StateStorage.selfNominateSyncingNode({ chain: this.chain, network: this.network, lastHeartBeat: syncingNode });
+      }
       const [hostname, pid] = syncingNode.split(':');
       const amSyncingNode = (hostname === os.hostname() && pid === process.pid.toString());
       if (amSyncingNode) {
@@ -368,9 +361,27 @@ export class P2pWorker {
       } else {
         setTimeout(() => {
           StateStorage.selfNominateSyncingNode({ chain: this.chain, network: this.network, lastHeartBeat: syncingNode });
-        }, 5000)
+        }, 10000)
       }
-    }, 1000);
+    }, 500);
+  }
+
+  async stop() {
+    logger.debug(`Stopping worker for chain ${this.chain}`);
+    await this.disconnect();
+    if (this.syncingNodeHeartBeat) {
+      clearInterval(this.syncingNodeHeartBeat);
+    }
+  }
+
+  async start(config: ConfigType) {
+    if (!config.services.p2p.enabled) {
+      return;
+    }
+    logger.debug(`Started worker for chain ${this.chain}`);
+    this.setupListeners();
+    await this.connect();
+    this.registerSyncingNode();
   }
 }
 
