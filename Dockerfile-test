@@ -1,10 +1,11 @@
-FROM node:10
+FROM amio/node-chrome
 WORKDIR /bitcore
 # Add source
 COPY lerna.json ./
 COPY package*.json ./
 
 COPY  ./packages/bitcore-client/package.json ./packages/bitcore-client/package.json
+COPY  ./packages/bitcore-build/package.json ./packages/bitcore-build/package.json
 COPY  ./packages/bitcore-lib-cash/package.json ./packages/bitcore-lib-cash/package.json
 COPY  ./packages/bitcore-lib/package.json ./packages/bitcore-lib/package.json
 COPY  ./packages/bitcore-mnemonic/package.json ./packages/bitcore-mnemonic/package.json
