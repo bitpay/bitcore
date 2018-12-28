@@ -1,0 +1,26 @@
+{
+  "name": "bitcore-wallet-client",
+  "main": "index.js",
+  "version": "2.1.1",
+  "homepage": "https://github.com/bitpay/bitcore-wallet-client",
+  "authors": ["BitPay Inc"],
+  "description": "Client for bitcore-wallet-service",
+  "keywords": [
+    "bitcoin",
+    "copay",
+    "multisig",
+    "wallet",
+    "client",
+    "bitcore"
+  ],
+  "ignore": [
+    "**/.*",
+    "lib",
+    "node_modules",
+    "Gruntfile.js",
+    "Makefile",
+    "index.js",
+    "test",
+    "Makefile"
+  ]
+}

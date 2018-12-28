@@ -1,0 +1,58 @@
+{
+  "name": "bitcore-wallet-client",
+  "description": "Client for bitcore-wallet-service",
+  "author": "BitPay Inc",
+  "version": "6.8.1",
+  "license": "MIT",
+  "keywords": [
+    "bitcoin",
+    "copay",
+    "multisig",
+    "wallet",
+    "client",
+    "bitcore",
+    "BWS",
+    "BWC"
+  ],
+  "engine": "node >= 8.0.0",
+  "main": "index.js",
+  "repository": {
+    "url": "git@github.com:bitpay/bitcore-wallet-client.git",
+    "type": "git"
+  },
+  "bugs": {
+    "url": "https://github.com/bitpay/bitcore-wallet-client/issues"
+  },
+  "dependencies": {
+    "async": "^0.9.0",
+    "bip38": "^1.3.0",
+    "bitcore-lib": "=0.16.0",
+    "bitcore-lib-cash": "=0.19.0",
+    "bitcore-mnemonic": "^1.3.0",
+    "bitcore-payment-protocol": "^1.7.0",
+    "json-stable-stringify": "^1.0.0",
+    "lodash": "^4.17.11",
+    "preconditions": "^2.2.1",
+    "sjcl": "1.0.3",
+    "superagent": "^3.4.1"
+  },
+  "devDependencies": {
+    "bitcore-wallet-service": "2.5.1",
+    "browserify": "^13.1.0",
+    "chai": "^1.9.1",
+    "coveralls": "^3.0.2",
+    "istanbul": "*",
+    "mocha": "^5.2.0",
+    "mongodb": "^2.0.27",
+    "sinon": "^7.1.1",
+    "supertest": "^3.0.0",
+    "uuid": "^2.0.1"
+  },
+  "scripts": {
+    "start": "node app.js",
+    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
+    "test": "./node_modules/.bin/mocha --exit",
+    "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
+    "docs": "./node_modules/.bin/jsdox lib/* lib/common lib/errors -o docs && cat README.header.md  docs/*.md LICENSE > README.md"
+  }
+}
