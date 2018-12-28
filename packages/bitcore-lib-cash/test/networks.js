@@ -118,10 +118,10 @@ describe('Networks', function() {
     expect(networks.get('regtest').prefix).to.equal('bchreg');
   });
 
-  it('should have bchreg prefix after enableRegtest is called', function() {
+  it('#DEPRECATED should not have bchreg prefix after enableRegtest is called', function() {
     var network = networks.get('testnet');
     networks.enableRegtest();
-    expect(network.prefix).to.equal('bchreg');
+    expect(network.prefix).to.equal('bchtest');
   });
 
   it('should have bchtest prefix after disableRegtest is called', function() {

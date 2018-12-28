@@ -7,6 +7,7 @@
   "scripts": {
     "lint": "gulp lint",
     "test": "gulp test",
+    "test:ci": "npm run test",
     "coverage": "gulp coverage",
     "build": "gulp"
   },

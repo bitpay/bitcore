@@ -1591,18 +1591,6 @@ BN.prototype.toScriptNumBuffer = function() {
   });
 };
 
-BN.prototype.gt = function(b) {
-  return this.cmp(b) > 0;
-};
-
-BN.prototype.gte = function(b) {
-  return this.cmp(b) >= 0;
-};
-
-BN.prototype.lt = function(b) {
-  return this.cmp(b) < 0;
-};
-
 BN.trim = function(buf, natlen) {
   return buf.slice(natlen - buf.length, buf.length);
 };
@@ -2754,7 +2742,11 @@ BufferReader.prototype.set = function(obj) {
 };
 
 BufferReader.prototype.eof = function() {
-  return this.pos >= this.buf.length;
+  if(this.buf) {
+    return this.pos >= this.buf.length;
+  } else {
+    return true;
+  }
 };
 
 BufferReader.prototype.finished = BufferReader.prototype.eof;
@@ -4598,7 +4590,11 @@ function get(arg, keys) {
     }
     return undefined;
   }
-  return networkMaps[arg];
+  if(networkMaps[arg] && networkMaps[arg].length >= 1) {
+    return networkMaps[arg][0];
+  } else {
+    return networkMaps[arg];
+  }
 }
 
 /**
@@ -4651,7 +4647,10 @@ function addNetwork(data) {
   }
   _.each(network, function(value) {
     if (!_.isUndefined(value) && !_.isObject(value)) {
-      networkMaps[value] = network;
+      if(!networkMaps[value]) {
+        networkMaps[value] = [];
+      }
+      networkMaps[value].push(network);
     }
   });
 
@@ -4674,8 +4673,9 @@ function removeNetwork(network) {
     }
   }
   for (var key in networkMaps) {
-    if (networkMaps[key] === network) {
-      delete networkMaps[key];
+    const index = networkMaps[key].indexOf(network);
+    if (index >= 0) {
+      delete networkMaps[key][index];
     }
   }
 }
@@ -4708,12 +4708,20 @@ var livenet = get('livenet');
 
 addNetwork({
   name: 'testnet',
-  alias: 'regtest',
+  alias: 'test',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,
   xpubkey: 0x043587cf,
-  xprivkey: 0x04358394
+  xprivkey: 0x04358394,
+  networkMagic: 0x0b110907,
+  port: 18333,
+  dnsSeeds: [
+    'testnet-seed.bitcoin.petertodd.org',
+    'testnet-seed.bluematt.me',
+    'testnet-seed.alexykot.me',
+    'testnet-seed.bitcoin.schildbach.de'
+  ]
 });
 
 /**
@@ -4722,75 +4730,28 @@ addNetwork({
  */
 var testnet = get('testnet');
 
-// Add configurable values for testnet/regtest
-
-var TESTNET = {
-  PORT: 18333,
-  NETWORK_MAGIC: BufferUtil.integerAsBuffer(0x0b110907),
-  DNS_SEEDS: [
-    'testnet-seed.bitcoin.petertodd.org',
-    'testnet-seed.bluematt.me',
-    'testnet-seed.alexykot.me',
-    'testnet-seed.bitcoin.schildbach.de'
-  ]
-};
-
-for (var key in TESTNET) {
-  if (!_.isObject(TESTNET[key])) {
-    networkMaps[TESTNET[key]] = testnet;
-  }
-}
-
-var REGTEST = {
-  PORT: 18444,
-  NETWORK_MAGIC: BufferUtil.integerAsBuffer(0xfabfb5da),
-  DNS_SEEDS: []
-};
-
-for (var key in REGTEST) {
-  if (!_.isObject(REGTEST[key])) {
-    networkMaps[REGTEST[key]] = testnet;
-  }
-}
-
-Object.defineProperty(testnet, 'port', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.PORT;
-    } else {
-      return TESTNET.PORT;
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'networkMagic', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.NETWORK_MAGIC;
-    } else {
-      return TESTNET.NETWORK_MAGIC;
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'dnsSeeds', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.DNS_SEEDS;
-    } else {
-      return TESTNET.DNS_SEEDS;
-    }
-  }
+addNetwork({
+  name: 'regtest',
+  alias: 'dev',
+  pubkeyhash: 0x6f,
+  privatekey: 0xef,
+  scripthash: 0xc4,
+  xpubkey: 0x043587cf,
+  xprivkey: 0x04358394,
+  networkMagic: 0xfabfb5da,
+  port: 18444,
+  dnsSeeds: []
 });
 
 /**
+ * @instance
+ * @member Networks#testnet
+ */
+var regtest = get('regtest');
+
+/**
  * @function
+ * @deprecated
  * @member Networks#enableRegtest
  * Will enable regtest features for testnet
  */
@@ -4800,6 +4761,7 @@ function enableRegtest() {
 
 /**
  * @function
+ * @deprecated
  * @member Networks#disableRegtest
  * Will disable regtest features for testnet
  */
@@ -4817,6 +4779,7 @@ module.exports = {
   livenet: livenet,
   mainnet: livenet,
   testnet: testnet,
+  regtest: regtest,
   get: get,
   enableRegtest: enableRegtest,
   disableRegtest: disableRegtest
@@ -5023,6 +4986,7 @@ Opcode.map = {
   OP_CHECKMULTISIGVERIFY: 175,
 
   OP_CHECKLOCKTIMEVERIFY: 177,
+  OP_CHECKSEQUENCEVERIFY: 178,
 
   // expansion
   OP_NOP1: 176,
@@ -5916,6 +5880,7 @@ var Interpreter = function Interpreter(obj) {
 };
 
 Interpreter.prototype.verifyWitnessProgram = function(version, program, witness, satoshis, flags) {
+
   var scriptPubKey = new Script();
   var stack = [];
 
@@ -5966,7 +5931,8 @@ Interpreter.prototype.verifyWitnessProgram = function(version, program, witness,
     script: scriptPubKey,
     stack: stack,
     sigversion: 1,
-    satoshis: satoshis
+    satoshis: satoshis,
+    flags: flags,
   });
 
   if (!this.evaluate()) {
@@ -6074,7 +6040,6 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
   }
 
   var hadWitness = false;
-
   if ((flags & Interpreter.SCRIPT_VERIFY_WITNESS)) {
     var witnessValues = {};
     if (scriptPubkey.isWitnessProgram(witnessValues)) {
@@ -6082,8 +6047,7 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
       if (scriptSig.toBuffer().length !== 0) {
         return false;
       }
-
-      if (!this.verifyWitnessProgram(witnessValues.version, witnessValues.program, witness, satoshis, flags)) {
+      if (!this.verifyWitnessProgram(witnessValues.version, witnessValues.program, witness, satoshis, this.flags)) {
         return false;
       }
     }
@@ -6142,19 +6106,37 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
           return false;
         }
 
-        if (!this.verifyWitnessProgram(p2shWitnessValues.version, p2shWitnessValues.program, witness, satoshis, flags)) {
+        if (!this.verifyWitnessProgram(p2shWitnessValues.version, p2shWitnessValues.program, witness, satoshis, this.flags)) {
           return false;
         }
-
+        // Bypass the cleanstack check at the end. The actual stack is obviously not clean
+        // for witness programs.
         stack = [stack[0]];
       }
     }
+  }
 
-    if ((flags & Interpreter.SCRIPT_VERIFY_WITNESS)) {
-      if (!hadWitness && witness.length > 0) {
-        this.errstr = 'SCRIPT_ERR_WITNESS_UNEXPECTED';
+  // The CLEANSTACK check is only performed after potential P2SH evaluation,
+  // as the non-P2SH evaluation of a P2SH script will obviously not result in
+  // a clean stack (the P2SH inputs remain). The same holds for witness
+  // evaluation.
+  if ((this.flags & Interpreter.SCRIPT_VERIFY_CLEANSTACK) != 0) {
+      // Disallow CLEANSTACK without P2SH, as otherwise a switch
+      // CLEANSTACK->P2SH+CLEANSTACK would be possible, which is not a
+      // softfork (and P2SH should be one).
+      if ((this.flags & Interpreter.SCRIPT_VERIFY_P2SH) == 0)
+        throw 'flags & SCRIPT_VERIFY_P2SH';
+
+      if (stackCopy.length != 1) {
+        this.errstr = 'SCRIPT_ERR_CLEANSTACK';
         return false;
       }
+  }
+
+  if ((this.flags & Interpreter.SCRIPT_VERIFY_WITNESS)) {
+    if (!hadWitness && witness.length > 0) {
+      this.errstr = 'SCRIPT_ERR_WITNESS_UNEXPECTED';
+      return false;
     }
   }
 
@@ -6245,10 +6227,75 @@ Interpreter.SCRIPT_VERIFY_MINIMALDATA = (1 << 6);
 // executed, e.g.  within an unexecuted IF ENDIF block, are *not* rejected.
 Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 7);
 
+
+// Require that only a single stack element remains after evaluation. This
+// changes the success criterion from "At least one stack element must
+// remain, and when interpreted as a boolean, it must be true" to "Exactly
+// one stack element must remain, and when interpreted as a boolean, it must
+// be true".
+// (softfork safe, BIP62 rule 6)
+// Note: CLEANSTACK should never be used without P2SH or WITNESS.
+Interpreter.SCRIPT_VERIFY_CLEANSTACK = (1 << 8),
+
 // CLTV See BIP65 for details.
 Interpreter.SCRIPT_VERIFY_CHECKLOCKTIMEVERIFY = (1 << 9);
 Interpreter.SCRIPT_VERIFY_WITNESS = (1 << 10);
 Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS = (1 << 11);
+
+// support CHECKSEQUENCEVERIFY opcode
+//
+// See BIP112 for details
+Interpreter.SCRIPT_VERIFY_CHECKSEQUENCEVERIFY = (1 << 10);
+
+//
+// Segwit script only: Require the argument of OP_IF/NOTIF to be exactly
+// 0x01 or empty vector
+//
+Interpreter.SCRIPT_VERIFY_MINIMALIF = (1 << 13);
+
+
+// Signature(s) must be empty vector if an CHECK(MULTI)SIG operation failed
+//
+Interpreter.SCRIPT_VERIFY_NULLFAIL = (1 << 14);
+
+// Public keys in scripts must be compressed
+//
+Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE = (1 << 15);
+
+// Do we accept signature using SIGHASH_FORKID
+//
+Interpreter.SCRIPT_ENABLE_SIGHASH_FORKID = (1 << 16);
+
+// Do we accept activate replay protection using a different fork id.
+//
+Interpreter.SCRIPT_ENABLE_REPLAY_PROTECTION = (1 << 17);
+
+// Enable new opcodes.
+//
+Interpreter.SCRIPT_ENABLE_MONOLITH_OPCODES = (1 << 18);
+
+
+
+/* Below flags apply in the context of BIP 68*/
+/**
+ * If this flag set, CTxIn::nSequence is NOT interpreted as a relative
+ * lock-time.
+ */
+Interpreter.SEQUENCE_LOCKTIME_DISABLE_FLAG = (1 << 31);
+
+/**
+ * If CTxIn::nSequence encodes a relative lock-time and this flag is set,
+ * the relative lock-time has units of 512 seconds, otherwise it specifies
+ * blocks with a granularity of 1.
+ */
+Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG = (1 << 22);
+
+/**
+ * If CTxIn::nSequence encodes a relative lock-time, this mask is applied to
+ * extract that lock-time from the sequence field.
+ */
+Interpreter.SEQUENCE_LOCKTIME_MASK = 0x0000ffff;
+
 
 Interpreter.castToBool = function(buf) {
   for (var i = 0; i < buf.length; i++) {
@@ -6268,6 +6315,13 @@ Interpreter.castToBool = function(buf) {
  */
 Interpreter.prototype.checkSignatureEncoding = function(buf) {
   var sig;
+
+    // Empty signature. Not strictly DER encoded, but allowed to provide a
+    // compact way to provide an invalid signature for use with CHECK(MULTI)SIG
+    if (buf.length == 0) {
+        return true;
+    }
+
   if ((this.flags & (Interpreter.SCRIPT_VERIFY_DERSIG | Interpreter.SCRIPT_VERIFY_LOW_S | Interpreter.SCRIPT_VERIFY_STRICTENC)) !== 0 && !Signature.isTxDER(buf)) {
     this.errstr = 'SCRIPT_ERR_SIG_DER_INVALID_FORMAT';
     return false;
@@ -6284,6 +6338,7 @@ Interpreter.prototype.checkSignatureEncoding = function(buf) {
       return false;
     }
   }
+
   return true;
 };
 
@@ -6295,6 +6350,13 @@ Interpreter.prototype.checkPubkeyEncoding = function(buf) {
     this.errstr = 'SCRIPT_ERR_PUBKEYTYPE';
     return false;
   }
+
+  // Only compressed keys are accepted in segwit
+  if ((this.flags & Interpreter.SCRIPT_VERIFY_WITNESS_PUBKEYTYPE) != 0 && this.sigversion == 1 && !PublicKey.fromBuffer(buf).compressed) {
+    this.errstr = 'SCRIPT_ERR_WITNESS_PUBKEYTYPE';
+    return false;
+  }
+
   return true;
 };
 
@@ -6382,12 +6444,69 @@ Interpreter.prototype.checkLockTime = function(nLockTime) {
   return true;
 }
 
+
+/**
+ * Checks a sequence parameter with the transaction's sequence.
+ * @param {BN} nSequence the sequence read from the script
+ * @return {boolean} true if the transaction's sequence is less than or equal to
+ *                   the transaction's sequence 
+ */
+Interpreter.prototype.checkSequence = function(nSequence) {
+
+    // Relative lock times are supported by comparing the passed in operand to
+    // the sequence number of the input.
+    var txToSequence = this.tx.inputs[this.nin].sequenceNumber;
+
+    // Fail if the transaction's version number is not set high enough to
+    // trigger BIP 68 rules.
+    if (this.tx.version < 2) {
+        return false;
+    }
+
+    // Sequence numbers with their most significant bit set are not consensus
+    // constrained. Testing that the transaction's sequence number do not have
+    // this bit set prevents using this property to get around a
+    // CHECKSEQUENCEVERIFY check.
+    if (txToSequence & SEQUENCE_LOCKTIME_DISABLE_FLAG) {
+        return false;
+    }
+
+    // Mask off any bits that do not have consensus-enforced meaning before
+    // doing the integer comparisons
+    var nLockTimeMask =
+        Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG | Interpreter.SEQUENCE_LOCKTIME_MASK;
+    var txToSequenceMasked = new BN(txToSequence & nLockTimeMask);
+    var nSequenceMasked = nSequence.and(nLockTimeMask);
+
+    // There are two kinds of nSequence: lock-by-blockheight and
+    // lock-by-blocktime, distinguished by whether nSequenceMasked <
+    // CTxIn::SEQUENCE_LOCKTIME_TYPE_FLAG.
+    //
+    // We want to compare apples to apples, so fail the script unless the type
+    // of nSequenceMasked being tested is the same as the nSequenceMasked in the
+    // transaction.
+    var SEQUENCE_LOCKTIME_TYPE_FLAG_BN = new BN(Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG);
+    
+    if (!((txToSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)  &&
+           nSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)) ||
+          (txToSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN) &&
+           nSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)))) {
+        return false;
+    }
+
+    // Now that we know we're comparing apples-to-apples, the comparison is a
+    // simple numeric one.
+    if (nSequenceMasked.gt(txToSequenceMasked)) {
+        return false;
+    }
+    return true;
+  }
+
 /** 
  * Based on the inner loop of bitcoind's EvalScript function
  * bitcoind commit: b5d1b1092998bc95313856d535c632ea5a8f9104
  */
 Interpreter.prototype.step = function() {
-
   var fRequireMinimal = (this.flags & Interpreter.SCRIPT_VERIFY_MINIMALDATA) !== 0;
 
   //bool fExec = !count(vfExec.begin(), vfExec.end(), false);
@@ -6533,8 +6652,57 @@ Interpreter.prototype.step = function() {
         }
         break;
 
-      case Opcode.OP_NOP1:
       case Opcode.OP_NOP3:
+      case Opcode.OP_CHECKSEQUENCEVERIFY:
+
+        if (!(this.flags & Interpreter.SCRIPT_VERIFY_CHECKSEQUENCEVERIFY)) {
+          // not enabled; treat as a NOP3
+          if (this.flags & Interpreter.SCRIPT_VERIFY_DISCOURAGE_UPGRADABLE_NOPS) {
+            this.errstr = 'SCRIPT_ERR_DISCOURAGE_UPGRADABLE_NOPS';
+            return false;
+          }
+          break;
+        }
+
+        if (this.stack.length < 1) {
+          this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
+          return false;
+        }
+
+
+        // nSequence, like nLockTime, is a 32-bit unsigned
+        // integer field. See the comment in CHECKLOCKTIMEVERIFY
+        // regarding 5-byte numeric operands.
+
+        var nSequence = BN.fromScriptNumBuffer(this.stack[this.stack.length - 1], fRequireMinimal, 5);
+
+
+        // In the rare event that the argument may be < 0 due to
+        // some arithmetic being done first, you can always use
+        // 0 MAX CHECKSEQUENCEVERIFY.
+        if (nSequence.lt(new BN(0))) {
+          this.errstr = 'SCRIPT_ERR_NEGATIVE_LOCKTIME';
+          return false;
+        }
+
+        // To provide for future soft-fork extensibility, if the
+        // operand has the disabled lock-time flag set,
+        // CHECKSEQUENCEVERIFY behaves as a NOP.
+        if ((nSequence &
+          Interpreter.SEQUENCE_LOCKTIME_DISABLE_FLAG) != 0) {
+          break;
+        }
+
+        // Actually compare the specified lock time with the transaction.
+        if (!this.checkSequence(nSequence)) {
+          this.errstr = 'SCRIPT_ERR_UNSATISFIED_LOCKTIME';
+          return false;
+        }
+        break;
+
+
+
+      case Opcode.OP_NOP1:
       case Opcode.OP_NOP4:
       case Opcode.OP_NOP5:
       case Opcode.OP_NOP6:
@@ -6561,11 +6729,25 @@ Interpreter.prototype.step = function() {
               this.errstr = 'SCRIPT_ERR_UNBALANCED_CONDITIONAL';
               return false;
             }
-            buf = this.stack.pop();
+
+            buf = this.stack[this.stack.length - 1];
+
+            if (this.flags & Interpreter.SCRIPT_VERIFY_MINIMALIF) {
+              buf = this.stack[this.stack.length - 1];
+              if (buf.length > 1) {
+                this.errstr = 'SCRIPT_ERR_MINIMALIF';
+                return false;
+              }
+              if (buf.length == 1 && buf[0]!=1) {
+                this.errstr = 'SCRIPT_ERR_MINIMALIF';
+                return false;
+              }
+            }
             fValue = Interpreter.castToBool(buf);
             if (opcodenum === Opcode.OP_NOTIF) {
               fValue = !fValue;
             }
+            this.stack.pop();
           }
           this.vfExec.push(fValue);
         }
@@ -7111,6 +7293,9 @@ Interpreter.prototype.step = function() {
 
           bufSig = this.stack[this.stack.length - 2];
           bufPubkey = this.stack[this.stack.length - 1];
+          if (!this.checkSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
+            return false;
+          }
 
           // Subset of script starting at the most recent codeseparator
           // CScript scriptCode(pbegincodehash, pend);
@@ -7122,10 +7307,6 @@ Interpreter.prototype.step = function() {
           var tmpScript = new Script().add(bufSig);
           subscript.findAndDelete(tmpScript);
 
-          if (!this.checkSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
-            return false;
-          }
-
           try {
             sig = Signature.fromTxFormat(bufSig);
             pubkey = PublicKey.fromBuffer(bufPubkey, false);
@@ -7135,8 +7316,15 @@ Interpreter.prototype.step = function() {
             fSuccess = false;
           }
 
+          if (!fSuccess && (this.flags & Interpreter.SCRIPT_VERIFY_NULLFAIL) &&
+            bufSig.length) {
+            this.errstr = 'SCRIPT_ERR_NULLFAIL';
+            return false;
+          }
+
           this.stack.pop();
           this.stack.pop();
+
           // stack.push_back(fSuccess ? vchTrue : vchFalse);
           this.stack.push(fSuccess ? Interpreter.true : Interpreter.false);
           if (opcodenum === Opcode.OP_CHECKSIGVERIFY) {
@@ -7174,6 +7362,13 @@ Interpreter.prototype.step = function() {
           // int ikey = ++i;
           var ikey = ++i;
           i += nKeysCount;
+
+          // ikey2 is the position of last non-signature item in
+          // the stack. Top stack item = 1. With
+          // SCRIPT_VERIFY_NULLFAIL, this is used for cleanup if
+          // operation fails.
+          var ikey2 = nKeysCount + 2;
+
           if (this.stack.length < i) {
             this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
             return false;
@@ -7238,8 +7433,20 @@ Interpreter.prototype.step = function() {
             }
           }
 
+
           // Clean up stack of actual arguments
           while (i-- > 1) {
+            if (!fSuccess && (this.flags & Interpreter.SCRIPT_VERIFY_NULLFAIL) &&
+              !ikey2 && this.stack[this.stack.length - 1].length) {
+
+              this.errstr = 'SCRIPT_ERR_NULLFAIL';
+              return false;
+            }
+
+            if (ikey2 > 0) {
+              ikey2--;
+            }
+
             this.stack.pop();
           }
 
@@ -8709,13 +8916,18 @@ var TransactionSignature = require('../signature');
 /**
  * @constructor
  */
-function MultiSigInput(input, pubkeys, threshold, signatures) {
+function MultiSigInput(input, pubkeys, threshold, signatures, opts) {
+  opts = opts || {};
   Input.apply(this, arguments);
   var self = this;
   pubkeys = pubkeys || input.publicKeys;
   threshold = threshold || input.threshold;
   signatures = signatures || input.signatures;
-  this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+  if (opts.noSorting) {
+    this.publicKeys = pubkeys
+  } else  {
+    this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+  }
   $.checkState(Script.buildMultisigOut(this.publicKeys, threshold).equals(this.output.script),
     'Provided public keys don\'t match to the provided output script');
   this.publicKeyIndex = {};
@@ -8925,15 +9137,20 @@ var TransactionSignature = require('../signature');
 /**
  * @constructor
  */
-function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, nestedWitness) {
+function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, nestedWitness, opts) {
   /* jshint maxstatements:20 */
+  opts = opts || {};
   Input.apply(this, arguments);
   var self = this;
   pubkeys = pubkeys || input.publicKeys;
   threshold = threshold || input.threshold;
   signatures = signatures || input.signatures;
   this.nestedWitness = nestedWitness ? true : false;
-  this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+  if (opts.noSorting) {
+    this.publicKeys = pubkeys
+  } else  {
+    this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+  }
   this.redeemScript = Script.buildMultisigOut(this.publicKeys, threshold);
   if (this.nestedWitness) {
     var nested = Script.buildWitnessMultisigOutFromScript(this.redeemScript);
@@ -10501,8 +10718,11 @@ Transaction.prototype._newTransaction = function() {
  * @param {Array=} pubkeys
  * @param {number=} threshold
  * @param {boolean=} nestedWitness - Indicates that the utxo is nested witness p2sh
+ * @param {Object=} opts - Several options:
+ *        - noSorting: defaults to false, if true and is multisig, don't
+ *                      sort the given public keys before creating the script
  */
-Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness) {
+Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness, opts) {
   if (_.isArray(utxo)) {
     var self = this;
     _.each(utxo, function(utxo) {
@@ -10518,7 +10738,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness) {
     return this;
   }
   if (pubkeys && threshold) {
-    this._fromMultisigUtxo(utxo, pubkeys, threshold, nestedWitness);
+    this._fromMultisigUtxo(utxo, pubkeys, threshold, nestedWitness, opts);
   } else {
     this._fromNonP2SH(utxo);
   }
@@ -10546,7 +10766,7 @@ Transaction.prototype._fromNonP2SH = function(utxo) {
   }));
 };
 
-Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, nestedWitness) {
+Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, nestedWitness, opts) {
   $.checkArgument(threshold <= pubkeys.length,
     'Number of required signatures must be greater than the number of public keys');
   var clazz;
@@ -10566,7 +10786,7 @@ Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, nes
     prevTxId: utxo.txId,
     outputIndex: utxo.outputIndex,
     script: Script.empty()
-  }, pubkeys, threshold, false, nestedWitness));
+  }, pubkeys, threshold, false, nestedWitness, opts));
 };
 
 /**
@@ -10794,13 +11014,11 @@ Transaction.prototype._getOutputAmount = function() {
  */
 Transaction.prototype._getInputAmount = function() {
   if (_.isUndefined(this._inputAmount)) {
-    var self = this;
-    this._inputAmount = 0;
-    _.each(this.inputs, function(input) {
+    this._inputAmount = _.sumBy(this.inputs, function(input) {
       if (_.isUndefined(input.output)) {
         throw new errors.Transaction.Input.MissingPreviousOutput();
       }
-      self._inputAmount += input.output.satoshis;
+      return input.output.satoshis;
     });
   }
   return this._inputAmount;
@@ -11276,7 +11494,7 @@ function UnspentOutput(data) {
                   'Must provide the scriptPubKey for that output!');
   var script = new Script(data.scriptPubKey || data.script);
   $.checkArgument(!_.isUndefined(data.amount) || !_.isUndefined(data.satoshis),
-                  'Must provide an amount for the output');
+                      'Must provide an amount for the output');
   var amount = !_.isUndefined(data.amount) ? new Unit.fromBTC(data.amount).toSatoshis() : data.satoshis;
   $.checkArgument(_.isNumber(amount), 'Amount must be a number');
   JSUtil.defineImmutable(this, {
@@ -28426,7 +28644,7 @@ module.exports={
   "_resolved": "https://registry.npmjs.org/elliptic/-/elliptic-6.4.0.tgz",
   "_shasum": "cac9af8762c85836187003c8dfe193e5e2eae5df",
   "_spec": "elliptic@=6.4.0",
-  "_where": "/Users/ematiu/dev/bitcore-lib",
+  "_where": "/Users/micah/dev/bitcore/packages/bitcore-lib",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"
@@ -30119,6 +30337,16 @@ var inherits = require('inherits');
 
 exports.inherits = inherits;
 
+function isSurrogatePair(msg, i) {
+  if ((msg.charCodeAt(i) & 0xFC00) !== 0xD800) {
+    return false;
+  }
+  if (i < 0 || i + 1 >= msg.length) {
+    return false;
+  }
+  return (msg.charCodeAt(i + 1) & 0xFC00) === 0xDC00;
+}
+
 function toArray(msg, enc) {
   if (Array.isArray(msg))
     return msg.slice();
@@ -30127,14 +30355,29 @@ function toArray(msg, enc) {
   var res = [];
   if (typeof msg === 'string') {
     if (!enc) {
+      // Inspired by stringToUtf8ByteArray() in closure-library by Google
+      // https://github.com/google/closure-library/blob/8598d87242af59aac233270742c8984e2b2bdbe0/closure/goog/crypt/crypt.js#L117-L143
+      // Apache License 2.0
+      // https://github.com/google/closure-library/blob/master/LICENSE
+      var p = 0;
       for (var i = 0; i < msg.length; i++) {
         var c = msg.charCodeAt(i);
-        var hi = c >> 8;
-        var lo = c & 0xff;
-        if (hi)
-          res.push(hi, lo);
-        else
-          res.push(lo);
+        if (c < 128) {
+          res[p++] = c;
+        } else if (c < 2048) {
+          res[p++] = (c >> 6) | 192;
+          res[p++] = (c & 63) | 128;
+        } else if (isSurrogatePair(msg, i)) {
+          c = 0x10000 + ((c & 0x03FF) << 10) + (msg.charCodeAt(++i) & 0x03FF);
+          res[p++] = (c >> 18) | 240;
+          res[p++] = ((c >> 12) & 63) | 128;
+          res[p++] = ((c >> 6) & 63) | 128;
+          res[p++] = (c & 63) | 128;
+        } else {
+          res[p++] = (c >> 12) | 224;
+          res[p++] = ((c >> 6) & 63) | 128;
+          res[p++] = (c & 63) | 128;
+        }
       }
     } else if (enc === 'hex') {
       msg = msg.replace(/[^a-z0-9]+/ig, '');
@@ -54335,13 +54578,14 @@ exports.createContext = Script.createContext = function (context) {
 },{}],214:[function(require,module,exports){
 module.exports={
   "name": "bitcore-lib",
-  "version": "0.16.0",
+  "version": "8.0.0",
   "description": "A pure and powerful JavaScript Bitcoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
     "lint": "gulp lint",
     "test": "gulp test",
+    "test:ci": "npm run test",
     "coverage": "gulp coverage",
     "build": "gulp"
   },
@@ -54370,7 +54614,7 @@ module.exports={
   },
   "dependencies": {
     "bn.js": "=4.11.8",
-    "bs58": "=4.0.1",
+    "bs58": "^4.0.1",
     "buffer-compare": "=1.1.1",
     "elliptic": "=6.4.0",
     "inherits": "=2.0.1",

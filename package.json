@@ -9,11 +9,25 @@
     "bootstrap": "./node_modules/.bin/lerna bootstrap",
     "insight": "cd packages/insight && npm start",
     "node": "cd packages/bitcore-node && npm start",
+    "bws": "cd packages/bitcore-wallet-service && npm start",
     "compile": "./node_modules/.bin/lerna run compile",
-    "test:ci": "npm run test:ci:build && npm run test:ci:unit && npm run test:ci:integration",
+    "test:ci": "npm run test:ci:build && npm run test:ci:unit:all && npm run test:ci:integration",
     "test:ci:build": "docker-compose -f docker-compose.test.yml build",
-    "test:ci:unit": "docker-compose -f docker-compose.test.yml run --entrypoint 'npm run test:unit' test_runner",
-    "test:ci:integration": "docker-compose -f docker-compose.test.yml run --entrypoint 'npm run test:integration' test_runner"
+    "test:ci:unit:all": "docker-compose -f docker-compose.test.yml run --entrypoint 'npm run lerna:ci:unit' test_runner",
+    "test:ci:integration": "docker-compose -f docker-compose.test.yml run --entrypoint 'npm run lerna:ci:integration' test_runner",
+    "test:bitcore-wallet-service": "cd ./packages/bitcore-wallet-service && npm run test",
+    "test:bitcore-node": "cd ./packages/bitcore-node && npm run test",
+    "test:bitcore-lib": "cd ./packages/bitcore-lib && npm run test",
+    "test:bitcore-lib-cash": "cd ./packages/bitcore-lib-cash && npm run test",
+    "test:bitcore-p2p": "cd ./packages/bitcore-p2p && npm run test",
+    "test:bitcore-p2p-cash": "cd ./packages/bitcore-p2p-cash && npm run test",
+    "test:bitcore-payment-protocol": "cd ./packages/bitcore-payment-protocol && npm run test",
+    "test:insight-previous": "cd ./packages/insight-previous && npm run test",
+    "test:insight": "cd ./packages/insight && npm run test",
+    "test:bitcore-mnemonic": "cd ./packages/bitcore-mnemonic && npm run test",
+    "lerna:ci:unit": "./node_modules/.bin/lerna run test:ci --concurrency 1 --stream",
+    "lerna:ci:integration": "./node_modules/.bin/lerna run test:ci --concurrency 1 --stream",
+    "lerna:ci:coverage": "./node_modules/.bin/lerna run coverage --concurrency 1 --stream"
   },
   "config": {
     "commitizen": {
