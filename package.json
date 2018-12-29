@@ -43,5 +43,6 @@
     "lerna": "^3.6.0",
     "prettier": "^1.14.3",
     "typescript-eslint-parser": "^15.0.0"
-  }
+  },
+  "dependencies": {}
 }

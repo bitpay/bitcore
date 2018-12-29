@@ -1,5 +1,6 @@
 FROM amio/node-chrome
 WORKDIR /bitcore
+
 # Add source
 COPY lerna.json ./
 COPY package*.json ./
@@ -23,7 +24,3 @@ RUN npm install
 RUN npm run bootstrap
 ADD . .
 RUN npm run compile
-
-
-# Run test script for bitcore-node
-WORKDIR .
