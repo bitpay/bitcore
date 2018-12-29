@@ -27,7 +27,7 @@
     "test:insight": "cd ./packages/insight && npm run test",
     "test:bitcore-mnemonic": "cd ./packages/bitcore-mnemonic && npm run test",
     "lerna:ci:unit": "./node_modules/.bin/lerna run test:ci --concurrency 1 --stream",
-    "lerna:ci:integration": "./node_modules/.bin/lerna run test:ci --concurrency 1 --stream",
+    "lerna:ci:integration": "./node_modules/.bin/lerna run test:ci:integration --concurrency 1 --stream",
     "lerna:ci:coverage": "./node_modules/.bin/lerna run coverage --concurrency 1 --stream"
   },
   "config": {
