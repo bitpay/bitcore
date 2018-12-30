@@ -3,7 +3,6 @@
 version: 2
 jobs:
   build:
-    parallelism: 4
     machine:
       image: circleci/classic:latest
       docker_layer_caching: true
@@ -14,10 +13,7 @@ jobs:
           name: Build Docker Compose Images
           command: npm run test:ci:build
   test:
-    parallelism: 4
-    machine:
-      image: circleci/classic:latest
-      docker_layer_caching: true
+    parallelism: 2
     working_directory: ~/bitcore
     steps:
       - checkout
