@@ -2702,7 +2702,7 @@ describe('client API', function() {
           });
         });
       });
-      it('Should sign proposal created with send max settings', function(done) {
+      it.only('Should sign proposal created with send max settings', function(done) {
         var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
         clients[0].getSendMaxInfo({
           feePerKb: 100e2,
@@ -5498,7 +5498,7 @@ describe('client API', function() {
           type: 'P2PKH',
           coin: coin,
         };
-        helpers.createAndJoinWallet(clients, 1, 1, {coin: coin}, function() {
+        helpers.createAndJoinWallet(clients, 1, 1, {coin: coin, network: 'livenet'}, function() {
           blockchainExplorerMock.setUtxo(address, 123, 1);
           clients[0].getBalanceFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', coin, function(err, balance) {
             should.not.exist(err);
@@ -5513,7 +5513,7 @@ describe('client API', function() {
           type: 'P2PKH',
           coin: coin,
         };
-        helpers.createAndJoinWallet(clients, 1, 1,  {coin: coin}, function() {
+        helpers.createAndJoinWallet(clients, 1, 1,  {coin: coin, network: 'livenet'}, function() {
           blockchainExplorerMock.setUtxo(address, 123, 1);
           clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1], { 
             coin: coin
@@ -5542,7 +5542,7 @@ describe('client API', function() {
           type: 'P2PKH',
           coin: coin,
         };
-        helpers.createAndJoinWallet(clients, 1, 1,  {coin: coin}, function() {
+        helpers.createAndJoinWallet(clients, 1, 1,  {coin: coin, network: 'livenet'}, function() {
           blockchainExplorerMock.setUtxo(address, 123, 1);
           clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1],  {
             coin: coin,
@@ -5562,7 +5562,7 @@ describe('client API', function() {
           type: 'P2PKH',
           coin: coin,
         };
-        helpers.createAndJoinWallet(clients, 1, 1,  {coin: coin}, function() {
+        helpers.createAndJoinWallet(clients, 1, 1,  {coin: coin, network: 'livenet'}, function() {
           blockchainExplorerMock.setUtxo(address, 123 / 1e8, 1);
           clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1], {
             fee: 500,
