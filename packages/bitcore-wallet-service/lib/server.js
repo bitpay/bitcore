@@ -1462,7 +1462,7 @@ WalletService.prototype.getUtxos = function(opts, cb) {
       } catch (ex) {
         return cb(Errors.INVALID_ADDRESS);
       }
-      if (addrObj.network != addrObj.network) {
+      if (addrObj.network != wallet.network) {
         return cb(Errors.INCORRECT_ADDRESS_NETWORK);
       }
 

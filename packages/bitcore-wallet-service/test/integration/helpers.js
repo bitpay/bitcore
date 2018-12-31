@@ -595,6 +595,7 @@ helpers.setupGroupingBE = function (be) {
   }
   be.register = sinon.stub().callsArgWith(1, null, null);
   be.addAddresses = sinon.stub().callsArgWith(2, null, null);
+  be.getAddressUtxos = sinon.stub().callsArgWith(1, null, helpers._utxos);
 };
 
 module.exports = helpers;

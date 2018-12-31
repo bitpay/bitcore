@@ -1836,7 +1836,7 @@ console.log('[server.js.425:err:]',err); //TODO
         });
       });
     });
-    it('should get UTXOs for specific addresses', function(done) {
+    it('should not allow to get UTXOs for specific addresses in non v8 bitcore', function(done) {
       helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
         _.uniqBy(utxos, 'address').length.should.be.above(1);
         var address = utxos[0].address;
@@ -1846,7 +1846,56 @@ console.log('[server.js.425:err:]',err); //TODO
         server.getUtxos({
           addresses: [address]
         }, function(err, utxos) {
-          err.message.should.contain('no longer supported');
+          err.message.should.contain('not supported');
+          done();
+        });
+      });
+    });
+    it('should not allow to get UTXOs for specific addresses if network mismatch', function(done) {
+      helpers.setupGroupingBE(blockchainExplorer);
+      helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
+        _.uniqBy(utxos, 'address').length.should.be.above(1);
+        var address = utxos[0].address;
+        var amount = _.sumBy(_.filter(utxos, {
+          address: address
+        }), 'satoshis');
+        server.getUtxos({
+          addresses: ['mrM5kMkqZccK5MxZYSsM3SjqdMaNKLJgrJ']
+        }, function(err, utxos) {
+          err.message.should.contain('address network');
+          done();
+        });
+      });
+    });
+    it('should not allow to get UTXOs for specific addresses if coin mismatch', function(done) {
+      helpers.setupGroupingBE(blockchainExplorer);
+      helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
+        _.uniqBy(utxos, 'address').length.should.be.above(1);
+        var address = utxos[0].address;
+        var amount = _.sumBy(_.filter(utxos, {
+          address: address
+        }), 'satoshis');
+        server.getUtxos({
+          addresses: ['CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X']
+        }, function(err, utxos) {
+          err.message.should.contain('Invalid address');
+          done();
+        });
+      });
+    });
+ 
+    it('should  get UTXOs for specific addresses', function(done) {
+      helpers.setupGroupingBE(blockchainExplorer);
+      helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
+        _.uniqBy(utxos, 'address').length.should.be.above(1);
+        var address = utxos[0].address;
+        var amount = _.sumBy(_.filter(utxos, {
+          address: address
+        }), 'satoshis');
+        server.getUtxos({
+          addresses: [address]
+        }, function(err, utxos) {
+          utxos.length.should.equal(3);
           done();
         });
       });
