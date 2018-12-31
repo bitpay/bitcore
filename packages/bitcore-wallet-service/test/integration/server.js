@@ -602,6 +602,32 @@ console.log('[server.js.425:err:]',err); //TODO
         });
       });
 
+      it('should join existing wallet, getStatus + v8', function(done) {
+        var copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+          customData: 'dummy custom data',
+        });
+        helpers.setupGroupingBE(blockchainExplorer);
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.not.exist(err);
+          var copayerId = result.copayerId;
+          helpers.getAuthServer(copayerId, function(server) {
+            server.getStatus({
+              includeExtendedInfo: true
+            }, function(err, status) {
+              should.not.exist(err);
+              status.wallet.m.should.equal(1);
+              status.wallet.beRegistered.should.equal(false);
+              should.not.exist(status.balance);
+              done();
+            });
+          });
+        });
+      });
+
       it('should fail join existing wallet with bad xpub', function(done) {
         var copayerOpts = helpers.getSignedCopayerOpts({
           walletId: walletId,

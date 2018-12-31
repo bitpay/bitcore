@@ -1582,6 +1582,9 @@ WalletService.prototype.getBalance = function(opts, cb, i) {
   };
 
   setWallet(() => {
+    if (!wallet.isComplete()) {
+      return cb();
+    }
     setAddresses((err) => {
       if (err) return cb(err);
 
