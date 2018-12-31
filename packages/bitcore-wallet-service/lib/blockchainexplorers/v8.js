@@ -186,7 +186,7 @@ V8.prototype.getConnectionInfo = function() {
   return 'V8 (' + this.coin + '/' + this.v8network + ') @ ' + this.host;
 };
 
-V8.prototype._transformUtxos = function(unsent) {
+V8.prototype._transformUtxos = function(unspent) {
   let ret = _.map(unspent, function(x) {
     var u = {address: x.address};
 
