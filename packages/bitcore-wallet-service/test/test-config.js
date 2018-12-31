@@ -1,7 +1,9 @@
+const host = process.env.DB_HOST || 'localhost';
+const port = process.env.DB_PORT || '27017';
 var config = {
   mongoDb: {
-    uri: 'mongodb://localhost:27017/bws_test',
+    uri: `mongodb://${host}:${port}/bws_test`,
   },
 };
- 
+
 module.exports = config;

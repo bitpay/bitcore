@@ -19,15 +19,20 @@ var TransactionSignature = require('../signature');
 /**
  * @constructor
  */
-function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, nestedWitness) {
+function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, nestedWitness, opts) {
   /* jshint maxstatements:20 */
+  opts = opts || {};
   Input.apply(this, arguments);
   var self = this;
   pubkeys = pubkeys || input.publicKeys;
   threshold = threshold || input.threshold;
   signatures = signatures || input.signatures;
   this.nestedWitness = nestedWitness ? true : false;
-  this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+  if (opts.noSorting) {
+    this.publicKeys = pubkeys
+  } else  {
+    this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+  }
   this.redeemScript = Script.buildMultisigOut(this.publicKeys, threshold);
   if (this.nestedWitness) {
     var nested = Script.buildWitnessMultisigOutFromScript(this.redeemScript);
