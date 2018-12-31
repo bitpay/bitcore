@@ -187,6 +187,8 @@ V8.prototype.getConnectionInfo = function() {
 };
 
 V8.prototype._transformUtxos = function(unspent) {
+  var self = this;
+
   let ret = _.map(unspent, function(x) {
     var u = {address: x.address};
 
@@ -287,7 +289,6 @@ console.log('[v8.js.207] GET ADDR UTXO', address); //TODO
     })
     .catch(cb);
 };
-
 
 
 V8.prototype.getTransactions = function(wallet, startBlock , cb) {

@@ -8,6 +8,11 @@ var V8 = require('../lib/blockchainexplorers/v8.js');
 var B = require('bitcore-lib-cash');
 const { Readable } = require('stream');
 
+const V8UTXOS = [
+{"_id":"5c1d4bc47adced963b3cddb9","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"6e34d9b83631cd55ee09d907061332ba3c17246e3c1255543fb7a35e58c52e42","mintHeight":1275259,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":1000000,"confirmations":-1},
+{"_id":"5c1e33e17adced963b776bcf","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"fb1340bae2431f71c5f14d0c5893cbfb09042dcb9602b858ccec43e0e1e2f1a1","mintHeight":1275390,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":2000000,"confirmations":-1},
+{"_id":"5c21088f7adced963b33eea2","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"42eeb1d139521fa5206685ffec5df3b302cf85561201178680a0efe6bd23d449","mintHeight":1275773,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":2000000,"confirmations":-1}];
+
 
 
 class Client {
@@ -130,21 +135,13 @@ describe('V8', () => {
   describe.skip('#deregistedwallet', () => {
   });
 
-  describe.only('#getAddressUtxos', () => {
+  describe('#getAddressUtxos', () => {
     it('should get uxtos', (done) => {
       class PartialJson extends Client {
-        listTransactions(opts) {
-          class MyReadable extends Readable {
-            constructor(options) {
-              super(options);
-              var txStr = JSON.stringify(txs);
-              this.push(txStr.substr(0,10));
-              this.push(txStr.substr(10));
-              this.push(null);
-              }
-          };
-
-          return new MyReadable;
+        getAddressTxos(opts) {
+          return new Promise(function (resolve) {
+            resolve(V8UTXOS);
+          }) 
         };
       };
       
@@ -158,10 +155,16 @@ describe('V8', () => {
         client: PartialJson,
       });
 
-      be.getAddressUtxos('1EU9VhWRN7aW38pGk7qj3c2EDcUGDZKESt', (err, txs) => {
+      be.getAddressUtxos('1EU9VhWRN7aW38pGk7qj3c2EDcUGDZKESt', (err, utxos) => {
         should.not.exist(err);
-        should.exist(txs);
-        txs.length.should.equal(3);
+        should.exist(utxos);
+        let x = utxos[2];
+        x.address.should.equal('qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh');
+        x.satoshis.should.equal(2000000);
+        x.amount.should.equal(x.satoshis/1e8);
+        x.scriptPubKey.should.equal('76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac');
+        x.txid.should.equal('42eeb1d139521fa5206685ffec5df3b302cf85561201178680a0efe6bd23d449');
+        x.vout.should.equal(0);
         return done();
       });
     });
