@@ -273,7 +273,7 @@ blockchainExplorerMock.reset = function() {
 helpers.newDb = (extra, cb) => {
   extra = extra || '';
   mongodb.MongoClient.connect(config.mongoDb.uri + extra, function(err, in_db) {
-    if (err) return  done(err);
+    if (err) return cb(err);
     in_db.dropDatabase(function(err) {
       return cb(err, in_db);
     });
