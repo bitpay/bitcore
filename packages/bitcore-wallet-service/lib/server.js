@@ -1583,7 +1583,7 @@ WalletService.prototype.getBalance = function(opts, cb, i) {
 
   setWallet(() => {
     if (!wallet.isComplete()) {
-      return cb();
+      return cb(null, self._totalizeUtxos([]));
     }
     setAddresses((err) => {
       if (err) return cb(err);

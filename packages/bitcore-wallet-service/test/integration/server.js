@@ -621,7 +621,8 @@ console.log('[server.js.425:err:]',err); //TODO
               should.not.exist(err);
               status.wallet.m.should.equal(1);
               status.wallet.beRegistered.should.equal(false);
-              should.not.exist(status.balance);
+              status.balance.totalAmount.should.equal(0);
+              status.balance.availableAmount.should.equal(0);
               done();
             });
           });
