@@ -13,7 +13,7 @@ var uglify = require('gulp-uglify');
 var fs = require('fs');
 
 function ignoreerror() {
-  /* jshint ignore:start */ // using `this` in this context is weird 
+  /* jshint ignore:start */ // using `this` in this context is weird
   this.emit('end');
   /* jshint ignore:end */
 }
@@ -40,7 +40,7 @@ function startGulp(name, opts) {
   // newer version of node? binaries are in lower level of node_module path
   if (!fs.existsSync(browserifyPath)) {
     browserifyPath = './node_modules/.bin/browserify';
-  } 
+  }
 
   if (!fs.existsSync(karmaPath)) {
     karmaPath = './node_modules/.bin/karma';
@@ -121,13 +121,13 @@ function startGulp(name, opts) {
    * code quality and documentation
    */
 
-//  task['lint']= function() {
-//    return gulp.src(alljs)
-//      .pipe(jshint())
-//      .pipe(jshint.reporter('default'));
-//  };
+  //  task['lint']= function() {
+  //    return gulp.src(alljs)
+  //      .pipe(jshint())
+  //      .pipe(jshint.reporter('default'));
+  //  };
 
-//  task['plato']= shell.task([platoPath + ' -d report -r -l .jshintrc -t ' + fullname + ' lib']);
+  //  task['plato']= shell.task([platoPath + ' -d report -r -l .jshintrc -t ' + fullname + ' lib']);
 
   task['coverage']= shell.task([istanbulPath + ' cover ' + mochaPath + ' -- --recursive']);
 
@@ -156,7 +156,7 @@ function startGulp(name, opts) {
       // todo: only run tests that are linked to file changes by doing
       // something smart like reading through the require statements
       return gulp.watch(alljs, task['test:browser']);
-   };
+    };
   }
 
   task['watch:coverage']= function() {
@@ -186,159 +186,157 @@ function startGulp(name, opts) {
   var releaseFiles = ['./package.json'];
 
   //var bump_version = function(importance) {
-    //return gulp.src(releaseFiles)
-      //.pipe(bump({
-        //type: importance
-      //}))
-      //.pipe(gulp.dest('./'));
+  //return gulp.src(releaseFiles)
+  //.pipe(bump({
+  //type: importance
+  //}))
+  //.pipe(gulp.dest('./'));
   //};
 
   //var tempBranch = 'releases/' + new Date().getTime() + '-build';
   //gulp.task('release:checkout-releases', function(cb) {
-    //git.branch(tempBranch, {
-      //args: ''
-    //}, function() {
-      //git.checkout(tempBranch, {
-        //args: ''
-      //}, cb);
-    //});
+  //git.branch(tempBranch, {
+  //args: ''
+  //}, function() {
+  //git.checkout(tempBranch, {
+  //args: ''
+  //}, cb);
+  //});
   //});
 
   //gulp.task('release:cleanup', function(cb) {
-    //git.branch(tempBranch, {
-      //args: '-D'
-    //}, cb);
+  //git.branch(tempBranch, {
+  //args: '-D'
+  //}, cb);
   //});
 
   //gulp.task('release:checkout-master', function(cb) {
-    //git.checkout('master', {
-      //args: ''
-    //}, cb);
+  //git.checkout('master', {
+  //args: ''
+  //}, cb);
   //});
 
   //gulp.task('release:sign-built-files', shell.task([
-    //'gpg --yes --out ' + fullname + '.js.sig --detach-sig ' + fullname + '.js',
-    //'gpg --yes --out ' + fullname + '.min.js.sig --detach-sig ' + fullname + '.min.js'
+  //'gpg --yes --out ' + fullname + '.js.sig --detach-sig ' + fullname + '.js',
+  //'gpg --yes --out ' + fullname + '.min.js.sig --detach-sig ' + fullname + '.min.js'
   //]));
 
   //var buildFiles = ['./package.json'];
   //var signatureFiles = [];
   //if (browser) {
-    //buildFiles.push(fullname + '.js');
-    //buildFiles.push(fullname + '.js.sig');
-    //buildFiles.push(fullname + '.min.js');
-    //buildFiles.push(fullname + '.min.js.sig');
+  //buildFiles.push(fullname + '.js');
+  //buildFiles.push(fullname + '.js.sig');
+  //buildFiles.push(fullname + '.min.js');
+  //buildFiles.push(fullname + '.min.js.sig');
 
-    //buildFiles.push('./bower.json');
+  //buildFiles.push('./bower.json');
 
-    //signatureFiles.push(fullname + '.js.sig');
-    //signatureFiles.push(fullname + '.min.js.sig');
+  //signatureFiles.push(fullname + '.js.sig');
+  //signatureFiles.push(fullname + '.min.js.sig');
   //}
   //var addFiles = function() {
-    //var pjson = require('../../package.json');
-    //return gulp.src(buildFiles)
-      //.pipe(git.add({
-        //args: '-f'
-      //}));
+  //var pjson = require('../../package.json');
+  //return gulp.src(buildFiles)
+  //.pipe(git.add({
+  //args: '-f'
+  //}));
   //};
 
   //var buildCommit = function() {
-    //var pjson = require('../../package.json');
-    //return gulp.src(buildFiles)
-      //.pipe(git.commit('Build: ' + pjson.version, {
-        //args: ''
-      //}));
+  //var pjson = require('../../package.json');
+  //return gulp.src(buildFiles)
+  //.pipe(git.commit('Build: ' + pjson.version, {
+  //args: ''
+  //}));
   //};
 
   //gulp.task('release:add-signed-files', ['release:sign-built-files'], addFiles);
   //gulp.task('release:add-built-files', addFiles);
 
   //if (browser) {
-    //gulp.task('release:build-commit', [
-      //'release:add-signed-files'
-    //], buildCommit);
+  //gulp.task('release:build-commit', [
+  //'release:add-signed-files'
+  //], buildCommit);
   //} else {
-    //gulp.task('release:build-commit', [
-      //'release:add-built-files'
-    //], buildCommit);
+  //gulp.task('release:build-commit', [
+  //'release:add-built-files'
+  //], buildCommit);
   //}
 
   //gulp.task('release:version-commit', function() {
-    //var pjson = require('../../package.json');
-    //return gulp.src(releaseFiles)
-      //.pipe(git.commit('Bump package version to ' + pjson.version, {
-        //args: ''
-      //}));
+  //var pjson = require('../../package.json');
+  //return gulp.src(releaseFiles)
+  //.pipe(git.commit('Bump package version to ' + pjson.version, {
+  //args: ''
+  //}));
   //});
 
   //gulp.task('release:push', function(cb) {
-    //git.push('bitpay', 'master', {
-      //args: ''
-    //}, cb);
+  //git.push('bitpay', 'master', {
+  //args: ''
+  //}, cb);
   //});
 
   //gulp.task('release:push-tag', function(cb) {
-    //var pjson = require('../../package.json');
-    //var name = 'v' + pjson.version;
-    //git.tag(name, 'Release ' + name, function() {
-      //git.push('bitpay', name, cb);
-    //});
+  //var pjson = require('../../package.json');
+  //var name = 'v' + pjson.version;
+  //git.tag(name, 'Release ' + name, function() {
+  //git.push('bitpay', name, cb);
+  //});
   //});
 
   //gulp.task('release:publish', shell.task([
-    //'npm publish'
+  //'npm publish'
   //]));
 
 
   //// requires https://hub.github.com/
   //var release = function(importance, cb) {
-    //var bumper = 'release:bump:' + importance;
-    //return runsequence(
-      //// Checkout the release temporal branch
-      //'release:checkout-releases',
-      //// Run npm install
-      //'release:install',
-      //// Run tests with gulp test
-      //'test',
-      //// Update package.json and bower.json
-      //bumper,
-      //// build browser files
-      //browser ? 'browser' : 'noop',
-      //// Commit 
-      //'release:build-commit',
-      //// Run git push bitpay $VERSION
-      //'release:push-tag',
-      //// Run npm publish
-      //'release:publish',
-      //// Checkout the `master` branch
-      //'release:checkout-master',
-      //// Bump package.json and bower.json, again
-      //bumper,
-      //// Version commit with no binary files to master
-      //'release:version-commit',
-      //// Push to master
-      //'release:push',
-      //// remove release branch
-      //'release:cleanup',
-      //cb);
+  //var bumper = 'release:bump:' + importance;
+  //return runsequence(
+  //// Checkout the release temporal branch
+  //'release:checkout-releases',
+  //// Run npm install
+  //'release:install',
+  //// Run tests with gulp test
+  //'test',
+  //// Update package.json and bower.json
+  //bumper,
+  //// build browser files
+  //browser ? 'browser' : 'noop',
+  //// Commit
+  //'release:build-commit',
+  //// Run git push bitpay $VERSION
+  //'release:push-tag',
+    //// Run npm publish
+  //'release:publish',
+  //// Checkout the `master` branch
+  //'release:checkout-master',
+  //// Bump package.json and bower.json, again
+  //bumper,
+  //// Version commit with no binary files to master
+  //'release:version-commit',
+  //// Push to master
+  //'release:push',
+  //// remove release branch
+  //'release:cleanup',
+  //cb);
   //};
 
   //['patch', 'minor', 'major'].forEach(function(importance) {
-    //gulp.task('release:' + importance, function(cb) {
-      //release(importance, cb);
-    //});
-    //gulp.task('release:bump:' + importance, function() {
-      //bump_version(importance);
-    //});
+  //gulp.task('release:' + importance, function(cb) {
+  //release(importance, cb);
+  //});
+  //gulp.task('release:bump:' + importance, function() {
+  //bump_version(importance);
+  //});
   //});
   //gulp.task('release', ['release:patch']);
 
 
-  task['test:browser'] = 
-    gulp.series(task['browser:uncompressed'], task['browser:maketests'], task['test:karma']);
-
 
   if (browser) {
+    task['test:browser'] = gulp.series(task['browser:uncompressed'], task['browser:maketests'], task['test:karma']);
     task['test']= gulp.series(task['test:node'], task['test:browser']);
   } else {
     task['test']= task['test:node'];
