@@ -221,7 +221,7 @@ V8.prototype.getUtxos = function(wallet, cb) {
   client.getCoins({pubKey: wallet.beAuthPublicKey2, payload: {} })
     .then( (unspent) => {
       console.timeEnd('V8getUtxos');
-      return cb(null,self._transformUtxos(unspend));
+      return cb(null,self._transformUtxos(unspent));
     })
     .catch(cb);
 };
