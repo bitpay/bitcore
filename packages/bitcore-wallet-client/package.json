@@ -29,7 +29,7 @@
     "bitcore-lib": "^8.0.0",
     "bitcore-lib-cash": "^8.0.0",
     "bitcore-mnemonic": "^8.0.0",
-    "bitcore-payment-protocol": "^1.7.0",
+    "bitcore-payment-protocol": "^8.0.0",
     "json-stable-stringify": "^1.0.0",
     "lodash": "^4.17.11",
     "preconditions": "^2.2.1",
@@ -37,7 +37,7 @@
     "superagent": "^3.4.1"
   },
   "devDependencies": {
-    "bitcore-wallet-service": "2.5.1",
+    "bitcore-wallet-service": "^8.0.0",
     "browserify": "^13.1.0",
     "chai": "^1.9.1",
     "coveralls": "^3.0.2",
@@ -49,6 +49,7 @@
     "uuid": "^2.0.1"
   },
   "scripts": {
+    "start": "node app.js",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "test": "./node_modules/.bin/mocha --exit",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",

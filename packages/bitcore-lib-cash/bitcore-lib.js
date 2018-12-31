@@ -5066,14 +5066,6 @@ function removeNetwork(network) {
   unindexNetworkBy(network, Object.keys(networkMaps));
 }
 
-
-
-var networkMagic = {
-  livenet: 0xe3e1f3e8,
-  testnet: 0xf4e5f3f4,
-  regtest: 0xdab5bffa,
-};
-
 var dnsSeeds = [
   'seed.bitcoinabc.org',
   'seed-abc.bitcoinforks.org',
@@ -5081,23 +5073,6 @@ var dnsSeeds = [
   'seed.bitprim.org ',
   'seed.deadalnix.me'
 ];
-
-
-var TESTNET = {
-  PORT: 18333,
-  NETWORK_MAGIC: networkMagic.testnet,
-  DNS_SEEDS: dnsSeeds,
-  PREFIX: 'bchtest'
-};
-
-
-var REGTEST = {
-  PORT: 18444,
-  NETWORK_MAGIC: networkMagic.regtest,
-  DNS_SEEDS: [],
-  PREFIX: 'bchreg'
-};
-
 
 var liveNetwork = {
   name: 'livenet',
@@ -5108,33 +5083,34 @@ var liveNetwork = {
   scripthash: 40,
   xpubkey: 0x0488b21e,
   xprivkey: 0x0488ade4,
-  networkMagic: networkMagic.livenet,
+  networkMagic: 0xe3e1f3e8,
   port: 8333,
   dnsSeeds: dnsSeeds
 };
 
-// network magic, port, prefix, and dnsSeeds are overloaded by enableRegtest
 var testNetwork = {
   name: 'testnet',
-  prefix: TESTNET.PREFIX,
+  prefix: 'bchtest',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
-  networkMagic: TESTNET.NETWORK_MAGIC,
+  networkMagic: 0xf4e5f3f4,
+  port: 18333,
+  dnsSeeds: dnsSeeds
 };
 
 var regtestNetwork = {
   name: 'regtest',
-  prefix: REGTEST.PREFIX,
+  prefix: 'bchreg',
   pubkeyhash: 0x6f,
   privatekey: 0xef,
   scripthash: 0xc4,
   xpubkey: 0x043587cf,
   xprivkey: 0x04358394,
-  networkMagic: REGTEST.NETWORK_MAGIC,
-  port: REGTEST.PORT,
+  networkMagic: 0xdab5bffa,
+  port: 18444,
   dnsSeeds: [],
   indexBy: [
     'port',
@@ -5156,71 +5132,9 @@ var livenet = get('livenet');
 var regtest = get('regtest');
 var testnet = get('testnet');
 
-
-
-Object.defineProperty(testnet, 'port', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.PORT;
-    } else {
-      return TESTNET.PORT;
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'networkMagic', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return BufferUtil.integerAsBuffer(REGTEST.NETWORK_MAGIC);
-    } else {
-      return BufferUtil.integerAsBuffer(TESTNET.NETWORK_MAGIC);
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'dnsSeeds', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.DNS_SEEDS;
-    } else {
-      return TESTNET.DNS_SEEDS;
-    }
-  }
-});
-
-
-Object.defineProperty(testnet, 'prefix', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return REGTEST.PREFIX;
-    } else {
-      return TESTNET.PREFIX;
-    }
-  }
-});
-
-Object.defineProperty(testnet, 'prefixArray', {
-  enumerable: true,
-  configurable: false,
-  get: function() {
-    if (this.regtestEnabled) {
-      return prefixToArray(REGTEST.PREFIX);
-    } else {
-      return prefixToArray(TESTNET.PREFIX);
-    }
-  }
-});
-
 /**
  * @function
+ * @deprecated
  * @member Networks#enableRegtest
  * Will enable regtest features for testnet
  */
@@ -5230,6 +5144,7 @@ function enableRegtest() {
 
 /**
  * @function
+ * @deprecated
  * @member Networks#disableRegtest
  * Will disable regtest features for testnet
  */
@@ -10818,6 +10733,9 @@ Transaction.NLOCKTIME_MAX_VALUE = 4294967295;
 // Value used for fee estimation (satoshis per kilobyte)
 Transaction.FEE_PER_KB = 100000;
 
+// Value used for fee estimation (satoshis per byte)
+Transaction.FEE_PER_BYTE = 1;
+
 // Safe upper bound for change address script size in bytes
 Transaction.CHANGE_OUTPUT_MAX_SIZE = 20 + 4 + 34 + 4;
 Transaction.MAXIMUM_EXTRA_SIZE = 4 + 9 + 9 + 4;
@@ -11403,6 +11321,7 @@ Transaction.prototype.fee = function(amount) {
  * Manually set the fee per KB for this transaction. Beware that this resets all the signatures
  * for inputs (in further versions, SIGHASH_SINGLE or SIGHASH_NONE signatures will not
  * be reset).
+ * Takes priority over fee per Byte, for backwards compatibility
  *
  * @param {number} amount satoshis per KB to be sent
  * @return {Transaction} this, for chaining
@@ -11410,6 +11329,22 @@ Transaction.prototype.fee = function(amount) {
 Transaction.prototype.feePerKb = function(amount) {
   $.checkArgument(_.isNumber(amount), 'amount must be a number');
   this._feePerKb = amount;
+  this._updateChangeOutput();
+  return this;
+};
+
+/**
+ * Manually set the fee per Byte for this transaction. Beware that this resets all the signatures
+ * for inputs (in further versions, SIGHASH_SINGLE or SIGHASH_NONE signatures will not
+ * be reset).
+ * fee per Byte will be ignored if fee per KB is set
+ *
+ * @param {number} amount satoshis per Byte to be sent
+ * @return {Transaction} this, for chaining
+ */
+Transaction.prototype.feePerByte = function(amount) {
+  $.checkArgument(_.isNumber(amount), 'amount must be a number');
+  this._feePerByte = amount;
   this._updateChangeOutput();
   return this;
 };
@@ -11626,7 +11561,11 @@ Transaction.prototype.getFee = function() {
 Transaction.prototype._estimateFee = function() {
   var estimatedSize = this._estimateSize();
   var available = this._getUnspentValue();
-  return Transaction._estimateFee(estimatedSize, available, this._feePerKb);
+  if (this._feePerByte && !this._feePerKb) {
+    return Transaction._estimateFeePerByte(estimatedSize, available, this._feePerByte);
+  } else {
+    return Transaction._estimateFeePerKb(estimatedSize, available, this._feePerKb);
+  }
 };
 
 Transaction.prototype._getUnspentValue = function() {
@@ -11639,12 +11578,20 @@ Transaction.prototype._clearSignatures = function() {
   });
 };
 
-Transaction._estimateFee = function(size, amountAvailable, feePerKb) {
+Transaction._estimateFeePerKb = function(size, amountAvailable, feePerKb) {
   var fee = Math.ceil(size / 1000) * (feePerKb || Transaction.FEE_PER_KB);
   if (amountAvailable > fee) {
     size += Transaction.CHANGE_OUTPUT_MAX_SIZE;
   }
   return Math.ceil(size / 1000) * (feePerKb || Transaction.FEE_PER_KB);
+};
+
+Transaction._estimateFeePerByte = function(size, amountAvailable, feePerByte) {
+  var fee = size * (feePerByte || Transaction.FEE_PER_BYTE);
+  if (amountAvailable > fee) {
+    size += Transaction.CHANGE_OUTPUT_MAX_SIZE;
+  }
+  return size * (feePerByte || Transaction.FEE_PER_BYTE);
 };
 
 Transaction.prototype._estimateSize = function() {
@@ -29236,7 +29183,13 @@ utils.intFromLE = intFromLE;
 
 },{"bn.js":65,"minimalistic-assert":159,"minimalistic-crypto-utils":160}],134:[function(require,module,exports){
 module.exports={
-  "_from": "elliptic@=6.4.0",
+  "_args": [
+    [
+      "elliptic@6.4.0",
+      "/Users/micah/dev/bitcore/packages/bitcore-lib-cash"
+    ]
+  ],
+  "_from": "elliptic@6.4.0",
   "_id": "elliptic@6.4.0",
   "_inBundle": false,
   "_integrity": "sha1-ysmvh2LIWDYYcAPI3+GT5eLq5d8=",
@@ -29245,12 +29198,12 @@ module.exports={
   "_requested": {
     "type": "version",
     "registry": true,
-    "raw": "elliptic@=6.4.0",
+    "raw": "elliptic@6.4.0",
     "name": "elliptic",
     "escapedName": "elliptic",
-    "rawSpec": "=6.4.0",
+    "rawSpec": "6.4.0",
     "saveSpec": null,
-    "fetchSpec": "=6.4.0"
+    "fetchSpec": "6.4.0"
   },
   "_requiredBy": [
     "/",
@@ -29258,9 +29211,8 @@ module.exports={
     "/create-ecdh"
   ],
   "_resolved": "https://registry.npmjs.org/elliptic/-/elliptic-6.4.0.tgz",
-  "_shasum": "cac9af8762c85836187003c8dfe193e5e2eae5df",
-  "_spec": "elliptic@=6.4.0",
-  "_where": "/Users/ematiu/dev/bitcore-lib-cash",
+  "_spec": "6.4.0",
+  "_where": "/Users/micah/dev/bitcore/packages/bitcore-lib-cash",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"
@@ -29268,7 +29220,6 @@ module.exports={
   "bugs": {
     "url": "https://github.com/indutny/elliptic/issues"
   },
-  "bundleDependencies": false,
   "dependencies": {
     "bn.js": "^4.4.0",
     "brorand": "^1.0.1",
@@ -29278,7 +29229,6 @@ module.exports={
     "minimalistic-assert": "^1.0.0",
     "minimalistic-crypto-utils": "^1.0.0"
   },
-  "deprecated": false,
   "description": "EC cryptography",
   "devDependencies": {
     "brfs": "^1.4.3",
@@ -55169,13 +55119,14 @@ exports.createContext = Script.createContext = function (context) {
 },{}],215:[function(require,module,exports){
 module.exports={
   "name": "bitcore-lib-cash",
-  "version": "0.20.0",
+  "version": "8.0.0",
   "description": "A pure and powerful JavaScript Bitcoin Cash library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
     "lint": "gulp lint",
     "test": "gulp test",
+    "test:ci": "npm run test",
     "coverage": "gulp coverage",
     "build": "gulp"
   },
@@ -55203,8 +55154,9 @@ module.exports={
     "request": "browser-request"
   },
   "dependencies": {
+    "bitcore-lib": "^8.0.0",
     "bn.js": "=4.11.8",
-    "bs58": "=4.0.1",
+    "bs58": "^4.0.1",
     "buffer-compare": "=1.1.1",
     "elliptic": "=6.4.0",
     "inherits": "=2.0.1",

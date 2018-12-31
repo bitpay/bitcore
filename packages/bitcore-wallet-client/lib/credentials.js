@@ -10,7 +10,6 @@ var sjcl = require('sjcl');
 var Common = require('./common');
 var Constants = Common.Constants;
 var Utils = Common.Utils;
-var config = require('./common/config');
 
 var FIELDS = [
   'coin',
@@ -50,16 +49,16 @@ function Credentials() {
 };
 
 function _checkCoin(coin) {
-  if (!config.chains[coin]) throw new Error('Invalid coin');
+  if (!_.includes(['btc', 'bch'], coin)) throw new Error('Invalid coin');
 };
 
-function _checkNetwork(coin, network) {
-  if (!config.chains[coin][network]) throw new Error('Invalid network');
+function _checkNetwork(network) {
+  if (!_.includes(['livenet', 'testnet'], network)) throw new Error('Invalid network');
 };
 
 Credentials.create = function(coin, network) {
   _checkCoin(coin);
-  _checkNetwork(coin, network);
+  _checkNetwork(network);
 
   var x = new Credentials();
 
@@ -82,7 +81,7 @@ var wordsForLang = {
 
 Credentials.createWithMnemonic = function(coin, network, passphrase, language, account, opts) {
   _checkCoin(coin);
-  _checkNetwork(coin, network);
+  _checkNetwork(network);
   if (!wordsForLang[language]) throw new Error('Unsupported language');
   $.shouldBeNumber(account);
 
@@ -131,7 +130,7 @@ Credentials.fromExtendedPrivateKey = function(coin, xPrivKey, account, derivatio
 // note that mnemonic / passphrase is NOT stored
 Credentials.fromMnemonic = function(coin, network, words, passphrase, account, derivationStrategy, opts) {
   _checkCoin(coin);
-  _checkNetwork(coin, network);
+  _checkNetwork(network);
   $.shouldBeNumber(account);
   $.checkArgument(_.includes(_.values(Constants.DERIVATION_STRATEGIES), derivationStrategy));
 
@@ -211,8 +210,7 @@ Credentials.prototype._expand = function() {
 
   var network = Credentials._getNetworkFromExtendedKey(this.xPrivKey || this.xPubKey);
   if (this.network) {
-    // the default network of livenet should be okay
-    $.checkState(this.network.name === network.name || network === 'livenet');
+    $.checkState(this.network == network);
   } else {
     this.network = network;
   }
