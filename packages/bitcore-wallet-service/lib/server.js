@@ -1254,15 +1254,6 @@ WalletService.prototype._getUtxosWithGrouping = function(wallet, cb) {
   bc.getUtxos(wallet, function(err, utxos) {
     if (err) return cb(err);
 
-    var utxos = _.map(utxos, function(utxo) {
-      var u = _.pick(utxo, ['txid', 'vout', 'address', 'scriptPubKey', 'amount', 'satoshis', 'confirmations']);
-      u.confirmations = u.confirmations || 0;
-      u.locked = false;
-      u.satoshis = _.isNumber(u.satoshis) ? +u.satoshis : Utils.strip(u.amount * 1e8);
-      delete u.amount;
-      return u;
-    });
-
     return cb(null, utxos);
   });
 };
@@ -1435,6 +1426,7 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
  * Returns list of UTXOs
  * @param {Object} opts
  * @param {String} [opts.coin='btc'] (optional)
+ * @param {Array} [opts.addresses] - List of addresses. options. only one address is supported
  * @returns {Array} utxos - List of UTXOs.
  */
 WalletService.prototype.getUtxos = function(opts, cb) {
@@ -1443,17 +1435,55 @@ WalletService.prototype.getUtxos = function(opts, cb) {
   opts = opts || {};
 
   if (opts.addresses) {
-    return cb(new ClientError('Addresses option no longer supported'));
-  }
 
-  if (opts.coin) {
-    if (!Utils.checkValueInCollection(opts.coin, Constants.COINS))
+    if (opts.addresses.length>1)
+      return cb(new ClientError('Addresses option only support 1 address'));
+  
+
+
+
+    self.getWallet({}, function(err, wallet) {
+      if (err) return next(err);
+
+
+      var bc = self._getBlockchainExplorer(wallet.coin, wallet.network);
+      if (!bc) {
+        return cb(new Error('Could not get blockchain explorer instance'));
+      }
+      if (!bc.supportsGrouping())  {
+        return cb(new ClientError('Addresses option not supported on this coin/network'));
+      }
+
+      const address = opts.addresses[0];
+      var A = Bitcore_[wallet.coin].Address;
+      var addrObj = {};
+      try {
+        addrObj = new A(address);
+      } catch (ex) {
+        return cb(Errors.INVALID_ADDRESS);
+      }
+      if (addrObj.network != wallet.network) {
+        return cb(Errors.INCORRECT_ADDRESS_NETWORK);
+      }
+
+      bc.getAddressUtxos(opts.address, (err, utxos) => {
+        if(err) return cb(err);
+        return cb(null, utxos);
+      });
+
+    });
+  }  else {
+
+    if (opts.coin) {
+      if (!Utils.checkValueInCollection(opts.coin, Constants.COINS))
       return cb(new ClientError('Invalid coin'));
-  }
+    }
 
-  self._getUtxosForCurrentWallet({
-    coin: opts.coin
-  }, cb);
+
+    self._getUtxosForCurrentWallet({
+      coin: opts.coin
+    }, cb);
+  }
 };
 
 WalletService.prototype._totalizeUtxos = function(utxos) {
