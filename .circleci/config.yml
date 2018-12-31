@@ -2,6 +2,7 @@
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 version: 2
 jobs:
+
   build:
     machine:
       image: circleci/classic:latest
@@ -9,7 +10,138 @@ jobs:
     working_directory: ~/bitcore
     steps:
       - checkout
-
       - run:
-          name: Build service
-          command: npm run test:ci
+          name: Build Docker Compose Images
+          command: npm run test:ci:build
+
+  bitcore-wallet-service:
+    machine:
+      image: circleci/classic:latest
+      docker_layer_caching: true
+    working_directory: ~/bitcore
+    steps:
+      - checkout
+      - run:
+          name: Bitcore-Wallet-Service Tests
+          command: npm run ci:bitcore-wallet-service
+
+  bitcore-wallet-client:
+    machine:
+      image: circleci/classic:latest
+      docker_layer_caching: true
+    working_directory: ~/bitcore
+    steps:
+      - checkout
+      - run:
+          name: Bitcore-Wallet-Client Tests
+          command: npm run ci:bitcore-wallet-client
+
+  bitcore-node:
+    machine:
+      image: circleci/classic:latest
+      docker_layer_caching: true
+    working_directory: ~/bitcore
+    steps:
+      - checkout
+      - run:
+          name: Bitcore-Node Tests
+          command: npm run ci:bitcore-node
+
+  bitcore-lib:
+    machine:
+      image: circleci/classic:latest
+      docker_layer_caching: true
+    working_directory: ~/bitcore
+    steps:
+      - checkout
+      - run:
+          name: Bitcore-Lib Tests
+          command: npm run ci:bitcore-lib
+
+  bitcore-lib-cash:
+    machine:
+      image: circleci/classic:latest
+      docker_layer_caching: true
+    working_directory: ~/bitcore
+    steps:
+      - checkout
+      - run:
+          name: Bitcore-Lib-Cash Tests
+          command: npm run ci:bitcore-lib-cash
+
+  bitcore-p2p:
+    machine:
+      image: circleci/classic:latest
+      docker_layer_caching: true
+    working_directory: ~/bitcore
+    steps:
+      - checkout
+      - run:
+          name: Bitcore-P2P Tests
+          command: npm run ci:bitcore-p2p
+
+  bitcore-p2p-cash:
+    machine:
+      image: circleci/classic:latest
+      docker_layer_caching: true
+    working_directory: ~/bitcore
+    steps:
+      - checkout
+      - run:
+          name: Bitcore-P2P-Cash Tests
+          command: npm run ci:bitcore-p2p-cash
+
+  bitcore-payment-protocol:
+    machine:
+      image: circleci/classic:latest
+      docker_layer_caching: true
+    working_directory: ~/bitcore
+    steps:
+      - checkout
+      - run:
+          name: Bitcore-Payment-Protocol Tests
+          command: npm run ci:bitcore-payment-protocol
+
+  bitcore-mnemonic:
+    machine:
+      image: circleci/classic:latest
+      docker_layer_caching: true
+    working_directory: ~/bitcore
+    steps:
+      - checkout
+      - run:
+          name: Bitcore-Mnemonic Tests
+          command: npm run ci:bitcore-mnemonic
+
+workflows:
+  version: 2
+  build-test-and-deploy:
+    jobs:
+      - build
+      - bitcore-wallet-client:
+          requires:
+            - build
+      - bitcore-wallet-service:
+          requires:
+            - build
+      - bitcore-node:
+          requires:
+            - build
+      - bitcore-lib:
+          requires:
+            - build
+      - bitcore-lib-cash:
+          requires:
+            - build
+      - bitcore-p2p:
+          requires:
+            - build
+      - bitcore-p2p-cash:
+          requires:
+            - build
+      - bitcore-payment-protocol:
+          requires:
+            - build
+      - bitcore-mnemonic:
+          requires:
+            - build
