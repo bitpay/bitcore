@@ -186,6 +186,31 @@ V8.prototype.getConnectionInfo = function() {
   return 'V8 (' + this.coin + '/' + this.v8network + ') @ ' + this.host;
 };
 
+V8.prototype._transformUtxos = function(unsent) {
+  let ret = _.map(unspent, function(x) {
+    var u = {address: x.address};
+
+    if (self.addressFormat) {
+      x.address = self.translateResultAddresses(x.address);
+    }
+
+    // v8 field name differences
+    u.satoshis = x.value;
+    u.amount = x.value / 1e8;
+    u.scriptPubKey = x.script;
+    u.txid = x.mintTxid;
+    u.vout = x.mintIndex;
+    u.locked = false;
+
+    // TODO
+    u.confirmations = x.confirmations || 0;
+
+    return u;
+  });
+
+  return ret;
+};
+
 /**
  * Retrieve a list of unspent outputs associated with an address or set of addresses
  */
@@ -195,19 +220,8 @@ V8.prototype.getUtxos = function(wallet, cb) {
   console.time('V8getUtxos');
   client.getCoins({pubKey: wallet.beAuthPublicKey2, payload: {} })
     .then( (unspent) => {
-      _.each(unspent, function(x) {
-        if (self.addressFormat) {
-          x.address = self.translateResultAddresses(x.address);
-        }
-        // v8 field name differences
-        x.satoshis = x.value;
-        x.amount = x.value / 1e8;
-        x.scriptPubKey = x.script;
-        x.txid = x.mintTxid;
-        x.vout = x.mintIndex;
-      });
       console.timeEnd('V8getUtxos');
-      return cb(null, unspent);
+      return cb(null,self._transformUtxos(unspend));
     })
     .catch(cb);
 };
@@ -261,6 +275,20 @@ console.log('[v8.js.207] GET TX', txid); //TODO
       
     });
 };
+
+
+V8.prototype.getAddressUtxos = function(address, cb) {
+  var self = this;
+console.log('[v8.js.207] GET ADDR UTXO', address); //TODO
+  var client = this._getClient();
+  client.getAddressTxos({address: address, unspent: true })
+    .then( (utxos) => {
+      return cb(null,self._transformUtxos(unspend));
+    })
+    .catch(cb);
+};
+
+
 
 V8.prototype.getTransactions = function(wallet, startBlock , cb) {
 console.time('V8 getTxs');

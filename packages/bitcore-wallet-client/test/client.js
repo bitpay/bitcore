@@ -199,6 +199,14 @@ blockchainExplorerMock.getUtxos = function(addresses, cb) {
   return cb(null, selected);
 };
 
+
+// v8
+blockchainExplorerMock.getAddressUtxos = function(address, cb) {
+  return cb(null, blockchainExplorerMock.utxos);
+};
+
+
+
 blockchainExplorerMock.setUtxo = function(address, amount, m, confirmations) {
   var B = Bitcore_[address.coin];
   var scriptPubKey;
@@ -215,6 +223,7 @@ blockchainExplorerMock.setUtxo = function(address, amount, m, confirmations) {
     txid: Bitcore.crypto.Hash.sha256(new Buffer(Math.random() * 100000)).toString('hex'),
     vout: Math.floor((Math.random() * 10) + 1),
     amount: amount,
+    satoshis: amount *1e8,
     address: address.address,
     scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
     confirmations: _.isUndefined(confirmations) ? Math.floor((Math.random() * 100) + 1) : +confirmations,
@@ -5454,7 +5463,18 @@ describe('client API', function() {
   _.each(['bch', 'btc'], function(coin) {
     var addr= addrMap[coin];
 
-    describe.skip('Sweep paper wallet ' + coin, function() {
+    describe('Sweep paper wallet ' + coin, function() {
+
+
+      beforeEach( () => {
+        blockchainExplorerMock.supportsGrouping = () => { return true; }
+      });
+
+
+      afterEach( () => {
+        blockchainExplorerMock.supportsGrouping = () => { return false; }
+      });
+
       var B = Bitcore_[coin];
       it.skip('should decrypt bip38 encrypted private key', function(done) {
         this.timeout(60000);
@@ -5478,7 +5498,7 @@ describe('client API', function() {
           type: 'P2PKH',
           coin: coin,
         };
-        helpers.createAndJoinWallet(clients, 1, 1, function() {
+        helpers.createAndJoinWallet(clients, 1, 1, {coin: coin}, function() {
           blockchainExplorerMock.setUtxo(address, 123, 1);
           clients[0].getBalanceFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', coin, function(err, balance) {
             should.not.exist(err);
@@ -5493,7 +5513,7 @@ describe('client API', function() {
           type: 'P2PKH',
           coin: coin,
         };
-        helpers.createAndJoinWallet(clients, 1, 1, function() {
+        helpers.createAndJoinWallet(clients, 1, 1,  {coin: coin}, function() {
           blockchainExplorerMock.setUtxo(address, 123, 1);
           clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1], { 
             coin: coin
@@ -5522,7 +5542,7 @@ describe('client API', function() {
           type: 'P2PKH',
           coin: coin,
         };
-        helpers.createAndJoinWallet(clients, 1, 1, function() {
+        helpers.createAndJoinWallet(clients, 1, 1,  {coin: coin}, function() {
           blockchainExplorerMock.setUtxo(address, 123, 1);
           clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1],  {
             coin: coin,
@@ -5542,7 +5562,7 @@ describe('client API', function() {
           type: 'P2PKH',
           coin: coin,
         };
-        helpers.createAndJoinWallet(clients, 1, 1, function() {
+        helpers.createAndJoinWallet(clients, 1, 1,  {coin: coin}, function() {
           blockchainExplorerMock.setUtxo(address, 123 / 1e8, 1);
           clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1], {
             fee: 500,
