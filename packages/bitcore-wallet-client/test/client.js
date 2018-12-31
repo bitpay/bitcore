@@ -2702,7 +2702,7 @@ describe('client API', function() {
           });
         });
       });
-      it.only('Should sign proposal created with send max settings', function(done) {
+      it('Should sign proposal created with send max settings', function(done) {
         var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
         clients[0].getSendMaxInfo({
           feePerKb: 100e2,
