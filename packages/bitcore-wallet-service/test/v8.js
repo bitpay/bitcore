@@ -129,4 +129,42 @@ describe('V8', () => {
   });
   describe.skip('#deregistedwallet', () => {
   });
+
+  describe.only('#getAddressUtxos', () => {
+    it('should get uxtos', (done) => {
+      class PartialJson extends Client {
+        listTransactions(opts) {
+          class MyReadable extends Readable {
+            constructor(options) {
+              super(options);
+              var txStr = JSON.stringify(txs);
+              this.push(txStr.substr(0,10));
+              this.push(txStr.substr(10));
+              this.push(null);
+              }
+          };
+
+          return new MyReadable;
+        };
+      };
+      
+      var be = new V8({
+        coin: 'btc',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        userAgent: 'testAgent',
+        addressFormat: null,
+        client: PartialJson,
+      });
+
+      be.getAddressUtxos('1EU9VhWRN7aW38pGk7qj3c2EDcUGDZKESt', (err, txs) => {
+        should.not.exist(err);
+        should.exist(txs);
+        txs.length.should.equal(3);
+        return done();
+      });
+    });
+  });
+
 });

@@ -1851,7 +1851,7 @@ console.log('[server.js.425:err:]',err); //TODO
         });
       });
     });
-    it('should not allow to get UTXOs for specific addresses if network mismatch', function(done) {
+    it('should return empty UTXOs for specific addresses if network mismatch', function(done) {
       helpers.setupGroupingBE(blockchainExplorer);
       helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
         _.uniqBy(utxos, 'address').length.should.be.above(1);
@@ -1862,12 +1862,13 @@ console.log('[server.js.425:err:]',err); //TODO
         server.getUtxos({
           addresses: ['mrM5kMkqZccK5MxZYSsM3SjqdMaNKLJgrJ']
         }, function(err, utxos) {
-          err.message.should.contain('address network');
+          should.not.exist(err);
+          utxos.should.be.empty();
           done();
         });
       });
     });
-    it('should not allow to get UTXOs for specific addresses if coin mismatch', function(done) {
+    it('should return empty UTXOs for specific addresses if coin mismatch', function(done) {
       helpers.setupGroupingBE(blockchainExplorer);
       helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
         _.uniqBy(utxos, 'address').length.should.be.above(1);
@@ -1878,7 +1879,8 @@ console.log('[server.js.425:err:]',err); //TODO
         server.getUtxos({
           addresses: ['CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X']
         }, function(err, utxos) {
-          err.message.should.contain('Invalid address');
+          should.not.exist(err);
+          utxos.should.be.empty();
           done();
         });
       });

@@ -283,7 +283,7 @@ console.log('[v8.js.207] GET ADDR UTXO', address); //TODO
   var client = this._getClient();
   client.getAddressTxos({address: address, unspent: true })
     .then( (utxos) => {
-      return cb(null,self._transformUtxos(unspend));
+      return cb(null,self._transformUtxos(utxos));
     })
     .catch(cb);
 };
