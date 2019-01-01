@@ -1433,7 +1433,6 @@ WalletService.prototype.getUtxos = function(opts, cb) {
   var self = this;
 
   opts = opts || {};
-
   if (opts.addresses) {
 
     if (opts.addresses.length>1)
@@ -1460,13 +1459,13 @@ WalletService.prototype.getUtxos = function(opts, cb) {
       try {
         addrObj = new A(address);
       } catch (ex) {
-        return cb(Errors.INVALID_ADDRESS);
+        return cb(null,[]);
       }
-      if (addrObj.network != wallet.network) {
-        return cb(Errors.INCORRECT_ADDRESS_NETWORK);
+      if (addrObj.network.name != wallet.network) {
+        return cb(null,[]);
       }
 
-      bc.getAddressUtxos(opts.address, (err, utxos) => {
+      bc.getAddressUtxos(address, (err, utxos) => {
         if(err) return cb(err);
         return cb(null, utxos);
       });
