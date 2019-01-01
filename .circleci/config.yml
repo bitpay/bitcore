@@ -1,15 +1,183 @@
 # Javascript Node CircleCI 2.0 configuration file
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
-version: 2
+version: 2.1
+executors:
+   bitcore-docker:
+    docker:
+      - image: circleci/node
 jobs:
   build:
-    machine:
-      image: circleci/classic:latest
-      docker_layer_caching: true
-    working_directory: ~/bitcore
+    executor: bitcore-docker
     steps:
       - checkout
-
+      - setup_remote_docker:
+          docker_layer_caching: true
       - run:
-          name: Build service
-          command: npm run test:ci
+          name: Build Docker Compose Images
+          command: npm run docker:build-test
+      - run:
+           name: Archive Docker image
+           command: docker save -o image.tar bitcore-node
+      - persist_to_workspace:
+           root: .
+           paths:
+             - ./image.tar
+
+  bitcore-wallet-service:
+     executor: bitcore-docker
+     steps:
+       - attach_workspace:
+           at: /tmp/workspace
+       - setup_remote_docker
+       - run:
+           name: Load archived Docker image
+           command: docker load -i /tmp/workspace/image.tar
+       - checkout
+       - run:
+          name: Bitcore-Wallet-Service Tests
+          command: npm run ci:bitcore-wallet-service
+
+  bitcore-wallet-client:
+    executor: bitcore-docker
+    steps:
+       - attach_workspace:
+           at: /tmp/workspace
+       - setup_remote_docker
+       - run:
+           name: Load archived Docker image
+           command: docker load -i /tmp/workspace/image.tar
+       - checkout
+       - run:
+          name: Bitcore-Wallet-Client Tests
+          command: npm run ci:bitcore-wallet-client
+
+  bitcore-node:
+    executor: bitcore-docker
+    steps:
+       - attach_workspace:
+           at: /tmp/workspace
+       - setup_remote_docker
+       - run:
+           name: Load archived Docker image
+           command: docker load -i /tmp/workspace/image.tar
+       - checkout
+       - run:
+          name: Bitcore-Node Tests
+          command: npm run ci:bitcore-node
+
+  bitcore-lib:
+    executor: bitcore-docker
+    steps:
+       - attach_workspace:
+           at: /tmp/workspace
+       - setup_remote_docker
+       - run:
+           name: Load archived Docker image
+           command: docker load -i /tmp/workspace/image.tar
+       - checkout
+       - run:
+          name: Bitcore-Lib Tests
+          command: npm run ci:bitcore-lib
+
+  bitcore-lib-cash:
+    executor: bitcore-docker
+    steps:
+       - attach_workspace:
+           at: /tmp/workspace
+       - setup_remote_docker
+       - run:
+           name: Load archived Docker image
+           command: docker load -i /tmp/workspace/image.tar
+       - checkout
+       - run:
+          name: Bitcore-Lib-Cash Tests
+          command: npm run ci:bitcore-lib-cash
+
+  bitcore-p2p:
+    executor: bitcore-docker
+    steps:
+       - attach_workspace:
+           at: /tmp/workspace
+       - setup_remote_docker
+       - run:
+           name: Load archived Docker image
+           command: docker load -i /tmp/workspace/image.tar
+       - checkout
+       - run:
+           name: Bitcore-P2P Tests
+           command: npm run ci:bitcore-p2p
+
+  bitcore-p2p-cash:
+    executor: bitcore-docker
+    steps:
+       - attach_workspace:
+           at: /tmp/workspace
+       - setup_remote_docker
+       - run:
+           name: Load archived Docker image
+           command: docker load -i /tmp/workspace/image.tar
+       - checkout
+       - run:
+           name: Bitcore-P2P-Cash Tests
+           command: npm run ci:bitcore-p2p-cash
+
+  bitcore-payment-protocol:
+    executor: bitcore-docker
+    steps:
+       - attach_workspace:
+           at: /tmp/workspace
+       - setup_remote_docker
+       - run:
+           name: Load archived Docker image
+           command: docker load -i /tmp/workspace/image.tar
+       - checkout
+       - run:
+           name: Bitcore-Payment-Protocol Tests
+           command: npm run ci:bitcore-payment-protocol
+
+  bitcore-mnemonic:
+    executor: bitcore-docker
+    steps:
+       - attach_workspace:
+           at: /tmp/workspace
+       - setup_remote_docker
+       - run:
+           name: Load archived Docker image
+           command: docker load -i /tmp/workspace/image.tar
+       - checkout
+       - run:
+           name: Bitcore-Mnemonic Tests
+           command: npm run ci:bitcore-mnemonic
+
+workflows:
+  version: 2
+  build-test-and-deploy:
+    jobs:
+      - build
+      - bitcore-wallet-client:
+          requires:
+            - build
+      - bitcore-wallet-service:
+          requires:
+            - build
+      - bitcore-node:
+          requires:
+            - build
+      - bitcore-lib:
+          requires:
+            - build
+      - bitcore-lib-cash:
+          requires:
+            - build
+      - bitcore-p2p:
+          requires:
+            - build
+      - bitcore-p2p-cash:
+          requires:
+            - build
+      - bitcore-payment-protocol:
+          requires:
+            - build
+      - bitcore-mnemonic:
+          requires:
+            - build

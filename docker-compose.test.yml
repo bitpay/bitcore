@@ -6,6 +6,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile-test
+      cache_from: bitcore-node
     ports:
       - 8100:8100
       - 3000:3000

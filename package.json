@@ -4,7 +4,8 @@
     "singleQuote": true
   },
   "scripts": {
-    "build": "docker build -t bitcore-node .",
+    "docker:build": "docker build -t bitcore-node .",
+    "docker:build-test": "docker build -t bitcore-node -f Dockerfile-test .",
     "postinstall": "npm run bootstrap && npm run compile",
     "bootstrap": "./node_modules/.bin/lerna bootstrap",
     "insight": "cd packages/insight && npm start",
