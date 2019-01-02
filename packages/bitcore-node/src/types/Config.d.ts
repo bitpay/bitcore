@@ -1,4 +1,4 @@
-export default interface Config {
+export interface ConfigType {
   maxPoolSize: number;
   port: number;
   dbHost: string;
@@ -7,12 +7,30 @@ export default interface Config {
   numWorkers: number;
 
   chains: {
-    [currency: string]: any;
+    [currency: string]: { [network: string]: any };
   };
-  api: {
-    wallets: {
-      allowCreationBeforeCompleteSync?: boolean;
-      allowUnauthenticatedCalls?: boolean;
+  services: {
+    api: {
+      enabled: boolean;
+      rateLimiter: {
+        whitelist: [string];
+      };
+      wallets: {
+        allowCreationBeforeCompleteSync?: boolean;
+        allowUnauthenticatedCalls?: boolean;
+      };
+    };
+    event: {
+      enabled: boolean;
+    };
+    p2p: {
+      enabled: boolean;
+    };
+    socket: {
+      enabled: boolean;
+    };
+    storage: {
+      enabled: boolean;
     };
   };
 }

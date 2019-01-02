@@ -19,7 +19,6 @@ var Stringify = require('json-stable-stringify');
 var request = require('superagent');
 
 var Common = require('./common');
-const config = require('./common/config');
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;
 var Utils = Common.Utils;
@@ -31,7 +30,7 @@ var Verifier = require('./verifier');
 var Package = require('../package.json');
 var Errors = require('./errors');
 
-var BASE_URL = 'http://localhost:3000/api';
+var BASE_URL = 'http://localhost:3232/bws/api';
 
 /**
  * @desc ClientAPI constructor.
@@ -165,23 +164,6 @@ API._encryptMessage = function(message, encryptingKey) {
   return Utils.encryptMessage(message, encryptingKey);
 };
 
-/**
- * Decrypt a message
- * @private
- * @static
- * @memberof Client.API
- * @param {String} message
- * @param {String} encryptingKey
- */
-API._decryptMessage = function(message, encryptingKey) {
-  if (!message) return '';
-  try {
-    return Utils.decryptMessage(message, encryptingKey);
-  } catch (ex) {
-    return '<ECANNOTDECRYPT>';
-  }
-};
-
 API.prototype._processTxNotes = function(notes) {
   var self = this;
 
@@ -190,9 +172,9 @@ API.prototype._processTxNotes = function(notes) {
   var encryptingKey = self.credentials.sharedEncryptingKey;
   _.each([].concat(notes), function(note) {
     note.encryptedBody = note.body;
-    note.body = API._decryptMessage(note.body, encryptingKey);
+    note.body = Utils.decryptMessageNoThrow(note.body, encryptingKey);
     note.encryptedEditedByName = note.editedByName;
-    note.editedByName = API._decryptMessage(note.editedByName, encryptingKey);
+    note.editedByName = Utils.decryptMessageNoThrow(note.editedByName, encryptingKey);
   });
 };
 
@@ -211,18 +193,21 @@ API.prototype._processTxps = function(txps) {
   var encryptingKey = self.credentials.sharedEncryptingKey;
   _.each([].concat(txps), function(txp) {
     txp.encryptedMessage = txp.message;
-    txp.message = API._decryptMessage(txp.message, encryptingKey) || null;
-    txp.creatorName = API._decryptMessage(txp.creatorName, encryptingKey);
+    txp.message = Utils.decryptMessageNoThrow(txp.message, encryptingKey) || null;
+    txp.creatorName = Utils.decryptMessageNoThrow(txp.creatorName, encryptingKey);
 
     _.each(txp.actions, function(action) {
-      action.copayerName = API._decryptMessage(action.copayerName, encryptingKey);
-      action.comment = API._decryptMessage(action.comment, encryptingKey);
+
+      // CopayerName encryption is optional (not available in older wallets)
+      action.copayerName = Utils.decryptMessageNoThrow(action.copayerName, encryptingKey);
+
+      action.comment = Utils.decryptMessageNoThrow(action.comment, encryptingKey);
       // TODO get copayerName from Credentials -> copayerId to copayerName
       // action.copayerName = null;
     });
     _.each(txp.outputs, function(output) {
       output.encryptedMessage = output.message;
-      output.message = API._decryptMessage(output.message, encryptingKey) || null;
+      output.message = Utils.decryptMessageNoThrow(output.message, encryptingKey) || null;
     });
     txp.hasUnconfirmedInputs = _.some(txp.inputs, function(input) {
       return input.confirmations == 0;
@@ -304,7 +289,7 @@ var _deviceValidated;
  *
  * @param {Object} opts
  * @param {String} opts.passphrase
- * @param {String} opts.skipDeviceValidation
+ * @param {Boolean} opts.skipDeviceValidation
  */
 API.prototype.validateKeyDerivation = function(opts, cb) {
   var self = this;
@@ -665,7 +650,7 @@ API.prototype.getBalanceFromPrivateKey = function(privateKey, coin, cb) {
   var privateKey = new B.PrivateKey(privateKey);
   var address = privateKey.publicKey.toAddress();
   self.getUtxos({
-    addresses: address.toString(),
+    addresses: coin == 'bch' ? address.toLegacyAddress() : address.toString(),
   }, function(err, utxos) {
     if (err) return cb(err);
     return cb(null, _.sumBy(utxos, 'satoshis'));
@@ -686,7 +671,7 @@ API.prototype.buildTxFromPrivateKey = function(privateKey, destinationAddress, o
 
     function(next) {
       self.getUtxos({
-        addresses: address.toString(),
+        addresses: coin == 'bch' ?  address.toLegacyAddress() : address.toString(),
       }, function(err, utxos) {
         return next(err, utxos);
       });
@@ -960,7 +945,7 @@ API._buildSecret = function(walletId, walletPrivKey, coin, network) {
   }
   var widHex = new Buffer(walletId.replace(/-/g, ''), 'hex');
   var widBase58 = new Bitcore.encoding.Base58(widHex).toString();
-  return widBase58.padEnd(22, '0') + walletPrivKey.toWIF() + (network == 'testnet' ? 'T' : 'L') + coin;
+  return _.padEnd(widBase58, 22, '0') + walletPrivKey.toWIF() + (network == 'testnet' ? 'T' : 'L') + coin;
 };
 
 API.parseSecret = function(secret) {
@@ -1256,8 +1241,8 @@ API.prototype.decryptPrivateKey = function(password) {
 API.prototype.getFeeLevels = function(coin, network, cb) {
   var self = this;
 
-  $.checkArgument(coin || config.chains[coin]);
-  $.checkArgument(network || config.chains[coin][network]);
+  $.checkArgument(coin || _.includes(['btc', 'bch'], coin));
+  $.checkArgument(network || _.includes(['livenet', 'testnet'], network));
 
   self._doGetRequest('/v2/feelevels/?coin=' + (coin || 'btc') + '&network=' + (network || 'livenet'), function(err, result) {
     if (err) return cb(err);
@@ -1306,11 +1291,11 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
   if (opts) $.shouldBeObject(opts);
   opts = opts || {};
 
-  let {coin, network} = opts;
-  $.checkArgument(coin, "Coin is a required paramter");
-  $.checkArgument(network, "Network is a required paramter");
-  $.shouldBeObject(config.chains[coin], 'Invalid coin');
-  $.checkState(config.chains[coin][network], 'Network not enabled in config');
+  var coin = opts.coin || 'btc';
+  if (!_.includes(['btc', 'bch'], coin)) return cb(new Error('Invalid coin'));
+
+  var network = opts.network || 'livenet';
+  if (!_.includes(['testnet', 'livenet'], network)) return cb(new Error('Invalid network'));
 
   if (!self.credentials) {
     log.info('Generating new keys');
@@ -1341,34 +1326,25 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
     m: m,
     n: n,
     pubKey: (new Bitcore.PrivateKey(walletPrivKey)).toPublicKey().toString(),
-    path: c.getBaseAddressDerivationPath(),
     coin: coin,
-    chain: coin,
     network: network,
     singleAddress: !!opts.singleAddress,
     id: opts.id,
   };
-
-  network = network;
-  coin = coin.toUpperCase();
-  var url = `api/${coin}/${network}/wallet/`;
-  self._doPostRequest(url, args, function(err, res) {
+  self._doPostRequest('/v2/wallets/', args, function(err, res) {
     if (err) return cb(err);
 
-    var walletId = res._id;
+    var walletId = res.walletId;
     c.addWalletInfo(walletId, walletName, m, n, copayerName);
     var secret = API._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
 
-    return cb(null, n > 1 ? secret : null);
-    /*
-     *self._doJoinWallet(walletId, walletPrivKey, c.xPubKey, c.requestPubKey, copayerName, {
-     *    coin: coin
-     *  },
-     *  function(err, wallet) {
-     *    if (err) return cb(err);
-     *    return cb(null, n > 1 ? secret : null);
-     *  });
-     */
+    self._doJoinWallet(walletId, walletPrivKey, c.xPubKey, c.requestPubKey, copayerName, {
+        coin: coin
+      },
+      function(err, wallet) {
+        if (err) return cb(err);
+        return cb(null, n > 1 ? secret : null);
+      });
   });
 };
 
@@ -1397,7 +1373,7 @@ API.prototype.joinWallet = function(secret, copayerName, opts, cb) {
   opts = opts || {};
 
   var coin = opts.coin || 'btc';
-  if (!config.chains[coin]) return cb(new Error('Invalid coin'));
+  if (!_.includes(['btc', 'bch'], coin)) return cb(new Error('Invalid coin'));
 
   try {
     var secretData = API.parseSecret(secret);
@@ -1503,13 +1479,13 @@ API.prototype._processWallet = function(wallet) {
 
   var encryptingKey = self.credentials.sharedEncryptingKey;
 
-  var name = Utils.decryptMessage(wallet.name, encryptingKey);
+  var name = Utils.decryptMessageNoThrow(wallet.name, encryptingKey);
   if (name != wallet.name) {
     wallet.encryptedName = wallet.name;
   }
   wallet.name = name;
   _.each(wallet.copayers, function(copayer) {
-    var name = Utils.decryptMessage(copayer.name, encryptingKey);
+    var name = Utils.decryptMessageNoThrow(copayer.name, encryptingKey);
     if (name != copayer.name) {
       copayer.encryptedName = copayer.name;
     }
@@ -1517,7 +1493,7 @@ API.prototype._processWallet = function(wallet) {
     _.each(copayer.requestPubKeys, function(access) {
       if (!access.name) return;
 
-      var name = Utils.decryptMessage(access.name, encryptingKey);
+      var name = Utils.decryptMessageNoThrow(access.name, encryptingKey);
       if (name != access.name) {
         access.encryptedName = access.name;
       }
@@ -1699,18 +1675,10 @@ API.prototype.fetchPayPro = function(opts, cb) {
 API.prototype.getUtxos = function(opts, cb) {
   $.checkState(this.credentials && this.credentials.isComplete());
   opts = opts || {};
-  let {coin, network, wallet} = opts;
-
-  $.checkArgument(wallet, "Wallet id is required");
-  $.checkArgument(coin, "Coin is a required paramter");
-  $.checkArgument(network, "Network is a required paramter");
-
-  coin = coin.toUpperCase();
-  var url = `api/${coin}/${network}/wallet/${wallet}/utxos/`;
-  if (opts.addresses || opts.spent) {
+  var url = '/v1/utxos/';
+  if (opts.addresses) {
     url += '?' + querystring.stringify({
-      addresses: [].concat(opts.addresses).join(','),
-      spent: opts.spent
+      addresses: [].concat(opts.addresses).join(',')
     });
   }
   this._doGetRequest(url, cb);
@@ -1765,7 +1733,6 @@ API.prototype.createTxProposal = function(opts, cb) {
     if (err) return cb(err);
 
     self._processTxps(txp);
-
     if (!Verifier.checkProposalCreation(args, txp, self.credentials.sharedEncryptingKey)) {
       return cb(new Errors.SERVER_COMPROMISED);
     }
@@ -1883,7 +1850,6 @@ API.prototype.getMainAddresses = function(opts, cb) {
  *
  * @param {String} opts.coin - Optional: defaults to current wallet coin
  * @param {Boolean} opts.twoStep[=false] - Optional: use 2-step balance computation for improved performance
- * @param {String} opts.wallet - Required: the wallet to lookup by id, TODO should be public key
  * @param {Callback} cb
  */
 API.prototype.getBalance = function(opts, cb) {
@@ -1901,7 +1867,7 @@ API.prototype.getBalance = function(opts, cb) {
   var args = [];
   if (opts.twoStep) args.push('?twoStep=1');
   if (opts.coin) {
-    if (!config.chains[opts.coin]) return cb(new Error('Invalid coin'));
+    if (!_.includes(['btc', 'bch'], opts.coin)) return cb(new Error('Invalid coin'));
     args.push('coin=' + opts.coin);
   }
   var qs = '';
@@ -1909,19 +1875,8 @@ API.prototype.getBalance = function(opts, cb) {
     qs = '?' + args.join('&');
   }
 
-  let {coin, network, wallet} = opts;
-  $.checkArgument(coin, "Coin is a required paramter");
-  $.checkArgument(network, "Network is a required paramter");
-  $.checkArgument(wallet, "Wallet is a required paramter");
-
-  coin = coin.toUpperCase();
-  var url = `api/${coin}/${network}/wallet/${wallet}/balance`;
-  this._doGetRequest(url, (err, resp) => {
-    if(err) {
-      return cb(err, null);
-    }
-   cb(null, {totalAmount: resp.balance, lockedAmount: -1});
-  });
+  var url = '/v1/balance/' + qs;
+  this._doGetRequest(url, cb);
 };
 
 /**
@@ -2118,7 +2073,7 @@ API.signTxProposalFromAirGapped = function(key, txp, unencryptedPkr, m, n, opts)
   opts = opts || {}
 
   var coin = opts.coin || 'btc';
-  if (!config.chains[coin]) return cb(new Error('Invalid coin'));
+  if (!_.includes(['btc', 'bch'], coin)) return cb(new Error('Invalid coin'));
 
   var publicKeyRing = JSON.parse(unencryptedPkr);
 
@@ -2251,9 +2206,12 @@ API.prototype.broadcastTxProposal = function(txp, cb) {
         }),
         coin: txp.coin || 'btc',
       }, function(err, ack, memo) {
-        if (err) return cb(err);
-        self._doBroadcast(txp, function(err, txp) {
-          return cb(err, txp, memo);
+        log.warn('Merchant rejected the payment. Broadcasting it any ways.', err);
+        if (memo) {
+          log.debug('Merchant memo:', memo);
+        }
+        self._doBroadcast(txp, function(err2, txp) {
+          return cb(err2, txp, memo, err);
         });
       });
     } else {

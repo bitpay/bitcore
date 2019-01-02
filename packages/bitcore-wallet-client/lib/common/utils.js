@@ -30,14 +30,48 @@ Utils.encryptMessage = function(message, encryptingKey) {
   }, Utils.SJCL));
 };
 
+// Will throw if it can't decrypt
 Utils.decryptMessage = function(cyphertextJson, encryptingKey) {
-  try {
-    var key = sjcl.codec.base64.toBits(encryptingKey);
-    return sjcl.decrypt(key, cyphertextJson);
-  } catch (ex) {
+  if (!cyphertextJson) return;
+
+  if (!encryptingKey)
+    throw 'No key';
+
+  var key = sjcl.codec.base64.toBits(encryptingKey);
+  return sjcl.decrypt(key, cyphertextJson);
+};
+
+
+Utils.decryptMessageNoThrow = function(cyphertextJson, encryptingKey) {
+  function isJsonString(str) {
+    var r;
+    try {
+      r=JSON.parse(str);
+    } catch (e) {
+      return false;
+    }
+    return r;
+  }
+
+  if (!encryptingKey)
+    return '<ECANNOTDECRYPT>';
+
+  if (!cyphertextJson)
+    return '';
+
+  // no sjcl encrypted json
+  var r= isJsonString(cyphertextJson);
+  if (!r|| !r.iv || !r.ct) {
     return cyphertextJson;
   }
+
+  try {
+    return Utils.decryptMessage(cyphertextJson, encryptingKey);
+  } catch (e) {
+    return '<ECANNOTDECRYPT>';
+  }
 };
+
 
 /* TODO: It would be nice to be compatible with bitcoind signmessage. How
  * the hash is calculated there? */
@@ -122,7 +156,7 @@ Utils.deriveAddress = function(scriptType, publicKeyRing, path, m, network, coin
   }
 
   return {
-    address: bitcoreAddress.toString(),
+    address: coin == 'bch' ?  bitcoreAddress.toLegacyAddress() : bitcoreAddress.toString(),
     path: path,
     publicKeys: _.invokeMap(publicKeys, 'toString'),
   };

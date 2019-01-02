@@ -2,11 +2,16 @@ import config from '../config';
 import { Request, Response } from 'express';
 import express from 'express';
 import cors from 'cors';
-import { LogMiddleware, CacheMiddleware, CacheTimes } from './middleware';
+import { LogMiddleware, CacheMiddleware, CacheTimes, RateLimiter } from './middleware';
 
 const app = express();
 const bodyParser = require('body-parser');
-app.use(bodyParser.json());
+app.use(RateLimiter('GLOBAL', 10, 200, 4000));
+app.use(
+  bodyParser.json({
+    limit: 100000000
+  })
+);
 app.use(
   bodyParser.raw({
     limit: 100000000

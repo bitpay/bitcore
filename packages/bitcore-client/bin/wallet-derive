@@ -5,7 +5,7 @@ const bitcoreLibs = {
   BCH: require('bitcore-lib-cash')
 };
 const program = require('../ts_build/program');
-const Wallet = require('../ts_build/wallet');
+const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
 
 program

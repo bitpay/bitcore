@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 'use strict';
 
-const Storage = require('../ts_build/storage');
+const { Storage } = require('../ts_build/storage');
 const program = require('../ts_build/program');
 
 program

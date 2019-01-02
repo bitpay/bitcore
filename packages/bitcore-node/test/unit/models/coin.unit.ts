@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { CoinModel, ICoin } from '../../../src/models/coin';
+import { CoinStorage, ICoin } from '../../../src/models/coin';
 import { SpentHeightIndicators } from '../../../src/types/Coin';
 import { ObjectId } from 'mongodb';
 
@@ -23,7 +23,7 @@ describe('Coin Model', function() {
         spentHeight: SpentHeightIndicators.unspent
       } as ICoin;
 
-      const result = CoinModel._apiTransform(coin, { object: false });
+      const result = CoinStorage._apiTransform(coin, { object: false });
 
       const parseResult = JSON.parse(result.toString());
       expect(parseResult).to.deep.equal({
@@ -59,7 +59,7 @@ describe('Coin Model', function() {
         spentHeight: SpentHeightIndicators.unspent
       } as ICoin;
 
-      const result = CoinModel._apiTransform(coin, { object: true });
+      const result = CoinStorage._apiTransform(coin, { object: true });
       expect(result).to.deep.equal({
         _id: id.toHexString(),
         mintTxid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',

@@ -606,8 +606,11 @@ Transaction.prototype._newTransaction = function() {
  * @param {Array=} pubkeys
  * @param {number=} threshold
  * @param {boolean=} nestedWitness - Indicates that the utxo is nested witness p2sh
+ * @param {Object=} opts - Several options:
+ *        - noSorting: defaults to false, if true and is multisig, don't
+ *                      sort the given public keys before creating the script
  */
-Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness) {
+Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness, opts) {
   if (_.isArray(utxo)) {
     var self = this;
     _.each(utxo, function(utxo) {
@@ -623,7 +626,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness) {
     return this;
   }
   if (pubkeys && threshold) {
-    this._fromMultisigUtxo(utxo, pubkeys, threshold, nestedWitness);
+    this._fromMultisigUtxo(utxo, pubkeys, threshold, nestedWitness, opts);
   } else {
     this._fromNonP2SH(utxo);
   }
@@ -651,7 +654,7 @@ Transaction.prototype._fromNonP2SH = function(utxo) {
   }));
 };
 
-Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, nestedWitness) {
+Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, nestedWitness, opts) {
   $.checkArgument(threshold <= pubkeys.length,
     'Number of required signatures must be greater than the number of public keys');
   var clazz;
@@ -671,7 +674,7 @@ Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, nes
     prevTxId: utxo.txId,
     outputIndex: utxo.outputIndex,
     script: Script.empty()
-  }, pubkeys, threshold, false, nestedWitness));
+  }, pubkeys, threshold, false, nestedWitness, opts));
 };
 
 /**
@@ -899,13 +902,11 @@ Transaction.prototype._getOutputAmount = function() {
  */
 Transaction.prototype._getInputAmount = function() {
   if (_.isUndefined(this._inputAmount)) {
-    var self = this;
-    this._inputAmount = 0;
-    _.each(this.inputs, function(input) {
+    this._inputAmount = _.sumBy(this.inputs, function(input) {
       if (_.isUndefined(input.output)) {
         throw new errors.Transaction.Input.MissingPreviousOutput();
       }
-      self._inputAmount += input.output.satoshis;
+      return input.output.satoshis;
     });
   }
   return this._inputAmount;

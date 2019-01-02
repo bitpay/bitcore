@@ -1,5 +1,7 @@
 import logger from '../logger';
 import * as express from 'express';
+import { RateLimitStorage } from '../models/rateLimit';
+import { Config } from "../services/config";
 
 type TimedRequest = {
   startTime?: Date;
@@ -62,5 +64,30 @@ export function CacheMiddleware(serverSeconds = CacheTimes.Second, browserSecond
   return (_: express.Request, res: express.Response, next: express.NextFunction) => {
     SetCache(res, serverSeconds, browserSeconds);
     next();
+  };
+}
+
+export function RateLimiter(method: string, perSecond: number, perMinute: number, perHour: number) {
+  return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    try {
+      const identifier = req.header('CF-Connecting-IP') || req.socket.remoteAddress || '';
+      if (Config.for('api').rateLimiter.whitelist.includes(identifier)) {
+        return next();
+      }
+      let [perSecondResult, perMinuteResult, perHourResult] = await RateLimitStorage.incrementAndCheck(
+        identifier,
+        method
+      );
+      if (
+        perSecondResult.value!.count > perSecond ||
+        perMinuteResult.value!.count > perMinute ||
+        perHourResult.value!.count > perHour
+      ) {
+        return res.status(429).send('Rate Limited');
+      }
+    } catch (err) {
+      logger.error('Rate Limiter failed');
+    }
+    return next();
   };
 }

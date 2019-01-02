@@ -281,7 +281,7 @@ describe('BIP32 compliance', function() {
       var chainCodeBuffer = new Buffer('39816057bba9d952fe87fe998b7fd4d690a1bb58c2ff69141469e4d1dffb4b91', 'hex');
       var unstubbed = bitcore.crypto.BN.prototype.toBuffer;
       var count = 0;
-      var stub = sandbox.stub(bitcore.crypto.BN.prototype, 'toBuffer', function(args) {
+      var stub = sandbox.stub(bitcore.crypto.BN.prototype, 'toBuffer').callsFake(function (args) {
         // On the fourth call to the function give back an invalid private key
         // otherwise use the normal behavior.
         count++;

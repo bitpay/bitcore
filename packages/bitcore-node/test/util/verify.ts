@@ -1,11 +1,11 @@
 #!/usr/bin/env node
-import { BlockModel, IBlock } from '../../src/models/block';
+import { BlockStorage, IBlock } from '../../src/models/block';
 import { AsyncRPC } from '../../src/rpc';
 import { expect } from 'chai';
-import { TransactionModel, ITransaction } from '../../src/models/transaction';
-import { CoinModel } from '../../src/models/coin';
+import { TransactionStorage, ITransaction } from '../../src/models/transaction';
+import { CoinStorage } from '../../src/models/coin';
 import { ChainNetwork } from '../../src/types/ChainNetwork';
-import { WalletAddressModel } from '../../src/models/walletAddress';
+import { WalletAddressStorage } from '../../src/models/walletAddress';
 import { Storage } from '../../src/services/storage';
 import config from '../../src/config';
 import logger from '../../src/logger';
@@ -29,7 +29,7 @@ export async function blocks(
   const normalizedTimes = new Array(tip.height).fill(0);
 
   // check each block
-  const cursor = BlockModel.collection.find({
+  const cursor = BlockStorage.collection.find({
     chain: info.chain,
     network: info.network
   });
@@ -78,7 +78,7 @@ export async function blocks(
       expect(block.reward, 'block reward').to.equal(Math.round(reward * SATOSHI));
 
       // Check block only has all `truth`'s transactions
-      const ours = await TransactionModel.collection
+      const ours = await TransactionStorage.collection
         .find({
           chain: info.chain,
           network: info.network,
@@ -122,7 +122,7 @@ export async function blocks(
       }
 
       // Check no other tx points to our block hash
-      const extra = await TransactionModel.collection
+      const extra = await TransactionStorage.collection
         .find({
           chain: info.chain,
           network: info.network,
@@ -155,7 +155,7 @@ export async function transactions(
 ) {
   const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
-  const txcursor = TransactionModel.collection.find({
+  const txcursor = TransactionStorage.collection.find({
     chain: info.chain,
     network: info.network
   });
@@ -175,7 +175,7 @@ export async function transactions(
 
     {
       // Minted by this transaction
-      const ours = await CoinModel.collection
+      const ours = await CoinStorage.collection
         .find({
           network: info.network,
           chain: info.chain,
@@ -196,7 +196,7 @@ export async function transactions(
         // wallets
         expect(tx.wallets).to.include.members(Array.from(our.wallets));
         if (our.wallets.length > 0) {
-          const wallets = await WalletAddressModel.collection
+          const wallets = await WalletAddressStorage.collection
             .find({
               wallet: {
                 $in: our.wallets
@@ -213,7 +213,7 @@ export async function transactions(
 
     {
       // Spent by this transaction
-      const ours = await CoinModel.collection
+      const ours = await CoinStorage.collection
         .find({
           network: info.network,
           chain: info.chain,
