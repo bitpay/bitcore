@@ -375,7 +375,7 @@ export class P2pWorker {
   }
 
   async start(config: ConfigType) {
-    if (!config.services.p2p.enabled) {
+    if (!config.services.p2p.disabled) {
       return;
     }
     logger.debug(`Started worker for chain ${this.chain}`);

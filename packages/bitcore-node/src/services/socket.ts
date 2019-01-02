@@ -38,7 +38,7 @@ export class SocketService {
   }
 
   start({ server, config = this.configService.get() }: { server: http.Server; config: ConfigType }) {
-    if (!config.services.socket.enabled) {
+    if (!config.services.socket.disabled) {
       return;
     }
     logger.info('Starting Socket Service');

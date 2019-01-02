@@ -1,7 +1,7 @@
 import logger from '../logger';
 import * as express from 'express';
 import { RateLimitStorage } from '../models/rateLimit';
-import { Config } from "../services/config";
+import { Config } from '../services/config';
 
 type TimedRequest = {
   startTime?: Date;
@@ -71,7 +71,8 @@ export function RateLimiter(method: string, perSecond: number, perMinute: number
   return async (req: express.Request, res: express.Response, next: express.NextFunction) => {
     try {
       const identifier = req.header('CF-Connecting-IP') || req.socket.remoteAddress || '';
-      if (Config.for('api').rateLimiter.whitelist.includes(identifier)) {
+      const rateLimiter = Config.for('api').rateLimiter;
+      if (rateLimiter && rateLimiter.whitelist.includes(identifier)) {
         return next();
       }
       let [perSecondResult, perMinuteResult, perHourResult] = await RateLimitStorage.incrementAndCheck(
