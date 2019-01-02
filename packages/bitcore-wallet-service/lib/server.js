@@ -1927,7 +1927,7 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
   var baseTxpFee = 100000;
   var sizePerInput = txp.getEstimatedSizeForSingleInput();
   //var feePerInput = sizePerInput * txp.feePerKb / 1000.;
-  var feePerInput = 100000;
+  var feePerInput = 0;
 
   function sanitizeUtxos(utxos) {
     var excludeIndex = _.reduce(utxosToExclude, function(res, val) {
