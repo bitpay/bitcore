@@ -72,7 +72,8 @@ export function RateLimiter(method: string, perSecond: number, perMinute: number
     try {
       const identifier = req.header('CF-Connecting-IP') || req.socket.remoteAddress || '';
       const rateLimiter = Config.for('api').rateLimiter;
-      if (rateLimiter && rateLimiter.whitelist.includes(identifier)) {
+      const whitelist = rateLimiter && rateLimiter.whitelist;
+      if (whitelist && whitelist.includes(identifier)) {
         return next();
       }
       let [perSecondResult, perMinuteResult, perHourResult] = await RateLimitStorage.incrementAndCheck(
