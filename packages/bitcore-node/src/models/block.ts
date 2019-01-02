@@ -153,7 +153,7 @@ export class BlockModel extends BaseModel<IBlock> {
   }
 
   getLocalTip({ chain, network }) {
-    return BlockStorage.collection.findOne({ chain, network, processed: true }, { sort: { height: -1 } });
+    return this.collection.findOne({ chain, network, processed: true }, { sort: { height: -1 } });
   }
 
   async handleReorg(params: { header?: Bitcoin.Block.HeaderObj; chain: string; network: string }): Promise<boolean> {
