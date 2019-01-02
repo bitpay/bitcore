@@ -61,7 +61,7 @@ export class EventService {
         }
       }
       if (!this.stopped) {
-        setTimeout(retryTxCursor, 5000);
+        setTimeout(retryTxCursor, 100);
       }
     };
     retryTxCursor();
@@ -77,7 +77,7 @@ export class EventService {
         }
       }
       if (!this.stopped) {
-        setTimeout(retryBlockCursor, 5000);
+        setTimeout(retryBlockCursor, 100);
       }
     };
     retryBlockCursor();
@@ -93,7 +93,7 @@ export class EventService {
         }
       }
       if (!this.stopped) {
-        setTimeout(retryAddressTxCursor, 5000);
+        setTimeout(retryAddressTxCursor, 100);
       }
     };
     retryAddressTxCursor();
