@@ -11,7 +11,7 @@ import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { Storage } from '../../../services/storage';
 import { RPC } from '../../../rpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
-import { TransactionStorage, ITransaction } from '../../../models/transaction';
+import { TransactionStorage } from '../../../models/transaction';
 import { ListTransactionsStream } from './transforms';
 import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
 import { StateStorage } from '../../../models/state';
@@ -156,7 +156,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (blockHash !== undefined) {
       query.blockHash = blockHash;
     }
-    return Storage.apiStreamingFind(TransactionModel, query, args, req, res);
+    return Storage.apiStreamingFind(TransactionStorage, query, args, req, res);
   }
 
   async getTransaction(params: CSP.StreamTransactionParams) {
@@ -168,7 +168,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     let query = { chain: chain, network, txid: txId };
     const found = await TransactionStorage.collection.findOne(query);
     if (found) {
-      return TransactionModel._apiTransform(found, { object: true }) as TransactionJSON;
+      return TransactionStorage._apiTransform(found, { object: true }) as TransactionJSON;
     } else {
       return undefined;
     }
@@ -341,7 +341,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (args.includeSpent !== 'true') {
       query.spentHeight = { $lt: SpentHeightIndicators.pending };
     }
-    Storage.apiStreamingFind(CoinModel, query, { limit }, req, res);
+    Storage.apiStreamingFind(CoinStorage, query, { limit }, req, res);
   }
 
   async getFee(params: CSP.GetEstimateSmartFeeParams) {
