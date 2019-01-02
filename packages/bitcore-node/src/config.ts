@@ -76,7 +76,7 @@ const Config = function(): ConfigType {
   };
 
   let foundConfig = findConfig();
-  Object.assign(config.services, foundConfig, {});
+  Object.assign(config, foundConfig, {});
   if (!Object.keys(config.chains).length) {
     Object.assign(config.chains, {
       BTC: {

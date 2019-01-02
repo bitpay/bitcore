@@ -32,7 +32,8 @@ export class ApiService {
   }
 
   async start() {
-    if (!this.configService.isEnabled('api')) {
+    if (this.configService.isDisabled('api')) {
+      logger.info(`Disabled API Service`);
       return;
     }
     if (!this.storageService.connected) {
@@ -40,8 +41,8 @@ export class ApiService {
     }
     this.httpServer.timeout = this.timeout;
     this.httpServer.listen(this.port, () => {
-      logger.info(`API server started on port ${this.port}`);
-      this.socketService.start({ server: this.httpServer, config });
+      logger.info(`Starting API Service on port ${this.port}`);
+      this.socketService.start({ server: this.httpServer });
     });
     return this.httpServer;
   }

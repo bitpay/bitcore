@@ -8,7 +8,6 @@ import { StateStorage } from '../models/state';
 import { SpentHeightIndicators } from '../types/Coin';
 import os from 'os';
 import { Config, ConfigService } from './config';
-import { ConfigType } from '../types/Config';
 const Chain = require('../chain');
 const LRU = require('lru-cache');
 
@@ -29,7 +28,8 @@ export class P2pManager {
   }
 
   async start({ blockModel = BlockStorage } = {}) {
-    if (!this.configService.isEnabled('p2p')) {
+    if (this.configService.isDisabled('p2p')) {
+      logger.info('Disabled P2P Manager');
       return;
     }
     logger.info('Starting P2P Manager');
@@ -48,7 +48,7 @@ export class P2pManager {
       });
       p2pWorkers.push(p2pWorker);
       try {
-        p2pWorker.start(Config.get());
+        p2pWorker.start();
       } catch (e) {
         logger.error('P2P Worker died with', e);
       }
@@ -347,10 +347,14 @@ export class P2pWorker {
     this.syncingNodeHeartBeat = setInterval(async () => {
       const syncingNode = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
       if (!syncingNode) {
-        return StateStorage.selfNominateSyncingNode({ chain: this.chain, network: this.network, lastHeartBeat: syncingNode });
+        return StateStorage.selfNominateSyncingNode({
+          chain: this.chain,
+          network: this.network,
+          lastHeartBeat: syncingNode
+        });
       }
       const [hostname, pid] = syncingNode.split(':');
-      const amSyncingNode = (hostname === os.hostname() && pid === process.pid.toString());
+      const amSyncingNode = hostname === os.hostname() && pid === process.pid.toString();
       if (amSyncingNode) {
         StateStorage.selfNominateSyncingNode({ chain: this.chain, network: this.network, lastHeartBeat: syncingNode });
         if (!this.isSyncingNode) {
@@ -360,8 +364,12 @@ export class P2pWorker {
         }
       } else {
         setTimeout(() => {
-          StateStorage.selfNominateSyncingNode({ chain: this.chain, network: this.network, lastHeartBeat: syncingNode });
-        }, 10000)
+          StateStorage.selfNominateSyncingNode({
+            chain: this.chain,
+            network: this.network,
+            lastHeartBeat: syncingNode
+          });
+        }, 10000);
       }
     }, 500);
   }
@@ -374,10 +382,7 @@ export class P2pWorker {
     }
   }
 
-  async start(config: ConfigType) {
-    if (!config.services.p2p.disabled) {
-      return;
-    }
+  async start() {
     logger.debug(`Started worker for chain ${this.chain}`);
     this.setupListeners();
     await this.connect();

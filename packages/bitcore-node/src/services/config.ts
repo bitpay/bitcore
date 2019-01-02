@@ -48,11 +48,11 @@ export class ConfigService {
     return this.get().services[service] || {};
   }
 
-  public isEnabled(service: ServiceName) {
+  public isDisabled(service: ServiceName) {
     const serviceConfig = this.for(service);
     const isDefined = x => x !== undefined;
     const disabled = isDefined(serviceConfig) ? valueOrDefault(serviceConfig.disabled, false) : false;
-    return !disabled;
+    return disabled;
   }
 }
 
