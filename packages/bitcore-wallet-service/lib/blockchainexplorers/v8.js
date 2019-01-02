@@ -193,7 +193,7 @@ V8.prototype._transformUtxos = function(unspent) {
     var u = {address: x.address};
 
     if (self.addressFormat) {
-      x.address = self.translateResultAddresses(x.address);
+      u.address = self.translateResultAddresses(x.address);
     }
 
     // v8 field name differences

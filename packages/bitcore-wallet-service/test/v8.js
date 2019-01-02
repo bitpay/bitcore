@@ -146,12 +146,11 @@ describe('V8', () => {
       };
       
       var be = new V8({
-        coin: 'btc',
+        coin: 'bch',
         network: 'livenet',
         url: 'http://dummy/',
         apiPrefix: 'dummyPath',
         userAgent: 'testAgent',
-        addressFormat: null,
         client: PartialJson,
       });
 
@@ -159,7 +158,7 @@ describe('V8', () => {
         should.not.exist(err);
         should.exist(utxos);
         let x = utxos[2];
-        x.address.should.equal('qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh');
+        x.address.should.equal('n4J9viXAWZQi3n1eYVuvMXPEmJ7Ckrw7jw');
         x.satoshis.should.equal(2000000);
         x.amount.should.equal(x.satoshis/1e8);
         x.scriptPubKey.should.equal('76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac');
