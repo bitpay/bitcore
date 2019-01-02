@@ -48,7 +48,7 @@ export class ConfigService {
   }
 
   public isEnabled(service: ServiceName) {
-    return this.for(service).enabled;
+    return this.for(service) && this.for(service).enabled;
   }
 }
 
