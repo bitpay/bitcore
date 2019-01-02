@@ -1,6 +1,6 @@
 import { homedir, cpus } from 'os';
 import parseArgv from './utils/parseArgv';
-import { ConfigType } from "./types/Config";
+import { ConfigType } from './types/Config';
 let program = parseArgv([], ['config']);
 
 function findConfig(): ConfigType | undefined {
@@ -60,7 +60,6 @@ const Config = function(): ConfigType {
     chains: {},
     services: {
       api: {
-        enabled: true,
         rateLimiter: {
           whitelist: ['::ffff:127.0.0.1']
         },
@@ -69,18 +68,10 @@ const Config = function(): ConfigType {
           allowUnauthenticatedCalls: false
         }
       },
-      event: {
-        enabled: true
-      },
-      p2p: {
-        enabled: true
-      },
-      socket: {
-        enabled: true
-      },
-      storage: {
-        enabled: true
-      }
+      event: {},
+      p2p: {},
+      socket: {},
+      storage: {}
     }
   };
 

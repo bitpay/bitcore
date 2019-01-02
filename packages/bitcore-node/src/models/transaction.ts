@@ -334,7 +334,8 @@ export class TransactionModel extends BaseModel<ITransaction> {
       }
     }
 
-    if (initialSyncComplete || Config.for('api').wallets.allowCreationBeforeCompleteSync) {
+    const walletConfig = Config.for('api').wallets;
+    if (initialSyncComplete || (walletConfig && walletConfig.allowCreationBeforeCompleteSync)) {
       let mintOpsAddresses = {};
       for (const mintOp of mintOps) {
         mintOpsAddresses[mintOp.updateOne.update.$set.address] = true;

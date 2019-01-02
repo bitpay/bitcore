@@ -1,4 +1,4 @@
-import { Config } from "../../services/config";
+import { Config } from '../../services/config';
 import { Request, Response, Router } from 'express';
 import { ChainNetwork } from '../../types/ChainNetwork';
 import { IWallet } from '../../models/wallet';
@@ -53,7 +53,8 @@ const authenticate: RequestHandler = async (req: PreAuthRequest, res: Response, 
     return res.status(404).send('Wallet not found');
   }
   Object.assign(req, { wallet });
-  if(Config.for('api').wallets.allowUnauthenticatedCalls) {
+  const walletConfig = Config.for('api').wallets;
+  if (walletConfig && walletConfig.allowUnauthenticatedCalls) {
     return next();
   }
   try {
