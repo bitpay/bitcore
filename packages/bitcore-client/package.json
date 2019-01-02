@@ -13,7 +13,7 @@
   },
   "scripts": {
     "clean": "rm -rf ts_build",
-    "compile": "./node_modules/.bin/tsc",
+    "compile": "npm run clean && ./node_modules/.bin/tsc",
     "test": "mocha ./test/unit"
   },
   "dependencies": {

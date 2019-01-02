@@ -26,17 +26,17 @@
     "singleQuote": true
   },
   "scripts": {
-    "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
-    "test": "ng test",
-    "lint": "run-s lint:*",
-    "lint:ng": "ng lint",
-    "lint:prettier": "prettier '{*,**/*}.{js,ts,md,json,css}' --list-different",
-    "fix": "run-s fix:*",
-    "fix:prettier": "prettier '{*,**/*}.{js,ts,md,json,css}' --write",
-    "fix:tslint": "tslint --fix --project .",
-    "e2e": "ng e2e"
+    "ng": "./node_modules/.bin/ng",
+    "start": "./node_modules/.bin/ng serve",
+    "build": "./node_modules/.bin/ng build",
+    "test": "./node_modules/.bin/ng test",
+    "lint": "./node_modules/.bin/run-s lint:*",
+    "lint:ng": "./node_modules/.bin/ng lint",
+    "lint:prettier": "./node_modules/.bin/prettier '{*,**/*}.{js,ts,md,json,css}' --list-different",
+    "fix": "./node_modules/.bin/run-s fix:*",
+    "fix:prettier": "./node_modules/.bin/prettier '{*,**/*}.{js,ts,md,json,css}' --write",
+    "fix:tslint": "./node_modules/.bin/tslint --fix --project .",
+    "e2e": "./node_modules/.bin/ng e2e"
   },
   "private": true,
   "dependencies": {

@@ -17,13 +17,18 @@ var TransactionSignature = require('../signature');
 /**
  * @constructor
  */
-function MultiSigInput(input, pubkeys, threshold, signatures) {
+function MultiSigInput(input, pubkeys, threshold, signatures, opts) {
+  opts = opts || {};
   Input.apply(this, arguments);
   var self = this;
   pubkeys = pubkeys || input.publicKeys;
   threshold = threshold || input.threshold;
   signatures = signatures || input.signatures;
-  this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+  if (opts.noSorting) {
+    this.publicKeys = pubkeys
+  } else  {
+    this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
+  }
   $.checkState(Script.buildMultisigOut(this.publicKeys, threshold).equals(this.output.script),
     'Provided public keys don\'t match to the provided output script');
   this.publicKeyIndex = {};

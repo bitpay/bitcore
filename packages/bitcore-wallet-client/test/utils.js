@@ -189,6 +189,66 @@ describe('Utils', function() {
     });
   });
 
+
+  describe('#decryptMessage should throw', function() {
+    it('should encrypt and decrypt', function() {
+      var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      var ct = Utils.encryptMessage('hello world', pwd);
+      (function(){
+        Utils.decryptMessage(ct, 'test')
+      }).should.throw('invalid aes key size');
+    });
+  });
+
+  describe('#decryptMessageNoThrow should not throw', function() {
+    it('should encrypt and decrypt', function() {
+      var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      var ct = Utils.encryptMessage('hello world', pwd);
+      var msg = Utils.decryptMessageNoThrow(ct, pwd);
+
+      msg.should.equal('hello world');
+    });
+
+    it('should encrypt and  fail to decrypt', function() {
+      var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      var ct = Utils.encryptMessage('hello world', pwd);
+      var msg = Utils.decryptMessageNoThrow(ct, 'hola');
+
+      msg.should.equal('<ECANNOTDECRYPT>');
+    });
+
+
+    it('should failover to decrypt a non-encrypted msg' , function() {
+      var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      var msg = Utils.decryptMessageNoThrow('hola mundo', 'hola');
+
+      msg.should.equal('hola mundo');
+    });
+ 
+    it('should failover to decrypt a non-encrypted msg (case 2)' , function() {
+      var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
+      var msg = Utils.decryptMessageNoThrow('{"pepe":1}', 'hola');
+
+      msg.should.equal('{"pepe":1}');
+    });
+
+
+    it('should no try to decrypt empty', function() {
+      var msg = Utils.decryptMessageNoThrow('', 'hola');
+      msg.should.equal('');
+    });
+
+
+    it('should no try to decrypt null', function() {
+      var msg = Utils.decryptMessageNoThrow(null, 'hola');
+      msg.should.equal('');
+    });
+
+ 
+  });
+
+
+
   describe('#getProposalHash', function() {
     it('should compute hash for old style proposals', function() {
       var hash = Utils.getProposalHash('msj42CCGruhRsFrGATiUuh25dtxYtnpbTx', 1234, 'the message');

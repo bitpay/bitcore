@@ -1,6 +1,4 @@
-'use strict';
 
-var gulp_bitcore = require('bitcore-build');
-
-gulp_bitcore('mnemonic');
+var startGulp = require('bitcore-build');
+Object.assign(exports, startGulp('mnemonic'))
 

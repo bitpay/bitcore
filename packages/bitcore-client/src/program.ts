@@ -20,4 +20,4 @@ program.parse = args => {
   }
 };
 
-export default program;
+module.exports = program;

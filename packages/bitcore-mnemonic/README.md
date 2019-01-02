@@ -10,11 +10,11 @@ A module for [bitcore](https://github.com/bitpay/bitcore) that implements [Mnemo
 
 ## Getting Started
 
-This library is distributed in both the npm and bower packaging systems.
+This library is distributed in both the npm packaging systems.
 
 ```sh
+npm install bitcore-lib  # this to install bitcore-lib since it is a peerDependecy
 npm install bitcore-mnemonic
-bower install bitcore-mnemonic
 ```
 
 There are many examples of how to use it on the developer guide [section for mnemonic](http://bitcore.io/guide/module/mnemonic/index.html). For example, the following code would generate a new random mnemonic code and convert it to a `HDPrivateKey`.

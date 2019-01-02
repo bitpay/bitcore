@@ -119,7 +119,7 @@ function getHash (w) {
   writer.writeUInt32LE(input.outputIndex);
 
   // scriptCode of the input (serialized as scripts inside CTxOuts)
-  writer.writeUInt8(subscript.toBuffer().length)
+  writer.writeVarintNum(subscript.toBuffer().length)
   writer.write(subscript.toBuffer());
 
   // value of the output spent by this input (8-byte little endian)

@@ -1,9 +1,10 @@
-import { CoinModel, ICoin } from './coin';
+import { CoinStorage, ICoin } from './coin';
 import { TransformOptions } from '../types/TransformOptions';
 import { ObjectID } from 'mongodb';
 import { BaseModel } from './base';
 import { IWallet } from './wallet';
-import { TransactionModel } from './transaction';
+import { TransactionStorage } from './transaction';
+import { StorageService } from '../services/storage';
 
 export type IWalletAddress = {
   wallet: ObjectID;
@@ -12,9 +13,9 @@ export type IWalletAddress = {
   network: string;
 };
 
-export class WalletAddress extends BaseModel<IWalletAddress> {
-  constructor() {
-    super('walletaddresses');
+export class WalletAddressModel extends BaseModel<IWalletAddress> {
+  constructor(storage?: StorageService) {
+    super('walletaddresses', storage);
   }
 
   allowedPaging = [];
@@ -65,21 +66,21 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
     return new Promise(async resolve => {
       let batch = new Array<string>();
       const AddAddresses = addresses => {
-        return WalletAddressModel.collection.updateMany(
+        return WalletAddressStorage.collection.updateMany(
           { wallet: wallet._id, address: { $in: addresses } },
           { $set: { wallet: wallet._id, chain, network } },
           { upsert: true }
         );
       };
       const UpdateCoins = addresses => {
-        return CoinModel.collection.updateMany(
+        return CoinStorage.collection.updateMany(
           { chain, network, address: { $in: addresses } },
           { $addToSet: { wallets: wallet._id } }
         );
       };
 
       const ProcessBatch = batch => {
-        return Promise.all([ AddAddresses(batch), UpdateCoins(batch)]);
+        return Promise.all([AddAddresses(batch), UpdateCoins(batch)]);
       };
 
       for (const address of addresses) {
@@ -94,7 +95,7 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
         batch = new Array<string>();
       }
 
-      let coinStream = CoinModel.collection
+      let coinStream = CoinStorage.collection
         .find({ wallets: wallet._id, 'wallets.0': { $exists: true } })
         .project({ spentTxid: 1, mintTxid: 1 })
         .addCursorFlag('noCursorTimeout', true);
@@ -102,14 +103,14 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
       coinStream.on('data', (coin: ICoin) => {
         coinStream.pause();
         if (!txids[coin.mintTxid]) {
-          TransactionModel.collection.updateMany(
+          TransactionStorage.collection.updateMany(
             { txid: coin.mintTxid, network, chain },
             { $addToSet: { wallets: wallet._id } }
           );
         }
         txids[coin.mintTxid] = true;
         if (coin.spentTxid && !txids[coin.spentTxid]) {
-          TransactionModel.collection.updateMany(
+          TransactionStorage.collection.updateMany(
             { txid: coin.spentTxid, network, chain },
             { $addToSet: { wallets: wallet._id } }
           );
@@ -124,4 +125,4 @@ export class WalletAddress extends BaseModel<IWalletAddress> {
   }
 }
 
-export let WalletAddressModel = new WalletAddress();
+export let WalletAddressStorage = new WalletAddressModel();

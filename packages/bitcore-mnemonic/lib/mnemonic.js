@@ -50,6 +50,7 @@ var Mnemonic = function(data, wordlist) {
   var ent, phrase, seed;
   if (Buffer.isBuffer(data)) {
     seed = data;
+    ent = seed.length * 8;
   } else if (_.isString(data)) {
     phrase = unorm.nfkd(data);
   } else if (_.isNumber(data)) {
@@ -76,8 +77,8 @@ var Mnemonic = function(data, wordlist) {
   if (phrase && !Mnemonic.isValid(phrase, wordlist)) {
     throw new errors.InvalidMnemonic(phrase);
   }
-  if (ent % 32 !== 0 || ent < 128) {
-    throw new bitcore.errors.InvalidArgument('ENT', 'Values must be ENT > 128 and ENT % 32 == 0');
+  if (ent % 32 !== 0 || ent < 128 || ent > 256) {
+    throw new bitcore.errors.InvalidArgument('ENT', 'Values must be ENT > 128 and ENT < 256 and ENT % 32 == 0');
   }
 
   phrase = phrase || Mnemonic._mnemonic(ent, wordlist);
@@ -240,7 +241,7 @@ Mnemonic._mnemonic = function(ENT, wordlist) {
 /**
  * Internal function to generate mnemonic based on entropy
  *
- * @param {Number} entropy - Entropy buffer
+ * @param {Buffer} entropy - Entropy buffer
  * @param {Array} wordlist - Array of words to generate the mnemonic
  * @returns {String} Mnemonic string
  */
@@ -271,7 +272,7 @@ Mnemonic._entropy2mnemonic = function(entropy, wordlist) {
 /**
  * Internal function to create checksum of entropy
  *
- * @param entropy
+ * @param {Buffer} entropy
  * @returns {string} Checksum of entropy length / 32
  * @private
  */
