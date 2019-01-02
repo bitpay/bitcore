@@ -29,7 +29,7 @@ var format = (amount, coin) => {
 };
 
 try {
-  identifier = (new bitcoreCash.Address(identifier)).toString();
+  identifier = (new bitcoreCash.Address(identifier)).toLegacyAddress();
 //  console.log('Cashaddr detected. Changed to :' + identifier);
 } catch (e) {
 };
