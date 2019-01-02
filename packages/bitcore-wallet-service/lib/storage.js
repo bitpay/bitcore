@@ -560,12 +560,11 @@ Storage.prototype.deregisterWallet = function(walletId, cb) {
       w: 1,
       upsert: false,
       multi: 1,
-    }, cb);
-  }
-  );
-
-
- };
+    }, () => {
+      self.clearWalletCache(walletId, cb);
+    });
+  });
+};
 
 
 Storage.prototype.storeAddressAndWallet = function(wallet, addresses, cb) {
@@ -859,6 +858,17 @@ Storage.prototype.clearTxHistoryCache = function(walletId, cb) {
     }, cb);
   });
 };
+
+
+Storage.prototype.clearWalletCache = function(walletId, cb) {
+  var self = this;
+  self.db.collection(collections.CACHE).remove({
+    walletId: walletId,
+  }, {
+    multi: 1
+  }, cb);
+};
+
 
 /*
  * This represent a ongoing query stream from a Wallet client
@@ -1242,37 +1252,6 @@ Storage.prototype._dump = function(cb, fn) {
     }, cb);
   });
 };
-
-Storage.prototype.fetchAddressIndexCache = function (walletId, key, cb) {
-  this.db.collection(collections.CACHE).findOne({
-    walletId: walletId,
-    type: 'addressIndexCache',
-    key: key,
-  }, function(err, ret) {
-    if (err) return cb(err);
-    if (!ret) return cb();
-    cb(null, ret.index);
-  });
-}
- 
-
-
-Storage.prototype.storeAddressIndexCache = function (walletId, key, index, cb) {
-  this.db.collection(collections.CACHE).update({ 
-    walletId: walletId,
-    type: 'addressIndexCache',
-    key: key,
-  }, {
-    "$set":
-    { 
-      index: index,
-    }
-  }, {
-    w: 1,
-    upsert: true,
-  }, cb);
-};
-
 
 Storage.prototype._addressHash = function(addresses) {
   var all = addresses.join();

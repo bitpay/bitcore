@@ -1617,6 +1617,7 @@ WalletService.prototype.getBalance = function(opts, cb, i) {
     setAddresses((err) => {
       if (err) return cb(err);
 
+      // TODO remove fastCache for v8
       self._getBalanceCached({
         coin: opts.coin,
         addresses: addresses,
