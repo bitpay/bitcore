@@ -23,7 +23,15 @@ You can start using bitcore-wallet-client in any of these two ways:
 
 Start your own local [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) instance. In this example we assume you have `bitcore-wallet-service` running on your `localhost:3232`.
 
-Then create two files `irene.js` and `tomas.js` with the content below:
+Install `bitcore-wallet-client` before start:
+
+```
+npm i bitcore-wallet-client
+```
+
+### **Create and join a shared wallet**
+---
+Create two files `irene.js` and `tomas.js` with the content below:
 
 **irene.js**
 
@@ -104,12 +112,6 @@ client.joinWallet(secret, "Tomas", {}, function(err, wallet) {
 });
 ```
 
-Install `bitcore-wallet-client` before start:
-
-```
-npm i bitcore-wallet-client
-```
-
 Create a new wallet with the first script:
 
 ```
@@ -135,10 +137,34 @@ Return: [...]
 Note that the scripts created two files named `irene.dat` and `tomas.dat`. With these files you can get status, generate addresses, create proposals, sign transactions, etc.
 
 
+### **Open a wallet dat file**
+---
+
+``` javascript
+var Client = require('bitcore-wallet-client');
+
+
+var fs = require('fs');
+var BWS_INSTANCE_URL = 'https://bws.bitpay.com/bws/api'
+
+var client = new Client({
+  baseUrl: BWS_INSTANCE_URL,
+  verbose: false,
+});
+
+client.import(fs.readFileSync("filename.dat"));
+```
+Now you can get the balance for the wallet with:
+
+``` javascript
+  client.openWallet((err, res) => {
+    client.getBalance((err, res) => {
+      console.log(res);
+    });
+  });
+```
+
 # Global
-
-
-
 
 
 * * *

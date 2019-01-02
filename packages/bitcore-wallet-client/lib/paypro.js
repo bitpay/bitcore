@@ -166,7 +166,7 @@ PayPro.get = function(opts, cb) {
       memo: pd.get('memo'),
       time: pd.get('time'),
       merchant_data: md,
-      toAddress: addr.toString(),
+      toAddress: coin == 'bch' ? addr.toLegacyAddress() : addr.toString(),
       amount: amount,
       network: network,
       domain: opts.host,

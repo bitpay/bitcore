@@ -44,7 +44,11 @@ function get(arg, keys) {
     }
     return undefined;
   }
-  return networkMaps[arg];
+  if(networkMaps[arg] && networkMaps[arg].length >= 1) {
+    return networkMaps[arg][0];
+  } else {
+    return networkMaps[arg];
+  }
 }
 
 /**
@@ -97,7 +101,10 @@ function addNetwork(data) {
   }
   _.each(network, function(value) {
     if (!_.isUndefined(value) && !_.isObject(value)) {
-      networkMaps[value] = network;
+      if(!networkMaps[value]) {
+        networkMaps[value] = [];
+      }
+      networkMaps[value].push(network);
     }
   });
 
@@ -120,8 +127,9 @@ function removeNetwork(network) {
     }
   }
   for (var key in networkMaps) {
-    if (networkMaps[key] === network) {
-      delete networkMaps[key];
+    const index = networkMaps[key].indexOf(network);
+    if (index >= 0) {
+      delete networkMaps[key][index];
     }
   }
 }

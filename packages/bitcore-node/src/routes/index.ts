@@ -7,7 +7,11 @@ import { LogMiddleware, CacheMiddleware, CacheTimes, RateLimiter } from './middl
 const app = express();
 const bodyParser = require('body-parser');
 app.use(RateLimiter('GLOBAL', 10, 200, 4000));
-app.use(bodyParser.json());
+app.use(
+  bodyParser.json({
+    limit: 100000000
+  })
+);
 app.use(
   bodyParser.raw({
     limit: 100000000

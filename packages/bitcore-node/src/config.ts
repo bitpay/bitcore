@@ -1,6 +1,6 @@
 import { homedir, cpus } from 'os';
 import parseArgv from './utils/parseArgv';
-import ConfigType from './types/Config';
+import { ConfigType } from "./types/Config";
 let program = parseArgv([], ['config']);
 
 function findConfig(): ConfigType | undefined {
@@ -57,18 +57,31 @@ const Config = function(): ConfigType {
     dbName: process.env.DB_NAME || 'bitcore',
     dbPort: process.env.DB_PORT || '27017',
     numWorkers: cpus().length,
-    api: {
-      rateLimiter: {
-        whitelist: [
-          '::ffff:127.0.0.1'
-        ]
+    chains: {},
+    services: {
+      api: {
+        enabled: true,
+        rateLimiter: {
+          whitelist: ['::ffff:127.0.0.1']
+        },
+        wallets: {
+          allowCreationBeforeCompleteSync: false,
+          allowUnauthenticatedCalls: false
+        }
       },
-      wallets: {
-        allowCreationBeforeCompleteSync: false,
-        allowUnauthenticatedCalls: false
+      event: {
+        enabled: true
+      },
+      p2p: {
+        enabled: true
+      },
+      socket: {
+        enabled: true
+      },
+      storage: {
+        enabled: true
       }
-    },
-    chains: {}
+    }
   };
 
   let foundConfig = findConfig();
