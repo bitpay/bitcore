@@ -449,8 +449,8 @@ V8.prototype.initSocket = function(callbacks) {
     // script output, or similar.
     if (!data.address) return;
     var out;
-    let addr = self.coin == 'bch' ? BCHAddressTranslator.translate(data.address, 'copay', 'cashaddr') : data.address;
     try {
+      let addr = self.coin == 'bch' ? BCHAddressTranslator.translate(data.address, 'copay', 'cashaddr') : data.address;
       out = { 
         address: addr,
         amount: data.value / 1e8,

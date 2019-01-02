@@ -40,6 +40,11 @@ describe('BCH Address translator', function() {
       should.exist(res);
       res.should.equal('1LqBGSKuX5yYUonjxT5qGfpUsXKYYWeabA');
     });
+    it('should filter out broken addreseses', function() {
+      var res = t.translate(['qq2qkh9gs99326ytdg334lvhh999ke9mwgv3w37rl0','pepe', 123,'qq2qkh9gs99326ytdg334lvhh999ke9mwgv3w37rl0', 'false' ], 'copay');
+      res.should.deep.equal(['CJHshKVqXnUYRB51EeaXhGDPZ5dxtcDF3z','CJHshKVqXnUYRB51EeaXhGDPZ5dxtcDF3z']);
+    });
+ 
   });
 });
 

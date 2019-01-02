@@ -38,9 +38,15 @@ BCHAddressTranslator.translate = function(addresses, to, from) {
   if (from == to) {
     ret = addresses;
   } else {
-    ret =  _.map(addresses, function(x) {
+    ret =  _.filter(_.map(addresses, function(x) {
       var bitcore = Bitcore_[from == 'legacy' ? 'btc' : 'bch'];
-      var orig = new bitcore.Address(x).toObject();
+      let orig;
+
+      try { 
+        orig = new bitcore.Address(x).toObject();
+      } catch (e) {
+        return null;
+      }
 
       if (to == 'cashaddr') {
         return Bitcore_['bch'].Address.fromObject(orig).toCashAddress(true);
@@ -49,7 +55,7 @@ BCHAddressTranslator.translate = function(addresses, to, from) {
       } else if (to == 'legacy') {
         return Bitcore_['btc'].Address.fromObject(orig).toString();
       }
-    });
+    }));
   }
   if (wasArray) 
     return ret;
