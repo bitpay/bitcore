@@ -1922,10 +1922,10 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
   }
 
   var txpAmount = txp.getTotalAmount();
-  var baseTxpSize = txp.getEstimatedSize();
+  // var baseTxpSize = txp.getEstimatedSize();
   //var baseTxpFee = baseTxpSize * txp.feePerKb / 1000.;
   var baseTxpFee = 100000;
-  var sizePerInput = txp.getEstimatedSizeForSingleInput();
+  // var sizePerInput = txp.getEstimatedSizeForSingleInput();
   //var feePerInput = sizePerInput * txp.feePerKb / 1000.;
   var feePerInput = 0;
 
