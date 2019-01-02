@@ -1,5 +1,5 @@
 var config = {
-  basePath: '/bws/api',
+  basePath: '/vws/api',
   disableLogs: false,
   port: 3232,
 
@@ -38,6 +38,12 @@ var config = {
     },
   },
   blockchainExplorerOpts: {
+    xvg: {
+      livenet: {
+        provider: 'v8',
+        url: 'http://localhost:3000'
+      },
+    },
     btc: {
       livenet: {
         provider: 'v8',

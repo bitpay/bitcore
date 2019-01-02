@@ -5,7 +5,7 @@ var Defaults = {};
 Defaults.MIN_FEE_PER_KB = 0;
 Defaults.MAX_FEE_PER_KB = 10000 * 1000; // 10k sat/b
 Defaults.MIN_TX_FEE = 0;
-Defaults.MAX_TX_FEE = 0.1 * 1e8;
+Defaults.MAX_TX_FEE = 100000;
 Defaults.MAX_TX_SIZE_IN_KB = 100;
 
 Defaults.MAX_KEYS = 100;
@@ -25,7 +25,7 @@ Defaults.MAX_MAIN_ADDRESS_GAP = 20;
 Defaults.SCAN_ADDRESS_GAP = Defaults.MAX_MAIN_ADDRESS_GAP + 10;
 
 Defaults.FEE_LEVELS = {
-  btc: [{
+  xvg: [{
     name: 'urgent',
     nbBlocks: 2,
     multiplier: 1.5,
@@ -94,7 +94,7 @@ Defaults.BALANCE_CACHE_DIRECT_DURATION = 60;
 Defaults.BALANCE_CACHE_DURATION = 10;
 
 // Cache time for blockchain height (in seconds)
-Defaults.BLOCKHEIGHT_CACHE_TIME = 10 * 60;
+Defaults.BLOCKHEIGHT_CACHE_TIME = 15;
 
 
 // Max allowed timespan for notification queries in seconds

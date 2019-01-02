@@ -14,7 +14,7 @@ var Stringify = require('json-stable-stringify');
 
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
-  btc: Bitcore,
+  xvg: Bitcore,
   bch: require('bitcore-lib-cash')
 };
 
@@ -1706,9 +1706,9 @@ WalletService.prototype.getSendMaxInfo = function(opts, cb) {
         });
 
         var baseTxpSize = txp.getEstimatedSize();
-        var baseTxpFee = baseTxpSize * txp.feePerKb / 1000.;
+        var baseTxpFee = 100000;
         var sizePerInput = txp.getEstimatedSizeForSingleInput();
-        var feePerInput = sizePerInput * txp.feePerKb / 1000.;
+        var feePerInput = 100000;
 
         var partitionedByAmount = _.partition(inputs, function(input) {
           return input.satoshis > feePerInput;
@@ -1996,8 +1996,9 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
       total += input.satoshis;
       netTotal += netInputAmount;
 
-      var txpSize = baseTxpSize + selected.length * sizePerInput;
-      fee = Math.round(baseTxpFee + selected.length * feePerInput);
+      // var txpSize = baseTxpSize + selected.length * sizePerInput;
+      // fee = Math.round(baseTxpFee + selected.length * feePerInput);
+      fee = 100000;
 
       //log.debug('Tx size: ' + Utils.formatSize(txpSize) + ', Tx fee: ' + Utils.formatAmountInBtc(fee));
 
@@ -2007,11 +2008,13 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
       //log.debug('Fee/Tx amount: ' + Utils.formatRatio(feeVsAmountRatio) + ' (max: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MAX_FEE_VS_TX_AMOUNT_FACTOR) + ')');
       //log.debug('Tx amount/Input amount:' + Utils.formatRatio(amountVsUtxoRatio) + ' (min: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) + ')');
 
+      /*
       if (txpSize / 1000. > Defaults.MAX_TX_SIZE_IN_KB) {
         //log.debug('Breaking because tx size (' + Utils.formatSize(txpSize) + ') is too big (max: ' + Utils.formatSize(Defaults.MAX_TX_SIZE_IN_KB * 1000.) + ')');
         error = Errors.TX_MAX_SIZE_EXCEEDED;
         return false;
       }
+      */
 
       if (!_.isEmpty(bigInputs)) {
         if (amountVsUtxoRatio < Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) {
@@ -2039,7 +2042,7 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
         if (changeAmount > 0 && changeAmount <= dustThreshold) {
           //log.debug('Change below dust threshold (' + Utils.formatAmountInBtc(dustThreshold) + '). Incrementing fee to remove change.');
           // Remove dust change by incrementing fee
-          fee += changeAmount;
+          // fee += changeAmount;
         }
 
         return false;
@@ -2054,7 +2057,8 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
         var input = _.head(bigInputs);
         //log.debug('Using big input: ', Utils.formatUtxos(input));
         total = input.satoshis;
-        fee = Math.round(baseTxpFee + feePerInput);
+        // fee = Math.round(baseTxpFee + feePerInput);
+        fee = 100000;
         netTotal = total - fee;
         selected = [input];
       }
@@ -2250,8 +2254,8 @@ WalletService.prototype._validateAndSanitizeTxOpts = function(wallet, opts, cb) 
           return next(new ClientError('Invalid fee per KB'));
       }
 
-      if (_.isNumber(opts.fee) && _.isEmpty(opts.inputs))
-        return next(new ClientError('fee can only be set when inputs are specified'));
+      // if (_.isNumber(opts.fee) && _.isEmpty(opts.inputs))
+      //   return next(new ClientError('fee can only be set when inputs are specified'));
 
       next();
     },
@@ -2433,7 +2437,7 @@ WalletService.prototype.createTx = function(opts, cb) {
           },
           function(next) {
 
-            if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs)) return next();
+            if (_.isNumber(opts.fee)) return next();
             self._getFeePerKb(wallet, opts, function(err, fee) {
               feePerKb = fee;
               next();
@@ -2459,7 +2463,8 @@ WalletService.prototype.createTx = function(opts, cb) {
               addressType: wallet.addressType,
               customData: opts.customData,
               inputs: opts.inputs,
-              fee: opts.inputs && !_.isNumber(opts.feePerKb) ? opts.fee : null,
+              // fee: opts.inputs && !_.isNumber(opts.feePerKb) ? opts.fee : null,
+              fee: opts.fee,
               noShuffleOutputs: opts.noShuffleOutputs
             };
 
@@ -3105,7 +3110,7 @@ WalletService.prototype._normalizeV8TxHistory = function(txs, bcHeight) {
       confirmations: c,
       blockheight: tx.height > 0  ? tx.height:  null,
       fees:  tx.fee || (indexedFee[tx.txid] ?  Math.abs(indexedFee[tx.txid].satoshis) : null),
-      time: t,
+      time: parseInt(t),
       size: tx.size,
     };
     switch (tx.category) {
@@ -3172,7 +3177,7 @@ WalletService.prototype._normalizeTxHistory = function(txs) {
       blockheight: tx.blockheight,
       fees: parseInt((tx.fees * 1e8).toFixed(0)),
       size: tx.size,
-      time: t,
+      time: parseInt(t),
       inputs: inputs,
       outputs: outputs,
     };
@@ -3192,6 +3197,10 @@ WalletService._initBlockchainHeightCache = function() {
       livenet: {},
       testnet: {}
     },
+    xvg: {
+      livenet: {},
+      testnet: {}
+    }
   };
 };
 
@@ -3399,7 +3408,7 @@ WalletService._getResultTx = function(wallet, indexedAddresses, tx, opts) {
     action: action,
     amount: amount,
     fees: tx.fees,
-    time: tx.time,
+    time: parseInt(tx.time),
     addressTo: addressTo,
     confirmations: tx.confirmations,
     foreignCrafted: foreignCrafted,

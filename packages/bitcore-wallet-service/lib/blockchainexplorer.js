@@ -33,7 +33,10 @@ var PROVIDERS = {
       'livenet': 'https://api.bitpay.com',
       'testnet': 'https://api.bitpay.com',
     },
- 
+    'xvg': {
+      'livenet': 'http://localhost:3000',
+      'testnet': 'http://localhost:3000'
+    },
   },
 };
 

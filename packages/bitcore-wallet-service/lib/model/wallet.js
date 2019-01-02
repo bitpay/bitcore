@@ -10,7 +10,7 @@ var Address = require('./address');
 var Copayer = require('./copayer');
 var AddressManager = require('./addressmanager');
 var Bitcore = {
-  'btc': require('bitcore-lib'),
+  'xvg': require('bitcore-lib'),
   'bch': require('bitcore-lib-cash'),
 };
 

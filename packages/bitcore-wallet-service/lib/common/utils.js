@@ -9,7 +9,7 @@ var secp256k1 = require('secp256k1');
 var Utils = {};
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
-  btc: Bitcore,
+  xvg: Bitcore,
   bch: require('bitcore-lib-cash')
 };
 
@@ -118,6 +118,11 @@ Utils.formatAmount = function(satoshis, unit, opts) {
       maxDecimals: 6,
       minDecimals: 2,
     },
+    xvg: {
+      toSatoshis: 100000000,
+      maxDecimals: 6,
+      minDecimals: 2,
+    },
   };
 
   $.shouldBeNumber(satoshis);
@@ -222,8 +227,8 @@ Utils.checkValueInCollection = function(value, collection) {
 
 Utils.getAddressCoin = function(address) {
   try {
-    new Bitcore_['btc'].Address(address);
-    return 'btc';
+    new Bitcore_['xvg'].Address(address);
+    return 'xvg';
   } catch (e) {
     try {
       new Bitcore_['bch'].Address(address);

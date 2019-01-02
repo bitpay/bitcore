@@ -12,7 +12,7 @@ var Client;
 var BCHAddressTranslator = require('../bchaddresstranslator');
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
-  btc: Bitcore,
+  xvg: Bitcore,
   bch: require('bitcore-lib-cash')
 };
 

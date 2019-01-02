@@ -8,7 +8,7 @@ log.debug = log.verbose;
 log.disableColor();
 
 var Bitcore = {
-  'btc': require('bitcore-lib'),
+  'xvg': require('bitcore-lib'),
   'bch': require('bitcore-lib-cash'),
 };
 
@@ -34,6 +34,7 @@ TxProposal.create = function(opts) {
 
   var now = Date.now();
   x.createdOn = Math.floor(now / 1000);
+  x.timestamp = x.createdOn;
   x.id = opts.id || Uuid.v4();
   x.walletId = opts.walletId;
   x.creatorId = opts.creatorId;
@@ -81,6 +82,7 @@ TxProposal.fromObj = function(obj) {
 
   x.version = obj.version;
   x.createdOn = obj.createdOn;
+  x.timestamp = obj.createdOn;
   x.id = obj.id;
   x.walletId = obj.walletId;
   x.creatorId = obj.creatorId;
@@ -143,6 +145,7 @@ TxProposal.prototype._buildTx = function() {
   var self = this;
 
   var t = new Bitcore[self.coin].Transaction();
+  t.timestamp = this.timestamp;
 
   $.checkState(Utils.checkValueInCollection(self.addressType, Constants.SCRIPT_TYPES));
 
@@ -194,7 +197,7 @@ TxProposal.prototype._buildTx = function() {
   var totalOutputs = _.sumBy(t.outputs, 'satoshis');
 
   $.checkState(totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs, 'not-enought-inputs');
-  $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE, 'fee-too-high');
+  // $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE, 'fee-too-high');
 
   return t;
 };
