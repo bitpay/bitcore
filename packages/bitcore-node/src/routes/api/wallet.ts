@@ -151,7 +151,7 @@ router.get('/:pubKey/check', authenticate, async (req: AuthenticatedRequest, res
 // update wallet
 router.post('/:pubKey', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
-  let addressLines: { address: string }[] = req.body;
+  let addressLines: { address: string }[] = req.body.filter(line => !!line.address);
   let keepAlive;
   try {
     let addresses = addressLines.map(({ address }) => address);
