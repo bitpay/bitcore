@@ -30,7 +30,7 @@ const getFileKeys = file => {
 
 const parseKeys = keys => {
   let parsed = JSON.parse(keys);
-  if (typeof parsed === 'object') {
+  if (typeof parsed === 'object' && !parsed instanceof Array ) {
     return [parsed];
   } else {
     return parsed;
