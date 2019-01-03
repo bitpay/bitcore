@@ -141,4 +141,14 @@ export class Client {
     const url = `${this.baseUrl}/tx/send`;
     return request.post(url, { body: payload, json: true });
   }
+
+  async checkWallet(params) {
+    const { pubKey } = params;
+    const url = `${this.baseUrl}/wallet/${pubKey}/check`;
+    const signature = this.sign({ method: 'GET', url });
+    return request.get(url, {
+      headers: { 'x-signature': signature },
+      json: true
+    });
+  }
 }
