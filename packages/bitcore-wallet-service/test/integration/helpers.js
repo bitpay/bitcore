@@ -296,7 +296,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
   if (!helpers._utxos) helpers._utxos = {};
 
   var S = Bitcore_[wallet.coin].Script;
-
+  sinon.stub(server, 'checkWalletSync').callsArgWith(2, null, true);
   async.waterfall([
 
     function(next) {
@@ -361,6 +361,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
     },
   ], function(err) {
     should.not.exist(err);
+    server.checkWalletSync.restore();
     return cb(helpers._utxos);
   });
 };
@@ -442,6 +443,14 @@ helpers.stubHistoryV8 = function(nr, bcHeight, txs) {
 };
 
 
+helpers.stubCheckData = function(bc, server, isBCH, cb) {
+  server.storage.walletCheck({walletId:server.walletId, bch: isBCH}).then((x) => {
+    bc.getCheckData = sinon.stub().callsArgWith(1, null, {sum: x.sum});
+    return cb();
+  });
+};
+
+
 helpers.stubFeeLevels = function(levels) {
   blockchainExplorer.estimateFee = function(nbBlocks, cb) {
     var result = _.fromPairs(_.map(_.pick(levels, nbBlocks), function(fee, n) {
@@ -513,6 +522,8 @@ helpers.getProposalSignatureOpts = function(txp, signingKey) {
 
 helpers.createAddresses = function(server, wallet, main, change, cb) {
   // var clock = sinon.useFakeTimers('Date');
+  
+  sinon.stub(server, 'checkWalletSync').callsArgWith(2, null, true);
   async.mapSeries(_.range(main + change), function(i, next) {
     // clock.tick(1000);
     var address = wallet.createAddress(i >= main);
@@ -522,17 +533,21 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
   }, function(err, addresses) {
     should.not.exist(err);
     // clock.restore();
+    server.checkWalletSync.restore();
+
     return cb(_.take(addresses, main), _.takeRight(addresses, change));
   });
 };
 
 helpers.createAndPublishTx = function(server, txOpts, signingKey, cb) {
+  sinon.stub(server, 'checkWalletSync').callsArgWith(2, null, true);
   server.createTx(txOpts, function(err, txp) {
     should.not.exist(err, "Error creating a TX");
     should.exist(txp,"Error... no txp");
     var publishOpts = helpers.getProposalSignatureOpts(txp, signingKey);
     server.publishTx(publishOpts, function(err) {
       should.not.exist(err);
+      server.checkWalletSync.restore();
       return cb(txp);
     });
   });
@@ -596,6 +611,7 @@ helpers.setupGroupingBE = function (be) {
   be.register = sinon.stub().callsArgWith(1, null, null);
   be.addAddresses = sinon.stub().callsArgWith(2, null, null);
   be.getAddressUtxos = sinon.stub().callsArgWith(1, null, helpers._utxos);
+  be.getCheckData = sinon.stub().callsArgWith(1, null, {sum: 100});
 };
 
 module.exports = helpers;
