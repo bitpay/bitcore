@@ -266,8 +266,10 @@ export class InternalStateProvider implements CSP.IChainStateService {
       const hash = crypto.createHash('sha256');
       let lastAddress;
       addressStream.on('data', (walletAddress: IWalletAddress) => {
-        lastAddress = walletAddress.address;
-        hash.update(walletAddress.address);
+        if (walletAddress.address) {
+          lastAddress = walletAddress.address;
+          hash.update(walletAddress.address);
+        }
       });
       addressStream.on('end', () => {
        resolve({ lastAddress, hash: hash.digest('hex') });
