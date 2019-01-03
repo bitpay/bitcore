@@ -3299,7 +3299,6 @@ WalletService.prototype.checkWalletSync = function(bc, wallet, cb) {
 
 
           self.storage.setWalletAddressChecked(wallet.id, totalAddresses, (err) => {
-console.log('[server.js.3301:err:]',err); //TODO
             return cb(null, isOK);
           });
       })
