@@ -267,12 +267,14 @@ export class InternalStateProvider implements CSP.IChainStateService {
       addressStream.on('data', (walletAddress: IWalletAddress) => {
         if (walletAddress.address) {
           lastAddress = walletAddress.address;
-          const addressSum = Buffer.from(walletAddress.address).reduce((tot, cur) => { return (tot + cur) % Number.MAX_SAFE_INTEGER });
+          const addressSum = Buffer.from(walletAddress.address).reduce(
+            (tot, cur) => (tot + cur) % Number.MAX_SAFE_INTEGER
+          );
           sum = (sum + addressSum) % Number.MAX_SAFE_INTEGER;
         }
       });
       addressStream.on('end', () => {
-       resolve({ lastAddress, sum });
+        resolve({ lastAddress, sum });
       });
     });
   }
