@@ -297,4 +297,10 @@ export class Wallet {
     let keys = await Promise.all(keyPromises);
     return TxProvider.sign({ ...payload, keys });
   }
+
+  async checkWallet() {
+    return this.client.checkWallet({
+      pubKey: this.authPubKey
+    });
+  }
 }

@@ -133,6 +133,21 @@ router.get('/:pubKey/addresses', authenticate, async (req: AuthenticatedRequest,
   }
 });
 
+router.get('/:pubKey/check', authenticate, async (req: AuthenticatedRequest, res) => {
+  const { chain, network } = req.params;
+  const wallet = req.wallet!._id!;
+  try {
+    const result = await ChainStateProvider.walletCheck({
+      chain,
+      network,
+      wallet
+    });
+    return res.send(result);
+  } catch (err) {
+    return res.status(500).json(err);
+  }
+});
+
 // update wallet
 router.post('/:pubKey', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;

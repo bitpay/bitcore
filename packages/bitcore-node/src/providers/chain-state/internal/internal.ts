@@ -1,12 +1,13 @@
 import { TransactionJSON } from '../../../types/Transaction';
 import through2 from 'through2';
+import crypto from 'crypto';
 
 import { MongoBound } from '../../../models/base';
 import { ObjectId } from 'mongodb';
 import { CoinStorage, ICoin } from '../../../models/coin';
 import { BlockStorage, IBlock } from '../../../models/block';
 import { WalletStorage, IWallet } from '../../../models/wallet';
-import { WalletAddressStorage } from '../../../models/walletAddress';
+import { WalletAddressStorage, IWalletAddress } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { Storage } from '../../../services/storage';
 import { RPC } from '../../../rpc';
@@ -256,6 +257,22 @@ export class InternalStateProvider implements CSP.IChainStateService {
     let { walletId, limit = 1000, req, res } = params;
     let query = { wallet: walletId };
     Storage.apiStreamingFind(WalletAddressStorage, query, { limit }, req, res);
+  }
+
+  async walletCheck(params: CSP.WalletCheckParams) {
+    let { wallet } = params;
+    return new Promise(resolve => {
+      const addressStream = WalletAddressStorage.collection.find({ wallet });
+      const hash = crypto.createHash('sha256');
+      let lastAddress;
+      addressStream.on('data', (walletAddress: IWalletAddress) => {
+        lastAddress = walletAddress.address;
+        hash.update(walletAddress.address);
+      });
+      addressStream.on('end', () => {
+       resolve({ lastAddress, hash: hash.digest('hex') });
+      });
+    });
   }
 
   async streamMissingWalletAddresses(params: CSP.StreamWalletMissingAddressesParams) {

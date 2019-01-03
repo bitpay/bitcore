@@ -72,6 +72,10 @@ class ChainStateProxy implements CSP.ChainStateProvider {
     return this.get(params).streamWalletAddresses(params);
   }
 
+  walletCheck(params: CSP.WalletCheckParams) {
+    return this.get(params).walletCheck(params);
+  }
+
   async updateWallet(params: CSP.UpdateWalletParams) {
     return this.get(params).updateWallet(params);
   }
