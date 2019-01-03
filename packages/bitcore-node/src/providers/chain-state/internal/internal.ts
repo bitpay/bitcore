@@ -386,7 +386,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getCoinsForTx({ chain, network, txid }: { chain: string; network: string; txid: string }) {
-    const tx = await TransactionStorage.collection.find({ txid }).count();
+    const tx = await TransactionStorage.collection.countDocuments({ txid });
     if (tx === 0) {
       throw new Error(`No such transaction ${txid}`);
     }
