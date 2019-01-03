@@ -1089,7 +1089,7 @@ WalletService.prototype._canCreateAddress = function(ignoreMaxGap, cb) {
   });
 };
 
-WalletService.prototype._store = function(wallet, address, cb) {
+WalletService.prototype._store = function(wallet, address, cb, scanning) {
   var self = this;
   self.storage.storeAddressAndWallet(wallet, address, (err) => {
     if (err) return cb(err);
@@ -1098,7 +1098,7 @@ WalletService.prototype._store = function(wallet, address, cb) {
         log.warn("Error syncing v8 addresses: ", err2);
       }
       return cb();
-    });
+    }, 0, scanning);
   });
 };
 
@@ -3317,7 +3317,7 @@ WalletService.prototype.checkWalletSync = function(bc, wallet, cb) {
  * a V8 type blockexplorerer
  **/
 
-WalletService.prototype.syncWallet = function(wallet, cb, count) {
+WalletService.prototype.syncWallet = function(wallet, cb, count, scanning) {
   var self = this;
   count = count || 0;
   var bc = self._getBlockchainExplorer(wallet.coin, wallet.network);
@@ -3358,6 +3358,8 @@ WalletService.prototype.syncWallet = function(wallet, cb, count) {
       }
 
       syncAddr(addresses, (err) => {
+
+        if (scanning) return cb();
 
 
         self.checkWalletSync(bc, wallet,  (err, isOK) => {
@@ -4053,7 +4055,7 @@ WalletService.prototype._runScan = function(wallet, step, opts, cb) {
         self.logi(i+' addresses were added.' );
       }
 
-      self._store(wallet, addresses, next);
+      self._store(wallet, addresses, next, true);
     });
   }, function(error) {
     self.storage.fetchWallet(wallet.id, function(err, wallet) {

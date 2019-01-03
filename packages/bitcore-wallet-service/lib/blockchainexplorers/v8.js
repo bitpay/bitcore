@@ -134,7 +134,7 @@ V8.prototype.addAddresses = function (wallet, addresses, cb) {
     }
   }); 
 
-  var k = 'addAddresses '+addresses.length;
+  var k = 'addAddresses'+addresses.length;
   console.time(k);
   client.importAddresses({ 
     payload: payload, 
