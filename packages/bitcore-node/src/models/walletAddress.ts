@@ -53,7 +53,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
     return {
       updateOne: {
         filter: { wallet: wallet._id, address: address },
-        update: { $set: { wallet: wallet._id, address: address, chain, network } },
+        update: { $setOnInsert: { wallet: wallet._id, address: address, chain, network } },
         upsert: true
       }
     };
