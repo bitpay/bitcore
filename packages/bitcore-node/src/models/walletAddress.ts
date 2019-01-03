@@ -53,7 +53,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
     return {
       updateOne: {
         filter: { wallet: wallet._id, address: address },
-        update: { wallet: wallet._id, address: address, chain, network },
+        update: { $set: { wallet: wallet._id, address: address, chain, network } },
         upsert: true
       }
     };
@@ -66,18 +66,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
     return new Promise(async resolve => {
       let batch = new Array<string>();
       const AddAddresses = addresses => {
-        const addressOps = addresses.map(address => ({
-          updateOne: {
-            filter: { wallet: wallet._id, address },
-            update: {
-              $set: {
-                chain,
-                network
-              }
-            },
-            upsert: true
-          }
-        }));
+        const addressOps = addresses.map(address => this.getUpdateWalletAddressObj({ wallet, address }));
         return WalletAddressStorage.collection.bulkWrite(addressOps);
       };
       const UpdateCoins = addresses => {
