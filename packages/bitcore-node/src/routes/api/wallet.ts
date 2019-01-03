@@ -6,6 +6,7 @@ import { RequestHandler } from 'express-serve-static-core';
 import { ChainStateProvider } from '../../providers/chain-state';
 import logger from '../../logger';
 import { MongoBound } from '../../models/base';
+import crypto from 'crypto';
 const router = Router({ mergeParams: true });
 const secp256k1 = require('secp256k1');
 const bitcoreLib = require('bitcore-lib');
@@ -28,7 +29,7 @@ type AuthenticatedRequest = {
 const verifyRequestSignature = (params: VerificationPayload): boolean => {
   const { message, pubKey, signature } = params;
   const pub = new bitcoreLib.PublicKey(pubKey).toBuffer();
-  const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
+  const messageHash = crypto.createHash('sha256').update(crypto.createHash('sha256').update(Buffer.from(message)).digest()).digest();
   if (typeof signature === 'string') {
     return secp256k1.verify(messageHash, Buffer.from(signature, 'hex'), pub);
   } else {
