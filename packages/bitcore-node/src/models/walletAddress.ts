@@ -22,6 +22,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
 
   onConnect() {
     this.collection.createIndex({ address: 1, wallet: 1 }, { background: true });
+    this.collection.createIndex({ wallet: 1 }, { background: true });
   }
 
   _apiTransform(walletAddress: { address: string }, options: TransformOptions) {
