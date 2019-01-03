@@ -8,7 +8,7 @@ export class ListTransactionsStream extends Transform {
   }
 
   async _transform(transaction, _, done) {
-    const sending = !! await CoinStorage.collection.count({
+    const sending = !! await CoinStorage.collection.countDocuments({
       wallets: this.wallet._id,
       'wallets.0': { $exists: true },
       spentTxid: transaction.txid
