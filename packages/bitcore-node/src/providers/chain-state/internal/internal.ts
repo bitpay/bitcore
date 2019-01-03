@@ -1,6 +1,5 @@
 import { TransactionJSON } from '../../../types/Transaction';
 import through2 from 'through2';
-import crypto from 'crypto';
 
 import { MongoBound } from '../../../models/base';
 import { ObjectId } from 'mongodb';
@@ -236,16 +235,19 @@ export class InternalStateProvider implements CSP.IChainStateService {
     let { wallet } = params;
     return new Promise(resolve => {
       const addressStream = WalletAddressStorage.collection.find({ wallet });
-      const hash = crypto.createHash('sha256');
+      let sum = 0;
       let lastAddress;
       addressStream.on('data', (walletAddress: IWalletAddress) => {
         if (walletAddress.address) {
           lastAddress = walletAddress.address;
-          hash.update(walletAddress.address);
+          const addressSum = Buffer.from(walletAddress.address).reduce(
+            (tot, cur) => (tot + cur) % Number.MAX_SAFE_INTEGER
+          );
+          sum = (sum + addressSum) % Number.MAX_SAFE_INTEGER;
         }
       });
       addressStream.on('end', () => {
-       resolve({ lastAddress, hash: hash.digest('hex') });
+        resolve({ lastAddress, sum });
       });
     });
   }
