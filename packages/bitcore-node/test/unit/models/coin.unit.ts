@@ -31,6 +31,7 @@ describe('Coin Model', function() {
         mintTxid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
         mintHeight: 1,
         network: 'regtest',
+        confirmations: -1,
         mintIndex: 0,
         chain: 'BTC',
         spentTxid: '',
@@ -71,6 +72,7 @@ describe('Coin Model', function() {
         spentHeight: SpentHeightIndicators.unspent,
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
         coinbase: true,
+        confirmations: -1,
         script: '',
         value: 5000000000.0
       });

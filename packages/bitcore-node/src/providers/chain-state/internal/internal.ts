@@ -11,7 +11,7 @@ import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { Storage } from '../../../services/storage';
 import { RPC } from '../../../rpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
-import { TransactionStorage } from '../../../models/transaction';
+import { TransactionStorage, ITransaction } from '../../../models/transaction';
 import { ListTransactionsStream } from './transforms';
 import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
 import { StateStorage } from '../../../models/state';
@@ -86,7 +86,18 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (options.sort) {
       cursor = cursor.sort(options.sort);
     }
-    return cursor.toArray();
+    let blocks = await cursor.toArray();
+    const tip = await this.getLocalTip(params);
+    const tipHeight = tip ? tip.height : 0;
+    const blockTransform = (b: IBlock) => {
+      let confirmations = 0;
+      if (b.height && b.height >= 0) {
+        confirmations = tipHeight - b.height + 1;
+      }
+      const convertedBlock = BlockStorage._apiTransform(b, { object: true }) as IBlock;
+      return { ...convertedBlock, confirmations };
+    };
+    return blocks.map(blockTransform);
   }
 
   private getBlocksQuery(params: CSP.GetBlockParams | CSP.StreamBlocksParams) {
@@ -156,7 +167,16 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (blockHash !== undefined) {
       query.blockHash = blockHash;
     }
-    return Storage.apiStreamingFind(TransactionStorage, query, args, req, res);
+    const tip = await this.getLocalTip(params);
+    const tipHeight = tip ? tip.height : 0;
+    return Storage.apiStreamingFind(TransactionStorage, query, args, req, res, t => {
+      let confirmations = 0;
+      if (t.blockHeight !== undefined && t.blockHeight >= 0) {
+        confirmations = tipHeight - t.blockHeight + 1;
+      }
+      const convertedTx = TransactionStorage._apiTransform(t, { object: true }) as Partial<ITransaction>;
+      return JSON.stringify({ ...convertedTx, confirmations: confirmations });
+    });
   }
 
   async getTransaction(params: CSP.StreamTransactionParams) {
@@ -166,9 +186,16 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
     network = network.toLowerCase();
     let query = { chain: chain, network, txid: txId };
+    const tip = await this.getLocalTip(params);
+    const tipHeight = tip ? tip.height : 0;
     const found = await TransactionStorage.collection.findOne(query);
     if (found) {
-      return TransactionStorage._apiTransform(found, { object: true }) as TransactionJSON;
+      let confirmations = 0;
+      if (found.blockHeight && found.blockHeight >= 0) {
+        confirmations = tipHeight - found.blockHeight + 1;
+      }
+      const convertedTx = TransactionStorage._apiTransform(found, { object: true }) as TransactionJSON;
+      return { ...convertedTx, confirmations: confirmations };
     } else {
       return undefined;
     }
@@ -364,7 +391,18 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (args.includeSpent !== 'true') {
       query.spentHeight = { $lt: SpentHeightIndicators.pending };
     }
-    Storage.apiStreamingFind(CoinStorage, query, { limit }, req, res);
+    const tip = await this.getLocalTip(params);
+    const tipHeight = tip ? tip.height : 0;
+    const utxoTransform = (c: ICoin): string => {
+      let confirmations = 0;
+      if (c.mintHeight && c.mintHeight >= 0) {
+        confirmations = tipHeight - c.mintHeight + 1;
+      }
+      c.confirmations = confirmations;
+      return CoinStorage._apiTransform(c) as string;
+    };
+
+    Storage.apiStreamingFind(CoinStorage, query, { limit }, req, res, utxoTransform);
   }
 
   async getFee(params: CSP.GetEstimateSmartFeeParams) {
