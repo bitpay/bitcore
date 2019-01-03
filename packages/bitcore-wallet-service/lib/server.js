@@ -3263,29 +3263,48 @@ WalletService.prototype.registerWalletV8 = function(wallet, cb) {
 WalletService.prototype.checkWalletSync = function(bc, wallet, cb) {
   var self = this;
 
-  // TODO remove on native bch addr
-  self.storage.walletCheck({walletId: wallet.id, bch: wallet.coin == 'bch'})
-    .then( (localCheck) => {
-      bc.getCheckData(wallet, (err, serverCheck) => {
+  if (!wallet.addressManager && !wallet.addressManager.receiveAddressIndex) 
+    return cb(null, true);
+
+  // check cache
+  const totalAddresses = wallet.addressManager.receiveAddressIndex+ wallet.addressManager.changeAddressIndex;
 
 
-        // If there is an error, just ignore it (server does not support walletCheck)
-        if (err) {
-          log.warn("Error at bitcore WalletCheck, ignoring" + err);
-          return cb();
-        }
+  self.storage.getWalletAddressChecked(wallet.id, (err, checkedTotal) => {
 
-        var isOK = serverCheck.sum == localCheck.sum;
+    if (checkedTotal == totalAddresses)  {
+      log.debug("addresses checked already");
+      return cb(null, true);
+    }
 
-        if (isOK) {
-          log.debug('Wallet Sync Check OK');
-        } else {
-          log.warn('ERROR: Wallet check failed:',localCheck, serverCheck);
-        }
+    // TODO remove on native bch addr
+    self.storage.walletCheck({walletId: wallet.id, bch: wallet.coin == 'bch'})
+      .then( (localCheck) => {
+        bc.getCheckData(wallet, (err, serverCheck) => {
 
-        return cb(null, isOK);
+
+          // If there is an error, just ignore it (server does not support walletCheck)
+          if (err) {
+            log.warn("Error at bitcore WalletCheck, ignoring" + err);
+            return cb();
+          }
+
+          var isOK = serverCheck.sum == localCheck.sum;
+
+          if (isOK) {
+            log.debug('Wallet Sync Check OK');
+          } else {
+            log.warn('ERROR: Wallet check failed:',localCheck, serverCheck);
+          }
+
+
+          self.storage.setWalletAddressChecked(wallet.id, totalAddresses, (err) => {
+console.log('[server.js.3301:err:]',err); //TODO
+            return cb(null, isOK);
+          });
       })
     });
+  });
 }
 
 
@@ -3340,6 +3359,8 @@ WalletService.prototype.syncWallet = function(wallet, cb, count) {
       }
 
       syncAddr(addresses, (err) => {
+
+
         self.checkWalletSync(bc, wallet,  (err, isOK) => {
           // ignore err
           if (err) return cb();

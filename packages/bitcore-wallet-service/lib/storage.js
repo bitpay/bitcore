@@ -715,6 +715,38 @@ Storage.prototype.getTxHistoryCacheStatusV8 = function(walletId, cb) {
 };
 
 
+Storage.prototype.getWalletAddressChecked = function(walletId, cb) {
+  var self = this;
+  self.db.collection(collections.CACHE).findOne({
+    walletId: walletId,
+    type: 'addressChecked',
+    key: null
+  }, function(err, result) {
+    if (err || !result) return cb(err);
+    return cb(null, result.totalAddresses);
+  });
+};
+
+Storage.prototype.setWalletAddressChecked = function(walletId, totalAddresses, cb) {
+  this.db.collection(collections.CACHE).update({
+    walletId: walletId,
+    type: 'addressChecked',
+    key: null
+  }, {
+    walletId: walletId,
+    type: 'addressChecked',
+    key: null,
+    totalAddresses: totalAddresses
+  }, {
+    w: 1,
+    upsert: true,
+  }, cb);
+};
+ 
+
+
+
+
 // --------         ---------------------------  Total
 //           > Time >
 //                       ^to     <=  ^from
@@ -1367,6 +1399,7 @@ Storage.prototype.walletCheck = async function(params) {
   return new Promise(resolve => {
     const addressStream = self.db.collection(collections.ADDRESSES).find({ walletId: walletId });
     let sum = 0;
+    let count = 0;
     let lastAddress;
     addressStream.on('data', (walletAddress) => {
 
