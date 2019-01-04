@@ -55,10 +55,9 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
-    const { args, req, res } = params;
-    const { limit = 10 } = args;
+    const { req, res } = params;
     const query = this.getAddressQuery(params);
-    Storage.apiStreamingFind(CoinStorage, query, { limit }, req, res);
+    Storage.apiStreamingFind(CoinStorage, query, {}, req, res);
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
@@ -253,9 +252,9 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   streamWalletAddresses(params: CSP.StreamWalletAddressesParams) {
-    let { walletId, limit = 1000, req, res } = params;
+    let { walletId, req, res } = params;
     let query = { wallet: walletId };
-    Storage.apiStreamingFind(WalletAddressStorage, query, { limit }, req, res);
+    Storage.apiStreamingFind(WalletAddressStorage, query, {}, req, res);
   }
 
   async walletCheck(params: CSP.WalletCheckParams) {
