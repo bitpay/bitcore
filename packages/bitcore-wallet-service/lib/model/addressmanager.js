@@ -53,10 +53,6 @@ AddressManager.prototype._incrementIndex = function(isChange) {
 AddressManager.prototype.rewindIndex = function(isChange, step, n) {
   step = _.isUndefined(step) ? 1 : step;
   n = _.isUndefined(n) ? 1 : n;
-console.log('[addressmanager.js.65] BEFORE REWIND, ADDRESS SKIPPED/step/n', this.skippedPaths.length, step, n); //TODO
-console.log('change/receive:', this.changeAddressIndex, this.receiveAddressIndex);
-
-
 
   if (isChange) {
     this.changeAddressIndex = Math.max(0, this.changeAddressIndex - n * step);
@@ -67,9 +63,6 @@ console.log('change/receive:', this.changeAddressIndex, this.receiveAddressIndex
   //clear skipppedPath, since index is rewinded
   // n address were actually derived.
   this.skippedPaths = this.skippedPaths.splice(0,this.skippedPaths.length - step * n + n);
-
-console.log('[addressmanager.js.65] AFTER REWIND, ADDRESS SKIPPED/step/n', this.skippedPaths.length, step, n); //TODO
-console.log('change/receive:', this.changeAddressIndex, this.receiveAddressIndex);
 };
 
 AddressManager.prototype.getCurrentIndex = function(isChange) {

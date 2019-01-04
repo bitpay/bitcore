@@ -9,7 +9,7 @@ var io = require('socket.io-client');
 const request = require('request-promise-native');
 var Common = require('../common');
 var Client;
-var BCHAddressTranslator = require('../bchaddresstranslator');
+  var BCHAddressTranslator = require('../bchaddresstranslator');
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
@@ -120,8 +120,6 @@ V8.prototype._getAuthClient = function (wallet) {
   });
 };
 
-
-
 V8.prototype.addAddresses = function (wallet, addresses, cb) {
   var self = this;
   var client = this._getAuthClient(wallet);
@@ -136,7 +134,7 @@ V8.prototype.addAddresses = function (wallet, addresses, cb) {
     }
   }); 
 
-  var k = 'addAddresses '+addresses.length;
+  var k = 'addAddresses'+addresses.length;
   console.time(k);
   client.importAddresses({ 
     payload: payload, 
@@ -147,8 +145,9 @@ V8.prototype.addAddresses = function (wallet, addresses, cb) {
       return cb(null, ret);
     })
       .catch ((err) => {
-        return cb(err) 
+        return cb(err);
       });
+
 };
 
 
@@ -234,6 +233,24 @@ V8.prototype.getUtxos = function(wallet, cb) {
       .catch(cb);
   });
 };
+
+/**
+ * Check wallet addresses
+ */
+V8.prototype.getCheckData = function(wallet, cb) {
+  var self = this;
+  var client = this._getAuthClient(wallet);
+  console.time('WalletCheck');
+  client.getCheckData({pubKey: wallet.beAuthPublicKey2, payload: {} })
+    .then( (checkInfo) => {
+      console.timeEnd('WalletCheck');
+      return cb(null,checkInfo);
+    })
+    .catch(cb);
+};
+
+
+
 /**
  * Broadcast a transaction to the bitcoin network
  */

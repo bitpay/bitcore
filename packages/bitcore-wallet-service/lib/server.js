@@ -1074,7 +1074,6 @@ WalletService.prototype._canCreateAddress = function(ignoreMaxGap, cb) {
       bc.getAddressActivity(latestAddresses[--i].address, function(err, res) {
         if (err) return next(err);
         activityFound = !!res;
-console.log('[server.js.1050:activityFound:]',activityFound); //TODO
         return next();
       });
     }, function(err) {
@@ -1090,7 +1089,7 @@ console.log('[server.js.1050:activityFound:]',activityFound); //TODO
   });
 };
 
-WalletService.prototype._store = function(wallet, address, cb) {
+WalletService.prototype._store = function(wallet, address, cb, checkSync) {
   var self = this;
   self.storage.storeAddressAndWallet(wallet, address, (err) => {
     if (err) return cb(err);
@@ -1099,7 +1098,7 @@ WalletService.prototype._store = function(wallet, address, cb) {
         log.warn("Error syncing v8 addresses: ", err2);
       }
       return cb();
-    });
+    }, !checkSync);
   });
 };
 
@@ -1131,7 +1130,7 @@ WalletService.prototype.createAddress = function(opts, cb) {
       }, function() {
         return cb(null, address);
       });
-    });
+    }, true);
   };
 
   function getFirstAddress(wallet, cb) {
@@ -2472,7 +2471,7 @@ WalletService.prototype.createTx = function(opts, cb) {
           },
           function(next) {
             if (!changeAddress || wallet.singleAddress || opts.dryRun) return next();
-            self._store(wallet, txp.changeAddress, next);
+            self._store(wallet, txp.changeAddress, next, true);
           },
           function(next) {
             if (opts.dryRun) return next();
@@ -3261,6 +3260,56 @@ WalletService.prototype.registerWalletV8 = function(wallet, cb) {
    });
 }
 
+WalletService.prototype.checkWalletSync = function(bc, wallet, cb) {
+  var self = this;
+
+  if (!wallet.addressManager && !wallet.addressManager.receiveAddressIndex) 
+    return cb(null, true);
+
+  // check cache
+  const totalAddresses = wallet.addressManager.receiveAddressIndex+ wallet.addressManager.changeAddressIndex;
+
+
+  self.storage.getWalletAddressChecked(wallet.id, (err, checkedTotal) => {
+
+    if (checkedTotal == totalAddresses)  {
+      log.debug("addresses checked already");
+      return cb(null, true);
+    }
+
+    // TODO remove on native bch addr
+    self.storage.walletCheck({walletId: wallet.id, bch: wallet.coin == 'bch'})
+      .then( (localCheck) => {
+        bc.getCheckData(wallet, (err, serverCheck) => {
+
+
+          // If there is an error, just ignore it (server does not support walletCheck)
+          if (err) {
+            log.warn("Error at bitcore WalletCheck, ignoring" + err);
+            return cb();
+          }
+
+          var isOK = serverCheck.sum == localCheck.sum;
+
+          if (isOK) {
+            log.debug('Wallet Sync Check OK');
+          } else {
+            log.warn('ERROR: Wallet check failed:',localCheck, serverCheck);
+            return cb(null, isOK);
+          }
+
+          self.storage.setWalletAddressChecked(wallet.id, totalAddresses, (err) => {
+            return cb(null, isOK);
+          });
+      })
+    });
+  });
+}
+
+
+
+
+
 
 
 /**
@@ -3268,8 +3317,9 @@ WalletService.prototype.registerWalletV8 = function(wallet, cb) {
  * a V8 type blockexplorerer
  **/
 
-WalletService.prototype.syncWallet = function(wallet, cb) {
+WalletService.prototype.syncWallet = function(wallet, cb, skipCheck, count) {
   var self = this;
+  count = count || 0;
   var bc = self._getBlockchainExplorer(wallet.coin, wallet.network);
   if (!bc) {
     return cb(new Error('Could not get blockchain explorer instance'));
@@ -3278,21 +3328,7 @@ WalletService.prototype.syncWallet = function(wallet, cb) {
   if (!bc.supportsGrouping())  {
     return cb();
   }
-  /**
-   * Returns an array with arrays of the given size.
-   *
-   * @param myArray {Array} Array to split
-   * @param chunkSize {Integer} Size of every group
-   */
-  function chunkArray(myArray, chunk_size){
-    var results = [];
 
-    while (myArray.length) {
-      results.push(myArray.splice(0, chunk_size));
-    }
-
-    return results;
-  }
 
   self.updateWalletV8Keys(wallet);
 
@@ -3306,24 +3342,45 @@ WalletService.prototype.syncWallet = function(wallet, cb) {
         return cb(err);
       }
 
-      if (!addresses || _.isEmpty(addresses)) {
-        self.logi('Addresses already sync'); 
-        return cb();
+      function syncAddr(addresses, icb) {
+        if (!addresses || _.isEmpty(addresses)) {
+          //self.logi('Addresses already sync'); 
+          return icb();
+        }
+
+        var addressStr = _.map(addresses,'address');
+        self.logi('Syncing addresses: ', addressStr.length); 
+        bc.addAddresses(wallet, addressStr, (err) => {
+          if (err) return cb(err);
+          
+          self.storage.markSyncedAddresses(addressStr, icb);
+        });
       }
 
-      // TODO: move this to a stream / transform
-      var chunks = chunkArray( _.map(addresses,'address'), Defaults.ADDRESS_SYNC_BATCH_SIZE);
-      async.each(chunks, (chunk, icb) => {
-        self.logi('Syncing addresses: ', chunk.length); 
-        bc.addAddresses(wallet, chunk, (err) => {
-          if (err) {
-            return icb(err);
+      syncAddr(addresses, (err) => {
+
+        if (skipCheck) return cb();
+
+
+        self.checkWalletSync(bc, wallet,  (err, isOK) => {
+          // ignore err
+          if (err) return cb();
+
+          if (isOK) return  cb();
+
+          if (count++ >= 1) {
+            log.warn("## ERROR: TRIED TO SYNC WALLET AND FAILED. GIVING UP");
+            return cb();
           }
-          self.storage.markSyncedAddresses(chunk, icb);
-        })
-      }, (err) => {
-          return cb(err);
-      });
+          log.info("Trying to RESYNC wallet... count:" + count);
+
+          // Reset sync and sync again...
+          wallet.beRegistered = false;
+          self.storage.deregisterWallet(wallet.id, () => {
+            self.syncWallet(wallet, cb, false, count);
+          });
+        });
+      })
     });
   });
 };
@@ -3525,7 +3582,7 @@ WalletService.prototype.getTxHistoryV8 = function(bc, wallet, opts, skip, limit,
   async.series([
     (next) => {
       // be sure the wallet is onsync
-      self.syncWallet(wallet, next);
+      self.syncWallet(wallet, next, true);
     },
     (next) => {
       self._getBlockchainHeight(wallet.coin, wallet.network, function(err, height, hash) {
@@ -3937,7 +3994,6 @@ WalletService.prototype._runScan = function(wallet, step, opts, cb) {
     if (step > 1) {
       gap = _.min([gap , 3]);
     }
-console.log('[server.js.3789:gap:]',gap); //TODO
 
     async.whilst(function() {
       self.logi('Scanning addr branch: %s index: %d gap %d step %d', derivator.id, derivator.index(), inactiveCounter, step);
@@ -3947,7 +4003,7 @@ console.log('[server.js.3789:gap:]',gap); //TODO
 
       opts.bc.getAddressActivity(address.address, function(err, activity) {
         if (err) return next(err);
-console.log('[server.js.3779:address:] SCANING:' + address.address+ ':'+address.path + " :" + !!activity); //TODO
+        console.log('[server.js.3779:address:] SCANING:' + address.address+ ':'+address.path + " :" + !!activity); //TODO
 
         allAddresses.push(address);
         inactiveCounter = activity ? 0 : inactiveCounter + 1;
@@ -4036,6 +4092,7 @@ WalletService.prototype.startScan = function(opts, cb) {
     if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
 
     setTimeout(function() {
+      wallet.beRegistered = false;
       self.storage.deregisterWallet(wallet.id, () => {
         self.scan(opts, scanFinished);
       });

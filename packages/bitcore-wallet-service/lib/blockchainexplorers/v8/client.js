@@ -45,6 +45,20 @@ console.log('[client.js.37:url:]',url); //TODO
   });
 };
 
+
+Client.prototype.getCheckData = async function (params) {
+  const { payload, pubKey } = params;
+  const url = `${this.baseUrl}/wallet/${pubKey}/check`;
+console.log('WALLET CHECK ',url); //TODO
+  const signature = this.sign({ method: 'GET', url, payload });
+  return request.get(url, {
+    headers: { 'x-signature': signature },
+    body: payload,
+    json: true
+  });
+};
+
+
 Client.prototype.getAddressTxos = async function (params) {
   const { unspent, address } = params;
   const args = unspent ? `?unspent=${unspent}` : '';
@@ -73,7 +87,7 @@ Client.prototype.getCoins = async function (params) {
     extra = `?includeSpent=${includeSpent}`;
   }
   const url = `${this.baseUrl}/wallet/${pubKey}/utxos${extra}`;
-  console.log('[client.js.74:url:]',url); //TODO
+  console.log('GET UTXOS:',url); //TODO
   const signature = this.sign({ method: 'GET', url, payload });
   return request.get(url, {
     headers: { 'x-signature': signature },
