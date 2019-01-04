@@ -21,7 +21,11 @@ export function Web3Proxy(req: express.Request, res: express.Response) {
     } else {
       requestStream = req.pipe(request(url));
     }
-    requestStream.on('error', e => console.log(e)).pipe(res);
+    requestStream
+      .on('error', () => {
+        res.status(500).send('An Error Has Occurred');
+      })
+      .pipe(res);
   } else {
     res.status(500).send(`This node is not configured with a web3 connection for ${chain} ${network} `);
   }
