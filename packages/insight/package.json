@@ -1,0 +1,95 @@
+{
+  "name": "@bitpay/insight",
+  "version": "8.0.0",
+  "description": "A blockchain explorer for Bitcore",
+  "homepage": "https://github.com/bitpay/bitcore",
+  "repository": "git://github.com/bitpay/bitcore.git",
+  "bugs": {
+    "url": "https://github.com/bitpay/bitcore/issues"
+  },
+  "license": "MIT",
+  "keywords": [
+    "insight",
+    "insight-ui",
+    "blockchain",
+    "block explorer",
+    "bitcoin",
+    "bitcore",
+    "API"
+  ],
+  "config": {
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  },
+  "prettier": {
+    "singleQuote": true
+  },
+  "scripts": {
+    "ng": "./node_modules/.bin/ng",
+    "start": "./node_modules/.bin/ng serve",
+    "build": "./node_modules/.bin/ng build",
+    "test": "./node_modules/.bin/ng test",
+    "lint": "./node_modules/.bin/run-s lint:*",
+    "lint:ng": "./node_modules/.bin/ng lint",
+    "lint:prettier": "./node_modules/.bin/prettier '{*,**/*}.{js,ts,md,json,css}' --list-different",
+    "fix": "./node_modules/.bin/run-s fix:*",
+    "fix:prettier": "./node_modules/.bin/prettier '{*,**/*}.{js,ts,md,json,css}' --write",
+    "fix:tslint": "./node_modules/.bin/tslint --fix --project .",
+    "e2e": "./node_modules/.bin/ng e2e"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular/common": "~6.1.1",
+    "@angular/core": "~6.1.1",
+    "@angular/forms": "~6.1.1",
+    "@angular/http": "~6.1.1",
+    "@angular/platform-browser": "~6.1.1",
+    "@angular/platform-browser-dynamic": "~6.1.1",
+    "@angular/router": "~6.1.1",
+    "@ionic-native/app-preferences": "^5.0.0-beta.21",
+    "@ionic-native/core": "5.0.0-beta.15",
+    "@ionic-native/splash-screen": "5.0.0-beta.15",
+    "@ionic-native/status-bar": "5.0.0-beta.15",
+    "@ionic/angular": "^4.0.0-beta.12",
+    "angular-pipes": "^9.0.0",
+    "backoff-rxjs": "0.0.10",
+    "core-js": "^2.5.3",
+    "fast-deep-equal": "^2.0.1",
+    "ngx-logger": "^3.3.2",
+    "rxjs": "~6.3.3",
+    "zone.js": "^0.8.26"
+  },
+  "devDependencies": {
+    "@angular-devkit/architect": "~0.7.2",
+    "@angular-devkit/build-angular": "~0.7.2",
+    "@angular-devkit/core": "~0.7.2",
+    "@angular-devkit/schematics": "~0.7.2",
+    "@angular/cli": "~6.2.3",
+    "@angular/compiler": "~6.1.1",
+    "@angular/compiler-cli": "~6.1.1",
+    "@angular/language-service": "~6.1.1",
+    "@ionic/ng-toolkit": "^1.0.0",
+    "@ionic/schematics-angular": "^1.0.0",
+    "@types/jasmine": "~2.8.6",
+    "@types/jasminewd2": "~2.0.3",
+    "@types/node": "~10.9.2",
+    "codelyzer": "~4.4.2",
+    "cz-conventional-changelog": "^2.1.0",
+    "jasmine-core": "~2.99.1",
+    "jasmine-spec-reporter": "~4.2.1",
+    "karma": "~3.0.0",
+    "karma-chrome-launcher": "~2.2.0",
+    "karma-coverage-istanbul-reporter": "~2.0.0",
+    "karma-jasmine": "~1.1.1",
+    "karma-jasmine-html-reporter": "^0.2.2",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^1.14.3",
+    "protractor": "~5.4.0",
+    "ts-node": "~7.0.0",
+    "tslint": "~5.11.0",
+    "tslint-angular": "^1.1.2",
+    "tslint-config-prettier": "^1.15.0",
+    "typescript": "~2.9.2"
+  }
+}

@@ -1,0 +1,47 @@
+version: "3"
+
+services:
+
+  test_runner:
+    build:
+      context: .
+      dockerfile: Dockerfile-test
+    ports:
+      - 8100:8100
+      - 3000:3000
+    environment:
+      - DB_HOST=db
+      - DB_NAME=bitcore-test
+      - BITCORE_CONFIG_PATH=/bitcore/bitcore-test.config.json
+    depends_on:
+      - db
+      - bitcoin
+
+  db:
+    image: mongo
+
+  bitcoin:
+    image: ruimarinho/bitcoin-core:0.16
+    command:
+      -printtoconsole
+      -regtest=1
+      -txindex=1
+      -listen=1
+      -server=1
+      -irc=0
+      -dnsseed=1
+      -upnp=0
+      -port=8332
+      -rpcport=8333
+      -rpcallowip=172.0.0.0/8
+      -rpcbind=0.0.0.0
+      -rpcuser=bitcorenodetest
+      -rpcpassword=local321
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.28.0.0/16

@@ -1,0 +1,48 @@
+{
+  "name": "bitcore-client",
+  "description": "Wallet client for Bitcore node",
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "version": "8.0.0",
+  "author": "Justin Langston <nitsujlangston@gmail.com>",
+  "main": "ts_build/index.js",
+  "types": "./ts_build/index.d.ts",
+  "prettier": {
+    "singleQuote": true
+  },
+  "scripts": {
+    "clean": "rm -rf ts_build",
+    "compile": "npm run clean && ./node_modules/.bin/tsc",
+    "test": "mocha ./test/unit"
+  },
+  "dependencies": {
+    "JSONStream": "~1.3.1",
+    "async": "^2.5.0",
+    "bcrypt": "^2.0.1",
+    "bitcore-lib": "^8.0.0",
+    "bitcore-lib-cash": "^8.0.0",
+    "bitcore-mnemonic": "^8.0.0",
+    "commander": "^2.15.1",
+    "leveldown": "^3.0.0",
+    "levelup": "^2.0.2",
+    "mkdirp": "^0.5.1",
+    "progress": "^2.0.0",
+    "promptly": "^3.0.3",
+    "request": "^2.87.0",
+    "request-promise-native": "^1.0.5",
+    "secp256k1": "^3.5.0"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^3.0.0",
+    "@types/node": "^10.12.15",
+    "@types/request": "^2.48.1",
+    "@types/request-promise-native": "^1.0.15",
+    "@types/secp256k1": "^3.5.0",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.8.0",
+    "mocha": "^5.0.5",
+    "sinon": "^4.4.8",
+    "typescript": "^3.2.2"
+  }
+}

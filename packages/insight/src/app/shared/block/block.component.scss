@@ -1,0 +1,109 @@
+$labelColor: #949494;
+
+.card {
+  border-radius: 3px;
+  max-width: 800px;
+  margin: 1em auto;
+  background-color: #fff;
+  box-shadow: 0 1px 5px 0 rgba(0, 0, 0, 0.08);
+  font-size: 0.9rem;
+}
+
+.section {
+  & + .section {
+    border-top: 1px solid #f1f2f5;
+  }
+}
+
+.header,
+.identifiers {
+  display: flex;
+  align-items: center;
+}
+
+.header {
+  padding: 1em;
+  .detail-view & {
+    padding: 1.5em;
+  }
+}
+
+.identifiers {
+  width: 150px;
+}
+
+.height {
+  font-size: 1.3rem;
+  color: var(--ion-color-primary);
+}
+
+.tip-tag {
+  text-transform: uppercase;
+  color: #fff;
+  background-color: #6eb542;
+  border-radius: 3px;
+  font-size: 0.7em;
+  display: inline-block;
+  padding: 0.1em 0.5em;
+  margin-left: 0.5em;
+}
+
+.time {
+  flex-grow: 1;
+  text-align: right;
+}
+
+.time,
+.key {
+  color: $labelColor;
+}
+
+.property + .property {
+  margin-top: 0.5rem;
+  .detail-view & {
+    margin-top: 0.8rem;
+  }
+}
+
+.key {
+  display: inline-block;
+  margin-right: 0.3em;
+  .detail-view & {
+    margin-right: 0.4em;
+  }
+}
+
+.link {
+  color: var(--app-link-color);
+  cursor: pointer;
+}
+
+.reward {
+  display: inline;
+}
+
+table {
+  width: 100%;
+}
+
+th,
+td {
+  padding: 1em;
+}
+
+td {
+  word-break: break-all;
+}
+
+$border: 1px solid #eee;
+
+th {
+  font-weight: normal;
+  color: $labelColor;
+  border-right: $border;
+  text-align: left;
+}
+
+tr + tr {
+  border-top: $border;
+}

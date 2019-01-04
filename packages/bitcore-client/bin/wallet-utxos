@@ -1,0 +1,23 @@
+#!/usr/bin/env node
+
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
+
+program
+  .version(require('../package.json').version)
+  .option('--name <name>', 'REQUIRED - Wallet name')
+  .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--includeSpent', 'optional - Include spent transaction outputs')
+  .parse(process.argv);
+
+const main = async () => {
+  const { name, path, includeSpent } = program;
+  try {
+    const wallet = await Wallet.loadWallet({ name, path });
+    wallet.getUtxos({ includeSpent }).pipe(process.stdout);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();

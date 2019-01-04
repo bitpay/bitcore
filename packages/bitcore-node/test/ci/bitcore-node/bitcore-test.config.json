@@ -1,0 +1,23 @@
+{
+  "bitcoreNode": {
+    "chains": {
+      "BTC": {
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "bitcoin",
+              "port": 8332
+            }
+          ],
+          "rpc": {
+            "host": "bitcoin",
+            "port": 8333,
+            "username": "bitcorenodetest",
+            "password": "local321"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,40 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+program
+  .option('-c, --coin <coin>', 'coin (btc/bch)')
+  .option('-n, --network <network>', 'the network for the given chain')
+  .option('-w, --wallet <walletId>', 'wallet id')
+  .option('-s, --spent', 'show spent transactions')
+  .parse(process.argv);
+
+var args = program.args;
+
+
+var opts = {};
+if (program.coin) { 
+    opts.coin = program.coin;
+}
+
+if (program.network) { 
+    opts.network = program.network;
+}
+
+if(program.wallet) {
+  opts.wallet = program.wallet;
+}
+
+if(program.spent) {
+  opts.spent = program.spent;
+}
+
+utils.getClient(program, {
+  mustExist: true
+}, function(client) {
+  client.getUtxos(opts, function(err, utxos) {
+    utils.die(err);
+    console.log(utxos);
+  });
+});

@@ -1,0 +1,40 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Launch & Debug Node",
+      "program": "${workspaceFolder}/build/src/server.js",
+      "args": ["--DEBUG", "true"],
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/build/**/*.js"],
+      "console": "integratedTerminal",
+      "preLaunchTask": "npm: tsc"
+    },
+    {
+      "type": "node",
+      "request": "attach",
+      "name": "Attach to Node",
+      "port": 9229,
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/build/**/*"]
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Unit Tests",
+      "program": "${workspaceRoot}/build/test/runners/unit.js",
+      "protocol": "auto",
+      "preLaunchTask": "npm: tsc:test"
+    },
+    {
+      "type": "node",
+      "request": "launch",
+      "name": "Debug Integration Tests",
+      "program": "${workspaceRoot}/build/test/runners/integration.js",
+      "protocol": "auto",
+      "preLaunchTask": "npm: tsc:test"
+    }
+  ]
+}

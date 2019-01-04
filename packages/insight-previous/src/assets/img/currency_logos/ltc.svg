@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="30px" height="30px" viewBox="0 0 30 30" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 46.2 (44496) - http://www.bohemiancoding.com/sketch -->
+    <title>litecoin</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Exploration" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="select-currency" transform="translate(-135.000000, -516.000000)" fill-rule="nonzero" fill="#BEBEBE">
+            <g id="LTC" transform="translate(135.000000, 514.000000)">
+                <g id="litecoin" transform="translate(0.000000, 2.000000)">
+                    <path d="M14.9978166,0.0793957695 C6.7571516,0.0793957695 0.076944392,6.75969362 0.076944392,15.0002674 C0.076944392,23.240932 6.7571516,29.9213166 14.9978166,29.9213166 C23.2383906,29.9213166 29.9186882,23.240932 29.9186882,15.0002674 C29.9186882,6.75969362 23.2383,0.0793957695 14.9978166,0.0793957695 Z M12.6942498,6.99841486 L17.3093483,6.99841486 L15.6819997,13.1259761 L17.9406036,12.3008837 L17.9600755,12.35399 L17.3893613,14.4987689 L15.0948236,15.3369607 L14.1258136,18.986236 L21.793452,18.986236 L21.0060653,21.9194637 L8.72315148,21.9194637 L9.97751782,17.2066495 L8.20200344,17.8552523 L8.78918003,15.6440909 L10.5659338,14.9949571 L12.6942498,6.99841486 Z" id="Fill-1"></path>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

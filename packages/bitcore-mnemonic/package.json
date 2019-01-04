@@ -1,0 +1,52 @@
+{
+  "name": "bitcore-mnemonic",
+  "version": "8.0.0",
+  "description": "BIP39 Mnemonics implemented for Bitcore.",
+  "author": "BitPay <dev@bitpay.com>",
+  "main": "index.js",
+  "scripts": {
+    "lint": "gulp lint",
+    "test": "gulp test",
+    "test:ci": "npm run test",
+    "coverage": "gulp coverage",
+    "build": "gulp"
+  },
+  "contributors": [
+    {
+      "name": "Yemel Jardi",
+      "email": "angel.jardi@gmail.com"
+    },
+    {
+      "name": "Matias Alejo Garcia",
+      "email": "ematiu@gmail.com"
+    }
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bitpay/bitcore-mnemonic.git"
+  },
+  "keywords": [
+    "bitcoin",
+    "bitcore",
+    "mnemonic",
+    "crypto",
+    "cryptography",
+    "encryption"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "assert": "^1.4.1",
+    "bitcore-build": "^8.0.0",
+    "brfs": "^2.0.1",
+    "chai": "^4.2.0",
+    "gulp": "^4.0.0",
+    "mocha": "^5.2.0"
+  },
+  "dependencies": {
+    "bitcore-lib": "^8.0.0",
+    "unorm": "^1.4.1"
+  },
+  "peerDependencies": {
+    "bitcore-lib": "^8.0.0"
+  }
+}

@@ -1,0 +1,33 @@
+<ion-header>
+  <head-nav [title]="'Address'"></head-nav>
+</ion-header>
+
+<ion-content padding>
+  <div *ngIf="loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <div *ngIf="!loading" class="page-content">
+    <h1>Address</h1>
+    <p class="ellipsis">{{ address.addrStr }}</p>
+    <h2>Summary</h2>
+
+    <ion-list class="list--summary">
+      <ion-item>
+        Final Balance
+        <ion-note item-end>
+          {{ getBalance() | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+        </ion-note>
+      </ion-item>
+    </ion-list>
+
+    <p text-center>
+      <qr-code [value]="address.addrStr" [size]="160"></qr-code>
+      <p>
+        <div *ngIf="showTransactions">
+          <h2>Transactions</h2>
+          <coin-list [coins]="transactions"></coin-list>
+        </div>
+  </div>
+
+</ion-content>

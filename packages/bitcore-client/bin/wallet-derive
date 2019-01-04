@@ -1,0 +1,73 @@
+#!/usr/bin/env node
+
+const bitcoreLibs = {
+  BTC: require('bitcore-lib'),
+  BCH: require('bitcore-lib-cash')
+};
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
+const promptly = require('promptly');
+
+program
+  .version(require('../package.json').version)
+  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--gap [gap]', 'optional - Number of addresses to derive (will derive that many change addresses too)')
+  .option('--change [change]', 'optional - should derive change addresses')
+  .option('--path [path]', 'optional - Custom wallet storage path')
+  .parse(process.argv);
+
+function derivePrivateKey(addressIndex, isChange, key) {
+  const changeNum = isChange ? 1 : 0;
+  const path = `m/${changeNum}/${addressIndex}`;
+  return key.derive(path);
+}
+
+const main = async () => {
+  const { name, path, gap=20, change=false } = program;
+  let wallet;
+  try {
+    const password = await promptly.password('Wallet Password:');
+    wallet = await Wallet.loadWallet({ name, path });
+    wallet = await wallet.unlock(password);
+
+    const { chain, network } = wallet;
+    let unusedAddressCounter = 0;
+
+    let index = 0;
+
+    if (change) {
+      index = wallet.changeAddressIndex || 0;
+    }
+
+    const xprivkey = wallet.unlocked.masterKey.xprivkey;
+    const HDPrivateKey = new bitcoreLibs[chain].HDPrivateKey(xprivkey);
+
+    while (unusedAddressCounter < gap) {
+      const derived = derivePrivateKey(index, change, HDPrivateKey);
+      const privKey = derived.privateKey.toString();
+      const address = derived.privateKey.toAddress(network).toString(true);
+      await wallet.importKeys({ keys: [{ privKey, address }] });
+
+      const hasTransactions = await wallet.client.getAddressTxos({ address });
+
+      if (!hasTransactions.length) {
+        unusedAddressCounter++;
+      } else {
+        unusedAddressCounter = 0;
+      }
+      index++;
+      if (change) {
+        wallet.changeAddressIndex = index;
+        console.log('Current change index: ', index);
+      } else {
+        wallet.addressIndex = index;
+        console.log(`Current address index: ${index}: ${address}`);
+      }
+    }
+    wallet.saveWallet();
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();

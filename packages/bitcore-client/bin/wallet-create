@@ -1,0 +1,39 @@
+#!/usr/bin/env node
+
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
+const promptly = require('promptly');
+
+program
+  .version(require('../package.json').version)
+  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--chain <chain>', 'REQUIRED - Chain (BTC/BCH/ETH, etc)')
+  .option(
+    '--network <network>',
+    'REQUIRED - Network (livenet/testnet/regtest, etc)'
+  )
+  .option('--baseUrl [host]', 'optional - Specify custom Bitcore API URL')
+  .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--mnemonic [phrase]', 'optional - Seed using existing backup phrase')
+  .parse(process.argv);
+
+const main = async () => {
+  const { name, baseUrl, chain, network, path, phrase } = program;
+  try {
+    const password = await promptly.password('Wallet Password:');
+    await Wallet.create({
+      name,
+      baseUrl,
+      chain,
+      network,
+      path,
+      phrase,
+      password
+    });
+    console.log('Wallet created!');
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();

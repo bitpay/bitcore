@@ -1,0 +1,33 @@
+#!/usr/bin/env node
+
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
+const promptly = require('promptly');
+
+program
+  .version(require('../package.json').version)
+  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--tx <tx>', 'REQUIRED - The transaction to sign')
+  .parse(process.argv);
+
+const main = async () => {
+  const { name, path, tx } = program;
+  let wallet;
+  try {
+    const password = await promptly.password('Wallet Password:');
+    wallet = await Wallet.loadWallet({ name, path });
+    wallet = await wallet.unlock(password);
+    let signedTx = await wallet.signTx({ tx });
+
+    console.log(
+      JSON.stringify({
+        signedTx: signedTx.uncheckedSerialize()
+      })
+    );
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();

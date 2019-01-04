@@ -1,0 +1,27 @@
+<div>
+  <div *ngIf="loading">
+    <ion-spinner name="crescent"></ion-spinner>
+  </div>
+
+  <div *ngIf="!loading">
+    <ion-grid class="grid--table">
+
+      <ion-row>
+        <ion-col><b>Hash</b></ion-col>
+        <ion-col text-right><b>Value Out</b></ion-col>
+      </ion-row>
+
+      <ion-row *ngFor="let tx of transactions">
+        <ion-col col-9>
+          <div class="ellipsis">
+            <a (click)="goToTx(tx.txid)">{{ tx.txid }}</a>
+          </div>
+        </ion-col>
+        <ion-col col-3 text-right>
+          {{ currency.getConversion(tx.valueOut) }}
+        </ion-col>
+      </ion-row>
+
+    </ion-grid>
+  </div>
+</div>

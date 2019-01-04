@@ -1,8 +1,0 @@
-Package: bitcore
-Version: {{ deb_package_version }}
-Section: base
-Priority: optional
-Architecture: {{ deb_package_arch }}
-Depends: nodejs, nodejs-legacy, npm, build-essential, libzmq3-dev
-Maintainer: {{ deb_package_maintainer }}
-Description: {{ deb_package_description }}

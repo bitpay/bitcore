@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+'use strict';
+
+const { Storage } = require('../ts_build/storage');
+const program = require('../ts_build/program');
+
+program
+  .version(require('../package.json').version)
+  .option('--path [path]', 'optional - Where wallets are stored')
+  .parse(process.argv);
+
+const main = async () => {
+  const { path } = program;
+  const storage = new Storage({createIfMissing: false, errorIfExists: false, path});
+  const walletStream = storage.listWallets();
+  walletStream.on('data', (wallet) => {
+    const { name, chain, network } = JSON.parse(wallet.toString());
+    console.log({name, chain, network});
+  });
+};
+
+main();

@@ -1,0 +1,112 @@
+{
+  "name": "@bitpay/insight-previous",
+  "description": "A blockchain explorer for Bitcore",
+  "version": "8.0.0",
+  "repository": "git://github.com/bitpay/bitcore.git",
+  "bugs": {
+    "url": "https://github.com/bitpay/bitcore/issues"
+  },
+  "homepage": "https://github.com/bitpay/bitcore",
+  "license": "MIT",
+  "keywords": [
+    "insight",
+    "insight-ui",
+    "blockchain",
+    "block explorer",
+    "bitcoin",
+    "bitcore",
+    "API"
+  ],
+  "config": {
+    "ionic_webpack": "webpack.config.js",
+    "commitizen": {
+      "path": "cz-conventional-changelog"
+    }
+  },
+  "prettier": {
+    "singleQuote": true
+  },
+  "scripts": {
+    "clean": "ionic-app-scripts clean",
+    "build": "ionic-app-scripts build",
+    "build:prod": "CHAIN=BTC NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:build",
+    "serve:prod": "npm run build:prod && npm run serve",
+    "serve": "./node_modules/.bin/serve www",
+    "ionic:build": "ionic-app-scripts build",
+    "ionic:serve": "ionic-app-scripts serve",
+    "e2e": "ionic-app-scripts build && protractor",
+    "postinstall": "./node_modules/.bin/webdriver-manager update --gecko false",
+    "start": "ionic serve",
+    "test": "./node_modules/@angular/cli/bin/ng test --code-coverage",
+    "test:unit-e2e": "ng test --watch=false --code-coverage --browsers ChromeHeadless && npm run e2e --browsers ChromeHeadless",
+    "!test:ci": "./node_modules/.bin/ng test --watch=false --code-coverage --browsers ChromeHeadless",
+    "cov": "opn coverage/index.html",
+    "lint": "run-s lint:*",
+    "lint:ng": "ng lint",
+    "lint:prettier": "prettier '{*,**/*}.{js,ts,md,json,css}' --list-different",
+    "fix": "run-s fix:*",
+    "fix:prettier": "prettier '{*,**/*}.{js,ts,md,json,css}' --write",
+    "fix:tslint": "tslint --fix --project ."
+  },
+  "dependencies": {
+    "@angular/common": "4.1.3",
+    "@angular/compiler": "4.1.3",
+    "@angular/compiler-cli": "4.1.3",
+    "@angular/core": "4.1.3",
+    "@angular/forms": "4.1.3",
+    "@angular/http": "4.1.3",
+    "@angular/platform-browser": "4.1.3",
+    "@angular/platform-browser-dynamic": "4.1.3",
+    "@angular/router": "4.1.3",
+    "@ionic-native/core": "3.10.2",
+    "@ionic-native/splash-screen": "3.10.2",
+    "@ionic-native/status-bar": "3.10.2",
+    "@ionic/storage": "2.0.1",
+    "angular2-moment": "^1.6.0",
+    "angular2-qrcode": "^2.0.1",
+    "bitcore-lib": "^0.16.0",
+    "bitcore-lib-cash": "^0.19.0",
+    "cz-conventional-changelog": "^2.1.0",
+    "ionic-angular": "3.4.2",
+    "ionicons": "3.0.0",
+    "node-sass": "^4.11.0",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^1.14.3",
+    "rxjs": "5.4.0",
+    "standard-version": "^4.4.0",
+    "sw-toolbox": "3.6.0",
+    "tslint-angular": "^1.1.2",
+    "tslint-config-prettier": "^1.15.0",
+    "zone.js": "0.8.12"
+  },
+  "devDependencies": {
+    "@angular/cli": "^1.7.4",
+    "@ionic/app-scripts": "1.3.7",
+    "@types/jasmine": "2.5.41",
+    "@types/node": "7.0.4",
+    "codecov": "2.2.0",
+    "ionic": "4.1.2",
+    "jasmine-core": "2.5.2",
+    "jasmine-spec-reporter": "3.2.0",
+    "karma": "1.4.1",
+    "karma-chrome-launcher": "2.1.1",
+    "karma-cli": "1.0.1",
+    "karma-coverage-istanbul-reporter": "1.2.1",
+    "karma-jasmine": "1.1.0",
+    "karma-jasmine-html-reporter": "0.2.2",
+    "ng": "0.0.0",
+    "opn-cli": "^3.1.0",
+    "protractor": "5.1.2",
+    "serve": "^10.0.1",
+    "serve-static": "1.12.3",
+    "ts-node": "3.0.4",
+    "tslint": "5.3.2",
+    "tslint-eslint-rules": "4.1.1",
+    "typescript": "2.3.3",
+    "webdriver-manager": "^12.1.1",
+    "webpack-merge": "^4.1.3"
+  },
+  "engines": {
+    "node": ">=8"
+  }
+}
