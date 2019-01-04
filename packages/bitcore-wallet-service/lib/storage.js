@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('crypto');
 var _ = require('lodash');
 var async = require('async');
 var $ = require('preconditions').singleton();
@@ -11,6 +12,10 @@ var Bitcore = require('bitcore-lib');
 var mongodb = require('mongodb');
 
 var Model = require('./model');
+var BCHAddressTranslator = require('./bchaddresstranslator');
+
+
+
 
 var collections = {
   WALLETS: 'wallets',
@@ -710,6 +715,38 @@ Storage.prototype.getTxHistoryCacheStatusV8 = function(walletId, cb) {
 };
 
 
+Storage.prototype.getWalletAddressChecked = function(walletId, cb) {
+  var self = this;
+  self.db.collection(collections.CACHE).findOne({
+    walletId: walletId,
+    type: 'addressChecked',
+    key: null
+  }, function(err, result) {
+    if (err || !result) return cb(err);
+    return cb(null, result.totalAddresses);
+  });
+};
+
+Storage.prototype.setWalletAddressChecked = function(walletId, totalAddresses, cb) {
+  this.db.collection(collections.CACHE).update({
+    walletId: walletId,
+    type: 'addressChecked',
+    key: null
+  }, {
+    walletId: walletId,
+    type: 'addressChecked',
+    key: null,
+    totalAddresses: totalAddresses
+  }, {
+    w: 1,
+    upsert: true,
+  }, cb);
+};
+ 
+
+
+
+
 // --------         ---------------------------  Total
 //           > Time >
 //                       ^to     <=  ^from
@@ -785,7 +822,7 @@ Storage.prototype.getTxHistoryCacheV8 = function(walletId, skip, limit, cb) {
 
       if (_.isNull(cacheStatus.tipId))
         return cb(null, []);
-      console.log('Cache status in GET:', cacheStatus); //TODO
+      //console.log('Cache status in GET:', cacheStatus); //TODO
 
 
       var firstPosition = cacheStatus.tipIndex - skip - limit + 1;
@@ -1355,6 +1392,38 @@ Storage.prototype.storeFeeLevelsCache = function (opts, values, cb) {
 };
 
 
+Storage.prototype.walletCheck = async function(params) {
+  let { walletId, bch } = params;
+  var self = this;
+
+  return new Promise(resolve => {
+    const addressStream = self.db.collection(collections.ADDRESSES).find({ walletId: walletId });
+    let sum = 0;
+    let count = 0;
+    let lastAddress;
+    addressStream.on('data', (walletAddress) => {
+
+      if (walletAddress.address) {
+        let addr = walletAddress.address;
+
+        // TODO remove on native cashaddr
+        if (bch) {
+          addr = BCHAddressTranslator.translate(addr, 'cashaddr', 'copay');
+          $.checkState(addr, 'ERROR: wrong addr format on DB for wallet:' + walletId);
+        }
+
+        lastAddress = addr;
+        const addressSum = Buffer.from(addr).reduce(
+          (tot, cur) => (tot + cur) % Number.MAX_SAFE_INTEGER
+        );
+        sum = (sum + addressSum) % Number.MAX_SAFE_INTEGER;
+      }
+    });
+    addressStream.on('end', () => {
+      resolve({ lastAddress, sum });
+    });
+  });
+}
 
 
 Storage.collections = collections;
