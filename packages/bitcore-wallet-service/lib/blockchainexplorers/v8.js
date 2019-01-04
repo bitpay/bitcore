@@ -145,8 +145,9 @@ V8.prototype.addAddresses = function (wallet, addresses, cb) {
       return cb(null, ret);
     })
       .catch ((err) => {
-        return cb(err) 
+        return cb(err);
       });
+
 };
 
 

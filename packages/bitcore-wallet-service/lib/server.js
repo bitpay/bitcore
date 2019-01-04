@@ -1089,7 +1089,7 @@ WalletService.prototype._canCreateAddress = function(ignoreMaxGap, cb) {
   });
 };
 
-WalletService.prototype._store = function(wallet, address, cb, scanning) {
+WalletService.prototype._store = function(wallet, address, cb, checkSync) {
   var self = this;
   self.storage.storeAddressAndWallet(wallet, address, (err) => {
     if (err) return cb(err);
@@ -1098,7 +1098,7 @@ WalletService.prototype._store = function(wallet, address, cb, scanning) {
         log.warn("Error syncing v8 addresses: ", err2);
       }
       return cb();
-    }, 0, scanning);
+    }, !checkSync);
   });
 };
 
@@ -1130,7 +1130,7 @@ WalletService.prototype.createAddress = function(opts, cb) {
       }, function() {
         return cb(null, address);
       });
-    });
+    }, true);
   };
 
   function getFirstAddress(wallet, cb) {
@@ -2471,7 +2471,7 @@ WalletService.prototype.createTx = function(opts, cb) {
           },
           function(next) {
             if (!changeAddress || wallet.singleAddress || opts.dryRun) return next();
-            self._store(wallet, txp.changeAddress, next);
+            self._store(wallet, txp.changeAddress, next, true);
           },
           function(next) {
             if (opts.dryRun) return next();
@@ -3295,8 +3295,8 @@ WalletService.prototype.checkWalletSync = function(bc, wallet, cb) {
             log.debug('Wallet Sync Check OK');
           } else {
             log.warn('ERROR: Wallet check failed:',localCheck, serverCheck);
+            return cb(null, isOK);
           }
-
 
           self.storage.setWalletAddressChecked(wallet.id, totalAddresses, (err) => {
             return cb(null, isOK);
@@ -3317,7 +3317,7 @@ WalletService.prototype.checkWalletSync = function(bc, wallet, cb) {
  * a V8 type blockexplorerer
  **/
 
-WalletService.prototype.syncWallet = function(wallet, cb, count, scanning) {
+WalletService.prototype.syncWallet = function(wallet, cb, skipCheck, count) {
   var self = this;
   count = count || 0;
   var bc = self._getBlockchainExplorer(wallet.coin, wallet.network);
@@ -3359,7 +3359,7 @@ WalletService.prototype.syncWallet = function(wallet, cb, count, scanning) {
 
       syncAddr(addresses, (err) => {
 
-        if (scanning) return cb();
+        if (skipCheck) return cb();
 
 
         self.checkWalletSync(bc, wallet,  (err, isOK) => {
@@ -3368,8 +3368,8 @@ WalletService.prototype.syncWallet = function(wallet, cb, count, scanning) {
 
           if (isOK) return  cb();
 
-          if (count++ >= 3) {
-            log.warn("## ERROR: TRIED TO SYNC WALLET 3 TIMES AND FAILED. GIVING UP");
+          if (count++ >= 1) {
+            log.warn("## ERROR: TRIED TO SYNC WALLET AND FAILED. GIVING UP");
             return cb();
           }
           log.info("Trying to RESYNC wallet... count:" + count);
@@ -3377,7 +3377,7 @@ WalletService.prototype.syncWallet = function(wallet, cb, count, scanning) {
           // Reset sync and sync again...
           wallet.beRegistered = false;
           self.storage.deregisterWallet(wallet.id, () => {
-            self.syncWallet(wallet, cb, count);
+            self.syncWallet(wallet, cb, false, count);
           });
         });
       })
@@ -3582,7 +3582,7 @@ WalletService.prototype.getTxHistoryV8 = function(bc, wallet, opts, skip, limit,
   async.series([
     (next) => {
       // be sure the wallet is onsync
-      self.syncWallet(wallet, next);
+      self.syncWallet(wallet, next, true);
     },
     (next) => {
       self._getBlockchainHeight(wallet.coin, wallet.network, function(err, height, hash) {
@@ -4055,7 +4055,7 @@ WalletService.prototype._runScan = function(wallet, step, opts, cb) {
         self.logi(i+' addresses were added.' );
       }
 
-      self._store(wallet, addresses, next, true);
+      self._store(wallet, addresses, next);
     });
   }, function(error) {
     self.storage.fetchWallet(wallet.id, function(err, wallet) {
