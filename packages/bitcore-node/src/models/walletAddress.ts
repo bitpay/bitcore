@@ -11,6 +11,7 @@ export type IWalletAddress = {
   address: string;
   chain: string;
   network: string;
+  processed: boolean;
 };
 
 export class WalletAddressModel extends BaseModel<IWalletAddress> {
@@ -33,73 +34,35 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
     return JSON.stringify(transform);
   }
 
-  getUpdateCoinsObj(params: { wallet: IWallet; address: string }) {
-    const { wallet, address } = params;
-    const { chain, network } = wallet;
-
-    return {
-      updateMany: {
-        filter: { chain, network, address },
-        update: {
-          $addToSet: { wallets: wallet._id }
-        }
-      }
-    };
-  }
-
-  getUpdateWalletAddressObj(params: { wallet: IWallet; address: string }) {
-    const { wallet, address } = params;
-    const { chain, network } = wallet;
-
-    return {
-      updateOne: {
-        filter: { wallet: wallet._id, address: address, chain, network },
-        update: { $setOnInsert: { wallet: wallet._id, address: address, chain, network } },
-        upsert: true
-      }
-    };
-  }
-
   async updateCoins(params: { wallet: IWallet; addresses: string[] }) {
     const { wallet, addresses } = params;
     const { chain, network } = wallet;
 
+    const unprocessedAddresses: Array<string> = [];
     return new Promise(async resolve => {
-      let batch = new Array<string>();
-      const AddAddresses = addresses => {
-        const addressOps = addresses.map(address => this.getUpdateWalletAddressObj({ wallet, address }));
-        return WalletAddressStorage.collection.bulkWrite(addressOps);
-      };
-      const UpdateCoins = addresses => {
-        return CoinStorage.collection.updateMany(
-          { chain, network, address: { $in: addresses } },
-          { $addToSet: { wallets: wallet._id } }
-        );
-      };
-
-      const ProcessBatch = batch => {
-        return Promise.all([AddAddresses(batch), UpdateCoins(batch)]);
-      };
-
-      for (const address of addresses) {
-        batch.push(address);
-        if (batch.length > 1000) {
-          await ProcessBatch(batch);
-          batch = new Array<string>();
+      for (let address of addresses) {
+        const updatedAddress = await this.collection.findOneAndUpdate({ 
+          wallet: wallet._id, address: address, chain, network
+        }, { $setOnInsert: { wallet: wallet._id, address: address, chain, network }}, { returnOriginal: false, upsert: true });
+        if (!updatedAddress.value!.processed) {
+          unprocessedAddresses.push(address); 
+          await CoinStorage.collection.updateMany(
+            { chain, network, address },
+            { $addToSet: { wallets: wallet._id } }
+          );
         }
-      }
-      if (batch.length > 0) {
-        await ProcessBatch(batch);
-        batch = new Array<string>();
       }
 
       let coinStream = CoinStorage.collection
         .find({ wallets: wallet._id, 'wallets.0': { $exists: true } })
-        .project({ spentTxid: 1, mintTxid: 1 })
+        .project({ spentTxid: 1, mintTxid: 1, address: 1 })
         .addCursorFlag('noCursorTimeout', true);
       let txids = {};
       coinStream.on('data', (coin: ICoin) => {
         coinStream.pause();
+        if (!unprocessedAddresses.includes(coin.address)){
+          return coinStream.resume();
+        }
         if (!txids[coin.mintTxid]) {
           TransactionStorage.collection.updateMany(
             { txid: coin.mintTxid, network, chain },
@@ -114,9 +77,12 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
           );
         }
         txids[coin.spentTxid] = true;
-        coinStream.resume();
+        return coinStream.resume();
       });
       coinStream.on('end', async () => {
+        for (const address of unprocessedAddresses){
+          await this.collection.updateOne({ address, wallet: wallet._id }, { $set: {processed: true }});
+        }
         resolve();
       });
     });
