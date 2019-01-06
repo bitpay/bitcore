@@ -258,9 +258,9 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async walletCheck(params: CSP.WalletCheckParams) {
-    let { wallet } = params;
+    let { chain, network, wallet } = params;
     return new Promise(resolve => {
-      const addressStream = WalletAddressStorage.collection.find({ wallet });
+      const addressStream = WalletAddressStorage.collection.find({ chain, network, wallet }).project({ address: 1 });
       let sum = 0;
       let lastAddress;
       addressStream.on('data', (walletAddress: IWalletAddress) => {
