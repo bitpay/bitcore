@@ -81,7 +81,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
       });
       coinStream.on('end', async () => {
         for (const address of unprocessedAddresses){
-          await this.collection.updateOne({ address, wallet: wallet._id }, { $set: {processed: true }});
+          await this.collection.updateOne({ chain, network, address, wallet: wallet._id }, { $set: {processed: true }});
         }
         resolve();
       });
