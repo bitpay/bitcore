@@ -22,8 +22,8 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
   allowedPaging = [];
 
   onConnect() {
-    this.collection.createIndex({ address: 1, wallet: 1 }, { background: true });
-    this.collection.createIndex({ wallet: 1 }, { background: true });
+    this.collection.createIndex({ chain: 1, network: 1, address: 1, wallet: 1 }, { background: true, unique: true });
+    this.collection.createIndex({ chain: 1, network: 1, wallet: 1, address: 1 }, { background: true, unique: true });
   }
 
   _apiTransform(walletAddress: { address: string }, options: TransformOptions) {
