@@ -12,14 +12,15 @@ import { ObjectID } from 'mongodb';
 import { MongoBound } from '../../../src/models/base';
 
 describe('Block Model', function() {
+  let addBlockParams = {
+    chain: 'BTC',
+    network: 'regtest',
+    block: TEST_BLOCK,
+    height: 1355,
+    initialSyncComplete: false
+  };
+
   describe('addBlock', () => {
-    let addBlockParams = {
-      chain: 'BTC',
-      network: 'regtest',
-      block: TEST_BLOCK,
-      height: 1355,
-      initialSyncComplete: false
-    };
     let sandbox;
     beforeEach(() => {
       sandbox = sinon.sandbox.create();
@@ -58,7 +59,7 @@ describe('Block Model', function() {
       const { query, options } = Storage.getFindOptions<MongoBound<IBlock>>(BlockStorage, {
         since: id,
         paging: '_id',
-        limit: 100,
+        limit: 100
       });
       expect(options.sort).to.be.deep.eq({ _id: -1 });
       expect(options.limit).to.be.eq(100);
@@ -87,11 +88,13 @@ describe('Block Model', function() {
     afterEach(() => {
       sandbox.restore();
     });
-    it('should return null if there are no blocks', async () => {
+    it('should return the new tip', async () => {
       mockStorage(null);
       const params = { chain: 'BTC', network: 'regtest' };
       const result = await ChainStateProvider.getLocalTip(params);
-      expect(result).to.deep.equal(null);
+      expect(result.height).to.deep.equal(addBlockParams.height + 1);
+      expect(result.chain).to.deep.equal(addBlockParams.chain);
+      expect(result.network).to.deep.equal(addBlockParams.network);
     });
   });
 
