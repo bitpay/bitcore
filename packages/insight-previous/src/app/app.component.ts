@@ -30,7 +30,6 @@ export class InsightApp {
     this.menu = menu;
     this.platform = platform;
 
-    this.rootPage = HomePage;
     this.initializeApp();
 
     // set our app's pages
@@ -43,6 +42,7 @@ export class InsightApp {
 
   private initializeApp(): void {
     this.platform.ready().then(() => {
+      this.rootPage = HomePage;
       // cordova ready
     });
   }

@@ -22,15 +22,17 @@ export class ApiProvider {
   });
 
   constructor(public http: Http, private defaults: DefaultProvider) {
-    this.http
-      .get(this.getUrlPrefix() + '/status/enabled-chains')
-      .subscribe(data => {
-        const availableNetworks = data.json() as ChainNetwork[];
-        this.networkSettings.next({
-          availableNetworks,
-          selectedNetwork: availableNetworks[0]
-        });
+    this.getAvailableNetworks().subscribe(data => {
+      const availableNetworks = data.json() as ChainNetwork[];
+      this.networkSettings.next({
+        availableNetworks,
+        selectedNetwork: availableNetworks[0]
       });
+    });
+  }
+
+  public getAvailableNetworks() {
+    return this.http.get(this.getUrlPrefix() + '/status/enabled-chains');
   }
 
   public getUrlPrefix(): string {
