@@ -10,8 +10,7 @@ import { IBlock } from '../types/Block';
 import { SpentHeightIndicators } from '../types/Coin';
 import { EventStorage } from './events';
 import config from '../config';
-import { Event } from '../services/event';
-import { StorageService } from "../services/storage";
+import { StorageService } from '../services/storage';
 
 export { IBlock };
 
@@ -47,17 +46,6 @@ export class BlockModel extends BaseModel<IBlock> {
         }
       }
     }
-
-    Event.blockStream.on('data', (block: IBlock) => {
-      if (block) {
-        const { chain, network, height } = block;
-        this.chainTips[chain] = valueOrDefault(this.chainTips[chain], {});
-        this.chainTips[chain][network] = valueOrDefault(this.chainTips[chain][network], block);
-        if (this.chainTips[chain][network].height < height) {
-          this.chainTips[chain][network] = block;
-        }
-      }
-    });
   }
 
   async addBlock(params: {
@@ -143,7 +131,17 @@ export class BlockModel extends BaseModel<IBlock> {
       EventStorage.signalBlock(convertedBlock);
     }
 
+    this.updateCachedChainTip({ block: convertedBlock, height, chain, network });
     return this.collection.updateOne({ hash: header.hash, chain, network }, { $set: { processed: true } });
+  }
+
+  updateCachedChainTip(params: { block; chain; network; height }) {
+    const { chain, network, block, height } = params;
+    this.chainTips[chain] = valueOrDefault(this.chainTips[chain], {});
+    this.chainTips[chain][network] = valueOrDefault(this.chainTips[chain][network], block);
+    if (this.chainTips[chain][network].height < height) {
+      this.chainTips[chain][network] = block;
+    }
   }
 
   getPoolInfo(coinbase: string) {
