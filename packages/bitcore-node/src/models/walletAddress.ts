@@ -41,15 +41,27 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
     const unprocessedAddresses: Array<string> = [];
     return new Promise(async resolve => {
       for (let address of addresses) {
-        const updatedAddress = await this.collection.findOneAndUpdate({ 
-          wallet: wallet._id, address: address, chain, network
-        }, { $setOnInsert: { wallet: wallet._id, address: address, chain, network }}, { returnOriginal: false, upsert: true });
-        if (!updatedAddress.value!.processed) {
-          unprocessedAddresses.push(address); 
-          await CoinStorage.collection.updateMany(
-            { chain, network, address },
-            { $addToSet: { wallets: wallet._id } }
+        try {
+          const updatedAddress = await this.collection.findOneAndUpdate(
+            {
+              wallet: wallet._id,
+              address: address,
+              chain,
+              network
+            },
+            { $setOnInsert: { wallet: wallet._id, address: address, chain, network } },
+            { returnOriginal: false, upsert: true }
           );
+          if (!updatedAddress.value!.processed) {
+            unprocessedAddresses.push(address);
+            await CoinStorage.collection.updateMany(
+              { chain, network, address },
+              { $addToSet: { wallets: wallet._id } }
+            );
+          }
+        } catch (err) {
+          // Perhaps a race condition from multiple calls around the same time
+          console.error('Likely an upsert race condition in walletAddress updates');
         }
       }
 
@@ -60,7 +72,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
       let txids = {};
       coinStream.on('data', (coin: ICoin) => {
         coinStream.pause();
-        if (!unprocessedAddresses.includes(coin.address)){
+        if (!unprocessedAddresses.includes(coin.address)) {
           return coinStream.resume();
         }
         if (!txids[coin.mintTxid]) {
@@ -80,8 +92,11 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
         return coinStream.resume();
       });
       coinStream.on('end', async () => {
-        for (const address of unprocessedAddresses){
-          await this.collection.updateOne({ chain, network, address, wallet: wallet._id }, { $set: {processed: true }});
+        for (const address of unprocessedAddresses) {
+          await this.collection.updateOne(
+            { chain, network, address, wallet: wallet._id },
+            { $set: { processed: true } }
+          );
         }
         resolve();
       });
