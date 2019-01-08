@@ -15,6 +15,9 @@ export class TransactionListComponent implements OnInit {
   @Input()
   public transactions?: any = [];
 
+  limit = 10;
+  chunkSize = 100;
+
   constructor(private txProvider: TxsProvider) {}
 
   ngOnInit(): void {
@@ -32,5 +35,10 @@ export class TransactionListComponent implements OnInit {
     } else {
       this.loading = false;
     }
+  }
+
+  loadMore() {
+    this.limit += this.chunkSize;
+    this.chunkSize *= 2;
   }
 }
