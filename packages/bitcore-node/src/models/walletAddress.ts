@@ -39,7 +39,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
     const { chain, network } = wallet;
 
     const unprocessedAddresses: Array<string> = [];
-    return new Promise(async resolve => {
+    return new Promise(async (resolve, reject) => {
       for (let address of addresses) {
         try {
           const updatedAddress = await this.collection.findOneAndUpdate(
@@ -61,7 +61,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
           }
         } catch (err) {
           // Perhaps a race condition from multiple calls around the same time
-          console.error('Likely an upsert race condition in walletAddress updates');
+          reject('Likely an upsert race condition in walletAddress updates')
         }
       }
 
