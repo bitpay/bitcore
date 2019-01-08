@@ -80,7 +80,7 @@ export class BlocksProvider {
         poolName: block.minedBy,
         url: ''
       },
-      reward: block.reward / 10 ** 8
+      reward: block.reward
     };
   }
 
