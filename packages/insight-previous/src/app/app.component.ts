@@ -1,6 +1,4 @@
 import { Component, ViewChild } from '@angular/core';
-import { SplashScreen } from '@ionic-native/splash-screen';
-import { StatusBar } from '@ionic-native/status-bar';
 import { MenuController, Nav, Platform } from 'ionic-angular';
 import { HomePage } from '../pages';
 import { ApiProvider } from '../providers/api/api';
@@ -15,8 +13,6 @@ export class InsightApp {
 
   private menu: MenuController;
   private platform: Platform;
-  private splash: SplashScreen;
-  private status: StatusBar;
 
   public rootPage: any;
   public pages: Array<{ title: string; component: any }>;
