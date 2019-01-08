@@ -177,17 +177,47 @@ describe('Locks', function() {
   });
 
 
-  it('should support runLocked', function(done) {
-    var step=100;
+  describe("#runLocked", () => {
+    it('should run a locked function', function(done) {
+      var step=100;
+      var called =0;
 
-    lock.acquire('123', {lockTime:10}, function(err, release) {
-      should.not.exist(err);
-      lock.acquire('123', {waitTime:1000}, function(err, release) {
-        should.not.exist(err);
+      function end() {
+        called++;
+      }
+
+      function task() {
+        setTimeout(() => {
+          called.should.equal(0);
+          done();
+        },200);
+      }
+
+      lock.runLocked('123', {}, end, task);
+    });
+
+
+    it('should lock locked functions', function(done) {
+      var step=100;
+      var called =0;
+
+      function end() {
+        called++;
+        called.should.equal(1);
         done();
-      },2);
-    }, 1);
- 
+      }
+
+      function task() {
+        lock.runLocked('123', {waitTime:100}, end, () => {
+          setTimeout(() => {
+          },200);
+        });
+     }
+
+      lock.runLocked('123', {}, end, task);
+    });
+
   });
+
 
 });

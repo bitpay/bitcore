@@ -320,7 +320,7 @@ WalletService.getInstanceWithAuth = function(opts, cb) {
 WalletService.prototype._runLocked = function(cb, task, waitTime) {
   $.checkState(this.walletId);
 
-  this.lock.runLocked(this.walletId, cb, task, waitTime);
+  this.lock.runLocked(this.walletId, {waitTime: waitTime}, cb, task);
 };
 
 
