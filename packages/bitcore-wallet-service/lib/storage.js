@@ -31,6 +31,7 @@ var collections = {
   SESSIONS: 'sessions',
   PUSH_NOTIFICATION_SUBS: 'push_notification_subs',
   TX_CONFIRMATION_SUBS: 'tx_confirmation_subs',
+  LOCKS: 'locks',
 };
 
 var Storage = function(opts) {
@@ -1424,6 +1425,26 @@ Storage.prototype.walletCheck = async function(params) {
     });
   });
 }
+
+
+Storage.prototype.acquireLock = function(key, cb) {
+  this.db.collection(collections.LOCKS).insert({
+    _id: key,
+    createdOn: Date.now(),
+  }, {
+    w: 1
+  }, cb);
+};
+
+
+Storage.prototype.releaseLock = function(key, cb) {
+  this.db.collection(collections.LOCKS).remove({
+    _id: key,
+  }, {
+    w: 1
+  }, cb);
+};
+
 
 
 Storage.collections = collections;

@@ -4,108 +4,190 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var Lock = require('../lib/locallock');
+var Lock = require('../lib/lock');
+var helpers = require('./integration/helpers');
 
 
-describe('Local locks', function() {
-  var lock;
-  beforeEach(function() {
-    this.clock = sinon.useFakeTimers();
-    lock = new Lock();
+describe('Locks', function() {
+  var lock, clock, order = [];
+
+  before(function(done) {
+    helpers.before(function(res) {
+      done();
+    });
+  });
+  beforeEach(function(done) {
+    var self = this;
+    helpers.beforeEach(function(res) {
+      let storage = res.storage;
+      lock = new Lock(storage);
+      order = [];
+      done();
+    });
   });
   afterEach(function() {
-    this.clock.restore();
   });
-  it('should lock tasks using the same token', function() {
+
+
+  function pushEvent(i) {
+    order.push(i);
+  }
+
+
+  it('should lock tasks using the same token', function(done) {
     var a = false,
-      b = false;
-    lock.locked('123', 0, 0, function(err, release) {
+      b = false, 
+      step = 100;
+
+
+    pushEvent(0);
+
+    lock.acquire('123', {}, function(err, release) {
       should.not.exist(err);
-      a = true;
+      pushEvent(1);
       setTimeout(function() {
         release();
-      }, 5);
-      lock.locked('123', 0, 0, function(err, release) {
+      }, step);
+      lock.acquire('123', {}, function(err, release) {
         should.not.exist(err);
-        b = true;
-        release();
-      });
-    });
-    a.should.equal(true);
-    b.should.equal(false);
-    this.clock.tick(10);
-    a.should.equal(true);
-    b.should.equal(true);
-  });
-  it('should not lock tasks using different tokens', function() {
-    var i = 0;
-    lock.locked('123', 0, 0, function(err, release) {
-      should.not.exist(err);
-      i++;
-      setTimeout(function() {
-        release();
-      }, 5);
-      lock.locked('456', 0, 0, function(err, release) {
-        should.not.exist(err);
-        i++;
-        release();
-      });
-    });
-    i.should.equal(2);
-  });
-  it('should return error if unable to acquire lock', function() {
-    lock.locked('123', 0, 0, function(err, release) {
-      should.not.exist(err);
-      setTimeout(function() {
-        release();
-      }, 5);
-      lock.locked('123', 1, 0, function(err, release) {
-        should.exist(err);
-        err.toString().should.contain('Could not acquire lock 123');
-      });
-    });
-    this.clock.tick(2);
-  });
-  it('should release lock if acquired for a long time', function() {
-    var i = 0;
-    lock.locked('123', 0, 3, function(err, release) {
-      should.not.exist(err);
-      i++;
-      lock.locked('123', 20, 0, function(err, release) {
-        should.not.exist(err);
-        i++;
-        release();
-      });
-    });
-    i.should.equal(1);
-    this.clock.tick(1);
-    i.should.equal(1);
-    this.clock.tick(10);
-    i.should.equal(2);
-  });
-  it('should only release one pending task on lock timeout', function() {
-    var i = 0;
-    lock.locked('123', 0, 3, function(err, release) {
-      should.not.exist(err);
-      i++;
-      lock.locked('123', 5, 0, function(err, release) {
-        should.not.exist(err);
-        i++;
+        pushEvent(2);
         setTimeout(function() {
           release();
-        }, 5);
+        }, step);
+        lock.acquire('123', {}, function(err, release) {
+          should.not.exist(err);
+          pushEvent(3);
+          setTimeout(function() {
+            release();
+            order.should.be.deep.equal([0,4,1,5,2,6,3]);
+            done();
+          },step);
+        });
+        pushEvent(6);
       });
-      lock.locked('123', 20, 0, function(err, release) {
-        should.not.exist(err);
-        i++;
-        release();
-      });
+      pushEvent(5);
     });
-    i.should.equal(1);
-    this.clock.tick(4);
-    i.should.equal(2)
-    this.clock.tick(7);
-    i.should.equal(3)
+    pushEvent(4);
+
+  });
+
+  it('should call waiting tasks', function(done) {
+    var a = false,
+      b = false, 
+      step = 100;
+
+
+    pushEvent(0);
+
+    lock.acquire('123', {}, function(err, release) {
+      should.not.exist(err);
+      pushEvent(1);
+      setTimeout(function() {
+        release();
+      }, step);
+    }, 1);
+    lock.acquire('123', {}, function(err, release) {
+      should.not.exist(err);
+      pushEvent(2);
+      setTimeout(function() {
+        release();
+      }, step);
+    }, 2);
+    lock.acquire('123', {}, function(err, release) {
+      should.not.exist(err);
+      pushEvent(3);
+      setTimeout(function() {
+        release();
+      }, step);
+    }, 3);
+    pushEvent(4);
+
+    setTimeout(function() {
+      order[1].should.equal(4);
+
+      //order is not assured
+      _.difference([0,4,1,2,3], order).should.be.empty();
+
+      done();
+    }, 3*step);
+
+  });
+ 
+  it('should not lock tasks using different tokens', function(done) {
+    var step=100;
+
+    pushEvent(0);
+
+    lock.acquire('123', {}, function(err, release) {
+      should.not.exist(err);
+      pushEvent(1);
+      setTimeout(function() {
+        release();
+      }, step);
+      lock.acquire('123', {}, function(err, release) {
+        should.not.exist(err);
+        pushEvent(2);
+        setTimeout(function() {
+          release();
+          order.indexOf(3).should.be.below(order.indexOf(2));
+          done();
+        }, step);
+      });
+
+    });
+
+    lock.acquire('123', {}, function(err, release) {
+      should.not.exist(err);
+      pushEvent(3);
+      setTimeout(function() {
+        release();
+      }, step);
+    });
+  });
+  it('should return error if unable to acquire lock', function(done) {
+
+    var step=100, err1;
+
+    pushEvent(0);
+
+    lock.acquire('123', {}, function(err, release) {
+      should.not.exist(err);
+      pushEvent(1);
+      setTimeout(function() {
+        release();
+        err1.should.contain('Could not acquire');
+        done();
+      }, step);
+      lock.acquire('123', {waitTime:1}, function(err, release) {
+        err1 = err;
+      },2);
+    }, 1);
+  });
+  it('should release lock if acquired for a long time', function(done) {
+
+    var step=100;
+
+    lock.acquire('123', {lockTime:10}, function(err, release) {
+      should.not.exist(err);
+      lock.acquire('123', {waitTime:1000}, function(err, release) {
+        should.not.exist(err);
+        done();
+      },2);
+    }, 1);
+  });
+
+
+  it('should support runLocked', function(done) {
+    var step=100;
+
+    lock.acquire('123', {lockTime:10}, function(err, release) {
+      should.not.exist(err);
+      lock.acquire('123', {waitTime:1000}, function(err, release) {
+        should.not.exist(err);
+        done();
+      },2);
+    }, 1);
+ 
   });
 
 });
