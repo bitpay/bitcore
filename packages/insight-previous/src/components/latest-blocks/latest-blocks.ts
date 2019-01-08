@@ -1,5 +1,6 @@
 import { Component, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { NavController } from 'ionic-angular';
+import { Subscription } from 'rxjs';
 import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
@@ -22,6 +23,8 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   public showTimeAs: string;
   private reloadInterval: any;
 
+  public subscriber: Subscription;
+
   constructor(
     private blocksProvider: BlocksProvider,
     private apiProvider: ApiProvider,
@@ -38,9 +41,9 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
     const seconds = 15;
     this.ngZone.runOutsideAngular(() => {
       this.reloadInterval = setInterval(
-        function(): void {
+        function (): void {
           this.ngZone.run(
-            function(): void {
+            function (): void {
               this.loadBlocks.call(this);
             }.bind(this)
           );
@@ -51,7 +54,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   }
 
   private loadBlocks(): void {
-    this.blocksProvider.getBlocks(this.numBlocks).subscribe(
+    this.subscriber = this.blocksProvider.getBlocks(this.numBlocks).subscribe(
       ({ blocks }) => {
         this.blocks = blocks;
         this.loading = false;
@@ -95,6 +98,12 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
       chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
       network: this.apiProvider.networkSettings.value.selectedNetwork.network
     });
+  }
+
+  public reloadData() {
+    this.subscriber.unsubscribe();
+    this.blocks = [];
+    this.ngOnInit();
   }
 
   ngOnDestroy(): void {
