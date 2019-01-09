@@ -4,11 +4,116 @@
 
 GET `/api/BTC/mainnet/tx/?blockHeight=123456`
 
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Curl command to get a response</b>
+
+```
+curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+```
+
+```
+{
+    "_id": "5c3612679e28322477a90cd2",
+    "chain": "BTC",
+    "network": "mainnet",
+    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
+    "height": 99720,
+    "version": 1,
+    "size": 439,
+    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
+    "time": "2010-12-27T20:41:12.000Z",
+    "timeNormalized": "2010-12-27T20:41:12.000Z",
+    "nonce": 1837081266,
+    "bits": 453281356,
+    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
+    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
+    "reward": 5000000000,
+    "transactionCount": 2,
+    "confirmations": 3
+}
+```
+
+</details>
+<br>
+
 GET `/api/BTC/mainnet/tx/?blockHash=0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca`
+
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Curl command to get a response</b>
+
+```
+curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+```
+
+```
+{
+    "_id": "5c3612679e28322477a90cd2",
+    "chain": "BTC",
+    "network": "mainnet",
+    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
+    "height": 99720,
+    "version": 1,
+    "size": 439,
+    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
+    "time": "2010-12-27T20:41:12.000Z",
+    "timeNormalized": "2010-12-27T20:41:12.000Z",
+    "nonce": 1837081266,
+    "bits": 453281356,
+    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
+    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
+    "reward": 5000000000,
+    "transactionCount": 2,
+    "confirmations": 3
+}
+```
+
+</details>
+<br>
 
 ## Get Transaction by txid
 
 GET `/api/BTC/mainnet/tx/5c8a63e695caf95c28a0155beaa22b84a7adb18b8693ba90f04d94891d122afe`
+
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Curl command to get a response</b>
+
+```
+curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+```
+
+```
+{
+    "_id": "5c3612679e28322477a90cd2",
+    "chain": "BTC",
+    "network": "mainnet",
+    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
+    "height": 99720,
+    "version": 1,
+    "size": 439,
+    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
+    "time": "2010-12-27T20:41:12.000Z",
+    "timeNormalized": "2010-12-27T20:41:12.000Z",
+    "nonce": 1837081266,
+    "bits": 453281356,
+    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
+    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
+    "reward": 5000000000,
+    "transactionCount": 2,
+    "confirmations": 3
+}
+```
+
+</details>
+<br>
 
 # Address
 
@@ -16,9 +121,79 @@ GET `/api/BTC/mainnet/tx/5c8a63e695caf95c28a0155beaa22b84a7adb18b8693ba90f04d948
 
 GET `/api/BTC/mainnet/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/?unspent=true`
 
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Curl command to get a response</b>
+
+```
+curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+```
+
+```
+{
+    "_id": "5c3612679e28322477a90cd2",
+    "chain": "BTC",
+    "network": "mainnet",
+    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
+    "height": 99720,
+    "version": 1,
+    "size": 439,
+    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
+    "time": "2010-12-27T20:41:12.000Z",
+    "timeNormalized": "2010-12-27T20:41:12.000Z",
+    "nonce": 1837081266,
+    "bits": 453281356,
+    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
+    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
+    "reward": 5000000000,
+    "transactionCount": 2,
+    "confirmations": 3
+}
+```
+
+</details>
+<br>
+
 ## Get Balance for an Address
 
 GET `/api/BTC/mainnet/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/balance`
+
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Curl command to get a response</b>
+
+```
+curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+```
+
+```
+{
+    "_id": "5c3612679e28322477a90cd2",
+    "chain": "BTC",
+    "network": "mainnet",
+    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
+    "height": 99720,
+    "version": 1,
+    "size": 439,
+    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
+    "time": "2010-12-27T20:41:12.000Z",
+    "timeNormalized": "2010-12-27T20:41:12.000Z",
+    "nonce": 1837081266,
+    "bits": 453281356,
+    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
+    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
+    "reward": 5000000000,
+    "transactionCount": 2,
+    "confirmations": 3
+}
+```
+
+</details>
+<br>
 
 # Block
 
@@ -63,6 +238,41 @@ curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b
 
 GET `/api/BTC/mainnet/block/123456`
 
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Curl command to get a response</b>
+
+```
+curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+```
+
+```
+{
+    "_id": "5c3612679e28322477a90cd2",
+    "chain": "BTC",
+    "network": "mainnet",
+    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
+    "height": 99720,
+    "version": 1,
+    "size": 439,
+    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
+    "time": "2010-12-27T20:41:12.000Z",
+    "timeNormalized": "2010-12-27T20:41:12.000Z",
+    "nonce": 1837081266,
+    "bits": 453281356,
+    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
+    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
+    "reward": 5000000000,
+    "transactionCount": 2,
+    "confirmations": 3
+}
+```
+
+</details>
+<br>
+
 # Authenticated Methods
 ## Wallet
 
@@ -81,9 +291,79 @@ BODY:
 }
 ```
 
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Curl command to get a response</b>
+
+```
+curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+```
+
+```
+{
+    "_id": "5c3612679e28322477a90cd2",
+    "chain": "BTC",
+    "network": "mainnet",
+    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
+    "height": 99720,
+    "version": 1,
+    "size": 439,
+    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
+    "time": "2010-12-27T20:41:12.000Z",
+    "timeNormalized": "2010-12-27T20:41:12.000Z",
+    "nonce": 1837081266,
+    "bits": 453281356,
+    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
+    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
+    "reward": 5000000000,
+    "transactionCount": 2,
+    "confirmations": 3
+}
+```
+
+</details>
+<br>
+
 ### Get Wallet:
 
 GET `/api/BTC/mainnet/wallet/:pubKey`
+
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Curl command to get a response</b>
+
+```
+curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+```
+
+```
+{
+    "_id": "5c3612679e28322477a90cd2",
+    "chain": "BTC",
+    "network": "mainnet",
+    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
+    "height": 99720,
+    "version": 1,
+    "size": 439,
+    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
+    "time": "2010-12-27T20:41:12.000Z",
+    "timeNormalized": "2010-12-27T20:41:12.000Z",
+    "nonce": 1837081266,
+    "bits": 453281356,
+    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
+    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
+    "reward": 5000000000,
+    "transactionCount": 2,
+    "confirmations": 3
+}
+```
+
+</details>
+<br>
 
 ### Import Addresses:
 
@@ -94,18 +374,193 @@ BODY: raw jsonl wallet file of the form
 {"address": "bItCoInAddReSSHeRe"}
 ```
 
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Curl command to get a response</b>
+
+```
+curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+```
+
+```
+{
+    "_id": "5c3612679e28322477a90cd2",
+    "chain": "BTC",
+    "network": "mainnet",
+    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
+    "height": 99720,
+    "version": 1,
+    "size": 439,
+    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
+    "time": "2010-12-27T20:41:12.000Z",
+    "timeNormalized": "2010-12-27T20:41:12.000Z",
+    "nonce": 1837081266,
+    "bits": 453281356,
+    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
+    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
+    "reward": 5000000000,
+    "transactionCount": 2,
+    "confirmations": 3
+}
+```
+
+</details>
+<br>
+
 ### Get Wallet Addresses
 
 GET `/api/BTC/mainnet/wallet/:pubKey/addresses`
+
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Curl command to get a response</b>
+
+```
+curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+```
+
+```
+{
+    "_id": "5c3612679e28322477a90cd2",
+    "chain": "BTC",
+    "network": "mainnet",
+    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
+    "height": 99720,
+    "version": 1,
+    "size": 439,
+    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
+    "time": "2010-12-27T20:41:12.000Z",
+    "timeNormalized": "2010-12-27T20:41:12.000Z",
+    "nonce": 1837081266,
+    "bits": 453281356,
+    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
+    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
+    "reward": 5000000000,
+    "transactionCount": 2,
+    "confirmations": 3
+}
+```
+
+</details>
+<br>
 
 ### Get Wallet Transactions:
 
 GET `/api/BTC/mainnet/wallet/:pubKey/transactions`
 
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Curl command to get a response</b>
+
+```
+curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+```
+
+```
+{
+    "_id": "5c3612679e28322477a90cd2",
+    "chain": "BTC",
+    "network": "mainnet",
+    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
+    "height": 99720,
+    "version": 1,
+    "size": 439,
+    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
+    "time": "2010-12-27T20:41:12.000Z",
+    "timeNormalized": "2010-12-27T20:41:12.000Z",
+    "nonce": 1837081266,
+    "bits": 453281356,
+    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
+    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
+    "reward": 5000000000,
+    "transactionCount": 2,
+    "confirmations": 3
+}
+```
+
+</details>
+<br>
+
 ### Get Balance:
 
 GET `/api/BTC/mainnet/wallet/:pubKey/balance`
 
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Curl command to get a response</b>
+
+```
+curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+```
+
+```
+{
+    "_id": "5c3612679e28322477a90cd2",
+    "chain": "BTC",
+    "network": "mainnet",
+    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
+    "height": 99720,
+    "version": 1,
+    "size": 439,
+    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
+    "time": "2010-12-27T20:41:12.000Z",
+    "timeNormalized": "2010-12-27T20:41:12.000Z",
+    "nonce": 1837081266,
+    "bits": 453281356,
+    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
+    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
+    "reward": 5000000000,
+    "transactionCount": 2,
+    "confirmations": 3
+}
+```
+
+</details>
+<br>
+
 ### Get Wallet UTXOS
 
 GET `/api/BTC/mainnet/wallet/:pubKey/utxos`
+
+<details>
+<summary><b>Response</b></summary>
+<br>
+
+<b>Curl command to get a response</b>
+
+```
+curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+```
+
+```
+{
+    "_id": "5c3612679e28322477a90cd2",
+    "chain": "BTC",
+    "network": "mainnet",
+    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
+    "height": 99720,
+    "version": 1,
+    "size": 439,
+    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
+    "time": "2010-12-27T20:41:12.000Z",
+    "timeNormalized": "2010-12-27T20:41:12.000Z",
+    "nonce": 1837081266,
+    "bits": 453281356,
+    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
+    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
+    "reward": 5000000000,
+    "transactionCount": 2,
+    "confirmations": 3
+}
+```
+
+</details>
+<br>
