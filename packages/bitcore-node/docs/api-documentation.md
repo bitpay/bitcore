@@ -24,7 +24,31 @@ GET `/api/BTC/mainnet/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/balance`
 
 ## Get Block
 
-GET `/api/BTC/mainnet/block/0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca`
+GET `/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718`
+
+**Example response**
+
+```
+{
+    "_id": "5c3612679e28322477a90cd2",
+    "chain": "BTC",
+    "network": "mainnet",
+    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
+    "height": 99720,
+    "version": 1,
+    "size": 439,
+    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
+    "time": "2010-12-27T20:41:12.000Z",
+    "timeNormalized": "2010-12-27T20:41:12.000Z",
+    "nonce": 1837081266,
+    "bits": 453281356,
+    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
+    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
+    "reward": 5000000000,
+    "transactionCount": 2,
+    "confirmations": 3
+}
+```
 
 GET `/api/BTC/mainnet/block/123456`
 
