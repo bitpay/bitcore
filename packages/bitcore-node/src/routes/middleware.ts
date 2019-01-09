@@ -68,12 +68,7 @@ export function CacheMiddleware(serverSeconds = CacheTimes.Second, browserSecond
 }
 
 function isWhiteListed(whitelist: Array<string> = [], ip: string) {
-  let whiteListed = whitelist.includes(ip);
-  if (whiteListed) {
-    return true;
-  } else {
-    return whitelist.some(listItem => new RegExp(listItem).test(ip));
-  }
+  return whitelist.some(listItem => ip.startsWith(listItem));
 }
 
 export function RateLimiter(method: string, perSecond: number, perMinute: number, perHour: number) {
