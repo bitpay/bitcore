@@ -233,6 +233,12 @@ wallets: {
         }
 ```
 
+**To create a wallet**
+
+```
+./packages/bitcore-client/bin/wallet-create --chain BTC --network mainnet --baseUrl http://localhost:3000/api
+```
+
 ### Add Wallet:
 
 POST `/api/BTC/mainnet/wallet`
@@ -378,7 +384,23 @@ curl -v localhost:3000/api/BTC/mainnet/wallet/03bdb94afdc7e5c4811bf9b160ac475b82
 ```
 
 ```
-[]
+[
+    {
+        "_id": "5c34b35d69d5562c2fc43e89",
+        "chain": "BTC",
+        "network": "mainnet",
+        "coinbase": true,
+        "mintIndex": 0,
+        "spentTxid": "",
+        "mintTxid": "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098",
+        "mintHeight": 1,
+        "spentHeight": -2,
+        "address": "12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX",
+        "script": "410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac",
+        "value": 5000000000,
+        "confirmations": -1
+    }
+]
 ```
 
 </details>
