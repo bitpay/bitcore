@@ -12,103 +12,9 @@ git checkout v8.0.0
 npm install
 ```
 
-Set your config
+Set up your bitcore.config.json file in ./bitcore
 
-## Config Example
-./config.json
-
-```
-{
-   "bitcoreNode":{
-      "chains":{
-         "BTC":{
-            "regtest":{
-               "chainSource":"p2p",
-               "trustedPeers":[
-                  {
-                     "host":"127.0.0.1",
-                     "port":20020
-                  }
-               ],
-               "rpc":{
-                  "host":"127.0.0.1",
-                  "port":20021,
-                  "username":"username",
-                  "password":"password"
-               }
-            },
-            "mainnet":{
-               "chainSource":"p2p",
-               "trustedPeers":[
-                  {
-                     "host":"127.0.0.1",
-                     "port":20008
-                  }
-               ],
-               "rpc":{
-                  "host":"127.0.0.1",
-                  "port":20009,
-                  "username":"username",
-                  "password":"password"
-               }
-            }
-         },
-         "BCH":{
-            "regtest":{
-               "chainSource":"p2p",
-               "trustedPeers":[
-                  {
-                     "host":"127.0.0.1",
-                     "port":30020
-                  }
-               ],
-               "rpc":{
-                  "host":"127.0.0.1",
-                  "port":30021,
-                  "username":"username",
-                  "password":"password"
-               }
-            },
-            "testnet":{
-               "chainSource":"p2p",
-               "trustedPeers":[
-                  {
-                     "host":"127.0.0.1",
-                     "port":30000
-                  }
-               ],
-               "rpc":{
-                  "host":"127.0.0.1",
-                  "port":30001,
-                  "username":"username",
-                  "password":"password"
-               }
-            },
-            "mainnet":{
-               "parentChain":"BTC",
-               "forkHeight":478558,
-               "trustedPeers":[
-                  {
-                     "host":"127.0.0.1",
-                     "port":30008
-                  }
-               ],
-               "rpc":{
-                  "host":"127.0.0.1",
-                  "port":30009,
-                  "username":"username",
-                  "password":"password"
-               }
-            }
-         }
-      }
-   }
-}
-```
-
-Then set up your bitcore.config.json file in ./bitcore
-
-## bitcore.config.json Example
+## Example bitcore.config.json
 
 bitcore.config.json file in ./bitcore
 
@@ -128,8 +34,8 @@ bitcore.config.json file in ./bitcore
           "rpc": {
             "host": "127.0.0.1",
             "port": 20009,
-            "username": "bitpaytest",
-            "password": "local321"
+            "username": "username",
+            "password": "password"
           }
         },
         "regtest": {
@@ -143,8 +49,8 @@ bitcore.config.json file in ./bitcore
           "rpc": {
             "host": "127.0.0.1",
             "port": 20021,
-            "username": "bitpaytest",
-            "password": "local321"
+            "username": "username",
+            "password": "password"
           }
         }
       },
@@ -161,8 +67,8 @@ bitcore.config.json file in ./bitcore
           "rpc": {
             "host": "127.0.0.1",
             "port": 30009,
-            "username": "bitpaytest",
-            "password": "local321"
+            "username": "username",
+            "password": "password"
           }
         },
         "regtest": {
@@ -176,8 +82,8 @@ bitcore.config.json file in ./bitcore
           "rpc": {
             "host": "127.0.0.1",
             "port": 30021,
-            "username": "bitpaytest",
-            "password": "local321"
+            "username": "username",
+            "password": "password"
           }
         }
       }
@@ -190,6 +96,8 @@ Then start the node
 ```
 npm run node
 ```
+
+# API Documentation
 
 # Transactions
 
