@@ -26,10 +26,11 @@ GET `/api/BTC/mainnet/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/balance`
 
 GET `/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718`
 
-```
 <details>
 <summary><b>Response</b></summary>
 <br>
+
+```
 {
     "_id": "5c3612679e28322477a90cd2",
     "chain": "BTC",
@@ -49,10 +50,10 @@ GET `/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7
     "transactionCount": 2,
     "confirmations": 3
 }
+```
 
 </details>
 <br>
-```
 
 GET `/api/BTC/mainnet/block/123456`
 
