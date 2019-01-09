@@ -25,6 +25,14 @@ type AuthenticatedRequest = {
   wallet?: MongoBound<IWallet>;
 } & PreAuthRequest;
 
+/**
+ * A Same wonderful function test jsdocs typedoc auto markdown
+ * For example [12, 1231 , 123, 123]
+ * Have no space above a function for typedoc to detect comments, params dont work or examples
+ * @param {object} - privacy gown
+ * @param {object} - security
+ * @returns {survival} 
+ */
 const verifyRequestSignature = (params: VerificationPayload): boolean => {
   const { message, pubKey, signature } = params;
   const pub = new bitcoreLib.PublicKey(pubKey).toBuffer();
