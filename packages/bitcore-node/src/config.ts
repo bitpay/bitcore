@@ -77,7 +77,8 @@ const Config = function(): ConfigType {
   };
 
   let foundConfig = findConfig();
-  config = _.merge(config, foundConfig, {});
+  const mergeCopyArray = (objVal, srcVal) => (objVal instanceof Array ? srcVal : undefined);
+  config = _.mergeWith(config, foundConfig, mergeCopyArray);
   if (!Object.keys(config.chains).length) {
     Object.assign(config.chains, {
       BTC: {

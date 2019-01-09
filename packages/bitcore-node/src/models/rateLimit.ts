@@ -12,6 +12,16 @@ export type IRateLimit = {
   expireAt?: Date;
 };
 
+export enum RateLimitTimes {
+  None = 0,
+  Second = 1000,
+  Minute = RateLimitTimes.Second * 60,
+  Hour = RateLimitTimes.Minute * 60,
+  Day = RateLimitTimes.Hour * 24,
+  Month = RateLimitTimes.Day * 30,
+  Year = RateLimitTimes.Day * 365
+}
+
 export class RateLimitModel extends BaseModel<IRateLimit> {
   constructor(storage?: StorageService) {
     super('ratelimits', storage);
@@ -26,25 +36,25 @@ export class RateLimitModel extends BaseModel<IRateLimit> {
   incrementAndCheck(identifier: string, method: string) {
     return Promise.all([
       this.collection.findOneAndUpdate(
-        { identifier, method, period: 'second', time: { $gt: new Date(Date.now() - 1000) } },
+        { identifier, method, period: 'second', time: { $gte: new Date(Date.now() - RateLimitTimes.Second) } },
         {
-          $setOnInsert: { time: new Date(), expireAt: new Date(Date.now() + 10 * 1000) },
+          $setOnInsert: { time: new Date(), expireAt: new Date(Date.now() + 2 * RateLimitTimes.Second) },
           $inc: { count: 1 }
         },
         { upsert: true, returnOriginal: false }
       ),
       this.collection.findOneAndUpdate(
-        { identifier, method, period: 'minute', time: { $gt: new Date(Date.now() - 60 * 1000) } },
+        { identifier, method, period: 'minute', time: { $gte: new Date(Date.now() - RateLimitTimes.Minute) } },
         {
-          $setOnInsert: { time: new Date(), expireAt: new Date(Date.now() + 2 * 60 * 1000) },
+          $setOnInsert: { time: new Date(), expireAt: new Date(Date.now() + 2 * RateLimitTimes.Minute) },
           $inc: { count: 1 }
         },
         { upsert: true, returnOriginal: false }
       ),
       this.collection.findOneAndUpdate(
-        { identifier, method, period: 'hour', time: { $gt: new Date(Date.now() - 60 * 60 * 1000) } },
+        { identifier, method, period: 'hour', time: { $gte: new Date(Date.now() - RateLimitTimes.Hour) } },
         {
-          $setOnInsert: { time: new Date(), expireAt: new Date(Date.now() + 62 * 60 * 1000) },
+          $setOnInsert: { time: new Date(), expireAt: new Date(Date.now() + 2 * RateLimitTimes.Hour) },
           $inc: { count: 1 }
         },
         { upsert: true, returnOriginal: false }
