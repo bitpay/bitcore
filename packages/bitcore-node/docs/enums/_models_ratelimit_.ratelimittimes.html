@@ -3,7 +3,7 @@
 <head>
 	<meta charset="utf-8">
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
-	<title>&quot;types/namespaces/Bitcoin/Block&quot; | bitcore-node</title>
+	<title>RateLimitTimes | bitcore-node</title>
 	<meta name="description" content="">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<link rel="stylesheet" href="../assets/css/main.css">
@@ -56,10 +56,13 @@
 					<a href="../globals.html">Globals</a>
 				</li>
 				<li>
-					<a href="_types_namespaces_bitcoin_block_.html">&quot;types/namespaces/Bitcoin/Block&quot;</a>
+					<a href="../modules/_models_ratelimit_.html">&quot;models/rateLimit&quot;</a>
+				</li>
+				<li>
+					<a href="_models_ratelimit_.ratelimittimes.html">RateLimitTimes</a>
 				</li>
 			</ul>
-			<h1>External module &quot;types/namespaces/Bitcoin/Block&quot;</h1>
+			<h1>Enumeration RateLimitTimes</h1>
 		</div>
 	</div>
 </header>
@@ -71,122 +74,91 @@
 				<section class="tsd-panel tsd-index-panel">
 					<div class="tsd-index-content">
 						<section class="tsd-index-section ">
-							<h3>Type aliases</h3>
+							<h3>Enumeration members</h3>
 							<ul class="tsd-index-list">
-								<li class="tsd-kind-type-alias tsd-parent-kind-external-module"><a href="_types_namespaces_bitcoin_block_.html#bitcoinblocktype" class="tsd-kind-icon">Bitcoin<wbr>Block<wbr>Type</a></li>
-								<li class="tsd-kind-type-alias tsd-parent-kind-external-module"><a href="_types_namespaces_bitcoin_block_.html#blockheader" class="tsd-kind-icon">Block<wbr>Header</a></li>
-								<li class="tsd-kind-type-alias tsd-parent-kind-external-module"><a href="_types_namespaces_bitcoin_block_.html#blockheaderobj" class="tsd-kind-icon">Block<wbr>Header<wbr>Obj</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="_models_ratelimit_.ratelimittimes.html#day" class="tsd-kind-icon">Day</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="_models_ratelimit_.ratelimittimes.html#hour" class="tsd-kind-icon">Hour</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="_models_ratelimit_.ratelimittimes.html#minute" class="tsd-kind-icon">Minute</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="_models_ratelimit_.ratelimittimes.html#month" class="tsd-kind-icon">Month</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="_models_ratelimit_.ratelimittimes.html#none" class="tsd-kind-icon">None</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="_models_ratelimit_.ratelimittimes.html#second" class="tsd-kind-icon">Second</a></li>
+								<li class="tsd-kind-enum-member tsd-parent-kind-enum"><a href="_models_ratelimit_.ratelimittimes.html#year" class="tsd-kind-icon">Year</a></li>
 							</ul>
 						</section>
 					</div>
 				</section>
 			</section>
 			<section class="tsd-panel-group tsd-member-group ">
-				<h2>Type aliases</h2>
-				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-external-module">
-					<a name="bitcoinblocktype" class="tsd-anchor"></a>
-					<h3>Bitcoin<wbr>Block<wbr>Type</h3>
-					<div class="tsd-signature tsd-kind-icon">Bitcoin<wbr>Block<wbr>Type<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
+				<h2>Enumeration members</h2>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
+					<a name="day" class="tsd-anchor"></a>
+					<h3>Day</h3>
+					<div class="tsd-signature tsd-kind-icon">Day<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> =&nbsp;RateLimitTimes.Hour * 24</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/types/namespaces/Bitcoin/Block.ts#L14">types/namespaces/Bitcoin/Block.ts:14</a></li>
+							<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/models/rateLimit.ts#L20">models/rateLimit.ts:20</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-type-declaration">
-						<h4>Type declaration</h4>
-						<ul class="tsd-parameters">
-							<li class="tsd-parameter">
-								<h5>hash<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
-							</li>
-							<li class="tsd-parameter">
-								<h5>header<span class="tsd-signature-symbol">: </span><a href="_types_namespaces_bitcoin_block_.html#blockheader" class="tsd-signature-type">BlockHeader</a></h5>
-							</li>
-							<li class="tsd-parameter">
-								<h5>to<wbr>Buffer<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">function</span></h5>
-								<ul class="tsd-parameters">
-									<li class="tsd-parameter-siganture">
-										<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-variable tsd-is-not-exported">
-											<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">Buffer</span></li>
-										</ul>
-										<ul class="tsd-descriptions">
-											<li class="tsd-description">
-												<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">Buffer</span></h4>
-											</li>
-										</ul>
-									</li>
-								</ul>
-							</li>
-							<li class="tsd-parameter">
-								<h5>transactions<span class="tsd-signature-symbol">: </span><a href="_types_namespaces_bitcoin_transaction_.html#bitcointransactiontype" class="tsd-signature-type">BitcoinTransactionType</a><span class="tsd-signature-symbol">[]</span></h5>
-							</li>
-						</ul>
-					</div>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-external-module">
-					<a name="blockheader" class="tsd-anchor"></a>
-					<h3>Block<wbr>Header</h3>
-					<div class="tsd-signature tsd-kind-icon">Block<wbr>Header<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
+					<a name="hour" class="tsd-anchor"></a>
+					<h3>Hour</h3>
+					<div class="tsd-signature tsd-kind-icon">Hour<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> =&nbsp;RateLimitTimes.Minute * 60</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/types/namespaces/Bitcoin/Block.ts#L11">types/namespaces/Bitcoin/Block.ts:11</a></li>
+							<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/models/rateLimit.ts#L19">models/rateLimit.ts:19</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-type-declaration">
-						<h4>Type declaration</h4>
-						<ul class="tsd-parameters">
-							<li class="tsd-parameter">
-								<h5>to<wbr>Object<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">function</span></h5>
-								<ul class="tsd-parameters">
-									<li class="tsd-parameter-siganture">
-										<ul class="tsd-signatures tsd-kind-type-literal tsd-parent-kind-variable tsd-is-not-exported">
-											<li class="tsd-signature tsd-kind-icon"><span class="tsd-signature-symbol">(</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><a href="_types_namespaces_bitcoin_block_.html#blockheaderobj" class="tsd-signature-type">BlockHeaderObj</a></li>
-										</ul>
-										<ul class="tsd-descriptions">
-											<li class="tsd-description">
-												<h4 class="tsd-returns-title">Returns <a href="_types_namespaces_bitcoin_block_.html#blockheaderobj" class="tsd-signature-type">BlockHeaderObj</a></h4>
-											</li>
-										</ul>
-									</li>
-								</ul>
-							</li>
-						</ul>
-					</div>
 				</section>
-				<section class="tsd-panel tsd-member tsd-kind-type-alias tsd-parent-kind-external-module">
-					<a name="blockheaderobj" class="tsd-anchor"></a>
-					<h3>Block<wbr>Header<wbr>Obj</h3>
-					<div class="tsd-signature tsd-kind-icon">Block<wbr>Header<wbr>Obj<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span></div>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
+					<a name="minute" class="tsd-anchor"></a>
+					<h3>Minute</h3>
+					<div class="tsd-signature tsd-kind-icon">Minute<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> =&nbsp;RateLimitTimes.Second * 60</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/types/namespaces/Bitcoin/Block.ts#L2">types/namespaces/Bitcoin/Block.ts:2</a></li>
+							<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/models/rateLimit.ts#L18">models/rateLimit.ts:18</a></li>
 						</ul>
 					</aside>
-					<div class="tsd-type-declaration">
-						<h4>Type declaration</h4>
-						<ul class="tsd-parameters">
-							<li class="tsd-parameter">
-								<h5>bits<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
-							</li>
-							<li class="tsd-parameter">
-								<h5>hash<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
-							</li>
-							<li class="tsd-parameter">
-								<h5>merkle<wbr>Root<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
-							</li>
-							<li class="tsd-parameter">
-								<h5>nonce<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
-							</li>
-							<li class="tsd-parameter">
-								<h5>prev<wbr>Hash<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
-							</li>
-							<li class="tsd-parameter">
-								<h5>time<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">number</span></h5>
-							</li>
-							<li class="tsd-parameter">
-								<h5>version<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span></h5>
-							</li>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
+					<a name="month" class="tsd-anchor"></a>
+					<h3>Month</h3>
+					<div class="tsd-signature tsd-kind-icon">Month<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> =&nbsp;RateLimitTimes.Day * 30</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/models/rateLimit.ts#L21">models/rateLimit.ts:21</a></li>
 						</ul>
-					</div>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
+					<a name="none" class="tsd-anchor"></a>
+					<h3>None</h3>
+					<div class="tsd-signature tsd-kind-icon">None<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> =&nbsp;0</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/models/rateLimit.ts#L16">models/rateLimit.ts:16</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
+					<a name="second" class="tsd-anchor"></a>
+					<h3>Second</h3>
+					<div class="tsd-signature tsd-kind-icon">Second<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> =&nbsp;1000</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/models/rateLimit.ts#L17">models/rateLimit.ts:17</a></li>
+						</ul>
+					</aside>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-enum-member tsd-parent-kind-enum">
+					<a name="year" class="tsd-anchor"></a>
+					<h3>Year</h3>
+					<div class="tsd-signature tsd-kind-icon">Year<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-symbol"> =&nbsp;RateLimitTimes.Day * 365</span></div>
+					<aside class="tsd-sources">
+						<ul>
+							<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/models/rateLimit.ts#L22">models/rateLimit.ts:22</a></li>
+						</ul>
+					</aside>
 				</section>
 			</section>
 		</div>
@@ -197,20 +169,50 @@
 						<a href="../globals.html"><em>Globals</em></a>
 					</li>
 					<li class="current tsd-kind-external-module">
-						<a href="_types_namespaces_bitcoin_block_.html">"types/namespaces/<wbr>Bitcoin/<wbr>Block"</a>
+						<a href="../modules/_models_ratelimit_.html">"models/rate<wbr>Limit"</a>
 					</li>
 				</ul>
 			</nav>
 			<nav class="tsd-navigation secondary menu-sticky">
 				<ul class="before-current">
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
-						<a href="_types_namespaces_bitcoin_block_.html#bitcoinblocktype" class="tsd-kind-icon">Bitcoin<wbr>Block<wbr>Type</a>
+				</ul>
+				<ul class="current">
+					<li class="current tsd-kind-enum tsd-parent-kind-external-module">
+						<a href="_models_ratelimit_.ratelimittimes.html" class="tsd-kind-icon">Rate<wbr>Limit<wbr>Times</a>
+						<ul>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
+								<a href="_models_ratelimit_.ratelimittimes.html#day" class="tsd-kind-icon">Day</a>
+							</li>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
+								<a href="_models_ratelimit_.ratelimittimes.html#hour" class="tsd-kind-icon">Hour</a>
+							</li>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
+								<a href="_models_ratelimit_.ratelimittimes.html#minute" class="tsd-kind-icon">Minute</a>
+							</li>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
+								<a href="_models_ratelimit_.ratelimittimes.html#month" class="tsd-kind-icon">Month</a>
+							</li>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
+								<a href="_models_ratelimit_.ratelimittimes.html#none" class="tsd-kind-icon">None</a>
+							</li>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
+								<a href="_models_ratelimit_.ratelimittimes.html#second" class="tsd-kind-icon">Second</a>
+							</li>
+							<li class=" tsd-kind-enum-member tsd-parent-kind-enum">
+								<a href="_models_ratelimit_.ratelimittimes.html#year" class="tsd-kind-icon">Year</a>
+							</li>
+						</ul>
+					</li>
+				</ul>
+				<ul class="after-current">
+					<li class=" tsd-kind-class tsd-parent-kind-external-module">
+						<a href="../classes/_models_ratelimit_.ratelimitmodel.html" class="tsd-kind-icon">Rate<wbr>Limit<wbr>Model</a>
 					</li>
 					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
-						<a href="_types_namespaces_bitcoin_block_.html#blockheader" class="tsd-kind-icon">Block<wbr>Header</a>
+						<a href="../modules/_models_ratelimit_.html#iratelimit" class="tsd-kind-icon">IRate<wbr>Limit</a>
 					</li>
-					<li class=" tsd-kind-type-alias tsd-parent-kind-external-module">
-						<a href="_types_namespaces_bitcoin_block_.html#blockheaderobj" class="tsd-kind-icon">Block<wbr>Header<wbr>Obj</a>
+					<li class=" tsd-kind-variable tsd-parent-kind-external-module">
+						<a href="../modules/_models_ratelimit_.html#ratelimitstorage" class="tsd-kind-icon">Rate<wbr>Limit<wbr>Storage</a>
 					</li>
 				</ul>
 			</nav>

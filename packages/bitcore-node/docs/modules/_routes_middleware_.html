@@ -90,6 +90,7 @@
 								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_routes_middleware_.html#logobj" class="tsd-kind-icon">Log<wbr>Obj</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_routes_middleware_.html#ratelimiter" class="tsd-kind-icon">Rate<wbr>Limiter</a></li>
 								<li class="tsd-kind-function tsd-parent-kind-external-module"><a href="_routes_middleware_.html#setcache" class="tsd-kind-icon">Set<wbr>Cache</a></li>
+								<li class="tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported"><a href="_routes_middleware_.html#iswhitelisted" class="tsd-kind-icon">is<wbr>White<wbr>Listed</a></li>
 							</ul>
 						</section>
 					</div>
@@ -103,7 +104,7 @@
 					<div class="tsd-signature tsd-kind-icon">Timed<wbr>Request<span class="tsd-signature-symbol">:</span> <span class="tsd-signature-type">object</span><span class="tsd-signature-symbol"> &amp; </span><span class="tsd-signature-type">express.Request</span></div>
 					<aside class="tsd-sources">
 						<ul>
-							<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/a93eb038/packages/bitcore-node/src/routes/middleware.ts#L6">routes/middleware.ts:6</a></li>
+							<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/routes/middleware.ts#L6">routes/middleware.ts:6</a></li>
 						</ul>
 					</aside>
 				</section>
@@ -120,7 +121,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/a93eb038/packages/bitcore-node/src/routes/middleware.ts#L63">routes/middleware.ts:63</a></li>
+									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/routes/middleware.ts#L63">routes/middleware.ts:63</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -146,7 +147,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/a93eb038/packages/bitcore-node/src/routes/middleware.ts#L18">routes/middleware.ts:18</a></li>
+									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/routes/middleware.ts#L18">routes/middleware.ts:18</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">(Anonymous function)</span></h4>
@@ -163,7 +164,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/a93eb038/packages/bitcore-node/src/routes/middleware.ts#L10">routes/middleware.ts:10</a></li>
+									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/routes/middleware.ts#L10">routes/middleware.ts:10</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -191,7 +192,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/a93eb038/packages/bitcore-node/src/routes/middleware.ts#L70">routes/middleware.ts:70</a></li>
+									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/routes/middleware.ts#L74">routes/middleware.ts:74</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -223,7 +224,7 @@
 						<li class="tsd-description">
 							<aside class="tsd-sources">
 								<ul>
-									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/a93eb038/packages/bitcore-node/src/routes/middleware.ts#L59">routes/middleware.ts:59</a></li>
+									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/routes/middleware.ts#L59">routes/middleware.ts:59</a></li>
 								</ul>
 							</aside>
 							<h4 class="tsd-parameters-title">Parameters</h4>
@@ -239,6 +240,32 @@
 								</li>
 							</ul>
 							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">void</span></h4>
+						</li>
+					</ul>
+				</section>
+				<section class="tsd-panel tsd-member tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+					<a name="iswhitelisted" class="tsd-anchor"></a>
+					<h3>is<wbr>White<wbr>Listed</h3>
+					<ul class="tsd-signatures tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+						<li class="tsd-signature tsd-kind-icon">is<wbr>White<wbr>Listed<span class="tsd-signature-symbol">(</span>whitelist<span class="tsd-signature-symbol">?: </span><span class="tsd-signature-type">Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span>, ip<span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">)</span><span class="tsd-signature-symbol">: </span><span class="tsd-signature-type">boolean</span></li>
+					</ul>
+					<ul class="tsd-descriptions">
+						<li class="tsd-description">
+							<aside class="tsd-sources">
+								<ul>
+									<li>Defined in <a href="https://github.com/bitpay/bitcore/blob/60ceab98/packages/bitcore-node/src/routes/middleware.ts#L70">routes/middleware.ts:70</a></li>
+								</ul>
+							</aside>
+							<h4 class="tsd-parameters-title">Parameters</h4>
+							<ul class="tsd-parameters">
+								<li>
+									<h5><span class="tsd-flag ts-flagDefault value">Default value</span> whitelist: <span class="tsd-signature-type">Array</span><span class="tsd-signature-symbol">&lt;</span><span class="tsd-signature-type">string</span><span class="tsd-signature-symbol">&gt;</span><span class="tsd-signature-symbol"> =&nbsp;[]</span></h5>
+								</li>
+								<li>
+									<h5>ip: <span class="tsd-signature-type">string</span></h5>
+								</li>
+							</ul>
+							<h4 class="tsd-returns-title">Returns <span class="tsd-signature-type">boolean</span></h4>
 						</li>
 					</ul>
 				</section>
@@ -277,6 +304,9 @@
 					</li>
 					<li class=" tsd-kind-function tsd-parent-kind-external-module">
 						<a href="_routes_middleware_.html#setcache" class="tsd-kind-icon">Set<wbr>Cache</a>
+					</li>
+					<li class=" tsd-kind-function tsd-parent-kind-external-module tsd-is-not-exported">
+						<a href="_routes_middleware_.html#iswhitelisted" class="tsd-kind-icon">is<wbr>White<wbr>Listed</a>
 					</li>
 				</ul>
 			</nav>

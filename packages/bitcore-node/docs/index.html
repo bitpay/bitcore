@@ -68,83 +68,87 @@
 				<p><em>Requirements</em>:</p>
 				<ul>
 					<li>Trusted P2P Peer</li>
-					<li>MongoDB Server &gt;= v3.4<h2 id="config-example">Config Example</h2>
-					./config.json</li>
+					<li>MongoDB Server &gt;= v3.4</li>
 				</ul>
+				<p>Checkout the repo</p>
+				<pre><code>git <span class="hljs-keyword">clone</span> <span class="hljs-title">git</span>@github.com:bitpay/bitcore.git
+git checkout <span class="hljs-keyword">master</span>
+<span class="hljs-title">npm</span> install</code></pre><p>Set up your bitcore.config.json file in ./bitcore</p>
+				<h2 id="example-bitcore-config-json">Example bitcore.config.json</h2>
+				<p>bitcore.config.json file in ./bitcore</p>
 				<pre><code>{
   <span class="hljs-attr">"bitcoreNode"</span>: {
     <span class="hljs-attr">"chains"</span>: {
       <span class="hljs-attr">"BTC"</span>: {
+        <span class="hljs-attr">"mainnet"</span>: {
+          <span class="hljs-attr">"chainSource"</span>: <span class="hljs-string">"p2p"</span>,
+          <span class="hljs-attr">"trustedPeers"</span>: [
+            {
+              <span class="hljs-attr">"host"</span>: <span class="hljs-string">"127.0.0.1"</span>,
+              <span class="hljs-attr">"port"</span>: <span class="hljs-number">20008</span>
+            }
+          ],
+          <span class="hljs-attr">"rpc"</span>: {
+            <span class="hljs-attr">"host"</span>: <span class="hljs-string">"127.0.0.1"</span>,
+            <span class="hljs-attr">"port"</span>: <span class="hljs-number">20009</span>,
+            <span class="hljs-attr">"username"</span>: <span class="hljs-string">"username"</span>,
+            <span class="hljs-attr">"password"</span>: <span class="hljs-string">"password"</span>
+          }
+        },
         <span class="hljs-attr">"regtest"</span>: {
           <span class="hljs-attr">"chainSource"</span>: <span class="hljs-string">"p2p"</span>,
           <span class="hljs-attr">"trustedPeers"</span>: [
             {
               <span class="hljs-attr">"host"</span>: <span class="hljs-string">"127.0.0.1"</span>,
-              <span class="hljs-attr">"port"</span>: <span class="hljs-number">30000</span>
+              <span class="hljs-attr">"port"</span>: <span class="hljs-number">20020</span>
             }
           ],
           <span class="hljs-attr">"rpc"</span>: {
             <span class="hljs-attr">"host"</span>: <span class="hljs-string">"127.0.0.1"</span>,
-            <span class="hljs-attr">"port"</span>: <span class="hljs-number">30001</span>,
-            <span class="hljs-attr">"username"</span>: <span class="hljs-string">"bitpaytest"</span>,
-            <span class="hljs-attr">"password"</span>: <span class="hljs-string">"local321"</span>
+            <span class="hljs-attr">"port"</span>: <span class="hljs-number">20021</span>,
+            <span class="hljs-attr">"username"</span>: <span class="hljs-string">"username"</span>,
+            <span class="hljs-attr">"password"</span>: <span class="hljs-string">"password"</span>
+          }
+        }
+      },
+      <span class="hljs-attr">"BCH"</span>: {
+        <span class="hljs-attr">"mainnet"</span>: {
+          <span class="hljs-attr">"parentChain"</span>: <span class="hljs-string">"BTC"</span>,
+          <span class="hljs-attr">"forkHeight"</span>: <span class="hljs-number">478558</span>,
+          <span class="hljs-attr">"trustedPeers"</span>: [
+            {
+              <span class="hljs-attr">"host"</span>: <span class="hljs-string">"127.0.0.1"</span>,
+              <span class="hljs-attr">"port"</span>: <span class="hljs-number">30008</span>
+            }
+          ],
+          <span class="hljs-attr">"rpc"</span>: {
+            <span class="hljs-attr">"host"</span>: <span class="hljs-string">"127.0.0.1"</span>,
+            <span class="hljs-attr">"port"</span>: <span class="hljs-number">30009</span>,
+            <span class="hljs-attr">"username"</span>: <span class="hljs-string">"username"</span>,
+            <span class="hljs-attr">"password"</span>: <span class="hljs-string">"password"</span>
           }
         },
-        <span class="hljs-attr">"testnet"</span>: {
+        <span class="hljs-attr">"regtest"</span>: {
           <span class="hljs-attr">"chainSource"</span>: <span class="hljs-string">"p2p"</span>,
           <span class="hljs-attr">"trustedPeers"</span>: [
             {
               <span class="hljs-attr">"host"</span>: <span class="hljs-string">"127.0.0.1"</span>,
-              <span class="hljs-attr">"port"</span>: <span class="hljs-number">20000</span>
+              <span class="hljs-attr">"port"</span>: <span class="hljs-number">30020</span>
             }
           ],
           <span class="hljs-attr">"rpc"</span>: {
             <span class="hljs-attr">"host"</span>: <span class="hljs-string">"127.0.0.1"</span>,
-            <span class="hljs-attr">"port"</span>: <span class="hljs-number">30001</span>
+            <span class="hljs-attr">"port"</span>: <span class="hljs-number">30021</span>,
+            <span class="hljs-attr">"username"</span>: <span class="hljs-string">"username"</span>,
+            <span class="hljs-attr">"password"</span>: <span class="hljs-string">"password"</span>
           }
         }
       }
     }
   }
-}</code></pre><h1 id="transactions">Transactions</h1>
-				<h2 id="get-transactions-by-block">Get Transactions by block</h2>
-				<p>GET <code>/api/BTC/mainnet/tx/?blockHeight=123456</code></p>
-				<p>GET <code>/api/BTC/mainnet/tx/?blockHash=0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca</code></p>
-				<h2 id="get-transaction-by-txid">Get Transaction by txid</h2>
-				<p>GET <code>/api/BTC/mainnet/tx/5c8a63e695caf95c28a0155beaa22b84a7adb18b8693ba90f04d94891d122afe</code></p>
-				<h1 id="address">Address</h1>
-				<h2 id="get-transaction-outputs-by-address">Get Transaction Outputs by Address</h2>
-				<p>GET <code>/api/BTC/mainnet/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/?unspent=true</code></p>
-				<h2 id="get-balance-for-an-address">Get Balance for an Address</h2>
-				<p>GET <code>/api/BTC/mainnet/address/mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4/balance</code></p>
-				<h1 id="block">Block</h1>
-				<h2 id="get-block">Get Block</h2>
-				<p>GET <code>/api/BTC/mainnet/block/0000000000002917ed80650c6174aac8dfc46f5fe36480aaef682ff6cd83c3ca</code></p>
-				<p>GET <code>/api/BTC/mainnet/block/123456</code></p>
-				<h1 id="authenticated-methods">Authenticated Methods</h1>
-				<h2 id="wallet">Wallet</h2>
-				<h3 id="add-wallet-">Add Wallet:</h3>
-				<p>POST <code>/api/BTC/mainnet/wallet</code></p>
-				<p>BODY:</p>
-				<pre><code>{
-  <span class="hljs-attr">"name"</span>: <span class="hljs-string">"WalletName"</span>,
-  <span class="hljs-attr">"chain"</span>: <span class="hljs-string">"BTC"</span>,
-  <span class="hljs-attr">"network"</span>: <span class="hljs-string">"mainnet"</span>,
-  <span class="hljs-attr">"pubKey"</span>: <span class="hljs-string">"03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d"</span>,
-  <span class="hljs-attr">"path"</span>: <span class="hljs-string">"m/44'/0'/0'"</span>
-}</code></pre><h3 id="get-wallet-">Get Wallet:</h3>
-				<p>GET <code>/api/BTC/mainnet/wallet/:pubKey</code></p>
-				<h3 id="import-addresses-">Import Addresses:</h3>
-				<p>POST <code>/api/BTC/mainnet/wallet/:pubKey</code></p>
-				<p>BODY: raw jsonl wallet file of the form</p>
-				<pre><code>{<span class="hljs-attr">"address"</span>: <span class="hljs-string">"bItCoInAddReSSHeRe"</span>}</code></pre><h3 id="get-wallet-addresses">Get Wallet Addresses</h3>
-				<p>GET <code>/api/BTC/mainnet/wallet/:pubKey/addresses</code></p>
-				<h3 id="get-wallet-transactions-">Get Wallet Transactions:</h3>
-				<p>GET <code>/api/BTC/mainnet/wallet/:pubKey/transactions</code></p>
-				<h3 id="get-balance-">Get Balance:</h3>
-				<p>GET <code>/api/BTC/mainnet/wallet/:pubKey/balance</code></p>
-				<h3 id="get-wallet-utxos">Get Wallet UTXOS</h3>
-				<p>GET <code>/api/BTC/mainnet/wallet/:pubKey/utxos</code></p>
+}</code></pre><p>Then start the node</p>
+				<pre><code>npm run <span class="hljs-keyword">node</span><span class="hljs-title"></span></code></pre><h1 id="api-documentation">API Documentation</h1>
+				<p><a href="./docs/api-documentation.md">API parameters and example responses</a></p>
 			</div>
 		</div>
 		<div class="col-4 col-menu menu-sticky-wrap menu-highlight">
