@@ -343,6 +343,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
       mintOpsAddresses = Object.keys(mintOpsAddresses);
       let wallets = await WalletAddressStorage.collection
         .find({ address: { $in: mintOpsAddresses }, chain, network }, { batchSize: 100 })
+        .project({ wallet: 1, address: 1 })
         .toArray();
       if (wallets.length) {
         mintOps = mintOps.map(mintOp => {

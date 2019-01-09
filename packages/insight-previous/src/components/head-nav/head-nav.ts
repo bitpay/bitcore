@@ -1,22 +1,23 @@
-import { Component } from '@angular/core';
+import { Component, EventEmitter, Output } from '@angular/core';
 import { Input } from '@angular/core';
 import { Http } from '@angular/http';
-import { ActionSheetController } from 'ionic-angular';
-import { ToastController } from 'ionic-angular';
+import * as bitcoreLib from 'bitcore-lib';
+import * as bitcoreLibCash from 'bitcore-lib-cash';
 import { PopoverController } from 'ionic-angular';
 import { NavController } from 'ionic-angular';
+import { ToastController } from 'ionic-angular';
+import { ActionSheetController } from 'ionic-angular';
 import { App } from 'ionic-angular/components/app/app';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { PriceProvider } from '../../providers/price/price';
 import { DenominationComponent } from '../denomination/denomination';
-import * as bitcoreLib from 'bitcore-lib';
-import * as bitcoreLibCash from 'bitcore-lib-cash';
 @Component({
   selector: 'head-nav',
   templateUrl: 'head-nav.html'
 })
 export class HeadNavComponent {
+  @Output() updateView = new EventEmitter<ChainNetwork>();
   public showSearch = false;
   public loading: boolean;
   @Input()
@@ -34,7 +35,9 @@ export class HeadNavComponent {
     public actionSheetCtrl: ActionSheetController,
     public popoverCtrl: PopoverController,
     public toastCtrl: ToastController
-  ) { }
+  ) {
+    this.config = this.apiProvider.getConfig();
+  }
 
   public search(): void {
     this.showSearch = false;
@@ -124,6 +127,20 @@ export class HeadNavComponent {
     popover.present({
       ev: myEvent
     });
+    popover.onDidDismiss(data => {
+      if (data) {
+        if (JSON.stringify(data) === JSON.stringify(this.config)) {
+          return;
+        }
+        this.apiProvider.changeNetwork(data);
+        this.config = this.apiProvider.getConfig();
+        if (this.navCtrl.getActive().component.name === 'HomePage') {
+          this.updateView.next(data);
+        } else {
+          this.navCtrl.setRoot('home', { chain: this.config.chain, network: this.config.network });
+        }
+      }
+    });
   }
 
   public toggleSearch(): void {
@@ -131,18 +148,17 @@ export class HeadNavComponent {
   }
 
   public extractAddress(address: string): string {
-    let extractedAddress = address
+    const extractedAddress = address
       .replace(/^(bitcoincash:|bchtest:|bitcoin:)/i, '')
       .replace(/\?.*/, '');
     return extractedAddress || address;
   }
 
   public isInputValid(inputValue): boolean {
-    this.config = this.apiProvider.getConfig();
-    if (this.isValidBlockOrTx(inputValue)) return true;
-    else if (this.isValidAddress(inputValue)) return true;
-    else if (this.isValidBlockIndex(inputValue)) return true;
-    else return false;
+    if (this.isValidBlockOrTx(inputValue)) { return true; }
+    else if (this.isValidAddress(inputValue)) { return true; }
+    else if (this.isValidBlockIndex(inputValue)) { return true; }
+    else { return false; }
   }
 
   private isValidBlockOrTx(inputValue): boolean {
@@ -159,11 +175,11 @@ export class HeadNavComponent {
     const network = this.config.network;
     const addr = this.extractAddress(inputValue);
 
-    if (coin.toLowerCase() == 'btc' && network == 'mainnet') {
+    if (coin.toLowerCase() === 'btc' && network === 'mainnet') {
       return this.isValidBitcoinMainnetAddress(addr);
-    } else if (coin.toLowerCase() == 'btc' && network == 'testnet') {
+    } else if (coin.toLowerCase() === 'btc' && network === 'testnet') {
       return this.isValidBitcoinTestnetAddress(addr);
-    } else if (coin.toLowerCase() == 'bch' && network == 'mainnet') {
+    } else if (coin.toLowerCase() === 'bch' && network === 'mainnet') {
       return (
         this.isValidBitcoinCashMainnetAddress(addr) ||
         this.isValidBitcoinCashLegacyMainnetAddress(addr)
