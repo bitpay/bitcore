@@ -67,7 +67,7 @@ export class HeadNavComponent {
                   .chain,
                 network: this.apiProvider.networkSettings.value.selectedNetwork
                   .network,
-                txId: parsedData[0].txid
+                txId: parsedData.txid
               });
             },
             () => {

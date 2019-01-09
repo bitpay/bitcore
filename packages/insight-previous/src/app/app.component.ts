@@ -19,7 +19,7 @@ export class InsightApp {
   private status: StatusBar;
 
   public rootPage: any;
-  public pages: Array<{ title: string; component: any }>;
+  public pages: Array<{ title: string; component: any; icon: any; }>;
 
   constructor(
     platform: Platform,
@@ -34,9 +34,9 @@ export class InsightApp {
 
     // set our app's pages
     this.pages = [
-      { title: 'Home', component: 'home' },
-      { title: 'Blocks', component: 'blocks' },
-      { title: 'Broadcast Transaction', component: 'BroadcastTxPage' }
+      { title: 'Home', component: 'home', icon: 'home' },
+      { title: 'Blocks', component: 'blocks', icon: 'logo-buffer' },
+      { title: 'Broadcast Transaction', component: 'BroadcastTxPage', icon: 'ios-radio-outline' }
     ];
   }
 
