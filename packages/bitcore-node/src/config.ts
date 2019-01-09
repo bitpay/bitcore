@@ -66,7 +66,7 @@ const Config = function(): ConfigType {
         },
         wallets: {
           allowCreationBeforeCompleteSync: false,
-          allowUnauthenticatedCalls: true
+          allowUnauthenticatedCalls: false
         }
       },
       event: {},
