@@ -50,9 +50,10 @@ GET `/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7
 }
 
 </details>
+<br>
+
 
 GET `/api/BTC/mainnet/block/123456`
-
 
 # Authenticated Methods
 ## Wallet
