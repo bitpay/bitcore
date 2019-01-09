@@ -13,7 +13,6 @@ npm install
 ```
 
 Set your config
-Then set up your bitcore.config.json file in ./bitcore
 
 ## Config Example
 ./config.json
@@ -104,6 +103,86 @@ Then set up your bitcore.config.json file in ./bitcore
          }
       }
    }
+}
+```
+
+Then set up your bitcore.config.json file in ./bitcore
+
+## bitcore.config.json Example
+
+bitcore.config.json file in ./bitcore
+
+```
+{
+  "bitcoreNode": {
+    "chains": {
+      "BTC": {
+        "mainnet": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 20008
+            }
+          ],
+          "rpc": {
+            "host": "127.0.0.1",
+            "port": 20009,
+            "username": "bitpaytest",
+            "password": "local321"
+          }
+        },
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 20020
+            }
+          ],
+          "rpc": {
+            "host": "127.0.0.1",
+            "port": 20021,
+            "username": "bitpaytest",
+            "password": "local321"
+          }
+        }
+      },
+      "BCH": {
+        "mainnet": {
+          "parentChain": "BTC",
+          "forkHeight": 478558,
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 30008
+            }
+          ],
+          "rpc": {
+            "host": "127.0.0.1",
+            "port": 30009,
+            "username": "bitpaytest",
+            "password": "local321"
+          }
+        },
+        "regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 30020
+            }
+          ],
+          "rpc": {
+            "host": "127.0.0.1",
+            "port": 30021,
+            "username": "bitpaytest",
+            "password": "local321"
+          }
+        }
+      }
+    }
+  }
 }
 ```
 
