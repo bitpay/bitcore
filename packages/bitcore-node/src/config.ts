@@ -62,7 +62,7 @@ const Config = function(): ConfigType {
     services: {
       api: {
         rateLimiter: {
-          whitelist: ['::ffff:127.0.0.1']
+          whitelist: ['::ffff:127.0.0.1', '::1']
         },
         wallets: {
           allowCreationBeforeCompleteSync: false,

@@ -13,7 +13,7 @@ export interface ConfigType {
     api: {
       disabled?: boolean;
       rateLimiter?: {
-        whitelist: [string];
+        whitelist: string[];
       };
       wallets?: {
         allowCreationBeforeCompleteSync?: boolean;
