@@ -50,7 +50,7 @@ GET `/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7
     "confirmations": 3
 }
 ```
-<details>
+</details>
 
 
 GET `/api/BTC/mainnet/block/123456`
