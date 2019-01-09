@@ -233,12 +233,6 @@ wallets: {
         }
 ```
 
-**To create a wallet**
-
-```
-./packages/bitcore-client/bin/wallet-create --chain BTC --network mainnet --baseUrl http://localhost:3000/api
-```
-
 ### Add Wallet:
 
 POST `/api/BTC/mainnet/wallet`
@@ -363,7 +357,17 @@ curl -v localhost:3000/api/BTC/mainnet/wallet/03bdb94afdc7e5c4811bf9b160ac475b82
 ```
 
 ```
-[]
+[
+    {
+        "address": "12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX"
+    },
+    {
+        "address": "1HLoD9E4SDFFPDiYfNYnkBLQ85Y51J3Zb1"
+    },
+    {
+        "address": "1FvzCLoTPGANNjWoUo6jUGuAG3wg1w4YjR"
+    }
+]
 ```
 
 </details>
@@ -380,27 +384,21 @@ GET `/api/BTC/mainnet/wallet/:pubKey/transactions`
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v localhost:3000/api/BTC/mainnet/wallet/03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d/transactions
+curl -v localhost:3000/api/BTC/mainnet/wallet/02870d8366cf8e50f383e38e5fafc01d956b67f25fbf5c1dd4e3766cf85acbc400/transactions
 ```
 
 ```
-[
-    {
-        "_id": "5c34b35d69d5562c2fc43e89",
-        "chain": "BTC",
-        "network": "mainnet",
-        "coinbase": true,
-        "mintIndex": 0,
-        "spentTxid": "",
-        "mintTxid": "0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098",
-        "mintHeight": 1,
-        "spentHeight": -2,
-        "address": "12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX",
-        "script": "410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac",
-        "value": 5000000000,
-        "confirmations": -1
-    }
-]
+{
+    "id":"5c34b35d69d5562c2fc43e8c",
+    "txid":"0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098",
+    "fee":0,"size":134,
+    "category":"receive",
+    "satoshis":5000000000,
+    "height":1,
+    "address":"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX",
+    "outputIndex":0,
+    "blockTime":"2009-01-09T02:54:25.000Z"
+}
 ```
 
 </details>
@@ -417,14 +415,14 @@ GET `/api/BTC/mainnet/wallet/:pubKey/balance`
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v localhost:3000/api/BTC/mainnet/wallet/03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d/balance
+curl -v localhost:3000/api/BTC/mainnet/wallet/02870d8366cf8e50f383e38e5fafc01d956b67f25fbf5c1dd4e3766cf85acbc400/balance
 ```
 
 ```
 {
-    "confirmed": 500000,
+    "confirmed": 46800000000,
     "unconfirmed": 0,
-    "balance": 500000
+    "balance": 46800000000
 }
 ```
 
@@ -442,11 +440,27 @@ GET `/api/BTC/mainnet/wallet/:pubKey/utxos`
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v localhost:3000/api/BTC/mainnet/wallet/03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d/utxos
+curl -v localhost:3000/api/BTC/mainnet/wallet/02870d8366cf8e50f383e38e5fafc01d956b67f25fbf5c1dd4e3766cf85acbc400/utxos
 ```
 
 ```
-[]
+[
+    {
+        "_id": "5c34b36069d5562c2fc45b09",
+        "chain": "BTC",
+        "network": "mainnet",
+        "coinbase": false,
+        "mintIndex": 1,
+        "spentTxid": "",
+        "mintTxid": "828ef3b079f9c23829c56fe86e85b4a69d9e06e5b54ea597eef5fb3ffef509fe",
+        "mintHeight": 248,
+        "spentHeight": -2,
+        "address": "12cbQLTFMXRnSzktFkuoG3eHoMeFtpTu3S",
+        "script": "410411db93e1dcdb8a016b49840f8c53bc1eb68a382e97b1482ecad7b148a6909a5cb2e0eaddfb84ccf9744464f82e160bfa9b8b64f9d4c03f999b8643f656b412a3ac",
+        "value": 1800000000,
+        "confirmations": 103006
+    }
+]
 ```
 
 </details>
