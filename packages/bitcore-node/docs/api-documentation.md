@@ -233,6 +233,14 @@ wallets: {
         }
 ```
 
+**Create 5 Sample Wallets with transactions, addresses, and UTXOS**
+
+Inside the root directory /bitcore/ run:
+
+```
+node packages/bitcore-node/build/test/benchmark/wallet-benchmark.js
+```
+
 ### Add Wallet:
 
 POST `/api/BTC/mainnet/wallet`
