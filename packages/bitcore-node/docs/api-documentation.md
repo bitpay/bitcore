@@ -11,7 +11,7 @@ GET `/api/BTC/mainnet/tx/?blockHeight=12`
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v https://localhost:3000/api/BTC/mainnet/tx/?blockHeight=12
+curl -v localhost:3000/api/BTC/mainnet/tx/?blockHeight=12
 ```
 
 ```
@@ -49,7 +49,7 @@ GET `/api/BTC/mainnet/tx?blockHash=000000006a625f06636b8bb6ac7b960a8d03705d1ace0
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v https://localhost:3000/api/BTC/mainnet/tx?blockHash=000000006a625f06636b8bb6ac7b960a8d03705d1ace08b1a19da3fdcc99ddbd
+curl -v localhost:3000/api/BTC/mainnet/tx?blockHash=000000006a625f06636b8bb6ac7b960a8d03705d1ace08b1a19da3fdcc99ddbd
 ```
 
 ```
@@ -89,7 +89,7 @@ GET `/api/BTC/mainnet/tx/9b0fc92260312ce44e74ef369f5c66bbb85848f2eddd5a7a1cde251
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v https://localhost:3000/api/BTC/mainnet/tx/9b0fc92260312ce44e74ef369f5c66bbb85848f2eddd5a7a1cde251e54ccfdd5
+curl -v localhost:3000/api/BTC/mainnet/tx/9b0fc92260312ce44e74ef369f5c66bbb85848f2eddd5a7a1cde251e54ccfdd5
 ```
 
 ```
@@ -129,7 +129,7 @@ GET `/api/BTC/mainnet/address/12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX/?unspent=true`
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v https://localhost:3000/api/BTC/mainnet/address/12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX/?unspent=true
+curl -v localhost:3000/api/BTC/mainnet/address/12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX/?unspent=true
 ```
 
 ```
@@ -166,7 +166,7 @@ GET `/api/BTC/mainnet/address/12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX/balance`
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v https://localhost:3000/api/BTC/mainnet/address/12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX/balance
+curl -v localhost:3000/api/BTC/mainnet/address/12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX/balance
 ```
 
 ```
@@ -193,7 +193,7 @@ GET `/api/BTC/mainnet/block/00000000839a8e6886ab5951d76f411475428afc90947ee32016
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v https://localhost:3000/api/BTC/mainnet/block/00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048
+curl -v localhost:3000/api/BTC/mainnet/block/00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048
 ```
 
 ```
@@ -226,7 +226,7 @@ curl -v https://localhost:3000/api/BTC/mainnet/block/00000000839a8e6886ab5951d76
 
 ### Add Wallet:
 
-!! POST `/api/BTC/mainnet/wallet`
+POST `/api/BTC/mainnet/wallet`
 
 BODY:
 ```
@@ -234,7 +234,7 @@ BODY:
   "name": "WalletName2",
   "chain": "BTC",
   "network": "mainnet",
-  "pubKey": "19buW9spaejyU3ejvHgTacRktw1LW14ivo",
+  "pubKey": "03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d",
   "path": "m/44'/0'/0'"
 }
 ```
@@ -246,14 +246,14 @@ BODY:
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -X -v POST -H "Content-Type: application/json" -d "{
+curl -v POST -H "Content-Type: application/json" -d "{
   "name": "WalletName2",
   "chain": "BTC",
   "network": "mainnet",
-  "pubKey": "19buW9spaejyU3ejvHgTacRktw1LW14ivo",
+  "pubKey": "03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d",
   "path": "m/44'/0'/0'"
 }" 
-https://localhost:3000/api/BTC/mainnet/wallet/
+localhost:3000/api/BTC/mainnet/wallet/
 ```
 
 ```
@@ -261,7 +261,7 @@ https://localhost:3000/api/BTC/mainnet/wallet/
     "chain": "BTC",
     "network": "mainnet",
     "name": "WalletName2",
-    "pubKey": "19buW9spaejyU3ejvHgTacRktw1LW14ivo",
+    "pubKey": "03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d",
     "path": "m/44'/0'/0'",
     "_id": "5c3631e538704e27c6f146c3"
 }
@@ -281,12 +281,18 @@ GET `/api/BTC/mainnet/wallet/:pubKey`
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v https://localhost:3000/api/BTC/mainnet/wallet/16fVqzss65Jhfbh6KjHXuzM9EzesMN7TCL
+curl -v localhost:3000/api/BTC/mainnet/wallet/03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d
 ```
 
 ```
-{ 
-    Authentication failed error
+{
+    "_id": "5c3639d1e60f7b2e174afc65",
+    "chain": "BTC",
+    "network": "mainnet",
+    "name": "WalletName",
+    "pubKey": "03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d",
+    "path": "m/44'/0'/0'",
+    "singleAddress": null
 }
 ```
 
@@ -299,7 +305,7 @@ POST `/api/BTC/mainnet/wallet/:pubKey`
 
 BODY: raw jsonl wallet file of the form
 ```
-{"address": "bItCoInAddReSSHeRe"}
+{"address": "mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4"}
 ```
 
 <details>
@@ -309,12 +315,18 @@ BODY: raw jsonl wallet file of the form
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v https://localhost:3000/api/BTC/mainnet/wallet/:16fVqzss65Jhfbh6KjHXuzM9EzesMN7TCL
+curl -v localhost:3000/api/BTC/mainnet/wallet/03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d
 ```
 
 ```
 {
-    Missing required param
+    "_id": "5c3639d1e60f7b2e174afc65",
+    "chain": "BTC",
+    "network": "mainnet",
+    "name": "WalletName",
+    "pubKey": "03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d",
+    "path": "m/44'/0'/0'",
+    "singleAddress": null
 }
 ```
 
@@ -332,29 +344,11 @@ GET `/api/BTC/mainnet/wallet/:pubKey/addresses`
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+curl -v localhost:3000/api/BTC/mainnet/wallet/03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d/addresses
 ```
 
 ```
-{
-    "_id": "5c3612679e28322477a90cd2",
-    "chain": "BTC",
-    "network": "mainnet",
-    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
-    "height": 99720,
-    "version": 1,
-    "size": 439,
-    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
-    "time": "2010-12-27T20:41:12.000Z",
-    "timeNormalized": "2010-12-27T20:41:12.000Z",
-    "nonce": 1837081266,
-    "bits": 453281356,
-    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
-    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
-    "reward": 5000000000,
-    "transactionCount": 2,
-    "confirmations": 3
-}
+[]
 ```
 
 </details>
@@ -371,29 +365,11 @@ GET `/api/BTC/mainnet/wallet/:pubKey/transactions`
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+curl -v localhost:3000/api/BTC/mainnet/wallet/03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d/transactions
 ```
 
 ```
-{
-    "_id": "5c3612679e28322477a90cd2",
-    "chain": "BTC",
-    "network": "mainnet",
-    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
-    "height": 99720,
-    "version": 1,
-    "size": 439,
-    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
-    "time": "2010-12-27T20:41:12.000Z",
-    "timeNormalized": "2010-12-27T20:41:12.000Z",
-    "nonce": 1837081266,
-    "bits": 453281356,
-    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
-    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
-    "reward": 5000000000,
-    "transactionCount": 2,
-    "confirmations": 3
-}
+[]
 ```
 
 </details>
@@ -410,28 +386,14 @@ GET `/api/BTC/mainnet/wallet/:pubKey/balance`
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+curl -v localhost:3000/api/BTC/mainnet/wallet/03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d/balance
 ```
 
 ```
 {
-    "_id": "5c3612679e28322477a90cd2",
-    "chain": "BTC",
-    "network": "mainnet",
-    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
-    "height": 99720,
-    "version": 1,
-    "size": 439,
-    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
-    "time": "2010-12-27T20:41:12.000Z",
-    "timeNormalized": "2010-12-27T20:41:12.000Z",
-    "nonce": 1837081266,
-    "bits": 453281356,
-    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
-    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
-    "reward": 5000000000,
-    "transactionCount": 2,
-    "confirmations": 3
+    "confirmed": 500000,
+    "unconfirmed": 0,
+    "balance": 500000
 }
 ```
 
@@ -449,29 +411,11 @@ GET `/api/BTC/mainnet/wallet/:pubKey/utxos`
 <b>Use Curl command in terminal to get a response</b>
 
 ```
-curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+curl -v localhost:3000/api/BTC/mainnet/wallet/03bdb94afdc7e5c4811bf9b160ac475b82156ea42c8659c8358b68c828df9a1c3d/utxos
 ```
 
 ```
-{
-    "_id": "5c3612679e28322477a90cd2",
-    "chain": "BTC",
-    "network": "mainnet",
-    "hash": "000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718",
-    "height": 99720,
-    "version": 1,
-    "size": 439,
-    "merkleRoot": "5a8a0af17855da42b358b47053c72558aaef2773fdd6fc845500fea6189b93f0",
-    "time": "2010-12-27T20:41:12.000Z",
-    "timeNormalized": "2010-12-27T20:41:12.000Z",
-    "nonce": 1837081266,
-    "bits": 453281356,
-    "previousBlockHash": "0000000000000133e27223dfdbd4519cd38b982760826456c7ff3bb2cc9a5e5e",
-    "nextBlockHash": "000000000000a9d244f9e21224bb9188dfe8c9c4e9f8b6f9f1a9dbd8e8bf8b68",
-    "reward": 5000000000,
-    "transactionCount": 2,
-    "confirmations": 3
-}
+[]
 ```
 
 </details>
