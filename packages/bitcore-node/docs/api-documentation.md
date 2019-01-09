@@ -224,7 +224,7 @@ curl -v localhost:3000/api/BTC/mainnet/block/00000000839a8e6886ab5951d76f4114754
 # Authenticated Methods
 ## Wallet
 
-**To test wallet api routes change config.ts inside /src folder to:**
+**To test wallet api routes change allowUnauthenticatedCalls: true inside /src/config.ts**
 
 ```
 wallets: {
