@@ -30,6 +30,12 @@ GET `/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7
 <summary><b>Response</b></summary>
 <br>
 
+<b>Curl command to get a response</b>
+
+```
+curl -v localhost:3000/api/BTC/mainnet/block/000000000001bd9673585488213888bb53b669196aedf41beda7d39813940718
+```
+
 ```
 {
     "_id": "5c3612679e28322477a90cd2",
