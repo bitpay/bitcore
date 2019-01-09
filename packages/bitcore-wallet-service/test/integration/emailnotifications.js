@@ -186,7 +186,10 @@ describe('Email notifications', function() {
           feePerKb: 100e2
         };
 
+console.log('[emailnotifications.js.188]'); //TODO
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
+
+console.log('[emailnotifications.js.191]'); //TODO
           setTimeout(function() {
             var calls = mailerStub.send.getCalls();
             calls.length.should.equal(2);
@@ -200,6 +203,7 @@ describe('Email notifications', function() {
             should.exist(one.html);
             one.html.indexOf('<html>').should.equal(0);
             server.storage.fetchUnsentEmails(function(err, unsent) {
+console.log('[emailnotifications.js.206:err:]',err); //TODO
               should.not.exist(err);
               unsent.should.be.empty;
               emailService._readTemplateFile = _readTemplateFile_old;

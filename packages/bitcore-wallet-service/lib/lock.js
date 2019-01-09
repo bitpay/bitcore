@@ -21,14 +21,11 @@ function Lock(storage, opts) {
 };
 
 
-Lock.prototype.acquire = function(token, opts, cb, taskId) {
+Lock.prototype.acquire = function(token, opts, cb) {
   var self = this;
-
   opts = opts || {};
 
   opts.lockTime = opts.lockTime ||  Defaults.LOCK_EXE_TIME;
-  opts.taskId = opts.taskId ||  Math.random();
-
   waiting[token] = waiting[token] || [];
 
   this.storage.acquireLock(token, (err) => {
@@ -36,6 +33,7 @@ Lock.prototype.acquire = function(token, opts, cb, taskId) {
     // Lock taken?
     if(err && err.message && err.message.indexOf('E11000 ') !== -1) {
 
+console.log('[lock.js.35] LOCKED! waiting', token); //TODO
       let waitTimerId;
 
       if (opts.waitTime) {
@@ -56,12 +54,31 @@ Lock.prototype.acquire = function(token, opts, cb, taskId) {
 
       var lockTimerId;
 
+      console.log('[lock.js.35] taking', token); //TODO
       function release(icb) {
         if (!icb) icb = () => {};
 
         if (_.isEmpty(waiting[token])) {
-          self.storage.releaseLock(token, icb);
+
+
+          console.log('[lock.js.61] RELEASING!', token); //TODO
+          self.storage.releaseLock(token, () => {
+
+            icb();
+
+console.log('[lock.js.70:waiting:]',waiting); //TODO
+            let arrivals = _.clone(waiting[token]);
+            waiting[token]=[];
+            // Did someone arrived?
+            _.each(arrivals, (x) => {
+
+console.log('[lock.js.74] RESTARTING!'); //TODO
+              self.acquire(token, opts, x.task);
+            });
+
+          });
         } else {
+console.log('[lock.js.61] NEXT!!', token); //TODO
 
           // there are fns waiting. do not release the lock yet
           let next = waiting[token].shift();
