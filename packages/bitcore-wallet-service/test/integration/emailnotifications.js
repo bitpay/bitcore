@@ -166,7 +166,7 @@ describe('Email notifications', function() {
       });
     });
 
-    it.only('should notify copayers a new tx proposal has been created', function(done) {
+    it('should notify copayers a new tx proposal has been created', function(done) {
 
       var _readTemplateFile_old = emailService._readTemplateFile;
       emailService._readTemplateFile = function(language, filename, cb) {
@@ -186,10 +186,8 @@ describe('Email notifications', function() {
           feePerKb: 100e2
         };
 
-console.log('[emailnotifications.js.188]'); //TODO
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
 
-console.log('[emailnotifications.js.191]'); //TODO
           setTimeout(function() {
             var calls = mailerStub.send.getCalls();
             calls.length.should.equal(2);
@@ -203,7 +201,6 @@ console.log('[emailnotifications.js.191]'); //TODO
             should.exist(one.html);
             one.html.indexOf('<html>').should.equal(0);
             server.storage.fetchUnsentEmails(function(err, unsent) {
-console.log('[emailnotifications.js.206:err:]',err); //TODO
               should.not.exist(err);
               unsent.should.be.empty;
               emailService._readTemplateFile = _readTemplateFile_old;
@@ -537,13 +534,14 @@ console.log('[emailnotifications.js.206:err:]',err); //TODO
               english.subject.should.contain('New payment received');
               english.text.should.contain('123,000 bits');
               done();
-            }, 100);
+            }, 200);
           });
         });
       });
     });
 
     it('should support multiple emailservice instances running concurrently', function(done) {
+
       var emailService2 = new EmailService();
       emailService2.start({
         lock: emailService.lock, // Use same locker service
@@ -572,7 +570,9 @@ console.log('[emailnotifications.js.206:err:]',err); //TODO
                 unsent.should.be.empty;
                 done();
               });
-            }, 100);
+
+              // enought time to BOTH email services to process the notification
+            }, 200);
           });
         });
       });
