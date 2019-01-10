@@ -18,6 +18,7 @@ npm install
 
 <details>
 <summary><b>Example bitcore.config.json</b></summary>
+<br>
 
 ```
 {
@@ -99,6 +100,7 @@ npm install
 
 <details>
 <summary><b> Example Bitcoin Mainnet Config </b></summary>
+<br>
 
 ```
 whitelist=127.0.0.1
@@ -108,8 +110,6 @@ server=1
 irc=1
 upnp=1
 ```
-
-<br>
 
 **Listen on different ports than default testnet**
 
