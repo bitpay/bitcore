@@ -31,6 +31,7 @@ var collections = {
   SESSIONS: 'sessions',
   PUSH_NOTIFICATION_SUBS: 'push_notification_subs',
   TX_CONFIRMATION_SUBS: 'tx_confirmation_subs',
+  LOCKS: 'locks',
 };
 
 var Storage = function(opts) {
@@ -133,6 +134,7 @@ Storage.prototype.connect = function(opts, cb) {
     }
     self.db = db;
     self._createIndexes();
+    self.clearLocks();
     console.log('Connection established to mongoDB');
     return cb();
   });
@@ -1424,6 +1426,26 @@ Storage.prototype.walletCheck = async function(params) {
     });
   });
 }
+
+
+Storage.prototype.acquireLock = function(key, cb) {
+  this.db.collection(collections.LOCKS).insert({
+    _id: key,
+  },{}, cb);
+};
+
+
+Storage.prototype.releaseLock = function(key, cb) {
+  this.db.collection(collections.LOCKS).remove({
+    _id: key,
+  }, {} , cb);
+};
+
+Storage.prototype.clearLocks = function() {
+  this.db.collection(collections.LOCKS).remove({
+  }, {multi:1} );
+};
+
 
 
 Storage.collections = collections;

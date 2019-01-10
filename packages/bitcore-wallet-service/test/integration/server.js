@@ -104,12 +104,15 @@ describe('Wallet service', function() {
     });
     it('should get server instance for existing copayer', function(done) {
       helpers.createAndJoinWallet(1, 2, function(s, wallet) {
+
+        // using copayer 0 data.
         var xpriv = TestData.copayers[0].xPrivKey;
         var priv = TestData.copayers[0].privKey_1H_0;
 
         var sig = helpers.signMessage('hello world', priv);
 
         WalletService.getInstanceWithAuth({
+          // test assumes wallet's copayer[0] is TestData's copayer[0]
           copayerId: wallet.copayers[0].id,
           message: 'hello world',
           signature: sig,
@@ -162,23 +165,27 @@ describe('Wallet service', function() {
           $set: {
             isSupportStaff: true
           }
-        });
+        }, () => {
 
-        var xpriv = TestData.copayers[0].xPrivKey;
-        var priv = TestData.copayers[0].privKey_1H_0;
+          var xpriv = TestData.copayers[0].xPrivKey;
+          var priv = TestData.copayers[0].privKey_1H_0;
 
-        var sig = helpers.signMessage('hello world', priv);
+          var sig = helpers.signMessage('hello world', priv);
 
-        WalletService.getInstanceWithAuth({
-          copayerId: wallet.copayers[0].id,
-          message: 'hello world',
-          signature: sig,
-          walletId: '123',
-        }, function(err, server) {
-          should.not.exist(err);
-          server.walletId.should.equal('123');
-          server.copayerId.should.equal(wallet.copayers[0].id);
-          done();
+          WalletService.getInstanceWithAuth({
+            copayerId: wallet.copayers[0].id,
+            message: 'hello world',
+            signature: sig,
+            walletId: '123',
+          }, function(err, server) {
+            should.not.exist(err);
+
+            // AQUI
+            server.walletId.should.equal('123');
+            server.copayerId.should.equal(wallet.copayers[0].id);
+            done();
+          });
+
         });
       });
     });
@@ -420,7 +427,6 @@ describe('Wallet service', function() {
             should.exist(err);
             err.message.should.equal('Invalid combination of required copayers / total copayers');
           } else {
-console.log('[server.js.425:err:]',err); //TODO
             should.not.exist(err);
           }
           return cb();
@@ -976,6 +982,7 @@ console.log('[server.js.425:err:]',err); //TODO
             }],
             feePerKb: 100e2,
           };
+
           async.eachSeries(_.range(2), function(i, next) {
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function() {
               next();
@@ -6934,11 +6941,6 @@ console.log('[server.js.425:err:]',err); //TODO
       x[0].vin[118].addr = mainAddresses[0].address;
       helpers.stubHistory(x);
 
-
-//console.log('[server.js.7149]',HugeTxs[1].vin); //TODO
-
-
-
       server.getTxHistory({}, function(err, txs) {
         should.not.exist(err);
         should.exist(txs);
@@ -7684,15 +7686,12 @@ console.log('[server.js.425:err:]',err); //TODO
         var addr = '1KbTiFvjbN6B5reCVS4tTT49vPQkvsqnE2'; // m/0/3
 
         server.scan({ startingStep: 1000 }, function(err) {
-console.log('[server.js.7365:err:]',err); //TODO
           should.not.exist(err);
           server.getWallet({}, function(err, wallet) {
-console.log('[server.js.7368:err:]',err); //TODO
             should.not.exist(err);
             wallet.addressManager.receiveAddressIndex.should.equal(201);
             wallet.addressManager.changeAddressIndex.should.equal(10);
             server.getMainAddresses({}, function(err, addr) {
-console.log('[server.js.7373:err:]',err); //TODO
               should.not.exist(err);
 
               //201 MAIN addresses (0 to 200)
@@ -7770,7 +7769,6 @@ console.log('[server.js.7373:err:]',err); //TODO
         server.scan({
           includeCopayerBranches: true
         }, function(err) {
-console.log('[server.js.7446:err:]',err); //TODO
           should.not.exist(err);
           server.storage.fetchAddresses(wallet.id, function(err, addresses) {
             should.exist(addresses);

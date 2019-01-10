@@ -187,6 +187,7 @@ describe('Email notifications', function() {
         };
 
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
+
           setTimeout(function() {
             var calls = mailerStub.send.getCalls();
             calls.length.should.equal(2);
@@ -533,13 +534,14 @@ describe('Email notifications', function() {
               english.subject.should.contain('New payment received');
               english.text.should.contain('123,000 bits');
               done();
-            }, 100);
+            }, 200);
           });
         });
       });
     });
 
     it('should support multiple emailservice instances running concurrently', function(done) {
+
       var emailService2 = new EmailService();
       emailService2.start({
         lock: emailService.lock, // Use same locker service
@@ -568,7 +570,9 @@ describe('Email notifications', function() {
                 unsent.should.be.empty;
                 done();
               });
-            }, 100);
+
+              // enought time to BOTH email services to process the notification
+            }, 200);
           });
         });
       });

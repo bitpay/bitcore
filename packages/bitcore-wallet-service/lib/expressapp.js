@@ -311,6 +311,7 @@ ExpressApp.prototype.start = function(opts, cb) {
     }, function(server) {
       var opts = {
         identifier: req.params['identifier'],
+        walletCheck: req.params['walletCheck'],
       };
       server.getWalletFromIdentifier(opts, function(err, wallet) {
         if (err) return returnError(err, res, req);
@@ -319,7 +320,6 @@ ExpressApp.prototype.start = function(opts, cb) {
         server.walletId = wallet.id;
         var opts = {};
         if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
-        if (req.query.twoStep == '1') opts.twoStep = true;
         server.getStatus(opts, function(err, status) {
           if (err) return returnError(err, res, req);
           res.json(status);

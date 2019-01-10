@@ -24,13 +24,6 @@ var config = {
       uri: 'mongodb://localhost:27017/bws',
     },
   },
-  lockOpts: {
-    //  To use locker-server, uncomment this:
-    lockerServer: {
-      host: 'localhost',
-      port: 3231,
-    },
-  },
   messageBrokerOpts: {
     //  To use message broker server, uncomment this:
     messageBrokerServer: {

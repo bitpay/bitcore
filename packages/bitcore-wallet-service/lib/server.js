@@ -100,7 +100,6 @@ WalletService.initialize = function(opts, cb) {
   $.shouldBeFunction(cb);
 
   opts = opts || {};
-  lock = opts.lock || new Lock(opts.lockOpts);
   blockchainExplorer = opts.blockchainExplorer;
   blockchainExplorerOpts = opts.blockchainExplorerOpts;
 
@@ -164,6 +163,8 @@ WalletService.initialize = function(opts, cb) {
       initFiatRateService(next);
     },
   ], function(err) {
+    lock = opts.lock || new Lock(storage, opts.lockOpts);
+
     if (err) {
       log.error('Could not initialize', err);
       throw err;
@@ -319,7 +320,7 @@ WalletService.getInstanceWithAuth = function(opts, cb) {
 WalletService.prototype._runLocked = function(cb, task, waitTime) {
   $.checkState(this.walletId);
 
-  this.lock.runLocked(this.walletId, cb, task, waitTime);
+  this.lock.runLocked(this.walletId, {waitTime: waitTime}, cb, task);
 };
 
 
@@ -509,12 +510,22 @@ WalletService.prototype.getWallet = function(opts, cb) {
  * Retrieves a wallet from storage.
  * @param {Object} opts
  * @param {string} opts.identifier - The identifier associated with the wallet (one of: walletId, address, txid).
+ * @param {string} opts.walletCheck - Check v8 wallet sync
  * @returns {Object} wallet
  */
 WalletService.prototype.getWalletFromIdentifier = function(opts, cb) {
   var self = this;
 
   if (!opts.identifier) return cb();
+
+
+  function end(err, ret) {
+    if (opts.walletCheck && !err && ret) {
+      return self.syncWallet(ret, cb);
+    } else {
+      return cb(err, ret);
+    }
+  }
 
   var walletId;
   async.parallel([
@@ -540,7 +551,7 @@ WalletService.prototype.getWalletFromIdentifier = function(opts, cb) {
   ], function(err) {
     if (err) return cb(err);
     if (walletId) {
-      return self.storage.fetchWallet(walletId, cb);
+      return self.storage.fetchWallet(walletId, end);
     }
 
     var re = /^[\da-f]+$/gi;
@@ -575,7 +586,7 @@ WalletService.prototype.getWalletFromIdentifier = function(opts, cb) {
       });
     }, function() {
       if (!walletId) return cb();
-      return self.storage.fetchWallet(walletId, cb);
+      return self.storage.fetchWallet(walletId, end);
     });
   });
 };
@@ -2513,6 +2524,7 @@ WalletService.prototype.publishTx = function(opts, cb) {
   if (!checkRequired(opts, ['txProposalId', 'proposalSignature'], cb)) return;
 
   self._runLocked(cb, function(cb) {
+
     self.getWallet({}, function(err, wallet) {
       if (err) return cb(err);
 
