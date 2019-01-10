@@ -67,9 +67,10 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
         let exists = (await WalletAddressStorage.collection.find({ wallet: wallet._id, address: { $in: addressBatch } }).toArray())
           .filter(walletAddress => walletAddress.processed)
           .map(walletAddress => walletAddress.address);
-        callback(null, addressBatch.filter(address => {
+        this.push(addressBatch.filter(address => {
           return !exists.includes(address);
         }));
+        callback();
       }
     }
 
@@ -90,7 +91,8 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
             }
           }
         })), { ordered: false};
-        callback(null, addressBatch);
+        this.push(addressBatch);
+        callback();
       }
     }
 
@@ -110,7 +112,8 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
             }
           };
         }), { ordered: false });
-        callback(null, addressBatch);
+        this.push(addressBatch);
+        callback();
       }
     }
 
@@ -136,7 +139,8 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
           }
         });
         coinStream.on('end', () => {
-          callback(null, {addressBatch})
+          this.push({ addressBatch });
+          callback();
         });
       }
     }
@@ -148,7 +152,8 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
       async _transform(data, _, callback) {
         const { txid, addressBatch } = data;
         if (addressBatch){
-          return callback(null, addressBatch);
+          this.push(addressBatch);
+          return callback();
         }
         await TransactionStorage.collection.updateMany(
           { chain, network, txid },
