@@ -7,6 +7,7 @@ var should = chai.should();
 var Lock = require('../lib/lock');
 var helpers = require('./integration/helpers');
 
+    var step=50;
 
 describe('Locks', function() {
   var lock, clock, order = [];
@@ -35,11 +36,6 @@ describe('Locks', function() {
 
 
   it('should lock tasks using the same token', function(done) {
-    var a = false,
-      b = false, 
-      step = 100;
-
-
     pushEvent(0);
 
     lock.acquire('123', {}, function(err, release) {
@@ -72,18 +68,21 @@ describe('Locks', function() {
   });
 
   it('should call waiting tasks', function(done) {
-    var a = false,
-      b = false, 
-      step = 100;
-
-
     pushEvent(0);
+
+    function testDone() {
+      if ( _.isEmpty(_.difference([0,4,1,2,3], order)) ) {
+        pushEvent('done');
+        done();
+      }
+    }
 
     lock.acquire('123', {}, function(err, release) {
       should.not.exist(err);
       pushEvent(1);
       setTimeout(function() {
         release();
+        testDone();
       }, step);
     }, 1);
     lock.acquire('123', {}, function(err, release) {
@@ -91,6 +90,7 @@ describe('Locks', function() {
       pushEvent(2);
       setTimeout(function() {
         release();
+        testDone();
       }, step);
     }, 2);
     lock.acquire('123', {}, function(err, release) {
@@ -98,23 +98,14 @@ describe('Locks', function() {
       pushEvent(3);
       setTimeout(function() {
         release();
+        testDone();
       }, step);
     }, 3);
     pushEvent(4);
 
-    setTimeout(function() {
-      order[1].should.equal(4);
-
-      //order is not assured
-      _.difference([0,4,1,2,3], order).should.be.empty();
-
-      done();
-    }, 3*step);
-
   });
  
   it('should not lock tasks using different tokens', function(done) {
-    var step=100;
 
     pushEvent(0);
 
@@ -146,26 +137,21 @@ describe('Locks', function() {
   });
   it('should return error if unable to acquire lock', function(done) {
 
-    var step=100, err1;
+    var err1;
 
     pushEvent(0);
 
     lock.acquire('123', {}, function(err, release) {
       should.not.exist(err);
       pushEvent(1);
-      setTimeout(function() {
+      lock.acquire('123', {waitTime:1}, function(err, release2) {
         release();
-        err1.should.contain('LOCKED');
+        err.should.contain('LOCKED');
         done();
-      }, step);
-      lock.acquire('123', {waitTime:1}, function(err, release) {
-        err1 = err;
       },2);
     }, 1);
   });
   it('should release lock if acquired for a long time', function(done) {
-
-    var step=100;
 
     lock.acquire('123', {lockTime:10}, function(err, release) {
       should.not.exist(err);
@@ -179,7 +165,6 @@ describe('Locks', function() {
 
   describe("#runLocked", () => {
     it('should run a locked function', function(done) {
-      var step=100;
       var called =0;
 
       function end() {
@@ -198,7 +183,6 @@ describe('Locks', function() {
 
 
     it('should lock locked functions', function(done) {
-      var step=100;
       var called =0;
 
       function end() {
