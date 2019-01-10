@@ -44,7 +44,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
       addressBatches: string[][];
       index: number;
       constructor() {
-        super({ objectMode: true});
+        super({ objectMode: true });
         this.addressBatches = partition(addresses, 1000);
         this.index = 0;
       }
@@ -52,8 +52,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
         if (this.index < this.addressBatches.length) {
           this.push(this.addressBatches[this.index]);
           this.index++;
-        }
-        else {
+        } else {
           this.push(null);
         }
       }
@@ -61,16 +60,21 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
 
     class FilterExistingAddressesStream extends Transform {
       constructor() {
-        super({objectMode: true});
+        super({ objectMode: true });
       }
       async _transform(addressBatch, _, callback) {
         try {
-          let exists = (await WalletAddressStorage.collection.find({ chain, network, wallet: wallet._id, address: { $in: addressBatch } }).project({ address: 1, processed: 1 }).toArray())
+          let exists = (await WalletAddressStorage.collection
+            .find({ chain, network, wallet: wallet._id, address: { $in: addressBatch } })
+            .project({ address: 1, processed: 1 })
+            .toArray())
             .filter(walletAddress => walletAddress.processed)
             .map(walletAddress => walletAddress.address);
-          this.push(addressBatch.filter(address => {
-            return !exists.includes(address);
-          }));
+          this.push(
+            addressBatch.filter(address => {
+              return !exists.includes(address);
+            })
+          );
           callback();
         } catch (err) {
           callback(err);
@@ -80,20 +84,23 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
 
     class AddNewAddressesStream extends Transform {
       constructor() {
-        super({objectMode: true});
+        super({ objectMode: true });
       }
       async _transform(addressBatch, _, callback) {
         if (!addressBatch.length) {
           return callback();
         }
         try {
-          await WalletAddressStorage.collection.bulkWrite(addressBatch.map(address => {
-            return {
-              insertOne: {
-                document: { chain, network, wallet: wallet._id, address, processed: false }
-              }
-            }
-          })), { ordered: false };
+          await WalletAddressStorage.collection.bulkWrite(
+            addressBatch.map(address => {
+              return {
+                insertOne: {
+                  document: { chain, network, wallet: wallet._id, address, processed: false }
+                }
+              };
+            })
+          ),
+            { ordered: false };
           this.push(addressBatch);
           callback();
         } catch (err) {
@@ -104,21 +111,24 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
 
     class UpdateCoinsStream extends Transform {
       constructor() {
-        super({objectMode: true});
+        super({ objectMode: true });
       }
       async _transform(addressBatch, _, callback) {
         if (!addressBatch.length) {
           return callback();
         }
         try {
-          await CoinStorage.collection.bulkWrite(addressBatch.map(address => {
-            return {
-              updateMany: {
-                filter: { chain, network, address },
-                update: { $addToSet: { wallets: wallet._id } }
-              }
-            };
-          }), { ordered: false });
+          await CoinStorage.collection.bulkWrite(
+            addressBatch.map(address => {
+              return {
+                updateMany: {
+                  filter: { chain, network, address },
+                  update: { $addToSet: { wallets: wallet._id } }
+                }
+              };
+            }),
+            { ordered: false }
+          );
           this.push(addressBatch);
           callback();
         } catch (err) {
@@ -137,15 +147,17 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
         if (!addressBatch.length) {
           return callback();
         }
-        const coinStream = CoinStorage.collection.find({chain, network, address: {$in: addressBatch}}).project({ mintTxid: 1, spentTxid: 1});
+        const coinStream = CoinStorage.collection
+          .find({ chain, network, address: { $in: addressBatch } })
+          .project({ mintTxid: 1, spentTxid: 1 });
         coinStream.on('data', (coin: ICoin) => {
-          if (!this.txids[coin.mintTxid]){
+          if (!this.txids[coin.mintTxid]) {
             this.txids[coin.mintTxid] = true;
-            this.push({ txid: coin.mintTxid});
+            this.push({ txid: coin.mintTxid });
           }
           if (!this.txids[coin.spentTxid]) {
             this.txids[coin.spentTxid] = true;
-            this.push({ txid: coin.spentTxid});
+            this.push({ txid: coin.spentTxid });
           }
         });
         let errored = false;
@@ -170,7 +182,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
       }
       async _transform(data, _, callback) {
         const { txid, addressBatch } = data;
-        if (addressBatch){
+        if (addressBatch) {
           this.push(addressBatch);
           return callback();
         }
@@ -182,7 +194,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
           callback();
         } catch (err) {
           callback(err);
-        } 
+        }
       }
     }
 
@@ -195,14 +207,17 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
           return callback();
         }
         try {
-          await WalletAddressStorage.collection.bulkWrite(addressBatch.map(address => {
-            return {
-              updateOne: {
-                filter: { chain, network, address, wallet: wallet._id },
-                update: { $set: { processed: true } }
-              }
-            }
-          }), { ordered: false });
+          await WalletAddressStorage.collection.bulkWrite(
+            addressBatch.map(address => {
+              return {
+                updateOne: {
+                  filter: { chain, network, address, wallet: wallet._id },
+                  update: { $set: { processed: true } }
+                }
+              };
+            }),
+            { ordered: false }
+          );
           callback();
         } catch (err) {
           callback(err);
@@ -218,42 +233,32 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
     const txUpdaterStream = new TxUpdaterStream();
     const markProcessedStream = new MarkProcessedStream();
 
-      return new Promise((resolve, reject) => {
-        markProcessedStream.on('unpipe', () => {
-          return resolve();
-        });
-        filterExistingAddressesStream.on('error', (err) => {
-          filterExistingAddressesStream.destroy();
-          return reject(err);
-        });
-        addNewAddressesStream.on('error', (err) => {
-          addNewAddressesStream.destroy();
-          return reject(err);
-        });
-        updateCoinsStream.on('error', (err) => {
-          updateCoinsStream.destroy();
-          return reject(err);
-        });
-        updatedTxidsStream.on('error', (err) => {
-          updatedTxidsStream.destroy();
-          return reject(err);
-        });
-        txUpdaterStream.on('error', (err) => {
-          txUpdaterStream.destroy();
-          return reject(err);
-        });
-        markProcessedStream.on('error', (err) => {
-          markProcessedStream.destroy();
-          return reject(err);
-        });
-        addressInputStream
-          .pipe(filterExistingAddressesStream)
-          .pipe(addNewAddressesStream)
-          .pipe(updateCoinsStream)
-          .pipe(updatedTxidsStream)
-          .pipe(txUpdaterStream)
-          .pipe(markProcessedStream);
+    const handleStreamError = (stream: Transform | Writable, reject) => {
+      stream.on('error', err => {
+        stream.destroy();
+        return reject(err);
       });
+    };
+    return new Promise((resolve, reject) => {
+      markProcessedStream.on('unpipe', () => {
+        return resolve();
+      });
+
+      handleStreamError(filterExistingAddressesStream, reject);
+      handleStreamError(addNewAddressesStream, reject);
+      handleStreamError(updateCoinsStream, reject);
+      handleStreamError(updatedTxidsStream, reject);
+      handleStreamError(txUpdaterStream, reject);
+      handleStreamError(markProcessedStream, reject);
+
+      addressInputStream
+        .pipe(filterExistingAddressesStream)
+        .pipe(addNewAddressesStream)
+        .pipe(updateCoinsStream)
+        .pipe(updatedTxidsStream)
+        .pipe(txUpdaterStream)
+        .pipe(markProcessedStream);
+    });
   }
 }
 
