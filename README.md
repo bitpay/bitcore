@@ -18,6 +18,7 @@ npm install
 
 <details>
 <summary><b>Example bitcore.config.json</b></summary>
+
 ```
 {
   "bitcoreNode": {
@@ -91,13 +92,14 @@ npm install
   }
 }
 ```
+
 </details>
-<br>
 
 ### 2) Setup Bitcoin Node
 
 <details>
 <summary><b> Example Bitcoin Mainnet Config </b></summary>
+
 ```
 whitelist=127.0.0.1
 txindex=0
@@ -106,6 +108,7 @@ server=1
 irc=1
 upnp=1
 ```
+
 </details>
 <br>
 
@@ -120,9 +123,9 @@ rpcuser=username
 rpcpassword=password
 ```
 
-###3) Run Bitcoin node
+### 3) Run Bitcoin node
 
-###4) Start Bitcore
+### 4) Start Bitcore
 
 ```
 npm run node
