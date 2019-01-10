@@ -104,7 +104,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
         if (!addressBatch.length) {
           return callback();
         }
-        await WalletAddressStorage.collection.bulkWrite(addressBatch.map(address => {
+        await CoinStorage.collection.bulkWrite(addressBatch.map(address => {
           return {
             updateMany: {
               filter: { chain, network, address },
