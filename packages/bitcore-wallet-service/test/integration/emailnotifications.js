@@ -166,7 +166,7 @@ describe('Email notifications', function() {
       });
     });
 
-    it('should notify copayers a new tx proposal has been created', function(done) {
+    it.only('should notify copayers a new tx proposal has been created', function(done) {
 
       var _readTemplateFile_old = emailService._readTemplateFile;
       emailService._readTemplateFile = function(language, filename, cb) {

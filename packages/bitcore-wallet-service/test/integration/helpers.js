@@ -202,7 +202,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
   server.createWallet(walletOpts, function(err, walletId) {
     if (err) return cb(err);
 
-    async.each(_.range(n), function(i, cb) {
+    async.eachSeries(_.range(n), function(i, cb) {
       var copayerData = TestData.copayers[i + offset];
 
 
@@ -539,16 +539,11 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
 
 helpers.createAndPublishTx = function(server, txOpts, signingKey, cb) {
 
-console.log('[helpers.js.541]'); //TODO
   server.createTx(txOpts, function(err, txp) {
-
-console.log('[helpers.js.544]'); //TODO
     should.not.exist(err, "Error creating a TX");
     should.exist(txp,"Error... no txp");
     var publishOpts = helpers.getProposalSignatureOpts(txp, signingKey);
     server.publishTx(publishOpts, function(err) {
-
-console.log('[helpers.js.550]'); //TODO
       should.not.exist(err);
       return cb(txp);
     });

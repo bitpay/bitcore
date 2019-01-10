@@ -10,9 +10,7 @@ var Defaults = Common.Defaults;
 var Errors = require('./errors/errordefinitions');
 
 
-const ACQUIRE_RETRY_STEP = 100; //ms
-
-var waiting = {};
+const ACQUIRE_RETRY_STEP = 50; //ms
 
 function Lock(storage, opts) {
   opts = opts || {};
@@ -21,29 +19,32 @@ function Lock(storage, opts) {
 };
 
 
-Lock.prototype.acquire = function(token, opts, cb) {
+Lock.prototype.acquire = function(token, opts, cb, timeLeft) {
   var self = this;
   opts = opts || {};
 
   opts.lockTime = opts.lockTime ||  Defaults.LOCK_EXE_TIME;
-  waiting[token] = waiting[token] || [];
 
   this.storage.acquireLock(token, (err) => {
 
     // Lock taken?
     if(err && err.message && err.message.indexOf('E11000 ') !== -1) {
 
-console.log('[lock.js.35] LOCKED! waiting', token); //TODO
-      let waitTimerId;
-
-      if (opts.waitTime) {
-        waitTimerId = setTimeout(() => {
-          waiting[token] = _.filter(waiting[token], (x) => { return x.task != cb; } );
-          cb('Could not acquire token');
-        }, opts.waitTime);
+      // Waiting time for lock has expired
+      if (timeLeft < 0) {
+        return cb('LOCKED');
       }
 
-      waiting[token].push({task:cb, waitTimerId: waitTimerId});
+      
+      if (!_.isUndefined(opts.waitTime)) {
+        if (_.isUndefined(timeLeft)) {
+          timeLeft = opts.waitTime;
+        } else {
+          timeLeft -= ACQUIRE_RETRY_STEP;
+        }
+      }
+      
+      return setTimeout(self.acquire.bind(self,token, opts, cb, timeLeft), ACQUIRE_RETRY_STEP);
 
     // Actual DB error
     } else if (err) {
@@ -54,42 +55,16 @@ console.log('[lock.js.35] LOCKED! waiting', token); //TODO
 
       var lockTimerId;
 
-      console.log('[lock.js.35] taking', token); //TODO
       function release(icb) {
         if (!icb) icb = () => {};
 
-        if (_.isEmpty(waiting[token])) {
+        clearTimeout(lockTimerId);
 
-
-          console.log('[lock.js.61] RELEASING!', token); //TODO
-          self.storage.releaseLock(token, () => {
-
-            icb();
-
-console.log('[lock.js.70:waiting:]',waiting); //TODO
-            let arrivals = _.clone(waiting[token]);
-            waiting[token]=[];
-            // Did someone arrived?
-            _.each(arrivals, (x) => {
-
-console.log('[lock.js.74] RESTARTING!'); //TODO
-              self.acquire(token, opts, x.task);
-            });
-
-          });
-        } else {
-console.log('[lock.js.61] NEXT!!', token); //TODO
-
-          // there are fns waiting. do not release the lock yet
-          let next = waiting[token].shift();
-          clearTimeout(next.waitTimerId);
-          clearTimeout(lockTimerId);
-          return next.task(null, release);
-        }
+        self.storage.releaseLock(token, icb);
       }
 
-      lockTimerId = setTimeout(() => { 
 
+      lockTimerId = setTimeout(() => { 
         release(); 
       }, opts.lockTime);
 
@@ -104,7 +79,10 @@ Lock.prototype.runLocked = function(token, opts, cb, task) {
   $.shouldBeDefined(token);
 
   this.acquire(token, opts, function(err, release) {
-    if (err) return cb(Errors.WALLET_BUSY);
+    if (err  == 'LOCKED' ) return cb(Errors.WALLET_BUSY);
+    if (err) return cb(err);
+
+
     var _cb = function() {
 
       cb.apply(null, arguments);

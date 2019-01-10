@@ -233,6 +233,8 @@ EmailService.prototype._getDataForTemplate = function(notification, recipient, c
       return cb(new Error('Could not format amount', ex));
     }
   }
+
+console.log('[emailservice.js.236]', notification.walletId); //TODO
   self.storage.fetchWallet(notification.walletId, function(err, wallet) {
     if (err) return cb(err);
     data.walletId = wallet.id;

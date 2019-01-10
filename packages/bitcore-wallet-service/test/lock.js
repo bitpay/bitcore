@@ -155,7 +155,7 @@ describe('Locks', function() {
       pushEvent(1);
       setTimeout(function() {
         release();
-        err1.should.contain('Could not acquire');
+        err1.should.contain('LOCKED');
         done();
       }, step);
       lock.acquire('123', {waitTime:1}, function(err, release) {

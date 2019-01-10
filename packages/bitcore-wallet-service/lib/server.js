@@ -2523,10 +2523,8 @@ WalletService.prototype.publishTx = function(opts, cb) {
 
   if (!checkRequired(opts, ['txProposalId', 'proposalSignature'], cb)) return;
 
-console.log('[server.js.2526]'); //TODO
   self._runLocked(cb, function(cb) {
 
-console.log('[server.js.2529]'); //TODO
     self.getWallet({}, function(err, wallet) {
       if (err) return cb(err);
 

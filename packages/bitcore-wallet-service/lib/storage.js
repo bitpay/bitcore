@@ -134,6 +134,7 @@ Storage.prototype.connect = function(opts, cb) {
     }
     self.db = db;
     self._createIndexes();
+    self.clearLocks();
     console.log('Connection established to mongoDB');
     return cb();
   });
@@ -1430,19 +1431,19 @@ Storage.prototype.walletCheck = async function(params) {
 Storage.prototype.acquireLock = function(key, cb) {
   this.db.collection(collections.LOCKS).insert({
     _id: key,
-    createdOn: Date.now(),
-  }, {
-    w: 1
-  }, cb);
+  },{}, cb);
 };
 
 
 Storage.prototype.releaseLock = function(key, cb) {
   this.db.collection(collections.LOCKS).remove({
     _id: key,
-  }, {
-    w: 1
-  }, cb);
+  }, {} , cb);
+};
+
+Storage.prototype.clearLocks = function() {
+  this.db.collection(collections.LOCKS).remove({
+  }, {multi:1} );
 };
 
 
