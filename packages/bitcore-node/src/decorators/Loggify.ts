@@ -59,7 +59,6 @@ export function LoggifyFunction(fn: Function, logPrefix: string = '', bind?: any
       returnVal
         .catch((err: any) => {
           logger.error(`${logPrefix}::catch::${err}`);
-          throw err;
         })
         .then((data: any) => {
           logger.debug(`${logPrefix}::resolved::`);
