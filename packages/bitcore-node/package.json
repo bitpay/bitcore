@@ -21,6 +21,8 @@
     "debug": "npm run tsc && node --inspect build/src/server.js --DEBUG true",
     "clean": "rm -rf build",
     "compile": "npm run tsc",
+    "docs:build-html": "typedoc --out ./docs/html --tsconfig tsconfig.json ./src",
+    "docs:build-json": "typedoc --json ./docs/json --tsconfig tsconfig.json ./src",
     "tsc": "npm run clean && ./node_modules/.bin/tsc",
     "tsc:test": "npm run clean && ./node_modules/.bin/tsc",
     "test": "npm run tsc:test && node ./build/test/runners/unit.js && node ./build/test/runners/integration.js",
