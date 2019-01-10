@@ -186,17 +186,18 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
     const txUpdaterStream = new TxUpdaterStream();
     const markProcessedStream = new MarkProcessedStream();
 
-    addressInputStream
-      .pipe(filterExistingAddressesStream)
-      .pipe(addNewAddressesStream)
-      .pipe(updateCoinsStream)
-      .pipe(updatedTxidsStream)
-      .pipe(txUpdaterStream)
-      .pipe(markProcessedStream);
-
-    markProcessedStream.on('end', () => {
-      return Promise.resolve();
-    });
+      return new Promise((resolve) => {
+        markProcessedStream.on('unpipe', () => {
+          return resolve();
+        });
+        addressInputStream
+          .pipe(filterExistingAddressesStream)
+          .pipe(addNewAddressesStream)
+          .pipe(updateCoinsStream)
+          .pipe(updatedTxidsStream)
+          .pipe(txUpdaterStream)
+          .pipe(markProcessedStream);
+      });
   }
 }
 
