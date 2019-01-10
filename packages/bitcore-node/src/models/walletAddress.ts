@@ -65,7 +65,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
       }
       async _transform(addressBatch, _, callback) {
         try {
-          let exists = (await WalletAddressStorage.collection.find({ wallet: wallet._id, address: { $in: addressBatch } }).project({ address: 1, processed: 1 }).toArray())
+          let exists = (await WalletAddressStorage.collection.find({ chain, network, wallet: wallet._id, address: { $in: addressBatch } }).project({ address: 1, processed: 1 }).toArray())
             .filter(walletAddress => walletAddress.processed)
             .map(walletAddress => walletAddress.address);
           this.push(addressBatch.filter(address => {
