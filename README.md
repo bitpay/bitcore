@@ -13,10 +13,11 @@ npm install
 ```
 
 # Setup Guide
-1) Setup bitcore config
+
+### 1) Setup bitcore config
+
 <details>
 <summary><b>Example bitcore.config.json</b></summary>
-<br>
 ```
 {
   "bitcoreNode": {
@@ -91,10 +92,12 @@ npm install
 }
 ```
 </details>
-2) # Setup Bitcoin Node
+<br>
+
+### 2) Setup Bitcoin Node
+
 <details>
 <summary><b> Example Bitcoin Mainnet Config </b></summary>
-<br>
 ```
 whitelist=127.0.0.1
 txindex=0
@@ -102,8 +105,13 @@ listen=1
 server=1
 irc=1
 upnp=1
+```
+</details>
+<br>
 
-# listen on different ports than default testnet
+**Listen on different ports than default testnet**
+
+```
 port=20008
 rpcport=20009
 rpcallowip=127.0.0.1
@@ -111,11 +119,11 @@ rpcallowip=127.0.0.1
 rpcuser=username
 rpcpassword=password
 ```
-</details>
 
+###3) Run Bitcoin node
 
-3) Run Bitcoin node
-4) Start Bitcore
+###4) Start Bitcore
+
 ```
 npm run node
 ```
@@ -132,4 +140,4 @@ See [CONTRIBUTING.md](https://github.com/bitpay/bitcore) on the main bitcore rep
 
 Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
 
-Copyright 2015 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
+Copyright 2015-2019 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
