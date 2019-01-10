@@ -109,7 +109,6 @@ irc=1
 upnp=1
 ```
 
-</details>
 <br>
 
 **Listen on different ports than default testnet**
@@ -122,6 +121,7 @@ rpcallowip=127.0.0.1
 rpcuser=username
 rpcpassword=password
 ```
+</details>
 
 ### 3) Run Bitcoin node
 
