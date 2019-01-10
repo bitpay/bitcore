@@ -14,10 +14,9 @@ npm install
 
 # Setup Guide
 1) Setup bitcore config
-## Example bitcore.config.json
-
-bitcore.config.json file in ./bitcore
-
+<details>
+<summary><b>Example bitcore.config.json</b></summary>
+<br>
 ```
 {
   "bitcoreNode": {
@@ -91,8 +90,11 @@ bitcore.config.json file in ./bitcore
   }
 }
 ```
-2) Setup Bitcoin Node
-# Example Bitcoin Mainnet Config
+</details>
+2) # Setup Bitcoin Node
+<details>
+<summary><b> Example Bitcoin Mainnet Config </b></summary>
+<br>
 ```
 whitelist=127.0.0.1
 txindex=0
@@ -109,6 +111,8 @@ rpcallowip=127.0.0.1
 rpcuser=username
 rpcpassword=password
 ```
+</details>
+
 
 3) Run Bitcoin node
 4) Start Bitcore
