@@ -76,6 +76,62 @@ a {
   }
 }
 
+ion-icon {
+  &[class*="custom-"] {
+    mask-size: contain;
+    mask-position: 50% 50%;
+    mask-repeat: no-repeat;
+    width: 6rem;
+    height: 6rem;
+  }
+
+  &[class*="custom-github"] {
+    mask-image: url(../assets/img/github.svg);
+    background: #263238;
+  }
+  &[class*="custom-bitpay"] {
+    mask-image: url(../assets/img/bitpay.svg);
+    background: #293b92;
+  }
+}
+
+
+ion-title {
+  &.logo-header {
+    .toolbar-title{
+      color: white;
+      font-weight: 700;
+      font-style: italic;
+      font-size: 2em;
+    }
+  }
+}
+.menu-inner >
+  ion-content{
+    position: relative;
+  }
+
+ion-footer{
+  height: 7rem;
+  display: flex;
+  flex-direction: column;
+  .footer-title{
+    display: flex;
+    width: 100%;
+    padding: 5px 0 0 16px;
+  }
+  .about{
+    display: flex;
+    justify-content: space-around;
+    width: 100%; 
+    align-self: center;
+    height: 100%;
+  }
+}
+
+.menu-icons{
+  padding-right: 1rem;
+}
 // Shared Sass variables, which can be used to adjust Ionic's
 // default Sass variables, belong in "theme/variables.scss".
 //
