@@ -134,7 +134,6 @@ Storage.prototype.connect = function(opts, cb) {
     }
     self.db = db;
     self._createIndexes();
-    self.clearLocks();
     console.log('Connection established to mongoDB');
     return cb();
   });
@@ -1440,12 +1439,6 @@ Storage.prototype.releaseLock = function(key, cb) {
     _id: key,
   }, {} , cb);
 };
-
-Storage.prototype.clearLocks = function() {
-  this.db.collection(collections.LOCKS).remove({
-  }, {multi:1} );
-};
-
 
 
 Storage.collections = collections;
