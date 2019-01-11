@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Input } from '@angular/core';
 import { TxsProvider } from '../../providers/transactions/transactions';
+import logger from '../../logger';
 
 @Component({
   selector: 'transaction-list',
@@ -28,7 +29,7 @@ export class TransactionListComponent implements OnInit {
           this.loading = false;
         },
         err => {
-          console.log('err is', err);
+          logger.error(err);
           this.loading = false;
         }
       );

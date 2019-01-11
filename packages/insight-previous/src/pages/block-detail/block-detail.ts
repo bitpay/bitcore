@@ -3,6 +3,7 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import logger from '../../logger';
 
 @IonicPage({
   name: 'block-detail',
@@ -39,7 +40,7 @@ export class BlockDetailPage {
         this.loading = false;
       },
       err => {
-        console.log('err is', err);
+        logger.error(err);
         this.loading = false;
       }
     );

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
+import logger from '../../logger';
 
 @IonicPage({
   name: 'blocks',
@@ -31,7 +32,7 @@ export class BlocksPage {
         this.loading = false;
       },
       err => {
-        console.log('err', err);
+        logger.error(err);
         this.loading = false;
       }
     );

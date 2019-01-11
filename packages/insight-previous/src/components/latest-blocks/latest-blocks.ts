@@ -5,6 +5,7 @@ import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { DefaultProvider } from '../../providers/default/default';
+import logger from '../../logger';
 
 @Component({
   selector: 'latest-blocks',
@@ -60,7 +61,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
       err => {
-        console.log('err', err);
+        logger.error(err);
         this.loading = false;
       }
     );
@@ -75,7 +76,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
       err => {
-        console.log('err', err);
+        logger.error(err);
         this.loading = false;
       }
     );

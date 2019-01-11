@@ -3,6 +3,7 @@ import { IonicPage, NavController, NavParams } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { TxsProvider } from '../../providers/transactions/transactions';
+import logger from '../../logger';
 
 @IonicPage({
   name: 'transaction',
@@ -38,7 +39,7 @@ export class TransactionPage {
         // Be aware that the tx component is loading data into the tx object
       },
       err => {
-        console.log('err is', err);
+        logger.error(err);
         this.loading = false;
       }
     );

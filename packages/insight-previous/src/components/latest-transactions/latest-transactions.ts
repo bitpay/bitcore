@@ -3,6 +3,7 @@ import { Http } from '@angular/http';
 import { NavController } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import logger from '../../logger';
 
 /**
  * Generated class for the LatestTransactionsComponent component.
@@ -51,7 +52,7 @@ export class LatestTransactionsComponent {
         this.loading = false;
       },
       (err) => {
-        console.log('err is', err);
+        logger.error(err);
         this.loading = false;
       }
     );
