@@ -25,11 +25,13 @@ Lock.prototype.acquire = function(token, opts, cb, timeLeft) {
 
   opts.lockTime = opts.lockTime ||  Defaults.LOCK_EXE_TIME;
 
-  this.storage.acquireLock(token, (err) => {
+  this.storage.acquireLock(token, Date.now() + opts.lockTime,  (err) => {
 
     // Lock taken?
     if(err && err.message && err.message.indexOf('E11000 ') !== -1) {
 
+      // Lock expired?
+      this.storage.clearExpiredLock(token, () => {});
       // Waiting time for lock has expired
       if (timeLeft < 0) {
         return cb('LOCKED');
@@ -53,20 +55,10 @@ Lock.prototype.acquire = function(token, opts, cb, timeLeft) {
     // Lock available
     } else {
 
-      var lockTimerId;
-
       function release(icb) {
         if (!icb) icb = () => {};
-
-        clearTimeout(lockTimerId);
-
         self.storage.releaseLock(token, icb);
       }
-
-
-      lockTimerId = setTimeout(() => { 
-        release(); 
-      }, opts.lockTime);
 
       return cb(null, (icb) => {
         release(icb);

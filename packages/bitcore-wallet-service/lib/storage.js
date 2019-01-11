@@ -134,7 +134,6 @@ Storage.prototype.connect = function(opts, cb) {
     }
     self.db = db;
     self._createIndexes();
-    self.clearLocks();
     console.log('Connection established to mongoDB');
     return cb();
   });
@@ -1428,9 +1427,10 @@ Storage.prototype.walletCheck = async function(params) {
 }
 
 
-Storage.prototype.acquireLock = function(key, cb) {
+Storage.prototype.acquireLock = function(key, expireTs, cb) {
   this.db.collection(collections.LOCKS).insert({
     _id: key,
+    expireOn: expireTs,
   },{}, cb);
 };
 
@@ -1441,9 +1441,21 @@ Storage.prototype.releaseLock = function(key, cb) {
   }, {} , cb);
 };
 
-Storage.prototype.clearLocks = function() {
-  this.db.collection(collections.LOCKS).remove({
-  }, {multi:1} );
+Storage.prototype.clearExpiredLock = function(key, cb) {
+  var self = this;
+
+  this.db.collection(collections.LOCKS).findOne({
+    _id: key,
+  }, (err, ret) => {
+    if (err || !ret) return;
+
+    if (ret.expireOn < Date.now()) {
+      log.info("Releasing expired lock : " + key);
+      return self.releaseLock(key, cb);
+    }
+    return cb();
+
+  });
 };
 
 
