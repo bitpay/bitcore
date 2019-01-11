@@ -161,6 +161,28 @@ describe('Locks', function() {
       });
     });
   });
+  it('should release lock if acquired for a long time (case 2)', function(done) {
+
+    // no releases
+    lock.acquire('123', {lockTime:10}, function(err, release) {
+      should.not.exist(err);
+    });
+
+    lock.acquire('123', {lockTime:20}, function(err, release) {
+      should.not.exist(err);
+    });
+    lock.acquire('123', {lockTime:30}, function(err, release) {
+      should.not.exist(err);
+      lock.acquire('123', {lockTime:30}, function(err, release) {
+        should.not.exist(err);
+        lock.acquire('123', {waitTime:1000}, function(err, release) {
+          should.not.exist(err);
+          done();
+        });
+      });
+    });
+  });
+
 
 
   describe("#runLocked", () => {

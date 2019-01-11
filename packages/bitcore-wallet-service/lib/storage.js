@@ -1450,6 +1450,7 @@ Storage.prototype.clearExpiredLock = function(key, cb) {
     if (err || !ret) return;
 
     if (ret.expireOn < Date.now()) {
+      log.info("Releasing expired lock : " + key);
       return self.releaseLock(key, cb);
     }
     return cb();
