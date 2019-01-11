@@ -1427,9 +1427,10 @@ Storage.prototype.walletCheck = async function(params) {
 }
 
 
-Storage.prototype.acquireLock = function(key, cb) {
+Storage.prototype.acquireLock = function(key, expireTs, cb) {
   this.db.collection(collections.LOCKS).insert({
     _id: key,
+    expireOn: expireTs,
   },{}, cb);
 };
 
@@ -1439,6 +1440,23 @@ Storage.prototype.releaseLock = function(key, cb) {
     _id: key,
   }, {} , cb);
 };
+
+Storage.prototype.clearExpiredLock = function(key, cb) {
+  var self = this;
+
+  this.db.collection(collections.LOCKS).findOne({
+    _id: key,
+  }, (err, ret) => {
+    if (err || !ret) return;
+
+    if (ret.expireOn < Date.now()) {
+      return self.releaseLock(key, cb);
+    }
+    return cb();
+
+  });
+};
+
 
 
 Storage.collections = collections;
