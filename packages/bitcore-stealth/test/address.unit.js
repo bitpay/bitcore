@@ -1,7 +1,7 @@
 'use strict';
 
 var assert = require('assert');
-var bitcore = require('bitcore');
+var bitcore = require('bitcore-lib-cash');
 
 var Stealth = require('../');
 

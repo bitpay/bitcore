@@ -2,7 +2,7 @@
 
 var _ = require('lodash');
 
-var bitcore = require('bitcore');
+var bitcore = require('bitcore-lib-cash');
 var Address = require('./address');
 var inherits = require('util').inherits;
 

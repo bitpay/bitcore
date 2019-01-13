@@ -2,7 +2,7 @@
 
 var _ = require('lodash');
 
-var bitcore = require('bitcore');
+var bitcore = require('bitcore-lib-cash');
 
 var Base58 = bitcore.encoding.Base58;
 var Base58Check = bitcore.encoding.Base58Check;
