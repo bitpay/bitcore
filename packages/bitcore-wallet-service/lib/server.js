@@ -1169,6 +1169,42 @@ WalletService.prototype.createAddress = function(opts, cb) {
 };
 
 /**
+ * Get Steath Address
+ * @returns {SteathAddress} address
+ */
+WalletService.prototype.getStealthAddress = function(opts, cb) {
+  var self = this;
+  opts = opts || {};
+
+  self.getWallet({}, function(err, wallet) {
+    if (err) return cb(err);
+    if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
+    if (wallet.coin != 'bch') return cb(Errors.WALLET_NOT_BCH);
+
+    let sa;
+    try {
+      sa = wallet.getStealthAddress();
+    } catch(e){
+      log.warn("Error creating stealth address for " + self.walletId, e);
+      return cb("Bad xPub");
+    };
+
+    self.storage.storeWallet(wallet, function(err) {
+      if (err) return cb(err);
+      self._notify('NewStealthAddress', {
+        address: sa.address,
+      }, function() {
+        let ret = _.clone(sa);
+        ret.coin = wallet.coin;
+        ret.network = wallet.network;
+        ret.walletId = wallet.id;
+        return cb(err, ret);
+      });
+    });
+  });
+};
+
+/**
  * Get all addresses.
  * @param {Object} opts
  * @param {Numeric} opts.limit (optional) - Limit the resultset. Return all addresses by default.

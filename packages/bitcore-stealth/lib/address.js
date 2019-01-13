@@ -19,6 +19,8 @@ var PrivateKey = bitcore.PrivateKey;
 var Networks = bitcore.Networks;
 var Transcation = bitcore.Transcation;
 
+const Base32 = bitcore.util.base32;
+
 
 function Address(scanKey, spendKeys, signatures) {
   if (!(this instanceof Address)) {
@@ -353,7 +355,9 @@ Address.prototype.toJSON = function toJSON() {
  * @returns {String} Stealth address
  */
 Address.prototype.toString = function() {
-  return Base58Check.encode(this.toBuffer());
+//  return Base58Check.encode(this.toBuffer());
+  var payl = bitcore.util.convertBits(this.toBuffer(), 8, 5);
+  return Base32.encode(payl).toUpperCase();
 };
 
 /**

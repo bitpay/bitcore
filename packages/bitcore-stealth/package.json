@@ -1,6 +1,6 @@
 {
   "name": "bitcore-stealth",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Stealth Addresses implemented for Bitcore.",
   "main": "index.js",
   "directories": {
@@ -20,7 +20,6 @@
     "stealth",
     "addresses"
   ],
-  "author": "Yemel Jardi <yemel@bitpay.com> (http://github.com/yemel)",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/bitpay/bitcore-stealth/issues"

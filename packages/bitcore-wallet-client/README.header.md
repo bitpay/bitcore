@@ -135,3 +135,23 @@ Return: [...]
 Note that the scripts created two files named `irene.dat` and `tomas.dat`. With these files you can get status, generate addresses, create proposals, sign transactions, etc.
 
 
+
+## Steath addresses implementation details (Bitcoin cash)
+
+Each bitcore-wallet-client wallet have only one stealth address. The address has at least 2 public key. One for scanning.
+
+To avoid the need of requesting new pub key of all copayers, given a wallet extended public key: xPub0, xPub1, ... xPubN, the stealh address composed by:
+
+1. Scan Key:
+
+The scan key is created from the derivation `/2/0` from wallet's base address xPub (normally m/44'/0'/0'). 
+
+For multisig wallets, the choseen public key is the first, in lexical order, of all wallet's pubkeys corresponding to m/2/0 derivation, expressed in compressed form.
+
+2. Spend Keys
+
+The spend keys are created from the derivation `/2/1` from wallet's base address. Spend keys must be ordered before creating the steath address
+
+
+
+

@@ -1632,6 +1632,44 @@ describe('Wallet service', function() {
     });
   });
 
+
+  describe.only('#getStealthAddress', function() {
+    var server, wallet;
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(1, 1, {coin:'bch'}, function(s, w) {
+          server = s;
+          wallet = w;
+          w.copayers[0].id.should.equal(TestData.copayers[0].id44bch);
+          done();
+        });
+      });
+
+      it('should create address', function(done) {
+        server.getStealthAddress({}, function(err, address) {
+          should.not.exist(err);
+          should.exist(address);
+          address.walletId.should.equal(wallet.id);
+          address.network.should.equal('livenet');
+          address.address.should.equal('9GQQX08YJ3D5649AZQY9QDWYFGJ7E2CN9AJ2MGVJRFAH95VP7KR09CLZQYPWUW84EDK9MVXPWUKGS4G9DNZ20L25VYZ7UKK22UE82RXLV8NSD8GPQQ');
+          address.scanPubKey.should.equal('033ce4945b4d54bd10085035c44a25ecab132f64ada1921a7b72d181f586f2e3e2');
+          address.spendPubKeys.should.deep.equal([ '02ee38f5cb6c5db0c1772c8855056cc4a7fd546105ee5aca5732750cdf61e7069d' ]);
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var notif = _.find(notifications, {
+              type: 'NewStealthAddress'
+            });
+            should.exist(notif);
+            notif.data.address.should.equal(address.address);
+            done();
+          });
+        });
+      });
+
+
+  });
+
+
+
   describe('#getMainAddresses', function() {
     var server, wallet;
 

@@ -39,6 +39,8 @@ var errors = {
   WALLET_NOT_COMPLETE: 'Wallet is not complete',
   WALLET_NOT_FOUND: 'Wallet not found',
   WALLET_NEED_SCAN: 'Wallet needs addresses scan',
+  WALLET_NOT_BTC: 'Feature only for Bitcoin [BTC]',
+  WALLET_NOT_BCH: 'Feature only for Bitcoin Cash [BCH]',
 };
 
 var errorObjects = _.fromPairs(_.map(errors, function(msg, code) {

@@ -3,6 +3,7 @@
 var _ = require('lodash');
 var util = require('util');
 var log = require('npmlog');
+const Stealth = require('bitcore-stealth');
 var $ = require('preconditions').singleton();
 var Uuid = require('uuid');
 
@@ -63,6 +64,8 @@ Wallet.create = function(opts) {
   // x.nativeCashAddr opts is only for testing
   x.nativeCashAddr = _.isUndefined(opts.nativeCashAddr) ? (x.coin == 'bch' ? true : null) : opts.nativeCashAddr;
 
+  x.stealth = null; 
+
   return x;
 };
 
@@ -98,7 +101,11 @@ Wallet.fromObj = function(obj) {
   x.beAuthPrivateKey2 = obj.beAuthPrivateKey2; 
   x.beAuthPublicKey2 = obj.beAuthPublicKey2; 
 
+<<<<<<< HEAD
   x.nativeCashAddr = obj.nativeCashAddr;
+=======
+  x.stealth = obj.stealth; 
+>>>>>>> add stealth address creation support at server + tests
 
   return x;
 };
@@ -198,6 +205,43 @@ Wallet.prototype.createAddress = function(isChange, step) {
   var address = Address.derive(self.id, this.addressType, this.publicKeyRing, path, this.m, this.coin, this.network, isChange, !self.nativeCashAddr);
   return address;
 };
+
+Wallet.prototype.getStealthAddress = function() {
+  $.checkState(this.isComplete());
+  $.checkState(this.coin == 'bch','Only for bch wallets');
+
+  if (this.stealth) {
+    return  this.stealth;
+  }
+  var self = this;
+
+ var scanPath = Constants.PATHS.STEALTH_SCAN;
+  log.verbose('Deriving scan key:' + scanPath);
+
+  let scankey = _.map(self.publicKeyRing, function(item) {
+    var xpub = new Bitcore['bch'].HDPublicKey(item.xPubKey);
+    return xpub.deriveChild(scanPath).publicKey;
+  }).sort()[0];
+
+  var spendPath = Constants.PATHS.STEALTH_SPEND;
+  log.verbose('Deriving spend key:' + spendPath);
+
+  let spendKeys = _.map(self.publicKeyRing, function(item) {
+    var xpub = new Bitcore['bch'].HDPublicKey(item.xPubKey);
+    return xpub.deriveChild(spendPath).publicKey;
+  }).sort();
+
+  let sa = new Stealth.Address(scankey, spendKeys);
+
+  this.stealth = {
+    address: sa.toString(),
+    spendPubKeys: _.map(spendKeys, (x) => { return x.toString()} ),
+    scanPubKey: scankey.toString(),
+  };
+  return this.stealth;
+};
+
+
 
 /// Only for power scan
 Wallet.prototype.getSkippedAddress = function() {

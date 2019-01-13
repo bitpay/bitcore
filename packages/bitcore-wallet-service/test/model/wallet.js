@@ -56,6 +56,36 @@ describe('Wallet', function() {
     });
   });
 
+  describe('#getStealthAddress', function() {
+    it('create multisig stealthAddress', function() {
+      var inW = _.clone(testWallet);
+      inW.coin = 'bch';
+      var w = Wallet.fromObj(inW);
+      var a = w.getStealthAddress();
+      a.address.should.equal('9GQQYWQLRWLHU45YXAR9ZAVMAYW47VCRGZN6LP0KQSTR8NHNEDSU3VX8QVPGRYFLPKLS0QKFWG9AEXVX9QKE4W29SN7940X9F5ZWJ68MVAECG8CZ6P9YUQZF90VJGED5JH5WQMW36WWW8WHHHCLF6J0Z0TRJN0ZWGL4QXHS02AS0989FFSVDNU7M32N6JT6VXK6MZNNAAKLXWT3UQC0AFGY2QVQQ');
+      a.scanPubKey.should.equal('02381f1bbf7e5684374651759be91d5f330340a7af85f6041633cef3cb61c8b0c7');
+      a.spendPubKeys.should.deep.equal([
+        "0281913f0dbf0782c9720bdc9986282d9ab94584fc5abcc54d04e968fb6773841f",
+        "02d04a4e00492bd92465b495e8e06dd1d39ce3baf7be3e9d49e27ac729bc4e47ea",
+        "035e0f5760f29ca94c18d9f3db8aa7a92f4c35b5b14e7dedbe672e3c061fd4a08a"]);
+    });
+
+    it('create singlesig stealthAddress', function() {
+      var inW = _.clone(testWallet2);
+      inW.coin = 'bch';
+      var w = Wallet.fromObj(inW);
+      var a = w.getStealthAddress();
+      a.address.should.equal('9GQQXXMUE3JUUDSSNTE0VMEWD7HL4UVXJ5F3GPANMZM76RFF7NWJ6C4UQYPDQJJWQPYJHKFYVK6FT68QDHGA888RHTMMU05AF83843EFH38Y06SPQQ');
+      a.scanPubKey.should.equal('031b7ccc65ce36109af2f66f2e6faffaf18695131407b3d8b7ed0d29f4dd2d62bc');
+      a.spendPubKeys.should.deep.equal([
+        "02d04a4e00492bd92465b495e8e06dd1d39ce3baf7be3e9d49e27ac729bc4e47ea",
+      ]);
+    });
+ 
+  });
+
+
+
   describe('#createBEKeys', function() {
     it('create BE keys based on xPubkeys', function() {
       var w = Wallet.fromObj(testWallet);
@@ -146,6 +176,40 @@ var testWallet = {
     xPubKey: 'xpub661MyMwAqRbcFXUfkjfSaRwxJbAPpzNUvTiNFjgZwDJ8sZuhyodkP24L4LvsrgThYAAwKkVVSSmL7Ts7o9EHEHPB3EE89roAra7njoSeiMd',
     requestPubKey: '0246c30040eda1e36e02629ae8cd2a845fcfa947239c4c703f7ea7550d39cfb43a',
     signature: '304402207a4e7067d823a98fa634f9c9d991b8c42cd0f82da24f686992acf96cdeb5e387022021ceba729bf763fc8e4277f6851fc2b856a82a22b35f20d2eeb23d99c5f5a41c',
+    version: '1.0.0',
+  }],
+  version: '1.0.0',
+  pubKey: '{"x":"6092daeed8ecb2212869395770e956ffc9bf453f803e700f64ffa70c97a00d80","y":"ba5e7082351115af6f8a9eb218979c7ed1f8aa94214f627ae624ab00048b8650","compressed":true}',
+  isTestnet: false
+};
+
+
+
+var testWallet2 = {
+  addressManager: {
+    receiveAddressIndex: 0,
+    changeAddressIndex: 0,
+    copayerIndex: 2147483647,
+  },
+  createdOn: 1422904188,
+  id: '123',
+  name: '123 wallet',
+  m: 1,
+  n: 1,
+  addressType: 'P2PKH',
+  derivationStrategy: 'BIP44',
+  status: 'complete',
+  publicKeyRing: [{
+    xPubKey: 'xpub661MyMwAqRbcFLRkhYzK8eQdoywNHJVsJCMQNDoMks5bZymuMcyDgYfnVQYq2Q9npnVmdTAthYGc3N3uxm5sEdnTpSqBc4YYTAhNnoSxCm9',
+    requestPubKey: '03814ac7decf64321a3c6967bfb746112fdb5b583531cd512cc3787eaf578947dc'
+  }, ],
+  copayers: [{
+    createdOn: 1422904189,
+    id: '1',
+    name: 'copayer 1',
+    xPubKey: 'xpub661MyMwAqRbcFLRkhYzK8eQdoywNHJVsJCMQNDoMks5bZymuMcyDgYfnVQYq2Q9npnVmdTAthYGc3N3uxm5sEdnTpSqBc4YYTAhNnoSxCm9',
+    requestPubKey: '03814ac7decf64321a3c6967bfb746112fdb5b583531cd512cc3787eaf578947dc',
+    signature: '30440220192ae7345d980f45f908bd63ccad60ce04270d07b91f1a9d92424a07a38af85202201591f0f71dd4e79d9206d2306862e6b8375e13a62c193953d768e884b6fb5a46',
     version: '1.0.0',
   }],
   version: '1.0.0',
