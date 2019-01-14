@@ -190,7 +190,7 @@ Address._stealthDH = function(bn, spendKey) {
  */
 Address._derivePublicKey = function(spendKey, c) {
   var sharedPoint = new PrivateKey(c).publicKey.point;
-  return new PublicKey(spendKey.point.add(sharedPoint), spendKey.network);
+  return new PublicKey(spendKey.point.add(sharedPoint));
 };
 
 /**
@@ -278,7 +278,7 @@ Address.getPubkeyHashPaymentAddress = function(ephemeral, scanKey, spendKey) {
   }
 
   var c = Address._stealthDH(scanKey.bn, ephemeral);
-  return Address._derivePublicKey(spendKey, c).toAddress(); // TODO: Network?
+  return Address._derivePublicKey(spendKey, c).toAddress(scanKey.network); // TODO: Network?
 };
 
 /**
@@ -305,7 +305,7 @@ Address.getMultisigPaymentAddress = function(ephemeral, scanKey, spendKeys, sign
     return Address._derivePublicKey(pubkey, c);
   });
 
-  return bitcore.Address.createMultisig(derivedPubkeys, signatures); // TODO: Network?
+  return bitcore.Address.createMultisig(derivedPubkeys, signatures, scanKey.network); // TODO: Network?
 };
 
 

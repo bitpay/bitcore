@@ -144,19 +144,28 @@ BlockchainMonitor.prototype._handleStealthPayments = function(coin, network, dat
             return;
 
           var ephemeral = Stealth.Transaction.getEphemeral(x);
-          var paymentAddress = tx.vout[i+1].scriptPubKey.addresses[0];
+          var paymentAddress = new bitcorecash.Address(tx.vout[i+1].scriptPubKey.addresses[0]);
 console.log('[blockchainmonitor.js.149:paymentAddress:]',paymentAddress); //TODO
+console.log('[blockchainmonitor.js.138:ephemeral:]',ephemeral); //TODO
 
-          console.log('[blockchainmonitor.js.138:ephemeral:]',ephemeral); //TODO
-
-          // go thur addresses
+          // go thru addresses
           _.each(addresses, (a) => {
-console.log('[blockchainmonitor.js.153]', a); //TODO
+            console.log('[blockchainmonitor.js.153]', a); //TODO
 
+            if (paymentAddress.isPayToPublicKeyHash() && a.m != 1) return;
+            if (!paymentAddress.isPayToPublicKeyHash() && a.m == 1) return;
 
-      var scanKey = new bitcore.PrivateKey(scanKeyLive);
-      var spendKey = new bitcore.PrivateKey(spendKeyLive).publicKey;
-            var scannedAddress = Stealth.Address.getPubkeyHashPaymentAddress(ephemeral, scanKey, spendKey);
+            var scanPrivKey = new bitcorecash.PrivateKey(a.scanPrivKey, network);
+console.log('[blockchainmonitor.js.158:scanPrivKey:]',scanPrivKey); //TODO
+            var spendPubKeys = _.map(a.spendPubKeys, (x) => { return  new bitcorecash.PublicKey(x, {network: network});}); 
+console.log('[blockchainmonitor.js.160:spendPubKeys:]',spendPubKeys); //TODO
+            var scannedAddress;
+            if (paymentAddress.isPayToPublicKeyHash()) {
+              scannedAddress = Stealth.Address.getPubkeyHashPaymentAddress(ephemeral,scanPrivKey, spendPubKeys[0]);
+            } else {
+              scannedAddress = Stealth.Address.getMultisigPaymentAddress(ephemeral,scanPrivKey, spendPubKeys, a.m);
+            }
+console.log('[blockchainmonitor.js.156:scannedAddress:]',scannedAddress); //TODO
           });
 
 
