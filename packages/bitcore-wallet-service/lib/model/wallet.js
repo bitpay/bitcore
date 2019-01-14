@@ -207,7 +207,7 @@ Wallet.prototype.createAddress = function(isChange, step) {
   return address;
 };
 
-Wallet.prototype.getStealthAddress = function() {
+Wallet.prototype.getStealthAddress = function(scanPrivKey) {
   $.checkState(this.isComplete());
   $.checkState(this.coin == 'bch','Only for bch wallets');
 
@@ -224,6 +224,8 @@ Wallet.prototype.getStealthAddress = function() {
     return xpub.deriveChild(scanPath).publicKey;
   }).sort()[0];
 
+  $.checkParam(scanKey == new Bitcore['bch'].PrivateKey(scanPrivKey).toPublicKey().toString(), 'Wrong scan Priv key');
+
   var spendPath = Constants.PATHS.STEALTH_SPEND;
   log.verbose('Deriving spend key:' + spendPath);
 
@@ -236,6 +238,7 @@ Wallet.prototype.getStealthAddress = function() {
     address: (new Stealth.Address(scankey, spendKeys, self.m)).toString(),
     spendPubKeys: _.map(spendKeys, (x) => { return x.toString()} ),
     scanPubKey: scankey.toString(),
+    scanPrivKey: scanPrivKey,
     walletId: self.id,
     network: self.network,
     m: self.m,

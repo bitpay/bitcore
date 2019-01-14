@@ -10,6 +10,8 @@ var BlockchainExplorer = require('./blockchainexplorer');
 var Storage = require('./storage');
 var MessageBroker = require('./messagebroker');
 var Lock = require('./lock');
+var bitcorecash = require('bitcore-lib-cash');
+const Stealth = require('bitcore-stealth');
 
 var Notification = require('./model/notification');
 
@@ -114,10 +116,55 @@ BlockchainMonitor.prototype._handleTx = function(coin, network, data) {
 BlockchainMonitor.prototype._handleStealthPayments = function(coin, network, data) {
   var self = this;
   if (!data || !data.txid) return;
-console.log('[blockchainmonitor.js.117:data:]',data); //TODO
-  //log.info(`New ${coin}/${network} tx: ${data.txid}`);
+  log.info(`New ${coin}/${network} tx: ${data.txid}`);
 
-  //self.storage.fetchTxByHash(data.txid, function(err, txp) {
+  // TODO filter only txs with opret
+  // TODO filter only txs with the right prefix
+  //
+  let explorer = self.explorers[coin][network];
+
+
+  explorer.getRawTransaction(data.txid, function(err, tx) {
+//console.log('[blockchainmonitor.js.128:tx:]',JSON.stringify(tx)); //TODO
+    if (err || !tx) return;
+    if (_.some(tx.vout, (x) => { 
+      return +x.value == 0 && bitcorecash.Script(tx.vout[0].scriptPubKey.hex).isDataOut()
+    })) {
+
+      // TODO store this, refresh on NewStealthAddress
+      self.storage.fetchStealthAddress({}, function(err, addresses) {
+//console.log('[blockchainmonitor.js.125:addresses:]',addresses); //TODO
+
+
+        _.each(tx.vout, (x, i) => { 
+
+          x.script = bitcorecash.Script(x.scriptPubKey.hex);
+
+          if (!x.script.isDataOut()) 
+            return;
+
+          var ephemeral = Stealth.Transaction.getEphemeral(x);
+          var paymentAddress = tx.vout[i+1].scriptPubKey.addresses[0];
+console.log('[blockchainmonitor.js.149:paymentAddress:]',paymentAddress); //TODO
+
+          console.log('[blockchainmonitor.js.138:ephemeral:]',ephemeral); //TODO
+
+          // go thur addresses
+          _.each(addresses, (a) => {
+console.log('[blockchainmonitor.js.153]', a); //TODO
+
+
+      var scanKey = new bitcore.PrivateKey(scanKeyLive);
+      var spendKey = new bitcore.PrivateKey(spendKeyLive).publicKey;
+            var scannedAddress = Stealth.Address.getPubkeyHashPaymentAddress(ephemeral, scanKey, spendKey);
+          });
+
+
+
+        });
+      });
+    }
+  });
     //if (err) {
       //log.error('Could not fetch tx from the db');
       //return;
@@ -180,7 +227,6 @@ BlockchainMonitor.prototype._handleThirdPartyBroadcasts = function(coin, network
 BlockchainMonitor.prototype._handleIncomingPayments = function(coin, network, data) {
   var self = this;
   if (!data) return;
-//console.log('[blockchainmonitor.js.158:data:]',data); //TODO
 
   var outs;
   // ! v8?

@@ -463,6 +463,28 @@ helpers.stubAddressActivity = function(activeAddresses, failsOn) {
   };
 };
 
+
+helpers.clientScanPrivKey = function(derivedXPrivKey) {
+  var self = this;
+
+
+  TODO TODO TODO
+
+  var spendPath = Constants.PATHS.STEALTH_SPEND;
+  log.verbose('Deriving spend key:' + spendPath);
+
+  let spendKeys = _.map(self.publicKeyRing, function(item) {
+    var xpub = new Bitcore['bch'].HDPublicKey(item.xPubKey);
+    return xpub.deriveChild(spendPath).publicKey;
+  }).sort();
+
+
+
+  return signatures;
+};
+
+
+
 helpers.clientSign = function(txp, derivedXPrivKey) {
   var self = this;
 

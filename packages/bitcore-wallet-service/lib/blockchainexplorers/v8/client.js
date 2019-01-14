@@ -78,6 +78,16 @@ console.log('[client.js.59:url:]',url); //TODO
 };
 
 
+// TODO
+Client.prototype.getRawTx = async function (params) {
+  const { txid } = params;
+  const url = `https://tbch.blockdozer.com/api/tx/${txid}`;
+console.log('[client.js.59:url:]',url); //TODO
+  return request.get(url, {
+    json: true
+  });
+};
+
 
 Client.prototype.getCoins = async function (params) {
   const { payload, pubKey, includeSpent } = params;

@@ -289,6 +289,30 @@ console.log('[v8.js.207] GET TX', txid); //TODO
 };
 
 
+V8.prototype.getRawTransaction = function(txid, cb) {
+  var self = this;
+console.log('[v8.js.207] GET Raw TX', txid); //TODO
+  var client = this._getClient();
+  client.getRawTx({txid: txid })
+    .then( (tx) => {
+      if (!tx || _.isEmpty(tx)) {
+        return cb();
+      }
+//      self.translateTx(tx);
+      return cb(null, tx);
+    })
+    .catch((err) =>{ 
+      // The TX was not found
+      if (err.statusCode == '404') {
+        return cb();
+      } else {
+        return cb(err);
+      }
+    });
+};
+
+
+
 V8.prototype.getAddressUtxos = function(address, height, cb) {
   var self = this;
 console.log(' GET ADDR UTXO', address, height); //TODO

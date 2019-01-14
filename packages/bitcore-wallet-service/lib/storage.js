@@ -609,6 +609,11 @@ Storage.prototype.storeStealthAddress = function(saddress, cb) {
   }, cb);
 };
 
+// TODO :  prefix
+Storage.prototype.fetchStealthAddress = function(saddress, cb) {
+  var self = this;
+  self.db.collection(collections.STEALTH_ADDRESSES).find({}).toArray(cb);
+};
 
 Storage.prototype.storeAddressAndWallet = function(wallet, addresses, cb) {
   var self = this;

@@ -1645,6 +1645,7 @@ describe('Wallet service', function() {
 
       it('should create address', function(done) {
         server.getStealthAddress({}, function(err, address) {
+console.log('[server.js.1648:err:]',err); //TODO
           should.not.exist(err);
           should.exist(address);
           address.walletId.should.equal(wallet.id);

@@ -1,0 +1,20 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var bitcoreCash = require('bitcore-wallet-client').BitcoreCash;
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .parse(process.argv);
+
+var args = program.args;
+utils.getClient(program, {
+  mustExist: true
+}, function(client) {
+  client.getStealthAddress({}, function(err, x) {
+    utils.die(err);
+
+    console.log('* Stealth Address %s ', x.address);
+  });
+});
