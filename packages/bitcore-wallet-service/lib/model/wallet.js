@@ -102,11 +102,11 @@ Wallet.fromObj = function(obj) {
   x.beAuthPrivateKey2 = obj.beAuthPrivateKey2; 
   x.beAuthPublicKey2 = obj.beAuthPublicKey2; 
 
-<<<<<<< HEAD
   x.nativeCashAddr = obj.nativeCashAddr;
-=======
-  x.stealth = obj.stealth; 
->>>>>>> add stealth address creation support at server + tests
+
+  if (obj.stealth) {
+    x.stealth = StealthAddress.fromObj(obj.stealth); 
+  }
 
   return x;
 };

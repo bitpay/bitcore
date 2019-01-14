@@ -26,8 +26,9 @@ Verifier.checkStealthAddress = function(credentials, address) {
   $.checkState(credentials.isComplete());
 
   var local = Utils.deriveStealthAddress(credentials.publicKeyRing, credentials.m, credentials.network);
+
   return (local.address == address.address &&
-    _.difference(local.publicKeys, address.publicKeys).length === 0);
+    _.xor(local.spendPubKeys , address.spendPubKeys).length === 0);
 };
 
 
@@ -44,7 +45,7 @@ Verifier.checkAddress = function(credentials, address) {
 
   var local = Utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin);
   return (local.address == address.address &&
-    _.difference(local.publicKeys, address.publicKeys).length === 0);
+    _.xor(local.publicKeys, address.publicKeys).length === 0);
 };
 
 /**

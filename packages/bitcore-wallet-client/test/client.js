@@ -2077,10 +2077,48 @@ describe('client API', function() {
   describe.only('Stealth Address', function() {
     it('should be able to create address in 1-of-1 wallet', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, {coin:'bch'}, function() {
-        clients[0].getStealthAddress(function(err, x) {
+        clients[0].getStealthAddress({}, function(err, x) {
           should.not.exist(err);
           should.exist(x.address);
+          x.address.length.should.equal(114);
+          x.m.should.equal(1);
           done();
+        });
+      });
+    });
+
+    it('should be able to create address in 2-of-2 wallet', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 2, {coin:'bch'}, function() {
+        clients[0].getStealthAddress({}, function(err,x) {
+          should.not.exist(err);
+          should.exist(x.address);
+          x.address.length.should.equal(167);
+          x.m.should.equal(2);
+          done();
+        });
+      });
+    });
+    it('should be able to create address in 2-of-3 wallet', function(done) {
+      helpers.createAndJoinWallet(clients, 2, 3, {coin:'bch'}, function() {
+        clients[0].getStealthAddress({}, function(err,x) {
+          should.not.exist(err);
+          should.exist(x.address);
+          x.address.length.should.equal(220);
+          x.m.should.equal(2);
+          done();
+        });
+      });
+    });
+ 
+     it('should be able to create address in 1-of-1 wallet twice', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, {coin:'bch'}, function() {
+        clients[0].getStealthAddress({}, function(err, x) {
+          should.not.exist(err);
+          clients[0].getStealthAddress({}, function(err, x2) {
+            should.not.exist(err);
+            x2.address.should.equal(x.address);
+            done();
+          });
         });
       });
     });

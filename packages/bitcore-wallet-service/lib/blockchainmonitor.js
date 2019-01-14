@@ -97,12 +97,42 @@ BlockchainMonitor.prototype._initExplorer = function(coin, network, explorer) {
   var self = this;
 
   explorer.initSocket({
-    onTx: _.bind(self._handleThirdPartyBroadcasts, self, coin, network),
+    onTx: _.bind(self._handleTx, self, coin, network),
     onBlock: _.bind(self._handleNewBlock, self, coin, network),
     onIncomingPayments: _.bind(self._handleIncomingPayments, self, coin, network),
   });
 
 };
+
+
+BlockchainMonitor.prototype._handleTx = function(coin, network, data) {
+  this._handleThirdPartyBroadcasts(coin, network, data);
+  this._handleStealthPayments(coin, network, data);
+};
+
+
+BlockchainMonitor.prototype._handleStealthPayments = function(coin, network, data) {
+  var self = this;
+  if (!data || !data.txid) return;
+console.log('[blockchainmonitor.js.117:data:]',data); //TODO
+  //log.info(`New ${coin}/${network} tx: ${data.txid}`);
+
+  //self.storage.fetchTxByHash(data.txid, function(err, txp) {
+    //if (err) {
+      //log.error('Could not fetch tx from the db');
+      //return;
+    //}
+        //var notification = Notification.create({
+          //type: 'NewIncomingTx',
+          //data: args,
+          //walletId: walletId,
+        //});
+        //self._storeAndBroadcastNotification(notification);
+      //});
+    //});
+  //});
+};
+
 
 BlockchainMonitor.prototype._handleThirdPartyBroadcasts = function(coin, network, data, processIt) {
   var self = this;

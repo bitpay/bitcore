@@ -4,6 +4,7 @@ var _ = require('lodash');
 var $ = require('preconditions').singleton();
 var sjcl = require('sjcl');
 var Stringify = require('json-stable-stringify');
+const Stealth = require('bitcore-stealth');
 
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
@@ -164,21 +165,21 @@ Utils.deriveAddress = function(scriptType, publicKeyRing, path, m, network, coin
 
 
 Utils.deriveStealthAddress = function(publicKeyRing, m, network) {
-  var bitcore = Bitcore_[coin];
-
+  var scanPath = Constants.PATHS.STEALTH_SCAN;
   let scankey = _.map(publicKeyRing, function(item) {
-    var xpub = new Bitcore['bch'].HDPublicKey(item.xPubKey);
+    var xpub = new Bitcore_['bch'].HDPublicKey(item.xPubKey);
     return xpub.deriveChild(scanPath).publicKey;
   }).sort()[0];
 
   var spendPath = Constants.PATHS.STEALTH_SPEND;
   let spendKeys = _.map(publicKeyRing, function(item) {
-    var xpub = new Bitcore['bch'].HDPublicKey(item.xPubKey);
+    var xpub = new Bitcore_['bch'].HDPublicKey(item.xPubKey);
     return xpub.deriveChild(spendPath).publicKey;
   }).sort();
 
   return {
     address: (new Stealth.Address(scankey, spendKeys, m)).toString(),
+    spendPubKeys: _.invokeMap(spendKeys,'toString'),
   };
 };
 
@@ -236,8 +237,9 @@ Utils.buildTx = function(txp) {
   var coin = txp.coin || 'btc';
 
   var bitcore = Bitcore_[coin];
-
   var t = new bitcore.Transaction();
+  if (coin == 'bch') 
+    t= new Stealth.Transaction();
 
   $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
 
@@ -263,7 +265,7 @@ Utils.buildTx = function(txp) {
           satoshis: o.amount
         }));
       } else {
-        t.to(o.toAddress, o.amount);
+        t.to(o.toAddress, o.amount, o.ephemeralPrivKey);
       }
     });
   }

@@ -1182,6 +1182,9 @@ WalletService.prototype.getStealthAddress = function(opts, cb) {
     if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
     if (wallet.coin != 'bch') return cb(Errors.WALLET_NOT_BCH);
 
+    if (wallet.stealth) 
+      return cb(null, wallet.stealth);
+
     let sa;
     try {
       sa = wallet.getStealthAddress();
