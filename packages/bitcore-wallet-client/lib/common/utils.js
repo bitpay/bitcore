@@ -166,10 +166,28 @@ Utils.deriveAddress = function(scriptType, publicKeyRing, path, m, network, coin
 
 Utils.deriveStealthAddress = function(publicKeyRing, m, network) {
   var scanPath = Constants.PATHS.STEALTH_SCAN;
-  let scankey = _.map(publicKeyRing, function(item) {
-    var xpub = new Bitcore_['bch'].HDPublicKey(item.xPubKey);
-    return xpub.deriveChild(scanPath).publicKey;
-  }).sort()[0];
+  var b = Bitcore_['bch'];
+
+  let xs = _.map(publicKeyRing, function(item) {
+    var xpub = new b.HDPublicKey(item.xPubKey);
+    return xpub.deriveChild(scanPath).publicKey.point.getX();
+  });
+
+  let x = b.crypto.Hash.sha256(
+    _.reduce(xs, (x,xp) => {
+      return x.add(xp);}  
+    ).toBuffer());
+
+
+  let scanPrivKey = (new b.PrivateKey(x)).toObject();
+  scanPrivKey = (new b.PrivateKey({
+    bn: scanPrivKey.bn,
+    compressed: true,
+    network: network,
+  }))
+
+  // we go back an forward to string to obtain a compressed pub key
+  let scanPubKey = scanPrivKey.toPublicKey();
 
   var spendPath = Constants.PATHS.STEALTH_SPEND;
   let spendKeys = _.map(publicKeyRing, function(item) {
@@ -178,7 +196,7 @@ Utils.deriveStealthAddress = function(publicKeyRing, m, network) {
   }).sort();
 
   return {
-    address: (new Stealth.Address(scankey, spendKeys, m)).toString(),
+    address: (new Stealth.Address(scanPubKey, spendKeys, m)).toString(),
     spendPubKeys: _.invokeMap(spendKeys,'toString'),
   };
 };

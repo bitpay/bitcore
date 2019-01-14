@@ -1171,19 +1171,12 @@ WalletService.prototype.createAddress = function(opts, cb) {
 
 /**
  * Get Steath Address
- * @param {string} [opts.scanPrivKey] - scan Priv key 
  * @returns {SteathAddress} address
  */
 WalletService.prototype.getStealthAddress = function(opts, cb) {
   var self = this;
   opts = opts || {};
 
-
-  if (_.isEmpty(opts.scanPrivKey)) {
-    return cb(new ClientError('Invalid scanPrivKey'));
-  }
-
-  var scanPrivKey = opts.scanPrivKey;
 
   self.getWallet({}, function(err, wallet) {
     if (err) return cb(err);
@@ -1195,7 +1188,7 @@ WalletService.prototype.getStealthAddress = function(opts, cb) {
 
     let sa;
     try {
-      sa = wallet.getStealthAddress(scanPrivKey);
+      sa = wallet.getStealthAddress();
     } catch(e){
       log.warn("Error creating stealth address for " + self.walletId, e);
       return cb("Bad xPub");

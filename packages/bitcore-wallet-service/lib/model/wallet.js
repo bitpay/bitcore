@@ -207,7 +207,7 @@ Wallet.prototype.createAddress = function(isChange, step) {
   return address;
 };
 
-Wallet.prototype.getStealthAddress = function(scanPrivKey) {
+Wallet.prototype.getStealthAddress = function() {
   $.checkState(this.isComplete());
   $.checkState(this.coin == 'bch','Only for bch wallets');
 
@@ -215,30 +215,44 @@ Wallet.prototype.getStealthAddress = function(scanPrivKey) {
     return  this.stealth;
   }
   var self = this;
+  let b = Bitcore['bch'];
 
  var scanPath = Constants.PATHS.STEALTH_SCAN;
   log.verbose('Deriving scan key:' + scanPath);
 
-  let scankey = _.map(self.publicKeyRing, function(item) {
-    var xpub = new Bitcore['bch'].HDPublicKey(item.xPubKey);
-    return xpub.deriveChild(scanPath).publicKey;
-  }).sort()[0];
+  let xs = _.map(self.publicKeyRing, function(item) {
+    var xpub = new b.HDPublicKey(item.xPubKey);
+    return xpub.deriveChild(scanPath).publicKey.point.getX();
+  });
 
-  $.checkParam(scanKey == new Bitcore['bch'].PrivateKey(scanPrivKey).toPublicKey().toString(), 'Wrong scan Priv key');
+  let x = b.crypto.Hash.sha256(
+    _.reduce(xs, (x,xp) => {
+      return x.add(xp);}  
+    ).toBuffer());
+
+  let scanPrivKey = (new b.PrivateKey(x)).toObject();
+  scanPrivKey = (new b.PrivateKey({
+    bn: scanPrivKey.bn,
+    compressed: true,
+    network: this.network,
+  }))
+
+  // we go back an forward to string to obtain a compressed pub key
+  let scanPubKey = scanPrivKey.toPublicKey();
 
   var spendPath = Constants.PATHS.STEALTH_SPEND;
   log.verbose('Deriving spend key:' + spendPath);
 
   let spendKeys = _.map(self.publicKeyRing, function(item) {
-    var xpub = new Bitcore['bch'].HDPublicKey(item.xPubKey);
+    var xpub = b.HDPublicKey(item.xPubKey);
     return xpub.deriveChild(spendPath).publicKey;
   }).sort();
 
   this.stealth = StealthAddress.create({
-    address: (new Stealth.Address(scankey, spendKeys, self.m)).toString(),
+    address: (new Stealth.Address(scanPubKey, spendKeys, self.m)).toString(),
     spendPubKeys: _.map(spendKeys, (x) => { return x.toString()} ),
-    scanPubKey: scankey.toString(),
-    scanPrivKey: scanPrivKey,
+    scanPrivKey: scanPrivKey.toString(),
+    scanPubKey: scanPubKey.toString(),
     walletId: self.id,
     network: self.network,
     m: self.m,

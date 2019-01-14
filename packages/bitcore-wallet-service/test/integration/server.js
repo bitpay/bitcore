@@ -1634,24 +1634,18 @@ describe('Wallet service', function() {
 
   describe.only('#getStealthAddress', function() {
     var server, wallet;
-      beforeEach(function(done) {
-        helpers.createAndJoinWallet(1, 1, {coin:'bch'}, function(s, w) {
-          server = s;
-          wallet = w;
-          w.copayers[0].id.should.equal(TestData.copayers[0].id44bch);
-          done();
-        });
-      });
-
-      it('should create address', function(done) {
+    it('should create address', function(done) {
+      helpers.createAndJoinWallet(1, 1, {coin:'bch'}, function(s, w) {
+        server = s;
+        wallet = w;
         server.getStealthAddress({}, function(err, address) {
-console.log('[server.js.1648:err:]',err); //TODO
           should.not.exist(err);
           should.exist(address);
           address.walletId.should.equal(wallet.id);
           address.network.should.equal('livenet');
-          address.address.should.equal('9GQQX08YJ3D5649AZQY9QDWYFGJ7E2CN9AJ2MGVJRFAH95VP7KR09CLZQYPWUW84EDK9MVXPWUKGS4G9DNZ20L25VYZ7UKK22UE82RXLV8NSD8GPQQ');
-          address.scanPubKey.should.equal('033ce4945b4d54bd10085035c44a25ecab132f64ada1921a7b72d181f586f2e3e2');
+          address.address.should.equal('9GQQYSC5SL008W0DJQYKNY986CFDC8L9NZJ0TDVW7T3UCD6S7DJP3Z7ZQYPWUW84EDK9MVXPWUKGS4G9DNZ20L25VYZ7UKK22UE82RXLV8NSD8GPQQ');
+          address.scanPrivKey.should.equal('aa66f51d720d9aa4562d34f5a9b95c88d3845d7fbe0f54ea6168864ffefc2ea3');
+          address.scanPubKey.should.equal('02431487def3b9ed90096990a7d612dc1fe598a4f5b58ef2e3cc3750f364188bc2');
           address.spendPubKeys.should.deep.equal([ '02ee38f5cb6c5db0c1772c8855056cc4a7fd546105ee5aca5732750cdf61e7069d' ]);
           server.getNotifications({}, function(err, notifications) {
             should.not.exist(err);
@@ -1664,7 +1658,67 @@ console.log('[server.js.1648:err:]',err); //TODO
           });
         });
       });
+    });
 
+    it('should create address testnet', function(done) {
+      helpers.createAndJoinWallet(1, 1, {coin:'bch', network: 'testnet'}, function(s, w) {
+        server = s;
+        wallet = w;
+        server.getStealthAddress({}, function(err, address) {
+          should.not.exist(err);
+          should.exist(address);
+          address.walletId.should.equal(wallet.id);
+          address.network.should.equal('testnet');
+          address.address.should.equal('9VQQ80NEX6CALLF0SRMGRSMFVXMKD30354S0UKMFT5C2HJHTDAFTH7WEQYPYRTTWFJ3ES6XUFS3FQDWLZ4LQNF9WR6LDWV38FDNPH4RHU34TCLGPQQ');
+          address.scanPrivKey.should.equal('62e6dc4edb957c47ec8658ea22433debf87046c2d940fe7758bff3ef7dcbd256');
+          address.scanPubKey.should.equal('03be7936b1dffd2f80f681c36961b766c5f1a560fe5b695d30abcaeb6f52bbf9d9');
+          address.spendPubKeys.should.deep.equal([ '0241ad6e4ca39868dc4c229035df157e09a4ae1ebed732274b661bd477e46abc7d' ]);
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var notif = _.find(notifications, {
+              type: 'NewStealthAddress'
+            });
+            should.exist(notif);
+            notif.data.address.should.equal(address.address);
+            done();
+          });
+        });
+      });
+    });
+
+
+
+    it('should create multisig address', function(done) {
+      helpers.createAndJoinWallet(2, 3, {coin:'bch'}, function(s, w) {
+        server = s;
+        wallet = w;
+        w.copayers[0].id.should.equal(TestData.copayers[0].id44bch);
+
+        server.getStealthAddress({}, function(err, address) {
+          should.not.exist(err);
+          should.exist(address);
+          address.walletId.should.equal(wallet.id);
+          address.network.should.equal('livenet');
+          address.address.should.equal('9GQQ96AUAEXNLLYZQFVLKKNQSLEXCU88Q0PHEDJNP4DWVJEZ0NPEW6AKQVP2HGTEYZ2RVCV6M5TTNVRDH0GEMKVKMJW9TAYGDNGMVJJ3YJC0K3CZACU0TJMVTKCVZAEV3P2S2MXY5L74GCG9AEDV54EJW5XD7C08Q6WSXQY3M2VH6CVH2H2JGFAJ6AH4UYSC4NW8484S9KLUZPUW8AM57UCYQGQQ');
+          address.scanPrivKey.should.equal('ca85d531330c2b0db178324514383034e9570de3f887a64cedd85800c78b4f3a');
+          address.scanPubKey.should.equal('02ebbcee4d3ffc820259fb5a6087f26c70e703c37cb6530d5ae64b227cc3976bb6');
+          address.spendPubKeys.should.deep.equal([
+            "02aba179209436619add16b9b06dbbd19dd996dc9c55f4886cd1b64a5124b0fb47",
+            "02ee38f5cb6c5db0c1772c8855056cc4a7fd546105ee5aca5732750cdf61e7069d",
+            "030091da997d619755d52427b2d76f5e1218acdc7a9eb02dbfc1078e3f774f7304",
+          ]);
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var notif = _.find(notifications, {
+              type: 'NewStealthAddress'
+            });
+            should.exist(notif);
+            notif.data.address.should.equal(address.address);
+            done();
+          });
+        });
+      });
+    });
 
   });
 
