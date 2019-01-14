@@ -7,17 +7,21 @@ var Stealth = require('../');
 
 var PrivateKey = bitcore.PrivateKey;
 
-var saddrLive = 'vJmtjxSDxNPXL4RNapp9ARdqKz3uJyf1EDGjr1Fgqs9c8mYsVH82h8wvnA4i5rtJ57mr3kor1EVJrd4e5upACJd588xe52yXtzumxj';
-var saddrLive2 = 'hfFELudSDw7rBvGyadXF9DZbcsE92YJGaA4LniuuyYyenZPzFmnF4M74e';
-
+//var saddrLive = 'vJmtjxSDxNPXL4RNapp9ARdqKz3uJyf1EDGjr1Fgqs9c8mYsVH82h8wvnA4i5rtJ57mr3kor1EVJrd4e5upACJd588xe52yXtzumxj';
+var saddrLive = '9GQQYHJC5VGJ9VUVS64UZXDEX707Y36PPTHG0FFNL8Q8KXY6AAKRC86JQYPKZETZEX8867M5HEQF57RUASAFZGFZ70ANXX5MA6DSKU7W0W04PTCPQQ';
+//var saddrLive2 = 'hfFELudSDw7rBvGyadXF9DZbcsE92YJGaA4LniuuyYyenZPzFmnF4M74e';
+var saddrLive2 = '9GQSYHJC5VGJ9VUVS64UZXDEX707Y36PPTHG0FFNL8Q8KXY6AAKRC86JQQQSQ';
 var scanKeyLive = '025e58a31122b38c86abc119b9379fe247410aee87a533f9c07b189aef6c3c1f52';
 var spendKeyLive = '03616562c98e7d7b74be409a787cec3a912122f3fb331a9bee9b0b73ce7b9f50af';
 
-var saddrTest = 'waPTqV9DUa13rP6meQh2b8XUHrxDDgL5yCycNpRLh5CzyZXmhzR3kLwyVSNxTBhW8dwHbwVhMATrepTRRF79mw3r3hHrAGwCiebxTi';
+//var saddrTest = 'waPTqV9DUa13rP6meQh2b8XUHrxDDgL5yCycNpRLh5CzyZXmhzR3kLwyVSNxTBhW8dwHbwVhMATrepTRRF79mw3r3hHrAGwCiebxTi';
+var  saddrTest = '9VQQY9S6QRQSX0FT8TF94K6GKKU0WCJ93MMAQZL9WNHJK535CUMYXLJ4QYPUW49AM56WLM3XLANQSN9PQ8SMQ0DYA33R6DQ9RMDW7J8PKRQXLXGPQQ';
+
 var scanKeyTest = '02161a00c1033d2b3ad25adb48b5b8f762458ef7d00be574ef2b5234c736437e55';
 var spendKeyTest = '03c754bddd34efee26ff66084ca101e1b03da4ec623d34051edaef48e1b0c06f99';
 
-var multisigAddress = '2Ctqsd4cHgrGfMqFgQXrRmREFZdSrNSys7LQSMaK6y9bhsVsFuDbsgipTCXyZtRwHydd6Wcacghh78oHA8NcGAhqcpRfPHFpj6XvZGyGgsN2HDXtd8ULjpoUCbJfPJB4woFhX2Rds4ZwfQ5xmHaW';
+//var multisigAddress = '2Ctqsd4cHgrGfMqFgQXrRmREFZdSrNSys7LQSMaK6y9bhsVsFuDbsgipTCXyZtRwHydd6Wcacghh78oHA8NcGAhqcpRfPHFpj6XvZGyGgsN2HDXtd8ULjpoUCbJfPJB4woFhX2Rds4ZwfQ5xmHaW';
+var multisigAddress = '9GQQYHJC5VGJ9VUVS64UZXDEX707Y36PPTHG0FFNL8Q8KXY6AAKRC86JQGPKZETZEX8867M5HEQF57RUASAFZGFZ70ANXX5MA6DSKU7W0W04PTCRCA2TMHF5ALHZDLMXPPX2ZQ0PKQ76FMRZ856Q28K6AAYWRVXQD7VSYQQ';
 
 describe('Stealth Address', function() {
   
@@ -26,8 +30,9 @@ describe('Stealth Address', function() {
   });
   
   it('should not require the "new" keyword', function() {
-    var address = Stealth.Address(saddrLive);
-    assert.ok(address instanceof Stealth.Address);
+    var address = new Stealth.Address(scanKeyLive, spendKeyLive);
+    var address2 = Stealth.Address(saddrLive);
+    assert.ok(address2 instanceof Stealth.Address);
   });
   
   it('provides a copy constructor', function() {
@@ -63,6 +68,7 @@ describe('Stealth Address', function() {
   });
 
   it('creates instance from sort livenet string', function() {
+
     var address = new Stealth.Address(saddrLive2);
     assert.ok(address instanceof Stealth.Address);
 
@@ -126,7 +132,8 @@ describe('Stealth Address', function() {
   });
 
   describe('Stealth derivation', function() {
-    var stealthAddress = "vJmtjxSDxNPXL4RNapp9ARdqKz3uJyf1EDGjr1Fgqs9c8mYsVH82h8wvnA4i5rtJ57mr3kor1EVJrd4e5upACJd588xe52yXtzumxj";
+    //var stealthAddress = "vJmtjxSDxNPXL4RNapp9ARdqKz3uJyf1EDGjr1Fgqs9c8mYsVH82h8wvnA4i5rtJ57mr3kor1EVJrd4e5upACJd588xe52yXtzumxj";
+    var stealthAddress = "9GQQYHJC5VGJ9VUVS64UZXDEX707Y36PPTHG0FFNL8Q8KXY6AAKRC86JQYPKZETZEX8867M5HEQF57RUASAFZGFZ70ANXX5MA6DSKU7W0W04PTCPQQ";
     var scanSecret = "3e49e7257cb31db997edb1cf8299af0f37e2663e2260e4b8033e49d39a6d02f2";
     var spendSecret = "aa3db0cfb3edc94de4d10f873f8190843f2a17484f6021a95a7742302c744748";
     var ephemSecret = "9e63abaf8dcd5ea3919e6de0b6c544e00bf51bf92496113a01d6e369944dc091";
@@ -181,7 +188,12 @@ describe('Stealth Address', function() {
     
   });
 
-  it.skip('accepts private keys in constructor', function() {
+  it('accepts private keys in constructor', function() {
+    var scanSecret = "3e49e7257cb31db997edb1cf8299af0f37e2663e2260e4b8033e49d39a6d02f2";
+    var spendSecret = "aa3db0cfb3edc94de4d10f873f8190843f2a17484f6021a95a7742302c744748";
+
+    var address = Stealth.Address(scanSecret, spendSecret);
+    assert.equal(address.toString(), '9GQQYHJC5VGJ9VUVS64UZXDEX707Y36PPTHG0FFNL8Q8KXY6AAKRC86JQYPKZETZEX8867M5HEQF57RUASAFZGFZ70ANXX5MA6DSKU7W0W04PTCPQQ');
     
   });
 

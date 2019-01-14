@@ -18,6 +18,7 @@ var Bitcore_ = {
   bch: require('bitcore-lib-cash')
 };
 
+const Stealth = require('bitcore-stealth');
 
 
 var Common = require('../../lib/common');
@@ -4527,6 +4528,65 @@ describe('Wallet service', function() {
     });
   });
 
+
+  describe.only('BCH Stealth address', function() {
+    var server, wallet, sa;
+    beforeEach(function(done) {
+      var scanKeyLive = '025e58a31122b38c86abc119b9379fe247410aee87a533f9c07b189aef6c3c1f52';
+      var spendKeyLive = '03616562c98e7d7b74be409a787cec3a912122f3fb331a9bee9b0b73ce7b9f50af';
+      sa = new Stealth.Address(scanKeyLive, spendKeyLive).toString();
+console.log('[server.js.4434:sa:]',sa); //TODO
+      helpers.createAndJoinWallet(1, 1, { 
+        coin: 'bch',
+      },  function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+
+    it('should create a tx', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function() {
+        let amount = 0.8 * 1e8;
+        var txOpts = {
+          outputs: [{
+            toAddress: sa,
+            amount: amount,
+          }],
+          message: 'some message',
+          customData: 'some custom data',
+          feePerKb: 123e2,
+        };
+        server.createTx(txOpts, function(err, tx) {
+console.log('[server.js.4458:err:]',err); //TODO
+          should.not.exist(err);
+          should.exist(tx);
+          tx.walletM.should.equal(1);
+          tx.walletN.should.equal(1);
+          tx.requiredRejections.should.equal(1);
+          tx.requiredSignatures.should.equal(1);
+          tx.isAccepted().should.equal.false;
+          tx.isRejected().should.equal.false;
+          tx.isPending().should.equal.true;
+          tx.isTemporary().should.equal.true;
+          tx.amount.should.equal(helpers.toSatoshi(0.8));
+          tx.feePerKb.should.equal(123e2);
+          tx.outputs.should.deep.equal([{
+            toAddress: addressStr,
+            amount: amount,
+          }]);
+
+          should.not.exist(tx.feeLevel);
+          server.getPendingTxs({}, function(err, txs) {
+            should.not.exist(err);
+            txs.should.be.empty;
+            done();
+          });
+        });
+      });
+    });
+  });
 
   describe('Transaction notes', function(done) {
     var server, wallet;

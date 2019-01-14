@@ -76,19 +76,50 @@ Address.prototype._classifyArguments = function(scanKey, spendKeys, signatures) 
   preconditions.checkArgument(scanKey);
 
   // Parse address string
-  var isBase58 = _.isString(scanKey) && Base58.validCharacters(scanKey);
-  if (isBase58 && !(spendKeys || signatures)) {
-    return this._fromString(scanKey);
+  var base32;
+  try { 
+    base32 = _.isString(scanKey) && Base32.decode(scanKey.toLowerCase());
+  } catch (ex) {
+//console.log('[address.js.84:ex:]',ex); //TODO
+  };
+
+  if (base32) {
+    var convertedBits =  bitcore.util.convertBits(base32, 5, 8, true);
+    return this._fromBuffer(new Buffer(convertedBits));
+  }
+
+  var scanKey;
+
+  try {
+    scanKey = new PrivateKey(scanKey).toPublicKey();
+  } catch (ex) {
+    try {
+    scanKey = new PublicKey(scanKey);
+    } catch (ex) {
+      throw new Error('Invalid scanKey');
+    }
   }
 
   // Build stealth address info
   var info = {};
-  info.scanKey = new PublicKey(scanKey);
+  info.scanKey = scanKey;
   info.network = info.scanKey.network || Networks.livenet;
   info.options = spendKeys ? 0 : 1; // reuseScan
  
   spendKeys = spendKeys ? [].concat(spendKeys) : [];
-  info.spendKeys = spendKeys.map(PublicKey);
+  info.spendKeys = spendKeys.map((x) => {
+    var ret;
+    try {
+      ret = new PrivateKey(x).toPublicKey();
+    } catch (ex) {
+      try {
+      ret = new PublicKey(x);
+      } catch (ex) {
+        throw new Error('Invalid spendKeys');
+      }
+    }
+    return ret;
+  });
 
   info.signatures = signatures || info.spendKeys.length || 1;
   info.prefix = '';
@@ -107,8 +138,8 @@ Address.isValid = function(address) {
 };
 
 Address.prototype._fromString = function(address) {
-  var buffer = Base58Check(address).toBuffer();
-  return this._fromBuffer(buffer);
+  var buffer = Base32.decode(address.toLowerCase());
+  return this._fromBuffer(new Buffer(buffer));
 };
 
 Address.prototype._fromBuffer = function(buffer) {
@@ -355,6 +386,7 @@ Address.prototype.toJSON = function toJSON() {
  * @returns {String} Stealth address
  */
 Address.prototype.toString = function() {
+
 //  return Base58Check.encode(this.toBuffer());
   var payl = bitcore.util.convertBits(this.toBuffer(), 8, 5);
   return Base32.encode(payl).toUpperCase();

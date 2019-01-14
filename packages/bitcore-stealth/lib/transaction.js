@@ -35,7 +35,7 @@ Transaction.getEphemeral = function(output) {
  * @param {number=} threshold
  */
 Transaction.prototype.from = function(utxo, pubkeys, threshold) {
-  // Add Stealth address suport
+  // Add Stealth address suport ??
   // Check If Stealth -> Do somehting
   return bitcore.Transaction.prototype.from.apply(this, arguments);
 };

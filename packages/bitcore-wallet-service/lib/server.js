@@ -18,6 +18,7 @@ var Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash')
 };
+const Stealth = require('bitcore-stealth');
 
 var Common = require('./common');
 var Utils = Common.Utils;
@@ -2103,18 +2104,26 @@ WalletService.prototype._validateAddr = function(wallet, inaddr, opts) {
   var addr = {};
   try {
     addr = new A(inaddr);
+
+    if (wallet.coin == 'bch' && !opts.noCashAddr) {
+      if (addr.toString(true) !=  inaddr)
+      return Errors.ONLY_CASHADDR;
+    }
+
   } catch (ex) {
-    return Errors.INVALID_ADDRESS;
+
+    if (wallet.coin != 'bch') 
+      return Errors.INVALID_ADDRESS;
+
+    try {
+      addr = new Stealth.Address(output.toAddress);
+    } catch (ex) {
+      return Errors.INVALID_ADDRESS;
+    }
   }
   if (addr.network.toString() != wallet.network) {
     return Errors.INCORRECT_ADDRESS_NETWORK;
   }
-
-  if (wallet.coin == 'bch' && !opts.noCashAddr) {
-    if (addr.toString(true) !=  inaddr)
-    return Errors.ONLY_CASHADDR;
-  }
-
   return;
 };
 
@@ -2277,7 +2286,7 @@ WalletService.prototype._getFeePerKb = function(wallet, opts, cb) {
  * @param {Object} opts
  * @param {string} opts.txProposalId - Optional. If provided it will be used as this TX proposal ID. Should be unique in the scope of the wallet.
  * @param {Array} opts.outputs - List of outputs.
- * @param {string} opts.outputs[].toAddress - Destination address.
+ * @param {string} opts.outputs[].toAddress - Destination address. `to Address` can be a Stealth address in BCH. See Stealth addresses 
  * @param {number} opts.outputs[].amount - Amount to transfer in satoshi.
  * @param {string} opts.outputs[].message - A message to attach to this output.
  * @param {string} opts.message - A message to attach to this transaction.
