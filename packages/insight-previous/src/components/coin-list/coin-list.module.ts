@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { IonicModule } from 'ionic-angular';
-import { CoinListComponent } from './coin-list';
 import { CoinComponentModule } from '../coin/coin.module';
+import { CoinListComponent } from './coin-list';
 
 @NgModule({
   declarations: [CoinListComponent],

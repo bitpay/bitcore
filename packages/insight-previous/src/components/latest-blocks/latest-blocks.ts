@@ -1,11 +1,13 @@
-import { Component, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { Component, Injectable, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { Subscription } from 'rxjs';
+import { Logger } from '../../logger';
 import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { DefaultProvider } from '../../providers/default/default';
-import logger from '../../logger';
+
+@Injectable()
 
 @Component({
   selector: 'latest-blocks',
@@ -32,7 +34,8 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
     private navCtrl: NavController,
     private ngZone: NgZone,
     public currency: CurrencyProvider,
-    public defaults: DefaultProvider
+    public defaults: DefaultProvider,
+    private logger: Logger
   ) {
     this.numBlocks = parseInt(defaults.getDefault('%NUM_BLOCKS%'), 10);
   }
@@ -61,7 +64,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
       err => {
-        logger.error(err);
+        this.logger.error(err);
         this.loading = false;
       }
     );
@@ -76,7 +79,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
       err => {
-        logger.error(err);
+        this.logger.error(err);
         this.loading = false;
       }
     );

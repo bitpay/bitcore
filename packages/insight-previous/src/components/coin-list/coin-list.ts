@@ -1,5 +1,4 @@
-import { Component } from '@angular/core';
-import { Input } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { AppCoin } from '../../providers/transactions/transactions';
 
 /**
@@ -13,5 +12,5 @@ import { AppCoin } from '../../providers/transactions/transactions';
   templateUrl: 'coin-list.html'
 })
 export class CoinListComponent {
-  @Input() public coins: Array<AppCoin>;
+  @Input() public coins: AppCoin[];
 }

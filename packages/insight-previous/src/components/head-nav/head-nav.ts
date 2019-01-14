@@ -1,21 +1,22 @@
-import { Component, EventEmitter, Output } from '@angular/core';
-import { Input } from '@angular/core';
+import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { Http } from '@angular/http';
 import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
-import { PopoverController } from 'ionic-angular';
-import { NavController } from 'ionic-angular';
-import { ToastController } from 'ionic-angular';
-import { ActionSheetController } from 'ionic-angular';
+import { ActionSheetController, NavController, PopoverController, ToastController  } from 'ionic-angular';
 import { App } from 'ionic-angular/components/app/app';
+import { Logger } from '../../logger';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { PriceProvider } from '../../providers/price/price';
 import { DenominationComponent } from '../denomination/denomination';
+
+@Injectable()
+
 @Component({
   selector: 'head-nav',
   templateUrl: 'head-nav.html'
 })
+
 export class HeadNavComponent {
   @Output() updateView = new EventEmitter<ChainNetwork>();
   public showSearch = false;
@@ -34,7 +35,8 @@ export class HeadNavComponent {
     public price: PriceProvider,
     public actionSheetCtrl: ActionSheetController,
     public popoverCtrl: PopoverController,
-    public toastCtrl: ToastController
+    public toastCtrl: ToastController,
+    private logger: Logger,
   ) {
     this.config = this.apiProvider.getConfig();
   }
@@ -47,7 +49,7 @@ export class HeadNavComponent {
       this.http.get(apiPrefix + '/block/' + this.q).subscribe(
         (data: any): void => {
           this.resetSearch();
-          console.log('block', data);
+          this.logger.info(data);
           const parsedData: any = JSON.parse(data._body);
           this.navCtrl.push('block-detail', {
             chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
@@ -60,7 +62,7 @@ export class HeadNavComponent {
           this.http.get(apiPrefix + '/tx/' + this.q).subscribe(
             (data: any): void => {
               this.resetSearch();
-              console.log('tx', data);
+              this.logger.info(data);
               const parsedData: any = JSON.parse(data._body);
               this.navCtrl.push('transaction', {
                 chain: this.apiProvider.networkSettings.value.selectedNetwork
@@ -75,7 +77,7 @@ export class HeadNavComponent {
                 (data: any): void => {
                   const addrStr = this.q;
                   this.resetSearch();
-                  console.log('addr', data);
+                  this.logger.info(data);
                   const parsedData: any = JSON.parse(data._body);
                   this.navCtrl.push('address', {
                     chain: this.apiProvider.networkSettings.value.selectedNetwork

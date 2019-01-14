@@ -1,9 +1,11 @@
-import { Component, NgZone, Input } from '@angular/core';
+import { Component, Injectable, Input, NgZone } from '@angular/core';
 import { Http } from '@angular/http';
 import { NavController } from 'ionic-angular';
+import { Logger } from '../../logger';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import logger from '../../logger';
+
+@Injectable()
 
 /**
  * Generated class for the LatestTransactionsComponent component.
@@ -17,12 +19,12 @@ import logger from '../../logger';
 })
 export class LatestTransactionsComponent {
 
-  private loading: boolean = true;
-  private transactions: Array<any> = [];
-  @Input() public refreshSeconds: number = 10;
+  private loading = true;
+  private transactions: any[] = [];
+  @Input() public refreshSeconds = 10;
   private timer: number;
 
-  constructor(private http: Http, private navCtrl: NavController, private api: ApiProvider, public currency: CurrencyProvider, private ngZone: NgZone) {
+  constructor(private http: Http, private navCtrl: NavController, private api: ApiProvider, public currency: CurrencyProvider, private ngZone: NgZone, private logger: Logger) {
     this.loadTransactions();
   }
 
@@ -44,7 +46,7 @@ export class LatestTransactionsComponent {
   }
 
   private loadTransactions(): void {
-    let url: string = this.api.getUrl() + 'txs';
+    const url: string = this.api.getUrl() + 'txs';
 
     this.http.get(url).subscribe(
       (data) => {
@@ -52,7 +54,7 @@ export class LatestTransactionsComponent {
         this.loading = false;
       },
       (err) => {
-        logger.error(err);
+        this.logger.error(err);
         this.loading = false;
       }
     );

@@ -1,13 +1,14 @@
 import { Injectable } from '@angular/core';
 import { ToastController } from 'ionic-angular';
 import 'rxjs/add/operator/map';
+import { Logger } from '../../logger';
 import { ApiProvider } from '../api/api';
 import { CurrencyProvider } from '../currency/currency';
 
 @Injectable()
 export class PriceProvider {
 
-  constructor(public currency: CurrencyProvider, public api: ApiProvider, private toastCtrl: ToastController) { }
+  constructor(public currency: CurrencyProvider, public api: ApiProvider, private toastCtrl: ToastController, private logger: Logger) { }
 
   public setCurrency(currency: string): void {
     this.currency.currencySymbol = currency;
@@ -28,7 +29,7 @@ export class PriceProvider {
         },
         err => {
           this.currency.loading = false;
-          console.error('err getting currency', err);
+          this.logger.error(err);
           this.setDefaultCurrency();
         }
       );
