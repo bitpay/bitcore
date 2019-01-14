@@ -19,6 +19,7 @@ var Constants = Common.Constants,
 
 var TxProposalLegacy = require('./txproposal_legacy');
 var TxProposalAction = require('./txproposalaction');
+const Stealth = require('bitcore-stealth');
 
 function TxProposal() {};
 
@@ -45,10 +46,20 @@ TxProposal.create = function(opts) {
   x.outputs = _.map(opts.outputs, function(output) {
     return _.pick(output, ['amount', 'toAddress', 'message', 'script']);
   });
-  x.outputOrder = _.range(x.outputs.length + 1);
-  if (!opts.noShuffleOutputs) {
-    x.outputOrder = _.shuffle(x.outputOrder);
+
+
+  let nrStealth =  _.filter(opts.outputs,'stealth').length;
+
+  if (nrStealth) {
+    // TODO shouffle here also...
+    x.outputOrder = _.range(x.outputs.length + nrStealth + 1);
+  } else{
+    x.outputOrder = _.range(x.outputs.length + 1);
+    if (!opts.noShuffleOutputs) {
+      x.outputOrder = _.shuffle(x.outputOrder);
+    }
   }
+
   x.walletM = opts.walletM;
   x.walletN = opts.walletN;
   x.requiredSignatures = x.walletM;
@@ -143,6 +154,8 @@ TxProposal.prototype._buildTx = function() {
   var self = this;
 
   var t = new Bitcore[self.coin].Transaction();
+  if (self.coin == 'bch') 
+    t= new Stealth.Transaction();
 
   $.checkState(Utils.checkValueInCollection(self.addressType, Constants.SCRIPT_TYPES));
 
@@ -176,7 +189,13 @@ TxProposal.prototype._buildTx = function() {
     t.change(self.changeAddress.address);
   }
 
+
   // Shuffle outputs for improved privacy
+  //
+  // 
+  // TODO: add extra dummy op_ret for change address, and suffle it?
+  //
+  //
   if (t.outputs.length > 1) {
     var outputOrder = _.reject(self.outputOrder, function(order) {
       return order >= t.outputs.length;

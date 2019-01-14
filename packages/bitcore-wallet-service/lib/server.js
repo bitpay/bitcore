@@ -2117,6 +2117,7 @@ WalletService.prototype._validateAddr = function(wallet, inaddr, opts) {
 
     try {
       addr = new Stealth.Address(output.toAddress);
+      output.stealth = true;
     } catch (ex) {
       return Errors.INVALID_ADDRESS;
     }
@@ -2136,15 +2137,15 @@ WalletService.prototype._validateOutputs = function(opts, wallet, cb) {
   for (var i = 0; i < opts.outputs.length; i++) {
     var output = opts.outputs[i];
     output.valid = false;
-
-    let addrErr = self._validateAddr(wallet, output.toAddress, opts);
-    if (addrErr) return addrErr;
-
-    
+    output.stealth = false;
 
     if (!checkRequired(output, ['toAddress', 'amount'])) {
       return new ClientError('Argument missing in output #' + (i + 1) + '.');
     }
+
+    let addrErr = self._validateAddr(wallet, output.toAddress, opts);
+    if (addrErr) return addrErr;
+
 
     if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount <= 0) {
       return new ClientError('Invalid amount');
@@ -2241,7 +2242,7 @@ WalletService.prototype._validateAndSanitizeTxOpts = function(wallet, opts, cb) 
       });
       opts.returnOrigAddrOutputs = false;
       _.each(opts.outputs, (x) => {
-        if (!x.toAddress) return;
+        if (!x.toAddress || x.stealth) return;
 
         let newAddr;
         try {

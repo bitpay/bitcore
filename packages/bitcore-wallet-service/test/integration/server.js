@@ -19,8 +19,6 @@ var Bitcore_ = {
 };
 
 const Stealth = require('bitcore-stealth');
-
-
 var Common = require('../../lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
@@ -4528,6 +4526,63 @@ describe('Wallet service', function() {
     });
   });
 
+  it('should create a BCH tx proposal with cashaddr and keep message', function(done) {
+
+    let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
+    let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
+    let amount =  0.8 * 1e8;
+    helpers.createAndJoinWallet(1, 1, { 
+      coin: 'bch',
+    },  function(s, w) {
+      helpers.stubUtxos(s, w, [1, 2], function() {
+        var txOpts = {
+          outputs: [{
+            toAddress: cashAddr,
+            amount: amount,
+            message: 'xxx',
+          }],
+          message: 'some message',
+          customData: 'some custom data',
+          feePerKb: 123e2,
+        };
+        s.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          should.exist(tx);
+          tx.walletM.should.equal(1);
+          tx.walletN.should.equal(1);
+          tx.requiredRejections.should.equal(1);
+          tx.requiredSignatures.should.equal(1);
+          tx.isAccepted().should.equal.false;
+          tx.isRejected().should.equal.false;
+          tx.isPending().should.equal.true;
+          tx.isTemporary().should.equal.true;
+          tx.outputs.should.deep.equal([{
+            toAddress: cashAddr,
+            amount: amount,
+            message: 'xxx',
+          }]);
+          tx.amount.should.equal(helpers.toSatoshi(0.8));
+          tx.feePerKb.should.equal(123e2);
+          should.not.exist(tx.feeLevel);
+          var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
+          s.publishTx(publishOpts, function(err) {
+            s.getPendingTxs({}, function(err, txs) {
+              should.not.exist(err);
+              txs.length.should.equal(1);
+              txs[0].outputs.should.deep.equal([{
+                toAddress: copayAddr,
+                message: 'xxx',
+                amount: amount,
+              }]);
+
+              done();
+            });
+          });
+        });
+      });
+    });
+  });
+
 
   describe.only('BCH Stealth address', function() {
     var server, wallet, sa;
@@ -4573,10 +4628,10 @@ console.log('[server.js.4458:err:]',err); //TODO
           tx.amount.should.equal(helpers.toSatoshi(0.8));
           tx.feePerKb.should.equal(123e2);
           tx.outputs.should.deep.equal([{
-            toAddress: addressStr,
+            toAddress: sa,
+>>>>>>> createTx at server working
             amount: amount,
           }]);
-
           should.not.exist(tx.feeLevel);
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
