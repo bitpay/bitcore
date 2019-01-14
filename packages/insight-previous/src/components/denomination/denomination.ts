@@ -24,7 +24,7 @@ export class DenominationComponent {
     public api: ApiProvider
   ) { }
 
-  ionViewDidLoad() {
+  public ionViewDidLoad() {
     this.api.getAvailableNetworks().subscribe(data => {
       const availableNetworks = data.json() as ChainNetwork[];
       this.switcherOn = availableNetworks.length > 1 ? true : false;

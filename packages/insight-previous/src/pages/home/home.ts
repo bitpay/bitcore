@@ -13,7 +13,7 @@ import { PriceProvider } from '../../providers/price/price';
   templateUrl: 'home.html'
 })
 export class HomePage {
-  @ViewChild('latestBlocks') latestBlocks: LatestBlocksComponent;
+  @ViewChild('latestBlocks') public latestBlocks: LatestBlocksComponent;
   constructor(
     public navParams: NavParams,
     private apiProvider: ApiProvider,

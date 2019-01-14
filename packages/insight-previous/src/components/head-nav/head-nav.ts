@@ -19,7 +19,7 @@ import { DenominationComponent } from '../denomination/denomination';
 })
 
 export class HeadNavComponent {
-  @Output() updateView = new EventEmitter<ChainNetwork>();
+  @Output() public updateView = new EventEmitter<ChainNetwork>();
   public showSearch = false;
   public loading: boolean;
   @Input()

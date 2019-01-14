@@ -118,9 +118,9 @@ export class TransactionComponent implements OnInit {
       tmp[address].count++;
     }
 
-    for (const v in tmp) {
+    for (let v = 0; v <= tmp.length; v++) {
       const obj: any = tmp[v];
-      obj.value = obj.value || parseInt(obj.valueSat) / this.COIN;
+      obj.value = obj.value || parseInt(obj.valueSat, 10) / this.COIN;
       ret.push(obj);
     }
 

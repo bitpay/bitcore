@@ -36,11 +36,13 @@ export class LatestTransactionsComponent {
 
     this.ngZone.runOutsideAngular(() => {
       this.timer = setInterval(
-        function (): void {
-          this.ngZone.run(function (): void {
-            this.loadTransactions.call(this);
-          }.bind(this));
-        }.bind(this),
+        () => {
+          this.ngZone.run(
+            () => {
+              this.loadTransactions.call(this);
+            }
+          );
+        },
         1000 * this.refreshSeconds
       );
     });
@@ -50,8 +52,8 @@ export class LatestTransactionsComponent {
     const url: string = this.api.getUrl() + 'txs';
 
     this.http.get(url).subscribe(
-      (data) => {
-        this.transactions = JSON.parse(data['_body']);
+      (data: any) => {
+        this.transactions = JSON.parse(data._body);
         this.loading = false;
       },
       (err) => {

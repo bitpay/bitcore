@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { ToastController } from 'ionic-angular';
-import 'rxjs/add/operator/map';
 import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../api/api';
 import { CurrencyProvider } from '../currency/currency';
@@ -17,7 +16,7 @@ export class PriceProvider {
     if (currency === 'USD') {
       this.api.http.get(this.api.getUrl() + '/currency').subscribe(
         data => {
-          const currencyParsed: any = JSON.parse(data['_body']);
+          const currencyParsed: any = JSON.parse(data._body);
           if (currencyParsed.data.bitstamp) {
             this.currency.factor = this.currency.bitstamp =
               currencyParsed.data.bitstamp;

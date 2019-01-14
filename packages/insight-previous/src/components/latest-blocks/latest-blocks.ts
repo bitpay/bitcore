@@ -45,13 +45,13 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
     const seconds = 15;
     this.ngZone.runOutsideAngular(() => {
       this.reloadInterval = setInterval(
-        function (): void {
+        () => {
           this.ngZone.run(
-            function (): void {
+            () => {
               this.loadBlocks.call(this);
-            }.bind(this)
+            }
           );
-        }.bind(this),
+        },
         1000 * seconds
       );
     });
@@ -106,7 +106,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
     this.ngOnInit();
   }
 
-  ngOnDestroy(): void {
+  public ngOnDestroy(): void {
     clearInterval(this.reloadInterval);
   }
 }

@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
 import { BehaviorSubject } from 'rxjs';
-import 'rxjs/add/operator/map';
 import { DefaultProvider } from '../../providers/default/default';
 
 export interface ChainNetwork {

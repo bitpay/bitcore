@@ -17,12 +17,12 @@ export class TransactionListComponent implements OnInit {
   @Input()
   public transactions?: any = [];
 
-  limit = 10;
-  chunkSize = 100;
+  public limit = 10;
+  public chunkSize = 100;
 
   constructor(private txProvider: TxsProvider, private logger: Logger) {}
 
-  ngOnInit(): void {
+  public ngOnInit(): void {
     if (this.transactions && this.transactions.length === 0) {
       this.txProvider.getTxs({ [this.queryType]: this.queryValue }).subscribe(
         data => {
@@ -39,7 +39,7 @@ export class TransactionListComponent implements OnInit {
     }
   }
 
-  loadMore() {
+  public loadMore() {
     this.limit += this.chunkSize;
     this.chunkSize *= 2;
   }
