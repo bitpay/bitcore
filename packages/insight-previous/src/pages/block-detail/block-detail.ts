@@ -1,8 +1,9 @@
 import { Component } from '@angular/core';
-import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { IonicPage, NavParams } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { RedirProvider } from '../../providers/redir/redir';
 
 @IonicPage({
   name: 'block-detail',
@@ -20,15 +21,15 @@ export class BlockDetailPage {
   };
 
   constructor(
-    public navCtrl: NavController,
     public navParams: NavParams,
     private blockProvider: BlocksProvider,
     private apiProvider: ApiProvider,
-    public currency: CurrencyProvider
+    public currency: CurrencyProvider,
+    public redirProvider: RedirProvider
   ) {
     this.blockHash = navParams.get('blockHash');
-    const chain: string = navParams.get('chain');
-    const network: string = navParams.get('network');
+    const chain: string = this.apiProvider.getConfig().chain;
+    const network: string = this.apiProvider.getConfig().network;
     this.apiProvider.changeNetwork({ chain, network });
   }
 
@@ -46,18 +47,10 @@ export class BlockDetailPage {
   }
 
   public goToPreviousBlock(): void {
-    this.navCtrl.push('block-detail', {
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
-      blockHash: this.block.previousblockhash
-    });
+    this.redirProvider.redir('block-detail', this.block.previousblockhash);
   }
 
   public goToNextBlock(): void {
-    this.navCtrl.push('block-detail', {
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
-      blockHash: this.block.nextblockhash
-    });
+    this.redirProvider.redir('block-detail', this.block.nextblockhash);
   }
 }

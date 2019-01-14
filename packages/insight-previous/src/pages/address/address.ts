@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { Http } from '@angular/http';
-import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { IonicPage, NavParams } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { ApiCoin, TxsProvider } from '../../providers/transactions/transactions';
@@ -27,7 +27,6 @@ export class AddressPage {
   public showTransactions: boolean;
 
   constructor(
-    public navCtrl: NavController,
     public navParams: NavParams,
     private http: Http,
     public currencyProvider: CurrencyProvider,
@@ -35,8 +34,8 @@ export class AddressPage {
     public txProvider: TxsProvider
   ) {
     this.addrStr = navParams.get('addrStr');
-    const chain: string = navParams.get('chain');
-    const network: string = navParams.get('network');
+    const chain: string = this.apiProvider.getConfig().chain;
+    const network: string = this.apiProvider.getConfig().network;
     this.apiProvider.changeNetwork({ chain, network });
   }
 

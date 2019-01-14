@@ -8,6 +8,8 @@ import { BlocksProvider } from '../providers/blocks/blocks';
 import { CurrencyProvider } from '../providers/currency/currency';
 import { DefaultProvider } from '../providers/default/default';
 import { PriceProvider } from '../providers/price/price';
+import { RedirProvider } from '../providers/redir/redir';
+import { SearchProvider } from '../providers/search/search';
 import { TxsProvider } from '../providers/transactions/transactions';
 import { InsightApp } from './app.component';
 
@@ -28,7 +30,9 @@ import { InsightApp } from './app.component';
     BlocksProvider,
     TxsProvider,
     DefaultProvider,
-    PriceProvider
+    PriceProvider,
+    SearchProvider,
+    RedirProvider
   ]
 })
 export class AppModule { }

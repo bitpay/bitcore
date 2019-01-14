@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { Input } from '@angular/core';
-import { NavController } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { RedirProvider } from '../../providers/redir/redir';
 import { ApiCoin, TxsProvider } from '../../providers/transactions/transactions';
 
 /**
@@ -23,10 +23,10 @@ export class TransactionComponent implements OnInit {
   @Input() public showCoins = false;
 
   constructor(
-    private navCtrl: NavController,
     public currency: CurrencyProvider,
     public apiProvider: ApiProvider,
-    public txProvider: TxsProvider
+    public txProvider: TxsProvider,
+    public redirProvider: RedirProvider
   ) { }
 
   public ngOnInit(): void {
@@ -53,19 +53,11 @@ export class TransactionComponent implements OnInit {
   }
 
   public goToTx(txId: string): void {
-    this.navCtrl.push('transaction', {
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
-      txId
-    });
+    this.redirProvider.redir('transaction', txId)
   }
 
   public goToAddress(addrStr: string): void {
-    this.navCtrl.push('address', {
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
-      addrStr
-    });
+    this.redirProvider.redir('address', addrStr)
   }
 
   public toggleExpanded(): void {
