@@ -459,6 +459,18 @@ ExpressApp.prototype.start = function(opts, cb) {
     });
   });
 
+
+  router.get('/v1/stealth/', function(req, res) {
+    getServerWithAuth(req, res, function(server) {
+      server.getStealthAddress(req.body, function(err, address) {
+        if (err) return returnError(err, res, req);
+        res.json(address);
+      });
+    });
+  });
+
+
+
   router.get('/v1/balance/', function(req, res) {
     getServerWithAuth(req, res, function(server) {
       var opts = {};

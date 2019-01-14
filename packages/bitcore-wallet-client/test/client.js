@@ -2073,6 +2073,20 @@ describe('client API', function() {
     });
   });
 
+
+  describe.only('Stealth Address', function() {
+    it('should be able to create address in 1-of-1 wallet', function(done) {
+      helpers.createAndJoinWallet(clients, 1, 1, {coin:'bch'}, function() {
+        clients[0].getStealthAddress(function(err, x) {
+          should.not.exist(err);
+          should.exist(x.address);
+          done();
+        });
+      });
+    });
+  });
+
+
   describe('Notifications', function() {
     var clock;
     beforeEach(function(done) {

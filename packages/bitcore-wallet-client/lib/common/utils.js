@@ -162,6 +162,27 @@ Utils.deriveAddress = function(scriptType, publicKeyRing, path, m, network, coin
   };
 };
 
+
+Utils.deriveStealthAddress = function(publicKeyRing, m, network) {
+  var bitcore = Bitcore_[coin];
+
+  let scankey = _.map(publicKeyRing, function(item) {
+    var xpub = new Bitcore['bch'].HDPublicKey(item.xPubKey);
+    return xpub.deriveChild(scanPath).publicKey;
+  }).sort()[0];
+
+  var spendPath = Constants.PATHS.STEALTH_SPEND;
+  let spendKeys = _.map(publicKeyRing, function(item) {
+    var xpub = new Bitcore['bch'].HDPublicKey(item.xPubKey);
+    return xpub.deriveChild(spendPath).publicKey;
+  }).sort();
+
+  return {
+    address: (new Stealth.Address(scankey, spendKeys, m)).toString(),
+  };
+};
+
+
 Utils.xPubToCopayerId = function(coin, xpub) {
   var str = coin == 'btc' ? xpub : coin + xpub;
   var hash = sjcl.hash.sha256.hash(str);

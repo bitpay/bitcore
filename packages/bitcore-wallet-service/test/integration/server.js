@@ -4711,7 +4711,7 @@ console.log('[server.js.4434:sa:]',sa); //TODO
   });
 
 
-  describe.only('BCH Stealth address OUTPUTS', function() {
+  describe('BCH Stealth address OUTPUTS', function() {
     var server, wallet, sa, saMulti;
     beforeEach(function(done) {
       var scanKeyLive = '025e58a31122b38c86abc119b9379fe247410aee87a533f9c07b189aef6c3c1f52';

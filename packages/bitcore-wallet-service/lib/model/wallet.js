@@ -9,6 +9,7 @@ var Uuid = require('uuid');
 
 var Address = require('./address');
 var Copayer = require('./copayer');
+var StealthAddress = require('./stealthaddress');
 var AddressManager = require('./addressmanager');
 var Bitcore = {
   'btc': require('bitcore-lib'),
@@ -231,13 +232,14 @@ Wallet.prototype.getStealthAddress = function() {
     return xpub.deriveChild(spendPath).publicKey;
   }).sort();
 
-  let sa = new Stealth.Address(scankey, spendKeys);
-
-  this.stealth = {
-    address: sa.toString(),
+  this.stealth = StealthAddress.create({
+    address: (new Stealth.Address(scankey, spendKeys, self.m)).toString(),
     spendPubKeys: _.map(spendKeys, (x) => { return x.toString()} ),
     scanPubKey: scankey.toString(),
-  };
+    walletId: self.id,
+    network: self.network,
+    m: self.m,
+  });
   return this.stealth;
 };
 

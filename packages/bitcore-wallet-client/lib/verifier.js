@@ -16,6 +16,23 @@ var log = require('./log');
 function Verifier(opts) {};
 
 /**
+ * Check stealth address
+ *
+ * @param {Function} credentials
+ * @param {String} address
+ * @returns {Boolean} true or false
+ */
+Verifier.checkStealthAddress = function(credentials, address) {
+  $.checkState(credentials.isComplete());
+
+  var local = Utils.deriveStealthAddress(credentials.publicKeyRing, credentials.m, credentials.network);
+  return (local.address == address.address &&
+    _.difference(local.publicKeys, address.publicKeys).length === 0);
+};
+
+
+
+/**
  * Check address
  *
  * @param {Function} credentials

@@ -62,12 +62,13 @@ describe('Wallet', function() {
       inW.coin = 'bch';
       var w = Wallet.fromObj(inW);
       var a = w.getStealthAddress();
-      a.address.should.equal('9GQQYWQLRWLHU45YXAR9ZAVMAYW47VCRGZN6LP0KQSTR8NHNEDSU3VX8QVPGRYFLPKLS0QKFWG9AEXVX9QKE4W29SN7940X9F5ZWJ68MVAECG8CZ6P9YUQZF90VJGED5JH5WQMW36WWW8WHHHCLF6J0Z0TRJN0ZWGL4QXHS02AS0989FFSVDNU7M32N6JT6VXK6MZNNAAKLXWT3UQC0AFGY2QVQQ');
+      a.address.should.equal('9GQQYWQLRWLHU45YXAR9ZAVMAYW47VCRGZN6LP0KQSTR8NHNEDSU3VX8QVPGRYFLPKLS0QKFWG9AEXVX9QKE4W29SN7940X9F5ZWJ68MVAECG8CZ6P9YUQZF90VJGED5JH5WQMW36WWW8WHHHCLF6J0Z0TRJN0ZWGL4QXHS02AS0989FFSVDNU7M32N6JT6VXK6MZNNAAKLXWT3UQC0AFGY2QGQQ');
       a.scanPubKey.should.equal('02381f1bbf7e5684374651759be91d5f330340a7af85f6041633cef3cb61c8b0c7');
       a.spendPubKeys.should.deep.equal([
         "0281913f0dbf0782c9720bdc9986282d9ab94584fc5abcc54d04e968fb6773841f",
         "02d04a4e00492bd92465b495e8e06dd1d39ce3baf7be3e9d49e27ac729bc4e47ea",
         "035e0f5760f29ca94c18d9f3db8aa7a92f4c35b5b14e7dedbe672e3c061fd4a08a"]);
+      a.m.should.equal(2);
     });
 
     it('create singlesig stealthAddress', function() {
@@ -80,6 +81,7 @@ describe('Wallet', function() {
       a.spendPubKeys.should.deep.equal([
         "02d04a4e00492bd92465b495e8e06dd1d39ce3baf7be3e9d49e27ac729bc4e47ea",
       ]);
+      a.m.should.equal(1);
     });
  
   });

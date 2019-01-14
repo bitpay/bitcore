@@ -20,6 +20,7 @@ var collections = {
   WALLETS: 'wallets',
   TXS: 'txs',
   ADDRESSES: 'addresses',
+  STEALTH_ADDRESSES: 'saddresses',
   NOTIFICATIONS: 'notifications',
   COPAYERS_LOOKUP: 'copayers_lookup',
   PREFERENCES: 'preferences',
@@ -598,6 +599,14 @@ Storage.prototype.deregisterWallet = function(walletId, cb) {
       self.clearWalletCache(walletId, cb);
     });
   });
+};
+
+
+Storage.prototype.storeStealthAddress = function(saddress, cb) {
+  var self = this;
+  self.db.collection(collections.STEALTH_ADDRESSES).insert(saddress, {
+    w: 1
+  }, cb);
 };
 
 

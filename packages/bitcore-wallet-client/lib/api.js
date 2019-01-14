@@ -1805,6 +1805,33 @@ API.prototype.createAddress = function(opts, cb) {
   });
 };
 
+
+/**
+ * Get Stealth address
+ *
+ * @param {Callback} cb
+ * @returns {Callback} cb - Return error or the address
+ */
+API.prototype.getStealthAddress = function(opts, cb) {
+  $.checkState(this.credentials && this.credentials.isComplete());
+
+  if ( this.credentials.coin != 'bch')
+    return cb(new Error('Only for BCH wallets'));
+
+  var self = this;
+  opts = opts || {};
+
+  self._doGetRequest('/v1/stealth/', function(err, address) {
+    if (err) return cb(err);
+
+    if (!Verifier.checkStealthAddress(self.credentials, address)) {
+      return cb(new Errors.SERVER_COMPROMISED);
+    }
+    return cb(null, address);
+  });
+};
+
+
 /**
  * Get your main addresses
  *

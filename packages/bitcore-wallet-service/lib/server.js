@@ -1190,16 +1190,15 @@ WalletService.prototype.getStealthAddress = function(opts, cb) {
       return cb("Bad xPub");
     };
 
-    self.storage.storeWallet(wallet, function(err) {
+    self.storage.storeStealthAddress(sa, function(err) {
       if (err) return cb(err);
-      self._notify('NewStealthAddress', {
-        address: sa.address,
-      }, function() {
-        let ret = _.clone(sa);
-        ret.coin = wallet.coin;
-        ret.network = wallet.network;
-        ret.walletId = wallet.id;
-        return cb(err, ret);
+      self.storage.storeWallet(wallet, function(err) {
+        if (err) return cb(err);
+        self._notify('NewStealthAddress', {
+          address: sa.address,
+        }, function(err) {
+          return cb(err, sa);
+        });
       });
     });
   });
@@ -2490,7 +2489,6 @@ WalletService.prototype.publishTx = function(opts, cb) {
         var raw;
         try {
           raw = txp.getRawTx();
-console.log('[server.js.2587:raw:]',raw); //TODO
         } catch (ex) {
           return cb(ex);
         }
