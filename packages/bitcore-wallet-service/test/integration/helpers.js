@@ -529,7 +529,7 @@ helpers.createAndPublishTx = function(server, txOpts, signingKey, cb) {
     var publishOpts = helpers.getProposalSignatureOpts(txp, signingKey);
     server.publishTx(publishOpts, function(err) {
       if (err) console.log(err);
-      should.not.exist(err);
+      should.not.exist(err, 'Error... publishing');
       return cb(txp);
     });
   });

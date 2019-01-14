@@ -51,13 +51,13 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold) {
  * @param {number} amount in satoshis
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.to = function(address, amount) {
+Transaction.prototype.to = function(address, amount, ephemeralPrivateKey) {
   if (!(address instanceof Address || Address.isValid(address))) {
     return bitcore.Transaction.prototype.to.apply(this, arguments);
   }
 
   address = new Address(address);
-  var ephemeral = new bitcore.PrivateKey();
+  var ephemeral = new bitcore.PrivateKey(ephemeralPrivateKey);
   var paymentAddress = address.toPaymentAddress(ephemeral);
 
   var metadata = bitcore.util.buffer.concat([

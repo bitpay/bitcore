@@ -4627,10 +4627,142 @@ console.log('[server.js.4434:sa:]',sa); //TODO
           tx.amount.should.equal(helpers.toSatoshi(0.8));
           tx.feePerKb.should.equal(123e2);
           tx.outputs.should.deep.equal([{
+//            toAddress: 'bitcoincash:'+cashAddr,
             toAddress: sa,
->>>>>>> createTx at server working
             amount: amount,
           }]);
+          tx.amount.should.equal(helpers.toSatoshi(0.8));
+          tx.feePerKb.should.equal(123e2);
+          should.not.exist(tx.feeLevel);
+
+          var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
+          s.publishTx(publishOpts, function(err) {
+            s.getPendingTxs({}, function(err, txs) {
+              should.not.exist(err);
+              txs.length.should.equal(1);
+              txs[0].outputs.should.deep.equal([{
+                toAddress: copayAddr,
+                amount: amount,
+              }]);
+
+              done();
+            });
+          });
+        });
+      });
+    });
+  });
+
+  it('should create a BCH tx proposal with cashaddr and keep message', function(done) {
+
+    let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
+    let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
+    let amount =  0.8 * 1e8;
+    helpers.createAndJoinWallet(1, 1, { 
+      coin: 'bch',
+    },  function(s, w) {
+      helpers.stubUtxos(s, w, [1, 2], function() {
+        var txOpts = {
+          outputs: [{
+            toAddress: cashAddr,
+            amount: amount,
+            message: 'xxx',
+          }],
+          message: 'some message',
+          customData: 'some custom data',
+          feePerKb: 123e2,
+        };
+        s.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          should.exist(tx);
+          tx.walletM.should.equal(1);
+          tx.walletN.should.equal(1);
+          tx.requiredRejections.should.equal(1);
+          tx.requiredSignatures.should.equal(1);
+          tx.isAccepted().should.equal.false;
+          tx.isRejected().should.equal.false;
+          tx.isPending().should.equal.true;
+          tx.isTemporary().should.equal.true;
+          tx.outputs.should.deep.equal([{
+            toAddress: cashAddr,
+            amount: amount,
+            message: 'xxx',
+          }]);
+          tx.amount.should.equal(helpers.toSatoshi(0.8));
+          tx.feePerKb.should.equal(123e2);
+          should.not.exist(tx.feeLevel);
+          var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
+          s.publishTx(publishOpts, function(err) {
+            s.getPendingTxs({}, function(err, txs) {
+              should.not.exist(err);
+              txs.length.should.equal(1);
+              txs[0].outputs.should.deep.equal([{
+                toAddress: copayAddr,
+                message: 'xxx',
+                amount: amount,
+              }]);
+
+              done();
+            });
+          });
+        });
+      });
+    });
+  });
+
+
+  describe.only('BCH Stealth address OUTPUTS', function() {
+    var server, wallet, sa, saMulti;
+    beforeEach(function(done) {
+      var scanKeyLive = '025e58a31122b38c86abc119b9379fe247410aee87a533f9c07b189aef6c3c1f52';
+      var spendKeyLive = '03616562c98e7d7b74be409a787cec3a912122f3fb331a9bee9b0b73ce7b9f50af';
+      var spendKeyLive2 = '02bbee6a7ed6de1a55b0f6966a9f39f02850562697d1c3431ce5247d5099db3766';
+
+      sa = new Stealth.Address(scanKeyLive, spendKeyLive).toString();
+      saMulti = new Stealth.Address(scanKeyLive, [spendKeyLive, spendKeyLive2]).toString();
+      helpers.createAndJoinWallet(1, 1, { 
+        coin: 'bch',
+      },  function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+
+    it('should create a tx', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function() {
+        let amount = 0.8 * 1e8;
+        var txOpts = {
+          outputs: [{
+            toAddress: sa,
+            amount: amount,
+          }],
+          message: 'some message',
+          customData: 'some custom data',
+          feePerKb: 123e2,
+        };
+        server.createTx(txOpts, function(err, tx) {
+          should.not.exist(err);
+          should.exist(tx);
+          tx.walletM.should.equal(1);
+          tx.walletN.should.equal(1);
+          tx.requiredRejections.should.equal(1);
+          tx.requiredSignatures.should.equal(1);
+          tx.isAccepted().should.equal.false;
+          tx.isRejected().should.equal.false;
+          tx.isPending().should.equal.true;
+          tx.isTemporary().should.equal.true;
+          tx.amount.should.equal(helpers.toSatoshi(0.8));
+          tx.feePerKb.should.equal(123e2);
+          tx.outputs.length.should.equal(1);
+          tx.outputs[0].should.include({
+            toAddress:sa, 
+            amount:amount,
+            stealth: true,
+          });
+          (new Bitcore.PrivateKey(tx.outputs[0].ephemeralPrivKey)).should.exist();
+>>>>>>> stealth OUTPUTS working
           should.not.exist(tx.feeLevel);
           server.getPendingTxs({}, function(err, txs) {
             should.not.exist(err);
@@ -4640,6 +4772,58 @@ console.log('[server.js.4434:sa:]',sa); //TODO
         });
       });
     });
+
+    it('should sign a tx with stealth singlesig address OUTPUT', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function() {
+        let amount = 0.8 * 1e8;
+        var txOpts = {
+          outputs: [{
+            toAddress: sa,
+            amount: amount,
+          }],
+          message: 'some message',
+          customData: 'some custom data',
+          feePerKb: 123e2,
+        };
+        helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
+          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+          server.signTx({
+            txProposalId: txp.id,
+            signatures: signatures,
+          }, function(err, txp) {
+            txp.raw.should.contain(signatures[0]);
+              done();
+          });
+        });
+      });
+    });
+
+
+    it('should sign a tx with stealth multisig address OUTPUT', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function() {
+        let amount = 0.8 * 1e8;
+        var txOpts = {
+          outputs: [{
+            toAddress: saMulti,
+            amount: amount,
+          }],
+          message: 'some message',
+          customData: 'some custom data',
+          feePerKb: 123e2,
+        };
+        helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
+          var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+          server.signTx({
+            txProposalId: txp.id,
+            signatures: signatures,
+          }, function(err, txp) {
+            txp.raw.should.contain(signatures[0]);
+              done();
+          });
+        });
+      });
+    });
+
   });
 
   describe('Transaction notes', function(done) {
@@ -5482,6 +5666,7 @@ console.log('[server.js.4434:sa:]',sa); //TODO
           });
         });
       });
+
     });
 
     describe('Multisig', function() {

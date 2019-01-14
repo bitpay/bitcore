@@ -2490,6 +2490,7 @@ WalletService.prototype.publishTx = function(opts, cb) {
         var raw;
         try {
           raw = txp.getRawTx();
+console.log('[server.js.2587:raw:]',raw); //TODO
         } catch (ex) {
           return cb(ex);
         }

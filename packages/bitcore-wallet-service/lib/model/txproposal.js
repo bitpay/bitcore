@@ -44,15 +44,20 @@ TxProposal.create = function(opts) {
   x.payProUrl = opts.payProUrl;
   x.changeAddress = opts.changeAddress;
   x.outputs = _.map(opts.outputs, function(output) {
-    return _.pick(output, ['amount', 'toAddress', 'message', 'script']);
+    return _.pick(output, ['amount', 'toAddress', 'message', 'script', 'stealth', 'ephemeralPrivKey']);
   });
 
 
-  let nrStealth =  _.filter(opts.outputs,'stealth').length;
+  let stealthAddresses =  _.filter(x.outputs,'stealth');
+  if (stealthAddresses.length) {
 
-  if (nrStealth) {
     // TODO shouffle here also...
-    x.outputOrder = _.range(x.outputs.length + nrStealth + 1);
+    x.outputOrder = _.range(x.outputs.length + stealthAddresses.length + 1);
+
+    // Add ephemeral private key 
+    _.each(stealthAddresses,(i) => {
+      i.ephemeralPrivKey = Bitcore[x.coin].PrivateKey.fromRandom(x.network).toString();
+    });
   } else{
     x.outputOrder = _.range(x.outputs.length + 1);
     if (!opts.noShuffleOutputs) {
@@ -179,7 +184,7 @@ TxProposal.prototype._buildTx = function() {
         satoshis: o.amount
       }));
     } else {
-      t.to(o.toAddress, o.amount);
+      t.to(o.toAddress, o.amount, o.ephemeralPrivKey);
     }
   });
 
@@ -191,10 +196,6 @@ TxProposal.prototype._buildTx = function() {
 
 
   // Shuffle outputs for improved privacy
-  //
-  // 
-  // TODO: add extra dummy op_ret for change address, and suffle it?
-  //
   //
   if (t.outputs.length > 1) {
     var outputOrder = _.reject(self.outputOrder, function(order) {
@@ -214,7 +215,6 @@ TxProposal.prototype._buildTx = function() {
 
   $.checkState(totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs, 'not-enought-inputs');
   $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE, 'fee-too-high');
-
   return t;
 };
 
@@ -246,6 +246,7 @@ TxProposal.prototype.getBitcoreTx = function() {
 };
 
 TxProposal.prototype.getRawTx = function() {
+
   var t = this.getBitcoreTx();
 
   return t.uncheckedSerialize();

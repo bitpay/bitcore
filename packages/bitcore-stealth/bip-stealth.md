@@ -150,7 +150,7 @@ stealth address: <scan=Q> <spend=R, ...>
 Sender (has Q, not d):
 
 <pre>
-P = eG
+P = eG (ephemeral)
 </pre>
 
 By publishing P, only sender and receiver have access to c:
