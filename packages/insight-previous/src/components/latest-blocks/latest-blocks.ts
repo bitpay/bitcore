@@ -1,13 +1,11 @@
-import { Component, Injectable, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { Component, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { DefaultProvider } from '../../providers/default/default';
+import { Logger } from '../../providers/logger/logger';
 import { RedirProvider } from '../../providers/redir/redir';
-
-@Injectable()
 
 @Component({
   selector: 'latest-blocks',

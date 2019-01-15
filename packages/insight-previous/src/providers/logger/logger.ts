@@ -19,7 +19,7 @@ export class Logger {
 
     // Create an array of level weights for performant filtering.
     this.weight = {};
-    for (let i = 0; i < this.levels.length; i++) {
+    for (const i of this.levels) {
       this.weight[this.levels[i].level] = this.levels[i].weight;
     }
   }
@@ -29,11 +29,11 @@ export class Logger {
     const isNull = _.isNull(message);
     const isError = _.isError(message);
     const isObject = _.isObject(message);
-    if (isUndefined) return 'undefined';
-    else if (isNull) return 'null';
-    else if (isError) return message.message;
-    else if (isObject) return JSON.stringify(message);
-    else return message;
+    if (isUndefined) { return 'undefined'; }
+    else if (isNull) { return 'null'; }
+    else if (isError) { return message.message; }
+    else if (isObject) { return JSON.stringify(message); }
+    else { return message; }
   }
 
   public error(_message?, ..._optionalParams): void {
@@ -46,21 +46,21 @@ export class Logger {
   public debug(_message?, ..._optionalParams): void {
     const type = 'debug';
     const args = this.processingArgs(arguments);
-    if (isDevMode()) this.log(`[${type}] ${args}`);
+    if (isDevMode()) { this.log(`[${type}] ${args}`); }
     this.add(type, args);
   }
 
   public info(_message?, ..._optionalParams): void {
     const type = 'info';
     const args = this.processingArgs(arguments);
-    if (isDevMode()) this.log(`[${type}] ${args}`);
+    if (isDevMode()) { this.log(`[${type}] ${args}`); }
     this.add(type, args);
   }
 
   public warn(_message?, ..._optionalParams): void {
     const type = 'warn';
     const args = this.processingArgs(arguments);
-    if (isDevMode()) this.log(`[${type}] ${args}`);
+    if (isDevMode()) { this.log(`[${type}] ${args}`); }
     this.add(type, args);
   }
 
@@ -70,7 +70,7 @@ export class Logger {
 
   public getWeight(weight) {
     return _.find(this.levels, l => {
-      return l.weight == weight;
+      return l.weight === weight;
     });
   }
 
@@ -97,7 +97,7 @@ export class Logger {
    */
   public get(filterWeight?: number) {
     let filteredLogs = this.logs;
-    if (filterWeight != undefined) {
+    if (filterWeight !== undefined) {
       filteredLogs = _.filter(this.logs, l => {
         return this.weight[l.level] <= filterWeight;
       });

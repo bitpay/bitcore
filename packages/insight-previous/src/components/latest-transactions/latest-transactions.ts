@@ -1,26 +1,18 @@
-import { Component, Injectable, Input, NgZone } from '@angular/core';
+import { Component, Input, NgZone, OnChanges } from '@angular/core';
 import { Http } from '@angular/http';
-import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { Logger } from '../../providers/logger/logger';
 import { RedirProvider } from '../../providers/redir/redir';
 
-@Injectable()
-
-/**
- * Generated class for the LatestTransactionsComponent component.
- *
- * See https://angular.io/docs/ts/latest/api/core/index/ComponentMetadata-class.html
- * for more info on Angular Components.
- */
 @Component({
   selector: 'latest-transactions',
   templateUrl: 'latest-transactions.html'
 })
-export class LatestTransactionsComponent {
+export class LatestTransactionsComponent implements OnChanges {
 
   @Input() public refreshSeconds = 10;
-  private timer: number;
+  private timer: any;
   private loading = true;
   private transactions = [];
 
@@ -28,7 +20,6 @@ export class LatestTransactionsComponent {
     this.loadTransactions();
   }
 
-  // tslint:disable-next-line:use-life-cycle-interface
   public ngOnChanges(): void {
     if (this.timer) {
       clearInterval(this.timer);

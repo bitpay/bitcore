@@ -1,9 +1,9 @@
 import { Component, Injectable } from '@angular/core';
 import { Http } from '@angular/http';
 import { IonicPage, NavParams } from 'ionic-angular';
-import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { Logger } from '../../providers/logger/logger';
 import { ApiCoin, TxsProvider } from '../../providers/transactions/transactions';
 
 @Injectable()

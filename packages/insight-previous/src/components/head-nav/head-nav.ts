@@ -2,10 +2,10 @@ import { Component, EventEmitter, Injectable, Input, Output } from '@angular/cor
 import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
 import { ActionSheetController, App, NavController, PopoverController, ToastController } from 'ionic-angular';
-import { Logger } from '../../providers/logger/logger';
 import * as _ from 'lodash';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
 import { RedirProvider } from '../../providers/redir/redir';
 import { SearchProvider } from '../../providers/search/search';
