@@ -5,16 +5,12 @@ import { TransactionComponentModule } from '../../components/transaction/transac
 import { TransactionPage } from './transaction';
 
 @NgModule({
-  declarations: [
-    TransactionPage
-  ],
+  declarations: [TransactionPage],
   imports: [
     IonicPageModule.forChild(TransactionPage),
     TransactionComponentModule,
     HeadNavComponentModule
   ],
-  exports: [
-    TransactionPage
-  ]
+  exports: [TransactionPage]
 })
-export class TransactionPageModule { }
+export class TransactionPageModule {}

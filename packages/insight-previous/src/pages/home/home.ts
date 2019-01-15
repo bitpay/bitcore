@@ -13,7 +13,8 @@ import { PriceProvider } from '../../providers/price/price';
   templateUrl: 'home.html'
 })
 export class HomePage {
-  @ViewChild('latestBlocks') public latestBlocks: LatestBlocksComponent;
+  @ViewChild('latestBlocks')
+  public latestBlocks: LatestBlocksComponent;
   constructor(
     public navParams: NavParams,
     private apiProvider: ApiProvider,
@@ -27,7 +28,7 @@ export class HomePage {
       network:
         navParams.get('network') ||
         this.apiProvider.networkSettings.value.selectedNetwork.network
-    }
+    };
     this.loadView(chainNetwork, false);
   }
 

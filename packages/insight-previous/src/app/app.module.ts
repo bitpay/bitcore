@@ -37,4 +37,4 @@ import { InsightApp } from './app.component';
     Logger
   ]
 })
-export class AppModule { }
+export class AppModule {}

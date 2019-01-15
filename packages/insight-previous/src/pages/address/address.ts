@@ -4,10 +4,12 @@ import { IonicPage, NavParams } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { Logger } from '../../providers/logger/logger';
-import { ApiCoin, TxsProvider } from '../../providers/transactions/transactions';
+import {
+  ApiCoin,
+  TxsProvider
+} from '../../providers/transactions/transactions';
 
 @Injectable()
-
 @IonicPage({
   name: 'address',
   segment: ':chain/:network/address/:addrStr'
@@ -56,7 +58,11 @@ export class AddressPage {
       }
     );
 
-    const txurl: string = this.apiProvider.getUrl() + '/address/' + this.addrStr + '/txs?limit=1000';
+    const txurl: string =
+      this.apiProvider.getUrl() +
+      '/address/' +
+      this.addrStr +
+      '/txs?limit=1000';
     this.http.get(txurl).subscribe(
       data => {
         const apiTx: ApiCoin[] = data.json() as ApiCoin[];

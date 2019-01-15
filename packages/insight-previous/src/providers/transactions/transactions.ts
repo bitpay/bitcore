@@ -117,7 +117,7 @@ export class TxsProvider {
     private api: ApiProvider,
     public currency: CurrencyProvider,
     public blocks: BlocksProvider
-  ) { }
+  ) {}
 
   public getFee(tx: AppTx): number {
     const sumSatoshis: any = (arr: any): number =>

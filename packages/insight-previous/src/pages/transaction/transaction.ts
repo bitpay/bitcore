@@ -7,7 +7,6 @@ import { RedirProvider } from '../../providers/redir/redir';
 import { TxsProvider } from '../../providers/transactions/transactions';
 
 @Injectable()
-
 @IonicPage({
   name: 'transaction',
   segment: ':chain/:network/tx/:txId'

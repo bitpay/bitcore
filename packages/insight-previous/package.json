@@ -30,8 +30,6 @@
     "postinstall": "./node_modules/.bin/webdriver-manager update --gecko false",
     "start": "npm run ionic:serve",
     "test": "ng test --watch=false --code-coverage --no-progress",
-    "lint:ng": "ng lint",
-    "lint:prettier": "prettier '{*,**/*}.{js,ts,md,json,css}' --list-different",
     "fix:prettier": "prettier '{*,**/*}.{js,ts,md,json,css}' --write",
     "fix:tslint": "tslint --type-check --fix --project ."
   },

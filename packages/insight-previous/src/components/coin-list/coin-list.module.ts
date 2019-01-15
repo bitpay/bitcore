@@ -8,4 +8,4 @@ import { CoinListComponent } from './coin-list';
   imports: [IonicModule, CoinComponentModule],
   exports: [CoinListComponent]
 })
-export class CoinListComponentModule { }
+export class CoinListComponentModule {}

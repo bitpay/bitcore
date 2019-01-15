@@ -5,7 +5,6 @@ import { BlocksProvider } from '../../providers/blocks/blocks';
 import { Logger } from '../../providers/logger/logger';
 
 @Injectable()
-
 @IonicPage({
   name: 'blocks',
   segment: ':chain/:network/blocks'

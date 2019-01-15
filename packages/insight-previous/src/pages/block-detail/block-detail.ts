@@ -7,7 +7,6 @@ import { Logger } from '../../providers/logger/logger';
 import { RedirProvider } from '../../providers/redir/redir';
 
 @Injectable()
-
 @IonicPage({
   name: 'block-detail',
   segment: ':chain/:network/block/:blockHash'

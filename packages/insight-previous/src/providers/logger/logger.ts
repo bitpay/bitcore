@@ -29,11 +29,17 @@ export class Logger {
     const isNull = _.isNull(message);
     const isError = _.isError(message);
     const isObject = _.isObject(message);
-    if (isUndefined) { return 'undefined'; }
-    else if (isNull) { return 'null'; }
-    else if (isError) { return message.message; }
-    else if (isObject) { return JSON.stringify(message); }
-    else { return message; }
+    if (isUndefined) {
+      return 'undefined';
+    } else if (isNull) {
+      return 'null';
+    } else if (isError) {
+      return message.message;
+    } else if (isObject) {
+      return JSON.stringify(message);
+    } else {
+      return message;
+    }
   }
 
   public error(_message?, ..._optionalParams): void {
@@ -46,21 +52,27 @@ export class Logger {
   public debug(_message?, ..._optionalParams): void {
     const type = 'debug';
     const args = this.processingArgs(arguments);
-    if (isDevMode()) { this.log(`[${type}] ${args}`); }
+    if (isDevMode()) {
+      this.log(`[${type}] ${args}`);
+    }
     this.add(type, args);
   }
 
   public info(_message?, ..._optionalParams): void {
     const type = 'info';
     const args = this.processingArgs(arguments);
-    if (isDevMode()) { this.log(`[${type}] ${args}`); }
+    if (isDevMode()) {
+      this.log(`[${type}] ${args}`);
+    }
     this.add(type, args);
   }
 
   public warn(_message?, ..._optionalParams): void {
     const type = 'warn';
     const args = this.processingArgs(arguments);
-    if (isDevMode()) { this.log(`[${type}] ${args}`); }
+    if (isDevMode()) {
+      this.log(`[${type}] ${args}`);
+    }
     this.add(type, args);
   }
 

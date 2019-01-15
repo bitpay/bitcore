@@ -8,11 +8,11 @@ export class DefaultProvider {
     '%NETWORK%': string;
     '%NUM_BLOCKS%': string;
   } = {
-      '%CHAIN%': process.env.CHAIN || 'BTC',
-      '%API_PREFIX%': process.env.API_PREFIX || '/api',
-      '%NETWORK%': process.env.NETWORK || 'regtest',
-      '%NUM_BLOCKS%': process.env.NUM_BLOCKS || '15'
-    };
+    '%CHAIN%': process.env.CHAIN || 'BTC',
+    '%API_PREFIX%': process.env.API_PREFIX || '/api',
+    '%NETWORK%': process.env.NETWORK || 'regtest',
+    '%NUM_BLOCKS%': process.env.NUM_BLOCKS || '15'
+  };
 
   constructor() {}
 

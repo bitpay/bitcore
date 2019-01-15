@@ -12,5 +12,6 @@ import { AppCoin } from '../../providers/transactions/transactions';
   templateUrl: 'coin-list.html'
 })
 export class CoinListComponent {
-  @Input() public coins: Array<[AppCoin]>;
+  @Input()
+  public coins: Array<[AppCoin]>;
 }

@@ -10,13 +10,20 @@ import { RedirProvider } from '../../providers/redir/redir';
   templateUrl: 'latest-transactions.html'
 })
 export class LatestTransactionsComponent implements OnChanges {
-
-  @Input() public refreshSeconds = 10;
+  @Input()
+  public refreshSeconds = 10;
   private timer: any;
   private loading = true;
   private transactions = [];
 
-  constructor(private http: Http, private api: ApiProvider, public currency: CurrencyProvider, private ngZone: NgZone, public redirProvider: RedirProvider, private logger: Logger) {
+  constructor(
+    private http: Http,
+    private api: ApiProvider,
+    public currency: CurrencyProvider,
+    private ngZone: NgZone,
+    public redirProvider: RedirProvider,
+    private logger: Logger
+  ) {
     this.loadTransactions();
   }
 
@@ -26,16 +33,11 @@ export class LatestTransactionsComponent implements OnChanges {
     }
 
     this.ngZone.runOutsideAngular(() => {
-      this.timer = setInterval(
-        () => {
-          this.ngZone.run(
-            () => {
-              this.loadTransactions.call(this);
-            }
-          );
-        },
-        1000 * this.refreshSeconds
-      );
+      this.timer = setInterval(() => {
+        this.ngZone.run(() => {
+          this.loadTransactions.call(this);
+        });
+      }, 1000 * this.refreshSeconds);
     });
   }
 
@@ -47,7 +49,7 @@ export class LatestTransactionsComponent implements OnChanges {
         this.transactions = JSON.parse(data._body);
         this.loading = false;
       },
-      (err) => {
+      err => {
         this.logger.error(err);
         this.loading = false;
       }
@@ -55,6 +57,6 @@ export class LatestTransactionsComponent implements OnChanges {
   }
 
   public goToTx(txId: string): void {
-    this.redirProvider.redir('transaction', txId)
+    this.redirProvider.redir('transaction', txId);
   }
 }

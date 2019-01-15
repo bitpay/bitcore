@@ -15,7 +15,7 @@ export class InsightApp {
   private platform: Platform;
 
   public rootPage: any;
-  public pages: Array<{ title: string; component: any; icon: any; }>;
+  public pages: Array<{ title: string; component: any; icon: any }>;
 
   constructor(
     platform: Platform,
@@ -33,7 +33,11 @@ export class InsightApp {
     this.pages = [
       { title: 'Home', component: 'home', icon: 'home' },
       { title: 'Blocks', component: 'blocks', icon: 'logo-buffer' },
-      { title: 'Broadcast Transaction', component: 'BroadcastTxPage', icon: 'ios-radio-outline' }
+      {
+        title: 'Broadcast Transaction',
+        component: 'BroadcastTxPage',
+        icon: 'ios-radio-outline'
+      }
     ];
   }
 
@@ -44,21 +48,19 @@ export class InsightApp {
     });
   }
 
-
   public subscribeRedirEvent() {
     this.events.subscribe('redirToEvent', data => {
       switch (data.redirTo) {
         case 'address':
-          this.nav.push(data.redirTo, { addrStr: data.params })
+          this.nav.push(data.redirTo, { addrStr: data.params });
           break;
         case 'transaction':
-          this.nav.push(data.redirTo, { txId: data.params })
+          this.nav.push(data.redirTo, { txId: data.params });
           break;
         case 'block-detail':
-          this.nav.push(data.redirTo, { blockHash: data.params })
+          this.nav.push(data.redirTo, { blockHash: data.params });
           break;
       }
-
     });
   }
 

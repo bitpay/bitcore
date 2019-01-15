@@ -42,16 +42,11 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
     this.loadBlocks();
     const seconds = 15;
     this.ngZone.runOutsideAngular(() => {
-      this.reloadInterval = setInterval(
-        () => {
-          this.ngZone.run(
-            () => {
-              this.loadBlocks.call(this);
-            }
-          );
-        },
-        1000 * seconds
-      );
+      this.reloadInterval = setInterval(() => {
+        this.ngZone.run(() => {
+          this.loadBlocks.call(this);
+        });
+      }, 1000 * seconds);
     });
   }
 
@@ -70,7 +65,8 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
 
   public loadMoreBlocks(): void {
     clearInterval(this.reloadInterval);
-    const since: number = this.blocks.length > 0 ? this.blocks[this.blocks.length - 1].height : 0;
+    const since: number =
+      this.blocks.length > 0 ? this.blocks[this.blocks.length - 1].height : 0;
     this.blocksProvider.pageBlocks(since, this.numBlocks).subscribe(
       ({ blocks }) => {
         this.blocks = this.blocks.concat(blocks);

@@ -50,7 +50,7 @@ export class ApiProvider {
     const config = {
       chain: this.networkSettings.value.selectedNetwork.chain,
       network: this.networkSettings.value.selectedNetwork.network
-    }
+    };
     return config;
   }
 
