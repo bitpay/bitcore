@@ -1,9 +1,9 @@
 import { Component, Injectable, Input, NgZone } from '@angular/core';
 import { Http } from '@angular/http';
-import { NavController } from 'ionic-angular';
 import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { RedirProvider } from '../../providers/redir/redir';
 
 @Injectable()
 
@@ -19,15 +19,16 @@ import { CurrencyProvider } from '../../providers/currency/currency';
 })
 export class LatestTransactionsComponent {
 
-  private loading = true;
-  private transactions: any[] = [];
   @Input() public refreshSeconds = 10;
   private timer: number;
+  private loading = true;
+  private transactions = [];
 
-  constructor(private http: Http, private navCtrl: NavController, private api: ApiProvider, public currency: CurrencyProvider, private ngZone: NgZone, private logger: Logger) {
+  constructor(private http: Http, private api: ApiProvider, public currency: CurrencyProvider, private ngZone: NgZone, public redirProvider: RedirProvider, private logger: Logger) {
     this.loadTransactions();
   }
 
+  // tslint:disable-next-line:use-life-cycle-interface
   public ngOnChanges(): void {
     if (this.timer) {
       clearInterval(this.timer);
@@ -61,9 +62,6 @@ export class LatestTransactionsComponent {
   }
 
   public goToTx(txId: string): void {
-    this.navCtrl.push('transaction', {
-      'selectedCurrency': this.currency.selectedCurrency,
-      'txId': txId
-    });
+    this.redirProvider.redir('transaction', txId)
   }
 }

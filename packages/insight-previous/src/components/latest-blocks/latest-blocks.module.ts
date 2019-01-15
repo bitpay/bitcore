@@ -15,4 +15,4 @@ import { LatestBlocksComponent } from './latest-blocks';
     LatestBlocksComponent
   ]
 })
-export class LatestBlocksComponentModule {}
+export class LatestBlocksComponentModule { }

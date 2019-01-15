@@ -14,6 +14,7 @@ import { environment } from '../environments/environment';
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { StatusNotifierComponent } from './status-notifier/status-notifier.component';
+import { Logger } from '../../../insight-previous/src/providers/logger/logger';
 
 @NgModule({
   declarations: [AppComponent, StatusNotifierComponent],
@@ -29,7 +30,8 @@ import { StatusNotifierComponent } from './status-notifier/status-notifier.compo
     AppPreferences,
     StatusBar,
     SplashScreen,
-    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy }
+    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy },
+    Logger,
   ],
   bootstrap: [AppComponent]
 })

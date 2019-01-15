@@ -30,7 +30,6 @@ export class AddressPage {
   public showTransactions: boolean;
 
   constructor(
-    public navCtrl: NavController,
     public navParams: NavParams,
     private http: Http,
     public currencyProvider: CurrencyProvider,
@@ -39,8 +38,8 @@ export class AddressPage {
     private logger: Logger
   ) {
     this.addrStr = navParams.get('addrStr');
-    const chain: string = navParams.get('chain');
-    const network: string = navParams.get('network');
+    const chain: string = this.apiProvider.getConfig().chain;
+    const network: string = this.apiProvider.getConfig().network;
     this.apiProvider.changeNetwork({ chain, network });
   }
 

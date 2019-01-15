@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import 'rxjs/add/operator/map';
 import { ApiProvider } from '../api/api';
 
 @Injectable()

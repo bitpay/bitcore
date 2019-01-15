@@ -1,11 +1,11 @@
 import { Component, Injectable, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
-import { NavController } from 'ionic-angular';
 import { Subscription } from 'rxjs';
 import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { DefaultProvider } from '../../providers/default/default';
+import { RedirProvider } from '../../providers/redir/redir';
 
 @Injectable()
 
@@ -31,11 +31,11 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   constructor(
     private blocksProvider: BlocksProvider,
     private apiProvider: ApiProvider,
-    private navCtrl: NavController,
     private ngZone: NgZone,
     public currency: CurrencyProvider,
     public defaults: DefaultProvider,
-    private logger: Logger
+    private logger: Logger,
+    public redirProvider: RedirProvider
   ) {
     this.numBlocks = parseInt(defaults.getDefault('%NUM_BLOCKS%'), 10);
   }
@@ -86,11 +86,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   }
 
   public goToBlock(blockHash: string): void {
-    this.navCtrl.push('block-detail', {
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
-      blockHash
-    });
+    this.redirProvider.redir('block-detail', blockHash);
   }
 
   public getBlocks(): any[] {
@@ -98,7 +94,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   }
 
   public goToBlocks(): void {
-    this.navCtrl.push('blocks', {
+    this.redirProvider.redir('blocks', {
       chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
       network: this.apiProvider.networkSettings.value.selectedNetwork.network
     });

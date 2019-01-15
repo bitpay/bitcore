@@ -17,4 +17,4 @@ import { AddressPage } from './address';
   ],
   exports: [AddressPage]
 })
-export class AddressPageModule {}
+export class AddressPageModule { }

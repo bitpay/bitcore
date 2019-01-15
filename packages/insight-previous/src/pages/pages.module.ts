@@ -26,4 +26,4 @@ import { HomePageModule } from './home/home.module';
   entryComponents: [],
   providers: []
 })
-export class PagesModule {}
+export class PagesModule { }

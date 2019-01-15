@@ -19,14 +19,13 @@ export class BlocksPage {
   public blocks: any[] = [];
 
   constructor(
-    public navCtrl: NavController,
     public navParams: NavParams,
     private apiProvider: ApiProvider,
     private blocksProvider: BlocksProvider,
     private logger: Logger
   ) {
-    const chain: string = navParams.get('chain');
-    const network: string = navParams.get('network');
+    const chain: string = this.apiProvider.getConfig().chain;
+    const network: string = this.apiProvider.getConfig().network;
     this.apiProvider.changeNetwork({ chain, network });
 
     this.blocksProvider.getBlocks().subscribe(

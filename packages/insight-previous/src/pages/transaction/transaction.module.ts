@@ -17,4 +17,4 @@ import { TransactionPage } from './transaction';
     TransactionPage
   ]
 })
-export class TransactionPageModule {}
+export class TransactionPageModule { }

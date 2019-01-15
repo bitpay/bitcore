@@ -15,4 +15,4 @@ import { TransactionComponent } from './transaction';
     TransactionComponent
   ]
 })
-export class TransactionComponentModule {}
+export class TransactionComponentModule { }

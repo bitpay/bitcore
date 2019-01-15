@@ -1,5 +1,5 @@
 import { Component, ViewChild } from '@angular/core';
-import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { Events, IonicPage, NavParams } from 'ionic-angular';
 import { LatestBlocksComponent } from '../../components/latest-blocks/latest-blocks';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { PriceProvider } from '../../providers/price/price';
@@ -15,10 +15,10 @@ import { PriceProvider } from '../../providers/price/price';
 export class HomePage {
   @ViewChild('latestBlocks') latestBlocks: LatestBlocksComponent;
   constructor(
-    public navCtrl: NavController,
     public navParams: NavParams,
     private apiProvider: ApiProvider,
-    private priceProvider: PriceProvider
+    private priceProvider: PriceProvider,
+    public events: Events
   ) {
     const chainNetwork: ChainNetwork = {
       chain:

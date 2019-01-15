@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { Http } from '@angular/http';
-import { App, NavController, ViewController } from 'ionic-angular';
+import { App, ViewController } from 'ionic-angular';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { PriceProvider } from '../../providers/price/price';
@@ -19,7 +19,6 @@ export class DenominationComponent {
     public currencyProvider: CurrencyProvider,
     public priceProvider: PriceProvider,
     public viewCtrl: ViewController,
-    public navCtrl: NavController,
     public app: App,
     public http: Http,
     public api: ApiProvider

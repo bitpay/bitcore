@@ -160,7 +160,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
                 size: parentTx.size,
                 locktime: parentTx.locktime,
                 inputCount: parentTx.inputCount,
-                outputCount: parentTx.inputCount,
+                outputCount: parentTx.outputCount,
                 value: parentTx.value,
                 wallets: []
               }

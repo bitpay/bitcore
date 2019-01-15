@@ -1,13 +1,14 @@
 import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
-import { Http } from '@angular/http';
 import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
-import { ActionSheetController, NavController, PopoverController, ToastController  } from 'ionic-angular';
-import { App } from 'ionic-angular/components/app/app';
+import { ActionSheetController, App, NavController, PopoverController, ToastController } from 'ionic-angular';
 import { Logger } from '../../providers/logger/logger';
+import * as _ from 'lodash';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { PriceProvider } from '../../providers/price/price';
+import { RedirProvider } from '../../providers/redir/redir';
+import { SearchProvider } from '../../providers/search/search';
 import { DenominationComponent } from '../denomination/denomination';
 
 @Injectable()
@@ -25,10 +26,11 @@ export class HeadNavComponent {
   public title: string;
   public q: string;
   public config: ChainNetwork;
+  public redirTo: any;
+  public params: any;
 
   constructor(
     private navCtrl: NavController,
-    private http: Http,
     private apiProvider: ApiProvider,
     public app: App,
     public currency: CurrencyProvider,
@@ -37,81 +39,56 @@ export class HeadNavComponent {
     public popoverCtrl: PopoverController,
     public toastCtrl: ToastController,
     private logger: Logger,
+    public searchProvider: SearchProvider,
+    public redirProvider: RedirProvider
   ) {
     this.config = this.apiProvider.getConfig();
   }
 
   public search(): void {
     this.showSearch = false;
-    const apiPrefix: string = this.apiProvider.getUrl();
     this.q = this.q.replace(/\s/g, '');
-    if (this.isInputValid(this.q)) {
-      this.http.get(apiPrefix + '/block/' + this.q).subscribe(
-        (data: any): void => {
-          this.resetSearch();
-          const parsedData: any = JSON.parse(data._body);
-          this.logger.info(parsedData);
-          this.navCtrl.push('block-detail', {
-            chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-            network: this.apiProvider.networkSettings.value.selectedNetwork
-              .network,
-            blockHash: parsedData.hash
+    const inputDetails = this.searchProvider.isInputValid(this.q);
+
+    if (this.q !== '' && inputDetails.isValid) {
+      this.searchProvider.search(this.q, inputDetails.type).subscribe(res => {
+        if (_.isArray(res)) {
+          const index = _.findIndex(res, (o) => {
+            return o !== null;
           });
-        },
-        () => {
-          this.http.get(apiPrefix + '/tx/' + this.q).subscribe(
-            (data: any): void => {
-              this.resetSearch();
-              const parsedData: any = JSON.parse(data._body);
-              this.logger.info(parsedData);
-              this.navCtrl.push('transaction', {
-                chain: this.apiProvider.networkSettings.value.selectedNetwork
-                  .chain,
-                network: this.apiProvider.networkSettings.value.selectedNetwork
-                  .network,
-                txId: parsedData.txid
-              });
-            },
-            () => {
-              this.http.get(apiPrefix + '/address/' + this.q).subscribe(
-                (data: any): void => {
-                  const addrStr = this.q;
-                  this.resetSearch();
-                  const parsedData: any = JSON.parse(data._body);
-                  this.logger.info(parsedData);
-                  this.navCtrl.push('address', {
-                    chain: this.apiProvider.networkSettings.value.selectedNetwork
-                      .chain,
-                    network: this.apiProvider.networkSettings.value
-                      .selectedNetwork.network,
-                    addrStr
-                  });
-                },
-                () => {
-                  this.loading = false;
-                  this.reportBadQuery();
-                }
-              );
-            }
-          );
+          if (index === 0) {
+            this.redirTo = 'block-detail';
+            this.params = res[0].json().hash;
+          } else {
+            this.redirTo = 'transaction';
+            this.params = res[1].json().txid;
+          }
+        } else {
+          this.redirTo = 'address';
+          this.params = res.json()[0].address;
         }
-      );
+        this.redirProvider.redir(this.redirTo, this.params);
+      }, err => {
+        this.resetSearch();
+        this.loading = false;
+        this.reportBadQuery('Server error. Please try again');
+        console.log(err);
+      });
     } else {
       this.resetSearch();
       this.loading = false;
-      this.reportBadQuery();
+      this.reportBadQuery('No matching records found!');
     }
-
   }
 
   /* tslint:disable:no-unused-variable */
-  private reportBadQuery(): void {
-    this.presentToast();
+  private reportBadQuery(message): void {
+    this.presentToast(message);
   }
 
-  private presentToast(): void {
+  private presentToast(message): void {
     const toast: any = this.toastCtrl.create({
-      message: 'No matching records found!',
+      message,
       duration: 3000,
       position: 'top'
     });

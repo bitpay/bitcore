@@ -15,4 +15,4 @@ import { HeadNavComponent } from './head-nav';
     HeadNavComponent
   ]
 })
-export class HeadNavComponentModule {}
+export class HeadNavComponentModule { }
