@@ -1,5 +1,8 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Injectable, Input, OnInit } from '@angular/core';
+import { Logger } from '../../providers/logger/logger';
 import { TxsProvider } from '../../providers/transactions/transactions';
+
+@Injectable()
 
 @Component({
   selector: 'transaction-list',
@@ -17,7 +20,7 @@ export class TransactionListComponent implements OnInit {
   limit = 10;
   chunkSize = 100;
 
-  constructor(private txProvider: TxsProvider) { }
+  constructor(private txProvider: TxsProvider, private logger: Logger) {}
 
   ngOnInit(): void {
     if (this.transactions && this.transactions.length === 0) {
@@ -27,7 +30,7 @@ export class TransactionListComponent implements OnInit {
           this.loading = false;
         },
         err => {
-          console.log('err is', err);
+          this.logger.error(err);
           this.loading = false;
         }
       );

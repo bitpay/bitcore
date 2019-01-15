@@ -1,9 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, Injectable } from '@angular/core';
 import { IonicPage, NavParams } from 'ionic-angular';
+import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { RedirProvider } from '../../providers/redir/redir';
 import { TxsProvider } from '../../providers/transactions/transactions';
+
+@Injectable()
 
 @IonicPage({
   name: 'transaction',
@@ -23,6 +26,7 @@ export class TransactionPage {
     private apiProvider: ApiProvider,
     private txProvider: TxsProvider,
     public currency: CurrencyProvider,
+    private logger: Logger,
     public redirProvider: RedirProvider
   ) {
     this.txId = navParams.get('txId');
@@ -39,7 +43,7 @@ export class TransactionPage {
         // Be aware that the tx component is loading data into the tx object
       },
       err => {
-        console.log('err is', err);
+        this.logger.error(err);
         this.loading = false;
       }
     );

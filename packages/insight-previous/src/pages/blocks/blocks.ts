@@ -1,7 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, Injectable } from '@angular/core';
 import { IonicPage, NavParams } from 'ionic-angular';
+import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
+
+@Injectable()
 
 @IonicPage({
   name: 'blocks',
@@ -18,7 +21,8 @@ export class BlocksPage {
   constructor(
     public navParams: NavParams,
     private apiProvider: ApiProvider,
-    private blocksProvider: BlocksProvider
+    private blocksProvider: BlocksProvider,
+    private logger: Logger
   ) {
     const chain: string = this.apiProvider.getConfig().chain;
     const network: string = this.apiProvider.getConfig().network;
@@ -30,7 +34,7 @@ export class BlocksPage {
         this.loading = false;
       },
       err => {
-        console.log('err', err);
+        this.logger.error(err);
         this.loading = false;
       }
     );

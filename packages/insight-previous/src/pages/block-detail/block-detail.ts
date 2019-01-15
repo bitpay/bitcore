@@ -1,9 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, Injectable } from '@angular/core';
 import { IonicPage, NavParams } from 'ionic-angular';
+import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { RedirProvider } from '../../providers/redir/redir';
+
+@Injectable()
 
 @IonicPage({
   name: 'block-detail',
@@ -25,6 +28,7 @@ export class BlockDetailPage {
     private blockProvider: BlocksProvider,
     private apiProvider: ApiProvider,
     public currency: CurrencyProvider,
+    private logger: Logger,
     public redirProvider: RedirProvider
   ) {
     this.blockHash = navParams.get('blockHash');
@@ -40,7 +44,7 @@ export class BlockDetailPage {
         this.loading = false;
       },
       err => {
-        console.log('err is', err);
+        this.logger.error(err);
         this.loading = false;
       }
     );

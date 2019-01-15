@@ -1,8 +1,11 @@
-import { Component, Input, NgZone } from '@angular/core';
+import { Component, Injectable, Input, NgZone } from '@angular/core';
 import { Http } from '@angular/http';
+import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { RedirProvider } from '../../providers/redir/redir';
+
+@Injectable()
 
 /**
  * Generated class for the LatestTransactionsComponent component.
@@ -21,7 +24,7 @@ export class LatestTransactionsComponent {
   private loading = true;
   private transactions = [];
 
-  constructor(private http: Http, private api: ApiProvider, public currency: CurrencyProvider, private ngZone: NgZone, public redirProvider: RedirProvider) {
+  constructor(private http: Http, private api: ApiProvider, public currency: CurrencyProvider, private ngZone: NgZone, public redirProvider: RedirProvider, private logger: Logger) {
     this.loadTransactions();
   }
 
@@ -52,7 +55,7 @@ export class LatestTransactionsComponent {
         this.loading = false;
       },
       (err) => {
-        console.log('err is', err);
+        this.logger.error(err);
         this.loading = false;
       }
     );

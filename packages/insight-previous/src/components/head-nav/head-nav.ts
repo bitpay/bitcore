@@ -1,7 +1,8 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
 import { ActionSheetController, App, NavController, PopoverController, ToastController } from 'ionic-angular';
+import { Logger } from '../../providers/logger/logger';
 import * as _ from 'lodash';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
@@ -10,10 +11,13 @@ import { RedirProvider } from '../../providers/redir/redir';
 import { SearchProvider } from '../../providers/search/search';
 import { DenominationComponent } from '../denomination/denomination';
 
+@Injectable()
+
 @Component({
   selector: 'head-nav',
   templateUrl: 'head-nav.html'
 })
+
 export class HeadNavComponent {
   @Output() updateView = new EventEmitter<ChainNetwork>();
   public showSearch = false;
@@ -34,6 +38,7 @@ export class HeadNavComponent {
     public actionSheetCtrl: ActionSheetController,
     public popoverCtrl: PopoverController,
     public toastCtrl: ToastController,
+    private logger: Logger,
     public searchProvider: SearchProvider,
     public redirProvider: RedirProvider
   ) {
@@ -67,7 +72,7 @@ export class HeadNavComponent {
         this.resetSearch();
         this.loading = false;
         this.reportBadQuery('Server error. Please try again');
-        console.log(err);
+        this.logger.error(err);
       });
     } else {
       this.resetSearch();
@@ -79,6 +84,7 @@ export class HeadNavComponent {
   /* tslint:disable:no-unused-variable */
   private reportBadQuery(message): void {
     this.presentToast(message);
+    this.logger.info(message);
   }
 
   private presentToast(message): void {

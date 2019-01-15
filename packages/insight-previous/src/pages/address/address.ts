@@ -1,9 +1,12 @@
-import { Component } from '@angular/core';
+import { Component, Injectable } from '@angular/core';
 import { Http } from '@angular/http';
 import { IonicPage, NavParams } from 'ionic-angular';
+import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { ApiCoin, TxsProvider } from '../../providers/transactions/transactions';
+
+@Injectable()
 
 /**
  * Generated class for the AddressPage page.
@@ -31,7 +34,8 @@ export class AddressPage {
     private http: Http,
     public currencyProvider: CurrencyProvider,
     private apiProvider: ApiProvider,
-    public txProvider: TxsProvider
+    public txProvider: TxsProvider,
+    private logger: Logger
   ) {
     this.addrStr = navParams.get('addrStr');
     const chain: string = this.apiProvider.getConfig().chain;
@@ -54,7 +58,7 @@ export class AddressPage {
         this.loading = false;
       },
       err => {
-        console.error('err is', err);
+        this.logger.error(err);
       }
     );
 
@@ -66,7 +70,7 @@ export class AddressPage {
         this.showTransactions = true;
       },
       err => {
-        console.error('err is', err);
+        this.logger.error(err);
         this.loading = false;
         this.showTransactions = false;
       }
