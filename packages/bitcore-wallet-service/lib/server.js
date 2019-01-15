@@ -1439,42 +1439,45 @@ WalletService.prototype._totalizeUtxos = function(utxos) {
 };
 
 
-WalletService.prototype._getBalanceCached = function(opts, cb, i) {
+/**
+ * Get wallet balance.
+ * @param {Object} opts
+ * @param {string} [opts.coin] - Override wallet coin (default wallet's coin).
+ * @returns {Object} balance - Total amount & locked amount.
+ */
+
+WalletService.prototype.getBalance = function(opts, cb, i) {
   var self = this;
-  var opts = opts || {};
-  opts.addresses = opts.addresses || [];
+  opts = opts || {};
 
+  if (opts.coin) {
+    return cb(new ClientError('opts.coin no longer supported'));
+  }
+  let wallet = opts.wallet;
+  let addresses = null;
 
-  function checkBalanceCache(cb) {
-    if (opts.addresses.length < Defaults.BALANCE_CACHE_ADDRESS_THRESOLD || !opts.fastCache)
-      return cb();
-
-    self.storage.checkAndUseBalanceCache(self.walletId, opts.addresses, opts.fastCache, cb);
-  };
-
-  function storeBalanceCache(balance, cb) {
-    if (opts.addresses.length < Defaults.BALANCE_CACHE_ADDRESS_THRESOLD)
-      return cb(null, balance);
-
-    self.storage.storeBalanceCache(self.walletId, opts.addresses, balance, function(err) {
-      if (err)
-        self.logw('Could not save cache:',err);
-
-      return cb(null, balance);
+  let setWallet = (cb1) => {
+    if (wallet) return cb1();
+    self.getWallet({}, function(err, ret) {
+      if (err) return cb(err);
+      wallet = ret;
+      return cb1(null, wallet);
     });
   };
 
+  setWallet(() => {
 
-  // TODO v8: remove lock?
-  // This lock is to prevent server starvation on big wallets
-  self._runLocked(cb, function(cb) {
-    checkBalanceCache(function(err, cache) {
+    if (!wallet.isComplete()) {
+      return cb(null, self._totalizeUtxos([]));
+    }
+
+    var bc = self._getBlockchainExplorer(wallet.coin, wallet.network);
+    if (!bc) {
+      return cb1(new Error('Could not get blockchain explorer instance'));
+    }
+
+    self.syncWallet(wallet, (err) => {
       if (err) return cb(err);
-
-      if (cache) {
-        self.logi('Using UTXO Cache');
-        return cb(null, cache, true);
-      }
 
       self._getUtxosForCurrentWallet({
         coin: opts.coin,
@@ -1500,63 +1503,7 @@ WalletService.prototype._getBalanceCached = function(opts, cb, i) {
 
         balance.byAddress = _.values(byAddress);
 
-        storeBalanceCache(balance, cb);
-      });
-    }, 10 * 1000);
-  });
-};
-
-/**
- * Get wallet balance.
- * @param {Object} opts
- * @param {string} [opts.coin] - Override wallet coin (default wallet's coin).
- * @returns {Object} balance - Total amount & locked amount.
- */
-
-WalletService.prototype.getBalance = function(opts, cb, i) {
-  var self = this;
-  opts = opts || {};
-
-  if (opts.coin) {
-    return cb(new ClientError('opts.coin no longer supported'));
-  }
-  opts.fastCache = Defaults.BALANCE_CACHE_DIRECT_DURATION;
-
-  let wallet = opts.wallet;
-  let addresses = null;
-
-  let setWallet = (cb1) => {
-    if (wallet) return cb1();
-    self.getWallet({}, function(err, ret) {
-      if (err) return cb(err);
-      wallet = ret;
-      return cb1(null, wallet);
-    });
-  };
-
-  let setAddresses = (cb1) => {
-    var bc = self._getBlockchainExplorer(wallet.coin, wallet.network);
-    if (!bc) {
-      return cb1(new Error('Could not get blockchain explorer instance'));
-    }
-    return self.syncWallet(wallet, cb1);
-  };
-
-  setWallet(() => {
-    if (!wallet.isComplete()) {
-      return cb(null, self._totalizeUtxos([]));
-    }
-    setAddresses((err) => {
-      if (err) return cb(err);
-
-      // TODO remove fastCache for v8
-      self._getBalanceCached({
-        coin: opts.coin,
-        addresses: addresses,
-        fastCache: opts.fastCache,
-      }, function(err, balance, cacheUsed) {
-        if (err) return cb(err);
-        return cb(null, balance, cacheUsed);
+        return cb(null, balance);
       });
     });
   });

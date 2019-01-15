@@ -1134,67 +1134,6 @@ Storage.prototype._dump = function(cb, fn) {
   });
 };
 
-Storage.prototype._addressHash = function(addresses) {
-  var all = addresses.join();
-  return Bitcore.crypto.Hash.ripemd160(new Buffer(all)).toString('hex');
-};
-
-Storage.prototype.checkAndUseBalanceCache = function(walletId, addresses, duration, cb) {
-  var self = this;
-  var key = self._addressHash(addresses);
-  var now = Date.now();
-
-
-  self.db.collection(collections.CACHE).findOne({
-    walletId: walletId || key,
-    type: 'balanceCache',
-    key: key,
-  }, function(err, ret) {
-    if (err) return cb(err);
-    if (!ret) return cb();
-
-    var validFor = ret.ts + duration * 1000 - now;
-
-    if (validFor > 0)  {
-      log.debug('','Using Balance Cache valid for %d ms more', validFor); 
-      cb(null, ret.result);
-      return true;
-    }
-    cb();
-
-    log.debug('','Balance cache expired, deleting'); 
-    self.db.collection(collections.CACHE).remove({
-      walletId: walletId,
-      type: 'balanceCache',
-      key: key,
-    }, {},  function() {});
-
-    return false;
-  });
-};
-
-
-
-Storage.prototype.storeBalanceCache = function (walletId, addresses, balance, cb) {
-  var key = this._addressHash(addresses);
-  var now = Date.now();
-
-  this.db.collection(collections.CACHE).update({ 
-    walletId: walletId || key,
-    type: 'balanceCache',
-    key: key,
-  }, {
-    "$set":
-    { 
-      ts: now,
-      result: balance,
-    }
-  }, {
-    w: 1,
-    upsert: true,
-  }, cb);
-};
-
 // FEE_LEVEL_DURATION = 5min
 var FEE_LEVEL_DURATION = 5 * 60 * 1000;
 Storage.prototype.checkAndUseFeeLevelsCache = function(opts, cb) {
