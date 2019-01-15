@@ -72,7 +72,7 @@ export class HeadNavComponent {
         this.resetSearch();
         this.loading = false;
         this.reportBadQuery('Server error. Please try again');
-        console.log(err);
+        this.logger.error(err);
       });
     } else {
       this.resetSearch();
@@ -84,6 +84,7 @@ export class HeadNavComponent {
   /* tslint:disable:no-unused-variable */
   private reportBadQuery(message): void {
     this.presentToast(message);
+    this.logger.info(message);
   }
 
   private presentToast(message): void {
