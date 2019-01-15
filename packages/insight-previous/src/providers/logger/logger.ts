@@ -20,7 +20,9 @@ export class Logger {
     // Create an array of level weights for performant filtering.
     this.weight = {};
     for (const i of this.levels) {
-      this.weight[this.levels[i].level] = this.levels[i].weight;
+      if (this.levels[i]) {
+        this.weight[this.levels[i].level] = this.levels[i].weight;
+      }
     }
   }
 
