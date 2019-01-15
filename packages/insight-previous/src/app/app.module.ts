@@ -12,6 +12,7 @@ import { RedirProvider } from '../providers/redir/redir';
 import { SearchProvider } from '../providers/search/search';
 import { TxsProvider } from '../providers/transactions/transactions';
 import { InsightApp } from './app.component';
+import { Logger } from '../../src/providers/logger/logger';
 
 @NgModule({
   declarations: [InsightApp],
@@ -32,7 +33,8 @@ import { InsightApp } from './app.component';
     DefaultProvider,
     PriceProvider,
     SearchProvider,
-    RedirProvider
+    RedirProvider,
+    Logger
   ]
 })
 export class AppModule { }
