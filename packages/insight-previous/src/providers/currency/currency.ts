@@ -23,6 +23,10 @@ export class CurrencyProvider {
     );
   }
 
+  public setCurrency(currency: string): void {
+    this.selectedCurrency = currency;
+  }
+
   public getConvertedNumber(value: number): number {
     // TODO: Change this function to make use of satoshis so that we don't have to do all these roundabout conversions.
     value = value * 1e-8;

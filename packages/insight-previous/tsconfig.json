@@ -19,11 +19,8 @@
   "exclude": [
     "node_modules",
     "src/test.ts",
-    "**/*.spec.ts",
-    "e2e"
+    "src/mocks.ts",
+    "**/*.spec.ts"
   ],
-  "compileOnSave": false,
-  "atom": {
-    "rewriteTsconfig": false
-  }
+  "compileOnSave": false
 }

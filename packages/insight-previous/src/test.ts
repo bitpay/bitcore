@@ -12,14 +12,10 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 import { BrowserDynamicTestingModule, platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
 import { HttpModule } from '@angular/http';
 // import { MockBackend } from '@angular/http/testing';
-import { App, Config, Form, IonicModule, Keyboard, DomController, MenuController, NavController, Platform, GestureController } from 'ionic-angular';
+import { ActionSheetController, App, Config, Form, IonicModule, Keyboard, DomController, MenuController, NavController, Platform, GestureController } from 'ionic-angular';
 import { ConfigMock, PlatformMock } from './mocks';
-import { BlocksServiceMock } from './services/mocks';
-import { BlocksService } from './services';
 import { ApiProvider } from './providers/api/api';
 import { CurrencyProvider } from './providers/currency/currency';
-import { HeadNavComponentModule } from './components/head-nav/head-nav.module';
-import { ActionSheetController } from 'ionic-angular';
 
 // Unfortunately there's no typing for the `__karma__` variable. Just declare it as any.
 declare var __karma__: any;
@@ -64,7 +60,6 @@ export class TestUtils {
         App, Form, Keyboard, DomController, MenuController, NavController, GestureController,
         {provide: Platform, useClass: PlatformMock},
         {provide: Config, useClass: ConfigMock},
-        {provide: BlocksService, useClass: BlocksServiceMock},
         ApiProvider,
         CurrencyProvider,
         ActionSheetController
@@ -73,8 +68,7 @@ export class TestUtils {
         FormsModule,
         IonicModule,
         ReactiveFormsModule,
-        HttpModule,
-        HeadNavComponentModule
+        HttpModule
       ]
     });
   }

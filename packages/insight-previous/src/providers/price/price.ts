@@ -15,7 +15,7 @@ export class PriceProvider {
 
     if (currency === 'USD') {
       this.api.http.get(this.api.getUrl() + '/currency').subscribe(
-        data => {
+        (data: any) => {
           const currencyParsed: any = JSON.parse(data._body);
           if (currencyParsed.data.bitstamp) {
             this.currency.factor = this.currency.bitstamp =

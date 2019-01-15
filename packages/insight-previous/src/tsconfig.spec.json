@@ -1,10 +1,10 @@
 {
-  "extends": "../tsconfig.ng-cli.json",
+  "extends": "../tsconfig.json",
   "compilerOptions": {
     "outDir": "../out-tsc/spec",
-    "module": "commonjs",
-    "target": "es5",
-    "baseUrl": "",
+    "typeRoots": [
+      "node_modules/@types"
+    ],
     "types": [
       "jasmine",
       "node"

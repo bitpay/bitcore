@@ -8,12 +8,6 @@ import { ApiCoin, TxsProvider } from '../../providers/transactions/transactions'
 
 @Injectable()
 
-/**
- * Generated class for the AddressPage page.
- *
- * See http://ionicframework.com/docs/components/#navigation for more info
- * on Ionic pages and navigation.
- */
 @IonicPage({
   name: 'address',
   segment: ':chain/:network/address/:addrStr'

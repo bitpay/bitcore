@@ -3,7 +3,6 @@
   "rules": {
     "interface-name": [true, "never-prefix"],
     "no-submodule-imports": [true, "zone.js", "rxjs", ["@angular"]],
-    "component-class-suffix": [true, "Component", "Page"],
-    "no-console": false
+    "component-class-suffix": [true, "Component", "Page"]
   }
 }
