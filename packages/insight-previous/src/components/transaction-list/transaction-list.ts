@@ -1,5 +1,4 @@
-import { Component, OnInit } from '@angular/core';
-import { Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { TxsProvider } from '../../providers/transactions/transactions';
 
 @Component({
@@ -18,7 +17,7 @@ export class TransactionListComponent implements OnInit {
   limit = 10;
   chunkSize = 100;
 
-  constructor(private txProvider: TxsProvider) {}
+  constructor(private txProvider: TxsProvider) { }
 
   ngOnInit(): void {
     if (this.transactions && this.transactions.length === 0) {

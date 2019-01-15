@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { IonicModule } from 'ionic-angular';
-import { HeadNavComponent } from './head-nav';
 import { DenominationComponentModule } from '../denomination/denomination.module';
+import { HeadNavComponent } from './head-nav';
 
 @NgModule({
   declarations: [
@@ -15,4 +15,4 @@ import { DenominationComponentModule } from '../denomination/denomination.module
     HeadNavComponent
   ]
 })
-export class HeadNavComponentModule {}
+export class HeadNavComponentModule { }

@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
-import 'rxjs/add/operator/map';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { BlocksProvider } from '../blocks/blocks';
@@ -118,7 +117,7 @@ export class TxsProvider {
     private api: ApiProvider,
     public currency: CurrencyProvider,
     public blocks: BlocksProvider
-  ) {}
+  ) { }
 
   public getFee(tx: AppTx): number {
     const sumSatoshis: any = (arr: any): number =>

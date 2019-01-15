@@ -1,6 +1,5 @@
 import { Injectable } from '@angular/core';
 import { ToastController } from 'ionic-angular';
-import 'rxjs/add/operator/map';
 import { ApiProvider } from '../api/api';
 import { CurrencyProvider } from '../currency/currency';
 

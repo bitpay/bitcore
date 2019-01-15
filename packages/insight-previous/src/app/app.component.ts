@@ -1,5 +1,5 @@
 import { Component, ViewChild } from '@angular/core';
-import { MenuController, Nav, Platform } from 'ionic-angular';
+import { Events, MenuController, Nav, Platform } from 'ionic-angular';
 import { HomePage } from '../pages';
 import { ApiProvider } from '../providers/api/api';
 import { CurrencyProvider } from '../providers/currency/currency';
@@ -21,7 +21,8 @@ export class InsightApp {
     platform: Platform,
     menu: MenuController,
     public currency: CurrencyProvider,
-    public apiProvider: ApiProvider
+    public apiProvider: ApiProvider,
+    public events: Events
   ) {
     this.menu = menu;
     this.platform = platform;
@@ -39,7 +40,25 @@ export class InsightApp {
   private initializeApp(): void {
     this.platform.ready().then(() => {
       this.rootPage = HomePage;
-      // cordova ready
+      this.subscribeRedirEvent();
+    });
+  }
+
+
+  public subscribeRedirEvent() {
+    this.events.subscribe('redirToEvent', data => {
+      switch (data.redirTo) {
+        case 'address':
+          this.nav.push(data.redirTo, { addrStr: data.params })
+          break;
+        case 'transaction':
+          this.nav.push(data.redirTo, { txId: data.params })
+          break;
+        case 'block-detail':
+          this.nav.push(data.redirTo, { blockHash: data.params })
+          break;
+      }
+
     });
   }
 
