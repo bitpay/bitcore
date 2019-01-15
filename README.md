@@ -12,9 +12,9 @@ git checkout master
 npm install
 ```
 
-# Setup Guide
+## Setup Guide
 
-### 1) Setup bitcore config
+**1. Setup Bitcore config**
 
 <details>
 <summary><b>Example bitcore.config.json</b></summary>
@@ -96,7 +96,7 @@ npm install
 
 </details>
 
-### 2) Setup Bitcoin Node
+**2. Setup Bitcoin Node**
 
 <details>
 <summary><b> Example Bitcoin Mainnet Config </b></summary>
@@ -111,7 +111,7 @@ irc=1
 upnp=1
 ```
 
-**Listen on different ports than default testnet**
+Listen on different ports than default testnet
 
 ```
 port=20008
@@ -123,17 +123,19 @@ rpcpassword=password
 ```
 </details>
 
-### 3) Run Bitcoin node
+**3. Run Bitcoin Node**
 
-### 4) Start Bitcore
+**4. Start Bitcore**
 
 ```
 npm run node
 ```
 
-# API Documentation
+## API Documentation
 
 [API parameters and example responses](./packages/bitcore-node/docs/api-documentation.md)
+
+[Guide to testing in RegTest](./packages/bitcore-node/docs/wallet-guide.md)
 
 ## Contributing
 

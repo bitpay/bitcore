@@ -67,12 +67,6 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return balance;
   }
 
-  async getBalanceForWallet(params: CSP.GetBalanceForWalletParams) {
-    const { walletId } = params;
-    let query = { wallets: walletId };
-    return CoinStorage.getBalance({ query });
-  }
-
   streamBlocks(params: CSP.StreamBlocksParams) {
     const { req, res } = params;
     const { query, options } = this.getBlocksQuery(params);
@@ -313,7 +307,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
           }
           return done();
         },
-        function(done) {
+        function (done) {
           this.push({ allMissingAddresses, totalMissingValue });
           done();
         }
@@ -376,8 +370,18 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {
-    let query = { wallets: params.wallet._id, 'wallets.0': { $exists: true } };
+    const query = {
+      wallets: params.wallet._id, 'wallets.0': { $exists: true },
+      spentHeight: { $lt: SpentHeightIndicators.minimum },
+      mintHeight: { $gt: SpentHeightIndicators.conflicting }
+    }
     return CoinStorage.getBalance({ query });
+  }
+
+  async getWalletBalanceAtTime(params: CSP.GetWalletBalanceAtTimeParams) {
+    const { chain, network, time } = params;
+    let query = { wallets: params.wallet._id, 'wallets.0': { $exists: true } };
+    return CoinStorage.getBalanceAtTime({ query, time, chain, network });
   }
 
   async streamWalletUtxos(params: CSP.StreamWalletUtxosParams) {

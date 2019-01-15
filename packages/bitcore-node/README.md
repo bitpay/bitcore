@@ -100,7 +100,8 @@ npm run node
 # API Documentation
 
 [API parameters and example responses](./docs/api-documentation.md)
-[Wallet Guide to testing in RegTest](./docs/wallet-guide.md)
+
+[Guide to testing in RegTest](./docs/wallet-guide.md)
 
 ## Contributing
 

@@ -15,13 +15,13 @@ touch .profile
 Edit the .profile file to insert:
 
 ```
-alias tnbitpay='/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/mainnet/bitpay'
+alias tnbitpay='/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/mainnet/'
 
-alias tnbitpayreg='/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/regtest/bitpay'
+alias tnbitpayreg='/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/regtest/'
 
-alias tnbitpaycashreg='/Applications/BitcoinABC-Qt.app/Contents/MacOS/BitcoinABC-Qt -datadir=/Users/username/blockchains/bitcoincash/networks/regtest/bitpay -flexiblehandshake -initiatecashconnections'
+alias tnbitpaycashreg='/Applications/BitcoinABC-Qt.app/Contents/MacOS/BitcoinABC-Qt -datadir=/Users/username/blockchains/bitcoincash/networks/regtest/ -flexiblehandshake -initiatecashconnections'
 
-alias tnbitpaycash='/Applications/BitcoinABC-Qt.app/Contents/MacOS/BitcoinABC-Qt -datadir=/Users/username/blockchains/bitcoincash/networks/mainnet/bitpay -flexiblehandshake -initiatecashconnections'
+alias tnbitpaycash='/Applications/BitcoinABC-Qt.app/Contents/MacOS/BitcoinABC-Qt -datadir=/Users/username/blockchains/bitcoincash/networks/mainnet/ -flexiblehandshake -initiatecashconnections'
 ```
 Ensure Mongod is running
 
@@ -46,7 +46,7 @@ tnbitpayreg
 
 Go to Help -> Debug Window -> console tab
 
-Input generate command in the line to create 5000 BTC
+Input generate command in the line to create 5000 Blocks
 
 ```
 generate(5000)

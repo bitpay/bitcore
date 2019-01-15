@@ -31,9 +31,7 @@ export declare namespace CSP {
   export type GetBalanceForAddressParams = ChainNetwork & {
     address: string;
   };
-  export type GetBalanceForWalletParams = ChainNetwork & {
-    walletId: string;
-  };
+  
   export type GetBlockParams = ChainNetwork & {
     blockId?: string;
     sinceBlock?: number | string;
@@ -62,6 +60,11 @@ export declare namespace CSP {
 
   export type GetWalletBalanceParams = ChainNetwork & {
     wallet: MongoBound<IWallet>;
+  };
+
+  export type GetWalletBalanceAtTimeParams = ChainNetwork & {
+    wallet: MongoBound<IWallet>;
+    time: string;
   };
 
   export type StreamAddressUtxosParams = ChainNetwork & {
@@ -115,7 +118,6 @@ export declare namespace CSP {
   export type ChainStateProvider = Provider<IChainStateService> & IChainStateService;
   export interface IChainStateService {
     getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{ confirmed: number, unconfirmed: number, balance: number }>;
-    getBalanceForWallet(params: GetBalanceForWalletParams): Promise<{ confirmed: number, unconfirmed: number, balance: number }>;
     getBlock(params: GetBlockParams): Promise<IBlock | string>;
     streamBlocks(params: StreamBlocksParams): any;
     getFee(params: GetEstimateSmartFeeParams): any;
@@ -124,6 +126,7 @@ export declare namespace CSP {
     getWallet(params: GetWalletParams): Promise<IWallet | null>;
     updateWallet(params: UpdateWalletParams): Promise<any>;
     getWalletBalance(params: GetWalletBalanceParams): Promise<{ confirmed: number, unconfirmed: number, balance: number }>;
+    getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams): Promise<{ confirmed: number, unconfirmed: number, balance: number }>;
     streamAddressUtxos(params: StreamAddressUtxosParams): any;
     streamAddressTransactions(params: StreamAddressUtxosParams): any;
     streamTransactions(params: StreamTransactionsParams): any;
