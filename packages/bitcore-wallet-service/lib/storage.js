@@ -745,65 +745,6 @@ Storage.prototype.setWalletAddressChecked = function(walletId, totalAddresses, c
 };
  
 
-
-
-
-// --------         ---------------------------  Total
-//           > Time >
-//                       ^to     <=  ^from
-//                       ^fwdIndex  =>  ^end
-Storage.prototype.getTxHistoryCache = function(walletId, from, to, cb) {
-  var self = this;
-  $.checkArgument(from >= 0);
-  $.checkArgument(from <= to);
-
-  self.db.collection(collections.CACHE).findOne({
-    walletId: walletId,
-    type: 'historyCacheStatus',
-    key: null
-  }, function(err, result) {
-    if (err) return cb(err);
-    if (!result) return cb();
-    if (!result.isUpdated) return cb();
-
-    // Reverse indexes
-    var fwdIndex = result.totalItems - to;
-
-    if (fwdIndex < 0) {
-      fwdIndex = 0;
-    }
-
-    var end = result.totalItems - from;
-
-    // nothing to return
-    if (end <= 0) return cb(null, []);
-
-    // Cache is OK.
-    self.db.collection(collections.CACHE).find({
-      walletId: walletId,
-      type: 'historyCache',
-      key: {
-        $gte: fwdIndex,
-        $lt: end
-      },
-    }).sort({
-      key: -1,
-    }).toArray(function(err, result) {
-      if (err) return cb(err);
-
-      if (!result) return cb();
-
-      if (result.length < end - fwdIndex) {
-        // some items are not yet defined.
-        return cb();
-      }
-
-      var txs = _.map(result, 'tx');
-      return cb(null, txs);
-    });
-  })
-};
-
 // Since cache TX are "hard confirmed" skip, and limit
 // should be reliable to query the database.
 //
@@ -851,49 +792,6 @@ Storage.prototype.getTxHistoryCacheV8 = function(walletId, skip, limit, cb) {
         var txs = _.map(result, 'tx');
         return cb(null, txs);
       });
-  });
-};
-
-
-Storage.prototype.softResetAllTxHistoryCache = function(cb) {
-  this.db.collection(collections.CACHE).update({
-    type: 'historyCacheStatus',
-  }, {
-    isUpdated: false,
-  }, {
-    multi: true,
-  }, cb);
-};
-
-Storage.prototype.softResetTxHistoryCache = function(walletId, cb) {
-  this.db.collection(collections.CACHE).update({
-    walletId: walletId,
-    type: 'historyCacheStatus',
-    key: null
-  }, {
-    isUpdated: false,
-  }, {
-    w: 1,
-    upsert: true,
-  }, cb);
-};
-
-Storage.prototype.clearTxHistoryCache = function(walletId, cb) {
-  var self = this;
-  self.db.collection(collections.CACHE).remove({
-    walletId: walletId,
-    type: 'historyCache',
-  }, {
-    multi: 1
-  }, function(err) {
-    if (err) return cb(err);
-    self.db.collection(collections.CACHE).remove({
-      walletId: walletId,
-      type: 'historyCacheStatus',
-      key: null
-    }, {
-      w: 1
-    }, cb);
   });
 };
 
@@ -1024,61 +922,6 @@ Storage.prototype.storeTxHistoryCacheV8 = function(walletId, tipIndex, items, up
       tipIndex: pos,
       tipTxId: last.txid,
       tipHeight: last.blockheight,
-    }, {
-      w: 1,
-      upsert: true,
-    }, cb);
-  });
-};
-
-
-
-// items should be in CHRONOLOGICAL order
-Storage.prototype.storeTxHistoryCache = function(walletId, totalItems, firstPosition, items, cb) {
-  $.shouldBeNumber(firstPosition);
-  $.checkArgument(firstPosition >= 0);
-  $.shouldBeNumber(totalItems);
-  $.checkArgument(totalItems >= 0);
-
-  var self = this;
-
-  _.each(items, function(item, i) {
-    item.position = firstPosition + i;
-  });
-  var cacheIsComplete = (firstPosition == 0);
-
-  // TODO: check txid uniqness?
-  async.each(items, function(item, next) {
-    var pos = item.position;
-    delete item.position;
-    self.db.collection(collections.CACHE).update({
-      walletId: walletId,
-      type: 'historyCache',
-      key: pos,
-    }, {
-      walletId: walletId,
-      type: 'historyCache',
-      key: pos,
-      tx: item,
-    }, {
-      w: 1,
-      upsert: true,
-    }, next);
-  }, function(err) {
-    if (err) return cb(err);
-
-    self.db.collection(collections.CACHE).update({
-      walletId: walletId,
-      type: 'historyCacheStatus',
-      key: null
-    }, {
-      walletId: walletId,
-      type: 'historyCacheStatus',
-      key: null,
-      totalItems: totalItems,
-      updatedOn: Date.now(),
-      isComplete: cacheIsComplete,
-      isUpdated: true,
     }, {
       w: 1,
       upsert: true,
