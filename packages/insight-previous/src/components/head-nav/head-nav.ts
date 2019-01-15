@@ -77,8 +77,8 @@ export class HeadNavComponent {
                 (data: any): void => {
                   const addrStr = this.q;
                   this.resetSearch();
-                  this.logger.info(parsedData);
                   const parsedData: any = JSON.parse(data._body);
+                  this.logger.info(parsedData);
                   this.navCtrl.push('address', {
                     chain: this.apiProvider.networkSettings.value.selectedNetwork
                       .chain,
