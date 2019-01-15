@@ -22,8 +22,8 @@
   },
   "scripts": {
     "clean": "ionic-app-scripts clean",
-    "build:prod": "CHAIN=BTC NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:build",
-    "serve:prod": "npm run build:prod && npm run serve",
+    "build:prod": "ENV=prod CHAIN=BTC NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:build",
+    "serve:prod": "npm run clean && npm run build:prod && npm run serve",
     "serve": "serve www",
     "ionic:build": "ionic-app-scripts build",
     "ionic:serve": "ionic-app-scripts serve --port 8200",
