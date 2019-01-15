@@ -4,7 +4,7 @@ import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
 import { ActionSheetController, NavController, PopoverController, ToastController  } from 'ionic-angular';
 import { App } from 'ionic-angular/components/app/app';
-import { Logger } from '../../logger';
+import { Logger } from '../../providers/logger/logger';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { PriceProvider } from '../../providers/price/price';
@@ -49,8 +49,8 @@ export class HeadNavComponent {
       this.http.get(apiPrefix + '/block/' + this.q).subscribe(
         (data: any): void => {
           this.resetSearch();
-          this.logger.info(data);
           const parsedData: any = JSON.parse(data._body);
+          this.logger.info(parsedData);
           this.navCtrl.push('block-detail', {
             chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
             network: this.apiProvider.networkSettings.value.selectedNetwork
@@ -62,8 +62,8 @@ export class HeadNavComponent {
           this.http.get(apiPrefix + '/tx/' + this.q).subscribe(
             (data: any): void => {
               this.resetSearch();
-              this.logger.info(data);
               const parsedData: any = JSON.parse(data._body);
+              this.logger.info(parsedData);
               this.navCtrl.push('transaction', {
                 chain: this.apiProvider.networkSettings.value.selectedNetwork
                   .chain,
@@ -77,7 +77,7 @@ export class HeadNavComponent {
                 (data: any): void => {
                   const addrStr = this.q;
                   this.resetSearch();
-                  this.logger.info(data);
+                  this.logger.info(parsedData);
                   const parsedData: any = JSON.parse(data._body);
                   this.navCtrl.push('address', {
                     chain: this.apiProvider.networkSettings.value.selectedNetwork

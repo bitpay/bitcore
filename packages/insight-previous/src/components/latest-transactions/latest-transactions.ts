@@ -1,7 +1,7 @@
 import { Component, Injectable, Input, NgZone } from '@angular/core';
 import { Http } from '@angular/http';
 import { NavController } from 'ionic-angular';
-import { Logger } from '../../logger';
+import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 

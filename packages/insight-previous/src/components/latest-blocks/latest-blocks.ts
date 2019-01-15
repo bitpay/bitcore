@@ -1,7 +1,7 @@
 import { Component, Injectable, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { NavController } from 'ionic-angular';
 import { Subscription } from 'rxjs';
-import { Logger } from '../../logger';
+import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
