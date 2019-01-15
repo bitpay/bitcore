@@ -6,8 +6,21 @@
 - add incomming TXs to wallet balance
 - detect incoming OLD/mined txs
 
-- ScanPub key = f(xpub0,1,2,3)
+
+
+bitcore(new tx with op_ret)
+
+bitcore(get txs with op_ret prefix (xxxx))
+
+
+
+Proto changes
+- ScanPub Priv key = f(xpub0,1,2,3)
 - changed encoding to base32. up to n=3 wallet are ok
 - multisig leaks wallet configuration 2-3, etc.
-- lexicogracical minor for spend
 - lexicogracical ordered for multisig
+
+
+
+
+
