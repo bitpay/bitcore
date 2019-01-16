@@ -70,9 +70,10 @@ helpers.beforeEach = function(cb) {
 
     be.register = sinon.stub().callsArgWith(1, null, null);
     be.addAddresses = sinon.stub().callsArgWith(2, null, null);
-    be.getAddressUtxos = sinon.stub().callsArgWith(1, null, helpers._utxos);
+    be.getAddressUtxos = sinon.stub().callsArgWith(2, null, []);
     be.getCheckData = sinon.stub().callsArgWith(1, null, {sum: 100});
     be.getUtxos = sinon.stub().callsArgWith(1, null,[]);
+    be.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000, 'hash');
 
 
     var opts = {
@@ -351,12 +352,20 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
         helpers._utxos = utxos;
       }
 
-      blockchainExplorer.getUtxos = function(param1, cb) {
+      blockchainExplorer.getUtxos = function(param1, height, cb) {
         
         var selected;
         selected = _.filter(helpers._utxos, {'wallet': param1.id});
         return cb(null, selected);
       };
+
+
+      blockchainExplorer.getAddressUtxos = function(param1, height, cb) {
+        var selected;
+        selected = _.filter(helpers._utxos, {'address': param1});
+        return cb(null, selected);
+      };
+
 
       return next();
     },
