@@ -2396,7 +2396,7 @@ describe('Wallet service', function() {
         fees.urgent.feePerKb.should.equal(60000);
         fees.priority.feePerKb.should.equal(40000);
         should.not.exist(fromCache);
-        clock.tick(6*60*1000);
+        clock.tick(31*60*1000);
         server.getFeeLevels({}, function(err, fees, fromCache) {
           should.not.exist(err);
           fees = _.fromPairs(_.map(fees, function(item) {
