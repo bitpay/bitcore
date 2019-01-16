@@ -101,10 +101,6 @@ V8.prototype.translateTx = function(tx) {
 
 };
 
-V8.prototype.supportsGrouping = function () {
-  return true;
-};
-
 V8.prototype._getClient = function () {
   return new Client({
     baseUrl: this.baseUrl,
