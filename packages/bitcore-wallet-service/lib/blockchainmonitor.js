@@ -296,8 +296,15 @@ BlockchainMonitor.prototype._handleTxConfirmations = function(coin, network, has
 };
 
 BlockchainMonitor.prototype._handleNewBlock = function(coin, network, hash) {
+
+  // clear height cache.
+  let cacheKey = Storage.BCHEIGHT_KEY + ':' + coin +':' + network;
+
+  this.storage.clearGlobalCache(cacheKey, ()=>{});
+
   this._notifyNewBlock(coin, network, hash);
   this._handleTxConfirmations(coin, network, hash);
+
 };
 
 BlockchainMonitor.prototype._storeAndBroadcastNotification = function(notification, cb) {

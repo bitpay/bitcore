@@ -126,7 +126,7 @@ WalletService.initialize = function(opts, cb) {
   function initMessageBroker(cb) {
     messageBroker = opts.messageBroker || new MessageBroker(opts.messageBrokerOpts);
     if (messageBroker) {
-      messageBroker.onMessage(WalletService.handleIncomingNotification);
+      messageBroker.onMessage(WalletService.handleIncomingNotifications);
     }
 
     return cb();
@@ -174,14 +174,13 @@ WalletService.initialize = function(opts, cb) {
   });
 };
 
-WalletService.handleIncomingNotification = function(notification, cb) {
+
+
+WalletService.handleIncomingNotifications = function(notification, cb) {
   cb = cb || function() {};
 
-  if (!notification || notification.type !== 'NewBlock') {
-    return cb();
-  }
-
-  WalletService._clearBlockchainHeightCache(notification.data.coin, notification.data.network);
+  // do nothing here....
+  // bc height cache is cleared on bcmonitor
   return cb();
 };
 
@@ -1678,10 +1677,7 @@ WalletService.prototype.getFeeLevels = function(opts, cb) {
   if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS))
     return cb(new ClientError('Invalid network'));
 
-
-  let cacheKey = 'feeLevel' + JSON.stringify(opts);
-
-
+  let cacheKey = 'feeLevel:' + opts.coin + ':' + opts.network;
 
   self.storage.checkAndUseGlobalCache(
     cacheKey, Defaults.FEE_LEVEL_CACHE_DURATION, (err, values) =>  {
@@ -3027,59 +3023,38 @@ WalletService.prototype._normalizeV8TxHistory = function(txs, bcHeight) {
 };
 
 
-WalletService._cachedBlockheight;
-
-WalletService._initBlockchainHeightCache = function() {
-  if (WalletService._cachedBlockheight) return;
-  WalletService._cachedBlockheight = {
-    btc: {
-      livenet: {},
-      testnet: {}
-    },
-    bch: {
-      livenet: {},
-      testnet: {}
-    },
-  };
-};
-
-WalletService._clearBlockchainHeightCache = function(coin, network) {
-  WalletService._initBlockchainHeightCache();
-  if (!Utils.checkValueInCollection(network, Constants.NETWORKS)) {
-    log.error('Incorrect network in new block: ' + coin + '/' + network);
-    return;
-  }
-  WalletService._cachedBlockheight[coin][network].current = null;
-};
-
-
-// TODO refactor this to a general cache
 WalletService.prototype._getBlockchainHeight = function(coin, network, cb) {
   var self = this;
 
-  var now = Date.now();
-  WalletService._initBlockchainHeightCache();
-  var cache = WalletService._cachedBlockheight[coin][network];
+  let cacheKey = Storage.BCHEIGHT_KEY + ':' + coin + ':' + network;
 
-  function fetchFromBlockchain(cb) {
+  self.storage.checkAndUseGlobalCache(
+    cacheKey, Defaults.BLOCKHEIGHT_CACHE_TIME, (err, values) =>  {
+    if (err) return cb(err);
+
+    if (values) 
+      return cb(null, values.current, values.hash, true);
+
+    values = {};
+
     var bc = self._getBlockchainExplorer(coin, network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.getBlockchainHeight(function(err, height, hash) {
       if (!err && height > 0) {
-        cache.current = height;
-        cache.last = height;
-        cache.hash = hash;
-        cache.updatedOn = now;
+        values.current = height;
+        values.hash = hash;
+      } else {
+        return cb(err || 'wrong height');
       }
-      return cb(null, cache.last, cache.hash);
+
+      self.storage.storeGlobalCache(cacheKey, values, (err) =>  {
+        if (err) {
+          log.warn('Could not store bcheith cache');
+        }
+        return cb(null, values.current, values.hash);
+      });
     });
-  };
-
-  if (!cache.current || (now - cache.updatedOn) > Defaults.BLOCKHEIGHT_CACHE_TIME * 1000) {
-    return fetchFromBlockchain(cb);
-  }
-
-  return cb(null, cache.current, cache.hash);
+  });
 };
 
 

@@ -2177,7 +2177,6 @@ describe('Wallet service', function() {
     });
   });
 
-
   describe('#getFeeLevels', function() {
     var server, wallet, levels;
     before(function() {

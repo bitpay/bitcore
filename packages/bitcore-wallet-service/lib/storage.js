@@ -16,7 +16,6 @@ var BCHAddressTranslator = require('./bchaddresstranslator');
 
 
 
-
 var collections = {
   WALLETS: 'wallets',
   TXS: 'txs',
@@ -38,6 +37,9 @@ var Storage = function(opts) {
   opts = opts || {};
   this.db = opts.db;
 };
+
+
+Storage.BCHEIGHT_KEY = 'bcheight';
 
 Storage.prototype._createIndexes = function() {
   this.db.collection(collections.WALLETS).createIndex({
@@ -1169,6 +1171,17 @@ Storage.prototype.storeGlobalCache = function (key, values, cb) {
   }, {
     w: 1,
     upsert: true,
+  }, cb);
+};
+
+Storage.prototype.clearGlobalCache = function (key, cb) {
+  var now = Date.now();
+  this.db.collection(collections.CACHE).remove({ 
+    key: key,
+    walletId: null,
+    type: null,
+  }, {
+    w: 1,
   }, cb);
 };
 

@@ -7,6 +7,7 @@ Constants.COINS = {
   BCH: 'bch',
 };
 
+
 Constants.NETWORKS = {
   LIVENET: 'livenet',
   TESTNET: 'testnet',
