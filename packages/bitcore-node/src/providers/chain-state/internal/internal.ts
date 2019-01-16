@@ -62,7 +62,10 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { chain, network, address } = params;
-    let query = { chain, network, address };
+    const query = {
+      chain, network, address, spentHeight: { $lt: SpentHeightIndicators.minimum },
+      mintHeight: { $gt: SpentHeightIndicators.conflicting }
+    };
     let balance = await CoinStorage.getBalance({ query });
     return balance;
   }
