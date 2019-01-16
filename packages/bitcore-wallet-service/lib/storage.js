@@ -1134,8 +1134,8 @@ Storage.prototype._dump = function(cb, fn) {
   });
 };
 
-// FEE_LEVEL_DURATION = 5min
-var FEE_LEVEL_DURATION = 5 * 60 * 1000;
+// FEE_LEVEL_DURATION = 30min
+var FEE_LEVEL_CACHE_DURATION = 30 * 60 * 1000;
 Storage.prototype.checkAndUseFeeLevelsCache = function(opts, cb) {
   var self = this;
   var key = JSON.stringify(opts);
@@ -1149,7 +1149,7 @@ Storage.prototype.checkAndUseFeeLevelsCache = function(opts, cb) {
     if (err) return cb(err);
     if (!ret) return cb();
 
-    var validFor = ret.ts + FEE_LEVEL_DURATION - now;
+    var validFor = ret.ts + FEE_LEVEL_CACHE_DURATION - now;
     return cb(null, validFor > 0 ? ret.result : null);
   });
 };
