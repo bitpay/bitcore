@@ -50,7 +50,7 @@ export class BlockDetailPage {
   }
 
   public goToPreviousBlock(): void {
-    this.redirProvider.redir('block-detail', { 
+    this.redirProvider.redir('block-detail', {
       blockHash: this.block.previousblockhash,
       chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
       network: this.apiProvider.networkSettings.value.selectedNetwork.network
@@ -58,7 +58,7 @@ export class BlockDetailPage {
   }
 
   public goToNextBlock(): void {
-    this.redirProvider.redir('block-detail', { 
+    this.redirProvider.redir('block-detail', {
       blockHash: this.block.nextblockhash,
       chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
       network: this.apiProvider.networkSettings.value.selectedNetwork.network
