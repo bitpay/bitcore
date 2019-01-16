@@ -1,9 +1,10 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, Injectable, ViewChild } from '@angular/core';
 import { Events, IonicPage, NavParams } from 'ionic-angular';
 import { LatestBlocksComponent } from '../../components/latest-blocks/latest-blocks';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { PriceProvider } from '../../providers/price/price';
 
+@Injectable()
 @IonicPage({
   name: 'home',
   segment: ':chain/:network'

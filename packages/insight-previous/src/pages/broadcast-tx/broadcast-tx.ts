@@ -1,9 +1,10 @@
-import { Component } from '@angular/core';
+import { Component, Injectable } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Http } from '@angular/http';
 import { IonicPage, NavParams, ToastController } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
 
+@Injectable()
 @IonicPage({
   segment: ':chain/:network/broadcast-tx'
 })

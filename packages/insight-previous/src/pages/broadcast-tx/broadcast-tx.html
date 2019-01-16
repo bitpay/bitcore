@@ -1,13 +1,9 @@
 <ion-header>
-  <ion-navbar color="brand">
-    <button ion-button menuToggle>
-      <ion-icon name="menu"></ion-icon>
-    </button>
-    <ion-title>{{ title }}</ion-title>
-  </ion-navbar>
+  <head-nav [title]="'Broadcast Transaction'"></head-nav>
 </ion-header>
 
 <ion-content padding>
+  <h1>Broadcast Transaction</h1>
   <div class="page-content">
     <form [formGroup]="txForm">
       <ion-list>

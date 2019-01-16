@@ -18,7 +18,7 @@ export class LatestTransactionsComponent implements OnChanges {
 
   constructor(
     private http: Http,
-    private api: ApiProvider,
+    private apiProvider: ApiProvider,
     public currency: CurrencyProvider,
     private ngZone: NgZone,
     public redirProvider: RedirProvider,
@@ -42,7 +42,7 @@ export class LatestTransactionsComponent implements OnChanges {
   }
 
   private loadTransactions(): void {
-    const url: string = this.api.getUrl() + 'txs';
+    const url: string = this.apiProvider.getUrl() + 'txs';
 
     this.http.get(url).subscribe(
       (data: any) => {
