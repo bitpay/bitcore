@@ -1763,6 +1763,8 @@ WalletService.prototype._checkTx = function(txp) {
   var self = this;
   var bitcoreError;
 
+
+
   var serializationOpts = {
     disableIsFullySigned: true,
     disableSmallFees: true,
@@ -1771,6 +1773,9 @@ WalletService.prototype._checkTx = function(txp) {
 
   if (txp.getEstimatedSize() / 1000 > Defaults.MAX_TX_SIZE_IN_KB)
     return Errors.TX_MAX_SIZE_EXCEEDED;
+
+  if (_.isEmpty(txp.inputPaths))
+    return Errors.NO_INPUT_PATHS;
 
   try {
     var bitcoreTx = txp.getBitcoreTx();
@@ -1951,6 +1956,7 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
   //log.debug('Selecting inputs for a ' + Utils.formatAmountInBtc(txp.getTotalAmount()) + ' txp');
 
   self._getUtxosForCurrentWallet({}, function(err, utxos) {
+
     if (err) return cb(err);
 
     var totalAmount;
@@ -2025,7 +2031,6 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
       txp.fee = fee;
 
       var err = self._checkTx(txp);
-
       if (!err) {
         var change = _.sumBy(txp.inputs, 'satoshis') - _.sumBy(txp.outputs, 'amount') - txp.fee;
         self.logi('Successfully built transaction. Total fees: ' + Utils.formatAmountInBtc(txp.fee) + ', total change: ' + Utils.formatAmountInBtc(change));
@@ -2293,9 +2298,11 @@ WalletService.prototype.createTx = function(opts, cb) {
         async.series([
 
           function(next) {
+
             self._validateAndSanitizeTxOpts(wallet, opts, next);
           },
           function(next) {
+
             self._canCreateTx(function(err, canCreate) {
               if (err) return next(err);
               if (!canCreate) return next(Errors.TX_CANNOT_CREATE);
@@ -2303,6 +2310,7 @@ WalletService.prototype.createTx = function(opts, cb) {
             });
           },
           function(next) {
+
             if (opts.sendMax) return next();
             getChangeAddress(wallet, function(err, address, isNew) {
               if (err) return next(err);
@@ -2320,6 +2328,7 @@ WalletService.prototype.createTx = function(opts, cb) {
             });
           },
           function(next) {
+
             var txOpts = {
               id: opts.txProposalId,
               walletId: self.walletId,
@@ -2347,13 +2356,16 @@ WalletService.prototype.createTx = function(opts, cb) {
             next();
           },
           function(next) {
+
             self._selectTxInputs(txp, opts.utxosToExclude, next);
           },
           function(next) {
+
             if (!changeAddress || wallet.singleAddress || opts.dryRun) return next();
             self._store(wallet, txp.changeAddress, next, true);
           },
           function(next) {
+
             if (opts.dryRun) return next();
             self.storage.storeTx(wallet.id, txp, next);
           },
@@ -2425,6 +2437,7 @@ WalletService.prototype.publishTx = function(opts, cb) {
         // Verify UTXOs are still available
 
         log.debug('Rechecking UTXOs availability for publishTx');
+
         self._getUtxosForCurrentWallet({
           addresses: txp.inputs,
         }, function(err, utxos) {
