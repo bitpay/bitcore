@@ -17,7 +17,8 @@ export class InsightApp {
   private network: string;
 
   public rootPage: any;
-  public pages: Array<{ title: string; component: any; icon: any }>;
+  public activePage: any;
+  public pages: Array<{ title: string; component: any; icon: any; }>;
 
   constructor(
     platform: Platform,
@@ -29,10 +30,17 @@ export class InsightApp {
 
     this.initializeApp();
 
-    this.apiProvider.networkSettings.subscribe(d => {
+    this.pages = [
+      { title: 'Home', component: 'home', icon: 'home' },
+      { title: 'Blocks', component: 'blocks', icon: 'logo-buffer' },
+      { title: 'Broadcast Transaction', component: 'broadcast-tx', icon: 'ios-radio-outline' }
+    ];
+
+    this.apiProvider.networkSettings.subscribe((d) => {
       this.chain = d.selectedNetwork.chain;
       this.network = d.selectedNetwork.network;
     });
+    this.activePage = this.pages[0];
   }
 
   private initializeApp(): void {
@@ -49,5 +57,16 @@ export class InsightApp {
     this.events.subscribe('redirToEvent', data => {
       this.nav.push(data.redirTo, data.params);
     });
+  }
+
+  public openPage(page: any): void {
+    this.menu.close();
+    if (page !== this.activePage) {
+      this.nav.setRoot(page.component, {
+        chain: this.chain,
+        network: this.network
+      });
+      this.activePage = page;
+    }
   }
 }

@@ -69,6 +69,8 @@ export class HeadNavComponent {
     this.q = this.q.replace(/\s/g, '');
     const inputDetails = this.searchProvider.isInputValid(this.q);
 
+    if (this.redirProvider.checkLastQuery(this.q)) { return; }
+
     if (this.q !== '' && inputDetails.isValid) {
       this.searchProvider.search(this.q, inputDetails.type).subscribe(
         res => {
