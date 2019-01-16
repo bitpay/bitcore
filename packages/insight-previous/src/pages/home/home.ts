@@ -7,7 +7,7 @@ import { PriceProvider } from '../../providers/price/price';
 @Injectable()
 @IonicPage({
   name: 'home',
-  segment: ':chain/:network'
+  segment: ':chain/:network/'
 })
 @Component({
   selector: 'page-home',
