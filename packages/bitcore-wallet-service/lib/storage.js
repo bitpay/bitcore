@@ -1134,34 +1134,32 @@ Storage.prototype._dump = function(cb, fn) {
   });
 };
 
-// FEE_LEVEL_DURATION = 30min
-var FEE_LEVEL_CACHE_DURATION = 30 * 60 * 1000;
-Storage.prototype.checkAndUseFeeLevelsCache = function(opts, cb) {
-  var self = this;
-  var key = JSON.stringify(opts);
-  var now = Date.now();
+// key: 'feeLevel' + JSON.stringify(opts);
+// duration: FEE_LEVEL_DURATION
 
+Storage.prototype.checkAndUseGlobalCache = function(key, duration, cb) {
+  var self = this;
+
+  var now = Date.now();
   self.db.collection(collections.CACHE).findOne({
-    walletId: null,
-    type: 'feeLevels',
     key: key,
+    walletId: null,
+    type: null,
   }, function(err, ret) {
     if (err) return cb(err);
     if (!ret) return cb();
-
-    var validFor = ret.ts + FEE_LEVEL_CACHE_DURATION - now;
+    var validFor = ret.ts + duration - now;
     return cb(null, validFor > 0 ? ret.result : null);
   });
 };
 
 
-Storage.prototype.storeFeeLevelsCache = function (opts, values, cb) {
-  var key = JSON.stringify(opts);
+Storage.prototype.storeGlobalCache = function (key, values, cb) {
   var now = Date.now();
   this.db.collection(collections.CACHE).update({ 
-    walletId: null,
-    type: 'feeLevels',
     key: key,
+    walletId: null,
+    type: null,
   }, {
     "$set":
     { 

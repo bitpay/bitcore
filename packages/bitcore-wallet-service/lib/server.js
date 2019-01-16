@@ -1679,15 +1679,13 @@ WalletService.prototype.getFeeLevels = function(opts, cb) {
     return cb(new ClientError('Invalid network'));
 
 
-  function checkAndUseFeeLevelsCache (next) {
-    self.storage.checkAndUseFeeLevelsCache(opts, next);
-  };
+  let cacheKey = 'feeLevel' + JSON.stringify(opts);
 
-  function storeFeeLevelsCache(values,next) {
-    self.storage.storeFeeLevelsCache(opts, values, next);
-  };
 
-  checkAndUseFeeLevelsCache(function(err, values) {
+
+  self.storage.checkAndUseGlobalCache(
+    cacheKey, Defaults.FEE_LEVEL_CACHE_DURATION, (err, values) =>  {
+
     if (err) return cb(err);
     if (values) return cb(null, values, true);
 
@@ -1742,7 +1740,7 @@ WalletService.prototype.getFeeLevels = function(opts, cb) {
         values[i].feePerKb = Math.min(values[i].feePerKb, values[i - 1].feePerKb);
       }
 
-      storeFeeLevelsCache(values, function(err) {
+      self.storage.storeGlobalCache(cacheKey, values, (err) =>  {
         if (err) {
           log.warn('Could not store fee level cache');
         }

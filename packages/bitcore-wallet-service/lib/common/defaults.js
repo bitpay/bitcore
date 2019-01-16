@@ -95,6 +95,8 @@ Defaults.BALANCE_CACHE_DURATION = 10;
 // Cache time for blockchain height (in seconds)
 Defaults.BLOCKHEIGHT_CACHE_TIME = 10 * 60;
 
+// Cache time fee levels 
+Defaults.FEE_LEVEL_CACHE_DURATION = 30 * 60 * 1000;
 
 // Max allowed timespan for notification queries in seconds
 Defaults.MAX_NOTIFICATIONS_TIMESPAN = 60 * 60 * 24 * 14; // ~ 2 weeks
@@ -136,5 +138,6 @@ Defaults.LOCK_EXE_TIME =     60 * 100000;
 Defaults.SERVER_EXE_TIME = Defaults.LOCK_EXE_TIME * 1.5;
 
 Defaults.BE_KEY_SALT = 'bws-auth-keysalt';
+
 
 module.exports = Defaults;
