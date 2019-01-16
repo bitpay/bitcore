@@ -101,11 +101,15 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
             })
           ),
             { ordered: false };
-          this.push(addressBatch);
-          callback();
+          
         } catch (err) {
-          callback(err);
+          // Ignore duplicate keys, they may be half processed
+          if (err.code !== 11000) {
+            return callback(err);
+          }
         }
+        this.push(addressBatch);
+        callback();
       }
     }
 
