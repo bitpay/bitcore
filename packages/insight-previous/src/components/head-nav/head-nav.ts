@@ -54,6 +54,10 @@ export class HeadNavComponent {
     public redirProvider: RedirProvider
   ) {
     this.config = this.apiProvider.getConfig();
+    this.params = {
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+    };
   }
 
   public search(): void {
@@ -70,14 +74,14 @@ export class HeadNavComponent {
             });
             if (index === 0) {
               this.redirTo = 'block-detail';
-              this.params = res[0].json().hash;
+              this.params['blockHash'] = res[0].json().hash;
             } else {
               this.redirTo = 'transaction';
-              this.params = res[1].json().txid;
+              this.params['txId'] = res[1].json().txid;
             }
           } else {
             this.redirTo = 'address';
-            this.params = res.json()[0].address;
+            this.params['addrStr'] = res.json()[0].address;
           }
           this.redirProvider.redir(this.redirTo, this.params);
         },

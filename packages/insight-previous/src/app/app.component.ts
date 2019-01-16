@@ -50,17 +50,7 @@ export class InsightApp {
 
   public subscribeRedirEvent() {
     this.events.subscribe('redirToEvent', data => {
-      switch (data.redirTo) {
-        case 'address':
-          this.nav.push(data.redirTo, { addrStr: data.params });
-          break;
-        case 'transaction':
-          this.nav.push(data.redirTo, { txId: data.params });
-          break;
-        case 'block-detail':
-          this.nav.push(data.redirTo, { blockHash: data.params });
-          break;
-      }
+      this.nav.push(data.redirTo, data.params);
     });
   }
 

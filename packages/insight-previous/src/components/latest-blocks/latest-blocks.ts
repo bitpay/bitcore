@@ -80,7 +80,11 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   }
 
   public goToBlock(blockHash: string): void {
-    this.redirProvider.redir('block-detail', blockHash);
+    this.redirProvider.redir('block-detail', { 
+      blockHash,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+    });
   }
 
   public getBlocks(): any[] {

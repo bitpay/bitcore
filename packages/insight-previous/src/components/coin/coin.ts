@@ -17,6 +17,10 @@ export class CoinComponent {
   public coin: AppCoin | {} = {};
 
   public goToTx(txId: string): void {
-    this.redirProvider.redir('transaction', txId);
+    this.redirProvider.redir('transaction', {
+      txId,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+    });
   }
 }

@@ -57,11 +57,19 @@ export class TransactionComponent implements OnInit {
   }
 
   public goToTx(txId: string): void {
-    this.redirProvider.redir('transaction', txId);
+    this.redirProvider.redir('transaction', { 
+      txId,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+    });
   }
 
   public goToAddress(addrStr: string): void {
-    this.redirProvider.redir('address', addrStr);
+    this.redirProvider.redir('address', { 
+      addrStr,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+    });
   }
 
   public toggleExpanded(): void {
