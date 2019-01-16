@@ -1219,18 +1219,6 @@ WalletService.prototype._getBlockchainExplorer = function(coin, network) {
 };
 
 
-WalletService.prototype._getUtxos = function(wallet, cb) {
-  var self = this;
-  var bc = self._getBlockchainExplorer(wallet.coin, wallet.network);
-  if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
-  self.updateWalletV8Keys(wallet);
-  bc.getUtxos(wallet, function(err, utxos) {
-    if (err) return cb(err);
-
-    return cb(null, utxos);
-  });
-};
-
 
 WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
   var self = this;
@@ -1253,7 +1241,7 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
 
         coin = opts.coin || wallet.coin;
 
-        var bc = self._getBlockchainExplorer(coin, wallet.network);
+        bc = self._getBlockchainExplorer(coin, wallet.network);
         if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
         return next();
       });
@@ -1293,13 +1281,15 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
     function(next) {
       if (!wallet.isComplete()) return next();
 
-      self._getUtxos(wallet, function(err, utxos) {
+      self._getBlockchainHeight(wallet.coin, wallet.network, function(err, height, hash) {
         if (err) return next(err);
-
-        if (utxos.length == 0) return cb(null, []);
-        allUtxos = utxos;
-        utxoIndex = _.keyBy(allUtxos, utxoKey);
-        return next();
+        bc.getUtxos(wallet, height, function(err, utxos) {
+          if (err) return next(err);
+          if (utxos.length == 0) return cb(null, []);
+          allUtxos = utxos;
+          utxoIndex = _.keyBy(allUtxos, utxoKey);
+          return next();
+        });
       });
     },
     function(next) {
@@ -1380,9 +1370,6 @@ WalletService.prototype.getUtxos = function(opts, cb) {
     if (opts.addresses.length>1)
       return cb(new ClientError('Addresses option only support 1 address'));
   
-
-
-
     self.getWallet({}, function(err, wallet) {
       if (err) return next(err);
 
@@ -1404,9 +1391,12 @@ WalletService.prototype.getUtxos = function(opts, cb) {
         return cb(null,[]);
       }
 
-      bc.getAddressUtxos(address, (err, utxos) => {
-        if(err) return cb(err);
-        return cb(null, utxos);
+      self._getBlockchainHeight(wallet.coin, wallet.network, function(err, height, hash) {
+        if (err) return next(err);
+        bc.getAddressUtxos(address, height,  (err, utxos) => {
+          if(err) return cb(err);
+          return cb(null, utxos);
+        });
       });
 
     });
@@ -1416,7 +1406,6 @@ WalletService.prototype.getUtxos = function(opts, cb) {
       if (!Utils.checkValueInCollection(opts.coin, Constants.COINS))
       return cb(new ClientError('Invalid coin'));
     }
-
 
     self._getUtxosForCurrentWallet({
       coin: opts.coin
@@ -3404,9 +3393,8 @@ WalletService.prototype.getTxHistoryV8 = function(bc, wallet, opts, skip, limit,
       self.syncWallet(wallet, next, true);
     },
     (next) => {
-      // TOOD add cache
       self._getBlockchainHeight(wallet.coin, wallet.network, function(err, height, hash) {
-        if (err || !height) return next(err);
+        if (err) return next(err);
         bcHeight = height;
         bcHash = hash;
         streamKey = (self.userAgent || '') + '-' + limit + '-' + bcHash;

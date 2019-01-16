@@ -198,13 +198,13 @@ var blockchainExplorerMock = {
 
 
 
-blockchainExplorerMock.getUtxos = function(wallet, cb) {
+blockchainExplorerMock.getUtxos = function(wallet, height, cb) {
   return cb(null, _.cloneDeep(blockchainExplorerMock.utxos));
 };
 
 
 // v8
-blockchainExplorerMock.getAddressUtxos = function(address, cb) {
+blockchainExplorerMock.getAddressUtxos = function(address, height,  cb) {
   var selected = _.filter(blockchainExplorerMock.utxos, function(utxo) {
     return _.includes(address, utxo.address);
   });

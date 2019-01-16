@@ -135,13 +135,6 @@ describe('V8', () => {
   describe('#getAddressUtxos', () => {
     it('should get uxtos', (done) => {
 
-      let req = {
-        get: () => {
-          return new Promise( (resolve) => {
-            resolve('{"height":15}');
-          });
-       },
-      };
 
       class PartialJson extends Client {
         getAddressTxos(opts) {
@@ -158,10 +151,9 @@ describe('V8', () => {
         apiPrefix: 'dummyPath',
         userAgent: 'testAgent',
         client: PartialJson,
-        request: req,
       });
 
-      be.getAddressUtxos('1EU9VhWRN7aW38pGk7qj3c2EDcUGDZKESt', (err, utxos) => {
+      be.getAddressUtxos('1EU9VhWRN7aW38pGk7qj3c2EDcUGDZKESt', 15, (err, utxos) => {
         should.not.exist(err);
         should.exist(utxos);
         let x = utxos[2];

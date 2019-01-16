@@ -1876,17 +1876,14 @@ describe('Wallet service', function() {
     });
  
     it('should  get UTXOs for specific addresses', function(done) {
-      helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
-        _.uniqBy(utxos, 'address').length.should.be.above(1);
-        var address = utxos[0].address;
-        var amount = _.sumBy(_.filter(utxos, {
-          address: address
-        }), 'satoshis');
-        server.getUtxos({
-          addresses: [address]
-        }, function(err, utxos) {
-          utxos.length.should.equal(3);
-          done();
+      server.createAddress({}, function(err, address) {
+        helpers.stubUtxos(server, wallet, [1, 2, 3], {addresses:[address]}, function(utxos) {
+          server.getUtxos({
+            addresses: [address.address]
+          }, function(err, utxos) {
+            utxos.length.should.equal(3);
+            done();
+          });
         });
       });
     });
@@ -1900,7 +1897,7 @@ describe('Wallet service', function() {
           feePerKb: 100e2,
         };
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
-          blockchainExplorer.getUtxos = function(addresses, cb) {
+          blockchainExplorer.getUtxos = function(addresses, height, cb) {
             return cb(null, []);
           };
 
@@ -2124,7 +2121,7 @@ describe('Wallet service', function() {
       });
     });
     it('should get balance when there are no funds', function(done) {
-      blockchainExplorer.getUtxos = sinon.stub().callsArgWith(1, null, []);
+      blockchainExplorer.getUtxos = sinon.stub().callsArgWith(2, null, []);
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
         server.getBalance({}, function(err, balance) {
@@ -2154,7 +2151,7 @@ describe('Wallet service', function() {
       });
     });
     it('should fail gracefully when blockchain is unreachable', function(done) {
-      blockchainExplorer.getUtxos = sinon.stub().callsArgWith(1, 'dummy error');
+      blockchainExplorer.getUtxos = sinon.stub().callsArgWith(2, 'dummy error');
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
         server.getBalance({}, function(err, balance) {
@@ -3239,7 +3236,7 @@ describe('Wallet service', function() {
           });
         });
         it('should fail gracefully if unable to reach the blockchain', function(done) {
-          blockchainExplorer.getUtxos = sinon.stub().callsArgWith(1, 'dummy error');
+          blockchainExplorer.getUtxos = sinon.stub().callsArgWith(2, 'dummy error');
           server.createAddress({}, function(err, address) {
             should.not.exist(err);
             var txOpts = {
