@@ -543,6 +543,7 @@ WalletService.prototype.getWalletFromIdentifier = function(opts, cb) {
       });
     },
     function(done) {
+      // sent txs
       self.storage.fetchTxByHash(opts.identifier, function(err, tx) {
         if (tx) walletId = tx.walletId;
         return done(err);
@@ -554,40 +555,7 @@ WalletService.prototype.getWalletFromIdentifier = function(opts, cb) {
       return self.storage.fetchWallet(walletId, end);
     }
 
-    var re = /^[\da-f]+$/gi;
-    if (!re.test(opts.identifier)) return cb();
-
-    // Is identifier a txid form an incomming tx?
-    var coinNetworkPairs = [];
-    _.each(_.values(Constants.COINS), function(coin) {
-      _.each(_.values(Constants.NETWORKS), function(network) {
-        coinNetworkPairs.push({
-          coin: coin,
-          network: network
-        });
-      });
-    });
-    async.detectSeries(coinNetworkPairs, function(coinNetwork, nextCoinNetwork) {
-      var bc = self._getBlockchainExplorer(coinNetwork.coin, coinNetwork.network);
-      if (!bc) return nextCoinNetwork(false);
-      bc.getTransaction(opts.identifier, function(err, tx) {
-        if (err || !tx) return nextCoinNetwork(false);
-        var outputs = _.head(self._normalizeTxHistory(tx)).outputs;
-        var toAddresses = _.map(outputs, 'address');
-        async.detect(toAddresses, function(addressStr, nextAddress) {
-          self.storage.fetchAddressByCoin(coinNetwork.coin, addressStr, function(err, address) {
-            if (err || !address) return nextAddress(false);
-            walletId = address.walletId;
-            nextAddress(true);
-          });
-        }, function() {
-          nextCoinNetwork(!!walletId);
-        });
-      });
-    }, function() {
-      if (!walletId) return cb();
-      return self.storage.fetchWallet(walletId, end);
-    });
+    return cb();
   });
 };
 
@@ -1252,15 +1220,11 @@ WalletService.prototype._getBlockchainExplorer = function(coin, network) {
 };
 
 
-WalletService.prototype._getUtxosWithGrouping = function(wallet, cb) {
+WalletService.prototype._getUtxos = function(wallet, cb) {
   var self = this;
   var bc = self._getBlockchainExplorer(wallet.coin, wallet.network);
   if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
-  if (!bc.supportsGrouping()) {
-    return cb(new Error('Blockchain explorer does not support grouping'));
-  };
   self.updateWalletV8Keys(wallet);
-
   bc.getUtxos(wallet, function(err, utxos) {
     if (err) return cb(err);
 
@@ -1268,34 +1232,6 @@ WalletService.prototype._getUtxosWithGrouping = function(wallet, cb) {
   });
 };
 
-
-WalletService.prototype._getUtxos = function(coin, addresses, cb) {
-  var self = this;
-
-  if (addresses.length == 0) return cb(null, []);
-
-  var networkName = Bitcore_[coin].Address(addresses[0]).toObject().network;
-
-  var bc = self._getBlockchainExplorer(coin, networkName);
-  if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
-
-  self.logi('Querying utxos: %s addrs', addresses.length);
-
-  bc.getUtxos(addresses, function(err, utxos) {
-    if (err) return cb(err);
-
-    var utxos = _.map(utxos, function(utxo) {
-      var u = _.pick(utxo, ['txid', 'vout', 'address', 'scriptPubKey', 'amount', 'satoshis', 'confirmations']);
-      u.confirmations = u.confirmations || 0;
-      u.locked = false;
-      u.satoshis = _.isNumber(u.satoshis) ? +u.satoshis : Utils.strip(u.amount * 1e8);
-      delete u.amount;
-      return u;
-    });
-
-    return cb(null, utxos);
-  }, self.walletId);
-};
 
 WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
   var self = this;
@@ -1305,7 +1241,7 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
     return utxo.txid + '|' + utxo.vout
   };
 
-  var coin, allAddresses, allUtxos, utxoIndex, addressStrs, bc, grouping, wallet;
+  var coin, allAddresses, allUtxos, utxoIndex, addressStrs, bc, wallet;
   async.series([
     function(next) {
       self.getWallet({}, function(err, w) {
@@ -1320,7 +1256,6 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
 
         var bc = self._getBlockchainExplorer(coin, wallet.network);
         if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
-        grouping = bc.supportsGrouping();
         return next();
       });
     },
@@ -1359,9 +1294,7 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
     function(next) {
       if (!wallet.isComplete()) return next();
 
-      var utxoFn = grouping ?  self._getUtxosWithGrouping.bind(self, wallet) : self._getUtxos.bind(self, coin, addressStrs);
-
-      utxoFn(function(err, utxos) {
+      self._getUtxos(wallet, function(err, utxos) {
         if (err) return next(err);
 
         if (utxos.length == 0) return cb(null, []);
@@ -1459,9 +1392,6 @@ WalletService.prototype.getUtxos = function(opts, cb) {
       if (!bc) {
         return cb(new Error('Could not get blockchain explorer instance'));
       }
-      if (!bc.supportsGrouping())  {
-        return cb(new ClientError('Addresses option not supported on this coin/network'));
-      }
 
       const address = opts.addresses[0];
       var A = Bitcore_[wallet.coin].Address;
@@ -1509,42 +1439,45 @@ WalletService.prototype._totalizeUtxos = function(utxos) {
 };
 
 
-WalletService.prototype._getBalanceCached = function(opts, cb, i) {
+/**
+ * Get wallet balance.
+ * @param {Object} opts
+ * @param {string} [opts.coin] - Override wallet coin (default wallet's coin).
+ * @returns {Object} balance - Total amount & locked amount.
+ */
+
+WalletService.prototype.getBalance = function(opts, cb, i) {
   var self = this;
-  var opts = opts || {};
-  opts.addresses = opts.addresses || [];
+  opts = opts || {};
 
+  if (opts.coin) {
+    return cb(new ClientError('opts.coin no longer supported'));
+  }
+  let wallet = opts.wallet;
+  let addresses = null;
 
-  function checkBalanceCache(cb) {
-    if (opts.addresses.length < Defaults.BALANCE_CACHE_ADDRESS_THRESOLD || !opts.fastCache)
-      return cb();
-
-    self.storage.checkAndUseBalanceCache(self.walletId, opts.addresses, opts.fastCache, cb);
-  };
-
-  function storeBalanceCache(balance, cb) {
-    if (opts.addresses.length < Defaults.BALANCE_CACHE_ADDRESS_THRESOLD)
-      return cb(null, balance);
-
-    self.storage.storeBalanceCache(self.walletId, opts.addresses, balance, function(err) {
-      if (err)
-        self.logw('Could not save cache:',err);
-
-      return cb(null, balance);
+  let setWallet = (cb1) => {
+    if (wallet) return cb1();
+    self.getWallet({}, function(err, ret) {
+      if (err) return cb(err);
+      wallet = ret;
+      return cb1(null, wallet);
     });
   };
 
+  setWallet(() => {
 
-  // TODO v8: remove lock?
-  // This lock is to prevent server starvation on big wallets
-  self._runLocked(cb, function(cb) {
-    checkBalanceCache(function(err, cache) {
+    if (!wallet.isComplete()) {
+      return cb(null, self._totalizeUtxos([]));
+    }
+
+    var bc = self._getBlockchainExplorer(wallet.coin, wallet.network);
+    if (!bc) {
+      return cb1(new Error('Could not get blockchain explorer instance'));
+    }
+
+    self.syncWallet(wallet, (err) => {
       if (err) return cb(err);
-
-      if (cache) {
-        self.logi('Using UTXO Cache');
-        return cb(null, cache, true);
-      }
 
       self._getUtxosForCurrentWallet({
         coin: opts.coin,
@@ -1570,71 +1503,7 @@ WalletService.prototype._getBalanceCached = function(opts, cb, i) {
 
         balance.byAddress = _.values(byAddress);
 
-        storeBalanceCache(balance, cb);
-      });
-    }, 10 * 1000);
-  });
-};
-
-/**
- * Get wallet balance.
- * @param {Object} opts
- * @param {string} [opts.coin] - Override wallet coin (default wallet's coin).
- * @returns {Object} balance - Total amount & locked amount.
- */
-
-WalletService.prototype.getBalance = function(opts, cb, i) {
-  var self = this;
-  opts = opts || {};
-
-  if (opts.coin) {
-    return cb(new ClientError('opts.coin no longer supported'));
-  }
-  opts.fastCache = Defaults.BALANCE_CACHE_DIRECT_DURATION;
-
-  let wallet = opts.wallet;
-  let addresses = null;
-
-  let setWallet = (cb1) => {
-    if (wallet) return cb1();
-    self.getWallet({}, function(err, ret) {
-      if (err) return cb(err);
-      wallet = ret;
-      return cb1(null, wallet);
-    });
-  };
-
-  let setAddresses = (cb1) => {
-    var bc = self._getBlockchainExplorer(wallet.coin, wallet.network);
-    if (!bc) {
-      return cb1(new Error('Could not get blockchain explorer instance'));
-    }
-    if (bc.supportsGrouping())  {
-      return self.syncWallet(wallet, cb1);
-    } else {
-      self.storage.fetchAddresses(self.walletId, function(err, ret) {
-        if (err) return cb1(err);
-        addresses = ret;
-        return cb1();
-      });
-    }
-  };
-
-  setWallet(() => {
-    if (!wallet.isComplete()) {
-      return cb(null, self._totalizeUtxos([]));
-    }
-    setAddresses((err) => {
-      if (err) return cb(err);
-
-      // TODO remove fastCache for v8
-      self._getBalanceCached({
-        coin: opts.coin,
-        addresses: addresses,
-        fastCache: opts.fastCache,
-      }, function(err, balance, cacheUsed) {
-        if (err) return cb(err);
-        return cb(null, balance, cacheUsed);
+        return cb(null, balance);
       });
     });
   });
@@ -1894,6 +1763,8 @@ WalletService.prototype._checkTx = function(txp) {
   var self = this;
   var bitcoreError;
 
+
+
   var serializationOpts = {
     disableIsFullySigned: true,
     disableSmallFees: true,
@@ -1902,6 +1773,9 @@ WalletService.prototype._checkTx = function(txp) {
 
   if (txp.getEstimatedSize() / 1000 > Defaults.MAX_TX_SIZE_IN_KB)
     return Errors.TX_MAX_SIZE_EXCEEDED;
+
+  if (_.isEmpty(txp.inputPaths))
+    return Errors.NO_INPUT_PATHS;
 
   try {
     var bitcoreTx = txp.getBitcoreTx();
@@ -2082,6 +1956,7 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
   //log.debug('Selecting inputs for a ' + Utils.formatAmountInBtc(txp.getTotalAmount()) + ' txp');
 
   self._getUtxosForCurrentWallet({}, function(err, utxos) {
+
     if (err) return cb(err);
 
     var totalAmount;
@@ -2156,7 +2031,6 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
       txp.fee = fee;
 
       var err = self._checkTx(txp);
-
       if (!err) {
         var change = _.sumBy(txp.inputs, 'satoshis') - _.sumBy(txp.outputs, 'amount') - txp.fee;
         self.logi('Successfully built transaction. Total fees: ' + Utils.formatAmountInBtc(txp.fee) + ', total change: ' + Utils.formatAmountInBtc(change));
@@ -2424,9 +2298,11 @@ WalletService.prototype.createTx = function(opts, cb) {
         async.series([
 
           function(next) {
+
             self._validateAndSanitizeTxOpts(wallet, opts, next);
           },
           function(next) {
+
             self._canCreateTx(function(err, canCreate) {
               if (err) return next(err);
               if (!canCreate) return next(Errors.TX_CANNOT_CREATE);
@@ -2434,6 +2310,7 @@ WalletService.prototype.createTx = function(opts, cb) {
             });
           },
           function(next) {
+
             if (opts.sendMax) return next();
             getChangeAddress(wallet, function(err, address, isNew) {
               if (err) return next(err);
@@ -2451,6 +2328,7 @@ WalletService.prototype.createTx = function(opts, cb) {
             });
           },
           function(next) {
+
             var txOpts = {
               id: opts.txProposalId,
               walletId: self.walletId,
@@ -2478,13 +2356,16 @@ WalletService.prototype.createTx = function(opts, cb) {
             next();
           },
           function(next) {
+
             self._selectTxInputs(txp, opts.utxosToExclude, next);
           },
           function(next) {
+
             if (!changeAddress || wallet.singleAddress || opts.dryRun) return next();
             self._store(wallet, txp.changeAddress, next, true);
           },
           function(next) {
+
             if (opts.dryRun) return next();
             self.storage.storeTx(wallet.id, txp, next);
           },
@@ -2556,6 +2437,7 @@ WalletService.prototype.publishTx = function(opts, cb) {
         // Verify UTXOs are still available
 
         log.debug('Rechecking UTXOs availability for publishTx');
+
         self._getUtxosForCurrentWallet({
           addresses: txp.inputs,
         }, function(err, utxos) {
@@ -2860,9 +2742,7 @@ WalletService.prototype._processBroadcast = function(txp, opts, cb) {
       self._notifyTxProposalAction('NewOutgoingTx', txp, extraArgs);
     }
 
-    self.storage.softResetTxHistoryCache(self.walletId, function() {
-      return cb(err, txp);
-    });
+    return cb(null, txp);
   });
 };
 
@@ -3149,48 +3029,6 @@ WalletService.prototype._normalizeV8TxHistory = function(txs, bcHeight) {
 };
 
 
-
-WalletService.prototype._normalizeTxHistory = function(txs) {
-  var now = Math.floor(Date.now() / 1000);
-
-  return _.map([].concat(txs), function(tx) {
-    var inputs = _.map(tx.vin, function(item) {
-      return {
-        address: item.addr,
-        amount: item.valueSat,
-      }
-    });
-
-    var outputs = _.map(tx.vout, function(item) {
-      var itemAddr;
-      // If classic multisig, ignore
-      if (item.scriptPubKey && _.isArray(item.scriptPubKey.addresses) && item.scriptPubKey.addresses.length == 1) {
-        itemAddr = item.scriptPubKey.addresses[0];
-      }
-
-      return {
-        address: itemAddr,
-        amount: parseInt((item.value * 1e8).toFixed(0)),
-      }
-    });
-
-    var t = tx.blocktime; // blocktime
-    if (!t || _.isNaN(t)) t = tx.firstSeenTs;
-    if (!t || _.isNaN(t)) t = now;
-
-    return {
-      txid: tx.txid,
-      confirmations: tx.confirmations,
-      blockheight: tx.blockheight,
-      fees: parseInt((tx.fees * 1e8).toFixed(0)),
-      size: tx.size,
-      time: t,
-      inputs: inputs,
-      outputs: outputs,
-    };
-  });
-};
-
 WalletService._cachedBlockheight;
 
 WalletService._initBlockchainHeightCache = function() {
@@ -3336,11 +3174,6 @@ WalletService.prototype.syncWallet = function(wallet, cb, skipCheck, count) {
   if (!bc) {
     return cb(new Error('Could not get blockchain explorer instance'));
   }
-
-  if (!bc.supportsGrouping())  {
-    return cb();
-  }
-
 
   self.updateWalletV8Keys(wallet);
 
@@ -3575,6 +3408,7 @@ WalletService.prototype._doGetTxHistoryV8 = function(bc, wallet, startBlock, bcH
   log.debug(' ########### GET HISTORY v8 startBlock/bcH]',startBlock,bcHeight); //TODO
 
   self._runLocked(cb, function(cb) {
+
     bc.getTransactions(wallet, startBlock, (err, txs) => {
       if (err) return cb(err);
 
@@ -3597,6 +3431,7 @@ WalletService.prototype.getTxHistoryV8 = function(bc, wallet, opts, skip, limit,
       self.syncWallet(wallet, next, true);
     },
     (next) => {
+      // TOOD add cache
       self._getBlockchainHeight(wallet.coin, wallet.network, function(err, height, hash) {
         if (err || !height) return next(err);
         bcHeight = height;
@@ -3737,100 +3572,6 @@ WalletService.prototype.getTxHistoryV8 = function(bc, wallet, opts, skip, limit,
   });
 };
 
-WalletService.prototype.getTxHistoryOld = function (bc, wallet, opts, from, to, cb) {
-
-  var self = this;
-  var txs, fromCache, totalItems, useCache, addressStrs, bcHeight;
-
-  self.storage.fetchAddresses(self.walletId, function(err, addresses) {
-    if (err) {
-      return cb(err);
-    }
-
-    if (addresses.length == 0) {
-      return cb(null, []);
-    }
-
-    if (addresses) {
-      useCache =  addresses.length >= Defaults.HISTORY_CACHE_ADDRESS_THRESOLD;
-      addressStrs = _.map(addresses, 'address');
-    }
-
-    async.series([
-
-      function(next) {
-        // Fix tx confirmations for cached txs
-        self._getBlockchainHeight(wallet.coin, wallet.network, function(err, height) {
-          if (err || !height) return next(err);
-          bcHeight = height;
-          return next();
-        });
-      },
-
-      function(next) {
-        if (!useCache) return next();
-
-        self.storage.getTxHistoryCache(self.walletId, from, to, function(err, res) {
-          if (err) return next(err);
-          if (!res || !res[0]) return next();
-
-          txs = res;
-          fromCache = true;
-
-          return next()
-        });
-      },
-      function(next) {
-        if (txs) return next();
-
-        self.logi('Querying tx for: %s addrs', addresses.length);
-
-        bc.getTransactions(addressStrs, from, to, function(err, rawTxs, total) {
-          if (err) return next(err);
-
-          txs =  self._normalizeTxHistory(rawTxs);
-          totalItems = total;
-          return next();
-        }, self.walletId);
-      },
-      function(next) {
-        if (!useCache || fromCache) return next();
-
-        var txsToCache = _.filter(txs, function(i) {
-          return i.confirmations >= Defaults.CONFIRMATIONS_TO_START_CACHING;
-        }).reverse();
-
-        if (!txsToCache.length) return next();
-
-        var fwdIndex = totalItems - to;
-        if (fwdIndex < 0) fwdIndex = 0;
-        self.storage.storeTxHistoryCache(self.walletId, totalItems, fwdIndex, txsToCache, next);
-      },
-      function(next) {
-        if (!useCache || !fromCache) return next();
-        if (!txs || !bcHeight) return next();
-
-        _.each(txs, function(tx) {
-          if (tx.blockheight >= 0) {
-            tx.confirmations = bcHeight - tx.blockheight + 1;
-          }
-        });
-        next();
-      },
-    ], function(err) {
-      if (err) return cb(err);
-
-      var indexedAddresses = _.keyBy(addresses, 'address');
-      return cb(null, {
-        items: _.map(txs, (tx) => {
-          return WalletService._getResultTx(wallet, indexedAddresses, tx, opts);
-        }),
-        fromCache: fromCache
-      });
-    });
-  });
-};
-
 /**
  * Retrieves all transactions (incoming & outgoing)
  * Times are in UNIX EPOCH
@@ -3866,14 +3607,9 @@ WalletService.prototype.getTxHistory = function(opts, cb) {
     async.waterfall([
 
       function(next) {
-        if (bc.supportsGrouping()){
-          self.getTxHistoryV8(bc, wallet,  opts, from, opts.limit,  next);
-        } else {
-          self.getTxHistoryOld(bc, wallet, opts, from, to, next);
-        }
+        self.getTxHistoryV8(bc, wallet,  opts, from, opts.limit,  next);
       },
       function(txs, next) {
-
         if (!txs || _.isEmpty(txs.items))  {
           return next();
         }
@@ -3967,7 +3703,7 @@ WalletService.prototype.scan = function(opts, cb) {
     }
 
 
-    self.storage.clearTxHistoryCache(self.walletId, function() {
+    self.storage.clearWalletCache(self.walletId, function() {
       self._runLocked(cb, function(cb) {
         wallet.scanStatus = 'running';
         self.storage.storeWallet(wallet, function(err) {
@@ -4008,14 +3744,14 @@ WalletService.prototype._runScan = function(wallet, step, opts, cb) {
     }
 
     async.whilst(function() {
-      self.logi('Scanning addr branch: %s index: %d gap %d step %d', derivator.id, derivator.index(), inactiveCounter, step);
+//      self.logi('Scanning addr branch: %s index: %d gap %d step %d', derivator.id, derivator.index(), inactiveCounter, step);
       return inactiveCounter < gap;
     }, function(next) {
       var address = derivator.derive();
 
       opts.bc.getAddressActivity(address.address, function(err, activity) {
         if (err) return next(err);
-        console.log('[server.js.3779:address:] SCANING:' + address.address+ ':'+address.path + " :" + !!activity); //TODO
+ //       console.log('[server.js.3779:address:] SCANING:' + address.address+ ':'+address.path + " :" + !!activity); //TODO
 
         allAddresses.push(address);
         inactiveCounter = activity ? 0 : inactiveCounter + 1;

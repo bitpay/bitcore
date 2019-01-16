@@ -30,6 +30,7 @@ var errors = {
   TX_NOT_FOUND: 'Transaction proposal not found',
   TX_NOT_PENDING: 'The transaction proposal is not pending',
   UNAVAILABLE_UTXOS: 'Unavailable unspent outputs',
+  NO_INPUT_PATHS: 'Derivation paths were not provided for the inputs',
   UPGRADE_NEEDED: 'Client app needs to be upgraded',
   WALLET_ALREADY_EXISTS: 'Wallet already exists',
   WALLET_FULL: 'Wallet full',

@@ -44,8 +44,12 @@ request.get(url, {
   if (err) {
     console.log('[v8tool.43:err:]',err); //TODO
   } else {
-     body.forEach((x)=> {
+    try {
+      body.forEach((x)=> {
         console.log(x.address);
       });
+    } catch (e) {
+console.log('[v8tool.52]', body); //TODO
     }
+  }
 });

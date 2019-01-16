@@ -10,7 +10,6 @@ describe('Blockchain explorer', function() {
   describe('#constructor', function() {
     it('should return a blockchain explorer with basic methods', function() {
       var exp = new BlockchainExplorer({
-        provider: 'insight',
         network: 'testnet',
       });
       should.exist(exp);
@@ -20,9 +19,7 @@ describe('Blockchain explorer', function() {
       exp.should.respondTo('getAddressActivity');
       exp.should.respondTo('estimateFee');
       exp.should.respondTo('initSocket');
-      exp.should.respondTo('supportsGrouping');
       var exp = new BlockchainExplorer({
-        provider: 'insight',
         network: 'livenet',
       });
       should.exist(exp);
@@ -38,7 +35,6 @@ describe('Blockchain explorer', function() {
       exp2.should.respondTo('getAddressActivity');
       exp2.should.respondTo('estimateFee');
       exp2.should.respondTo('initSocket');
-      exp2.should.respondTo('supportsGrouping');
       exp2.should.respondTo('register');
       exp2.should.respondTo('addAddresses');
  

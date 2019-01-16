@@ -65,10 +65,16 @@ helpers.beforeEach = function(cb) {
   if (!storage.db) return cb();
   storage.db.dropDatabase(function(err) {
     if (err) return cb(err);
-    blockchainExplorer = sinon.stub();
-    blockchainExplorer.supportsGrouping = function () {
-      return false;
-    }
+    let be = blockchainExplorer = sinon.stub();
+
+
+    be.register = sinon.stub().callsArgWith(1, null, null);
+    be.addAddresses = sinon.stub().callsArgWith(2, null, null);
+    be.getAddressUtxos = sinon.stub().callsArgWith(1, null, helpers._utxos);
+    be.getCheckData = sinon.stub().callsArgWith(1, null, {sum: 100});
+    be.getUtxos = sinon.stub().callsArgWith(1, null,[]);
+
+
     var opts = {
       storage: storage,
       blockchainExplorer: blockchainExplorer,
@@ -348,13 +354,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
       blockchainExplorer.getUtxos = function(param1, cb) {
         
         var selected;
-        if (blockchainExplorer.supportsGrouping()) {
-          selected = _.filter(helpers._utxos, {'wallet': param1.id});
-        } else {
-          selected = _.filter(helpers._utxos, function(utxo) {
-            return _.includes(param1, utxo.address);
-          });
-        }
+        selected = _.filter(helpers._utxos, {'wallet': param1.id});
         return cb(null, selected);
       };
 
@@ -370,34 +370,6 @@ helpers.stubBroadcast = function(thirdPartyBroadcast) {
   blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, null, '112233');
   blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
 };
-
-helpers.stubHistory = function(txs) {
-  var totalItems = txs.length;
-  blockchainExplorer.getTransactions = function(addresses, from, to, cb) {
-    var MAX_BATCH_SIZE = 100;
-    var nbTxs = txs.length;
-
-    if (_.isUndefined(from) && _.isUndefined(to)) {
-      from = 0;
-      to = MAX_BATCH_SIZE;
-    }
-    if (!_.isUndefined(from) && _.isUndefined(to))
-      to = from + MAX_BATCH_SIZE;
-
-    if (!_.isUndefined(from) && !_.isUndefined(to) && to - from > MAX_BATCH_SIZE)
-      to = from + MAX_BATCH_SIZE;
-
-    if (from < 0) from = 0;
-    if (to < 0) to = 0;
-    if (from > nbTxs) from = nbTxs;
-    if (to > nbTxs) to = nbTxs;
-
-    var page = txs.slice(from, to);
-    return cb(null, page, totalItems);
-  };
-};
-
-
 
 helpers.createTxsV8 = function(nr, bcHeight, txs) {
   txs = txs || [];
@@ -599,16 +571,6 @@ helpers.historyCacheTest = function(items) {
   });
 
   return ret;
-};
-
-helpers.setupGroupingBE = function (be) {
-  be.supportsGrouping = function () {
-    return true;
-  }
-  be.register = sinon.stub().callsArgWith(1, null, null);
-  be.addAddresses = sinon.stub().callsArgWith(2, null, null);
-  be.getAddressUtxos = sinon.stub().callsArgWith(1, null, helpers._utxos);
-  be.getCheckData = sinon.stub().callsArgWith(1, null, {sum: 100});
 };
 
 module.exports = helpers;

@@ -41,7 +41,6 @@ describe('History V8', function() {
     helpers.beforeEach(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
-      helpers.setupGroupingBE(blockchainExplorer);
       request = res.request;
       done();
     });

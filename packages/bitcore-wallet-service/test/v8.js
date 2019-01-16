@@ -27,7 +27,6 @@ var external = '11234';
 var txs = [{
   id: 1,
   txid: 'txid1',
-  confirmations: 1,
   blockTime: t,
   size: 226,
   category: 'send',
@@ -37,7 +36,6 @@ var txs = [{
 {
   id: 2,
   txid: 'txid2',
-  confirmations: 1,
   category: 'send',
   blockTime: t,
   satoshis: 0.3e8,
@@ -46,7 +44,6 @@ var txs = [{
 {
   id: 3,
   txid: 'txid3',
-  confirmations: 1,
   blockTime: t,
   satoshis: 5460,
   category: 'fee',
