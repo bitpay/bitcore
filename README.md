@@ -109,11 +109,10 @@ listen=1
 server=1
 irc=1
 upnp=1
-```
 
-Listen on different ports than default testnet
+# Make sure port & rpcport matches the 
+# bitcore.config.json ports for BTC mainnet
 
-```
 port=20008
 rpcport=20009
 rpcallowip=127.0.0.1
@@ -123,7 +122,17 @@ rpcpassword=password
 ```
 </details>
 
-**3. Run Bitcoin Node**
+### 3) Run Bitcoin node
+<details>
+<summary><b>Example Starting a Bitcoin Node</b></summary>
+<br>
+  
+```
+# Path to your bitcoin application and path to the config above
+/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/mainnet/
+```
+
+</details>
 
 **4. Start Bitcore**
 

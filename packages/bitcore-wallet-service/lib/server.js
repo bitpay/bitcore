@@ -126,7 +126,7 @@ WalletService.initialize = function(opts, cb) {
   function initMessageBroker(cb) {
     messageBroker = opts.messageBroker || new MessageBroker(opts.messageBrokerOpts);
     if (messageBroker) {
-      messageBroker.onMessage(WalletService.handleIncomingNotification);
+      messageBroker.onMessage(WalletService.handleIncomingNotifications);
     }
 
     return cb();
@@ -174,14 +174,13 @@ WalletService.initialize = function(opts, cb) {
   });
 };
 
-WalletService.handleIncomingNotification = function(notification, cb) {
+
+
+WalletService.handleIncomingNotifications = function(notification, cb) {
   cb = cb || function() {};
 
-  if (!notification || notification.type !== 'NewBlock') {
-    return cb();
-  }
-
-  WalletService._clearBlockchainHeightCache(notification.data.coin, notification.data.network);
+  // do nothing here....
+  // bc height cache is cleared on bcmonitor
   return cb();
 };
 
@@ -1220,18 +1219,6 @@ WalletService.prototype._getBlockchainExplorer = function(coin, network) {
 };
 
 
-WalletService.prototype._getUtxos = function(wallet, cb) {
-  var self = this;
-  var bc = self._getBlockchainExplorer(wallet.coin, wallet.network);
-  if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
-  self.updateWalletV8Keys(wallet);
-  bc.getUtxos(wallet, function(err, utxos) {
-    if (err) return cb(err);
-
-    return cb(null, utxos);
-  });
-};
-
 
 WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
   var self = this;
@@ -1254,7 +1241,7 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
 
         coin = opts.coin || wallet.coin;
 
-        var bc = self._getBlockchainExplorer(coin, wallet.network);
+        bc = self._getBlockchainExplorer(coin, wallet.network);
         if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
         return next();
       });
@@ -1294,13 +1281,15 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
     function(next) {
       if (!wallet.isComplete()) return next();
 
-      self._getUtxos(wallet, function(err, utxos) {
+      self._getBlockchainHeight(wallet.coin, wallet.network, function(err, height, hash) {
         if (err) return next(err);
-
-        if (utxos.length == 0) return cb(null, []);
-        allUtxos = utxos;
-        utxoIndex = _.keyBy(allUtxos, utxoKey);
-        return next();
+        bc.getUtxos(wallet, height, function(err, utxos) {
+          if (err) return next(err);
+          if (utxos.length == 0) return cb(null, []);
+          allUtxos = utxos;
+          utxoIndex = _.keyBy(allUtxos, utxoKey);
+          return next();
+        });
       });
     },
     function(next) {
@@ -1381,9 +1370,6 @@ WalletService.prototype.getUtxos = function(opts, cb) {
     if (opts.addresses.length>1)
       return cb(new ClientError('Addresses option only support 1 address'));
   
-
-
-
     self.getWallet({}, function(err, wallet) {
       if (err) return next(err);
 
@@ -1405,9 +1391,12 @@ WalletService.prototype.getUtxos = function(opts, cb) {
         return cb(null,[]);
       }
 
-      bc.getAddressUtxos(address, (err, utxos) => {
-        if(err) return cb(err);
-        return cb(null, utxos);
+      self._getBlockchainHeight(wallet.coin, wallet.network, function(err, height, hash) {
+        if (err) return next(err);
+        bc.getAddressUtxos(address, height,  (err, utxos) => {
+          if(err) return cb(err);
+          return cb(null, utxos);
+        });
       });
 
     });
@@ -1417,7 +1406,6 @@ WalletService.prototype.getUtxos = function(opts, cb) {
       if (!Utils.checkValueInCollection(opts.coin, Constants.COINS))
       return cb(new ClientError('Invalid coin'));
     }
-
 
     self._getUtxosForCurrentWallet({
       coin: opts.coin
@@ -1678,16 +1666,11 @@ WalletService.prototype.getFeeLevels = function(opts, cb) {
   if (!Utils.checkValueInCollection(opts.network, Constants.NETWORKS))
     return cb(new ClientError('Invalid network'));
 
+  let cacheKey = 'feeLevel:' + opts.coin + ':' + opts.network;
 
-  function checkAndUseFeeLevelsCache (next) {
-    self.storage.checkAndUseFeeLevelsCache(opts, next);
-  };
+  self.storage.checkAndUseGlobalCache(
+    cacheKey, Defaults.FEE_LEVEL_CACHE_DURATION, (err, values) =>  {
 
-  function storeFeeLevelsCache(values,next) {
-    self.storage.storeFeeLevelsCache(opts, values, next);
-  };
-
-  checkAndUseFeeLevelsCache(function(err, values) {
     if (err) return cb(err);
     if (values) return cb(null, values, true);
 
@@ -1742,7 +1725,7 @@ WalletService.prototype.getFeeLevels = function(opts, cb) {
         values[i].feePerKb = Math.min(values[i].feePerKb, values[i - 1].feePerKb);
       }
 
-      storeFeeLevelsCache(values, function(err) {
+      self.storage.storeGlobalCache(cacheKey, values, (err) =>  {
         if (err) {
           log.warn('Could not store fee level cache');
         }
@@ -3029,59 +3012,38 @@ WalletService.prototype._normalizeV8TxHistory = function(txs, bcHeight) {
 };
 
 
-WalletService._cachedBlockheight;
-
-WalletService._initBlockchainHeightCache = function() {
-  if (WalletService._cachedBlockheight) return;
-  WalletService._cachedBlockheight = {
-    btc: {
-      livenet: {},
-      testnet: {}
-    },
-    bch: {
-      livenet: {},
-      testnet: {}
-    },
-  };
-};
-
-WalletService._clearBlockchainHeightCache = function(coin, network) {
-  WalletService._initBlockchainHeightCache();
-  if (!Utils.checkValueInCollection(network, Constants.NETWORKS)) {
-    log.error('Incorrect network in new block: ' + coin + '/' + network);
-    return;
-  }
-  WalletService._cachedBlockheight[coin][network].current = null;
-};
-
-
-// TODO refactor this to a general cache
 WalletService.prototype._getBlockchainHeight = function(coin, network, cb) {
   var self = this;
 
-  var now = Date.now();
-  WalletService._initBlockchainHeightCache();
-  var cache = WalletService._cachedBlockheight[coin][network];
+  let cacheKey = Storage.BCHEIGHT_KEY + ':' + coin + ':' + network;
 
-  function fetchFromBlockchain(cb) {
+  self.storage.checkAndUseGlobalCache(
+    cacheKey, Defaults.BLOCKHEIGHT_CACHE_TIME, (err, values) =>  {
+    if (err) return cb(err);
+
+    if (values) 
+      return cb(null, values.current, values.hash, true);
+
+    values = {};
+
     var bc = self._getBlockchainExplorer(coin, network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
     bc.getBlockchainHeight(function(err, height, hash) {
       if (!err && height > 0) {
-        cache.current = height;
-        cache.last = height;
-        cache.hash = hash;
-        cache.updatedOn = now;
+        values.current = height;
+        values.hash = hash;
+      } else {
+        return cb(err || 'wrong height');
       }
-      return cb(null, cache.last, cache.hash);
+
+      self.storage.storeGlobalCache(cacheKey, values, (err) =>  {
+        if (err) {
+          log.warn('Could not store bcheith cache');
+        }
+        return cb(null, values.current, values.hash);
+      });
     });
-  };
-
-  if (!cache.current || (now - cache.updatedOn) > Defaults.BLOCKHEIGHT_CACHE_TIME * 1000) {
-    return fetchFromBlockchain(cb);
-  }
-
-  return cb(null, cache.current, cache.hash);
+  });
 };
 
 
@@ -3431,9 +3393,8 @@ WalletService.prototype.getTxHistoryV8 = function(bc, wallet, opts, skip, limit,
       self.syncWallet(wallet, next, true);
     },
     (next) => {
-      // TOOD add cache
       self._getBlockchainHeight(wallet.coin, wallet.network, function(err, height, hash) {
-        if (err || !height) return next(err);
+        if (err) return next(err);
         bcHeight = height;
         bcHash = hash;
         streamKey = (self.userAgent || '') + '-' + limit + '-' + bcHash;

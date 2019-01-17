@@ -215,19 +215,17 @@ V8.prototype._transformUtxos = function(unspent, bcheight) {
 /**
  * Retrieve a list of unspent outputs associated with an address or set of addresses
  */
-V8.prototype.getUtxos = function(wallet, cb) {
+V8.prototype.getUtxos = function(wallet, height, cb) {
+  $.checkArgument(cb);
   var self = this;
   var client = this._getAuthClient(wallet);
   console.time('V8getUtxos');
-  self.getBlockchainHeight((err, height) => {
-    if (err) return cb(err);
-    client.getCoins({pubKey: wallet.beAuthPublicKey2, payload: {} })
-      .then( (unspent) => {
-        console.timeEnd('V8getUtxos');
-        return cb(null,self._transformUtxos(unspent, height));
-      })
-      .catch(cb);
-  });
+  client.getCoins({pubKey: wallet.beAuthPublicKey2, payload: {} })
+    .then( (unspent) => {
+      console.timeEnd('V8getUtxos');
+      return cb(null,self._transformUtxos(unspent, height));
+    })
+    .catch(cb);
 };
 
 /**
@@ -299,20 +297,16 @@ console.log('[v8.js.207] GET TX', txid); //TODO
 };
 
 
-V8.prototype.getAddressUtxos = function(address, cb) {
+V8.prototype.getAddressUtxos = function(address, height, cb) {
   var self = this;
-console.log('[v8.js.207] GET ADDR UTXO', address); //TODO
+console.log(' GET ADDR UTXO', address, height); //TODO
   var client = this._getClient();
 
-  self.getBlockchainHeight((err, height) => {
-    if (err) return cb(err);
-
-    client.getAddressTxos({address: address, unspent: true })
-      .then( (utxos) => {
-        return cb(null,self._transformUtxos(utxos, height));
-      })
-        .catch(cb);
-  });
+  client.getAddressTxos({address: address, unspent: true })
+    .then( (utxos) => {
+      return cb(null,self._transformUtxos(utxos, height));
+    })
+      .catch(cb);
 };
 
 

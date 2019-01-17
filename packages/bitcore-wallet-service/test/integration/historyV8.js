@@ -89,7 +89,7 @@ describe('History V8', function() {
       });
     });
 
-    it('should get tx history from insight, 3 items page', function(done) {
+    it('should get tx history from insight, 20 items', function(done) {
       helpers.stubHistoryV8(50, BCHEIGHT);
       server.getTxHistory({limit: 20}, function(err, txs, fromCache) {
         should.not.exist(err);
