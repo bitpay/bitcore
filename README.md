@@ -144,7 +144,9 @@ npm run node
 
 [API parameters and example responses](./packages/bitcore-node/docs/api-documentation.md)
 
-[Guide to testing in RegTest](./packages/bitcore-node/docs/wallet-guide.md)
+[Websockets API namespaces, event names, and parameters](./packages/bitcore-node/docs/sockets-api.md)
+
+[Testing Bitcore-node in RegTest](./packages/bitcore-node/docs/wallet-guide.md)
 
 ## Contributing
 

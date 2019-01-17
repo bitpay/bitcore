@@ -99,9 +99,11 @@ npm run node
 
 # API Documentation
 
-[API parameters and example responses](./docs/api-documentation.md)
+[REST API parameters and example responses](./docs/api-documentation.md)
 
-[Guide to testing in RegTest](./docs/wallet-guide.md)
+[Websockets API namespaces, event names, and parameters](./docs/sockets-api.md)
+
+[Testing Bitcore-node in RegTest](./docs/wallet-guide.md)
 
 ## Contributing
 
