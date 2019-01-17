@@ -77,7 +77,7 @@ Storage.prototype._createIndexes = function() {
   });
   this.db.collection(collections.ADDRESSES).createIndex({
     address: 1,
-  });
+  }, {unique: 1});
    this.db.collection(collections.ADDRESSES).createIndex({
     address: 1,
     beRegistered: 1
