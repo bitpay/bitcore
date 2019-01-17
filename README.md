@@ -17,7 +17,7 @@ npm install
 **1. Setup Bitcore config**
 
 <details>
-<summary><b>Example bitcore.config.json</b></summary>
+<summary>Example bitcore.config.json</summary>
 <br>
 
 ```
@@ -100,7 +100,7 @@ npm install
 **2. Setup Bitcoin Node**
 
 <details>
-<summary><b> Example Bitcoin Mainnet Config </b></summary>
+<summary>Example Bitcoin Mainnet Config</summary>
 <br>
 
 ```
@@ -126,7 +126,7 @@ rpcpassword=password
 
 **3. Run Bitcoin node**
 <details>
-<summary><b>Example Starting a Bitcoin Node</b></summary>
+<summary>Example Starting a Bitcoin Node</summary>
 <br>
   
 ```
