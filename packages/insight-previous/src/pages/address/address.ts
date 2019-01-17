@@ -1,22 +1,19 @@
 import { Component, Injectable } from '@angular/core';
 import { Http } from '@angular/http';
 import { IonicPage, NavParams } from 'ionic-angular';
-import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { ApiCoin, TxsProvider } from '../../providers/transactions/transactions';
+import { Logger } from '../../providers/logger/logger';
+import {
+  ApiCoin,
+  TxsProvider
+} from '../../providers/transactions/transactions';
 
 @Injectable()
-
-/**
- * Generated class for the AddressPage page.
- *
- * See http://ionicframework.com/docs/components/#navigation for more info
- * on Ionic pages and navigation.
- */
 @IonicPage({
   name: 'address',
-  segment: ':chain/:network/address/:addrStr'
+  segment: ':chain/:network/address/:addrStr',
+  defaultHistory: ['home']
 })
 @Component({
   selector: 'page-address',
@@ -62,7 +59,11 @@ export class AddressPage {
       }
     );
 
-    const txurl: string = this.apiProvider.getUrl() + '/address/' + this.addrStr + '/txs?limit=1000';
+    const txurl: string =
+      this.apiProvider.getUrl() +
+      '/address/' +
+      this.addrStr +
+      '/txs?limit=1000';
     this.http.get(txurl).subscribe(
       data => {
         const apiTx: ApiCoin[] = data.json() as ApiCoin[];

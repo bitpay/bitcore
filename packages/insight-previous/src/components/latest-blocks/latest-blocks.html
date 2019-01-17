@@ -18,7 +18,7 @@
 
       <ion-row *ngFor="let block of getBlocks()">
         <ion-col>
-          <a (click)="goToBlock(block.hash)">{{block.height}}</a>
+          <a (click)="goToBlock(block.hash)">{{ block.height }}</a>
         </ion-col>
         <ion-col *ngIf="showTimeAs === 'age'">
           {{ block.time | amFromUnix | amTimeAgo }}
@@ -27,10 +27,10 @@
           {{ block.time * 1000 | date:'medium' }}
         </ion-col>
         <ion-col text-right>
-          {{block.txlength}}
+          {{ block.txlength }}
         </ion-col>
         <ion-col hideWhen="portrait">
-          <a *ngIf="block.poolInfo && block.poolInfo.poolName" href="{{block.poolInfo.url}}">{{block.poolInfo.poolName}}</a>
+          <a *ngIf="block.poolInfo && block.poolInfo.poolName" href="{{block.poolInfo.url}}">{{ block.poolInfo.poolName }}</a>
         </ion-col>
         <ion-col text-right>
           {{ block.size }}

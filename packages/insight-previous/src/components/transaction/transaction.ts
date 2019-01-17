@@ -2,7 +2,10 @@ import { Component, Input, OnInit } from '@angular/core';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { RedirProvider } from '../../providers/redir/redir';
-import { ApiCoin, TxsProvider } from '../../providers/transactions/transactions';
+import {
+  ApiCoin,
+  TxsProvider
+} from '../../providers/transactions/transactions';
 
 /**
  * Generated class for the TransactionComponent component.
@@ -18,15 +21,17 @@ export class TransactionComponent implements OnInit {
   private COIN = 100000000;
 
   public expanded = false;
-  @Input() public tx: any = {};
-  @Input() public showCoins = false;
+  @Input()
+  public tx: any = {};
+  @Input()
+  public showCoins = false;
 
   constructor(
     public currency: CurrencyProvider,
     public apiProvider: ApiProvider,
     public txProvider: TxsProvider,
     public redirProvider: RedirProvider
-  ) { }
+  ) {}
 
   public ngOnInit(): void {
     if (this.showCoins) {
@@ -52,11 +57,19 @@ export class TransactionComponent implements OnInit {
   }
 
   public goToTx(txId: string): void {
-    this.redirProvider.redir('transaction', txId)
+    this.redirProvider.redir('transaction', {
+      txId,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+    });
   }
 
   public goToAddress(addrStr: string): void {
-    this.redirProvider.redir('address', addrStr)
+    this.redirProvider.redir('address', {
+      addrStr,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+    });
   }
 
   public toggleExpanded(): void {
@@ -64,7 +77,9 @@ export class TransactionComponent implements OnInit {
   }
 
   public aggregateItems(items: any[]): any[] {
-    if (!items) { return []; }
+    if (!items) {
+      return [];
+    }
 
     const l: number = items.length;
 
@@ -95,7 +110,9 @@ export class TransactionComponent implements OnInit {
         continue;
       }
 
-      const address: string = items[i].address || (items[i].scriptPubKey && items[i].scriptPubKey.addresses[0]);
+      const address: string =
+        items[i].address ||
+        (items[i].scriptPubKey && items[i].scriptPubKey.addresses[0]);
 
       if (!tmp[address]) {
         tmp[address] = {};
@@ -106,21 +123,25 @@ export class TransactionComponent implements OnInit {
       }
       tmp[address].isSpent = items[i].spentTxId;
 
-      tmp[address].doubleSpentTxID = tmp[address].doubleSpentTxID || items[i].doubleSpentTxID;
-      tmp[address].doubleSpentIndex = tmp[address].doubleSpentIndex || items[i].doubleSpentIndex;
+      tmp[address].doubleSpentTxID =
+        tmp[address].doubleSpentTxID || items[i].doubleSpentTxID;
+      tmp[address].doubleSpentIndex =
+        tmp[address].doubleSpentIndex || items[i].doubleSpentIndex;
       tmp[address].dbError = tmp[address].dbError || items[i].dbError;
       tmp[address].valueSat += Math.round(items[i].value * this.COIN);
       tmp[address].items.push(items[i]);
       tmp[address].notAddr = notAddr;
 
-      if (items[i].unconfirmedInput) { tmp[address].unconfirmedInput = true; }
+      if (items[i].unconfirmedInput) {
+        tmp[address].unconfirmedInput = true;
+      }
 
       tmp[address].count++;
     }
 
-    for (const v in tmp) {
+    for (let v = 0; v <= tmp.length; v++) {
       const obj: any = tmp[v];
-      obj.value = obj.value || parseInt(obj.valueSat) / this.COIN;
+      obj.value = obj.value || parseInt(obj.valueSat, 10) / this.COIN;
       ret.push(obj);
     }
 

@@ -6,16 +6,12 @@ import * as _ from 'lodash';
 import { Observable } from 'rxjs';
 import { ApiProvider, ChainNetwork } from '../api/api';
 
-
 @Injectable()
 export class SearchProvider {
   private config: ChainNetwork;
   private apiURL: string;
 
-  constructor(
-    private apiProvider: ApiProvider,
-    private http: Http
-  ) { }
+  constructor(private apiProvider: ApiProvider, private http: Http) {}
 
   public search(input: string, type: string): Observable<any> {
     this.apiURL = this.apiProvider.getUrl();
@@ -23,7 +19,8 @@ export class SearchProvider {
       case 'blockOrTx':
         return Observable.forkJoin(
           this.searchBlock(input).catch(() => Observable.of(null)),
-          this.searchTx(input).catch(() => Observable.of(null)));
+          this.searchTx(input).catch(() => Observable.of(null))
+        );
       case 'addr':
         return this.searchAddr(input);
     }
@@ -42,16 +39,13 @@ export class SearchProvider {
 
   public isInputValid(inputValue) {
     if (this.isValidBlockOrTx(inputValue)) {
-      return { isValid: true, type: 'blockOrTx' }
-    }
-    else if (this.isValidAddress(inputValue)) {
-      return { isValid: true, type: 'addr' }
-    }
-    else if (this.isValidBlockIndex(inputValue)) {
-      return { isValid: true, type: 'blockOrTx' }
-    }
-    else {
-      return { isValid: false, type: 'invalid' }
+      return { isValid: true, type: 'blockOrTx' };
+    } else if (this.isValidAddress(inputValue)) {
+      return { isValid: true, type: 'addr' };
+    } else if (this.isValidBlockIndex(inputValue)) {
+      return { isValid: true, type: 'blockOrTx' };
+    } else {
+      return { isValid: false, type: 'invalid' };
     }
   }
 
@@ -107,5 +101,4 @@ export class SearchProvider {
       .replace(/\?.*/, '');
     return extractedAddress || address;
   }
-
 }

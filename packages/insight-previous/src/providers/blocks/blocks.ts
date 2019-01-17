@@ -53,7 +53,7 @@ export class BlocksProvider {
     public http: Http,
     private api: ApiProvider,
     public currency: CurrencyProvider
-  ) { }
+  ) {}
 
   private toAppBlock(block: ApiBlock): AppBlock {
     const difficulty: number = 0x1d00ffff / block.bits;

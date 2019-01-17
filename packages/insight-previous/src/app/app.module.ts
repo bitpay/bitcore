@@ -2,6 +2,7 @@ import { ErrorHandler, NgModule } from '@angular/core';
 import { HttpModule } from '@angular/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
+import { Logger } from '../../src/providers/logger/logger';
 import { BlocksPage, HomePage, PagesModule } from '../pages';
 import { ApiProvider } from '../providers/api/api';
 import { BlocksProvider } from '../providers/blocks/blocks';
@@ -12,7 +13,6 @@ import { RedirProvider } from '../providers/redir/redir';
 import { SearchProvider } from '../providers/search/search';
 import { TxsProvider } from '../providers/transactions/transactions';
 import { InsightApp } from './app.component';
-import { Logger } from '../../src/providers/logger/logger';
 
 @NgModule({
   declarations: [InsightApp],
@@ -37,4 +37,4 @@ import { Logger } from '../../src/providers/logger/logger';
     Logger
   ]
 })
-export class AppModule { }
+export class AppModule {}
