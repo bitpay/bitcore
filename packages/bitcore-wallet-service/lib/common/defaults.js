@@ -135,8 +135,8 @@ Defaults.INSIGHT_TIMEOUT = 30000;
 
 Defaults.ADDRESS_SYNC_BATCH_SIZE = 500000;
 
-Defaults.LOCK_WAIT_TIME =    20 * 1000;
-Defaults.LOCK_EXE_TIME =     60 * 100000;
+Defaults.LOCK_WAIT_TIME =    5 * 1000; // wait time 5s
+Defaults.LOCK_EXE_TIME =     40 * 1000; // max lock time 50s
 Defaults.SERVER_EXE_TIME = Defaults.LOCK_EXE_TIME * 1.5;
 
 Defaults.BE_KEY_SALT = 'bws-auth-keysalt';
