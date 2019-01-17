@@ -1,21 +1,32 @@
-# Parent Event Listener:
+# Join a room
 ```
-on('data')
+socket.on('connect', () => {
+  console.log('Connected to socket');
+  socket.emit('room', '/BTC/regtest/inv');
+});
 ```
 
-## Room namespace: 
+## Room Namespaces
 ```
 /${chain}/${network}/inv
+
+/${chain}/${network}/address
+
+/BTC/regtest/inv
+
+/BTC/mainnet/address
 ```
 
-### Emit Event:
+## Tx Event Listener
 ```
-emit('tx', sanitizedTx)
+socket.on('tx', sanitizedTx => {
+  console.log(sanitizedTx);
+});
 ```
 
-@params: **tx** - An object with properties associated to a transaction
+@params **sanitizedTx** - Transactions object without wallets property
 ```
-tx = {
+sanitizedTx = {
   txid: string;
   chain: string;
   network: string;
@@ -30,32 +41,17 @@ tx = {
   inputCount: number;
   outputCount: number;
   value: number;
-  wallets: ObjectID[];
 }
 ```
 
-@returns **sanitizedTx** - An object with a list of sanitized wallets
+## Block Event Listener
 ```
-sanitizedTx = {
-    wallets: ObjectID[];
-} & {
-    wallets: undefined;
-}
+socket.on('block', block => {
+  console.log(block);
+});
 ```
 
-## Room namespace:
-```
-/${chain}/${network}/inv
-```
-
-### Emit Event
-```
-emit('block', block)
-```
-
-@params - **block** - A block on the blockchain
-
-@returns - **block**
+@params - **block** - A specified block on a blockchain
 ```
 block = {
   chain: string;
@@ -78,20 +74,20 @@ block = {
 }
 ```
 
-## Room namespaces: 
+## Address Event Listener
 ```
-/${chain}/${network}/address
+socket.on(address, sanitizedCoin => {
+  console.log(sanitizedCoin);
+});
+
+socket.on('1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu', sanitizedCoin => {
+  console.log(sanitizedCoin);
+});
 ```
 
-### Emit Events
+@params - **sanitizedCoin** - A coin object without wallets property
 ```
-emit(address, sanitizedCoin)
-```
-
-@params - **addressCoin** - A coin and an address
-```
-addressCoin = { 
-    coins: {
+    sanitizedCoin: {
   network: string;
   chain: string;
   mintTxid: string;
@@ -101,38 +97,23 @@ addressCoin = {
   value: number;
   address: string;
   script: Buffer;
-  wallets: Array<ObjectID>;
   spentTxid: string;
   spentHeight: number;
   confirmations?: number;
     }
-    address: string
-}
 ```
 
-@returns - **sanitizedCoins**
+## Coin Event Listener
 ```
-sanitizedCoin = {
-    wallets: ObjectID[];
-} & {
-    wallets: undefined;
-}
 ```
+socket.on('coin', sanitizedCoin => {
+  console.log(sanitizedCoin);
+});
+``````
 
-## Room namespaces: 
+@params - **sanitizedCoin** - A coin object without wallets property
 ```
-/${chain}/${network}/inv
-```
-
-### Emit Events
-```
-emit('coin', sanitizedCoin)
-```
-
-@params - **addressCoin** - A coin and an address
-```
-addressCoin = { 
-    coins: {
+    sanitizedCoin: {
   network: string;
   chain: string;
   mintTxid: string;
@@ -142,20 +123,8 @@ addressCoin = {
   value: number;
   address: string;
   script: Buffer;
-  wallets: Array<ObjectID>;
   spentTxid: string;
   spentHeight: number;
   confirmations?: number;
     }
-    address: string
-}
-```
-
-@returns - sanitizedCoins
-```
-sanitizedCoin = {
-    wallets: ObjectID[];
-} & {
-    wallets: undefined;
-}
 ```
