@@ -4,26 +4,13 @@
     "declaration": false,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
-    "lib": [
-      "dom",
-      "es2015"
-    ],
+    "lib": ["dom", "es2015"],
     "module": "es2015",
     "moduleResolution": "node",
     "sourceMap": true,
     "target": "es5"
   },
-  "include": [
-    "src/**/*.ts"
-  ],
-  "exclude": [
-    "node_modules",
-    "src/test.ts",
-    "**/*.spec.ts",
-    "e2e"
-  ],
-  "compileOnSave": false,
-  "atom": {
-    "rewriteTsconfig": false
-  }
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "src/test.ts", "src/mocks.ts", "**/*.spec.ts"],
+  "compileOnSave": false
 }

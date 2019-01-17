@@ -1,11 +1,14 @@
-import { Component } from '@angular/core';
+import { Component, Injectable } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Http } from '@angular/http';
 import { IonicPage, NavParams, ToastController } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
 
+@Injectable()
 @IonicPage({
-  segment: ':chain/:network/broadcast-tx'
+  name: 'broadcast-tx',
+  segment: ':chain/:network/broadcast-tx',
+  defaultHistory: ['home']
 })
 @Component({
   selector: 'page-broadcast-tx',
@@ -54,7 +57,7 @@ export class BroadcastTxPage {
   private presentToast(success: boolean, response: any): void {
     const message: string = success
       ? 'Transaction successfully broadcast. Trasaction id: ' +
-      JSON.parse(response._body).txid
+        JSON.parse(response._body).txid
       : 'An error occurred: ' + response._body;
     if (this.toast) {
       this.toast.dismiss();

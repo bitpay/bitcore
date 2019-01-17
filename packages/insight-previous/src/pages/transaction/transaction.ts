@@ -1,16 +1,16 @@
 import { Component, Injectable } from '@angular/core';
 import { IonicPage, NavParams } from 'ionic-angular';
-import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { Logger } from '../../providers/logger/logger';
 import { RedirProvider } from '../../providers/redir/redir';
 import { TxsProvider } from '../../providers/transactions/transactions';
 
 @Injectable()
-
 @IonicPage({
   name: 'transaction',
-  segment: ':chain/:network/tx/:txId'
+  segment: ':chain/:network/tx/:txId',
+  defaultHistory: ['home']
 })
 @Component({
   selector: 'page-transaction',
@@ -50,6 +50,10 @@ export class TransactionPage {
   }
 
   public goToBlock(blockHash: string): void {
-    this.redirProvider.redir('block-detail', blockHash);
+    this.redirProvider.redir('block-detail', {
+      blockHash,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+    });
   }
 }

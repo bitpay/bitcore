@@ -1,14 +1,14 @@
 import { Component, Injectable } from '@angular/core';
 import { IonicPage, NavParams } from 'ionic-angular';
-import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
+import { Logger } from '../../providers/logger/logger';
 
 @Injectable()
-
 @IonicPage({
   name: 'blocks',
-  segment: ':chain/:network/blocks'
+  segment: ':chain/:network/blocks',
+  defaultHistory: ['home']
 })
 @Component({
   selector: 'page-blocks',

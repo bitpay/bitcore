@@ -14,9 +14,7 @@ describe('InsightApp', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [
-        HttpModule
-      ],
+      imports: [HttpModule],
       providers: [
         PopoverController,
         InsightApp,
@@ -30,7 +28,7 @@ describe('InsightApp', () => {
     injector = getTestBed();
     app = injector.get(InsightApp);
 
-    app['nav'] = (<any>new NavMock());
+    app['nav'] = <any>new NavMock();
   });
 
   it('initializes with three possible pages', () => {

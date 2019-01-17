@@ -1,17 +1,19 @@
 <ion-navbar color="brand">
-  <button ion-button menuToggle>
+  <button ion-button icon-only menuToggle>
     <ion-icon name="menu"></ion-icon>
   </button>
-  <ion-title [ngClass]="{'logo-header': title == 'insight'}">{{title}}</ion-title>
+  <ion-title [ngClass]="{'logo-header': title == 'insight'}">{{ title }}</ion-title>
   <ion-buttons end>
     <button ion-button (click)="changeCurrency($event)">
     </button>
 
     <button ion-button (click)="changeCurrency($event)">
       <ion-icon name="logo-bitcoin" *ngIf="currency.currencySymbol !== 'USD'"></ion-icon>
-      <ion-icon name="logo-usd" *ngIf="currency.currencySymbol === 'USD'"></ion-icon>&nbsp;{{ currency?.currencySymbol
-      }}
-      <i> &nbsp;({{config?.network}})</i>
+      <ion-icon name="logo-usd" *ngIf="currency.currencySymbol === 'USD'"></ion-icon>
+      &nbsp;
+      {{ currency?.currencySymbol }}
+      &nbsp;
+      <i>({{ config?.network }})</i>
     </button>
     <button ion-button icon-only (click)="toggleSearch()">
       <ion-icon name="search"></ion-icon>
