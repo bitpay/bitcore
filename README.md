@@ -95,6 +95,7 @@ npm install
 ```
 
 </details>
+<br>
 
 **2. Setup Bitcoin Node**
 
@@ -121,8 +122,9 @@ rpcuser=username
 rpcpassword=password
 ```
 </details>
+<br>
 
-### 3) Run Bitcoin node
+**3. Run Bitcoin node**
 <details>
 <summary><b>Example Starting a Bitcoin Node</b></summary>
 <br>
@@ -133,6 +135,7 @@ rpcpassword=password
 ```
 
 </details>
+<br>
 
 **4. Start Bitcore**
 
