@@ -46,9 +46,18 @@ tnbitpayreg
 
 Go to Help -> Debug Window -> console tab
 
-Input generate command in the line to create 5000 Blocks
+Input generate command in the line to create 5000 BTC
 
 ```
 generate 5000
 ```
+
+To find RegTest account address
+```
+getaccountaddress ""
+```
+
+Test transactions by sending to account address in the send tab
+
+Check transaction results in the Transactions tab
 
