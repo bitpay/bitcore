@@ -40,7 +40,6 @@ export class InsightApp {
     ];
 
     this.apiProvider.networkSettings.subscribe((d) => {
-      console.log('[app.component.ts:43]',d); /* TODO */
       this.chain = d.selectedNetwork.chain;
       this.network = d.selectedNetwork.network;
     });
