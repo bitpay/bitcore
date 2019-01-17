@@ -2921,7 +2921,7 @@ WalletService.prototype._normalizeV8TxHistory = function(walletId, txs, bcHeight
   var self = this;
 
   if (_.isEmpty(txs) )
-    return txs;
+    return cb(null,txs);
 
   // This is PARTIAL history??  TODO TODO TODO TODO!~
 //console.log('[server.js.2915:txs:] IN NORMALIZE',txs); //TODO
@@ -2971,42 +2971,45 @@ WalletService.prototype._normalizeV8TxHistory = function(walletId, txs, bcHeight
 
     // move without send?
     if (tx.category == 'move' && ! indexedSend[tx.txid]) {
+      var output = {
+          address: tx.address,
+          amount: Math.abs(tx.satoshis),
+      };
+ 
      if (moves[tx.txid] )  {
-        moves[tx.txid].push(tx);
+        moves[tx.txid].outputs.push(output);
+        return false;
      } else {
-        moves[tx.txid] = [tx];
+        moves[tx.txid] = tx;
+        tx.outputs = [output];
+        return true;
       }
-      // add all to the history, filter them later
-      return true;
     }
   });
 
   // Filter out moves:
   // This are moves from the wallet to itself. There are 2+ outputs. one if the change
   // the other a main address for the wallet.
-  let moves2 = [];
   _.each(moves, (v,k) => {
-    if (v.length>1) {
-      moves2.push(v);
+    if (v.outputs.length<=1) {
+      delete moves[k];
     }
   });
 
   function fixMoves(cb2) {
-    if (!moves2.length) return cb2();
+    if (_.isEmpty(moves)) return cb2();
 
     // each detected duplicate output move
-    let moves3 = _.flatten(moves2);
+    let moves3 = _.flatten(_.map(_.values(moves),'outputs'));
 
     // check output address for change address
     self.storage.fetchAddressesByWalletId(walletId, _.map(moves3,'address') , (err, addrs) =>  {
       if (err) return cb(err);
 
       let isChangeAddress = _.countBy(_.filter(addrs,{'isChange':true}), 'address');
-      let n = txs.length;
-      txs = _.filter(txs, (x) => {
-        return !isChangeAddress[x.address];
+      _.each(moves, (x) => {
+        _.remove(x.outputs, (i) => { return isChangeAddress[i.address];});
       });
-      log.debug(`Filtered ${n-txs.length} move transactions`);
       return cb2();
     });
   }
@@ -3041,6 +3044,8 @@ WalletService.prototype._normalizeV8TxHistory = function(walletId, txs, bcHeight
         case 'move':
           ret.action = 'moved';
           ret.amount =  Math.abs(tx.satoshis);
+          ret.addressTo= tx.outputs ? tx.outputs[0].address : null;
+          ret.outputs= tx.outputs;
           break;
         default:
           ret.action = 'invalid';
@@ -3466,7 +3471,6 @@ WalletService.prototype.getTxHistoryV8 = function(bc, wallet, opts, skip, limit,
         if (err) return cb(err);
 
         self._normalizeV8TxHistory(wallet.id, txs, bcHeight, function(err, inTxs) {
-
           if (err) return cb(err);
 
           if (cacheStatus.tipTxId) {
