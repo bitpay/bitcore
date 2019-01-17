@@ -2303,7 +2303,6 @@ WalletService.prototype.createTx = function(opts, cb) {
             });
           },
           function(next) {
-
             if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs)) return next();
             self._getFeePerKb(wallet, opts, function(err, fee) {
               feePerKb = fee;
@@ -2918,7 +2917,8 @@ WalletService.prototype.getNotifications = function(opts, cb) {
 };
 
 
-WalletService.prototype._normalizeV8TxHistory = function(txs, bcHeight) {
+WalletService.prototype._normalizeV8TxHistory = function(walletId, txs, bcHeight, cb) {
+  var self = this;
 
   if (_.isEmpty(txs) )
     return txs;
@@ -2936,7 +2936,7 @@ WalletService.prototype._normalizeV8TxHistory = function(txs, bcHeight) {
   var seenSend = {};
   var seenReceive = {};
 
-  var movesOnly = [];
+  var moves = {};
 
   // remove 'fees' and 'moves' (probably change addresses)
   var txs =  _.filter(txs, (tx) => {
@@ -2970,48 +2970,90 @@ WalletService.prototype._normalizeV8TxHistory = function(txs, bcHeight) {
     }
 
     // move without send?
-    if (tx.category == 'move' && ! indexedSend[tx.txid] ) return true;
+    if (tx.category == 'move' && ! indexedSend[tx.txid]) {
+     if (moves[tx.txid] )  {
+        moves[tx.txid].push(tx);
+     } else {
+        moves[tx.txid] = [tx];
+      }
+      // add all to the history, filter them later
+      return true;
+    }
   });
-console.log('[server.js.2974:movesOnly:]',movesOnly); //TODO
 
-  var ret =  _.map([].concat(txs), function(tx) {
-    var t = (new Date(tx.blockTime)).getTime()/1000;
-    var c =  (bcHeight && tx.height >= 0) ?  bcHeight - tx.height + 1 : 0;
-    var ret = {
-      id: tx.id,
-      txid: tx.txid,
-      confirmations: c,
-      blockheight: tx.height > 0  ? tx.height:  null,
-      fees:  tx.fee || (indexedFee[tx.txid] ?  Math.abs(indexedFee[tx.txid].satoshis) : null),
-      time: t,
-      size: tx.size,
-    };
-    switch (tx.category) {
-      case 'send':
-        ret.action = 'sent';
-        ret.amount= Math.abs(_.sumBy(tx.outputs,'amount'));
-        ret.addressTo= tx.outputs ? tx.outputs[0].address : null;
-        ret.outputs= tx.outputs;
-        break;
-      case 'receive':
-        ret.action = 'received';
-        ret.outputs= tx.outputs;
-        ret.amount =  Math.abs(tx.satoshis);
-        break;
-      case 'move':
-        ret.action = 'moved';
-        ret.amount =  Math.abs(tx.satoshis);
-        break;
-      default:
-        ret.action = 'invalid';
-    }; 
-
-    // not available
-    //inputs: inputs,
-    return ret;
+  // Filter out moves:
+  // This are moves from the wallet to itself. There are 2+ outputs. one if the change
+  // the other a main address for the wallet.
+  let moves2 = [];
+  _.each(moves, (v,k) => {
+    if (v.length>1) {
+      moves2.push(v);
+    }
   });
-  //console.log('[server.js.2965:ret:] END',ret); //TODO
-  return ret;
+
+  function fixMoves(cb2) {
+    if (!moves2.length) return cb2();
+
+    // each detected duplicate output move
+    let moves3 = _.flatten(moves2);
+
+    // check output address for change address
+    self.storage.fetchAddressesByWalletId(walletId, _.map(moves3,'address') , (err, addrs) =>  {
+      if (err) return cb(err);
+
+      let isChangeAddress = _.countBy(_.filter(addrs,{'isChange':true}), 'address');
+      let n = txs.length;
+      txs = _.filter(txs, (x) => {
+        return !isChangeAddress[x.address];
+      });
+      log.debug(`Filtered ${n-txs.length} move transactions`);
+      return cb2();
+    });
+  }
+
+  fixMoves((err) => {
+    if (err) return cb(err);
+
+    var ret =  _.map([].concat(txs), function(tx) {
+      var t = (new Date(tx.blockTime)).getTime()/1000;
+      var c =  (bcHeight && tx.height >= 0) ?  bcHeight - tx.height + 1 : 0;
+      var ret = {
+        id: tx.id,
+        txid: tx.txid,
+        confirmations: c,
+        blockheight: tx.height > 0  ? tx.height:  null,
+        fees:  tx.fee || (indexedFee[tx.txid] ?  Math.abs(indexedFee[tx.txid].satoshis) : null),
+        time: t,
+        size: tx.size,
+      };
+      switch (tx.category) {
+        case 'send':
+          ret.action = 'sent';
+          ret.amount= Math.abs(_.sumBy(tx.outputs,'amount'));
+          ret.addressTo= tx.outputs ? tx.outputs[0].address : null;
+          ret.outputs= tx.outputs;
+          break;
+        case 'receive':
+          ret.action = 'received';
+          ret.outputs= tx.outputs;
+          ret.amount =  Math.abs(tx.satoshis);
+          break;
+        case 'move':
+          ret.action = 'moved';
+          ret.amount =  Math.abs(tx.satoshis);
+          break;
+        default:
+          ret.action = 'invalid';
+      }; 
+
+      // not available
+      //inputs: inputs,
+      return ret;
+    });
+
+    //console.log('[server.js.2965:ret:] END',ret); //TODO
+    return cb(null, ret);
+  });
 };
 
 
@@ -3364,23 +3406,6 @@ WalletService.prototype.tagLowFeeTxs = function(wallet, txs, cb) {
 };
 
 
-/* downloads current history from startHeight block index */
-WalletService.prototype._doGetTxHistoryV8 = function(bc, wallet, startBlock, bcHeight, cb) {
-   var self = this;
-
-   var all = [];
-  startBlock = startBlock || 0;
-  log.debug(' ########### GET HISTORY v8 startBlock/bcH]',startBlock,bcHeight); //TODO
-
-
-  bc.getTransactions(wallet, startBlock, (err, txs) => {
-    if (err) return cb(err);
-
-    txs = self._normalizeV8TxHistory(txs, bcHeight);
-    return cb(null, txs);
-  });
-};
-
 WalletService.prototype.getTxHistoryV8 = function(bc, wallet, opts, skip, limit, cb) {
   var self = this;
   var bcHeight, bcHash, sinceTx, lastTxs, cacheStatus, resultTxs = [], fromCache = false;
@@ -3434,27 +3459,35 @@ WalletService.prototype.getTxHistoryV8 = function(bc, wallet, opts, skip, limit,
         return next();
       }
 
-      self._doGetTxHistoryV8(bc, wallet, cacheStatus.updatedHeight, bcHeight, (err, inTxs) => {
+      let startBlock = cacheStatus.updatedHeight || 0;
+      log.debug(' ########### GET HISTORY v8 startBlock/bcH]',startBlock,bcHeight); //TODO
+
+      bc.getTransactions(wallet, startBlock, (err, txs) => {
         if (err) return cb(err);
-        if (cacheStatus.tipTxId) {
-          // first item is the most recent tx.
-          // removes already cache txs
-          lastTxs = _.takeWhile(inTxs, (tx) => {
-            // cacheTxs are very confirmed, so can't be reorged
-            return tx.txid != cacheStatus.tipTxId;
-          });
 
-          //only store stream IF cache is been used.
-          //
-          log.info(`Storing stream cache for ${wallet.id}: ${lastTxs.length} txs`);
-          return self.storage.storeTxHistoryStreamV8(wallet.id, streamKey, lastTxs, next);
-        }
+        self._normalizeV8TxHistory(wallet.id, txs, bcHeight, function(err, inTxs) {
 
-        lastTxs = inTxs;
-        return next();
+          if (err) return cb(err);
+
+          if (cacheStatus.tipTxId) {
+            // first item is the most recent tx.
+            // removes already cache txs
+            lastTxs = _.takeWhile(inTxs, (tx) => {
+              // cacheTxs are very confirmed, so can't be reorged
+              return tx.txid != cacheStatus.tipTxId;
+            });
+
+            //only store stream IF cache is been used.
+            //
+            log.info(`Storing stream cache for ${wallet.id}: ${lastTxs.length} txs`);
+            return self.storage.storeTxHistoryStreamV8(wallet.id, streamKey, lastTxs, next);
+          }
+
+          lastTxs = inTxs;
+          return next();
+        });
       });
     },
-
     (next) => {
 
       // Case 1. 
@@ -3499,7 +3532,6 @@ WalletService.prototype.getTxHistoryV8 = function(bc, wallet, opts, skip, limit,
           fromCache = true;
         }
       
-
         resultTxs  = resultTxs.concat(oldTxs);
         return next();
      });

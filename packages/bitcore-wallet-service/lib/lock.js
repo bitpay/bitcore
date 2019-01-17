@@ -30,7 +30,6 @@ Lock.prototype.acquire = function(token, opts, cb, timeLeft) {
     // Lock taken?
     if(err && err.message && err.message.indexOf('E11000 ') !== -1) {
 
-console.log('[lock.js.32] LOCKED'); //TODO
       // Lock expired?
       this.storage.clearExpiredLock(token, () => {});
       // Waiting time for lock has expired
