@@ -44,8 +44,8 @@ var config = {
         url: 'https://api.bitcore.io',
       },
       testnet: {
-        url: 'http://localhost:3000',
-       //url: 'https://api.bitcore.io',
+       // url: 'http://localhost:3000',
+       url: 'https://api.bitcore.io',
       },
 
     },
