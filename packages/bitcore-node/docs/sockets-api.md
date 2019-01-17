@@ -1,7 +1,19 @@
-Event Listener Event:
+# Event Listener Event:
+```
 "data"
+```
 
-@params: tx - An object with properties associated to a transaction
+## Room namespace: 
+```
+/${chain}/${network}/inv
+```
+
+### Emit Event:
+```
+'tx'
+```
+
+@params: **tx** - An object with properties associated to a transaction
 ```
 tx = {
   txid: string;
@@ -22,17 +34,7 @@ tx = {
 }
 ```
 
-Room namespace: 
-```
-/${chain}/${network}/inv
-```
-
-Emit Event:
-```
-'tx'
-```
-
-@returns sanitizedTx - An object with a list of sanitized wallets
+@returns **sanitizedTx** - An object with a list of sanitized wallets
 ```
 sanitizedTx = {
     wallets: ObjectID[];
@@ -41,17 +43,19 @@ sanitizedTx = {
 }
 ```
 
-Room namespace:
+## Room namespace:
 ```
 /${chain}/${network}/inv
 ```
 
-Emit Event
+### Emit Event
 ```
 'block'
 ```
 
-@params && @returns - a Block on a blockchain
+@params - **block** - A block on the blockchain
+
+@returns - **block**
 ```
 block = {
   chain: string;
@@ -74,7 +78,17 @@ block = {
 }
 ```
 
-@params - A coin and an address
+## Room namespaces: 
+```
+/${chain}/${network}/address
+```
+
+### Emit Events
+```
+'address'
+```
+
+@params - **addressCoin** - A coin and an address
 ```
 addressCoin = { 
     coins: {
@@ -96,17 +110,45 @@ addressCoin = {
 }
 ```
 
-Room namespaces: 
+@returns - **sanitizedCoins**
 ```
-/${chain}/${network}/address
+sanitizedCoin = {
+    wallets: ObjectID[];
+} & {
+    wallets: undefined;
+}
+```
 
+## Room namespaces: 
+```
 /${chain}/${network}/inv
 ```
 
-Emit Events
+### Emit Events
 ```
-'address'
 'coin'
+```
+
+@params - **addressCoin** - A coin and an address
+```
+addressCoin = { 
+    coins: {
+  network: string;
+  chain: string;
+  mintTxid: string;
+  mintIndex: number;
+  mintHeight: number;
+  coinbase: boolean;
+  value: number;
+  address: string;
+  script: Buffer;
+  wallets: Array<ObjectID>;
+  spentTxid: string;
+  spentHeight: number;
+  confirmations?: number;
+    }
+    address: string
+}
 ```
 
 @returns - sanitizedCoins
