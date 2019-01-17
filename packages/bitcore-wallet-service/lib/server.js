@@ -1205,7 +1205,7 @@ WalletService.prototype._getBlockchainExplorer = function(coin, network) {
       opts = this.blockchainExplorerOpts[network];
     }
   }
-  opts.provider = provider || 'insight';
+  opts.provider = provider;
   opts.coin = coin;
   opts.network = network;
   opts.userAgent = WalletService.getServiceVersion();
@@ -2936,6 +2936,8 @@ WalletService.prototype._normalizeV8TxHistory = function(txs, bcHeight) {
   var seenSend = {};
   var seenReceive = {};
 
+  var movesOnly = [];
+
   // remove 'fees' and 'moves' (probably change addresses)
   var txs =  _.filter(txs, (tx) => {
     if (tx.category == 'receive') {
@@ -2967,9 +2969,10 @@ WalletService.prototype._normalizeV8TxHistory = function(txs, bcHeight) {
       }
     }
 
-    // move without send? 
+    // move without send?
     if (tx.category == 'move' && ! indexedSend[tx.txid] ) return true;
   });
+console.log('[server.js.2974:movesOnly:]',movesOnly); //TODO
 
   var ret =  _.map([].concat(txs), function(tx) {
     var t = (new Date(tx.blockTime)).getTime()/1000;
@@ -3369,14 +3372,12 @@ WalletService.prototype._doGetTxHistoryV8 = function(bc, wallet, startBlock, bcH
   startBlock = startBlock || 0;
   log.debug(' ########### GET HISTORY v8 startBlock/bcH]',startBlock,bcHeight); //TODO
 
-  self._runLocked(cb, function(cb) {
 
-    bc.getTransactions(wallet, startBlock, (err, txs) => {
-      if (err) return cb(err);
+  bc.getTransactions(wallet, startBlock, (err, txs) => {
+    if (err) return cb(err);
 
-      txs = self._normalizeV8TxHistory(txs, bcHeight);
-      return cb(null, txs);
-    });
+    txs = self._normalizeV8TxHistory(txs, bcHeight);
+    return cb(null, txs);
   });
 };
 
