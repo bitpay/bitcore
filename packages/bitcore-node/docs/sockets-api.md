@@ -12,6 +12,8 @@ socket.on('connect', () => {
 
 /${chain}/${network}/address
 
+# Examples
+
 /BTC/regtest/inv
 
 /BTC/mainnet/address
@@ -80,6 +82,8 @@ socket.on(address, sanitizedCoin => {
   console.log(sanitizedCoin);
 });
 
+# Example
+
 socket.on('1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu', sanitizedCoin => {
   console.log(sanitizedCoin);
 });
@@ -87,7 +91,7 @@ socket.on('1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu', sanitizedCoin => {
 
 @params - **sanitizedCoin** - A coin object without wallets property
 ```
-    sanitizedCoin: {
+sanitizedCoin = {
   network: string;
   chain: string;
   mintTxid: string;
@@ -99,21 +103,19 @@ socket.on('1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu', sanitizedCoin => {
   script: Buffer;
   spentTxid: string;
   spentHeight: number;
-  confirmations?: number;
-    }
+}
 ```
 
 ## Coin Event Listener
 ```
-```
 socket.on('coin', sanitizedCoin => {
   console.log(sanitizedCoin);
 });
-``````
+```
 
 @params - **sanitizedCoin** - A coin object without wallets property
 ```
-    sanitizedCoin: {
+sanitizedCoin = {
   network: string;
   chain: string;
   mintTxid: string;
@@ -125,6 +127,5 @@ socket.on('coin', sanitizedCoin => {
   script: Buffer;
   spentTxid: string;
   spentHeight: number;
-  confirmations?: number;
-    }
+}
 ```
