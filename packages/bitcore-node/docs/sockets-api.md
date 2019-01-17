@@ -1,6 +1,6 @@
-# Event Listener Event:
+# Parent Event Listener:
 ```
-"data"
+on('data')
 ```
 
 ## Room namespace: 
@@ -10,7 +10,7 @@
 
 ### Emit Event:
 ```
-'tx'
+emit('tx', sanitizedTx)
 ```
 
 @params: **tx** - An object with properties associated to a transaction
@@ -50,7 +50,7 @@ sanitizedTx = {
 
 ### Emit Event
 ```
-'block'
+emit('block', block)
 ```
 
 @params - **block** - A block on the blockchain
@@ -85,7 +85,7 @@ block = {
 
 ### Emit Events
 ```
-'address'
+emit(address, sanitizedCoin)
 ```
 
 @params - **addressCoin** - A coin and an address
@@ -126,7 +126,7 @@ sanitizedCoin = {
 
 ### Emit Events
 ```
-'coin'
+emit('coin', sanitizedCoin)
 ```
 
 @params - **addressCoin** - A coin and an address
