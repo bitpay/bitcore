@@ -8,6 +8,7 @@
     "postinstall": "npm run bootstrap && npm run compile",
     "bootstrap": "./node_modules/.bin/lerna bootstrap",
     "insight": "cd packages/insight && npm start",
+    "insight-previous": "cd ./packages/insight-previous && npm start",
     "node": "cd packages/bitcore-node && npm start",
     "bws": "cd packages/bitcore-wallet-service && npm start",
     "compile": "./node_modules/.bin/lerna run compile",
@@ -53,6 +54,7 @@
     "eslint-plugin-import": "^2.8.0",
     "lerna": "^3.6.0",
     "prettier": "^1.14.3",
+    "typedoc": "^0.14.0",
     "typescript-eslint-parser": "^15.0.0"
   },
   "dependencies": {}

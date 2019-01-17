@@ -41,7 +41,6 @@ describe('History V8', function() {
     helpers.beforeEach(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
-      helpers.setupGroupingBE(blockchainExplorer);
       request = res.request;
       done();
     });
@@ -51,6 +50,26 @@ describe('History V8', function() {
   });
 
   var BCHEIGHT =  10000;
+
+  describe.skip('#checkWalletData', function() {
+    it('should check wallet data', (done) => {
+      blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, BCHEIGHT, 'hash');
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        helpers.createAddresses(server, wallet, 1, 1, function(main, change) {
+          mainAddresses = main;
+          changeAddresses = change;
+          helpers.stubFeeLevels({
+            24: 10000,
+          });
+          helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'bch', done);
+        });
+      });
+    });
+  });
+
+ 
 
   describe('#getTxHistoryV8', function() {
     var server, wallet, mainAddresses, changeAddresses;
@@ -65,12 +84,12 @@ describe('History V8', function() {
           helpers.stubFeeLevels({
             24: 10000,
           });
-          done();
+          helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'bch', done);
         });
       });
     });
 
-    it('should get tx history from insight, 3 items page', function(done) {
+    it('should get tx history from insight, 20 items', function(done) {
       helpers.stubHistoryV8(50, BCHEIGHT);
       server.getTxHistory({limit: 20}, function(err, txs, fromCache) {
         should.not.exist(err);
@@ -424,7 +443,6 @@ describe('History V8', function() {
       var external = '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7';
 
       helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
-
         var txOpts = {
           outputs: [{
             toAddress: external,
@@ -450,7 +468,6 @@ describe('History V8', function() {
             txProposalId: tx.id,
             signatures: signatures,
           }, function(err, tx) {
-console.log('[historyV8.js.450:err:]',err); //TODO
             should.not.exist(err);
 
             helpers.stubBroadcast();
@@ -492,7 +509,7 @@ console.log('[historyV8.js.450:err:]',err); //TODO
               ]; 
  
               helpers.stubHistoryV8(null, null,txs);
-
+              helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'bch', () =>{ 
               server.getTxHistory({}, function(err, txs) {
                 should.not.exist(err);
                 should.exist(txs);
@@ -520,6 +537,7 @@ console.log('[historyV8.js.450:err:]',err); //TODO
                 should.exist(tx.customData);
                 should.exist(tx.customData["test"]);
                 done();
+              });
               });
             });
           });

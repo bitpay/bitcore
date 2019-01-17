@@ -1,4 +1,4 @@
-import { Config } from "../../services/config";
+import { Config } from '../../services/config';
 import { Request, Response, Router } from 'express';
 import { ChainNetwork } from '../../types/ChainNetwork';
 import { IWallet } from '../../models/wallet';
@@ -53,7 +53,8 @@ const authenticate: RequestHandler = async (req: PreAuthRequest, res: Response, 
     return res.status(404).send('Wallet not found');
   }
   Object.assign(req, { wallet });
-  if(Config.for('api').wallets.allowUnauthenticatedCalls) {
+  const walletConfig = Config.for('api').wallets;
+  if (walletConfig && walletConfig.allowUnauthenticatedCalls) {
     return next();
   }
   try {
@@ -132,10 +133,25 @@ router.get('/:pubKey/addresses', authenticate, async (req: AuthenticatedRequest,
   }
 });
 
+router.get('/:pubKey/check', authenticate, async (req: AuthenticatedRequest, res) => {
+  const { chain, network } = req.params;
+  const wallet = req.wallet!._id!;
+  try {
+    const result = await ChainStateProvider.walletCheck({
+      chain,
+      network,
+      wallet
+    });
+    return res.send(result);
+  } catch (err) {
+    return res.status(500).json(err);
+  }
+});
+
 // update wallet
 router.post('/:pubKey', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
-  let addressLines: { address: string }[] = req.body;
+  let addressLines: { address: string }[] = req.body.filter(line => !!line.address);
   let keepAlive;
   try {
     let addresses = addressLines.map(({ address }) => address);

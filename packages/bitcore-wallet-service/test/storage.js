@@ -329,6 +329,26 @@ describe('Storage', function() {
       });
     });
 
+    it('should clear all cache on deregistration', (done) =>{
+      let tipIndex = 80; // current cache tip
+      let items  = [{txid:'1234', blockheight: 800, amount: 100}]; // a single tx.
+      let updateHeight = 1000;
+
+      storage.storeTxHistoryCacheV8('xx', tipIndex, items, updateHeight, (err)=> {
+        should.not.exist(err);
+        storage.deregisterWallet('xx',  (err) => {
+          should.not.exist(err);
+          storage.getTxHistoryCacheV8('xx', 0, 5, (err, txs) => {
+            should.not.exist(err);
+            txs.length.should.equal(0);
+            done();
+          });
+        });
+      });
+    });
+
+ 
+
     it('should store a 5 txs on the cache and retreive them correctly', (done) =>{
       let tipIndex = 80; // current cache tip
       let items  = [

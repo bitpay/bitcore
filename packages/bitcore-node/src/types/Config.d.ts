@@ -11,26 +11,26 @@ export interface ConfigType {
   };
   services: {
     api: {
-      enabled: boolean;
-      rateLimiter: {
-        whitelist: [string];
+      disabled?: boolean;
+      rateLimiter?: {
+        whitelist: string[];
       };
-      wallets: {
+      wallets?: {
         allowCreationBeforeCompleteSync?: boolean;
         allowUnauthenticatedCalls?: boolean;
       };
     };
     event: {
-      enabled: boolean;
+      disabled?: boolean;
     };
     p2p: {
-      enabled: boolean;
+      disabled?: boolean;
     };
     socket: {
-      enabled: boolean;
+      disabled?: boolean;
     };
     storage: {
-      enabled: boolean;
+      disabled?: boolean;
     };
   };
 }

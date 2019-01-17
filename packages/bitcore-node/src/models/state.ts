@@ -20,7 +20,7 @@ export class StateModel extends BaseModel<IState> {
     return this.collection.findOneAndUpdate(
       {},
       { $setOnInsert: { created: new Date()}},
-      { upsert: true }
+      { upsert: true, returnOriginal: false }
     );
   }
 

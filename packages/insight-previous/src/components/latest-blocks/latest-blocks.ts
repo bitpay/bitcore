@@ -1,9 +1,13 @@
-import { Component, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
-import { NavController } from 'ionic-angular';
+import { Component, Injectable, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
+import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { DefaultProvider } from '../../providers/default/default';
+import { RedirProvider } from '../../providers/redir/redir';
+
+@Injectable()
 
 @Component({
   selector: 'latest-blocks',
@@ -22,13 +26,16 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   public showTimeAs: string;
   private reloadInterval: any;
 
+  public subscriber: Subscription;
+
   constructor(
     private blocksProvider: BlocksProvider,
     private apiProvider: ApiProvider,
-    private navCtrl: NavController,
     private ngZone: NgZone,
     public currency: CurrencyProvider,
-    public defaults: DefaultProvider
+    public defaults: DefaultProvider,
+    private logger: Logger,
+    public redirProvider: RedirProvider
   ) {
     this.numBlocks = parseInt(defaults.getDefault('%NUM_BLOCKS%'), 10);
   }
@@ -38,9 +45,9 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
     const seconds = 15;
     this.ngZone.runOutsideAngular(() => {
       this.reloadInterval = setInterval(
-        function(): void {
+        function (): void {
           this.ngZone.run(
-            function(): void {
+            function (): void {
               this.loadBlocks.call(this);
             }.bind(this)
           );
@@ -51,13 +58,13 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   }
 
   private loadBlocks(): void {
-    this.blocksProvider.getBlocks(this.numBlocks).subscribe(
+    this.subscriber = this.blocksProvider.getBlocks(this.numBlocks).subscribe(
       ({ blocks }) => {
         this.blocks = blocks;
         this.loading = false;
       },
       err => {
-        console.log('err', err);
+        this.logger.error(err);
         this.loading = false;
       }
     );
@@ -72,18 +79,14 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
       err => {
-        console.log('err', err);
+        this.logger.error(err);
         this.loading = false;
       }
     );
   }
 
   public goToBlock(blockHash: string): void {
-    this.navCtrl.push('block-detail', {
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
-      blockHash
-    });
+    this.redirProvider.redir('block-detail', blockHash);
   }
 
   public getBlocks(): any[] {
@@ -91,10 +94,16 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   }
 
   public goToBlocks(): void {
-    this.navCtrl.push('blocks', {
+    this.redirProvider.redir('blocks', {
       chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
       network: this.apiProvider.networkSettings.value.selectedNetwork.network
     });
+  }
+
+  public reloadData() {
+    this.subscriber.unsubscribe();
+    this.blocks = [];
+    this.ngOnInit();
   }
 
   ngOnDestroy(): void {

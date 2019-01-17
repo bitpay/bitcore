@@ -8,7 +8,7 @@ async function getAllAddressesFromBlocks(start, end) {
     .find({ chain: 'BTC', network: 'mainnet', mintHeight: { $gte: start, $lte: end } })
     .project({ address: 1 })
     .toArray();
-  return addresses.map(a => a.address);
+  return Object.keys(addresses.reduce((prev, a) => Object.assign(prev, { [a.address]: a.address }, {})));
 }
 
 async function createWallet(addresses: string[], iteration) {

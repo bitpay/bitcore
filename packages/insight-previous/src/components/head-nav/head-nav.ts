@@ -1,112 +1,95 @@
-import { Component } from '@angular/core';
-import { Input } from '@angular/core';
-import { Http } from '@angular/http';
-import { ActionSheetController } from 'ionic-angular';
-import { ToastController } from 'ionic-angular';
-import { PopoverController } from 'ionic-angular';
-import { NavController } from 'ionic-angular';
-import { App } from 'ionic-angular/components/app/app';
+import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
+import * as bitcoreLib from 'bitcore-lib';
+import * as bitcoreLibCash from 'bitcore-lib-cash';
+import { ActionSheetController, App, NavController, PopoverController, ToastController } from 'ionic-angular';
+import { Logger } from '../../providers/logger/logger';
+import * as _ from 'lodash';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { PriceProvider } from '../../providers/price/price';
+import { RedirProvider } from '../../providers/redir/redir';
+import { SearchProvider } from '../../providers/search/search';
 import { DenominationComponent } from '../denomination/denomination';
-import * as bitcoreLib from 'bitcore-lib';
-import * as bitcoreLibCash from 'bitcore-lib-cash';
+
+@Injectable()
+
 @Component({
   selector: 'head-nav',
   templateUrl: 'head-nav.html'
 })
+
 export class HeadNavComponent {
+  @Output() updateView = new EventEmitter<ChainNetwork>();
   public showSearch = false;
   public loading: boolean;
   @Input()
   public title: string;
   public q: string;
   public config: ChainNetwork;
+  public redirTo: any;
+  public params: any;
 
   constructor(
     private navCtrl: NavController,
-    private http: Http,
     private apiProvider: ApiProvider,
     public app: App,
     public currency: CurrencyProvider,
     public price: PriceProvider,
     public actionSheetCtrl: ActionSheetController,
     public popoverCtrl: PopoverController,
-    public toastCtrl: ToastController
-  ) { }
+    public toastCtrl: ToastController,
+    private logger: Logger,
+    public searchProvider: SearchProvider,
+    public redirProvider: RedirProvider
+  ) {
+    this.config = this.apiProvider.getConfig();
+  }
 
   public search(): void {
     this.showSearch = false;
-    const apiPrefix: string = this.apiProvider.getUrl();
     this.q = this.q.replace(/\s/g, '');
-    if (this.isInputValid(this.q)) {
-      this.http.get(apiPrefix + '/block/' + this.q).subscribe(
-        (data: any): void => {
-          this.resetSearch();
-          console.log('block', data);
-          const parsedData: any = JSON.parse(data._body);
-          this.navCtrl.push('block-detail', {
-            chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-            network: this.apiProvider.networkSettings.value.selectedNetwork
-              .network,
-            blockHash: parsedData.hash
+    const inputDetails = this.searchProvider.isInputValid(this.q);
+
+    if (this.q !== '' && inputDetails.isValid) {
+      this.searchProvider.search(this.q, inputDetails.type).subscribe(res => {
+        if (_.isArray(res)) {
+          const index = _.findIndex(res, (o) => {
+            return o !== null;
           });
-        },
-        () => {
-          this.http.get(apiPrefix + '/tx/' + this.q).subscribe(
-            (data: any): void => {
-              this.resetSearch();
-              console.log('tx', data);
-              const parsedData: any = JSON.parse(data._body);
-              this.navCtrl.push('transaction', {
-                chain: this.apiProvider.networkSettings.value.selectedNetwork
-                  .chain,
-                network: this.apiProvider.networkSettings.value.selectedNetwork
-                  .network,
-                txId: parsedData[0].txid
-              });
-            },
-            () => {
-              this.http.get(apiPrefix + '/address/' + this.q).subscribe(
-                (data: any): void => {
-                  const addrStr = this.q;
-                  this.resetSearch();
-                  console.log('addr', data);
-                  const parsedData: any = JSON.parse(data._body);
-                  this.navCtrl.push('address', {
-                    chain: this.apiProvider.networkSettings.value.selectedNetwork
-                      .chain,
-                    network: this.apiProvider.networkSettings.value
-                      .selectedNetwork.network,
-                    addrStr
-                  });
-                },
-                () => {
-                  this.loading = false;
-                  this.reportBadQuery();
-                }
-              );
-            }
-          );
+          if (index === 0) {
+            this.redirTo = 'block-detail';
+            this.params = res[0].json().hash;
+          } else {
+            this.redirTo = 'transaction';
+            this.params = res[1].json().txid;
+          }
+        } else {
+          this.redirTo = 'address';
+          this.params = res.json()[0].address;
         }
-      );
+        this.redirProvider.redir(this.redirTo, this.params);
+      }, err => {
+        this.resetSearch();
+        this.loading = false;
+        this.reportBadQuery('Server error. Please try again');
+        this.logger.error(err);
+      });
     } else {
       this.resetSearch();
       this.loading = false;
-      this.reportBadQuery();
+      this.reportBadQuery('No matching records found!');
     }
-
   }
 
   /* tslint:disable:no-unused-variable */
-  private reportBadQuery(): void {
-    this.presentToast();
+  private reportBadQuery(message): void {
+    this.presentToast(message);
+    this.logger.info(message);
   }
 
-  private presentToast(): void {
+  private presentToast(message): void {
     const toast: any = this.toastCtrl.create({
-      message: 'No matching records found!',
+      message,
       duration: 3000,
       position: 'top'
     });
@@ -124,6 +107,20 @@ export class HeadNavComponent {
     popover.present({
       ev: myEvent
     });
+    popover.onDidDismiss(data => {
+      if (data) {
+        if (JSON.stringify(data) === JSON.stringify(this.config)) {
+          return;
+        }
+        this.apiProvider.changeNetwork(data);
+        this.config = this.apiProvider.getConfig();
+        if (this.navCtrl.getActive().component.name === 'HomePage') {
+          this.updateView.next(data);
+        } else {
+          this.navCtrl.setRoot('home', { chain: this.config.chain, network: this.config.network });
+        }
+      }
+    });
   }
 
   public toggleSearch(): void {
@@ -131,18 +128,17 @@ export class HeadNavComponent {
   }
 
   public extractAddress(address: string): string {
-    let extractedAddress = address
+    const extractedAddress = address
       .replace(/^(bitcoincash:|bchtest:|bitcoin:)/i, '')
       .replace(/\?.*/, '');
     return extractedAddress || address;
   }
 
   public isInputValid(inputValue): boolean {
-    this.config = this.apiProvider.getConfig();
-    if (this.isValidBlockOrTx(inputValue)) return true;
-    else if (this.isValidAddress(inputValue)) return true;
-    else if (this.isValidBlockIndex(inputValue)) return true;
-    else return false;
+    if (this.isValidBlockOrTx(inputValue)) { return true; }
+    else if (this.isValidAddress(inputValue)) { return true; }
+    else if (this.isValidBlockIndex(inputValue)) { return true; }
+    else { return false; }
   }
 
   private isValidBlockOrTx(inputValue): boolean {
@@ -159,11 +155,11 @@ export class HeadNavComponent {
     const network = this.config.network;
     const addr = this.extractAddress(inputValue);
 
-    if (coin.toLowerCase() == 'btc' && network == 'mainnet') {
+    if (coin.toLowerCase() === 'btc' && network === 'mainnet') {
       return this.isValidBitcoinMainnetAddress(addr);
-    } else if (coin.toLowerCase() == 'btc' && network == 'testnet') {
+    } else if (coin.toLowerCase() === 'btc' && network === 'testnet') {
       return this.isValidBitcoinTestnetAddress(addr);
-    } else if (coin.toLowerCase() == 'bch' && network == 'mainnet') {
+    } else if (coin.toLowerCase() === 'bch' && network === 'mainnet') {
       return (
         this.isValidBitcoinCashMainnetAddress(addr) ||
         this.isValidBitcoinCashLegacyMainnetAddress(addr)

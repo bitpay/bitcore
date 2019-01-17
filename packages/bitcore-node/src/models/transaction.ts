@@ -160,7 +160,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
                 size: parentTx.size,
                 locktime: parentTx.locktime,
                 inputCount: parentTx.inputCount,
-                outputCount: parentTx.inputCount,
+                outputCount: parentTx.outputCount,
                 value: parentTx.value,
                 wallets: []
               }
@@ -334,7 +334,8 @@ export class TransactionModel extends BaseModel<ITransaction> {
       }
     }
 
-    if (initialSyncComplete || Config.for('api').wallets.allowCreationBeforeCompleteSync) {
+    const walletConfig = Config.for('api').wallets;
+    if (initialSyncComplete || (walletConfig && walletConfig.allowCreationBeforeCompleteSync)) {
       let mintOpsAddresses = {};
       for (const mintOp of mintOps) {
         mintOpsAddresses[mintOp.updateOne.update.$set.address] = true;
@@ -342,6 +343,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
       mintOpsAddresses = Object.keys(mintOpsAddresses);
       let wallets = await WalletAddressStorage.collection
         .find({ address: { $in: mintOpsAddresses }, chain, network }, { batchSize: 100 })
+        .project({ wallet: 1, address: 1 })
         .toArray();
       if (wallets.length) {
         mintOps = mintOps.map(mintOp => {

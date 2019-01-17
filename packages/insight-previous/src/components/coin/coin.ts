@@ -1,7 +1,7 @@
 import { Component, Input } from '@angular/core';
-import { NavController } from 'ionic-angular/navigation/nav-controller';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { RedirProvider } from '../../providers/redir/redir';
 import { AppCoin } from '../../providers/transactions/transactions';
 @Component({
   selector: 'coin',
@@ -11,16 +11,12 @@ export class CoinComponent {
   constructor(
     public apiProvider: ApiProvider,
     public currencyProvider: CurrencyProvider,
-    private navCtrl: NavController
-  ) {}
+    public redirProvider: RedirProvider
+  ) { }
   @Input()
   public coin: AppCoin | {} = {};
 
   public goToTx(txId: string): void {
-    this.navCtrl.push('transaction', {
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
-      txId
-    });
+    this.redirProvider.redir('transaction', txId)
   }
 }

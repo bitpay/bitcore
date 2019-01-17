@@ -190,19 +190,26 @@ helpers.createAndPublishTxProposal = function(client, opts, cb) {
   });
 };
 
-var blockchainExplorerMock = {};
+var blockchainExplorerMock = {
+  register: sinon.stub().callsArgWith(1, null, null),
+  getCheckData: sinon.stub().callsArgWith(1, null, {sum: 100}),
+  addAddresses: sinon.stub().callsArgWith(2, null, null),
+};
 
-blockchainExplorerMock.getUtxos = function(addresses, cb) {
-  var selected = _.filter(blockchainExplorerMock.utxos, function(utxo) {
-    return _.includes(addresses, utxo.address);
-  });
-  return cb(null, selected);
+
+
+blockchainExplorerMock.getUtxos = function(wallet, height, cb) {
+  return cb(null, _.cloneDeep(blockchainExplorerMock.utxos));
 };
 
 
 // v8
-blockchainExplorerMock.getAddressUtxos = function(address, cb) {
-  return cb(null, blockchainExplorerMock.utxos);
+blockchainExplorerMock.getAddressUtxos = function(address, height,  cb) {
+  var selected = _.filter(blockchainExplorerMock.utxos, function(utxo) {
+    return _.includes(address, utxo.address);
+  });
+ 
+  return cb(null, _.cloneDeep(selected));
 };
 
 
@@ -247,9 +254,42 @@ blockchainExplorerMock.getTransaction = function(txid, cb) {
   return cb();
 };
 
-blockchainExplorerMock.getTransactions = function(addresses, from, to, cb) {
+function createTxsV8(nr, bcHeight, txs) {
+  txs = txs || [];
+  // Will generate
+  // order / confirmations  / height / txid
+  //  0.  => -1     / -1            /   txid0   / id0  <=  LAST ONE!
+  //  1.  => 1      / bcHeight      /   txid1
+  //  2.  => 2      / bcHeight - 1  /   txid2
+  //  3.  => 3...   / bcHeight - 2  /   txid3
+
+  var  i = 0;
+  if (_.isEmpty(txs)) {
+    while(i < nr) {
+      txs.push({
+        id: 'id' + i,
+        txid: 'txid' + i,
+        size: 226,
+        category: 'receive',
+        satoshis: 30001,
+        // this is translated on V8.prototype.getTransactions 
+        amount: 30001 /1e8,
+        height: (i == 0) ? -1 :  bcHeight - i + 1,
+        address: 'muFJi3ZPfR5nhxyD7dfpx2nYZA8Wmwzgck',
+        blockTime: '2018-09-21T18:08:31.000Z',
+      });
+      i++;
+    }
+  }
+  return txs;
+};
+
+
+
+blockchainExplorerMock.getTransactions = function(wallet, startBlock, cb) {
   var list = [].concat(blockchainExplorerMock.txHistory);
-  list = _.slice(list, from, to);
+  // -1 = mempool, always included in server' s v8.js
+  list = _.filter(list, (x) => { return x.height >= startBlock || x.height == -1; } );
   return cb(null, list);
 };
 
@@ -2353,6 +2393,7 @@ describe('client API', function() {
           clients[2].rejectTxProposal(txp1, 'Free locked UTXOs', next);
         },
         function(next) {
+
           clients[0].publishTxProposal({
             txp: txp2
           }, next);
@@ -2378,23 +2419,15 @@ describe('client API', function() {
       });
     });
     it('Should fail to create proposal with insufficient funds', function(done) {
-      helpers.createAndJoinWallet(clients, 2, 2, function(w) {
-        clients[0].createAddress(function(err, x0) {
-          should.not.exist(err);
-          should.exist(x0.address);
-          blockchainExplorerMock.setUtxo(x0, 1, 2);
-          blockchainExplorerMock.setUtxo(x0, 1, 2);
-          var opts = {
-            amount: 3e8,
-            toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-            message: 'hello 1-1',
-          };
-          helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
-            should.exist(err);
-            err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS);
-            done();
-          });
-        });
+      var opts = {
+        amount: 6e8,
+        toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+        message: 'hello 1-1',
+      };
+      helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
+        should.exist(err);
+        err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS);
+        done();
       });
     });
    it('Should fail to create proposal with insufficient funds for fee', function(done) {
@@ -2547,27 +2580,21 @@ describe('client API', function() {
 
     describe('Detecting tampered tx proposals', function() {
       it('should detect wrong signature', function(done) {
-        helpers.createAndJoinWallet(clients, 1, 1, function() {
-          clients[0].createAddress(function(err, x0) {
-            should.not.exist(err);
-            blockchainExplorerMock.setUtxo(x0, 10, 1);
-            var opts = {
-              amount: 1000e2,
-              toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
-              message: 'hello',
-            };
-            helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
-              should.not.exist(err);
+        var opts = {
+          amount: 1000e2,
+          toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
+          message: 'hello',
+        };
+        helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
+          should.not.exist(err);
 
-              helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
-                txps[0].proposalSignature = '304402206e4a1db06e00068582d3be41cfc795dcf702451c132581e661e7241ef34ca19202203e17598b4764913309897d56446b51bc1dcd41a25d90fdb5f87a6b58fe3a6920';
-              }, function() {
-                clients[0].getTxProposals({}, function(err, txps) {
-                  should.exist(err);
-                  err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
-                  done();
-                });
-              });
+          helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function(txps) {
+            txps[0].proposalSignature = '304402206e4a1db06e00068582d3be41cfc795dcf702451c132581e661e7241ef34ca19202203e17598b4764913309897d56446b51bc1dcd41a25d90fdb5f87a6b58fe3a6920';
+          }, function() {
+            clients[0].getTxProposals({}, function(err, txps) {
+              should.exist(err);
+              err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
+              done();
             });
           });
         });
@@ -3692,7 +3719,7 @@ describe('client API', function() {
 
   describe('Transaction history', function() {
     it('should get transaction history', function(done) {
-      blockchainExplorerMock.setHistory(TestData.history);
+      blockchainExplorerMock.setHistory(createTxsV8(2,1000));
       helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
@@ -3707,7 +3734,7 @@ describe('client API', function() {
       });
     });
     it('should get empty transaction history when there are no addresses', function(done) {
-      blockchainExplorerMock.setHistory(TestData.history);
+      blockchainExplorerMock.setHistory([]);
       helpers.createAndJoinWallet(clients, 1, 1, function(w) {
         clients[0].getTxHistory({}, function(err, txs) {
           should.not.exist(err);
@@ -3765,10 +3792,10 @@ describe('client API', function() {
           });
         },
         function(txp, next) {
-          var history = _.cloneDeep(TestData.history);
+          var history = createTxsV8(2,1000);
           history[0].txid = txp.txid;
           _.each(history, function(h) {
-            h.blocktime = Math.floor(Date.now() / 1000);
+            h.blockTime = (new Date).toISOString();
           });
           blockchainExplorerMock.setHistory(history);
           clients[0].getTxHistory({}, function(err, txs) {
@@ -3800,8 +3827,8 @@ describe('client API', function() {
         done();
       });
     });
-    it('should get paginated transaction history', function(done) {
-      var testCases = [{
+    describe('should get paginated transaction history', function(done) {
+      let testCases = [{
         opts: {},
         expected: [20, 10]
       }, {
@@ -3827,20 +3854,29 @@ describe('client API', function() {
         expected: [10]
       }, ];
 
-      blockchainExplorerMock.setHistory(TestData.history);
-      helpers.createAndJoinWallet(clients, 1, 1, function(w) {
-        clients[0].createAddress(function(err, x0) {
+      beforeEach((done)=> {
+        let txs = createTxsV8(2,1000);
+        txs[0].blockTime= (new Date(20* 1000)).toISOString();
+        txs[1].blockTime= (new Date(10* 1000)).toISOString();
+        blockchainExplorerMock.setHistory(txs);
+        helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+          clients[0].createAddress(function(err, x0) {
+            should.not.exist(err);
+            should.exist(x0.address);
+            done();
+          });
+        });
+      });
+      _.each(testCases, function(testCase) {
+
+        it(`should skip ${testCase.opts.skip} limit ${testCase.opts.limit}`, (done) => {
+        clients[0].getTxHistory(testCase.opts, function(err, txs) {
           should.not.exist(err);
-          should.exist(x0.address);
-          async.each(testCases, function(testCase, next) {
-            clients[0].getTxHistory(testCase.opts, function(err, txs) {
-              should.not.exist(err);
-              should.exist(txs);
-              var times = _.map(txs, 'time');
-              times.should.deep.equal(testCase.expected);
-              next();
-            });
-          }, done);
+          should.exist(txs);
+          var times = _.map(txs, 'time');
+          times.should.deep.equal(testCase.expected);
+          done();
+        });
         });
       });
     });

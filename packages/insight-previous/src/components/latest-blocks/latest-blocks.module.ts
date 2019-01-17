@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
+import { MomentModule } from 'angular2-moment';
 import { IonicModule } from 'ionic-angular';
 import { LatestBlocksComponent } from './latest-blocks';
-import { MomentModule } from 'angular2-moment';
 
 @NgModule({
   declarations: [
@@ -15,4 +15,4 @@ import { MomentModule } from 'angular2-moment';
     LatestBlocksComponent
   ]
 })
-export class LatestBlocksComponentModule {}
+export class LatestBlocksComponentModule { }

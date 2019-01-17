@@ -8,8 +8,11 @@ import { BlocksProvider } from '../providers/blocks/blocks';
 import { CurrencyProvider } from '../providers/currency/currency';
 import { DefaultProvider } from '../providers/default/default';
 import { PriceProvider } from '../providers/price/price';
+import { RedirProvider } from '../providers/redir/redir';
+import { SearchProvider } from '../providers/search/search';
 import { TxsProvider } from '../providers/transactions/transactions';
 import { InsightApp } from './app.component';
+import { Logger } from '../../src/providers/logger/logger';
 
 @NgModule({
   declarations: [InsightApp],
@@ -28,7 +31,10 @@ import { InsightApp } from './app.component';
     BlocksProvider,
     TxsProvider,
     DefaultProvider,
-    PriceProvider
+    PriceProvider,
+    SearchProvider,
+    RedirProvider,
+    Logger
   ]
 })
 export class AppModule { }

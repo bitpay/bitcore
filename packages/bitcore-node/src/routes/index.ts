@@ -3,10 +3,10 @@ import { Request, Response } from 'express';
 import express from 'express';
 import cors from 'cors';
 import { LogMiddleware, CacheMiddleware, CacheTimes, RateLimiter } from './middleware';
+import { Web3Proxy } from "./web3";
 
 const app = express();
 const bodyParser = require('body-parser');
-app.use(RateLimiter('GLOBAL', 10, 200, 4000));
 app.use(
   bodyParser.json({
     limit: 100000000
@@ -57,6 +57,7 @@ function getRouterFromFile(path) {
 app.use(cors());
 app.use(LogMiddleware());
 app.use(CacheMiddleware(CacheTimes.Second));
+app.use(RateLimiter('GLOBAL', 10, 200, 4000));
 app.use('/api', getRouterFromFile('status'));
 
 app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
@@ -76,5 +77,6 @@ app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
 });
 
 app.use('/api/:chain/:network', bootstrap('api'));
+app.use('/web3/:chain/:network', Web3Proxy);
 
 export default app;

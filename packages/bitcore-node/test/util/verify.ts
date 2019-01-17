@@ -123,15 +123,14 @@ export async function blocks(
 
       // Check no other tx points to our block hash
       const extra = await TransactionStorage.collection
-        .find({
+        .countDocuments({
           chain: info.chain,
           network: info.network,
           blockHash: block.hash,
           txid: {
             $nin: truth.tx.map(tx => tx.txid)
           }
-        })
-        .count();
+        });
       expect(extra, 'number of extra transactions').to.equal(0);
     }
   }

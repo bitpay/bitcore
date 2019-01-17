@@ -1,6 +1,7 @@
 import { ConfigType } from '../types/Config';
 import config from '../config';
 import { ChainNetwork } from '../types/ChainNetwork';
+import { valueOrDefault } from '../utils/check';
 
 type RecursivePartial<T> = { [P in keyof T]?: RecursivePartial<T[P]> };
 type ServiceName = keyof ConfigType['services'];
@@ -39,16 +40,19 @@ export class ConfigService {
     return chainNetworks;
   }
 
-  public chainConfig({chain, network}: ChainNetwork) {
+  public chainConfig({ chain, network }: ChainNetwork) {
     return this.get().chains[chain][network];
   }
 
   public for<T extends keyof ConfigType['services']>(service: T): ConfigType['services'][T] {
-    return this.get().services[service];
+    return this.get().services[service] || {};
   }
 
-  public isEnabled(service: ServiceName) {
-    return this.for(service).enabled;
+  public isDisabled(service: ServiceName) {
+    const serviceConfig = this.for(service);
+    const isDefined = x => x !== undefined;
+    const disabled = isDefined(serviceConfig) ? valueOrDefault(serviceConfig.disabled, false) : false;
+    return disabled;
   }
 }
 

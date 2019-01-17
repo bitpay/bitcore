@@ -5,7 +5,6 @@ var $ = require('preconditions').singleton();
 var log = require('npmlog');
 log.debug = log.verbose;
 
-var Insight = require('./blockchainexplorers/insight');
 var V8 = require('./blockchainexplorers/v8');
 var Common = require('./common');
 var Constants = Common.Constants,
@@ -13,17 +12,6 @@ var Constants = Common.Constants,
   Utils = Common.Utils;
 
 var PROVIDERS = {
-  'insight': {
-    'btc': {
-      'livenet': 'https://insight.bitpay.com:443',
-      'testnet': 'https://test-insight.bitpay.com:443',
-    },
-    'bch': {
-      'livenet': 'https://bch-insight.bitpay.com:443',
-      'testnet': 'https://test-bch-insight.bitpay.com:443',
-    },
-  },
-
   'v8': {
     'btc': {
       'livenet': 'https://api.bitpay.com',
@@ -43,7 +31,7 @@ var PROVIDERS = {
 function BlockChainExplorer(opts) {
   $.checkArgument(opts);
 
-  var provider = opts.provider || 'insight';
+  var provider = opts.provider || 'v8';
   var coin = opts.coin || Defaults.COIN;
   var network = opts.network || 'livenet';
 
@@ -63,15 +51,6 @@ function BlockChainExplorer(opts) {
   
 
   switch (provider) {
-    case 'insight':
-      return new Insight({
-        coin: coin,
-        network: network,
-        url: url,
-        apiPrefix: opts.apiPrefix,
-        userAgent: opts.userAgent,
-        addressFormat: opts.addressFormat,
-      });
     case 'v8':
       return new V8({
         coin: coin,

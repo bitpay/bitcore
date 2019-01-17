@@ -29,7 +29,6 @@ run_program ()
   fi
 }
 
-run_program locker/locker.js pids/locker.pid logs/locker.log
 run_program messagebroker/messagebroker.js pids/messagebroker.pid logs/messagebroker.log
 run_program bcmonitor/bcmonitor.js pids/bcmonitor.pid logs/bcmonitor.log
 run_program emailservice/emailservice.js pids/emailservice.pid logs/emailservice.log

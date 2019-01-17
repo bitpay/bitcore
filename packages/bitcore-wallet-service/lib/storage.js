@@ -1,5 +1,6 @@
 'use strict';
 
+const crypto = require('crypto');
 var _ = require('lodash');
 var async = require('async');
 var $ = require('preconditions').singleton();
@@ -11,6 +12,8 @@ var Bitcore = require('bitcore-lib');
 var mongodb = require('mongodb');
 
 var Model = require('./model');
+var BCHAddressTranslator = require('./bchaddresstranslator');
+
 
 var collections = {
   WALLETS: 'wallets',
@@ -26,12 +29,16 @@ var collections = {
   SESSIONS: 'sessions',
   PUSH_NOTIFICATION_SUBS: 'push_notification_subs',
   TX_CONFIRMATION_SUBS: 'tx_confirmation_subs',
+  LOCKS: 'locks',
 };
 
 var Storage = function(opts) {
   opts = opts || {};
   this.db = opts.db;
 };
+
+
+Storage.BCHEIGHT_KEY = 'bcheight';
 
 Storage.prototype._createIndexes = function() {
   this.db.collection(collections.WALLETS).createIndex({
@@ -560,12 +567,12 @@ Storage.prototype.deregisterWallet = function(walletId, cb) {
       w: 1,
       upsert: false,
       multi: 1,
-    }, cb);
-  }
-  );
 
-
- };
+    }, () => {
+      self.clearWalletCache(walletId, cb);
+    });
+  });
+};
 
 
 Storage.prototype.storeAddressAndWallet = function(wallet, addresses, cb) {
@@ -711,60 +718,32 @@ Storage.prototype.getTxHistoryCacheStatusV8 = function(walletId, cb) {
 };
 
 
-// --------         ---------------------------  Total
-//           > Time >
-//                       ^to     <=  ^from
-//                       ^fwdIndex  =>  ^end
-Storage.prototype.getTxHistoryCache = function(walletId, from, to, cb) {
+Storage.prototype.getWalletAddressChecked = function(walletId, cb) {
   var self = this;
-  $.checkArgument(from >= 0);
-  $.checkArgument(from <= to);
-
   self.db.collection(collections.CACHE).findOne({
     walletId: walletId,
-    type: 'historyCacheStatus',
+    type: 'addressChecked',
     key: null
   }, function(err, result) {
-    if (err) return cb(err);
-    if (!result) return cb();
-    if (!result.isUpdated) return cb();
+    if (err || !result) return cb(err);
+    return cb(null, result.totalAddresses);
+  });
+};
 
-    // Reverse indexes
-    var fwdIndex = result.totalItems - to;
-
-    if (fwdIndex < 0) {
-      fwdIndex = 0;
-    }
-
-    var end = result.totalItems - from;
-
-    // nothing to return
-    if (end <= 0) return cb(null, []);
-
-    // Cache is OK.
-    self.db.collection(collections.CACHE).find({
-      walletId: walletId,
-      type: 'historyCache',
-      key: {
-        $gte: fwdIndex,
-        $lt: end
-      },
-    }).sort({
-      key: -1,
-    }).toArray(function(err, result) {
-      if (err) return cb(err);
-
-      if (!result) return cb();
-
-      if (result.length < end - fwdIndex) {
-        // some items are not yet defined.
-        return cb();
-      }
-
-      var txs = _.map(result, 'tx');
-      return cb(null, txs);
-    });
-  })
+Storage.prototype.setWalletAddressChecked = function(walletId, totalAddresses, cb) {
+  this.db.collection(collections.CACHE).update({
+    walletId: walletId,
+    type: 'addressChecked',
+    key: null
+  }, {
+    walletId: walletId,
+    type: 'addressChecked',
+    key: null,
+    totalAddresses: totalAddresses
+  }, {
+    w: 1,
+    upsert: true,
+  }, cb);
 };
 
 // Since cache TX are "hard confirmed" skip, and limit
@@ -786,7 +765,7 @@ Storage.prototype.getTxHistoryCacheV8 = function(walletId, skip, limit, cb) {
 
       if (_.isNull(cacheStatus.tipId))
         return cb(null, []);
-      console.log('Cache status in GET:', cacheStatus); //TODO
+      //console.log('Cache status in GET:', cacheStatus); //TODO
 
 
       var firstPosition = cacheStatus.tipIndex - skip - limit + 1;
@@ -818,47 +797,16 @@ Storage.prototype.getTxHistoryCacheV8 = function(walletId, skip, limit, cb) {
 };
 
 
-Storage.prototype.softResetAllTxHistoryCache = function(cb) {
-  this.db.collection(collections.CACHE).update({
-    type: 'historyCacheStatus',
-  }, {
-    isUpdated: false,
-  }, {
-    multi: true,
-  }, cb);
-};
 
-Storage.prototype.softResetTxHistoryCache = function(walletId, cb) {
-  this.db.collection(collections.CACHE).update({
-    walletId: walletId,
-    type: 'historyCacheStatus',
-    key: null
-  }, {
-    isUpdated: false,
-  }, {
-    w: 1,
-    upsert: true,
-  }, cb);
-};
-
-Storage.prototype.clearTxHistoryCache = function(walletId, cb) {
+Storage.prototype.clearWalletCache = function(walletId, cb) {
   var self = this;
   self.db.collection(collections.CACHE).remove({
     walletId: walletId,
-    type: 'historyCache',
   }, {
     multi: 1
-  }, function(err) {
-    if (err) return cb(err);
-    self.db.collection(collections.CACHE).remove({
-      walletId: walletId,
-      type: 'historyCacheStatus',
-      key: null
-    }, {
-      w: 1
-    }, cb);
-  });
+  }, cb);
 };
+
 
 /*
  * This represent a ongoing query stream from a Wallet client
@@ -983,60 +931,6 @@ Storage.prototype.storeTxHistoryCacheV8 = function(walletId, tipIndex, items, up
   });
 };
 
-
-
-// items should be in CHRONOLOGICAL order
-Storage.prototype.storeTxHistoryCache = function(walletId, totalItems, firstPosition, items, cb) {
-  $.shouldBeNumber(firstPosition);
-  $.checkArgument(firstPosition >= 0);
-  $.shouldBeNumber(totalItems);
-  $.checkArgument(totalItems >= 0);
-
-  var self = this;
-
-  _.each(items, function(item, i) {
-    item.position = firstPosition + i;
-  });
-  var cacheIsComplete = (firstPosition == 0);
-
-  // TODO: check txid uniqness?
-  async.each(items, function(item, next) {
-    var pos = item.position;
-    delete item.position;
-    self.db.collection(collections.CACHE).update({
-      walletId: walletId,
-      type: 'historyCache',
-      key: pos,
-    }, {
-      walletId: walletId,
-      type: 'historyCache',
-      key: pos,
-      tx: item,
-    }, {
-      w: 1,
-      upsert: true,
-    }, next);
-  }, function(err) {
-    if (err) return cb(err);
-
-    self.db.collection(collections.CACHE).update({
-      walletId: walletId,
-      type: 'historyCacheStatus',
-      key: null
-    }, {
-      walletId: walletId,
-      type: 'historyCacheStatus',
-      key: null,
-      totalItems: totalItems,
-      updatedOn: Date.now(),
-      isComplete: cacheIsComplete,
-      isUpdated: true,
-    }, {
-      w: 1,
-      upsert: true,
-    }, cb);
-  });
-};
 
 
 Storage.prototype.storeFiatRate = function(providerName, rates, cb) {
@@ -1243,126 +1137,32 @@ Storage.prototype._dump = function(cb, fn) {
   });
 };
 
-Storage.prototype.fetchAddressIndexCache = function (walletId, key, cb) {
-  this.db.collection(collections.CACHE).findOne({
-    walletId: walletId,
-    type: 'addressIndexCache',
-    key: key,
-  }, function(err, ret) {
-    if (err) return cb(err);
-    if (!ret) return cb();
-    cb(null, ret.index);
-  });
-}
- 
+// key: 'feeLevel' + JSON.stringify(opts);
+// duration: FEE_LEVEL_DURATION
 
-
-Storage.prototype.storeAddressIndexCache = function (walletId, key, index, cb) {
-  this.db.collection(collections.CACHE).update({ 
-    walletId: walletId,
-    type: 'addressIndexCache',
-    key: key,
-  }, {
-    "$set":
-    { 
-      index: index,
-    }
-  }, {
-    w: 1,
-    upsert: true,
-  }, cb);
-};
-
-
-Storage.prototype._addressHash = function(addresses) {
-  var all = addresses.join();
-  return Bitcore.crypto.Hash.ripemd160(new Buffer(all)).toString('hex');
-};
-
-Storage.prototype.checkAndUseBalanceCache = function(walletId, addresses, duration, cb) {
+Storage.prototype.checkAndUseGlobalCache = function(key, duration, cb) {
   var self = this;
-  var key = self._addressHash(addresses);
+
   var now = Date.now();
-
-
   self.db.collection(collections.CACHE).findOne({
-    walletId: walletId || key,
-    type: 'balanceCache',
     key: key,
-  }, function(err, ret) {
-    if (err) return cb(err);
-    if (!ret) return cb();
-
-    var validFor = ret.ts + duration * 1000 - now;
-
-    if (validFor > 0)  {
-      log.debug('','Using Balance Cache valid for %d ms more', validFor); 
-      cb(null, ret.result);
-      return true;
-    }
-    cb();
-
-    log.debug('','Balance cache expired, deleting'); 
-    self.db.collection(collections.CACHE).remove({
-      walletId: walletId,
-      type: 'balanceCache',
-      key: key,
-    }, {},  function() {});
-
-    return false;
-  });
-};
-
-
-
-Storage.prototype.storeBalanceCache = function (walletId, addresses, balance, cb) {
-  var key = this._addressHash(addresses);
-  var now = Date.now();
-
-  this.db.collection(collections.CACHE).update({ 
-    walletId: walletId || key,
-    type: 'balanceCache',
-    key: key,
-  }, {
-    "$set":
-    { 
-      ts: now,
-      result: balance,
-    }
-  }, {
-    w: 1,
-    upsert: true,
-  }, cb);
-};
-
-// FEE_LEVEL_DURATION = 5min
-var FEE_LEVEL_DURATION = 5 * 60 * 1000;
-Storage.prototype.checkAndUseFeeLevelsCache = function(opts, cb) {
-  var self = this;
-  var key = JSON.stringify(opts);
-  var now = Date.now();
-
-  self.db.collection(collections.CACHE).findOne({
     walletId: null,
-    type: 'feeLevels',
-    key: key,
+    type: null,
   }, function(err, ret) {
     if (err) return cb(err);
     if (!ret) return cb();
-
-    var validFor = ret.ts + FEE_LEVEL_DURATION - now;
+    var validFor = ret.ts + duration - now;
     return cb(null, validFor > 0 ? ret.result : null);
   });
 };
 
 
-Storage.prototype.storeFeeLevelsCache = function (opts, values, cb) {
-  var key = JSON.stringify(opts);
+Storage.prototype.storeGlobalCache = function (key, values, cb) {
   var now = Date.now();
   this.db.collection(collections.CACHE).update({ 
-    walletId: null,
-    type: 'feeLevels',
     key: key,
+    walletId: null,
+    type: null,
   }, {
     "$set":
     { 
@@ -1375,6 +1175,83 @@ Storage.prototype.storeFeeLevelsCache = function (opts, values, cb) {
   }, cb);
 };
 
+
+Storage.prototype.clearGlobalCache = function (key, cb) {
+  var now = Date.now();
+  this.db.collection(collections.CACHE).remove({ 
+    key: key,
+    walletId: null,
+    type: null,
+  }, {
+    w: 1,
+  }, cb);
+};
+
+
+Storage.prototype.walletCheck = async function(params) {
+  let { walletId, bch } = params;
+  var self = this;
+
+  return new Promise(resolve => {
+    const addressStream = self.db.collection(collections.ADDRESSES).find({ walletId: walletId });
+    let sum = 0;
+    let count = 0;
+    let lastAddress;
+    addressStream.on('data', (walletAddress) => {
+
+      if (walletAddress.address) {
+        let addr = walletAddress.address;
+
+        // TODO remove on native cashaddr
+        if (bch) {
+          addr = BCHAddressTranslator.translate(addr, 'cashaddr', 'copay');
+          $.checkState(addr, 'ERROR: wrong addr format on DB for wallet:' + walletId);
+        }
+
+        lastAddress = addr;
+        const addressSum = Buffer.from(addr).reduce(
+          (tot, cur) => (tot + cur) % Number.MAX_SAFE_INTEGER
+        );
+        sum = (sum + addressSum) % Number.MAX_SAFE_INTEGER;
+      }
+    });
+    addressStream.on('end', () => {
+      resolve({ lastAddress, sum });
+    });
+  });
+}
+
+
+Storage.prototype.acquireLock = function(key, expireTs, cb) {
+  this.db.collection(collections.LOCKS).insert({
+    _id: key,
+    expireOn: expireTs,
+  },{}, cb);
+};
+
+
+Storage.prototype.releaseLock = function(key, cb) {
+  this.db.collection(collections.LOCKS).remove({
+    _id: key,
+  }, {} , cb);
+};
+
+Storage.prototype.clearExpiredLock = function(key, cb) {
+  var self = this;
+
+  this.db.collection(collections.LOCKS).findOne({
+    _id: key,
+  }, (err, ret) => {
+    if (err || !ret) return;
+
+    if (ret.expireOn < Date.now()) {
+      log.info("Releasing expired lock : " + key);
+      return self.releaseLock(key, cb);
+    }
+    return cb();
+
+  });
+};
 
 
 

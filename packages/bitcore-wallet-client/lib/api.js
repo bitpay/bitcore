@@ -2534,8 +2534,8 @@ API.prototype.getSendMaxInfo = function(opts, cb) {
  * Get wallet status based on a string identifier (one of: walletId, address, txid)
  *
  * @param {string} opts.identifier - The identifier
- * @param {Boolean} opts.twoStep[=false] - Optional: use 2-step balance computation for improved performance
  * @param {Boolean} opts.includeExtendedInfo (optional: query extended status)
+ * @param {Boolean} opts.walletCheck (optional:  run v8 walletCheck if wallet found)
  * @returns {Callback} cb - Returns error or an object with status information
  */
 API.prototype.getStatusByIdentifier = function(opts, cb) {
@@ -2546,7 +2546,7 @@ API.prototype.getStatusByIdentifier = function(opts, cb) {
 
   var qs = [];
   qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));
-  qs.push('twoStep=' + (opts.twoStep ? '1' : '0'));
+  qs.push('walletCheck=' + (opts.walletCheck ? '1' : '0'));
 
   self._doGetRequest('/v1/wallets/' + opts.identifier + '?' + qs.join('&'), function(err, result) {
     if (err || !result || !result.wallet) return cb(err);

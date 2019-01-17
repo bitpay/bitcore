@@ -1,4 +1,11 @@
-import * as crypto from 'crypto';
+import { createHash, createCipheriv, createDecipheriv, randomBytes } from 'crypto';
+
+const crypto = {
+  createHash,
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+}
 
 export function shaHash(data, algo = 'sha256') {
   let hash = crypto

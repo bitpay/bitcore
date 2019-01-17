@@ -132,7 +132,9 @@ Wallet.prototype.updateBEKeys = function() {
   var seed =_.map(this.copayers, 'xPubKey').sort().join('') + this.network + this.coin + salt;
   seed = bitcore.crypto.Hash.sha256(new Buffer(seed));
   var priv = bitcore.PrivateKey(seed, this.network);
+
   this.beAuthPrivateKey2 = priv.toString();
+  // WARN!! => this will generate an uncompressed pub key.
   this.beAuthPublicKey2 = priv.toPublicKey().toString();
 };
 

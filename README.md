@@ -1,61 +1,28 @@
-# Installing
+Bitcore Node
+============
+_Requirements_:
+- Trusted P2P Peer
+- MongoDB Server >= v3.4
+
+Checkout the repo
+
 ```
+git clone git@github.com:bitpay/bitcore.git
+git checkout master
 npm install
 ```
 
-# Running Bitcore-Node
+# Setup Guide
 
-To run bitcore-node you'll need
-* mongoDB v3.4.11
-* node 8.9.4
-* a valid bitcore.config.json
-  * see bitcore-node/README
+### 1) Setup bitcore config
 
-Alternatively, if you have docker
+<details>
+<summary><b>Example bitcore.config.json</b></summary>
+<br>
 
-```
-npm run build
-docker-compose up
-```
-
-# Services
-* bitcore-node
-  * port 3000
-* insight
-  * port 8100
-
-
-# Configuring Bitcore Services
-Bitcore services can be configured through a bitcore.config.json file
-
-Each service should have it's own namespace in the config
-
-Eg:
-
-```
-{
-  bitcoreNode : {},
-  insight: {},
-  someOtherService: {}
-}
-```
-
-## Bitcore-Node Config
-Bitcore-Node can access a bitcore.config.json file from
-* Environment Variable
-  * $BITCORE_CONFIG_PATH=some/path/to/config
-* node arguments
-  * --config some/path/to/config
-* ~/bitcore.config.json
-* ${BITCORE_DIR}/bitcore.config.json
-* ${BITCORE_DIR}/packages/bitcore-node/bitcore.config.json
-
-### Example Config
 ```
 {
   "bitcoreNode": {
-    "dbHost": "OPTIONAL IP FOR REMOTE DB",
-    "pruneSpentScripts": true,
     "chains": {
       "XVG": {
         "mainnet": {
@@ -79,24 +46,53 @@ Bitcore-Node can access a bitcore.config.json file from
 }
 ```
 
+</details>
 
-### Trusted Peer Environment Variables
-Trusted peers can also be added via enviroment variables.
-```
-TRUSTED_BTC_REGTEST_PEER=127.0.0.1
-TRUSTED_BTC_REGTEST_PEER_PORT=30000
-```
-This would accomplish the same thing as adding a peer to the trustedPeers array in the config
+### 2) Setup Verge Node
 
+<details>
+<summary><b> Example Verge Mainnet Config </b></summary>
+<br>
 
-# Bitcore Wallet
+```
+whitelist=127.0.0.1
+txindex=0
+listen=1
+server=1
+irc=1
+upnp=1
+```
 
-Create a wallet
+**Listen on different ports than default testnet**
+
 ```
-./bin/wallet-create "testing wallet creation" 1-1 --coin btc --network testnet -f ~/newtestwallet.dat
+port=21102
+rpcport=20102
+rpcallowip=127.0.0.1
+
+rpcuser=RPCUSER
+rpcpassword=RPCPASS
+```
+</details>
+
+### 3) Run Verge node
+
+### 4) Start Bitcore
+
+```
+npm run node
 ```
 
-Register a wallet
-```
-./bin/wallet-import
-```
+# API Documentation
+
+[API parameters and example responses](./packages/bitcore-node/docs/api-documentation.md)
+
+## Contributing
+
+See [CONTRIBUTING.md](https://github.com/vergecurrency/bitcore) on the main bitcore repo for information about how to contribute.
+
+## License
+
+Code released under [the MIT license](https://github.com/vergecurrency/bitcore/blob/master/LICENSE).
+
+Copyright 2015-2019 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.

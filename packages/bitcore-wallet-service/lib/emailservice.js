@@ -105,7 +105,7 @@ EmailService.prototype.start = function(opts, cb) {
       done();
     },
     function(done) {
-      self.lock = opts.lock || new Lock(opts.lockOpts);
+      self.lock = opts.lock || new Lock(self.storage, opts.lockOpts);
       done();
     },
     function(done) {
@@ -233,6 +233,7 @@ EmailService.prototype._getDataForTemplate = function(notification, recipient, c
       return cb(new Error('Could not format amount', ex));
     }
   }
+
   self.storage.fetchWallet(notification.walletId, function(err, wallet) {
     if (err) return cb(err);
     data.walletId = wallet.id;
@@ -355,7 +356,7 @@ EmailService.prototype.sendEmail = function(notification, cb) {
       // TODO: Optimize so one process does not have to wait until all others are done
       // Instead set a flag somewhere in the db to indicate that this process is free
       // to serve another request.
-      self.lock.runLocked('email-' + notification.id, cb, function(cb) {
+      self.lock.runLocked('email-' + notification.id, {},  cb, function(cb) {
         self.storage.fetchEmailByNotification(notification.id, function(err, email) {
           if (err) return cb(err);
           if (email) return cb();

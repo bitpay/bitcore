@@ -1,7 +1,5 @@
 import { Component, ViewChild } from '@angular/core';
-import { SplashScreen } from '@ionic-native/splash-screen';
-import { StatusBar } from '@ionic-native/status-bar';
-import { MenuController, Nav, Platform } from 'ionic-angular';
+import { Events, MenuController, Nav, Platform } from 'ionic-angular';
 import { HomePage } from '../pages';
 import { ApiProvider } from '../providers/api/api';
 import { CurrencyProvider } from '../providers/currency/currency';
@@ -15,35 +13,52 @@ export class InsightApp {
 
   private menu: MenuController;
   private platform: Platform;
-  private splash: SplashScreen;
-  private status: StatusBar;
 
   public rootPage: any;
-  public pages: Array<{ title: string; component: any }>;
+  public pages: Array<{ title: string; component: any; icon: any; }>;
 
   constructor(
     platform: Platform,
     menu: MenuController,
     public currency: CurrencyProvider,
-    public apiProvider: ApiProvider
+    public apiProvider: ApiProvider,
+    public events: Events
   ) {
     this.menu = menu;
     this.platform = platform;
 
-    this.rootPage = HomePage;
     this.initializeApp();
 
     // set our app's pages
     this.pages = [
-      { title: 'Home', component: 'home' },
-      { title: 'Blocks', component: 'blocks' },
-      { title: 'Broadcast Transaction', component: 'BroadcastTxPage' }
+      { title: 'Home', component: 'home', icon: 'home' },
+      { title: 'Blocks', component: 'blocks', icon: 'logo-buffer' },
+      { title: 'Broadcast Transaction', component: 'BroadcastTxPage', icon: 'ios-radio-outline' }
     ];
   }
 
   private initializeApp(): void {
     this.platform.ready().then(() => {
-      // cordova ready
+      this.rootPage = HomePage;
+      this.subscribeRedirEvent();
+    });
+  }
+
+
+  public subscribeRedirEvent() {
+    this.events.subscribe('redirToEvent', data => {
+      switch (data.redirTo) {
+        case 'address':
+          this.nav.push(data.redirTo, { addrStr: data.params })
+          break;
+        case 'transaction':
+          this.nav.push(data.redirTo, { txId: data.params })
+          break;
+        case 'block-detail':
+          this.nav.push(data.redirTo, { blockHash: data.params })
+          break;
+      }
+
     });
   }
 

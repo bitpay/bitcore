@@ -86,6 +86,10 @@ export declare namespace CSP {
     limit: number;
   };
 
+  export type WalletCheckParams = ChainNetwork & {
+    wallet: ObjectId;
+  };
+
   export type StreamWalletMissingAddressesParams = ChainNetwork & {
     pubKey: string;
     req: Request;
@@ -118,7 +122,7 @@ export declare namespace CSP {
     broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
     createWallet(params: CreateWalletParams): Promise<IWallet>;
     getWallet(params: GetWalletParams): Promise<IWallet | null>;
-    updateWallet(params: UpdateWalletParams): Promise<{}>;
+    updateWallet(params: UpdateWalletParams): Promise<any>;
     getWalletBalance(params: GetWalletBalanceParams): Promise<{ confirmed: number, unconfirmed: number, balance: number }>;
     streamAddressUtxos(params: StreamAddressUtxosParams): any;
     streamAddressTransactions(params: StreamAddressUtxosParams): any;
@@ -127,6 +131,7 @@ export declare namespace CSP {
     getDailyTransactions(params: { chain: string; network: string }): Promise<DailyTransactionsJSON>;
     getTransaction(params: StreamTransactionParams): Promise<TransactionJSON | string | undefined>;
     streamWalletAddresses(params: StreamWalletAddressesParams): any;
+    walletCheck(params: WalletCheckParams): any;
     streamWalletTransactions(params: StreamWalletTransactionsParams): any;
     streamWalletUtxos(params: StreamWalletUtxosParams): any;
     streamMissingWalletAddresses(params: StreamWalletMissingAddressesParams);

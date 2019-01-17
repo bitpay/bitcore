@@ -6,7 +6,7 @@ import { ObjectId } from 'mongodb';
 import { CoinStorage, ICoin } from '../../../models/coin';
 import { BlockStorage, IBlock } from '../../../models/block';
 import { WalletStorage, IWallet } from '../../../models/wallet';
-import { WalletAddressStorage } from '../../../models/walletAddress';
+import { WalletAddressStorage, IWalletAddress } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { Storage } from '../../../services/storage';
 import { RPC } from '../../../rpc';
@@ -55,10 +55,9 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
-    const { args, req, res } = params;
-    const { limit = 10 } = args;
+    const { req, res } = params;
     const query = this.getAddressQuery(params);
-    Storage.apiStreamingFind(CoinStorage, query, { limit }, req, res);
+    Storage.apiStreamingFind(CoinStorage, query, {}, req, res);
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
@@ -230,7 +229,9 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const state = await StateStorage.collection.findOne({});
     const initialSyncComplete =
       state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
-    if (!initialSyncComplete && !Config.for('api').wallets.allowCreationBeforeCompleteSync) {
+    const walletConfig = Config.for('api').wallets;
+    const canCreate = walletConfig && walletConfig.allowCreationBeforeCompleteSync;
+    if (!initialSyncComplete && !canCreate) {
       throw 'Wallet creation not permitted before intitial sync is complete';
     }
     const wallet: IWallet = {
@@ -251,9 +252,30 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   streamWalletAddresses(params: CSP.StreamWalletAddressesParams) {
-    let { walletId, limit = 1000, req, res } = params;
+    let { walletId, req, res } = params;
     let query = { wallet: walletId };
-    Storage.apiStreamingFind(WalletAddressStorage, query, { limit }, req, res);
+    Storage.apiStreamingFind(WalletAddressStorage, query, {}, req, res);
+  }
+
+  async walletCheck(params: CSP.WalletCheckParams) {
+    let { chain, network, wallet } = params;
+    return new Promise(resolve => {
+      const addressStream = WalletAddressStorage.collection.find({ chain, network, wallet }).project({ address: 1 });
+      let sum = 0;
+      let lastAddress;
+      addressStream.on('data', (walletAddress: IWalletAddress) => {
+        if (walletAddress.address) {
+          lastAddress = walletAddress.address;
+          const addressSum = Buffer.from(walletAddress.address).reduce(
+            (tot, cur) => (tot + cur) % Number.MAX_SAFE_INTEGER
+          );
+          sum = (sum + addressSum) % Number.MAX_SAFE_INTEGER;
+        }
+      });
+      addressStream.on('end', () => {
+        resolve({ lastAddress, sum });
+      });
+    });
   }
 
   async streamMissingWalletAddresses(params: CSP.StreamWalletMissingAddressesParams) {
@@ -401,7 +423,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getCoinsForTx({ chain, network, txid }: { chain: string; network: string; txid: string }) {
-    const tx = await TransactionStorage.collection.find({ txid }).count();
+    const tx = await TransactionStorage.collection.countDocuments({ txid });
     if (tx === 0) {
       throw new Error(`No such transaction ${txid}`);
     }

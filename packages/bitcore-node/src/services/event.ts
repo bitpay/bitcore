@@ -26,7 +26,8 @@ export class EventService {
   }
 
   start() {
-    if (!this.configService.isEnabled('event')) {
+    if (this.configService.isDisabled('event')) {
+      logger.info('Disabled Event Service');
       return;
     }
     logger.info('Starting Event Service');

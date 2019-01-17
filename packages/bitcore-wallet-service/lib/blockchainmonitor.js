@@ -127,24 +127,23 @@ BlockchainMonitor.prototype._handleThirdPartyBroadcasts = function(coin, network
 
     txp.setBroadcasted();
 
-    self.storage.softResetTxHistoryCache(walletId, function() {
-      self.storage.storeTx(self.walletId, txp, function(err) {
-        if (err)
-          log.error('Could not save TX');
 
-        var args = {
-          txProposalId: txp.id,
-          txid: data.txid,
-          amount: txp.getTotalAmount(),
-        };
+    self.storage.storeTx(self.walletId, txp, function(err) {
+      if (err)
+        log.error('Could not save TX');
 
-        var notification = Notification.create({
-          type: 'NewOutgoingTxByThirdParty',
-          data: args,
-          walletId: walletId,
-        });
-        self._storeAndBroadcastNotification(notification);
+      var args = {
+        txProposalId: txp.id,
+        txid: data.txid,
+        amount: txp.getTotalAmount(),
+      };
+
+      var notification = Notification.create({
+        type: 'NewOutgoingTxByThirdParty',
+        data: args,
+        walletId: walletId,
       });
+      self._storeAndBroadcastNotification(notification);
     });
   });
 };
@@ -219,10 +218,7 @@ BlockchainMonitor.prototype._handleIncomingPayments = function(coin, network, da
           walletId: walletId,
         });
 
-        // Todo remove for v8.
-        self.storage.softResetTxHistoryCache(walletId, function() {
-          self._storeAndBroadcastNotification(notification, next);
-        });
+        self._storeAndBroadcastNotification(notification, next);
       });
     });
   }, function(err) {
@@ -244,11 +240,7 @@ BlockchainMonitor.prototype._notifyNewBlock = function(coin, network, hash) {
     },
   });
 
-  self.storage.softResetAllTxHistoryCache(function() {
-    self._storeAndBroadcastNotification(notification, function(err) {
-      return;
-    });
-  });
+  self._storeAndBroadcastNotification(notification, () => {});
 };
 
 BlockchainMonitor.prototype._handleTxConfirmations = function(coin, network, hash) {
@@ -305,8 +297,15 @@ BlockchainMonitor.prototype._handleTxConfirmations = function(coin, network, has
 };
 
 BlockchainMonitor.prototype._handleNewBlock = function(coin, network, hash) {
+
+  // clear height cache.
+  let cacheKey = Storage.BCHEIGHT_KEY + ':' + coin +':' + network;
+
+  this.storage.clearGlobalCache(cacheKey, ()=>{});
+
   this._notifyNewBlock(coin, network, hash);
   this._handleTxConfirmations(coin, network, hash);
+
 };
 
 BlockchainMonitor.prototype._storeAndBroadcastNotification = function(notification, cb) {

@@ -90,12 +90,15 @@ Defaults.HISTORY_CACHE_ADDRESS_THRESOLD = 100;
 // Number of addresses from which balance in cache for a few seconds
 Defaults.BALANCE_CACHE_ADDRESS_THRESOLD = Defaults.HISTORY_CACHE_ADDRESS_THRESOLD;
 
-Defaults.BALANCE_CACHE_DIRECT_DURATION = 60;
 Defaults.BALANCE_CACHE_DURATION = 10;
 
-// Cache time for blockchain height (in seconds)
+// Cache time for blockchain height (in ms) 
+// this is actually erased on 'new block' notifications
+// so, 30m seems fine
 Defaults.BLOCKHEIGHT_CACHE_TIME = 15;
 
+// Cache time fee levels (in ms)
+Defaults.FEE_LEVEL_CACHE_DURATION = 30 * 60 * 1000;
 
 // Max allowed timespan for notification queries in seconds
 Defaults.MAX_NOTIFICATIONS_TIMESPAN = 60 * 60 * 24 * 14; // ~ 2 weeks
@@ -126,7 +129,7 @@ Defaults.RateLimit = {
   // },
 };
 
-Defaults.COIN = 'btc';
+Defaults.COIN = 'xvg';
 Defaults.INSIGHT_REQUEST_POOL_SIZE = 10;
 Defaults.INSIGHT_TIMEOUT = 30000;
 
@@ -137,5 +140,6 @@ Defaults.LOCK_EXE_TIME =     60 * 100000;
 Defaults.SERVER_EXE_TIME = Defaults.LOCK_EXE_TIME * 1.5;
 
 Defaults.BE_KEY_SALT = 'bws-auth-keysalt';
+
 
 module.exports = Defaults;

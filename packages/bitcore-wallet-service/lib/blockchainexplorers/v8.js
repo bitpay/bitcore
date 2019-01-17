@@ -49,6 +49,10 @@ function V8(opts) {
   this.userAgent = opts.userAgent || 'bws';
 
   this.baseUrl  = this.host + this.apiPrefix;
+
+  // for testing
+  //
+  this.request  = opts.request || request;
   Client = opts.client ||Client ||  require('./v8/client');
 }
 
@@ -97,10 +101,6 @@ V8.prototype.translateTx = function(tx) {
 
 };
 
-V8.prototype.supportsGrouping = function () {
-  return true;
-};
-
 V8.prototype._getClient = function () {
   return new Client({
     baseUrl: this.baseUrl,
@@ -116,8 +116,6 @@ V8.prototype._getAuthClient = function (wallet) {
   });
 };
 
-
-
 V8.prototype.addAddresses = function (wallet, addresses, cb) {
   var self = this;
   var client = this._getAuthClient(wallet);
@@ -132,7 +130,7 @@ V8.prototype.addAddresses = function (wallet, addresses, cb) {
     }
   }); 
 
-  var k = 'addAddresses '+addresses.length;
+  var k = 'addAddresses'+addresses.length;
   console.time(k);
   client.importAddresses({ 
     payload: payload, 
@@ -143,8 +141,9 @@ V8.prototype.addAddresses = function (wallet, addresses, cb) {
       return cb(null, ret);
     })
       .catch ((err) => {
-        return cb(err) 
+        return cb(err);
       });
+
 };
 
 
@@ -186,7 +185,8 @@ V8.prototype.getConnectionInfo = function() {
   return 'V8 (' + this.coin + '/' + this.v8network + ') @ ' + this.host;
 };
 
-V8.prototype._transformUtxos = function(unspent) {
+V8.prototype._transformUtxos = function(unspent, bcheight) {
+  $.checkState(bcheight>0, 'No BC height passed to _transformUtxos');
   var self = this;
 
   let ret = _.map(unspent, function(x) {
@@ -203,9 +203,7 @@ V8.prototype._transformUtxos = function(unspent) {
     u.txid = x.mintTxid;
     u.vout = x.mintIndex;
     u.locked = false;
-
-    // TODO
-    u.confirmations = x.confirmations || 0;
+    u.confirmations = x.mintHeight > 0 ?  (bcheight - x.mintHeight  + 1) : 0;
 
     return u;
   });
@@ -216,17 +214,36 @@ V8.prototype._transformUtxos = function(unspent) {
 /**
  * Retrieve a list of unspent outputs associated with an address or set of addresses
  */
-V8.prototype.getUtxos = function(wallet, cb) {
+V8.prototype.getUtxos = function(wallet, height, cb) {
+  $.checkArgument(cb);
   var self = this;
   var client = this._getAuthClient(wallet);
   console.time('V8getUtxos');
   client.getCoins({pubKey: wallet.beAuthPublicKey2, payload: {} })
     .then( (unspent) => {
       console.timeEnd('V8getUtxos');
-      return cb(null,self._transformUtxos(unspent));
+      return cb(null,self._transformUtxos(unspent, height));
     })
     .catch(cb);
 };
+
+/**
+ * Check wallet addresses
+ */
+V8.prototype.getCheckData = function(wallet, cb) {
+  var self = this;
+  var client = this._getAuthClient(wallet);
+  console.time('WalletCheck');
+  client.getCheckData({pubKey: wallet.beAuthPublicKey2, payload: {} })
+    .then( (checkInfo) => {
+      console.timeEnd('WalletCheck');
+      return cb(null,checkInfo);
+    })
+    .catch(cb);
+};
+
+
+
 /**
  * Broadcast a transaction to the bitcoin network
  */
@@ -279,15 +296,16 @@ console.log('[v8.js.207] GET TX', txid); //TODO
 };
 
 
-V8.prototype.getAddressUtxos = function(address, cb) {
+V8.prototype.getAddressUtxos = function(address, height, cb) {
   var self = this;
-console.log('[v8.js.207] GET ADDR UTXO', address); //TODO
+console.log(' GET ADDR UTXO', address, height); //TODO
   var client = this._getClient();
+
   client.getAddressTxos({address: address, unspent: true })
     .then( (utxos) => {
-      return cb(null,self._transformUtxos(utxos));
+      return cb(null,self._transformUtxos(utxos, height));
     })
-    .catch(cb);
+      .catch(cb);
 };
 
 
@@ -364,7 +382,7 @@ V8.prototype.getAddressActivity = function(address, cb) {
 
   var url = this.baseUrl + '/address/' + this.translateQueryAddresses(address) + '/txs?limit=1';
 console.log('[v8.js.328:url:] CHECKING ADDRESS ACTIVITY',url); //TODO
-  request.get(url, {})
+  this.request.get(url, {})
     .then( (ret) => {
       return cb(null, ret !== '[]');
     })
@@ -381,7 +399,7 @@ V8.prototype.estimateFee = function(nbBlocks, cb) {
 
   async.each(nbBlocks, function(x, icb) {
     var url = self.baseUrl + '/fee/' + x;
-    request.get(url, {})
+    self.request.get(url, {})
       .then( (ret) => {
         result[x] = ret;
         return icb();
@@ -399,7 +417,7 @@ V8.prototype.estimateFee = function(nbBlocks, cb) {
 V8.prototype.getBlockchainHeight = function(cb) {
   var url = this.baseUrl + '/block/tip';
 
-  request.get(url, {})
+  this.request.get(url, {})
     .then( (ret) => {
       try {
         ret = JSON.parse(ret);
@@ -413,7 +431,7 @@ V8.prototype.getBlockchainHeight = function(cb) {
 
 V8.prototype.getTxidsInBlock = function(blockHash, cb) {
   var url = this.baseUrl + '/tx/?blockHash=' + blockHash;
-  request.get(url, {})
+  this.request.get(url, {})
     .then( (ret) => {
       try {
         ret = JSON.parse(ret);
@@ -429,7 +447,7 @@ V8.prototype.getTxidsInBlock = function(blockHash, cb) {
 
 V8.prototype.initSocket = function(callbacks) {
   var self = this;
-  log.info('V8 connecting socket at:' + this.host);;
+  log.info('V8 connecting socket at:' + this.host);
   // sockets always use the first server on the pull
   var socket = io.connect(this.host, {transports: ['websocket']});
 

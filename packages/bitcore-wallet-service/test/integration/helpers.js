@@ -65,10 +65,17 @@ helpers.beforeEach = function(cb) {
   if (!storage.db) return cb();
   storage.db.dropDatabase(function(err) {
     if (err) return cb(err);
-    blockchainExplorer = sinon.stub();
-    blockchainExplorer.supportsGrouping = function () {
-      return false;
-    }
+    let be = blockchainExplorer = sinon.stub();
+
+
+    be.register = sinon.stub().callsArgWith(1, null, null);
+    be.addAddresses = sinon.stub().callsArgWith(2, null, null);
+    be.getAddressUtxos = sinon.stub().callsArgWith(2, null, []);
+    be.getCheckData = sinon.stub().callsArgWith(1, null, {sum: 100});
+    be.getUtxos = sinon.stub().callsArgWith(1, null,[]);
+    be.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000, 'hash');
+
+
     var opts = {
       storage: storage,
       blockchainExplorer: blockchainExplorer,
@@ -202,7 +209,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
   server.createWallet(walletOpts, function(err, walletId) {
     if (err) return cb(err);
 
-    async.each(_.range(n), function(i, cb) {
+    async.eachSeries(_.range(n), function(i, cb) {
       var copayerData = TestData.copayers[i + offset];
 
 
@@ -232,6 +239,8 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
       if (err) return new Error('Could not generate wallet');
       helpers.getAuthServer(copayerIds[0], function(s) {
         s.getWallet({}, function(err, w) {
+
+          sinon.stub(s, 'checkWalletSync').callsArgWith(2, null, true);
           cb(s, w);
         });
       });
@@ -296,7 +305,6 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
   if (!helpers._utxos) helpers._utxos = {};
 
   var S = Bitcore_[wallet.coin].Script;
-
   async.waterfall([
 
     function(next) {
@@ -344,18 +352,20 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
         helpers._utxos = utxos;
       }
 
-      blockchainExplorer.getUtxos = function(param1, cb) {
+      blockchainExplorer.getUtxos = function(param1, height, cb) {
         
         var selected;
-        if (blockchainExplorer.supportsGrouping()) {
-          selected = _.filter(helpers._utxos, {'wallet': param1.id});
-        } else {
-          selected = _.filter(helpers._utxos, function(utxo) {
-            return _.includes(param1, utxo.address);
-          });
-        }
+        selected = _.filter(helpers._utxos, {'wallet': param1.id});
         return cb(null, selected);
       };
+
+
+      blockchainExplorer.getAddressUtxos = function(param1, height, cb) {
+        var selected;
+        selected = _.filter(helpers._utxos, {'address': param1});
+        return cb(null, selected);
+      };
+
 
       return next();
     },
@@ -369,34 +379,6 @@ helpers.stubBroadcast = function(thirdPartyBroadcast) {
   blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, null, '112233');
   blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
 };
-
-helpers.stubHistory = function(txs) {
-  var totalItems = txs.length;
-  blockchainExplorer.getTransactions = function(addresses, from, to, cb) {
-    var MAX_BATCH_SIZE = 100;
-    var nbTxs = txs.length;
-
-    if (_.isUndefined(from) && _.isUndefined(to)) {
-      from = 0;
-      to = MAX_BATCH_SIZE;
-    }
-    if (!_.isUndefined(from) && _.isUndefined(to))
-      to = from + MAX_BATCH_SIZE;
-
-    if (!_.isUndefined(from) && !_.isUndefined(to) && to - from > MAX_BATCH_SIZE)
-      to = from + MAX_BATCH_SIZE;
-
-    if (from < 0) from = 0;
-    if (to < 0) to = 0;
-    if (from > nbTxs) from = nbTxs;
-    if (to > nbTxs) to = nbTxs;
-
-    var page = txs.slice(from, to);
-    return cb(null, page, totalItems);
-  };
-};
-
-
 
 helpers.createTxsV8 = function(nr, bcHeight, txs) {
   txs = txs || [];
@@ -439,6 +421,14 @@ helpers.stubHistoryV8 = function(nr, bcHeight, txs) {
     });
     return cb(null, page);
   };
+};
+
+
+helpers.stubCheckData = function(bc, server, isBCH, cb) {
+  server.storage.walletCheck({walletId:server.walletId, bch: isBCH}).then((x) => {
+    bc.getCheckData = sinon.stub().callsArgWith(1, null, {sum: x.sum});
+    return cb();
+  });
 };
 
 
@@ -513,6 +503,7 @@ helpers.getProposalSignatureOpts = function(txp, signingKey) {
 
 helpers.createAddresses = function(server, wallet, main, change, cb) {
   // var clock = sinon.useFakeTimers('Date');
+  
   async.mapSeries(_.range(main + change), function(i, next) {
     // clock.tick(1000);
     var address = wallet.createAddress(i >= main);
@@ -522,11 +513,13 @@ helpers.createAddresses = function(server, wallet, main, change, cb) {
   }, function(err, addresses) {
     should.not.exist(err);
     // clock.restore();
+
     return cb(_.take(addresses, main), _.takeRight(addresses, change));
   });
 };
 
 helpers.createAndPublishTx = function(server, txOpts, signingKey, cb) {
+
   server.createTx(txOpts, function(err, txp) {
     should.not.exist(err, "Error creating a TX");
     should.exist(txp,"Error... no txp");
@@ -587,15 +580,6 @@ helpers.historyCacheTest = function(items) {
   });
 
   return ret;
-};
-
-helpers.setupGroupingBE = function (be) {
-  be.supportsGrouping = function () {
-    return true;
-  }
-  be.register = sinon.stub().callsArgWith(1, null, null);
-  be.addAddresses = sinon.stub().callsArgWith(2, null, null);
-  be.getAddressUtxos = sinon.stub().callsArgWith(1, null, helpers._utxos);
 };
 
 module.exports = helpers;

@@ -9,9 +9,9 @@ var B = require('bitcore-lib-cash');
 const { Readable } = require('stream');
 
 const V8UTXOS = [
-{"_id":"5c1d4bc47adced963b3cddb9","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"6e34d9b83631cd55ee09d907061332ba3c17246e3c1255543fb7a35e58c52e42","mintHeight":1275259,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":1000000,"confirmations":-1},
-{"_id":"5c1e33e17adced963b776bcf","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"fb1340bae2431f71c5f14d0c5893cbfb09042dcb9602b858ccec43e0e1e2f1a1","mintHeight":1275390,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":2000000,"confirmations":-1},
-{"_id":"5c21088f7adced963b33eea2","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"42eeb1d139521fa5206685ffec5df3b302cf85561201178680a0efe6bd23d449","mintHeight":1275773,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":2000000,"confirmations":-1}];
+{"_id":"5c1d4bc47adced963b3cddb9","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"6e34d9b83631cd55ee09d907061332ba3c17246e3c1255543fb7a35e58c52e42","mintHeight":12,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":1000000,"confirmations":-1},
+{"_id":"5c1e33e17adced963b776bcf","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"fb1340bae2431f71c5f14d0c5893cbfb09042dcb9602b858ccec43e0e1e2f1a1","mintHeight":15,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":2000000,"confirmations":-1},
+{"_id":"5c21088f7adced963b33eea2","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"42eeb1d139521fa5206685ffec5df3b302cf85561201178680a0efe6bd23d449","mintHeight":-1,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":2000000,"confirmations":-1}];
 
 
 
@@ -27,7 +27,6 @@ var external = '11234';
 var txs = [{
   id: 1,
   txid: 'txid1',
-  confirmations: 1,
   blockTime: t,
   size: 226,
   category: 'send',
@@ -37,7 +36,6 @@ var txs = [{
 {
   id: 2,
   txid: 'txid2',
-  confirmations: 1,
   category: 'send',
   blockTime: t,
   satoshis: 0.3e8,
@@ -46,7 +44,6 @@ var txs = [{
 {
   id: 3,
   txid: 'txid3',
-  confirmations: 1,
   blockTime: t,
   satoshis: 5460,
   category: 'fee',
@@ -137,6 +134,8 @@ describe('V8', () => {
 
   describe('#getAddressUtxos', () => {
     it('should get uxtos', (done) => {
+
+
       class PartialJson extends Client {
         getAddressTxos(opts) {
           return new Promise(function (resolve) {
@@ -154,16 +153,21 @@ describe('V8', () => {
         client: PartialJson,
       });
 
-      be.getAddressUtxos('1EU9VhWRN7aW38pGk7qj3c2EDcUGDZKESt', (err, utxos) => {
+      be.getAddressUtxos('1EU9VhWRN7aW38pGk7qj3c2EDcUGDZKESt', 15, (err, utxos) => {
         should.not.exist(err);
         should.exist(utxos);
         let x = utxos[2];
+        x.confirmations.should.equal(0);
         x.address.should.equal('n4J9viXAWZQi3n1eYVuvMXPEmJ7Ckrw7jw');
         x.satoshis.should.equal(2000000);
         x.amount.should.equal(x.satoshis/1e8);
         x.scriptPubKey.should.equal('76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac');
         x.txid.should.equal('42eeb1d139521fa5206685ffec5df3b302cf85561201178680a0efe6bd23d449');
         x.vout.should.equal(0);
+
+        utxos[1].confirmations.should.equal(1);
+        utxos[0].confirmations.should.equal(4);
+
         return done();
       });
     });

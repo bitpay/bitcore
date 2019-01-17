@@ -1,8 +1,12 @@
-import { Component } from '@angular/core';
-import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { Component, Injectable } from '@angular/core';
+import { IonicPage, NavParams } from 'ionic-angular';
+import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { RedirProvider } from '../../providers/redir/redir';
 import { TxsProvider } from '../../providers/transactions/transactions';
+
+@Injectable()
 
 @IonicPage({
   name: 'transaction',
@@ -18,15 +22,16 @@ export class TransactionPage {
   public tx: any = {};
 
   constructor(
-    public navCtrl: NavController,
     public navParams: NavParams,
     private apiProvider: ApiProvider,
     private txProvider: TxsProvider,
-    public currency: CurrencyProvider
+    public currency: CurrencyProvider,
+    private logger: Logger,
+    public redirProvider: RedirProvider
   ) {
     this.txId = navParams.get('txId');
-    const chain: string = navParams.get('chain');
-    const network: string = navParams.get('network');
+    const chain: string = this.apiProvider.getConfig().chain;
+    const network: string = this.apiProvider.getConfig().network;
     this.apiProvider.changeNetwork({ chain, network });
   }
 
@@ -38,17 +43,13 @@ export class TransactionPage {
         // Be aware that the tx component is loading data into the tx object
       },
       err => {
-        console.log('err is', err);
+        this.logger.error(err);
         this.loading = false;
       }
     );
   }
 
   public goToBlock(blockHash: string): void {
-    this.navCtrl.push('block-detail', {
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
-      blockHash
-    });
+    this.redirProvider.redir('block-detail', blockHash);
   }
 }
