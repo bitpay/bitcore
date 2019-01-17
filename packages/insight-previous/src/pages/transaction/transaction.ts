@@ -9,7 +9,8 @@ import { TxsProvider } from '../../providers/transactions/transactions';
 @Injectable()
 @IonicPage({
   name: 'transaction',
-  segment: ':chain/:network/tx/:txId'
+  segment: ':chain/:network/tx/:txId',
+  defaultHistory: ['home']
 })
 @Component({
   selector: 'page-transaction',
@@ -49,6 +50,10 @@ export class TransactionPage {
   }
 
   public goToBlock(blockHash: string): void {
-    this.redirProvider.redir('block-detail', blockHash);
+    this.redirProvider.redir('block-detail', {
+      blockHash,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+    });
   }
 }

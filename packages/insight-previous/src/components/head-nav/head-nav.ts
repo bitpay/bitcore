@@ -135,11 +135,12 @@ export class HeadNavComponent {
         if (this.navCtrl.getActive().component.name === 'HomePage') {
           this.updateView.next(data);
         } else {
-          this.navCtrl.setRoot('home', {
-            chain: this.config.chain,
-            network: this.config.network
-          });
+          this.navCtrl.popToRoot();
         }
+        this.navCtrl.setRoot('home', {
+          chain: this.config.chain,
+          network: this.config.network
+        });
       }
     });
   }

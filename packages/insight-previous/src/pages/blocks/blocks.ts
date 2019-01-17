@@ -7,7 +7,8 @@ import { Logger } from '../../providers/logger/logger';
 @Injectable()
 @IonicPage({
   name: 'blocks',
-  segment: ':chain/:network/blocks'
+  segment: ':chain/:network/blocks',
+  defaultHistory: ['home']
 })
 @Component({
   selector: 'page-blocks',

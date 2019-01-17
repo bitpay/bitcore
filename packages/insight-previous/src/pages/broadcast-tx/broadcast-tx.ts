@@ -6,7 +6,9 @@ import { ApiProvider } from '../../providers/api/api';
 
 @Injectable()
 @IonicPage({
-  segment: ':chain/:network/broadcast-tx'
+  name: 'broadcast-tx',
+  segment: ':chain/:network/broadcast-tx',
+  defaultHistory: ['home']
 })
 @Component({
   selector: 'page-broadcast-tx',

@@ -7,7 +7,7 @@ import { PriceProvider } from '../../providers/price/price';
 @Injectable()
 @IonicPage({
   name: 'home',
-  segment: ':chain/:network/'
+  segment: ':chain/:network'
 })
 @Component({
   selector: 'page-home',
@@ -30,6 +30,7 @@ export class HomePage {
         navParams.get('network') ||
         this.apiProvider.networkSettings.value.selectedNetwork.network
     };
+    this.apiProvider.changeNetwork(chainNetwork);
     this.loadView(chainNetwork, false);
   }
 

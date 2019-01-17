@@ -12,7 +12,8 @@ import {
 @Injectable()
 @IonicPage({
   name: 'address',
-  segment: ':chain/:network/address/:addrStr'
+  segment: ':chain/:network/address/:addrStr',
+  defaultHistory: ['home']
 })
 @Component({
   selector: 'page-address',

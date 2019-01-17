@@ -14,6 +14,9 @@ export class InsightApp {
   private menu: MenuController;
   private platform: Platform;
 
+  private chain: string;
+  private network: string;
+
   public rootPage: any;
   public pages: Array<{ title: string; component: any; icon: any }>;
 
@@ -33,17 +36,22 @@ export class InsightApp {
     this.pages = [
       { title: 'Home', component: 'home', icon: 'home' },
       { title: 'Blocks', component: 'blocks', icon: 'logo-buffer' },
-      {
-        title: 'Broadcast Transaction',
-        component: 'BroadcastTxPage',
-        icon: 'ios-radio-outline'
-      }
+      { title: 'Broadcast Transaction', component: 'broadcast-tx', icon: 'ios-radio-outline' }
     ];
-  }
+
+    this.apiProvider.networkSettings.subscribe((d) => {
+      console.log('[app.component.ts:43]',d); /* TODO */
+      this.chain = d.selectedNetwork.chain;
+      this.network = d.selectedNetwork.network;
+    });
+  } 
 
   private initializeApp(): void {
     this.platform.ready().then(() => {
-      this.rootPage = HomePage;
+      this.nav.setRoot('home', {
+        chain: this.chain,
+        network: this.network
+      });
       this.subscribeRedirEvent();
     });
   }
@@ -59,8 +67,8 @@ export class InsightApp {
     this.menu.close();
     // navigate to the new page if it is not the current page
     this.nav.push(page.component, {
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+      chain: this.chain,
+      network: this.network
     });
   }
 }

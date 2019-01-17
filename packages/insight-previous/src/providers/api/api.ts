@@ -15,8 +15,7 @@ export interface NetworkSettings {
 @Injectable()
 export class ApiProvider {
   public networkSettings = new BehaviorSubject<NetworkSettings>({
-    availableNetworks: undefined,
-    // FIXME: a lot of code still depends on this value being available instantly – needs to be rewritten to accommodate `undefined`
+    availableNetworks: [{ chain: 'BTC', network: 'mainnet' }],
     selectedNetwork: { chain: 'BTC', network: 'mainnet' }
   });
 
@@ -25,7 +24,7 @@ export class ApiProvider {
       const availableNetworks = data.json() as ChainNetwork[];
       this.networkSettings.next({
         availableNetworks,
-        selectedNetwork: availableNetworks[0]
+        selectedNetwork: this.networkSettings.value.selectedNetwork
       });
     });
   }
