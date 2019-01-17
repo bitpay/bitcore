@@ -1242,6 +1242,7 @@ Storage.prototype.clearExpiredLock = function(key, cb) {
   }, (err, ret) => {
     if (err || !ret) return;
 
+console.log('[storage.js.1244]', ret.expireOn , Date.now()); //TODO
     if (ret.expireOn < Date.now()) {
       log.info("Releasing expired lock : " + key);
       return self.releaseLock(key, cb);

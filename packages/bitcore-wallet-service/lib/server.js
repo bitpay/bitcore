@@ -3558,7 +3558,12 @@ WalletService.prototype.getTxHistory = function(opts, cb) {
   self.getWallet({}, function(err, wallet) {
     if (err) return cb(err);
 
-    // TODO
+    if (wallet.scanStatus == 'error') 
+      return cb(Errors.WALLET_NEED_SCAN);
+
+    if (wallet.scanStatus == 'running') 
+      return cb(Errors.WALLET_BUSY);
+
     bc = self._getBlockchainExplorer(wallet.coin, wallet.network);
     if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
 
