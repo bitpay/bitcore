@@ -1,7 +1,7 @@
 Event Listener Event:
 "data"
 
-@params
+@params: tx - An object with properties associated to a transaction
 ```
 tx = {
   txid: string;
@@ -28,9 +28,11 @@ Room namespace:
 ```
 
 Emit Event:
+```
 'tx'
+```
 
-@returns 
+@returns sanitizedTx - An object with a list of sanitized wallets
 ```
 sanitizedTx = {
     wallets: ObjectID[];
@@ -40,12 +42,16 @@ sanitizedTx = {
 ```
 
 Room namespace:
+```
 /${chain}/${network}/inv
+```
 
 Emit Event
+```
 'block'
-xw
-@params && @returns 
+```
+
+@params && @returns - a Block on a blockchain
 ```
 block = {
   chain: string;
@@ -68,7 +74,7 @@ block = {
 }
 ```
 
-@params 
+@params - A coin and an address
 ```
 addressCoin = { 
     coins: {
@@ -91,8 +97,11 @@ addressCoin = {
 ```
 
 Room namespaces: 
+```
 /${chain}/${network}/address
+
 /${chain}/${network}/inv
+```
 
 Emit Events
 ```
@@ -100,7 +109,7 @@ Emit Events
 'coin'
 ```
 
-@returns 
+@returns - sanitizedCoins
 ```
 sanitizedCoin = {
     wallets: ObjectID[];
