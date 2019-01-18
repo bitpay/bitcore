@@ -167,11 +167,13 @@ export class BlockModel extends BaseModel<IBlock> {
       const prevBlock = await this.collection.findOne({ chain, network, hash: header.prevHash });
       if (prevBlock) {
         localTip = prevBlock;
+        this.chainTips[chain][network] = prevBlock;
       } else {
+        delete this.chainTips[chain][network];
         logger.error(`Previous block isn't in the DB need to roll back until we have a block in common`);
       }
+      logger.info(`Resetting tip to ${localTip.height - 1}`, { chain, network });
     }
-    logger.info(`Resetting tip to ${localTip.height}`, { chain, network });
     const reorgOps = [
       this.collection.deleteMany({ chain, network, height: { $gte: localTip.height } }),
       TransactionStorage.collection.deleteMany({ chain, network, blockHeight: { $gte: localTip.height } }),

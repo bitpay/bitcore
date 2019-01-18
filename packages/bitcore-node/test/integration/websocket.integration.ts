@@ -28,7 +28,7 @@ describe('Websockets', () => {
       chainConfig
     });
 
-    await rpc.generate(1);
+    await rpc.generate(5);
     await p2pWorker.start();
     await p2pWorker.sync();
     await rpc.generate(1);

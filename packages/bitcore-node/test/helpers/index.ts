@@ -11,6 +11,7 @@ import { RateLimitStorage } from "../../src/models/rateLimit";
 import { EventStorage } from "../../src/models/events";
 
 export async function resetDatabase() {
+  console.log('Restting database');
   await resetModel(BlockStorage);
   await resetModel(TransactionStorage);
   await resetModel(CoinStorage);
@@ -29,6 +30,7 @@ export function mockCollection(toReturn, collectionMethods = {}) {
   const mock = Object.assign(
     {
       find: sinon.stub().returnsThis(),
+      count: sinon.stub().returnsThis(),
       sort: sinon.stub().returnsThis(),
       insertOne: sinon.stub().resolves(),
       insertMany: sinon.stub().resolves(),
