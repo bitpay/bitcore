@@ -101,7 +101,7 @@ export class Wallet {
     let alreadyExists;
     try {
       alreadyExists = await this.loadWallet({ storage, name, chain, network });
-    } catch (err) {}
+    } catch (err) { }
     if (alreadyExists) {
       throw new Error('Wallet already exists');
     }
@@ -141,7 +141,7 @@ export class Wallet {
         chain,
         network
       });
-    } catch (err) {}
+    } catch (err) { }
     return alreadyExists != undefined;
   }
 
@@ -218,7 +218,7 @@ export class Wallet {
     return this.client.getFee({ target });
   }
 
-  getUtxos(params: {includeSpent?: boolean} = {}) {
+  getUtxos(params: { includeSpent?: boolean } = {}) {
     const { includeSpent = false } = params;
     return this.client.getCoins({
       pubKey: this.authPubKey,
@@ -276,7 +276,15 @@ export class Wallet {
 
   async signTx(params) {
     let { tx } = params;
-    const utxos = params.utxos || (await this.getUtxos(params));
+    const utxos = params.utxos || [];
+    if (!params.utxos) {
+      this.getUtxos(params).on('data', (data) => {
+        const stringData = data.toString().replace(',\n', '');
+        if (stringData.includes('{') && stringData.includes('}')) {
+          utxos.push(JSON.parse(stringData));
+        }
+      })
+    }
     const payload = {
       chain: this.chain,
       network: this.network,
