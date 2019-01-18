@@ -21,13 +21,14 @@ describe('Websockets', () => {
     await resetDatabase();
   });
 
-  it.only('should get a new block when one is generated', async () => {
+  it('should get a new block when one is generated', async () => {
     const p2pWorker = new P2pWorker({
       chain,
       network,
       chainConfig
     });
 
+    await rpc.generate(1);
     await p2pWorker.start();
     await p2pWorker.sync();
     await rpc.generate(1);
@@ -51,7 +52,7 @@ describe('Websockets', () => {
     await p2pWorker.stop();
   });
 
-  it.only('should get a websocket event when a block is added', async () => {
+  it('should get a websocket event when a block is added', async () => {
     await Event.start();
     await Api.start();
 
@@ -61,6 +62,7 @@ describe('Websockets', () => {
       chainConfig
     });
 
+    await rpc.generate(1);
     await p2pWorker.start();
     await p2pWorker.sync();
     await rpc.generate(1);
