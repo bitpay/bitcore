@@ -21,7 +21,7 @@ touch .bashrc
 ```
 
 Edit the .profile file to insert:
-*Make sure to change* 
+> *Make sure to replace username*
 
 ```
 alias bitcoinmainnet='/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/mainnet/'
@@ -52,7 +52,7 @@ To run RegTest Bitcoin Core RegTest Client
 bitcoinregtest
 ```
 
-If successful Bitcore logo should be blue and syncing blocks on mongod in the background
+> If successful Bitcore logo should be blue and syncing blocks on mongod in the background
 
 ## How to Generate Blocks
 
