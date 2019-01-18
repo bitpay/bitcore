@@ -1,8 +1,8 @@
-<ion-header>
-  <head-nav [title]="'insight'" (updateView)="loadView($event,true)"></head-nav>
-</ion-header>
+<head-nav [title]="'insight'" (updateView)="loadView($event,true)"></head-nav>
 
 <ion-content padding>
-  <h2>Latest Blocks</h2>
-  <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" #latestBlocks></latest-blocks>
+  <div class="page-content">
+    <h2>Latest Blocks</h2>
+    <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" #latestBlocks></latest-blocks>
+  </div>
 </ion-content>
