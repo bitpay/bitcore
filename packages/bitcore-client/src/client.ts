@@ -66,7 +66,7 @@ export class Client {
       this.baseUrl
     }/wallet/${pubKey}/utxos?includeSpent=${includeSpent}`;
     const signature = this.sign({ method: 'GET', url, payload });
-    return requestStream(url, {
+    return requestStream.get(url, {
       headers: { 'x-signature': signature },
       body: payload,
       json: true
