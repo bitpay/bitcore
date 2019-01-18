@@ -8,21 +8,31 @@ cd ~
 
 Create a .profile file if missing
 
+OR
+
+Create a .bashrc if configuring for interactive Bash usage
+
 ```
 touch .profile
+
+OR
+
+touch .bashrc
 ```
 
 Edit the .profile file to insert:
+*Make sure to change* 
 
 ```
-alias tnbitpay='/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/mainnet/'
+alias bitcoinmainnet='/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/mainnet/'
 
-alias tnbitpayreg='/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/regtest/'
+alias bitcoinregtest='/Applications/Bitcoin-Qt.app/Contents/MacOS/Bitcoin-Qt -datadir=/Users/username/blockchains/bitcoin-core/networks/regtest/'
 
-alias tnbitpaycashreg='/Applications/BitcoinABC-Qt.app/Contents/MacOS/BitcoinABC-Qt -datadir=/Users/username/blockchains/bitcoincash/networks/regtest/ -flexiblehandshake -initiatecashconnections'
+alias bitcoincashmainnet='/Applications/BitcoinABC-Qt.app/Contents/MacOS/BitcoinABC-Qt -datadir=/Users/username/blockchains/bitcoincash/networks/mainnet/ -flexiblehandshake -initiatecashconnections'
 
-alias tnbitpaycash='/Applications/BitcoinABC-Qt.app/Contents/MacOS/BitcoinABC-Qt -datadir=/Users/username/blockchains/bitcoincash/networks/mainnet/ -flexiblehandshake -initiatecashconnections'
+alias bitcoincashregtest='/Applications/BitcoinABC-Qt.app/Contents/MacOS/BitcoinABC-Qt -datadir=/Users/username/blockchains/bitcoincash/networks/regtest/ -flexiblehandshake -initiatecashconnections'
 ```
+
 Ensure Mongod is running
 
 ```
@@ -35,12 +45,14 @@ Start the Bitcore node in the /bitcore/ project root directory
 npm run node
 ```
 
-To run RegTest Bitcoin Core Client
+To run RegTest Bitcoin Core RegTest Client
 
 ```
-. .profile
-tnbitpayreg
+. ~/.profile
+bitcoinregtest
 ```
+
+If successful Bitcore logo should be blue and syncing blocks on mongod in the background
 
 ## How to Generate Blocks
 
@@ -60,4 +72,3 @@ getaccountaddress ""
 Test transactions by sending to account address in the send tab
 
 Check transaction results in the Transactions tab
-
