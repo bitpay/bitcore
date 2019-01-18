@@ -25,7 +25,7 @@ export class EventService {
     this.signalAddressCoin = this.signalAddressCoin.bind(this);
   }
 
-  start() {
+  async start() {
     if (this.configService.isDisabled('event')) {
       logger.info('Disabled Event Service');
       return;
@@ -33,10 +33,10 @@ export class EventService {
     logger.info('Starting Event Service');
     this.stopped = false;
     if (this.storageService.connected) {
-      this.wireup();
+      return this.wireup();
     } else {
       this.storageService.connection.on('CONNECTED', () => {
-        this.wireup();
+        return this.wireup();
       });
     }
   }
