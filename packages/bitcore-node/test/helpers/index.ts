@@ -1,3 +1,4 @@
+import { StateStorage } from "../../src/models/state";
 import * as sinon from 'sinon';
 import { BlockStorage } from '../../src/models/block';
 import { TransactionStorage } from '../../src/models/transaction';
@@ -13,6 +14,7 @@ export async function resetDatabase() {
   await resetModel(CoinStorage);
   await resetModel(WalletAddressStorage);
   await resetModel(WalletStorage);
+  await resetModel(StateStorage);
 }
 
 export async function resetModel(model: BaseModel<any>) {
