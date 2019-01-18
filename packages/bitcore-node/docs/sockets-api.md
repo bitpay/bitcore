@@ -26,7 +26,7 @@ socket.on('tx', sanitizedTx => {
 });
 ```
 
-@params **sanitizedTx** - Transactions object without wallets property
+@return **sanitizedTx** - Transactions object without wallets property
 ```
 sanitizedTx = {
   txid: string;
@@ -53,26 +53,25 @@ socket.on('block', block => {
 });
 ```
 
-@params - **block** - A specified block on a blockchain
+@returns - **block** - A specified block on a blockchain
 ```
 block = {
-  chain: string;
-  confirmations?: number;
-  network: string;
-  height: number;
-  hash: string;
-  version: number;
-  merkleRoot: string;
-  time: Date;
-  timeNormalized: Date;
-  nonce: number;
-  previousBlockHash: string;
-  nextBlockHash: string;
-  transactionCount: number;
-  size: number;
-  bits: number;
-  reward: number;
-  processed: boolean;
+  chain: 'BTC',
+  network: 'regtest',
+  hash: '529e8ecb8db4e40f604b180e835cf53cf0eafbd43fbea13ced38ac9faf819560',
+  height: 611,
+  version: 536870912,
+  nextBlockHash: '',
+  previousBlockHash: '089a4f003633b5a9b845c0d0fa22dd0601780bdc7eba0367ae89d11809552cd7',
+  merkleRoot: 'dcc481de07b3cac9d9bac855beddaf1679653b92a89e721c93b740d6d4f39ade',
+  time: '2019-01-17T21:41:31.000Z',
+  timeNormalized: '2019-01-17T21:41:31.000Z',
+  bits: 545259519,
+  nonce: 2,
+  transactionCount: 2,
+  size: 430,
+  reward: 312505140,
+  processed: false 
 }
 ```
 
@@ -89,7 +88,7 @@ socket.on('1JfbZRwdDHKZmuiZgYArJZhcuuzuw2HuMu', sanitizedCoin => {
 });
 ```
 
-@params - **sanitizedCoin** - A coin object without wallets property
+@returns - **sanitizedCoin** - A coin object without wallets property
 ```
 sanitizedCoin = {
   network: string;
@@ -113,7 +112,7 @@ socket.on('coin', sanitizedCoin => {
 });
 ```
 
-@params - **sanitizedCoin** - A coin object without wallets property
+@returns - **sanitizedCoin** - A coin object without wallets property
 ```
 sanitizedCoin = {
   network: string;
