@@ -63,8 +63,8 @@ export class InsightApp {
     this.menu.close();
     if (page !== this.activePage) {
       this.nav.setRoot(page.component, {
-        chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-        network: this.apiProvider.networkSettings.value.selectedNetwork.network
+        chain: this.chain,
+        network: this.network
       });
       this.activePage = page;
     }
