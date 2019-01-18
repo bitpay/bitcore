@@ -83,6 +83,7 @@ export class HeadNavComponent {
             this.redirTo = 'address';
             this.params['addrStr'] = res.json()[0].address;
           }
+          this.navCtrl.setRoot('home', this.params, { animate: false });
           this.redirProvider.redir(this.redirTo, this.params);
         },
         err => {
