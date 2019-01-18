@@ -77,7 +77,7 @@ Storage.prototype._createIndexes = function() {
   });
   this.db.collection(collections.ADDRESSES).createIndex({
     address: 1,
-  });
+  }, {unique: 1});
    this.db.collection(collections.ADDRESSES).createIndex({
     address: 1,
     beRegistered: 1
@@ -487,10 +487,7 @@ Storage.prototype.fetchAddresses = function(walletId, cb) {
     if (err) return cb(err);
     if (!result) return cb();
 
-    var addresses = _.map(result, function(address) {
-      return Model.Address.fromObj(address);
-    });
-    return cb(null, addresses);
+    return cb(null, result.map(Model.Address.fromObj));
   });
 };
 
@@ -520,10 +517,7 @@ Storage.prototype.fetchNewAddresses = function(walletId, fromTs, cb) {
   }).toArray(function(err, result) {
     if (err) return cb(err);
     if (!result) return cb();
-    var addresses = _.map(result, function(address) {
-      return Model.Address.fromObj(address);
-    });
-    return cb(null, addresses);
+    return cb(null, addresses.map(Model.Address.fromObj));
   });
 };
 
@@ -602,6 +596,21 @@ Storage.prototype.fetchAddressByWalletId = function(walletId, address, cb) {
     return cb(null, Model.Address.fromObj(result));
   });
 };
+
+
+Storage.prototype.fetchAddressesByWalletId = function(walletId, addresses, cb) {
+  var self = this;
+
+  this.db.collection(collections.ADDRESSES).find({
+    walletId: walletId,
+    address: { '$in': addresses }, 
+  }, {address: true, isChange: true} ).toArray(function(err, result) {
+    if (err) return cb(err);
+    if (!result) return cb();
+    return cb(null, result);
+  });
+};
+
 
 Storage.prototype.fetchAddressByCoin = function(coin, address, cb) {
   var self = this;

@@ -3373,18 +3373,20 @@ describe('client API', function() {
   });
 
   describe('Multiple output proposals', function() {
-    var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
-    var opts = {
-      message: 'hello',
-      outputs: [{
-        amount: 10000,
-        toAddress: toAddress,
-        message: 'world',
-      }],
-      feePerKb: 100e2,
-    };
-
+    var toAddress;
+    var opts;
     beforeEach(function(done) {
+      toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+      opts = {
+        message: 'hello',
+        outputs: [{
+          amount: 10000,
+          toAddress: toAddress,
+          message: 'world',
+        }],
+        feePerKb: 100e2,
+      };
+
       var http = sinon.stub();
       http.yields(null, TestData.payProBuf);
       helpers.createAndJoinWallet(clients, 1, 1, function(w) {

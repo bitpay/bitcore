@@ -207,6 +207,38 @@ Credentials.prototype._hashFromEntropy = function(prefix, length) {
 Credentials.prototype._expand = function() {
   $.checkState(this.xPrivKey || (this.xPubKey && this.entropySource));
 
+  /* Derivation dependencies
+   *
+   * For signing software wallets with mnemonic
+     mnemonic (+passphrase)->  xPrivKey -> xPubKey -> (+ coin) copayerId
+                                        -> reqPrivKey
+                                        -> entropySource -> personalEncryptingKey
+
+   * For signing software wallets without mnemonic
+   *
+     xPrivKey -> xPubKey -> (+ coin) copayerId
+              -> reqPrivKey
+              -> entropySource -> personalEncryptingKey
+
+
+
+   * For RO software wallets  (MUST provide `entropySourceHex`)
+   *
+      entropySourceHex -> (hashx2) entropySource 
+
+      xPubKey -> (+ coin) copayerId
+      entropySource   -> reqPrivKey
+                      -> personalEncryptingKey
+
+   * For Hardware wallets
+      entropySourcePath -> (+hw xPub derivation)  entropySource 
+
+      xPubKey -> (+ coin) copayerId
+      entropySource   -> reqPrivKey
+                      -> personalEncryptingKey
+ 
+ 
+  */
 
   var network = Credentials._getNetworkFromExtendedKey(this.xPrivKey || this.xPubKey);
   if (this.network) {
