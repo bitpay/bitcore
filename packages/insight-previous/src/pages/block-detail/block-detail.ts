@@ -1,16 +1,16 @@
 import { Component, Injectable } from '@angular/core';
 import { IonicPage, NavParams } from 'ionic-angular';
-import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { Logger } from '../../providers/logger/logger';
 import { RedirProvider } from '../../providers/redir/redir';
 
 @Injectable()
-
 @IonicPage({
   name: 'block-detail',
-  segment: ':chain/:network/block/:blockHash'
+  segment: ':chain/:network/block/:blockHash',
+  defaultHistory: ['home']
 })
 @Component({
   selector: 'page-block-detail',
@@ -32,8 +32,8 @@ export class BlockDetailPage {
     public redirProvider: RedirProvider
   ) {
     this.blockHash = navParams.get('blockHash');
-    const chain: string = this.apiProvider.getConfig().chain;
-    const network: string = this.apiProvider.getConfig().network;
+    const chain: string = navParams.get('chain') || this.apiProvider.getConfig().chain;
+    const network: string = navParams.get('network') || this.apiProvider.getConfig().network;
     this.apiProvider.changeNetwork({ chain, network });
   }
 
@@ -51,10 +51,18 @@ export class BlockDetailPage {
   }
 
   public goToPreviousBlock(): void {
-    this.redirProvider.redir('block-detail', this.block.previousblockhash);
+    this.redirProvider.redir('block-detail', {
+      blockHash: this.block.previousblockhash,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+    });
   }
 
   public goToNextBlock(): void {
-    this.redirProvider.redir('block-detail', this.block.nextblockhash);
+    this.redirProvider.redir('block-detail', {
+      blockHash: this.block.nextblockhash,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+    });
   }
 }

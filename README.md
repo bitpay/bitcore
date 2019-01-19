@@ -61,9 +61,9 @@ listen=1
 server=1
 irc=1
 upnp=1
-```
 
-**Listen on different ports than default testnet**
+# Make sure port & rpcport matches the 
+# bitcore.config.json ports for XVG mainnet
 
 ```
 port=21102
@@ -76,6 +76,16 @@ rpcpassword=RPCPASS
 </details>
 
 ### 3) Run Verge node
+<details>
+<summary><b>Example Starting a Verge Node</b></summary>
+<br>
+  
+```
+# Path to your verge application and path to the config above
+/Applications/Verge-Qt.app/Contents/MacOS/Verge-Qt -datadir=/Users/username/blockchains/verge-core/networks/mainnet/
+```
+
+</details>
 
 ### 4) Start Bitcore
 

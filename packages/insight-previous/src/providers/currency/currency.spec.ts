@@ -10,14 +10,8 @@ describe('CurrencyProvider', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [
-        HttpModule
-      ],
-      providers: [
-        ApiProvider,
-        CurrencyProvider,
-        DefaultProvider
-      ]
+      imports: [HttpModule],
+      providers: [ApiProvider, CurrencyProvider, DefaultProvider]
     });
   });
 
@@ -60,7 +54,7 @@ describe('CurrencyProvider', () => {
 
     aFloat = 1234567890.09876543;
 
-    expect(currency.roundFloat(aFloat, 2)).toBe(1234567890.10);
+    expect(currency.roundFloat(aFloat, 2)).toBe(1234567890.1);
     expect(currency.roundFloat(aFloat, 3)).toBe(1234567890.099);
     expect(currency.roundFloat(aFloat, 4)).toBe(1234567890.0988);
     expect(currency.roundFloat(aFloat, 5)).toBe(1234567890.09877);

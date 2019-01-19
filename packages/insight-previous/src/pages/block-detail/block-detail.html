@@ -1,6 +1,4 @@
-<ion-header>
-  <head-nav [title]="'Block'"></head-nav>
-</ion-header>
+<head-nav [title]="'Block'"></head-nav>
 
 <ion-content padding>
   <div *ngIf="loading">
@@ -102,7 +100,7 @@
             <ion-item>
               Confirmations
               <ion-note item-end>
-                {{block.confirmations}}
+                {{ block.confirmations }}
               </ion-note>
             </ion-item>
           </ion-col>

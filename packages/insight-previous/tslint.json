@@ -2,7 +2,6 @@
   "extends": ["tslint:latest", "tslint-angular", "tslint-config-prettier"],
   "rules": {
     "interface-name": [true, "never-prefix"],
-    "no-submodule-imports": [true, ["@angular"]],
-    "component-class-suffix": [true, "Component", "Page"]
+    "component-class-suffix": [true, "Component", "Page", "App"]
   }
 }

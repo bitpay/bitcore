@@ -22,9 +22,9 @@ export class DenominationComponent {
     public app: App,
     public http: Http,
     public api: ApiProvider
-  ) { }
+  ) {}
 
-  ionViewDidLoad() {
+  public ionViewDidLoad() {
     this.api.getAvailableNetworks().subscribe(data => {
       const availableNetworks = data.json() as ChainNetwork[];
       this.switcherOn = availableNetworks.length > 1 ? true : false;
@@ -33,7 +33,7 @@ export class DenominationComponent {
         this.api.networkSettings.value.selectedNetwork.chain,
         'm' + this.api.networkSettings.value.selectedNetwork.chain
       ];
-    })
+    });
   }
 
   public close(): void {

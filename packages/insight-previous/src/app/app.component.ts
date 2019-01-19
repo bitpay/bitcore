@@ -14,8 +14,11 @@ export class InsightApp {
   private menu: MenuController;
   private platform: Platform;
 
+  private chain: string;
+  private network: string;
+
   public rootPage: any;
-  public pages: Array<{ title: string; component: any; icon: any; }>;
+  public pages: Array<{ title: string; component: any; icon: any }>;
 
   constructor(
     platform: Platform,
@@ -33,32 +36,28 @@ export class InsightApp {
     this.pages = [
       { title: 'Home', component: 'home', icon: 'home' },
       { title: 'Blocks', component: 'blocks', icon: 'logo-buffer' },
-      { title: 'Broadcast Transaction', component: 'BroadcastTxPage', icon: 'ios-radio-outline' }
+      { title: 'Broadcast Transaction', component: 'broadcast-tx', icon: 'ios-radio-outline' }
     ];
-  }
+
+    this.apiProvider.networkSettings.subscribe((d) => {
+      this.chain = d.selectedNetwork.chain;
+      this.network = d.selectedNetwork.network;
+    });
+  } 
 
   private initializeApp(): void {
     this.platform.ready().then(() => {
-      this.rootPage = HomePage;
+      this.nav.setRoot('home', {
+        chain: this.chain,
+        network: this.network
+      });
       this.subscribeRedirEvent();
     });
   }
 
-
   public subscribeRedirEvent() {
     this.events.subscribe('redirToEvent', data => {
-      switch (data.redirTo) {
-        case 'address':
-          this.nav.push(data.redirTo, { addrStr: data.params })
-          break;
-        case 'transaction':
-          this.nav.push(data.redirTo, { txId: data.params })
-          break;
-        case 'block-detail':
-          this.nav.push(data.redirTo, { blockHash: data.params })
-          break;
-      }
-
+      this.nav.push(data.redirTo, data.params);
     });
   }
 
@@ -67,8 +66,8 @@ export class InsightApp {
     this.menu.close();
     // navigate to the new page if it is not the current page
     this.nav.push(page.component, {
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+      chain: this.chain,
+      network: this.network
     });
   }
 }

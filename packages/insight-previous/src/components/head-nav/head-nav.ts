@@ -1,25 +1,36 @@
-import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Injectable,
+  Input,
+  Output
+} from '@angular/core';
 import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
-import { ActionSheetController, App, NavController, PopoverController, ToastController } from 'ionic-angular';
-import { Logger } from '../../providers/logger/logger';
+import {
+  ActionSheetController,
+  App,
+  NavController,
+  PopoverController,
+  ToastController
+} from 'ionic-angular';
 import * as _ from 'lodash';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
 import { RedirProvider } from '../../providers/redir/redir';
 import { SearchProvider } from '../../providers/search/search';
 import { DenominationComponent } from '../denomination/denomination';
 
 @Injectable()
-
 @Component({
   selector: 'head-nav',
   templateUrl: 'head-nav.html'
 })
-
 export class HeadNavComponent {
-  @Output() updateView = new EventEmitter<ChainNetwork>();
+  @Output()
+  public updateView = new EventEmitter<ChainNetwork>();
   public showSearch = false;
   public loading: boolean;
   @Input()
@@ -43,6 +54,10 @@ export class HeadNavComponent {
     public redirProvider: RedirProvider
   ) {
     this.config = this.apiProvider.getConfig();
+    this.params = {
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+    };
   }
 
   public search(): void {
@@ -51,29 +66,33 @@ export class HeadNavComponent {
     const inputDetails = this.searchProvider.isInputValid(this.q);
 
     if (this.q !== '' && inputDetails.isValid) {
-      this.searchProvider.search(this.q, inputDetails.type).subscribe(res => {
-        if (_.isArray(res)) {
-          const index = _.findIndex(res, (o) => {
-            return o !== null;
-          });
-          if (index === 0) {
-            this.redirTo = 'block-detail';
-            this.params = res[0].json().hash;
+      this.searchProvider.search(this.q, inputDetails.type).subscribe(
+        res => {
+          if (_.isArray(res)) {
+            const index = _.findIndex(res, o => {
+              return o !== null;
+            });
+            if (index === 0) {
+              this.redirTo = 'block-detail';
+              this.params['blockHash'] = res[0].json().hash;
+            } else {
+              this.redirTo = 'transaction';
+              this.params['txId'] = res[1].json().txid;
+            }
           } else {
-            this.redirTo = 'transaction';
-            this.params = res[1].json().txid;
+            this.redirTo = 'address';
+            this.params['addrStr'] = res.json()[0].address;
           }
-        } else {
-          this.redirTo = 'address';
-          this.params = res.json()[0].address;
+          this.navCtrl.setRoot('home', this.params, { animate: false });
+          this.redirProvider.redir(this.redirTo, this.params);
+        },
+        err => {
+          this.resetSearch();
+          this.loading = false;
+          this.reportBadQuery('Server error. Please try again');
+          this.logger.error(err);
         }
-        this.redirProvider.redir(this.redirTo, this.params);
-      }, err => {
-        this.resetSearch();
-        this.loading = false;
-        this.reportBadQuery('Server error. Please try again');
-        this.logger.error(err);
-      });
+      );
     } else {
       this.resetSearch();
       this.loading = false;
@@ -117,8 +136,12 @@ export class HeadNavComponent {
         if (this.navCtrl.getActive().component.name === 'HomePage') {
           this.updateView.next(data);
         } else {
-          this.navCtrl.setRoot('home', { chain: this.config.chain, network: this.config.network });
+          this.navCtrl.popToRoot();
         }
+        this.navCtrl.setRoot('home', {
+          chain: this.config.chain,
+          network: this.config.network
+        });
       }
     });
   }
@@ -135,10 +158,15 @@ export class HeadNavComponent {
   }
 
   public isInputValid(inputValue): boolean {
-    if (this.isValidBlockOrTx(inputValue)) { return true; }
-    else if (this.isValidAddress(inputValue)) { return true; }
-    else if (this.isValidBlockIndex(inputValue)) { return true; }
-    else { return false; }
+    if (this.isValidBlockOrTx(inputValue)) {
+      return true;
+    } else if (this.isValidAddress(inputValue)) {
+      return true;
+    } else if (this.isValidBlockIndex(inputValue)) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   private isValidBlockOrTx(inputValue): boolean {

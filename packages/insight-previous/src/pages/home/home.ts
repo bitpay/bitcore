@@ -1,19 +1,21 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, Injectable, ViewChild } from '@angular/core';
 import { Events, IonicPage, NavParams } from 'ionic-angular';
 import { LatestBlocksComponent } from '../../components/latest-blocks/latest-blocks';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { PriceProvider } from '../../providers/price/price';
 
+@Injectable()
 @IonicPage({
   name: 'home',
-  segment: ':chain/:network'
+  segment: 'home/:chain/:network'
 })
 @Component({
   selector: 'page-home',
   templateUrl: 'home.html'
 })
 export class HomePage {
-  @ViewChild('latestBlocks') latestBlocks: LatestBlocksComponent;
+  @ViewChild('latestBlocks')
+  public latestBlocks: LatestBlocksComponent;
   constructor(
     public navParams: NavParams,
     private apiProvider: ApiProvider,
@@ -27,7 +29,8 @@ export class HomePage {
       network:
         navParams.get('network') ||
         this.apiProvider.networkSettings.value.selectedNetwork.network
-    }
+    };
+    this.apiProvider.changeNetwork(chainNetwork);
     this.loadView(chainNetwork, false);
   }
 

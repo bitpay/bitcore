@@ -12,11 +12,15 @@ export class CoinComponent {
     public apiProvider: ApiProvider,
     public currencyProvider: CurrencyProvider,
     public redirProvider: RedirProvider
-  ) { }
+  ) {}
   @Input()
   public coin: AppCoin | {} = {};
 
   public goToTx(txId: string): void {
-    this.redirProvider.redir('transaction', txId)
+    this.redirProvider.redir('transaction', {
+      txId,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+    });
   }
 }

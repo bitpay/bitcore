@@ -24,7 +24,7 @@ curl -v localhost:3000/api/BTC/mainnet/tx/?blockHeight=12
         "blockHeight": 12,
         "blockHash": "0000000027c2488e2510d1acf4369787784fa20ee084c258b58d9fbd43802b5e",
         "blockTime": "2009-01-09T04:21:28.000Z",
-        "blockTimeNormalized": "2009-01-09T04:21:28.000Z",
+        "blockTimeNormalized": "2009-01-09T04:21:28.000Z"
         "coinbase": true,
         "locktime": -1,
         "inputCount": 1,
@@ -224,13 +224,19 @@ curl -v localhost:3000/api/BTC/mainnet/block/00000000839a8e6886ab5951d76f4114754
 # Authenticated Methods
 ## Wallet
 
-**To test wallet api routes change allowUnauthenticatedCalls: true inside /src/config.ts**
+**To test wallet api routes change allowUnauthenticatedCalls: true inside bitcore.config.json**
 
 ```
-wallets: {
-          allowCreationBeforeCompleteSync: false,
-          allowUnauthenticatedCalls: true
+  "bitcoreNode": {
+    "services": {
+      "api": {
+        "wallets": {
+          "allowCreationBeforeCompleteSync": true
         }
+      }
+    },
+    ....
+  }
 ```
 
 **Create 5 Sample Wallets with transactions, addresses, and UTXOS**
@@ -396,17 +402,19 @@ curl -v localhost:3000/api/BTC/mainnet/wallet/02870d8366cf8e50f383e38e5fafc01d95
 ```
 
 ```
-{
-    "id":"5c34b35d69d5562c2fc43e8c",
-    "txid":"0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098",
-    "fee":0,"size":134,
-    "category":"receive",
-    "satoshis":5000000000,
-    "height":1,
-    "address":"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX",
-    "outputIndex":0,
-    "blockTime":"2009-01-09T02:54:25.000Z"
-}
+[
+  {
+      "id":"5c34b35d69d5562c2fc43e8c",
+      "txid":"0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098",
+      "fee":0,"size":134,
+      "category":"receive",
+      "satoshis":5000000000,
+      "height":1,
+      "address":"12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX",
+      "outputIndex":0,
+      "blockTime":"2009-01-09T02:54:25.000Z"
+  }
+]
 ```
 
 </details>

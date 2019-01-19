@@ -1,14 +1,8 @@
-<!--
-  Generated template for the HomePage page.
-
-  See http://ionicframework.com/docs/components/#navigation for more info on
-  Ionic pages and navigation.
--->
-<ion-header>
-  <head-nav [title]="'insight'" (updateView)="loadView($event,true)"></head-nav>
-</ion-header>
+<head-nav [title]="'insight'" (updateView)="loadView($event,true)"></head-nav>
 
 <ion-content padding>
-  <h1>Latest Blocks</h1>
-  <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" #latestBlocks></latest-blocks>
+  <div class="page-content">
+    <h2>Latest Blocks</h2>
+    <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" #latestBlocks></latest-blocks>
+  </div>
 </ion-content>
