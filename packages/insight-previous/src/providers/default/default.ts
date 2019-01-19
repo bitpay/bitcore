@@ -9,7 +9,7 @@ export class DefaultProvider {
     '%NETWORK%': string;
     '%NUM_BLOCKS%': string;
   } = {
-      '%CHAIN%': process.env.CHAIN || 'BTC',
+      '%CHAIN%': process.env.CHAIN || 'XVG',
       '%API_PREFIX%': process.env.API_PREFIX || '/api',
       '%NETWORK%': process.env.NETWORK || 'regtest',
       '%NUM_BLOCKS%': process.env.NUM_BLOCKS || '15'

@@ -18,7 +18,7 @@ export class ApiProvider {
   public networkSettings = new BehaviorSubject<NetworkSettings>({
     availableNetworks: undefined,
     // FIXME: a lot of code still depends on this value being available instantly – needs to be rewritten to accommodate `undefined`
-    selectedNetwork: { chain: 'BTC', network: 'mainnet' }
+    selectedNetwork: { chain: 'XVG', network: 'mainnet' }
   });
 
   constructor(public http: Http, private defaults: DefaultProvider) {
