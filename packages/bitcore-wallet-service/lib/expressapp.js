@@ -411,7 +411,7 @@ ExpressApp.prototype.start = function(opts, cb) {
 
   // DEPRECATED
   router.post('/v2/addresses/', function(req, res) {
-    logDeprecated(req);
+   logDeprecated(req);
     getServerWithAuth(req, res, function(server) {
       server.createAddress({
         ignoreMaxGap: true
