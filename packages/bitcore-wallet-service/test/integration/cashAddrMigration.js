@@ -40,7 +40,6 @@ describe('Cash address migration', function() {
     helpers.beforeEach(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
-      helpers.setupGroupingBE(blockchainExplorer);
       request = res.request;
       done();
     });
