@@ -12,9 +12,9 @@ var Bitcore = require('bitcore-lib');
 var mongodb = require('mongodb');
 
 var Model = require('./model');
+
+// only for migration
 var BCHAddressTranslator = require('./bchaddresstranslator');
-
-
 
 var collections = {
   WALLETS: 'wallets',
@@ -490,6 +490,38 @@ Storage.prototype.fetchAddresses = function(walletId, cb) {
     return cb(null, result.map(Model.Address.fromObj));
   });
 };
+
+Storage.prototype.migrateToCashAddr = function(walletId, cb) {
+  var self = this;
+
+  var cursor = self.db.collection(collections.ADDRESSES).find({
+    walletId: walletId,
+  });
+
+
+  cursor.on("end", function() {
+    console.log(`Migration to cash address of ${walletId} Finished`);
+    return self.clearWalletCache(walletId,cb);
+  }); 
+
+  cursor.on("err", function(err) {
+    return cb(err);
+  });
+
+  cursor.on("data", function(doc) {
+      cursor.pause();
+      let x;
+      try {
+        x = BCHAddressTranslator.translate(doc.address, 'cashaddr');
+      } catch (e) {
+        return cb(e);
+      }
+
+      self.db.collection(collections.ADDRESSES).update({_id: doc._id}, {$set:{address: x}}, {multi:true});
+      cursor.resume();
+  });
+};
+
 
 Storage.prototype.fetchUnsyncAddresses = function(walletId, cb) {
   var self = this;
