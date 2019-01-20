@@ -2379,23 +2379,24 @@ WalletService.prototype.createTx = function(opts, cb) {
           function(next) {
 
             if (opts.dryRun) return next();
+
+            if (txp.coin == 'bch') {
+
+              if (opts.returnOrigAddrOutputs) {
+                log.info('Returning Orig BCH address outputs for compat');
+                txp.outputs = opts.origAddrOutputs;
+              }
+
+              if (opts.noCashAddr && txp.changeAddress) {
+                txp.changeAddress.address= BCHAddressTranslator.translate(txp.changeAddress.address,'copay');
+              }
+            }
+
+
             self.storage.storeTx(wallet.id, txp, next);
           },
         ], function(err) {
           if (err) return cb(err);
-
-          if (txp.coin == 'bch') {
-
-            if (opts.returnOrigAddrOutputs) {
-              log.info('Returning Orig BCH address outputs for compat');
-              txp.outputs = opts.origAddrOutputs;
-            }
-
-            if (opts.noCashAddr && txp.changeAddress) {
-              txp.changeAddress.address= BCHAddressTranslator.translate(txp.changeAddress.address,'copay');
-            }
-          }
-
           return cb(null, txp);
         });
 
