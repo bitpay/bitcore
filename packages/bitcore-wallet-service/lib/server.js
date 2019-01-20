@@ -2382,11 +2382,6 @@ WalletService.prototype.createTx = function(opts, cb) {
 
             if (txp.coin == 'bch') {
 
-              if (opts.returnOrigAddrOutputs) {
-                log.info('Returning Orig BCH address outputs for compat');
-                txp.outputs = opts.origAddrOutputs;
-              }
-
               if (opts.noCashAddr && txp.changeAddress) {
                 txp.changeAddress.address= BCHAddressTranslator.translate(txp.changeAddress.address,'copay');
               }
@@ -2397,6 +2392,15 @@ WalletService.prototype.createTx = function(opts, cb) {
           },
         ], function(err) {
           if (err) return cb(err);
+
+            if (txp.coin == 'bch') {
+              if (opts.returnOrigAddrOutputs) {
+                log.info('Returning Orig BCH address outputs for compat');
+                txp.outputs = opts.origAddrOutputs;
+              }
+            }
+
+
           return cb(null, txp);
         });
 
