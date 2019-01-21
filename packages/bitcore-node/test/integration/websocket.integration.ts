@@ -8,7 +8,7 @@ import { P2pWorker } from '../../src/services/p2p';
 import { Event } from '../../src/services/event';
 import { Api } from '../../src/services/api';
 
-const wait = (time) => new Promise((resolve)=>setTimeout(resolve, time));
+const wait = time => new Promise(resolve => setTimeout(resolve, time));
 
 const chain = 'BTC';
 const network = 'regtest';
@@ -16,7 +16,8 @@ const chainConfig = config.chains[chain][network];
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
-describe('Websockets', () => {
+describe('Websockets', function() {
+  this.timeout(50000);
   before(async () => {
     await resetDatabase();
   });
@@ -27,26 +28,23 @@ describe('Websockets', () => {
       network,
       chainConfig
     });
-
-    await rpc.generate(5);
     await p2pWorker.start();
     await p2pWorker.sync();
-    await rpc.generate(1);
-    await p2pWorker.sync();
 
-    const tip = await BlockStorage.getLocalTip({ chain, network });
-    expect(tip).to.not.eq(null);
+    const checkForBlocks = await BlockStorage.getLocalTip({chain, network}); 
+    if (checkForBlocks === null || checkForBlocks.height < 100) {
+      rpc.generate(100)
+    }
 
     await rpc.generate(1);
     await p2pWorker.sync();
     await wait(1000);
 
     const afterGenTip = await BlockStorage.getLocalTip({ chain, network });
+    expect(afterGenTip).to.not.eq(null);
 
-    if (tip != null && afterGenTip != null) {
-      expect(tip.height).to.be.lt(afterGenTip.height);
-    } else {
-      console.log('no prevTip');
+    if (checkForBlocks != null && afterGenTip != null) {
+      expect(checkForBlocks.height).to.be.lt(afterGenTip.height);
     }
 
     await p2pWorker.stop();
@@ -62,36 +60,58 @@ describe('Websockets', () => {
       chainConfig
     });
 
-    await rpc.generate(1);
-    await p2pWorker.start();
-    await p2pWorker.sync();
-    await rpc.generate(1);
-    await p2pWorker.sync();
-    await wait(1000);
-
     let hasSeenABlockEvent = false;
-    console.log('Attempting socket connection');
+
     const socket = io.connect(
       'http://localhost:3000',
       { transports: ['websocket'] }
     );
     socket.on('connect', () => {
-      console.log('Connected to socket');
       socket.emit('room', '/BTC/regtest/inv');
     });
-    socket.on('block', payload => {
+    socket.on('block', () => {
       hasSeenABlockEvent = true;
-      console.log(payload);
-    });
-    socket.on('disconnect', () => {
-      console.log('Socket disconnected');
     });
 
+    await p2pWorker.start();
     await rpc.generate(1);
     await p2pWorker.sync();
     await wait(1000);
     await p2pWorker.stop();
+    await socket.disconnect();
 
     expect(hasSeenABlockEvent).to.be.eq(true);
+  });
+
+  it('should get a mempool tx and coin when mempool event, senttoaddress, occurs', async () => {
+    const p2pWorker = new P2pWorker({ chain, network, chainConfig });
+
+    let hasSeenTxEvent = false;
+    let hasSeenCoinEvent = false;
+
+    const socket = io.connect(
+      'http://localhost:3000',
+      { transports: ['websocket'] }
+    );
+
+    socket.on('connect', () => {
+      socket.emit('room', '/BTC/regtest/inv');
+    });
+    socket.on('tx', () => {
+      hasSeenTxEvent = true;
+    });
+    socket.on('coin', () => {
+      hasSeenCoinEvent = true;
+    });
+    await p2pWorker.start();
+    await p2pWorker.sync();
+    await wait(5000);
+    await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
+    await wait(15000);
+
+    await p2pWorker.stop();
+    await socket.disconnect();
+
+    expect([hasSeenTxEvent, hasSeenCoinEvent]).to.deep.eq([true, true]);
   });
 });
