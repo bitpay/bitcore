@@ -23,6 +23,7 @@ export function mockCollection(toReturn, collectionMethods = {}) {
   const mock = Object.assign(
     {
       find: sinon.stub().returnsThis(),
+      aggregate: sinon.stub().returnsThis(),
       sort: sinon.stub().returnsThis(),
       insertOne: sinon.stub().resolves(),
       insertMany: sinon.stub().resolves(),
@@ -30,7 +31,7 @@ export function mockCollection(toReturn, collectionMethods = {}) {
       deleteOne: sinon.stub().resolves(),
       deleteMany: sinon.stub().resolves(),
       limit: sinon.stub().returnsThis(),
-      toArray: sinon.stub().resolves([toReturn]),
+      toArray: sinon.stub().resolves((toReturn instanceof Array)? toReturn : [toReturn]),
       findOne: sinon.stub().resolves(toReturn),
       update: sinon.stub().resolves({ result: toReturn }),
       updateOne: sinon.stub().resolves(toReturn),

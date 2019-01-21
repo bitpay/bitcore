@@ -68,7 +68,6 @@ class CoinModel extends BaseModel<ICoin> {
 
   async getBalance(params: { query: any }): Promise<{ confirmed: number, unconfirmed: number, balance: number }> {
     let { query } = params;
-
     const result = await this.collection
       .aggregate<{ _id: string, balance: number }>([
         { $match: query },

@@ -374,9 +374,10 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {
     const query = {
-      wallets: params.wallet._id, 'wallets.0': { $exists: true },
+      wallets: params.wallet._id,
+      'wallets.0': { $exists: true },
       spentHeight: { $lt: SpentHeightIndicators.minimum },
-      mintHeight: { $gt: SpentHeightIndicators.conflicting }
+      mintHeight: { $gt: SpentHeightIndicators.conflicting },
     }
     return CoinStorage.getBalance({ query });
   }
