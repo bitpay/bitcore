@@ -91,7 +91,7 @@ describe('Coin Model', function () {
       sandbox.restore();
     });
 
-    it('should return an object with confirmed, unconfirmed, and balance', async () => {      
+    it('should return an object with confirmed, unconfirmed, and balance when additional time parameter is passed in', async () => {      
       let id = new ObjectId("5c364e342ab5602e97a56f0e");
       let chain = 'BTC';
       let network = 'regtest';
