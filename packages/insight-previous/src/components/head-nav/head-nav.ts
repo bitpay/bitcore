@@ -60,6 +60,10 @@ export class HeadNavComponent {
     };
   }
 
+  public goHome(): void {
+    this.navCtrl.popToRoot();
+  }
+
   public search(): void {
     this.showSearch = false;
     this.q = this.q.replace(/\s/g, '');
@@ -83,6 +87,7 @@ export class HeadNavComponent {
             this.redirTo = 'address';
             this.params['addrStr'] = res.json()[0].address;
           }
+          this.navCtrl.setRoot('home', this.params, { animate: false });
           this.redirProvider.redir(this.redirTo, this.params);
         },
         err => {
