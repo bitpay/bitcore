@@ -1,4 +1,4 @@
-export class BCHTxProvder {
+export class BCHTxProvider {
   lib = require('bitcore-lib-cash');
   create({ recipients, utxos, change, fee }) {
     let tx = new this.lib.Transaction().from(utxos).fee(Number(fee));
@@ -11,4 +11,3 @@ export class BCHTxProvder {
     return tx;
   }
 }
-export default new BCHTxProvder();

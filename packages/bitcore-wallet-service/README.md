@@ -72,6 +72,20 @@ BWS can be used with PM2 with the provided `app.js` script:
 @dabura667 made a report about how to use letsencrypt with BWS: https://github.com/bitpay/bitcore-wallet-service/issues/423
   
 
+# TX proposal life cycle
+
+Tx proposal need to be:
+ 1. First created via /v?/txproposal
+      -> This will create a 'temporary' TX proposal, returning the object, but not locking the inputs
+ 2. Then published via  /v?/txproposal/:id/publish
+      -> This publish the tx proposal to all copayers, looking the inputs. The TX proposal can be `deleted` also, after been published.
+ 3. Then signed via /v?/txproposal/:id/signature for each copayer
+ 4. Then broadcasted to the p2p network via /v?/txproposal/:id/broadcast
+
+
+The are plenty example creating and sending proposals in the `/test/integration` code.
+
+
 # REST API
 
 Note: all currency amounts are in units of satoshis (1/100,000,000 of a bitcoin).
@@ -114,14 +128,21 @@ Returns:
  * actions array ['createdOn', 'type', 'copayerId', 'copayerName', 'comment']
   
  
-`/v1/txproposals/`:  Get Wallet's pending transaction proposals and their status
+`/v2/txproposals/`:  Get Wallet's pending transaction proposals and their status
 Returns:
  * List of pending TX Proposals. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/txproposal.js))
 
-`/v1/addresses/`: Get Wallet's main addresses (does not include change addresses)
+ * Uses cashaddr without prefix for BCH
+
+
+`/v4/addresses/`: Get Wallet's main addresses (does not include change addresses)
+
+Optional Arguments:
+ * ignoreMaxGap: [false] Ignore checking less that 20 unused addresses (BIP44 GAP)
 
 Returns:
- * List of Addresses object: (https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/address.js)).  This call is mainly provided so the client check this addresses for incoming transactions (using a service like [Insight](https://insight.is)
+ * List of Addresses object: (https://github.com/bitpay/bitcore/blob/master/packages/bitcore-wallet-service/lib/model/address.js)).  This call is mainly provided so the client check this addresses for incoming transactions (using a service like [Insight](https://insight.is)
+ * Returns cashaddr without prefix for BCH
 
 `/v1/balance/`:  Get Wallet's balance
 
@@ -174,7 +195,7 @@ Returns:
  * copayerId: Assigned ID of the copayer (to be used on x-identity header)
  * wallet: Object with wallet's information
 
-`/v1/txproposals/`: Add a new transaction proposal
+`/v3/txproposals/`: Add a new temporary transaction proposal
 
 Required Arguments:
  * toAddress: RCPT Bitcoin address.
@@ -184,10 +205,15 @@ Required Arguments:
  * (opt) payProUrl: Paypro URL for peers to verify TX
  * (opt) feePerKb: Use an alternative fee per KB for this TX.
  * (opt) excludeUnconfirmedUtxos: Do not use UTXOs of unconfirmed transactions as inputs for this TX.
+ * BCH addresses need to be cashaddr without prefix.
 
 Returns:
  * TX Proposal object. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/txproposal.js)). `.id` is probably needed in this case.
 
+`/v2/txproposals/:id/publish`: Publish the previously created `temporary` tx proposal.
+
+Returns:
+ * TX Proposal object. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/txproposal.js)).
 
 `/v3/addresses/`: Request a new main address from wallet . (creates an address on normal conditions)
 

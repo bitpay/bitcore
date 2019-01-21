@@ -522,7 +522,7 @@ API.prototype._import = function(cb) {
  * @param {String} opts.walletPrivKey - if available, walletPrivKey for encrypting metadata
  */
 API.prototype.importFromMnemonic = function(words, opts, cb) {
-  log.debug('Importing from 12 Words');
+  log.debug('Importing from Mnemonic');
 
   var self = this;
 

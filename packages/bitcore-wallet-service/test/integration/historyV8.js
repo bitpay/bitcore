@@ -16,8 +16,6 @@ var Bitcore_ = {
   bch: require('bitcore-lib-cash')
 };
 
-
-
 var Common = require('../../lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
@@ -110,6 +108,111 @@ describe('History V8', function() {
           i++;
         });
         done();
+      });
+    });
+
+    it('should handle moves, filtering change addresses (case 1)', function(done) {
+      let txs= helpers.createTxsV8(20, 1000);
+      helpers.createAddresses(server, wallet, 1, 1, function(main, change) {
+
+        // 2 move tx.
+        txs[0].address =change[0].address;
+        txs[0].txid =txs[1].txid;
+        txs[0].height =txs[1].height;
+        txs[1].address =main[0].address;
+        txs[0].category=txs[1].category='move';
+        
+        helpers.stubHistoryV8(null, null, txs);
+
+        server.getTxHistory({limit: 10}, function(err, txs, fromCache) {
+          should.not.exist(err);
+          fromCache.should.equal(false);
+          should.exist(txs);
+          txs.length.should.equal(10);
+
+          // should filter out 1 move
+          txs[0].action.should.equal('moved');
+          txs[1].action.should.equal('received');
+
+          // should keep the main address
+          txs[0].outputs[0].address.should.equal(main[0].address);
+
+          done();
+        });
+      });
+    });
+
+
+    it('should handle moves, filtering change addresses (case 2)', function(done) {
+      let txs= helpers.createTxsV8(20, 1000);
+      helpers.createAddresses(server, wallet, 1, 1, function(main, change) {
+
+        // 2 move tx, inverted vouts
+        txs[0].address =main[0].address;
+        txs[0].txid =txs[1].txid;
+        txs[0].height =txs[1].height;
+        txs[1].address =change[0].address;
+        txs[0].category=txs[1].category='move';
+        
+        helpers.stubHistoryV8(null, null, txs);
+
+        server.getTxHistory({limit: 10}, function(err, txs, fromCache) {
+          should.not.exist(err);
+          fromCache.should.equal(false);
+          should.exist(txs);
+          txs.length.should.equal(10);
+
+          // should filter out 1 move
+          txs[0].action.should.equal('moved');
+          txs[1].action.should.equal('received');
+
+          // should keep the main address
+          txs[0].outputs[0].address.should.equal(main[0].address);
+
+          done();
+        });
+      });
+    });
+
+
+    it('should handle moves, filtering change addresses in multisend', function(done) {
+      let txs= helpers.createTxsV8(20, 1000);
+      helpers.createAddresses(server, wallet, 2, 1, function(main, change) {
+
+
+        txs[0].txid    =txs[1].txid     = txs[2].txid   =txs[3].txid;
+        txs[0].height  =txs[1].height   = txs[2].height =txs[3].height;
+        txs[0].category=txs[1].category= txs[2].category=txs[3].category='move';
+
+        txs[0].address =main[0].address;
+        txs[1].address =main[0].address;
+        txs[2].address =change[0].address;
+        txs[3].address =main[1].address;
+        
+        helpers.stubHistoryV8(null, null, txs);
+
+        server.getTxHistory({limit: 10}, function(err, txs, fromCache) {
+          should.not.exist(err);
+          fromCache.should.equal(false);
+          should.exist(txs);
+          txs.length.should.equal(10);
+
+          // should filter out 1 move
+          txs[0].action.should.equal('moved');
+          txs[1].action.should.equal('received');
+
+          // should keep the main address
+          _.map(txs[0].outputs,'address').should.include(
+            main[0].address,
+            main[1].address,
+          );
+
+          _.map(txs[0].outputs,'address').should.not.include(
+            change[0].address,
+          );
+ 
+          done();
+        });
       });
     });
 
