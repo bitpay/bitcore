@@ -20,7 +20,9 @@ import { InsightApp } from './app.component';
     BrowserModule,
     HttpModule,
     PagesModule,
-    IonicModule.forRoot(InsightApp)
+    IonicModule.forRoot(InsightApp, {
+      animate: false
+    })
   ],
   bootstrap: [IonicApp],
   entryComponents: [InsightApp, HomePage, BlocksPage],
