@@ -1,8 +1,9 @@
 import { Component, Injectable } from '@angular/core';
 import { IonicPage, NavParams } from 'ionic-angular';
-import { ApiProvider } from '../../providers/api/api';
+import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { Logger } from '../../providers/logger/logger';
+import { PriceProvider } from '../../providers/price/price';
 import { RedirProvider } from '../../providers/redir/redir';
 import { TxsProvider } from '../../providers/transactions/transactions';
 
@@ -19,6 +20,7 @@ import { TxsProvider } from '../../providers/transactions/transactions';
 export class TransactionPage {
   public loading = true;
   private txId: string;
+  private chainNetwork: ChainNetwork;
   public tx: any = {};
 
   constructor(
@@ -27,12 +29,20 @@ export class TransactionPage {
     private txProvider: TxsProvider,
     public currency: CurrencyProvider,
     private logger: Logger,
+    private priceProvider: PriceProvider,
     public redirProvider: RedirProvider
   ) {
     this.txId = navParams.get('txId');
-    const chain: string = this.apiProvider.getConfig().chain;
-    const network: string = this.apiProvider.getConfig().network;
-    this.apiProvider.changeNetwork({ chain, network });
+
+    const chain: string = navParams.get('chain') || this.apiProvider.getConfig().chain;
+    const network: string = navParams.get('network') || this.apiProvider.getConfig().network;
+
+    this.chainNetwork = {
+      chain,
+      network
+    };
+    this.apiProvider.changeNetwork(this.chainNetwork);
+    this.priceProvider.setCurrency(this.chainNetwork.chain);
   }
 
   public ionViewDidLoad(): void {
@@ -52,8 +62,8 @@ export class TransactionPage {
   public goToBlock(blockHash: string): void {
     this.redirProvider.redir('block-detail', {
       blockHash,
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+      chain: this.chainNetwork.chain,
+      network: this.chainNetwork.network
     });
   }
 }
