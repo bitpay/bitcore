@@ -89,6 +89,7 @@ export class EventService {
         const addressTx = await addressTxCursor.next();
         if (addressTx) {
           const addressCoin = <IEvent.CoinEvent>addressTx.payload;
+          console.log(addressCoin);
           this.addressCoinStream.write(addressCoin);
           lastAddressTxUpdate = new Date();
         }

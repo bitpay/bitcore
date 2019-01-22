@@ -28,10 +28,11 @@ describe('Websockets', function() {
       network,
       chainConfig
     });
+    await rpc.generate(1);
     await p2pWorker.start();
     await p2pWorker.sync();
 
-    const checkForBlocks = await BlockStorage.getLocalTip({chain, network}); 
+    const checkForBlocks = await BlockStorage.getLocalTip({chain, network});
     if (checkForBlocks === null || checkForBlocks.height < 100) {
       rpc.generate(100)
     }
