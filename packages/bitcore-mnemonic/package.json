@@ -36,17 +36,17 @@
   "license": "MIT",
   "devDependencies": {
     "assert": "^1.4.1",
-    "bitcore-build": "^8.0.0",
+    "bitcore-build": "file:../bitcore-build",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
     "mocha": "^5.2.0"
   },
   "dependencies": {
-    "bitcore-lib": "^8.0.0",
+    "bitcore-lib": "file:../bitcore-lib",
     "unorm": "^1.4.1"
   },
   "peerDependencies": {
-    "bitcore-lib": "^8.0.0"
+    "bitcore-lib": "file:../bitcore-lib"
   }
 }
