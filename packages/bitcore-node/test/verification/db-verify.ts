@@ -12,6 +12,7 @@ import { Storage } from '../../src/services/storage';
   await Storage.start();
   if (!chain || !network) {
     console.error('Please provide a CHAIN and NETWORK environment variable');
+    process.exit(1);
   }
   const tip = await BlockStorage.getLocalTip({ chain, network });
 
