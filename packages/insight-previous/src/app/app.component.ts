@@ -29,11 +29,11 @@ export class InsightApp {
 
     this.initializeApp();
 
-    this.apiProvider.networkSettings.subscribe((d) => {
+    this.apiProvider.networkSettings.subscribe(d => {
       this.chain = d.selectedNetwork.chain;
       this.network = d.selectedNetwork.network;
     });
-  } 
+  }
 
   private initializeApp(): void {
     this.platform.ready().then(() => {
