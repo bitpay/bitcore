@@ -11,7 +11,7 @@ import { Storage } from '../../src/services/storage';
   const network = NETWORK;
   await Storage.start();
   if (!chain || !network) {
-    console.error('Please provide a CHAIN and NETWORK environment variable');
+    console.log('Please provide a CHAIN and NETWORK environment variable');
     process.exit(1);
   }
   const tip = await BlockStorage.getLocalTip({ chain, network });
@@ -25,7 +25,7 @@ import { Storage } from '../../src/services/storage';
       if (tx.fee < 0) {
         allGood = false;
         const error = { model: 'transaction', err: false, type: 'NEG_FEE', payload: tx };
-        console.error(JSON.stringify(error));
+        console.log(JSON.stringify(error));
       }
       seenTxs[tx.txid] = tx;
     }
@@ -36,7 +36,7 @@ import { Storage } from '../../src/services/storage';
       if (seenCoins[coin.mintTxid] && seenCoins[coin.mintTxid][coin.mintIndex]) {
         allGood = false;
         const error = { model: 'coin', err: false, type: 'DUPE_COIN', payload: coin };
-        console.error(JSON.stringify(error));
+        console.log(JSON.stringify(error));
       } else {
         seenCoins[coin.mintTxid] = seenCoins[coin.mintTxid] || {};
         seenCoins[coin.mintTxid][coin.mintIndex] = coin;
@@ -48,7 +48,7 @@ import { Storage } from '../../src/services/storage';
       if (!coins) {
         allGood = false;
         const error = { model: 'coin', err: false, type: 'MISSING_COIN_FOR_TXID', payload: txid };
-        console.error(JSON.stringify(error));
+        console.log(JSON.stringify(error));
       }
     }
 
@@ -58,13 +58,13 @@ import { Storage } from '../../src/services/storage';
       if (!tx) {
         allGood = false;
         const error = { model: 'transaction', err: false, type: 'MISSING_TX', payload: tx };
-        console.error(JSON.stringify(error));
+        console.log(JSON.stringify(error));
       } else {
         const sum = Object.values(coins).reduce((prev, cur) => prev + cur.value, 0);
         if (sum != tx.value) {
           allGood = false;
           const error = { model: 'coin+transactions', err: false, type: 'VALUE_MISMATCH', payload: { tx, coins } };
-          console.error(JSON.stringify(error));
+          console.log(JSON.stringify(error));
         }
       }
     }
