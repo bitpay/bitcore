@@ -73,7 +73,12 @@ import { Storage } from '../../src/services/storage';
     const blocksForHeight = await BlockStorage.collection.countDocuments({ chain, network, height: blockNum });
     if (blocksForHeight !== 1) {
       allGood = false;
-      const error = { model: 'block', err: false, type: 'DUPE_BLOCKHEIGHT', payload: { height: blockNum, blocksForHeight } };
+      const error = {
+        model: 'block',
+        err: false,
+        type: 'DUPE_BLOCKHEIGHT',
+        payload: { height: blockNum, blocksForHeight }
+      };
       console.error(JSON.stringify(error));
     }
     //blocks with same hash
