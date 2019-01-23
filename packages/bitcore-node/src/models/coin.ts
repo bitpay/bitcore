@@ -62,7 +62,7 @@ class CoinModel extends BaseModel<ICoin> {
     );
   }
 
-  async getBalance(params: { query: any }): Promise<{ confirmed: number, unconfirmed: number, balance: number }> {
+  async getBalance(params: { query: any }) {
     let { query } = params;
     const result = await this.collection
       .aggregate<{ _id: string, balance: number }>([
@@ -83,11 +83,11 @@ class CoinModel extends BaseModel<ICoin> {
         }
       ])
       .toArray();
-    return result.reduce((acc, cur) => {
+    return result.reduce<{ confirmed: number, unconfirmed: number, balance: number }>((acc, cur) => {
       acc[cur._id] = cur.balance;
       acc.balance += cur.balance;
       return acc;
-    }, { confirmed: 0, unconfirmed: 0, balance: 0 }) as { confirmed: number, unconfirmed: number, balance: number };
+    }, { confirmed: 0, unconfirmed: 0, balance: 0 });
   }
 
   async getBalanceAtTime(params: { query: any, time: string, chain: string, network: string }) {
