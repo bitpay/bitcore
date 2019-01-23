@@ -30,6 +30,7 @@
     "test:ci:integration": "npm run test:integration",
     "verify:rpc": "npm run tsc:test && node ./build/test/verification/rpc-verify.js",
     "verify:db": "npm run tsc:test && node ./build/test/verification/db-verify.js",
+    "repair:db": "npm run tsc:test && node ./build/test/verification/db-repair.js",
     "test:unit": "npm run tsc:test && node ./build/test/runners/unit.js",
     "test:integration": "npm run tsc:test && node ./build/test/runners/integration.js",
     "benchmark": "npm run tsc && node build/test/benchmark/benchmark.js"
