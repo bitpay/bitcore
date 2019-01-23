@@ -77,4 +77,5 @@ import { Storage } from '../../src/services/storage';
       console.log({ block: i, success });
     }
   }
+  process.exit(0);
 })();
