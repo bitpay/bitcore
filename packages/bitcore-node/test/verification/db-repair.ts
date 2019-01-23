@@ -1,24 +1,53 @@
 #!/usr/bin/env node
-
-import { Storage } from "../../src/services/storage";
+import fs from 'fs';
+import { CoinStorage } from '../../src/models/coin';
+import { Storage } from '../../src/services/storage';
 (async () => {
+  const { CHAIN, NETWORK, FILE } = process.env;
+  const chain = CHAIN;
+  const network = NETWORK;
+  await Storage.start();
+  const handleRepair = async data => {
+    switch (data.type) {
+      case 'DUPE_COIN':
+        const dupeCoins = await CoinStorage.collection
+          .find({ chain, network, mintTxid: data.payload.mintTxid, mintIndex: data.payload.mintIndex })
+          .sort({ _id: -1 })
+          .toArray();
+        if (dupeCoins.length > 1 && dupeCoins[0].spentHeight === dupeCoins[1].spentHeight) {
+          await CoinStorage.collection.deleteOne({
+            mintIndex: dupeCoins[0].mintIndex,
+            mintTxid: dupeCoins[0].mintTxid
+          });
+        } else if (dupeCoins.length > 1 && dupeCoins[0].spentHeight !== dupeCoins[1].spentHeight) {
+          await CoinStorage.collection.deleteOne({
+            _id: dupeCoins[0]._id,
+            mintIndex: dupeCoins[0].mintIndex,
+            mintTxid: dupeCoins[0].mintTxid
+          });
+        }
+        break;
+      default:
+        console.log('done');
+    }
+  };
 
-const { CHAIN, NETWORK, FILE} = process.env;
-await Storage.start();
+  const getFileContents = FILE => {
+    fs.createReadStream(FILE).on('data', data => {
+      const parsedData = JSON.parse(data);
+      handleRepair(parsedData);
+    });
+  };
 
-// Read in each line from FILE as path
+  getFileContents(FILE);
 
-// for each line, JSON.parse
-// with parsed object pass that into a reducer / switch
-// for that type of object
-//
-//type: 'DUPE_BLOCKHASH'
-//type: 'NEG_FEE'
-//type: 'DUPE_COIN'
-//type: 'MISSING_COIN_FOR_TXID'
-//type: 'MISSING_TX'
-//type: 'VALUE_MISMATCH'
-//type: 'DUPE_BLOCKHEIGHT'
-//
-// will need to handle each of those error types
+  //type: 'DUPE_BLOCKHASH'
+  //type: 'NEG_FEE'
+  //type: 'DUPE_COIN'
+  //type: 'MISSING_COIN_FOR_TXID'
+  //type: 'MISSING_TX'
+  //type: 'VALUE_MISMATCH'
+  //type: 'DUPE_BLOCKHEIGHT'
+  //
+  // will need to handle each of those error types
 })();
