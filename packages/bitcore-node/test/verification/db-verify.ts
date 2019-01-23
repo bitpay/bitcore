@@ -6,7 +6,8 @@ import { TransactionStorage, ITransaction } from '../../src/models/transaction';
 import { Storage } from '../../src/services/storage';
 
 (async () => {
-  const { CHAIN, NETWORK } = process.env;
+  const { CHAIN, NETWORK, HEIGHT } = process.env;
+  const resumeHeight = Number(HEIGHT) || 1;
   const chain = CHAIN;
   const network = NETWORK;
   await Storage.start();
@@ -94,7 +95,7 @@ import { Storage } from '../../src/services/storage';
   }
 
   if (tip) {
-    for (let i = 1; i < tip.height; i++) {
+    for (let i = resumeHeight; i < tip.height; i++) {
       const success = await validateDataForBlock(i);
       console.log({ block: i, success });
     }
