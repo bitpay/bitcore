@@ -145,11 +145,13 @@ npm run node
 
 ## API Documentation
 
-[API parameters and example responses](./packages/bitcore-node/docs/api-documentation.md)
+[REST API parameters and example responses](./packages/bitcore-node/docs/api-documentation.md)
 
 [Websockets API namespaces, event names, and parameters](./packages/bitcore-node/docs/sockets-api.md)
 
 [Testing Bitcore-node in RegTest](./packages/bitcore-node/docs/wallet-guide.md)
+
+[Wallet Guide - Creating, Signing, Import Address](./packages/bitcore-client/README.md)
 
 ## Contributing
 

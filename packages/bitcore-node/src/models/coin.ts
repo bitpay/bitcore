@@ -36,10 +36,6 @@ class CoinModel extends BaseModel<ICoin> {
   onConnect() {
     this.collection.createIndex({ mintTxid: 1, mintIndex: 1 }, { background: true });
     this.collection.createIndex(
-      { mintTxid: 1, mintIndex: 1, chain: 1, network: 1 },
-      { partialFilterExpression: { spentHeight: { $lt: 0 } } }
-    );
-    this.collection.createIndex(
       { address: 1, chain: 1, network: 1 },
       {
         background: true,
