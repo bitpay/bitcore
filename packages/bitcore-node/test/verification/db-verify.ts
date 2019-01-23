@@ -6,7 +6,8 @@ import { TransactionStorage, ITransaction } from '../../src/models/transaction';
 import { Storage } from '../../src/services/storage';
 
 (async () => {
-  const { CHAIN, NETWORK } = process.env;
+  const { CHAIN, NETWORK, HEIGHT } = process.env;
+  const resumeHeight = Number(HEIGHT) || 1;
   const chain = CHAIN;
   const network = NETWORK;
   await Storage.start();
@@ -68,11 +69,33 @@ import { Storage } from '../../src/services/storage';
         }
       }
     }
+
+    //blocks with same height
+    const blocksForHeight = await BlockStorage.collection.countDocuments({ chain, network, height: blockNum });
+    if (blocksForHeight !== 1) {
+      allGood = false;
+      const error = {
+        model: 'block',
+        err: false,
+        type: 'DUPE_BLOCKHEIGHT',
+        payload: { height: blockNum, blocksForHeight }
+      };
+      console.error(JSON.stringify(error));
+    }
+    //blocks with same hash
+    const hashFromTx = blockTxs[0].blockHash;
+    const blocksForHash = await BlockStorage.collection.countDocuments({ chain, network, hash: hashFromTx });
+    if (blocksForHash !== 1) {
+      allGood = false;
+      const error = { model: 'block', err: false, type: 'DUPE_BLOCKHASH', payload: { hash: hashFromTx } };
+      console.error(JSON.stringify(error));
+    }
+
     return allGood;
   }
 
   if (tip) {
-    for (let i = 1; i < tip.height; i++) {
+    for (let i = resumeHeight; i < tip.height; i++) {
       const success = await validateDataForBlock(i);
       console.log({ block: i, success });
     }
