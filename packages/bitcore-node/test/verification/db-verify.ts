@@ -68,6 +68,23 @@ import { Storage } from '../../src/services/storage';
         }
       }
     }
+
+    //blocks with same height
+    const blocksForHeight = await BlockStorage.collection.countDocuments({ chain, network, height: blockNum });
+    if (blocksForHeight !== 1) {
+      allGood = false;
+      const error = { model: 'block', err: false, type: 'DUPE_BLOCKHEIGHT', payload: { height: blockNum, blocksForHeight } };
+      console.error(JSON.stringify(error));
+    }
+    //blocks with same hash
+    const hashFromTx = blockTxs[0].blockHash;
+    const blocksForHash = await BlockStorage.collection.countDocuments({ chain, network, hash: hashFromTx });
+    if (blocksForHash !== 1) {
+      allGood = false;
+      const error = { model: 'block', err: false, type: 'DUPE_BLOCKHASH', payload: { hash: hashFromTx } };
+      console.error(JSON.stringify(error));
+    }
+
     return allGood;
   }
 
