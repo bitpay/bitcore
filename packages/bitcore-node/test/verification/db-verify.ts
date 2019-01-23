@@ -74,7 +74,9 @@ import { Storage } from '../../src/services/storage';
   if (tip) {
     for (let i = 1; i < tip.height; i++) {
       const success = await validateDataForBlock(i);
-      console.log({ block: i, success });
+      if (!success) {
+        console.log({ block: i, success });
+      }
     }
   }
   process.exit(0);
