@@ -10,6 +10,9 @@ import { Storage } from '../../src/services/storage';
   const chain = CHAIN;
   const network = NETWORK;
   await Storage.start();
+  if (!chain || !network) {
+    console.error('Please provide a CHAIN and NETWORK environment variable');
+  }
   const tip = await BlockStorage.getLocalTip({ chain, network });
 
   async function validateDataForBlock(blockNum: number) {
