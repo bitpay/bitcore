@@ -3,11 +3,13 @@
 import { BlockStorage } from '../../src/models/block';
 import { CoinStorage, ICoin } from '../../src/models/coin';
 import { TransactionStorage, ITransaction } from '../../src/models/transaction';
+import { Storage } from '../../src/services/storage';
 
 (async () => {
   const { CHAIN, NETWORK } = process.env;
   const chain = CHAIN;
   const network = NETWORK;
+  await Storage.start();
   const tip = await BlockStorage.getLocalTip({ chain, network });
 
   async function validateDataForBlock(blockNum: number) {
