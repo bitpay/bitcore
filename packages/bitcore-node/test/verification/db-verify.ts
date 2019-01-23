@@ -33,7 +33,7 @@ import { Storage } from '../../src/services/storage';
     const coinsForBlock = await CoinStorage.collection.find({ chain, network, mintHeight: blockNum }).toArray();
     const seenCoins = {} as { [txid: string]: ICoin[] };
     for (let coin of coinsForBlock) {
-      if (seenCoins[coin.mintTxid][coin.mintIndex]) {
+      if (seenCoins[coin.mintTxid] && seenCoins[coin.mintTxid][coin.mintIndex]) {
         allGood = false;
         const error = { model: 'coin', err: false, type: 'DUPE_COIN', payload: coin };
         console.error(error);
