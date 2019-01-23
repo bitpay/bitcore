@@ -3033,7 +3033,7 @@ WalletService.prototype._normalizeV8TxHistory = function(walletId, txs, bcHeight
         confirmations: c,
         blockheight: tx.height > 0  ? tx.height:  null,
         fees:  tx.fee || (indexedFee[tx.txid] ?  Math.abs(indexedFee[tx.txid].satoshis) : null),
-        time: t,
+        time: parseInt(t),
         size: tx.size,
       };
       switch (tx.category) {
