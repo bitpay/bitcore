@@ -54,7 +54,7 @@ Address.fromObj = function(obj) {
   return x;
 };
 
-Address._deriveAddress = function(scriptType, publicKeyRing, path, m, coin, network) {
+Address._deriveAddress = function(scriptType, publicKeyRing, path, m, coin, network, noNativeCashAddr) {
   $.checkArgument(Utils.checkValueInCollection(scriptType, Constants.SCRIPT_TYPES));
 
   var publicKeys = _.map(publicKeyRing, function(item) {
@@ -73,16 +73,25 @@ Address._deriveAddress = function(scriptType, publicKeyRing, path, m, coin, netw
       break;
   }
 
+
+
+  let addrStr = bitcoreAddress.toString(true); 
+  if (noNativeCashAddr && coin == 'bch') {
+    addrStr =  bitcoreAddress.toLegacyAddress();
+  }
+
   return {
     // bws still use legacy addresses for BCH
-    address: coin == 'bch' ? bitcoreAddress.toLegacyAddress() : bitcoreAddress.toString(),
+    address: addrStr,
     path: path,
     publicKeys: _.invokeMap(publicKeys, 'toString'),
   };
 };
 
-Address.derive = function(walletId, scriptType, publicKeyRing, path, m, coin, network, isChange) {
-  var raw = Address._deriveAddress(scriptType, publicKeyRing, path, m, coin, network);
+
+// noNativeCashAddr only for testing
+Address.derive = function(walletId, scriptType, publicKeyRing, path, m, coin, network, isChange, noNativeCashAddr) {
+  var raw = Address._deriveAddress(scriptType, publicKeyRing, path, m, coin, network, noNativeCashAddr);
   return Address.create(_.extend(raw, {
     coin: coin,
     walletId: walletId,

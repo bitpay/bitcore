@@ -60,6 +60,10 @@ export class HeadNavComponent {
     };
   }
 
+  public goHome(): void {
+    this.navCtrl.popToRoot();
+  }
+
   public search(): void {
     this.showSearch = false;
     this.q = this.q.replace(/\s/g, '');

@@ -5,6 +5,7 @@ var $ = require('preconditions').singleton();
 var async = require('async');
 var log = require('npmlog');
 var serverMessages = require('../serverMessages');
+var BCHAddressTranslator = require('./bchaddresstranslator');
 
 log.debug = log.verbose;
 log.disableColor();
@@ -478,6 +479,7 @@ WalletService.prototype.createWallet = function(opts, cb) {
         singleAddress: !!opts.singleAddress,
         derivationStrategy: derivationStrategy,
         addressType: addressType,
+        nativeCashAddr: opts.nativeCashAddr,
       });
       self.storage.storeWallet(wallet, function(err) {
         self.logi('Wallet created', wallet.id, opts.network);
@@ -501,7 +503,24 @@ WalletService.prototype.getWallet = function(opts, cb) {
   self.storage.fetchWallet(self.walletId, function(err, wallet) {
     if (err) return cb(err);
     if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
-    return cb(null, wallet);
+
+    // cashAddress migration
+    if (wallet.coin != 'bch' || wallet.nativeCashAddr)  
+      return cb(null, wallet);
+
+    // only for testing
+    if (opts.doNotMigrate) return cb(null, wallet);
+
+    // remove someday...
+    log.info(`Migrating wallet ${wallet.id} to cashAddr`);
+    self.storage.migrateToCashAddr(self.walletId,(e)=> {
+      if (e) return cb(e);
+      wallet.nativeCashAddr=true;
+      return self.storage.storeWallet(wallet, (e)=> {
+        if (e) return cb(e);
+        return cb(e, wallet);
+      });
+    });
   });
 };
 
@@ -1084,6 +1103,7 @@ WalletService.prototype._store = function(wallet, address, cb, checkSync) {
  * Creates a new address.
  * @param {Object} opts
  * @param {Boolean} [opts.ignoreMaxGap=false] - Ignore constraint of maximum number of consecutive addresses without activity
+ * @param {Boolean} opts.noCashAddr (do not use cashaddr, only for backwards compat)
  * @returns {Address} address
  */
 WalletService.prototype.createAddress = function(opts, cb) {
@@ -1124,7 +1144,7 @@ WalletService.prototype.createAddress = function(opts, cb) {
     if (!canCreate) return cb(Errors.MAIN_ADDRESS_GAP_REACHED);
 
     self._runLocked(cb, function(cb) {
-      self.getWallet({}, function(err, wallet) {
+      self.getWallet({doNotMigrate: opts.doNotMigrate}, function(err, wallet) {
         if (err) return cb(err);
         if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
         if (wallet.scanStatus == 'error') 
@@ -1135,6 +1155,10 @@ WalletService.prototype.createAddress = function(opts, cb) {
         return createFn(wallet, (err, address) => {
           if (err) {
             return cb(err);
+          }
+
+          if (wallet.coin == 'bch' && opts.noCashAddr) {
+            address.address = BCHAddressTranslator.translate(address.address, 'copay');
           }
 
           return cb(err, address);
@@ -1238,7 +1262,7 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
         if (wallet.scanStatus == 'error') 
           return cb(Errors.WALLET_NEED_SCAN);
 
-        coin = opts.coin || wallet.coin;
+        coin = wallet.coin;
 
         bc = self._getBlockchainExplorer(coin, wallet.network);
         if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
@@ -1261,21 +1285,8 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
       });
     },
     function(next) {
-
       addressStrs = _.map(allAddresses, 'address');
-      if (!opts.coin) return next();
-
-      coin = opts.coin;
-      if (coin != 'bch') return next();
-
-      if (Utils.getAddressCoin(addressStrs[0]) == 'bch') 
-        return next();
-
-      // because some old BCH walelts could have legacy addresses?
-      addressStrs =  _.map(addressStrs, function(a) {
-        return Utils.translateAddress(a, coin);
-      });
-      next();
+      return next();
     },
     function(next) {
       if (!wallet.isComplete()) return next();
@@ -1330,7 +1341,6 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
       });
     },
     function(next) {
-      if (opts.coin) return next();
       // Needed for the clients to sign UTXOs
       var addressToPath = _.keyBy(allAddresses, 'address');
       _.each(allUtxos, function(utxo) {
@@ -1356,7 +1366,6 @@ WalletService.prototype._getUtxosForCurrentWallet = function(opts, cb) {
 /**
  * Returns list of UTXOs
  * @param {Object} opts
- * @param {String} [opts.coin='btc'] (optional)
  * @param {Array} [opts.addresses] - List of addresses. options. only one address is supported
  * @returns {Array} utxos - List of UTXOs.
  */
@@ -1364,6 +1373,11 @@ WalletService.prototype.getUtxos = function(opts, cb) {
   var self = this;
 
   opts = opts || {};
+
+  if (opts.coin) {
+    return cb(new ClientError('coins option no longer supported'));
+  }
+
   if (opts.addresses) {
 
     if (opts.addresses.length>1)
@@ -1400,15 +1414,7 @@ WalletService.prototype.getUtxos = function(opts, cb) {
 
     });
   }  else {
-
-    if (opts.coin) {
-      if (!Utils.checkValueInCollection(opts.coin, Constants.COINS))
-      return cb(new ClientError('Invalid coin'));
-    }
-
-    self._getUtxosForCurrentWallet({
-      coin: opts.coin
-    }, cb);
+    self._getUtxosForCurrentWallet({}, cb);
   }
 };
 
@@ -1429,7 +1435,6 @@ WalletService.prototype._totalizeUtxos = function(utxos) {
 /**
  * Get wallet balance.
  * @param {Object} opts
- * @param {string} [opts.coin] - Override wallet coin (default wallet's coin).
  * @returns {Object} balance - Total amount & locked amount.
  */
 
@@ -1438,7 +1443,7 @@ WalletService.prototype.getBalance = function(opts, cb, i) {
   opts = opts || {};
 
   if (opts.coin) {
-    return cb(new ClientError('opts.coin no longer supported'));
+    return cb(new ClientError('coin is not longer supported in getBalance'));
   }
 
   let wallet = opts.wallet;
@@ -2062,8 +2067,30 @@ WalletService.prototype._canCreateTx = function(cb) {
   });
 };
 
-WalletService.prototype._validateOutputs = function(opts, wallet, cb) {
+
+WalletService.prototype._validateAddr = function(wallet, inaddr, opts) {
   var A = Bitcore_[wallet.coin].Address;
+
+  var addr = {};
+  try {
+    addr = new A(inaddr);
+  } catch (ex) {
+    return Errors.INVALID_ADDRESS;
+  }
+  if (addr.network.toString() != wallet.network) {
+    return Errors.INCORRECT_ADDRESS_NETWORK;
+  }
+
+  if (wallet.coin == 'bch' && !opts.noCashAddr) {
+    if (addr.toString(true) !=  inaddr)
+    return Errors.ONLY_CASHADDR;
+  }
+
+  return;
+};
+
+WalletService.prototype._validateOutputs = function(opts, wallet, cb) {
+  var self = this;
   var dustThreshold = Math.max(Defaults.MIN_OUTPUT_AMOUNT, Bitcore_[wallet.coin].Transaction.DUST_AMOUNT);
 
   if (_.isEmpty(opts.outputs)) return new ClientError('No outputs were specified');
@@ -2072,18 +2099,13 @@ WalletService.prototype._validateOutputs = function(opts, wallet, cb) {
     var output = opts.outputs[i];
     output.valid = false;
 
+    let addrErr = self._validateAddr(wallet, output.toAddress, opts);
+    if (addrErr) return addrErr;
+
+    
+
     if (!checkRequired(output, ['toAddress', 'amount'])) {
       return new ClientError('Argument missing in output #' + (i + 1) + '.');
-    }
-
-    var toAddress = {};
-    try {
-      toAddress = new A(output.toAddress);
-    } catch (ex) {
-      return Errors.INVALID_ADDRESS;
-    }
-    if (toAddress.network != wallet.network) {
-      return Errors.INCORRECT_ADDRESS_NETWORK;
     }
 
     if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount <= 0) {
@@ -2166,6 +2188,7 @@ WalletService.prototype._validateAndSanitizeTxOpts = function(wallet, opts, cb) 
     function(next) {
       // check outputs are on 'copay' format for BCH
       if (wallet.coin != 'bch') return next();
+      if (!opts.noCashAddr) return next();
 
       // TODO remove one cashaddr is used internally (noCashAddr flag)?
       opts.origAddrOutputs = _.map(opts.outputs, (x) => {
@@ -2240,7 +2263,8 @@ WalletService.prototype._getFeePerKb = function(wallet, opts, cb) {
  * @param {Array} opts.inputs - Optional. Inputs for this TX
  * @param {number} opts.fee - Optional. Use an fixed fee for this TX (only when opts.inputs is specified)
  * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
- * @returns {TxProposal} Transaction proposal.
+ * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch
+ * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
  */
 WalletService.prototype.createTx = function(opts, cb) {
   var self = this;
@@ -2256,6 +2280,12 @@ WalletService.prototype.createTx = function(opts, cb) {
       });
     } else {
       if (opts.changeAddress) {
+
+        // 
+
+        let addrErr = self._validateAddr(wallet, opts.changeAddress, opts);
+        if (addrErr) return cb(addrErr);
+
         self.storage.fetchAddressByWalletId(wallet.id, opts.changeAddress, function(err, address) {
           if (err || !address) return cb(Errors.INVALID_CHANGE_ADDRESS);
           return cb(null, address);
@@ -2356,16 +2386,28 @@ WalletService.prototype.createTx = function(opts, cb) {
           function(next) {
 
             if (opts.dryRun) return next();
+
+            if (txp.coin == 'bch') {
+
+              if (opts.noCashAddr && txp.changeAddress) {
+                txp.changeAddress.address= BCHAddressTranslator.translate(txp.changeAddress.address,'copay');
+              }
+            }
+
+
             self.storage.storeTx(wallet.id, txp, next);
           },
         ], function(err) {
           if (err) return cb(err);
 
-          //
-          if (opts.returnOrigAddrOutputs) {
-            log.info('Returning Orig BCH address outputs for compat');
-            txp.outputs = opts.origAddrOutputs;
-          }
+            if (txp.coin == 'bch') {
+              if (opts.returnOrigAddrOutputs) {
+                log.info('Returning Orig BCH address outputs for compat');
+                txp.outputs = opts.origAddrOutputs;
+              }
+            }
+
+
           return cb(null, txp);
         });
 
@@ -2383,6 +2425,7 @@ WalletService.prototype._verifyRequestPubKey = function(requestPubKey, signature
  * @param {Object} opts
  * @param {string} opts.txProposalId - The tx id.
  * @param {string} opts.proposalSignature - S(raw tx). Used by other copayers to verify the proposal.
+ * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch
  */
 WalletService.prototype.publishTx = function(opts, cb) {
   var self = this;
@@ -2446,6 +2489,15 @@ WalletService.prototype.publishTx = function(opts, cb) {
             if (err) return cb(err);
 
             self._notifyTxProposalAction('NewTxProposal', txp, function() {
+
+
+              if (opts.noCashAddr && txp.coin == 'bch') {
+                if (txp.changeAddress) {
+                  txp.changeAddress.address= BCHAddressTranslator.translate(txp.changeAddress.address,'copay');
+                }
+              }
+
+
               return cb(null, txp);
             });
           });
@@ -2846,6 +2898,7 @@ WalletService.prototype.rejectTx = function(opts, cb) {
 /**
  * Retrieves pending transaction proposals.
  * @param {Object} opts
+ * @param {Boolean} opts.noCashAddr (do not use cashaddr, only for backwards compat)
  * @returns {TxProposal[]} Transaction proposal.
  */
 WalletService.prototype.getPendingTxs = function(opts, cb) {
@@ -2868,9 +2921,26 @@ WalletService.prototype.getPendingTxs = function(opts, cb) {
         }, next);
       });
     }, function(err) {
-      return cb(err, _.reject(txps, function(txp) {
+
+      txps = _.reject(txps, function(txp) {
         return txp.status == 'broadcasted';
-      }));
+      })
+
+      if (opts.noCashAddr && txps[0] && txps[0].coin == 'bch') {
+console.log('## [server.js.2989]'); //TODO
+        _.each(txps, (x) => {
+          if (x.changeAddress) {
+            x.changeAddress.address= BCHAddressTranslator.translate(x.changeAddress.address,'copay');
+          }
+          _.each(x.outputs, (x) => {
+            if (x.toAddress) {
+              x.toAddress= BCHAddressTranslator.translate(x.toAddress,'copay');
+            }
+          });
+        });
+      }
+
+      return cb(err, txps);
     });
   });
 };
@@ -3675,7 +3745,6 @@ WalletService.prototype.getTxHistory = function(opts, cb) {
         } else {
           self.logi(`History from bc ${from}/${to}: ${finalTxs.length} txs`);
         }
-        //console.log('[server.js.3504:finalTxs:]',finalTxs); //TODO
         return cb(null, finalTxs, !!res.txs.fromCache, !!res.txs.useStream);
       });
     });

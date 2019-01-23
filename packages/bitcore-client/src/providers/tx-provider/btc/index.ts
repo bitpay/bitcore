@@ -1,4 +1,4 @@
-export class BTCTxProvder {
+export class BTCTxProvider {
   lib = require('bitcore-lib');
 
   create({ recipients, utxos, change, fee }) {
@@ -48,4 +48,3 @@ export class BTCTxProvder {
     return applicableUtxos.map(utxo => utxo.address);
   }
 }
-export default new BTCTxProvder();

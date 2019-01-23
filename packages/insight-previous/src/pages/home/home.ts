@@ -1,5 +1,5 @@
 import { Component, Injectable, ViewChild } from '@angular/core';
-import { Events, IonicPage, NavParams } from 'ionic-angular';
+import { Events, IonicPage, Nav, NavParams } from 'ionic-angular';
 import { LatestBlocksComponent } from '../../components/latest-blocks/latest-blocks';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { PriceProvider } from '../../providers/price/price';
@@ -16,19 +16,34 @@ import { PriceProvider } from '../../providers/price/price';
 export class HomePage {
   @ViewChild('latestBlocks')
   public latestBlocks: LatestBlocksComponent;
+  public chain: string;
+  public network: string;
   constructor(
+    public nav: Nav,
     public navParams: NavParams,
     private apiProvider: ApiProvider,
     private priceProvider: PriceProvider,
     public events: Events
   ) {
+    const chainParam = navParams.get('chain');
+    const networkParam = navParams.get('network');
+
+    this.chain = chainParam ||
+      this.apiProvider.networkSettings.value.selectedNetwork.chain;
+    this.network = networkParam ||
+      this.apiProvider.networkSettings.value.selectedNetwork.network;
+
+    // Set rootPage for deep links
+    if (!chainParam || !networkParam) {
+      this.nav.setRoot('home', {
+        chain: this.chain,
+        network: this.network
+      });
+    }
+
     const chainNetwork: ChainNetwork = {
-      chain:
-        navParams.get('chain') ||
-        this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network:
-        navParams.get('network') ||
-        this.apiProvider.networkSettings.value.selectedNetwork.network
+      chain: this.chain,
+      network: this.network
     };
     this.apiProvider.changeNetwork(chainNetwork);
     this.loadView(chainNetwork, false);
@@ -39,5 +54,12 @@ export class HomePage {
     if (currencyChanged) {
       this.latestBlocks.reloadData();
     }
+  }
+
+  public openPage(page: string): void {
+    this.nav.push(page, {
+      chain: this.chain,
+      network: this.network
+    });
   }
 }
