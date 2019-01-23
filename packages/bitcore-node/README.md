@@ -99,7 +99,11 @@ npm run node
 
 # API Documentation
 
-[API parameters and example responses](./docs/api-documentation.md)
+[REST API parameters and example responses](./docs/api-documentation.md)
+
+[Websockets API namespaces, event names, and parameters](./docs/sockets-api.md)
+
+[Testing Bitcore-node in RegTest](./docs/wallet-guide.md)
 
 ## Contributing
 
@@ -109,4 +113,4 @@ See [CONTRIBUTING.md](https://github.com/bitpay/bitcore) on the main bitcore rep
 
 Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
 
-Copyright 2015 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
+Copyright 2015-2019 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.

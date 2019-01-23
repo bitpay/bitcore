@@ -38,6 +38,18 @@ If you provide privKey, pubKey must be provided as well
 ./wallet-balance --name TestWalletBTC
 ```
 
+### Balance Checking at Specific Date or Time
+```
+./wallet-balance --name TestWalletBTC --time 01-15-2019
+```
+
+Valid types of time (no slash marks allowed):
+```
+1-14-2019
+"Wed Jan 16 2019 13:34:20 GMT-0500 (Eastern Standard Time)"
+"2019-01-16T18:47:33.396Z"
+```
+
 ### Wallet UTXOS
 ```
 ./bin/wallet-utxos --name TestWalletBTC
