@@ -1,6 +1,5 @@
 import { WalletAddressStorage } from '../models/walletAddress';
 import { BaseModel } from './base';
-import { TransformOptions } from '../types/TransformOptions';
 import { ObjectID } from 'mongodb';
 import { StorageService } from '../services/storage';
 
@@ -24,12 +23,8 @@ export class WalletModel extends BaseModel<IWallet> {
     this.collection.createIndex({ pubKey: 1 }, { background: true });
   }
 
-  _apiTransform(wallet: IWallet, options: TransformOptions) {
-    let transform = { name: wallet.name, pubKey: wallet.pubKey };
-    if (options && options.object) {
-      return transform;
-    }
-    return JSON.stringify(transform);
+  _apiTransform(wallet: IWallet) {
+    return { name: wallet.name, pubKey: wallet.pubKey };
   }
 
   async updateCoins(wallet: IWallet) {

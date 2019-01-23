@@ -3,7 +3,7 @@ import { BlockStorage, IBlock } from '../../../src/models/block';
 import { TransactionStorage } from '../../../src/models/transaction';
 import { CoinStorage } from '../../../src/models/coin';
 import * as sinon from 'sinon';
-import { TEST_BLOCK } from '../../data/test-block';
+import { block1 } from '../../data/test-block';
 import { Storage } from '../../../src/services/storage';
 import { mockStorage } from '../../helpers';
 import { mockCollection } from '../../helpers/index.js';
@@ -13,10 +13,10 @@ import { MongoBound } from '../../../src/models/base';
 
 describe('Block Model', function() {
   let addBlockParams = {
-    chain: 'BTC',
-    network: 'regtest',
-    block: TEST_BLOCK,
-    height: 1355,
+    chain: 'BCH',
+    network: 'mainnet',
+    block: block1,
+    height: 1,
     initialSyncComplete: false
   };
 
@@ -90,16 +90,12 @@ describe('Block Model', function() {
     });
     it('should return the new tip', async () => {
       mockStorage(null);
-      const params = { chain: 'BTC', network: 'regtest' };
+      const params = { chain: 'BCH', network: 'mainnet' };
       const result = await ChainStateProvider.getLocalTip(params);
       expect(result.height).to.deep.equal(addBlockParams.height + 1);
       expect(result.chain).to.deep.equal(addBlockParams.chain);
       expect(result.network).to.deep.equal(addBlockParams.network);
     });
-  });
-
-  describe('getPoolInfo', () => {
-    xit('should return pool info given a coinbase string');
   });
 
   describe('getLocatorHashes', () => {
@@ -140,10 +136,10 @@ describe('Block Model', function() {
           prevHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9',
           hash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
           time: 1526756523,
-          version: '536870912',
+          version: 536870912,
           merkleRoot: '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
-          bits: parseInt('207fffff', 16).toString(),
-          nonce: '2'
+          bits: parseInt('207fffff', 16),
+          nonce: 2
         },
         chain: 'BTC',
         network: 'regtest'
@@ -163,10 +159,10 @@ describe('Block Model', function() {
       let coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 
       let blockMethodParams = {
-        chain: 'BTC',
-        network: 'regtest',
-        block: TEST_BLOCK,
-        height: 1355
+        chain: 'BCH',
+        network: 'mainnet',
+        block: block1,
+        height: 1
       };
       let params = Object.assign(BlockStorage, blockMethodParams);
 
@@ -183,10 +179,10 @@ describe('Block Model', function() {
         previousBlockHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
       });
       let blockMethodParams = {
-        chain: 'BTC',
-        network: 'regtest',
-        block: TEST_BLOCK,
-        height: 1355
+        chain: 'BCH',
+        network: 'mainnet',
+        block: block1,
+        height: 1
       };
       let params = Object.assign(BlockStorage, blockMethodParams);
       const removeSpy = BlockStorage.collection.deleteMany as sinon.SinonSpy;
@@ -202,10 +198,10 @@ describe('Block Model', function() {
       });
 
       let blockMethodParams = {
-        chain: 'BTC',
-        network: 'regtest',
-        block: TEST_BLOCK,
-        height: 1355
+        chain: 'BCH',
+        network: 'mainnet',
+        block: block1,
+        height: 1
       };
       let params = Object.assign(BlockStorage, blockMethodParams);
       const removeSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
@@ -221,10 +217,10 @@ describe('Block Model', function() {
       });
 
       let blockMethodParams = {
-        chain: 'BTC',
-        network: 'regtest',
-        block: TEST_BLOCK,
-        height: 1355
+        chain: 'BCH',
+        network: 'mainnet',
+        block: block1,
+        height: 1
       };
       let params = Object.assign(BlockStorage, blockMethodParams);
       const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
@@ -242,10 +238,10 @@ describe('Block Model', function() {
       });
 
       let blockMethodParams = {
-        chain: 'BTC',
-        network: 'regtest',
-        block: TEST_BLOCK,
-        height: 1355
+        chain: 'BCH',
+        network: 'mainnet',
+        block: block1,
+        height: 1
       };
       let params = Object.assign(BlockStorage, blockMethodParams);
       const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
@@ -260,7 +256,7 @@ describe('Block Model', function() {
   describe('_apiTransform', () => {
     it('should return the transform object with block values', () => {
       const block: IBlock = {
-        chain: 'BTC',
+        chain: 'BCH',
         network: 'mainnet',
         height: 1,
         hash: 'abcd',
@@ -275,20 +271,29 @@ describe('Block Model', function() {
         size: 255,
         bits: 256,
         reward: 5000000000,
+        coinbaseTxId: '',
+        coinbaseUnlockingScript: '',
+        coinbaseUnlockingScriptUtf8: '',
+        coinbaseMintTxId: '0000000000000000000000000000000000000000000000000000000000000000',
+        coinbaseMintIndex: 0xffffffff,
+        coinbaseSequenceNumber: 0xffffffff,
         processed: true
       };
 
-      const result = BlockStorage._apiTransform(block, { object: true });
+      const result = BlockStorage._apiTransform(block);
 
       expect(result.hash).to.be.equal(block.hash);
       expect(result.height).to.be.equal(block.height);
       expect(result.version).to.be.equal(block.version);
       expect(result.size).to.be.equal(block.size);
       expect(result.merkleRoot).to.be.equal(block.merkleRoot);
-      expect(result.time).to.equal(block.time);
-      expect(result.timeNormalized).to.equal(block.timeNormalized);
+      expect(result.time).to.equal(block.time.toISOString());
+      expect(result.timeNormalized).to.equal(block.timeNormalized.toISOString());
       expect(result.nonce).to.be.equal(block.nonce);
       expect(result.bits).to.be.equal(block.bits);
+      expect(result.coinbaseTxId).to.be.equal(block.coinbaseTxId);
+      expect(result.coinbaseUnlockingScript).to.be.equal(block.coinbaseUnlockingScript);
+      expect(result.coinbaseUnlockingScriptUtf8).to.be.equal(block.coinbaseUnlockingScriptUtf8);
       expect(result.previousBlockHash).to.be.equal(block.previousBlockHash);
       expect(result.nextBlockHash).to.be.equal(block.nextBlockHash);
       expect(result.transactionCount).to.be.equal(block.transactionCount);

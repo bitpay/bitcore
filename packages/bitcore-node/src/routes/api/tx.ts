@@ -5,6 +5,7 @@ import { ChainStateProvider } from '../../providers/chain-state';
 import logger from '../../logger';
 import { TransactionJSON } from '../../types/Transaction';
 import { CacheTimes } from '../middleware';
+const Chain = require('../../chain');
 const router = Router({ mergeParams: true });
 
 router.get('/', function(req, res) {
@@ -77,17 +78,81 @@ router.get('/:txId/authhead', async (req, res) => {
   }
 });
 
-router.get('/:txid/coins', (req, res, next) => {
-  let { chain, network, txid } = req.params;
-  if (typeof txid !== 'string' || typeof chain !== 'string' || typeof network !== 'string') {
+router.get('/:txId/coins', (req, res, next) => {
+  let { chain, network, txId } = req.params;
+  if (typeof txId !== 'string' || typeof chain !== 'string' || typeof network !== 'string') {
     res.status(400).send('Missing required param');
   } else {
     chain = chain.toUpperCase();
     network = network.toLowerCase();
-    ChainStateProvider.getCoinsForTx({ chain, network, txid })
+    ChainStateProvider.getCoinsForTx({ chain, network, txid: txId })
       .then(coins => {
         res.setHeader('Content-Type', 'application/json');
         return res.status(200).send(JSON.stringify(coins));
+      })
+      .catch(next);
+  }
+});
+
+router.get('/:txId/raw', (req, res, next) => {
+  let { chain, network, txId } = req.params;
+  if (typeof txId !== 'string' || typeof chain !== 'string' || typeof network !== 'string') {
+    return res.status(400).send('Missing required param');
+  } else {
+    chain = chain.toUpperCase();
+    network = network.toLowerCase();
+    return Promise.all([
+      ChainStateProvider.getTransaction({ chain, network, txId }),
+      ChainStateProvider.getCoinsForTx({ chain, network, txid: txId })
+    ])
+      .then(async ([txJson, coins]) => {
+        if (txJson === undefined) {
+          return res.status(404).send(`Could not find transaction: ${txId}`);
+        }
+        if (coins === undefined) {
+          return res.status(500).send(`Coin information is not available for transaction: ${txId}`);
+        }
+        const txData = {
+          version: txJson.version,
+          inputs: coins.inputs
+            .sort((a, b) => (a.spentIndex < b.spentIndex ? -1 : 1))
+            .map(input => ({
+              prevTxId: input.mintTxid,
+              outputIndex: input.mintIndex,
+              sequenceNumber: input.inputSequenceNumber,
+              script: input.unlockingScript
+            })),
+          outputs: coins.outputs
+            .sort((a, b) => (a.mintIndex < b.mintIndex ? -1 : 1))
+            .map(output => ({
+              satoshis: output.value,
+              script: output.lockingScript
+            })),
+          nLockTime: txJson.locktime
+        };
+        if (txJson.coinbase === true) {
+          const coinbaseBlock = await ChainStateProvider.getBlock({ chain, network, blockId: txJson.blockHash });
+          if (coinbaseBlock === undefined) {
+            return res.status(500).send(`Some input information is not available for coinbase transaction: ${txId}`);
+          }
+          txData.inputs = [
+            {
+              prevTxId: coinbaseBlock.coinbaseMintTxId,
+              outputIndex: coinbaseBlock.coinbaseMintIndex,
+              sequenceNumber: coinbaseBlock.coinbaseSequenceNumber,
+              script: coinbaseBlock.coinbaseUnlockingScript
+            }
+          ];
+        }
+        const tx = Chain[chain].lib.Transaction(txData);
+        if (tx.hash !== txId) {
+          return res.status(500).send(`Some database information appears to be corrupted for transaction: ${txId}`);
+        }
+        return tx.toBuffer().toString('hex');
+      })
+      .then((raw: string) => {
+        res.setHeader('Content-Type', 'application/json');
+        return res.status(200).send(raw);
       })
       .catch(next);
   }

@@ -13,17 +13,22 @@ describe('Coin Model', function() {
         chain: 'BTC',
         mintTxid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
         mintIndex: 0,
+        spentIndex: 0,
         mintHeight: 1,
         coinbase: true,
         value: 5000000000.0,
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
-        script: Buffer.from(''),
+        lockingScript: '',
+        lockingScriptAsm: '',
+        unlockingScript: '',
+        unlockingScriptAsm: '',
+        inputSequenceNumber: 0xffffffff,
         wallets: [],
         spentTxid: '',
         spentHeight: SpentHeightIndicators.unspent
       } as ICoin;
 
-      const result = CoinStorage._apiTransform(coin, { object: false });
+      const result = JSON.stringify(CoinStorage._apiTransform(coin));
 
       const parseResult = JSON.parse(result.toString());
       expect(parseResult).to.deep.equal({
@@ -35,9 +40,14 @@ describe('Coin Model', function() {
         mintIndex: 0,
         chain: 'BTC',
         spentTxid: '',
+        spentIndex: 0,
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
         coinbase: true,
-        script: '',
+        lockingScript: '',
+        lockingScriptAsm: '',
+        unlockingScript: '',
+        unlockingScriptAsm: '',
+        inputSequenceNumber: 0xffffffff,
         spentHeight: SpentHeightIndicators.unspent,
         value: 5000000000.0
       });
@@ -50,30 +60,40 @@ describe('Coin Model', function() {
         chain: 'BTC',
         mintTxid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
         mintIndex: 0,
+        spentIndex: 0,
         mintHeight: 1,
         coinbase: true,
         value: 5000000000.0,
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
-        script: Buffer.from(''),
+        lockingScript: '',
+        lockingScriptAsm: '',
+        unlockingScript: '',
+        unlockingScriptAsm: '',
+        inputSequenceNumber: 0xffffffff,
         wallets: [],
         spentTxid: '',
         spentHeight: SpentHeightIndicators.unspent
       } as ICoin;
 
-      const result = CoinStorage._apiTransform(coin, { object: true });
+      const result = CoinStorage._apiTransform(coin);
       expect(result).to.deep.equal({
         _id: id.toHexString(),
         mintTxid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
         network: 'regtest',
         chain: 'BTC',
         spentTxid: '',
+        spentIndex: 0,
         mintHeight: 1,
         mintIndex: 0,
         spentHeight: SpentHeightIndicators.unspent,
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
         coinbase: true,
         confirmations: -1,
-        script: '',
+        lockingScript: '',
+        lockingScriptAsm: '',
+        unlockingScript: '',
+        unlockingScriptAsm: '',
+        inputSequenceNumber: 0xffffffff,
         value: 5000000000.0
       });
     });

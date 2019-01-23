@@ -2,7 +2,6 @@ import { CoinStorage } from './coin';
 import { WalletAddressStorage } from './walletAddress';
 import { partition } from '../utils/partition';
 import { ObjectID } from 'bson';
-import { TransformOptions } from '../types/TransformOptions';
 import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { BaseModel, MongoBound } from './base';
@@ -13,6 +12,8 @@ import { Socket } from '../services/socket';
 import { TransactionJSON } from '../types/Transaction';
 import { SpentHeightIndicators } from '../types/Coin';
 import { Config } from '../services/config';
+import { BitcoinScript } from '../types/namespaces/Bitcoin/Transaction';
+import { valueOrDefault } from '../utils/check';
 
 const Chain = require('../chain');
 
@@ -25,14 +26,21 @@ export type ITransaction = {
   blockTime?: Date;
   blockTimeNormalized?: Date;
   coinbase: boolean;
+  confirmations?: number;
   fee: number;
   size: number;
   locktime: number;
   inputCount: number;
   outputCount: number;
   value: number;
+  version: number;
   wallets: ObjectID[];
 };
+
+const limitAsmSize = (limit: number) => (script?: BitcoinScript) =>
+  script && limit > 0 && script.toBuffer().length <= limit ? script.toASM() : undefined;
+const limitLockingAsmSize = limitAsmSize(Config.get().lockingScriptAsmByteLimit);
+const limitUnlockingAsmSize = limitAsmSize(Config.get().unlockingScriptAsmByteLimit);
 
 @LoggifyClass
 export class TransactionModel extends BaseModel<ITransaction> {
@@ -162,7 +170,8 @@ export class TransactionModel extends BaseModel<ITransaction> {
                 inputCount: parentTx.inputCount,
                 outputCount: parentTx.outputCount,
                 value: parentTx.value,
-                wallets: []
+                version: parentTx.version,
+                wallets: [] as ObjectID[]
               }
             },
             upsert: true,
@@ -246,6 +255,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
                 inputCount: tx.inputs.length,
                 outputCount: tx.outputs.length,
                 value: tx.outputAmount,
+                version: tx.version,
                 wallets
               }
             },
@@ -321,7 +331,8 @@ export class TransactionModel extends BaseModel<ITransaction> {
                 mintHeight: height,
                 coinbase: isCoinbase,
                 value: output.satoshis,
-                script: output.script && output.script.toBuffer(),
+                lockingScript: output.script && output.script.toHex(),
+                lockingScriptAsm: limitLockingAsmSize(output.script),
                 spentHeight: SpentHeightIndicators.unspent,
                 wallets: []
               }
@@ -388,6 +399,13 @@ export class TransactionModel extends BaseModel<ITransaction> {
         if (sameBlockSpend) {
           sameBlockSpend.updateOne.update.$set.spentHeight = height;
           sameBlockSpend.updateOne.update.$set.spentTxid = tx._hash;
+          sameBlockSpend.updateOne.update.$set.spentIndex = inputObj.outputIndex;
+          sameBlockSpend.updateOne.update.$set.unlockingScript = inputObj.script;
+          sameBlockSpend.updateOne.update.$set.unlockingScriptAsm = limitUnlockingAsmSize(
+            new Chain[chain].lib.Script(inputObj.script)
+          );
+          sameBlockSpend.updateOne.update.$set.inputSequenceNumber = inputObj.sequenceNumber;
+
           continue;
         }
         const updateQuery: any = {
@@ -399,7 +417,16 @@ export class TransactionModel extends BaseModel<ITransaction> {
               chain,
               network
             },
-            update: { $set: { spentTxid: tx._hash, spentHeight: height } }
+            update: {
+              $set: {
+                spentHeight: height,
+                spentTxid: tx._hash,
+                spentIndex: inputObj.outputIndex,
+                unlockingScript: inputObj.script,
+                unlockingScriptAsm: limitUnlockingAsmSize(new Chain[chain].lib.Script(inputObj.script)),
+                inputSequenceNumber: inputObj.sequenceNumber
+              }
+            }
           }
         };
         spendOps.push(updateQuery);
@@ -466,28 +493,26 @@ export class TransactionModel extends BaseModel<ITransaction> {
     return this.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true);
   }
 
-  _apiTransform(tx: Partial<MongoBound<ITransaction>>, options: TransformOptions): TransactionJSON | string {
-    const transaction: TransactionJSON = {
+  _apiTransform(tx: Partial<MongoBound<ITransaction>>): TransactionJSON {
+    return {
       _id: tx._id ? tx._id.toString() : '',
-      txid: tx.txid || '',
-      network: tx.network || '',
-      chain: tx.chain || '',
-      blockHeight: tx.blockHeight || -1,
-      blockHash: tx.blockHash || '',
+      txid: valueOrDefault(tx.txid, ''),
+      network: valueOrDefault(tx.network, ''),
+      chain: valueOrDefault(tx.chain, ''),
+      blockHeight: valueOrDefault(tx.blockHeight, -1),
+      blockHash: valueOrDefault(tx.blockHash, ''),
       blockTime: tx.blockTime ? tx.blockTime.toISOString() : '',
       blockTimeNormalized: tx.blockTimeNormalized ? tx.blockTimeNormalized.toISOString() : '',
-      coinbase: tx.coinbase || false,
-      locktime: tx.locktime || -1,
-      inputCount: tx.inputCount || -1,
-      outputCount: tx.outputCount || -1,
-      size: tx.size || -1,
-      fee: tx.fee || -1,
-      value: tx.value || -1
+      coinbase: valueOrDefault(tx.coinbase, false),
+      confirmations: valueOrDefault(tx.confirmations, -1),
+      locktime: valueOrDefault(tx.locktime, -1),
+      inputCount: valueOrDefault(tx.inputCount, -1),
+      outputCount: valueOrDefault(tx.outputCount, -1),
+      size: valueOrDefault(tx.size, -1),
+      fee: valueOrDefault(tx.fee, -1),
+      value: valueOrDefault(tx.value, -1),
+      version: valueOrDefault(tx.version, -1)
     };
-    if (options && options.object) {
-      return transaction;
-    }
-    return JSON.stringify(transaction);
   }
 }
 export let TransactionStorage = new TransactionModel();

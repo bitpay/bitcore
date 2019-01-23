@@ -1,146 +1,31 @@
-import { TEST_TX, TEST_TX_1, TEST_TX_2, TEST_TX_3 } from './test-tx';
+const lib = require('bitcore-lib-cash');
+import { tx1, tx2, tx3, tx4 } from './test-tx';
 import { Bitcoin } from '../../src/types/namespaces/Bitcoin';
-export const TEST_BLOCK: Bitcoin.Block = {
-  hash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
-  transactions: [TEST_TX],
-  toBuffer: () => {
-    return { length: 264 } as Buffer;
-  },
-  header: {
-    toObject: () => {
-      return {
-        hash:
-          '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
-        confirmations: 1,
-        strippedsize: 228,
-        size: 264,
-        weight: 948,
-        height: 1355,
-        version: '536870912',
-        versionHex: '20000000',
-        merkleRoot:
-          '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
-        tx: [
-          '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08'
-        ],
-        time: 1526756523,
-        mediantime: 1526066375,
-        nonce: '2',
-        bits: parseInt('207fffff', 16).toString(),
-        difficulty: 4.656542373906925e-10,
-        chainwork:
-          '0000000000000000000000000000000000000000000000000000000000000a98',
-        prevHash:
-          '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9'
-      };
-    }
-  }
-};
-export const TEST_BLOCK_1: Bitcoin.Block = {
-  hash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
-  transactions: [TEST_TX_1],
-  toBuffer: () => {
-    return { length: 264 } as Buffer;
-  },
-  header: {
-    toObject: () => {
-      return {
-        hash:
-          '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
-        confirmations: 122,
-        strippedsize: 226,
-        size: 262,
-        weight: 940,
-        height: 1362,
-        version: '536870912',
-        versionHex: '20000000',
-        merkleRoot:
-          'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
-        tx: [
-          'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e'
-        ],
-        time: 1526326784,
-        mediantime: 1526326784,
-        nonce: '3',
-        bits: parseInt('207fffff', 16).toString(),
-        difficulty: 4.656542373906925e-10,
-        chainwork:
-          '0000000000000000000000000000000000000000000000000000000000000a98',
-        prevHash:
-          '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929'
-      };
-    }
-  }
-};
-export const TEST_BLOCK_2: Bitcoin.Block = {
-  hash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
-  transactions: [TEST_TX_2],
-  toBuffer: () => {
-    return { length: 264 } as Buffer;
-  },
-  header: {
-    toObject: () => {
-      return {
-        hash:
-          '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
-        confirmations: 106,
-        strippedsize: 226,
-        size: 262,
-        weight: 940,
-        height: 1367,
-        version: '536870912',
-        versionHex: '20000000',
-        merkleRoot:
-          '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
-        tx: [
-          '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826'
-        ],
-        time: 1526326785,
-        mediantime: 1526326784,
-        nonce: '0',
-        bits: parseInt('207fffff', 16).toString(),
-        difficulty: 4.656542373906925e-10,
-        chainwork:
-          '0000000000000000000000000000000000000000000000000000000000000a98',
-        prevHash:
-          '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7'
-      };
-    }
-  }
-};
-export const TEST_BLOCK_3: Bitcoin.Block = {
-  hash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
-  transactions: [TEST_TX_3],
-  toBuffer: () => {
-    return { length: 264 } as Buffer;
-  },
-  header: {
-    toObject: () => {
-      return {
-        hash:
-          '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
-        confirmations: 126,
-        strippedsize: 226,
-        size: 262,
-        weight: 940,
-        height: 1357,
-        version: '536870912',
-        versionHex: '20000000',
-        merkleRoot:
-          '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
-        tx: [
-          '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f'
-        ],
-        time: 1526326785,
-        mediantime: 1526326785,
-        nonce: '3',
-        bits: parseInt('207fffff', 16).toString(),
-        difficulty: 4.656542373906925e-10,
-        chainwork:
-          '0000000000000000000000000000000000000000000000000000000000000a98',
-        prevHash:
-          '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86'
-      };
-    }
-  }
-};
+
+export const block1: Bitcoin.Block = lib.Block({
+  header: lib.BlockHeader.fromString(
+    '010000006fe28c0ab6f1b372c1a6a246ae63f74f931e8365e15a089c68d6190000000000982051fd1e4ba744bbbe680e1fee14677ba1a3c3540bf7b1cdb606e857233e0e61bc6649ffff001d01e36299'
+  ),
+  transactions: [tx1]
+});
+
+export const block2: Bitcoin.Block = lib.Block({
+  header: lib.BlockHeader.fromString(
+    '010000004860eb18bf1b1620e37e9490fc8a427514416fd75159ab86688e9a8300000000d5fdcc541e25de1c7a5addedf24858b8bb665c9f36ef744ee42c316022c90f9bb0bc6649ffff001d08d2bd61'
+  ),
+  transactions: [tx2]
+});
+
+export const block3: Bitcoin.Block = lib.Block({
+  header: lib.BlockHeader.fromString(
+    '01000000bddd99ccfda39da1b108ce1a5d70038d0a967bacb68b6b63065f626a0000000044f672226090d85db9a9f2fbfe5f0f9609b387af7be5b7fbb7a1767c831c9e995dbe6649ffff001d05e0ed6d'
+  ),
+  transactions: [tx3]
+});
+
+export const block4: Bitcoin.Block = lib.Block({
+  header: lib.BlockHeader.fromString(
+    '010000004944469562ae1c2c74d9a535e00b6f3e40ffbad4f2fda3895501b582000000007a06ea98cd40ba2e3288262b28638cec5337c1456aaf5eedc8e9e5a20f062bdf8cc16649ffff001d2bfee0a9'
+  ),
+  transactions: [tx4]
+});

@@ -1,4 +1,3 @@
-import { TransactionJSON } from '../../../types/Transaction';
 import through2 from 'through2';
 
 import { MongoBound } from '../../../models/base';
@@ -11,7 +10,7 @@ import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { Storage } from '../../../services/storage';
 import { RPC } from '../../../rpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
-import { TransactionStorage, ITransaction } from '../../../models/transaction';
+import { TransactionStorage } from '../../../models/transaction';
 import { ListTransactionsStream } from './transforms';
 import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
 import { StateStorage } from '../../../models/state';
@@ -93,7 +92,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       if (b.height && b.height >= 0) {
         confirmations = tipHeight - b.height + 1;
       }
-      const convertedBlock = BlockStorage._apiTransform(b, { object: true }) as IBlock;
+      const convertedBlock = BlockStorage._apiTransform(b);
       return { ...convertedBlock, confirmations };
     };
     return blocks.map(blockTransform);
@@ -173,7 +172,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       if (t.blockHeight !== undefined && t.blockHeight >= 0) {
         confirmations = tipHeight - t.blockHeight + 1;
       }
-      const convertedTx = TransactionStorage._apiTransform(t, { object: true }) as Partial<ITransaction>;
+      const convertedTx = TransactionStorage._apiTransform(t);
       return JSON.stringify({ ...convertedTx, confirmations: confirmations });
     });
   }
@@ -193,7 +192,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       if (found.blockHeight && found.blockHeight >= 0) {
         confirmations = tipHeight - found.blockHeight + 1;
       }
-      const convertedTx = TransactionStorage._apiTransform(found, { object: true }) as TransactionJSON;
+      const convertedTx = TransactionStorage._apiTransform(found);
       return { ...convertedTx, confirmations: confirmations };
     } else {
       return undefined;
@@ -207,9 +206,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
     const found = (await CoinStorage.resolveAuthhead(txId, chain, network))[0];
     if (found) {
-      const transformedCoins = found.identityOutputs.map<CoinJSON>(output =>
-        CoinStorage._apiTransform(output, { object: true })
-      );
+      const transformedCoins = found.identityOutputs.map<CoinJSON>(output => CoinStorage._apiTransform(output));
       return {
         chain: found.chain,
         network: found.network,
@@ -398,7 +395,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
         confirmations = tipHeight - c.mintHeight + 1;
       }
       c.confirmations = confirmations;
-      return CoinStorage._apiTransform(c) as string;
+      return JSON.stringify(CoinStorage._apiTransform(c));
     };
 
     Storage.apiStreamingFind(CoinStorage, query, { limit }, req, res, utxoTransform);
@@ -425,7 +422,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   async getCoinsForTx({ chain, network, txid }: { chain: string; network: string; txid: string }) {
     const tx = await TransactionStorage.collection.countDocuments({ txid });
     if (tx === 0) {
-      throw new Error(`No such transaction ${txid}`);
+      return;
     }
 
     let inputs = await CoinStorage.collection
@@ -447,8 +444,8 @@ export class InternalStateProvider implements CSP.IChainStateService {
       .toArray();
 
     return {
-      inputs: inputs.map(input => CoinStorage._apiTransform(input, { object: true })),
-      outputs: outputs.map(output => CoinStorage._apiTransform(output, { object: true }))
+      inputs: inputs.map(input => CoinStorage._apiTransform(input)),
+      outputs: outputs.map(output => CoinStorage._apiTransform(output))
     };
   }
 

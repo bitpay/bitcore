@@ -1,13 +1,13 @@
-import { BitcoinTransactionType } from "./Transaction";
+import { BitcoinTransactionType } from './Transaction';
 export type BlockHeaderObj = {
   prevHash: string;
   hash: string;
   time: number;
-  version: string;
+  version: number;
   merkleRoot: string;
-  bits: string;
-  nonce: string;
-}
+  bits: number;
+  nonce: number;
+};
 export type BlockHeader = {
   toObject: () => BlockHeaderObj;
 };

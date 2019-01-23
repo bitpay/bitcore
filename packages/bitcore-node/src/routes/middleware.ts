@@ -1,4 +1,4 @@
-import logger from '../logger';
+import logger, { formatTimestamp } from '../logger';
 import * as express from 'express';
 import { RateLimitStorage } from '../models/rateLimit';
 import { Config } from '../services/config';
@@ -20,7 +20,7 @@ export function LogMiddleware() {
     req.startTime = new Date();
     const ip = req.header('CF-Connecting-IP') || req.socket.remoteAddress || req.hostname;
     const logOut = {
-      time: req.startTime.toTimeString(),
+      time: formatTimestamp(req.startTime),
       ip: ip.padStart(22, ' '),
       phase: 'START'.padStart(8, ' '),
       method: req.method.padStart(6, ' '),

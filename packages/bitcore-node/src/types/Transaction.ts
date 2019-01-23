@@ -2,6 +2,7 @@ export type TransactionJSON = {
   _id: string;
   txid: string;
   chain: string;
+  confirmations: number;
   network: string;
   blockHeight: number;
   blockHash: string;
@@ -14,4 +15,5 @@ export type TransactionJSON = {
   inputCount: number;
   outputCount: number;
   value: number;
+  version: number;
 };

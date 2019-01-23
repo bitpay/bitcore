@@ -1,5 +1,4 @@
 import { CoinStorage, ICoin } from './coin';
-import { TransformOptions } from '../types/TransformOptions';
 import { ObjectID } from 'mongodb';
 import { BaseModel } from './base';
 import { IWallet } from './wallet';
@@ -28,12 +27,8 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
     this.collection.createIndex({ chain: 1, network: 1, wallet: 1, address: 1 }, { background: true, unique: true });
   }
 
-  _apiTransform(walletAddress: { address: string }, options: TransformOptions) {
-    let transform = { address: walletAddress.address };
-    if (options && options.object) {
-      return transform;
-    }
-    return JSON.stringify(transform);
+  _apiTransform(walletAddress: { address: string }) {
+    return { address: walletAddress.address };
   }
 
   async updateCoins(params: { wallet: IWallet; addresses: string[] }) {
@@ -101,7 +96,6 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
             })
           ),
             { ordered: false };
-          
         } catch (err) {
           // Ignore duplicate keys, they may be half processed
           if (err.code !== 11000) {

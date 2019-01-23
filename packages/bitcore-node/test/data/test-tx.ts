@@ -1,40 +1,17 @@
-export const TEST_TX = {
-  hash: '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
-  _hash: '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
-  isCoinbase: () => true,
-  outputAmount: 0.09765625,
-  inputs: [],
-  outputs: [],
-  nLockTime: 0,
-  toBuffer: () => Buffer.from('')
-};
-export const TEST_TX_1 = {
-  hash: 'b8abbdd4428b32cdf79a29728ea7a6d102444c880dca9be489c1ba346dcc5436',
-  _hash: 'b8abbdd4428b32cdf79a29728ea7a6d102444c880dca9be489c1ba346dcc5436',
-  isCoinbase: () => true,
-  outputAmount: 0.0976,
-  inputs: [],
-  outputs: [],
-  nLockTime: 0,
-  toBuffer: () => Buffer.from('')
-};
-export const TEST_TX_2 = {
-  hash: '1e28aa7b910f256dd49f020a668b69c427c2646bfc99b4f892deea71bb885062',
-  _hash: '1e28aa7b910f256dd49f020a668b69c427c2646bfc99b4f892deea71bb885062',
-  isCoinbase: () => true,
-  outputAmount: 0.06763325,
-  inputs: [],
-  outputs: [],
-  nLockTime: 0,
-  toBuffer: () => Buffer.from('')
-};
-export const TEST_TX_3 = {
-  hash: '947911ecc53cd8313220c94ba2211b90a4062a79ee8f830b100861c377f501ef',
-  _hash: '947911ecc53cd8313220c94ba2211b90a4062a79ee8f830b100861c377f501ef',
-  isCoinbase: () => true,
-  outputAmount: 0.07865625,
-  inputs: [],
-  outputs: [],
-  nLockTime: 0,
-  toBuffer: () => Buffer.from('')
-};
+const lib = require('bitcore-lib-cash');
+
+export const tx1 = lib.Transaction(
+  '01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d0104ffffffff0100f2052a0100000043410496b538e853519c726a2c91e61ec11600ae1390813a627c66fb8be7947be63c52da7589379515d4e0a604f8141781e62294721166bf621e73a82cbf2342c858eeac00000000'
+);
+
+export const tx2 = lib.Transaction(
+  '01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d010bffffffff0100f2052a010000004341047211a824f55b505228e4c3d5194c1fcfaa15a456abdf37f9b9d97a4040afc073dee6c89064984f03385237d92167c13e236446b417ab79a0fcae412ae3316b77ac00000000'
+);
+
+export const tx3 = lib.Transaction(
+  '01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d010effffffff0100f2052a0100000043410494b9d3e76c5b1629ecf97fff95d7a4bbdac87cc26099ada28066c6ff1eb9191223cd897194a08d0c2726c5747f1db49e8cf90e75dc3e3550ae9b30086f3cd5aaac00000000'
+);
+
+export const tx4 = lib.Transaction(
+  '01000000010000000000000000000000000000000000000000000000000000000000000000ffffffff0704ffff001d011affffffff0100f2052a01000000434104184f32b212815c6e522e66686324030ff7e5bf08efb21f8b00614fb7690e19131dd31304c54f37baa40db231c918106bb9fd43373e37ae31a0befc6ecaefb867ac00000000'
+);

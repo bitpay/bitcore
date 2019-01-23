@@ -4,6 +4,8 @@ export type BitcoinAddress = {
 export type BitcoinScript = {
   toBuffer: () => Buffer;
   toHex: () => string;
+  toASM: () => string;
+  toString: () => string;
   classify: () => string;
   chunks: Array<{ buf: Buffer }>;
   toAddress: (network: string) => BitcoinAddress;
@@ -11,6 +13,11 @@ export type BitcoinScript = {
 export type BitcoinInputObj = {
   prevTxId: string;
   outputIndex: number;
+  sequenceNumber: number;
+  /**
+   * Hexadecimal-encoded unlocking script
+   */
+  script: string;
 };
 export type BitcoinInput = {
   toObject: () => BitcoinInputObj;
@@ -28,4 +35,5 @@ export type BitcoinTransactionType = {
   inputs: BitcoinInput[];
   toBuffer: () => Buffer;
   nLockTime: number;
+  version: number;
 };

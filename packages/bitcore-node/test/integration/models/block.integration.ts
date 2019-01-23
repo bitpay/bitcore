@@ -3,7 +3,7 @@ import { resetDatabase } from '../../helpers';
 import { BlockStorage } from '../../../src/models/block';
 import { TransactionStorage } from '../../../src/models/transaction';
 import { CoinStorage } from '../../../src/models/coin';
-import { TEST_BLOCK } from '../../data/test-block';
+import { block1, block2, block3, block4 } from '../../data/test-block';
 import { SpentHeightIndicators } from '../../../src/types/Coin';
 import logger from '../../../src/logger';
 
@@ -14,123 +14,68 @@ describe('Block Model', function() {
 
   describe('addBlock', () => {
     it('should add a block when incoming block references previous block hash', async () => {
-      await BlockStorage.collection.insertOne({
-        chain: 'BTC',
-        network: 'regtest',
-        height: 5,
-        hash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
-        version: 100,
-        merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
-        time: new Date(1526326784),
-        timeNormalized: new Date(1526326784),
-        transactionCount: 1,
-        reward: 50,
-        nonce: 3,
-        previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
-        nextBlockHash: '',
-        size: 264,
-        bits: parseInt('207fffff', 16),
-        processed: true
-      });
-      await BlockStorage.collection.insertOne({
-        chain: 'BTC',
-        network: 'regtest',
-        height: 6,
-        hash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
-        version: 100,
-        merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
-        time: new Date(1526326784),
-        timeNormalized: new Date(1526326784),
-        transactionCount: 1,
-        reward: 50,
-        nonce: 3,
-        previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
-        nextBlockHash: '',
-        size: 264,
-        bits: parseInt('207fffff', 16),
-        processed: true
-      });
-      await BlockStorage.collection.insertOne({
-        chain: 'BTC',
-        network: 'regtest',
-        height: 7,
-        hash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
-        version: 100,
-        merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
-        time: new Date(1526326784),
-        timeNormalized: new Date(1526326784),
-        transactionCount: 1,
-        reward: 50,
-        nonce: 3,
-        previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
-        nextBlockHash: '',
-        size: 264,
-        bits: parseInt('207fffff', 16),
-        processed: true
-      });
-      await BlockStorage.collection.insertOne({
-        chain: 'BTC',
-        network: 'regtest',
-        height: 8,
-        hash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9',
-        version: 100,
-        merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
-        time: new Date(1526326784),
-        timeNormalized: new Date(1526326784),
-        transactionCount: 1,
-        reward: 50,
-        nonce: 3,
-        previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
-        nextBlockHash: '',
-        size: 264,
-        bits: parseInt('207fffff', 16),
-        processed: true
-      });
-
-      await BlockStorage.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest', initialSyncComplete: false });
-
+      await BlockStorage.addBlock({ block: block1, chain: 'BCH', network: 'mainnet', initialSyncComplete: false });
+      await BlockStorage.addBlock({ block: block2, chain: 'BCH', network: 'mainnet', initialSyncComplete: false });
+      await BlockStorage.addBlock({ block: block3, chain: 'BCH', network: 'mainnet', initialSyncComplete: false });
+      await BlockStorage.addBlock({ block: block4, chain: 'BCH', network: 'mainnet', initialSyncComplete: false });
       const blocks = await BlockStorage.collection
-        .find({ chain: 'BTC', network: 'regtest' })
+        .find({ chain: 'BCH', network: 'mainnet' })
         .sort({ height: 1 })
         .toArray();
-      expect(blocks.length).to.equal(5);
-      const ownBlock = blocks[4];
-      expect(ownBlock.chain).to.equal('BTC');
-      expect(ownBlock.hash).to.equal('64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929');
-      expect(ownBlock.network).to.equal('regtest');
-      expect(ownBlock.bits).to.equal('545259519');
-      expect(ownBlock.height).to.equal(9);
-      expect(ownBlock.merkleRoot).to.equal('08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08');
-      expect(ownBlock.nonce).to.equal('2');
-      expect(ownBlock.previousBlockHash).to.equal('3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9');
-      expect(ownBlock.reward).to.equal(0.09765625);
-      expect(ownBlock.size).to.equal(264);
-      expect(ownBlock.version).to.equal('536870912');
-      // TODO: assertion for block times
-      expect(ownBlock.transactionCount).to.equal(1);
-      expect(ownBlock.processed).to.equal(true);
-
-      logger.info(`new block was successfully added with hash`, ownBlock.hash);
+      expect(blocks.length).to.equal(4);
+      expect({ ...blocks[3], _id: '' }).to.deep.equal({
+        _id: '',
+        bits: 486604799,
+        chain: 'BCH',
+        coinbaseMintIndex: 4294967295,
+        coinbaseMintTxId: '0000000000000000000000000000000000000000000000000000000000000000',
+        coinbaseSequenceNumber: 4294967295,
+        coinbaseTxId: 'df2b060fa2e5e9c8ed5eaf6a45c13753ec8c63282b2688322eba40cd98ea067a',
+        coinbaseUnlockingScript: '04ffff001d011a',
+        coinbaseUnlockingScriptUtf8: '\u0004��\u0000\u001d\u0001\u001a',
+        hash: '000000004ebadb55ee9096c9a2f8880e09da59c0d68b1c228da88e48844a1485',
+        height: 4,
+        merkleRoot: 'df2b060fa2e5e9c8ed5eaf6a45c13753ec8c63282b2688322eba40cd98ea067a',
+        network: 'mainnet',
+        nextBlockHash: '',
+        nonce: 2850094635,
+        previousBlockHash: '0000000082b5015589a3fdf2d4baff403e6f0be035a5d9742c1cae6295464449',
+        processed: true,
+        reward: 5000000000,
+        size: 215,
+        time: new Date('2009-01-09T03:16:28.000Z'),
+        timeNormalized: new Date('2009-01-09T03:16:28.000Z'),
+        transactionCount: 1,
+        version: 1
+      });
+      logger.info(`new block was successfully added with hash`, blocks[3].hash);
 
       const transaction = await TransactionStorage.collection
         .find({
-          chain: 'BTC',
-          network: 'regtest',
-          blockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929'
+          chain: 'BCH',
+          network: 'mainnet',
+          blockHash: '00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048'
         })
         .toArray();
-      expect(transaction.length).to.equal(1);
-      expect(transaction[0].chain).to.equal('BTC');
-      expect(transaction[0].network).to.equal('regtest');
-      expect(transaction[0].txid).to.equal('08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08');
-      expect(transaction[0].blockHash).to.equal('64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929');
-      expect(transaction[0].blockHeight).to.equal(9);
-      expect(transaction[0].coinbase).to.equal(true);
-      expect(transaction[0].locktime).to.equal(0);
-      expect(transaction[0].size).to.equal(0);
-      // TODO: assertion for block times
-      expect(transaction[0].wallets.length).to.equal(0);
-
+      expect({ ...transaction[0], _id: '' }).to.deep.equal({
+        _id: '',
+        blockHash: '00000000839a8e6886ab5951d76f411475428afc90947ee320161bbf18eb6048',
+        blockHeight: 1,
+        blockTime: new Date('2009-01-09T02:54:25.000Z'),
+        blockTimeNormalized: new Date('2009-01-09T02:54:25.000Z'),
+        chain: 'BCH',
+        coinbase: true,
+        fee: 0,
+        inputCount: 1,
+        locktime: 0,
+        network: 'mainnet',
+        outputCount: 1,
+        size: 134,
+        txid: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
+        value: 5000000000,
+        version: 1,
+        wallets: []
+      });
       logger.info(`tx: ${transaction[0].txid} was successfully stored in the TX model`);
     });
   });
@@ -153,6 +98,12 @@ describe('Block Model', function() {
         nextBlockHash: '',
         size: 264,
         bits: parseInt('207fffff', 16),
+        coinbaseTxId: '',
+        coinbaseUnlockingScript: '',
+        coinbaseUnlockingScriptUtf8: '',
+        coinbaseMintTxId: '0000000000000000000000000000000000000000000000000000000000000000',
+        coinbaseMintIndex: 0xffffffff,
+        coinbaseSequenceNumber: 0xffffffff,
         processed: true
       });
       await BlockStorage.collection.insertOne({
@@ -171,6 +122,12 @@ describe('Block Model', function() {
         nextBlockHash: '',
         size: 264,
         bits: parseInt('207fffff', 16),
+        coinbaseTxId: '',
+        coinbaseUnlockingScript: '',
+        coinbaseUnlockingScriptUtf8: '',
+        coinbaseMintTxId: '0000000000000000000000000000000000000000000000000000000000000000',
+        coinbaseMintIndex: 0xffffffff,
+        coinbaseSequenceNumber: 0xffffffff,
         processed: true
       });
       await BlockStorage.collection.insertOne({
@@ -189,6 +146,12 @@ describe('Block Model', function() {
         nextBlockHash: '',
         size: 264,
         bits: parseInt('207fffff', 16),
+        coinbaseTxId: '',
+        coinbaseUnlockingScript: '',
+        coinbaseUnlockingScriptUtf8: '',
+        coinbaseMintTxId: '0000000000000000000000000000000000000000000000000000000000000000',
+        coinbaseMintIndex: 0xffffffff,
+        coinbaseSequenceNumber: 0xffffffff,
         processed: true
       });
 
@@ -197,10 +160,10 @@ describe('Block Model', function() {
           prevHash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
           hash: '12c719927ce18f9a61d7c5a7af08d3110cacfa43671aa700956c3c05ed38bdaa',
           time: 1526326785,
-          version: '536870912',
+          version: 536870912,
           merkleRoot: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
-          bits: parseInt('207fffff', 16).toString(),
-          nonce: '3'
+          bits: parseInt('207fffff', 16),
+          nonce: 3
         },
         chain: 'BTC',
         network: 'regtest'
@@ -215,10 +178,10 @@ describe('Block Model', function() {
           prevHash: '12c719927ce18f9a61d7c5a7af08d3110cacfa43671aa700956c3c05ed38bdaa',
           hash: '4c6872bf45ecab2fb8b38c8b8f50fc4a8309c6171d28d479b8226afcb1a99920',
           time: 1526326785,
-          version: '536870912',
+          version: 536870912,
           merkleRoot: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
-          bits: parseInt('207fffff', 16).toString(),
-          nonce: '3'
+          bits: parseInt('207fffff', 16),
+          nonce: 3
         },
         chain: 'BTC',
         network: 'regtest'
@@ -245,6 +208,12 @@ describe('Block Model', function() {
         nextBlockHash: '',
         size: 264,
         bits: parseInt('207fffff', 16),
+        coinbaseTxId: '',
+        coinbaseUnlockingScript: '',
+        coinbaseUnlockingScriptUtf8: '',
+        coinbaseMintTxId: '0000000000000000000000000000000000000000000000000000000000000000',
+        coinbaseMintIndex: 0xffffffff,
+        coinbaseSequenceNumber: 0xffffffff,
         processed: true
       });
       await BlockStorage.collection.insertOne({
@@ -263,6 +232,12 @@ describe('Block Model', function() {
         nextBlockHash: '',
         size: 264,
         bits: parseInt('207fffff', 16),
+        coinbaseTxId: '',
+        coinbaseUnlockingScript: '',
+        coinbaseUnlockingScriptUtf8: '',
+        coinbaseMintTxId: '0000000000000000000000000000000000000000000000000000000000000000',
+        coinbaseMintIndex: 0xffffffff,
+        coinbaseSequenceNumber: 0xffffffff,
         processed: true
       });
       await BlockStorage.collection.insertOne({
@@ -281,6 +256,12 @@ describe('Block Model', function() {
         nextBlockHash: '',
         size: 264,
         bits: parseInt('207fffff', 16),
+        coinbaseTxId: '',
+        coinbaseUnlockingScript: '',
+        coinbaseUnlockingScriptUtf8: '',
+        coinbaseMintTxId: '0000000000000000000000000000000000000000000000000000000000000000',
+        coinbaseMintIndex: 0xffffffff,
+        coinbaseSequenceNumber: 0xffffffff,
         processed: true
       });
 
@@ -299,7 +280,8 @@ describe('Block Model', function() {
         inputCount: 1,
         outputCount: 1,
         wallets: [],
-        blockHeight: 5
+        blockHeight: 5,
+        version: 1
       });
 
       await TransactionStorage.collection.insertOne({
@@ -316,7 +298,8 @@ describe('Block Model', function() {
         inputCount: 1,
         outputCount: 1,
         wallets: [],
-        blockHeight: 6
+        blockHeight: 6,
+        version: 1
       });
 
       await TransactionStorage.collection.insertOne({
@@ -333,7 +316,8 @@ describe('Block Model', function() {
         inputCount: 1,
         outputCount: 1,
         wallets: [],
-        blockHeight: 7
+        blockHeight: 7,
+        version: 1
       });
 
       await TransactionStorage.collection.insertOne({
@@ -350,7 +334,8 @@ describe('Block Model', function() {
         inputCount: 1,
         outputCount: 1,
         wallets: [],
-        blockHeight: 7
+        blockHeight: 7,
+        version: 1
       });
 
       // setting the Coin model
@@ -360,10 +345,15 @@ describe('Block Model', function() {
         mintTxid: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919g',
         spentTxid: '',
         mintIndex: 0,
+        spentIndex: 0,
         spentHeight: SpentHeightIndicators.unspent,
         mintHeight: 5,
         coinbase: true,
-        script: Buffer.from(''),
+        lockingScript: '',
+        lockingScriptAsm: '',
+        unlockingScript: '',
+        unlockingScriptAsm: '',
+        inputSequenceNumber: 0xffffffff,
         wallets: [],
         value: 500.0,
         address: 'mkjB6LmjiNfJWgH4aP4v1GkFjRcQTfDSfj'
@@ -375,10 +365,15 @@ describe('Block Model', function() {
         mintTxid: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
         spentTxid: '',
         mintIndex: 0,
+        spentIndex: 0,
         spentHeight: SpentHeightIndicators.unspent,
         mintHeight: 7,
         coinbase: true,
-        script: Buffer.from(''),
+        lockingScript: '',
+        lockingScriptAsm: '',
+        unlockingScript: '',
+        unlockingScriptAsm: '',
+        inputSequenceNumber: 0xffffffff,
         wallets: [],
         value: 500.0,
         address: 'mkjB6LmjiNfJWgH4aP4v1GkFjRcQTfDSfj'
@@ -389,10 +384,15 @@ describe('Block Model', function() {
         mintTxid: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
         spentTxid: '',
         mintIndex: 0,
+        spentIndex: 0,
         spentHeight: SpentHeightIndicators.unspent,
         mintHeight: 7,
         coinbase: true,
-        script: Buffer.from(''),
+        lockingScript: '',
+        lockingScriptAsm: '',
+        unlockingScript: '',
+        unlockingScriptAsm: '',
+        inputSequenceNumber: 0xffffffff,
         wallets: [],
         value: 500.0,
         address: 'mkjB6LmjiNfJWgH4aP4v1GkFjRcQTfDSfj'
@@ -404,8 +404,13 @@ describe('Block Model', function() {
         mintIndex: 0,
         spentHeight: 8,
         mintHeight: 7,
+        spentIndex: 0,
         coinbase: true,
-        script: Buffer.from(''),
+        lockingScript: '',
+        lockingScriptAsm: '',
+        unlockingScript: '',
+        unlockingScriptAsm: '',
+        inputSequenceNumber: 0xffffffff,
         wallets: [],
         value: 500.0,
         address: 'mkjB6LmjiNfJWgH4aP4v1GkFjRcQTfDSfj',
@@ -417,10 +422,10 @@ describe('Block Model', function() {
           prevHash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
           hash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
           time: 1526326785,
-          version: '536870912',
+          version: 536870912,
           merkleRoot: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
-          bits: parseInt('207fffff', 16).toString(),
-          nonce: '3'
+          bits: parseInt('207fffff', 16),
+          nonce: 3
         },
         chain: 'BTC',
         network: 'regtest'

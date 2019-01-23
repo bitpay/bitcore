@@ -14,9 +14,14 @@ export type ICoin = {
   coinbase: boolean;
   value: number;
   address: string;
-  script: Buffer;
+  lockingScript: string;
+  lockingScriptAsm: string;
+  unlockingScript: string;
+  unlockingScriptAsm: string;
+  inputSequenceNumber: number;
   wallets: Array<ObjectID>;
   spentTxid: string;
+  spentIndex: number;
   spentHeight: number;
   confirmations?: number;
 };
@@ -61,36 +66,44 @@ class CoinModel extends BaseModel<ICoin> {
     );
   }
 
-  async getBalance(params: { query: any }): Promise<{ confirmed: number, unconfirmed: number, balance: number }> {
+  async getBalance(params: { query: any }): Promise<{ confirmed: number; unconfirmed: number; balance: number }> {
     let { query } = params;
     query = Object.assign(query, {
       spentHeight: { $lt: SpentHeightIndicators.minimum },
       mintHeight: { $gt: SpentHeightIndicators.conflicting }
     });
-    const result =  await this.collection
-      .aggregate<{ _id: string, balance: number }>([
+    const result = await this.collection
+      .aggregate<{ _id: string; balance: number }>([
         { $match: query },
-        { 
-          $project: { 
-            value: 1, 
-            status: {$cond: { if: { $gte: ['$mintHeight', SpentHeightIndicators.minimum]}, then: 'confirmed', else: 'unconfirmed' }}, 
-            _id: 0 
-          } 
+        {
+          $project: {
+            value: 1,
+            status: {
+              $cond: {
+                if: { $gte: ['$mintHeight', SpentHeightIndicators.minimum] },
+                then: 'confirmed',
+                else: 'unconfirmed'
+              }
+            },
+            _id: 0
+          }
         },
         {
           $group: {
             _id: '$status',
             balance: { $sum: '$value' }
-
           }
         }
       ])
       .toArray();
-    return result.reduce((acc, cur) => { 
-      acc[cur._id] = cur.balance; 
-      acc.balance += cur.balance;
-      return acc; 
-    }, { confirmed: 0, unconfirmed: 0, balance: 0 }) as { confirmed: number, unconfirmed: number, balance: number };
+    return result.reduce(
+      (acc, cur) => {
+        acc[cur._id] = cur.balance;
+        acc.balance += cur.balance;
+        return acc;
+      },
+      { confirmed: 0, unconfirmed: 0, balance: 0 }
+    ) as { confirmed: number; unconfirmed: number; balance: number };
   }
 
   resolveAuthhead(mintTxid: string, chain?: string, network?: string) {
@@ -152,26 +165,27 @@ class CoinModel extends BaseModel<ICoin> {
       .toArray();
   }
 
-  _apiTransform(coin: Partial<MongoBound<ICoin>>, options?: { object: boolean }): any {
-    const transform: CoinJSON = {
+  _apiTransform(coin: Partial<MongoBound<ICoin>>): CoinJSON {
+    return {
       _id: valueOrDefault(coin._id, new ObjectID()).toHexString(),
       chain: valueOrDefault(coin.chain, ''),
       network: valueOrDefault(coin.network, ''),
       coinbase: valueOrDefault(coin.coinbase, false),
-      mintIndex: valueOrDefault(coin.mintIndex, -1),
-      spentTxid: valueOrDefault(coin.spentTxid, ''),
-      mintTxid: valueOrDefault(coin.mintTxid, ''),
       mintHeight: valueOrDefault(coin.mintHeight, -1),
+      mintTxid: valueOrDefault(coin.mintTxid, ''),
+      mintIndex: valueOrDefault(coin.mintIndex, -1),
       spentHeight: valueOrDefault(coin.spentHeight, SpentHeightIndicators.error),
+      spentTxid: valueOrDefault(coin.spentTxid, ''),
+      spentIndex: valueOrDefault(coin.spentIndex, -1),
       address: valueOrDefault(coin.address, ''),
-      script: valueOrDefault(coin.script, Buffer.alloc(0)).toString('hex'),
+      lockingScript: valueOrDefault(coin.lockingScript, ''),
+      lockingScriptAsm: valueOrDefault(coin.lockingScriptAsm, ''),
+      unlockingScript: valueOrDefault(coin.unlockingScript, ''),
+      unlockingScriptAsm: valueOrDefault(coin.lockingScriptAsm, ''),
+      inputSequenceNumber: valueOrDefault(coin.inputSequenceNumber, -1),
       value: valueOrDefault(coin.value, -1),
       confirmations: valueOrDefault(coin.confirmations, -1)
     };
-    if (options && options.object) {
-      return transform;
-    }
-    return JSON.stringify(transform);
   }
 }
 export let CoinStorage = new CoinModel();

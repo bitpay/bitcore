@@ -1,4 +1,4 @@
-import logger from '../logger';
+import { logger, timestamp, formatTimestamp } from '../logger';
 import { EventEmitter } from 'events';
 import { BlockStorage, BlockModel } from '../models/block';
 import { ChainStateProvider } from '../providers/chain-state';
@@ -8,6 +8,7 @@ import { StateStorage } from '../models/state';
 import { SpentHeightIndicators } from '../types/Coin';
 import os from 'os';
 import { Config, ConfigService } from './config';
+import { BitcoinBlockType } from '../types/namespaces/Bitcoin/Block';
 const Chain = require('../chain');
 const LRU = require('lru-cache');
 
@@ -105,18 +106,19 @@ export class P2pWorker {
 
   setupListeners() {
     this.pool.on('peerready', peer => {
-      logger.info(`Connected to peer ${peer.host}`, {
-        chain: this.chain,
-        network: this.network
-      });
+      logger.info(
+        `${timestamp()} | Connected to peer: ${peer.host}:${peer.port.toString().padEnd(5)} | Chain: ${
+          this.chain
+        } | Network: ${this.network}`
+      );
     });
 
     this.pool.on('peerdisconnect', peer => {
-      logger.warn(`Not connected to peer ${peer.host}`, {
-        chain: this.chain,
-        network: this.network,
-        port: peer.port
-      });
+      logger.warn(
+        `${timestamp()} | Not connected to peer: ${peer.host}:${peer.port.toString().padEnd(5)} | Chain: ${
+          this.chain
+        } | Network: ${this.network}`
+      );
     });
 
     this.pool.on('peertx', (peer, message) => {
@@ -215,14 +217,14 @@ export class P2pWorker {
   }
 
   public async getBlock(hash: string) {
-    return new Promise(resolve => {
+    return new Promise<BitcoinBlockType>(resolve => {
       logger.debug('Getting block, hash:', hash);
       const _getBlock = () => {
         this.pool.sendMessage(this.messages.GetData.forBlock(hash));
       };
       const getBlockRetry = setInterval(_getBlock, 1000);
 
-      this.events.once(hash, block => {
+      this.events.once(hash, (block: BitcoinBlockType) => {
         logger.debug('Received block, hash:', hash);
         clearInterval(getBlockRetry);
         resolve(block);
@@ -241,7 +243,7 @@ export class P2pWorker {
     return best;
   }
 
-  async processBlock(block): Promise<any> {
+  async processBlock(block: BitcoinBlockType): Promise<any> {
     return new Promise(async (resolve, reject) => {
       try {
         await this.blockModel.addBlock({
@@ -253,10 +255,7 @@ export class P2pWorker {
           block
         });
         if (!this.syncing) {
-          logger.info(`Added block ${block.hash}`, {
-            chain: this.chain,
-            network: this.network
-          });
+          logger.info(`${timestamp()} | Added block: ${block.hash} | Chain: ${this.chain} | Network: ${this.network}`);
         }
         resolve();
       } catch (err) {
@@ -310,30 +309,38 @@ export class P2pWorker {
     while (headers.length > 0) {
       tip = await ChainStateProvider.getLocalTip({ chain, network });
       let currentHeight = tip ? tip.height : 0;
-      let lastLog = 0;
-      logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
+      const startingHeight = currentHeight;
+      const startingTime = Date.now();
+      let lastLog = startingTime;
+      logger.info(`${timestamp()} | Syncing ${headers.length} blocks | Chain: ${chain} | Network: ${network}`);
       for (const header of headers) {
         try {
           const block = await this.getBlock(header.hash);
           await this.processBlock(block);
           currentHeight++;
-          if (Date.now() - lastLog > 100) {
-            logger.info(`Sync `, {
-              chain,
-              network,
-              height: currentHeight
-            });
-            lastLog = Date.now();
+          const now = Date.now();
+          const oneSecond = 1000;
+          if (now - lastLog > oneSecond) {
+            const blocksProcessed = currentHeight - startingHeight;
+            const elapsedMinutes = (now - startingTime) / (60 * oneSecond);
+            logger.info(
+              `${timestamp()} | Syncing... | Chain: ${chain} | Network: ${network} |${(blocksProcessed / elapsedMinutes)
+                .toFixed(2)
+                .padStart(8)} blocks/min | Height: ${currentHeight.toString().padStart(7)} – ${formatTimestamp(
+                new Date(block.header.toObject().time * 1000)
+              )}`
+            );
+            lastLog = now;
           }
         } catch (err) {
-          logger.error(`Error syncing ${chain} ${network}`, err);
+          logger.error(`${timestamp()} | Error syncing | Chain: ${chain} | Network: ${network}`, err);
           this.syncing = false;
           return this.sync();
         }
       }
       headers = await getHeaders();
     }
-    logger.info(`${chain}:${network} up to date.`);
+    logger.info(`${timestamp()} | Sync completed | Chain: ${chain} | Network: ${network}`);
     this.syncing = false;
     StateStorage.collection.findOneAndUpdate(
       {},
