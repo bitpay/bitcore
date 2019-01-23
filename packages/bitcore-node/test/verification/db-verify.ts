@@ -61,7 +61,7 @@ import { Storage } from '../../src/services/storage';
         console.error(JSON.stringify(error));
       } else {
         const sum = Object.values(coins).reduce((prev, cur) => prev + cur.value, 0);
-        if (sum + tx.fee != tx.value) {
+        if (sum != tx.value) {
           allGood = false;
           const error = { model: 'coin+transactions', err: false, type: 'VALUE_MISMATCH', payload: { tx, coins } };
           console.error(JSON.stringify(error));
