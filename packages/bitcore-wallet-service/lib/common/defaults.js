@@ -129,7 +129,7 @@ Defaults.RateLimit = {
   // },
 };
 
-Defaults.COIN = 'xvg';
+Defaults.COIN = 'btc';
 Defaults.INSIGHT_REQUEST_POOL_SIZE = 10;
 Defaults.INSIGHT_TIMEOUT = 30000;
 
