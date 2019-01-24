@@ -34,8 +34,10 @@ export class TransactionPage {
   ) {
     this.txId = navParams.get('txId');
 
-    const chain: string = navParams.get('chain') || this.apiProvider.getConfig().chain;
-    const network: string = navParams.get('network') || this.apiProvider.getConfig().network;
+    const chain: string =
+      navParams.get('chain') || this.apiProvider.getConfig().chain;
+    const network: string =
+      navParams.get('network') || this.apiProvider.getConfig().network;
 
     this.chainNetwork = {
       chain,
