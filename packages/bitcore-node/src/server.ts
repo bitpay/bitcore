@@ -6,6 +6,7 @@ import cluster = require('cluster');
 import parseArgv from './utils/parseArgv';
 import { Event } from './services/event';
 let args = parseArgv([], ['DEBUG']);
+require('heapdump');
 
 process.on('unhandledRejection', error => {
   console.error('Unhandled Rejection at:', error.stack || error);
