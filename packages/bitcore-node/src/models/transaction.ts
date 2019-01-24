@@ -111,14 +111,12 @@ export class TransactionModel extends BaseModel<ITransaction> {
         txOps.forEach(op => {
           const filter = op.updateOne.filter;
           const tx = { ...op.updateOne.update.$set, ...filter };
-          console.log(tx);
           EventStorage.signalTx(tx);
           mintOps
             .filter(coinOp => coinOp.updateOne.filter.mintTxid === filter.txid)
             .forEach(coinOp => {
               const address = coinOp.updateOne.update.$set.address;
               const coin = { ...coinOp.updateOne.update.$set};
-              console.log(address, coin);
               EventStorage.signalAddressCoin({ address, coin });
             });
         });

@@ -34,6 +34,10 @@ describe('Websockets', function() {
     await p2pWorker.sync();
     const beforeGenTip = await BlockStorage.getLocalTip({ chain, network });
     expect(beforeGenTip).to.not.eq(null);
+
+    if(beforeGenTip && beforeGenTip.height && beforeGenTip.height < 100) {
+      await rpc.generate(100);
+    }
     await rpc.generate(1);
     await p2pWorker.sync();
     await wait(1000);
