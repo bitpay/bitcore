@@ -113,7 +113,7 @@ export class P2pWorker {
     }
     if (this.invCache[type].length > this.invCacheLimits[type]) {
       this.invCache[type].shift();
-    } 
+    }
     this.invCache[type].push(hash);
   }
 
@@ -233,7 +233,7 @@ export class P2pWorker {
   public async getBlock(hash: string) {
     logger.debug('Getting block, hash:', hash);
     let received = false;
-    return new Promise(async resolve => {
+    return new Promise<Bitcoin.Block>(async resolve => {
       this.events.once(hash, block => {
         logger.debug('Received block, hash:', hash);
         received = true;

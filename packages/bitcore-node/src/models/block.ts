@@ -108,8 +108,8 @@ export class BlockModel extends BaseModel<IBlock> {
       EventStorage.signalBlock(convertedBlock);
     }
 
+    await this.collection.updateOne({ hash: convertedBlock.hash, chain, network }, { $set: { processed: true } });
     this.updateCachedChainTip({ block: convertedBlock, height, chain, network });
-    return this.collection.updateOne({ hash: convertedBlock.hash, chain, network }, { $set: { processed: true } });
   }
 
   async getBlockOp(params: { block: Bitcoin.Block; chain: string; network: string }) {
