@@ -3,11 +3,8 @@ import fs from 'fs';
 import { Transform } from 'stream';
 import { CoinStorage } from '../../src/models/coin';
 import { Storage } from '../../src/services/storage';
-import parseArgv from '../../src/utils/parseArgv';
-const args = parseArgv([], ['DRYRUN']);
-console.log(args);
 (async () => {
-  const { CHAIN, NETWORK, FILE } = process.env;
+  const { CHAIN, NETWORK, FILE, DRYRUN } = process.env;
   if (!CHAIN || !NETWORK || !FILE) {
     console.log('CHAIN, NETWORK, and FILE env variable are required');
     process.exit(1);
@@ -34,7 +31,7 @@ console.log(args);
         toKeep = spentCoin || toKeep;
         const wouldBeDeleted = dupeCoins.filter(c => c._id != toKeep._id);
 
-        if (args.DRYRUN) {
+        if (DRYRUN) {
           console.log('WOULD DELETE');
           console.log(wouldBeDeleted);
         } else {
