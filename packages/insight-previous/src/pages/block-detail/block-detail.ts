@@ -35,8 +35,10 @@ export class BlockDetailPage {
     public redirProvider: RedirProvider
   ) {
     this.blockHash = navParams.get('blockHash');
-    const chain: string = navParams.get('chain') || this.apiProvider.getConfig().chain;
-    const network: string = navParams.get('network') || this.apiProvider.getConfig().network;
+    const chain: string =
+      navParams.get('chain') || this.apiProvider.getConfig().chain;
+    const network: string =
+      navParams.get('network') || this.apiProvider.getConfig().network;
 
     this.chainNetwork = {
       chain,
