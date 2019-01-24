@@ -116,8 +116,8 @@ export class TransactionModel extends BaseModel<ITransaction> {
             .filter(coinOp => coinOp.updateOne.filter.mintTxid === filter.txid)
             .map(coinOp => {
               const address = coinOp.updateOne.update.$set.address;
-              const coin = { ...coinOp.updateOne.update.$set };
-              return () => EventStorage.signalAddressCoin({ address, coin });
+              const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
+              return () => EventStorage.signalAddressCoin({ address, coin }) as any;
             })
             .reduce((promises, promise) => promises.then(promise), Promise.resolve());
         }

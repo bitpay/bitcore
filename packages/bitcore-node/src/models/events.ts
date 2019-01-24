@@ -31,15 +31,15 @@ export class EventModel extends BaseModel<IEvent> {
   }
 
   public signalBlock(block: IEvent.BlockEvent) {
-    this.collection.insertOne({ payload: block, emitTime: new Date(), type: 'block' });
+    return this.collection.insertOne({ payload: block, emitTime: new Date(), type: 'block' });
   }
 
   public signalTx(tx: IEvent.TxEvent) {
-    this.collection.insertOne({ payload: tx, emitTime: new Date(), type: 'tx' });
+    return this.collection.insertOne({ payload: tx, emitTime: new Date(), type: 'tx' });
   }
 
   public signalAddressCoin(payload: IEvent.CoinEvent) {
-    this.collection.insertOne({ payload, emitTime: new Date(), type: 'coin' });
+    return this.collection.insertOne({ payload, emitTime: new Date(), type: 'coin' });
   }
 
   public getBlockTail(lastSeen: Date) {
