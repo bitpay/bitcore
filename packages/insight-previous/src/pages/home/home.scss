@@ -1,34 +1,36 @@
 page-home {
-  .footer{
-    background-color: #373D42;
-    overflow: hidden;
-    padding: 5px 10px;
-    width: 100%; 
-    &-pages {
-      padding-top: 5px;
-      color: #dde;
-      float: left;
-      a {
-        color: white;
-        font-size: 0.8em;
+  .scroll-content{
+    display: grid;
+    grid-template-rows: 1fr auto;
+    .footer{
+      background-color: #373D42;
+      padding: 5px 10px;
+      width: 100%; 
+      &-pages {
+        padding-top: 5px;
+        color: #dde;
+        float: left;
+        a {
+          color: white;
+          font-size: 0.8em;
+        }
+      }
+      &-about {
+        float: right;
+        a {
+          text-decoration: none;
+        }
+        .version {
+          color: grey;
+          font-style: italic;
+        }
+        .logo {
+          color: white;
+          font-weight: 700;
+          font-style: italic;
+          font-size: 1.5em;
+        }
       }
     }
-    &-about {
-      float: right;
-      a {
-        text-decoration: none;
-      }
-      .version {
-        color: grey;
-        font-style: italic;
-      }
-      .logo {
-        color: white;
-        font-weight: 700;
-        font-style: italic;
-        font-size: 1.5em;
-      }
-    }
-
   }
 }

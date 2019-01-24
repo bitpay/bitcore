@@ -1,6 +1,6 @@
 <ion-header>
   <ion-navbar color="brand">
-    <ion-title (click)="goHome()" [ngClass]="{'logo-header': title == 'insight'}">{{ title }}</ion-title>
+    <ion-title (click)="goHome()" class="logo-header">insight</ion-title>
     <ion-buttons end>
       <button ion-button (click)="changeCurrency($event)">
         <ion-icon name="logo-bitcoin" *ngIf="currency.currencySymbol !== 'USD'"></ion-icon>
