@@ -12,7 +12,7 @@ import * as lodash from 'lodash';
 import { TransactionJSON } from '../types/Transaction';
 import { SpentHeightIndicators } from '../types/Coin';
 import { Config } from '../services/config';
-import { EventStorage } from "./events";
+import { EventStorage } from './events';
 
 const Chain = require('../chain');
 
@@ -108,18 +108,19 @@ export class TransactionModel extends BaseModel<ITransaction> {
 
       // Create events for mempool txs
       if (params.height < SpentHeightIndicators.minimum) {
-        txOps.forEach(op => {
+        for (let op of txOps) {
           const filter = op.updateOne.filter;
           const tx = { ...op.updateOne.update.$set, ...filter };
-          EventStorage.signalTx(tx);
-          mintOps
+          await EventStorage.signalTx(tx);
+          await mintOps
             .filter(coinOp => coinOp.updateOne.filter.mintTxid === filter.txid)
-            .forEach(coinOp => {
+            .map(coinOp => {
               const address = coinOp.updateOne.update.$set.address;
-              const coin = { ...coinOp.updateOne.update.$set};
-              EventStorage.signalAddressCoin({ address, coin });
-            });
-        });
+              const coin = { ...coinOp.updateOne.update.$set };
+              return () => EventStorage.signalAddressCoin({ address, coin });
+            })
+            .reduce((promises, promise) => promises.then(promise), Promise.resolve());
+        }
       }
     }
   }
