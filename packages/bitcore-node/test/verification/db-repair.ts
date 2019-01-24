@@ -2,6 +2,8 @@
 import fs from 'fs';
 import { CoinStorage } from '../../src/models/coin';
 import { Storage } from '../../src/services/storage';
+import parseArgv from '../../src/utils/parseArgv';
+const args = parseArgv([], ['DRYRUN']);
 (async () => {
   const { CHAIN, NETWORK, FILE } = process.env;
   if (!CHAIN || !NETWORK || !FILE) {
@@ -19,17 +21,22 @@ import { Storage } from '../../src/services/storage';
           .find({ chain, network, mintTxid: data.payload.mintTxid, mintIndex: data.payload.mintIndex })
           .sort({ _id: -1 })
           .toArray();
-        if (dupeCoins.length > 1 && dupeCoins[0].spentHeight === dupeCoins[1].spentHeight) {
-          await CoinStorage.collection.deleteOne({
-            mintIndex: dupeCoins[0].mintIndex,
-            mintTxid: dupeCoins[0].mintTxid
-          });
-        } else if (dupeCoins.length > 1 && dupeCoins[0].spentHeight !== dupeCoins[1].spentHeight) {
-          await CoinStorage.collection.deleteOne({
-            _id: dupeCoins[0]._id,
-            mintIndex: dupeCoins[0].mintIndex,
-            mintTxid: dupeCoins[0].mintTxid
-          });
+
+        let toKeep = dupeCoins[0];
+        const spentCoin = dupeCoins.find(c => c.spentHeight > toKeep.spentHeight);
+        toKeep = spentCoin || toKeep;
+
+        if (dupeCoins.length > 1) {
+          if (args.DRYRUN) {
+            console.log('WOULD DELETE');
+            const wouldBeDeleted = dupeCoins.filter(c => c._id != toKeep._id);
+            console.log(wouldBeDeleted);
+          } else {
+            const { mintIndex, mintTxid } = toKeep;
+            CoinStorage.collection.deleteMany({ chain, network, mintTxid, mintIndex, _id: { $ne: toKeep._id } });
+          }
+        } else {
+          console.log(toKeep.mintTxid, toKeep.mintIndex, 'only saw', dupeCoins.length);
         }
         break;
       default:
