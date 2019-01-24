@@ -24,35 +24,29 @@ console.log(args);
           .sort({ _id: -1 })
           .toArray();
 
+        if (dupeCoins.length < 2) {
+          console.log('No action required.', dupeCoins.length, 'coin');
+          return;
+        }
+
         let toKeep = dupeCoins[0];
         const spentCoin = dupeCoins.find(c => c.spentHeight > toKeep.spentHeight);
         toKeep = spentCoin || toKeep;
         const wouldBeDeleted = dupeCoins.filter(c => c._id != toKeep._id);
 
-        if (dupeCoins.length > 1) {
-          if (args.DRYRUN) {
-            console.log('WOULD DELETE');
-            console.log(wouldBeDeleted);
-          } else {
-            const { mintIndex, mintTxid } = toKeep;
-            console.log('Deleting', wouldBeDeleted.length, 'coins');
-            await CoinStorage.collection.deleteMany({
-              chain,
-              network,
-              mintTxid,
-              mintIndex,
-              _id: { $in: wouldBeDeleted.map(c => c._id) }
-            });
-          }
+        if (args.DRYRUN) {
+          console.log('WOULD DELETE');
+          console.log(wouldBeDeleted);
         } else {
-          console.log(
-            'Investigated dupes for MintTxid: ',
-            toKeep.mintTxid,
-            'MintIndex:',
-            toKeep.mintIndex,
-            'only saw',
-            dupeCoins.length
-          );
+          const { mintIndex, mintTxid } = toKeep;
+          console.log('Deleting', wouldBeDeleted.length, 'coins');
+          await CoinStorage.collection.deleteMany({
+            chain,
+            network,
+            mintTxid,
+            mintIndex,
+            _id: { $in: wouldBeDeleted.map(c => c._id) }
+          });
         }
         break;
       default:
@@ -70,7 +64,7 @@ console.log(args);
       if (dataStr.startsWith('{') && dataStr.endsWith('}')) {
         try {
           const parsedData = JSON.parse(line);
-          console.log('Repairing');
+          console.log('Inspecting...');
           console.log(dataStr);
           await handleRepair(parsedData);
         } catch (err) {
