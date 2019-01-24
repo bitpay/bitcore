@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import fs from 'fs';
+import { Transform } from 'stream';
 import { CoinStorage } from '../../src/models/coin';
 import { Storage } from '../../src/services/storage';
 import parseArgv from '../../src/utils/parseArgv';
 const args = parseArgv([], ['DRYRUN']);
+console.log(args);
 (async () => {
   const { CHAIN, NETWORK, FILE } = process.env;
   if (!CHAIN || !NETWORK || !FILE) {
@@ -25,33 +27,79 @@ const args = parseArgv([], ['DRYRUN']);
         let toKeep = dupeCoins[0];
         const spentCoin = dupeCoins.find(c => c.spentHeight > toKeep.spentHeight);
         toKeep = spentCoin || toKeep;
+        const wouldBeDeleted = dupeCoins.filter(c => c._id != toKeep._id);
 
         if (dupeCoins.length > 1) {
           if (args.DRYRUN) {
             console.log('WOULD DELETE');
-            const wouldBeDeleted = dupeCoins.filter(c => c._id != toKeep._id);
             console.log(wouldBeDeleted);
           } else {
             const { mintIndex, mintTxid } = toKeep;
-            CoinStorage.collection.deleteMany({ chain, network, mintTxid, mintIndex, _id: { $ne: toKeep._id } });
+            console.log('Deleting', wouldBeDeleted.length, 'coins');
+            await CoinStorage.collection.deleteMany({
+              chain,
+              network,
+              mintTxid,
+              mintIndex,
+              _id: { $in: wouldBeDeleted.map(c => c._id) }
+            });
           }
         } else {
-          console.log(toKeep.mintTxid, toKeep.mintIndex, 'only saw', dupeCoins.length);
+          console.log(
+            'Investigated dupes for MintTxid: ',
+            toKeep.mintTxid,
+            'MintIndex:',
+            toKeep.mintIndex,
+            'only saw',
+            dupeCoins.length
+          );
         }
         break;
       default:
-        console.log('done');
+        console.log('skipping');
     }
   };
 
-  const getFileContents = FILE => {
-    fs.createReadStream(FILE).on('data', data => {
-      const dataStr = data.toString();
+  function getLinesFromChunk(chunk) {
+    return chunk.toString().split('\n');
+  }
+
+  async function repairLineIfValidJson(line: string) {
+    const dataStr = line.trim();
+    if (dataStr && dataStr.length > 2) {
       if (dataStr.startsWith('{') && dataStr.endsWith('}')) {
-        const parsedData = JSON.parse(data);
-        handleRepair(parsedData);
+        try {
+          const parsedData = JSON.parse(line);
+          console.log('Repairing');
+          console.log(dataStr);
+          await handleRepair(parsedData);
+        } catch (err) {
+          //console.log(err);
+        }
       }
-    });
+    }
+  }
+
+  async function transformFileChunks(chunk, _, cb) {
+    for (let line of getLinesFromChunk(chunk)) {
+      await repairLineIfValidJson(line);
+    }
+    cb();
+  }
+
+  const getFileContents = FILE => {
+    fs.createReadStream(FILE)
+      .pipe(
+        new Transform({
+          write: transformFileChunks
+        })
+      )
+      .on('end', () => {
+        process.exit(0);
+      })
+      .on('finish', () => {
+        process.exit(0);
+      });
   };
 
   getFileContents(FILE);
