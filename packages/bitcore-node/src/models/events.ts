@@ -7,7 +7,7 @@ import { StorageService } from '../services/storage';
 export namespace IEvent {
   export type BlockEvent = IBlock;
   export type TxEvent = ITransaction;
-  export type CoinEvent = { coin: ICoin; address: string };
+  export type CoinEvent = { coin: Partial<ICoin>; address: string };
 }
 interface IEvent {
   payload: IEvent.BlockEvent | IEvent.TxEvent | IEvent.CoinEvent;

@@ -34,6 +34,46 @@ export type ITransaction = {
   wallets: ObjectID[];
 };
 
+export type MintOp = {
+  updateOne: {
+    filter: {
+      mintTxid: string;
+      mintIndex: number;
+      chain: string;
+      network: string;
+    };
+    update: {
+      $set: {
+        chain: string;
+        network: string;
+        address: string;
+        mintHeight: number;
+        coinbase: boolean;
+        value: number;
+        script: Buffer;
+        spentHeight: SpentHeightIndicators;
+        spentTxid?: string;
+        wallets: Array<ObjectID>;
+      };
+    };
+    upsert: true;
+    forceServerObjectId: true;
+  };
+};
+
+export type SpendOp = {
+  updateOne: {
+    filter: {
+      mintTxid: string;
+      mintIndex: number;
+      spentHeight: { $lt: SpentHeightIndicators };
+      chain: string;
+      network: string;
+    };
+    update: { $set: { spentTxid: string; spentHeight: number } };
+  };
+};
+
 @LoggifyClass
 export class TransactionModel extends BaseModel<ITransaction> {
   constructor(storage?: StorageService) {
@@ -135,7 +175,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
     initialSyncComplete: boolean;
     chain: string;
     network: string;
-    mintOps: Array<any>;
+    mintOps: Array<MintOp>;
     mempoolTime?: Date;
   }) {
     let { blockHash, blockTime, blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
@@ -266,10 +306,10 @@ export class TransactionModel extends BaseModel<ITransaction> {
     initialSyncComplete: boolean;
     chain: string;
     network: string;
-    mintOps?: Array<any>;
+    mintOps?: Array<MintOp>;
   }) {
     let { chain, height, network, parentChain, forkHeight, initialSyncComplete } = params;
-    let mintOps = new Array<any>();
+    let mintOps = new Array<MintOp>();
     let parentChainCoinsMap = new Map();
     if (parentChain && forkHeight && height < forkHeight) {
       let parentChainCoins = await CoinStorage.collection
@@ -365,11 +405,11 @@ export class TransactionModel extends BaseModel<ITransaction> {
     forkHeight?: number;
     chain: string;
     network: string;
-    mintOps?: Array<any>;
+    mintOps?: Array<MintOp>;
     [rest: string]: any;
-  }): Array<any> {
+  }) {
     let { chain, network, height, parentChain, forkHeight } = params;
-    let spendOps: any[] = [];
+    let spendOps: SpendOp[] = [];
     if (parentChain && forkHeight && height < forkHeight) {
       return spendOps;
     }
@@ -386,11 +426,11 @@ export class TransactionModel extends BaseModel<ITransaction> {
         let inputObj = input.toObject();
         let sameBlockSpend = mintMap[inputObj.prevTxId] && mintMap[inputObj.prevTxId][inputObj.outputIndex];
         if (sameBlockSpend) {
-          sameBlockSpend.updateOne.update.$set.spentHeight = height;
-          sameBlockSpend.updateOne.update.$set.spentTxid = tx._hash;
+          sameBlockSpend.updateOne.update.$setOnInsert.spentHeight = height;
+          sameBlockSpend.updateOne.update.$setOnInsert.spentTxid = tx._hash;
           continue;
         }
-        const updateQuery: any = {
+        const updateQuery = {
           updateOne: {
             filter: {
               mintTxid: inputObj.prevTxId,
@@ -399,7 +439,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
               chain,
               network
             },
-            update: { $set: { spentTxid: tx._hash, spentHeight: height } }
+            update: { $set: { spentTxid: tx._hash || tx.hash, spentHeight: height } }
           }
         };
         spendOps.push(updateQuery);
@@ -415,8 +455,8 @@ export class TransactionModel extends BaseModel<ITransaction> {
     forkHeight?: number;
     chain: string;
     network: string;
-    mintOps: Array<any>;
-    spendOps: Array<any>;
+    mintOps: Array<MintOp>;
+    spendOps: Array<SpendOp>;
     initialSyncComplete: boolean;
     [rest: string]: any;
   }) {

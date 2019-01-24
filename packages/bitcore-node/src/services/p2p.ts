@@ -215,7 +215,7 @@ export class P2pWorker {
   }
 
   public async getBlock(hash: string) {
-    return new Promise(resolve => {
+    return new Promise<Bitcoin.Block>(resolve => {
       logger.debug('Getting block, hash:', hash);
       const _getBlock = () => {
         this.pool.sendMessage(this.messages.GetData.forBlock(hash));
@@ -341,6 +341,24 @@ export class P2pWorker {
       { upsert: true }
     );
     return true;
+  }
+
+  async resync(from: number, to: number) {
+    const { chain, network } = this;
+    let currentHeight = from;
+    while (currentHeight < to) {
+      const locatorHashes = await ChainStateProvider.getLocatorHashes({
+        chain,
+        network,
+        startHeight: currentHeight,
+        endHeight: currentHeight + 30
+      });
+      for (let hash of locatorHashes) {
+        const block = await this.getBlock(hash);
+        await BlockStorage.processBlock({ chain, network, block, initialSyncComplete: true });
+        currentHeight++;
+      }
+    }
   }
 
   registerSyncingNode() {
