@@ -31,7 +31,7 @@ export class TransactionComponent implements OnInit {
     public apiProvider: ApiProvider,
     public txProvider: TxsProvider,
     public redirProvider: RedirProvider
-  ) {}
+  ) { }
 
   public ngOnInit(): void {
     if (this.showCoins) {
@@ -139,7 +139,7 @@ export class TransactionComponent implements OnInit {
       tmp[address].count++;
     }
 
-    for (let v = 0; v <= tmp.length; v++) {
+    for (const v of Object.keys(tmp)) {
       const obj: any = tmp[v];
       obj.value = obj.value || parseInt(obj.valueSat, 10) / this.COIN;
       ret.push(obj);
