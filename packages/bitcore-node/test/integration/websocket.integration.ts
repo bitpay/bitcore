@@ -9,7 +9,6 @@ import { Event } from '../../src/services/event';
 import { Api } from '../../src/services/api';
 
 const wait = time => new Promise(resolve => setTimeout(resolve, time));
-
 const chain = 'BTC';
 const network = 'regtest';
 const chainConfig = config.chains[chain][network];
@@ -30,18 +29,17 @@ describe('Websockets', function() {
     });
     await p2pWorker.start();
 
-    await rpc.generate(5)
+    await rpc.generate(5);
     await p2pWorker.sync();
     const beforeGenTip = await BlockStorage.getLocalTip({ chain, network });
     expect(beforeGenTip).to.not.eq(null);
 
-    if(beforeGenTip && beforeGenTip.height && beforeGenTip.height < 100) {
+    if (beforeGenTip && beforeGenTip.height && beforeGenTip.height < 100) {
       await rpc.generate(100);
     }
     await rpc.generate(1);
     await p2pWorker.sync();
     await wait(1000);
-
     const afterGenTip = await BlockStorage.getLocalTip({ chain, network });
     expect(afterGenTip).to.not.eq(null);
 
@@ -68,17 +66,20 @@ describe('Websockets', function() {
       'http://localhost:3000',
       { transports: ['websocket'] }
     );
-    socket.on('connect', () => {
-      socket.emit('room', '/BTC/regtest/inv');
-    });
-    socket.on('block', () => {
-      hasSeenABlockEvent = true;
+    let sawEvents = new Promise(resolve => {
+      socket.on('connect', () => {
+        socket.emit('room', '/BTC/regtest/inv');
+      });
+      socket.on('block', () => {
+        hasSeenABlockEvent = true;
+        resolve();
+      });
     });
 
     await p2pWorker.start();
     await rpc.generate(1);
+    await sawEvents;
     await p2pWorker.sync();
-    await wait(1000);
     await p2pWorker.stop();
     await socket.disconnect();
 
@@ -96,20 +97,27 @@ describe('Websockets', function() {
       { transports: ['websocket'] }
     );
 
-    socket.on('connect', () => {
-      socket.emit('room', '/BTC/regtest/inv');
-    });
-    socket.on('tx', () => {
-      hasSeenTxEvent = true;
-    });
-    socket.on('coin', () => {
-      hasSeenCoinEvent = true;
+    let sawEvents = new Promise(resolve => {
+      socket.on('connect', () => {
+        socket.emit('room', '/BTC/regtest/inv');
+      });
+      socket.on('tx', () => {
+        hasSeenTxEvent = true;
+        if (hasSeenTxEvent && hasSeenCoinEvent) {
+          resolve();
+        }
+      });
+      socket.on('coin', () => {
+        hasSeenCoinEvent = true;
+        if (hasSeenTxEvent && hasSeenCoinEvent) {
+          resolve();
+        }
+      });
     });
     await p2pWorker.start();
     await p2pWorker.sync();
-    await wait(5000);
     await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
-    await wait(15000);
+    await sawEvents;
 
     await p2pWorker.stop();
     await socket.disconnect();
