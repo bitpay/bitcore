@@ -4,6 +4,11 @@ import { CoinStorage } from '../../src/models/coin';
 import { Storage } from '../../src/services/storage';
 (async () => {
   const { CHAIN, NETWORK, FILE } = process.env;
+  if (!CHAIN || !NETWORK || !FILE) {
+    console.log('CHAIN, NETWORK, and FILE env variable are required');
+    process.exit(1);
+  }
+
   const chain = CHAIN;
   const network = NETWORK;
   await Storage.start();
@@ -34,8 +39,11 @@ import { Storage } from '../../src/services/storage';
 
   const getFileContents = FILE => {
     fs.createReadStream(FILE).on('data', data => {
-      const parsedData = JSON.parse(data);
-      handleRepair(parsedData);
+      const dataStr = data.toString();
+      if (dataStr.startsWith('{') && dataStr.endsWith('}')) {
+        const parsedData = JSON.parse(data);
+        handleRepair(parsedData);
+      }
     });
   };
 
