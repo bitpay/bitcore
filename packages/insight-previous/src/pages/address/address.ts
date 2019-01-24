@@ -1,9 +1,10 @@
 import { Component, Injectable } from '@angular/core';
 import { Http } from '@angular/http';
 import { IonicPage, NavParams } from 'ionic-angular';
-import { ApiProvider } from '../../providers/api/api';
+import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { Logger } from '../../providers/logger/logger';
+import { PriceProvider } from '../../providers/price/price';
 import {
   ApiCoin,
   TxsProvider
@@ -22,6 +23,7 @@ import {
 export class AddressPage {
   public loading = true;
   private addrStr: string;
+  private chainNetwork: ChainNetwork;
   public address: any = {};
   public transactions: any[] = [];
   public showTransactions: boolean;
@@ -32,12 +34,22 @@ export class AddressPage {
     public currencyProvider: CurrencyProvider,
     private apiProvider: ApiProvider,
     public txProvider: TxsProvider,
-    private logger: Logger
+    private logger: Logger,
+    private priceProvider: PriceProvider
   ) {
     this.addrStr = navParams.get('addrStr');
-    const chain: string = this.apiProvider.getConfig().chain;
-    const network: string = this.apiProvider.getConfig().network;
-    this.apiProvider.changeNetwork({ chain, network });
+
+    const chain: string =
+      navParams.get('chain') || this.apiProvider.getConfig().chain;
+    const network: string =
+      navParams.get('network') || this.apiProvider.getConfig().network;
+
+    this.chainNetwork = {
+      chain,
+      network
+    };
+    this.apiProvider.changeNetwork(this.chainNetwork);
+    this.priceProvider.setCurrency(this.chainNetwork.chain);
   }
 
   public ionViewDidLoad(): void {

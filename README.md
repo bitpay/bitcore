@@ -12,12 +12,12 @@ git checkout master
 npm install
 ```
 
-# Setup Guide
+## Setup Guide
 
-### 1) Setup bitcore config
+**1. Setup Bitcore config**
 
 <details>
-<summary><b>Example bitcore.config.json</b></summary>
+<summary>Example bitcore.config.json</summary>
 <br>
 
 ```
@@ -95,11 +95,12 @@ npm install
 ```
 
 </details>
+<br>
 
-### 2) Setup Bitcoin Node
+**2. Setup Bitcoin Node**
 
 <details>
-<summary><b> Example Bitcoin Mainnet Config </b></summary>
+<summary>Example Bitcoin Mainnet Config</summary>
 <br>
 
 ```
@@ -124,10 +125,11 @@ rpcuser=username
 rpcpassword=password
 ```
 </details>
+<br>
 
-### 3) Run Bitcoin node
+**3. Run Bitcoin node**
 <details>
-<summary><b>Example Starting a Bitcoin Node</b></summary>
+<summary>Example Starting a Bitcoin Node</summary>
 <br>
   
 ```
@@ -136,16 +138,23 @@ rpcpassword=password
 ```
 
 </details>
+<br>
 
-### 4) Start Bitcore
+**4. Start Bitcore**
 
 ```
 npm run node
 ```
 
-# API Documentation
+## API Documentation
 
-[API parameters and example responses](./packages/bitcore-node/docs/api-documentation.md)
+[REST API parameters and example responses](./packages/bitcore-node/docs/api-documentation.md)
+
+[Websockets API namespaces, event names, and parameters](./packages/bitcore-node/docs/sockets-api.md)
+
+[Testing Bitcore-node in RegTest](./packages/bitcore-node/docs/wallet-guide.md)
+
+[Wallet Guide - Creating, Signing, Import Address](./packages/bitcore-client/README.md)
 
 ## Contributing
 

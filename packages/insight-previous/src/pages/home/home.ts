@@ -25,10 +25,23 @@ export class HomePage {
     private priceProvider: PriceProvider,
     public events: Events
   ) {
-    this.chain = navParams.get('chain') ||
+    const chainParam = navParams.get('chain');
+    const networkParam = navParams.get('network');
+
+    this.chain =
+      chainParam ||
       this.apiProvider.networkSettings.value.selectedNetwork.chain;
-    this.network = navParams.get('network') ||
+    this.network =
+      networkParam ||
       this.apiProvider.networkSettings.value.selectedNetwork.network;
+
+    // Set rootPage for deep links
+    if (!chainParam || !networkParam) {
+      this.nav.setRoot('home', {
+        chain: this.chain,
+        network: this.network
+      });
+    }
 
     const chainNetwork: ChainNetwork = {
       chain: this.chain,

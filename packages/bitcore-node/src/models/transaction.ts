@@ -311,7 +311,6 @@ export class TransactionModel extends BaseModel<ITransaction> {
             filter: {
               mintTxid: tx._hash,
               mintIndex: index,
-              spentHeight: { $lt: SpentHeightIndicators.minimum },
               chain,
               network
             },
