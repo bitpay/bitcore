@@ -29,13 +29,11 @@ describe('Websockets', function() {
       chainConfig
     });
     await p2pWorker.start();
+
+    await rpc.generate(5)
     await p2pWorker.sync();
-
-    const checkForBlocks = await BlockStorage.getLocalTip({chain, network}); 
-    if (checkForBlocks === null || checkForBlocks.height < 100) {
-      rpc.generate(100)
-    }
-
+    const beforeGenTip = await BlockStorage.getLocalTip({ chain, network });
+    expect(beforeGenTip).to.not.eq(null);
     await rpc.generate(1);
     await p2pWorker.sync();
     await wait(1000);
@@ -43,8 +41,8 @@ describe('Websockets', function() {
     const afterGenTip = await BlockStorage.getLocalTip({ chain, network });
     expect(afterGenTip).to.not.eq(null);
 
-    if (checkForBlocks != null && afterGenTip != null) {
-      expect(checkForBlocks.height).to.be.lt(afterGenTip.height);
+    if (beforeGenTip != null && afterGenTip != null) {
+      expect(beforeGenTip.height).to.be.lt(afterGenTip.height);
     }
 
     await p2pWorker.stop();
