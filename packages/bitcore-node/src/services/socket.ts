@@ -31,6 +31,7 @@ export class SocketService {
     this.configService = configService;
     this.serviceConfig = this.configService.for('socket');
     this.eventModel = eventModel;
+    this.wireup = this.wireup.bind(this);
     this.start = this.start.bind(this);
     this.signalTx = this.signalTx.bind(this);
     this.signalBlock = this.signalBlock.bind(this);

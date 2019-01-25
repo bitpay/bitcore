@@ -9,10 +9,10 @@ import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
 import { StreamingFindOptions, Storage, StorageService } from '../services/storage';
 import * as lodash from 'lodash';
-import { Socket } from '../services/socket';
 import { TransactionJSON } from '../types/Transaction';
 import { SpentHeightIndicators } from '../types/Coin';
 import { Config } from '../services/config';
+import { EventStorage } from './events';
 
 const Chain = require('../chain');
 
@@ -148,18 +148,19 @@ export class TransactionModel extends BaseModel<ITransaction> {
 
       // Create events for mempool txs
       if (params.height < SpentHeightIndicators.minimum) {
-        txOps.forEach(op => {
+        for (let op of txOps) {
           const filter = op.updateOne.filter;
           const tx = { ...op.updateOne.update.$set, ...filter };
-          Socket.signalTx(tx);
-          mintOps
+          await EventStorage.signalTx(tx);
+          await mintOps
             .filter(coinOp => coinOp.updateOne.filter.mintTxid === filter.txid)
-            .forEach(coinOp => {
+            .map(coinOp => {
               const address = coinOp.updateOne.update.$set.address;
               const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
-              Socket.signalAddressCoin({ address, coin });
-            });
-        });
+              return () => EventStorage.signalAddressCoin({ address, coin }) as any;
+            })
+            .reduce((promises, promise) => promises.then(promise), Promise.resolve());
+        }
       }
     }
   }
