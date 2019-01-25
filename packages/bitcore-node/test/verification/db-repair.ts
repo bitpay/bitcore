@@ -62,7 +62,7 @@ import { BlockStorage } from '../../src/models/block';
           console.log(data.payload);
         } else {
           console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
-          await worker.resync(blockHeight, blockHeight + 1);
+          await worker.resync(blockHeight - 1, blockHeight + 1);
         }
         break;
       case 'DUPE_BLOCKHEIGHT':
