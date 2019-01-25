@@ -413,7 +413,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
     if (parentChain && forkHeight && height < forkHeight) {
       return spendOps;
     }
-    let mintMap = {};
+    let mintMap = {} as Mapping<Mapping<MintOp>>;
     for (let mintOp of params.mintOps || []) {
       mintMap[mintOp.updateOne.filter.mintTxid] = mintMap[mintOp.updateOne.filter.mintIndex] || {};
       mintMap[mintOp.updateOne.filter.mintTxid][mintOp.updateOne.filter.mintIndex] = mintOp;
@@ -426,8 +426,8 @@ export class TransactionModel extends BaseModel<ITransaction> {
         let inputObj = input.toObject();
         let sameBlockSpend = mintMap[inputObj.prevTxId] && mintMap[inputObj.prevTxId][inputObj.outputIndex];
         if (sameBlockSpend) {
-          sameBlockSpend.updateOne.update.$setOnInsert.spentHeight = height;
-          sameBlockSpend.updateOne.update.$setOnInsert.spentTxid = tx._hash;
+          sameBlockSpend.updateOne.update.$set.spentHeight = height;
+          sameBlockSpend.updateOne.update.$set.spentTxid = tx._hash;
           continue;
         }
         const updateQuery = {
