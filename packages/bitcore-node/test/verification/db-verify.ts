@@ -25,7 +25,7 @@ import { Storage } from '../../src/services/storage';
     for (let tx of blockTxs) {
       if (tx.fee < 0) {
         allGood = false;
-        const error = { model: 'transaction', err: false, type: 'NEG_FEE', payload: tx };
+        const error = { model: 'transaction', err: false, type: 'NEG_FEE', payload: { tx, blockNum } };
         console.log(JSON.stringify(error));
       }
       seenTxs[tx.txid] = tx;
@@ -48,7 +48,7 @@ import { Storage } from '../../src/services/storage';
       const coins = seenCoins[txid];
       if (!coins) {
         allGood = false;
-        const error = { model: 'coin', err: false, type: 'MISSING_COIN_FOR_TXID', payload: txid };
+        const error = { model: 'coin', err: false, type: 'MISSING_COIN_FOR_TXID', payload: { txid, blockNum } };
         console.log(JSON.stringify(error));
       }
     }
@@ -58,13 +58,18 @@ import { Storage } from '../../src/services/storage';
       const coins = seenCoins[txid];
       if (!tx) {
         allGood = false;
-        const error = { model: 'transaction', err: false, type: 'MISSING_TX', payload: tx };
+        const error = { model: 'transaction', err: false, type: 'MISSING_TX', payload: { txid, blockNum } };
         console.log(JSON.stringify(error));
       } else {
         const sum = Object.values(coins).reduce((prev, cur) => prev + cur.value, 0);
         if (sum != tx.value) {
           allGood = false;
-          const error = { model: 'coin+transactions', err: false, type: 'VALUE_MISMATCH', payload: { tx, coins } };
+          const error = {
+            model: 'coin+transactions',
+            err: false,
+            type: 'VALUE_MISMATCH',
+            payload: { tx, coins, blockNum }
+          };
           console.log(JSON.stringify(error));
         }
       }
@@ -78,17 +83,19 @@ import { Storage } from '../../src/services/storage';
         model: 'block',
         err: false,
         type: 'DUPE_BLOCKHEIGHT',
-        payload: { height: blockNum, blocksForHeight }
+        payload: { blockNum, blocksForHeight }
       };
-      console.error(JSON.stringify(error));
+      console.log(JSON.stringify(error));
     }
     //blocks with same hash
-    const hashFromTx = blockTxs[0].blockHash;
-    const blocksForHash = await BlockStorage.collection.countDocuments({ chain, network, hash: hashFromTx });
-    if (blocksForHash !== 1) {
-      allGood = false;
-      const error = { model: 'block', err: false, type: 'DUPE_BLOCKHASH', payload: { hash: hashFromTx } };
-      console.error(JSON.stringify(error));
+    if (blockTxs.length > 0) {
+      const hashFromTx = blockTxs[0].blockHash;
+      const blocksForHash = await BlockStorage.collection.countDocuments({ chain, network, hash: hashFromTx });
+      if (blocksForHash !== 1) {
+        allGood = false;
+        const error = { model: 'block', err: false, type: 'DUPE_BLOCKHASH', payload: { hash: hashFromTx, blockNum } };
+        console.log(JSON.stringify(error));
+      }
     }
 
     return allGood;
