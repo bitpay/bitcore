@@ -116,6 +116,7 @@ describe('Websockets', function() {
     });
     await p2pWorker.start();
     await p2pWorker.sync();
+    await wait(3000);
     await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
     await sawEvents;
 
