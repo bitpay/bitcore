@@ -86,7 +86,7 @@ export class P2pWorker {
     this.invCache = {};
     this.invCacheLimits = {
       [this.bitcoreP2p.Inventory.TYPE.BLOCK]: 100,
-      [this.bitcoreP2p.Inventory.TYPE.TX]: 100000,
+      [this.bitcoreP2p.Inventory.TYPE.TX]: 100000
     };
     this.messages = new this.bitcoreP2p.Messages({
       network: this.bitcoreLib.Networks.get(this.network)
@@ -108,7 +108,7 @@ export class P2pWorker {
   }
 
   cacheInv(type: number, hash: string): void {
-    if (!this.invCache[type]){
+    if (!this.invCache[type]) {
       this.invCache[type] = [];
     }
     if (this.invCache[type].length > this.invCacheLimits[type]) {
@@ -165,8 +165,8 @@ export class P2pWorker {
         hash
       });
 
-      if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash)) {
-        this.cacheInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
+      const blockInCache = this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
+      if (this.isSyncingNode && !blockInCache) {
         this.events.emit(hash, message.block);
         this.events.emit('block', message.block);
         this.sync();
@@ -265,6 +265,7 @@ export class P2pWorker {
       initialSyncComplete: this.initialSyncComplete,
       block
     });
+    this.cacheInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, block.hash);
     if (!this.syncing) {
       logger.info(`Added block ${block.hash}`, {
         chain: this.chain,
