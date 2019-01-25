@@ -12,7 +12,7 @@ try {
     .parse(process.argv);
 } catch (e) {
   console.log(e.message);
-  return program.help()
+  return program.help();
 }
 
 async function main() {
