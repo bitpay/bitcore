@@ -86,7 +86,7 @@ export class P2pWorker {
     this.invCache = {};
     this.invCacheLimits = {
       [this.bitcoreP2p.Inventory.TYPE.BLOCK]: 100,
-      [this.bitcoreP2p.Inventory.TYPE.TX]: 100000,
+      [this.bitcoreP2p.Inventory.TYPE.TX]: 100000
     };
     this.messages = new this.bitcoreP2p.Messages({
       network: this.bitcoreLib.Networks.get(this.network)
@@ -108,12 +108,12 @@ export class P2pWorker {
   }
 
   cacheInv(type: number, hash: string): void {
-    if (!this.invCache[type]){
+    if (!this.invCache[type]) {
       this.invCache[type] = [];
     }
     if (this.invCache[type].length > this.invCacheLimits[type]) {
       this.invCache[type].shift();
-    } 
+    }
     this.invCache[type].push(hash);
   }
 
@@ -165,8 +165,8 @@ export class P2pWorker {
         hash
       });
 
-      if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash)) {
-        this.cacheInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
+      const blockInCache = this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
+      if (this.isSyncingNode && !blockInCache) {
         this.events.emit(hash, message.block);
         this.events.emit('block', message.block);
         this.sync();
@@ -233,7 +233,7 @@ export class P2pWorker {
   public async getBlock(hash: string) {
     logger.debug('Getting block, hash:', hash);
     let received = false;
-    return new Promise(async resolve => {
+    return new Promise<Bitcoin.Block>(async resolve => {
       this.events.once(hash, block => {
         logger.debug('Received block, hash:', hash);
         received = true;
@@ -265,6 +265,7 @@ export class P2pWorker {
       initialSyncComplete: this.initialSyncComplete,
       block
     });
+    this.cacheInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, block.hash);
     if (!this.syncing) {
       logger.info(`Added block ${block.hash}`, {
         chain: this.chain,
@@ -349,6 +350,24 @@ export class P2pWorker {
       { upsert: true }
     );
     return true;
+  }
+
+  async resync(from: number, to: number) {
+    const { chain, network } = this;
+    let currentHeight = from;
+    while (currentHeight < to) {
+      const locatorHashes = await ChainStateProvider.getLocatorHashes({
+        chain,
+        network,
+        startHeight: currentHeight,
+        endHeight: currentHeight + 30
+      });
+      for (let hash of locatorHashes) {
+        const block = await this.getBlock(hash);
+        await BlockStorage.processBlock({ chain, network, block, initialSyncComplete: true });
+        currentHeight++;
+      }
+    }
   }
 
   registerSyncingNode() {

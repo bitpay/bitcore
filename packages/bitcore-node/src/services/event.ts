@@ -35,7 +35,7 @@ export class EventService {
     if (this.storageService.connected) {
       this.wireup();
     } else {
-      this.storageService.connection.on('CONNECTED', () => {
+      this.eventModel.events.on('CONNECTED', () => {
         this.wireup();
       });
     }
