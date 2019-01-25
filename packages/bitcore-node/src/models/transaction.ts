@@ -51,8 +51,12 @@ export type MintOp = {
         coinbase: boolean;
         value: number;
         script: Buffer;
-        spentHeight: SpentHeightIndicators;
         spentTxid?: string;
+        spentHeight?: SpentHeightIndicators;
+        wallets?: Array<ObjectID>;
+      };
+      $setOnInsert: {
+        spentHeight: SpentHeightIndicators;
         wallets: Array<ObjectID>;
       };
     };
@@ -234,7 +238,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
           };
         } else {
           agg[mintTxid].total += value;
-          agg[mintTxid].wallets.push(...wallets);
+          agg[mintTxid].wallets.push(...(wallets || []));
         }
         return agg;
       }, {});
@@ -362,7 +366,9 @@ export class TransactionModel extends BaseModel<ITransaction> {
                 mintHeight: height,
                 coinbase: isCoinbase,
                 value: output.satoshis,
-                script: output.script && output.script.toBuffer(),
+                script: output.script && output.script.toBuffer()
+              },
+              $setOnInsert: {
                 spentHeight: SpentHeightIndicators.unspent,
                 wallets: []
               }
@@ -428,6 +434,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         let sameBlockSpend = mintMap[inputObj.prevTxId] && mintMap[inputObj.prevTxId][inputObj.outputIndex];
         if (sameBlockSpend) {
           sameBlockSpend.updateOne.update.$set.spentHeight = height;
+          delete sameBlockSpend.updateOne.update.$setOnInsert.spentHeight;
           sameBlockSpend.updateOne.update.$set.spentTxid = tx._hash;
           continue;
         }
