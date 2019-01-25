@@ -98,14 +98,14 @@ describe('Block Model', function() {
       expect(ownBlock.chain).to.equal('BTC');
       expect(ownBlock.hash).to.equal('64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929');
       expect(ownBlock.network).to.equal('regtest');
-      expect(ownBlock.bits).to.equal('545259519');
+      expect(ownBlock.bits).to.equal(545259519);
       expect(ownBlock.height).to.equal(9);
       expect(ownBlock.merkleRoot).to.equal('08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08');
-      expect(ownBlock.nonce).to.equal('2');
+      expect(ownBlock.nonce).to.equal(2);
       expect(ownBlock.previousBlockHash).to.equal('3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9');
       expect(ownBlock.reward).to.equal(0.09765625);
       expect(ownBlock.size).to.equal(264);
-      expect(ownBlock.version).to.equal('536870912');
+      expect(ownBlock.version).to.equal(536870912);
       // TODO: assertion for block times
       expect(ownBlock.transactionCount).to.equal(1);
       expect(ownBlock.processed).to.equal(true);
@@ -197,10 +197,10 @@ describe('Block Model', function() {
           prevHash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
           hash: '12c719927ce18f9a61d7c5a7af08d3110cacfa43671aa700956c3c05ed38bdaa',
           time: 1526326785,
-          version: '536870912',
+          version: 536870912,
           merkleRoot: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
-          bits: parseInt('207fffff', 16).toString(),
-          nonce: '3'
+          bits: parseInt('207fffff', 16),
+          nonce: 3
         },
         chain: 'BTC',
         network: 'regtest'
@@ -215,10 +215,10 @@ describe('Block Model', function() {
           prevHash: '12c719927ce18f9a61d7c5a7af08d3110cacfa43671aa700956c3c05ed38bdaa',
           hash: '4c6872bf45ecab2fb8b38c8b8f50fc4a8309c6171d28d479b8226afcb1a99920',
           time: 1526326785,
-          version: '536870912',
+          version: 536870912,
           merkleRoot: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
-          bits: parseInt('207fffff', 16).toString(),
-          nonce: '3'
+          bits: parseInt('207fffff', 16),
+          nonce: 3
         },
         chain: 'BTC',
         network: 'regtest'
@@ -417,10 +417,10 @@ describe('Block Model', function() {
           prevHash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
           hash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
           time: 1526326785,
-          version: '536870912',
+          version: 536870912,
           merkleRoot: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
-          bits: parseInt('207fffff', 16).toString(),
-          nonce: '3'
+          bits: parseInt('207fffff', 16),
+          nonce: 3
         },
         chain: 'BTC',
         network: 'regtest'

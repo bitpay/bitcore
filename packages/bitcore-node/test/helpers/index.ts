@@ -34,6 +34,7 @@ export function mockCollection(toReturn, collectionMethods = {}) {
       sort: sinon.stub().returnsThis(),
       insertOne: sinon.stub().resolves(),
       insertMany: sinon.stub().resolves(),
+      bulkWrite: sinon.stub().resolves(),
       remove: sinon.stub().resolves(),
       deleteOne: sinon.stub().resolves(),
       deleteMany: sinon.stub().resolves(),

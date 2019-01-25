@@ -8,8 +8,8 @@ import { ObjectID } from 'mongodb';
 import { Config, ConfigService } from './config';
 import { ConfigType } from '../types/Config';
 
-function SanitizeWallet(x: { wallets: ObjectID[] }) {
-  const sanitized = Object.assign({}, x, { wallets: undefined });
+function SanitizeWallet(x: { wallets?: ObjectID[] }) {
+  const sanitized = Object.assign({}, x, { wallets: new Array<ObjectID>() });
   if (sanitized.wallets && sanitized.wallets.length > 0) {
     delete sanitized.wallets;
   }

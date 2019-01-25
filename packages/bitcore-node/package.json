@@ -79,6 +79,7 @@
     "body-parser": "^1.18.3",
     "cors": "^2.8.4",
     "express": "^4.16.3",
+    "heapdump": "^0.3.12",
     "http": "0.0.0",
     "lodash": "^4.17.11",
     "lru-cache": "^4.1.3",
