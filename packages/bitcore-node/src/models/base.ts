@@ -1,3 +1,4 @@
+import { EventEmitter } from "events";
 import { Storage } from '../services/storage';
 import { ObjectID, Collection, MongoClient, Db } from 'mongodb';
 
@@ -6,6 +7,7 @@ export abstract class BaseModel<T> {
   connected = false;
   client?: MongoClient;
   db?: Db;
+  events = new EventEmitter();
 
   // each model must implement an array of keys that are indexed, for paging
   abstract allowedPaging: Array<{
@@ -23,6 +25,7 @@ export abstract class BaseModel<T> {
         this.connected = true;
         this.db = this.storageService.db;
         await this.onConnect();
+        this.events.emit('CONNECTED');
       }
     };
     if (this.storageService.connected) {

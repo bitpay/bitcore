@@ -7,7 +7,7 @@ import { StorageService } from '../services/storage';
 export namespace IEvent {
   export type BlockEvent = IBlock;
   export type TxEvent = ITransaction;
-  export type CoinEvent = { coin: ICoin; address: string };
+  export type CoinEvent = { coin: Partial<ICoin>; address: string };
 }
 interface IEvent {
   payload: IEvent.BlockEvent | IEvent.TxEvent | IEvent.CoinEvent;
@@ -22,24 +22,23 @@ export class EventModel extends BaseModel<IEvent> {
   allowedPaging = [];
 
   async onConnect() {
-    this.collection.createIndex({ type: 1, emitTime: 1 }, { background: true });
-
+    await this.collection.createIndex({ type: 1, emitTime: 1 }, { background: true });
     const capped = await this.collection.isCapped();
     if (!capped) {
-      this.db!.createCollection('events', { capped: true, size: 10000 });
+      await this.db!.createCollection('events', { capped: true, size: 10000 });
     }
   }
 
   public signalBlock(block: IEvent.BlockEvent) {
-    this.collection.insertOne({ payload: block, emitTime: new Date(), type: 'block' });
+    return this.collection.insertOne({ payload: block, emitTime: new Date(), type: 'block' });
   }
 
   public signalTx(tx: IEvent.TxEvent) {
-    this.collection.insertOne({ payload: tx, emitTime: new Date(), type: 'tx' });
+    return this.collection.insertOne({ payload: tx, emitTime: new Date(), type: 'tx' });
   }
 
   public signalAddressCoin(payload: IEvent.CoinEvent) {
-    this.collection.insertOne({ payload, emitTime: new Date(), type: 'coin' });
+    return this.collection.insertOne({ payload, emitTime: new Date(), type: 'coin' });
   }
 
   public getBlockTail(lastSeen: Date) {

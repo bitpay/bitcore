@@ -140,10 +140,10 @@ describe('Block Model', function() {
           prevHash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9',
           hash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
           time: 1526756523,
-          version: '536870912',
+          version: 536870912,
           merkleRoot: '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
-          bits: parseInt('207fffff', 16).toString(),
-          nonce: '2'
+          bits: parseInt('207fffff', 16),
+          nonce: 2
         },
         chain: 'BTC',
         network: 'regtest'

@@ -521,16 +521,22 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getLocatorHashes(params) {
-    const { chain, network } = params;
+    const { chain, network, startHeight, endHeight } = params;
+    const query =
+      startHeight && endHeight
+        ? {
+            processed: true,
+            chain,
+            network,
+            height: { $gt: startHeight, $lt: endHeight }
+          }
+        : {
+            processed: true,
+            chain,
+            network
+          };
     const locatorBlocks = await BlockStorage.collection
-      .find(
-        {
-          processed: true,
-          chain,
-          network
-        },
-        { sort: { height: -1 }, limit: 30 }
-      )
+      .find(query, { sort: { height: -1 }, limit: 30 })
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
     if (locatorBlocks.length < 2) {
