@@ -16,13 +16,28 @@ Currently we have the following features
 
 ### Wallet Create
 ```
+> No baseURL flag will automatically create a wallet that points to https://api.bitcore.io/api.
+
 ./wallet-create --name TestWalletBTC --chain BTC --network mainnet
+
+> To create a wallet to point to local bitcore-node.
+
 ./wallet-create  --chain BCH --network regtest --baseUrl http://localhost:3000/api --name myregtestwallet
 ```
+### Register an Existing Wallet
+Register an existing wallet to point to custom Bitcore API url.
+```
+./wallet-register --name myregtestwallet --baseURL https://api.bitcore.io/api
+```
 
-### Wallet Import
+Or a local Bitcore-node
+```
+./wallet-register --name myregtestwallet --baseURL http://localhost:3000
+```
+
+### Wallet Address Import
 You can import a jsonl file. privKey and pubKey are optional.
-If you provide privKey, pubKey must be provided as well
+If you provide privKey, pubKey must be provided as well.
 ```
 //~/Desktop/export.jsonl
 {"address": "mXy1234", privKey: "xxxxxxx", pubKey: "yyyyyyyy"}
@@ -31,6 +46,11 @@ If you provide privKey, pubKey must be provided as well
 ```
 ```
 ./wallet-import --name TestWalletBTC --file ~/Desktop/export.jsonl
+```
+
+You can also import an address in json format in the command line.
+```
+./wallet-import --name myregtestwallet --parse '[{"address":"mXy1234"}]'
 ```
 
 ### Balance Checking
