@@ -11,7 +11,7 @@ export class PriceProvider {
     public api: ApiProvider,
     private toastCtrl: ToastController,
     private logger: Logger
-  ) {}
+  ) { }
 
   public setCurrency(currency: string): void {
     this.currency.currencySymbol = currency;
@@ -31,8 +31,9 @@ export class PriceProvider {
           this.currency.loading = false;
         },
         err => {
+          const error = err.status === 404 ? `${err.status} (Not Found)` : err;
           this.currency.loading = false;
-          this.logger.error(err);
+          this.logger.error(error);
           this.setDefaultCurrency();
         }
       );

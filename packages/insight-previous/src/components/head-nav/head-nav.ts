@@ -83,29 +83,35 @@ export class HeadNavComponent {
               this.redirTo = 'transaction';
               this.params['txId'] = res[1].json().txid;
             }
-          } else {
+          } else if (res.json().length > 0) {
             this.redirTo = 'address';
             this.params['addrStr'] = res.json()[0].address;
           }
-          this.navCtrl.setRoot('home', this.params, { animate: false });
-          this.redirProvider.redir(this.redirTo, this.params);
+
+          if (this.redirTo) {
+            this.navCtrl.setRoot('home', this.params, { animate: false });
+            this.redirProvider.redir(this.redirTo, this.params);
+          } else {
+            this.resetSearch('No matching records found!');
+          }
         },
         err => {
-          this.resetSearch();
-          this.loading = false;
-          this.reportBadQuery('Server error. Please try again');
+          this.resetSearch('Server error. Please try again');
           this.logger.error(err);
         }
       );
     } else {
-      this.resetSearch();
-      this.loading = false;
-      this.reportBadQuery('No matching records found!');
+      this.resetSearch('No matching records found!');
     }
   }
 
-  /* tslint:disable:no-unused-variable */
-  private reportBadQuery(message): void {
+  private resetSearch(message: string): void {
+    this.q = '';
+    this.loading = false;
+    this.reportBadQuery(message);
+  }
+
+  private reportBadQuery(message: string): void {
     this.presentToast(message);
     this.logger.info(message);
   }
@@ -118,12 +124,6 @@ export class HeadNavComponent {
     });
     toast.present();
   }
-
-  private resetSearch(): void {
-    this.q = '';
-    this.loading = false;
-  }
-  /* tslint:enable:no-unused-variable */
 
   public changeCurrency(myEvent: any): void {
     const popover: any = this.popoverCtrl.create(DenominationComponent);
