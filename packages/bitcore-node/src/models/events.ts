@@ -22,12 +22,11 @@ export class EventModel extends BaseModel<IEvent> {
   allowedPaging = [];
 
   async onConnect() {
-    this.collection.createIndex({ type: 1, emitTime: 1 }, { background: true });
-
     const capped = await this.collection.isCapped();
     if (!capped) {
-      this.db!.createCollection('events', { capped: true, size: 10000 });
+      await this.db!.createCollection('events', { capped: true, size: 10000 });
     }
+    await this.collection.createIndex({ type: 1, emitTime: 1 }, { background: true });
   }
 
   public signalBlock(block: IEvent.BlockEvent) {
