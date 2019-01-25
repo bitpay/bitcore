@@ -397,6 +397,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
             .filter(wallet => wallet.address === mintOp.updateOne.update.$set.address)
             .map(wallet => wallet.wallet);
           mintOp.updateOne.update.$set.wallets = transformedWallets;
+          delete mintOp.updateOne.update.$setOnInsert.wallets;
           return mintOp;
         });
       }

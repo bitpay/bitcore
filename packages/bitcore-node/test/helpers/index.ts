@@ -1,4 +1,4 @@
-import { StateStorage } from "../../src/models/state";
+import { StateStorage } from '../../src/models/state';
 import * as sinon from 'sinon';
 import { BlockStorage } from '../../src/models/block';
 import { TransactionStorage } from '../../src/models/transaction';
@@ -7,8 +7,8 @@ import { WalletAddressStorage } from '../../src/models/walletAddress';
 import { WalletStorage } from '../../src/models/wallet';
 import { Storage } from '../../src/services/storage';
 import { BaseModel } from '../../src/models/base';
-import { RateLimitStorage } from "../../src/models/rateLimit";
-import { EventStorage } from "../../src/models/events";
+import { RateLimitStorage } from '../../src/models/rateLimit';
+import { EventStorage } from '../../src/models/events';
 
 export async function resetDatabase() {
   console.log('Restting database');
@@ -30,6 +30,7 @@ export function mockCollection(toReturn, collectionMethods = {}) {
   const mock = Object.assign(
     {
       find: sinon.stub().returnsThis(),
+      aggregate: sinon.stub().returnsThis(),
       count: sinon.stub().returnsThis(),
       sort: sinon.stub().returnsThis(),
       insertOne: sinon.stub().resolves(),
@@ -39,7 +40,7 @@ export function mockCollection(toReturn, collectionMethods = {}) {
       deleteOne: sinon.stub().resolves(),
       deleteMany: sinon.stub().resolves(),
       limit: sinon.stub().returnsThis(),
-      toArray: sinon.stub().resolves([toReturn]),
+      toArray: sinon.stub().resolves(toReturn instanceof Array ? toReturn : [toReturn]),
       findOne: sinon.stub().resolves(toReturn),
       update: sinon.stub().resolves({ result: toReturn }),
       updateOne: sinon.stub().resolves(toReturn),
