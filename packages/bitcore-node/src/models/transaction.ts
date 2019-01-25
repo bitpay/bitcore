@@ -230,7 +230,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
       const groupedMints = params.mintOps.reduce<CoinGroup>((agg, coinOp) => {
         const mintTxid = coinOp.updateOne.filter.mintTxid;
         const coin = coinOp.updateOne.update.$set;
-        const { value, wallets } = coin;
+        const { value, wallets = [] } = coin;
         if (!agg[mintTxid]) {
           agg[mintTxid] = {
             total: value,
@@ -238,7 +238,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
           };
         } else {
           agg[mintTxid].total += value;
-          agg[mintTxid].wallets.push(...(wallets || []));
+          agg[mintTxid].wallets.push(...wallets);
         }
         return agg;
       }, {});
