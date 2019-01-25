@@ -98,14 +98,14 @@ describe('Block Model', function() {
       expect(ownBlock.chain).to.equal('BTC');
       expect(ownBlock.hash).to.equal('64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929');
       expect(ownBlock.network).to.equal('regtest');
-      expect(ownBlock.bits).to.equal('545259519');
+      expect(ownBlock.bits).to.equal(545259519);
       expect(ownBlock.height).to.equal(9);
       expect(ownBlock.merkleRoot).to.equal('08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08');
-      expect(ownBlock.nonce).to.equal('2');
+      expect(ownBlock.nonce).to.equal(2);
       expect(ownBlock.previousBlockHash).to.equal('3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9');
       expect(ownBlock.reward).to.equal(0.09765625);
       expect(ownBlock.size).to.equal(264);
-      expect(ownBlock.version).to.equal('536870912');
+      expect(ownBlock.version).to.equal(536870912);
       // TODO: assertion for block times
       expect(ownBlock.transactionCount).to.equal(1);
       expect(ownBlock.processed).to.equal(true);
