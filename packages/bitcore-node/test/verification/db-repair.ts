@@ -109,9 +109,7 @@ import { BlockStorage } from '../../src/models/block';
           console.log('Inspecting...');
           console.log(dataStr);
           await handleRepair(parsedData);
-        } catch (err) {
-          //console.log(err);
-        }
+        } catch (err) {}
       }
     }
   }
@@ -139,12 +137,4 @@ import { BlockStorage } from '../../src/models/block';
   };
 
   getFileContents(FILE);
-
-  //type: 'DUPE_BLOCKHASH'
-  //type: 'NEG_FEE'
-  //type: 'DUPE_COIN'
-  //type: 'MISSING_COIN_FOR_TXID'
-  //type: 'MISSING_TX'
-  //type: 'VALUE_MISMATCH'
-  //type: 'DUPE_BLOCKHEIGHT'
 })();
