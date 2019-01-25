@@ -355,19 +355,32 @@ export class P2pWorker {
   async resync(from: number, to: number) {
     const { chain, network } = this;
     let currentHeight = from;
+    this.syncing = true;
     while (currentHeight < to) {
       const locatorHashes = await ChainStateProvider.getLocatorHashes({
         chain,
         network,
-        startHeight: currentHeight,
-        endHeight: currentHeight + 30
+        startHeight: Math.max(0, currentHeight - 15),
+        endHeight: Math.min(currentHeight + 30, to)
       });
-      for (let hash of locatorHashes) {
-        const block = await this.getBlock(hash);
+      const headers = await this.getHeaders(locatorHashes);
+      logger.info(`Re-Syncing ${headers.length} blocks for ${chain} ${network}`);
+      let lastLog = Date.now();
+      for (let header of headers) {
+        const block = await this.getBlock(header.hash);
         await BlockStorage.processBlock({ chain, network, block, initialSyncComplete: true });
         currentHeight++;
+        if (Date.now() - lastLog > 100) {
+          logger.info(`Re-Sync `, {
+            chain,
+            network,
+            height: currentHeight
+          });
+          lastLog = Date.now();
+        }
       }
     }
+    this.syncing = false;
   }
 
   registerSyncingNode() {
