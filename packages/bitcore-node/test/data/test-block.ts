@@ -16,7 +16,7 @@ export const TEST_BLOCK: Bitcoin.Block = {
         size: 264,
         weight: 948,
         height: 1355,
-        version: '536870912',
+        version: 536870912,
         versionHex: '20000000',
         merkleRoot:
           '08e23107e8449f02568d37d37aa76e840e55bbb5f100ed8ad257af303db88c08',
@@ -25,8 +25,8 @@ export const TEST_BLOCK: Bitcoin.Block = {
         ],
         time: 1526756523,
         mediantime: 1526066375,
-        nonce: '2',
-        bits: parseInt('207fffff', 16).toString(),
+        nonce: 2,
+        bits: parseInt('207fffff', 16),
         difficulty: 4.656542373906925e-10,
         chainwork:
           '0000000000000000000000000000000000000000000000000000000000000a98',
@@ -52,7 +52,7 @@ export const TEST_BLOCK_1: Bitcoin.Block = {
         size: 262,
         weight: 940,
         height: 1362,
-        version: '536870912',
+        version: 536870912,
         versionHex: '20000000',
         merkleRoot:
           'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
@@ -61,8 +61,8 @@ export const TEST_BLOCK_1: Bitcoin.Block = {
         ],
         time: 1526326784,
         mediantime: 1526326784,
-        nonce: '3',
-        bits: parseInt('207fffff', 16).toString(),
+        nonce: 3,
+        bits: parseInt('207fffff', 16),
         difficulty: 4.656542373906925e-10,
         chainwork:
           '0000000000000000000000000000000000000000000000000000000000000a98',
@@ -88,7 +88,7 @@ export const TEST_BLOCK_2: Bitcoin.Block = {
         size: 262,
         weight: 940,
         height: 1367,
-        version: '536870912',
+        version: 536870912,
         versionHex: '20000000',
         merkleRoot:
           '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
@@ -97,8 +97,8 @@ export const TEST_BLOCK_2: Bitcoin.Block = {
         ],
         time: 1526326785,
         mediantime: 1526326784,
-        nonce: '0',
-        bits: parseInt('207fffff', 16).toString(),
+        nonce: 0,
+        bits: parseInt('207fffff', 16),
         difficulty: 4.656542373906925e-10,
         chainwork:
           '0000000000000000000000000000000000000000000000000000000000000a98',
@@ -124,7 +124,7 @@ export const TEST_BLOCK_3: Bitcoin.Block = {
         size: 262,
         weight: 940,
         height: 1357,
-        version: '536870912',
+        version: 536870912,
         versionHex: '20000000',
         merkleRoot:
           '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
@@ -133,8 +133,8 @@ export const TEST_BLOCK_3: Bitcoin.Block = {
         ],
         time: 1526326785,
         mediantime: 1526326785,
-        nonce: '3',
-        bits: parseInt('207fffff', 16).toString(),
+        nonce: 3,
+        bits: parseInt('207fffff', 16),
         difficulty: 4.656542373906925e-10,
         chainwork:
           '0000000000000000000000000000000000000000000000000000000000000a98',

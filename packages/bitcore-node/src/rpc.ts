@@ -155,6 +155,10 @@ export class AsyncRPC {
     }
     return (await this.call('getrawtransaction', args)) as RPCTransaction;
   }
+
+  async sendtoaddress(address: string, value: string | number) { 
+    return this.call('sendtoaddress', [address, value]);
+  }
 }
 
 export type RPCBlock<T> = {
