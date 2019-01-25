@@ -366,9 +366,13 @@ export class P2pWorker {
         logger.info(`${chain}:${network} up to date.`);
         break;
       }
-      logger.info(`Re-Syncing ${headers.length} blocks for ${chain} ${network}`);
+      const headerCount = Math.min(headers.length, to - currentHeight);
+      logger.info(`Re-Syncing ${headerCount} blocks for ${chain} ${network}`);
       let lastLog = Date.now();
       for (let header of headers) {
+        if (currentHeight > to) {
+          break;
+        }
         const block = await this.getBlock(header.hash);
         await BlockStorage.processBlock({ chain, network, block, initialSyncComplete: true });
         currentHeight++;
