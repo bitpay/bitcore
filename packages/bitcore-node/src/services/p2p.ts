@@ -148,7 +148,7 @@ export class P2pWorker {
         network: this.network,
         hash
       });
-      if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash)) {
+      if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash) && !this.syncing) {
         this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, hash);
         this.processTransaction(message.transaction);
         this.events.emit('transaction', message.transaction);
@@ -166,10 +166,15 @@ export class P2pWorker {
       });
 
       const blockInCache = this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
-      if (this.isSyncingNode && !blockInCache) {
+      if (!blockInCache) {
+        this.cacheInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
+      }
+      if (this.isSyncingNode && (!blockInCache || this.syncing)) {
         this.events.emit(hash, message.block);
         this.events.emit('block', message.block);
-        this.sync();
+        if (!this.syncing) {
+          this.sync();
+        }
       }
     });
 
@@ -265,13 +270,6 @@ export class P2pWorker {
       initialSyncComplete: this.initialSyncComplete,
       block
     });
-    this.cacheInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, block.hash);
-    if (!this.syncing) {
-      logger.info(`Added block ${block.hash}`, {
-        chain: this.chain,
-        network: this.network
-      });
-    }
   }
 
   async processTransaction(tx: Bitcoin.Transaction): Promise<any> {
