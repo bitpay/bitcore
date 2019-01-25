@@ -520,7 +520,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
             processed: true,
             chain,
             network,
-            height: { $gt: startHeight, lt: endHeight }
+            height: { $gt: startHeight, $lt: endHeight }
           }
         : {
             processed: true,
