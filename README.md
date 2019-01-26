@@ -66,7 +66,9 @@ upnp=1
 # Make sure port & rpcport matches the 
 # bitcore.config.json ports for XVG mainnet
 
-```
+# if using Verge Core v5+ prefix
+# [main]
+
 port=21102
 rpcport=20102
 rpcallowip=127.0.0.1

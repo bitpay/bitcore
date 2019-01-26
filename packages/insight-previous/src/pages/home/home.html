@@ -1,9 +1,9 @@
-<head-nav [title]="'insight'" (updateView)="loadView($event,true)"></head-nav>
+<head-nav (updateView)="loadView($event,true)"></head-nav>
 
 <ion-content>
   <div class="page-content" padding>
     <h2>Latest Blocks</h2>
-    <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" #latestBlocks></latest-blocks> 
+    <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" #latestBlocks></latest-blocks>
   </div>
   <div class="footer">
     <div class="footer-pages">

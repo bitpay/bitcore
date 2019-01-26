@@ -23,7 +23,7 @@ export class ApiProvider {
   });
 
   constructor(
-    public http: Http, 
+    public http: Http,
     private defaults: DefaultProvider,
     private logger: Logger
   ) {
@@ -64,7 +64,9 @@ export class ApiProvider {
     const availableNetworks = this.networkSettings.value.availableNetworks;
     const isValid = _.some(availableNetworks, network);
     if (!isValid) {
-      this.logger.error('Invalid URL: missing or invalid COIN or NETWORK param');
+      this.logger.error(
+        'Invalid URL: missing or invalid COIN or NETWORK param'
+      );
       return;
     }
     this.networkSettings.next({

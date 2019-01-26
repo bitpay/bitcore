@@ -4,3 +4,4 @@ node_modules/
 *bitcore.config.*
 .vscode
 .DS_Store
+*.swp

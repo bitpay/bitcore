@@ -203,6 +203,21 @@ router.get('/:pubKey/balance', authenticate, async (req: AuthenticatedRequest, r
   }
 });
 
+router.get('/:pubKey/balance/:time', authenticate, async (req: AuthenticatedRequest, res) => {
+  let { chain, network, time } = req.params;
+  try {
+    const result = await ChainStateProvider.getWalletBalanceAtTime({
+      chain,
+      network,
+      wallet: req.wallet!,
+      time
+    });
+    return res.send(result || { confirmed: 0, unconfirmed: 0, balance: 0 });
+  } catch (err) {
+    return res.status(500).json(err);
+  }
+});
+
 router.get('/:pubKey/utxos', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
   let { limit } = req.query;

@@ -28,9 +28,11 @@ export class HomePage {
     const chainParam = navParams.get('chain');
     const networkParam = navParams.get('network');
 
-    this.chain = chainParam ||
+    this.chain =
+      chainParam ||
       this.apiProvider.networkSettings.value.selectedNetwork.chain;
-    this.network = networkParam ||
+    this.network =
+      networkParam ||
       this.apiProvider.networkSettings.value.selectedNetwork.network;
 
     // Set rootPage for deep links
