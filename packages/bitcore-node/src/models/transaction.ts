@@ -398,6 +398,9 @@ export class TransactionModel extends BaseModel<ITransaction> {
             .map(wallet => wallet.wallet);
           mintOp.updateOne.update.$set.wallets = transformedWallets;
           delete mintOp.updateOne.update.$setOnInsert.wallets;
+          if (!Object.keys(mintOp.updateOne.update.$setOnInsert).length) {
+            delete mintOp.updateOne.update.$setOnInsert;
+          }
           return mintOp;
         });
       }
@@ -436,6 +439,9 @@ export class TransactionModel extends BaseModel<ITransaction> {
         if (sameBlockSpend) {
           sameBlockSpend.updateOne.update.$set.spentHeight = height;
           delete sameBlockSpend.updateOne.update.$setOnInsert.spentHeight;
+          if (!Object.keys(sameBlockSpend.updateOne.update.$setOnInsert).length) {
+            delete sameBlockSpend.updateOne.update.$setOnInsert;
+          }
           sameBlockSpend.updateOne.update.$set.spentTxid = tx._hash;
           continue;
         }
