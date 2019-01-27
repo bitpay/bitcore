@@ -1,16 +1,16 @@
+import { EventEmitter } from "events";
 import logger from '../logger';
 import { StorageService } from './storage';
 import { LoggifyClass } from '../decorators/Loggify';
 import { EventStorage, IEvent, EventModel } from '../models/events';
-import { PassThrough } from 'stream';
 import { Storage } from './storage';
 import { Config, ConfigService } from './config';
 
 @LoggifyClass
 export class EventService {
-  txStream = new PassThrough({ objectMode: true });
-  blockStream = new PassThrough({ objectMode: true });
-  addressCoinStream = new PassThrough({ objectMode: true });
+  txEvent = new EventEmitter();
+  blockEvent = new EventEmitter();
+  addressCoinEvent = new EventEmitter();
   storageService: StorageService;
   configService: ConfigService;
   eventModel: EventModel;
@@ -57,7 +57,7 @@ export class EventService {
         const txEvent = await txCursor.next();
         if (txEvent) {
           const tx = <IEvent.TxEvent>txEvent.payload;
-          this.txStream.write(tx);
+          this.txEvent.emit('tx', tx);
           lastTxUpdate = new Date();
         }
       }
@@ -73,7 +73,7 @@ export class EventService {
         const blockEvent = await blockCursor.next();
         if (blockEvent) {
           const block = <IEvent.BlockEvent>blockEvent.payload;
-          this.blockStream.write(block);
+          this.blockEvent.emit('block', block);
           lastBlockUpdate = new Date();
         }
       }
@@ -89,7 +89,7 @@ export class EventService {
         const addressTx = await addressTxCursor.next();
         if (addressTx) {
           const addressCoin = <IEvent.CoinEvent>addressTx.payload;
-          this.addressCoinStream.write(addressCoin);
+          this.addressCoinEvent.emit('coin', addressCoin);
           lastAddressTxUpdate = new Date();
         }
       }
