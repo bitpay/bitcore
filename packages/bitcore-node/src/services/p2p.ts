@@ -8,6 +8,7 @@ import { StateStorage } from '../models/state';
 import { SpentHeightIndicators } from '../types/Coin';
 import os from 'os';
 import { Config, ConfigService } from './config';
+import { wait } from "../utils/wait";
 const Chain = require('../chain');
 
 export class P2pManager {
@@ -230,7 +231,7 @@ export class P2pWorker {
       });
       while (!received) {
         this.pool.sendMessage(this.messages.GetHeaders({ starts: candidateHashes }));
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await wait(1000);
       }
     });
   }
@@ -246,7 +247,7 @@ export class P2pWorker {
       });
       while (!received) {
         this.pool.sendMessage(this.messages.GetData.forBlock(hash));
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await wait(1000);
       }
     });
   }
