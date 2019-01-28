@@ -21,6 +21,7 @@ import { InsightApp } from './app.component';
     HttpModule,
     PagesModule,
     IonicModule.forRoot(InsightApp, {
+      mode: 'md',
       animate: false
     })
   ],

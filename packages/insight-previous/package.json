@@ -17,6 +17,9 @@
     "bitcore",
     "API"
   ],
+  "config": {
+    "ionic_sass": "./sass.js"
+  },
   "prettier": {
     "singleQuote": true
   },
