@@ -18,7 +18,8 @@ import { BlockStorage } from '../../src/models/block';
   await Storage.start();
   const chainConfig = Config.chainConfig({ chain, network });
   const worker = new P2pWorker({ chain, network, chainConfig });
-  await worker.start();
+  await worker.connect();
+
   const handleRepair = async data => {
     switch (data.type) {
       case 'DUPE_COIN':
