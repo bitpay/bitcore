@@ -302,9 +302,7 @@ export class P2pWorker {
       let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
       while (!parentTip || parentTip.height < forkHeight) {
         logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
-        await new Promise(resolve => {
-          setTimeout(resolve, 5000);
-        });
+        await wait(5000);
         parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
       }
     }
@@ -418,16 +416,16 @@ export class P2pWorker {
         if (this.isSyncingNode) {
           logger.info(`This worker is no longer syncing node for ${this.chain} ${this.network}`);
           this.isSyncingNode = false;
-          await new Promise(resolve => setTimeout(resolve, 100000));
+          await wait(100000);
         }
-        await new Promise(resolve => setTimeout(resolve, 10000));
+        await wait(10000);
         StateStorage.selfNominateSyncingNode({
           chain: this.chain,
           network: this.network,
           lastHeartBeat: syncingNode
         });
       }
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await wait(500);
     }
   }
 
