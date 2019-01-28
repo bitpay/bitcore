@@ -31,9 +31,8 @@ export class PriceProvider {
           this.currency.loading = false;
         },
         err => {
-          const error = err.status === 404 ? `${err.status} (Not Found)` : err;
           this.currency.loading = false;
-          this.logger.error(error);
+          this.logger.error(err);
           this.setDefaultCurrency();
         }
       );
