@@ -208,6 +208,7 @@ export class P2pWorker {
   }
 
   async connect() {
+    this.setupListeners();
     this.pool.connect();
     this.connectInterval = setInterval(this.pool.connect.bind(this.pool), 5000);
     return new Promise<void>(resolve => {
@@ -446,7 +447,6 @@ export class P2pWorker {
 
   async start() {
     logger.debug(`Started worker for chain ${this.chain}`);
-    this.setupListeners();
     await this.connect();
     this.registerSyncingNode();
   }
