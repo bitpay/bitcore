@@ -65,34 +65,23 @@ export class HeadNavComponent {
   }
 
   public search(): void {
-    this.showSearch = false;
     this.q = this.q.replace(/\s/g, '');
     const inputDetails = this.searchProvider.isInputValid(this.q);
 
     if (this.q !== '' && inputDetails.isValid) {
+      this.showSearch = false;
       this.searchProvider.search(this.q, inputDetails.type).subscribe(
         res => {
-          if (_.isArray(res)) {
-            const index = _.findIndex(res, o => {
-              return o !== null;
-            });
-            if (index === 0) {
-              this.redirTo = 'block-detail';
-              this.params['blockHash'] = res[0].json().hash;
-            } else {
-              this.redirTo = 'transaction';
-              this.params['txId'] = res[1].json().txid;
-            }
-          } else if (res.json().length > 0) {
-            this.redirTo = 'address';
-            this.params['addrStr'] = res.json()[0].address;
-          }
-
-          if (this.redirTo) {
+          const nextView = this.processResponse(res);
+          if (!_.includes(nextView, '')) {
+            this.params[nextView.type] = nextView.params;
+            this.redirTo = nextView.redirTo;
             this.navCtrl.setRoot('home', this.params, { animate: false });
             this.redirProvider.redir(this.redirTo, this.params);
           } else {
-            this.resetSearch('No matching records found!');
+            const message = 'No matching records found!';
+            this.resetSearch(message);
+            this.logger.info(message);
           }
         },
         err => {
@@ -100,20 +89,42 @@ export class HeadNavComponent {
           this.logger.error(err);
         }
       );
+    }
+  }
+
+  private processResponse(response) {
+    if (!_.isArray(response) && response.json()[0]) {
+      return {
+        redirTo: 'address',
+        params: response.json()[0].address,
+        type: 'addrStr',
+      }
     } else {
-      this.resetSearch('No matching records found!');
+      return _.reduce(response, (result, value) => {
+        if (value.ok === true) {
+          if (value.json().txid) {
+            result = {
+              redirTo: 'transaction',
+              params: value.json().txid,
+              type: 'txId',
+            };
+          } else {
+            result = {
+              redirTo: 'block-detail',
+              params: value.json().hash,
+              type: 'blockHash',
+            };
+          }
+        }
+        return result;
+      }, { redirTo: '', params: '', type: '' });
     }
   }
 
   private resetSearch(message: string): void {
     this.q = '';
     this.loading = false;
-    this.reportBadQuery(message);
-  }
-
-  private reportBadQuery(message: string): void {
     this.presentToast(message);
-    this.logger.info(message);
   }
 
   private presentToast(message): void {
