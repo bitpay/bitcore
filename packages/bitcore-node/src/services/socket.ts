@@ -66,7 +66,7 @@ export class SocketService {
   }
 
   async wireup() {
-    this.eventService.txStream.on('data', (tx: IEvent.TxEvent) => {
+    this.eventService.txEvent.on('tx', (tx: IEvent.TxEvent) => {
       if (this.io) {
         const { chain, network } = tx;
         const sanitizedTx = SanitizeWallet(tx);
@@ -74,14 +74,14 @@ export class SocketService {
       }
     });
 
-    this.eventService.blockStream.on('data', (block: IEvent.BlockEvent) => {
+    this.eventService.blockEvent.on('block', (block: IEvent.BlockEvent) => {
       if (this.io) {
         const { chain, network } = block;
         this.io.sockets.in(`/${chain}/${network}/inv`).emit('block', block);
       }
     });
 
-    this.eventService.addressCoinStream.on('data', (addressCoin: IEvent.CoinEvent) => {
+    this.eventService.addressCoinEvent.on('coin', (addressCoin: IEvent.CoinEvent) => {
       if (this.io) {
         const { coin, address } = addressCoin;
         const { chain, network } = coin;
