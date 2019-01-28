@@ -25,6 +25,7 @@ export class SocketService {
   serviceConfig: ConfigType['services']['socket'];
   eventService: EventService;
   eventModel: EventModel;
+  stopped = true;
 
   constructor({ eventService = Event, eventModel = EventStorage, configService = Config } = {}) {
     this.eventService = eventService;
@@ -43,19 +44,23 @@ export class SocketService {
       logger.info('Disabled Socket Service');
       return;
     }
-    logger.info('Starting Socket Service');
-    this.httpServer = server;
-    this.io = SocketIO(server);
-    this.io.sockets.on('connection', socket => {
-      socket.on('room', room => {
-        socket.join(room);
+    if (this.stopped) {
+      this.stopped = false;
+      logger.info('Starting Socket Service');
+      this.httpServer = server;
+      this.io = SocketIO(server);
+      this.io.sockets.on('connection', socket => {
+        socket.on('room', room => {
+          socket.join(room);
+        });
       });
-    });
+    }
     this.wireup();
   }
 
   stop() {
     logger.info('Stopping Socket Service');
+    this.stopped = true;
     return new Promise(resolve => {
       if (this.io) {
         this.io.close(resolve);
