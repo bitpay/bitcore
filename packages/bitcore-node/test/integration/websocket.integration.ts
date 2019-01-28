@@ -15,18 +15,31 @@ const chainConfig = config.chains[chain][network];
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
+let p2pWorker;
+
 describe('Websockets', function() {
   this.timeout(50000);
   before(async () => {
     await resetDatabase();
   });
 
-  it('should get a new block when one is generated', async () => {
-    const p2pWorker = new P2pWorker({
+  beforeEach(() => {
+    p2pWorker = new P2pWorker({
       chain,
       network,
       chainConfig
     });
+  });
+
+  afterEach(async () => {
+    try {
+      await p2pWorker.stop();
+    } catch (e) {
+      console.log('Error stopping p2p worker');
+    }
+  });
+
+  it('should get a new block when one is generated', async () => {
     await p2pWorker.start();
 
     await rpc.generate(5);
@@ -46,8 +59,6 @@ describe('Websockets', function() {
     if (beforeGenTip != null && afterGenTip != null) {
       expect(beforeGenTip.height).to.be.lt(afterGenTip.height);
     }
-
-    await p2pWorker.stop();
   });
 
   it('should get a websocket event when a block is added', async () => {
