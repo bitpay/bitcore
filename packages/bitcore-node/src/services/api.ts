@@ -15,6 +15,7 @@ export class ApiService {
   storageService: StorageService;
   socketService: SocketService;
   httpServer: http.Server;
+  stopped = true;
 
   constructor({
     port = 3000,
@@ -39,15 +40,19 @@ export class ApiService {
     if (!this.storageService.connected) {
       await this.storageService.start({});
     }
-    this.httpServer.timeout = this.timeout;
-    this.httpServer.listen(this.port, () => {
-      logger.info(`Starting API Service on port ${this.port}`);
-      this.socketService.start({ server: this.httpServer });
-    });
+    if (this.stopped) {
+      this.stopped = false;
+      this.httpServer.timeout = this.timeout;
+      this.httpServer.listen(this.port, () => {
+        logger.info(`Starting API Service on port ${this.port}`);
+        this.socketService.start({ server: this.httpServer });
+      });
+    }
     return this.httpServer;
   }
 
   stop() {
+    this.stopped = true;
     return new Promise(resolve => {
       this.httpServer.close(resolve);
     });
