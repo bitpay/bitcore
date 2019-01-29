@@ -94,6 +94,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
   //blocks with same height
   const blocksForHeight = await BlockStorage.collection.countDocuments({ chain, network, height: blockNum });
   if (blocksForHeight === 0) {
+    success = false;
     const error = {
       model: 'block',
       err: true,
