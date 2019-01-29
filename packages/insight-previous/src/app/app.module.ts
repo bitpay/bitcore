@@ -2,7 +2,7 @@ import { ErrorHandler, NgModule } from '@angular/core';
 import { HttpModule } from '@angular/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
-import { Logger } from '../../src/providers/logger/logger';
+import { Logger } from '../providers/logger/logger';
 import { BlocksPage, HomePage, PagesModule } from '../pages';
 import { ApiProvider } from '../providers/api/api';
 import { BlocksProvider } from '../providers/blocks/blocks';

@@ -30,8 +30,9 @@
           {{ block.txlength }}
         </ion-col>
         <ion-col hideWhen="portrait">
-          <a *ngIf="block.poolInfo && block.poolInfo.poolName" href="{{block.poolInfo.url}}">{{ block.poolInfo.poolName
-            }}</a>
+          <a *ngIf="block.poolInfo && block.poolInfo.poolName" href="{{ block.poolInfo.url }}">
+            {{ block.poolInfo.poolName }}
+          </a>
         </ion-col>
         <ion-col text-right>
           {{ block.size }}
