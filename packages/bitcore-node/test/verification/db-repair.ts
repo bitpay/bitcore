@@ -6,6 +6,7 @@ import { Storage } from '../../src/services/storage';
 import { P2pWorker } from '../../src/services/p2p';
 import { Config } from '../../src/services/config';
 import { BlockStorage } from '../../src/models/block';
+import { validateDataForBlock } from './db-verify';
 
 (async () => {
   const { CHAIN, NETWORK, FILE, DRYRUN } = process.env;
@@ -57,12 +58,17 @@ import { BlockStorage } from '../../src/models/block';
       case 'VALUE_MISMATCH':
       case 'NEG_FEE':
         const blockHeight = Number(data.payload.blockNum);
+        const { success } = await validateDataForBlock(blockHeight);
         if (DRYRUN) {
           console.log('WOULD RESYNC BLOCKS', blockHeight, 'to', blockHeight + 1);
           console.log(data.payload);
         } else {
-          console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
-          await worker.resync(blockHeight - 1, blockHeight + 1);
+          if (!success) {
+            console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
+            await worker.resync(blockHeight - 1, blockHeight + 1);
+          } else {
+            console.log('No errors found, repaired previously');
+          }
         }
         break;
       case 'DUPE_BLOCKHEIGHT':
