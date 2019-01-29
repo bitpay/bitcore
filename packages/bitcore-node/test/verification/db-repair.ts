@@ -86,6 +86,8 @@ import { validateDataForBlock } from './db-verify';
         }
 
         let toKeepBlock = dupeBlock[0];
+        const processedBlock = dupeBlock.find(b => b.processed === true);
+        toKeepBlock = processedBlock || toKeepBlock;
         const wouldBeDeletedBlock = dupeBlock.filter(c => c._id !== toKeepBlock._id);
 
         if (DRYRUN) {
