@@ -361,8 +361,11 @@ export class P2pWorker {
   async resync(from: number, to: number) {
     const { chain, network } = this;
     let currentHeight = Math.max(1, from);
-    this.isSyncing = true;
+    const originalSyncValue = this.isSyncing;
+    const originalSyncingNodeValue = this.isSyncingNode;
     while (currentHeight < to) {
+      this.isSyncing = true;
+      this.isSyncingNode = true;
       const locatorHashes = await ChainStateProvider.getLocatorHashes({
         chain,
         network,
@@ -394,7 +397,8 @@ export class P2pWorker {
         }
       }
     }
-    this.isSyncing = false;
+    this.isSyncing = originalSyncValue;
+    this.isSyncingNode = originalSyncingNodeValue;
   }
 
   async registerSyncingNode() {
