@@ -97,27 +97,31 @@ export class HeadNavComponent {
       return {
         redirTo: 'address',
         params: response.json()[0].address,
-        type: 'addrStr',
-      }
+        type: 'addrStr'
+      };
     } else {
-      return _.reduce(response, (result, value) => {
-        if (value.ok === true) {
-          if (value.json().txid) {
-            result = {
-              redirTo: 'transaction',
-              params: value.json().txid,
-              type: 'txId',
-            };
-          } else {
-            result = {
-              redirTo: 'block-detail',
-              params: value.json().hash,
-              type: 'blockHash',
-            };
+      return _.reduce(
+        response,
+        (result, value) => {
+          if (value.ok === true) {
+            if (value.json().txid) {
+              result = {
+                redirTo: 'transaction',
+                params: value.json().txid,
+                type: 'txId'
+              };
+            } else {
+              result = {
+                redirTo: 'block-detail',
+                params: value.json().hash,
+                type: 'blockHash'
+              };
+            }
           }
-        }
-        return result;
-      }, { redirTo: '', params: '', type: '' });
+          return result;
+        },
+        { redirTo: '', params: '', type: '' }
+      );
     }
   }
 

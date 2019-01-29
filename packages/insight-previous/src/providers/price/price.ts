@@ -11,7 +11,7 @@ export class PriceProvider {
     public api: ApiProvider,
     private toastCtrl: ToastController,
     private logger: Logger
-  ) { }
+  ) {}
 
   public setCurrency(currency: string): void {
     this.currency.currencySymbol = currency;

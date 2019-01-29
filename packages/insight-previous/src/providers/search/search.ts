@@ -11,7 +11,7 @@ export class SearchProvider {
   private config: ChainNetwork;
   private apiURL: string;
 
-  constructor(private apiProvider: ApiProvider, private http: Http) { }
+  constructor(private apiProvider: ApiProvider, private http: Http) {}
 
   public search(input: string, type: string): Observable<any> {
     this.apiURL = this.apiProvider.getUrl();
