@@ -26,18 +26,26 @@
 
   <ion-row align-items-end class="small" *ngIf="!showCoins">
     <ion-col col-12 text-right text-uppercase>
-      <button ion-button small item-end color="danger" *ngIf="tx.confirmations === 0">
-        Unconfirmed
-      </button>
-      <button ion-button small item-end color="warning" *ngIf="tx.confirmations === 1">
-        1 Confirmation
-      </button>
-      <button ion-button small item-end color="primary" *ngIf="tx.confirmations > 1">
-        {{ tx.confirmations | number }} Confirmations
-      </button>
-      <button ion-button small item-end color="brand">
-        {{ currency.getConvertedNumber(tx.valueOut) | number:'1.0-8' }} {{ currency.currencySymbol }}
-      </button>
+      <ion-chip item-end color="danger" *ngIf="tx.confirmations === 0">
+        <ion-label>
+          Unconfirmed
+        </ion-label>
+      </ion-chip>
+      <ion-chip item-end color="warning" *ngIf="tx.confirmations === 1">
+        <ion-label>
+          1 Confirmation
+        </ion-label>
+      </ion-chip>
+      <ion-chip item-end color="primary" *ngIf="tx.confirmations > 1">
+        <ion-label>
+          {{ tx.confirmations | number }} Confirmations
+        </ion-label>
+      </ion-chip>
+      <ion-chip item-end color="brand">
+        <ion-label>
+          {{ currency.getConvertedNumber(tx.valueOut) | number:'1.0-8' }} {{ currency.currencySymbol }}
+        </ion-label>
+      </ion-chip>
     </ion-col>
   </ion-row>
 
