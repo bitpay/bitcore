@@ -208,6 +208,7 @@ export class P2pWorker {
   }
 
   async connect() {
+    this.setupListeners();
     this.pool.connect();
     this.connectInterval = setInterval(this.pool.connect.bind(this.pool), 5000);
     return new Promise<void>(resolve => {
@@ -360,8 +361,11 @@ export class P2pWorker {
   async resync(from: number, to: number) {
     const { chain, network } = this;
     let currentHeight = Math.max(1, from);
-    this.isSyncing = true;
+    const originalSyncValue = this.isSyncing;
+    const originalSyncingNodeValue = this.isSyncingNode;
     while (currentHeight < to) {
+      this.isSyncing = true;
+      this.isSyncingNode = true;
       const locatorHashes = await ChainStateProvider.getLocatorHashes({
         chain,
         network,
@@ -393,7 +397,8 @@ export class P2pWorker {
         }
       }
     }
-    this.isSyncing = false;
+    this.isSyncing = originalSyncValue;
+    this.isSyncingNode = originalSyncingNodeValue;
   }
 
   async registerSyncingNode() {
@@ -446,7 +451,6 @@ export class P2pWorker {
 
   async start() {
     logger.debug(`Started worker for chain ${this.chain}`);
-    this.setupListeners();
     await this.connect();
     this.registerSyncingNode();
   }

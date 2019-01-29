@@ -1,5 +1,4 @@
 import request = require('request');
-
 import { LoggifyClass } from './decorators/Loggify';
 type CallbackType = (err: any, data?: any) => any;
 
@@ -110,11 +109,9 @@ export class RPC {
     return this.asyncCall('estimatesmartfee', [target]);
   }
 
-
   async getEstimateFee(target: number) {
     return this.asyncCall('estimatefee', [target]);
   }
-
 }
 
 @LoggifyClass
@@ -148,6 +145,10 @@ export class AsyncRPC {
     return (await this.call('generate', [n])) as string[];
   }
 
+  async getnewaddress(account: string): Promise<string> {
+    return (await this.call('getnewaddress', [account])) as string;
+  }
+
   async transaction(txid: string, block?: string): Promise<RPCTransaction> {
     const args = [txid, true];
     if (block) {
@@ -156,7 +157,7 @@ export class AsyncRPC {
     return (await this.call('getrawtransaction', args)) as RPCTransaction;
   }
 
-  async sendtoaddress(address: string, value: string | number) { 
+  async sendtoaddress(address: string, value: string | number) {
     return this.call('sendtoaddress', [address, value]);
   }
 }
