@@ -23,8 +23,9 @@ import { validateDataForBlock } from './db-verify';
   const handleRepair = async data => {
     switch (data.type) {
       case 'DUPE_COIN':
+        const coin = data.payload.coin;
         const dupeCoins = await CoinStorage.collection
-          .find({ chain, network, mintTxid: data.payload.mintTxid, mintIndex: data.payload.mintIndex })
+          .find({ chain, network, mintTxid: coin.mintTxid, mintIndex: coin.mintIndex })
           .sort({ _id: -1 })
           .toArray();
 
