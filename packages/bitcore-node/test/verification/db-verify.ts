@@ -93,7 +93,21 @@ export async function validateDataForBlock(blockNum: number, log = false) {
 
   //blocks with same height
   const blocksForHeight = await BlockStorage.collection.countDocuments({ chain, network, height: blockNum });
-  if (blocksForHeight !== 1) {
+  if (blocksForHeight === 0) {
+    success = false;
+    const error = {
+      model: 'block',
+      err: true,
+      type: 'MISSING_BLOCK',
+      payload: { blockNum }
+    };
+    errors.push(error);
+    if (log) {
+      console.log(JSON.stringify(error));
+    }
+  }
+
+  if (blocksForHeight > 1) {
     success = false;
     const error = {
       model: 'block',
@@ -110,7 +124,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
   if (blockTxs.length > 0) {
     const hashFromTx = blockTxs[0].blockHash;
     const blocksForHash = await BlockStorage.collection.countDocuments({ chain, network, hash: hashFromTx });
-    if (blocksForHash !== 1) {
+    if (blocksForHash > 1) {
       success = false;
       const error = { model: 'block', err: true, type: 'DUPE_BLOCKHASH', payload: { hash: hashFromTx, blockNum } };
       errors.push(error);

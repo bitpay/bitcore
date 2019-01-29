@@ -55,6 +55,7 @@ import { validateDataForBlock } from './db-verify';
           });
         }
         break;
+      case 'MISSING_BLOCK':
       case 'MISSING_TX':
       case 'MISSING_COIN_FOR_TXID':
       case 'VALUE_MISMATCH':
