@@ -108,12 +108,12 @@ describe('Wallet Model', function() {
 
     it('should return correct coin and tx to verify a mempool tx', async () => {
       const p2pWorker = new P2pWorker({ chain, network, chainConfig });
-      const value = 10;
+      const value = 0.1;
 
       let sawEvents = new Promise(resolve => Event.addressCoinEvent.on('coin', resolve));
       await p2pWorker.start();
       await wait(3000);
-
+      await rpc.generate(1);
       const sentTxId = await rpc.sendtoaddress(address1, value);
 
       await sawEvents;
