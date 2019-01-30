@@ -113,7 +113,6 @@ describe('Wallet Model', function() {
       let sawEvents = new Promise(resolve => Event.addressCoinEvent.on('coin', resolve));
       await p2pWorker.start();
       await wait(3000);
-      await rpc.generate(1);
       const sentTxId = await rpc.sendtoaddress(address1, value);
 
       await sawEvents;
