@@ -5,6 +5,7 @@ import { AsyncRPC } from '../../../src/rpc';
 import { Event } from '../../../src/services/event';
 import { WalletStorage } from '../../../src/models/wallet';
 import config from '../../../src/config';
+import { BlockStorage } from '../../../src/models/block';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { TransactionStorage } from '../../../src/models/transaction';
 import { CoinStorage } from '../../../src/models/coin';
@@ -113,6 +114,10 @@ describe('Wallet Model', function() {
       let sawEvents = new Promise(resolve => Event.addressCoinEvent.on('coin', resolve));
       await p2pWorker.start();
       await wait(3000);
+      const beforeGenTip = await BlockStorage.getLocalTip({ chain, network });
+      if (beforeGenTip && beforeGenTip.height && beforeGenTip.height < 100) {
+        await rpc.generate(100);
+      }
       const sentTxId = await rpc.sendtoaddress(address1, value);
 
       await sawEvents;
