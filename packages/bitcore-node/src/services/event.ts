@@ -1,4 +1,4 @@
-import { EventEmitter } from "events";
+import { EventEmitter } from 'events';
 import logger from '../logger';
 import { StorageService } from './storage';
 import { LoggifyClass } from '../decorators/Loggify';

@@ -122,8 +122,8 @@ export class AsyncRPC {
     this.rpc = new RPC(username, password, host, port);
   }
 
-  async call(method: string, params: any[]) {
-    return new Promise((resolve, reject) => {
+  async call<T = any>(method: string, params: any[]): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
       this.rpc.callMethod(method, params, (err, data) => {
         if (err) {
           return reject(err);
@@ -158,7 +158,7 @@ export class AsyncRPC {
   }
 
   async sendtoaddress(address: string, value: string | number) {
-    return this.call('sendtoaddress', [address, value]);
+    return this.call<string>('sendtoaddress', [address, value]);
   }
 }
 
