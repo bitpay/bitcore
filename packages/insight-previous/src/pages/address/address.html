@@ -22,10 +22,8 @@
     <p text-center>
       <qr-code [value]="address.addrStr" [size]="160"></qr-code>
       <p>
-        <div *ngIf="showTransactions">
-          <h2>Transactions</h2>
-          <coin-list [coins]="transactions"></coin-list>
-        </div>
+
+        <coin-list [addrStr]="address.addrStr"></coin-list>
   </div>
 
 </ion-content>
