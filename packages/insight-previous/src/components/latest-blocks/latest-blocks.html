@@ -30,7 +30,9 @@
           {{ block.txlength }}
         </ion-col>
         <ion-col hideWhen="portrait">
-          <a *ngIf="block.poolInfo && block.poolInfo.poolName" href="{{block.poolInfo.url}}">{{ block.poolInfo.poolName }}</a>
+          <a *ngIf="block.poolInfo && block.poolInfo.poolName" href="{{ block.poolInfo.url }}">
+            {{ block.poolInfo.poolName }}
+          </a>
         </ion-col>
         <ion-col text-right>
           {{ block.size }}
@@ -39,7 +41,7 @@
 
       <ion-row *ngIf="showAllBlocksButton">
         <ion-col text-center>
-          <button ion-button (click)="goToBlocks()">See all blocks</button>
+          <button ion-button (click)="goToBlocks()" [disabled]="getBlocks().length == 0">See all blocks</button>
         </ion-col>
       </ion-row>
 

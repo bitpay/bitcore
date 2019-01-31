@@ -37,6 +37,7 @@ export interface ConfigType {
     api: {
       disabled?: boolean;
       rateLimiter?: {
+        disabled?: boolean;
         whitelist: string[];
       };
       wallets?: {

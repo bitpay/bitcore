@@ -8,8 +8,8 @@ import { ObjectID } from 'mongodb';
 import { Config, ConfigService } from './config';
 import { ConfigType } from '../types/Config';
 
-function SanitizeWallet(x: { wallets: ObjectID[] }) {
-  const sanitized = Object.assign({}, x, { wallets: undefined });
+function SanitizeWallet(x: { wallets?: ObjectID[] }) {
+  const sanitized = Object.assign({}, x, { wallets: new Array<ObjectID>() });
   if (sanitized.wallets && sanitized.wallets.length > 0) {
     delete sanitized.wallets;
   }
@@ -25,12 +25,14 @@ export class SocketService {
   serviceConfig: ConfigType['services']['socket'];
   eventService: EventService;
   eventModel: EventModel;
+  stopped = true;
 
   constructor({ eventService = Event, eventModel = EventStorage, configService = Config } = {}) {
     this.eventService = eventService;
     this.configService = configService;
     this.serviceConfig = this.configService.for('socket');
     this.eventModel = eventModel;
+    this.wireup = this.wireup.bind(this);
     this.start = this.start.bind(this);
     this.signalTx = this.signalTx.bind(this);
     this.signalBlock = this.signalBlock.bind(this);
@@ -42,19 +44,23 @@ export class SocketService {
       logger.info('Disabled Socket Service');
       return;
     }
-    logger.info('Starting Socket Service');
-    this.httpServer = server;
-    this.io = SocketIO(server);
-    this.io.sockets.on('connection', socket => {
-      socket.on('room', room => {
-        socket.join(room);
+    if (this.stopped) {
+      this.stopped = false;
+      logger.info('Starting Socket Service');
+      this.httpServer = server;
+      this.io = SocketIO(server);
+      this.io.sockets.on('connection', socket => {
+        socket.on('room', room => {
+          socket.join(room);
+        });
       });
-    });
+    }
     this.wireup();
   }
 
   stop() {
     logger.info('Stopping Socket Service');
+    this.stopped = true;
     return new Promise(resolve => {
       if (this.io) {
         this.io.close(resolve);
@@ -65,7 +71,7 @@ export class SocketService {
   }
 
   async wireup() {
-    this.eventService.txStream.on('data', (tx: IEvent.TxEvent) => {
+    this.eventService.txEvent.on('tx', (tx: IEvent.TxEvent) => {
       if (this.io) {
         const { chain, network } = tx;
         const sanitizedTx = SanitizeWallet(tx);
@@ -73,14 +79,14 @@ export class SocketService {
       }
     });
 
-    this.eventService.blockStream.on('data', (block: IEvent.BlockEvent) => {
+    this.eventService.blockEvent.on('block', (block: IEvent.BlockEvent) => {
       if (this.io) {
         const { chain, network } = block;
         this.io.sockets.in(`/${chain}/${network}/inv`).emit('block', block);
       }
     });
 
-    this.eventService.addressCoinStream.on('data', (addressCoin: IEvent.CoinEvent) => {
+    this.eventService.addressCoinEvent.on('coin', (addressCoin: IEvent.CoinEvent) => {
       if (this.io) {
         const { coin, address } = addressCoin;
         const { chain, network } = coin;

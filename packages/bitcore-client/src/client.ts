@@ -41,8 +41,11 @@ export class Client {
   }
 
   async getBalance(params) {
-    const { payload, pubKey } = params;
-    const url = `${this.baseUrl}/wallet/${pubKey}/balance`;
+    const { payload, pubKey, time } = params;
+    let url = `${this.baseUrl}/wallet/${pubKey}/balance`;
+    if (time) {
+      url += `/${time}`
+    }
     const signature = this.sign({ method: 'GET', url, payload });
     return request.get(url, {
       headers: { 'x-signature': signature },

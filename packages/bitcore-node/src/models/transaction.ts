@@ -8,12 +8,12 @@ import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
 import { StreamingFindOptions, Storage, StorageService } from '../services/storage';
 import * as lodash from 'lodash';
-import { Socket } from '../services/socket';
 import { TransactionJSON } from '../types/Transaction';
 import { SpentHeightIndicators } from '../types/Coin';
 import { Config } from '../services/config';
 import { BitcoinScript } from '../types/namespaces/Bitcoin/Transaction';
 import { valueOrDefault } from '../utils/check';
+import { EventStorage } from './events';
 
 const Chain = require('../chain');
 
@@ -41,6 +41,55 @@ const limitAsmSize = (limit: number) => (script?: BitcoinScript) =>
   script && limit > 0 && script.toBuffer().length <= limit ? script.toASM() : undefined;
 const limitLockingAsmSize = limitAsmSize(Config.get().lockingScriptAsmByteLimit);
 const limitUnlockingAsmSize = limitAsmSize(Config.get().unlockingScriptAsmByteLimit);
+
+export type MintOp = {
+  updateOne: {
+    filter: {
+      mintTxid: string;
+      mintIndex: number;
+      chain: string;
+      network: string;
+    };
+    update: {
+      $set: {
+        chain: string;
+        network: string;
+        address: string;
+        mintHeight: number;
+        coinbase: boolean;
+        value: number;
+        lockingScript: string;
+        lockingScriptAsm?: string;
+        spentTxid?: string;
+        spentIndex?: number;
+        spentHeight?: SpentHeightIndicators;
+        unlockingScript?: string;
+        unlockingScriptAsm?: string;
+        inputSequenceNumber?: number;
+        wallets?: Array<ObjectID>;
+      };
+      $setOnInsert: {
+        spentHeight: SpentHeightIndicators;
+        wallets: Array<ObjectID>;
+      };
+    };
+    upsert: true;
+    forceServerObjectId: true;
+  };
+};
+
+export type SpendOp = {
+  updateOne: {
+    filter: {
+      mintTxid: string;
+      mintIndex: number;
+      spentHeight: { $lt: SpentHeightIndicators };
+      chain: string;
+      network: string;
+    };
+    update: { $set: { spentTxid: string; spentHeight: number } };
+  };
+};
 
 @LoggifyClass
 export class TransactionModel extends BaseModel<ITransaction> {
@@ -116,18 +165,19 @@ export class TransactionModel extends BaseModel<ITransaction> {
 
       // Create events for mempool txs
       if (params.height < SpentHeightIndicators.minimum) {
-        txOps.forEach(op => {
+        for (let op of txOps) {
           const filter = op.updateOne.filter;
           const tx = { ...op.updateOne.update.$set, ...filter };
-          Socket.signalTx(tx);
-          mintOps
+          await EventStorage.signalTx(tx);
+          await mintOps
             .filter(coinOp => coinOp.updateOne.filter.mintTxid === filter.txid)
-            .forEach(coinOp => {
+            .map(coinOp => {
               const address = coinOp.updateOne.update.$set.address;
               const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
-              Socket.signalAddressCoin({ address, coin });
-            });
-        });
+              return () => EventStorage.signalAddressCoin({ address, coin }) as any;
+            })
+            .reduce((promises, promise) => promises.then(promise), Promise.resolve());
+        }
       }
     }
   }
@@ -143,7 +193,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
     initialSyncComplete: boolean;
     chain: string;
     network: string;
-    mintOps: Array<any>;
+    mintOps: Array<MintOp>;
     mempoolTime?: Date;
   }) {
     let { blockHash, blockTime, blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
@@ -194,7 +244,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
       const groupedMints = params.mintOps.reduce<CoinGroup>((agg, coinOp) => {
         const mintTxid = coinOp.updateOne.filter.mintTxid;
         const coin = coinOp.updateOne.update.$set;
-        const { value, wallets } = coin;
+        const { value, wallets = [] } = coin;
         if (!agg[mintTxid]) {
           agg[mintTxid] = {
             total: value,
@@ -276,10 +326,10 @@ export class TransactionModel extends BaseModel<ITransaction> {
     initialSyncComplete: boolean;
     chain: string;
     network: string;
-    mintOps?: Array<any>;
+    mintOps?: Array<MintOp>;
   }) {
     let { chain, height, network, parentChain, forkHeight, initialSyncComplete } = params;
-    let mintOps = new Array<any>();
+    let mintOps = new Array<MintOp>();
     let parentChainCoinsMap = new Map();
     if (parentChain && forkHeight && height < forkHeight) {
       let parentChainCoins = await CoinStorage.collection
@@ -332,7 +382,9 @@ export class TransactionModel extends BaseModel<ITransaction> {
                 coinbase: isCoinbase,
                 value: output.satoshis,
                 lockingScript: output.script && output.script.toHex(),
-                lockingScriptAsm: limitLockingAsmSize(output.script),
+                lockingScriptAsm: limitLockingAsmSize(output.script)
+              },
+              $setOnInsert: {
                 spentHeight: SpentHeightIndicators.unspent,
                 wallets: []
               }
@@ -361,6 +413,10 @@ export class TransactionModel extends BaseModel<ITransaction> {
             .filter(wallet => wallet.address === mintOp.updateOne.update.$set.address)
             .map(wallet => wallet.wallet);
           mintOp.updateOne.update.$set.wallets = transformedWallets;
+          delete mintOp.updateOne.update.$setOnInsert.wallets;
+          if (!Object.keys(mintOp.updateOne.update.$setOnInsert).length) {
+            delete mintOp.updateOne.update.$setOnInsert;
+          }
           return mintOp;
         });
       }
@@ -376,15 +432,15 @@ export class TransactionModel extends BaseModel<ITransaction> {
     forkHeight?: number;
     chain: string;
     network: string;
-    mintOps?: Array<any>;
+    mintOps?: Array<MintOp>;
     [rest: string]: any;
-  }): Array<any> {
+  }) {
     let { chain, network, height, parentChain, forkHeight } = params;
-    let spendOps: any[] = [];
+    let spendOps: SpendOp[] = [];
     if (parentChain && forkHeight && height < forkHeight) {
       return spendOps;
     }
-    let mintMap = {};
+    let mintMap = {} as Mapping<Mapping<MintOp>>;
     for (let mintOp of params.mintOps || []) {
       mintMap[mintOp.updateOne.filter.mintTxid] = mintMap[mintOp.updateOne.filter.mintIndex] || {};
       mintMap[mintOp.updateOne.filter.mintTxid][mintOp.updateOne.filter.mintIndex] = mintOp;
@@ -398,6 +454,10 @@ export class TransactionModel extends BaseModel<ITransaction> {
         let sameBlockSpend = mintMap[inputObj.prevTxId] && mintMap[inputObj.prevTxId][inputObj.outputIndex];
         if (sameBlockSpend) {
           sameBlockSpend.updateOne.update.$set.spentHeight = height;
+          delete sameBlockSpend.updateOne.update.$setOnInsert.spentHeight;
+          if (!Object.keys(sameBlockSpend.updateOne.update.$setOnInsert).length) {
+            delete sameBlockSpend.updateOne.update.$setOnInsert;
+          }
           sameBlockSpend.updateOne.update.$set.spentTxid = tx._hash;
           sameBlockSpend.updateOne.update.$set.spentIndex = inputObj.outputIndex;
           sameBlockSpend.updateOne.update.$set.unlockingScript = inputObj.script;
@@ -408,7 +468,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
 
           continue;
         }
-        const updateQuery: any = {
+        const updateQuery = {
           updateOne: {
             filter: {
               mintTxid: inputObj.prevTxId,
@@ -420,7 +480,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
             update: {
               $set: {
                 spentHeight: height,
-                spentTxid: tx._hash,
+                spentTxid: tx._hash || tx.hash,
                 spentIndex: inputObj.outputIndex,
                 unlockingScript: inputObj.script,
                 unlockingScriptAsm: limitUnlockingAsmSize(new Chain[chain].lib.Script(inputObj.script)),
@@ -442,8 +502,8 @@ export class TransactionModel extends BaseModel<ITransaction> {
     forkHeight?: number;
     chain: string;
     network: string;
-    mintOps: Array<any>;
-    spendOps: Array<any>;
+    mintOps: Array<MintOp>;
+    spendOps: Array<SpendOp>;
     initialSyncComplete: boolean;
     [rest: string]: any;
   }) {

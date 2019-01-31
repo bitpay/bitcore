@@ -12,7 +12,7 @@
     "singleQuote": true
   },
   "scripts": {
-    "clean": "rm -rf ts_build",
+    "clean": "rm -rf ./ts_build",
     "compile": "npm run clean && ./node_modules/.bin/tsc",
     "test": "mocha ./test/unit"
   },

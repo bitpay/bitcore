@@ -32,10 +32,6 @@ class ChainStateProxy implements CSP.ChainStateProvider {
     return this.get(params).getBalanceForAddress(params);
   }
 
-  async getBalanceForWallet(params: CSP.GetBalanceForWalletParams) {
-    return this.get(params).getBalanceForWallet(params);
-  }
-
   async getBlock(params: CSP.GetBlockParams) {
     return this.get(params).getBlock(params);
   }
@@ -86,6 +82,10 @@ class ChainStateProxy implements CSP.ChainStateProvider {
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {
     return this.get(params).getWalletBalance(params);
+  }
+  
+  async getWalletBalanceAtTime(params: CSP.GetWalletBalanceAtTimeParams) {
+    return this.get(params).getWalletBalanceAtTime(params);
   }
 
   async getFee(params: CSP.GetEstimateSmartFeeParams) {

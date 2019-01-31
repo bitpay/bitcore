@@ -8,9 +8,8 @@ import { StateStorage } from '../models/state';
 import { SpentHeightIndicators } from '../types/Coin';
 import os from 'os';
 import { Config, ConfigService } from './config';
-import { BitcoinBlockType } from '../types/namespaces/Bitcoin/Block';
+import { wait } from '../utils/wait';
 const Chain = require('../chain');
-const LRU = require('lru-cache');
 
 export class P2pManager {
   workers = new Array<P2pWorker>();
@@ -64,14 +63,15 @@ export class P2pWorker {
   private bitcoreP2p: any;
   private chainConfig: any;
   private events: EventEmitter;
-  private syncing: boolean;
+  private isSyncing: boolean;
   private messages: any;
   private pool: any;
   private connectInterval?: NodeJS.Timer;
   private invCache: any;
+  private invCacheLimits: any;
   private initialSyncComplete: boolean;
   private isSyncingNode: boolean;
-  private syncingNodeHeartBeat?: NodeJS.Timer;
+  private stopping?: boolean;
   private blockModel: BlockModel;
   constructor({ chain, network, chainConfig, blockModel = BlockStorage }) {
     this.blockModel = blockModel;
@@ -81,10 +81,14 @@ export class P2pWorker {
     this.bitcoreP2p = Chain[this.chain].p2p;
     this.chainConfig = chainConfig;
     this.events = new EventEmitter();
-    this.syncing = false;
+    this.isSyncing = false;
     this.initialSyncComplete = false;
     this.isSyncingNode = false;
-    this.invCache = new LRU({ max: 10000 });
+    this.invCache = {};
+    this.invCacheLimits = {
+      [this.bitcoreP2p.Inventory.TYPE.BLOCK]: 100,
+      [this.bitcoreP2p.Inventory.TYPE.TX]: 100000
+    };
     this.messages = new this.bitcoreP2p.Messages({
       network: this.bitcoreLib.Networks.get(this.network)
     });
@@ -102,6 +106,23 @@ export class P2pWorker {
       network: this.network,
       messages: this.messages
     });
+  }
+
+  cacheInv(type: number, hash: string): void {
+    if (!this.invCache[type]) {
+      this.invCache[type] = [];
+    }
+    if (this.invCache[type].length > this.invCacheLimits[type]) {
+      this.invCache[type].shift();
+    }
+    this.invCache[type].push(hash);
+  }
+
+  isCachedInv(type: number, hash: string): boolean {
+    if (!this.invCache[type]) {
+      this.invCache[type] = [];
+    }
+    return this.invCache[type].includes(hash);
   }
 
   setupListeners() {
@@ -129,11 +150,11 @@ export class P2pWorker {
         network: this.network,
         hash
       });
-      if (this.isSyncingNode && !this.invCache.get(hash)) {
+      if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash) && !this.isSyncing) {
+        this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, hash);
         this.processTransaction(message.transaction);
         this.events.emit('transaction', message.transaction);
       }
-      this.invCache.set(hash);
     });
 
     this.pool.on('peerblock', async (peer, message) => {
@@ -146,11 +167,16 @@ export class P2pWorker {
         hash
       });
 
-      if (this.isSyncingNode && !this.invCache.get(hash)) {
-        this.invCache.set(hash);
+      const blockInCache = this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
+      if (!blockInCache) {
+        this.cacheInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
+      }
+      if (this.isSyncingNode && (!blockInCache || this.isSyncing)) {
         this.events.emit(hash, message.block);
         this.events.emit('block', message.block);
-        this.sync();
+        if (!this.isSyncing) {
+          this.sync();
+        }
       }
     });
 
@@ -165,13 +191,13 @@ export class P2pWorker {
     });
 
     this.pool.on('peerinv', (peer, message) => {
-      if (this.isSyncingNode && !this.syncing) {
+      if (this.isSyncingNode && !this.isSyncing) {
         const filtered = message.inventory.filter(inv => {
           const hash = this.bitcoreLib.encoding
             .BufferReader(inv.hash)
             .readReverse()
             .toString('hex');
-          return !this.invCache.get(hash);
+          return !this.isCachedInv(inv.type, hash);
         });
 
         if (filtered.length) {
@@ -182,6 +208,7 @@ export class P2pWorker {
   }
 
   async connect() {
+    this.setupListeners();
     this.pool.connect();
     this.connectInterval = setInterval(this.pool.connect.bind(this.pool), 5000);
     return new Promise<void>(resolve => {
@@ -198,38 +225,32 @@ export class P2pWorker {
   }
 
   public async getHeaders(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
-    return new Promise<Bitcoin.Block.HeaderObj[]>(resolve => {
-      const _getHeaders = () => {
-        this.pool.sendMessage(
-          this.messages.GetHeaders({
-            starts: candidateHashes
-          })
-        );
-      };
-      const headersRetry = setInterval(_getHeaders, 1000);
-
+    let received = false;
+    return new Promise<Bitcoin.Block.HeaderObj[]>(async resolve => {
       this.events.once('headers', headers => {
-        clearInterval(headersRetry);
+        received = true;
         resolve(headers);
       });
-      _getHeaders();
+      while (!received) {
+        this.pool.sendMessage(this.messages.GetHeaders({ starts: candidateHashes }));
+        await wait(1000);
+      }
     });
   }
 
   public async getBlock(hash: string) {
-    return new Promise<BitcoinBlockType>(resolve => {
-      logger.debug('Getting block, hash:', hash);
-      const _getBlock = () => {
-        this.pool.sendMessage(this.messages.GetData.forBlock(hash));
-      };
-      const getBlockRetry = setInterval(_getBlock, 1000);
-
-      this.events.once(hash, (block: BitcoinBlockType) => {
+    logger.debug('Getting block, hash:', hash);
+    let received = false;
+    return new Promise<Bitcoin.Block>(async resolve => {
+      this.events.once(hash, (block: Bitcoin.Block) => {
         logger.debug('Received block, hash:', hash);
-        clearInterval(getBlockRetry);
+        received = true;
         resolve(block);
       });
-      _getBlock();
+      while (!received) {
+        this.pool.sendMessage(this.messages.GetData.forBlock(hash));
+        await wait(1000);
+      }
     });
   }
 
@@ -243,24 +264,14 @@ export class P2pWorker {
     return best;
   }
 
-  async processBlock(block: BitcoinBlockType): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-      try {
-        await this.blockModel.addBlock({
-          chain: this.chain,
-          network: this.network,
-          forkHeight: this.chainConfig.forkHeight,
-          parentChain: this.chainConfig.parentChain,
-          initialSyncComplete: this.initialSyncComplete,
-          block
-        });
-        if (!this.syncing) {
-          logger.info(`${timestamp()} | Added block: ${block.hash} | Chain: ${this.chain} | Network: ${this.network}`);
-        }
-        resolve();
-      } catch (err) {
-        reject(err);
-      }
+  async processBlock(block: Bitcoin.Block): Promise<any> {
+    await this.blockModel.addBlock({
+      chain: this.chain,
+      network: this.network,
+      forkHeight: this.chainConfig.forkHeight,
+      parentChain: this.chainConfig.parentChain,
+      initialSyncComplete: this.initialSyncComplete,
+      block
     });
   }
 
@@ -278,11 +289,15 @@ export class P2pWorker {
     });
   }
 
+  async syncDone() {
+    return new Promise(resolve => this.events.once('SYNCDONE', resolve));
+  }
+
   async sync() {
-    if (this.syncing) {
-      return;
+    if (this.isSyncing) {
+      return false;
     }
-    this.syncing = true;
+    this.isSyncing = true;
     const { chain, chainConfig, network } = this;
     const { parentChain, forkHeight } = chainConfig;
     const state = await StateStorage.collection.findOne({});
@@ -293,9 +308,7 @@ export class P2pWorker {
       let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
       while (!parentTip || parentTip.height < forkHeight) {
         logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
-        await new Promise(resolve => {
-          setTimeout(resolve, 5000);
-        });
+        await wait(5000);
         parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
       }
     }
@@ -334,64 +347,117 @@ export class P2pWorker {
           }
         } catch (err) {
           logger.error(`${timestamp()} | Error syncing | Chain: ${chain} | Network: ${network}`, err);
-          this.syncing = false;
+          this.isSyncing = false;
           return this.sync();
         }
       }
       headers = await getHeaders();
     }
+
     logger.info(`${timestamp()} | Sync completed | Chain: ${chain} | Network: ${network}`);
-    this.syncing = false;
-    StateStorage.collection.findOneAndUpdate(
+    this.isSyncing = false;
+    await StateStorage.collection.findOneAndUpdate(
       {},
       { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
       { upsert: true }
     );
+    this.events.emit('SYNCDONE');
     return true;
   }
 
-  registerSyncingNode() {
-    this.syncingNodeHeartBeat = setInterval(async () => {
+  async resync(from: number, to: number) {
+    const { chain, network } = this;
+    let currentHeight = Math.max(1, from);
+    const originalSyncValue = this.isSyncing;
+    const originalSyncingNodeValue = this.isSyncingNode;
+    while (currentHeight < to) {
+      this.isSyncing = true;
+      this.isSyncingNode = true;
+      const locatorHashes = await ChainStateProvider.getLocatorHashes({
+        chain,
+        network,
+        startHeight: Math.max(1, currentHeight - 30),
+        endHeight: currentHeight
+      });
+      const headers = await this.getHeaders(locatorHashes);
+      if (!headers.length) {
+        logger.info(`${chain}:${network} up to date.`);
+        break;
+      }
+      const headerCount = Math.min(headers.length, to - currentHeight);
+      logger.info(`Re-Syncing ${headerCount} blocks for ${chain} ${network}`);
+      let lastLog = Date.now();
+      for (let header of headers) {
+        if (currentHeight > to) {
+          break;
+        }
+        const block = await this.getBlock(header.hash);
+        await BlockStorage.processBlock({ chain, network, block, initialSyncComplete: true });
+        currentHeight++;
+        if (Date.now() - lastLog > 100) {
+          logger.info(`Re-Sync `, {
+            chain,
+            network,
+            height: currentHeight
+          });
+          lastLog = Date.now();
+        }
+      }
+    }
+    this.isSyncing = originalSyncValue;
+    this.isSyncingNode = originalSyncingNodeValue;
+  }
+
+  async registerSyncingNode() {
+    while (!this.stopping) {
       const syncingNode = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
       if (!syncingNode) {
-        return StateStorage.selfNominateSyncingNode({
+        StateStorage.selfNominateSyncingNode({
           chain: this.chain,
           network: this.network,
           lastHeartBeat: syncingNode
         });
+        continue;
       }
-      const [hostname, pid] = syncingNode.split(':');
-      const amSyncingNode = hostname === os.hostname() && pid === process.pid.toString();
+      const [hostname, pid, timestamp] = syncingNode.split(':');
+      const amSyncingNode =
+        hostname === os.hostname() && pid === process.pid.toString() && Date.now() - parseInt(timestamp) < 1000;
       if (amSyncingNode) {
-        StateStorage.selfNominateSyncingNode({ chain: this.chain, network: this.network, lastHeartBeat: syncingNode });
+        StateStorage.selfNominateSyncingNode({
+          chain: this.chain,
+          network: this.network,
+          lastHeartBeat: syncingNode
+        });
         if (!this.isSyncingNode) {
           logger.info(`This worker is now the syncing node for ${this.chain} ${this.network}`);
           this.isSyncingNode = true;
           this.sync();
         }
       } else {
-        setTimeout(() => {
-          StateStorage.selfNominateSyncingNode({
-            chain: this.chain,
-            network: this.network,
-            lastHeartBeat: syncingNode
-          });
-        }, 10000);
+        if (this.isSyncingNode) {
+          logger.info(`This worker is no longer syncing node for ${this.chain} ${this.network}`);
+          this.isSyncingNode = false;
+          await wait(100000);
+        }
+        await wait(10000);
+        StateStorage.selfNominateSyncingNode({
+          chain: this.chain,
+          network: this.network,
+          lastHeartBeat: syncingNode
+        });
       }
-    }, 500);
+      await wait(500);
+    }
   }
 
   async stop() {
+    this.stopping = true;
     logger.debug(`Stopping worker for chain ${this.chain}`);
     await this.disconnect();
-    if (this.syncingNodeHeartBeat) {
-      clearInterval(this.syncingNodeHeartBeat);
-    }
   }
 
   async start() {
     logger.debug(`Started worker for chain ${this.chain}`);
-    this.setupListeners();
     await this.connect();
     this.registerSyncingNode();
   }

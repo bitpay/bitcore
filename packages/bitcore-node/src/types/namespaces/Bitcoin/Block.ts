@@ -8,6 +8,7 @@ export type BlockHeaderObj = {
   bits: number;
   nonce: number;
 };
+
 export type BlockHeader = {
   toObject: () => BlockHeaderObj;
 };
