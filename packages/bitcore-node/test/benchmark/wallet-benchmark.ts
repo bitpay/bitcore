@@ -2,7 +2,7 @@ import { CoinStorage } from '../../src/models/coin';
 import { Wallet } from 'bitcore-client';
 import { Storage } from '../../src/services/storage';
 
-export async function getAllAddressesFromBlocks(start, end) {
+async function getAllAddressesFromBlocks(start, end) {
   if (!Storage.connected) await Storage.start({});
   const addresses = await CoinStorage.collection
     .find({ chain: 'BTC', network: 'mainnet', mintHeight: { $gte: start, $lte: end } })
@@ -42,7 +42,7 @@ export async function createWallet(addresses: string[], iteration) {
   return lockedWallet;
 }
 
-export async function benchMarkUtxoList(unlockedWallet: Wallet, addresses, includeSpent = false) {
+async function benchMarkUtxoList(unlockedWallet: Wallet, addresses, includeSpent = false) {
   const utxoListStart = new Date();
   const utxoStream = unlockedWallet.getUtxos({ includeSpent });
   const utxoBenchmark = new Promise(resolve => {
@@ -71,7 +71,7 @@ export async function benchMarkUtxoList(unlockedWallet: Wallet, addresses, inclu
   await utxoBenchmark;
 }
 
-export async function bench(iteration = 0, startBlock = 0, endBlock = 100) {
+async function bench(iteration = 0, startBlock = 0, endBlock = 100) {
   console.log('Benchmark', iteration, 'START');
   const addresses = await getAllAddressesFromBlocks(startBlock, endBlock);
   console.log('Collected', addresses.length, 'addresses');

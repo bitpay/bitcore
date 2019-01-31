@@ -5,8 +5,6 @@ import Mocha from 'mocha';
 
 import config from '../../src/config';
 import { Storage } from '../../src/services/storage';
-import { Api } from '../../src/services/api';
-import { Event } from '../../src/services/event';
 
 const TIMEOUT = 5000;
 const TEST_DIR = path.join(__dirname, '../integration');
@@ -22,10 +20,8 @@ function handleError(err) {
   process.exit(1);
 }
 
-async function startTestDatabase() {
-  await Storage.start(storageArgs);
-  await Event.start();
-  return await Api.start();
+function startTestDatabase() {
+  return Storage.start(storageArgs);
 }
 
 function runTests() {
