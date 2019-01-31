@@ -57,7 +57,7 @@ const Config = function(): ConfigType {
     dbHost: process.env.DB_HOST || '127.0.0.1',
     dbName: process.env.DB_NAME || 'bitcore',
     dbPort: process.env.DB_PORT || '27017',
-    lockingScriptAsmByteLimit: 223,
+    lockingScriptAsmByteLimit: 0,
     unlockingScriptAsmByteLimit: 0,
     numWorkers: cpus().length,
     chains: {},

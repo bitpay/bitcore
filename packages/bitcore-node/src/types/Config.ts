@@ -14,12 +14,12 @@ export interface ConfigType {
    * limits), a `lockingScriptAsmByteLimit` and `unlockingScriptAsmByteLimit` is
    * set to prevent scripts larger than the limit from being disassembled and
    * the resulting string saved separately in the database. (Note, the
-   * hexadecimal-encoded version of every script is always saved to the
-   * database, regardless of this setting.)
+   * hexadecimal-encoded version of every script may be saved to the
+   * database regardless of this setting.)
    *
-   * By default, `lockingScriptAsmByteLimit` is set to `223` bytes (the standard
+   * A good setting for `lockingScriptAsmByteLimit` is `223` bytes (the standard
    * default `MAX_OP_RETURN_RELAY` for BCH). This covers most locking script
-   * querying use cases.
+   * querying use cases. This is currently disabled by default.
    */
   lockingScriptAsmByteLimit: number;
   /**
