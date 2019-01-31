@@ -18,13 +18,15 @@ Currently we have the following features
 
 ### Wallet Create
 
-```
 > No baseUrl flag will automatically create a wallet that points to https://api.bitcore.io/api.
 
+```
 ./wallet-create --name TestWalletBTC --chain BTC --network mainnet
+```
 
 > To create a wallet to point to local bitcore-node.
 
+```
 ./wallet-create --name myregtestwallet --chain BCH --network regtest --baseUrl http://localhost:3000/api
 ```
 
