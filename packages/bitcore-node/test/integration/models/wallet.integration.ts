@@ -107,11 +107,12 @@ describe('Wallet Model', function() {
       }
     });
 
-    it('should return correct coin and tx to verify a mempool tx and utxos stream', async () => {
+    it('should return correct coin and tx to verify mempool tx, utxos stream, and wallet balance', async () => {
       const p2pWorker = new P2pWorker({ chain, network, chainConfig });
       const value = 0.1;
 
-      let sawEvents = new Promise(resolve => Event.addressCoinEvent.on('coin', resolve));
+      const sawEvents = new Promise(resolve => Event.addressCoinEvent.on('coin', resolve));
+
       await p2pWorker.start();
       await rpc.generate(5);
       await p2pWorker.syncDone();
@@ -163,6 +164,7 @@ describe('Wallet Model', function() {
         expect(confirmCoin).to.have.property('value');
       }
       const getUtxosResult = await lockedWallet.getUtxos({ includeSpent: true });
+
       getUtxosResult.pipe(new ParseApiStream()).on('data', (coin: ICoin) => {
         expect(coin).to.have.deep.property('chain', chain);
         expect(coin).to.have.deep.property('network', network);
@@ -170,6 +172,11 @@ describe('Wallet Model', function() {
         expect(coin).to.have.deep.property('address', address1);
         expect(coin).to.have.deep.property('spentHeight', -2);
       });
+
+      const getWalletBalance = await lockedWallet.getBalance(null);
+      expect(getWalletBalance.confirmed).to.deep.equal(0);
+      expect(getWalletBalance.unconfirmed).to.deep.equal(value * 1e8);
+      expect(getWalletBalance.balance).to.deep.equal(getWalletBalance.unconfirmed + getWalletBalance.confirmed);
 
       await p2pWorker.stop();
     });
