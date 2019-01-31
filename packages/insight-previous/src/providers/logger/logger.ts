@@ -6,10 +6,8 @@ import * as _ from 'lodash';
 export class Logger {
   public levels;
   public weight;
-  public logs;
 
   constructor() {
-    this.logs = [];
     this.levels = [
       { level: 'error', weight: 1, label: 'Error', def: false },
       { level: 'warn', weight: 2, label: 'Warning', def: false },
@@ -48,7 +46,6 @@ export class Logger {
     const type = 'error';
     const args = this.processingArgs(arguments);
     this.log(`[${type}] ${args}`);
-    this.add(type, args);
   }
 
   public debug(_message?, ..._optionalParams): void {
@@ -57,7 +54,6 @@ export class Logger {
     if (isDevMode()) {
       this.log(`[${type}] ${args}`);
     }
-    this.add(type, args);
   }
 
   public info(_message?, ..._optionalParams): void {
@@ -66,7 +62,6 @@ export class Logger {
     if (isDevMode()) {
       this.log(`[${type}] ${args}`);
     }
-    this.add(type, args);
   }
 
   public warn(_message?, ..._optionalParams): void {
@@ -75,7 +70,6 @@ export class Logger {
     if (isDevMode()) {
       this.log(`[${type}] ${args}`);
     }
-    this.add(type, args);
   }
 
   public getLevels() {
@@ -92,31 +86,6 @@ export class Logger {
     return _.find(this.levels, l => {
       return l.def;
     });
-  }
-
-  public add(level, msg): void {
-    msg = msg.replace('/xpriv.*/', '[...]');
-    msg = msg.replace('/walletPrivKey.*/', 'walletPrivKey:[...]');
-    const newLog = {
-      timestamp: new Date().toISOString(),
-      level,
-      msg
-    };
-    this.logs.push(newLog);
-  }
-
-  /**
-   * Returns logs of <= to filteredWeight
-   * @param {number} filteredWeight Weight (1-4) to use when filtering logs. optional
-   */
-  public get(filterWeight?: number) {
-    let filteredLogs = this.logs;
-    if (filterWeight !== undefined) {
-      filteredLogs = _.filter(this.logs, l => {
-        return this.weight[l.level] <= filterWeight;
-      });
-    }
-    return filteredLogs;
   }
 
   public processingArgs(argsValues) {

@@ -18,8 +18,8 @@ export class SearchProvider {
     switch (type) {
       case 'blockOrTx':
         return Observable.forkJoin(
-          this.searchBlock(input).catch(() => Observable.of(null)),
-          this.searchTx(input).catch(() => Observable.of(null))
+          this.searchBlock(input).catch(err => Observable.of(err)),
+          this.searchTx(input).catch(err => Observable.of(err))
         );
       case 'addr':
         return this.searchAddr(input);
