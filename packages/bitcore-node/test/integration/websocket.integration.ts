@@ -15,7 +15,7 @@ const chainConfig = config.chains[chain][network];
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
-let p2pWorker;
+let p2pWorker: P2pWorker;
 
 describe('Websockets', function() {
   this.timeout(50000);
@@ -43,7 +43,7 @@ describe('Websockets', function() {
     await p2pWorker.start();
 
     await rpc.generate(5);
-    await p2pWorker.sync();
+    await p2pWorker.syncDone();
     const beforeGenTip = await BlockStorage.getLocalTip({ chain, network });
     expect(beforeGenTip).to.not.eq(null);
 
@@ -51,7 +51,7 @@ describe('Websockets', function() {
       await rpc.generate(100);
     }
     await rpc.generate(1);
-    await p2pWorker.sync();
+    await p2pWorker.syncDone();
     await wait(1000);
     const afterGenTip = await BlockStorage.getLocalTip({ chain, network });
     expect(afterGenTip).to.not.eq(null);
@@ -90,7 +90,6 @@ describe('Websockets', function() {
     await p2pWorker.start();
     await rpc.generate(1);
     await sawEvents;
-    await p2pWorker.sync();
     await p2pWorker.stop();
     await socket.disconnect();
 
@@ -126,7 +125,6 @@ describe('Websockets', function() {
       });
     });
     await p2pWorker.start();
-    await p2pWorker.sync();
     await wait(3000);
     await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
     await sawEvents;
