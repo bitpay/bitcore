@@ -3,21 +3,30 @@ import fs from 'fs';
 import { Transform } from 'stream';
 import { CoinStorage } from '../../src/models/coin';
 import { Storage } from '../../src/services/storage';
+import { P2pWorker } from '../../src/services/p2p';
+import { Config } from '../../src/services/config';
+import { BlockStorage } from '../../src/models/block';
+import { validateDataForBlock } from './db-verify';
+
 (async () => {
   const { CHAIN, NETWORK, FILE, DRYRUN } = process.env;
   if (!CHAIN || !NETWORK || !FILE) {
     console.log('CHAIN, NETWORK, and FILE env variable are required');
     process.exit(1);
   }
-
-  const chain = CHAIN;
-  const network = NETWORK;
+  const chain = CHAIN || '';
+  const network = NETWORK || '';
   await Storage.start();
+  const chainConfig = Config.chainConfig({ chain, network });
+  const worker = new P2pWorker({ chain, network, chainConfig });
+  await worker.connect();
+
   const handleRepair = async data => {
     switch (data.type) {
       case 'DUPE_COIN':
+        const coin = data.payload.coin;
         const dupeCoins = await CoinStorage.collection
-          .find({ chain, network, mintTxid: data.payload.mintTxid, mintIndex: data.payload.mintIndex })
+          .find({ chain, network, mintTxid: coin.mintTxid, mintIndex: coin.mintIndex })
           .sort({ _id: -1 })
           .toArray();
 
@@ -46,6 +55,53 @@ import { Storage } from '../../src/services/storage';
           });
         }
         break;
+      case 'MISSING_BLOCK':
+      case 'MISSING_TX':
+      case 'MISSING_COIN_FOR_TXID':
+      case 'VALUE_MISMATCH':
+      case 'NEG_FEE':
+        const blockHeight = Number(data.payload.blockNum);
+        const { success } = await validateDataForBlock(blockHeight);
+        if (DRYRUN) {
+          console.log('WOULD RESYNC BLOCKS', blockHeight, 'to', blockHeight + 1);
+          console.log(data.payload);
+        } else {
+          if (!success) {
+            console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
+            await worker.resync(blockHeight - 1, blockHeight + 1);
+          } else {
+            console.log('No errors found, repaired previously');
+          }
+        }
+        break;
+      case 'DUPE_BLOCKHEIGHT':
+      case 'DUPE_BLOCKHASH':
+        const dupeBlock = await BlockStorage.collection
+          .find({ chain, network, height: data.payload.blockNum })
+          .toArray();
+
+        if (dupeBlock.length < 2) {
+          console.log('No action required.', dupeBlock.length, 'block');
+          return;
+        }
+
+        let toKeepBlock = dupeBlock[0];
+        const processedBlock = dupeBlock.find(b => b.processed === true);
+        toKeepBlock = processedBlock || toKeepBlock;
+        const wouldBeDeletedBlock = dupeBlock.filter(c => c._id !== toKeepBlock._id);
+
+        if (DRYRUN) {
+          console.log('WOULD DELETE');
+          console.log(wouldBeDeletedBlock);
+        } else {
+          console.log('Deleting', wouldBeDeletedBlock.length, 'block');
+          await BlockStorage.collection.deleteMany({
+            chain,
+            network,
+            _id: { $in: wouldBeDeletedBlock.map(c => c._id) }
+          });
+        }
+        break;
       default:
         console.log('skipping');
     }
@@ -64,9 +120,7 @@ import { Storage } from '../../src/services/storage';
           console.log('Inspecting...');
           console.log(dataStr);
           await handleRepair(parsedData);
-        } catch (err) {
-          //console.log(err);
-        }
+        } catch (err) {}
       }
     }
   }
@@ -94,14 +148,4 @@ import { Storage } from '../../src/services/storage';
   };
 
   getFileContents(FILE);
-
-  //type: 'DUPE_BLOCKHASH'
-  //type: 'NEG_FEE'
-  //type: 'DUPE_COIN'
-  //type: 'MISSING_COIN_FOR_TXID'
-  //type: 'MISSING_TX'
-  //type: 'VALUE_MISMATCH'
-  //type: 'DUPE_BLOCKHEIGHT'
-  //
-  // will need to handle each of those error types
 })();

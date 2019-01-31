@@ -2,8 +2,8 @@ import * as Bcrypt from 'bcrypt';
 import { Encryption } from './encryption';
 import { Client } from './client';
 import { Storage } from './storage';
-import { Request } from 'request';
 import TxProvider from './providers/tx-provider';
+import { ParseApiStream } from './stream-util';
 const Mnemonic = require('bitcore-mnemonic');
 const { PrivateKey } = require('bitcore-lib');
 
@@ -101,7 +101,7 @@ export class Wallet {
     let alreadyExists;
     try {
       alreadyExists = await this.loadWallet({ storage, name, chain, network });
-    } catch (err) { }
+    } catch (err) {}
     if (alreadyExists) {
       throw new Error('Wallet already exists');
     }
@@ -141,7 +141,7 @@ export class Wallet {
         chain,
         network
       });
-    } catch (err) { }
+    } catch (err) {}
     return alreadyExists != undefined;
   }
 
@@ -209,8 +209,8 @@ export class Wallet {
     return new PrivateKey(this.authKey);
   }
 
-  getBalance() {
-    return this.client.getBalance({ pubKey: this.authPubKey });
+  getBalance(time) {
+    return this.client.getBalance({ pubKey: this.authPubKey, time });
   }
 
   getNetworkFee(params) {
@@ -278,12 +278,11 @@ export class Wallet {
     let { tx } = params;
     const utxos = params.utxos || [];
     if (!params.utxos) {
-      this.getUtxos(params).on('data', (data) => {
-        const stringData = data.toString().replace(',\n', '');
-        if (stringData.includes('{') && stringData.includes('}')) {
-          utxos.push(JSON.parse(stringData));
-        }
-      })
+      this.getUtxos(params)
+        .pipe(new ParseApiStream())
+        .on('data', data => {
+          utxos.push(data);
+        });
     }
     const payload = {
       chain: this.chain,

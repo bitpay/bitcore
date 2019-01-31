@@ -1,5 +1,12 @@
 {
   "bitcoreNode": {
+    "services": {
+      "api": {
+        "wallets": {
+          "allowCreationBeforeCompleteSync": true
+        }
+      }
+    },
     "chains": {
       "BTC": {
         "regtest": {

@@ -10,7 +10,7 @@
       "sourceMaps": true,
       "outFiles": ["${workspaceFolder}/build/**/*.js"],
       "console": "integratedTerminal",
-      "preLaunchTask": "npm: tsc"
+      "preLaunchTask": "npm: compile"
     },
     {
       "type": "node",

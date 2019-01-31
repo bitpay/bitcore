@@ -62,15 +62,12 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { chain, network, address } = params;
-    let query = { chain, network, address };
+    const query = {
+      chain, network, address, spentHeight: { $lt: SpentHeightIndicators.minimum },
+      mintHeight: { $gt: SpentHeightIndicators.conflicting }
+    };
     let balance = await CoinStorage.getBalance({ query });
     return balance;
-  }
-
-  async getBalanceForWallet(params: CSP.GetBalanceForWalletParams) {
-    const { walletId } = params;
-    let query = { wallets: walletId };
-    return CoinStorage.getBalance({ query });
   }
 
   streamBlocks(params: CSP.StreamBlocksParams) {
@@ -313,7 +310,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
           }
           return done();
         },
-        function(done) {
+        function (done) {
           this.push({ allMissingAddresses, totalMissingValue });
           done();
         }
@@ -376,8 +373,19 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {
-    let query = { wallets: params.wallet._id, 'wallets.0': { $exists: true } };
+    const query = {
+      wallets: params.wallet._id,
+      'wallets.0': { $exists: true },
+      spentHeight: { $lt: SpentHeightIndicators.minimum },
+      mintHeight: { $gt: SpentHeightIndicators.conflicting },
+    }
     return CoinStorage.getBalance({ query });
+  }
+
+  async getWalletBalanceAtTime(params: CSP.GetWalletBalanceAtTimeParams) {
+    const { chain, network, time } = params;
+    let query = { wallets: params.wallet._id, 'wallets.0': { $exists: true } };
+    return CoinStorage.getBalanceAtTime({ query, time, chain, network });
   }
 
   async streamWalletUtxos(params: CSP.StreamWalletUtxosParams) {
@@ -520,7 +528,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
             processed: true,
             chain,
             network,
-            height: { $gt: startHeight, lt: endHeight }
+            height: { $gt: startHeight, $lt: endHeight }
           }
         : {
             processed: true,

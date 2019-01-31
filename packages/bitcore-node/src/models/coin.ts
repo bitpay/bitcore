@@ -4,6 +4,7 @@ import { ObjectID } from 'mongodb';
 import { SpentHeightIndicators, CoinJSON } from '../types/Coin';
 import { valueOrDefault } from '../utils/check';
 import { StorageService } from '../services/storage';
+import { BlockStorage } from './block';
 
 export type ICoin = {
   network: string;
@@ -61,21 +62,17 @@ class CoinModel extends BaseModel<ICoin> {
     );
   }
 
-  async getBalance(params: { query: any }): Promise<{ confirmed: number, unconfirmed: number, balance: number }> {
+  async getBalance(params: { query: any }) {
     let { query } = params;
-    query = Object.assign(query, {
-      spentHeight: { $lt: SpentHeightIndicators.minimum },
-      mintHeight: { $gt: SpentHeightIndicators.conflicting }
-    });
-    const result =  await this.collection
+    const result = await this.collection
       .aggregate<{ _id: string, balance: number }>([
         { $match: query },
-        { 
-          $project: { 
-            value: 1, 
-            status: {$cond: { if: { $gte: ['$mintHeight', SpentHeightIndicators.minimum]}, then: 'confirmed', else: 'unconfirmed' }}, 
-            _id: 0 
-          } 
+        {
+          $project: {
+            value: 1,
+            status: { $cond: { if: { $gte: ['$mintHeight', SpentHeightIndicators.minimum] }, then: 'confirmed', else: 'unconfirmed' } },
+            _id: 0
+          }
         },
         {
           $group: {
@@ -86,11 +83,29 @@ class CoinModel extends BaseModel<ICoin> {
         }
       ])
       .toArray();
-    return result.reduce((acc, cur) => { 
-      acc[cur._id] = cur.balance; 
+    return result.reduce<{ confirmed: number, unconfirmed: number, balance: number }>((acc, cur) => {
+      acc[cur._id] = cur.balance;
       acc.balance += cur.balance;
-      return acc; 
-    }, { confirmed: 0, unconfirmed: 0, balance: 0 }) as { confirmed: number, unconfirmed: number, balance: number };
+      return acc;
+    }, { confirmed: 0, unconfirmed: 0, balance: 0 });
+  }
+
+  async getBalanceAtTime(params: { query: any, time: string, chain: string, network: string }) {
+    let { query, time, chain, network } = params;
+    const block = await BlockStorage.collection.findOne({
+      $query: {
+        chain,
+        network,
+        time: { $lte: new Date(time) }
+      },
+      $orderBy: { _id: -1 }
+    });
+    const blockHeight = block!.height
+    const combinedQuery = Object.assign({}, {
+      $or: [{ spentHeight: { $gt: blockHeight } }, { spentHeight: { $lt: SpentHeightIndicators.minimum } }],
+      mintHeight: { $lte: blockHeight }
+    }, query);
+    return this.getBalance({ query: combinedQuery });
   }
 
   resolveAuthhead(mintTxid: string, chain?: string, network?: string) {
