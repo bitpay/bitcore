@@ -4,6 +4,7 @@ import { BrowserModule } from '@angular/platform-browser';
 import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
 import { Logger } from '../../src/providers/logger/logger';
 import { BlocksPage, HomePage, PagesModule } from '../pages';
+import { AddressProvider } from '../providers/address/address';
 import { ApiProvider } from '../providers/api/api';
 import { BlocksProvider } from '../providers/blocks/blocks';
 import { CurrencyProvider } from '../providers/currency/currency';
@@ -36,7 +37,8 @@ import { InsightApp } from './app.component';
     PriceProvider,
     SearchProvider,
     RedirProvider,
-    Logger
+    Logger,
+    AddressProvider
   ]
 })
 export class AppModule {}
