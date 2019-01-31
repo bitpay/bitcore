@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Wallet } from 'bitcore-client';
+import { Wallet, ParseApiStream } from 'bitcore-client';
 import { Api } from '../../../src/services/api';
 import { AsyncRPC } from '../../../src/rpc';
 import { Event } from '../../../src/services/event';
@@ -8,7 +8,7 @@ import config from '../../../src/config';
 import { BlockStorage } from '../../../src/models/block';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { TransactionStorage } from '../../../src/models/transaction';
-import { CoinStorage } from '../../../src/models/coin';
+import { CoinStorage, ICoin } from '../../../src/models/coin';
 import { P2pWorker } from '../../../src/services/p2p';
 import { wait } from '../../../src/utils/wait';
 
@@ -163,7 +163,13 @@ describe('Wallet Model', function() {
         expect(confirmCoin).to.have.property('value');
       }
       const getUtxosResult = await lockedWallet.getUtxos({ includeSpent: true });
-      expect(getUtxosResult).to.not.be.null;
+      getUtxosResult.pipe(new ParseApiStream()).on('data', (coin: ICoin) => {
+        expect(coin).to.have.deep.property('chain', chain);
+        expect(coin).to.have.deep.property('network', network);
+        expect(coin).to.have.deep.property('mintTxid', sentTxId);
+        expect(coin).to.have.deep.property('address', address1);
+        expect(coin).to.have.deep.property('spentHeight', -2);
+      });
 
       await p2pWorker.stop();
     });

@@ -2,8 +2,8 @@ import * as Bcrypt from 'bcrypt';
 import { Encryption } from './encryption';
 import { Client } from './client';
 import { Storage } from './storage';
-import { Request } from 'request';
 import TxProvider from './providers/tx-provider';
+import { ParseApiStream } from './stream-util';
 const Mnemonic = require('bitcore-mnemonic');
 const { PrivateKey } = require('bitcore-lib');
 
@@ -278,12 +278,11 @@ export class Wallet {
     let { tx } = params;
     const utxos = params.utxos || [];
     if (!params.utxos) {
-      this.getUtxos(params).on('data', data => {
-        const stringData = data.toString().replace(',\n', '');
-        if (stringData.includes('{') && stringData.includes('}')) {
-          utxos.push(JSON.parse(stringData));
-        }
-      });
+      this.getUtxos(params)
+        .pipe(new ParseApiStream())
+        .on('data', data => {
+          utxos.push(data);
+        });
     }
     const payload = {
       chain: this.chain,
