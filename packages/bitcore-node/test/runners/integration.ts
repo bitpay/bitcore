@@ -5,13 +5,15 @@ import Mocha from 'mocha';
 
 import config from '../../src/config';
 import { Storage } from '../../src/services/storage';
+import { Api } from '../../src/services/api';
+import { Event } from '../../src/services/event';
 
 const TIMEOUT = 5000;
 const TEST_DIR = path.join(__dirname, '../integration');
 
 const storageArgs = {
-    dbHost: config.dbHost,
-    dbName: 'bitcore-integration'
+  dbHost: config.dbHost,
+  dbName: 'bitcore-integration'
 };
 
 function handleError(err) {
@@ -20,8 +22,10 @@ function handleError(err) {
   process.exit(1);
 }
 
-function startTestDatabase() {
-  return Storage.start(storageArgs);
+async function startTestDatabase() {
+  await Storage.start(storageArgs);
+  await Event.start();
+  return await Api.start();
 }
 
 function runTests() {
