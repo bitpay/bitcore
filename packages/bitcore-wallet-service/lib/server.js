@@ -1579,9 +1579,9 @@ WalletService.prototype.getSendMaxInfo = function(opts, cb) {
         });
 
         var baseTxpSize = txp.getEstimatedSize();
-        var baseTxpFee = 100000;
-        var sizePerInput = txp.getEstimatedSizeForSingleInput();
-        var feePerInput = 100000;
+        var baseTxpFee = (Math.ceil(baseTxpSize / 1000) * 1000) * feePerKb / 1000;
+        // var sizePerInput = txp.getEstimatedSizeForSingleInput();
+        var feePerInput = 0;
 
         var partitionedByAmount = _.partition(inputs, function(input) {
           return input.satoshis > feePerInput;
@@ -1795,11 +1795,9 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
   }
 
   var txpAmount = txp.getTotalAmount();
-  // var baseTxpSize = txp.getEstimatedSize();
-  //var baseTxpFee = baseTxpSize * txp.feePerKb / 1000.;
-  var baseTxpFee = 100000;
+  var baseTxpSize = txp.getEstimatedSize();
+  var baseTxpFee = (Math.ceil(baseTxpSize / 1000) * 1000) * txp.feePerKb / 1000;
   // var sizePerInput = txp.getEstimatedSizeForSingleInput();
-  //var feePerInput = sizePerInput * txp.feePerKb / 1000.;
   var feePerInput = 0;
 
   function sanitizeUtxos(utxos) {
@@ -1871,9 +1869,8 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
       total += input.satoshis;
       netTotal += netInputAmount;
 
-      // var txpSize = baseTxpSize + selected.length * sizePerInput;
-      // fee = Math.round(baseTxpFee + selected.length * feePerInput);
-      fee = 100000;
+      var txpSize = baseTxpSize;
+      fee = baseTxpFee;
 
       //log.debug('Tx size: ' + Utils.formatSize(txpSize) + ', Tx fee: ' + Utils.formatAmountInBtc(fee));
 
@@ -1883,13 +1880,11 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
       //log.debug('Fee/Tx amount: ' + Utils.formatRatio(feeVsAmountRatio) + ' (max: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MAX_FEE_VS_TX_AMOUNT_FACTOR) + ')');
       //log.debug('Tx amount/Input amount:' + Utils.formatRatio(amountVsUtxoRatio) + ' (min: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) + ')');
 
-      /*
       if (txpSize / 1000. > Defaults.MAX_TX_SIZE_IN_KB) {
         //log.debug('Breaking because tx size (' + Utils.formatSize(txpSize) + ') is too big (max: ' + Utils.formatSize(Defaults.MAX_TX_SIZE_IN_KB * 1000.) + ')');
         error = Errors.TX_MAX_SIZE_EXCEEDED;
         return false;
       }
-      */
 
       if (!_.isEmpty(bigInputs)) {
         if (amountVsUtxoRatio < Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) {
@@ -1932,8 +1927,8 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
         var input = _.head(bigInputs);
         //log.debug('Using big input: ', Utils.formatUtxos(input));
         total = input.satoshis;
-        // fee = Math.round(baseTxpFee + feePerInput);
-        fee = 100000;
+        fee = Math.round(baseTxpFee);
+        // fee = 100000;
 
         netTotal = total - fee;
         selected = [input];
@@ -2340,10 +2335,8 @@ WalletService.prototype.createTx = function(opts, cb) {
           },
           function(next) {
             if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs)) return next();
-            self._getFeePerKb(wallet, opts, function(err, fee) {
-              feePerKb = fee;
-              next();
-            });
+            feePerKb = Defaults.MIN_FEE_PER_KB;
+            next();
           },
           function(next) {
 
@@ -2366,8 +2359,7 @@ WalletService.prototype.createTx = function(opts, cb) {
               addressType: wallet.addressType,
               customData: opts.customData,
               inputs: opts.inputs,
-              // fee: opts.inputs && !_.isNumber(opts.feePerKb) ? opts.fee : null,
-              fee: opts.fee,
+              fee: opts.inputs && !_.isNumber(opts.feePerKb) ? opts.fee : null,
               noShuffleOutputs: opts.noShuffleOutputs
             };
 
@@ -2394,6 +2386,8 @@ WalletService.prototype.createTx = function(opts, cb) {
               }
             }
 
+            // Set the tx fee.
+            txp.estimateFee();
 
             self.storage.storeTx(wallet.id, txp, next);
           },

@@ -197,7 +197,7 @@ TxProposal.prototype._buildTx = function() {
   var totalOutputs = _.sumBy(t.outputs, 'satoshis');
 
   $.checkState(totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs, 'not-enought-inputs');
-  // $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE, 'fee-too-high');
+  $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE, 'fee-too-high');
 
   return t;
 };
@@ -262,7 +262,9 @@ TxProposal.prototype.getEstimatedSize = function() {
 
 TxProposal.prototype.getEstimatedFee = function() {
   $.checkState(_.isNumber(this.feePerKb));
-  var fee = this.feePerKb * this.getEstimatedSize() / 1000;
+  var baseTxpSize = this.getEstimatedSize();
+  var fee = (Math.ceil(baseTxpSize / 1000) * 1000) * this.feePerKb / 1000;
+
   return parseInt(fee.toFixed(0));
 };
 

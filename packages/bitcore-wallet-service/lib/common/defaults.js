@@ -2,10 +2,10 @@
 
 var Defaults = {};
 
-Defaults.MIN_FEE_PER_KB = 0;
-Defaults.MAX_FEE_PER_KB = 10000 * 1000; // 10k sat/b
-Defaults.MIN_TX_FEE = 0;
-Defaults.MAX_TX_FEE = 100000;
+Defaults.MIN_FEE_PER_KB = 100000;
+Defaults.MAX_FEE_PER_KB = 1000000;
+Defaults.MIN_TX_FEE = 100000;
+Defaults.MAX_TX_FEE = 1000000;
 Defaults.MAX_TX_SIZE_IN_KB = 100;
 
 Defaults.MAX_KEYS = 100;
@@ -29,7 +29,7 @@ Defaults.FEE_LEVELS = {
     name: 'urgent',
     nbBlocks: 2,
     multiplier: 1.5,
-    defaultValue: 150000,
+    defaultValue: 100000,
   }, {
     name: 'priority',
     nbBlocks: 2,
@@ -37,20 +37,20 @@ Defaults.FEE_LEVELS = {
   }, {
     name: 'normal',
     nbBlocks: 3,
-    defaultValue: 80000
+    defaultValue: 100000
   }, {
     name: 'economy',
     nbBlocks: 6,
-    defaultValue: 50000
+    defaultValue: 100000
   }, {
     name: 'superEconomy',
     nbBlocks: 24,
-    defaultValue: 20000
+    defaultValue: 100000
   }],
   bch: [{
     name: 'normal',
     nbBlocks: 2,
-    defaultValue: 2000,
+    defaultValue: 100000,
   }]
 };
 

@@ -988,14 +988,11 @@ Transaction.prototype._clearSignatures = function() {
 };
 
 Transaction._estimateFee = function(size, amountAvailable, feePerKb) {
-  /*
   var fee = Math.ceil(size / 1000) * (feePerKb || Transaction.FEE_PER_KB);
   if (amountAvailable > fee) {
     size += Transaction.CHANGE_OUTPUT_MAX_SIZE;
   }
   return Math.ceil(size / 1000) * (feePerKb || Transaction.FEE_PER_KB);
-  */
-  return Transaction.FEE_PER_KB;
 };
 
 Transaction.prototype._estimateSize = function() {
