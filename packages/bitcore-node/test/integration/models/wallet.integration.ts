@@ -113,11 +113,18 @@ describe('Wallet Model', function() {
 
       let sawEvents = new Promise(resolve => Event.addressCoinEvent.on('coin', resolve));
       await p2pWorker.start();
-      await wait(3000);
+      await rpc.generate(5);
+      await p2pWorker.syncDone();
+
       const beforeGenTip = await BlockStorage.getLocalTip({ chain, network });
       if (beforeGenTip && beforeGenTip.height && beforeGenTip.height < 100) {
         await rpc.generate(100);
       }
+
+      await rpc.generate(1);
+      await p2pWorker.syncDone();
+      await wait(3000);
+
       const sentTxId = await rpc.sendtoaddress(address1, value);
 
       await sawEvents;
@@ -155,6 +162,9 @@ describe('Wallet Model', function() {
         expect(confirmCoin).to.have.property('mintIndex');
         expect(confirmCoin).to.have.property('value');
       }
+      const getUtxosResult = await lockedWallet.getUtxos({ includeSpent: true });
+      expect(getUtxosResult).to.not.be.null;
+
       await p2pWorker.stop();
     });
   });
