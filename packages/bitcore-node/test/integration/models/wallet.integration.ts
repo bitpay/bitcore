@@ -107,7 +107,7 @@ describe('Wallet Model', function() {
       }
     });
 
-    it('should return correct coin and tx to verify a mempool tx', async () => {
+    it('should return correct coin and tx to verify a mempool tx and utxos stream', async () => {
       const p2pWorker = new P2pWorker({ chain, network, chainConfig });
       const value = 0.1;
 
