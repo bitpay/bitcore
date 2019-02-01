@@ -4,8 +4,9 @@ import { Client } from './client';
 import { Storage } from './storage';
 import { Request } from 'request';
 import TxProvider from './providers/tx-provider';
-const Mnemonic = require('bitcore-mnemonic');
+import { AddressProvider } from './providers/address-provider/deriver';
 const { PrivateKey } = require('bitcore-lib');
+const Mnemonic = require('bitcore-mnemonic');
 
 export namespace Wallet {
   export type KeyImport = {
@@ -36,8 +37,10 @@ export class Wallet {
   encryptionKey: string;
   authPubKey: string;
   pubKey: string;
+  xPubKey: string;
   name: string;
   path: string;
+  addressIndex: number;
   authKey: string;
   derivationPath: string;
 
@@ -110,6 +113,7 @@ export class Wallet {
       encryptionKey,
       authKey,
       authPubKey,
+      addressIndex: 0,
       masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
       xPubKey: hdPubKey.xpubkey,
@@ -322,5 +326,19 @@ export class Wallet {
     return this.client.getAddresses({
       pubKey: this.authPubKey
     });
+  }
+
+  async deriveAddress(isChange) {
+    this.addressIndex = (this.addressIndex || 0);
+    const address = AddressProvider.derive(
+      this.chain,
+      this.network,
+      this.xPubKey,
+      this.addressIndex,
+      isChange
+    );
+    this.addressIndex++;
+    this.saveWallet();
+    return address;
   }
 }

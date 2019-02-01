@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Wallet, Storage } from 'bitcore-client';
+import { ParseApiStream, Wallet, Storage } from 'bitcore-client';
 import { RouteComponentProps } from 'react-router';
 import {
   Icon,
@@ -49,6 +49,7 @@ export class WalletContainer extends Component<Props, State> {
     super(props);
     this.handleAddressChange = this.handleAddressChange.bind(this);
     this.handleAddAddressClick = this.handleAddAddressClick.bind(this);
+    this.handleDeriveAddressClick = this.handleDeriveAddressClick.bind(this);
   }
 
   async componentDidMount() {
@@ -71,6 +72,7 @@ export class WalletContainer extends Component<Props, State> {
         .split('\n');
       for (const jsonTx of jsonTxs) {
         if (jsonTx.startsWith('{') && jsonTx.endsWith('}')) {
+          console.log(jsonTx);
           const parsed = JSON.parse(jsonTx);
           this.setState({ transactions: [...this.state.transactions, parsed] });
         }
@@ -79,20 +81,21 @@ export class WalletContainer extends Component<Props, State> {
   }
 
   async fetchAddresses(wallet: Wallet) {
-    wallet.getAddresses().on('data', (d: Buffer) => {
-      const jsonTxs = d
-        .toString()
-        .trim()
-        .split(',\n');
-      console.log(jsonTxs);
-      for (const jsonTx of jsonTxs) {
-        if (jsonTx.startsWith('{') && jsonTx.endsWith('}')) {
-          console.log(jsonTx);
-          const parsed = JSON.parse(jsonTx);
-          this.setState({ addresses: [...this.state.addresses, parsed] });
+    wallet
+      .getAddresses()
+      .pipe(new ParseApiStream())
+      .on('data', (d: any) => {
+        console.log(d);
+        let addresses = [];
+        if (Array.isArray(d)) {
+          addresses = d;
+        } else {
+          addresses = [d];
         }
-      }
-    });
+        this.setState({
+          addresses: [...this.state.addresses, ...addresses.map(a => a.address)]
+        });
+      });
   }
 
   async updateBalance(wallet: Wallet) {
@@ -132,10 +135,16 @@ export class WalletContainer extends Component<Props, State> {
     });
     await this.importAddresses(this.state.addressToAdd);
   }
+
+  async handleDeriveAddressClick() {
+    const address = await this.state.wallet!.deriveAddress(0);
+    console.log(address);
+  }
+
   render() {
     return (
       <div className="walletContainer">
-        <Card>
+        <Card fluid>
           <Card.Content>
             <h1> {this.state.walletName} </h1>
             <Label>
@@ -155,7 +164,14 @@ export class WalletContainer extends Component<Props, State> {
               {this.state.transactions.length ? (
                 this.state.transactions.map(t => (
                   <div key={t.id}>
-                    {t.id} {t.satoshis} Satoshis
+                    <a
+                      href={`${API_URL}/${this.state.wallet!.chain}/${
+                        this.state.wallet!.network
+                      }/tx/${t.txid}`}
+                    >
+                      {t.height > 0 ? `Block: ${t.height}` : 'Mempool:'}{' '}
+                      {t.category} {t.satoshis} Satoshis
+                    </a>
                   </div>
                 ))
               ) : (
@@ -181,8 +197,11 @@ export class WalletContainer extends Component<Props, State> {
                 onChange={this.handleAddressChange}
               >
                 <input />
-                <Button onClick={this.handleAddAddressClick}>
-                  Add to Wallet
+                <Button primary onClick={this.handleAddAddressClick}>
+                  Add
+                </Button>
+                <Button onClick={this.handleDeriveAddressClick}>
+                  Derive
                 </Button>
               </Input>
             </div>

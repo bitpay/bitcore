@@ -144,7 +144,8 @@ export class WalletsContainer extends Component<Props, State> {
       name: this.state.newWalletName,
       password: this.state.newWalletPassword,
       chain: this.state.selectedChain,
-      network: this.state.selectedNetwork
+      network: this.state.selectedNetwork,
+      baseUrl: API_URL
     });
     this.addWalletToState(wallet);
   }

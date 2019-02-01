@@ -64,7 +64,6 @@ export class P2pWorker {
   private chainConfig: any;
   private events: EventEmitter;
   private isSyncing: boolean;
-  public syncer?: Promise<void>;
   private messages: any;
   private pool: any;
   private connectInterval?: NodeJS.Timer;
@@ -289,73 +288,71 @@ export class P2pWorker {
     });
   }
 
+  async syncDone() {
+    return new Promise(resolve => this.events.once('SYNCDONE', resolve));
+  }
+
   async sync() {
     if (this.isSyncing) {
-      return this.syncer;
+      return false;
     }
     this.isSyncing = true;
-    this.syncer = new Promise(async (resolve, reject) => {
-      try {
-        const { chain, chainConfig, network } = this;
-        const { parentChain, forkHeight } = chainConfig;
-        const state = await StateStorage.collection.findOne({});
-        this.initialSyncComplete =
-          state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
-        let tip = await ChainStateProvider.getLocalTip({ chain, network });
-        if (parentChain && (!tip || tip.height < forkHeight)) {
-          let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
-          while (!parentTip || parentTip.height < forkHeight) {
-            logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
-            await wait(5000);
-            parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
-          }
-        }
-
-        const getHeaders = async () => {
-          const locators = await ChainStateProvider.getLocatorHashes({ chain, network });
-          return this.getHeaders(locators);
-        };
-
-        let headers = await getHeaders();
-        while (headers.length > 0) {
-          tip = await ChainStateProvider.getLocalTip({ chain, network });
-          let currentHeight = tip ? tip.height : 0;
-          let lastLog = 0;
-          logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
-          for (const header of headers) {
-            try {
-              const block = await this.getBlock(header.hash);
-              await this.processBlock(block);
-              currentHeight++;
-              if (Date.now() - lastLog > 100) {
-                logger.info(`Sync `, {
-                  chain,
-                  network,
-                  height: currentHeight
-                });
-                lastLog = Date.now();
-              }
-            } catch (err) {
-              logger.error(`Error syncing ${chain} ${network}`, err);
-              this.isSyncing = false;
-              return this.sync();
-            }
-          }
-          headers = await getHeaders();
-        }
-        logger.info(`${chain}:${network} up to date.`);
-        this.isSyncing = false;
-        await StateStorage.collection.findOneAndUpdate(
-          {},
-          { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
-          { upsert: true }
-        );
-        resolve();
-      } catch (e) {
-        reject(e);
+    const { chain, chainConfig, network } = this;
+    const { parentChain, forkHeight } = chainConfig;
+    const state = await StateStorage.collection.findOne({});
+    this.initialSyncComplete =
+      state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
+    let tip = await ChainStateProvider.getLocalTip({ chain, network });
+    if (parentChain && (!tip || tip.height < forkHeight)) {
+      let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
+      while (!parentTip || parentTip.height < forkHeight) {
+        logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
+        await wait(5000);
+        parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
       }
-    });
-    return this.syncer;
+    }
+
+    const getHeaders = async () => {
+      const locators = await ChainStateProvider.getLocatorHashes({ chain, network });
+      return this.getHeaders(locators);
+    };
+
+    let headers = await getHeaders();
+    while (headers.length > 0) {
+      tip = await ChainStateProvider.getLocalTip({ chain, network });
+      let currentHeight = tip ? tip.height : 0;
+      let lastLog = 0;
+      logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
+      for (const header of headers) {
+        try {
+          const block = await this.getBlock(header.hash);
+          await this.processBlock(block);
+          currentHeight++;
+          if (Date.now() - lastLog > 100) {
+            logger.info(`Sync `, {
+              chain,
+              network,
+              height: currentHeight
+            });
+            lastLog = Date.now();
+          }
+        } catch (err) {
+          logger.error(`Error syncing ${chain} ${network}`, err);
+          this.isSyncing = false;
+          return this.sync();
+        }
+      }
+      headers = await getHeaders();
+    }
+    logger.info(`${chain}:${network} up to date.`);
+    this.isSyncing = false;
+    await StateStorage.collection.findOneAndUpdate(
+      {},
+      { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
+      { upsert: true }
+    );
+    this.events.emit('SYNCDONE');
+    return true;
   }
 
   async resync(from: number, to: number) {
