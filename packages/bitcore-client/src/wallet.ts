@@ -215,7 +215,7 @@ export class Wallet {
     return new PrivateKey(this.authKey);
   }
 
-  getBalance(time) {
+  getBalance(time?: string) {
     return this.client.getBalance({ pubKey: this.authPubKey, time });
   }
 
@@ -314,6 +314,12 @@ export class Wallet {
 
   async checkWallet() {
     return this.client.checkWallet({
+      pubKey: this.authPubKey
+    });
+  }
+
+  getAddresses() {
+    return this.client.getAddresses({
       pubKey: this.authPubKey
     });
   }

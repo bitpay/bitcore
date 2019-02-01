@@ -42,7 +42,7 @@ export class Client {
     });
   }
 
-  async getBalance(params) {
+  async getBalance(params: { payload?: any; pubKey: string; time?: string }) {
     const { payload, pubKey, time } = params;
     let url = `${this.baseUrl}/wallet/${pubKey}/balance`;
     if (time) {
@@ -150,6 +150,16 @@ export class Client {
   async checkWallet(params) {
     const { pubKey } = params;
     const url = `${this.baseUrl}/wallet/${pubKey}/check`;
+    const signature = this.sign({ method: 'GET', url });
+    return request.get(url, {
+      headers: { 'x-signature': signature },
+      json: true
+    });
+  }
+
+  getAddresses(params: { pubKey: string }) {
+    const { pubKey } = params;
+    const url = `${this.baseUrl}/wallet/${pubKey}/addresses`;
     const signature = this.sign({ method: 'GET', url });
     return request.get(url, {
       headers: { 'x-signature': signature },
