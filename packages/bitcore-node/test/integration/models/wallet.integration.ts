@@ -107,7 +107,7 @@ describe('Wallet Model', function() {
       }
     });
 
-    it('should return correct coin and tx to verify mempool tx, utxos stream, and wallet balance', async () => {
+    it('should return correct coin and tx to verify 100 benchmark mempool tx, utxos stream, and wallet balance', async () => {
       const p2pWorker = new P2pWorker({ chain, network, chainConfig });
       let txidList = new Array<string>();
       const value = 0.1;
