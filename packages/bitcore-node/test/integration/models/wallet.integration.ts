@@ -109,9 +109,29 @@ describe('Wallet Model', function() {
 
     it('should return correct coin and tx to verify mempool tx, utxos stream, and wallet balance', async () => {
       const p2pWorker = new P2pWorker({ chain, network, chainConfig });
+      let txidList = new Array<string>();
       const value = 0.1;
+      let lastTxid;
+      let setOnce = false;
+      let newTxidList = new Array<string>();
+      let updatedList = new Array<string>();
 
-      const sawEvents = new Promise(resolve => Event.addressCoinEvent.on('coin', resolve));
+      let sawEvents = new Promise(resolve => {
+        Event.addressCoinEvent.on('coin', async addressCoin => {
+          const { coin } = addressCoin;
+          if (setOnce) {
+            newTxidList = txidList.map(e => e);
+            setOnce = true;
+          }
+          const foundIndex = newTxidList.indexOf(coin.mintTxid);
+          updatedList = newTxidList.slice(foundIndex, 1);
+          console.log(updatedList.length);
+          // if (notSeen.length === 0) {
+          await wait(20000);
+          resolve();
+          // }
+        });
+      });
 
       await p2pWorker.start();
       await rpc.generate(5);
@@ -126,57 +146,71 @@ describe('Wallet Model', function() {
       await p2pWorker.syncDone();
       await wait(3000);
 
-      const sentTxId = await rpc.sendtoaddress(address1, value);
+      for (let i = 0; i < 100; i++) {
+        const sentTxId = await rpc.sendtoaddress(address1, value);
+        lastTxid = sentTxId;
+        txidList.push(sentTxId);
+      }
 
       await sawEvents;
+
+      expect(lastTxid).to.deep.equal(txidList[99]);
 
       const confirmTx = await TransactionStorage.collection
         .find({
           chain,
           network,
-          txid: sentTxId
+          txid: { $in: txidList }
         })
         .toArray();
 
-      expect(confirmTx[0]).to.have.deep.property('chain', chain);
-      expect(confirmTx[0]).to.have.deep.property('network', network);
-      expect(confirmTx[0]).to.have.deep.property('txid', sentTxId);
-      expect(confirmTx[0]).to.have.property('value');
-      expect(confirmTx[0]).to.have.property('blockHeight');
-
-      if (confirmTx) {
-        const confirmCoin = await CoinStorage.collection.findOne({
-          chain,
-          network,
-          mintTxid: confirmTx[0].txid,
-          address: address1,
-          mintHeight: confirmTx[0].blockHeight,
-          spentHeight: -2
-        });
-
-        expect(confirmCoin).to.have.deep.property('chain', chain);
-        expect(confirmCoin).to.have.deep.property('network', network);
-        expect(confirmCoin).to.have.deep.property('mintTxid', sentTxId);
-        expect(confirmCoin).to.have.deep.property('address', address1);
-        expect(confirmCoin).to.have.deep.property('mintHeight', confirmTx[0].blockHeight);
-        expect(confirmCoin).to.have.deep.property('spentHeight', -2);
-        expect(confirmCoin).to.have.property('mintIndex');
-        expect(confirmCoin).to.have.property('value');
+      for (let txid of txidList) {
+        expect(confirmTx.map(tx => tx.txid)).to.include(txid);
+        expect(confirmTx.map(tx => tx.chain).includes(chain)).to.be.true;
+        expect(confirmTx.map(tx => tx.network).includes(network)).to.be.true;
+        expect(confirmTx.length).to.deep.equal(txidList.length);
       }
+
+      for (let tx of confirmTx) {
+        if (tx && tx.blockHeight) {
+          const confirmCoin = await CoinStorage.collection
+            .find({
+              chain,
+              network,
+              mintTxid: { $in: txidList },
+              address: address1,
+              mintHeight: { $in: confirmTx.map(tx => tx.blockHeight) },
+              spentHeight: -2
+            })
+            .toArray();
+
+          expect(confirmCoin.map(tx => tx.mintTxid).includes(tx.txid)).to.be.true;
+          expect(confirmCoin.map(tx => tx.chain).includes(tx.chain)).to.be.true;
+          expect(confirmCoin.map(tx => tx.network).includes(tx.network)).to.be.true;
+          expect(confirmCoin.map(tx => tx.address).includes(address1)).to.be.true;
+          expect(confirmCoin.map(tx => tx.mintHeight).includes(tx.blockHeight)).to.be.true;
+          expect(confirmCoin.map(tx => tx.spentHeight).includes(-2)).to.be.true;
+        }
+      }
+
       const getUtxosResult = await lockedWallet.getUtxos({ includeSpent: true });
 
       getUtxosResult.pipe(new ParseApiStream()).on('data', (coin: ICoin) => {
+        expect(txidList.map(txid => txid)).to.include(coin.mintTxid);
         expect(coin).to.have.deep.property('chain', chain);
         expect(coin).to.have.deep.property('network', network);
-        expect(coin).to.have.deep.property('mintTxid', sentTxId);
         expect(coin).to.have.deep.property('address', address1);
         expect(coin).to.have.deep.property('spentHeight', -2);
       });
 
       const getWalletBalance = await lockedWallet.getBalance(null);
+      console.log(getWalletBalance);
       expect(getWalletBalance.confirmed).to.deep.equal(0);
-      expect(getWalletBalance.unconfirmed).to.deep.equal(value * 1e8);
+      expect(getWalletBalance.unconfirmed).to.deep.equal(value * 100 * 1e8);
       expect(getWalletBalance.balance).to.deep.equal(getWalletBalance.unconfirmed + getWalletBalance.confirmed);
+
+      const { heapUsed } = process.memoryUsage();
+      expect(heapUsed).to.be.below(3e8);
 
       await p2pWorker.stop();
     });
