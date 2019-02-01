@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Http } from '@angular/http';
 import { IonicPage, NavParams, ToastController } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
+import { Logger } from '../../providers/logger/logger';
 
 @Injectable()
 @IonicPage({
@@ -26,7 +27,8 @@ export class BroadcastTxPage {
     public formBuilder: FormBuilder,
     public navParams: NavParams,
     private http: Http,
-    private apiProvider: ApiProvider
+    private apiProvider: ApiProvider,
+    private logger: Logger
   ) {
     const chain: string = this.apiProvider.getConfig().chain;
     const network: string = this.apiProvider.getConfig().network;
@@ -44,11 +46,12 @@ export class BroadcastTxPage {
     };
     this.status = 'loading';
 
-    this.http.post(this.apiProvider.getUrl() + 'tx/send', postData).subscribe(
+    this.http.post(this.apiProvider.getUrl() + '/tx/send', postData).subscribe(
       response => {
         this.presentToast(true, response);
       },
       err => {
+        this.logger.error(err._body);
         this.presentToast(false, err);
       }
     );
@@ -65,7 +68,7 @@ export class BroadcastTxPage {
 
     this.toast = this.toastCtrl.create({
       message,
-      position: 'middle',
+      position: 'bottom',
       showCloseButton: true,
       dismissOnPageChange: true
     });
