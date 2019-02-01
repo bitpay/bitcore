@@ -52,6 +52,8 @@ export class AddressPage {
       data => {
         this.address = {
           balance: data.balance,
+          confirmed: data.confirmed,
+          unconfirmed: data.unconfirmed,
           addrStr: this.addrStr
         };
         this.loading = false;
@@ -64,5 +66,13 @@ export class AddressPage {
 
   public getBalance(): number {
     return this.currencyProvider.getConvertedNumber(this.address.balance);
+  }
+
+  public getConfirmedBalance(): number {
+    return this.currencyProvider.getConvertedNumber(this.address.confirmed);
+  }
+
+  public getUnconfirmedBalance(): number {
+    return this.currencyProvider.getConvertedNumber(this.address.unconfirmed);
   }
 }
