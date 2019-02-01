@@ -3,6 +3,8 @@ import requestStream from 'request';
 import * as secp256k1 from 'secp256k1';
 import * as stream from 'stream';
 import { URL } from 'url';
+let usingBrowser = (global as any).window;
+const URLClass = usingBrowser ? usingBrowser.URL : URL;
 const bitcoreLib = require('bitcore-lib');
 
 export class Client {
@@ -14,7 +16,7 @@ export class Client {
 
   sign(params) {
     const { method, url, payload = {} } = params;
-    const parsedUrl = new URL(url);
+    const parsedUrl = new URLClass(url);
     const message = [
       method,
       parsedUrl.pathname + parsedUrl.search,
@@ -44,7 +46,7 @@ export class Client {
     const { payload, pubKey, time } = params;
     let url = `${this.baseUrl}/wallet/${pubKey}/balance`;
     if (time) {
-      url += `/${time}`
+      url += `/${time}`;
     }
     const signature = this.sign({ method: 'GET', url, payload });
     return request.get(url, {
@@ -63,7 +65,7 @@ export class Client {
     });
   };
 
-  getCoins(params: {payload?: any, pubKey: string, includeSpent: boolean}) {
+  getCoins(params: { payload?: any; pubKey: string; includeSpent: boolean }) {
     const { payload, pubKey, includeSpent } = params;
     const url = `${
       this.baseUrl

@@ -1,4 +1,4 @@
-import * as Bcrypt from 'bcrypt';
+import * as Bcrypt from 'bcryptjs';
 import { Encryption } from './encryption';
 import { Client } from './client';
 import { Storage } from './storage';
@@ -100,7 +100,7 @@ export class Wallet {
 
     let alreadyExists;
     try {
-      alreadyExists = await this.loadWallet({ storage, name, chain, network });
+      alreadyExists = await this.loadWallet({ storage, name });
     } catch (err) {}
     if (alreadyExists) {
       throw new Error('Wallet already exists');
@@ -119,9 +119,7 @@ export class Wallet {
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({
       storage,
-      name,
-      chain,
-      network
+      name
     });
     console.log(mnemonic.toString());
     await loadedWallet.register().catch(e => {
@@ -131,27 +129,35 @@ export class Wallet {
     return loadedWallet;
   }
 
-  static async exists(params) {
-    const { storage, name, chain, network } = params;
+  static async exists(params: {
+    name: string;
+    path?: string;
+    storage?: Storage;
+  }) {
+    const { storage, name } = params;
     let alreadyExists;
     try {
       alreadyExists = await Wallet.loadWallet({
         storage,
-        name,
-        chain,
-        network
+        name
       });
-    } catch (err) {}
-    return alreadyExists != undefined;
+    } catch (err) {
+      console.log(err);
+    }
+    return alreadyExists != undefined && alreadyExists != [];
   }
 
-  static async loadWallet(params) {
-    const { chain, network, name, path } = params;
+  static async loadWallet(params: {
+    name: string;
+    path?: string;
+    storage?: Storage;
+  }) {
+    const { name, path } = params;
     let { storage } = params;
     storage =
       storage ||
       new Storage({ errorIfExists: false, createIfMissing: false, path });
-    const loadedWallet = await storage.loadWallet({ chain, network, name });
+    const loadedWallet = await storage.loadWallet({ name });
     return new Wallet(Object.assign(loadedWallet, { storage }));
   }
 

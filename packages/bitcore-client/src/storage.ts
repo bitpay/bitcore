@@ -1,21 +1,36 @@
 import * as os from 'os';
 import * as fs from 'fs';
-import levelup, { LevelUp } from 'levelup';
-import leveldown, { LevelDown } from 'leveldown';
 import { Encryption } from './encryption';
+import levelup, { LevelUp } from 'levelup';
+import { LevelDown } from 'leveldown';
+import leveldownjs from 'level-js';
+
+let lvldwn: LevelDown;
+let usingBrowser = (global as any).window;
+if (usingBrowser) {
+  lvldwn = leveldownjs;
+} else {
+  lvldwn = require('leveldown');
+}
 const bitcoreLib = require('bitcore-lib');
-const StorageCache = {};
+const StorageCache: { [path: string]: LevelUp } = {};
 
 export class Storage {
   path: string;
   db: LevelUp;
-  constructor(params) {
+  constructor(params: {
+    path?: string;
+    createIfMissing: boolean;
+    errorIfExists: boolean;
+  }) {
     const { path, createIfMissing, errorIfExists } = params;
     let basePath;
     if (!path) {
       basePath = `${os.homedir()}/.bitcore`;
       try {
-        fs.mkdirSync(basePath);
+        if (!usingBrowser) {
+          fs.mkdirSync(basePath);
+        }
       } catch (e) {
         if (e.errno !== -17) {
           console.error('Unable to create bitcore storage directory');
@@ -23,7 +38,7 @@ export class Storage {
       }
     }
     this.path = path || `${basePath}/bitcoreWallet`;
-    if (!createIfMissing) {
+    if (!createIfMissing && !usingBrowser) {
       const walletExists =
         fs.existsSync(this.path) &&
         fs.existsSync(this.path + '/LOCK') &&
@@ -35,7 +50,8 @@ export class Storage {
     if (StorageCache[this.path]) {
       this.db = StorageCache[this.path];
     } else {
-      this.db = StorageCache[this.path] = levelup(leveldown(this.path), {
+      console.log('creating leveldown at', this.path);
+      this.db = StorageCache[this.path] = levelup(lvldwn(this.path), {
         createIfMissing,
         errorIfExists
       });
@@ -52,10 +68,14 @@ export class Storage {
   }
 
   listWallets() {
-    return this.db.createValueStream({
-      gt: Buffer.from('walle'),
-      lt: Buffer.from('wallf')
-    });
+    if (usingBrowser) {
+      return this.db.createValueStream();
+    } else {
+      return this.db.createValueStream({
+        gt: Buffer.from('walle'),
+        lt: Buffer.from('wallf')
+      });
+    }
   }
 
   async saveWallet(params) {
