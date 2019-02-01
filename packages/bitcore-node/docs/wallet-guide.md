@@ -58,7 +58,7 @@ bitcoinregtest
 
 Go to Help -> Debug Window -> console tab
 
-Input generate command in the line to create 5000 BTC
+Input generate command in the line to create 5000 Blocks
 
 ```
 generate 5000
