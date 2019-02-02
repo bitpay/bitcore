@@ -6,6 +6,7 @@ import { Storage } from '../../src/services/storage';
 import { P2pWorker } from '../../src/services/p2p';
 import { Config } from '../../src/services/config';
 import { BlockStorage } from '../../src/models/block';
+import { validateDataForBlock } from './db-verify';
 
 (async () => {
   const { CHAIN, NETWORK, FILE, DRYRUN } = process.env;
@@ -18,12 +19,14 @@ import { BlockStorage } from '../../src/models/block';
   await Storage.start();
   const chainConfig = Config.chainConfig({ chain, network });
   const worker = new P2pWorker({ chain, network, chainConfig });
-  await worker.start();
+  await worker.connect();
+
   const handleRepair = async data => {
     switch (data.type) {
       case 'DUPE_COIN':
+        const coin = data.payload.coin;
         const dupeCoins = await CoinStorage.collection
-          .find({ chain, network, mintTxid: data.payload.mintTxid, mintIndex: data.payload.mintIndex })
+          .find({ chain, network, mintTxid: coin.mintTxid, mintIndex: coin.mintIndex })
           .sort({ _id: -1 })
           .toArray();
 
@@ -52,17 +55,23 @@ import { BlockStorage } from '../../src/models/block';
           });
         }
         break;
+      case 'MISSING_BLOCK':
       case 'MISSING_TX':
       case 'MISSING_COIN_FOR_TXID':
       case 'VALUE_MISMATCH':
       case 'NEG_FEE':
         const blockHeight = Number(data.payload.blockNum);
+        const { success } = await validateDataForBlock(blockHeight);
         if (DRYRUN) {
           console.log('WOULD RESYNC BLOCKS', blockHeight, 'to', blockHeight + 1);
           console.log(data.payload);
         } else {
-          console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
-          await worker.resync(blockHeight - 1, blockHeight + 1);
+          if (!success) {
+            console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
+            await worker.resync(blockHeight - 1, blockHeight + 1);
+          } else {
+            console.log('No errors found, repaired previously');
+          }
         }
         break;
       case 'DUPE_BLOCKHEIGHT':
@@ -77,6 +86,8 @@ import { BlockStorage } from '../../src/models/block';
         }
 
         let toKeepBlock = dupeBlock[0];
+        const processedBlock = dupeBlock.find(b => b.processed === true);
+        toKeepBlock = processedBlock || toKeepBlock;
         const wouldBeDeletedBlock = dupeBlock.filter(c => c._id !== toKeepBlock._id);
 
         if (DRYRUN) {

@@ -8,6 +8,7 @@ import { StateStorage } from '../models/state';
 import { SpentHeightIndicators } from '../types/Coin';
 import os from 'os';
 import { Config, ConfigService } from './config';
+import { wait } from '../utils/wait';
 const Chain = require('../chain');
 
 export class P2pManager {
@@ -62,7 +63,7 @@ export class P2pWorker {
   private bitcoreP2p: any;
   private chainConfig: any;
   private events: EventEmitter;
-  private syncing: boolean;
+  private isSyncing: boolean;
   private messages: any;
   private pool: any;
   private connectInterval?: NodeJS.Timer;
@@ -70,7 +71,7 @@ export class P2pWorker {
   private invCacheLimits: any;
   private initialSyncComplete: boolean;
   private isSyncingNode: boolean;
-  private syncingNodeHeartBeat?: NodeJS.Timer;
+  private stopping?: boolean;
   private blockModel: BlockModel;
   constructor({ chain, network, chainConfig, blockModel = BlockStorage }) {
     this.blockModel = blockModel;
@@ -80,7 +81,7 @@ export class P2pWorker {
     this.bitcoreP2p = Chain[this.chain].p2p;
     this.chainConfig = chainConfig;
     this.events = new EventEmitter();
-    this.syncing = false;
+    this.isSyncing = false;
     this.initialSyncComplete = false;
     this.isSyncingNode = false;
     this.invCache = {};
@@ -148,7 +149,7 @@ export class P2pWorker {
         network: this.network,
         hash
       });
-      if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash) && !this.syncing) {
+      if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash) && !this.isSyncing) {
         this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, hash);
         this.processTransaction(message.transaction);
         this.events.emit('transaction', message.transaction);
@@ -169,10 +170,10 @@ export class P2pWorker {
       if (!blockInCache) {
         this.cacheInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
       }
-      if (this.isSyncingNode && (!blockInCache || this.syncing)) {
+      if (this.isSyncingNode && (!blockInCache || this.isSyncing)) {
         this.events.emit(hash, message.block);
         this.events.emit('block', message.block);
-        if (!this.syncing) {
+        if (!this.isSyncing) {
           this.sync();
         }
       }
@@ -189,7 +190,7 @@ export class P2pWorker {
     });
 
     this.pool.on('peerinv', (peer, message) => {
-      if (this.isSyncingNode && !this.syncing) {
+      if (this.isSyncingNode && !this.isSyncing) {
         const filtered = message.inventory.filter(inv => {
           const hash = this.bitcoreLib.encoding
             .BufferReader(inv.hash)
@@ -206,6 +207,7 @@ export class P2pWorker {
   }
 
   async connect() {
+    this.setupListeners();
     this.pool.connect();
     this.connectInterval = setInterval(this.pool.connect.bind(this.pool), 5000);
     return new Promise<void>(resolve => {
@@ -230,7 +232,7 @@ export class P2pWorker {
       });
       while (!received) {
         this.pool.sendMessage(this.messages.GetHeaders({ starts: candidateHashes }));
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await wait(1000);
       }
     });
   }
@@ -246,7 +248,7 @@ export class P2pWorker {
       });
       while (!received) {
         this.pool.sendMessage(this.messages.GetData.forBlock(hash));
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await wait(1000);
       }
     });
   }
@@ -286,11 +288,15 @@ export class P2pWorker {
     });
   }
 
+  async syncDone() {
+    return new Promise(resolve => this.events.once('SYNCDONE', resolve));
+  }
+
   async sync() {
-    if (this.syncing) {
-      return;
+    if (this.isSyncing) {
+      return false;
     }
-    this.syncing = true;
+    this.isSyncing = true;
     const { chain, chainConfig, network } = this;
     const { parentChain, forkHeight } = chainConfig;
     const state = await StateStorage.collection.findOne({});
@@ -301,9 +307,7 @@ export class P2pWorker {
       let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
       while (!parentTip || parentTip.height < forkHeight) {
         logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
-        await new Promise(resolve => {
-          setTimeout(resolve, 5000);
-        });
+        await wait(5000);
         parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
       }
     }
@@ -334,27 +338,31 @@ export class P2pWorker {
           }
         } catch (err) {
           logger.error(`Error syncing ${chain} ${network}`, err);
-          this.syncing = false;
+          this.isSyncing = false;
           return this.sync();
         }
       }
       headers = await getHeaders();
     }
     logger.info(`${chain}:${network} up to date.`);
-    this.syncing = false;
-    StateStorage.collection.findOneAndUpdate(
+    this.isSyncing = false;
+    await StateStorage.collection.findOneAndUpdate(
       {},
       { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
       { upsert: true }
     );
+    this.events.emit('SYNCDONE');
     return true;
   }
 
   async resync(from: number, to: number) {
     const { chain, network } = this;
     let currentHeight = Math.max(1, from);
-    this.syncing = true;
+    const originalSyncValue = this.isSyncing;
+    const originalSyncingNodeValue = this.isSyncingNode;
     while (currentHeight < to) {
+      this.isSyncing = true;
+      this.isSyncingNode = true;
       const locatorHashes = await ChainStateProvider.getLocatorHashes({
         chain,
         network,
@@ -386,51 +394,60 @@ export class P2pWorker {
         }
       }
     }
-    this.syncing = false;
+    this.isSyncing = originalSyncValue;
+    this.isSyncingNode = originalSyncingNodeValue;
   }
 
-  registerSyncingNode() {
-    this.syncingNodeHeartBeat = setInterval(async () => {
+  async registerSyncingNode() {
+    while (!this.stopping) {
       const syncingNode = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
       if (!syncingNode) {
-        return StateStorage.selfNominateSyncingNode({
+        StateStorage.selfNominateSyncingNode({
           chain: this.chain,
           network: this.network,
           lastHeartBeat: syncingNode
         });
+        continue;
       }
-      const [hostname, pid] = syncingNode.split(':');
-      const amSyncingNode = hostname === os.hostname() && pid === process.pid.toString();
+      const [hostname, pid, timestamp] = syncingNode.split(':');
+      const amSyncingNode =
+        hostname === os.hostname() && pid === process.pid.toString() && Date.now() - parseInt(timestamp) < 1000;
       if (amSyncingNode) {
-        StateStorage.selfNominateSyncingNode({ chain: this.chain, network: this.network, lastHeartBeat: syncingNode });
+        StateStorage.selfNominateSyncingNode({
+          chain: this.chain,
+          network: this.network,
+          lastHeartBeat: syncingNode
+        });
         if (!this.isSyncingNode) {
           logger.info(`This worker is now the syncing node for ${this.chain} ${this.network}`);
           this.isSyncingNode = true;
           this.sync();
         }
       } else {
-        setTimeout(() => {
-          StateStorage.selfNominateSyncingNode({
-            chain: this.chain,
-            network: this.network,
-            lastHeartBeat: syncingNode
-          });
-        }, 10000);
+        if (this.isSyncingNode) {
+          logger.info(`This worker is no longer syncing node for ${this.chain} ${this.network}`);
+          this.isSyncingNode = false;
+          await wait(100000);
+        }
+        await wait(10000);
+        StateStorage.selfNominateSyncingNode({
+          chain: this.chain,
+          network: this.network,
+          lastHeartBeat: syncingNode
+        });
       }
-    }, 500);
+      await wait(500);
+    }
   }
 
   async stop() {
+    this.stopping = true;
     logger.debug(`Stopping worker for chain ${this.chain}`);
     await this.disconnect();
-    if (this.syncingNodeHeartBeat) {
-      clearInterval(this.syncingNodeHeartBeat);
-    }
   }
 
   async start() {
     logger.debug(`Started worker for chain ${this.chain}`);
-    this.setupListeners();
     await this.connect();
     this.registerSyncingNode();
   }

@@ -3115,7 +3115,7 @@ WalletService.prototype._normalizeV8TxHistory = function(walletId, txs, bcHeight
         case 'move':
           ret.action = 'moved';
           ret.amount =  Math.abs(tx.satoshis);
-          ret.addressTo= tx.outputs ? tx.outputs[0].address : null;
+          ret.addressTo= tx.outputs && tx.outputs.length ? tx.outputs[0].address : null;
           ret.outputs= tx.outputs;
           break;
         default:
