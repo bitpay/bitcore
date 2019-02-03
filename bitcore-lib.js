@@ -10217,9 +10217,6 @@ Transaction.NLOCKTIME_MAX_VALUE = 4294967295;
 // Value used for fee estimation (satoshis per kilobyte)
 Transaction.FEE_PER_KB = 100000;
 
-// Value used for fee estimation (satoshis per byte)
-Transaction.FEE_PER_BYTE = 1;
-
 // Safe upper bound for change address script size in bytes
 Transaction.CHANGE_OUTPUT_MAX_SIZE = 20 + 4 + 34 + 4;
 Transaction.MAXIMUM_EXTRA_SIZE = 4 + 9 + 9 + 4;
@@ -11132,6 +11129,9 @@ Transaction.prototype._estimateFee = function () {
     return size * feeRate;
   }
   var noChangeFee = getFee(estimatedSize);
+  if (!this._changeScript) {
+    return noChangeFee;
+  }
   var changeFee = getFee(Transaction.CHANGE_OUTPUT_MAX_SIZE);
   if (available <= noChangeFee + changeFee) {
     return noChangeFee;
