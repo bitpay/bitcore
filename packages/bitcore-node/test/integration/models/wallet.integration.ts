@@ -125,7 +125,6 @@ describe('Wallet Model', function() {
             // Splice deletes elements from the original array newTxidList
             newTxidList.splice(foundIndex, 1);
             if (newTxidList.length === 0) {
-              await wait(10000);
               resolve();
             }
           }
@@ -154,10 +153,11 @@ describe('Wallet Model', function() {
       // Slice keeps txidList intact and creates a new array
       var newTxidList = txidList.slice();
 
-      await wait(10000);
       await sawEvents;
 
       expect(lastTxid).to.deep.equal(txidList[99]);
+
+      await wait(10000);
 
       const confirmTx = await TransactionStorage.collection
         .find({
