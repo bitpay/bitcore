@@ -107,7 +107,7 @@ describe('Wallet Model', function() {
       }
     });
 
-    it('should return correct coin and tx to verify 100 benchmark mempool tx, utxos stream, and wallet balance', async () => {
+    it('should return correct coin and tx to verify 50 benchmark mempool tx, utxos stream, and wallet balance', async () => {
       const p2pWorker = new P2pWorker({ chain, network, chainConfig });
       let txidList = new Array<string>();
       const value = 0.1;
@@ -120,11 +120,12 @@ describe('Wallet Model', function() {
       let sawEvents = new Promise(resolve => {
         Event.addressCoinEvent.on('coin', async addressCoin => {
           const { coin } = addressCoin;
-          if (newTxidList) {
+          if (newTxidList && txidList.length === 50) {
             let foundIndex = newTxidList.indexOf(coin.mintTxid);
             // Splice deletes elements from the original array newTxidList
             newTxidList.splice(foundIndex, 1);
             if (newTxidList.length === 0) {
+              await wait(5000);
               resolve();
             }
           }
@@ -140,24 +141,22 @@ describe('Wallet Model', function() {
         await rpc.generate(100);
       }
 
-      await rpc.generate(1);
+      await rpc.generate(10);
       await p2pWorker.syncDone();
       await wait(3000);
 
-      for (let i = 0; i < 100; i++) {
-        const sentTxId = await rpc.sendtoaddress(address1, value);
+      for (let i = 0; i < 50; i++) {
+        let sentTxId = await rpc.sendtoaddress(address1, value);
         lastTxid = sentTxId;
         txidList.push(sentTxId);
       }
 
       // Slice keeps txidList intact and creates a new array
       var newTxidList = txidList.slice();
-
       await sawEvents;
+      await wait(5000);
 
-      expect(lastTxid).to.deep.equal(txidList[99]);
-
-      await wait(10000);
+      expect(lastTxid).to.deep.equal(txidList[49]);
 
       const confirmTx = await TransactionStorage.collection
         .find({
@@ -166,6 +165,7 @@ describe('Wallet Model', function() {
           txid: { $in: txidList }
         })
         .toArray();
+
       for (let txid of txidList) {
         expect(confirmTx.map(tx => tx.txid)).to.include(txid);
         expect(confirmTx.map(tx => tx.chain).includes(chain)).to.be.true;
@@ -181,8 +181,7 @@ describe('Wallet Model', function() {
               network,
               mintTxid: { $in: txidList },
               address: address1,
-              mintHeight: { $in: confirmTx.map(tx => tx.blockHeight) },
-              spentHeight: -2
+              mintHeight: { $in: confirmTx.map(tx => tx.blockHeight) }
             })
             .toArray();
 
@@ -191,7 +190,6 @@ describe('Wallet Model', function() {
           expect(confirmCoin.map(tx => tx.network).includes(tx.network)).to.be.true;
           expect(confirmCoin.map(tx => tx.address).includes(address1)).to.be.true;
           expect(confirmCoin.map(tx => tx.mintHeight).includes(tx.blockHeight)).to.be.true;
-          expect(confirmCoin.map(tx => tx.spentHeight).includes(-2)).to.be.true;
         }
       }
 
@@ -202,17 +200,15 @@ describe('Wallet Model', function() {
         expect(coin).to.have.deep.property('chain', chain);
         expect(coin).to.have.deep.property('network', network);
         expect(coin).to.have.deep.property('address', address1);
-        expect(coin).to.have.deep.property('spentHeight', -2);
       });
 
       const getWalletBalance = await lockedWallet.getBalance(null);
       expect(getWalletBalance.confirmed).to.deep.equal(0);
-      expect(getWalletBalance.unconfirmed).to.deep.equal(value * 100 * 1e8);
+      expect(getWalletBalance.unconfirmed).to.deep.equal(value * 50 * 1e8);
       expect(getWalletBalance.balance).to.deep.equal(getWalletBalance.unconfirmed + getWalletBalance.confirmed);
 
       const { heapUsed } = process.memoryUsage();
       expect(heapUsed).to.be.below(3e8);
-
       await p2pWorker.stop();
     });
   });
