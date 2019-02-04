@@ -125,7 +125,7 @@ describe('Wallet Model', function() {
             // Splice deletes elements from the original array newTxidList
             newTxidList.splice(foundIndex, 1);
             if (newTxidList.length === 0) {
-              await wait(10000);
+              await wait(5000);
               resolve();
             }
           }
@@ -170,7 +170,6 @@ describe('Wallet Model', function() {
         expect(confirmTx.map(tx => tx.txid)).to.include(txid);
         expect(confirmTx.map(tx => tx.chain).includes(chain)).to.be.true;
         expect(confirmTx.map(tx => tx.network).includes(network)).to.be.true;
-        expect(confirmTx.length).to.deep.equal(txidList.length);
       }
 
       for (let tx of confirmTx) {
