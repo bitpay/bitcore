@@ -1579,8 +1579,6 @@ WalletService.prototype.getSendMaxInfo = function(opts, cb) {
         });
 
         var baseTxpSize = txp.getEstimatedSize();
-        var baseTxpFee = (Math.ceil(baseTxpSize / 1000) * 1000) * feePerKb / 1000;
-        // var sizePerInput = txp.getEstimatedSizeForSingleInput();
         var feePerInput = 0;
 
         var partitionedByAmount = _.partition(inputs, function(input) {
@@ -1592,7 +1590,7 @@ WalletService.prototype.getSendMaxInfo = function(opts, cb) {
         inputs = partitionedByAmount[0];
 
         _.each(inputs, function(input, i) {
-          var sizeInKb = (baseTxpSize + (i + 1) * sizePerInput) / 1000.;
+          var sizeInKb = (baseTxpSize + (i + 1)) / 1000.;
           if (sizeInKb > Defaults.MAX_TX_SIZE_IN_KB) {
             info.utxosAboveMaxSize = inputs.length - i;
             info.amountAboveMaxSize = _.sumBy(_.slice(inputs, i), 'satoshis');
