@@ -125,7 +125,7 @@ describe('Wallet Model', function() {
             // Splice deletes elements from the original array newTxidList
             newTxidList.splice(foundIndex, 1);
             if (newTxidList.length === 0) {
-              await wait(5000);
+              await wait(10000);
               resolve();
             }
           }
