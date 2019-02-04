@@ -167,11 +167,8 @@ describe('Wallet Model', function() {
         })
         .toArray();
 
-      for (let txid of txidList) {
-        expect(confirmTx.map(tx => tx.txid)).to.include(txid);
-        expect(confirmTx.map(tx => tx.chain).includes(chain)).to.be.true;
-        expect(confirmTx.map(tx => tx.network).includes(network)).to.be.true;
-      }
+      expect(confirmTx.map(tx => tx.chain).includes(chain)).to.be.true;
+      expect(confirmTx.map(tx => tx.network).includes(network)).to.be.true;
 
       for (let tx of confirmTx) {
         if (tx && tx.blockHeight) {
