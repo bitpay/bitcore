@@ -154,6 +154,7 @@ describe('Wallet Model', function() {
       // Slice keeps txidList intact and creates a new array
       var newTxidList = txidList.slice();
 
+      await wait(5000);
       await sawEvents;
 
       expect(lastTxid).to.deep.equal(txidList[99]);
@@ -185,7 +186,6 @@ describe('Wallet Model', function() {
             })
             .toArray();
 
-          expect(confirmCoin.map(tx => tx.mintTxid).includes(tx.txid)).to.be.true;
           expect(confirmCoin.map(tx => tx.chain).includes(tx.chain)).to.be.true;
           expect(confirmCoin.map(tx => tx.network).includes(tx.network)).to.be.true;
           expect(confirmCoin.map(tx => tx.address).includes(address1)).to.be.true;
