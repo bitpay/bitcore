@@ -112,24 +112,23 @@ describe('Wallet Model', function() {
       let txidList = new Array<string>();
       const value = 0.1;
       let lastTxid;
-      let setOnce = false;
-      let newTxidList = new Array<string>();
-      let updatedList = new Array<string>();
 
+      /**
+       * Gets a stream of coins then splices each index of coin txid in newTxidList
+       * addressCoinEvent stream does not return coins in order of creation
+       */
       let sawEvents = new Promise(resolve => {
         Event.addressCoinEvent.on('coin', async addressCoin => {
           const { coin } = addressCoin;
-          if (setOnce) {
-            newTxidList = txidList.map(e => e);
-            setOnce = true;
+          if (newTxidList) {
+            let foundIndex = newTxidList.indexOf(coin.mintTxid);
+            // Splice deletes elements from the original array newTxidList
+            newTxidList.splice(foundIndex, 1);
+            if (newTxidList.length === 0) {
+              await wait(10000);
+              resolve();
+            }
           }
-          const foundIndex = newTxidList.indexOf(coin.mintTxid);
-          updatedList = newTxidList.slice(foundIndex, 1);
-          console.log(updatedList.length);
-          // if (notSeen.length === 0) {
-          await wait(20000);
-          resolve();
-          // }
         });
       });
 
@@ -151,6 +150,9 @@ describe('Wallet Model', function() {
         lastTxid = sentTxId;
         txidList.push(sentTxId);
       }
+
+      // Slice keeps txidList intact and creates a new array
+      var newTxidList = txidList.slice();
 
       await sawEvents;
 
@@ -204,7 +206,6 @@ describe('Wallet Model', function() {
       });
 
       const getWalletBalance = await lockedWallet.getBalance(null);
-      console.log(getWalletBalance);
       expect(getWalletBalance.confirmed).to.deep.equal(0);
       expect(getWalletBalance.unconfirmed).to.deep.equal(value * 100 * 1e8);
       expect(getWalletBalance.balance).to.deep.equal(getWalletBalance.unconfirmed + getWalletBalance.confirmed);
