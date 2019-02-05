@@ -59,8 +59,9 @@ export class Wallet {
   }
 
   saveWallet() {
-    this.lock();
-    return this.storage.saveWallet({ wallet: this });
+    const walletInstance = Object.assign({}, this);
+    delete walletInstance.unlocked;
+    return this.storage.saveWallet({ wallet: walletInstance });
   }
 
   static async create(params: Partial<Wallet.WalletObj>) {
@@ -128,7 +129,7 @@ export class Wallet {
       name
     });
     console.log(mnemonic.toString());
-    await loadedWallet.register({baseUrl}).catch(e => {
+    await loadedWallet.register({ baseUrl }).catch(e => {
       console.debug(e);
       console.error('Failed to register wallet with bitcore-node.');
     });
@@ -169,6 +170,7 @@ export class Wallet {
 
   lock() {
     this.unlocked = undefined;
+    return this;
   }
 
   async unlock(password) {
@@ -331,7 +333,7 @@ export class Wallet {
   }
 
   async deriveAddress(isChange) {
-    this.addressIndex = (this.addressIndex || 0);
+    this.addressIndex = this.addressIndex || 0;
     const address = AddressProvider.derive(
       this.chain,
       this.network,
