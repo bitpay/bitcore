@@ -1,0 +1,11 @@
+import { Wallet } from './wallet';
+import { Storage } from './storage';
+import TxProvider from './providers/tx-provider';
+<<<<<<< HEAD
+import { Client } from "./client";
+export { Wallet, TxProvider, Client, Storage };
+=======
+import { Client } from './client';
+import { ParseApiStream } from './stream-util';
+export { Wallet, TxProvider, Client, ParseApiStream };
+>>>>>>> 967fb6d5a71bd98c8aa4742f8a6802c36c0b5750

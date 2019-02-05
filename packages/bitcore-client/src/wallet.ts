@@ -2,10 +2,11 @@ import * as Bcrypt from 'bcryptjs';
 import { Encryption } from './encryption';
 import { Client } from './client';
 import { Storage } from './storage';
+import { Request } from 'request';
 import TxProvider from './providers/tx-provider';
-import { ParseApiStream } from './stream-util';
-const Mnemonic = require('bitcore-mnemonic');
+import { AddressProvider } from './providers/address-provider/deriver';
 const { PrivateKey } = require('bitcore-lib');
+const Mnemonic = require('bitcore-mnemonic');
 
 export namespace Wallet {
   export type KeyImport = {
@@ -36,8 +37,10 @@ export class Wallet {
   encryptionKey: string;
   authPubKey: string;
   pubKey: string;
+  xPubKey: string;
   name: string;
   path: string;
+  addressIndex: number;
   authKey: string;
   derivationPath: string;
 
@@ -110,6 +113,7 @@ export class Wallet {
       encryptionKey,
       authKey,
       authPubKey,
+      addressIndex: 0,
       masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
       xPubKey: hdPubKey.xpubkey,
@@ -284,11 +288,12 @@ export class Wallet {
     let { tx } = params;
     const utxos = params.utxos || [];
     if (!params.utxos) {
-      this.getUtxos(params)
-        .pipe(new ParseApiStream())
-        .on('data', data => {
-          utxos.push(data);
-        });
+      this.getUtxos(params).on('data', data => {
+        const stringData = data.toString().replace(',\n', '');
+        if (stringData.includes('{') && stringData.includes('}')) {
+          utxos.push(JSON.parse(stringData));
+        }
+      });
     }
     const payload = {
       chain: this.chain,
@@ -321,5 +326,19 @@ export class Wallet {
     return this.client.getAddresses({
       pubKey: this.authPubKey
     });
+  }
+
+  async deriveAddress(isChange) {
+    this.addressIndex = (this.addressIndex || 0);
+    const address = AddressProvider.derive(
+      this.chain,
+      this.network,
+      this.xPubKey,
+      this.addressIndex,
+      isChange
+    );
+    this.addressIndex++;
+    this.saveWallet();
+    return address;
   }
 }
