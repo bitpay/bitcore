@@ -22,7 +22,7 @@ export class AddressPage {
   private addrStr: string;
   private chainNetwork: ChainNetwork;
   public address: any = {};
-  public nroTransactions: number = 0;
+  public nroTransactions = 0;
 
   constructor(
     public navParams: NavParams,
@@ -46,7 +46,8 @@ export class AddressPage {
       network
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
-    this.priceProvider.setCurrency(this.chainNetwork.chain);
+    const currentCurrency = localStorage.getItem('insight-currency');
+    this.priceProvider.setCurrency(currentCurrency);
 
     this.events.subscribe('CoinList', (d: any) => {
       this.nroTransactions = d.length;
