@@ -318,6 +318,24 @@ export class WalletContainer extends Component<Props, State> {
                 <Button onClick={this.handleDeriveAddressClick}>Derive</Button>
               </Input>
             </div>
+
+            <div>
+              <Input
+                type="text"
+                placeholder="Address"
+                value={this.state.addressToAdd}
+                action
+                fluid
+                onChange={this.handleAddressChange}
+              >
+                <input />
+              </Input>
+              <Input labelPosition="right" type="text" placeholder="Amount">
+                <Label basic>BTC</Label>
+                <input />
+                <Button primary>Send</Button>
+              </Input>
+            </div>
           </Card.Content>
         </Card>
       </div>
