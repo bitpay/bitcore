@@ -13,7 +13,8 @@ import {
   List,
   Input,
   Select,
-  Divider
+  Divider,
+  Header
 } from 'semantic-ui-react';
 
 import './wallet.css';
@@ -127,7 +128,7 @@ export class WalletContainer extends Component<Props, State> {
         if (foundIndex > -1) {
           prevTx[foundIndex] = d;
         } else {
-          prevTx.push(d);
+          prevTx = [d, ...prevTx.slice(0, 4)];
         }
         this.setState({ transactions: prevTx });
       });
@@ -232,24 +233,43 @@ export class WalletContainer extends Component<Props, State> {
         <Card fluid>
           <Card.Content>
             <Link to={'/'}>
-              <Icon name="angle left" size="small" />
+              <Icon name="angle left" size="large" />
             </Link>
-            <h1> {this.state.walletName} </h1>
-            <Card.Meta>
-              {this.state.wallet
-                ? `${this.state.wallet.chain} ${this.state.wallet.network}`
-                : ''}
-            </Card.Meta>
-            <Label>
-              Balance:
-              <Label.Detail>{this.state.balance.balance}</Label.Detail>
-            </Label>
+            <Header as="h1" textAlign="center">
+              {this.state.walletName}
+              <Header.Subheader>
+                {this.state.wallet
+                  ? `${this.state.wallet.chain} ${this.state.wallet.network}`
+                  : ''}
+              </Header.Subheader>
+            </Header>
             {this.state.balance.unconfirmed ? (
-              <Label>
-                Unconfirmed:
-                <Label.Detail>{this.state.balance.unconfirmed}</Label.Detail>
-              </Label>
-            ) : null}
+              <div>
+                <Header as="h2" floated="left">
+                  <Label>
+                    Balance:
+                    <Label.Detail>{this.state.balance.balance}</Label.Detail>
+                  </Label>
+                </Header>
+                <Header as="h2" floated="right">
+                  <Label>
+                    Unconfirmed:
+                    <Label.Detail>
+                      {this.state.balance.unconfirmed}
+                    </Label.Detail>
+                  </Label>
+                </Header>
+              </div>
+            ) : (
+              <Header as="h2" textAlign="center">
+                <Label>
+                  Balance:
+                  <Label.Detail>
+                    {this.state.balance.balance / 1e8}
+                  </Label.Detail>
+                </Label>
+              </Header>
+            )}
           </Card.Content>
           <Card.Content>
             <h1> Transactions </h1>
