@@ -16,9 +16,16 @@ import {
 } from 'semantic-ui-react';
 
 import './wallet.css';
+import io from 'socket.io-client';
+import { any } from 'prop-types';
 
 const API_URL =
   process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
+
+const socket = io.connect(
+  'http://localhost:3000',
+  { transports: ['websocket'] }
+);
 
 interface Props extends RouteComponentProps<{ name: string }> {}
 interface State {
@@ -53,9 +60,14 @@ export class WalletContainer extends Component<Props, State> {
   }
 
   async componentDidMount() {
+    socket.on('connect', () => {
+      console.log('Connected to socket');
+      socket.emit('room', '/BTC/regtest/inv');
+    });
     const name = this.props.match.params.name;
     this.setState({ walletName: name });
     const wallet = await this.loadWallet(name);
+    wallet!.register({ baseUrl: 'http://localhost:3000/api' });
     this.setState({ wallet });
     if (wallet) {
       console.log('Using bitcore-node at ', wallet.baseUrl);
@@ -66,9 +78,17 @@ export class WalletContainer extends Component<Props, State> {
   }
 
   async fetchTransactions(wallet: Wallet) {
-    wallet.listTransactions({}).pipe(new ParseApiStream())
-    .on('data', d => {
-          this.setState({ transactions: [...this.state.transactions, d] });
+    wallet
+      .listTransactions({})
+      .pipe(new ParseApiStream())
+      .on('data', d => {
+        this.setState({ transactions: [...this.state.transactions, d] });
+      });
+    socket.on('tx', async (sanitizedTx: any) => {
+      this.setState({
+        transactions: [...this.state.transactions, sanitizedTx]
+      });
+      await this.updateBalance(wallet);
     });
   }
 
@@ -154,14 +174,16 @@ export class WalletContainer extends Component<Props, State> {
             <div>
               {this.state.transactions.length ? (
                 this.state.transactions.map(t => (
-                  <div key={t.id}>
+                  <div key={t.txid}>
                     <a
                       href={`${API_URL}/${this.state.wallet!.chain}/${
                         this.state.wallet!.network
                       }/tx/${t.txid}`}
                     >
-                      {t.height > 0 ? `Block: ${t.height}` : 'Mempool:'}{' '}
-                      {t.category} {t.satoshis} Satoshis
+                      {t.blockHeight > 0
+                        ? `Block: ${t.blockHeight}`
+                        : 'Mempool:'}{' '}
+                      {t.value / 1e8} BTC
                     </a>
                   </div>
                 ))
@@ -174,11 +196,7 @@ export class WalletContainer extends Component<Props, State> {
             <h1> Addresses </h1>
             <div>
               {this.state.addresses.length ? (
-                this.state.addresses.map(a => (
-                  <div key={a}>
-                    {a}
-                  </div>
-                ))
+                this.state.addresses.map(a => <div key={a}>{a}</div>)
               ) : (
                 <i>No Addresses</i>
               )}
