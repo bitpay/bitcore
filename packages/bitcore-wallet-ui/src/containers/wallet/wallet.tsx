@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { ParseApiStream, Wallet, Storage } from 'bitcore-client';
 import { RouteComponentProps } from 'react-router';
+import { Link } from 'react-router-dom';
 import {
   Icon,
   Segment,
@@ -18,6 +19,10 @@ import {
 import './wallet.css';
 import io from 'socket.io-client';
 import { any } from 'prop-types';
+import Snackbar from '@material-ui/core/Snackbar';
+import IconButton from '@material-ui/core/IconButton';
+import CloseIcon from '@material-ui/icons/Close';
+import PropTypes from 'prop-types';
 
 const API_URL =
   process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
@@ -36,6 +41,8 @@ interface State {
   transactions: any[];
   addresses: string[];
   addressToAdd: string;
+  message: string;
+  open: boolean;
 }
 
 export class WalletContainer extends Component<Props, State> {
@@ -49,7 +56,9 @@ export class WalletContainer extends Component<Props, State> {
     },
     transactions: [],
     addresses: [],
-    addressToAdd: ''
+    addressToAdd: '',
+    message: '',
+    open: false
   };
 
   constructor(props: Props) {
@@ -71,26 +80,65 @@ export class WalletContainer extends Component<Props, State> {
     this.setState({ wallet });
     if (wallet) {
       console.log('Using bitcore-node at ', wallet.baseUrl);
-      await this.fetchTransactions(wallet);
+      await this.handleGetTx(wallet);
+      await this.handleGetBlock(wallet);
+      await this.updateWalletInfo(wallet);
       await this.fetchAddresses(wallet);
-      await this.updateBalance(wallet);
     }
+  }
+  async updateWalletInfo(wallet: Wallet) {
+    await this.fetchTransactions(wallet);
+    await this.updateBalance(wallet);
+  }
+
+  handleGetTx(wallet: Wallet) {
+    socket.on('tx', async (sanitizedTx: any) => {
+      let message = `Recieved ${sanitizedTx.value /
+        100000000} BTC at ${new Date(
+        sanitizedTx.blockTimeNormalized
+      ).toLocaleString()}`;
+      this.setState({
+        message,
+        open: true
+      });
+      this.updateWalletInfo(wallet);
+    });
+  }
+
+  handleGetBlock(wallet: Wallet) {
+    socket.on('block', (block: any) => {
+      let message = `Recieved Block Reward ${block.reward /
+        100000000} BTC at ${new Date(block.time).toLocaleString()}`;
+      this.setState({
+        message,
+        open: true
+      });
+      this.updateWalletInfo(wallet);
+    });
   }
 
   async fetchTransactions(wallet: Wallet) {
     wallet
       .listTransactions({})
       .pipe(new ParseApiStream())
-      .on('data', d => {
-        this.setState({ transactions: [...this.state.transactions, d] });
+      .on('data', (d: any) => {
+        let prevTx = this.state.transactions;
+        const foundIndex = prevTx.findIndex(t => t.id === d.id);
+        if (foundIndex > -1) {
+          prevTx[foundIndex] = d;
+        } else {
+          prevTx.push(d);
+        }
+        this.setState({ transactions: prevTx });
       });
-    socket.on('tx', async (sanitizedTx: any) => {
-      this.setState({
-        transactions: [...this.state.transactions, sanitizedTx]
-      });
-      await this.updateBalance(wallet);
-    });
   }
+
+  handleClose = (reason: any) => {
+    if (reason === 'clickaway') {
+      return;
+    }
+    this.setState({ open: false });
+  };
 
   async fetchAddresses(wallet: Wallet) {
     wallet
@@ -155,9 +203,43 @@ export class WalletContainer extends Component<Props, State> {
   render() {
     return (
       <div className="walletContainer">
+        <Snackbar
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left'
+          }}
+          open={this.state.open}
+          autoHideDuration={6000}
+          onClose={this.handleClose}
+          ContentProps={{
+            'aria-describedby': 'message-id'
+          }}
+          message={<span id="message-id">{this.state.message}</span>}
+          action={[
+            <Button key="undo" size="small" onClick={this.handleClose}>
+              UNDO
+            </Button>,
+            <IconButton
+              key="close"
+              aria-label="Close"
+              color="inherit"
+              onClick={this.handleClose}
+            >
+              <CloseIcon />
+            </IconButton>
+          ]}
+        />
         <Card fluid>
           <Card.Content>
+            <Link to={'/'}>
+              <Icon name="angle left" size="small" />
+            </Link>
             <h1> {this.state.walletName} </h1>
+            <Card.Meta>
+              {this.state.wallet
+                ? `${this.state.wallet.chain} ${this.state.wallet.network}`
+                : ''}
+            </Card.Meta>
             <Label>
               Balance:
               <Label.Detail>{this.state.balance.balance}</Label.Detail>
@@ -180,10 +262,8 @@ export class WalletContainer extends Component<Props, State> {
                         this.state.wallet!.network
                       }/tx/${t.txid}`}
                     >
-                      {t.blockHeight > 0
-                        ? `Block: ${t.blockHeight}`
-                        : 'Mempool:'}{' '}
-                      {t.value / 1e8} BTC
+                      {t.height > 0 ? `Block: ${t.height}` : 'Mempool:'}{' '}
+                      {t.value / 1e8 || t.satoshis / 1e8} BTC
                     </a>
                   </div>
                 ))
