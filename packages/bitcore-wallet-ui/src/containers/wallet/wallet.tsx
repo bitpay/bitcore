@@ -58,6 +58,7 @@ export class WalletContainer extends Component<Props, State> {
     const wallet = await this.loadWallet(name);
     this.setState({ wallet });
     if (wallet) {
+      console.log('Using bitcore-node at ', wallet.baseUrl);
       await this.fetchTransactions(wallet);
       await this.fetchAddresses(wallet);
       await this.updateBalance(wallet);
@@ -139,6 +140,7 @@ export class WalletContainer extends Component<Props, State> {
   async handleDeriveAddressClick() {
     const address = await this.state.wallet!.deriveAddress(0);
     console.log(address);
+    this.setState({ addressToAdd: address });
   }
 
   render() {
@@ -200,9 +202,7 @@ export class WalletContainer extends Component<Props, State> {
                 <Button primary onClick={this.handleAddAddressClick}>
                   Add
                 </Button>
-                <Button onClick={this.handleDeriveAddressClick}>
-                  Derive
-                </Button>
+                <Button onClick={this.handleDeriveAddressClick}>Derive</Button>
               </Input>
             </div>
           </Card.Content>

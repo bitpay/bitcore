@@ -28,6 +28,7 @@ export namespace Wallet {
 export class Wallet {
   masterKey: any;
   baseUrl: string;
+  apiUrl: string;
   chain: string;
   network: string;
   client: Client;
@@ -47,12 +48,12 @@ export class Wallet {
   constructor(params: Wallet | Wallet.WalletObj) {
     Object.assign(this, params);
     if (this.baseUrl) {
-      this.baseUrl = `${this.baseUrl}/${this.chain}/${this.network}`;
+      this.apiUrl = `${this.baseUrl}/${this.chain}/${this.network}`;
     } else {
-      this.baseUrl = `https://api.bitcore.io/api/${this.chain}/${this.network}`;
+      this.apiUrl = `https://api.bitcore.io/api/${this.chain}/${this.network}`;
     }
     this.client = new Client({
-      baseUrl: this.baseUrl,
+      baseUrl: this.apiUrl,
       authKey: this.getAuthSigningKey()
     });
   }
@@ -338,7 +339,7 @@ export class Wallet {
       isChange
     );
     this.addressIndex++;
-    this.saveWallet();
+    await this.saveWallet();
     return address;
   }
 }
