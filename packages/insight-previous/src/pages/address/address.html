@@ -6,7 +6,7 @@
   </div>
 
   <div *ngIf="!loading" class="page-content">
-    <h1>Address <small>{{ getBalance() | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}</small></h1>
+    <h1>Address <small>{{ getConvertedNumber(address.balance) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}</small></h1>
     <p class="ellipsis">{{ address.addrStr }}</p>
     
     <h2>Summary</h2>
@@ -17,13 +17,19 @@
             <ion-item>
               Confirmed Balance
               <ion-note item-end>
-                {{ getConfirmedBalance() | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+                {{ getConvertedNumber(address.confirmed) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
               </ion-note>
             </ion-item>
             <ion-item *ngIf="address.unconfirmed > 0">
               Unconfirmed Balance
               <ion-note item-end>
-                {{ getUnconfirmedBalance() | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+                {{ getConvertedNumber(address.unconfirmed) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+              </ion-note>
+            </ion-item>
+            <ion-item *ngIf="nroTransactions > 0">
+              Nro. Transactions
+              <ion-note item-end>
+                {{ nroTransactions }}
               </ion-note>
             </ion-item>
           </ion-list>

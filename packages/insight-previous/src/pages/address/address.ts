@@ -1,5 +1,5 @@
 import { Component, Injectable } from '@angular/core';
-import { IonicPage, NavParams } from 'ionic-angular';
+import { Events, IonicPage, NavParams } from 'ionic-angular';
 import { AddressProvider } from '../../providers/address/address';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
@@ -22,6 +22,7 @@ export class AddressPage {
   private addrStr: string;
   private chainNetwork: ChainNetwork;
   public address: any = {};
+  public nroTransactions: number = 0;
 
   constructor(
     public navParams: NavParams,
@@ -30,7 +31,8 @@ export class AddressPage {
     public txProvider: TxsProvider,
     private logger: Logger,
     private priceProvider: PriceProvider,
-    private addrProvider: AddressProvider
+    private addrProvider: AddressProvider,
+    private events: Events
   ) {
     this.addrStr = navParams.get('addrStr');
 
@@ -45,9 +47,13 @@ export class AddressPage {
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
     this.priceProvider.setCurrency(this.chainNetwork.chain);
+
+    this.events.subscribe('CoinList', (d: any) => {
+      this.nroTransactions = d.length;
+    });
   }
 
-  public ionViewDidLoad(): void {
+  public ionViewWillLoad(): void {
     this.addrProvider.getAddressBalance(this.addrStr).subscribe(
       data => {
         this.address = {
@@ -64,15 +70,7 @@ export class AddressPage {
     );
   }
 
-  public getBalance(): number {
-    return this.currencyProvider.getConvertedNumber(this.address.balance);
-  }
-
-  public getConfirmedBalance(): number {
-    return this.currencyProvider.getConvertedNumber(this.address.confirmed);
-  }
-
-  public getUnconfirmedBalance(): number {
-    return this.currencyProvider.getConvertedNumber(this.address.unconfirmed);
+  public getConvertedNumber(n: number): number {
+    return this.currencyProvider.getConvertedNumber(n);
   }
 }
