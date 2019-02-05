@@ -73,7 +73,6 @@ export class WalletContainer extends Component<Props, State> {
         .split('\n');
       for (const jsonTx of jsonTxs) {
         if (jsonTx.startsWith('{') && jsonTx.endsWith('}')) {
-          console.log(jsonTx);
           const parsed = JSON.parse(jsonTx);
           this.setState({ transactions: [...this.state.transactions, parsed] });
         }
@@ -86,7 +85,6 @@ export class WalletContainer extends Component<Props, State> {
       .getAddresses()
       .pipe(new ParseApiStream())
       .on('data', (d: any) => {
-        console.log(d);
         let addresses = [];
         if (Array.isArray(d)) {
           addresses = d;
@@ -139,7 +137,6 @@ export class WalletContainer extends Component<Props, State> {
 
   async handleDeriveAddressClick() {
     const address = await this.state.wallet!.deriveAddress(0);
-    console.log(address);
     this.setState({ addressToAdd: address });
   }
 

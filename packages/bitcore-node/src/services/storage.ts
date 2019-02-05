@@ -134,7 +134,7 @@ export class StorageService {
           // there was no data
           res.write('[]');
         } else {
-          res.write(']');
+          res.write('\n]');
         }
         res.end();
       }
