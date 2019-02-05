@@ -128,7 +128,8 @@ export class WalletContainer extends Component<Props, State> {
         if (foundIndex > -1) {
           prevTx[foundIndex] = d;
         } else {
-          prevTx = [d, ...prevTx.slice(0, 4)];
+          prevTx.push(d);
+          // prevTx = [d, ...prevTx.slice(0, 4)];
         }
         this.setState({ transactions: prevTx });
       });
