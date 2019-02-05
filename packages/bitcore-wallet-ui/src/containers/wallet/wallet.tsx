@@ -28,9 +28,12 @@ import PropTypes from 'prop-types';
 const API_URL =
   process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
 
-const socket = io.connect('http://localhost:3000', {
-  transports: ['websocket']
-});
+const socket = io.connect(
+  'http://localhost:3000',
+  {
+    transports: ['websocket']
+  }
+);
 
 interface Props extends RouteComponentProps<{ name: string }> {}
 interface State {
@@ -348,7 +351,9 @@ export class WalletContainer extends Component<Props, State> {
                 <Button onClick={this.handleDeriveAddressClick}>Derive</Button>
               </Input>
             </div>
-
+          </Card.Content>
+          <Card.Content>
+            <h1> Send </h1>
             <div>
               <Input
                 type="text"
@@ -360,8 +365,14 @@ export class WalletContainer extends Component<Props, State> {
               >
                 <input />
               </Input>
-              <Input labelPosition="right" type="text" placeholder="Amount">
-                <Label basic>BTC</Label>
+              <Input
+                type="text"
+                fluid
+                action
+                labelPosition="left"
+                placeholder="Amount"
+              >
+                <Label>{wallet ? wallet.chain : null}</Label>
                 <input />
                 <Button primary>Send</Button>
               </Input>
