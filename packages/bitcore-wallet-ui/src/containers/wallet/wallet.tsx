@@ -66,17 +66,9 @@ export class WalletContainer extends Component<Props, State> {
   }
 
   async fetchTransactions(wallet: Wallet) {
-    wallet.listTransactions({}).on('data', d => {
-      const jsonTxs = d
-        .toString()
-        .trim()
-        .split('\n');
-      for (const jsonTx of jsonTxs) {
-        if (jsonTx.startsWith('{') && jsonTx.endsWith('}')) {
-          const parsed = JSON.parse(jsonTx);
-          this.setState({ transactions: [...this.state.transactions, parsed] });
-        }
-      }
+    wallet.listTransactions({}).pipe(new ParseApiStream())
+    .on('data', d => {
+          this.setState({ transactions: [...this.state.transactions, d] });
     });
   }
 
