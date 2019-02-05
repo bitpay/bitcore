@@ -64,7 +64,7 @@ export class Wallet {
   }
 
   static async create(params: Partial<Wallet.WalletObj>) {
-    const { chain, network, name, phrase, password, path } = params;
+    const { chain, network, name, phrase, password, path, baseUrl } = params;
     let { storage } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
@@ -114,6 +114,7 @@ export class Wallet {
       encryptionKey,
       authKey,
       authPubKey,
+      baseUrl,
       addressIndex: 0,
       masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
@@ -127,7 +128,7 @@ export class Wallet {
       name
     });
     console.log(mnemonic.toString());
-    await loadedWallet.register().catch(e => {
+    await loadedWallet.register({baseUrl}).catch(e => {
       console.debug(e);
       console.error('Failed to register wallet with bitcore-node.');
     });
@@ -197,7 +198,7 @@ export class Wallet {
 
   async register(params: { baseUrl?: string } = {}) {
     const { baseUrl } = params;
-    let registerBaseUrl = this.baseUrl;
+    let registerBaseUrl = this.apiUrl;
     if (baseUrl) {
       // save the new url without chain and network
       // then use the new url with chain and network below
