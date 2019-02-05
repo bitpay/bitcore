@@ -185,7 +185,11 @@ export class WalletContainer extends Component<Props, State> {
             <h1> Addresses </h1>
             <div>
               {this.state.addresses.length ? (
-                this.state.addresses
+                this.state.addresses.map(a => (
+                  <div key={a}>
+                    {a}
+                  </div>
+                ))
               ) : (
                 <i>No Addresses</i>
               )}
@@ -194,6 +198,7 @@ export class WalletContainer extends Component<Props, State> {
               <Input
                 type="text"
                 placeholder="Address"
+                value={this.state.addressToAdd}
                 action
                 fluid
                 onChange={this.handleAddressChange}
