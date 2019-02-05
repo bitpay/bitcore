@@ -27,10 +27,9 @@ import PropTypes from 'prop-types';
 const API_URL =
   process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
 
-const socket = io.connect(
-  'http://localhost:3000',
-  { transports: ['websocket'] }
-);
+const socket = io.connect('http://localhost:3000', {
+  transports: ['websocket']
+});
 
 interface Props extends RouteComponentProps<{ name: string }> {}
 interface State {
@@ -47,7 +46,7 @@ interface State {
 
 export class WalletContainer extends Component<Props, State> {
   state: State = {
-    password: 'iamsatoshi',
+    password: '',
     walletName: '',
     balance: {
       confirmed: 0,
@@ -66,6 +65,8 @@ export class WalletContainer extends Component<Props, State> {
     this.handleAddressChange = this.handleAddressChange.bind(this);
     this.handleAddAddressClick = this.handleAddAddressClick.bind(this);
     this.handleDeriveAddressClick = this.handleDeriveAddressClick.bind(this);
+    this.handlePasswordChange = this.handlePasswordChange.bind(this);
+    this.handleLockToggle = this.handleLockToggle.bind(this);
   }
 
   async componentDidMount() {
@@ -163,10 +164,14 @@ export class WalletContainer extends Component<Props, State> {
   }
 
   async importAddresses(address: string) {
-    const unlockedWallet = await this.state.wallet!.unlock(this.state.password);
-    await unlockedWallet.importKeys({
-      keys: [{ address: this.state.addressToAdd }]
-    });
+    let wallet = this.state.wallet;
+    if (wallet) {
+      if (wallet && wallet.unlocked) {
+        await wallet.importKeys({
+          keys: [{ address: this.state.addressToAdd }]
+        });
+      }
+    }
   }
 
   async loadWallet(name: string) {
@@ -188,6 +193,25 @@ export class WalletContainer extends Component<Props, State> {
   handleAddressChange(event: React.ChangeEvent<HTMLInputElement>) {
     this.setState({ addressToAdd: event.target.value });
   }
+
+  handlePasswordChange(event: React.ChangeEvent<HTMLInputElement>) {
+    this.setState({ password: event.target.value });
+  }
+
+  async handleLockToggle() {
+    if (this.state.wallet) {
+      console.log(this.state.wallet.unlocked);
+      if (this.state.wallet.unlocked) {
+        const locked = await this.state.wallet.lock();
+        await this.setState({ wallet: locked });
+      } else {
+        console.log('unlocking wallet');
+        const unlocked = await this.state.wallet.unlock(this.state.password);
+        await this.setState({ wallet: unlocked });
+      }
+    }
+  }
+
   async handleAddAddressClick() {
     this.setState({
       addresses: [...this.state.addresses, this.state.addressToAdd]
@@ -201,6 +225,8 @@ export class WalletContainer extends Component<Props, State> {
   }
 
   render() {
+    const wallet = this.state.wallet;
+    const walletUnlocked = wallet && wallet.unlocked;
     return (
       <div className="walletContainer">
         <Snackbar
@@ -290,13 +316,33 @@ export class WalletContainer extends Component<Props, State> {
                 fluid
                 onChange={this.handleAddressChange}
               >
-                <input />
-                <Button primary onClick={this.handleAddAddressClick}>
+                <input data-lpignore="true" />
+                <Button
+                  disabled={!walletUnlocked}
+                  primary
+                  onClick={this.handleAddAddressClick}
+                >
                   Add
                 </Button>
                 <Button onClick={this.handleDeriveAddressClick}>Derive</Button>
               </Input>
             </div>
+          </Card.Content>
+          <Card.Content>
+            <h1>Security</h1>
+            <Input
+              type="password"
+              placeholder="Wallet Password"
+              value={this.state.password}
+              action
+              fluid
+              onChange={this.handlePasswordChange}
+            >
+              <input />
+              <Button onClick={this.handleLockToggle}>
+                <Icon name={walletUnlocked ? 'unlock' : 'lock'} />
+              </Button>
+            </Input>
           </Card.Content>
         </Card>
       </div>
