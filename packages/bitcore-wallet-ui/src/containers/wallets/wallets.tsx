@@ -25,6 +25,7 @@ interface State {
   selectedNetwork: string;
   newWalletName: string;
   newWalletPassword: string;
+  mnemonic?: string;
   wallet?: Wallet;
   wallets: Wallet[];
 }
@@ -51,6 +52,7 @@ export class WalletsContainer extends Component<Props, State> {
     this.handleWalletPasswordChange = this.handleWalletPasswordChange.bind(
       this
     );
+    this.handleWalletMnemonicChange = this.handleWalletMnemonicChange.bind(this);
     this.handleCreateWalletClick = this.handleCreateWalletClick.bind(this);
   }
 
@@ -96,10 +98,7 @@ export class WalletsContainer extends Component<Props, State> {
 
   walletListItemComponent(wallet: Wallet) {
     return (
-      <List.Item
-        key={wallet.name}
-        className="walletListItemContainer"
-      >
+      <List.Item key={wallet.name} className="walletListItemContainer">
         <Grid columns={6} relaxed>
           <Grid.Column width={1}>
             <List.Icon
@@ -145,6 +144,7 @@ export class WalletsContainer extends Component<Props, State> {
       password: this.state.newWalletPassword,
       chain: this.state.selectedChain,
       network: this.state.selectedNetwork,
+      phrase: this.state.mnemonic,
       baseUrl: API_URL
     });
     this.addWalletToState(wallet);
@@ -168,6 +168,10 @@ export class WalletsContainer extends Component<Props, State> {
 
   handleWalletPasswordChange(event: React.ChangeEvent<HTMLInputElement>) {
     this.setState({ newWalletPassword: event.target.value });
+  }
+
+  handleWalletMnemonicChange(event: React.ChangeEvent<HTMLInputElement>) {
+    this.setState({ mnemonic: event.target.value });
   }
   walletCreateComponent() {
     const options = [
@@ -204,6 +208,13 @@ export class WalletsContainer extends Component<Props, State> {
           type="text"
           placeholder="Wallet Password"
           onChange={this.handleWalletPasswordChange}
+        />
+
+        <Input
+          fluid
+          type="text"
+          placeholder="Mnemonic"
+          onChange={this.handleWalletMnemonicChange}
         />
         <div>
           <Select

@@ -72,7 +72,7 @@ export class Wallet {
     }
     // Generate wallet private keys
     const mnemonic = new Mnemonic(phrase);
-    const hdPrivKey = mnemonic.toHDPrivateKey(password);
+    const hdPrivKey = mnemonic.toHDPrivateKey();
     const privKeyObj = hdPrivKey.toObject();
 
     // Generate authentication keys
@@ -80,7 +80,8 @@ export class Wallet {
     const authPubKey = authKey.toPublicKey().toString();
 
     // Generate public keys
-    const hdPubKey = hdPrivKey.hdPublicKey;
+    // bip44 compatible pubKey
+    const hdPubKey = hdPrivKey.derive(AddressProvider.pathFor(chain, network));
     const pubKey = hdPubKey.publicKey.toString();
 
     // Generate and encrypt the encryption key and private key

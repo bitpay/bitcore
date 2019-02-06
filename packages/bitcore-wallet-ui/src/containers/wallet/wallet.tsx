@@ -222,6 +222,7 @@ export class WalletContainer extends Component<Props, State> {
       addresses: [...this.state.addresses, this.state.addressToAdd]
     });
     await this.importAddresses(this.state.addressToAdd);
+    await this.updateWalletInfo(this.state.wallet!);
   }
 
   async handleDeriveAddressClick() {

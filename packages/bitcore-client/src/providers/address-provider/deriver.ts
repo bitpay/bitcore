@@ -35,6 +35,16 @@ export class BchDeriver extends AbstractBitcoreLibDeriver {
 }
 
 export class EthDeriver implements IDeriver {
+  padTo32(msg) {
+    while (msg.length < 32) {
+      msg = Buffer.concat([new Buffer([0]), msg]);
+    }
+    if (msg.length !== 32) {
+      throw new Error(`invalid key length: ${msg.length}`);
+    }
+    return msg;
+  }
+
   deriveAddress(network, pubKey, addressIndex, isChange) {
     const xpub = new BitcoreLib.HDPublicKey(pubKey, network);
     const changeNum = isChange ? 1 : 0;
@@ -45,8 +55,8 @@ export class EthDeriver implements IDeriver {
     const ecPub = ecKey.getPublic().toJSON();
     console.log(ecPub);
     const paddedBuffer = Buffer.concat([
-      Buffer.alloc(32, ecPub[0].toArray()),
-      Buffer.alloc(32, ecPub[1].toArray())
+      this.padTo32(new Buffer(ecPub[0].toArray())),
+      this.padTo32(new Buffer(ecPub[1].toArray()))
     ]);
     return `0x${pubToAddress(paddedBuffer).toString('hex')}`;
   }
@@ -56,6 +66,21 @@ const derivers: { [chain: string]: IDeriver } = {
   BTC: new BtcDeriver(),
   BCH: new BchDeriver(),
   ETH: new EthDeriver()
+};
+
+const paths = {
+  BTC: {
+    mainnet: `m/44'/0'/0'`
+  },
+  BCH: {
+    mainnet: `m/44'/145'/0'`
+  },
+  ETH: {
+    mainnet: `m/44'/60'/0'`
+  },
+  default: {
+    testnet: `m/44'/1'/0'`
+  }
 };
 
 export class AddressProviderProxy {
@@ -70,6 +95,14 @@ export class AddressProviderProxy {
       addressIndex,
       isChange
     );
+  }
+
+  pathFor(chain, network) {
+    if (network != 'mainnet') {
+      return paths.default.testnet;
+    } else {
+      return paths[chain][network];
+    }
   }
 }
 
