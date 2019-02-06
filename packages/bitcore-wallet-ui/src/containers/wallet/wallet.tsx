@@ -81,7 +81,7 @@ export class WalletContainer extends Component<Props, State> {
     const name = this.props.match.params.name;
     this.setState({ walletName: name });
     const wallet = await this.loadWallet(name);
-    wallet!.register({ baseUrl: 'http://localhost:3000/api' });
+    await wallet!.register({ baseUrl: 'http://localhost:3000/api' });
     this.setState({ wallet });
     if (wallet) {
       console.log('Using bitcore-node at ', wallet.baseUrl);
