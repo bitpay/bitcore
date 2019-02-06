@@ -1,48 +1,33 @@
 import React from 'react';
 import { withStyles } from '@material-ui/core/styles';
-import classnames from 'classnames';
-import CardHeader from '@material-ui/core/CardHeader';
-import CardContent from '@material-ui/core/CardContent';
-import Collapse from '@material-ui/core/Collapse';
-import Avatar from '@material-ui/core/Avatar';
-import IconButton from '@material-ui/core/IconButton';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import AddIcon from '@material-ui/icons/Add';
-import { Typography } from '@material-ui/core';
-import Button from '@material-ui/core/Button';
+import { Typography, ExpansionPanel } from '@material-ui/core';
+import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
+import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
+import ExpansionPanelActions from '@material-ui/core/ExpansionPanelActions';
+import Divider from '@material-ui/core/Divider';
 
-const styles = (theme: any) => ({
+const styles = () => ({
   root: {
     justifyContent: 'center',
-    alignItems: 'center'
+    alignItems: 'center',
+    backgroundColor: '#1A3A8B',
+    height: 70
   },
-  title: {
+  white: {
     color: 'white'
   },
-  card: {
-    maxWidth: 400
+  heading: {
+    margin: 'auto',
+    color: 'white'
   },
-  expand: {
-    color: 'white',
-    transform: 'rotate(0deg)',
-    marginLeft: 'auto',
-    transition: theme.transitions.create('transform', {
-      duration: theme.transitions.duration.shortest
-    })
-  },
-  expandOpen: {
-    transform: 'rotate(180deg)'
-  },
-  avatar: {
-    backgroundColor: '#1A3A8B'
-  },
-  cardContent: {
-    backgroundColor: 'white'
-  },
-  button: {
+  action: {
     width: '100%',
     backgroundColor: '#4683e8',
-    height: 55
+    height: 55,
+    justifyContent: 'center',
+    color: 'white'
   }
 });
 
@@ -52,61 +37,35 @@ interface Props {
   handleCreateWalletClick: any;
 }
 
-interface State {
-  expanded: boolean;
-}
-
-class CreateWallet extends React.Component<Props, State> {
-  state = { expanded: false };
-
-  handleExpandClick = () => {
-    this.setState(state => ({ expanded: !state.expanded }));
-  };
-
+class CreateWallet extends React.Component<Props> {
   render() {
     const { classes, walletCreate, handleCreateWalletClick } = this.props;
 
     return (
       <div>
-        <CardHeader
-          avatar={
-            <Avatar aria-label="Add" className={classes.avatar}>
-              <AddIcon />
-            </Avatar>
-          }
-          action={
-            <IconButton
-              className={classnames(classes.expand, {
-                [classes.expandOpen]: this.state.expanded
-              })}
-              onClick={this.handleExpandClick}
-              aria-expanded={this.state.expanded}
-              aria-label="Show more"
-            >
-              <ExpandMoreIcon />
-            </IconButton>
-          }
-          title={
-            <Typography variant="title" className={classes.title}>
-              Create new vault
+        <ExpansionPanel>
+          <ExpansionPanelSummary
+            className={classes.root}
+            expandIcon={<ExpandMoreIcon className={classes.white} />}
+          >
+            <AddIcon aria-label="Add" className={classes.avatar} />
+            <Typography variant="title" className={classes.heading}>
+              Create new wallet
             </Typography>
-          }
-          className={classes.root}
-        />
-        <Collapse in={this.state.expanded} timeout="auto" unmountOnExit>
-          <CardContent className={classes.cardContent}>
+          </ExpansionPanelSummary>
+          <ExpansionPanelDetails className={classes.cardContent}>
             {walletCreate()}
-          </CardContent>
-          <Button
-            variant="contained"
-            color="primary"
-            type="submit"
-            className={this.props.classes.button}
+          </ExpansionPanelDetails>
+          <Divider />
+          <ExpansionPanelActions
+            className={classes.action}
             onClick={handleCreateWalletClick}
           >
-            Create
-          </Button>
-        </Collapse>
+            <Typography variant="subtitle1" className={classes.white}>
+              Create
+            </Typography>
+          </ExpansionPanelActions>
+        </ExpansionPanel>
       </div>
     );
   }
