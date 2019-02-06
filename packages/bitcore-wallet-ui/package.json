@@ -5,15 +5,11 @@
   "dependencies": {
     "@material-ui/core": "^3.9.2",
     "@material-ui/icons": "^3.0.2",
-    "@types/jest": "23.3.13",
-    "@types/node": "10.12.20",
-    "@types/react-dom": "16.0.11",
-    "@types/react-router-dom": "^4.3.1",
-    "@types/semantic-ui": "^2.2.6",
-    "@types/socket.io-client": "^1.4.32",
-    "bitcore-client": "8.0.0",
+    "classnames": "^2.2.6",
     "history": "^4.7.2",
+    "prop-types": "^15.6.2",
     "react": "^16.7.0",
+    "bitcore-client": "^8.0.0",
     "react-dom": "^16.7.0",
     "react-router": "^4.3.1",
     "react-router-dom": "^4.3.1",
@@ -23,12 +19,6 @@
     "socket.io-client": "^2.2.0",
     "typescript": "3.2.4",
     "web3": "^1.0.0-beta.41"
-  },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
   },
   "eslintConfig": {
     "extends": "react-app"
@@ -40,8 +30,15 @@
     "not op_mini all"
   ],
   "devDependencies": {
+    "@types/classnames": "^2.2.7",
     "@types/history": "^4.7.2",
+    "@types/jest": "23.3.13",
+    "@types/node": "10.12.20",
     "@types/react": "^16.8.0",
-    "@types/react-router": "^4.4.3"
+    "@types/react-dom": "16.0.11",
+    "@types/react-router": "^4.4.3",
+    "@types/react-router-dom": "^4.3.1",
+    "@types/semantic-ui": "^2.2.6",
+    "@types/socket.io-client": "^1.4.32"
   }
 }

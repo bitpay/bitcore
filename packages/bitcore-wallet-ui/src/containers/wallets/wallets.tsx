@@ -1,24 +1,19 @@
 import React, { Component } from 'react';
-import { Button, Comment, Form, Header } from 'semantic-ui-react';
-import { RouteComponentProps } from 'react-router';
 import { Wallet, Storage } from 'bitcore-client';
-import {
-  Icon,
-  Accordion,
-  Grid,
-  Card,
-  List,
-  Input,
-  Select,
-  Divider
-} from 'semantic-ui-react';
-import { DropdownProps } from 'semantic-ui-react/dist/commonjs/modules/Dropdown/Dropdown';
-import './wallets.css';
+import { NavBar } from './AppBar';
+import { WalletListCard } from './WalletContainer';
+import TextField from '@material-ui/core/TextField';
+import classNames from 'classnames';
+import { withStyles } from '@material-ui/core/styles';
+import MenuItem from '@material-ui/core/MenuItem';
 
 const API_URL =
   process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
 
-interface Props {}
+interface Props {
+  classes: any;
+  styles: any;
+}
 interface State {
   creating: boolean;
   selectedChain: string;
@@ -30,12 +25,25 @@ interface State {
   wallets: Wallet[];
 }
 
-const icons: { [chain: string]: string } = {
-  BTC: 'bitcoin',
-  ETH: 'ethereum'
-};
+const styles = (theme: any) => ({
+  container: {
+    display: 'flex',
+    flexWrap: 'wrap'
+  } as any,
+  textField: {
+    marginLeft: theme.spacing.unit,
+    marginRight: theme.spacing.unit,
+    width: '90%'
+  } as any,
+  dense: {
+    marginTop: 19
+  } as any,
+  menu: {
+    width: 200
+  } as any
+});
 
-export class WalletsContainer extends Component<Props, State> {
+class WalletsContainer extends Component<Props, State> {
   state: State = {
     creating: false,
     wallets: [],
@@ -52,8 +60,11 @@ export class WalletsContainer extends Component<Props, State> {
     this.handleWalletPasswordChange = this.handleWalletPasswordChange.bind(
       this
     );
-    this.handleWalletMnemonicChange = this.handleWalletMnemonicChange.bind(this);
+    this.handleWalletMnemonicChange = this.handleWalletMnemonicChange.bind(
+      this
+    );
     this.handleCreateWalletClick = this.handleCreateWalletClick.bind(this);
+    this.walletCreateComponent = this.walletCreateComponent.bind(this);
   }
 
   async componentDidMount() {
@@ -96,46 +107,12 @@ export class WalletsContainer extends Component<Props, State> {
     return wallet;
   }
 
-  walletListItemComponent(wallet: Wallet) {
-    return (
-      <List.Item key={wallet.name} className="walletListItemContainer">
-        <Grid columns={6} relaxed>
-          <Grid.Column width={1}>
-            <List.Icon
-              name={icons[wallet.chain] as any}
-              size="large"
-              verticalAlign="middle"
-            />
-          </Grid.Column>
-          <Grid.Column width={12}>
-            <List.Content>
-              <List.Header>
-                <a href={`/wallet/${wallet.name}`}> {wallet.name}</a>
-              </List.Header>
-              <List.Description>
-                <a href={`/wallet/${wallet.name}`}>
-                  {wallet.chain} {wallet.network} wallet
-                </a>
-              </List.Description>
-            </List.Content>
-          </Grid.Column>
-        </Grid>
-      </List.Item>
-    );
+  handleChainChange(event: React.ChangeEvent<HTMLInputElement>) {
+    this.setState({ selectedChain: event.target.value as string });
   }
 
-  handleChainChange(
-    event: React.SyntheticEvent<HTMLElement, Event>,
-    data: DropdownProps
-  ) {
-    this.setState({ selectedChain: data.value as string });
-  }
-
-  handleNetworkChange(
-    event: React.SyntheticEvent<HTMLElement, Event>,
-    data: DropdownProps
-  ) {
-    this.setState({ selectedNetwork: data.value as string });
+  handleNetworkChange(event: React.ChangeEvent<HTMLInputElement>) {
+    this.setState({ selectedNetwork: event.target.value as string });
   }
 
   async handleCreateWalletClick() {
@@ -148,18 +125,6 @@ export class WalletsContainer extends Component<Props, State> {
       baseUrl: API_URL
     });
     this.addWalletToState(wallet);
-  }
-
-  walletListComponent(wallets: Wallet[]) {
-    const walletComponents = wallets.map(this.walletListItemComponent);
-    console.log(walletComponents);
-    return (
-      <div>
-        <List divided={true} relaxed={true}>
-          {walletComponents}
-        </List>
-      </div>
-    );
   }
 
   handleWalletNameChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -197,73 +162,102 @@ export class WalletsContainer extends Component<Props, State> {
     const networks = chainNetworks[this.state.selectedChain] || [];
     return (
       <div className="walletCreateContainer">
-        <Input
-          fluid
-          type="text"
-          placeholder="Wallet Name"
+        <TextField
+          id="standard-dense"
+          label="Wallet Name"
+          className={classNames(
+            this.props.classes.textField,
+            this.props.classes.dense
+          )}
+          margin="dense"
+          required
           onChange={this.handleWalletNameChange}
         />
-        <Input
-          fluid
-          type="text"
-          placeholder="Wallet Password"
+        <TextField
+          id="standard-dense"
+          label="Wallet Password"
+          className={classNames(
+            this.props.classes.textField,
+            this.props.classes.dense
+          )}
+          margin="dense"
           onChange={this.handleWalletPasswordChange}
         />
 
-        <Input
-          fluid
-          type="text"
-          placeholder="Mnemonic"
+        <TextField
+          id="standard-dense"
+          label="Mnemonic"
+          className={classNames(
+            this.props.classes.textField,
+            this.props.classes.dense
+          )}
+          margin="dense"
           onChange={this.handleWalletMnemonicChange}
         />
-        <div>
-          <Select
-            fluid
-            options={options}
-            defaultValue="BTC"
-            onChange={this.handleChainChange}
-          />
-          <Select
-            fluid
-            options={networks}
-            defaultValue="mainnet"
-            onChange={this.handleNetworkChange}
-          />
-        </div>
-        <Button
-          fluid
-          primary
-          type="submit"
-          onClick={this.handleCreateWalletClick}
+
+        <TextField
+          id="standard-select-chain"
+          select
+          label="Chain"
+          className={this.props.classes.textField}
+          value={this.state.selectedChain}
+          onChange={this.handleChainChange}
+          required
+          SelectProps={{
+            MenuProps: {
+              className: this.props.classes.menu
+            }
+          }}
+          helperText="Please select your chain"
+          margin="normal"
         >
-          Create
-        </Button>
+          {options.map(option => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.text}
+            </MenuItem>
+          ))}
+        </TextField>
+
+        <TextField
+          id="standard-select-network"
+          select
+          label="Network"
+          className={this.props.classes.textField}
+          value={this.state.selectedNetwork}
+          onChange={this.handleNetworkChange}
+          required
+          SelectProps={{
+            MenuProps: {
+              className: this.props.classes.menu
+            }
+          }}
+          helperText="Please select your network"
+          margin="normal"
+        >
+          {networks.map(option => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.text}
+            </MenuItem>
+          ))}
+        </TextField>
       </div>
     );
   }
 
   render() {
-    const walletList = this.walletListComponent(this.state.wallets);
     return (
       <div className="walletContainer">
-        <Card>
-          <h1> Wallets </h1>
-          <Divider />
-          <div>{walletList}</div>
-          <Accordion fluid styled>
-            <Accordion.Title
-              onClick={() => this.setState({ creating: !this.state.creating })}
-              active={this.state.creating}
-            >
-              <Icon name="dropdown" />
-              New Wallet
-            </Accordion.Title>
-            <Accordion.Content active={this.state.creating}>
-              <div>{this.walletCreateComponent()}</div>
-            </Accordion.Content>
-          </Accordion>
-        </Card>
+        <NavBar />
+        <WalletListCard
+          wallets={this.state.wallets}
+          walletCreate={this.walletCreateComponent}
+          handleCreateWalletClick={this.handleCreateWalletClick}
+        />
       </div>
     );
   }
 }
+
+const WalletsContainers = withStyles(styles)(WalletsContainer);
+
+export { WalletsContainers };
