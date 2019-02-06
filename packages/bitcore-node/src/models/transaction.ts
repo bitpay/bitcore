@@ -6,7 +6,7 @@ import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
-import { StreamingFindOptions, Storage, StorageService } from '../services/storage';
+import { StorageService } from '../services/storage';
 import * as lodash from 'lodash';
 import { TransactionJSON } from '../types/Transaction';
 import { SpentHeightIndicators } from '../types/Coin';
@@ -544,13 +544,6 @@ export class TransactionModel extends BaseModel<ITransaction> {
       ]);
     }
     return;
-  }
-
-  getTransactions(params: { query: any; options: StreamingFindOptions<ITransaction> }) {
-    let originalQuery = params.query;
-    const { query, options } = Storage.getFindOptions(this, params.options);
-    const finalQuery = Object.assign({}, originalQuery, query);
-    return this.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true);
   }
 
   _apiTransform(tx: Partial<MongoBound<ITransaction>>): TransactionJSON {
