@@ -184,7 +184,7 @@ export class StorageService {
       .find(finalQuery, options)
       .addCursorFlag('noCursorTimeout', true)
       .stream({
-        transform: transform || model._apiTransform
+        transform: transform || ((data: MongoBound<T>) => JSON.stringify(model._apiTransform(data)))
       });
     if (options.sort) {
       cursor = cursor.sort(options.sort);
