@@ -17,7 +17,6 @@ import {
   Header
 } from 'semantic-ui-react';
 
-import './wallet.css';
 import io from 'socket.io-client';
 import { any } from 'prop-types';
 import Snackbar from '@material-ui/core/Snackbar';
