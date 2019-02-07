@@ -17,7 +17,6 @@ const styles = (theme: any) => ({
     marginTop: 70
   },
   root2: {
-    ...theme.mixins.gutters(),
     paddingLeft: 0,
     paddingRight: 0,
     backgroundColor: '#1A3A8B',
@@ -26,7 +25,9 @@ const styles = (theme: any) => ({
     marginBottom: '5em'
   },
   padding: {
-    padding: 20
+    padding: 20,
+    margin: 'auto',
+    maxWidth: 600
   },
   listRoot: {
     flexGrow: 1,
