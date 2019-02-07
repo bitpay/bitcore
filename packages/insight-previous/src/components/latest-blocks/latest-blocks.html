@@ -41,13 +41,13 @@
 
       <ion-row *ngIf="showAllBlocksButton">
         <ion-col text-center>
-          <button ion-button (click)="goToBlocks()" [disabled]="getBlocks().length == 0">See all blocks</button>
+          <button ion-button small (click)="goToBlocks()" [disabled]="getBlocks().length == 0">See all blocks</button>
         </ion-col>
       </ion-row>
 
       <ion-row *ngIf="showLoadMoreButton">
         <ion-col text-center>
-          <button ion-button (click)="loadMoreBlocks()">Load more blocks</button>
+          <button ion-button small (click)="loadMoreBlocks()">Load more blocks</button>
         </ion-col>
       </ion-row>
     </ion-grid>

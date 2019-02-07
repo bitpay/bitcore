@@ -1,16 +1,19 @@
-<div *ngIf="showTransactions">
-  <h2>Transactions</h2>
-    <div [hidden]="!loading">
-      <ion-spinner name="crescent"></ion-spinner>
-    </div>
-    <div [hidden]="loading">
-      <ion-grid class="grid--table">
-        <div *ngFor="let coin of coins; let i = index">
-          <coin *ngIf="i < limit" [coin]="coin"></coin>
-        </div>
-      </ion-grid>
-      <div *ngIf="limit < coins.length" text-center>
-        <button ion-button (click)="loadMore()">Load more</button>
-      </div>
-    </div>
+<div *ngIf="loading">
+  <ion-spinner name="crescent"></ion-spinner>
+</div>
+
+
+<div *ngIf="!loading">
+  <ion-grid>
+    <ion-row *ngFor="let coin of coins; let i = index">
+      <ion-col col-12 *ngIf="i < limit">
+        <coin [coin]="coin"></coin>
+      </ion-col>
+    </ion-row>
+    <ion-row *ngIf="limit < coins.length">
+      <ion-col col-12 text-center>
+        <button ion-button small (click)="loadMore()">Load More</button>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
 </div>
