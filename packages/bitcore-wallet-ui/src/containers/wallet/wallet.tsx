@@ -118,7 +118,7 @@ export class WalletContainer extends Component<Props, State> {
   handleGetBlock(wallet: Wallet) {
     socket.on('block', (block: any) => {
       let message = `Recieved Block Reward ${block.reward /
-        100000000} BTC at ${new Date(block.time).toLocaleString()}`;
+        100000000} BTC on ${new Date(block.time).toDateString()}`;
       this.setState({
         message,
         open: true
@@ -264,9 +264,6 @@ export class WalletContainer extends Component<Props, State> {
           }}
           message={<span id="message-id">{this.state.message}</span>}
           action={[
-            <Button key="undo" size="small" onClick={this.handleClose}>
-              UNDO
-            </Button>,
             <IconButton
               key="close"
               aria-label="Close"
