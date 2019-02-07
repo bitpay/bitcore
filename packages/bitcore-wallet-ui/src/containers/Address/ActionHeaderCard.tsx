@@ -32,7 +32,7 @@ const styles = {
   },
   paper: {
     backgroundColor: 'white',
-    height: 180,
+    height: 220,
     textAlign: 'center',
     padding: 40,
     paddingLeft: 20,

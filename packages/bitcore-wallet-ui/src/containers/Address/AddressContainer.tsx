@@ -8,7 +8,8 @@ const styles = (theme: any) => ({
   root: {
     marginTop: '21em',
     background: 'rgba(0,0,0,.07)',
-    padding: 0
+    padding: 0,
+    width: '100%'
   },
   root2: {
     paddingLeft: 0,
@@ -26,8 +27,7 @@ const styles = (theme: any) => ({
   },
   listRoot: {
     flexGrow: 1,
-    maxWidth: 600,
-    width: '100%'
+    maxWidth: 600
   },
   demo: {
     backgroundColor: theme.palette.background.paper
