@@ -27,7 +27,8 @@ const styles = () => ({
     backgroundColor: '#4683e8',
     height: 55,
     justifyContent: 'center',
-    color: 'white'
+    color: 'white',
+    cursor: 'pointer'
   }
 });
 
