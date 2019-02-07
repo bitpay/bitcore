@@ -23,6 +23,9 @@ import Snackbar from '@material-ui/core/Snackbar';
 import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
 import PropTypes from 'prop-types';
+import { WalletBar } from './AppBar';
+import { TransactionListCard } from './WalletContainer';
+import { WalletBottomNav } from './BottomNav';
 
 const API_URL =
   process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
@@ -234,7 +237,11 @@ export class WalletContainer extends Component<Props, State> {
     const walletUnlocked = wallet && wallet.unlocked;
     return (
       <div className="walletContainer">
-        <Snackbar
+        <WalletBar />
+        <TransactionListCard />
+        <WalletBottomNav />
+      </div>
+      /* <Snackbar
           anchorOrigin={{
             vertical: 'bottom',
             horizontal: 'left'
@@ -395,7 +402,7 @@ export class WalletContainer extends Component<Props, State> {
             </Input>
           </Card.Content>
         </Card>
-      </div>
+      </div> */
     );
   }
 }
