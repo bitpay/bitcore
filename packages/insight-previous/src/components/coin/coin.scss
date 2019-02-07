@@ -1,0 +1,15 @@
+coin {
+  ion-grid {
+    background-color: #f7f7f7;
+    border: 1px solid #f3f3f3;
+    border-radius: 3px;
+
+    ion-row {
+
+      &.small {
+        font-size: 1.1rem;
+      }
+
+    }
+  }
+}

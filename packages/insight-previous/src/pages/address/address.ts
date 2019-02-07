@@ -22,7 +22,7 @@ export class AddressPage {
   private addrStr: string;
   private chainNetwork: ChainNetwork;
   public address: any = {};
-  public nroTransactions: number = 0;
+  public nroTransactions = 0;
 
   constructor(
     public navParams: NavParams,

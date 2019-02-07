@@ -1,7 +1,6 @@
 // https://www.npmjs.com/package/node-sass
 
 module.exports = {
-
   /**
    * outputFilename: The filename of the saved CSS file
    * from the sass build. The directory which it is saved in
@@ -51,9 +50,7 @@ module.exports = {
    * If a file matches both include and exclude patterns, then
    * the file will be excluded.
    */
-  includeFiles: [
-    /\.(s(c|a)ss)$/i
-  ],
+  includeFiles: [/\.(s(c|a)ss)$/i],
 
   /**
    * excludeFiles: An array of regex patterns for files which
@@ -70,9 +67,7 @@ module.exports = {
    * only sass variables. These variables are the first sass files
    * to be imported so their values override default variables.
    */
-  variableSassFiles: [
-    '{{SRC}}/theme/variables.scss'
-  ],
+  variableSassFiles: ['{{SRC}}/theme/variables.scss'],
 
   /**
    * directoryMaps: Compiled JS modules may be within a different
@@ -99,5 +94,4 @@ module.exports = {
     'rxjs',
     'zone.js'
   ]
-
 };
