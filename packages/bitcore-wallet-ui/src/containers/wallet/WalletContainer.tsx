@@ -36,19 +36,29 @@ const styles = (theme: any) => ({
 
 interface Props {
   classes: any;
+  transactions: any;
+  API_URL: string;
+  wallet: Wallet;
 }
-const array = [1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1, 2, 3, 4, 5];
 
 function TransactionCard(props: Props) {
-  const { classes } = props;
+  const { classes, transactions, wallet, API_URL } = props;
 
   return (
     <div className={classes.padding}>
       <div className={classes.root}>
         <div className={classes.listRoot}>
-          {array.map((e, i: number) => (
-            <TransactionList key={i} e={e} />
-          ))}
+          {transactions
+            .slice(0)
+            .reverse()
+            .map((tx: any, i: number) => (
+              <TransactionList
+                key={i}
+                tx={tx}
+                wallet={wallet}
+                API_URL={API_URL}
+              />
+            ))}
         </div>
       </div>
     </div>

@@ -26,6 +26,7 @@ import PropTypes from 'prop-types';
 import { WalletBar } from './AppBar';
 import { TransactionListCard } from './WalletContainer';
 import { WalletBottomNav } from './BottomNav';
+import DialogSelect from './UnlockBar';
 
 const API_URL =
   process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
@@ -73,6 +74,8 @@ export class WalletContainer extends Component<Props, State> {
     this.handleDeriveAddressClick = this.handleDeriveAddressClick.bind(this);
     this.handlePasswordChange = this.handlePasswordChange.bind(this);
     this.handleLockToggle = this.handleLockToggle.bind(this);
+    this.updateWalletInfo = this.updateWalletInfo.bind(this);
+    this.updateBalance = this.updateBalance.bind(this);
   }
 
   async componentDidMount() {
@@ -237,11 +240,18 @@ export class WalletContainer extends Component<Props, State> {
     const walletUnlocked = wallet && wallet.unlocked;
     return (
       <div className="walletContainer">
-        <WalletBar />
-        <TransactionListCard />
-        <WalletBottomNav />
-      </div>
-      /* <Snackbar
+        {wallet ? (
+          <WalletBar wallet={wallet} balance={this.state.balance.balance} />
+        ) : null}
+        {wallet ? (
+          <TransactionListCard
+            transactions={this.state.transactions}
+            wallet={wallet}
+            API_URL={API_URL}
+          />
+        ) : null}
+        {walletUnlocked ? <WalletBottomNav /> : <DialogSelect />}
+        <Snackbar
           anchorOrigin={{
             vertical: 'bottom',
             horizontal: 'left'
@@ -267,6 +277,8 @@ export class WalletContainer extends Component<Props, State> {
             </IconButton>
           ]}
         />
+      </div>
+      /*
         <Card fluid>
           <Card.Content>
             <Link to={'/'}>

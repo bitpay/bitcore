@@ -10,9 +10,10 @@ import RefreshIcon from '@material-ui/icons/Refresh';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 
 interface Props {
-  e: number;
+  tx: any;
   classes: any;
-  // t: object;
+  wallet: Wallet;
+  API_URL: string;
 }
 
 const styles = (theme: any) => ({
@@ -20,8 +21,14 @@ const styles = (theme: any) => ({
     maxWidth: 600,
     padding: theme.spacing.unit * 2,
     alignItems: 'center',
-    borderTop: '2px solid green'
+    borderTop: '2px solid #002855'
   } as any,
+  greenpaper: {
+    maxWidth: 600,
+    padding: theme.spacing.unit * 2,
+    alignItems: 'center',
+    borderTop: '2px solid green'
+  },
   textRight: {
     textAlign: 'right'
   } as any,
@@ -31,11 +38,17 @@ const styles = (theme: any) => ({
     border: '1px solid green',
     margin: 'auto'
   },
+  defaultAvatar: {
+    backgroundColor: 'white',
+    color: '#002855',
+    border: '1px solid #002855',
+    margin: 'auto'
+  },
   auto: {
     margin: 'auto'
   } as any,
   default: {
-    color: 'black'
+    color: '#002855'
   },
   green: {
     color: 'green'
@@ -43,37 +56,36 @@ const styles = (theme: any) => ({
 });
 
 function Transactions(props: Props) {
-  const { classes } = props;
+  const { classes, tx, wallet, API_URL } = props;
   return (
-    <Link
-      to={'/wallet'}
-      // to={`${API_URL}/${this.state.wallet!.chain}/${
-      //   this.state.wallet!.network
-      // }/tx/${t.txid}`}
-    >
-      <Paper className={classes.paper}>
+    <Link to={`${API_URL}/${wallet.chain}/${wallet.network}/tx/${tx.txid}`}>
+      <Paper className={tx.height > 0 ? classes.greenpaper : classes.paper}>
         <Grid container wrap="nowrap" spacing={16}>
           <Grid item className={classes.auto}>
-            <Avatar className={classes.avatar}>
-              {true ? <ArrowUpwardIcon /> : <RefreshIcon />}
+            <Avatar
+              className={tx.height > 0 ? classes.avatar : classes.defaultAvatar}
+            >
+              {tx.height > 0 ? <ArrowUpwardIcon /> : <RefreshIcon />}
             </Avatar>
           </Grid>
           <Grid item xs zeroMinWidth className={classes.auto}>
-            <Typography noWrap variant="h6" className={classes.status}>
-              {/* {t.height > 0 ? `Block: ${t.height}` : 'Confirming:'}{' '} */}
+            <Typography
+              noWrap
+              variant="h6"
+              className={tx.height > 0 ? classes.green : classes.default}
+            >
+              {tx.height > 0 ? `Block: ${tx.height}` : 'Confirming'}{' '}
             </Typography>
           </Grid>
           <Grid item className={classes.textRight}>
             <Typography
               variant="subtitle1"
-              className={true ? classes.green : classes.default}
+              className={tx.height > 0 ? classes.green : classes.default}
             >
-              {/* {t.value / 1e8 || t.satoshis / 1e8} BTC */}
-              0.001231 BTC
+              {tx.value / 1e8 || tx.satoshis / 1e8} {wallet.chain}
             </Typography>
             <Typography variant="subtitle1" color="textSecondary">
-              {/* {t.blockTime} */}
-              November 15, 2018
+              {new Date(tx.blockTime).toDateString()}
             </Typography>
           </Grid>
         </Grid>

@@ -9,6 +9,7 @@ import LockIcon from '@material-ui/icons/Lock';
 import { Paper } from '@material-ui/core';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
 import { Link } from 'react-router-dom';
+import { Wallet } from 'bitcore-client';
 
 const styles = {
   root: {
@@ -57,8 +58,14 @@ const styles = {
   }
 };
 
-function WalletNavBar(props: any) {
-  const { classes } = props;
+interface Props {
+  wallet: Wallet;
+  balance: number;
+  classes: any;
+}
+
+function WalletNavBar(props: Props) {
+  const { classes, wallet, balance } = props;
 
   return (
     <div className={classes.root}>
@@ -68,17 +75,17 @@ function WalletNavBar(props: any) {
             <ClearIcon />
           </Link>
           <Typography variant="title" color="inherit">
-            JustinRegTestWallet
+            {wallet.name}
           </Typography>
-          {true ? <LockOpenIcon /> : <LockIcon />}
+          {wallet.unlocked ? <LockOpenIcon /> : <LockIcon />}
         </Toolbar>
       </AppBar>
       <Paper className={classes.paper}>
         <Typography variant="h2" className={classes.heading}>
-          1,293.2
+          {balance / 1e8}
         </Typography>
         <Typography variant="subheading" className={classes.chain}>
-          BTC
+          {wallet.chain}
         </Typography>
       </Paper>
     </div>
