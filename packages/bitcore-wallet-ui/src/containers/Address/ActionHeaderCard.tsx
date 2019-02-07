@@ -70,7 +70,6 @@ const styles = {
     flex: 1
   },
   iconButton: {
-    padding: 10,
     color: '#002855'
   },
   divider: {
@@ -126,7 +125,9 @@ function AddressBar(props: Props) {
             aria-label="addresses"
             onClick={() => handleDeriveAddressClick()}
           >
-            Derive
+            <Typography variant="subheading" className={classes.iconButton}>
+              Derive
+            </Typography>
           </IconButton>
         </Paper>
         <Button
