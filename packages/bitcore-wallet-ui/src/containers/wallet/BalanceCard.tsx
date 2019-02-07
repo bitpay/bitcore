@@ -1,15 +1,10 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
-import AppBar from '@material-ui/core/AppBar';
-import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
-import ClearIcon from '@material-ui/icons/Clear';
-import LockIcon from '@material-ui/icons/Lock';
 import { Paper } from '@material-ui/core';
-import LockOpenIcon from '@material-ui/icons/LockOpen';
-import { Link } from 'react-router-dom';
 import { Wallet } from 'bitcore-client';
+import { WalletHeader } from './WalletHeader';
 
 const styles = {
   root: {
@@ -69,17 +64,7 @@ function WalletNavBar(props: Props) {
 
   return (
     <div className={classes.root}>
-      <AppBar position="static" className={classes.background}>
-        <Toolbar className={classes.toolbar}>
-          <Link to={'/'} className={classes.link}>
-            <ClearIcon />
-          </Link>
-          <Typography variant="title" color="inherit">
-            {wallet.name}
-          </Typography>
-          {wallet.unlocked ? <LockOpenIcon /> : <LockIcon />}
-        </Toolbar>
-      </AppBar>
+      <WalletHeader wallet={wallet} />
       <Paper className={classes.paper}>
         <Typography variant="h2" className={classes.heading}>
           {balance / 1e8}

@@ -2,20 +2,6 @@ import React, { Component } from 'react';
 import { ParseApiStream, Wallet, Storage } from 'bitcore-client';
 import { RouteComponentProps } from 'react-router';
 import { Link } from 'react-router-dom';
-import {
-  Icon,
-  Segment,
-  Button,
-  Label,
-  Accordion,
-  Grid,
-  Card,
-  List,
-  Input,
-  Select,
-  Divider,
-  Header
-} from 'semantic-ui-react';
 
 import io from 'socket.io-client';
 import { any } from 'prop-types';
@@ -23,17 +9,22 @@ import Snackbar from '@material-ui/core/Snackbar';
 import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
 import PropTypes from 'prop-types';
-import { WalletBar } from './AppBar';
-import { TransactionListCard } from './WalletContainer';
+import { WalletBar } from './BalanceCard';
+import { TransactionListCard } from './TransactionContainer';
 import { WalletBottomNav } from './BottomNav';
 import DialogSelect from './UnlockBar';
+import { AddressNavBar } from '../Address/ActionHeaderCard';
+import { AddressListCard } from '../Address/AddressContainer';
 
 const API_URL =
   process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
 
-const socket = io.connect('http://localhost:3000', {
-  transports: ['websocket']
-});
+const socket = io.connect(
+  'http://localhost:3000',
+  {
+    transports: ['websocket']
+  }
+);
 
 interface Props extends RouteComponentProps<{ name: string }> {}
 interface State {
@@ -247,12 +238,18 @@ export class WalletContainer extends Component<Props, State> {
     }
     return (
       <div className="walletContainer">
-        <WalletBar wallet={wallet} balance={this.state.balance.balance} />
-        <TransactionListCard
+        <AddressNavBar wallet={wallet} />
+        <AddressListCard
           transactions={this.state.transactions}
           wallet={wallet}
           API_URL={API_URL}
         />
+        {/* <WalletBar wallet={wallet} balance={this.state.balance.balance} /> */}
+        {/* <TransactionListCard
+          transactions={this.state.transactions}
+          wallet={wallet}
+          API_URL={API_URL}
+        /> */}
         {walletUnlocked ? (
           <WalletBottomNav walletName={this.state.walletName} />
         ) : (

@@ -1,13 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
-import Paper from '@material-ui/core/Paper';
-import { TransactionList } from './WalletList';
+import { TransactionList } from '../Address/AddressList';
 import { Wallet } from 'bitcore-client';
 
 const styles = (theme: any) => ({
   root: {
-    marginTop: '15em',
+    marginTop: '21em',
     background: 'rgba(0,0,0,.07)',
     padding: 0
   },
@@ -20,7 +19,7 @@ const styles = (theme: any) => ({
     marginBottom: '5em'
   },
   padding: {
-    // padding: 20,
+    padding: 20,
     margin: 'auto',
     maxWidth: 600,
     marginBottom: 80
@@ -41,7 +40,7 @@ interface Props {
   wallet: Wallet;
 }
 
-function TransactionCard(props: Props) {
+function AddressCard(props: Props) {
   const { classes, transactions, wallet, API_URL } = props;
 
   return (
@@ -65,10 +64,10 @@ function TransactionCard(props: Props) {
   );
 }
 
-TransactionCard.propTypes = {
+AddressCard.propTypes = {
   classes: PropTypes.object.isRequired
 };
 
-const TransactionListCard = withStyles(styles)(TransactionCard);
+const AddressListCard = withStyles(styles)(AddressCard);
 
-export { TransactionListCard };
+export { AddressListCard };
