@@ -30,12 +30,13 @@ function SimpleAppBar(props: any) {
     <div className={classes.root}>
       <AppBar position="static" className={classes.background}>
         <Toolbar className={classes.toolbar}>
-          <Typography variant="h6" color="inherit">
-            <img
+          <Typography variant="h5" color="inherit">
+            {/* <img
               src="https://www.bitpay.com/cdn/en_US/bitpay-mark-std.svg"
               alt="Pay with BitPay"
               width="75px"
-            />
+            /> */}
+            <i>bitcore</i>
           </Typography>
         </Toolbar>
       </AppBar>
