@@ -8,7 +8,7 @@ import Typography from '@material-ui/core/Typography';
 const styles = {
   root: {
     flexGrow: 1,
-    position: 'fixed' as 'fixed',
+    position: 'absolute' as 'absolute',
     top: 0,
     width: '100%',
     zIndex: -1

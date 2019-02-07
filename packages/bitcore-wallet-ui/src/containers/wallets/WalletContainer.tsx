@@ -22,7 +22,8 @@ const styles = (theme: any) => ({
     paddingRight: 0,
     backgroundColor: '#1A3A8B',
     color: 'white',
-    marginTop: '.8em'
+    marginTop: '.8em',
+    marginBottom: '5em'
   },
   padding: {
     padding: 20
