@@ -64,11 +64,6 @@ function Addresses(props: Props) {
   return (
     <Paper className={classes.paper}>
       <Grid container wrap="nowrap" spacing={16}>
-        <Grid item xs zeroMinWidth className={classes.auto}>
-          <Typography noWrap variant="h6" className={classes.default}>
-            Address
-          </Typography>
-        </Grid>
         <Grid item className={classes.textRight}>
           <Typography variant="subtitle1" className={classes.default}>
             {address}
