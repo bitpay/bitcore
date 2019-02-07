@@ -96,6 +96,5 @@ WalletNavBar.propTypes = {
   classes: PropTypes.object.isRequired
 };
 
-const WalletBar = withStyles(styles)(WalletNavBar);
+export const WalletBar = withStyles(styles)(WalletNavBar);
 
-export { WalletBar };
