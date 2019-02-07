@@ -1,8 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
-import Paper from '@material-ui/core/Paper';
-import { TransactionList } from './WalletList';
+import { TransactionList } from './TransactionList';
 import { Wallet } from 'bitcore-client';
 
 const styles = (theme: any) => ({
@@ -20,7 +19,7 @@ const styles = (theme: any) => ({
     marginBottom: '5em'
   },
   padding: {
-    // padding: 20,
+    padding: 20,
     margin: 'auto',
     maxWidth: 600,
     marginBottom: 80

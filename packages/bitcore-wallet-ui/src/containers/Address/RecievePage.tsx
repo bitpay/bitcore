@@ -8,11 +8,10 @@ import { any } from 'prop-types';
 import Snackbar from '@material-ui/core/Snackbar';
 import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
-import PropTypes from 'prop-types';
-import { WalletBar } from './BalanceCard';
-import { TransactionListCard } from './TransactionContainer';
-import { WalletBottomNav } from './BottomNav';
-import DialogSelect from './UnlockBar';
+import { WalletBottomNav } from '../wallet/BottomNav';
+import DialogSelect from '../wallet/UnlockBar';
+import { AddressNavBar } from '../Address/ActionHeaderCard';
+import { AddressListCard } from '../Address/AddressContainer';
 
 const API_URL =
   process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
@@ -37,7 +36,7 @@ interface State {
   open: boolean;
 }
 
-export class WalletContainer extends Component<Props, State> {
+export class RecievePage extends Component<Props, State> {
   state: State = {
     password: '',
     walletName: '',
@@ -236,12 +235,15 @@ export class WalletContainer extends Component<Props, State> {
     }
     return (
       <div className="walletContainer">
-        <WalletBar wallet={wallet} balance={this.state.balance.balance} />
-        <TransactionListCard
-          transactions={this.state.transactions}
+        <AddressNavBar
+          handleAddressChange={this.handleAddressChange}
+          addressToAdd={this.state.addressToAdd}
+          handleAddAddressClick={this.handleAddAddressClick}
+          handleDeriveAddressClick={this.handleDeriveAddressClick}
+          walletUnlocked={walletUnlocked}
           wallet={wallet}
-          API_URL={API_URL}
         />
+        <AddressListCard address={this.state.addresses} />
         {walletUnlocked ? (
           <WalletBottomNav walletName={this.state.walletName} />
         ) : (
@@ -272,96 +274,11 @@ export class WalletContainer extends Component<Props, State> {
         />
       </div>
       /*
-        <Card fluid>
-          <Card.Content>
-            <Link to={'/'}>
-              <Icon name="angle left" size="large" />
-            </Link>
-            <Header as="h1" textAlign="center">
-              {this.state.walletName}
-              <Header.Subheader>
-                {this.state.wallet
-                  ? `${this.state.wallet.chain} ${this.state.wallet.network}`
-                  : ''}
-              </Header.Subheader>
-            </Header>
-            {this.state.balance.unconfirmed ? (
-              <div>
-                <Header as="h2" floated="left">
-                  <Label>
-                    Balance:
-                    <Label.Detail>{this.state.balance.balance}</Label.Detail>
-                  </Label>
-                </Header>
-                <Header as="h2" floated="right">
-                  <Label>
-                    Unconfirmed:
-                    <Label.Detail>
-                      {this.state.balance.unconfirmed}
-                    </Label.Detail>
-                  </Label>
-                </Header>
-              </div>
-            ) : (
-              <Header as="h2" textAlign="center">
-                <Label>
-                  Balance:
-                  <Label.Detail>
-                    {this.state.balance.balance / 1e8}
-                  </Label.Detail>
-                </Label>
-              </Header>
-            )}
-          </Card.Content>
-          <Card.Content>
-            <h1> Transactions </h1>
-            <div>
-              {this.state.transactions.length ? (
-                this.state.transactions.map(t => (
-                  <div key={t.txid}>
-                    <a
-                      href={`${API_URL}/${this.state.wallet!.chain}/${
-                        this.state.wallet!.network
-                      }/tx/${t.txid}`}
-                    >
-                      {t.height > 0 ? `Block: ${t.height}` : 'Mempool:'}{' '}
-                      {t.value / 1e8 || t.satoshis / 1e8} BTC
-                    </a>
-                  </div>
-                ))
-              ) : (
-                <i>No Transactions</i>
-              )}
-            </div>
-          </Card.Content>
-          <Card.Content>
-            <h1> Addresses </h1>
-            <div>
-              {this.state.addresses.length ? (
-                this.state.addresses.map(a => <div key={a}>{a}</div>)
-              ) : (
-                <i>No Addresses</i>
-              )}
-            </div>
-            <div>
-              <Input
-                type="text"
-                placeholder="Address"
-                value={this.state.addressToAdd}
-                action
-                fluid
-                onChange={this.handleAddressChange}
-              >
-                <input data-lpignore="true" />
                 <Button
                   disabled={!walletUnlocked}
                   primary
                   onClick={this.handleAddAddressClick}
                 >
-                  Add
-                </Button>
-                <Button onClick={this.handleDeriveAddressClick}>Derive</Button>
-              </Input>
             </div>
           </Card.Content>
           <Card.Content>
@@ -389,25 +306,7 @@ export class WalletContainer extends Component<Props, State> {
                 <Button primary>Send</Button>
               </Input>
             </div>
-          </Card.Content>
-          <Card.Content>
-            <h1>Security</h1>
-            <Input
-              type="password"
-              placeholder="Wallet Password"
-              value={this.state.password}
-              action
-              fluid
-              onChange={this.handlePasswordChange}
-            >
-              <input />
-              <Button onClick={this.handleLockToggle}>
-                <Icon name={walletUnlocked ? 'unlock' : 'lock'} />
-              </Button>
-            </Input>
-          </Card.Content>
-        </Card>
-      </div> */
+          </Card.Content> */
     );
   }
 }

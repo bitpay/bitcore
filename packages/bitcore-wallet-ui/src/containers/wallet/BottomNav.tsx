@@ -64,7 +64,7 @@ class WalletActionNav extends React.Component<Props, State> {
       >
         <BottomNavigationAction
           component={this.recieveLink}
-          label="Import"
+          label="Receive"
           icon={<ArrowDownwardIcon />}
         />
         <BottomNavigationAction
