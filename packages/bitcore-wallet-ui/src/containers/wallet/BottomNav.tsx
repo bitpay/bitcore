@@ -18,6 +18,7 @@ const styles = {
 };
 
 interface Props {
+  walletName: string;
   classes: any;
 }
 interface State {
@@ -33,12 +34,22 @@ class WalletActionNav extends React.Component<Props, State> {
   };
 
   recieveLink = (props: any) => (
-    <Link to="/recieve" {...props} data-next="true" />
+    <Link
+      to={`/wallet/${this.props.walletName}/receive`}
+      {...props}
+      data-next="true"
+    />
   );
   activityLink = (props: any) => (
-    <Link to="/wallet/walletname" {...props} data-next="true" />
+    <Link to={`/wallet/${this.props.walletName}`} {...props} data-next="true" />
   );
-  sendLink = (props: any) => <Link to="/send" {...props} data-next="true" />;
+  sendLink = (props: any) => (
+    <Link
+      to={`/wallet/${this.props.walletName}/send`}
+      {...props}
+      data-next="true"
+    />
+  );
 
   render() {
     const { classes } = this.props;

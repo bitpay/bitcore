@@ -31,12 +31,9 @@ import DialogSelect from './UnlockBar';
 const API_URL =
   process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
 
-const socket = io.connect(
-  'http://localhost:3000',
-  {
-    transports: ['websocket']
-  }
-);
+const socket = io.connect('http://localhost:3000', {
+  transports: ['websocket']
+});
 
 interface Props extends RouteComponentProps<{ name: string }> {}
 interface State {
@@ -73,6 +70,7 @@ export class WalletContainer extends Component<Props, State> {
     this.handleAddAddressClick = this.handleAddAddressClick.bind(this);
     this.handleDeriveAddressClick = this.handleDeriveAddressClick.bind(this);
     this.handlePasswordChange = this.handlePasswordChange.bind(this);
+    this.handlePasswordSubmit = this.handlePasswordSubmit.bind(this);
     this.handleLockToggle = this.handleLockToggle.bind(this);
     this.updateWalletInfo = this.updateWalletInfo.bind(this);
     this.updateBalance = this.updateBalance.bind(this);
@@ -205,7 +203,13 @@ export class WalletContainer extends Component<Props, State> {
   }
 
   handlePasswordChange(event: React.ChangeEvent<HTMLInputElement>) {
-    this.setState({ password: event.target.value });
+    this.handlePasswordSubmit(event.target.value);
+  }
+
+  async handlePasswordSubmit(password: string) {
+    console.log('unlocking');
+    await this.setState({ password });
+    await this.handleLockToggle();
   }
 
   async handleLockToggle() {
@@ -238,19 +242,22 @@ export class WalletContainer extends Component<Props, State> {
   render() {
     const wallet = this.state.wallet;
     const walletUnlocked = wallet && wallet.unlocked;
+    if (!wallet) {
+      return <div className="walletContainer">No Wallet Found</div>;
+    }
     return (
       <div className="walletContainer">
-        {wallet ? (
-          <WalletBar wallet={wallet} balance={this.state.balance.balance} />
-        ) : null}
-        {wallet ? (
-          <TransactionListCard
-            transactions={this.state.transactions}
-            wallet={wallet}
-            API_URL={API_URL}
-          />
-        ) : null}
-        {walletUnlocked ? <WalletBottomNav /> : <DialogSelect />}
+        <WalletBar wallet={wallet} balance={this.state.balance.balance} />
+        <TransactionListCard
+          transactions={this.state.transactions}
+          wallet={wallet}
+          API_URL={API_URL}
+        />
+        {walletUnlocked ? (
+          <WalletBottomNav walletName={this.state.walletName} />
+        ) : (
+          <DialogSelect onUnlock={this.handlePasswordSubmit} />
+        )}
         <Snackbar
           anchorOrigin={{
             vertical: 'bottom',

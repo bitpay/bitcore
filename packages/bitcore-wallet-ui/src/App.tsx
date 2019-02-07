@@ -13,6 +13,7 @@ class App extends Component {
       <Router history={createdHistory}>
         <Switch>
           <Route path="/wallet/:name" component={WalletContainer} />
+          <Route path="/wallet/:name/send" component={WalletContainer} />
           <Route exact path="/" component={WalletsContainers} />
         </Switch>
       </Router>
