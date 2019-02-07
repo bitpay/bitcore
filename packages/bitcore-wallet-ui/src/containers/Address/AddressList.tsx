@@ -61,8 +61,28 @@ const styles = (theme: any) => ({
 
 function Addresses(props: Props) {
   const { classes, address } = props;
+  const copyTextToClipboard = (text: string) => {
+    var textArea = document.createElement('textarea');
+    textArea.value = text;
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+
+    try {
+      var successful = document.execCommand('copy');
+      var msg = successful ? 'successful' : 'unsuccessful';
+      console.log('Copying' + msg);
+    } catch (err) {
+      console.error('Oops, unable to copy', err);
+    }
+
+    document.body.removeChild(textArea);
+  };
   return (
-    <Paper className={classes.paper}>
+    <Paper
+      className={classes.paper}
+      onClick={() => copyTextToClipboard(address)}
+    >
       <Grid container wrap="nowrap" spacing={16}>
         <Grid item className={classes.textRight}>
           <Typography variant="subtitle1" className={classes.default}>
