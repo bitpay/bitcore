@@ -68,6 +68,4 @@ TransactionCard.propTypes = {
   classes: PropTypes.object.isRequired
 };
 
-const TransactionListCard = withStyles(styles)(TransactionCard);
-
-export { TransactionListCard };
+export const TransactionListCard = withStyles(styles)(TransactionCard);
