@@ -19,6 +19,7 @@ const styles = (theme: any) => ({
     marginBottom: '5em'
   },
   padding: {
+    padding: 20,
     margin: 'auto',
     maxWidth: 600,
     marginBottom: 80
