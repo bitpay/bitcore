@@ -71,7 +71,7 @@ function Addresses(props: Props) {
     try {
       var successful = document.execCommand('copy');
       var msg = successful ? 'successful' : 'unsuccessful';
-      console.log('Copying' + msg);
+      console.log('Copied ' + address);
     } catch (err) {
       console.error('Oops, unable to copy', err);
     }
