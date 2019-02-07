@@ -88,10 +88,23 @@ const styles = {
 interface Props {
   wallet: Wallet;
   classes: any;
+  handleAddAddressClick: any;
+  handleDeriveAddressClick: any;
+  addressToAdd: any;
+  handleAddressChange: any;
+  walletUnlocked: any;
 }
 
 function AddressBar(props: Props) {
-  const { classes, wallet } = props;
+  const {
+    classes,
+    walletUnlocked,
+    wallet,
+    handleDeriveAddressClick,
+    handleAddAddressClick,
+    handleAddressChange,
+    addressToAdd
+  } = props;
 
   return (
     <div className={classes.root}>
@@ -101,13 +114,28 @@ function AddressBar(props: Props) {
           {true ? 'Recieve' : 'Send'}
         </Typography>
         <Paper className={classes.searchBar}>
-          <InputBase className={classes.input} placeholder="Enter address" />
+          <InputBase
+            className={classes.input}
+            placeholder="Enter address"
+            value={addressToAdd}
+            onChange={e => handleAddressChange(e)}
+          />
           <Divider className={classes.divider} />
-          <IconButton className={classes.iconButton} aria-label="addresses">
+          <IconButton
+            className={classes.iconButton}
+            aria-label="addresses"
+            onClick={() => handleDeriveAddressClick()}
+          >
             Derive
           </IconButton>
         </Paper>
-        <Button variant="outlined" color="primary" className={classes.button}>
+        <Button
+          variant="outlined"
+          color="primary"
+          disabled={!walletUnlocked}
+          className={classes.button}
+          onClick={() => handleAddAddressClick()}
+        >
           Add
         </Button>
       </Paper>

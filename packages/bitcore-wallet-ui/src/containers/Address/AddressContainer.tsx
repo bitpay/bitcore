@@ -1,8 +1,7 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { withStyles } from '@material-ui/core/styles';
-import { TransactionList } from '../Address/AddressList';
-import { Wallet } from 'bitcore-client';
+import { AddressList } from '../Address/AddressList';
 
 const styles = (theme: any) => ({
   root: {
@@ -36,28 +35,21 @@ const styles = (theme: any) => ({
 
 interface Props {
   classes: any;
-  transactions: any;
-  API_URL: string;
-  wallet: Wallet;
+  address: any[];
 }
 
 function AddressCard(props: Props) {
-  const { classes, transactions, wallet, API_URL } = props;
+  const { classes, address } = props;
 
   return (
     <div className={classes.padding}>
       <div className={classes.root}>
         <div className={classes.listRoot}>
-          {transactions
+          {address
             .slice(0)
             .reverse()
-            .map((tx: any, i: number) => (
-              <TransactionList
-                key={i}
-                tx={tx}
-                wallet={wallet}
-                API_URL={API_URL}
-              />
+            .map((address: any, i: number) => (
+              <AddressList key={i} address={address} />
             ))}
         </div>
       </div>

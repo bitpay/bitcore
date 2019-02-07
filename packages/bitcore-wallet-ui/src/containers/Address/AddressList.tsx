@@ -1,6 +1,5 @@
 import React from 'react';
 import { Wallet } from 'bitcore-client';
-import { Link } from 'react-router-dom';
 import { withStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
@@ -10,10 +9,8 @@ import RefreshIcon from '@material-ui/icons/Refresh';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 
 interface Props {
-  tx: any;
   classes: any;
-  wallet: Wallet;
-  API_URL: string;
+  address: string;
 }
 
 const styles = (theme: any) => ({
@@ -62,48 +59,26 @@ const styles = (theme: any) => ({
   }
 });
 
-function Transactions(props: Props) {
-  const { classes, tx, wallet, API_URL } = props;
+function Addresses(props: Props) {
+  const { classes, address } = props;
   return (
-    <Link
-      to={`${API_URL}/${wallet.chain}/${wallet.network}/tx/${tx.txid}`}
-      className={classes.link}
-    >
-      <Paper className={tx.height > 0 ? classes.greenpaper : classes.paper}>
-        <Grid container wrap="nowrap" spacing={16}>
-          <Grid item className={classes.auto}>
-            <Avatar
-              className={tx.height > 0 ? classes.avatar : classes.defaultAvatar}
-            >
-              {tx.height > 0 ? <ArrowUpwardIcon /> : <RefreshIcon />}
-            </Avatar>
-          </Grid>
-          <Grid item xs zeroMinWidth className={classes.auto}>
-            <Typography
-              noWrap
-              variant="h6"
-              className={tx.height > 0 ? classes.green : classes.default}
-            >
-              {tx.height > 0 ? `Block: ${tx.height}` : 'Confirming'}{' '}
-            </Typography>
-          </Grid>
-          <Grid item className={classes.textRight}>
-            <Typography
-              variant="subtitle1"
-              className={tx.height > 0 ? classes.green : classes.default}
-            >
-              {tx.value / 1e8 || tx.satoshis / 1e8} {wallet.chain}
-            </Typography>
-            <Typography variant="subtitle1" color="textSecondary">
-              {new Date(tx.blockTime).toDateString()}
-            </Typography>
-          </Grid>
+    <Paper className={classes.paper}>
+      <Grid container wrap="nowrap" spacing={16}>
+        <Grid item xs zeroMinWidth className={classes.auto}>
+          <Typography noWrap variant="h6" className={classes.default}>
+            Address
+          </Typography>
         </Grid>
-      </Paper>
-    </Link>
+        <Grid item className={classes.textRight}>
+          <Typography variant="subtitle1" className={classes.default}>
+            {address}
+          </Typography>
+        </Grid>
+      </Grid>
+    </Paper>
   );
 }
 
-const TransactionList = withStyles(styles)(Transactions);
+const AddressList = withStyles(styles)(Addresses);
 
-export { TransactionList };
+export { AddressList };
