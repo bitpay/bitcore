@@ -52,13 +52,23 @@ const styles = (theme: any) => ({
   },
   green: {
     color: 'green'
+  },
+  link: {
+    color: 'white',
+    textDecoration: 'none',
+    '&:hover': {
+      textDecoration: 'none'
+    }
   }
 });
 
 function Transactions(props: Props) {
   const { classes, tx, wallet, API_URL } = props;
   return (
-    <Link to={`${API_URL}/${wallet.chain}/${wallet.network}/tx/${tx.txid}`}>
+    <Link
+      to={`${API_URL}/${wallet.chain}/${wallet.network}/tx/${tx.txid}`}
+      className={classes.link}
+    >
       <Paper className={tx.height > 0 ? classes.greenpaper : classes.paper}>
         <Grid container wrap="nowrap" spacing={16}>
           <Grid item className={classes.auto}>

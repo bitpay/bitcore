@@ -27,8 +27,7 @@ const styles = {
   } as any,
   toolbar: {
     alignItems: 'center',
-    justifyContent: 'space-between',
-    width: '100%'
+    justifyContent: 'space-between'
   },
   link: {
     color: 'white',

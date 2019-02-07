@@ -26,7 +26,8 @@ const styles = (theme: any) => ({
   },
   listRoot: {
     flexGrow: 1,
-    maxWidth: 600
+    maxWidth: 600,
+    width: '100%'
   },
   demo: {
     backgroundColor: theme.palette.background.paper

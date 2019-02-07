@@ -244,8 +244,8 @@ export class WalletContainer extends Component<Props, State> {
           wallet={wallet}
           API_URL={API_URL}
         />
-        {/* <WalletBar wallet={wallet} balance={this.state.balance.balance} /> */}
-        {/* <TransactionListCard
+        {/* <WalletBar wallet={wallet} balance={this.state.balance.balance} />
+        <TransactionListCard
           transactions={this.state.transactions}
           wallet={wallet}
           API_URL={API_URL}

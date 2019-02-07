@@ -32,11 +32,11 @@ const styles = {
   },
   paper: {
     backgroundColor: 'white',
-    height: 220,
+    height: 180,
     textAlign: 'center',
     padding: 40,
     paddingLeft: 20,
-    marginTop: 50,
+    marginTop: 70,
     width: '100%',
     zIndex: -99
   } as any,

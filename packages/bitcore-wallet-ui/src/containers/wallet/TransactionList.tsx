@@ -52,6 +52,13 @@ const styles = (theme: any) => ({
   },
   green: {
     color: 'green'
+  },
+  link: {
+    color: 'white',
+    textDecoration: 'none',
+    '&:hover': {
+      textDecoration: 'none'
+    }
   }
 });
 
