@@ -34,8 +34,7 @@ const styles = {
     backgroundColor: 'white',
     height: 220,
     textAlign: 'center',
-    padding: 40,
-    paddingLeft: 20,
+    padding: 30,
     marginTop: 70,
     width: '100%',
     zIndex: -99

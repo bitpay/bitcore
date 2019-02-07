@@ -25,8 +25,8 @@ const styles = (theme: any) =>
       flexWrap: 'wrap'
     },
     formControl: {
-      margin: theme.spacing.unit,
-      minWidth: 500
+      margin: 'auto',
+      minWidth: 250
     },
     title: {
       color: 'white',
