@@ -7,7 +7,7 @@ import { Wallet } from 'bitcore-client';
 
 const styles = (theme: any) => ({
   root: {
-    marginTop: '13em',
+    marginTop: '15em',
     background: 'rgba(0,0,0,.07)',
     padding: 0
   },
@@ -20,7 +20,7 @@ const styles = (theme: any) => ({
     marginBottom: '5em'
   },
   padding: {
-    padding: 20,
+    // padding: 20,
     margin: 'auto',
     maxWidth: 600,
     marginBottom: 80
