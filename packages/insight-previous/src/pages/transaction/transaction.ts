@@ -44,7 +44,8 @@ export class TransactionPage {
       network
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
-    this.priceProvider.setCurrency(this.chainNetwork.chain);
+    const currentCurrency = localStorage.getItem('insight-currency');
+    this.priceProvider.setCurrency(currentCurrency);
   }
 
   public ionViewDidLoad(): void {

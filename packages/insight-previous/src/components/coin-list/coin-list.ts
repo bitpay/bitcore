@@ -1,5 +1,5 @@
-import { Events } from 'ionic-angular';
 import { Component, Input, OnInit } from '@angular/core';
+import { Events } from 'ionic-angular';
 import { AddressProvider } from '../../providers/address/address';
 import { Logger } from '../../providers/logger/logger';
 import { TxsProvider } from '../../providers/transactions/transactions';
