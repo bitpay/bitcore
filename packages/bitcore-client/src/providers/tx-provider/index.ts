@@ -10,11 +10,11 @@ export class TxProvider {
     return providers[chain];
   }
 
-  create(params) {
+  create(params): string {
     return this.get(params).create(params);
   }
 
-  sign(params) {
+  sign(params): string {
     return this.get(params).sign(params);
   }
 

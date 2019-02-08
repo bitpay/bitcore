@@ -37,7 +37,7 @@ interface Props {
   classes: any;
   transactions: any;
   API_URL: string;
-  wallet: Wallet;
+  wallet?: Wallet;
 }
 
 function TransactionCard(props: Props) {
@@ -68,6 +68,4 @@ TransactionCard.propTypes = {
   classes: PropTypes.object.isRequired
 };
 
-const TransactionListCard = withStyles(styles)(TransactionCard);
-
-export { TransactionListCard };
+export const TransactionListCard = withStyles(styles)(TransactionCard);

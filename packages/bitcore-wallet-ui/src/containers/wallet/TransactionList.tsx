@@ -1,6 +1,5 @@
 import React from 'react';
 import { Wallet } from 'bitcore-client';
-import { Link } from 'react-router-dom';
 import { withStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
@@ -12,7 +11,7 @@ import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 interface Props {
   tx: any;
   classes: any;
-  wallet: Wallet;
+  wallet?: Wallet;
   API_URL: string;
 }
 
@@ -66,9 +65,13 @@ function Transactions(props: Props) {
   const { classes, tx, wallet, API_URL } = props;
   return (
     <a
-      href={`http://localhost:8200/#/home/${wallet.chain}/${
-        wallet.network
-      }/tx/${tx.txid}`}
+      href={
+        wallet
+          ? `http://localhost:8200/#/home/${wallet.chain}/${
+              wallet.network
+            }/tx/${tx.txid}`
+          : ''
+      }
     >
       <Paper className={tx.height > 0 ? classes.greenpaper : classes.paper}>
         <Grid container wrap="nowrap" spacing={16}>
@@ -93,7 +96,7 @@ function Transactions(props: Props) {
               variant="subtitle1"
               className={tx.height > 0 ? classes.green : classes.default}
             >
-              {tx.value / 1e8 || tx.satoshis / 1e8} {wallet.chain}
+              {tx.value / 1e8 || tx.satoshis / 1e8} {wallet ? wallet.chain : ''}
             </Typography>
             <Typography variant="subtitle1" color="textSecondary">
               {new Date(tx.blockTime).toDateString()}
@@ -105,6 +108,4 @@ function Transactions(props: Props) {
   );
 }
 
-const TransactionList = withStyles(styles)(Transactions);
-
-export { TransactionList };
+export const TransactionList = withStyles(styles)(Transactions);

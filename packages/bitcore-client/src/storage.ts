@@ -4,6 +4,7 @@ import { Encryption } from './encryption';
 import levelup, { LevelUp } from 'levelup';
 import { LevelDown } from 'leveldown';
 import leveldownjs from 'level-js';
+import { Wallet } from './wallet';
 
 let lvldwn: LevelDown;
 let usingBrowser = (global as any).window;
@@ -48,6 +49,7 @@ export class Storage {
       }
     }
     if (StorageCache[this.path]) {
+      console.log('using storage cache');
       this.db = StorageCache[this.path];
     } else {
       console.log('creating leveldown at', this.path);
@@ -100,7 +102,11 @@ export class Storage {
     }
   }
 
-  async addKeys(params) {
+  async addKeys(params: {
+    name: string;
+    keys: Wallet.KeyImport[];
+    encryptionKey: string;
+  }) {
     const { name, keys, encryptionKey } = params;
     const ops = keys.map(key => {
       let { pubKey } = key;
@@ -122,6 +128,10 @@ export class Storage {
       };
     });
 
-    return this.db.batch(ops);
+    if (ops.length > 1) {
+      return this.db.batch(ops);
+    } else {
+      this.db.put(ops[0].key, ops[0].value);
+    }
   }
 }

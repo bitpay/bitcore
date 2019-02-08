@@ -16,12 +16,9 @@ import { AddressListCard } from '../Address/AddressContainer';
 const API_URL =
   process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
 
-const socket = io.connect(
-  'http://localhost:3000',
-  {
-    transports: ['websocket']
-  }
-);
+const socket = io.connect('http://localhost:3000', {
+  transports: ['websocket']
+});
 
 interface Props extends RouteComponentProps<{ name: string }> {}
 interface State {
@@ -223,8 +220,12 @@ export class RecievePage extends Component<Props, State> {
   }
 
   async handleDeriveAddressClick() {
-    const address = await this.state.wallet!.deriveAddress(0);
-    this.setState({ addressToAdd: address });
+    const wallet = this.state.wallet;
+    const newAddresses = await wallet!.nextAddressPair();
+    await this.updateWalletInfo(this.state.wallet!);
+    this.setState({
+      addresses: [...this.state.addresses, ...newAddresses]
+    });
   }
 
   render() {

@@ -5,14 +5,15 @@ import { Storage } from './storage';
 import { Request } from 'request';
 import TxProvider from './providers/tx-provider';
 import { AddressProvider } from './providers/address-provider/deriver';
+import { ParseApiStream } from './stream-util';
 const { PrivateKey } = require('bitcore-lib');
 const Mnemonic = require('bitcore-mnemonic');
 
 export namespace Wallet {
   export type KeyImport = {
     address: string;
-    privKey: string;
-    pubKey: string;
+    privKey?: string;
+    pubKey?: string;
   };
   export type WalletObj = {
     name: string;
@@ -72,7 +73,9 @@ export class Wallet {
     }
     // Generate wallet private keys
     const mnemonic = new Mnemonic(phrase);
-    const hdPrivKey = mnemonic.toHDPrivateKey();
+    const hdPrivKey = mnemonic
+      .toHDPrivateKey()
+      .derive(AddressProvider.pathFor(chain, network));
     const privKeyObj = hdPrivKey.toObject();
 
     // Generate authentication keys
@@ -81,8 +84,7 @@ export class Wallet {
 
     // Generate public keys
     // bip44 compatible pubKey
-    const hdPubKey = hdPrivKey.derive(AddressProvider.pathFor(chain, network));
-    const pubKey = hdPubKey.publicKey.toString();
+    const pubKey = hdPrivKey.publicKey.toString();
 
     // Generate and encrypt the encryption key and private key
     const walletEncryptionKey = Encryption.generateEncryptionKey();
@@ -120,7 +122,7 @@ export class Wallet {
       addressIndex: 0,
       masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
-      xPubKey: hdPubKey.xpubkey,
+      xPubKey: hdPrivKey.xpubkey,
       pubKey
     });
     // save wallet to storage and then bitcore-node
@@ -228,7 +230,7 @@ export class Wallet {
     return this.client.getBalance({ pubKey: this.authPubKey, time });
   }
 
-  getNetworkFee(params) {
+  getNetworkFee(params: { target?: number } = {}) {
     const target = params.target || 2;
     return this.client.getFee({ target });
   }
@@ -248,13 +250,39 @@ export class Wallet {
     });
   }
 
-  async newTx(params) {
-    const utxos = params.utxos || (await this.getUtxos(params));
+  async newTx(params: {
+    utxos?: any[];
+    recipients: { address: string; amount: number }[];
+    change?: string;
+    fee?: number;
+  }) {
+    console.log('using index', this.addressIndex, 'for change');
+    const change =
+      params.change || (await this.deriveAddress(this.addressIndex, true));
+    console.log(change);
+    const utxos = params.utxos || [];
+    if (!utxos.length) {
+      await new Promise(resolve =>
+        this.getUtxos()
+          .pipe(new ParseApiStream())
+          .on('data', utxo =>
+            utxos.push({
+              value: utxo.value,
+              txid: utxo.mintTxid,
+              vout: utxo.mintIndex,
+              address: utxo.address,
+              script: utxo.script,
+              utxo
+            })
+          )
+          .on('finish', resolve)
+      );
+    }
     const payload = {
       network: this.network,
       chain: this.chain,
       recipients: params.recipients,
-      change: params.change,
+      change,
       fee: params.fee,
       utxos
     };
@@ -269,7 +297,7 @@ export class Wallet {
     };
     return this.client.broadcast({ payload });
   }
-  async importKeys(params: { keys: Partial<Wallet.KeyImport>[] }) {
+  async importKeys(params: { keys: Wallet.KeyImport[] }) {
     const { keys } = params;
     const { encryptionKey } = this.unlocked;
     const keysToSave = keys.filter(key => typeof key.privKey === 'string');
@@ -293,12 +321,21 @@ export class Wallet {
     let { tx } = params;
     const utxos = params.utxos || [];
     if (!params.utxos) {
-      this.getUtxos(params).on('data', data => {
-        const stringData = data.toString().replace(',\n', '');
-        if (stringData.includes('{') && stringData.includes('}')) {
-          utxos.push(JSON.parse(stringData));
-        }
-      });
+      await new Promise(resolve =>
+        this.getUtxos()
+          .pipe(new ParseApiStream())
+          .on('data', utxo =>
+            utxos.push({
+              value: utxo.value,
+              txid: utxo.mintTxid,
+              vout: utxo.mintIndex,
+              address: utxo.address,
+              script: utxo.script,
+              utxo
+            })
+          )
+          .on('finish', resolve)
+      );
     }
     const payload = {
       chain: this.chain,
@@ -333,17 +370,34 @@ export class Wallet {
     });
   }
 
-  async deriveAddress(isChange) {
-    this.addressIndex = this.addressIndex || 0;
+  async deriveAddress(addressIndex, isChange) {
     const address = AddressProvider.derive(
       this.chain,
       this.network,
       this.xPubKey,
+      addressIndex,
+      isChange
+    );
+    return address;
+  }
+
+  async derivePrivateKey(isChange) {
+    const keyToImport = await AddressProvider.derivePrivateKey(
+      this.chain,
+      this.network,
+      this.unlocked.masterKey,
       this.addressIndex,
       isChange
     );
-    this.addressIndex++;
+    await this.importKeys({ keys: [keyToImport] });
+    return keyToImport.address.toString();
+  }
+
+  async nextAddressPair() {
+    this.addressIndex = this.addressIndex !== undefined ? this.addressIndex + 1 : 0;
+    const newAddress = await this.derivePrivateKey(false);
+    const newChangeAddress = await this.derivePrivateKey(true);
     await this.saveWallet();
-    return address;
+    return [newAddress, newChangeAddress];
   }
 }

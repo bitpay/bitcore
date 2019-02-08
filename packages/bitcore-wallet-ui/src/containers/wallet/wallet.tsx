@@ -13,23 +13,21 @@ import { WalletBar } from './BalanceCard';
 import { TransactionListCard } from './TransactionContainer';
 import { WalletBottomNav } from './BottomNav';
 import DialogSelect from './UnlockBar';
+import { SocketContext } from '../../contexts/io';
 
 const API_URL =
   process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
 
-const socket = io.connect(
-  'http://localhost:3000',
-  {
-    transports: ['websocket']
-  }
-);
+interface Props extends RouteComponentProps<{ name: string }> {
+  socket: ReturnType<typeof io>;
+  children: React.ReactNode;
+}
 
-interface Props extends RouteComponentProps<{ name: string }> {}
-interface State {
+export interface AppState {
   walletName: string;
   wallet?: Wallet;
   password: string;
-  balance: { confirmed: number; unconfirmed: number; balance: number };
+  balance: { confirmed: number; unconfirmed: number; balance: string };
   transactions: any[];
   addresses: string[];
   addressToAdd: string;
@@ -37,21 +35,52 @@ interface State {
   open: boolean;
 }
 
-export class WalletContainer extends Component<Props, State> {
-  state: State = {
-    password: '',
-    walletName: '',
-    balance: {
-      confirmed: 0,
-      unconfirmed: 0,
-      balance: 0
-    },
-    transactions: [],
-    addresses: [],
-    addressToAdd: '',
-    message: '',
-    open: false
-  };
+export function AppStateWithSocket(props: Props) {
+  return (
+    <SocketContext.Consumer>
+      {socket => (
+        <WalletContainer socket={socket} {...props}>
+          {props.children}
+        </WalletContainer>
+      )}
+    </SocketContext.Consumer>
+  );
+}
+export function LiveUpdatingWalletContainer(props: Props) {
+  return (
+    <AppStateWithSocket {...props}>
+      <AppStateContext.Consumer>
+        {state => (
+          <TransactionListCard
+            transactions={state.transactions}
+            wallet={state.wallet!}
+            API_URL={API_URL}
+          />
+        )}
+      </AppStateContext.Consumer>
+    </AppStateWithSocket>
+  );
+}
+
+const DefaultState: AppState = {
+  password: '',
+  walletName: '',
+  balance: {
+    confirmed: 0,
+    unconfirmed: 0,
+    balance: '...'
+  },
+  transactions: [],
+  addresses: [],
+  addressToAdd: '',
+  message: '',
+  open: false
+};
+
+export const AppStateContext = React.createContext(DefaultState);
+
+export class WalletContainer extends Component<Props, AppState> {
+  state = DefaultState;
 
   constructor(props: Props) {
     super(props);
@@ -66,9 +95,9 @@ export class WalletContainer extends Component<Props, State> {
   }
 
   async componentDidMount() {
-    socket.on('connect', () => {
+    this.props.socket.on('connect', () => {
       console.log('Connected to socket');
-      socket.emit('room', '/BTC/regtest/inv');
+      this.props.socket.emit('room', '/BTC/regtest/inv');
     });
     const name = this.props.match.params.name;
     this.setState({ walletName: name });
@@ -88,8 +117,13 @@ export class WalletContainer extends Component<Props, State> {
     await this.updateBalance(wallet);
   }
 
+  async componentWillUnmount() {
+    this.props.socket.removeAllListeners();
+  }
+
   handleGetTx(wallet: Wallet) {
-    socket.on('tx', async (sanitizedTx: any) => {
+    this.props.socket.on('tx', async (sanitizedTx: any) => {
+      console.log(sanitizedTx);
       let message = `Recieved ${sanitizedTx.value /
         100000000} BTC at ${new Date(
         sanitizedTx.blockTimeNormalized
@@ -103,9 +137,8 @@ export class WalletContainer extends Component<Props, State> {
   }
 
   handleGetBlock(wallet: Wallet) {
-    socket.on('block', (block: any) => {
-      let message = `Recieved Block Reward ${block.reward /
-        100000000} BTC on ${new Date(block.time).toDateString()}`;
+    this.props.socket.on('block', (block: any) => {
+      let message = `New Block on ${new Date(block.time).toDateString()}`;
       this.setState({
         message,
         open: true
@@ -224,53 +257,49 @@ export class WalletContainer extends Component<Props, State> {
   }
 
   async handleDeriveAddressClick() {
-    const address = await this.state.wallet!.deriveAddress(0);
+    const address = await this.state.wallet!.derivePrivateKey(0);
     this.setState({ addressToAdd: address });
   }
 
   render() {
     const wallet = this.state.wallet;
     const walletUnlocked = wallet && wallet.unlocked;
-    if (!wallet) {
-      return <div className="walletContainer">No Wallet Found</div>;
-    }
     return (
-      <div className="walletContainer">
-        <WalletBar wallet={wallet} balance={this.state.balance.balance} />
-        <TransactionListCard
-          transactions={this.state.transactions}
-          wallet={wallet}
-          API_URL={API_URL}
-        />
-        {walletUnlocked ? (
-          <WalletBottomNav walletName={this.state.walletName} />
-        ) : (
-          <DialogSelect onUnlock={this.handlePasswordSubmit} />
-        )}
-        <Snackbar
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'left'
-          }}
-          open={this.state.open}
-          autoHideDuration={6000}
-          onClose={this.handleClose}
-          ContentProps={{
-            'aria-describedby': 'message-id'
-          }}
-          message={<span id="message-id">{this.state.message}</span>}
-          action={[
-            <IconButton
-              key="close"
-              aria-label="Close"
-              color="inherit"
-              onClick={this.handleClose}
-            >
-              <CloseIcon />
-            </IconButton>
-          ]}
-        />
-      </div>
+      <AppStateContext.Provider value={this.state}>
+        <div className="walletContainer">
+          <WalletBar wallet={wallet} balance={this.state.balance.confirmed} />
+
+          {this.props.children}
+          {walletUnlocked ? (
+            <WalletBottomNav walletName={this.state.walletName} />
+          ) : (
+            <DialogSelect onUnlock={this.handlePasswordSubmit} />
+          )}
+          <Snackbar
+            anchorOrigin={{
+              vertical: 'bottom',
+              horizontal: 'left'
+            }}
+            open={this.state.open}
+            autoHideDuration={6000}
+            onClose={this.handleClose}
+            ContentProps={{
+              'aria-describedby': 'message-id'
+            }}
+            message={<span id="message-id">{this.state.message}</span>}
+            action={[
+              <IconButton
+                key="close"
+                aria-label="Close"
+                color="inherit"
+                onClick={this.handleClose}
+              >
+                <CloseIcon />
+              </IconButton>
+            ]}
+          />
+        </div>
+      </AppStateContext.Provider>
     );
   }
 }
