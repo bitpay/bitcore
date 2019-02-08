@@ -5,6 +5,7 @@ import levelup, { LevelUp } from 'levelup';
 import { LevelDown } from 'leveldown';
 import leveldownjs from 'level-js';
 import { Wallet } from './wallet';
+import { Transform } from 'stream';
 
 let lvldwn: LevelDown;
 let usingBrowser = (global as any).window;
@@ -70,14 +71,17 @@ export class Storage {
   }
 
   listWallets() {
-    if (usingBrowser) {
-      return this.db.createValueStream();
-    } else {
-      return this.db.createValueStream({
-        gt: Buffer.from('walle'),
-        lt: Buffer.from('wallf')
-      });
-    }
+    return this.db.createReadStream().pipe(
+      new Transform({
+        objectMode: true,
+        write: function(data, enc, next) {
+          if (data.key.toString().startsWith('wallet')) {
+            this.push(data.value.toString());
+          }
+          next();
+        }
+      })
+    );
   }
 
   async saveWallet(params) {
