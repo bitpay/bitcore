@@ -8,13 +8,14 @@ import { AppCoin } from '../../providers/transactions/transactions';
   templateUrl: 'coin.html'
 })
 export class CoinComponent {
+  @Input()
+  public coin: AppCoin | {} = {};
+
   constructor(
     public apiProvider: ApiProvider,
     public currencyProvider: CurrencyProvider,
     public redirProvider: RedirProvider
   ) {}
-  @Input()
-  public coin: AppCoin | {} = {};
 
   public goToTx(txId: string): void {
     this.redirProvider.redir('transaction', {

@@ -8,7 +8,7 @@
         &nbsp;
         {{ currency?.currencySymbol }}
         &nbsp;
-        <i>({{ config?.network }})</i>
+        <i>( <span *ngIf="currency.currencySymbol === 'USD'">{{ config?.chain }} - </span> {{ config?.network }})</i>
       </button>
       <button ion-button icon-only (click)="toggleSearch()">
         <ion-icon name="search" [color]="!showSearch ? 'light' : 'dark'"></ion-icon>
