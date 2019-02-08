@@ -65,7 +65,11 @@ const styles = (theme: any) => ({
 function Transactions(props: Props) {
   const { classes, tx, wallet, API_URL } = props;
   return (
-    <Link to={`${API_URL}/${wallet.chain}/${wallet.network}/tx/${tx.txid}`}>
+    <a
+      href={`http://localhost:8200/#/home/${wallet.chain}/${
+        wallet.network
+      }/tx/${tx.txid}`}
+    >
       <Paper className={tx.height > 0 ? classes.greenpaper : classes.paper}>
         <Grid container wrap="nowrap" spacing={16}>
           <Grid item className={classes.auto}>
@@ -97,7 +101,7 @@ function Transactions(props: Props) {
           </Grid>
         </Grid>
       </Paper>
-    </Link>
+    </a>
   );
 }
 

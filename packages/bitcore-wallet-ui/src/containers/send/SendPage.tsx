@@ -1,10 +1,7 @@
 import React, { Component } from 'react';
 import { ParseApiStream, Wallet, Storage } from 'bitcore-client';
 import { RouteComponentProps } from 'react-router';
-import { Link } from 'react-router-dom';
-
 import io from 'socket.io-client';
-import { any } from 'prop-types';
 import Snackbar from '@material-ui/core/Snackbar';
 import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
