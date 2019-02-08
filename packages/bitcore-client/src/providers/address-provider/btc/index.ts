@@ -19,7 +19,7 @@ export abstract class AbstractBitcoreLibDeriver implements IDeriver {
     const privKey = xpriv.derive(path).privateKey;
     const pubKey = privKey.publicKey;
     const address = this.bitcoreLib.Address(pubKey, network).toString();
-    return { address, privKey, pubKey };
+    return { address, privKey: privKey.toString(), pubKey: pubKey.toString() };
   }
 }
 export class BtcDeriver extends AbstractBitcoreLibDeriver {

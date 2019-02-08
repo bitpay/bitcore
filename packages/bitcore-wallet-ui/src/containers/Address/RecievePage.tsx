@@ -220,8 +220,8 @@ export class RecievePage extends Component<Props, State> {
   }
 
   async handleDeriveAddressClick() {
-    const address = await this.state.wallet!.derivePrivateKey(0);
-    console.log(address);
+    const wallet = this.state.wallet;
+    const address = await wallet!.derivePrivateKey(0);
     this.setState({ addressToAdd: address });
   }
 

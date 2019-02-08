@@ -38,8 +38,9 @@ export class EthDeriver implements IDeriver {
     const xpriv = new BitcoreLib.HDPrivateKey(xPriv, network);
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;
-    const privKey = xpriv.derive(path).privateKey;
-    const pubKey = privKey.publicKey;
+    const derivedPrivKey = xpriv.derive(path);
+    const privKey = derivedPrivKey.privateKey;
+    const pubKey = derivedPrivKey.publicKey;
     const pubKeyBuffer = pubKey.toBuffer();
     const address = this.addressFromPublicKeyBuffer(pubKeyBuffer);
     return { address, privKey, pubKey };

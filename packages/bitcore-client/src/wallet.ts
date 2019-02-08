@@ -12,8 +12,8 @@ const Mnemonic = require('bitcore-mnemonic');
 export namespace Wallet {
   export type KeyImport = {
     address: string;
-    privKey: string;
-    pubKey: string;
+    privKey?: string;
+    pubKey?: string;
   };
   export type WalletObj = {
     name: string;
@@ -73,7 +73,9 @@ export class Wallet {
     }
     // Generate wallet private keys
     const mnemonic = new Mnemonic(phrase);
-    const hdPrivKey = mnemonic.toHDPrivateKey();
+    const hdPrivKey = mnemonic
+      .toHDPrivateKey()
+      .derive(AddressProvider.pathFor(chain, network));
     const privKeyObj = hdPrivKey.toObject();
 
     // Generate authentication keys
@@ -293,7 +295,7 @@ export class Wallet {
     };
     return this.client.broadcast({ payload });
   }
-  async importKeys(params: { keys: Partial<Wallet.KeyImport>[] }) {
+  async importKeys(params: { keys: Wallet.KeyImport[] }) {
     const { keys } = params;
     const { encryptionKey } = this.unlocked;
     const keysToSave = keys.filter(key => typeof key.privKey === 'string');

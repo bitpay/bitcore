@@ -58,7 +58,6 @@ export function LiveUpdatingWalletContainer(props: Props) {
           />
         )}
       </AppStateContext.Consumer>
-      )}
     </AppStateWithSocket>
   );
 }

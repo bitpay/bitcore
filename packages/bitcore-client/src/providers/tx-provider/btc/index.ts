@@ -3,7 +3,6 @@ export class BTCTxProvider {
 
   create({ recipients, utxos, change, fee }) {
     const btcUtxos = utxos.map(utxo => {
-      console.log(utxo.value)
       const btcUtxo = Object.assign({}, utxo, {
         amount: utxo.value / Math.pow(10, 8)
       });
@@ -25,18 +24,21 @@ export class BTCTxProvider {
       outputs: bitcoreTx.inputs,
       utxos
     });
-
-    let newTx = new this.lib.Transaction()
-      .from(applicableUtxos)
-      .to(this.getOutputsFromTx({ tx: bitcoreTx }));
+    const outputs = this.getOutputsFromTx({ tx: bitcoreTx });
+    let newTx = new this.lib.Transaction().from(applicableUtxos).to(outputs);
     const privKeys = keys.map(key => key.privKey.toString('hex'));
-    return newTx.sign(privKeys);
+    return newTx.sign(privKeys).toString();
   }
 
   getRelatedUtxos({ outputs, utxos }) {
     let txids = outputs.map(output => output.toObject().prevTxId);
     let applicableUtxos = utxos.filter(utxo => txids.includes(utxo.txid));
-    return applicableUtxos;
+    return applicableUtxos.map(utxo => {
+      const btcUtxo = Object.assign({}, utxo, {
+        amount: utxo.value / Math.pow(10, 8)
+      });
+      return new this.lib.Transaction.UnspentOutput(btcUtxo);
+    });
   }
 
   getOutputsFromTx({ tx }) {

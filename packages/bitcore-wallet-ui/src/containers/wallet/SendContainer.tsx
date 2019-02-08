@@ -101,6 +101,7 @@ export class SendCard extends React.Component<Props, State> {
       fee: 200
     });
 
+    console.log(tx);
     const signed = await this.props.appState.wallet!.signTx({ tx });
     this.setState({ rawTx: signed });
   }
