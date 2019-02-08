@@ -94,6 +94,4 @@ function Addresses(props: Props) {
   );
 }
 
-const AddressList = withStyles(styles)(Addresses);
-
-export { AddressList };
+export const AddressList = withStyles(styles)(Addresses);

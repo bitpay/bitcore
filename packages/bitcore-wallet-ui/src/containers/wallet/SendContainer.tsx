@@ -1,42 +1,29 @@
+import { AppStateContext } from './Wallet';
 import { RouteComponentProps } from 'react-router';
 import { WalletBottomNav } from '../wallet/BottomNav';
 import DialogSelect from '../wallet/UnlockBar';
 import React from 'react';
 import { useState } from 'react';
 import { Wallet } from 'bitcore-client';
-import { WalletContainer } from './Wallet';
+import { WalletContainer, AppState } from './Wallet';
 import { WalletBar } from './BalanceCard';
 import Paper from '@material-ui/core/Paper';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
 import FormControl from '@material-ui/core/FormControl';
-
-import io from 'socket.io-client';
 import { withStyles } from '@material-ui/core/styles';
-
-const API_URL =
-  process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
-
-const socket = io.connect('http://localhost:3000', {
-  transports: ['websocket']
-});
+import { SocketContext } from '../../contexts/io';
 
 interface Props extends RouteComponentProps<{ name: string }> {
   classes: any;
+  socket: ReturnType<typeof io>;
+  appState: AppState;
 }
 
 interface State {
-  walletName: string;
-  wallet?: Wallet;
-  password: string;
-  balance: { confirmed: number; unconfirmed: number; balance: number };
-  transactions: any[];
-  addresses: string[];
-  addressToAdd: string;
-  message: string;
   sendTo: string;
   amountToSend: string;
-  open: boolean;
+  rawTx: string;
 }
 
 const styles = (theme: any) => ({
@@ -71,144 +58,107 @@ const styles = (theme: any) => ({
     backgroundColor: theme.palette.background.paper
   }
 });
+
+export function LiveUpdatingSendContainer(props: Props) {
+  return (
+    <SocketContext.Consumer>
+      {socket => (
+        <WalletContainer socket={socket} {...props}>
+          <AppStateContext.Consumer>
+            {state => (
+              <SendContainer socket={socket} appState={state} {...props} />
+            )}
+          </AppStateContext.Consumer>
+        </WalletContainer>
+      )}
+    </SocketContext.Consumer>
+  );
+}
 export class SendCard extends React.Component<Props, State> {
   state: State = {
-    password: '',
-    walletName: '',
-    balance: {
-      confirmed: 0,
-      unconfirmed: 0,
-      balance: 0
-    },
-    transactions: [],
-    addresses: [],
-    addressToAdd: '',
-    message: '',
-    open: false,
     sendTo: '',
-    amountToSend: ''
+    amountToSend: '',
+    rawTx: ''
   };
 
   constructor(props: Props) {
     super(props);
-    this.updateWalletInfo = this.updateWalletInfo.bind(this);
-    this.updateBalance = this.updateBalance.bind(this);
-    this.handlePasswordSubmit = this.handlePasswordSubmit.bind(this);
+    this.handleSendClick = this.handleSendClick.bind(this);
   }
 
   async componentDidMount() {
-    socket.on('connect', () => {
+    this.props.socket.on('connect', () => {
       console.log('Connected to socket');
-      socket.emit('room', '/BTC/regtest/inv');
+      this.props.socket.emit('room', '/BTC/regtest/inv');
     });
-    const name = this.props.match.params.name;
-    this.setState({ walletName: name });
-    const wallet = await this.loadWallet(name);
-    await wallet!.register({ baseUrl: 'http://localhost:3000/api' });
-    this.setState({ wallet });
-    if (wallet) {
-      console.log('Using bitcore-node at ', wallet.baseUrl);
-      await this.updateWalletInfo(wallet);
-    }
-  }
-  async updateWalletInfo(wallet: Wallet) {
-    await this.updateBalance(wallet);
   }
 
-  async updateBalance(wallet: Wallet) {
-    const balance = await wallet.getBalance();
-    this.setState({ balance });
-  }
-  async loadWallet(name: string) {
-    let wallet: Wallet | undefined;
-    try {
-      const exists = Wallet.exists({ name });
-      if (!exists) {
-        console.log('Wallet needs to be created');
-      } else {
-        console.log('Wallet exists');
-        wallet = await Wallet.loadWallet({ name });
-      }
-    } catch (err) {
-      console.log(err);
-    }
-    return wallet;
-  }
+  async handleSendClick() {
+    const tx = await this.props.appState.wallet!.newTx({
+      recipients: [
+        { address: this.state.sendTo, amount: Number(this.state.amountToSend) }
+      ],
+      fee: 200
+    });
 
-  async handleLockToggle() {
-    if (this.state.wallet) {
-      console.log(this.state.wallet.unlocked);
-      if (this.state.wallet.unlocked) {
-        const locked = await this.state.wallet.lock();
-        await this.setState({ wallet: locked });
-      } else {
-        console.log('unlocking wallet');
-        const unlocked = await this.state.wallet.unlock(this.state.password);
-        await this.setState({ wallet: unlocked });
-      }
-    }
-  }
-
-  async handlePasswordSubmit(password: string) {
-    await this.setState({ password });
-    await this.handleLockToggle();
+    const signed = await this.props.appState.wallet!.signTx({ tx });
+    this.setState({ rawTx: signed });
   }
 
   public render() {
-    const wallet = this.state.wallet;
+    const wallet = this.props.appState.wallet;
     const walletUnlocked = wallet && wallet.unlocked;
     const { classes } = this.props;
-    if (!wallet) {
-      return <div className="walletContainer">No Wallet Found</div>;
-    }
     return (
-      <div className="walletContainer">
-        <WalletBar wallet={wallet} balance={this.state.balance.balance} />
-        <div className={classes.padding}>
-          <div className={classes.root}>
-            <div className={classes.flex}>
-              <Paper className={classes.padding}>
-                <div>
-                  <FormControl fullWidth className={classes.margin}>
-                    <TextField
-                      className={classes.flex}
-                      id="address"
-                      label="Address"
-                      value={this.state.sendTo}
-                      onChange={e => this.setState({ sendTo: e.target.value })}
-                      margin="normal"
-                    />
-                    <TextField
-                      className={classes.flex}
-                      id="value"
-                      label="Amount"
-                      value={this.state.amountToSend}
-                      onChange={e =>
-                        this.setState({ amountToSend: e.target.value })
-                      }
-                      margin="normal"
-                    />
+      <div className={classes.padding}>
+        <div className={classes.root}>
+          <div className={classes.flex}>
+            <Paper className={classes.padding}>
+              <div>
+                <FormControl fullWidth className={classes.margin}>
+                  <TextField
+                    className={classes.flex}
+                    id="address"
+                    label="Address"
+                    value={this.state.sendTo}
+                    onChange={e => this.setState({ sendTo: e.target.value })}
+                    margin="normal"
+                  />
+                  <TextField
+                    className={classes.flex}
+                    id="value"
+                    label="Amount"
+                    value={this.state.amountToSend}
+                    onChange={e =>
+                      this.setState({ amountToSend: e.target.value })
+                    }
+                    margin="normal"
+                  />
 
-                    <Button
-                      variant="contained"
-                      color="primary"
-                      className={classes.button}
-                    >
-                      Send
-                    </Button>
-                  </FormControl>
-                </div>
-                <div />
-              </Paper>
-            </div>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    className={classes.button}
+                    onClick={() => this.handleSendClick()}
+                  >
+                    Send
+                  </Button>
+                </FormControl>
+
+                <FormControl fullWidth className={classes.margin}>
+                  <TextField
+                    className={classes.flex}
+                    multiline
+                    value={this.state.rawTx}
+                    disabled
+                    margin="normal"
+                  />
+                </FormControl>
+              </div>
+              <div />
+            </Paper>
           </div>
         </div>
-
-        {walletUnlocked ? (
-          <WalletBottomNav walletName={this.state.walletName} />
-        ) : (
-          <DialogSelect onUnlock={this.handlePasswordSubmit} />
-        )}
       </div>
     );
   }

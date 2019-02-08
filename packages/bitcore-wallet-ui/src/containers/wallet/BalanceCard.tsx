@@ -54,8 +54,8 @@ const styles = {
 };
 
 interface Props {
-  wallet: Wallet;
-  balance: number;
+  wallet?: Wallet;
+  balance: string | number;
   classes: any;
 }
 
@@ -67,10 +67,10 @@ function WalletNavBar(props: Props) {
       <WalletHeader wallet={wallet} />
       <Paper className={classes.paper}>
         <Typography variant="h2" className={classes.heading}>
-          {balance / 1e8}
+          {typeof balance === 'number' ? Number(balance) / 1e8 : ''}
         </Typography>
         <Typography variant="subheading" className={classes.chain}>
-          {wallet.chain}
+          {wallet ? wallet.chain : 'unknown chain'}
         </Typography>
       </Paper>
     </div>
@@ -82,4 +82,3 @@ WalletNavBar.propTypes = {
 };
 
 export const WalletBar = withStyles(styles)(WalletNavBar);
-

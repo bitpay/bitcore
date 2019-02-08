@@ -37,7 +37,7 @@ interface Props {
   classes: any;
   transactions: any;
   API_URL: string;
-  wallet: Wallet;
+  wallet?: Wallet;
 }
 
 function TransactionCard(props: Props) {

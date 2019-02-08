@@ -136,6 +136,7 @@ export class Client {
         )
         .on('end', resolve);
       let jsonData = JSON.stringify(payload);
+      console.log(jsonData);
       dataStream.push(jsonData);
       dataStream.push(null);
     });

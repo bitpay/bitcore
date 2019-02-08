@@ -39,7 +39,7 @@ const styles = {
 };
 
 interface Props {
-  wallet: Wallet;
+  wallet?: Wallet;
   classes: any;
 }
 
@@ -54,9 +54,9 @@ function WalletNavTop(props: Props) {
             <ClearIcon />
           </Link>
           <Typography variant="title" color="inherit">
-            {wallet.name}
+            {wallet ? wallet.name : 'Loading...'}
           </Typography>
-          {wallet.unlocked ? <LockOpenIcon /> : <LockIcon />}
+          {wallet && wallet.unlocked ? <LockOpenIcon /> : <LockIcon />}
         </Toolbar>
       </AppBar>
     </div>
@@ -67,6 +67,4 @@ WalletNavTop.propTypes = {
   classes: PropTypes.object.isRequired
 };
 
-const WalletHeader = withStyles(styles)(WalletNavTop);
-
-export { WalletHeader };
+export const WalletHeader = withStyles(styles)(WalletNavTop);

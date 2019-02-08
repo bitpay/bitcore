@@ -5,6 +5,7 @@ import { Storage } from './storage';
 import { Request } from 'request';
 import TxProvider from './providers/tx-provider';
 import { AddressProvider } from './providers/address-provider/deriver';
+import { ParseApiStream } from './stream-util';
 const { PrivateKey } = require('bitcore-lib');
 const Mnemonic = require('bitcore-mnemonic');
 
@@ -228,7 +229,7 @@ export class Wallet {
     return this.client.getBalance({ pubKey: this.authPubKey, time });
   }
 
-  getNetworkFee(params) {
+  getNetworkFee(params: { target?: number } = {}) {
     const target = params.target || 2;
     return this.client.getFee({ target });
   }
@@ -248,14 +249,37 @@ export class Wallet {
     });
   }
 
-  async newTx(params) {
-    const utxos = params.utxos || (await this.getUtxos(params));
+  async newTx(params: {
+    utxos?: any[];
+    recipients: { address: string; amount: number }[];
+    change?: string;
+    fee?: number;
+  }) {
+    let fee = params.fee || (await this.getNetworkFee());
+    const utxos = params.utxos || [];
+    if (!utxos.length) {
+      await new Promise(resolve =>
+        this.getUtxos()
+          .pipe(new ParseApiStream())
+          .on('data', utxo =>
+            utxos.push({
+              value: utxo.value,
+              txid: utxo.mintTxid,
+              vout: utxo.mintIndex,
+              address: utxo.address,
+              script: utxo.script,
+              utxo
+            })
+          )
+          .on('finish', resolve)
+      );
+    }
     const payload = {
       network: this.network,
       chain: this.chain,
       recipients: params.recipients,
       change: params.change,
-      fee: params.fee,
+      fee,
       utxos
     };
     return TxProvider.create(payload);
@@ -293,12 +317,21 @@ export class Wallet {
     let { tx } = params;
     const utxos = params.utxos || [];
     if (!params.utxos) {
-      this.getUtxos(params).on('data', data => {
-        const stringData = data.toString().replace(',\n', '');
-        if (stringData.includes('{') && stringData.includes('}')) {
-          utxos.push(JSON.parse(stringData));
-        }
-      });
+      await new Promise(resolve =>
+        this.getUtxos()
+          .pipe(new ParseApiStream())
+          .on('data', utxo =>
+            utxos.push({
+              value: utxo.value,
+              txid: utxo.mintTxid,
+              vout: utxo.mintIndex,
+              address: utxo.address,
+              script: utxo.script,
+              utxo
+            })
+          )
+          .on('finish', resolve)
+      );
     }
     const payload = {
       chain: this.chain,
@@ -333,17 +366,29 @@ export class Wallet {
     });
   }
 
-  async deriveAddress(isChange) {
-    this.addressIndex = this.addressIndex || 0;
+  async deriveAddress(addressIndex, isChange) {
     const address = AddressProvider.derive(
       this.chain,
       this.network,
       this.xPubKey,
+      addressIndex,
+      isChange
+    );
+    return address;
+  }
+
+  async derivePrivateKey(isChange) {
+    this.addressIndex = this.addressIndex || 0;
+    const keyToImport = await AddressProvider.derivePrivateKey(
+      this.chain,
+      this.network,
+      this.unlocked.masterKey,
       this.addressIndex,
       isChange
     );
+    await this.importKeys({ keys: [keyToImport] });
     this.addressIndex++;
     await this.saveWallet();
-    return address;
+    return keyToImport.address.toString();
   }
 }

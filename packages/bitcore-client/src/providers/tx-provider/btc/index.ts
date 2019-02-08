@@ -2,14 +2,21 @@ export class BTCTxProvider {
   lib = require('bitcore-lib');
 
   create({ recipients, utxos, change, fee }) {
-    let tx = new this.lib.Transaction().from(utxos).fee(Number(fee));
+    const btcUtxos = utxos.map(utxo => {
+      console.log(utxo.value)
+      const btcUtxo = Object.assign({}, utxo, {
+        amount: utxo.value / Math.pow(10, 8)
+      });
+      return new this.lib.Transaction.UnspentOutput(btcUtxo);
+    });
+    let tx = new this.lib.Transaction().from(btcUtxos).fee(Number(fee));
     for (const recipient of recipients) {
-      tx.to(recipient.address, recipient.amount);
+      tx.to(recipient.address, recipient.amount * 10e7);
     }
     if (change) {
       tx.change(change);
     }
-    return tx;
+    return tx.uncheckedSerialize();
   }
 
   sign({ tx, keys, utxos }) {
