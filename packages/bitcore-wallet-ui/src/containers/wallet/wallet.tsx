@@ -123,6 +123,7 @@ export class WalletContainer extends Component<Props, AppState> {
 
   handleGetTx(wallet: Wallet) {
     this.props.socket.on('tx', async (sanitizedTx: any) => {
+      console.log(sanitizedTx);
       let message = `Recieved ${sanitizedTx.value /
         100000000} BTC at ${new Date(
         sanitizedTx.blockTimeNormalized
@@ -137,8 +138,7 @@ export class WalletContainer extends Component<Props, AppState> {
 
   handleGetBlock(wallet: Wallet) {
     this.props.socket.on('block', (block: any) => {
-      let message = `Recieved Block Reward ${block.reward /
-        100000000} BTC on ${new Date(block.time).toDateString()}`;
+      let message = `New Block on ${new Date(block.time).toDateString()}`;
       this.setState({
         message,
         open: true
@@ -267,7 +267,7 @@ export class WalletContainer extends Component<Props, AppState> {
     return (
       <AppStateContext.Provider value={this.state}>
         <div className="walletContainer">
-          <WalletBar wallet={wallet} balance={this.state.balance.balance} />
+          <WalletBar wallet={wallet} balance={this.state.balance.confirmed} />
 
           {this.props.children}
           {walletUnlocked ? (

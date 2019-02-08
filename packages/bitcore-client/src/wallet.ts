@@ -84,8 +84,7 @@ export class Wallet {
 
     // Generate public keys
     // bip44 compatible pubKey
-    const hdPubKey = hdPrivKey.derive(AddressProvider.pathFor(chain, network));
-    const pubKey = hdPubKey.publicKey.toString();
+    const pubKey = hdPrivKey.publicKey.toString();
 
     // Generate and encrypt the encryption key and private key
     const walletEncryptionKey = Encryption.generateEncryptionKey();
@@ -123,7 +122,7 @@ export class Wallet {
       addressIndex: 0,
       masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
-      xPubKey: hdPubKey.xpubkey,
+      xPubKey: hdPrivKey.xpubkey,
       pubKey
     });
     // save wallet to storage and then bitcore-node
@@ -257,7 +256,10 @@ export class Wallet {
     change?: string;
     fee?: number;
   }) {
-    let fee = params.fee || (await this.getNetworkFee());
+    console.log('using index', this.addressIndex, 'for change');
+    const change =
+      params.change || (await this.deriveAddress(this.addressIndex, true));
+    console.log(change);
     const utxos = params.utxos || [];
     if (!utxos.length) {
       await new Promise(resolve =>
@@ -280,8 +282,8 @@ export class Wallet {
       network: this.network,
       chain: this.chain,
       recipients: params.recipients,
-      change: params.change,
-      fee,
+      change,
+      fee: params.fee,
       utxos
     };
     return TxProvider.create(payload);
@@ -380,7 +382,6 @@ export class Wallet {
   }
 
   async derivePrivateKey(isChange) {
-    this.addressIndex = this.addressIndex || 0;
     const keyToImport = await AddressProvider.derivePrivateKey(
       this.chain,
       this.network,
@@ -389,8 +390,14 @@ export class Wallet {
       isChange
     );
     await this.importKeys({ keys: [keyToImport] });
-    this.addressIndex++;
-    await this.saveWallet();
     return keyToImport.address.toString();
+  }
+
+  async nextAddressPair() {
+    this.addressIndex = this.addressIndex !== undefined ? this.addressIndex + 1 : 0;
+    const newAddress = await this.derivePrivateKey(false);
+    const newChangeAddress = await this.derivePrivateKey(true);
+    await this.saveWallet();
+    return [newAddress, newChangeAddress];
   }
 }

@@ -221,8 +221,11 @@ export class RecievePage extends Component<Props, State> {
 
   async handleDeriveAddressClick() {
     const wallet = this.state.wallet;
-    const address = await wallet!.derivePrivateKey(0);
-    this.setState({ addressToAdd: address });
+    const newAddresses = await wallet!.nextAddressPair();
+    await this.updateWalletInfo(this.state.wallet!);
+    this.setState({
+      addresses: [...this.state.addresses, ...newAddresses]
+    });
   }
 
   render() {

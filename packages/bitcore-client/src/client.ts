@@ -113,9 +113,13 @@ export class Client {
   async getFee(params) {
     const { target } = params;
     const url = `${this.baseUrl}/fee/${target}`;
-    return request.get(url, {
-      json: true
-    });
+    return new Promise(resolve =>
+      request
+        .get(url, {
+          json: true
+        })
+        .on('data', d => resolve(d.toString()))
+    );
   }
 
   async importAddresses(params) {

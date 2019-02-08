@@ -97,8 +97,7 @@ export class SendCard extends React.Component<Props, State> {
     const tx = await this.props.appState.wallet!.newTx({
       recipients: [
         { address: this.state.sendTo, amount: Number(this.state.amountToSend) }
-      ],
-      fee: 200
+      ]
     });
 
     console.log(tx);
