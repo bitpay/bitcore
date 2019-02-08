@@ -1,11 +1,10 @@
-import { AppStateContext } from './wallet';
 import { RouteComponentProps } from 'react-router';
 import { WalletBottomNav } from '../wallet/BottomNav';
 import DialogSelect from '../wallet/UnlockBar';
 import React from 'react';
 import { useState } from 'react';
 import { Wallet } from 'bitcore-client';
-import { WalletContainer, AppState } from './wallet';
+import { AppStateContext, WalletContainer, AppState } from './Wallet';
 import { WalletBar } from './BalanceCard';
 import Paper from '@material-ui/core/Paper';
 import Button from '@material-ui/core/Button';

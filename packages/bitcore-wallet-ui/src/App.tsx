@@ -3,12 +3,12 @@ import { Router, Switch, Route } from 'react-router';
 import './App.css';
 import 'semantic-ui-css/semantic.min.css';
 import * as history from 'history';
-import { WalletsContainers } from './containers/wallets/wallets';
+import { WalletsContainers } from './containers/wallets/Wallets';
 import {
   AppStateWithSocket,
   WalletContainer,
   LiveUpdatingWalletContainer
-} from './containers/wallet/wallet';
+} from './containers/wallet/Wallet';
 import { RecievePage } from './containers/Address/RecievePage';
 import {
   SendContainer,
