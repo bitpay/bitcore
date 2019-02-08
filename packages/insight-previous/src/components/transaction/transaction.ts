@@ -56,11 +56,13 @@ export class TransactionComponent implements OnInit {
     return vout.address;
   }
 
-  public goToTx(txId: string): void {
+  public goToTx(txId: string, vout?: number, fromVout?: boolean): void {
     this.redirProvider.redir('transaction', {
       txId,
       chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
+      vout,
+      fromVout
     });
   }
 

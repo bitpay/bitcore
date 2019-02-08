@@ -27,7 +27,7 @@ export class TransactionListComponent implements OnInit {
       this.txProvider.getTxs({ [this.queryType]: this.queryValue }).subscribe(
         data => {
           // Newly Generated Coins (Coinbase) First
-          var sortedTxs = _.sortBy(data.txs, function(tx) {
+          const sortedTxs = _.sortBy(data.txs, tx => {
             return tx.isCoinBase ? 0 : 1;
           });
           this.transactions = sortedTxs;

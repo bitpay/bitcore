@@ -209,7 +209,7 @@ export class Wallet {
     return new PrivateKey(this.authKey);
   }
 
-  getBalance(time) {
+  getBalance(time?:string) {
     return this.client.getBalance({ pubKey: this.authPubKey, time });
   }
 

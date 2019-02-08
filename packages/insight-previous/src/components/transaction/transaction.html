@@ -49,7 +49,7 @@
     </ion-col>
   </ion-row>
 
-  <ion-row *ngIf="showCoins">
+  <ion-row *ngIf="showCoins" align-items-center>
     <ion-col col-12 col-md-5>
 
       <ion-list [hidden]="!tx.isCoinBase">
@@ -59,24 +59,27 @@
       </ion-list>
 
       <ion-list [hidden]="tx.isCoinBase">
-        <ion-item *ngFor="let vin of aggregateItems(tx.vin)">
-          <div>
-            <div class="ellipsis">
-              <p>
-                <a (click)="goToAddress(vin.address)">{{ vin.address }}</a>
-              </p>
-            </div>
-            <div [hidden]="!expanded">
-              <p *ngIf="vin.confirmations">
-                <b>Confirmations</b> {{ vin.confirmations }}</p>
-              <p>
-                <b>Unlocking Script</b>
-              </p>
-              <div *ngFor="let item of vin.items">
-                <div *ngIf="item.scriptSig">
-                  <div class="unlocking-script">
-                    <p>{{ item.scriptSig.asm }}
-                  </div>
+        <ion-item *ngFor="let vin of aggregateItems(tx.vin); let i = index ">
+          <button item-start ion-button *ngIf="expanded" (click)="goToTx(vin.items[i].mintTxid, i, false)" clear
+            icon-only>
+            <ion-icon color="primary" name="ios-arrow-forward"></ion-icon>
+          </button>
+
+          <div class="ellipsis">
+            <p>
+              <a (click)="goToAddress(vin.address)">{{ vin.address }}</a>
+            </p>
+          </div>
+          <div [hidden]="!expanded">
+            <p *ngIf="vin.confirmations">
+              <b>Confirmations</b> {{ vin.confirmations }}</p>
+            <p>
+              <b>Unlocking Script</b>
+            </p>
+            <div *ngFor="let item of vin.items">
+              <div *ngIf="item.scriptSig">
+                <div class="unlocking-script">
+                  <p>{{ item.scriptSig.asm }}
                 </div>
               </div>
             </div>
@@ -90,13 +93,13 @@
 
     </ion-col>
 
-    <ion-col col-12 col-md-1 text-center>
+    <ion-col col-12 col-md-1 text-center align-items-center>
       <ion-icon name="arrow-forward"></ion-icon>
     </ion-col>
 
     <ion-col col-12 col-md-6>
       <ion-list>
-        <ion-item *ngFor="let vout of tx.vout">
+        <ion-item *ngFor="let vout of tx.vout; let i = index">
           <div>
             <div class="ellipsis">
               <p>
@@ -119,9 +122,15 @@
 
           <div item-end>
             {{ currency.getConvertedNumber(vout.value) | number:'1.0-8' }} {{ currency.currencySymbol }}
-            <span [hidden]="!vout.spentTxId">(S)</span>
-            <span [hidden]="vout.spentTxId">(U)</span>
+            <span [hidden]="!vout.spentTxid">(S)</span>
+            <span [hidden]="vout.spentTxid">(U)</span>
           </div>
+
+          <button item-end ion-button *ngIf="expanded && vout.spentTxid && vout.spentTxid !== '' " (click)="
+            goToTx(vout.spentTxid, i, true)"
+            clear icon-only>
+            <ion-icon color="primary" name="ios-arrow-forward"></ion-icon>
+          </button>
         </ion-item>
       </ion-list>
     </ion-col>

@@ -52,7 +52,8 @@ export class HomePage {
   }
 
   public loadView(chainNetwork: ChainNetwork, currencyChanged: boolean) {
-    this.priceProvider.setCurrency(chainNetwork.chain);
+    const currentCurrency = localStorage.getItem('insight-currency');
+    this.priceProvider.setCurrency(currentCurrency);
     if (currencyChanged) {
       this.latestBlocks.reloadData();
     }

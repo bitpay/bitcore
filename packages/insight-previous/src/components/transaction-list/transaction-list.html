@@ -11,8 +11,8 @@
       </ion-col>
     </ion-row>
     <ion-row *ngIf="limit < transactions.length">
-      <ion-col col-12 text-center (click)="loadMore()">
-        <a>Load More</a>
+      <ion-col col-12 text-center>
+        <button ion-button small (click)="loadMore()">Load More</button>
       </ion-col>
     </ion-row>
   </ion-grid>
