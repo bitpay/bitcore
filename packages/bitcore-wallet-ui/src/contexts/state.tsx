@@ -1,5 +1,5 @@
 import { Wallet } from 'bitcore-client';
-interface AppState {
+export interface AppState {
   walletName: string;
   wallet?: Wallet;
   password: string;
@@ -9,6 +9,7 @@ interface AppState {
   addressToAdd: string;
   message: string;
   open: boolean;
+  postReducer: Function;
 }
 const State = {
   password: '',
