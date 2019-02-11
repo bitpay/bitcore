@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { Title } from '@angular/platform-browser';
 import { Platform } from '@ionic/angular';
 import { ConfigService } from './services/config/config.service';
 

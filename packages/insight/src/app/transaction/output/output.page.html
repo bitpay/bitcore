@@ -8,4 +8,11 @@
   </ion-toolbar>
 </ion-header>
 
-<ion-content padding> </ion-content>
+<ion-content padding>
+  <app-output
+    *ngIf="(coin$ | async) as coin"
+    [coin]="coin"
+    [summary]="false"
+    [displayValueCode]="config.displayValueCode$ | async"
+  ></app-output>
+</ion-content>

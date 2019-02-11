@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { combineLatest, Observable, of } from 'rxjs';
-import { filter, map, switchMap, tap } from 'rxjs/operators';
+import { filter, switchMap } from 'rxjs/operators';
 import { ApiService } from '../services/api/api.service';
 import { ConfigService } from '../services/config/config.service';
 import { TransactionJSON } from '../types/bitcore-node';

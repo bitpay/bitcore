@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, fromEvent } from 'rxjs';
 
-// TODO: network connected/disconnected notification
 @Injectable({
   providedIn: 'root'
 })

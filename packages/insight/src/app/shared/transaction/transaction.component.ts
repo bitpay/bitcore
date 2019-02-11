@@ -17,6 +17,7 @@ export class TransactionComponent {
   transaction: TransactionJSON;
 
   pending = SpentHeightIndicators.pending;
+  conflicting = SpentHeightIndicators.conflicting;
 
   /**
    * The unit in which to display value – can be either a valid denomination for
