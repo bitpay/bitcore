@@ -22,6 +22,11 @@ export class ApiProvider {
     selectedNetwork: { chain: 'BTC', network: 'mainnet' }
   });
 
+  public ratesAPI = {
+    btc: 'https://bitpay.com/api/rates',
+    bch: 'https://bitpay.com/api/rates/bch'
+  };
+
   constructor(
     public http: Http,
     private defaults: DefaultProvider,

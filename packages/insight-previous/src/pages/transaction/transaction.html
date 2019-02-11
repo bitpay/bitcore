@@ -5,7 +5,13 @@
   </div>
 
   <div *ngIf="!loading" class="page-content">
-    <h1>Transaction</h1>
+    <h1 ion-text>
+      Transaction
+      <ion-note *ngIf="vout !== undefined">
+        <span class="tx-note" ion-text *ngIf="fromVout">Output {{ vout }}</span>
+        <span class="tx-note" ion-text *ngIf="!fromVout">Input {{ vout }}</span>
+      </ion-note>
+    </h1>
     <p class="item-hash">
       <b>Transaction Hash</b> {{ tx.txid }}</p>
 
