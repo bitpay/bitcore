@@ -8,9 +8,8 @@ describe('BlockListComponent', () => {
 
   beforeEach(async(() => {
     TestBed.configureTestingModule({
-      declarations: [ BlockListComponent ]
-    })
-    .compileComponents();
+      declarations: [BlockListComponent]
+    }).compileComponents();
   }));
 
   beforeEach(() => {

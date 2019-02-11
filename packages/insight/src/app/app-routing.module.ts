@@ -27,6 +27,36 @@ const routes: Routes = [
       {
         path: 'block/:hash',
         loadChildren: './block/block.module#BlockPageModule'
+      },
+      {
+        path: 'block/:hash/transactions',
+        loadChildren:
+          './block/block-transactions/block-transactions.module#BlockTransactionsPageModule'
+      },
+      {
+        path: 'transactions',
+        loadChildren:
+          './transactions/transactions.module#TransactionsPageModule'
+      },
+      {
+        path: 'transaction/:hash',
+        loadChildren: './transaction/transaction.module#TransactionPageModule'
+      },
+      {
+        path: 'transaction/:hash/outputs',
+        loadChildren: './transaction/outputs/outputs.module#OutputsPageModule'
+      },
+      {
+        path: 'transaction/:hash/output/:output',
+        loadChildren: './transaction/output/output.module#OutputPageModule'
+      },
+      {
+        path: 'transaction/:hash/inputs',
+        loadChildren: './transaction/inputs/inputs.module#InputsPageModule'
+      },
+      {
+        path: 'transaction/:hash/input/:input',
+        loadChildren: './transaction/input/input.module#InputPageModule'
       }
     ]
   },
@@ -39,7 +69,7 @@ const routes: Routes = [
 @NgModule({
   imports: [
     RouterModule.forRoot(routes, {
-      enableTracing: !environment.production,
+      enableTracing: environment.debugRouting,
       preloadingStrategy: PreloadAllModules
     })
   ],

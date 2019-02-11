@@ -15,8 +15,10 @@ export const environment = {
   apiPrefix: 'https://api.bitcore.io/api',
   ratesApi: 'https://bitpay.com/api/rates/bch',
   production: true,
+  debugRouting: false,
   loggingSettings,
   initialDisplayValueCode: initialChain.code,
   initialChain,
-  expectedChains
+  expectedChains,
+  pollingRateMilliseconds: 60 * 1000
 };

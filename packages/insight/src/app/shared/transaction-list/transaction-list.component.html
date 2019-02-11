@@ -1,0 +1,2 @@
+<app-transaction *ngFor="let transaction of transactions$ | async" [transaction]="transaction" [routerLink]="['/' + (chain$ | async).code + '/transaction/' + transaction.txid]"
+    [displayValueCode]="displayValueCode"></app-transaction>

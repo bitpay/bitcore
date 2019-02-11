@@ -1,0 +1,32 @@
+<div [ngClass]="{ card: true, 'detail-view': !summary }">
+  <app-card-item class="section">
+    <div class="property">
+      <span class="key">Value</span>
+      <span class="value">
+        <app-currency-value
+          amount="{{ coin.value }}"
+          code="{{ coin.chain }}_satoshis"
+          displayAs="{{ displayValueCode }}"
+        ></app-currency-value>
+      </span>
+    </div>
+    <ng-container *ngIf="!summary">
+      <div class="property">
+        <span class="key">Not summary</span>
+        <span class="value">something else</span>
+      </div>
+    </ng-container>
+  </app-card-item>
+</div>
+<!-- <div class="card" *ngIf="!summary">
+  <app-card-item
+    *ngIf="block.transactionCount > 0"
+    class="section"
+    header="Transactions"
+    headerCount="{{ block.transactionCount }}"
+    type="forward"
+    [routerLink]="[
+      '/' + block.chain + '/block/' + block.hash + '/transactions'
+    ]"
+  ></app-card-item>
+</div> -->
