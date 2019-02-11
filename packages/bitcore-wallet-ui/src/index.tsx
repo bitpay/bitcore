@@ -6,9 +6,30 @@ import * as serviceWorker from './serviceWorker';
 import { Provider } from 'react-redux';
 import { createStore, applyMiddleware } from 'redux';
 import thunk from 'redux-thunk';
-import reducers from './reducers';
+import { MyImmerReducer } from './reducers';
+import { createActionCreators, createReducerFunction } from 'immer-reducer';
+import { AppState } from './contexts/state';
 
-const store = createStore(reducers, applyMiddleware(thunk));
+const initialState: AppState = {
+  password: '',
+  walletName: '',
+  balance: {
+    confirmed: 0,
+    unconfirmed: 0,
+    balance: 0
+  },
+  transactions: [],
+  addresses: [],
+  addressToAdd: '',
+  message: '',
+  wallet: undefined,
+  wallets: []
+};
+
+export const ActionCreators = createActionCreators(MyImmerReducer);
+const reducerFunction = createReducerFunction(MyImmerReducer, initialState);
+
+export const store = createStore(reducerFunction, applyMiddleware(thunk));
 
 ReactDOM.render(
   <Provider store={store}>

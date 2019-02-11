@@ -8,7 +8,6 @@ import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import ExpansionPanelActions from '@material-ui/core/ExpansionPanelActions';
 import Divider from '@material-ui/core/Divider';
 import { connect } from 'react-redux';
-import { fetchPostsandUpdate } from '../../actions';
 import { AppState } from '../../contexts/state';
 
 const styles = () => ({
@@ -39,14 +38,9 @@ interface Props {
   walletCreate: any;
   classes: any;
   handleCreateWalletClick: any;
-  fetchPostsandUpdate: any;
 }
 
 class CreateWallet extends React.Component<Props> {
-  componentDidMount() {
-    this.props.fetchPostsandUpdate();
-  }
-
   render() {
     const { classes, walletCreate, handleCreateWalletClick } = this.props;
 
@@ -80,15 +74,4 @@ class CreateWallet extends React.Component<Props> {
   }
 }
 
-const mapStateToProps = (state: AppState) => {
-  return { posts: state.postReducer };
-};
-
-const CreateWalletCard = withStyles(styles)(
-  connect(
-    mapStateToProps,
-    { fetchPostsandUpdate }
-  )(CreateWallet)
-);
-
-export { CreateWalletCard };
+export const CreateWalletCard = withStyles(styles)(CreateWallet);

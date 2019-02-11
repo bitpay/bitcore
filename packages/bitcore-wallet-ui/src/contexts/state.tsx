@@ -8,20 +8,5 @@ export interface AppState {
   addresses: string[];
   addressToAdd: string;
   message: string;
-  open: boolean;
-  postReducer: Function;
+  wallets: Wallet[];
 }
-const State = {
-  password: '',
-  walletName: '',
-  balance: {
-    confirmed: 0,
-    unconfirmed: 0,
-    balance: 0
-  },
-  transactions: [],
-  addresses: [],
-  addressToAdd: '',
-  message: '',
-  open: false
-};
