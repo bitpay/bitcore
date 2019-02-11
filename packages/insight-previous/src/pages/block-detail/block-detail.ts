@@ -1,12 +1,17 @@
-import { Component } from '@angular/core';
-import { IonicPage, NavController, NavParams } from 'ionic-angular';
-import { ApiProvider } from '../../providers/api/api';
+import { Component, Injectable } from '@angular/core';
+import { IonicPage, NavParams } from 'ionic-angular';
+import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { Logger } from '../../providers/logger/logger';
+import { PriceProvider } from '../../providers/price/price';
+import { RedirProvider } from '../../providers/redir/redir';
 
+@Injectable()
 @IonicPage({
   name: 'block-detail',
-  segment: ':chain/:network/block/:blockHash'
+  segment: ':chain/:network/block/:blockHash',
+  defaultHistory: ['home']
 })
 @Component({
   selector: 'page-block-detail',
@@ -15,49 +20,61 @@ import { CurrencyProvider } from '../../providers/currency/currency';
 export class BlockDetailPage {
   public loading = true;
   private blockHash: string;
+  private chainNetwork: ChainNetwork;
   public block: any = {
     tx: []
   };
 
   constructor(
-    public navCtrl: NavController,
     public navParams: NavParams,
     private blockProvider: BlocksProvider,
     private apiProvider: ApiProvider,
-    public currency: CurrencyProvider
+    public currency: CurrencyProvider,
+    private logger: Logger,
+    private priceProvider: PriceProvider,
+    public redirProvider: RedirProvider
   ) {
     this.blockHash = navParams.get('blockHash');
-    const chain: string = navParams.get('chain');
-    const network: string = navParams.get('network');
-    this.apiProvider.changeNetwork({ chain, network });
+    const chain: string =
+      navParams.get('chain') || this.apiProvider.getConfig().chain;
+    const network: string =
+      navParams.get('network') || this.apiProvider.getConfig().network;
+
+    this.chainNetwork = {
+      chain,
+      network
+    };
+    this.apiProvider.changeNetwork(this.chainNetwork);
+    const currentCurrency = localStorage.getItem('insight-currency');
+    this.priceProvider.setCurrency(currentCurrency);
   }
 
-  public ionViewDidLoad(): void {
+  ionViewDidLoad() {
     this.blockProvider.getBlock(this.blockHash).subscribe(
       data => {
         this.block = data.block;
         this.loading = false;
       },
       err => {
-        console.log('err is', err);
+        this.logger.error(err);
         this.loading = false;
       }
     );
   }
 
   public goToPreviousBlock(): void {
-    this.navCtrl.push('block-detail', {
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
-      blockHash: this.block.previousblockhash
+    this.redirProvider.redir('block-detail', {
+      blockHash: this.block.previousblockhash,
+      chain: this.chainNetwork.chain,
+      network: this.chainNetwork.network
     });
   }
 
   public goToNextBlock(): void {
-    this.navCtrl.push('block-detail', {
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
-      blockHash: this.block.nextblockhash
+    this.redirProvider.redir('block-detail', {
+      blockHash: this.block.nextblockhash,
+      chain: this.chainNetwork.chain,
+      network: this.chainNetwork.network
     });
   }
 }

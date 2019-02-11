@@ -1,39 +1,62 @@
 import * as http from 'http';
-import SocketIO = require('socket.io');
-import mongoose from 'mongoose';
 import app from '../routes';
 import logger from '../logger';
 import config from '../config';
 import { LoggifyClass } from '../decorators/Loggify';
-import { Storage } from './storage';
-import { Socket } from './socket';
+import { Storage, StorageService } from './storage';
+import { Socket, SocketService } from './socket';
+import { ConfigService, Config } from './config';
 
 @LoggifyClass
 export class ApiService {
   port: number;
   timeout: number;
+  configService: ConfigService;
+  storageService: StorageService;
+  socketService: SocketService;
+  httpServer: http.Server;
+  stopped = true;
 
-  constructor(options) {
-    const { port, timeout } = options;
-
-    this.port = port || 3000;
-    this.timeout = timeout || 600000;
+  constructor({
+    port = 3000,
+    timeout = 600000,
+    configService = Config,
+    storageService = Storage,
+    socketService = Socket
+  } = {}) {
+    this.port = port;
+    this.timeout = timeout;
+    this.configService = configService;
+    this.storageService = storageService;
+    this.socketService = socketService;
+    this.httpServer = new http.Server(app);
   }
 
   async start() {
-    if (mongoose.connection.readyState !== 1) {
-      await Storage.start({});
+    if (this.configService.isDisabled('api')) {
+      logger.info(`Disabled API Service`);
+      return;
     }
-    const httpServer = new http.Server(app);
-    const io = SocketIO(httpServer);
-    httpServer.listen(this.port, () => {
-      logger.info(`API server started on port ${this.port}`);
-      Socket.setServer(io);
-    });
-    httpServer.timeout = this.timeout;
+    if (!this.storageService.connected) {
+      await this.storageService.start({});
+    }
+    if (this.stopped) {
+      this.stopped = false;
+      this.httpServer.timeout = this.timeout;
+      this.httpServer.listen(this.port, () => {
+        logger.info(`Starting API Service on port ${this.port}`);
+        this.socketService.start({ server: this.httpServer });
+      });
+    }
+    return this.httpServer;
   }
 
-  stop() {}
+  stop() {
+    this.stopped = true;
+    return new Promise(resolve => {
+      this.httpServer.close(resolve);
+    });
+  }
 }
 
 // TOOO: choose a place in the config for the API timeout and include it here

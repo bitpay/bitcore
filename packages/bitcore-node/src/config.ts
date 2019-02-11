@@ -1,6 +1,7 @@
 import { homedir, cpus } from 'os';
 import parseArgv from './utils/parseArgv';
-import ConfigType from './types/Config';
+import { ConfigType } from './types/Config';
+import * as _ from 'lodash';
 let program = parseArgv([], ['config']);
 
 function findConfig(): ConfigType | undefined {
@@ -57,11 +58,28 @@ const Config = function(): ConfigType {
     dbName: process.env.DB_NAME || 'bitcore',
     dbPort: process.env.DB_PORT || '27017',
     numWorkers: cpus().length,
-    chains: {}
+    chains: {},
+    services: {
+      api: {
+        rateLimiter: {
+          disabled: false,
+          whitelist: ['::ffff:127.0.0.1', '::1']
+        },
+        wallets: {
+          allowCreationBeforeCompleteSync: false,
+          allowUnauthenticatedCalls: false
+        }
+      },
+      event: {},
+      p2p: {},
+      socket: {},
+      storage: {}
+    }
   };
 
   let foundConfig = findConfig();
-  Object.assign(config, foundConfig, {});
+  const mergeCopyArray = (objVal, srcVal) => (objVal instanceof Array ? srcVal : undefined);
+  config = _.mergeWith(config, foundConfig, mergeCopyArray);
   if (!Object.keys(config.chains).length) {
     Object.assign(config.chains, {
       BTC: {

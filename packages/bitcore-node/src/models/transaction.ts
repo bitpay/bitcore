@@ -1,5 +1,5 @@
-import { CoinModel } from './coin';
-import { WalletAddressModel } from './walletAddress';
+import { CoinStorage } from './coin';
+import { WalletAddressStorage } from './walletAddress';
 import { partition } from '../utils/partition';
 import { ObjectID } from 'bson';
 import { TransformOptions } from '../types/TransformOptions';
@@ -7,12 +7,12 @@ import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { BaseModel, MongoBound } from './base';
 import logger from '../logger';
-import config from '../config';
-import { StreamingFindOptions, Storage } from '../services/storage';
+import { StreamingFindOptions, Storage, StorageService } from '../services/storage';
 import * as lodash from 'lodash';
-import { Socket } from '../services/socket';
 import { TransactionJSON } from '../types/Transaction';
 import { SpentHeightIndicators } from '../types/Coin';
+import { Config } from '../services/config';
+import { EventStorage } from './events';
 
 const Chain = require('../chain');
 
@@ -34,10 +34,54 @@ export type ITransaction = {
   wallets: ObjectID[];
 };
 
+export type MintOp = {
+  updateOne: {
+    filter: {
+      mintTxid: string;
+      mintIndex: number;
+      chain: string;
+      network: string;
+    };
+    update: {
+      $set: {
+        chain: string;
+        network: string;
+        address: string;
+        mintHeight: number;
+        coinbase: boolean;
+        value: number;
+        script: Buffer;
+        spentTxid?: string;
+        spentHeight?: SpentHeightIndicators;
+        wallets?: Array<ObjectID>;
+      };
+      $setOnInsert: {
+        spentHeight: SpentHeightIndicators;
+        wallets: Array<ObjectID>;
+      };
+    };
+    upsert: true;
+    forceServerObjectId: true;
+  };
+};
+
+export type SpendOp = {
+  updateOne: {
+    filter: {
+      mintTxid: string;
+      mintIndex: number;
+      spentHeight: { $lt: SpentHeightIndicators };
+      chain: string;
+      network: string;
+    };
+    update: { $set: { spentTxid: string; spentHeight: number } };
+  };
+};
+
 @LoggifyClass
-export class Transaction extends BaseModel<ITransaction> {
-  constructor() {
-    super('transactions');
+export class TransactionModel extends BaseModel<ITransaction> {
+  constructor(storage?: StorageService) {
+    super('transactions', storage);
   }
 
   allowedPaging = [
@@ -82,8 +126,8 @@ export class Transaction extends BaseModel<ITransaction> {
     logger.debug('Minting Coins', mintOps.length);
     if (mintOps.length) {
       await Promise.all(
-        partition(mintOps, mintOps.length / config.maxPoolSize).map(mintBatch =>
-          CoinModel.collection.bulkWrite(mintBatch, { ordered: false })
+        partition(mintOps, mintOps.length / Config.get().maxPoolSize).map(mintBatch =>
+          CoinStorage.collection.bulkWrite(mintBatch, { ordered: false })
         )
       );
     }
@@ -91,8 +135,8 @@ export class Transaction extends BaseModel<ITransaction> {
     logger.debug('Spending Coins', spendOps.length);
     if (spendOps.length) {
       await Promise.all(
-        partition(spendOps, spendOps.length / config.maxPoolSize).map(spendBatch =>
-          CoinModel.collection.bulkWrite(spendBatch, { ordered: false })
+        partition(spendOps, spendOps.length / Config.get().maxPoolSize).map(spendBatch =>
+          CoinStorage.collection.bulkWrite(spendBatch, { ordered: false })
         )
       );
     }
@@ -101,25 +145,26 @@ export class Transaction extends BaseModel<ITransaction> {
       const txOps = await this.addTransactions({ ...params, mintOps });
       logger.debug('Writing Transactions', txOps.length);
       await Promise.all(
-        partition(txOps, txOps.length / config.maxPoolSize).map(txBatch =>
+        partition(txOps, txOps.length / Config.get().maxPoolSize).map(txBatch =>
           this.collection.bulkWrite(txBatch, { ordered: false })
         )
       );
 
       // Create events for mempool txs
       if (params.height < SpentHeightIndicators.minimum) {
-        txOps.forEach(op => {
+        for (let op of txOps) {
           const filter = op.updateOne.filter;
           const tx = { ...op.updateOne.update.$set, ...filter };
-          Socket.signalTx(tx);
-          mintOps
+          await EventStorage.signalTx(tx);
+          await mintOps
             .filter(coinOp => coinOp.updateOne.filter.mintTxid === filter.txid)
-            .forEach(coinOp => {
+            .map(coinOp => {
               const address = coinOp.updateOne.update.$set.address;
               const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
-              Socket.signalAddressCoin({ address, coin });
-            });
-        });
+              return () => EventStorage.signalAddressCoin({ address, coin }) as any;
+            })
+            .reduce((promises, promise) => promises.then(promise), Promise.resolve());
+        }
       }
     }
   }
@@ -135,12 +180,12 @@ export class Transaction extends BaseModel<ITransaction> {
     initialSyncComplete: boolean;
     chain: string;
     network: string;
-    mintOps: Array<any>;
+    mintOps: Array<MintOp>;
     mempoolTime?: Date;
   }) {
     let { blockHash, blockTime, blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
     if (parentChain && forkHeight && height < forkHeight) {
-      const parentTxs = await TransactionModel.collection
+      const parentTxs = await TransactionStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
         .toArray();
       return parentTxs.map(parentTx => {
@@ -160,7 +205,7 @@ export class Transaction extends BaseModel<ITransaction> {
                 size: parentTx.size,
                 locktime: parentTx.locktime,
                 inputCount: parentTx.inputCount,
-                outputCount: parentTx.inputCount,
+                outputCount: parentTx.outputCount,
                 value: parentTx.value,
                 wallets: []
               }
@@ -177,7 +222,7 @@ export class Transaction extends BaseModel<ITransaction> {
       } else {
         spentQuery = { spentTxid: { $in: params.txs.map(tx => tx._hash) }, chain, network };
       }
-      const spent = await CoinModel.collection
+      const spent = await CoinStorage.collection
         .find(spentQuery)
         .project({ spentTxid: 1, value: 1, wallets: 1 })
         .toArray();
@@ -185,7 +230,7 @@ export class Transaction extends BaseModel<ITransaction> {
       const groupedMints = params.mintOps.reduce<CoinGroup>((agg, coinOp) => {
         const mintTxid = coinOp.updateOne.filter.mintTxid;
         const coin = coinOp.updateOne.update.$set;
-        const { value, wallets } = coin;
+        const { value, wallets = [] } = coin;
         if (!agg[mintTxid]) {
           agg[mintTxid] = {
             total: value,
@@ -224,7 +269,7 @@ export class Transaction extends BaseModel<ITransaction> {
           // TODO: Fee is negative for mempool txs
           fee = groupedSpends[txid].total - groupedMints[txid].total;
           if (fee < 0) {
-            console.error(txid, groupedSpends[txid], groupedMints[txid]);
+            logger.debug('negative fee', txid, groupedSpends[txid], groupedMints[txid]);
           }
         }
 
@@ -266,13 +311,13 @@ export class Transaction extends BaseModel<ITransaction> {
     initialSyncComplete: boolean;
     chain: string;
     network: string;
-    mintOps?: Array<any>;
+    mintOps?: Array<MintOp>;
   }) {
     let { chain, height, network, parentChain, forkHeight, initialSyncComplete } = params;
-    let mintOps = new Array<any>();
+    let mintOps = new Array<MintOp>();
     let parentChainCoinsMap = new Map();
     if (parentChain && forkHeight && height < forkHeight) {
-      let parentChainCoins = await CoinModel.collection
+      let parentChainCoins = await CoinStorage.collection
         .find({
           chain: parentChain,
           network,
@@ -310,7 +355,6 @@ export class Transaction extends BaseModel<ITransaction> {
             filter: {
               mintTxid: tx._hash,
               mintIndex: index,
-              spentHeight: { $lt: SpentHeightIndicators.minimum },
               chain,
               network
             },
@@ -322,7 +366,9 @@ export class Transaction extends BaseModel<ITransaction> {
                 mintHeight: height,
                 coinbase: isCoinbase,
                 value: output.satoshis,
-                script: output.script && output.script.toBuffer(),
+                script: output.script && output.script.toBuffer()
+              },
+              $setOnInsert: {
                 spentHeight: SpentHeightIndicators.unspent,
                 wallets: []
               }
@@ -334,14 +380,16 @@ export class Transaction extends BaseModel<ITransaction> {
       }
     }
 
-    if (initialSyncComplete) {
+    const walletConfig = Config.for('api').wallets;
+    if (initialSyncComplete || (walletConfig && walletConfig.allowCreationBeforeCompleteSync)) {
       let mintOpsAddresses = {};
       for (const mintOp of mintOps) {
         mintOpsAddresses[mintOp.updateOne.update.$set.address] = true;
       }
       mintOpsAddresses = Object.keys(mintOpsAddresses);
-      let wallets = await WalletAddressModel.collection
+      let wallets = await WalletAddressStorage.collection
         .find({ address: { $in: mintOpsAddresses }, chain, network }, { batchSize: 100 })
+        .project({ wallet: 1, address: 1 })
         .toArray();
       if (wallets.length) {
         mintOps = mintOps.map(mintOp => {
@@ -349,6 +397,10 @@ export class Transaction extends BaseModel<ITransaction> {
             .filter(wallet => wallet.address === mintOp.updateOne.update.$set.address)
             .map(wallet => wallet.wallet);
           mintOp.updateOne.update.$set.wallets = transformedWallets;
+          delete mintOp.updateOne.update.$setOnInsert.wallets;
+          if (!Object.keys(mintOp.updateOne.update.$setOnInsert).length) {
+            delete mintOp.updateOne.update.$setOnInsert;
+          }
           return mintOp;
         });
       }
@@ -364,15 +416,15 @@ export class Transaction extends BaseModel<ITransaction> {
     forkHeight?: number;
     chain: string;
     network: string;
-    mintOps?: Array<any>;
+    mintOps?: Array<MintOp>;
     [rest: string]: any;
-  }): Array<any> {
+  }) {
     let { chain, network, height, parentChain, forkHeight } = params;
-    let spendOps: any[] = [];
+    let spendOps: SpendOp[] = [];
     if (parentChain && forkHeight && height < forkHeight) {
       return spendOps;
     }
-    let mintMap = {};
+    let mintMap = {} as Mapping<Mapping<MintOp>>;
     for (let mintOp of params.mintOps || []) {
       mintMap[mintOp.updateOne.filter.mintTxid] = mintMap[mintOp.updateOne.filter.mintIndex] || {};
       mintMap[mintOp.updateOne.filter.mintTxid][mintOp.updateOne.filter.mintIndex] = mintOp;
@@ -386,10 +438,14 @@ export class Transaction extends BaseModel<ITransaction> {
         let sameBlockSpend = mintMap[inputObj.prevTxId] && mintMap[inputObj.prevTxId][inputObj.outputIndex];
         if (sameBlockSpend) {
           sameBlockSpend.updateOne.update.$set.spentHeight = height;
+          delete sameBlockSpend.updateOne.update.$setOnInsert.spentHeight;
+          if (!Object.keys(sameBlockSpend.updateOne.update.$setOnInsert).length) {
+            delete sameBlockSpend.updateOne.update.$setOnInsert;
+          }
           sameBlockSpend.updateOne.update.$set.spentTxid = tx._hash;
           continue;
         }
-        const updateQuery: any = {
+        const updateQuery = {
           updateOne: {
             filter: {
               mintTxid: inputObj.prevTxId,
@@ -398,7 +454,7 @@ export class Transaction extends BaseModel<ITransaction> {
               chain,
               network
             },
-            update: { $set: { spentTxid: tx._hash, spentHeight: height } }
+            update: { $set: { spentTxid: tx._hash || tx.hash, spentHeight: height } }
           }
         };
         spendOps.push(updateQuery);
@@ -414,8 +470,8 @@ export class Transaction extends BaseModel<ITransaction> {
     forkHeight?: number;
     chain: string;
     network: string;
-    mintOps: Array<any>;
-    spendOps: Array<any>;
+    mintOps: Array<MintOp>;
+    spendOps: Array<SpendOp>;
     initialSyncComplete: boolean;
     [rest: string]: any;
   }) {
@@ -425,7 +481,7 @@ export class Transaction extends BaseModel<ITransaction> {
     }
     let prunedTxs = {};
     for (const spendOp of spendOps) {
-      let coin = await CoinModel.collection.findOne(
+      let coin = await CoinStorage.collection.findOne(
         {
           chain,
           network,
@@ -448,7 +504,7 @@ export class Transaction extends BaseModel<ITransaction> {
           { $set: { blockHeight: SpentHeightIndicators.conflicting } },
           { w: 0, j: false, multi: true }
         ),
-        CoinModel.collection.update(
+        CoinStorage.collection.update(
           { mintTxid: { $in: prunedTxs } },
           { $set: { mintHeight: SpentHeightIndicators.conflicting } },
           { w: 0, j: false, multi: true }
@@ -489,4 +545,4 @@ export class Transaction extends BaseModel<ITransaction> {
     return JSON.stringify(transaction);
   }
 }
-export let TransactionModel = new Transaction();
+export let TransactionStorage = new TransactionModel();

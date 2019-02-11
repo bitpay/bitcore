@@ -17,19 +17,20 @@ describe('URI', function() {
     URI.parse.bind(URI, 'badURI').should.throw(TypeError);
 
     uri = URI.parse('bitcoincash:');
-    expect(uri.address).to.be.undefined();
-    expect(uri.amount).to.be.undefined();
-    expect(uri.otherParam).to.be.undefined();
+    expect(uri.address).to.be.equal(undefined);
+    expect(uri.amount).to.be.equal(undefined);
+    expect(uri.otherParam).to.be.equal(undefined);
+
 
     uri = URI.parse('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m');
     uri.address.should.equal('qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m');
-    expect(uri.amount).to.be.undefined();
-    expect(uri.otherParam).to.be.undefined();
+    expect(uri.amount).to.be.equal(undefined);
+    expect(uri.otherParam).to.be.equal(undefined);
 
     uri = URI.parse('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m?amount=123.22');
     uri.address.should.equal('qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m');
     uri.amount.should.equal('123.22');
-    expect(uri.otherParam).to.be.undefined();
+    expect(uri.otherParam).to.be.equal(undefined);
 
     uri = URI.parse('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m?amount=123.22' +
                     '&other-param=something&req-extra=param');
@@ -46,19 +47,19 @@ describe('URI', function() {
     URI.parse.bind(URI, 'badURI').should.throw(TypeError);
 
     uri = URI.parse('bchtest:');
-    expect(uri.address).to.be.undefined();
-    expect(uri.amount).to.be.undefined();
-    expect(uri.otherParam).to.be.undefined();
+    expect(uri.address).to.be.equal(undefined);
+    expect(uri.amount).to.be.equal(undefined);
+    expect(uri.otherParam).to.be.equal(undefined);
 
     uri = URI.parse('bchtest:qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x');
     uri.address.should.equal('qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x');
-    expect(uri.amount).to.be.undefined();
-    expect(uri.otherParam).to.be.undefined();
+    expect(uri.amount).to.be.equal(undefined);
+    expect(uri.otherParam).to.be.equal(undefined);
 
     uri = URI.parse('bchtest:qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x?amount=123.22');
     uri.address.should.equal('qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x');
     uri.amount.should.equal('123.22');
-    expect(uri.otherParam).to.be.undefined();
+    expect(uri.otherParam).to.be.equal(undefined);
 
     uri = URI.parse('bchtest:qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x?amount=123.22' +
                     '&other-param=something&req-extra=param');
@@ -87,8 +88,8 @@ describe('URI', function() {
       var str = 'bitcoincash:qryan2ur3ff2x4arg4zaemevmncgewwl6swgk4az9g';
       uri = URI.parse(str);
       uri.address.should.equal('qryan2ur3ff2x4arg4zaemevmncgewwl6swgk4az9g');
-      expect(uri.amount).to.be.undefined();
-      expect(uri.otherParam).to.be.undefined();
+      expect(uri.amount).to.be.equal(undefined);
+      expect(uri.otherParam).to.be.equal(undefined);
       URI.isValid(str).should.equal(true);
     });
 
@@ -98,7 +99,7 @@ describe('URI', function() {
       uri = URI.parse(str);
       uri.address.should.equal('qryan2ur3ff2x4arg4zaemevmncgewwl6swgk4az9g');
       uri.amount.should.equal('123.22');
-      expect(uri.otherParam).to.be.undefined();
+      expect(uri.otherParam).to.be.equal(undefined);
       URI.isValid(str).should.equal(true);
     });
 
@@ -155,8 +156,8 @@ describe('URI', function() {
       var str = 'bchtest:qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x';
       uri = URI.parse(str);
       uri.address.should.equal('qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x');
-      expect(uri.amount).to.be.undefined();
-      expect(uri.otherParam).to.be.undefined();
+      expect(uri.amount).to.be.equal(undefined);
+      expect(uri.otherParam).to.be.equal(undefined);
       URI.isValid(str).should.equal(true);
     });
 
@@ -166,7 +167,7 @@ describe('URI', function() {
       uri = URI.parse(str);
       uri.address.should.equal('qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x');
       uri.amount.should.equal('123.22');
-      expect(uri.otherParam).to.be.undefined();
+      expect(uri.otherParam).to.be.equal(undefined);
       URI.isValid(str).should.equal(true);
     });
 
@@ -290,13 +291,13 @@ describe('URI', function() {
       uri = URI.fromString('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m?amount=123.22');
       uri.address.toString().should.equal('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m');
       uri.amount.should.equal(12322000000);
-      expect(uri.otherParam).to.be.undefined();
+      expect(uri.otherParam).to.be.equal(undefined);
     });
 
     it('stores unknown parameters as "extras"', function() {
       uri = new URI('bitcoincash:qzruaav37d2hwqfaqvsktwdqjly502s06qfra0qe9m?amount=1.2&other=param');
       uri.address.should.be.instanceof(bitcore.Address);
-      expect(uri.other).to.be.undefined();
+      expect(uri.other).to.be.equal(undefined);
       uri.extras.other.should.equal('param');
     });
 
@@ -330,13 +331,13 @@ describe('URI', function() {
       uri = URI.fromString('bchtest:qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x?amount=123.22');
       uri.address.toString().should.equal('bchtest:qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x');
       uri.amount.should.equal(12322000000);
-      expect(uri.otherParam).to.be.undefined();
+      expect(uri.otherParam).to.be.equal(undefined);
     });
 
     it('stores unknown parameters as "extras"', function() {
       uri = new URI('bchtest:qqkj609un9sl896yezxj0j5hxagk7h7pnyyzaz887x?amount=1.2&other=param');
       uri.address.should.be.instanceof(bitcore.Address);
-      expect(uri.other).to.be.undefined();
+      expect(uri.other).to.be.equal(undefined);
       uri.extras.other.should.equal('param');
     });
 
@@ -380,7 +381,7 @@ describe('URI', function() {
     });
     uri.address.should.be.instanceof(bitcore.Address);
     uri.amount.should.equal(120000000);
-    expect(uri.other).to.be.undefined();
+    expect(uri.other).to.be.equal(undefined);
     uri.extras.other.should.equal('param');
 
     (function() {

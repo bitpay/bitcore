@@ -1,128 +1,167 @@
-import { Component } from '@angular/core';
-import { Input } from '@angular/core';
-import { Http } from '@angular/http';
-import { ActionSheetController } from 'ionic-angular';
-import { ToastController } from 'ionic-angular';
-import { PopoverController } from 'ionic-angular';
-import { NavController } from 'ionic-angular';
-import { App } from 'ionic-angular/components/app/app';
-import { ApiProvider, ChainNetwork } from '../../providers/api/api';
-import { CurrencyProvider } from '../../providers/currency/currency';
-import { PriceProvider } from '../../providers/price/price';
-import { DenominationComponent } from '../denomination/denomination';
+import {
+  Component,
+  EventEmitter,
+  Injectable,
+  Input,
+  Output
+} from '@angular/core';
 import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
+import {
+  ActionSheetController,
+  App,
+  NavController,
+  PopoverController,
+  ToastController
+} from 'ionic-angular';
+import * as _ from 'lodash';
+import { ApiProvider, ChainNetwork } from '../../providers/api/api';
+import { CurrencyProvider } from '../../providers/currency/currency';
+import { Logger } from '../../providers/logger/logger';
+import { PriceProvider } from '../../providers/price/price';
+import { RedirProvider } from '../../providers/redir/redir';
+import { SearchProvider } from '../../providers/search/search';
+import { DenominationComponent } from '../denomination/denomination';
+
+@Injectable()
 @Component({
   selector: 'head-nav',
   templateUrl: 'head-nav.html'
 })
 export class HeadNavComponent {
+  @Output()
+  public updateView = new EventEmitter<ChainNetwork>();
   public showSearch = false;
   public loading: boolean;
   @Input()
   public title: string;
   public q: string;
   public config: ChainNetwork;
+  public redirTo: any;
+  public params: any;
 
   constructor(
     private navCtrl: NavController,
-    private http: Http,
     private apiProvider: ApiProvider,
     public app: App,
     public currency: CurrencyProvider,
     public price: PriceProvider,
     public actionSheetCtrl: ActionSheetController,
     public popoverCtrl: PopoverController,
-    public toastCtrl: ToastController
-  ) { }
+    public toastCtrl: ToastController,
+    private logger: Logger,
+    public searchProvider: SearchProvider,
+    public redirProvider: RedirProvider
+  ) {
+    this.config = this.apiProvider.getConfig();
+    this.params = {
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+    };
+  }
+
+  public goHome(): void {
+    this.navCtrl.popToRoot();
+  }
 
   public search(): void {
-    this.showSearch = false;
-    const apiPrefix: string = this.apiProvider.getUrl();
     this.q = this.q.replace(/\s/g, '');
-    if (this.isInputValid(this.q)) {
-      this.http.get(apiPrefix + '/block/' + this.q).subscribe(
-        (data: any): void => {
-          this.resetSearch();
-          console.log('block', data);
-          const parsedData: any = JSON.parse(data._body);
-          this.navCtrl.push('block-detail', {
-            chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-            network: this.apiProvider.networkSettings.value.selectedNetwork
-              .network,
-            blockHash: parsedData.hash
-          });
+    const inputDetails = this.searchProvider.isInputValid(this.q);
+
+    if (this.q !== '' && inputDetails.isValid) {
+      this.showSearch = false;
+      this.searchProvider.search(this.q, inputDetails.type).subscribe(
+        res => {
+          const nextView = this.processResponse(res);
+          if (!_.includes(nextView, '')) {
+            this.params[nextView.type] = nextView.params;
+            this.redirTo = nextView.redirTo;
+            this.navCtrl.setRoot('home', this.params, { animate: false });
+            this.redirProvider.redir(this.redirTo, this.params);
+          } else {
+            const message = 'No matching records found!';
+            this.resetSearch(message);
+            this.logger.info(message);
+          }
         },
-        () => {
-          this.http.get(apiPrefix + '/tx/' + this.q).subscribe(
-            (data: any): void => {
-              this.resetSearch();
-              console.log('tx', data);
-              const parsedData: any = JSON.parse(data._body);
-              this.navCtrl.push('transaction', {
-                chain: this.apiProvider.networkSettings.value.selectedNetwork
-                  .chain,
-                network: this.apiProvider.networkSettings.value.selectedNetwork
-                  .network,
-                txId: parsedData[0].txid
-              });
-            },
-            () => {
-              this.http.get(apiPrefix + '/address/' + this.q).subscribe(
-                (data: any): void => {
-                  const addrStr = this.q;
-                  this.resetSearch();
-                  console.log('addr', data);
-                  const parsedData: any = JSON.parse(data._body);
-                  this.navCtrl.push('address', {
-                    chain: this.apiProvider.networkSettings.value.selectedNetwork
-                      .chain,
-                    network: this.apiProvider.networkSettings.value
-                      .selectedNetwork.network,
-                    addrStr
-                  });
-                },
-                () => {
-                  this.loading = false;
-                  this.reportBadQuery();
-                }
-              );
-            }
-          );
+        err => {
+          this.resetSearch('Server error. Please try again');
+          this.logger.error(err);
         }
       );
-    } else {
-      this.resetSearch();
-      this.loading = false;
-      this.reportBadQuery();
     }
-
   }
 
-  /* tslint:disable:no-unused-variable */
-  private reportBadQuery(): void {
-    this.presentToast();
+  private processResponse(response) {
+    if (!_.isArray(response) && response.json()[0]) {
+      return {
+        redirTo: 'address',
+        params: response.json()[0].address,
+        type: 'addrStr'
+      };
+    } else {
+      return _.reduce(
+        response,
+        (result, value) => {
+          if (value.ok === true) {
+            if (value.json().txid) {
+              result = {
+                redirTo: 'transaction',
+                params: value.json().txid,
+                type: 'txId'
+              };
+            } else {
+              result = {
+                redirTo: 'block-detail',
+                params: value.json().hash,
+                type: 'blockHash'
+              };
+            }
+          }
+          return result;
+        },
+        { redirTo: '', params: '', type: '' }
+      );
+    }
   }
 
-  private presentToast(): void {
+  private resetSearch(message: string): void {
+    this.q = '';
+    this.loading = false;
+    this.presentToast(message);
+  }
+
+  private presentToast(message): void {
     const toast: any = this.toastCtrl.create({
-      message: 'No matching records found!',
+      message,
       duration: 3000,
       position: 'top'
     });
     toast.present();
   }
 
-  private resetSearch(): void {
-    this.q = '';
-    this.loading = false;
-  }
-  /* tslint:enable:no-unused-variable */
-
   public changeCurrency(myEvent: any): void {
     const popover: any = this.popoverCtrl.create(DenominationComponent);
     popover.present({
       ev: myEvent
+    });
+    popover.onDidDismiss(data => {
+      if (data) {
+        if (JSON.stringify(data) === JSON.stringify(this.config)) {
+          return;
+        }
+        this.apiProvider.changeNetwork(data);
+        this.config = this.apiProvider.getConfig();
+        if (this.navCtrl.getActive().component.name === 'HomePage') {
+          this.updateView.next(data);
+        } else {
+          this.navCtrl.popToRoot();
+        }
+        this.navCtrl.setRoot('home', {
+          chain: this.config.chain,
+          network: this.config.network
+        });
+      }
     });
   }
 
@@ -131,18 +170,22 @@ export class HeadNavComponent {
   }
 
   public extractAddress(address: string): string {
-    let extractedAddress = address
+    const extractedAddress = address
       .replace(/^(bitcoincash:|bchtest:|bitcoin:)/i, '')
       .replace(/\?.*/, '');
     return extractedAddress || address;
   }
 
   public isInputValid(inputValue): boolean {
-    this.config = this.apiProvider.getConfig();
-    if (this.isValidBlockOrTx(inputValue)) return true;
-    else if (this.isValidAddress(inputValue)) return true;
-    else if (this.isValidBlockIndex(inputValue)) return true;
-    else return false;
+    if (this.isValidBlockOrTx(inputValue)) {
+      return true;
+    } else if (this.isValidAddress(inputValue)) {
+      return true;
+    } else if (this.isValidBlockIndex(inputValue)) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   private isValidBlockOrTx(inputValue): boolean {
@@ -159,11 +202,11 @@ export class HeadNavComponent {
     const network = this.config.network;
     const addr = this.extractAddress(inputValue);
 
-    if (coin.toLowerCase() == 'btc' && network == 'mainnet') {
+    if (coin.toLowerCase() === 'btc' && network === 'mainnet') {
       return this.isValidBitcoinMainnetAddress(addr);
-    } else if (coin.toLowerCase() == 'btc' && network == 'testnet') {
+    } else if (coin.toLowerCase() === 'btc' && network === 'testnet') {
       return this.isValidBitcoinTestnetAddress(addr);
-    } else if (coin.toLowerCase() == 'bch' && network == 'mainnet') {
+    } else if (coin.toLowerCase() === 'bch' && network === 'mainnet') {
       return (
         this.isValidBitcoinCashMainnetAddress(addr) ||
         this.isValidBitcoinCashLegacyMainnetAddress(addr)

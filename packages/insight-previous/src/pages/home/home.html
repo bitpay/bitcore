@@ -1,40 +1,19 @@
-<!--
-  Generated template for the HomePage page.
+<head-nav (updateView)="loadView($event,true)"></head-nav>
 
-  See http://ionicframework.com/docs/components/#navigation for more info on
-  Ionic pages and navigation.
--->
-<ion-header>
-  <head-nav [title]="'insight'"></head-nav>
-</ion-header>
-
-
-<ion-content padding>
-  <div class="page-content">
-
-    <div class="latest-blocks">
-      <h1>Latest Blocks</h1>
-      <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true"></latest-blocks>
+<ion-content>
+  <div class="page-content" padding>
+    <h2>Latest Blocks</h2>
+    <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" #latestBlocks></latest-blocks>
+  </div>
+  <div class="footer">
+    <div class="footer-pages">
+      <a (click)="openPage('broadcast-tx')">Broadcast Transaction</a>
     </div>
-
-    <div class="about">
-      <p>
-        <strong>Insight</strong> is an open-source Bitcoin blockchain explorer developed by
-        <a href="https://bitpay.com/" target="_blank">BitPay</a>. Insight also provides a complete REST and websocket
-        API, giving developers access to more advanced blockchain
-        queries than those provided by many Bitcoin node implementations.</p>
-      <p>
-        The Insight project is available
-        <a href="https://github.com/bitpay/insight" target="_blank">on GitHub</a>.</p>
-      <div id="powered" class="row">
-        <div class="powered-text">
-          <small class="text-muted">Powered by</small>
-        </div>
-        <a href="http://bitcore.io" target="_blank" class="bitcore" title="Bitcore"></a>
-        <a href="https://angular.io/" target="_blank" class="angular" title="Angular"></a>
-        <a href="https://code.google.com/p/leveldb/" target="_blank" class="leveldb" title="LevelDB"></a>
-        <a href="http://nodejs.org" target="_blank" class="nodejs" title="NodeJs"></a>
-      </div>
+    <div class="footer-about">
+      <a href="https://github.com/bitpay/bitcore/tree/master/packages/insight-previous" target="_blank">
+        <span class="logo">insight</span>
+        <span class="version">v8.0.0</span>
+      </a>
     </div>
   </div>
 </ion-content>

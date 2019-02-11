@@ -3,11 +3,15 @@ import { HttpModule } from '@angular/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
 import { BlocksPage, HomePage, PagesModule } from '../pages';
+import { AddressProvider } from '../providers/address/address';
 import { ApiProvider } from '../providers/api/api';
 import { BlocksProvider } from '../providers/blocks/blocks';
 import { CurrencyProvider } from '../providers/currency/currency';
 import { DefaultProvider } from '../providers/default/default';
+import { Logger } from '../providers/logger/logger';
 import { PriceProvider } from '../providers/price/price';
+import { RedirProvider } from '../providers/redir/redir';
+import { SearchProvider } from '../providers/search/search';
 import { TxsProvider } from '../providers/transactions/transactions';
 import { InsightApp } from './app.component';
 
@@ -17,7 +21,10 @@ import { InsightApp } from './app.component';
     BrowserModule,
     HttpModule,
     PagesModule,
-    IonicModule.forRoot(InsightApp)
+    IonicModule.forRoot(InsightApp, {
+      mode: 'md',
+      animate: false
+    })
   ],
   bootstrap: [IonicApp],
   entryComponents: [InsightApp, HomePage, BlocksPage],
@@ -28,7 +35,11 @@ import { InsightApp } from './app.component';
     BlocksProvider,
     TxsProvider,
     DefaultProvider,
-    PriceProvider
+    PriceProvider,
+    SearchProvider,
+    RedirProvider,
+    Logger,
+    AddressProvider
   ]
 })
-export class AppModule { }
+export class AppModule {}

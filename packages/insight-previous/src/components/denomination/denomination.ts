@@ -1,6 +1,6 @@
 import { Component } from '@angular/core';
 import { Http } from '@angular/http';
-import { App, NavController, ViewController } from 'ionic-angular';
+import { App, ViewController } from 'ionic-angular';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { PriceProvider } from '../../providers/price/price';
@@ -19,16 +19,21 @@ export class DenominationComponent {
     public currencyProvider: CurrencyProvider,
     public priceProvider: PriceProvider,
     public viewCtrl: ViewController,
-    public navCtrl: NavController,
     public app: App,
     public http: Http,
     public api: ApiProvider
-  ) {
-    this.units = [
-      'USD',
-      this.api.networkSettings.value.selectedNetwork.chain,
-      'm' + this.api.networkSettings.value.selectedNetwork.chain
-    ];
+  ) {}
+
+  public ionViewDidLoad() {
+    this.api.getAvailableNetworks().subscribe(data => {
+      const availableNetworks = data.json() as ChainNetwork[];
+      this.switcherOn = availableNetworks.length > 1 ? true : false;
+      this.units = [
+        'USD',
+        this.api.networkSettings.value.selectedNetwork.chain,
+        'm' + this.api.networkSettings.value.selectedNetwork.chain
+      ];
+    });
   }
 
   public close(): void {
@@ -37,8 +42,6 @@ export class DenominationComponent {
 
   public changeExplorer(chainNetwork: ChainNetwork): void {
     this.selected = chainNetwork;
-    const { chain, network }: ChainNetwork = chainNetwork;
-    this.viewCtrl.dismiss();
-    this.app.getRootNav().push('home', { chain, network });
+    this.viewCtrl.dismiss(chainNetwork);
   }
 }

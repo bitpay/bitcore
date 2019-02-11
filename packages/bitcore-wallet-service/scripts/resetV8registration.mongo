@@ -1,0 +1,3 @@
+// json support
+db.addresses.update({"beRegistered":true}, {'$set':{ "beRegistered":null}  }, {multi:true});
+db.wallets.update({"beRegistered":true}, {'$set':{ "beRegistered":null}  }, {multi:true});

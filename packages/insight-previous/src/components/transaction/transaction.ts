@@ -1,9 +1,11 @@
-import { Component } from '@angular/core';
-import { Input } from '@angular/core';
-import { NavController } from 'ionic-angular';
-import { CurrencyProvider } from '../../providers/currency/currency';
-import { TxsProvider, ApiCoin } from '../../providers/transactions/transactions';
+import { Component, Input, OnInit } from '@angular/core';
 import { ApiProvider } from '../../providers/api/api';
+import { CurrencyProvider } from '../../providers/currency/currency';
+import { RedirProvider } from '../../providers/redir/redir';
+import {
+  ApiCoin,
+  TxsProvider
+} from '../../providers/transactions/transactions';
 
 /**
  * Generated class for the TransactionComponent component.
@@ -15,18 +17,20 @@ import { ApiProvider } from '../../providers/api/api';
   selector: 'transaction',
   templateUrl: 'transaction.html'
 })
-export class TransactionComponent {
-  private COIN: number = 100000000;
+export class TransactionComponent implements OnInit {
+  private COIN = 100000000;
 
-  public expanded: boolean = false;
-  @Input() public tx: any = {};
-  @Input() public showCoins?: boolean = false;
+  public expanded = false;
+  @Input()
+  public tx: any = {};
+  @Input()
+  public showCoins = false;
 
   constructor(
-    private navCtrl: NavController,
     public currency: CurrencyProvider,
     public apiProvider: ApiProvider,
-    public txProvider: TxsProvider
+    public txProvider: TxsProvider,
+    public redirProvider: RedirProvider
   ) {}
 
   public ngOnInit(): void {
@@ -52,19 +56,21 @@ export class TransactionComponent {
     return vout.address;
   }
 
-  public goToTx(txId: string): void {
-    this.navCtrl.push('transaction', {
+  public goToTx(txId: string, vout?: number, fromVout?: boolean): void {
+    this.redirProvider.redir('transaction', {
+      txId,
       chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
       network: this.apiProvider.networkSettings.value.selectedNetwork.network,
-      txId: txId
+      vout,
+      fromVout
     });
   }
 
   public goToAddress(addrStr: string): void {
-    this.navCtrl.push('address', {
+    this.redirProvider.redir('address', {
+      addrStr,
       chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
-      addrStr: addrStr
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
     });
   }
 
@@ -72,20 +78,22 @@ export class TransactionComponent {
     this.expanded = !this.expanded;
   }
 
-  public aggregateItems(items: Array<any>): Array<any> {
-    if (!items) return [];
+  public aggregateItems(items: any[]): any[] {
+    if (!items) {
+      return [];
+    }
 
-    let l: number = items.length;
+    const l: number = items.length;
 
-    let ret: Array<any> = [];
-    let tmp: any = {};
-    let u: number = 0;
+    const ret: any[] = [];
+    const tmp: any = {};
+    let u = 0;
 
-    for (let i: number = 0; i < l; i++) {
-      let notAddr: boolean = false;
+    for (let i = 0; i < l; i++) {
+      let notAddr = false;
       // non standard input
-      if (items[i].scriptSig && !items[i].addr) {
-        items[i].addr = 'Unparsed address [' + u++ + ']';
+      if (items[i].scriptSig && !items[i].address) {
+        items[i].address = 'Unparsed address [' + u++ + ']';
         items[i].notAddr = true;
         notAddr = true;
       }
@@ -99,37 +107,43 @@ export class TransactionComponent {
 
       // multiple addr at output
       if (items[i].scriptPubKey && items[i].scriptPubKey.addresses.length > 1) {
-        items[i].addr = items[i].scriptPubKey.addresses.join(',');
+        items[i].address = items[i].scriptPubKey.addresses.join(',');
         ret.push(items[i]);
         continue;
       }
 
-      let addr: string = items[i].addr || (items[i].scriptPubKey && items[i].scriptPubKey.addresses[0]);
+      const address: string =
+        items[i].address ||
+        (items[i].scriptPubKey && items[i].scriptPubKey.addresses[0]);
 
-      if (!tmp[addr]) {
-        tmp[addr] = {};
-        tmp[addr].valueSat = 0;
-        tmp[addr].count = 0;
-        tmp[addr].addr = addr;
-        tmp[addr].items = [];
+      if (!tmp[address]) {
+        tmp[address] = {};
+        tmp[address].valueSat = 0;
+        tmp[address].count = 0;
+        tmp[address].address = address;
+        tmp[address].items = [];
       }
-      tmp[addr].isSpent = items[i].spentTxId;
+      tmp[address].isSpent = items[i].spentTxId;
 
-      tmp[addr].doubleSpentTxID = tmp[addr].doubleSpentTxID || items[i].doubleSpentTxID;
-      tmp[addr].doubleSpentIndex = tmp[addr].doubleSpentIndex || items[i].doubleSpentIndex;
-      tmp[addr].dbError = tmp[addr].dbError || items[i].dbError;
-      tmp[addr].valueSat += Math.round(items[i].value * this.COIN);
-      tmp[addr].items.push(items[i]);
-      tmp[addr].notAddr = notAddr;
+      tmp[address].doubleSpentTxID =
+        tmp[address].doubleSpentTxID || items[i].doubleSpentTxID;
+      tmp[address].doubleSpentIndex =
+        tmp[address].doubleSpentIndex || items[i].doubleSpentIndex;
+      tmp[address].dbError = tmp[address].dbError || items[i].dbError;
+      tmp[address].valueSat += Math.round(items[i].value * this.COIN);
+      tmp[address].items.push(items[i]);
+      tmp[address].notAddr = notAddr;
 
-      if (items[i].unconfirmedInput) tmp[addr].unconfirmedInput = true;
+      if (items[i].unconfirmedInput) {
+        tmp[address].unconfirmedInput = true;
+      }
 
-      tmp[addr].count++;
+      tmp[address].count++;
     }
 
-    for (let v in tmp) {
-      let obj: any = tmp[v];
-      obj.value = obj.value || parseInt(obj.valueSat) / this.COIN;
+    for (const v of Object.keys(tmp)) {
+      const obj: any = tmp[v];
+      obj.value = obj.value || parseInt(obj.valueSat, 10) / this.COIN;
       ret.push(obj);
     }
 

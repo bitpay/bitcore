@@ -1,60 +1,36 @@
 page-home {
-  @media screen and (min-width: 768px) {
-    .latest-blocks {
-      width: 68%;
-      display: inline-block;
+  .scroll-content{
+    display: grid;
+    grid-template-rows: 1fr auto;
+    .footer{
+      background-color: #373D42;
+      padding: 5px 10px;
+      width: 100%; 
+      &-pages {
+        padding-top: 5px;
+        color: #dde;
+        float: left;
+        a {
+          color: white;
+          font-size: 0.8em;
+        }
+      }
+      &-about {
+        float: right;
+        a {
+          text-decoration: none;
+        }
+        .version {
+          color: grey;
+          font-style: italic;
+        }
+        .logo {
+          color: white;
+          font-weight: 700;
+          font-style: italic;
+          font-size: 1.5em;
+        }
+      }
     }
-    .about {
-      width: 30%;
-      float: right;
-    }
-  }
-
-  .about {
-    background-color: #f4f4f4;
-    border: 1px solid #eee;
-    border-radius: 5px;
-    padding: 14px;
-  }
-
-  #powered .powered-text {
-    border-top: 1px solid #ddd;
-    margin: 30px auto 0;
-    text-align: center;
-    width: 90%;
-  }
-  #powered .powered-text small {
-    background-color: #f4f4f4;
-    padding: 4px;
-    position: relative;
-    top: -12px;
-  }
-
-  #powered a {
-    background-repeat: no-repeat;
-    background-position: center center;
-    display: inline-block;
-    float: left;
-    height: 45px;
-  }
-  #powered a.bitcore {
-    background-image: url('../../assets/img/bitcore.svg');
-    background-size: 80px;
-    width: 30%;
-  }
-  #powered a.nodejs {
-    background-image: url('../../assets/img/nodejs.png');
-    background-size: 80px;
-    width: 30%;
-  }
-  #powered a.angular {
-    background-image: url('../../assets/img/angularjs.png');
-    background-size: 50px;
-    width: 20%;
-  }
-  #powered a.leveldb {
-    background-image: url('../../assets/img/leveldb.png');
-    background-size: 50px;
-    width: 20%;
   }
 }

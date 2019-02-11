@@ -7,6 +7,7 @@
   "scripts": {
     "lint": "gulp lint",
     "test": "gulp test",
+    "test:ci": "npm run test",
     "coverage": "gulp coverage",
     "build": "gulp"
   },
@@ -35,18 +36,19 @@
   },
   "dependencies": {
     "bn.js": "=4.11.8",
-    "bs58": "=4.0.1",
+    "bs58": "^4.0.1",
     "buffer-compare": "=1.1.1",
     "elliptic": "=6.4.0",
     "inherits": "=2.0.1",
-    "lodash": "=4.17.4"
+    "lodash": "=4.17.11"
   },
   "devDependencies": {
-    "bitcore-build": "https://github.com/bitpay/bitcore-build.git#d4e8b2b2f1e2c065c3a807dcb6a6250f61d67ab3",
-    "brfs": "^1.2.0",
-    "chai": "^1.10.0",
-    "gulp": "^3.8.10",
-    "sinon": "^1.13.0"
+    "bitcore-build": "^8.0.0",
+    "brfs": "^2.0.1",
+    "chai": "^4.2.0",
+    "gulp": "^4.0.0",
+    "karma-phantomjs-launcher": "^1.0.4",
+    "sinon": "^7.1.1"
   },
   "license": "MIT"
 }

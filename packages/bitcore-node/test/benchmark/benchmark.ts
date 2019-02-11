@@ -4,7 +4,7 @@ const UnspentOutput = Transaction.UnspentOutput;
 
 import config from '../../src/config';
 import { Storage } from '../../src/services/storage';
-import { BlockModel } from '../../src/models/block';
+import { BlockStorage } from '../../src/models/block';
 import { BitcoinBlockType } from '../../src/types/namespaces/Bitcoin/Block';
 import { resetDatabase } from '../helpers/index.js';
 import * as crypto from 'crypto';
@@ -19,6 +19,14 @@ function* generateBlocks(blockCount: number, blockSizeMb: number) {
     yield tempBlock;
     prevBlock = tempBlock;
   }
+}
+
+function preGenerateBlocks(blockCount: number, blockSizeMb: number) {
+  const blocks = new Array<BitcoinBlockType>();
+  for (let block of generateBlocks(blockCount, blockSizeMb)) {
+    blocks.push(block);
+  }
+  return blocks;
 }
 
 function generateBlock(blockSizeMb: number, previousBlock?: BitcoinBlockType): BitcoinBlockType {
@@ -39,14 +47,14 @@ function generateBlock(blockSizeMb: number, previousBlock?: BitcoinBlockType): B
           size: 264,
           weight: 948,
           height: 1355,
-          version: '536870912',
+          version: 536870912,
           versionHex: '20000000',
           merkleRoot: randomHash(),
           tx: [randomHash()],
           time: 1526756523,
           mediantime: 1526066375,
-          nonce: '2',
-          bits: parseInt('207fffff', 16).toString(),
+          nonce: 2,
+          bits: parseInt('207fffff', 16),
           difficulty: 4.656542373906925e-10,
           chainwork: '0000000000000000000000000000000000000000000000000000000000000a98',
           prevHash: prevHash
@@ -109,11 +117,15 @@ function startBenchmarkDatabase() {
 
 async function benchmark(blockCount: number, blockSizeMb: number) {
   await resetDatabase();
+  console.log('Generating blocks');
+  const blocks = preGenerateBlocks(blockCount, blockSizeMb);
   const startTime = new Date();
-  for (let block of generateBlocks(blockCount, blockSizeMb)) {
-    console.log('Adding block', block.hash);
-    await BlockModel.addBlock({ block, chain: 'BENCH', network: 'MARK', initialSyncComplete: false });
+  console.log('Adding blocks');
+  for (let block of blocks) {
+    process.stdout.write('.');
+    await BlockStorage.addBlock({ block, chain: 'BENCH', network: 'MARK', initialSyncComplete: false });
   }
+  process.stdout.write('\n');
   const endTime = new Date();
   const time = endTime.getTime() - startTime.getTime();
   const seconds = time / 1000;
@@ -123,6 +135,6 @@ async function benchmark(blockCount: number, blockSizeMb: number) {
 }
 
 startBenchmarkDatabase()
-  .then(() => benchmark(160, 1))
+  .then(() => benchmark(80, 1))
   .then(() => benchmark(5, 32))
   .then(() => process.exit());

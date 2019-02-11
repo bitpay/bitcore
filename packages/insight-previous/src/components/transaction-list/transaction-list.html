@@ -5,9 +5,14 @@
 
 <div *ngIf="!loading">
   <ion-grid>
-    <ion-row *ngFor="let tx of transactions">
-      <ion-col col-12>
+    <ion-row *ngFor="let tx of transactions; let i = index">
+      <ion-col col-12 *ngIf="i < limit">
         <transaction [tx]="tx"></transaction>
+      </ion-col>
+    </ion-row>
+    <ion-row *ngIf="limit < transactions.length">
+      <ion-col col-12 text-center>
+        <button ion-button small (click)="loadMore()">Load More</button>
       </ion-col>
     </ion-row>
   </ion-grid>

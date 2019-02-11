@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const program = require('../lib/program');
-const Wallet = require('../lib/wallet');
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
 
 program
@@ -31,9 +31,11 @@ const getFileKeys = file => {
 const parseKeys = keys => {
   let parsed = JSON.parse(keys);
   if (typeof parsed === 'object') {
-    return [parsed];
-  } else {
-    return parsed;
+    if (parsed instanceof Array === false) {
+      return [parsed];
+    } else {
+      return parsed;
+    }
   }
 };
 

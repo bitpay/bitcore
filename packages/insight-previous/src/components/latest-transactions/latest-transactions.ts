@@ -1,27 +1,29 @@
-import { Component, NgZone, Input } from '@angular/core';
+import { Component, Input, NgZone, OnChanges } from '@angular/core';
 import { Http } from '@angular/http';
-import { NavController } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
+import { Logger } from '../../providers/logger/logger';
+import { RedirProvider } from '../../providers/redir/redir';
 
-/**
- * Generated class for the LatestTransactionsComponent component.
- *
- * See https://angular.io/docs/ts/latest/api/core/index/ComponentMetadata-class.html
- * for more info on Angular Components.
- */
 @Component({
   selector: 'latest-transactions',
   templateUrl: 'latest-transactions.html'
 })
-export class LatestTransactionsComponent {
+export class LatestTransactionsComponent implements OnChanges {
+  @Input()
+  public refreshSeconds = 10;
+  private timer: any;
+  private loading = true;
+  private transactions = [];
 
-  private loading: boolean = true;
-  private transactions: Array<any> = [];
-  @Input() public refreshSeconds: number = 10;
-  private timer: number;
-
-  constructor(private http: Http, private navCtrl: NavController, private api: ApiProvider, public currency: CurrencyProvider, private ngZone: NgZone) {
+  constructor(
+    private http: Http,
+    private apiProvider: ApiProvider,
+    public currency: CurrencyProvider,
+    private ngZone: NgZone,
+    public redirProvider: RedirProvider,
+    private logger: Logger
+  ) {
     this.loadTransactions();
   }
 
@@ -31,36 +33,34 @@ export class LatestTransactionsComponent {
     }
 
     this.ngZone.runOutsideAngular(() => {
-      this.timer = setInterval(
-        function (): void {
-          this.ngZone.run(function (): void {
-            this.loadTransactions.call(this);
-          }.bind(this));
-        }.bind(this),
-        1000 * this.refreshSeconds
-      );
+      this.timer = setInterval(() => {
+        this.ngZone.run(() => {
+          this.loadTransactions.call(this);
+        });
+      }, 1000 * this.refreshSeconds);
     });
   }
 
   private loadTransactions(): void {
-    let url: string = this.api.getUrl() + 'txs';
+    const url: string = this.apiProvider.getUrl() + 'txs';
 
     this.http.get(url).subscribe(
-      (data) => {
-        this.transactions = JSON.parse(data['_body']);
+      (data: any) => {
+        this.transactions = JSON.parse(data._body);
         this.loading = false;
       },
-      (err) => {
-        console.log('err is', err);
+      err => {
+        this.logger.error(err);
         this.loading = false;
       }
     );
   }
 
   public goToTx(txId: string): void {
-    this.navCtrl.push('transaction', {
-      'selectedCurrency': this.currency.selectedCurrency,
-      'txId': txId
+    this.redirProvider.redir('transaction', {
+      txId,
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
     });
   }
 }

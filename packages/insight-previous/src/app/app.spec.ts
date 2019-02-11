@@ -3,8 +3,6 @@ import { TestBed, getTestBed } from '@angular/core/testing';
 import { Platform } from 'ionic-angular';
 import { NavMock } from '../mocks';
 import { PopoverController, MenuController } from 'ionic-angular';
-import { StatusBar } from '@ionic-native/status-bar';
-import { SplashScreen } from '@ionic-native/splash-screen';
 import { ApiProvider } from '../providers/api/api';
 import { CurrencyProvider } from '../providers/currency/currency';
 import { DefaultProvider } from '../providers/default/default';
@@ -16,16 +14,12 @@ describe('InsightApp', () => {
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [
-        HttpModule
-      ],
+      imports: [HttpModule],
       providers: [
         PopoverController,
         InsightApp,
         Platform,
         MenuController,
-        SplashScreen,
-        StatusBar,
         ApiProvider,
         CurrencyProvider,
         DefaultProvider
@@ -34,7 +28,7 @@ describe('InsightApp', () => {
     injector = getTestBed();
     app = injector.get(InsightApp);
 
-    app['nav'] = (<any>new NavMock());
+    app['nav'] = <any>new NavMock();
   });
 
   it('initializes with three possible pages', () => {

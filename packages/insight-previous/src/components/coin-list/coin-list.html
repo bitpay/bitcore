@@ -1,21 +1,19 @@
-<!-- Generated template for the CoinListComponent component -->
-<ion-grid>
-  <ion-row>
-    <ion-col col-5>
-      <ion-note text-left>
-        Received
-      </ion-note>
-    </ion-col>
-    <ion-col col-3 text-right>
-      <ion-note>
-        Value
-      </ion-note>
-    </ion-col>
-    <ion-col col-4 text-left>
-      <ion-note>
-        Spent
-      </ion-note>
-    </ion-col>
-  </ion-row>
-  <coin *ngFor="let coin of coins"[coin]="coin"></coin>
-</ion-grid>
+<div *ngIf="loading">
+  <ion-spinner name="crescent"></ion-spinner>
+</div>
+
+
+<div *ngIf="!loading">
+  <ion-grid>
+    <ion-row *ngFor="let coin of coins; let i = index">
+      <ion-col col-12 *ngIf="i < limit">
+        <coin [coin]="coin"></coin>
+      </ion-col>
+    </ion-row>
+    <ion-row *ngIf="limit < coins.length">
+      <ion-col col-12 text-center>
+        <button ion-button small (click)="loadMore()">Load More</button>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</div>

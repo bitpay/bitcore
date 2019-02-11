@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
-import 'rxjs/add/operator/map';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { BlocksProvider } from '../blocks/blocks';
@@ -176,7 +175,7 @@ export class TxsProvider {
   public getTx(hash: string): Observable<{ tx: AppTx }> {
     const url: string = this.api.getUrl() + '/tx/' + hash;
     return this.http.get(url).flatMap(async data => {
-      const apiTx: ApiTx = data.json()[0];
+      const apiTx: ApiTx = data.json();
       const appTx: AppTx = this.toAppTx(apiTx);
       return { tx: appTx };
     });

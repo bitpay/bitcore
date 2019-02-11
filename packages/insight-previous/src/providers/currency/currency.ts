@@ -1,5 +1,4 @@
 import { Injectable } from '@angular/core';
-import 'rxjs/add/operator/map';
 import { ApiProvider } from '../api/api';
 
 @Injectable()
@@ -22,6 +21,10 @@ export class CurrencyProvider {
       Math.round(aFloat * Math.pow(10, decimalPlaces)) /
       Math.pow(10, decimalPlaces)
     );
+  }
+
+  public setCurrency(currency: string): void {
+    this.selectedCurrency = currency;
   }
 
   public getConvertedNumber(value: number): number {

@@ -13,7 +13,7 @@ npm start insight
 
 ## Network / Chain setting
 
-To use a specific network / chain set the `NETWORK` and  `CHAIN` environment variable, e.g.:
+To use a specific network / chain set the `NETWORK` and `CHAIN` environment variable, e.g.:
 
 ```bash
 NETWORK=testnet CHAIN=BCH npm start

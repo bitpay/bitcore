@@ -1,0 +1,55 @@
+#!/usr/bin/env node
+
+const request = require('request');
+const Bitcore = require('bitcore-lib');
+const Client = require('../lib/blockchainexplorers/v8/client.js');
+
+
+const coin = 'BCH';
+const network = 'mainnet';
+const authKey = process.argv[2]; 
+
+if (!authKey) 
+  throw "provide authKey"
+
+
+
+
+// ====================
+//
+const authKeyObj =  Bitcore.PrivateKey(authKey);
+
+let tmp  = authKeyObj.toObject();
+tmp.compressed = false;
+const pubKey = Bitcore.PrivateKey(tmp).toPublicKey() ;
+
+//console.log(pubKey); 
+
+const baseUrl = `https://api.bitcore.io/api/${coin}/${network}/`;
+let client = new Client({
+  baseUrl: baseUrl,
+  authKey: authKeyObj,
+});
+
+
+const url = `${baseUrl}/wallet/${pubKey}/addresses`;
+const signature = client.sign({ method: 'GET', url });
+const payload = {};
+
+request.get(url, {
+  headers: { 'x-signature': signature },
+  body: payload,
+  json: true
+}, (err, req, body) => {
+  if (err) {
+    console.log('[v8tool.43:err:]',err); //TODO
+  } else {
+    try {
+      body.forEach((x)=> {
+        console.log(x.address);
+      });
+    } catch (e) {
+console.log('[v8tool.52]', body); //TODO
+    }
+  }
+});

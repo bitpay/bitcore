@@ -1,18 +1,11 @@
 import { NgModule } from '@angular/core';
 import { IonicModule } from 'ionic-angular';
-import { HeadNavComponent } from './head-nav';
 import { DenominationComponentModule } from '../denomination/denomination.module';
+import { HeadNavComponent } from './head-nav';
 
 @NgModule({
-  declarations: [
-    HeadNavComponent
-  ],
-  imports: [
-    IonicModule,
-    DenominationComponentModule
-  ],
-  exports: [
-    HeadNavComponent
-  ]
+  declarations: [HeadNavComponent],
+  imports: [IonicModule, DenominationComponentModule],
+  exports: [HeadNavComponent]
 })
 export class HeadNavComponentModule {}

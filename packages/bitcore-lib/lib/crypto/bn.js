@@ -172,18 +172,6 @@ BN.prototype.toScriptNumBuffer = function() {
   });
 };
 
-BN.prototype.gt = function(b) {
-  return this.cmp(b) > 0;
-};
-
-BN.prototype.gte = function(b) {
-  return this.cmp(b) >= 0;
-};
-
-BN.prototype.lt = function(b) {
-  return this.cmp(b) < 0;
-};
-
 BN.trim = function(buf, natlen) {
   return buf.slice(natlen - buf.length, buf.length);
 };

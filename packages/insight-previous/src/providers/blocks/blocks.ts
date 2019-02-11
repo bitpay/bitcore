@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
-import 'rxjs/add/operator/map';
-import { Observable } from 'rxjs/Observable';
+import { Observable } from 'rxjs';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 
@@ -80,7 +79,7 @@ export class BlocksProvider {
         poolName: block.minedBy,
         url: ''
       },
-      reward: block.reward / 10 ** 8
+      reward: block.reward
     };
   }
 

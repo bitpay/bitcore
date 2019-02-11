@@ -1,17 +1,51 @@
-import { Component } from '@angular/core';
-import { Input } from '@angular/core';
-import { AppCoin } from '../../providers/transactions/transactions';
+import { Component, Input, OnInit } from '@angular/core';
+import { Events } from 'ionic-angular';
+import { AddressProvider } from '../../providers/address/address';
+import { Logger } from '../../providers/logger/logger';
+import { TxsProvider } from '../../providers/transactions/transactions';
 
-/**
- * Generated class for the CoinListComponent component.
- *
- * See https://angular.io/docs/ts/latest/api/core/index/ComponentMetadata-class.html
- * for more info on Angular Components.
- */
 @Component({
   selector: 'coin-list',
   templateUrl: 'coin-list.html'
 })
-export class CoinListComponent {
-  @Input() public coins: Array<AppCoin>;
+export class CoinListComponent implements OnInit {
+  @Input()
+  public addrStr?: string;
+
+  public coins: any = [];
+  public showTransactions: boolean;
+  public loading;
+  public limit = 10;
+  public chunkSize = 100;
+
+  constructor(
+    private addrProvider: AddressProvider,
+    private txsProvider: TxsProvider,
+    private logger: Logger,
+    private events: Events
+  ) {}
+
+  public ngOnInit(): void {
+    if (this.coins && this.coins.length === 0) {
+      this.loading = true;
+      this.addrProvider.getAddressActivity(this.addrStr).subscribe(
+        data => {
+          this.coins = data.map(this.txsProvider.toAppCoin);
+          this.showTransactions = true;
+          this.loading = false;
+          this.events.publish('CoinList', { length: data.length });
+        },
+        err => {
+          this.logger.error(err);
+          this.loading = false;
+          this.showTransactions = false;
+        }
+      );
+    }
+  }
+
+  public loadMore() {
+    this.limit += this.chunkSize;
+    this.chunkSize *= 2;
+  }
 }

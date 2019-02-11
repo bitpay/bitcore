@@ -14,6 +14,7 @@ var Networks = bitcore.Networks;
 
 var validbase58 = require('./data/bitcoind/base58_keys_valid.json');
 var invalidbase58 = require('./data/bitcoind/base58_keys_invalid.json');
+var validCashAddr = require('./data/cashaddr.json')
 
 describe('Address', function() {
 
@@ -675,4 +676,25 @@ describe('Address', function() {
       }).to.throw('Number of required signatures must be less than or equal to the number of public keys');
     });
   });
+
+  describe('cashaddr test vectors', function () {
+    it('should validate each test vector', function () {
+      // vectors from here:
+      // https://github.com/bitcoin/bips/blob/master/bip-0173.mediawiki
+      // the test vectors include a number of addresses with type "15" which is not explained in the spec,
+      // so those are skipped
+      for (var i in validCashAddr) {
+        var obj = validCashAddr[i]
+        var payloadSize = obj.payloadSize
+        var type = obj.type
+        var cashaddr = obj.cashaddr
+        var payload = obj.payload
+        if (type === 15) continue // unknown type - not described in spec
+        var info = Address._decodeCashAddress(cashaddr)
+        info.type.should.equal(type === 0 ? 'pubkeyhash': 'scripthash')
+        info.hashBuffer.toString('hex').should.equal(payload.toLowerCase())
+        info.hashBuffer.length.should.equal(payloadSize)
+      }
+    })
+  })
 });

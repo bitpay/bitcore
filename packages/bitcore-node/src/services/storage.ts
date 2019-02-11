@@ -2,13 +2,14 @@ import { EventEmitter } from 'events';
 import { Request, Response } from 'express';
 import { TransformableModel } from '../types/TransformableModel';
 import logger from '../logger';
-import config from '../config';
 import { LoggifyClass } from '../decorators/Loggify';
-import { ObjectID } from 'bson';
+import { ObjectID } from 'mongodb';
 import { MongoClient, Db, Cursor } from 'mongodb';
 import { MongoBound } from '../models/base';
 import '../models';
 import { StreamingFindOptions } from '../types/Query';
+import { ConfigType } from '../types/Config';
+import { Config, ConfigService } from './config';
 
 export { StreamingFindOptions };
 
@@ -18,10 +19,15 @@ export class StorageService {
   db?: Db;
   connected: boolean = false;
   connection = new EventEmitter();
+  configService: ConfigService;
 
-  start(args: any): Promise<MongoClient> {
+  constructor({ configService = Config } = {}) {
+    this.configService = configService;
+  }
+
+  start(args: Partial<ConfigType> = {}): Promise<MongoClient> {
     return new Promise((resolve, reject) => {
-      let options = Object.assign({}, config, args);
+      let options = Object.assign({}, this.configService.get(), args);
       let { dbName, dbHost, dbPort } = options;
       const connectUrl = `mongodb://${dbHost}:${dbPort}/${dbName}?socketTimeoutMS=3600000&noDelay=true`;
       let attemptConnect = async () => {
@@ -29,7 +35,7 @@ export class StorageService {
           connectUrl,
           {
             keepAlive: true,
-            poolSize: config.maxPoolSize,
+            poolSize: options.maxPoolSize,
             useNewUrlParser: true
           }
         );
@@ -174,9 +180,12 @@ export class StorageService {
   ) {
     const { query, options } = this.getFindOptions(model, originalOptions);
     const finalQuery = Object.assign({}, originalQuery, query);
-    let cursor = model.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true).stream({
-      transform: transform || model._apiTransform
-    });
+    let cursor = model.collection
+      .find(finalQuery, options)
+      .addCursorFlag('noCursorTimeout', true)
+      .stream({
+        transform: transform || model._apiTransform
+      });
     if (options.sort) {
       cursor = cursor.sort(options.sort);
     }

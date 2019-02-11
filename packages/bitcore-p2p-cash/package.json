@@ -6,7 +6,7 @@
   "main": "index.js",
   "scripts": {
     "lint": "gulp lint",
-    "test": "gulp test:node",
+    "test": "gulp test",
     "coverage": "gulp coverage",
     "build": "gulp"
   },
@@ -67,10 +67,10 @@
     "socks5-client": "^0.3.6"
   },
   "devDependencies": {
-    "bitcore-build": "git://github.com/bitpay/bitcore-build.git",
+    "bitcore-build": "^8.0.0",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
-    "gulp": "^3.8.10",
+    "gulp": "^4.0.0",
     "sinon": "^1.12.2"
   },
   "license": "MIT"

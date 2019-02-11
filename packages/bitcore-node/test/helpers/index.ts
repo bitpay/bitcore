@@ -1,18 +1,25 @@
+import { StateStorage } from '../../src/models/state';
 import * as sinon from 'sinon';
-import { BlockModel } from '../../src/models/block';
-import { TransactionModel } from '../../src/models/transaction';
-import { CoinModel } from '../../src/models/coin';
-import { WalletAddressModel } from '../../src/models/walletAddress';
-import { WalletModel } from '../../src/models/wallet';
+import { BlockStorage } from '../../src/models/block';
+import { TransactionStorage } from '../../src/models/transaction';
+import { CoinStorage } from '../../src/models/coin';
+import { WalletAddressStorage } from '../../src/models/walletAddress';
+import { WalletStorage } from '../../src/models/wallet';
 import { Storage } from '../../src/services/storage';
 import { BaseModel } from '../../src/models/base';
+import { RateLimitStorage } from '../../src/models/rateLimit';
+import { EventStorage } from '../../src/models/events';
 
 export async function resetDatabase() {
-  await resetModel(BlockModel);
-  await resetModel(TransactionModel);
-  await resetModel(CoinModel);
-  await resetModel(WalletAddressModel);
-  await resetModel(WalletModel);
+  console.log('Restting database');
+  await resetModel(BlockStorage);
+  await resetModel(TransactionStorage);
+  await resetModel(CoinStorage);
+  await resetModel(WalletAddressStorage);
+  await resetModel(WalletStorage);
+  await resetModel(StateStorage);
+  await resetModel(RateLimitStorage);
+  await resetModel(EventStorage);
 }
 
 export async function resetModel(model: BaseModel<any>) {
@@ -23,18 +30,22 @@ export function mockCollection(toReturn, collectionMethods = {}) {
   const mock = Object.assign(
     {
       find: sinon.stub().returnsThis(),
+      aggregate: sinon.stub().returnsThis(),
+      count: sinon.stub().returnsThis(),
       sort: sinon.stub().returnsThis(),
       insertOne: sinon.stub().resolves(),
       insertMany: sinon.stub().resolves(),
+      bulkWrite: sinon.stub().resolves(),
       remove: sinon.stub().resolves(),
       deleteOne: sinon.stub().resolves(),
       deleteMany: sinon.stub().resolves(),
       limit: sinon.stub().returnsThis(),
-      toArray: sinon.stub().resolves([toReturn]),
+      toArray: sinon.stub().resolves(toReturn instanceof Array ? toReturn : [toReturn]),
       findOne: sinon.stub().resolves(toReturn),
       update: sinon.stub().resolves({ result: toReturn }),
       updateOne: sinon.stub().resolves(toReturn),
-      updateMany: sinon.stub().resolves({ nModified: 1 })
+      updateMany: sinon.stub().resolves({ nModified: 1 }),
+      addCursorFlag: sinon.stub().returnsThis()
     },
     collectionMethods
   );

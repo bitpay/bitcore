@@ -20,9 +20,9 @@ export class ERC20StateProvider extends ETHStateProvider
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { network, address } = params;
-    const balance: number = await this.erc20For(network)
+    const balance= await this.erc20For(network)
       .methods.balanceOf(address)
       .call();
-    return [{ balance }];
+    return { confirmed: balance, unconfirmed: 0, balance };
   };
 }

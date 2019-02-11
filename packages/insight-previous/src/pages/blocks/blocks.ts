@@ -1,11 +1,14 @@
-import { Component } from '@angular/core';
-import { IonicPage, NavController, NavParams } from 'ionic-angular';
+import { Component, Injectable } from '@angular/core';
+import { IonicPage, NavParams } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
+import { Logger } from '../../providers/logger/logger';
 
+@Injectable()
 @IonicPage({
   name: 'blocks',
-  segment: ':chain/:network/blocks'
+  segment: ':chain/:network/blocks',
+  defaultHistory: ['home']
 })
 @Component({
   selector: 'page-blocks',
@@ -16,13 +19,13 @@ export class BlocksPage {
   public blocks: any[] = [];
 
   constructor(
-    public navCtrl: NavController,
     public navParams: NavParams,
     private apiProvider: ApiProvider,
-    private blocksProvider: BlocksProvider
+    private blocksProvider: BlocksProvider,
+    private logger: Logger
   ) {
-    const chain: string = navParams.get('chain');
-    const network: string = navParams.get('network');
+    const chain: string = this.apiProvider.getConfig().chain;
+    const network: string = this.apiProvider.getConfig().network;
     this.apiProvider.changeNetwork({ chain, network });
 
     this.blocksProvider.getBlocks().subscribe(
@@ -31,7 +34,7 @@ export class BlocksPage {
         this.loading = false;
       },
       err => {
-        console.log('err', err);
+        this.logger.error(err);
         this.loading = false;
       }
     );

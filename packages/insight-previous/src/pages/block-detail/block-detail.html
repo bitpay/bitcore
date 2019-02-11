@@ -1,7 +1,4 @@
-<ion-header>
-  <head-nav [title]="'Block'"></head-nav>
-</ion-header>
-
+<head-nav></head-nav>
 <ion-content padding>
   <div *ngIf="loading">
     <ion-spinner name="crescent"></ion-spinner>
@@ -34,7 +31,7 @@
             <ion-item>
               Block Reward
               <ion-note item-end>
-                {{ currency.getConvertedNumber(block.reward) | number:'1.0-8' }} {{ currency.currencySymbol }}
+                {{ currency.getConvertedNumber(block.reward) | number }} {{ currency.currencySymbol }}
               </ion-note>
             </ion-item>
             <ion-item>
@@ -102,7 +99,7 @@
             <ion-item>
               Confirmations
               <ion-note item-end>
-                {{block.confirmations}}
+                {{ block.confirmations }}
               </ion-note>
             </ion-item>
           </ion-col>

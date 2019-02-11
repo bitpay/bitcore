@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 'use strict';
 
-const Storage = require('../lib/storage');
-const program = require('../lib/program');
+const { Storage } = require('../ts_build/storage');
+const program = require('../ts_build/program');
 
 program
   .version(require('../package.json').version)

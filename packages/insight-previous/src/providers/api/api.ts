@@ -1,8 +1,10 @@
 import { Injectable } from '@angular/core';
 import { Http } from '@angular/http';
 import { BehaviorSubject } from 'rxjs';
-import 'rxjs/add/operator/map';
 import { DefaultProvider } from '../../providers/default/default';
+import { Logger } from '../../providers/logger/logger';
+
+import * as _ from 'lodash';
 
 export interface ChainNetwork {
   chain: string;
@@ -16,21 +18,31 @@ export interface NetworkSettings {
 @Injectable()
 export class ApiProvider {
   public networkSettings = new BehaviorSubject<NetworkSettings>({
-    availableNetworks: undefined,
-    // FIXME: a lot of code still depends on this value being available instantly – needs to be rewritten to accommodate `undefined`
+    availableNetworks: [{ chain: 'BTC', network: 'mainnet' }],
     selectedNetwork: { chain: 'BTC', network: 'mainnet' }
   });
 
-  constructor(public http: Http, private defaults: DefaultProvider) {
-    this.http
-      .get(this.getUrlPrefix() + '/status/enabled-chains')
-      .subscribe(data => {
-        const availableNetworks = data.json() as ChainNetwork[];
-        this.networkSettings.next({
-          availableNetworks,
-          selectedNetwork: availableNetworks[0]
-        });
+  public ratesAPI = {
+    btc: 'https://bitpay.com/api/rates',
+    bch: 'https://bitpay.com/api/rates/bch'
+  };
+
+  constructor(
+    public http: Http,
+    private defaults: DefaultProvider,
+    private logger: Logger
+  ) {
+    this.getAvailableNetworks().subscribe(data => {
+      const availableNetworks = data.json() as ChainNetwork[];
+      this.networkSettings.next({
+        availableNetworks,
+        selectedNetwork: this.networkSettings.value.selectedNetwork
       });
+    });
+  }
+
+  public getAvailableNetworks() {
+    return this.http.get(this.getUrlPrefix() + '/status/enabled-chains');
   }
 
   public getUrlPrefix(): string {
@@ -49,13 +61,21 @@ export class ApiProvider {
     const config = {
       chain: this.networkSettings.value.selectedNetwork.chain,
       network: this.networkSettings.value.selectedNetwork.network
-    }
+    };
     return config;
   }
 
   public changeNetwork(network: ChainNetwork): void {
+    const availableNetworks = this.networkSettings.value.availableNetworks;
+    const isValid = _.some(availableNetworks, network);
+    if (!isValid) {
+      this.logger.error(
+        'Invalid URL: missing or invalid COIN or NETWORK param'
+      );
+      return;
+    }
     this.networkSettings.next({
-      availableNetworks: this.networkSettings.value.availableNetworks,
+      availableNetworks,
       selectedNetwork: network
     });
   }

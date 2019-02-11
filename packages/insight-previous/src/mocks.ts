@@ -1,7 +1,7 @@
 /* tslint:disable */
 // IONIC:
-import { EventEmitter}      from '@angular/core';
-import { FormBuilder }      from '@angular/forms';
+import { EventEmitter } from '@angular/core';
+import { FormBuilder } from '@angular/forms';
 
 // from
 // https://github.com/stonelasley/ionic-mocks/
@@ -10,36 +10,33 @@ import { FormBuilder }      from '@angular/forms';
 declare var jasmine: any;
 
 export class AlertMock {
-	public static instance(): any {
-		let instance = jasmine.createSpyObj('Alert', ['present', 'dismiss']);
-		instance.present.and.returnValue(Promise.resolve());
-		instance.dismiss.and.returnValue(Promise.resolve());
+  public static instance(): any {
+    let instance = jasmine.createSpyObj('Alert', ['present', 'dismiss']);
+    instance.present.and.returnValue(Promise.resolve());
+    instance.dismiss.and.returnValue(Promise.resolve());
 
-		return instance;
-	}
+    return instance;
+  }
 }
 
 export class AlertControllerMock {
-	public static instance(alertMock?: AlertMock): any {
+  public static instance(alertMock?: AlertMock): any {
+    let instance = jasmine.createSpyObj('AlertController', ['create']);
+    instance.create.and.returnValue(alertMock || AlertMock.instance());
 
-		let instance = jasmine.createSpyObj('AlertController', ['create']);
-		instance.create.and.returnValue(alertMock || AlertMock.instance());
-
-		return instance;
-	}
+    return instance;
+  }
 }
 
 export class ToastMock {
-
   public create(): any {
     let rtn: Object = {};
-    rtn['present'] = (() => true);
+    rtn['present'] = () => true;
     return rtn;
   }
 }
 
 export class ConfigMock {
-
   public get(): any {
     return '';
   }
@@ -64,7 +61,6 @@ export class FormMock {
 }
 
 export class NavMock {
-
   public pop(): any {
     return new Promise(function(resolve: Function): void {
       resolve();
@@ -79,9 +75,9 @@ export class NavMock {
 
   public getActive(): any {
     return {
-      'instance': {
-        'model': 'something',
-      },
+      instance: {
+        model: 'something'
+      }
     };
   }
 
@@ -95,14 +91,14 @@ export class NavMock {
 }
 
 export class PlatformMock {
-  public ready(): Promise<{String}> {
-    return new Promise((resolve) => {
+  public ready(): Promise<String> {
+    return new Promise(resolve => {
       resolve('READY');
     });
   }
 
   public registerBackButtonAction(fn: Function, priority?: number): Function {
-    return (() => true);
+    return () => true;
   }
 
   public hasFocus(ele: HTMLElement): boolean {
@@ -122,7 +118,7 @@ export class PlatformMock {
       paddingLeft: '10',
       paddingTop: '10',
       paddingRight: '10',
-      paddingBottom: '10',
+      paddingBottom: '10'
     };
   }
 
@@ -130,8 +126,12 @@ export class PlatformMock {
     return callback;
   }
 
-  public registerListener(ele: any, eventName: string, callback: any): Function {
-    return (() => true);
+  public registerListener(
+    ele: any,
+    eventName: string,
+    callback: any
+  ): Function {
+    return () => true;
   }
 
   public win(): Window {
@@ -156,14 +156,12 @@ export class PlatformMock {
 }
 
 export class SplashMock {
-
   public hide() {
     return Promise.resolve(true);
   }
 }
 
 export class StatusMock {
-
   public styleDefault() {
     return Promise.resolve(true);
   }
@@ -178,7 +176,6 @@ export class MenuMock {
 }
 
 export class AppMock {
-
   public getActiveNav(): NavMock {
     return new NavMock();
   }

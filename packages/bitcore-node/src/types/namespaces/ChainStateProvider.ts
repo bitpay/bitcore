@@ -1,3 +1,4 @@
+import { TransactionJSON } from '../Transaction';
 import { ObjectId } from 'mongodb';
 import { IBlock } from '../../models/block';
 import { Request, Response } from 'express';
@@ -30,9 +31,7 @@ export declare namespace CSP {
   export type GetBalanceForAddressParams = ChainNetwork & {
     address: string;
   };
-  export type GetBalanceForWalletParams = ChainNetwork & {
-    walletId: string;
-  };
+  
   export type GetBlockParams = ChainNetwork & {
     blockId?: string;
     sinceBlock?: number | string;
@@ -63,6 +62,11 @@ export declare namespace CSP {
     wallet: MongoBound<IWallet>;
   };
 
+  export type GetWalletBalanceAtTimeParams = ChainNetwork & {
+    wallet: MongoBound<IWallet>;
+    time: string;
+  };
+
   export type StreamAddressUtxosParams = ChainNetwork & {
     address: string;
     req: Request;
@@ -83,6 +87,10 @@ export declare namespace CSP {
     req: Request;
     res: Response;
     limit: number;
+  };
+
+  export type WalletCheckParams = ChainNetwork & {
+    wallet: ObjectId;
   };
 
   export type StreamWalletMissingAddressesParams = ChainNetwork & {
@@ -109,23 +117,24 @@ export declare namespace CSP {
   export type Provider<T> = { get(params: { chain: string }): T };
   export type ChainStateProvider = Provider<IChainStateService> & IChainStateService;
   export interface IChainStateService {
-    getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{ balance: number }[]>;
-    getBalanceForWallet(params: GetBalanceForWalletParams): Promise<{ balance: number }[]>;
+    getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{ confirmed: number, unconfirmed: number, balance: number }>;
     getBlock(params: GetBlockParams): Promise<IBlock | string>;
     streamBlocks(params: StreamBlocksParams): any;
     getFee(params: GetEstimateSmartFeeParams): any;
     broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
     createWallet(params: CreateWalletParams): Promise<IWallet>;
     getWallet(params: GetWalletParams): Promise<IWallet | null>;
-    updateWallet(params: UpdateWalletParams): Promise<{}>;
-    getWalletBalance(params: GetWalletBalanceParams): Promise<{ balance: number }[]>;
+    updateWallet(params: UpdateWalletParams): Promise<any>;
+    getWalletBalance(params: GetWalletBalanceParams): Promise<{ confirmed: number, unconfirmed: number, balance: number }>;
+    getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams): Promise<{ confirmed: number, unconfirmed: number, balance: number }>;
     streamAddressUtxos(params: StreamAddressUtxosParams): any;
     streamAddressTransactions(params: StreamAddressUtxosParams): any;
     streamTransactions(params: StreamTransactionsParams): any;
     getAuthhead(params: StreamTransactionParams): Promise<AuthheadJSON | undefined>;
     getDailyTransactions(params: { chain: string; network: string }): Promise<DailyTransactionsJSON>;
-    getTransaction(params: StreamTransactionParams): Promise<any>;
+    getTransaction(params: StreamTransactionParams): Promise<TransactionJSON | string | undefined>;
     streamWalletAddresses(params: StreamWalletAddressesParams): any;
+    walletCheck(params: WalletCheckParams): any;
     streamWalletTransactions(params: StreamWalletTransactionsParams): any;
     streamWalletUtxos(params: StreamWalletUtxosParams): any;
     streamMissingWalletAddresses(params: StreamWalletMissingAddressesParams);

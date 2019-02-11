@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-const program = require('../lib/program');
-const Wallet = require('../lib/wallet');
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
 
 program

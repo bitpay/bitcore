@@ -1,6 +1,4 @@
 import { Injectable } from '@angular/core';
-import { Http } from '@angular/http';
-import 'rxjs/add/operator/map';
 
 @Injectable()
 export class DefaultProvider {
@@ -16,7 +14,7 @@ export class DefaultProvider {
     '%NUM_BLOCKS%': process.env.NUM_BLOCKS || '15'
   };
 
-  constructor(public http: Http) {}
+  constructor() {}
 
   public getDefault(str: string): string {
     return this.defaults[str] !== undefined ? this.defaults[str] : str;
