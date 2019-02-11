@@ -1,10 +1,17 @@
 <ion-header no-border>
   <ion-toolbar>
-    <ion-buttons slot="start">
-      <ion-menu-button></ion-menu-button>
-      <ion-back-button></ion-back-button>
-    </ion-buttons>
-    <ion-title>{{ (config.currentChain$ | async).name }}</ion-title>
+    <ng-container *ngIf="(config.currentChain$ | async) as currentChain">
+      <ion-buttons slot="start">
+        <ion-menu-button></ion-menu-button>
+        <ion-back-button></ion-back-button>
+      </ion-buttons>
+      <ion-title>{{ currentChain.name }}</ion-title>
+      <ion-buttons slot="end">
+        <ion-button [routerLink]="['/' + currentChain.code + '/search/']">
+          <ion-icon slot="icon-only" name="search"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </ng-container>
   </ion-toolbar>
 </ion-header>
 
