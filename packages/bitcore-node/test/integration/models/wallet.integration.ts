@@ -166,43 +166,55 @@ describe('Wallet Model', function() {
         })
         .toArray();
 
+      const txTxid = confirmTx.map(tx => tx.txid);
+      const txChain = confirmTx.map(tx => tx.chain);
+      const txNetwork = confirmTx.map(tx => tx.network);
+
       for (let txid of txidList) {
-        expect(confirmTx.map(tx => tx.txid)).to.include(txid);
-        expect(confirmTx.map(tx => tx.chain).includes(chain)).to.be.true;
-        expect(confirmTx.map(tx => tx.network).includes(network)).to.be.true;
+        expect(txTxid).to.include(txid);
+        expect(txChain.includes(chain)).to.be.true;
+        expect(txNetwork.includes(network)).to.be.true;
         expect(confirmTx.length).to.deep.equal(txidList.length);
       }
 
+      let confirmTxBlockHeight = confirmTx.map(tx => tx.blockHeight);
+      const confirmCoin = await CoinStorage.collection
+        .find({
+          chain,
+          network,
+          mintTxid: { $in: txidList },
+          address: address1,
+          mintHeight: { $in: confirmTxBlockHeight }
+        })
+        .toArray();
+
+      const coinMintTxid = confirmCoin.map(tx => tx.mintTxid);
+      const coinChain = confirmCoin.map(tx => tx.chain);
+      const coinNetwork = confirmCoin.map(tx => tx.network);
+      const coinAddress = confirmCoin.map(tx => tx.address);
+      const coinMintHeight = confirmCoin.map(tx => tx.mintHeight);
+
       for (let tx of confirmTx) {
         if (tx && tx.blockHeight) {
-          const confirmCoin = await CoinStorage.collection
-            .find({
-              chain,
-              network,
-              mintTxid: { $in: txidList },
-              address: address1,
-              mintHeight: { $in: confirmTx.map(tx => tx.blockHeight) }
-            })
-            .toArray();
-
-          expect(confirmCoin.map(tx => tx.mintTxid).includes(tx.txid)).to.be.true;
-          expect(confirmCoin.map(tx => tx.chain).includes(tx.chain)).to.be.true;
-          expect(confirmCoin.map(tx => tx.network).includes(tx.network)).to.be.true;
-          expect(confirmCoin.map(tx => tx.address).includes(address1)).to.be.true;
-          expect(confirmCoin.map(tx => tx.mintHeight).includes(tx.blockHeight)).to.be.true;
+          expect(coinMintTxid.includes(tx.txid)).to.be.true;
+          expect(coinChain.includes(tx.chain)).to.be.true;
+          expect(coinNetwork.includes(tx.network)).to.be.true;
+          expect(coinAddress.includes(address1)).to.be.true;
+          expect(coinMintHeight.includes(tx.blockHeight)).to.be.true;
         }
       }
 
       const getUtxosResult = await lockedWallet.getUtxos({ includeSpent: true });
+      const txListid = txidList.map(txid => txid);
 
       getUtxosResult.pipe(new ParseApiStream()).on('data', (coin: ICoin) => {
-        expect(txidList.map(txid => txid)).to.include(coin.mintTxid);
+        expect(txListid).to.include(coin.mintTxid);
         expect(coin).to.have.deep.property('chain', chain);
         expect(coin).to.have.deep.property('network', network);
         expect(coin).to.have.deep.property('address', address1);
       });
 
-      const getWalletBalance = await lockedWallet.getBalance(null);
+      const getWalletBalance = await lockedWallet.getBalance();
       expect(getWalletBalance.confirmed).to.deep.equal(0);
       expect(getWalletBalance.unconfirmed).to.deep.equal(value * 50 * 1e8);
       expect(getWalletBalance.balance).to.deep.equal(getWalletBalance.unconfirmed + getWalletBalance.confirmed);

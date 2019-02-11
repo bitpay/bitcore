@@ -11,11 +11,11 @@ async function getAllAddressesFromBlocks(start, end) {
   return Object.keys(addresses.reduce((prev, a) => Object.assign(prev, { [a.address]: a.address }, {})));
 }
 
-export async function createWallet(addresses: string[], iteration) {
+export async function createWallet(addresses: string[], iteration, regtest?: string) {
   const walletName = 'Benchmark Wallet' + iteration;
   const password = 'iamsatoshi';
   const chain = 'BTC';
-  const network = 'regtest';
+  const network = regtest || 'mainnet';
   const baseUrl = 'http://localhost:3000/api';
   let lockedWallet: Wallet;
 
