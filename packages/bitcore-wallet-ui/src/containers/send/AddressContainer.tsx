@@ -61,6 +61,4 @@ AddressCard.propTypes = {
   classes: PropTypes.object.isRequired
 } as any;
 
-const AddressListCard = withStyles(styles)(AddressCard);
-
-export { AddressListCard };
+export const AddressListCard = withStyles(styles)(AddressCard);

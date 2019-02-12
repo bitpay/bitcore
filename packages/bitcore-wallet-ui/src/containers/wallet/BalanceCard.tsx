@@ -5,6 +5,7 @@ import Typography from '@material-ui/core/Typography';
 import { Paper } from '@material-ui/core';
 import { Wallet } from 'bitcore-client';
 import { WalletHeader } from './WalletHeader';
+import { connect } from 'react-redux';
 
 const styles = {
   root: {
@@ -55,7 +56,7 @@ const styles = {
 
 interface Props {
   wallet?: Wallet;
-  balance: string | number;
+  balance: any;
   classes: any;
 }
 
@@ -64,7 +65,7 @@ function WalletNavBar(props: Props) {
 
   return (
     <div className={classes.root}>
-      <WalletHeader wallet={wallet} />
+      <WalletHeader />
       <Paper className={classes.paper}>
         <Typography variant="h2" className={classes.heading}>
           {typeof balance === 'number' ? Number(balance) / 1e8 : ''}
@@ -81,4 +82,13 @@ WalletNavBar.propTypes = {
   classes: PropTypes.object.isRequired
 };
 
-export const WalletBar = withStyles(styles)(WalletNavBar);
+const mapStateToProps = (state: Props) => {
+  return {
+    wallet: state.wallet,
+    balance: state.balance.balance
+  };
+};
+
+export const WalletBar = withStyles(styles)(
+  connect(mapStateToProps)(WalletNavBar)
+);

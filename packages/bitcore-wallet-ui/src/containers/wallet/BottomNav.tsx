@@ -6,6 +6,7 @@ import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 import ArrowDownwardIcon from '@material-ui/icons/ArrowDownward';
 import FilterListIcon from '@material-ui/icons/FilterList';
 import { Link } from 'react-router-dom';
+import { connect } from 'react-redux';
 
 const styles = {
   root: {
@@ -82,6 +83,12 @@ class WalletActionNav extends React.Component<Props, State> {
   }
 }
 
-const WalletBottomNav = withStyles(styles)(WalletActionNav);
+const mapStateToProps = (state: Props) => {
+  return {
+    walletName: state.walletName
+  };
+};
 
-export { WalletBottomNav };
+export const WalletBottomNav = withStyles(styles)(
+  connect(mapStateToProps)(WalletActionNav)
+);

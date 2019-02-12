@@ -8,7 +8,8 @@ import ClearIcon from '@material-ui/icons/Clear';
 import LockIcon from '@material-ui/icons/Lock';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
 import { Link } from 'react-router-dom';
-import { Wallet } from 'bitcore-client';
+import { AppState } from '../../contexts/state';
+import { connect } from 'react-redux';
 
 const styles = {
   root: {
@@ -39,7 +40,7 @@ const styles = {
 };
 
 interface Props {
-  wallet?: Wallet;
+  wallet?: AppState['wallet'];
   classes: any;
 }
 
@@ -67,4 +68,12 @@ WalletNavTop.propTypes = {
   classes: PropTypes.object.isRequired
 };
 
-export const WalletHeader = withStyles(styles)(WalletNavTop);
+const mapStateToProps = (state: AppState) => {
+  return {
+    wallet: state.wallet
+  };
+};
+
+export const WalletHeader = withStyles(styles)(
+  connect(mapStateToProps)(WalletNavTop)
+);

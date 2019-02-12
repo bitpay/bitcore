@@ -1,6 +1,6 @@
 import React from 'react';
 import { Wallet } from 'bitcore-client';
-import { withStyles } from '@material-ui/core/styles';
+import { withStyles, Theme, createStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
 import Avatar from '@material-ui/core/Avatar';
@@ -12,57 +12,57 @@ interface Props {
   tx: any;
   classes: any;
   wallet?: Wallet;
-  API_URL: string;
 }
 
-const styles = (theme: any) => ({
-  paper: {
-    maxWidth: 600,
-    padding: theme.spacing.unit * 2,
-    alignItems: 'center',
-    borderTop: '2px solid #002855'
-  } as any,
-  greenpaper: {
-    maxWidth: 600,
-    padding: theme.spacing.unit * 2,
-    alignItems: 'center',
-    borderTop: '2px solid green'
-  },
-  textRight: {
-    textAlign: 'right'
-  } as any,
-  avatar: {
-    backgroundColor: 'white',
-    color: 'green',
-    border: '1px solid green',
-    margin: 'auto'
-  },
-  defaultAvatar: {
-    backgroundColor: 'white',
-    color: '#002855',
-    border: '1px solid #002855',
-    margin: 'auto'
-  },
-  auto: {
-    margin: 'auto'
-  } as any,
-  default: {
-    color: '#002855'
-  },
-  green: {
-    color: 'green'
-  },
-  link: {
-    color: 'white',
-    textDecoration: 'none',
-    '&:hover': {
-      textDecoration: 'none'
+const styles = (theme: Theme) =>
+  createStyles({
+    paper: {
+      maxWidth: 600,
+      padding: theme.spacing.unit * 2,
+      alignItems: 'center',
+      borderTop: '2px solid #002855'
+    },
+    greenpaper: {
+      maxWidth: 600,
+      padding: theme.spacing.unit * 2,
+      alignItems: 'center',
+      borderTop: '2px solid green'
+    },
+    textRight: {
+      textAlign: 'right'
+    },
+    avatar: {
+      backgroundColor: 'white',
+      color: 'green',
+      border: '1px solid green',
+      margin: 'auto'
+    },
+    defaultAvatar: {
+      backgroundColor: 'white',
+      color: '#002855',
+      border: '1px solid #002855',
+      margin: 'auto'
+    },
+    auto: {
+      margin: 'auto'
+    },
+    default: {
+      color: '#002855'
+    },
+    green: {
+      color: 'green'
+    },
+    link: {
+      color: 'white',
+      textDecoration: 'none',
+      '&:hover': {
+        textDecoration: 'none'
+      }
     }
-  }
-});
+  });
 
 function Transactions(props: Props) {
-  const { classes, tx, wallet, API_URL } = props;
+  const { classes, tx, wallet } = props;
   return (
     <a
       href={

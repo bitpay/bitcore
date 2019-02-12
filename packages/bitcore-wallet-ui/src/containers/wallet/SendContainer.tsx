@@ -2,20 +2,17 @@ import { RouteComponentProps } from 'react-router';
 import { WalletBottomNav } from '../wallet/BottomNav';
 import DialogSelect from '../wallet/UnlockBar';
 import React from 'react';
-import { useState } from 'react';
-import { Wallet } from 'bitcore-client';
-import { AppStateContext, WalletContainer, AppState } from './Wallet';
 import { WalletBar } from './BalanceCard';
+import { AppState } from '../../contexts/state';
 import Paper from '@material-ui/core/Paper';
 import Button from '@material-ui/core/Button';
 import TextField from '@material-ui/core/TextField';
 import FormControl from '@material-ui/core/FormControl';
 import { withStyles } from '@material-ui/core/styles';
-import { SocketContext } from '../../contexts/io';
+import { connect } from 'react-redux';
 
 interface Props extends RouteComponentProps<{ name: string }> {
   classes: any;
-  socket: ReturnType<typeof io>;
   appState: AppState;
 }
 
@@ -58,21 +55,6 @@ const styles = (theme: any) => ({
   }
 });
 
-export function LiveUpdatingSendContainer(props: Props) {
-  return (
-    <SocketContext.Consumer>
-      {socket => (
-        <WalletContainer socket={socket} {...props}>
-          <AppStateContext.Consumer>
-            {state => (
-              <SendContainer socket={socket} appState={state} {...props} />
-            )}
-          </AppStateContext.Consumer>
-        </WalletContainer>
-      )}
-    </SocketContext.Consumer>
-  );
-}
 export class SendCard extends React.Component<Props, State> {
   state: State = {
     sendTo: '',
@@ -85,13 +67,6 @@ export class SendCard extends React.Component<Props, State> {
     this.handleSendClick = this.handleSendClick.bind(this);
   }
 
-  async componentDidMount() {
-    this.props.socket.on('connect', () => {
-      console.log('Connected to socket');
-      this.props.socket.emit('room', '/BTC/regtest/inv');
-    });
-  }
-
   async handleSendClick() {
     const tx = await this.props.appState.wallet!.newTx({
       recipients: [
@@ -99,14 +74,12 @@ export class SendCard extends React.Component<Props, State> {
       ]
     });
 
-    console.log(tx);
     const signed = await this.props.appState.wallet!.signTx({ tx });
     this.setState({ rawTx: signed });
   }
 
   public render() {
-    const wallet = this.props.appState.wallet;
-    const walletUnlocked = wallet && wallet.unlocked;
+    const wallet = this.props.appState.wallet!;
     const { classes } = this.props;
     return (
       <div className={classes.padding}>
@@ -162,4 +135,13 @@ export class SendCard extends React.Component<Props, State> {
     );
   }
 }
-export const SendContainer = withStyles(styles)(SendCard);
+
+const mapStateToProps = (state: AppState) => {
+  return {
+    appState: state
+  };
+};
+
+export const SendContainer = withStyles(styles)(
+  connect(mapStateToProps)(SendCard)
+);

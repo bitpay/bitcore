@@ -1,16 +1,17 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { withStyles } from '@material-ui/core/styles';
+import React, { Component } from 'react';
+import { withStyles, createStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import { Paper } from '@material-ui/core';
-import { Wallet } from 'bitcore-client';
 import { WalletHeader } from '../wallet/WalletHeader';
 import InputBase from '@material-ui/core/InputBase';
 import Divider from '@material-ui/core/Divider';
 import IconButton from '@material-ui/core/IconButton';
 import Button from '@material-ui/core/Button';
+import { AppState } from '../../contexts/state';
+import { ActionCreators, store } from '../../index';
+import { connect } from 'react-redux';
 
-const styles = {
+const styles = createStyles({
   root: {
     flexGrow: 1,
     position: 'absolute' as 'absolute',
@@ -24,7 +25,7 @@ const styles = {
     boxShadow: 'none',
     paddingTop: 20,
     zIndex: 99
-  } as any,
+  },
   toolbar: {
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -38,11 +39,11 @@ const styles = {
     marginTop: 70,
     width: '100%',
     zIndex: -99
-  } as any,
+  },
   heading: {
     color: '#002855',
     textAlign: 'left'
-  } as any,
+  },
   chain: {
     color: 'rgba(255, 255, 255, .64)',
     fontSize: 20
@@ -82,72 +83,103 @@ const styles = {
     width: '100%',
     marginTop: 20
   }
-};
+});
 
 interface Props {
-  wallet: Wallet;
+  wallet: AppState['wallet'];
   classes: any;
-  handleAddAddressClick: any;
-  handleDeriveAddressClick: any;
-  addressToAdd: any;
-  handleAddressChange: any;
-  walletUnlocked: any;
+  addresses: AppState['addresses'];
+  addressToAdd: AppState['addressToAdd'];
 }
 
-function AddressBar(props: Props) {
-  const {
-    classes,
-    walletUnlocked,
-    wallet,
-    handleDeriveAddressClick,
-    handleAddAddressClick,
-    handleAddressChange,
-    addressToAdd
-  } = props;
+class AddressBar extends Component<Props> {
+  async importAddresses(address: string) {
+    let wallet = this.props.wallet;
+    if (wallet) {
+      if (wallet && wallet.unlocked) {
+        await wallet.importKeys({
+          keys: [{ address }]
+        });
+      }
+    }
+  }
 
-  return (
-    <div className={classes.root}>
-      <WalletHeader wallet={wallet} />
-      <Paper className={classes.paper}>
-        <Typography variant="h4" className={classes.heading}>
-          {true ? 'Recieve' : 'Send'}
-        </Typography>
-        <Paper className={classes.searchBar}>
-          <InputBase
-            className={classes.input}
-            placeholder="Enter address"
-            value={addressToAdd}
-            onChange={e => handleAddressChange(e)}
-          />
-          <Divider className={classes.divider} />
-          <IconButton
-            className={classes.iconButton}
-            aria-label="addresses"
-            onClick={() => handleDeriveAddressClick()}
+  async handleAddAddressClick() {
+    store.dispatch(
+      ActionCreators.setAddress([
+        ...this.props.addresses,
+        this.props.addressToAdd
+      ])
+    );
+    await this.importAddresses(this.props.addressToAdd);
+  }
+
+  handleAddressChange(
+    event: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) {
+    store.dispatch(ActionCreators.setAddressToAdd(event.target.value));
+  }
+
+  async handleDeriveAddressClick() {
+    const wallet = this.props.wallet;
+    const newAddresses = await wallet!.nextAddressPair();
+    store.dispatch(
+      ActionCreators.setAddress([...this.props.addresses, ...newAddresses])
+    );
+  }
+
+  render() {
+    const { classes, wallet, addressToAdd } = this.props;
+    return (
+      <div className={classes.root}>
+        <WalletHeader />
+        <Paper className={classes.paper}>
+          <Typography variant="h4" className={classes.heading}>
+            Recieve
+          </Typography>
+          <Paper className={classes.searchBar}>
+            <InputBase
+              className={classes.input}
+              placeholder="Enter address"
+              value={addressToAdd}
+              onChange={e => this.handleAddressChange(e)}
+            />
+            <Divider className={classes.divider} />
+            <IconButton
+              className={classes.iconButton}
+              aria-label="addresses"
+              onClick={() => this.handleDeriveAddressClick()}
+            >
+              <Typography variant="subheading" className={classes.iconButton}>
+                Derive
+              </Typography>
+            </IconButton>
+          </Paper>
+          <Button
+            variant="outlined"
+            color="primary"
+            disabled={!wallet!.unlocked}
+            className={classes.button}
+            onClick={() => this.handleAddAddressClick()}
           >
-            <Typography variant="subheading" className={classes.iconButton}>
-              Derive
-            </Typography>
-          </IconButton>
+            Add
+          </Button>
         </Paper>
-        <Button
-          variant="outlined"
-          color="primary"
-          disabled={!walletUnlocked}
-          className={classes.button}
-          onClick={() => handleAddAddressClick()}
-        >
-          Add
-        </Button>
-      </Paper>
-    </div>
-  );
+      </div>
+    );
+  }
 }
 
-AddressBar.propTypes = {
-  classes: PropTypes.object.isRequired
+const mapStateToProps = (state: Props) => {
+  return {
+    wallet: state.wallet,
+    addresses: state.addresses,
+    addressToAdd: state.addressToAdd
+  };
 };
 
-const AddressNavBar = withStyles(styles)(AddressBar);
-
-export { AddressNavBar };
+export const AddressNavBar = withStyles(styles)(
+  connect(mapStateToProps)(AddressBar)
+);

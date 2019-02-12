@@ -1,29 +1,18 @@
 import React, { Component } from 'react';
 import { ParseApiStream, Wallet, Storage } from 'bitcore-client';
 import { RouteComponentProps } from 'react-router';
-import { Link } from 'react-router-dom';
-
-import io from 'socket.io-client';
-import { any } from 'prop-types';
 import Snackbar from '@material-ui/core/Snackbar';
 import IconButton from '@material-ui/core/IconButton';
 import CloseIcon from '@material-ui/icons/Close';
-import PropTypes from 'prop-types';
 import { WalletBar } from './BalanceCard';
 import { TransactionListCard } from './TransactionContainer';
 import { WalletBottomNav } from './BottomNav';
 import DialogSelect from './UnlockBar';
-import { SocketContext } from '../../contexts/io';
-
-const API_URL =
-  process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
+import { socket } from '../../contexts/io';
+import { ActionCreators, store } from '../../index';
+import { connect } from 'react-redux';
 
 interface Props extends RouteComponentProps<{ name: string }> {
-  socket: ReturnType<typeof io>;
-  children: React.ReactNode;
-}
-
-export interface AppState {
   walletName: string;
   wallet?: Wallet;
   password: string;
@@ -32,84 +21,37 @@ export interface AppState {
   addresses: string[];
   addressToAdd: string;
   message: string;
+}
+
+export interface State {
   open: boolean;
 }
 
-export function AppStateWithSocket(props: Props) {
-  return (
-    <SocketContext.Consumer>
-      {socket => (
-        <WalletContainer socket={socket} {...props}>
-          {props.children}
-        </WalletContainer>
-      )}
-    </SocketContext.Consumer>
-  );
-}
-export function LiveUpdatingWalletContainer(props: Props) {
-  return (
-    <AppStateWithSocket {...props}>
-      <AppStateContext.Consumer>
-        {state => (
-          <TransactionListCard
-            transactions={state.transactions}
-            wallet={state.wallet!}
-            API_URL={API_URL}
-          />
-        )}
-      </AppStateContext.Consumer>
-    </AppStateWithSocket>
-  );
-}
-
-const DefaultState: AppState = {
-  password: '',
-  walletName: '',
-  balance: {
-    confirmed: 0,
-    unconfirmed: 0,
-    balance: '...'
-  },
-  transactions: [],
-  addresses: [],
-  addressToAdd: '',
-  message: '',
-  open: false
-};
-
-export const AppStateContext = React.createContext(DefaultState);
-
-export class WalletContainer extends Component<Props, AppState> {
-  state = DefaultState;
+class WalletContainer extends Component<Props, State> {
+  state = { open: false };
 
   constructor(props: Props) {
     super(props);
-    this.handleAddressChange = this.handleAddressChange.bind(this);
-    this.handleAddAddressClick = this.handleAddAddressClick.bind(this);
-    this.handleDeriveAddressClick = this.handleDeriveAddressClick.bind(this);
-    this.handlePasswordChange = this.handlePasswordChange.bind(this);
-    this.handlePasswordSubmit = this.handlePasswordSubmit.bind(this);
-    this.handleLockToggle = this.handleLockToggle.bind(this);
     this.updateWalletInfo = this.updateWalletInfo.bind(this);
     this.updateBalance = this.updateBalance.bind(this);
   }
 
   async componentDidMount() {
-    this.props.socket.on('connect', () => {
+    socket.on('connect', () => {
       console.log('Connected to socket');
-      this.props.socket.emit('room', '/BTC/regtest/inv');
+      socket.emit('room', '/BTC/regtest/inv');
     });
     const name = this.props.match.params.name;
-    this.setState({ walletName: name });
+    store.dispatch(ActionCreators.setWalletName(name));
     const wallet = await this.loadWallet(name);
     await wallet!.register({ baseUrl: 'http://localhost:3000/api' });
-    this.setState({ wallet });
-    if (wallet) {
-      console.log('Using bitcore-node at ', wallet.baseUrl);
-      await this.handleGetTx(wallet);
-      await this.handleGetBlock(wallet);
-      await this.updateWalletInfo(wallet);
-      await this.fetchAddresses(wallet);
+    await store.dispatch(ActionCreators.setWallet(wallet!));
+    if (this.props.wallet) {
+      console.log('Using bitcore-node at ', this.props.wallet.baseUrl);
+      await this.handleGetTx(this.props.wallet);
+      await this.handleGetBlock(this.props.wallet);
+      await this.updateWalletInfo(this.props.wallet);
+      await this.fetchAddresses(this.props.wallet);
     }
   }
   async updateWalletInfo(wallet: Wallet) {
@@ -118,18 +60,17 @@ export class WalletContainer extends Component<Props, AppState> {
   }
 
   async componentWillUnmount() {
-    this.props.socket.removeAllListeners();
+    socket.removeAllListeners();
   }
 
   handleGetTx(wallet: Wallet) {
-    this.props.socket.on('tx', async (sanitizedTx: any) => {
-      console.log(sanitizedTx);
+    socket.on('tx', async (sanitizedTx: any) => {
       let message = `Recieved ${sanitizedTx.value /
         100000000} BTC at ${new Date(
         sanitizedTx.blockTimeNormalized
       ).toLocaleString()}`;
+      store.dispatch(ActionCreators.setMessage(message));
       this.setState({
-        message,
         open: true
       });
       this.updateWalletInfo(wallet);
@@ -137,10 +78,10 @@ export class WalletContainer extends Component<Props, AppState> {
   }
 
   handleGetBlock(wallet: Wallet) {
-    this.props.socket.on('block', (block: any) => {
+    socket.on('block', (block: any) => {
       let message = `New Block on ${new Date(block.time).toDateString()}`;
+      store.dispatch(ActionCreators.setMessage(message));
       this.setState({
-        message,
         open: true
       });
       this.updateWalletInfo(wallet);
@@ -152,15 +93,15 @@ export class WalletContainer extends Component<Props, AppState> {
       .listTransactions({})
       .pipe(new ParseApiStream())
       .on('data', (d: any) => {
-        let prevTx = this.state.transactions;
+        let prevTx = this.props.transactions.map(e => e);
         const foundIndex = prevTx.findIndex(t => t.id === d.id);
         if (foundIndex > -1) {
           prevTx[foundIndex] = d;
         } else {
-          prevTx.push(d);
-          // prevTx = [d, ...prevTx.slice(0, 4)];
+          // Recent 10 Transactions limit
+          prevTx = [...prevTx.slice(0, 9), d];
         }
-        this.setState({ transactions: prevTx });
+        store.dispatch(ActionCreators.setTransactions(prevTx));
       });
   }
 
@@ -182,26 +123,18 @@ export class WalletContainer extends Component<Props, AppState> {
         } else {
           addresses = [d];
         }
-        this.setState({
-          addresses: [...this.state.addresses, ...addresses.map(a => a.address)]
-        });
+        store.dispatch(
+          ActionCreators.setAddress([
+            ...this.props.addresses,
+            ...addresses.map(a => a.address)
+          ])
+        );
       });
   }
 
   async updateBalance(wallet: Wallet) {
     const balance = await wallet.getBalance();
-    this.setState({ balance });
-  }
-
-  async importAddresses(address: string) {
-    let wallet = this.state.wallet;
-    if (wallet) {
-      if (wallet && wallet.unlocked) {
-        await wallet.importKeys({
-          keys: [{ address: this.state.addressToAdd }]
-        });
-      }
-    }
+    await store.dispatch(ActionCreators.setBalance(balance));
   }
 
   async loadWallet(name: string) {
@@ -220,86 +153,53 @@ export class WalletContainer extends Component<Props, AppState> {
     return wallet;
   }
 
-  handleAddressChange(event: React.ChangeEvent<HTMLInputElement>) {
-    this.setState({ addressToAdd: event.target.value });
-  }
-
-  handlePasswordChange(event: React.ChangeEvent<HTMLInputElement>) {
-    this.handlePasswordSubmit(event.target.value);
-  }
-
-  async handlePasswordSubmit(password: string) {
-    console.log('unlocking');
-    await this.setState({ password });
-    await this.handleLockToggle();
-  }
-
-  async handleLockToggle() {
-    if (this.state.wallet) {
-      console.log(this.state.wallet.unlocked);
-      if (this.state.wallet.unlocked) {
-        const locked = await this.state.wallet.lock();
-        await this.setState({ wallet: locked });
-      } else {
-        console.log('unlocking wallet');
-        const unlocked = await this.state.wallet.unlock(this.state.password);
-        await this.setState({ wallet: unlocked });
-      }
-    }
-  }
-
-  async handleAddAddressClick() {
-    this.setState({
-      addresses: [...this.state.addresses, this.state.addressToAdd]
-    });
-    await this.importAddresses(this.state.addressToAdd);
-    await this.updateWalletInfo(this.state.wallet!);
-  }
-
-  async handleDeriveAddressClick() {
-    const address = await this.state.wallet!.derivePrivateKey(0);
-    this.setState({ addressToAdd: address });
-  }
-
   render() {
-    const wallet = this.state.wallet;
-    const walletUnlocked = wallet && wallet.unlocked;
+    const { wallet } = this.props;
+    const unlockedWallet = wallet && wallet.unlocked!;
     return (
-      <AppStateContext.Provider value={this.state}>
-        <div className="walletContainer">
-          <WalletBar wallet={wallet} balance={this.state.balance.confirmed} />
-
-          {this.props.children}
-          {walletUnlocked ? (
-            <WalletBottomNav walletName={this.state.walletName} />
-          ) : (
-            <DialogSelect onUnlock={this.handlePasswordSubmit} />
-          )}
-          <Snackbar
-            anchorOrigin={{
-              vertical: 'bottom',
-              horizontal: 'left'
-            }}
-            open={this.state.open}
-            autoHideDuration={6000}
-            onClose={this.handleClose}
-            ContentProps={{
-              'aria-describedby': 'message-id'
-            }}
-            message={<span id="message-id">{this.state.message}</span>}
-            action={[
-              <IconButton
-                key="close"
-                aria-label="Close"
-                color="inherit"
-                onClick={this.handleClose}
-              >
-                <CloseIcon />
-              </IconButton>
-            ]}
-          />
-        </div>
-      </AppStateContext.Provider>
+      <div>
+        <WalletBar />
+        <TransactionListCard />
+        {wallet && unlockedWallet ? <WalletBottomNav /> : <DialogSelect />}
+        <Snackbar
+          anchorOrigin={{
+            vertical: 'bottom',
+            horizontal: 'left'
+          }}
+          open={this.state.open}
+          autoHideDuration={6000}
+          onClose={this.handleClose}
+          ContentProps={{
+            'aria-describedby': 'message-id'
+          }}
+          message={<span id="message-id">{this.props.message}</span>}
+          action={[
+            <IconButton
+              key="close"
+              aria-label="Close"
+              color="inherit"
+              onClick={this.handleClose}
+            >
+              <CloseIcon />
+            </IconButton>
+          ]}
+        />
+      </div>
     );
   }
 }
+
+const mapStateToProps = (state: Props) => {
+  return {
+    walletName: state.walletName,
+    wallet: state.wallet,
+    password: state.password,
+    balance: state.balance,
+    transactions: state.transactions,
+    addresses: state.addresses,
+    addressToAdd: state.addressToAdd,
+    message: state.message
+  };
+};
+
+export const SingleWalletPage = connect(mapStateToProps)(WalletContainer);

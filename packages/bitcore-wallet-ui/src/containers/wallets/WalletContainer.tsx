@@ -1,6 +1,11 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { withStyles } from '@material-ui/core/styles';
+import {
+  createStyles,
+  Theme,
+  withStyles,
+  WithStyles
+} from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 import { WalletList } from './WalletList';
@@ -9,38 +14,39 @@ import List from '@material-ui/core/List';
 import { Wallet } from 'bitcore-client';
 import { CreateWalletCard } from './CreateWallet';
 
-const styles = (theme: any) => ({
-  root: {
-    ...theme.mixins.gutters(),
-    paddingTop: theme.spacing.unit * 2,
-    paddingBottom: theme.spacing.unit * 2,
-    marginTop: 70
-  },
-  root2: {
-    paddingLeft: 0,
-    paddingRight: 0,
-    backgroundColor: '#1A3A8B',
-    color: 'white',
-    marginTop: '.8em',
-    marginBottom: '5em'
-  },
-  padding: {
-    padding: 20,
-    margin: 'auto',
-    maxWidth: 600
-  },
-  listRoot: {
-    flexGrow: 1,
-    maxWidth: 752,
-    paddingTop: theme.spacing.unit * 2,
-    paddingBottom: theme.spacing.unit * 2
-  },
-  demo: {
-    backgroundColor: theme.palette.background.paper
-  }
-});
+const styles = (theme: Theme) =>
+  createStyles({
+    root: {
+      ...theme.mixins.gutters(),
+      paddingTop: theme.spacing.unit * 2,
+      paddingBottom: theme.spacing.unit * 2,
+      marginTop: 70
+    },
+    root2: {
+      paddingLeft: 0,
+      paddingRight: 0,
+      backgroundColor: '#1A3A8B',
+      color: 'white',
+      marginTop: '.8em',
+      marginBottom: '5em'
+    },
+    padding: {
+      padding: 20,
+      margin: 'auto',
+      maxWidth: 600
+    },
+    listRoot: {
+      flexGrow: 1,
+      maxWidth: 752,
+      paddingTop: theme.spacing.unit * 2,
+      paddingBottom: theme.spacing.unit * 2
+    },
+    demo: {
+      backgroundColor: theme.palette.background.paper
+    }
+  });
 
-interface Props {
+export interface Props extends WithStyles<typeof styles> {
   wallets: Wallet[];
   classes: any;
   walletCreate: any;
@@ -82,6 +88,4 @@ WalletCard.propTypes = {
   classes: PropTypes.object.isRequired
 };
 
-const WalletListCard = withStyles(styles)(WalletCard);
-
-export { WalletListCard };
+export const WalletListCard = withStyles(styles)(WalletCard);

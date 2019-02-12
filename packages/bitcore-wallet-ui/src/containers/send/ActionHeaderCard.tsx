@@ -2,13 +2,14 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import Typography from '@material-ui/core/Typography';
 import { Paper } from '@material-ui/core';
-import { Wallet } from 'bitcore-client';
+import { AppState } from '../../contexts/state';
 import { WalletHeader } from '../wallet/WalletHeader';
 import InputBase from '@material-ui/core/InputBase';
 import Button from '@material-ui/core/Button';
-import { withStyles, WithStyles } from '@material-ui/core/styles';
+import { createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
+import { connect } from 'react-redux';
 
-const styles = {
+const styles = createStyles({
   root: {
     flexGrow: 1,
     position: 'absolute' as 'absolute',
@@ -22,7 +23,7 @@ const styles = {
     boxShadow: 'none',
     paddingTop: 20,
     zIndex: 99
-  } as any,
+  },
   toolbar: {
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -36,11 +37,11 @@ const styles = {
     marginTop: 70,
     width: '100%',
     zIndex: -99
-  } as any,
+  },
   heading: {
     color: '#002855',
     textAlign: 'left'
-  } as any,
+  },
   chain: {
     color: 'rgba(255, 255, 255, .64)',
     fontSize: 20
@@ -80,10 +81,10 @@ const styles = {
     width: '100%',
     marginTop: 20
   }
-};
+});
 
 export interface Props extends WithStyles<typeof styles> {
-  wallet: Wallet;
+  wallet: AppState['wallet'];
   handleAddAddressClick: Function;
   handleDeriveAddressClick: Function;
   addressToAdd: Function;
@@ -95,7 +96,6 @@ function AddressBar(props: Props) {
   const {
     classes,
     walletUnlocked,
-    wallet,
     handleAddAddressClick,
     handleAddressChange,
     addressToAdd
@@ -103,7 +103,7 @@ function AddressBar(props: Props) {
 
   return (
     <div className={classes.root}>
-      <WalletHeader wallet={wallet} />
+      <WalletHeader />
       <Paper className={classes.paper}>
         <Typography variant="h4" className={classes.heading}>
           Send
@@ -134,6 +134,12 @@ AddressBar.propTypes = {
   classes: PropTypes.object.isRequired
 } as any;
 
-const AddressNavBar = withStyles(styles)(AddressBar);
+const mapStateToProps = (state: Props) => {
+  return {
+    addressToAdd: state.addressToAdd
+  };
+};
 
-export { AddressNavBar };
+export const AddressNavBar = withStyles(styles)(
+  connect(mapStateToProps)(AddressBar)
+);

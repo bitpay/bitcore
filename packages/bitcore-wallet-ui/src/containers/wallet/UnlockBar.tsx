@@ -1,6 +1,6 @@
 import React from 'react';
 import Button from '@material-ui/core/Button';
-import { withStyles } from '@material-ui/core/styles';
+import { createStyles, withStyles } from '@material-ui/core/styles';
 import Dialog from '@material-ui/core/Dialog';
 import TextField from '@material-ui/core/TextField';
 import DialogActions from '@material-ui/core/DialogActions';
@@ -8,9 +8,12 @@ import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import FormControl from '@material-ui/core/FormControl';
 import { Typography } from '@material-ui/core';
+import { connect } from 'react-redux';
+import { ActionCreators, store } from '../../index';
+import { AppState } from '../../contexts/state';
 
-const styles = (theme: any) =>
-  ({
+const styles = () =>
+  createStyles({
     root: {
       position: 'fixed',
       bottom: 0,
@@ -31,35 +34,56 @@ const styles = (theme: any) =>
     title: {
       color: 'white',
       marginTop: 8
+    },
+    hidden: {
+      display: 'none'
     }
-  } as any);
+  });
 
 interface Props {
   classes: any;
-  onUnlock: (password: string) => void;
+  password: string;
+  wallet: AppState['wallet'];
 }
+
 class DialogSelect extends React.Component<Props> {
   state = {
-    open: false,
-    password: ''
-  };
-
-  handleChange = (name: any) => (event: any) => {
-    this.setState({ [name]: event.target.value });
+    open: false
   };
 
   handleClickOpen = () => {
     this.setState({ open: true });
   };
 
+  handlePasswordChange(
+    event: React.ChangeEvent<
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >
+  ) {
+    store.dispatch(ActionCreators.setPassword(event.target.value));
+  }
+
+  async handleLockToggle() {
+    if (this.props.wallet) {
+      let wallet = this.props.wallet;
+      if (this.props.wallet.unlocked) {
+        const locked = await wallet.lock();
+        store.dispatch(ActionCreators.setWallet(locked));
+      } else {
+        let password = this.props.password;
+        const unlocked = await wallet.unlock(password);
+        store.dispatch(ActionCreators.setWallet(unlocked));
+      }
+    }
+  }
+
   handleClose = () => {
-    console.log(this.state);
-    this.props.onUnlock(this.state.password);
+    this.handleLockToggle();
     this.setState({ open: false });
   };
 
   render() {
-    const { classes } = this.props;
+    const { classes, password } = this.props;
 
     return (
       <div className={classes.root}>
@@ -83,8 +107,8 @@ class DialogSelect extends React.Component<Props> {
                   id="password"
                   label="Password"
                   className={classes.textField}
-                  value={this.state.password}
-                  onChange={this.handleChange('password')}
+                  value={password}
+                  onChange={e => this.handlePasswordChange(e)}
                   margin="normal"
                 />
               </FormControl>
@@ -104,4 +128,11 @@ class DialogSelect extends React.Component<Props> {
   }
 }
 
-export default withStyles(styles)(DialogSelect);
+const mapStateToProps = (state: Props) => {
+  return {
+    password: state.password,
+    wallet: state.wallet
+  };
+};
+
+export default withStyles(styles)(connect(mapStateToProps)(DialogSelect));

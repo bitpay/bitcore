@@ -4,7 +4,12 @@ import { NavBar } from './AppBar';
 import { WalletListCard } from './WalletContainer';
 import TextField from '@material-ui/core/TextField';
 import classNames from 'classnames';
-import { withStyles } from '@material-ui/core/styles';
+import {
+  createStyles,
+  Theme,
+  withStyles,
+  WithStyles
+} from '@material-ui/core/styles';
 import MenuItem from '@material-ui/core/MenuItem';
 import { ActionCreators, store } from '../../index';
 import { AppState } from '../../contexts/state';
@@ -13,12 +18,11 @@ import { connect } from 'react-redux';
 const API_URL =
   process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
 
-interface Props {
-  classes: any;
-  styles: any;
+export interface Props extends WithStyles<typeof styles> {
   wallet?: Wallet;
   wallets: Wallet[];
 }
+
 interface State {
   creating: boolean;
   selectedChain: string;
@@ -28,23 +32,24 @@ interface State {
   mnemonic?: string;
 }
 
-const styles = (theme: any) => ({
-  container: {
-    display: 'flex',
-    flexWrap: 'wrap'
-  } as any,
-  textField: {
-    marginLeft: theme.spacing.unit,
-    marginRight: theme.spacing.unit,
-    width: '90%'
-  } as any,
-  dense: {
-    marginTop: 19
-  } as any,
-  menu: {
-    width: 200
-  } as any
-});
+const styles = (theme: Theme) =>
+  createStyles({
+    container: {
+      display: 'flex',
+      flexWrap: 'wrap'
+    } as any,
+    textField: {
+      marginLeft: theme.spacing.unit,
+      marginRight: theme.spacing.unit,
+      width: '90%'
+    } as any,
+    dense: {
+      marginTop: 19
+    } as any,
+    menu: {
+      width: 200
+    } as any
+  });
 
 class WalletsContainer extends Component<Props, State> {
   state: State = {
@@ -72,8 +77,7 @@ class WalletsContainer extends Component<Props, State> {
   async componentDidMount() {
     const wallet = await this.createOrLoadWallet();
     store.dispatch(ActionCreators.setWallet(wallet!));
-    const wallets = this.props.wallet!.storage.listWallets();
-    this.props.wallet!.storage.listWallets().on('data', (walletBuf: Buffer) => {
+    wallet!.storage.listWallets().on('data', (walletBuf: Buffer) => {
       const walletStr = walletBuf.toString();
       const foundWallet = JSON.parse(walletStr);
       store.dispatch(ActionCreators.setWallets(foundWallet!));
@@ -246,11 +250,12 @@ class WalletsContainer extends Component<Props, State> {
   }
 
   render() {
+    const { wallets } = this.props;
     return (
-      <div className="walletContainer">
+      <div>
         <NavBar />
         <WalletListCard
-          wallets={this.props.wallets}
+          wallets={wallets}
           walletCreate={this.walletCreateComponent}
           handleCreateWalletClick={this.handleCreateWalletClick}
         />
@@ -263,6 +268,6 @@ const mapStateToProps = (state: AppState) => {
   return { wallet: state.wallet, wallets: state.wallets };
 };
 
-export const WalletsContainers = withStyles(styles)(
+export const WalletsPage = withStyles(styles)(
   connect(mapStateToProps)(WalletsContainer)
 );

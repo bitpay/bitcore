@@ -1,5 +1,4 @@
 import React from 'react';
-import { withStyles } from '@material-ui/core/styles';
 import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
 import AddIcon from '@material-ui/icons/Add';
 import { Typography, ExpansionPanel } from '@material-ui/core';
@@ -7,34 +6,34 @@ import ExpansionPanelSummary from '@material-ui/core/ExpansionPanelSummary';
 import ExpansionPanelDetails from '@material-ui/core/ExpansionPanelDetails';
 import ExpansionPanelActions from '@material-ui/core/ExpansionPanelActions';
 import Divider from '@material-ui/core/Divider';
-import { connect } from 'react-redux';
-import { AppState } from '../../contexts/state';
+import { createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
 
-const styles = () => ({
-  root: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#1A3A8B',
-    height: 70
-  },
-  white: {
-    color: 'white'
-  },
-  heading: {
-    margin: 'auto',
-    color: 'white'
-  },
-  action: {
-    width: '100%',
-    backgroundColor: '#4683e8',
-    height: 55,
-    justifyContent: 'center',
-    color: 'white',
-    cursor: 'pointer'
-  }
-});
+const styles = () =>
+  createStyles({
+    root: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: '#1A3A8B',
+      height: 70
+    },
+    white: {
+      color: 'white'
+    },
+    heading: {
+      margin: 'auto',
+      color: 'white'
+    },
+    action: {
+      width: '100%',
+      backgroundColor: '#4683e8',
+      height: 55,
+      justifyContent: 'center',
+      color: 'white',
+      cursor: 'pointer'
+    }
+  });
 
-interface Props {
+export interface Props extends WithStyles<typeof styles> {
   walletCreate: any;
   classes: any;
   handleCreateWalletClick: any;

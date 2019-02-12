@@ -48,6 +48,4 @@ SimpleAppBar.propTypes = {
   classes: PropTypes.object.isRequired
 };
 
-const NavBar = withStyles(styles)(SimpleAppBar);
-
-export { NavBar };
+export const NavBar = withStyles(styles)(SimpleAppBar);
