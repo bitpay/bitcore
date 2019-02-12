@@ -759,6 +759,22 @@ Transaction.prototype.feePerKb = function(amount) {
   return this;
 };
 
+/**
+ * Manually set the fee per Byte for this transaction. Beware that this resets all the signatures
+ * for inputs (in further versions, SIGHASH_SINGLE or SIGHASH_NONE signatures will not
+ * be reset).
+ * fee per Byte will be ignored if fee per KB is set
+ *
+ * @param {number} amount satoshis per Byte to be sent
+ * @return {Transaction} this, for chaining
+ */
+Transaction.prototype.feePerByte = function (amount) {
+  $.checkArgument(_.isNumber(amount), 'amount must be a number');
+  this._feePerByte = amount;
+  this._updateChangeOutput();
+  return this;
+};
+
 /* Output management */
 
 /**
@@ -968,10 +984,19 @@ Transaction.prototype.getFee = function() {
 /**
  * Estimates fee from serialized transaction size in bytes.
  */
-Transaction.prototype._estimateFee = function() {
+Transaction.prototype._estimateFee = function () {
   var estimatedSize = this._estimateSize();
   var available = this._getUnspentValue();
-  return Transaction._estimateFee(estimatedSize, available, this._feePerKb);
+  var feeRate = this._feePerByte || (this._feePerKb || Transaction.FEE_PER_KB) / 1000;
+  function getFee(size) {
+    return size * feeRate;
+  }
+  var fee = Math.ceil(getFee(estimatedSize));
+  var feeWithChange = Math.ceil(getFee(estimatedSize) + getFee(Transaction.CHANGE_OUTPUT_MAX_SIZE));
+  if (!this._changeScript || available <= feeWithChange) {
+    return fee;
+  }
+  return feeWithChange;
 };
 
 Transaction.prototype._getUnspentValue = function() {
@@ -982,14 +1007,6 @@ Transaction.prototype._clearSignatures = function() {
   _.each(this.inputs, function(input) {
     input.clearSignatures();
   });
-};
-
-Transaction._estimateFee = function(size, amountAvailable, feePerKb) {
-  var fee = Math.ceil(size / 1000) * (feePerKb || Transaction.FEE_PER_KB);
-  if (amountAvailable > fee) {
-    size += Transaction.CHANGE_OUTPUT_MAX_SIZE;
-  }
-  return Math.ceil(size / 1000) * (feePerKb || Transaction.FEE_PER_KB);
 };
 
 Transaction.prototype._estimateSize = function() {
