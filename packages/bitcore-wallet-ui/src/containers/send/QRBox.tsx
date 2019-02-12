@@ -15,7 +15,8 @@ import {
   setQRErrorCorrectionLevel,
   setAddressType,
   generate_address
-} from '../../qrcode/Logic';
+} from '../../qrcode/test';
+import Paper from '@material-ui/core/Paper';
 
 interface TabProps {
   children: any;
@@ -37,10 +38,22 @@ TabContainer.propTypes = {
 const styles = (theme: Theme) =>
   createStyles({
     root: {
-      backgroundColor: theme.palette.background.paper,
       maxWidth: 600,
+      margin: 'auto',
       width: '100%',
-      padding: 20
+      padding: 20,
+      textAlign: 'center'
+    },
+    paper: {
+      marginTop: 20,
+      background: 'white',
+      padding: 0,
+      width: '100%'
+    },
+    appBar: {
+      borderRadius: '10px 10px 0 0',
+      borderBottom: '.5px solid lightgrey',
+      boxShadow: 'none'
     }
   });
 
@@ -60,25 +73,31 @@ class FullWidthTabs extends React.Component<Props, State> {
 
   componentDidMount = () => {
     setQRErrorCorrectionLevel('H');
+    generate_address();
   };
 
   handleChange = (_event: any, value: number) => {
+    switch (value) {
+      case 0:
+        setAddressType('segwit');
+        generate_address();
+        break;
+      case 1:
+        setAddressType('bech32');
+        generate_address();
+        break;
+      case 2:
+        setAddressType('legacy');
+        generate_address();
+        break;
+      default:
+        break;
+    }
     this.setState({ value });
   };
 
   handleChangeIndex = (index: number) => {
-    switch (index) {
-      case 0:
-        setAddressType('bech32');
-      case 1:
-        setAddressType('segwit');
-      case 2:
-        setAddressType('legacy');
-      default:
-        break;
-    }
     this.setState({ value: index });
-    generate_address();
   };
 
   render() {
@@ -86,40 +105,87 @@ class FullWidthTabs extends React.Component<Props, State> {
 
     return (
       <div className={classes.root}>
-        <AppBar position="static" color="default">
-          <Tabs
-            value={this.state.value}
-            onChange={this.handleChange}
-            indicatorColor="primary"
-            textColor="primary"
-            variant="fullWidth"
+        <Paper className={classes.paper}>
+          <AppBar position="static" color="inherit" className={classes.appBar}>
+            <Tabs
+              value={this.state.value}
+              onChange={this.handleChange}
+              indicatorColor="primary"
+              textColor="primary"
+              variant="fullWidth"
+            >
+              <Tab label="SegWit" />
+              <Tab label="Bech32" />
+              <Tab label="Legacy" />
+            </Tabs>
+          </AppBar>
+          <SwipeableViews
+            axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
+            index={this.state.value}
+            onChangeIndex={this.handleChangeIndex}
           >
-            <Tab label="SegWit(bech32)" />
-            <Tab label="SegWit" />
-            <Tab label="Legacy" />
-          </Tabs>
-        </AppBar>
-        <SwipeableViews
-          axis={theme.direction === 'rtl' ? 'x-reverse' : 'x'}
-          index={this.state.value}
-          onChangeIndex={this.handleChangeIndex}
-        >
-          <TabContainer dir={theme.direction}>
-            <div id="address_div">
-              <img id="address_qr" />
-            </div>
-          </TabContainer>
-          <TabContainer dir={theme.direction}>
-            <div id="address_div">
-              <img id="address_qr" />
-            </div>
-          </TabContainer>
-          <TabContainer dir={theme.direction}>
-            <div id="address_div">
-              <img id="address_qr" />
-            </div>
-          </TabContainer>
-        </SwipeableViews>
+            <TabContainer dir={theme.direction}>
+              <div id="address_div">
+                <div>
+                  <div>
+                    <div id="address_text">Address:</div>
+                  </div>
+                  <div id="address_address" />
+                </div>
+                <img id="address_qr" />
+              </div>
+              <div>
+                <div>
+                  <div>
+                    <div id="privkey_text">Private key:</div>
+                  </div>
+                  <div id="privkey_privkey" />
+                </div>
+                <img id="privkey_qr" />
+              </div>
+            </TabContainer>
+            <TabContainer dir={theme.direction}>
+              <div id="address_div">
+                <div>
+                  <div>
+                    <div id="address_text">Address:</div>
+                  </div>
+                  <div id="address_address" />
+                </div>
+                <img id="address_qr" />
+              </div>
+              <div>
+                <div>
+                  <div>
+                    <div id="privkey_text">Private key:</div>
+                  </div>
+                  <div id="privkey_privkey" />
+                </div>
+                <img id="privkey_qr" />
+              </div>
+            </TabContainer>
+            <TabContainer dir={theme.direction}>
+              <div id="address_div">
+                <div>
+                  <div>
+                    <div id="address_text">Address:</div>
+                  </div>
+                  <div id="address_address" />
+                </div>
+                <img id="address_qr" />
+              </div>
+              <div>
+                <div>
+                  <div>
+                    <div id="privkey_text">Private key:</div>
+                  </div>
+                  <div id="privkey_privkey" />
+                </div>
+                <img id="privkey_qr" />
+              </div>
+            </TabContainer>
+          </SwipeableViews>
+        </Paper>
       </div>
     );
   }

@@ -7,7 +7,6 @@ import CloseIcon from '@material-ui/icons/Close';
 import { WalletBar } from './BalanceCard';
 import { TransactionListCard } from './TransactionContainer';
 import { WalletBottomNav } from './BottomNav';
-import DialogSelect from './UnlockBar';
 import { socket } from '../../contexts/io';
 import { ActionCreators, store } from '../../index';
 import { connect } from 'react-redux';
@@ -37,10 +36,6 @@ class WalletContainer extends Component<Props, State> {
   }
 
   async componentDidMount() {
-    socket.on('connect', () => {
-      console.log('Connected to socket');
-      socket.emit('room', '/BTC/regtest/inv');
-    });
     const name = this.props.match.params.name;
     store.dispatch(ActionCreators.setWalletName(name));
     const wallet = await this.loadWallet(name);
@@ -57,10 +52,6 @@ class WalletContainer extends Component<Props, State> {
   async updateWalletInfo(wallet: Wallet) {
     await this.fetchTransactions(wallet);
     await this.updateBalance(wallet);
-  }
-
-  async componentWillUnmount() {
-    socket.removeAllListeners();
   }
 
   handleGetTx(wallet: Wallet) {
@@ -160,7 +151,7 @@ class WalletContainer extends Component<Props, State> {
       <div>
         <WalletBar />
         <TransactionListCard />
-        {wallet && unlockedWallet ? <WalletBottomNav /> : <DialogSelect />}
+        <WalletBottomNav />
         <Snackbar
           anchorOrigin={{
             vertical: 'bottom',

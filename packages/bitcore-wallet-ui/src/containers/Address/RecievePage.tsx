@@ -1,7 +1,6 @@
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
 import { WalletBottomNav } from '../wallet/BottomNav';
-import DialogSelect from '../wallet/UnlockBar';
 import { AddressNavBar } from '../Address/ActionHeaderCard';
 import { AddressListCard } from '../Address/AddressContainer';
 import { AppState } from '../../contexts/state';
@@ -13,7 +12,6 @@ interface Props extends RouteComponentProps<{ name: string }> {
 
 export function RecieveContainer(props: Props) {
   const wallet = props.wallet!;
-  const walletUnlocked = wallet && wallet.unlocked;
   if (!wallet) {
     // Add Error Boundary Component Here
     return <div>No Wallet Found</div>;
@@ -23,7 +21,6 @@ export function RecieveContainer(props: Props) {
       <AddressNavBar />
       <AddressListCard />
       <WalletBottomNav />
-      {/* {walletUnlocked ? <WalletBottomNav /> : <DialogSelect />} */}
     </div>
   );
 }

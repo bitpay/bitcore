@@ -1,13 +1,18 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { Component } from 'react';
+import { WithStyles, withStyles, createStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import { Paper } from '@material-ui/core';
-import { AppState } from '../../contexts/state';
 import { WalletHeader } from '../wallet/WalletHeader';
 import InputBase from '@material-ui/core/InputBase';
+import Input from '@material-ui/core/Input';
+import InputLabel from '@material-ui/core/InputLabel';
+import InputAdornment from '@material-ui/core/InputAdornment';
+import FormControl from '@material-ui/core/FormControl';
 import Button from '@material-ui/core/Button';
-import { createStyles, withStyles, WithStyles } from '@material-ui/core/styles';
+import { AppState } from '../../contexts/state';
 import { connect } from 'react-redux';
+import { QRBox } from './QRBox';
+import { WalletBottomNav } from '../wallet/BottomNav';
 
 const styles = createStyles({
   root: {
@@ -31,7 +36,7 @@ const styles = createStyles({
   },
   paper: {
     backgroundColor: 'white',
-    height: 220,
+    height: 260,
     textAlign: 'center',
     padding: 30,
     marginTop: 70,
@@ -65,7 +70,7 @@ const styles = createStyles({
     margin: 'auto'
   },
   input: {
-    marginLeft: 8,
+    marignLeft: 8,
     flex: 1
   },
   iconButton: {
@@ -80,63 +85,104 @@ const styles = createStyles({
     maxWidth: 200,
     width: '100%',
     marginTop: 20
+  },
+  amountInput: {
+    width: '100%',
+    maxWidth: 600,
+    margin: 'auto',
+    marginTop: 20,
+    boxShadow: 'none'
+  },
+  inputWidth: {
+    width: '100%'
   }
 });
 
 export interface Props extends WithStyles<typeof styles> {
+  classes: any;
   wallet: AppState['wallet'];
-  handleAddAddressClick: Function;
-  handleDeriveAddressClick: Function;
-  addressToAdd: Function;
-  handleAddressChange: Function;
-  walletUnlocked: boolean;
 }
 
-function AddressBar(props: Props) {
-  const {
-    classes,
-    walletUnlocked,
-    handleAddAddressClick,
-    handleAddressChange,
-    addressToAdd
-  } = props;
+interface State {
+  sendTo: string;
+  amountToSend: string;
+  rawTx: string;
+}
 
-  return (
-    <div className={classes.root}>
-      <WalletHeader />
-      <Paper className={classes.paper}>
-        <Typography variant="h4" className={classes.heading}>
-          Send
-        </Typography>
-        <Paper className={classes.searchBar}>
-          <InputBase
-            className={classes.input}
-            placeholder="Enter address"
-            value={addressToAdd}
-            onChange={e => handleAddressChange(e)}
-          />
+class AddressBar extends Component<Props, State> {
+  state: State = {
+    sendTo: '',
+    amountToSend: '',
+    rawTx: ''
+  };
+
+  constructor(props: Props) {
+    super(props);
+    this.handleSendClick = this.handleSendClick.bind(this);
+  }
+  async handleSendClick() {
+    const tx = await this.props.wallet!.newTx({
+      recipients: [
+        { address: this.state.sendTo, amount: Number(this.state.amountToSend) }
+      ]
+    });
+
+    const signed = await this.props.wallet!.signTx({ tx });
+    this.setState({ rawTx: signed });
+  }
+
+  render() {
+    const { classes, wallet } = this.props;
+    return (
+      <div className={classes.root}>
+        <WalletHeader />
+        <Paper className={classes.paper}>
+          <Typography variant="h4" className={classes.heading}>
+            Send
+          </Typography>
+          <Paper className={classes.searchBar}>
+            <InputBase
+              className={classes.input}
+              placeholder="Enter address"
+              value={this.state.sendTo}
+              onChange={e => this.setState({ sendTo: e.target.value })}
+            />
+          </Paper>
+          <Paper className={classes.amountInput}>
+            <FormControl className={classes.inputWidth}>
+              <InputLabel htmlFor="adornment-amount">Amount</InputLabel>
+              <Input
+                id="adornment-amount"
+                value={this.state.amountToSend}
+                onChange={e => this.setState({ amountToSend: e.target.value })}
+                startAdornment={
+                  <InputAdornment position="start">
+                    {wallet!.chain}
+                  </InputAdornment>
+                }
+              />
+            </FormControl>
+          </Paper>
+          <Button
+            variant="outlined"
+            color="primary"
+            disabled={!wallet!.unlocked}
+            className={classes.button}
+            onClick={() => this.handleSendClick()}
+          >
+            Send
+          </Button>
         </Paper>
-        <Button
-          variant="outlined"
-          color="primary"
-          disabled={!walletUnlocked}
-          className={classes.button}
-          onClick={() => handleAddAddressClick()}
-        >
-          Confirm
-        </Button>
-      </Paper>
-    </div>
-  );
+        <QRBox />
+        <WalletBottomNav />
+      </div>
+    );
+  }
 }
 
-AddressBar.propTypes = {
-  classes: PropTypes.object.isRequired
-} as any;
-
-const mapStateToProps = (state: Props) => {
+const mapStateToProps = (state: AppState) => {
   return {
-    addressToAdd: state.addressToAdd
+    wallet: state.wallet
   };
 };
 

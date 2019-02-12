@@ -1,4 +1,3 @@
-/* tslint:disable */
 // QR code
 // source: https://github.com/kazuhikoarase/qrcode-generator/blob/master/js/qrcode.js
 
@@ -1644,13 +1643,13 @@ export var qrcode = (function() {
     if (!stringToBytes) {
       throw 'sjis not supported.';
     }
-    !(function(c, code) {
-      // self test for sjis support.
-      var test = stringToBytes(c);
-      if (test.length != 2 || ((test[0] << 8) | test[1]) != code) {
-        throw 'sjis not supported.';
-      }
-    })('\u53cb', 0x9746);
+    // !(function(c, code) {
+    //   // self test for sjis support.
+    //   var test = stringToBytes(c);
+    //   if (test.length != 2 || ((test[0] << 8) | test[1]) != code) {
+    //     throw 'sjis not supported.';
+    //   }
+    // })('\u53cb', 0x9746);
 
     var _bytes = stringToBytes(data);
 
@@ -2109,52 +2108,52 @@ export var qrcode = (function() {
 })();
 
 // multibyte support
-!(function() {
-  qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
-    // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
-    function toUTF8Array(str) {
-      var utf8 = [];
-      for (var i = 0; i < str.length; i++) {
-        var charcode = str.charCodeAt(i);
-        if (charcode < 0x80) utf8.push(charcode);
-        else if (charcode < 0x800) {
-          utf8.push(0xc0 | (charcode >> 6), 0x80 | (charcode & 0x3f));
-        } else if (charcode < 0xd800 || charcode >= 0xe000) {
-          utf8.push(
-            0xe0 | (charcode >> 12),
-            0x80 | ((charcode >> 6) & 0x3f),
-            0x80 | (charcode & 0x3f)
-          );
-        }
-        // surrogate pair
-        else {
-          i++;
-          // UTF-16 encodes 0x10000-0x10FFFF by
-          // subtracting 0x10000 and splitting the
-          // 20 bits of 0x0-0xFFFFF into two halves
-          charcode =
-            0x10000 +
-            (((charcode & 0x3ff) << 10) | (str.charCodeAt(i) & 0x3ff));
-          utf8.push(
-            0xf0 | (charcode >> 18),
-            0x80 | ((charcode >> 12) & 0x3f),
-            0x80 | ((charcode >> 6) & 0x3f),
-            0x80 | (charcode & 0x3f)
-          );
-        }
-      }
-      return utf8;
-    }
-    return toUTF8Array(s);
-  };
-})();
+// !(function() {
+//   qrcode.stringToBytesFuncs['UTF-8'] = function(s) {
+//     // http://stackoverflow.com/questions/18729405/how-to-convert-utf8-string-to-byte-array
+//     function toUTF8Array(str) {
+//       var utf8 = [];
+//       for (var i = 0; i < str.length; i++) {
+//         var charcode = str.charCodeAt(i);
+//         if (charcode < 0x80) utf8.push(charcode);
+//         else if (charcode < 0x800) {
+//           utf8.push(0xc0 | (charcode >> 6), 0x80 | (charcode & 0x3f));
+//         } else if (charcode < 0xd800 || charcode >= 0xe000) {
+//           utf8.push(
+//             0xe0 | (charcode >> 12),
+//             0x80 | ((charcode >> 6) & 0x3f),
+//             0x80 | (charcode & 0x3f)
+//           );
+//         }
+//         // surrogate pair
+//         else {
+//           i++;
+//           // UTF-16 encodes 0x10000-0x10FFFF by
+//           // subtracting 0x10000 and splitting the
+//           // 20 bits of 0x0-0xFFFFF into two halves
+//           charcode =
+//             0x10000 +
+//             (((charcode & 0x3ff) << 10) | (str.charCodeAt(i) & 0x3ff));
+//           utf8.push(
+//             0xf0 | (charcode >> 18),
+//             0x80 | ((charcode >> 12) & 0x3f),
+//             0x80 | ((charcode >> 6) & 0x3f),
+//             0x80 | (charcode & 0x3f)
+//           );
+//         }
+//       }
+//       return utf8;
+//     }
+//     return toUTF8Array(s);
+//   };
+// })();
 
-(function(factory) {
-  if (typeof define === 'function' && define.amd) {
-    define([], factory);
-  } else if (typeof exports === 'object') {
-    module.exports = factory();
-  }
-})(function() {
-  return qrcode;
-});
+// (function(factory) {
+//   if (typeof define === 'function' && define.amd) {
+//     define([], factory);
+//   } else if (typeof exports === 'object') {
+//     module.exports = factory();
+//   }
+// })(function() {
+//   return qrcode;
+// });

@@ -7,29 +7,20 @@ import DialogActions from '@material-ui/core/DialogActions';
 import DialogContent from '@material-ui/core/DialogContent';
 import DialogTitle from '@material-ui/core/DialogTitle';
 import FormControl from '@material-ui/core/FormControl';
-import { Typography } from '@material-ui/core';
 import { connect } from 'react-redux';
 import { ActionCreators, store } from '../../index';
 import { AppState } from '../../contexts/state';
 
 const styles = () =>
   createStyles({
-    root: {
-      position: 'fixed',
-      bottom: 0,
-      width: '100%',
-      textAlign: 'center',
-      backgroundColor: '#002855',
-      height: 50,
-      alignItems: 'center'
-    },
     container: {
       display: 'flex',
-      flexWrap: 'wrap'
+      flexWrap: 'wrap',
+      width: '100%'
     },
     formControl: {
       margin: 'auto',
-      minWidth: 250
+      width: '100%'
     },
     title: {
       color: 'white',
@@ -51,7 +42,7 @@ class DialogSelect extends React.Component<Props> {
     open: false
   };
 
-  handleClickOpen = () => {
+  componentDidMount = () => {
     this.setState({ open: true });
   };
 
@@ -78,7 +69,6 @@ class DialogSelect extends React.Component<Props> {
   }
 
   handleClose = () => {
-    this.handleLockToggle();
     this.setState({ open: false });
   };
 
@@ -86,15 +76,10 @@ class DialogSelect extends React.Component<Props> {
     const { classes, password } = this.props;
 
     return (
-      <div className={classes.root}>
-        <Button className={classes.title} onClick={this.handleClickOpen}>
-          <Typography variant="title" className={classes.title}>
-            Unlock
-          </Typography>
-        </Button>
+      <div>
         <Dialog
-          disableBackdropClick
-          disableEscapeKeyDown
+          // disableBackdropClick
+          // disableEscapeKeyDown
           open={this.state.open}
           onClose={this.handleClose}
         >
@@ -106,7 +91,6 @@ class DialogSelect extends React.Component<Props> {
                   type="password"
                   id="password"
                   label="Password"
-                  className={classes.textField}
                   value={password}
                   onChange={e => this.handlePasswordChange(e)}
                   margin="normal"
@@ -118,7 +102,13 @@ class DialogSelect extends React.Component<Props> {
             <Button onClick={this.handleClose} color="primary">
               Cancel
             </Button>
-            <Button onClick={this.handleClose} color="primary">
+            <Button
+              onClick={() => {
+                this.handleLockToggle();
+                this.handleClose();
+              }}
+              color="primary"
+            >
               Unlock
             </Button>
           </DialogActions>
@@ -135,4 +125,6 @@ const mapStateToProps = (state: Props) => {
   };
 };
 
-export default withStyles(styles)(connect(mapStateToProps)(DialogSelect));
+export const UnlockBar = withStyles(styles)(
+  connect(mapStateToProps)(DialogSelect)
+);

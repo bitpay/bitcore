@@ -10,6 +10,7 @@ import LockOpenIcon from '@material-ui/icons/LockOpen';
 import { Link } from 'react-router-dom';
 import { AppState } from '../../contexts/state';
 import { connect } from 'react-redux';
+import { UnlockBar } from './UnlockBar';
 
 const styles = {
   root: {
@@ -60,6 +61,7 @@ function WalletNavTop(props: Props) {
           {wallet && wallet.unlocked ? <LockOpenIcon /> : <LockIcon />}
         </Toolbar>
       </AppBar>
+      <UnlockBar />
     </div>
   );
 }

@@ -68,7 +68,7 @@ function WalletNavBar(props: Props) {
       <WalletHeader />
       <Paper className={classes.paper}>
         <Typography variant="h2" className={classes.heading}>
-          {typeof balance === 'number' ? Number(balance) / 1e8 : ''}
+          {typeof balance === 'number' ? Number(balance) / 1e8 : 0.0}
         </Typography>
         <Typography variant="subheading" className={classes.chain}>
           {wallet ? wallet.chain : 'unknown chain'}
