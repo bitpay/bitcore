@@ -1,58 +1,62 @@
 <head-nav></head-nav>
 <ion-content padding>
-  <div *ngIf="loading">
-    <ion-spinner name="crescent"></ion-spinner>
-  </div>
 
-  <div *ngIf="!loading" class="page-content">
-    <h1 ion-text>
-      Transaction
-      <ion-note *ngIf="vout !== undefined">
-        <span class="tx-note" ion-text *ngIf="fromVout">Output {{ vout }}</span>
-        <span class="tx-note" ion-text *ngIf="!fromVout">Input {{ vout }}</span>
-      </ion-note>
-    </h1>
-    <p class="item-hash">
-      <b>Transaction Hash</b> {{ tx.txid }}</p>
+  <div class="page-content">
 
-    <h2>Summary</h2>
+    <loader *ngIf="loading" [type]="'title'"></loader>
 
-    <ion-list class="list--summary">
-      <ion-item>
-        Size
-        <ion-note item-end>
-          {{ tx.size }} (bytes)
-        </ion-note>
-      </ion-item>
-      <ion-item>
-        Fee Rate
-        <ion-note item-end>
-          {{ (tx.fee / tx.size) | number:'1.0-8' }} sats/byte
-        </ion-note>
-      </ion-item>
-      <ion-item>
-        Received Time
-        <ion-note item-end>
-          {{ tx.time * 1000 | date:'medium' }}
-        </ion-note>
-      </ion-item>
-      <ion-item>
-        Mined Time
-        <ion-note item-end>
-          {{ tx.blocktime * 1000 | date:'medium' }}
-        </ion-note>
-      </ion-item>
-      <ion-item>
-        Included in Block
-        <ion-note item-end>
-          <a (click)="goToBlock(tx.blockhash)">{{ tx.blockhash }}</a>
-        </ion-note>
-      </ion-item>
-    </ion-list>
+    <div *ngIf="!loading">
 
-    <h2>Details</h2>
+      <h1 ion-text>
+        Transaction
+        <ion-note *ngIf="vout !== undefined">
+          <span class="tx-note" ion-text *ngIf="fromVout">Output {{ vout }}</span>
+          <span class="tx-note" ion-text *ngIf="!fromVout">Input {{ vout }}</span>
+        </ion-note>
+      </h1>
+      <p class="item-hash">
+        <b>Transaction Hash</b> {{ tx.txid }}</p>
 
-    <transaction [tx]="tx" [showCoins]="true"></transaction>
+      <h2>Summary</h2>
+
+      <ion-list class="list--summary">
+        <ion-item>
+          Size
+          <ion-note item-end>
+            {{ tx.size }} (bytes)
+          </ion-note>
+        </ion-item>
+        <ion-item>
+          Fee Rate
+          <ion-note item-end>
+            {{ (tx.fee / tx.size) | number:'1.0-8' }} sats/byte
+          </ion-note>
+        </ion-item>
+        <ion-item>
+          Received Time
+          <ion-note item-end>
+            {{ tx.time * 1000 | date:'medium' }}
+          </ion-note>
+        </ion-item>
+        <ion-item>
+          Mined Time
+          <ion-note item-end>
+            {{ tx.blocktime * 1000 | date:'medium' }}
+          </ion-note>
+        </ion-item>
+        <ion-item>
+          Included in Block
+          <ion-note item-end>
+            <a (click)="goToBlock(tx.blockhash)">{{ tx.blockhash }}</a>
+          </ion-note>
+        </ion-item>
+      </ion-list>
+
+      <h2>Details</h2>
+
+      <transaction [tx]="tx" [showCoins]="true"></transaction>
+    </div>
+
   </div>
 
 </ion-content>
