@@ -3,6 +3,7 @@ import { QRCodeModule } from 'angular2-qrcode';
 import { IonicPageModule } from 'ionic-angular';
 import { CoinListComponentModule } from '../../components/coin-list/coin-list.module';
 import { HeadNavComponentModule } from '../../components/head-nav/head-nav.module';
+import { LoaderComponentModule } from '../../components/loader/loader.module';
 import { TransactionListComponentModule } from '../../components/transaction-list/transaction-list.module';
 import { AddressPage } from './address';
 
@@ -13,7 +14,8 @@ import { AddressPage } from './address';
     CoinListComponentModule,
     TransactionListComponentModule,
     HeadNavComponentModule,
-    QRCodeModule
+    QRCodeModule,
+    LoaderComponentModule
   ],
   exports: [AddressPage]
 })

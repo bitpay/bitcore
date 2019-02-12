@@ -2,6 +2,7 @@ import { NgModule } from '@angular/core';
 import { IonicPageModule } from 'ionic-angular';
 import { HeadNavComponentModule } from '../../components/head-nav/head-nav.module';
 import { LatestBlocksComponentModule } from '../../components/latest-blocks/latest-blocks.module';
+import { LoaderComponentModule } from '../../components/loader/loader.module';
 import { BlocksPage } from './blocks';
 
 @NgModule({
@@ -9,7 +10,8 @@ import { BlocksPage } from './blocks';
   imports: [
     IonicPageModule.forChild(BlocksPage),
     HeadNavComponentModule,
-    LatestBlocksComponentModule
+    LatestBlocksComponentModule,
+    LoaderComponentModule
   ],
   exports: [BlocksPage]
 })

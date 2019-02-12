@@ -1,11 +1,13 @@
 <head-nav></head-nav>
 <ion-content padding>
-  <div *ngIf="loading">
-    <ion-spinner name="crescent"></ion-spinner>
-  </div>
+  <div class="page-content">
 
-  <div *ngIf="!loading" class="page-content">
-    <h1>Blocks</h1>
-    <latest-blocks [numBlocks]="200" [showTimeAs]="'timestamp'" [showLoadMoreButton]="true"></latest-blocks>
+    <loader *ngIf="loading" [type]="'title'"></loader>
+
+    <div *ngIf="!loading">
+      <h1>Blocks</h1>
+      <latest-blocks [numBlocks]="200" [showTimeAs]="'timestamp'" [showLoadMoreButton]="true"></latest-blocks>
+    </div>
+
   </div>
 </ion-content>
