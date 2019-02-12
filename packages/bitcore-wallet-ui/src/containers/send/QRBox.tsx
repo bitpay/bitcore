@@ -68,7 +68,7 @@ interface State {
 
 class FullWidthTabs extends React.Component<Props, State> {
   state = {
-    value: 0
+    value: 1
   };
 
   componentDidMount = () => {

@@ -682,7 +682,7 @@ function makePrivateKey(bigint) {
   return base58encode(privkey);
 }
 
-var addressType = 'segwit';
+var addressType = 'bech32';
 // set generated address type (single address)
 export function setAddressType(type) {
   addressType = type;
