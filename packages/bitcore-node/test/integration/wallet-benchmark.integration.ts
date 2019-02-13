@@ -44,9 +44,9 @@ describe('Wallet Benchmark', function() {
 
       expect(largeAddressBatch.length).to.deep.equal(1000);
 
-      const importedWallet1 = await createWallet(smallAddressBatch, 0, 'regtest');
-      const importedWallet2 = await createWallet(mediumAddressBatch, 1, 'regtest');
-      const importedWallet3 = await createWallet(largeAddressBatch, 2, 'regtest');
+      const importedWallet1 = await createWallet(smallAddressBatch, 0, network);
+      const importedWallet2 = await createWallet(mediumAddressBatch, 1, network);
+      const importedWallet3 = await createWallet(largeAddressBatch, 2, network);
 
       expect(importedWallet1).to.not.be.null;
       expect(importedWallet2).to.not.be.null;
