@@ -1,14 +1,16 @@
+import * as _ from 'lodash';
 import { CoinStorage } from '../../src/models/coin';
 import { Wallet } from 'bitcore-client';
 import { Storage } from '../../src/services/storage';
 
 async function getAllAddressesFromBlocks(start, end) {
   if (!Storage.connected) await Storage.start({});
-  const addresses = await CoinStorage.collection
+  const coins = await CoinStorage.collection
     .find({ chain: 'BTC', network: 'mainnet', mintHeight: { $gte: start, $lte: end } })
     .project({ address: 1 })
     .toArray();
-  return Object.keys(addresses.reduce((prev, a) => Object.assign(prev, { [a.address]: a.address }, {})));
+  const uniqueAddresses = _.uniq(coins.map(c => c.address));
+  return uniqueAddresses;
 }
 
 export async function createWallet(addresses: string[], iteration, regtest?: string) {
