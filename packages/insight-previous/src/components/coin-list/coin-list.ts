@@ -44,8 +44,9 @@ export class CoinListComponent implements OnInit {
     }
   }
 
-  public loadMore() {
+  public loadMore(infiniteScroll) {
     this.limit += this.chunkSize;
     this.chunkSize *= 2;
+    infiniteScroll.complete();
   }
 }

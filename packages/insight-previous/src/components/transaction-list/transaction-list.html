@@ -8,9 +8,9 @@
       </ion-col>
     </ion-row>
     <ion-row *ngIf="limit < transactions.length">
-      <ion-col col-12 text-center>
-        <button ion-button small (click)="loadMore()">Load More</button>
-      </ion-col>
+      <ion-infinite-scroll (ionInfinite)="loadMore($event)">
+        <loader [type]="'tx-full-list'"></loader>
+      </ion-infinite-scroll>
     </ion-row>
   </ion-grid>
 </div>
