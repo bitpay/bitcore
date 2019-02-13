@@ -688,7 +688,7 @@ export function setAddressType(type) {
   addressType = type;
 }
 
-var qrErrorCorrectionLevel = 'L';
+var qrErrorCorrectionLevel = 'H';
 // set qr code error correction level (single address)
 export function setQRErrorCorrectionLevel(level) {
   qrErrorCorrectionLevel = level;
@@ -721,12 +721,6 @@ export function generate_address() {
     true,
     qrErrorCorrectionLevel
   );
-  console.log(result);
-  document.getElementById('privkey_privkey').innerHTML = result[0];
-  var qr_div_privkey = document.getElementById('privkey_qr');
-  qr_div_privkey.src = result[1].createDataURL(6, 12);
-  qr_div_privkey.style =
-    'display:block; margin-left: auto; margin-right: auto;';
 
   document.getElementById('address_address').innerHTML = result[3];
 
@@ -734,8 +728,6 @@ export function generate_address() {
   qr_div_address.src = result[4].createDataURL(6, 12);
   qr_div_address.style =
     'display:block; margin-left: auto; margin-right: auto;';
-
-  document.getElementById('address_div').style = 'display: table;';
 }
 
 // generates address from bytes, then returns the address and qr code if necessary

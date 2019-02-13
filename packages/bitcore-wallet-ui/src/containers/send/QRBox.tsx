@@ -72,7 +72,6 @@ class FullWidthTabs extends React.Component<Props, State> {
   };
 
   componentDidMount = () => {
-    setQRErrorCorrectionLevel('H');
     generate_address();
   };
 
@@ -134,15 +133,6 @@ class FullWidthTabs extends React.Component<Props, State> {
                 </div>
                 <img id="address_qr" />
               </div>
-              <div>
-                <div>
-                  <div>
-                    <div id="privkey_text">Private key:</div>
-                  </div>
-                  <div id="privkey_privkey" />
-                </div>
-                <img id="privkey_qr" />
-              </div>
             </TabContainer>
             <TabContainer dir={theme.direction}>
               <div id="address_div">
@@ -154,15 +144,6 @@ class FullWidthTabs extends React.Component<Props, State> {
                 </div>
                 <img id="address_qr" />
               </div>
-              <div>
-                <div>
-                  <div>
-                    <div id="privkey_text">Private key:</div>
-                  </div>
-                  <div id="privkey_privkey" />
-                </div>
-                <img id="privkey_qr" />
-              </div>
             </TabContainer>
             <TabContainer dir={theme.direction}>
               <div id="address_div">
@@ -173,15 +154,6 @@ class FullWidthTabs extends React.Component<Props, State> {
                   <div id="address_address" />
                 </div>
                 <img id="address_qr" />
-              </div>
-              <div>
-                <div>
-                  <div>
-                    <div id="privkey_text">Private key:</div>
-                  </div>
-                  <div id="privkey_privkey" />
-                </div>
-                <img id="privkey_qr" />
               </div>
             </TabContainer>
           </SwipeableViews>
