@@ -1,7 +1,11 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, fromEvent } from 'rxjs';
 
-// TODO: network connected/disconnected notification
+/**
+ * TODO: This currently only checks network connectivity. It should also notify
+ * the app if the connected bitcore-node starts failing (using
+ * `ApiService.bitcoreAvailable`).
+ */
 @Injectable({
   providedIn: 'root'
 })

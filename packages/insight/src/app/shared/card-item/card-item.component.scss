@@ -8,6 +8,10 @@
   justify-content: space-between;
 }
 
+.content:empty {
+  display: none;
+}
+
 .header,
 .content {
   padding: 1em;
