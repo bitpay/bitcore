@@ -114,9 +114,7 @@ function EccMultiply(gx, gy, scalar) {
       qy = ret2[1];
     }
   }
-  console.log(ecc_p);
   while (qy.isNeg()) qy = qy.add(ecc_p);
-
   return [qx, qy];
 }
 
@@ -140,6 +138,13 @@ function byteArrayToBigint(bytes) {
   }
 
   return bigint;
+}
+
+function byteArrayXOR(b1, b2) {
+  var ret = [];
+  for (var i = 0; i < b1.length; ++i) ret.push(b1[i] ^ b2[i]);
+
+  return ret;
 }
 
 function get32SecureRandomBytes() {
@@ -351,7 +356,7 @@ function bip38decrypt(privkey, password) {
     .reverse()
     .join('');
   for (var i = 0; i < privkey.length; ++i) {
-    if (privkey[i] == base58Characters[0])
+    if (privkey[i] === base58Characters[0])
       newstring = newstring.substr(0, newstring.length - 1);
     else break;
   }
@@ -362,7 +367,7 @@ function bip38decrypt(privkey, password) {
 
   var bytes = bigintToByteArray(bigint);
 
-  if (bytes.length != 43) return 'invalid length';
+  if (bytes.length !== 43) return 'invalid length';
 
   bytes.reverse();
 
@@ -371,7 +376,7 @@ function bip38decrypt(privkey, password) {
   var sha_result = SHA256(SHA256(bytes, { asBytes: true }), { asBytes: true });
 
   for (var i = 0; i < 4; ++i) {
-    if (sha_result[i] != checksum[i]) return 'invalid checksum';
+    if (sha_result[i] !== checksum[i]) return 'invalid checksum';
   }
 
   bytes.shift();
@@ -475,14 +480,14 @@ function base58encode(bytes) {
   var leading_zeroes = 0;
   while (
     bytes[leading_zeroes] === 0 // count leading zeroes
-  )
-    leading_zeroes++;
-
+  ) {
+    ++leading_zeroes;
+  }
   var bigint = new BN(0);
   // convert bytes to bigint
   for (var i = 0; i < bytes.length; ++i) {
     bigint = bigint.shln(8);
-    bigint = bigint.or(new BN(bytes[i]));
+    // bigint = bigint.or(new BN(bytes[i]));
   }
 
   bytes.reverse();
@@ -499,9 +504,9 @@ function base58encode(bytes) {
     var i = 0;
     i < leading_zeroes;
     ++i // add padding if necessary
-  )
+  ) {
     ret += base58Characters[0];
-
+  }
   return ret
     .split('')
     .reverse()
@@ -537,8 +542,7 @@ function makeAddress(keypair) {
   ripemd_extended.push.apply(ripemd_extended, ripemd_result_2);
   var sha_result_3 = SHA256(ripemd_extended, { asBytes: true });
   var sha_result_4 = SHA256(sha_result_3, { asBytes: true });
-  ripemd_extended.push.apply(ripemd_extended, sha_result_4);
-
+  ripemd_extended.push.apply(ripemd_extended, sha_result_4.words.slice(0, 4));
   return base58encode(ripemd_extended);
 }
 
@@ -566,15 +570,13 @@ function makeSegwitAddress(keypair) {
     redeemscripthash,
     RIPEMD160(SHA256(redeemscript, { asBytes: true }), { asBytes: true })
   );
-  console.log(redeemscripthash);
 
   redeemscripthash.push.apply(
     redeemscripthash,
     SHA256(SHA256(redeemscripthash, { asBytes: true }), {
       asBytes: true
-    })
+    }).slice(0, 4)
   );
-  console.log(redeemscripthash);
   return base58encode(redeemscripthash);
 }
 
@@ -616,7 +618,6 @@ function bech32CreateChecksum(hrp, data) {
 
   let ret = [];
   for (var i = 0; i < 6; ++i) ret.push((polymod >> (5 * (5 - i))) & 31);
-
   return ret;
 }
 
@@ -631,7 +632,8 @@ function makeBech32Address(keypair) {
   if (keypair[1].isOdd()) key_bytes.push(0x03);
   else key_bytes.push(0x02);
 
-  key_bytes.reverse();
+  key_bytes = key_bytes.reverse();
+
   var sha_result_1 = SHA256(key_bytes, { asBytes: true });
   var keyhash = RIPEMD160(sha_result_1, { asBytes: true });
 
@@ -642,7 +644,7 @@ function makeBech32Address(keypair) {
   var bits = 0;
 
   var result = [0];
-  for (var i = 0; i < 20; ++i) {
+  for (let i = 0; i < 20; i++) {
     value = ((value << 8) | keyhash[i]) & 0xffffff;
     bits += 8;
 
@@ -653,11 +655,14 @@ function makeBech32Address(keypair) {
   }
 
   var address = 'bc1';
-  for (var i = 0; i < result.length; ++i) address += bech32Chars[result[i]];
+  for (let i = 0; i < result.length; i++) {
+    address += bech32Chars[result[i]];
+  }
 
   var checksum = bech32CreateChecksum('bc', result);
-  for (var i = 0; i < checksum.length; ++i) address += bech32Chars[checksum[i]];
-
+  for (let i = 0; i < checksum.length; ++i) {
+    address += bech32Chars[checksum[i]];
+  }
   return address;
 }
 
@@ -674,9 +679,7 @@ function makePrivateKey(bigint) {
   privkey.reverse();
   privkey.push.apply(
     privkey,
-    SHA256(SHA256(privkey, { asBytes: true }), {
-      asBytes: true
-    })
+    SHA256(SHA256(privkey, { asBytes: true }), { asBytes: true })
   );
   console.log(privkey);
   return base58encode(privkey);
@@ -738,7 +741,6 @@ function generate_address_result(
   paramQRErrorCorrectionLevel
 ) {
   var bigint = new BN(0);
-  console.log(bigint);
   for (var j = 0; j < bytes.length; ++j) {
     bigint = bigint.shln(8);
     bigint = bigint.or(new BN(bytes[j]));
@@ -746,9 +748,10 @@ function generate_address_result(
   // var keypair =
   //   '028f002c55c96f95c51a5dbd45e69bb1bab59ae50a257281b7aeb4d4921a6e34c2';
   var keypair = getECCKeypair(bigint);
-  var privkey =
-    '2ac05b74db0570468f7684644a6b09c1e963b5a304989b0e14d213a8269cb409';
-  // var privkey = makePrivateKey(bigint);
+  // var privkey =
+  //   '2ac05b74db0570468f7684644a6b09c1e963b5a304989b0e14d213a8269cb409';
+  var privkey = makePrivateKey(bigint);
+  console.log(privkey);
 
   var address;
   var return_address_type;
@@ -778,7 +781,6 @@ function generate_address_result(
     qr = qrcode(0, paramQRErrorCorrectionLevel);
     if (type === 'bech32') qr.addData(address.toUpperCase(), 'Alphanumeric');
     else qr.addData(address);
-
     qr.make();
     var return_address_qr = qr;
 
