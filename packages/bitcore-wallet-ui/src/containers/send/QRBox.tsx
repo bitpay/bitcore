@@ -11,11 +11,7 @@ import AppBar from '@material-ui/core/AppBar';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import Typography from '@material-ui/core/Typography';
-import {
-  setQRErrorCorrectionLevel,
-  setAddressType,
-  generate_address
-} from '../../qrcode/test';
+import { setAddressType, generate_address } from '../../qrcode/logic';
 import Paper from '@material-ui/core/Paper';
 
 interface TabProps {
