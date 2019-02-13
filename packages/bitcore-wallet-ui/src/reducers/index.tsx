@@ -22,7 +22,10 @@ export class MyImmerReducer extends ImmerReducer<AppState> {
     this.draftState.transactions = txList;
   }
   setAddress(addressList: AppState['addresses']) {
-    this.draftState.addresses = addressList;
+    const addresses = this.state.addresses.map(e => e);
+    if (addresses !== addressList) {
+      this.draftState.addresses = addressList;
+    }
   }
   setBalance(balance: AppState['balance']) {
     this.draftState.balance = balance;

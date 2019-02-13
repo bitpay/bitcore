@@ -40,7 +40,9 @@ class WalletContainer extends Component<Props, State> {
     store.dispatch(ActionCreators.setWalletName(name));
     const wallet = await this.loadWallet(name);
     await wallet!.register({ baseUrl: 'http://localhost:3000/api' });
-    await store.dispatch(ActionCreators.setWallet(wallet!));
+    if (!this.props.wallet!.unlocked) {
+      await store.dispatch(ActionCreators.setWallet(wallet!));
+    }
     if (this.props.wallet) {
       console.log('Using bitcore-node at ', this.props.wallet.baseUrl);
       await this.handleGetTx(this.props.wallet);
