@@ -120,9 +120,8 @@ export class RPC {
       'trace_filter',
       [
         {
-          fromAddress: [address],
-          after: 1000,
-          count: 100
+          toAddress: [address],
+          fromAddress: [address]
         }
       ],
       callback
