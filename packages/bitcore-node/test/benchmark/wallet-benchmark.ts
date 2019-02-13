@@ -13,11 +13,11 @@ async function getAllAddressesFromBlocks(start, end) {
   return uniqueAddresses;
 }
 
-export async function createWallet(addresses: string[], iteration, regtest?: string) {
+export async function createWallet(addresses: string[], iteration, networkName?: string) {
   const walletName = 'Benchmark Wallet' + iteration;
   const password = 'iamsatoshi';
   const chain = 'BTC';
-  const network = regtest || 'mainnet';
+  const network = networkName || 'mainnet';
   const baseUrl = 'http://localhost:3000/api';
   let lockedWallet: Wallet;
 
