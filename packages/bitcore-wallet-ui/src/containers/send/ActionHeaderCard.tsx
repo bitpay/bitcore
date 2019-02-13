@@ -173,7 +173,7 @@ class AddressBar extends Component<Props, State> {
             Send
           </Button>
         </Paper>
-        <QRBox />
+        <QRBox rawTx={this.state.rawTx} />
         <WalletBottomNav />
       </div>
     );

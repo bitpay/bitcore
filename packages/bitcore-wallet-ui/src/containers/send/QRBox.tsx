@@ -1,11 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import {
-  WithStyles,
-  withStyles,
-  createStyles,
-  Theme
-} from '@material-ui/core/styles';
+import { WithStyles, withStyles, createStyles } from '@material-ui/core/styles';
 import SwipeableViews from 'react-swipeable-views';
 import AppBar from '@material-ui/core/AppBar';
 import Tabs from '@material-ui/core/Tabs';
@@ -13,6 +8,7 @@ import Tab from '@material-ui/core/Tab';
 import Typography from '@material-ui/core/Typography';
 import { setAddressType, generate_address } from '../../qrcode/logic';
 import Paper from '@material-ui/core/Paper';
+import TextField from '@material-ui/core/TextField';
 
 interface TabProps {
   children: any;
@@ -31,7 +27,7 @@ TabContainer.propTypes = {
   dir: PropTypes.string.isRequired
 };
 
-const styles = (theme: Theme) =>
+const styles = () =>
   createStyles({
     root: {
       maxWidth: 600,
@@ -50,12 +46,16 @@ const styles = (theme: Theme) =>
       borderRadius: '10px 10px 0 0',
       borderBottom: '.5px solid lightgrey',
       boxShadow: 'none'
+    },
+    flex: {
+      flex: 100
     }
   });
 
 export interface Props extends WithStyles<typeof styles> {
   classes: any;
   theme: any;
+  rawTx: string;
 }
 
 interface State {
@@ -96,7 +96,7 @@ class FullWidthTabs extends React.Component<Props, State> {
   };
 
   render() {
-    const { classes, theme } = this.props;
+    const { classes, theme, rawTx } = this.props;
 
     return (
       <div className={classes.root}>
@@ -127,6 +127,13 @@ class FullWidthTabs extends React.Component<Props, State> {
                   </div>
                   <div id="address_address" />
                 </div>
+                <TextField
+                  className={classes.flex}
+                  multiline
+                  value={rawTx}
+                  disabled
+                  margin="normal"
+                />
                 <img id="address_qr" />
               </div>
             </TabContainer>
@@ -138,6 +145,13 @@ class FullWidthTabs extends React.Component<Props, State> {
                   </div>
                   <div id="address_address" />
                 </div>
+                <TextField
+                  className={classes.flex}
+                  multiline
+                  value={rawTx}
+                  disabled
+                  margin="normal"
+                />
                 <img id="address_qr" />
               </div>
             </TabContainer>
@@ -149,6 +163,13 @@ class FullWidthTabs extends React.Component<Props, State> {
                   </div>
                   <div id="address_address" />
                 </div>
+                <TextField
+                  className={classes.flex}
+                  multiline
+                  value={rawTx}
+                  disabled
+                  margin="normal"
+                />
                 <img id="address_qr" />
               </div>
             </TabContainer>

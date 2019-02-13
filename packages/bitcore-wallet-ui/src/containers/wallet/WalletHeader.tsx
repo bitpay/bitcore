@@ -11,6 +11,7 @@ import { Link } from 'react-router-dom';
 import { AppState } from '../../contexts/state';
 import { connect } from 'react-redux';
 import { UnlockBar } from './UnlockBar';
+import { ActionCreators, store } from '../../index';
 
 const styles = {
   root: {
@@ -48,6 +49,12 @@ interface Props {
 function WalletNavTop(props: Props) {
   const { classes, wallet } = props;
 
+  const renderContent = () => {
+    if (!store.getState().wallet!.unlocked) {
+      return <UnlockBar />;
+    }
+  };
+
   return (
     <div className={classes.root}>
       <AppBar position="static" className={classes.background}>
@@ -58,10 +65,10 @@ function WalletNavTop(props: Props) {
           <Typography variant="title" color="inherit">
             {wallet ? wallet.name : 'Loading...'}
           </Typography>
-          {wallet && wallet.unlocked ? <LockOpenIcon /> : <LockIcon />}
+          {store.getState().wallet!.unlocked ? <LockOpenIcon /> : <LockIcon />}
         </Toolbar>
       </AppBar>
-      <UnlockBar />
+      {renderContent()}
     </div>
   );
 }
