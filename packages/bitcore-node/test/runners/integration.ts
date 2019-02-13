@@ -10,8 +10,8 @@ const TIMEOUT = 5000;
 const TEST_DIR = path.join(__dirname, '../integration');
 
 const storageArgs = {
-    dbHost: config.dbHost,
-    dbName: 'bitcore-integration'
+  dbHost: config.dbHost,
+  dbName: 'bitcore-integration'
 };
 
 function handleError(err) {
