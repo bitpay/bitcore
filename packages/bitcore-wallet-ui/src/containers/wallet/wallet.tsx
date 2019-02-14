@@ -1,25 +1,19 @@
 import React, { Component } from 'react';
-import { ParseApiStream, Wallet, Storage } from 'bitcore-client';
+import { ParseApiStream, Wallet } from 'bitcore-client';
 import { RouteComponentProps } from 'react-router';
-import Snackbar from '@material-ui/core/Snackbar';
-import IconButton from '@material-ui/core/IconButton';
-import CloseIcon from '@material-ui/icons/Close';
 import { WalletBar } from './BalanceCard';
 import { TransactionListCard } from './TransactionContainer';
 import { WalletBottomNav } from './BottomNav';
 import { socket } from '../../contexts/io';
 import { ActionCreators, store } from '../../index';
 import { connect } from 'react-redux';
+import { AppState } from '../../contexts/state';
 
 interface Props extends RouteComponentProps<{ name: string }> {
   walletName: string;
   wallet?: Wallet;
-  password: string;
-  balance: { confirmed: number; unconfirmed: number; balance: string };
-  transactions: any[];
-  addresses: string[];
-  addressToAdd: string;
-  message: string;
+  transactions: AppState['transactions'];
+  addresses: AppState['addresses'];
 }
 
 export interface State {
@@ -98,7 +92,7 @@ class WalletContainer extends Component<Props, State> {
       });
   }
 
-  handleClose = (reason: any) => {
+  handleClose = (reason: string) => {
     if (reason === 'clickaway') {
       return;
     }
@@ -147,36 +141,11 @@ class WalletContainer extends Component<Props, State> {
   }
 
   render() {
-    const { wallet } = this.props;
-    const unlockedWallet = wallet && wallet.unlocked!;
     return (
       <div>
         <WalletBar />
         <TransactionListCard />
         <WalletBottomNav value={1} />
-        <Snackbar
-          anchorOrigin={{
-            vertical: 'bottom',
-            horizontal: 'left'
-          }}
-          open={this.state.open}
-          autoHideDuration={6000}
-          onClose={this.handleClose}
-          ContentProps={{
-            'aria-describedby': 'message-id'
-          }}
-          message={<span id="message-id">{this.props.message}</span>}
-          action={[
-            <IconButton
-              key="close"
-              aria-label="Close"
-              color="inherit"
-              onClick={this.handleClose}
-            >
-              <CloseIcon />
-            </IconButton>
-          ]}
-        />
       </div>
     );
   }
@@ -184,14 +153,9 @@ class WalletContainer extends Component<Props, State> {
 
 const mapStateToProps = (state: Props) => {
   return {
-    walletName: state.walletName,
     wallet: state.wallet,
-    password: state.password,
-    balance: state.balance,
-    transactions: state.transactions,
     addresses: state.addresses,
-    addressToAdd: state.addressToAdd,
-    message: state.message
+    transactions: state.transactions
   };
 };
 

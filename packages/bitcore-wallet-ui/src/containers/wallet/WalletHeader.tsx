@@ -1,5 +1,4 @@
-import React from 'react';
-import PropTypes from 'prop-types';
+import React, { Component } from 'react';
 import { withStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -11,7 +10,8 @@ import { Link } from 'react-router-dom';
 import { AppState } from '../../contexts/state';
 import { connect } from 'react-redux';
 import { UnlockBar } from './UnlockBar';
-import { ActionCreators, store } from '../../index';
+import { store } from '../../index';
+import { Notification } from './Notification';
 
 const styles = {
   root: {
@@ -44,42 +44,54 @@ const styles = {
 interface Props {
   wallet?: AppState['wallet'];
   classes: any;
+  message: string;
 }
 
-function WalletNavTop(props: Props) {
-  const { classes, wallet } = props;
+interface State {
+  open: boolean;
+}
 
-  const renderContent = () => {
-    if (!store.getState().wallet!.unlocked) {
+class WalletNavTop extends Component<Props, State> {
+  state = {
+    open: false
+  };
+
+  renderContent = () => {
+    if (this.state.open) {
       return <UnlockBar />;
     }
   };
+  render() {
+    const { classes, wallet, message } = this.props;
 
-  return (
-    <div className={classes.root}>
-      <AppBar position="static" className={classes.background}>
-        <Toolbar className={classes.toolbar}>
-          <Link to={'/'} className={classes.link}>
-            <ClearIcon />
-          </Link>
-          <Typography variant="title" color="inherit">
-            {wallet ? wallet.name : 'Loading...'}
-          </Typography>
-          {store.getState().wallet!.unlocked ? <LockOpenIcon /> : <LockIcon />}
-        </Toolbar>
-      </AppBar>
-      {renderContent()}
-    </div>
-  );
+    return (
+      <div className={classes.root}>
+        <AppBar position="static" className={classes.background}>
+          <Toolbar className={classes.toolbar}>
+            <Link to={'/'} className={classes.link}>
+              <ClearIcon />
+            </Link>
+            <Typography variant="title" color="inherit">
+              {wallet ? wallet.name : 'Loading...'}
+            </Typography>
+            {store.getState().wallet!.unlocked ? (
+              <LockOpenIcon />
+            ) : (
+              <LockIcon onClick={() => this.setState({ open: true })} />
+            )}
+          </Toolbar>
+        </AppBar>
+        {this.renderContent()}
+        <Notification message={message} />
+      </div>
+    );
+  }
 }
-
-WalletNavTop.propTypes = {
-  classes: PropTypes.object.isRequired
-};
 
 const mapStateToProps = (state: AppState) => {
   return {
-    wallet: state.wallet
+    wallet: state.wallet,
+    message: state.message
   };
 };
 
