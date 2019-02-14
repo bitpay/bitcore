@@ -14,9 +14,6 @@ export class MyImmerReducer extends ImmerReducer<AppState> {
   setWalletName(name: string) {
     this.draftState.walletName = name;
   }
-  setMessage(message: string) {
-    this.draftState.message = message;
-  }
   // Need to import ITransaction[] type here
   setTransactions(txList: AppState['transactions']) {
     this.draftState.transactions = txList;

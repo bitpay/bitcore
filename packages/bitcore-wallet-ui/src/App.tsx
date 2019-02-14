@@ -7,12 +7,16 @@ import { socket } from './contexts/io';
 import { WalletsPage } from './containers/wallets/Wallets';
 import { SingleWalletPage } from './containers/wallet/Wallet';
 import { RecievePage } from './containers/Address/RecievePage';
-import { AddressNavBar } from './containers/send/ActionHeaderCard';
-import { ActionCreators, store } from './index';
+import { AddressNavBar } from './containers/send/SendContainer';
+import { Notification } from './containers/wallet/Notification';
 const createdHistory = history.createBrowserHistory();
 
 class App extends Component {
-  async componentDidMount() {
+  state = {
+    message: ''
+  };
+
+  componentDidMount() {
     socket.on('connect', () => {
       console.log('Connected to socket');
       socket.emit('room', '/BTC/regtest/inv');
@@ -25,30 +29,34 @@ class App extends Component {
         100000000} BTC at ${new Date(
         sanitizedTx.blockTimeNormalized
       ).toLocaleString()}`;
-      store.dispatch(ActionCreators.setMessage(message));
+      this.setState({ message });
     });
   })();
 
   handleGetBlock = (() => {
     socket.on('block', (block: any) => {
       let message = `New Block on ${new Date(block.time).toDateString()}`;
-      store.dispatch(ActionCreators.setMessage(message));
+      this.setState({ message });
     });
   })();
 
   async componentWillUnmount() {
     socket.removeAllListeners();
   }
+
   render() {
     return (
-      <Router history={createdHistory}>
-        <Switch>
-          <Route exact path="/wallet/:name" component={SingleWalletPage} />
-          <Route path="/wallet/:name/send" component={AddressNavBar} />
-          <Route path="/wallet/:name/receive" component={RecievePage} />
-          <Route exact path="/" component={WalletsPage} />
-        </Switch>
-      </Router>
+      <div>
+        <Notification message={this.state.message} />
+        <Router history={createdHistory}>
+          <Switch>
+            <Route exact path="/wallet/:name" component={SingleWalletPage} />
+            <Route path="/wallet/:name/send" component={AddressNavBar} />
+            <Route path="/wallet/:name/receive" component={RecievePage} />
+            <Route exact path="/" component={WalletsPage} />
+          </Switch>
+        </Router>
+      </div>
     );
   }
 }

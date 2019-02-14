@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import { withStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
@@ -10,8 +10,6 @@ import { Link } from 'react-router-dom';
 import { AppState } from '../../contexts/state';
 import { connect } from 'react-redux';
 import { UnlockBar } from './UnlockBar';
-import { store } from '../../index';
-import { Notification } from './Notification';
 
 const styles = {
   root: {
@@ -44,14 +42,13 @@ const styles = {
 interface Props {
   wallet?: AppState['wallet'];
   classes: any;
-  message: string;
 }
 
 interface State {
   open: boolean;
 }
 
-class WalletNavTop extends Component<Props, State> {
+class WalletNavTop extends PureComponent<Props, State> {
   state = {
     open: false
   };
@@ -62,7 +59,7 @@ class WalletNavTop extends Component<Props, State> {
     }
   };
   render() {
-    const { classes, wallet, message } = this.props;
+    const { classes, wallet } = this.props;
 
     return (
       <div className={classes.root}>
@@ -74,7 +71,7 @@ class WalletNavTop extends Component<Props, State> {
             <Typography variant="title" color="inherit">
               {wallet ? wallet.name : 'Loading...'}
             </Typography>
-            {store.getState().wallet!.unlocked ? (
+            {wallet!.unlocked ? (
               <LockOpenIcon />
             ) : (
               <LockIcon onClick={() => this.setState({ open: true })} />
@@ -82,7 +79,6 @@ class WalletNavTop extends Component<Props, State> {
           </Toolbar>
         </AppBar>
         {this.renderContent()}
-        <Notification message={message} />
       </div>
     );
   }
@@ -90,8 +86,7 @@ class WalletNavTop extends Component<Props, State> {
 
 const mapStateToProps = (state: AppState) => {
   return {
-    wallet: state.wallet,
-    message: state.message
+    wallet: state.wallet
   };
 };
 

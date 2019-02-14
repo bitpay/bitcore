@@ -7,6 +7,5 @@ export interface AppState {
   transactions: any[];
   addresses: string[];
   addressToAdd: string;
-  message: string;
   wallets: Wallet[];
 }

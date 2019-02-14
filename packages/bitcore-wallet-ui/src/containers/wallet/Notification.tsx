@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import classNames from 'classnames';
 import CheckCircleIcon from '@material-ui/icons/CheckCircle';
@@ -8,8 +8,6 @@ import IconButton from '@material-ui/core/IconButton';
 import Snackbar from '@material-ui/core/Snackbar';
 import SnackbarContent from '@material-ui/core/SnackbarContent';
 import { Theme, withStyles, createStyles } from '@material-ui/core/styles';
-import { connect } from 'react-redux';
-import { AppState } from '../../contexts/state';
 
 const styles1 = (theme: Theme) =>
   createStyles({
@@ -30,11 +28,11 @@ const styles1 = (theme: Theme) =>
   });
 
 function MySnackbarContent(props: any) {
-  const { classes, className, message, onClose, ...other } = props;
+  const { classes, className, message, variant, onClose, ...other } = props;
 
   return (
     <SnackbarContent
-      className={classNames(classes['success'], className)}
+      className={classNames(classes[variant], className)}
       aria-describedby="client-snackbar"
       message={
         <span id="client-snackbar" className={classes.message}>
@@ -68,15 +66,7 @@ MySnackbarContent.propTypes = {
   variant: PropTypes.oneOf(['success']).isRequired
 };
 
-const mapStateToProps = (state: AppState) => {
-  return {
-    message: state.message
-  };
-};
-
-const MySnackbarContentWrapper = withStyles(styles1)(
-  connect(mapStateToProps)(MySnackbarContent)
-);
+const MySnackbarContentWrapper = withStyles(styles1)(MySnackbarContent);
 
 const styles2 = (theme: Theme) =>
   createStyles({
@@ -86,20 +76,22 @@ const styles2 = (theme: Theme) =>
   });
 
 interface Props2 {
-  message: any;
+  message: string;
 }
 
 interface State {
   open: boolean;
 }
 
-class CustomizedSnackbars extends React.Component<Props2, State> {
+class CustomizedSnackbars extends PureComponent<Props2, State> {
   state = {
     open: false
   };
 
-  handleOpen = () => {
-    this.setState({ open: true });
+  componentWillReceiveProps = (nextProps: any) => {
+    if (nextProps.message) {
+      this.setState({ open: true });
+    }
   };
 
   handleClose = (_event: any, reason: string) => {

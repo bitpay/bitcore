@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import { WithStyles, withStyles, createStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import { Paper } from '@material-ui/core';
-import { WalletHeader } from '../wallet/WalletHeader';
 import InputBase from '@material-ui/core/InputBase';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
@@ -135,7 +134,6 @@ class AddressBar extends Component<Props, State> {
     const { classes, wallet } = this.props;
     return (
       <div className={classes.root}>
-        <WalletHeader />
         <Paper className={classes.paper}>
           <Typography variant="h4" className={classes.heading}>
             Send

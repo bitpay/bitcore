@@ -21,7 +21,6 @@ const initialState: AppState = {
   transactions: [],
   addresses: [],
   addressToAdd: '',
-  message: '',
   wallet: undefined,
   wallets: []
 };
