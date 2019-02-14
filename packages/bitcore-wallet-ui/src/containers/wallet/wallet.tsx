@@ -16,13 +16,7 @@ interface Props extends RouteComponentProps<{ name: string }> {
   addresses: AppState['addresses'];
 }
 
-export interface State {
-  open: boolean;
-}
-
-class WalletContainer extends Component<Props, State> {
-  state = { open: false };
-
+class WalletContainer extends Component<Props> {
   constructor(props: Props) {
     super(props);
     this.updateWalletInfo = this.updateWalletInfo.bind(this);
@@ -51,26 +45,13 @@ class WalletContainer extends Component<Props, State> {
   }
 
   handleGetTx(wallet: Wallet) {
-    socket.on('tx', async (sanitizedTx: any) => {
-      let message = `Recieved ${sanitizedTx.value /
-        100000000} BTC at ${new Date(
-        sanitizedTx.blockTimeNormalized
-      ).toLocaleString()}`;
-      store.dispatch(ActionCreators.setMessage(message));
-      this.setState({
-        open: true
-      });
+    socket.on('tx', () => {
       this.updateWalletInfo(wallet);
     });
   }
 
   handleGetBlock(wallet: Wallet) {
-    socket.on('block', (block: any) => {
-      let message = `New Block on ${new Date(block.time).toDateString()}`;
-      store.dispatch(ActionCreators.setMessage(message));
-      this.setState({
-        open: true
-      });
+    socket.on('block', () => {
       this.updateWalletInfo(wallet);
     });
   }
@@ -91,13 +72,6 @@ class WalletContainer extends Component<Props, State> {
         store.dispatch(ActionCreators.setTransactions(prevTx));
       });
   }
-
-  handleClose = (reason: string) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-    this.setState({ open: false });
-  };
 
   async fetchAddresses(wallet: Wallet) {
     wallet

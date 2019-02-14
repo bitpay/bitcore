@@ -8,6 +8,7 @@ import { WalletsPage } from './containers/wallets/Wallets';
 import { SingleWalletPage } from './containers/wallet/Wallet';
 import { RecievePage } from './containers/Address/RecievePage';
 import { AddressNavBar } from './containers/send/ActionHeaderCard';
+import { ActionCreators, store } from './index';
 const createdHistory = history.createBrowserHistory();
 
 class App extends Component {
@@ -17,6 +18,23 @@ class App extends Component {
       socket.emit('room', '/BTC/regtest/inv');
     });
   }
+
+  handleGetTx = (() => {
+    socket.on('tx', async (sanitizedTx: any) => {
+      let message = `Recieved ${sanitizedTx.value /
+        100000000} BTC at ${new Date(
+        sanitizedTx.blockTimeNormalized
+      ).toLocaleString()}`;
+      store.dispatch(ActionCreators.setMessage(message));
+    });
+  })();
+
+  handleGetBlock = (() => {
+    socket.on('block', (block: any) => {
+      let message = `New Block on ${new Date(block.time).toDateString()}`;
+      store.dispatch(ActionCreators.setMessage(message));
+    });
+  })();
 
   async componentWillUnmount() {
     socket.removeAllListeners();
