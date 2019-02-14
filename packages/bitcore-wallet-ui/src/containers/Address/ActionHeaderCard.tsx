@@ -105,12 +105,7 @@ class AddressBar extends Component<Props> {
   }
 
   async handleAddAddressClick() {
-    store.dispatch(
-      ActionCreators.setAddress([
-        ...this.props.addresses,
-        this.props.addressToAdd
-      ])
-    );
+    store.dispatch(ActionCreators.setAddress(this.props.addressToAdd));
     await this.importAddresses(this.props.addressToAdd);
   }
 
@@ -125,9 +120,7 @@ class AddressBar extends Component<Props> {
   async handleDeriveAddressClick() {
     const wallet = this.props.wallet;
     const newAddresses = await wallet!.nextAddressPair();
-    store.dispatch(
-      ActionCreators.setAddress([...this.props.addresses, ...newAddresses])
-    );
+    newAddresses.map(e => store.dispatch(ActionCreators.setAddress(e)));
   }
 
   render() {

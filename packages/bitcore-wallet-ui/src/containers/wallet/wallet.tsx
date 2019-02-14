@@ -84,11 +84,8 @@ class WalletContainer extends Component<Props> {
         } else {
           addresses = [d];
         }
-        store.dispatch(
-          ActionCreators.setAddress([
-            ...this.props.addresses,
-            ...addresses.map(a => a.address)
-          ])
+        addresses.map(a =>
+          store.dispatch(ActionCreators.setAddress(a.address))
         );
       });
   }
