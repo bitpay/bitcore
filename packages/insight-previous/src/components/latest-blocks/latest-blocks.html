@@ -43,9 +43,9 @@
       </ion-row>
 
       <ion-row *ngIf="showLoadMoreButton">
-        <ion-col text-center>
-          <button ion-button small (click)="loadMoreBlocks()">Load more blocks</button>
-        </ion-col>
+        <ion-infinite-scroll (ionInfinite)="loadMoreBlocks($event)">
+          <loader [type]="'grid'"></loader>
+        </ion-infinite-scroll>
       </ion-row>
     </div>
   </ion-grid>
