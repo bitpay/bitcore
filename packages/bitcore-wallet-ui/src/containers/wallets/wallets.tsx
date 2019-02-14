@@ -19,7 +19,7 @@ const API_URL =
   process.env.CREATE_REACT_APP_API_URL || 'http://localhost:3000/api';
 
 export interface Props extends WithStyles<typeof styles> {
-  wallet?: Wallet;
+  wallet?: Wallet | undefined;
   wallets: Wallet[];
 }
 
@@ -75,8 +75,12 @@ class WalletsContainer extends Component<Props, State> {
   }
 
   async componentDidMount() {
+    if (store.getState().transactions) {
+      store.dispatch(ActionCreators.setTransactions([]));
+    }
+    store.dispatch(ActionCreators.setWallet(undefined));
     const wallet = await this.createOrLoadWallet();
-    store.dispatch(ActionCreators.setWallet(wallet!));
+    store.dispatch(ActionCreators.setWallets(wallet!));
     wallet!.storage.listWallets().on('data', (walletBuf: Buffer) => {
       const walletStr = walletBuf.toString();
       const foundWallet = JSON.parse(walletStr);

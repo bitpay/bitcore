@@ -71,7 +71,7 @@ class WalletNavTop extends PureComponent<Props, State> {
             <Typography variant="title" color="inherit">
               {wallet ? wallet.name : 'Loading...'}
             </Typography>
-            {wallet!.unlocked ? (
+            {wallet && wallet.unlocked! ? (
               <LockOpenIcon />
             ) : (
               <LockIcon onClick={() => this.setState({ open: true })} />
