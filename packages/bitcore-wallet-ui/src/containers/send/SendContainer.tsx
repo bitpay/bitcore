@@ -116,19 +116,17 @@ class AddressBar extends Component<Props, State> {
     rawTx: ''
   };
 
-  constructor(props: Props) {
-    super(props);
-    this.handleSendClick = this.handleSendClick.bind(this);
-  }
-  async handleSendClick() {
+  handleSendClick = async () => {
     const tx = await this.props.wallet!.newTx({
       recipients: [
         { address: this.state.sendTo, amount: Number(this.state.amountToSend) }
       ]
     });
 
-    const signed = await this.props.wallet!.signTx({ tx });
-    this.setState({ rawTx: signed });
+    await this.props.wallet!.signTx({ tx });
+    const result = await this.props.wallet!.broadcast({tx})
+    console.log(result);
+    // this.setState({ rawTx: signedRawTx });
   }
 
   render() {
