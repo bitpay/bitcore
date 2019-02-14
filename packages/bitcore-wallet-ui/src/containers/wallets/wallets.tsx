@@ -59,22 +59,8 @@ class WalletsContainer extends Component<Props, State> {
     selectedChain: 'BTC',
     selectedNetwork: 'mainnet'
   };
-  constructor(props: Props) {
-    super(props);
-    this.handleChainChange = this.handleChainChange.bind(this);
-    this.handleNetworkChange = this.handleNetworkChange.bind(this);
-    this.handleWalletNameChange = this.handleWalletNameChange.bind(this);
-    this.handleWalletPasswordChange = this.handleWalletPasswordChange.bind(
-      this
-    );
-    this.handleWalletMnemonicChange = this.handleWalletMnemonicChange.bind(
-      this
-    );
-    this.handleCreateWalletClick = this.handleCreateWalletClick.bind(this);
-    this.walletCreateComponent = this.walletCreateComponent.bind(this);
-  }
 
-  async componentDidMount() {
+  componentDidMount = async () => {
     if (store.getState().transactions) {
       store.dispatch(ActionCreators.setTransactions([]));
     }
@@ -86,13 +72,13 @@ class WalletsContainer extends Component<Props, State> {
       const foundWallet = JSON.parse(walletStr);
       store.dispatch(ActionCreators.setWallets(foundWallet!));
     });
-  }
+  };
 
-  addWalletToState(wallet: Wallet) {
+  addWalletToState = (wallet: Wallet) => {
     store.dispatch(ActionCreators.setWallets(wallet!));
-  }
+  };
 
-  async createOrLoadWallet() {
+  createOrLoadWallet = async () => {
     const testWallet = {
       name: 'BitcoreWallet',
       chain: 'BTC',
@@ -114,17 +100,17 @@ class WalletsContainer extends Component<Props, State> {
       console.log(err);
     }
     return wallet;
-  }
+  };
 
-  handleChainChange(event: React.ChangeEvent<HTMLInputElement>) {
+  handleChainChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     this.setState({ selectedChain: event.target.value as string });
-  }
+  };
 
-  handleNetworkChange(event: React.ChangeEvent<HTMLInputElement>) {
+  handleNetworkChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     this.setState({ selectedNetwork: event.target.value as string });
-  }
+  };
 
-  async handleCreateWalletClick() {
+  handleCreateWalletClick = async () => {
     const wallet = await Wallet.create({
       name: this.state.newWalletName,
       password: this.state.newWalletPassword,
@@ -134,20 +120,20 @@ class WalletsContainer extends Component<Props, State> {
       baseUrl: API_URL
     });
     this.addWalletToState(wallet);
-  }
+  };
 
-  handleWalletNameChange(event: React.ChangeEvent<HTMLInputElement>) {
+  handleWalletNameChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     this.setState({ newWalletName: event.target.value });
-  }
+  };
 
-  handleWalletPasswordChange(event: React.ChangeEvent<HTMLInputElement>) {
+  handleWalletPasswordChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     this.setState({ newWalletPassword: event.target.value });
-  }
+  };
 
-  handleWalletMnemonicChange(event: React.ChangeEvent<HTMLInputElement>) {
+  handleWalletMnemonicChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     this.setState({ mnemonic: event.target.value });
-  }
-  walletCreateComponent() {
+  };
+  walletCreateComponent = () => {
     const options = [
       { key: 'BTC', text: 'Bitcoin', value: 'BTC' },
       { key: 'BCH', text: 'Bitcoin Cash', value: 'BCH' },
@@ -251,7 +237,7 @@ class WalletsContainer extends Component<Props, State> {
         </TextField>
       </div>
     );
-  }
+  };
 
   render() {
     const { wallets } = this.props;

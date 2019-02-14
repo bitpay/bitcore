@@ -17,13 +17,7 @@ interface Props extends RouteComponentProps<{ name: string }> {
 }
 
 class WalletContainer extends Component<Props> {
-  constructor(props: Props) {
-    super(props);
-    this.updateWalletInfo = this.updateWalletInfo.bind(this);
-    this.updateBalance = this.updateBalance.bind(this);
-  }
-
-  async componentDidMount() {
+  componentDidMount = async () => {
     const name = this.props.match.params.name;
     store.dispatch(ActionCreators.setWalletName(name));
     const wallet = await this.loadWallet(name);
@@ -39,25 +33,25 @@ class WalletContainer extends Component<Props> {
       await this.updateWalletInfo(this.props.wallet);
       await this.fetchAddresses(this.props.wallet);
     }
-  }
-  async updateWalletInfo(wallet: Wallet) {
+  };
+  updateWalletInfo = async (wallet: Wallet) => {
     await this.fetchTransactions(wallet);
     await this.updateBalance(wallet);
-  }
+  };
 
-  handleGetTx(wallet: Wallet) {
+  handleGetTx = (wallet: Wallet) => {
     socket.on('tx', () => {
       this.updateWalletInfo(wallet);
     });
-  }
+  };
 
-  handleGetBlock(wallet: Wallet) {
+  handleGetBlock = (wallet: Wallet) => {
     socket.on('block', () => {
       this.updateWalletInfo(wallet);
     });
-  }
+  };
 
-  async fetchTransactions(wallet: Wallet) {
+  fetchTransactions = async (wallet: Wallet) => {
     wallet
       .listTransactions({})
       .pipe(new ParseApiStream())
@@ -72,9 +66,9 @@ class WalletContainer extends Component<Props> {
         }
         store.dispatch(ActionCreators.setTransactions(prevTx));
       });
-  }
+  };
 
-  async fetchAddresses(wallet: Wallet) {
+  fetchAddresses = async (wallet: Wallet) => {
     wallet
       .getAddresses()
       .pipe(new ParseApiStream())
@@ -89,14 +83,14 @@ class WalletContainer extends Component<Props> {
           store.dispatch(ActionCreators.setAddress(a.address))
         );
       });
-  }
+  };
 
-  async updateBalance(wallet: Wallet) {
+  updateBalance = async (wallet: Wallet) => {
     const balance = await wallet.getBalance();
     await store.dispatch(ActionCreators.setBalance(balance));
-  }
+  };
 
-  async loadWallet(name: string) {
+  loadWallet = async (name: string) => {
     let wallet: Wallet | undefined;
     try {
       const exists = Wallet.exists({ name });
@@ -110,7 +104,7 @@ class WalletContainer extends Component<Props> {
       console.log(err);
     }
     return wallet;
-  }
+  };
 
   render() {
     return (
