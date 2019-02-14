@@ -12,6 +12,7 @@ import { AppState } from '../../contexts/state';
 import { connect } from 'react-redux';
 import { QRBox } from './QRBox';
 import { WalletBottomNav } from '../wallet/BottomNav';
+import { WalletHeader } from '../wallet/WalletHeader';
 
 const styles = createStyles({
   root: {
@@ -134,6 +135,7 @@ class AddressBar extends Component<Props, State> {
     const { classes, wallet } = this.props;
     return (
       <div className={classes.root}>
+        <WalletHeader />
         <Paper className={classes.paper}>
           <Typography variant="h4" className={classes.heading}>
             Send
