@@ -1,6 +1,7 @@
 import { NgModule } from '@angular/core';
 import { IonicModule } from 'ionic-angular';
 import { ComponentsModule } from '../components';
+import { FooterComponentModule } from '../components/footer/footer.module';
 import { HeadNavComponentModule } from '../components/head-nav/head-nav.module';
 import { LatestBlocksComponentModule } from '../components/latest-blocks/latest-blocks.module';
 import { LatestTransactionsComponentModule } from '../components/latest-transactions/latest-transactions.module';
@@ -16,6 +17,7 @@ import { HomePageModule } from './home/home.module';
     BlocksPageModule,
     BroadcastTxPageModule,
     HomePageModule,
+    FooterComponentModule,
     HeadNavComponentModule,
     LatestTransactionsComponentModule,
     LatestBlocksComponentModule
