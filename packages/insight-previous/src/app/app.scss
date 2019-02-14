@@ -36,9 +36,6 @@ a {
   ion-item {
     color: #99a;
     font-size: 1.125rem;
-    @media screen and (min-width: $desktop-min-width) {
-      font-size: 1.4rem;
-    }
     padding: 0;
   }
 
@@ -81,3 +78,24 @@ a {
 // To declare rules for a specific mode, create a child rule
 // for the .md, .ios, or .wp mode classes. The mode class is
 // automatically applied to the <body> element in the app.
+
+// Desktop
+
+ion-header .toolbar {
+ margin: auto;
+}
+
+ion-footer .toolbar[fixed] {
+  min-height: 36px;
+}
+
+@media (min-width: map-get($grid-breakpoints, lg)) {
+ ion-navbar.toolbar,
+ ion-header .toolbar[fixed],
+ ion-footer .toolbar[fixed],
+ ion-tabs .tabbar {
+   margin: 0;
+   padding-right: calc((100% - #{map-get($grid-max-widths, lg)}) / 2);
+   padding-left: calc((100% - #{map-get($grid-max-widths, lg)}) / 2);
+ }
+}

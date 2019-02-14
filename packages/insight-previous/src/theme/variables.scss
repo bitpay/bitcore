@@ -71,4 +71,13 @@ $colors: (
 
 // Other globals
 
-$desktop-min-width: 1288px;
+$grid-breakpoints: (
+ xs: 0, // Phone (0px - 575px)
+ sm: 576px, // Phablet (576px - 767px)
+ md: 768px, // Tablet vertical (768px - 991px)
+ lg: 992px // Tablet horizontal, Desktop (992px and above)
+);
+
+$grid-max-widths: (
+ lg: 992px
+);
