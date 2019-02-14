@@ -93,14 +93,14 @@ Utils.getClient = function(args, opts, cb) {
   opts = opts || {};
 
   var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
-  var host = args.host || process.env['BWS_HOST'] || 'http://localhost:3000/';
+  var host = args.host || process.env['BWS_HOST'] || 'https://bws.bitpay.com/bws/api';
 
   var storage = new FileStorage({
     filename: filename,
   });
 
   var client = new Client({
-    baseUrl: url.resolve(host, '/'),
+    baseUrl: host,
     verbose: args.verbose,
     supportStaffWalletId: opts.walletId,
   });
@@ -251,7 +251,7 @@ Utils.configureCommander = function(program) {
   program
     .version('0.0.1')
     .option('-f, --file <filename>', 'Wallet file')
-    .option('-h, --host <host>', 'Bitcore Wallet Service URL (eg: http://localhost:3001/copay/api')
+    .option('-h, --host <host>', 'Bitcore Wallet Service URL (eg: http://localhost:3000/bws/api')
     .option('-v, --verbose', 'be verbose')
 
   return program;
