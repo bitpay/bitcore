@@ -21,7 +21,7 @@ utils.getClient(program, { mustExist: true }, function (client) {
       console.log('  Missing copayers:', x.n - x.copayers.length);
       console.log('  Wallet secret:', x.secret);
     }
-    console.log('* Copayers:', _.pluck(x.copayers,'name').join(', '));
+    console.log('* Copayers:', _.map(x.copayers,'name').join(', '));
 
 
     if (program.verbose) {
