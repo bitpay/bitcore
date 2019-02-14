@@ -153,7 +153,7 @@ class WalletContainer extends Component<Props, State> {
       <div>
         <WalletBar />
         <TransactionListCard />
-        <WalletBottomNav />
+        <WalletBottomNav value={1} />
         <Snackbar
           anchorOrigin={{
             vertical: 'bottom',

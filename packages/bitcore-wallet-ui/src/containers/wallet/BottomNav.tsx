@@ -21,13 +21,14 @@ const styles = {
 interface Props {
   walletName: string;
   classes: any;
+  value: number;
 }
 interface State {
   value: number;
 }
 class WalletActionNav extends React.Component<Props, State> {
   state = {
-    value: 1
+    value: this.props.value
   };
 
   handleChange = (_event: any, value: number) => {

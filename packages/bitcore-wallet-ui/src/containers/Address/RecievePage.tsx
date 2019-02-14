@@ -20,7 +20,7 @@ export function RecieveContainer(props: Props) {
     <div>
       <AddressNavBar />
       <AddressListCard />
-      <WalletBottomNav />
+      <WalletBottomNav value={0} />
     </div>
   );
 }

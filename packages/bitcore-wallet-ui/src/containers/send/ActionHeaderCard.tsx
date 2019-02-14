@@ -174,7 +174,7 @@ class AddressBar extends Component<Props, State> {
           </Button>
         </Paper>
         <QRBox rawTx={this.state.rawTx} />
-        <WalletBottomNav />
+        <WalletBottomNav value={2} />
       </div>
     );
   }
