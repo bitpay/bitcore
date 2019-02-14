@@ -3,7 +3,8 @@ import {
   EventEmitter,
   Injectable,
   Input,
-  Output
+  Output,
+  ViewChild
 } from '@angular/core';
 import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
@@ -12,6 +13,7 @@ import {
   App,
   NavController,
   PopoverController,
+  Searchbar,
   ToastController
 } from 'ionic-angular';
 import * as _ from 'lodash';
@@ -29,6 +31,7 @@ import { DenominationComponent } from '../denomination/denomination';
   templateUrl: 'head-nav.html'
 })
 export class HeadNavComponent {
+  @ViewChild('searchbar') searchbar: Searchbar;
   @Output()
   public updateView = new EventEmitter<ChainNetwork>();
   public showSearch = false;
@@ -80,23 +83,25 @@ export class HeadNavComponent {
             this.redirProvider.redir(this.redirTo, this.params);
           } else {
             const message = 'No matching records found!';
-            this.resetSearch(message);
+            this.wrongSearch(message);
             this.logger.info(message);
           }
         },
         err => {
-          this.resetSearch('Server error. Please try again');
+          this.wrongSearch('Server error. Please try again');
           this.logger.error(err);
         }
       );
+    } else {
+      this.wrongSearch('No matching records found!');
     }
   }
 
   private processResponse(response) {
-    if (!_.isArray(response) && response.json()[0]) {
+    if (!_.isArray(response)) {
       return {
         redirTo: 'address',
-        params: response.json()[0].address,
+        params: response.json()[0] ? response.json()[0].address : [],
         type: 'addrStr'
       };
     } else {
@@ -125,10 +130,12 @@ export class HeadNavComponent {
     }
   }
 
-  private resetSearch(message: string): void {
-    this.q = '';
+  private wrongSearch(message: string): void {
     this.loading = false;
     this.presentToast(message);
+    setTimeout(() => {
+      this.searchbar.setFocus();
+    }, 150);
   }
 
   private presentToast(message): void {

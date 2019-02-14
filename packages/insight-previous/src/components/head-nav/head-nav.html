@@ -22,7 +22,8 @@
 
   <ion-toolbar fixed [hidden]="!showSearch">
     <form (ngSubmit)="search($event)">
-      <ion-searchbar placeholder="{{ 'Search for block, transaction or address' }}" [(ngModel)]="q" name="search"></ion-searchbar>
+      <ion-searchbar #searchbar placeholder="{{ 'Search for block, transaction or address' }}" [(ngModel)]="q"
+        name="search"></ion-searchbar>
     </form>
   </ion-toolbar>
 </ion-header>

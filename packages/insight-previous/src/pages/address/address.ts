@@ -58,8 +58,8 @@ export class AddressPage {
     this.addrProvider.getAddressBalance(this.addrStr).subscribe(
       data => {
         this.address = {
-          balance: data.balance,
-          confirmed: data.confirmed,
+          balance: data.balance || 0,
+          confirmed: data.confirmed || 0,
           unconfirmed: data.unconfirmed,
           addrStr: this.addrStr
         };

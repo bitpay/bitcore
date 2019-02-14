@@ -29,10 +29,10 @@
                   {{ getConvertedNumber(address.unconfirmed) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
                 </ion-note>
               </ion-item>
-              <ion-item *ngIf="nroTransactions > 0">
+              <ion-item>
                 Nro. Transactions
                 <ion-note item-end>
-                  {{ nroTransactions }}
+                  {{ nroTransactions || 0}}
                 </ion-note>
               </ion-item>
             </ion-list>
