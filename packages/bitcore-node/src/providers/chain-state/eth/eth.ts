@@ -49,6 +49,22 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     return transactions;
   }
 
+  async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
+    const { network, rawTx } = params;
+    try {
+      const tx = await this.getRPC(network).sendSignedTransaction(rawTx);
+      return tx
+    } catch(err) {
+      return err
+    }
+  }
+
+  async getTransactionCount(params: any) {
+    const { network, address } = params;
+    const txCount = await this.getRPC(network).getTransactionCount(address);
+    return txCount
+  }
+
   async getWalletAddresses(walletId: ObjectID) {
     let query = { wallet: walletId };
     return WalletAddressStorage.collection.find(query).addCursorFlag('noCursorTimeout', true).toArray();
