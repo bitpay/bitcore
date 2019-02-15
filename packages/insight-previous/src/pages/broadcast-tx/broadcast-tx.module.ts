@@ -6,7 +6,11 @@ import { BroadcastTxPage } from './broadcast-tx';
 
 @NgModule({
   declarations: [BroadcastTxPage],
-  imports: [IonicPageModule.forChild(BroadcastTxPage), FooterComponentModule, HeadNavComponentModule],
+  imports: [
+    IonicPageModule.forChild(BroadcastTxPage),
+    FooterComponentModule,
+    HeadNavComponentModule
+  ],
   exports: [BroadcastTxPage]
 })
 export class BroadcastTxPageModule {}
