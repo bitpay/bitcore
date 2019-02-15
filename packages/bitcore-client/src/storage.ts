@@ -84,12 +84,33 @@ export class Storage {
     );
   }
 
+  listKeys() {
+    return this.db.createReadStream().pipe(
+      new Transform({
+        objectMode: true,
+        write: function(data, enc, next) {
+          if (data.key.toString().startsWith('key')) {
+            this.push({
+              data: data.value.toString(),
+              key: data.key.toString()
+            });
+          }
+          next();
+        }
+      })
+    );
+  }
+
   async saveWallet(params) {
     const { wallet } = params;
     return this.db.put(`wallet|${wallet.name}`, JSON.stringify(wallet));
   }
 
-  async getKey(params) {
+  async getKey(params: {
+    address: string;
+    name: string;
+    encryptionKey: string;
+  }): Promise<Wallet.KeyImport> {
     const { address, name, encryptionKey } = params;
     const payload = (await this.db.get(`key|${name}|${address}`)) as string;
     const json = JSON.parse(payload) || payload;
@@ -131,7 +152,7 @@ export class Storage {
         value: JSON.stringify(payload)
       };
     });
-
+    console.log(ops);
     if (ops.length > 1) {
       return this.db.batch(ops);
     } else {

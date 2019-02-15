@@ -117,7 +117,9 @@ export declare namespace CSP {
   export type Provider<T> = { get(params: { chain: string }): T };
   export type ChainStateProvider = Provider<IChainStateService> & IChainStateService;
   export interface IChainStateService {
-    getBalanceForAddress(params: GetBalanceForAddressParams): Promise<{ confirmed: number, unconfirmed: number, balance: number }>;
+    getBalanceForAddress(
+      params: GetBalanceForAddressParams
+    ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
     getBlock(params: GetBlockParams): Promise<IBlock | string>;
     streamBlocks(params: StreamBlocksParams): any;
     getFee(params: GetEstimateSmartFeeParams): any;
@@ -125,14 +127,18 @@ export declare namespace CSP {
     createWallet(params: CreateWalletParams): Promise<IWallet>;
     getWallet(params: GetWalletParams): Promise<IWallet | null>;
     updateWallet(params: UpdateWalletParams): Promise<any>;
-    getWalletBalance(params: GetWalletBalanceParams): Promise<{ confirmed: number, unconfirmed: number, balance: number }>;
-    getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams): Promise<{ confirmed: number, unconfirmed: number, balance: number }>;
+    getWalletBalance(
+      params: GetWalletBalanceParams
+    ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
+    getWalletBalanceAtTime(
+      params: GetWalletBalanceAtTimeParams
+    ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
     streamAddressUtxos(params: StreamAddressUtxosParams): any;
     streamAddressTransactions(params: StreamAddressUtxosParams): any;
     streamTransactions(params: StreamTransactionsParams): any;
     getAuthhead(params: StreamTransactionParams): Promise<AuthheadJSON | undefined>;
     getDailyTransactions(params: { chain: string; network: string }): Promise<DailyTransactionsJSON>;
-    getTransactionCount(params: any);
+    getTransactionCount(params: { chain: string; network: string; address: string }): Promise<{}>;
     getTransaction(params: StreamTransactionParams): Promise<TransactionJSON | string | undefined>;
     streamWalletAddresses(params: StreamWalletAddressesParams): any;
     walletCheck(params: WalletCheckParams): any;

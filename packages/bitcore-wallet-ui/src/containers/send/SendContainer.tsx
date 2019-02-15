@@ -15,7 +15,8 @@ import { WalletBottomNav } from '../wallet/BottomNav';
 import { WalletHeader } from '../wallet/WalletHeader';
 import axios from 'axios';
 import EthereumTx from 'ethereumjs-tx';
-import utils from 'web3-utils';
+import * as utils from 'web3-utils';
+import { store } from '../..';
 
 const styles = createStyles({
   root: {
@@ -104,6 +105,7 @@ const styles = createStyles({
 export interface Props extends WithStyles<typeof styles> {
   classes: any;
   wallet: AppState['wallet'];
+  addresses: AppState['addresses'];
 }
 
 interface State {
@@ -119,80 +121,55 @@ class AddressBar extends Component<Props, State> {
     rawTx: ''
   };
 
+  componentDidMount() {
+    this.props.wallet!.storage.listKeys().on('data', console.log);
+    console.log(this.props.addresses);
+  }
+
   handleSendClick = async () => {
-    const { wallet } = this.props;
+    const { wallet, addresses } = this.props;
     const chain = wallet!.chain;
-    const network = wallet!.network;
-    const privateKey =
-      '117ACF0C71DE079057F4D125948D2F1F12CB3F47C234E43438E1E44C93A9C583';
-    const address = '0xd8fD14fB0E0848Cb931c1E54a73486c4B968BE3D';
+    const from = addresses[0];
 
-    if (chain !== 'ETH') {
-      const rawTx = await wallet!.newTx({
-        recipients: [
-          {
-            address: this.state.sendTo,
-            amount: Number(this.state.amountToSend)
-          }
-        ]
-      });
+    switch (chain) {
+      case 'BTC':
+        let BtcTx = await wallet!.newTx({
+          recipients: [
+            {
+              address: this.state.sendTo,
+              amount: Number(this.state.amountToSend)
+            }
+          ]
+        });
 
-      await wallet!.signTx({ rawTx });
-      const txResult = await this.sendTransaction({ chain, network, rawTx });
-      console.log(txResult);
-    } else {
-      let txCount: string | number | utils.BN = await this.getTransactionCount({
-        chain,
-        network,
-        address
-      });
-      // construct the transaction data
-      console.log(txCount);
-
-      const txData = {
-        nonce: utils.toHex(txCount),
-        gasLimit: utils.toHex(25000),
-        gasPrice: utils.toHex(10e9), // 10 Gwei
-        to: this.state.sendTo,
-        from: address,
-        value: utils.toHex(utils.toWei(`${this.state.amountToSend}`, 'wei'))
-      };
-
-      const rawTx = new EthereumTx(txData);
-      const bufferKey = Buffer.from(privateKey, 'hex');
-      rawTx.sign(bufferKey);
-      const serializedTx = rawTx.serialize();
-      const txResult = await this.sendTransaction({
-        chain,
-        network,
-        rawTx: '0x' + serializedTx.toString('hex')
-      });
-      console.log(txResult);
-    }
-  };
-
-  getTransactionCount = async (params: any) => {
-    try {
-      const txCount = await axios.post(
-        `/api/${params.chain}/${params.network}/tx/count`,
-        params
-      );
-      return txCount.data.txCount;
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
-  sendTransaction = async (params: any) => {
-    try {
-      const txResult = await axios.post(
-        `/api/${params.chain}/${params.network}/tx/send`,
-        params
-      );
-      console.log(txResult);
-      return txResult.data;
-    } catch (err) {
-      console.log(err);
+        const signedBtcTx = await wallet!.signTx({
+          tx: BtcTx.tx,
+          utxos: BtcTx.utxos
+        });
+        const BTCTxResult = await wallet!.broadcast({
+          tx: signedBtcTx
+        });
+        console.log(BTCTxResult);
+        break;
+      case 'ETH':
+        let EthTx = await wallet!.newTx({
+          recipients: [
+            {
+              address: this.state.sendTo,
+              amount: Number(this.state.amountToSend)
+            }
+          ],
+          from
+        });
+        const serializedEthTx = await wallet!.signTx({ tx: EthTx, from });
+        const combinedTx = '0x' + serializedEthTx.toString('hex');
+        const EthTxResult = await wallet!.broadcast({
+          tx: combinedTx
+        });
+        console.log(EthTxResult);
+        break;
+      default:
+        return;
     }
   };
 
@@ -222,7 +199,7 @@ class AddressBar extends Component<Props, State> {
                 onChange={e => this.setState({ amountToSend: e.target.value })}
                 startAdornment={
                   <InputAdornment position="start">
-                    {wallet!.chain}
+                    {wallet ? wallet!.chain : ''}
                   </InputAdornment>
                 }
               />
@@ -231,7 +208,7 @@ class AddressBar extends Component<Props, State> {
           <Button
             variant="outlined"
             color="primary"
-            disabled={!wallet!.unlocked}
+            disabled={wallet ? !wallet!.unlocked : true}
             className={classes.button}
             onClick={() => this.handleSendClick()}
           >
@@ -247,7 +224,8 @@ class AddressBar extends Component<Props, State> {
 
 const mapStateToProps = (state: AppState) => {
   return {
-    wallet: state.wallet
+    wallet: state.wallet,
+    addresses: state.addresses
   };
 };
 

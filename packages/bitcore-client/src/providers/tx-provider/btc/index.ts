@@ -1,7 +1,10 @@
+import { Wallet } from '../../../';
+import * as _ from 'lodash';
+
 export class BTCTxProvider {
   lib = require('bitcore-lib');
 
-  create({ recipients, utxos, change, fee = 4566}) {
+  create({ recipients, utxos, change, fee = 4566 }) {
     const btcUtxos = utxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {
         amount: utxo.value / Math.pow(10, 8)
@@ -16,20 +19,32 @@ export class BTCTxProvider {
     for (const recipient of recipients) {
       tx.to(recipient.address, recipient.amount * 10e7);
     }
-    console.log(tx);
-    return tx.uncheckedSerialize();
+    return { tx: tx.uncheckedSerialize(), utxos };
   }
 
-  sign({ tx, keys, utxos }) {
+  async sign(params: { tx: string; wallet: Wallet; utxos: any[] }) {
+    const { tx, wallet, utxos } = params;
+    const { encryptionKey } = wallet.unlocked;
+    let inputAddresses = await this.getSigningAddresses({ tx, utxos });
+    let keyPromises = inputAddresses.map(address => {
+      return wallet.storage.getKey({
+        address,
+        encryptionKey,
+        name: wallet.name
+      });
+    });
+
+    let keys = await Promise.all(keyPromises);
     let bitcoreTx = new this.lib.Transaction(tx);
-    let applicableUtxos = this.getRelatedUtxos({
+    let applicableUtxos = await this.getRelatedUtxos({
       outputs: bitcoreTx.inputs,
       utxos
     });
-    const outputs = this.getOutputsFromTx({ tx: bitcoreTx });
+    const outputs = await this.getOutputsFromTx({ tx: bitcoreTx });
     let newTx = new this.lib.Transaction().from(applicableUtxos).to(outputs);
-    const privKeys = keys.map(key => key.privKey.toString('hex'));
-    return newTx.sign(privKeys).toString();
+    const privKeys = _.uniq(keys.map(key => key.privKey.toString()));
+    const signedTx = newTx.sign(privKeys).toString();
+    return signedTx;
   }
 
   getRelatedUtxos({ outputs, utxos }) {
@@ -50,7 +65,7 @@ export class BTCTxProvider {
     });
   }
 
-  getSigningAddresses({ tx, utxos }) {
+  getSigningAddresses({ tx, utxos }): string[] {
     let bitcoreTx = new this.lib.Transaction(tx);
     let applicableUtxos = this.getRelatedUtxos({
       outputs: bitcoreTx.inputs,

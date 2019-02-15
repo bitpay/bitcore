@@ -67,9 +67,7 @@ export class Client {
 
   getCoins(params: { payload?: any; pubKey: string; includeSpent: boolean }) {
     const { payload, pubKey, includeSpent } = params;
-    const url = `${
-      this.baseUrl
-    }/wallet/${pubKey}/utxos?includeSpent=${includeSpent}`;
+    const url = `${this.baseUrl}/wallet/${pubKey}/utxos`;
     const signature = this.sign({ method: 'GET', url, payload });
     return requestStream.get(url, {
       headers: { 'x-signature': signature },

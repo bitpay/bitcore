@@ -53,11 +53,6 @@ class WalletNavTop extends PureComponent<Props, State> {
     open: false
   };
 
-  renderContent = () => {
-    if (this.state.open) {
-      return <UnlockBar />;
-    }
-  };
   render() {
     const { classes, wallet } = this.props;
 
@@ -78,7 +73,7 @@ class WalletNavTop extends PureComponent<Props, State> {
             )}
           </Toolbar>
         </AppBar>
-        {this.renderContent()}
+        {this.state.open && <UnlockBar />}
       </div>
     );
   }

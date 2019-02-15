@@ -253,6 +253,7 @@ export class Wallet {
   async newTx(params: {
     utxos?: any[];
     recipients: { address: string; amount: number }[];
+    from?: string;
     change?: string;
     fee?: number;
   }) {
@@ -261,7 +262,7 @@ export class Wallet {
       params.change || (await this.deriveAddress(this.addressIndex, true));
     console.log(change);
     const utxos = params.utxos || [];
-    if (!utxos.length) {
+    if (!utxos.length && this.chain !== 'ETH') {
       await new Promise(resolve =>
         this.getUtxos()
           .pipe(new ParseApiStream())
@@ -282,6 +283,7 @@ export class Wallet {
       network: this.network,
       chain: this.chain,
       recipients: params.recipients,
+      from: params.from,
       change,
       fee: params.fee,
       utxos
@@ -289,11 +291,12 @@ export class Wallet {
     return TxProvider.create(payload);
   }
 
-  async broadcast(params) {
+  async broadcast(params: { tx: string }) {
+    const { tx } = params;
     const payload = {
       network: this.network,
       chain: this.chain,
-      rawTx: params.tx
+      rawTx: tx
     };
     return this.client.broadcast({ payload });
   }
@@ -318,9 +321,9 @@ export class Wallet {
   }
 
   async signTx(params) {
-    let { tx } = params;
+    let { tx, from } = params;
     const utxos = params.utxos || [];
-    if (!params.utxos) {
+    if (!params.utxos && this.chain !== 'ETH') {
       await new Promise(resolve =>
         this.getUtxos()
           .pipe(new ParseApiStream())
@@ -341,21 +344,11 @@ export class Wallet {
       chain: this.chain,
       network: this.network,
       tx,
-      utxos
+      utxos,
+      from
     };
-    const { encryptionKey } = this.unlocked;
-    let inputAddresses = TxProvider.getSigningAddresses(payload);
-    let keyPromises = inputAddresses.map(address => {
-      return this.storage.getKey({
-        address,
-        encryptionKey,
-        chain: this.chain,
-        network: this.network,
-        name: this.name
-      });
-    });
-    let keys = await Promise.all(keyPromises);
-    return TxProvider.sign({ ...payload, keys });
+
+    return TxProvider.sign({ ...payload, wallet: this });
   }
 
   async checkWallet() {
@@ -389,12 +382,14 @@ export class Wallet {
       this.addressIndex,
       isChange
     );
+    console.log(keyToImport);
     await this.importKeys({ keys: [keyToImport] });
     return keyToImport.address.toString();
   }
 
   async nextAddressPair() {
-    this.addressIndex = this.addressIndex !== undefined ? this.addressIndex + 1 : 0;
+    this.addressIndex =
+      this.addressIndex !== undefined ? this.addressIndex + 1 : 0;
     const newAddress = await this.derivePrivateKey(false);
     const newChangeAddress = await this.derivePrivateKey(true);
     await this.saveWallet();

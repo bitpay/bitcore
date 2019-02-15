@@ -39,9 +39,10 @@ export class EthDeriver implements IDeriver {
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;
     const derivedPrivKey = xpriv.derive(path);
-    const privKey = derivedPrivKey.privateKey;
-    const pubKey = derivedPrivKey.publicKey;
-    const pubKeyBuffer = pubKey.toBuffer();
+    const privKey = '0x' + derivedPrivKey.privateKey.toString('hex');
+    const pubKeyObj = derivedPrivKey.publicKey;
+    const pubKey = '0x' + pubKeyObj.toString('hex');
+    const pubKeyBuffer = pubKeyObj.toBuffer();
     const address = this.addressFromPublicKeyBuffer(pubKeyBuffer);
     return { address, privKey, pubKey };
   }
