@@ -103,3 +103,8 @@ ion-footer .toolbar[fixed] {
    padding-left: calc((100% - #{map-get($grid-max-widths, lg)}) / 2);
  }
 }
+
+a.disabled-link{
+  color: #99a;
+  pointer-events: none;
+}

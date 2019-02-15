@@ -103,7 +103,8 @@
           <div>
             <div class="ellipsis">
               <p>
-                <a (click)="goToAddress(vout.address)">{{ getAddress(vout) }}</a>
+                <a [ngClass]="{'disabled-link': getAddress(vout) === 'Unparsed address' }"
+                  (click)="goToAddress(vout.address)">{{ getAddress(vout) }}</a>
               </p>
             </div>
             <div *ngIf="expanded">
