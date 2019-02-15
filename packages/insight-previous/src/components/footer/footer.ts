@@ -55,5 +55,4 @@ export class FooterComponent {
   ) {
     this.config = this.apiProvider.getConfig();
   }
-
 }
