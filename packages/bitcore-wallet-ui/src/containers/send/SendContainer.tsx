@@ -13,6 +13,9 @@ import { connect } from 'react-redux';
 import { QRBox } from './QRBox';
 import { WalletBottomNav } from '../wallet/BottomNav';
 import { WalletHeader } from '../wallet/WalletHeader';
+import axios from 'axios';
+import EthereumTx from 'ethereumjs-tx';
+import utils from 'web3-utils';
 
 const styles = createStyles({
   root: {
@@ -117,17 +120,81 @@ class AddressBar extends Component<Props, State> {
   };
 
   handleSendClick = async () => {
-    const tx = await this.props.wallet!.newTx({
-      recipients: [
-        { address: this.state.sendTo, amount: Number(this.state.amountToSend) }
-      ]
-    });
+    const { wallet } = this.props;
+    const chain = wallet!.chain;
+    const network = wallet!.network;
+    const privateKey =
+      '117ACF0C71DE079057F4D125948D2F1F12CB3F47C234E43438E1E44C93A9C583';
+    const address = '0xd8fD14fB0E0848Cb931c1E54a73486c4B968BE3D';
 
-    await this.props.wallet!.signTx({ tx });
-    const result = await this.props.wallet!.broadcast({tx})
-    console.log(result);
-    // this.setState({ rawTx: signedRawTx });
-  }
+    if (chain !== 'ETH') {
+      const rawTx = await wallet!.newTx({
+        recipients: [
+          {
+            address: this.state.sendTo,
+            amount: Number(this.state.amountToSend)
+          }
+        ]
+      });
+
+      await wallet!.signTx({ rawTx });
+      const txResult = await this.sendTransaction({ chain, network, rawTx });
+      console.log(txResult);
+    } else {
+      let txCount: string | number | utils.BN = await this.getTransactionCount({
+        chain,
+        network,
+        address
+      });
+      // construct the transaction data
+      console.log(txCount);
+
+      const txData = {
+        nonce: utils.toHex(txCount),
+        gasLimit: utils.toHex(25000),
+        gasPrice: utils.toHex(10e9), // 10 Gwei
+        to: this.state.sendTo,
+        from: address,
+        value: utils.toHex(utils.toWei(`${this.state.amountToSend}`, 'wei'))
+      };
+
+      const rawTx = new EthereumTx(txData);
+      const bufferKey = Buffer.from(privateKey, 'hex');
+      rawTx.sign(bufferKey);
+      const serializedTx = rawTx.serialize();
+      const txResult = await this.sendTransaction({
+        chain,
+        network,
+        rawTx: '0x' + serializedTx.toString('hex')
+      });
+      console.log(txResult);
+    }
+  };
+
+  getTransactionCount = async (params: any) => {
+    try {
+      const txCount = await axios.post(
+        `/api/${params.chain}/${params.network}/tx/count`,
+        params
+      );
+      return txCount.data.txCount;
+    } catch (err) {
+      console.log(err);
+    }
+  };
+
+  sendTransaction = async (params: any) => {
+    try {
+      const txResult = await axios.post(
+        `/api/${params.chain}/${params.network}/tx/send`,
+        params
+      );
+      console.log(txResult);
+      return txResult.data;
+    } catch (err) {
+      console.log(err);
+    }
+  };
 
   render() {
     const { classes, wallet } = this.props;
