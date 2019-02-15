@@ -23,7 +23,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
   const seenTxs = {} as { [txid: string]: ITransaction };
   const errors = new Array<ErrorType>();
 
-  const seenTxCoins = {} as { [txid: string]: ICoin[] }
+  const seenTxCoins = {} as { [txid: string]: ICoin[] };
   for (let tx of blockTxs) {
     const coinsForTx = await CoinStorage.collection.find({ chain, network, mintTxid: tx.txid }).toArray();
     for (let coin of coinsForTx) {
@@ -31,6 +31,9 @@ export async function validateDataForBlock(blockNum: number, log = false) {
         success = false;
         const error = { model: 'coin', err: true, type: 'DUPE_COIN', payload: { coin, blockNum } };
         errors.push(error);
+        if (log) {
+          console.log(JSON.stringify(error));
+        }
       } else {
         seenTxCoins[coin.mintTxid] = seenTxCoins[coin.mintTxid] || {};
         seenTxCoins[coin.mintTxid][coin.mintIndex] = coin;
