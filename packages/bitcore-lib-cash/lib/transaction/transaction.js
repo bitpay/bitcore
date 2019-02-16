@@ -80,8 +80,6 @@ Transaction.NLOCKTIME_MAX_VALUE = 4294967295;
 // Value used for fee estimation (satoshis per kilobyte)
 Transaction.FEE_PER_KB = 100000;
 
-// Value used for fee estimation (satoshis per byte)
-Transaction.FEE_PER_BYTE = 1;
 
 // Safe upper bound for change address script size in bytes
 Transaction.CHANGE_OUTPUT_MAX_SIZE = 20 + 4 + 34 + 4;
@@ -232,6 +230,14 @@ Transaction.prototype._hasFeeError = function(opts, unspent) {
       }
       return new errors.Transaction.FeeError.TooLarge(
         'expected less than ' + maximumFee + ' but got ' + unspent
+      );
+    }
+  }
+  if (!opts.disableSmallFees) {
+    var minimumFee = Math.ceil(this._estimateFee() / Transaction.FEE_SECURITY_MARGIN);
+    if (unspent < minimumFee) {
+      return new errors.Transaction.FeeError.TooSmall(
+        'expected more than ' + minimumFee + ' but got ' + unspent
       );
     }
   }
@@ -468,7 +474,7 @@ Transaction.prototype.getLockTime = function() {
 };
 
 Transaction.prototype.fromString = function(string) {
-  this.fromBuffer(new buffer.Buffer(string, 'hex'));
+  this.fromBuffer(buffer.Buffer.from(string, 'hex'));
 };
 
 Transaction.prototype._newTransaction = function() {
@@ -668,7 +674,6 @@ Transaction.prototype.fee = function(amount) {
  * Manually set the fee per KB for this transaction. Beware that this resets all the signatures
  * for inputs (in further versions, SIGHASH_SINGLE or SIGHASH_NONE signatures will not
  * be reset).
- * Takes priority over fee per Byte, for backwards compatibility
  *
  * @param {number} amount satoshis per KB to be sent
  * @return {Transaction} this, for chaining
@@ -905,14 +910,19 @@ Transaction.prototype.getFee = function() {
 /**
  * Estimates fee from serialized transaction size in bytes.
  */
-Transaction.prototype._estimateFee = function() {
+Transaction.prototype._estimateFee = function () {
   var estimatedSize = this._estimateSize();
   var available = this._getUnspentValue();
-  if (this._feePerByte && !this._feePerKb) {
-    return Transaction._estimateFeePerByte(estimatedSize, available, this._feePerByte);
-  } else {
-    return Transaction._estimateFeePerKb(estimatedSize, available, this._feePerKb);
+  var feeRate = this._feePerByte || (this._feePerKb || Transaction.FEE_PER_KB) / 1000;
+  function getFee(size) {
+    return size * feeRate;
   }
+  var fee = Math.ceil(getFee(estimatedSize));
+  var feeWithChange = Math.ceil(getFee(estimatedSize) + getFee(Transaction.CHANGE_OUTPUT_MAX_SIZE));
+  if (!this._changeScript || available <= feeWithChange) {
+    return fee;
+  }
+  return feeWithChange;
 };
 
 Transaction.prototype._getUnspentValue = function() {
@@ -923,22 +933,6 @@ Transaction.prototype._clearSignatures = function() {
   _.each(this.inputs, function(input) {
     input.clearSignatures();
   });
-};
-
-Transaction._estimateFeePerKb = function(size, amountAvailable, feePerKb) {
-  var fee = Math.ceil(size / 1000) * (feePerKb || Transaction.FEE_PER_KB);
-  if (amountAvailable > fee) {
-    size += Transaction.CHANGE_OUTPUT_MAX_SIZE;
-  }
-  return Math.ceil(size / 1000) * (feePerKb || Transaction.FEE_PER_KB);
-};
-
-Transaction._estimateFeePerByte = function(size, amountAvailable, feePerByte) {
-  var fee = size * (feePerByte || Transaction.FEE_PER_BYTE);
-  if (amountAvailable > fee) {
-    size += Transaction.CHANGE_OUTPUT_MAX_SIZE;
-  }
-  return size * (feePerByte || Transaction.FEE_PER_BYTE);
 };
 
 Transaction.prototype._estimateSize = function() {
