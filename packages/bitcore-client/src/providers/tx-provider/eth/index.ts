@@ -19,6 +19,9 @@ export class ETHTxProvider {
     //     break;
     //   case 'ropsten':
     //     chainId = 3;
+    // break;
+    // default:
+    // break;
     // }
 
     // !important amount needs to be passed into utils as a string
@@ -46,10 +49,7 @@ export class ETHTxProvider {
         encryptionKey: wallet.unlocked.encryptionKey
       });
 
-      console.log(key);
-      // const privateKey =
-      //   '2ac05b74db0570468f7684644a6b09c1e963b5a304989b0e14d213a8269cb409';
-      const bufferKey = Buffer.from(key.privKey, 'hex');
+      const bufferKey = Buffer.from(key.privKey.substr(2), 'hex');
       rawTx.sign(bufferKey);
       const serializedTx = rawTx.serialize();
       return serializedTx;

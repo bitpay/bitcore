@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { WithStyles, withStyles, createStyles } from '@material-ui/core/styles';
+import { RouteComponentProps } from 'react-router';
 import Typography from '@material-ui/core/Typography';
 import { Paper } from '@material-ui/core';
 import InputBase from '@material-ui/core/InputBase';
@@ -13,10 +14,8 @@ import { connect } from 'react-redux';
 import { QRBox } from './QRBox';
 import { WalletBottomNav } from '../wallet/BottomNav';
 import { WalletHeader } from '../wallet/WalletHeader';
-import axios from 'axios';
-import EthereumTx from 'ethereumjs-tx';
-import * as utils from 'web3-utils';
-import { store } from '../..';
+import { ActionCreators, store } from '../../index';
+import { Wallet } from 'bitcore-client';
 
 const styles = createStyles({
   root: {
@@ -102,7 +101,8 @@ const styles = createStyles({
   }
 });
 
-export interface Props extends WithStyles<typeof styles> {
+// WithStyles<typeof styles>
+export interface Props extends RouteComponentProps<{ name: string }> {
   classes: any;
   wallet: AppState['wallet'];
   addresses: AppState['addresses'];
@@ -114,22 +114,44 @@ interface State {
   rawTx: string;
 }
 
-class AddressBar extends Component<Props, State> {
+class SendContainer extends Component<Props, State> {
   state: State = {
     sendTo: '',
     amountToSend: '',
     rawTx: ''
   };
 
-  componentDidMount() {
-    this.props.wallet!.storage.listKeys().on('data', console.log);
-    console.log(this.props.addresses);
-  }
+  componentDidMount = async () => {
+    const name = this.props.match.params.name;
+    store.dispatch(ActionCreators.setWalletName(name));
+    const wallet = await this.loadWallet(name);
+    await store.dispatch(ActionCreators.setWallet(wallet));
+    await wallet!.register({ baseUrl: 'http://localhost:3000/api' });
+    if (!this.props.wallet!.unlocked) {
+      await store.dispatch(ActionCreators.setWallet(wallet!));
+    }
+  };
+
+  loadWallet = async (name: string) => {
+    let wallet: AppState['wallet'] | undefined;
+    try {
+      const exists = Wallet.exists({ name });
+      if (!exists) {
+        console.log('Wallet needs to be created');
+      } else {
+        console.log('Wallet exists');
+        wallet = await Wallet.loadWallet({ name });
+      }
+    } catch (err) {
+      console.log(err);
+    }
+    return wallet;
+  };
 
   handleSendClick = async () => {
     const { wallet, addresses } = this.props;
     const chain = wallet!.chain;
-    const from = addresses[0];
+    const from = addresses[addresses.length - 1];
 
     switch (chain) {
       case 'BTC':
@@ -143,8 +165,7 @@ class AddressBar extends Component<Props, State> {
         });
 
         const signedBtcTx = await wallet!.signTx({
-          tx: BtcTx.tx,
-          utxos: BtcTx.utxos
+          tx: BtcTx
         });
         const BTCTxResult = await wallet!.broadcast({
           tx: signedBtcTx
@@ -162,7 +183,7 @@ class AddressBar extends Component<Props, State> {
           from
         });
         const serializedEthTx = await wallet!.signTx({ tx: EthTx, from });
-        const combinedTx = '0x' + serializedEthTx.toString('hex');
+        const combinedTx = serializedEthTx.toString('hex');
         const EthTxResult = await wallet!.broadcast({
           tx: combinedTx
         });
@@ -229,6 +250,6 @@ const mapStateToProps = (state: AppState) => {
   };
 };
 
-export const AddressNavBar = withStyles(styles)(
-  connect(mapStateToProps)(AddressBar)
+export const SendPage = withStyles(styles)(
+  connect(mapStateToProps)(SendContainer)
 );

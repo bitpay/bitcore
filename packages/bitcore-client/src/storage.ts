@@ -152,7 +152,6 @@ export class Storage {
         value: JSON.stringify(payload)
       };
     });
-    console.log(ops);
     if (ops.length > 1) {
       return this.db.batch(ops);
     } else {

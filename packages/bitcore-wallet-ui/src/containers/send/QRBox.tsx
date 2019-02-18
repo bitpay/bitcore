@@ -34,7 +34,8 @@ const styles = () =>
       margin: 'auto',
       width: '100%',
       padding: 20,
-      textAlign: 'center'
+      textAlign: 'center',
+      marginBottom: 56
     },
     paper: {
       marginTop: 20,

@@ -382,7 +382,6 @@ export class Wallet {
       this.addressIndex,
       isChange
     );
-    console.log(keyToImport);
     await this.importKeys({ keys: [keyToImport] });
     return keyToImport.address.toString();
   }

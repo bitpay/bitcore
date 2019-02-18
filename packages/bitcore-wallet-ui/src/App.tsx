@@ -7,7 +7,7 @@ import { socket } from './contexts/io';
 import { WalletsPage } from './containers/wallets/Wallets';
 import { SingleWalletPage } from './containers/wallet/Wallet';
 import { RecievePage } from './containers/Address/RecievePage';
-import { AddressNavBar } from './containers/send/SendContainer';
+import { SendPage } from './containers/send/SendContainer';
 import { Notification } from './containers/wallet/Notification';
 const createdHistory = history.createBrowserHistory();
 
@@ -51,7 +51,7 @@ class App extends Component {
         <Router history={createdHistory}>
           <Switch>
             <Route exact path="/wallet/:name" component={SingleWalletPage} />
-            <Route path="/wallet/:name/send" component={AddressNavBar} />
+            <Route path="/wallet/:name/send" component={SendPage} />
             <Route path="/wallet/:name/receive" component={RecievePage} />
             <Route exact path="/" component={WalletsPage} />
           </Switch>

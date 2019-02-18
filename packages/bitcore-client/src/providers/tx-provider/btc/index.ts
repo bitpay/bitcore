@@ -4,7 +4,7 @@ import * as _ from 'lodash';
 export class BTCTxProvider {
   lib = require('bitcore-lib');
 
-  create({ recipients, utxos, change, fee = 4566 }) {
+  create({ recipients, utxos, change, fee = 20000 }) {
     const btcUtxos = utxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {
         amount: utxo.value / Math.pow(10, 8)
@@ -19,7 +19,7 @@ export class BTCTxProvider {
     for (const recipient of recipients) {
       tx.to(recipient.address, recipient.amount * 10e7);
     }
-    return { tx: tx.uncheckedSerialize(), utxos };
+    return tx.uncheckedSerialize();
   }
 
   async sign(params: { tx: string; wallet: Wallet; utxos: any[] }) {
