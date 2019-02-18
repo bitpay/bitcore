@@ -8,9 +8,9 @@ export class ETHTxProvider {
 
   async create({ recipients, from, fee = 20000 }) {
     let txCount = await web3.eth.getTransactionCount(from);
-    // construct the transaction data
     const { address, amount } = recipients[0];
 
+    // WIP: chainId
     // EIP 155 chainId - mainnet: 1, ropsten: 3
     // let chainId = 1;
     // switch (network) {

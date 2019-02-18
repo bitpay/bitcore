@@ -42,14 +42,11 @@ export class BTCTxProvider {
     );
     while (utxoSum < recepientSum) {
       const utxo = utxos[index];
-      console.log(utxoSum);
-      console.log(index);
       utxoSum += Number(utxo.value);
       index += 1;
     }
 
     const filteredUtxos = utxos.slice(0, index);
-    console.log(filteredUtxos);
     return filteredUtxos;
   }
 
@@ -68,13 +65,11 @@ export class BTCTxProvider {
     });
     let tx = new this.lib.Transaction().from(btcUtxos).fee(Number(fee));
     if (change) {
-      console.log('adding change address', change);
       tx.change(change);
     }
     for (const recipient of recipients) {
       tx.to(recipient.address, recipient.amount);
     }
-    console.log(tx.uncheckedSerialize());
     return tx.uncheckedSerialize();
   }
 
