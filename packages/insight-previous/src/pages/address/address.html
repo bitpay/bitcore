@@ -3,51 +3,51 @@
 <ion-content>
   <ion-grid fixed>
 
-  <div class="page-content">
+    <div class="page-content">
 
-    <loader *ngIf="loading" [type]="'title'"></loader>
+      <loader *ngIf="loading" [type]="'title'"></loader>
 
-    <div *ngIf="!loading">
-      <h1>Address <small>{{ getConvertedNumber(address.balance) | number:'1.0-8' }}
-          {{ currencyProvider.currencySymbol }}</small></h1>
-      <p class="ellipsis">{{ address.addrStr }}</p>
+      <div *ngIf="!loading">
+        <h1>Address <small>{{ getConvertedNumber(address.balance) | number:'1.0-8' }}
+            {{ currencyProvider.currencySymbol }}</small></h1>
+        <p class="ellipsis">{{ address.addrStr }}</p>
 
-      <h2>Summary</h2>
-      <ion-grid>
-        <ion-row align-items-start justify-content-center>
-          <ion-col>
-            <ion-list class="list--summary">
-              <ion-item>
-                Confirmed Balance
-                <ion-note item-end>
-                  {{ getConvertedNumber(address.confirmed) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
-                </ion-note>
-              </ion-item>
-              <ion-item *ngIf="address.unconfirmed > 0">
-                Unconfirmed Balance
-                <ion-note item-end>
-                  {{ getConvertedNumber(address.unconfirmed) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
-                </ion-note>
-              </ion-item>
-              <ion-item *ngIf="nroTransactions > 0">
-                Nro. Transactions
-                <ion-note item-end>
-                  {{ nroTransactions }}
-                </ion-note>
-              </ion-item>
-            </ion-list>
-          </ion-col>
-          <ion-col col-auto text-center>
-            <qr-code [value]="address.addrStr" [size]="160"></qr-code>
-          </ion-col>
-        </ion-row>
-      </ion-grid>
+        <h2>Summary</h2>
+        <ion-grid>
+          <ion-row align-items-start justify-content-center>
+            <ion-col>
+              <ion-list class="list--summary">
+                <ion-item>
+                  Confirmed Balance
+                  <ion-note item-end>
+                    {{ getConvertedNumber(address.confirmed) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+                  </ion-note>
+                </ion-item>
+                <ion-item *ngIf="address.unconfirmed > 0">
+                  Unconfirmed Balance
+                  <ion-note item-end>
+                    {{ getConvertedNumber(address.unconfirmed) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+                  </ion-note>
+                </ion-item>
+                <ion-item>
+                  Nro. Transactions
+                  <ion-note item-end>
+                    {{ nroTransactions || 0 }}
+                  </ion-note>
+                </ion-item>
+              </ion-list>
+            </ion-col>
+            <ion-col col-auto text-center>
+              <qr-code [value]="address.addrStr" [size]="160"></qr-code>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
 
-      <h1>Transactions</h1>
-      <coin-list [addrStr]="address.addrStr"></coin-list>
+        <h1>Transactions</h1>
+        <coin-list [addrStr]="address.addrStr"></coin-list>
+      </div>
+
     </div>
-
-  </div>
   </ion-grid>
 </ion-content>
 <footer></footer>
