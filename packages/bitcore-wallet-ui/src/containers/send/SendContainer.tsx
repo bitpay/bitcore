@@ -14,8 +14,9 @@ import { connect } from 'react-redux';
 import { QRBox } from './QRBox';
 import { WalletBottomNav } from '../wallet/BottomNav';
 import { WalletHeader } from '../wallet/WalletHeader';
-import { ActionCreators, store } from '../../index';
-import { Wallet, ParseApiStream } from 'bitcore-client';
+import MenuItem from '@material-ui/core/MenuItem';
+import Select from '@material-ui/core/Select';
+import OutlinedInput from '@material-ui/core/OutlinedInput';
 
 const styles = createStyles({
   root: {
@@ -39,7 +40,7 @@ const styles = createStyles({
   },
   paper: {
     backgroundColor: 'white',
-    height: 260,
+    height: 360,
     textAlign: 'center',
     padding: 30,
     marginTop: 70,
@@ -60,17 +61,6 @@ const styles = createStyles({
     '&:hover': {
       textDecoration: 'none'
     }
-  },
-  searchBar: {
-    padding: '2px 4px',
-    marginTop: 20,
-    display: 'flex',
-    alignItems: 'center',
-    maxWidth: 600,
-    width: '100%',
-    boxShadow: 'none',
-    backgroundColor: 'rgba(0, 0, 0, .087)',
-    margin: 'auto'
   },
   input: {
     marignLeft: 8,
@@ -101,7 +91,7 @@ const styles = createStyles({
   }
 });
 
-export interface Props extends RouteComponentProps<{ name: string }> {
+interface Props extends RouteComponentProps<{ name: string }> {
   classes: any;
   wallet: AppState['wallet'];
   addresses: AppState['addresses'];
@@ -111,69 +101,22 @@ export interface Props extends RouteComponentProps<{ name: string }> {
 interface State {
   sendTo: string;
   amountToSend: string;
-  rawTx: string;
+  sentTxid: string;
+  sendFrom: string;
 }
 
 class SendContainer extends Component<Props, State> {
   state: State = {
     sendTo: '',
     amountToSend: '',
-    rawTx: ''
-  };
-
-  componentDidMount = async () => {
-    const name = this.props.match.params.name;
-    store.dispatch(ActionCreators.setWalletName(name));
-    const wallet = await this.loadWallet(name);
-    if (!this.props.wallet) {
-      await store.dispatch(ActionCreators.setWallet(wallet));
-    }
-    await wallet!.register({ baseUrl: 'http://localhost:3000/api' });
-    if (!this.props.wallet!.unlocked) {
-      await store.dispatch(ActionCreators.setWallet(wallet!));
-    }
-    if (this.props.wallet) {
-      await this.fetchAddresses(this.props.wallet);
-    }
-  };
-
-  fetchAddresses = async (wallet: Wallet) => {
-    wallet
-      .getAddresses()
-      .pipe(new ParseApiStream())
-      .on('data', (d: any) => {
-        let addresses = [];
-        if (Array.isArray(d)) {
-          addresses = d;
-        } else {
-          addresses = [d];
-        }
-        addresses.map(a =>
-          store.dispatch(ActionCreators.setAddress(a.address))
-        );
-      });
-  };
-
-  loadWallet = async (name: string) => {
-    let wallet: AppState['wallet'] | undefined;
-    try {
-      const exists = Wallet.exists({ name });
-      if (!exists) {
-        console.log('Wallet needs to be created');
-      } else {
-        console.log('Wallet exists');
-        wallet = await Wallet.loadWallet({ name });
-      }
-    } catch (err) {
-      console.log(err);
-    }
-    return wallet;
+    sentTxid: '',
+    sendFrom: ''
   };
 
   handleSendClick = async () => {
-    const { wallet, addresses } = this.props;
+    const { wallet } = this.props;
     const chain = wallet!.chain;
-    const from = addresses[0];
+    const from = this.state.sendFrom;
 
     let recipientObj: any = {};
 
@@ -208,11 +151,11 @@ class SendContainer extends Component<Props, State> {
     const txResult = await wallet!.broadcast({
       tx: serializedTx
     });
-    console.log(txResult);
+    this.setState({ sentTxid: txResult.txid });
   };
 
   render() {
-    const { classes, wallet, unlocked } = this.props;
+    const { classes, wallet, unlocked, addresses } = this.props;
     return (
       <div className={classes.root}>
         <WalletHeader />
@@ -220,13 +163,51 @@ class SendContainer extends Component<Props, State> {
           <Typography variant="h4" className={classes.heading}>
             Send
           </Typography>
-          <Paper className={classes.searchBar}>
-            <InputBase
-              className={classes.input}
-              placeholder="Enter address"
-              value={this.state.sendTo}
-              onChange={e => this.setState({ sendTo: e.target.value })}
-            />
+          <Paper className={classes.amountInput}>
+            <FormControl variant="outlined" className={classes.inputWidth}>
+              <InputLabel htmlFor="outlined-from-simple">From</InputLabel>
+              {wallet && wallet.chain === 'ETH' ? (
+                <Select
+                  value={this.state.sendFrom}
+                  onChange={e => this.setState({ sendFrom: e.target.value })}
+                  input={
+                    <OutlinedInput
+                      labelWidth={20}
+                      name="From"
+                      id="outlined-from-simple"
+                    />
+                  }
+                >
+                  {addresses.map(e => (
+                    <MenuItem key={e} value={e}>
+                      {e}
+                    </MenuItem>
+                  ))}
+                </Select>
+              ) : (
+                <OutlinedInput
+                  value={`${wallet!.name}`}
+                  labelWidth={40}
+                  disabled={true}
+                  name={`From ${wallet!.name}`}
+                  id="outlined-from-simple"
+                />
+              )}
+            </FormControl>
+          </Paper>
+          <Paper className={classes.amountInput}>
+            <FormControl variant="outlined" className={classes.inputWidth}>
+              <InputLabel htmlFor="outlined-to-simple">To</InputLabel>
+              <OutlinedInput
+                labelWidth={20}
+                name="To"
+                id="outlined-to-simple"
+                className={classes.input}
+                placeholder="Enter address"
+                value={this.state.sendTo}
+                onChange={e => this.setState({ sendTo: e.target.value })}
+              />
+            </FormControl>
           </Paper>
           <Paper className={classes.amountInput}>
             <FormControl className={classes.inputWidth}>
@@ -253,7 +234,7 @@ class SendContainer extends Component<Props, State> {
             Send
           </Button>
         </Paper>
-        <QRBox rawTx={this.state.rawTx} />
+        <QRBox sentTxid={this.state.sentTxid} />
         <WalletBottomNav value={2} />
       </div>
     );

@@ -6,7 +6,6 @@ import AppBar from '@material-ui/core/AppBar';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
 import Typography from '@material-ui/core/Typography';
-import { setAddressType, generate_address } from '../../qrcode/logic';
 import Paper from '@material-ui/core/Paper';
 import TextField from '@material-ui/core/TextField';
 
@@ -56,7 +55,7 @@ const styles = () =>
 export interface Props extends WithStyles<typeof styles> {
   classes: any;
   theme: any;
-  rawTx: string;
+  sentTxid: string;
 }
 
 interface State {
@@ -68,27 +67,7 @@ class FullWidthTabs extends React.Component<Props, State> {
     value: 1
   };
 
-  componentDidMount = () => {
-    generate_address();
-  };
-
   handleChange = (_event: any, value: number) => {
-    switch (value) {
-      case 0:
-        setAddressType('segwit');
-        generate_address();
-        break;
-      case 1:
-        setAddressType('bech32');
-        generate_address();
-        break;
-      case 2:
-        setAddressType('legacy');
-        generate_address();
-        break;
-      default:
-        break;
-    }
     this.setState({ value });
   };
 
@@ -97,7 +76,7 @@ class FullWidthTabs extends React.Component<Props, State> {
   };
 
   render() {
-    const { classes, theme, rawTx } = this.props;
+    const { classes, theme, sentTxid } = this.props;
 
     return (
       <div className={classes.root}>
@@ -124,14 +103,14 @@ class FullWidthTabs extends React.Component<Props, State> {
               <div id="address_div">
                 <div>
                   <div>
-                    <div id="address_text">Address:</div>
+                    <div id="address_text">Sent Txid:</div>
                   </div>
                   <div id="address_address" />
                 </div>
                 <TextField
                   className={classes.flex}
                   multiline
-                  value={rawTx}
+                  value={sentTxid}
                   disabled
                   margin="normal"
                 />
@@ -142,14 +121,14 @@ class FullWidthTabs extends React.Component<Props, State> {
               <div id="address_div">
                 <div>
                   <div>
-                    <div id="address_text">Address:</div>
+                    <div id="address_text">Sent Txid:</div>
                   </div>
                   <div id="address_address" />
                 </div>
                 <TextField
                   className={classes.flex}
                   multiline
-                  value={rawTx}
+                  value={sentTxid}
                   disabled
                   margin="normal"
                 />
@@ -160,14 +139,14 @@ class FullWidthTabs extends React.Component<Props, State> {
               <div id="address_div">
                 <div>
                   <div>
-                    <div id="address_text">Address:</div>
+                    <div id="address_text">Sent Txid:</div>
                   </div>
                   <div id="address_address" />
                 </div>
                 <TextField
                   className={classes.flex}
                   multiline
-                  value={rawTx}
+                  value={sentTxid}
                   disabled
                   margin="normal"
                 />
