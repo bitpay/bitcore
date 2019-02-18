@@ -94,6 +94,7 @@ class DialogSelect extends React.Component<Props> {
             >
               <FormControl className={classes.formControl}>
                 <TextField
+                  autoFocus
                   type="password"
                   id="password"
                   label="Password"

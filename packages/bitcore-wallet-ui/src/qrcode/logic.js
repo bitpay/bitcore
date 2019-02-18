@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import BN from 'bn.js';
 import { qrcode } from './qrcode';
 var RIPEMD160 = require('crypto-js/ripemd160');

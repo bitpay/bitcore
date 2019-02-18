@@ -53,21 +53,25 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     const { network, rawTx } = params;
     try {
       const tx = await this.getRPC(network).sendSignedTransaction(rawTx);
-      return tx
-    } catch(err) {
-      return err
+      console.log(tx, rawTx);
+      return tx;
+    } catch (err) {
+      return err;
     }
   }
 
   async getTransactionCount(params: any) {
     const { network, address } = params;
     const txCount = await this.getRPC(network).getTransactionCount(address);
-    return txCount
+    return txCount;
   }
 
   async getWalletAddresses(walletId: ObjectID) {
     let query = { wallet: walletId };
-    return WalletAddressStorage.collection.find(query).addCursorFlag('noCursorTimeout', true).toArray();
+    return WalletAddressStorage.collection
+      .find(query)
+      .addCursorFlag('noCursorTimeout', true)
+      .toArray();
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {
@@ -79,9 +83,15 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     let addressBalancePromises = addresses.map(({ address }) =>
       this.getBalanceForAddress({ chain: this.chain, network, address })
     );
-    let addressBalances = await Promise.all<{ confirmed: number; unconfirmed: number, balance: number }>(addressBalancePromises);
+    let addressBalances = await Promise.all<{ confirmed: number; unconfirmed: number; balance: number }>(
+      addressBalancePromises
+    );
     let balance = addressBalances.reduce(
-      (prev, cur) => ({ unconfirmed: prev.unconfirmed + cur.unconfirmed, confirmed: prev.confirmed + cur.confirmed, balance: prev.balance + cur.balance }),
+      (prev, cur) => ({
+        unconfirmed: prev.unconfirmed + cur.unconfirmed,
+        confirmed: prev.confirmed + cur.confirmed,
+        balance: prev.balance + cur.balance
+      }),
       { unconfirmed: 0, confirmed: 0, balance: 0 }
     );
     return balance;

@@ -101,7 +101,6 @@ const styles = createStyles({
   }
 });
 
-// WithStyles<typeof styles>
 export interface Props extends RouteComponentProps<{ name: string }> {
   classes: any;
   wallet: AppState['wallet'];
