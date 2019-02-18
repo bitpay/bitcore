@@ -623,6 +623,7 @@ function bech32CreateChecksum(hrp, data) {
 
 // create bech32 address from public key
 function makeBech32Address(keypair) {
+  console.log(keypair);
   var key_bytes = [];
 
   var bytes_public_x = bigintToByteArray(keypair[0]);
@@ -681,7 +682,6 @@ function makePrivateKey(bigint) {
     privkey,
     SHA256(SHA256(privkey, { asBytes: true }), { asBytes: true })
   );
-  console.log(privkey);
   return base58encode(privkey);
 }
 

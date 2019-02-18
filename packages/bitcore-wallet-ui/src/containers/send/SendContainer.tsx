@@ -160,7 +160,7 @@ class SendContainer extends Component<Props, State> {
           recipients: [
             {
               address: this.state.sendTo,
-              amount: Number(this.state.amountToSend)
+              amount: Number(this.state.amountToSend) * 1e8
             }
           ]
         });

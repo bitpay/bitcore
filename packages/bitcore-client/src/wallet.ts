@@ -6,6 +6,8 @@ import { Request } from 'request';
 import TxProvider from './providers/tx-provider';
 import { AddressProvider } from './providers/address-provider/deriver';
 import { ParseApiStream } from './stream-util';
+import { numberToHex } from 'web3-utils/types';
+import { cursorTo } from 'readline';
 const { PrivateKey } = require('bitcore-lib');
 const Mnemonic = require('bitcore-mnemonic');
 
@@ -258,35 +260,16 @@ export class Wallet {
     fee?: number;
   }) {
     console.log('using index', this.addressIndex, 'for change');
-    const change =
-      params.change || (await this.deriveAddress(this.addressIndex, true));
-    console.log(change);
-    const utxos = params.utxos || [];
-    if (!utxos.length && this.chain !== 'ETH') {
-      await new Promise(resolve =>
-        this.getUtxos()
-          .pipe(new ParseApiStream())
-          .on('data', utxo =>
-            utxos.push({
-              value: utxo.value,
-              txid: utxo.mintTxid,
-              vout: utxo.mintIndex,
-              address: utxo.address,
-              script: utxo.script,
-              utxo
-            })
-          )
-          .on('finish', resolve)
-      );
-    }
+
     const payload = {
       network: this.network,
       chain: this.chain,
       recipients: params.recipients,
       from: params.from,
-      change,
+      change: params.change,
       fee: params.fee,
-      utxos
+      wallet: this,
+      utxos: params.utxos
     };
     return TxProvider.create(payload);
   }

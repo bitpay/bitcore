@@ -1,13 +1,68 @@
-import { Wallet } from '../../../';
+import { Wallet, ParseApiStream } from '../../../';
 import * as _ from 'lodash';
 
 export class BTCTxProvider {
   lib = require('bitcore-lib');
 
-  create({ recipients, utxos, change, fee = 20000 }) {
-    const btcUtxos = utxos.map(utxo => {
+  async getUtxos(wallet: Wallet) {
+    const utxos = [];
+    await new Promise(resolve =>
+      wallet
+        .getUtxos()
+        .pipe(new ParseApiStream())
+        .on('data', utxo =>
+          utxos.push({
+            value: utxo.value,
+            txid: utxo.mintTxid,
+            vout: utxo.mintIndex,
+            address: utxo.address,
+            script: utxo.script,
+            utxo
+          })
+        )
+        .on('finish', resolve)
+    );
+    return utxos;
+  }
+
+  selectCoins(
+    recipients: Array<{ amount: number }>,
+    utxos: Array<{ value: number; utxo: { mintHeight: number } }>,
+    fee: number
+  ) {
+    utxos = utxos.sort(function(a, b) {
+      return a.utxo.mintHeight - b.utxo.mintHeight;
+    });
+
+    let index = 0;
+    let utxoSum = 0;
+    let recepientSum = recipients.reduce(
+      (sum, cur) => sum + Number(cur.amount),
+      fee
+    );
+    while (utxoSum < recepientSum) {
+      const utxo = utxos[index];
+      console.log(utxoSum);
+      console.log(index);
+      utxoSum += Number(utxo.value);
+      index += 1;
+    }
+
+    const filteredUtxos = utxos.slice(0, index);
+    console.log(filteredUtxos);
+    return filteredUtxos;
+  }
+
+  async create({ recipients, utxos = [], change, wallet, fee = 20000 }) {
+    change = change || (await wallet.deriveAddress(wallet.addressIndex, true));
+    if (!utxos.length) {
+      utxos = await this.getUtxos(wallet);
+    }
+
+    const filteredUtxos = this.selectCoins(recipients, utxos, fee);
+    const btcUtxos = filteredUtxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {
-        amount: utxo.value / Math.pow(10, 8)
+        amount: utxo.value / 1e8
       });
       return new this.lib.Transaction.UnspentOutput(btcUtxo);
     });
@@ -17,8 +72,9 @@ export class BTCTxProvider {
       tx.change(change);
     }
     for (const recipient of recipients) {
-      tx.to(recipient.address, recipient.amount * 10e7);
+      tx.to(recipient.address, recipient.amount);
     }
+    console.log(tx.uncheckedSerialize());
     return tx.uncheckedSerialize();
   }
 
