@@ -3605,6 +3605,13 @@ WalletService.prototype.getTxHistoryV8 = function(bc, wallet, opts, skip, limit,
         if (oldTxs.length) {
           fromCache = true;
         }
+
+        // update confirmations from height
+        _.each(oldTxs, (x) => {
+          if (x.blockheight>0) {
+            x.confirmations = bcHeight - x.blockheight + 1;
+          } 
+        });
       
         resultTxs  = resultTxs.concat(oldTxs);
         return next();
@@ -3616,12 +3623,13 @@ WalletService.prototype.getTxHistoryV8 = function(bc, wallet, opts, skip, limit,
       }
       // We have now TXs from 'tipHeight` to end in `lastTxs`.
       // Store hard confirmed TXs
+      // confirmations here is bcHeight - tip + 1, so OK.
       txsToCache = _.filter(lastTxs, function(i) {
         if (i.confirmations < Defaults.CONFIRMATIONS_TO_START_CACHING)  {
           return false;
         };
         if (!cacheStatus.tipHeight)
-        return true;  
+          return true;  
 
         return i.blockheight > cacheStatus.tipHeight;
       });
