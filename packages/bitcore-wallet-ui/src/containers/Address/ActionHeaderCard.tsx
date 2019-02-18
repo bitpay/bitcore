@@ -90,6 +90,7 @@ interface Props {
   classes: any;
   addresses: AppState['addresses'];
   addressToAdd: AppState['addressToAdd'];
+  unlocked: boolean;
 }
 
 class AddressBar extends Component<Props> {
@@ -124,7 +125,7 @@ class AddressBar extends Component<Props> {
   }
 
   render() {
-    const { classes, wallet, addressToAdd } = this.props;
+    const { classes, wallet, addressToAdd, unlocked } = this.props;
     return (
       <div className={classes.root}>
         <WalletHeader />
@@ -153,7 +154,7 @@ class AddressBar extends Component<Props> {
           <Button
             variant="outlined"
             color="primary"
-            disabled={!wallet!.unlocked}
+            disabled={unlocked}
             className={classes.button}
             onClick={() => this.handleAddAddressClick()}
           >
@@ -169,7 +170,8 @@ const mapStateToProps = (state: Props) => {
   return {
     wallet: state.wallet,
     addresses: state.addresses,
-    addressToAdd: state.addressToAdd
+    addressToAdd: state.addressToAdd,
+    unlocked: state.unlocked
   };
 };
 

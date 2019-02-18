@@ -60,10 +60,12 @@ class DialogSelect extends React.Component<Props> {
       if (this.props.wallet.unlocked) {
         const locked = await wallet.lock();
         store.dispatch(ActionCreators.setWallet(locked));
+        store.dispatch(ActionCreators.setUnlocked(false));
       } else {
         let password = this.props.password;
         const unlocked = await wallet.unlock(password);
         store.dispatch(ActionCreators.setWallet(unlocked));
+        store.dispatch(ActionCreators.setUnlocked(true));
       }
     }
   }

@@ -42,6 +42,7 @@ const styles = {
 interface Props {
   wallet?: AppState['wallet'];
   classes: any;
+  unlocked: boolean;
 }
 
 interface State {
@@ -54,7 +55,7 @@ class WalletNavTop extends PureComponent<Props, State> {
   };
 
   render() {
-    const { classes, wallet } = this.props;
+    const { classes, wallet, unlocked } = this.props;
 
     return (
       <div className={classes.root}>
@@ -66,7 +67,7 @@ class WalletNavTop extends PureComponent<Props, State> {
             <Typography variant="title" color="inherit">
               {wallet ? wallet.name : 'Loading...'}
             </Typography>
-            {wallet && wallet.unlocked! ? (
+            {wallet && unlocked ? (
               <LockOpenIcon />
             ) : (
               <LockIcon onClick={() => this.setState({ open: true })} />
@@ -81,7 +82,8 @@ class WalletNavTop extends PureComponent<Props, State> {
 
 const mapStateToProps = (state: AppState) => {
   return {
-    wallet: state.wallet
+    wallet: state.wallet,
+    unlocked: state.unlocked
   };
 };
 

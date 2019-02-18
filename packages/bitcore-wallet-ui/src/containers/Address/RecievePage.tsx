@@ -25,7 +25,7 @@ export function RecieveContainer(props: Props) {
   );
 }
 
-const mapStateToProps = (state: Props) => {
+const mapStateToProps = (state: AppState) => {
   return {
     wallet: state.wallet
   };

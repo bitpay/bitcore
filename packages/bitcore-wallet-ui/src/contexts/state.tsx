@@ -8,4 +8,5 @@ export interface AppState {
   addresses: string[];
   addressToAdd: string;
   wallets: Wallet[];
+  unlocked: boolean;
 }

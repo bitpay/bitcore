@@ -6,6 +6,9 @@ export class MyImmerReducer extends ImmerReducer<AppState> {
   setWallet(wallet: Wallet | undefined) {
     this.draftState.wallet = wallet;
   }
+  setUnlocked(unlocked: boolean) {
+    this.draftState.unlocked = unlocked;
+  }
   setWallets(wallet: Wallet) {
     const walletNames = this.state.wallets.map(w => w.name);
     if (!walletNames.includes(wallet.name))

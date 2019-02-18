@@ -106,6 +106,7 @@ export interface Props extends RouteComponentProps<{ name: string }> {
   classes: any;
   wallet: AppState['wallet'];
   addresses: AppState['addresses'];
+  unlocked: boolean;
 }
 
 interface State {
@@ -195,7 +196,7 @@ class SendContainer extends Component<Props, State> {
   };
 
   render() {
-    const { classes, wallet } = this.props;
+    const { classes, wallet, unlocked } = this.props;
     return (
       <div className={classes.root}>
         <WalletHeader />
@@ -229,7 +230,7 @@ class SendContainer extends Component<Props, State> {
           <Button
             variant="outlined"
             color="primary"
-            disabled={wallet ? !wallet!.unlocked : true}
+            disabled={unlocked}
             className={classes.button}
             onClick={() => this.handleSendClick()}
           >
@@ -246,7 +247,8 @@ class SendContainer extends Component<Props, State> {
 const mapStateToProps = (state: AppState) => {
   return {
     wallet: state.wallet,
-    addresses: state.addresses
+    addresses: state.addresses,
+    unlocked: state.unlocked
   };
 };
 

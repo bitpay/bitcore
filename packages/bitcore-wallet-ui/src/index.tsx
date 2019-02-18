@@ -22,7 +22,8 @@ const initialState: AppState = {
   addresses: [],
   addressToAdd: '',
   wallet: undefined,
-  wallets: []
+  wallets: [],
+  unlocked: false
 };
 
 export const ActionCreators = createActionCreators(MyImmerReducer);
