@@ -17,7 +17,7 @@ export class TxProvider {
     return this.get(params).create(params);
   }
 
-  // Eth returns Promise<Uint8Array> while BTC returns Promise<string>
+  // WIP: Needs typings - Eth returns Promise<Uint8Array> while BTC returns Promise<string>
   async sign(params): Promise<any> {
     return this.get(params).sign(params);
   }

@@ -4,7 +4,7 @@ import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { InternalStateProvider } from '../internal/internal';
 import { ObjectID } from 'mongodb';
 
-const Web3 = require('web3-eth');
+import Web3 = require('web3-eth');
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -51,13 +51,8 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     const { network, rawTx } = params;
-    try {
-      const tx = await this.getRPC(network).sendSignedTransaction(rawTx);
-      console.log(tx, rawTx);
-      return tx;
-    } catch (err) {
-      return err;
-    }
+    const tx = await this.getRPC(network).sendSignedTransaction(rawTx);
+    return tx;
   }
 
   async getTransactionCount(params: any) {

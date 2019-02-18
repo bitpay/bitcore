@@ -15,7 +15,7 @@ import { QRBox } from './QRBox';
 import { WalletBottomNav } from '../wallet/BottomNav';
 import { WalletHeader } from '../wallet/WalletHeader';
 import { ActionCreators, store } from '../../index';
-import { Wallet } from 'bitcore-client';
+import { Wallet, ParseApiStream } from 'bitcore-client';
 
 const styles = createStyles({
   root: {
@@ -132,6 +132,26 @@ class SendContainer extends Component<Props, State> {
     if (!this.props.wallet!.unlocked) {
       await store.dispatch(ActionCreators.setWallet(wallet!));
     }
+    if (this.props.wallet) {
+      await this.fetchAddresses(this.props.wallet);
+    }
+  };
+
+  fetchAddresses = async (wallet: Wallet) => {
+    wallet
+      .getAddresses()
+      .pipe(new ParseApiStream())
+      .on('data', (d: any) => {
+        let addresses = [];
+        if (Array.isArray(d)) {
+          addresses = d;
+        } else {
+          addresses = [d];
+        }
+        addresses.map(a =>
+          store.dispatch(ActionCreators.setAddress(a.address))
+        );
+      });
   };
 
   loadWallet = async (name: string) => {
@@ -153,47 +173,42 @@ class SendContainer extends Component<Props, State> {
   handleSendClick = async () => {
     const { wallet, addresses } = this.props;
     const chain = wallet!.chain;
-    const from = addresses[addresses.length - 1];
+    const from = addresses[0];
+
+    let recipientObj: any = {};
 
     switch (chain) {
       case 'BTC':
-        let BtcTx = await wallet!.newTx({
+        recipientObj = {
           recipients: [
             {
               address: this.state.sendTo,
               amount: Number(this.state.amountToSend) * 1e8
             }
           ]
-        });
-
-        const signedBtcTx = await wallet!.signTx({
-          tx: BtcTx
-        });
-        const BTCTxResult = await wallet!.broadcast({
-          tx: signedBtcTx
-        });
-        console.log(BTCTxResult);
+        };
         break;
       case 'ETH':
-        let EthTx = await wallet!.newTx({
+        recipientObj = {
           recipients: [
             {
               address: this.state.sendTo,
-              amount: Number(this.state.amountToSend)
+              amount: Number(this.state.amountToSend) * 1e8
             }
           ],
           from
-        });
-        const serializedEthTx = await wallet!.signTx({ tx: EthTx, from });
-        const combinedTx = serializedEthTx.toString('hex');
-        const EthTxResult = await wallet!.broadcast({
-          tx: combinedTx
-        });
-        console.log(EthTxResult);
+        };
         break;
       default:
         return;
     }
+
+    let tx = await wallet!.newTx(recipientObj);
+    const serializedTx = await wallet!.signTx({ tx, ...recipientObj });
+    const txResult = await wallet!.broadcast({
+      tx: serializedTx
+    });
+    console.log(txResult);
   };
 
   render() {

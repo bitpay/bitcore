@@ -24,7 +24,7 @@ export class ETHTxProvider {
     // break;
     // }
 
-    // !important amount needs to be passed into utils as a string
+    // !Important: Amount needs to be passed into utils as a string
     const txData = {
       nonce: web3.utils.toHex(txCount),
       gasLimit: web3.utils.toHex(25000),
@@ -34,8 +34,8 @@ export class ETHTxProvider {
       value: web3.utils.toHex(web3.utils.toWei(`${amount}`, 'wei'))
       // chainId
     };
-    // const rawTx = new EthereumTx(txData).serialize().toString('hex');
-    return txData;
+    const rawTx = new EthereumTx(txData).serialize().toString('hex');
+    return rawTx;
   }
 
   async sign(params: { tx: string; wallet: Wallet; from: string }) {
@@ -48,11 +48,10 @@ export class ETHTxProvider {
         name: wallet.name,
         encryptionKey: wallet.unlocked.encryptionKey
       });
-
-      const bufferKey = Buffer.from(key.privKey.substr(2), 'hex');
+      const bufferKey = Buffer.from(key.privKey, 'hex');
       rawTx.sign(bufferKey);
       const serializedTx = rawTx.serialize();
-      return serializedTx;
+      return '0x' + serializedTx.toString('hex');
     } catch (err) {
       console.log(err);
     }

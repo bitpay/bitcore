@@ -26,7 +26,6 @@ class WalletContainer extends Component<Props> {
       await store.dispatch(ActionCreators.setWallet(wallet!));
     }
     if (this.props.wallet) {
-      console.log('Using bitcore-node at ', this.props.wallet.baseUrl);
       await this.handleGetTx(this.props.wallet);
       await this.handleGetBlock(this.props.wallet);
       await this.updateWalletInfo(this.props.wallet);
