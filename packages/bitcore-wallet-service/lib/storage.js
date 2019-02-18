@@ -818,7 +818,7 @@ Storage.prototype.getTxHistoryCacheV8 = function(walletId, skip, limit, cb) {
       if (lastPosition <= 0) 
         return cb(null, []);
 
-      console.log('[storage.js.750:first/lastPosition:]',firstPosition + '/'+lastPosition); //TODO
+      //console.log('[storage.js.750:first/lastPosition:]',firstPosition + '/'+lastPosition); //TODO
 
       self.db.collection(collections.CACHE).find({
         walletId: walletId,
