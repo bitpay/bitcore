@@ -117,7 +117,7 @@ class WalletContainer extends Component<Props> {
   }
 }
 
-const mapStateToProps = (state: Props) => {
+const mapStateToProps = (state: AppState) => {
   return {
     wallet: state.wallet,
     addresses: state.addresses,

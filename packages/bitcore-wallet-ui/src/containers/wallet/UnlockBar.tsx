@@ -54,7 +54,12 @@ class DialogSelect extends React.Component<Props> {
     store.dispatch(ActionCreators.setPassword(event.target.value));
   }
 
-  async handleLockToggle() {
+  async handleLockToggle(
+    event:
+      | React.FormEvent<HTMLFormElement>
+      | React.MouseEvent<HTMLElement, MouseEvent>
+  ) {
+    event.preventDefault();
     if (this.props.wallet) {
       let wallet = this.props.wallet;
       if (this.props.wallet.unlocked) {
@@ -68,6 +73,7 @@ class DialogSelect extends React.Component<Props> {
         store.dispatch(ActionCreators.setUnlocked(true));
       }
     }
+    this.handleClose();
   }
 
   handleClose = () => {
@@ -79,15 +85,13 @@ class DialogSelect extends React.Component<Props> {
 
     return (
       <div>
-        <Dialog
-          // disableBackdropClick
-          // disableEscapeKeyDown
-          open={this.state.open}
-          onClose={this.handleClose}
-        >
+        <Dialog open={this.state.open} onClose={this.handleClose}>
           <DialogTitle>Enter your password</DialogTitle>
           <DialogContent>
-            <form className={classes.container}>
+            <form
+              className={classes.container}
+              onSubmit={e => this.handleLockToggle(e)}
+            >
               <FormControl className={classes.formControl}>
                 <TextField
                   type="password"
@@ -105,9 +109,8 @@ class DialogSelect extends React.Component<Props> {
               Cancel
             </Button>
             <Button
-              onClick={() => {
-                this.handleLockToggle();
-                this.handleClose();
+              onClick={e => {
+                this.handleLockToggle(e);
               }}
               color="primary"
             >
