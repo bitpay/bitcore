@@ -74,8 +74,13 @@ export class BTCTxProvider {
   }
 
   async sign(params: { tx: string; wallet: Wallet; utxos: any[] }) {
-    const { tx, wallet, utxos } = params;
+    const { tx, wallet } = params;
     const { encryptionKey } = wallet.unlocked;
+    let utxos = params.utxos || [];
+    if (!utxos.length) {
+      utxos = await this.getUtxos(wallet);
+    }
+
     let inputAddresses = await this.getSigningAddresses({ tx, utxos });
     let keyPromises = inputAddresses.map(address => {
       return wallet.storage.getKey({

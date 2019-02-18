@@ -305,29 +305,11 @@ export class Wallet {
 
   async signTx(params) {
     let { tx, from } = params;
-    const utxos = params.utxos || [];
-    if (!params.utxos && this.chain !== 'ETH') {
-      await new Promise(resolve =>
-        this.getUtxos()
-          .pipe(new ParseApiStream())
-          .on('data', utxo =>
-            utxos.push({
-              value: utxo.value,
-              txid: utxo.mintTxid,
-              vout: utxo.mintIndex,
-              address: utxo.address,
-              script: utxo.script,
-              utxo
-            })
-          )
-          .on('finish', resolve)
-      );
-    }
     const payload = {
       chain: this.chain,
       network: this.network,
       tx,
-      utxos,
+      utxos: params.utxos,
       from
     };
 
