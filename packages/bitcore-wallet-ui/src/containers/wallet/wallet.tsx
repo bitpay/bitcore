@@ -22,7 +22,7 @@ class WalletContainer extends Component<Props> {
     store.dispatch(ActionCreators.setWalletName(name));
     const wallet = await this.loadWallet(name);
     await wallet!.register({ baseUrl: 'http://localhost:3000/api' });
-    if (!this.props.wallet!.unlocked) {
+    if (!this.props.wallet) {
       await store.dispatch(ActionCreators.setWallet(wallet!));
     }
     if (this.props.wallet) {

@@ -125,7 +125,9 @@ class SendContainer extends Component<Props, State> {
     const name = this.props.match.params.name;
     store.dispatch(ActionCreators.setWalletName(name));
     const wallet = await this.loadWallet(name);
-    await store.dispatch(ActionCreators.setWallet(wallet));
+    if (!this.props.wallet) {
+      await store.dispatch(ActionCreators.setWallet(wallet));
+    }
     await wallet!.register({ baseUrl: 'http://localhost:3000/api' });
     if (!this.props.wallet!.unlocked) {
       await store.dispatch(ActionCreators.setWallet(wallet!));
