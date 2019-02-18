@@ -125,7 +125,7 @@ class AddressBar extends Component<Props> {
   }
 
   render() {
-    const { classes, wallet, addressToAdd, unlocked } = this.props;
+    const { classes, addressToAdd, unlocked } = this.props;
     return (
       <div className={classes.root}>
         <WalletHeader />
@@ -154,7 +154,7 @@ class AddressBar extends Component<Props> {
           <Button
             variant="outlined"
             color="primary"
-            disabled={unlocked}
+            disabled={!unlocked}
             className={classes.button}
             onClick={() => this.handleAddAddressClick()}
           >

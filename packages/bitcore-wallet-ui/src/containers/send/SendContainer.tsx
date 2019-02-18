@@ -230,7 +230,7 @@ class SendContainer extends Component<Props, State> {
           <Button
             variant="outlined"
             color="primary"
-            disabled={unlocked}
+            disabled={!unlocked}
             className={classes.button}
             onClick={() => this.handleSendClick()}
           >
