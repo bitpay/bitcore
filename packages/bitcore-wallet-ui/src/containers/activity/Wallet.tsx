@@ -50,19 +50,18 @@ class WalletContainer extends Component<Props> {
   };
 
   fetchTransactions = async (wallet: Wallet) => {
+    const loadedTransactions = this.props.transactions;
     await wallet
       .listTransactions({})
       .pipe(new ParseApiStream())
       .on('data', (d: any) => {
-        let prevTx = this.props.transactions.map(e => e);
-        const foundIndex = prevTx.findIndex(t => t.id === d.id);
+        const foundIndex = loadedTransactions.findIndex(t => t.id === d.id);
         if (foundIndex > -1) {
-          prevTx[foundIndex] = d;
-        } else {
-          // Recent 10 Transactions limit
-          prevTx = [...prevTx.slice(0, 9), d];
+          loadedTransactions[foundIndex] = d;
         }
-        store.dispatch(ActionCreators.setTransactions(prevTx));
+      })
+      .on('finish', () => {
+        store.dispatch(ActionCreators.setTransactions(loadedTransactions));
       });
   };
 
@@ -87,7 +86,9 @@ class WalletContainer extends Component<Props> {
     return (
       <div>
         <WalletBar />
-        <TransactionListCard />
+        <TransactionListCard
+          transactions={this.props.transactions.slice(0, 10)}
+        />
         <WalletBottomNav value={1} />
       </div>
     );

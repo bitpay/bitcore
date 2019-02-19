@@ -60,6 +60,7 @@
     "@types/react-router-dom": "^4.3.1",
     "@types/react-swipeable-views": "^0.12.2",
     "@types/semantic-ui": "^2.2.6",
-    "@types/socket.io-client": "^1.4.32"
+    "@types/socket.io-client": "^1.4.32",
+    "bitcore-node": "8.0.0"
   }
 }
