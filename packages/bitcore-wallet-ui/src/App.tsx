@@ -19,7 +19,7 @@ class App extends Component {
   componentDidMount() {
     socket.on('connect', () => {
       console.log('Connected to socket');
-      socket.emit('room', `/BTC/regtest/inv`);
+      socket.emit('room', `/ETH/mainnet/inv`);
     });
   }
 

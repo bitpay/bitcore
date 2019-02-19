@@ -61,12 +61,12 @@ class WalletsContainer extends Component<Props, State> {
   };
 
   componentDidMount = async () => {
-    if (store.getState().transactions) {
+    if (this.props.wallet) {
       store.dispatch(ActionCreators.setTransactions([]));
+      store.dispatch(ActionCreators.setAddress(''));
+      store.dispatch(ActionCreators.setWallet(undefined));
     }
-    store.dispatch(ActionCreators.setWallet(undefined));
     const wallet = await this.createOrLoadWallet();
-    store.dispatch(ActionCreators.setWallets(wallet!));
     wallet!.storage.listWallets().on('data', (walletBuf: Buffer) => {
       const walletStr = walletBuf.toString();
       const foundWallet = JSON.parse(walletStr);
