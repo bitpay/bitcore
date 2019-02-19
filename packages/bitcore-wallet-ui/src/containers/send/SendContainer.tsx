@@ -16,6 +16,8 @@ import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import OutlinedInput from '@material-ui/core/OutlinedInput';
 import { WalletHeader } from '../../components/header/WalletHeader';
+import { ParseApiStream, Wallet } from 'bitcore-client';
+import { ActionCreators, store } from '../../index';
 
 const styles = createStyles({
   root: {
@@ -113,6 +115,52 @@ class SendContainer extends Component<Props, State> {
     sendFrom: ''
   };
 
+  componentDidMount = async () => {
+    const name = this.props.match.params.name;
+    store.dispatch(ActionCreators.setWalletName(name));
+    const wallet = await this.loadWallet(name);
+    await wallet!.register({ baseUrl: 'http://localhost:3000/api' });
+    if (!this.props.wallet) {
+      store.dispatch(ActionCreators.setWallet(wallet));
+    }
+    if (this.props.wallet) {
+      await this.fetchAddresses(this.props.wallet);
+    }
+  };
+
+  fetchAddresses = async (wallet: Wallet) => {
+    wallet
+      .getAddresses()
+      .pipe(new ParseApiStream())
+      .on('data', (d: any) => {
+        let addresses = [];
+        if (Array.isArray(d)) {
+          addresses = d;
+        } else {
+          addresses = [d];
+        }
+        addresses.map(a =>
+          store.dispatch(ActionCreators.setAddress(a.address))
+        );
+      });
+  };
+
+  loadWallet = async (name: string) => {
+    let wallet: AppState['wallet'] | undefined;
+    try {
+      const exists = Wallet.exists({ name });
+      if (!exists) {
+        console.log('Wallet needs to be created');
+      } else {
+        console.log('Wallet exists');
+        wallet = await Wallet.loadWallet({ name });
+      }
+    } catch (err) {
+      console.log(err);
+    }
+    return wallet;
+  };
+
   handleSendClick = async () => {
     const { wallet } = this.props;
     const chain = wallet!.chain;
@@ -136,7 +184,7 @@ class SendContainer extends Component<Props, State> {
           recipients: [
             {
               address: this.state.sendTo,
-              amount: Number(this.state.amountToSend) * 1e8
+              amount: Number(this.state.amountToSend) * 1e18
             }
           ],
           from
@@ -151,7 +199,6 @@ class SendContainer extends Component<Props, State> {
     const txResult = await wallet!.broadcast({
       tx: serializedTx
     });
-    console.log(txResult);
     this.setState({ sentTxid: txResult.txid.transactionHash || txResult.txid });
   };
 
@@ -187,10 +234,10 @@ class SendContainer extends Component<Props, State> {
                 </Select>
               ) : (
                 <OutlinedInput
-                  value={`${wallet!.name}`}
+                  value={wallet ? `${wallet!.name}` : ''}
                   labelWidth={40}
                   disabled={true}
-                  name={`From ${wallet!.name}`}
+                  name={wallet ? `From ${wallet!.name}` : 'From'}
                   id="outlined-from-simple"
                 />
               )}

@@ -6,9 +6,10 @@ import * as history from 'history';
 import { socket } from './contexts/io';
 import { WalletsPage } from './containers/wallets/Wallets';
 import { SingleWalletPage } from './containers/activity/Wallet';
-import { RecievePage } from './containers/recieve/RecievePage';
+import { RecieveContainer } from './containers/recieve/RecieveContainer';
 import { Notification } from './components/notification/Notification';
 import { SendPage } from './containers/send/SendContainer';
+import { ErrorBoundary } from './components/404/ErrorBoundary';
 const createdHistory = history.createBrowserHistory();
 
 class App extends Component {
@@ -48,17 +49,22 @@ class App extends Component {
 
   render() {
     return (
-      <div>
-        <Notification message={this.state.message} />
-        <Router history={createdHistory}>
-          <Switch>
-            <Route exact path="/wallet/:name" component={SingleWalletPage} />
-            <Route path="/wallet/:name/send" component={SendPage} />
-            <Route path="/wallet/:name/receive" component={RecievePage} />
-            <Route exact path="/" component={WalletsPage} />
-          </Switch>
-        </Router>
-      </div>
+      <ErrorBoundary>
+        <div>
+          <Notification message={this.state.message} />
+          <Router history={createdHistory}>
+            <Switch>
+              <Route exact path="/wallet/:name" component={SingleWalletPage} />
+              <Route path="/wallet/:name/send" component={SendPage} />
+              <Route
+                path="/wallet/:name/receive"
+                component={RecieveContainer}
+              />
+              <Route exact path="/" component={WalletsPage} />
+            </Switch>
+          </Router>
+        </div>
+      </ErrorBoundary>
     );
   }
 }
