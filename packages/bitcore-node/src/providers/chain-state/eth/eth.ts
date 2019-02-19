@@ -7,7 +7,6 @@ import Web3 from 'web3';
 import { Storage } from '../../../services/storage';
 import { Readable } from 'stream';
 (Symbol as any).asyncIterator = Symbol.asyncIterator || Symbol.for('Symbol.asyncIterator');
-//import Web3 = require('web3-eth');
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
