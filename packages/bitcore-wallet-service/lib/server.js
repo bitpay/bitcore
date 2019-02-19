@@ -2920,7 +2920,6 @@ WalletService.prototype.getPendingTxs = function(opts, cb) {
       })
 
       if (opts.noCashAddr && txps[0] && txps[0].coin == 'bch') {
-console.log('## [server.js.2989]'); //TODO
         _.each(txps, (x) => {
           if (x.changeAddress) {
             x.changeAddress.address= BCHAddressTranslator.translate(x.changeAddress.address,'copay');

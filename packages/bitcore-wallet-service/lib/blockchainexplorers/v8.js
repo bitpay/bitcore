@@ -391,7 +391,12 @@ V8.prototype.estimateFee = function(nbBlocks, cb) {
     var url = self.baseUrl + '/fee/' + x;
     self.request.get(url, {})
       .then( (ret) => {
-        result[x] = ret;
+        try {
+          ret = JSON.parse(ret); 
+          result[x] = ret.feerate;
+        }
+        catch (e) {};
+
         return icb();
       })
       .catch((err) => {return icb(err)} );
