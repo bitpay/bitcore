@@ -7,9 +7,10 @@ import Avatar from '@material-ui/core/Avatar';
 import Typography from '@material-ui/core/Typography';
 import RefreshIcon from '@material-ui/icons/Refresh';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
+import { AppState } from '../../contexts/state';
 
 interface Props {
-  tx: any;
+  tx: AppState['transactions'][0];
   classes: any;
   wallet?: Wallet;
 }
@@ -96,7 +97,7 @@ function Transactions(props: Props) {
               variant="subtitle1"
               className={tx.height > 0 ? classes.green : classes.default}
             >
-              {tx.value / 1e8 || tx.satoshis / 1e8} {wallet ? wallet.chain : ''}
+              {tx.satoshis! / 1e8} {wallet ? wallet.chain : ''}
             </Typography>
             <Typography variant="subtitle1" color="textSecondary">
               {new Date(tx.blockTime).toDateString()}

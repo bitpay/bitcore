@@ -60,17 +60,4 @@ function TransactionCard(props: Props) {
   );
 }
 
-TransactionCard.propTypes = {
-  classes: PropTypes.object.isRequired
-};
-
-const mapStateToProps = (state: AppState) => {
-  return {
-    transactions: state.transactions,
-    wallet: state.wallet
-  };
-};
-
-export const TransactionListCard = withStyles(styles)(
-  connect(mapStateToProps)(TransactionCard)
-);
+export const TransactionListCard = withStyles(styles)(TransactionCard);
