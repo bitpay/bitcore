@@ -87,7 +87,8 @@ const styles = createStyles({
     boxShadow: 'none'
   },
   inputWidth: {
-    width: '100%'
+    width: '100%',
+    textAlign: 'left'
   }
 });
 
@@ -151,7 +152,8 @@ class SendContainer extends Component<Props, State> {
     const txResult = await wallet!.broadcast({
       tx: serializedTx
     });
-    this.setState({ sentTxid: txResult.txid });
+    console.log(txResult);
+    this.setState({ sentTxid: txResult.txid.transactionHash || txResult.txid });
   };
 
   render() {
@@ -172,7 +174,7 @@ class SendContainer extends Component<Props, State> {
                   onChange={e => this.setState({ sendFrom: e.target.value })}
                   input={
                     <OutlinedInput
-                      labelWidth={20}
+                      labelWidth={40}
                       name="From"
                       id="outlined-from-simple"
                     />

@@ -88,7 +88,7 @@ class CustomizedSnackbars extends PureComponent<Props2, State> {
     open: false
   };
 
-  componentWillReceiveProps = (nextProps: any) => {
+  componentWillReceiveProps = (nextProps: Props2) => {
     if (nextProps.message) {
       this.setState({ open: true });
     }

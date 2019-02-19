@@ -63,7 +63,6 @@ class WalletsContainer extends Component<Props, State> {
   componentDidMount = async () => {
     if (this.props.wallet) {
       store.dispatch(ActionCreators.setTransactions([]));
-      store.dispatch(ActionCreators.setAddress(''));
       store.dispatch(ActionCreators.setWallet(undefined));
     }
     const wallet = await this.createOrLoadWallet();

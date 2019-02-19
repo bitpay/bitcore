@@ -6,7 +6,6 @@ import { Wallet } from 'bitcore-client';
 import { Link } from 'react-router-dom';
 import { Icon } from 'semantic-ui-react';
 import { ActionCreators, store } from '../../index';
-import { socket } from '../../contexts/io';
 import { AppState } from '../../contexts/state';
 
 interface Props {
@@ -24,15 +23,8 @@ export class WalletList extends Component<Props> {
     store.dispatch(ActionCreators.setWalletName(name));
     wallet = await this.loadWallet(name);
     await wallet!.register({ baseUrl: 'http://localhost:3000/api' });
-    await this.handleSocketConnect(wallet!);
-    await store.dispatch(ActionCreators.setWallet(wallet));
-  };
-
-  handleSocketConnect = (wallet: Wallet) => {
-    socket.on('connect', () => {
-      console.log(`Connected to socket ${wallet.chain} ${wallet.network}`);
-      socket.emit('room', `/${wallet.chain}/${wallet.network}/inv`);
-    });
+    store.dispatch(ActionCreators.setWallet(wallet));
+    store.dispatch(ActionCreators.setUnlocked(false));
   };
 
   loadWallet = async (name: string) => {

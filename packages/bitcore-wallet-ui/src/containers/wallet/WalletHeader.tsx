@@ -1,17 +1,18 @@
 import React, { PureComponent } from 'react';
-import { withStyles } from '@material-ui/core/styles';
+import { WithStyles, withStyles, createStyles } from '@material-ui/core/styles';
 import AppBar from '@material-ui/core/AppBar';
 import Toolbar from '@material-ui/core/Toolbar';
 import Typography from '@material-ui/core/Typography';
 import ClearIcon from '@material-ui/icons/Clear';
 import LockIcon from '@material-ui/icons/Lock';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
+import Avatar from '@material-ui/core/Avatar';
 import { Link } from 'react-router-dom';
 import { AppState } from '../../contexts/state';
 import { connect } from 'react-redux';
 import { UnlockBar } from './UnlockBar';
 
-const styles = {
+const styles = createStyles({
   root: {
     flexGrow: 1,
     position: 'absolute' as 'absolute',
@@ -36,10 +37,31 @@ const styles = {
     '&:hover': {
       textDecoration: 'none'
     }
+  },
+  navStyle: {
+    position: 'fixed',
+    bottom: 50,
+    right: 0,
+    padding: '2px',
+    zIndex: 999,
+    margin: 10
+  },
+  avatar: {
+    width: 60,
+    height: 60,
+    color: '#fff',
+    boxShadow:
+      '0px 1px 3px 0px rgba(0,0,0,0.2), 0px 1px 1px 0px rgba(0,0,0,0.14), 0px 2px 1px -1px rgba(0,0,0,0.12)',
+    backgroundColor: 'rgb(0, 122, 255)',
+    cursor: 'pointer'
+  },
+  avatarIcon: {
+    height: 35,
+    width: 35
   }
-};
+});
 
-interface Props {
+interface Props extends WithStyles<typeof styles> {
   wallet?: AppState['wallet'];
   classes: any;
   unlocked: boolean;
@@ -74,6 +96,18 @@ class WalletNavTop extends PureComponent<Props, State> {
             )}
           </Toolbar>
         </AppBar>
+        <div className={classes.navStyle}>
+          <Avatar style={styles.avatar}>
+            {wallet && unlocked ? (
+              <LockOpenIcon style={styles.avatarIcon} />
+            ) : (
+              <LockIcon
+                style={styles.avatarIcon}
+                onClick={() => this.setState({ open: true })}
+              />
+            )}
+          </Avatar>
+        </div>
         {this.state.open && <UnlockBar />}
       </div>
     );

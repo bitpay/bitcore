@@ -16,14 +16,16 @@ class App extends Component {
     message: ''
   };
 
-  componentDidMount() {
+  componentDidMount = () => {
     socket.on('connect', () => {
-      console.log('Connected to socket');
-      socket.emit('room', `/ETH/mainnet/inv`);
+      console.log(`Connected to socket BTC regtest`);
+      socket.emit('room', `/BTC/regtest/inv`);
     });
-  }
+    this.handleGetTx();
+    this.handleGetBlock();
+  };
 
-  handleGetTx = (() => {
+  handleGetTx = () => {
     socket.on('tx', async (sanitizedTx: any) => {
       let message = `Recieved ${sanitizedTx.value /
         100000000} BTC at ${new Date(
@@ -31,14 +33,14 @@ class App extends Component {
       ).toLocaleString()}`;
       this.setState({ message });
     });
-  })();
+  };
 
-  handleGetBlock = (() => {
+  handleGetBlock = () => {
     socket.on('block', (block: any) => {
       let message = `New Block on ${new Date(block.time).toDateString()}`;
       this.setState({ message });
     });
-  })();
+  };
 
   async componentWillUnmount() {
     socket.removeAllListeners();

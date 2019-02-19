@@ -7,6 +7,7 @@ import { WalletBottomNav } from './BottomNav';
 import { ActionCreators, store } from '../../index';
 import { connect } from 'react-redux';
 import { AppState } from '../../contexts/state';
+import { socket } from '../../contexts/io';
 
 interface Props extends RouteComponentProps<{ name: string }> {
   walletName: string;
@@ -16,17 +17,31 @@ interface Props extends RouteComponentProps<{ name: string }> {
 }
 
 class WalletContainer extends Component<Props> {
-  componentDidUpdate = async (prevProps: any) => {
+  componentDidUpdate = (prevProps: any) => {
     const { wallet } = this.props;
     if (wallet && prevProps.wallet !== wallet) {
-      await this.updateWalletInfo(wallet);
-      await this.fetchAddresses(wallet);
+      this.updateWalletInfo(wallet);
+      this.fetchAddresses(wallet);
+      this.handleGetTx(wallet);
+      this.handleGetBlock(wallet);
     }
   };
 
-  updateWalletInfo = async (wallet: Wallet) => {
-    await this.fetchTransactions(wallet);
-    await this.updateBalance(wallet);
+  handleGetTx = (wallet: Wallet) => {
+    socket.on('tx', () => {
+      this.updateWalletInfo(wallet);
+    });
+  };
+
+  handleGetBlock = (wallet: Wallet) => {
+    socket.on('block', () => {
+      this.updateWalletInfo(wallet);
+    });
+  };
+
+  updateWalletInfo = (wallet: Wallet) => {
+    this.fetchTransactions(wallet);
+    this.updateBalance(wallet);
   };
 
   updateBalance = async (wallet: Wallet) => {
@@ -35,7 +50,7 @@ class WalletContainer extends Component<Props> {
   };
 
   fetchTransactions = async (wallet: Wallet) => {
-    wallet
+    await wallet
       .listTransactions({})
       .pipe(new ParseApiStream())
       .on('data', (d: any) => {
@@ -52,7 +67,7 @@ class WalletContainer extends Component<Props> {
   };
 
   fetchAddresses = async (wallet: Wallet) => {
-    wallet
+    await wallet
       .getAddresses()
       .pipe(new ParseApiStream())
       .on('data', (d: any) => {

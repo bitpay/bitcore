@@ -33,7 +33,7 @@ const styles = () =>
     }
   });
 
-export interface Props extends WithStyles<typeof styles> {
+interface Props extends WithStyles<typeof styles> {
   walletCreate: any;
   classes: any;
   handleCreateWalletClick: any;
