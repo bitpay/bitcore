@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
-import { Wallet, Storage } from 'bitcore-client';
-import { NavBar } from './AppBar';
-import { WalletListCard } from './WalletContainer';
+import { Wallet } from 'bitcore-client';
+import { NavBar } from '../../components/wallets/AppBar';
+import { WalletListCard } from '../../components/wallets/WalletContainer';
 import TextField from '@material-ui/core/TextField';
 import classNames from 'classnames';
 import {

@@ -10,7 +10,7 @@ import Avatar from '@material-ui/core/Avatar';
 import { Link } from 'react-router-dom';
 import { AppState } from '../../contexts/state';
 import { connect } from 'react-redux';
-import { UnlockBar } from './UnlockBar';
+import { UnlockBar } from '../unlock/UnlockBar';
 
 const styles = createStyles({
   root: {

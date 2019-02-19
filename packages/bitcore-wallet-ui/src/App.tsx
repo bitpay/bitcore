@@ -5,10 +5,10 @@ import 'semantic-ui-css/semantic.min.css';
 import * as history from 'history';
 import { socket } from './contexts/io';
 import { WalletsPage } from './containers/wallets/Wallets';
-import { SingleWalletPage } from './containers/wallet/Wallet';
-import { RecievePage } from './containers/Address/RecievePage';
+import { SingleWalletPage } from './containers/activity/Wallet';
+import { RecievePage } from './containers/recieve/RecievePage';
+import { Notification } from './components/notification/Notification';
 import { SendPage } from './containers/send/SendContainer';
-import { Notification } from './containers/wallet/Notification';
 const createdHistory = history.createBrowserHistory();
 
 class App extends Component {

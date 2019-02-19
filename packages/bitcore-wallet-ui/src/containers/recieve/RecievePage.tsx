@@ -1,10 +1,10 @@
 import React from 'react';
 import { RouteComponentProps } from 'react-router';
-import { WalletBottomNav } from '../wallet/BottomNav';
-import { AddressNavBar } from '../Address/ActionHeaderCard';
-import { AddressListCard } from '../Address/AddressContainer';
+import { WalletBottomNav } from '../../components/footer/BottomNav';
 import { AppState } from '../../contexts/state';
 import { connect } from 'react-redux';
+import { AddressNavBar } from '../../components/recieve/AddressNavBar';
+import { AddressListCard } from '../../components/recieve/AddressContainer';
 
 interface Props extends RouteComponentProps<{ name: string }> {
   wallet: AppState['wallet'];

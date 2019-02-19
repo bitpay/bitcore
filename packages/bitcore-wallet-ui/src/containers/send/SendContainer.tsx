@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
-import { WithStyles, withStyles, createStyles } from '@material-ui/core/styles';
+import { withStyles, createStyles } from '@material-ui/core/styles';
 import { RouteComponentProps } from 'react-router';
 import Typography from '@material-ui/core/Typography';
 import { Paper } from '@material-ui/core';
-import InputBase from '@material-ui/core/InputBase';
 import Input from '@material-ui/core/Input';
 import InputLabel from '@material-ui/core/InputLabel';
 import InputAdornment from '@material-ui/core/InputAdornment';
@@ -11,12 +10,12 @@ import FormControl from '@material-ui/core/FormControl';
 import Button from '@material-ui/core/Button';
 import { AppState } from '../../contexts/state';
 import { connect } from 'react-redux';
-import { QRBox } from './QRBox';
-import { WalletBottomNav } from '../wallet/BottomNav';
-import { WalletHeader } from '../wallet/WalletHeader';
+import { QRBox } from '../../components/send/QRBox';
+import { WalletBottomNav } from '../../components/footer/BottomNav';
 import MenuItem from '@material-ui/core/MenuItem';
 import Select from '@material-ui/core/Select';
 import OutlinedInput from '@material-ui/core/OutlinedInput';
+import { WalletHeader } from '../../components/header/WalletHeader';
 
 const styles = createStyles({
   root: {

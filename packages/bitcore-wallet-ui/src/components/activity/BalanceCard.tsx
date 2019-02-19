@@ -4,7 +4,7 @@ import { withStyles } from '@material-ui/core/styles';
 import Typography from '@material-ui/core/Typography';
 import { Paper } from '@material-ui/core';
 import { Wallet } from 'bitcore-client';
-import { WalletHeader } from './WalletHeader';
+import { WalletHeader } from '../header/WalletHeader';
 import { connect } from 'react-redux';
 
 const styles = {

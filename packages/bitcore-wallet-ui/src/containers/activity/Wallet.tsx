@@ -1,13 +1,13 @@
 import React, { Component } from 'react';
 import { ParseApiStream, Wallet } from 'bitcore-client';
 import { RouteComponentProps } from 'react-router';
-import { WalletBar } from './BalanceCard';
-import { TransactionListCard } from './TransactionContainer';
-import { WalletBottomNav } from './BottomNav';
+import { WalletBottomNav } from '../../components/footer/BottomNav';
 import { ActionCreators, store } from '../../index';
 import { connect } from 'react-redux';
 import { AppState } from '../../contexts/state';
 import { socket } from '../../contexts/io';
+import { WalletBar } from '../../components/activity/BalanceCard';
+import { TransactionListCard } from '../../components/activity/TransactionContainer';
 
 interface Props extends RouteComponentProps<{ name: string }> {
   walletName: string;
