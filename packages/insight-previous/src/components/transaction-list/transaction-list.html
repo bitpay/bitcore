@@ -1,7 +1,4 @@
-<div *ngIf="loading">
-  <ion-spinner name="crescent"></ion-spinner>
-</div>
-
+<loader *ngIf="loading" [type]="'tx-full-list'"></loader>
 
 <div *ngIf="!loading">
   <ion-grid>
@@ -11,9 +8,9 @@
       </ion-col>
     </ion-row>
     <ion-row *ngIf="limit < transactions.length">
-      <ion-col col-12 text-center (click)="loadMore()">
-        <a>Load More</a>
-      </ion-col>
+      <ion-infinite-scroll (ionInfinite)="loadMore($event)">
+        <loader [type]="'tx-full-list'"></loader>
+      </ion-infinite-scroll>
     </ion-row>
   </ion-grid>
 </div>

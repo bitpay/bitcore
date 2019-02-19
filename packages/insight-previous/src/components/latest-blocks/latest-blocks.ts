@@ -63,14 +63,15 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
     );
   }
 
-  public loadMoreBlocks(): void {
+  public loadMoreBlocks(infiniteScroll) {
     clearInterval(this.reloadInterval);
     const since: number =
       this.blocks.length > 0 ? this.blocks[this.blocks.length - 1].height : 0;
-    this.blocksProvider.pageBlocks(since, this.numBlocks).subscribe(
+    return this.blocksProvider.pageBlocks(since, this.numBlocks).subscribe(
       ({ blocks }) => {
         this.blocks = this.blocks.concat(blocks);
         this.loading = false;
+        infiniteScroll.complete();
       },
       err => {
         this.logger.error(err);

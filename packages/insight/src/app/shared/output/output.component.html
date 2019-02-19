@@ -1,0 +1,46 @@
+<div [ngClass]="{ card: true, 'detail-view': !summary }">
+  <app-card-item class="section">
+    <div class="property">
+      <span class="key">Value</span>
+      <span class="value">
+        <app-currency-value
+          amount="{{ coin.value }}"
+          code="{{ coin.chain }}_satoshis"
+          displayAs="{{ displayValueCode }}"
+        ></app-currency-value>
+      </span>
+      <!-- TODO: indicate if spent/unspent -->
+    </div>
+    <ng-container *ngIf="!summary">
+      <p>
+        TODO: this should be the most linked-to view in Insight. It is the ideal
+        place for most wallets to link to when showing users their previous
+        "transactions". For most wallets (including Copay/BitPay currently),
+        users are sending a single payment to a single address in a
+        "transaction", i.e. an Output. Showing the user only that output makes
+        for a much better, easier to understand experience.
+      </p>
+      <p>
+        E.g. Alice sends Bob $10. Her wallet creates a transaction using the
+        closest available output – in Alice's case, she's not used the wallet
+        much before, and just withdrew $1000 from an exchange. The wallet sends
+        $10 to Bob, and $990 back to an internal change address. In the
+        transaction history, Alice can see the $10 payment. Out of curiosity,
+        she clicks through to "view her transaction on the blockchain". When she
+        sees the "$1000 transaction" panic ensues.
+      </p>
+      <p>
+        Outputs still need to be designed – we could consider a view that looks
+        almost like a transaction receipt. If any view in Insight is also for a
+        "non-technical" audience, it's this one. The most important element is
+        the `value` (in the user's displayAs currency). Other data we will want
+        to include: `timeNormalized`, `address` (or `lockingScript` if no
+        address format applies), "included in transaction", "mined in block",
+        "confirmations" and if it has already been spent, "used in input".
+        `lockingScript` should always be possible to see, even if the output has
+        a valid address (maybe in a detail view, or if the user clicks on the
+        address).
+      </p>
+    </ng-container>
+  </app-card-item>
+</div>

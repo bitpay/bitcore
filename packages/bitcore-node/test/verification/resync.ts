@@ -11,7 +11,7 @@ import { Storage } from '../../src/services/storage';
     await Storage.start();
     const chainConfig = Config.chainConfig({ chain, network });
     const worker = new P2pWorker({ chain, network, chainConfig });
-    await worker.start();
+    await worker.connect();
 
     await worker.resync(Number(START), Number(END));
 

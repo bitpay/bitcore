@@ -228,7 +228,11 @@ export class Wallet {
     return new PrivateKey(this.authKey);
   }
 
+<<<<<<< HEAD
   getBalance(time?: string) {
+=======
+  getBalance(time?:string) {
+>>>>>>> 1ea81b4081dc34d107536d9756d750f0e8eb9a4d
     return this.client.getBalance({ pubKey: this.authPubKey, time });
   }
 

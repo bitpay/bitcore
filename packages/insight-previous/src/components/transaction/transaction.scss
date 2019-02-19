@@ -8,7 +8,6 @@ transaction {
     border-radius: 3px;
 
     ion-row {
-      border: 1px solid #f3f3f3;
 
       &.small {
         font-size: 1.1rem;
@@ -64,5 +63,8 @@ transaction {
   .locking-script {
     white-space: normal;
     font-family: monospace;
+  }
+  .arrow-forward{
+    padding: 18px 0px;
   }
 }

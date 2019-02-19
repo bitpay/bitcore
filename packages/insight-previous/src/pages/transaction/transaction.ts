@@ -22,6 +22,8 @@ export class TransactionPage {
   private txId: string;
   private chainNetwork: ChainNetwork;
   public tx: any = {};
+  public vout: number;
+  public fromVout: boolean;
 
   constructor(
     public navParams: NavParams,
@@ -33,6 +35,8 @@ export class TransactionPage {
     public redirProvider: RedirProvider
   ) {
     this.txId = navParams.get('txId');
+    this.vout = navParams.get('vout');
+    this.fromVout = navParams.get('fromVout') || undefined;
 
     const chain: string =
       navParams.get('chain') || this.apiProvider.getConfig().chain;
@@ -44,7 +48,8 @@ export class TransactionPage {
       network
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
-    this.priceProvider.setCurrency(this.chainNetwork.chain);
+    const currentCurrency = localStorage.getItem('insight-currency');
+    this.priceProvider.setCurrency(currentCurrency);
   }
 
   public ionViewDidLoad(): void {

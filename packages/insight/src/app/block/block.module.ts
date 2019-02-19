@@ -6,19 +6,17 @@ import { IonicModule } from '@ionic/angular';
 import { SharedModule } from '../shared/shared.module';
 import { BlockPage } from './block.page';
 
-const routes: Routes = [
-  {
-    path: '',
-    component: BlockPage
-  }
-];
-
 @NgModule({
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
-    RouterModule.forChild(routes),
+    RouterModule.forChild([
+      {
+        path: '',
+        component: BlockPage
+      }
+    ]),
     SharedModule
   ],
   declarations: [BlockPage]

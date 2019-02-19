@@ -1,37 +1,21 @@
-<div *ngIf="showTransactions">
-  <h2>Transactions</h2>
+<loader *ngIf="loading" [type]="'tx-list'"></loader>
+
+<div *ngIf="!loading">
   <ion-grid>
-    <div *ngIf="loading">
-      <ion-spinner name="crescent"></ion-spinner>
-    </div>
-    <div *ngIf="!loading">
-      <ion-row>
-        <ion-col col-5>
-          <ion-note text-left>
-            Received
-          </ion-note>
-        </ion-col>
-        <ion-col col-3 text-right>
-          <ion-note>
-            Value
-          </ion-note>
-        </ion-col>
-        <ion-col col-4 text-left>
-          <ion-note>
-            Spent
-          </ion-note>
-        </ion-col>
-      </ion-row>
-      <ion-row *ngFor="let coin of coins; let i = index">
-        <ion-col col-12 *ngIf="i < limit">
-          <coin [coin]="coin"></coin>
-        </ion-col>
-      </ion-row>
-      <ion-row *ngIf="limit < coins.length">
-        <ion-col col-12 text-center (click)="loadMore()">
-          <a>Load More</a>
-        </ion-col>
-      </ion-row>
-    </div>
+    <ion-row *ngFor="let coin of coins; let i = index">
+      <ion-col col-12 *ngIf="i < limit">
+        <coin [coin]="coin"></coin>
+      </ion-col>
+    </ion-row>
+    <ion-row *ngIf="limit < coins.length">
+      <ion-infinite-scroll (ionInfinite)="loadMore($event)">
+        <loader [type]="'tx-list'"></loader>
+      </ion-infinite-scroll>
+    </ion-row>
+    <ion-row *ngIf="coins.length === 0" class="no-txs">
+      <ion-col col-12>
+        There are no transactions involving this address.
+      </ion-col>
+    </ion-row>
   </ion-grid>
 </div>

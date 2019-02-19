@@ -1,0 +1,18 @@
+<ion-header no-border>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+      <ion-back-button></ion-back-button>
+    </ion-buttons>
+    <ion-title>Output</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content padding>
+  <app-output
+    *ngIf="(coin$ | async) as coin"
+    [coin]="coin"
+    [summary]="false"
+    [displayValueCode]="config.displayValueCode$ | async"
+  ></app-output>
+</ion-content>
