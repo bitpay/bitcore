@@ -3,8 +3,11 @@ import { WalletAddressStorage } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { InternalStateProvider } from '../internal/internal';
 import { ObjectID } from 'mongodb';
-
-import Web3 = require('web3-eth');
+import Web3 from 'web3';
+import { Storage } from '../../../services/storage';
+import { Readable } from 'stream';
+(Symbol as any).asyncIterator = Symbol.asyncIterator || Symbol.for('Symbol.asyncIterator');
+//import Web3 = require('web3-eth');
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -14,7 +17,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     this.config = Config.chains[this.chain];
   }
 
-  getRPC(network: string) {
+  getWeb3(network: string) {
     const networkConfig = this.config[network];
     const provider = networkConfig.provider;
     const portString = provider.port ? `:${provider.port}` : '';
@@ -33,36 +36,91 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { network, address } = params;
-    const balance = Number(await this.getRPC(network).getBalance(address));
+    const balance = Number(await this.getWeb3(network).eth.getBalance(address));
     return { confirmed: balance, unconfirmed: 0, balance };
   }
 
   async getBlock(params: CSP.GetBlockParams) {
     const { network, blockId } = params;
-    return this.getRPC(network).getBlock(blockId);
+    return this.getWeb3(network).eth.getBlock(Number(blockId)) as any;
   }
 
   async getTransaction(params: CSP.StreamTransactionParams) {
     const { network, txId } = params;
-    const transaction = await this.getRPC(network).getTransaction(txId);
-    const transactions = transaction !== null ? transaction : null;
-    return transactions;
+    const transaction = await this.getWeb3(network).eth.getTransaction(txId);
+    return transaction as any;
+  }
+
+  async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
+    const { network, wallet, req, res } = params;
+
+    const web3 = this.getWeb3(network);
+
+    function scan(fromHeight, toHeight, address) {
+      return new Promise<Array<any>>(resolve =>
+        web3.eth.currentProvider.send(
+          {
+            method: 'trace_filter',
+            params: [
+              {
+                fromBlock: web3.utils.toHex(fromHeight),
+                toBlock: web3.utils.toHex(toHeight),
+                toAddress: [address]
+              }
+            ],
+            jsonrpc: '2.0',
+            id: 0
+          },
+          (_, data) => resolve(data.result)
+        )
+      );
+    }
+
+    async function* getTransactionsForAddress(address: string) {
+      let start = 0;
+      while (start < 500000) {
+        const txs = await scan(start, start + 1000, address);
+        start += 1000;
+        for (const tx of txs) {
+          yield tx;
+        }
+      }
+    }
+
+    const addresses = await this.getWalletAddresses(wallet._id!);
+    console.log(addresses);
+
+    Storage.stream(
+      new Readable({
+        objectMode: true,
+        read: async function() {
+          for (const walletAddress of addresses) {
+            for await (const tx of getTransactionsForAddress(walletAddress.address)) {
+              console.log(tx);
+              this.push(tx);
+            }
+          }
+        }
+      }),
+      req,
+      res
+    );
   }
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     const { network, rawTx } = params;
-    const tx = await this.getRPC(network).sendSignedTransaction(rawTx);
+    const tx = await this.getWeb3(network).eth.sendSignedTransaction(rawTx);
     return tx;
   }
 
   async getTransactionCount(params: any) {
     const { network, address } = params;
-    const txCount = await this.getRPC(network).getTransactionCount(address);
+    const txCount = await this.getWeb3(network).eth.getTransactionCount(address);
     return txCount;
   }
 
   async getWalletAddresses(walletId: ObjectID) {
-    let query = { wallet: walletId };
+    let query = { chain: this.chain, wallet: walletId };
     return WalletAddressStorage.collection
       .find(query)
       .addCursorFlag('noCursorTimeout', true)

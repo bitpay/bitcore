@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2017",
     "module": "commonjs",
-    "lib": ["es2017"],
+    "lib": ["es2017", "esnext"],
     "allowJs": true,
     "sourceMap": true,
     "outDir": "build",

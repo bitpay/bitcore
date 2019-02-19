@@ -5,7 +5,7 @@ import logger from '../logger';
 import config from '../config';
 import parseArgv from '../utils/parseArgv';
 import { EventEmitter } from 'events';
-import * as cluster from 'cluster';
+import cluster from 'cluster';
 
 let args = parseArgv([], ['DEBUG']);
 
