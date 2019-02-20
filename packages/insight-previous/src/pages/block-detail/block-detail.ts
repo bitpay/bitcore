@@ -29,7 +29,7 @@ export class BlockDetailPage {
     public navParams: NavParams,
     private blockProvider: BlocksProvider,
     private apiProvider: ApiProvider,
-    public currency: CurrencyProvider,
+    public currencyProvider: CurrencyProvider,
     private logger: Logger,
     private priceProvider: PriceProvider,
     public redirProvider: RedirProvider
@@ -45,8 +45,8 @@ export class BlockDetailPage {
       network
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
-    const currentCurrency = localStorage.getItem('insight-currency');
-    this.priceProvider.setCurrency(currentCurrency);
+    this.currencyProvider.setCurrency();
+    this.priceProvider.setCurrency();
   }
 
   ionViewDidLoad() {

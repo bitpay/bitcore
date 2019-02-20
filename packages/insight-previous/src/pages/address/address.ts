@@ -46,8 +46,8 @@ export class AddressPage {
       network
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
-    const currentCurrency = localStorage.getItem('insight-currency');
-    this.priceProvider.setCurrency(currentCurrency);
+    this.currencyProvider.setCurrency();
+    this.priceProvider.setCurrency();
 
     this.events.subscribe('CoinList', (d: any) => {
       this.nroTransactions = d.length;

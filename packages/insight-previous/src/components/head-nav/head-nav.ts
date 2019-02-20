@@ -1,11 +1,4 @@
-import {
-  Component,
-  EventEmitter,
-  Injectable,
-  Input,
-  Output,
-  ViewChild
-} from '@angular/core';
+import { Component, Injectable, Input, ViewChild } from '@angular/core';
 import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
 import {
@@ -32,8 +25,6 @@ import { DenominationComponent } from '../denomination/denomination';
 })
 export class HeadNavComponent {
   @ViewChild('searchbar') searchbar: Searchbar;
-  @Output()
-  public updateView = new EventEmitter<ChainNetwork>();
   public showSearch = false;
   public loading: boolean;
   @Input()
@@ -47,8 +38,8 @@ export class HeadNavComponent {
     private navCtrl: NavController,
     private apiProvider: ApiProvider,
     public app: App,
-    public currency: CurrencyProvider,
-    public price: PriceProvider,
+    public currencyProvider: CurrencyProvider,
+    public priceProvider: PriceProvider,
     public actionSheetCtrl: ActionSheetController,
     public popoverCtrl: PopoverController,
     public toastCtrl: ToastController,
@@ -64,7 +55,10 @@ export class HeadNavComponent {
   }
 
   public goHome(): void {
-    this.navCtrl.popToRoot();
+    this.navCtrl.setRoot('home', {
+      chain: this.config.chain,
+      network: this.config.network
+    });
   }
 
   public search(): void {
@@ -148,28 +142,30 @@ export class HeadNavComponent {
   }
 
   public changeCurrency(myEvent: any): void {
-    const popover: any = this.popoverCtrl.create(DenominationComponent);
+    const popover: any = this.popoverCtrl.create(DenominationComponent, {
+      config: this.config,
+      currencySymbol: this.currencyProvider.getCurrency()
+    });
     popover.present({
       ev: myEvent
     });
     popover.onDidDismiss(data => {
-      if (data) {
-        if (JSON.stringify(data) === JSON.stringify(this.config)) {
-          return;
-        }
-        this.apiProvider.changeNetwork(data);
+      if (!data) {
+        return;
+      } else if (data.chainNetwork !== this.config) {
+        this.apiProvider.changeNetwork(data.chainNetwork);
         this.config = this.apiProvider.getConfig();
-        if (this.navCtrl.getActive().component.name === 'HomePage') {
-          this.updateView.next(data);
-        } else {
-          this.navCtrl.popToRoot();
-        }
-        this.navCtrl.setRoot('home', {
-          chain: this.config.chain,
-          network: this.config.network
-        });
+        this.setCurrency(data.currencySymbol);
+        this.goHome();
+      } else if (data.currencySymbol !== this.currencyProvider.getCurrency()) {
+        this.setCurrency(data.currencySymbol);
       }
     });
+  }
+
+  private setCurrency(currencySymbol) {
+    this.currencyProvider.setCurrency(currencySymbol);
+    this.priceProvider.setCurrency(currencySymbol);
   }
 
   public toggleSearch(): void {
