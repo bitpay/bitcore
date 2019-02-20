@@ -1,5 +1,5 @@
 import { LoggifyClass } from '../decorators/Loggify';
-import { BaseModel, MongoBound } from './base';
+import { BaseModel } from './base';
 import { StorageService } from '../services/storage';
 
 export interface AccountState {
