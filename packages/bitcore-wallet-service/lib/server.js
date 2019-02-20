@@ -2986,7 +2986,7 @@ WalletService.prototype.getNotifications = function(opts, cb) {
 };
 
 
-WalletService.prototype._normalizeV8TxHistory = function(walletId, txs, bcHeight, cb) {
+WalletService.prototype._normalizeTxHistory = function(walletId, txs, bcHeight, cb) {
   var self = this;
 
   if (_.isEmpty(txs) )
@@ -3008,7 +3008,13 @@ WalletService.prototype._normalizeV8TxHistory = function(walletId, txs, bcHeight
   var moves = {};
 
   // remove 'fees' and 'moves' (probably change addresses)
+  // also remove conflincting TXs (height=-3)
   var txs =  _.filter(txs, (tx) => {
+
+    // double spend or error
+    if (tx.height && tx.height <= -3) 
+      return false;
+
     if (tx.category == 'receive') {
       var output = {
           address: tx.address,
@@ -3539,7 +3545,7 @@ WalletService.prototype.getTxHistoryV8 = function(bc, wallet, opts, skip, limit,
       bc.getTransactions(wallet, startBlock, (err, txs) => {
         if (err) return cb(err);
 
-        self._normalizeV8TxHistory(wallet.id, txs, bcHeight, function(err, inTxs) {
+        self._normalizeTxHistory(wallet.id, txs, bcHeight, function(err, inTxs) {
           if (err) return cb(err);
 
           if (cacheStatus.tipTxId) {
