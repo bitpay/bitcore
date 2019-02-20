@@ -87,7 +87,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     }
 
     const addresses = await this.getWalletAddresses(wallet._id!);
-    console.log(addresses);
 
     Storage.stream(
       new Readable({
@@ -95,7 +94,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         read: async function() {
           for (const walletAddress of addresses) {
             for await (const tx of getTransactionsForAddress(walletAddress.address)) {
-              console.log(tx);
               this.push(tx);
             }
           }
@@ -112,7 +110,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     return tx;
   }
 
-  async getTransactionCount(params: any) {
+  async getTransactionCount(params: { network: string; address: string }) {
     const { network, address } = params;
     const txCount = await this.getWeb3(network).eth.getTransactionCount(address);
     return txCount;
