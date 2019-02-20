@@ -1674,7 +1674,7 @@ WalletService.prototype.getFeeLevels = function(opts, cb) {
   let cacheKey = 'feeLevel:' + opts.coin + ':' + opts.network;
 
   self.storage.checkAndUseGlobalCache(
-    cacheKey, Defaults.FEE_LEVEL_CACHE_DURATION, (err, values) =>  {
+    cacheKey, Defaults.FEE_LEVEL_CACHE_DURATION, (err, values, oldvalues) =>  {
 
     if (err) return cb(err);
     if (values) return cb(null, values, true);
@@ -1709,6 +1709,12 @@ WalletService.prototype.getFeeLevels = function(opts, cb) {
     };
 
     self._sampleFeeLevels(opts.coin, opts.network, samplePoints(), function(err, feeSamples) {
+      if (err) {
+        if (oldvalues) {
+          log.warn("##  There was an error estimating fees... using old cached values");
+          return cb(null, oldvalues, true);
+        }
+      }
 
       var values = _.map(feeLevels, function(level) {
         var result = {

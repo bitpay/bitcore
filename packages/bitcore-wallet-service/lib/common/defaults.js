@@ -29,23 +29,23 @@ Defaults.FEE_LEVELS = {
     name: 'urgent',
     nbBlocks: 2,
     multiplier: 1.5,
-    defaultValue: 150000,
+    defaultValue: 75000,
   }, {
     name: 'priority',
     nbBlocks: 2,
-    defaultValue: 100000
+    defaultValue: 50000
   }, {
     name: 'normal',
     nbBlocks: 3,
-    defaultValue: 80000
+    defaultValue: 30000
   }, {
     name: 'economy',
     nbBlocks: 6,
-    defaultValue: 50000
+    defaultValue: 25000
   }, {
     name: 'superEconomy',
     nbBlocks: 24,
-    defaultValue: 20000
+    defaultValue: 10000
   }],
   bch: [{
     name: 'normal',
