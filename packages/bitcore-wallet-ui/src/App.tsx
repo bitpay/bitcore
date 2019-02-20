@@ -27,18 +27,18 @@ class App extends Component {
   };
 
   handleGetTx = () => {
-    socket.on('tx', async (sanitizedTx: any) => {
-      let message = `Recieved ${sanitizedTx.value /
-        100000000} BTC at ${new Date(
-        sanitizedTx.blockTimeNormalized
-      ).toLocaleString()}`;
-      this.setState({ message });
+    socket.on('coin', async (sanitizedCoin: any) => {
+      if (sanitizedCoin.mintIndex === 0) {
+        let message = `Sent ${sanitizedCoin.value /
+          1e8} BTC at ${new Date().toDateString()}`;
+        this.setState({ message });
+      }
     });
   };
 
   handleGetBlock = () => {
     socket.on('block', (block: any) => {
-      let message = `New Block on ${new Date(block.time).toDateString()}`;
+      let message = `Confirmed on ${new Date(block.time).toDateString()}`;
       this.setState({ message });
     });
   };

@@ -45,8 +45,6 @@ export class BTCTxProvider {
       utxoSum += Number(utxo.value);
       index += 1;
     }
-    console.log({ utxoSum, index });
-    console.log(recepientSum);
     const filteredUtxos = utxos.slice(0, index);
     return filteredUtxos;
   }

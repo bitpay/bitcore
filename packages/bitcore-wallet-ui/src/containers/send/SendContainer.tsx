@@ -174,7 +174,7 @@ class SendContainer extends Component<Props, State> {
           recipients: [
             {
               address: this.state.sendTo,
-              amount: Number(this.state.amountToSend) * 1e8
+              amount: Number(this.state.amountToSend.trim()) * 1e8
             }
           ]
         };
@@ -184,7 +184,7 @@ class SendContainer extends Component<Props, State> {
           recipients: [
             {
               address: this.state.sendTo,
-              amount: Number(this.state.amountToSend) * 1e18
+              amount: Number(this.state.amountToSend.trim()) * 1e18
             }
           ],
           from

@@ -87,7 +87,7 @@ WalletNavBar.propTypes = {
 const mapStateToProps = (state: Props) => {
   return {
     wallet: state.wallet,
-    balance: state.balance.balance
+    balance: state.balance.confirmed
   };
 };
 
