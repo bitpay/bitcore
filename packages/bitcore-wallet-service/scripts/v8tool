@@ -8,7 +8,7 @@ const Client = require('../lib/blockchainexplorers/v8/client.js');
 const coin = 'BCH';
 const network = 'mainnet';
 const authKey = process.argv[2]; 
-const path = process.argv[3] || 'addresses; 
+const path = process.argv[3] || 'addresses'; 
 
 if (!authKey) 
   throw "provide authKey"
