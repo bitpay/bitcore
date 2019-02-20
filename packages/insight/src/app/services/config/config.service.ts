@@ -1,16 +1,9 @@
 import { Injectable } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Title } from '@angular/platform-browser';
+import { Router } from '@angular/router';
 import { AppPreferences } from '@ionic-native/app-preferences/ngx';
-import * as equal from 'fast-deep-equal';
 import { NGXLogger } from 'ngx-logger';
 import { BehaviorSubject } from 'rxjs';
-import {
-  distinctUntilChanged,
-  filter,
-  map,
-  switchMap,
-  tap
-} from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { Chain } from '../../types/chains';
 
@@ -30,6 +23,7 @@ export class ConfigService {
   constructor(
     private logger: NGXLogger,
     private router: Router,
+    private titleService: Title,
     private appPreferences: AppPreferences
   ) {
     this.logger.debug(
@@ -37,5 +31,9 @@ export class ConfigService {
         environment.production ? 'production' : 'non-production'
       } mode.`
     );
+  }
+
+  setTitle(newTitle: string) {
+    this.titleService.setTitle(newTitle);
   }
 }

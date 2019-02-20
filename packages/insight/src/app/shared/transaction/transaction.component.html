@@ -1,0 +1,167 @@
+<div [ngClass]="{ card: true, 'detail-view': !summary }">
+  <div class="section header">
+    <div class="identifiers">
+      <div
+        class="hash"
+        title="The hash this transaction, a.k.a its transaction ID."
+      >
+        {{ transaction.txid }}
+      </div>
+      <span
+        *ngIf="transaction.blockHeight === pending"
+        class="pending-tag"
+        title="This transaction has not yet been mined."
+      >
+        Pending
+      </span>
+      <!-- TODO: red "Conflicting" label for `conflicting` -->
+    </div>
+    <app-date-time [value]="transaction.blockTimeNormalized" class="time">
+    </app-date-time>
+  </div>
+  <app-card-item class="section">
+    <div class="property">
+      <span class="key">Output Value</span>
+      <span class="value">
+        <app-currency-value
+          class="reward"
+          amount="{{ transaction.value }}"
+          code="{{ transaction.chain }}_satoshis"
+          displayAs="{{ displayValueCode }}"
+        ></app-currency-value>
+      </span>
+    </div>
+    <div class="property">
+      <span class="key">Serialized Size</span>
+      <span class="value"> {{ transaction.size | bytes }} </span>
+    </div>
+    <ng-container *ngIf="!summary">
+      <div class="property">
+        <span class="key">Fee</span>
+        <span class="value">
+          <app-currency-value
+            class="reward"
+            amount="{{ transaction.fee }}"
+            code="{{ transaction.chain }}_satoshis"
+            displayAs="{{ displayValueCode }}"
+          ></app-currency-value
+        ></span>
+      </div>
+      <div class="property">
+        <span class="key">Fee Rate</span>
+        <span class="value">
+          {{ transaction.size / transaction.fee }} sat/B
+        </span>
+      </div>
+      <div class="property">
+        <!-- if identityOutputs is empty, this is authhead -->
+        <span class="key">Authhead</span>
+        <span class="value">
+          <ng-container *ngIf="(authhead$ | async) as authhead">
+            <span
+              class="authhead-tag"
+              *ngIf="authhead.identityOutputs.length === 0"
+            >
+              Self
+            </span>
+            <a
+              class="authhead"
+              *ngFor="let output of authhead.identityOutputs"
+              [routerLink]="[
+                '/' + output.chain + '/transaction/' + output.mintTxid
+              ]"
+            >
+              {{ output.mintTxid }}
+            </a>
+          </ng-container>
+        </span>
+      </div>
+    </ng-container>
+  </app-card-item>
+  <ng-container *ngIf="!summary">
+    <app-card-item
+      *ngIf="transaction.confirmations > 0"
+      class="section"
+      header="Included in Block"
+      headerEquivalent="{{ transaction.blockHeight }}"
+      type="forward"
+      [routerLink]="[
+        '/' + transaction.chain + '/block/' + transaction.blockHash
+      ]"
+    >
+      <div class="property">
+        <span class="key">Mined Time</span>
+        <span class="value"> {{ transaction.blockTimeNormalized }} </span>
+      </div>
+      <div class="property">
+        <span class="key">Confirmations</span>
+        <span class="value"> {{ transaction.confirmations }} </span>
+      </div>
+    </app-card-item>
+    <app-card-item
+      *ngIf="transaction.coinbase"
+      class="section"
+      header="Coinbase Details"
+      type="expand-collapse"
+    >
+      TODO: bitcore-node is not yet storing Coinbase information on the
+      Transaction
+    </app-card-item>
+    <app-card-item
+      class="section"
+      header="Raw Transaction"
+      type="expand-collapse"
+    >
+      <table>
+        <tr>
+          <th>Version</th>
+          <td>{{ transaction.version }}</td>
+        </tr>
+        <tr>
+          <th>Input Count</th>
+          <td>{{ transaction.inputCount }}</td>
+        </tr>
+        <tr>
+          <th>Inputs</th>
+          <td>TODO</td>
+        </tr>
+        <tr>
+          <th>Output Count</th>
+          <td>{{ transaction.outputCount }}</td>
+        </tr>
+        <tr>
+          <th>Outputs</th>
+          <td>TODO</td>
+        </tr>
+        <tr>
+          <th>Locktime</th>
+          <td>{{ transaction.locktime }}</td>
+        </tr>
+      </table>
+
+      <a href="#">View Hex</a>
+    </app-card-item>
+  </ng-container>
+</div>
+
+<div class="card" *ngIf="!summary">
+  <app-card-item
+    *ngIf="!transaction.coinbase"
+    class="section"
+    header="Inputs"
+    headerCount="{{ transaction.inputCount }}"
+    type="forward"
+    [routerLink]="[
+      '/' + transaction.chain + '/transaction/' + transaction.txid + '/inputs'
+    ]"
+  ></app-card-item>
+  <app-card-item
+    class="section"
+    header="Outputs"
+    headerCount="{{ transaction.outputCount }}"
+    type="forward"
+    [routerLink]="[
+      '/' + transaction.chain + '/transaction/' + transaction.txid + '/outputs'
+    ]"
+  ></app-card-item>
+</div>

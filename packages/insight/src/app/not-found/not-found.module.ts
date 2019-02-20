@@ -1,25 +1,23 @@
-import { NgModule } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Routes, RouterModule } from '@angular/router';
-
+import { RouterModule, Routes } from '@angular/router';
 import { IonicModule } from '@ionic/angular';
-
+import { SharedModule } from '../shared/shared.module';
 import { NotFoundPage } from './not-found.page';
-
-const routes: Routes = [
-  {
-    path: '',
-    component: NotFoundPage
-  }
-];
 
 @NgModule({
   imports: [
     CommonModule,
     FormsModule,
     IonicModule,
-    RouterModule.forChild(routes)
+    RouterModule.forChild([
+      {
+        path: '',
+        component: NotFoundPage
+      }
+    ]),
+    SharedModule
   ],
   declarations: [NotFoundPage]
 })

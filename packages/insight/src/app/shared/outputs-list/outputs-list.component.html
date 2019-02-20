@@ -1,0 +1,13 @@
+<app-output
+  *ngFor="let coin of (outputs$ | async)"
+  [coin]="coin"
+  [routerLink]="[
+    '/' +
+      (chain$ | async).code +
+      '/transaction/' +
+      (txHash$ | async) +
+      '/output/' +
+      coin.mintIndex
+  ]"
+  [displayValueCode]="displayValueCode"
+></app-output>

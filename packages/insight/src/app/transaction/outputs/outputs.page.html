@@ -1,0 +1,23 @@
+<ion-header no-border>
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-menu-button></ion-menu-button>
+      <ion-back-button></ion-back-button>
+    </ion-buttons>
+    <ion-title>Outputs</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content padding>
+  <div>
+    TODO: summary card – # Outputs in Transaction TXID, aggregate visualization
+    of the amounts (e.g. a scatter plot), aggregate visualization of spent-ness
+    (e.g. timeline of when each coin was spent), other details? This section
+    should blend into the page, rather than being a clickable-card.
+  </div>
+  <app-outputs-list
+    [chain$]="config.currentChain$"
+    [txHash$]="txHash$"
+    [displayValueCode]="config.displayValueCode$ | async"
+  ></app-outputs-list>
+</ion-content>

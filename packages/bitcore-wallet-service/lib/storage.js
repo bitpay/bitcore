@@ -1179,6 +1179,7 @@ Storage.prototype._dump = function(cb, fn) {
 
 // key: 'feeLevel' + JSON.stringify(opts);
 // duration: FEE_LEVEL_DURATION
+//
 
 Storage.prototype.checkAndUseGlobalCache = function(key, duration, cb) {
   var self = this;
@@ -1192,7 +1193,9 @@ Storage.prototype.checkAndUseGlobalCache = function(key, duration, cb) {
     if (err) return cb(err);
     if (!ret) return cb();
     var validFor = ret.ts + duration - now;
-    return cb(null, validFor > 0 ? ret.result : null);
+
+    // always return the value as a 3 param anyways.
+    return cb(null, validFor > 0 ? ret.result : null, ret.result);
   });
 };
 

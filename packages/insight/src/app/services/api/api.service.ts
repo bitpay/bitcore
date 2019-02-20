@@ -4,14 +4,23 @@ import { retryBackoff } from 'backoff-rxjs';
 import { NGXLogger } from 'ngx-logger';
 import { BehaviorSubject, Observable, timer } from 'rxjs';
 import { finalize, map, shareReplay, switchMap } from 'rxjs/operators';
-import { IBlock, StreamingFindOptions } from '../../types/bitcore-node';
+import { environment } from '../../../environments/environment';
+import {
+  AuthheadJSON,
+  CoinListingJSON,
+  DailyTransactionsJSON,
+  IBlock,
+  StreamingFindOptions,
+  TransactionJSON
+} from '../../types/bitcore-node';
 import { Chain, Chains } from '../../types/chains';
 import { RateListing } from '../../types/units';
 import { ConfigService } from '../config/config.service';
 
-// TODO: expose this setting as a BehaviorSubject, tone it down when the window isn't active?
-const streamPollingPeriod = () => timer(0, 5 * 1000);
-const ratesStreamPollingPeriod = () => timer(0, 60 * 1000);
+const streamPollingPeriod = () => timer(0, environment.pollingRateMilliseconds);
+const ratesStreamPollingPeriod = () =>
+  timer(0, environment.pollingRateMilliseconds);
+const oneHour = 1000 * 60 * 60;
 
 /**
  * Convert any object into an object with only elements of type `string`.
@@ -25,7 +34,7 @@ const stringifyForQuery = (object: any) =>
     {}
   );
 
-const temporaryChainBase = (chain: Chain) =>
+const consolidatedChainBase = (chain: Chain) =>
   chain.code === 'BCH'
     ? 'BCH/mainnet'
     : chain.code === 'tBCH'
@@ -36,10 +45,7 @@ const temporaryChainBase = (chain: Chain) =>
           ? 'BTC/testnet'
           : 'unknownTemporaryChainBase';
 
-const temporaryChainNetworkToCode = (chainNetwork: {
-  chain: string;
-  network: string;
-}) =>
+const chainNetworkToCode = (chainNetwork: { chain: string; network: string }) =>
   Chains[
     `${chainNetwork.network === 'testnet' ? 't' : ''}${chainNetwork.chain}`
   ];
@@ -47,6 +53,26 @@ const temporaryChainNetworkToCode = (chainNetwork: {
 @Injectable({
   providedIn: 'root'
 })
+/**
+ * Some implementation notes: you'll notice we're doing a huge amount of
+ * repetitive polling in this service and around the app – this is intentional.
+ *
+ * To provide live-updating information, we could connect to a websocket API
+ * provided by Bitcore. While much more data-efficient, the scaling story for
+ * that on the server-side is quite complicated (including DOS resistance). In
+ * the future, when the Bitcore stack has stabilize a bit, that could be a great
+ * improvement.
+ *
+ * In the immediate term, the scaling story is much better when serving
+ * highly-cacheable API responses to a huge number of clients. Even with client
+ * polling rates and caching times configured to be very short (seconds), it's
+ * still very simple to use a service like Cloudflare to reduce load on the
+ * server itself while presenting a fast, live-updating experience to all the
+ * clients.
+ *
+ * So we're polling a lot right now, but we can afford it; and the alternative
+ * requires more server-side complexity to scale to many thousands of clients.
+ */
 export class ApiService {
   constructor(
     private config: ConfigService,
@@ -80,12 +106,13 @@ export class ApiService {
    * Usage example: `${apiBase}/route`
    */
   apiBase = (chain: Chain) =>
-    // TODO: pull Chain type into Bitcore
-    // `${this.config.apiPrefix$.getValue()}/${chain.code}/${chain.network}`;
-    `${this.config.apiPrefix$.getValue()}/${temporaryChainBase(chain)}`;
+    `${this.config.apiPrefix$.getValue()}/${consolidatedChainBase(chain)}`;
 
-  streamFromBitcore = <T>(call: () => Observable<T>) =>
-    streamPollingPeriod().pipe(
+  streamFromBitcore = <T>(
+    call: () => Observable<T>,
+    pollingPeriod = streamPollingPeriod()
+  ) =>
+    pollingPeriod.pipe(
       switchMap(() => call()),
       retryBackoff({
         initialInterval: 5 * 1000,
@@ -108,21 +135,57 @@ export class ApiService {
         .get<Array<{ chain: string; network: string }>>(
           `${this.config.apiPrefix$.getValue()}/status/enabled-chains`
         )
-        .pipe(map(response => response.map<Chain>(temporaryChainNetworkToCode)))
+        .pipe(map(response => response.map<Chain>(chainNetworkToCode)))
     );
 
   streamBlocks = (chain: Chain, params: StreamingFindOptions<IBlock>) =>
     this.streamFromBitcore(() =>
-      this.http.get<IBlock>(`${this.apiBase(chain)}/block`, {
+      this.http.get<IBlock[]>(`${this.apiBase(chain)}/block`, {
         params: stringifyForQuery(params)
       })
     );
 
   streamBlock = (chain: Chain, hash: string) =>
     this.streamFromBitcore(() =>
-      // TODO: `confirmations` should be in a proper type (e.g. IBlockExtended)
       this.http.get<IBlock & { confirmations: number }>(
         `${this.apiBase(chain)}/block/${hash}`
       )
+    );
+
+  streamTransactions = (
+    chain: Chain,
+    params: StreamingFindOptions<TransactionJSON>
+  ) =>
+    this.streamFromBitcore(() =>
+      this.http.get<TransactionJSON[]>(`${this.apiBase(chain)}/tx/`, {
+        params: stringifyForQuery(params)
+      })
+    );
+
+  streamTransaction = (chain: Chain, hash: string) =>
+    this.streamFromBitcore(() =>
+      this.http.get<TransactionJSON>(`${this.apiBase(chain)}/tx/${hash}`)
+    );
+
+  streamTransactionAuthhead = (chain: Chain, authbase: string) =>
+    this.streamFromBitcore(() =>
+      this.http.get<AuthheadJSON>(
+        `${this.apiBase(chain)}/tx/${authbase}/authhead`
+      )
+    );
+
+  streamTransactionCoins = (chain: Chain, txHash: string) =>
+    this.streamFromBitcore(() =>
+      this.http.get<CoinListingJSON>(
+        `${this.apiBase(chain)}/tx/${txHash}/coins`
+      )
+    );
+  streamStatsDailyTransactions = (chain: Chain) =>
+    this.streamFromBitcore(
+      () =>
+        this.http.get<DailyTransactionsJSON>(
+          `${this.apiBase(chain)}/stats/daily-transactions`
+        ),
+      timer(0, oneHour)
     );
 }

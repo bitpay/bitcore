@@ -1,19 +1,11 @@
 <head-nav (updateView)="loadView($event,true)"></head-nav>
 
 <ion-content>
-  <div class="page-content" padding>
-    <h2>Latest Blocks</h2>
-    <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" #latestBlocks></latest-blocks>
-  </div>
-  <div class="footer">
-    <div class="footer-pages">
-      <a (click)="openPage('broadcast-tx')">Broadcast Transaction</a>
+  <ion-grid fixed>
+    <div class="page-content">
+      <h2>Latest Blocks</h2>
+      <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" #latestBlocks></latest-blocks>
     </div>
-    <div class="footer-about">
-      <a href="https://github.com/bitpay/bitcore/tree/master/packages/insight-previous" target="_blank">
-        <span class="logo">insight</span>
-        <span class="version">v8.0.0</span>
-      </a>
-    </div>
-  </div>
+  </ion-grid>
 </ion-content>
+<footer></footer>

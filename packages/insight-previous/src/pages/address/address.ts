@@ -1,5 +1,5 @@
 import { Component, Injectable } from '@angular/core';
-import { IonicPage, NavParams } from 'ionic-angular';
+import { Events, IonicPage, NavParams } from 'ionic-angular';
 import { AddressProvider } from '../../providers/address/address';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
@@ -22,6 +22,7 @@ export class AddressPage {
   private addrStr: string;
   private chainNetwork: ChainNetwork;
   public address: any = {};
+  public nroTransactions = 0;
 
   constructor(
     public navParams: NavParams,
@@ -30,7 +31,8 @@ export class AddressPage {
     public txProvider: TxsProvider,
     private logger: Logger,
     private priceProvider: PriceProvider,
-    private addrProvider: AddressProvider
+    private addrProvider: AddressProvider,
+    private events: Events
   ) {
     this.addrStr = navParams.get('addrStr');
 
@@ -44,14 +46,21 @@ export class AddressPage {
       network
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
-    this.priceProvider.setCurrency(this.chainNetwork.chain);
+    const currentCurrency = localStorage.getItem('insight-currency');
+    this.priceProvider.setCurrency(currentCurrency);
+
+    this.events.subscribe('CoinList', (d: any) => {
+      this.nroTransactions = d.length;
+    });
   }
 
-  public ionViewDidLoad(): void {
+  public ionViewWillLoad(): void {
     this.addrProvider.getAddressBalance(this.addrStr).subscribe(
       data => {
         this.address = {
-          balance: data.balance,
+          balance: data.balance || 0,
+          confirmed: data.confirmed || 0,
+          unconfirmed: data.unconfirmed,
           addrStr: this.addrStr
         };
         this.loading = false;
@@ -62,7 +71,7 @@ export class AddressPage {
     );
   }
 
-  public getBalance(): number {
-    return this.currencyProvider.getConvertedNumber(this.address.balance);
+  public getConvertedNumber(n: number): number {
+    return this.currencyProvider.getConvertedNumber(n);
   }
 }
