@@ -454,9 +454,30 @@ export class InternalStateProvider implements CSP.IChainStateService {
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
 
+    const tip = await this.getLocalTip({chain, network});
+    const tipHeight = tip ? tip.height : 0;
+
+    const inputsTransform = inputs.map((c: ICoin) => {
+      let confirmations = 0;
+      if (c.mintHeight && c.mintHeight >= 0) {
+        confirmations = tipHeight - c.mintHeight + 1;
+      }
+      c.confirmations = confirmations;
+      return CoinStorage._apiTransform(c, { object: true });
+    });
+
+    let outputsTransform = outputs.map((c: ICoin) => {
+      let confirmations = 0;
+      if (c.mintHeight && c.mintHeight >= 0) {
+        confirmations = tipHeight - c.mintHeight + 1;
+      }
+      c.confirmations = confirmations;
+      return CoinStorage._apiTransform(c, { object: true });
+    });
+
     return {
-      inputs: inputs.map(input => CoinStorage._apiTransform(input, { object: true })),
-      outputs: outputs.map(output => CoinStorage._apiTransform(output, { object: true }))
+      inputs: inputsTransform,
+      outputs: outputsTransform
     };
   }
 
