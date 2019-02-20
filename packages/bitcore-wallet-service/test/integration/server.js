@@ -2296,6 +2296,53 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    it('should get not cache old fee levels after fail', function(done) {
+      let x = Defaults.FEE_LEVEL_CACHE_DURATION;
+      Defaults.FEE_LEVEL_CACHE_DURATION = 0;
+
+      helpers.stubFeeLevels({
+        1: 40002,
+        2: 20000,
+        6: 18000,
+        24: 9001,
+      });
+      server.getFeeLevels({}, function(err, fees) {
+        should.not.exist(err);
+        fees = _.fromPairs(_.map(fees, function(item) {
+          return [item.level, item];
+        }));
+        fees.urgent.feePerKb.should.equal(60003);
+        blockchainExplorer.estimateFee = sinon.stub().yields('dummy error');
+        server.getFeeLevels({}, function(err, fees) {
+          should.not.exist(err);
+          fees = _.fromPairs(_.map(fees, function(item) {
+            return [item.level, item];
+          }));
+          fees.urgent.feePerKb.should.equal(60003);
+          fees.superEconomy.feePerKb.should.equal(9001);
+
+          helpers.stubFeeLevels({
+            1: 400,
+            2: 200,
+            6: 180,
+            24: 90,
+          });
+          server.getFeeLevels({}, function(err, fees) {
+            should.not.exist(err);
+            fees = _.fromPairs(_.map(fees, function(item) {
+              return [item.level, item];
+            }));
+            fees.urgent.feePerKb.should.equal(600);
+            fees.superEconomy.feePerKb.should.equal(90);
+            Defaults.FEE_LEVEL_CACHE_DURATION = x;
+            done();
+          });
+        });
+      });
+    });
+ 
+ 
  
     it('should fallback to slower confirmation times if network cannot estimate (returns -1)', function(done) {
       helpers.stubFeeLevels({
