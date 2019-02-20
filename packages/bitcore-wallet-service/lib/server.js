@@ -3018,8 +3018,8 @@ WalletService.prototype._normalizeTxHistory = function(walletId, txs, bcHeight, 
   var txs =  _.filter(txs, (tx) => {
 
     // double spend or error
-    if (tx.height && tx.height <= -3) 
-      return false;
+//    if (tx.height && tx.height <= -3) 
+//      return false;
 
     if (tx.category == 'receive') {
       var output = {
