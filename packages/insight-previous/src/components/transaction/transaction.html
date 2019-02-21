@@ -138,7 +138,7 @@
 
   <ion-row align-items-start text-uppercase class="small" *ngIf="showCoins">
     <ion-col col-6>
-      <div [hidden]="tx.isCoinBase">
+      <div *ngIf="!tx.isCoinBase && currency.getConvertedNumber(tx.fee) >= 0">
         <ion-chip>
           <ion-label>Fee
             <span text-nowrap>{{ currencyProvider.getConvertedNumber(tx.fee) | number:'1.0-8' }}
