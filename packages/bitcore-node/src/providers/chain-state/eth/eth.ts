@@ -8,6 +8,31 @@ import { Storage } from '../../../services/storage';
 import { Readable } from 'stream';
 (Symbol as any).asyncIterator = Symbol.asyncIterator || Symbol.for('Symbol.asyncIterator');
 
+interface ParityBlockReward {
+  author: string;
+  rewardType: 'block';
+  value: string;
+}
+interface ParityCall {
+  callType: 'call';
+  from: string;
+  gas: string;
+  input: string;
+  to: string;
+  value: string;
+}
+interface ParityTraceResponse {
+  action: ParityBlockReward | ParityCall;
+  blockHash: string;
+  blockNumber: number;
+  result?: { gasUsed: string; output: string };
+  subtraces: number;
+  traceAddress: [];
+  transactionHash?: string;
+  transactionPosition?: number;
+  type: 'reward' | 'call';
+}
+
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
 
@@ -55,8 +80,8 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
     const web3 = this.getWeb3(network);
 
-    function scan(fromHeight, toHeight, address) {
-      return new Promise<Array<any>>(resolve =>
+    function scan(fromHeight: number, toHeight: number, address: string) {
+      return new Promise<Array<ParityTraceResponse>>(resolve =>
         web3.eth.currentProvider.send(
           {
             method: 'trace_filter',
@@ -64,25 +89,30 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
               {
                 fromBlock: web3.utils.toHex(fromHeight),
                 toBlock: web3.utils.toHex(toHeight),
-                toAddress: [address]
+                toAddress: [address.toLowerCase()]
               }
             ],
             jsonrpc: '2.0',
             id: 0
           },
-          (_, data) => resolve(data.result)
+          (_, data) => resolve(data.result as Array<ParityTraceResponse>)
         )
       );
     }
 
     async function* getTransactionsForAddress(address: string) {
-      let start = 0;
-      while (start < 500000) {
-        const txs = await scan(start, start + 1000, address);
-        start += 1000;
-        for (const tx of txs) {
-          yield tx;
-        }
+      const txs = await scan(0, 100000, address);
+      for (const tx of txs) {
+        yield {
+          id: null,
+          txid: tx.transactionHash,
+          fee: tx.result ? tx.result.gasUsed : null,
+          category: 'receive',
+          satoshis: tx.action.value,
+          height: tx.blockNumber,
+          address,
+          outputIndex: tx.result ? tx.result.output : null
+        };
       }
     }
 
@@ -93,10 +123,13 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         objectMode: true,
         read: async function() {
           for (const walletAddress of addresses) {
-            for await (const tx of getTransactionsForAddress(walletAddress.address)) {
+            const transactions = await getTransactionsForAddress(walletAddress.address);
+            for await (const tx of transactions) {
+              console.log(tx);
               this.push(tx);
             }
           }
+          this.push(null);
         }
       }),
       req,

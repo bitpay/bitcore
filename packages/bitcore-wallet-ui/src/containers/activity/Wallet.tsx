@@ -8,6 +8,7 @@ import { AppState } from '../../contexts/state';
 import { socket } from '../../contexts/io';
 import { WalletBar } from '../../components/activity/BalanceCard';
 import { TransactionListCard } from '../../components/activity/TransactionContainer';
+import axios from 'axios';
 
 interface Props extends RouteComponentProps<{ name: string }> {
   walletName: string;
@@ -55,7 +56,9 @@ class WalletContainer extends Component<Props> {
       .listTransactions({})
       .pipe(new ParseApiStream())
       .on('data', (d: any) => {
-        const foundIndex = prevTx.findIndex(t => t.id === d.id);
+        const foundIndex = prevTx.findIndex(
+          t => t.txid === d.txid && t.outputIndex == d.outputIndex
+        );
         if (foundIndex > -1) {
           prevTx[foundIndex] = d;
         } else {
