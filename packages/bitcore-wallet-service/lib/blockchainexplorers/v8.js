@@ -184,7 +184,9 @@ V8.prototype._transformUtxos = function(unspent, bcheight) {
   $.checkState(bcheight>0, 'No BC height passed to _transformUtxos');
   var self = this;
 
-  let ret = _.map(unspent, function(x) {
+  let ret = _.map(_.reject(unspent, (x) => {
+    return x.spentHeight && x.spentHeight <= -3;
+  }), (x) => {
     var u = {address: x.address};
 
     // v8 field name differences
@@ -391,7 +393,12 @@ V8.prototype.estimateFee = function(nbBlocks, cb) {
     var url = self.baseUrl + '/fee/' + x;
     self.request.get(url, {})
       .then( (ret) => {
-        result[x] = ret;
+        try {
+          ret = JSON.parse(ret); 
+          result[x] = ret.feerate;
+        }
+        catch (e) {};
+
         return icb();
       })
       .catch((err) => {return icb(err)} );
