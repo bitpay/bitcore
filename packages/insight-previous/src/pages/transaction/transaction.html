@@ -27,9 +27,9 @@
               {{ tx.size }} (bytes)
             </ion-note>
           </ion-item>
-          <ion-item>
+          <ion-item *ngIf="tx.fee >= 0">
             Fee Rate
-            <ion-note *ngIf="tx.fee >= 0" item-end>
+            <ion-note item-end>
               {{ (tx.fee / tx.size) | number:'1.0-8' }} sats/byte
             </ion-note>
           </ion-item>
@@ -39,9 +39,9 @@
               {{ tx.time * 1000 | date:'medium' }}
             </ion-note>
           </ion-item>
-          <ion-item>
+          <ion-item *ngIf="tx.confirmations !== 0">
             Mined Time
-            <ion-note *ngIf="tx.confirmations !== 0" item-end>
+            <ion-note item-end>
               {{ tx.blocktime * 1000 | date:'medium' }}
             </ion-note>
           </ion-item>
