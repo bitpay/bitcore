@@ -27,6 +27,7 @@
     "bitcore-mnemonic": "^8.0.0",
     "commander": "^2.15.1",
     "elliptic": "^6.4.1",
+    "ethereumjs-tx": "^1.3.7",
     "ethereumjs-util": "^6.0.0",
     "level-js": "^4.0.0",
     "leveldown": "^3.0.0",
@@ -36,7 +37,8 @@
     "promptly": "^3.0.3",
     "request": "^2.87.0",
     "request-promise-native": "^1.0.5",
-    "secp256k1": "^3.5.0"
+    "secp256k1": "^3.5.0",
+    "web3": "^1.0.0-beta.46"
   },
   "devDependencies": {
     "@types/bcrypt": "^3.0.0",
