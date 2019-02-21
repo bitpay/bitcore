@@ -37,7 +37,7 @@ describe('paypro', function() {
     };
 
     httpNode = {};
-    httpNode.get = function(opts, cb) {
+    httpNode.request = function(opts, cb) {
       var res = {};
       res.statusCode = httpNode.error || 200;
       if (httpNode.error == 404) 

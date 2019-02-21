@@ -6,7 +6,7 @@ var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
 program
-  .option('-n, --network <network>', 'Network for the wallet')
+  .option('-t, --testnet', 'Create a Testnet Wallet')
   .option('-p, --password', 'Encrypt wallet. Will ask password interactively')
   .option('-c, --coin <coin>', 'coin (btc/bch)')
   .usage('[options] <walletName> <m-n> [copayerName] <passphrase>')
@@ -19,8 +19,8 @@ if (!args[0])
 var walletName = args[0];
 var copayerName = args[2] || process.env.USER;
 var passphrase = args[3];
+var network = program.testnet ? 'testnet' : 'livenet';
 var coin  = program.coin ? program.coin : 'btc';
-var network = program.network ? program.network : 'livenet'
 
 var mn;
 try {
@@ -38,9 +38,10 @@ utils.getClient(program, {
     language: 'en',
     coin: coin,
   });
+
   client.createWallet(walletName, copayerName, mn[0], mn[1], {
     network: network,
-    coin: coin
+    coin: coin,
   }, function(err, secret) {
     utils.die(err);
     console.log(' * ' + _.capitalize(network) + ' Wallet Created.');

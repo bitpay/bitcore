@@ -8,6 +8,7 @@ const Client = require('../lib/blockchainexplorers/v8/client.js');
 const coin = 'BCH';
 const network = 'mainnet';
 const authKey = process.argv[2]; 
+const path = process.argv[3] || 'addresses'; 
 
 if (!authKey) 
   throw "provide authKey"
@@ -32,7 +33,7 @@ let client = new Client({
 });
 
 
-const url = `${baseUrl}/wallet/${pubKey}/addresses`;
+const url = `${baseUrl}/wallet/${pubKey}/${path}`;
 const signature = client.sign({ method: 'GET', url });
 const payload = {};
 

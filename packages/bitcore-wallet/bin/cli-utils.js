@@ -2,7 +2,7 @@ var _ = require('lodash');
 var url = require('url');
 var read = require('read')
 var log = require('npmlog');
-var Client = require('../../bitcore-wallet-client');
+var Client = require('bitcore-wallet-client');
 var FileStorage = require('./filestorage');
 var sjcl = require('sjcl');
 
@@ -93,16 +93,18 @@ Utils.getClient = function(args, opts, cb) {
   opts = opts || {};
 
   var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
-  var host = args.host || process.env['BWS_HOST'] || 'https://bws.bitpay.com/bws/api';
+  var host = args.host || process.env['BWS_HOST'] || 'https://bws.bitpay.com/';
 
   var storage = new FileStorage({
     filename: filename,
   });
 
   var client = new Client({
-    baseUrl: host,
+    baseUrl: url.resolve(host, '/bws/api'),
     verbose: args.verbose,
     supportStaffWalletId: opts.walletId,
+    timeout: 20 * 60 * 1000,
+    //timeout: 1000,
   });
 
   storage.load(function(err, walletData) {
@@ -213,7 +215,7 @@ Utils.findOneTxProposal = function(txps, id) {
   if (matches.length > 1) {
     console.log('More than one TX Proposals match:' + id);
     Utils.renderTxProposals(txps);
-    program.exit(1);
+    process.exit(1);
   }
 
   return matches[0];
@@ -232,17 +234,23 @@ Utils.parseAmount = function(text) {
   var regex = '^(\\d*(\\.\\d{0,8})?)\\s*(' + _.keys(Utils.UNITS2).join('|') + ')?$';
   var match = new RegExp(regex, 'i').exec(text.trim());
 
-  if (!match || match.length === 0) throw new Error('Invalid amount');
+  if (!match || match.length === 0) {
+    Utils.die('Invalid amount: ' + text);
+  }
 
   var amount = parseFloat(match[1]);
   if (!_.isNumber(amount) || _.isNaN(amount)) throw new Error('Invalid amount');
 
   var unit = (match[3] || 'sat').toLowerCase();
   var rate = Utils.UNITS2[unit];
-  if (!rate) throw new Error('Invalid unit')
+  if (!rate) {
+    Utils.die('Invalid unit: ' + unit);
+  }
 
   var amountSat = parseFloat((amount * rate).toPrecision(12));
-  if (amountSat != Math.round(amountSat)) throw new Error('Invalid amount');
+  if (amountSat != Math.round(amountSat)) {
+    Utils.die('Invalid amount: ' + amount + ' ' + unit);
+  }
 
   return amountSat;
 };
@@ -251,7 +259,7 @@ Utils.configureCommander = function(program) {
   program
     .version('0.0.1')
     .option('-f, --file <filename>', 'Wallet file')
-    .option('-h, --host <host>', 'Bitcore Wallet Service URL (eg: http://localhost:3000/bws/api')
+    .option('-h, --host <host>', 'Bitcore Wallet Service URL (eg: http://localhost:3001/copay/api')
     .option('-v, --verbose', 'be verbose')
 
   return program;
