@@ -109,7 +109,7 @@ export class BlockModel extends BaseModel<IBlock> {
     }
 
     await this.collection.updateOne({ hash: convertedBlock.hash, chain, network }, { $set: { processed: true } });
-    this.updateCachedChainTip({ block: convertedBlock, height, chain, network });
+    this.updateCachedChainTip({ block: convertedBlock, chain, network });
   }
 
   async getBlockOp(params: { block: Bitcoin.Block; chain: string; network: string }) {
@@ -164,11 +164,11 @@ export class BlockModel extends BaseModel<IBlock> {
     };
   }
 
-  updateCachedChainTip(params: { block; chain; network; height }) {
-    const { chain, network, block, height } = params;
+  updateCachedChainTip(params: { block: IBlock; chain: string; network: string }) {
+    const { chain, network, block } = params;
     this.chainTips[chain] = valueOrDefault(this.chainTips[chain], {});
     this.chainTips[chain][network] = valueOrDefault(this.chainTips[chain][network], block);
-    if (this.chainTips[chain][network].height < height) {
+    if (this.chainTips[chain][network].height < block.height) {
       this.chainTips[chain][network] = block;
     }
   }
@@ -196,7 +196,7 @@ export class BlockModel extends BaseModel<IBlock> {
       const prevBlock = await this.collection.findOne({ chain, network, hash: header.prevHash });
       if (prevBlock) {
         localTip = prevBlock;
-        this.chainTips[chain][network] = prevBlock;
+        this.updateCachedChainTip({chain, network, block: prevBlock})
       } else {
         delete this.chainTips[chain][network];
         logger.error(`Previous block isn't in the DB need to roll back until we have a block in common`);
