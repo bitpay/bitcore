@@ -122,9 +122,12 @@ describe('Wallet Model', function() {
         const seenTxids = new Array<string>();
         Event.addressCoinEvent.on('coin', async (addressCoin: IEvent.CoinEvent) => {
           const { coin } = addressCoin;
-          seenTxids.push(coin.mintTxid!);
-          if (seenTxids.length === 50) {
-            resolve();
+          const mintTxid = coin.mintTxid!;
+          if (!seenTxids.includes(mintTxid) && sentTransactionIds.includes(mintTxid)) {
+            seenTxids.push(mintTxid);
+            if (seenTxids.length === 50) {
+              resolve();
+            }
           }
         });
       });
