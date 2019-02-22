@@ -2,6 +2,7 @@ var $ = require('preconditions').singleton();
 var _ = require('lodash');
 
 var Bitcore = require('bitcore-lib');
+var BCHAddress = require('bitcore-lib-cash').Address;
 
 var Common = require('./common');
 var Utils = Common.Utils;
@@ -180,11 +181,24 @@ Verifier.checkPaypro = function(txp, payproOpts) {
     amount = txp.amount;
   }
 
+
+  if (amount != payproOpts.amount)
+    return false;
+
+
+  if (txp.coin == 'btc' && toAddress != payproOpts.toAddress)
+    return false;
+
+  // To circunvent cashaddr/legacy address problems...
+  if (txp.coin == 'bch' && (new BCHAddress(toAddress).toString()) != (new BCHAddress(payproOpts.toAddress).toString())) 
+    return false;
+
+// this generates problems...
 //  if (feeRate && payproOpts.requiredFeeRate &&
 //      feeRate < payproOpts.requiredFeeRate)
 //  return false;
 
-  return toAddress == payproOpts.toAddress && amount == payproOpts.amount;
+    return true;
 };
 
 

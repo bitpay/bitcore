@@ -1901,7 +1901,6 @@ API.prototype.getTxProposals = function(opts, cb) {
       function(txp, acb) {
         if (opts.doNotVerify) return acb(true);
         self.getPayPro(txp, function(err, paypro) {
-
           var isLegit = Verifier.checkTxProposal(self.credentials, txp, {
             paypro: paypro,
           });
@@ -2190,6 +2189,7 @@ API.prototype.broadcastTxProposal = function(txp, cb) {
 
     if (paypro) {
 
+      var t_unsigned = Utils.buildTx(txp);
       var t = Utils.buildTx(txp);
       self._applyAllSignatures(txp, t);
 
@@ -2197,8 +2197,7 @@ API.prototype.broadcastTxProposal = function(txp, cb) {
         http: self.payProHttp,
         url: txp.payProUrl,
         amountSat: txp.amount,
-        refundAddr: txp.changeAddress.address,
-        merchant_data: paypro.merchant_data,
+        rawTxUnsigned: t_unsigned.uncheckedSerialize(),
         rawTx: t.serialize({
           disableSmallFees: true,
           disableLargeFees: true,
@@ -2206,7 +2205,9 @@ API.prototype.broadcastTxProposal = function(txp, cb) {
         }),
         coin: txp.coin || 'btc',
       }, function(err, ack, memo) {
-        log.warn('Merchant rejected the payment. Broadcasting it any ways.', err);
+        if (err) 
+          return cb(err);
+
         if (memo) {
           log.debug('Merchant memo:', memo);
         }

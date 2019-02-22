@@ -1,12 +1,17 @@
 var $ = require('preconditions').singleton();
 const URL = require('url');
+const _ = require('lodash');
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
 };
+const JSON_PAYMENT_REQUEST_CONTENT_TYPE = 'application/payment-request';
+const JSON_PAYMENT_VERIFY_CONTENT_TYPE = 'application/verify-payment';
+const JSON_PAYMENT_CONTENT_TYPE = 'application/payment';
+const JSON_PAYMENT_ACK_CONTENT_TYPE = 'application/payment-ack';
 
-var BitcorePayPro = require('bitcore-payment-protocol');
+
 var PayPro = {};
 
 PayPro._nodeRequest = function(opts, cb) {
@@ -43,6 +48,9 @@ PayPro._nodeRequest = function(opts, cb) {
   req.on("error", function(error) {
     return cb(error);
   });
+
+  if (opts.body) 
+    req.write(opts.body);
 
   req.end();
 };
@@ -107,6 +115,8 @@ var getHttp = function(opts) {
   return (env == "node") ? PayPro._nodeRequest : http = PayPro._browserRequest;;
 };
 
+const MAX_FEE_PER_KB = 500000;
+
 PayPro.get = function(opts, cb) {
   $.checkArgument(opts && opts.url);
 
@@ -115,178 +125,138 @@ PayPro.get = function(opts, cb) {
   var bitcore = Bitcore_[coin];
 
   var COIN = coin.toUpperCase();
-  var PP = new BitcorePayPro(COIN);
-
   opts.headers = opts.headers || {
-    'Accept': BitcorePayPro.LEGACY_PAYMENT[COIN].REQUEST_CONTENT_TYPE,
+    'Accept': JSON_PAYMENT_REQUEST_CONTENT_TYPE,
     'Content-Type': 'application/octet-stream',
   };
 
-  http(opts, function(err, dataBuffer) {
+  http(opts, function(err, data) {
     if (err) return cb(err);
-    var request, verified, signature, serializedDetails;
+
     try {
-      var body = BitcorePayPro.PaymentRequest.decode(dataBuffer);
-      request = PP.makePaymentRequest(body);
-      signature = request.get('signature');
-      serializedDetails = request.get('serialized_payment_details');
-      // Verify the signature
-      verified = request.verify(true);
+      data = JSON.parse(data.toString());
+    } catch (e)  {
+      return cb(e);
+    }
+
+    // read and check
+    let ret = {};
+    ret.url = opts.url;
+
+    // TODO TODO TODO
+    ret.verified= 1;
+
+    // network
+    if(data.network == 'test') 
+      ret.network = 'testnet';
+
+    if(data.network == 'live') 
+      ret.network = 'livenet';
+
+    if ( !data.network )
+      return cb(new Error('No network at payment request'));
+
+    //currency
+    if ( data.currency != COIN )
+      return cb(new Error('Currency mismmath. Expecting:' + COIN));
+
+    ret.coin = coin;
+
+
+    //fee
+    if ( data.requiredFeeRate > MAX_FEE_PER_KB)
+      return cb(new Error('Fee rate too high:' +data.requiredFeeRate));
+
+    ret.requiredFeeRate = data.requiredFeeRate;
+
+    //outputs
+    if (!data.outputs || data.outputs.length !=1) {
+      return cb(new Error('Must have 1 output'));
+    }
+
+    if (!_.isNumber(data.outputs[0].amount) ) {
+      return cb(new Error('Bad output amount ' + e));
+    }
+    ret.amount = data.outputs[0].amount;
+
+    try {
+      ret.toAddress = (new bitcore.Address(data.outputs[0].address)).toString();
     } catch (e) {
-      return cb(new Error('Could not parse payment protocol' + e));
+      return cb(new Error('Bad output address '+ e));
     }
-
-    // Get the payment details
-    var decodedDetails = BitcorePayPro.PaymentDetails.decode(serializedDetails);
-    var pd = new BitcorePayPro();
-    pd = pd.makePaymentDetails(decodedDetails);
-
-    var outputs = pd.get('outputs');
-    if (outputs.length > 1)
-      return cb(new Error('Payment Protocol Error: Requests with more that one output are not supported'))
-
-    var output = outputs[0];
-
-    var amount = output.get('amount').toNumber();
-    var network = pd.get('network') == 'test' ? 'testnet' : 'livenet';
-
-    // We love payment protocol
-    var offset = output.get('script').offset;
-    var limit = output.get('script').limit;
-
-    // NOTE: For some reason output.script.buffer
-    // is only an ArrayBuffer
-    var buffer = new Buffer(new Uint8Array(output.get('script').buffer));
-    var scriptBuf = buffer.slice(offset, limit);
-    var addr = new bitcore.Address.fromScript(new bitcore.Script(scriptBuf), network);
-
-    var md = pd.get('merchant_data');
-
-    if (md) {
-      md = md.toString();
+    
+    ret.memo = data.memo;
+    ret.paymentId = data.paymentId;
+    try {
+      ret.expires = (new Date(data.expires)).toISOString();
+    } catch (e) {
+      return cb(new Error('Bad expiration'));
     }
-
-    var ok = verified.verified;
-    var caName;
-
-    if (verified.isChain) {
-      ok = ok && verified.chainVerified;
-    }
-
-    var ret = {
-      verified: ok,
-      caTrusted: verified.caTrusted,
-      caName: verified.caName,
-      selfSigned: verified.selfSigned,
-      expires: pd.get('expires'),
-      memo: pd.get('memo'),
-      time: pd.get('time'),
-      merchant_data: md,
-      toAddress: coin == 'bch' ? addr.toLegacyAddress() : addr.toString(),
-      amount: amount,
-      network: network,
-      domain: opts.host,
-      url: opts.url,
-    };
-
-    var requiredFeeRate = pd.get('required_fee_rate');
-    if (requiredFeeRate) 
-      ret.requiredFeeRate = requiredFeeRate;
 
     return cb(null, ret);
   });
 };
 
 
-PayPro._getPayProRefundOutputs = function(addrStr, amount, coin) {
-  amount = amount.toString(10);
-
-  var bitcore = Bitcore_[coin];
-  var output = new BitcorePayPro.Output();
-  var addr = new bitcore.Address(addrStr);
-
-  var s;
-  if (addr.isPayToPublicKeyHash()) {
-    s = bitcore.Script.buildPublicKeyHashOut(addr);
-  } else if (addr.isPayToScriptHash()) {
-    s = bitcore.Script.buildScriptHashOut(addr);
-  } else {
-    throw new Error('Unrecognized address type ' + addr.type);
-  }
-
-  //  console.log('PayPro refund address set to:', addrStr,s);
-  output.set('script', s.toBuffer());
-  output.set('amount', amount);
-  return [output];
-};
-
-
-PayPro._createPayment = function(merchant_data, rawTx, refundAddr, amountSat, coin) {
-  var pay = new BitcorePayPro();
-  pay = pay.makePayment();
-
-  if (merchant_data) {
-    merchant_data = new Buffer(merchant_data);
-    pay.set('merchant_data', merchant_data);
-  }
-
-  var txBuf = new Buffer(rawTx, 'hex');
-  pay.set('transactions', [txBuf]);
-
-  var refund_outputs = this._getPayProRefundOutputs(refundAddr, amountSat, coin);
-  if (refund_outputs)
-    pay.set('refund_to', refund_outputs);
-
-  // Unused for now
-  // options.memo = '';
-  // pay.set('memo', options.memo);
-
-  pay = pay.serialize();
-  var buf = new ArrayBuffer(pay.length);
-  var view = new Uint8Array(buf);
-  for (var i = 0; i < pay.length; i++) {
-    view[i] = pay[i];
-  }
-
-  return view;
-};
 
 PayPro.send = function(opts, cb) {
-  $.checkArgument(opts.merchant_data)
+  $.checkArgument(opts.rawTxUnsigned)
     .checkArgument(opts.url)
     .checkArgument(opts.rawTx)
-    .checkArgument(opts.refundAddr)
     .checkArgument(opts.amountSat);
 
 
   var coin = opts.coin || 'btc';
   var COIN = coin.toUpperCase();
 
-  var payment = PayPro._createPayment(opts.merchant_data, opts.rawTx, opts.refundAddr, opts.amountSat, coin);
-
   var http = getHttp(opts);
   opts.method = 'POST';
   opts.headers = opts.headers || {
-    'Accept': BitcorePayPro.LEGACY_PAYMENT[COIN].ACK_CONTENT_TYPE,
-    'Content-Type': BitcorePayPro.LEGACY_PAYMENT[COIN].CONTENT_TYPE,
-    // 'Content-Type': 'application/octet-stream',
+    'Content-Type': JSON_PAYMENT_VERIFY_CONTENT_TYPE,
   };
-  opts.body = payment;
+  let size = opts.rawTx.length/2;
+  opts.body = JSON.stringify({
+    "currency": COIN,
+    "unsignedTransaction": opts.rawTxUnsigned,
+    "weightedSize": size,
+  });
 
+  // verify request
   http(opts, function(err, rawData) {
-    if (err) return cb(err);
-    var memo;
-    if (rawData) {
-      try {
-        var data = BitcorePayPro.PaymentACK.decode(rawData);
-        var pp = new BitcorePayPro(COIN);
-        var ack = pp.makePaymentACK(data);
-        memo = ack.get('memo');
-      } catch (e) {
-        console.log('Could not decode paymentACK');
-      };
+    if (err) {
+      console.log('Error at verify-payment:', err, opts);
+      return cb(err);
     }
-    return cb(null, rawData, memo);
+
+    opts.headers = {
+      'Content-Type': JSON_PAYMENT_CONTENT_TYPE,
+      'Accept': JSON_PAYMENT_ACK_CONTENT_TYPE,
+    };
+
+    opts.body = JSON.stringify({
+      "currency": COIN,
+      "transactions": [
+        opts.rawTx,
+      ],
+    });
+
+    http(opts, function(err, rawData) {
+      if (err) {
+        console.log('Error at payment:', err, opts);
+        return cb(err);
+      }
+  
+      var memo;
+      if (rawData) {
+        try {
+          var data = JSON.parse(rawData.toString());
+          memo = data.memo;
+        } catch (e) {
+          console.log('Could not decode paymentACK');
+        };
+      }
+      return cb(null, rawData, memo);
+    });
   });
 };
 

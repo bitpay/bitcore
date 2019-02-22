@@ -20,9 +20,6 @@ var Bitcore_ = {
   bch: require('bitcore-lib-cash'),
 };
 
-
-var BitcorePayPro = require('bitcore-payment-protocol');
-
 var BWS = require('bitcore-wallet-service');
 
 var Common = require('../lib/common');
