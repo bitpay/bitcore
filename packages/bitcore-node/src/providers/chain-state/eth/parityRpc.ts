@@ -1,7 +1,5 @@
 import Web3 from 'web3';
 
-(Symbol as any).asyncIterator = Symbol.asyncIterator || Symbol.for('Symbol.asyncIterator');
-
 interface ParityBlockReward {
   author: string;
   rewardType: 'block';

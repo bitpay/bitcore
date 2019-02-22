@@ -5,7 +5,8 @@ import { InternalStateProvider } from '../internal/internal';
 import { ObjectID } from 'mongodb';
 import Web3 from 'web3';
 import { Storage } from '../../../services/storage';
-import { Readable } from 'stream';
+import 'core-js/modules/es7.symbol.async-iterator';
+import { Readable } from 'readable-stream';
 import { ParityRPC, ParityTraceResponse } from './parityRpc';
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {

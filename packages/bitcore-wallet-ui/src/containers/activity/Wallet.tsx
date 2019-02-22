@@ -8,7 +8,6 @@ import { AppState } from '../../contexts/state';
 import { socket } from '../../contexts/io';
 import { WalletBar } from '../../components/activity/BalanceCard';
 import { TransactionListCard } from '../../components/activity/TransactionContainer';
-import axios from 'axios';
 
 interface Props extends RouteComponentProps<{ name: string }> {
   walletName: string;
