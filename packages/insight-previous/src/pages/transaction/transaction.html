@@ -30,7 +30,7 @@
           <ion-item *ngIf="tx.fee >= 0">
             Fee Rate
             <ion-note item-end>
-              {{ (tx.fee / tx.size) | number:'1.0-8' }} sats/byte
+              {{ (tx.fee / tx.size) | number:'1.0-2' }} sats/byte
             </ion-note>
           </ion-item>
           <ion-item>
