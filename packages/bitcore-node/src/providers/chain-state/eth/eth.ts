@@ -6,32 +6,7 @@ import { ObjectID } from 'mongodb';
 import Web3 from 'web3';
 import { Storage } from '../../../services/storage';
 import { Readable } from 'stream';
-(Symbol as any).asyncIterator = Symbol.asyncIterator || Symbol.for('Symbol.asyncIterator');
-
-interface ParityBlockReward {
-  author: string;
-  rewardType: 'block';
-  value: string;
-}
-interface ParityCall {
-  callType: 'call';
-  from: string;
-  gas: string;
-  input: string;
-  to: string;
-  value: string;
-}
-interface ParityTraceResponse {
-  action: ParityBlockReward | ParityCall;
-  blockHash: string;
-  blockNumber: number;
-  result?: { gasUsed: string; output: string };
-  subtraces: number;
-  traceAddress: [];
-  transactionHash?: string;
-  transactionPosition?: number;
-  type: 'reward' | 'call';
-}
+import { ParityRPC, ParityTraceResponse } from './parityRpc';
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -69,6 +44,24 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     return this.getWeb3(network).eth.getBlock(Number(blockId)) as any;
   }
 
+  async streamBlocks(params: CSP.StreamBlocksParams) {
+    const { network, blockId } = params;
+
+    const web3 = this.getWeb3(network);
+
+    return new Promise<Array<ParityTraceResponse>>(resolve =>
+      web3.eth.currentProvider.send(
+        {
+          method: 'trace_block',
+          params: [web3.utils.toHex(parseInt(blockId!))],
+          jsonrpc: '2.0',
+          id: 0
+        },
+        (_, data) => resolve(data.result)
+      )
+    );
+  }
+
   async getTransaction(params: CSP.StreamTransactionParams) {
     const { network, txId } = params;
     const transaction = await this.getWeb3(network).eth.getTransaction(txId);
@@ -79,43 +72,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     const { network, wallet, req, res } = params;
 
     const web3 = this.getWeb3(network);
-
-    function scan(fromHeight: number, toHeight: number, address: string) {
-      return new Promise<Array<ParityTraceResponse>>(resolve =>
-        web3.eth.currentProvider.send(
-          {
-            method: 'trace_filter',
-            params: [
-              {
-                fromBlock: web3.utils.toHex(fromHeight),
-                toBlock: web3.utils.toHex(toHeight),
-                toAddress: [address.toLowerCase()]
-              }
-            ],
-            jsonrpc: '2.0',
-            id: 0
-          },
-          (_, data) => resolve(data.result as Array<ParityTraceResponse>)
-        )
-      );
-    }
-
-    async function* getTransactionsForAddress(address: string) {
-      const txs = await scan(0, 100000, address);
-      for (const tx of txs) {
-        yield {
-          id: null,
-          txid: tx.transactionHash,
-          fee: tx.result ? tx.result.gasUsed : null,
-          category: 'receive',
-          satoshis: tx.action.value,
-          height: tx.blockNumber,
-          address,
-          outputIndex: tx.result ? tx.result.output : null
-        };
-      }
-    }
-
     const addresses = await this.getWalletAddresses(wallet._id!);
 
     Storage.stream(
@@ -123,9 +79,8 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         objectMode: true,
         read: async function() {
           for (const walletAddress of addresses) {
-            const transactions = await getTransactionsForAddress(walletAddress.address);
+            const transactions = await new ParityRPC(web3).getTransactionsForAddress(10000, walletAddress.address);
             for await (const tx of transactions) {
-              console.log(tx);
               this.push(tx);
             }
           }
