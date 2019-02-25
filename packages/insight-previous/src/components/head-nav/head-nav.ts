@@ -1,10 +1,4 @@
-import {
-  Component,
-  EventEmitter,
-  Injectable,
-  Input,
-  Output
-} from '@angular/core';
+import { Component, Injectable, Input, ViewChild } from '@angular/core';
 import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
 import {
@@ -12,6 +6,7 @@ import {
   App,
   NavController,
   PopoverController,
+  Searchbar,
   ToastController
 } from 'ionic-angular';
 import * as _ from 'lodash';
@@ -29,8 +24,7 @@ import { DenominationComponent } from '../denomination/denomination';
   templateUrl: 'head-nav.html'
 })
 export class HeadNavComponent {
-  @Output()
-  public updateView = new EventEmitter<ChainNetwork>();
+  @ViewChild('searchbar') searchbar: Searchbar;
   public showSearch = false;
   public loading: boolean;
   @Input()
@@ -44,8 +38,8 @@ export class HeadNavComponent {
     private navCtrl: NavController,
     private apiProvider: ApiProvider,
     public app: App,
-    public currency: CurrencyProvider,
-    public price: PriceProvider,
+    public currencyProvider: CurrencyProvider,
+    public priceProvider: PriceProvider,
     public actionSheetCtrl: ActionSheetController,
     public popoverCtrl: PopoverController,
     public toastCtrl: ToastController,
@@ -61,7 +55,10 @@ export class HeadNavComponent {
   }
 
   public goHome(): void {
-    this.navCtrl.popToRoot();
+    this.navCtrl.setRoot('home', {
+      chain: this.config.chain,
+      network: this.config.network
+    });
   }
 
   public search(): void {
@@ -80,23 +77,25 @@ export class HeadNavComponent {
             this.redirProvider.redir(this.redirTo, this.params);
           } else {
             const message = 'No matching records found!';
-            this.resetSearch(message);
+            this.wrongSearch(message);
             this.logger.info(message);
           }
         },
         err => {
-          this.resetSearch('Server error. Please try again');
+          this.wrongSearch('Server error. Please try again');
           this.logger.error(err);
         }
       );
+    } else {
+      this.wrongSearch('No matching records found!');
     }
   }
 
   private processResponse(response) {
-    if (!_.isArray(response) && response.json()[0]) {
+    if (!_.isArray(response)) {
       return {
         redirTo: 'address',
-        params: response.json()[0].address,
+        params: response.json()[0] ? response.json()[0].address : [],
         type: 'addrStr'
       };
     } else {
@@ -125,10 +124,12 @@ export class HeadNavComponent {
     }
   }
 
-  private resetSearch(message: string): void {
-    this.q = '';
+  private wrongSearch(message: string): void {
     this.loading = false;
     this.presentToast(message);
+    setTimeout(() => {
+      this.searchbar.setFocus();
+    }, 150);
   }
 
   private presentToast(message): void {
@@ -141,28 +142,30 @@ export class HeadNavComponent {
   }
 
   public changeCurrency(myEvent: any): void {
-    const popover: any = this.popoverCtrl.create(DenominationComponent);
+    const popover: any = this.popoverCtrl.create(DenominationComponent, {
+      config: this.config,
+      currencySymbol: this.currencyProvider.getCurrency()
+    });
     popover.present({
       ev: myEvent
     });
     popover.onDidDismiss(data => {
-      if (data) {
-        if (JSON.stringify(data) === JSON.stringify(this.config)) {
-          return;
-        }
-        this.apiProvider.changeNetwork(data);
+      if (!data) {
+        return;
+      } else if (data.chainNetwork !== this.config) {
+        this.apiProvider.changeNetwork(data.chainNetwork);
         this.config = this.apiProvider.getConfig();
-        if (this.navCtrl.getActive().component.name === 'HomePage') {
-          this.updateView.next(data);
-        } else {
-          this.navCtrl.popToRoot();
-        }
-        this.navCtrl.setRoot('home', {
-          chain: this.config.chain,
-          network: this.config.network
-        });
+        this.setCurrency(data.currencySymbol);
+        this.goHome();
+      } else if (data.currencySymbol !== this.currencyProvider.getCurrency()) {
+        this.setCurrency(data.currencySymbol);
       }
     });
+  }
+
+  private setCurrency(currencySymbol) {
+    this.currencyProvider.setCurrency(currencySymbol);
+    this.priceProvider.setCurrency(currencySymbol);
   }
 
   public toggleSearch(): void {

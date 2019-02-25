@@ -46,8 +46,8 @@ export class AddressPage {
       network
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
-    const currentCurrency = localStorage.getItem('insight-currency');
-    this.priceProvider.setCurrency(currentCurrency);
+    this.currencyProvider.setCurrency();
+    this.priceProvider.setCurrency();
 
     this.events.subscribe('CoinList', (d: any) => {
       this.nroTransactions = d.length;
@@ -58,8 +58,8 @@ export class AddressPage {
     this.addrProvider.getAddressBalance(this.addrStr).subscribe(
       data => {
         this.address = {
-          balance: data.balance,
-          confirmed: data.confirmed,
+          balance: data.balance || 0,
+          confirmed: data.confirmed || 0,
           unconfirmed: data.unconfirmed,
           addrStr: this.addrStr
         };

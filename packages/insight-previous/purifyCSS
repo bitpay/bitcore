@@ -1,0 +1,19 @@
+!/bin/bash
+PATH=$PATH:$(npm bin)
+set -x
+
+BUILDFOLDER=www/
+
+# clean up previous build
+rm -fr $BUILDFOLDER
+
+# Prod build
+ENV=prod CHAIN=BTC NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:build --prod \
+                        --wwwDir $BUILDFOLDER
+
+# remove unused css
+purifycss $BUILDFOLDER"build/main.css" \
+          $BUILDFOLDER"build/*.js" \
+          --info \
+          --min \
+          --out $BUILDFOLDER"build/main.css" \

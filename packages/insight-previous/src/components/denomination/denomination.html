@@ -1,10 +1,10 @@
-<ion-list radio-group [(ngModel)]="currencyProvider.currencySymbol" (ionChange)="priceProvider.setCurrency(currencyProvider.currencySymbol)">
-  <ion-row *ngIf="switcherOn">
+<ion-list radio-group [(ngModel)]="currencySymbol">
+  <ion-row *ngIf="availableNetworks?.length > 1">
     <ion-list-header>
       Blockchain
     </ion-list-header>
 
-    <ion-item *ngFor="let chainNetwork of api.networkSettings.value.availableNetworks">
+    <ion-item *ngFor="let chainNetwork of availableNetworks">
       <ion-avatar item-start>
         <img src="assets/img/currency_logos/{{ chainNetwork.chain.toLowerCase() }}.svg" class="logo" />
       </ion-avatar>
@@ -20,6 +20,7 @@
 
   <ion-item *ngFor="let unit of units">
     <ion-label color="dark">{{ unit }}</ion-label>
-    <ion-radio value="{{ unit }}" (click)="close()"></ion-radio>
+    <ion-radio value="{{ unit }}" [checked]="unit === currencySymbol" (click)="changeUnit(unit)">
+    </ion-radio>
   </ion-item>
 </ion-list>
