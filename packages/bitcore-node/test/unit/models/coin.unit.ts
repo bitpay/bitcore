@@ -118,8 +118,8 @@ describe('Coin Model', function() {
       };
 
       let blockModelHeight = { height: 123 };
-      mockStorage([{ _id: 'confirmed', balance: 123123 }, { _id: 'unconfirmed', balance: 1 }]);
-      mockModel(BlockStorage, blockModelHeight);
+      mockModel('coins', [{ _id: 'confirmed', balance: 123123 }, { _id: 'unconfirmed', balance: 1 }]);
+      mockModel('blocks', blockModelHeight);
       let coinModelAggregateSpy = CoinStorage.collection.aggregate as sinon.SinonSpy;
       let blockModelFindSpy = BlockStorage.collection.find as sinon.SinonSpy;
 
