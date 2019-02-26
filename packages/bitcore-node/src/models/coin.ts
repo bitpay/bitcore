@@ -100,14 +100,17 @@ class CoinModel extends BaseModel<ICoin> {
 
   async getBalanceAtTime(params: { query: any; time: string; chain: string; network: string }) {
     let { query, time, chain, network } = params;
-    const block = await BlockStorage.collection.findOne({
-      $query: {
-        chain,
-        network,
-        timeNormalized: { $lte: new Date(time) }
-      },
-      $orderBy: { timeNormalized: -1 }
-    });
+    const [block] = await BlockStorage.collection
+      .find({
+        $query: {
+          chain,
+          network,
+          timeNormalized: { $lte: new Date(time) }
+        }
+      })
+      .limit(1)
+      .sort({ timeNormalized: -1 })
+      .toArray();
     const blockHeight = block!.height;
     const combinedQuery = Object.assign(
       {},
