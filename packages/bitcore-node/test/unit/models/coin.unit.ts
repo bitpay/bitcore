@@ -121,11 +121,11 @@ describe('Coin Model', function() {
       mockStorage([{ _id: 'confirmed', balance: 123123 }, { _id: 'unconfirmed', balance: 1 }]);
       Object.assign(BlockStorage.collection.find, sandbox.stub().resolves(blockModelHeight));
       let coinModelAggregateSpy = CoinStorage.collection.aggregate as sinon.SinonSpy;
-      let blockModelFindOneSpy = BlockStorage.collection.findOne as sinon.SinonSpy;
+      let blockModelFindSpy = BlockStorage.collection.find as sinon.SinonSpy;
 
       const result = await CoinStorage.getBalanceAtTime({ query, time, chain, network });
       expect(coinModelAggregateSpy.called).to.deep.equal(true, 'CoinStorage.aggregation should have been called');
-      expect(blockModelFindOneSpy.called).to.deep.equal(true, 'BlockModel.findOne should have been called');
+      expect(blockModelFindSpy.called).to.deep.equal(true, 'BlockModel.find should have been called');
       expect(coinModelAggregateSpy.getCall(0).args[0][0].$match).to.deep.equal(matchObject);
       expect(result).to.has.property('confirmed');
       expect(result).to.has.property('unconfirmed');
