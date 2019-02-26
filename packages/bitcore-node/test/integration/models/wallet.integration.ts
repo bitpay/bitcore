@@ -110,8 +110,9 @@ describe('Wallet Model', function() {
 
     it('should return correct coin and tx to verify 50 benchmark mempool tx, utxos stream, and wallet balance', async () => {
       const p2pWorker = new P2pWorker({ chain, network, chainConfig });
-      let sentTransactionIds = new Array<string>();
       const value = 0.1;
+      const numTransactions = 25;
+      let sentTransactionIds = new Array<string>();
       let lastTxid;
 
       /**
@@ -125,7 +126,7 @@ describe('Wallet Model', function() {
           const mintTxid = coin.mintTxid!;
           if (!seenTxids.includes(mintTxid) && sentTransactionIds.includes(mintTxid)) {
             seenTxids.push(mintTxid);
-            if (seenTxids.length === 50) {
+            if (seenTxids.length === numTransactions) {
               resolve();
             }
           }
@@ -145,7 +146,7 @@ describe('Wallet Model', function() {
       await p2pWorker.syncDone();
       await wait(3000);
 
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < numTransactions; i++) {
         let sentTxId = await rpc.sendtoaddress(address1, value);
         lastTxid = sentTxId;
         sentTransactionIds.push(sentTxId);
@@ -155,7 +156,7 @@ describe('Wallet Model', function() {
       await sawEvents;
       await wait(5000);
 
-      expect(lastTxid).to.deep.equal(sentTransactionIds[49]);
+      expect(lastTxid).to.deep.equal(sentTransactionIds[numTransactions - 1]);
 
       const confirmTx = await TransactionStorage.collection
         .find({
@@ -214,7 +215,7 @@ describe('Wallet Model', function() {
 
       const getWalletBalance = await lockedWallet.getBalance();
       expect(getWalletBalance.confirmed).to.deep.equal(0);
-      expect(getWalletBalance.unconfirmed).to.deep.equal(value * 50 * 1e8);
+      expect(getWalletBalance.unconfirmed).to.deep.equal(value * numTransactions * 1e8);
       expect(getWalletBalance.balance).to.deep.equal(getWalletBalance.unconfirmed + getWalletBalance.confirmed);
 
       const { heapUsed } = process.memoryUsage();
