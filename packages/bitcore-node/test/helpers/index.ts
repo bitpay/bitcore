@@ -58,3 +58,9 @@ export function mockStorage(toReturn, collectionMethods = {}) {
   } as any;
   return Storage;
 }
+
+export function mockModel(model, toReturn, collectionMethods = {}) {
+  model.db = {
+    collection: sinon.stub().returns(mockCollection(toReturn, collectionMethods))
+  };
+}

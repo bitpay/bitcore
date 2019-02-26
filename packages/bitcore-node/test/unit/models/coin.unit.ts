@@ -4,7 +4,7 @@ import { SpentHeightIndicators } from '../../../src/types/Coin';
 import { ObjectId } from 'mongodb';
 import sinon from 'sinon';
 import { BlockStorage } from '../../../src/models/block';
-import { mockStorage } from '../../helpers/index.js';
+import { mockStorage, mockModel } from '../../helpers/index.js';
 
 describe('Coin Model', function() {
   describe('_apiTransform', () => {
@@ -119,7 +119,7 @@ describe('Coin Model', function() {
 
       let blockModelHeight = { height: 123 };
       mockStorage([{ _id: 'confirmed', balance: 123123 }, { _id: 'unconfirmed', balance: 1 }]);
-      Object.assign(BlockStorage.collection.find, sandbox.stub().resolves(blockModelHeight));
+      mockModel(BlockStorage, blockModelHeight);
       let coinModelAggregateSpy = CoinStorage.collection.aggregate as sinon.SinonSpy;
       let blockModelFindSpy = BlockStorage.collection.find as sinon.SinonSpy;
 
