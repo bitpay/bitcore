@@ -173,7 +173,7 @@ describe('Wallet Model', function() {
         expect(coin).to.have.deep.property('spentHeight', -2);
       });
 
-      const getWalletBalance = await lockedWallet.getBalance(null);
+      const getWalletBalance = await lockedWallet.getBalance();
       expect(getWalletBalance.confirmed).to.deep.equal(0);
       expect(getWalletBalance.unconfirmed).to.deep.equal(value * 1e8);
       expect(getWalletBalance.balance).to.deep.equal(getWalletBalance.unconfirmed + getWalletBalance.confirmed);
