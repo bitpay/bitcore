@@ -6,7 +6,7 @@ import sinon from 'sinon';
 import { BlockStorage } from '../../../src/models/block';
 import { mockStorage } from '../../helpers/index.js';
 
-describe('Coin Model', function () {
+describe('Coin Model', function() {
   describe('_apiTransform', () => {
     it('should return the transform object with coin info', () => {
       let id = new ObjectId();
@@ -91,40 +91,40 @@ describe('Coin Model', function () {
       sandbox.restore();
     });
 
-    it('should return an object with confirmed, unconfirmed, and balance when additional time parameter is passed in', async () => {      
-      let id = new ObjectId("5c364e342ab5602e97a56f0e");
+    it('should return an object with confirmed, unconfirmed, and balance when additional time parameter is passed in', async () => {
+      let id = new ObjectId('5c364e342ab5602e97a56f0e');
       let chain = 'BTC';
       let network = 'regtest';
       let time = new Date().toISOString();
       let query = { wallets: id, 'wallets.0': { $exists: true } };
-      let matchObject = { 
-        "$or": [
+      let matchObject = {
+        $or: [
           {
-            "spentHeight": {
-              "$gt": 123
+            spentHeight: {
+              $gt: 123
             }
           },
           {
-            "spentHeight": {
-              "$lt": 0
+            spentHeight: {
+              $lt: 0
             }
           }
         ],
-        "mintHeight": {
-          "$lte": 123
+        mintHeight: {
+          $lte: 123
         },
-        "wallets": new ObjectId('5c364e342ab5602e97a56f0e'),
-        "wallets.0": { '$exists': true },
-      }
+        wallets: new ObjectId('5c364e342ab5602e97a56f0e'),
+        'wallets.0': { $exists: true }
+      };
 
       let blockModelHeight = { height: 123 };
-      mockStorage([{_id: 'confirmed', balance: 123123}, {_id: 'unconfirmed', balance: 1}]);
-      Object.assign(BlockStorage.collection.findOne, sandbox.stub().resolves(blockModelHeight));
+      mockStorage([{ _id: 'confirmed', balance: 123123 }, { _id: 'unconfirmed', balance: 1 }]);
+      Object.assign(BlockStorage.collection.find, sandbox.stub().resolves(blockModelHeight));
       let coinModelAggregateSpy = CoinStorage.collection.aggregate as sinon.SinonSpy;
       let blockModelFindOneSpy = BlockStorage.collection.findOne as sinon.SinonSpy;
 
-      const result = await CoinStorage.getBalanceAtTime({query, time, chain, network});
-      expect(coinModelAggregateSpy.called).to.deep.equal(true, "CoinStorage.aggregation should have been called");
+      const result = await CoinStorage.getBalanceAtTime({ query, time, chain, network });
+      expect(coinModelAggregateSpy.called).to.deep.equal(true, 'CoinStorage.aggregation should have been called');
       expect(blockModelFindOneSpy.called).to.deep.equal(true, 'BlockModel.findOne should have been called');
       expect(coinModelAggregateSpy.getCall(0).args[0][0].$match).to.deep.equal(matchObject);
       expect(result).to.has.property('confirmed');
@@ -143,20 +143,20 @@ describe('Coin Model', function () {
       sandbox.restore();
     });
 
-    it('should return an object with confirmed, unconfirmed, and balance', async () => {      
-      let id = new ObjectId("5c364e342ab5602e97a56f0e");
+    it('should return an object with confirmed, unconfirmed, and balance', async () => {
+      let id = new ObjectId('5c364e342ab5602e97a56f0e');
       let query = {
-        "wallets": id, 
-        'wallets.0': { "$exists": true },
-        "spentHeight": { "$lt": 0 },
-        "mintHeight": { "$gt": -3 }
+        wallets: id,
+        'wallets.0': { $exists: true },
+        spentHeight: { $lt: 0 },
+        mintHeight: { $gt: -3 }
       };
 
-      mockStorage([{_id: 'confirmed', balance: 123123}, {_id: 'unconfirmed', balance: 1}]);
+      mockStorage([{ _id: 'confirmed', balance: 123123 }, { _id: 'unconfirmed', balance: 1 }]);
       let coinModelAggregateSpy = CoinStorage.collection.aggregate as sinon.SinonSpy;
 
-      const result = await CoinStorage.getBalance({query});
-      expect(coinModelAggregateSpy.called).to.deep.equal(true, "CoinStorage.aggregation should have been called");
+      const result = await CoinStorage.getBalance({ query });
+      expect(coinModelAggregateSpy.called).to.deep.equal(true, 'CoinStorage.aggregation should have been called');
       expect(coinModelAggregateSpy.getCall(0).args[0][0].$match).to.deep.equal(query);
       expect(result).to.has.property('confirmed');
       expect(result).to.has.property('unconfirmed');
