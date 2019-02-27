@@ -108,7 +108,7 @@ describe('Wallet Model', function() {
       }
     });
 
-    it('should return correct coin and tx to verify 50 benchmark mempool tx, utxos stream, and wallet balance', async done => {
+    it('should return correct coin and tx to verify 50 benchmark mempool tx, utxos stream, and wallet balance', async () => {
       const p2pWorker = new P2pWorker({ chain, network, chainConfig });
       const value = 0.1;
       const numTransactions = 25;
@@ -154,7 +154,7 @@ describe('Wallet Model', function() {
 
       // Slice keeps txidList intact and creates a new array
       await sawEvents;
-      await wait(5000);
+      await wait(10000);
 
       expect(lastTxid).to.deep.equal(sentTransactionIds[numTransactions - 1]);
 
@@ -221,7 +221,6 @@ describe('Wallet Model', function() {
       const { heapUsed } = process.memoryUsage();
       expect(heapUsed).to.be.below(3e8);
       await p2pWorker.stop();
-      done();
     });
   });
 });
