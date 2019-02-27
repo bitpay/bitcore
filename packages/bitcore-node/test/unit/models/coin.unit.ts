@@ -112,7 +112,8 @@ describe('Coin Model', function() {
           $lte: 123
         },
         wallets: new ObjectId('5c364e342ab5602e97a56f0e'),
-        'wallets.0': { $exists: true }
+        'wallets.0': { $exists: true },
+        hint: { wallets: 1, spentHeight: 1, value: 1 }
       };
 
       let blockModelHeight = { height: 123 };
