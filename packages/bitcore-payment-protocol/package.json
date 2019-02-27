@@ -1,6 +1,6 @@
 {
   "name": "bitcore-payment-protocol",
-  "version": "8.0.0",
+  "version": "8.1.0",
   "description": "Payment Protocol (BIP70 and related) support for bitcore",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -53,13 +53,13 @@
     "asn1.js": "^5.0.1",
     "asn1.js-rfc3280": "^4.0.0",
     "asn1.js-rfc5280": "^3.0.0",
+    "bitcore-lib": "^8.1.0",
     "bs58": "^4.0.1",
     "jsrsasign": "^8.0.12",
-    "protobufjs": "=5.0.3",
-    "bitcore-lib": "^8.0.0"
+    "protobufjs": "=5.0.3"
   },
   "devDependencies": {
-    "bitcore-build": "^8.0.0",
+    "bitcore-build": "^8.1.0",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
