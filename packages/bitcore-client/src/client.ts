@@ -44,7 +44,7 @@ export class Client {
     const { payload, pubKey, time } = params;
     let url = `${this.baseUrl}/wallet/${pubKey}/balance`;
     if (time) {
-      url += `/${time}`
+      url += `/${time}`;
     }
     const signature = this.sign({ method: 'GET', url, payload });
     return request.get(url, {
@@ -63,7 +63,7 @@ export class Client {
     });
   };
 
-  getCoins(params: {payload?: any, pubKey: string, includeSpent: boolean}) {
+  getCoins(params: { payload?: any; pubKey: string; includeSpent: boolean }) {
     const { payload, pubKey, includeSpent } = params;
     const url = `${
       this.baseUrl
@@ -83,27 +83,33 @@ export class Client {
       startDate,
       endBlock,
       endDate,
-      includeMempool
+      includeMempool,
+      payload
     } = params;
-    let url = `${this.baseUrl}/wallet/${pubKey}/transactions?`;
+    let url = `${this.baseUrl}/wallet/${pubKey}/transactions`;
+    let query = '';
     if (startBlock) {
-      url += `startBlock=${startBlock}&`;
+      query += `startBlock=${startBlock}&`;
     }
     if (endBlock) {
-      url += `endBlock=${endBlock}&`;
+      query += `endBlock=${endBlock}&`;
     }
     if (startDate) {
-      url += `startDate=${startDate}&`;
+      query += `startDate=${startDate}&`;
     }
     if (endDate) {
-      url += `endDate=${endDate}&`;
+      query += `endDate=${endDate}&`;
     }
     if (includeMempool) {
-      url += 'includeMempool=true';
+      query += 'includeMempool=true';
     }
-    const signature = this.sign({ method: 'GET', url });
+    if (query) {
+      url += '?' + query;
+    }
+    const signature = this.sign({ method: 'GET', url, payload });
     return requestStream.get(url, {
       headers: { 'x-signature': signature },
+      body: payload,
       json: true
     });
   }
