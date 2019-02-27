@@ -108,7 +108,7 @@ describe('Wallet Model', function() {
       }
     });
 
-    it('should return correct coin and tx to verify 50 benchmark mempool tx, utxos stream, and wallet balance', async () => {
+    it('should return correct coin and tx to verify 50 benchmark mempool tx, utxos stream, and wallet balance', async done => {
       const p2pWorker = new P2pWorker({ chain, network, chainConfig });
       const value = 0.1;
       const numTransactions = 25;
@@ -221,6 +221,7 @@ describe('Wallet Model', function() {
       const { heapUsed } = process.memoryUsage();
       expect(heapUsed).to.be.below(3e8);
       await p2pWorker.stop();
+      done();
     });
   });
 });
