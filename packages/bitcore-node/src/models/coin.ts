@@ -115,7 +115,7 @@ class CoinModel extends BaseModel<ICoin> {
     const combinedQuery = Object.assign(
       {},
       {
-        $or: [{ spentHeight: { $gt: blockHeight } }, { spentHeight: { $lt: SpentHeightIndicators.minimum } }],
+        $or: [{ spentHeight: { $gt: blockHeight } }, { spentHeight: SpentHeightIndicators.unspent }],
         mintHeight: { $lte: blockHeight }
       },
       query
