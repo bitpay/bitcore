@@ -1,4 +1,4 @@
-# Bitcore v8.0.0
+# Bitcore v8.1.0
 
 ## Principles
 
@@ -10,39 +10,43 @@ To get started, just `npm install bitcore` or `bower install bitcore`.
 
 ## Addresses and Key Management
 
-* [Addresses](address.md)
-* [Using Different Networks](networks.md)
-* [Private Keys](privatekey.md) and [Public Keys](publickey.md)
-* [Hierarchically-derived Private and Public Keys](hierarchical.md)
+- [Addresses](address.md)
+- [Using Different Networks](networks.md)
+- [Private Keys](privatekey.md) and [Public Keys](publickey.md)
+- [Hierarchically-derived Private and Public Keys](hierarchical.md)
 
 ## Payment Handling
-* [Using Different Units](unit.md)
-* [Acknowledging and Requesting Payments: Bitcoin URIs](uri.md)
-* [The Transaction Class](transaction.md)
+
+- [Using Different Units](unit.md)
+- [Acknowledging and Requesting Payments: Bitcoin URIs](uri.md)
+- [The Transaction Class](transaction.md)
 
 ## Bitcoin Internals
-* [Scripts](script.md)
-* [Block](block.md)
+
+- [Scripts](script.md)
+- [Block](block.md)
 
 ## Extra
-* [Crypto](crypto.md)
-* [Encoding](encoding.md)
+
+- [Crypto](crypto.md)
+- [Encoding](encoding.md)
 
 ## Module Development
-* [Browser Builds](browser.md)
+
+- [Browser Builds](browser.md)
 
 ## Modules
 
 Some functionality is implemented as a module that can be installed separately:
 
-* [Payment Protocol Support](https://github.com/bitpay/bitcore-payment-protocol)
-* [Peer to Peer Networking](https://github.com/bitpay/bitcore-p2p)
-* [Bitcoin Core JSON-RPC](https://github.com/bitpay/bitcoind-rpc)
-* [Payment Channels](https://github.com/bitpay/bitcore-channel)
-* [Mnemonics](https://github.com/bitpay/bitcore-mnemonic)
-* [Elliptical Curve Integrated Encryption Scheme](https://github.com/bitpay/bitcore-ecies)
-* [Blockchain Explorers](https://github.com/bitpay/bitcore-explorers)
-* [Signed Messages](https://github.com/bitpay/bitcore-message)
+- [Payment Protocol Support](https://github.com/bitpay/bitcore-payment-protocol)
+- [Peer to Peer Networking](https://github.com/bitpay/bitcore-p2p)
+- [Bitcoin Core JSON-RPC](https://github.com/bitpay/bitcoind-rpc)
+- [Payment Channels](https://github.com/bitpay/bitcore-channel)
+- [Mnemonics](https://github.com/bitpay/bitcore-mnemonic)
+- [Elliptical Curve Integrated Encryption Scheme](https://github.com/bitpay/bitcore-ecies)
+- [Blockchain Explorers](https://github.com/bitpay/bitcore-explorers)
+- [Signed Messages](https://github.com/bitpay/bitcore-message)
 
 # Examples
 
@@ -85,10 +89,10 @@ var uri = new bitcore.URI(paymentInfo).toString();
 
 ```javascript
 var transaction = new Transaction()
-    .from(utxos)          // Feed information about what unspent outputs one can use
-    .to(address, amount)  // Add an output with the given amount of satoshis
-    .change(address)      // Sets up a change address where the rest of the funds will go
-    .sign(privkeySet)     // Signs all the inputs it can
+  .from(utxos) // Feed information about what unspent outputs one can use
+  .to(address, amount) // Add an output with the given amount of satoshis
+  .change(address) // Sets up a change address where the rest of the funds will go
+  .sign(privkeySet); // Signs all the inputs it can
 ```
 
 ## Connect to the Network
