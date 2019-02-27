@@ -108,7 +108,6 @@ describe('Coin Model', function() {
             spentHeight: -2
           }
         ],
-        hint: { wallets: 1, spentHeight: 1, value: 1 },
         mintHeight: {
           $lte: 123
         },
