@@ -8,6 +8,7 @@
   },
   "homepage": "https://github.com/bitpay/bitcore",
   "license": "MIT",
+  "private": true,
   "keywords": [
     "insight",
     "insight-ui",
