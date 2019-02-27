@@ -1,6 +1,6 @@
 import { LoggifyClass } from '../decorators/Loggify';
 import { BaseModel, MongoBound } from './base';
-import { ObjectID } from 'mongodb';
+import { ObjectID, CollectionAggregationOptions } from 'mongodb';
 import { SpentHeightIndicators, CoinJSON } from '../types/Coin';
 import { valueOrDefault } from '../utils/check';
 import { StorageService } from '../services/storage';
@@ -62,7 +62,7 @@ class CoinModel extends BaseModel<ICoin> {
     );
   }
 
-  async getBalance(params: { query: any }) {
+  async getBalance(params: { query: any }, options: CollectionAggregationOptions = {}) {
     let { query } = params;
     const result = await this.collection
       .aggregate<{ _id: string; balance: number }>(
@@ -88,9 +88,7 @@ class CoinModel extends BaseModel<ICoin> {
             }
           }
         ],
-        {
-          hint: { wallets: 1, spentHeight: 1, value: 1 }
-        }
+        options
       )
       .toArray();
     return result.reduce<{ confirmed: number; unconfirmed: number; balance: number }>(
@@ -125,7 +123,7 @@ class CoinModel extends BaseModel<ICoin> {
       },
       query
     );
-    return this.getBalance({ query: combinedQuery });
+    return this.getBalance({ query: combinedQuery }, { hint: { wallets: 1, spentHeight: 1, value: 1 } });
   }
 
   resolveAuthhead(mintTxid: string, chain?: string, network?: string) {
