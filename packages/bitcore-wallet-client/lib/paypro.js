@@ -56,6 +56,7 @@ PayPro._nodeRequest = function(opts, cb) {
 };
 
 PayPro._browserRequest = function(opts, cb) {
+
   var method = (opts.method || 'GET').toUpperCase();
   var url = opts.url;
   var req = opts;
@@ -77,7 +78,7 @@ PayPro._browserRequest = function(opts, cb) {
   xhr.onload = function(event) {
     var response = xhr.response;
     if (xhr.status == 200) {
-      return cb(null, new Uint8Array(response));
+      return cb(null, Buffer.from(response));
     } else {
       return cb('HTTP Request Error: '  + xhr.status + ' ' + xhr.statusText + ' ' + response ? response : '');
     }
@@ -106,7 +107,10 @@ var getHttp = function(opts) {
   opts.proto = RegExp.$2;
   opts.host = RegExp.$3;
   opts.path = RegExp.$4 + RegExp.$6;
-  if (opts.http) return opts.http;
+
+  if (opts.http) {
+    return opts.http;
+  }
 
   var env = opts.env;
   if (!env)
@@ -132,13 +136,12 @@ PayPro.get = function(opts, cb) {
 
   http(opts, function(err, data) {
     if (err) return cb(err);
-
     try {
       data = JSON.parse(data.toString());
+
     } catch (e)  {
       return cb(e);
     }
-
     // read and check
     let ret = {};
     ret.url = opts.url;
@@ -158,7 +161,7 @@ PayPro.get = function(opts, cb) {
 
     //currency
     if ( data.currency != COIN )
-      return cb(new Error('Currency mismmath. Expecting:' + COIN));
+      return cb(new Error('Currency mismatch. Expecting:' + COIN));
 
     ret.coin = coin;
 
@@ -202,8 +205,7 @@ PayPro.get = function(opts, cb) {
 PayPro.send = function(opts, cb) {
   $.checkArgument(opts.rawTxUnsigned)
     .checkArgument(opts.url)
-    .checkArgument(opts.rawTx)
-    .checkArgument(opts.amountSat);
+    .checkArgument(opts.rawTx);
 
 
   var coin = opts.coin || 'btc';

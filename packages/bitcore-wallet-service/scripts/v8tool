@@ -6,6 +6,7 @@ const Client = require('../lib/blockchainexplorers/v8/client.js');
 
 
 const coin = 'BCH';
+console.log('[v8tool.8:coin:]',coin); //TODO
 const network = 'mainnet';
 const authKey = process.argv[2]; 
 const path = process.argv[3] || 'addresses'; 
@@ -26,14 +27,18 @@ const pubKey = Bitcore.PrivateKey(tmp).toPublicKey() ;
 
 //console.log(pubKey); 
 
-const baseUrl = `https://api.bitcore.io/api/${coin}/${network}/`;
+const baseUrl = `https://api.bitcore.io/api/${coin}/${network}`;
 let client = new Client({
   baseUrl: baseUrl,
   authKey: authKeyObj,
 });
 
+// utxos
+// addresses
 
+//const url = `${baseUrl}/wallet/${pubKey}/${path}`;
 const url = `${baseUrl}/wallet/${pubKey}/${path}`;
+console.log('[v8tool.37:url:]',url); //TODO
 const signature = client.sign({ method: 'GET', url });
 const payload = {};
 
@@ -46,11 +51,12 @@ request.get(url, {
     console.log('[v8tool.43:err:]',err); //TODO
   } else {
     try {
-      body.forEach((x)=> {
-        console.log(x.address);
-      });
+console.log('[v8tool.50:body:]',body); //TODO
+      //body.forEach((x)=> {
+      //  console.log(x.address);
+      //});
     } catch (e) {
-console.log('[v8tool.52]', body); //TODO
+console.log('[v8tool.52]', e, body); //TODO
     }
   }
 });

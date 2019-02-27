@@ -7,11 +7,9 @@ var should = chai.should();
 var PayPro = require('../lib/paypro');
 var TestData = require('./testdata');
 
-var TestDataBCH = _.clone(TestData.payProData);
 
-//paypro is using C/H address for now
-//TestDataBCH.toAddress = 'bchtest:qqkcn2tjp59v4xl24ercn99qdvdtz7qcvuvmw9knqf';
 
+var serverCoin = 'btc';
 
 describe('paypro', function() {
   var xhr, httpNode, clock, headers;
@@ -24,7 +22,6 @@ describe('paypro', function() {
     xhr.onCreate = function(req) {};
     xhr.open = function(method, url) {};
     xhr.setRequestHeader = function(k, v) {
-//console.log('[paypro.js.21]', k,v); //TODO
       headers[k]=v;
     };
     xhr.getAllResponseHeaders = function() {
@@ -32,7 +29,7 @@ describe('paypro', function() {
       return 'content-type: test';
     };
     xhr.send = function() {
-      xhr.response = TestData.payProBuf;
+      xhr.response = Buffer.from(TestData.payProJsonHex[serverCoin],'hex');
       xhr.onload();
     };
 
@@ -43,8 +40,9 @@ describe('paypro', function() {
       if (httpNode.error == 404) 
         res.statusMessage = 'Not Found';
       res.on = function(e, cb) {
-        if (e == 'data')
-          return cb(TestData.payProBuf);
+        if (e == 'data') {
+          return cb(Buffer.from(TestData.payProJsonHex[serverCoin],'hex'));
+        }
         if (e == 'end')
           return cb();
       };
@@ -63,33 +61,52 @@ describe('paypro', function() {
       return cb(res);
     };
   });
+  beforeEach(() => {
+    serverCoin = 'btc';
+  });
   after(function() {
     clock.restore();
   });
 
   it('Make a PP request with browser', function(done) {
     xhr.status=200;
+    serverCoin='btc';
+
+    // Get it thru xhr mock up
     PayPro.get({
       url: 'http://an.url.com/paypro',
       xhr: xhr,
       env: 'browser',
     }, function(err, res) {
-      headers['Accept'].should.equal('application/bitcoin-paymentrequest');
-      should.not.exist(err);
-      res.should.deep.equal(TestData.payProData);
-      done();
+      headers['Accept'].should.equal('application/payment-request');
+
+      // Get it thru http mock up
+      PayPro.get({
+        url: 'http://an.url.com/paypro',
+        xhr: null,
+        http: function (opts, cb) {
+          return cb(null, Buffer.from(TestData.payProJsonHex['btc'],'hex'));
+        }
+      }, function(err, res2) {
+        should.not.exist(err);
+
+        // they should be equal...
+        res2.should.be.deep.equal(res);
+        done();
+      });
     });
   });
 
 
   it('Should handle a failed request from the browser', function(done) {
     xhr.status=404;
+    serverCoin='btc';
     PayPro.get({
       url: 'http://an.url.com/paypro',
       xhr: xhr,
       env: 'browser',
     }, function(err, res) {
-      headers['Accept'].should.equal('application/bitcoin-paymentrequest');
+      headers['Accept'].should.equal('application/payment-request');
       should.exist(err);
       done();
     });
@@ -99,6 +116,7 @@ describe('paypro', function() {
 
   it('Make a PP request with browser BCH', function(done) {
     xhr.status=200;
+    serverCoin='bch';
     PayPro.get({
       url: 'http://an.url.com/paypro',
       xhr: xhr,
@@ -106,13 +124,28 @@ describe('paypro', function() {
       coin: 'bch',
     }, function(err, res) {
       should.not.exist(err);
-      headers['Accept'].should.equal('application/bitcoincash-paymentrequest');
-      res.should.deep.equal(TestDataBCH);
-      done();
+      headers['Accept'].should.equal('application/payment-request');
+
+      // Get it thru http mock up
+      PayPro.get({
+        url: 'http://an.url.com/paypro',
+        xhr: null,
+        http: function (opts, cb) {
+          return cb(null, Buffer.from(TestData.payProJsonHex['bch'],'hex'));
+        },
+        coin: 'bch',
+      }, function(err, res2) {
+        should.not.exist(err);
+
+        // they should be equal...
+        res2.should.be.deep.equal(res);
+        done();
+      });
     });
   });
 
   it('Make a PP request with browser with headers', function(done) {
+
     PayPro.get({
       url: 'http://an.url.com/paypro',
       xhr: xhr,
@@ -122,11 +155,10 @@ describe('paypro', function() {
         'Content-Type': 'application/octet-stream',
         'Content-Length': 0,
         'Content-Transfer-Encoding': 'xxx',
-      }
-
+      },
     }, function(err, res) {
       should.not.exist(err);
-      res.should.deep.equal(TestData.payProData);
+      res.should.deep.equal(TestData.payProJsonData['btc']);
       done();
     });
   });
@@ -178,7 +210,7 @@ describe('paypro', function() {
       env: 'node',
     }, function(err, res) {
       should.not.exist(err);
-      res.should.deep.equal(TestData.payProData);
+      res.should.deep.equal(TestData.payProJsonData.btc);
       done();
     });
   });
@@ -197,51 +229,90 @@ describe('paypro', function() {
     });
   });
 
-  it('Create a PP payment', function() {
-    var data = TestData.payProData;
-    var payment = PayPro._createPayment(data.merchant_data, '12ab1234', 'mwRGmB4NE3bG4EbXJKTHf8uvodoUtMCRhZ', 100, 'btc');
-    var s = '';
-    for (var i = 0; i < payment.length; i++) {
-      s += payment[i].toString(16);
-    }
-    s.should.equal('a4c7b22696e766f6963654964223a22436962454a4a74473174394837374b6d4d3631453274222c226d65726368616e744964223a22444766754344656f66556e576a446d5537454c634568227d12412ab12341a1d864121976a914ae6eeec7e05624db748f9c16cce6fb53696ab3988ac');
-  });
-
   it('Send a PP payment (browser, BTC)', function(done) {
-    var data = TestData.payProData;
     var opts = {
-      merchant_data: data.merchant_data,
-      rawTx: '12ab1234',
-      refundAddr: 'mwRGmB4NE3bG4EbXJKTHf8uvodoUtMCRhZ',
-      amountSat: 100,
+      rawTx: 'rawTx1',
+      rawTxUnsigned: 'rawTxUnsigned',
       url: 'http://an.url.com/paypro',
       xhr: xhr,
       env: 'browser',
+    }
+    xhr.status= 200;
+
+    var calls=0;
+    xhr.send = function() {
+      if (!calls++) {
+        xhr.response = 'Payment seems OK';
+      } else {
+        xhr.response = '{"memo":"memo1"}';
+      }
+      xhr.onload();
     };
-    var payment = PayPro.send(opts, function(err, data) {
-      headers['Accept'].should.equal('application/bitcoin-paymentack');
-      headers['Content-Type'].should.equal('application/bitcoin-payment');
+
+    var payment = PayPro.send(opts, function(err, data, memo) {
       should.not.exist(err);
+      memo.should.equal('memo1');
       done();
     });
   });
 
+  it('Should not send a PP payment is verify failed (browser, BTC)', function(done) {
+    var opts = {
+      rawTx: 'rawTx1',
+      rawTxUnsigned: 'rawTxUnsigned',
+      url: 'http://an.url.com/paypro',
+      xhr: xhr,
+      env: 'browser',
+    }
+    xhr.status= 400;
+
+    var calls=0;
+    xhr.send = function() {
+      if (!calls++) {
+        xhr.response = 'xx';
+      } else {
+        // should never get hehe
+        'xx'.should.equal('yy');
+      }
+      xhr.onload();
+    };
+
+    var payment = PayPro.send(opts, function(err, data, memo) {
+      err.should.equal('xx');
+      done();
+    });
+  });
+
+
+
   it('Send a PP payment (browser, BCH)', function(done) {
     var data = TestData.payProData;
-    var opts = {
-      merchant_data: data.merchant_data,
-      rawTx: '12ab1234',
-      refundAddr: 'mwRGmB4NE3bG4EbXJKTHf8uvodoUtMCRhZ',
-      amountSat: 100,
+    var opts = { 
+      rawTx: 'rawTx1',
+      rawTxUnsigned: 'rawTxUnsigned',
       url: 'http://an.url.com/paypro',
       xhr: xhr,
       env: 'browser',
       coin: 'bch',
     };
-    var payment = PayPro.send(opts, function(err, data) {
-      headers['Accept'].should.equal('application/bitcoincash-paymentack');
-      headers['Content-Type'].should.equal('application/bitcoincash-payment');
+    xhr.status= 200;
+
+    var calls=0;
+    xhr.send = function() {
+      if (!calls++) {
+        xhr.response = 'Payment seems OK';
+      } else {
+        xhr.response = '{"memo":"memo1"}';
+      }
+      xhr.onload();
+    };
+
+
+
+    var payment = PayPro.send(opts, function(err, data, memo) {
+      headers['Content-Type'].should.equal('application/payment');
       should.not.exist(err);
+      memo.should.equal('memo1');
       done();
     });
   });
@@ -252,12 +323,10 @@ describe('paypro', function() {
     httpNode.error = null;
     var data = TestData.payProData;
     var opts = {
-      merchant_data: data.merchant_data,
       rawTx: '12ab1234',
-      refundAddr: 'mwRGmB4NE3bG4EbXJKTHf8uvodoUtMCRhZ',
-      amountSat: 100,
-      httpNode: httpNode,
+      rawTxUnsigned: 'rawTxUnsigned',
       url: 'http://an.url.com/paypro',
+      httpNode: httpNode,
       env: 'node',
     };
     var payment = PayPro.send(opts, function(err, data) {
