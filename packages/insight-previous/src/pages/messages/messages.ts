@@ -83,7 +83,7 @@ export class MessagesPage {
       if (message.verify(values.address, values.signature)) {
         this.success = 'Message verified!';
       } else {
-        this.error = 'Message could not be verified';
+        this.error = message.error;
       }
     } catch(e) {
       this.error = e.message;

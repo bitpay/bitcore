@@ -3,39 +3,46 @@
   <ion-grid fixed>
   <div class="page-content">
     <h1>Verify Message</h1>
-    <p>Bitcoin comes with a way of signing arbitrary messages. <br>
-    This form can be used to verify that a message comes from a specific Bitcoin address.
-    </p>
-    <form [formGroup]="messageForm">
-      <ion-list>
-        <ion-item>
-          <ion-label floating>Address</ion-label>
-          <ion-input type="text" formControlName="address" [value]="messageForm.value.address"></ion-input>
-        </ion-item>
+    <ion-card>
+      <ion-card-content>
+        Bitcoin comes with a way of signing arbitrary messages. <br>
+        This form can be used to verify that a message comes from a specific Bitcoin address.
+      </ion-card-content>
+    </ion-card>
+    <ion-row>
+      <ion-col col-md-8 push-md-2>
+        <form [formGroup]="messageForm">
+          <ion-list>
+            <ion-item>
+              <ion-label staked>Address</ion-label>
+              <ion-input type="text" formControlName="address" [value]="messageForm.value.address" clearInput></ion-input>
+            </ion-item>
 
-        <ion-item>
-          <ion-label floating>Signature</ion-label>
-          <ion-input type="text" formControlName="signature"></ion-input>
-        </ion-item>
+            <ion-item>
+              <ion-label staked>Signature</ion-label>
+              <ion-input type="text" formControlName="signature" clearInput></ion-input>
+            </ion-item>
 
-        <ion-item>
-          <ion-label floating>Message</ion-label>
-          <ion-input type="text" formControlName="message"></ion-input>
-        </ion-item>
+            <ion-item>
+              <ion-label staked>Message</ion-label>
+              <ion-input type="text" formControlName="message" clearInput></ion-input>
+            </ion-item>
+          </ion-list>
 
-        <ion-item>
-          <p *ngIf="success">{{ successs }}</p>
-          <p *ngIf="error"> {{ error }}</p>
-        </ion-item>
+          <p ion-text color="success" *ngIf="success">{{ success }}</p>
+          <p ion-text color="danger" *ngIf="error"> {{ error }}</p>
 
-        <ion-item>
-          <button ion-button outline (click)="verify()" [disabled]="messageForm.invalid">
-            Verify
-          </button>
-        </ion-item>
-      </ion-list>
-    </form>
+          <ion-row>
+            <ion-col push-md-8 col-md-4>
+              <button ion-button block (click)="verify()" [disabled]="messageForm.invalid">
+                Verify
+              </button>
+            </ion-col>
+          </ion-row>
+        </form>
+      </ion-col>
+    </ion-row>
   </div>
   </ion-grid>
 </ion-content>
-<footer [chainNetwork]=""></footer>
+<footer [chainNetwork]="chainNetwork"></footer>
