@@ -154,7 +154,7 @@ describe('Wallet Model', function() {
 
       // Slice keeps txidList intact and creates a new array
       await sawEvents;
-      await wait(5000);
+      await wait(10000);
 
       expect(lastTxid).to.deep.equal(sentTransactionIds[numTransactions - 1]);
 
