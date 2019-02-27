@@ -118,6 +118,9 @@ class CoinModel extends BaseModel<ICoin> {
         $or: [{ spentHeight: { $gt: blockHeight } }, { spentHeight: SpentHeightIndicators.unspent }],
         mintHeight: { $lte: blockHeight }
       },
+      {
+        hint: { wallets: 1, spentHeight: 1, value: 1 }
+      },
       query
     );
     return this.getBalance({ query: combinedQuery });
