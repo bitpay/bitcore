@@ -1,8 +1,6 @@
 import { Component, ViewChild } from '@angular/core';
 import { Events, Nav, Platform } from 'ionic-angular';
-import { HomePage } from '../pages';
 import { ApiProvider } from '../providers/api/api';
-import { CurrencyProvider } from '../providers/currency/currency';
 
 @Component({
   templateUrl: './app.html'
@@ -21,7 +19,6 @@ export class InsightApp {
 
   constructor(
     platform: Platform,
-    public currency: CurrencyProvider,
     public apiProvider: ApiProvider,
     public events: Events
   ) {

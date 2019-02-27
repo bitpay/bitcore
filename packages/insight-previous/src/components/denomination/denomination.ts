@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { NavParams, ViewController } from 'ionic-angular';
+import _ from 'lodash';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 @Component({
   selector: 'denomination',
@@ -9,6 +10,7 @@ export class DenominationComponent {
   public units: any = [];
   public availableNetworks;
   public currencySymbol;
+  public showUnits = false;
 
   constructor(
     public viewCtrl: ViewController,
@@ -20,6 +22,12 @@ export class DenominationComponent {
     this.currencySymbol = this.navParams.data.currencySymbol;
     this.api.getAvailableNetworks().subscribe(data => {
       this.availableNetworks = data.json() as ChainNetwork[];
+      this.showUnits = _.some(
+        this.availableNetworks,
+        this.api.networkSettings.value.selectedNetwork
+      )
+        ? true
+        : false;
       this.units = [
         'USD',
         this.api.networkSettings.value.selectedNetwork.chain,
