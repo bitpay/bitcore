@@ -11,6 +11,7 @@ import { TransactionStorage } from '../../../src/models/transaction';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
 import { P2pWorker } from '../../../src/services/p2p';
 import { wait } from '../../../src/utils/wait';
+import { IEvent } from '../../../src/models/events';
 
 let lockedWallet: Wallet;
 const walletName = 'Test Wallet';
@@ -109,8 +110,9 @@ describe('Wallet Model', function() {
 
     it('should return correct coin and tx to verify 50 benchmark mempool tx, utxos stream, and wallet balance', async () => {
       const p2pWorker = new P2pWorker({ chain, network, chainConfig });
-      let txidList = new Array<string>();
       const value = 0.1;
+      const numTransactions = 25;
+      let sentTransactionIds = new Array<string>();
       let lastTxid;
 
       /**
@@ -118,14 +120,13 @@ describe('Wallet Model', function() {
        * addressCoinEvent stream does not return coins in order of creation
        */
       let sawEvents = new Promise(resolve => {
-        Event.addressCoinEvent.on('coin', async addressCoin => {
+        const seenTxids = new Array<string>();
+        Event.addressCoinEvent.on('coin', async (addressCoin: IEvent.CoinEvent) => {
           const { coin } = addressCoin;
-          if (newTxidList && txidList.length === 50) {
-            let foundIndex = newTxidList.indexOf(coin.mintTxid);
-            // Splice deletes elements from the original array newTxidList
-            newTxidList.splice(foundIndex, 1);
-            if (newTxidList.length === 0) {
-              await wait(5000);
+          const mintTxid = coin.mintTxid!;
+          if (!seenTxids.includes(mintTxid) && sentTransactionIds.includes(mintTxid)) {
+            seenTxids.push(mintTxid);
+            if (seenTxids.length === numTransactions) {
               resolve();
             }
           }
@@ -145,36 +146,35 @@ describe('Wallet Model', function() {
       await p2pWorker.syncDone();
       await wait(3000);
 
-      for (let i = 0; i < 50; i++) {
+      for (let i = 0; i < numTransactions; i++) {
         let sentTxId = await rpc.sendtoaddress(address1, value);
         lastTxid = sentTxId;
-        txidList.push(sentTxId);
+        sentTransactionIds.push(sentTxId);
       }
 
       // Slice keeps txidList intact and creates a new array
-      var newTxidList = txidList.slice();
       await sawEvents;
-      await wait(5000);
+      await wait(10000);
 
-      expect(lastTxid).to.deep.equal(txidList[49]);
+      expect(lastTxid).to.deep.equal(sentTransactionIds[numTransactions - 1]);
 
       const confirmTx = await TransactionStorage.collection
         .find({
           chain,
           network,
-          txid: { $in: txidList }
+          txid: { $in: sentTransactionIds }
         })
         .toArray();
 
-      const txTxid = confirmTx.map(tx => tx.txid);
+      const txids = confirmTx.map(tx => tx.txid);
       const txChain = confirmTx.map(tx => tx.chain);
       const txNetwork = confirmTx.map(tx => tx.network);
 
-      for (let txid of txidList) {
-        expect(txTxid).to.include(txid);
+      for (let txid of sentTransactionIds) {
+        expect(txids).to.include(txid);
         expect(txChain.includes(chain)).to.be.true;
         expect(txNetwork.includes(network)).to.be.true;
-        expect(confirmTx.length).to.deep.equal(txidList.length);
+        expect(confirmTx.length).to.deep.equal(sentTransactionIds.length);
       }
 
       let confirmTxBlockHeight = confirmTx.map(tx => tx.blockHeight);
@@ -182,7 +182,7 @@ describe('Wallet Model', function() {
         .find({
           chain,
           network,
-          mintTxid: { $in: txidList },
+          mintTxid: { $in: sentTransactionIds },
           address: address1,
           mintHeight: { $in: confirmTxBlockHeight }
         })
@@ -205,10 +205,9 @@ describe('Wallet Model', function() {
       }
 
       const getUtxosResult = await lockedWallet.getUtxos({ includeSpent: true });
-      const txListid = txidList.map(txid => txid);
 
       getUtxosResult.pipe(new ParseApiStream()).on('data', (coin: ICoin) => {
-        expect(txListid).to.include(coin.mintTxid);
+        expect(sentTransactionIds).to.include(coin.mintTxid);
         expect(coin).to.have.deep.property('chain', chain);
         expect(coin).to.have.deep.property('network', network);
         expect(coin).to.have.deep.property('address', address1);
@@ -216,7 +215,7 @@ describe('Wallet Model', function() {
 
       const getWalletBalance = await lockedWallet.getBalance();
       expect(getWalletBalance.confirmed).to.deep.equal(0);
-      expect(getWalletBalance.unconfirmed).to.deep.equal(value * 50 * 1e8);
+      expect(getWalletBalance.unconfirmed).to.deep.equal(value * numTransactions * 1e8);
       expect(getWalletBalance.balance).to.deep.equal(getWalletBalance.unconfirmed + getWalletBalance.confirmed);
 
       const { heapUsed } = process.memoryUsage();

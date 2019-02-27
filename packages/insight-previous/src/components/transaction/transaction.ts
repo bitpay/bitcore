@@ -27,7 +27,7 @@ export class TransactionComponent implements OnInit {
   public showCoins = false;
 
   constructor(
-    public currency: CurrencyProvider,
+    public currencyProvider: CurrencyProvider,
     public apiProvider: ApiProvider,
     public txProvider: TxsProvider,
     public redirProvider: RedirProvider
