@@ -42,7 +42,7 @@ describe('Wallet Model', function() {
         name: walletName,
         chain,
         network,
-        baseUrl: 'http://localhost:3000/api'
+        baseUrl
       });
       expect(lockedWallet).to.have.property('pubKey');
       expect(lockedWallet).to.have.property('password');

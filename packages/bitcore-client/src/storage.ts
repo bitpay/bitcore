@@ -2,11 +2,18 @@ import * as os from 'os';
 import * as fs from 'fs';
 import { Encryption } from './encryption';
 import levelup, { LevelUp } from 'levelup';
-import leveldown from 'leveldown';
+import { LevelDown } from 'leveldown';
+import leveljs from 'level-js';
 import { Wallet } from './wallet';
 import { Transform } from 'stream';
 
+let lvldwn: LevelDown;
 let usingBrowser = (global as any).window;
+if (usingBrowser) {
+  lvldwn = leveljs;
+} else {
+  lvldwn = require('leveldown');
+}
 const bitcoreLib = require('bitcore-lib');
 const StorageCache: { [path: string]: LevelUp } = {};
 
@@ -47,7 +54,7 @@ export class Storage {
       this.db = StorageCache[this.path];
     } else {
       console.log('creating leveldown at', this.path);
-      this.db = StorageCache[this.path] = levelup(leveldown(this.path), {
+      this.db = StorageCache[this.path] = levelup(lvldwn(this.path), {
         createIfMissing,
         errorIfExists
       });
