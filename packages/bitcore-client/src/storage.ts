@@ -3,14 +3,13 @@ import * as fs from 'fs';
 import { Encryption } from './encryption';
 import levelup, { LevelUp } from 'levelup';
 import { LevelDown } from 'leveldown';
-import leveljs from 'level-js';
 import { Wallet } from './wallet';
 import { Transform } from 'stream';
 
 let lvldwn: LevelDown;
 let usingBrowser = (global as any).window;
 if (usingBrowser) {
-  lvldwn = leveljs;
+  lvldwn = require('level-js');
 } else {
   lvldwn = require('leveldown');
 }
