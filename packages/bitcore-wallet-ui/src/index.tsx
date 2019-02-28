@@ -4,8 +4,7 @@ import './index.css';
 import App from './App';
 import * as serviceWorker from './serviceWorker';
 import { Provider } from 'react-redux';
-import { createStore, applyMiddleware } from 'redux';
-import thunk from 'redux-thunk';
+import { createStore } from 'redux';
 import { MyImmerReducer } from './reducers';
 import { createActionCreators, createReducerFunction } from 'immer-reducer';
 import { AppState } from './contexts/state';
@@ -29,7 +28,7 @@ const initialState: AppState = {
 export const ActionCreators = createActionCreators(MyImmerReducer);
 const reducerFunction = createReducerFunction(MyImmerReducer, initialState);
 
-export const store = createStore(reducerFunction, applyMiddleware(thunk));
+export const store = createStore(reducerFunction);
 
 ReactDOM.render(
   <Provider store={store}>

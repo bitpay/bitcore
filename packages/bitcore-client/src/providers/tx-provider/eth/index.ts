@@ -2,7 +2,7 @@ import Web3 from 'web3';
 import EthereumTx from 'ethereumjs-tx';
 import { Wallet } from 'src';
 
-const web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:7545'));
+const web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
 export class ETHTxProvider {
   lib = require('bitcore-lib');
 
@@ -10,29 +10,14 @@ export class ETHTxProvider {
     let txCount = await web3.eth.getTransactionCount(from);
     const { address, amount } = recipients[0];
 
-    // WIP: chainId
-    // EIP 155 chainId - mainnet: 1, ropsten: 3
-    // let chainId = 1;
-    // switch (network) {
-    //   case 'mainnet':
-    //     chainId = 1;
-    //     break;
-    //   case 'ropsten':
-    //     chainId = 3;
-    // break;
-    // default:
-    // break;
-    // }
-
     // !Important: Amount needs to be passed into utils as a string
     const txData = {
       nonce: web3.utils.toHex(txCount),
       gasLimit: web3.utils.toHex(25000),
-      gasPrice: web3.utils.toHex(fee), // 10 Gwei
+      gasPrice: web3.utils.toHex(fee),
       to: address,
       from,
       value: web3.utils.toHex(web3.utils.toWei(`${amount}`, 'wei'))
-      // chainId
     };
     const rawTx = new EthereumTx(txData).serialize().toString('hex');
     return rawTx;

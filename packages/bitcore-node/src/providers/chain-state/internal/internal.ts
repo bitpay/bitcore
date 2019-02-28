@@ -420,19 +420,6 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return this.getRPC(chain, network).getEstimateSmartFee(Number(target));
   }
 
-  async getTransactionCount(params: { chain: string; network: string; address: string }) {
-    const { chain, network, address } = params;
-    return new Promise((resolve, reject) => {
-      this.getRPC(chain, network).getTransactionCount(address, (err: any, result: any) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result);
-        }
-      });
-    });
-  }
-
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     const { chain, network, rawTx } = params;
     return new Promise((resolve, reject) => {

@@ -2,12 +2,8 @@ import * as Bcrypt from 'bcryptjs';
 import { Encryption } from './encryption';
 import { Client } from './client';
 import { Storage } from './storage';
-import { Request } from 'request';
 import TxProvider from './providers/tx-provider';
 import { AddressProvider } from './providers/address-provider/deriver';
-import { ParseApiStream } from './stream-util';
-import { numberToHex } from 'web3-utils/types';
-import { cursorTo } from 'readline';
 const { PrivateKey } = require('bitcore-lib');
 const Mnemonic = require('bitcore-mnemonic');
 
@@ -31,7 +27,6 @@ export namespace Wallet {
 export class Wallet {
   masterKey: any;
   baseUrl: string;
-  apiUrl: string;
   chain: string;
   network: string;
   client: Client;
@@ -51,12 +46,12 @@ export class Wallet {
   constructor(params: Wallet | Wallet.WalletObj) {
     Object.assign(this, params);
     if (this.baseUrl) {
-      this.apiUrl = `${this.baseUrl}/${this.chain}/${this.network}`;
+      this.baseUrl = `${this.baseUrl}/${this.chain}/${this.network}`;
     } else {
-      this.apiUrl = `https://api.bitcore.io/api/${this.chain}/${this.network}`;
+      this.baseUrl = `https://api.bitcore.io/api/${this.chain}/${this.network}`;
     }
     this.client = new Client({
-      baseUrl: this.apiUrl,
+      baseUrl: this.baseUrl,
       authKey: this.getAuthSigningKey()
     });
   }
@@ -68,7 +63,7 @@ export class Wallet {
   }
 
   static async create(params: Partial<Wallet.WalletObj>) {
-    const { chain, network, name, phrase, password, path, baseUrl } = params;
+    const { chain, network, name, phrase, password, path } = params;
     let { storage } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
@@ -120,7 +115,6 @@ export class Wallet {
       encryptionKey,
       authKey,
       authPubKey,
-      baseUrl,
       addressIndex: 0,
       masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
@@ -134,7 +128,7 @@ export class Wallet {
       name
     });
     console.log(mnemonic.toString());
-    await loadedWallet.register({ baseUrl }).catch(e => {
+    await loadedWallet.register().catch(e => {
       console.debug(e);
       console.error('Failed to register wallet with bitcore-node.');
     });
@@ -205,7 +199,7 @@ export class Wallet {
 
   async register(params: { baseUrl?: string } = {}) {
     const { baseUrl } = params;
-    let registerBaseUrl = this.apiUrl;
+    let registerBaseUrl = this.baseUrl;
     if (baseUrl) {
       // save the new url without chain and network
       // then use the new url with chain and network below
@@ -228,7 +222,7 @@ export class Wallet {
     return new PrivateKey(this.authKey);
   }
 
-  getBalance(time?:string) {
+  getBalance(time?: string) {
     return this.client.getBalance({ pubKey: this.authPubKey, time });
   }
 

@@ -111,24 +111,6 @@ router.post('/send', async function(req, res) {
   }
 });
 
-router.post('/count', async function(req, res) {
-  try {
-    let { chain, network } = req.params;
-    let { address } = req.body;
-    chain = chain.toUpperCase();
-    network = network.toLowerCase();
-    let txCount = await ChainStateProvider.getTransactionCount({
-      chain,
-      network,
-      address
-    });
-    return res.send({ txCount });
-  } catch (err) {
-    logger.error(err);
-    return res.status(500).send(err.message);
-  }
-});
-
 module.exports = {
   router: router,
   path: '/tx'

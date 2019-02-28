@@ -84,19 +84,6 @@ export class RPC {
     });
   }
 
-  getInternalEthTransactions(address: string, callback: CallbackType) {
-    this.callMethod(
-      'trace_filter',
-      [
-        {
-          toAddress: [address],
-          fromAddress: [address]
-        }
-      ],
-      callback
-    );
-  }
-
   getTransaction(txid: string, callback: CallbackType) {
     this.callMethod('getrawtransaction', [txid, true], (err, result) => {
       if (err) {
@@ -104,10 +91,6 @@ export class RPC {
       }
       return callback(null, result);
     });
-  }
-
-  async getTransactionCount(tx: any, callback) {
-    this.callMethod('getTransactionCount', tx, callback);
   }
 
   sendTransaction(rawTx: string, callback: CallbackType) {

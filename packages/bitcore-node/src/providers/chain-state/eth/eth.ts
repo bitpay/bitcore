@@ -7,7 +7,6 @@ import Web3 from 'web3';
 import { Storage } from '../../../services/storage';
 import 'core-js/modules/es7.symbol.async-iterator';
 import { Readable } from 'readable-stream';
-// import { Readable } from 'stream';
 import { ParityRPC, ParityTraceResponse } from './parityRpc';
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
@@ -98,12 +97,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     const { network, rawTx } = params;
     const tx = await this.getWeb3(network).eth.sendSignedTransaction(rawTx);
     return tx;
-  }
-
-  async getTransactionCount(params: { network: string; address: string }) {
-    const { network, address } = params;
-    const txCount = await this.getWeb3(network).eth.getTransactionCount(address);
-    return txCount;
   }
 
   async getWalletAddresses(walletId: ObjectID) {
