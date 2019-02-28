@@ -21,6 +21,10 @@ export class TxProvider {
   async sign(params): Promise<any> {
     return this.get(params).sign(params);
   }
+
+  getSigningAddresses(params) {
+    return this.get(params).getSigningAddresses(params);
+  }
 }
 
 export default new TxProvider();
