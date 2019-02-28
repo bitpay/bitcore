@@ -1,0 +1,48 @@
+<head-nav></head-nav>
+<ion-content>
+  <ion-grid fixed>
+  <div class="page-content">
+    <h1>Verify Message</h1>
+    <ion-card>
+      <ion-card-content>
+        Bitcoin comes with a way of signing arbitrary messages. <br>
+        This form can be used to verify that a message comes from a specific Bitcoin address.
+      </ion-card-content>
+    </ion-card>
+    <ion-row>
+      <ion-col col-md-8 push-md-2>
+        <form [formGroup]="messageForm">
+          <ion-list>
+            <ion-item>
+              <ion-label staked>Address</ion-label>
+              <ion-input type="text" formControlName="address" [value]="messageForm.value.address" clearInput></ion-input>
+            </ion-item>
+
+            <ion-item>
+              <ion-label staked>Signature</ion-label>
+              <ion-input type="text" formControlName="signature" clearInput></ion-input>
+            </ion-item>
+
+            <ion-item>
+              <ion-label staked>Message</ion-label>
+              <ion-input type="text" formControlName="message" clearInput></ion-input>
+            </ion-item>
+          </ion-list>
+
+          <p ion-text color="primary" *ngIf="success">{{ success }}</p>
+          <p ion-text color="danger" *ngIf="error"> {{ error }}</p>
+
+          <ion-row>
+            <ion-col push-md-8 col-md-4>
+              <button ion-button block (click)="verify()" [disabled]="messageForm.invalid">
+                Verify
+              </button>
+            </ion-col>
+          </ion-row>
+        </form>
+      </ion-col>
+    </ion-row>
+  </div>
+  </ion-grid>
+</ion-content>
+<footer [chainNetwork]="chainNetwork"></footer>
