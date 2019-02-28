@@ -93,6 +93,10 @@ export class RPC {
     });
   }
 
+  async getTransactionCount(tx: any, callback) {
+    this.callMethod('getTransactionCount', tx, callback);
+  }
+
   sendTransaction(rawTx: string, callback: CallbackType) {
     this.callMethod('sendrawtransaction', [rawTx], callback);
   }
