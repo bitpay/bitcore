@@ -96,10 +96,6 @@ class ChainStateProxy implements CSP.ChainStateProvider {
     return this.get(params).streamWalletUtxos(params);
   }
 
-  async getTransactionCount(params: { chain: string; network: string; address: string }) {
-    return this.get(params).getTransactionCount(params);
-  }
-
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     return this.get(params).broadcastTransaction(params);
   }

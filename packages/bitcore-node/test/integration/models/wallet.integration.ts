@@ -36,7 +36,7 @@ describe('Wallet Model', function() {
         name: walletName,
         chain,
         network,
-        baseUrl
+        baseUrl: 'http://localhost:3000/api/BTC/regtest'
       });
       expect(lockedWallet).to.have.property('pubKey');
       expect(lockedWallet).to.have.property('password');
