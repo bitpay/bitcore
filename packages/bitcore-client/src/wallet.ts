@@ -105,7 +105,7 @@ export class Wallet {
 
     let alreadyExists;
     try {
-      alreadyExists = await this.loadWallet({ storage, name, chain, network });
+      alreadyExists = await this.loadWallet({ storage, name });
     } catch (err) {}
     if (alreadyExists) {
       throw new Error('Wallet already exists');
@@ -125,9 +125,7 @@ export class Wallet {
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({
       storage,
-      name,
-      chain,
-      network
+      name
     });
     console.log(mnemonic.toString());
     await loadedWallet.register().catch(e => {
@@ -141,17 +139,13 @@ export class Wallet {
     name: string;
     path?: string;
     storage?: Storage;
-    chain: string;
-    network: string;
   }) {
-    const { storage, name, chain, network } = params;
+    const { storage, name } = params;
     let alreadyExists;
     try {
       alreadyExists = await Wallet.loadWallet({
         storage,
-        name,
-        chain,
-        network
+        name
       });
     } catch (err) {
       console.log(err);
@@ -163,8 +157,6 @@ export class Wallet {
     name: string;
     path?: string;
     storage?: Storage;
-    chain: string;
-    network: string;
   }) {
     const { name, path } = params;
     let { storage } = params;
