@@ -49,7 +49,7 @@ class CoinModel extends BaseModel<ICoin> {
     this.collection.createIndex({ spentTxid: 1 }, { background: true, sparse: true });
     this.collection.createIndex({ chain: 1, network: 1, spentHeight: 1 }, { background: true });
     this.collection.createIndex(
-      { wallets: 1, spentHeight: 1, value: 1 },
+      { wallets: 1, spentHeight: 1, value: 1, mintHeight: 1 },
       { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } }
     );
     this.collection.createIndex(
@@ -123,7 +123,7 @@ class CoinModel extends BaseModel<ICoin> {
       },
       query
     );
-    return this.getBalance({ query: combinedQuery }, { hint: { wallets: 1, spentHeight: 1, value: 1 } });
+    return this.getBalance({ query: combinedQuery }, { hint: { wallets: 1, spentHeight: 1, value: 1, mintHeight: 1 } });
   }
 
   resolveAuthhead(mintTxid: string, chain?: string, network?: string) {
