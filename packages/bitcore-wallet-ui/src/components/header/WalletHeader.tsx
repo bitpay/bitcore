@@ -8,7 +8,7 @@ import LockIcon from '@material-ui/icons/Lock';
 import LockOpenIcon from '@material-ui/icons/LockOpen';
 import Avatar from '@material-ui/core/Avatar';
 import { Link } from 'react-router-dom';
-import { AppState } from '../../contexts/state';
+import { AppState } from '../../types/state';
 import { connect } from 'react-redux';
 import { UnlockBar } from '../unlock/UnlockBar';
 

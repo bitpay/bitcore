@@ -8,11 +8,11 @@ import {
 } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
-import { WalletList } from './WalletList';
+import { WalletList } from '../../components/wallets/WalletList';
 import Grid from '@material-ui/core/Grid';
 import List from '@material-ui/core/List';
 import { Wallet } from 'bitcore-client';
-import { CreateWalletCard } from './CreateWallet';
+import { CreateWalletCard } from '../../components/wallets/CreateWallet';
 
 const styles = (theme: Theme) =>
   createStyles({

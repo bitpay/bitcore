@@ -9,7 +9,7 @@ import DialogTitle from '@material-ui/core/DialogTitle';
 import FormControl from '@material-ui/core/FormControl';
 import { connect } from 'react-redux';
 import { ActionCreators, store } from '../../index';
-import { AppState } from '../../contexts/state';
+import { AppState } from '../../types/state';
 
 const styles = () =>
   createStyles({

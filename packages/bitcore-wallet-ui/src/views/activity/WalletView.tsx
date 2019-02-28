@@ -4,10 +4,10 @@ import { RouteComponentProps } from 'react-router';
 import { WalletBottomNav } from '../../components/footer/BottomNav';
 import { ActionCreators, store } from '../../index';
 import { connect } from 'react-redux';
-import { AppState } from '../../contexts/state';
-import { socket } from '../../contexts/io';
+import { AppState } from '../../types/state';
+import { socket } from '../../sockets/io';
 import { WalletBar } from '../../components/activity/BalanceCard';
-import { TransactionListCard } from '../../components/activity/TransactionContainer';
+import { TransactionListCard } from '../../containers/transaction/TransactionContainer';
 
 interface Props extends RouteComponentProps<{ name: string }> {
   walletName: string;

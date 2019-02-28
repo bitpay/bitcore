@@ -1,9 +1,7 @@
 import React from 'react';
-import PropTypes from 'prop-types';
 import { Theme, withStyles, createStyles } from '@material-ui/core/styles';
-import { TransactionList } from './TransactionList';
-import { AppState } from '../../contexts/state';
-import { connect } from 'react-redux';
+import { TransactionList } from '../../components/activity/TransactionList';
+import { AppState } from '../../types/state';
 
 const styles = (theme: Theme) =>
   createStyles({

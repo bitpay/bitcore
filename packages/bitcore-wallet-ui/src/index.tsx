@@ -7,7 +7,7 @@ import { Provider } from 'react-redux';
 import { createStore } from 'redux';
 import { MyImmerReducer } from './reducers';
 import { createActionCreators, createReducerFunction } from 'immer-reducer';
-import { AppState } from './contexts/state';
+import { AppState } from './types/state';
 
 const initialState: AppState = {
   password: '',

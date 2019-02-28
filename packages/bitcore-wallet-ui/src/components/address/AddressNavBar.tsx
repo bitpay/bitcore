@@ -6,7 +6,7 @@ import InputBase from '@material-ui/core/InputBase';
 import Divider from '@material-ui/core/Divider';
 import IconButton from '@material-ui/core/IconButton';
 import Button from '@material-ui/core/Button';
-import { AppState } from '../../contexts/state';
+import { AppState } from '../../types/state';
 import { ActionCreators, store } from '../../index';
 import { connect } from 'react-redux';
 import { WalletHeader } from '../header/WalletHeader';

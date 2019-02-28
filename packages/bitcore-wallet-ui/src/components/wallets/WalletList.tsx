@@ -6,7 +6,7 @@ import { Wallet } from 'bitcore-client';
 import { Link } from 'react-router-dom';
 import { Icon } from 'semantic-ui-react';
 import { ActionCreators, store } from '../../index';
-import { AppState } from '../../contexts/state';
+import { AppState } from '../../types/state';
 
 interface Props {
   wallet: Wallet;

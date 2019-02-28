@@ -7,7 +7,7 @@ import Avatar from '@material-ui/core/Avatar';
 import Typography from '@material-ui/core/Typography';
 import RefreshIcon from '@material-ui/icons/Refresh';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
-import { AppState } from '../../contexts/state';
+import { AppState } from '../../types/state';
 
 interface Props {
   tx: AppState['transactions'][0];

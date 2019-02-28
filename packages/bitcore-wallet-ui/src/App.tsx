@@ -3,12 +3,12 @@ import { Router, Switch, Route } from 'react-router';
 import './App.css';
 import 'semantic-ui-css/semantic.min.css';
 import * as history from 'history';
-import { socket } from './contexts/io';
-import { WalletsPage } from './containers/wallets/Wallets';
-import { SingleWalletPage } from './containers/activity/Wallet';
-import { RecieveContainer } from './containers/recieve/RecieveContainer';
+import { socket } from './sockets/io';
+import { WalletsPage } from './views/wallets/WalletsView';
+import { SingleWalletPage } from './views/activity/WalletView';
+import { RecieveContainer } from './views/recieve/RecieveView';
 import { Notification } from './components/notification/Notification';
-import { SendPage } from './containers/send/SendContainer';
+import { SendPage } from './views/send/SendView';
 import { ErrorBoundary } from './components/404/ErrorBoundary';
 const createdHistory = history.createBrowserHistory();
 

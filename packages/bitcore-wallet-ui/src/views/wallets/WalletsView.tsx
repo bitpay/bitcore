@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { Wallet } from 'bitcore-client';
 import { NavBar } from '../../components/wallets/AppBar';
-import { WalletListCard } from '../../components/wallets/WalletContainer';
+import { WalletListCard } from '../../containers/wallets/WalletsContainer';
 import TextField from '@material-ui/core/TextField';
 import classNames from 'classnames';
 import {
@@ -12,7 +12,7 @@ import {
 } from '@material-ui/core/styles';
 import MenuItem from '@material-ui/core/MenuItem';
 import { ActionCreators, store } from '../../index';
-import { AppState } from '../../contexts/state';
+import { AppState } from '../../types/state';
 import { connect } from 'react-redux';
 
 const API_URL =
