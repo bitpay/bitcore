@@ -8,6 +8,7 @@ import { LatestTransactionsComponentModule } from '../components/latest-transact
 import { BlocksPageModule } from '../pages/blocks/blocks.module';
 import { BroadcastTxPageModule } from './broadcast-tx/broadcast-tx.module';
 import { HomePageModule } from './home/home.module';
+import { MessagesPageModule } from './messages/messages.module';
 
 @NgModule({
   declarations: [],
@@ -16,6 +17,7 @@ import { HomePageModule } from './home/home.module';
     ComponentsModule,
     BlocksPageModule,
     BroadcastTxPageModule,
+    MessagesPageModule,
     HomePageModule,
     FooterComponentModule,
     HeadNavComponentModule,
