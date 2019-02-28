@@ -6,9 +6,14 @@ export class ParseApiStream extends Transform {
   }
 
   _write(data, _encoding, cb) {
-    const stringData = data.toString().replace(',\n', '');
-    if (stringData.includes('{') && stringData.includes('}')) {
-      this.push(JSON.parse(stringData));
+    const stringDatas = data.toString().split('\n');
+    for (let stringData of stringDatas) {
+      const normalized = stringData.endsWith(',')
+        ? stringData.slice(0, stringData.length - 1)
+        : stringData;
+      if (normalized.includes('{') && normalized.includes('}')) {
+        this.push(JSON.parse(normalized));
+      }
     }
     cb();
   }

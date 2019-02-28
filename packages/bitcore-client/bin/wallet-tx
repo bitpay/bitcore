@@ -48,7 +48,7 @@ const main = async () => {
 
     console.log(
       JSON.stringify({
-        rawTx: tx.uncheckedSerialize()
+        rawTx: tx
       })
     );
   } catch (e) {
