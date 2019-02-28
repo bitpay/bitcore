@@ -2,7 +2,7 @@ import { Component, Injectable } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Http } from '@angular/http';
 import { IonicPage, NavParams, ToastController } from 'ionic-angular';
-import { ApiProvider } from '../../providers/api/api';
+import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
@@ -23,6 +23,7 @@ export class BroadcastTxPage {
   public txForm: FormGroup;
   private status: string;
   private toast: any;
+  private chainNetwork: ChainNetwork;
 
   constructor(
     private toastCtrl: ToastController,
@@ -34,9 +35,17 @@ export class BroadcastTxPage {
     private priceProvider: PriceProvider,
     private currencyProvider: CurrencyProvider
   ) {
-    const chain: string = this.apiProvider.getConfig().chain;
-    const network: string = this.apiProvider.getConfig().network;
-    this.apiProvider.changeNetwork({ chain, network });
+    const chain: string =
+      navParams.get('chain') || this.apiProvider.getConfig().chain;
+    const network: string =
+      navParams.get('network') || this.apiProvider.getConfig().network;
+
+    this.chainNetwork = {
+      chain,
+      network
+    };
+
+    this.apiProvider.changeNetwork(this.chainNetwork);
     this.currencyProvider.setCurrency();
     this.priceProvider.setCurrency();
 
@@ -66,7 +75,7 @@ export class BroadcastTxPage {
   private presentToast(success: boolean, response: any): void {
     const message: string = success
       ? 'Transaction successfully broadcast. Trasaction id: ' +
-        JSON.parse(response._body).txid
+      JSON.parse(response._body).txid
       : 'An error occurred: ' + response._body;
     if (this.toast) {
       this.toast.dismiss();
