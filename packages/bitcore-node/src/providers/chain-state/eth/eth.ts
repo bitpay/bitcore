@@ -99,12 +99,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     return tx;
   }
 
-  async getTransactionCount(params: { network: string; address: string }) {
-    const { network, address } = params;
-    const txCount = await this.getWeb3(network).eth.getTransactionCount(address);
-    return txCount;
-  }
-
   async getWalletAddresses(walletId: ObjectID) {
     let query = { chain: this.chain, wallet: walletId };
     return WalletAddressStorage.collection
