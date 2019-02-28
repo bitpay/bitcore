@@ -253,8 +253,6 @@ export class Wallet {
     change?: string;
     fee?: number;
   }) {
-    console.log('using index', this.addressIndex, 'for change');
-
     const payload = {
       network: this.network,
       chain: this.chain,
