@@ -11,8 +11,7 @@ export class FooterComponent {
   @Input()
   private chainNetwork: ChainNetwork;
 
-  constructor(public nav: Nav) {
-  }
+  constructor(public nav: Nav) {}
 
   public openPage(page: string): void {
     this.nav.push(page, {
