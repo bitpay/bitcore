@@ -2,7 +2,7 @@ import Web3 from 'web3';
 import EthereumTx from 'ethereumjs-tx';
 import { Wallet } from 'src';
 
-const web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:7545'));
+const web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
 export class ETHTxProvider {
   lib = require('bitcore-lib');
 

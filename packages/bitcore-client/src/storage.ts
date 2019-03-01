@@ -51,7 +51,7 @@ export class Storage {
     if (StorageCache[this.path]) {
       this.db = StorageCache[this.path];
     } else {
-      console.log('creating leveldown at', this.path);
+      console.log('using wallets at', this.path);
       this.db = StorageCache[this.path] = levelup(lvldwn(this.path), {
         createIfMissing,
         errorIfExists
