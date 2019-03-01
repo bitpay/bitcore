@@ -110,6 +110,7 @@ router.post('/send', async function(req, res) {
     return res.status(500).send(err.message);
   }
 });
+
 module.exports = {
   router: router,
   path: '/tx'

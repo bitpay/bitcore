@@ -4,15 +4,15 @@ import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
 import config from '../config';
 import parseArgv from '../utils/parseArgv';
+import { EventEmitter } from 'events';
+import cluster from 'cluster';
 
-const cluster = require('cluster');
-const { EventEmitter } = require('events');
 let args = parseArgv([], ['DEBUG']);
 
 @LoggifyClass
 export class WorkerService extends EventEmitter {
   workers = new Array<{
-    worker: WorkerType;
+    worker: cluster.Worker;
     active: boolean;
     started: Promise<any>;
   }>();
