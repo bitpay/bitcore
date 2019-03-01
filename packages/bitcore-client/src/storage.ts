@@ -49,7 +49,6 @@ export class Storage {
       }
     }
     if (StorageCache[this.path]) {
-      console.log('using storage cache');
       this.db = StorageCache[this.path];
     } else {
       console.log('creating leveldown at', this.path);

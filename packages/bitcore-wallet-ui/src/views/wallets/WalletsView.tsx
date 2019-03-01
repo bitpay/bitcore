@@ -89,10 +89,8 @@ class WalletsContainer extends Component<Props, State> {
     try {
       const exists = await Wallet.exists(testWallet);
       if (!exists) {
-        console.log('Wallet needs to be created');
         wallet = await Wallet.create(testWallet);
       } else {
-        console.log('Wallet exists');
         wallet = await Wallet.loadWallet(testWallet);
       }
     } catch (err) {

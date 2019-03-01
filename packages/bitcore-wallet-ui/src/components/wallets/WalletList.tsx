@@ -32,9 +32,7 @@ export class WalletList extends Component<Props> {
     try {
       const exists = Wallet.exists({ name });
       if (!exists) {
-        console.log('Wallet needs to be created');
       } else {
-        console.log('Wallet exists');
         wallet = await Wallet.loadWallet({ name });
       }
     } catch (err) {
