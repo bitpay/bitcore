@@ -92,6 +92,15 @@ export class TransactionModel extends BaseModel<ITransaction> {
   ];
 
   onConnect() {
+    const desiredIndexes = [
+      '_id_',
+      'txid_1',
+      'chain_1_network_1_blockHeight_1',
+      'blockHash_1',
+      'chain_1_network_1_blockTimeNormalized_1',
+      'wallets_1_blockTimeNormalized_1',
+      'wallets_1_blockHeight_1'
+    ];
     this.collection.createIndex({ txid: 1 }, { background: true });
     this.collection.createIndex({ chain: 1, network: 1, blockHeight: 1 }, { background: true });
     this.collection.createIndex({ blockHash: 1 }, { background: true });
@@ -104,6 +113,22 @@ export class TransactionModel extends BaseModel<ITransaction> {
       { wallets: 1, blockHeight: 1 },
       { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } }
     );
+    this.collection.listIndexes()
+      .toArray()
+      .then((indexes) => {
+        const indexNamesToRemove = indexes
+          .map(index => index.name)
+          .filter(name => !desiredIndexes.includes(name))
+        for (let name of indexNamesToRemove) {
+          console.log(`dropping index - ${name}`);
+          this.collection.dropIndex(name)
+            .catch((err) => {
+              console.log(`Error dropping index ${name}`);
+              console.log(err);
+            })
+        }
+      })
+      .catch(err => console.log(err));
   }
 
   async batchImport(params: {
