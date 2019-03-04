@@ -92,31 +92,47 @@ export class TransactionModel extends BaseModel<ITransaction> {
   ];
 
   onConnect() {
-    const desiredIndexes = [
-      '_id_',
-      'txid_1',
-      'chain_1_network_1_blockHeight_1',
-      'blockHash_1',
-      'chain_1_network_1_blockTimeNormalized_1',
-      'wallets_1_blockTimeNormalized_1',
-      'wallets_1_blockHeight_1'
+    const indexesToCreate: { key: object, name: string, partialFilterExpression?: object, background?: boolean }[] = [
+      {
+        key: { txid: 1 },
+        background: true,
+        name: 'txid_1'
+      },
+      {
+        key: { chain: 1, network: 1, blockHeight: 1 },
+        background: true,
+        name: 'chain_1_network_1_blockHeight_1'
+      },
+      {
+        key: { blockHash: 1 },
+        background: true,
+        name: 'blockHash_1'
+      },
+      {
+        key: { chain: 1, network: 1, blockTimeNormalized: 1 },
+        background: true,
+        name: 'chain_1_network_1_blockTimeNormalized_1'
+      },
+      {
+        key: { wallets: 1, blockTimeNormalized: 1 },
+        background: true,
+        name: 'wallets_1_blockTimeNormalized_1',
+        partialFilterExpression: { 'wallets.0': { $exists: true } }
+      },
+      {
+        key: { wallets: 1, blockHeight: 1 },
+        background: true,
+        name: 'wallets_1_blockHeight_1',
+        partialFilterExpression: { 'wallets.0': { $exists: true } }
+      }
     ];
-    this.collection.createIndex({ txid: 1 }, { background: true });
-    this.collection.createIndex({ chain: 1, network: 1, blockHeight: 1 }, { background: true });
-    this.collection.createIndex({ blockHash: 1 }, { background: true });
-    this.collection.createIndex({ chain: 1, network: 1, blockTimeNormalized: 1 }, { background: true });
-    this.collection.createIndex(
-      { wallets: 1, blockTimeNormalized: 1 },
-      { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } }
-    );
-    this.collection.createIndex(
-      { wallets: 1, blockHeight: 1 },
-      { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } }
-    );
-    this.collection.listIndexes()
-      .toArray()
+
+    const desiredIndexes: Array<string> = indexesToCreate.map(index => index.name).concat('_id_');
+
+    this.collection.createIndexes(indexesToCreate)
+      .then(() => this.collection.listIndexes().toArray())
       .then((indexes) => {
-        const indexNamesToRemove = indexes
+        const indexNamesToRemove: string[] = indexes
           .map(index => index.name)
           .filter(name => !desiredIndexes.includes(name))
         for (let name of indexNamesToRemove) {
