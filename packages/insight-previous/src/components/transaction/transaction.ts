@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ApiProvider } from '../../providers/api/api';
+import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { RedirProvider } from '../../providers/redir/redir';
 import {
@@ -25,18 +26,18 @@ export class TransactionComponent implements OnInit {
   public tx: any = {};
   @Input()
   public showCoins = false;
+  public confirmations: number;
 
   constructor(
     public currencyProvider: CurrencyProvider,
     public apiProvider: ApiProvider,
     public txProvider: TxsProvider,
-    public redirProvider: RedirProvider
+    public redirProvider: RedirProvider,
+    public blocksProvider: BlocksProvider
   ) {}
 
   public ngOnInit(): void {
-    if (this.showCoins) {
-      this.getCoins();
-    }
+    this.showCoins ? this.getCoins() : this.getConfirmations();
   }
 
   public getCoins(): void {
@@ -45,6 +46,7 @@ export class TransactionComponent implements OnInit {
       this.tx.vout = data.outputs;
       this.tx.fee = this.txProvider.getFee(this.tx);
       this.tx.valueOut = data.outputs.reduce((a, b) => a + b.value, 0);
+      this.getConfirmations();
     });
   }
 
@@ -54,6 +56,15 @@ export class TransactionComponent implements OnInit {
     }
 
     return vout.address;
+  }
+
+  public getConfirmations() {
+    this.blocksProvider.getCurrentHeight().subscribe(height => {
+      this.confirmations =
+        this.tx.blockheight > 0
+          ? height - this.tx.blockheight + 1
+          : this.tx.blockheight;
+    });
   }
 
   public goToTx(txId: string, vout?: number, fromVout?: boolean): void {

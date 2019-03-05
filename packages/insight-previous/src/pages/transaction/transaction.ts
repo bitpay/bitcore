@@ -1,6 +1,7 @@
 import { Component, Injectable } from '@angular/core';
 import { IonicPage, NavParams } from 'ionic-angular';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
+import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
@@ -24,6 +25,7 @@ export class TransactionPage {
   public tx: any = {};
   public vout: number;
   public fromVout: boolean;
+  public confirmations: number;
 
   constructor(
     public navParams: NavParams,
@@ -32,7 +34,8 @@ export class TransactionPage {
     public currencyProvider: CurrencyProvider,
     private logger: Logger,
     private priceProvider: PriceProvider,
-    public redirProvider: RedirProvider
+    public redirProvider: RedirProvider,
+    private blocksProvider: BlocksProvider
   ) {
     this.txId = navParams.get('txId');
     this.vout = navParams.get('vout');
@@ -57,6 +60,7 @@ export class TransactionPage {
       data => {
         this.tx = data.tx;
         this.loading = false;
+        this.getConfirmations();
         // Be aware that the tx component is loading data into the tx object
       },
       err => {
@@ -64,6 +68,15 @@ export class TransactionPage {
         this.loading = false;
       }
     );
+  }
+
+  public getConfirmations() {
+    this.blocksProvider.getCurrentHeight().subscribe(height => {
+      this.confirmations =
+        this.tx.blockheight > 0
+          ? height - this.tx.blockheight + 1
+          : this.tx.blockheight;
+    });
   }
 
   public goToBlock(blockHash: string): void {
