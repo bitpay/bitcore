@@ -92,19 +92,24 @@ exports.payProJsonData = {
   paymentId: 'U5PHkYZoVaEAvdYZxc2nij',
   verified: 1,
 },
-  'bch': { network: 'test',
+  'bch': 
+  { network: 'testnet',
     currency: 'BCH',
     requiredFeeRate: 10.279,
-    outputs:
-    [ { amount: 756200,
-      address: 'qqas2c2rx35qsdkjggmj5ltkm65vlxxxcuzxys7dmr' } ],
+    toAmount: 756200,
+    toAddress: 'bchtest:qqas2c2rx35qsdkjggmj5ltkm65vlxxxcuzxys7dmr' ,
     time: '2019-02-27T13:43:19.083Z',
     expires: '2019-02-27T13:58:19.083Z',
     memo: 'Payment request for BitPay invoice Gy7546i48MeGYYmBt4vydL for merchant GusPay',
     paymentUrl: 'https://test.bitpay.com/i/Gy7546i48MeGYYmBt4vydL',
     paymentId: 'Gy7546i48MeGYYmBt4vydL',
+  verified: 1,
   },
 };
+
+
+
+exports.payProAckHex = Buffer.from('{"memo":"an ack memo"}');
 
 module.exports = exports;
 
@@ -154,7 +159,6 @@ var payProRequestedFeeBuf = [8,1,18,11,120,53,48,57,43,115,104,97,50,53,54,26,16
 
 /*
 module.exports.payProBuf = new Buffer(payproHex, 'hex');
-module.exports.payProAckBuf = new Buffer(payAck);
 module.exports.payProData = payProData;
 module.exports.payProDataBchBuf = new Buffer(payProBufBCH);
 module.exports.payProRequestedFeeBuf = new Buffer(payProRequestedFeeBuf);

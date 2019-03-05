@@ -2819,17 +2819,20 @@ describe('client API', function() {
 
 
   describe('Payment Protocol', function() {
-    var http;
+    var http, PP, DATA;
     beforeEach((done) => {
-      db.dropDatabase(function(err) {
+     db.dropDatabase(function(err) {
         done();
       });
     });
 
-    describe('Shared wallet', function() {
+    describe('Shared wallet BTC', function() {
       beforeEach(function(done) {
+        PP = Buffer.from(TestData.payProJsonHex['btc'],'hex');
+        DATA = TestData.payProJsonData['btc'];
+  
         http = sinon.stub();
-        http.yields(null, TestData.payProBuf);
+        http.yields(null, PP);
         helpers.createAndJoinWallet(clients, 2, 2, function(w) {
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
@@ -2843,7 +2846,6 @@ describe('client API', function() {
 
             clients[0].fetchPayPro(opts, function(err, paypro) {
               http.getCall(0).args[0].coin.should.equal('btc');
-
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
                 amount: paypro.amount,
@@ -2863,9 +2865,9 @@ describe('client API', function() {
           should.not.exist(err);
           var tx = txps[0];
           // From the hardcoded paypro request
-          tx.outputs[0].amount.should.equal(404500);
-          tx.outputs[0].toAddress.should.equal('mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE');
-          tx.message.should.equal('Payment request for BitPay invoice CibEJJtG1t9H77KmM61E2t for merchant testCopay');
+          tx.outputs[0].amount.should.equal(DATA.amount);
+          tx.outputs[0].toAddress.should.equal(DATA.toAddress);
+          tx.message.should.equal(DATA.memo);
           tx.payProUrl.should.equal('dummy');
           done();
         });
@@ -2892,9 +2894,9 @@ describe('client API', function() {
           should.not.exist(err);
           var tx = txps[0];
           // From the hardcoded paypro request
-          tx.outputs[0].amount.should.equal(404500);
-          tx.outputs[0].toAddress.should.equal('mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE');
-          tx.message.should.equal('Payment request for BitPay invoice CibEJJtG1t9H77KmM61E2t for merchant testCopay');
+          tx.outputs[0].amount.should.equal(DATA.amount);
+          tx.outputs[0].toAddress.should.equal(DATA.toAddress);
+          tx.message.should.equal(DATA.memo);
           tx.payProUrl.should.equal('dummy');
           done();
         });
@@ -2920,51 +2922,18 @@ describe('client API', function() {
             clients[1].signTxProposal(xx, function(err, yy, paypro) {
               should.not.exist(err);
               yy.status.should.equal('accepted');
-              http.onCall(5).yields(null, TestData.payProAckBuf);
+              http.onCall(5).yields(null, TestData.payProAckHex);
 
               clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
                 should.not.exist(err);
                 var args = http.lastCall.args[0];
                 args.method.should.equal('POST');
-                args.body.length.should.be.within(440, 460);
-                memo.should.equal('Transaction received by BitPay. Invoice will be marked as paid if the transaction is confirmed.');
-                zz.message.should.equal('Payment request for BitPay invoice CibEJJtG1t9H77KmM61E2t for merchant testCopay');
-                done();
-              });
-            });
-          });
-        });
-      });
-
-      it('Should send correct refund address', function(done) {
-        clients[0].getTxProposals({}, function(err, txps) {
-          should.not.exist(err);
-          var changeAddress = txps[0].changeAddress.address;
-          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
-            should.not.exist(err);
-            clients[1].signTxProposal(xx, function(err, yy, paypro) {
-              should.not.exist(err);
-              yy.status.should.equal('accepted');
-              http.onCall(5).yields(null, TestData.payProAckBuf);
-
-              clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
-                should.not.exist(err);
-                var args = http.lastCall.args[0];
-                var data = BitcorePayPro.Payment.decode(args.body);
-                var pay = new BitcorePayPro();
-                var p = pay.makePayment(data);
-                var refund_to = p.get('refund_to');
-                refund_to.length.should.equal(1);
-
-                refund_to = refund_to[0];
-
-                var amount = refund_to.get('amount')
-                amount.low.should.equal(404500);
-                amount.high.should.equal(0);
-                var s = refund_to.get('script');
-                s = new Bitcore.Script(s.buffer.slice(s.offset, s.limit));
-                var addr = new Bitcore.Address.fromScript(s, 'testnet');
-                addr.toString().should.equal(changeAddress);
+                let x= JSON.parse(args.body);
+                x.currency.should.equal('BTC');
+                x.transactions.length.should.equal(1);
+                x.transactions[0].length.should.be.within(665,680);
+                memo.should.equal('Payment request for BitPay invoice U5PHkYZoVaEAvdYZxc2nij for merchant GusPay');
+                zz.message.should.equal('Payment request for BitPay invoice U5PHkYZoVaEAvdYZxc2nij for merchant GusPay');
                 done();
               });
             });
@@ -2980,20 +2949,19 @@ describe('client API', function() {
             should.not.exist(err);
             clients[1].signTxProposal(xx, function(err, yy, paypro) {
               should.not.exist(err);
+
               yy.status.should.equal('accepted');
-              http.onCall(5).yields(null, TestData.payProAckBuf);
 
+              http.onCall(6).yields(null, TestData.payProAckHex);
               clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
-
                 should.not.exist(err);
                 var args = http.lastCall.args[0];
-                var data = BitcorePayPro.Payment.decode(args.body);
-                var pay = new BitcorePayPro();
-                var p = pay.makePayment(data);
-                var rawTx = p.get('transactions')[0].toBuffer();
+                var data = JSON.parse(args.body);
+                var rawTx = Buffer.from(data.transactions[0],'hex');
                 var tx = new Bitcore.Transaction(rawTx);
                 var script = tx.inputs[0].script;
                 script.isScriptHashIn().should.equal(true);
+                memo.should.be.equal('an ack memo');
                 done();
               });
             });
@@ -3003,10 +2971,14 @@ describe('client API', function() {
     });
 
 
-    describe('Shared wallet / requiredFeeRate', function() {
+    describe('Shared wallet / requiredFeeRate BTC', function() {
       beforeEach(function(done) {
+
+        PP = Buffer.from(TestData.payProJsonHex['btc'],'hex');
+        DATA = TestData.payProJsonData['btc'];
+
         http = sinon.stub();
-        http.yields(null, TestData.payProRequestedFeeBuf);
+        http.yields(null, PP);
         helpers.createAndJoinWallet(clients, 2, 2, function(w) {
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
@@ -3041,9 +3013,9 @@ describe('client API', function() {
           should.not.exist(err);
           var tx = txps[0];
           // From the hardcoded paypro request
-          tx.outputs[0].amount.should.equal(9400);
-          tx.outputs[0].toAddress.should.equal('mrobN6UstsVWLHqxfRDFz3WYxnKwxEHCEv');
-          tx.message.should.equal('Payment request for BitPay invoice 4QZqHsP42WWzkec74jTHc4 for merchant GusPay');
+          tx.outputs[0].amount.should.equal(DATA.amount);
+          tx.outputs[0].toAddress.should.equal(DATA.toAddress);
+          tx.message.should.equal(DATA.memo);
           tx.payProUrl.should.equal('dummy');
           tx.feePerKb.should.equal(1024);
           done();
@@ -3058,15 +3030,19 @@ describe('client API', function() {
             clients[1].signTxProposal(xx, function(err, yy, paypro) {
               should.not.exist(err);
               yy.status.should.equal('accepted');
-              http.onCall(5).yields(null, TestData.payProAckBuf);
+              http.onCall(6).yields(null, TestData.payProAckHex);
 
               clients[1].broadcastTxProposal(yy, function(err, zz, memo) {
                 should.not.exist(err);
                 var args = http.lastCall.args[0];
                 args.method.should.equal('POST');
-                args.body.length.should.be.within(440, 460);
-                memo.should.equal('Transaction received by BitPay. Invoice will be marked as paid if the transaction is confirmed.');
-                zz.message.should.equal('Payment request for BitPay invoice 4QZqHsP42WWzkec74jTHc4 for merchant GusPay');
+                let x= JSON.parse(args.body);
+                x.currency.should.equal('BTC');
+                x.transactions.length.should.equal(1);
+                x.transactions[0].length.should.be.within(665,680);
+
+                memo.should.equal('an ack memo');
+                zz.message.should.equal('Payment request for BitPay invoice U5PHkYZoVaEAvdYZxc2nij for merchant GusPay');
                 zz.feePerKb.should.equal(1024);
                 done();
               });
@@ -3094,10 +3070,15 @@ describe('client API', function() {
 
 
 
-    describe('1-of-1 wallet', function() {
+    describe('1-of-1 wallet BTC', function() {
       beforeEach(function(done) {
+
+
+        PP = Buffer.from(TestData.payProJsonHex['btc'],'hex');
+        DATA = TestData.payProJsonData['btc'];
+
         http = sinon.stub();
-        http.yields(null, TestData.payProBuf);
+        http.yields(null, PP);
         helpers.createAndJoinWallet(clients, 1, 1, function(w) {
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
@@ -3125,39 +3106,6 @@ describe('client API', function() {
         });
       });
 
-      it('Should send correct refund address', function(done) {
-        clients[0].getTxProposals({}, function(err, txps) {
-          should.not.exist(err);
-          var changeAddress = txps[0].changeAddress.address;
-          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
-            should.not.exist(err);
-            xx.status.should.equal('accepted');
-            http.onCall(5).yields(null, TestData.payProAckBuf);
-
-            clients[0].broadcastTxProposal(xx, function(err, zz, memo) {
-              should.not.exist(err);
-              var args = http.lastCall.args[0];
-              var data = BitcorePayPro.Payment.decode(args.body);
-              var pay = new BitcorePayPro();
-              var p = pay.makePayment(data);
-              var refund_to = p.get('refund_to');
-              refund_to.length.should.equal(1);
-
-              refund_to = refund_to[0];
-
-              var amount = refund_to.get('amount')
-              amount.low.should.equal(404500);
-              amount.high.should.equal(0);
-              var s = refund_to.get('script');
-              s = new Bitcore.Script(s.buffer.slice(s.offset, s.limit));
-              var addr = new Bitcore.Address.fromScript(s, 'testnet');
-              addr.toString().should.equal(changeAddress);
-              done();
-            });
-          });
-        });
-      });
-
       it('Should send the signed tx in paypro', function(done) {
         clients[0].getTxProposals({}, function(err, txps) {
           should.not.exist(err);
@@ -3165,18 +3113,17 @@ describe('client API', function() {
           clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
             should.not.exist(err);
             xx.status.should.equal('accepted');
-            http.onCall(5).yields(null, TestData.payProAckBuf);
+            http.onCall(5).yields(null, TestData.payProAckHex);
 
             clients[0].broadcastTxProposal(xx, function(err, zz, memo) {
               should.not.exist(err);
               var args = http.lastCall.args[0];
-              var data = BitcorePayPro.Payment.decode(args.body);
-              var pay = new BitcorePayPro();
-              var p = pay.makePayment(data);
-              var rawTx = p.get('transactions')[0].toBuffer();
+              var data = JSON.parse(args.body);
+              var rawTx = Buffer.from(data.transactions[0],'hex');
               var tx = new Bitcore.Transaction(rawTx);
               var script = tx.inputs[0].script;
               script.isPublicKeyHashIn().should.equal(true);
+              memo.should.be.equal('an ack memo');
               done();
             });
           });
@@ -3189,9 +3136,14 @@ describe('client API', function() {
       
       // note this is using BCH with BTC format testnet address
       beforeEach(function(done) {
+
+        PP = Buffer.from(TestData.payProJsonHex['bch'],'hex');
+        DATA = TestData.payProJsonData['bch'];
+
         http = sinon.stub();
-        http.yields(null, TestData.payProDataBchBuf);
-        helpers.createAndJoinWallet(clients, 1, 1, {coin:'bch', network:'livenet'}, function(w) {
+        http.yields(null, PP);
+
+        helpers.createAndJoinWallet(clients, 1, 1, {coin:'bch', network:'testnet'}, function(w) {
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
             should.exist(x0.address);
@@ -3207,7 +3159,7 @@ describe('client API', function() {
             clients[0].payProHttp = clients[1].payProHttp = http;
 
             clients[0].fetchPayPro(opts, function(err, paypro) {
-              paypro.toAddress.should.equal('CN4yN5kfov99EjS1amKYQnSfaehpyRGzv2');
+              paypro.toAddress.should.equal(DATA.toAddress);
               http.getCall(0).args[0].coin.should.equal('bch');
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
@@ -3223,41 +3175,6 @@ describe('client API', function() {
         });
       });
 
-      it('Should send correct refund address', function(done) {
-        clients[0].getTxProposals({}, function(err, txps) {
-          should.not.exist(err);
-          var changeAddress = txps[0].changeAddress.address;
-          clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
-            should.not.exist(err);
-            xx.status.should.equal('accepted');
-            http.onCall(5).yields(null, TestData.payProAckBuf);
-
-            clients[0].broadcastTxProposal(xx, function(err, zz, memo) {
-
-              should.not.exist(err);
-              var args = http.lastCall.args[0];
-              var data = BitcorePayPro.Payment.decode(args.body);
-              var pay = new BitcorePayPro();
-              var p = pay.makePayment(data);
-              var refund_to = p.get('refund_to');
-              refund_to.length.should.equal(1);
-
-              refund_to = refund_to[0];
-
-              var amount = refund_to.get('amount')
-              amount.low.should.equal(830600);
-              amount.high.should.equal(0);
-              var s = refund_to.get('script');
-              s = new Bitcore_['bch'].Script(s.buffer.slice(s.offset, s.limit));
-              var addr = new Bitcore_['bch'].Address.fromScript(s);
-              var addrStr = addr.toLegacyAddress();
-              addrStr.should.equal(changeAddress);
-              done();
-            });
-          });
-        });
-      });
-
       it('Should send the signed tx in paypro', function(done) {
         clients[0].getTxProposals({}, function(err, txps) {
           should.not.exist(err);
@@ -3265,18 +3182,17 @@ describe('client API', function() {
           clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
             should.not.exist(err);
             xx.status.should.equal('accepted');
-            http.onCall(5).yields(null, TestData.payProAckBuf);
+            http.onCall(5).yields(null, TestData.payProAckHex);
 
             clients[0].broadcastTxProposal(xx, function(err, zz, memo) {
               should.not.exist(err);
               var args = http.lastCall.args[0];
-              var data = BitcorePayPro.Payment.decode(args.body);
-              var pay = new BitcorePayPro();
-              var p = pay.makePayment(data);
-              var rawTx = p.get('transactions')[0].toBuffer();
-              var tx = new  Bitcore_['bch'].Transaction(rawTx);
+              var data = JSON.parse(args.body);
+              var rawTx = Buffer.from(data.transactions[0],'hex');
+              var tx = new Bitcore_['bch'].Transaction(rawTx);
               var script = tx.inputs[0].script;
               script.isPublicKeyHashIn().should.equal(true);
+              memo.should.be.equal('an ack memo');
               done();
             });
           });
@@ -3288,8 +3204,14 @@ describe('client API', function() {
     describe('New proposal flow', function() {
 
       beforeEach(function(done) {
+
+        PP = Buffer.from(TestData.payProJsonHex['btc'],'hex');
+        DATA = TestData.payProJsonData['btc'];
+
+
+
         http = sinon.stub();
-        http.yields(null, TestData.payProBuf);
+        http.yields(null, PP);
         helpers.createAndJoinWallet(clients, 2, 2, function(w) {
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
@@ -3304,10 +3226,10 @@ describe('client API', function() {
             clients[0].fetchPayPro(opts, function(err, paypro) {
               clients[0].createTxProposal({
                 outputs: [{
-                  toAddress: paypro.toAddress,
-                  amount: paypro.amount,
+                  toAddress: DATA.toAddress,
+                  amount: DATA.amount,
                 }],
-                message: paypro.memo,
+                message: DATA.memo,
                 payProUrl: opts.payProUrl,
                 feePerKb: 100e2,
               }, function(err, txp) {
@@ -3329,9 +3251,9 @@ describe('client API', function() {
           should.not.exist(err);
           var tx = txps[0];
           // From the hardcoded paypro request
-          tx.amount.should.equal(404500);
-          tx.outputs[0].toAddress.should.equal('mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE');
-          tx.message.should.equal('Payment request for BitPay invoice CibEJJtG1t9H77KmM61E2t for merchant testCopay');
+          tx.amount.should.equal(DATA.amount);
+          tx.outputs[0].toAddress.should.equal(DATA.toAddress);
+          tx.message.should.equal(DATA.memo);
           tx.payProUrl.should.equal('dummy');
           done();
         });

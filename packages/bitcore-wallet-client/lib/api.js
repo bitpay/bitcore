@@ -1941,7 +1941,7 @@ API.prototype.getPayPro = function(txp, cb) {
     http: self.payProHttp,
     coin: txp.coin || 'btc',
   }, function(err, paypro) {
-    if (err) return cb(new Error('Cannot check transaction now:' + err));
+    if (err) return cb(new Error('Cannot check transaction now:' + (err.message? err.message : err)));
     return cb(null, paypro);
   });
 };
@@ -2186,6 +2186,7 @@ API.prototype.broadcastTxProposal = function(txp, cb) {
   var self = this;
 
   self.getPayPro(txp, function(err, paypro) {
+    if (err) return cb(err);
 
     if (paypro) {
 

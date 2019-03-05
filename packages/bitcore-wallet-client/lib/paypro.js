@@ -140,7 +140,7 @@ PayPro.get = function(opts, cb) {
       data = JSON.parse(data.toString());
 
     } catch (e)  {
-      return cb(e);
+      return cb({message: 'Could not parse payment request:' + e});
     }
     // read and check
     let ret = {};
