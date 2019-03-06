@@ -12,17 +12,18 @@ var Constants = Common.Constants,
   Utils = Common.Utils;
 
 var PROVIDERS = {
-  'v8': {
-    'btc': {
-      'livenet': 'https://api.bitpay.com',
-      'testnet': 'https://api.bitpay.com',
+  v8: {
+    btc: {
+      livenet: 'https://api.bitpay.com',
+      testnet: 'https://api.bitpay.com',
+      regtest: 'http://localhost:3000'
     },
-    'bch': {
-      'livenet': 'https://api.bitpay.com',
-      'testnet': 'https://api.bitpay.com',
-    },
- 
-  },
+    bch: {
+      livenet: 'https://api.bitpay.com',
+      testnet: 'https://api.bitpay.com',
+      regtest: 'http://localhost:3000'
+    }
+  }
 };
 
 function BlockChainExplorer(opts) {
@@ -33,19 +34,22 @@ function BlockChainExplorer(opts) {
   var network = opts.network || 'livenet';
 
   $.checkState(PROVIDERS[provider], 'Provider ' + provider + ' not supported');
-  $.checkState(_.includes(_.keys(PROVIDERS[provider]), coin), 'Coin ' + coin + ' not supported by this provider');
+  $.checkState(
+    _.includes(_.keys(PROVIDERS[provider]), coin),
+    'Coin ' + coin + ' not supported by this provider'
+  );
 
-  $.checkState(_.includes(_.keys(PROVIDERS[provider][coin]), network), 'Network ' + network + ' not supported by this provider for coin ' + coin);
+  $.checkState(
+    _.includes(_.keys(PROVIDERS[provider][coin]), network),
+    'Network ' + network + ' not supported by this provider for coin ' + coin
+  );
 
   var url = opts.url || PROVIDERS[provider][coin][network];
-
 
   if (coin != 'bch' && opts.addressFormat)
     throw new Error('addressFormat only supported for bch');
 
-  if (coin == 'bch' && !opts.addressFormat)
-    opts.addressFormat = 'cashaddr';
-  
+  if (coin == 'bch' && !opts.addressFormat) opts.addressFormat = 'cashaddr';
 
   switch (provider) {
     case 'v8':
@@ -55,12 +59,12 @@ function BlockChainExplorer(opts) {
         url: url,
         apiPrefix: opts.apiPrefix,
         userAgent: opts.userAgent,
-        addressFormat: opts.addressFormat,
+        addressFormat: opts.addressFormat
       });
- 
+
     default:
       throw new Error('Provider ' + provider + ' not supported.');
-  };
-};
+  }
+}
 
 module.exports = BlockChainExplorer;

@@ -21,47 +21,47 @@ var config = {
 
   storageOpts: {
     mongoDb: {
-      uri: 'mongodb://localhost:27017/bws',
-    },
+      uri: 'mongodb://localhost:27017/bws'
+    }
   },
   messageBrokerOpts: {
     //  To use message broker server, uncomment this:
     messageBrokerServer: {
-      url: 'http://localhost:3380',
-    },
+      url: 'http://localhost:3380'
+    }
   },
   blockchainExplorerOpts: {
     btc: {
       livenet: {
-        url: 'https://api.bitcore.io',
+        url: 'https://api.bitcore.io'
       },
       testnet: {
-        url: 'https://api.bitcore.io',
-      },
+        // uncomment to point to local regtest
+        url: 'http://localhost:3000'
+        // url: 'https://api.bitcore.io'
+      }
     },
     bch: {
       livenet: {
-        url: 'https://api.bitcore.io',
+        url: 'https://api.bitcore.io'
       },
       testnet: {
-       // url: 'http://localhost:3000',
-       url: 'https://api.bitcore.io',
-      },
-
-    },
+        url: 'https://api.bitcore.io'
+      }
+    }
   },
-  pushNotificationsOpts: {
-    templatePath: './lib/templates',
-    defaultLanguage: 'en',
-    defaultUnit: 'btc',
-    subjectPrefix: '',
-    pushServerUrl: 'https://fcm.googleapis.com/fcm',
-    authorizationKey: 'You_have_to_put_something_here',
-  },
+  // pushNotificationsOpts: {
+  //   templatePath: './lib/templates',
+  //   defaultLanguage: 'en',
+  //   defaultUnit: 'btc',
+  //   subjectPrefix: '',
+  //   pushServerUrl: 'https://fcm.googleapis.com/fcm',
+  //   authorizationKey: 'You_have_to_put_something_here'
+  // },
   fiatRateServiceOpts: {
     defaultProvider: 'BitPay',
-    fetchInterval: 60, // in minutes
-  },
+    fetchInterval: 60 // in minutes
+  }
   // To use email notifications uncomment this:
   // emailOpts: {
   //  host: 'localhost',
