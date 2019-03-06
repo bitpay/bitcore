@@ -50,14 +50,14 @@ var config = {
       }
     }
   },
-  // pushNotificationsOpts: {
-  //   templatePath: './lib/templates',
-  //   defaultLanguage: 'en',
-  //   defaultUnit: 'btc',
-  //   subjectPrefix: '',
-  //   pushServerUrl: 'https://fcm.googleapis.com/fcm',
-  //   authorizationKey: 'You_have_to_put_something_here'
-  // },
+  pushNotificationsOpts: {
+    templatePath: './lib/templates',
+    defaultLanguage: 'en',
+    defaultUnit: 'btc',
+    subjectPrefix: '',
+    pushServerUrl: 'https://fcm.googleapis.com/fcm',
+    authorizationKey: 'You_have_to_put_something_here'
+  },
   fiatRateServiceOpts: {
     defaultProvider: 'BitPay',
     fetchInterval: 60 // in minutes
