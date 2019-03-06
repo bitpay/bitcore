@@ -12,6 +12,9 @@ const JSON_PAYMENT_CONTENT_TYPE = 'application/payment';
 const JSON_PAYMENT_ACK_CONTENT_TYPE = 'application/payment-ack';
 
 
+const dfltTrustedKeys = require('../util/JsonPaymentProtocolKeys.js');
+
+
 var PayPro = {};
 
 PayPro._nodeRequest = function(opts, cb) {
@@ -41,7 +44,7 @@ PayPro._nodeRequest = function(opts, cb) {
     });
     res.on("end", function() {
       data = Buffer.concat(data); // Make one large Buffer of it
-      return cb(null, data);
+      return cb(null, data, res.headers);
     });
   });
 
@@ -78,7 +81,8 @@ PayPro._browserRequest = function(opts, cb) {
   xhr.onload = function(event) {
     var response = xhr.response;
     if (xhr.status == 200) {
-      return cb(null, Buffer.from(response));
+console.log('[paypro.js.80:xhr:]',xhr); //TODO
+      return cb(null, Buffer.from(response), xhr.headers);
     } else {
       return cb('HTTP Request Error: '  + xhr.status + ' ' + xhr.statusText + ' ' + response ? response : '');
     }
@@ -121,8 +125,90 @@ var getHttp = function(opts) {
 
 const MAX_FEE_PER_KB = 500000;
 
+
+/**
+ * Verifies the signature of a given payment request is both valid and from a trusted key
+ * @param requestUrl {String} The url used to fetch this payment request
+ * @param paymentRequest {Object} The payment request object returned by parsePaymentRequest
+ * @param trustedKeys {Object} An object containing all keys trusted by this client
+ * @param callback {function} If no error is returned callback will contain the owner of the key which signed this request (ie BitPay Inc.)
+ */
+PayPro._verify = function (requestUrl, paymentRequest, trustedKeys, callback) {
+  let hash = paymentRequest.headers.digest.split('=')[1];
+  let signature = paymentRequest.headers.signature;
+  let signatureType = paymentRequest.headers['x-signature-type'];
+  let identity = paymentRequest.headers['x-identity'];
+  let host;
+
+  if (!requestUrl) {
+    return callback(new Error('You must provide the original payment request url'));
+  }
+  if (!trustedKeys) {
+    return callback(new Error('You must provide a set of trusted keys'))
+  }
+
+  try {
+    host = url.parse(requestUrl).hostname;
+  }
+  catch(e) {}
+
+  if (!host) {
+    return callback(new Error('Invalid requestUrl'));
+  }
+  if (!signatureType) {
+    return callback(new Error('Response missing x-signature-type header'));
+  }
+  if (typeof signatureType !== 'string') {
+    return callback(new Error('Invalid x-signature-type header'));
+  }
+  if (signatureType !== 'ecc') {
+    return callback(new Error(`Unknown signature type ${signatureType}`))
+  }
+  if (!signature) {
+    return callback(new Error('Response missing signature header'));
+  }
+  if (typeof signature !== 'string') {
+    return callback(new Error('Invalid signature header'));
+  }
+  if (!identity) {
+    return callback(new Error('Response missing x-identity header'));
+  }
+  if (typeof identity !== 'string') {
+    return callback(new Error('Invalid identity header'));
+  }
+console.log('[paypro.js.173:identity:]',identity); //TODO
+
+  if (!trustedKeys[identity]) {
+    return callback(new Error(`Response signed by unknown key (${identity}), unable to validate`));
+  }
+
+  let keyData = trustedKeys[identity];
+  if (keyData.domains.indexOf(host) === -1) {
+    return callback(new Error(`The key on the response (${identity}) is not trusted for domain ${host}`));
+  } else if (!keyData.networks.includes(paymentRequest.network)) {
+    return callback(new Error(`The key on the response is not trusted for transactions on the '${paymentRequest.network}' network`));
+  }
+
+  let valid = Bitcore.crypto.ECDSA.verify(
+    Buffer.from(hash, 'hex'),
+    Buffer.from(signature, 'hex'),
+    Buffer.from(keyData.publicKey, 'hex'),
+    'little',
+  );
+console.log('[paypro.js.188:valid:]',valid); //TODO
+
+  if (!valid) {
+    return callback(new Error('Response signature invalid'));
+  }
+
+  return callback(null, keyData.owner);
+};
+
+
+
 PayPro.get = function(opts, cb) {
   $.checkArgument(opts && opts.url);
+  opts.trustedKeys = opts.trustedKeys || dlftTrustedKeys;
 
   var http = getHttp(opts);
   var coin = opts.coin || 'btc';
@@ -134,7 +220,7 @@ PayPro.get = function(opts, cb) {
     'Content-Type': 'application/octet-stream',
   };
 
-  http(opts, function(err, data) {
+  http(opts, function(err, data, headers) {
     if (err) return cb(err);
     try {
       data = JSON.parse(data.toString());
@@ -146,57 +232,73 @@ PayPro.get = function(opts, cb) {
     let ret = {};
     ret.url = opts.url;
 
-    // TODO TODO TODO
-    ret.verified= 1;
-
-    // network
-    if(data.network == 'test') 
-      ret.network = 'testnet';
-
-    if(data.network == 'live') 
-      ret.network = 'livenet';
-
-    if ( !data.network )
-      return cb(new Error('No network at payment request'));
-
-    //currency
-    if ( data.currency != COIN )
-      return cb(new Error('Currency mismatch. Expecting:' + COIN));
-
-    ret.coin = coin;
-
-
-    //fee
-    if ( data.requiredFeeRate > MAX_FEE_PER_KB)
-      return cb(new Error('Fee rate too high:' +data.requiredFeeRate));
-
-    ret.requiredFeeRate = data.requiredFeeRate;
-
-    //outputs
-    if (!data.outputs || data.outputs.length !=1) {
-      return cb(new Error('Must have 1 output'));
+    if (!headers.digest) {
+      return cb(new Error('Digest missing from response headers'));
     }
 
-    if (!_.isNumber(data.outputs[0].amount) ) {
-      return cb(new Error('Bad output amount ' + e));
-    }
-    ret.amount = data.outputs[0].amount;
+    let digest = headers.digest.split('=')[1];
+console.log('[paypro.js.237:rawBody:]',data); //TODO
+    let hash = Bitcore.crypto.hash.sha256(data).toString('hex');
 
-    try {
-      ret.toAddress = (new bitcore.Address(data.outputs[0].address)).toString();
-    } catch (e) {
-      return cb(new Error('Bad output address '+ e));
-    }
-    
-    ret.memo = data.memo;
-    ret.paymentId = data.paymentId;
-    try {
-      ret.expires = (new Date(data.expires)).toISOString();
-    } catch (e) {
-      return cb(new Error('Bad expiration'));
+    if (digest !== hash) {
+      return callback(new Error(`Response body hash does not match digest header. Actual: ${hash} Expected: ${digest}`));
     }
 
-    return cb(null, ret);
+    PayPro._verify(opts.url, data, headers, opts.trustedKeys, (err) => {
+console.log('[paypro.js.243:err:]',err); //TODO
+      if (err) return cb(err);
+ 
+      ret.verified= 1;
+
+      // network
+      if(data.network == 'test') 
+        ret.network = 'testnet';
+
+      if(data.network == 'live') 
+        ret.network = 'livenet';
+
+      if ( !data.network )
+        return cb(new Error('No network at payment request'));
+
+      //currency
+      if ( data.currency != COIN )
+        return cb(new Error('Currency mismatch. Expecting:' + COIN));
+
+      ret.coin = coin;
+
+
+      //fee
+      if ( data.requiredFeeRate > MAX_FEE_PER_KB)
+        return cb(new Error('Fee rate too high:' +data.requiredFeeRate));
+
+      ret.requiredFeeRate = data.requiredFeeRate;
+
+      //outputs
+      if (!data.outputs || data.outputs.length !=1) {
+        return cb(new Error('Must have 1 output'));
+      }
+
+      if (!_.isNumber(data.outputs[0].amount) ) {
+        return cb(new Error('Bad output amount ' + e));
+      }
+      ret.amount = data.outputs[0].amount;
+
+      try {
+        ret.toAddress = (new bitcore.Address(data.outputs[0].address)).toString();
+      } catch (e) {
+        return cb(new Error('Bad output address '+ e));
+      }
+      
+      ret.memo = data.memo;
+      ret.paymentId = data.paymentId;
+      try {
+        ret.expires = (new Date(data.expires)).toISOString();
+      } catch (e) {
+        return cb(new Error('Bad expiration'));
+      }
+
+      return cb(null, ret);
+    });
   });
 };
 
