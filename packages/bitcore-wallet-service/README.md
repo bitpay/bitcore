@@ -131,6 +131,45 @@ http://localhost:3232/bws/api
 
 <img width="923" alt="screen shot 2019-03-06 at 10 50 29 am" src="https://user-images.githubusercontent.com/23103037/53894324-e69f8300-3ffd-11e9-9b25-145332fe860c.png">
 
+# Testing on mobile
+
+Additional Requirements:
+
+- Mobile phone and PC must be connected to the same internet
+- PC desktop ip address for localhost
+
+To find ip address for PC run:
+
+```
+ifconfig | grep "inet " | grep -v 127.0.0.1
+```
+
+### copay/app-template/index-template.html
+
+1. Comment out content security meta tag in the `<head>`
+
+```
+// <meta http-equiv="Content-Security-Policy" content="default-src 'self'  ... >
+```
+
+2. Then run
+
+```
+npm run apply:copay
+```
+
+3. Enter PC ip address followed by port in the mobile phone browser:
+
+```
+10.10.11.73:8100
+```
+
+4. Set wallet service url to PC ip address /bws/api
+
+```
+http://10.10.11.73:3232/bws/api
+```
+
 # TX proposal life cycle
 
 Tx proposal need to be:
