@@ -26,6 +26,7 @@ export class TransactionPage {
   public vout: number;
   public fromVout: boolean;
   public confirmations: number;
+  public errorMessage: string;
 
   constructor(
     public navParams: NavParams,
@@ -67,6 +68,7 @@ export class TransactionPage {
       },
       err => {
         this.logger.error(err);
+        this.errorMessage = err;
         this.loading = false;
       }
     );

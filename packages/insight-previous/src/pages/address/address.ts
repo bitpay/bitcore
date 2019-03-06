@@ -23,6 +23,7 @@ export class AddressPage {
   private chainNetwork: ChainNetwork;
   public address: any = {};
   public nroTransactions = 0;
+  public errorMessage: string;
 
   constructor(
     public navParams: NavParams,
@@ -67,6 +68,8 @@ export class AddressPage {
       },
       err => {
         this.logger.error(err);
+        this.errorMessage = err;
+        this.loading = false;
       }
     );
   }

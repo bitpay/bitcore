@@ -6,7 +6,9 @@
 
       <loader *ngIf="loading" [type]="'title'"></loader>
 
-      <div *ngIf="!loading">
+      <error [message]="errorMessage" *ngIf="!loading && errorMessage"></error>
+
+      <div *ngIf="!loading && !errorMessage">
 
         <h1>Block #{{ block.height }}</h1>
         <p class="item-hash">

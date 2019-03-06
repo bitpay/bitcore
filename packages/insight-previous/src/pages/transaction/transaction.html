@@ -6,8 +6,9 @@
 
       <loader *ngIf="loading" [type]="'title'"></loader>
 
-      <div *ngIf="!loading">
+      <error [message]="errorMessage" *ngIf="!loading && errorMessage "></error>
 
+      <div *ngIf="!loading && !errorMessage">
         <h1 ion-text>
           Transaction
           <ion-note *ngIf="vout !== undefined">
@@ -15,6 +16,7 @@
             <span class="tx-note" ion-text *ngIf="!fromVout">Input {{ vout }}</span>
           </ion-note>
         </h1>
+
         <p class="item-hash">
           <b>Transaction Hash</b> {{ tx.txid }}</p>
 
