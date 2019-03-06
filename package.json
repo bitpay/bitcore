@@ -57,5 +57,7 @@
     "typedoc": "^0.14.0",
     "typescript-eslint-parser": "^15.0.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "request": "^2.88.0"
+  }
 }

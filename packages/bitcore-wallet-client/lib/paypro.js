@@ -6,6 +6,7 @@ var Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
 };
+const request = require('request');
 const JSON_PAYMENT_REQUEST_CONTENT_TYPE = 'application/payment-request';
 const JSON_PAYMENT_VERIFY_CONTENT_TYPE = 'application/verify-payment';
 const JSON_PAYMENT_CONTENT_TYPE = 'application/payment';
@@ -16,128 +17,18 @@ const dfltTrustedKeys = require('../util/JsonPaymentProtocolKeys.js');
 
 
 var PayPro = {};
-
-PayPro._nodeRequest = function(opts, cb) {
-  opts.agent = false;
-
-  var http = opts.httpNode || (opts.proto === 'http' ? require("http") : require("https"));
-
-  const url =  URL.parse(opts.url);
-  let ropts = {
-    headers: opts.headers,
-    method: opts.method || 'GET',
-    hostname: url.host,
-    port:url.port ||  (opts.proto === 'http' ? 80 : 443),
-    path:url.path,
-    protocol: url.protocol,
-    agent: false,
-  };
-
-  var req  = http.request(ropts, function(res) {
-    var data = []; // List of Buffer objects
-
-    if (res.statusCode != 200)
-      return cb(new Error('HTTP Request Error: '  + res.statusCode + ' ' + res.statusMessage + ' ' +  ( data ? data : '' )  ));
-
-    res.on("data", function(chunk) {
-      data.push(chunk); // Append Buffer object
-    });
-    res.on("end", function() {
-      data = Buffer.concat(data); // Make one large Buffer of it
-      return cb(null, data, res.headers);
-    });
-  });
-
-  req.on("error", function(error) {
-    return cb(error);
-  });
-
-  if (opts.body) 
-    req.write(opts.body);
-
-  req.end();
-};
-
-PayPro._browserRequest = function(opts, cb) {
-
-  var method = (opts.method || 'GET').toUpperCase();
-  var url = opts.url;
-  var req = opts;
-
-  req.headers = req.headers || {};
-  req.body = req.body || req.data || '';
-
-  var xhr = opts.xhr || new XMLHttpRequest();
-  xhr.open(method, url, true);
-
-  Object.keys(req.headers).forEach(function(key) {
-    var val = req.headers[key];
-    if (key === 'Content-Length') return;
-    if (key === 'Content-Transfer-Encoding') return;
-    xhr.setRequestHeader(key, val);
-  });
-  xhr.responseType = 'arraybuffer';
-
-  xhr.onload = function(event) {
-    var response = xhr.response;
-    if (xhr.status == 200) {
-console.log('[paypro.js.80:xhr:]',xhr); //TODO
-      return cb(null, Buffer.from(response), xhr.getAllResponseHeaders());
-    } else {
-      return cb('HTTP Request Error: '  + xhr.status + ' ' + xhr.statusText + ' ' + response ? response : '');
-    }
-  };
-
-  xhr.onerror = function(event) {
-    var status;
-    if (xhr.status === 0 || !xhr.statusText) {
-      status = 'HTTP Request Error';
-    } else {
-      status = xhr.statusText;
-    }
-    return cb(new Error(status));
-  };
-
-  if (req.body) {
-    xhr.send(req.body);
-  } else {
-    xhr.send(null);
-  }
-};
-
-var getHttp = function(opts) {
-  var match = opts.url.match(/^((http[s]?):\/)?\/?([^:\/\s]+)((\/\w+)*\/)([\w\-\.]+[^#?\s]+)(.*)?(#[\w\-]+)?$/);
-
-  opts.proto = RegExp.$2;
-  opts.host = RegExp.$3;
-  opts.path = RegExp.$4 + RegExp.$6;
-
-  if (opts.http) {
-    return opts.http;
-  }
-
-  var env = opts.env;
-  if (!env)
-    env = (process && !process.browser) ? 'node' : 'browser';
-
-  return (env == "node") ? PayPro._nodeRequest : http = PayPro._browserRequest;;
-};
-
 const MAX_FEE_PER_KB = 500000;
 
 
 /**
  * Verifies the signature of a given payment request is both valid and from a trusted key
- * @param requestUrl {String} The url used to fetch this payment request
- * @param paymentRequest {Object} The payment request object returned by parsePaymentRequest
- * @param trustedKeys {Object} An object containing all keys trusted by this client
- * @param callback {function} If no error is returned callback will contain the owner of the key which signed this request (ie BitPay Inc.)
  */
-PayPro._verify = function (requestUrl, paymentRequest, trustedKeys, callback) {
-  let hash = paymentRequest.headers.digest.split('=')[1];
-  let signature = paymentRequest.headers.signature;
-  let signatureType = paymentRequest.headers['x-signature-type'];
-  let identity = paymentRequest.headers['x-identity'];
+PayPro._verify = function (requestUrl, headers, network, trustedKeys, callback) {
+console.log('[paypro.js.26:headers:]',headers); //TODO
+  let hash = headers.digest.split('=')[1];
+  let signature = headers.signature;
+  let signatureType = headers['x-signature-type'];
+  let identity = headers['x-identity'];
   let host;
 
   if (!requestUrl) {
@@ -148,7 +39,7 @@ PayPro._verify = function (requestUrl, paymentRequest, trustedKeys, callback) {
   }
 
   try {
-    host = url.parse(requestUrl).hostname;
+    host = URL.parse(requestUrl).hostname;
   }
   catch(e) {}
 
@@ -185,8 +76,8 @@ console.log('[paypro.js.173:identity:]',identity); //TODO
   let keyData = trustedKeys[identity];
   if (keyData.domains.indexOf(host) === -1) {
     return callback(new Error(`The key on the response (${identity}) is not trusted for domain ${host}`));
-  } else if (!keyData.networks.includes(paymentRequest.network)) {
-    return callback(new Error(`The key on the response is not trusted for transactions on the '${paymentRequest.network}' network`));
+  } else if (!keyData.networks.includes(network)) {
+    return callback(new Error(`The key on the response is not trusted for transactions on the '${network}' network`));
   }
 
   let valid = Bitcore.crypto.ECDSA.verify(
@@ -204,13 +95,51 @@ console.log('[paypro.js.188:valid:]',valid); //TODO
   return callback(null, keyData.owner);
 };
 
+function runRequest(opts, cb) {
+
+  request(opts, (err, res, body) => {
+    if (err) return cb(err);
+    let ret;
+
+    try {
+      ret = JSON.parse(body.toString());
+    } catch (e)  {
+      return cb({message: 'Could not parse payment request:' + e});
+    }
+
+    // read and check
+    ret.url = opts.url;
+
+    if (!res.headers.digest) {
+      return cb(new Error('Digest missing from response headers'));
+    }
+
+    // Step 1: Check digest from header
+    let digest = res.headers.digest.split('=')[1];
+console.log('[paypro.js.120:digest:]',digest); //TODO
+    let hash = Bitcore.crypto.Hash.sha256(Buffer.from(body,'utf8')).toString('hex');
+
+    if (digest !== hash) {
+      return cb(new Error(`Response body hash does not match digest header. Actual: ${hash} Expected: ${digest}`));
+    }
+
+    // Step 2: verify digest's signature
+    PayPro._verify(opts.url, res.headers, opts.network, opts.trustedKeys, (err) => {
+console.log('[paypro.js.243:err:]',err); //TODO
+      if (err) return cb(err);
+      ret.verified= 1;
+console.log('[paypro.js.131:ret:]',ret); //TODO
+
+      return cb(null, ret);
+    });
+  });
+};
 
 
 PayPro.get = function(opts, cb) {
   $.checkArgument(opts && opts.url);
   opts.trustedKeys = opts.trustedKeys || dfltTrustedKeys;
 
-  var http = getHttp(opts);
   var coin = opts.coin || 'btc';
   var bitcore = Bitcore_[coin];
 
@@ -219,86 +148,59 @@ PayPro.get = function(opts, cb) {
     'Accept': JSON_PAYMENT_REQUEST_CONTENT_TYPE,
     'Content-Type': 'application/octet-stream',
   };
+  opts.method = 'GET';
+console.log('[paypro.js.151:opts:]',opts); //TODO
 
-  http(opts, function(err, data, headers) {
+  runRequest(opts, function(err, data) {
     if (err) return cb(err);
+// TODO TODO 
+    // network
+    if(data.network == 'test') 
+      ret.network = 'testnet';
+
+    if(data.network == 'live') 
+      ret.network = 'livenet';
+
+    if ( !data.network )
+      return cb(new Error('No network at payment request'));
+
+    //currency
+    if ( data.currency != COIN )
+      return cb(new Error('Currency mismatch. Expecting:' + COIN));
+
+    ret.coin = coin;
+
+
+    //fee
+    if ( data.requiredFeeRate > MAX_FEE_PER_KB)
+      return cb(new Error('Fee rate too high:' +data.requiredFeeRate));
+
+    ret.requiredFeeRate = data.requiredFeeRate;
+
+    //outputs
+    if (!data.outputs || data.outputs.length !=1) {
+      return cb(new Error('Must have 1 output'));
+    }
+
+    if (!_.isNumber(data.outputs[0].amount) ) {
+      return cb(new Error('Bad output amount ' + e));
+    }
+    ret.amount = data.outputs[0].amount;
+
     try {
-      data = JSON.parse(data.toString());
-
-    } catch (e)  {
-      return cb({message: 'Could not parse payment request:' + e});
+      ret.toAddress = (new bitcore.Address(data.outputs[0].address)).toString();
+    } catch (e) {
+      return cb(new Error('Bad output address '+ e));
     }
-    // read and check
-    let ret = {};
-    ret.url = opts.url;
-
-    if (!headers.digest) {
-      return cb(new Error('Digest missing from response headers'));
+    
+    ret.memo = data.memo;
+    ret.paymentId = data.paymentId;
+    try {
+      ret.expires = (new Date(data.expires)).toISOString();
+    } catch (e) {
+      return cb(new Error('Bad expiration'));
     }
-
-    let digest = headers.digest.split('=')[1];
-console.log('[paypro.js.237:rawBody:]',data); //TODO
-    let hash = Bitcore.crypto.hash.sha256(data).toString('hex');
-
-    if (digest !== hash) {
-      return callback(new Error(`Response body hash does not match digest header. Actual: ${hash} Expected: ${digest}`));
-    }
-
-    PayPro._verify(opts.url, data, headers, opts.trustedKeys, (err) => {
-console.log('[paypro.js.243:err:]',err); //TODO
-      if (err) return cb(err);
- 
-      ret.verified= 1;
-
-      // network
-      if(data.network == 'test') 
-        ret.network = 'testnet';
-
-      if(data.network == 'live') 
-        ret.network = 'livenet';
-
-      if ( !data.network )
-        return cb(new Error('No network at payment request'));
-
-      //currency
-      if ( data.currency != COIN )
-        return cb(new Error('Currency mismatch. Expecting:' + COIN));
-
-      ret.coin = coin;
-
-
-      //fee
-      if ( data.requiredFeeRate > MAX_FEE_PER_KB)
-        return cb(new Error('Fee rate too high:' +data.requiredFeeRate));
-
-      ret.requiredFeeRate = data.requiredFeeRate;
-
-      //outputs
-      if (!data.outputs || data.outputs.length !=1) {
-        return cb(new Error('Must have 1 output'));
-      }
-
-      if (!_.isNumber(data.outputs[0].amount) ) {
-        return cb(new Error('Bad output amount ' + e));
-      }
-      ret.amount = data.outputs[0].amount;
-
-      try {
-        ret.toAddress = (new bitcore.Address(data.outputs[0].address)).toString();
-      } catch (e) {
-        return cb(new Error('Bad output address '+ e));
-      }
-      
-      ret.memo = data.memo;
-      ret.paymentId = data.paymentId;
-      try {
-        ret.expires = (new Date(data.expires)).toISOString();
-      } catch (e) {
-        return cb(new Error('Bad expiration'));
-      }
-
-      return cb(null, ret);
-    });
+    return cb(null, ret);
   });
 };
 
@@ -313,7 +215,6 @@ PayPro.send = function(opts, cb) {
   var coin = opts.coin || 'btc';
   var COIN = coin.toUpperCase();
 
-  var http = getHttp(opts);
   opts.method = 'POST';
   opts.headers = opts.headers || {
     'Content-Type': JSON_PAYMENT_VERIFY_CONTENT_TYPE,
@@ -326,7 +227,7 @@ PayPro.send = function(opts, cb) {
   });
 
   // verify request
-  http(opts, function(err, rawData) {
+  request(opts, function(err, rawData) {
     if (err) {
       console.log('Error at verify-payment:', err, opts);
       return cb(err);
@@ -344,7 +245,7 @@ PayPro.send = function(opts, cb) {
       ],
     });
 
-    http(opts, function(err, rawData) {
+    request(opts, function(err, rawData) {
       if (err) {
         console.log('Error at payment:', err, opts);
         return cb(err);

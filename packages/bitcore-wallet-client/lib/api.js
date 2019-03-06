@@ -15,8 +15,6 @@ var sjcl = require('sjcl');
 var url = require('url');
 var querystring = require('querystring');
 
-var request = require('superagent');
-
 var Common = require('./common');
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;
@@ -26,8 +24,8 @@ var PayPro = require('./paypro');
 var log = require('./log');
 var Credentials = require('./credentials');
 var Verifier = require('./verifier');
-var Package = require('../package.json');
 var Errors = require('./errors');
+const Request = require('./Request');
 
 var BASE_URL = 'http://localhost:3232/bws/api';
 
@@ -40,14 +38,13 @@ var BASE_URL = 'http://localhost:3232/bws/api';
 function API(opts) {
   opts = opts || {};
 
-  this.request = opts.request || request;
-  this.baseUrl = opts.baseUrl || BASE_URL;
   this.payProHttp = null; // Only for testing
   this.doNotVerifyPayPro = opts.doNotVerifyPayPro;
   this.timeout = opts.timeout || 50000;
   this.logLevel = opts.logLevel || 'silent';
   this.supportStaffWalletId = opts.supportStaffWalletId;
 
+  this.request = new Request(opts.baseUrl || BASE_URL, {r: opts.request});
   log.setLevel(this.logLevel);
 };
 util.inherits(API, events.EventEmitter);
@@ -216,56 +213,6 @@ API.prototype._processTxps = function(txps) {
 };
 
 /**
- * Parse errors
- * @private
- * @static
- * @memberof Client.API
- * @param {Object} body
- */
-API._parseError = function(body) {
-  if (!body) return;
-
-  if (_.isString(body)) {
-    try {
-      body = JSON.parse(body);
-    } catch (e) {
-      body = {
-        error: body
-      };
-    }
-  }
-  var ret;
-  if (body.code) {
-    if (Errors[body.code]) {
-      ret = new Errors[body.code];
-      if (body.message) ret.message = body.message;
-    } else {
-      ret = new Error(body.code + ': ' + body.message);
-    }
-  } else {
-    ret = new Error(body.error || JSON.stringify(body));
-  }
-  log.error(ret);
-  return ret;
-};
-
-/**
- * Sign an HTTP request
- * @private
- * @static
- * @memberof Client.API
- * @param {String} method - The HTTP method
- * @param {String} url - The URL for the request
- * @param {Object} args - The arguments in case this is a POST/PUT request
- * @param {String} privKey - Private key to sign the request
- */
-API._signRequest = function(method, url, args, privKey) {
-  var message = [method.toLowerCase(), url, JSON.stringify(args)].join('|');
-  return Utils.signMessage(message, privKey);
-};
-
-
-/**
  * Seed from random
  *
  * @param {Object} opts
@@ -278,6 +225,8 @@ API.prototype.seedFromRandom = function(opts) {
 
   opts = opts || {};
   this.credentials = Credentials.create(opts.coin || 'btc', opts.network || 'livenet');
+
+  this.request.setCredentials(this.credentials);
 };
 
 
@@ -368,6 +317,7 @@ API.prototype.seedFromRandomWithMnemonic = function(opts) {
 
   opts = opts || {};
   this.credentials = Credentials.createWithMnemonic(opts.coin || 'btc', opts.network || 'livenet', opts.passphrase, opts.language || 'en', opts.account || 0);
+  this.request.setCredentials(this.credentials);
 };
 
 API.prototype.getMnemonic = function() {
@@ -396,6 +346,7 @@ API.prototype.clearMnemonic = function() {
 API.prototype.seedFromExtendedPrivateKey = function(xPrivKey, opts) {
   opts = opts || {};
   this.credentials = Credentials.fromExtendedPrivateKey(opts.coin || 'btc', xPrivKey, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
+  this.request.setCredentials(this.credentials);
 };
 
 
@@ -416,6 +367,7 @@ API.prototype.seedFromMnemonic = function(words, opts) {
 
   opts = opts || {};
   this.credentials = Credentials.fromMnemonic(opts.coin || 'btc', opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
+  this.request.setCredentials(this.credentials);
 };
 
 /**
@@ -434,6 +386,7 @@ API.prototype.seedFromExtendedPublicKey = function(xPubKey, source, entropySourc
 
   opts = opts || {};
   this.credentials = Credentials.fromExtendedPublicKey(opts.coin || 'btc', xPubKey, source, entropySourceHex, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44);
+  this.request.setCredentials(this.credentials);
 };
 
 
@@ -477,6 +430,7 @@ API.prototype.import = function(str) {
   } catch (ex) {
     throw new Errors.INVALID_BACKUP;
   }
+  this.request.setCredentials(this.credentials);
 };
 
 API.prototype._import = function(cb) {
@@ -541,6 +495,7 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
     log.info('Mnemonic error:', e);
     return cb(new Errors.INVALID_BACKUP);
   }
+  this.request.setCredentials(this.credentials);
 
   self._import(function(err, ret) {
     if (!err) return cb(null, ret);
@@ -549,6 +504,7 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
       var altCredentials = derive(true);
       if (altCredentials.xPubKey.toString() == self.credentials.xPubKey.toString()) return cb(err);
       self.credentials = altCredentials;
+      self.request.setCredentials(this.credentials);
       return self._import(cb);
     }
     return cb(err);
@@ -583,6 +539,7 @@ API.prototype.importFromExtendedPrivateKey = function(xPrivKey, opts, cb) {
   };
 
   this._import(cb);
+  this.request.setCredentials(this.credentials);
 };
 
 /**
@@ -612,6 +569,7 @@ API.prototype.importFromExtendedPublicKey = function(xPubKey, source, entropySou
   };
 
   this._import(cb);
+  this.request.setCredentials(this.credentials);
 };
 
 API.prototype.decryptBIP38PrivateKey = function(encryptedPrivateKeyBase58, passphrase, opts, cb) {
@@ -716,7 +674,7 @@ API.prototype.openWallet = function(cb) {
   if (self.credentials.isComplete() && self.credentials.hasWalletInfo())
     return cb(null, true);
 
-  self._doGetRequest('/v2/wallets/?includeExtendedInfo=1', function(err, ret) {
+  self.request.get('/v2/wallets/?includeExtendedInfo=1', function(err, ret) {
     if (err) return cb(err);
     var wallet = ret.wallet;
 
@@ -749,193 +707,13 @@ API.prototype.openWallet = function(cb) {
   });
 };
 
-API.prototype._getHeaders = function(method, url, args) {
-  var headers = {
-    'x-client-version': 'bwc-' + Package.version,
-  };
-  if (this.supportStaffWalletId) {
-    headers['x-wallet-id'] = this.supportStaffWalletId;
-  }
-
-  return headers;
-};
-
-
-/**
- * Do an HTTP request
- * @private
- *
- * @param {Object} method
- * @param {String} url
- * @param {Object} args
- * @param {Callback} cb
- */
-API.prototype._doRequest = function(method, url, args, useSession, cb) {
-  var self = this;
-
-  var headers = self._getHeaders(method, url, args);
-
-  if (self.credentials) {
-    headers['x-identity'] = self.credentials.copayerId;
-
-    if (useSession && self.session) {
-      headers['x-session'] = self.session;
-    } else {
-      var reqSignature;
-      var key = args._requestPrivKey || self.credentials.requestPrivKey;
-      if (key) {
-        delete args['_requestPrivKey'];
-        reqSignature = API._signRequest(method, url, args, key);
-      }
-      headers['x-signature'] = reqSignature;
-    }
-  }
-
-  var r = self.request[method](self.baseUrl + url);
-
-  r.accept('json');
-
-  _.each(headers, function(v, k) {
-    if (v) r.set(k, v);
-  });
-
-  if (args) {
-    if (method == 'post' || method == 'put') {
-      r.send(args);
-
-    } else {
-      r.query(args);
-    }
-  }
-
-  r.timeout(self.timeout);
-
-  r.end(function(err, res) {
-    if (!res) {
-      return cb(new Errors.CONNECTION_ERROR);
-    }
-
-    if (res.body)
-
-      log.debug(util.inspect(res.body, {
-        depth: 10
-      }));
-
-    if (res.status !== 200) {
-      if (res.status === 404)
-        return cb(new Errors.NOT_FOUND);
-
-      if (!res.status)
-        return cb(new Errors.CONNECTION_ERROR);
-
-      log.error('HTTP Error:' + res.status);
-
-      if (!res.body)
-        return cb(new Error(res.status));
-
-      return cb(API._parseError(res.body));
-    }
-
-    if (res.body === '{"error":"read ECONNRESET"}')
-      return cb(new Errors.ECONNRESET_ERROR(JSON.parse(res.body)));
-
-    return cb(null, res.body, res.header);
-  });
-};
 
 API.prototype._login = function(cb) {
-  this._doPostRequest('/v1/login', {}, cb);
+  this.request.post('/v1/login', {}, cb);
 };
 
 API.prototype._logout = function(cb) {
-  this._doPostRequest('/v1/logout', {}, cb);
-};
-
-/**
- * Do an HTTP request
- * @private
- *
- * @param {Object} method
- * @param {String} url
- * @param {Object} args
- * @param {Callback} cb
- */
-API.prototype._doRequestWithLogin = function(method, url, args, cb) {
-  var self = this;
-
-  function doLogin(cb) {
-    self._login(function(err, s) {
-      if (err) return cb(err);
-      if (!s) return cb(new Errors.NOT_AUTHORIZED);
-      self.session = s;
-      cb();
-    });
-  };
-
-  async.waterfall([
-
-    function(next) {
-      if (self.session) return next();
-      doLogin(next);
-    },
-    function(next) {
-      self._doRequest(method, url, args, true, function(err, body, header) {
-        if (err && err instanceof Errors.NOT_AUTHORIZED) {
-          doLogin(function(err) {
-            if (err) return next(err);
-            return self._doRequest(method, url, args, true, next);
-          });
-        }
-        next(null, body, header);
-      });
-    },
-  ], cb);
-};
-
-/**
- * Do a POST request
- * @private
- *
- * @param {String} url
- * @param {Object} args
- * @param {Callback} cb
- */
-API.prototype._doPostRequest = function(url, args, cb) {
-  return this._doRequest('post', url, args, false, cb);
-};
-
-API.prototype._doPutRequest = function(url, args, cb) {
-  return this._doRequest('put', url, args, false, cb);
-};
-
-/**
- * Do a GET request
- * @private
- *
- * @param {String} url
- * @param {Callback} cb
- */
-API.prototype._doGetRequest = function(url, cb) {
-  url += url.indexOf('?') > 0 ? '&' : '?';
-  url += 'r=' + _.random(10000, 99999);
-  return this._doRequest('get', url, {}, false, cb);
-};
-
-API.prototype._doGetRequestWithLogin = function(url, cb) {
-  url += url.indexOf('?') > 0 ? '&' : '?';
-  url += 'r=' + _.random(10000, 99999);
-  return this._doRequestWithLogin('get', url, {}, cb);
-};
-
-/**
- * Do a DELETE request
- * @private
- *
- * @param {String} url
- * @param {Callback} cb
- */
-API.prototype._doDeleteRequest = function(url, cb) {
-  return this._doRequest('delete', url, {}, false, cb);
+  this.request.post('/v1/logout', {}, cb);
 };
 
 API._buildSecret = function(walletId, walletPrivKey, coin, network) {
@@ -1121,7 +899,7 @@ API.prototype._doJoinWallet = function(walletId, walletPrivKey, xPubKey, request
   args.copayerSignature = Utils.signMessage(hash, walletPrivKey);
 
   var url = '/v2/wallets/' + walletId + '/copayers';
-  this._doPostRequest(url, args, function(err, body) {
+  this.request.post(url, args, function(err, body) {
     if (err) return cb(err);
     self._processWallet(body.wallet);
     return cb(null, body.wallet);
@@ -1243,7 +1021,7 @@ API.prototype.getFeeLevels = function(coin, network, cb) {
   $.checkArgument(coin || _.includes(['btc', 'bch'], coin));
   $.checkArgument(network || _.includes(['livenet', 'testnet'], network));
 
-  self._doGetRequest('/v2/feelevels/?coin=' + (coin || 'btc') + '&network=' + (network || 'livenet'), function(err, result) {
+  self.request.get('/v2/feelevels/?coin=' + (coin || 'btc') + '&network=' + (network || 'livenet'), function(err, result) {
     if (err) return cb(err);
     return cb(err, result);
   });
@@ -1255,7 +1033,7 @@ API.prototype.getFeeLevels = function(coin, network, cb) {
  * @param {Callback} cb
  */
 API.prototype.getVersion = function(cb) {
-  this._doGetRequest('/v1/version/', cb);
+  this.request.get('/v1/version/', cb);
 };
 
 API.prototype._checkKeyDerivation = function() {
@@ -1330,7 +1108,7 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
     singleAddress: !!opts.singleAddress,
     id: opts.id,
   };
-  self._doPostRequest('/v2/wallets/', args, function(err, res) {
+  self.request.post('/v2/wallets/', args, function(err, res) {
     if (err) return cb(err);
 
     var walletId = res.walletId;
@@ -1440,7 +1218,7 @@ API.prototype.recreateWallet = function(cb) {
       supportBIP44AndP2PKH: supportBIP44AndP2PKH,
     };
 
-    self._doPostRequest('/v2/wallets/', args, function(err, body) {
+    self.request.post('/v2/wallets/', args, function(err, body) {
       if (err) {
         if (!(err instanceof Errors.WALLET_ALREADY_EXISTS))
           return cb(err);
@@ -1557,7 +1335,7 @@ API.prototype.getNotifications = function(opts, cb) {
     url += '?timeSpan=' + opts.timeSpan;
   }
 
-  self._doGetRequestWithLogin(url, function(err, result) {
+  self.request.getWithLogin(url, function(err, result) {
     if (err) return cb(err);
 
     var notifications = _.filter(result, function(notification) {
@@ -1591,7 +1369,7 @@ API.prototype.getStatus = function(opts, cb) {
   qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));
   qs.push('twoStep=' + (opts.twoStep ? '1' : '0'));
 
-  self._doGetRequest('/v2/wallets/?' + qs.join('&'), function(err, result) {
+  self.request.get('/v2/wallets/?' + qs.join('&'), function(err, result) {
     if (err) return cb(err);
     if (result.wallet.status == 'pending') {
       var c = self.credentials;
@@ -1615,7 +1393,7 @@ API.prototype.getPreferences = function(cb) {
   $.checkArgument(cb);
 
   var self = this;
-  self._doGetRequest('/v1/preferences/', function(err, preferences) {
+  self.request.get('/v1/preferences/', function(err, preferences) {
     if (err) return cb(err);
     return cb(null, preferences);
   });
@@ -1633,7 +1411,7 @@ API.prototype.savePreferences = function(preferences, cb) {
   $.checkArgument(cb);
 
   var self = this;
-  self._doPutRequest('/v1/preferences/', preferences, cb);
+  self.request.put('/v1/preferences/', preferences, cb);
 };
 
 
@@ -1680,7 +1458,7 @@ API.prototype.getUtxos = function(opts, cb) {
       addresses: [].concat(opts.addresses).join(',')
     });
   }
-  this._doGetRequest(url, cb);
+  this.request.get(url, cb);
 };
 
 API.prototype._getCreateTxProposalArgs = function(opts) {
@@ -1728,7 +1506,7 @@ API.prototype.createTxProposal = function(opts, cb) {
 
   var args = self._getCreateTxProposalArgs(opts);
 
-  self._doPostRequest('/v2/txproposals/', args, function(err, txp) {
+  self.request.post('/v2/txproposals/', args, function(err, txp) {
     if (err) return cb(err);
 
     self._processTxps(txp);
@@ -1763,7 +1541,7 @@ API.prototype.publishTxProposal = function(opts, cb) {
   };
 
   var url = '/v1/txproposals/' + opts.txp.id + '/publish/';
-  self._doPostRequest(url, args, function(err, txp) {
+  self.request.post(url, args, function(err, txp) {
     if (err) return cb(err);
     self._processTxps(txp);
     return cb(null, txp);
@@ -1793,7 +1571,7 @@ API.prototype.createAddress = function(opts, cb) {
 
   opts = opts || {};
 
-  self._doPostRequest('/v3/addresses/', opts, function(err, address) {
+  self.request.post('/v3/addresses/', opts, function(err, address) {
     if (err) return cb(err);
 
     if (!Verifier.checkAddress(self.credentials, address)) {
@@ -1830,7 +1608,7 @@ API.prototype.getMainAddresses = function(opts, cb) {
   }
   var url = '/v1/addresses/' + qs;
 
-  self._doGetRequest(url, function(err, addresses) {
+  self.request.get(url, function(err, addresses) {
     if (err) return cb(err);
 
     if (!opts.doNotVerify) {
@@ -1848,7 +1626,6 @@ API.prototype.getMainAddresses = function(opts, cb) {
  * Update wallet balance
  *
  * @param {String} opts.coin - Optional: defaults to current wallet coin
- * @param {Boolean} opts.twoStep[=false] - Optional: use 2-step balance computation for improved performance
  * @param {Callback} cb
  */
 API.prototype.getBalance = function(opts, cb) {
@@ -1864,7 +1641,6 @@ API.prototype.getBalance = function(opts, cb) {
   $.checkState(this.credentials && this.credentials.isComplete());
 
   var args = [];
-  if (opts.twoStep) args.push('?twoStep=1');
   if (opts.coin) {
     if (!_.includes(['btc', 'bch'], opts.coin)) return cb(new Error('Invalid coin'));
     args.push('coin=' + opts.coin);
@@ -1875,7 +1651,7 @@ API.prototype.getBalance = function(opts, cb) {
   }
 
   var url = '/v1/balance/' + qs;
-  this._doGetRequest(url, cb);
+  this.request.get(url, cb);
 };
 
 /**
@@ -1892,7 +1668,7 @@ API.prototype.getTxProposals = function(opts, cb) {
 
   var self = this;
 
-  self._doGetRequest('/v1/txproposals/', function(err, txps) {
+  self.request.get('/v1/txproposals/', function(err, txps) {
     if (err) return cb(err);
 
     self._processTxps(txps);
@@ -1999,7 +1775,7 @@ API.prototype.signTxProposal = function(txp, password, cb) {
       signatures: signatures
     };
 
-    self._doPostRequest(url, args, function(err, txp) {
+    self.request.post(url, args, function(err, txp) {
       if (err) return cb(err);
       self._processTxps(txp);
       return cb(null, txp);
@@ -2130,7 +1906,7 @@ API.prototype.rejectTxProposal = function(txp, reason, cb) {
   var args = {
     reason: API._encryptMessage(reason, self.credentials.sharedEncryptingKey) || '',
   };
-  self._doPostRequest(url, args, function(err, txp) {
+  self.request.post(url, args, function(err, txp) {
     if (err) return cb(err);
     self._processTxps(txp);
     return cb(null, txp);
@@ -2155,7 +1931,7 @@ API.prototype.broadcastRawTx = function(opts, cb) {
   opts = opts || {};
 
   var url = '/v1/broadcast_raw/';
-  self._doPostRequest(url, opts, function(err, txid) {
+  self.request.post(url, opts, function(err, txid) {
     if (err) return cb(err);
     return cb(null, txid);
   });
@@ -2164,7 +1940,7 @@ API.prototype.broadcastRawTx = function(opts, cb) {
 API.prototype._doBroadcast = function(txp, cb) {
   var self = this;
   var url = '/v1/txproposals/' + txp.id + '/broadcast/';
-  self._doPostRequest(url, {}, function(err, txp) {
+  self.request.post(url, {}, function(err, txp) {
     if (err) return cb(err);
     self._processTxps(txp);
     return cb(null, txp);
@@ -2234,7 +2010,7 @@ API.prototype.removeTxProposal = function(txp, cb) {
   var self = this;
 
   var url = '/v1/txproposals/' + txp.id;
-  self._doDeleteRequest(url, function(err) {
+  self.request.delete(url, function(err) {
     return cb(err);
   });
 };
@@ -2265,7 +2041,7 @@ API.prototype.getTxHistory = function(opts, cb) {
   }
 
   var url = '/v1/txhistory/' + qs;
-  self._doGetRequest(url, function(err, txs) {
+  self.request.get(url, function(err, txs) {
     if (err) return cb(err);
     self._processTxps(txs);
     return cb(null, txs);
@@ -2283,7 +2059,7 @@ API.prototype.getTx = function(id, cb) {
 
   var self = this;
   var url = '/v1/txproposals/' + id;
-  this._doGetRequest(url, function(err, txp) {
+  this.request.get(url, function(err, txp) {
     if (err) return cb(err);
 
     self._processTxps(txp);
@@ -2309,7 +2085,7 @@ API.prototype.startScan = function(opts, cb) {
     includeCopayerBranches: opts.includeCopayerBranches,
   };
 
-  self._doPostRequest('/v1/addresses/scan', args, function(err) {
+  self.request.post('/v1/addresses/scan', args, function(err) {
     return cb(err);
   });
 };
@@ -2348,7 +2124,7 @@ API.prototype.addAccess = function(opts, cb) {
     restrictions: opts.restrictions,
   };
 
-  this._doPutRequest('/v1/copayers/' + copayerId + '/', opts, function(err, res) {
+  this.request.put('/v1/copayers/' + copayerId + '/', opts, function(err, res) {
     if (err) return cb(err);
     return cb(null, res.wallet, reqPrivKey);
   });
@@ -2365,7 +2141,7 @@ API.prototype.getTxNote = function(opts, cb) {
   var self = this;
 
   opts = opts || {};
-  self._doGetRequest('/v1/txnotes/' + opts.txid + '/', function(err, note) {
+  self.request.get('/v1/txnotes/' + opts.txid + '/', function(err, note) {
     if (err) return cb(err);
     self._processTxNotes(note);
     return cb(null, note);
@@ -2387,7 +2163,7 @@ API.prototype.editTxNote = function(opts, cb) {
   if (opts.body) {
     opts.body = API._encryptMessage(opts.body, this.credentials.sharedEncryptingKey);
   }
-  self._doPutRequest('/v1/txnotes/' + opts.txid + '/', opts, function(err, note) {
+  self.request.put('/v1/txnotes/' + opts.txid + '/', opts, function(err, note) {
     if (err) return cb(err);
     self._processTxNotes(note);
     return cb(null, note);
@@ -2414,7 +2190,7 @@ API.prototype.getTxNotes = function(opts, cb) {
     qs = '?' + args.join('&');
   }
 
-  self._doGetRequest('/v1/txnotes/' + qs, function(err, notes) {
+  self.request.get('/v1/txnotes/' + qs, function(err, notes) {
     if (err) return cb(err);
     self._processTxNotes(notes);
     return cb(null, notes);
@@ -2444,7 +2220,7 @@ API.prototype.getFiatRate = function(opts, cb) {
     qs = '?' + args.join('&');
   }
 
-  self._doGetRequest('/v1/fiatrates/' + opts.code + '/' + qs, function(err, rates) {
+  self.request.get('/v1/fiatrates/' + opts.code + '/' + qs, function(err, rates) {
     if (err) return cb(err);
     return cb(null, rates);
   });
@@ -2459,7 +2235,7 @@ API.prototype.getFiatRate = function(opts, cb) {
  */
 API.prototype.pushNotificationsSubscribe = function(opts, cb) {
   var url = '/v1/pushnotifications/subscriptions/';
-  this._doPostRequest(url, opts, function(err, response) {
+  this.request.post(url, opts, function(err, response) {
     if (err) return cb(err);
     return cb(null, response);
   });
@@ -2472,7 +2248,7 @@ API.prototype.pushNotificationsSubscribe = function(opts, cb) {
  */
 API.prototype.pushNotificationsUnsubscribe = function(token, cb) {
   var url = '/v2/pushnotifications/subscriptions/' + token;
-  this._doDeleteRequest(url, cb);
+  this.request.delete(url, cb);
 };
 
 /**
@@ -2483,7 +2259,7 @@ API.prototype.pushNotificationsUnsubscribe = function(token, cb) {
  */
 API.prototype.txConfirmationSubscribe = function(opts, cb) {
   var url = '/v1/txconfirmations/';
-  this._doPostRequest(url, opts, function(err, response) {
+  this.request.post(url, opts, function(err, response) {
     if (err) return cb(err);
     return cb(null, response);
   });
@@ -2496,7 +2272,7 @@ API.prototype.txConfirmationSubscribe = function(opts, cb) {
  */
 API.prototype.txConfirmationUnsubscribe = function(txid, cb) {
   var url = '/v1/txconfirmations/' + txid;
-  this._doDeleteRequest(url, cb);
+  this.request.delete(url, cb);
 };
 
 /**
@@ -2525,7 +2301,7 @@ API.prototype.getSendMaxInfo = function(opts, cb) {
 
   var url = '/v1/sendmaxinfo/' + qs;
 
-  self._doGetRequest(url, function(err, result) {
+  self.request.get(url, function(err, result) {
     if (err) return cb(err);
     return cb(null, result);
   });
@@ -2549,7 +2325,7 @@ API.prototype.getStatusByIdentifier = function(opts, cb) {
   qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));
   qs.push('walletCheck=' + (opts.walletCheck ? '1' : '0'));
 
-  self._doGetRequest('/v1/wallets/' + opts.identifier + '?' + qs.join('&'), function(err, result) {
+  self.request.get('/v1/wallets/' + opts.identifier + '?' + qs.join('&'), function(err, result) {
     if (err || !result || !result.wallet) return cb(err);
     if (result.wallet.status == 'pending') {
       var c = self.credentials;
