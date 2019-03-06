@@ -73,8 +73,6 @@ You can add your certificates at the config.js using:
 
 # Enabling Regtest Mode
 
-## Steps:
-
 ### bitcore.config.json
 
 1.  Add testnet to bitcore.config.json. Testnet config must match regtest settings.
@@ -122,8 +120,6 @@ blockchainExplorerOpts: {
 > Note: If testing on a PC browser, comment out notificationbroadcaster.js to disable notifications.
 
 ## Creating a wallet on regtest network
-
-### Steps:
 
 1. Set the wallet service URL to
 
