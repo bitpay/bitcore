@@ -26,8 +26,9 @@ function v8network(bwsNetwork) {
   if (
     bwsNetwork == 'testnet' &&
     config.blockchainExplorerOpts.btc.testnet.regtestEnabled
-  )
+  ) {
     return 'regtest';
+  }
   return bwsNetwork;
 }
 
