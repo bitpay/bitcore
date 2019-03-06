@@ -14,7 +14,6 @@ var Mnemonic = require('bitcore-mnemonic');
 var sjcl = require('sjcl');
 var url = require('url');
 var querystring = require('querystring');
-var Stringify = require('json-stable-stringify');
 
 var request = require('superagent');
 

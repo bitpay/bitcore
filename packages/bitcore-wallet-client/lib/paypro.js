@@ -82,7 +82,7 @@ PayPro._browserRequest = function(opts, cb) {
     var response = xhr.response;
     if (xhr.status == 200) {
 console.log('[paypro.js.80:xhr:]',xhr); //TODO
-      return cb(null, Buffer.from(response), xhr.headers);
+      return cb(null, Buffer.from(response), xhr.getAllResponseHeaders());
     } else {
       return cb('HTTP Request Error: '  + xhr.status + ' ' + xhr.statusText + ' ' + response ? response : '');
     }
@@ -208,7 +208,7 @@ console.log('[paypro.js.188:valid:]',valid); //TODO
 
 PayPro.get = function(opts, cb) {
   $.checkArgument(opts && opts.url);
-  opts.trustedKeys = opts.trustedKeys || dlftTrustedKeys;
+  opts.trustedKeys = opts.trustedKeys || dfltTrustedKeys;
 
   var http = getHttp(opts);
   var coin = opts.coin || 'btc';

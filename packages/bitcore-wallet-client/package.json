@@ -29,8 +29,6 @@
     "bitcore-lib": "^8.1.0",
     "bitcore-lib-cash": "^8.1.0",
     "bitcore-mnemonic": "^8.1.0",
-    "bitcore-payment-protocol": "^8.1.0",
-    "json-stable-stringify": "^1.0.0",
     "lodash": "^4.17.11",
     "preconditions": "^2.2.1",
     "sjcl": "1.0.3",
