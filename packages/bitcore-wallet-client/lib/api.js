@@ -71,7 +71,7 @@ API.prototype.initialize = function(opts, cb) {
 API.prototype.dispose = function(cb) {
   var self = this;
   self._disposeNotifications();
-  self._logout(cb);
+  self.request.logout(cb);
 };
 
 API.prototype._fetchLatestNotifications = function(interval, cb) {
@@ -707,14 +707,6 @@ API.prototype.openWallet = function(cb) {
   });
 };
 
-
-API.prototype._login = function(cb) {
-  this.request.post('/v1/login', {}, cb);
-};
-
-API.prototype._logout = function(cb) {
-  this.request.post('/v1/logout', {}, cb);
-};
 
 API._buildSecret = function(walletId, walletPrivKey, coin, network) {
   if (_.isString(walletPrivKey)) {

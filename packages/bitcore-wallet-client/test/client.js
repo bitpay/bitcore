@@ -26,6 +26,7 @@ var Common = require('../lib/common');
 var Constants = Common.Constants;
 var Utils = Common.Utils;
 var Client = require('../lib');
+var Request = require('../lib/request.js');
 var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;
 var TestData = require('./testdata');
@@ -161,12 +162,12 @@ helpers.createAndJoinWallet = function(clients, m, n, opts, cb) {
 helpers.tamperResponse = function(clients, method, url, args, tamper, cb) {
   clients = [].concat(clients);
   // Use first client to get a clean response from server
-  clients[0]._doRequest(method, url, args, false, function(err, result) {
+  clients[0].request.doRequest(method, url, args, false, function(err, result) {
     should.not.exist(err);
     tamper(result);
     // Return tampered data for every client in the list
     _.each(clients, function(client) {
-      client._doRequest = sinon.stub().withArgs(method, url).yields(null, result);
+      client.request.doRequest = sinon.stub().withArgs(method, url).yields(null, result);
     });
     return cb();
   });
@@ -225,7 +226,7 @@ blockchainExplorerMock.setUtxo = function(address, amount, m, confirmations) {
   should.exist(scriptPubKey);
   blockchainExplorerMock.utxos.push({
     txid: Bitcore.crypto.Hash.sha256(new Buffer(Math.random() * 100000)).toString('hex'),
-    vout: Math.floor((Math.random() * 10) + 1),
+    outputIndex: 0,
     amount: amount,
     satoshis: amount *1e8,
     address: address.address,
@@ -414,7 +415,7 @@ describe('client API', function() {
   describe('Server internals', function() {
     it('should allow cors', function(done) {
       clients[0].credentials = {};
-      clients[0]._doRequest('options', '/', {}, false, function(err, x, headers) {
+      clients[0].request.doRequest('options', '/', {}, false, function(err, x, headers) {
         headers['access-control-allow-origin'].should.equal('*');
         should.exist(headers['access-control-allow-methods']);
         should.exist(headers['access-control-allow-headers']);
@@ -507,14 +508,14 @@ describe('client API', function() {
         code: 999,
         message: 'unexpected body'
       };
-      var ret = Client._parseError(body);
+      var ret = Request._parseError(body);
       ret.should.be.an.instanceOf(Error);
       ret.message.should.equal('999: unexpected body');
       done();
     });
 
     it('should handle critical errors (Case5)', function(done) {
-      clients[0].request = helpers.stubRequest('some error');
+      clients[0].request.r = helpers.stubRequest('some error');
       clients[0].createWallet('mywallet', 'creator', 1, 2, {
         network: 'testnet'
       }, function(err, secret) {
@@ -527,7 +528,7 @@ describe('client API', function() {
       var body = {
         code: 'INSUFFICIENT_FUNDS',
       };
-      var ret = Client._parseError(body);
+      var ret = Request._parseError(body);
       ret.should.be.an.instanceOf(Error);
       ret.message.should.equal('Insufficient funds.');
 
@@ -535,7 +536,7 @@ describe('client API', function() {
         code: 'INSUFFICIENT_FUNDS',
         message: 'remote message',
       };
-      var ret = Client._parseError(body);
+      var ret = Request._parseError(body);
       ret.should.be.an.instanceOf(Error);
       ret.message.should.equal('remote message');
 
@@ -543,7 +544,7 @@ describe('client API', function() {
         code: 'MADE_UP_ERROR',
         message: 'remote message',
       };
-      var ret = Client._parseError(body);
+      var ret = Request._parseError(body);
       ret.should.be.an.instanceOf(Error);
       ret.message.should.equal('MADE_UP_ERROR: remote message');
       done();
@@ -1120,6 +1121,8 @@ describe('client API', function() {
           _.map(notifications, 'type').should.deep.equal(['NewCopayer', 'WalletComplete']);
           clock.tick(2000);
           notifications = [];
+
+
           clients[0]._fetchLatestNotifications(5, function() {
             notifications.length.should.equal(0);
             clock.tick(2000);
@@ -1166,7 +1169,7 @@ describe('client API', function() {
       });
     });
     it('should encrypt wallet name', function(done) {
-      var spy = sinon.spy(clients[0], '_doPostRequest');
+      var spy = sinon.spy(clients[0].request, 'post');
       clients[0].seedFromRandomWithMnemonic();
       clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, function(err, secret) {
         should.not.exist(err);
@@ -1182,7 +1185,7 @@ describe('client API', function() {
       });
     });
     it('should encrypt copayer name in wallet creation', function(done) {
-      var spy = sinon.spy(clients[0], '_doPostRequest');
+      var spy = sinon.spy(clients[0].request, 'post');
       clients[0].seedFromRandomWithMnemonic();
       clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, function(err, secret) {
         should.not.exist(err);
@@ -1208,7 +1211,7 @@ describe('client API', function() {
         network: 'livenet',
         id: '123',
       };
-      clients[0]._doPostRequest('/v2/wallets/', args, function(err, wallet) {
+      clients[0].request.post('/v2/wallets/', args, function(err, wallet) {
         should.not.exist(err);
         var c = clients[0].credentials;
 
@@ -1223,7 +1226,7 @@ describe('client API', function() {
         };
         var hash = Utils.getCopayerHash(args.name, args.xPubKey, args.requestPubKey);
         args.copayerSignature = Utils.signMessage(hash, wpk);
-        clients[0]._doPostRequest('/v2/wallets/123/copayers', args, function(err, wallet) {
+        clients[0].request.post('/v2/wallets/123/copayers', args, function(err, wallet) {
           should.not.exist(err);
           clients[0].openWallet(function(err) {
             should.not.exist(err);
@@ -1414,7 +1417,9 @@ describe('client API', function() {
           status.wallet.copayers[0].xPubKey = status.wallet.copayers[1].xPubKey;
         }, function() {
           openWalletStub.restore();
+
           clients[1].openWallet(function(err, x) {
+
             err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
@@ -2550,7 +2555,7 @@ describe('client API', function() {
         message: 'some message',
         feePerKb: 100e2,
       };
-      var spy = sinon.spy(clients[0], '_doPostRequest');
+      var spy = sinon.spy(clients[0].request, 'post');
       clients[0].createTxProposal(opts, function(err, x) {
         should.not.exist(err);
         spy.calledOnce.should.be.true;
@@ -2565,7 +2570,7 @@ describe('client API', function() {
       };
       helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
         should.not.exist(err);
-        var spy = sinon.spy(clients[1], '_doPostRequest');
+        var spy = sinon.spy(clients[1].request, 'post');
         clients[1].rejectTxProposal(x, 'rejection comment', function(err, tx1) {
           should.not.exist(err);
           spy.calledOnce.should.be.true;
@@ -3845,7 +3850,7 @@ describe('client API', function() {
       });
     });
     it('should not send note body in clear text', function(done) {
-      var spy = sinon.spy(clients[0], '_doPutRequest');
+      var spy = sinon.spy(clients[0].request, 'post');
       clients[0].editTxNote({
         txid: '123',
         body: 'a random note'
@@ -4368,7 +4373,7 @@ describe('client API', function() {
               recoveryClient.getStatus({}, function(err, status) {
                 should.exist(err);
                 err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
-                var spy = sinon.spy(recoveryClient, '_doPostRequest');
+                var spy = sinon.spy(recoveryClient, 'post');
                 recoveryClient.recreateWallet(function(err) {
                   should.not.exist(err);
 
@@ -5302,7 +5307,7 @@ describe('client API', function() {
       });
 
       it('should add access with copayer name', function(done) {
-        var spy = sinon.spy(clients[0], '_doPutRequest');
+        var spy = sinon.spy(clients[0].request, 'post');
         clients[0].addAccess({
           name: 'pepe',
         }, function(err, x, key) {

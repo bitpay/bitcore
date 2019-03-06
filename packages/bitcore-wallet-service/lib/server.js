@@ -1956,7 +1956,6 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
   //log.debug('Selecting inputs for a ' + Utils.formatAmountInBtc(txp.getTotalAmount()) + ' txp');
 
   self._getUtxosForCurrentWallet({}, function(err, utxos) {
-
     if (err) return cb(err);
 
     var totalAmount;
@@ -2380,16 +2379,13 @@ WalletService.prototype.createTx = function(opts, cb) {
             next();
           },
           function(next) {
-
             self._selectTxInputs(txp, opts.utxosToExclude, next);
           },
           function(next) {
-
             if (!changeAddress || wallet.singleAddress || opts.dryRun) return next();
             self._store(wallet, txp.changeAddress, next, true);
           },
           function(next) {
-
             if (opts.dryRun) return next();
 
             if (txp.coin == 'bch') {

@@ -1,5 +1,6 @@
 const _ = require('lodash');
 const request = require('superagent');
+const async = require('async');
 const Package = require('../package.json');
 const log = require('./log');
 const util = require('util');
@@ -60,8 +61,6 @@ Request._signRequest = function(method, url, args, privKey) {
  * @param {Callback} cb
  */
 Request.prototype.doRequest = function(method, url, args, useSession, cb) {
-console.log('[request.js.52:url:]',url); //TODO
-console.log('[request.js.52:method:]',method); //TODO
   var self = this;
 
   var headers = self.getHeaders(method, url, args);
@@ -102,7 +101,6 @@ console.log('[request.js.52:method:]',method); //TODO
   r.timeout(self.timeout);
 
   r.end(function(err, res) {
-console.log('[request.js.94:err:]',err); //TODO
     if (!res) {
       return cb(new Errors.CONNECTION_ERROR);
     }
@@ -206,6 +204,16 @@ Request.prototype.getWithLogin = function(url, cb) {
   url += 'r=' + _.random(10000, 99999);
   return this.doRequestWithLogin('get', url, {}, cb);
 };
+
+
+Request.prototype._login = function(cb) {
+  this.post('/v1/login', {}, cb);
+};
+
+Request.prototype.logout = function(cb) {
+  this.post('/v1/logout', {}, cb);
+};
+
 
 /**
  * Do an HTTP request
