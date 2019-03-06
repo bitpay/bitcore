@@ -23,7 +23,7 @@ var Constants = Common.Constants,
 function v8network(bwsNetwork) {
   if (bwsNetwork == 'livenet') return 'mainnet';
   // Uncomment to turn on regtest
-  if (bwsNetwork == 'testnet') return 'regtest';
+  // if (bwsNetwork == 'testnet') return 'regtest';
   return bwsNetwork;
 }
 
