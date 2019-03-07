@@ -120,14 +120,23 @@ console.log('[paypro.js.173:identity:]',identity); //TODO
 PayPro.runRequest = function (opts, cb) {
   $.checkArgument(opts.network, 'should pass network');
 
+console.log('[paypro.js.122]'); //TODO
   PayPro.request(opts, (err, res, body) => {
+console.log('[paypro.js.124:body:]',body); //TODO
     if (err) return cb(err);
     let ret;
+
+    if (!res || res.statusCode != 200) {
+console.log('[paypro.js.128:res:]',res); //TODO
+      let m  = res ? (res.statusMessage || res.statusCode) : '';
+      return cb({message: 'Could not retrieve payment: ' + m} );
+    }
 
     try {
       ret = JSON.parse(body.toString());
     } catch (e)  {
-      return cb({message: 'Could not retrieve payment: ' + body.toString()});
+      try { body = body.toString(); } catch (e) {};
+      return cb({message: 'Could not retrieve payment: ' +  body });
     }
 
 
@@ -137,10 +146,12 @@ PayPro.runRequest = function (opts, cb) {
     if (opts.noVerify) 
       return cb(null, body);
 
+console.log('[paypro.js.143]'); //TODO
     if (!res.headers.digest) {
       return cb(new Error('Digest missing from response headers'));
     }
 
+console.log('[paypro.js.148]'); //TODO
     //
     // Verification
     //
@@ -180,6 +191,7 @@ PayPro.get = function(opts, cb) {
   opts.network = opts.network || 'livenet';
 
   PayPro.runRequest(opts, function(err, data) {
+console.log('[paypro.js.182:data:]',err,data); //TODO
     if (err) return cb(err);
 
     var ret = {};
