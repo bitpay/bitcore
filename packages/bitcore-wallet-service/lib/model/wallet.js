@@ -3,11 +3,13 @@
 var _ = require('lodash');
 var util = require('util');
 var log = require('npmlog');
+const Stealth = require('bitcore-stealth');
 var $ = require('preconditions').singleton();
 var Uuid = require('uuid');
 
 var Address = require('./address');
 var Copayer = require('./copayer');
+var StealthAddress = require('./stealthaddress');
 var AddressManager = require('./addressmanager');
 var Bitcore = {
   'xvg': require('bitcore-lib'),
@@ -62,6 +64,8 @@ Wallet.create = function(opts) {
 
   // x.nativeCashAddr opts is only for testing
   x.nativeCashAddr = _.isUndefined(opts.nativeCashAddr) ? (x.coin == 'bch' ? true : null) : opts.nativeCashAddr;
+  
+  x.stealth = null; 
 
   return x;
 };
@@ -99,6 +103,10 @@ Wallet.fromObj = function(obj) {
   x.beAuthPublicKey2 = obj.beAuthPublicKey2; 
 
   x.nativeCashAddr = obj.nativeCashAddr;
+
+  if (obj.stealth) {
+    x.stealth = StealthAddress.fromObj(obj.stealth); 
+  }
 
   return x;
 };

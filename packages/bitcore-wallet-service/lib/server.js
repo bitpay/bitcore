@@ -18,6 +18,7 @@ var Bitcore_ = {
   xvg: Bitcore,
   bch: require('bitcore-lib-cash')
 };
+const Stealth = require('bitcore-stealth');
 
 var Common = require('./common');
 var Utils = Common.Utils;
@@ -2067,14 +2068,19 @@ WalletService.prototype._canCreateTx = function(cb) {
 };
 
 
-WalletService.prototype._validateAddr = function(wallet, inaddr, opts) {
+WalletService.prototype._validateAddr = function(wallet, inaddr, opts, output) {
   var A = Bitcore_[wallet.coin].Address;
 
   var addr = {};
   try {
     addr = new A(inaddr);
   } catch (ex) {
-    return Errors.INVALID_ADDRESS;
+    try {
+      addr = new Stealth.Address(inaddr);
+      output.stealth = true;
+    } catch (ex) {
+      return Errors.INVALID_ADDRESS;
+    }
   }
   if (addr.network.toString() != wallet.network) {
     return Errors.INCORRECT_ADDRESS_NETWORK;
@@ -2098,14 +2104,14 @@ WalletService.prototype._validateOutputs = function(opts, wallet, cb) {
     var output = opts.outputs[i];
     output.valid = false;
 
-    let addrErr = self._validateAddr(wallet, output.toAddress, opts);
-    if (addrErr) return addrErr;
-
-    
+    output.stealth = false;
 
     if (!checkRequired(output, ['toAddress', 'amount'])) {
       return new ClientError('Argument missing in output #' + (i + 1) + '.');
     }
+    
+    let addrErr = self._validateAddr(wallet, output.toAddress, opts, output);
+    if (addrErr) return addrErr;
 
     if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount <= 0) {
       return new ClientError('Invalid amount');
@@ -2202,7 +2208,7 @@ WalletService.prototype._validateAndSanitizeTxOpts = function(wallet, opts, cb) 
       });
       opts.returnOrigAddrOutputs = false;
       _.each(opts.outputs, (x) => {
-        if (!x.toAddress) return;
+        if (!x.toAddress || x.stealth) return;
 
         let newAddr;
         try {

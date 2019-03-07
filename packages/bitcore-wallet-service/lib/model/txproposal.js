@@ -19,6 +19,7 @@ var Constants = Common.Constants,
 
 var TxProposalLegacy = require('./txproposal_legacy');
 var TxProposalAction = require('./txproposalaction');
+const Stealth = require('bitcore-stealth');
 
 function TxProposal() {};
 
@@ -44,12 +45,27 @@ TxProposal.create = function(opts) {
   x.payProUrl = opts.payProUrl;
   x.changeAddress = opts.changeAddress;
   x.outputs = _.map(opts.outputs, function(output) {
-    return _.pick(output, ['amount', 'toAddress', 'message', 'script']);
+    return _.pick(output, ['amount', 'toAddress', 'message', 'script', 'stealth', 'ephemeralPrivKey']);
   });
-  x.outputOrder = _.range(x.outputs.length + 1);
-  if (!opts.noShuffleOutputs) {
-    x.outputOrder = _.shuffle(x.outputOrder);
+  let stealthAddresses =  _.filter(x.outputs,'stealth');
+  if (stealthAddresses.length) {
+    // TODO shouffle here also...
+    x.outputOrder = _.range(x.outputs.length + stealthAddresses.length + 1);
+
+    // Add ephemeral private key 
+    _.each(stealthAddresses, (i) => {
+      i.ephemeralPrivKey = Bitcore[x.coin].PrivateKey.fromRandom(x.network).toString();
+      var ephemeral = Bitcore[x.coin].PrivateKey(ephemeral);
+      var paymentAddress = new Stealth.Address(i.toAddress).toPaymentAddress(ephemeral);
+      i.toAddress = paymentAddress.toString();
+    });
+  } else{
+    x.outputOrder = _.range(x.outputs.length + 1);
+    if (!opts.noShuffleOutputs) {
+      x.outputOrder = _.shuffle(x.outputOrder);
+    }
   }
+
   x.walletM = opts.walletM;
   x.walletN = opts.walletN;
   x.requiredSignatures = x.walletM;
@@ -144,7 +160,8 @@ TxProposal.prototype._updateStatus = function() {
 TxProposal.prototype._buildTx = function() {
   var self = this;
 
-  var t = new Bitcore[self.coin].Transaction();
+  // var t = new Bitcore[self.coin].Transaction();
+  var t = new Stealth.Transaction();
   t.timestamp = this.timestamp;
 
   $.checkState(Utils.checkValueInCollection(self.addressType, Constants.SCRIPT_TYPES));
@@ -169,7 +186,7 @@ TxProposal.prototype._buildTx = function() {
         satoshis: o.amount
       }));
     } else {
-      t.to(o.toAddress, o.amount);
+      t.to(o.toAddress, o.amount, o.ephemeralPrivKey, o.stealth);
     }
   });
 
