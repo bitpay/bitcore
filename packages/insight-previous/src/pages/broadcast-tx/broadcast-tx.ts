@@ -75,7 +75,7 @@ export class BroadcastTxPage {
   private presentToast(success: boolean, response: any): void {
     const message: string = success
       ? 'Transaction successfully broadcast. Trasaction id: ' +
-      JSON.parse(response._body).txid
+        JSON.parse(response._body).txid
       : 'An error occurred: ' + response._body;
     if (this.toast) {
       this.toast.dismiss();

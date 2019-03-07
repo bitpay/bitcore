@@ -55,11 +55,7 @@ export class MessagesPage {
     this.messageForm = formBuilder.group({
       address: [
         '',
-        Validators.compose([
-          Validators.pattern(/^[0-9A-Fa-f]+$/),
-          Validators.minLength(1),
-          Validators.required
-        ])
+        Validators.compose([Validators.minLength(1), Validators.required])
       ],
       signature: [
         '',
