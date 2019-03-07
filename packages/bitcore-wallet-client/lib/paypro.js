@@ -26,6 +26,7 @@ const MAX_FEE_PER_KB = 500000;
  * Verifies the signature of a given payment request is both valid and from a trusted key
  */
 PayPro._verify = function (requestUrl, headers, network, trustedKeys, callback) {
+
   let hash = headers.digest.split('=')[1];
   let signature = headers.signature;
   let signatureType = headers['x-signature-type'];
@@ -84,13 +85,29 @@ console.log('[paypro.js.173:identity:]',identity); //TODO
     return callback(new Error(`The key on the response is not trusted for transactions on the '${network}' network`));
   }
 
+
+  var hashbuf = Buffer.from(hash,'hex');
+  let sigbuf = Buffer.from(signature,'hex'); 
+
+  let s_r = new Buffer(32); 
+  let s_s = new Buffer(32); 
+
+  sigbuf.copy(s_r,0,0); 
+  sigbuf.copy(s_s,0,32);
+
+  let s_rBN = Bitcore.crypto.BN.fromBuffer(s_r); 
+  let s_sBN = Bitcore.crypto.BN.fromBuffer(s_s); 
+
+  let pub = Bitcore.PublicKey.fromString(keyData.publicKey);
+
+  let sig = new Bitcore.crypto.Signature(); 
+  sig.set({r: s_rBN, s: s_sBN});
+
   let valid = Bitcore.crypto.ECDSA.verify(
-    Buffer.from(hash, 'hex'),
-    Buffer.from(signature, 'hex'),
-    Buffer.from(keyData.publicKey, 'hex'),
-    'little',
+    hashbuf, 
+    sig, 
+    pub
   );
-console.log('[paypro.js.188:valid:]',valid); //TODO
 
   if (!valid) {
     return callback(new Error('Response signature invalid'));
@@ -113,29 +130,34 @@ PayPro.runRequest = function (opts, cb) {
       return cb({message: 'Could not retrieve payment: ' + body.toString()});
     }
 
+
     // read and check
     ret.url = opts.url;
+
+    if (opts.noVerify) 
+      return cb(null, body);
 
     if (!res.headers.digest) {
       return cb(new Error('Digest missing from response headers'));
     }
 
+    //
+    // Verification
+    //
+    
     // Step 1: Check digest from header
     let digest = res.headers.digest.split('=')[1];
-console.log('[paypro.js.120:digest:]',digest); //TODO
     let hash = Bitcore.crypto.Hash.sha256(Buffer.from(body,'utf8')).toString('hex');
 
     if (digest !== hash) {
       return cb(new Error(`Response body hash does not match digest header. Actual: ${hash} Expected: ${digest}`));
     }
-
     // Step 2: verify digest's signature
     PayPro._verify(opts.url, res.headers, opts.network, opts.trustedKeys, (err) => {
-console.log('[paypro.js.243:err:]',err); //TODO
       if (err) return cb(err);
-      ret.verified= 1;
-console.log('[paypro.js.131:ret:]',ret); //TODO
 
+      let ret = body;
+      ret.verified= 1;
       return cb(null, ret);
     });
   });
@@ -158,10 +180,18 @@ PayPro.get = function(opts, cb) {
   opts.network = opts.network || 'livenet';
 
   PayPro.runRequest(opts, function(err, data) {
-console.log('[paypro.js.160:err:]',err); //TODO
-console.log('[paypro.js.160:data:]',data); //TODO
     if (err) return cb(err);
-// TODO TODO 
+
+    var ret = {};
+    try {
+     data = JSON.parse(data);
+    } catch (e) {
+      return cb(new Error('Could not payment request:' + data));
+    }
+
+    // otherwise, it returns err.
+    ret.verified = true; 
+
     // network
     if(data.network == 'test') 
       ret.network = 'testnet';
@@ -177,7 +207,6 @@ console.log('[paypro.js.160:data:]',data); //TODO
       return cb(new Error('Currency mismatch. Expecting:' + COIN));
 
     ret.coin = coin;
-
 
     //fee
     if ( data.requiredFeeRate > MAX_FEE_PER_KB)
@@ -235,6 +264,9 @@ PayPro.send = function(opts, cb) {
     "weightedSize": size,
   });
 
+  // Do not verify verify-payment message's response
+  opts.noVerify = true;
+
   // verify request
   PayPro.runRequest(opts, function(err, rawData) {
     if (err) {
@@ -253,6 +285,10 @@ PayPro.send = function(opts, cb) {
         opts.rawTx,
       ],
     });
+
+
+    // Do not verify payment message's response
+    opts.noVerify = true;
 
     PayPro.runRequest(opts, function(err, rawData) {
       if (err) {
