@@ -38,7 +38,6 @@ var BASE_URL = 'http://localhost:3232/bws/api';
 function API(opts) {
   opts = opts || {};
 
-  this.payProHttp = null; // Only for testing
   this.doNotVerifyPayPro = opts.doNotVerifyPayPro;
   this.timeout = opts.timeout || 50000;
   this.logLevel = opts.logLevel || 'silent';
@@ -1423,8 +1422,11 @@ API.prototype.fetchPayPro = function(opts, cb) {
  
   PayPro.get({
     url: opts.payProUrl,
-    http: this.payProHttp,
     coin: this.credentials.coin || 'btc',
+    network: this.credentials.network || 'livenet',
+
+    // for testing
+    request: this.request,
   }, function(err, paypro) { 
     if (err)
       return cb(err);
@@ -1705,8 +1707,11 @@ API.prototype.getPayPro = function(txp, cb) {
 
   PayPro.get({
     url: txp.payProUrl,
-    http: self.payProHttp,
     coin: txp.coin || 'btc',
+    network: txp.network || 'livenet',
+
+    // for testing
+    request: self.request,
   }, function(err, paypro) {
     if (err) return cb(new Error('Cannot check transaction now:' + (err.message? err.message : err)));
     return cb(null, paypro);
@@ -1962,7 +1967,6 @@ API.prototype.broadcastTxProposal = function(txp, cb) {
       self._applyAllSignatures(txp, t);
 
       PayPro.send({
-        http: self.payProHttp,
         url: txp.payProUrl,
         amountSat: txp.amount,
         rawTxUnsigned: t_unsigned.uncheckedSerialize(),
@@ -1972,6 +1976,10 @@ API.prototype.broadcastTxProposal = function(txp, cb) {
           disableDustOutputs: true
         }),
         coin: txp.coin || 'btc',
+        network: txp.network || 'livenet',
+
+        // for testing
+        request: self.request,
       }, function(err, ack, memo) {
         if (err) 
           return cb(err);

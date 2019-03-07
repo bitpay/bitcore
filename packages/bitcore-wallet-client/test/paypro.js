@@ -17,18 +17,7 @@ describe('paypro', function() {
     // Stub time before cert expiration at Mar 27 2016
     clock = sinon.useFakeTimers(1459105693843);
 
-    xhr = {};
-    headers = {};
-    xhr.onCreate = function(req) {};
-    xhr.open = function(method, url) {};
-    xhr.setRequestHeader = function(k, v) {
-      headers[k]=v;
-    };
-    xhr.getAllResponseHeaders = function() {
 
-      return 'content-type: test';
-    };
-    xhr.send = function() {
       xhr.response = Buffer.from(TestData.payProJsonHex[serverCoin],'hex');
       xhr.onload();
     };

@@ -1814,7 +1814,7 @@ describe('client API', function() {
   describe('Push notifications', function() {
     it('should do a post request', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0]._doRequest = sinon.stub().yields(null, {
+        clients[0].request.doRequest = sinon.stub().yields(null, {
           statusCode: 200,
         });
         clients[0].pushNotificationsSubscribe(function(err, res) {
@@ -1828,7 +1828,7 @@ describe('client API', function() {
 
     it('should do a delete request', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0]._doRequest = sinon.stub().yields(null);
+        clients[0].request.doRequest = sinon.stub().yields(null);
         clients[0].pushNotificationsUnsubscribe('123', function(err) {
           should.not.exist(err);
           done();
@@ -1840,7 +1840,7 @@ describe('client API', function() {
   describe('Tx confirmations', function() {
     it('should do a post request', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0]._doRequest = sinon.stub().yields(null, {
+        clients[0].request.doRequest = sinon.stub().yields(null, {
           statusCode: 200,
         });
         clients[0].txConfirmationSubscribe({
@@ -1856,7 +1856,7 @@ describe('client API', function() {
 
     it('should do a delete request', function(done) {
       helpers.createAndJoinWallet(clients, 1, 1, function() {
-        clients[0]._doRequest = sinon.stub().yields(null);
+        clients[0].request.doRequest = sinon.stub().yields(null);
         clients[0].txConfirmationUnsubscribe('123', function(err) {
           should.not.exist(err);
           done();
@@ -2823,7 +2823,7 @@ describe('client API', function() {
   });
 
 
-  describe('Payment Protocol', function() {
+  describe.only('Payment Protocol', function() {
     var http, PP, DATA;
     beforeEach((done) => {
      db.dropDatabase(function(err) {
@@ -5732,12 +5732,12 @@ describe('client API', function() {
 
   });
 
-  describe('_doRequest', function() {
+  describe('doRequest', function() {
     it('should handle connection error', function(done) {
       var client = new Client();
       client.credentials = {};
       client.request = helpers.stubRequest(null, {});
-      client._doRequest('get', 'url', {}, false, function(err, body, header) {
+      client.request.doRequest('get', 'url', {}, false, function(err, body, header) {
         should.exist(err);
         should.not.exist(body);
         should.not.exist(header);
@@ -5753,7 +5753,7 @@ describe('client API', function() {
         status: 200,
         body: '{"error":"read ECONNRESET"}',
       });
-      client._doRequest('get', 'url', {}, false, function(err, body, header) {
+      client.request.doRequest('get', 'url', {}, false, function(err, body, header) {
         should.exist(err);
         should.not.exist(body);
         should.not.exist(header);

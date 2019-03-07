@@ -16,7 +16,9 @@ const JSON_PAYMENT_ACK_CONTENT_TYPE = 'application/payment-ack';
 const dfltTrustedKeys = require('../util/JsonPaymentProtocolKeys.js');
 
 
-var PayPro = {};
+var PayPro = {
+  request: request
+};
 const MAX_FEE_PER_KB = 500000;
 
 
@@ -95,16 +97,18 @@ console.log('[paypro.js.188:valid:]',valid); //TODO
   return callback(null, keyData.owner);
 };
 
-function runRequest(opts, cb) {
 
-  request(opts, (err, res, body) => {
+PayPro.runRequest = function (opts, cb) {
+  $.checkArgument(opts.network, 'should pass network');
+
+  PayPro.request(opts, (err, res, body) => {
     if (err) return cb(err);
     let ret;
 
     try {
       ret = JSON.parse(body.toString());
     } catch (e)  {
-      return cb({message: 'Could not parse payment request:' + e});
+      return cb({message: 'Could not retrieve payment: ' + body.toString()});
     }
 
     // read and check
@@ -149,9 +153,11 @@ PayPro.get = function(opts, cb) {
     'Content-Type': 'application/octet-stream',
   };
   opts.method = 'GET';
-console.log('[paypro.js.151:opts:]',opts); //TODO
+  opts.network = opts.network || 'livenet';
 
-  runRequest(opts, function(err, data) {
+  PayPro.runRequest(opts, function(err, data) {
+console.log('[paypro.js.160:err:]',err); //TODO
+console.log('[paypro.js.160:data:]',data); //TODO
     if (err) return cb(err);
 // TODO TODO 
     // network
@@ -215,6 +221,7 @@ PayPro.send = function(opts, cb) {
   var coin = opts.coin || 'btc';
   var COIN = coin.toUpperCase();
 
+  opts.network = opts.network || 'livenet';
   opts.method = 'POST';
   opts.headers = opts.headers || {
     'Content-Type': JSON_PAYMENT_VERIFY_CONTENT_TYPE,
@@ -227,7 +234,7 @@ PayPro.send = function(opts, cb) {
   });
 
   // verify request
-  request(opts, function(err, rawData) {
+  PayPro.runRequest(opts, function(err, rawData) {
     if (err) {
       console.log('Error at verify-payment:', err, opts);
       return cb(err);
@@ -245,7 +252,7 @@ PayPro.send = function(opts, cb) {
       ],
     });
 
-    request(opts, function(err, rawData) {
+    PayPro.runRequest(opts, function(err, rawData) {
       if (err) {
         console.log('Error at payment:', err, opts);
         return cb(err);
