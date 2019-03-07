@@ -1,14 +1,65 @@
 head-nav {
-  ion-title {
-    &.logo-header {
-      .toolbar-title{
-        width: auto;
-        cursor: pointer;
-        color: white;
-        font-weight: 700;
-        font-style: italic;
-        font-size: 2em;
+  .toolbar-content {
+    display: grid;
+    grid-template-columns: 20% 1fr 20%;
+    justify-items: stretch;
+    align-items: center;
+      ion-title {
+        justify-self: start;
+        &.logo-header {
+          .toolbar-title{
+            width: auto;
+            cursor: pointer;
+            color: white;
+            font-weight: 700;
+            font-style: italic;
+            font-size: 2em;
+            padding-left: 0px;
+          }
+        }
       }
+      ion-buttons {
+        justify-self: end;
+      }
+      .search{
+        justify-self: center;
+        @media (min-width: map-get($grid-breakpoints, lg)) {
+          display: inline-block;
+        }
+        
+        display: none;
+        
+        vertical-align: middle;
+        input {
+          width: 500px;
+          margin-top: 4px;
+          padding: 9px 12px;
+          color: color($colors, light);
+          background-color: #7CAD23;
+          border: 0;
+          box-shadow: 1px 1px 0 0 rgba(255,255,255,.41), inset 1px 1px 3px 0 rgba(0,0,0,.10);
+        }
+        
+        ::-webkit-input-placeholder {
+          color: #BCDF7E;
+          font-style: italic;
+          font-weight: 100;
+        }
+        
+        ::-moz-placeholder {
+          color: #BCDF7E;
+          font-family: 'Ubuntu', sans-serif;
+          font-weight: 100;
+        }
+      }
+  }
+  .mobile-searchbar > .toolbar-content {
+    display: grid;
+    grid-template-columns: 100%;
+  }
+  .search-button {
+    @media (min-width: map-get($grid-breakpoints, lg)) {
+      display: none;
     }
   }
 }

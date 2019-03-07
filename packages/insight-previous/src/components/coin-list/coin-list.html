@@ -1,7 +1,4 @@
-<div *ngIf="loading">
-  <ion-spinner name="crescent"></ion-spinner>
-</div>
-
+<loader *ngIf="loading" [type]="'tx-list'"></loader>
 
 <div *ngIf="!loading">
   <ion-grid>
@@ -11,8 +8,13 @@
       </ion-col>
     </ion-row>
     <ion-row *ngIf="limit < coins.length">
-      <ion-col col-12 text-center>
-        <button ion-button small (click)="loadMore()">Load More</button>
+      <ion-infinite-scroll (ionInfinite)="loadMore($event)">
+        <loader [type]="'tx-list'"></loader>
+      </ion-infinite-scroll>
+    </ion-row>
+    <ion-row *ngIf="coins.length === 0" class="no-txs">
+      <ion-col col-12>
+        There are no transactions involving this address.
       </ion-col>
     </ion-row>
   </ion-grid>

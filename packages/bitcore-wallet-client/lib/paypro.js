@@ -1,4 +1,5 @@
 var $ = require('preconditions').singleton();
+const URL = require('url');
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
@@ -10,13 +11,22 @@ var PayPro = {};
 
 PayPro._nodeRequest = function(opts, cb) {
   opts.agent = false;
+
   var http = opts.httpNode || (opts.proto === 'http' ? require("http") : require("https"));
 
-  var fn = opts.method == 'POST' ? 'post' : 'get';
+  const url =  URL.parse(opts.url);
+  let ropts = {
+    headers: opts.headers,
+    method: opts.method || 'GET',
+    hostname: url.host,
+    port:url.port ||  (opts.proto === 'http' ? 80 : 443),
+    path:url.path,
+    protocol: url.protocol,
+    agent: false,
+  };
 
-  http[fn](opts, function(res) {
+  var req  = http.request(ropts, function(res) {
     var data = []; // List of Buffer objects
-
 
     if (res.statusCode != 200)
       return cb(new Error('HTTP Request Error: '  + res.statusCode + ' ' + res.statusMessage + ' ' +  ( data ? data : '' )  ));
@@ -29,6 +39,12 @@ PayPro._nodeRequest = function(opts, cb) {
       return cb(null, data);
     });
   });
+
+  req.on("error", function(error) {
+    return cb(error);
+  });
+
+  req.end();
 };
 
 PayPro._browserRequest = function(opts, cb) {

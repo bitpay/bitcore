@@ -3,8 +3,6 @@ import { ApiProvider } from '../api/api';
 
 @Injectable()
 export class CurrencyProvider {
-  public defaultCurrency: string;
-  public selectedCurrency: string;
   public currencySymbol: string;
   public factor = 1;
   public bitstamp: number;
@@ -13,7 +11,7 @@ export class CurrencyProvider {
   public explorers: any = [];
 
   constructor(private apiProvider: ApiProvider) {
-    this.currencySymbol = this.apiProvider.networkSettings.value.selectedNetwork.chain.toUpperCase();
+    this.setCurrency();
   }
 
   public roundFloat(aFloat: number, decimalPlaces: number): number {
@@ -23,8 +21,23 @@ export class CurrencyProvider {
     );
   }
 
-  public setCurrency(currency: string): void {
-    this.selectedCurrency = currency;
+  public setCurrency(currency?: string): void {
+    if (!currency) {
+      currency =
+        localStorage.getItem('insight-currency') ||
+        this.apiProvider.networkSettings.value.selectedNetwork.chain.toUpperCase();
+    }
+
+    if (currency !== 'USD') {
+      const chain = this.apiProvider.networkSettings.value.selectedNetwork.chain.toUpperCase();
+      this.currencySymbol = currency.startsWith('m') ? 'm' + chain : chain;
+    } else {
+      this.currencySymbol = 'USD';
+    }
+  }
+
+  public getCurrency(): string {
+    return this.currencySymbol;
   }
 
   public getConvertedNumber(value: number): number {
@@ -67,7 +80,10 @@ export class CurrencyProvider {
 
     if (this.currencySymbol === 'USD') {
       response = this.roundFloat(value * this.factor, 2);
-    } else if (this.currencySymbol === 'm' + this.defaultCurrency) {
+    } else if (
+      this.currencySymbol ===
+      'm' + this.apiProvider.networkSettings.value.selectedNetwork.chain
+    ) {
       this.factor = 1000;
       response = this.roundFloat(value * this.factor, 5);
     } else if (this.currencySymbol === 'bits') {

@@ -1,13 +1,14 @@
 {
   "name": "@bitpay/insight-previous",
   "description": "A blockchain explorer for Bitcore",
-  "version": "8.0.0",
+  "version": "8.1.0",
   "repository": "git://github.com/bitpay/bitcore.git",
   "bugs": {
     "url": "https://github.com/bitpay/bitcore/issues"
   },
   "homepage": "https://github.com/bitpay/bitcore",
   "license": "MIT",
+  "private": true,
   "keywords": [
     "insight",
     "insight-ui",
@@ -46,8 +47,8 @@
     "@angular/platform-browser-dynamic": "4.4.7",
     "angular2-moment": "1.6.0",
     "angular2-qrcode": "2.0.1",
-    "bitcore-lib": "0.16.0",
-    "bitcore-lib-cash": "0.19.0",
+    "bitcore-lib": "8.1.0",
+    "bitcore-lib-cash": "8.1.0",
     "ionic-angular": "3.9.2",
     "ionicons": "3.0.0",
     "lodash": "4.17.11",

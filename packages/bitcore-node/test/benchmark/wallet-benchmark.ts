@@ -1,21 +1,23 @@
+import * as _ from 'lodash';
 import { CoinStorage } from '../../src/models/coin';
 import { Wallet } from 'bitcore-client';
 import { Storage } from '../../src/services/storage';
 
 async function getAllAddressesFromBlocks(start, end) {
   if (!Storage.connected) await Storage.start({});
-  const addresses = await CoinStorage.collection
+  const coins = await CoinStorage.collection
     .find({ chain: 'BTC', network: 'mainnet', mintHeight: { $gte: start, $lte: end } })
     .project({ address: 1 })
     .toArray();
-  return Object.keys(addresses.reduce((prev, a) => Object.assign(prev, { [a.address]: a.address }, {})));
+  const uniqueAddresses = _.uniq(coins.map(c => c.address));
+  return uniqueAddresses;
 }
 
-async function createWallet(addresses: string[], iteration) {
+export async function createWallet(addresses: string[], iteration, networkName?: string) {
   const walletName = 'Benchmark Wallet' + iteration;
   const password = 'iamsatoshi';
   const chain = 'BTC';
-  const network = 'mainnet';
+  const network = networkName || 'mainnet';
   const baseUrl = 'http://localhost:3000/api';
   let lockedWallet: Wallet;
 
@@ -115,10 +117,12 @@ async function bench(iteration = 0, startBlock = 0, endBlock = 100) {
   await benchmarkComplete;
 }
 
-async function main() {
-  for (let i = 1; i < 6; i++) {
-    await bench(i, 0, Math.pow(10, i));
+if(require.main === module ){
+  async function main() {
+    for (let i = 1; i < 6; i++) {
+      await bench(i, 0, Math.pow(10, i));
+    }
+    process.exit(0);
   }
-  process.exit(0);
+  main();
 }
-main();

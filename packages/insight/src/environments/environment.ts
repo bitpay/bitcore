@@ -18,6 +18,8 @@ export const environment = {
    */
   apiPrefix: '/api',
   production: false,
+  debugRouting: false,
+  pollingRateMilliseconds: 20 * 1000,
   ...{
     loggingSettings: {
       ...environmentProd.loggingSettings,

@@ -1,5 +1,5 @@
 import { StateStorage } from '../../src/models/state';
-import * as sinon from 'sinon';
+import sinon from 'sinon';
 import { BlockStorage } from '../../src/models/block';
 import { TransactionStorage } from '../../src/models/transaction';
 import { CoinStorage } from '../../src/models/coin';
@@ -57,4 +57,11 @@ export function mockStorage(toReturn, collectionMethods = {}) {
     collection: sinon.stub().returns(mockCollection(toReturn, collectionMethods))
   } as any;
   return Storage;
+}
+
+export function mockModel(collectionName: string, toReturn: any, collectionMethods = {}) {
+  const isStubbed: sinon.SinonStub = Storage.db!.collection as sinon.SinonStub;
+  if (isStubbed.withArgs) {
+    isStubbed.withArgs(collectionName).returns(mockCollection(toReturn, collectionMethods));
+  }
 }

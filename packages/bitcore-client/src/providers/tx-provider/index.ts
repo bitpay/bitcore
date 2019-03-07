@@ -1,8 +1,11 @@
-import { BTCTxProvider } from './btc'
+import { BTCTxProvider } from './btc';
 import { BCHTxProvider } from './bch';
+import { ETHTxProvider } from './eth';
+
 const providers = {
   BTC: new BTCTxProvider(),
-  BCH: new BCHTxProvider()
+  BCH: new BCHTxProvider(),
+  ETH: new ETHTxProvider()
 };
 
 export class TxProvider {
@@ -14,7 +17,8 @@ export class TxProvider {
     return this.get(params).create(params);
   }
 
-  sign(params) {
+  // WIP: Needs typings - Eth returns Promise<Uint8Array> while BTC returns Promise<string>
+  async sign(params): Promise<any> {
     return this.get(params).sign(params);
   }
 

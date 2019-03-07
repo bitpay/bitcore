@@ -1,5 +1,5 @@
+import { ViewEncapsulation } from '@angular/compiler/src/core';
 import { Component, Input, OnInit } from '@angular/core';
-import { ViewEncapsulation } from '../../../../node_modules/@angular/compiler/src/core';
 
 export enum CardItemType {
   forward = 'forward',
@@ -19,7 +19,13 @@ export class CardItemComponent implements OnInit {
   header = '';
 
   @Input()
-  headerValue = '';
+  headerEquivalent = '';
+
+  @Input()
+  headerCount = '';
+
+  @Input()
+  headerSum = '';
 
   @Input()
   type: CardItemType = CardItemType.none;

@@ -3,7 +3,9 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Http } from '@angular/http';
 import { IonicPage, NavParams, ToastController } from 'ionic-angular';
 import { ApiProvider } from '../../providers/api/api';
+import { CurrencyProvider } from '../../providers/currency/currency';
 import { Logger } from '../../providers/logger/logger';
+import { PriceProvider } from '../../providers/price/price';
 
 @Injectable()
 @IonicPage({
@@ -28,11 +30,15 @@ export class BroadcastTxPage {
     public navParams: NavParams,
     private http: Http,
     private apiProvider: ApiProvider,
-    private logger: Logger
+    private logger: Logger,
+    private priceProvider: PriceProvider,
+    private currencyProvider: CurrencyProvider
   ) {
     const chain: string = this.apiProvider.getConfig().chain;
     const network: string = this.apiProvider.getConfig().network;
     this.apiProvider.changeNetwork({ chain, network });
+    this.currencyProvider.setCurrency();
+    this.priceProvider.setCurrency();
 
     this.title = 'Broadcast Transaction';
     this.txForm = formBuilder.group({

@@ -43,13 +43,13 @@
       </ion-chip>
       <ion-chip item-end color="brand">
         <ion-label>
-          {{ currency.getConvertedNumber(tx.valueOut) | number:'1.0-8' }} {{ currency.currencySymbol }}
+          {{ currencyProvider.getConvertedNumber(tx.valueOut) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
         </ion-label>
       </ion-chip>
     </ion-col>
   </ion-row>
 
-  <ion-row *ngIf="showCoins" align-items-center>
+  <ion-row *ngIf="showCoins" align-items-start>
     <ion-col col-12 col-md-5>
 
       <ion-list [hidden]="!tx.isCoinBase">
@@ -86,14 +86,14 @@
           </div>
 
           <div item-end>
-            {{ currency.getConvertedNumber(vin.value) | number:'1.0-8' }} {{ currency.currencySymbol }}
+            {{ currencyProvider.getConvertedNumber(vin.value) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
           </div>
         </ion-item>
       </ion-list>
 
     </ion-col>
 
-    <ion-col col-12 col-md-1 text-center align-items-center>
+    <ion-col col-12 col-md-1 text-center class="arrow-forward">
       <ion-icon name="arrow-forward"></ion-icon>
     </ion-col>
 
@@ -103,7 +103,8 @@
           <div>
             <div class="ellipsis">
               <p>
-                <a (click)="goToAddress(vout.address)">{{ getAddress(vout) }}</a>
+                <a [ngClass]="{'disabled-link': getAddress(vout) === 'Unparsed address' }"
+                  (click)="goToAddress(vout.address)">{{ getAddress(vout) }}</a>
               </p>
             </div>
             <div *ngIf="expanded">
@@ -121,14 +122,13 @@
           </div>
 
           <div item-end>
-            {{ currency.getConvertedNumber(vout.value) | number:'1.0-8' }} {{ currency.currencySymbol }}
+            {{ currencyProvider.getConvertedNumber(vout.value) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
             <span [hidden]="!vout.spentTxid">(S)</span>
             <span [hidden]="vout.spentTxid">(U)</span>
           </div>
 
           <button item-end ion-button *ngIf="expanded && vout.spentTxid && vout.spentTxid !== '' " (click)="
-            goToTx(vout.spentTxid, i, true)"
-            clear icon-only>
+            goToTx(vout.spentTxid, i, true)" clear icon-only>
             <ion-icon color="primary" name="ios-arrow-forward"></ion-icon>
           </button>
         </ion-item>
@@ -136,12 +136,13 @@
     </ion-col>
   </ion-row>
 
-  <ion-row align-items-center text-uppercase class="small" *ngIf="showCoins">
+  <ion-row align-items-start text-uppercase class="small" *ngIf="showCoins">
     <ion-col col-6>
-      <div [hidden]="tx.isCoinBase">
+      <div *ngIf="!tx.isCoinBase && currencyProvider.getConvertedNumber(tx.fee) >= 0">
         <ion-chip>
           <ion-label>Fee
-            <span text-nowrap>{{ currency.getConvertedNumber(tx.fee) | number:'1.0-8' }} {{ currency.currencySymbol }}</span>
+            <span text-nowrap>{{ currencyProvider.getConvertedNumber(tx.fee) | number:'1.0-8' }}
+              {{ currencyProvider.currencySymbol }}</span>
           </ion-label>
         </ion-chip>
       </div>
@@ -158,7 +159,9 @@
         </ion-label>
       </ion-chip>
       <ion-chip color="brand">
-        <ion-label>{{ currency.getConvertedNumber(tx.valueOut) | number:'1.0-8' }} {{ currency.currencySymbol }}</ion-label>
+        <ion-label>{{ currencyProvider.getConvertedNumber(tx.valueOut) | number:'1.0-8' }}
+          {{ currencyProvider.currencySymbol }}
+        </ion-label>
       </ion-chip>
     </ion-col>
   </ion-row>

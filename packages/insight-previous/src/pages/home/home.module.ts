@@ -1,8 +1,10 @@
 import { NgModule } from '@angular/core';
 import { IonicPageModule } from 'ionic-angular';
+import { FooterComponentModule } from '../../components/footer/footer.module';
 import { HeadNavComponentModule } from '../../components/head-nav/head-nav.module';
 import { LatestBlocksComponentModule } from '../../components/latest-blocks/latest-blocks.module';
 import { LatestTransactionsComponentModule } from '../../components/latest-transactions/latest-transactions.module';
+import { LoaderComponentModule } from '../../components/loader/loader.module';
 import { HomePage } from './home';
 
 @NgModule({
@@ -10,8 +12,10 @@ import { HomePage } from './home';
   imports: [
     IonicPageModule.forChild(HomePage),
     LatestBlocksComponentModule,
+    FooterComponentModule,
     HeadNavComponentModule,
-    LatestTransactionsComponentModule
+    LatestTransactionsComponentModule,
+    LoaderComponentModule
   ],
   exports: [HomePage]
 })

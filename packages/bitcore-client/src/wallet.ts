@@ -1,17 +1,17 @@
-import * as Bcrypt from 'bcrypt';
+import * as Bcrypt from 'bcryptjs';
 import { Encryption } from './encryption';
 import { Client } from './client';
 import { Storage } from './storage';
 import TxProvider from './providers/tx-provider';
-import { ParseApiStream } from './stream-util';
-const Mnemonic = require('bitcore-mnemonic');
+import { AddressProvider } from './providers/address-provider/deriver';
 const { PrivateKey } = require('bitcore-lib');
+const Mnemonic = require('bitcore-mnemonic');
 
 export namespace Wallet {
   export type KeyImport = {
     address: string;
-    privKey: string;
-    pubKey: string;
+    privKey?: string;
+    pubKey?: string;
   };
   export type WalletObj = {
     name: string;
@@ -36,8 +36,10 @@ export class Wallet {
   encryptionKey: string;
   authPubKey: string;
   pubKey: string;
+  xPubKey: string;
   name: string;
   path: string;
+  addressIndex: number;
   authKey: string;
   derivationPath: string;
 
@@ -55,8 +57,9 @@ export class Wallet {
   }
 
   saveWallet() {
-    this.lock();
-    return this.storage.saveWallet({ wallet: this });
+    const walletInstance = Object.assign({}, this);
+    delete walletInstance.unlocked;
+    return this.storage.saveWallet({ wallet: walletInstance });
   }
 
   static async create(params: Partial<Wallet.WalletObj>) {
@@ -67,7 +70,9 @@ export class Wallet {
     }
     // Generate wallet private keys
     const mnemonic = new Mnemonic(phrase);
-    const hdPrivKey = mnemonic.toHDPrivateKey(password);
+    const hdPrivKey = mnemonic
+      .toHDPrivateKey()
+      .derive(AddressProvider.pathFor(chain, network));
     const privKeyObj = hdPrivKey.toObject();
 
     // Generate authentication keys
@@ -75,8 +80,8 @@ export class Wallet {
     const authPubKey = authKey.toPublicKey().toString();
 
     // Generate public keys
-    const hdPubKey = hdPrivKey.hdPublicKey;
-    const pubKey = hdPubKey.publicKey.toString();
+    // bip44 compatible pubKey
+    const pubKey = hdPrivKey.publicKey.toString();
 
     // Generate and encrypt the encryption key and private key
     const walletEncryptionKey = Encryption.generateEncryptionKey();
@@ -100,7 +105,7 @@ export class Wallet {
 
     let alreadyExists;
     try {
-      alreadyExists = await this.loadWallet({ storage, name, chain, network });
+      alreadyExists = await this.loadWallet({ storage, name });
     } catch (err) {}
     if (alreadyExists) {
       throw new Error('Wallet already exists');
@@ -110,18 +115,17 @@ export class Wallet {
       encryptionKey,
       authKey,
       authPubKey,
+      addressIndex: 0,
       masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
-      xPubKey: hdPubKey.xpubkey,
+      xPubKey: hdPrivKey.xpubkey,
       pubKey
     });
     // save wallet to storage and then bitcore-node
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({
       storage,
-      name,
-      chain,
-      network
+      name
     });
     console.log(mnemonic.toString());
     await loadedWallet.register().catch(e => {
@@ -131,32 +135,41 @@ export class Wallet {
     return loadedWallet;
   }
 
-  static async exists(params) {
-    const { storage, name, chain, network } = params;
+  static async exists(params: {
+    name: string;
+    path?: string;
+    storage?: Storage;
+  }) {
+    const { storage, name } = params;
     let alreadyExists;
     try {
       alreadyExists = await Wallet.loadWallet({
         storage,
-        name,
-        chain,
-        network
+        name
       });
-    } catch (err) {}
-    return alreadyExists != undefined;
+    } catch (err) {
+      console.log(err);
+    }
+    return alreadyExists != undefined && alreadyExists != [];
   }
 
-  static async loadWallet(params) {
-    const { chain, network, name, path } = params;
+  static async loadWallet(params: {
+    name: string;
+    path?: string;
+    storage?: Storage;
+  }) {
+    const { name, path } = params;
     let { storage } = params;
     storage =
       storage ||
       new Storage({ errorIfExists: false, createIfMissing: false, path });
-    const loadedWallet = await storage.loadWallet({ chain, network, name });
+    const loadedWallet = await storage.loadWallet({ name });
     return new Wallet(Object.assign(loadedWallet, { storage }));
   }
 
   lock() {
     this.unlocked = undefined;
+    return this;
   }
 
   async unlock(password) {
@@ -209,11 +222,11 @@ export class Wallet {
     return new PrivateKey(this.authKey);
   }
 
-  getBalance(time?:string) {
+  getBalance(time?: string) {
     return this.client.getBalance({ pubKey: this.authPubKey, time });
   }
 
-  getNetworkFee(params) {
+  getNetworkFee(params: { target?: number } = {}) {
     const target = params.target || 2;
     return this.client.getFee({ target });
   }
@@ -233,28 +246,36 @@ export class Wallet {
     });
   }
 
-  async newTx(params) {
-    const utxos = params.utxos || (await this.getUtxos(params));
+  async newTx(params: {
+    utxos?: any[];
+    recipients: { address: string; amount: number }[];
+    from?: string;
+    change?: string;
+    fee?: number;
+  }) {
     const payload = {
       network: this.network,
       chain: this.chain,
       recipients: params.recipients,
+      from: params.from,
       change: params.change,
       fee: params.fee,
-      utxos
+      wallet: this,
+      utxos: params.utxos
     };
     return TxProvider.create(payload);
   }
 
-  async broadcast(params) {
+  async broadcast(params: { tx: string }) {
+    const { tx } = params;
     const payload = {
       network: this.network,
       chain: this.chain,
-      rawTx: params.tx
+      rawTx: tx
     };
     return this.client.broadcast({ payload });
   }
-  async importKeys(params: { keys: Partial<Wallet.KeyImport>[] }) {
+  async importKeys(params: { keys: Wallet.KeyImport[] }) {
     const { keys } = params;
     const { encryptionKey } = this.unlocked;
     const keysToSave = keys.filter(key => typeof key.privKey === 'string');
@@ -275,39 +296,59 @@ export class Wallet {
   }
 
   async signTx(params) {
-    let { tx } = params;
-    const utxos = params.utxos || [];
-    if (!params.utxos) {
-      this.getUtxos(params)
-        .pipe(new ParseApiStream())
-        .on('data', data => {
-          utxos.push(data);
-        });
-    }
+    let { tx, from } = params;
     const payload = {
       chain: this.chain,
       network: this.network,
       tx,
-      utxos
+      utxos: params.utxos,
+      from
     };
-    const { encryptionKey } = this.unlocked;
-    let inputAddresses = TxProvider.getSigningAddresses(payload);
-    let keyPromises = inputAddresses.map(address => {
-      return this.storage.getKey({
-        address,
-        encryptionKey,
-        chain: this.chain,
-        network: this.network,
-        name: this.name
-      });
-    });
-    let keys = await Promise.all(keyPromises);
-    return TxProvider.sign({ ...payload, keys });
+
+    return TxProvider.sign({ ...payload, wallet: this });
   }
 
   async checkWallet() {
     return this.client.checkWallet({
       pubKey: this.authPubKey
     });
+  }
+
+  getAddresses() {
+    return this.client.getAddresses({
+      pubKey: this.authPubKey
+    });
+  }
+
+  async deriveAddress(addressIndex, isChange) {
+    const address = AddressProvider.derive(
+      this.chain,
+      this.network,
+      this.xPubKey,
+      addressIndex,
+      isChange
+    );
+    return address;
+  }
+
+  async derivePrivateKey(isChange) {
+    const keyToImport = await AddressProvider.derivePrivateKey(
+      this.chain,
+      this.network,
+      this.unlocked.masterKey,
+      this.addressIndex,
+      isChange
+    );
+    await this.importKeys({ keys: [keyToImport] });
+    return keyToImport.address.toString();
+  }
+
+  async nextAddressPair() {
+    this.addressIndex =
+      this.addressIndex !== undefined ? this.addressIndex + 1 : 0;
+    const newAddress = await this.derivePrivateKey(false);
+    const newChangeAddress = await this.derivePrivateKey(true);
+    await this.saveWallet();
+    return [newAddress, newChangeAddress];
   }
 }

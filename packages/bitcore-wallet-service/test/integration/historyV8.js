@@ -287,8 +287,38 @@ describe('History V8', function() {
       });
     });
 
+    it('should get tx history from cache and bc mixed, updating confirmations', function(done) {
+      var _cache = Defaults.CONFIRMATIONS_TO_START_CACHING;
+      var _time = Defaults.BLOCKHEIGHT_CACHE_TIME ;
+      Defaults.CONFIRMATIONS_TO_START_CACHING = 10;
 
-    
+      // remove bc tip cache.
+      Defaults.BLOCKHEIGHT_CACHE_TIME = 0;
+      helpers.stubHistoryV8(50, BCHEIGHT); //(0->49)
+
+      // this call is to fill the cache
+      server.getTxHistory({limit: 20}, function(err, txs, fromCache) {
+        should.not.exist(err);
+        fromCache.should.equal(false);
+
+        // change height from 10000 to 10100
+        let heightOffset = 100;
+        blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 10000 + heightOffset, 'hash');
+        server.getTxHistory({skip: 5, limit: 20}, function(err, txs, fromCache) {
+          should.not.exist(err);
+          fromCache.should.equal(true);
+          var i = 5;
+          _.each(txs, function(tx) {
+            tx.confirmations.should.equal(i + heightOffset);
+            i++;
+          });
+          Defaults.BLOCKHEIGHT_CACHE_TIME = _time;
+          Defaults.CONFIRMATIONS_TO_START_CACHING = _cache;
+          done();
+        });
+      });
+    });
+
     describe("Stream cache", () => {
       it('should not stream cache on first call', function(done) {
         this.timeout(10000);
@@ -542,7 +572,6 @@ describe('History V8', function() {
     });
 
     it('should get tx history with accepted proposal, multisend', function(done) {
-      server._normalizeTxHistory = sinon.stub().returnsArg(0);
       var external = '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7';
 
       helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
@@ -613,6 +642,7 @@ describe('History V8', function() {
  
               helpers.stubHistoryV8(null, null,txs);
               helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'bch', () =>{ 
+
               server.getTxHistory({}, function(err, txs) {
                 should.not.exist(err);
                 should.exist(txs);
@@ -699,7 +729,6 @@ describe('History V8', function() {
         expected: [],
       }];
 
-      server._normalizeTxHistory = sinon.stub().returnsArg(0);
       var timestamps = [50, 40, 30, 20, 10];
       var txs = _.map(timestamps, function(ts, idx) {
         return {
@@ -764,7 +793,6 @@ describe('History V8', function() {
       helpers.stubFeeLevels({
         24: 10000,
       });
-      server._normalizeTxHistory = sinon.stub().returnsArg(0);
       var txs = [{
         txid: '1',
         confirmations: 0,
@@ -825,7 +853,6 @@ describe('History V8', function() {
     });
     it.skip('should get tx history even if fee levels are unavailable', function(done) {
       blockchainExplorer.estimateFee = sinon.stub().yields('dummy error');
-      server._normalizeTxHistory = sinon.stub().returnsArg(0);
       var txs = [{
         txid: '1',
         confirmations: 1,
@@ -858,7 +885,6 @@ describe('History V8', function() {
       helpers.stubHistoryV8(x);
 
 
-//console.log('[server.js.7149]',HugeTxs[1].vin); //TODO
       server.getTxHistory({}, function(err, txs) {
         should.not.exist(err);
         should.exist(txs);

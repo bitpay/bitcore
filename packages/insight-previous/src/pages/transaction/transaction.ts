@@ -29,7 +29,7 @@ export class TransactionPage {
     public navParams: NavParams,
     private apiProvider: ApiProvider,
     private txProvider: TxsProvider,
-    public currency: CurrencyProvider,
+    public currencyProvider: CurrencyProvider,
     private logger: Logger,
     private priceProvider: PriceProvider,
     public redirProvider: RedirProvider
@@ -48,8 +48,8 @@ export class TransactionPage {
       network
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
-    const currentCurrency = localStorage.getItem('insight-currency');
-    this.priceProvider.setCurrency(currentCurrency);
+    this.currencyProvider.setCurrency();
+    this.priceProvider.setCurrency();
   }
 
   public ionViewDidLoad(): void {

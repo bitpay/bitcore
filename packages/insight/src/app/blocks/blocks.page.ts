@@ -10,7 +10,7 @@ import { Direction, IBlock, StreamingFindOptions } from '../types/bitcore-node';
 })
 export class BlocksPage {
   query$ = new BehaviorSubject<StreamingFindOptions<IBlock>>({
-    limit: 100,
+    limit: 20,
     direction: Direction.descending,
     paging: 'height'
   });
