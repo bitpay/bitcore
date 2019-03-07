@@ -26,12 +26,14 @@ const MAX_FEE_PER_KB = 500000;
  * Verifies the signature of a given payment request is both valid and from a trusted key
  */
 PayPro._verify = function (requestUrl, headers, network, trustedKeys, callback) {
-console.log('[paypro.js.26:headers:]',headers); //TODO
   let hash = headers.digest.split('=')[1];
   let signature = headers.signature;
   let signatureType = headers['x-signature-type'];
   let identity = headers['x-identity'];
   let host;
+
+  if (network == 'testnet') network = 'test';
+  if (network == 'livenet') network = 'main';
 
   if (!requestUrl) {
     return callback(new Error('You must provide the original payment request url'));
