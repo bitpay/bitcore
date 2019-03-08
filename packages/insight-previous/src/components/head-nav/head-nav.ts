@@ -93,30 +93,28 @@ export class HeadNavComponent implements OnInit {
   }
 
   private processResponse(response) {
-    if (!_.isArray(response)) {
+    if (response.addr) {
       return {
         redirTo: 'address',
-        params: response.json()[0] ? response.json()[0].address : [],
+        params: response.addr[0] ? response.addr[0].address : [],
         type: 'addrStr'
       };
     } else {
       return _.reduce(
         response,
         (result, value) => {
-          if (value.ok === true) {
-            if (value.json().txid) {
-              result = {
-                redirTo: 'transaction',
-                params: value.json().txid,
-                type: 'txId'
-              };
-            } else {
-              result = {
-                redirTo: 'block-detail',
-                params: value.json().hash,
-                type: 'blockHash'
-              };
-            }
+          if (value.tx) {
+            result = {
+              redirTo: 'transaction',
+              params: value.tx.txid,
+              type: 'txId'
+            };
+          } else if (value.block) {
+            result = {
+              redirTo: 'block-detail',
+              params: value.block.hash,
+              type: 'blockHash'
+            };
           }
           return result;
         },
