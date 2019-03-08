@@ -26,8 +26,6 @@ const MAX_FEE_PER_KB = 500000;
  * Verifies the signature of a given payment request is both valid and from a trusted key
  */
 PayPro._verify = function (requestUrl, headers, network, trustedKeys, callback) {
-console.log('[paypro.js.28:headers:]',headers); //TODO
-
   let hash = headers.digest.split('=')[1];
   let signature = headers.signature;
   let signatureType = headers['x-signature-type'];
@@ -77,7 +75,6 @@ console.log('[paypro.js.28:headers:]',headers); //TODO
     return callback(new Error(`Response signed by unknown key (${identity}), unable to validate`));
   }
 
-console.log('[paypro.js.83:network:]',network); //TODO
   let keyData = trustedKeys[identity];
   if (keyData.domains.indexOf(host) === -1) {
     return callback(new Error(`The key on the response (${identity}) is not trusted for domain ${host}`));
@@ -120,9 +117,7 @@ console.log('[paypro.js.83:network:]',network); //TODO
 PayPro.runRequest = function (opts, cb) {
   $.checkArgument(opts.network, 'should pass network');
 
-console.log('[paypro.js.122]'); //TODO
   PayPro.request(opts, (err, res, body) => {
-console.log('[paypro.js.124:body:]',body); //TODO
     if (err) return cb(err);
     let ret;
 
@@ -188,7 +183,6 @@ PayPro.get = function(opts, cb) {
   opts.network = opts.network || 'livenet';
 
   PayPro.runRequest(opts, function(err, data) {
-console.log('[paypro.js.182:data:]',err,data); //TODO
     if (err) return cb(err);
 
     var ret = {};

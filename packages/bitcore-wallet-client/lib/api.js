@@ -503,7 +503,7 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
       var altCredentials = derive(true);
       if (altCredentials.xPubKey.toString() == self.credentials.xPubKey.toString()) return cb(err);
       self.credentials = altCredentials;
-      self.request.setCredentials(this.credentials);
+      self.request.setCredentials(self.credentials);
       return self._import(cb);
     }
     return cb(err);
@@ -537,8 +537,8 @@ API.prototype.importFromExtendedPrivateKey = function(xPrivKey, opts, cb) {
     return cb(new Errors.INVALID_BACKUP);
   };
 
-  this._import(cb);
   this.request.setCredentials(this.credentials);
+  this._import(cb);
 };
 
 /**
@@ -567,8 +567,8 @@ API.prototype.importFromExtendedPublicKey = function(xPubKey, source, entropySou
     return cb(new Errors.INVALID_BACKUP);
   };
 
-  this._import(cb);
   this.request.setCredentials(this.credentials);
+  this._import(cb);
 };
 
 API.prototype.decryptBIP38PrivateKey = function(encryptedPrivateKeyBase58, passphrase, opts, cb) {
@@ -2399,6 +2399,7 @@ API.prototype.createWalletFromOldCopay = function(username, password, blob, cb) 
     return cb(new Error('Wallet is incomplete, cannot be imported'));
 
   this.credentials = Credentials.fromOldCopayWallet(w);
+  this.request.setCredentials(this.credentials);
   this.recreateWallet(cb);
 };
 

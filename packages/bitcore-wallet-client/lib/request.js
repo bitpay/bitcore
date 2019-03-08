@@ -82,7 +82,6 @@ Request.prototype.doRequest = function(method, url, args, useSession, cb) {
   }
 
   var r = self.r[method](self.baseUrl + url);
-
   r.accept('json');
 
   _.each(headers, function(v, k) {
@@ -158,7 +157,7 @@ Request._parseError = function(body) {
       ret = new Errors[body.code];
       if (body.message) ret.message = body.message;
     } else {
-      ret = new Error(body.code + ': ' + body.message);
+      ret = new Error(body.code + ': ' + (_.isObject(body.message) ? JSON.stringify(body.message) : body.message) );
     }
   } else {
     ret = new Error(body.error || JSON.stringify(body));

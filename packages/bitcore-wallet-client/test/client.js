@@ -2823,7 +2823,7 @@ describe('client API', function() {
   });
 
 
-  describe.only('Payment Protocol', function() {
+  describe('Payment Protocol', function() {
     var PP, DATA, oldreq;
     function mockRequest(bodyBuf, headers) {
 //      bodyBuf = _.isArray(bodyBuf) ? bodyBuf  : [bodyBuf];
@@ -3090,22 +3090,21 @@ describe('client API', function() {
 
 
 
-    describe.only('1-of-1 wallet BTC', function() {
-      var DATA,
+    describe('1-of-1 wallet BTC', function() {
+      var DATA;
       beforeEach(function(done) {
         DATA = JSON.parse(TestData.payProJsonBody.btc);
         mockRequest(Buffer.from(TestData.payProJson.btc.body,'hex'), TestData.payProJson.btc.headers);
-        helpers.createAndJoinWallet(clients, 1, 1, function(w) {
+        helpers.createAndJoinWallet(clients, 1, 1, {network: 'livenet'},  function(w) {
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
             should.exist(x0.address);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             var opts = {
-              payProUrl: 'dummy',
+              payProUrl:'https://bitpay.com/i/4Zrpank3aA2EAdYaQwMXbz',
             };
             clients[0].fetchPayPro(opts, function(err, paypro) {
-              http.getCall(0).args[0].coin.should.equal('btc');
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
                 amount: paypro.amount,
@@ -3127,11 +3126,11 @@ describe('client API', function() {
           clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
             should.not.exist(err);
             xx.status.should.equal('accepted');
-            http.onCall(5).yields(null, TestData.payProAckHex);
+            let spy = sinon.spy(Client.PayPro,'request');
 
             clients[0].broadcastTxProposal(xx, function(err, zz, memo) {
               should.not.exist(err);
-              var args = http.lastCall.args[0];
+              var args = spy.lastCall.args[0];
               var data = JSON.parse(args.body);
               var rawTx = Buffer.from(data.transactions[0],'hex');
               var tx = new Bitcore.Transaction(rawTx);
@@ -3150,12 +3149,8 @@ describe('client API', function() {
       
       // note this is using BCH with BTC format testnet address
       beforeEach(function(done) {
-
-        PP = Buffer.from(TestData.payProJsonHex['bch'],'hex');
-        DATA = TestData.payProJsonData['bch'];
-
-        http = sinon.stub();
-        http.yields(null, PP);
+        DATA = JSON.parse(TestData.payProJsonBody.btc);
+        mockRequest(Buffer.from(TestData.payProJson.bch.body,'hex'), TestData.payProJson.bch.headers);
 
         helpers.createAndJoinWallet(clients, 1, 1, {coin:'bch', network:'testnet'}, function(w) {
           clients[0].createAddress(function(err, x0) {
@@ -3168,13 +3163,11 @@ describe('client API', function() {
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             var opts = {
-              payProUrl: 'dummy',
+              payProUrl:'https://test.bitpay.com/i/4Zrpank3aA2EAdYaQwMXbz',
             };
-            clients[0].payProHttp = clients[1].payProHttp = http;
 
             clients[0].fetchPayPro(opts, function(err, paypro) {
-              paypro.toAddress.should.equal(DATA.toAddress);
-              http.getCall(0).args[0].coin.should.equal('bch');
+              should.not.exist(err);
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
                 amount: paypro.amount,
@@ -3196,11 +3189,11 @@ describe('client API', function() {
           clients[0].signTxProposal(txps[0], function(err, xx, paypro) {
             should.not.exist(err);
             xx.status.should.equal('accepted');
-            http.onCall(5).yields(null, TestData.payProAckHex);
 
+            let spy = sinon.spy(Client.PayPro,'request');
             clients[0].broadcastTxProposal(xx, function(err, zz, memo) {
               should.not.exist(err);
-              var args = http.lastCall.args[0];
+              var args = spy.lastCall.args[0];
               var data = JSON.parse(args.body);
               var rawTx = Buffer.from(data.transactions[0],'hex');
               var tx = new Bitcore_['bch'].Transaction(rawTx);
@@ -3218,15 +3211,10 @@ describe('client API', function() {
     describe('New proposal flow', function() {
 
       beforeEach(function(done) {
+        DATA = JSON.parse(TestData.payProJsonBody.btc);
+        mockRequest(Buffer.from(TestData.payProJson.btc.body,'hex'), TestData.payProJson.btc.headers);
 
-        PP = Buffer.from(TestData.payProJsonHex['btc'],'hex');
-        DATA = TestData.payProJsonData['btc'];
-
-
-
-        http = sinon.stub();
-        http.yields(null, PP);
-        helpers.createAndJoinWallet(clients, 2, 2, function(w) {
+        helpers.createAndJoinWallet(clients, 2, 2, {network:'livenet'}, function(w) {
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
             should.exist(x0.address);
@@ -3235,13 +3223,11 @@ describe('client API', function() {
             var opts = {
               payProUrl: 'dummy',
             };
-            clients[0].payProHttp = clients[1].payProHttp = http;
-
             clients[0].fetchPayPro(opts, function(err, paypro) {
               clients[0].createTxProposal({
                 outputs: [{
-                  toAddress: DATA.toAddress,
-                  amount: DATA.amount,
+                  toAddress: DATA.outputs[0].address,
+                  amount: DATA.outputs[0].amount,
                 }],
                 message: DATA.memo,
                 payProUrl: opts.payProUrl,
@@ -3265,8 +3251,8 @@ describe('client API', function() {
           should.not.exist(err);
           var tx = txps[0];
           // From the hardcoded paypro request
-          tx.amount.should.equal(DATA.amount);
-          tx.outputs[0].toAddress.should.equal(DATA.toAddress);
+          tx.amount.should.equal(DATA.outputs[0].amount);
+          tx.outputs[0].toAddress.should.equal(DATA.outputs[0].address);
           tx.message.should.equal(DATA.memo);
           tx.payProUrl.should.equal('dummy');
           done();
@@ -3859,7 +3845,7 @@ describe('client API', function() {
       });
     });
     it('should not send note body in clear text', function(done) {
-      var spy = sinon.spy(clients[0].request, 'post');
+      var spy = sinon.spy(clients[0].request, 'put');
       clients[0].editTxNote({
         txid: '123',
         body: 'a random note'
@@ -4382,7 +4368,7 @@ describe('client API', function() {
               recoveryClient.getStatus({}, function(err, status) {
                 should.exist(err);
                 err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
-                var spy = sinon.spy(recoveryClient, 'post');
+                var spy = sinon.spy(recoveryClient.request, 'post');
                 recoveryClient.recreateWallet(function(err) {
                   should.not.exist(err);
 
@@ -4910,6 +4896,7 @@ describe('client API', function() {
         c.credentials.n.should.equal(1);
 
         c.createAddress(function(err, x0) {
+          should.not.exist(err);
           // This is the first 'shared' address, created automatically
           // by old copay
           x0.address.should.equal('2N3w8sJUyAXCQirqNsTayWr7pWADFNdncmf');
@@ -5316,7 +5303,7 @@ describe('client API', function() {
       });
 
       it('should add access with copayer name', function(done) {
-        var spy = sinon.spy(clients[0].request, 'post');
+        var spy = sinon.spy(clients[0].request, 'put');
         clients[0].addAccess({
           name: 'pepe',
         }, function(err, x, key) {
@@ -5712,6 +5699,7 @@ describe('client API', function() {
     it('should import with external priv key', function(done) {
       var client = helpers.newClient(app);
       client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00');
+
       client.createWallet('mywallet', 'creator', 1, 1, {
         network: 'livenet'
       }, function(err) {
@@ -5719,6 +5707,7 @@ describe('client API', function() {
         var c = client.credentials;
         var importedClient = helpers.newClient(app);
         importedClient.importFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00', {}, function(err) {
+console.log('[client.js.5707:err:]',err); //TODO
           should.not.exist(err);
           var c2 = importedClient.credentials;
           c2.account.should.equal(0);
@@ -5745,7 +5734,7 @@ describe('client API', function() {
     it('should handle connection error', function(done) {
       var client = new Client();
       client.credentials = {};
-      client.request = helpers.stubRequest(null, {});
+      client.request.r = helpers.stubRequest(null, {});
       client.request.doRequest('get', 'url', {}, false, function(err, body, header) {
         should.exist(err);
         should.not.exist(body);
@@ -5758,7 +5747,7 @@ describe('client API', function() {
     it('should handle ECONNRESET error', function(done) {
       var client = new Client();
       client.credentials = {};
-      client.request = helpers.stubRequest(null, {
+      client.request.r = helpers.stubRequest(null, {
         status: 200,
         body: '{"error":"read ECONNRESET"}',
       });
