@@ -3086,20 +3086,15 @@ describe('client API', function() {
           });
         });
       });
-
     });
 
 
 
     describe('1-of-1 wallet BTC', function() {
+      var DATA,
       beforeEach(function(done) {
-
-
-        PP = Buffer.from(TestData.payProJsonHex['btc'],'hex');
-        DATA = TestData.payProJsonData['btc'];
-
-        http = sinon.stub();
-        http.yields(null, PP);
+        DATA = JSON.parse(TestData.payProJsonBody.btc);
+        mockRequest(Buffer.from(TestData.payProJson.btc.body,'hex'), TestData.payProJson.btc.headers);
         helpers.createAndJoinWallet(clients, 1, 1, function(w) {
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
@@ -3109,8 +3104,6 @@ describe('client API', function() {
             var opts = {
               payProUrl: 'dummy',
             };
-            clients[0].payProHttp = clients[1].payProHttp = http;
-
             clients[0].fetchPayPro(opts, function(err, paypro) {
               http.getCall(0).args[0].coin.should.equal('btc');
               helpers.createAndPublishTxProposal(clients[0], {
