@@ -26,7 +26,7 @@
 
   <ion-row align-items-end class="small" *ngIf="!showCoins">
     <ion-col col-12 text-right text-uppercase>
-      <ion-chip item-end color="danger" *ngIf="confirmations < 0">
+      <ion-chip item-end color="danger" *ngIf="confirmations <= 0">
         <ion-label>
           Unconfirmed
         </ion-label>
@@ -148,7 +148,7 @@
       </div>
     </ion-col>
     <ion-col col-6 text-right>
-      <ion-chip color="danger" *ngIf="confirmations < 0">
+      <ion-chip color="danger" *ngIf="confirmations <= 0">
         <ion-label>Unconfirmed</ion-label>
       </ion-chip>
       <ion-chip color="warning" *ngIf="confirmations === 1">

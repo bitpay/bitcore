@@ -50,7 +50,7 @@
             <ion-note item-end>
               <a (click)="goToBlock(tx.blockhash)">{{ tx.blockhash }}</a>
             </ion-note>
-            <ion-note *ngIf="confirmations < 0" item-end>
+            <ion-note *ngIf="confirmations <= 0" item-end>
               Unconfirmed
             </ion-note>
           </ion-item>
