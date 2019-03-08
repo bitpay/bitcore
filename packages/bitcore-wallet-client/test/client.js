@@ -3090,7 +3090,7 @@ describe('client API', function() {
 
 
 
-    describe('1-of-1 wallet BTC', function() {
+    describe.only('1-of-1 wallet BTC', function() {
       var DATA,
       beforeEach(function(done) {
         DATA = JSON.parse(TestData.payProJsonBody.btc);
