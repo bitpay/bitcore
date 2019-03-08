@@ -18,7 +18,7 @@ import * as bitcoreLibCash from 'bitcore-lib-cash';
 @Injectable()
 @IonicPage({
   name: 'messages',
-  segment: ':chain/:network/messages/verify',
+  segment: ':chain/:network/verify-message',
   defaultHistory: ['home']
 })
 @Component({
