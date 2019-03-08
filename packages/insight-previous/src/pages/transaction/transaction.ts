@@ -60,7 +60,9 @@ export class TransactionPage {
       data => {
         this.tx = data.tx;
         this.loading = false;
-        this.getConfirmations();
+        this.txProvider
+          .getConfirmations(this.tx.blockheight)
+          .subscribe(confirmations => (this.confirmations = confirmations));
         // Be aware that the tx component is loading data into the tx object
       },
       err => {
@@ -68,15 +70,6 @@ export class TransactionPage {
         this.loading = false;
       }
     );
-  }
-
-  public getConfirmations() {
-    this.blocksProvider.getCurrentHeight().subscribe(height => {
-      this.confirmations =
-        this.tx.blockheight > 0
-          ? height - this.tx.blockheight + 1
-          : this.tx.blockheight;
-    });
   }
 
   public goToBlock(blockHash: string): void {

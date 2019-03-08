@@ -59,12 +59,9 @@ export class TransactionComponent implements OnInit {
   }
 
   public getConfirmations() {
-    this.blocksProvider.getCurrentHeight().subscribe(height => {
-      this.confirmations =
-        this.tx.blockheight > 0
-          ? height - this.tx.blockheight + 1
-          : this.tx.blockheight;
-    });
+    this.txProvider
+      .getConfirmations(this.tx.blockheight)
+      .subscribe(confirmations => (this.confirmations = confirmations));
   }
 
   public goToTx(txId: string, vout?: number, fromVout?: boolean): void {
