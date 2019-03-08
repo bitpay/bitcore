@@ -2402,4 +2402,6 @@ API.prototype.createWalletFromOldCopay = function(username, password, blob, cb) 
   this.recreateWallet(cb);
 };
 
+API.PayPro = PayPro;
+
 module.exports = API;

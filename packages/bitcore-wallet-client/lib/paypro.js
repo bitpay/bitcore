@@ -26,6 +26,7 @@ const MAX_FEE_PER_KB = 500000;
  * Verifies the signature of a given payment request is both valid and from a trusted key
  */
 PayPro._verify = function (requestUrl, headers, network, trustedKeys, callback) {
+console.log('[paypro.js.28:headers:]',headers); //TODO
 
   let hash = headers.digest.split('=')[1];
   let signature = headers.signature;
@@ -72,12 +73,11 @@ PayPro._verify = function (requestUrl, headers, network, trustedKeys, callback) 
   if (typeof identity !== 'string') {
     return callback(new Error('Invalid identity header'));
   }
-console.log('[paypro.js.173:identity:]',identity); //TODO
-
   if (!trustedKeys[identity]) {
     return callback(new Error(`Response signed by unknown key (${identity}), unable to validate`));
   }
 
+console.log('[paypro.js.83:network:]',network); //TODO
   let keyData = trustedKeys[identity];
   if (keyData.domains.indexOf(host) === -1) {
     return callback(new Error(`The key on the response (${identity}) is not trusted for domain ${host}`));
@@ -127,7 +127,6 @@ console.log('[paypro.js.124:body:]',body); //TODO
     let ret;
 
     if (!res || res.statusCode != 200) {
-console.log('[paypro.js.128:res:]',res); //TODO
       let m  = res ? (res.statusMessage || res.statusCode) : '';
       return cb({message: 'Could not retrieve payment: ' + m} );
     }
@@ -146,12 +145,10 @@ console.log('[paypro.js.128:res:]',res); //TODO
     if (opts.noVerify) 
       return cb(null, body);
 
-console.log('[paypro.js.143]'); //TODO
     if (!res.headers.digest) {
       return cb(new Error('Digest missing from response headers'));
     }
 
-console.log('[paypro.js.148]'); //TODO
     //
     // Verification
     //
