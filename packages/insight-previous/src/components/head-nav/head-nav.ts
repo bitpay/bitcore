@@ -1,4 +1,4 @@
-import { Component, Injectable, Input, ViewChild } from '@angular/core';
+import { Component, Input, OnInit, ViewChild } from '@angular/core';
 import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
 import {
@@ -18,12 +18,11 @@ import { RedirProvider } from '../../providers/redir/redir';
 import { SearchProvider } from '../../providers/search/search';
 import { DenominationComponent } from '../denomination/denomination';
 
-@Injectable()
 @Component({
   selector: 'head-nav',
   templateUrl: 'head-nav.html'
 })
-export class HeadNavComponent {
+export class HeadNavComponent implements OnInit {
   @ViewChild('searchbar') searchbar: Searchbar;
   public showSearch = false;
   public loading: boolean;
@@ -46,7 +45,9 @@ export class HeadNavComponent {
     private logger: Logger,
     public searchProvider: SearchProvider,
     public redirProvider: RedirProvider
-  ) {
+  ) {}
+
+  public ngOnInit(): void {
     this.config = this.apiProvider.getConfig();
     this.params = {
       chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
