@@ -39,7 +39,7 @@
               {{ tx.time * 1000 | date:'medium' }}
             </ion-note>
           </ion-item>
-          <ion-item *ngIf="tx.confirmations !== 0">
+          <ion-item *ngIf="confirmations > 0">
             Mined Time
             <ion-note item-end>
               {{ tx.blocktime * 1000 | date:'medium' }}
@@ -50,7 +50,7 @@
             <ion-note item-end>
               <a (click)="goToBlock(tx.blockhash)">{{ tx.blockhash }}</a>
             </ion-note>
-            <ion-note *ngIf="tx.confirmations === 0" item-end>
+            <ion-note *ngIf="confirmations <= 0" item-end>
               Unconfirmed
             </ion-note>
           </ion-item>

@@ -116,7 +116,7 @@ export class TxsProvider {
     public http: Http,
     private api: ApiProvider,
     public currency: CurrencyProvider,
-    public blocks: BlocksProvider
+    public blocksProvider: BlocksProvider
   ) {}
 
   public getFee(tx: AppTx): number {
@@ -185,6 +185,12 @@ export class TxsProvider {
     const url: string = this.api.getUrl() + '/tx/' + txId + '/coins';
     return this.http.get(url).map(data => {
       return data.json() as CoinsApiResponse;
+    });
+  }
+
+  public getConfirmations(blockheight: number): Observable<number> {
+    return this.blocksProvider.getCurrentHeight().map(height => {
+      return blockheight > 0 ? height - blockheight + 1 : blockheight;
     });
   }
 }
