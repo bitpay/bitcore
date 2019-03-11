@@ -98,7 +98,7 @@ Defaults.BALANCE_CACHE_DURATION = 10;
 Defaults.BLOCKHEIGHT_CACHE_TIME = 30 * 60 * 1000;
 
 // Cache time fee levels (in ms)
-Defaults.FEE_LEVEL_CACHE_DURATION = 30 * 60 * 1000;
+Defaults.FEE_LEVEL_CACHE_DURATION = 6 * 60 * 1000;
 
 // Max allowed timespan for notification queries in seconds
 Defaults.MAX_NOTIFICATIONS_TIMESPAN = 60 * 60 * 24 * 14; // ~ 2 weeks
