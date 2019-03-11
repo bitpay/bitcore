@@ -221,5 +221,33 @@ describe('V8', () => {
         return done();
       });
     });
+
+    it('should use results from estimate fee is blocks is not present', (done) => {
+
+      let fakeRequest = {
+        get: sinon.stub().resolves('{"feerate":0.00017349}'),
+      };
+
+      var be = new V8({
+        coin: 'bch',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        userAgent: 'testAgent',
+        request: fakeRequest,
+      });
+
+      be.estimateFee([1,2,3,4,5], (err, levels) => {
+        should.not.exist(err);
+        should.exist(levels);
+        levels.should.deep.equal({ '1': 0.00017349,
+          '2': 0.00017349,
+          '3': 0.00017349,
+          '4': 0.00017349,
+          '5': 0.00017349 });
+        return done();
+      });
+    });
+
   });
 });
