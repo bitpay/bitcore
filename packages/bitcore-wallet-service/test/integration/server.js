@@ -2174,7 +2174,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#getFeeLevels', function() {
+  describe.only('#getFeeLevels', function() {
     var server, wallet, levels;
     before(function() {
       levels = Defaults.FEE_LEVELS;
@@ -2276,7 +2276,7 @@ describe('Wallet service', function() {
         2: 20000,
         6: 18000,
         24: 9001,
-      });
+      }, true);
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
         fees = _.fromPairs(_.map(fees, function(item) {
@@ -2306,7 +2306,7 @@ describe('Wallet service', function() {
         2: 20000,
         6: 18000,
         24: 9001,
-      });
+      }, true);
       server.getFeeLevels({}, function(err, fees) {
         should.not.exist(err);
         fees = _.fromPairs(_.map(fees, function(item) {
@@ -2327,7 +2327,7 @@ describe('Wallet service', function() {
             2: 200,
             6: 180,
             24: 90,
-          });
+          }, true);
           server.getFeeLevels({}, function(err, fees) {
             should.not.exist(err);
             fees = _.fromPairs(_.map(fees, function(item) {
@@ -2341,9 +2341,170 @@ describe('Wallet service', function() {
         });
       });
     });
- 
- 
- 
+
+
+    it('should not store cache old fee levels after 1+ fail', function(done) {
+      let x = Defaults.FEE_LEVEL_CACHE_DURATION;
+      Defaults.FEE_LEVEL_CACHE_DURATION = 100;
+
+      helpers.stubFeeLevels({
+        1: -1,
+        2: -1,
+        6: 200,
+        24: 101,
+      }, true);
+
+
+      server.getFeeLevels({}, function(err, fees, cached) {
+        should.not.exist(err);
+        should.not.exist(cached);
+        fees = _.fromPairs(_.map(fees, function(item) {
+          return [item.level, item];
+        }));
+
+
+        //should use default value 
+        //because value and fallback = -1
+        fees.priority.feePerKb.should.equal(
+          Defaults.FEE_LEVELS.btc[1].defaultValue 
+        );
+
+
+        //using the given value
+        fees.superEconomy.feePerKb.should.equal(101);
+
+        helpers.stubFeeLevels({
+          1: 400,
+          2: 200,
+          6: 180,
+          24: 90,
+        }, true);
+
+        // should query again, NOT using cache.
+        server.getFeeLevels({}, function(err, fees, cached) {
+          should.not.exist(cached);
+          should.not.exist(err);
+          fees = _.fromPairs(_.map(fees, function(item) {
+            return [item.level, item];
+          }));
+          fees.urgent.feePerKb.should.equal(600);
+          fees.superEconomy.feePerKb.should.equal(90);
+
+          // now, it should be cached.
+          server.getFeeLevels({}, function(err, fees, cached) {
+            should.exist(cached);
+            Defaults.FEE_LEVEL_CACHE_DURATION = x;
+            done();
+          });
+        });
+      });
+    });
+
+    it('should not store cache old fee levels after 1+ fail (Case 2)', function(done) {
+      let x = Defaults.FEE_LEVEL_CACHE_DURATION;
+      Defaults.FEE_LEVEL_CACHE_DURATION = 100;
+
+      helpers.stubFeeLevels({
+        6: 200,
+        24: 101,
+      });
+
+      server.getFeeLevels({}, function(err, fees, cached) {
+        should.not.exist(err);
+        should.not.exist(cached);
+        fees = _.fromPairs(_.map(fees, function(item) {
+          return [item.level, item];
+        }));
+
+
+        //should use default value 
+        //because value and fallback = -1
+        fees.priority.feePerKb.should.equal(
+          Defaults.FEE_LEVELS.btc[1].defaultValue 
+        );
+
+
+        //using the given value
+        fees.superEconomy.feePerKb.should.equal(101);
+
+        helpers.stubFeeLevels({
+          1: 400,
+          2: 200,
+          6: 180,
+          24: 90,
+        }, true);
+
+        // should query again, NOT using cache.
+        server.getFeeLevels({}, function(err, fees, cached) {
+          should.not.exist(cached);
+          should.not.exist(err);
+          fees = _.fromPairs(_.map(fees, function(item) {
+            return [item.level, item];
+          }));
+          fees.urgent.feePerKb.should.equal(600);
+          fees.superEconomy.feePerKb.should.equal(90);
+
+          // now, it should be cached.
+          server.getFeeLevels({}, function(err, fees, cached) {
+            should.exist(cached);
+            Defaults.FEE_LEVEL_CACHE_DURATION = x;
+            done();
+          });
+        });
+      });
+    });
+
+
+
+
+
+    it('should STORE cache old fee levels if NO fail', function(done) {
+      let x = Defaults.FEE_LEVEL_CACHE_DURATION;
+      Defaults.FEE_LEVEL_CACHE_DURATION = 100;
+      helpers.stubFeeLevels({
+        1: 500,
+        2: 400,
+        6: 200,
+        24: 101,
+      }, true);
+
+      server.getFeeLevels({}, function(err, fees, cached) {
+        should.not.exist(err);
+        should.not.exist(cached);
+        fees = _.fromPairs(_.map(fees, function(item) {
+          return [item.level, item];
+        }));
+
+
+        //using the given value
+        fees.priority.feePerKb.should.equal(500);
+        fees.superEconomy.feePerKb.should.equal(101);
+
+        helpers.stubFeeLevels({
+          1: 400,
+          2: 200,
+          6: 180,
+          24: 90,
+        }, true);
+
+        // should USE cache.
+        server.getFeeLevels({}, function(err, fees, cached) {
+          should.not.exist(err);
+          should.exist(cached);
+          fees = _.fromPairs(_.map(fees, function(item) {
+            return [item.level, item];
+          }));
+
+          //old cached values
+          fees.urgent.feePerKb.should.equal(750);
+          fees.superEconomy.feePerKb.should.equal(101);
+          Defaults.FEE_LEVEL_CACHE_DURATION = x;
+          done();
+        });
+      });
+    });
+
+
     it('should fallback to slower confirmation times if network cannot estimate (returns -1)', function(done) {
       helpers.stubFeeLevels({
         1: -1,
@@ -2434,7 +2595,7 @@ describe('Wallet service', function() {
       helpers.stubFeeLevels({
         1: 40000,
         2: 20000,
-      });
+      }, true);
       server.getFeeLevels({}, function(err, fees, fromCache) {
         should.not.exist(err);
         fees = _.fromPairs(_.map(fees, function(item) {

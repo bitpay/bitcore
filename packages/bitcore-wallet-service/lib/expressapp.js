@@ -505,10 +505,12 @@ ExpressApp.prototype.start = function(opts, cb) {
     });
   });
 
-  router.get('/v2/feelevels/', estimateFeeLimiter, function(req, res) {
+//  router.get('/v2/feelevels/', estimateFeeLimiter, function(req, res) {
+  router.get('/v2/feelevels/',function(req, res) {
     var opts = {};
     if (req.query.coin) opts.coin = req.query.coin;
     if (req.query.network) opts.network = req.query.network;
+console.log('[expressapp.js.512:opts:]',opts); //TODO
 
     var server;
     try {
