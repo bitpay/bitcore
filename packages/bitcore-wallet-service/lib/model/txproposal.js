@@ -54,8 +54,8 @@ TxProposal.create = function(opts) {
 
     // Add ephemeral private key 
     _.each(stealthAddresses, (i) => {
-      i.ephemeralPrivKey = Bitcore[x.coin].PrivateKey.fromRandom(x.network).toString();
-      var ephemeral = Bitcore[x.coin].PrivateKey(ephemeral);
+      var ephemeral = Bitcore[x.coin].PrivateKey.fromRandom(x.network);
+      i.ephemeralPrivKey = ephemeral.toString();
       var paymentAddress = new Stealth.Address(i.toAddress).toPaymentAddress(ephemeral);
       i.toAddress = paymentAddress.toString();
     });

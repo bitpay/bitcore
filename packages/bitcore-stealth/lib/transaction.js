@@ -62,8 +62,8 @@ Transaction.prototype.to = function(address, amount, ephemeralPrivateKey, stealt
     ephemeral.publicKey.toDER()
   ]);
 
-  this.addData(metadata);
   this.to(address, amount);
+  this.addData(metadata);
 
   return this;
 };
