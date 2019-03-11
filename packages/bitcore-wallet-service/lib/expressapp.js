@@ -510,7 +510,6 @@ ExpressApp.prototype.start = function(opts, cb) {
     var opts = {};
     if (req.query.coin) opts.coin = req.query.coin;
     if (req.query.network) opts.network = req.query.network;
-console.log('[expressapp.js.512:opts:]',opts); //TODO
 
     var server;
     try {
