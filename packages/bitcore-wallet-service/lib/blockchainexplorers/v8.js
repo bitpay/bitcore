@@ -403,11 +403,17 @@ V8.prototype.estimateFee = function(nbBlocks, cb) {
 
           result[x] = ret.feerate;
         }
-        catch (e) {};
+        catch (e) {
+
+console.log('[v8.js.407]',e); //TODO
+        };
 
         return icb();
       })
-      .catch((err) => {return icb(err)} );
+      .catch((err) => {
+console.log('[v8.js.410:err:]',err); //TODO
+        return icb(err)
+      } );
   }, function(err) {
     if (err) {
       return cb(err);

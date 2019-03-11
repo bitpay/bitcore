@@ -2174,7 +2174,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe.only('#getFeeLevels', function() {
+  describe('#getFeeLevels', function() {
     var server, wallet, levels;
     before(function() {
       levels = Defaults.FEE_LEVELS;
@@ -2404,6 +2404,7 @@ describe('Wallet service', function() {
       let x = Defaults.FEE_LEVEL_CACHE_DURATION;
       Defaults.FEE_LEVEL_CACHE_DURATION = 100;
 
+      //  not given values will fail
       helpers.stubFeeLevels({
         6: 200,
         24: 101,
