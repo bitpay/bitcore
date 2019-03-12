@@ -21,6 +21,9 @@ type ErrorType = {
 export async function validateDataForBlock(blockNum: number, log = false) {
   let success = true;
   const blockTxs = await TransactionStorage.collection.find({ chain, network, blockHeight: blockNum }).toArray();
+  const blockTxids = blockTxs.map(t => t.txid);
+  const coinsForTx = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: blockTxids } }).toArray();
+
   const seenTxs = {} as { [txid: string]: ITransaction };
   const errors = new Array<ErrorType>();
 
@@ -46,9 +49,6 @@ export async function validateDataForBlock(blockNum: number, log = false) {
     }
   }
 
-  const blockTxids = blockTxs.map(t => t.txid);
-
-  const coinsForTx = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: blockTxids } }).toArray();
   for (let coin of coinsForTx) {
     if (seenTxCoins[coin.mintTxid] && seenTxCoins[coin.mintTxid][coin.mintIndex]) {
       success = false;
