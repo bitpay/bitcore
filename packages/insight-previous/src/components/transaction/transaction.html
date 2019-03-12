@@ -71,8 +71,8 @@
             </p>
           </div>
           <div [hidden]="!expanded">
-            <p *ngIf="vin.confirmations">
-              <b>Confirmations</b> {{ vin.confirmations }}</p>
+            <p *ngIf="confirmations > 0">
+              <b>Confirmations</b> {{ confirmations }}</p>
             <p>
               <b>Unlocking Script</b>
             </p>
