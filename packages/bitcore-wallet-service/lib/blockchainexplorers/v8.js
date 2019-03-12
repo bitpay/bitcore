@@ -396,14 +396,16 @@ V8.prototype.estimateFee = function(nbBlocks, cb) {
           ret = JSON.parse(ret);
 
           // only process right responses.
-          if (ret.blocks != x)  {
+          if (!_.isUndefined(ret.blocks) && ret.blocks != x)  {
             log.info(`Ignoring response for ${x}:`+ JSON.stringify(ret));
             return icb();
           }
 
           result[x] = ret.feerate;
         }
-        catch (e) { };
+        catch (e) { 
+          log.warn('fee error:', e);
+        };
 
         return icb();
       })
