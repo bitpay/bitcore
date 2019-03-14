@@ -57,6 +57,7 @@ const Config = function(): ConfigType {
     dbHost: process.env.DB_HOST || '127.0.0.1',
     dbName: process.env.DB_NAME || 'bitcore',
     dbPort: process.env.DB_PORT || '27017',
+    ratelimit: process.env.RATE_LIMIT == 'true' || true,
     numWorkers: cpus().length,
     chains: {},
     services: {

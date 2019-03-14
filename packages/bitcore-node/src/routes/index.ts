@@ -58,8 +58,9 @@ function getRouterFromFile(path) {
 app.use(cors());
 app.use(LogMiddleware());
 app.use(CacheMiddleware(CacheTimes.Second));
-app.use(RateLimiter('GLOBAL', 10, 200, 4000));
 app.use('/api', getRouterFromFile('status'));
+if (config.ratelimit)
+  app.use(RateLimiter('GLOBAL', 10, 200, 4000));
 
 app.use('/api/:chain/:network', (req: Request, resp: Response, next: any) => {
   let { chain, network } = req.params;

@@ -4,6 +4,7 @@ export interface ConfigType {
   dbHost: string;
   dbName: string;
   dbPort: string;
+  ratelimit: boolean | undefined;
   numWorkers: number;
 
   chains: {
