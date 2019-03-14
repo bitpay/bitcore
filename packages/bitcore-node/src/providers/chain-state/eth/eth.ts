@@ -73,13 +73,14 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
     const web3 = this.getWeb3(network);
     const addresses = await this.getWalletAddresses(wallet._id!);
+    const bestBlock = await web3.eth.getBlockNumber();
 
     Storage.stream(
       new Readable({
         objectMode: true,
         read: async function() {
           for (const walletAddress of addresses) {
-            const transactions = await new ParityRPC(web3).getTransactionsForAddress(100000, walletAddress.address);
+            const transactions = await new ParityRPC(web3).getTransactionsForAddress(bestBlock, walletAddress.address);
             for await (const tx of transactions) {
               this.push(tx);
             }

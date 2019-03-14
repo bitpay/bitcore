@@ -19,6 +19,8 @@ export interface AppState {
     satoshis: number;
     size: number;
     txid: string;
+    chain: string;
+    network: string;
   }[];
   addresses: string[];
   addressToAdd: string;

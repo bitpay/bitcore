@@ -34,9 +34,12 @@ export class ParityRPC {
     this.web3 = web3;
   }
 
-  public async *getTransactionsForAddress(bestHeight: number, address: string) {
-    const txs = await this.scan(0, bestHeight, address);
+  public async *getTransactionsForAddress(bestBlock: number, address: string) {
+    const fromBlock = bestBlock - 100000;
+    const txs = await this.scan(fromBlock, bestBlock, address);
     for (const tx of txs) {
+      let { timestamp } = await this.web3.eth.getBlock(tx.blockNumber);
+      let blockTime = new Date(timestamp * 1000).toUTCString();
       yield {
         id: null,
         txid: tx.transactionHash,
@@ -45,7 +48,10 @@ export class ParityRPC {
         satoshis: tx.action.value,
         height: tx.blockNumber,
         address,
-        outputIndex: tx.result ? tx.result.output : null
+        outputIndex: tx.result ? tx.result.output : null,
+        blockTime,
+        chain: 'ETH',
+        network: 'mainnet'
       };
     }
   }
@@ -59,7 +65,7 @@ export class ParityRPC {
             {
               fromBlock: this.web3.utils.toHex(fromHeight),
               toBlock: this.web3.utils.toHex(toHeight),
-              toAddress: [address.toLowerCase()]
+              toAddress: [address],
             }
           ],
           jsonrpc: '2.0',

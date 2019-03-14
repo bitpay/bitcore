@@ -17,6 +17,7 @@
     "classnames": "^2.2.6",
     "history": "^4.7.2",
     "immer-reducer": "^0.6.0",
+    "moment": "^2.24.0",
     "prop-types": "^15.6.2",
     "react": "^16.7.0",
     "react-dom": "^16.7.0",
