@@ -8,6 +8,7 @@ export class ETHTxProvider {
 
   async create({ recipients, from, fee = 20000 }) {
     let txCount = await web3.eth.getTransactionCount(from);
+    console.log(from, txCount);
     const { address, amount } = recipients[0];
 
     // !Important: Amount needs to be passed into utils as a string
