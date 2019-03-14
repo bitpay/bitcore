@@ -2,6 +2,7 @@ var $ = require('preconditions').singleton();
 const URL = require('url');
 const _ = require('lodash');
 var Bitcore = require('bitcore-lib');
+const Errors = require('./errors');
 var Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
@@ -122,20 +123,34 @@ PayPro.runRequest = function (opts, cb) {
     let ret;
 
     if (!res || res.statusCode != 200) {
+
+      // some know codes
+      if (res.statusCode == 400) {
+        return cb( new Errors.INVOICE_EXPIRED);
+      } else if (res.statusCode == 404 ) {
+        return cb( new Errors.INVOICE_NOT_AVAILABLE);
+      } else if (res.statusCode == 422 ) {
+        return cb( new Errors.UNCONFIRMED_INPUTS_NOT_ACCEPTED);
+      }
+
       let m  = res ? (res.statusMessage || res.statusCode) : '';
-      return cb({message: 'Could not retrieve payment: ' + m} );
+      return cb(new Error('Could not fetch invoice: ' + m) );
     }
 
     try {
       ret = JSON.parse(body.toString());
     } catch (e)  {
       try { body = body.toString(); } catch (e) {};
-      return cb({message: 'Could not retrieve payment: ' +  body });
+      return cb(new Error('Could not fetch invoice: ' +  body ));
     }
 
 
     // read and check
     ret.url = opts.url;
+
+    //console.log('########################### SKIPPING VERIFICATION!!!!!!!!!!! ');
+    // TODO TODO TODO 
+    //  return cb(null, body);
 
     if (opts.noVerify) 
       return cb(null, body);

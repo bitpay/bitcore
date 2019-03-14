@@ -1713,7 +1713,7 @@ API.prototype.getPayPro = function(txp, cb) {
     // for testing
     request: self.request,
   }, function(err, paypro) {
-    if (err) return cb(new Error('Cannot check transaction now:' + (err.message? err.message : err)));
+    if (err) return cb(new Error('Could not fetch invoice:' + (err.message? err.message : err)));
     return cb(null, paypro);
   });
 };
@@ -1981,8 +1981,9 @@ API.prototype.broadcastTxProposal = function(txp, cb) {
         // for testing
         request: self.request,
       }, function(err, ack, memo) {
-        if (err) 
+        if (err) {
           return cb(err);
+        }
 
         if (memo) {
           log.debug('Merchant memo:', memo);
