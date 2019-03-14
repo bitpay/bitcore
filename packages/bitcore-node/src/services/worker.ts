@@ -26,6 +26,7 @@ export class WorkerService extends EventEmitter {
       if (!args.DEBUG) {
         for (let worker = 0; worker < config.numWorkers; worker++) {
           let newWorker = cluster.fork();
+          logger.verbose(`Starting worker number ${worker}`);
           newWorker.on('message', (msg: any) => {
             this.emit(msg.id, msg);
           });

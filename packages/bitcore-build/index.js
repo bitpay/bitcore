@@ -7,7 +7,7 @@ var coveralls = require('@kollavarsham/gulp-coveralls');
 var mocha = require('gulp-mocha');
 var rename = require('gulp-rename');
 var shell = require('gulp-shell');
-var uglify = require('gulp-uglify');
+var terser = require('gulp-terser');
 //var bump = require('gulp-bump');
 //var git = require('gulp-git');
 var fs = require('fs');
@@ -96,9 +96,9 @@ function startGulp(name, opts) {
       browserifyCommand
     ]);
 
-    task['browser:uglify'] =function() {
+    task['browser:terser'] =function() {
       return gulp.src(fullname + '.js')
-        .pipe(uglify({
+        .pipe(terser({
           mangle: true,
           compress: true
         }))
@@ -108,7 +108,7 @@ function startGulp(name, opts) {
     };
 
     task['browser:compressed'] =
-      gulp.series(task['browser:uncompressed'], task['browser:uglify']);
+      gulp.series(task['browser:uncompressed'], task['browser:terser']);
 
     task['browser:maketests'] = shell.task([
       'find test/ -type f -name "*.js" | xargs ' + browserifyPath + ' -t brfs -o tests.js'

@@ -32,4 +32,4 @@ import { MessagesPageModule } from './messages/messages.module';
   entryComponents: [],
   providers: []
 })
-export class PagesModule { }
+export class PagesModule {}

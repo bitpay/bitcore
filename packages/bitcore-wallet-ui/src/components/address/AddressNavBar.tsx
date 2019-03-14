@@ -119,8 +119,8 @@ class AddressBar extends Component<Props> {
   }
 
   async handleDeriveAddressClick() {
-    const wallet = this.props.wallet;
-    const newAddresses = await wallet!.nextAddressPair();
+    const wallet = this.props.wallet!;
+    const newAddresses = await wallet.nextAddressPair( wallet.chain !== 'ETH');
     newAddresses.map(e => store.dispatch(ActionCreators.setAddress(e)));
   }
 

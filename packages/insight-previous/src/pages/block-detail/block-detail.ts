@@ -6,6 +6,7 @@ import { CurrencyProvider } from '../../providers/currency/currency';
 import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
 import { RedirProvider } from '../../providers/redir/redir';
+import { TxsProvider } from '../../providers/transactions/transactions';
 
 @Injectable()
 @IonicPage({
@@ -18,22 +19,25 @@ import { RedirProvider } from '../../providers/redir/redir';
   templateUrl: 'block-detail.html'
 })
 export class BlockDetailPage {
-  public loading = true;
   private blockHash: string;
   private chainNetwork: ChainNetwork;
+
+  public loading = true;
+  public errorMessage: string;
+  public confirmations: number;
   public block: any = {
     tx: []
   };
-  public errorMessage: string;
 
   constructor(
     public navParams: NavParams,
-    private blockProvider: BlocksProvider,
-    private apiProvider: ApiProvider,
     public currencyProvider: CurrencyProvider,
+    public redirProvider: RedirProvider,
+    public txProvider: TxsProvider,
+    private blockProvider: BlocksProvider,
     private logger: Logger,
-    private priceProvider: PriceProvider,
-    public redirProvider: RedirProvider
+    private apiProvider: ApiProvider,
+    private priceProvider: PriceProvider
   ) {
     this.blockHash = navParams.get('blockHash');
     const chain: string =
@@ -54,6 +58,9 @@ export class BlockDetailPage {
     this.blockProvider.getBlock(this.blockHash).subscribe(
       data => {
         this.block = data.block;
+        this.txProvider
+          .getConfirmations(this.block.height)
+          .subscribe(confirmations => (this.confirmations = confirmations));
         this.loading = false;
       },
       err => {
