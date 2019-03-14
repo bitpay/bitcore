@@ -5707,7 +5707,6 @@ describe('client API', function() {
         var c = client.credentials;
         var importedClient = helpers.newClient(app);
         importedClient.importFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00', {}, function(err) {
-console.log('[client.js.5707:err:]',err); //TODO
           should.not.exist(err);
           var c2 = importedClient.credentials;
           c2.account.should.equal(0);
