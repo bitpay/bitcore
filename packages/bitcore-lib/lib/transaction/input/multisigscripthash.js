@@ -33,7 +33,7 @@ function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, nestedWi
   } else  {
     this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
   }
-  this.redeemScript = Script.buildMultisigOut(this.publicKeys, threshold);
+  this.redeemScript = Script.buildMultisigOut(this.publicKeys, threshold, opts);
   if (this.nestedWitness) {
     var nested = Script.buildWitnessMultisigOutFromScript(this.redeemScript);
     $.checkState(Script.buildScriptHashOut(nested).equals(this.output.script),
