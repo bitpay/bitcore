@@ -24,7 +24,7 @@ router.get('/:chain/:network/sync', async function(req, res) {
   const state = await StateStorage.collection.findOne({});
   const initialSyncComplete =
     state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
-    res.json({"initialSyncComplete": initialSyncComplete != null});
+  res.json({ initialSyncComplete });
 });
 
 module.exports = {
