@@ -1,8 +1,8 @@
-<ion-list radio-group [(ngModel)]="currencySymbol">
-  <ion-row *ngIf="availableNetworks?.length > 1">
-    <ion-list-header>
+<ion-list no-lines>
+  <ion-row>
+    <ion-item-divider>
       Blockchain
-    </ion-list-header>
+    </ion-item-divider>
 
     <ion-item *ngFor="let chainNetwork of availableNetworks">
       <ion-avatar item-start>
@@ -13,10 +13,11 @@
       </ion-label>
     </ion-item>
   </ion-row>
-
-  <ion-list-header>
+</ion-list>
+<ion-list radio-group [(ngModel)]="currencySymbol" *ngIf="showUnits">
+  <ion-item-divider>
     Units
-  </ion-list-header>
+  </ion-item-divider>
 
   <ion-item *ngFor="let unit of units">
     <ion-label color="dark">{{ unit }}</ion-label>

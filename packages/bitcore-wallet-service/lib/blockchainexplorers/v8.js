@@ -379,7 +379,6 @@ console.log('[v8.js.328:url:] CHECKING ADDRESS ACTIVITY',url); //TODO
       return cb(null, ret !== '[]');
     })
       .catch((err) => {
-console.log('[v8.js.335:err:]',err); //TODO
         return cb(err);
       } );
 };
@@ -394,14 +393,25 @@ V8.prototype.estimateFee = function(nbBlocks, cb) {
     self.request.get(url, {})
       .then( (ret) => {
         try {
-          ret = JSON.parse(ret); 
+          ret = JSON.parse(ret);
+
+          // only process right responses.
+          if (!_.isUndefined(ret.blocks) && ret.blocks != x)  {
+            log.info(`Ignoring response for ${x}:`+ JSON.stringify(ret));
+            return icb();
+          }
+
           result[x] = ret.feerate;
         }
-        catch (e) {};
+        catch (e) { 
+          log.warn('fee error:', e);
+        };
 
         return icb();
       })
-      .catch((err) => {return icb(err)} );
+      .catch((err) => {
+        return icb(err)
+      } );
   }, function(err) {
     if (err) {
       return cb(err);

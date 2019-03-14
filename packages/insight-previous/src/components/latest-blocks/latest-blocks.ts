@@ -25,6 +25,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   private reloadInterval: any;
 
   public subscriber: Subscription;
+  public errorMessage: string;
 
   constructor(
     private blocksProvider: BlocksProvider,
@@ -57,7 +58,10 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
         this.loading = false;
       },
       err => {
-        this.logger.error(err);
+        this.subscriber.unsubscribe();
+        clearInterval(this.reloadInterval);
+        this.logger.error(err._body);
+        this.errorMessage = err;
         this.loading = false;
       }
     );
@@ -75,6 +79,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
       },
       err => {
         this.logger.error(err);
+        this.errorMessage = err;
         this.loading = false;
       }
     );

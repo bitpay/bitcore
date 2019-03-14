@@ -6,7 +6,9 @@
 
       <loader *ngIf="loading" [type]="'title'"></loader>
 
-      <div *ngIf="!loading">
+      <error [message]="errorMessage" *ngIf="!loading && errorMessage"></error>
+
+      <div *ngIf="!loading && !errorMessage">
 
         <h1>Block #{{ block.height }}</h1>
         <p class="item-hash">
@@ -103,7 +105,7 @@
                 <ion-item>
                   Confirmations
                   <ion-note item-end>
-                    {{ block.confirmations }}
+                    {{ confirmations }}
                   </ion-note>
                 </ion-item>
               </ion-col>
