@@ -437,7 +437,7 @@ Transaction.prototype.fromObject = function fromObject(arg, opts) {
       txin = new Input.PublicKeyHash(input);
     } else if (script.isScriptHashOut() && input.publicKeys && input.threshold) {
       txin = new Input.MultiSigScriptHash(
-        input, input.publicKeys, input.threshold, input.signatures, opts
+        input, input.publicKeys, input.threshold, input.signatures, null, opts
       );
     } else if (script.isPublicKeyOut()) {
       txin = new Input.PublicKey(input);
