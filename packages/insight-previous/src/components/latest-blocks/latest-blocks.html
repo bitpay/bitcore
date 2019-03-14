@@ -1,4 +1,5 @@
-<div>
+<error [message]="errorMessage" *ngIf="errorMessage"></error>
+<div *ngIf="!errorMessage">
   <ion-grid class="grid--table">
 
     <ion-row>
@@ -13,7 +14,7 @@
     <loader *ngIf="loading" [type]="'grid'"></loader>
 
     <div *ngIf="!loading">
-      <ion-row *ngFor="let block of getBlocks()">
+      <ion-row *ngFor="let block of blocks">
         <ion-col>
           <a (click)="goToBlock(block.hash)">{{ block.height }}</a>
         </ion-col>
@@ -38,7 +39,7 @@
 
       <ion-row *ngIf="showAllBlocksButton">
         <ion-col text-center>
-          <button ion-button small (click)="goToBlocks()" [disabled]="getBlocks().length == 0">See all blocks</button>
+          <button ion-button small (click)="goToBlocks()" [disabled]="blocks.length == 0">See all blocks</button>
         </ion-col>
       </ion-row>
 

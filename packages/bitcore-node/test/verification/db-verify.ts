@@ -21,8 +21,23 @@ type ErrorType = {
 export async function validateDataForBlock(blockNum: number, log = false) {
   let success = true;
   const blockTxs = await TransactionStorage.collection.find({ chain, network, blockHeight: blockNum }).toArray();
+  const blockTxids = blockTxs.map(t => t.txid);
+  const coinsForTx = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: blockTxids } }).toArray();
+  const mempoolTxs = await TransactionStorage.collection
+    .find({ chain, network, blockHeight: -1, txid: { $in: blockTxids } })
+    .toArray();
+
   const seenTxs = {} as { [txid: string]: ITransaction };
   const errors = new Array<ErrorType>();
+
+  for (const tx of mempoolTxs) {
+    success = false;
+    const error = { model: 'transaction', err: true, type: 'DUPE_TRANSACTION', payload: { tx, blockNum } };
+    errors.push(error);
+    if (log) {
+      console.log(JSON.stringify(error));
+    }
+  }
 
   const seenTxCoins = {} as { [txid: string]: ICoin[] };
   for (let tx of blockTxs) {
@@ -46,9 +61,6 @@ export async function validateDataForBlock(blockNum: number, log = false) {
     }
   }
 
-  const blockTxids = blockTxs.map(t => t.txid);
-
-  const coinsForTx = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: blockTxids } }).toArray();
   for (let coin of coinsForTx) {
     if (seenTxCoins[coin.mintTxid] && seenTxCoins[coin.mintTxid][coin.mintIndex]) {
       success = false;
