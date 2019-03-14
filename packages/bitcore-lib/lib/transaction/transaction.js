@@ -33,7 +33,7 @@ var BN = require('../crypto/bn');
  * @param {*} serialized
  * @constructor
  */
-function Transaction(serialized) {
+function Transaction(serialized, opts) {
   if (!(this instanceof Transaction)) {
     return new Transaction(serialized);
   }
@@ -50,7 +50,7 @@ function Transaction(serialized) {
     } else if (BufferUtil.isBuffer(serialized)) {
       this.fromBuffer(serialized);
     } else if (_.isObject(serialized)) {
-      this.fromObject(serialized);
+      this.fromObject(serialized, opts);
     } else {
       throw new errors.InvalidArgument('Must provide an object or string to deserialize a transaction');
     }
@@ -416,7 +416,7 @@ Transaction.prototype.toObject = Transaction.prototype.toJSON = function toObjec
   return obj;
 };
 
-Transaction.prototype.fromObject = function fromObject(arg) {
+Transaction.prototype.fromObject = function fromObject(arg, opts) {
   /* jshint maxstatements: 20 */
   $.checkArgument(_.isObject(arg) || arg instanceof Transaction);
   var self = this;
@@ -437,7 +437,7 @@ Transaction.prototype.fromObject = function fromObject(arg) {
       txin = new Input.PublicKeyHash(input);
     } else if (script.isScriptHashOut() && input.publicKeys && input.threshold) {
       txin = new Input.MultiSigScriptHash(
-        input, input.publicKeys, input.threshold, input.signatures
+        input, input.publicKeys, input.threshold, input.signatures, opts
       );
     } else if (script.isPublicKeyOut()) {
       txin = new Input.PublicKey(input);
