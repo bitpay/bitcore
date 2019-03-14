@@ -36,7 +36,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { network, address } = params;
     const balance = Number(await this.getWeb3(network).eth.getBalance(address));
-    console.log(balance, address);
     return { confirmed: balance, unconfirmed: 0, balance };
   }
 
@@ -119,7 +118,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     let addressBalances = await Promise.all<{ confirmed: number; unconfirmed: number; balance: number }>(
       addressBalancePromises
     );
-    console.log(addressBalances);
     let balance = addressBalances.reduce(
       (prev, cur) => ({
         unconfirmed: prev.unconfirmed + cur.unconfirmed,
