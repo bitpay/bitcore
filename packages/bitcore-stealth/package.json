@@ -32,7 +32,7 @@
     "mocha": "^2.0.1"
   },
   "dependencies": {
-    "bitcore-lib": "8.0.0",
+    "bitcore-lib": "^8.1.0",
     "lodash": "^4.17.11"
   }
 }
