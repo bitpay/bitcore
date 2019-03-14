@@ -26,19 +26,19 @@
 
   <ion-row align-items-end class="small" *ngIf="!showCoins">
     <ion-col col-12 text-right text-uppercase>
-      <ion-chip item-end color="danger" *ngIf="tx.confirmations === 0">
+      <ion-chip item-end color="danger" *ngIf="confirmations <= 0">
         <ion-label>
           Unconfirmed
         </ion-label>
       </ion-chip>
-      <ion-chip item-end color="warning" *ngIf="tx.confirmations === 1">
+      <ion-chip item-end color="warning" *ngIf="confirmations === 1">
         <ion-label>
           1 Confirmation
         </ion-label>
       </ion-chip>
-      <ion-chip item-end color="primary" *ngIf="tx.confirmations > 1">
+      <ion-chip item-end color="primary" *ngIf="confirmations > 1">
         <ion-label>
-          {{ tx.confirmations | number }} Confirmations
+          {{ confirmations }} Confirmations
         </ion-label>
       </ion-chip>
       <ion-chip item-end color="brand">
@@ -148,14 +148,14 @@
       </div>
     </ion-col>
     <ion-col col-6 text-right>
-      <ion-chip color="danger" *ngIf="tx.confirmations === 0">
+      <ion-chip color="danger" *ngIf="confirmations <= 0">
         <ion-label>Unconfirmed</ion-label>
       </ion-chip>
-      <ion-chip color="warning" *ngIf="tx.confirmations === 1">
+      <ion-chip color="warning" *ngIf="confirmations === 1">
         <ion-label>1 Confirmation</ion-label>
       </ion-chip>
-      <ion-chip color="primary" *ngIf="tx.confirmations > 1">
-        <ion-label>{{ tx.confirmations | number }} Confirmations
+      <ion-chip color="primary" *ngIf="confirmations > 1">
+        <ion-label>{{ confirmations }} Confirmations
         </ion-label>
       </ion-chip>
       <ion-chip color="brand">

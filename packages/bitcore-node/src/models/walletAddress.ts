@@ -28,7 +28,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
     this.collection.createIndex({ chain: 1, network: 1, wallet: 1, address: 1 }, { background: true, unique: true });
   }
 
-  _apiTransform(walletAddress: { address: string }, options: TransformOptions) {
+  _apiTransform(walletAddress: { address: string }, options?: TransformOptions) {
     let transform = { address: walletAddress.address };
     if (options && options.object) {
       return transform;
@@ -101,7 +101,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
             })
           ),
             { ordered: false };
-          
+
         } catch (err) {
           // Ignore duplicate keys, they may be half processed
           if (err.code !== 11000) {

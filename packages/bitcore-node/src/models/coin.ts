@@ -1,6 +1,6 @@
 import { LoggifyClass } from '../decorators/Loggify';
 import { BaseModel, MongoBound } from './base';
-import { ObjectID } from 'mongodb';
+import { ObjectID, CollectionAggregationOptions } from 'mongodb';
 import { SpentHeightIndicators, CoinJSON } from '../types/Coin';
 import { valueOrDefault } from '../utils/check';
 import { StorageService } from '../services/storage';
@@ -49,7 +49,7 @@ class CoinModel extends BaseModel<ICoin> {
     this.collection.createIndex({ spentTxid: 1 }, { background: true, sparse: true });
     this.collection.createIndex({ chain: 1, network: 1, spentHeight: 1 }, { background: true });
     this.collection.createIndex(
-      { wallets: 1, spentHeight: 1, value: 1 },
+      { wallets: 1, spentHeight: 1, value: 1, mintHeight: 1 },
       { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } }
     );
     this.collection.createIndex(
@@ -62,31 +62,34 @@ class CoinModel extends BaseModel<ICoin> {
     );
   }
 
-  async getBalance(params: { query: any }) {
+  async getBalance(params: { query: any }, options: CollectionAggregationOptions = {}) {
     let { query } = params;
     const result = await this.collection
-      .aggregate<{ _id: string; balance: number }>([
-        { $match: query },
-        {
-          $project: {
-            value: 1,
-            status: {
-              $cond: {
-                if: { $gte: ['$mintHeight', SpentHeightIndicators.minimum] },
-                then: 'confirmed',
-                else: 'unconfirmed'
-              }
-            },
-            _id: 0
+      .aggregate<{ _id: string; balance: number }>(
+        [
+          { $match: query },
+          {
+            $project: {
+              value: 1,
+              status: {
+                $cond: {
+                  if: { $gte: ['$mintHeight', SpentHeightIndicators.minimum] },
+                  then: 'confirmed',
+                  else: 'unconfirmed'
+                }
+              },
+              _id: 0
+            }
+          },
+          {
+            $group: {
+              _id: '$status',
+              balance: { $sum: '$value' }
+            }
           }
-        },
-        {
-          $group: {
-            _id: '$status',
-            balance: { $sum: '$value' }
-          }
-        }
-      ])
+        ],
+        options
+      )
       .toArray();
     return result.reduce<{ confirmed: number; unconfirmed: number; balance: number }>(
       (acc, cur) => {
@@ -115,12 +118,12 @@ class CoinModel extends BaseModel<ICoin> {
     const combinedQuery = Object.assign(
       {},
       {
-        $or: [{ spentHeight: { $gt: blockHeight } }, { spentHeight: { $lt: SpentHeightIndicators.minimum } }],
+        $or: [{ spentHeight: { $gt: blockHeight } }, { spentHeight: SpentHeightIndicators.unspent }],
         mintHeight: { $lte: blockHeight }
       },
       query
     );
-    return this.getBalance({ query: combinedQuery });
+    return this.getBalance({ query: combinedQuery }, { hint: { wallets: 1, spentHeight: 1, value: 1, mintHeight: 1 } });
   }
 
   resolveAuthhead(mintTxid: string, chain?: string, network?: string) {

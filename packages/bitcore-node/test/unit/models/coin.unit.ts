@@ -105,9 +105,7 @@ describe('Coin Model', function() {
             }
           },
           {
-            spentHeight: {
-              $lt: 0
-            }
+            spentHeight: -2
           }
         ],
         mintHeight: {

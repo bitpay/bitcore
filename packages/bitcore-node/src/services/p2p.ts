@@ -411,7 +411,7 @@ export class P2pWorker {
       }
       const [hostname, pid, timestamp] = syncingNode.split(':');
       const amSyncingNode =
-        hostname === os.hostname() && pid === process.pid.toString() && Date.now() - parseInt(timestamp) < 1000;
+        hostname === os.hostname() && pid === process.pid.toString() && Date.now() - parseInt(timestamp) < 5000;
       if (amSyncingNode) {
         StateStorage.selfNominateSyncingNode({
           chain: this.chain,

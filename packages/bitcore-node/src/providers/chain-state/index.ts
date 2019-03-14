@@ -83,7 +83,7 @@ class ChainStateProxy implements CSP.ChainStateProvider {
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {
     return this.get(params).getWalletBalance(params);
   }
-  
+
   async getWalletBalanceAtTime(params: CSP.GetWalletBalanceAtTimeParams) {
     return this.get(params).getWalletBalanceAtTime(params);
   }

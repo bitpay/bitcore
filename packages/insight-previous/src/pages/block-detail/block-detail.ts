@@ -24,6 +24,7 @@ export class BlockDetailPage {
   public block: any = {
     tx: []
   };
+  public errorMessage: string;
 
   constructor(
     public navParams: NavParams,
@@ -57,6 +58,7 @@ export class BlockDetailPage {
       },
       err => {
         this.logger.error(err);
+        this.errorMessage = err;
         this.loading = false;
       }
     );

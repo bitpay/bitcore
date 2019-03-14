@@ -63,7 +63,10 @@ export class InternalStateProvider implements CSP.IChainStateService {
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { chain, network, address } = params;
     const query = {
-      chain, network, address, spentHeight: { $lt: SpentHeightIndicators.minimum },
+      chain,
+      network,
+      address,
+      spentHeight: { $lt: SpentHeightIndicators.minimum },
       mintHeight: { $gt: SpentHeightIndicators.conflicting }
     };
     let balance = await CoinStorage.getBalance({ query });
@@ -310,7 +313,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
           }
           return done();
         },
-        function (done) {
+        function(done) {
           this.push({ allMissingAddresses, totalMissingValue });
           done();
         }
@@ -377,8 +380,8 @@ export class InternalStateProvider implements CSP.IChainStateService {
       wallets: params.wallet._id,
       'wallets.0': { $exists: true },
       spentHeight: { $lt: SpentHeightIndicators.minimum },
-      mintHeight: { $gt: SpentHeightIndicators.conflicting },
-    }
+      mintHeight: { $gt: SpentHeightIndicators.conflicting }
+    };
     return CoinStorage.getBalance({ query });
   }
 

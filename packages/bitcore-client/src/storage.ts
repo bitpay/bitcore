@@ -1,21 +1,37 @@
 import * as os from 'os';
 import * as fs from 'fs';
-import levelup, { LevelUp } from 'levelup';
-import leveldown, { LevelDown } from 'leveldown';
 import { Encryption } from './encryption';
+import levelup, { LevelUp } from 'levelup';
+import { LevelDown } from 'leveldown';
+import { Wallet } from './wallet';
+import { Transform } from 'stream';
+
+let lvldwn: LevelDown;
+let usingBrowser = (global as any).window;
+if (usingBrowser) {
+  lvldwn = require('level-js');
+} else {
+  lvldwn = require('leveldown');
+}
 const bitcoreLib = require('bitcore-lib');
-const StorageCache = {};
+const StorageCache: { [path: string]: LevelUp } = {};
 
 export class Storage {
   path: string;
   db: LevelUp;
-  constructor(params) {
+  constructor(params: {
+    path?: string;
+    createIfMissing: boolean;
+    errorIfExists: boolean;
+  }) {
     const { path, createIfMissing, errorIfExists } = params;
     let basePath;
     if (!path) {
       basePath = `${os.homedir()}/.bitcore`;
       try {
-        fs.mkdirSync(basePath);
+        if (!usingBrowser) {
+          fs.mkdirSync(basePath);
+        }
       } catch (e) {
         if (e.errno !== -17) {
           console.error('Unable to create bitcore storage directory');
@@ -23,7 +39,7 @@ export class Storage {
       }
     }
     this.path = path || `${basePath}/bitcoreWallet`;
-    if (!createIfMissing) {
+    if (!createIfMissing && !usingBrowser) {
       const walletExists =
         fs.existsSync(this.path) &&
         fs.existsSync(this.path + '/LOCK') &&
@@ -35,7 +51,8 @@ export class Storage {
     if (StorageCache[this.path]) {
       this.db = StorageCache[this.path];
     } else {
-      this.db = StorageCache[this.path] = levelup(leveldown(this.path), {
+      console.log('using wallets at', this.path);
+      this.db = StorageCache[this.path] = levelup(lvldwn(this.path), {
         createIfMissing,
         errorIfExists
       });
@@ -52,10 +69,34 @@ export class Storage {
   }
 
   listWallets() {
-    return this.db.createValueStream({
-      gt: Buffer.from('walle'),
-      lt: Buffer.from('wallf')
-    });
+    return this.db.createReadStream().pipe(
+      new Transform({
+        objectMode: true,
+        write: function(data, enc, next) {
+          if (data.key.toString().startsWith('wallet')) {
+            this.push(data.value.toString());
+          }
+          next();
+        }
+      })
+    );
+  }
+
+  listKeys() {
+    return this.db.createReadStream().pipe(
+      new Transform({
+        objectMode: true,
+        write: function(data, enc, next) {
+          if (data.key.toString().startsWith('key')) {
+            this.push({
+              data: data.value.toString(),
+              key: data.key.toString()
+            });
+          }
+          next();
+        }
+      })
+    );
   }
 
   async saveWallet(params) {
@@ -63,7 +104,11 @@ export class Storage {
     return this.db.put(`wallet|${wallet.name}`, JSON.stringify(wallet));
   }
 
-  async getKey(params) {
+  async getKey(params: {
+    address: string;
+    name: string;
+    encryptionKey: string;
+  }): Promise<Wallet.KeyImport> {
     const { address, name, encryptionKey } = params;
     const payload = (await this.db.get(`key|${name}|${address}`)) as string;
     const json = JSON.parse(payload) || payload;
@@ -80,7 +125,11 @@ export class Storage {
     }
   }
 
-  async addKeys(params) {
+  async addKeys(params: {
+    name: string;
+    keys: Wallet.KeyImport[];
+    encryptionKey: string;
+  }) {
     const { name, keys, encryptionKey } = params;
     const ops = keys.map(key => {
       let { pubKey } = key;
@@ -101,7 +150,10 @@ export class Storage {
         value: JSON.stringify(payload)
       };
     });
-
-    return this.db.batch(ops);
+    if (ops.length > 1) {
+      return this.db.batch(ops);
+    } else {
+      this.db.put(ops[0].key, ops[0].value);
+    }
   }
 }
