@@ -1,24 +1,19 @@
 import Web3 from 'web3';
 import EthereumTx from 'ethereumjs-tx';
-import { Key } from "../../derivation";
-
-
-const web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+import { Key } from '../../derivation';
+const utils = require('web3-utils');
 export class ETHTxProvider {
   lib = require('bitcore-lib');
 
-  async create({ recipients, from, fee = 20000 }) {
-    let txCount = await web3.eth.getTransactionCount(from);
+  async create({ recipients, from, nonce, fee = 20000 }) {
     const { address, amount } = recipients[0];
-
-    // !Important: Amount needs to be passed into utils as a string
     const txData = {
-      nonce: web3.utils.toHex(txCount),
-      gasLimit: web3.utils.toHex(25000),
-      gasPrice: web3.utils.toHex(fee),
+      nonce,
+      gasLimit: utils.toHex(25000),
+      gasPrice: utils.toHex(fee),
       to: address,
       from,
-      value: web3.utils.toHex(web3.utils.toWei(`${amount}`, 'wei'))
+      value: utils.toHex(utils.toWei(`${amount}`, 'wei'))
     };
     const rawTx = new EthereumTx(txData).serialize().toString('hex');
     return rawTx;
