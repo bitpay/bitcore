@@ -7,7 +7,9 @@
 
       <loader *ngIf="loading" [type]="'title'"></loader>
 
-      <div *ngIf="!loading">
+      <error [message]="errorMessage" *ngIf="!loading && errorMessage "></error>
+
+      <div *ngIf="!loading && !errorMessage">
         <h1>Address <small>{{ getConvertedNumber(address.balance) | number:'1.0-8' }}
             {{ currencyProvider.currencySymbol }}</small></h1>
         <p class="ellipsis">{{ address.addrStr }}</p>
@@ -50,4 +52,4 @@
     </div>
   </ion-grid>
 </ion-content>
-<footer></footer>
+<footer [chainNetwork]="chainNetwork"></footer>

@@ -3,6 +3,8 @@ import requestStream from 'request';
 import * as secp256k1 from 'secp256k1';
 import * as stream from 'stream';
 import { URL } from 'url';
+let usingBrowser = (global as any).window;
+const URLClass = usingBrowser ? usingBrowser.URL : URL;
 const bitcoreLib = require('bitcore-lib');
 
 export class Client {
@@ -14,7 +16,7 @@ export class Client {
 
   sign(params) {
     const { method, url, payload = {} } = params;
-    const parsedUrl = new URL(url);
+    const parsedUrl = new URLClass(url);
     const message = [
       method,
       parsedUrl.pathname + parsedUrl.search,
@@ -40,11 +42,11 @@ export class Client {
     });
   }
 
-  async getBalance(params) {
+  async getBalance(params: { payload?: any; pubKey: string; time?: string }) {
     const { payload, pubKey, time } = params;
     let url = `${this.baseUrl}/wallet/${pubKey}/balance`;
     if (time) {
-      url += `/${time}`
+      url += `/${time}`;
     }
     const signature = this.sign({ method: 'GET', url, payload });
     return request.get(url, {
@@ -63,7 +65,7 @@ export class Client {
     });
   };
 
-  getCoins(params: {payload?: any, pubKey: string, includeSpent: boolean}) {
+  getCoins(params: { payload?: any; pubKey: string; includeSpent: boolean }) {
     const { payload, pubKey, includeSpent } = params;
     const url = `${
       this.baseUrl
@@ -83,27 +85,33 @@ export class Client {
       startDate,
       endBlock,
       endDate,
-      includeMempool
+      includeMempool,
+      payload
     } = params;
-    let url = `${this.baseUrl}/wallet/${pubKey}/transactions?`;
+    let url = `${this.baseUrl}/wallet/${pubKey}/transactions`;
+    let query = '';
     if (startBlock) {
-      url += `startBlock=${startBlock}&`;
+      query += `startBlock=${startBlock}&`;
     }
     if (endBlock) {
-      url += `endBlock=${endBlock}&`;
+      query += `endBlock=${endBlock}&`;
     }
     if (startDate) {
-      url += `startDate=${startDate}&`;
+      query += `startDate=${startDate}&`;
     }
     if (endDate) {
-      url += `endDate=${endDate}&`;
+      query += `endDate=${endDate}&`;
     }
     if (includeMempool) {
-      url += 'includeMempool=true';
+      query += 'includeMempool=true';
     }
-    const signature = this.sign({ method: 'GET', url });
+    if (query) {
+      url += '?' + query;
+    }
+    const signature = this.sign({ method: 'GET', url, payload });
     return requestStream.get(url, {
       headers: { 'x-signature': signature },
+      body: payload,
       json: true
     });
   }
@@ -111,9 +119,13 @@ export class Client {
   async getFee(params) {
     const { target } = params;
     const url = `${this.baseUrl}/fee/${target}`;
-    return request.get(url, {
-      json: true
-    });
+    return new Promise(resolve =>
+      request
+        .get(url, {
+          json: true
+        })
+        .on('data', d => resolve(d.toString()))
+    );
   }
 
   async importAddresses(params) {
@@ -148,6 +160,16 @@ export class Client {
   async checkWallet(params) {
     const { pubKey } = params;
     const url = `${this.baseUrl}/wallet/${pubKey}/check`;
+    const signature = this.sign({ method: 'GET', url });
+    return request.get(url, {
+      headers: { 'x-signature': signature },
+      json: true
+    });
+  }
+
+  getAddresses(params: { pubKey: string }) {
+    const { pubKey } = params;
+    const url = `${this.baseUrl}/wallet/${pubKey}/addresses`;
     const signature = this.sign({ method: 'GET', url });
     return request.get(url, {
       headers: { 'x-signature': signature },

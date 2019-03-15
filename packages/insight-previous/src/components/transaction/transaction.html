@@ -26,24 +26,24 @@
 
   <ion-row align-items-end class="small" *ngIf="!showCoins">
     <ion-col col-12 text-right text-uppercase>
-      <ion-chip item-end color="danger" *ngIf="tx.confirmations === 0">
+      <ion-chip item-end color="danger" *ngIf="confirmations <= 0">
         <ion-label>
           Unconfirmed
         </ion-label>
       </ion-chip>
-      <ion-chip item-end color="warning" *ngIf="tx.confirmations === 1">
+      <ion-chip item-end color="warning" *ngIf="confirmations === 1">
         <ion-label>
           1 Confirmation
         </ion-label>
       </ion-chip>
-      <ion-chip item-end color="primary" *ngIf="tx.confirmations > 1">
+      <ion-chip item-end color="primary" *ngIf="confirmations > 1">
         <ion-label>
-          {{ tx.confirmations | number }} Confirmations
+          {{ confirmations }} Confirmations
         </ion-label>
       </ion-chip>
       <ion-chip item-end color="brand">
         <ion-label>
-          {{ currency.getConvertedNumber(tx.valueOut) | number:'1.0-8' }} {{ currency.currencySymbol }}
+          {{ currencyProvider.getConvertedNumber(tx.valueOut) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
         </ion-label>
       </ion-chip>
     </ion-col>
@@ -86,7 +86,7 @@
           </div>
 
           <div item-end>
-            {{ currency.getConvertedNumber(vin.value) | number:'1.0-8' }} {{ currency.currencySymbol }}
+            {{ currencyProvider.getConvertedNumber(vin.value) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
           </div>
         </ion-item>
       </ion-list>
@@ -122,7 +122,7 @@
           </div>
 
           <div item-end>
-            {{ currency.getConvertedNumber(vout.value) | number:'1.0-8' }} {{ currency.currencySymbol }}
+            {{ currencyProvider.getConvertedNumber(vout.value) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
             <span [hidden]="!vout.spentTxid">(S)</span>
             <span [hidden]="vout.spentTxid">(U)</span>
           </div>
@@ -138,28 +138,29 @@
 
   <ion-row align-items-start text-uppercase class="small" *ngIf="showCoins">
     <ion-col col-6>
-      <div [hidden]="tx.isCoinBase">
+      <div *ngIf="!tx.isCoinBase && currencyProvider.getConvertedNumber(tx.fee) >= 0">
         <ion-chip>
           <ion-label>Fee
-            <span text-nowrap>{{ currency.getConvertedNumber(tx.fee) | number:'1.0-8' }}
-              {{ currency.currencySymbol }}</span>
+            <span text-nowrap>{{ currencyProvider.getConvertedNumber(tx.fee) | number:'1.0-8' }}
+              {{ currencyProvider.currencySymbol }}</span>
           </ion-label>
         </ion-chip>
       </div>
     </ion-col>
     <ion-col col-6 text-right>
-      <ion-chip color="danger" *ngIf="tx.confirmations === 0">
+      <ion-chip color="danger" *ngIf="confirmations <= 0">
         <ion-label>Unconfirmed</ion-label>
       </ion-chip>
-      <ion-chip color="warning" *ngIf="tx.confirmations === 1">
+      <ion-chip color="warning" *ngIf="confirmations === 1">
         <ion-label>1 Confirmation</ion-label>
       </ion-chip>
-      <ion-chip color="primary" *ngIf="tx.confirmations > 1">
-        <ion-label>{{ tx.confirmations | number }} Confirmations
+      <ion-chip color="primary" *ngIf="confirmations > 1">
+        <ion-label>{{ confirmations }} Confirmations
         </ion-label>
       </ion-chip>
       <ion-chip color="brand">
-        <ion-label>{{ currency.getConvertedNumber(tx.valueOut) | number:'1.0-8' }} {{ currency.currencySymbol }}
+        <ion-label>{{ currencyProvider.getConvertedNumber(tx.valueOut) | number:'1.0-8' }}
+          {{ currencyProvider.currencySymbol }}
         </ion-label>
       </ion-chip>
     </ion-col>

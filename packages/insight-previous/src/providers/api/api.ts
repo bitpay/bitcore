@@ -17,9 +17,13 @@ export interface NetworkSettings {
 
 @Injectable()
 export class ApiProvider {
+  public defaultNetwork = {
+    chain: this.defaults.getDefault('%CHAIN%'),
+    network: this.defaults.getDefault('%NETWORK%')
+  };
   public networkSettings = new BehaviorSubject<NetworkSettings>({
-    availableNetworks: [{ chain: 'BTC', network: 'mainnet' }],
-    selectedNetwork: { chain: 'BTC', network: 'mainnet' }
+    availableNetworks: [this.defaultNetwork],
+    selectedNetwork: this.defaultNetwork
   });
 
   public ratesAPI = {

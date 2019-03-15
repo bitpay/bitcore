@@ -10,6 +10,7 @@ import '../models';
 import { StreamingFindOptions } from '../types/Query';
 import { ConfigType } from '../types/Config';
 import { Config, ConfigService } from './config';
+import { Readable } from 'stream';
 
 export { StreamingFindOptions };
 
@@ -97,6 +98,46 @@ export class StorageService {
     return typecastedValue;
   }
 
+  stream(input: Readable, req: Request, res: Response) {
+    let closed = false;
+    req.on('close', function() {
+      closed = true;
+    });
+    res.on('close', function() {
+      closed = true;
+    });
+    input.on('error', function(err) {
+      if (!closed) {
+        closed = true;
+        return res.status(500).end(err.message);
+      }
+    });
+    let isFirst = true;
+    res.type('json');
+    input.on('data', function(data) {
+      if (!closed) {
+        if (isFirst) {
+          res.write('[\n');
+          isFirst = false;
+        } else {
+          res.write(',\n');
+        }
+        res.write(JSON.stringify(data));
+      }
+    });
+    input.on('end', function() {
+      if (!closed) {
+        if (isFirst) {
+          // there was no data
+          res.write('[]');
+        } else {
+          res.write('\n]');
+        }
+        res.end();
+      }
+    });
+  }
+
   apiStream<T>(cursor: Cursor<T>, req: Request, res: Response) {
     let closed = false;
     req.on('close', function() {
@@ -134,7 +175,7 @@ export class StorageService {
           // there was no data
           res.write('[]');
         } else {
-          res.write(']');
+          res.write('\n]');
         }
         res.end();
       }

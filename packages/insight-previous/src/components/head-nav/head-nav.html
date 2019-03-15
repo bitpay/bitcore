@@ -11,12 +11,15 @@
 
     <ion-buttons>
       <button ion-button (click)="changeCurrency($event)">
-        <ion-icon name="logo-bitcoin" *ngIf="currency.currencySymbol !== 'USD'"></ion-icon>
-        <ion-icon name="logo-usd" *ngIf="currency.currencySymbol === 'USD'"></ion-icon>
+        <ion-icon name="logo-bitcoin" *ngIf="currencyProvider?.currencySymbol !== 'USD'"></ion-icon>
+        <ion-icon name="logo-usd" *ngIf="currencyProvider?.currencySymbol === 'USD'"></ion-icon>
         &nbsp;
-        {{ currency?.currencySymbol }}
+        {{ currencyProvider?.currencySymbol }}
         &nbsp;
-        <i>( <span *ngIf="currency.currencySymbol === 'USD'">{{ config?.chain }} - </span> {{ config?.network }})</i>
+        <i>( <span *ngIf="currencyProvider?.currencySymbol === 'USD'">{{ config?.chain }} - </span>
+          {{ config?.network }} )</i>
+        &nbsp;
+        <ion-icon name="md-arrow-dropdown"></ion-icon>
       </button>
     </ion-buttons>
   </ion-navbar>

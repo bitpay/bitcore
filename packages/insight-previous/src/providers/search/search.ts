@@ -27,14 +27,20 @@ export class SearchProvider {
   }
 
   private searchBlock(block: string): Observable<any> {
-    return this.http.get(this.apiURL + '/block/' + block);
+    return this.http
+      .get(this.apiURL + '/block/' + block)
+      .map(data => ({ block: data.json() }));
   }
   private searchTx(txid: string): Observable<any> {
-    return this.http.get(this.apiURL + '/tx/' + txid);
+    return this.http
+      .get(this.apiURL + '/tx/' + txid)
+      .map(data => ({ tx: data.json() }));
   }
   private searchAddr(addr: string): Observable<any> {
     const address = this.extractAddress(addr);
-    return this.http.get(this.apiURL + '/address/' + address);
+    return this.http
+      .get(this.apiURL + '/address/' + address)
+      .map(data => ({ addr: data.json() }));
   }
 
   public isInputValid(inputValue) {

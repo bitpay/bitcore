@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=8.0.0"
   },
-  "version": "8.0.0",
+  "version": "8.1.0",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "main": "ts_build/index.js",
   "types": "./ts_build/index.d.ts",
@@ -13,6 +13,7 @@
   },
   "scripts": {
     "clean": "rm -rf ./ts_build",
+    "watch": "./node_modules/.bin/tsc --watch",
     "compile": "npm run clean && ./node_modules/.bin/tsc",
     "test": "mocha ./test/unit"
   },
@@ -20,10 +21,15 @@
     "JSONStream": "~1.3.1",
     "async": "^2.5.0",
     "bcrypt": "^2.0.1",
-    "bitcore-lib": "^8.0.0",
-    "bitcore-lib-cash": "^8.0.0",
-    "bitcore-mnemonic": "^8.0.0",
+    "bcryptjs": "^2.4.3",
+    "bitcore-lib": "^8.1.0",
+    "bitcore-lib-cash": "^8.1.0",
+    "bitcore-mnemonic": "^8.1.0",
     "commander": "^2.15.1",
+    "elliptic": "^6.4.1",
+    "ethereumjs-tx": "^1.3.7",
+    "ethereumjs-util": "^6.0.0",
+    "level-js": "^4.0.0",
     "leveldown": "^3.0.0",
     "levelup": "^2.0.2",
     "mkdirp": "^0.5.1",
@@ -31,10 +37,14 @@
     "promptly": "^3.0.3",
     "request": "^2.87.0",
     "request-promise-native": "^1.0.5",
-    "secp256k1": "^3.5.0"
+    "secp256k1": "^3.5.0",
+    "web3": "^1.0.0-beta.46"
   },
   "devDependencies": {
     "@types/bcrypt": "^3.0.0",
+    "@types/bcryptjs": "^2.4.2",
+    "@types/elliptic": "^6.4.3",
+    "@types/ethereumjs-util": "^5.2.0",
     "@types/node": "^10.12.15",
     "@types/request": "^2.48.1",
     "@types/request-promise-native": "^1.0.15",

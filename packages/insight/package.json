@@ -1,6 +1,6 @@
 {
   "name": "@bitpay/insight",
-  "version": "8.0.0",
+  "version": "8.1.0",
   "description": "A blockchain explorer for Bitcore",
   "homepage": "https://github.com/bitpay/bitcore",
   "repository": "git://github.com/bitpay/bitcore.git",

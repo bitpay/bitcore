@@ -1,0 +1,19 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .usage('[options]')
+  .description('Scan wallets addresses for funds')
+  .parse(process.argv);
+
+var args = program.args;
+utils.getClient(program, { mustExist: true }, function (client) {
+  client.startScan({}, function(err) {
+    utils.die(err);
+    console.log(' *  Scan started. Check with `wallet-status`.');
+  });
+});

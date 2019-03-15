@@ -1,33 +1,33 @@
 import { Component } from '@angular/core';
-import { Http } from '@angular/http';
-import { App, ViewController } from 'ionic-angular';
+import { NavParams, ViewController } from 'ionic-angular';
+import _ from 'lodash';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
-import { CurrencyProvider } from '../../providers/currency/currency';
-import { PriceProvider } from '../../providers/price/price';
-
 @Component({
   selector: 'denomination',
   templateUrl: 'denomination.html'
 })
 export class DenominationComponent {
-  public switcherOn: boolean;
   public units: any = [];
-  public enabledChains: ChainNetwork[] = [];
-  public selected: ChainNetwork;
+  public availableNetworks;
+  public currencySymbol;
+  public showUnits = false;
 
   constructor(
-    public currencyProvider: CurrencyProvider,
-    public priceProvider: PriceProvider,
     public viewCtrl: ViewController,
-    public app: App,
-    public http: Http,
-    public api: ApiProvider
+    public api: ApiProvider,
+    public navParams: NavParams
   ) {}
 
   public ionViewDidLoad() {
+    this.currencySymbol = this.navParams.data.currencySymbol;
     this.api.getAvailableNetworks().subscribe(data => {
-      const availableNetworks = data.json() as ChainNetwork[];
-      this.switcherOn = availableNetworks.length > 1 ? true : false;
+      this.availableNetworks = data.json() as ChainNetwork[];
+      this.showUnits = _.some(
+        this.availableNetworks,
+        this.api.networkSettings.value.selectedNetwork
+      )
+        ? true
+        : false;
       this.units = [
         'USD',
         this.api.networkSettings.value.selectedNetwork.chain,
@@ -36,12 +36,18 @@ export class DenominationComponent {
     });
   }
 
-  public close(): void {
-    this.viewCtrl.dismiss();
+  public changeUnit(unit: string): void {
+    this.currencySymbol = unit;
+    this.viewCtrl.dismiss({
+      chainNetwork: this.navParams.data.config,
+      currencySymbol: this.currencySymbol
+    });
   }
 
   public changeExplorer(chainNetwork: ChainNetwork): void {
-    this.selected = chainNetwork;
-    this.viewCtrl.dismiss(chainNetwork);
+    this.viewCtrl.dismiss({
+      chainNetwork,
+      currencySymbol: this.currencySymbol
+    });
   }
 }

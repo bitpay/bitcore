@@ -10,14 +10,17 @@ export class PriceProvider {
   private rates = {};
 
   constructor(
-    public currency: CurrencyProvider,
+    public currencyProvider: CurrencyProvider,
     public api: ApiProvider,
     private toastCtrl: ToastController,
     private logger: Logger
   ) {}
 
-  public setCurrency(currency: string): void {
-    this.currency.currencySymbol = currency;
+  public setCurrency(currency?: string): void {
+    if (!currency) {
+      currency = this.currencyProvider.getCurrency();
+    }
+
     localStorage.setItem('insight-currency', currency);
 
     if (currency === 'USD') {
@@ -31,24 +34,24 @@ export class PriceProvider {
           _.each(currencyParsed, o => {
             this.rates[o.code] = o.rate;
           });
-          this.currency.factor = this.rates[currency];
-          this.currency.loading = false;
+          this.currencyProvider.factor = this.rates[currency];
+          this.currencyProvider.loading = false;
         },
         err => {
-          this.currency.loading = false;
+          this.currencyProvider.loading = false;
           this.logger.error(err);
-          this.setDefaultCurrency();
+          this.showErrorToast();
         }
       );
     } else {
-      this.currency.factor =
+      this.currencyProvider.factor =
         currency === 'm' + this.api.networkSettings.value.selectedNetwork.chain
           ? 1000
           : 1;
     }
   }
 
-  private setDefaultCurrency() {
+  private showErrorToast() {
     const toast: any = this.toastCtrl.create({
       message: 'This currency is not available at this time',
       duration: 3000,
@@ -56,8 +59,7 @@ export class PriceProvider {
     });
     toast.present();
     toast.onDidDismiss(() => {
-      this.currency.factor = 1;
-      this.currency.currencySymbol = this.api.getConfig().chain;
+      this.currencyProvider.setCurrency();
     });
   }
 }

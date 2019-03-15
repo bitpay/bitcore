@@ -87,7 +87,6 @@ utils.getClient(program, {
   var coin = client.credentials.coin;
   var bitcore = Bitcore_[coin];
 
-
   var uri, addr, amount, note;
 
   // no backwards compat uri
@@ -101,8 +100,8 @@ utils.getClient(program, {
 
     // BIP21
     try { 
-      var parsed = new bitcore.URI(arg1);
 
+      var parsed = new bitcore.URI(arg1);
       if (!parsed.r) {
 
         addr = parsed.address ? parsed.address.toString() : '';
@@ -113,7 +112,7 @@ utils.getClient(program, {
         uri = parsed.r;
       }
     } catch (e) {
-      utils.die(e);
+      uri = null;
     }
   }
 
