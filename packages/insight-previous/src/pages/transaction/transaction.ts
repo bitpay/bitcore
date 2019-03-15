@@ -1,7 +1,6 @@
 import { Component, Injectable } from '@angular/core';
 import { IonicPage, NavParams } from 'ionic-angular';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
-import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
@@ -20,23 +19,23 @@ import { TxsProvider } from '../../providers/transactions/transactions';
 })
 export class TransactionPage {
   public loading = true;
-  private txId: string;
-  private chainNetwork: ChainNetwork;
   public tx: any = {};
   public vout: number;
   public fromVout: boolean;
   public confirmations: number;
   public errorMessage: string;
 
+  private txId: string;
+  private chainNetwork: ChainNetwork;
+
   constructor(
     public navParams: NavParams,
+    public currencyProvider: CurrencyProvider,
+    public redirProvider: RedirProvider,
     private apiProvider: ApiProvider,
     private txProvider: TxsProvider,
-    public currencyProvider: CurrencyProvider,
     private logger: Logger,
-    private priceProvider: PriceProvider,
-    public redirProvider: RedirProvider,
-    private blocksProvider: BlocksProvider
+    private priceProvider: PriceProvider
   ) {
     this.txId = navParams.get('txId');
     this.vout = navParams.get('vout');
@@ -59,7 +58,7 @@ export class TransactionPage {
   public ionViewDidLoad(): void {
     this.txProvider.getTx(this.txId).subscribe(
       data => {
-        this.tx = data.tx;
+        this.tx = this.txProvider.toAppTx(data);
         this.loading = false;
         this.txProvider
           .getConfirmations(this.tx.blockheight)
@@ -67,8 +66,8 @@ export class TransactionPage {
         // Be aware that the tx component is loading data into the tx object
       },
       err => {
-        this.logger.error(err);
-        this.errorMessage = err;
+        this.logger.error(err.message);
+        this.errorMessage = err.message;
         this.loading = false;
       }
     );

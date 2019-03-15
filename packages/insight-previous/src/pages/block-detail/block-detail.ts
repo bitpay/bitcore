@@ -19,9 +19,6 @@ import { TxsProvider } from '../../providers/transactions/transactions';
   templateUrl: 'block-detail.html'
 })
 export class BlockDetailPage {
-  private blockHash: string;
-  private chainNetwork: ChainNetwork;
-
   public loading = true;
   public errorMessage: string;
   public confirmations: number;
@@ -29,12 +26,15 @@ export class BlockDetailPage {
     tx: []
   };
 
+  private blockHash: string;
+  private chainNetwork: ChainNetwork;
+
   constructor(
     public navParams: NavParams,
     public currencyProvider: CurrencyProvider,
     public redirProvider: RedirProvider,
     public txProvider: TxsProvider,
-    private blockProvider: BlocksProvider,
+    private blocksProvider: BlocksProvider,
     private logger: Logger,
     private apiProvider: ApiProvider,
     private priceProvider: PriceProvider
@@ -55,17 +55,18 @@ export class BlockDetailPage {
   }
 
   ionViewDidLoad() {
-    this.blockProvider.getBlock(this.blockHash).subscribe(
-      data => {
-        this.block = data.block;
+    this.blocksProvider.getBlock(this.blockHash).subscribe(
+      response => {
+        const block = this.blocksProvider.toAppBlock(response);
+        this.block = block;
         this.txProvider
           .getConfirmations(this.block.height)
           .subscribe(confirmations => (this.confirmations = confirmations));
         this.loading = false;
       },
       err => {
-        this.logger.error(err);
-        this.errorMessage = err;
+        this.logger.error(err.message);
+        this.errorMessage = err.message;
         this.loading = false;
       }
     );

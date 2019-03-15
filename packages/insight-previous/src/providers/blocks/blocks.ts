@@ -1,5 +1,5 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Http } from '@angular/http';
 import { Observable } from 'rxjs';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
@@ -50,12 +50,12 @@ export interface AppBlock {
 @Injectable()
 export class BlocksProvider {
   constructor(
-    public http: Http,
-    private api: ApiProvider,
-    public currency: CurrencyProvider
+    public httpClient: HttpClient,
+    public currency: CurrencyProvider,
+    private api: ApiProvider
   ) {}
 
-  private toAppBlock(block: ApiBlock): AppBlock {
+  public toAppBlock(block: ApiBlock): AppBlock {
     const difficulty: number = 0x1d00ffff / block.bits;
     return {
       height: block.height,
@@ -83,21 +83,14 @@ export class BlocksProvider {
     };
   }
 
-  public getCurrentHeight(): Observable<number> {
+  public getCurrentHeight(): Observable<ApiBlock> {
     const heightUrl: string = this.api.getUrl() + '/block/tip';
-    return this.http.get(heightUrl).map(blockResp => {
-      const block: ApiBlock = blockResp.json();
-      return block.height;
-    });
+    return this.httpClient.get<ApiBlock>(heightUrl);
   }
 
-  public getBlocks(numBlocks: number = 10): Observable<{ blocks: AppBlock[] }> {
+  public getBlocks(numBlocks: number = 10): Observable<ApiBlock[]> {
     const url: string = this.api.getUrl() + '/block?limit=' + numBlocks;
-    return this.http.get(url).map(data => {
-      const blocks: ApiBlock[] = data.json();
-      const appBlocks: AppBlock[] = blocks.map(block => this.toAppBlock(block));
-      return { blocks: appBlocks };
-    });
+    return this.httpClient.get<ApiBlock[]>(url);
   }
 
   /**
@@ -106,21 +99,13 @@ export class BlocksProvider {
   public pageBlocks(
     since: number,
     numBlocks: number = 10
-  ): Observable<{ blocks: AppBlock[] }> {
+  ): Observable<ApiBlock[]> {
     const url = `${this.api.getUrl()}/block?since=${since}&limit=${numBlocks}&paging=height&direction=-1`;
-    return this.http.get(url).map(data => {
-      const blocks: ApiBlock[] = data.json();
-      const appBlocks: AppBlock[] = blocks.map(block => this.toAppBlock(block));
-      return { blocks: appBlocks };
-    });
+    return this.httpClient.get<ApiBlock[]>(url);
   }
 
-  public getBlock(hash: string): Observable<{ block: AppBlock }> {
+  public getBlock(hash: string): Observable<ApiBlock> {
     const url: string = this.api.getUrl() + '/block/' + hash;
-    return this.http.get(url).map(data => {
-      const block: ApiBlock = data.json();
-      const appBlock: AppBlock = this.toAppBlock(block);
-      return { block: appBlock };
-    });
+    return this.httpClient.get<ApiBlock>(url);
   }
 }

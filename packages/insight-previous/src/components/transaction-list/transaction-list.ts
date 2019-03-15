@@ -16,7 +16,6 @@ export class TransactionListComponent implements OnInit {
   public queryValue?: string;
   @Input()
   public transactions?: any = [];
-
   public limit = 10;
   public chunkSize = 100;
 
@@ -25,9 +24,10 @@ export class TransactionListComponent implements OnInit {
   public ngOnInit(): void {
     if (this.transactions && this.transactions.length === 0) {
       this.txProvider.getTxs({ [this.queryType]: this.queryValue }).subscribe(
-        data => {
+        response => {
           // Newly Generated Coins (Coinbase) First
-          const sortedTxs = _.sortBy(data.txs, (tx: any) => {
+          const txs = response.map(tx => this.txProvider.toAppTx(tx));
+          const sortedTxs = _.sortBy(txs, (tx: any) => {
             return tx.isCoinBase ? 0 : 1;
           });
           this.transactions = sortedTxs;

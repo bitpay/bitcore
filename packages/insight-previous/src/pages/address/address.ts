@@ -19,11 +19,12 @@ import { TxsProvider } from '../../providers/transactions/transactions';
 })
 export class AddressPage {
   public loading = true;
-  private addrStr: string;
-  private chainNetwork: ChainNetwork;
   public address: any = {};
   public nroTransactions = 0;
   public errorMessage: string;
+
+  private addrStr: string;
+  private chainNetwork: ChainNetwork;
 
   constructor(
     public navParams: NavParams,
@@ -67,8 +68,8 @@ export class AddressPage {
         this.loading = false;
       },
       err => {
-        this.logger.error(err);
-        this.errorMessage = err;
+        this.logger.error(err.message);
+        this.errorMessage = err.message;
         this.loading = false;
       }
     );
