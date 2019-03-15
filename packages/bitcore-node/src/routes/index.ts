@@ -57,7 +57,7 @@ function getRouterFromFile(path) {
 
 app.use(cors());
 app.use(LogMiddleware());
-app.use(CacheMiddleware(CacheTimes.Second));
+app.use(CacheMiddleware(CacheTimes.Second, CacheTimes.Second));
 app.use(RateLimiter('GLOBAL', 10, 200, 4000));
 app.use('/api', getRouterFromFile('status'));
 
