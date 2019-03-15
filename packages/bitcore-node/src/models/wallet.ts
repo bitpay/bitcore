@@ -23,7 +23,7 @@ export class WalletModel extends BaseModel<IWallet> {
     this.collection.createIndex({ pubKey: 1 }, { background: true });
   }
 
-  _apiTransform(wallet: IWallet, options?: TransformOptions) {
+  _apiTransform(wallet: IWallet) {
     return { name: wallet.name, pubKey: wallet.pubKey };
   }
 

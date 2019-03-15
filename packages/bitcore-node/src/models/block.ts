@@ -220,7 +220,7 @@ export class BlockModel extends BaseModel<IBlock> {
     return true;
   }
 
-  _apiTransform(block: Partial<MongoBound<IBlock>>, options?: TransformOptions): BlockJSON {
+  _apiTransform(block: Partial<MongoBound<IBlock>>): BlockJSON {
     return {
       chain: valueOrDefault(block.chain, ''),
       coinbaseTxId: valueOrDefault(block.coinbaseTxId, ''),

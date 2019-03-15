@@ -548,7 +548,6 @@ export class TransactionModel extends BaseModel<ITransaction> {
 
   _apiTransform(tx: Partial<MongoBound<ITransaction>>): TransactionJSON {
     return {
-  _apiTransform(tx: Partial<MongoBound<ITransaction>>, options?: TransformOptions): TransactionJSON {
       _id: tx._id ? tx._id.toString() : '',
       txid: valueOrDefault(tx.txid, ''),
       network: valueOrDefault(tx.network, ''),
