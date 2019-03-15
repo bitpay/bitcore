@@ -1,4 +1,4 @@
-var config = {
+module.exports = {
   basePath: '/bws/api',
   disableLogs: false,
   port: 3232,
@@ -91,4 +91,3 @@ var config = {
   // //then add:
   // mailer: sgMail,
 };
-module.exports = config;

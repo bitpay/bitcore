@@ -49,6 +49,7 @@
     "uuid": "^3.3.2"
   },
   "devDependencies": {
+    "@types/node": "^11.11.3",
     "chai": "^1.9.1",
     "coveralls": "^3.0.2",
     "istanbul": "*",
