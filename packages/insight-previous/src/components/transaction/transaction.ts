@@ -19,14 +19,14 @@ import {
   templateUrl: 'transaction.html'
 })
 export class TransactionComponent implements OnInit {
-  private COIN = 100000000;
-
   public expanded = false;
   @Input()
   public tx: any = {};
   @Input()
   public showCoins = false;
   public confirmations: number;
+
+  private COIN = 100000000;
 
   constructor(
     public currencyProvider: CurrencyProvider,
@@ -50,18 +50,20 @@ export class TransactionComponent implements OnInit {
     });
   }
 
-  public getAddress(vout: ApiCoin): string {
-    if (vout.address === 'false') {
+  public getAddress(v: ApiCoin): string {
+    if (v.address === 'false') {
       return 'Unparsed address';
     }
 
-    return vout.address;
+    return v.address;
   }
 
   public getConfirmations() {
     this.txProvider
       .getConfirmations(this.tx.blockheight)
-      .subscribe(confirmations => (this.confirmations = confirmations));
+      .subscribe(confirmations => {
+        this.confirmations = confirmations;
+      });
   }
 
   public goToTx(txId: string, vout?: number, fromVout?: boolean): void {

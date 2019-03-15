@@ -28,9 +28,9 @@ export class PriceProvider {
         this.api.getConfig().chain === 'BTC'
           ? this.api.ratesAPI.btc
           : this.api.ratesAPI.bch;
-      this.api.http.get(ratesAPI).subscribe(
+      this.api.httpClient.get(ratesAPI).subscribe(
         (data: any) => {
-          const currencyParsed: any = JSON.parse(data._body);
+          const currencyParsed: any = data;
           _.each(currencyParsed, o => {
             this.rates[o.code] = o.rate;
           });
