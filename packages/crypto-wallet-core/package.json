@@ -1,0 +1,36 @@
+{
+  "name": "crypto-wallet-core",
+  "version": "8.1.0",
+  "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
+  "main": "ts_build/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "multi-currency",
+    "addresses",
+    "and",
+    "transactions"
+  ],
+  "author": "Micah Riggan",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "bitcore-lib": "^8.1.0",
+    "bitcore-lib-cash": "^8.1.0",
+    "elliptic": "^6.4.1",
+    "ethereumjs-tx": "^1.3.7",
+    "ethereumjs-util": "^6.0.0",
+    "secp256k1": "^3.5.0",
+    "web3": "^1.0.0-beta.46"
+  },
+  "devDependencies": {
+    "@types/elliptic": "^6.4.3",
+    "@types/ethereumjs-util": "^5.2.0",
+    "@types/node": "^10.12.15",
+    "@types/secp256k1": "^3.5.0",
+    "eslint-config-airbnb-base": "^12.1.0",
+    "eslint-plugin-import": "^2.8.0",
+    "typescript": "^3.2.2"
+  }
+}
