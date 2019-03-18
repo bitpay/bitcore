@@ -8,8 +8,8 @@ log.debug = log.verbose;
 log.disableColor();
 
 var Bitcore = {
-  'btc': require('bitcore-lib'),
-  'bch': require('bitcore-lib-cash'),
+  btc: require('bitcore-lib'),
+  bch: require('bitcore-lib-cash')
 };
 
 var Common = require('../common');
@@ -20,13 +20,52 @@ var Constants = Common.Constants,
 var TxProposalLegacy = require('./txproposal_legacy');
 var TxProposalAction = require('./txproposalaction');
 
-function TxProposal() {};
+export interface ITransaction {
+  createdOn: number;
+  id: string;
+  walletId: string;
+  creatorId: string;
+  coin: string;
+  network: string;
+  message: string;
+  payProUrl: string;
+  changeAddress: string;
+  outputs: Array<{
+    amount: string;
+    toAddress: string;
+    message: string;
+    script: string;
+  }>;
+  outputOrder: number;
+
+  walletM: number;
+  walletN: number;
+  requiredSignatures: number;
+  requiredRejections: number;
+  status: string;
+  actions: [];
+  feeLevel: number;
+  feePerKb: number;
+  excludeUnconfirmedUtxos: boolean;
+
+  addressType: string;
+
+  customData: any;
+
+  amount: string;
+
+  fee: number;
+}
+
+function TxProposal() {}
 
 TxProposal.create = function(opts) {
   opts = opts || {};
 
   $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
-  $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
+  $.checkArgument(
+    Utils.checkValueInCollection(opts.network, Constants.NETWORKS)
+  );
 
   var x = new TxProposal();
 
@@ -52,15 +91,21 @@ TxProposal.create = function(opts) {
   x.walletM = opts.walletM;
   x.walletN = opts.walletN;
   x.requiredSignatures = x.walletM;
-  x.requiredRejections = Math.min(x.walletM, x.walletN - x.walletM + 1),
-  x.status = 'temporary';
+  (x.requiredRejections = Math.min(x.walletM, x.walletN - x.walletM + 1)),
+    (x.status = 'temporary');
   x.actions = [];
   x.feeLevel = opts.feeLevel;
   x.feePerKb = opts.feePerKb;
   x.excludeUnconfirmedUtxos = opts.excludeUnconfirmedUtxos;
 
-  x.addressType = opts.addressType || (x.walletN > 1 ? Constants.SCRIPT_TYPES.P2SH : Constants.SCRIPT_TYPES.P2PKH);
-  $.checkState(Utils.checkValueInCollection(x.addressType, Constants.SCRIPT_TYPES));
+  x.addressType =
+    opts.addressType ||
+    (x.walletN > 1
+      ? Constants.SCRIPT_TYPES.P2SH
+      : Constants.SCRIPT_TYPES.P2PKH);
+  $.checkState(
+    Utils.checkValueInCollection(x.addressType, Constants.SCRIPT_TYPES)
+  );
 
   x.customData = opts.customData;
 
@@ -144,7 +189,9 @@ TxProposal.prototype._buildTx = function() {
 
   var t = new Bitcore[self.coin].Transaction();
 
-  $.checkState(Utils.checkValueInCollection(self.addressType, Constants.SCRIPT_TYPES));
+  $.checkState(
+    Utils.checkValueInCollection(self.addressType, Constants.SCRIPT_TYPES)
+  );
 
   switch (self.addressType) {
     case Constants.SCRIPT_TYPES.P2SH:
@@ -159,12 +206,17 @@ TxProposal.prototype._buildTx = function() {
   }
 
   _.each(self.outputs, function(o) {
-    $.checkState(o.script || o.toAddress, 'Output should have either toAddress or script specified');
+    $.checkState(
+      o.script || o.toAddress,
+      'Output should have either toAddress or script specified'
+    );
     if (o.script) {
-      t.addOutput(new Bitcore[self.coin].Transaction.Output({
-        script: o.script,
-        satoshis: o.amount
-      }));
+      t.addOutput(
+        new Bitcore[self.coin].Transaction.Output({
+          script: o.script,
+          satoshis: o.amount
+        })
+      );
     } else {
       t.to(o.toAddress, o.amount);
     }
@@ -193,12 +245,17 @@ TxProposal.prototype._buildTx = function() {
   var totalInputs = _.sumBy(t.inputs, 'output.satoshis');
   var totalOutputs = _.sumBy(t.outputs, 'satoshis');
 
-  $.checkState(totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs, 'not-enought-inputs');
-  $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE, 'fee-too-high');
+  $.checkState(
+    totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs,
+    'not-enought-inputs'
+  );
+  $.checkState(
+    totalInputs - totalOutputs <= Defaults.MAX_TX_FEE,
+    'fee-too-high'
+  );
 
   return t;
 };
-
 
 TxProposal.prototype._getCurrentSignatures = function() {
   var acceptedActions = _.filter(this.actions, {
@@ -208,7 +265,7 @@ TxProposal.prototype._getCurrentSignatures = function() {
   return _.map(acceptedActions, function(x) {
     return {
       signatures: x.signatures,
-      xpub: x.xpub,
+      xpub: x.xpub
     };
   });
 };
@@ -250,7 +307,8 @@ TxProposal.prototype.getEstimatedSize = function() {
   var inputSize = this.getEstimatedSizeForSingleInput();
   var outputSize = 34;
   var nbInputs = this.inputs.length;
-  var nbOutputs = (_.isArray(this.outputs) ? Math.max(1, this.outputs.length) : 1) + 1;
+  var nbOutputs =
+    (_.isArray(this.outputs) ? Math.max(1, this.outputs.length) : 1) + 1;
 
   var size = overhead + inputSize * nbInputs + outputSize * nbOutputs;
 
@@ -259,7 +317,7 @@ TxProposal.prototype.getEstimatedSize = function() {
 
 TxProposal.prototype.getEstimatedFee = function() {
   $.checkState(_.isNumber(this.feePerKb));
-  var fee = this.feePerKb * this.getEstimatedSize() / 1000;
+  var fee = (this.feePerKb * this.getEstimatedSize()) / 1000;
   return parseInt(fee.toFixed(0));
 };
 
@@ -285,7 +343,6 @@ TxProposal.prototype.getActors = function() {
   return _.map(this.actions, 'copayerId');
 };
 
-
 /**
  * getApprovers
  *
@@ -295,7 +352,9 @@ TxProposal.prototype.getApprovers = function() {
   return _.map(
     _.filter(this.actions, {
       type: 'accept'
-    }), 'copayerId');
+    }),
+    'copayerId'
+  );
 };
 
 /**
@@ -310,19 +369,29 @@ TxProposal.prototype.getActionBy = function(copayerId) {
   });
 };
 
-TxProposal.prototype.addAction = function(copayerId, type, comment, signatures, xpub) {
+TxProposal.prototype.addAction = function(
+  copayerId,
+  type,
+  comment,
+  signatures,
+  xpub
+) {
   var action = TxProposalAction.create({
     copayerId: copayerId,
     type: type,
     signatures: signatures,
     xpub: xpub,
-    comment: comment,
+    comment: comment
   });
   this.actions.push(action);
   this._updateStatus();
 };
 
-TxProposal.prototype._addSignaturesToBitcoreTx = function(tx, signatures, xpub) {
+TxProposal.prototype._addSignaturesToBitcoreTx = function(
+  tx,
+  signatures,
+  xpub
+) {
   var self = this;
 
   var bitcore = Bitcore[self.coin];
@@ -341,18 +410,18 @@ TxProposal.prototype._addSignaturesToBitcoreTx = function(tx, signatures, xpub) 
       var s = {
         inputIndex: i,
         signature: signature,
-        sigtype: bitcore.crypto.Signature.SIGHASH_ALL | bitcore.crypto.Signature.SIGHASH_FORKID,
-        publicKey: pub,
+        sigtype:
+          bitcore.crypto.Signature.SIGHASH_ALL |
+          bitcore.crypto.Signature.SIGHASH_FORKID,
+        publicKey: pub
       };
       tx.inputs[i].addSignature(tx, s);
       i++;
-    } catch (e) {};
+    } catch (e) {}
   });
 
-  if (i != tx.inputs.length)
-    throw new Error('Wrong signatures');
+  if (i != tx.inputs.length) throw new Error('Wrong signatures');
 };
-
 
 TxProposal.prototype.sign = function(copayerId, signatures, xpub) {
   try {

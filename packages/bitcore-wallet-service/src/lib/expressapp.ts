@@ -347,7 +347,7 @@ ExpressApp.prototype.start = function(opts, cb) {
   });
 
 
-  
+
   // DEPRECATED (do not use cashaddr)
   router.get('/v1/txproposals/', function(req, res) {
     getServerWithAuth(req, res, function(server) {

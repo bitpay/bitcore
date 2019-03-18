@@ -75,7 +75,7 @@ Address._deriveAddress = function(scriptType, publicKeyRing, path, m, coin, netw
 
 
 
-  let addrStr = bitcoreAddress.toString(true); 
+  let addrStr = bitcoreAddress.toString(true);
   if (noNativeCashAddr && coin == 'bch') {
     addrStr =  bitcoreAddress.toLegacyAddress();
   }
@@ -90,7 +90,7 @@ Address._deriveAddress = function(scriptType, publicKeyRing, path, m, coin, netw
 
 
 // noNativeCashAddr only for testing
-Address.derive = function(walletId, scriptType, publicKeyRing, path, m, coin, network, isChange, noNativeCashAddr) {
+Address.derive = function(walletId, scriptType, publicKeyRing, path, m, coin, network, isChange, noNativeCashAddr = false) {
   var raw = Address._deriveAddress(scriptType, publicKeyRing, path, m, coin, network, noNativeCashAddr);
   return Address.create(_.extend(raw, {
     coin: coin,
