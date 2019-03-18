@@ -7,6 +7,8 @@ import Web3 from 'web3';
 import { Storage } from '../../../services/storage';
 import { Readable } from 'stream';
 import { ParityRPC, ParityTraceResponse } from './parityRpc';
+import { EventStorage } from '../../../models/events';
+import { TransactionStorage } from '../../../models/transaction';
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -83,6 +85,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
             const transactions = await new ParityRPC(web3).getTransactionsForAddress(bestBlock, walletAddress.address);
             for await (const tx of transactions) {
               this.push(tx);
+              TransactionStorage.collection.insertOne(tx);
             }
           }
           this.push(null);
@@ -97,6 +100,33 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     const { network, rawTx } = params;
     const tx = await this.getWeb3(network).eth.sendSignedTransaction(rawTx);
     return tx;
+  }
+
+  async watchEtherTransfers(network: string) {
+    // Instantiate web3 with WebSocket provider
+    const web3Socket = new Web3(new Web3.providers.WebsocketProvider('ws://localhost:8545'));
+
+    // Instantiate subscription object
+    const subscription = web3Socket.eth.subscribe('pendingTransactions');
+
+    // Subscribe to pending transactions
+    subscription
+      .subscribe((error, _result) => {
+        if (error) console.log(error);
+      })
+      .on('data', async txHash => {
+        try {
+          const web3 = this.getWeb3(network);
+
+          // Get transaction details
+          const trx = await web3.eth.getTransactionReciept(txHash);
+          await EventStorage.signalTx(trx);
+          // Unsubscribe from pending transactions.
+          subscription.unsubscribe();
+        } catch (error) {
+          console.log(error);
+        }
+      });
   }
 
   async getWalletAddresses(walletId: ObjectID) {

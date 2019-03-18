@@ -51,39 +51,22 @@ class WalletContainer extends Component<Props> {
 
   fetchTransactions = async (wallet: Wallet) => {
     let prevTx = this.props.transactions.map(e => e);
-    switch (wallet.chain) {
-      case 'BTC':
-        await wallet
-          .listTransactions({})
-          .pipe(new ParseApiStream())
-          .on('data', (d: any) => {
-            const foundIndex = prevTx.findIndex(
-              t => t.txid === d.txid && t.outputIndex == d.outputIndex
-            );
-            if (foundIndex > -1) {
-              prevTx[foundIndex] = d;
-            } else {
-              prevTx = [...prevTx.slice(0, 9), d];
-            }
-            store.dispatch(ActionCreators.setTransactions(prevTx));
-          })
-          .on('finish', () => {
-            console.log('finished!');
-          });
-        break;
-      case 'ETH':
-        await wallet
-          .listTransactions({})
-          .pipe(new ParseApiStream())
-          .on('data', (d: any) => {
-            prevTx = [...prevTx.slice(0, 9), d];
-            store.dispatch(ActionCreators.setTransactions(prevTx));
-          })
-          .on('finish', () => {
-            console.log('finished!');
-          });
-        break;
-    }
+    await wallet
+      .listTransactions({})
+      .pipe(new ParseApiStream())
+      .on('data', (d: any) => {
+        const foundIndex = prevTx.findIndex(
+          t => t.txid === d.txid && t.outputIndex === d.outputIndex
+        );
+        if (foundIndex > -1) {
+          prevTx[foundIndex] = d;
+        } else {
+          prevTx = [...prevTx, d];
+        }
+        console.log(d.txid);
+        store.dispatch(ActionCreators.setTransactions(prevTx));
+      })
+      .on('finish', () => {});
   };
 
   fetchAddresses = async (wallet: Wallet) => {

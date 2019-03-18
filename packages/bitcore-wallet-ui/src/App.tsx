@@ -19,14 +19,26 @@ class App extends Component {
 
   componentDidMount = () => {
     socket.on('connect', () => {
-      console.log(`Connected to socket BTC regtest`);
-      socket.emit('room', `/BTC/regtest/inv`);
+      console.log(`Connected to socket ETH mainnet`);
+      socket.emit('room', `/ETH/mainnet/inv`);
     });
     this.handleGetTx();
+    this.handleGetCoin();
     this.handleGetBlock();
   };
 
   handleGetTx = () => {
+    socket.on('tx', async (sanitizedTx: any) => {
+      console.log(sanitizedTx);
+      if (sanitizedTx.mintIndex === 0) {
+        let message = `Sent ${sanitizedTx.value /
+          1e8} BTC at ${new Date().toDateString()}`;
+        this.setState({ message });
+      }
+    });
+  };
+
+  handleGetCoin = () => {
     socket.on('coin', async (sanitizedCoin: any) => {
       if (sanitizedCoin.mintIndex === 0) {
         let message = `Sent ${sanitizedCoin.value /

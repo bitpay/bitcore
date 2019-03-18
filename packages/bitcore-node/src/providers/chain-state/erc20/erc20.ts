@@ -2,6 +2,7 @@ const abi = require('./erc20abi');
 
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { ETHStateProvider } from '../eth/eth';
+import { EventStorage } from '../../../models/events';
 
 export class ERC20StateProvider extends ETHStateProvider implements CSP.IChainStateService {
   contractAddr: string;
@@ -23,5 +24,20 @@ export class ERC20StateProvider extends ETHStateProvider implements CSP.IChainSt
       .methods.balanceOf(address)
       .call();
     return { confirmed: balance, unconfirmed: 0, balance };
+  }
+
+  watchTokenTransfers(network: string) {
+    const tokenContract = this.erc20For(network);
+
+    tokenContract.events.Transfer(async (error, event) => {
+      if (error) {
+        console.log(error);
+        return;
+      }
+      await EventStorage.signalTx(event.transactionHash);
+
+      console.log('Transaction hash is: ' + event.transactionHash + '\n');
+      return;
+    });
   }
 }

@@ -9,7 +9,7 @@ import RefreshIcon from '@material-ui/icons/Refresh';
 import ArrowUpwardIcon from '@material-ui/icons/ArrowUpward';
 import moment from 'moment';
 import { AppState } from '../../types/state';
-import { constants } from '../../constants';
+import { Constants } from '../../constants';
 
 interface Props {
   tx: AppState['transactions'][0];
@@ -25,22 +25,10 @@ const styles = (theme: Theme) =>
       alignItems: 'center',
       borderTop: '2px solid #002855'
     },
-    greenpaper: {
-      maxWidth: 600,
-      padding: theme.spacing.unit * 2,
-      alignItems: 'center',
-      borderTop: '2px solid green'
-    },
     textRight: {
       textAlign: 'right'
     },
     avatar: {
-      backgroundColor: 'white',
-      color: 'green',
-      border: '1px solid green',
-      margin: 'auto'
-    },
-    defaultAvatar: {
       backgroundColor: 'white',
       color: '#002855',
       border: '1px solid #002855',
@@ -55,6 +43,12 @@ const styles = (theme: Theme) =>
     green: {
       color: 'green'
     },
+    blue: {
+      color: 'blue'
+    },
+    red: {
+      color: 'red'
+    },
     link: {
       color: 'white',
       textDecoration: 'none',
@@ -66,6 +60,33 @@ const styles = (theme: Theme) =>
 
 function Transactions(props: Props) {
   const { classes, tx, wallet } = props;
+  let statusColor = 'default';
+
+  const filterCategory = () => {
+    switch (tx.category) {
+      case 'receive':
+        tx.height > 0 ? (statusColor = 'green') : (statusColor = 'default');
+        return (
+          <Typography noWrap variant="h6" className={classes[statusColor]}>
+            {tx.height > 0 ? `Recieved Block: ${tx.height}` : 'Confirming'}
+          </Typography>
+        );
+      case 'send':
+        tx.height > 0 ? (statusColor = 'red') : (statusColor = 'default');
+        return (
+          <Typography noWrap variant="h6" className={classes[statusColor]}>
+            {tx.height > 0 ? `Sent Block: ${tx.height}` : 'Confirming'}
+          </Typography>
+        );
+      case 'transfer':
+        tx.height > 0 ? (statusColor = 'blue') : (statusColor = 'default');
+        return (
+          <Typography noWrap variant="h6" className={classes[statusColor]}>
+            {tx.height > 0 ? `Token Transfer Block ${tx.height}` : 'Confirming'}{' '}
+          </Typography>
+        );
+    }
+  };
   return (
     <a
       href={
@@ -76,32 +97,19 @@ function Transactions(props: Props) {
           : ''
       }
     >
-      <Paper className={tx.height > 0 ? classes.greenpaper : classes.paper}>
+      <Paper className={classes.paper}>
         <Grid container wrap="nowrap" spacing={16}>
           <Grid item className={classes.auto}>
-            <Avatar
-              className={tx.height > 0 ? classes.avatar : classes.defaultAvatar}
-            >
+            <Avatar className={classes.avatar}>
               {tx.height > 0 ? <ArrowUpwardIcon /> : <RefreshIcon />}
             </Avatar>
           </Grid>
           <Grid item xs zeroMinWidth className={classes.auto}>
-            <Typography
-              noWrap
-              variant="h6"
-              className={tx.height > 0 ? classes.green : classes.default}
-            >
-              {tx.height > 0 ? `Block: ${tx.height}` : 'Confirming'}{' '}
-            </Typography>
+            {filterCategory()}
           </Grid>
           <Grid item className={classes.textRight}>
-            <Typography
-              variant="subtitle1"
-              className={tx.height > 0 ? classes.green : classes.default}
-            >
-              {tx.chain === 'ETH'
-                ? `${tx.satoshis / constants[tx.chain]} ${tx.chain}`
-                : `${tx.satoshis / 1e8} BTC`}
+            <Typography variant="subtitle1" className={classes[statusColor]}>
+              {tx.satoshis / Constants[tx.chain]} {tx.chain}
             </Typography>
             <Typography variant="subtitle1" color="textSecondary">
               {moment(tx.blockTime).fromNow()}
