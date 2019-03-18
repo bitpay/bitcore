@@ -3,7 +3,6 @@ import { Events, IonicPage, NavParams } from 'ionic-angular';
 import { AddressProvider } from '../../providers/address/address';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
 import { TxsProvider } from '../../providers/transactions/transactions';
 
@@ -29,9 +28,8 @@ export class AddressPage {
   constructor(
     public navParams: NavParams,
     public currencyProvider: CurrencyProvider,
-    private apiProvider: ApiProvider,
     public txProvider: TxsProvider,
-    private logger: Logger,
+    private apiProvider: ApiProvider,
     private priceProvider: PriceProvider,
     private addrProvider: AddressProvider,
     private events: Events
@@ -68,9 +66,9 @@ export class AddressPage {
           this.loading = false;
         },
         err => {
-          this.logger.error(err.message);
           this.errorMessage = err.message;
           this.loading = false;
+          throw err;
         }
       );
   }

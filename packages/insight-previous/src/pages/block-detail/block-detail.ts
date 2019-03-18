@@ -3,7 +3,6 @@ import { IonicPage, NavParams } from 'ionic-angular';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
 import { RedirProvider } from '../../providers/redir/redir';
 import { TxsProvider } from '../../providers/transactions/transactions';
@@ -35,7 +34,6 @@ export class BlockDetailPage {
     public redirProvider: RedirProvider,
     public txProvider: TxsProvider,
     private blocksProvider: BlocksProvider,
-    private logger: Logger,
     private apiProvider: ApiProvider,
     private priceProvider: PriceProvider
   ) {
@@ -63,9 +61,9 @@ export class BlockDetailPage {
         this.loading = false;
       },
       err => {
-        this.logger.error(err.message);
         this.errorMessage = err.message;
         this.loading = false;
+        throw err;
       }
     );
   }

@@ -2,7 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { Component, Input, NgZone, OnChanges } from '@angular/core';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { Logger } from '../../providers/logger/logger';
 import { RedirProvider } from '../../providers/redir/redir';
 
 @Component({
@@ -12,17 +11,17 @@ import { RedirProvider } from '../../providers/redir/redir';
 export class LatestTransactionsComponent implements OnChanges {
   @Input()
   public refreshSeconds = 10;
+
   private timer: any;
   private loading = true;
   private transactions = [];
 
   constructor(
-    private httpClient: HttpClient,
-    private apiProvider: ApiProvider,
     public currency: CurrencyProvider,
-    private ngZone: NgZone,
     public redirProvider: RedirProvider,
-    private logger: Logger
+    private ngZone: NgZone,
+    private httpClient: HttpClient,
+    private apiProvider: ApiProvider
   ) {
     this.loadTransactions();
   }
@@ -50,8 +49,8 @@ export class LatestTransactionsComponent implements OnChanges {
         this.loading = false;
       },
       err => {
-        this.logger.error(err);
         this.loading = false;
+        throw err;
       }
     );
   }

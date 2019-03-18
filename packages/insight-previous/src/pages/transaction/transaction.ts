@@ -2,7 +2,6 @@ import { Component, Injectable } from '@angular/core';
 import { IonicPage, NavParams } from 'ionic-angular';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
 import { RedirProvider } from '../../providers/redir/redir';
 import { TxsProvider } from '../../providers/transactions/transactions';
@@ -34,7 +33,6 @@ export class TransactionPage {
     public redirProvider: RedirProvider,
     private apiProvider: ApiProvider,
     private txProvider: TxsProvider,
-    private logger: Logger,
     private priceProvider: PriceProvider
   ) {
     this.txId = navParams.get('txId');
@@ -70,9 +68,9 @@ export class TransactionPage {
         // Be aware that the tx component is loading data into the tx object
       },
       err => {
-        this.logger.error(err.message);
         this.errorMessage = err.message;
         this.loading = false;
+        throw err;
       }
     );
   }
