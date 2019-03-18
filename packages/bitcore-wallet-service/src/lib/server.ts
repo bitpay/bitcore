@@ -5,7 +5,7 @@ import * as _ from 'lodash';
 import * as $ from 'preconditions';
 import * as async from 'async';
 import * as log from 'npmlog';
-import { ITransaction } from './model/txproposal';
+import { ITxProposal } from './model/txproposal';
 var serverMessages = require('../serverMessages');
 var BCHAddressTranslator = require('./bchaddresstranslator');
 
@@ -627,7 +627,7 @@ WalletService.prototype.getStatus = function(opts, cb) {
     wallet?: IWallet;
     serverMessage?: string;
     balance?: string;
-    pendingTxps?: Array<ITransaction>;
+    pendingTxps?: Array<ITxProposal>;
     preferences?: boolean;
   } = {};
   async.parallel(
@@ -3514,7 +3514,7 @@ WalletService.prototype._normalizeTxHistory = function(
     if (_.isEmpty(moves)) return cb2();
 
     // each detected duplicate output move
-    let moves3 = _.flatten(_.map(_.values(moves), 'outputs')) as Array<ITransaction>;
+    let moves3 = _.flatten(_.map(_.values(moves), 'outputs')) as Array<ITxProposal>;
 
     // check output address for change address
     self.storage.fetchAddressesByWalletId(
@@ -3917,7 +3917,7 @@ WalletService._addNotesInfo = function(tx, indexedNotes) {
   }
 };
 
-WalletService.prototype.tagLowFeeTxs = function(wallet: IWallet, txs: Array<ITransaction>, cb) {
+WalletService.prototype.tagLowFeeTxs = function(wallet: IWallet, txs: Array<ITxProposal>, cb) {
   var self = this;
   var unconfirmed = _.filter(txs, {
     confirmations: 0

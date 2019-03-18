@@ -23,38 +23,56 @@ var Uuid = require('uuid');
  * to notify the user
  *
  */
-function Notification() {};
 
-Notification.create = function(opts) {
-  opts = opts || {};
+export interface INotification {
+  version: string;
+  createdOn: number;
+  id: number;
+  type: string;
+  data: any;
+  walletId: string;
+  creatorId: string;
+}
 
-  var x = new Notification();
+export class Notification {
+  version: string;
+  createdOn: number;
+  id: number;
+  type: string;
+  data: any;
+  walletId: string;
+  creatorId: string;
 
-  x.version = '1.0.0';
-  var now = Date.now();
+  static create = function(opts) {
+    opts = opts || {};
 
-  x.createdOn = Math.floor(now / 1000);
-  x.id = _.padStart(now, 14, '0') + _.padStart(opts.ticker || 0, 4, '0');
-  x.type = opts.type || 'general';
-  x.data = opts.data;
-  x.walletId = opts.walletId;
-  x.creatorId = opts.creatorId;
+    var x = new Notification();
 
-  return x;
-};
+    x.version = '1.0.0';
+    var now = Date.now();
 
-Notification.fromObj = function(obj) {
-  var x = new Notification();
+    x.createdOn = Math.floor(now / 1000);
+    x.id = _.padStart(now, 14, '0') + _.padStart(opts.ticker || 0, 4, '0');
+    x.type = opts.type || 'general';
+    x.data = opts.data;
+    x.walletId = opts.walletId;
+    x.creatorId = opts.creatorId;
 
-  x.version = obj.version;
-  x.createdOn = obj.createdOn;
-  x.id = obj.id;
-  x.type = obj.type,
-  x.data = obj.data;
-  x.walletId = obj.walletId;
-  x.creatorId = obj.creatorId;
+    return x;
+  };
 
-  return x;
-};
+  static fromObj = function(obj) {
+    var x = new Notification();
+
+    x.version = obj.version;
+    x.createdOn = obj.createdOn;
+    x.id = obj.id;
+    (x.type = obj.type), (x.data = obj.data);
+    x.walletId = obj.walletId;
+    x.creatorId = obj.creatorId;
+
+    return x;
+  };
+}
 
 module.exports = Notification;

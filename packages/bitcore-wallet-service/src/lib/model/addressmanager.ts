@@ -4,6 +4,15 @@ var $ = require('preconditions').singleton();
 var Constants = require('../common/constants');
 var Utils = require('../common/utils');
 
+interface IAddressManager {
+  version: number;
+  derivationStrategy: string;
+  receiveAddressIndex: number;
+  changeAddressIndex: number;
+  copayerIndex: number;
+  skippedPaths: Array<{ path: string; isChange: boolean }>;
+}
+
 export class AddressManager {
   version: number;
   derivationStrategy: string;
@@ -11,6 +20,31 @@ export class AddressManager {
   changeAddressIndex: number;
   copayerIndex: number;
   skippedPaths: Array<{ path: string; isChange: boolean }>;
+
+  static create = function(opts) {
+    opts = opts || {};
+
+    var x = new AddressManager();
+
+    x.version = 2;
+    x.derivationStrategy =
+      opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
+    $.checkState(
+      Utils.checkValueInCollection(
+        x.derivationStrategy,
+        Constants.DERIVATION_STRATEGIES
+      )
+    );
+
+    x.receiveAddressIndex = 0;
+    x.changeAddressIndex = 0;
+    x.copayerIndex = _.isNumber(opts.copayerIndex)
+      ? opts.copayerIndex
+      : Constants.BIP45_SHARED_INDEX;
+    x.skippedPaths = [];
+
+    return x;
+  };
 
   static fromObj(obj) {
     var x = new AddressManager();
