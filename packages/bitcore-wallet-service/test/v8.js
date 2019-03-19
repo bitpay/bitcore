@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var V8 = require('../ts_build/lib/blockchainexplorers/v8.js');
+var { V8 } = require('../ts_build/lib/blockchainexplorers/v8.js');
 var B = require('bitcore-lib-cash');
 const { Readable } = require('stream');
 
