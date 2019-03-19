@@ -17,7 +17,13 @@ var Constants = Common.Constants;
 var Utils = Common.Utils;
 
 export class BlockchainMonitor {
-  start = function(opts, cb) {
+  explorers: any;
+  storage: Storage;
+  messageBroker: MessageBroker;
+  lock: Lock;
+  walletId: string;
+
+  start(opts, cb) {
     opts = opts || {};
 
     var self = this;
@@ -102,9 +108,9 @@ export class BlockchainMonitor {
         return cb(err);
       }
     );
-  };
+  }
 
-  _initExplorer = function(coin, network, explorer) {
+  _initExplorer(coin, network, explorer) {
     var self = this;
 
     explorer.initSocket({
@@ -117,9 +123,9 @@ export class BlockchainMonitor {
         network
       )
     });
-  };
+  }
 
-  _handleThirdPartyBroadcasts = function(coin, network, data, processIt) {
+  _handleThirdPartyBroadcasts(coin, network, data, processIt) {
     var self = this;
     if (!data || !data.txid) return;
     //log.info(`New ${coin}/${network} tx: ${data.txid}`);
@@ -186,9 +192,9 @@ export class BlockchainMonitor {
         self._storeAndBroadcastNotification(notification);
       });
     });
-  };
+  }
 
-  _handleIncomingPayments = function(coin, network, data) {
+  _handleIncomingPayments(coin, network, data) {
     var self = this;
     if (!data) return;
     //console.log('[blockchainmonitor.js.158:data:]',data); //TODO
@@ -286,9 +292,9 @@ export class BlockchainMonitor {
         return;
       }
     );
-  };
+  }
 
-  _notifyNewBlock = function(coin, network, hash) {
+  _notifyNewBlock(coin, network, hash) {
     var self = this;
 
     log.info(`New ${coin}/${network} block ${hash}`);
@@ -303,9 +309,9 @@ export class BlockchainMonitor {
     });
 
     self._storeAndBroadcastNotification(notification, () => {});
-  };
+  }
 
-  _handleTxConfirmations = function(coin, network, hash) {
+  _handleTxConfirmations(coin, network, hash) {
     var self = this;
 
     function processTriggeredSubs(subs, cb) {
@@ -356,9 +362,9 @@ export class BlockchainMonitor {
         });
       });
     });
-  };
+  }
 
-  _handleNewBlock = function(coin, network, hash) {
+  _handleNewBlock(coin, network, hash) {
     // clear height cache.
     let cacheKey = Storage.BCHEIGHT_KEY + ':' + coin + ':' + network;
 
@@ -366,9 +372,9 @@ export class BlockchainMonitor {
 
     this._notifyNewBlock(coin, network, hash);
     this._handleTxConfirmations(coin, network, hash);
-  };
+  }
 
-  _storeAndBroadcastNotification = function(notification, cb) {
+  _storeAndBroadcastNotification(notification, cb?: () => void) {
     var self = this;
 
     self.storage.storeNotification(
@@ -379,5 +385,5 @@ export class BlockchainMonitor {
         if (cb) return cb();
       }
     );
-  };
+  }
 }
