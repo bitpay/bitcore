@@ -157,7 +157,7 @@ export class ExpressApp {
       };
     }
 
-    function getServer(req, res) {
+    function getServer(req, res): WalletService {
       var opts = {
         clientVersion: req.header('x-client-version'),
         userAgent: req.header('user-agent')
@@ -266,7 +266,7 @@ export class ExpressApp {
     });
 
     router.post('/v2/wallets/', createWalletLimiter, function(req, res) {
-      var server;
+      var server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
