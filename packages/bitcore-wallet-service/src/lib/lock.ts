@@ -14,7 +14,7 @@ const ACQUIRE_RETRY_STEP = 50; //ms
 
 export class Lock {
   storage: Storage;
-  constructor(storage: Storage, opts) {
+  constructor(storage: Storage, opts = {}) {
     opts = opts || {};
 
     this.storage = storage;

@@ -523,5 +523,3 @@ var _parseErr = function(err, res) {
   log.warn('V8 ' + res.request.href + ' Returned Status: ' + res.statusCode);
   return 'Error querying the blockchain';
 };
-
-module.exports = V8;

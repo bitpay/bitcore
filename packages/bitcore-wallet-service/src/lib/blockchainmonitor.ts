@@ -1,4 +1,10 @@
 'use strict';
+import { WalletService } from './server';
+import { Storage } from './storage';
+import { Lock } from './lock';
+import { MessageBroker } from './messagebroker';
+import { Notification } from './model/notification';
+import { BlockChainExplorer } from './blockchainexplorer';
 
 var $ = require('preconditions').singleton();
 var _ = require('lodash');
@@ -6,14 +12,6 @@ var async = require('async');
 var log = require('npmlog');
 log.debug = log.verbose;
 
-var BlockchainExplorer = require('./blockchainexplorer');
-var Storage = require('./storage');
-var MessageBroker = require('./messagebroker');
-var Lock = require('./lock');
-
-var Notification = require('./model/notification');
-
-var WalletService = require('./server');
 var Common = require('./common');
 var Constants = Common.Constants;
 var Utils = Common.Utils;
@@ -61,7 +59,7 @@ export class BlockchainMonitor {
                 return;
               }
 
-              var explorer = new BlockchainExplorer({
+              explorer = new BlockChainExplorer({
                 provider: config.provider,
                 coin: pair.coin,
                 network: pair.network,
@@ -383,5 +381,3 @@ export class BlockchainMonitor {
     );
   };
 }
-
-module.exports = BlockchainMonitor;

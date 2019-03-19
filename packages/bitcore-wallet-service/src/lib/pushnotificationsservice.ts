@@ -502,5 +502,3 @@ export class PushNotificationsService {
     );
   }
 }
-
-module.exports = PushNotificationsService;

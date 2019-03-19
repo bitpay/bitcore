@@ -1,8 +1,10 @@
-'use strict';
-
 import * as _ from 'lodash';
 import * as async from 'async';
 import express from 'express';
+import { Stats } from './stats';
+import { WalletService } from './server';
+import { ClientError } from './errors/clienterror';
+
 var log = require('npmlog');
 
 var bodyParser = require('body-parser');
@@ -11,9 +13,6 @@ var RateLimit = require('express-rate-limit');
 
 var Common = require('./common');
 var Defaults = Common.Defaults;
-
-var WalletService = require('./server');
-var Stats = require('./stats');
 
 log.disableColor();
 log.debug = log.verbose;
@@ -100,7 +99,7 @@ export class ExpressApp {
     var router = express.Router();
 
     function returnError(err, res, req) {
-      if (err instanceof WalletService.ClientError) {
+      if (err instanceof ClientError) {
         var status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
         if (!opts.disableLogs)
           log.info(
@@ -181,7 +180,7 @@ export class ExpressApp {
       var credentials = getCredentials(req);
       if (!credentials)
         return returnError(
-          new WalletService.ClientError({
+          new ClientError({
             code: 'NOT_AUTHORIZED'
           }),
           res,
@@ -210,7 +209,7 @@ export class ExpressApp {
 
         if (opts.onlySupportStaff && !server.copayerIsSupportStaff) {
           return returnError(
-            new WalletService.ClientError({
+            new ClientError({
               code: 'NOT_AUTHORIZED'
             }),
             res,
