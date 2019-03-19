@@ -1,5 +1,6 @@
 'use strict';
 
+import { TxProposalAction } from "./txproposalaction";
 var _ = require('lodash');
 var $ = require('preconditions').singleton();
 var Uuid = require('uuid');
@@ -18,7 +19,6 @@ var Constants = Common.Constants,
   Utils = Common.Utils;
 
 var TxProposalLegacy = require('./txproposal_legacy');
-var TxProposalAction = require('./txproposalaction');
 
 export interface ITxProposal {
   type: string;
