@@ -27,7 +27,7 @@ var Defaults = Common.Defaults;
 
 var { Storage } = require('../../ts_build/lib/storage');
 var Model = require('../../ts_build/lib/model');
-var WalletService = require('../../ts_build/lib/server');
+var { WalletService } = require('../../ts_build/lib/server');
 var TestData = require('../testdata');
 
 var storage, blockchainExplorer;

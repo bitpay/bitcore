@@ -57,7 +57,9 @@ export class Address {
     x.path = opts.path;
     x.publicKeys = opts.publicKeys;
     x.coin = opts.coin;
-    x.network = this.Bitcore[opts.coin].Address(x.address).toObject().network;
+    x.network = Address.Bitcore[opts.coin]
+      .Address(x.address)
+      .toObject().network;
     x.type = opts.type || Constants.SCRIPT_TYPES.P2SH;
     x.hasActivity = undefined;
     x.beRegistered = null;
@@ -96,14 +98,14 @@ export class Address {
     );
 
     var publicKeys = _.map(publicKeyRing, function(item) {
-      var xpub = new this.Bitcore[coin].HDPublicKey(item.xPubKey);
+      var xpub = new Address.Bitcore[coin].HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
     });
 
     var bitcoreAddress;
     switch (scriptType) {
       case Constants.SCRIPT_TYPES.P2SH:
-        bitcoreAddress = this.Bitcore[coin].Address.createMultisig(
+        bitcoreAddress = Address.Bitcore[coin].Address.createMultisig(
           publicKeys,
           m,
           network
@@ -111,7 +113,7 @@ export class Address {
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
-        bitcoreAddress = this.Bitcore[coin].Address.fromPublicKey(
+        bitcoreAddress = Address.Bitcore[coin].Address.fromPublicKey(
           publicKeys[0],
           network
         );
