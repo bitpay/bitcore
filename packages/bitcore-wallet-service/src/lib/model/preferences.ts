@@ -18,7 +18,7 @@ export class Preferences {
   language: string;
   unit: number;
 
-  static create = function(opts) {
+  static create(opts) {
     opts = opts || {};
 
     var x = new Preferences();
@@ -31,9 +31,9 @@ export class Preferences {
     x.language = opts.language;
     x.unit = opts.unit;
     return x;
-  };
+  }
 
-  fromObj = function(obj) {
+  static fromObj(obj) {
     var x = new Preferences();
 
     x.version = obj.version;
@@ -44,5 +44,5 @@ export class Preferences {
     x.language = obj.language;
     x.unit = obj.unit;
     return x;
-  };
+  }
 }

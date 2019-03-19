@@ -114,7 +114,7 @@ export class WalletService {
    */
   static getServiceVersion() {
     if (!serviceVersion) {
-      serviceVersion = 'bws-' + require('../package').version;
+      serviceVersion = 'bws-' + require('../../package').version;
     }
 
     return serviceVersion;
