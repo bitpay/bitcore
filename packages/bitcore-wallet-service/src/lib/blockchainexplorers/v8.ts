@@ -2,12 +2,12 @@
 
 import * as request from 'request-promise-native';
 import { Client } from './v8/client';
-var _ = require('lodash');
-var async = require('async');
+import io = require('socket.io-client');
+import * as _ from 'lodash';
+import * as async from 'async';
 var $ = require('preconditions').singleton();
 var log = require('npmlog');
 log.debug = log.verbose;
-var io = require('socket.io-client');
 var Common = require('../common');
 var BCHAddressTranslator = require('../bchaddresstranslator');
 var Bitcore = require('bitcore-lib');
@@ -400,7 +400,7 @@ export class V8 {
 
     async.each(
       nbBlocks,
-      function(x, icb) {
+      function(x: string, icb) {
         var url = self.baseUrl + '/fee/' + x;
         self.request
           .get(url, {})
@@ -487,7 +487,7 @@ export class V8 {
     socket.on('connect_error', function() {
       log.error('Error connecting to ' + self.getConnectionInfo());
     });
-    socket.on('tx', _.bind(callbacks.onTx));
+    socket.on('tx', callbacks.onTx);
     socket.on('block', function(data) {
       return callbacks.onBlock(data.hash);
     });

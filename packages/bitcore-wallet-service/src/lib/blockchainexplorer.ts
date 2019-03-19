@@ -1,11 +1,11 @@
 'use strict';
 
+import { V8 } from './blockchainexplorers/v8';
 var _ = require('lodash');
 var $ = require('preconditions').singleton();
 var log = require('npmlog');
 log.debug = log.verbose;
 
-var V8 = require('./blockchainexplorers/v8');
 var Common = require('./common');
 var Constants = Common.Constants,
   Defaults = Common.Defaults,
