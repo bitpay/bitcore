@@ -20,6 +20,8 @@ var Bitcore_ = {
 
 
 
+var { WalletService } = require('../../ts_build/lib/server');
+const { Storage } = require('../../ts_build/lib/storage')
 var Common = require('../../ts_build/lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
@@ -28,8 +30,6 @@ var Defaults = Common.Defaults;
 var Model = require('../../ts_build/lib/model');
 var BCHAddressTranslator= require('../../ts_build/lib/bchaddresstranslator');
 
-var { WalletService } = require('../../ts_build/lib/server');
-const { Storage } = require('../../ts_build/lib/storage')
 var HugeTxs = require('./hugetx');
 var TestData = require('../testdata');
 var helpers = require('./helpers');

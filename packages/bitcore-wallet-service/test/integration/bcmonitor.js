@@ -10,8 +10,8 @@ var log = require('npmlog');
 log.debug = log.verbose;
 log.level = 'info';
 
-var WalletService = require('../../ts_build/lib/server');
-var BlockchainMonitor = require('../../ts_build/lib/blockchainmonitor');
+var { WalletService } = require('../../ts_build/lib/server');
+var { BlockchainMonitor } = require('../../ts_build/lib/blockchainmonitor');
 
 var helpers = require('./helpers');
 var storage, blockchainExplorer;
