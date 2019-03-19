@@ -9,7 +9,7 @@ var { BlockChainExplorer } = require('../ts_build/lib/blockchainexplorer');
 describe('BlockChain explorer', function() {
   describe('#constructor', function() {
     it('should return a blockchain explorer with basic methods', function() {
-      var exp = new BlockchainExplorer({
+      var exp = new BlockChainExplorer({
         network: 'testnet',
       });
       should.exist(exp);
@@ -19,12 +19,12 @@ describe('BlockChain explorer', function() {
       exp.should.respondTo('getAddressActivity');
       exp.should.respondTo('estimateFee');
       exp.should.respondTo('initSocket');
-      var exp = new BlockchainExplorer({
+      var exp = new BlockChainExplorer({
         network: 'livenet',
       });
       should.exist(exp);
 
-      var exp2 = new BlockchainExplorer({
+      var exp2 = new BlockChainExplorer({
         provider: 'v8',
         network: 'livenet',
       });
@@ -41,7 +41,7 @@ describe('BlockChain explorer', function() {
     });
     it('should fail on unsupported provider', function() {
       (function() {
-        var exp = new BlockchainExplorer({
+        var exp = new BlockChainExplorer({
           provider: 'dummy',
         });
       }).should.throw('not supported');
@@ -49,7 +49,7 @@ describe('BlockChain explorer', function() {
   });
   describe('#v8', function() {
     it.skip('should sign registration', function() {
-      var exp = new BlockchainExplorer({
+      var exp = new BlockChainExplorer({
         provider: 'v8',
         network: 'livenet',
       });
