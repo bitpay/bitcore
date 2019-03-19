@@ -51,7 +51,7 @@ module.exports = {
     },
   },
   pushNotificationsOpts: {
-    templatePath: '../templates',
+    templatePath: '../../templates',
     defaultLanguage: 'en',
     defaultUnit: 'btc',
     subjectPrefix: '',

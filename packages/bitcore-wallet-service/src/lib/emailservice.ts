@@ -95,6 +95,7 @@ export class EmailService {
     self.templatePath = path.normalize(
       (opts.emailOpts.templatePath || __dirname + '/templates') + '/'
     );
+    console.log(self.templatePath);
     self.publicTxUrlTemplate = opts.emailOpts.publicTxUrlTemplate || {};
     self.subjectPrefix = opts.emailOpts.subjectPrefix || '[Wallet service]';
     self.from = opts.emailOpts.from;
