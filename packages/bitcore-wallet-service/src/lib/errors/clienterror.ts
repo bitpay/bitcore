@@ -26,5 +26,3 @@ export class ClientError extends Error {
     return '<ClientError:' + this.code + ' ' + this.message + '>';
   }
 }
-
-module.exports = ClientError;

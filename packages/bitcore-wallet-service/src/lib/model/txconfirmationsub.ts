@@ -42,5 +42,3 @@ export class TxConfirmationSub {
     return x;
   };
 }
-
-module.exports = TxConfirmationSub;

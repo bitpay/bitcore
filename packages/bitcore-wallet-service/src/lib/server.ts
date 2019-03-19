@@ -1,13 +1,15 @@
-import { ClientError } from "./errors/clienterror";
+import { ClientError } from './errors/clienterror';
+export { ClientError };
 import { IWallet } from './model/wallet';
-'use strict';
-
 import * as _ from 'lodash';
 import * as async from 'async';
 import * as log from 'npmlog';
 import { ITxProposal, TxProposal } from './model/txproposal';
 import { Storage } from './storage';
 import { INotification } from './model/notification';
+import { FiatRateService } from './fiatrateservice';
+import { Lock } from './lock';
+import { MessageBroker } from './messagebroker';
 const $ = require('preconditions').singleton();
 var serverMessages = require('../serverMessages');
 var BCHAddressTranslator = require('./bchaddresstranslator');
@@ -31,10 +33,7 @@ var Defaults = Common.Defaults;
 
 var Errors = require('./errors/errordefinitions');
 
-var Lock = require('./lock');
-var MessageBroker = require('./messagebroker');
 var BlockchainExplorer = require('./blockchainexplorer');
-var FiatRateService = require('./fiatrateservice');
 
 var request = require('request');
 
@@ -115,7 +114,7 @@ export class WalletService {
    */
   static getServiceVersion() {
     if (!serviceVersion) {
-      serviceVersion = 'bws-' + require('../package').version;
+      serviceVersion = 'bws-' + require('../../package').version;
     }
 
     return serviceVersion;
@@ -2590,10 +2589,13 @@ export class WalletService {
 
           // TODO remove one cashaddr is used internally (noCashAddr flag)?
           opts.origAddrOutputs = _.map(opts.outputs, x => {
-            let ret = {
+            let ret: {
+              toAddress?: string;
+              amount?: number;
+              message?: string;
+            } = {
               toAddress: x.toAddress,
-              amount: x.amount,
-              message: undefined
+              amount: x.amount
             };
             if (x.message) ret.message = x.message;
 
@@ -4649,6 +4651,3 @@ function checkRequired(obj, args, cb?: (e: any) => void) {
 
   return false;
 }
-
-module.exports = WalletService;
-module.exports.ClientError = ClientError;

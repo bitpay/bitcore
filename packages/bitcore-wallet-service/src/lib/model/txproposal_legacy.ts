@@ -55,7 +55,7 @@ export interface ITxProposal {
   derivationStrategy: string;
   customData: any;
 }
-export class TxProposal {
+export class TxProposalLegacy {
   version: string;
   type: string;
   createdOn: number;
@@ -96,12 +96,12 @@ export class TxProposal {
     EXTERNAL: 'external'
   };
 
-  static fromObj = function(obj) {
-    var x = new TxProposal();
+  static fromObj(obj) {
+    var x = new TxProposalLegacy();
 
     x.version = obj.version;
     if (obj.version === '1.0.0') {
-      x.type = TxProposal.Types.SIMPLE;
+      x.type = TxProposalLegacy.Types.SIMPLE;
     } else {
       x.type = obj.type;
     }
@@ -169,8 +169,8 @@ export class TxProposal {
 
   getTotalAmount = function() {
     if (
-      this.type == TxProposal.Types.MULTIPLEOUTPUTS ||
-      this.type == TxProposal.Types.EXTERNAL
+      this.type == TxProposalLegacy.Types.MULTIPLEOUTPUTS ||
+      this.type == TxProposalLegacy.Types.EXTERNAL
     ) {
       return _.map(this.outputs, 'amount').reduce(function(total, n) {
         return total + n;
@@ -243,5 +243,3 @@ export class TxProposal {
     this.broadcastedOn = Math.floor(Date.now() / 1000);
   };
 }
-
-module.exports = TxProposal;

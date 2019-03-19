@@ -12,8 +12,8 @@ log.level = 'info';
 
 var sjcl = require('sjcl');
 
-var WalletService = require('../../ts_build/lib/server');
-var PushNotificationsService = require('../../ts_build/lib/pushnotificationsservice');
+var { WalletService } = require('../../ts_build/lib/server');
+var { PushNotificationsService } = require('../../ts_build/lib/pushnotificationsservice');
 
 var TestData = require('../testdata');
 var helpers = require('./helpers');

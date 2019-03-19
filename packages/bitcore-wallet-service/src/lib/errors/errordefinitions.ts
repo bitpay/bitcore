@@ -1,8 +1,7 @@
 'use strict';
+import { ClientError } from "./clienterror";
 
 var _ = require('lodash');
-
-var ClientError = require('./clienterror');
 
 var errors = {
   BAD_SIGNATURES: 'Bad signatures',

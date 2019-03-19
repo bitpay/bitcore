@@ -20,6 +20,8 @@ var Bitcore_ = {
 
 
 
+var { WalletService } = require('../../ts_build/lib/server');
+const { Storage } = require('../../ts_build/lib/storage')
 var Common = require('../../ts_build/lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
@@ -27,8 +29,6 @@ var Defaults = Common.Defaults;
 
 var Model = require('../../ts_build/lib/model');
 var BCHAddressTranslator= require('../../ts_build/lib/bchaddresstranslator');
-
-var WalletService = require('../../ts_build/lib/server');
 
 var HugeTxs = require('./hugetx');
 var TestData = require('../testdata');
@@ -158,7 +158,7 @@ describe('Wallet service', function() {
 
     it('should get server instance for support staff', function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, wallet) {
-        var collections = require('../../lib/storage').collections;
+        var collections = Storage.collections;
         s.storage.db.collection(collections.COPAYERS_LOOKUP).update({
           copayerId: wallet.copayers[0].id
         }, {

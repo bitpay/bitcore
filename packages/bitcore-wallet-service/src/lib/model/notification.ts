@@ -74,5 +74,3 @@ export class Notification {
     return x;
   };
 }
-
-module.exports = Notification;

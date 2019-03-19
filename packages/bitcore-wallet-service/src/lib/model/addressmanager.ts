@@ -146,5 +146,3 @@ export class AddressManager {
     return ret;
   }
 }
-
-module.exports = AddressManager;

@@ -46,5 +46,3 @@ export class MessageBroker extends EventEmitter {
     this.on('msg', handler);
   }
 }
-
-module.exports = MessageBroker;

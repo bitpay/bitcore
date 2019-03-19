@@ -61,5 +61,3 @@ export class TxNote {
     return this;
   };
 }
-
-module.exports = TxNote;

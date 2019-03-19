@@ -62,5 +62,3 @@ export class Session {
     this.updatedOn = now;
   };
 }
-
-module.exports = Session;

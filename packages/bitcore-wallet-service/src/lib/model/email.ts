@@ -101,5 +101,3 @@ export class Email {
     this._logAttempt('fail');
   };
 }
-
-module.exports = Email;

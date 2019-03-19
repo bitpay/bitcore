@@ -42,5 +42,3 @@ export class PushNotificationSub {
     return x;
   };
 }
-
-module.exports = PushNotificationSub;
