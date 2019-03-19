@@ -16,7 +16,7 @@ var Defaults = Common.Defaults;
 describe('ExpressApp', function() {
   describe('#constructor', function() {
     it('will set an express app', function() {
-      var TestExpressApp = proxyquire('../lib/expressapp', {});
+      var TestExpressApp = proxyquire('../ts_build/lib/expressapp', {});
       var express = new TestExpressApp();
       should.exist(express.app);
       should.exist(express.app.use);
@@ -26,7 +26,7 @@ describe('ExpressApp', function() {
   describe('#start', function() {
     it('will listen at the specified port', function(done) {
       var initialize = sinon.stub().callsArg(1);
-      var TestExpressApp = proxyquire('../lib/expressapp', {
+      var TestExpressApp = proxyquire('../ts_build/lib/expressapp', {
         './server': {
           initialize: initialize
         }
@@ -64,7 +64,7 @@ describe('ExpressApp', function() {
         var server = {
           getStatus: sinon.stub().callsArgWith(1, null, {}),
         };
-        var TestExpressApp = proxyquire('../lib/expressapp', {
+        var TestExpressApp = proxyquire('../ts_build/lib/expressapp', {
           './server': {
             initialize: sinon.stub().callsArg(1),
             getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
@@ -93,7 +93,7 @@ describe('ExpressApp', function() {
         var server = {
           getMainAddresses: sinon.stub().callsArgWith(1, null, {}),
         };
-        var TestExpressApp = proxyquire('../lib/expressapp', {
+        var TestExpressApp = proxyquire('../ts_build/lib/expressapp', {
           './server': {
             initialize: sinon.stub().callsArg(1),
             getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
@@ -124,7 +124,7 @@ describe('ExpressApp', function() {
             amount: 123
           }),
         };
-        var TestExpressApp = proxyquire('../lib/expressapp', {
+        var TestExpressApp = proxyquire('../ts_build/lib/expressapp', {
           './server': {
             initialize: sinon.stub().callsArg(1),
             getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
@@ -155,7 +155,7 @@ describe('ExpressApp', function() {
           var server = {
             getBalance: sinon.stub().callsArgWith(1, null, {}),
           };
-          var TestExpressApp = proxyquire('../lib/expressapp', {
+          var TestExpressApp = proxyquire('../ts_build/lib/expressapp', {
             './server': {
               initialize: sinon.stub().callsArg(1),
               getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
@@ -196,7 +196,7 @@ describe('ExpressApp', function() {
           server = {
             getNotifications: sinon.stub().callsArgWith(1, null, {})
           };
-          TestExpressApp = proxyquire('../lib/expressapp', {
+          TestExpressApp = proxyquire('../ts_build/lib/expressapp', {
             './server': {
               initialize: sinon.stub().callsArg(1),
               getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
