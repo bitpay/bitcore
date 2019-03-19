@@ -5,7 +5,7 @@ const Bitcore = require('bitcore-lib');
 const Client = require('../lib/blockchainexplorers/v8/client.js');
 
 
-const coin = 'BCH';
+const coin = 'BTC';
 console.log('[v8tool.8:coin:]',coin); //TODO
 const network = 'mainnet';
 const authKey = process.argv[2]; 
@@ -52,6 +52,7 @@ request.get(url, {
   } else {
     try {
 console.log('[v8tool.50:body:]',body); //TODO
+console.log('[v8tool.52]LENGTH', body.length); //TODO
       //body.forEach((x)=> {
       //  console.log(x.address);
       //});
