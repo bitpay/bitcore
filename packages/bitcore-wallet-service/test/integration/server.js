@@ -28,7 +28,7 @@ var Defaults = Common.Defaults;
 var Model = require('../../ts_build/lib/model');
 var BCHAddressTranslator= require('../../ts_build/lib/bchaddresstranslator');
 
-var WalletService = require('../../ts_build/lib/server');
+var { WalletService } = require('../../ts_build/lib/server');
 
 var HugeTxs = require('./hugetx');
 var TestData = require('../testdata');
@@ -158,7 +158,7 @@ describe('Wallet service', function() {
 
     it('should get server instance for support staff', function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, wallet) {
-        var collections = require('../../lib/storage').collections;
+        var collections = require('../../ts_build/lib/storage').collections;
         s.storage.db.collection(collections.COPAYERS_LOOKUP).update({
           copayerId: wallet.copayers[0].id
         }, {
