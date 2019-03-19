@@ -11,6 +11,7 @@ var log = require('npmlog');
 log.debug = log.verbose;
 log.disableColor();
 var util = require('util');
+var $ = require('preconditions').singleton();
 var Bitcore = require('bitcore-lib');
 
 var Model = require('./model');

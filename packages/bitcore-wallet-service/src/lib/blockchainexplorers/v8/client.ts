@@ -149,5 +149,3 @@ export class Client {
     return request.post(url, { body: payload, json: true });
   }
 }
-
-module.exports = Client;
