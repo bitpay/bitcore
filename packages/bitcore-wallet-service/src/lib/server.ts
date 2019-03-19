@@ -72,6 +72,7 @@ export interface IWalletService {
   appVersion: string;
   parsedClientVersion: { agent: number; major: number; minor: number };
   clientVersion: string;
+  copayerIsSupportStaff: boolean;
 }
 function boolToNum(x: boolean) {
   return x ? 1 : 0;
@@ -95,6 +96,7 @@ export class WalletService {
   appVersion: string;
   parsedClientVersion: { agent: string; major: number; minor: number };
   clientVersion: string;
+  copayerIsSupportStaff: boolean;
 
   constructor() {
     if (!initialized) {
@@ -239,7 +241,7 @@ export class WalletService {
    * @param {Object} opts
    * @param {string} opts.clientVersion - A string that identifies the client issuing the request
    */
-  static getInstance(opts) {
+  static getInstance(opts): WalletService {
     opts = opts || {};
 
     var version = Utils.parseVersion(opts.clientVersion);
@@ -280,7 +282,7 @@ export class WalletService {
         return;
       }
 
-      var server;
+      var server: WalletService;
       try {
         server = WalletService.getInstance(opts);
       } catch (ex) {
