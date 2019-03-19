@@ -1,13 +1,24 @@
+import { Wallet } from './wallet';
+import { Copayer } from './copayer';
+import { TxProposal } from './txproposal';
+import { Address } from './address';
+import { Notification } from './notification';
+import { Preferences } from './preferences';
+import { Email } from './email';
+import { TxNote } from './txnote';
+import { Session } from './session';
+import { PushNotificationSub } from './pushnotificationsub';
+import { TxConfirmationSub } from './txconfirmationsub';
 module.exports = {
-  Wallet: require('./wallet'),
-  Copayer: require('./copayer'),
-  TxProposal: require('./txproposal'),
-  Address: require('./address'),
-  Notification: require('./notification'),
-  Preferences: require('./preferences'),
-  Email: require('./email'),
-  TxNote: require('./txnote'),
-  Session: require('./session'),
-  PushNotificationSub: require('./pushnotificationsub'),
-  TxConfirmationSub: require('./txconfirmationsub')
+  Wallet,
+  Copayer,
+  TxProposal,
+  Address,
+  Notification,
+  Preferences,
+  Email,
+  TxNote,
+  Session,
+  PushNotificationSub,
+  TxConfirmationSub
 };

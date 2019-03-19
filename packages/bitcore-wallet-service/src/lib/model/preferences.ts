@@ -46,5 +46,3 @@ export class Preferences {
     return x;
   };
 }
-
-module.exports = Preferences;

@@ -162,5 +162,3 @@ export class Address {
     );
   }
 }
-
-module.exports = Address;

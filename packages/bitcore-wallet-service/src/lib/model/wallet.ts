@@ -6,10 +6,9 @@ var log = require('npmlog');
 var $ = require('preconditions').singleton();
 var Uuid = require('uuid');
 
-var Address = require('./address');
-var Copayer = require('./copayer');
 import { AddressManager } from "./addressmanager";
-import { ICopayer } from "./copayer";
+import { ICopayer, Copayer } from "./copayer";
+import { Address } from "./address";
 
 var Bitcore = {
   btc: require('bitcore-lib'),
@@ -126,7 +125,7 @@ export class Wallet {
     return x;
   }
 
-  fromObj(obj: IWallet) {
+  static fromObj(obj: IWallet) {
     var x = new Wallet();
 
     $.shouldBeNumber(obj.m);
@@ -300,5 +299,3 @@ export class Wallet {
     return address;
   }
 }
-
-module.exports = Wallet;

@@ -48,5 +48,3 @@ export class TxProposalAction {
     return x;
   };
 }
-
-module.exports = TxProposalAction;

@@ -147,5 +147,3 @@ export class Copayer {
     return address;
   }
 }
-
-module.exports = Copayer;
