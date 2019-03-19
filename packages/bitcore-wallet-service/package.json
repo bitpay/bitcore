@@ -37,7 +37,7 @@
     "morgan": "^1.9.1",
     "mustache": "^2.1.0",
     "npmlog": "^0.1.1",
-    "preconditions": "^2.2.1",
+    "preconditions": "^2.2.3",
     "read": "^1.0.5",
     "request": "^2.53.0",
     "request-promise-native": "^1.0.5",

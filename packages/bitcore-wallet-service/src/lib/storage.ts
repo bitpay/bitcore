@@ -1571,5 +1571,3 @@ export class Storage {
     );
   }
 }
-
-module.exports = Storage;

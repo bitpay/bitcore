@@ -1,13 +1,14 @@
+import { ClientError } from "./errors/clienterror";
 import { IWallet } from './model/wallet';
 'use strict';
 
 import * as _ from 'lodash';
-import * as $ from 'preconditions';
 import * as async from 'async';
 import * as log from 'npmlog';
 import { ITxProposal, TxProposal } from './model/txproposal';
 import { Storage } from './storage';
 import { INotification } from './model/notification';
+const $ = require('preconditions').singleton();
 var serverMessages = require('../serverMessages');
 var BCHAddressTranslator = require('./bchaddresstranslator');
 
@@ -28,7 +29,6 @@ var Utils = Common.Utils;
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;
 
-var ClientError = require('./errors/clienterror');
 var Errors = require('./errors/errordefinitions');
 
 var Lock = require('./lock');
