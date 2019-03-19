@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var V8 = require('../lib/blockchainexplorers/v8.js');
+var V8 = require('../ts_build/lib/blockchainexplorers/v8.js');
 var B = require('bitcore-lib-cash');
 const { Readable } = require('stream');
 
@@ -48,7 +48,7 @@ var txs = [{
   satoshis: 5460,
   category: 'fee',
 },
-]; 
+];
 
 
 describe('V8', () => {
@@ -73,7 +73,7 @@ describe('V8', () => {
           return new MyReadable;
         };
       };
-      
+
       var be = new V8({
         coin: 'btc',
         network: 'livenet',
@@ -98,10 +98,10 @@ describe('V8', () => {
           class MyReadable extends Readable {
             constructor(options) {
               super(options);
-              var txStr = '{ "id": 1, "txid": "txid1", "confirmations": 1, "blockTime": "'+ 
+              var txStr = '{ "id": 1, "txid": "txid1", "confirmations": 1, "blockTime": "'+
                 t + '", "size": 226, "category": "send", "toAddress": "'+
                 external +'", "satoshis": 0.5e8 } \n { "id": 2, "txid": "txid2", "confirmations": 1, "category": "send", "blockTime": "'+
-                t + '", "satoshis": 0.3e8, "toAddress": "'+external + '"}'; 
+                t + '", "satoshis": 0.3e8, "toAddress": "'+external + '"}';
               this.push(txStr.substr(0,10));
               this.push(txStr.substr(10));
               this.push(null);
@@ -140,10 +140,10 @@ describe('V8', () => {
         getAddressTxos(opts) {
           return new Promise(function (resolve) {
             resolve(V8UTXOS);
-          }) 
+          })
         };
       };
-      
+
       var be = new V8({
         coin: 'bch',
         network: 'livenet',
@@ -167,7 +167,7 @@ describe('V8', () => {
 
         utxos[1].confirmations.should.equal(1);
         utxos[0].confirmations.should.equal(4);
- 
+
         return done();
       });
     });
@@ -197,7 +197,7 @@ describe('V8', () => {
         return done();
       });
     });
- 
+
     it('should ignore non-matching results from estimate fee', (done) => {
 
       let fakeRequest = {

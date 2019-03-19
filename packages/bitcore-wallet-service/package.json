@@ -36,6 +36,7 @@
     "mongodb": "^2.0.27",
     "morgan": "^1.9.1",
     "mustache": "^2.1.0",
+    "nodemailer": "^5.1.1",
     "npmlog": "^0.1.1",
     "preconditions": "^2.2.3",
     "read": "^1.0.5",

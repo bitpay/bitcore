@@ -10,8 +10,8 @@ var log = require('npmlog');
 log.debug = log.verbose;
 log.level = 'info';
 
-var WalletService = require('../../lib/server');
-var EmailService = require('../../lib/emailservice');
+var WalletService = require('../../ts_build/lib/server');
+var EmailService = require('../../ts_build/lib/emailservice');
 
 var TestData = require('../testdata');
 var helpers = require('./helpers');
@@ -78,7 +78,7 @@ describe('Email notifications', function() {
       });
     });
 
- 
+
 
     it('should handle small incomming payments (bch)', function(done) {
       server.createAddress({}, function(err, address) {

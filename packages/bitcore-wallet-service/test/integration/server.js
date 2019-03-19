@@ -20,15 +20,15 @@ var Bitcore_ = {
 
 
 
-var Common = require('../../lib/common');
+var Common = require('../../ts_build/lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;
 
-var Model = require('../../lib/model');
-var BCHAddressTranslator= require('../../lib/bchaddresstranslator');
+var Model = require('../../ts_build/lib/model');
+var BCHAddressTranslator= require('../../ts_build/lib/bchaddresstranslator');
 
-var WalletService = require('../../lib/server');
+var WalletService = require('../../ts_build/lib/server');
 
 var HugeTxs = require('./hugetx');
 var TestData = require('../testdata');
@@ -1874,7 +1874,7 @@ describe('Wallet service', function() {
         });
       });
     });
- 
+
     it('should  get UTXOs for specific addresses', function(done) {
       server.createAddress({}, function(err, address) {
         helpers.stubUtxos(server, wallet, [1, 2, 3], {addresses:[address]}, function(utxos) {
@@ -2219,7 +2219,7 @@ describe('Wallet service', function() {
     afterEach(function() {
       clock.restore();
     });
- 
+
 
     it('should get current fee levels', function(done) {
       helpers.stubFeeLevels({
@@ -2363,10 +2363,10 @@ describe('Wallet service', function() {
         }));
 
 
-        //should use default value 
+        //should use default value
         //because value and fallback = -1
         fees.priority.feePerKb.should.equal(
-          Defaults.FEE_LEVELS.btc[1].defaultValue 
+          Defaults.FEE_LEVELS.btc[1].defaultValue
         );
 
 
@@ -2418,10 +2418,10 @@ describe('Wallet service', function() {
         }));
 
 
-        //should use default value 
+        //should use default value
         //because value and fallback = -1
         fees.priority.feePerKb.should.equal(
-          Defaults.FEE_LEVELS.btc[1].defaultValue 
+          Defaults.FEE_LEVELS.btc[1].defaultValue
         );
 
 
@@ -2746,20 +2746,20 @@ describe('Wallet service', function() {
       key: 'id44btc',
       addr: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
       flags: {},
-    }, 
+    },
     {
       coin: 'bch',
       key: 'id44bch',
       addr: 'qpgjyj728rhu4gca2dqfzlpl8acnhzequshhgvev53',
       flags: {},
-    }, 
+    },
     {
       coin: 'bch',
       key: 'id44bch',
       addr: 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X',
       flags: { noCashAddr: true },
-    }, 
- 
+    },
+
   ];
 
   _.each(testSet, function(x) {
@@ -2768,12 +2768,12 @@ describe('Wallet service', function() {
     let idKey = x.key;
     let addressStr = x.addr;
     let flags = x.flags;
-  
+
     describe('#createTx ' + coin + ' flags' + JSON.stringify(flags), function() {
       describe('Tx proposal creation & publishing ' + coin, function() {
         var server, wallet;
         beforeEach(function(done) {
-          helpers.createAndJoinWallet(1, 1, { 
+          helpers.createAndJoinWallet(1, 1, {
             coin: coin,
           },  function(s, w) {
             server = s;
@@ -2840,7 +2840,7 @@ describe('Wallet service', function() {
               });
             });
           });
-    
+
           it('should fail to create tx for invalid address', function(done) {
             helpers.stubUtxos(server, wallet, 1, function() {
               var txOpts = {
@@ -2981,7 +2981,7 @@ describe('Wallet service', function() {
               });
             });
           });
- 
+
           it('should be able to specify inputs & absolute fee', function(done) {
             helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
               var txOpts = {
@@ -4454,7 +4454,7 @@ describe('Wallet service', function() {
       let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
       let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
       let amount =  0.8 * 1e8;
-      helpers.createAndJoinWallet(1, 1, { 
+      helpers.createAndJoinWallet(1, 1, {
         coin: 'bch',
       },  function(s, w) {
         helpers.stubUtxos(s, w, [1, 2], function() {
@@ -4509,7 +4509,7 @@ describe('Wallet service', function() {
       let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
       let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
       let amount =  0.8 * 1e8;
-      helpers.createAndJoinWallet(1, 1, { 
+      helpers.createAndJoinWallet(1, 1, {
         coin: 'bch',
       },  function(s, w) {
         helpers.stubUtxos(s, w, [1, 2], function() {
@@ -4545,7 +4545,7 @@ describe('Wallet service', function() {
             var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
             s.publishTx(publishOpts, function(err) {
               s.getPendingTxs({noCashAddr: true}, function(err, txs) {
-            
+
                 should.not.exist(err);
                 txs.length.should.equal(1);
                 txs[0].outputs.should.deep.equal([{
@@ -4566,7 +4566,7 @@ describe('Wallet service', function() {
       let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
       let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
       let amount =  0.8 * 1e8;
-      helpers.createAndJoinWallet(1, 1, { 
+      helpers.createAndJoinWallet(1, 1, {
         coin: 'bch',
       },  function(s, w) {
         helpers.stubUtxos(s, w, [1, 2], function() {
@@ -4625,7 +4625,7 @@ describe('Wallet service', function() {
       let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
       let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
       let amount =  0.8 * 1e8;
-      helpers.createAndJoinWallet(1, 1, { 
+      helpers.createAndJoinWallet(1, 1, {
         coin: 'bch',
       },  function(s, w) {
         helpers.stubUtxos(s, w, [1, 2], function() {
@@ -4649,7 +4649,7 @@ describe('Wallet service', function() {
       let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
       let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
       let amount =  0.8 * 1e8;
-      helpers.createAndJoinWallet(1, 1, { 
+      helpers.createAndJoinWallet(1, 1, {
         coin: 'bch',
       },  function(s, w) {
         helpers.stubUtxos(s, w, [1, 2], function() {
@@ -4674,7 +4674,7 @@ describe('Wallet service', function() {
       let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
       let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
       let amount =  0.8 * 1e8;
-      helpers.createAndJoinWallet(1, 1, { 
+      helpers.createAndJoinWallet(1, 1, {
         coin: 'bch',
       },  function(s, w) {
         helpers.createAddresses(s, w, 1, 1, function(mainAddresses, changeAddress) {
@@ -4704,7 +4704,7 @@ describe('Wallet service', function() {
       let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
       let cashAddr = BCHAddressTranslator.translate(copayAddr,'cashaddr');
       let amount =  0.8 * 1e8;
-      helpers.createAndJoinWallet(1, 1, { 
+      helpers.createAndJoinWallet(1, 1, {
         coin: 'bch',
       },  function(s, w) {
         helpers.createAddresses(s, w, 1, 1, function(mainAddresses, changeAddress) {
@@ -7009,7 +7009,7 @@ describe('Wallet service', function() {
             server.scan( { startingStep:1 }, function(err) {
               should.not.exist(err);
 
-              // should prederive 3 address, so 
+              // should prederive 3 address, so
               // First call should be m/0/3
               var calls = getAddressActivitySpy.getCalls();
               calls[0].args[0].should.equal(addr);
@@ -7659,7 +7659,7 @@ describe('Wallet service', function() {
   describe('Sync wallet with grouping block explorer', function() {
     var server , wallet;
     beforeEach(function(done) {
-  
+
       helpers.createAndJoinWallet(1, 1, function(s, w) {
         server = s;
         wallet = w;

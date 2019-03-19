@@ -6,8 +6,8 @@ var chai = require('chai');
 var sinon = require('sinon');
 var mongodb = require('mongodb');
 var should = chai.should();
-var Storage = require('../lib/storage');
-var Model = require('../lib/model');
+var Storage = require('../ts_build/lib/storage');
+var Model = require('../ts_build/lib/model');
 var config = require('./test-config');
 var helpers = require('./integration/helpers');
 var db, storage;
@@ -228,7 +228,7 @@ describe('Storage', function() {
         done();
       });
     });
- 
+
 
     it('should store a single tx on the cache and update status correctly', (done) =>{
       let tipIndex = 80; // current cache tip
@@ -347,7 +347,7 @@ describe('Storage', function() {
       });
     });
 
- 
+
 
     it('should store a 5 txs on the cache and retreive them correctly', (done) =>{
       let tipIndex = 80; // current cache tip

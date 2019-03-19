@@ -6,9 +6,9 @@ var request = require('request');
 var http = require('http');
 var should = chai.should();
 var proxyquire = require('proxyquire');
-var config = require('../config.js');
+var config = require('../ts_build/config.js');
 
-var Common = require('../lib/common');
+var Common = require('../ts_build/lib/common');
 var Defaults = Common.Defaults;
 
 

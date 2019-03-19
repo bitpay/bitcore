@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var BlockchainExplorer = require('../lib/blockchainexplorer');
+var BlockchainExplorer = require('../ts_build/lib/blockchainexplorer');
 
 describe('Blockchain explorer', function() {
   describe('#constructor', function() {
@@ -37,7 +37,7 @@ describe('Blockchain explorer', function() {
       exp2.should.respondTo('initSocket');
       exp2.should.respondTo('register');
       exp2.should.respondTo('addAddresses');
- 
+
     });
     it('should fail on unsupported provider', function() {
       (function() {
