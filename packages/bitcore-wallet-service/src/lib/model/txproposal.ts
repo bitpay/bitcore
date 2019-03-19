@@ -21,6 +21,8 @@ var TxProposalLegacy = require('./txproposal_legacy');
 var TxProposalAction = require('./txproposalaction');
 
 export interface ITxProposal {
+  type: string;
+  creatorName: string;
   createdOn: number;
   txid: string;
   id: string;
@@ -33,10 +35,11 @@ export interface ITxProposal {
   changeAddress: string;
   inputs: Array<any>;
   outputs: Array<{
-    amount: string;
-    toAddress: string;
-    message: string;
-    script: string;
+    amount: number;
+    address: string;
+    toAddress?: string;
+    message?: string;
+    script?: string;
   }>;
   outputOrder: number;
   walletM: number;
@@ -58,9 +61,12 @@ export interface ITxProposal {
   proposalSignature: string;
   proposalSignaturePubKey: string;
   proposalSignaturePubKeySig: string;
+  lowFees: boolean;
 }
 
 export class TxProposal {
+  type: string;
+  creatorName: string;
   createdOn: number;
   id: string;
   txid: string;
@@ -73,10 +79,11 @@ export class TxProposal {
   changeAddress: string;
   inputs: Array<any>;
   outputs: Array<{
-    amount: string;
-    toAddress: string;
-    message: string;
-    script: string;
+    amount: number;
+    address: string;
+    toAddress?: string;
+    message?: string;
+    script?: string;
   }>;
   outputOrder: number;
   walletM: number;

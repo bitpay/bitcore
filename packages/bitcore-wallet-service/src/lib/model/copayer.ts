@@ -16,7 +16,7 @@ var Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
 
-interface ICopayer {
+export interface ICopayer {
   version: number;
   createdOn: number;
   coin: string;
@@ -32,7 +32,7 @@ interface ICopayer {
   customData: any;
 }
 
-class Copayer {
+export class Copayer {
   version: number;
   createdOn: number;
   coin: string;
@@ -45,18 +45,16 @@ class Copayer {
     key: string;
     signature: string;
   }>;
-
   customData: any;
-
   addressManager: AddressManager;
 
-  static _xPubToCopayerId = function(coin, xpub) {
+  static _xPubToCopayerId(coin, xpub) {
     var str = coin == Defaults.COIN ? xpub : coin + xpub;
     var hash = sjcl.hash.sha256.hash(str);
     return sjcl.codec.hex.fromBits(hash);
-  };
+  }
 
-  static create = function(opts) {
+  static create(opts) {
     opts = opts || {};
     $.checkArgument(opts.xPubKey, 'Missing copayer extended public key')
       .checkArgument(opts.requestPubKey, 'Missing copayer request public key')
@@ -98,9 +96,9 @@ class Copayer {
     x.customData = opts.customData;
 
     return x;
-  };
+  }
 
-  static fromObj = function(obj) {
+  static fromObj(obj) {
     var x = new Copayer();
 
     x.version = obj.version;
@@ -130,9 +128,9 @@ class Copayer {
     x.customData = obj.customData;
 
     return x;
-  };
+  }
 
-  createAddress = function(wallet, isChange) {
+  createAddress(wallet, isChange) {
     $.checkState(wallet.isComplete());
 
     var path = this.addressManager.getNewAddressPath(isChange);
@@ -147,7 +145,7 @@ class Copayer {
       isChange
     );
     return address;
-  };
+  }
 }
 
 module.exports = Copayer;

@@ -4,8 +4,9 @@ import * as crypto from 'crypto';
 import * as _ from 'lodash';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
+import { Wallet } from './model/wallet';
+import * as async from 'async';
 
-var async = require('async');
 var log = require('npmlog');
 log.debug = log.verbose;
 log.disableColor();
@@ -34,12 +35,12 @@ var collections = {
   LOCKS: 'locks'
 };
 
-class Storage {
+export class Storage {
   static BCHEIGHT_KEY = 'bcheight';
   static collections = collections;
   db: Db;
 
-  constructor(opts) {
+  constructor(opts: { db?: Db } = {}) {
     opts = opts || {};
     this.db = opts.db;
   }
@@ -159,7 +160,7 @@ class Storage {
     });
   }
 
-  fetchWallet(id, cb) {
+  fetchWallet(id, cb: (err?: any, wallet?: Wallet) => void) {
     if (!this.db) return cb('not ready');
 
     this.db.collection(collections.WALLETS).findOne(
@@ -1085,7 +1086,7 @@ class Storage {
     });
     async.each(
       items,
-      function(item, next) {
+      function(item: { position: number; code: string; value: string }, next) {
         pos = item.position;
         delete item.position;
         //console.log('STORING [storage.js.804:at:]',pos, item.blockheight);
@@ -1167,7 +1168,7 @@ class Storage {
     var now = Date.now();
     async.each(
       rates,
-      function(rate, next) {
+      function(rate: { code: string; value: string }, next) {
         self.db.collection(collections.FIAT_RATES).insert(
           {
             provider: providerName,
@@ -1416,7 +1417,7 @@ class Storage {
       if (err) return cb(err);
       async.eachSeries(
         collections,
-        function(col, next) {
+        function(col: any, next) {
           col.find().toArray(function(err, items) {
             fn('--------', col.s.name);
             fn(items);

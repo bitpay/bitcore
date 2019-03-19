@@ -53,6 +53,7 @@
     "@types/express": "^4.16.1",
     "@types/mongodb": "^2.2.19",
     "@types/node": "^11.11.3",
+    "@types/nodemailer": "^4.6.6",
     "@types/request": "^2.48.1",
     "@types/socket.io": "^2.1.2",
     "@types/socket.io-client": "^1.4.32",
@@ -74,7 +75,7 @@
     "test": "./node_modules/.bin/mocha --exit",
     "test:ci": "npm run test",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
-    "tsc":"./node_modules/.bin/tsc"
+    "tsc": "./node_modules/.bin/tsc"
   },
   "bitcoreNode": "./bitcorenode",
   "contributors": [

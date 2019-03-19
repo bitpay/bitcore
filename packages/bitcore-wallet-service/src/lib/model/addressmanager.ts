@@ -123,7 +123,7 @@ export class AddressManager {
     );
   }
 
-  getNewAddressPath(isChange, step) {
+  getNewAddressPath(isChange, step = 1) {
     var ret;
     var i = 0;
     step = step || 1;

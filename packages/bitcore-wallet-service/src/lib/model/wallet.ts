@@ -9,6 +9,7 @@ var Uuid = require('uuid');
 var Address = require('./address');
 var Copayer = require('./copayer');
 import { AddressManager } from "./addressmanager";
+import { ICopayer } from "./copayer";
 
 var Bitcore = {
   btc: require('bitcore-lib'),
@@ -39,15 +40,15 @@ export type IWallet = {
   derivationStrategy: string;
   addressType: string;
   addressManager: string;
-  scanStatus: boolean;
+  scanStatus: 'error' | 'success';
   beRegistered: boolean; // Block explorer registered
   beAuthPrivateKey2: string;
   beAuthPublicKey2: string;
-  nativeCashAddr: string;
+  nativeCashAddr: boolean;
   isTestnet?: boolean;
 };
 
-class Wallet {
+export class Wallet {
   version: string;
   createdOn: number;
   id: number;
@@ -58,18 +59,18 @@ class Wallet {
   status: string;
   publicKeyRing: Array<string>;
   addressIndex: number;
-  copayers: Array<string>;
+  copayers: Array<ICopayer>;
   pubKey: string;
   coin: string;
   network: string;
   derivationStrategy: string;
   addressType: string;
   addressManager: AddressManager;
-  scanStatus: boolean;
+  scanStatus: 'error' | 'success';
   beRegistered: boolean; // Block explorer registered
   beAuthPrivateKey2: string;
   beAuthPublicKey2: string;
-  nativeCashAddr: string;
+  nativeCashAddr: boolean;
   isTestnet?: boolean;
 
   scanning: boolean;
