@@ -120,7 +120,7 @@ export class Stats {
         var value = {
           count: 1
         };
-        emit(key, value);
+        //emit(key, value);
       };
       var reduce = function(k, v) {
         var count = 0;
@@ -244,7 +244,7 @@ export class Stats {
           count: 1,
           amount: this.amount
         };
-        emit(key, value);
+        //emit(key, value);
       };
       var reduce = function(k, v) {
         var count = 0,

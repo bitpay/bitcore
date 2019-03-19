@@ -3,5 +3,3 @@ module.exports = {
   Defaults: require('./defaults'),
   Utils: require('./utils')
 };
-
-module.exports = Common;
