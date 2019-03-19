@@ -78,5 +78,3 @@ export class Lock {
     });
   }
 }
-
-module.exports = Lock;
