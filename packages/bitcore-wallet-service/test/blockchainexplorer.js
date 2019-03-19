@@ -4,9 +4,9 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var { BlockchainExplorer } = require('../ts_build/lib/blockchainexplorer');
+var { BlockChainExplorer } = require('../ts_build/lib/blockchainexplorer');
 
-describe('Blockchain explorer', function() {
+describe('BlockChain explorer', function() {
   describe('#constructor', function() {
     it('should return a blockchain explorer with basic methods', function() {
       var exp = new BlockchainExplorer({

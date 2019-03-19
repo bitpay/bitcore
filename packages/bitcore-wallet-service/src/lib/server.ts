@@ -2589,10 +2589,13 @@ export class WalletService {
 
           // TODO remove one cashaddr is used internally (noCashAddr flag)?
           opts.origAddrOutputs = _.map(opts.outputs, x => {
-            let ret = {
+            let ret: {
+              toAddress?: string;
+              amount?: number;
+              message?: string;
+            } = {
               toAddress: x.toAddress,
-              amount: x.amount,
-              message: undefined
+              amount: x.amount
             };
             if (x.message) ret.message = x.message;
 

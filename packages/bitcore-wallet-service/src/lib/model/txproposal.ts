@@ -1,6 +1,7 @@
 'use strict';
 
 import { TxProposalAction } from "./txproposalaction";
+import { TxProposalLegacy } from "./txproposal_legacy";
 var _ = require('lodash');
 var $ = require('preconditions').singleton();
 var Uuid = require('uuid');
@@ -17,8 +18,6 @@ var Common = require('../common');
 var Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
-
-var TxProposalLegacy = require('./txproposal_legacy');
 
 export interface ITxProposal {
   type: string;
@@ -164,7 +163,7 @@ export class TxProposal {
     return x;
   };
 
-  static fromObj = function(obj) {
+  static fromObj(obj) {
     if (!(obj.version >= 3)) {
       return TxProposalLegacy.fromObj(obj);
     }
