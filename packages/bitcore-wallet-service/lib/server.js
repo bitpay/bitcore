@@ -4,6 +4,7 @@ var _ = require('lodash');
 var $ = require('preconditions').singleton();
 var async = require('async');
 var log = require('npmlog');
+var deprecatedServerMessage = require('../deprecated-serverMessages');
 var serverMessages = require('../serverMessages');
 var BCHAddressTranslator = require('./bchaddresstranslator');
 
@@ -610,7 +611,8 @@ WalletService.prototype.getStatus = function(opts, cb) {
         }
         status.wallet = wallet;
 
-        status.serverMessage = serverMessages(wallet, self.appName, self.appVersion);
+        status.serverMessage = deprecatedServerMessage(wallet, self.appName, self.appVersion);
+        status.serverMessages = serverMessages(wallet, self.appName, self.appVersion);
         next();
       });
     },
