@@ -1,30 +1,36 @@
 import Web3 from 'web3';
+import AbiDecoder from 'abi-decoder';
+import { ObjectID } from 'bson';
+const erc20abi = require('../erc20/erc20abi');
 
 if (Symbol['asyncIterator'] === undefined) (Symbol as any)['asyncIterator'] = Symbol.for('asyncIterator');
 
-interface ParityBlockReward {
-  author: string;
-  rewardType: 'block';
-  value: string;
-}
 interface ParityCall {
-  callType: 'call';
-  from: string;
-  gas: string;
-  input: string;
-  to: string;
+  callType?: 'call' | 'delegatecall';
+  author?: string;
+  rewardType?: 'block';
+  from?: string;
+  gas?: string;
+  input?: string;
+  to?: string;
   value: string;
 }
+
 export interface ParityTraceResponse {
-  action: ParityBlockReward | ParityCall;
+  action: ParityCall;
   blockHash: string;
   blockNumber: number;
-  result?: { gasUsed: string; output: string };
+  result: { gasUsed?: string; output: string };
   subtraces: number;
   traceAddress: [];
-  transactionHash?: string;
-  transactionPosition?: number;
-  type: 'reward' | 'call';
+  transactionHash: string;
+  transactionPosition: number;
+  type: 'reward' | 'call' | 'delegatecall' | 'create';
+}
+
+export interface TokenTransferResponse {
+  name?: 'transfer';
+  params?: [{ name: string; value: string; type: string }];
 }
 
 export class ParityRPC {
@@ -34,39 +40,106 @@ export class ParityRPC {
     this.web3 = web3;
   }
 
-  public async *getTransactionsForAddress(bestHeight: number, address: string) {
-    const txs = await this.scan(0, bestHeight, address);
-    for (const tx of txs) {
-      yield {
-        id: null,
-        txid: tx.transactionHash,
-        fee: tx.result ? tx.result.gasUsed : null,
-        category: 'receive',
-        satoshis: tx.action.value,
-        height: tx.blockNumber,
-        address,
-        outputIndex: tx.result ? tx.result.output : null
-      };
+  private async traceBlock(blockNumber: number) {
+    const txs = await this.send<Array<ParityTraceResponse>>({
+      method: 'trace_block',
+      params: [this.web3.utils.toHex(blockNumber)],
+      jsonrpc: '2.0',
+      id: 0
+    });
+    return txs;
+  }
+
+  public async *getTransactionsFromBlock(blockNumber: number, chain: string, network: string) {
+    const txs = await this.traceBlock(blockNumber);
+    if (txs && txs.length > 1) {
+      for (const tx of txs) {
+        yield this.transactionFromParityTrace(tx, chain, network);
+      }
     }
   }
 
-  scan(fromHeight: number, toHeight: number, address: string) {
-    return new Promise<Array<ParityTraceResponse>>(resolve =>
-      this.web3.eth.currentProvider.send(
-        {
-          method: 'trace_filter',
-          params: [
-            {
-              fromBlock: this.web3.utils.toHex(fromHeight),
-              toBlock: this.web3.utils.toHex(toHeight),
-              toAddress: [address.toLowerCase()]
-            }
-          ],
-          jsonrpc: '2.0',
-          id: 0
-        },
-        (_, data) => resolve(data.result as Array<ParityTraceResponse>)
-      )
-    );
+  public send<T>(data: any) {
+    return new Promise<T>(resolve => {
+      this.web3.eth.currentProvider.send(data, (_, data) => resolve(data.result));
+    });
+  }
+
+  private decodeTokenTransfer(input: ParityCall['input']): TokenTransferResponse {
+    try {
+      AbiDecoder.addABI(erc20abi);
+      return AbiDecoder.decodeMethod(input);
+    } catch (err) {
+      return err;
+    }
+  }
+
+  private async transactionFromParityTrace(tx: ParityTraceResponse, chain: string, network: string) {
+    const decodedData = await this.decodeTokenTransfer(tx.action.input!);
+
+    let chainId = 1;
+    switch (network) {
+      case 'mainnet':
+        chainId = 1;
+        break;
+      case 'ropsten':
+        chainId = 3;
+        break;
+      case 'rinkeby':
+        chainId = 4;
+        break;
+      default:
+        chainId = 1;
+        break;
+    }
+            // gasUsed: parseInt(tx.result.gasUsed!) || parseInt(tx.action.gas!),
+            // new Buffer(tx.result.gasUsed!) ||
+    if (decodedData && decodedData.params) {
+      return {
+        chain,
+        network,
+        chainId,
+        txid: tx.transactionHash,
+        blockHeight: tx.blockNumber,
+        blockHash: tx.blockHash,
+        data: tx.action.input,
+        fee: tx.action.gas! ? parseInt(tx.action.gas!) : 0,
+        gasLimit: Buffer.from('600000'),
+        gasPrice: tx.action.gas! ? Buffer.from(`${tx.action.gas}`) : Buffer.from('0'),
+        nonce: Buffer.from(`${tx.transactionPosition!}`),
+        outputIndex: tx.result ? tx.result.output : undefined,
+        outputAmount: tx.action.rewardType === 'block' ? parseInt(tx.action.value) : 0,
+        value: parseInt(tx.action.value) || 0,
+        wallets: [] as ObjectID[],
+        from: tx.action.from!,
+        to: tx.action.to!,
+        category: 'transfer',
+        ERC20: true,
+        tokenTransfer: decodedData.params.filter(e => e.name === '_value')[0].value || 0
+      };
+    } else {
+      return {
+        chain,
+        network,
+        chainId,
+        txid: tx.transactionHash,
+        blockHeight: tx.blockNumber,
+        blockHash: tx.blockHash,
+        data: tx.action.input,
+        fee: tx.action.gas! ? parseInt(tx.action.gas!) : 0,
+        gasLimit: Buffer.from('600000'),
+        gasPrice: tx.action.gas! ? Buffer.from(`${tx.action.gas}`) : Buffer.from('0'),
+        nonce: Buffer.from(`${tx.transactionPosition!}`),
+        outputIndex: tx.result ? tx.result.output : undefined,
+        outputAmount: tx.action.rewardType === 'block' ? parseInt(tx.action.value) : 0,
+        value: parseInt(tx.action.value) || 0,
+        wallets: [] as ObjectID[],
+        from: tx.action.from,
+        to: tx.action.to,
+        category: tx.type,
+        ERC20: false,
+        tokenTransfer: 0
+      };
+    }
   }
 }
