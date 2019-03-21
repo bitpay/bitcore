@@ -31,8 +31,6 @@
     "ci:bitcore-p2p": "./ci.sh 'npm run test:bitcore-p2p'",
     "test:bitcore-p2p-cash": "cd ./packages/bitcore-p2p-cash && npm run test",
     "ci:bitcore-p2p-cash": "./ci.sh 'npm run test:bitcore-p2p-cash'",
-    "test:bitcore-payment-protocol": "cd ./packages/bitcore-payment-protocol && npm run test",
-    "ci:bitcore-payment-protocol": "./ci.sh 'npm run test:bitcore-payment-protocol'",
     "test:bitcore-mnemonic": "cd ./packages/bitcore-mnemonic && npm run test",
     "ci:bitcore-mnemonic": "./ci.sh 'npm run test:bitcore-mnemonic'",
     "test:insight-previous": "cd ./packages/insight-previous && npm run test",
