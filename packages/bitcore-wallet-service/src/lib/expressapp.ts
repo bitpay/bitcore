@@ -1,9 +1,9 @@
-import * as _ from 'lodash';
 import * as async from 'async';
 import express from 'express';
-import { Stats } from './stats';
-import { WalletService } from './server';
+import * as _ from 'lodash';
 import { ClientError } from './errors/clienterror';
+import { WalletService } from './server';
+import { Stats } from './stats';
 
 var log = require('npmlog');
 
@@ -88,7 +88,7 @@ export class ExpressApp {
       var logFormat =
         ':walletId :remote-addr :date[iso] ":method :url" :status :res[content-length] :response-time ":user-agent"  ';
       var logOpts = {
-        skip: function(req, res) {
+        skip(req, res) {
           if (res.statusCode != 200) return false;
           return req.path.indexOf('/notifications/') >= 0;
         }
@@ -260,7 +260,7 @@ export class ExpressApp {
       server.createWallet(req.body, function(err, walletId) {
         if (err) return returnError(err, res, req);
         res.json({
-          walletId: walletId
+          walletId
         });
       });
     });
@@ -275,7 +275,7 @@ export class ExpressApp {
       server.createWallet(req.body, function(err, walletId) {
         if (err) return returnError(err, res, req);
         res.json({
-          walletId: walletId
+          walletId
         });
       });
     });
@@ -611,7 +611,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/utxos/', function(req, res) {
-      var opts: { addresses?: Array<string> } = {};
+      var opts: { addresses?: string[] } = {};
       var addresses = req.query.addresses;
       if (addresses && _.isString(addresses))
         opts.addresses = req.query.addresses.split(',');

@@ -1,17 +1,17 @@
-import * as _ from 'lodash';
 import * as async from 'async';
+import * as _ from 'lodash';
 import * as log from 'npmlog';
 
 import { ClientError } from './errors/clienterror';
 export { ClientError };
-import { IWallet, Wallet } from './model/wallet';
-import { ITxProposal, TxProposal } from './model/txproposal';
-import { Storage } from './storage';
-import { INotification } from './model/notification';
 import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
-import { Copayer } from './model/copayer';
+import { INotification } from './model/notification';
+import { ITxProposal, TxProposal } from './model/txproposal';
+import { IWallet, Wallet } from './model/wallet';
+import { Storage } from './storage';
+
 const $ = require('preconditions').singleton();
 var serverMessages = require('../serverMessages');
 var BCHAddressTranslator = require('./bchaddresstranslator');
@@ -51,12 +51,12 @@ var messageBroker;
 var fiatRateService;
 var serviceVersion;
 
-type IAddress = {
+interface IAddress {
   coin: string;
   network: string;
   address: string;
   hasActivity: boolean;
-};
+}
 
 export interface IWalletService {
   lock: any;
@@ -215,7 +215,7 @@ export class WalletService {
   }
 
   static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() {};
+    cb = cb || function() { };
 
     // do nothing here....
     // bc height cache is cleared on bcmonitor
@@ -374,7 +374,7 @@ export class WalletService {
   _runLocked(cb, task, waitTime?: number) {
     $.checkState(this.walletId);
 
-    this.lock.runLocked(this.walletId, { waitTime: waitTime }, cb, task);
+    this.lock.runLocked(this.walletId, { waitTime }, cb, task);
   }
 
   logi(...args) {
@@ -450,7 +450,7 @@ export class WalletService {
 
   logout(opts, cb) {
     var self = this;
-    //self.storage.removeSession(self.copayerId, cb);
+    // self.storage.removeSession(self.copayerId, cb);
   }
 
   /**
@@ -539,8 +539,8 @@ export class WalletService {
             network: opts.network,
             pubKey: pubKey.toString(),
             singleAddress: !!opts.singleAddress,
-            derivationStrategy: derivationStrategy,
-            addressType: addressType,
+            derivationStrategy,
+            addressType,
             nativeCashAddr: opts.nativeCashAddr
           });
           self.storage.storeWallet(wallet, function(err) {
@@ -661,7 +661,7 @@ export class WalletService {
       wallet?: IWallet;
       serverMessage?: string;
       balance?: string;
-      pendingTxps?: Array<ITxProposal>;
+      pendingTxps?: ITxProposal[];
       preferences?: boolean;
     } = {};
     async.parallel(
@@ -796,9 +796,9 @@ export class WalletService {
     }
     opts = opts || {};
 
-    //self.logi('Notification', type);
+    // self.logi('Notification', type);
 
-    cb = cb || function() {};
+    cb = cb || function() { };
 
     var walletId = self.walletId || data.walletId;
     var copayerId = self.copayerId || data.copayerId;
@@ -806,11 +806,11 @@ export class WalletService {
     $.checkState(walletId);
 
     var notification = Model.Notification.create({
-      type: type,
-      data: data,
+      type,
+      data,
       ticker: this.notifyTicker++,
       creatorId: opts.isGlobal ? null : copayerId,
-      walletId: walletId
+      walletId
     });
 
     this.storage.storeNotification(walletId, notification, function() {
@@ -865,7 +865,7 @@ export class WalletService {
       if (opts.dryRun)
         return cb(null, {
           copayerId: null,
-          wallet: wallet
+          wallet
         });
 
       wallet.addCopayer(copayer);
@@ -906,7 +906,7 @@ export class WalletService {
           function() {
             return cb(null, {
               copayerId: copayer.id,
-              wallet: wallet
+              wallet
             });
           }
         );
@@ -928,7 +928,7 @@ export class WalletService {
 
       return cb(null, {
         copayerId: copayer.id,
-        wallet: wallet
+        wallet
       });
     });
   }
@@ -1147,19 +1147,19 @@ export class WalletService {
     var preferences = [
       {
         name: 'email',
-        isValid: function(value) {
+        isValid(value) {
           return EmailValidator.validate(value);
         }
       },
       {
         name: 'language',
-        isValid: function(value) {
+        isValid(value) {
           return _.isString(value) && value.length == 2;
         }
       },
       {
         name: 'unit',
-        isValid: function(value) {
+        isValid(value) {
           return (
             _.isString(value) && _.includes(['btc', 'bit'], value.toLowerCase())
           );
@@ -1173,7 +1173,7 @@ export class WalletService {
         var value = opts[preference.name];
         if (!value) return;
         if (!preference.isValid(value)) {
-          throw 'Invalid ' + preference.name;
+          throw new Error('Invalid ' + preference.name);
           return false;
         }
       });
@@ -1226,7 +1226,7 @@ export class WalletService {
 
     self.storage.fetchAddresses(self.walletId, function(
       err,
-      addresses: Array<IAddress>
+      addresses: IAddress[]
     ) {
       if (err) return cb(err);
       var latestAddresses = _.takeRight(
@@ -1234,7 +1234,7 @@ export class WalletService {
           isChange: true
         }),
         Defaults.MAX_MAIN_ADDRESS_GAP
-      ) as Array<IAddress>;
+      ) as IAddress[];
       if (
         latestAddresses.length < Defaults.MAX_MAIN_ADDRESS_GAP ||
         _.some(latestAddresses, {
@@ -1791,7 +1791,7 @@ export class WalletService {
           return cb(
             new ClientError(
               'Invalid fee level. Valid values are ' +
-                _.map(feeLevels, 'name').join(', ')
+              _.map(feeLevels, 'name').join(', ')
             )
           );
       }
@@ -1840,7 +1840,7 @@ export class WalletService {
             network: wallet.network,
             walletM: wallet.m,
             walletN: wallet.n,
-            feePerKb: feePerKb
+            feePerKb
           });
 
           var baseTxpSize = txp.getEstimatedSize();
@@ -1915,10 +1915,10 @@ export class WalletService {
         var logger = network == 'livenet' ? self.logw : self.logi;
         logger(
           'Could not compute fee estimation in ' +
-            network +
-            ': ' +
-            failed.join(', ') +
-            ' blocks.'
+          network +
+          ': ' +
+          failed.join(', ') +
+          ' blocks.'
         );
       }
 
@@ -2095,7 +2095,7 @@ export class WalletService {
   _selectTxInputs(txp, utxosToExclude, cb) {
     var self = this;
 
-    //todo: check inputs are ours and have enough value
+    // todo: check inputs are ours and have enough value
     if (txp.inputs && !_.isEmpty(txp.inputs)) {
       if (!_.isNumber(txp.fee)) self._estimateFee(txp);
       return cb(self._checkTx(txp));
@@ -2142,20 +2142,20 @@ export class WalletService {
       if (totalValueInUtxos < txpAmount) {
         self.logi(
           'Total value in all utxos (' +
-            Utils.formatAmountInBtc(totalValueInUtxos) +
-            ') is insufficient to cover for txp amount (' +
-            Utils.formatAmountInBtc(txpAmount) +
-            ')'
+          Utils.formatAmountInBtc(totalValueInUtxos) +
+          ') is insufficient to cover for txp amount (' +
+          Utils.formatAmountInBtc(txpAmount) +
+          ')'
         );
         return cb(Errors.INSUFFICIENT_FUNDS);
       }
       if (netValueInUtxos < txpAmount) {
         self.logi(
           'Value after fees in all utxos (' +
-            Utils.formatAmountInBtc(netValueInUtxos) +
-            ') is insufficient to cover for txp amount (' +
-            Utils.formatAmountInBtc(txpAmount) +
-            ')'
+          Utils.formatAmountInBtc(netValueInUtxos) +
+          ') is insufficient to cover for txp amount (' +
+          Utils.formatAmountInBtc(txpAmount) +
+          ')'
         );
         return cb(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
       }
@@ -2176,8 +2176,8 @@ export class WalletService {
         return -utxo.satoshis;
       });
 
-      //log.debug('Considering ' + bigInputs.length + ' big inputs (' + Utils.formatUtxos(bigInputs) + ')');
-      //log.debug('Considering ' + smallInputs.length + ' small inputs (' + Utils.formatUtxos(smallInputs) + ')');
+      // log.debug('Considering ' + bigInputs.length + ' big inputs (' + Utils.formatUtxos(bigInputs) + ')');
+      // log.debug('Considering ' + smallInputs.length + ' small inputs (' + Utils.formatUtxos(smallInputs) + ')');
 
       var total = 0;
       var netTotal = -baseTxpFee;
@@ -2186,11 +2186,11 @@ export class WalletService {
       var error;
 
       _.each(smallInputs, function(input, i) {
-        //log.debug('Input #' + i + ': ' + Utils.formatUtxos(input));
+        // log.debug('Input #' + i + ': ' + Utils.formatUtxos(input));
 
         var netInputAmount = input.satoshis - feePerInput;
 
-        //log.debug('The input contributes ' + Utils.formatAmountInBtc(netInputAmount));
+        // log.debug('The input contributes ' + Utils.formatAmountInBtc(netInputAmount));
 
         selected.push(input);
 
@@ -2200,16 +2200,16 @@ export class WalletService {
         var txpSize = baseTxpSize + selected.length * sizePerInput;
         fee = Math.round(baseTxpFee + selected.length * feePerInput);
 
-        //log.debug('Tx size: ' + Utils.formatSize(txpSize) + ', Tx fee: ' + Utils.formatAmountInBtc(fee));
+        // log.debug('Tx size: ' + Utils.formatSize(txpSize) + ', Tx fee: ' + Utils.formatAmountInBtc(fee));
 
         var feeVsAmountRatio = fee / txpAmount;
         var amountVsUtxoRatio = netInputAmount / txpAmount;
 
-        //log.debug('Fee/Tx amount: ' + Utils.formatRatio(feeVsAmountRatio) + ' (max: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MAX_FEE_VS_TX_AMOUNT_FACTOR) + ')');
-        //log.debug('Tx amount/Input amount:' + Utils.formatRatio(amountVsUtxoRatio) + ' (min: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) + ')');
+        // log.debug('Fee/Tx amount: ' + Utils.formatRatio(feeVsAmountRatio) + ' (max: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MAX_FEE_VS_TX_AMOUNT_FACTOR) + ')');
+        // log.debug('Tx amount/Input amount:' + Utils.formatRatio(amountVsUtxoRatio) + ' (min: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) + ')');
 
         if (txpSize / 1000 > Defaults.MAX_TX_SIZE_IN_KB) {
-          //log.debug('Breaking because tx size (' + Utils.formatSize(txpSize) + ') is too big (max: ' + Utils.formatSize(Defaults.MAX_TX_SIZE_IN_KB * 1000.) + ')');
+          // log.debug('Breaking because tx size (' + Utils.formatSize(txpSize) + ') is too big (max: ' + Utils.formatSize(Defaults.MAX_TX_SIZE_IN_KB * 1000.) + ')');
           error = Errors.TX_MAX_SIZE_EXCEEDED;
           return false;
         }
@@ -2219,7 +2219,7 @@ export class WalletService {
             amountVsUtxoRatio <
             Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR
           ) {
-            //log.debug('Breaking because utxo is too small compared to tx amount');
+            // log.debug('Breaking because utxo is too small compared to tx amount');
             return false;
           }
 
@@ -2228,29 +2228,29 @@ export class WalletService {
             Defaults.UTXO_SELECTION_MAX_FEE_VS_TX_AMOUNT_FACTOR
           ) {
             var feeVsSingleInputFeeRatio = fee / (baseTxpFee + feePerInput);
-            //log.debug('Fee/Single-input fee: ' + Utils.formatRatio(feeVsSingleInputFeeRatio) + ' (max: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MAX_FEE_VS_SINGLE_UTXO_FEE_FACTOR) + ')' + ' loses wrt single-input tx: ' + Utils.formatAmountInBtc((selected.length - 1) * feePerInput));
+            // log.debug('Fee/Single-input fee: ' + Utils.formatRatio(feeVsSingleInputFeeRatio) + ' (max: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MAX_FEE_VS_SINGLE_UTXO_FEE_FACTOR) + ')' + ' loses wrt single-input tx: ' + Utils.formatAmountInBtc((selected.length - 1) * feePerInput));
             if (
               feeVsSingleInputFeeRatio >
               Defaults.UTXO_SELECTION_MAX_FEE_VS_SINGLE_UTXO_FEE_FACTOR
             ) {
-              //log.debug('Breaking because fee is too significant compared to tx amount and it is too expensive compared to using single input');
+              // log.debug('Breaking because fee is too significant compared to tx amount and it is too expensive compared to using single input');
               return false;
             }
           }
         }
 
-        //log.debug('Cumuled total so far: ' + Utils.formatAmountInBtc(total) + ', Net total so far: ' + Utils.formatAmountInBtc(netTotal));
+        // log.debug('Cumuled total so far: ' + Utils.formatAmountInBtc(total) + ', Net total so far: ' + Utils.formatAmountInBtc(netTotal));
 
         if (netTotal >= txpAmount) {
           var changeAmount = Math.round(total - txpAmount - fee);
-          //log.debug('Tx change: ', Utils.formatAmountInBtc(changeAmount));
+          // log.debug('Tx change: ', Utils.formatAmountInBtc(changeAmount));
 
           var dustThreshold = Math.max(
             Defaults.MIN_OUTPUT_AMOUNT,
             Bitcore_[txp.coin].Transaction.DUST_AMOUNT
           );
           if (changeAmount > 0 && changeAmount <= dustThreshold) {
-            //log.debug('Change below dust threshold (' + Utils.formatAmountInBtc(dustThreshold) + '). Incrementing fee to remove change.');
+            // log.debug('Change below dust threshold (' + Utils.formatAmountInBtc(dustThreshold) + '). Incrementing fee to remove change.');
             // Remove dust change by incrementing fee
             fee += changeAmount;
           }
@@ -2260,12 +2260,12 @@ export class WalletService {
       });
 
       if (netTotal < txpAmount) {
-        //log.debug('Could not reach Txp total (' + Utils.formatAmountInBtc(txpAmount) + '), still missing: ' + Utils.formatAmountInBtc(txpAmount - netTotal));
+        // log.debug('Could not reach Txp total (' + Utils.formatAmountInBtc(txpAmount) + '), still missing: ' + Utils.formatAmountInBtc(txpAmount - netTotal));
 
         selected = [];
         if (!_.isEmpty(bigInputs)) {
           var input = _.head(bigInputs);
-          //log.debug('Using big input: ', Utils.formatUtxos(input));
+          // log.debug('Using big input: ', Utils.formatUtxos(input));
           total = input.satoshis;
           fee = Math.round(baseTxpFee + feePerInput);
           netTotal = total - fee;
@@ -2274,14 +2274,14 @@ export class WalletService {
       }
 
       if (_.isEmpty(selected)) {
-        //log.debug('Could not find enough funds within this utxo subset');
+        // log.debug('Could not find enough funds within this utxo subset');
         return cb(error || Errors.INSUFFICIENT_FUNDS_FOR_FEE);
       }
 
       return cb(null, selected, fee);
     }
 
-    //log.debug('Selecting inputs for a ' + Utils.formatAmountInBtc(txp.getTotalAmount()) + ' txp');
+    // log.debug('Selecting inputs for a ' + Utils.formatAmountInBtc(txp.getTotalAmount()) + ' txp');
 
     self._getUtxosForCurrentWallet({}, function(err, utxos) {
       if (err) return cb(err);
@@ -2305,7 +2305,7 @@ export class WalletService {
 
       utxos = sanitizeUtxos(utxos);
 
-      //log.debug('Considering ' + utxos.length + ' utxos (' + Utils.formatUtxos(utxos) + ')');
+      // log.debug('Considering ' + utxos.length + ' utxos (' + Utils.formatUtxos(utxos) + ')');
 
       var groups = [6, 1];
       if (!txp.excludeUnconfirmedUtxos) groups.push(0);
@@ -2326,21 +2326,21 @@ export class WalletService {
             return utxo.confirmations >= group;
           });
 
-          //log.debug('Group >= ' + group);
+          // log.debug('Group >= ' + group);
 
           // If this group does not have any new elements, skip it
           if (lastGroupLength === candidateUtxos.length) {
-            //log.debug('This group is identical to the one already explored');
+            // log.debug('This group is identical to the one already explored');
             return next();
           }
 
-          //log.debug('Candidate utxos: ' + Utils.formatUtxos(candidateUtxos));
+          // log.debug('Candidate utxos: ' + Utils.formatUtxos(candidateUtxos));
 
           lastGroupLength = candidateUtxos.length;
 
           select(candidateUtxos, function(err, selectedInputs, selectedFee) {
             if (err) {
-              //log.debug('No inputs selected on this group: ', err);
+              // log.debug('No inputs selected on this group: ', err);
               selectionError = err;
               return next();
             }
@@ -2349,8 +2349,8 @@ export class WalletService {
             inputs = selectedInputs;
             fee = selectedFee;
 
-            //log.debug('Selected inputs from this group: ' + Utils.formatUtxos(inputs));
-            //log.debug('Fee for this selection: ' + Utils.formatAmountInBtc(fee));
+            // log.debug('Selected inputs from this group: ' + Utils.formatUtxos(inputs));
+            // log.debug('Fee for this selection: ' + Utils.formatAmountInBtc(fee));
 
             return next();
           });
@@ -2373,9 +2373,9 @@ export class WalletService {
               txp.fee;
             self.logi(
               'Successfully built transaction. Total fees: ' +
-                Utils.formatAmountInBtc(txp.fee) +
-                ', total change: ' +
-                Utils.formatAmountInBtc(change)
+              Utils.formatAmountInBtc(txp.fee) +
+              ', total change: ' +
+              Utils.formatAmountInBtc(change)
             );
           } else {
             self.logw('Error building transaction', err);
@@ -2514,7 +2514,7 @@ export class WalletService {
               return next(
                 new ClientError(
                   'Invalid fee level. Valid values are ' +
-                    _.map(feeLevels, 'name').join(', ')
+                  _.map(feeLevels, 'name').join(', ')
                 )
               );
           }
@@ -2762,9 +2762,9 @@ export class WalletService {
                     network: wallet.network,
                     outputs: opts.outputs,
                     message: opts.message,
-                    changeAddress: changeAddress,
+                    changeAddress,
                     feeLevel: opts.feeLevel,
-                    feePerKb: feePerKb,
+                    feePerKb,
                     payProUrl: opts.payProUrl,
                     walletM: wallet.m,
                     walletN: wallet.n,
@@ -3343,7 +3343,7 @@ export class WalletService {
                     'TxProposalFinallyRejected',
                     txp,
                     {
-                      rejectedBy: rejectedBy
+                      rejectedBy
                     },
                     next
                   );
@@ -3488,7 +3488,7 @@ export class WalletService {
     if (_.isEmpty(txs)) return cb(null, txs);
 
     // This is PARTIAL history??  TODO TODO TODO TODO!~
-    //console.log('[server.js.2915:txs:] IN NORMALIZE',txs); //TODO
+    // console.log('[server.js.2915:txs:] IN NORMALIZE',txs); //TODO
     var now = Math.floor(Date.now() / 1000);
 
     // TODO make this better...
@@ -3644,11 +3644,11 @@ export class WalletService {
         }
 
         // not available
-        //inputs: inputs,
+        // inputs: inputs,
         return ret;
       });
 
-      //console.log('[server.js.2965:ret:] END',ret); //TODO
+      // console.log('[server.js.2965:ret:] END',ret); //TODO
       return cb(null, ret);
     });
   }
@@ -3764,12 +3764,8 @@ export class WalletService {
     });
   }
 
-  /**
-   * Syncs wallet regitration and address with
-   * a V8 type blockexplorerer
-   **/
-
-  syncWallet(wallet, cb, skipCheck = undefined, count = undefined) {
+  // Syncs wallet regitration and address with a V8 type blockexplorerer
+  syncWallet(wallet, cb, skipCheck?, count?) {
     var self = this;
     count = count || 0;
     var bc = self._getBlockchainExplorer(wallet.coin, wallet.network);
@@ -3791,7 +3787,7 @@ export class WalletService {
 
         function syncAddr(addresses, icb) {
           if (!addresses || _.isEmpty(addresses)) {
-            //self.logi('Addresses already sync');
+            // self.logi('Addresses already sync');
             return icb();
           }
 
@@ -3868,7 +3864,7 @@ export class WalletService {
         action = 'moved';
       } else {
         // BWS standard sent
-        //(amountIn > 0 && amountOutChange >0 && outputs.length <= 2)
+        // (amountIn > 0 && amountOutChange >0 && outputs.length <= 2)
         amount =
           amountIn -
           amountOut -
@@ -3903,13 +3899,13 @@ export class WalletService {
 
     var newTx = {
       txid: tx.txid,
-      action: action,
-      amount: amount,
+      action,
+      amount,
       fees: tx.fees,
       time: tx.time,
-      addressTo: addressTo,
+      addressTo,
       confirmations: tx.confirmations,
-      foreignCrafted: foreignCrafted,
+      foreignCrafted,
       outputs: undefined,
       feePerKb: undefined,
       inputs: undefined
@@ -3974,7 +3970,7 @@ export class WalletService {
       tx.customData = proposal.customData;
       // .sentTs = proposal.sentTs;
       // .merchant = proposal.merchant;
-      //.paymentAckMemo = proposal.paymentAckMemo;
+      // .paymentAckMemo = proposal.paymentAckMemo;
     }
   }
 
@@ -3985,7 +3981,7 @@ export class WalletService {
     }
   }
 
-  tagLowFeeTxs(wallet: IWallet, txs: Array<any>, cb) {
+  tagLowFeeTxs(wallet: IWallet, txs: any[], cb) {
     var self = this;
     var unconfirmed = txs.filter(tx => tx.confirmations === 0);
     if (_.isEmpty(unconfirmed)) return cb();
@@ -4086,14 +4082,14 @@ export class WalletService {
             ' ########### GET HISTORY v8 startBlock/bcH]',
             startBlock,
             bcHeight
-          ); //TODO
+          ); // TODO
 
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
 
             self._normalizeTxHistory(wallet.id, txs, bcHeight, function(
               err,
-              inTxs: Array<any>
+              inTxs: any[]
             ) {
               if (err) return cb(err);
 
@@ -4105,7 +4101,7 @@ export class WalletService {
                   return tx.txid != cacheStatus.tipTxId;
                 });
 
-                //only store stream IF cache is been used.
+                // only store stream IF cache is been used.
                 //
                 log.info(
                   `Storing stream cache for ${wallet.id}: ${lastTxs.length} txs`
@@ -4218,8 +4214,8 @@ export class WalletService {
         if (err) return cb(err);
         return cb(null, {
           items: resultTxs,
-          fromCache: fromCache,
-          fromBc: fromBc,
+          fromCache,
+          fromBc,
           useStream: !!streamData
         });
       }
@@ -4281,8 +4277,8 @@ export class WalletService {
                   self.storage.fetchTxs(
                     self.walletId,
                     {
-                      minTs: minTs,
-                      maxTs: maxTs
+                      minTs,
+                      maxTs
                     },
                     done
                   );
@@ -4291,7 +4287,7 @@ export class WalletService {
                   self.storage.fetchTxNotes(
                     self.walletId,
                     {
-                      minTs: minTs
+                      minTs
                     },
                     done
                   );
@@ -4299,7 +4295,7 @@ export class WalletService {
               ],
               function(err, res) {
                 return next(err, {
-                  txs: txs,
+                  txs,
                   txps: res[0],
                   notes: res[1]
                 });
@@ -4409,7 +4405,7 @@ export class WalletService {
 
       var gap = Defaults.SCAN_ADDRESS_GAP;
 
-      //when powerScanning, we just accept gap<=3
+      // when powerScanning, we just accept gap<=3
       if (step > 1) {
         gap = _.min([gap, 3]);
       }
@@ -4494,7 +4490,8 @@ export class WalletService {
 
             var addr,
               i = 0;
-            while ((addr = derivator.getSkippedAddress())) {
+            // tslint:disable-next-line:no-conditional-assignment
+            while (addr = derivator.getSkippedAddress()) {
               addresses.push(addr);
               i++;
             }

@@ -1,9 +1,9 @@
 'use strict';
 
 import * as nodemailer from 'nodemailer';
-import { Storage } from './storage';
-import { MessageBroker } from './messagebroker';
 import { Lock } from './lock';
+import { MessageBroker } from './messagebroker';
+import { Storage } from './storage';
 var _ = require('lodash');
 var $ = require('preconditions').singleton();
 var async = require('async');
@@ -62,7 +62,7 @@ export class EmailService {
   publicTxUrlTemplate: string;
   subjectPrefix: string;
   from: string;
-  availableLanguages: Array<string>;
+  availableLanguages: string[];
   storage: Storage;
   messageBroker: MessageBroker;
   lock: Lock;
@@ -249,7 +249,7 @@ export class EmailService {
               copayerId: p.copayerId,
               emailAddress: p.email,
               language: p.language,
-              unit: unit
+              unit
             };
           })
         );

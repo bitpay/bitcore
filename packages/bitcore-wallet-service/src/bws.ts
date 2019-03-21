@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
-import * as fs from 'fs';
 import * as async from 'async';
+import * as fs from 'fs';
 
 var ExpressApp = require('./lib/expressapp');
 var config = require('./config');
@@ -22,9 +22,9 @@ var serverModule = config.https ? require('https') : require('http');
 var serverOpts: {
   key?: Buffer;
   cert?: Buffer;
-  ciphers?: Array<string>;
+  ciphers?: string[];
   honorCipherOrder?: boolean;
-  ca?: Array<Buffer>;
+  ca?: Buffer[];
 } = {};
 
 if (config.https) {
@@ -51,14 +51,14 @@ if (config.https) {
 }
 
 if (config.cluster && !config.lockOpts.lockerServer)
-  throw 'When running in cluster mode, locker server need to be configured';
+  throw new Error('When running in cluster mode, locker server need to be configured');
 
 if (config.cluster && !config.messageBrokerOpts.messageBrokerServer)
-  throw 'When running in cluster mode, message broker server need to be configured';
+  throw new Error('When running in cluster mode, message broker server need to be configured');
 
 var expressApp = new ExpressApp();
 
-function startInstance(cb?: Function) {
+function startInstance(cb?: () => void) {
   var server = config.https
     ? serverModule.createServer(serverOpts, expressApp.app)
     : serverModule.Server(expressApp.app);

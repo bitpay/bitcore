@@ -56,9 +56,9 @@ export class BlockChainExplorer {
     switch (provider) {
       case 'v8':
         return new V8({
-          coin: coin,
-          network: network,
-          url: url,
+          coin,
+          network,
+          url,
           apiPrefix: opts.apiPrefix,
           userAgent: opts.userAgent,
           addressFormat: opts.addressFormat

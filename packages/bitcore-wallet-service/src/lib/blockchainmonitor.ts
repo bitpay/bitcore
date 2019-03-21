@@ -1,10 +1,10 @@
 'use strict';
-import { WalletService } from './server';
-import { Storage } from './storage';
+import { BlockChainExplorer } from './blockchainexplorer';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
 import { Notification } from './model/notification';
-import { BlockChainExplorer } from './blockchainexplorer';
+import { WalletService } from './server';
+import { Storage } from './storage';
 
 var $ = require('preconditions').singleton();
 var _ = require('lodash');
@@ -40,8 +40,8 @@ export class BlockchainMonitor {
           _.each(_.values(Constants.COINS), function(coin) {
             _.each(_.values(Constants.NETWORKS), function(network) {
               coinNetworkPairs.push({
-                coin: coin,
-                network: network
+                coin,
+                network
               });
             });
           });
@@ -128,7 +128,7 @@ export class BlockchainMonitor {
   _handleThirdPartyBroadcasts(coin, network, data, processIt) {
     var self = this;
     if (!data || !data.txid) return;
-    //log.info(`New ${coin}/${network} tx: ${data.txid}`);
+    // log.info(`New ${coin}/${network} tx: ${data.txid}`);
 
     self.storage.fetchTxByHash(data.txid, function(err, txp) {
       if (err) {
@@ -187,7 +187,7 @@ export class BlockchainMonitor {
         var notification = Notification.create({
           type: 'NewOutgoingTxByThirdParty',
           data: args,
-          walletId: walletId
+          walletId
         });
         self._storeAndBroadcastNotification(notification);
       });
@@ -197,7 +197,7 @@ export class BlockchainMonitor {
   _handleIncomingPayments(coin, network, data) {
     var self = this;
     if (!data) return;
-    //console.log('[blockchainmonitor.js.158:data:]',data); //TODO
+    // console.log('[blockchainmonitor.js.158:data:]',data); //TODO
 
     var outs;
     // ! v8?
@@ -215,7 +215,7 @@ export class BlockchainMonitor {
 
           return {
             address: addr,
-            amount: amount
+            amount
           };
         })
       );
@@ -281,7 +281,7 @@ export class BlockchainMonitor {
                 address: out.address,
                 amount: out.amount
               },
-              walletId: walletId
+              walletId
             });
 
             self._storeAndBroadcastNotification(notification, next);
@@ -302,9 +302,9 @@ export class BlockchainMonitor {
       type: 'NewBlock',
       walletId: network, // use network name as wallet id for global notifications
       data: {
-        hash: hash,
-        coin: coin,
-        network: network
+        hash,
+        coin,
+        network
       }
     });
 
@@ -327,8 +327,8 @@ export class BlockchainMonitor {
             creatorId: sub.copayerId,
             data: {
               txid: sub.txid,
-              coin: coin,
-              network: network
+              coin,
+              network
               // TODO: amount
             }
           });

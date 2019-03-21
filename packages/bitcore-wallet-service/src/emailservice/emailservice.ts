@@ -2,7 +2,7 @@
 
 'use strict';
 
-import { EmailService } from "../lib/emailservice";
+import { EmailService } from '../lib/emailservice';
 var _ = require('lodash');
 var log = require('npmlog');
 log.debug = log.verbose;
