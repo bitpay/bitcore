@@ -1,8 +1,8 @@
 import { BaseModel } from './base';
-import { ITransaction } from './transaction';
 import { IBlock } from '../types/Block';
 import { ICoin } from './coin';
 import { StorageService } from '../services/storage';
+import { ITransaction } from "../types/Transaction";
 
 export namespace IEvent {
   export type BlockEvent = IBlock;

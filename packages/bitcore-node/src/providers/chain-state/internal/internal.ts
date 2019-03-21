@@ -1,22 +1,23 @@
-import { TransactionJSON } from '../../../types/Transaction';
+import { TransactionJSON, ITransaction } from '../../../types/Transaction';
 import through2 from 'through2';
 
 import { MongoBound } from '../../../models/base';
 import { ObjectId } from 'mongodb';
 import { CoinStorage, ICoin } from '../../../models/coin';
-import { BlockStorage, IBlock } from '../../../models/block';
+import { BlockStorage } from '../../../models/block';
 import { WalletStorage, IWallet } from '../../../models/wallet';
 import { WalletAddressStorage, IWalletAddress } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { Storage } from '../../../services/storage';
 import { RPC } from '../../../rpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
-import { TransactionStorage, ITransaction } from '../../../models/transaction';
+import { TransactionStorage } from '../../../models/transaction';
 import { ListTransactionsStream } from './transforms';
 import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
 import { StateStorage } from '../../../models/state';
 import { SpentHeightIndicators, CoinJSON } from '../../../types/Coin';
 import { Config } from '../../../services/config';
+import { IBlock } from '../../../types/Block';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -516,11 +517,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getLocalTip({ chain, network }) {
-    if (BlockStorage.chainTips[chain] && BlockStorage.chainTips[chain][network]) {
-      return BlockStorage.chainTips[chain][network];
-    } else {
-      return BlockStorage.getLocalTip({ chain, network });
-    }
+    return BlockStorage.getLocalTip({ chain, network });
   }
 
   async getLocatorHashes(params) {

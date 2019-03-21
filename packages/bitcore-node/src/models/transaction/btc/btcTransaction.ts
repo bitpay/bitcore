@@ -1,38 +1,23 @@
-import { CoinStorage } from './coin';
-import { WalletAddressStorage } from './walletAddress';
-import { partition } from '../utils/partition';
+import { IBtcTransaction } from "../../../types/Transaction";
+import { CoinStorage } from '../.././coin';
+import { WalletAddressStorage } from '../.././walletAddress';
+import { partition } from '../../../utils/partition';
 import { ObjectID } from 'bson';
-import { TransformOptions } from '../types/TransformOptions';
-import { LoggifyClass } from '../decorators/Loggify';
-import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { BaseModel, MongoBound } from './base';
-import logger from '../logger';
-import { StreamingFindOptions, Storage, StorageService } from '../services/storage';
+import { TransformOptions } from '../../../types/TransformOptions';
+import { LoggifyClass } from '../../../decorators/Loggify';
+import { Bitcoin } from '../../../types/namespaces/Bitcoin';
+import { MongoBound } from '../.././base';
+import { StreamingFindOptions, Storage, StorageService } from '../../../services/storage';
+import { BtcTransactionJSON } from '../../../types/Transaction';
+import { SpentHeightIndicators } from '../../../types/Coin';
+import { Config } from '../../../services/config';
+import { EventStorage } from '../.././events';
 import * as lodash from 'lodash';
-import { TransactionJSON } from '../types/Transaction';
-import { SpentHeightIndicators } from '../types/Coin';
-import { Config } from '../services/config';
-import { EventStorage } from './events';
+import logger from '../../../logger';
+import { TransactionModel } from "../base/base";
 
 const Chain = require('../chain');
 
-export type ITransaction = {
-  txid: string;
-  chain: string;
-  network: string;
-  blockHeight?: number;
-  blockHash?: string;
-  blockTime?: Date;
-  blockTimeNormalized?: Date;
-  coinbase: boolean;
-  fee: number;
-  size: number;
-  locktime: number;
-  inputCount: number;
-  outputCount: number;
-  value: number;
-  wallets: ObjectID[];
-};
 
 export type MintOp = {
   updateOne: {
@@ -79,9 +64,9 @@ export type SpendOp = {
 };
 
 @LoggifyClass
-export class TransactionModel extends BaseModel<ITransaction> {
+export class BtcTransactionModel extends TransactionModel<IBtcTransaction> {
   constructor(storage?: StorageService) {
-    super('transactions', storage);
+    super(storage);
   }
 
   allowedPaging = [
@@ -185,7 +170,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
   }) {
     let { blockHash, blockTime, blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
     if (parentChain && forkHeight && height < forkHeight) {
-      const parentTxs = await TransactionStorage.collection
+      const parentTxs = await BtcTransactionStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
         .toArray();
       return parentTxs.map(parentTx => {
@@ -514,15 +499,15 @@ export class TransactionModel extends BaseModel<ITransaction> {
     return;
   }
 
-  getTransactions(params: { query: any; options: StreamingFindOptions<ITransaction> }) {
+  getTransactions(params: { query: any; options: StreamingFindOptions<IBtcTransaction> }) {
     let originalQuery = params.query;
     const { query, options } = Storage.getFindOptions(this, params.options);
     const finalQuery = Object.assign({}, originalQuery, query);
     return this.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true);
   }
 
-  _apiTransform(tx: Partial<MongoBound<ITransaction>>, options?: TransformOptions): TransactionJSON | string {
-    const transaction: TransactionJSON = {
+  _apiTransform(tx: Partial<MongoBound<IBtcTransaction>>, options?: TransformOptions): BtcTransactionJSON | string {
+    const transaction: BtcTransactionJSON = {
       _id: tx._id ? tx._id.toString() : '',
       txid: tx.txid || '',
       network: tx.network || '',
@@ -545,4 +530,4 @@ export class TransactionModel extends BaseModel<ITransaction> {
     return JSON.stringify(transaction);
   }
 }
-export let TransactionStorage = new TransactionModel();
+export let BtcTransactionStorage = new BtcTransactionModel();

@@ -1,15 +1,14 @@
-import { TransactionJSON } from '../Transaction';
+import { TransactionJSON, ITransaction } from '../Transaction';
 import { ObjectId } from 'mongodb';
-import { IBlock } from '../../models/block';
 import { Request, Response } from 'express';
 import { IWallet } from '../../models/wallet';
 import { ChainNetwork } from '../../types/ChainNetwork';
 import { StreamingFindOptions } from '../../services/storage';
 import { MongoBound } from '../../models/base';
-import { ITransaction } from '../../models/transaction';
 import { AuthheadJSON } from '../Authhead';
 import { CoinListingJSON } from '../Coin';
 import { DailyTransactionsJSON } from '../stats';
+import { IBlock } from "../Block";
 export declare namespace CSP {
   export type StreamWalletTransactionsArgs = {
     startBlock: number;

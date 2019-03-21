@@ -1,6 +1,5 @@
 export type IBlock = {
   chain: string;
-  confirmations?: number;
   network: string;
   height: number;
   hash: string;
@@ -8,12 +7,15 @@ export type IBlock = {
   merkleRoot: string;
   time: Date;
   timeNormalized: Date;
-  nonce: number;
   previousBlockHash: string;
   nextBlockHash: string;
   transactionCount: number;
+  nonce: number;
   size: number;
   bits: number;
   reward: number;
   processed: boolean;
 };
+
+export type IBtcBlock = IBlock & {};
+export type IEthBlock = IBlock & {};
