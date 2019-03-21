@@ -214,7 +214,7 @@ PayPro.get = function(opts, cb) {
     if(data.network == 'test') 
       ret.network = 'testnet';
 
-    if(data.network == 'live') 
+    if(data.network == 'main') 
       ret.network = 'livenet';
 
     if ( !data.network )
