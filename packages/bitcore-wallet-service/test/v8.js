@@ -15,13 +15,6 @@ const V8UTXOS = [
 
 
 
-class Client {
-  constructor() {
-  }
-  listTransactions () {
-  }
-};
-
 var t = (new Date).toISOString();
 var external = '11234';
 var txs = [{
@@ -58,7 +51,7 @@ describe('V8', () => {
 
   describe('#listTransactions', () => {
     it('should handle partial json results', (done) => {
-      class PartialJson extends Client {
+      class PartialJson extends V8 {
         listTransactions(opts) {
           class MyReadable extends Readable {
             constructor(options) {
@@ -93,7 +86,7 @@ describe('V8', () => {
     });
 
     it('should handle partial jsonline results', (done) => {
-      class PartialJsonL extends Client {
+      class PartialJsonL extends V8 {
         listTransactions(opts) {
           class MyReadable extends Readable {
             constructor(options) {
@@ -111,7 +104,7 @@ describe('V8', () => {
           return new MyReadable;
         };
       };
-      var be2 = new V8({
+      var be2 = new PartialJsonL({
         coin: 'btc',
         network: 'livenet',
         url: 'http://dummy/',
@@ -136,7 +129,7 @@ describe('V8', () => {
     it('should get uxtos', (done) => {
 
 
-      class PartialJson extends Client {
+      class PartialJson extends V8 {
         getAddressTxos(opts) {
           return new Promise(function (resolve) {
             resolve(V8UTXOS);
@@ -144,7 +137,7 @@ describe('V8', () => {
         };
       };
 
-      var be = new V8({
+      var be = new PartialJson({
         coin: 'bch',
         network: 'livenet',
         url: 'http://dummy/',
