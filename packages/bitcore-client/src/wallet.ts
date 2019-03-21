@@ -39,7 +39,7 @@ export class Wallet {
   xPubKey: string;
   name: string;
   path: string;
-  addressIndex: number;
+  addressIndex?: number;
   authKey: string;
   derivationPath: string;
 
@@ -115,7 +115,6 @@ export class Wallet {
       encryptionKey,
       authKey,
       authPubKey,
-      addressIndex: 0,
       masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
       xPubKey: hdPrivKey.xpubkey,
@@ -339,16 +338,20 @@ export class Wallet {
       this.addressIndex,
       isChange
     );
-    await this.importKeys({ keys: [keyToImport] });
-    return keyToImport.address.toString();
+    return keyToImport;
   }
 
-  async nextAddressPair() {
-    this.addressIndex =
-      this.addressIndex !== undefined ? this.addressIndex + 1 : 0;
-    const newAddress = await this.derivePrivateKey(false);
-    const newChangeAddress = await this.derivePrivateKey(true);
+  async nextAddressPair(withChangeAddress?: boolean) {
+    this.addressIndex = this.addressIndex || 0;
+    const newPrivateKey = await this.derivePrivateKey(false);
+    const keys = [newPrivateKey];
+    if (withChangeAddress) {
+      const newChangePrivateKey = await this.derivePrivateKey(true);
+      keys.push(newChangePrivateKey);
+    }
+    this.addressIndex++;
+    await this.importKeys({ keys });
     await this.saveWallet();
-    return [newAddress, newChangeAddress];
+    return keys.map(key => key.address.toString());
   }
 }

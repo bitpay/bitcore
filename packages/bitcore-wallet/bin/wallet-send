@@ -124,7 +124,7 @@ utils.getClient(program, {
       payProUrl: uri,
     }, function(err, paypro) {
       if (err) {
-        utils.die(' Failed to fetch payment: ' + err);
+        utils.die(' Failed to fetch payment: ' + (_.isObject(err)? JSON.stringify(err) : err));
       } else if (!paypro.verified) {
         utils.die('Failed to verify payment protocol signatures');
       }

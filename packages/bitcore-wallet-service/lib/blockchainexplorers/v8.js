@@ -382,10 +382,9 @@ V8.prototype.getAddressActivity = function(address, cb) {
     .then(ret => {
       return cb(null, ret !== '[]');
     })
-    .catch(err => {
-      console.log('[v8.js.335:err:]', err); //TODO
-      return cb(err);
-    });
+      .catch((err) => {
+        return cb(err);
+      } );
 };
 
 V8.prototype.estimateFee = function(nbBlocks, cb) {
@@ -393,30 +392,34 @@ V8.prototype.estimateFee = function(nbBlocks, cb) {
   nbBlocks = nbBlocks || [1, 2, 6, 24];
   var result = {};
 
-  async.each(
-    nbBlocks,
-    function(x, icb) {
-      var url = self.baseUrl + '/fee/' + x;
-      self.request
-        .get(url, {})
-        .then(ret => {
-          try {
-            ret = JSON.parse(ret);
-            result[x] = ret.feerate;
-          } catch (e) {}
+  async.each(nbBlocks, function(x, icb) {
+    var url = self.baseUrl + '/fee/' + x;
+    self.request.get(url, {})
+      .then( (ret) => {
+        try {
+          ret = JSON.parse(ret);
 
-          return icb();
-        })
-        .catch(err => {
-          return icb(err);
-        });
-    },
-    function(err) {
-      if (err) {
-        return cb(err);
+          // only process right responses.
+          if (!_.isUndefined(ret.blocks) && ret.blocks != x)  {
+            log.info(`Ignoring response for ${x}:`+ JSON.stringify(ret));
+            return icb();
+          }
+
+          result[x] = ret.feerate;
+        }
+        catch (e) {
+          log.warn('fee error:', e);
+        };
+
+        return icb();
+      })
+      .catch((err) => {
+        return icb(err)
+      } );
+  }, function(err) {
+    if (err) {
+      return cb(err);
       }
-      // TODO: normalize result
-      return cb(null, result);
     }
   );
 };

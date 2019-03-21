@@ -1,7 +1,7 @@
 import { Component, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { ApiProvider } from '../../providers/api/api';
-import { BlocksProvider } from '../../providers/blocks/blocks';
+import { AppBlock, BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { DefaultProvider } from '../../providers/default/default';
 import { Logger } from '../../providers/logger/logger';
@@ -12,8 +12,6 @@ import { RedirProvider } from '../../providers/redir/redir';
   templateUrl: 'latest-blocks.html'
 })
 export class LatestBlocksComponent implements OnInit, OnDestroy {
-  public loading = true;
-  public blocks: any[] = [];
   @Input()
   public numBlocks: number;
   @Input()
@@ -22,18 +20,21 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   public showLoadMoreButton = false;
   @Input()
   public showTimeAs: string;
+  public loading = true;
+  public blocks: AppBlock[] = [];
+  public subscriber: Subscription;
+  public errorMessage: string;
+
   private reloadInterval: any;
 
-  public subscriber: Subscription;
-
   constructor(
+    public currency: CurrencyProvider,
+    public defaults: DefaultProvider,
+    public redirProvider: RedirProvider,
     private blocksProvider: BlocksProvider,
     private apiProvider: ApiProvider,
     private ngZone: NgZone,
-    public currency: CurrencyProvider,
-    public defaults: DefaultProvider,
-    private logger: Logger,
-    public redirProvider: RedirProvider
+    private logger: Logger
   ) {
     this.numBlocks = parseInt(defaults.getDefault('%NUM_BLOCKS%'), 10);
   }
@@ -52,12 +53,18 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
 
   private loadBlocks(): void {
     this.subscriber = this.blocksProvider.getBlocks(this.numBlocks).subscribe(
-      ({ blocks }) => {
+      response => {
+        const blocks = response.map(block =>
+          this.blocksProvider.toAppBlock(block)
+        );
         this.blocks = blocks;
         this.loading = false;
       },
       err => {
-        this.logger.error(err);
+        this.subscriber.unsubscribe();
+        clearInterval(this.reloadInterval);
+        this.logger.error(err.message);
+        this.errorMessage = err.message;
         this.loading = false;
       }
     );
@@ -68,13 +75,17 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
     const since: number =
       this.blocks.length > 0 ? this.blocks[this.blocks.length - 1].height : 0;
     return this.blocksProvider.pageBlocks(since, this.numBlocks).subscribe(
-      ({ blocks }) => {
+      response => {
+        const blocks = response.map(block =>
+          this.blocksProvider.toAppBlock(block)
+        );
         this.blocks = this.blocks.concat(blocks);
         this.loading = false;
         infiniteScroll.complete();
       },
       err => {
-        this.logger.error(err);
+        this.logger.error(err.message);
+        this.errorMessage = err.message;
         this.loading = false;
       }
     );
@@ -86,10 +97,6 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
       chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
       network: this.apiProvider.networkSettings.value.selectedNetwork.network
     });
-  }
-
-  public getBlocks(): any[] {
-    return this.blocks;
   }
 
   public goToBlocks(): void {

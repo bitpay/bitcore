@@ -1,6 +1,6 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Http } from '@angular/http';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { DefaultProvider } from '../../providers/default/default';
 import { Logger } from '../../providers/logger/logger';
 
@@ -17,23 +17,26 @@ export interface NetworkSettings {
 
 @Injectable()
 export class ApiProvider {
+  public defaultNetwork = {
+    chain: this.defaults.getDefault('%CHAIN%'),
+    network: this.defaults.getDefault('%NETWORK%')
+  };
   public networkSettings = new BehaviorSubject<NetworkSettings>({
-    availableNetworks: [{ chain: 'BTC', network: 'mainnet' }],
-    selectedNetwork: { chain: 'BTC', network: 'mainnet' }
+    availableNetworks: [this.defaultNetwork],
+    selectedNetwork: this.defaultNetwork
   });
-
   public ratesAPI = {
     btc: 'https://bitpay.com/api/rates',
     bch: 'https://bitpay.com/api/rates/bch'
   };
 
   constructor(
-    public http: Http,
+    public httpClient: HttpClient,
     private defaults: DefaultProvider,
     private logger: Logger
   ) {
     this.getAvailableNetworks().subscribe(data => {
-      const availableNetworks = data.json() as ChainNetwork[];
+      const availableNetworks = data;
       this.networkSettings.next({
         availableNetworks,
         selectedNetwork: this.networkSettings.value.selectedNetwork
@@ -41,8 +44,10 @@ export class ApiProvider {
     });
   }
 
-  public getAvailableNetworks() {
-    return this.http.get(this.getUrlPrefix() + '/status/enabled-chains');
+  public getAvailableNetworks(): Observable<ChainNetwork[]> {
+    return this.httpClient.get<ChainNetwork[]>(
+      this.getUrlPrefix() + '/status/enabled-chains'
+    );
   }
 
   public getUrlPrefix(): string {

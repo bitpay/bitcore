@@ -83,7 +83,7 @@ class WalletsContainer extends Component<Props, State> {
       chain: 'BTC',
       network: 'regtest',
       baseUrl: API_URL,
-      password: 'tab'
+      password: ''
     };
     let wallet: Wallet | undefined;
     try {

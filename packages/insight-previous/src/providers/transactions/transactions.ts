@@ -1,5 +1,5 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Http } from '@angular/http';
 import { Observable } from 'rxjs';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
@@ -113,10 +113,10 @@ export interface AppTx {
 @Injectable()
 export class TxsProvider {
   constructor(
-    public http: Http,
-    private api: ApiProvider,
+    public httpClient: HttpClient,
     public currency: CurrencyProvider,
-    public blocks: BlocksProvider
+    public blocksProvider: BlocksProvider,
+    private api: ApiProvider
   ) {}
 
   public getFee(tx: AppTx): number {
@@ -159,32 +159,28 @@ export class TxsProvider {
     };
   }
 
-  public getTxs(args?: { blockHash?: string }): Observable<{ txs: AppTx[] }> {
+  public getTxs(args?: { blockHash?: string }): Observable<ApiTx[]> {
     let queryString = '';
     if (args.blockHash) {
       queryString += `?blockHash=${args.blockHash}`;
     }
     const url: string = this.api.getUrl() + '/tx' + queryString;
-    return this.http.get(url).map(data => {
-      const txs: ApiTx[] = data.json();
-      const appTxs: AppTx[] = txs.map(tx => this.toAppTx(tx));
-      return { txs: appTxs };
-    });
+    return this.httpClient.get<ApiTx[]>(url);
   }
 
-  public getTx(hash: string): Observable<{ tx: AppTx }> {
+  public getTx(hash: string): Observable<ApiTx> {
     const url: string = this.api.getUrl() + '/tx/' + hash;
-    return this.http.get(url).flatMap(async data => {
-      const apiTx: ApiTx = data.json();
-      const appTx: AppTx = this.toAppTx(apiTx);
-      return { tx: appTx };
-    });
+    return this.httpClient.get<ApiTx>(url);
   }
 
   public getCoins(txId: string): Observable<CoinsApiResponse> {
     const url: string = this.api.getUrl() + '/tx/' + txId + '/coins';
-    return this.http.get(url).map(data => {
-      return data.json() as CoinsApiResponse;
+    return this.httpClient.get<CoinsApiResponse>(url);
+  }
+
+  public getConfirmations(blockheight: number): Observable<number> {
+    return this.blocksProvider.getCurrentHeight().map(data => {
+      return blockheight > 0 ? data.height - blockheight + 1 : blockheight;
     });
   }
 }

@@ -434,11 +434,22 @@ helpers.stubCheckData = function(bc, server, isBCH, cb) {
 };
 
 
-helpers.stubFeeLevels = function(levels) {
+// fill => fill intermediary levels
+helpers.stubFeeLevels = function(levels, fill) {
   blockchainExplorer.estimateFee = function(nbBlocks, cb) {
     var result = _.fromPairs(_.map(_.pick(levels, nbBlocks), function(fee, n) {
       return [+n, fee > 0 ? fee / 1e8 : fee];
     }));
+
+    if (fill) {
+      let last;
+      _.each(nbBlocks, (n) => { 
+        if (result[n]) {
+          last = result[n];
+        }
+        result[n] = last;
+      });
+    }
     return cb(null, result);
   };
 };
