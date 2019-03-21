@@ -25,7 +25,7 @@ var log = require('./log');
 var Credentials = require('./credentials');
 var Verifier = require('./verifier');
 var Errors = require('./errors');
-const Request = require('./Request');
+const Request = require('./request');
 
 var BASE_URL = 'http://localhost:3232/bws/api';
 
