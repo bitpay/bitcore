@@ -1,6 +1,6 @@
 'use strict';
 
-export const Defaults = {
+module.exports = {
   MIN_FEE_PER_KB: 0,
   MAX_FEE_PER_KB: 10000 * 1000, // 10k sat/b
   MIN_TX_FEE: 0,
@@ -149,5 +149,3 @@ export const Defaults = {
 
   BE_KEY_SALT: 'bws-auth-keysalt'
 };
-
-module.exports = Defaults;
