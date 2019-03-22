@@ -21,7 +21,7 @@ export type IBtcTransaction = ITransaction & {
 };
 
 export type IEthTransaction = ITransaction & {
-  data: string;
+  data: Buffer;
   gasLimit: number;
   gasPrice: number;
   nonce: number;

@@ -273,7 +273,7 @@ export class EthP2pWorker {
         chain: this.chain,
         network: this.network,
         blockHeight: -1,
-        data: '0x' +tx.data.toString('hex'),
+        data: tx.data,
         txid,
         blockHash: undefined,
         blockTime: new Date(),
@@ -286,7 +286,7 @@ export class EthP2pWorker {
         from,
         gasLimit: Number.parseInt(tx.gasLimit.toString('hex'), 16),
         gasPrice: Number.parseInt(tx.gasPrice.toString('hex'), 16),
-        nonce: Number.parseInt(tx.nonce.toString('hex'), 16)
+        nonce: Number.parseInt(tx.nonce.toString('hex') || '0', 16)
       };
     } else {
       const { hash: blockHash, time: blockTime, timeNormalized: blockTimeNormalized, height } = block;
