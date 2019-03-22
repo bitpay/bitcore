@@ -1,12 +1,11 @@
 import logger from '../../../logger';
-import BN from 'bn.js';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { IEthBlock } from '../../../types/Block';
 import { EventStorage } from '../.././events';
 import { StorageService } from '../../../services/storage';
-import { Ethereum } from '../../../types/namespaces/Ethereum';
 import { EthTransactionStorage } from '../../transaction/eth/ethTransaction';
 import { BlockModel } from '../base/base';
+import { IEthTransaction } from '../../../types/Transaction';
 
 @LoggifyClass
 export class EthBlockModel extends BlockModel<IEthBlock> {
@@ -19,7 +18,8 @@ export class EthBlockModel extends BlockModel<IEthBlock> {
   }
 
   async addBlock(params: {
-    block: Ethereum.Block;
+    block: IEthBlock;
+    transactions: IEthTransaction[];
     parentChain?: string;
     forkHeight?: number;
     initialSyncComplete: boolean;
@@ -27,9 +27,8 @@ export class EthBlockModel extends BlockModel<IEthBlock> {
     network: string;
   }) {
     const { block, chain, network } = params;
-    const header = block.header;
 
-    const reorg = await this.handleReorg({ header, chain, network });
+    const reorg = await this.handleReorg({ block, chain, network });
 
     if (reorg) {
       return Promise.reject('reorg');
@@ -38,14 +37,15 @@ export class EthBlockModel extends BlockModel<IEthBlock> {
   }
 
   async processBlock(params: {
-    block: Ethereum.Block;
+    block: IEthBlock;
+    transactions: IEthTransaction[];
     parentChain?: string;
     forkHeight?: number;
     initialSyncComplete: boolean;
     chain: string;
     network: string;
   }) {
-    const { chain, network, block, parentChain, forkHeight, initialSyncComplete } = params;
+    const { chain, network, transactions, parentChain, forkHeight, initialSyncComplete } = params;
     const blockOp = await this.getBlockOp(params);
     const convertedBlock = blockOp.updateOne.update.$set;
     const { height, timeNormalized, time } = convertedBlock;
@@ -62,7 +62,7 @@ export class EthBlockModel extends BlockModel<IEthBlock> {
     }
 
     await EthTransactionStorage.batchImport({
-      txs: block.transactions,
+      txs: transactions,
       blockHash: convertedBlock.hash,
       blockTime: new Date(time),
       blockTimeNormalized: new Date(timeNormalized),
@@ -81,73 +81,50 @@ export class EthBlockModel extends BlockModel<IEthBlock> {
     await this.collection.updateOne({ hash: convertedBlock.hash, chain, network }, { $set: { processed: true } });
   }
 
-  async getBlockOp(params: { block: Ethereum.Block; chain: string; network: string }) {
+  async getBlockOp(params: { block: IEthBlock; chain: string; network: string }) {
     const { block, chain, network } = params;
-    const { header } = block;
-    const blockTime = Number.parseInt(header.timestamp.toString('hex') || '0', 16) * 1000;
-    const prevHash = header.parentHash.toString('hex');
+    const blockTime = block.time;
+    const prevHash = block.previousBlockHash;
 
     const previousBlock = await this.collection.findOne({ hash: prevHash, chain, network });
 
     const blockTimeNormalized = (() => {
       const prevTime = previousBlock ? previousBlock.timeNormalized : null;
-      if (prevTime && blockTime <= prevTime.getTime()) {
+      if (prevTime && blockTime.getTime() <= prevTime.getTime()) {
         return prevTime.getTime() + 1;
       } else {
         return blockTime;
       }
     })();
 
-    const height = new BN(header.number).toNumber();
+    const height = block.height;
     logger.debug('Setting blockheight', height);
-    const hash = block.header.hash().toString('hex');
-    const convertedBlock = {
-      chain,
-      network,
-      height,
-      hash,
-      version: 1,
-      merkleRoot: block.header.transactionsTrie.toString('hex'),
-      time: new Date(blockTime),
-      nonce: header.nonce.toString('hex'),
-      timeNormalized: new Date(blockTimeNormalized),
-      previousBlockHash: header.parentHash.toString('hex'),
-      nextBlockHash: '',
-      transactionCount: block.transactions.length,
-      size: block.raw.length,
-      reward: 3,
-      processed: false,
-      bits: 0,
-      gasLimit: Number.parseInt(header.gasLimit.toString('hex'), 16) || 0,
-      gasUsed: Number.parseInt(header.gasUsed.toString('hex'), 16) || 0,
-      stateRoot: header.stateRoot
-    };
     return {
       updateOne: {
         filter: {
-          hash,
+          hash: block.hash,
           chain,
           network
         },
         update: {
-          $set: convertedBlock
+          $set: { ...block, blockTimeNormalized }
         },
         upsert: true
       }
     };
   }
 
-  async handleReorg(params: { header: Ethereum.Header; chain: string; network: string }): Promise<boolean> {
-    const { header, chain, network } = params;
-    const prevHash = header.parentHash.toString('hex');
+  async handleReorg(params: { block: IEthBlock; chain: string; network: string }): Promise<boolean> {
+    const { block, chain, network } = params;
+    const prevHash = block.previousBlockHash;
     let localTip = await this.getLocalTip(params);
-    if (header != null && localTip != null && localTip.hash === prevHash) {
+    if (block != null && localTip != null && localTip.hash === prevHash) {
       return false;
     }
     if (!localTip || localTip.height === 0) {
       return false;
     }
-    if (header) {
+    if (block) {
       const prevBlock = await this.collection.findOne({ chain, network, hash: prevHash });
       if (prevBlock) {
         localTip = prevBlock;

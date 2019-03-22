@@ -7,7 +7,6 @@ export type ITransaction = {
   blockHash?: string;
   blockTime?: Date;
   blockTimeNormalized?: Date;
-  coinbase: boolean;
   fee: number;
   size: number;
   value: number;
@@ -18,12 +17,16 @@ export type IBtcTransaction = ITransaction & {
   locktime: number;
   inputCount: number;
   outputCount: number;
+  coinbase: boolean;
 };
 
 export type IEthTransaction = ITransaction & {
+  data: string;
   gasLimit: number;
   gasPrice: number;
   nonce: number;
+  to: string;
+  from: string;
 };
 
 
@@ -36,7 +39,6 @@ export type TransactionJSON = {
   blockHash?: string;
   blockTime: string;
   blockTimeNormalized: string;
-  coinbase: boolean;
   fee: number;
   size: number;
   value: number;
@@ -69,11 +71,12 @@ export type EthTransactionJSON = {
   blockHash: string;
   blockTime: string;
   blockTimeNormalized: string;
-  coinbase: boolean;
   fee: number;
   size: number;
   value: number;
   gasLimit: number;
   gasPrice: number;
   nonce: number;
+  to: string;
+  from: string;
 };

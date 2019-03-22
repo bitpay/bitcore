@@ -6,6 +6,9 @@ import { StateStorage } from '../../../models/state';
 import { Ethereum } from '../../../types/namespaces/Ethereum';
 import { EthTransactionStorage, EthTransactionModel } from '../../../models/transaction/eth/ethTransaction';
 import { BitcoreP2PEth } from './p2p-lib';
+import { IEthBlock } from '../../../types/Block';
+import BN from 'bn.js';
+import { IEthTransaction } from '../../../types/Transaction';
 const LRU = require('lru-cache');
 
 export class EthP2pWorker {
@@ -81,7 +84,8 @@ export class EthP2pWorker {
         this.events.emit(hash, message.block);
         if (!this.syncing) {
           try {
-            await this.processBlock(block);
+            const { convertedTxs, convertedBlock } = this.convertBlock(block);
+            await this.processBlock(convertedBlock, convertedTxs);
             this.events.emit('block', message.block);
           } catch (err) {
             logger.error(`Error syncing ${chain} ${network}`, err);
@@ -130,9 +134,9 @@ export class EthP2pWorker {
     return this.eth.getBlock(header);
   }
 
-  async processBlock(block): Promise<any> {
-    if (block.transactions.length > 1) {
-      console.log('Block has ', block.transactions.length, 'transactions');
+  async processBlock(block: IEthBlock, transactions: IEthTransaction[]): Promise<any> {
+    if (transactions.length > 1) {
+      console.log('Block has ', transactions.length, 'transactions');
     }
     await this.blockModel.addBlock({
       chain: this.chain,
@@ -140,7 +144,8 @@ export class EthP2pWorker {
       forkHeight: this.chainConfig.forkHeight,
       parentChain: this.chainConfig.parentChain,
       initialSyncComplete: this.initialSyncComplete,
-      block
+      block,
+      transactions
     });
     if (!this.syncing) {
       logger.info(`Added block ${block.hash}`, {
@@ -152,10 +157,11 @@ export class EthP2pWorker {
 
   async processTransaction(tx: Ethereum.Transaction) {
     const now = new Date();
+    const convertedTx = this.convertTx(tx);
     this.txModel.batchImport({
       chain: this.chain,
       network: this.network,
-      txs: [tx],
+      txs: [convertedTx],
       height: -1,
       mempoolTime: now,
       blockTime: now,
@@ -199,7 +205,8 @@ export class EthP2pWorker {
           const hash = header.hash();
           const hashStr = hash.toString('hex');
           const block = await this.getBlock(header);
-          await this.processBlock(block);
+          const { convertedBlock, convertedTxs } = this.convertBlock(block);
+          await this.processBlock(convertedBlock, convertedTxs);
           currentHeight++;
           if (Date.now() - lastLog > 100) {
             logger.info(`Sync `, {
@@ -224,6 +231,74 @@ export class EthP2pWorker {
       { upsert: true }
     );
     return true;
+  }
+
+  convertBlock(block: Ethereum.Block) {
+    const { header } = block;
+    const blockTime = Number.parseInt(header.timestamp.toString('hex') || '0', 16) * 1000;
+    const hash = block.header.hash().toString('hex');
+    const height = new BN(header.number).toNumber();
+    const convertedBlock: IEthBlock = {
+      chain: this.chain,
+      network: this.network,
+      height,
+      hash,
+      version: 1,
+      merkleRoot: block.header.transactionsTrie.toString('hex'),
+      time: new Date(blockTime),
+      timeNormalized: new Date(blockTime),
+      nonce: header.nonce.toString('hex'),
+      previousBlockHash: header.parentHash.toString('hex'),
+      nextBlockHash: '',
+      transactionCount: block.transactions.length,
+      size: block.raw.length,
+      reward: 3,
+      processed: false,
+      bits: 0,
+      gasLimit: Number.parseInt(header.gasLimit.toString('hex'), 16) || 0,
+      gasUsed: Number.parseInt(header.gasUsed.toString('hex'), 16) || 0,
+      stateRoot: header.stateRoot
+    };
+    const convertedTxs = block.transactions.map(t => this.convertTx(t, convertedBlock));
+    return { convertedBlock, convertedTxs };
+  }
+
+  convertTx(tx: Ethereum.Transaction, block?: IEthBlock): IEthTransaction {
+    if (!block) {
+      const txid = tx.hash().toString('hex');
+      const to = '0x' + tx.to.toString('hex');
+      const from = '0x' + tx.from.toString('hex');
+      const fee = Number(tx.getUpfrontCost().toString());
+      return {
+        chain: this.chain,
+        network: this.network,
+        blockHeight: -1,
+        data: '0x' +tx.data.toString('hex'),
+        txid,
+        blockHash: undefined,
+        blockTime: new Date(),
+        blockTimeNormalized: new Date(),
+        fee,
+        size: tx.data.length,
+        value: Number.parseInt(tx.value.toString('hex'), 16) || 0,
+        wallets: [],
+        to,
+        from,
+        gasLimit: Number.parseInt(tx.gasLimit.toString('hex'), 16),
+        gasPrice: Number.parseInt(tx.gasPrice.toString('hex'), 16),
+        nonce: Number.parseInt(tx.nonce.toString('hex'), 16)
+      };
+    } else {
+      const { hash: blockHash, time: blockTime, timeNormalized: blockTimeNormalized, height } = block;
+      const noBlockTx = this.convertTx(tx);
+      return {
+        ...noBlockTx,
+        blockHeight: height,
+        blockHash,
+        blockTime,
+        blockTimeNormalized
+      };
+    }
   }
 
   async start() {

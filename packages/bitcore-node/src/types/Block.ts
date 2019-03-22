@@ -20,4 +20,7 @@ export type IBlock = {
 export type IBtcBlock = IBlock & {};
 export type IEthBlock = IBlock & {
   nonce: string;
+  gasLimit: number;
+  gasUsed: number;
+  stateRoot: Buffer;
 };

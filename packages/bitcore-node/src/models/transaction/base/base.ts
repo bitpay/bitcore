@@ -40,7 +40,6 @@ export class TransactionModel<T extends ITransaction> extends BaseModel<T> {
       blockHash: tx.blockHash || '',
       blockTime: tx.blockTime ? tx.blockTime.toISOString() : '',
       blockTimeNormalized: tx.blockTimeNormalized ? tx.blockTimeNormalized.toISOString() : '',
-      coinbase: tx.coinbase || false,
       size: tx.size || -1,
       fee: tx.fee || -1,
       value: tx.value || -1

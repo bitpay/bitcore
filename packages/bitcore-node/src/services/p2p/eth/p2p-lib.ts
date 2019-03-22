@@ -178,7 +178,7 @@ export class BitcoreP2PEth extends EventEmitter {
               const isValid = await this.isValidBlock(block);
               if (!isValid) {
                 console.log(`${addr} received wrong block body`);
-                
+
               }
               this.emit(block.hash().toString('hex'), block);
               this.onNewBlock(block, peer);
@@ -343,7 +343,7 @@ export class BitcoreP2PEth extends EventEmitter {
     });
   }
 
-  getBlock(header: Ethereum.Header): Promise<Ethereum.Header> {
+  getBlock(header: Ethereum.Header): Promise<Ethereum.Block> {
     const hashStr = header.hash().toString('hex');
     return new Promise(resolve => {
       const _getBlock = () => {

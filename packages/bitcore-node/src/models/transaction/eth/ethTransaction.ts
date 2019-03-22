@@ -1,6 +1,5 @@
 import logger from '../../../logger';
 import * as _ from 'lodash';
-import { Ethereum } from '../../../types/namespaces/Ethereum';
 import { partition } from '../../../utils/partition';
 import { TransformOptions } from '../../../types/TransformOptions';
 import { LoggifyClass } from '../../../decorators/Loggify';
@@ -25,7 +24,7 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
   }
 
   async batchImport(params: {
-    txs: Array<Ethereum.Transaction>;
+    txs: Array<IEthTransaction>;
     height: number;
     mempoolTime?: Date;
     blockTime?: Date;
@@ -57,7 +56,7 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
   }
 
   async addTransactions(params: {
-    txs: Array<Ethereum.Transaction>;
+    txs: Array<IEthTransaction>;
     height: number;
     blockTime?: Date;
     blockHash?: string;
@@ -69,7 +68,7 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
     network: string;
     mempoolTime?: Date;
   }) {
-    let { blockHash, blockTime, blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
+    let { blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
     if (parentChain && forkHeight && height < forkHeight) {
       const parentTxs = await EthTransactionStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
@@ -80,19 +79,8 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
             filter: { txid: parentTx.txid, chain, network },
             update: {
               $set: {
-                chain,
-                network,
-                blockHeight: height,
-                blockHash,
-                blockTime,
-                blockTimeNormalized,
-                fee: parentTx.fee,
-                size: parentTx.size,
-                value: parentTx.value,
-                wallets: new Array<ObjectID>(),
-                gasLimit: parentTx.gasLimit,
-                gasPrice: parentTx.gasPrice,
-                nonce: parentTx.nonce
+                ...parentTx,
+                wallets: new Array<ObjectID>()
               }
             },
             upsert: true,
@@ -102,11 +90,8 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
       });
     } else {
       return Promise.all(
-        params.txs.map(async tx => {
-          const txid = tx.hash().toString('hex');
-          const to = '0x' + tx.to.toString('hex');
-          const from = '0x' + tx.from.toString('hex');
-          let fee = Number(tx.getUpfrontCost().toString());
+        params.txs.map(async (tx: IEthTransaction) => {
+          const { to, txid, from } = tx;
           const sentWallets = await WalletAddressStorage.collection.find({ chain, network, address: from }).toArray();
           const receivedWallets = await WalletAddressStorage.collection.find({ chain, network, address: to }).toArray();
           const wallets = _.uniqBy(sentWallets.concat(receivedWallets).map(w => w.wallet), w => w.toHexString());
@@ -116,21 +101,9 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
               filter: { txid, chain, network },
               update: {
                 $set: {
-                  chain,
-                  network,
-                  blockHeight: height,
-                  blockHash,
-                  blockTime,
+                  ...tx,
                   blockTimeNormalized,
-                  fee,
-                  size: tx.data.length,
-                  value: Number.parseInt(tx.value.toString('hex'), 16) || 0,
-                  wallets,
-                  to,
-                  from,
-                  gasLimit: Number.parseInt(tx.gasLimit.toString('hex'), 16),
-                  gasPrice: Number.parseInt(tx.gasPrice.toString('hex'), 16),
-                  nonce: Number.parseInt(tx.nonce.toString('hex'), 16)
+                  wallets
                 }
               },
               upsert: true,
@@ -143,7 +116,7 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
   }
 
   async pruneMempool(params: {
-    txs: Array<Ethereum.Transaction>;
+    txs: Array<IEthTransaction>;
     height: number;
     parentChain?: string;
     forkHeight?: number;
@@ -187,13 +160,14 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
       blockHash: tx.blockHash || '',
       blockTime: tx.blockTime ? tx.blockTime.toISOString() : '',
       blockTimeNormalized: tx.blockTimeNormalized ? tx.blockTimeNormalized.toISOString() : '',
-      coinbase: tx.coinbase || false,
       size: tx.size || -1,
       fee: tx.fee || -1,
       value: tx.value || -1,
       gasLimit: tx.gasLimit || -1,
       gasPrice: tx.gasPrice || -1,
-      nonce: tx.nonce || 0
+      nonce: tx.nonce || 0,
+      to: tx.to || '',
+      from: tx.from || ''
     };
     if (options && options.object) {
       return transaction;
