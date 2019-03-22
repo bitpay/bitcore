@@ -85,7 +85,8 @@
     "tsc": "./node_modules/.bin/tsc",
     "build": "tsc && npm run lint",
     "clean": "rimraf ./ts_build",
-    "lint": "tslint --fix -c tslint.json 'src/**/*.ts'"
+    "lint": "tslint -c tslint.json 'src/**/*.ts'",
+    "lint-fix": "tslint --fix -c tslint.json 'src/**/*.ts'"
   },
   "bitcoreNode": "./bitcorenode",
   "contributors": [
