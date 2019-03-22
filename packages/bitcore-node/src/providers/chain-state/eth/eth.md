@@ -1,9 +1,9 @@
 # Config
+
 The following config block supports two networks for ETH. Main and Local
 
 The local network would be geth, or testrpc
 The main network shows how to connect via websocket
-
 
 ```
 
@@ -11,7 +11,7 @@ The main network shows how to connect via websocket
   "local": {
     "chainSource": "web3",
       "provider": {
-        "protocool": "http",
+        "protocol": "http",
         "host": "127.0.0.1",
         "port": "8545"
       }
@@ -19,7 +19,7 @@ The main network shows how to connect via websocket
     "main": {
       "chainSource": "web3",
       "provider": {
-        "protocool": "wss",
+        "protocol": "wss",
         "host": "mainnet.infura.io/ws"
       }
     }
@@ -28,7 +28,7 @@ The main network shows how to connect via websocket
   "main": {
     "chainSource": "web3",
     "provider": {
-      "protocool": "wss",
+      "protocol": "wss",
       "host": "mainnet.infura.io/ws"
     }
   }
@@ -40,4 +40,4 @@ The main network shows how to connect via websocket
 Should you want to add your own provider, you can register it on the ChainStateProvider
 
 import {ChainStateProvider} from 'src/providers/chain-state';
-ChainStateProvider.registerService(myServiceThatImplementsIChainStateService); 
+ChainStateProvider.registerService(myServiceThatImplementsIChainStateService);

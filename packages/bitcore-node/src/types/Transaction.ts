@@ -1,4 +1,5 @@
 import { ObjectID } from 'mongodb';
+import { ClassifiedTrace } from '../providers/chain-state/eth/parityRpc';
 export type ITransaction = {
   txid: string;
   chain: string;
@@ -21,14 +22,15 @@ export type IBtcTransaction = ITransaction & {
 };
 
 export type IEthTransaction = ITransaction & {
-  data: string;
+  data: Buffer;
   gasLimit: number;
   gasPrice: number;
   nonce: number;
   to: string;
   from: string;
+  internal: Array<ClassifiedTrace>;
+  abiType?: 'ERC20' | 'ERC721';
 };
-
 
 export type TransactionJSON = {
   _id: string;
@@ -79,4 +81,5 @@ export type EthTransactionJSON = {
   nonce: number;
   to: string;
   from: string;
+  decodedData?: { type: string; value: string };
 };

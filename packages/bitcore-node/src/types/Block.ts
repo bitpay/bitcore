@@ -3,7 +3,6 @@ export type IBlock = {
   network: string;
   height: number;
   hash: string;
-  version: number;
   merkleRoot: string;
   time: Date;
   timeNormalized: Date;
@@ -12,13 +11,16 @@ export type IBlock = {
   transactionCount: number;
   nonce: number | string;
   size: number;
-  bits: number;
   reward: number;
   processed: boolean;
 };
 
-export type IBtcBlock = IBlock & {};
+export type IBtcBlock = IBlock & {
+  version: number;
+  bits: number;
+};
 export type IEthBlock = IBlock & {
+  coinbase: string;
   nonce: string;
   gasLimit: number;
   gasUsed: number;

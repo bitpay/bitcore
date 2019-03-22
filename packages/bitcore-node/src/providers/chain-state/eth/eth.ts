@@ -16,7 +16,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   getWeb3(network: string) {
     const networkConfig = this.config[network];
     const provider = networkConfig.provider;
-    const portString = provider.port ? `:${provider.port}` : '';
+    const portString = provider.port ? `:${provider.port}` : ':8545';
     const connUrl = `${provider.protocol}://${provider.host}${portString}`;
     let ProviderType;
     switch (provider.protocol) {
@@ -34,6 +34,17 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     const { network, address } = params;
     const balance = Number(await this.getWeb3(network).eth.getBalance(address));
     return { confirmed: balance, unconfirmed: 0, balance };
+  }
+
+  async getBlock(params: CSP.GetBlockParams) {
+    const { network, blockId } = params;
+    return this.getWeb3(network).eth.getBlock(Number(blockId)) as any;
+  }
+
+  async getTransaction(params: CSP.StreamTransactionParams) {
+    const { network, txId } = params;
+    const transaction = await this.getWeb3(network).eth.getTransaction(txId);
+    return transaction as any;
   }
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {

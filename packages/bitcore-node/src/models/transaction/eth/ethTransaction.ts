@@ -12,6 +12,9 @@ import { EventStorage } from '../.././events';
 import { WalletAddressStorage } from '../../walletAddress';
 import { TransactionModel } from '../base/base';
 import { ObjectID } from 'bson';
+import AbiDecoder from 'abi-decoder';
+const erc20abi = require('../../../providers/chain-state/erc20/erc20abi');
+const erc721abi = require('../../../providers/chain-state/erc20/erc721abi');
 
 @LoggifyClass
 export class EthTransactionModel extends TransactionModel<IEthTransaction> {
@@ -150,7 +153,31 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
     return this.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true);
   }
 
+  abiDecode(input: string) {
+    try {
+      try {
+        AbiDecoder.addABI(erc20abi);
+        const value = AbiDecoder.decodeMethod(input).params.filter(e => e.name === '_value')[0].value;
+        return {
+          type: 'ERC20',
+          value
+        };
+      } catch {
+        AbiDecoder.addABI(erc721abi);
+        const value = AbiDecoder.decodeMethod(input).params.filter(e => e.name === '_value')[0].value;
+        return {
+          type: 'ERC721',
+          value
+        };
+      }
+    } catch {
+      return false;
+    }
+  }
+
   _apiTransform(tx: Partial<MongoBound<IEthTransaction>>, options?: TransformOptions): EthTransactionJSON | string {
+    const decodedData = this.abiDecode(`0x${tx.data!.toString('hex')}`);
+
     const transaction: EthTransactionJSON = {
       _id: tx._id ? tx._id.toString() : '',
       txid: tx.txid || '',
@@ -167,7 +194,8 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
       gasPrice: tx.gasPrice || -1,
       nonce: tx.nonce || 0,
       to: tx.to || '',
-      from: tx.from || ''
+      from: tx.from || '',
+      decodedData: decodedData ? decodedData : undefined
     };
     if (options && options.object) {
       return transaction;

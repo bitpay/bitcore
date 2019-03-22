@@ -1,7 +1,7 @@
 import { BaseModel, MongoBound } from '../../base';
 import { IBlock } from '../../../types/Block';
 import { StorageService } from '../../../services/storage';
-import { TransformOptions } from "../../../types/TransformOptions";
+import { TransformOptions } from '../../../types/TransformOptions';
 export class BlockModel<T extends IBlock> extends BaseModel<T> {
   constructor(storage?: StorageService) {
     super('blocks', storage);
@@ -32,13 +32,11 @@ export class BlockModel<T extends IBlock> extends BaseModel<T> {
       network: block.network,
       hash: block.hash,
       height: block.height,
-      version: block.version,
       size: block.size,
       merkleRoot: block.merkleRoot,
       time: block.time,
       timeNormalized: block.timeNormalized,
       nonce: block.nonce,
-      bits: block.bits,
       /*
        *difficulty: block.difficulty,
        */

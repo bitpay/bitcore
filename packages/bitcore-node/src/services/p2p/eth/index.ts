@@ -9,7 +9,12 @@ import { BitcoreP2PEth } from './p2p-lib';
 import { IEthBlock } from '../../../types/Block';
 import BN from 'bn.js';
 import { IEthTransaction } from '../../../types/Transaction';
+import { ParityRPC } from '../../../providers/chain-state/eth/parityRpc';
+import { ETHStateProvider } from '../../../providers/chain-state/eth/eth';
+import Web3 from 'web3';
 const LRU = require('lru-cache');
+
+if (Symbol['asyncIterator'] === undefined) (Symbol as any)['asyncIterator'] = Symbol.for('asyncIterator');
 
 export class EthP2pWorker {
   private chain: string;
@@ -23,6 +28,8 @@ export class EthP2pWorker {
   private eth: BitcoreP2PEth;
   private blockModel: EthBlockModel;
   private txModel: EthTransactionModel;
+  private web3: Web3;
+  private rpc: ParityRPC;
 
   constructor({ chain, network, chainConfig, blockModel = EthBlockStorage, txModel = EthTransactionStorage }) {
     this.eth = new BitcoreP2PEth(network);
@@ -35,6 +42,8 @@ export class EthP2pWorker {
     this.invCache = new LRU({ max: 10000 });
     this.blockModel = blockModel;
     this.txModel = txModel;
+    this.web3 = new ETHStateProvider().getWeb3(network);
+    this.rpc = new ParityRPC(this.web3);
   }
 
   setupListeners() {
@@ -205,7 +214,19 @@ export class EthP2pWorker {
           const hash = header.hash();
           const hashStr = hash.toString('hex');
           const block = await this.getBlock(header);
-          const { convertedBlock, convertedTxs } = this.convertBlock(block);
+          let { convertedBlock, convertedTxs } = this.convertBlock(block);
+          const height = new BN(block.header.number).toNumber();
+          let internalTxs = await this.rpc.getTransactionsFromBlock(height);
+          for await (const tx of internalTxs) {
+            // if (tx.type === 'reward') {
+            //   console.log(tx);
+            // }
+            const foundIndex = convertedTxs.findIndex(t => t.txid === tx.transactionHash);
+            if (foundIndex > -1) {
+              convertedTxs[foundIndex].internal.push(tx);
+            }
+          }
+
           await this.processBlock(convertedBlock, convertedTxs);
           currentHeight++;
           if (Date.now() - lastLog > 100) {
@@ -243,7 +264,7 @@ export class EthP2pWorker {
       network: this.network,
       height,
       hash,
-      version: 1,
+      coinbase: block.header.coinbase.toString('hex'),
       merkleRoot: block.header.transactionsTrie.toString('hex'),
       time: new Date(blockTime),
       timeNormalized: new Date(blockTime),
@@ -254,7 +275,6 @@ export class EthP2pWorker {
       size: block.raw.length,
       reward: 3,
       processed: false,
-      bits: 0,
       gasLimit: Number.parseInt(header.gasLimit.toString('hex'), 16) || 0,
       gasUsed: Number.parseInt(header.gasUsed.toString('hex'), 16) || 0,
       stateRoot: header.stateRoot
@@ -265,15 +285,17 @@ export class EthP2pWorker {
 
   convertTx(tx: Ethereum.Transaction, block?: IEthBlock): IEthTransaction {
     if (!block) {
-      const txid = tx.hash().toString('hex');
+      const txid = '0x' + tx.hash().toString('hex');
       const to = '0x' + tx.to.toString('hex');
       const from = '0x' + tx.from.toString('hex');
       const fee = Number(tx.getUpfrontCost().toString());
+      const abiType = this.rpc.abiDecode('0x' + tx.data.toString('hex'));
+      const nonce = tx.nonce.toString('hex');
       return {
         chain: this.chain,
         network: this.network,
         blockHeight: -1,
-        data: '0x' +tx.data.toString('hex'),
+        data: tx.data,
         txid,
         blockHash: undefined,
         blockTime: new Date(),
@@ -286,7 +308,9 @@ export class EthP2pWorker {
         from,
         gasLimit: Number.parseInt(tx.gasLimit.toString('hex'), 16),
         gasPrice: Number.parseInt(tx.gasPrice.toString('hex'), 16),
-        nonce: Number.parseInt(tx.nonce.toString('hex'), 16)
+        nonce: Number.parseInt(nonce || '0x0', 16),
+        abiType: abiType ? abiType : undefined,
+        internal: []
       };
     } else {
       const { hash: blockHash, time: blockTime, timeNormalized: blockTimeNormalized, height } = block;
