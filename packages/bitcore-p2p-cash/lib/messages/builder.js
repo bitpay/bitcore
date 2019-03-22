@@ -58,7 +58,8 @@ function builder(options) {
       getblocks: 'GetBlocks',
       getheaders: 'GetHeaders',
       mempool: 'MemPool',
-      getaddr: 'GetAddr'
+      getaddr: 'GetAddr',
+      xversion: 'Xversion'
     },
     commands: {}
   };
