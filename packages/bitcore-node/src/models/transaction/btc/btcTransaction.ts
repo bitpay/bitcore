@@ -15,9 +15,7 @@ import { EventStorage } from '../.././events';
 import * as lodash from 'lodash';
 import logger from '../../../logger';
 import { TransactionModel } from "../base/base";
-
-const Chain = require('../chain');
-
+import { BitcoreLibs } from "../../../chain";
 
 export type MintOp = {
   updateOne: {
@@ -331,8 +329,8 @@ export class BtcTransactionModel extends TransactionModel<IBtcTransaction> {
         if (output.script) {
           address = output.script.toAddress(network).toString(true);
           if (address === 'false' && output.script.classify() === 'Pay to public key') {
-            let hash = Chain[chain].lib.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
-            address = Chain[chain].lib.Address(hash, network).toString(true);
+            let hash = BitcoreLibs[chain].lib.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
+            address = BitcoreLibs[chain].lib.Address(hash, network).toString(true);
           }
         }
         mintOps.push({

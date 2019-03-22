@@ -1,4 +1,5 @@
 import logger from '../../../logger';
+import os from 'os';
 import { ChainStateProvider } from '../../../providers/chain-state';
 import { BtcTransactionStorage } from '../../../models/transaction/btc/btcTransaction';
 import { Bitcoin } from '../../../types/namespaces/Bitcoin';
@@ -7,9 +8,8 @@ import { SpentHeightIndicators } from '../../../types/Coin';
 import { wait } from '../../../utils/wait';
 import { EventEmitter } from 'events';
 import { BtcBlockStorage, BtcBlockModel } from '../../../models/block/btc/btcBlock';
-import os from 'os';
+import { BitcoreLibs } from '../../../chain';
 
-const Chain = require('../chain');
 export class BitcoreP2pWorker {
   private chain: string;
   private network: string;
@@ -31,8 +31,8 @@ export class BitcoreP2pWorker {
     this.blockModel = blockModel;
     this.chain = chain;
     this.network = network;
-    this.bitcoreLib = Chain[this.chain].lib;
-    this.bitcoreP2p = Chain[this.chain].p2p;
+    this.bitcoreLib = BitcoreLibs[this.chain].lib;
+    this.bitcoreP2p = BitcoreLibs[this.chain].p2p;
     this.chainConfig = chainConfig;
     this.events = new EventEmitter();
     this.isSyncing = false;

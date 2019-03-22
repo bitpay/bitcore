@@ -4,9 +4,6 @@ import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { InternalStateProvider } from '../internal/internal';
 import { ObjectID } from 'mongodb';
 import Web3 from 'web3';
-import { Storage } from '../../../services/storage';
-import { Readable } from 'stream';
-import { ParityRPC, ParityTraceResponse } from './parityRpc';
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -37,59 +34,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     const { network, address } = params;
     const balance = Number(await this.getWeb3(network).eth.getBalance(address));
     return { confirmed: balance, unconfirmed: 0, balance };
-  }
-
-  async getBlock(params: CSP.GetBlockParams) {
-    const { network, blockId } = params;
-    return this.getWeb3(network).eth.getBlock(Number(blockId)) as any;
-  }
-
-  async streamBlocks(params: CSP.StreamBlocksParams) {
-    const { network, blockId } = params;
-
-    const web3 = this.getWeb3(network);
-
-    return new Promise<Array<ParityTraceResponse>>(resolve =>
-      web3.eth.currentProvider.send(
-        {
-          method: 'trace_block',
-          params: [web3.utils.toHex(parseInt(blockId!))],
-          jsonrpc: '2.0',
-          id: 0
-        },
-        (_, data) => resolve(data.result)
-      )
-    );
-  }
-
-  async getTransaction(params: CSP.StreamTransactionParams) {
-    const { network, txId } = params;
-    const transaction = await this.getWeb3(network).eth.getTransaction(txId);
-    return transaction as any;
-  }
-
-  async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
-    const { network, wallet, req, res } = params;
-
-    const web3 = this.getWeb3(network);
-    const addresses = await this.getWalletAddresses(wallet._id!);
-
-    Storage.stream(
-      new Readable({
-        objectMode: true,
-        read: async function() {
-          for (const walletAddress of addresses) {
-            const transactions = await new ParityRPC(web3).getTransactionsForAddress(100000, walletAddress.address);
-            for await (const tx of transactions) {
-              this.push(tx);
-            }
-          }
-          this.push(null);
-        }
-      }),
-      req,
-      res
-    );
   }
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {

@@ -12,6 +12,7 @@ import { Config } from '../../../services/config';
 import { EventStorage } from '../.././events';
 import { WalletAddressStorage } from '../../walletAddress';
 import { TransactionModel } from '../base/base';
+import { ObjectID } from 'bson';
 
 @LoggifyClass
 export class EthTransactionModel extends TransactionModel<IEthTransaction> {
@@ -88,7 +89,7 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
                 fee: parentTx.fee,
                 size: parentTx.size,
                 value: parentTx.value,
-                wallets: [],
+                wallets: new Array<ObjectID>(),
                 gasLimit: parentTx.gasLimit,
                 gasPrice: parentTx.gasPrice,
                 nonce: parentTx.nonce
@@ -125,9 +126,11 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
                   size: tx.data.length,
                   value: Number.parseInt(tx.value.toString('hex'), 16) || 0,
                   wallets,
-                  gasLimit: tx.gasLimit.toString('hex'),
-                  gasPrice: tx.gasPrice.toString('hex'),
-                  nonce: tx.nonce.toString('hex')
+                  to,
+                  from,
+                  gasLimit: Number.parseInt(tx.gasLimit.toString('hex'), 16),
+                  gasPrice: Number.parseInt(tx.gasPrice.toString('hex'), 16),
+                  nonce: Number.parseInt(tx.nonce.toString('hex'), 16)
                 }
               },
               upsert: true,
@@ -188,9 +191,9 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
       size: tx.size || -1,
       fee: tx.fee || -1,
       value: tx.value || -1,
-      gasLimit: tx.gasLimit || '',
-      gasPrice: tx.gasPrice || '',
-      nonce: tx.nonce || ''
+      gasLimit: tx.gasLimit || -1,
+      gasPrice: tx.gasPrice || -1,
+      nonce: tx.nonce || 0
     };
     if (options && options.object) {
       return transaction;

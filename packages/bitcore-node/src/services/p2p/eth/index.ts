@@ -22,7 +22,7 @@ export class EthP2pWorker {
   private txModel: EthTransactionModel;
 
   constructor({ chain, network, chainConfig, blockModel = EthBlockStorage, txModel = EthTransactionStorage }) {
-    this.eth = new BitcoreP2PEth();
+    this.eth = new BitcoreP2PEth(network);
     this.chain = chain || 'ETH';
     this.network = network;
     this.chainConfig = chainConfig;

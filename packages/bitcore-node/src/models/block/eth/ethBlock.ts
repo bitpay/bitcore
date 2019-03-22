@@ -1,6 +1,5 @@
 import logger from '../../../logger';
 import BN from 'bn.js';
-import { BtcTransactionStorage } from '../.././transaction/btc/btcTransaction';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { IEthBlock } from '../../../types/Block';
 import { EventStorage } from '../.././events';
@@ -85,7 +84,7 @@ export class EthBlockModel extends BlockModel<IEthBlock> {
   async getBlockOp(params: { block: Ethereum.Block; chain: string; network: string }) {
     const { block, chain, network } = params;
     const { header } = block;
-    const blockTime = new Date(header.timestamp.readUInt32BE(0) * 1000).getTime();
+    const blockTime = Number.parseInt(header.timestamp.toString('hex') || '0', 16) * 1000;
     const prevHash = header.parentHash.toString('hex');
 
     const previousBlock = await this.collection.findOne({ hash: prevHash, chain, network });
@@ -99,20 +98,19 @@ export class EthBlockModel extends BlockModel<IEthBlock> {
       }
     })();
 
-    const height = (previousBlock && previousBlock.height + 1) || 1;
+    const height = new BN(header.number).toNumber();
     logger.debug('Setting blockheight', height);
-
+    const hash = block.header.hash().toString('hex');
     const convertedBlock = {
       chain,
       network,
-      height: new BN(header.number).toNumber(),
-      hash: block.header.hash().toString('hex'),
+      height,
+      hash,
       version: 1,
       merkleRoot: block.header.transactionsTrie.toString('hex'),
-      time: new Date(header.timestamp.readUInt32BE(0) * 1000),
-      timeNormalized: new Date(header.timestamp.readUInt32BE(0) * 1000),
-      nonce: Number(header.nonce.toString('hex')),
-      blockTimeNormalized,
+      time: new Date(blockTime),
+      nonce: header.nonce.toString('hex'),
+      timeNormalized: new Date(blockTimeNormalized),
       previousBlockHash: header.parentHash.toString('hex'),
       nextBlockHash: '',
       transactionCount: block.transactions.length,
@@ -127,7 +125,7 @@ export class EthBlockModel extends BlockModel<IEthBlock> {
     return {
       updateOne: {
         filter: {
-          hash: header.hash,
+          hash,
           chain,
           network
         },
@@ -143,7 +141,7 @@ export class EthBlockModel extends BlockModel<IEthBlock> {
     const { header, chain, network } = params;
     const prevHash = header.parentHash.toString('hex');
     let localTip = await this.getLocalTip(params);
-    if (header && localTip && localTip.hash === prevHash) {
+    if (header != null && localTip != null && localTip.hash === prevHash) {
       return false;
     }
     if (!localTip || localTip.height === 0) {
@@ -159,13 +157,13 @@ export class EthBlockModel extends BlockModel<IEthBlock> {
       logger.info(`Resetting tip to ${localTip.height - 1}`, { chain, network });
     }
     const reorgOps = [
-      this.collection.deleteMany({ chain, network, height: { $gte: localTip.height } }),
-      BtcTransactionStorage.collection.deleteMany({ chain, network, blockHeight: { $gte: localTip.height } })
+      this.collection.deleteMany({ chain, network, height: { $gt: localTip.height } }),
+      EthTransactionStorage.collection.deleteMany({ chain, network, blockHeight: { $gt: localTip.height } })
     ];
     await Promise.all(reorgOps);
 
     logger.debug('Removed data from above blockHeight: ', localTip.height);
-    return true;
+    return localTip.hash !== prevHash;
   }
 }
 

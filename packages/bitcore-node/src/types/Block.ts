@@ -10,7 +10,7 @@ export type IBlock = {
   previousBlockHash: string;
   nextBlockHash: string;
   transactionCount: number;
-  nonce: number;
+  nonce: number | string;
   size: number;
   bits: number;
   reward: number;
@@ -18,4 +18,6 @@ export type IBlock = {
 };
 
 export type IBtcBlock = IBlock & {};
-export type IEthBlock = IBlock & {};
+export type IEthBlock = IBlock & {
+  nonce: string;
+};

@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import { Ethereum } from "../../../types/namespaces/Ethereum";
+import { Ethereum } from '../../../types/namespaces/Ethereum';
 const devp2p = require('ethereumjs-devp2p');
 const EthereumTx = require('ethereumjs-tx');
 const EthereumBlock = require('ethereumjs-block');
@@ -32,11 +32,17 @@ const CHECK_BLOCK_NR = 4370000;
 
 const ETH = {
   NETWORKS: {
-    RINKEYBY: {
+    rinkeby: {
       networkId: CHAIN_ID,
       td: devp2p._util.int2buffer(1), // total difficulty in genesis block
       bestHash: Buffer.from('6341fd3daf94b748c72ced5a5b26028f2474f5f00d824504e4fa37a75767e177', 'hex'),
       genesisHash: Buffer.from('6341fd3daf94b748c72ced5a5b26028f2474f5f00d824504e4fa37a75767e177', 'hex')
+    },
+    mainnet: {
+      networkId: 1,
+      td: devp2p._util.int2buffer(1), // total difficulty in genesis block
+      bestHash: Buffer.from('d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3', 'hex'),
+      genesisHash: Buffer.from('d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3', 'hex')
     }
   }
 };
@@ -69,11 +75,11 @@ export class BitcoreP2PEth extends EventEmitter {
 
   peers = {};
 
-  constructor() {
+  constructor(network: 'rinkeby' | 'mainnet') {
     super();
     // connect to local ethereum node (debug)
 
-    this.setupListeners();
+    this.setupListeners(network);
   }
 
   connect() {
@@ -90,7 +96,7 @@ export class BitcoreP2PEth extends EventEmitter {
     this.establishHeartbeat();
   }
 
-  setupListeners() {
+  setupListeners(network) {
     this.rlpx.on('error', err => console.error(chalk.red(`RLPx error: ${err.stack || err}`)));
 
     this.rlpx.on('peer:added', peer => {
@@ -104,7 +110,7 @@ export class BitcoreP2PEth extends EventEmitter {
         chalk.green(`Add peer: ${addr} ${clientId} (eth${eth.getVersion()}) (total: ${this.rlpx.getPeers().length})`)
       );
 
-      eth.sendStatus(ETH.NETWORKS.RINKEYBY);
+      eth.sendStatus(ETH.NETWORKS[network]);
 
       eth.once('status', () => {
         eth.sendMessage(devp2p.ETH.MESSAGE_CODES.GET_BLOCK_HEADERS, [CHECK_BLOCK_NR, 1, 0, 0]);
@@ -166,25 +172,18 @@ export class BitcoreP2PEth extends EventEmitter {
 
           case devp2p.ETH.MESSAGE_CODES.BLOCK_BODIES:
             console.log('MESSAGE:BLOCK_BODIES');
-            let isValidPayload = false;
             while (requests.bodies.length > 0) {
               const header = requests.bodies.shift();
               const block = new EthereumBlock([header.raw, payload[0][0], payload[0][1]]);
               const isValid = await this.isValidBlock(block);
-              if (isValid) {
-                isValidPayload = true;
-                this.emit(block.hash().toString('hex'), block);
-                this.onNewBlock(block, peer);
-                break;
+              if (!isValid) {
+                console.log(`${addr} received wrong block body`);
+                
               }
+              this.emit(block.hash().toString('hex'), block);
+              this.onNewBlock(block, peer);
             }
-
-            if (!isValidPayload) {
-              console.log(`${addr} received wrong block body`);
-            }
-
             break;
-
           case devp2p.ETH.MESSAGE_CODES.NEW_BLOCK:
             console.log('MESSAGE:NEW_BLOCK');
             const newBlock = new EthereumBlock(payload[0]);
@@ -332,7 +331,7 @@ export class BitcoreP2PEth extends EventEmitter {
   getHeaders(bestHeight: number) {
     return new Promise(resolve => {
       const _getHeaders = () => {
-        const message = [bestHeight, 2000, 0, 0];
+        const message = [bestHeight > 0 ? bestHeight + 1: bestHeight , 2000, 0, 0];
         this.sendPoolMessage(devp2p.ETH.MESSAGE_CODES.GET_BLOCK_HEADERS, message);
       };
       const headersRetry = setInterval(_getHeaders, 10000);
@@ -350,7 +349,7 @@ export class BitcoreP2PEth extends EventEmitter {
       const _getBlock = () => {
         console.log('Getting block ', hashStr);
         if (this.blocksCache.has(hashStr)) {
-          this.emit(hashStr, this.blocksCache.get(hashStr))
+          this.emit(hashStr, this.blocksCache.get(hashStr));
         } else {
           requests.bodies.push(header);
           this.sendPoolMessage(devp2p.ETH.MESSAGE_CODES.GET_BLOCK_BODIES, [header.hash()]);

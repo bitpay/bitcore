@@ -21,9 +21,9 @@ export type IBtcTransaction = ITransaction & {
 };
 
 export type IEthTransaction = ITransaction & {
-  gasLimit: string;
-  gasPrice: string;
-  nonce: string;
+  gasLimit: number;
+  gasPrice: number;
+  nonce: number;
 };
 
 
@@ -73,7 +73,7 @@ export type EthTransactionJSON = {
   fee: number;
   size: number;
   value: number;
-  gasLimit: string;
-  gasPrice: string;
-  nonce: string;
+  gasLimit: number;
+  gasPrice: number;
+  nonce: number;
 };
