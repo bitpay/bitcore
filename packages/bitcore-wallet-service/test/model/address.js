@@ -5,7 +5,7 @@ var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
 
-var Address = require('../../lib/model/address');
+var { Address } = require('../../ts_build/lib/model/address');
 
 describe('Address', function() {
   describe('#create', function() {

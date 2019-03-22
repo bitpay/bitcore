@@ -16,14 +16,14 @@ var Bitcore_ = {
   bch: require('bitcore-lib-cash')
 };
 
-var Common = require('../../lib/common');
+var Common = require('../../ts_build/lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;
 
-var Model = require('../../lib/model');
+var Model = require('../../ts_build/lib/model');
 
-var WalletService = require('../../lib/server');
+var WalletService = require('../../ts_build/lib/server');
 
 var HugeTxs = require('./hugetx');
 var TestData = require('../testdata');
@@ -67,7 +67,7 @@ describe('History V8', function() {
     });
   });
 
- 
+
 
   describe('#getTxHistoryV8', function() {
     var server, wallet, mainAddresses, changeAddresses;
@@ -98,7 +98,7 @@ describe('History V8', function() {
         _.each(txs, function(tx) {
           tx.txid.should.equal('txid' + i);
           tx.confirmations.should.equal(i);
-          if (i) { 
+          if (i) {
             tx.blockheight.should.equal(BCHEIGHT - i + 1);
           }  else {
 
@@ -121,7 +121,7 @@ describe('History V8', function() {
         txs[0].height =txs[1].height;
         txs[1].address =main[0].address;
         txs[0].category=txs[1].category='move';
-        
+
         helpers.stubHistoryV8(null, null, txs);
 
         server.getTxHistory({limit: 10}, function(err, txs, fromCache) {
@@ -153,7 +153,7 @@ describe('History V8', function() {
         txs[0].height =txs[1].height;
         txs[1].address =change[0].address;
         txs[0].category=txs[1].category='move';
-        
+
         helpers.stubHistoryV8(null, null, txs);
 
         server.getTxHistory({limit: 10}, function(err, txs, fromCache) {
@@ -188,7 +188,7 @@ describe('History V8', function() {
         txs[1].address =main[0].address;
         txs[2].address =change[0].address;
         txs[3].address =main[1].address;
-        
+
         helpers.stubHistoryV8(null, null, txs);
 
         server.getTxHistory({limit: 10}, function(err, txs, fromCache) {
@@ -210,7 +210,7 @@ describe('History V8', function() {
           _.map(txs[0].outputs,'address').should.not.include(
             change[0].address,
           );
- 
+
           done();
         });
       });
@@ -231,7 +231,7 @@ describe('History V8', function() {
         _.first(txs).id.should.equal('id0');
         server.getTxHistory({skip: 20, limit: 10}, function(err, txs, fromCache) {
           // first TX result should be:
-          // txid: 19 
+          // txid: 19
           // confirmations: 19
           should.not.exist(err);
           fromCache.should.equal(true);
@@ -266,7 +266,7 @@ describe('History V8', function() {
         _.first(txs).id.should.equal('id0');
         server.getTxHistory({skip: 5, limit: 20}, function(err, txs, fromCache) {
           // first TX result should be:
-          // txid: 19 
+          // txid: 19
           // confirmations: 19
           should.not.exist(err);
           fromCache.should.equal(true);
@@ -638,10 +638,10 @@ describe('History V8', function() {
                 category: 'fee',
                 height: 1000,
                },
-              ]; 
- 
+              ];
+
               helpers.stubHistoryV8(null, null,txs);
-              helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'bch', () =>{ 
+              helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'bch', () =>{
 
               server.getTxHistory({}, function(err, txs) {
                 should.not.exist(err);

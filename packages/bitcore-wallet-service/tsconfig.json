@@ -6,7 +6,6 @@
     "declaration": true,
     "declarationMap": true,
     "module": "commonjs",
-    "allowJS": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "moduleResolution": "node",

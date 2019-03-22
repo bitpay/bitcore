@@ -12,7 +12,7 @@ log.level = 'info';
 
 var helpers = require('./helpers');
 
-var FiatRateService = require('../../lib/fiatrateservice');
+var { FiatRateService } = require('../../ts_build/lib/fiatrateservice');
 
 describe('Fiat rate service', function() {
   var service, request;

@@ -1,15 +1,24 @@
-var Model = {};
-
-Model.Wallet = require('./wallet');
-Model.Copayer = require('./copayer');
-Model.TxProposal = require('./txproposal');
-Model.Address = require('./address');
-Model.Notification = require('./notification');
-Model.Preferences = require('./preferences');
-Model.Email = require('./email');
-Model.TxNote = require('./txnote');
-Model.Session = require('./session');
-Model.PushNotificationSub = require('./pushnotificationsub');
-Model.TxConfirmationSub = require('./txconfirmationsub');
-
-module.exports = Model;
+import { Wallet } from './wallet';
+import { Copayer } from './copayer';
+import { TxProposal } from './txproposal';
+import { Address } from './address';
+import { Notification } from './notification';
+import { Preferences } from './preferences';
+import { Email } from './email';
+import { TxNote } from './txnote';
+import { Session } from './session';
+import { PushNotificationSub } from './pushnotificationsub';
+import { TxConfirmationSub } from './txconfirmationsub';
+module.exports = {
+  Wallet,
+  Copayer,
+  TxProposal,
+  Address,
+  Notification,
+  Preferences,
+  Email,
+  TxNote,
+  Session,
+  PushNotificationSub,
+  TxConfirmationSub
+};

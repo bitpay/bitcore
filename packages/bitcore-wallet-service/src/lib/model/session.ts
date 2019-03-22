@@ -2,51 +2,63 @@ var _ = require('lodash');
 var Uuid = require('uuid');
 
 var Defaults = require('../common/defaults');
+export interface ISession {
+  id: number;
+  version: number;
+  createdOn: number;
+  updatedOn: number;
+  copayerId: string;
+  walletId: string;
+}
+export class Session {
+  id: number;
+  version: number;
+  createdOn: number;
+  updatedOn: number;
+  copayerId: string;
+  walletId: string;
 
-function Session() {};
+  static create = function(opts) {
+    opts = opts || {};
 
-Session.create = function(opts) {
-  opts = opts || {};
+    var now = Math.floor(Date.now() / 1000);
 
-  var now = Math.floor(Date.now() / 1000);
+    var x = new Session();
 
-  var x = new Session();
+    x.id = Uuid.v4();
+    x.version = 1;
+    x.createdOn = now;
+    x.updatedOn = now;
+    x.copayerId = opts.copayerId;
+    x.walletId = opts.walletId;
 
-  x.id = Uuid.v4();
-  x.version = 1;
-  x.createdOn = now;
-  x.updatedOn = now;
-  x.copayerId = opts.copayerId;
-  x.walletId = opts.walletId;
+    return x;
+  };
 
-  return x;
-};
+  static fromObj = function(obj) {
+    var x = new Session();
 
-Session.fromObj = function(obj) {
-  var x = new Session();
+    x.id = obj.id;
+    x.version = obj.version;
+    x.createdOn = obj.createdOn;
+    x.updatedOn = obj.updatedOn;
+    x.copayerId = obj.copayerId;
+    x.walletId = obj.walletId;
 
-  x.id = obj.id;
-  x.version = obj.version;
-  x.createdOn = obj.createdOn;
-  x.updatedOn = obj.updatedOn;
-  x.copayerId = obj.copayerId;
-  x.walletId = obj.walletId;
+    return x;
+  };
 
-  return x;
-};
+  toObject = function() {
+    return this;
+  };
 
-Session.prototype.toObject = function() {
-  return this;
-};
+  isValid = function() {
+    var now = Math.floor(Date.now() / 1000);
+    return now - this.updatedOn <= Defaults.SESSION_EXPIRATION;
+  };
 
-Session.prototype.isValid = function() {
-  var now = Math.floor(Date.now() / 1000);
-  return (now - this.updatedOn) <= Defaults.SESSION_EXPIRATION;
-};
-
-Session.prototype.touch = function() {
-  var now = Math.floor(Date.now() / 1000);
-  this.updatedOn = now;
-};
-
-module.exports = Session;
+  touch = function() {
+    var now = Math.floor(Date.now() / 1000);
+    this.updatedOn = now;
+  };
+}

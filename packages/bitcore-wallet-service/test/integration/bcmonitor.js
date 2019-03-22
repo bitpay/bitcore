@@ -10,8 +10,8 @@ var log = require('npmlog');
 log.debug = log.verbose;
 log.level = 'info';
 
-var WalletService = require('../../lib/server');
-var BlockchainMonitor = require('../../lib/blockchainmonitor');
+var { WalletService } = require('../../ts_build/lib/server');
+var { BlockchainMonitor } = require('../../ts_build/lib/blockchainmonitor');
 
 var helpers = require('./helpers');
 var storage, blockchainExplorer;
@@ -148,7 +148,7 @@ it('should parse v8 amount ', function(done) {
     });
   });
 
- 
+
 
   it('should notify copayers of tx confirmation', function(done) {
     server.createAddress({}, function(err, address) {
