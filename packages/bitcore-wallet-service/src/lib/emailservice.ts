@@ -92,8 +92,11 @@ export class EmailService {
 
     self.defaultLanguage = opts.emailOpts.defaultLanguage || 'en';
     self.defaultUnit = opts.emailOpts.defaultUnit || 'btc';
+    console.log(
+      (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/'
+    );
     self.templatePath = path.normalize(
-      (opts.emailOpts.templatePath || __dirname + '/templates') + '/'
+      (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/'
     );
     console.log(self.templatePath);
     self.publicTxUrlTemplate = opts.emailOpts.publicTxUrlTemplate || {};

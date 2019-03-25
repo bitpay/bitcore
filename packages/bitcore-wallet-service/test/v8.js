@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var { V8 } = require('../ts_build/lib/blockchainexplorers/v8.js');
+var { V8 } = require('../ts_build/lib/blockchainexplorers/v8');
 var B = require('bitcore-lib-cash');
 const { Readable } = require('stream');
 
@@ -51,7 +51,7 @@ describe('V8', () => {
 
   describe('#listTransactions', () => {
     it('should handle partial json results', (done) => {
-      class PartialJson extends V8 {
+      class PartialJson {
         listTransactions(opts) {
           class MyReadable extends Readable {
             constructor(options) {
@@ -86,7 +86,7 @@ describe('V8', () => {
     });
 
     it('should handle partial jsonline results', (done) => {
-      class PartialJsonL extends V8 {
+      class PartialJsonL {
         listTransactions(opts) {
           class MyReadable extends Readable {
             constructor(options) {
@@ -104,7 +104,7 @@ describe('V8', () => {
           return new MyReadable;
         };
       };
-      var be2 = new PartialJsonL({
+      var be2 = new V8({
         coin: 'btc',
         network: 'livenet',
         url: 'http://dummy/',
@@ -129,7 +129,7 @@ describe('V8', () => {
     it('should get uxtos', (done) => {
 
 
-      class PartialJson extends V8 {
+      class PartialJson {
         getAddressTxos(opts) {
           return new Promise(function (resolve) {
             resolve(V8UTXOS);
@@ -137,7 +137,7 @@ describe('V8', () => {
         };
       };
 
-      var be = new PartialJson({
+      var be = new V8({
         coin: 'bch',
         network: 'livenet',
         url: 'http://dummy/',

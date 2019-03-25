@@ -70,7 +70,7 @@ describe('Push notifications', function() {
               storage: helpers.getStorage(),
               request: requestStub,
               pushNotificationsOpts: {
-                templatePath: '../../templates',
+                templatePath: 'templates',
                 defaultLanguage: 'en',
                 defaultUnit: 'btc',
                 subjectPrefix: '',
@@ -225,7 +225,7 @@ describe('Push notifications', function() {
               storage: helpers.getStorage(),
               request: requestStub,
               pushNotificationsOpts: {
-                templatePath: '../../templates',
+                templatePath: 'templates',
                 defaultLanguage: 'en',
                 defaultUnit: 'btc',
                 subjectPrefix: '',
@@ -478,7 +478,7 @@ describe('Push notifications', function() {
             storage: helpers.getStorage(),
             request: requestStub,
             pushNotificationsOpts: {
-              templatePath: '../../templates',
+              templatePath: 'templates',
               defaultLanguage: 'en',
               defaultUnit: 'btc',
               subjectPrefix: '',

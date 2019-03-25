@@ -16,8 +16,8 @@ interface IAddressManager {
 export class AddressManager {
   version: number;
   derivationStrategy: string;
-  receiveAddressIndex: number;
-  changeAddressIndex: number;
+  receiveAddressIndex: number = 0;
+  changeAddressIndex: number = 0;
   copayerIndex: number;
   skippedPaths: Array<{ path: string; isChange: boolean }>;
 
@@ -52,8 +52,8 @@ export class AddressManager {
     x.version = obj.version;
     x.derivationStrategy =
       obj.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
-    x.receiveAddressIndex = obj.receiveAddressIndex;
-    x.changeAddressIndex = obj.changeAddressIndex;
+    x.receiveAddressIndex = obj.receiveAddressIndex || 0;
+    x.changeAddressIndex = obj.changeAddressIndex || 0;
     x.copayerIndex = obj.copayerIndex;
 
     // this is not stored, only temporary.
