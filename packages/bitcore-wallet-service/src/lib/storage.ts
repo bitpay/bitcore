@@ -1,11 +1,11 @@
 'use strict';
 
+import * as async from 'async';
 import * as crypto from 'crypto';
 import * as _ from 'lodash';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
 import { Wallet } from './model/wallet';
-import * as async from 'async';
 
 var log = require('npmlog');
 log.debug = log.verbose;
@@ -166,7 +166,7 @@ export class Storage {
 
     this.db.collection(collections.WALLETS).findOne(
       {
-        id: id
+        id
       },
       function(err, result) {
         if (err) return cb(err);
@@ -233,7 +233,7 @@ export class Storage {
   fetchCopayerLookup(copayerId, cb) {
     this.db.collection(collections.COPAYERS_LOOKUP).findOne(
       {
-        copayerId: copayerId
+        copayerId
       },
       function(err, result) {
         if (err) return cb(err);
@@ -280,7 +280,7 @@ export class Storage {
     this.db.collection(collections.TXS).findOne(
       {
         id: txProposalId,
-        walletId: walletId
+        walletId
       },
       function(err, result) {
         if (err) return cb(err);
@@ -322,8 +322,8 @@ export class Storage {
       .collection(collections.TXS)
       .find(
         {
-          walletId: walletId,
-          creatorId: creatorId
+          walletId,
+          creatorId
         },
         {
           limit: limit || 5
@@ -348,7 +348,7 @@ export class Storage {
     self.db
       .collection(collections.TXS)
       .find({
-        walletId: walletId,
+        walletId,
         isPending: true
       })
       .sort({
@@ -382,7 +382,7 @@ export class Storage {
     if (_.isNumber(opts.maxTs)) tsFilter.$lte = opts.maxTs;
 
     var filter: { walletId: string; createdOn?: typeof tsFilter } = {
-      walletId: walletId
+      walletId
     };
     if (!_.isEmpty(tsFilter)) filter.createdOn = tsFilter;
 
@@ -427,7 +427,7 @@ export class Storage {
       status: string;
       broadcastedOn?: typeof tsFilter;
     } = {
-      walletId: walletId,
+      walletId,
       status: 'broadcasted'
     };
     if (!_.isEmpty(tsFilter)) filter.broadcastedOn = tsFilter;
@@ -473,7 +473,7 @@ export class Storage {
     this.db
       .collection(collections.NOTIFICATIONS)
       .find({
-        walletId: walletId,
+        walletId,
         id: {
           $gt: minId
         }
@@ -507,7 +507,7 @@ export class Storage {
     this.db.collection(collections.TXS).update(
       {
         id: txp.id,
-        walletId: walletId
+        walletId
       },
       txp.toObject(),
       {
@@ -522,7 +522,7 @@ export class Storage {
     this.db.collection(collections.TXS).remove(
       {
         id: txProposalId,
-        walletId: walletId
+        walletId
       },
       {
         w: 1
@@ -545,7 +545,7 @@ export class Storage {
           );
         },
         function(next) {
-          var otherCollections = _.without(
+          var otherCollections: string[] = _.without(
             _.values(collections),
             collections.WALLETS
           );
@@ -554,7 +554,7 @@ export class Storage {
             function(col, next) {
               self.db.collection(col).remove(
                 {
-                  walletId: walletId
+                  walletId
                 },
                 next
               );
@@ -572,7 +572,7 @@ export class Storage {
     this.db
       .collection(collections.ADDRESSES)
       .find({
-        walletId: walletId
+        walletId
       })
       .sort({
         createdOn: 1
@@ -589,7 +589,7 @@ export class Storage {
     var self = this;
 
     var cursor = self.db.collection(collections.ADDRESSES).find({
-      walletId: walletId
+      walletId
     });
 
     cursor.on('end', function() {
@@ -623,7 +623,7 @@ export class Storage {
     this.db
       .collection(collections.ADDRESSES)
       .find({
-        walletId: walletId,
+        walletId,
         beRegistered: null
       })
       .toArray(function(err, result) {
@@ -639,7 +639,7 @@ export class Storage {
     this.db
       .collection(collections.ADDRESSES)
       .find({
-        walletId: walletId,
+        walletId,
         createdOn: {
           $gte: fromTs
         }
@@ -701,7 +701,7 @@ export class Storage {
       function() {
         self.db.collection(collections.ADDRESSES).update(
           {
-            walletId: walletId
+            walletId
           },
           { $set: { beRegistered: null } },
           {
@@ -740,8 +740,8 @@ export class Storage {
 
     this.db.collection(collections.ADDRESSES).findOne(
       {
-        walletId: walletId,
-        address: address
+        walletId,
+        address
       },
       function(err, result) {
         if (err) return cb(err);
@@ -759,7 +759,7 @@ export class Storage {
       .collection(collections.ADDRESSES)
       .find(
         {
-          walletId: walletId,
+          walletId,
           address: { $in: addresses }
         },
         {}
@@ -778,7 +778,7 @@ export class Storage {
     this.db
       .collection(collections.ADDRESSES)
       .find({
-        address: address
+        address
       })
       .toArray(function(err, result) {
         if (err) return cb(err);
@@ -800,14 +800,14 @@ export class Storage {
     this.db
       .collection(collections.PREFERENCES)
       .find({
-        walletId: walletId
+        walletId
       })
       .toArray(function(err, result) {
         if (err) return cb(err);
 
         if (copayerId) {
           result = _.find(result, {
-            copayerId: copayerId
+            copayerId
           });
         }
         if (!result) return cb();
@@ -872,7 +872,7 @@ export class Storage {
   fetchEmailByNotification(notificationId, cb) {
     this.db.collection(collections.EMAIL_QUEUE).findOne(
       {
-        notificationId: notificationId
+        notificationId
       },
       function(err, result) {
         if (err) return cb(err);
@@ -887,7 +887,7 @@ export class Storage {
     var self = this;
     self.db.collection(collections.CACHE).findOne(
       {
-        walletId: walletId,
+        walletId,
         type: 'historyCacheStatusV8',
         key: null
       },
@@ -914,7 +914,7 @@ export class Storage {
     var self = this;
     self.db.collection(collections.CACHE).findOne(
       {
-        walletId: walletId,
+        walletId,
         type: 'addressChecked',
         key: null
       },
@@ -928,15 +928,15 @@ export class Storage {
   setWalletAddressChecked(walletId, totalAddresses, cb) {
     this.db.collection(collections.CACHE).update(
       {
-        walletId: walletId,
+        walletId,
         type: 'addressChecked',
         key: null
       },
       {
-        walletId: walletId,
+        walletId,
         type: 'addressChecked',
         key: null,
-        totalAddresses: totalAddresses
+        totalAddresses
       },
       {
         w: 1,
@@ -964,7 +964,7 @@ export class Storage {
       if (err) return cb(err);
 
       if (_.isNull(cacheStatus.tipId)) return cb(null, []);
-      //console.log('Cache status in GET:', cacheStatus); //TODO
+      // console.log('Cache status in GET:', cacheStatus); //TODO
 
       var firstPosition = cacheStatus.tipIndex - skip - limit + 1;
       var lastPosition = cacheStatus.tipIndex - skip + 1;
@@ -972,12 +972,12 @@ export class Storage {
       if (firstPosition < 0) firstPosition = 0;
       if (lastPosition <= 0) return cb(null, []);
 
-      //console.log('[storage.js.750:first/lastPosition:]',firstPosition + '/'+lastPosition); //TODO
+      // console.log('[storage.js.750:first/lastPosition:]',firstPosition + '/'+lastPosition); //TODO
 
       self.db
         .collection(collections.CACHE)
         .find({
-          walletId: walletId,
+          walletId,
           type: 'historyCacheV8',
           key: {
             $gte: firstPosition,
@@ -1000,7 +1000,7 @@ export class Storage {
     var self = this;
     self.db.collection(collections.CACHE).deleteMany(
       {
-        walletId: walletId
+        walletId
       },
       {},
       cb
@@ -1016,16 +1016,16 @@ export class Storage {
     // only 1 per wallet is allowed
     self.db.collection(collections.CACHE).update(
       {
-        walletId: walletId,
+        walletId,
         type: 'historyStream',
         key: null
       },
       {
-        walletId: walletId,
+        walletId,
         type: 'historyStream',
         key: null,
-        streamKey: streamKey,
-        items: items
+        streamKey,
+        items
       },
       {
         w: 1,
@@ -1039,7 +1039,7 @@ export class Storage {
     var self = this;
     self.db.collection(collections.CACHE).deleteMany(
       {
-        walletId: walletId,
+        walletId,
         type: 'historyStream',
         key: null
       },
@@ -1052,7 +1052,7 @@ export class Storage {
     var self = this;
     self.db.collection(collections.CACHE).findOne(
       {
-        walletId: walletId,
+        walletId,
         type: 'historyStream',
         key: null
       },
@@ -1090,10 +1090,10 @@ export class Storage {
       function(item: { position: number; code: string; value: string }, next) {
         pos = item.position;
         delete item.position;
-        //console.log('STORING [storage.js.804:at:]',pos, item.blockheight);
+        // console.log('STORING [storage.js.804:at:]',pos, item.blockheight);
         self.db.collection(collections.CACHE).insert(
           {
-            walletId: walletId,
+            walletId,
             type: 'historyCacheV8',
             key: pos,
             tx: item
@@ -1104,7 +1104,7 @@ export class Storage {
       function(err) {
         if (err) return cb(err);
 
-        type CacheItem = { txid?: string; blockheight?: number };
+        interface CacheItem { txid?: string; blockheight?: number; }
         var first: CacheItem = _.first(items);
         var last: CacheItem = _.last(items);
 
@@ -1134,17 +1134,17 @@ export class Storage {
 
         log.debug(
           `Cache Last Item: ${last.txid} blockh: ${
-            last.blockheight
+          last.blockheight
           } updatedh: ${updateHeight}`
         );
         self.db.collection(collections.CACHE).update(
           {
-            walletId: walletId,
+            walletId,
             type: 'historyCacheStatusV8',
             key: null
           },
           {
-            walletId: walletId,
+            walletId,
             type: 'historyCacheStatusV8',
             key: null,
             updatedOn: Date.now(),
@@ -1193,7 +1193,7 @@ export class Storage {
       .collection(collections.FIAT_RATES)
       .find({
         provider: providerName,
-        code: code,
+        code,
         ts: {
           $lte: ts
         }
@@ -1213,8 +1213,8 @@ export class Storage {
 
     self.db.collection(collections.TX_NOTES).findOne(
       {
-        walletId: walletId,
-        txid: txid
+        walletId,
+        txid
       },
       function(err, result) {
         if (err) return cb(err);
@@ -1251,7 +1251,7 @@ export class Storage {
     var self = this;
 
     var filter: { walletId: string; editedOn?: { $gte: number } } = {
-      walletId: walletId
+      walletId
     };
     if (_.isNumber(opts.minTs))
       filter.editedOn = {
@@ -1291,7 +1291,7 @@ export class Storage {
 
     self.db.collection(collections.SESSIONS).findOne(
       {
-        copayerId: copayerId
+        copayerId
       },
       function(err, result) {
         if (err || !result) return cb(err);
@@ -1318,7 +1318,7 @@ export class Storage {
     this.db
       .collection(collections.PUSH_NOTIFICATION_SUBS)
       .find({
-        copayerId: copayerId
+        copayerId
       })
       .toArray(function(err, result) {
         if (err) return cb(err);
@@ -1350,8 +1350,8 @@ export class Storage {
   removePushNotificationSub(copayerId, token, cb) {
     this.db.collection(collections.PUSH_NOTIFICATION_SUBS).remove(
       {
-        copayerId: copayerId,
-        token: token
+        copayerId,
+        token
       },
       {
         w: 1
@@ -1399,8 +1399,8 @@ export class Storage {
   removeTxConfirmationSub(copayerId, txid, cb) {
     this.db.collection(collections.TX_CONFIRMATION_SUBS).remove(
       {
-        copayerId: copayerId,
-        txid: txid
+        copayerId,
+        txid
       },
       {
         w: 1
@@ -1411,7 +1411,7 @@ export class Storage {
 
   _dump(cb, fn) {
     fn = fn || console.log;
-    cb = cb || function() {};
+    cb = cb || function() { };
 
     var self = this;
     this.db.collections(function(err, collections) {
@@ -1443,7 +1443,7 @@ export class Storage {
     var now = Date.now();
     self.db.collection(collections.CACHE).findOne(
       {
-        key: key,
+        key,
         walletId: null,
         type: null
       },
@@ -1462,7 +1462,7 @@ export class Storage {
     var now = Date.now();
     this.db.collection(collections.CACHE).update(
       {
-        key: key,
+        key,
         walletId: null,
         type: null
       },
@@ -1484,7 +1484,7 @@ export class Storage {
     var now = Date.now();
     this.db.collection(collections.CACHE).remove(
       {
-        key: key,
+        key,
         walletId: null,
         type: null
       },
@@ -1495,14 +1495,14 @@ export class Storage {
     );
   }
 
-  walletCheck = async function(params) {
+  walletCheck = async params => {
     let { walletId, bch } = params;
     var self = this;
 
     return new Promise(resolve => {
       const addressStream = self.db
         .collection(collections.ADDRESSES)
-        .find({ walletId: walletId });
+        .find({ walletId });
       let sum = 0;
       let count = 0;
       let lastAddress;
@@ -1530,7 +1530,7 @@ export class Storage {
         resolve({ lastAddress, sum });
       });
     });
-  };
+  }
 
   acquireLock(key, expireTs, cb) {
     this.db.collection(collections.LOCKS).insert(

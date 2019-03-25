@@ -88,7 +88,7 @@ export class Copayer {
       opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
     if (AddressManager.supportsCopayerBranches(derivationStrategy)) {
       x.addressManager = AddressManager.fromObj({
-        derivationStrategy: derivationStrategy,
+        derivationStrategy,
         copayerIndex: opts.copayerIndex
       });
     }

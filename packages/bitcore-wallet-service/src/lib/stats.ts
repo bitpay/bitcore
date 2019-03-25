@@ -2,8 +2,8 @@
 
 'use strict';
 
-import * as _ from 'lodash';
 import * as async from 'async';
+import * as _ from 'lodash';
 import moment from 'moment';
 import * as mongodb from 'mongodb';
 var $ = require('preconditions').singleton();
@@ -120,7 +120,7 @@ export class Stats {
         var value = {
           count: 1
         };
-        //emit(key, value);
+        // emit(key, value);
       };
       var reduce = function(k, v) {
         var count = 0;
@@ -128,7 +128,7 @@ export class Stats {
           count += v[i].count;
         }
         return {
-          count: count
+          count
         };
       };
       var opts = {
@@ -169,7 +169,7 @@ export class Stats {
             byDay: _.map(results, function(record) {
               var day = moment(record._id.day).format('YYYYMMDD');
               return {
-                day: day,
+                day,
                 coin: record._id.coin,
                 count: record.value.count
               };
@@ -244,7 +244,7 @@ export class Stats {
           count: 1,
           amount: this.amount
         };
-        //emit(key, value);
+        // emit(key, value);
       };
       var reduce = function(k, v) {
         var count = 0,
@@ -254,8 +254,8 @@ export class Stats {
           amount += v[i].amount;
         }
         return {
-          count: count,
-          amount: amount
+          count,
+          amount
         };
       };
       var opts = {
@@ -301,12 +301,12 @@ export class Stats {
           _.each(results, function(record) {
             var day = moment(record._id.day).format('YYYYMMDD');
             stats.nbByDay.push({
-              day: day,
+              day,
               coin: record._id.coin,
               count: record.value.count
             });
             stats.amountByDay.push({
-              day: day,
+              day,
               amount: record.value.amount
             });
           });

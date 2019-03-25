@@ -209,13 +209,17 @@ export class Utils {
     agent = agent.toLowerCase();
 
     var w;
-    if ((w = agent.indexOf('copay')) >= 0) {
+    w = agent.indexOf('copay');
+    if (w >= 0) {
       v.app = 'copay';
-    } else if ((w = agent.indexOf('bitpay')) >= 0) {
-      v.app = 'bitpay';
     } else {
-      v.app = 'other';
-      return v;
+      w = agent.indexOf('bitpay');
+      if (w >= 0) {
+        v.app = 'bitpay';
+      } else {
+        v.app = 'other';
+        return v;
+      }
     }
 
     var version = agent.substr(w + v.app.length);

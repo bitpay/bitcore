@@ -27,14 +27,14 @@ export interface ITxProposal {
   id: number;
   walletId: string;
   creatorId: string;
-  outputs: Array<any>;
+  outputs: any[];
   toAddress: string;
   amount: number;
   message: string;
   payProUrl: string;
   proposalSignature: string;
   changeAddress: string;
-  inputs: Array<any>;
+  inputs: any[];
   requiredSignatures: number;
   requiredRejections: number;
   walletN: number;
@@ -42,7 +42,7 @@ export interface ITxProposal {
   txid: string;
   broadcastedOn: string;
   inputPaths: string;
-  actions: Array<any>;
+  actions: any[];
   outputOrder: number;
   coin: string;
   network: string;
@@ -62,14 +62,14 @@ export class TxProposalLegacy {
   id: number;
   walletId: string;
   creatorId: string;
-  outputs: Array<any>;
+  outputs: any[];
   toAddress: string;
   amount: number;
   message: string;
   payProUrl: string;
   proposalSignature: string;
   changeAddress: string;
-  inputs: Array<any>;
+  inputs: any[];
   requiredSignatures: number;
   requiredRejections: number;
   walletN: number;
@@ -77,7 +77,7 @@ export class TxProposalLegacy {
   txid: string;
   broadcastedOn: string;
   inputPaths: string;
-  actions: Array<any>;
+  actions: any[];
   outputOrder: number;
   coin: string;
   network: string;
@@ -141,7 +141,7 @@ export class TxProposalLegacy {
     x.customData = obj.customData;
 
     return x;
-  };
+  }
 
   toObject = function() {
     var x = _.cloneDeep(this);
@@ -195,17 +195,17 @@ export class TxProposalLegacy {
 
   getActionBy = function(copayerId) {
     return _.find(this.actions, {
-      copayerId: copayerId
+      copayerId
     });
   };
 
   addAction = function(copayerId, type, comment, signatures, xpub) {
     var action = TxProposalAction.create({
-      copayerId: copayerId,
-      type: type,
-      signatures: signatures,
-      xpub: xpub,
-      comment: comment
+      copayerId,
+      type,
+      signatures,
+      xpub,
+      comment
     });
     this.actions.push(action);
     this._updateStatus();

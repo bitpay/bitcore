@@ -4,7 +4,7 @@ export class ClientError extends Error {
   code: string;
   message: string;
   constructor(...args) {
-    super()
+    super();
     switch (args.length) {
       case 0:
         this.code = 'BADREQUEST';

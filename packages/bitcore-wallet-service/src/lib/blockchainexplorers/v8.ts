@@ -1,10 +1,10 @@
 'use strict';
 
-import * as request from 'request-promise-native';
-import { Client } from './v8/client';
-import io = require('socket.io-client');
-import * as _ from 'lodash';
 import * as async from 'async';
+import * as _ from 'lodash';
+import * as request from 'request-promise-native';
+import io = require('socket.io-client');
+import { Client } from './v8/client';
 var $ = require('preconditions').singleton();
 var log = require('npmlog');
 log.debug = log.verbose;
@@ -29,7 +29,7 @@ export class V8 {
   coin: string;
   network: string;
   v8network: string;
-  //v8 is always cashaddr
+  // v8 is always cashaddr
   addressFormat: string;
   apiPrefix: string;
   host: string;
@@ -51,7 +51,7 @@ export class V8 {
     this.network = opts.network || 'livenet';
     this.v8network = v8network(this.network);
 
-    //v8 is always cashaddr
+    // v8 is always cashaddr
     this.addressFormat = this.coin == 'bch' ? 'cashaddr' : null;
 
     var coin = this.coin.toUpperCase();
@@ -138,7 +138,7 @@ export class V8 {
     console.time(k);
     client
       .importAddresses({
-        payload: payload,
+        payload,
         pubKey: wallet.beAuthPublicKey2
       })
       .then(ret => {
@@ -165,7 +165,7 @@ export class V8 {
     client
       .register({
         authKey: wallet.beAuthPrivateKey2,
-        payload: payload
+        payload
       })
       .then(ret => {
         return cb(null, ret);
@@ -256,7 +256,7 @@ export class V8 {
    */
   broadcast(rawTx, cb) {
     const payload = {
-      rawTx: rawTx,
+      rawTx,
       network: this.v8network,
       chain: this.coin.toUpperCase()
     };
@@ -271,7 +271,7 @@ export class V8 {
         return cb(null, ret.txid);
       })
       .catch(err => {
-        console.log('[v8.js.221:err:]', err); //TODO
+        console.log('[v8.js.221:err:]', err); // TODO
         return cb(err);
       });
   }
@@ -279,10 +279,10 @@ export class V8 {
   // This is for internal usage, addresses should be returned on internal representation
   getTransaction(txid, cb) {
     var self = this;
-    console.log('[v8.js.207] GET TX', txid); //TODO
+    console.log('[v8.js.207] GET TX', txid); // TODO
     var client = this._getClient();
     client
-      .getTx({ txid: txid })
+      .getTx({ txid })
       .then(tx => {
         if (!tx || _.isEmpty(tx)) {
           return cb();
@@ -301,11 +301,11 @@ export class V8 {
 
   getAddressUtxos(address, height, cb) {
     var self = this;
-    console.log(' GET ADDR UTXO', address, height); //TODO
+    console.log(' GET ADDR UTXO', address, height); // TODO
     var client = this._getClient();
 
     client
-      .getAddressTxos({ address: address, unspent: true })
+      .getAddressTxos({ address, unspent: true })
       .then(utxos => {
         return cb(null, self._transformUtxos(utxos, height));
       })
@@ -317,7 +317,7 @@ export class V8 {
     if (startBlock) {
       log.debug(`getTxs: startBlock ${startBlock}`);
     } else {
-      log.debug(`getTxs: from 0`);
+      log.debug('getTxs: from 0');
     }
     var self = this;
 
@@ -382,7 +382,7 @@ export class V8 {
     var self = this;
 
     var url = this.baseUrl + '/address/' + address + '/txs?limit=1';
-    console.log('[v8.js.328:url:] CHECKING ADDRESS ACTIVITY', url); //TODO
+    console.log('[v8.js.328:url:] CHECKING ADDRESS ACTIVITY', url); // TODO
     this.request
       .get(url, {})
       .then(ret => {

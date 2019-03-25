@@ -15,7 +15,7 @@ export interface IAddress {
   walletId: string;
   isChange: boolean;
   path: string;
-  publicKeys: Array<string>;
+  publicKeys: string[];
   coin: string;
   network: string;
   type: string;
@@ -30,7 +30,7 @@ export class Address {
   walletId: string;
   isChange: boolean;
   path: string;
-  publicKeys: Array<string>;
+  publicKeys: string[];
   coin: string;
   network: string;
   type: string;
@@ -128,7 +128,7 @@ export class Address {
     return {
       // bws still use legacy addresses for BCH
       address: addrStr,
-      path: path,
+      path,
       publicKeys: _.invokeMap(publicKeys, 'toString')
     };
   }
@@ -156,10 +156,10 @@ export class Address {
     );
     return Address.create(
       _.extend(raw, {
-        coin: coin,
-        walletId: walletId,
+        coin,
+        walletId,
         type: scriptType,
-        isChange: isChange
+        isChange
       })
     );
   }

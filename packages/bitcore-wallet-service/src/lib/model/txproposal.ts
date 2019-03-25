@@ -1,7 +1,7 @@
 'use strict';
 
-import { TxProposalAction } from "./txproposalaction";
-import { TxProposalLegacy } from "./txproposal_legacy";
+import { TxProposalLegacy } from './txproposal_legacy';
+import { TxProposalAction } from './txproposalaction';
 var _ = require('lodash');
 var $ = require('preconditions').singleton();
 var Uuid = require('uuid');
@@ -32,7 +32,7 @@ export interface ITxProposal {
   message: string;
   payProUrl: string;
   changeAddress: string;
-  inputs: Array<any>;
+  inputs: any[];
   outputs: Array<{
     amount: number;
     address: string;
@@ -76,7 +76,7 @@ export class TxProposal {
   message: string;
   payProUrl: string;
   changeAddress: string;
-  inputs: Array<any>;
+  inputs: any[];
   outputs: Array<{
     amount: number;
     address: string;
@@ -207,7 +207,7 @@ export class TxProposal {
     x.proposalSignaturePubKeySig = obj.proposalSignaturePubKeySig;
 
     return x;
-  };
+  }
 
   toObject = function() {
     var x = _.cloneDeep(this);
@@ -411,17 +411,17 @@ export class TxProposal {
    */
   getActionBy = function(copayerId) {
     return _.find(this.actions, {
-      copayerId: copayerId
+      copayerId
     });
   };
 
   addAction = function(copayerId, type, comment, signatures, xpub) {
     var action = TxProposalAction.create({
-      copayerId: copayerId,
-      type: type,
-      signatures: signatures,
-      xpub: xpub,
-      comment: comment
+      copayerId,
+      type,
+      signatures,
+      xpub,
+      comment
     });
     this.actions.push(action);
     this._updateStatus();
@@ -445,15 +445,16 @@ export class TxProposal {
         var pub = x.deriveChild(self.inputPaths[i]).publicKey;
         var s = {
           inputIndex: i,
-          signature: signature,
+          signature,
           sigtype:
+            // tslint:disable-next-line:no-bitwise
             bitcore.crypto.Signature.SIGHASH_ALL |
             bitcore.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub
         };
         tx.inputs[i].addSignature(tx, s);
         i++;
-      } catch (e) {}
+      } catch (e) { }
     });
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');

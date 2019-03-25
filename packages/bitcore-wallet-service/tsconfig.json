@@ -1,6 +1,10 @@
 {
   "compilerOptions": {
-    "lib": ["es5", "es6", "es2017"],
+    "lib": [
+      "es5",
+      "es6",
+      "es2017"
+    ],
     "noImplicitAny": false,
     "removeComments": true,
     "declaration": true,
@@ -11,10 +15,15 @@
     "moduleResolution": "node",
     "esModuleInterop": true,
     "target": "es5",
-    "typeRoots": ["./node_modules/@types"],
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
     "baseUrl": ".",
     "paths": {
-      "*": ["*", "./src/*"]
+      "*": [
+        "*",
+        "./src/*"
+      ]
     },
     "outDir": "ts_build",
     "sourceMap": true
