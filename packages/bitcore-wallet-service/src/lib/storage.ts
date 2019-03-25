@@ -1,25 +1,20 @@
 'use strict';
 
 import * as async from 'async';
-import * as crypto from 'crypto';
-import * as _ from 'lodash';
+import _ from 'lodash';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
 import { Wallet } from './model/wallet';
 
-var log = require('npmlog');
+// only for migration
+const BCHAddressTranslator = require('./bchaddresstranslator');
+const Model = require('./model');
+const $ = require('preconditions').singleton();
+let log = require('npmlog');
 log.debug = log.verbose;
 log.disableColor();
-var util = require('util');
-var $ = require('preconditions').singleton();
-var Bitcore = require('bitcore-lib');
 
-var Model = require('./model');
-
-// only for migration
-var BCHAddressTranslator = require('./bchaddresstranslator');
-
-var collections = {
+const collections = {
   WALLETS: 'wallets',
   TXS: 'txs',
   ADDRESSES: 'addresses',
@@ -130,22 +125,20 @@ export class Storage {
   }
 
   connect(opts, cb) {
-    var self = this;
-
     opts = opts || {};
 
     if (this.db) return cb();
 
-    var config = opts.mongoDb || {};
+    const config = opts.mongoDb || {};
     mongodb.MongoClient.connect(
       config.uri,
-      function(err, db) {
+      (err, db) => {
         if (err) {
           log.error('Unable to connect to the mongoDB. Check the credentials.');
           return cb(err);
         }
-        self.db = db;
-        self._createIndexes();
+        this.db = db;
+        this._createIndexes();
         console.log('Connection established to mongoDB');
         return cb();
       }
@@ -153,10 +146,9 @@ export class Storage {
   }
 
   disconnect(cb) {
-    var self = this;
-    this.db.close(true, function(err) {
+    this.db.close(true, (err) => {
       if (err) return cb(err);
-      self.db = null;
+      this.db = null;
       return cb();
     });
   }
@@ -168,7 +160,7 @@ export class Storage {
       {
         id
       },
-      function(err, result) {
+      (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
         return cb(null, Model.Wallet.fromObj(result));
@@ -191,9 +183,7 @@ export class Storage {
   }
 
   storeWalletAndUpdateCopayersLookup(wallet, cb) {
-    var self = this;
-
-    var copayerLookups = _.map(wallet.copayers, function(copayer) {
+    const copayerLookups = _.map(wallet.copayers, (copayer) => {
       try {
         $.checkState(copayer.requestPubKeys);
       } catch (e) {
@@ -214,16 +204,16 @@ export class Storage {
       {
         w: 1
       },
-      function(err) {
+      (err) => {
         if (err) return cb(err);
-        self.db.collection(collections.COPAYERS_LOOKUP).insert(
+        this.db.collection(collections.COPAYERS_LOOKUP).insert(
           copayerLookups,
           {
             w: 1
           },
-          function(err) {
+          (err) => {
             if (err) return cb(err);
-            return self.storeWallet(wallet, cb);
+            return this.storeWallet(wallet, cb);
           }
         );
       }
@@ -235,7 +225,7 @@ export class Storage {
       {
         copayerId
       },
-      function(err, result) {
+      (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
 
@@ -255,14 +245,12 @@ export class Storage {
 
   // TODO: should be done client-side
   _completeTxData(walletId, txs, cb) {
-    var self = this;
-
-    self.fetchWallet(walletId, function(err, wallet) {
+    this.fetchWallet(walletId, (err, wallet) => {
       if (err) return cb(err);
-      _.each([].concat(txs), function(tx) {
+      _.each([].concat(txs), (tx) => {
         tx.derivationStrategy = wallet.derivationStrategy || 'BIP45';
         tx.creatorName = wallet.getCopayer(tx.creatorId).name;
-        _.each(tx.actions, function(action) {
+        _.each(tx.actions, (action) => {
           action.copayerName = wallet.getCopayer(action.copayerId).name;
         });
 
@@ -274,7 +262,6 @@ export class Storage {
 
   // TODO: remove walletId from signature
   fetchTx(walletId, txProposalId, cb) {
-    var self = this;
     if (!this.db) return cb();
 
     this.db.collection(collections.TXS).findOne(
@@ -282,10 +269,10 @@ export class Storage {
         id: txProposalId,
         walletId
       },
-      function(err, result) {
+      (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        return self._completeTxData(
+        return this._completeTxData(
           walletId,
           Model.TxProposal.fromObj(result),
           cb
@@ -295,18 +282,17 @@ export class Storage {
   }
 
   fetchTxByHash(hash, cb) {
-    var self = this;
     if (!this.db) return cb();
 
     this.db.collection(collections.TXS).findOne(
       {
         txid: hash
       },
-      function(err, result) {
+      (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
 
-        return self._completeTxData(
+        return this._completeTxData(
           result.walletId,
           Model.TxProposal.fromObj(result),
           cb
@@ -316,8 +302,6 @@ export class Storage {
   }
 
   fetchLastTxs(walletId, creatorId, limit, cb) {
-    var self = this;
-
     this.db
       .collection(collections.TXS)
       .find(
@@ -332,10 +316,10 @@ export class Storage {
       .sort({
         createdOn: -1
       })
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        var txs = _.map(result, function(tx) {
+        const txs = _.map(result, (tx) => {
           return Model.TxProposal.fromObj(tx);
         });
         return cb(null, txs);
@@ -343,9 +327,7 @@ export class Storage {
   }
 
   fetchPendingTxs(walletId, cb) {
-    var self = this;
-
-    self.db
+    this.db
       .collection(collections.TXS)
       .find({
         walletId,
@@ -354,13 +336,13 @@ export class Storage {
       .sort({
         createdOn: -1
       })
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        var txs = _.map(result, function(tx) {
+        const txs = _.map(result, (tx) => {
           return Model.TxProposal.fromObj(tx);
         });
-        return self._completeTxData(walletId, txs, cb);
+        return this._completeTxData(walletId, txs, cb);
       });
   }
 
@@ -373,20 +355,18 @@ export class Storage {
    * @param opts.limit
    */
   fetchTxs(walletId, opts, cb) {
-    var self = this;
-
     opts = opts || {};
 
-    var tsFilter: { $gte?: number; $lte?: number } = {};
+    const tsFilter: { $gte?: number; $lte?: number } = {};
     if (_.isNumber(opts.minTs)) tsFilter.$gte = opts.minTs;
     if (_.isNumber(opts.maxTs)) tsFilter.$lte = opts.maxTs;
 
-    var filter: { walletId: string; createdOn?: typeof tsFilter } = {
+    const filter: { walletId: string; createdOn?: typeof tsFilter } = {
       walletId
     };
     if (!_.isEmpty(tsFilter)) filter.createdOn = tsFilter;
 
-    var mods: { limit?: number } = {};
+    const mods: { limit?: number } = {};
     if (_.isNumber(opts.limit)) mods.limit = opts.limit;
 
     this.db
@@ -395,13 +375,13 @@ export class Storage {
       .sort({
         createdOn: -1
       })
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        var txs = _.map(result, function(tx) {
+        const txs = _.map(result, (tx) => {
           return Model.TxProposal.fromObj(tx);
         });
-        return self._completeTxData(walletId, txs, cb);
+        return this._completeTxData(walletId, txs, cb);
       });
   }
 
@@ -414,15 +394,13 @@ export class Storage {
    * @param opts.limit
    */
   fetchBroadcastedTxs(walletId, opts, cb) {
-    var self = this;
-
     opts = opts || {};
 
-    var tsFilter: { $gte?: number; $lte?: number } = {};
+    const tsFilter: { $gte?: number; $lte?: number } = {};
     if (_.isNumber(opts.minTs)) tsFilter.$gte = opts.minTs;
     if (_.isNumber(opts.maxTs)) tsFilter.$lte = opts.maxTs;
 
-    var filter: {
+    const filter: {
       walletId: string;
       status: string;
       broadcastedOn?: typeof tsFilter;
@@ -432,7 +410,7 @@ export class Storage {
     };
     if (!_.isEmpty(tsFilter)) filter.broadcastedOn = tsFilter;
 
-    var mods: { limit?: number } = {};
+    const mods: { limit?: number } = {};
     if (_.isNumber(opts.limit)) mods.limit = opts.limit;
 
     this.db
@@ -441,13 +419,13 @@ export class Storage {
       .sort({
         createdOn: -1
       })
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        var txs = _.map(result, function(tx) {
+        const txs = _.map(result, (tx) => {
           return Model.TxProposal.fromObj(tx);
         });
-        return self._completeTxData(walletId, txs, cb);
+        return this._completeTxData(walletId, txs, cb);
       });
   }
 
@@ -462,10 +440,7 @@ export class Storage {
     function makeId(timestamp) {
       return _.padStart(timestamp, 14, '0') + _.repeat('0', 4);
     }
-
-    var self = this;
-
-    var minId = makeId(minTs);
+    let minId = makeId(minTs);
     if (notificationId) {
       minId = notificationId > minId ? notificationId : minId;
     }
@@ -481,10 +456,10 @@ export class Storage {
       .sort({
         id: 1
       })
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        var notifications = _.map(result, function(notification) {
+        const notifications = _.map(result, (notification) => {
           return Model.Notification.fromObj(notification);
         });
         return cb(null, notifications);
@@ -532,27 +507,25 @@ export class Storage {
   }
 
   removeWallet(walletId, cb) {
-    var self = this;
-
     async.parallel(
       [
-        function(next) {
-          self.db.collection(collections.WALLETS).remove(
+        (next) => {
+          this.db.collection(collections.WALLETS).remove(
             {
               id: walletId
             },
             next
           );
         },
-        function(next) {
-          var otherCollections: string[] = _.without(
+        (next) => {
+          const otherCollections: string[] = _.without(
             _.values(collections),
             collections.WALLETS
           );
           async.each(
             otherCollections,
-            function(col, next) {
-              self.db.collection(col).remove(
+            (col, next) => {
+              this.db.collection(col).remove(
                 {
                   walletId
                 },
@@ -568,7 +541,6 @@ export class Storage {
   }
 
   fetchAddresses(walletId, cb) {
-    var self = this;
     this.db
       .collection(collections.ADDRESSES)
       .find({
@@ -577,7 +549,7 @@ export class Storage {
       .sort({
         createdOn: 1
       })
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
 
@@ -586,22 +558,20 @@ export class Storage {
   }
 
   migrateToCashAddr(walletId, cb) {
-    var self = this;
-
-    var cursor = self.db.collection(collections.ADDRESSES).find({
+    const cursor = this.db.collection(collections.ADDRESSES).find({
       walletId
     });
 
-    cursor.on('end', function() {
+    cursor.on('end', () => {
       console.log(`Migration to cash address of ${walletId} Finished`);
-      return self.clearWalletCache(walletId, cb);
+      return this.clearWalletCache(walletId, cb);
     });
 
-    cursor.on('err', function(err) {
+    cursor.on('err', (err) => {
       return cb(err);
     });
 
-    cursor.on('data', function(doc) {
+    cursor.on('data', (doc) => {
       cursor.pause();
       let x;
       try {
@@ -610,7 +580,7 @@ export class Storage {
         return cb(e);
       }
 
-      self.db
+      this.db
         .collection(collections.ADDRESSES)
         .update({ _id: doc._id }, { $set: { address: x } }, { multi: true });
       cursor.resume();
@@ -618,15 +588,13 @@ export class Storage {
   }
 
   fetchUnsyncAddresses(walletId, cb) {
-    var self = this;
-
     this.db
       .collection(collections.ADDRESSES)
       .find({
         walletId,
         beRegistered: null
       })
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
         return cb(null, result);
@@ -634,8 +602,6 @@ export class Storage {
   }
 
   fetchNewAddresses(walletId, fromTs, cb) {
-    var self = this;
-
     this.db
       .collection(collections.ADDRESSES)
       .find({
@@ -647,7 +613,7 @@ export class Storage {
       .sort({
         createdOn: 1
       })
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
         return cb(null, result.map(Model.Address.fromObj));
@@ -655,9 +621,7 @@ export class Storage {
   }
 
   storeAddress(address, cb) {
-    var self = this;
-
-    self.db.collection(collections.ADDRESSES).update(
+    this.db.collection(collections.ADDRESSES).update(
       {
         walletId: address.walletId,
         address: address.address
@@ -672,8 +636,7 @@ export class Storage {
   }
 
   markSyncedAddresses(addresses, cb) {
-    var self = this;
-    self.db.collection(collections.ADDRESSES).updateMany(
+    this.db.collection(collections.ADDRESSES).updateMany(
       {
         address: { $in: addresses }
       },
@@ -686,10 +649,8 @@ export class Storage {
     );
   }
 
-  deregisterWallet = function(walletId, cb) {
-    var self = this;
-
-    self.db.collection(collections.WALLETS).update(
+  deregisterWallet = (walletId, cb) => {
+    this.db.collection(collections.WALLETS).update(
       {
         id: walletId
       },
@@ -698,8 +659,8 @@ export class Storage {
         w: 1,
         upsert: false
       },
-      function() {
-        self.db.collection(collections.ADDRESSES).update(
+      () => {
+        this.db.collection(collections.ADDRESSES).update(
           {
             walletId
           },
@@ -707,43 +668,39 @@ export class Storage {
           {
             w: 1,
             upsert: false,
-            multi: 1
+            multi: true
           },
           () => {
-            self.clearWalletCache(walletId, cb);
+            this.clearWalletCache(walletId, cb);
           }
         );
       }
     );
-  };
+  }
 
   storeAddressAndWallet(wallet, addresses, cb) {
-    var self = this;
-
     const clonedAddresses = [].concat(addresses);
     if (_.isEmpty(addresses)) return cb();
 
-    self.db.collection(collections.ADDRESSES).insert(
+    this.db.collection(collections.ADDRESSES).insert(
       clonedAddresses,
       {
         w: 1
       },
-      function(err) {
+      (err) => {
         if (err) return cb(err);
-        self.storeWallet(wallet, cb);
+        this.storeWallet(wallet, cb);
       }
     );
   }
 
   fetchAddressByWalletId(walletId, address, cb) {
-    var self = this;
-
     this.db.collection(collections.ADDRESSES).findOne(
       {
         walletId,
         address
       },
-      function(err, result) {
+      (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
 
@@ -753,8 +710,6 @@ export class Storage {
   }
 
   fetchAddressesByWalletId(walletId, addresses, cb) {
-    var self = this;
-
     this.db
       .collection(collections.ADDRESSES)
       .find(
@@ -764,7 +719,7 @@ export class Storage {
         },
         {}
       )
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
         return cb(null, result);
@@ -772,7 +727,6 @@ export class Storage {
   }
 
   fetchAddressByCoin(coin, address, cb) {
-    var self = this;
     if (!this.db) return cb();
 
     this.db
@@ -780,11 +734,11 @@ export class Storage {
       .find({
         address
       })
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
         if (!result || _.isEmpty(result)) return cb();
         if (result.length > 1) {
-          result = _.find(result, function(address) {
+          result = _.find(result, (address) => {
             return coin == (address.coin || 'btc');
           });
         } else {
@@ -802,7 +756,7 @@ export class Storage {
       .find({
         walletId
       })
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
 
         if (copayerId) {
@@ -812,13 +766,14 @@ export class Storage {
         }
         if (!result) return cb();
 
-        var preferences = _.map([].concat(result), function(r) {
+        const preferences = _.map([].concat(result), (r) => {
           return Model.Preferences.fromObj(r);
         });
-        if (copayerId) {
-          preferences = preferences[0];
+        if (copayerId) { // TODO: review if returs are correct
+          return cb(null, preferences[0]);
+        } else {
+          return cb(null, preferences);
         }
-        return cb(null, preferences);
       });
   }
 
@@ -857,11 +812,11 @@ export class Storage {
       .find({
         status: 'fail'
       })
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
         if (!result || _.isEmpty(result)) return cb(null, []);
 
-        var emails = _.map(result, function(x) {
+        const emails = _.map(result, (x) => {
           return Model.Email.fromObj(x);
         });
 
@@ -874,7 +829,7 @@ export class Storage {
       {
         notificationId
       },
-      function(err, result) {
+      (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
 
@@ -884,14 +839,13 @@ export class Storage {
   }
 
   getTxHistoryCacheStatusV8(walletId, cb) {
-    var self = this;
-    self.db.collection(collections.CACHE).findOne(
+    this.db.collection(collections.CACHE).findOne(
       {
         walletId,
         type: 'historyCacheStatusV8',
         key: null
       },
-      function(err, result) {
+      (err, result) => {
         if (err) return cb(err);
         if (!result)
           return cb(null, {
@@ -911,14 +865,13 @@ export class Storage {
   }
 
   getWalletAddressChecked(walletId, cb) {
-    var self = this;
-    self.db.collection(collections.CACHE).findOne(
+    this.db.collection(collections.CACHE).findOne(
       {
         walletId,
         type: 'addressChecked',
         key: null
       },
-      function(err, result) {
+      (err, result) => {
         if (err || !result) return cb(err);
         return cb(null, result.totalAddresses);
       }
@@ -956,25 +909,24 @@ export class Storage {
   // In a query, tipIndex - skip - limit would be the oldest tx to be queried.
 
   getTxHistoryCacheV8(walletId, skip, limit, cb) {
-    var self = this;
     $.checkArgument(skip >= 0);
     $.checkArgument(limit >= 0);
 
-    self.getTxHistoryCacheStatusV8(walletId, (err, cacheStatus) => {
+    this.getTxHistoryCacheStatusV8(walletId, (err, cacheStatus) => {
       if (err) return cb(err);
 
       if (_.isNull(cacheStatus.tipId)) return cb(null, []);
       // console.log('Cache status in GET:', cacheStatus); //TODO
 
-      var firstPosition = cacheStatus.tipIndex - skip - limit + 1;
-      var lastPosition = cacheStatus.tipIndex - skip + 1;
+      let firstPosition = cacheStatus.tipIndex - skip - limit + 1;
+      const lastPosition = cacheStatus.tipIndex - skip + 1;
 
       if (firstPosition < 0) firstPosition = 0;
       if (lastPosition <= 0) return cb(null, []);
 
       // console.log('[storage.js.750:first/lastPosition:]',firstPosition + '/'+lastPosition); //TODO
 
-      self.db
+      this.db
         .collection(collections.CACHE)
         .find({
           walletId,
@@ -987,18 +939,17 @@ export class Storage {
         .sort({
           key: -1
         })
-        .toArray(function(err, result) {
+        .toArray((err, result) => {
           if (err) return cb(err);
           if (!result) return cb();
-          var txs = _.map(result, 'tx');
+          const txs = _.map(result, 'tx');
           return cb(null, txs);
         });
     });
   }
 
   clearWalletCache(walletId, cb) {
-    var self = this;
-    self.db.collection(collections.CACHE).deleteMany(
+    this.db.collection(collections.CACHE).deleteMany(
       {
         walletId
       },
@@ -1011,10 +962,8 @@ export class Storage {
    * This represent a ongoing query stream from a Wallet client
    */
   storeTxHistoryStreamV8(walletId, streamKey, items, cb) {
-    var self = this;
-
     // only 1 per wallet is allowed
-    self.db.collection(collections.CACHE).update(
+    this.db.collection(collections.CACHE).update(
       {
         walletId,
         type: 'historyStream',
@@ -1036,8 +985,7 @@ export class Storage {
   }
 
   clearTxHistoryStreamV8(walletId, cb) {
-    var self = this;
-    self.db.collection(collections.CACHE).deleteMany(
+    this.db.collection(collections.CACHE).deleteMany(
       {
         walletId,
         type: 'historyStream',
@@ -1049,14 +997,13 @@ export class Storage {
   }
 
   getTxHistoryStreamV8(walletId, cb) {
-    var self = this;
-    self.db.collection(collections.CACHE).findOne(
+    this.db.collection(collections.CACHE).findOne(
       {
         walletId,
         type: 'historyStream',
         key: null
       },
-      function(err, result) {
+      (err, result) => {
         if (err || !result) return cb(err);
         return cb(null, result);
       }
@@ -1072,9 +1019,8 @@ export class Storage {
    *
    */
   storeTxHistoryCacheV8(walletId, tipIndex, items, updateHeight, cb) {
-    var self = this;
     let index = _.isNull(tipIndex) ? 0 : tipIndex + 1;
-    var pos;
+    let pos;
 
     // `items` must be ordeder: first item [0]: most recent.
     //
@@ -1082,16 +1028,16 @@ export class Storage {
     // pos = 0; oldest one.
     // pos = tipIndex (item[0] => most recent).
 
-    _.each(items.reverse(), function(item) {
+    _.each(items.reverse(), (item) => {
       item.position = index++;
     });
     async.each(
       items,
-      function(item: { position: number; code: string; value: string }, next) {
+      (item: { position: number; code: string; value: string }, next) => {
         pos = item.position;
         delete item.position;
         // console.log('STORING [storage.js.804:at:]',pos, item.blockheight);
-        self.db.collection(collections.CACHE).insert(
+        this.db.collection(collections.CACHE).insert(
           {
             walletId,
             type: 'historyCacheV8',
@@ -1101,12 +1047,12 @@ export class Storage {
           next
         );
       },
-      function(err) {
+      (err) => {
         if (err) return cb(err);
 
         interface CacheItem { txid?: string; blockheight?: number; }
-        var first: CacheItem = _.first(items);
-        var last: CacheItem = _.last(items);
+        const first: CacheItem = _.first(items);
+        const last: CacheItem = _.last(items);
 
         try {
           $.checkState(last.txid, 'missing txid in tx to be cached');
@@ -1137,7 +1083,7 @@ export class Storage {
           last.blockheight
           } updatedh: ${updateHeight}`
         );
-        self.db.collection(collections.CACHE).update(
+        this.db.collection(collections.CACHE).update(
           {
             walletId,
             type: 'historyCacheStatusV8',
@@ -1164,13 +1110,11 @@ export class Storage {
   }
 
   storeFiatRate(providerName, rates, cb) {
-    var self = this;
-
-    var now = Date.now();
+    const now = Date.now();
     async.each(
       rates,
-      function(rate: { code: string; value: string }, next) {
-        self.db.collection(collections.FIAT_RATES).insert(
+      (rate: { code: string; value: string }, next) => {
+        this.db.collection(collections.FIAT_RATES).insert(
           {
             provider: providerName,
             ts: now,
@@ -1188,8 +1132,7 @@ export class Storage {
   }
 
   fetchFiatRate(providerName, code, ts, cb) {
-    var self = this;
-    self.db
+    this.db
       .collection(collections.FIAT_RATES)
       .find({
         provider: providerName,
@@ -1202,24 +1145,22 @@ export class Storage {
         ts: -1
       })
       .limit(1)
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err || _.isEmpty(result)) return cb(err);
         return cb(null, result[0]);
       });
   }
 
   fetchTxNote(walletId, txid, cb) {
-    var self = this;
-
-    self.db.collection(collections.TX_NOTES).findOne(
+    this.db.collection(collections.TX_NOTES).findOne(
       {
         walletId,
         txid
       },
-      function(err, result) {
+      (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        return self._completeTxNotesData(
+        return this._completeTxNotesData(
           walletId,
           Model.TxNote.fromObj(result),
           cb
@@ -1230,11 +1171,9 @@ export class Storage {
 
   // TODO: should be done client-side
   _completeTxNotesData(walletId, notes, cb) {
-    var self = this;
-
-    self.fetchWallet(walletId, function(err, wallet) {
+    this.fetchWallet(walletId, (err, wallet) => {
       if (err) return cb(err);
-      _.each([].concat(notes), function(note) {
+      _.each([].concat(notes), (note) => {
         note.editedByName = wallet.getCopayer(note.editedBy).name;
       });
       return cb(null, notes);
@@ -1248,9 +1187,7 @@ export class Storage {
    * @param opts.minTs
    */
   fetchTxNotes(walletId, opts, cb) {
-    var self = this;
-
-    var filter: { walletId: string; editedOn?: { $gte: number } } = {
+    const filter: { walletId: string; editedOn?: { $gte: number } } = {
       walletId
     };
     if (_.isNumber(opts.minTs))
@@ -1260,14 +1197,14 @@ export class Storage {
     this.db
       .collection(collections.TX_NOTES)
       .find(filter)
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
-        var notes = _.compact(
-          _.map(result, function(note) {
+        const notes = _.compact(
+          _.map(result, (note) => {
             return Model.TxNote.fromObj(note);
           })
         );
-        return self._completeTxNotesData(walletId, notes, cb);
+        return this._completeTxNotesData(walletId, notes, cb);
       });
   }
 
@@ -1287,13 +1224,11 @@ export class Storage {
   }
 
   getSession(copayerId, cb) {
-    var self = this;
-
-    self.db.collection(collections.SESSIONS).findOne(
+    this.db.collection(collections.SESSIONS).findOne(
       {
         copayerId
       },
-      function(err, result) {
+      (err, result) => {
         if (err || !result) return cb(err);
         return cb(null, Model.Session.fromObj(result));
       }
@@ -1320,12 +1255,12 @@ export class Storage {
       .find({
         copayerId
       })
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
 
         if (!result) return cb();
 
-        var tokens = _.map([].concat(result), function(r) {
+        const tokens = _.map([].concat(result), (r) => {
           return Model.PushNotificationSub.fromObj(r);
         });
         return cb(null, tokens);
@@ -1361,7 +1296,7 @@ export class Storage {
   }
 
   fetchActiveTxConfirmationSubs(copayerId, cb) {
-    var filter: { isActive: boolean; copayerId?: string } = {
+    const filter: { isActive: boolean; copayerId?: string } = {
       isActive: true
     };
     if (copayerId) filter.copayerId = copayerId;
@@ -1369,12 +1304,12 @@ export class Storage {
     this.db
       .collection(collections.TX_CONFIRMATION_SUBS)
       .find(filter)
-      .toArray(function(err, result) {
+      .toArray((err, result) => {
         if (err) return cb(err);
 
         if (!result) return cb();
 
-        var subs = _.map([].concat(result), function(r) {
+        const subs = _.map([].concat(result), (r) => {
           return Model.TxConfirmationSub.fromObj(r);
         });
         return cb(null, subs);
@@ -1413,13 +1348,12 @@ export class Storage {
     fn = fn || console.log;
     cb = cb || function() { };
 
-    var self = this;
-    this.db.collections(function(err, collections) {
+    this.db.collections((err, collections) => {
       if (err) return cb(err);
       async.eachSeries(
         collections,
-        function(col: any, next) {
-          col.find().toArray(function(err, items) {
+        (col: any, next) => {
+          col.find().toArray((err, items) => {
             fn('--------', col.s.name);
             fn(items);
             fn(
@@ -1438,19 +1372,17 @@ export class Storage {
   //
 
   checkAndUseGlobalCache(key, duration, cb) {
-    var self = this;
-
-    var now = Date.now();
-    self.db.collection(collections.CACHE).findOne(
+    const now = Date.now();
+    this.db.collection(collections.CACHE).findOne(
       {
         key,
         walletId: null,
         type: null
       },
-      function(err, ret) {
+      (err, ret) => {
         if (err) return cb(err);
         if (!ret) return cb();
-        var validFor = ret.ts + duration - now;
+        const validFor = ret.ts + duration - now;
 
         // always return the value as a 3 param anyways.
         return cb(null, validFor > 0 ? ret.result : null, ret.result);
@@ -1459,7 +1391,7 @@ export class Storage {
   }
 
   storeGlobalCache(key, values, cb) {
-    var now = Date.now();
+    const now = Date.now();
     this.db.collection(collections.CACHE).update(
       {
         key,
@@ -1481,7 +1413,6 @@ export class Storage {
   }
 
   clearGlobalCache(key, cb) {
-    var now = Date.now();
     this.db.collection(collections.CACHE).remove(
       {
         key,
@@ -1496,15 +1427,13 @@ export class Storage {
   }
 
   walletCheck = async params => {
-    let { walletId, bch } = params;
-    var self = this;
+    const { walletId, bch } = params;
 
     return new Promise(resolve => {
-      const addressStream = self.db
+      const addressStream = this.db
         .collection(collections.ADDRESSES)
         .find({ walletId });
       let sum = 0;
-      let count = 0;
       let lastAddress;
       addressStream.on('data', walletAddress => {
         if (walletAddress.address) {
@@ -1554,8 +1483,6 @@ export class Storage {
   }
 
   clearExpiredLock(key, cb) {
-    var self = this;
-
     this.db.collection(collections.LOCKS).findOne(
       {
         _id: key
@@ -1565,7 +1492,7 @@ export class Storage {
 
         if (ret.expireOn < Date.now()) {
           log.info('Releasing expired lock : ' + key);
-          return self.releaseLock(key, cb);
+          return this.releaseLock(key, cb);
         }
         return cb();
       }

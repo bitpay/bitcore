@@ -9,16 +9,17 @@ import { TxConfirmationSub } from './txconfirmationsub';
 import { TxNote } from './txnote';
 import { TxProposal } from './txproposal';
 import { Wallet } from './wallet';
+
 module.exports = {
-  Wallet,
-  Copayer,
-  TxProposal,
   Address,
+  Copayer,
+  Email,
   Notification,
   Preferences,
-  Email,
-  TxNote,
-  Session,
   PushNotificationSub,
-  TxConfirmationSub
+  Session,
+  TxConfirmationSub,
+  TxNote,
+  TxProposal,
+  Wallet
 };

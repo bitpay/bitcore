@@ -116,10 +116,7 @@ export class ExpressApp {
       } else {
         var code = 500,
           message;
-        if (
-          _.isObject(err) &&
-          (_.isNumber(err.code) || _.isNumber(err.statusCode))
-        ) {
+        if (err && ((err.code && _.isNumber(err.code)) || (err.statusCode && _.isNumber(err.statusCode)))) {
           code = err.code || err.statusCode;
           message = err.message || err.body;
         }
@@ -800,9 +797,9 @@ export class ExpressApp {
         function(server) {
           var timeSpan = req.query.timeSpan
             ? Math.min(
-                +req.query.timeSpan || 0,
-                Defaults.MAX_NOTIFICATIONS_TIMESPAN
-              )
+              +req.query.timeSpan || 0,
+              Defaults.MAX_NOTIFICATIONS_TIMESPAN
+            )
             : Defaults.NOTIFICATIONS_TIMESPAN;
           var opts = {
             minTs: +Date.now() - timeSpan * 1000,
