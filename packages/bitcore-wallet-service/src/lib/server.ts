@@ -1,15 +1,17 @@
-import { ClientError } from './errors/clienterror';
-export { ClientError };
-import { IWallet } from './model/wallet';
 import * as _ from 'lodash';
 import * as async from 'async';
 import * as log from 'npmlog';
+
+import { ClientError } from './errors/clienterror';
+export { ClientError };
+import { IWallet, Wallet } from './model/wallet';
 import { ITxProposal, TxProposal } from './model/txproposal';
 import { Storage } from './storage';
 import { INotification } from './model/notification';
 import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
+import { Copayer } from './model/copayer';
 const $ = require('preconditions').singleton();
 var serverMessages = require('../serverMessages');
 var BCHAddressTranslator = require('./bchaddresstranslator');
@@ -38,7 +40,6 @@ var BlockchainExplorer = require('./blockchainexplorer');
 var request = require('request');
 
 var Model = require('./model');
-var Wallet = Model.Wallet;
 
 var initialized = false;
 
@@ -3697,7 +3698,7 @@ export class WalletService {
     }
   }
 
-  registerWalletV8(wallet, cb) {
+  registerWalletV8(wallet: Wallet, cb) {
     var self = this;
     if (wallet.beRegistered) {
       return cb();
@@ -4399,10 +4400,10 @@ export class WalletService {
     });
   }
 
-  _runScan(wallet, step, opts, cb) {
+  _runScan(wallet: Wallet, step, opts, cb) {
     var self = this;
 
-    function scanBranch(wallet, derivator, cb) {
+    function scanBranch(wallet: Wallet, derivator, cb) {
       var inactiveCounter = 0;
       var allAddresses = [];
 

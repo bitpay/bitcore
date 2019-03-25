@@ -58,7 +58,7 @@ export class Wallet {
   status: string;
   publicKeyRing: Array<string>;
   addressIndex: number;
-  copayers: Array<ICopayer>;
+  copayers: Array<Copayer>;
   pubKey: string;
   coin: string;
   network: string;
