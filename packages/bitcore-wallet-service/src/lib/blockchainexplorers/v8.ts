@@ -36,7 +36,7 @@ export class V8 {
   userAgent: string;
   baseUrl: string;
   request: request;
-  Client: Client;
+  Client: typeof Client;
 
   constructor(opts) {
     $.checkArgument(opts);
@@ -111,14 +111,14 @@ export class V8 {
   }
 
   _getClient() {
-    return new Client({
+    return new this.Client({
       baseUrl: this.baseUrl
     });
   }
 
   _getAuthClient(wallet) {
     $.checkState(wallet.beAuthPrivateKey2);
-    return new Client({
+    return new this.Client({
       baseUrl: this.baseUrl,
       authKey: Bitcore_[this.coin].PrivateKey(wallet.beAuthPrivateKey2)
     });
