@@ -90,7 +90,7 @@ export class PushNotificationsService {
     }
 
     self.templatePath = path.normalize(
-      (opts.pushNotificationsOpts.templatePath || __dirname + '/templates') +
+      (opts.pushNotificationsOpts.templatePath || __dirname + '../../templates') +
         '/'
     );
     self.defaultLanguage = opts.pushNotificationsOpts.defaultLanguage || 'en';
