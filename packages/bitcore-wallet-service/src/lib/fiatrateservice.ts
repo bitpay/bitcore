@@ -1,7 +1,7 @@
 'use strict';
 
-import * as request from 'request';
 import * as _ from 'lodash';
+import * as request from 'request';
 import { Storage } from './storage';
 var $ = require('preconditions').singleton();
 var async = require('async');
@@ -16,7 +16,7 @@ var Model = require('./model');
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
   defaultProvider: any;
-  providers: Array<any>;
+  providers: any[];
   storage: Storage;
   init(opts, cb) {
     var self = this;

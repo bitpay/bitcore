@@ -10,7 +10,7 @@ var Defaults = Common.Defaults;
 
 var Errors = require('./errors/errordefinitions');
 
-const ACQUIRE_RETRY_STEP = 50; //ms
+const ACQUIRE_RETRY_STEP = 50; // ms
 
 export class Lock {
   storage: Storage;
@@ -20,7 +20,7 @@ export class Lock {
     this.storage = storage;
   }
 
-  acquire(token, opts, cb, timeLeft = undefined) {
+  acquire(token, opts, cb, timeLeft?) {
     var self = this;
     opts = opts || {};
 
@@ -30,7 +30,7 @@ export class Lock {
       // Lock taken?
       if (err && err.message && err.message.indexOf('E11000 ') !== -1) {
         // Lock expired?
-        this.storage.clearExpiredLock(token, () => {});
+        this.storage.clearExpiredLock(token, () => { });
         // Waiting time for lock has expired
         if (timeLeft < 0) {
           return cb('LOCKED');
@@ -56,7 +56,7 @@ export class Lock {
         // Lock available
       } else {
         return cb(null, icb => {
-          if (!icb) icb = () => {};
+          if (!icb) icb = () => { };
           self.storage.releaseLock(token, icb);
         });
       }

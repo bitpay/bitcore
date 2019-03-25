@@ -1,7 +1,7 @@
 module.exports = {
   name: 'Bitstamp',
   url: 'https://www.bitstamp.net/api/ticker/',
-  parseFn: function(raw) {
+  parseFn(raw) {
     return [
       {
         code: 'USD',

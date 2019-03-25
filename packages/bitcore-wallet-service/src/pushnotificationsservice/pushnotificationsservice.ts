@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { PushNotificationsService } from "../lib/pushnotificationsservice";
+import { PushNotificationsService } from '../lib/pushnotificationsservice';
 
 var log = require('npmlog');
 log.debug = log.verbose;

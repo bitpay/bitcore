@@ -6,9 +6,9 @@ var log = require('npmlog');
 var $ = require('preconditions').singleton();
 var Uuid = require('uuid');
 
-import { AddressManager } from "./addressmanager";
-import { ICopayer, Copayer } from "./copayer";
-import { Address } from "./address";
+import { Address } from './address';
+import { AddressManager } from './addressmanager';
+import { Copayer, ICopayer } from './copayer';
 
 var Bitcore = {
   btc: require('bitcore-lib'),
@@ -21,7 +21,7 @@ var Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
 
-export type IWallet = {
+export interface IWallet {
   version: string;
   createdOn: number;
   id: number;
@@ -30,9 +30,9 @@ export type IWallet = {
   n: number;
   singleAddress: boolean;
   status: string;
-  publicKeyRing: Array<string>;
+  publicKeyRing: string[];
   addressIndex: number;
-  copayers: Array<string>;
+  copayers: string[];
   pubKey: string;
   coin: string;
   network: string;
@@ -45,7 +45,7 @@ export type IWallet = {
   beAuthPublicKey2: string;
   nativeCashAddr: boolean;
   isTestnet?: boolean;
-};
+}
 
 export class Wallet {
   version: string;
@@ -56,7 +56,7 @@ export class Wallet {
   n: number;
   singleAddress: boolean;
   status: string;
-  publicKeyRing: Array<string>;
+  publicKeyRing: string[];
   addressIndex: number;
   copayers: Array<Copayer>;
   pubKey: string;
@@ -235,10 +235,10 @@ export class Wallet {
 
     var c = this.getCopayer(copayerId);
 
-    //new ones go first
+    // new ones go first
     c.requestPubKeys.unshift({
       key: requestPubKey.toString(),
-      signature: signature,
+      signature,
       selfSigned: true,
       restrictions: restrictions || {},
       name: name || null

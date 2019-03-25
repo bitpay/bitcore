@@ -1,5 +1,5 @@
 'use strict';
-import { ClientError } from "./clienterror";
+import { ClientError } from './clienterror';
 
 var _ = require('lodash');
 

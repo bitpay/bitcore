@@ -1,20 +1,18 @@
 'use strict';
 
+import * as async from 'async';
 import * as fs from 'fs';
 import * as _ from 'lodash';
 import request from 'request';
-import * as async from 'async';
-import { Storage } from './storage';
-import { ICopayer } from './model/copayer';
-import { IPreferences } from './model/preferences';
 import { INotification } from './model/notification';
+import { IPreferences } from './model/preferences';
+import { Storage } from './storage';
 var Mustache = require('mustache');
 var defaultRequest = require('request');
 var MessageBroker = require('./messagebroker');
 var path = require('path');
 var Utils = require('./common/utils');
 var Defaults = require('./common/defaults');
-var Model = require('./model');
 var sjcl = require('sjcl');
 var log = require('npmlog');
 log.debug = log.verbose;
@@ -73,16 +71,16 @@ export class PushNotificationsService {
     self.request = opts.request || defaultRequest;
 
     function _readDirectories(basePath, cb) {
-      fs.readdir(basePath, function(err, files) {
+      fs.readdir(basePath, (err, files) => {
         if (err) return cb(err);
         async.filter(
           files,
-          function(file, next: (err: boolean) => void) {
-            fs.stat(path.join(basePath, file), function(err, stats) {
+          (file, next: (err: boolean) => void) => {
+            fs.stat(path.join(basePath, file), (err, stats) => {
               return next(!err && stats.isDirectory());
             });
           },
-          function(dirs) {
+          (dirs) => {
             return cb(null, dirs);
           }
         );
@@ -91,7 +89,7 @@ export class PushNotificationsService {
 
     self.templatePath = path.normalize(
       (opts.pushNotificationsOpts.templatePath || __dirname + '../../templates') +
-        '/'
+      '/'
     );
     self.defaultLanguage = opts.pushNotificationsOpts.defaultLanguage || 'en';
     self.defaultUnit = opts.pushNotificationsOpts.defaultUnit || 'btc';
@@ -106,13 +104,13 @@ export class PushNotificationsService {
 
     async.parallel(
       [
-        function(done) {
-          _readDirectories(self.templatePath, function(err, res) {
+        (done) => {
+          _readDirectories(self.templatePath, (err, res) => {
             self.availableLanguages = res;
             done(err);
           });
         },
-        function(done) {
+        (done) => {
           if (opts.storage) {
             self.storage = opts.storage;
             done();
@@ -124,7 +122,7 @@ export class PushNotificationsService {
             );
           }
         },
-        function(done) {
+        (done) => {
           self.messageBroker =
             opts.messageBroker || new MessageBroker(opts.messageBrokerOpts);
           self.messageBroker.onMessage(
@@ -133,7 +131,7 @@ export class PushNotificationsService {
           done();
         }
       ],
-      function(err) {
+      (err) => {
         if (err) {
           log.error(err);
         }
@@ -144,7 +142,7 @@ export class PushNotificationsService {
 
   _sendPushNotifications(notification, cb) {
     var self = this;
-    cb = cb || function() {};
+    cb = cb || function() { };
 
     var notifType = PUSHNOTIFICATIONS_TYPES[notification.type];
     if (!notifType) return cb();
@@ -152,21 +150,21 @@ export class PushNotificationsService {
     log.debug('Notification received: ' + notification.type);
     log.debug(JSON.stringify(notification));
 
-    self._checkShouldSendNotif(notification, function(err, should) {
+    self._checkShouldSendNotif(notification, (err, should) => {
       if (err) return cb(err);
 
       log.debug('Should send notification: ', should);
       if (!should) return cb();
 
-      self._getRecipientsList(notification, notifType, function(
+      self._getRecipientsList(notification, notifType, (
         err,
         recipientsList
-      ) {
+      ) => {
         if (err) return cb(err);
 
         async.waterfall(
           [
-            function(next) {
+            (next) => {
               self._readAndApplyTemplates(
                 notification,
                 notifType,
@@ -174,18 +172,18 @@ export class PushNotificationsService {
                 next
               );
             },
-            function(contents, next) {
+            (contents, next) => {
               async.map(
                 recipientsList,
-                function(recipient: IPreferences, next) {
+                (recipient: IPreferences, next) => {
                   var content = contents[recipient.language];
 
                   self.storage.fetchPushNotificationSubs(
                     recipient.copayerId,
-                    function(err, subs) {
+                    (err, subs) => {
                       if (err) return next(err);
 
-                      var notifications = _.map(subs, function(sub) {
+                      var notifications = _.map(subs, (sub) => {
                         return {
                           to: sub.token,
                           priority: 'high',
@@ -234,13 +232,13 @@ export class PushNotificationsService {
                     next();
                   });
                 },
-                function(err) {
+                (err) => {
                   return next(err);
                 }
               );
             }
           ],
-          function(err) {
+          (err) => {
             if (err) {
               log.error('An error ocurred generating notification', err);
             }
@@ -284,8 +282,8 @@ export class PushNotificationsService {
               if (p.language)
                 log.warn(
                   'Language for notifications "' +
-                    p.language +
-                    '" not available.'
+                  p.language +
+                  '" not available.'
                 );
               p.language = self.defaultLanguage;
             }
@@ -334,7 +332,7 @@ export class PushNotificationsService {
       function(recipient: { language: string }, next) {
         async.waterfall(
           [
-            function(next) {
+            (next) => {
               self._getDataForTemplate(notification, recipient, next);
             },
             function(data, next) {
@@ -348,15 +346,15 @@ export class PushNotificationsService {
                     if (err && type == 'html') return next();
                     if (err) return next(err);
 
-                    self._applyTemplate(template, data, function(err, res) {
+                    self._applyTemplate(template, data, (err, res) => {
                       return next(err, [type, res]);
                     });
                   });
                 },
-                function(err, res) {
+                (err, res) => {
                   return next(
                     err,
-                    _.fromPairs(res.filter(Boolean) as Array<any>)
+                    _.fromPairs(res.filter(Boolean) as any[])
                   );
                 }
               );
@@ -365,13 +363,13 @@ export class PushNotificationsService {
               next(null, result);
             }
           ],
-          function(err, res) {
+          (err, res) => {
             next(err, [recipient.language, res]);
           }
         );
       },
-      function(err, res) {
-        return cb(err, _.fromPairs(res.filter(Boolean) as Array<any>));
+      (err, res) => {
+        return cb(err, _.fromPairs(res.filter(Boolean) as any[]));
       }
     );
   }
@@ -405,7 +403,7 @@ export class PushNotificationsService {
       data.walletN = wallet.n;
 
       const copayer = wallet.copayers.find(
-        c => c.id === notification.creatorId
+        (c) => c.id === notification.creatorId
       );
       /*
        *var copayer = _.find(wallet.copayers, {
@@ -420,7 +418,7 @@ export class PushNotificationsService {
 
       if (notification.type == 'TxProposalFinallyRejected' && data.rejectedBy) {
         var rejectors = _.map(data.rejectedBy, function(copayerId) {
-          return wallet.copayers.find(c => c.id === copayerId).name;
+          return wallet.copayers.find((c) => c.id === copayerId).name;
         });
         data.rejectorsNames = rejectors.join(', ');
       }
@@ -494,7 +492,7 @@ export class PushNotificationsService {
         json: true,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'key=' + self.authorizationKey
+          'Authorization': 'key=' + self.authorizationKey
         },
         body: opts
       },

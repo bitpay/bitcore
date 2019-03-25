@@ -87,7 +87,7 @@ export class AddressManager {
       );
     }
 
-    //clear skipppedPath, since index is rewinded
+    // clear skipppedPath, since index is rewinded
     // n address were actually derived.
     this.skippedPaths = this.skippedPaths.splice(
       0,
@@ -130,7 +130,7 @@ export class AddressManager {
 
     while (i++ < step) {
       if (ret) {
-        this.skippedPaths.push({ path: ret, isChange: isChange });
+        this.skippedPaths.push({ path: ret, isChange });
       }
 
       ret = this.getCurrentAddressPath(isChange);
