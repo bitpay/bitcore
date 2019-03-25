@@ -1,5 +1,5 @@
+import { HttpClient } from '@angular/common/http';
 import { Component, Input, NgZone, OnChanges } from '@angular/core';
-import { Http } from '@angular/http';
 import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { Logger } from '../../providers/logger/logger';
@@ -17,7 +17,7 @@ export class LatestTransactionsComponent implements OnChanges {
   private transactions = [];
 
   constructor(
-    private http: Http,
+    private httpClient: HttpClient,
     private apiProvider: ApiProvider,
     public currency: CurrencyProvider,
     private ngZone: NgZone,
@@ -44,7 +44,7 @@ export class LatestTransactionsComponent implements OnChanges {
   private loadTransactions(): void {
     const url: string = this.apiProvider.getUrl() + 'txs';
 
-    this.http.get(url).subscribe(
+    this.httpClient.get(url).subscribe(
       (data: any) => {
         this.transactions = JSON.parse(data._body);
         this.loading = false;

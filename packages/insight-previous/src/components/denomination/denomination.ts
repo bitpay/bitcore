@@ -21,7 +21,7 @@ export class DenominationComponent {
   public ionViewDidLoad() {
     this.currencySymbol = this.navParams.data.currencySymbol;
     this.api.getAvailableNetworks().subscribe(data => {
-      this.availableNetworks = data.json() as ChainNetwork[];
+      this.availableNetworks = data;
       this.showUnits = _.some(
         this.availableNetworks,
         this.api.networkSettings.value.selectedNetwork

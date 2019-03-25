@@ -67,7 +67,8 @@
 
           <div class="ellipsis">
             <p>
-              <a (click)="goToAddress(vin.address)">{{ vin.address }}</a>
+              <a (click)="goToAddress(vin.address)"
+                [ngClass]="{'disabled-link': getAddress(vin) === 'Unparsed address' }">{{ getAddress(vin) }}</a>
             </p>
           </div>
           <div [hidden]="!expanded">
