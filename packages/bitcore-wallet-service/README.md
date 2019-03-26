@@ -12,10 +12,10 @@ A Multisig HD Bitcore Wallet Service.
 Bitcore Wallet Service facilitates multisig HD wallets creation and operation through a (hopefully) simple and intuitive REST API.
 
 BWS can usually be installed within minutes and accommodates all the needed infrastructure for peers in a multisig wallet to communicate and operate – with minimum server trust.
-  
+
 See [Bitcore-wallet-client](https://github.com/bitpay/bitcore-wallet-client) for the *official* client library that communicates to BWS and verifies its response. Also check [Bitcore-wallet](https://github.com/bitpay/bitcore-wallet) for a simple CLI wallet implementation that relies on BWS.
 
-BWS is been used in production enviroments for [Copay Wallet](https://copay.io), [Bitpay App wallet](https://bitpay.com/wallet) and others.  
+BWS is been used in production enviroments for [Copay Wallet](https://copay.io), [Bitpay App wallet](https://bitpay.com/wallet) and others.
 
 More about BWS at https://blog.bitpay.com/announcing-the-bitcore-wallet-suite/
 
@@ -32,14 +32,14 @@ This will launch the BWS service (with default settings) at `http://localhost:32
 
 BWS needs mongoDB. You can configure the connection at `config.js`
 
-BWS supports SSL and Clustering. For a detailed guide on installing BWS with extra features see [Installing BWS](https://github.com/bitpay/bitcore-wallet-service/blob/master/installation.md). 
+BWS supports SSL and Clustering. For a detailed guide on installing BWS with extra features see [Installing BWS](https://github.com/bitpay/bitcore-wallet-service/blob/master/installation.md).
 
 BWS uses by default a Request Rate Limitation to CreateWallet endpoint. If you need to modify it, check defaults.js' `Defaults.RateLimit`
 
 # Using BWS with PM2
 
-BWS can be used with PM2 with the provided `app.js` script: 
- 
+BWS can be used with PM2 with the provided `app.js` script:
+
 ```
   pm2 start app.js --name "bitcoin-wallet-service"
 ```
@@ -70,7 +70,7 @@ BWS can be used with PM2 with the provided `app.js` script:
 ```
 
 @dabura667 made a report about how to use letsencrypt with BWS: https://github.com/bitpay/bitcore-wallet-service/issues/423
-  
+
 
 # TX proposal life cycle
 
@@ -85,6 +85,135 @@ Tx proposal need to be:
 
 The are plenty example creating and sending proposals in the `/test/integration` code.
 
+# Enabling Regtest Mode for BWS and Copay
+## Requirements
+- bitcore-node running on http://localhost:3000
+- bws running locally on http://localhost:3232/bws/api
+- mongod running
+- copay running on port: 8100
+- bitcoin-core running on regtest mode (blue icon logo)
+
+> mongo topology crashes sometimes due to notifications being incompatible in a web browser
+### bitcore-wallet-service/lib/notificationbroadcaster.js
+> Note: If testing on a PC browser, comment out notificationbroadcaster.js to disable notifications.
+
+## Steps:
+
+### bitcore.config.json
+1.  Add testnet and regtest to bitcore.config.json. Testnet config must match regtest settings.
+```
+"testnet": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 20020
+            }
+          ],
+          "rpc": {
+            "host": "127.0.0.1",
+            "port": 20021,
+            "username": "bitpaytest",
+            "password": "local321"
+          }
+        },
+"regtest": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "127.0.0.1",
+              "port": 20020
+            }
+          ],
+          "rpc": {
+            "host": "127.0.0.1",
+            "port": 20021,
+            "username": "bitpaytest",
+            "password": "local321"
+          }
+        }
+```
+### bitcore-wallet-service/config.js
+2. Point testnet to http://localhost:3000 in BWS/config.js and set regtestEnabled to true.
+```
+blockchainExplorerOpts: {
+    btc: {
+      livenet: {
+        url: 'https://api.bitcore.io'
+      },
+      testnet: {
+        // set url to http://localhost:3000 here
+        url: 'http://localhost:3000',
+        // set regtestEnabled to true here
+        regtestEnabled: true
+      }
+    },
+...
+```
+### packages/bitcore-wallet-service/lib/blockchainexplorers/v8.js
+- Pull the enableRegtest flag from config
+```
+const config = require('../../config');
+```
+
+- Update v8network function to convert testnet to regtest in API request.
+
+```
+function v8network(bwsNetwork) {
+  if (bwsNetwork == 'livenet') return 'mainnet';
+  if (
+    bwsNetwork == 'testnet' &&
+    config.blockchainExplorerOpts.btc.testnet.regtestEnabled
+  ) {
+    return 'regtest';
+  }
+  return bwsNetwork;
+}
+```
+## Copay changes
+### copay/app-template/index-template.html
+1. Comment out content security meta tag in the ```<head>```
+```
+// <meta http-equiv="Content-Security-Policy" content="default-src 'self'  ... >
+```
+
+# Creating a wallet on regtest network
+
+## Steps:
+
+1. Set the wallet service URL to
+```
+http://localhost:3232/bws/api
+```
+2. Select Testnet by pressing the slider button.
+
+<img width="923" alt="screen shot 2019-03-06 at 10 50 29 am" src="https://user-images.githubusercontent.com/23103037/53894324-e69f8300-3ffd-11e9-9b25-145332fe860c.png">
+
+# Testing on mobile
+Requirements:
+- Mobile phone and PC must be connected to the same internet
+- PC desktop ip address for localhost
+
+To find ip address for PC run:
+```
+// 127.0.0.1 is equal to localhost
+ifconfig | grep "inet " | grep -v 127.0.0.1
+```
+
+1. Inside copay project root directory run:
+```
+npm run apply:copay
+```
+
+2. Enter PC ip address followed by port in the mobile phone browser:
+```
+10.10.11.73:8100
+```
+
+3. Set wallet service url to PC ip address /bws/api when creating a new wallet
+```
+http://10.10.11.73:3232/bws/api
+```
 
 # REST API
 
@@ -109,11 +238,11 @@ Returns:
  * Wallet object. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/wallet.js)).
 
 `/v1/txhistory/`: Get Wallet's transaction history
- 
+
 Optional Arguments:
  * skip: Records to skip from the result (defaults to 0)
  * limit: Total number of records to return (return all available records if not specified).
- 
+
 Returns:
  * History of incoming and outgoing transactions of the wallet. The list is paginated using the `skip` & `limit` params. Each item has the following fields:
  * action ('sent', 'received', 'moved')
@@ -126,8 +255,8 @@ Returns:
  * creatorName
  * message
  * actions array ['createdOn', 'type', 'copayerId', 'copayerName', 'comment']
-  
- 
+
+
 `/v2/txproposals/`:  Get Wallet's pending transaction proposals and their status
 Returns:
  * List of pending TX Proposals. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/txproposal.js))
@@ -167,18 +296,18 @@ Optional Arguments:
 
 Returns:
  * The fiat exchange rate.
- 
+
 ## POST Endpoints
 `/v1/wallets/`: Create a new Wallet
 
  Required Arguments:
- * name: Name of the wallet 
- * m: Number of required peers to sign transactions 
+ * name: Name of the wallet
+ * m: Number of required peers to sign transactions
  * n: Number of total peers on the wallet
  * pubKey: Wallet Creation Public key to check joining copayer's signatures (the private key is unknown by BWS and must be communicated
   by the creator peer to other peers).
 
-Returns: 
+Returns:
  * walletId: Id of the new created wallet
 
 
@@ -224,24 +353,24 @@ Returns:
 
 Required Arguments:
  * signatures:  All Transaction's input signatures, in order of appearance.
-  
+
 Returns:
  * TX Proposal object. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/txproposal.js)). `.status` is probably needed in this case.
-  
+
 `/v1/txproposals/:id/broadcast/`: Broadcast a transaction proposal
- 
+
 Returns:
  * TX Proposal object. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/txproposal.js)). `.status` is probably needed in this case.
-  
+
 `/v1/txproposals/:id/rejections`: Reject a transaction proposal
- 
+
 Returns:
  * TX Proposal object. (see [fields on the source code](https://github.com/bitpay/bitcore-wallet-service/blob/master/lib/model/txproposal.js)). `.status` is probably needed in this case.
 
 `/v1/addresses/scan`: Start an address scan process looking for activity.
 
  Optional Arguments:
- * includeCopayerBranches: Scan all copayer branches following BIP45 recommendation (defaults to false). 
+ * includeCopayerBranches: Scan all copayer branches following BIP45 recommendation (defaults to false).
 
 `/v1/txconfirmations/`: Subscribe to receive push notifications when the specified transaction gets confirmed.
 Required Arguments:
@@ -259,10 +388,10 @@ Required Arguments:
 
 `/v1/txconfirmations/:txid`: Unsubscribe from transaction `txid` and no longer listen to its confirmation.
 
-   
+
 # Push Notifications
   Recomended to complete config.js file:
-  
+
   * [GCM documentation to get your API key](https://developers.google.com/cloud-messaging/gcm)
   * [Apple's Notification guide to know how to get your certificates for APN](https://developer.apple.com/library/ios/documentation/NetworkingInternet/Conceptual/RemoteNotificationsPG/Chapters/Introduction.html)
 
@@ -274,7 +403,7 @@ Required Arguments:
 ## DELETE Endpoints
 `/v2/pushnotifications/subscriptions/`: Remove subscriptions for push notifications service from database.
 
- 
+
 
 
 
