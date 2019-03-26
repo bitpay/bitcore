@@ -4,6 +4,8 @@ import * as log from 'npmlog';
 
 import { ClientError } from './errors/clienterror';
 export { ClientError };
+import { BlockChainExplorer } from './blockchainexplorer';
+import { V8 } from './blockchainexplorers/v8';
 import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
@@ -34,8 +36,6 @@ var Constants = Common.Constants;
 var Defaults = Common.Defaults;
 
 var Errors = require('./errors/errordefinitions');
-
-var BlockchainExplorer = require('./blockchainexplorer');
 
 var request = require('request');
 
@@ -85,7 +85,7 @@ function boolToNum(x: boolean) {
 export class WalletService {
   lock: any;
   storage: Storage;
-  blockchainExplorer: any;
+  blockchainExplorer: V8;
   blockchainExplorerOpts: any;
   messageBroker: any;
   fiatRateService: any;
@@ -215,7 +215,7 @@ export class WalletService {
   }
 
   static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() { };
+    cb = cb || function() {};
 
     // do nothing here....
     // bc height cache is cleared on bcmonitor
@@ -798,7 +798,7 @@ export class WalletService {
 
     // self.logi('Notification', type);
 
-    cb = cb || function() { };
+    cb = cb || function() {};
 
     var walletId = self.walletId || data.walletId;
     var copayerId = self.copayerId || data.copayerId;
@@ -1435,7 +1435,7 @@ export class WalletService {
     });
   }
 
-  _getBlockchainExplorer(coin, network) {
+  _getBlockchainExplorer(coin, network): ReturnType<typeof BlockChainExplorer> {
     var opts: Partial<{
       provider: string;
       coin: string;
@@ -1463,7 +1463,7 @@ export class WalletService {
     opts.userAgent = WalletService.getServiceVersion();
     var bc;
     try {
-      bc = new BlockchainExplorer(opts);
+      bc = BlockChainExplorer(opts);
     } catch (ex) {
       this.logw('Could not instantiate blockchain explorer', ex);
     }
@@ -1791,7 +1791,7 @@ export class WalletService {
           return cb(
             new ClientError(
               'Invalid fee level. Valid values are ' +
-              _.map(feeLevels, 'name').join(', ')
+                _.map(feeLevels, 'name').join(', ')
             )
           );
       }
@@ -1915,10 +1915,10 @@ export class WalletService {
         var logger = network == 'livenet' ? self.logw : self.logi;
         logger(
           'Could not compute fee estimation in ' +
-          network +
-          ': ' +
-          failed.join(', ') +
-          ' blocks.'
+            network +
+            ': ' +
+            failed.join(', ') +
+            ' blocks.'
         );
       }
 
@@ -2142,20 +2142,20 @@ export class WalletService {
       if (totalValueInUtxos < txpAmount) {
         self.logi(
           'Total value in all utxos (' +
-          Utils.formatAmountInBtc(totalValueInUtxos) +
-          ') is insufficient to cover for txp amount (' +
-          Utils.formatAmountInBtc(txpAmount) +
-          ')'
+            Utils.formatAmountInBtc(totalValueInUtxos) +
+            ') is insufficient to cover for txp amount (' +
+            Utils.formatAmountInBtc(txpAmount) +
+            ')'
         );
         return cb(Errors.INSUFFICIENT_FUNDS);
       }
       if (netValueInUtxos < txpAmount) {
         self.logi(
           'Value after fees in all utxos (' +
-          Utils.formatAmountInBtc(netValueInUtxos) +
-          ') is insufficient to cover for txp amount (' +
-          Utils.formatAmountInBtc(txpAmount) +
-          ')'
+            Utils.formatAmountInBtc(netValueInUtxos) +
+            ') is insufficient to cover for txp amount (' +
+            Utils.formatAmountInBtc(txpAmount) +
+            ')'
         );
         return cb(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
       }
@@ -2373,9 +2373,9 @@ export class WalletService {
               txp.fee;
             self.logi(
               'Successfully built transaction. Total fees: ' +
-              Utils.formatAmountInBtc(txp.fee) +
-              ', total change: ' +
-              Utils.formatAmountInBtc(change)
+                Utils.formatAmountInBtc(txp.fee) +
+                ', total change: ' +
+                Utils.formatAmountInBtc(change)
             );
           } else {
             self.logw('Error building transaction', err);
@@ -2514,7 +2514,7 @@ export class WalletService {
               return next(
                 new ClientError(
                   'Invalid fee level. Valid values are ' +
-                  _.map(feeLevels, 'name').join(', ')
+                    _.map(feeLevels, 'name').join(', ')
                 )
               );
           }
@@ -4491,7 +4491,7 @@ export class WalletService {
             var addr,
               i = 0;
             // tslint:disable-next-line:no-conditional-assignment
-            while (addr = derivator.getSkippedAddress()) {
+            while ((addr = derivator.getSkippedAddress())) {
               addresses.push(addr);
               i++;
             }

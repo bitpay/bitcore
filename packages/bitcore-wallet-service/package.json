@@ -76,7 +76,7 @@
     "typescript-eslint-parser": "^22.0.0"
   },
   "scripts": {
-    "start": "./start.sh",
+    "start": "npm run clean && npm run tsc && ./start.sh",
     "stop": "./stop.sh",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
     "test": "./node_modules/.bin/mocha --exit",

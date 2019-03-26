@@ -65,7 +65,7 @@ export class BlockchainMonitor {
                 return;
               }
 
-              explorer = new BlockChainExplorer({
+              explorer = BlockChainExplorer({
                 provider: config.provider,
                 coin: pair.coin,
                 network: pair.network,
