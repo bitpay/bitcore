@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { BtcBlockStorage } from "../../../src/models/block/btc/btcBlock";
-import { TransactionStorage } from '../../../src/models/transaction';
+import { BtcBlockStorage } from '../../../src/models/block/btc/btcBlock';
+import { BtcTransactionStorage } from '../../../src/models/transaction/btc/btcTransaction';
 import { CoinStorage } from '../../../src/models/coin';
 import * as sinon from 'sinon';
 import { TEST_BLOCK } from '../../data/test-block';
@@ -10,7 +10,7 @@ import { mockCollection } from '../../helpers/index.js';
 import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { ObjectID } from 'mongodb';
 import { MongoBound } from '../../../src/models/base';
-import { IBtcBlock } from "../../../src/types/Block";
+import { IBtcBlock } from '../../../src/types/Block';
 
 describe('Block Model', function() {
   let addBlockParams = {
@@ -34,7 +34,7 @@ describe('Block Model', function() {
 
       mockStorage(newBlock);
       sandbox.stub(BtcBlockStorage, 'handleReorg').resolves();
-      sandbox.stub(TransactionStorage, 'batchImport').resolves();
+      sandbox.stub(BtcTransactionStorage, 'batchImport').resolves();
 
       const result = await BtcBlockStorage.addBlock(addBlockParams);
       expect(result);
@@ -129,10 +129,10 @@ describe('Block Model', function() {
 
     it('should return if localTip hash equals the previous hash', async () => {
       Object.assign(BtcBlockStorage.collection, mockCollection(null));
-      Object.assign(TransactionStorage.collection, mockCollection(null));
+      Object.assign(BtcTransactionStorage.collection, mockCollection(null));
       Object.assign(CoinStorage.collection, mockCollection(null));
       let blockModelRemoveSpy = BtcBlockStorage.collection.deleteMany as sinon.SinonSpy;
-      let transactionModelRemoveSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
+      let transactionModelRemoveSpy = BtcTransactionStorage.collection.deleteMany as sinon.SinonSpy;
       let coinModelRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
       let coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 
@@ -159,7 +159,7 @@ describe('Block Model', function() {
 
     it('should return if localTip height is zero', async () => {
       let blockModelRemoveSpy = BtcBlockStorage.collection.deleteMany as sinon.SinonSpy;
-      let transactionModelRemoveSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
+      let transactionModelRemoveSpy = BtcTransactionStorage.collection.deleteMany as sinon.SinonSpy;
       let coinModelRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
       let coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 
@@ -209,7 +209,7 @@ describe('Block Model', function() {
         height: 1355
       };
       let params = Object.assign(BtcBlockStorage, blockMethodParams);
-      const removeSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
+      const removeSpy = BtcTransactionStorage.collection.deleteMany as sinon.SinonSpy;
 
       await BtcBlockStorage.handleReorg(params);
       expect(removeSpy.called).to.be.true;
