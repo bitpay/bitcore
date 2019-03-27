@@ -57,7 +57,8 @@
       true,
       "never"
     ],
-    "array-type": false
+    "array-type": false,
+    "eofline": false
   },
   "rulesDirectory": []
 }
