@@ -1,14 +1,13 @@
 #!/usr/bin/env node
 import { PushNotificationsService } from '../lib/pushnotificationsservice';
 
-var log = require('npmlog');
+let log = require('npmlog');
+let config = require('../config');
+
 log.debug = log.verbose;
 log.level = 'debug';
-
-var config = require('../config');
-
-var pushNotificationsService = new PushNotificationsService();
-pushNotificationsService.start(config, function(err) {
+const pushNotificationsService = new PushNotificationsService();
+pushNotificationsService.start(config, (err) => {
   if (err) throw err;
 
   log.debug('Push Notification Service started');

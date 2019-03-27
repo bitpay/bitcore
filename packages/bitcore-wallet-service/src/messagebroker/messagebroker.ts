@@ -1,21 +1,20 @@
 #!/usr/bin/env node
-
 'use strict';
+import io from 'socket.io';
 
-import io = require('socket.io');
-var $ = require('preconditions').singleton();
-var log = require('npmlog');
+let log = require('npmlog');
+
 log.debug = log.verbose;
 
-var DEFAULT_PORT = 3380;
+const DEFAULT_PORT = 3380;
 
-var opts = {
+const opts = {
   port: parseInt(process.argv[2]) || DEFAULT_PORT,
 };
 
-var server = io(opts.port.toString());
-server.on('connection', function(socket) {
-  socket.on('msg', function(data) {
+const server = io(opts.port.toString());
+server.on('connection', (socket) => {
+  socket.on('msg', (data) => {
     server.emit('msg', data);
   });
 });

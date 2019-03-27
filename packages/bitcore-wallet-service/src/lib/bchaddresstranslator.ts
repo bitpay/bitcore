@@ -22,7 +22,7 @@ export class BCHAddressTranslator {
   }
 
   // Supports 3 formats:  legacy (1xxx, mxxxx); Copay: (Cxxx, Hxxx), Cashaddr(qxxx);
-  static translate(addresses, to, from) {
+  static translate(addresses, to, from?) {
     var wasArray = true;
     if (!_.isArray(addresses)) {
       wasArray = false;
