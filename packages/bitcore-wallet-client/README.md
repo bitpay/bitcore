@@ -1,41 +1,41 @@
-# bitcore-wallet-client
+# Bitcore Wallet Client
 
 [![NPM Package](https://img.shields.io/npm/v/bitcore-wallet-client.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-wallet-client)
 [![Build Status](https://img.shields.io/travis/bitpay/bitcore-wallet-client.svg?branch=master&style=flat-square)](https://travis-ci.org/bitpay/bitcore-wallet-client)
 [![Coverage Status](https://coveralls.io/repos/bitpay/bitcore-wallet-client/badge.svg)](https://coveralls.io/r/bitpay/bitcore-wallet-client)
 
-The *official* client library for [bitcore-wallet-service](https://github.com/bitpay/bitcore-wallet-service).
+**The *official* client library for [bitcore-wallet-service](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet-service).**
 
 ## Description
 
-This package communicates with BWS [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) using the REST API. All REST endpoints are wrapped as simple async methods. All relevant responses from BWS are checked independently by the peers, thus the importance of using this library when talking to a third party BWS instance.
+This package communicates with BWS [Bitcore wallet service](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet-service) using the REST API. All REST endpoints are wrapped as simple async methods. All relevant responses from BWS are checked independently by the peers, thus the importance of using this library when talking to a third party BWS instance.
 
-See [Bitcore-wallet](https://github.com/bitpay/bitcore-wallet) for a simple CLI wallet implementation that relays on BWS and uses bitcore-wallet-client.
+See [Bitcore-wallet](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet) for a simple CLI wallet implementation that relays on BWS and uses bitcore-wallet-client.
 
 ## Get Started
 
 You can start using bitcore-wallet-client in any of these two ways:
 
-* via [Bower](http://bower.io/): by running `bower install bitcore-wallet-client` from your console
-* or via [NPM](https://www.npmjs.com/package/bitcore-wallet-client): by running `npm install bitcore-wallet-client` from your console.
+- via [Bower](http://bower.io/): by running `bower install bitcore-wallet-client` from your console
+- or via [NPM](https://www.npmjs.com/package/bitcore-wallet-client): by running `npm install bitcore-wallet-client` from your console.
 
 ## Example
 
-Start your own local [Bitcore wallet service](https://github.com/bitpay/bitcore-wallet-service) instance. In this example we assume you have `bitcore-wallet-service` running on your `localhost:3232`.
+Start your own local [Bitcore wallet service](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet-service) instance. In this example we assume you have `bitcore-wallet-service` running on your `localhost:3232`.
 
 Install `bitcore-wallet-client` before start:
 
-```
+```sh
 npm i bitcore-wallet-client
 ```
 
 ### **Create and join a shared wallet**
----
+
 Create two files `irene.js` and `tomas.js` with the content below:
 
-**irene.js**
+#### irene.js
 
-``` javascript
+```javascript
 var Client = require('bitcore-wallet-client');
 
 
@@ -58,10 +58,9 @@ client.createWallet("My Wallet", "Irene", 2, 2, {network: 'testnet'}, function(e
 });
 ```
 
-**tomas.js**
+#### tomas.js
 
-``` javascript
-
+```javascript
 var Client = require('bitcore-wallet-client');
 
 
@@ -114,7 +113,7 @@ client.joinWallet(secret, "Tomas", {}, function(err, wallet) {
 
 Create a new wallet with the first script:
 
-```
+```sh
 $ node irene.js
 info Generating new keys
  Wallet Created. Share this secret with your copayers: JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY1ZRwZCbvT
@@ -122,7 +121,7 @@ info Generating new keys
 
 Join to this wallet with generated secret:
 
-```
+```sh
 $ node tomas.js JbTDjtUkvWS4c3mgAtJf4zKyRGzdQzZacfx2S7gRqPLcbeAWaSDEnazFJF6mKbzBvY1ZRwZCbvT
 Joined My Wallet!
 
@@ -131,14 +130,11 @@ Wallet Info: [...]
 Creating first address:
 
 Return: [...]
-
 ```
 
 Note that the scripts created two files named `irene.dat` and `tomas.dat`. With these files you can get status, generate addresses, create proposals, sign transactions, etc.
 
-
 ### **Open a wallet dat file**
----
 
 ``` javascript
 var Client = require('bitcore-wallet-client');
@@ -154,9 +150,10 @@ var client = new Client({
 
 client.import(fs.readFileSync("filename.dat"));
 ```
+
 Now you can get the balance for the wallet with:
 
-``` javascript
+```javascript
   client.openWallet((err, res) => {
     client.getBalance((err, res) => {
       console.log(res);
@@ -164,39 +161,35 @@ Now you can get the balance for the wallet with:
   });
 ```
 
-# Global
-
-
 * * *
 
 ## Class: API
+
 ClientAPI constructor.
 
 ### API.setNotificationsInterval(notificationIntervalSeconds)
 
 Reset notification polling with new interval
 
-**Parameters**
+#### **Parameters**
 
 **notificationIntervalSeconds**: `Numeric`, use 0 to pause notifications
-
 
 ### API.seedFromRandom(opts, opts.network)
 
 Seed from random
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `Object`, Seed from random
 
 **opts.network**: `String`, default 'livenet'
 
-
 ### API.seedFromRandomWithMnemonic(opts, opts.network, opts.passphrase, opts.language, opts.account)
 
 Seed from random with mnemonic
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `Object`, Seed from random with mnemonic
 
@@ -208,12 +201,11 @@ Seed from random with mnemonic
 
 **opts.account**: `Number`, default 0
 
-
 ### API.seedFromExtendedPrivateKey(xPrivKey, opts.account, opts.derivationStrategy)
 
 Seed from extended private key
 
-**Parameters**
+#### **Parameters**
 
 **xPrivKey**: `String`, Seed from extended private key
 
@@ -221,13 +213,12 @@ Seed from extended private key
 
 **opts.derivationStrategy**: `String`, default 'BIP44'
 
-
 ### API.seedFromMnemonic(BIP39, opts, opts.network, opts.passphrase, opts.account, opts.derivationStrategy)
 
 Seed from Mnemonics (language autodetected)
 Can throw an error if mnemonic is invalid
 
-**Parameters**
+#### **Parameters**
 
 **BIP39**: `String`, words
 
@@ -243,12 +234,11 @@ Can throw an error if mnemonic is invalid
 
 **opts.derivationStrategy**: `String`, default 'BIP44'
 
-
 ### API.seedFromExtendedPublicKey(xPubKey, source, entropySourceHex, opts, opts.account, opts.derivationStrategy)
 
 Seed from external wallet public key
 
-**Parameters**
+#### **Parameters**
 
 **xPubKey**: `String`, Seed from external wallet public key
 
@@ -262,12 +252,11 @@ Seed from external wallet public key
 
 **opts.derivationStrategy**: `String`, default 'BIP44'
 
-
 ### API.export(opts, opts.noSign)
 
 Export wallet
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `Object`, Export wallet
 
@@ -279,7 +268,7 @@ Export wallet
 Import wallet
 emits 'derivation-error' in case keys are not validated correctly.
 
-**Parameters**
+#### **Parameters**
 
 **str**: `Object`, Import wallet
 emits 'derivation-error' in case keys are not validated correctly.
@@ -292,13 +281,12 @@ will be needed for derive credentials fields.
 
 **opts.skipKeyValidation**: `Boolean`, Skip extended key validation
 
-
 ### API.importFromMnemonic(BIP39, opts, opts.network, opts.passphrase, opts.account, opts.derivationStrategy)
 
 Import from Mnemonics (language autodetected)
 Can throw an error if mnemonic is invalid
 
-**Parameters**
+#### **Parameters**
 
 **BIP39**: `String`, words
 
@@ -314,12 +302,11 @@ Can throw an error if mnemonic is invalid
 
 **opts.derivationStrategy**: `String`, default 'BIP44'
 
-
 ### API.importFromExtendedPublicKey(xPubKey, source, entropySourceHex, opts, opts.account, opts.derivationStrategy)
 
 Import from Extended Public Key
 
-**Parameters**
+#### **Parameters**
 
 **xPubKey**: `String`, Import from Extended Public Key
 
@@ -333,22 +320,19 @@ Import from Extended Public Key
 
 **opts.derivationStrategy**: `String`, default 'BIP44'
 
-
 ### API.openWallet(cb)
 
 Open a wallet and try to complete the public key ring.
 
-**Parameters**
+#### **Parameters**
 
 **cb**: `Callback`, The callback that handles the response. It returns a flag indicating that the wallet is complete.
 
 **Fires**: API#event:walletCompleted
 
-
 ### API.isComplete()
 
 Return if wallet is complete
-
 
 ### API.isPrivKeyEncrypted()
 
@@ -379,11 +363,10 @@ Get external wallet source name
 unlocks the private key. `lock` need to be called explicity
 later to remove the unencrypted private key.
 
-**Parameters**
+#### **Parameters**
 
 **password**: , unlocks the private key. `lock` need to be called explicity
 later to remove the unencrypted private key.
-
 
 ### API.canSign()
 
@@ -396,7 +379,7 @@ Can this credentials sign a transaction?
 
 sets up encryption for the extended private key
 
-**Parameters**
+#### **Parameters**
 
 **password**: `String`, Password used to encrypt
 
@@ -409,7 +392,6 @@ sets up encryption for the extended private key
 disables encryption for private key.
 wallet must be unlocked
 
-
 ### API.lock()
 
 Locks private key (removes the unencrypted version and keep only the encrypted)
@@ -420,7 +402,7 @@ Locks private key (removes the unencrypted version and keep only the encrypted)
 
 Get current fee levels for the specified network
 
-**Parameters**
+#### **Parameters**
 
 **network**: `string`, 'livenet' (default) or 'testnet'
 
@@ -432,16 +414,15 @@ Get current fee levels for the specified network
 
 Get service version
 
-**Parameters**
+#### **Parameters**
 
 **cb**: `Callback`, Get service version
-
 
 ### API.createWallet(walletName, copayerName, m, n, opts, opts.network, opts.walletPrivKey, opts.id, opts.withMnemonics, cb)
 
 Create a wallet.
 
-**Parameters**
+#### **Parameters**
 
 **walletName**: `String`, Create a wallet.
 
@@ -469,7 +450,7 @@ Create a wallet.
 
 Join an existent wallet
 
-**Parameters**
+#### **Parameters**
 
 **secret**: `String`, Join an existent wallet
 
@@ -493,7 +474,7 @@ Recreates a wallet, given credentials (with wallet id)
 
 Get latest notifications
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `object`, Get latest notifications
 
@@ -507,7 +488,7 @@ Get latest notifications
 
 Get status of the wallet
 
-**Parameters**
+#### **Parameters**
 
 **opts.twoStep[**: `Boolean`, Optional: use 2-step balance computation for improved performance
 
@@ -519,7 +500,7 @@ Get status of the wallet
 
 Get copayer preferences
 
-**Parameters**
+#### **Parameters**
 
 **cb**: `Callback`, Get copayer preferences
 
@@ -529,7 +510,7 @@ Get copayer preferences
 
 Save copayer preferences
 
-**Parameters**
+#### **Parameters**
 
 **preferences**: `Object`, Save copayer preferences
 
@@ -541,7 +522,7 @@ Save copayer preferences
 
 fetchPayPro
 
-**Parameters**
+#### **Parameters**
 
 **opts.payProUrl**: , URL for paypro request
 
@@ -555,7 +536,7 @@ Returns (err,paypro)
 
 Gets list of utxos
 
-**Parameters**
+#### **Parameters**
 
 **cb**: `function`, Gets list of utxos
 
@@ -569,7 +550,7 @@ Gets list of utxos
 
 Create a transaction proposal
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `Object`, Create a transaction proposal
 
@@ -608,7 +589,7 @@ Create a transaction proposal
 
 Publish a transaction proposal
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `Object`, Publish a transaction proposal
 
@@ -620,7 +601,7 @@ Publish a transaction proposal
 
 Create a new address
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `Object`, Create a new address
 
@@ -634,7 +615,7 @@ Create a new address
 
 Get your main addresses
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `Object`, Get your main addresses
 
@@ -652,7 +633,7 @@ Get your main addresses
 
 Update wallet balance
 
-**Parameters**
+#### **Parameters**
 
 **opts.twoStep[**: `Boolean`, Optional: use 2-step balance computation for improved performance
 
@@ -663,7 +644,7 @@ Update wallet balance
 
 Get list of transactions proposals
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `Object`, Get list of transactions proposals
 
@@ -677,7 +658,7 @@ Get list of transactions proposals
 
 Sign a transaction proposal
 
-**Parameters**
+#### **Parameters**
 
 **txp**: `Object`, Sign a transaction proposal
 
@@ -689,7 +670,7 @@ Sign a transaction proposal
 
 Sign transaction proposal from AirGapped
 
-**Parameters**
+#### **Parameters**
 
 **txp**: `Object`, Sign transaction proposal from AirGapped
 
@@ -705,7 +686,7 @@ Sign transaction proposal from AirGapped
 
 Reject a transaction proposal
 
-**Parameters**
+#### **Parameters**
 
 **txp**: `Object`, Reject a transaction proposal
 
@@ -719,7 +700,7 @@ Reject a transaction proposal
 
 Broadcast raw transaction
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `Object`, Broadcast raw transaction
 
@@ -735,7 +716,7 @@ Broadcast raw transaction
 
 Broadcast a transaction proposal
 
-**Parameters**
+#### **Parameters**
 
 **txp**: `Object`, Broadcast a transaction proposal
 
@@ -747,7 +728,7 @@ Broadcast a transaction proposal
 
 Remove a transaction proposal
 
-**Parameters**
+#### **Parameters**
 
 **txp**: `Object`, Remove a transaction proposal
 
@@ -759,7 +740,7 @@ Remove a transaction proposal
 
 Get transaction history
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `Object`, Get transaction history
 
@@ -777,7 +758,7 @@ Get transaction history
 
 getTx
 
-**Parameters**
+#### **Parameters**
 
 **TransactionId**: `String`, getTx
 
@@ -788,7 +769,7 @@ getTx
 Start an address scanning process.
 When finished, the scanning process will send a notification 'ScanFinished' to all copayers.
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `Object`, Start an address scanning process.
 When finished, the scanning process will send a notification 'ScanFinished' to all copayers.
@@ -803,7 +784,7 @@ When finished, the scanning process will send a notification 'ScanFinished' to a
 
 Returns exchange rate for the specified currency & timestamp.
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `Object`, Returns exchange rate for the specified currency & timestamp.
 
@@ -819,7 +800,7 @@ Returns exchange rate for the specified currency & timestamp.
 
 Returns subscription status.
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `Object`, Returns subscription status.
 
@@ -833,7 +814,7 @@ Returns subscription status.
 
 Returns unsubscription status.
 
-**Parameters**
+#### **Parameters**
 
 **token**: `String`, Device token
 
@@ -843,7 +824,7 @@ Returns unsubscription status.
 
 Returns send max information.
 
-**Parameters**
+#### **Parameters**
 
 **opts**: `String`, Returns send max information.
 
@@ -859,7 +840,7 @@ Returns send max information.
 
 createWalletFromOldCopay
 
-**Parameters**
+#### **Parameters**
 
 **username**: , createWalletFromOldCopay
 
@@ -871,211 +852,93 @@ createWalletFromOldCopay
 
 **Returns**: `undefined`
 
-
-
 * * *
 
-
-
-
-
-
-
-
-
-
-* * *
-
-
-
-
-
-
-
-
-
-
-* * *
-
-
-
-
-
-
-
-
-
-
-* * *
-
-
-
-
-
-
-
-
-
-
-* * *
-
-
-
-
-
-
-
-
-
-
-# Global
-
-
-
-
-
-* * *
 
 ## Class: Logger
-A simple logger that wraps the <tt>console.log</tt> methods when available.
+
+A simple logger that wraps the `console.log` methods when available.
 
 Usage:
-<pre>
+
+```html
   log = new Logger('copay');
   log.setLevel('info');
   log.debug('Message!'); // won't show
   log.setLevel('debug');
   log.debug('Message!', 1); // will show '[debug] copay: Message!, 1'
-</pre>
+```
 
 ### Logger.setLevel(level)
 
 Sets the level of a logger. A level can be any bewteen: 'silent', 'debug', 'info', 'log',
 'warn', 'error', and 'fatal'. That order matters: if a logger's level is set to
-'warn', calling <tt>level.debug</tt> won't have any effect. If the level is set to 'silent',
+'warn', calling `level.debug` won't have any effect. If the level is set to 'silent',
 nothing will ever be logged. 'silent' is the default log level.
 
-**Parameters**
+#### **Parameters**
 
 **level**: `number`, the name of the logging level
-
 
 ### Logger.debug(args)
 
 Log messages at the debug level.
 
-**Parameters**
+#### **Parameters**
 
 **args**: `*`, the arguments to be logged.
-
 
 ### Logger.info(args)
 
 Log messages at the info level.
 
-**Parameters**
+#### **Parameters**
 
 **args**: `*`, the arguments to be logged.
-
 
 ### Logger.log(args)
 
 Log messages at an intermediary level called 'log'.
 
-**Parameters**
+#### **Parameters**
 
 **args**: `*`, the arguments to be logged.
-
 
 ### Logger.warn(args)
 
 Log messages at the warn level.
 
-**Parameters**
+#### **Parameters**
 
 **args**: `*`, the arguments to be logged.
-
 
 ### Logger.error(args)
 
 Log messages at the error level.
 
-**Parameters**
+#### **Parameters**
 
 **args**: `*`, the arguments to be logged.
-
 
 ### Logger.fatal(args)
 
 Log messages at the fatal level.
 
-**Parameters**
+#### **Parameters**
 
 **args**: `*`, the arguments to be logged.
-
-
-
-
-* * *
-
-
-
-
-
-
-
-
-
-
-* * *
-
-
-
-
-
-
-
-
-
-
-* * *
-
-
-
-
-
-
-
-
-
-
-* * *
-
-
-
-
-
-
-
-
-
-
-# Global
-
-
-
-
 
 * * *
 
 ## Class: Verifier
+
 Verifier constructor. Checks data given by the server
 
 ### Verifier.checkAddress(credentials, address)
 
 Check address
 
-**Parameters**
+#### **Parameters**
 
 **credentials**: `function`, Check address
 
@@ -1087,7 +950,7 @@ Check address
 
 Check copayers
 
-**Parameters**
+#### **Parameters**
 
 **credentials**: `function`, Check copayers
 
@@ -1099,7 +962,7 @@ Check copayers
 
 Check transaction proposal
 
-**Parameters**
+#### **Parameters**
 
 **credentials**: `function`, Check transaction proposal
 
@@ -1109,38 +972,12 @@ Check transaction proposal
 
 **isLegit**: `Boolean`, Check transaction proposal
 
+## Contributing
 
+See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/Contributing.md) on the main bitcore repo for information about how to contribute.
 
+## License
 
-* * *
+Code released under [the MIT license](https://github.com/bitpay/bitcore/blob/master/LICENSE).
 
-
-
-
-
-
-
-
-
-
-The MIT License
-
-Copyright (c) 2015 BitPay
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
+Copyright 2013-2019 BitPay, Inc. Bitcore is a trademark maintained by BitPay, Inc.
