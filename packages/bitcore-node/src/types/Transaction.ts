@@ -1,5 +1,5 @@
 import { ObjectID } from 'mongodb';
-import { ClassifiedTrace } from '../providers/chain-state/eth/parityRpc';
+import { ClassifiedTrace, TokenTransferResponse } from '../providers/chain-state/eth/parityRpc';
 export type ITransaction = {
   txid: string;
   chain: string;
@@ -64,6 +64,8 @@ export type BtcTransactionJSON = {
   value: number;
 };
 
+export type AbiDecodedData = { type: string; decodedData: TokenTransferResponse };
+export type DecodedTrace = ClassifiedTrace & AbiDecodedData;
 export type EthTransactionJSON = {
   _id: string;
   txid: string;
@@ -81,5 +83,6 @@ export type EthTransactionJSON = {
   nonce: number;
   to: string;
   from: string;
-  decodedData?: { type: string; value: string };
+  decodedData?: AbiDecodedData;
+  internal: Array<DecodedTrace>;
 };

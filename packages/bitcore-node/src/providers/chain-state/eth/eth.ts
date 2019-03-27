@@ -4,6 +4,9 @@ import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { InternalStateProvider } from '../internal/internal';
 import { ObjectID } from 'mongodb';
 import Web3 from 'web3';
+import { Storage } from '../../../services/storage';
+import { EthTransactionStorage } from '../../../models/transaction/eth/ethTransaction';
+import { ITransaction, EthTransactionJSON } from '../../../types/Transaction';
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -42,9 +45,30 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   }
 
   async getTransaction(params: CSP.StreamTransactionParams) {
-    const { network, txId } = params;
-    const transaction = await this.getWeb3(network).eth.getTransaction(txId);
-    return transaction as any;
+    try {
+      let { chain, network, txId } = params;
+      if (typeof txId !== 'string' || !chain || !network) {
+        throw 'Missing required param';
+      }
+      network = network.toLowerCase();
+      let query = { chain: chain, network, txid: txId };
+      const tip = await this.getLocalTip(params);
+      const tipHeight = tip ? tip.height : 0;
+      const found = await EthTransactionStorage.collection.findOne(query);
+      if (found) {
+        let confirmations = 0;
+        if (found.blockHeight && found.blockHeight >= 0) {
+          confirmations = tipHeight - found.blockHeight + 1;
+        }
+        const convertedTx = EthTransactionStorage._apiTransform(found, { object: true }) as EthTransactionJSON;
+        return { ...convertedTx, confirmations: confirmations };
+      } else {
+        return undefined;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    return undefined;
   }
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
@@ -59,6 +83,34 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       .find(query)
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
+  }
+
+  async streamTransactions(params: CSP.StreamTransactionsParams) {
+    const { chain, network, req, res, args } = params;
+    let { blockHash, blockHeight } = args;
+    if (!chain || !network) {
+      throw 'Missing chain or network';
+    }
+    let query: any = {
+      chain: chain,
+      network: network.toLowerCase()
+    };
+    if (blockHeight !== undefined) {
+      query.blockHeight = Number(blockHeight);
+    }
+    if (blockHash !== undefined) {
+      query.blockHash = blockHash;
+    }
+    const tip = await this.getLocalTip(params);
+    const tipHeight = tip ? tip.height : 0;
+    return Storage.apiStreamingFind(EthTransactionStorage, query, args, req, res, t => {
+      let confirmations = 0;
+      if (t.blockHeight !== undefined && t.blockHeight >= 0) {
+        confirmations = tipHeight - t.blockHeight + 1;
+      }
+      const convertedTx = EthTransactionStorage._apiTransform(t, { object: true }) as Partial<ITransaction>;
+      return JSON.stringify({ ...convertedTx, confirmations: confirmations });
+    });
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {

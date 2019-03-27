@@ -18,7 +18,7 @@ const erc721abi = require('../../../providers/chain-state/erc20/erc721abi');
 
 @LoggifyClass
 export class EthTransactionModel extends TransactionModel<IEthTransaction> {
-  constructor(storage?: StorageService) {
+  constructor(storage: StorageService = Storage) {
     super(storage);
   }
 
@@ -157,21 +157,27 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
     try {
       try {
         AbiDecoder.addABI(erc20abi);
-        const value = AbiDecoder.decodeMethod(input).params.filter(e => e.name === '_value')[0].value;
+        const decodedData = AbiDecoder.decodeMethod(input);
+        if (!decodedData || decodedData.length === 0) {
+          throw new Error();
+        }
         return {
           type: 'ERC20',
-          value
+          ...decodedData
         };
       } catch {
         AbiDecoder.addABI(erc721abi);
-        const value = AbiDecoder.decodeMethod(input).params.filter(e => e.name === '_value')[0].value;
+        const decodedData = AbiDecoder.decodeMethod(input);
+        if (!decodedData || decodedData.length === 0) {
+          throw new Error();
+        }
         return {
           type: 'ERC721',
-          value
+          ...decodedData
         };
       }
     } catch {
-      return false;
+      return undefined;
     }
   }
 
@@ -195,6 +201,9 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
       nonce: tx.nonce || 0,
       to: tx.to || '',
       from: tx.from || '',
+      internal: tx.internal
+        ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t.action.input || '0x') }))
+        : [],
       decodedData: decodedData ? decodedData : undefined
     };
     if (options && options.object) {

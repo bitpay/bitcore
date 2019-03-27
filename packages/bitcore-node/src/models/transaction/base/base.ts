@@ -1,10 +1,12 @@
 import { BaseModel, MongoBound } from '../../base';
-import { StorageService } from '../../../services/storage';
-import { ITransaction, TransactionJSON } from '../../../types/Transaction';
+import { StorageService, Storage } from '../../../services/storage';
+import { ITransaction } from '../../../types/Transaction';
 import { TransformOptions } from '../../../types/TransformOptions';
+import { EthTransactionStorage } from '../eth/ethTransaction';
+import { BtcTransactionStorage } from '..';
 
 export class TransactionModel<T extends ITransaction> extends BaseModel<T> {
-  constructor(storage?: StorageService) {
+  constructor(storage: StorageService = Storage) {
     super('transactions', storage);
   }
 
@@ -30,24 +32,15 @@ export class TransactionModel<T extends ITransaction> extends BaseModel<T> {
     );
   }
 
-  _apiTransform(tx: Partial<MongoBound<T>>, options?: TransformOptions): TransactionJSON | string {
-    const transaction: TransactionJSON = {
-      _id: tx._id ? tx._id.toString() : '',
-      txid: tx.txid || '',
-      network: tx.network || '',
-      chain: tx.chain || '',
-      blockHeight: tx.blockHeight || -1,
-      blockHash: tx.blockHash || '',
-      blockTime: tx.blockTime ? tx.blockTime.toISOString() : '',
-      blockTimeNormalized: tx.blockTimeNormalized ? tx.blockTimeNormalized.toISOString() : '',
-      size: tx.size || -1,
-      fee: tx.fee || -1,
-      value: tx.value || -1
-    };
-    if (options && options.object) {
-      return transaction;
+  _apiTransform(tx: Partial<MongoBound<T>>, options?: TransformOptions) {
+    switch (tx.chain) {
+      case 'ETH':
+        return EthTransactionStorage._apiTransform(tx, options);
+      case 'BTC':
+        return BtcTransactionStorage._apiTransform(tx, options);
+      default:
+        return BtcTransactionStorage._apiTransform(tx, options);
     }
-    return JSON.stringify(transaction);
   }
 }
 export let TransactionStorage = new TransactionModel<ITransaction>();

@@ -1,4 +1,4 @@
-import { IBtcTransaction } from "../../../types/Transaction";
+import { IBtcTransaction } from '../../../types/Transaction';
 import { CoinStorage } from '../.././coin';
 import { WalletAddressStorage } from '../.././walletAddress';
 import { partition } from '../../../utils/partition';
@@ -14,8 +14,8 @@ import { Config } from '../../../services/config';
 import { EventStorage } from '../.././events';
 import * as lodash from 'lodash';
 import logger from '../../../logger';
-import { TransactionModel } from "../base/base";
-import { BitcoreLibs } from "../../../chain";
+import { TransactionModel } from '../base/base';
+import { BitcoreLibs } from '../../../chain';
 
 export type MintOp = {
   updateOne: {
@@ -63,7 +63,7 @@ export type SpendOp = {
 
 @LoggifyClass
 export class BtcTransactionModel extends TransactionModel<IBtcTransaction> {
-  constructor(storage?: StorageService) {
+  constructor(storage: StorageService = Storage) {
     super(storage);
   }
 

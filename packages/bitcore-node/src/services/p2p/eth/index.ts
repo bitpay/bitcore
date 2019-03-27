@@ -221,9 +221,13 @@ export class EthP2pWorker {
             // if (tx.type === 'reward') {
             //   console.log(tx);
             // }
-            const foundIndex = convertedTxs.findIndex(t => t.txid === tx.transactionHash);
-            if (foundIndex > -1) {
-              convertedTxs[foundIndex].internal.push(tx);
+            if (tx && tx.action) {
+              const foundIndex = convertedTxs.findIndex(
+                t => t.txid === tx.transactionHash && t.from !== tx.action.from && t.to !== tx.action.to
+              );
+              if (foundIndex > -1) {
+                convertedTxs[foundIndex].internal.push(tx);
+              }
             }
           }
 
@@ -257,19 +261,19 @@ export class EthP2pWorker {
   convertBlock(block: Ethereum.Block) {
     const { header } = block;
     const blockTime = Number.parseInt(header.timestamp.toString('hex') || '0', 16) * 1000;
-    const hash = block.header.hash().toString('hex');
+    const hash = `0x${block.header.hash().toString('hex')}`;
     const height = new BN(header.number).toNumber();
     const convertedBlock: IEthBlock = {
       chain: this.chain,
       network: this.network,
       height,
       hash,
-      coinbase: block.header.coinbase.toString('hex'),
+      coinbase: `0x${block.header.coinbase.toString('hex')}`,
       merkleRoot: block.header.transactionsTrie.toString('hex'),
       time: new Date(blockTime),
       timeNormalized: new Date(blockTime),
       nonce: header.nonce.toString('hex'),
-      previousBlockHash: header.parentHash.toString('hex'),
+      previousBlockHash: `0x${header.parentHash.toString('hex')}`,
       nextBlockHash: '',
       transactionCount: block.transactions.length,
       size: block.raw.length,
@@ -291,7 +295,7 @@ export class EthP2pWorker {
       const fee = Number(tx.getUpfrontCost().toString());
       const abiType = this.rpc.abiDecode('0x' + tx.data.toString('hex'));
       const nonce = tx.nonce.toString('hex');
-      return {
+      const convertedTx: IEthTransaction = {
         chain: this.chain,
         network: this.network,
         blockHeight: -1,
@@ -309,9 +313,12 @@ export class EthP2pWorker {
         gasLimit: Number.parseInt(tx.gasLimit.toString('hex'), 16),
         gasPrice: Number.parseInt(tx.gasPrice.toString('hex'), 16),
         nonce: Number.parseInt(nonce || '0x0', 16),
-        abiType: abiType ? abiType : undefined,
         internal: []
       };
+      if (abiType) {
+        convertedTx.abiType = abiType;
+      }
+      return convertedTx;
     } else {
       const { hash: blockHash, time: blockTime, timeNormalized: blockTimeNormalized, height } = block;
       const noBlockTx = this.convertTx(tx);

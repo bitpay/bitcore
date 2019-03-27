@@ -31,7 +31,7 @@ export interface ParityTraceResponse {
 }
 
 export interface ClassifiedTrace extends ParityTraceResponse {
-  abiType: IEthTransaction['abiType'];
+  abiType?: IEthTransaction['abiType'];
 }
 
 export interface TokenTransferResponse {
@@ -83,15 +83,18 @@ export class ParityRPC {
         return 'ERC721';
       }
     } catch {
-      return false;
+      return undefined;
     }
   }
 
   private async transactionFromParityTrace(tx: ParityTraceResponse): Promise<ClassifiedTrace> {
     const abiType = await this.abiDecode(tx.action.input!);
-    return {
-      ...tx,
-      abiType: abiType ? abiType : undefined
+    const convertedTx: ClassifiedTrace = {
+      ...tx
     };
+    if (abiType) {
+      convertedTx.abiType = abiType;
+    }
+    return convertedTx;
   }
 }

@@ -56,7 +56,7 @@ export class EthBlockModel extends BlockModel<IEthBlock> {
     if (previousBlock) {
       await this.collection.updateOne(
         { chain, network, hash: previousBlock.hash },
-        { $set: { nextBlockHash: convertedBlock.hash } }
+        { $set: { nextBlockHash: `0x${convertedBlock.hash}` } }
       );
       logger.debug('Updating previous block.nextBlockHash ', convertedBlock.hash);
     }
@@ -88,10 +88,10 @@ export class EthBlockModel extends BlockModel<IEthBlock> {
 
     const previousBlock = await this.collection.findOne({ hash: prevHash, chain, network });
 
-    const blockTimeNormalized = (() => {
+    const timeNormalized = (() => {
       const prevTime = previousBlock ? previousBlock.timeNormalized : null;
       if (prevTime && blockTime.getTime() <= prevTime.getTime()) {
-        return prevTime.getTime() + 1;
+        return new Date(prevTime.getTime() + 1);
       } else {
         return blockTime;
       }
@@ -107,7 +107,7 @@ export class EthBlockModel extends BlockModel<IEthBlock> {
           network
         },
         update: {
-          $set: { ...block, blockTimeNormalized }
+          $set: { ...block, timeNormalized }
         },
         upsert: true
       }
