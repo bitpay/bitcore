@@ -134,6 +134,7 @@ The are plenty example creating and sending proposals in the `/test/integration`
         }
 ```
 **bitcore-wallet-service/config.js**
+
 2. Point testnet to http://localhost:3000 in BWS/config.js and set regtestEnabled to true.
 ```
 blockchainExplorerOpts: {
@@ -189,7 +190,7 @@ http://localhost:3232/bws/api
 
 <img width="923" alt="screen shot 2019-03-06 at 10 50 29 am" src="https://user-images.githubusercontent.com/23103037/53894324-e69f8300-3ffd-11e9-9b25-145332fe860c.png">
 
-# Testing on mobile
+## Testing on mobile
 Requirements:
 - Mobile phone and PC must be connected to the same internet
 - PC desktop ip address for localhost
