@@ -151,29 +151,10 @@ blockchainExplorerOpts: {
     },
 ...
 ```
-**packages/bitcore-wallet-service/lib/blockchainexplorers/v8.js**
-- Pull the enableRegtest flag from config
-```
-const config = require('../../config');
-```
 
-- Update v8network function to convert testnet to regtest in API request.
-
-```
-function v8network(bwsNetwork) {
-  if (bwsNetwork == 'livenet') return 'mainnet';
-  if (
-    bwsNetwork == 'testnet' &&
-    config.blockchainExplorerOpts.btc.testnet.regtestEnabled
-  ) {
-    return 'regtest';
-  }
-  return bwsNetwork;
-}
-```
 ### Copay changes
 **copay/app-template/index-template.html**
-1. Comment out content security meta tag in the ```<head>```
+3. Comment out content security meta tag in the ```<head>```
 ```
 // <meta http-equiv="Content-Security-Policy" content="default-src 'self'  ... >
 ```
