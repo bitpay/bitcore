@@ -1,5 +1,3 @@
-'use strict';
-
 import * as async from 'async';
 import _ from 'lodash';
 import { Db } from 'mongodb';

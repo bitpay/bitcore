@@ -1,23 +1,21 @@
-'use strict';
-
+import * as async from 'async';
+import _ from 'lodash';
 import * as nodemailer from 'nodemailer';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
 import { Storage } from './storage';
-var _ = require('lodash');
-var $ = require('preconditions').singleton();
-var async = require('async');
-var Mustache = require('mustache');
-var log = require('npmlog');
+
+const Mustache = require('mustache');
+const fs = require('fs');
+const path = require('path');
+const Utils = require('./common/utils');
+const Defaults = require('./common/defaults');
+const Model = require('./model');
+
+let log = require('npmlog');
 log.debug = log.verbose;
-var fs = require('fs');
-var path = require('path');
-var Utils = require('./common/utils');
-var Defaults = require('./common/defaults');
 
-var Model = require('./model');
-
-var EMAIL_TYPES = {
+const EMAIL_TYPES = {
   NewCopayer: {
     filename: 'new_copayer',
     notifyDoer: false,
@@ -71,75 +69,73 @@ export class EmailService {
   start(opts, cb) {
     opts = opts || {};
 
-    function _readDirectories(basePath, cb) {
-      fs.readdir(basePath, function(err, files) {
+    const _readDirectories = (basePath, cb) => {
+      fs.readdir(basePath, (err, files) => {
         if (err) return cb(err);
         async.filter(
           files,
-          function(file, next) {
-            fs.stat(path.join(basePath, file), function(err, stats) {
+          (file, next) => {
+            fs.stat(path.join(basePath, file), (err, stats) => {
               return next(!err && stats.isDirectory());
             });
           },
-          function(dirs) {
+          (dirs) => {
             return cb(null, dirs);
           }
         );
       });
-    }
+    };
 
-    var self = this;
-
-    self.defaultLanguage = opts.emailOpts.defaultLanguage || 'en';
-    self.defaultUnit = opts.emailOpts.defaultUnit || 'btc';
+    this.defaultLanguage = opts.emailOpts.defaultLanguage || 'en';
+    this.defaultUnit = opts.emailOpts.defaultUnit || 'btc';
     console.log(
       (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/'
     );
-    self.templatePath = path.normalize(
+    this.templatePath = path.normalize(
       (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/'
     );
-    console.log(self.templatePath);
-    self.publicTxUrlTemplate = opts.emailOpts.publicTxUrlTemplate || {};
-    self.subjectPrefix = opts.emailOpts.subjectPrefix || '[Wallet service]';
-    self.from = opts.emailOpts.from;
+    console.log(this.templatePath);
+    this.publicTxUrlTemplate = opts.emailOpts.publicTxUrlTemplate || {};
+    this.subjectPrefix = opts.emailOpts.subjectPrefix || '[Wallet service]';
+    this.from = opts.emailOpts.from;
 
     async.parallel(
       [
-        function(done) {
-          _readDirectories(self.templatePath, function(err, res) {
-            self.availableLanguages = res;
+        (done) => {
+          _readDirectories(this.templatePath, (err, res) => {
+            this.availableLanguages = res;
             done(err);
           });
         },
-        function(done) {
+        (done) => {
           if (opts.storage) {
-            self.storage = opts.storage;
+            this.storage = opts.storage;
             done();
           } else {
-            self.storage = new Storage();
-            self.storage.connect(
+            this.storage = new Storage();
+            this.storage.connect(
               opts.storageOpts,
               done
             );
           }
         },
-        function(done) {
-          self.messageBroker =
+        (done) => {
+          this.messageBroker =
             opts.messageBroker || new MessageBroker(opts.messageBrokerOpts);
-          self.messageBroker.onMessage(_.bind(self.sendEmail, self));
+          this.messageBroker.onMessage(_.bind(this.sendEmail, this));
           done();
         },
-        function(done) {
-          self.lock = opts.lock || new Lock(self.storage, opts.lockOpts);
+        (done) => {
+          this.lock = opts.lock || new Lock(this.storage, opts.lockOpts);
           done();
         },
-        function(done) {
-          self.mailer =
+        (done) => {
+          this.mailer =
             opts.mailer || nodemailer.createTransport(opts.emailOpts);
           done();
         }
       ],
-      function(err) {
+      (err) => {
         if (err) {
           log.error(err);
         }
@@ -149,7 +145,7 @@ export class EmailService {
   }
 
   _compileTemplate(template, extension) {
-    var lines = template.split('\n');
+    const lines = template.split('\n');
     if (extension == '.html') {
       lines.unshift('');
     }
@@ -160,10 +156,8 @@ export class EmailService {
   }
 
   _readTemplateFile(language, filename, cb) {
-    var self = this;
-
-    var fullFilename = path.join(self.templatePath, language, filename);
-    fs.readFile(fullFilename, 'utf8', function(err, template) {
+    const fullFilename = path.join(this.templatePath, language, filename);
+    fs.readFile(fullFilename, 'utf8', (err, template) => {
       if (err) {
         return cb(
           new Error('Could not read template file ' + fullFilename + err)
@@ -175,14 +169,12 @@ export class EmailService {
 
   // TODO: cache for X minutes
   _loadTemplate(emailType, recipient, extension, cb) {
-    var self = this;
-
-    self._readTemplateFile(
+    this._readTemplateFile(
       recipient.language,
       emailType.filename + extension,
-      function(err, template) {
+      (err, template) => {
         if (err) return cb(err);
-        return cb(null, self._compileTemplate(template, extension));
+        return cb(null, this._compileTemplate(template, extension));
       }
     );
   }
@@ -190,8 +182,8 @@ export class EmailService {
   _applyTemplate(template, data, cb) {
     if (!data) return cb(new Error('Could not apply template to empty data'));
 
-    var error;
-    var result = _.mapValues(template, function(t) {
+    let error;
+    const result = _.mapValues(template, (t) => {
       try {
         return Mustache.render(t, data);
       } catch (e) {
@@ -204,21 +196,19 @@ export class EmailService {
   }
 
   _getRecipientsList(notification, emailType, cb) {
-    var self = this;
-
-    self.storage.fetchWallet(notification.walletId, function(err, wallet) {
+    this.storage.fetchWallet(notification.walletId, (err, wallet) => {
       if (err) return cb(err);
 
-      self.storage.fetchPreferences(notification.walletId, null, function(
+      this.storage.fetchPreferences(notification.walletId, null, (
         err,
         preferences
-      ) {
+      ) => {
         if (err) return cb(err);
         if (_.isEmpty(preferences)) return cb(null, []);
 
-        var usedEmails = {};
-        var recipients = _.compact(
-          _.map(preferences, function(p) {
+        const usedEmails = {};
+        const recipients = _.compact(
+          _.map(preferences, (p) => {
             if (!p.email || usedEmails[p.email]) return;
 
             usedEmails[p.email] = true;
@@ -229,20 +219,20 @@ export class EmailService {
               !emailType.notifyOthers
             )
               return;
-            if (!_.includes(self.availableLanguages, p.language)) {
+            if (!_.includes(this.availableLanguages, p.language)) {
               if (p.language) {
                 log.warn(
                   'Language for email "' + p.language + '" not available.'
                 );
               }
-              p.language = self.defaultLanguage;
+              p.language = this.defaultLanguage;
             }
 
-            var unit;
+            let unit;
             if (wallet.coin != Defaults.COIN) {
               unit = wallet.coin;
             } else {
-              unit = p.unit || self.defaultUnit;
+              unit = p.unit || this.defaultUnit;
             }
 
             return {
@@ -260,20 +250,18 @@ export class EmailService {
   }
 
   _getDataForTemplate(notification, recipient, cb) {
-    var self = this;
-
     // TODO: Declare these in BWU
-    var UNIT_LABELS = {
+    const UNIT_LABELS = {
       btc: 'BTC',
       bit: 'bits',
       bch: 'BCH'
     };
 
-    var data = _.cloneDeep(notification.data);
-    data.subjectPrefix = _.trim(self.subjectPrefix) + ' ';
+    const data = _.cloneDeep(notification.data);
+    data.subjectPrefix = _.trim(this.subjectPrefix) + ' ';
     if (data.amount) {
       try {
-        var unit = recipient.unit.toLowerCase();
+        const unit = recipient.unit.toLowerCase();
         data.amount =
           Utils.formatAmount(+data.amount, unit) + ' ' + UNIT_LABELS[unit];
       } catch (ex) {
@@ -281,13 +269,13 @@ export class EmailService {
       }
     }
 
-    self.storage.fetchWallet(notification.walletId, function(err, wallet) {
+    this.storage.fetchWallet(notification.walletId, (err, wallet) => {
       if (err) return cb(err);
       data.walletId = wallet.id;
       data.walletName = wallet.name;
       data.walletM = wallet.m;
       data.walletN = wallet.n;
-      var copayer = _.find(wallet.copayers, {
+      const copayer: any = _.find(wallet.copayers, {
         id: notification.creatorId
       });
       if (copayer) {
@@ -296,10 +284,11 @@ export class EmailService {
       }
 
       if (notification.type == 'TxProposalFinallyRejected' && data.rejectedBy) {
-        var rejectors = _.map(data.rejectedBy, function(copayerId) {
-          return _.find(wallet.copayers, {
+        const rejectors = _.map(data.rejectedBy, (copayerId) => {
+          const copayer: any = _.find(wallet.copayers, {
             id: copayerId
-          }).name;
+          });
+          return copayer.name;
         });
         data.rejectorsNames = rejectors.join(', ');
       }
@@ -308,7 +297,7 @@ export class EmailService {
         _.includes(['NewIncomingTx', 'NewOutgoingTx'], notification.type) &&
         data.txid
       ) {
-        var urlTemplate = self.publicTxUrlTemplate[wallet.coin][wallet.network];
+        const urlTemplate = this.publicTxUrlTemplate[wallet.coin][wallet.network];
         if (urlTemplate) {
           try {
             data.urlForTx = Mustache.render(urlTemplate, data);
@@ -323,9 +312,7 @@ export class EmailService {
   }
 
   _send(email, cb) {
-    var self = this;
-
-    var mailOptions = {
+    const mailOptions = {
       from: email.from,
       to: email.to,
       subject: email.subject,
@@ -335,7 +322,7 @@ export class EmailService {
     if (email.bodyHtml) {
       mailOptions.html = email.bodyHtml;
     }
-    self.mailer
+    this.mailer
       .sendMail(mailOptions)
       .then(result => {
         log.debug('Message sent: ', result || '');
@@ -351,141 +338,135 @@ export class EmailService {
   }
 
   _readAndApplyTemplates(notification, emailType, recipientsList, cb) {
-    var self = this;
-
     async.map(
       recipientsList,
-      function(recipient, next) {
+      (recipient: any, next) => {
         async.waterfall(
           [
-            function(next) {
-              self._getDataForTemplate(notification, recipient, next);
+            (next) => {
+              this._getDataForTemplate(notification, recipient, next);
             },
-            function(data, next) {
+            (data, next) => {
               async.map(
                 ['plain', 'html'],
-                function(type, next) {
-                  self._loadTemplate(emailType, recipient, '.' + type, function(
+                (type, next) => {
+                  this._loadTemplate(emailType, recipient, '.' + type, (
                     err,
                     template
-                  ) {
+                  ) => {
                     if (err && type == 'html') return next();
                     if (err) return next(err);
-                    self._applyTemplate(template, data, function(err, res) {
+                    this._applyTemplate(template, data, (err, res) => {
                       return next(err, [type, res]);
                     });
                   });
                 },
-                function(err, res) {
+                (err, res: any) => {
                   return next(err, _.fromPairs(res.filter(Boolean)));
                 }
               );
             },
-            function(result, next) {
+            (result, next) => {
               next(null, result);
             }
           ],
-          function(err, res) {
+          (err, res) => {
             next(err, [recipient.language, res]);
           }
         );
       },
-      function(err, res) {
+      (err, res: any) => {
         return cb(err, _.fromPairs(res.filter(Boolean)));
       }
     );
   }
 
   _checkShouldSendEmail(notification, cb) {
-    var self = this;
-
     if (notification.type != 'NewTxProposal') return cb(null, true);
-    self.storage.fetchWallet(notification.walletId, function(err, wallet) {
+    this.storage.fetchWallet(notification.walletId, (err, wallet) => {
       return cb(err, wallet.m > 1);
     });
   }
 
   sendEmail(notification, cb) {
-    var self = this;
+    cb = cb || function() { };
 
-    cb = cb || function() {};
-
-    var emailType = EMAIL_TYPES[notification.type];
+    const emailType = EMAIL_TYPES[notification.type];
     if (!emailType) return cb();
 
-    self._checkShouldSendEmail(notification, function(err, should) {
+    this._checkShouldSendEmail(notification, (err, should) => {
       if (err) return cb(err);
       if (!should) return cb();
 
-      self._getRecipientsList(notification, emailType, function(
+      this._getRecipientsList(notification, emailType, (
         err,
         recipientsList
-      ) {
+      ) => {
         if (_.isEmpty(recipientsList)) return cb();
 
         // TODO: Optimize so one process does not have to wait until all others are done
         // Instead set a flag somewhere in the db to indicate that this process is free
         // to serve another request.
-        self.lock.runLocked('email-' + notification.id, {}, cb, function(cb) {
-          self.storage.fetchEmailByNotification(notification.id, function(
+        this.lock.runLocked('email-' + notification.id, {}, cb, (cb) => {
+          this.storage.fetchEmailByNotification(notification.id, (
             err,
             email
-          ) {
+          ) => {
             if (err) return cb(err);
             if (email) return cb();
 
             async.waterfall(
               [
-                function(next) {
-                  self._readAndApplyTemplates(
+                (next) => {
+                  this._readAndApplyTemplates(
                     notification,
                     emailType,
                     recipientsList,
                     next
                   );
                 },
-                function(contents, next) {
+                (contents, next) => {
                   async.map(
                     recipientsList,
-                    function(recipient, next) {
-                      var content = contents[recipient.language];
-                      var email = Model.Email.create({
+                    (recipient: any, next) => {
+                      const content = contents[recipient.language];
+                      const email = Model.Email.create({
                         walletId: notification.walletId,
                         copayerId: recipient.copayerId,
-                        from: self.from,
+                        from: this.from,
                         to: recipient.emailAddress,
                         subject: content.plain.subject,
                         bodyPlain: content.plain.body,
                         bodyHtml: content.html ? content.html.body : null,
                         notificationId: notification.id
                       });
-                      self.storage.storeEmail(email, function(err) {
+                      this.storage.storeEmail(email, (err) => {
                         return next(err, email);
                       });
                     },
                     next
                   );
                 },
-                function(emails, next) {
+                (emails, next) => {
                   async.each(
                     emails,
-                    function(email, next) {
-                      self._send(email, function(err) {
+                    (email: any, next) => {
+                      this._send(email, (err) => {
                         if (err) {
                           email.setFail();
                         } else {
                           email.setSent();
                         }
-                        self.storage.storeEmail(email, next);
+                        this.storage.storeEmail(email, next);
                       });
                     },
-                    function(err) {
+                    (err) => {
                       return next();
                     }
                   );
                 }
               ],
-              function(err) {
+              (err) => {
                 if (err) {
                   log.error(
                     'An error ocurred generating email notification',
