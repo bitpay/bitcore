@@ -90,7 +90,11 @@ describe('Block Model', function() {
       sandbox.restore();
     });
     it('should return the new tip', async () => {
-      mockStorage(null);
+      Object.assign(BtcBlockStorage.collection, mockCollection({
+        height: addBlockParams.height + 1,
+        chain: 'BTC',
+        network: 'regtest'
+      }));
       const params = { chain: 'BTC', network: 'regtest' };
       const result = await ChainStateProvider.getLocalTip(params);
       expect(result.height).to.deep.equal(addBlockParams.height + 1);
