@@ -32,6 +32,8 @@ export class BlockModel<T extends IBlock> extends BaseModel<T> {
       network: block.network,
       hash: block.hash,
       height: block.height,
+      version: block.version,
+      bits: block.bits,
       size: block.size,
       merkleRoot: block.merkleRoot,
       time: block.time,

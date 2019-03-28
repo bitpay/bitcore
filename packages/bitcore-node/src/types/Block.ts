@@ -10,6 +10,8 @@ export type IBlock = {
   nextBlockHash: string;
   transactionCount: number;
   nonce: number | string;
+  version?: number;
+  bits?: number;
   size: number;
   reward: number;
   processed: boolean;
