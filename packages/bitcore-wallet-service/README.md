@@ -154,6 +154,7 @@ blockchainExplorerOpts: {
 
 ### Copay changes
 **copay/app-template/index-template.html**
+
 3. Comment out content security meta tag in the ```<head>```
 ```
 // <meta http-equiv="Content-Security-Policy" content="default-src 'self'  ... >
