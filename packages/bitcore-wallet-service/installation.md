@@ -1,32 +1,45 @@
+# Installation
+
 The following document is a step-by-step guide to run BWS.
 
-### Prerequisites
+## Prerequisites
+
 Ensure MongoDB (2.6+) is installed and running. This document assumes that mongod is running at the default port 27017.
 See the configuration section to configure a different host/port.
 
-### Install BWS from NPM
+## Install BWS from NPM
+
 Use the following steps to Install BWS from the npmjs repository and run it with defaults.
-```bash
+
+```sh
 npm install bitcore-wallet-service
 cd bitcore-wallet-service
 ```
+
 To change configuration before running, see the Configuration section.
-```bash
+
+```sh
 npm start
 ```
 
-### Install BWS from github source
+## Install BWS from github source
+
 Use the following steps to Install BWS from github source and run it with defaults.
-```bash
+
+```sh
 git clone https://github.com/bitpay/bitcore-wallet-service.git
 cd bitcore-wallet-service
 npm install
 ```
+
 To change configuration before running, see the Configuration section.
-```bash
+
+```sh
 npm start
 ```
-### Configuration
+
+## Configuration
+
 Configuration for all required modules can be specified in https://github.com/bitpay/bitcore-wallet-service/blob/master/config.js
 
 BWS is composed of 4 separate node services -
@@ -35,8 +48,10 @@ Blockchain Monitor - bcmonitor/bcmonitor.js (This service talks to the Blockchai
 Email Service - emailservice/emailservice.js
 Bitcore Wallet Service - bws.js
 
-#### Configure MongoDB
+### Configure MongoDB
+
 Example configuration for connecting to the MongoDB instance:
+
 ```javascript
   storageOpts: {
     mongoDb: {
@@ -45,8 +60,10 @@ Example configuration for connecting to the MongoDB instance:
   }
 ```
 
-#### Configure Message Broker service
+### Configure Message Broker service
+
 Example configuration for connecting to message broker service:
+
 ```javascript
   messageBrokerOpts: {
     messageBrokerServer: {
@@ -55,9 +72,11 @@ Example configuration for connecting to message broker service:
   }
 ```
 
-#### Configure blockchain service. Bitcore v8 is required.
+### Configure blockchain service. Bitcore v8 is required.
+
 Note: this service will be used by blockchain monitor service as well as by BWS itself.
 An example of this configuration is:
+
 ```javascript
   blockchainExplorerOpts: {
       'btc': {
@@ -73,8 +92,10 @@ An example of this configuration is:
   }
 ```
 
-#### Configure Email service
+### Configure Email service
+
 Example configuration for connecting to email service (using postfix):
+
 ```javascript
   emailOpts: {
     host: 'localhost',
@@ -85,12 +106,13 @@ Example configuration for connecting to email service (using postfix):
   }
 ```
 
-#### Enable clustering
+### Enable clustering
+
 Change `config.js` file to enable and configure clustering:
+
 ```javascript
 {
   cluster: true,
   clusterInstances: 4,
 }
 ```
-
