@@ -28,7 +28,8 @@ const requests = { headers: new Array<string>(), bodies: new Array<any>(), msgTy
  */
 const REMOTE_CLIENTID_FILTER = ['go1.5', 'go1.6', 'go1.7', 'quorum', 'pirl', 'ubiq', 'gmc', 'gwhale', 'prichain'];
 
-const CHECK_BLOCK_NR = 4370000;
+// To start syncing from a higher block height.
+const CHECK_BLOCK_NR = 0;
 
 const ETH = {
   NETWORKS: {
@@ -43,7 +44,7 @@ const ETH = {
       td: devp2p._util.int2buffer(1), // total difficulty in genesis block
       bestHash: Buffer.from('d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3', 'hex'),
       genesisHash: Buffer.from('d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3', 'hex')
-    }
+    },
   }
 };
 const getPeerAddr = peer => `${peer._socket.remoteAddress}:${peer._socket.remotePort}`;

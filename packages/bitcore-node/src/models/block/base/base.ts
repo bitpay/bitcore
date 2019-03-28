@@ -21,8 +21,8 @@ export class BlockModel<T extends IBlock> extends BaseModel<T> {
     this.collection.createIndex({ previousBlockHash: 1 }, { background: true });
   }
 
-  getLocalTip({ chain, network }) {
-    return this.collection.findOne({ chain, network, processed: true }, { sort: { height: -1 } });
+  async getLocalTip({ chain, network }) {
+    return await this.collection.findOne({ chain, network, processed: true }, { sort: { height: -1 } });
   }
 
   _apiTransform(block: Partial<MongoBound<T>>, options?: TransformOptions): any {
