@@ -66,7 +66,7 @@ export class BlocksProvider {
       merkleroot: block.merkleRoot,
       version: block.version,
       difficulty,
-      bits: block.bits.toString(16),
+      bits: block.bits ? block.bits.toString(16) : '',
       hash: block.hash,
       time: new Date(block.time).getTime() / 1000,
       tx: {

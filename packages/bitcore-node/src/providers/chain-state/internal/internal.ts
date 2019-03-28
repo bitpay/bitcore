@@ -116,6 +116,8 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (blockId) {
       if (blockId.length === 64) {
         query.hash = blockId;
+      } else if (chain === 'ETH' && blockId.length === 66) {
+        query.hash = blockId;
       } else {
         let height = parseInt(blockId, 10);
         if (Number.isNaN(height) || height.toString(10) !== blockId) {
@@ -517,7 +519,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getLocalTip({ chain, network }) {
-    return BlockStorage.getLocalTip({ chain, network });
+    return await BlockStorage.getLocalTip({ chain, network });
   }
 
   async getLocatorHashes(params) {
