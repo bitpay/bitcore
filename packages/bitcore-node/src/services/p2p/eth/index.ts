@@ -269,7 +269,7 @@ export class EthP2pWorker {
       height,
       hash,
       coinbase: `0x${block.header.coinbase.toString('hex')}`,
-      merkleRoot: block.header.transactionsTrie.toString('hex'),
+      merkleRoot: `0x${block.header.transactionsTrie.toString('hex')}`,
       time: new Date(blockTime),
       timeNormalized: new Date(blockTime),
       nonce: header.nonce.toString('hex'),

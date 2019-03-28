@@ -56,7 +56,7 @@ export class EthBlockModel extends BlockModel<IEthBlock> {
     if (previousBlock) {
       await this.collection.updateOne(
         { chain, network, hash: previousBlock.hash },
-        { $set: { nextBlockHash: `0x${convertedBlock.hash}` } }
+        { $set: { nextBlockHash: convertedBlock.hash } }
       );
       logger.debug('Updating previous block.nextBlockHash ', convertedBlock.hash);
     }
