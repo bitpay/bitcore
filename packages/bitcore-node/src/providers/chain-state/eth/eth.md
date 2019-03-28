@@ -3,14 +3,8 @@
 The following config block supports two networks for ETH. Main and Local
 
 The local network would be geth, or testrpc
-<<<<<<< HEAD
-The main network shows how to connect via websocket
-
-```
-=======
 
 The main network shows how to connect via websocket
->>>>>>> a613a85ad8bcf51e84e8c6cc729877f66dfaeb4b
 
 ```json
 "ETH": {
