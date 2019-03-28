@@ -402,7 +402,7 @@ export class P2pWorker {
     while (!this.stopping) {
       const syncingNode = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
       if (!syncingNode) {
-        StateStorage.selfNominateSyncingNode({
+        await StateStorage.selfNominateSyncingNode({
           chain: this.chain,
           network: this.network,
           lastHeartBeat: syncingNode
@@ -411,7 +411,7 @@ export class P2pWorker {
       }
       const [hostname, pid, timestamp] = syncingNode.split(':');
       const amSyncingNode =
-        hostname === os.hostname() && pid === process.pid.toString() && Date.now() - parseInt(timestamp) < 5000;
+        hostname === os.hostname() && pid === process.pid.toString() && Date.now() - parseInt(timestamp) < 60 * 1000;
       if (amSyncingNode) {
         StateStorage.selfNominateSyncingNode({
           chain: this.chain,
@@ -425,11 +425,10 @@ export class P2pWorker {
         }
       } else {
         if (this.isSyncingNode) {
-          logger.info(`This worker is no longer syncing node for ${this.chain} ${this.network}`);
-          this.isSyncingNode = false;
-          await wait(100000);
+          logger.error(`This worker failed to renew syncing node status for ${this.chain} ${this.network}`);
+          throw new Error('Syncing Node Renewal Failure');
         }
-        await wait(10000);
+        await wait(10 * 1000);
         StateStorage.selfNominateSyncingNode({
           chain: this.chain,
           network: this.network,

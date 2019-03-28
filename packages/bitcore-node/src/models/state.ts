@@ -33,7 +33,7 @@ export class StateModel extends BaseModel<IState> {
   async selfNominateSyncingNode(params: { chain: string, network: string, lastHeartBeat: any }) {
     const { chain, network, lastHeartBeat } = params;
     const singleState = await this.getSingletonState();
-    this.collection.findOneAndUpdate(
+    return this.collection.findOneAndUpdate(
       { _id: singleState.value!._id, $or: [{ [`syncingNode:${chain}:${network}`]: { $exists: false } }, { [`syncingNode:${chain}:${network}`]: lastHeartBeat }]},
       { $set: { [`syncingNode:${chain}:${network}`]: `${os.hostname}:${process.pid}:${Date.now()}` } }
     );
