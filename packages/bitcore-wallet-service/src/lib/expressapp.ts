@@ -1,19 +1,16 @@
-import * as async from 'async';
 import express from 'express';
-import * as _ from 'lodash';
+import _ from 'lodash';
 import { ClientError } from './errors/clienterror';
 import { WalletService } from './server';
 import { Stats } from './stats';
 
-var log = require('npmlog');
+const bodyParser = require('body-parser');
+const compression = require('compression');
+const RateLimit = require('express-rate-limit');
+const Common = require('./common');
+const Defaults = Common.Defaults;
 
-var bodyParser = require('body-parser');
-var compression = require('compression');
-var RateLimit = require('express-rate-limit');
-
-var Common = require('./common');
-var Defaults = Common.Defaults;
-
+let log = require('npmlog');
 log.disableColor();
 log.debug = log.verbose;
 log.level = 'verbose';
@@ -37,7 +34,7 @@ export class ExpressApp {
 
     this.app.use(compression());
 
-    this.app.use(function(req, res, next) {
+    this.app.use((req, res, next) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader(
         'Access-Control-Allow-Methods',
@@ -50,7 +47,7 @@ export class ExpressApp {
       res.setHeader('x-service-version', WalletService.getServiceVersion());
       next();
     });
-    var allowCORS = function(req, res, next) {
+    const allowCORS = (req, res, next) => {
       if ('OPTIONS' == req.method) {
         res.sendStatus(200);
         res.end();
@@ -62,14 +59,14 @@ export class ExpressApp {
     this.app.enable('trust proxy');
 
     // handle `abort` https://nodejs.org/api/http.html#http_event_abort
-    this.app.use(function(req, res, next) {
-      req.on('abort', function() {
+    this.app.use((req, res, next) => {
+      req.on('abort', () => {
         log.warn('Request aborted by the client');
       });
       next();
     });
 
-    var POST_LIMIT = 1024 * 100 /* Max POST 100 kb */;
+    const POST_LIMIT = 1024 * 100 /* Max POST 100 kb */;
 
     this.app.use(
       bodyParser.json({
@@ -80,14 +77,14 @@ export class ExpressApp {
     if (opts.disableLogs) {
       log.level = 'silent';
     } else {
-      var morgan = require('morgan');
+      const morgan = require('morgan');
       morgan.token('walletId', function getId(req) {
         return req.walletId ? '<' + req.walletId + '>' : '<>';
       });
 
-      var logFormat =
+      const logFormat =
         ':walletId :remote-addr :date[iso] ":method :url" :status :res[content-length] :response-time ":user-agent"  ';
-      var logOpts = {
+      const logOpts = {
         skip(req, res) {
           if (res.statusCode != 200) return false;
           return req.path.indexOf('/notifications/') >= 0;
@@ -96,11 +93,11 @@ export class ExpressApp {
       this.app.use(morgan(logFormat, logOpts));
     }
 
-    var router = express.Router();
+    const router = express.Router();
 
-    function returnError(err, res, req) {
+    const returnError = (err, res, req) => {
       if (err instanceof ClientError) {
-        var status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
+        const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
         if (!opts.disableLogs)
           log.info(
             'Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err)
@@ -114,14 +111,14 @@ export class ExpressApp {
           })
           .end();
       } else {
-        var code = 500,
+        let code = 500,
           message;
         if (err && ((err.code && _.isNumber(err.code)) || (err.statusCode && _.isNumber(err.statusCode)))) {
           code = err.code || err.statusCode;
           message = err.message || err.body;
         }
 
-        var m = message || err.toString();
+        const m = message || err.toString();
 
         if (!opts.disableLogs) log.error(req.url + ' :' + code + ':' + m);
 
@@ -132,19 +129,19 @@ export class ExpressApp {
           })
           .end();
       }
-    }
+    };
 
-    function logDeprecated(req) {
+    const logDeprecated = (req) => {
       log.warn(
         'DEPRECATED',
         req.method,
         req.url,
         '(' + req.header('x-client-version') + ')'
       );
-    }
+    };
 
-    function getCredentials(req) {
-      var identity = req.header('x-identity');
+    const getCredentials = (req) => {
+      const identity = req.header('x-identity');
       if (!identity) return;
 
       return {
@@ -152,29 +149,29 @@ export class ExpressApp {
         signature: req.header('x-signature'),
         session: req.header('x-session')
       };
-    }
+    };
 
-    function getServer(req, res): WalletService {
-      var opts = {
+    const getServer = (req, res): WalletService => {
+      const opts = {
         clientVersion: req.header('x-client-version'),
         userAgent: req.header('user-agent')
       };
       return WalletService.getInstance(opts);
-    }
+    };
 
-    function getServerWithAuth(
+    const getServerWithAuth = (
       req,
       res,
       opts,
       cb?: (err: any, data?: any) => void
-    ) {
+    ) => {
       if (_.isFunction(opts)) {
         cb = opts;
         opts = {};
       }
       opts = opts || {};
 
-      var credentials = getCredentials(req);
+      const credentials = getCredentials(req);
       if (!credentials)
         return returnError(
           new ClientError({
@@ -184,7 +181,7 @@ export class ExpressApp {
           req
         );
 
-      var auth = {
+      const auth = {
         copayerId: credentials.copayerId,
         message:
           req.method.toLowerCase() +
@@ -201,7 +198,7 @@ export class ExpressApp {
       if (opts.allowSession) {
         auth.session = credentials.session;
       }
-      WalletService.getInstanceWithAuth(auth, function(err, server) {
+      WalletService.getInstanceWithAuth(auth, (err, server) => {
         if (err) return returnError(err, res, req);
 
         if (opts.onlySupportStaff && !server.copayerIsSupportStaff) {
@@ -220,9 +217,9 @@ export class ExpressApp {
 
         return cb(server);
       });
-    }
+    };
 
-    var createWalletLimiter;
+    let createWalletLimiter;
 
     if (Defaults.RateLimit.createWallet && !opts.ignoreRateLimiter) {
       log.info(
@@ -239,22 +236,22 @@ export class ExpressApp {
       createWalletLimiter = new RateLimit(Defaults.RateLimit.createWallet);
       // router.use(/\/v\d+\/wallets\/$/, createWalletLimiter)
     } else {
-      createWalletLimiter = function(req, res, next) {
+      createWalletLimiter = (req, res, next) => {
         next();
       };
     }
 
     // DEPRECATED
-    router.post('/v1/wallets/', createWalletLimiter, function(req, res) {
+    router.post('/v1/wallets/', createWalletLimiter, (req, res) => {
       logDeprecated(req);
-      var server;
+      let server;
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
       }
       req.body.supportBIP44AndP2PKH = false;
-      server.createWallet(req.body, function(err, walletId) {
+      server.createWallet(req.body, (err, walletId) => {
         if (err) return returnError(err, res, req);
         res.json({
           walletId
@@ -262,14 +259,14 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v2/wallets/', createWalletLimiter, function(req, res) {
-      var server: WalletService;
+    router.post('/v2/wallets/', createWalletLimiter, (req, res) => {
+      let server: WalletService;
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.createWallet(req.body, function(err, walletId) {
+      server.createWallet(req.body, (err, walletId) => {
         if (err) return returnError(err, res, req);
         res.json({
           walletId
@@ -277,47 +274,47 @@ export class ExpressApp {
       });
     });
 
-    router.put('/v1/copayers/:id/', function(req, res) {
+    router.put('/v1/copayers/:id/', (req, res) => {
       req.body.copayerId = req.params['id'];
-      var server;
+      let server;
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.addAccess(req.body, function(err, result) {
+      server.addAccess(req.body, (err, result) => {
         if (err) return returnError(err, res, req);
         res.json(result);
       });
     });
 
     // DEPRECATED
-    router.post('/v1/wallets/:id/copayers/', function(req, res) {
+    router.post('/v1/wallets/:id/copayers/', (req, res) => {
       logDeprecated(req);
       req.body.walletId = req.params['id'];
       req.body.supportBIP44AndP2PKH = false;
-      var server;
+      let server;
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.joinWallet(req.body, function(err, result) {
+      server.joinWallet(req.body, (err, result) => {
         if (err) return returnError(err, res, req);
 
         res.json(result);
       });
     });
 
-    router.post('/v2/wallets/:id/copayers/', function(req, res) {
+    router.post('/v2/wallets/:id/copayers/', (req, res) => {
       req.body.walletId = req.params['id'];
-      var server;
+      let server;
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.joinWallet(req.body, function(err, result) {
+      server.joinWallet(req.body, (err, result) => {
         if (err) return returnError(err, res, req);
 
         res.json(result);
@@ -325,14 +322,14 @@ export class ExpressApp {
     });
 
     // DEPRECATED
-    router.get('/v1/wallets/', function(req, res) {
+    router.get('/v1/wallets/', (req, res) => {
       logDeprecated(req);
-      getServerWithAuth(req, res, function(server) {
+      getServerWithAuth(req, res, (server) => {
         server.getStatus(
           {
             includeExtendedInfo: true
           },
-          function(err, status) {
+          (err, status) => {
             if (err) return returnError(err, res, req);
             res.json(status);
           }
@@ -340,41 +337,41 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v2/wallets/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        var opts = { includeExtendedInfo: false, twoStep: false };
+    router.get('/v2/wallets/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        const opts = { includeExtendedInfo: false, twoStep: false };
         if (req.query.includeExtendedInfo == '1')
           opts.includeExtendedInfo = true;
         if (req.query.twoStep == '1') opts.twoStep = true;
 
-        server.getStatus(opts, function(err, status) {
+        server.getStatus(opts, (err, status) => {
           if (err) return returnError(err, res, req);
           res.json(status);
         });
       });
     });
 
-    router.get('/v1/wallets/:identifier/', function(req, res) {
+    router.get('/v1/wallets/:identifier/', (req, res) => {
       getServerWithAuth(
         req,
         res,
         {
           onlySupportStaff: true
         },
-        function(server) {
-          var opts = {
+        (server) => {
+          const opts = {
             identifier: req.params['identifier'],
             walletCheck: req.params['walletCheck']
           };
-          server.getWalletFromIdentifier(opts, function(err, wallet) {
+          server.getWalletFromIdentifier(opts, (err, wallet) => {
             if (err) return returnError(err, res, req);
             if (!wallet) return res.end();
 
             server.walletId = wallet.id;
-            var opts = { includeExtendedInfo: false };
+            const opts = { includeExtendedInfo: false };
             if (req.query.includeExtendedInfo == '1')
               opts.includeExtendedInfo = true;
-            server.getStatus(opts, function(err, status) {
+            server.getStatus(opts, (err, status) => {
               if (err) return returnError(err, res, req);
               res.json(status);
             });
@@ -383,18 +380,18 @@ export class ExpressApp {
       );
     });
 
-    router.get('/v1/preferences/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        server.getPreferences({}, function(err, preferences) {
+    router.get('/v1/preferences/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.getPreferences({}, (err, preferences) => {
           if (err) return returnError(err, res, req);
           res.json(preferences);
         });
       });
     });
 
-    router.put('/v1/preferences', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        server.savePreferences(req.body, function(err, result) {
+    router.put('/v1/preferences', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.savePreferences(req.body, (err, result) => {
           if (err) return returnError(err, res, req);
           res.json(result);
         });
@@ -402,44 +399,44 @@ export class ExpressApp {
     });
 
     // DEPRECATED (do not use cashaddr)
-    router.get('/v1/txproposals/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        server.getPendingTxs({ noCashAddr: true }, function(err, pendings) {
+    router.get('/v1/txproposals/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.getPendingTxs({ noCashAddr: true }, (err, pendings) => {
           if (err) return returnError(err, res, req);
           res.json(pendings);
         });
       });
     });
 
-    router.get('/v2/txproposals/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        server.getPendingTxs({}, function(err, pendings) {
+    router.get('/v2/txproposals/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.getPendingTxs({}, (err, pendings) => {
           if (err) return returnError(err, res, req);
           res.json(pendings);
         });
       });
     });
 
-    router.post('/v1/txproposals/', function(req, res) {
-      var Errors = require('./errors/errordefinitions');
-      var err = Errors.UPGRADE_NEEDED;
+    router.post('/v1/txproposals/', (req, res) => {
+      const Errors = require('./errors/errordefinitions');
+      const err = Errors.UPGRADE_NEEDED;
       return returnError(err, res, req);
     });
 
     // DEPRECATED, no cash addr
-    router.post('/v2/txproposals/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
+    router.post('/v2/txproposals/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
         req.body.noCashAddr = true;
-        server.createTx(req.body, function(err, txp) {
+        server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
         });
       });
     });
 
-    router.post('/v3/txproposals/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        server.createTx(req.body, function(err, txp) {
+    router.post('/v3/txproposals/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
         });
@@ -447,14 +444,14 @@ export class ExpressApp {
     });
 
     // DEPRECATED
-    router.post('/v1/addresses/', function(req, res) {
+    router.post('/v1/addresses/', (req, res) => {
       logDeprecated(req);
-      getServerWithAuth(req, res, function(server) {
+      getServerWithAuth(req, res, (server) => {
         server.createAddress(
           {
             ignoreMaxGap: true
           },
-          function(err, address) {
+          (err, address) => {
             if (err) return returnError(err, res, req);
             res.json(address);
           }
@@ -463,14 +460,14 @@ export class ExpressApp {
     });
 
     // DEPRECATED
-    router.post('/v2/addresses/', function(req, res) {
+    router.post('/v2/addresses/', (req, res) => {
       logDeprecated(req);
-      getServerWithAuth(req, res, function(server) {
+      getServerWithAuth(req, res, (server) => {
         server.createAddress(
           {
             ignoreMaxGap: true
           },
-          function(err, address) {
+          (err, address) => {
             if (err) return returnError(err, res, req);
             res.json(address);
           }
@@ -479,53 +476,53 @@ export class ExpressApp {
     });
 
     // DEPRECATED (no cashaddr by default)
-    router.post('/v3/addresses/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        var opts = req.body;
+    router.post('/v3/addresses/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        let opts = req.body;
         opts = opts || {};
         opts.noCashAddr = true;
-        server.createAddress(opts, function(err, address) {
+        server.createAddress(opts, (err, address) => {
           if (err) return returnError(err, res, req);
           res.json(address);
         });
       });
     });
 
-    router.post('/v4/addresses/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        server.createAddress(req.body, function(err, address) {
+    router.post('/v4/addresses/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.createAddress(req.body, (err, address) => {
           if (err) return returnError(err, res, req);
           res.json(address);
         });
       });
     });
 
-    router.get('/v1/addresses/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        var opts: { limit?: number; reverse?: boolean } = {};
+    router.get('/v1/addresses/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        const opts: { limit?: number; reverse?: boolean } = {};
         if (req.query.limit) opts.limit = +req.query.limit;
         opts.reverse = req.query.reverse == '1';
 
-        server.getMainAddresses(opts, function(err, addresses) {
+        server.getMainAddresses(opts, (err, addresses) => {
           if (err) return returnError(err, res, req);
           res.json(addresses);
         });
       });
     });
 
-    router.get('/v1/balance/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        var opts: { coin?: string; twoStep?: boolean } = {};
+    router.get('/v1/balance/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        const opts: { coin?: string; twoStep?: boolean } = {};
         if (req.query.coin) opts.coin = req.query.coin;
         if (req.query.twoStep == '1') opts.twoStep = true;
-        server.getBalance(opts, function(err, balance) {
+        server.getBalance(opts, (err, balance) => {
           if (err) return returnError(err, res, req);
           res.json(balance);
         });
       });
     });
 
-    var estimateFeeLimiter;
+    let estimateFeeLimiter;
 
     if (Defaults.RateLimit.estimateFee && !opts.ignoreRateLimiter) {
       log.info(
@@ -542,25 +539,25 @@ export class ExpressApp {
       estimateFeeLimiter = new RateLimit(Defaults.RateLimit.estimateFee);
       // router.use(/\/v\d+\/wallets\/$/, createWalletLimiter)
     } else {
-      estimateFeeLimiter = function(req, res, next) {
+      estimateFeeLimiter = (req, res, next) => {
         next();
       };
     }
 
     // DEPRECATED
-    router.get('/v1/feelevels/', estimateFeeLimiter, function(req, res) {
+    router.get('/v1/feelevels/', estimateFeeLimiter, (req, res) => {
       logDeprecated(req);
-      var opts: { network?: string } = {};
+      const opts: { network?: string } = {};
       if (req.query.network) opts.network = req.query.network;
-      var server;
+      let server;
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getFeeLevels(opts, function(err, feeLevels) {
+      server.getFeeLevels(opts, (err, feeLevels) => {
         if (err) return returnError(err, res, req);
-        _.each(feeLevels, function(feeLevel) {
+        _.each(feeLevels, (feeLevel) => {
           feeLevel.feePerKB = feeLevel.feePerKb;
           delete feeLevel.feePerKb;
         });
@@ -568,28 +565,28 @@ export class ExpressApp {
       });
     });
 
-    //  router.get('/v2/feelevels/', estimateFeeLimiter, function(req, res) {
-    router.get('/v2/feelevels/', function(req, res) {
-      var opts: { coin?: string; network?: string } = {};
+    //  router.get('/v2/feelevels/', estimateFeeLimiter, (req, res) => {
+    router.get('/v2/feelevels/', (req, res) => {
+      const opts: { coin?: string; network?: string } = {};
       if (req.query.coin) opts.coin = req.query.coin;
       if (req.query.network) opts.network = req.query.network;
 
-      var server;
+      let server;
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getFeeLevels(opts, function(err, feeLevels) {
+      server.getFeeLevels(opts, (err, feeLevels) => {
         if (err) return returnError(err, res, req);
         res.json(feeLevels);
       });
     });
 
-    router.get('/v1/sendmaxinfo/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        var q = req.query;
-        var opts: {
+    router.get('/v1/sendmaxinfo/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        const q = req.query;
+        const opts: {
           feePerKb?: number;
           feeLevel?: number;
           returnInputs?: boolean;
@@ -600,29 +597,29 @@ export class ExpressApp {
         if (q.excludeUnconfirmedUtxos == '1')
           opts.excludeUnconfirmedUtxos = true;
         if (q.returnInputs == '1') opts.returnInputs = true;
-        server.getSendMaxInfo(opts, function(err, info) {
+        server.getSendMaxInfo(opts, (err, info) => {
           if (err) return returnError(err, res, req);
           res.json(info);
         });
       });
     });
 
-    router.get('/v1/utxos/', function(req, res) {
-      var opts: { addresses?: string[] } = {};
-      var addresses = req.query.addresses;
+    router.get('/v1/utxos/', (req, res) => {
+      const opts: { addresses?: string[] } = {};
+      const addresses = req.query.addresses;
       if (addresses && _.isString(addresses))
         opts.addresses = req.query.addresses.split(',');
-      getServerWithAuth(req, res, function(server) {
-        server.getUtxos(opts, function(err, utxos) {
+      getServerWithAuth(req, res, (server) => {
+        server.getUtxos(opts, (err, utxos) => {
           if (err) return returnError(err, res, req);
           res.json(utxos);
         });
       });
     });
 
-    router.post('/v1/broadcast_raw/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        server.broadcastRawTx(req.body, function(err, txid) {
+    router.post('/v1/broadcast_raw/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.broadcastRawTx(req.body, (err, txid) => {
           if (err) return returnError(err, res, req);
           res.json(txid);
           res.end();
@@ -630,10 +627,10 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v1/txproposals/:id/signatures/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
+    router.post('/v1/txproposals/:id/signatures/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
         req.body.txProposalId = req.params['id'];
-        server.signTx(req.body, function(err, txp) {
+        server.signTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
           res.end();
@@ -642,11 +639,11 @@ export class ExpressApp {
     });
 
     //
-    router.post('/v1/txproposals/:id/publish/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
+    router.post('/v1/txproposals/:id/publish/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
         req.body.txProposalId = req.params['id'];
         req.body.noCashAddr = true;
-        server.publishTx(req.body, function(err, txp) {
+        server.publishTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
           res.end();
@@ -654,10 +651,10 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v2/txproposals/:id/publish/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
+    router.post('/v2/txproposals/:id/publish/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
         req.body.txProposalId = req.params['id'];
-        server.publishTx(req.body, function(err, txp) {
+        server.publishTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
           res.end();
@@ -666,10 +663,10 @@ export class ExpressApp {
     });
 
     // TODO Check HTTP verb and URL name
-    router.post('/v1/txproposals/:id/broadcast/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
+    router.post('/v1/txproposals/:id/broadcast/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
         req.body.txProposalId = req.params['id'];
-        server.broadcastTx(req.body, function(err, txp) {
+        server.broadcastTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
           res.end();
@@ -677,10 +674,10 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v1/txproposals/:id/rejections', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
+    router.post('/v1/txproposals/:id/rejections', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
         req.body.txProposalId = req.params['id'];
-        server.rejectTx(req.body, function(err, txp) {
+        server.rejectTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
           res.end();
@@ -688,10 +685,10 @@ export class ExpressApp {
       });
     });
 
-    router.delete('/v1/txproposals/:id/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
+    router.delete('/v1/txproposals/:id/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
         req.body.txProposalId = req.params['id'];
-        server.removePendingTx(req.body, function(err) {
+        server.removePendingTx(req.body, (err) => {
           if (err) return returnError(err, res, req);
           res.json({
             success: true
@@ -701,10 +698,10 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v1/txproposals/:id/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
+    router.get('/v1/txproposals/:id/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
         req.body.txProposalId = req.params['id'];
-        server.getTx(req.body, function(err, tx) {
+        server.getTx(req.body, (err, tx) => {
           if (err) return returnError(err, res, req);
           res.json(tx);
           res.end();
@@ -712,9 +709,9 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v1/txhistory/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        var opts: {
+    router.get('/v1/txhistory/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        const opts: {
           skip?: number;
           limit?: number;
           includeExtendedInfo?: boolean;
@@ -724,7 +721,7 @@ export class ExpressApp {
         if (req.query.includeExtendedInfo == '1')
           opts.includeExtendedInfo = true;
 
-        server.getTxHistory(opts, function(err, txs) {
+        server.getTxHistory(opts, (err, txs) => {
           if (err) return returnError(err, res, req);
           res.json(txs);
           res.end();
@@ -732,9 +729,9 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v1/addresses/scan/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        server.startScan(req.body, function(err, started) {
+    router.post('/v1/addresses/scan/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.startScan(req.body, (err, started) => {
           if (err) return returnError(err, res, req);
           res.json(started);
           res.end();
@@ -742,8 +739,8 @@ export class ExpressApp {
       });
     });
 
-    router.get('/v1/stats/', function(req, res) {
-      var opts: {
+    router.get('/v1/stats/', (req, res) => {
+      const opts: {
         network?: string;
         coin?: string;
         from?: string;
@@ -754,59 +751,59 @@ export class ExpressApp {
       if (req.query.from) opts.from = req.query.from;
       if (req.query.to) opts.to = req.query.to;
 
-      var stats = new Stats(opts);
-      stats.run(function(err, data) {
+      const stats = new Stats(opts);
+      stats.run((err, data) => {
         if (err) return returnError(err, res, req);
         res.json(data);
         res.end();
       });
     });
 
-    router.get('/v1/version/', function(req, res) {
+    router.get('/v1/version/', (req, res) => {
       res.json({
         serviceVersion: WalletService.getServiceVersion()
       });
       res.end();
     });
 
-    router.post('/v1/login/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        server.login({}, function(err, session) {
+    router.post('/v1/login/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.login({}, (err, session) => {
           if (err) return returnError(err, res, req);
           res.json(session);
         });
       });
     });
 
-    router.post('/v1/logout/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        server.logout({}, function(err) {
+    router.post('/v1/logout/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.logout({}, (err) => {
           if (err) return returnError(err, res, req);
           res.end();
         });
       });
     });
 
-    router.get('/v1/notifications/', function(req, res) {
+    router.get('/v1/notifications/', (req, res) => {
       getServerWithAuth(
         req,
         res,
         {
           allowSession: true
         },
-        function(server) {
-          var timeSpan = req.query.timeSpan
+        (server) => {
+          const timeSpan = req.query.timeSpan
             ? Math.min(
               +req.query.timeSpan || 0,
               Defaults.MAX_NOTIFICATIONS_TIMESPAN
             )
             : Defaults.NOTIFICATIONS_TIMESPAN;
-          var opts = {
+          const opts = {
             minTs: +Date.now() - timeSpan * 1000,
             notificationId: req.query.notificationId
           };
 
-          server.getNotifications(opts, function(err, notifications) {
+          server.getNotifications(opts, (err, notifications) => {
             if (err) return returnError(err, res, req);
             res.json(notifications);
           });
@@ -814,44 +811,44 @@ export class ExpressApp {
       );
     });
 
-    router.get('/v1/txnotes/:txid', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        var opts = {
+    router.get('/v1/txnotes/:txid', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        const opts = {
           txid: req.params['txid']
         };
-        server.getTxNote(opts, function(err, note) {
+        server.getTxNote(opts, (err, note) => {
           if (err) return returnError(err, res, req);
           res.json(note);
         });
       });
     });
 
-    router.put('/v1/txnotes/:txid/', function(req, res) {
+    router.put('/v1/txnotes/:txid/', (req, res) => {
       req.body.txid = req.params['txid'];
-      getServerWithAuth(req, res, function(server) {
-        server.editTxNote(req.body, function(err, note) {
+      getServerWithAuth(req, res, (server) => {
+        server.editTxNote(req.body, (err, note) => {
           if (err) return returnError(err, res, req);
           res.json(note);
         });
       });
     });
 
-    router.get('/v1/txnotes/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        var opts: { minTs?: number } = {};
+    router.get('/v1/txnotes/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        const opts: { minTs?: number } = {};
         if (req.query.minTs && _.isNumber(+req.query.minTs)) {
           opts.minTs = +req.query.minTs;
         }
-        server.getTxNotes(opts, function(err, notes) {
+        server.getTxNotes(opts, (err, notes) => {
           if (err) return returnError(err, res, req);
           res.json(notes);
         });
       });
     });
 
-    router.get('/v1/fiatrates/:code/', function(req, res) {
-      var server;
-      var opts = {
+    router.get('/v1/fiatrates/:code/', (req, res) => {
+      let server;
+      const opts = {
         code: req.params['code'],
         provider: req.query.provider,
         ts: +req.query.ts
@@ -861,15 +858,15 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getFiatRate(opts, function(err, rates) {
+      server.getFiatRate(opts, (err, rates) => {
         if (err) return returnError(err, res, req);
         res.json(rates);
       });
     });
 
-    router.post('/v1/pushnotifications/subscriptions/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        server.pushNotificationsSubscribe(req.body, function(err, response) {
+    router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.pushNotificationsSubscribe(req.body, (err, response) => {
           if (err) return returnError(err, res, req);
           res.json(response);
         });
@@ -877,14 +874,14 @@ export class ExpressApp {
     });
 
     // DEPRECATED
-    router.delete('/v1/pushnotifications/subscriptions/', function(req, res) {
+    router.delete('/v1/pushnotifications/subscriptions/', (req, res) => {
       logDeprecated(req);
-      getServerWithAuth(req, res, function(server) {
+      getServerWithAuth(req, res, (server) => {
         server.pushNotificationsUnsubscribe(
           {
             token: 'dummy'
           },
-          function(err, response) {
+          (err, response) => {
             if (err) return returnError(err, res, req);
             res.json(response);
           }
@@ -892,36 +889,36 @@ export class ExpressApp {
       });
     });
 
-    router.delete('/v2/pushnotifications/subscriptions/:token', function(
+    router.delete('/v2/pushnotifications/subscriptions/:token', (
       req,
       res
-    ) {
-      var opts = {
+    ) => {
+      const opts = {
         token: req.params['token']
       };
-      getServerWithAuth(req, res, function(server) {
-        server.pushNotificationsUnsubscribe(opts, function(err, response) {
+      getServerWithAuth(req, res, (server) => {
+        server.pushNotificationsUnsubscribe(opts, (err, response) => {
           if (err) return returnError(err, res, req);
           res.json(response);
         });
       });
     });
 
-    router.post('/v1/txconfirmations/', function(req, res) {
-      getServerWithAuth(req, res, function(server) {
-        server.txConfirmationSubscribe(req.body, function(err, response) {
+    router.post('/v1/txconfirmations/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.txConfirmationSubscribe(req.body, (err, response) => {
           if (err) return returnError(err, res, req);
           res.json(response);
         });
       });
     });
 
-    router.delete('/v1/txconfirmations/:txid', function(req, res) {
-      var opts = {
+    router.delete('/v1/txconfirmations/:txid', (req, res) => {
+      const opts = {
         txid: req.params['txid']
       };
-      getServerWithAuth(req, res, function(server) {
-        server.txConfirmationUnsubscribe(opts, function(err, response) {
+      getServerWithAuth(req, res, (server) => {
+        server.txConfirmationUnsubscribe(opts, (err, response) => {
           if (err) return returnError(err, res, req);
           res.json(response);
         });

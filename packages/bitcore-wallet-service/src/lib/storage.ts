@@ -4,8 +4,7 @@ import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
 import { Wallet } from './model/wallet';
 
-// only for migration
-const BCHAddressTranslator = require('./bchaddresstranslator');
+const BCHAddressTranslator = require('./bchaddresstranslator'); // only for migration
 const Model = require('./model');
 const $ = require('preconditions').singleton();
 let log = require('npmlog');
