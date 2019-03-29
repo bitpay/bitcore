@@ -5,6 +5,13 @@ import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
 import { Storage } from './storage';
 
+interface Recipient {
+  copayerId: string;
+  emailAddress: string;
+  language: string;
+  unit: string;
+}
+
 const Mustache = require('mustache');
 const fs = require('fs');
 const path = require('path');
@@ -94,7 +101,6 @@ export class EmailService {
     this.templatePath = path.normalize(
       (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/'
     );
-    console.log(this.templatePath);
     this.publicTxUrlTemplate = opts.emailOpts.publicTxUrlTemplate || {};
     this.subjectPrefix = opts.emailOpts.subjectPrefix || '[Wallet service]';
     this.from = opts.emailOpts.from;
@@ -275,9 +281,7 @@ export class EmailService {
       data.walletName = wallet.name;
       data.walletM = wallet.m;
       data.walletN = wallet.n;
-      const copayer: any = _.find(wallet.copayers, {
-        id: notification.creatorId
-      });
+      const copayer = wallet.copayers.find((c) => c.id == notification.creatorId);
       if (copayer) {
         data.copayerId = copayer.id;
         data.copayerName = copayer.name;
@@ -285,9 +289,7 @@ export class EmailService {
 
       if (notification.type == 'TxProposalFinallyRejected' && data.rejectedBy) {
         const rejectors = _.map(data.rejectedBy, (copayerId) => {
-          const copayer: any = _.find(wallet.copayers, {
-            id: copayerId
-          });
+          const copayer = wallet.copayers.find((c) => c.id == copayerId);
           return copayer.name;
         });
         data.rejectorsNames = rejectors.join(', ');
@@ -337,10 +339,10 @@ export class EmailService {
       });
   }
 
-  _readAndApplyTemplates(notification, emailType, recipientsList, cb) {
+  _readAndApplyTemplates(notification, emailType, recipientsList: Recipient[], cb) {
     async.map(
       recipientsList,
-      (recipient: any, next) => {
+      (recipient, next) => {
         async.waterfall(
           [
             (next) => {
@@ -400,7 +402,7 @@ export class EmailService {
 
       this._getRecipientsList(notification, emailType, (
         err,
-        recipientsList
+        recipientsList: Recipient[]
       ) => {
         if (_.isEmpty(recipientsList)) return cb();
 
@@ -428,7 +430,7 @@ export class EmailService {
                 (contents, next) => {
                   async.map(
                     recipientsList,
-                    (recipient: any, next) => {
+                    (recipient, next) => {
                       const content = contents[recipient.language];
                       const email = Model.Email.create({
                         walletId: notification.walletId,
