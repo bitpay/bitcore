@@ -218,15 +218,29 @@ export class EthP2pWorker {
           const height = new BN(block.header.number).toNumber();
           let internalTxs = await this.rpc.getTransactionsFromBlock(height);
           for await (const tx of internalTxs) {
-            // if (tx.type === 'reward') {
-            //   console.log(tx);
-            // }
+            if (tx.type === 'reward') {
+              const rewardIndex = [convertedBlock].findIndex(
+                t => t.hash === tx.blockHash && t.height === tx.blockNumber
+              );
+              if (tx.action.rewardType && tx.action.rewardType === 'block') {
+                [convertedBlock][rewardIndex].reward = Number.parseInt(tx.action.value, 16);
+              }
+              if (tx.action.rewardType && tx.action.rewardType === 'uncle') {
+                [convertedBlock][rewardIndex].uncleReward = Number.parseInt(tx.action.value, 16);
+              }
+            }
             if (tx && tx.action) {
               const foundIndex = convertedTxs.findIndex(
                 t => t.txid === tx.transactionHash && t.from !== tx.action.from && t.to !== tx.action.to
               );
               if (foundIndex > -1) {
                 convertedTxs[foundIndex].internal.push(tx);
+              }
+              if (tx.error) {
+                const errorIndex = convertedTxs.findIndex(t => t.txid === tx.transactionHash);
+                if (errorIndex && errorIndex > -1) {
+                  convertedTxs[errorIndex].error = tx.error;
+                }
               }
             }
           }
@@ -277,7 +291,7 @@ export class EthP2pWorker {
       nextBlockHash: '',
       transactionCount: block.transactions.length,
       size: block.raw.length,
-      reward: 3,
+      reward: 0,
       processed: false,
       gasLimit: Number.parseInt(header.gasLimit.toString('hex'), 16) || 0,
       gasUsed: Number.parseInt(header.gasUsed.toString('hex'), 16) || 0,

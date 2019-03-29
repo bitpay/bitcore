@@ -30,6 +30,7 @@ export type IEthTransaction = ITransaction & {
   from: string;
   internal: Array<ClassifiedTrace>;
   abiType?: 'ERC20' | 'ERC721';
+  error?: string;
 };
 
 export type TransactionJSON = {

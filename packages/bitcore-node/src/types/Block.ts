@@ -27,4 +27,5 @@ export type IEthBlock = IBlock & {
   gasLimit: number;
   gasUsed: number;
   stateRoot: Buffer;
+  uncleReward?: number;
 };

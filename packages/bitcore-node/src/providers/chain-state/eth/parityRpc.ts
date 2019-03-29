@@ -9,7 +9,7 @@ if (Symbol['asyncIterator'] === undefined) (Symbol as any)['asyncIterator'] = Sy
 interface ParityCall {
   callType?: 'call' | 'delegatecall';
   author?: string;
-  rewardType?: 'block';
+  rewardType?: 'block' | 'uncle';
   from?: string;
   gas?: string;
   input?: string;
