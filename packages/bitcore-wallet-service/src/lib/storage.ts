@@ -649,7 +649,7 @@ export class Storage {
     );
   }
 
-  deregisterWallet = (walletId, cb) => {
+  deregisterWallet(walletId, cb) {
     this.db.collection(collections.WALLETS).update(
       {
         id: walletId

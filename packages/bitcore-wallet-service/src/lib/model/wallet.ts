@@ -25,7 +25,7 @@ export interface IWallet {
   n: number;
   singleAddress: boolean;
   status: string;
-  publicKeyRing: string[];
+  publicKeyRing: Array<{ xPubKey: string, requestPubKey: string }>;
   addressIndex: number;
   copayers: string[];
   pubKey: string;
@@ -51,7 +51,7 @@ export class Wallet {
   n: number;
   singleAddress: boolean;
   status: string;
-  publicKeyRing: any[];
+  publicKeyRing: Array<{ xPubKey: string, requestPubKey: string }>;
   addressIndex: number;
   copayers: Array<Copayer>;
   pubKey: string;
@@ -241,7 +241,7 @@ export class Wallet {
   }
 
   getCopayer(copayerId): Copayer {
-    return _.find(this.copayers, (c) => c.id == copayerId);
+    return this.copayers.find((c) => c.id == copayerId);
   }
 
   isComplete() {

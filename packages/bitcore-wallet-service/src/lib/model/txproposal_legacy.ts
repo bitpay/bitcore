@@ -189,7 +189,7 @@ export class TxProposalLegacy {
     );
   }
 
-  getActionBy = (copayerId) => {
+  getActionBy(copayerId) {
     return _.find(this.actions, {
       copayerId
     });

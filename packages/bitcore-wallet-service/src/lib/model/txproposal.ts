@@ -105,7 +105,7 @@ export class TxProposal {
   proposalSignaturePubKeySig: string;
   raw?: any;
 
-  static create = (opts) => {
+  static create(opts) {
     opts = opts || {};
 
     $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
@@ -209,18 +209,18 @@ export class TxProposal {
     return x;
   }
 
-  toObject = () => {
+  toObject() {
     const x: any = _.cloneDeep(this);
     x.isPending = this.isPending();
     return x;
   }
 
-  setInputs = (inputs) => {
+  setInputs(inputs) {
     this.inputs = inputs || [];
     this.inputPaths = _.map(inputs, 'path') || [];
   }
 
-  _updateStatus = () => {
+  _updateStatus() {
     if (this.status != 'pending') return;
 
     if (this.isRejected()) {
@@ -230,7 +230,7 @@ export class TxProposal {
     }
   }
 
-  _buildTx = () => {
+  _buildTx() {
     const t = new Bitcore[this.coin].Transaction();
 
     $.checkState(
@@ -301,7 +301,7 @@ export class TxProposal {
     return t;
   }
 
-  _getCurrentSignatures = () => {
+  _getCurrentSignatures() {
     const acceptedActions = _.filter(this.actions, (a) => {
       return a.type == 'accept';
     });
@@ -314,7 +314,7 @@ export class TxProposal {
     });
   }
 
-  getBitcoreTx = () => {
+  getBitcoreTx() {
     const t = this._buildTx();
 
     const sigs = this._getCurrentSignatures();
@@ -325,13 +325,13 @@ export class TxProposal {
     return t;
   }
 
-  getRawTx = () => {
+  getRawTx() {
     const t = this.getBitcoreTx();
 
     return t.uncheckedSerialize();
   }
 
-  getEstimatedSizeForSingleInput = () => {
+  getEstimatedSizeForSingleInput() {
     switch (this.addressType) {
       case Constants.SCRIPT_TYPES.P2PKH:
         return 147;
@@ -341,7 +341,7 @@ export class TxProposal {
     }
   }
 
-  getEstimatedSize = () => {
+  getEstimatedSize() {
     // Note: found empirically based on all multisig P2SH inputs and within m & n allowed limits.
     const safetyMargin = 0.02;
 
@@ -357,13 +357,13 @@ export class TxProposal {
     return parseInt((size * (1 + safetyMargin)).toFixed(0));
   }
 
-  getEstimatedFee = () => {
+  getEstimatedFee() {
     $.checkState(_.isNumber(this.feePerKb));
     const fee = (this.feePerKb * this.getEstimatedSize()) / 1000;
     return parseInt(fee.toFixed(0));
   }
 
-  estimateFee = () => {
+  estimateFee() {
     this.fee = this.getEstimatedFee();
   }
 
@@ -372,7 +372,7 @@ export class TxProposal {
    *
    * @return {Number} total amount of all outputs excluding change output
    */
-  getTotalAmount = () => {
+  getTotalAmount() {
     return _.sumBy(this.outputs, 'amount');
   }
 
@@ -381,7 +381,7 @@ export class TxProposal {
    *
    * @return {String[]} copayerIds that performed actions in this proposal (accept / reject)
    */
-  getActors = () => {
+  getActors() {
     return _.map(this.actions, 'copayerId');
   }
 
@@ -390,7 +390,7 @@ export class TxProposal {
    *
    * @return {String[]} copayerIds that approved the tx proposal (accept)
    */
-  getApprovers = () => {
+  getApprovers() {
     return _.map(
       _.filter(this.actions, (a) => {
         return a.type == 'accept';
@@ -405,13 +405,13 @@ export class TxProposal {
    * @param {String} copayerId
    * @return {Object} type / createdOn
    */
-  getActionBy = (copayerId) => {
+  getActionBy(copayerId) {
     return _.find(this.actions, {
       copayerId
     });
   }
 
-  addAction = (copayerId, type, comment, signatures?, xpub?) => {
+  addAction(copayerId, type, comment, signatures?, xpub?) {
     const action = TxProposalAction.create({
       copayerId,
       type,
@@ -423,7 +423,7 @@ export class TxProposal {
     this._updateStatus();
   }
 
-  _addSignaturesToBitcoreTx = (tx, signatures, xpub) => {
+  _addSignaturesToBitcoreTx(tx, signatures, xpub) {
     const bitcore = Bitcore[this.coin];
 
     if (signatures.length != this.inputs.length)
@@ -453,7 +453,7 @@ export class TxProposal {
     if (i != tx.inputs.length) throw new Error('Wrong signatures');
   }
 
-  sign = (copayerId, signatures, xpub) => {
+  sign(copayerId, signatures, xpub) {
     try {
       // Tests signatures are OK
       const tx = this.getBitcoreTx();
@@ -473,33 +473,33 @@ export class TxProposal {
     }
   }
 
-  reject = (copayerId, reason) => {
+  reject(copayerId, reason) {
     this.addAction(copayerId, 'reject', reason);
   }
 
-  isTemporary = () => {
+  isTemporary() {
     return this.status == 'temporary';
   }
 
-  isPending = () => {
+  isPending() {
     return !_.includes(['temporary', 'broadcasted', 'rejected'], this.status);
   }
 
-  isAccepted = () => {
+  isAccepted() {
     const votes = _.countBy(this.actions, 'type');
     return votes['accept'] >= this.requiredSignatures;
   }
 
-  isRejected = () => {
+  isRejected() {
     const votes = _.countBy(this.actions, 'type');
     return votes['reject'] >= this.requiredRejections;
   }
 
-  isBroadcasted = () => {
+  isBroadcasted() {
     return this.status == 'broadcasted';
   }
 
-  setBroadcasted = () => {
+  setBroadcasted() {
     $.checkState(this.txid);
     this.status = 'broadcasted';
     this.broadcastedOn = Math.floor(Date.now() / 1000);

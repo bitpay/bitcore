@@ -16,7 +16,7 @@ export class TxProposalAction {
   xpub: string;
   comment: string;
 
-  static create = (opts) => {
+  static create(opts) {
     opts = opts || {};
 
     let x = new TxProposalAction();
@@ -32,7 +32,7 @@ export class TxProposalAction {
     return x;
   }
 
-  static fromObj = (obj) => {
+  static fromObj(obj) {
     let x = new TxProposalAction();
 
     x.version = obj.version;
