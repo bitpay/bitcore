@@ -1,10 +1,10 @@
-var _ = require('lodash');
-var $ = require('preconditions').singleton();
+import _ from 'lodash';
 
-var Constants = require('../common/constants');
-var Utils = require('../common/utils');
+const $ = require('preconditions').singleton();
+const Constants = require('../common/constants');
+const Utils = require('../common/utils');
 
-interface IAddressManager {
+export interface IAddressManager {
   version: number;
   derivationStrategy: string;
   receiveAddressIndex: number;
@@ -21,10 +21,10 @@ export class AddressManager {
   copayerIndex: number;
   skippedPaths: Array<{ path: string; isChange: boolean }>;
 
-  static create = function(opts) {
+  static create(opts) {
     opts = opts || {};
 
-    var x = new AddressManager();
+    const x = new AddressManager();
 
     x.version = 2;
     x.derivationStrategy =
@@ -44,10 +44,10 @@ export class AddressManager {
     x.skippedPaths = [];
 
     return x;
-  };
+  }
 
   static fromObj(obj) {
-    var x = new AddressManager();
+    const x = new AddressManager();
 
     x.version = obj.version;
     x.derivationStrategy =
@@ -124,8 +124,8 @@ export class AddressManager {
   }
 
   getNewAddressPath(isChange, step = 1) {
-    var ret;
-    var i = 0;
+    let ret;
+    let i = 0;
     step = step || 1;
 
     while (i++ < step) {
@@ -142,7 +142,7 @@ export class AddressManager {
   getNextSkippedPath() {
     if (_.isEmpty(this.skippedPaths)) return null;
 
-    var ret = this.skippedPaths.pop();
+    const ret = this.skippedPaths.pop();
     return ret;
   }
 }

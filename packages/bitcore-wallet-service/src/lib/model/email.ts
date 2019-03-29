@@ -1,7 +1,6 @@
-'use strict';
+import _ from 'lodash';
 
-var _ = require('lodash');
-var Uuid = require('uuid');
+const Uuid = require('uuid');
 
 interface IEmail {
   version: number;
@@ -23,7 +22,7 @@ interface IEmail {
 export class Email {
   version: number;
   createdOn: number;
-  id: number;
+  id: string | number;
   walletId: string;
   copayerId: string;
   from: string;
@@ -40,12 +39,12 @@ export class Email {
   static create(opts) {
     opts = opts || {};
 
-    var x = new Email();
+    const x = new Email();
 
     x.version = 2;
-    var now = Date.now();
+    const now = Date.now();
     x.createdOn = Math.floor(now / 1000);
-    x.id = _.padStart(now, 14, '0') + Uuid.v4();
+    x.id = _.padStart(now.toString(), 14, '0') + Uuid.v4();
     x.walletId = opts.walletId;
     x.copayerId = opts.copayerId;
     x.from = opts.from;
@@ -62,7 +61,7 @@ export class Email {
   }
 
   static fromObj(obj) {
-    var x = new Email();
+    const x = new Email();
 
     x.version = obj.version;
     x.createdOn = obj.createdOn;
@@ -87,17 +86,17 @@ export class Email {
     return x;
   }
 
-  _logAttempt = function(result) {
+  _logAttempt(result) {
     this.attempts++;
     this.lastAttemptOn = Math.floor(Date.now() / 1000);
     this.status = result;
-  };
+  }
 
-  setSent = function() {
+  setSent() {
     this._logAttempt('sent');
-  };
+  }
 
-  setFail = function() {
+  setFail() {
     this._logAttempt('fail');
-  };
+  }
 }

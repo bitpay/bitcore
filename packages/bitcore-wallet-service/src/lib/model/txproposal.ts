@@ -1,21 +1,20 @@
-'use strict';
-
+import _ from 'lodash';
 import { TxProposalLegacy } from './txproposal_legacy';
 import { TxProposalAction } from './txproposalaction';
-var _ = require('lodash');
-var $ = require('preconditions').singleton();
-var Uuid = require('uuid');
-var log = require('npmlog');
+
+const $ = require('preconditions').singleton();
+const Uuid = require('uuid');
+const log = require('npmlog');
 log.debug = log.verbose;
 log.disableColor();
 
-var Bitcore = {
+const Bitcore = {
   btc: require('bitcore-lib'),
   bch: require('bitcore-lib-cash')
 };
 
-var Common = require('../common');
-var Constants = Common.Constants,
+const Common = require('../common');
+const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
 
@@ -75,37 +74,38 @@ export class TxProposal {
   network: string;
   message: string;
   payProUrl: string;
-  changeAddress: string;
+  changeAddress: any;
   inputs: any[];
   outputs: Array<{
     amount: number;
-    address: string;
+    address?: string;
     toAddress?: string;
     message?: string;
     script?: string;
   }>;
-  outputOrder: number;
+  outputOrder: number[];
   walletM: number;
   walletN: number;
   requiredSignatures: number;
   requiredRejections: number;
   status: string;
-  actions: [];
+  actions: any[] = [];
   feeLevel: number;
   feePerKb: number;
   excludeUnconfirmedUtxos: boolean;
   addressType: string;
   customData: any;
-  amount: string;
+  amount: string | number;
   fee: number;
   version: number;
   broadcastedOn: number;
-  inputPaths: string;
+  inputPaths: string | any[];
   proposalSignature: string;
   proposalSignaturePubKey: string;
   proposalSignaturePubKeySig: string;
+  raw?: any;
 
-  static create = function(opts) {
+  static create = (opts) => {
     opts = opts || {};
 
     $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
@@ -113,11 +113,11 @@ export class TxProposal {
       Utils.checkValueInCollection(opts.network, Constants.NETWORKS)
     );
 
-    var x = new TxProposal();
+    const x = new TxProposal();
 
     x.version = 3;
 
-    var now = Date.now();
+    const now = Date.now();
     x.createdOn = Math.floor(now / 1000);
     x.id = opts.id || Uuid.v4();
     x.walletId = opts.walletId;
@@ -127,7 +127,7 @@ export class TxProposal {
     x.message = opts.message;
     x.payProUrl = opts.payProUrl;
     x.changeAddress = opts.changeAddress;
-    x.outputs = _.map(opts.outputs, function(output) {
+    x.outputs = _.map(opts.outputs, (output) => {
       return _.pick(output, ['amount', 'toAddress', 'message', 'script']);
     });
     x.outputOrder = _.range(x.outputs.length + 1);
@@ -161,14 +161,14 @@ export class TxProposal {
     x.fee = opts.fee;
 
     return x;
-  };
+  }
 
   static fromObj(obj) {
     if (!(obj.version >= 3)) {
       return TxProposalLegacy.fromObj(obj);
     }
 
-    var x = new TxProposal();
+    const x = new TxProposal();
 
     x.version = obj.version;
     x.createdOn = obj.createdOn;
@@ -191,7 +191,7 @@ export class TxProposal {
     x.txid = obj.txid;
     x.broadcastedOn = obj.broadcastedOn;
     x.inputPaths = obj.inputPaths;
-    x.actions = _.map(obj.actions, function(action) {
+    x.actions = _.map(obj.actions, (action) => {
       return TxProposalAction.fromObj(action);
     });
     x.outputOrder = obj.outputOrder;
@@ -209,18 +209,18 @@ export class TxProposal {
     return x;
   }
 
-  toObject = function() {
-    var x = _.cloneDeep(this);
+  toObject = () => {
+    const x: any = _.cloneDeep(this);
     x.isPending = this.isPending();
     return x;
-  };
+  }
 
-  setInputs = function(inputs) {
+  setInputs = (inputs) => {
     this.inputs = inputs || [];
     this.inputPaths = _.map(inputs, 'path') || [];
-  };
+  }
 
-  _updateStatus = function() {
+  _updateStatus = () => {
     if (this.status != 'pending') return;
 
     if (this.isRejected()) {
@@ -228,37 +228,35 @@ export class TxProposal {
     } else if (this.isAccepted()) {
       this.status = 'accepted';
     }
-  };
+  }
 
-  _buildTx = function() {
-    var self = this;
-
-    var t = new Bitcore[self.coin].Transaction();
+  _buildTx = () => {
+    const t = new Bitcore[this.coin].Transaction();
 
     $.checkState(
-      Utils.checkValueInCollection(self.addressType, Constants.SCRIPT_TYPES)
+      Utils.checkValueInCollection(this.addressType, Constants.SCRIPT_TYPES)
     );
 
-    switch (self.addressType) {
+    switch (this.addressType) {
       case Constants.SCRIPT_TYPES.P2SH:
-        _.each(self.inputs, function(i) {
+        _.each(this.inputs, (i) => {
           $.checkState(i.publicKeys, 'Inputs should include public keys');
-          t.from(i, i.publicKeys, self.requiredSignatures);
+          t.from(i, i.publicKeys, this.requiredSignatures);
         });
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
-        t.from(self.inputs);
+        t.from(this.inputs);
         break;
     }
 
-    _.each(self.outputs, function(o) {
+    _.each(this.outputs, (o) => {
       $.checkState(
         o.script || o.toAddress,
         'Output should have either toAddress or script specified'
       );
       if (o.script) {
         t.addOutput(
-          new Bitcore[self.coin].Transaction.Output({
+          new Bitcore[this.coin].Transaction.Output({
             script: o.script,
             satoshis: o.amount
           })
@@ -268,28 +266,28 @@ export class TxProposal {
       }
     });
 
-    t.fee(self.fee);
+    t.fee(this.fee);
 
-    if (self.changeAddress) {
-      t.change(self.changeAddress.address);
+    if (this.changeAddress) {
+      t.change(this.changeAddress.address);
     }
 
     // Shuffle outputs for improved privacy
     if (t.outputs.length > 1) {
-      var outputOrder = _.reject(self.outputOrder, function(order) {
+      const outputOrder = _.reject(this.outputOrder, (order: number) => {
         return order >= t.outputs.length;
       });
       $.checkState(t.outputs.length == outputOrder.length);
-      t.sortOutputs(function(outputs) {
-        return _.map(outputOrder, function(i) {
+      t.sortOutputs((outputs) => {
+        return _.map(outputOrder, (i) => {
           return outputs[i];
         });
       });
     }
 
     // Validate actual inputs vs outputs independently of Bitcore
-    var totalInputs = _.sumBy(t.inputs, 'output.satoshis');
-    var totalOutputs = _.sumBy(t.outputs, 'satoshis');
+    const totalInputs = _.sumBy(t.inputs, 'output.satoshis');
+    const totalOutputs = _.sumBy(t.outputs, 'satoshis');
 
     $.checkState(
       totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs,
@@ -301,41 +299,39 @@ export class TxProposal {
     );
 
     return t;
-  };
+  }
 
-  _getCurrentSignatures = function() {
-    var acceptedActions = _.filter(this.actions, {
-      type: 'accept'
+  _getCurrentSignatures = () => {
+    const acceptedActions = _.filter(this.actions, (a) => {
+      return a.type == 'accept';
     });
 
-    return _.map(acceptedActions, function(x) {
+    return _.map(acceptedActions, (x) => {
       return {
         signatures: x.signatures,
         xpub: x.xpub
       };
     });
-  };
+  }
 
-  getBitcoreTx = function() {
-    var self = this;
+  getBitcoreTx = () => {
+    const t = this._buildTx();
 
-    var t = this._buildTx();
-
-    var sigs = this._getCurrentSignatures();
-    _.each(sigs, function(x) {
-      self._addSignaturesToBitcoreTx(t, x.signatures, x.xpub);
+    const sigs = this._getCurrentSignatures();
+    _.each(sigs, (x) => {
+      this._addSignaturesToBitcoreTx(t, x.signatures, x.xpub);
     });
 
     return t;
-  };
+  }
 
-  getRawTx = function() {
-    var t = this.getBitcoreTx();
+  getRawTx = () => {
+    const t = this.getBitcoreTx();
 
     return t.uncheckedSerialize();
-  };
+  }
 
-  getEstimatedSizeForSingleInput = function() {
+  getEstimatedSizeForSingleInput = () => {
     switch (this.addressType) {
       case Constants.SCRIPT_TYPES.P2PKH:
         return 147;
@@ -343,65 +339,65 @@ export class TxProposal {
       case Constants.SCRIPT_TYPES.P2SH:
         return this.requiredSignatures * 72 + this.walletN * 36 + 44;
     }
-  };
+  }
 
-  getEstimatedSize = function() {
+  getEstimatedSize = () => {
     // Note: found empirically based on all multisig P2SH inputs and within m & n allowed limits.
-    var safetyMargin = 0.02;
+    const safetyMargin = 0.02;
 
-    var overhead = 4 + 4 + 9 + 9;
-    var inputSize = this.getEstimatedSizeForSingleInput();
-    var outputSize = 34;
-    var nbInputs = this.inputs.length;
-    var nbOutputs =
+    const overhead = 4 + 4 + 9 + 9;
+    const inputSize = this.getEstimatedSizeForSingleInput();
+    const outputSize = 34;
+    const nbInputs = this.inputs.length;
+    const nbOutputs =
       (_.isArray(this.outputs) ? Math.max(1, this.outputs.length) : 1) + 1;
 
-    var size = overhead + inputSize * nbInputs + outputSize * nbOutputs;
+    const size = overhead + inputSize * nbInputs + outputSize * nbOutputs;
 
     return parseInt((size * (1 + safetyMargin)).toFixed(0));
-  };
+  }
 
-  getEstimatedFee = function() {
+  getEstimatedFee = () => {
     $.checkState(_.isNumber(this.feePerKb));
-    var fee = (this.feePerKb * this.getEstimatedSize()) / 1000;
+    const fee = (this.feePerKb * this.getEstimatedSize()) / 1000;
     return parseInt(fee.toFixed(0));
-  };
+  }
 
-  estimateFee = function() {
+  estimateFee = () => {
     this.fee = this.getEstimatedFee();
-  };
+  }
 
   /**
    * getTotalAmount
    *
    * @return {Number} total amount of all outputs excluding change output
    */
-  getTotalAmount = function() {
+  getTotalAmount = () => {
     return _.sumBy(this.outputs, 'amount');
-  };
+  }
 
   /**
    * getActors
    *
    * @return {String[]} copayerIds that performed actions in this proposal (accept / reject)
    */
-  getActors = function() {
+  getActors = () => {
     return _.map(this.actions, 'copayerId');
-  };
+  }
 
   /**
    * getApprovers
    *
    * @return {String[]} copayerIds that approved the tx proposal (accept)
    */
-  getApprovers = function() {
+  getApprovers = () => {
     return _.map(
-      _.filter(this.actions, {
-        type: 'accept'
+      _.filter(this.actions, (a) => {
+        return a.type == 'accept';
       }),
       'copayerId'
     );
-  };
+  }
 
   /**
    * getActionBy
@@ -409,14 +405,14 @@ export class TxProposal {
    * @param {String} copayerId
    * @return {Object} type / createdOn
    */
-  getActionBy = function(copayerId) {
+  getActionBy = (copayerId) => {
     return _.find(this.actions, {
       copayerId
     });
-  };
+  }
 
-  addAction = function(copayerId, type, comment, signatures, xpub) {
-    var action = TxProposalAction.create({
+  addAction = (copayerId, type, comment, signatures?, xpub?) => {
+    const action = TxProposalAction.create({
       copayerId,
       type,
       signatures,
@@ -425,25 +421,22 @@ export class TxProposal {
     });
     this.actions.push(action);
     this._updateStatus();
-  };
+  }
 
-  _addSignaturesToBitcoreTx = function(tx, signatures, xpub) {
-    var self = this;
-
-    var bitcore = Bitcore[self.coin];
+  _addSignaturesToBitcoreTx = (tx, signatures, xpub) => {
+    const bitcore = Bitcore[this.coin];
 
     if (signatures.length != this.inputs.length)
       throw new Error('Number of signatures does not match number of inputs');
 
-    var i = 0,
-      x = new bitcore.HDPublicKey(xpub);
+    let i = 0;
+    const x = new bitcore.HDPublicKey(xpub);
 
-    _.each(signatures, function(signatureHex) {
-      var input = self.inputs[i];
+    _.each(signatures, (signatureHex) => {
       try {
-        var signature = bitcore.crypto.Signature.fromString(signatureHex);
-        var pub = x.deriveChild(self.inputPaths[i]).publicKey;
-        var s = {
+        const signature = bitcore.crypto.Signature.fromString(signatureHex);
+        const pub = x.deriveChild(this.inputPaths[i]).publicKey;
+        const s = {
           inputIndex: i,
           signature,
           sigtype:
@@ -458,12 +451,12 @@ export class TxProposal {
     });
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');
-  };
+  }
 
-  sign = function(copayerId, signatures, xpub) {
+  sign = (copayerId, signatures, xpub) => {
     try {
       // Tests signatures are OK
-      var tx = this.getBitcoreTx();
+      const tx = this.getBitcoreTx();
       this._addSignaturesToBitcoreTx(tx, signatures, xpub);
 
       this.addAction(copayerId, 'accept', null, signatures, xpub);
@@ -478,37 +471,37 @@ export class TxProposal {
       log.debug(e);
       return false;
     }
-  };
+  }
 
-  reject = function(copayerId, reason) {
+  reject = (copayerId, reason) => {
     this.addAction(copayerId, 'reject', reason);
-  };
+  }
 
-  isTemporary = function() {
+  isTemporary = () => {
     return this.status == 'temporary';
-  };
+  }
 
-  isPending = function() {
+  isPending = () => {
     return !_.includes(['temporary', 'broadcasted', 'rejected'], this.status);
-  };
+  }
 
-  isAccepted = function() {
-    var votes = _.countBy(this.actions, 'type');
+  isAccepted = () => {
+    const votes = _.countBy(this.actions, 'type');
     return votes['accept'] >= this.requiredSignatures;
-  };
+  }
 
-  isRejected = function() {
-    var votes = _.countBy(this.actions, 'type');
+  isRejected = () => {
+    const votes = _.countBy(this.actions, 'type');
     return votes['reject'] >= this.requiredRejections;
-  };
+  }
 
-  isBroadcasted = function() {
+  isBroadcasted = () => {
     return this.status == 'broadcasted';
-  };
+  }
 
-  setBroadcasted = function() {
+  setBroadcasted = () => {
     $.checkState(this.txid);
     this.status = 'broadcasted';
     this.broadcastedOn = Math.floor(Date.now() / 1000);
-  };
+  }
 }

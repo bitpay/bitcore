@@ -1,25 +1,20 @@
-'use strict';
-
-var _ = require('lodash');
-var util = require('util');
-var log = require('npmlog');
-var $ = require('preconditions').singleton();
-var Uuid = require('uuid');
-
+import _ from 'lodash';
 import { Address } from './address';
 import { AddressManager } from './addressmanager';
-import { Copayer, ICopayer } from './copayer';
+import { Copayer } from './copayer';
 
-var Bitcore = {
+const log = require('npmlog');
+const $ = require('preconditions').singleton();
+const Uuid = require('uuid');
+const config = require('../../config');
+const Common = require('../common');
+const Constants = Common.Constants,
+  Defaults = Common.Defaults,
+  Utils = Common.Utils;
+const Bitcore = {
   btc: require('bitcore-lib'),
   bch: require('bitcore-lib-cash')
 };
-
-var config = require('../../config');
-var Common = require('../common');
-var Constants = Common.Constants,
-  Defaults = Common.Defaults,
-  Utils = Common.Utils;
 
 export interface IWallet {
   version: string;
@@ -56,7 +51,7 @@ export class Wallet {
   n: number;
   singleAddress: boolean;
   status: string;
-  publicKeyRing: string[];
+  publicKeyRing: any[];
   addressIndex: number;
   copayers: Array<Copayer>;
   pubKey: string;
@@ -78,7 +73,7 @@ export class Wallet {
   static create(opts) {
     opts = opts || {};
 
-    var x = new Wallet();
+    let x = new Wallet();
 
     $.shouldBeNumber(opts.m);
     $.shouldBeNumber(opts.n);
@@ -126,7 +121,7 @@ export class Wallet {
   }
 
   static fromObj(obj: IWallet) {
-    var x = new Wallet();
+    let x = new Wallet();
 
     $.shouldBeNumber(obj.m);
     $.shouldBeNumber(obj.n);
@@ -140,7 +135,7 @@ export class Wallet {
     x.singleAddress = !!obj.singleAddress;
     x.status = obj.status;
     x.publicKeyRing = obj.publicKeyRing;
-    x.copayers = _.map(obj.copayers, function(copayer) {
+    x.copayers = _.map(obj.copayers, (copayer) => {
       return Copayer.fromObj(copayer);
     });
     x.pubKey = obj.pubKey;
@@ -164,7 +159,7 @@ export class Wallet {
   }
 
   toObject() {
-    var x = _.cloneDeep(this);
+    let x: any = _.cloneDeep(this);
     x.isShared = this.isShared();
     return x;
   }
@@ -190,8 +185,8 @@ export class Wallet {
   updateBEKeys() {
     $.checkState(this.isComplete());
 
-    var bitcore = Bitcore[this.coin];
-    var salt = config.BE_KEY_SALT || Defaults.BE_KEY_SALT;
+    const bitcore = Bitcore[this.coin];
+    const salt = config.BE_KEY_SALT || Defaults.BE_KEY_SALT;
 
     var seed =
       _.map(this.copayers, 'xPubKey')
@@ -201,7 +196,7 @@ export class Wallet {
       this.coin +
       salt;
     seed = bitcore.crypto.Hash.sha256(new Buffer(seed));
-    var priv = bitcore.PrivateKey(seed, this.network);
+    const priv = bitcore.PrivateKey(seed, this.network);
 
     this.beAuthPrivateKey2 = priv.toString();
     // WARN!! => this will generate an uncompressed pub key.
@@ -209,7 +204,7 @@ export class Wallet {
   }
 
   _updatePublicKeyRing() {
-    this.publicKeyRing = _.map(this.copayers, function(copayer) {
+    this.publicKeyRing = _.map(this.copayers, (copayer) => {
       return _.pick(copayer, ['xPubKey', 'requestPubKey']);
     });
   }
@@ -233,7 +228,7 @@ export class Wallet {
   ) {
     $.checkState(this.copayers.length == this.n);
 
-    var c = this.getCopayer(copayerId);
+    const c: any = this.getCopayer(copayerId);
 
     // new ones go first
     c.requestPubKeys.unshift({
@@ -245,10 +240,8 @@ export class Wallet {
     });
   }
 
-  getCopayer(copayerId) {
-    return _.find(this.copayers, {
-      id: copayerId
-    });
+  getCopayer(copayerId): Copayer {
+    return _.find(this.copayers, (c) => c.id == copayerId);
   }
 
   isComplete() {
@@ -261,12 +254,11 @@ export class Wallet {
 
   createAddress(isChange, step) {
     $.checkState(this.isComplete());
-    var self = this;
 
-    var path = this.addressManager.getNewAddressPath(isChange, step);
+    const path = this.addressManager.getNewAddressPath(isChange, step);
     log.verbose('Deriving addr:' + path);
-    var address = Address.derive(
-      self.id,
+    const address = Address.derive(
+      this.id,
       this.addressType,
       this.publicKeyRing,
       path,
@@ -274,20 +266,19 @@ export class Wallet {
       this.coin,
       this.network,
       isChange,
-      !self.nativeCashAddr
+      !this.nativeCashAddr
     );
     return address;
   }
 
   /// Only for power scan
   getSkippedAddress() {
-    var self = this;
     $.checkState(this.isComplete());
 
-    var next = this.addressManager.getNextSkippedPath();
+    const next = this.addressManager.getNextSkippedPath();
     if (!next) return;
-    var address = Address.derive(
-      self.id,
+    const address = Address.derive(
+      this.id,
       this.addressType,
       this.publicKeyRing,
       next.path,
