@@ -1,9 +1,7 @@
-'use strict';
+import _ from 'lodash';
 import { ClientError } from './clienterror';
 
-var _ = require('lodash');
-
-var errors = {
+const errors = {
   BAD_SIGNATURES: 'Bad signatures',
   COPAYER_DATA_MISMATCH: 'Copayer data mismatch',
   COPAYER_IN_WALLET: 'Copayer already in wallet',
@@ -40,11 +38,11 @@ var errors = {
   WALLET_NEED_SCAN: 'Wallet needs addresses scan',
 };
 
-var errorObjects = _.fromPairs(_.map(errors, function(msg, code) {
+const errorObjects = _.fromPairs(_.map(errors, (msg, code) => {
   return [code, new ClientError(code, msg)];
 }));
 
-errorObjects.codes = _.mapValues(errors, function(v, k) {
+errorObjects.codes = _.mapValues(errors, (v, k) => {
   return k;
 });
 

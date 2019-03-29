@@ -1,9 +1,9 @@
 import * as requestStream from 'request';
 import * as request from 'request-promise-native';
 import * as secp256k1 from 'secp256k1';
-const bitcoreLib = require('bitcore-lib');
-import * as stream from 'stream';
 import { URL } from 'url';
+
+const bitcoreLib = require('bitcore-lib');
 
 export class Client {
   authKey: { bn: { toBuffer: (arg) => Buffer } };
@@ -134,7 +134,7 @@ export class Client {
 
     console.log('addAddresses:', url, payload); // TODO
     const signature = this.sign({ method: 'POST', url, payload });
-    let h = { 'x-signature': signature };
+    const h = { 'x-signature': signature };
     return request.post(url, {
       headers: h,
       body: payload,

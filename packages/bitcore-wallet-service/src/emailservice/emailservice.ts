@@ -1,16 +1,13 @@
 #!/usr/bin/env node
-
-'use strict';
-
+import _ from 'lodash';
 import { EmailService } from '../lib/emailservice';
-var _ = require('lodash');
-var log = require('npmlog');
+
+const config = require('../config');
+const log = require('npmlog');
 log.debug = log.verbose;
 
-var config = require('../config');
-
-var emailService = new EmailService();
-emailService.start(config, function(err) {
+const emailService = new EmailService();
+emailService.start(config, (err) => {
   if (err) throw err;
 
   console.log('Email service started');
