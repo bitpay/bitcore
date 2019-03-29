@@ -1,4 +1,3 @@
-
 # Bitcore Wallet Service
 
 [![NPM Package](https://img.shields.io/npm/v/bitcore-wallet-service.svg?style=flat-square)](https://www.npmjs.org/package/bitcore-wallet-service)
@@ -13,7 +12,7 @@ Bitcore Wallet Service facilitates multisig HD wallets creation and operation th
 
 BWS can usually be installed within minutes and accommodates all the needed infrastructure for peers in a multisig wallet to communicate and operate – with minimum server trust.
 
-See [bitcore-wallet-client](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet-client) for the *official* client library that communicates to BWS and verifies its response. Also check [bitcore-wallet](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet) for a simple CLI wallet implementation that relies on BWS.
+See [bitcore-wallet-client](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet-client) for the _official_ client library that communicates to BWS and verifies its response. Also check [bitcore-wallet](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-wallet) for a simple CLI wallet implementation that relies on BWS.
 
 BWS is been used in production enviroments for [Copay Wallet](https://copay.io), [Bitpay App wallet](https://bitpay.com/wallet) and others.
 
@@ -56,7 +55,7 @@ BWS can be used with PM2 with the provided `app.js` script:
 
 ## Using SSL
 
-  You can add your certificates at the config.js using:
+You can add your certificates at the config.js using:
 
 ```json
   https: true,
@@ -76,17 +75,19 @@ BWS can be used with PM2 with the provided `app.js` script:
 
 Tx proposal need to be:
 
- 1. First created via /v?/txproposal
-      -> This will create a 'temporary' TX proposal, returning the object, but not locking the inputs
- 2. Then published via  /v?/txproposal/:id/publish
-      -> This publish the tx proposal to all copayers, looking the inputs. The TX proposal can be `deleted` also, after been published.
- 3. Then signed via /v?/txproposal/:id/signature for each copayer
- 4. Then broadcasted to the p2p network via /v?/txproposal/:id/broadcast
+1.  First created via /v?/txproposal
+    -> This will create a 'temporary' TX proposal, returning the object, but not locking the inputs
+2.  Then published via /v?/txproposal/:id/publish
+    -> This publish the tx proposal to all copayers, looking the inputs. The TX proposal can be `deleted` also, after been published.
+3.  Then signed via /v?/txproposal/:id/signature for each copayer
+4.  Then broadcasted to the p2p network via /v?/txproposal/:id/broadcast
 
 The are plenty example creating and sending proposals in the `/test/integration` code.
 
 ## Enabling Regtest Mode for BWS and Copay
+
 ### Requirements
+
 - bitcore-node running on http://localhost:3000
 - bws running locally on http://localhost:3232/bws/api
 - mongod running
@@ -94,13 +95,15 @@ The are plenty example creating and sending proposals in the `/test/integration`
 - bitcoin-core running on regtest mode (blue icon logo)
 
 > mongo topology crashes sometimes due to notifications being incompatible in a web browser
-**bitcore-wallet-service/lib/notificationbroadcaster.js**
+> **bitcore-wallet-service/lib/notificationbroadcaster.js**
 > Note: If testing on a PC browser, comment out notificationbroadcaster.js to disable notifications.
 
 ### Steps:
 
 **bitcore.config.json**
+
 1.  Add testnet and regtest to bitcore.config.json. Testnet config must match regtest settings.
+
 ```
 "testnet": {
           "chainSource": "p2p",
@@ -133,9 +136,11 @@ The are plenty example creating and sending proposals in the `/test/integration`
           }
         }
 ```
+
 **bitcore-wallet-service/config.js**
 
 2. Point testnet to http://localhost:3000 in BWS/config.js and set regtestEnabled to true.
+
 ```
 blockchainExplorerOpts: {
     btc: {
@@ -153,9 +158,11 @@ blockchainExplorerOpts: {
 ```
 
 ### Copay changes
+
 **copay/app-template/index-template.html**
 
-3. Comment out content security meta tag in the ```<head>```
+3. Comment out content security meta tag in the `<head>`
+
 ```
 // <meta http-equiv="Content-Security-Policy" content="default-src 'self'  ... >
 ```
@@ -165,35 +172,43 @@ blockchainExplorerOpts: {
 ### Steps:
 
 1. Set the wallet service URL to
+
 ```
 http://localhost:3232/bws/api
 ```
+
 2. Select Testnet by pressing the slider button.
 
 <img width="923" alt="screen shot 2019-03-06 at 10 50 29 am" src="https://user-images.githubusercontent.com/23103037/53894324-e69f8300-3ffd-11e9-9b25-145332fe860c.png">
 
 ## Testing on mobile
+
 Requirements:
+
 - Mobile phone and PC must be connected to the same internet
 - PC desktop ip address for localhost
 
 To find ip address for PC run:
+
 ```
 // 127.0.0.1 is equal to localhost
 ifconfig | grep "inet " | grep -v 127.0.0.1
 ```
 
 1. Inside copay project root directory run:
+
 ```
 npm run apply:copay
 ```
 
 2. Enter PC ip address followed by port in the mobile phone browser:
+
 ```
 10.10.11.73:8100
 ```
 
 3. Set wallet service url to PC ip address /bws/api when creating a new wallet
+
 ```
 http://10.10.11.73:3232/bws/api
 ```
@@ -204,7 +219,7 @@ Note: all currency amounts are in units of satoshis (1/100,000,000 of a bitcoin)
 
 ## Authentication
 
-  In order to access a wallet, clients are required to send the headers:
+In order to access a wallet, clients are required to send the headers:
 
 ```sh
   x-identity
@@ -244,7 +259,7 @@ Returns:
 - message
 - actions array ['createdOn', 'type', 'copayerId', 'copayerName', 'comment']
 
-### `/v2/txproposals/`:  Get Wallet's pending transaction proposals and their status
+### `/v2/txproposals/`: Get Wallet's pending transaction proposals and their status
 
 Returns:
 
@@ -263,7 +278,7 @@ Returns:
 - List of Addresses object: (https://github.com/bitpay/bitcore/blob/master/packages/bitcore-wallet-service/lib/model/address.js). This call is mainly provided so the client check this addresses for incoming transactions (using a service like [Insight](https://insight.bitcore.io)
 - Returns cashaddr without prefix for BCH
 
-### `/v1/balance/`:  Get Wallet's balance
+### `/v1/balance/`: Get Wallet's balance
 
 Returns:
 
@@ -276,13 +291,13 @@ Returns:
 - byAddress array ['address', 'path', 'amount']: A list of addresses holding funds.
 - totalKbToSendMax: An estimation of the number of KiB required to include all available UTXOs in a tx (including unconfirmed).
 
-### `/v1/txnotes/:txid`:  Get user notes associated to the specified transaction
+### `/v1/txnotes/:txid`: Get user notes associated to the specified transaction
 
 Returns:
 
 - The note associated to the `txid` as a string.
 
-### `/v1/fiatrates/:code`:  Get the fiat rate for the specified ISO 4217 code
+### `/v1/fiatrates/:code`: Get the fiat rate for the specified ISO 4217 code
 
 Optional Arguments:
 
@@ -297,13 +312,13 @@ Returns:
 
 ### `/v1/wallets/`: Create a new Wallet
 
- Required Arguments:
+Required Arguments:
 
 - name: Name of the wallet
 - m: Number of required peers to sign transactions
 - n: Number of total peers on the wallet
 - pubKey: Wallet Creation Public key to check joining copayer's signatures (the private key is unknown by BWS and must be communicated
-by the creator peer to other peers).
+  by the creator peer to other peers).
 
 Returns:
 
@@ -357,7 +372,7 @@ Returns:
 
 Required Arguments:
 
-- signatures:  All Transaction's input signatures, in order of appearance.
+- signatures: All Transaction's input signatures, in order of appearance.
 
 Returns:
 
@@ -377,7 +392,7 @@ Returns:
 
 ### `/v1/addresses/scan`: Start an address scan process looking for activity.
 
- Optional Arguments:
+Optional Arguments:
 
 - includeCopayerBranches: Scan all copayer branches following BIP45 recommendation (defaults to false).
 
@@ -385,7 +400,7 @@ Returns:
 
 Required Arguments:
 
-- txid:  The transaction to subscribe to.
+- txid: The transaction to subscribe to.
 
 ## PUT Endpoints
 
@@ -395,7 +410,7 @@ Required Arguments:
 
 ### `/v1/txproposals/:id/`: Deletes a transaction proposal. Only the creator can delete a TX Proposal, and only if it has no other signatures or rejections
 
- Returns:
+Returns:
 
 - TX Proposal object. (see [fields on the source code](https://github.com/bitpay/bitcore/blob/master/packages/bitcore-wallet-service/lib/model/txproposal.js)). `.id` is probably needed in this case.
 
@@ -403,7 +418,7 @@ Required Arguments:
 
 # Push Notifications
 
-  Recomended to complete config.js file:
+Recomended to complete config.js file:
 
 - [FCM documentation](https://firebase.google.com/docs/cloud-messaging/)
 - [Apple's Notification](https://developer.apple.com/documentation/usernotifications)
