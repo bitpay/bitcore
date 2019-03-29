@@ -7,12 +7,8 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 **Note:** Version bump only for package @bitpay/insight-previous
 
-
-
-
-
-# [8.1.0](https://github.com/bitpay/bitcore/compare/v5.0.0-beta.44...v8.1.0) (2019-02-27)
+## [8.1.0](https://github.com/bitpay/bitcore/compare/v5.0.0-beta.44...v8.1.0) (2019-02-27)
 
 **Note:** Version bump only for package @bitpay/insight-previous
 
-# [8.0.0](https://github.com/bitpay/bitcore/compare/v5.0.0-beta.44...v8.0.0) (2019-02-27)
+## [8.0.0](https://github.com/bitpay/bitcore/compare/v5.0.0-beta.44...v8.0.0) (2019-02-27)
