@@ -1,4 +1,4 @@
-var _ = require('lodash');
+import * as _ from 'lodash';
 
 module.exports = {
   name: 'BitPay',
