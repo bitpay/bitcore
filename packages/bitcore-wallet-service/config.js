@@ -37,6 +37,7 @@ var config = {
       },
       testnet: {
         url: 'https://api.bitcore.io',
+        regtestEnabled: false
       },
     },
     bch: {

@@ -15,7 +15,7 @@ var Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash')
 };
-
+const config = require('../../config');
 var Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
@@ -23,6 +23,12 @@ var Constants = Common.Constants,
 
 function v8network(bwsNetwork) {
   if (bwsNetwork == 'livenet') return 'mainnet';
+  if (
+    bwsNetwork == 'testnet' &&
+    config.blockchainExplorerOpts.btc.testnet.regtestEnabled
+  ) {
+    return 'regtest';
+  }
   return bwsNetwork;
 };
 
@@ -32,7 +38,7 @@ function V8(opts) {
   $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
   $.checkArgument(opts.url);
 
-  this.apiPrefix = _.isUndefined(opts.apiPrefix)? '/api' : opts.apiPrefix; 
+  this.apiPrefix = _.isUndefined(opts.apiPrefix)? '/api' : opts.apiPrefix;
   this.coin = opts.coin || Defaults.COIN;
   this.network = opts.network || 'livenet';
   this.v8network = v8network(this.network);
@@ -123,12 +129,12 @@ V8.prototype.addAddresses = function (wallet, addresses, cb) {
     return {
       address: a,
     }
-  }); 
+  });
 
   var k = 'addAddresses'+addresses.length;
   console.time(k);
-  client.importAddresses({ 
-    payload: payload, 
+  client.importAddresses({
+    payload: payload,
     pubKey: wallet.beAuthPublicKey2,
   })
     .then( ret => {
@@ -150,13 +156,13 @@ V8.prototype.register = function (wallet, cb) {
 
   var client = this._getAuthClient(wallet);
   const payload = {
-    name: wallet.id, 
+    name: wallet.id,
     pubKey: wallet.beAuthPublicKey2,
     network: this.v8network,
     chain: this.coin,
   };
   client.register({
-    authKey: wallet.beAuthPrivateKey2, 
+    authKey: wallet.beAuthPrivateKey2,
     payload: payload}
   )
     .then((ret) => {
@@ -279,14 +285,14 @@ console.log('[v8.js.207] GET TX', txid); //TODO
       }
       return cb(null, tx);
     })
-    .catch((err) =>{ 
+    .catch((err) =>{
       // The TX was not found
       if (err.statusCode == '404') {
         return cb();
       } else {
         return cb(err);
       }
-      
+
     });
 };
 
@@ -353,7 +359,7 @@ console.time('V8 getTxs');
 
       if (tx.height>=0)
         txs.push(tx);
-      else 
+      else
         unconf.push(tx);
     })
     console.timeEnd("V8 getTxs");
@@ -403,7 +409,7 @@ V8.prototype.estimateFee = function(nbBlocks, cb) {
 
           result[x] = ret.feerate;
         }
-        catch (e) { 
+        catch (e) {
           log.warn('fee error:', e);
         };
 
@@ -476,7 +482,7 @@ V8.prototype.initSocket = function(callbacks) {
     var out;
     try {
       let addr = self.coin == 'bch' ? BCHAddressTranslator.translate(data.address, 'copay', 'cashaddr') : data.address;
-      out = { 
+      out = {
         address: data.address,
         amount: data.value / 1e8,
       };
@@ -484,9 +490,9 @@ V8.prototype.initSocket = function(callbacks) {
       // non parsable address
       return;
     }
-    return callbacks.onIncomingPayments({outs: [out], txid: data.mintTxid}); 
+    return callbacks.onIncomingPayments({outs: [out], txid: data.mintTxid});
   });
- 
+
   return socket;
 };
 
