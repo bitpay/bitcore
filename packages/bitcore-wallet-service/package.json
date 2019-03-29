@@ -4,6 +4,8 @@
   "author": "BitPay Inc",
   "version": "8.1.1",
   "license": "MIT",
+  "main": "ts_build/index.js",
+  "types": "./ts_build/index.d.ts",
   "keywords": [
     "bitcoin",
     "copay",
