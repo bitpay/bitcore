@@ -291,7 +291,7 @@ export class EthP2pWorker {
       nextBlockHash: '',
       transactionCount: block.transactions.length,
       size: block.raw.length,
-      reward: 0,
+      reward: 5,
       processed: false,
       gasLimit: Number.parseInt(header.gasLimit.toString('hex'), 16) || 0,
       gasUsed: Number.parseInt(header.gasUsed.toString('hex'), 16) || 0,
@@ -306,7 +306,8 @@ export class EthP2pWorker {
       const txid = '0x' + tx.hash().toString('hex');
       const to = '0x' + tx.to.toString('hex');
       const from = '0x' + tx.from.toString('hex');
-      const fee = Number(tx.getUpfrontCost().toString());
+      const value = Number.parseInt(tx.value.toString('hex'), 16);
+      const fee = Number(tx.getUpfrontCost().toString()) - value;
       const abiType = this.rpc.abiDecode('0x' + tx.data.toString('hex'));
       const nonce = tx.nonce.toString('hex');
       const convertedTx: IEthTransaction = {
@@ -320,7 +321,7 @@ export class EthP2pWorker {
         blockTimeNormalized: new Date(),
         fee,
         size: tx.data.length,
-        value: Number.parseInt(tx.value.toString('hex'), 16) || 0,
+        value,
         wallets: [],
         to,
         from,

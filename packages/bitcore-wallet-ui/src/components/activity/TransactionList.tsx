@@ -53,6 +53,12 @@ const styles = (theme: Theme) =>
     green: {
       color: 'green'
     },
+    blue: {
+      color: 'blue'
+    },
+    red: {
+      color: 'red'
+    },
     link: {
       color: 'white',
       textDecoration: 'none',
@@ -64,6 +70,33 @@ const styles = (theme: Theme) =>
 
 function Transactions(props: Props) {
   const { classes, tx, wallet } = props;
+  let statusColor = 'default';
+
+  const filterCategory = () => {
+    switch (tx.category) {
+      case 'recieve':
+        tx.height > 0 ? (statusColor = 'green') : (statusColor = 'default');
+        return (
+          <Typography noWrap variant="h6" className={classes[statusColor]}>
+            {tx.height > 0 ? `Recieved Block: ${tx.height}` : 'Confirming'}
+          </Typography>
+        );
+      case 'send':
+        tx.height > 0 ? (statusColor = 'red') : (statusColor = 'default');
+        return (
+          <Typography noWrap variant="h6" className={classes[statusColor]}>
+            {tx.height > 0 ? `Sent Block: ${tx.height}` : 'Confirming'}
+          </Typography>
+        );
+      case 'move':
+        tx.height > 0 ? (statusColor = 'blue') : (statusColor = 'default');
+        return (
+          <Typography noWrap variant="h6" className={classes[statusColor]}>
+            {tx.height > 0 ? `Token Transfer Block ${tx.height}` : 'Confirming'}{' '}
+          </Typography>
+        );
+    }
+  };
   return (
     <a
       href={
@@ -84,20 +117,11 @@ function Transactions(props: Props) {
             </Avatar>
           </Grid>
           <Grid item xs zeroMinWidth className={classes.auto}>
-            <Typography
-              noWrap
-              variant="h6"
-              className={tx.height > 0 ? classes.green : classes.default}
-            >
-              {tx.height > 0 ? `Block: ${tx.height}` : 'Confirming'}{' '}
-            </Typography>
+            {filterCategory()}
           </Grid>
           <Grid item className={classes.textRight}>
-            <Typography
-              variant="subtitle1"
-              className={tx.height > 0 ? classes.green : classes.default}
-            >
-              {tx.satoshis! / 1e8} {wallet ? wallet.chain : ''}
+            <Typography variant="subtitle1" className={classes[statusColor]}>
+              {tx.value! / 1e18} {wallet ? wallet.chain : ''}
             </Typography>
             <Typography variant="subtitle1" color="textSecondary">
               {new Date(tx.blockTime).toDateString()}

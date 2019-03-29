@@ -61,7 +61,7 @@ class WalletContainer extends Component<Props> {
         if (foundIndex > -1) {
           prevTx[foundIndex] = d;
         } else {
-          prevTx = [...prevTx.slice(0, 9), d];
+          prevTx = [...prevTx, d];
         }
       })
       .on('finish', () => {

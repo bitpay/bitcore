@@ -15,8 +15,8 @@ export interface AppState {
     fee: number;
     height: number;
     id: string;
-    outputIndex: number;
-    satoshis: number;
+    outputIndex?: number;
+    value: number;
     size: number;
     txid: string;
   }[];

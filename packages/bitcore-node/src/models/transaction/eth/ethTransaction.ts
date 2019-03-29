@@ -95,8 +95,12 @@ export class EthTransactionModel extends TransactionModel<IEthTransaction> {
       return Promise.all(
         params.txs.map(async (tx: IEthTransaction) => {
           const { to, txid, from } = tx;
-          const sentWallets = await WalletAddressStorage.collection.find({ chain, network, address: from }).toArray();
-          const receivedWallets = await WalletAddressStorage.collection.find({ chain, network, address: to }).toArray();
+          const sentWallets = await WalletAddressStorage.collection
+            .find({ chain, network, address: from.toLowerCase() })
+            .toArray();
+          const receivedWallets = await WalletAddressStorage.collection
+            .find({ chain, network, address: to.toLowerCase() })
+            .toArray();
           const wallets = _.uniqBy(sentWallets.concat(receivedWallets).map(w => w.wallet), w => w.toHexString());
 
           return {

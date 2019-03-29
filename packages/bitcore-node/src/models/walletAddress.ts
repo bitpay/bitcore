@@ -95,13 +95,12 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
             addressBatch.map(address => {
               return {
                 insertOne: {
-                  document: { chain, network, wallet: wallet._id, address, processed: false }
+                  document: { chain, network, wallet: wallet._id, address: address.toLowerCase(), processed: false }
                 }
               };
             })
           ),
             { ordered: false };
-
         } catch (err) {
           // Ignore duplicate keys, they may be half processed
           if (err.code !== 11000) {
