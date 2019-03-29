@@ -933,5 +933,3 @@ export class ExpressApp {
     WalletService.initialize(opts, cb);
   }
 }
-
-module.exports = ExpressApp;
