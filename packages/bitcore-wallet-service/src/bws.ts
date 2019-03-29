@@ -2,8 +2,8 @@
 
 import * as async from 'async';
 import * as fs from 'fs';
+import { ExpressApp } from './lib/expressapp';
 
-var ExpressApp = require('./lib/expressapp');
 var config = require('./config');
 var log = require('npmlog');
 log.debug = log.verbose;
@@ -51,10 +51,14 @@ if (config.https) {
 }
 
 if (config.cluster && !config.lockOpts.lockerServer)
-  throw new Error('When running in cluster mode, locker server need to be configured');
+  throw new Error(
+    'When running in cluster mode, locker server need to be configured'
+  );
 
 if (config.cluster && !config.messageBrokerOpts.messageBrokerServer)
-  throw new Error('When running in cluster mode, message broker server need to be configured');
+  throw new Error(
+    'When running in cluster mode, message broker server need to be configured'
+  );
 
 var expressApp = new ExpressApp();
 
