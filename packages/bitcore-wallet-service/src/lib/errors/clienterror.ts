@@ -1,10 +1,10 @@
 'use strict';
 
-export class ClientError extends Error {
+export class ClientError {
+  name: string;
   code: string;
   message: string;
   constructor(...args) {
-    super();
     switch (args.length) {
       case 0:
         this.code = 'BADREQUEST';
@@ -20,6 +20,7 @@ export class ClientError extends Error {
         this.message = args[1];
         break;
     }
+    this.name = this.code;
   }
 
   toString() {
