@@ -46,7 +46,7 @@ export class WorkerService extends EventEmitter {
     }
   }
 
-  stop() {}
+  async stop() {}
 
   sendTask(task: any, argument: any, done: CallbackType) {
     var worker = this.workers.shift();

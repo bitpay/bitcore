@@ -15,14 +15,16 @@ export class P2pManager {
   workers = new Array<P2pWorker>();
 
   private configService: ConfigService;
+  private p2pWorkers: Array<P2pWorker>;
 
   constructor({ configService = Config } = {}) {
     this.configService = configService;
+    this.p2pWorkers = new Array<P2pWorker>();
   }
 
   async stop() {
     logger.info('Stopping P2P Manager');
-    for (const worker of this.workers) {
+    for (const worker of this.p2pWorkers) {
       await worker.stop();
     }
   }
@@ -33,7 +35,7 @@ export class P2pManager {
       return;
     }
     logger.info('Starting P2P Manager');
-    const p2pWorkers = new Array<P2pWorker>();
+
     for (let chainNetwork of Config.chainNetworks()) {
       const { chain, network } = chainNetwork;
       const chainConfig = Config.chainConfig(chainNetwork);
@@ -46,7 +48,7 @@ export class P2pManager {
         chainConfig,
         blockModel
       });
-      p2pWorkers.push(p2pWorker);
+      this.p2pWorkers.push(p2pWorker);
       try {
         p2pWorker.start();
       } catch (e) {
@@ -70,9 +72,10 @@ export class P2pWorker {
   private invCache: any;
   private invCacheLimits: any;
   private initialSyncComplete: boolean;
-  private isSyncingNode: boolean;
   private stopping?: boolean;
   private blockModel: BlockModel;
+  private lastHeartBeat: string;
+  private queuedRegistrations: Array<NodeJS.Timer>;
   constructor({ chain, network, chainConfig, blockModel = BlockStorage }) {
     this.blockModel = blockModel;
     this.chain = chain;
@@ -82,8 +85,9 @@ export class P2pWorker {
     this.chainConfig = chainConfig;
     this.events = new EventEmitter();
     this.isSyncing = false;
+    this.lastHeartBeat = '';
+    this.queuedRegistrations = [];
     this.initialSyncComplete = false;
-    this.isSyncingNode = false;
     this.invCache = {};
     this.invCacheLimits = {
       [this.bitcoreP2p.Inventory.TYPE.BLOCK]: 100,
@@ -359,10 +363,8 @@ export class P2pWorker {
     const { chain, network } = this;
     let currentHeight = Math.max(1, from);
     const originalSyncValue = this.isSyncing;
-    const originalSyncingNodeValue = this.isSyncingNode;
     while (currentHeight < to) {
       this.isSyncing = true;
-      this.isSyncingNode = true;
       const locatorHashes = await ChainStateProvider.getLocatorHashes({
         chain,
         network,
@@ -395,60 +397,78 @@ export class P2pWorker {
       }
     }
     this.isSyncing = originalSyncValue;
-    this.isSyncingNode = originalSyncingNodeValue;
   }
 
-  async registerSyncingNode() {
+  get isSyncingNode(): boolean {
+    if (!this.lastHeartBeat) {
+      return false;
+    }
+    const [hostname, pid, timestamp] = this.lastHeartBeat.split(':');
+    const amSyncingNode =
+      hostname === os.hostname() && pid === process.pid.toString() && Date.now() - parseInt(timestamp) < 60 * 1000;
+    return amSyncingNode;
+  }
+
+  async refreshSyncingNode() {
     while (!this.stopping) {
-      const syncingNode = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
-      if (!syncingNode) {
-        await StateStorage.selfNominateSyncingNode({
-          chain: this.chain,
-          network: this.network,
-          lastHeartBeat: syncingNode
-        });
-        continue;
+      const wasSyncingNode = this.isSyncingNode;
+      this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
+      const nowSyncingNode = this.isSyncingNode;
+      if (wasSyncingNode && !nowSyncingNode) {
+        throw new Error('Syncing Node Renewal Failure');
       }
-      const [hostname, pid, timestamp] = syncingNode.split(':');
-      const amSyncingNode =
-        hostname === os.hostname() && pid === process.pid.toString() && Date.now() - parseInt(timestamp) < 60 * 1000;
-      if (amSyncingNode) {
-        StateStorage.selfNominateSyncingNode({
-          chain: this.chain,
-          network: this.network,
-          lastHeartBeat: syncingNode
-        });
-        if (!this.isSyncingNode) {
-          logger.info(`This worker is now the syncing node for ${this.chain} ${this.network}`);
-          this.isSyncingNode = true;
-          this.sync();
-        }
+      if (!wasSyncingNode && nowSyncingNode) {
+        logger.info(`This worker is now the syncing node for ${this.chain} ${this.network}`);
+        this.sync();
+      }
+      if (!this.lastHeartBeat || this.isSyncingNode) {
+        await this.registerSyncingNode({ primary: true });
       } else {
-        if (this.isSyncingNode) {
-          logger.error(`This worker failed to renew syncing node status for ${this.chain} ${this.network}`);
-          throw new Error('Syncing Node Renewal Failure');
-        }
-        await wait(10 * 1000);
+        await this.registerSyncingNode({ primary: false });
+      }
+    }
+  }
+
+  async registerSyncingNode({ primary }) {
+    const queuedRegistration = setTimeout(
+      () => {
         StateStorage.selfNominateSyncingNode({
           chain: this.chain,
           network: this.network,
-          lastHeartBeat: syncingNode
+          lastHeartBeat: this.lastHeartBeat
         });
-      }
-      await wait(500);
+      },
+      primary ? 0 : 60 * 1000
+    );
+    this.queuedRegistrations.push(queuedRegistration);
+  }
+
+  async unregisterSyncingNode() {
+    await wait(1000);
+    this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
+    if (this.isSyncingNode) {
+      await StateStorage.selfResignSyncingNode({
+        chain: this.chain,
+        network: this.network,
+        lastHeartBeat: this.lastHeartBeat
+      });
     }
   }
 
   async stop() {
     this.stopping = true;
     logger.debug(`Stopping worker for chain ${this.chain}`);
+    this.queuedRegistrations.forEach(queuedRegistration => {
+      clearTimeout(queuedRegistration);
+    });
+    await this.unregisterSyncingNode();
     await this.disconnect();
   }
 
   async start() {
     logger.debug(`Started worker for chain ${this.chain}`);
     await this.connect();
-    this.registerSyncingNode();
+    this.refreshSyncingNode();
   }
 }
 

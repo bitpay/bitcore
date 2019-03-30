@@ -62,7 +62,7 @@ export class StorageService {
     });
   }
 
-  stop() {}
+  async stop() {}
 
   validPagingProperty<T>(model: TransformableModel<T>, property: keyof MongoBound<T>) {
     const defaultCase = property === '_id';

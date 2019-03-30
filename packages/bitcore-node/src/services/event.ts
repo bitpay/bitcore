@@ -41,7 +41,7 @@ export class EventService {
     }
   }
 
-  stop() {
+  async stop() {
     logger.info('Stopping Event Service');
     this.stopped = true;
   }
