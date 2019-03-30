@@ -21,7 +21,7 @@ export class WorkerService extends EventEmitter {
     if (cluster.isMaster) {
       logger.verbose(`Master ${process.pid} is running`);
       cluster.on('exit', (worker: WorkerType) => {
-        logger.error(`worker ${worker.process.pid} died`);
+        logger.warn(`worker ${worker.process.pid} stopped`);
       });
       if (!args.DEBUG) {
         for (let worker = 0; worker < config.numWorkers; worker++) {
