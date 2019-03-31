@@ -18,7 +18,8 @@ import { PriceProvider } from '../../providers/price/price';
 })
 export class BlocksPage {
   public loading = true;
-  public blocks: any[] = [];
+  public blocks;
+
   private chainNetwork: ChainNetwork;
 
   constructor(
@@ -42,7 +43,7 @@ export class BlocksPage {
     this.priceProvider.setCurrency();
 
     this.blocksProvider.getBlocks().subscribe(
-      ({ blocks }) => {
+      blocks => {
         this.blocks = blocks;
         this.loading = false;
       },

@@ -6,8 +6,9 @@
 
       <loader *ngIf="loading" [type]="'title'"></loader>
 
-      <div *ngIf="!loading">
+      <error [message]="errorMessage" *ngIf="!loading && errorMessage "></error>
 
+      <div *ngIf="!loading && !errorMessage">
         <h1 ion-text>
           Transaction
           <ion-note *ngIf="vout !== undefined">
@@ -15,6 +16,7 @@
             <span class="tx-note" ion-text *ngIf="!fromVout">Input {{ vout }}</span>
           </ion-note>
         </h1>
+
         <p class="item-hash">
           <b>Transaction Hash</b> {{ tx.txid }}</p>
 
@@ -39,7 +41,7 @@
               {{ tx.time * 1000 | date:'medium' }}
             </ion-note>
           </ion-item>
-          <ion-item *ngIf="tx.confirmations !== 0">
+          <ion-item *ngIf="confirmations > 0">
             Mined Time
             <ion-note item-end>
               {{ tx.blocktime * 1000 | date:'medium' }}
@@ -50,7 +52,7 @@
             <ion-note item-end>
               <a (click)="goToBlock(tx.blockhash)">{{ tx.blockhash }}</a>
             </ion-note>
-            <ion-note *ngIf="tx.confirmations === 0" item-end>
+            <ion-note *ngIf="confirmations <= 0" item-end>
               Unconfirmed
             </ion-note>
           </ion-item>

@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ApiProvider } from '../../providers/api/api';
+import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { RedirProvider } from '../../providers/redir/redir';
 import {
@@ -18,25 +19,25 @@ import {
   templateUrl: 'transaction.html'
 })
 export class TransactionComponent implements OnInit {
-  private COIN = 100000000;
-
   public expanded = false;
   @Input()
   public tx: any = {};
   @Input()
   public showCoins = false;
+  public confirmations: number;
+
+  private COIN = 100000000;
 
   constructor(
     public currencyProvider: CurrencyProvider,
     public apiProvider: ApiProvider,
     public txProvider: TxsProvider,
-    public redirProvider: RedirProvider
+    public redirProvider: RedirProvider,
+    public blocksProvider: BlocksProvider
   ) {}
 
   public ngOnInit(): void {
-    if (this.showCoins) {
-      this.getCoins();
-    }
+    this.showCoins ? this.getCoins() : this.getConfirmations();
   }
 
   public getCoins(): void {
@@ -45,15 +46,24 @@ export class TransactionComponent implements OnInit {
       this.tx.vout = data.outputs;
       this.tx.fee = this.txProvider.getFee(this.tx);
       this.tx.valueOut = data.outputs.reduce((a, b) => a + b.value, 0);
+      this.getConfirmations();
     });
   }
 
-  public getAddress(vout: ApiCoin): string {
-    if (vout.address === 'false') {
+  public getAddress(v: ApiCoin): string {
+    if (v.address === 'false') {
       return 'Unparsed address';
     }
 
-    return vout.address;
+    return v.address;
+  }
+
+  public getConfirmations() {
+    this.txProvider
+      .getConfirmations(this.tx.blockheight)
+      .subscribe(confirmations => {
+        this.confirmations = confirmations;
+      });
   }
 
   public goToTx(txId: string, vout?: number, fromVout?: boolean): void {

@@ -17,7 +17,9 @@
         {{ currencyProvider?.currencySymbol }}
         &nbsp;
         <i>( <span *ngIf="currencyProvider?.currencySymbol === 'USD'">{{ config?.chain }} - </span>
-          {{ config?.network }})</i>
+          {{ config?.network }} )</i>
+        &nbsp;
+        <ion-icon name="md-arrow-dropdown"></ion-icon>
       </button>
     </ion-buttons>
   </ion-navbar>

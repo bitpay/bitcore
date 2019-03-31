@@ -10,9 +10,7 @@ export class CurrencyProvider {
   public loading: boolean;
   public explorers: any = [];
 
-  constructor(private apiProvider: ApiProvider) {
-    this.setCurrency();
-  }
+  constructor(private apiProvider: ApiProvider) {}
 
   public roundFloat(aFloat: number, decimalPlaces: number): number {
     return (

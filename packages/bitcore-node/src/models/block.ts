@@ -219,7 +219,7 @@ export class BlockModel extends BaseModel<IBlock> {
     return true;
   }
 
-  _apiTransform(block: Partial<MongoBound<IBlock>>, options: TransformOptions): any {
+  _apiTransform(block: Partial<MongoBound<IBlock>>, options?: TransformOptions): any {
     const transform = {
       _id: block._id,
       chain: block.chain,

@@ -10,7 +10,7 @@ export class DefaultProvider {
   } = {
     '%CHAIN%': process.env.CHAIN || 'XVG',
     '%API_PREFIX%': process.env.API_PREFIX || '/api',
-    '%NETWORK%': process.env.NETWORK || 'regtest',
+    '%NETWORK%': process.env.NETWORK || 'mainnet',
     '%NUM_BLOCKS%': process.env.NUM_BLOCKS || '15'
   };
 

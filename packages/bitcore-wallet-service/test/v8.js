@@ -173,4 +173,81 @@ describe('V8', () => {
     });
   });
 
+  describe('#estimateFee', () => {
+    it('should estimate fee', (done) => {
+
+      let fakeRequest = {
+        get: sinon.stub().resolves('{"feerate":0.00017349,"blocks":5}'),
+      };
+
+      var be = new V8({
+        coin: 'bch',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        userAgent: 'testAgent',
+        request: fakeRequest,
+      });
+
+      be.estimateFee([5], (err, levels) => {
+        should.not.exist(err);
+        should.exist(levels);
+        // should ignore non-matching results
+        levels.should.deep.equal({ '5': 0.00017349 });
+        return done();
+      });
+    });
+ 
+    it('should ignore non-matching results from estimate fee', (done) => {
+
+      let fakeRequest = {
+        get: sinon.stub().resolves('{"feerate":0.00017349,"blocks":4}'),
+      };
+
+      var be = new V8({
+        coin: 'bch',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        userAgent: 'testAgent',
+        request: fakeRequest,
+      });
+
+      be.estimateFee([1,2,3,4,5], (err, levels) => {
+        should.not.exist(err);
+        should.exist(levels);
+        // should ignore non-matching results
+        levels.should.deep.equal({ '4': 0.00017349 });
+        return done();
+      });
+    });
+
+    it('should use results from estimate fee is blocks is not present', (done) => {
+
+      let fakeRequest = {
+        get: sinon.stub().resolves('{"feerate":0.00017349}'),
+      };
+
+      var be = new V8({
+        coin: 'bch',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        userAgent: 'testAgent',
+        request: fakeRequest,
+      });
+
+      be.estimateFee([1,2,3,4,5], (err, levels) => {
+        should.not.exist(err);
+        should.exist(levels);
+        levels.should.deep.equal({ '1': 0.00017349,
+          '2': 0.00017349,
+          '3': 0.00017349,
+          '4': 0.00017349,
+          '5': 0.00017349 });
+        return done();
+      });
+    });
+
+  });
 });

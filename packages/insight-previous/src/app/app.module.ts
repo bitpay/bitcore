@@ -1,5 +1,5 @@
+import { HttpClientModule } from '@angular/common/http';
 import { ErrorHandler, NgModule } from '@angular/core';
-import { HttpModule } from '@angular/http';
 import { BrowserModule } from '@angular/platform-browser';
 import { IonicApp, IonicErrorHandler, IonicModule } from 'ionic-angular';
 import { BlocksPage, HomePage, PagesModule } from '../pages';
@@ -19,7 +19,7 @@ import { InsightApp } from './app.component';
   declarations: [InsightApp],
   imports: [
     BrowserModule,
-    HttpModule,
+    HttpClientModule,
     PagesModule,
     IonicModule.forRoot(InsightApp, {
       mode: 'md',

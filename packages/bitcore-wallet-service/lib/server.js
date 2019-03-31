@@ -1634,7 +1634,7 @@ WalletService.prototype._sampleFeeLevels = function(coin, network, points, cb) {
 
     var failed = [];
     var levels = _.fromPairs(_.map(points, function(p) {
-      var feePerKb = _.isObject(result) ? +result[p] : -1;
+      var feePerKb = (_.isObject(result) && result[p] && _.isNumber(result[p]) ) ? +result[p] : -1;
       if (feePerKb < 0)
         failed.push(p);
 
@@ -1646,7 +1646,7 @@ WalletService.prototype._sampleFeeLevels = function(coin, network, points, cb) {
       logger('Could not compute fee estimation in ' + network + ': ' + failed.join(', ') + ' blocks.');
     }
 
-    return cb(null, levels);
+    return cb(null, levels, failed.length);
   });
 };
 
@@ -1707,7 +1707,7 @@ WalletService.prototype.getFeeLevels = function(opts, cb) {
       return result;
     };
 
-    self._sampleFeeLevels(opts.coin, opts.network, samplePoints(), function(err, feeSamples) {
+    self._sampleFeeLevels(opts.coin, opts.network, samplePoints(), function(err, feeSamples, failed) {
       if (err) {
         if (oldvalues) {
           log.warn("##  There was an error estimating fees... using old cached values");
@@ -1734,6 +1734,12 @@ WalletService.prototype.getFeeLevels = function(opts, cb) {
       for (var i = 1; i < values.length; i++) {
         values[i].feePerKb = Math.min(values[i].feePerKb, values[i - 1].feePerKb);
       }
+
+      if (failed > 0) {
+        log.warn('Not caching default values. Failed:' + failed);
+        return cb(null, values);
+      }
+
 
       self.storage.storeGlobalCache(cacheKey, values, (err) =>  {
         if (err) {
@@ -1951,7 +1957,6 @@ WalletService.prototype._selectTxInputs = function(txp, utxosToExclude, cb) {
   //log.debug('Selecting inputs for a ' + Utils.formatAmountInBtc(txp.getTotalAmount()) + ' txp');
 
   self._getUtxosForCurrentWallet({}, function(err, utxos) {
-
     if (err) return cb(err);
 
     var totalAmount;
@@ -2377,16 +2382,13 @@ WalletService.prototype.createTx = function(opts, cb) {
             next();
           },
           function(next) {
-
             self._selectTxInputs(txp, opts.utxosToExclude, next);
           },
           function(next) {
-
             if (!changeAddress || wallet.singleAddress || opts.dryRun) return next();
             self._store(wallet, txp.changeAddress, next, true);
           },
           function(next) {
-
             if (opts.dryRun) return next();
 
             if (txp.coin == 'bch') {
