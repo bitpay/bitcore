@@ -35,19 +35,19 @@ head-nav {
           margin-top: 4px;
           padding: 9px 12px;
           color: color($colors, light);
-          background-color: #7CAD23;
+          background-color: #349CC0;
           border: 0;
           box-shadow: 1px 1px 0 0 rgba(255,255,255,.41), inset 1px 1px 3px 0 rgba(0,0,0,.10);
         }
         
         ::-webkit-input-placeholder {
-          color: #BCDF7E;
+          color: #9CDAEF;
           font-style: italic;
           font-weight: 100;
         }
         
         ::-moz-placeholder {
-          color: #BCDF7E;
+          color: #9CDAEF;
           font-family: 'Ubuntu', sans-serif;
           font-weight: 100;
         }

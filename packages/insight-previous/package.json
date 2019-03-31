@@ -80,7 +80,8 @@
     "tslint-config-prettier": "^1.15.0",
     "tslint-eslint-rules": "4.1.1",
     "typescript": "2.6.2",
-    "webdriver-manager": "^12.1.1"
+    "webdriver-manager": "^12.1.1",
+    "scryptsy": "^2.0.0"
   },
   "engines": {
     "node": ">=8"

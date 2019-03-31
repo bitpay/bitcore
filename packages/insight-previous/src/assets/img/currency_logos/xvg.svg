@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="30px" height="30px" viewBox="0 0 30 30" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+	<title>verge</title>
+	<defs></defs>
+	<g id="bitcoin">
+		<path id="Shape" d="M29.488,18.714c-1.997,7.887 -10.11,12.7 -18.141,10.734c-8.009,-1.967 -12.898,-9.955 -10.9,-17.841c1.997,-7.886 10.11,-12.699 18.119,-10.733c8.03,1.946 12.919,9.955 10.922,17.84" style="fill:#38b0dd;fill-rule:nonzero;"/>
+		<path d="M7.362,8.03l1.546,0l-1.071,-2.53l14.326,0l-1.02,2.53l-12.235,0l6.266,14.801l5.969,-14.801l1.495,0l-7.464,18.47l-7.812,-18.47Z" style="fill:#fff;fill-rule:nonzero;"/>
+	</g>
+</svg>
