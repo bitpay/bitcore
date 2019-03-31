@@ -5,17 +5,11 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 
 ## [8.1.1](https://github.com/matiu/bitcore/compare/v8.1.0...v8.1.1) (2019-03-21)
 
-
 ### Bug Fixes
 
 * **node:** detecting dupe transactions and coins with mismatched heights ([3891140](https://github.com/matiu/bitcore/commit/3891140))
 
-
-
-
-
-# [8.1.0](https://github.com/nitsujlangston/bitcore/compare/v5.0.0-beta.44...v8.1.0) (2019-02-27)
-
+## [8.1.0](https://github.com/nitsujlangston/bitcore/compare/v5.0.0-beta.44...v8.1.0) (2019-02-27)
 
 ### Bug Fixes
 
@@ -35,7 +29,6 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 * **node:** stream has a memory leak, use event emitter instead ([d256e5c](https://github.com/nitsujlangston/bitcore/commit/d256e5c))
 * **sync:** handle sync node going awol ([372b273](https://github.com/nitsujlangston/bitcore/commit/372b273))
 
-
 ### Features
 
 * **api:** Adds check wallet endpoint ([a606095](https://github.com/nitsujlangston/bitcore/commit/a606095))
@@ -50,7 +43,6 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 * **service:** support multiple sync nodes ([66385ce](https://github.com/nitsujlangston/bitcore/commit/66385ce))
 * **sync:** prune mempool transactions and coins when conflicting ones come in ([18ffda1](https://github.com/nitsujlangston/bitcore/commit/18ffda1))
 
-
 ### Performance Improvements
 
 * **api:** stream wallet address import process ([e0333f8](https://github.com/nitsujlangston/bitcore/commit/e0333f8))
@@ -59,7 +51,6 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 * **sync:** add utxo cache behavior to coin spend ([3dd7521](https://github.com/nitsujlangston/bitcore/commit/3dd7521))
 * **sync:** lra cache address encoding of output scripts ([6892f43](https://github.com/nitsujlangston/bitcore/commit/6892f43))
 * **wallet api:** improve wallet transaction list performance ([7491e6f](https://github.com/nitsujlangston/bitcore/commit/7491e6f))
-
 
 ### BREAKING CHANGES
 
@@ -67,12 +58,7 @@ See [Conventional Commits](https://conventionalcommits.org) for commit guideline
 unconfirmed: number}`
 * **wallet api:** no longer page based on _id
 
-
-
-
-
 ## [8.0.1](https://github.com/nitsujlangston/bitcore/compare/v5.0.0-beta.44...v8.0.1) (2019-02-27)
-
 
 ### Bug Fixes
 
@@ -92,7 +78,6 @@ unconfirmed: number}`
 * **node:** stream has a memory leak, use event emitter instead ([d256e5c](https://github.com/nitsujlangston/bitcore/commit/d256e5c))
 * **sync:** handle sync node going awol ([372b273](https://github.com/nitsujlangston/bitcore/commit/372b273))
 
-
 ### Features
 
 * **api:** Adds check wallet endpoint ([a606095](https://github.com/nitsujlangston/bitcore/commit/a606095))
@@ -107,7 +92,6 @@ unconfirmed: number}`
 * **service:** support multiple sync nodes ([66385ce](https://github.com/nitsujlangston/bitcore/commit/66385ce))
 * **sync:** prune mempool transactions and coins when conflicting ones come in ([18ffda1](https://github.com/nitsujlangston/bitcore/commit/18ffda1))
 
-
 ### Performance Improvements
 
 * **api:** stream wallet address import process ([e0333f8](https://github.com/nitsujlangston/bitcore/commit/e0333f8))
@@ -116,7 +100,6 @@ unconfirmed: number}`
 * **sync:** add utxo cache behavior to coin spend ([3dd7521](https://github.com/nitsujlangston/bitcore/commit/3dd7521))
 * **sync:** lra cache address encoding of output scripts ([6892f43](https://github.com/nitsujlangston/bitcore/commit/6892f43))
 * **wallet api:** improve wallet transaction list performance ([7491e6f](https://github.com/nitsujlangston/bitcore/commit/7491e6f))
-
 
 ### BREAKING CHANGES
 

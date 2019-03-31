@@ -1,12 +1,12 @@
 # Config
+
 The following config block supports two networks for ETH. Main and Local
 
 The local network would be geth, or testrpc
+
 The main network shows how to connect via websocket
 
-
-```
-
+```json
 "ETH": {
   "local": {
     "chainSource": "web3",
@@ -35,7 +35,7 @@ The main network shows how to connect via websocket
 }
 ```
 
-# Adding your own provider
+## Adding your own provider
 
 Should you want to add your own provider, you can register it on the ChainStateProvider
 

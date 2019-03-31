@@ -33,7 +33,7 @@ const start = async () => {
 };
 
 const stop = async () => {
-  console.log('Shutting down');
+  console.log(`Shutting down ${process.pid}`);
   for (const service of services.reverse()) {
     await service.stop();
   }
