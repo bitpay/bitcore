@@ -422,10 +422,11 @@ export class P2pWorker {
         this.sync();
       }
       if (!this.lastHeartBeat || this.isSyncingNode) {
-        await this.registerSyncingNode({ primary: true });
+        this.registerSyncingNode({ primary: true });
       } else {
-        await this.registerSyncingNode({ primary: false });
+        this.registerSyncingNode({ primary: false });
       }
+      await wait(500);
     }
   }
 
