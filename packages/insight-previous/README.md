@@ -6,15 +6,15 @@
 
 To get started, first [start a `bitcore` node](../../readme.md), then run insight:
 
-```bash
+```sh
 cd bitcore
-npm start insight
+npm start insight-previous
 ```
 
 ## Network / Chain setting
 
 To use a specific network / chain set the `NETWORK` and `CHAIN` environment variable, e.g.:
 
-```bash
+```sh
 NETWORK=testnet CHAIN=BCH npm start
 ```

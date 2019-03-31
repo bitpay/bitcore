@@ -6,51 +6,50 @@ Bitcoin is a powerful new peer-to-peer platform for the next generation of finan
 
 To get started, just `npm install bitcore` or `bower install bitcore`.
 
-# Documentation Index
+## Documentation Index
 
-## Addresses and Key Management
+### Addresses and Key Management
 
 - [Addresses](address.md)
 - [Using Different Networks](networks.md)
 - [Private Keys](privatekey.md) and [Public Keys](publickey.md)
 - [Hierarchically-derived Private and Public Keys](hierarchical.md)
 
-## Payment Handling
+### Payment Handling
 
 - [Using Different Units](unit.md)
 - [Acknowledging and Requesting Payments: Bitcoin URIs](uri.md)
 - [The Transaction Class](transaction.md)
 
-## Bitcoin Internals
+### Bitcoin Internals
 
 - [Scripts](script.md)
 - [Block](block.md)
 
-## Extra
+### Extra
 
 - [Crypto](crypto.md)
 - [Encoding](encoding.md)
 
-## Module Development
+### Module Development
 
 - [Browser Builds](browser.md)
 
-## Modules
+### Modules
 
 Some functionality is implemented as a module that can be installed separately:
 
-- [Payment Protocol Support](https://github.com/bitpay/bitcore-payment-protocol)
-- [Peer to Peer Networking](https://github.com/bitpay/bitcore-p2p)
+- [Peer to Peer Networking](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-p2p)
 - [Bitcoin Core JSON-RPC](https://github.com/bitpay/bitcoind-rpc)
 - [Payment Channels](https://github.com/bitpay/bitcore-channel)
-- [Mnemonics](https://github.com/bitpay/bitcore-mnemonic)
+- [Mnemonics](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-mnemonic)
 - [Elliptical Curve Integrated Encryption Scheme](https://github.com/bitpay/bitcore-ecies)
 - [Blockchain Explorers](https://github.com/bitpay/bitcore-explorers)
 - [Signed Messages](https://github.com/bitpay/bitcore-message)
 
-# Examples
+## Examples
 
-## Create and Save a Private Key
+### Create and Save a Private Key
 
 ```javascript
 var privateKey = new bitcore.PrivateKey();
@@ -62,20 +61,20 @@ var hexa = privateKey.toString();
 // e.g. 'b9de6e778fe92aa7edb69395556f843f1dce0448350112e14906efc2a80fa61a'
 ```
 
-## Create an Address
+### Create an Address
 
 ```javascript
 var address = privateKey.toAddress();
 ```
 
-## Create a Multisig Address
+### Create a Multisig Address
 
 ```javascript
 // Build a 2-of-3 address from public keys
 var p2shAddress = new bitcore.Address([publicKey1, publicKey2, publicKey3], 2);
 ```
 
-## Request a Payment
+### Request a Payment
 
 ```javascript
 var paymentInfo = {
@@ -85,7 +84,7 @@ var paymentInfo = {
 var uri = new bitcore.URI(paymentInfo).toString();
 ```
 
-## Create a Transaction
+### Create a Transaction
 
 ```javascript
 var transaction = new Transaction()
@@ -95,7 +94,7 @@ var transaction = new Transaction()
   .sign(privkeySet); // Signs all the inputs it can
 ```
 
-## Connect to the Network
+### Connect to the Network
 
 ```javascript
 var peer = new Peer('5.9.85.34');

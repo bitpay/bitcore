@@ -37,8 +37,8 @@ var config = {
         url: 'http://localhost:3000'
       },
       testnet: {
-        provider: 'v8',
-        url: 'http://localhost:3000'
+        url: 'http://localhost:3000',
+        regtestEnabled: false
       },
     },
   },
