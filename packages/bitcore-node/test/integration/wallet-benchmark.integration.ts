@@ -25,21 +25,21 @@ describe('Wallet Benchmark', function() {
 
       for (let i = 0; i < 10; i++) {
         let address = await rpc.getnewaddress('');
-        smallAddressBatch.push(address);
+        smallAddressBatch.push(address.toLowerCase());
       }
 
       expect(smallAddressBatch.length).to.deep.equal(10);
 
       for (let i = 0; i < 100; i++) {
         let address = await rpc.getnewaddress('');
-        mediumAddressBatch.push(address);
+        mediumAddressBatch.push(address.toLowerCase());
       }
 
       expect(mediumAddressBatch.length).to.deep.equal(100);
 
       for (let i = 0; i < 1000; i++) {
         let address = await rpc.getnewaddress('');
-        largeAddressBatch.push(address);
+        largeAddressBatch.push(address.toLowerCase());
       }
 
       expect(largeAddressBatch.length).to.deep.equal(1000);
@@ -63,7 +63,7 @@ describe('Wallet Benchmark', function() {
       const smallAddresses = foundSmallAddressBatch.map(wa => wa.address);
 
       for (let address of smallAddressBatch) {
-        expect(smallAddresses.includes(address.toLowerCase())).to.be.true;
+        expect(smallAddresses.includes(address)).to.be.true;
       }
       expect(foundSmallAddressBatch.length).to.have.deep.equal(smallAddressBatch.length);
 
@@ -78,7 +78,7 @@ describe('Wallet Benchmark', function() {
       const mediumAddresses = foundMediumAddressBatch.map(wa => wa.address);
 
       for (let address of mediumAddressBatch) {
-        expect(mediumAddresses.includes(address.toLowerCase())).to.be.true;
+        expect(mediumAddresses.includes(address)).to.be.true;
       }
       expect(foundMediumAddressBatch.length).to.have.deep.equal(mediumAddressBatch.length);
 
@@ -93,7 +93,7 @@ describe('Wallet Benchmark', function() {
       const largeAddresses = foundLargeAddressBatch.map(wa => wa.address);
 
       for (let address of largeAddressBatch) {
-        expect(largeAddresses.includes(address.toLowerCase())).to.be.true;
+        expect(largeAddresses.includes(address)).to.be.true;
       }
       expect(foundLargeAddressBatch.length).to.have.deep.equal(largeAddressBatch.length);
 
