@@ -1,6 +1,3 @@
 export { BlockStorage } from './base/base';
-import { EthBlockStorage } from './eth/ethBlock';
-import { BtcBlockStorage } from './btc/btcBlock';
-
-export { EthBlockStorage };
-export { BtcBlockStorage };
+export { EthBlockStorage } from './eth/ethBlock';
+export { BtcBlockStorage } from './btc/btcBlock';

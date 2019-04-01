@@ -1,7 +1,3 @@
-import { TransactionStorage } from './base/base';
-import { EthTransactionStorage } from './eth/ethTransaction';
-import { BtcTransactionStorage } from './btc/btcTransaction';
-
-export { TransactionStorage };
-export { EthTransactionStorage };
-export { BtcTransactionStorage };
+export { TransactionStorage } from './base/base';
+export { EthTransactionStorage } from './eth/ethTransaction';
+export { BtcTransactionStorage } from './btc/btcTransaction';
