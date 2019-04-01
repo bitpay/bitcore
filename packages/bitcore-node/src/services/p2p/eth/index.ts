@@ -299,7 +299,7 @@ export class EthP2pWorker {
       merkleRoot: `0x${block.header.transactionsTrie.toString('hex')}`,
       time: new Date(blockTime),
       timeNormalized: new Date(blockTime),
-      nonce: header.nonce.toString('hex'),
+      nonce: `0x${header.nonce.toString('hex')}`,
       previousBlockHash: `0x${header.parentHash.toString('hex')}`,
       nextBlockHash: '',
       transactionCount: block.transactions.length,
