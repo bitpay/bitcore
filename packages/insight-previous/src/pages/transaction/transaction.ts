@@ -62,7 +62,12 @@ export class TransactionPage {
         this.loading = false;
         this.txProvider
           .getConfirmations(this.tx.blockheight)
-          .subscribe(confirmations => (this.confirmations = confirmations));
+          .subscribe(confirmations => {
+            if (confirmations === -3) {
+              this.errorMessage = "This transaction is invalid and will never confirm, because some of its inputs are already spent."
+            }
+            this.confirmations = confirmations
+          });
         // Be aware that the tx component is loading data into the tx object
       },
       err => {

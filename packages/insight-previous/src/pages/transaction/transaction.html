@@ -6,9 +6,9 @@
 
       <loader *ngIf="loading" [type]="'title'"></loader>
 
-      <error [message]="errorMessage" *ngIf="!loading && errorMessage "></error>
+      <error [message]="errorMessage" *ngIf="!loading && errorMessage && confirmations !== -3 "></error>
 
-      <div *ngIf="!loading && !errorMessage">
+      <div *ngIf="(!loading && !errorMessage) || confirmations === -3">
         <h1 ion-text>
           Transaction
           <ion-note *ngIf="vout !== undefined">
@@ -21,6 +21,8 @@
           <b>Transaction Hash</b> {{ tx.txid }}</p>
 
         <h2>Summary</h2>
+
+        <error [message]="errorMessage" *ngIf="!loading && errorMessage"></error>
 
         <ion-list class="list--summary">
           <ion-item>
@@ -52,7 +54,10 @@
             <ion-note item-end>
               <a (click)="goToBlock(tx.blockhash)">{{ tx.blockhash }}</a>
             </ion-note>
-            <ion-note *ngIf="confirmations <= 0" item-end>
+            <ion-note *ngIf="confirmations === -3" item-end>
+              Invalid
+            </ion-note>
+            <ion-note *ngIf="confirmations === -1" item-end>
               Unconfirmed
             </ion-note>
           </ion-item>
