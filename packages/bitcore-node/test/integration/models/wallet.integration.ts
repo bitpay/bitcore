@@ -98,7 +98,7 @@ describe('Wallet Model', function() {
         expect(findAddressResult[0]).to.have.deep.property('network', network);
         expect(findAddressResult[0]).to.have.deep.property('wallet', findWalletResult._id);
         expect(findAddressResult[0]).to.have.deep.property('address', address1.toLowerCase());
-        expect(findAddressResult[0]).to.have.deep.property('processed', true);
+        expect(findAddressResult[0]).to.have.property('processed');
       }
     });
   });
