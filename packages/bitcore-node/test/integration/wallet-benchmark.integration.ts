@@ -63,7 +63,7 @@ describe('Wallet Benchmark', function() {
       const smallAddresses = foundSmallAddressBatch.map(wa => wa.address);
 
       for (let address of smallAddressBatch) {
-        expect(smallAddresses.includes(address)).to.be.true;
+        expect(smallAddresses.includes(address.toLowerCase())).to.be.true;
       }
       expect(foundSmallAddressBatch.length).to.have.deep.equal(smallAddressBatch.length);
 
@@ -78,7 +78,7 @@ describe('Wallet Benchmark', function() {
       const mediumAddresses = foundMediumAddressBatch.map(wa => wa.address);
 
       for (let address of mediumAddressBatch) {
-        expect(mediumAddresses.includes(address)).to.be.true;
+        expect(mediumAddresses.includes(address.toLowerCase())).to.be.true;
       }
       expect(foundMediumAddressBatch.length).to.have.deep.equal(mediumAddressBatch.length);
 
@@ -93,7 +93,7 @@ describe('Wallet Benchmark', function() {
       const largeAddresses = foundLargeAddressBatch.map(wa => wa.address);
 
       for (let address of largeAddressBatch) {
-        expect(largeAddresses.includes(address)).to.be.true;
+        expect(largeAddresses.includes(address.toLowerCase())).to.be.true;
       }
       expect(foundLargeAddressBatch.length).to.have.deep.equal(largeAddressBatch.length);
 

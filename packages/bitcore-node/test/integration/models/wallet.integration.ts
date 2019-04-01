@@ -90,14 +90,14 @@ describe('Wallet Model', function() {
             wallet: findWalletResult._id,
             chain,
             network,
-            address: address1
+            address: address1.toLowerCase()
           })
           .toArray();
 
         expect(findAddressResult[0]).to.have.deep.property('chain', chain);
         expect(findAddressResult[0]).to.have.deep.property('network', network);
         expect(findAddressResult[0]).to.have.deep.property('wallet', findWalletResult._id);
-        expect(findAddressResult[0]).to.have.deep.property('address', address1);
+        expect(findAddressResult[0]).to.have.deep.property('address', address1.toLowerCase());
         expect(findAddressResult[0]).to.have.deep.property('processed', true);
       }
     });
