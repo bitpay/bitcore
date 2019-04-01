@@ -4,8 +4,8 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var Wallet = require('../../lib/model/wallet');
-var Copayer = require('../../lib/model/copayer');
+var { Wallet } = require('../../ts_build/lib/model/wallet');
+var { Copayer } = require('../../ts_build/lib/model/copayer');
 
 
 describe('Copayer', function() {

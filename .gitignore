@@ -13,3 +13,5 @@ node_modules/
 Session.vim
 .netrwhist
 *~
+ts_build
+
