@@ -102,24 +102,9 @@ The are plenty example creating and sending proposals in the `/test/integration`
 
 **bitcore.config.json**
 
-1.  Add testnet and regtest to bitcore.config.json. Testnet config must match regtest settings.
+1.  Add regtest to bitcore.config.json.
 
 ```
-"testnet": {
-          "chainSource": "p2p",
-          "trustedPeers": [
-            {
-              "host": "127.0.0.1",
-              "port": 20020
-            }
-          ],
-          "rpc": {
-            "host": "127.0.0.1",
-            "port": 20021,
-            "username": "bitpaytest",
-            "password": "local321"
-          }
-        },
 "regtest": {
           "chainSource": "p2p",
           "trustedPeers": [
