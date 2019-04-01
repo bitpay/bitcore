@@ -19,8 +19,10 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   getWeb3(network: string) {
     const networkConfig = this.config[network];
     const provider = networkConfig.provider;
-    const portString = provider.port ? `:${provider.port}` : ':8545';
-    const connUrl = `${provider.protocol}://${provider.host}${portString}`;
+    const protocol = provider.protocol || 'http';
+    const host = provider.host || 'localhost';
+    const portString = provider.port || '8545';
+    const connUrl = `${protocol}://${host}:${portString}`;
     let ProviderType;
     switch (provider.protocol) {
       case 'wss':

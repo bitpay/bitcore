@@ -68,8 +68,13 @@ export class ParityRPC {
   }
 
   public send<T>(data: any) {
-    return new Promise<T>(resolve => {
-      this.web3.eth.currentProvider.send(data, (_, data) => resolve(data.result));
+    return new Promise<T>((resolve, reject) => {
+      this.web3.eth.currentProvider.send(data, (err, data) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve(data.result);
+      });
     });
   }
 
