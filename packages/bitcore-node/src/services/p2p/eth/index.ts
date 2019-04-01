@@ -219,14 +219,15 @@ export class EthP2pWorker {
           let internalTxs = await this.rpc.getTransactionsFromBlock(height);
           for await (const tx of internalTxs) {
             if (tx.type === 'reward') {
-              const rewardIndex = [convertedBlock].findIndex(
-                t => t.hash === tx.blockHash && t.height === tx.blockNumber
-              );
               if (tx.action.rewardType && tx.action.rewardType === 'block') {
-                [convertedBlock][rewardIndex].reward = Number.parseInt(tx.action.value, 16);
+                const gasSum = convertedTxs.reduce((sum, e) => sum + e.fee, 0);
+                const totalReward = Number.parseInt(tx.action.value, 16) + gasSum;
+                convertedBlock.reward = totalReward;
               }
               if (tx.action.rewardType && tx.action.rewardType === 'uncle') {
-                [convertedBlock][rewardIndex].uncleReward = Number.parseInt(tx.action.value, 16);
+                const uncles = convertedBlock.uncleReward || [];
+                const uncleValue = Number.parseInt(tx.action.value, 16);
+                Object.assign(convertedBlock, { uncleReward: uncles.concat([uncleValue]) });
               }
             }
             if (tx && tx.action) {
@@ -277,6 +278,18 @@ export class EthP2pWorker {
     const blockTime = Number.parseInt(header.timestamp.toString('hex') || '0', 16) * 1000;
     const hash = `0x${block.header.hash().toString('hex')}`;
     const height = new BN(header.number).toNumber();
+    let reward = 5;
+    const ForkHeights = {
+      Byzantium: 4370000,
+      Constantinople: 7280000
+    };
+
+    if (height > ForkHeights.Byzantium) {
+      reward = 3;
+    } else if (height > ForkHeights.Constantinople) {
+      reward = 2;
+    }
+
     const convertedBlock: IEthBlock = {
       chain: this.chain,
       network: this.network,
@@ -291,7 +304,7 @@ export class EthP2pWorker {
       nextBlockHash: '',
       transactionCount: block.transactions.length,
       size: block.raw.length,
-      reward: 5,
+      reward,
       processed: false,
       gasLimit: Number.parseInt(header.gasLimit.toString('hex'), 16) || 0,
       gasUsed: Number.parseInt(header.gasUsed.toString('hex'), 16) || 0,
@@ -306,7 +319,7 @@ export class EthP2pWorker {
       const txid = '0x' + tx.hash().toString('hex');
       const to = '0x' + tx.to.toString('hex');
       const from = '0x' + tx.from.toString('hex');
-      const value = Number.parseInt(tx.value.toString('hex'), 16);
+      const value = Number.parseInt(tx.value.toString('hex') || '0x0', 16);
       const fee = Number(tx.getUpfrontCost().toString()) - value;
       const abiType = this.rpc.abiDecode('0x' + tx.data.toString('hex'));
       const nonce = tx.nonce.toString('hex');

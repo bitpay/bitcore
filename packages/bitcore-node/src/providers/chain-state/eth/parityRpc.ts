@@ -1,6 +1,7 @@
 import Web3 from 'web3';
 import AbiDecoder from 'abi-decoder';
 import { IEthTransaction } from '../../../types/Transaction';
+import { LoggifyClass } from '../../../decorators/Loggify';
 const erc20abi = require('../erc20/erc20abi');
 const erc721abi = require('../erc20/erc721abi');
 
@@ -39,6 +40,7 @@ export interface TokenTransferResponse {
   params?: [{ name: string; value: string; type: string }];
 }
 
+@LoggifyClass
 export class ParityRPC {
   web3: Web3;
 
