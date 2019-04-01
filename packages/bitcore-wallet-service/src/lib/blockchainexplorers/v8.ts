@@ -16,12 +16,19 @@ var Bitcore_ = {
   bch: require('bitcore-lib-cash')
 };
 
+const config = require('../../config');
 var Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
 
 function v8network(bwsNetwork) {
   if (bwsNetwork == 'livenet') return 'mainnet';
+  if (
+    bwsNetwork == 'testnet' &&
+    config.blockchainExplorerOpts.btc.testnet.regtestEnabled
+  ) {
+    return 'regtest';
+  }
   return bwsNetwork;
 }
 
