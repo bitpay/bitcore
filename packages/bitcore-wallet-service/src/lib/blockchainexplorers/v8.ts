@@ -127,7 +127,7 @@ export class V8 {
     $.checkState(wallet.beAuthPrivateKey2);
     return new this.Client({
       baseUrl: this.baseUrl,
-      authKey: Bitcore_[this.coin].PrivateKey(wallet.beAuthPrivateKey2)
+      authKey: Bitcore_.btc.PrivateKey(wallet.beAuthPrivateKey2)
     });
   }
 

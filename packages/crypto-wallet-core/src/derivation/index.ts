@@ -64,4 +64,4 @@ export class DerivationProxy {
   }
 }
 
-export const Deriver = new DerivationProxy();
+export default new DerivationProxy();

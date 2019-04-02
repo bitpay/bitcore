@@ -3,8 +3,11 @@
   "version": "8.1.1",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
   "main": "ts_build/index.js",
+  "types": "./ts_build/index.d.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "clean": "rm -rf ./ts_build",
+    "watch": "./node_modules/.bin/tsc --watch",
+    "compile": "npm run clean && ./node_modules/.bin/tsc"
   },
   "keywords": [
     "multi-currency",

@@ -190,7 +190,7 @@ export class Wallet {
   updateBEKeys() {
     $.checkState(this.isComplete());
 
-    var bitcore = Bitcore[this.coin];
+    var bitcore = Bitcore.btc;
     var salt = config.BE_KEY_SALT || Defaults.BE_KEY_SALT;
 
     var seed =
@@ -265,6 +265,7 @@ export class Wallet {
 
     var path = this.addressManager.getNewAddressPath(isChange, step);
     log.verbose('Deriving addr:' + path);
+    console.log(this);
     var address = Address.derive(
       self.id,
       this.addressType,
