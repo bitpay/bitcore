@@ -1,7 +1,7 @@
-module.exports = function(wallet, appName, appVersion) {
+module.exports = (wallet, appName, appVersion) => {
   if (!appVersion || !appName) return;
 
-  if (wallet.network == 'livenet' && appVersion.major==5 && wallet.createdOn < 1443461026 ) {
+  if (wallet.network == 'livenet' && appVersion.major == 5 && wallet.createdOn < 1443461026) {
     return {
       title: 'Deprecated Test message',
       body: 'Only for bitpay, old wallets',
@@ -12,4 +12,4 @@ module.exports = function(wallet, appName, appVersion) {
       app: 'bitpay',
     };
   }
-}
+};
