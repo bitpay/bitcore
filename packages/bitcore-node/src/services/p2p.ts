@@ -404,8 +404,10 @@ export class P2pWorker {
       return false;
     }
     const [hostname, pid, timestamp] = this.lastHeartBeat.split(':');
-    const amSyncingNode =
-      hostname === os.hostname() && pid === process.pid.toString() && Date.now() - parseInt(timestamp) < 60 * 1000;
+    const hostNameMatches = hostname === os.hostname();
+    const pidMatches = pid === process.pid.toString();
+    const timestampIsFresh = Date.now() - parseInt(timestamp) < 60 * 1000;
+    const amSyncingNode = hostNameMatches && pidMatches && timestampIsFresh;
     return amSyncingNode;
   }
 
@@ -431,12 +433,13 @@ export class P2pWorker {
   }
 
   async registerSyncingNode({ primary }) {
+    const lastHeartBeat = this.lastHeartBeat;
     const queuedRegistration = setTimeout(
       () => {
         StateStorage.selfNominateSyncingNode({
           chain: this.chain,
           network: this.network,
-          lastHeartBeat: this.lastHeartBeat
+          lastHeartBeat
         });
       },
       primary ? 0 : 60 * 1000
