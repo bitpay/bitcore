@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 const config = require('../config');
-const FiatRateService = require('../lib/fiatrateservice');
+
+import { FiatRateService } from '../lib/fiatrateservice';
 
 const service = new FiatRateService();
 service.init(config, (err) => {
