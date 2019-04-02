@@ -1,7 +1,6 @@
 #!/usr/bin/env node
-import _ from 'lodash';
-import { EmailService } from '../lib/emailservice';
 
+const EmailService = require('../lib/emailservice');
 const config = require('../config');
 const log = require('npmlog');
 log.debug = log.verbose;

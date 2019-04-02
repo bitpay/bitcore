@@ -93,17 +93,17 @@ export class EmailService {
       });
     };
 
-    this.defaultLanguage = opts.emailOpts.defaultLanguage || 'en';
-    this.defaultUnit = opts.emailOpts.defaultUnit || 'btc';
+    this.defaultLanguage = opts.emailOpts && opts.emailOpts.defaultLanguage ? opts.emailOpts.defaultLanguage : 'en';
+    this.defaultUnit = opts.emailOpts && opts.emailOpts.defaultUnit ? opts.emailOpts.defaultUnit : 'btc';
     console.log(
-      (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/'
+      (opts.emailOpts && opts.emailOpts.templatePath ? opts.emailOpts.templatePath : __dirname + '/../../templates') + '/'
     );
     this.templatePath = path.normalize(
-      (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/'
+      (opts.emailOpts && opts.emailOpts.templatePath ? opts.emailOpts.templatePath : __dirname + '/../../templates') + '/'
     );
-    this.publicTxUrlTemplate = opts.emailOpts.publicTxUrlTemplate || {};
-    this.subjectPrefix = opts.emailOpts.subjectPrefix || '[Wallet service]';
-    this.from = opts.emailOpts.from;
+    this.publicTxUrlTemplate = opts.emailOpts && opts.emailOpts.publicTxUrlTemplate ? opts.emailOpts.publicTxUrlTemplate : {};
+    this.subjectPrefix = opts.emailOpts && opts.emailOpts.subjectPrefix ? opts.emailOpts.subjectPrefix : '[Wallet service]';
+    this.from = opts.emailOpts && opts.emailOpts.from ? opts.emailOpts.from : null;
 
     async.parallel(
       [
