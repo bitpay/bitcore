@@ -15,6 +15,7 @@ import { IWallet, Wallet } from './model/wallet';
 import { Storage } from './storage';
 
 const $ = require('preconditions').singleton();
+var deprecatedServerMessage = require('../deprecated-serverMessages');
 var serverMessages = require('../serverMessages');
 var BCHAddressTranslator = require('./bchaddresstranslator');
 
@@ -215,7 +216,7 @@ export class WalletService {
   }
 
   static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() {};
+    cb = cb || function() { };
 
     // do nothing here....
     // bc height cache is cleared on bcmonitor
@@ -695,6 +696,8 @@ export class WalletService {
             }
             status.wallet = wallet;
 
+            status.serverMessage = deprecatedServerMessage(wallet, self.appName, self.appVersion);
+
             status.serverMessage = serverMessages(
               wallet,
               self.appName,
@@ -798,7 +801,7 @@ export class WalletService {
 
     // self.logi('Notification', type);
 
-    cb = cb || function() {};
+    cb = cb || function() { };
 
     var walletId = self.walletId || data.walletId;
     var copayerId = self.copayerId || data.copayerId;
@@ -1791,7 +1794,7 @@ export class WalletService {
           return cb(
             new ClientError(
               'Invalid fee level. Valid values are ' +
-                _.map(feeLevels, 'name').join(', ')
+              _.map(feeLevels, 'name').join(', ')
             )
           );
       }
@@ -1915,10 +1918,10 @@ export class WalletService {
         var logger = network == 'livenet' ? self.logw : self.logi;
         logger(
           'Could not compute fee estimation in ' +
-            network +
-            ': ' +
-            failed.join(', ') +
-            ' blocks.'
+          network +
+          ': ' +
+          failed.join(', ') +
+          ' blocks.'
         );
       }
 
@@ -2142,20 +2145,20 @@ export class WalletService {
       if (totalValueInUtxos < txpAmount) {
         self.logi(
           'Total value in all utxos (' +
-            Utils.formatAmountInBtc(totalValueInUtxos) +
-            ') is insufficient to cover for txp amount (' +
-            Utils.formatAmountInBtc(txpAmount) +
-            ')'
+          Utils.formatAmountInBtc(totalValueInUtxos) +
+          ') is insufficient to cover for txp amount (' +
+          Utils.formatAmountInBtc(txpAmount) +
+          ')'
         );
         return cb(Errors.INSUFFICIENT_FUNDS);
       }
       if (netValueInUtxos < txpAmount) {
         self.logi(
           'Value after fees in all utxos (' +
-            Utils.formatAmountInBtc(netValueInUtxos) +
-            ') is insufficient to cover for txp amount (' +
-            Utils.formatAmountInBtc(txpAmount) +
-            ')'
+          Utils.formatAmountInBtc(netValueInUtxos) +
+          ') is insufficient to cover for txp amount (' +
+          Utils.formatAmountInBtc(txpAmount) +
+          ')'
         );
         return cb(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
       }
@@ -2373,9 +2376,9 @@ export class WalletService {
               txp.fee;
             self.logi(
               'Successfully built transaction. Total fees: ' +
-                Utils.formatAmountInBtc(txp.fee) +
-                ', total change: ' +
-                Utils.formatAmountInBtc(change)
+              Utils.formatAmountInBtc(txp.fee) +
+              ', total change: ' +
+              Utils.formatAmountInBtc(change)
             );
           } else {
             self.logw('Error building transaction', err);
@@ -2514,7 +2517,7 @@ export class WalletService {
               return next(
                 new ClientError(
                   'Invalid fee level. Valid values are ' +
-                    _.map(feeLevels, 'name').join(', ')
+                  _.map(feeLevels, 'name').join(', ')
                 )
               );
           }
