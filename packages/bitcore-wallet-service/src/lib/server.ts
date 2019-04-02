@@ -649,7 +649,25 @@ export class WalletService {
 
     const status: {
       wallet?: IWallet;
-      serverMessage?: string;
+      serverMessage?: {
+        title: string,
+        body: string,
+        link: string,
+        id: string,
+        dismissible: boolean,
+        category: string,
+        app: string
+      };
+      serverMessages?: Array<{
+        title: string,
+        body: string,
+        link: string,
+        id: string,
+        dismissible: boolean,
+        category: string,
+        app: string,
+        priority: number
+      }>;
       balance?: string;
       pendingTxps?: ITxProposal[];
       preferences?: boolean;
@@ -687,7 +705,7 @@ export class WalletService {
 
             status.serverMessage = deprecatedServerMessage(wallet, this.appName, this.appVersion);
 
-            status.serverMessage = serverMessages(
+            status.serverMessages = serverMessages(
               wallet,
               this.appName,
               this.appVersion
