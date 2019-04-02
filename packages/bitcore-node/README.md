@@ -98,7 +98,7 @@ npm run node
 
 ## Contributing
 
-See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/Contributing.md) on the main bitcore repo for information about how to contribute.
+See [CONTRIBUTING.md](../../Contributing.md) on the main bitcore repo for information about how to contribute.
 
 ## License
 

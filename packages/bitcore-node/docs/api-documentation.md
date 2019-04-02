@@ -499,8 +499,8 @@ POST `/api/BTC/mainnet/wallet/:pubKey`
 BODY: raw jsonl wallet file of the form
 
 ```json
-{ 
-    "address": "mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4" 
+{
+    "address": "mmEsgUprBEQkGDKowPQSLEYDbMtGRKxaF4"
 }
 ```
 
