@@ -6,17 +6,18 @@ var request = require('request');
 var http = require('http');
 var should = chai.should();
 var proxyquire = require('proxyquire');
-var config = require('../config.js');
+var config = require('../ts_build/config.js');
 
-var Common = require('../lib/common');
+var Common = require('../ts_build/lib/common');
 var Defaults = Common.Defaults;
+var { WalletService } = require('../ts_build/lib/server');
 
 
 
 describe('ExpressApp', function() {
   describe('#constructor', function() {
     it('will set an express app', function() {
-      var TestExpressApp = proxyquire('../lib/expressapp', {});
+      var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {});
       var express = new TestExpressApp();
       should.exist(express.app);
       should.exist(express.app.use);
@@ -26,9 +27,12 @@ describe('ExpressApp', function() {
   describe('#start', function() {
     it('will listen at the specified port', function(done) {
       var initialize = sinon.stub().callsArg(1);
-      var TestExpressApp = proxyquire('../lib/expressapp', {
+      var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
         './server': {
-          initialize: initialize
+          WalletService : {
+            initialize: initialize,
+            getServiceVersion: WalletService.getServiceVersion
+          }
         }
       });
       var app = new TestExpressApp();
@@ -64,10 +68,13 @@ describe('ExpressApp', function() {
         var server = {
           getStatus: sinon.stub().callsArgWith(1, null, {}),
         };
-        var TestExpressApp = proxyquire('../lib/expressapp', {
+        var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
           './server': {
-            initialize: sinon.stub().callsArg(1),
-            getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            WalletService:  {
+              initialize: sinon.stub().callsArg(1),
+              getServiceVersion: WalletService.getServiceVersion,
+              getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            }
           }
         });
         start(TestExpressApp, function() {
@@ -93,10 +100,13 @@ describe('ExpressApp', function() {
         var server = {
           getMainAddresses: sinon.stub().callsArgWith(1, null, {}),
         };
-        var TestExpressApp = proxyquire('../lib/expressapp', {
+        var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
           './server': {
-            initialize: sinon.stub().callsArg(1),
-            getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            WalletService: {
+              initialize: sinon.stub().callsArg(1),
+              getServiceVersion: WalletService.getServiceVersion,
+              getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            }
           }
         });
         start(TestExpressApp, function() {
@@ -124,10 +134,13 @@ describe('ExpressApp', function() {
             amount: 123
           }),
         };
-        var TestExpressApp = proxyquire('../lib/expressapp', {
+        var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
           './server': {
-            initialize: sinon.stub().callsArg(1),
-            getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            WalletService : {
+              initialize: sinon.stub().callsArg(1),
+              getServiceVersion: WalletService.getServiceVersion,
+              getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            }
           }
         });
         start(TestExpressApp, function() {
@@ -155,10 +168,13 @@ describe('ExpressApp', function() {
           var server = {
             getBalance: sinon.stub().callsArgWith(1, null, {}),
           };
-          var TestExpressApp = proxyquire('../lib/expressapp', {
+          var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
             './server': {
-              initialize: sinon.stub().callsArg(1),
-              getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+              WalletService : {
+                initialize: sinon.stub().callsArg(1),
+                getServiceVersion: WalletService.getServiceVersion,
+                getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+              }
             }
           });
           start(TestExpressApp, function() {
@@ -189,19 +205,23 @@ describe('ExpressApp', function() {
       });
 
       describe('/v1/notifications', function(done) {
-        var server, TestExpressApp, clock;
+        var server, clock, TestExpressApp;
         beforeEach(function() {
           clock = sinon.useFakeTimers(2000000000, 'Date');
 
           server = {
             getNotifications: sinon.stub().callsArgWith(1, null, {})
           };
-          TestExpressApp = proxyquire('../lib/expressapp', {
+          var {ExpressApp} = proxyquire('../ts_build/lib/expressapp', {
             './server': {
-              initialize: sinon.stub().callsArg(1),
-              getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+              WalletService: {
+                initialize: sinon.stub().callsArg(1),
+                getServiceVersion: WalletService.getServiceVersion,
+                getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+              }
             }
           });
+          TestExpressApp = ExpressApp;
         });
         afterEach(function() {
           clock.restore();

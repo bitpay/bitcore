@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var Lock = require('../lib/lock');
+var { Lock } = require('../ts_build/lib/lock');
 var helpers = require('./integration/helpers');
 
     var step=50;
@@ -104,7 +104,7 @@ describe('Locks', function() {
     pushEvent(4);
 
   });
- 
+
   it('should not lock tasks using different tokens', function(done) {
 
     pushEvent(0);

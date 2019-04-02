@@ -26,12 +26,17 @@
 
   <ion-row align-items-end class="small" *ngIf="!showCoins">
     <ion-col col-12 text-right text-uppercase>
-      <ion-chip item-end color="danger" *ngIf="confirmations <= 0">
+      <ion-chip item-end color="danger" *ngIf="confirmations === -3">
+        <ion-label>
+          Invalid
+        </ion-label>
+      </ion-chip>
+      <ion-chip item-end color="warning" *ngIf="confirmations === -1">
         <ion-label>
           Unconfirmed
         </ion-label>
       </ion-chip>
-      <ion-chip item-end color="warning" *ngIf="confirmations === 1">
+      <ion-chip item-end color="brand" *ngIf="confirmations === 1">
         <ion-label>
           1 Confirmation
         </ion-label>
@@ -41,7 +46,7 @@
           {{ confirmations }} Confirmations
         </ion-label>
       </ion-chip>
-      <ion-chip item-end color="brand">
+      <ion-chip item-end color="default">
         <ion-label>
           {{ currencyProvider.getConvertedNumber(tx.valueOut) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
         </ion-label>
@@ -149,17 +154,20 @@
       </div>
     </ion-col>
     <ion-col col-6 text-right>
-      <ion-chip color="danger" *ngIf="confirmations <= 0">
+      <ion-chip color="danger" *ngIf="confirmations === -3">
+        <ion-label>Invalid</ion-label>
+      </ion-chip>
+      <ion-chip color="warning" *ngIf="confirmations === -1">
         <ion-label>Unconfirmed</ion-label>
       </ion-chip>
-      <ion-chip color="warning" *ngIf="confirmations === 1">
+      <ion-chip color="brand" *ngIf="confirmations === 1">
         <ion-label>1 Confirmation</ion-label>
       </ion-chip>
       <ion-chip color="primary" *ngIf="confirmations > 1">
         <ion-label>{{ confirmations }} Confirmations
         </ion-label>
       </ion-chip>
-      <ion-chip color="brand">
+      <ion-chip color="default">
         <ion-label>{{ currencyProvider.getConvertedNumber(tx.valueOut) | number:'1.0-8' }}
           {{ currencyProvider.currencySymbol }}
         </ion-label>
