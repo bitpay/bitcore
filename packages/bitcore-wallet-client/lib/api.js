@@ -9,7 +9,6 @@ var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
-  eth: require('bitcore-client')
 };
 var Mnemonic = require('bitcore-mnemonic');
 var sjcl = require('sjcl');
@@ -317,7 +316,6 @@ API.prototype.seedFromRandomWithMnemonic = function(opts) {
 
   opts = opts || {};
   this.credentials = Credentials.createWithMnemonic(opts.coin || 'btc', opts.network || 'livenet', opts.passphrase, opts.language || 'en', opts.account || 0);
-  console.log(this.credentials);
   this.request.setCredentials(this.credentials);
 };
 
