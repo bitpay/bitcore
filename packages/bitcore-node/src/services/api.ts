@@ -24,7 +24,7 @@ export class ApiService {
     storageService = Storage,
     socketService = Socket
   } = {}) {
-    this.port = port;
+    this.port = Number(process.env.BITCORE_NODE_HTTP_PORT) || port;
     this.timeout = timeout;
     this.configService = configService;
     this.storageService = storageService;
