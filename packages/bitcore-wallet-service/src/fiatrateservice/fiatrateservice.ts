@@ -1,5 +1,6 @@
 #!/usr/bin/env node
-const config = require('../config');
+
+var config = require('../config');
 
 import { FiatRateService } from '../lib/fiatrateservice';
 

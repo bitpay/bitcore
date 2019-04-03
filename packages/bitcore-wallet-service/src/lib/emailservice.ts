@@ -93,6 +93,8 @@ export class EmailService {
       });
     };
 
+    opts.emailOpts = opts.emailOpts || {};
+
     this.defaultLanguage = opts.emailOpts.defaultLanguage || 'en';
     this.defaultUnit = opts.emailOpts.defaultUnit || 'btc';
     console.log(
