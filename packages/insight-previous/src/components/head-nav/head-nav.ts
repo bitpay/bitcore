@@ -96,7 +96,7 @@ export class HeadNavComponent implements OnInit {
     if (response.addr) {
       return {
         redirTo: 'address',
-        params: response.addr[0] ? response.addr[0].address : [],
+        params: response.addr[0] ? response.addr[0].address : this.q,
         type: 'addrStr'
       };
     } else {
