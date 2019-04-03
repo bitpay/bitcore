@@ -642,6 +642,7 @@ export class WalletService {
    * Retrieves wallet status.
    * @param {Object} opts
    * @param {Object} opts.includeExtendedInfo - Include PKR info & address managers for wallet & copayers
+   * @param {Object} opts.includeServerMessages - Include server messages array
    * @returns {Object} status
    */
   getStatus(opts, cb) {
@@ -703,13 +704,15 @@ export class WalletService {
             }
             status.wallet = wallet;
 
-            status.serverMessage = deprecatedServerMessage(wallet, this.appName, this.appVersion);
-
-            status.serverMessages = serverMessages(
-              wallet,
-              this.appName,
-              this.appVersion
-            );
+            if (opts.includeServerMessages) {
+              status.serverMessages = serverMessages(
+                wallet,
+                this.appName,
+                this.appVersion
+              );
+            } else {
+              status.serverMessage = deprecatedServerMessage(wallet, this.appName, this.appVersion);
+            }
             next();
           });
         },
