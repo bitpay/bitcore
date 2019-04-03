@@ -1561,16 +1561,16 @@ API.prototype.createAddress = function(opts, cb) {
     log.warn('DEPRECATED WARN: createAddress should receive 2 parameters.')
   }
 
-  if (!self._checkKeyDerivation()) return cb(new Error('Cannot create new address for this wallet'));
+  // if (!self._checkKeyDerivation()) return cb(new Error('Cannot create new address for this wallet'));
 
   opts = opts || {};
 
   self.request.post('/v3/addresses/', opts, function(err, address) {
     if (err) return cb(err);
 
-    if (!Verifier.checkAddress(self.credentials, address)) {
-      return cb(new Errors.SERVER_COMPROMISED);
-    }
+    // if (!Verifier.checkAddress(self.credentials, address)) {
+    //   return cb(new Errors.SERVER_COMPROMISED);
+    // }
 
     return cb(null, address);
   });

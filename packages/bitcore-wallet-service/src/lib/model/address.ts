@@ -1,8 +1,10 @@
 import _ from 'lodash';
 
-const $ = require('preconditions').singleton();
-const Common = require('../common');
-const Constants = Common.Constants,
+var $ = require('preconditions').singleton();
+import CWC from 'crypto-wallet-core';
+import * as _ from 'lodash';
+var Common = require('../common');
+var Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
 
@@ -55,7 +57,7 @@ export class Address {
     x.path = opts.path;
     x.publicKeys = opts.publicKeys;
     x.coin = opts.coin;
-    x.network = Address.Bitcore[opts.coin]
+    x.network = Address.Bitcore.btc
       .Address(x.address)
       .toObject().network;
     x.type = opts.type || Constants.SCRIPT_TYPES.P2SH;
@@ -94,16 +96,18 @@ export class Address {
     $.checkArgument(
       Utils.checkValueInCollection(scriptType, Constants.SCRIPT_TYPES)
     );
-
-    const publicKeys = _.map(publicKeyRing, (item) => {
-      const xpub = new Address.Bitcore[coin].HDPublicKey(item.xPubKey);
+    var bitcoreAddress;
+    var publicKeys = _.map(publicKeyRing, function(item) {
+      var xpub = new Address.Bitcore.btc.HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
     });
-
-    let bitcoreAddress;
+    // if (coin === 'eth') {
+    //   const pathIndex = /\/([0-9]*)*/;
+    //   const [_purpose, _account, changeIndex, addressIndex] = path.match(pathIndex).group;
+    // } else {
     switch (scriptType) {
       case Constants.SCRIPT_TYPES.P2SH:
-        bitcoreAddress = Address.Bitcore[coin].Address.createMultisig(
+        bitcoreAddress = Address.Bitcore.btc.Address.createMultisig(
           publicKeys,
           m,
           network
@@ -111,21 +115,22 @@ export class Address {
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
-        bitcoreAddress = Address.Bitcore[coin].Address.fromPublicKey(
+        bitcoreAddress = Address.Bitcore.btc.Address.fromPublicKey(
           publicKeys[0],
           network
         );
         break;
     }
-
-    let addrStr = bitcoreAddress.toString(true);
-    if (noNativeCashAddr && coin == 'bch') {
-      addrStr = bitcoreAddress.toLegacyAddress();
-    }
+    bitcoreAddress = CWC.deriver.deriveAddress('ETH', 'mainnet', '17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem', 0, false);
+    console.log(bitcoreAddress);
+    // let addrStr = bitcoreAddress.toString(true);
+    // if (noNativeCashAddr && coin == 'bch') {
+    //   addrStr = bitcoreAddress.toLegacyAddress();
+    // }
 
     return {
       // bws still use legacy addresses for BCH
-      address: addrStr,
+      address: `0x${bitcoreAddress}`,
       path,
       publicKeys: _.invokeMap(publicKeys, 'toString')
     };

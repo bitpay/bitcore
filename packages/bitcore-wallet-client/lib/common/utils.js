@@ -138,13 +138,14 @@ Utils.deriveAddress = function(scriptType, publicKeyRing, path, m, network, coin
   $.checkArgument(_.includes(_.values(Constants.SCRIPT_TYPES), scriptType));
 
   coin = coin || 'btc';
-  var bitcore = Bitcore_[coin];
+  var bitcore = Bitcore_.btc;
+  var bitcoreAddress;
   var publicKeys = _.map(publicKeyRing, function(item) {
+    bitcoreAddress = CWC.deriver.deriveAddress('ETH', 'mainnet', item.xPubKey, 0, false);
     var xpub = new bitcore.HDPublicKey(item.xPubKey);
     return xpub.deriveChild(path).publicKey;
   });
 
-  var bitcoreAddress;
   switch (scriptType) {
     case Constants.SCRIPT_TYPES.P2SH:
       bitcoreAddress = bitcore.Address.createMultisig(publicKeys, m, network);
@@ -156,7 +157,7 @@ Utils.deriveAddress = function(scriptType, publicKeyRing, path, m, network, coin
   }
 
   return {
-    address: coin == 'bch' ?  bitcoreAddress.toLegacyAddress() : bitcoreAddress.toString(),
+    address: `0x${bitcoreAddress}`,
     path: path,
     publicKeys: _.invokeMap(publicKeys, 'toString'),
   };
