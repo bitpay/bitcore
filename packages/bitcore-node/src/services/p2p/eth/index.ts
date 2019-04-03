@@ -136,7 +136,7 @@ export class EthP2pWorker {
 
   async connect() {
     this.eth.connect();
-    this.connectInterval = setInterval(() => this.eth.connect(), 5000);
+    this.connectInterval = setInterval(() => !this.syncing && this.eth.connect(), 5000);
     return new Promise<void>(resolve => {
       this.eth.once('peerready', () => resolve());
     });
