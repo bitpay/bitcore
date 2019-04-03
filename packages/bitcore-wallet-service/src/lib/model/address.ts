@@ -1,5 +1,3 @@
-import _ from 'lodash';
-
 var $ = require('preconditions').singleton();
 import CWC from 'crypto-wallet-core';
 import * as _ from 'lodash';
