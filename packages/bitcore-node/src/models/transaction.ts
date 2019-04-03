@@ -183,7 +183,17 @@ export class TransactionModel extends BaseModel<ITransaction> {
     mintOps: Array<MintOp>;
     mempoolTime?: Date;
   }) {
-    let { blockHash, blockTime, blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
+    let {
+      blockHash,
+      blockTime,
+      blockTimeNormalized,
+      chain,
+      height,
+      network,
+      parentChain,
+      forkHeight,
+      mempoolTime
+    } = params;
     if (parentChain && forkHeight && height < forkHeight) {
       const parentTxs = await TransactionStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
@@ -207,7 +217,8 @@ export class TransactionModel extends BaseModel<ITransaction> {
                 inputCount: parentTx.inputCount,
                 outputCount: parentTx.outputCount,
                 value: parentTx.value,
-                wallets: []
+                wallets: [],
+                ...(mempoolTime && { mempoolTime })
               }
             },
             upsert: true,
