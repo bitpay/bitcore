@@ -1,5 +1,3 @@
-'use strict';
-
 export interface IPreferences {
   version: string;
   createdOn: number;
@@ -21,7 +19,7 @@ export class Preferences {
   static create(opts) {
     opts = opts || {};
 
-    var x = new Preferences();
+    const x = new Preferences();
 
     x.version = '1.0.0';
     x.createdOn = Math.floor(Date.now() / 1000);
@@ -34,7 +32,7 @@ export class Preferences {
   }
 
   static fromObj(obj) {
-    var x = new Preferences();
+    const x = new Preferences();
 
     x.version = obj.version;
     x.createdOn = obj.createdOn;

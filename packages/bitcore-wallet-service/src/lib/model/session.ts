@@ -1,7 +1,8 @@
-var _ = require('lodash');
-var Uuid = require('uuid');
+import _ from 'lodash';
 
-var Defaults = require('../common/defaults');
+const Uuid = require('uuid');
+const Defaults = require('../common/defaults');
+
 export interface ISession {
   id: number;
   version: number;
@@ -18,12 +19,12 @@ export class Session {
   copayerId: string;
   walletId: string;
 
-  static create = function(opts) {
+  static create(opts) {
     opts = opts || {};
 
-    var now = Math.floor(Date.now() / 1000);
+    const now = Math.floor(Date.now() / 1000);
 
-    var x = new Session();
+    const x = new Session();
 
     x.id = Uuid.v4();
     x.version = 1;
@@ -33,10 +34,10 @@ export class Session {
     x.walletId = opts.walletId;
 
     return x;
-  };
+  }
 
-  static fromObj = function(obj) {
-    var x = new Session();
+  static fromObj(obj) {
+    const x = new Session();
 
     x.id = obj.id;
     x.version = obj.version;
@@ -46,19 +47,19 @@ export class Session {
     x.walletId = obj.walletId;
 
     return x;
-  };
+  }
 
-  toObject = function() {
+  toObject() {
     return this;
-  };
+  }
 
-  isValid = function() {
-    var now = Math.floor(Date.now() / 1000);
+  isValid() {
+    const now = Math.floor(Date.now() / 1000);
     return now - this.updatedOn <= Defaults.SESSION_EXPIRATION;
-  };
+  }
 
-  touch = function() {
-    var now = Math.floor(Date.now() / 1000);
+  touch() {
+    const now = Math.floor(Date.now() / 1000);
     this.updatedOn = now;
-  };
+  }
 }

@@ -1,18 +1,10 @@
-'use strict';
-
 import { Address } from './address';
 import { AddressManager } from './addressmanager';
 
-var $ = require('preconditions').singleton();
-var _ = require('lodash');
-var util = require('util');
-var Uuid = require('uuid');
-var sjcl = require('sjcl');
-
-var Bitcore = require('bitcore-lib');
-
-var Common = require('../common');
-var Constants = Common.Constants,
+const $ = require('preconditions').singleton();
+const sjcl = require('sjcl');
+const Common = require('../common');
+const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
 
@@ -49,8 +41,8 @@ export class Copayer {
   addressManager: AddressManager;
 
   static _xPubToCopayerId(coin, xpub) {
-    var str = coin == Defaults.COIN ? xpub : coin + xpub;
-    var hash = sjcl.hash.sha256.hash(str);
+    const str = coin == Defaults.COIN ? xpub : coin + xpub;
+    const hash = sjcl.hash.sha256.hash(str);
     return sjcl.codec.hex.fromBits(hash);
   }
 
@@ -67,7 +59,7 @@ export class Copayer {
 
     opts.copayerIndex = opts.copayerIndex || 0;
 
-    var x = new Copayer();
+    const x = new Copayer();
 
     x.version = 2;
     x.createdOn = Math.floor(Date.now() / 1000);
@@ -84,7 +76,7 @@ export class Copayer {
       }
     ];
 
-    var derivationStrategy =
+    const derivationStrategy =
       opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
     if (AddressManager.supportsCopayerBranches(derivationStrategy)) {
       x.addressManager = AddressManager.fromObj({
@@ -99,7 +91,7 @@ export class Copayer {
   }
 
   static fromObj(obj) {
-    var x = new Copayer();
+    const x = new Copayer();
 
     x.version = obj.version;
     x.createdOn = obj.createdOn;
@@ -133,8 +125,8 @@ export class Copayer {
   createAddress(wallet, isChange) {
     $.checkState(wallet.isComplete());
 
-    var path = this.addressManager.getNewAddressPath(isChange);
-    var address = Address.derive(
+    const path = this.addressManager.getNewAddressPath(isChange);
+    const address = Address.derive(
       wallet.id,
       wallet.addressType,
       wallet.publicKeyRing,

@@ -1,5 +1,3 @@
-'use strict';
-
 export interface ITxProposalAction {
   version: string;
   createdOn: number;
@@ -18,10 +16,10 @@ export class TxProposalAction {
   xpub: string;
   comment: string;
 
-  static create = function(opts) {
+  static create(opts) {
     opts = opts || {};
 
-    var x = new TxProposalAction();
+    let x = new TxProposalAction();
 
     x.version = '1.0.0';
     x.createdOn = Math.floor(Date.now() / 1000);
@@ -32,10 +30,10 @@ export class TxProposalAction {
     x.comment = opts.comment;
 
     return x;
-  };
+  }
 
-  static fromObj = function(obj) {
-    var x = new TxProposalAction();
+  static fromObj(obj) {
+    let x = new TxProposalAction();
 
     x.version = obj.version;
     x.createdOn = obj.createdOn;
@@ -46,5 +44,5 @@ export class TxProposalAction {
     x.comment = obj.comment;
 
     return x;
-  };
+  }
 }

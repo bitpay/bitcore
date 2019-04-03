@@ -1,17 +1,13 @@
-'use strict';
-
+import _ from 'lodash';
 import { V8 } from './blockchainexplorers/v8';
-var _ = require('lodash');
-var $ = require('preconditions').singleton();
-var log = require('npmlog');
+
+const $ = require('preconditions').singleton();
+const Common = require('./common');
+const Defaults = Common.Defaults;
+let log = require('npmlog');
 log.debug = log.verbose;
 
-var Common = require('./common');
-var Constants = Common.Constants,
-  Defaults = Common.Defaults,
-  Utils = Common.Utils;
-
-var PROVIDERS = {
+const PROVIDERS = {
   v8: {
     btc: {
       livenet: 'https://api.bitpay.com',
@@ -27,9 +23,9 @@ var PROVIDERS = {
 export function BlockChainExplorer(opts) {
   $.checkArgument(opts);
 
-  var provider = opts.provider || 'v8';
-  var coin = opts.coin || Defaults.COIN;
-  var network = opts.network || 'livenet';
+  const provider = opts.provider || 'v8';
+  const coin = opts.coin || Defaults.COIN;
+  const network = opts.network || 'livenet';
 
   $.checkState(PROVIDERS[provider], 'Provider ' + provider + ' not supported');
   $.checkState(
@@ -42,7 +38,7 @@ export function BlockChainExplorer(opts) {
     'Network ' + network + ' not supported by this provider for coin ' + coin
   );
 
-  var url = opts.url || PROVIDERS[provider][coin][network];
+  const url = opts.url || PROVIDERS[provider][coin][network];
 
   if (coin != 'bch' && opts.addressFormat)
     throw new Error('addressFormat only supported for bch');
