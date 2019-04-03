@@ -10,6 +10,7 @@ var sjcl = require('sjcl');
 var Common = require('./common');
 var Constants = Common.Constants;
 var Utils = Common.Utils;
+const CWC = require('../../crypto-wallet-core').default;
 
 var FIELDS = [
   'coin',
@@ -386,7 +387,8 @@ Credentials.prototype.getBaseAddressDerivationPath = function() {
   }
 
   var coin = this.network == 'livenet' ? '0' : '1';
-  return 'm/' + purpose + "'/" + coin + "'/" + this.account + "'";
+  return CWC.deriver.pathFor(coin, this.network, this.account)
+  // return 'm/' + purpose + "'/" + coin + "'/" + this.account + "'";
 };
 
 Credentials.prototype.getDerivedXPrivKey = function(password) {

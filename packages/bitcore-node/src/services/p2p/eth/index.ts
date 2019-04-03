@@ -1,17 +1,19 @@
+import * as os from 'os';
+import BN from 'bn.js';
+import Web3 from 'web3';
 import logger from '../../../logger';
 import { EventEmitter } from 'events';
-import { EthBlockStorage, EthBlockModel } from '../../../models/block/eth/ethBlock';
 import { ChainStateProvider } from '../../../providers/chain-state';
 import { StateStorage } from '../../../models/state';
 import { Ethereum } from '../../../types/namespaces/Ethereum';
-import { EthTransactionStorage, EthTransactionModel } from '../../../models/transaction/eth/ethTransaction';
 import { BitcoreP2PEth } from './p2p-lib';
 import { IEthBlock } from '../../../types/Block';
-import BN from 'bn.js';
 import { IEthTransaction } from '../../../types/Transaction';
 import { ParityRPC } from '../../../providers/chain-state/eth/parityRpc';
 import { ETHStateProvider } from '../../../providers/chain-state/eth/eth';
-import Web3 from 'web3';
+import { wait } from '../../../utils/wait';
+import { EthBlockStorage, EthBlockModel } from "../../../models/block/eth/ethBlock";
+import { EthTransactionModel, EthTransactionStorage } from "../../../models/transaction/eth/ethTransaction";
 const LRU = require('lru-cache');
 
 if (Symbol['asyncIterator'] === undefined) (Symbol as any)['asyncIterator'] = Symbol.for('asyncIterator');
@@ -25,6 +27,9 @@ export class EthP2pWorker {
   private messages: any;
   private invCache: any;
   private initialSyncComplete: boolean;
+  private isSyncingNode: boolean;
+  private connectInterval?: NodeJS.Timer;
+  private stopping: boolean = false;
   private eth: BitcoreP2PEth;
   private blockModel: EthBlockModel;
   private txModel: EthTransactionModel;
@@ -38,6 +43,7 @@ export class EthP2pWorker {
     this.chainConfig = chainConfig;
     this.events = new EventEmitter();
     this.syncing = true;
+    this.isSyncingNode = false;
     this.initialSyncComplete = false;
     this.invCache = new LRU({ max: 10000 });
     this.blockModel = blockModel;
@@ -130,9 +136,17 @@ export class EthP2pWorker {
 
   async connect() {
     this.eth.connect();
+    this.connectInterval = setInterval(() => this.eth.connect(), 5000);
     return new Promise<void>(resolve => {
       this.eth.once('peerready', () => resolve());
     });
+  }
+
+  async disconnect() {
+    this.eth.removeAllListeners();
+    if (this.connectInterval) {
+      clearInterval(this.connectInterval);
+    }
   }
 
   public async getHeaders(bestHeight: number) {
@@ -358,6 +372,54 @@ export class EthP2pWorker {
         blockTimeNormalized
       };
     }
+  }
+
+  async registerSyncingNode() {
+    while (!this.stopping) {
+      const syncingNode = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
+      if (!syncingNode) {
+        StateStorage.selfNominateSyncingNode({
+          chain: this.chain,
+          network: this.network,
+          lastHeartBeat: syncingNode
+        });
+        continue;
+      }
+      const [hostname, pid, timestamp] = syncingNode.split(':');
+      const amSyncingNode =
+        hostname === os.hostname() && pid === process.pid.toString() && Date.now() - parseInt(timestamp) < 5000;
+      if (amSyncingNode) {
+        StateStorage.selfNominateSyncingNode({
+          chain: this.chain,
+          network: this.network,
+          lastHeartBeat: syncingNode
+        });
+        if (!this.isSyncingNode) {
+          logger.info(`This worker is now the syncing node for ${this.chain} ${this.network}`);
+          this.isSyncingNode = true;
+          this.sync();
+        }
+      } else {
+        if (this.isSyncingNode) {
+          logger.info(`This worker is no longer syncing node for ${this.chain} ${this.network}`);
+          this.isSyncingNode = false;
+          await wait(100000);
+        }
+        await wait(10000);
+        StateStorage.selfNominateSyncingNode({
+          chain: this.chain,
+          network: this.network,
+          lastHeartBeat: syncingNode
+        });
+      }
+      await wait(500);
+    }
+  }
+
+  async stop() {
+    this.stopping = true;
+    logger.debug(`Stopping worker for chain ${this.chain}`);
+    await this.disconnect();
   }
 
   async start() {

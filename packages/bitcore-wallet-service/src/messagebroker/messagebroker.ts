@@ -1,9 +1,7 @@
 #!/usr/bin/env node
-'use strict';
 import io from 'socket.io';
 
-let log = require('npmlog');
-
+const log = require('npmlog');
 log.debug = log.verbose;
 
 const DEFAULT_PORT = 3380;

@@ -16,7 +16,7 @@ var scripts = [
 async.eachSeries(scripts, function(script, callback) {
   console.log(`Spawning ${script}`);
 
-  var node = spawn('node', [script]);
+  const node = spawn('node', [script]);
   node.stdout.on('data', data => {
     console.log(`${data}`);
   });

@@ -1,10 +1,6 @@
-var $ = require('preconditions').singleton();
 import { EventEmitter } from 'events';
-var _ = require('lodash');
-var inherits = require('inherits');
-var events = require('events');
-var nodeutil = require('util');
-var log = require('npmlog');
+
+let log = require('npmlog');
 log.debug = log.verbose;
 log.disableColor();
 
@@ -13,21 +9,20 @@ export class MessageBroker extends EventEmitter {
   mq: SocketIO.Socket;
   constructor(opts) {
     super();
-    var self = this;
 
     opts = opts || {};
     if (opts.messageBrokerServer) {
-      var url = opts.messageBrokerServer.url;
+      const url = opts.messageBrokerServer.url;
 
       this.remote = true;
       this.mq = require('socket.io-client').connect(url);
-      this.mq.on('connect', function() {});
-      this.mq.on('connect_error', function() {
+      this.mq.on('connect', () => { });
+      this.mq.on('connect_error', () => {
         log.warn('Error connecting to message broker server @ ' + url);
       });
 
-      this.mq.on('msg', function(data) {
-        self.emit('msg', data);
+      this.mq.on('msg', (data) => {
+        this.emit('msg', data);
       });
 
       log.info('Using message broker server at ' + url);

@@ -1,9 +1,8 @@
-var Bitcore_ = {
+import _ from 'lodash';
+const Bitcore_ = {
   btc: require('bitcore-lib'),
   bch: require('bitcore-lib-cash')
 };
-
-var _ = require('lodash');
 
 export class BCHAddressTranslator {
   static getAddressCoin(address) {
@@ -12,7 +11,7 @@ export class BCHAddressTranslator {
       return 'legacy';
     } catch (e) {
       try {
-        var a = new Bitcore_['bch'].Address(address);
+        const a = new Bitcore_['bch'].Address(address);
         if (a.toLegacyAddress() == address) return 'copay';
         return 'cashaddr';
       } catch (e) {
@@ -23,20 +22,20 @@ export class BCHAddressTranslator {
 
   // Supports 3 formats:  legacy (1xxx, mxxxx); Copay: (Cxxx, Hxxx), Cashaddr(qxxx);
   static translate(addresses, to, from?) {
-    var wasArray = true;
+    let wasArray = true;
     if (!_.isArray(addresses)) {
       wasArray = false;
       addresses = [addresses];
     }
     from = from || BCHAddressTranslator.getAddressCoin(addresses[0]);
 
-    var ret;
+    let ret;
     if (from == to) {
       ret = addresses;
     } else {
       ret = _.filter(
-        _.map(addresses, function(x) {
-          var bitcore = Bitcore_[from == 'legacy' ? 'btc' : 'bch'];
+        _.map(addresses, (x) => {
+          const bitcore = Bitcore_[from == 'legacy' ? 'btc' : 'bch'];
           let orig;
 
           try {

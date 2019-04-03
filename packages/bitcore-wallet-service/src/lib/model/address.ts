@@ -1,10 +1,8 @@
-'use strict';
+import _ from 'lodash';
 
-var $ = require('preconditions').singleton();
-import * as _ from 'lodash';
-
-var Common = require('../common');
-var Constants = Common.Constants,
+const $ = require('preconditions').singleton();
+const Common = require('../common');
+const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
 
@@ -45,7 +43,7 @@ export class Address {
   static create(opts) {
     opts = opts || {};
 
-    var x = new Address();
+    const x = new Address();
 
     $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
 
@@ -67,7 +65,7 @@ export class Address {
   }
 
   static fromObj(obj) {
-    var x = new Address();
+    const x = new Address();
 
     x.version = obj.version;
     x.createdOn = obj.createdOn;
@@ -97,12 +95,12 @@ export class Address {
       Utils.checkValueInCollection(scriptType, Constants.SCRIPT_TYPES)
     );
 
-    var publicKeys = _.map(publicKeyRing, function(item) {
-      var xpub = new Address.Bitcore[coin].HDPublicKey(item.xPubKey);
+    const publicKeys = _.map(publicKeyRing, (item) => {
+      const xpub = new Address.Bitcore[coin].HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
     });
 
-    var bitcoreAddress;
+    let bitcoreAddress;
     switch (scriptType) {
       case Constants.SCRIPT_TYPES.P2SH:
         bitcoreAddress = Address.Bitcore[coin].Address.createMultisig(
@@ -145,7 +143,7 @@ export class Address {
     isChange,
     noNativeCashAddr = false
   ) {
-    var raw = Address._deriveAddress(
+    const raw = Address._deriveAddress(
       scriptType,
       publicKeyRing,
       path,

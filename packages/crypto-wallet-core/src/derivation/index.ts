@@ -34,7 +34,8 @@ const derivers: { [chain: string]: IDeriver } = {
 
 export class DerivationProxy {
   get(chain) {
-    return derivers[chain];
+    const normalizedChain = chain.toUpperCase();
+    return derivers[normalizedChain];
   }
 
   deriveAddress(chain, network, pubKey, addressIndex, isChange) {
@@ -55,11 +56,13 @@ export class DerivationProxy {
     );
   }
 
-  pathFor(chain, network) {
+  pathFor(chain, network, account = 0) {
+    const normalizedChain = chain.toUpperCase();
+    const accountStr = `${account}'`;
     if (network != 'mainnet') {
-      return Paths.default.testnet;
+      return Paths.default.testnet + accountStr;
     } else {
-      return Paths[chain][network];
+      return Paths[normalizedChain][network] + accountStr;
     }
   }
 }

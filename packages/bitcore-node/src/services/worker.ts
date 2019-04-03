@@ -21,8 +21,8 @@ export class WorkerService extends EventEmitter {
     if (cluster.isMaster) {
       logger.verbose(`Master ${process.pid} is running`);
       cluster.on('exit', (worker: WorkerType) => {
-        logger.error(`worker ${worker.process.pid} died`);
-        process.exit();
+        logger.warn(`worker ${worker.process.pid} stopped`);
+        process.kill(process.pid);
       });
       if (!args.DEBUG) {
         for (let worker = 0; worker < config.numWorkers; worker++) {
@@ -47,7 +47,7 @@ export class WorkerService extends EventEmitter {
     }
   }
 
-  stop() {}
+  async stop() {}
 
   sendTask(task: any, argument: any, done: CallbackType) {
     var worker = this.workers.shift();

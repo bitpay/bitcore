@@ -1,5 +1,4 @@
-var _ = require('lodash');
-var Uuid = require('uuid');
+import _ from 'lodash';
 
 /*
  * notifications examples
@@ -37,32 +36,32 @@ export interface INotification {
 export class Notification {
   version: string;
   createdOn: number;
-  id: number;
+  id: string | number;
   type: string;
   data: any;
   walletId: string;
   creatorId: string;
 
-  static create = function(opts) {
+  static create(opts) {
     opts = opts || {};
 
-    var x = new Notification();
+    const x = new Notification();
 
     x.version = '1.0.0';
-    var now = Date.now();
+    const now = Date.now();
 
     x.createdOn = Math.floor(now / 1000);
-    x.id = _.padStart(now, 14, '0') + _.padStart(opts.ticker || 0, 4, '0');
+    x.id = _.padStart(now.toString(), 14, '0') + _.padStart(opts.ticker || 0, 4, '0');
     x.type = opts.type || 'general';
     x.data = opts.data;
     x.walletId = opts.walletId;
     x.creatorId = opts.creatorId;
 
     return x;
-  };
+  }
 
-  static fromObj = function(obj) {
-    var x = new Notification();
+  static fromObj(obj) {
+    const x = new Notification();
 
     x.version = obj.version;
     x.createdOn = obj.createdOn;
@@ -72,5 +71,5 @@ export class Notification {
     x.creatorId = obj.creatorId;
 
     return x;
-  };
+  }
 }
