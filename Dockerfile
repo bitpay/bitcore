@@ -5,6 +5,7 @@ RUN npm install
 COPY lerna.json ./
 
 COPY ./packages/bitcore-build/package.json ./packages/bitcore-build/package.json
+COPY ./packages/bitcore-client/package.json ./packages/bitcore-client/package.json
 COPY ./packages/bitcore-mnemonic/package.json ./packages/bitcore-mnemonic/package.json
 COPY ./packages/bitcore-lib/package.json ./packages/bitcore-lib/package.json
 COPY ./packages/bitcore-lib-cash/package.json ./packages/bitcore-lib-cash/package.json
@@ -21,8 +22,11 @@ COPY ./packages/insight/package.json ./packages/insight/package.json
 RUN ./node_modules/.bin/lerna bootstrap
 
 COPY . .
+COPY .env.example .env
 EXPOSE 3000
 EXPOSE 8100
-CMD ["./node_modules/.bin/lerna", "run", "start"]
-#CMD ["npm", "--prefix=./packages/bitcore-node", "start"]
-#CMD ["npm", "--prefix=./packages/insight", "start"]
+
+RUN npm run compile
+# WORKDIR /usr/src/app/packages/bitcore-node
+
+CMD ["npm", "run", "node"]
