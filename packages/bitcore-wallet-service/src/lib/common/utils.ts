@@ -1,13 +1,11 @@
-var $ = require('preconditions').singleton();
-var _ = require('lodash');
+import _ from 'lodash';
 
-var bitcore = require('bitcore-lib');
-var crypto = bitcore.crypto;
-var encoding = bitcore.encoding;
-var secp256k1 = require('secp256k1');
-
-var Bitcore = require('bitcore-lib');
-var Bitcore_ = {
+const $ = require('preconditions').singleton();
+const bitcore = require('bitcore-lib');
+const crypto = bitcore.crypto;
+const secp256k1 = require('secp256k1');
+const Bitcore = require('bitcore-lib');
+const Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash')
 };
@@ -16,7 +14,7 @@ export class Utils {
   static getMissingFields(obj, args) {
     args = [].concat(args);
     if (!_.isObject(obj)) return args;
-    var missing = _.filter(args, function(arg) {
+    const missing = _.filter(args, (arg) => {
       return !obj.hasOwnProperty(arg);
     });
     return missing;
@@ -36,8 +34,8 @@ export class Utils {
    * the hash is calculated there? */
   static hashMessage(text, noReverse) {
     $.checkArgument(text);
-    var buf = new Buffer(text);
-    var ret = crypto.Hash.sha256sha256(buf);
+    const buf = new Buffer(text);
+    let ret = crypto.Hash.sha256sha256(buf);
     if (!noReverse) {
       ret = new bitcore.encoding.BufferReader(ret).readReverse();
     }
@@ -47,14 +45,14 @@ export class Utils {
   static verifyMessage(text, signature, publicKey) {
     $.checkArgument(text);
 
-    var hash = Utils.hashMessage(text, true);
+    const hash = Utils.hashMessage(text, true);
 
-    var sig = this._tryImportSignature(signature);
+    const sig = this._tryImportSignature(signature);
     if (!sig) {
       return false;
     }
 
-    var publicKeyBuffer = this._tryImportPublicKey(publicKey);
+    const publicKeyBuffer = this._tryImportPublicKey(publicKey);
     if (!publicKeyBuffer) {
       return false;
     }
@@ -63,7 +61,7 @@ export class Utils {
   }
 
   static _tryImportPublicKey(publicKey) {
-    var publicKeyBuffer = publicKey;
+    let publicKeyBuffer = publicKey;
     try {
       if (!Buffer.isBuffer(publicKey)) {
         publicKeyBuffer = new Buffer(publicKey, 'hex');
@@ -76,7 +74,7 @@ export class Utils {
 
   static _tryImportSignature(signature) {
     try {
-      var signatureBuffer = signature;
+      let signatureBuffer = signature;
       if (!Buffer.isBuffer(signature)) {
         signatureBuffer = new Buffer(signature, 'hex');
       }
@@ -95,7 +93,7 @@ export class Utils {
   }
 
   static formatAmount(satoshis, unit, opts) {
-    var UNITS = {
+    const UNITS = {
       btc: {
         toSatoshis: 100000000,
         maxDecimals: 6,
@@ -123,14 +121,14 @@ export class Utils {
 
     function addSeparators(nStr, thousands, decimal, minDecimals) {
       nStr = nStr.replace('.', decimal);
-      var x = nStr.split(decimal);
-      var x0 = x[0];
-      var x1 = x[1];
+      const x = nStr.split(decimal);
+      let x0 = x[0];
+      let x1 = x[1];
 
-      x1 = _.dropRightWhile(x1, function(n, i) {
+      x1 = _.dropRightWhile(x1, (n, i) => {
         return n == '0' && i >= minDecimals;
       }).join('');
-      var x2 = x.length > 1 ? decimal + x1 : '';
+      const x2 = x.length > 1 ? decimal + x1 : '';
 
       x0 = x0.replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
       return x0 + x2;
@@ -138,8 +136,8 @@ export class Utils {
 
     opts = opts || {};
 
-    var u = _.assign(UNITS[unit], opts);
-    var amount = (satoshis / u.toSatoshis).toFixed(u.maxDecimals);
+    const u = _.assign(UNITS[unit], opts);
+    const amount = (satoshis / u.toSatoshis).toFixed(u.maxDecimals);
     return addSeparators(
       amount,
       opts.thousandsSeparator || ',',
@@ -159,9 +157,9 @@ export class Utils {
 
   static formatUtxos(utxos) {
     if (_.isEmpty(utxos)) return 'none';
-    return _.map([].concat(utxos), function(i) {
-      var amount = Utils.formatAmountInBtc(i.satoshis);
-      var confirmations = i.confirmations ? i.confirmations + 'c' : 'u';
+    return _.map([].concat(utxos), (i) => {
+      const amount = Utils.formatAmountInBtc(i.satoshis);
+      const confirmations = i.confirmations ? i.confirmations + 'c' : 'u';
       return amount + '/' + confirmations;
     }).join(', ');
   }
@@ -175,7 +173,7 @@ export class Utils {
   }
 
   static parseVersion(version) {
-    var v: {
+    const v: {
       agent?: string;
       major?: number;
       minor?: number;
@@ -184,7 +182,7 @@ export class Utils {
 
     if (!version) return null;
 
-    var x = version.split('-');
+    let x = version.split('-');
     if (x.length != 2) {
       v.agent = version;
       return v;
@@ -199,7 +197,7 @@ export class Utils {
   }
 
   static parseAppVersion(agent) {
-    var v: {
+    const v: {
       app?: string;
       major?: number;
       minor?: number;
@@ -208,7 +206,7 @@ export class Utils {
     if (!agent) return null;
     agent = agent.toLowerCase();
 
-    var w;
+    let w;
     w = agent.indexOf('copay');
     if (w >= 0) {
       v.app = 'copay';
@@ -222,7 +220,7 @@ export class Utils {
       }
     }
 
-    var version = agent.substr(w + v.app.length);
+    const version = agent.substr(w + v.app.length);
     const x = version.split('.');
     v.major = x[0] ? parseInt(x[0].replace(/\D/g, '')) : null;
     v.minor = x[1] ? parseInt(x[1]) : null;
@@ -251,11 +249,11 @@ export class Utils {
   }
 
   static translateAddress(address, coin) {
-    var origCoin = Utils.getAddressCoin(address);
-    var origAddress = new Bitcore_[origCoin].Address(address);
-    var origObj = origAddress.toObject();
+    const origCoin = Utils.getAddressCoin(address);
+    const origAddress = new Bitcore_[origCoin].Address(address);
+    const origObj = origAddress.toObject();
 
-    var result = Bitcore_[coin].Address.fromObject(origObj);
+    const result = Bitcore_[coin].Address.fromObject(origObj);
     return coin == 'bch' ? result.toLegacyAddress() : result.toString();
   }
 }

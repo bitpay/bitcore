@@ -1,5 +1,3 @@
-'use strict';
-
 export interface IPushNotificationSub {
   version: string;
   createdOn: number;
@@ -16,10 +14,10 @@ export class PushNotificationSub {
   packageName: string;
   platform: string;
 
-  static create = function(opts) {
+  static create(opts) {
     opts = opts || {};
 
-    var x = new PushNotificationSub();
+    const x = new PushNotificationSub();
 
     x.version = '1.0.0';
     x.createdOn = Math.floor(Date.now() / 1000);
@@ -28,10 +26,10 @@ export class PushNotificationSub {
     x.packageName = opts.packageName;
     x.platform = opts.platform;
     return x;
-  };
+  }
 
-  static fromObj = function(obj) {
-    var x = new PushNotificationSub();
+  static fromObj(obj) {
+    const x = new PushNotificationSub();
 
     x.version = obj.version;
     x.createdOn = obj.createdOn;
@@ -40,5 +38,5 @@ export class PushNotificationSub {
     x.packageName = obj.packageName;
     x.platform = obj.platform;
     return x;
-  };
+  }
 }

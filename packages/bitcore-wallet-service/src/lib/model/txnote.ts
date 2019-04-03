@@ -1,6 +1,3 @@
-var _ = require('lodash');
-var Uuid = require('uuid');
-
 export interface ITxNote {
   version: number;
   createdOn: number;
@@ -19,12 +16,12 @@ export class TxNote {
   editedOn: number;
   editedBy: string;
 
-  static create = function(opts) {
+  static create(opts) {
     opts = opts || {};
 
-    var now = Math.floor(Date.now() / 1000);
+    const now = Math.floor(Date.now() / 1000);
 
-    var x = new TxNote();
+    const x = new TxNote();
 
     x.version = 1;
     x.createdOn = now;
@@ -35,10 +32,10 @@ export class TxNote {
     x.editedBy = opts.copayerId;
 
     return x;
-  };
+  }
 
-  static fromObj = function(obj) {
-    var x = new TxNote();
+  static fromObj(obj) {
+    const x = new TxNote();
 
     x.version = obj.version;
     x.createdOn = obj.createdOn;
@@ -49,15 +46,15 @@ export class TxNote {
     x.editedBy = obj.editedBy;
 
     return x;
-  };
+  }
 
-  edit = function(body, copayerId) {
+  edit(body, copayerId) {
     this.body = body;
     this.editedBy = copayerId;
     this.editedOn = Math.floor(Date.now() / 1000);
-  };
+  }
 
-  toObject = function() {
+  toObject() {
     return this;
-  };
+  }
 }

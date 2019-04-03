@@ -1,5 +1,3 @@
-'use strict';
-
 export class ClientError {
   name: string;
   code: string;

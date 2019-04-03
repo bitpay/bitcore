@@ -1,16 +1,13 @@
 #!/usr/bin/env node
-
-'use strict';
-
-import * as _ from 'lodash';
+import _ from 'lodash';
 import { BlockchainMonitor } from '../lib/blockchainmonitor';
-var log = require('npmlog');
+
+const config = require('../config');
+const log = require('npmlog');
 log.debug = log.verbose;
 
-var config = require('../config');
-
-var bcm = new BlockchainMonitor();
-bcm.start(config, function(err) {
+const bcm = new BlockchainMonitor();
+bcm.start(config, (err) => {
   if (err) throw err;
 
   console.log('Blockchain monitor started');

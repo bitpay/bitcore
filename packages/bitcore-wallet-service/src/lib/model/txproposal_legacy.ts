@@ -1,21 +1,17 @@
-'use strict';
+import _ from 'lodash';
 
-var _ = require('lodash');
-var $ = require('preconditions').singleton();
-var log = require('npmlog');
+const $ = require('preconditions').singleton();
+const log = require('npmlog');
 log.debug = log.verbose;
 log.disableColor();
+const Common = require('../common');
+const Constants = Common.Constants;
+const Defaults = Common.Defaults;
 
-var Bitcore = require('bitcore-lib');
-
-var Common = require('../common');
-var Constants = Common.Constants;
-var Defaults = Common.Defaults;
-
-var TxProposalAction = require('./txproposalaction');
+const TxProposalAction = require('./txproposalaction');
 
 function throwUnsupportedError() {
-  var msg = 'Unsupported operation on this transaction proposal';
+  const msg = 'Unsupported operation on this transaction proposal';
   log.warn('DEPRECATED: ' + msg);
   throw new Error(msg);
 }
@@ -75,7 +71,7 @@ export class TxProposalLegacy {
   walletN: number;
   status: string;
   txid: string;
-  broadcastedOn: string;
+  broadcastedOn: number;
   inputPaths: string;
   actions: any[];
   outputOrder: number;
@@ -97,7 +93,7 @@ export class TxProposalLegacy {
   };
 
   static fromObj(obj) {
-    var x = new TxProposalLegacy();
+    const x = new TxProposalLegacy();
 
     x.version = obj.version;
     if (obj.version === '1.0.0') {
@@ -143,13 +139,13 @@ export class TxProposalLegacy {
     return x;
   }
 
-  toObject = function() {
-    var x = _.cloneDeep(this);
+  toObject() {
+    const x: any = _.cloneDeep(this);
     x.isPending = this.isPending();
     return x;
-  };
+  }
 
-  _updateStatus = function() {
+  _updateStatus() {
     if (this.status != 'pending') return;
 
     if (this.isRejected()) {
@@ -157,17 +153,17 @@ export class TxProposalLegacy {
     } else if (this.isAccepted()) {
       this.status = 'accepted';
     }
-  };
+  }
 
-  getBitcoreTx = function() {
+  getBitcoreTx() {
     throwUnsupportedError();
-  };
+  }
 
-  getRawTx = function() {
+  getRawTx() {
     throwUnsupportedError();
-  };
+  }
 
-  getTotalAmount = function() {
+  getTotalAmount() {
     if (
       this.type == TxProposalLegacy.Types.MULTIPLEOUTPUTS ||
       this.type == TxProposalLegacy.Types.EXTERNAL
@@ -178,29 +174,29 @@ export class TxProposalLegacy {
     } else {
       return this.amount;
     }
-  };
+  }
 
-  getActors = function() {
+  getActors() {
     return _.map(this.actions, 'copayerId');
-  };
+  }
 
-  getApprovers = function() {
+  getApprovers() {
     return _.map(
-      _.filter(this.actions, {
-        type: 'accept'
+      _.filter(this.actions, (a) => {
+        return a.type == 'accept';
       }),
       'copayerId'
     );
-  };
+  }
 
-  getActionBy = function(copayerId) {
+  getActionBy(copayerId) {
     return _.find(this.actions, {
       copayerId
     });
-  };
+  }
 
-  addAction = function(copayerId, type, comment, signatures, xpub) {
-    var action = TxProposalAction.create({
+  addAction(copayerId, type, comment, signatures?, xpub?) {
+    const action = TxProposalAction.create({
       copayerId,
       type,
       signatures,
@@ -209,37 +205,37 @@ export class TxProposalLegacy {
     });
     this.actions.push(action);
     this._updateStatus();
-  };
+  }
 
-  sign = function() {
+  sign() {
     throwUnsupportedError();
-  };
+  }
 
-  reject = function(copayerId, reason) {
+  reject(copayerId, reason) {
     this.addAction(copayerId, 'reject', reason);
-  };
+  }
 
-  isPending = function() {
+  isPending() {
     return !_.includes(['broadcasted', 'rejected'], this.status);
-  };
+  }
 
-  isAccepted = function() {
-    var votes = _.countBy(this.actions, 'type');
+  isAccepted() {
+    const votes = _.countBy(this.actions, 'type');
     return votes['accept'] >= this.requiredSignatures;
-  };
+  }
 
-  isRejected = function() {
-    var votes = _.countBy(this.actions, 'type');
+  isRejected() {
+    const votes = _.countBy(this.actions, 'type');
     return votes['reject'] >= this.requiredRejections;
-  };
+  }
 
-  isBroadcasted = function() {
+  isBroadcasted() {
     return this.status == 'broadcasted';
-  };
+  }
 
-  setBroadcasted = function() {
+  setBroadcasted() {
     $.checkState(this.txid);
     this.status = 'broadcasted';
     this.broadcastedOn = Math.floor(Date.now() / 1000);
-  };
+  }
 }

@@ -1,5 +1,3 @@
-'use strict';
-
 export interface ITxConfirmationSub {
   version: number;
   createdOn: number;
@@ -16,10 +14,10 @@ export class TxConfirmationSub {
   txid: string;
   isActive: boolean;
 
-  static create = function(opts) {
+  static create(opts) {
     opts = opts || {};
 
-    var x = new TxConfirmationSub();
+    const x = new TxConfirmationSub();
 
     x.version = 1;
     x.createdOn = Math.floor(Date.now() / 1000);
@@ -28,10 +26,10 @@ export class TxConfirmationSub {
     x.txid = opts.txid;
     x.isActive = true;
     return x;
-  };
+  }
 
-  static fromObj = function(obj) {
-    var x = new TxConfirmationSub();
+  static fromObj(obj) {
+    const x = new TxConfirmationSub();
 
     x.version = obj.version;
     x.createdOn = obj.createdOn;
@@ -40,5 +38,5 @@ export class TxConfirmationSub {
     x.txid = obj.txid;
     x.isActive = obj.isActive;
     return x;
-  };
+  }
 }

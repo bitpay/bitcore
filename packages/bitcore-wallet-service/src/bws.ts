@@ -1,25 +1,17 @@
 #!/usr/bin/env node
-
-import * as async from 'async';
 import * as fs from 'fs';
 import { ExpressApp } from './lib/expressapp';
 
-var config = require('./config');
-var log = require('npmlog');
+const config = require('./config');
+const log = require('npmlog');
 log.debug = log.verbose;
 log.disableColor();
-var Common = require('./lib/common');
-var Defaults = Common.Defaults;
 
-var port = process.env.BWS_PORT || config.port || 3232;
+const port = process.env.BWS_PORT || config.port || 3232;
+const cluster = require('cluster');
+const serverModule = config.https ? require('https') : require('http');
 
-var cluster = require('cluster');
-var http = require('http');
-var numCPUs = require('os').cpus().length;
-var clusterInstances = config.clusterInstances || numCPUs;
-var serverModule = config.https ? require('https') : require('http');
-
-var serverOpts: {
+const serverOpts: {
   key?: Buffer;
   cert?: Buffer;
   ciphers?: string[];
@@ -60,14 +52,14 @@ if (config.cluster && !config.messageBrokerOpts.messageBrokerServer)
     'When running in cluster mode, message broker server need to be configured'
   );
 
-var expressApp = new ExpressApp();
+const expressApp = new ExpressApp();
 
-function startInstance(cb?: () => void) {
-  var server = config.https
+function startInstance() {
+  const server = config.https
     ? serverModule.createServer(serverOpts, expressApp.app)
     : serverModule.Server(expressApp.app);
 
-  expressApp.start(config, function(err) {
+  expressApp.start(config, (err) => {
     if (err) {
       log.error('Could not start BWS instance', err);
       return;
@@ -75,7 +67,7 @@ function startInstance(cb?: () => void) {
 
     server.listen(port);
 
-    var instanceInfo = cluster.worker
+    const instanceInfo = cluster.worker
       ? ' [Instance:' + cluster.worker.id + ']'
       : '';
     log.info('BWS running ' + instanceInfo);
@@ -85,17 +77,17 @@ function startInstance(cb?: () => void) {
 
 if (config.cluster && cluster.isMaster) {
   // Count the machine's CPUs
-  var instances = config.clusterInstances || require('os').cpus().length;
+  const instances = config.clusterInstances || require('os').cpus().length;
 
   log.info('Starting ' + instances + ' instances');
 
   // Create a worker for each CPU
-  for (var i = 0; i < instances; i += 1) {
+  for (let i = 0; i < instances; i += 1) {
     cluster.fork();
   }
 
   // Listen for dying workers
-  cluster.on('exit', function(worker) {
+  cluster.on('exit', (worker) => {
     // Replace the dead worker,
     log.error('Worker ' + worker.id + ' died :(');
     cluster.fork();

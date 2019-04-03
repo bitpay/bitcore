@@ -1,17 +1,13 @@
-'use strict';
-
-import * as _ from 'lodash';
+import * as async from 'async';
+import _ from 'lodash';
 import * as request from 'request';
 import { Storage } from './storage';
-var $ = require('preconditions').singleton();
-var async = require('async');
-var log = require('npmlog');
+
+const $ = require('preconditions').singleton();
+const Common = require('./common');
+const Defaults = Common.Defaults;
+let log = require('npmlog');
 log.debug = log.verbose;
-
-var Common = require('./common');
-var Defaults = Common.Defaults;
-
-var Model = require('./model');
 
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
@@ -19,29 +15,27 @@ export class FiatRateService {
   providers: any[];
   storage: Storage;
   init(opts, cb) {
-    var self = this;
-
     opts = opts || {};
 
-    self.request = opts.request || request;
-    self.defaultProvider = opts.defaultProvider || Defaults.FIAT_RATE_PROVIDER;
+    this.request = opts.request || request;
+    this.defaultProvider = opts.defaultProvider || Defaults.FIAT_RATE_PROVIDER;
 
     async.parallel(
       [
-        function(done) {
+        (done) => {
           if (opts.storage) {
-            self.storage = opts.storage;
+            this.storage = opts.storage;
             done();
           } else {
-            self.storage = new Storage();
-            self.storage.connect(
+            this.storage = new Storage();
+            this.storage.connect(
               opts.storageOpts,
               done
             );
           }
         }
       ],
-      function(err) {
+      (err) => {
         if (err) {
           log.error(err);
         }
@@ -51,37 +45,33 @@ export class FiatRateService {
   }
 
   startCron(opts, cb) {
-    var self = this;
-
     opts = opts || {};
 
-    self.providers = _.values(require('./fiatrateproviders'));
+    this.providers = _.values(require('./fiatrateproviders'));
 
-    var interval = opts.fetchInterval || Defaults.FIAT_RATE_FETCH_INTERVAL;
+    const interval = opts.fetchInterval || Defaults.FIAT_RATE_FETCH_INTERVAL;
     if (interval) {
-      self._fetch();
-      setInterval(function() {
-        self._fetch();
+      this._fetch();
+      setInterval(() => {
+        this._fetch();
       }, interval * 60 * 1000);
     }
 
     return cb();
   }
 
-  _fetch(cb?: (err: any, data: any) => void) {
-    var self = this;
-
-    cb = cb || function() {};
+  _fetch(cb?) {
+    cb = cb || function() { };
 
     async.each(
-      self.providers,
-      function(provider, next) {
-        self._retrieve(provider, function(err, res) {
+      this.providers,
+      (provider, next) => {
+        this._retrieve(provider, (err, res) => {
           if (err) {
             log.warn('Error retrieving data for ' + provider.name, err);
             return next();
           }
-          self.storage.storeFiatRate(provider.name, res, function(err) {
+          this.storage.storeFiatRate(provider.name, res, (err) => {
             if (err) {
               log.warn('Error storing data for ' + provider.name, err);
             }
@@ -94,15 +84,13 @@ export class FiatRateService {
   }
 
   _retrieve(provider, cb) {
-    var self = this;
-
     log.debug('Fetching data for ' + provider.name);
-    self.request.get(
+    this.request.get(
       {
         url: provider.url,
         json: true
       },
-      function(err, res, body) {
+      (err, res, body) => {
         if (err || !body) {
           return cb(err);
         }
@@ -114,7 +102,7 @@ export class FiatRateService {
             new Error('No parse function for provider ' + provider.name)
           );
         }
-        var rates = provider.parseFn(body);
+        const rates = provider.parseFn(body);
 
         return cb(null, rates);
       }
@@ -122,23 +110,21 @@ export class FiatRateService {
   }
 
   getRate(opts, cb) {
-    var self = this;
-
     $.shouldBeFunction(cb);
 
     opts = opts || {};
 
-    var now = Date.now();
-    var provider = opts.provider || self.defaultProvider;
-    var ts = _.isNumber(opts.ts) || _.isArray(opts.ts) ? opts.ts : now;
+    const now = Date.now();
+    const provider = opts.provider || this.defaultProvider;
+    const ts = _.isNumber(opts.ts) || _.isArray(opts.ts) ? opts.ts : now;
 
     async.map(
       [].concat(ts),
-      function(ts, cb) {
-        self.storage.fetchFiatRate(provider, opts.code, ts, function(
+      (ts, cb) => {
+        this.storage.fetchFiatRate(provider, opts.code, ts, (
           err,
           rate
-        ) {
+        ) => {
           if (err) return cb(err);
           if (
             rate &&
@@ -153,7 +139,7 @@ export class FiatRateService {
           });
         });
       },
-      function(err, res) {
+      (err, res: any) => {
         if (err) return cb(err);
         if (!_.isArray(ts)) res = res[0];
         return cb(null, res);
