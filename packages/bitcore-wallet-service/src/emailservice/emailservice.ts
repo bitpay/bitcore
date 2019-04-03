@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
+var config = require('../config');
 const EmailService = require('../lib/emailservice');
-const config = require('../config');
 const log = require('npmlog');
 log.debug = log.verbose;
 
