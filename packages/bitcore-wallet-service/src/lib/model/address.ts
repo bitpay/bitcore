@@ -1,5 +1,5 @@
 var $ = require('preconditions').singleton();
-import CWC from 'crypto-wallet-core';
+const CWC = require('crypto-wallet-core').default;
 import * as _ from 'lodash';
 var Common = require('../common');
 var Constants = Common.Constants,
@@ -55,9 +55,7 @@ export class Address {
     x.path = opts.path;
     x.publicKeys = opts.publicKeys;
     x.coin = opts.coin;
-    x.network = Address.Bitcore.btc
-      .Address(x.address)
-      .toObject().network;
+    x.network = opts.network || 'mainnet';
     x.type = opts.type || Constants.SCRIPT_TYPES.P2SH;
     x.hasActivity = undefined;
     x.beRegistered = null;
@@ -99,10 +97,6 @@ export class Address {
       var xpub = new Address.Bitcore.btc.HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
     });
-    // if (coin === 'eth') {
-    //   const pathIndex = /\/([0-9]*)*/;
-    //   const [_purpose, _account, changeIndex, addressIndex] = path.match(pathIndex).group;
-    // } else {
     switch (scriptType) {
       case Constants.SCRIPT_TYPES.P2SH:
         bitcoreAddress = Address.Bitcore.btc.Address.createMultisig(
@@ -119,8 +113,19 @@ export class Address {
         );
         break;
     }
-    bitcoreAddress = CWC.deriver.deriveAddress('ETH', 'mainnet', '17VZNX1SN5NtKa8UQFxwQbFeFc3iqRYhem', 0, false);
-    console.log(bitcoreAddress);
+    const pathIndex = /m\/([0-9]*)\/([0-9]*)/;
+    const [_input, changeIndex, addressIndex] = path.match(pathIndex);
+    // console.log(changeIndex, addressIndex);
+    const isChange = changeIndex > 0;
+    const [{ xPubKey }] = publicKeyRing;
+    bitcoreAddress = CWC.deriver.deriveAddress(
+      coin,
+      network,
+      xPubKey,
+      addressIndex,
+      isChange
+    );
+    console.log(bitcoreAddress, coin, network);
     // let addrStr = bitcoreAddress.toString(true);
     // if (noNativeCashAddr && coin == 'bch') {
     //   addrStr = bitcoreAddress.toLegacyAddress();
@@ -128,7 +133,7 @@ export class Address {
 
     return {
       // bws still use legacy addresses for BCH
-      address: `0x${bitcoreAddress}`,
+      address: bitcoreAddress,
       path,
       publicKeys: _.invokeMap(publicKeys, 'toString')
     };
