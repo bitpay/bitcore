@@ -673,7 +673,11 @@ API.prototype.openWallet = function(cb) {
   if (self.credentials.isComplete() && self.credentials.hasWalletInfo())
     return cb(null, true);
 
-  self.request.get('/v2/wallets/?includeExtendedInfo=1', function(err, ret) {
+    var qs = [];
+    qs.push('includeExtendedInfo=1');
+    qs.push('serverMessageArray=1');
+
+  self.request.get('/v3/wallets/?' + qs.join('&'), function(err, ret) {
     if (err) return cb(err);
     var wallet = ret.wallet;
 
@@ -1359,8 +1363,9 @@ API.prototype.getStatus = function(opts, cb) {
   var qs = [];
   qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));
   qs.push('twoStep=' + (opts.twoStep ? '1' : '0'));
+  qs.push('serverMessageArray=1');
 
-  self.request.get('/v2/wallets/?' + qs.join('&'), function(err, result) {
+  self.request.get('/v3/wallets/?' + qs.join('&'), function(err, result) {
     if (err) return cb(err);
     if (result.wallet.status == 'pending') {
       var c = self.credentials;
