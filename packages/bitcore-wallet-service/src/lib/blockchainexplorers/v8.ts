@@ -29,6 +29,11 @@ function v8network(bwsNetwork) {
   }
   return bwsNetwork;
 }
+interface BalanceResponse {
+  unconfirmed: number;
+  confirmed: number;
+  balance: number;
+}
 
 export class V8 {
   coin: string;
@@ -99,13 +104,13 @@ export class V8 {
   translateTx(tx) {
     if (!this.addressFormat) return tx;
 
-    _.each(tx.vin, (x) => {
+    _.each(tx.vin, x => {
       if (x.addr) {
         x.addr = this.translateResultAddresses(x.addr);
       }
     });
 
-    _.each(tx.vout, (x) => {
+    _.each(tx.vout, x => {
       if (x.scriptPubKey && x.scriptPubKey.addresses) {
         x.scriptPubKey.addresses = this.translateResultAddresses(
           x.scriptPubKey.addresses
@@ -176,14 +181,17 @@ export class V8 {
       .catch(cb);
   }
 
-  async getBalance(wallet, cb) {
+  async getBalance(wallet, cb?): Promise<BalanceResponse> {
     const client = this._getAuthClient(wallet);
-    client
+    return client
       .getBalance({ pubKey: wallet.beAuthPublicKey2, payload: {} })
       .then(ret => {
-        return cb(null, ret);
+        if (cb) {
+          return cb(null, ret);
+        }
+        return ret as BalanceResponse;
       })
-      .catch(cb);
+      .catch(err => cb && cb(err));
   }
 
   getConnectionInfo() {
@@ -417,7 +425,7 @@ export class V8 {
             return icb(err);
           });
       },
-      (err) => {
+      err => {
         if (err) {
           return cb(err);
         }
@@ -479,7 +487,7 @@ export class V8 {
       log.error('Error connecting to ' + this.getConnectionInfo());
     });
     socket.on('tx', callbacks.onTx);
-    socket.on('block', (data) => {
+    socket.on('block', data => {
       return callbacks.onBlock(data.hash);
     });
     socket.on('coin', data => {
