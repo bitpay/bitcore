@@ -1,11 +1,13 @@
 import * as async from 'async';
-import _ from 'lodash';
-import * as nodemailer from 'nodemailer';
+import * as _ from 'lodash';
+// This has been changed in favor of @sendgrid.  To use nodemail, change the
+// sending function from `.send` to `.sendMail`.
+// import * as nodemailer from nodemailer';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
 import { Storage } from './storage';
 
-interface Recipient {
+export interface Recipient {
   copayerId: string;
   emailAddress: string;
   language: string;
@@ -71,7 +73,8 @@ export class EmailService {
   storage: Storage;
   messageBroker: MessageBroker;
   lock: Lock;
-  mailer: nodemailer.Transporter;
+  mailer: any;
+//  mailer: nodemailer.Transporter;
 
   start(opts, cb) {
     opts = opts || {};
@@ -139,7 +142,7 @@ export class EmailService {
         },
         (done) => {
           this.mailer =
-            opts.mailer || nodemailer.createTransport(opts.emailOpts);
+            opts.mailer; // || nodemailer.createTransport(opts.emailOpts);
           done();
         }
       ],
@@ -327,7 +330,7 @@ export class EmailService {
       mailOptions.html = email.bodyHtml;
     }
     this.mailer
-      .sendMail(mailOptions)
+      .send(mailOptions)
       .then(result => {
         log.debug('Message sent: ', result || '');
         return cb(null, result);
