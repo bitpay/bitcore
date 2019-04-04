@@ -7,8 +7,7 @@ log.disableColor();
 const Common = require('../common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
-
-const TxProposalAction = require('./txproposalaction');
+import { TxProposalAction } from './txproposalaction';
 
 function throwUnsupportedError() {
   const msg = 'Unsupported operation on this transaction proposal';

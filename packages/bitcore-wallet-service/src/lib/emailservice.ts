@@ -100,12 +100,11 @@ export class EmailService {
 
     this.defaultLanguage = opts.emailOpts.defaultLanguage || 'en';
     this.defaultUnit = opts.emailOpts.defaultUnit || 'btc';
-    console.log(
-      (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/'
-    );
+    log.info('Email templates at:' +
+      (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/');
     this.templatePath = path.normalize(
-      (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/'
-    );
+      (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/');
+
     this.publicTxUrlTemplate = opts.emailOpts.publicTxUrlTemplate || {};
     this.subjectPrefix = opts.emailOpts.subjectPrefix || '[Wallet service]';
     this.from = opts.emailOpts.from;
@@ -336,9 +335,12 @@ export class EmailService {
         return cb(null, result);
       })
       .catch(err => {
+        let errStr;
+        try { errStr = err.toString().substr(0, 100); } catch (e) {}
+
         log.error(
           'An error occurred when trying to send email to ' + email.to,
-          err
+          errStr || err
         );
         return cb(err);
       });
@@ -475,9 +477,12 @@ export class EmailService {
               ],
               (err) => {
                 if (err) {
+                  let errStr;
+                  try { errStr = err.toString().substr(0, 100); } catch (e) {}
+
                   log.error(
                     'An error ocurred generating email notification',
-                    err
+                    errStr || err
                   );
                 }
                 return cb(err);

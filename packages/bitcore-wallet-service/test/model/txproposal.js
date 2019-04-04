@@ -24,6 +24,28 @@ describe('TxProposal', function() {
       should.exist(txp);
       txp.amount.should.equal(aTXP().amount);
     });
+
+    it('should copy a TxProposal, with actions', function() {
+      let txpObj  = aTXP();
+
+
+      txpObj.version = 2;
+      txpObj.actions = [{
+        version: '1.0.0',
+        createdOn: 1,
+        copayerId: 1,
+        type: 'xx',
+        signatures: 'ss',
+        xpub: 'xx',
+      }];
+      
+      var txp = TxProposal.fromObj(txpObj);
+      should.exist(txp);
+      txp.amount.should.equal(aTXP().amount);
+    });
+
+
+
     it('should default to BTC coin', function() {
       var txp = TxProposal.fromObj(aTXP());
       should.exist(txp);

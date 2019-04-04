@@ -8,7 +8,7 @@ var sinon = require('sinon');
 var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
-log.level = 'info';
+log.level = 'error';
 
 var WalletService = require('../../ts_build/lib/server');
 var EmailService = require('../../ts_build/lib/emailservice');

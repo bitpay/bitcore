@@ -3,6 +3,7 @@ import * as _ from 'lodash';
 import * as log from 'npmlog';
 
 import { ClientError } from './errors/clienterror';
+
 export { ClientError };
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
@@ -21,6 +22,7 @@ const BCHAddressTranslator = require('./bchaddresstranslator');
 
 log.debug = log.verbose;
 log.disableColor();
+log.level = 'error';
 
 const EmailValidator = require('email-validator');
 
@@ -3858,8 +3860,10 @@ export class WalletService {
 
   static _addProposalInfo(
     tx: any,
-    indexedProposals: { [txid: string]: TxProposal }
+    indexedProposals: { [txid: string]: TxProposal },
+    opts: any,
   ) {
+    opts = opts || {}
     const proposal = indexedProposals[tx.txid];
     if (proposal) {
       tx.createdOn = proposal.createdOn;
@@ -3887,6 +3891,11 @@ export class WalletService {
         output.message = txpOut ? txpOut.message : null;
       });
       tx.customData = proposal.customData;
+
+      tx.createdOn = proposal.createdOn;
+      if (opts.includeExtendedInfo) {
+        tx.raw = proposal.raw;
+      }
       // .sentTs = proposal.sentTs;
       // .merchant = proposal.merchant;
       // .paymentAckMemo = proposal.paymentAckMemo;
@@ -4227,7 +4236,7 @@ export class WalletService {
           const indexedNotes = _.keyBy(res.notes, 'txid');
 
           const finalTxs = _.map(res.txs.items, tx => {
-            WalletService._addProposalInfo(tx, indexedProposals);
+            WalletService._addProposalInfo(tx, indexedProposals, opts);
             WalletService._addNotesInfo(tx, indexedNotes);
             return tx;
           });

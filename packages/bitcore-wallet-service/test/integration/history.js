@@ -571,6 +571,99 @@ describe('History V8', function() {
       });
     });
 
+
+    it('should include raw tx in includeExtendedInfo is passed', function(done) {
+      var external = '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7';
+
+      helpers.stubUtxos(server, wallet, [1, 2], function(utxos) {
+        var txOpts = {
+          outputs: [{
+            toAddress: external,
+            amount: 0.3e8,
+          }],
+          feePerKb: 100e2,
+          customData: {
+            "test": true
+          },
+        };
+
+        helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
+          should.exist(tx);
+
+          var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
+          server.signTx({
+            txProposalId: tx.id,
+            signatures: signatures,
+          }, function(err, tx) {
+            should.not.exist(err);
+
+            helpers.stubBroadcast();
+            server.broadcastTx({
+              txProposalId: tx.id
+            }, function(err, txp) {
+              should.not.exist(err);
+              var t = (new Date).toISOString();
+              var txs = [{
+                id: 1,
+                txid: txp.txid,
+                confirmations: 1,
+                blockTime: t,
+                size: 226,
+                category: 'send',
+                address: external,
+                satoshis: 0.5e8,
+                height: 1000,
+               },
+              {
+                id: 2,
+                txid: txp.txid,
+                confirmations: 1,
+                category: 'send',
+                blockTime: t,
+                satoshis: 0.3e8,
+                address: external,
+                height: 1000,
+              },
+              {
+                id: 3,
+                txid: txp.txid,
+                confirmations: 1,
+                blockTime: t,
+                satoshis: 5460,
+                category: 'fee',
+                height: 1000,
+               },
+              ];
+
+              helpers.stubHistoryV8(null, null,txs);
+              helpers.stubCheckData(blockchainExplorer, server, wallet.coin == 'bch', () =>{
+
+              server.getTxHistory({
+                includeExtendedInfo: true,
+              }, function(err, txs) {
+                should.not.exist(err);
+                should.exist(txs);
+                txs.length.should.equal(1);
+                var tx = txs[0];
+
+                tx.raw.should.contain('000000001976a91451224bca38efcaa31d5340917c3f3f713b8b20e488ac02142c04000000001976a914e63d641ba6465791167acea6c0bc67c397a7f37e88ac00000000');
+                tx.createdOn.should.equal(txp.createdOn);
+
+                tx.action.should.equal('sent');
+                tx.amount.should.equal(0.8e8);
+                tx.addressTo.should.equal(external);
+                tx.actions.length.should.equal(1);
+                tx.actions[0].type.should.equal('accept');
+                done();
+              });
+              });
+            });
+          });
+        });
+      });
+    });
+
+
     it('should get tx history with accepted proposal, multisend', function(done) {
       var external = '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7';
 
@@ -652,7 +745,7 @@ describe('History V8', function() {
                 tx.action.should.equal('sent');
                 tx.amount.should.equal(0.8e8);
 
-
+                should.not.exist(tx.raw);
                 tx.message.should.equal('some message');
                 tx.addressTo.should.equal(external);
                 tx.actions.length.should.equal(1);
