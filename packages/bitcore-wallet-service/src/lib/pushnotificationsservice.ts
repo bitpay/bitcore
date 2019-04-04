@@ -3,8 +3,7 @@ import * as fs from 'fs';
 import _ from 'lodash';
 import request from 'request';
 import { MessageBroker } from './messagebroker';
-import { INotification } from './model/notification';
-import { IPreferences } from './model/preferences';
+import { INotification, IPreferences } from './model';
 import { Storage } from './storage';
 
 const Mustache = require('mustache');

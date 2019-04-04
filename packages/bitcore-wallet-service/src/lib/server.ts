@@ -2,17 +2,13 @@ import * as async from 'async';
 import * as _ from 'lodash';
 import * as log from 'npmlog';
 
-import { ClientError } from './errors/clienterror';
-
-export { ClientError };
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
+import { ClientError } from './errors/clienterror';
 import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
-import { INotification } from './model/notification';
-import { ITxProposal, TxProposal } from './model/txproposal';
-import { IWallet, Wallet } from './model/wallet';
+import { Copayer, INotification, ITxProposal, IWallet, Notification, Preferences, PushNotificationSub, Session, TxConfirmationSub, TxNote, TxProposal, Wallet } from './model';
 import { Storage } from './storage';
 
 const $ = require('preconditions').singleton();
@@ -40,9 +36,6 @@ const Defaults = Common.Defaults;
 const Errors = require('./errors/errordefinitions');
 
 let request = require('request');
-
-const Model = require('./model');
-
 let initialized = false;
 
 let lock;
@@ -420,7 +413,7 @@ export class WalletService {
         },
         (next) => {
           if (!session || !session.isValid()) {
-            session = Model.Session.create({
+            session = Session.create({
               copayerId: this.copayerId,
               walletId: this.walletId
             });
@@ -817,7 +810,7 @@ export class WalletService {
 
     $.checkState(walletId);
 
-    const notification = Model.Notification.create({
+    const notification = Notification.create({
       type,
       data,
       ticker: this.notifyTicker++,
@@ -855,7 +848,7 @@ export class WalletService {
   }
 
   _addCopayerToWallet(wallet, opts, cb) {
-    const copayer = Model.Copayer.create({
+    const copayer = Copayer.create({
       coin: wallet.coin,
       name: opts.name,
       copayerIndex: wallet.copayers.length,
@@ -1188,11 +1181,11 @@ export class WalletService {
       ) => {
         if (err) return cb(err);
 
-        const newPref = Model.Preferences.create({
+        const newPref = Preferences.create({
           walletId: this.walletId,
           copayerId: this.copayerId
         });
-        const preferences = Model.Preferences.fromObj(
+        const preferences = Preferences.fromObj(
           _.defaults(newPref, opts, oldPref)
         );
         this.storage.storePreferences(preferences, (err) => {
@@ -1817,7 +1810,7 @@ export class WalletService {
 
           info.feePerKb = feePerKb;
 
-          const txp = Model.TxProposal.create({
+          const txp = TxProposal.create({
             walletId: this.walletId,
             coin: wallet.coin,
             network: wallet.network,
@@ -2737,7 +2730,7 @@ export class WalletService {
                     noShuffleOutputs: opts.noShuffleOutputs
                   };
 
-                  txp = Model.TxProposal.create(txOpts);
+                  txp = TxProposal.create(txOpts);
                   next();
                 },
                 (next) => {
@@ -2914,7 +2907,7 @@ export class WalletService {
         if (err) return cb(err);
 
         if (!note) {
-          note = Model.TxNote.create({
+          note = TxNote.create({
             walletId: this.walletId,
             txid: opts.txid,
             copayerId: this.copayerId,
@@ -3863,7 +3856,7 @@ export class WalletService {
     indexedProposals: { [txid: string]: TxProposal },
     opts: any,
   ) {
-    opts = opts || {}
+    opts = opts || {};
     const proposal = indexedProposals[tx.txid];
     if (proposal) {
       tx.createdOn = proposal.createdOn;
@@ -4495,7 +4488,7 @@ export class WalletService {
    */
   pushNotificationsSubscribe(opts, cb) {
     if (!checkRequired(opts, ['token'], cb)) return;
-    const sub = Model.PushNotificationSub.create({
+    const sub = PushNotificationSub.create({
       copayerId: this.copayerId,
       token: opts.token,
       packageName: opts.packageName,
@@ -4524,7 +4517,7 @@ export class WalletService {
   txConfirmationSubscribe(opts, cb) {
     if (!checkRequired(opts, ['txid'], cb)) return;
 
-    const sub = Model.TxConfirmationSub.create({
+    const sub = TxConfirmationSub.create({
       copayerId: this.copayerId,
       walletId: this.walletId,
       txid: opts.txid

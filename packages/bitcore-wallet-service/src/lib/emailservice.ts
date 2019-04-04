@@ -5,6 +5,7 @@ import * as _ from 'lodash';
 // import * as nodemailer from nodemailer';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
+import { Email } from './model';
 import { Storage } from './storage';
 
 export interface Recipient {
@@ -19,7 +20,6 @@ const fs = require('fs');
 const path = require('path');
 const Utils = require('./common/utils');
 const Defaults = require('./common/defaults');
-const Model = require('./model');
 
 let log = require('npmlog');
 log.debug = log.verbose;
@@ -74,7 +74,7 @@ export class EmailService {
   messageBroker: MessageBroker;
   lock: Lock;
   mailer: any;
-//  mailer: nodemailer.Transporter;
+  //  mailer: nodemailer.Transporter;
 
   start(opts, cb) {
     opts = opts || {};
@@ -336,7 +336,7 @@ export class EmailService {
       })
       .catch(err => {
         let errStr;
-        try { errStr = err.toString().substr(0, 100); } catch (e) {}
+        try { errStr = err.toString().substr(0, 100); } catch (e) { }
 
         log.error(
           'An error occurred when trying to send email to ' + email.to,
@@ -439,7 +439,7 @@ export class EmailService {
                     recipientsList,
                     (recipient, next) => {
                       const content = contents[recipient.language];
-                      const email = Model.Email.create({
+                      const email = Email.create({
                         walletId: notification.walletId,
                         copayerId: recipient.copayerId,
                         from: this.from,
@@ -478,7 +478,7 @@ export class EmailService {
               (err) => {
                 if (err) {
                   let errStr;
-                  try { errStr = err.toString().substr(0, 100); } catch (e) {}
+                  try { errStr = err.toString().substr(0, 100); } catch (e) { }
 
                   log.error(
                     'An error ocurred generating email notification',
