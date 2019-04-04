@@ -299,12 +299,7 @@ Credentials.prototype._expand = function() {
     var derivedXPrivKey = deriveFn(this.getBaseAddressDerivationPath());
 
     // this is the xPubKey shared with the server.
-    global.console.log(
-      'Deriving xPubKey with',
-      this.getBaseAddressDerivationPath()
-    );
     this.xPubKey = derivedXPrivKey.hdPublicKey.toString();
-    global.console.log(this.xPubKey);
   }
 
   // requests keys from mnemonics, but using a xPubkey
@@ -391,7 +386,6 @@ Credentials.prototype.getBaseAddressDerivationPath = function() {
       break;
   }
   const path = CWC.deriver.pathFor(this.coin, this.network, this.account);
-  global.console.log(path);
   return path;
   // return 'm/' + purpose + "'/" + coin + "'/" + this.account + "'";
 };

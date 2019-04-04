@@ -8,7 +8,7 @@ var events = require('events');
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
+  bch: require('bitcore-lib-cash')
 };
 var Mnemonic = require('bitcore-mnemonic');
 var sjcl = require('sjcl');
@@ -43,9 +43,9 @@ function API(opts) {
   this.logLevel = opts.logLevel || 'silent';
   this.supportStaffWalletId = opts.supportStaffWalletId;
 
-  this.request = new Request(opts.baseUrl || BASE_URL, {r: opts.request});
+  this.request = new Request(opts.baseUrl || BASE_URL, { r: opts.request });
   log.setLevel(this.logLevel);
-};
+}
 util.inherits(API, events.EventEmitter);
 
 API.privateKeyEncryptionOpts = {
@@ -80,7 +80,7 @@ API.prototype._fetchLatestNotifications = function(interval, cb) {
 
   var opts = {
     lastNotificationId: self.lastNotificationId,
-    includeOwn: self.notificationIncludeOwn,
+    includeOwn: self.notificationIncludeOwn
   };
 
   if (!self.lastNotificationId) {
@@ -113,7 +113,10 @@ API.prototype._initNotifications = function(opts) {
   self.notificationsIntervalId = setInterval(function() {
     self._fetchLatestNotifications(interval, function(err) {
       if (err) {
-        if (err instanceof Errors.NOT_FOUND || err instanceof Errors.NOT_AUTHORIZED) {
+        if (
+          err instanceof Errors.NOT_FOUND ||
+          err instanceof Errors.NOT_AUTHORIZED
+        ) {
           self._disposeNotifications();
         }
       }
@@ -130,7 +133,6 @@ API.prototype._disposeNotifications = function() {
   }
 };
 
-
 /**
  * Reset notification polling with new interval
  * @param {Numeric} notificationIntervalSeconds - use 0 to pause notifications
@@ -144,7 +146,6 @@ API.prototype.setNotificationsInterval = function(notificationIntervalSeconds) {
     });
   }
 };
-
 
 /**
  * Encrypt a message
@@ -169,7 +170,10 @@ API.prototype._processTxNotes = function(notes) {
     note.encryptedBody = note.body;
     note.body = Utils.decryptMessageNoThrow(note.body, encryptingKey);
     note.encryptedEditedByName = note.editedByName;
-    note.editedByName = Utils.decryptMessageNoThrow(note.editedByName, encryptingKey);
+    note.editedByName = Utils.decryptMessageNoThrow(
+      note.editedByName,
+      encryptingKey
+    );
   });
 };
 
@@ -188,21 +192,31 @@ API.prototype._processTxps = function(txps) {
   var encryptingKey = self.credentials.sharedEncryptingKey;
   _.each([].concat(txps), function(txp) {
     txp.encryptedMessage = txp.message;
-    txp.message = Utils.decryptMessageNoThrow(txp.message, encryptingKey) || null;
-    txp.creatorName = Utils.decryptMessageNoThrow(txp.creatorName, encryptingKey);
+    txp.message =
+      Utils.decryptMessageNoThrow(txp.message, encryptingKey) || null;
+    txp.creatorName = Utils.decryptMessageNoThrow(
+      txp.creatorName,
+      encryptingKey
+    );
 
     _.each(txp.actions, function(action) {
-
       // CopayerName encryption is optional (not available in older wallets)
-      action.copayerName = Utils.decryptMessageNoThrow(action.copayerName, encryptingKey);
+      action.copayerName = Utils.decryptMessageNoThrow(
+        action.copayerName,
+        encryptingKey
+      );
 
-      action.comment = Utils.decryptMessageNoThrow(action.comment, encryptingKey);
+      action.comment = Utils.decryptMessageNoThrow(
+        action.comment,
+        encryptingKey
+      );
       // TODO get copayerName from Credentials -> copayerId to copayerName
       // action.copayerName = null;
     });
     _.each(txp.outputs, function(output) {
       output.encryptedMessage = output.message;
-      output.message = Utils.decryptMessageNoThrow(output.message, encryptingKey) || null;
+      output.message =
+        Utils.decryptMessageNoThrow(output.message, encryptingKey) || null;
     });
     txp.hasUnconfirmedInputs = _.some(txp.inputs, function(input) {
       return input.confirmations == 0;
@@ -219,15 +233,23 @@ API.prototype._processTxps = function(txps) {
  * @param {String} opts.network - default 'livenet'
  */
 API.prototype.seedFromRandom = function(opts) {
-  $.checkArgument(arguments.length <= 1, 'DEPRECATED: only 1 argument accepted.');
-  $.checkArgument(_.isUndefined(opts) || _.isObject(opts), 'DEPRECATED: argument should be an options object.');
+  $.checkArgument(
+    arguments.length <= 1,
+    'DEPRECATED: only 1 argument accepted.'
+  );
+  $.checkArgument(
+    _.isUndefined(opts) || _.isObject(opts),
+    'DEPRECATED: argument should be an options object.'
+  );
 
   opts = opts || {};
-  this.credentials = Credentials.create(opts.coin || 'btc', opts.network || 'livenet');
+  this.credentials = Credentials.create(
+    opts.coin || 'btc',
+    opts.network || 'livenet'
+  );
 
   this.request.setCredentials(this.credentials);
 };
-
 
 var _deviceValidated;
 
@@ -247,25 +269,37 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
 
   function testMessageSigning(xpriv, xpub) {
     var nonHardenedPath = 'm/0/0';
-    var message = 'Lorem ipsum dolor sit amet, ne amet urbanitas percipitur vim, libris disputando his ne, et facer suavitate qui. Ei quidam laoreet sea. Cu pro dico aliquip gubergren, in mundi postea usu. Ad labitur posidonium interesset duo, est et doctus molestie adipiscing.';
+    var message =
+      'Lorem ipsum dolor sit amet, ne amet urbanitas percipitur vim, libris disputando his ne, et facer suavitate qui. Ei quidam laoreet sea. Cu pro dico aliquip gubergren, in mundi postea usu. Ad labitur posidonium interesset duo, est et doctus molestie adipiscing.';
     var priv = xpriv.deriveChild(nonHardenedPath).privateKey;
     var signature = Utils.signMessage(message, priv);
     var pub = xpub.deriveChild(nonHardenedPath).publicKey;
     return Utils.verifyMessage(message, signature, pub);
-  };
+  }
 
   function testHardcodedKeys() {
-    var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+    var words =
+      'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
     var xpriv = Mnemonic(words).toHDPrivateKey();
 
-    if (xpriv.toString() != 'xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu') return false;
+    if (
+      xpriv.toString() !=
+      'xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu'
+    )
+      return false;
 
     xpriv = xpriv.deriveChild("m/44'/0'/0'");
-    if (xpriv.toString() != 'xprv9xpXFhFpqdQK3TmytPBqXtGSwS3DLjojFhTGht8gwAAii8py5X6pxeBnQ6ehJiyJ6nDjWGJfZ95WxByFXVkDxHXrqu53WCRGypk2ttuqncb') return false;
+    if (
+      xpriv.toString() !=
+      'xprv9xpXFhFpqdQK3TmytPBqXtGSwS3DLjojFhTGht8gwAAii8py5X6pxeBnQ6ehJiyJ6nDjWGJfZ95WxByFXVkDxHXrqu53WCRGypk2ttuqncb'
+    )
+      return false;
 
-    var xpub = Bitcore.HDPublicKey.fromString('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj');
+    var xpub = Bitcore.HDPublicKey.fromString(
+      'xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj'
+    );
     return testMessageSigning(xpriv, xpub);
-  };
+  }
 
   function testLiveKeys() {
     var words;
@@ -285,7 +319,7 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
     var xpub = new Bitcore.HDPublicKey(c.xPubKey);
 
     return testMessageSigning(xpriv, xpub);
-  };
+  }
 
   var hardcodedOk = true;
   if (!_deviceValidated && !opts.skipDeviceValidation) {
@@ -293,7 +327,7 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
     _deviceValidated = true;
   }
 
-  var liveOk = (c.canSign() && !c.isPrivKeyEncrypted()) ? testLiveKeys() : true;
+  var liveOk = c.canSign() && !c.isPrivKeyEncrypted() ? testLiveKeys() : true;
 
   self.keyDerivationOk = hardcodedOk && liveOk;
 
@@ -311,11 +345,23 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
  * @param {Number} opts.account - default 0
  */
 API.prototype.seedFromRandomWithMnemonic = function(opts) {
-  $.checkArgument(arguments.length <= 1, 'DEPRECATED: only 1 argument accepted.');
-  $.checkArgument(_.isUndefined(opts) || _.isObject(opts), 'DEPRECATED: argument should be an options object.');
+  $.checkArgument(
+    arguments.length <= 1,
+    'DEPRECATED: only 1 argument accepted.'
+  );
+  $.checkArgument(
+    _.isUndefined(opts) || _.isObject(opts),
+    'DEPRECATED: argument should be an options object.'
+  );
 
   opts = opts || {};
-  this.credentials = Credentials.createWithMnemonic(opts.coin || 'btc', opts.network || 'livenet', opts.passphrase, opts.language || 'en', opts.account || 0);
+  this.credentials = Credentials.createWithMnemonic(
+    opts.coin || 'btc',
+    opts.network || 'livenet',
+    opts.passphrase,
+    opts.language || 'en',
+    opts.account || 0
+  );
   this.request.setCredentials(this.credentials);
 };
 
@@ -327,12 +373,9 @@ API.prototype.mnemonicHasPassphrase = function() {
   return this.credentials.mnemonicHasPassphrase;
 };
 
-
-
 API.prototype.clearMnemonic = function() {
   return this.credentials.clearMnemonic();
 };
-
 
 /**
  * Seed from extended private key
@@ -344,10 +387,15 @@ API.prototype.clearMnemonic = function() {
  */
 API.prototype.seedFromExtendedPrivateKey = function(xPrivKey, opts) {
   opts = opts || {};
-  this.credentials = Credentials.fromExtendedPrivateKey(opts.coin || 'btc', xPrivKey, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
+  this.credentials = Credentials.fromExtendedPrivateKey(
+    opts.coin || 'btc',
+    xPrivKey,
+    opts.account || 0,
+    opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44,
+    opts
+  );
   this.request.setCredentials(this.credentials);
 };
-
 
 /**
  * Seed from Mnemonics (language autodetected)
@@ -362,10 +410,21 @@ API.prototype.seedFromExtendedPrivateKey = function(xPrivKey, opts) {
  * @param {String} opts.derivationStrategy - default 'BIP44'
  */
 API.prototype.seedFromMnemonic = function(words, opts) {
-  $.checkArgument(_.isUndefined(opts) || _.isObject(opts), 'DEPRECATED: second argument should be an options object.');
+  $.checkArgument(
+    _.isUndefined(opts) || _.isObject(opts),
+    'DEPRECATED: second argument should be an options object.'
+  );
 
   opts = opts || {};
-  this.credentials = Credentials.fromMnemonic(opts.coin || 'btc', opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
+  this.credentials = Credentials.fromMnemonic(
+    opts.coin || 'btc',
+    opts.network || 'livenet',
+    words,
+    opts.passphrase,
+    opts.account || 0,
+    opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44,
+    opts
+  );
   this.request.setCredentials(this.credentials);
 };
 
@@ -380,14 +439,25 @@ API.prototype.seedFromMnemonic = function(words, opts) {
  * @param {Number} opts.account - default 0
  * @param {String} opts.derivationStrategy - default 'BIP44'
  */
-API.prototype.seedFromExtendedPublicKey = function(xPubKey, source, entropySourceHex, opts) {
+API.prototype.seedFromExtendedPublicKey = function(
+  xPubKey,
+  source,
+  entropySourceHex,
+  opts
+) {
   $.checkArgument(_.isUndefined(opts) || _.isObject(opts));
 
   opts = opts || {};
-  this.credentials = Credentials.fromExtendedPublicKey(opts.coin || 'btc', xPubKey, source, entropySourceHex, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44);
+  this.credentials = Credentials.fromExtendedPublicKey(
+    opts.coin || 'btc',
+    xPubKey,
+    source,
+    entropySourceHex,
+    opts.account || 0,
+    opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44
+  );
   this.request.setCredentials(this.credentials);
 };
-
 
 /**
  * Export wallet
@@ -416,7 +486,6 @@ API.prototype.export = function(opts) {
   return output;
 };
 
-
 /**
  * Import wallet
  *
@@ -427,7 +496,7 @@ API.prototype.import = function(str) {
     var credentials = Credentials.fromObj(JSON.parse(str));
     this.credentials = credentials;
   } catch (ex) {
-    throw new Errors.INVALID_BACKUP;
+    throw new Errors.INVALID_BACKUP();
   }
   this.request.setCredentials(this.credentials);
 };
@@ -439,7 +508,6 @@ API.prototype._import = function(cb) {
 
   // First option, grab wallet info from BWS.
   self.openWallet(function(err, ret) {
-
     // it worked?
     if (!err) return cb(null, ret);
 
@@ -451,7 +519,7 @@ API.prototype._import = function(cb) {
     log.info('Copayer not found, trying to add access');
     self.addAccess({}, function(err) {
       if (err) {
-        return cb(new Errors.WALLET_DOES_NOT_EXIST);
+        return cb(new Errors.WALLET_DOES_NOT_EXIST());
       }
 
       self.openWallet(cb);
@@ -481,27 +549,41 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
   opts = opts || {};
 
   function derive(nonCompliantDerivation) {
-    return Credentials.fromMnemonic(opts.coin || 'btc', opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, {
-      nonCompliantDerivation: nonCompliantDerivation,
-      entropySourcePath: opts.entropySourcePath,
-      walletPrivKey: opts.walletPrivKey,
-    });
-  };
+    return Credentials.fromMnemonic(
+      opts.coin || 'btc',
+      opts.network || 'livenet',
+      words,
+      opts.passphrase,
+      opts.account || 0,
+      opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44,
+      {
+        nonCompliantDerivation: nonCompliantDerivation,
+        entropySourcePath: opts.entropySourcePath,
+        walletPrivKey: opts.walletPrivKey
+      }
+    );
+  }
 
   try {
     self.credentials = derive(false);
   } catch (e) {
     log.info('Mnemonic error:', e);
-    return cb(new Errors.INVALID_BACKUP);
+    return cb(new Errors.INVALID_BACKUP());
   }
   this.request.setCredentials(this.credentials);
 
   self._import(function(err, ret) {
     if (!err) return cb(null, ret);
     if (err instanceof Errors.INVALID_BACKUP) return cb(err);
-    if (err instanceof Errors.NOT_AUTHORIZED || err instanceof Errors.WALLET_DOES_NOT_EXIST) {
+    if (
+      err instanceof Errors.NOT_AUTHORIZED ||
+      err instanceof Errors.WALLET_DOES_NOT_EXIST
+    ) {
       var altCredentials = derive(true);
-      if (altCredentials.xPubKey.toString() == self.credentials.xPubKey.toString()) return cb(err);
+      if (
+        altCredentials.xPubKey.toString() == self.credentials.xPubKey.toString()
+      )
+        return cb(err);
       self.credentials = altCredentials;
       self.request.setCredentials(self.credentials);
       return self._import(cb);
@@ -527,15 +609,23 @@ API.prototype.importFromExtendedPrivateKey = function(xPrivKey, opts, cb) {
   if (!cb) {
     cb = opts;
     opts = {};
-    log.warn('DEPRECATED WARN: importFromExtendedPrivateKey should receive 3 parameters.');
+    log.warn(
+      'DEPRECATED WARN: importFromExtendedPrivateKey should receive 3 parameters.'
+    );
   }
 
   try {
-    this.credentials = Credentials.fromExtendedPrivateKey(opts.coin || 'btc', xPrivKey, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
+    this.credentials = Credentials.fromExtendedPrivateKey(
+      opts.coin || 'btc',
+      xPrivKey,
+      opts.account || 0,
+      opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44,
+      opts
+    );
   } catch (e) {
     log.info('xPriv error:', e);
-    return cb(new Errors.INVALID_BACKUP);
-  };
+    return cb(new Errors.INVALID_BACKUP());
+  }
 
   this.request.setCredentials(this.credentials);
   this._import(cb);
@@ -553,25 +643,47 @@ API.prototype.importFromExtendedPrivateKey = function(xPrivKey, opts, cb) {
  * @param {String} opts.derivationStrategy - default 'BIP44'
  * @param {String} opts.compliantDerivation - default 'true'
  */
-API.prototype.importFromExtendedPublicKey = function(xPubKey, source, entropySourceHex, opts, cb) {
-  $.checkArgument(arguments.length == 5, "DEPRECATED: should receive 5 arguments");
+API.prototype.importFromExtendedPublicKey = function(
+  xPubKey,
+  source,
+  entropySourceHex,
+  opts,
+  cb
+) {
+  $.checkArgument(
+    arguments.length == 5,
+    'DEPRECATED: should receive 5 arguments'
+  );
   $.checkArgument(_.isUndefined(opts) || _.isObject(opts));
   $.shouldBeFunction(cb);
 
   opts = opts || {};
   log.debug('Importing from Extended Private Key');
   try {
-    this.credentials = Credentials.fromExtendedPublicKey(opts.coin || 'btc', xPubKey, source, entropySourceHex, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
+    this.credentials = Credentials.fromExtendedPublicKey(
+      opts.coin || 'btc',
+      xPubKey,
+      source,
+      entropySourceHex,
+      opts.account || 0,
+      opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44,
+      opts
+    );
   } catch (e) {
     log.info('xPriv error:', e);
-    return cb(new Errors.INVALID_BACKUP);
-  };
+    return cb(new Errors.INVALID_BACKUP());
+  }
 
   this.request.setCredentials(this.credentials);
   this._import(cb);
 };
 
-API.prototype.decryptBIP38PrivateKey = function(encryptedPrivateKeyBase58, passphrase, opts, cb) {
+API.prototype.decryptBIP38PrivateKey = function(
+  encryptedPrivateKeyBase58,
+  passphrase,
+  opts,
+  cb
+) {
   var Bip38 = require('bip38');
   var bip38 = new Bip38();
 
@@ -585,8 +697,14 @@ API.prototype.decryptBIP38PrivateKey = function(encryptedPrivateKeyBase58, passp
   var privateKey = new Bitcore.PrivateKey(privateKeyWif);
   var address = privateKey.publicKey.toAddress().toString();
   var addrBuff = new Buffer(address, 'ascii');
-  var actualChecksum = Bitcore.crypto.Hash.sha256sha256(addrBuff).toString('hex').substring(0, 8);
-  var expectedChecksum = Bitcore.encoding.Base58Check.decode(encryptedPrivateKeyBase58).toString('hex').substring(6, 14);
+  var actualChecksum = Bitcore.crypto.Hash.sha256sha256(addrBuff)
+    .toString('hex')
+    .substring(0, 8);
+  var expectedChecksum = Bitcore.encoding.Base58Check.decode(
+    encryptedPrivateKeyBase58
+  )
+    .toString('hex')
+    .substring(6, 14);
 
   if (actualChecksum != expectedChecksum)
     return cb(new Error('Incorrect passphrase'));
@@ -602,18 +720,26 @@ API.prototype.getBalanceFromPrivateKey = function(privateKey, coin, cb) {
     coin = 'btc';
   }
   var B = Bitcore_[coin];
- 
+
   var privateKey = new B.PrivateKey(privateKey);
   var address = privateKey.publicKey.toAddress();
-  self.getUtxos({
-    addresses: coin == 'bch' ? address.toLegacyAddress() : address.toString(),
-  }, function(err, utxos) {
-    if (err) return cb(err);
-    return cb(null, _.sumBy(utxos, 'satoshis'));
-  });
+  self.getUtxos(
+    {
+      addresses: coin == 'bch' ? address.toLegacyAddress() : address.toString()
+    },
+    function(err, utxos) {
+      if (err) return cb(err);
+      return cb(null, _.sumBy(utxos, 'satoshis'));
+    }
+  );
 };
 
-API.prototype.buildTxFromPrivateKey = function(privateKey, destinationAddress, opts, cb) {
+API.prototype.buildTxFromPrivateKey = function(
+  privateKey,
+  destinationAddress,
+  opts,
+  cb
+) {
   var self = this;
 
   opts = opts || {};
@@ -623,42 +749,48 @@ API.prototype.buildTxFromPrivateKey = function(privateKey, destinationAddress, o
   var privateKey = B.PrivateKey(privateKey);
   var address = privateKey.publicKey.toAddress();
 
-  async.waterfall([
+  async.waterfall(
+    [
+      function(next) {
+        self.getUtxos(
+          {
+            addresses:
+              coin == 'bch' ? address.toLegacyAddress() : address.toString()
+          },
+          function(err, utxos) {
+            return next(err, utxos);
+          }
+        );
+      },
+      function(utxos, next) {
+        if (!_.isArray(utxos) || utxos.length == 0)
+          return next(new Error('No utxos found'));
 
-    function(next) {
-      self.getUtxos({
-        addresses: coin == 'bch' ?  address.toLegacyAddress() : address.toString(),
-      }, function(err, utxos) {
-        return next(err, utxos);
-      });
-    },
-    function(utxos, next) {
-      if (!_.isArray(utxos) || utxos.length == 0) return next(new Error('No utxos found'));
+        var fee = opts.fee || 10000;
+        var amount = _.sumBy(utxos, 'satoshis') - fee;
+        if (amount <= 0) return next(new Errors.INSUFFICIENT_FUNDS());
 
-      var fee = opts.fee || 10000;
-      var amount = _.sumBy(utxos, 'satoshis') - fee;
-      if (amount <= 0) return next(new Errors.INSUFFICIENT_FUNDS);
+        var tx;
+        try {
+          var toAddress = B.Address.fromString(destinationAddress);
 
-      var tx;
-      try {
-        var toAddress = B.Address.fromString(destinationAddress);
+          tx = new B.Transaction()
+            .from(utxos)
+            .to(toAddress, amount)
+            .fee(fee)
+            .sign(privateKey);
 
-        tx = new B.Transaction()
-          .from(utxos)
-          .to(toAddress, amount)
-          .fee(fee)
-          .sign(privateKey);
-
-        // Make sure the tx can be serialized
-        tx.serialize();
-
-      } catch (ex) {
-        log.error('Could not build transaction from private key', ex);
-        return next(new Errors.COULD_NOT_BUILD_TRANSACTION);
+          // Make sure the tx can be serialized
+          tx.serialize();
+        } catch (ex) {
+          log.error('Could not build transaction from private key', ex);
+          return next(new Errors.COULD_NOT_BUILD_TRANSACTION());
+        }
+        return next(null, tx);
       }
-      return next(null, tx);
-    }
-  ], cb);
+    ],
+    cb
+  );
 };
 
 /**
@@ -683,22 +815,29 @@ API.prototype.openWallet = function(cb) {
       var me = _.find(wallet.copayers, {
         id: self.credentials.copayerId
       });
-      self.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, me.name);
+      self.credentials.addWalletInfo(
+        wallet.id,
+        wallet.name,
+        wallet.m,
+        wallet.n,
+        me.name
+      );
     }
 
-    if (wallet.status != 'complete')
-      return cb();
+    if (wallet.status != 'complete') return cb();
 
     if (self.credentials.walletPrivKey) {
       if (!Verifier.checkCopayers(self.credentials, wallet.copayers)) {
-        return cb(new Errors.SERVER_COMPROMISED);
+        return cb(new Errors.SERVER_COMPROMISED());
       }
     } else {
       // this should only happen in AIR-GAPPED flows
       log.warn('Could not verify copayers key (missing wallet Private Key)');
     }
 
-    self.credentials.addPublicKeyRing(API._extractPublicKeyRing(wallet.copayers));
+    self.credentials.addPublicKeyRing(
+      API._extractPublicKeyRing(wallet.copayers)
+    );
 
     self.emit('walletCompleted', wallet);
 
@@ -706,14 +845,18 @@ API.prototype.openWallet = function(cb) {
   });
 };
 
-
 API._buildSecret = function(walletId, walletPrivKey, coin, network) {
   if (_.isString(walletPrivKey)) {
     walletPrivKey = Bitcore.PrivateKey.fromString(walletPrivKey);
   }
   var widHex = new Buffer(walletId.replace(/-/g, ''), 'hex');
   var widBase58 = new Bitcore.encoding.Base58(widHex).toString();
-  return _.padEnd(widBase58, 22, '0') + walletPrivKey.toWIF() + (network == 'testnet' ? 'T' : 'L') + coin;
+  return (
+    _.padEnd(widBase58, 22, '0') +
+    walletPrivKey.toWIF() +
+    (network == 'testnet' ? 'T' : 'L') +
+    coin
+  );
 };
 
 API.parseSecret = function(secret) {
@@ -726,9 +869,9 @@ API.parseSecret = function(secret) {
     while (i < indexes.length) {
       parts.push(str.substring(i == 0 ? 0 : indexes[i - 1], indexes[i]));
       i++;
-    };
+    }
     return parts;
-  };
+  }
 
   try {
     var secretSplit = split(secret, [22, 74, 75]);
@@ -744,7 +887,7 @@ API.parseSecret = function(secret) {
       walletId: walletId,
       walletPrivKey: walletPrivKey,
       coin: coin,
-      network: networkChar == 'T' ? 'testnet' : 'livenet',
+      network: networkChar == 'T' ? 'testnet' : 'livenet'
     };
   } catch (ex) {
     throw new Error('Invalid secret');
@@ -764,7 +907,10 @@ API.signTxp = function(txp, derivedXPrivKey) {
   var xpriv = new Bitcore.HDPrivateKey(derivedXPrivKey);
 
   _.each(txp.inputs, function(i) {
-    $.checkState(i.path, "Input derivation path not available (signing transaction)")
+    $.checkState(
+      i.path,
+      'Input derivation path not available (signing transaction)'
+    );
     if (!derived[i.path]) {
       derived[i.path] = xpriv.deriveChild(i.path).privateKey;
       privs.push(derived[i.path]);
@@ -773,11 +919,13 @@ API.signTxp = function(txp, derivedXPrivKey) {
 
   var t = Utils.buildTx(txp);
 
-  var signatures = _.map(privs, function(priv, i) { 
+  var signatures = _.map(privs, function(priv, i) {
     return t.getSignatures(priv);
   });
 
-  signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
+  signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(
+    s
+  ) {
     return s.signature.toDER().toString('hex');
   });
 
@@ -797,7 +945,7 @@ API.prototype._getCurrentSignatures = function(txp) {
   return _.map(acceptedActions, function(x) {
     return {
       signatures: x.signatures,
-      xpub: x.xpub,
+      xpub: x.xpub
     };
   });
 };
@@ -810,7 +958,6 @@ API.prototype._addSignaturesToBitcoreTx = function(txp, t, signatures, xpub) {
 
   var bitcore = Bitcore_[txp.coin];
 
-
   var i = 0,
     x = new bitcore.HDPublicKey(xpub);
 
@@ -822,19 +969,18 @@ API.prototype._addSignaturesToBitcoreTx = function(txp, t, signatures, xpub) {
       var s = {
         inputIndex: i,
         signature: signature,
-        sigtype: bitcore.crypto.Signature.SIGHASH_ALL | bitcore.crypto.Signature.SIGHASH_FORKID,
-        publicKey: pub,
-      }
-      ;
+        sigtype:
+          bitcore.crypto.Signature.SIGHASH_ALL |
+          bitcore.crypto.Signature.SIGHASH_FORKID,
+        publicKey: pub
+      };
       t.inputs[i].addSignature(t, s);
       i++;
-    } catch (e) {} ;
+    } catch (e) {}
   });
 
-  if (i != txp.inputs.length)
-    throw new Error('Wrong signatures');
+  if (i != txp.inputs.length) throw new Error('Wrong signatures');
 };
-
 
 API.prototype._applyAllSignatures = function(txp, t) {
   var self = this;
@@ -861,7 +1007,15 @@ API.prototype._applyAllSignatures = function(txp, t) {
  * @param {String} opts.coin
  * @param {Callback} cb
  */
-API.prototype._doJoinWallet = function(walletId, walletPrivKey, xPubKey, requestPubKey, copayerName, opts, cb) {
+API.prototype._doJoinWallet = function(
+  walletId,
+  walletPrivKey,
+  xPubKey,
+  requestPubKey,
+  copayerName,
+  opts,
+  cb
+) {
   $.shouldBeFunction(cb);
   var self = this;
 
@@ -870,8 +1024,14 @@ API.prototype._doJoinWallet = function(walletId, walletPrivKey, xPubKey, request
   // Adds encrypted walletPrivateKey to CustomData
   opts.customData = opts.customData || {};
   opts.customData.walletPrivKey = walletPrivKey.toString();
-  var encCustomData = Utils.encryptMessage(JSON.stringify(opts.customData), this.credentials.personalEncryptingKey);
-  var encCopayerName = Utils.encryptMessage(copayerName, this.credentials.sharedEncryptingKey);
+  var encCustomData = Utils.encryptMessage(
+    JSON.stringify(opts.customData),
+    this.credentials.personalEncryptingKey
+  );
+  var encCopayerName = Utils.encryptMessage(
+    copayerName,
+    this.credentials.sharedEncryptingKey
+  );
 
   var args = {
     walletId: walletId,
@@ -879,7 +1039,7 @@ API.prototype._doJoinWallet = function(walletId, walletPrivKey, xPubKey, request
     name: encCopayerName,
     xPubKey: xPubKey,
     requestPubKey: requestPubKey,
-    customData: encCustomData,
+    customData: encCustomData
   };
   if (opts.dryRun) args.dryRun = true;
 
@@ -940,7 +1100,6 @@ API.prototype.getKeys = function(password) {
   return this.credentials.getKeys(password);
 };
 
-
 /**
  * Checks is password is valid
  * Returns null (keys not encrypted), true or false.
@@ -955,9 +1114,8 @@ API.prototype.checkPassword = function(password) {
     return !!keys.xPrivKey;
   } catch (e) {
     return false;
-  };
+  }
 };
-
 
 /**
  * Can this credentials sign a transaction?
@@ -968,7 +1126,6 @@ API.prototype.checkPassword = function(password) {
 API.prototype.canSign = function() {
   return this.credentials && this.credentials.canSign();
 };
-
 
 API._extractPublicKeyRing = function(copayers) {
   return _.map(copayers, function(copayer) {
@@ -986,7 +1143,10 @@ API._extractPublicKeyRing = function(copayers) {
  * @return {undefined}
  */
 API.prototype.encryptPrivateKey = function(password, opts) {
-  this.credentials.encryptPrivateKey(password, opts || API.privateKeyEncryptionOpts);
+  this.credentials.encryptPrivateKey(
+    password,
+    opts || API.privateKeyEncryptionOpts
+  );
 };
 
 /**
@@ -1012,10 +1172,16 @@ API.prototype.getFeeLevels = function(coin, network, cb) {
   $.checkArgument(coin || _.includes(['btc', 'bch'], coin));
   $.checkArgument(network || _.includes(['livenet', 'testnet'], network));
 
-  self.request.get('/v2/feelevels/?coin=' + (coin || 'btc') + '&network=' + (network || 'livenet'), function(err, result) {
-    if (err) return cb(err);
-    return cb(err, result);
-  });
+  self.request.get(
+    '/v2/feelevels/?coin=' +
+      (coin || 'btc') +
+      '&network=' +
+      (network || 'livenet'),
+    function(err, result) {
+      if (err) return cb(err);
+      return cb(err, result);
+    }
+  );
 };
 
 /**
@@ -1028,7 +1194,7 @@ API.prototype.getVersion = function(cb) {
 };
 
 API.prototype._checkKeyDerivation = function() {
-  var isInvalid = (this.keyDerivationOk === false);
+  var isInvalid = this.keyDerivationOk === false;
   if (isInvalid) {
     log.error('Key derivation for this device is not working as expected');
   }
@@ -1054,16 +1220,19 @@ API.prototype._checkKeyDerivation = function() {
 API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
   var self = this;
 
-  if (!self._checkKeyDerivation()) return cb(new Error('Cannot create new wallet'));
+  if (!self._checkKeyDerivation())
+    return cb(new Error('Cannot create new wallet'));
 
   if (opts) $.shouldBeObject(opts);
   opts = opts || {};
 
   var coin = opts.coin || 'btc';
-  if (!_.includes(['btc', 'bch', 'eth'], coin)) return cb(new Error('Invalid coin'));
+  if (!_.includes(['btc', 'bch', 'eth'], coin))
+    return cb(new Error('Invalid coin'));
 
   var network = opts.network || 'livenet';
-  if (!_.includes(['testnet', 'livenet'], network)) return cb(new Error('Invalid network'));
+  if (!_.includes(['testnet', 'livenet'], network))
+    return cb(new Error('Invalid network'));
 
   if (!self.credentials) {
     log.info('Generating new keys');
@@ -1093,26 +1262,38 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
     name: encWalletName,
     m: m,
     n: n,
-    pubKey: (new Bitcore.PrivateKey(walletPrivKey)).toPublicKey().toString(),
+    pubKey: new Bitcore.PrivateKey(walletPrivKey).toPublicKey().toString(),
     coin: coin,
     network: network,
     singleAddress: !!opts.singleAddress,
-    id: opts.id,
+    id: opts.id
   };
   self.request.post('/v2/wallets/', args, function(err, res) {
     if (err) return cb(err);
 
     var walletId = res.walletId;
     c.addWalletInfo(walletId, walletName, m, n, copayerName);
-    var secret = API._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
+    var secret = API._buildSecret(
+      c.walletId,
+      c.walletPrivKey,
+      c.coin,
+      c.network
+    );
 
-    self._doJoinWallet(walletId, walletPrivKey, c.xPubKey, c.requestPubKey, copayerName, {
+    self._doJoinWallet(
+      walletId,
+      walletPrivKey,
+      c.xPubKey,
+      c.requestPubKey,
+      copayerName,
+      {
         coin: coin
       },
       function(err, wallet) {
         if (err) return cb(err);
         return cb(null, n > 1 ? secret : null);
-      });
+      }
+    );
   });
 };
 
@@ -1141,7 +1322,8 @@ API.prototype.joinWallet = function(secret, copayerName, opts, cb) {
   opts = opts || {};
 
   var coin = opts.coin || 'btc';
-  if (!_.includes(['btc', 'bch', 'eth'], coin)) return cb(new Error('Invalid coin'));
+  if (!_.includes(['btc', 'bch', 'eth'], coin))
+    return cb(new Error('Invalid coin'));
 
   try {
     var secretData = API.parseSecret(secret);
@@ -1157,16 +1339,30 @@ API.prototype.joinWallet = function(secret, copayerName, opts, cb) {
   }
 
   self.credentials.addWalletPrivateKey(secretData.walletPrivKey.toString());
-  self._doJoinWallet(secretData.walletId, secretData.walletPrivKey, self.credentials.xPubKey, self.credentials.requestPubKey, copayerName, {
-    coin: coin,
-    dryRun: !!opts.dryRun,
-  }, function(err, wallet) {
-    if (err) return cb(err);
-    if (!opts.dryRun) {
-      self.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, copayerName);
+  self._doJoinWallet(
+    secretData.walletId,
+    secretData.walletPrivKey,
+    self.credentials.xPubKey,
+    self.credentials.requestPubKey,
+    copayerName,
+    {
+      coin: coin,
+      dryRun: !!opts.dryRun
+    },
+    function(err, wallet) {
+      if (err) return cb(err);
+      if (!opts.dryRun) {
+        self.credentials.addWalletInfo(
+          wallet.id,
+          wallet.name,
+          wallet.m,
+          wallet.n,
+          copayerName
+        );
+      }
+      return cb(null, wallet);
     }
-    return cb(null, wallet);
-  });
+  );
 };
 
 /**
@@ -1182,64 +1378,83 @@ API.prototype.recreateWallet = function(cb) {
   var self = this;
 
   // First: Try to get the wallet with current credentials
-  this.getStatus({
-    includeExtendedInfo: true
-  }, function(err) {
-    // No error? -> Wallet is ready.
-    if (!err) {
-      log.info('Wallet is already created');
-      return cb();
-    };
+  this.getStatus(
+    {
+      includeExtendedInfo: true
+    },
+    function(err) {
+      // No error? -> Wallet is ready.
+      if (!err) {
+        log.info('Wallet is already created');
+        return cb();
+      }
 
-    var c = self.credentials;
-    var walletPrivKey = Bitcore.PrivateKey.fromString(c.walletPrivKey);
-    var walletId = c.walletId;
-    var supportBIP44AndP2PKH = c.derivationStrategy != Constants.DERIVATION_STRATEGIES.BIP45;
-    var encWalletName = Utils.encryptMessage(c.walletName || 'recovered wallet', c.sharedEncryptingKey);
-    var coin = c.coin;
+      var c = self.credentials;
+      var walletPrivKey = Bitcore.PrivateKey.fromString(c.walletPrivKey);
+      var walletId = c.walletId;
+      var supportBIP44AndP2PKH =
+        c.derivationStrategy != Constants.DERIVATION_STRATEGIES.BIP45;
+      var encWalletName = Utils.encryptMessage(
+        c.walletName || 'recovered wallet',
+        c.sharedEncryptingKey
+      );
+      var coin = c.coin;
 
-    var args = {
-      name: encWalletName,
-      m: c.m,
-      n: c.n,
-      pubKey: walletPrivKey.toPublicKey().toString(),
-      coin: c.coin,
-      network: c.network,
-      id: walletId,
-      supportBIP44AndP2PKH: supportBIP44AndP2PKH,
-    };
+      var args = {
+        name: encWalletName,
+        m: c.m,
+        n: c.n,
+        pubKey: walletPrivKey.toPublicKey().toString(),
+        coin: c.coin,
+        network: c.network,
+        id: walletId,
+        supportBIP44AndP2PKH: supportBIP44AndP2PKH
+      };
 
-    self.request.post('/v2/wallets/', args, function(err, body) {
-      if (err) {
-        if (!(err instanceof Errors.WALLET_ALREADY_EXISTS))
-          return cb(err);
+      self.request.post('/v2/wallets/', args, function(err, body) {
+        if (err) {
+          if (!(err instanceof Errors.WALLET_ALREADY_EXISTS)) return cb(err);
 
-        return self.addAccess({}, function(err) {
-          if (err) return cb(err);
-          self.openWallet(function(err) {
-            return cb(err);
+          return self.addAccess({}, function(err) {
+            if (err) return cb(err);
+            self.openWallet(function(err) {
+              return cb(err);
+            });
           });
-        });
-      }
+        }
 
-      if (!walletId) {
-        walletId = body.walletId;
-      }
+        if (!walletId) {
+          walletId = body.walletId;
+        }
 
-      var i = 1;
-      async.each(self.credentials.publicKeyRing, function(item, next) {
-        var name = item.copayerName || ('copayer ' + i++);
-        self._doJoinWallet(walletId, walletPrivKey, item.xPubKey, item.requestPubKey, name, {
-          coin: c.coin,
-          supportBIP44AndP2PKH: supportBIP44AndP2PKH,
-        }, function(err) {
-          //Ignore error is copayer already in wallet
-          if (err && err instanceof Errors.COPAYER_IN_WALLET) return next();
-          return next(err);
-        });
-      }, cb);
-    });
-  });
+        var i = 1;
+        async.each(
+          self.credentials.publicKeyRing,
+          function(item, next) {
+            var name = item.copayerName || 'copayer ' + i++;
+            self._doJoinWallet(
+              walletId,
+              walletPrivKey,
+              item.xPubKey,
+              item.requestPubKey,
+              name,
+              {
+                coin: c.coin,
+                supportBIP44AndP2PKH: supportBIP44AndP2PKH
+              },
+              function(err) {
+                //Ignore error is copayer already in wallet
+                if (err && err instanceof Errors.COPAYER_IN_WALLET)
+                  return next();
+                return next(err);
+              }
+            );
+          },
+          cb
+        );
+      });
+    }
+  );
 };
 
 API.prototype._processWallet = function(wallet) {
@@ -1278,13 +1493,18 @@ API.prototype._processStatus = function(status) {
     if (!copayers) return;
 
     var me = _.find(copayers, {
-      'id': self.credentials.copayerId
+      id: self.credentials.copayerId
     });
     if (!me || !me.customData) return;
 
     var customData;
     try {
-      customData = JSON.parse(Utils.decryptMessage(me.customData, self.credentials.personalEncryptingKey));
+      customData = JSON.parse(
+        Utils.decryptMessage(
+          me.customData,
+          self.credentials.personalEncryptingKey
+        )
+      );
     } catch (e) {
       log.warn('Could not decrypt customData:', me.customData);
     }
@@ -1296,13 +1516,12 @@ API.prototype._processStatus = function(status) {
     // Update walletPrivateKey
     if (!self.credentials.walletPrivKey && customData.walletPrivKey)
       self.credentials.addWalletPrivateKey(customData.walletPrivKey);
-  };
+  }
 
   processCustomData(status);
   self._processWallet(status.wallet);
   self._processTxps(status.pendingTxps);
-}
-
+};
 
 /**
  * Get latest notifications
@@ -1330,7 +1549,9 @@ API.prototype.getNotifications = function(opts, cb) {
     if (err) return cb(err);
 
     var notifications = _.filter(result, function(notification) {
-      return opts.includeOwn || (notification.creatorId != self.credentials.copayerId);
+      return (
+        opts.includeOwn || notification.creatorId != self.credentials.copayerId
+      );
     });
 
     return cb(null, notifications);
@@ -1350,7 +1571,7 @@ API.prototype.getStatus = function(opts, cb) {
   if (!cb) {
     cb = opts;
     opts = {};
-    log.warn('DEPRECATED WARN: getStatus should receive 2 parameters.')
+    log.warn('DEPRECATED WARN: getStatus should receive 2 parameters.');
   }
 
   var self = this;
@@ -1364,7 +1585,12 @@ API.prototype.getStatus = function(opts, cb) {
     if (err) return cb(err);
     if (result.wallet.status == 'pending') {
       var c = self.credentials;
-      result.wallet.secret = API._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
+      result.wallet.secret = API._buildSecret(
+        c.walletId,
+        c.walletPrivKey,
+        c.coin,
+        c.network
+      );
     }
 
     self._processStatus(result);
@@ -1405,7 +1631,6 @@ API.prototype.savePreferences = function(preferences, cb) {
   self.request.put('/v1/preferences/', preferences, cb);
 };
 
-
 /**
  * fetchPayPro
  *
@@ -1417,22 +1642,23 @@ API.prototype.savePreferences = function(preferences, cb) {
  *  paypro.memo
  */
 API.prototype.fetchPayPro = function(opts, cb) {
-  $.checkArgument(opts)
-    .checkArgument(opts.payProUrl);
- 
-  PayPro.get({
-    url: opts.payProUrl,
-    coin: this.credentials.coin || 'btc',
-    network: this.credentials.network || 'livenet',
+  $.checkArgument(opts).checkArgument(opts.payProUrl);
 
-    // for testing
-    request: this.request,
-  }, function(err, paypro) { 
-    if (err)
-      return cb(err);
+  PayPro.get(
+    {
+      url: opts.payProUrl,
+      coin: this.credentials.coin || 'btc',
+      network: this.credentials.network || 'livenet',
 
-    return cb(null, paypro);
-  });
+      // for testing
+      request: this.request
+    },
+    function(err, paypro) {
+      if (err) return cb(err);
+
+      return cb(null, paypro);
+    }
+  );
 };
 
 /**
@@ -1448,9 +1674,11 @@ API.prototype.getUtxos = function(opts, cb) {
   opts = opts || {};
   var url = '/v1/utxos/';
   if (opts.addresses) {
-    url += '?' + querystring.stringify({
-      addresses: [].concat(opts.addresses).join(',')
-    });
+    url +=
+      '?' +
+      querystring.stringify({
+        addresses: [].concat(opts.addresses).join(',')
+      });
   }
   this.request.get(url, cb);
 };
@@ -1459,10 +1687,14 @@ API.prototype._getCreateTxProposalArgs = function(opts) {
   var self = this;
 
   var args = _.cloneDeep(opts);
-  args.message = API._encryptMessage(opts.message, this.credentials.sharedEncryptingKey) || null;
+  args.message =
+    API._encryptMessage(opts.message, this.credentials.sharedEncryptingKey) ||
+    null;
   args.payProUrl = opts.payProUrl || null;
   _.each(args.outputs, function(o) {
-    o.message = API._encryptMessage(o.message, self.credentials.sharedEncryptingKey) || null;
+    o.message =
+      API._encryptMessage(o.message, self.credentials.sharedEncryptingKey) ||
+      null;
   });
 
   return args;
@@ -1504,8 +1736,14 @@ API.prototype.createTxProposal = function(opts, cb) {
     if (err) return cb(err);
 
     self._processTxps(txp);
-    if (!Verifier.checkProposalCreation(args, txp, self.credentials.sharedEncryptingKey)) {
-      return cb(new Errors.SERVER_COMPROMISED);
+    if (
+      !Verifier.checkProposalCreation(
+        args,
+        txp,
+        self.credentials.sharedEncryptingKey
+      )
+    ) {
+      return cb(new Errors.SERVER_COMPROMISED());
     }
 
     return cb(null, txp);
@@ -1521,8 +1759,7 @@ API.prototype.createTxProposal = function(opts, cb) {
  */
 API.prototype.publishTxProposal = function(opts, cb) {
   $.checkState(this.credentials && this.credentials.isComplete());
-  $.checkArgument(opts)
-    .checkArgument(opts.txp);
+  $.checkArgument(opts).checkArgument(opts.txp);
 
   $.checkState(parseInt(opts.txp.version) >= 3);
 
@@ -1558,7 +1795,7 @@ API.prototype.createAddress = function(opts, cb) {
   if (!cb) {
     cb = opts;
     opts = {};
-    log.warn('DEPRECATED WARN: createAddress should receive 2 parameters.')
+    log.warn('DEPRECATED WARN: createAddress should receive 2 parameters.');
   }
 
   // if (!self._checkKeyDerivation()) return cb(new Error('Cannot create new address for this wallet'));
@@ -1609,8 +1846,7 @@ API.prototype.getMainAddresses = function(opts, cb) {
       var fake = _.some(addresses, function(address) {
         return !Verifier.checkAddress(self.credentials, address);
       });
-      if (fake)
-        return cb(new Errors.SERVER_COMPROMISED);
+      if (fake) return cb(new Errors.SERVER_COMPROMISED());
     }
     return cb(null, addresses);
   });
@@ -1626,7 +1862,7 @@ API.prototype.getBalance = function(opts, cb) {
   if (!cb) {
     cb = opts;
     opts = {};
-    log.warn('DEPRECATED WARN: getBalance should receive 2 parameters.')
+    log.warn('DEPRECATED WARN: getBalance should receive 2 parameters.');
   }
 
   var self = this;
@@ -1636,7 +1872,8 @@ API.prototype.getBalance = function(opts, cb) {
 
   var args = [];
   if (opts.coin) {
-    if (!_.includes(['btc', 'bch', 'eth'], opts.coin)) return cb(new Error('Invalid coin'));
+    if (!_.includes(['btc', 'bch', 'eth'], opts.coin))
+      return cb(new Error('Invalid coin'));
     args.push('coin=' + opts.coin);
   }
   var qs = '';
@@ -1666,58 +1903,71 @@ API.prototype.getTxProposals = function(opts, cb) {
     if (err) return cb(err);
 
     self._processTxps(txps);
-    async.every(txps,
+    async.every(
+      txps,
       function(txp, acb) {
         if (opts.doNotVerify) return acb(true);
         self.getPayPro(txp, function(err, paypro) {
           var isLegit = Verifier.checkTxProposal(self.credentials, txp, {
-            paypro: paypro,
+            paypro: paypro
           });
 
           return acb(isLegit);
         });
       },
       function(isLegit) {
-        if (!isLegit)
-          return cb(new Errors.SERVER_COMPROMISED);
+        if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
         var result;
         if (opts.forAirGapped) {
           result = {
             txps: JSON.parse(JSON.stringify(txps)),
-            encryptedPkr: opts.doNotEncryptPkr ? null : Utils.encryptMessage(JSON.stringify(self.credentials.publicKeyRing), self.credentials.personalEncryptingKey),
-            unencryptedPkr: opts.doNotEncryptPkr ? JSON.stringify(self.credentials.publicKeyRing) : null,
+            encryptedPkr: opts.doNotEncryptPkr
+              ? null
+              : Utils.encryptMessage(
+                  JSON.stringify(self.credentials.publicKeyRing),
+                  self.credentials.personalEncryptingKey
+                ),
+            unencryptedPkr: opts.doNotEncryptPkr
+              ? JSON.stringify(self.credentials.publicKeyRing)
+              : null,
             m: self.credentials.m,
-            n: self.credentials.n,
+            n: self.credentials.n
           };
         } else {
           result = txps;
         }
         return cb(null, result);
-      });
+      }
+    );
   });
 };
-
 
 //private?
 API.prototype.getPayPro = function(txp, cb) {
   var self = this;
-  if (!txp.payProUrl || this.doNotVerifyPayPro)
-    return cb();
+  if (!txp.payProUrl || this.doNotVerifyPayPro) return cb();
 
-  PayPro.get({
-    url: txp.payProUrl,
-    coin: txp.coin || 'btc',
-    network: txp.network || 'livenet',
+  PayPro.get(
+    {
+      url: txp.payProUrl,
+      coin: txp.coin || 'btc',
+      network: txp.network || 'livenet',
 
-    // for testing
-    request: self.request,
-  }, function(err, paypro) {
-    if (err) return cb(new Error('Could not fetch invoice:' + (err.message? err.message : err)));
-    return cb(null, paypro);
-  });
+      // for testing
+      request: self.request
+    },
+    function(err, paypro) {
+      if (err)
+        return cb(
+          new Error(
+            'Could not fetch invoice:' + (err.message ? err.message : err)
+          )
+        );
+      return cb(null, paypro);
+    }
+  );
 };
-
 
 /**
  * Sign a transaction proposal
@@ -1739,22 +1989,20 @@ API.prototype.signTxProposal = function(txp, password, cb) {
   var self = this;
 
   if (!txp.signatures) {
-    if (!self.canSign())
-      return cb(new Errors.MISSING_PRIVATE_KEY);
+    if (!self.canSign()) return cb(new Errors.MISSING_PRIVATE_KEY());
 
     if (self.isPrivKeyEncrypted() && !password)
-      return cb(new Errors.ENCRYPTED_PRIVATE_KEY);
+      return cb(new Errors.ENCRYPTED_PRIVATE_KEY());
   }
 
   self.getPayPro(txp, function(err, paypro) {
     if (err) return cb(err);
 
     var isLegit = Verifier.checkTxProposal(self.credentials, txp, {
-      paypro: paypro,
+      paypro: paypro
     });
 
-    if (!isLegit)
-      return cb(new Errors.SERVER_COMPROMISED);
+    if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
     var signatures = txp.signatures;
 
@@ -1790,20 +2038,27 @@ API.prototype.signTxProposal = function(txp, password, cb) {
  * @param {String} password - (optional) A password to decrypt the encrypted private key (if encryption is set).
  * @return {Object} txp - Return transaction
  */
-API.prototype.signTxProposalFromAirGapped = function(txp, encryptedPkr, m, n, password) {
+API.prototype.signTxProposalFromAirGapped = function(
+  txp,
+  encryptedPkr,
+  m,
+  n,
+  password
+) {
   $.checkState(this.credentials);
 
   var self = this;
 
-  if (!self.canSign())
-    throw new Errors.MISSING_PRIVATE_KEY;
+  if (!self.canSign()) throw new Errors.MISSING_PRIVATE_KEY();
 
   if (self.isPrivKeyEncrypted() && !password)
-    throw new Errors.ENCRYPTED_PRIVATE_KEY;
+    throw new Errors.ENCRYPTED_PRIVATE_KEY();
 
   var publicKeyRing;
   try {
-    publicKeyRing = JSON.parse(Utils.decryptMessage(encryptedPkr, self.credentials.personalEncryptingKey));
+    publicKeyRing = JSON.parse(
+      Utils.decryptMessage(encryptedPkr, self.credentials.personalEncryptingKey)
+    );
   } catch (ex) {
     throw new Error('Could not decrypt public key ring');
   }
@@ -1823,7 +2078,6 @@ API.prototype.signTxProposalFromAirGapped = function(txp, encryptedPkr, m, n, pa
   return self._signTxp(txp, password);
 };
 
-
 /**
  * Sign transaction proposal from AirGapped
  *
@@ -1839,12 +2093,20 @@ API.prototype.signTxProposalFromAirGapped = function(txp, encryptedPkr, m, n, pa
  * @param {String} opts.derivationStrategy - default 'BIP44'
  * @return {Object} txp - Return transaction
  */
-API.signTxProposalFromAirGapped = function(key, txp, unencryptedPkr, m, n, opts) {
+API.signTxProposalFromAirGapped = function(
+  key,
+  txp,
+  unencryptedPkr,
+  m,
+  n,
+  opts
+) {
   var self = this;
-  opts = opts || {}
+  opts = opts || {};
 
   var coin = opts.coin || 'btc';
-  if (!_.includes(['btc', 'bch', 'eth'], coin)) return cb(new Error('Invalid coin'));
+  if (!_.includes(['btc', 'bch', 'eth'], coin))
+    return cb(new Error('Invalid coin'));
 
   var publicKeyRing = JSON.parse(unencryptedPkr);
 
@@ -1857,21 +2119,23 @@ API.signTxProposalFromAirGapped = function(key, txp, unencryptedPkr, m, n, opts)
   });
 
   if (key.slice(0, 4) === 'xprv' || key.slice(0, 4) === 'tprv') {
-    if (key.slice(0, 4) === 'xprv' && txp.network == 'testnet') throw new Error("testnet HD keys must start with tprv");
-    if (key.slice(0, 4) === 'tprv' && txp.network == 'livenet') throw new Error("livenet HD keys must start with xprv");
+    if (key.slice(0, 4) === 'xprv' && txp.network == 'testnet')
+      throw new Error('testnet HD keys must start with tprv');
+    if (key.slice(0, 4) === 'tprv' && txp.network == 'livenet')
+      throw new Error('livenet HD keys must start with xprv');
     newClient.seedFromExtendedPrivateKey(key, {
-      'coin': coin,
-      'account': opts.account,
-      'derivationStrategy': opts.derivationStrategy
+      coin: coin,
+      account: opts.account,
+      derivationStrategy: opts.derivationStrategy
     });
   } else {
     newClient.seedFromMnemonic(key, {
-      'coin': coin,
-      'network': txp.network,
-      'passphrase': opts.passphrase,
-      'account': opts.account,
-      'derivationStrategy': opts.derivationStrategy
-    })
+      coin: coin,
+      network: txp.network,
+      passphrase: opts.passphrase,
+      account: opts.account,
+      derivationStrategy: opts.derivationStrategy
+    });
   }
   newClient.credentials.m = m;
   newClient.credentials.n = n;
@@ -1883,7 +2147,6 @@ API.signTxProposalFromAirGapped = function(key, txp, unencryptedPkr, m, n, opts)
 
   return newClient._signTxp(txp);
 };
-
 
 /**
  * Reject a transaction proposal
@@ -1901,7 +2164,8 @@ API.prototype.rejectTxProposal = function(txp, reason, cb) {
 
   var url = '/v1/txproposals/' + txp.id + '/rejections/';
   var args = {
-    reason: API._encryptMessage(reason, self.credentials.sharedEncryptingKey) || '',
+    reason:
+      API._encryptMessage(reason, self.credentials.sharedEncryptingKey) || ''
   };
   self.request.post(url, args, function(err, txp) {
     if (err) return cb(err);
@@ -1944,7 +2208,6 @@ API.prototype._doBroadcast = function(txp, cb) {
   });
 };
 
-
 /**
  * Broadcast a transaction proposal
  *
@@ -1961,37 +2224,39 @@ API.prototype.broadcastTxProposal = function(txp, cb) {
     if (err) return cb(err);
 
     if (paypro) {
-
       var t_unsigned = Utils.buildTx(txp);
       var t = Utils.buildTx(txp);
       self._applyAllSignatures(txp, t);
 
-      PayPro.send({
-        url: txp.payProUrl,
-        amountSat: txp.amount,
-        rawTxUnsigned: t_unsigned.uncheckedSerialize(),
-        rawTx: t.serialize({
-          disableSmallFees: true,
-          disableLargeFees: true,
-          disableDustOutputs: true
-        }),
-        coin: txp.coin || 'btc',
-        network: txp.network || 'livenet',
+      PayPro.send(
+        {
+          url: txp.payProUrl,
+          amountSat: txp.amount,
+          rawTxUnsigned: t_unsigned.uncheckedSerialize(),
+          rawTx: t.serialize({
+            disableSmallFees: true,
+            disableLargeFees: true,
+            disableDustOutputs: true
+          }),
+          coin: txp.coin || 'btc',
+          network: txp.network || 'livenet',
 
-        // for testing
-        request: self.request,
-      }, function(err, ack, memo) {
-        if (err) {
-          return cb(err);
-        }
+          // for testing
+          request: self.request
+        },
+        function(err, ack, memo) {
+          if (err) {
+            return cb(err);
+          }
 
-        if (memo) {
-          log.debug('Merchant memo:', memo);
+          if (memo) {
+            log.debug('Merchant memo:', memo);
+          }
+          self._doBroadcast(txp, function(err2, txp) {
+            return cb(err2, txp, memo, err);
+          });
         }
-        self._doBroadcast(txp, function(err2, txp) {
-          return cb(err2, txp, memo, err);
-        });
-      });
+      );
     } else {
       self._doBroadcast(txp, cb);
     }
@@ -2068,7 +2333,6 @@ API.prototype.getTx = function(id, cb) {
   });
 };
 
-
 /**
  * Start an address scanning process.
  * When finished, the scanning process will send a notification 'ScanFinished' to all copayers.
@@ -2083,7 +2347,7 @@ API.prototype.startScan = function(opts, cb) {
   var self = this;
 
   var args = {
-    includeCopayerBranches: opts.includeCopayerBranches,
+    includeCopayerBranches: opts.includeCopayerBranches
   };
 
   self.request.post('/v1/addresses/scan', args, function(err) {
@@ -2107,22 +2371,27 @@ API.prototype.addAccess = function(opts, cb) {
 
   opts = opts || {};
 
-  var reqPrivKey = new Bitcore.PrivateKey(opts.generateNewKey ? null : this.credentials.requestPrivKey);
+  var reqPrivKey = new Bitcore.PrivateKey(
+    opts.generateNewKey ? null : this.credentials.requestPrivKey
+  );
   var requestPubKey = reqPrivKey.toPublicKey().toString();
 
-  var xPriv = new Bitcore.HDPrivateKey(this.credentials.xPrivKey)
-    .deriveChild(this.credentials.getBaseAddressDerivationPath());
+  var xPriv = new Bitcore.HDPrivateKey(this.credentials.xPrivKey).deriveChild(
+    this.credentials.getBaseAddressDerivationPath()
+  );
   var sig = Utils.signRequestPubKey(requestPubKey, xPriv);
   var copayerId = this.credentials.copayerId;
 
-  var encCopayerName = opts.name ? Utils.encryptMessage(opts.name, this.credentials.sharedEncryptingKey) : null;
+  var encCopayerName = opts.name
+    ? Utils.encryptMessage(opts.name, this.credentials.sharedEncryptingKey)
+    : null;
 
   var opts = {
     copayerId: copayerId,
     requestPubKey: requestPubKey,
     signature: sig,
     name: encCopayerName,
-    restrictions: opts.restrictions,
+    restrictions: opts.restrictions
   };
 
   this.request.put('/v1/copayers/' + copayerId + '/', opts, function(err, res) {
@@ -2162,7 +2431,10 @@ API.prototype.editTxNote = function(opts, cb) {
 
   opts = opts || {};
   if (opts.body) {
-    opts.body = API._encryptMessage(opts.body, this.credentials.sharedEncryptingKey);
+    opts.body = API._encryptMessage(
+      opts.body,
+      this.credentials.sharedEncryptingKey
+    );
   }
   self.request.put('/v1/txnotes/' + opts.txid + '/', opts, function(err, note) {
     if (err) return cb(err);
@@ -2221,11 +2493,14 @@ API.prototype.getFiatRate = function(opts, cb) {
     qs = '?' + args.join('&');
   }
 
-  self.request.get('/v1/fiatrates/' + opts.code + '/' + qs, function(err, rates) {
+  self.request.get('/v1/fiatrates/' + opts.code + '/' + qs, function(
+    err,
+    rates
+  ) {
     if (err) return cb(err);
     return cb(null, rates);
   });
-}
+};
 
 /**
  * Subscribe to push notifications.
@@ -2297,8 +2572,7 @@ API.prototype.getSendMaxInfo = function(opts, cb) {
 
   var qs = '';
 
-  if (args.length > 0)
-    qs = '?' + args.join('&');
+  if (args.length > 0) qs = '?' + args.join('&');
 
   var url = '/v1/sendmaxinfo/' + qs;
 
@@ -2326,19 +2600,26 @@ API.prototype.getStatusByIdentifier = function(opts, cb) {
   qs.push('includeExtendedInfo=' + (opts.includeExtendedInfo ? '1' : '0'));
   qs.push('walletCheck=' + (opts.walletCheck ? '1' : '0'));
 
-  self.request.get('/v1/wallets/' + opts.identifier + '?' + qs.join('&'), function(err, result) {
-    if (err || !result || !result.wallet) return cb(err);
-    if (result.wallet.status == 'pending') {
-      var c = self.credentials;
-      result.wallet.secret = API._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
+  self.request.get(
+    '/v1/wallets/' + opts.identifier + '?' + qs.join('&'),
+    function(err, result) {
+      if (err || !result || !result.wallet) return cb(err);
+      if (result.wallet.status == 'pending') {
+        var c = self.credentials;
+        result.wallet.secret = API._buildSecret(
+          c.walletId,
+          c.walletPrivKey,
+          c.coin,
+          c.network
+        );
+      }
+
+      self._processStatus(result);
+
+      return cb(err, result);
     }
-
-    self._processStatus(result);
-
-    return cb(err, result);
-  });
+  );
 };
-
 
 /*
  *
@@ -2360,19 +2641,17 @@ API.prototype._oldCopayDecrypt = function(username, password, blob) {
       decrypted = sjcl.decrypt(passphrase, blob);
     } catch (e) {
       log.debug(e);
-    };
+    }
   }
 
-  if (!decrypted)
-    return null;
+  if (!decrypted) return null;
 
   var ret;
   try {
     ret = JSON.parse(decrypted);
-  } catch (e) {};
+  } catch (e) {}
   return ret;
 };
-
 
 API.prototype.getWalletIdsFromOldCopay = function(username, password, blob) {
   var p = this._oldCopayDecrypt(username, password, blob);
@@ -2380,7 +2659,6 @@ API.prototype.getWalletIdsFromOldCopay = function(username, password, blob) {
   var ids = p.walletIds.concat(_.keys(p.focusedTimestamps));
   return _.uniq(ids);
 };
-
 
 /**
  * createWalletFromOldCopay
@@ -2391,7 +2669,12 @@ API.prototype.getWalletIdsFromOldCopay = function(username, password, blob) {
  * @param cb
  * @return {undefined}
  */
-API.prototype.createWalletFromOldCopay = function(username, password, blob, cb) {
+API.prototype.createWalletFromOldCopay = function(
+  username,
+  password,
+  blob,
+  cb
+) {
   var self = this;
   var w = this._oldCopayDecrypt(username, password, blob);
   if (!w) return cb(new Error('Could not decrypt'));
