@@ -3,6 +3,7 @@ import * as _ from 'lodash';
 import * as log from 'npmlog';
 
 import { ClientError } from './errors/clienterror';
+
 export { ClientError };
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
@@ -21,6 +22,7 @@ const BCHAddressTranslator = require('./bchaddresstranslator');
 
 log.debug = log.verbose;
 log.disableColor();
+log.level = 'error';
 
 const EmailValidator = require('email-validator');
 
