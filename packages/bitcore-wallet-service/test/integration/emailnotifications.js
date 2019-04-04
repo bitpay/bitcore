@@ -45,8 +45,8 @@ describe('Email notifications', function() {
             should.not.exist(err);
 
             mailerStub = sinon.stub();
-            mailerStub.sendMail = sinon.stub();
-            mailerStub.sendMail.returns(Promise.resolve('ok'));
+            mailerStub.send = sinon.stub();
+            mailerStub.send.returns(Promise.resolve('ok'));
             //mailerStub.returns(Promise.reject('err'));
 
             emailService = new EmailService();
@@ -91,7 +91,7 @@ describe('Email notifications', function() {
           amount: 221340,
         }, function(err) {
           setTimeout(function() {
-            var calls = mailerStub.sendMail.getCalls();
+            var calls = mailerStub.send.getCalls();
             calls.length.should.equal(1);
             var emails = _.map(calls, function(c) {
               return c.args[0];
@@ -133,8 +133,8 @@ describe('Email notifications', function() {
             should.not.exist(err);
 
             mailerStub = sinon.stub();
-            mailerStub.sendMail = sinon.stub();
-            mailerStub.sendMail.returns(Promise.resolve('ok'));
+            mailerStub.send = sinon.stub();
+            mailerStub.send.returns(Promise.resolve('ok'));
             //mailerStub.returns(Promise.reject('err'));
 
             emailService = new EmailService();
@@ -189,7 +189,7 @@ describe('Email notifications', function() {
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
 
           setTimeout(function() {
-            var calls = mailerStub.sendMail.getCalls();
+            var calls = mailerStub.send.getCalls();
             calls.length.should.equal(2);
             var emails = _.map(calls, function(c) {
               return c.args[0];
@@ -226,7 +226,7 @@ describe('Email notifications', function() {
         };
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
           setTimeout(function() {
-            var calls = mailerStub.sendMail.getCalls();
+            var calls = mailerStub.send.getCalls();
             calls.length.should.equal(0);
             server.storage.fetchUnsentEmails(function(err, unsent) {
               should.not.exist(err);
@@ -291,7 +291,7 @@ describe('Email notifications', function() {
           should.not.exist(err);
 
           setTimeout(function() {
-            var calls = mailerStub.sendMail.getCalls();
+            var calls = mailerStub.send.getCalls();
             var emails = _.map(_.takeRight(calls, 3), function(c) {
               return c.args[0];
             });
@@ -346,7 +346,7 @@ describe('Email notifications', function() {
           should.not.exist(err);
 
           setTimeout(function() {
-            var calls = mailerStub.sendMail.getCalls();
+            var calls = mailerStub.send.getCalls();
             var emails = _.map(_.takeRight(calls, 2), function(c) {
               return c.args[0];
             });
@@ -376,7 +376,7 @@ describe('Email notifications', function() {
           amount: 13000,
         }, function(err) {
           setTimeout(function() {
-            var calls = mailerStub.sendMail.getCalls();
+            var calls = mailerStub.send.getCalls();
             calls.length.should.equal(3);
             var emails = _.map(calls, function(c) {
               return c.args[0];
@@ -411,7 +411,7 @@ describe('Email notifications', function() {
           amount: 12300000,
         }, function(err) {
           setTimeout(function() {
-            var calls = mailerStub.sendMail.getCalls();
+            var calls = mailerStub.send.getCalls();
             calls.length.should.equal(3);
             var emails = _.map(calls, function(c) {
               return c.args[0];
@@ -445,7 +445,7 @@ describe('Email notifications', function() {
             txid: '123',
           }, function(err) {
             setTimeout(function() {
-              var calls = mailerStub.sendMail.getCalls();
+              var calls = mailerStub.send.getCalls();
               calls.length.should.equal(1);
               var email = calls[0].args[0];
               email.to.should.equal('copayer1@domain.com');
@@ -478,7 +478,7 @@ describe('Email notifications', function() {
             amount: 12300000,
           }, function(err) {
             setTimeout(function() {
-              var calls = mailerStub.sendMail.getCalls();
+              var calls = mailerStub.send.getCalls();
               calls.length.should.equal(2);
               var emails = _.map(calls, function(c) {
                 return c.args[0];
@@ -516,7 +516,7 @@ describe('Email notifications', function() {
             amount: 12300000,
           }, function(err) {
             setTimeout(function() {
-              var calls = mailerStub.sendMail.getCalls();
+              var calls = mailerStub.send.getCalls();
               calls.length.should.equal(3);
               var emails = _.map(calls, function(c) {
                 return c.args[0];
@@ -563,7 +563,7 @@ describe('Email notifications', function() {
           };
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
             setTimeout(function() {
-              var calls = mailerStub.sendMail.getCalls();
+              var calls = mailerStub.send.getCalls();
               calls.length.should.equal(2);
               server.storage.fetchUnsentEmails(function(err, unsent) {
                 should.not.exist(err);
@@ -579,7 +579,7 @@ describe('Email notifications', function() {
     });
 
     it('should handler mailer errors ', function(done) {
-      mailerStub.sendMail.rejects('err');
+      mailerStub.send.rejects('err');
       server.createAddress({}, function(err, address) {
         should.not.exist(err);
 
@@ -590,7 +590,7 @@ describe('Email notifications', function() {
           amount: 12300000,
         }, function(err) {
           setTimeout(function() {
-            var calls = mailerStub.sendMail.getCalls();
+            var calls = mailerStub.send.getCalls();
             calls.length.should.equal(3);
             var emails = _.map(calls, function(c) {
               return c.args[0];
@@ -636,8 +636,8 @@ describe('Email notifications', function() {
             should.not.exist(err);
 
             mailerStub = sinon.stub();
-            mailerStub.sendMail = sinon.stub();
-            mailerStub.sendMail.resolves('ok');
+            mailerStub.send = sinon.stub();
+            mailerStub.send.resolves('ok');
 
             emailService = new EmailService();
             emailService.start({
@@ -678,7 +678,7 @@ describe('Email notifications', function() {
           };
           helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
             setTimeout(function() {
-              var calls = mailerStub.sendMail.getCalls();
+              var calls = mailerStub.send.getCalls();
               calls.length.should.equal(0);
               done();
             }, 100);

@@ -1173,7 +1173,6 @@ export class WalletService {
         if (!value) return;
         if (!preference.isValid(value)) {
           throw new Error('Invalid ' + preference.name);
-          return false;
         }
       });
     } catch (ex) {
