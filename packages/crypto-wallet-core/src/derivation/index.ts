@@ -1,7 +1,7 @@
 import { BtcDeriver } from './btc';
 import { BchDeriver } from './bch';
 import { EthDeriver } from './eth';
-import { Paths } from "./paths";
+import { Paths } from './paths';
 
 export type Key = {
   address: string;
@@ -31,7 +31,6 @@ const derivers: { [chain: string]: IDeriver } = {
   ETH: new EthDeriver()
 };
 
-
 export class DerivationProxy {
   get(chain) {
     const normalizedChain = chain.toUpperCase();
@@ -59,10 +58,11 @@ export class DerivationProxy {
   pathFor(chain, network, account = 0) {
     const normalizedChain = chain.toUpperCase();
     const accountStr = `${account}'`;
-    if (network != 'mainnet') {
-      return Paths.default.testnet + accountStr;
+    const chainConfig = Paths[normalizedChain];
+    if (chainConfig && chainConfig[network]) {
+      return chainConfig[network] + accountStr;
     } else {
-      return Paths[normalizedChain][network] + accountStr;
+      return Paths.default.testnet + accountStr;
     }
   }
 }

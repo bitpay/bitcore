@@ -10,7 +10,7 @@ var sjcl = require('sjcl');
 var Common = require('./common');
 var Constants = Common.Constants;
 var Utils = Common.Utils;
-const CWC = require('../../crypto-wallet-core').default;
+const CWC = require('crypto-wallet-core').default;
 
 var FIELDS = [
   'coin',
@@ -296,10 +296,15 @@ Credentials.prototype._expand = function() {
       ? _.bind(xPrivKey.deriveChild, xPrivKey)
       : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
 
-    //var derivedXPrivKey = deriveFn(this.getBaseAddressDerivationPath());
+    var derivedXPrivKey = deriveFn(this.getBaseAddressDerivationPath());
 
     // this is the xPubKey shared with the server.
-    this.xPubKey = xPrivKey.hdPublicKey.toString();
+    global.console.log(
+      'Deriving xPubKey with',
+      this.getBaseAddressDerivationPath()
+    );
+    this.xPubKey = derivedXPrivKey.hdPublicKey.toString();
+    global.console.log(this.xPubKey);
   }
 
   // requests keys from mnemonics, but using a xPubkey
@@ -385,9 +390,9 @@ Credentials.prototype.getBaseAddressDerivationPath = function() {
       purpose = '48';
       break;
   }
-
-  var coin = this.network == 'livenet' ? '0' : '1';
-  return CWC.deriver.pathFor(coin, this.network, this.account)
+  const path = CWC.deriver.pathFor(this.coin, this.network, this.account);
+  global.console.log(path);
+  return path;
   // return 'm/' + purpose + "'/" + coin + "'/" + this.account + "'";
 };
 

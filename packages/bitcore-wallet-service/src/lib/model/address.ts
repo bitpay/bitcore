@@ -115,7 +115,6 @@ export class Address {
     }
     const pathIndex = /m\/([0-9]*)\/([0-9]*)/;
     const [_input, changeIndex, addressIndex] = path.match(pathIndex);
-    // console.log(changeIndex, addressIndex);
     const isChange = changeIndex > 0;
     const [{ xPubKey }] = publicKeyRing;
     bitcoreAddress = CWC.deriver.deriveAddress(
@@ -125,7 +124,6 @@ export class Address {
       addressIndex,
       isChange
     );
-    console.log(bitcoreAddress, coin, network);
     // let addrStr = bitcoreAddress.toString(true);
     // if (noNativeCashAddr && coin == 'bch') {
     //   addrStr = bitcoreAddress.toLegacyAddress();
