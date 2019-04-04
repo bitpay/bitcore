@@ -3863,6 +3863,7 @@ export class WalletService {
     indexedProposals: { [txid: string]: TxProposal },
     opts: any,
   ) {
+    opts = opts || {}
     const proposal = indexedProposals[tx.txid];
     if (proposal) {
       tx.createdOn = proposal.createdOn;
