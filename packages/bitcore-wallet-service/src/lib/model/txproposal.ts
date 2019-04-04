@@ -205,6 +205,9 @@ export class TxProposal {
     x.proposalSignature = obj.proposalSignature;
     x.proposalSignaturePubKey = obj.proposalSignaturePubKey;
     x.proposalSignaturePubKeySig = obj.proposalSignaturePubKeySig;
+    if (x.status == 'broadcasted') {
+      x.raw = obj.raw;
+    }
 
     return x;
   }

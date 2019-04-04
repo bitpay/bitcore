@@ -3858,7 +3858,8 @@ export class WalletService {
 
   static _addProposalInfo(
     tx: any,
-    indexedProposals: { [txid: string]: TxProposal }
+    indexedProposals: { [txid: string]: TxProposal },
+    opts: any,
   ) {
     const proposal = indexedProposals[tx.txid];
     if (proposal) {
@@ -3887,6 +3888,11 @@ export class WalletService {
         output.message = txpOut ? txpOut.message : null;
       });
       tx.customData = proposal.customData;
+
+      tx.createdOn = proposal.createdOn;
+      if (opts.includeExtendedInfo) {
+        tx.raw = proposal.raw;
+      }
       // .sentTs = proposal.sentTs;
       // .merchant = proposal.merchant;
       // .paymentAckMemo = proposal.paymentAckMemo;
@@ -4227,7 +4233,7 @@ export class WalletService {
           const indexedNotes = _.keyBy(res.notes, 'txid');
 
           const finalTxs = _.map(res.txs.items, tx => {
-            WalletService._addProposalInfo(tx, indexedProposals);
+            WalletService._addProposalInfo(tx, indexedProposals, opts);
             WalletService._addNotesInfo(tx, indexedNotes);
             return tx;
           });
