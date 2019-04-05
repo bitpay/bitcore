@@ -166,7 +166,6 @@ Utils.deriveAddress = function(
       bitcoreAddress = bitcore.Address.fromPublicKey(publicKeys[0], network);
       break;
   }
-  global.console.log(path);
   const pathIndex = /m\/([0-9]*)\/([0-9]*)/;
   const [_input, changeIndex, addressIndex] = path.match(pathIndex);
   const isChange = changeIndex > 0;

@@ -1708,16 +1708,22 @@ export class WalletService {
 
             balance.byAddress = _.values(byAddress);
 
-            const balanceResponse = await bc.getBalance(wallet);
-            Object.assign(balance, {
-              totalAmount: balance.totalAmount || balanceResponse.balance,
-              availableAmount:
-                balance.availableAmount || balanceResponse.balance,
-              totalConfirmedAmount:
-                balance.totalConfirmedAmount || balanceResponse.confirmed,
-              lockedAmount: balance.lockedAmount || balanceResponse.unconfirmed
-            });
-            return cb(null, balance);
+            try {
+              const balanceResponse = await bc.getBalance(wallet);
+
+              Object.assign(balance, {
+                totalAmount: balance.totalAmount || balanceResponse.balance,
+                availableAmount:
+                  balance.availableAmount || balanceResponse.balance,
+                totalConfirmedAmount:
+                  balance.totalConfirmedAmount || balanceResponse.confirmed,
+                lockedAmount:
+                  balance.lockedAmount || balanceResponse.unconfirmed
+              });
+              return cb(null, balance);
+            } catch {
+              return cb(null, balance);
+            }
           }
         );
       });
