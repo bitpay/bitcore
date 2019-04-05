@@ -7,6 +7,8 @@ var should = chai.should();
 var { V8 } = require('../ts_build/lib/blockchainexplorers/v8');
 var B = require('bitcore-lib-cash');
 const { Readable } = require('stream');
+var Common = require('../ts_build/lib/common');
+var Defaults = Common.Defaults;
 
 const V8UTXOS = [
 {"_id":"5c1d4bc47adced963b3cddb9","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"6e34d9b83631cd55ee09d907061332ba3c17246e3c1255543fb7a35e58c52e42","mintHeight":12,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":1000000,"confirmations":-1},
@@ -239,6 +241,94 @@ describe('V8', () => {
           '4': 0.00017349,
           '5': 0.00017349 });
         return done();
+      });
+    });
+
+  });
+
+
+  describe.only('#broadcast', () => {
+    it('should broadcast a TX', (done) => {
+      class BroadcastOk {
+        broadcast(payload) {
+          return new Promise(function (resolve) {
+            resolve({'txid':'txid'});
+          })
+        };
+      };
+
+      var be = new V8({
+        coin: 'bch',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        userAgent: 'testAgent',
+        client: BroadcastOk,
+      });
+
+      be.broadcast('xxx', (err, txid) => {
+        should.not.exist(err);
+        txid.should.equal('txid');
+        done();
+      });
+    });
+
+    it('should fail to broadcast an invalid TX', (done) => {
+      class BroadcastInvalid {
+        broadcast(payload) {
+          return new Promise(function (resolve) {
+            resolve('invalid');
+          })
+        };
+      };
+
+      var be = new V8({
+        coin: 'bch',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        userAgent: 'testAgent',
+        client: BroadcastInvalid,
+      });
+
+      be.broadcast('xxx', (err, txid) => {
+        should.not.exist(txid);
+        err.toString().should.contain('Error');
+        done();
+      });
+    });
+
+
+    it('should retry to broadcast is socket hang up', (done) => {
+      var oldd = Defaults.BROADCAST_RETRY_TIME;
+      Defaults.BROADCAST_RETRY_TIME = 5;
+      var x=0;
+      class BroadcastInvalid {
+        broadcast(payload) {
+          return new Promise(function (resolve,reject) {
+            if (x++<2) {
+              reject('socket err or');
+            } else {
+              resolve({'txid':'txid'});
+            }
+          })
+        };
+      };
+
+      var be = new V8({
+        coin: 'bch',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        userAgent: 'testAgent',
+        client: BroadcastInvalid,
+      });
+
+      be.broadcast('xxx', (err, txid) => {
+        should.not.exist(err);
+        txid.should.equal('txid');
+        Defaults.BROADCAST_RETRY_TIME = oldd;
+        done();
       });
     });
 
