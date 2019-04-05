@@ -456,7 +456,7 @@ export class WalletService {
    * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
    * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch).
    * @param {string} opts.network[='livenet'] - The Bitcoin network for this wallet.
-   * @param {string} opts.supportBIP44AndP2PKH[=true] - Client supports BIP44 & P2PKH for new wallets.
+   * @param {string} opts.account[=0] - BIP44 account number
    */
   createWallet(opts, cb) {
     let pubKey;
@@ -487,15 +487,8 @@ export class WalletService {
       return cb(new ClientError('Invalid network'));
     }
 
-    opts.supportBIP44AndP2PKH = _.isBoolean(opts.supportBIP44AndP2PKH)
-      ? opts.supportBIP44AndP2PKH
-      : true;
-
-    const derivationStrategy = opts.supportBIP44AndP2PKH
-      ? Constants.DERIVATION_STRATEGIES.BIP44
-      : Constants.DERIVATION_STRATEGIES.BIP45;
-    const addressType =
-      opts.n === 1 && opts.supportBIP44AndP2PKH
+    const derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44
+    const addressType = opts.n === 1 
         ? Constants.SCRIPT_TYPES.P2PKH
         : Constants.SCRIPT_TYPES.P2SH;
 
@@ -1023,7 +1016,6 @@ export class WalletService {
    * @param {string} opts.copayerSignature - S(name|xPubKey|requestPubKey). Used by other copayers to verify that the copayer joining knows the wallet secret.
    * @param {string} opts.customData - (optional) Custom data for this copayer.
    * @param {string} opts.dryRun[=false] - (optional) Simulate the action but do not change server state.
-   * @param {string} [opts.supportBIP44AndP2PKH = true] - Client supports BIP44 & P2PKH for joining wallets.
    */
   joinWallet(opts, cb) {
     if (
@@ -1052,10 +1044,6 @@ export class WalletService {
       return cb(new ClientError('Invalid extended public key'));
     }
 
-    opts.supportBIP44AndP2PKH = _.isBoolean(opts.supportBIP44AndP2PKH)
-      ? opts.supportBIP44AndP2PKH
-      : true;
-
     this.walletId = opts.walletId;
     this._runLocked(cb, (cb) => {
       this.storage.fetchWallet(opts.walletId, (err, wallet) => {
@@ -1078,30 +1066,17 @@ export class WalletService {
           );
         }
 
-        if (opts.supportBIP44AndP2PKH) {
-          // New client trying to join legacy wallet
-          if (
-            wallet.derivationStrategy == Constants.DERIVATION_STRATEGIES.BIP45
-          ) {
-            return cb(
-              new ClientError(
-                'The wallet you are trying to join was created with an older version of the client app.'
-              )
-            );
-          }
-        } else {
-          // Legacy client trying to join new wallet
-          if (
-            wallet.derivationStrategy == Constants.DERIVATION_STRATEGIES.BIP44
-          ) {
-            return cb(
-              new ClientError(
-                Errors.codes.UPGRADE_NEEDED,
-                'To join this wallet you need to upgrade your client app.'
-              )
-            );
-          }
+        // New client trying to join legacy wallet
+        if (
+          wallet.derivationStrategy == Constants.DERIVATION_STRATEGIES.BIP45
+        ) {
+          return cb(
+            new ClientError(
+              'The wallet you are trying to join was created with an older version of the client app.'
+            )
+          );
         }
+
 
         const hash = WalletService._getCopayerHash(
           opts.name,
@@ -4409,7 +4384,7 @@ export class WalletService {
               addresses.push(addr);
               i++;
             }
-            this.logi(i + ' addresses were added.');
+            //this.logi(i + ' addresses were added.');
           }
 
           this._store(wallet, addresses, next);

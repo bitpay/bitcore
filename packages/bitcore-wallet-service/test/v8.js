@@ -247,7 +247,7 @@ describe('V8', () => {
   });
 
 
-  describe.only('#broadcast', () => {
+  describe('#broadcast', () => {
     it('should broadcast a TX', (done) => {
       class BroadcastOk {
         broadcast(payload) {

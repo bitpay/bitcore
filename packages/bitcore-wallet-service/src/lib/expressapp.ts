@@ -244,19 +244,7 @@ export class ExpressApp {
     // DEPRECATED
     router.post('/v1/wallets/', createWalletLimiter, (req, res) => {
       logDeprecated(req);
-      let server;
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      req.body.supportBIP44AndP2PKH = false;
-      server.createWallet(req.body, (err, walletId) => {
-        if (err) return returnError(err, res, req);
-        res.json({
-          walletId
-        });
-      });
+      return returnError(new ClientError('BIP45 wallet creation no longer supported'), res, req);
     });
 
     router.post('/v2/wallets/', createWalletLimiter, (req, res) => {
@@ -291,19 +279,7 @@ export class ExpressApp {
     // DEPRECATED
     router.post('/v1/wallets/:id/copayers/', (req, res) => {
       logDeprecated(req);
-      req.body.walletId = req.params['id'];
-      req.body.supportBIP44AndP2PKH = false;
-      let server;
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      server.joinWallet(req.body, (err, result) => {
-        if (err) return returnError(err, res, req);
-
-        res.json(result);
-      });
+      return returnError(new ClientError('BIP45 wallet creation no longer supported'), res, req);
     });
 
     router.post('/v2/wallets/:id/copayers/', (req, res) => {
