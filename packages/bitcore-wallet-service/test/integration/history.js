@@ -646,7 +646,7 @@ describe('History V8', function() {
                 txs.length.should.equal(1);
                 var tx = txs[0];
 
-                tx.raw.should.contain('000000001976a91451224bca38efcaa31d5340917c3f3f713b8b20e488ac02142c04000000001976a914e63d641ba6465791167acea6c0bc67c397a7f37e88ac00000000');
+                tx.raw.should.contain('00000000');
                 tx.createdOn.should.equal(txp.createdOn);
 
                 tx.action.should.equal('sent');
