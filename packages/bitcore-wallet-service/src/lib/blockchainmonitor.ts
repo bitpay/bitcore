@@ -3,7 +3,7 @@ import _ from 'lodash';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
-import { Notification } from './model/notification';
+import { Notification } from './model';
 import { WalletService } from './server';
 import { Storage } from './storage';
 

@@ -1,25 +1,11 @@
-import { Address } from './address';
-import { Copayer } from './copayer';
-import { Email } from './email';
-import { Notification } from './notification';
-import { Preferences } from './preferences';
-import { PushNotificationSub } from './pushnotificationsub';
-import { Session } from './session';
-import { TxConfirmationSub } from './txconfirmationsub';
-import { TxNote } from './txnote';
-import { TxProposal } from './txproposal';
-import { Wallet } from './wallet';
-
-module.exports = {
-  Address,
-  Copayer,
-  Email,
-  Notification,
-  Preferences,
-  PushNotificationSub,
-  Session,
-  TxConfirmationSub,
-  TxNote,
-  TxProposal,
-  Wallet
-};
+export { Address } from './address';
+export { Copayer } from './copayer';
+export { Email } from './email';
+export { INotification, Notification } from './notification';
+export { IPreferences, Preferences } from './preferences';
+export { PushNotificationSub } from './pushnotificationsub';
+export { Session } from './session';
+export { TxConfirmationSub } from './txconfirmationsub';
+export { TxNote } from './txnote';
+export { ITxProposal, TxProposal } from './txproposal';
+export { IWallet, Wallet } from './wallet';
