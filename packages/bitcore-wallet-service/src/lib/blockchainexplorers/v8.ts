@@ -253,7 +253,7 @@ export class V8 {
   /**
    * Broadcast a transaction to the bitcoin network
    */
-  broadcast(rawTx, cb) {
+  broadcast(rawTx, cb, count: number = 0) {
     const payload = {
       rawTx,
       network: this.v8network,
@@ -270,8 +270,17 @@ export class V8 {
         return cb(null, ret.txid);
       })
       .catch(err => {
-        console.log('[v8.js.221:err:]', err); // TODO
-        return cb(err);
+        if (count > 3  ) {
+          log.error('FINAL Broadcast error:', err);
+          return cb(err);
+        } else {
+          count++;
+          // retry
+          setTimeout(() => {
+            log.info('Retrying broadcast after', count * Defaults.BROADCAST_RETRY_TIME);
+            return this.broadcast(rawTx, cb, count);
+          }, count * Defaults.BROADCAST_RETRY_TIME);
+        }
       });
   }
 
