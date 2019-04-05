@@ -2386,29 +2386,6 @@ API.prototype.getWalletIdsFromOldCopay = function(username, password, blob) {
   return _.uniq(ids);
 };
 
-
-/**
- * createWalletFromOldCopay
- *
- * @param username
- * @param password
- * @param blob
- * @param cb
- * @return {undefined}
- */
-API.prototype.createWalletFromOldCopay = function(username, password, blob, cb) {
-  var self = this;
-  var w = this._oldCopayDecrypt(username, password, blob);
-  if (!w) return cb(new Error('Could not decrypt'));
-
-  if (w.publicKeyRing.copayersExtPubKeys.length != w.opts.totalCopayers)
-    return cb(new Error('Wallet is incomplete, cannot be imported'));
-
-  this.credentials = Credentials.fromOldCopayWallet(w);
-  this.request.setCredentials(this.credentials);
-  this.recreateWallet(cb);
-};
-
 API.PayPro = PayPro;
 
 module.exports = API;
