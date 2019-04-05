@@ -18,7 +18,10 @@
         </h1>
 
         <p class="item-hash">
-          <b>Transaction Hash</b> {{ tx.txid }}</p>
+          <b>Transaction Hash</b> {{ tx.txid }} <button [copyToClipboard]="tx.txid">
+            <ion-icon md="md-copy"></ion-icon>
+          </button>
+        </p>
 
         <h2>Summary</h2>
 
