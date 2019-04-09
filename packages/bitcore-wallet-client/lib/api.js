@@ -1169,7 +1169,7 @@ API.prototype.decryptPrivateKey = function(password) {
 API.prototype.getFeeLevels = function(coin, network, cb) {
   var self = this;
 
-  $.checkArgument(coin || _.includes(['btc', 'bch'], coin));
+  $.checkArgument(coin || _.includes(['btc', 'bch', 'eth'], coin));
   $.checkArgument(network || _.includes(['livenet', 'testnet'], network));
 
   self.request.get(
