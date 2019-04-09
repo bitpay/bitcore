@@ -17,7 +17,6 @@ var encoding = Bitcore.encoding;
 
 var Constants = require('./constants');
 var Defaults = require('./defaults');
-
 function Utils() {}
 
 Utils.SJCL = {};
@@ -149,7 +148,7 @@ Utils.deriveAddress = function(
   $.checkArgument(_.includes(_.values(Constants.SCRIPT_TYPES), scriptType));
 
   coin = coin || 'btc';
-  var bitcore = Bitcore_.btc;
+  var bitcore = coin !== 'eth' ? Bitcore_[coin] : Bitcore_.btc;
   var bitcoreAddress;
 
   var publicKeys = _.map(publicKeyRing, function(item) {
@@ -163,23 +162,29 @@ Utils.deriveAddress = function(
       break;
     case Constants.SCRIPT_TYPES.P2PKH:
       $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
-      bitcoreAddress = bitcore.Address.fromPublicKey(publicKeys[0], network);
+      const pathIndex = /m\/([0-9]*)\/([0-9]*)/;
+      const [_input, changeIndex, addressIndex] = path.match(pathIndex);
+      const isChange = changeIndex > 0;
+      const [{ xPubKey }] = publicKeyRing;
+      bitcoreAddress = CWC.deriver.deriveAddress(
+        coin,
+        network,
+        xPubKey,
+        addressIndex,
+        isChange
+      );
       break;
   }
-  const pathIndex = /m\/([0-9]*)\/([0-9]*)/;
-  const [_input, changeIndex, addressIndex] = path.match(pathIndex);
-  const isChange = changeIndex > 0;
-  const [{ xPubKey }] = publicKeyRing;
-  bitcoreAddress = CWC.deriver.deriveAddress(
-    coin,
-    network,
-    xPubKey,
-    addressIndex,
-    isChange
-  );
+
+  let addrStr = bitcoreAddress;
+  if (coin === 'btc') {
+   addrStr = bitcoreAddress.toString(true);
+  } else if (noNativeCashAddr && coin == 'bch') {
+    addrStr = bitcoreAddress.toLegacyAddress();
+  }
 
   return {
-    address: bitcoreAddress,
+    address: addrStr,
     path: path,
     publicKeys: _.invokeMap(publicKeys, 'toString')
   };

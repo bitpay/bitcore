@@ -2,7 +2,6 @@ import { ec } from 'elliptic';
 import { pubToAddress } from 'ethereumjs-util';
 import { IDeriver } from '..';
 const BitcoreLib = require('bitcore-lib');
-const createKeccakHash = require('keccak');
 const secp = new ec('secp256k1');
 
 export class EthDeriver implements IDeriver {
@@ -14,24 +13,6 @@ export class EthDeriver implements IDeriver {
       throw new Error(`invalid key length: ${msg.length}`);
     }
     return msg;
-  }
-
-  toChecksumAddress(address) {
-    address = address.toLowerCase().replace('0x', '');
-    var hash = createKeccakHash('keccak256')
-      .update(address)
-      .digest('hex');
-    var ret = '0x';
-
-    for (var i = 0; i < address.length; i++) {
-      if (parseInt(hash[i], 16) >= 8) {
-        ret += address[i].toUpperCase();
-      } else {
-        ret += address[i];
-      }
-    }
-
-    return ret;
   }
 
   deriveAddress(network, pubKey, addressIndex, isChange) {

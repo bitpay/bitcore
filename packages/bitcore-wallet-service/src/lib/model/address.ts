@@ -107,31 +107,30 @@ export class Address {
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
-        bitcoreAddress = Address.Bitcore.btc.Address.fromPublicKey(
-          publicKeys[0],
-          network
+        const pathIndex = /m\/([0-9]*)\/([0-9]*)/;
+        const [_input, changeIndex, addressIndex] = path.match(pathIndex);
+        const isChange = changeIndex > 0;
+        const [{ xPubKey }] = publicKeyRing;
+        bitcoreAddress = CWC.deriver.deriveAddress(
+          coin,
+          network,
+          xPubKey,
+          addressIndex,
+          isChange
         );
         break;
     }
-    const pathIndex = /m\/([0-9]*)\/([0-9]*)/;
-    const [_input, changeIndex, addressIndex] = path.match(pathIndex);
-    const isChange = changeIndex > 0;
-    const [{ xPubKey }] = publicKeyRing;
-    bitcoreAddress = CWC.deriver.deriveAddress(
-      coin,
-      network,
-      xPubKey,
-      addressIndex,
-      isChange
-    );
-    // let addrStr = bitcoreAddress.toString(true);
-    // if (noNativeCashAddr && coin == 'bch') {
-    //   addrStr = bitcoreAddress.toLegacyAddress();
-    // }
+
+    let addrStr = bitcoreAddress;
+    if (coin === 'btc') {
+     addrStr = bitcoreAddress.toString(true);
+    } else if (noNativeCashAddr && coin == 'bch') {
+      addrStr = bitcoreAddress.toLegacyAddress();
+    }
 
     return {
       // bws still use legacy addresses for BCH
-      address: bitcoreAddress,
+      address: addrStr,
       path,
       publicKeys: _.invokeMap(publicKeys, 'toString')
     };

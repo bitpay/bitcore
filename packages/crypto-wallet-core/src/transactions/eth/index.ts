@@ -1,4 +1,3 @@
-import Web3 from 'web3';
 import EthereumTx from 'ethereumjs-tx';
 import { Key } from '../../derivation';
 const utils = require('web3-utils');

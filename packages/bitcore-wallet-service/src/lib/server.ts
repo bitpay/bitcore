@@ -1712,13 +1712,13 @@ export class WalletService {
               const balanceResponse = await bc.getBalance(wallet);
 
               Object.assign(balance, {
-                totalAmount: balance.totalAmount || balanceResponse.balance,
+                totalAmount: balanceResponse.balance || balance.totalAmount,
                 availableAmount:
-                  balance.availableAmount || balanceResponse.balance,
+                  balanceResponse.balance || balance.availableAmount,
                 totalConfirmedAmount:
-                  balance.totalConfirmedAmount || balanceResponse.confirmed,
+                  balanceResponse.confirmed || balance.totalConfirmedAmount,
                 lockedAmount:
-                  balance.lockedAmount || balanceResponse.unconfirmed
+                  balanceResponse.unconfirmed || balance.lockedAmount
               });
               return cb(null, balance);
             } catch {
