@@ -6,7 +6,7 @@ import { ObjectID } from 'mongodb';
 import Web3 from 'web3';
 import { Storage } from '../../../services/storage';
 import { EthTransactionStorage } from '../../../models/transaction/eth/ethTransaction';
-import { ITransaction, EthTransactionJSON } from '../../../types/Transaction';
+import { ITransaction, EthTransactionJSON, IEthTransaction } from '../../../types/Transaction';
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -33,6 +33,36 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         break;
     }
     return new Web3(new ProviderType(connUrl));
+  }
+
+  async getFee({ network = 'mainnet', target = 4 } = {}) {
+    const bestBlock = await this.getWeb3(network).eth.getBlockNumber();
+    const gasPrices: number[] = [];
+    for (let i = 0; i < target; i++) {
+      const block = await this.getWeb3(network).eth.getBlock(bestBlock - i);
+      const txs: Array<IEthTransaction> = await Promise.all(
+        block.transactions.map(txid => {
+          return this.getWeb3(network).eth.getTransaction(txid);
+        })
+      );
+      var blockGasPrices = txs.map(tx => {
+        return tx.gasPrice
+      });
+      // sort gas prices in descending order
+      blockGasPrices = blockGasPrices.sort((a, b) => {
+        return b - a;
+      });
+      var txCount = txs.length;
+      var lowGasPriceIndex = txCount > 1 ? txCount - 2 : 0;
+      if (txCount > 0) {
+        gasPrices.push(blockGasPrices[lowGasPriceIndex]);
+      }
+    }
+    var gethGasPrice = await this.getWeb3(network).eth.getGasPrice();
+    var estimate = gasPrices.reduce((a, b) => {
+      return Math.max(a, b);
+    }, gethGasPrice);
+    return estimate;
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
