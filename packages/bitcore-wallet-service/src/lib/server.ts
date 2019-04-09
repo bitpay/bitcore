@@ -1708,24 +1708,24 @@ export class WalletService {
 
             balance.byAddress = _.values(byAddress);
 
-            if (opts.coin === 'eth') {
+            if (wallet.coin === 'eth') {
               const balanceResponse = await bc.getBalance(wallet);
 
               Object.assign(balance, {
                 totalAmount:
-                  balanceResponse.balance / 1e18 || balance.totalAmount,
+                  balanceResponse.balance / 1e10 || balance.totalAmount,
                 lockedAmount:
-                  balanceResponse.unconfirmed / 1e18 || balance.lockedAmount,
+                  balanceResponse.unconfirmed / 1e10 || balance.lockedAmount,
                 totalConfirmedAmount:
-                  balanceResponse.confirmed / 1e18 ||
+                  balanceResponse.confirmed / 1e10 ||
                   balance.totalConfirmedAmount,
                 lockedConfirmedAmount:
-                  balanceResponse.unconfirmed / 1e18 ||
+                  balanceResponse.unconfirmed / 1e10 ||
                   balance.totalConfirmedAmount,
                 availableAmount:
-                  balanceResponse.confirmed / 1e18 || balance.availableAmount,
+                  balanceResponse.confirmed / 1e10 || balance.availableAmount,
                 availableConfirmedAmount:
-                  balanceResponse.confirmed / 1e18 || balance.availableAmount
+                  balanceResponse.confirmed / 1e10 || balance.availableAmount
               });
               return cb(null, balance);
             } else {
