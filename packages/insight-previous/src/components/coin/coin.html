@@ -2,15 +2,20 @@
   <ion-row *ngIf="coin?.mintTxid">
     <ion-col col-7>
       <div class="ellipsis">
-        <span>
+        <span *ngIf="coin.height >= 0">
           <a (click)="goToTx(coin.mintTxid)">{{ coin.mintTxid }}</a>
+        </span>
+        <span ion-text color="danger" *ngIf="coin.height === -3">
+          Invalid
         </span>
       </div>
     </ion-col>
     <ion-col col-5 text-right>
-      <ion-icon name="md-add-circle" color="dark"></ion-icon>
-      {{ currencyProvider.getConvertedNumber(coin.value) | number:'1.0-8' }}
-      {{ currencyProvider.currencySymbol }}
+      <span ion-text>
+        <ion-icon name="md-add-circle" color="dark"></ion-icon>
+        {{ currencyProvider.getConvertedNumber(coin.value) | number:'1.0-8' }}
+        {{ currencyProvider.currencySymbol }}
+      </span>
     </ion-col>
   </ion-row>
 
@@ -32,8 +37,8 @@
       </div>
     </ion-col>
     <ion-col col-5 text-right>
-      <span ion-text [color]="!coin.spentTxid ? 'default':'danger'">
-        <ion-icon name="md-remove-circle" [color]="!coin.spentTxid ? 'default':'danger'" *ngIf="coin.height >= 0">
+      <span ion-text [color]="!coin.spentTxid ? 'default':'dark-light'">
+        <ion-icon name="md-remove-circle" [color]="!coin.spentTxid ? 'default':'dark-light'" *ngIf="coin.height >= 0">
         </ion-icon>
         {{ currencyProvider.getConvertedNumber(coin.value) | number:'1.0-8' }}
         {{ currencyProvider.currencySymbol }}

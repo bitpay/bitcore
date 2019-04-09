@@ -13,7 +13,7 @@ export class CoinListComponent implements OnInit {
   @Input()
   public addrStr?: string;
 
-  public coins: any = [];
+  public txs: any = [];
   public showTransactions: boolean;
   public loading;
   public limit = 10;
@@ -27,12 +27,12 @@ export class CoinListComponent implements OnInit {
   ) {}
 
   public ngOnInit(): void {
-    if (this.coins && this.coins.length === 0) {
+    if (this.txs && this.txs.length === 0) {
       this.loading = true;
       this.addrProvider.getAddressActivity(this.addrStr).subscribe(
         data => {
           const formattedData = data.map(this.txsProvider.toAppCoin);
-          this.coins = this.orderByHeight(formattedData);
+          this.txs = this.orderByHeight(formattedData);
           this.showTransactions = true;
           this.loading = false;
           this.events.publish('CoinList', { length: data.length });
@@ -47,24 +47,23 @@ export class CoinListComponent implements OnInit {
   }
 
   orderByHeight(data) {
-    let processedCoins = [];
-    let coins = [];
+    const unconfirmedTxs = [];
+    let confirmedTxs = [];
 
-    data.map(coin => {
-      const { mintHeight, mintTxid, value, spentHeight, spentTxid } = coin;
+    data.forEach(tx => {
+      const { mintHeight, mintTxid, value, spentHeight, spentTxid } = tx;
 
       mintHeight < 0
-        ? processedCoins.push({ height: mintHeight, mintTxid, value })
-        : coins.push({ height: mintHeight, mintTxid, value });
+        ? unconfirmedTxs.push({ height: mintHeight, mintTxid, value })
+        : confirmedTxs.push({ height: mintHeight, mintTxid, value });
 
       spentHeight < 0
-        ? processedCoins.push({ height: spentHeight, spentTxid, value })
-        : coins.push({ height: spentHeight, spentTxid, value });
+        ? unconfirmedTxs.push({ height: spentHeight, spentTxid, value })
+        : confirmedTxs.push({ height: spentHeight, spentTxid, value });
     });
 
-    coins = _.orderBy(coins, ['height'], ['desc']);
-    processedCoins = processedCoins.concat(coins);
-    return processedCoins;
+    confirmedTxs = _.orderBy(confirmedTxs, ['height'], ['desc']);
+    return unconfirmedTxs.concat(confirmedTxs);
   }
 
   public loadMore(infiniteScroll) {
