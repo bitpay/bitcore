@@ -52,6 +52,9 @@ module.exports = {
     eth: {
       livenet: {
         url: 'http://localhost:3000'
+      },
+      mainnet: {
+        url: 'http://localhost:3000'
       }
     }
   },

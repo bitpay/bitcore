@@ -64,7 +64,7 @@ export class AddressProviderProxy {
   }
 
   pathFor(chain, network) {
-    if (network != 'mainnet') {
+    if (network === 'testnet') {
       return paths.default.testnet;
     } else {
       return paths[chain][network];

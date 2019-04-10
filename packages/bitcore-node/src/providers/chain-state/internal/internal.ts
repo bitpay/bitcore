@@ -153,6 +153,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getBlock(params: CSP.GetBlockParams) {
     let blocks = await this.getBlocks(params);
+    console.log(blocks[0]);
     return blocks[0];
   }
 
@@ -531,7 +532,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getLocalTip({ chain, network }) {
-    return await BlockStorage.getLocalTip({ chain, network });
+    return BlockStorage.getLocalTip({ chain, network });
   }
 
   async getLocatorHashes(params) {

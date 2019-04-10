@@ -3444,8 +3444,8 @@ export class WalletService {
 
       if (tx.category == 'receive') {
         const output = {
-          address: tx.address,
-          amount: Math.abs(tx.satoshis)
+          address: tx.to || tx.address,
+          amount: Math.abs(tx.value || tx.satoshis )
         };
         if (seenReceive[tx.txid]) {
           seenReceive[tx.txid].outputs.push(output);
@@ -3458,8 +3458,8 @@ export class WalletService {
       }
       if (tx.category == 'send') {
         const output = {
-          address: tx.address,
-          amount: Math.abs(tx.satoshis)
+          address: tx.to || tx.address,
+          amount: Math.abs(tx.value || tx.satoshis)
         };
         if (seenSend[tx.txid]) {
           seenSend[tx.txid].outputs.push(output);
@@ -3474,8 +3474,8 @@ export class WalletService {
       // move without send?
       if (tx.category == 'move' && !indexedSend[tx.txid]) {
         const output = {
-          address: tx.address,
-          amount: Math.abs(tx.satoshis)
+          address: tx.to || tx.address,
+          amount: Math.abs(tx.value || tx.satoshis)
         };
 
         if (moves[tx.txid]) {
@@ -3557,11 +3557,11 @@ export class WalletService {
           case 'receive':
             ret.action = 'received';
             ret.outputs = tx.outputs;
-            ret.amount = Math.abs(tx.satoshis);
+            ret.amount = Math.abs(tx.value || tx.satoshis);
             break;
           case 'move':
             ret.action = 'moved';
-            ret.amount = Math.abs(tx.satoshis);
+            ret.amount = Math.abs(tx.value || tx.satoshis);
             ret.addressTo =
               tx.outputs && tx.outputs.length ? tx.outputs[0].address : null;
             ret.outputs = tx.outputs;

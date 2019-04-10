@@ -6,7 +6,7 @@ import { ObjectID } from 'mongodb';
 import Web3 from 'web3';
 import { Storage } from '../../../services/storage';
 import { EthTransactionStorage } from '../../../models/transaction/eth/ethTransaction';
-import { ITransaction, EthTransactionJSON, IEthTransaction } from '../../../types/Transaction';
+import { ITransaction, EthTransactionJSON } from '../../../types/Transaction';
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -35,12 +35,16 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     return new Web3(new ProviderType(connUrl));
   }
 
-  async getFee({ network = 'mainnet', target = 4 } = {}) {
+  async getFee(params) {
+    let { network, target = 4 } = params;
+    if (network === 'livenet') {
+      network = 'mainnet'
+    }
     const bestBlock = await this.getWeb3(network).eth.getBlockNumber();
     const gasPrices: number[] = [];
     for (let i = 0; i < target; i++) {
       const block = await this.getWeb3(network).eth.getBlock(bestBlock - i);
-      const txs: Array<IEthTransaction> = await Promise.all(
+      const txs: any[] = await Promise.all(
         block.transactions.map(txid => {
           return this.getWeb3(network).eth.getTransaction(txid);
         })
