@@ -12,7 +12,11 @@
       <div *ngIf="!loading && !errorMessage">
         <h1>Address <small>{{ getConvertedNumber(address.balance) | number:'1.0-8' }}
             {{ currencyProvider.currencySymbol }}</small></h1>
-        <p class="ellipsis">{{ address.addrStr }}</p>
+        <p class="ellipsis">{{ address.addrStr }}
+          <button [copyToClipboard]="address.addrStr">
+            <ion-icon md="md-copy"></ion-icon>
+          </button>
+        </p>
 
         <h2>Summary</h2>
         <ion-grid>

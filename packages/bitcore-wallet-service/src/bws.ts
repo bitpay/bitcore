@@ -20,7 +20,6 @@ const serverOpts: {
 } = {};
 
 if (config.https) {
-  fs.readFileSync('');
   serverOpts.key = fs.readFileSync(
     config.privateKeyFile || './ssl/privatekey.pem'
   );

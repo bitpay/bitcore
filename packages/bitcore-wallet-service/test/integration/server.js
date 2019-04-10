@@ -1185,6 +1185,49 @@ describe('Wallet service', function() {
         });
       });
     });
+    it('should get status including server messages', function(done) {
+      server.appName = 'bitpay';
+      server.appVersion = {major: 5, minor: 0, patch: 0};
+      server.getStatus({
+        includeServerMessages: true
+      }, function(err, status) {
+        should.not.exist(err);
+        should.exist(status);
+        should.exist(status.serverMessages);
+        _.isArray(status.serverMessages).should.be.true;
+        status.serverMessages.should.deep.equal([{
+          title: 'Test message 2',
+          body: 'Only for bitpay livenet wallets',
+          link: 'http://bitpay.com',
+          id: 'bitpay2',
+          dismissible: true,
+          category: 'critical',
+          app: 'bitpay',
+          priority: 1
+        }]); 
+        done();
+      });
+    });
+    it('should get status including deprecated server message', function(done) {
+      server.appName = 'bitpay';
+      server.appVersion = {major: 5, minor: 0, patch: 0};
+        server.getStatus({}, function(err, status) {
+          should.not.exist(err);
+          should.exist(status);
+          should.exist(status.serverMessage);
+          _.isObject(status.serverMessage).should.be.true;
+          status.serverMessage.should.deep.equal({
+            title: 'Deprecated Test message',
+            body: 'Only for bitpay, old wallets',
+            link: 'http://bitpay.com',
+            id: 'bitpay1',
+            dismissible: true,
+            category: 'critical',
+            app: 'bitpay',
+          }); 
+          done();
+        });
+      });
   });
 
   describe('#verifyMessageSignature', function() {
@@ -5831,7 +5874,10 @@ describe('Wallet service', function() {
           txProposalId: txpid
         }, function(err, txp) {
           should.not.exist(err);
-          should.not.exist(txp.raw);
+         
+          should.exist(txp.raw);
+          // used to be like this. No sure why we won't like raw to be shown.
+          //should.not.exist(txp.raw);
           txp.txid.should.equal(txid);
           txp.isBroadcasted().should.be.true;
           txp.broadcastedOn.should.equal(1234);

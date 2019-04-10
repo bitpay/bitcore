@@ -337,6 +337,7 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.get('/v2/wallets/', (req, res) => {
       getServerWithAuth(req, res, (server) => {
         const opts = { includeExtendedInfo: false, twoStep: false };
@@ -344,6 +345,20 @@ export class ExpressApp {
           opts.includeExtendedInfo = true;
         if (req.query.twoStep == '1') opts.twoStep = true;
 
+        server.getStatus(opts, (err, status) => {
+          if (err) return returnError(err, res, req);
+          res.json(status);
+        });
+      });
+    });
+
+    router.get('/v3/wallets/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        const opts = { includeExtendedInfo: false, twoStep: false, includeServerMessages: false };
+        if (req.query.includeExtendedInfo == '1')
+          opts.includeExtendedInfo = true;
+        if (req.query.twoStep == '1') opts.twoStep = true;
+        if (req.query.serverMessageArray == '1') opts.includeServerMessages = true;
         server.getStatus(opts, (err, status) => {
           if (err) return returnError(err, res, req);
           res.json(status);

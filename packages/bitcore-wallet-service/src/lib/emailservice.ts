@@ -1,11 +1,14 @@
 import * as async from 'async';
-import _ from 'lodash';
-import * as nodemailer from 'nodemailer';
+import * as _ from 'lodash';
+// This has been changed in favor of @sendgrid.  To use nodemail, change the
+// sending function from `.send` to `.sendMail`.
+// import * as nodemailer from nodemailer';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
+import { Email } from './model';
 import { Storage } from './storage';
 
-interface Recipient {
+export interface Recipient {
   copayerId: string;
   emailAddress: string;
   language: string;
@@ -17,7 +20,6 @@ const fs = require('fs');
 const path = require('path');
 const Utils = require('./common/utils');
 const Defaults = require('./common/defaults');
-const Model = require('./model');
 
 let log = require('npmlog');
 log.debug = log.verbose;
@@ -71,7 +73,8 @@ export class EmailService {
   storage: Storage;
   messageBroker: MessageBroker;
   lock: Lock;
-  mailer: nodemailer.Transporter;
+  mailer: any;
+  //  mailer: nodemailer.Transporter;
 
   start(opts, cb) {
     opts = opts || {};
@@ -93,14 +96,15 @@ export class EmailService {
       });
     };
 
+    opts.emailOpts = opts.emailOpts || {};
+
     this.defaultLanguage = opts.emailOpts.defaultLanguage || 'en';
     this.defaultUnit = opts.emailOpts.defaultUnit || 'btc';
-    console.log(
-      (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/'
-    );
+    log.info('Email templates at:' +
+      (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/');
     this.templatePath = path.normalize(
-      (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/'
-    );
+      (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/');
+
     this.publicTxUrlTemplate = opts.emailOpts.publicTxUrlTemplate || {};
     this.subjectPrefix = opts.emailOpts.subjectPrefix || '[Wallet service]';
     this.from = opts.emailOpts.from;
@@ -137,7 +141,7 @@ export class EmailService {
         },
         (done) => {
           this.mailer =
-            opts.mailer || nodemailer.createTransport(opts.emailOpts);
+            opts.mailer; // || nodemailer.createTransport(opts.emailOpts);
           done();
         }
       ],
@@ -325,15 +329,18 @@ export class EmailService {
       mailOptions.html = email.bodyHtml;
     }
     this.mailer
-      .sendMail(mailOptions)
+      .send(mailOptions)
       .then(result => {
         log.debug('Message sent: ', result || '');
         return cb(null, result);
       })
       .catch(err => {
+        let errStr;
+        try { errStr = err.toString().substr(0, 100); } catch (e) { }
+
         log.error(
           'An error occurred when trying to send email to ' + email.to,
-          err
+          errStr || err
         );
         return cb(err);
       });
@@ -432,7 +439,7 @@ export class EmailService {
                     recipientsList,
                     (recipient, next) => {
                       const content = contents[recipient.language];
-                      const email = Model.Email.create({
+                      const email = Email.create({
                         walletId: notification.walletId,
                         copayerId: recipient.copayerId,
                         from: this.from,
@@ -470,9 +477,12 @@ export class EmailService {
               ],
               (err) => {
                 if (err) {
+                  let errStr;
+                  try { errStr = err.toString().substr(0, 100); } catch (e) { }
+
                   log.error(
                     'An error ocurred generating email notification',
-                    err
+                    errStr || err
                   );
                 }
                 return cb(err);

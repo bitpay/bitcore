@@ -2,10 +2,9 @@ import * as async from 'async';
 import _ from 'lodash';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
-import { Wallet } from './model/wallet';
+import { Address, Email, Notification, Preferences, PushNotificationSub, Session, TxConfirmationSub, TxNote, TxProposal, Wallet } from './model';
 
 const BCHAddressTranslator = require('./bchaddresstranslator'); // only for migration
-const Model = require('./model');
 const $ = require('preconditions').singleton();
 let log = require('npmlog');
 log.debug = log.verbose;
@@ -160,7 +159,7 @@ export class Storage {
       (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        return cb(null, Model.Wallet.fromObj(result));
+        return cb(null, Wallet.fromObj(result));
       }
     );
   }
@@ -271,7 +270,7 @@ export class Storage {
         if (!result) return cb();
         return this._completeTxData(
           walletId,
-          Model.TxProposal.fromObj(result),
+          TxProposal.fromObj(result),
           cb
         );
       }
@@ -291,7 +290,7 @@ export class Storage {
 
         return this._completeTxData(
           result.walletId,
-          Model.TxProposal.fromObj(result),
+          TxProposal.fromObj(result),
           cb
         );
       }
@@ -317,7 +316,7 @@ export class Storage {
         if (err) return cb(err);
         if (!result) return cb();
         const txs = _.map(result, (tx) => {
-          return Model.TxProposal.fromObj(tx);
+          return TxProposal.fromObj(tx);
         });
         return cb(null, txs);
       });
@@ -337,7 +336,7 @@ export class Storage {
         if (err) return cb(err);
         if (!result) return cb();
         const txs = _.map(result, (tx) => {
-          return Model.TxProposal.fromObj(tx);
+          return TxProposal.fromObj(tx);
         });
         return this._completeTxData(walletId, txs, cb);
       });
@@ -376,7 +375,7 @@ export class Storage {
         if (err) return cb(err);
         if (!result) return cb();
         const txs = _.map(result, (tx) => {
-          return Model.TxProposal.fromObj(tx);
+          return TxProposal.fromObj(tx);
         });
         return this._completeTxData(walletId, txs, cb);
       });
@@ -420,7 +419,7 @@ export class Storage {
         if (err) return cb(err);
         if (!result) return cb();
         const txs = _.map(result, (tx) => {
-          return Model.TxProposal.fromObj(tx);
+          return TxProposal.fromObj(tx);
         });
         return this._completeTxData(walletId, txs, cb);
       });
@@ -457,7 +456,7 @@ export class Storage {
         if (err) return cb(err);
         if (!result) return cb();
         const notifications = _.map(result, (notification) => {
-          return Model.Notification.fromObj(notification);
+          return Notification.fromObj(notification);
         });
         return cb(null, notifications);
       });
@@ -550,7 +549,7 @@ export class Storage {
         if (err) return cb(err);
         if (!result) return cb();
 
-        return cb(null, result.map(Model.Address.fromObj));
+        return cb(null, result.map(Address.fromObj));
       });
   }
 
@@ -613,7 +612,7 @@ export class Storage {
       .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        return cb(null, result.map(Model.Address.fromObj));
+        return cb(null, result.map(Address.fromObj));
       });
   }
 
@@ -701,7 +700,7 @@ export class Storage {
         if (err) return cb(err);
         if (!result) return cb();
 
-        return cb(null, Model.Address.fromObj(result));
+        return cb(null, Address.fromObj(result));
       }
     );
   }
@@ -743,7 +742,7 @@ export class Storage {
         }
         if (!result) return cb();
 
-        return cb(null, Model.Address.fromObj(result));
+        return cb(null, Address.fromObj(result));
       });
   }
 
@@ -764,7 +763,7 @@ export class Storage {
         if (!result) return cb();
 
         const preferences = _.map([].concat(result), (r) => {
-          return Model.Preferences.fromObj(r);
+          return Preferences.fromObj(r);
         });
         if (copayerId) { // TODO: review if returs are correct
           return cb(null, preferences[0]);
@@ -814,7 +813,7 @@ export class Storage {
         if (!result || _.isEmpty(result)) return cb(null, []);
 
         const emails = _.map(result, (x) => {
-          return Model.Email.fromObj(x);
+          return Email.fromObj(x);
         });
 
         return cb(null, emails);
@@ -830,7 +829,7 @@ export class Storage {
         if (err) return cb(err);
         if (!result) return cb();
 
-        return cb(null, Model.Email.fromObj(result));
+        return cb(null, Email.fromObj(result));
       }
     );
   }
@@ -1159,7 +1158,7 @@ export class Storage {
         if (!result) return cb();
         return this._completeTxNotesData(
           walletId,
-          Model.TxNote.fromObj(result),
+          TxNote.fromObj(result),
           cb
         );
       }
@@ -1198,7 +1197,7 @@ export class Storage {
         if (err) return cb(err);
         const notes = _.compact(
           _.map(result, (note) => {
-            return Model.TxNote.fromObj(note);
+            return TxNote.fromObj(note);
           })
         );
         return this._completeTxNotesData(walletId, notes, cb);
@@ -1227,7 +1226,7 @@ export class Storage {
       },
       (err, result) => {
         if (err || !result) return cb(err);
-        return cb(null, Model.Session.fromObj(result));
+        return cb(null, Session.fromObj(result));
       }
     );
   }
@@ -1258,7 +1257,7 @@ export class Storage {
         if (!result) return cb();
 
         const tokens = _.map([].concat(result), (r) => {
-          return Model.PushNotificationSub.fromObj(r);
+          return PushNotificationSub.fromObj(r);
         });
         return cb(null, tokens);
       });
@@ -1307,7 +1306,7 @@ export class Storage {
         if (!result) return cb();
 
         const subs = _.map([].concat(result), (r) => {
-          return Model.TxConfirmationSub.fromObj(r);
+          return TxConfirmationSub.fromObj(r);
         });
         return cb(null, subs);
       });

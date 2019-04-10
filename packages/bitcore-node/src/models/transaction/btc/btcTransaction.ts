@@ -166,7 +166,17 @@ export class BtcTransactionModel extends TransactionModel<IBtcTransaction> {
     mintOps: Array<MintOp>;
     mempoolTime?: Date;
   }) {
-    let { blockHash, blockTime, blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
+    let {
+      blockHash,
+      blockTime,
+      blockTimeNormalized,
+      chain,
+      height,
+      network,
+      parentChain,
+      forkHeight,
+      mempoolTime
+    } = params;
     if (parentChain && forkHeight && height < forkHeight) {
       const parentTxs = await BtcTransactionStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
@@ -190,7 +200,8 @@ export class BtcTransactionModel extends TransactionModel<IBtcTransaction> {
                 inputCount: parentTx.inputCount,
                 outputCount: parentTx.outputCount,
                 value: parentTx.value,
-                wallets: []
+                wallets: [],
+                ...(mempoolTime && { mempoolTime })
               }
             },
             upsert: true,

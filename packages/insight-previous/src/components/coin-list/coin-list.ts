@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { Events } from 'ionic-angular';
+import _ from 'lodash';
 import { AddressProvider } from '../../providers/address/address';
 import { Logger } from '../../providers/logger/logger';
 import { TxsProvider } from '../../providers/transactions/transactions';
@@ -12,7 +13,7 @@ export class CoinListComponent implements OnInit {
   @Input()
   public addrStr?: string;
 
-  public coins: any = [];
+  public txs: any = [];
   public showTransactions: boolean;
   public loading;
   public limit = 10;
@@ -26,11 +27,12 @@ export class CoinListComponent implements OnInit {
   ) {}
 
   public ngOnInit(): void {
-    if (this.coins && this.coins.length === 0) {
+    if (this.txs && this.txs.length === 0) {
       this.loading = true;
       this.addrProvider.getAddressActivity(this.addrStr).subscribe(
         data => {
-          this.coins = data.map(this.txsProvider.toAppCoin);
+          const formattedData = data.map(this.txsProvider.toAppCoin);
+          this.txs = this.orderByHeight(formattedData);
           this.showTransactions = true;
           this.loading = false;
           this.events.publish('CoinList', { length: data.length });
@@ -42,6 +44,26 @@ export class CoinListComponent implements OnInit {
         }
       );
     }
+  }
+
+  orderByHeight(data) {
+    const unconfirmedTxs = [];
+    let confirmedTxs = [];
+
+    data.forEach(tx => {
+      const { mintHeight, mintTxid, value, spentHeight, spentTxid } = tx;
+
+      mintHeight < 0
+        ? unconfirmedTxs.push({ height: mintHeight, mintTxid, value })
+        : confirmedTxs.push({ height: mintHeight, mintTxid, value });
+
+      spentHeight < 0
+        ? unconfirmedTxs.push({ height: spentHeight, spentTxid, value })
+        : confirmedTxs.push({ height: spentHeight, spentTxid, value });
+    });
+
+    confirmedTxs = _.orderBy(confirmedTxs, ['height'], ['desc']);
+    return unconfirmedTxs.concat(confirmedTxs);
   }
 
   public loadMore(infiniteScroll) {
