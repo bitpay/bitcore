@@ -18,6 +18,7 @@ COPY  ./packages/bitcore-wallet-service/package.json ./packages/bitcore-wallet-s
 COPY  ./packages/bitcore-wallet/package.json ./packages/bitcore-wallet/package.json
 COPY  ./packages/insight-previous/package.json ./packages/insight-previous/package.json
 COPY  ./packages/insight/package.json ./packages/insight/package.json
+COPY  ./packages/crypto-wallet-core/package.json ./packages/crypto-wallet-core/package.json
 
 RUN npm install
 RUN npm run bootstrap
