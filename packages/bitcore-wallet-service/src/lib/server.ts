@@ -66,7 +66,7 @@ export interface IWalletService {
   copayerId: string;
   appName: string;
   appVersion: string;
-  parsedClientVersion: { agent: number; major: number; minor: number };
+  parsedClientVersion: { agent: number; major: number; minor: number; };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
 }
@@ -487,8 +487,8 @@ export class WalletService {
       return cb(new ClientError('Invalid network'));
     }
 
-    const derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44
-    const addressType = opts.n === 1 
+    const derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44;
+    const addressType = opts.n === 1
         ? Constants.SCRIPT_TYPES.P2PKH
         : Constants.SCRIPT_TYPES.P2SH;
 
@@ -1076,7 +1076,6 @@ export class WalletService {
             )
           );
         }
-
 
         const hash = WalletService._getCopayerHash(
           opts.name,
@@ -4384,7 +4383,7 @@ export class WalletService {
               addresses.push(addr);
               i++;
             }
-            //this.logi(i + ' addresses were added.');
+            // this.logi(i + ' addresses were added.');
           }
 
           this._store(wallet, addresses, next);
