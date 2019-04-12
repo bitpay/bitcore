@@ -1,6 +1,6 @@
 {
   "name": "bitcore-wallet-ui",
-  "version": "8.1.1",
+  "version": "8.2.0",
   "private": true,
   "proxy": "http://localhost:3000",
   "scripts": {
@@ -13,7 +13,7 @@
     "@material-ui/core": "^3.9.2",
     "@material-ui/icons": "^3.0.2",
     "@material-ui/styles": "^3.0.0-alpha.10",
-    "bitcore-client": "^8.1.1",
+    "bitcore-client": "^8.2.0",
     "classnames": "^2.2.6",
     "history": "^4.7.2",
     "immer-reducer": "^0.6.0",
