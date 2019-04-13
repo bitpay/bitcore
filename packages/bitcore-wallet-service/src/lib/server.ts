@@ -1482,10 +1482,17 @@ export class WalletService {
             hash
           ) => {
             if (err) return next(err);
+
+            const dustThreshold = Bitcore_[wallet.coin].Transaction.DUST_AMOUNT;
             bc.getUtxos(wallet, height, (err, utxos) => {
               if (err) return next(err);
               if (utxos.length == 0) return cb(null, []);
-              allUtxos = utxos;
+
+              // filter out DUST
+              allUtxos = _.filter(utxos, (x) => {
+                return x.satoshis >= dustThreshold;
+              });
+
               utxoIndex = _.keyBy(allUtxos, utxoKey);
               return next();
             });

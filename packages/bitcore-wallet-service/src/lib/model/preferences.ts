@@ -28,6 +28,7 @@ export class Preferences {
     x.email = opts.email;
     x.language = opts.language;
     x.unit = opts.unit;
+    // you can't put useDust here since this is copayer's specific.
     return x;
   }
 

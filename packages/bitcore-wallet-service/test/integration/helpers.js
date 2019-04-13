@@ -273,7 +273,6 @@ helpers._parseAmount = function(str) {
 
   var re = /^((?:\d+c)|u)?\s*([\d\.]+)\s*(btc|bit|sat)?$/;
   var match = str.match(re);
-
   if (!match) throw new Error('Could not parse amount ' + str);
 
   if (match[1]) {

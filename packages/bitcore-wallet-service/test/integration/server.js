@@ -1811,7 +1811,43 @@ describe('Wallet service', function() {
         });
       });
     });
+
+
+    it('should skip dust UTXOs ', function(done) {
+      helpers.stubUtxos(server, wallet, ['1 sat', 2, '10 sat', '100 sat', '1000 sat'], function() {
+        server.getUtxos({}, function(err, utxos) {
+          should.not.exist(err);
+          should.exist(utxos);
+          utxos.length.should.equal(2);
+          _.sumBy(utxos, 'satoshis').should.equal(2 * 1e8 + 1000);
+          server.getMainAddresses({}, function(err, addresses) {
+            var utxo = utxos[0];
+            var address = _.find(addresses, {
+              address: utxo.address
+            });
+            should.exist(address);
+            utxo.path.should.equal(address.path);
+            utxo.publicKeys.should.deep.equal(address.publicKeys);
+            done();
+          });
+        });
+      });
+    });
+
+    it('should report no UTXOs if only dust', function(done) {
+      helpers.stubUtxos(server, wallet, ['1 sat', '10 sat', '100 sat', '500 sat'], function() {
+        server.getUtxos({}, function(err, utxos) {
+          should.not.exist(err);
+          should.exist(utxos);
+          utxos.length.should.equal(0);
+          _.sumBy(utxos, 'satoshis').should.equal(0);
+          done();
+        });
+      });
+    });
   });
+
+
 
   describe('Multiple request Pub Keys', function() {
     var server, wallet;
