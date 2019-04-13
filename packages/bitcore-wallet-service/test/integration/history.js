@@ -111,6 +111,23 @@ describe('History V8', function() {
       });
     });
 
+    it('should filter out DUST amount', function(done) {
+      let txs= helpers.createTxsV8(50, BCHEIGHT);
+      txs[5].satoshis=100;
+      txs[15].satoshis=10;
+      txs[25].satoshis=1;
+      helpers.stubHistoryV8(null, null, txs);
+      server.getTxHistory({limit: 50}, function(err, txs, fromCache) {
+        should.not.exist(err);
+        fromCache.should.equal(false);
+        should.exist(txs);
+        txs.length.should.equal(47);
+        done();
+      });
+    });
+
+
+
     it('should handle moves, filtering change addresses (case 1)', function(done) {
       let txs= helpers.createTxsV8(20, 1000);
       helpers.createAddresses(server, wallet, 1, 1, function(main, change) {

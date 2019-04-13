@@ -4847,7 +4847,7 @@ describe('Wallet service', function() {
     it('should include the note in tx history listing', function(done) {
       helpers.createAddresses(server, wallet, 1, 1, function(mainAddresses, changeAddress) {
         blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000);
-        server._normalizeTxHistory = function(a, b, c, d) { return d(null, b); }
+        server._normalizeTxHistory = function(a, b, c, e,  d) { return d(null, b); }
         var txs = [{
           txid: '123',
           blockheight: 100,
@@ -5292,7 +5292,9 @@ describe('Wallet service', function() {
       });
     });
     it('should ignore utxos not contributing to total amount (below their cost in fee)', function(done) {
-      helpers.stubUtxos(server, wallet, ['u0.1', 0.2, 0.3, 0.4, '1bit', '100bit', '200bit'], function() {
+
+      // 10 sat and 100 sat should be completely ignored. (under dust)
+      helpers.stubUtxos(server, wallet, ['u0.1', '100 sat', 0.2, 0.3, 0.4, '10bit', '100bit', '200bit', '10 sat'], function() {
         server.getSendMaxInfo({
           feePerKb: 0.001e8,
           returnInputs: true,
@@ -5304,7 +5306,7 @@ describe('Wallet service', function() {
           info.fee.should.equal(info.size * 0.001e8 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
           info.utxosBelowFee.should.equal(3);
-          info.amountBelowFee.should.equal(301e2);
+          info.amountBelowFee.should.equal(310e2);
           server.getSendMaxInfo({
             feePerKb: 0.0001e8,
             returnInputs: true,
@@ -5316,7 +5318,7 @@ describe('Wallet service', function() {
             info.fee.should.equal(info.size * 0.0001e8 / 1000.);
             info.amount.should.equal(1.0003e8 - info.fee);
             info.utxosBelowFee.should.equal(1);
-            info.amountBelowFee.should.equal(1e2);
+            info.amountBelowFee.should.equal(1e3);
             sendTx(info, done);
           });
         });

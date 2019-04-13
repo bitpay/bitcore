@@ -3386,7 +3386,7 @@ export class WalletService {
     });
   }
 
-  _normalizeTxHistory(walletId, txs: any[], bcHeight, cb) {
+  _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, cb) {
     if (_.isEmpty(txs)) return cb(null, txs);
 
     // This is PARTIAL history??  TODO TODO TODO TODO!~
@@ -3502,7 +3502,7 @@ export class WalletService {
     fixMoves(err => {
       if (err) return cb(err);
 
-      const ret = _.map([].concat(txs), (tx) => {
+      const ret = _.filter(_.map([].concat(txs), (tx) => {
         const t = new Date(tx.blockTime).getTime() / 1000;
         const c = bcHeight && tx.height >= 0 ? bcHeight - tx.height + 1 : 0;
         const ret = {
@@ -3520,7 +3520,8 @@ export class WalletService {
           amount: 0,
           action: undefined,
           addressTo: undefined,
-          outputs: undefined
+          outputs: undefined,
+          dust: false,
         };
         switch (tx.category) {
           case 'send':
@@ -3533,6 +3534,7 @@ export class WalletService {
             ret.action = 'received';
             ret.outputs = tx.outputs;
             ret.amount = Math.abs(tx.satoshis);
+            ret.dust = ret.amount < dustThreshold;
             break;
           case 'move':
             ret.action = 'moved';
@@ -3548,6 +3550,10 @@ export class WalletService {
         // not available
         // inputs: inputs,
         return ret;
+
+        // filter out dust
+      }),(x) => {
+        return !x.dust;
       });
 
       // console.log('[server.js.2965:ret:] END',ret); //TODO
@@ -3987,7 +3993,8 @@ export class WalletService {
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
 
-            this._normalizeTxHistory(wallet.id, txs, bcHeight, (
+            const dustThreshold = Bitcore_[wallet.coin].Transaction.DUST_AMOUNT;
+            this._normalizeTxHistory(wallet.id, txs, dustThreshold, bcHeight, (
               err,
               inTxs: any[]
             ) => {
