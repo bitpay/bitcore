@@ -334,6 +334,7 @@ Credentials.prototype.getBaseAddressDerivationPath = function() {
       break;
   }
 
+  // TODO fix BCH
   var coin = (this.network == 'livenet' ? "0" : "1");
   return "m/" + purpose + "'/" + coin + "'/" + this.account + "'";
 };
