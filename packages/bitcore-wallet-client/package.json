@@ -46,7 +46,8 @@
     "mongodb": "^2.0.27",
     "sinon": "^7.1.1",
     "supertest": "^3.0.0",
-    "uuid": "^2.0.1"
+    "uuid": "^2.0.1",
+    "@types/node": "^11.11.3"
   },
   "scripts": {
     "start": "node app.js",
