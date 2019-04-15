@@ -3552,7 +3552,7 @@ export class WalletService {
         return ret;
 
         // filter out dust
-      }),(x) => {
+      }), (x) => {
         return !x.dust;
       });
 
