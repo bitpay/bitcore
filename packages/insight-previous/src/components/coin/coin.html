@@ -5,7 +5,7 @@
         <span *ngIf="coin.height >= 0">
           <a (click)="goToTx(coin.mintTxid)">{{ coin.mintTxid }}</a>
         </span>
-        <span ion-text color="danger" *ngIf="coin.height === -3">
+        <span ion-text color="danger" *ngIf="coin.height < 0">
           Invalid
         </span>
       </div>
