@@ -3865,10 +3865,12 @@ export class WalletService {
           toAddress: output.address,
           amount: output.amount
         };
-        const txpOut = proposal.outputs.find(
-          o => o.toAddress === output.address && o.amount === output.amount
-        );
-        output.message = txpOut ? txpOut.message : null;
+        if (proposal.outputs) {
+          const txpOut = proposal.outputs.find(
+            o => o.toAddress === output.address && o.amount === output.amount
+          );
+          output.message = txpOut ? txpOut.message : null;
+        }
       });
       tx.customData = proposal.customData;
 
