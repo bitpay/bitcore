@@ -163,6 +163,10 @@ Utils.deriveAddress = function(scriptType, publicKeyRing, path, m, network, coin
 };
 
 Utils.xPubToCopayerId = function(coin, xpub) {
+
+  // this is only because we allowed coin = 0' wallets for BCH 
+  // with "wallet duplication" happened.
+
   var str = coin == 'btc' ? xpub : coin + xpub;
   var hash = sjcl.hash.sha256.hash(str);
   return sjcl.codec.hex.fromBits(hash);

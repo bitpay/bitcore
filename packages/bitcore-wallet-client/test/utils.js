@@ -16,22 +16,19 @@ describe('Utils', function() {
     });
   });
 
-  describe.only('#xPubToCopayerId', function() {
-    it('should generate copayerId', function() {
+  describe('#xPubToCopayerId', function() {
+    it('should generate copayerId BTC', function() {
       var xpub = Bitcore.HDPublicKey.fromString('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj');
       var res = Utils.xPubToCopayerId('btc', 'xpub');
       res.should.equal('7296cfd7d812726a25b9d7c582b93738389fa66328cdd47cc67dbf98f1ff68a1');
     });
 
-    it('should generate copayerId', function() {
+    it('should generate copayerId BCH', function() {
       var xpub = Bitcore.HDPublicKey.fromString('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj');
       var res = Utils.xPubToCopayerId('bch', 'xpub');
-      res.should.equal('7296cfd7d812726a25b9d7c582b93738389fa66328cdd47cc67dbf98f1ff68a1');
+      res.should.equal('5ea2f70a79027e385fea0e47df952db5763d7a749679f639a9f1c7235c86de4b');
     });
- 
   });
-
-
 
   describe('#signMessage', function() {
     it('should sign a message', function() {
