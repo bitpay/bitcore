@@ -10,6 +10,7 @@ import { ITransaction } from '../../models/transaction';
 import { AuthheadJSON } from '../Authhead';
 import { CoinListingJSON } from '../Coin';
 import { DailyTransactionsJSON } from '../stats';
+import { ICoin } from '../../models/coin';
 export declare namespace CSP {
   export type StreamWalletTransactionsArgs = {
     startBlock: number;
@@ -21,7 +22,6 @@ export declare namespace CSP {
 
   export type StreamAddressUtxosArgs = {
     unspent: boolean;
-    limit: number;
   };
 
   export type GetBlockArgs = { limit: null | number };
@@ -71,7 +71,7 @@ export declare namespace CSP {
     address: string;
     req: Request;
     res: Response;
-    args: StreamAddressUtxosArgs;
+    args: Partial<StreamAddressUtxosArgs & StreamingFindOptions<ICoin>>;
   };
 
   export type StreamTransactionsParams = ChainNetwork & {
