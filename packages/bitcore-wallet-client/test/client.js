@@ -1269,9 +1269,10 @@ describe('client API', function() {
       var xPriv = 'xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu';
       clients[0].seedFromExtendedPrivateKey(xPriv, {
         'coin': 'bch',
+        use0forBCH: true,
       });
       clients[0].createWallet('mycashwallet', 'pepe', 1, 1, {
-        coin: 'bch'
+        coin: 'bch',
       }, function(err, secret) {
         should.not.exist(err);
 
@@ -1315,6 +1316,8 @@ describe('client API', function() {
     });
     it('should fire event when wallet is complete', function(done) {
       var checks = 0;
+
+
       clients[0].on('walletCompleted', function(wallet) {
         wallet.name.should.equal('mywallet');
         wallet.status.should.equal('complete');
@@ -1322,6 +1325,10 @@ describe('client API', function() {
         clients[0].credentials.isComplete().should.equal(true);
         if (++checks == 2) done();
       });
+      clients[0].seedFromRandom({
+        network: 'testnet',
+      });
+
       clients[0].createWallet('mywallet', 'creator', 2, 2, {
         network: 'testnet'
       }, function(err, secret) {
@@ -1357,6 +1364,12 @@ describe('client API', function() {
     });
 
     it('should return wallet on successful join', function(done) {
+      clients[0].seedFromRandom({
+        network: 'testnet',
+      });
+
+
+
       clients[0].createWallet('mywallet', 'creator', 2, 2, {
         network: 'testnet'
       }, function(err, secret) {
@@ -1372,6 +1385,11 @@ describe('client API', function() {
     });
 
     it('should not allow to join wallet on bogus device', function(done) {
+      clients[0].seedFromRandom({
+        network: 'testnet',
+      });
+
+
       clients[0].createWallet('mywallet', 'creator', 2, 2, {
         network: 'testnet'
       }, function(err, secret) {
@@ -1472,6 +1490,9 @@ describe('client API', function() {
       });
     });
     it('should perform a dry join without actually joining', function(done) {
+      clients[0].seedFromRandom({
+      });
+
       clients[0].createWallet('mywallet', 'creator', 1, 2, {}, function(err, secret) {
         should.not.exist(err);
         should.exist(secret);
@@ -1488,6 +1509,10 @@ describe('client API', function() {
     });
 
     it('should return wallet status even if wallet is not yet complete', function(done) {
+      clients[0].seedFromRandom({
+        network: 'testnet'
+      });
+
       clients[0].createWallet('mywallet', 'creator', 1, 2, {
         network: 'testnet'
       }, function(err, secret) {
@@ -1504,7 +1529,12 @@ describe('client API', function() {
         });
       });
     });
+      
     it('should return status using v2 version', function(done) {
+      clients[0].seedFromRandom({
+        network: 'testnet'
+      });
+
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
       }, function(err, secret) {
@@ -1518,6 +1548,10 @@ describe('client API', function() {
       });
     });
     it('should return extended status using v2 version', function(done) {
+      clients[0].seedFromRandom({
+        network: 'testnet'
+      });
+
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
       }, function(err, secret) {
@@ -1534,6 +1568,10 @@ describe('client API', function() {
     });
 
     it('should store walletPrivKey', function(done) {
+      clients[0].seedFromRandom({
+        network: 'testnet'
+      });
+
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
       }, function(err) {
@@ -1555,6 +1593,10 @@ describe('client API', function() {
     });
 
     it('should set walletPrivKey from BWS', function(done) {
+      clients[0].seedFromRandom({
+        network: 'testnet'
+      });
+
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
       }, function(err) {
