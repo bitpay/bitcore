@@ -38,8 +38,9 @@ var FIELDS = [
   'account',
   'compliantDerivation',
   'addressType',
-  'hwInfo',
-  'entropySourcePath',
+  'hwInfo',                 // Obsolete, only for backwards compat
+  'entropySourcePath',      // Obsolete, only for backwards compat 
+  'use145forBCH',          // use the appropiate coin' path element in BIP44 for BCH 
 ];
 
 function Credentials() {
@@ -56,16 +57,23 @@ function _checkNetwork(network) {
   if (!_.includes(['livenet', 'testnet'], network)) throw new Error('Invalid network');
 };
 
-Credentials.create = function(coin, network) {
+Credentials.create = function(coin, network, account) {
   _checkCoin(coin);
   _checkNetwork(network);
+
+  if (account && !_.isNumber(account) )
+    throw new Error('Invalid account');
+
+  account = account   || 0;
 
   var x = new Credentials();
 
   x.coin = coin;
   x.network = network;
+  x.account = account;
   x.xPrivKey = (new Bitcore.HDPrivateKey(network)).toString();
   x.compliantDerivation = true;
+  x.use145forBCH = true;
   x._expand();
   return x;
 };
@@ -98,6 +106,7 @@ Credentials.createWithMnemonic = function(coin, network, passphrase, language, a
   x.account = account;
   x.xPrivKey = m.toHDPrivateKey(passphrase, network).toString();
   x.compliantDerivation = true;
+  x.use145forBCH = true;
   x._expand();
   x.mnemonic = m.phrase;
   x.mnemonicHasPassphrase = !!passphrase;
@@ -118,6 +127,7 @@ Credentials.fromExtendedPrivateKey = function(coin, xPrivKey, account, derivatio
   x.account = account;
   x.derivationStrategy = derivationStrategy;
   x.compliantDerivation = !opts.nonCompliantDerivation;
+  x.use145forBCH = !opts.use0forBCH;
 
   if (opts.walletPrivKey) {
     x.addWalletPrivateKey(opts.walletPrivKey);
@@ -145,6 +155,7 @@ Credentials.fromMnemonic = function(coin, network, words, passphrase, account, d
   x.account = account;
   x.derivationStrategy = derivationStrategy;
   x.compliantDerivation = !opts.nonCompliantDerivation;
+  x.use145forBCH = !opts.use0forBCH;
   x.entropySourcePath = opts.entropySourcePath;
 
   if (opts.walletPrivKey) {
@@ -186,6 +197,7 @@ Credentials.fromExtendedPublicKey = function(coin, xPubKey, source, entropySourc
   x.derivationStrategy = derivationStrategy;
   x.externalSource = source;
   x.compliantDerivation = true;
+  x.use145forBCH = true;
   x._expand();
   return x;
 };
@@ -334,8 +346,19 @@ Credentials.prototype.getBaseAddressDerivationPath = function() {
       break;
   }
 
-  // TODO fix BCH
-  var coin = (this.network == 'livenet' ? "0" : "1");
+  var coin = '0';
+  if (this.network != 'livenet' ) {
+    coin = '1';
+  } else if (this.coin == 'bch') {
+    if (this.use145forBCH) {
+      coin = '145';
+    } else {
+      coin = '0';
+    }
+  } else if (this.coin == 'eth') {
+    coin = '60';
+  };
+
   return "m/" + purpose + "'/" + coin + "'/" + this.account + "'";
 };
 

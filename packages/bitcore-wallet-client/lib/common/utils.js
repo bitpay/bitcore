@@ -164,11 +164,9 @@ Utils.deriveAddress = function(scriptType, publicKeyRing, path, m, network, coin
 
 Utils.xPubToCopayerId = function(coin, xpub) {
 
-  // this is no longer necesary, because 
-  // derivation path `coin` item is set, so
-  // diffrerent coins render different xpub
-  // Keep for compatibility.
-  //
+  // this is only because we allowed coin = 0' wallets for BCH 
+  // for the  "wallet duplication" feature
+
   var str = coin == 'btc' ? xpub : coin + xpub;
 
   var hash = sjcl.hash.sha256.hash(str);
