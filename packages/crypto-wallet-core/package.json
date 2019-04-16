@@ -4,6 +4,8 @@
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
   "main": "ts_build/index.js",
   "scripts": {
+    "clean": "rm -rf ts_build",
+    "compile": "npm run clean && ./node_modules/.bin/tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -31,6 +33,6 @@
     "@types/secp256k1": "^3.5.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
-    "typescript": "^3.2.2"
+    "typescript": "^3.4.3"
   }
 }
