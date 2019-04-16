@@ -1070,13 +1070,7 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
   if (!_.includes(['testnet', 'livenet'], network)) return cb(new Error('Invalid network'));
 
   if (!self.credentials) {
-    log.info('Generating new keys');
-    self.seedFromRandom({
-      coin: coin,
-      network: network
-    });
-  } else {
-    log.info('Using existing keys');
+    return cb(new Error('Generate keys first using seedFrom*'));
   }
 
   if (coin != self.credentials.coin) {
