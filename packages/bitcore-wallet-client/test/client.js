@@ -437,6 +437,8 @@ describe('client API', function() {
         s2.load = sinon.stub().yields(null);
         var client = helpers.newClient(app);
         client.storage = s2;
+
+        client.seedFromRandomWithMnemonic({ network: 'testnet' });
         client.createWallet('1', '2', 1, 1, {
             network: 'testnet'
           },
@@ -465,6 +467,7 @@ describe('client API', function() {
         s2.load = sinon.stub().yields(null);
         var client = helpers.newClient(app);
         client.storage = s2;
+        client.seedFromRandomWithMnemonic({ network: 'testnet' });
         client.createWallet('1', '2', 1, 1, {
             network: 'testnet'
           },
@@ -493,6 +496,7 @@ describe('client API', function() {
         s2.load = sinon.stub().yields(null);
         var client = helpers.newClient(app);
         client.storage = s2;
+        client.seedFromRandomWithMnemonic({ network: 'testnet' });
         client.createWallet('1', '2', 1, 1, {
             network: 'testnet'
           },
@@ -516,6 +520,7 @@ describe('client API', function() {
 
     it('should handle critical errors (Case5)', function(done) {
       clients[0].request.r = helpers.stubRequest('some error');
+      clients[0].seedFromRandomWithMnemonic({ network: 'testnet' });
       clients[0].createWallet('mywallet', 'creator', 1, 2, {
         network: 'testnet'
       }, function(err, secret) {
