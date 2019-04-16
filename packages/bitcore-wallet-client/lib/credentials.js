@@ -156,6 +156,7 @@ Credentials.fromMnemonic = function(coin, network, words, passphrase, account, d
   x.compliantDerivation = !opts.nonCompliantDerivation;
   x.use145forBCH = !opts.useLegacyCoinType;
   x.derivationStrategy = derivationStrategy;
+  x.entropySourcePath = opts.entropySourcePath;
 
   // this are wallet specific
   x.coin = coin;
@@ -205,7 +206,11 @@ Credentials.fromExtendedPublicKey = function(coin, xPubKey, source, entropySourc
   x.derivationStrategy = derivationStrategy;
   x.externalSource = source;
   x.compliantDerivation = true;
+<<<<<<< HEAD
   x.use145forBCH = opts.use145forBCH || false;
+=======
+  x.use145forBCH = true;
+>>>>>>> add tests for use0forBCH
   x._expand();
   return x;
 };
