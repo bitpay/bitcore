@@ -157,7 +157,6 @@ Credentials.fromMnemonic = function(coin, network, words, passphrase, account, d
   x.use145forBCH = !opts.use0forBCH;
   x.derivationStrategy = derivationStrategy;
 
-console.log('[credentials.js.159]', x.use145forBCH); // TODO
   // this are wallet specific
   x.coin = coin;
   x.account = account;
