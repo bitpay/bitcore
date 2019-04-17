@@ -459,10 +459,14 @@ API.prototype._import = function(cb) {
   });
 };
 
+
+API.prototype.importAllFromMnemonic = function(words, opts, cb) {
+}
+
 /**
  * Import from Mnemonics (language autodetected)
  * Can throw an error if mnemonic is invalid
- * Will try compliant and non-compliantDerivation
+ * Will try compilant and non-compliantDerivation
  *
  * @param {String} BIP39 words
  * @param {Object} opts
@@ -488,6 +492,13 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
       entropySourcePath: opts.entropySourcePath,
       walletPrivKey: opts.walletPrivKey,
       useLegacyCoinType, 
+    return Credentials.fromMnemonic(opts.coin || 'btc', opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, {
+      nonCompliantDerivation: nonCompliantDerivation,
+      entropySourcePath: opts.entropySourcePath,
+      walletPrivKey: opts.walletPrivKey,
+      use0forBCH: use0forBCH,
+>>>>>>> update test name files
+>>>>>>> update test name files
     });
   };
 

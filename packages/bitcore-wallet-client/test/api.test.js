@@ -4185,7 +4185,7 @@ describe('client API', function() {
             done();
           });
         });
-        it('should export & import with mnemonics + BWS', function(done) {
+        it.only('should export & import with mnemonics + BWS', function(done) {
           clients[0].seedFromMnemonic('pink net pet stove boy receive task nephew book spawn pull regret', {
             network: 'livenet',
             nonCompliantDerivation: true,
