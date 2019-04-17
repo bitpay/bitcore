@@ -4658,7 +4658,6 @@ describe('client API', function() {
       }, function(err, secret) {
         should.not.exist(err);
         clients[0].createAddress(function(err, x) {
-console.log('[api.test.js.4660:err:]',err); // TODO
           should.not.exist(err);
           address = x.address;
           console.log('[api.test.js.4661:address:]',address); // TODO
@@ -4670,7 +4669,11 @@ console.log('[api.test.js.4660:err:]',err); // TODO
           }, function(err) {
             should.not.exist(err);
             check(importedClient);
-            done();
+            clients[0].createAddress(function(err, x) {
+              should.not.exist(err);
+              x.address.should.equal(address);
+              done();
+            });
           });
           });
       });
