@@ -4237,6 +4237,59 @@ describe('client API', function() {
       });
     });
 
+    describe.only('BCH with 0 as cointype derivation', function() {
+      function setup(done) {
+        clients[0].createWallet('mywallet', 'creator', 1, 1, {
+          network: 'livenet',
+          coin: 'bch',
+          use0forBCH: true,
+        }, function(err) {
+          should.not.exist(err);
+          clients[0].createAddress(function(err, addr) {
+            should.not.exist(err);
+            address = addr.address;
+console.log('[api.test.js.4248:address:]',address); // TODO
+            done();
+          });
+        });
+      };
+
+      beforeEach(function() {
+        importedClient = null;
+      });
+      afterEach(function(done) {
+        if (!importedClient) return done();
+        importedClient.getMainAddresses({}, function(err, list) {
+          should.not.exist(err);
+          should.exist(list);
+          list.length.should.equal(1);
+          list[0].address.should.equal(address);
+          done();
+        });
+      });
+      it('should export & import with mnemonics + BWS', function(done) {
+        clients[0].seedFromMnemonic('pink net pet stove boy receive task nephew book spawn pull regret', {
+          network: 'livenet',
+          nonCompliantDerivation: true,
+        });
+        clients[0].credentials.xPrivKey.toString().should.equal('xprv9s21ZrQH143K3E71Wm5nrxuMdqCTMG6AM5Xyp4dJ3ZkUj2gEpfifT5Hc1cfqnycKooRpzoH4gjmAKDmGGaH2k2cSe29EcQSarveq6STBZZW');
+        clients[0].credentials.xPubKey.toString().should.equal('xpub6CLj2x8T5zwngq3Uq42PbXbAXnyaUtsANEZaBjAPNBn5PbhSJM29DM5nhrdJDNpEy9X3n5sQhk6CNA7PKTp48Xvq3QFdiYAXAcaWEJ6Xmug');
+        setup(function() {
+          importedClient = helpers.newClient(app);
+          var spy = sinon.spy(importedClient, 'openWallet');
+          importedClient.importFromMnemonic(clients[0].getMnemonic(), {
+            network: 'livenet',
+          }, function(err) {
+            should.not.exist(err);
+            spy.getCalls().length.should.equal(2);
+            done();
+          });
+        });
+      });
+    });
+
+
+
     describe('#validateKeyDerivation', function() {
       beforeEach(function(done) {
         helpers.createAndJoinWallet(clients, 1, 1, function() {
