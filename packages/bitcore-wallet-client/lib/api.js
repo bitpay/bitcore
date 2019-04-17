@@ -484,9 +484,10 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
   var self = this;
 
   opts = opts || {};
+  opts.coin = opts.coin || 'btc';
 
   function derive(nonCompliantDerivation, use0forBCH) {
-    return Credentials.fromMnemonic(opts.coin || 'btc', opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, {
+    return Credentials.fromMnemonic(opts.coin, opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, {
       nonCompliantDerivation: nonCompliantDerivation,
       entropySourcePath: opts.entropySourcePath,
       walletPrivKey: opts.walletPrivKey,
@@ -501,7 +502,7 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
     return cb(new Errors.INVALID_BACKUP);
   }
   this.request.setCredentials(this.credentials);
-
+ 
   self._import(function(err, ret) {
     if (!err) return cb(null, ret);
     if (err instanceof Errors.INVALID_BACKUP) return cb(err);
@@ -513,9 +514,11 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
         case 'btc':
           // try using nonCompliantDerivation
           altCredentials = derive(true);
+          break;
         case 'bch':
           // try using 0 as coin for BCH (old wallets)
           altCredentials = derive(false, true);
+          break;
         default:
           return cb(err);
       }
