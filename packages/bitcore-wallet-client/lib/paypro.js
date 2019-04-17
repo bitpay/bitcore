@@ -243,7 +243,7 @@ PayPro.get = function(opts, cb) {
     ret.amount = data.outputs[0].amount;
 
     try {
-      ret.toAddress = (new bitcore.Address(data.outputs[0].address)).toString();
+      ret.toAddress = (new bitcore.Address(data.outputs[0].address)).toString(true);
     } catch (e) {
       return cb(new Error('Bad output address '+ e));
     }

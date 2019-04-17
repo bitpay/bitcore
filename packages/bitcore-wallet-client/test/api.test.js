@@ -123,20 +123,17 @@ helpers.createAndJoinWallet = function(clients, m, n, opts, cb) {
     network: network,
     singleAddress: !!opts.singleAddress,
   }, function(err, secret) {
-console.log('[api.test.js.125:err:]',err); // TODO
     should.not.exist(err);
 
     if (n > 1) {
       should.exist(secret);
     }
 
-console.log('[api.test.js.133]'); // TODO
     async.series([
 
         function(next) {
           async.each(_.range(1, n), function(i, cb) {
 
-console.log('[api.test.js.140]'); // TODO
             clients[i].seedFromRandomWithMnemonic({
               coin: coin,
               network: network
@@ -1287,7 +1284,7 @@ describe('client API', function() {
           should.not.exist(err);
           x.coin.should.equal('bch');
           x.network.should.equal('livenet');
-          x.address.should.equal('CcJ4qUfyQ8x5NwhAeCQkrBSWVeXxXghcNz');
+          x.address.should.equal('qrvcdmgpk73zyfd8pmdl9wnuld36zh9n4gms8s0u59');
           done();
         })
       });
@@ -2842,7 +2839,7 @@ describe('client API', function() {
       });
 
       it('Should sign proposal', function(done) {
-        var toAddress = 'CfNCvxmKYzZsS78pDKKfrDd2doZt3w4jUs';
+        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
         var opts = {
           outputs: [{
             amount: 1e8,
@@ -3211,7 +3208,7 @@ describe('client API', function() {
             should.exist(x0.address);
 
             // TODO change createAddress to /v4/, and remove this.
-            x0.address = Bitcore_['bch'].Address(x0.address).toString(true);
+            //x0.address = Bitcore_['bch'].Address(x0.address).toString(true);
             // ======
             blockchainExplorerMock.setUtxo(x0, 1, 2);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
@@ -4630,7 +4627,7 @@ describe('client API', function() {
     });
   });
 
-  describe.only('Mobility, backup & restore BCH ONLY', function() {
+  describe('Mobility, backup & restore BCH ONLY', function() {
     var importedClient = null, address;
 
     beforeEach(function() {
@@ -4662,7 +4659,6 @@ describe('client API', function() {
         clients[0].createAddress(function(err, x) {
           should.not.exist(err);
           address = x.address;
-          console.log('[api.test.js.4661:address:]',address); // TODO
           var importedClient = helpers.newClient(app);
           var spy = sinon.spy(importedClient, 'openWallet');
           importedClient.importFromMnemonic(clients[0].getMnemonic(), {
@@ -4671,9 +4667,9 @@ describe('client API', function() {
           }, function(err) {
             should.not.exist(err);
             check(importedClient);
-            clients[0].createAddress(function(err, x) {
+            importedClient.getMainAddresses({}, function(err, x) {
               should.not.exist(err);
-              x.address.should.equal(address);
+              x[0].address.should.equal(address);
               done();
             });
           });

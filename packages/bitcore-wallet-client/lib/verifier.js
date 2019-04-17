@@ -27,6 +27,10 @@ Verifier.checkAddress = function(credentials, address) {
   $.checkState(credentials.isComplete());
 
   var local = Utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin); 
+
+
+console.log('[verifier.js.32:local:]',local); // TODO
+console.log('[verifier.js.31]', local.address, address.address); // TODO
   return (local.address == address.address &&
     _.difference(local.publicKeys, address.publicKeys).length === 0);
 };
@@ -104,13 +108,15 @@ Verifier.checkProposalCreation = function(args, txp, encryptingKey) {
 
   var changeAddress;
   if (txp.changeAddress) {
-    changeAddress = txp.changeAddress.address;
+    changeAddress = txp.changeAddress.address; 
   }
+console.log('[verifier.js.107:changeAddress:]',changeAddress, args.changeAddress); // TODO
 
   if (args.changeAddress && !strEqual(changeAddress, args.changeAddress)) return false;
   if (_.isNumber(args.feePerKb) && (txp.feePerKb != args.feePerKb)) return false;
   if (!strEqual(txp.payProUrl, args.payProUrl)) return false;
 
+console.log('[verifier.js.114]'); // TODO
   var decryptedMessage = null;
   try {
     decryptedMessage = Utils.decryptMessage(args.message, encryptingKey);
@@ -120,6 +126,7 @@ Verifier.checkProposalCreation = function(args, txp, encryptingKey) {
   if (!strEqual(txp.message, decryptedMessage)) return false;
   if ((args.customData || txp.customData) && !_.isEqual(txp.customData, args.customData)) return false;
 
+console.log('[verifier.js.124]'); // TODO
   return true;
 };
 
@@ -160,9 +167,11 @@ Verifier.checkTxProposalSignature = function(credentials, txp) {
   if (!Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
     return false;
 
+console.log('[verifier.js.165]'); // TODO
   if (!Verifier.checkAddress(credentials, txp.changeAddress))
     return false;
 
+console.log('[verifier.js.169]'); // TODO
   return true;
 };
 
@@ -213,12 +222,15 @@ Verifier.checkPaypro = function(txp, payproOpts) {
 Verifier.checkTxProposal = function(credentials, txp, opts) {
   opts = opts || {};
 
+console.log('[verifier.js.218]'); // TODO
   if (!this.checkTxProposalSignature(credentials, txp))
     return false;
-
+ 
+console.log('[verifier.js.222]'); // TODO
   if (opts.paypro && !this.checkPaypro(txp, opts.paypro))
     return false;
 
+console.log('[verifier.js.226]'); // TODO
   return true;
 };
 

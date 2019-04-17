@@ -487,7 +487,6 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
   opts.coin = opts.coin || 'btc';
 
   function derive(nonCompliantDerivation, use0forBCH) {
-console.log('[api.js.489:use0forBCH:]',use0forBCH); // TODO
     return Credentials.fromMnemonic(opts.coin, opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, {
       nonCompliantDerivation: nonCompliantDerivation,
       entropySourcePath: opts.entropySourcePath,
@@ -505,12 +504,10 @@ console.log('[api.js.489:use0forBCH:]',use0forBCH); // TODO
   this.request.setCredentials(this.credentials);
  
   self._import(function(err, ret) {
-console.log('[api.js.505] TRYING!!!!!!!!!!!!!!'); // TODO
     if (!err) return cb(null, ret);
     if (err instanceof Errors.INVALID_BACKUP) return cb(err);
     if (err instanceof Errors.NOT_AUTHORIZED || err instanceof Errors.WALLET_DOES_NOT_EXIST) {
 
-console.log('[api.js.510]',err, ' WITH:', opts); // TODO
       var altCredentials;
       // Only BTC wallets can be nonCompliantDerivation
       switch(opts.coin) {
@@ -519,7 +516,6 @@ console.log('[api.js.510]',err, ' WITH:', opts); // TODO
           altCredentials = derive(true);
           break;
         case 'bch':
-console.log('[api.js.520]'); // TODO
           // try using 0 as coin for BCH (old wallets)
           altCredentials = derive(false, true);
           break;
@@ -527,12 +523,8 @@ console.log('[api.js.520]'); // TODO
           return cb(err);
       }
 
-console.log('[api.js.530]',altCredentials.xPubKey.toString(), self.credentials.xPubKey.toString()); // TODO
-
       if (altCredentials.xPubKey.toString() == self.credentials.xPubKey.toString()) 
         return cb(err);
-
-console.log('[api.js.531]'); // TODO
 
       self.credentials = altCredentials;
       self.request.setCredentials(self.credentials);
@@ -1095,7 +1087,6 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
   if (opts) $.shouldBeObject(opts);
   opts = opts || {};
 
-console.log('[api.js.1081:opts:]',opts); // TODO
   var coin = opts.coin || 'btc';
   if (!_.includes(['btc', 'bch'], coin)) return cb(new Error('Invalid coin'));
 
@@ -1106,7 +1097,6 @@ console.log('[api.js.1081:opts:]',opts); // TODO
     return cb(new Error('Generate keys first using seedFrom*'));
   }
 
-console.log('[api.js.1099:coin:]',coin, self.credentials.coin); // TODO
   if (coin != self.credentials.coin) { 
     return cb(new Error('Existing keys were created for a different coin'));
   }
@@ -1533,7 +1523,7 @@ API.prototype.createTxProposal = function(opts, cb) {
 
   var args = self._getCreateTxProposalArgs(opts);
 
-  self.request.post('/v2/txproposals/', args, function(err, txp) {
+  self.request.post('/v3/txproposals/', args, function(err, txp) {
     if (err) return cb(err);
 
     self._processTxps(txp);
@@ -1567,7 +1557,7 @@ API.prototype.publishTxProposal = function(opts, cb) {
     proposalSignature: Utils.signMessage(hash, self.credentials.requestPrivKey)
   };
 
-  var url = '/v1/txproposals/' + opts.txp.id + '/publish/';
+  var url = '/v2/txproposals/' + opts.txp.id + '/publish/';
   self.request.post(url, args, function(err, txp) {
     if (err) return cb(err);
     self._processTxps(txp);
@@ -1695,7 +1685,7 @@ API.prototype.getTxProposals = function(opts, cb) {
 
   var self = this;
 
-  self.request.get('/v1/txproposals/', function(err, txps) {
+  self.request.get('/v2/txproposals/', function(err, txps) {
     if (err) return cb(err);
 
     self._processTxps(txps);
@@ -1781,10 +1771,11 @@ API.prototype.signTxProposal = function(txp, password, cb) {
 
   self.getPayPro(txp, function(err, paypro) {
     if (err) return cb(err);
-
+ 
     var isLegit = Verifier.checkTxProposal(self.credentials, txp, {
       paypro: paypro,
     });
+console.log('[api.js.1775:isLegit:]',isLegit); // TODO
 
     if (!isLegit)
       return cb(new Errors.SERVER_COMPROMISED);
