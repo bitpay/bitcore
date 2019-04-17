@@ -487,16 +487,17 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
   opts.coin = opts.coin || 'btc';
 
   function derive(nonCompliantDerivation, use0forBCH) {
+console.log('[api.js.489:use0forBCH:]',use0forBCH); // TODO
     return Credentials.fromMnemonic(opts.coin, opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, {
       nonCompliantDerivation: nonCompliantDerivation,
       entropySourcePath: opts.entropySourcePath,
       walletPrivKey: opts.walletPrivKey,
-      use0forBCH: use0forBCH,
+      use0forBCH: use0forBCH, 
     });
   };
 
   try {
-    self.credentials = derive(false);
+    self.credentials = derive();
   } catch (e) {
     log.info('Mnemonic error:', e);
     return cb(new Errors.INVALID_BACKUP);
@@ -504,10 +505,12 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
   this.request.setCredentials(this.credentials);
  
   self._import(function(err, ret) {
+console.log('[api.js.505] TRYING!!!!!!!!!!!!!!'); // TODO
     if (!err) return cb(null, ret);
     if (err instanceof Errors.INVALID_BACKUP) return cb(err);
     if (err instanceof Errors.NOT_AUTHORIZED || err instanceof Errors.WALLET_DOES_NOT_EXIST) {
 
+console.log('[api.js.510]',err, ' WITH:', opts); // TODO
       var altCredentials;
       // Only BTC wallets can be nonCompliantDerivation
       switch(opts.coin) {
@@ -516,14 +519,20 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
           altCredentials = derive(true);
           break;
         case 'bch':
+console.log('[api.js.520]'); // TODO
           // try using 0 as coin for BCH (old wallets)
           altCredentials = derive(false, true);
           break;
         default:
           return cb(err);
       }
+
+console.log('[api.js.530]',altCredentials.xPubKey.toString(), self.credentials.xPubKey.toString()); // TODO
+
       if (altCredentials.xPubKey.toString() == self.credentials.xPubKey.toString()) 
         return cb(err);
+
+console.log('[api.js.531]'); // TODO
 
       self.credentials = altCredentials;
       self.request.setCredentials(self.credentials);
@@ -1078,7 +1087,7 @@ API.prototype._checkKeyDerivation = function() {
  * @param cb
  * @return {undefined}
  */
-API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
+API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) { 
   var self = this;
 
   if (!self._checkKeyDerivation()) return cb(new Error('Cannot create new wallet'));
@@ -1086,6 +1095,7 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
   if (opts) $.shouldBeObject(opts);
   opts = opts || {};
 
+console.log('[api.js.1081:opts:]',opts); // TODO
   var coin = opts.coin || 'btc';
   if (!_.includes(['btc', 'bch'], coin)) return cb(new Error('Invalid coin'));
 
@@ -1096,7 +1106,8 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
     return cb(new Error('Generate keys first using seedFrom*'));
   }
 
-  if (coin != self.credentials.coin) {
+console.log('[api.js.1099:coin:]',coin, self.credentials.coin); // TODO
+  if (coin != self.credentials.coin) { 
     return cb(new Error('Existing keys were created for a different coin'));
   }
 
@@ -1587,7 +1598,7 @@ API.prototype.createAddress = function(opts, cb) {
 
   opts = opts || {};
 
-  self.request.post('/v3/addresses/', opts, function(err, address) {
+  self.request.post('/v4/addresses/', opts, function(err, address) {
     if (err) return cb(err);
 
     if (!Verifier.checkAddress(self.credentials, address)) {

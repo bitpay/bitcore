@@ -156,7 +156,7 @@ Utils.deriveAddress = function(scriptType, publicKeyRing, path, m, network, coin
   }
 
   return {
-    address: coin == 'bch' ?  bitcoreAddress.toLegacyAddress() : bitcoreAddress.toString(),
+    address: bitcoreAddress.toString(true),
     path: path,
     publicKeys: _.invokeMap(publicKeys, 'toString'),
   };
