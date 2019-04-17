@@ -148,19 +148,27 @@ Credentials.fromMnemonic = function(coin, network, words, passphrase, account, d
 
   var m = new Mnemonic(words);
   var x = new Credentials();
-  x.coin = coin;
   x.xPrivKey = m.toHDPrivateKey(passphrase, network).toString();
   x.mnemonic = words;
   x.mnemonicHasPassphrase = !!passphrase;
-  x.account = account;
-  x.derivationStrategy = derivationStrategy;
+
+  // Defivation Settings
   x.compliantDerivation = !opts.nonCompliantDerivation;
   x.use145forBCH = !opts.use0forBCH;
-  x.entropySourcePath = opts.entropySourcePath;
+  x.derivationStrategy = derivationStrategy;
 
+  // this are wallet specific
+  x.coin = coin;
+  x.account = account;
+
+  // copayer's shared wallet info
   if (opts.walletPrivKey) {
     x.addWalletPrivateKey(opts.walletPrivKey);
   }
+
+
+  // obsolete
+  x.entropySourcePath = opts.entropySourcePath;
 
   x._expand();
   return x;
@@ -197,7 +205,7 @@ Credentials.fromExtendedPublicKey = function(coin, xPubKey, source, entropySourc
   x.derivationStrategy = derivationStrategy;
   x.externalSource = source;
   x.compliantDerivation = true;
-  x.use145forBCH = true;
+  x.use145forBCH = opts.use145forBCH || false;
   x._expand();
   return x;
 };
@@ -317,6 +325,8 @@ Credentials.fromObj = function(obj) {
   x.coin = x.coin || 'btc';
   x.derivationStrategy = x.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
   x.addressType = x.addressType || Constants.SCRIPT_TYPES.P2SH;
+  x.use145forBCH = x.use145forBCH || false;
+
   x.account = x.account || 0;
 
   $.checkState(x.xPrivKey || x.xPubKey || x.xPrivKeyEncrypted, "invalid input");
