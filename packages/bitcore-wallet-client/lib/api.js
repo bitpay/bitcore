@@ -459,9 +459,14 @@ API.prototype._import = function(cb) {
   });
 };
 
+
+API.prototype.importAllFromMnemonic = function(words, opts, cb) {
+}
+
 /**
  * Import from Mnemonics (language autodetected)
  * Can throw an error if mnemonic is invalid
+ * Will try compilant and non-compliantDerivation
  *
  * @param {String} BIP39 words
  * @param {Object} opts
@@ -480,11 +485,12 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
 
   opts = opts || {};
 
-  function derive(nonCompliantDerivation) {
+  function derive(nonCompliantDerivation, use0forBCH) {
     return Credentials.fromMnemonic(opts.coin || 'btc', opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, {
       nonCompliantDerivation: nonCompliantDerivation,
       entropySourcePath: opts.entropySourcePath,
       walletPrivKey: opts.walletPrivKey,
+      use0forBCH: use0forBCH,
     });
   };
 
@@ -500,8 +506,22 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
     if (!err) return cb(null, ret);
     if (err instanceof Errors.INVALID_BACKUP) return cb(err);
     if (err instanceof Errors.NOT_AUTHORIZED || err instanceof Errors.WALLET_DOES_NOT_EXIST) {
-      var altCredentials = derive(true);
-      if (altCredentials.xPubKey.toString() == self.credentials.xPubKey.toString()) return cb(err);
+
+      var altCredentials;
+      // Only BTC wallets can be nonCompliantDerivation
+      switch(opts.coin) {
+        case 'btc':
+          // try using nonCompliantDerivation
+          altCredentials = derive(true);
+        case 'bch':
+          // try using 0 as coin for BCH (old wallets)
+          altCredentials = derive(false, true);
+        default:
+          return cb(err);
+      }
+      if (altCredentials.xPubKey.toString() == self.credentials.xPubKey.toString()) 
+        return cb(err);
+
       self.credentials = altCredentials;
       self.request.setCredentials(self.credentials);
       return self._import(cb);
