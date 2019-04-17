@@ -123,16 +123,20 @@ helpers.createAndJoinWallet = function(clients, m, n, opts, cb) {
     network: network,
     singleAddress: !!opts.singleAddress,
   }, function(err, secret) {
+console.log('[api.test.js.125:err:]',err); // TODO
     should.not.exist(err);
 
     if (n > 1) {
       should.exist(secret);
     }
 
+console.log('[api.test.js.133]'); // TODO
     async.series([
 
         function(next) {
           async.each(_.range(1, n), function(i, cb) {
+
+console.log('[api.test.js.140]'); // TODO
             clients[i].seedFromRandomWithMnemonic({
               coin: coin,
               network: network
@@ -4235,58 +4239,6 @@ describe('client API', function() {
       });
     });
 
-    describe.only('BCH with 0 as cointype derivation', function() {
-      function setup(done) {
-        clients[0].createWallet('mywallet', 'creator', 1, 1, {
-          network: 'livenet',
-          coin: 'bch',
-          use0forBCH: true,
-        }, function(err) {
-          should.not.exist(err);
-          clients[0].createAddress(function(err, addr) {
-            should.not.exist(err);
-            address = addr.address;
-console.log('[api.test.js.4248:address:]',address); // TODO
-            done();
-          });
-        });
-      };
-
-      beforeEach(function() {
-        importedClient = null;
-      });
-      afterEach(function(done) {
-        if (!importedClient) return done();
-        importedClient.getMainAddresses({}, function(err, list) {
-          should.not.exist(err);
-          should.exist(list);
-          list.length.should.equal(1);
-          list[0].address.should.equal(address);
-          done();
-        });
-      });
-      it('should export & import with mnemonics + BWS', function(done) {
-        clients[0].seedFromMnemonic('pink net pet stove boy receive task nephew book spawn pull regret', {
-          network: 'livenet',
-          nonCompliantDerivation: true,
-        });
-        clients[0].credentials.xPrivKey.toString().should.equal('xprv9s21ZrQH143K3E71Wm5nrxuMdqCTMG6AM5Xyp4dJ3ZkUj2gEpfifT5Hc1cfqnycKooRpzoH4gjmAKDmGGaH2k2cSe29EcQSarveq6STBZZW');
-        clients[0].credentials.xPubKey.toString().should.equal('xpub6CLj2x8T5zwngq3Uq42PbXbAXnyaUtsANEZaBjAPNBn5PbhSJM29DM5nhrdJDNpEy9X3n5sQhk6CNA7PKTp48Xvq3QFdiYAXAcaWEJ6Xmug');
-        setup(function() {
-          importedClient = helpers.newClient(app);
-          var spy = sinon.spy(importedClient, 'openWallet');
-          importedClient.importFromMnemonic(clients[0].getMnemonic(), {
-            network: 'livenet',
-          }, function(err) {
-            should.not.exist(err);
-            spy.getCalls().length.should.equal(2);
-            done();
-          });
-        });
-      });
-    });
-
-
 
     describe('#validateKeyDerivation', function() {
       beforeEach(function(done) {
@@ -4672,6 +4624,55 @@ console.log('[api.test.js.4248:address:]',address); // TODO
             });
           });
         });
+      });
+    });
+  });
+
+  describe.only('Mobility, backup & restore BCH ONLY', function() {
+    var importedClient = null, address;
+
+    beforeEach(function() {
+      importedClient = null;
+    });
+
+    it('should be able to restore a  Use0ForBCH wallet', function(done) {
+
+      var check = function(x) {
+        x.credentials.getBaseAddressDerivationPath().should.equal('m/44\'/0\'/0\'');
+        x.credentials.xPrivKey.toString().should.equal('xprv9s21ZrQH143K3E71Wm5nrxuMdqCTMG6AM5Xyp4dJ3ZkUj2gEpfifT5Hc1cfqnycKooRpzoH4gjmAKDmGGaH2k2cSe29EcQSarveq6STBZZW');
+        x.credentials.xPubKey.toString().should.equal('xpub6DJEsBSYZrjsrHssifihdekpoWcKRHR6WVfbyk6Hhq1HxZSDoyEvT2pMHmSnNKEvdQNmfVqn1Ef1yWgYcrnhc3mSegUCbMvVJCPLYJ1PNen');
+      };
+
+      var m = 'pink net pet stove boy receive task nephew book spawn pull regret';
+      // first create a "old" bch wallet (coin = 0).
+      clients[0].seedFromMnemonic(m, {
+        network: 'livenet',
+        coin: 'bch',
+        use0forBCH: 'true',
+      });
+      check(clients[0]);
+
+      clients[0].createWallet('mywallet', 'creator', 1, 1, {
+        coin: 'bch',
+        network: 'livenet',
+      }, function(err, secret) {
+        should.not.exist(err);
+        clients[0].createAddress(function(err, x) {
+console.log('[api.test.js.4660:err:]',err); // TODO
+          should.not.exist(err);
+          address = x.address;
+          console.log('[api.test.js.4661:address:]',address); // TODO
+          var importedClient = helpers.newClient(app);
+          var spy = sinon.spy(importedClient, 'openWallet');
+          importedClient.importFromMnemonic(clients[0].getMnemonic(), {
+            network: 'livenet',
+            coin: 'bch',
+          }, function(err) {
+            should.not.exist(err);
+            check(importedClient);
+            done();
+          });
+          });
       });
     });
   });

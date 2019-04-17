@@ -157,6 +157,7 @@ Credentials.fromMnemonic = function(coin, network, words, passphrase, account, d
   x.use145forBCH = !opts.use0forBCH;
   x.derivationStrategy = derivationStrategy;
 
+console.log('[credentials.js.159]', x.use145forBCH); // TODO
   // this are wallet specific
   x.coin = coin;
   x.account = account;
@@ -272,10 +273,13 @@ Credentials.prototype._expand = function() {
 
     var deriveFn = this.compliantDerivation ? _.bind(xPrivKey.deriveChild, xPrivKey) : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
 
+console.log('[credentials.js.275]', this.getBaseAddressDerivationPath()); // TODO
     var derivedXPrivKey = deriveFn(this.getBaseAddressDerivationPath());
 
     // this is the xPubKey shared with the server.
     this.xPubKey = derivedXPrivKey.hdPublicKey.toString();
+
+console.log('[credentials.js.281]', this.xPubKey); // TODO
   }
 
   // requests keys from mnemonics, but using a xPubkey

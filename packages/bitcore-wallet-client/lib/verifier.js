@@ -26,7 +26,7 @@ function Verifier(opts) {};
 Verifier.checkAddress = function(credentials, address) {
   $.checkState(credentials.isComplete());
 
-  var local = Utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin);
+  var local = Utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin); 
   return (local.address == address.address &&
     _.difference(local.publicKeys, address.publicKeys).length === 0);
 };
