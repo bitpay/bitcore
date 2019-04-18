@@ -1746,7 +1746,7 @@ describe('Wallet service', function() {
     });
 
 
-    it.only('should get UTXOs for wallet addresses', function(done) {
+    it('should get UTXOs for wallet addresses', function(done) {
       helpers.stubUtxos(server, wallet, [1, 2], function() {
         server.getUtxos({}, function(err, utxos) {
           should.not.exist(err);
