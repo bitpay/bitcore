@@ -329,20 +329,22 @@ helpers.newDb = (extra, cb) => {
 
 var db;
 describe('client API', function() {
-  var clients, app, sandbox ;
+  var clients, app, sandbox, storage ;
   var i = 0;
 
   before((done) => {
     helpers.newDb('', (err, in_db) => {
       db = in_db;
+      storage = new Storage({
+        db: db,
+      });
+      Storage.createIndexes(db);
       return done(err);
     });
   });
 
   beforeEach(function(done) {
-    var storage = new Storage({
-      db: db,
-    });
+
     var expressApp = new ExpressApp();
     expressApp.start({
         ignoreRateLimiter: true,

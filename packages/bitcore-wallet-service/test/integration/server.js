@@ -367,7 +367,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it.only('should check m-n combination', function(done) {
+    it('should check m-n combination', function(done) {
       var pairs = [{
         m: 0,
         n: 0,

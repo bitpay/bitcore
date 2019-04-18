@@ -556,7 +556,6 @@ export class ExpressApp {
       });
     });
 
-    //  router.get('/v2/feelevels/', estimateFeeLimiter, (req, res) => {
     router.get('/v2/feelevels/', (req, res) => {
       const opts: { coin?: string; network?: string } = {};
       if (req.query.coin) opts.coin = req.query.coin;
