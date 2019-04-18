@@ -2618,6 +2618,7 @@ export class WalletService {
           return cb(null, _.head(addresses));
         });
       } else {
+
         if (opts.changeAddress) {
           const addrErr = this._validateAddr(wallet, opts.changeAddress, opts);
           if (addrErr) return cb(addrErr);
@@ -2718,8 +2719,9 @@ export class WalletService {
                   this._selectTxInputs(txp, opts.utxosToExclude, next);
                 },
                 (next) => {
-                  if (!changeAddress || wallet.singleAddress || opts.dryRun)
+                  if (!changeAddress || wallet.singleAddress || opts.dryRun || opts.changeAddress)
                     return next();
+
                   this._store(wallet, txp.changeAddress, next, true);
                 },
                 (next) => {

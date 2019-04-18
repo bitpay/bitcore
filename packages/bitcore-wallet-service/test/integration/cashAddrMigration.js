@@ -34,13 +34,16 @@ var storage, blockchainExplorer, request;
 
 describe('Cash address migration', function() {
   before(function(done) {
-    helpers.before(done);
-  });
-  beforeEach(function(done) {
-    helpers.beforeEach(function(res) {
+    helpers.before(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
       request = res.request;
+      done();
+    });
+ 
+  });
+  beforeEach(function(done) {
+    helpers.beforeEach(function(res) {
       done();
     });
   });

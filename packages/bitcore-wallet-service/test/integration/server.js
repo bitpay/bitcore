@@ -39,13 +39,16 @@ var storage, blockchainExplorer, request;
 describe('Wallet service', function() {
 
   before(function(done) {
-    helpers.before(done);
-  });
-  beforeEach(function(done) {
-    helpers.beforeEach(function(res) {
+    helpers.before(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
       request = res.request;
+      done();
+    });
+ 
+  });
+  beforeEach(function(done) {
+    helpers.beforeEach(function(res) {
       done();
     });
   });
@@ -1211,6 +1214,34 @@ describe('Wallet service', function() {
           });
         });
       });
+
+
+      it.skip('should create next address if insertion fail ', function(done) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+          should.exist(address);
+          server.getWallet({}, (err,w) => {
+
+
+            var old = server.getWallet;
+            server.getWallet = sinon.stub();
+
+            // return main address index to 0;
+            w.addressManager.receiveAddressIndex = 0;
+            server.getWallet.callsArgWith(1, null, w);
+
+
+            server.createAddress({}, function(err, address) {
+              server.getWallet = old;
+              should.not.exist(err);
+              should.exist(address);
+              done();
+            });
+          });
+        });
+      });
+
+
 
       it('should create many addresses on simultaneous requests', function(done) {
         var N = 5;
