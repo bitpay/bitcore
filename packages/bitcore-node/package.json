@@ -36,7 +36,7 @@
     "benchmark": "npm run tsc && node build/test/benchmark/benchmark.js",
     "api": "npm run tsc && node build/src/workers/api.js",
     "api:cluster": "npm run tsc && node build/src/workers/api.js --CLUSTER true",
-    "pruning": "npm run tsc && node build/src/workers/pruning.js",
+    "pruning": "npm run tsc && node build/src/workers/pruning.js --EXIT true",
     "p2p": "npm run tsc && node build/src/workers/p2p.js"
   },
   "keywords": [

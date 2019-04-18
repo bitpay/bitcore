@@ -4,6 +4,9 @@ import logger from '../logger';
 import { Config } from './config';
 import '../utils/polyfills';
 
+import parseArgv from '../utils/parseArgv';
+let args = parseArgv([], ['EXIT']);
+
 export class PruningService {
   transactionModel: TransactionModel;
   coinModel: CoinModel;
@@ -15,7 +18,11 @@ export class PruningService {
   }
 
   async start() {
-    this.detectAndClear().then(() => process.emit('SIGINT'));
+    this.detectAndClear().then(() => {
+      if (args.EXIT) {
+        process.emit('SIGINT');
+      }
+    });
   }
 
   async stop() {
