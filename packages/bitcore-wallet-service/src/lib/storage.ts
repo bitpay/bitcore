@@ -39,7 +39,7 @@ export class Storage {
   }
 
   static createIndexes(db) {
-  log.info('Creating DB indexes');
+    log.info('Creating DB indexes');
     db.collection(collections.WALLETS).createIndex({
       id: 1
     });
@@ -66,7 +66,7 @@ export class Storage {
       txid: 1
     });
     db.collection(collections.NOTIFICATIONS).createIndex({
-     walletId: 1,
+      walletId: 1,
       id: 1
     });
     db.collection(collections.ADDRESSES).createIndex({
@@ -122,7 +122,6 @@ export class Storage {
       copayerId: 1
     });
   }
-
 
   connect(opts, cb) {
     opts = opts || {};

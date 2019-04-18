@@ -1286,7 +1286,7 @@ export class WalletService {
             this.logw(`Found duplicate address: ${address.address}`);
             // just return it, no notification
             // Should we search for the last address and update index?
-              return cb(null, address);
+            return cb(null, address);
           }
           if (err) return cb(err);
 
