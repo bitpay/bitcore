@@ -1,8 +1,13 @@
+import { Worker } from '../services/worker';
 import { Storage } from '../services/storage';
 import { Api } from '../services/api';
 import { Event } from '../services/event';
+import cluster = require('cluster');
+import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 require('heapdump');
+
+let args = parseArgv([], ['DEBUG']);
 const services: Array<any> = [];
 
 export const ApiWorker = async () => {
@@ -13,7 +18,17 @@ export const ApiWorker = async () => {
   process.on('SIGTERM', stop);
   process.on('SIGINT', stop);
 
-  services.push(Storage, Event, Api);
+  services.push(Storage, Event);
+  if (cluster.isMaster) {
+    services.push(Worker);
+    if (args.DEBUG) {
+      services.push(Api);
+    }
+  } else {
+    if (!args.DEBUG) {
+      services.push(Api);
+    }
+  }
   for (const service of services) {
     await service.start();
   }
