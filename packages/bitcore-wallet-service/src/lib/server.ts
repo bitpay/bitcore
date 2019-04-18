@@ -1243,7 +1243,7 @@ export class WalletService {
   }
 
   _store(wallet, address, cb, checkSync = false) {
-    this.storage.storeAddressAndWallet(wallet, address, err => {
+    this.storage.storeAddressAndWallet(wallet, address, (err, duplicate) => {
       if (err) return cb(err);
       this.syncWallet(
         wallet,
@@ -1251,7 +1251,7 @@ export class WalletService {
           if (err2) {
             this.logw('Error syncing v8 addresses: ', err2);
           }
-          return cb();
+          return cb(null, duplicate);
         },
         !checkSync
       );
@@ -1280,15 +1280,11 @@ export class WalletService {
       this._store(
         wallet,
         address,
-        (err) => {
-          // duplicate address?
-          if ( err && err.toString().match(/E11000/) ) {
-            this.logw(`Found duplicate address: ${address.address}`);
-            // just return it, no notification
-            // Should we search for the last address and update index?
-            return cb(null, address);
-          }
+        (err, duplicate) => {
           if (err) return cb(err);
+
+          if (duplicate)
+            return cb(null, address);
 
           this._notify(
             'NewAddress',

@@ -679,6 +679,7 @@ export class Storage {
   storeAddressAndWallet(wallet, addresses, cb) {
     const clonedAddresses = [].concat(addresses);
     if (_.isEmpty(addresses)) return cb();
+    let duplicate;
 
     this.db.collection(collections.ADDRESSES).insert(
       clonedAddresses,
@@ -686,8 +687,20 @@ export class Storage {
         w: 1
       },
       (err) => {
-        if (err) return cb(err);
-        this.storeWallet(wallet, cb);
+        // duplicate address?
+        if ( err ) {
+          if (!err.toString().match(/E11000/)) {
+            return cb(err);
+          } else {
+            // just return it
+            duplicate = true;
+            log.warn('Found duplicate address: ' +
+              _.join( _.map(clonedAddresses, 'address') , ',') );
+          }
+        }
+        this.storeWallet(wallet, (err) => {
+          return cb(err, duplicate);
+        });
       }
     );
   }
