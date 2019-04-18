@@ -7,10 +7,10 @@ import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 require('heapdump');
 
-let args = parseArgv([], ['DEBUG']);
+let args = parseArgv([], ['DEBUG', 'CLUSTER']);
 const services: Array<any> = [];
 
-export const ApiWorker = async () => {
+export const ClusteredApiWorker = async () => {
   process.on('unhandledRejection', error => {
     console.error('Unhandled Rejection at:', error.stack || error);
     stop();
@@ -20,14 +20,13 @@ export const ApiWorker = async () => {
 
   services.push(Storage, Event);
   if (cluster.isMaster) {
-    services.push(Worker);
-    if (args.DEBUG) {
+    if (args.DEBUG || !args.CLUSTER) {
       services.push(Api);
+    } else {
+      services.push(Worker);
     }
   } else {
-    if (!args.DEBUG) {
-      services.push(Api);
-    }
+    services.push(Api);
   }
   for (const service of services) {
     await service.start();
@@ -43,5 +42,5 @@ const stop = async () => {
 };
 
 if (require.main === module) {
-  ApiWorker();
+  ClusteredApiWorker();
 }

@@ -35,6 +35,7 @@
     "test:integration": "npm run tsc && node ./build/test/runners/integration.js",
     "benchmark": "npm run tsc && node build/test/benchmark/benchmark.js",
     "api": "npm run tsc && node build/src/workers/api.js",
+    "api:cluster": "npm run tsc && node build/src/workers/api.js --CLUSTER true",
     "full": "npm run tsc && node build/src/workers/full.js",
     "pruning": "npm run tsc && node build/src/workers/pruning.js",
     "p2p": "npm run tsc && node build/src/workers/p2p.js"
