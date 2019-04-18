@@ -1,7 +1,7 @@
 'use strict';
 
 var $ = require('preconditions').singleton();
-var _ = require('lodash');
+import * as _ from 'lodash';
 
 var Bitcore = require('bitcore-lib');
 var Mnemonic = require('bitcore-mnemonic');

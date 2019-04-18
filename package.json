@@ -55,5 +55,7 @@
     "typedoc": "^0.14.0",
     "typescript-eslint-parser": "^15.0.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "lodash": "^4.17.11"
+  }
 }

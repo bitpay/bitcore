@@ -1,8 +1,8 @@
 'use strict';
 
 import { EventEmitter } from 'events';
+import * as _ from 'lodash';
 
-var _ = require('lodash');
 var $ = require('preconditions').singleton();
 var async = require('async');
 var Bitcore = require('bitcore-lib');

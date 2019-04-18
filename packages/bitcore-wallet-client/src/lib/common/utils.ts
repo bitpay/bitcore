@@ -1,6 +1,6 @@
 'use strict';
 
-const _ = require('lodash');
+import * as _ from 'lodash';
 const $ = require('preconditions').singleton();
 const sjcl = require('sjcl');
 const Stringify = require('json-stable-stringify');
