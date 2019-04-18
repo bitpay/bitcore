@@ -19,14 +19,14 @@ describe('Utils', function() {
   describe('#xPubToCopayerId', function() {
     it('should generate copayerId', function() {
       var xpub = Bitcore.HDPublicKey.fromString('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj');
-      var res = Utils.xPubToCopayerId('btc', 'xpub');
-      res.should.equal('7296cfd7d812726a25b9d7c582b93738389fa66328cdd47cc67dbf98f1ff68a1');
+      var res = Utils.xPubToCopayerId('btc', xpub);
+      res.should.equal('8b5ae039f102653a49be29ab1625c2e77a987bcbad60715dea147976386e8fa7');
     });
 
     it('should generate copayerId', function() {
       var xpub = Bitcore.HDPublicKey.fromString('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj');
-      var res = Utils.xPubToCopayerId('bch', 'xpub');
-      res.should.equal('7296cfd7d812726a25b9d7c582b93738389fa66328cdd47cc67dbf98f1ff68a1');
+      var res = Utils.xPubToCopayerId('bch', xpub);
+      res.should.equal('ec63517dba84344ac3d4cfb59ad99f49333272200defc0cad93733db833cf9a1');
     });
  
   });
