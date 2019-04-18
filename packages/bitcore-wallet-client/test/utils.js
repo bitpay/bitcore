@@ -16,7 +16,7 @@ describe('Utils', function() {
     });
   });
 
-  describe.only('#xPubToCopayerId', function() {
+  describe('#xPubToCopayerId', function() {
     it('should generate copayerId', function() {
       var xpub = Bitcore.HDPublicKey.fromString('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj');
       var res = Utils.xPubToCopayerId('btc', 'xpub');
