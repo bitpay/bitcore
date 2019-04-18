@@ -41,6 +41,8 @@ var FIELDS = [
   'hwInfo',                 // Obsolete, only for backwards compat
   'entropySourcePath',      // Obsolete, only for backwards compat 
   'use145forBCH',          // use the appropiate coin' path element in BIP44 for BCH 
+  'version',
+  'keyFingerprint',
 ];
 
 function Credentials() {
@@ -317,7 +319,11 @@ Credentials.prototype._expand = function() {
 };
 
 Credentials.fromObj = function(obj) {
+
   var x = new Credentials();
+  if (obj.version != x.version) {
+    throw 'Bad Credentials version';
+  }
 
   _.each(FIELDS, function(k) {
     x[k] = obj[k];
@@ -416,107 +422,23 @@ Credentials.prototype.hasWalletInfo = function() {
   return !!this.walletId;
 };
 
-Credentials.prototype.isPrivKeyEncrypted = function() {
-  return (!!this.xPrivKeyEncrypted) && !this.xPrivKey;
-};
-
-Credentials.prototype.encryptPrivateKey = function(password, opts) {
-  if (this.xPrivKeyEncrypted)
-    throw new Error('Private key already encrypted');
-
-  if (!this.xPrivKey)
-    throw new Error('No private key to encrypt');
-
-
-  this.xPrivKeyEncrypted = sjcl.encrypt(password, this.xPrivKey, opts);
-  if (!this.xPrivKeyEncrypted)
-    throw new Error('Could not encrypt');
-
-  if (this.mnemonic)
-    this.mnemonicEncrypted = sjcl.encrypt(password, this.mnemonic, opts);
-
-  delete this.xPrivKey;
-  delete this.mnemonic;
-};
-
-Credentials.prototype.decryptPrivateKey = function(password) {
-  if (!this.xPrivKeyEncrypted)
-    throw new Error('Private key is not encrypted');
-
-  try {
-    this.xPrivKey = sjcl.decrypt(password, this.xPrivKeyEncrypted);
-
-    if (this.mnemonicEncrypted) {
-      this.mnemonic = sjcl.decrypt(password, this.mnemonicEncrypted);
-    }
-    delete this.xPrivKeyEncrypted;
-    delete this.mnemonicEncrypted;
-  } catch (ex) {
-    throw new Error('Could not decrypt');
-  }
-};
-
-Credentials.prototype.getKeys = function(password) {
-  var keys = {};
-
-  if (this.isPrivKeyEncrypted()) {
-    $.checkArgument(password, 'Private keys are encrypted, a password is needed');
-    try {
-      keys.xPrivKey = sjcl.decrypt(password, this.xPrivKeyEncrypted);
-
-      if (this.mnemonicEncrypted) {
-        keys.mnemonic = sjcl.decrypt(password, this.mnemonicEncrypted);
-      }
-    } catch (ex) {
-      throw new Error('Could not decrypt');
-    }
-  } else {
-    keys.xPrivKey = this.xPrivKey;
-    keys.mnemonic = this.mnemonic;
-  }
-  return keys;
-};
 
 Credentials.prototype.addPublicKeyRing = function(publicKeyRing) {
   this.publicKeyRing = _.clone(publicKeyRing);
 };
 
 Credentials.prototype.canSign = function() {
-  return (!!this.xPrivKey || !!this.xPrivKeyEncrypted);
+  return (!!this.keyFingerprint);
 };
 
-Credentials.prototype.setNoSign = function() {
-  delete this.xPrivKey;
-  delete this.xPrivKeyEncrypted;
-  delete this.mnemonic;
-  delete this.mnemonicEncrypted;
+Credentials.prototype.setNotSign = function() {
+  this.keyFingerprint = null;
 };
 
 Credentials.prototype.isComplete = function() {
   if (!this.m || !this.n) return false;
   if (!this.publicKeyRing || this.publicKeyRing.length != this.n) return false;
   return true;
-};
-
-Credentials.prototype.hasExternalSource = function() {
-  return (typeof this.externalSource == "string");
-};
-
-Credentials.prototype.getExternalSourceName = function() {
-  return this.externalSource;
-};
-
-Credentials.prototype.getMnemonic = function() {
-  if (this.mnemonicEncrypted && !this.mnemonic) {
-    throw new Error('Credentials are encrypted');
-  }
-
-  return this.mnemonic;
-};
-
-Credentials.prototype.clearMnemonic = function() {
-  delete this.mnemonic;
-  delete this.mnemonicEncrypted;
 };
 
 module.exports = Credentials;
