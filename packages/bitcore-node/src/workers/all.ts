@@ -20,14 +20,14 @@ export const FullClusteredWorker = async () => {
 
   services.push(Storage, Event);
   if (cluster.isMaster) {
-    services.push(P2P, Worker);
+    services.push(P2P);
     if (args.DEBUG) {
       services.push(Api);
+    } else {
+      services.push(Worker);
     }
   } else {
-    if (!args.DEBUG) {
-      services.push(Api);
-    }
+    services.push(Api);
   }
   for (const service of services) {
     await service.start();
