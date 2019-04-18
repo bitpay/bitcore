@@ -281,6 +281,7 @@ export class EmailService {
 
     this.storage.fetchWallet(notification.walletId, (err, wallet) => {
       if (err) return cb(err);
+      if (!wallet) return cb('no wallet');
       data.walletId = wallet.id;
       data.walletName = wallet.name;
       data.walletM = wallet.m;

@@ -33,8 +33,12 @@ var storage, blockchainExplorer, request;
 
 describe('History V8', function() {
   before(function(done) {
-    helpers.before(done);
+    helpers.before((res) => {
+      done();
+    });
   });
+
+
   beforeEach(function(done) {
     helpers.beforeEach(function(res) {
       storage = res.storage;
