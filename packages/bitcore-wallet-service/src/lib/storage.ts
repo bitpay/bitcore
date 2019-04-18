@@ -1426,7 +1426,7 @@ export class Storage {
   }
 
   walletCheck = async params => {
-    const { walletId, bch } = params;
+    const { walletId } = params;
 
     return new Promise(resolve => {
       const addressStream = this.db
@@ -1436,19 +1436,8 @@ export class Storage {
       let lastAddress;
       addressStream.on('data', walletAddress => {
         if (walletAddress.address) {
-          let addr = walletAddress.address;
-
-          // TODO remove on native cashaddr
-          if (bch) {
-            addr = BCHAddressTranslator.translate(addr, 'cashaddr', 'copay');
-            $.checkState(
-              addr,
-              'ERROR: wrong addr format on DB for wallet:' + walletId
-            );
-          }
-
-          lastAddress = addr;
-          const addressSum = Buffer.from(addr).reduce(
+          lastAddress =  walletAddress.address;
+          const addressSum = Buffer.from(lastAddress).reduce(
             (tot, cur) => (tot + cur) % Number.MAX_SAFE_INTEGER
           );
           sum = (sum + addressSum) % Number.MAX_SAFE_INTEGER;

@@ -1249,7 +1249,7 @@ export class WalletService {
         wallet,
         err2 => {
           if (err2) {
-            log.warn('Error syncing v8 addresses: ', err2);
+            this.logw('Error syncing v8 addresses: ', err2);
           }
           return cb();
         },
@@ -1273,7 +1273,7 @@ export class WalletService {
       try {
         address = wallet.createAddress(false);
       } catch (e) {
-        log.warn('Error creating address for ' + this.walletId, e);
+        this.logw('Error creating address', e);
         return cb('Bad xPub');
       }
 
@@ -1281,6 +1281,13 @@ export class WalletService {
         wallet,
         address,
         (err) => {
+          // duplicate address?
+          if ( err && err.toString().match(/E11000/) ) {
+            this.logw(`Found duplicate address: ${address.address}`);
+            // just return it, no notification
+            // Should we search for the last address and update index?
+              return cb(null, address);
+          }
           if (err) return cb(err);
 
           this._notify(
@@ -1545,7 +1552,7 @@ export class WalletService {
           const addressToPath = _.keyBy(allAddresses, 'address');
           _.each(allUtxos, (utxo) => {
             if (!addressToPath[utxo.address]) {
-              if (!opts.addresses) log.warn('Ignored UTXO!: ' + utxo.address);
+              if (!opts.addresses) this.logw('Ignored UTXO!: ' + utxo.address);
               return;
             }
             utxo.path = addressToPath[utxo.address].path;
@@ -1947,7 +1954,7 @@ export class WalletService {
         ) => {
           if (err) {
             if (oldvalues) {
-              log.warn(
+              this.logw(
                 '##  There was an error estimating fees... using old cached values'
               );
               return cb(null, oldvalues, true);
@@ -1989,13 +1996,13 @@ export class WalletService {
           }
 
           if (failed > 0) {
-            log.warn('Not caching default values. Failed:' + failed);
+            this.logw('Not caching default values. Failed:' + failed);
             return cb(null, values);
           }
 
           this.storage.storeGlobalCache(cacheKey, values, err => {
             if (err) {
-              log.warn('Could not store fee level cache');
+              this.logw('Could not store fee level cache');
             }
             return cb(null, values);
           });
@@ -3589,7 +3596,7 @@ export class WalletService {
 
           this.storage.storeGlobalCache(cacheKey, values, err => {
             if (err) {
-              log.warn('Could not store bcheith cache');
+              this.logw('Could not store bc heigth cache');
             }
             return cb(null, values.current, values.hash);
           });
@@ -3636,14 +3643,13 @@ export class WalletService {
         return cb(null, true);
       }
 
-      // TODO remove on native bch addr
       this.storage
-        .walletCheck({ walletId: wallet.id, bch: wallet.coin == 'bch' })
+        .walletCheck({ walletId: wallet.id})
         .then((localCheck: { sum: number }) => {
           bc.getCheckData(wallet, (err, serverCheck) => {
             // If there is an error, just ignore it (server does not support walletCheck)
             if (err) {
-              log.warn('Error at bitcore WalletCheck, ignoring' + err);
+              this.logw('Error at bitcore WalletCheck, ignoring' + err);
               return cb();
             }
 

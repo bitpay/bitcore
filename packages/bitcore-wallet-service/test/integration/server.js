@@ -1216,12 +1216,11 @@ describe('Wallet service', function() {
       });
 
 
-      it.skip('should create next address if insertion fail ', function(done) {
+      it('should create next address if insertion fail ', function(done) {
         server.createAddress({}, function(err, address) {
           should.not.exist(err);
           should.exist(address);
           server.getWallet({}, (err,w) => {
-
 
             var old = server.getWallet;
             server.getWallet = sinon.stub();
@@ -1230,10 +1229,10 @@ describe('Wallet service', function() {
             w.addressManager.receiveAddressIndex = 0;
             server.getWallet.callsArgWith(1, null, w);
 
-
             server.createAddress({}, function(err, address) {
               server.getWallet = old;
               should.not.exist(err);
+
               should.exist(address);
               done();
             });
