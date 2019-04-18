@@ -14,8 +14,8 @@ var Utils = Common.Utils;
 var FIELDS = [
   'coin',
   'network',
-  'xPrivKey',
-  'xPrivKeyEncrypted',
+  'xPrivKey',             // obsolte
+  'xPrivKeyEncrypted',   // obsolte
   'xPubKey',
   'requestPrivKey',
   'requestPubKey',
@@ -44,7 +44,7 @@ var FIELDS = [
 ];
 
 function Credentials() {
-  this.version = '1.0.0';
+  this.version = '2.0.0';
   this.derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44;
   this.account = 0;
 };
@@ -71,7 +71,7 @@ Credentials.create = function(coin, network, account) {
   x.coin = coin;
   x.network = network;
   x.account = account;
-  x.xPrivKey = (new Bitcore.HDPrivateKey(network)).toString();
+
   x.compliantDerivation = true;
   x.use145forBCH = true;
   x._expand();
