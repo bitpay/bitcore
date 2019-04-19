@@ -74,10 +74,34 @@ Key.fromMnemonic = function(words, passphrase, opts) {
   x.mnemonic = words;
   x.mnemonicHasPassphrase = !!passphrase;
 
-  // Defivation Settings
   x.use145forBCH = !opts.use0forBCH;
+  x.compliantDerivation = !opts.nonCompliantDerivation;
+
   return x;
 };
+
+Key.fromExtendedPrivateKey = function(xPriv, opts) {
+  $.checkArgument(xPriv);
+  opts = opts || {};
+
+  try {
+    new Bitcore.HDPrivateKey(xPriv);
+  } catch (e) {
+    throw 'Invalid argument';
+  }
+
+  var x = new Key();
+  x.xPrivKey = xPriv;
+  x.mnemonic = null;
+  x.mnemonicHasPassphrase = null;
+
+  x.use145forBCH = !opts.use0forBCH;
+  x.compliantDerivation = !opts.nonCompliantDerivation;
+
+  return x;
+};
+
+
 
 Key.fromObj = function(obj) {
 
@@ -168,9 +192,9 @@ Key.prototype.decrypt = function(password) {
 
 
 Key.prototype.derive = function(password, path) {
-  $.checkArgument(path);
+  $.checkArgument(path, 'no path');
 
-  var xPrivKey = new Bitcore.HDPrivateKey(this.get(password).xPrivKey, this.network);
+  var xPrivKey = new Bitcore.HDPrivateKey(this.get(password).xPrivKey, NETWORK);
   var deriveFn = !!this.compliantDerivation ? _.bind(xPrivKey.deriveChild, xPrivKey) : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
   return deriveFn(path);
 };
