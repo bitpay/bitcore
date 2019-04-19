@@ -152,7 +152,7 @@ Credentials.fromMnemonic = function(coin, network, words, passphrase, account, d
   x.mnemonic = words;
   x.mnemonicHasPassphrase = !!passphrase;
 
-  // Defivation Settings
+  // Derivation Settings
   x.compliantDerivation = !opts.nonCompliantDerivation;
   x.use145forBCH = !opts.use0forBCH;
   x.derivationStrategy = derivationStrategy;

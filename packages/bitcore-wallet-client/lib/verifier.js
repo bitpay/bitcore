@@ -104,7 +104,7 @@ Verifier.checkProposalCreation = function(args, txp, encryptingKey) {
 
   var changeAddress;
   if (txp.changeAddress) {
-    changeAddress = txp.changeAddress.address; 
+    changeAddress = txp.changeAddress.address;
   }
   if (args.changeAddress && !strEqual(changeAddress, args.changeAddress)) return false;
   if (_.isNumber(args.feePerKb) && (txp.feePerKb != args.feePerKb)) return false;

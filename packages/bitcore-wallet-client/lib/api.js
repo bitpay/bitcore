@@ -459,14 +459,10 @@ API.prototype._import = function(cb) {
   });
 };
 
-
-API.prototype.importAllFromMnemonic = function(words, opts, cb) {
-}
-
 /**
  * Import from Mnemonics (language autodetected)
  * Can throw an error if mnemonic is invalid
- * Will try compilant and non-compliantDerivation
+ * Will try compliant and non-compliantDerivation
  *
  * @param {String} BIP39 words
  * @param {Object} opts
@@ -491,7 +487,7 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
       nonCompliantDerivation: nonCompliantDerivation,
       entropySourcePath: opts.entropySourcePath,
       walletPrivKey: opts.walletPrivKey,
-      use0forBCH: use0forBCH, 
+      use0forBCH, 
     });
   };
 
