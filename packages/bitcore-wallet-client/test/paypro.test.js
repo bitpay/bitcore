@@ -55,7 +55,7 @@ describe('paypro', function() {
         "network": "testnet",
         "paymentId": "3oZcpotopVGcZ2stRw2dop",
         "requiredFeeRate": 1.398,
-        "toAddress": "bchtest:qz78y0832kskq84rr4f9t22fequ5c0l4gu6wsehezr",
+        "toAddress": "qz78y0832kskq84rr4f9t22fequ5c0l4gu6wsehezr",
         "verified": true,
       });
       done();

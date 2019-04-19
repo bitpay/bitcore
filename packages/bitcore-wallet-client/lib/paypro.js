@@ -288,7 +288,7 @@ PayPro.send = function(opts, cb) {
   // verify request
   PayPro.runRequest(opts, function(err, rawData) {
     if (err) {
-      console.log('Error at verify-payment:', err, opts);
+      console.log('Error at verify-payment:', err.message ? err.message: '', opts);
       return cb(err);
     }
 
@@ -310,7 +310,7 @@ PayPro.send = function(opts, cb) {
 
     PayPro.runRequest(opts, function(err, rawData) {
       if (err) {
-        console.log('Error at payment:', err, opts);
+        console.log('Error at payment:', err.message ? err.message: '', opts);
         return cb(err);
       }
   
