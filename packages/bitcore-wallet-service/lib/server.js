@@ -1567,6 +1567,8 @@ WalletService.prototype.getSendMaxInfo = function(opts, cb) {
 
       if (_.isEmpty(inputs)) return cb(null, info);
 
+      opts.feePerKb = Defaults.MIN_FEE_PER_KB;
+
       self._getFeePerKb(wallet, opts, function(err, feePerKb) {
         if (err) return cb(err);
 
