@@ -422,7 +422,7 @@ describe('Wallet service', function() {
         name: 'my wallet',
         pubKey: TestData.keyPair.pub,
       };
-      async.each(pairs, function(pair, cb) {
+      async.eachSeries(pairs, function(pair, cb) {
         var pub = (new Bitcore.PrivateKey()).toPublicKey();
         opts.m = pair.m;
         opts.n = pair.n;
@@ -431,6 +431,7 @@ console.log('[server.js.429:opts:]',opts); // TODO
         server.createWallet(opts, function(err) {
           if (!pair.valid) {
             should.exist(err);
+console.log('[server.js.433:err:] SHOULD BE ERR',err); // TODO
             err.message.should.equal('Invalid combination of required copayers / total copayers');
           } else {
             if (err) console.log("ERROR", opts, err);

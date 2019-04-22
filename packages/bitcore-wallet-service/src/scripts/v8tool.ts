@@ -2,7 +2,7 @@
 
 const request = require('request');
 const Bitcore = require('bitcore-lib');
-import { Client } from '../src/lib//blockchainexplorers/v8/client';
+import { Client } from '../lib//blockchainexplorers/v8/client';
 
 
 const coin = 'BTC';

@@ -4,7 +4,7 @@ var _ = require('lodash');
 const request = require('request');
 const Bitcore = require('bitcore-lib');
 const requestStream = require('request');
-const Client = require('../lib/blockchainexplorers/v8/client.js');
+import { Client } from '../lib//blockchainexplorers/v8/client';
 
 
 const coin = 'BTC';
@@ -63,7 +63,6 @@ r.on('end', () => {
       tx = JSON.parse(rawTx);
     } catch (e) {
       log.error('v8 error at JSON.parse:' + e  + ' Parsing:' + rawTx + ":");
-      return cb(e);
     }
     // v8 field name differences
     if (tx.value)
