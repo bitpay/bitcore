@@ -18,11 +18,15 @@ describe('Fiat rate service', function() {
   var service, request;
 
   before(function(done) {
-    helpers.before(done);
+    helpers.before((res) => {
+      done();
+    });
   });
+
   after(function(done) {
     helpers.after(done);
   });
+
   beforeEach(function(done) {
     helpers.beforeEach(function() {
       service = new FiatRateService();
@@ -37,6 +41,7 @@ describe('Fiat rate service', function() {
       });
     });
   });
+
   describe('#getRate', function() {
     it('should get current rate', function(done) {
       service.storage.storeFiatRate('BitPay', [{

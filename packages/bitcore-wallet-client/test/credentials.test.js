@@ -36,8 +36,7 @@ describe('Credentials', function() {
       path.should.equal("m/44'/0'/0'");
     });
     it('should return path for testnet account 2', function() {
-      var c = Credentials.create('btc', 'testnet');
-      c.account = 2;
+      var c = Credentials.create('btc', 'testnet', 2);
       var path = c.getBaseAddressDerivationPath();
       path.should.equal("m/44'/1'/2'");
     });
@@ -47,7 +46,41 @@ describe('Credentials', function() {
       var path = c.getBaseAddressDerivationPath();
       path.should.equal("m/45'");
     });
+
+    it('should return path for testnet account 1', function() {
+      var c = Credentials.create('bch', 'testnet', 1);
+      var path = c.getBaseAddressDerivationPath();
+      path.should.equal("m/44'/1'/1'");
+    });
+
+
+    it('should return different copayerId for differnt coin / accounts', function() {
+      var xpriv = 'xprv9s21ZrQH143K3zLpjtB4J4yrRfDTEfbrMa9vLZaTAv5BzASwBmA16mdBmZKpMLssw1AzTnm31HAD2pk2bsnZ9dccxaLD48mRdhtw82XoiBi';
+      var c = Credentials.fromExtendedPrivateKey('btc', xpriv, 0, 'BIP44');
+      var c2 = Credentials.fromExtendedPrivateKey('btc', xpriv, 1, 'BIP44');
+      var c3 = Credentials.fromExtendedPrivateKey('bch', xpriv, 1, 'BIP44');
+      var c4 = Credentials.fromExtendedPrivateKey('bch', xpriv, 1, 'BIP44');
+
+      c.copayerId.should.equal('4abffe3e0e52a4cec11ebf966675cb526566919a8a0d5de36d9b2898ee804a58');
+      c2.copayerId.should.equal('911867838cffffc2bbd05e519f1932d56c49b93a908136ce7a17b70573c1c428');
+      c3.copayerId.should.equal('dc9577aa5054563f31047463e25ec52f96c5b1fa93c4b567f2329eb6a66517d0');
+      c4.copayerId.should.equal('dc9577aa5054563f31047463e25ec52f96c5b1fa93c4b567f2329eb6a66517d0');
+    });
+
+ 
   });
+
+    it('should return different copayerId for differnt network', function() {
+
+      var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+      var c = Credentials.fromMnemonic('btc', 'livenet', words, '', 0, 'BIP44');
+      var c2 = Credentials.fromMnemonic('btc', "testnet", words, '', 0, 'BIP44');
+
+      c.copayerId.should.equal('af4e120530f26ffa834739b0eb030093c881bf73f8f893fc6837823325da83f2');
+      c2.copayerId.should.equal('51d883fcd4ec010a89503c4b64e0cf22fe706495a9cf086bec69194c1c8f8952');
+  });
+
+
 
   describe('#getDerivedXPrivKey', function() {
     it('should derive extended private key from master livenet', function() {
@@ -153,6 +186,32 @@ describe('Credentials', function() {
       c.xPubKey.should.equal('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj');
       c.getBaseAddressDerivationPath().should.equal("m/44'/0'/0'");
     });
+
+    it('Should create credentials from mnemonic BIP44 BCH', function() {
+      var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+      var c = Credentials.fromMnemonic('bch', 'livenet', words, '', 0, 'BIP44');
+      c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
+      c.network.should.equal('livenet');
+      c.account.should.equal(0);
+      c.derivationStrategy.should.equal('BIP44');
+      c.xPubKey.should.equal('xpub6ByHsPNSQXTWZ7PLESMY2FufyYWtLXagSUpMQq7Un96SiThZH2iJB1X7pwviH1WtKVeDP6K8d6xxFzzoaFzF3s8BKCZx8oEDdDkNnp4owAZ');
+      c.getBaseAddressDerivationPath().should.equal("m/44'/145'/0'");
+    });
+
+    it('Should create credentials from mnemonic BIP44 BCH, coin =0 ', function() {
+      var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
+      var c = Credentials.fromMnemonic('bch', 'livenet', words, '', 0, 'BIP44', 
+        { use0forBCH: true}
+      );
+      c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
+      c.network.should.equal('livenet');
+      c.account.should.equal(0);
+      c.derivationStrategy.should.equal('BIP44');
+      c.xPubKey.should.equal('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj');
+      c.getBaseAddressDerivationPath().should.equal("m/44'/0'/0'");
+    });
+
+
 
     it('Should create credentials from mnemonic BIP48', function() {
       var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";

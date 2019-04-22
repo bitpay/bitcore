@@ -7,6 +7,7 @@ var http = require('http');
 var should = chai.should();
 var proxyquire = require('proxyquire');
 var config = require('../ts_build/config.js');
+var log = require('npmlog');
 
 var Common = require('../ts_build/lib/common');
 var Defaults = Common.Defaults;
@@ -15,10 +16,15 @@ var { WalletService } = require('../ts_build/lib/server');
 
 
 describe('ExpressApp', function() {
+  beforeEach(()=>{
+    log.level = 'error';
+    config.disableLogs = true;
+  });
   describe('#constructor', function() {
     it('will set an express app', function() {
       var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {});
-      var express = new TestExpressApp();
+      var express = new TestExpressApp({
+      });
       should.exist(express.app);
       should.exist(express.app.use);
       should.exist(express.app.enable);
@@ -50,7 +56,8 @@ describe('ExpressApp', function() {
       var httpServer;
 
       function start(ExpressApp, done) {
-        var app = new ExpressApp();
+        var app = new ExpressApp({
+        });
         httpServer = http.Server(app.app);
 
         app.start(config, function(err) {

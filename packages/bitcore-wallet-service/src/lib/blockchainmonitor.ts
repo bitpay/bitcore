@@ -133,7 +133,7 @@ export class BlockchainMonitor {
       const walletId = txp.walletId;
 
       if (!processIt) {
-        log.info(
+        log.debug(
           'Detected broadcast ' +
           data.txid +
           ' of an accepted txp [' +
@@ -156,7 +156,7 @@ export class BlockchainMonitor {
         );
       }
 
-      log.info(
+      log.debug(
         'Processing accepted txp [' +
         txp.id +
         '] for wallet ' +
@@ -238,7 +238,7 @@ export class BlockchainMonitor {
           if (!address || address.isChange) return next();
 
           const walletId = address.walletId;
-          log.info(
+          log.debug(
             'Incoming tx for wallet ' +
             walletId +
             ' [' +
@@ -260,7 +260,7 @@ export class BlockchainMonitor {
               );
             });
             if (alreadyNotified) {
-              log.info(
+              log.debug(
                 'The incoming tx ' + data.txid + ' was already notified'
               );
               return next();
@@ -287,7 +287,7 @@ export class BlockchainMonitor {
   }
 
   _notifyNewBlock(coin, network, hash) {
-    log.info(`New ${coin}/${network} block ${hash}`);
+    log.debug(`New ${coin}/${network} block ${hash}`);
     const notification = Notification.create({
       type: 'NewBlock',
       walletId: network, // use network name as wallet id for global notifications
@@ -304,7 +304,7 @@ export class BlockchainMonitor {
   _handleTxConfirmations(coin, network, hash) {
     const processTriggeredSubs = (subs, cb) => {
       async.each(subs, (sub: any) => {
-        log.info('New tx confirmation ' + sub.txid);
+        log.debug('New tx confirmation ' + sub.txid);
         sub.isActive = false;
         this.storage.storeTxConfirmationSub(sub, (err) => {
           if (err) return cb(err);

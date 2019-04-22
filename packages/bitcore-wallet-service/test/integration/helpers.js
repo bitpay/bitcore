@@ -52,22 +52,16 @@ helpers.before = function(cb) {
       //var db = new tingodb.Db('./db/test', {});
       //return cb(db);
     }
+
   }
   getDb(function(db) {
     storage = new Storage({
       db: db
     });
-    return cb();
-  });
-};
+    Storage.createIndexes(db);
 
-helpers.beforeEach = function(cb) {
-  if (!storage.db) return cb();
-  storage.db.dropDatabase(function(err) {
-    if (err) return cb(err);
+
     let be = blockchainExplorer = sinon.stub();
-
-
     be.register = sinon.stub().callsArgWith(1, null, null);
     be.addAddresses = sinon.stub().callsArgWith(2, null, null);
     be.getAddressUtxos = sinon.stub().callsArgWith(2, null, []);
@@ -75,7 +69,48 @@ helpers.beforeEach = function(cb) {
     be.getUtxos = sinon.stub().callsArgWith(1, null,[]);
     be.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000, 'hash');
 
+    var opts = {
+      storage: storage,
+      blockchainExplorer: blockchainExplorer,
+      request: sinon.stub()
+    };
+    WalletService.initialize(opts, function() {
+      return cb(opts);
+    });
+  });
+};
 
+helpers.beforeEach = function(cb) {
+  if (!storage.db) return cb();
+
+  // Left overs to be initalized
+  let be = blockchainExplorer;
+  be.register = sinon.stub().callsArgWith(1, null, null);
+  be.addAddresses = sinon.stub().callsArgWith(2, null, null);
+ 
+  // TODO
+  const collections = {
+    WALLETS: 'wallets',
+    TXS: 'txs',
+    ADDRESSES: 'addresses',
+    NOTIFICATIONS: 'notifications',
+    COPAYERS_LOOKUP: 'copayers_lookup',
+    PREFERENCES: 'preferences',
+    EMAIL_QUEUE: 'email_queue',
+    CACHE: 'cache',
+    FIAT_RATES: 'fiat_rates',
+    TX_NOTES: 'tx_notes',
+    SESSIONS: 'sessions',
+    PUSH_NOTIFICATION_SUBS: 'push_notification_subs',
+    TX_CONFIRMATION_SUBS: 'tx_confirmation_subs',
+    LOCKS: 'locks'
+  };
+
+
+  async.each(_.values(collections), (x, icb)=> {
+    storage.db.collection(x).remove({}, icb);
+  }, (err) => {
+    should.not.exist(err);
     var opts = {
       storage: storage,
       blockchainExplorer: blockchainExplorer,

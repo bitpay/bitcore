@@ -688,7 +688,7 @@ curl -v localhost:3000/api/BTC/mainnet/wallet/02870d8366cf8e50f383e38e5fafc01d95
 
 ## Fee
 
-### Get Fee by Target
+### Get Fee estimate for within N blocks
 
 GET `/api/BTC/mainnet/fee/:target`
 
@@ -699,13 +699,13 @@ GET `/api/BTC/mainnet/fee/:target`
 <b>Use Curl command in terminal to get a response</b>
 
 ```sh
-curl -v localhost:3000/api/BTC/mainnet/fee/80
+curl -v localhost:3000/api/BTC/mainnet/fee/22
 ```
 
 ```json
 {
-    "blocks": "0.00002003",
-    "feerate": "22"
+    "blocks": "22",
+    "feerate": "0.00002003"
 }
 ```
 

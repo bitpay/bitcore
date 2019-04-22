@@ -3,6 +3,7 @@ import _ from 'lodash';
 import { ClientError } from './errors/clienterror';
 import { WalletService } from './server';
 import { Stats } from './stats';
+import * as log from 'npmlog';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
@@ -10,7 +11,6 @@ const RateLimit = require('express-rate-limit');
 const Common = require('./common');
 const Defaults = Common.Defaults;
 
-let log = require('npmlog');
 log.disableColor();
 log.debug = log.verbose;
 log.level = 'verbose';
@@ -556,7 +556,6 @@ export class ExpressApp {
       });
     });
 
-    //  router.get('/v2/feelevels/', estimateFeeLimiter, (req, res) => {
     router.get('/v2/feelevels/', (req, res) => {
       const opts: { coin?: string; network?: string } = {};
       if (req.query.coin) opts.coin = req.query.coin;
