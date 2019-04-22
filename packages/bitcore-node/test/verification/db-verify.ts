@@ -49,7 +49,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
         console.log(JSON.stringify(error));
       }
     }
-    if (seenTxs[tx.txid]) {
+    if (seenTxs[tx.txidStr]) {
       success = false;
       const error = { model: 'transaction', err: true, type: 'DUPE_TRANSACTION', payload: { tx, blockNum } };
       errors.push(error);
@@ -57,7 +57,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
         console.log(JSON.stringify(error));
       }
     } else {
-      seenTxs[tx.txid] = tx;
+      seenTxs[tx.txidStr] = tx;
     }
   }
 

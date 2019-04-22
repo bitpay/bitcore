@@ -17,7 +17,8 @@ import { EventStorage } from './events';
 const Chain = require('../chain');
 
 export type ITransaction = {
-  txid: string;
+  txid: Buffer;
+  txidStr: string;
   chain: string;
   network: string;
   blockHeight?: number;
@@ -54,6 +55,7 @@ export type MintOp = {
         spentTxid?: Buffer;
         spentHeight?: SpentHeightIndicators;
         wallets?: Array<ObjectID>;
+        mintTxidStr: string;
       };
       $setOnInsert: {
         spentHeight: SpentHeightIndicators;
@@ -74,7 +76,7 @@ export type SpendOp = {
       chain: string;
       network: string;
     };
-    update: { $set: { spentTxid: string; spentHeight: number } };
+    update: { $set: { spentTxid: Buffer; spentHeight: number; spentTxidStr: string } };
   };
 };
 
@@ -157,7 +159,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
           const tx = { ...op.updateOne.update.$set, ...filter };
           await EventStorage.signalTx(tx);
           await mintOps
-            .filter(coinOp => coinOp.updateOne.filter.mintTxid.toString('hex') === filter.txid)
+            .filter(coinOp => coinOp.updateOne.update.$set.mintTxidStr === tx.txidStr)
             .map(coinOp => {
               const address = coinOp.updateOne.update.$set.address;
               const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
@@ -212,6 +214,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
                 blockTimeNormalized,
                 coinbase: parentTx.coinbase,
                 fee: parentTx.fee,
+                txidStr: parentTx.txid.toString('hex'),
                 size: parentTx.size,
                 locktime: parentTx.locktime,
                 inputCount: parentTx.inputCount,
@@ -239,7 +242,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         .toArray();
       type CoinGroup = { [txid: string]: { total: number; wallets: Array<ObjectID> } };
       const groupedMints = params.mintOps.reduce<CoinGroup>((agg, coinOp) => {
-        const mintTxid = coinOp.updateOne.filter.mintTxid.toString('hex');
+        const mintTxid = coinOp.updateOne.update.$set.mintTxidStr;
         const coin = coinOp.updateOne.update.$set;
         const { value, wallets = [] } = coin;
         if (!agg[mintTxid]) {
@@ -255,7 +258,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
       }, {});
 
       const groupedSpends = spent.reduce<CoinGroup>((agg, coin) => {
-        const spentTxid = coin.spentTxid.toString('hex');
+        const spentTxid = coin.spentTxidStr;
         if (!agg[spentTxid]) {
           agg[spentTxid] = {
             total: coin.value,
@@ -287,11 +290,12 @@ export class TransactionModel extends BaseModel<ITransaction> {
 
         return {
           updateOne: {
-            filter: { txid, chain, network },
+            filter: { txid: Buffer.from(txid), chain, network },
             update: {
               $set: {
                 chain,
                 network,
+                txidStr: txid,
                 blockHeight: height,
                 blockHash,
                 blockTime,
@@ -378,7 +382,8 @@ export class TransactionModel extends BaseModel<ITransaction> {
                 mintHeight: height,
                 coinbase: isCoinbase,
                 value: output.satoshis,
-                script: output.script && output.script.toBuffer()
+                script: output.script && output.script.toBuffer(),
+                mintTxidStr: tx._hash
               },
               $setOnInsert: {
                 spentHeight: SpentHeightIndicators.unspent,
@@ -438,7 +443,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
     }
     let mintMap = {} as Mapping<Mapping<MintOp>>;
     for (let mintOp of params.mintOps || []) {
-      const mintTxid = mintOp.updateOne.filter.mintTxid.toString('hex');
+      const mintTxid = mintOp.updateOne.update.$set.mintTxidStr;
       mintMap[mintTxid] = mintMap[mintOp.updateOne.filter.mintIndex] || {};
       mintMap[mintTxid][mintOp.updateOne.filter.mintIndex] = mintOp;
     }
@@ -449,13 +454,14 @@ export class TransactionModel extends BaseModel<ITransaction> {
       for (let input of tx.inputs) {
         let inputObj = input.toObject();
         let sameBlockSpend = mintMap[inputObj.prevTxId] && mintMap[inputObj.prevTxId][inputObj.outputIndex];
+        const hash = tx._hash || tx.hash;
         if (sameBlockSpend) {
           sameBlockSpend.updateOne.update.$set.spentHeight = height;
           delete sameBlockSpend.updateOne.update.$setOnInsert.spentHeight;
           if (!Object.keys(sameBlockSpend.updateOne.update.$setOnInsert).length) {
             delete sameBlockSpend.updateOne.update.$setOnInsert;
           }
-          sameBlockSpend.updateOne.update.$set.spentTxid = Buffer.from(tx._hash!);
+          sameBlockSpend.updateOne.update.$set.spentTxid = Buffer.from(hash);
           continue;
         }
         const updateQuery = {
@@ -467,7 +473,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
               chain,
               network
             },
-            update: { $set: { spentTxid: tx._hash || tx.hash, spentHeight: height } }
+            update: { $set: { spentTxid: Buffer.from(hash), spentHeight: height, spentTxidStr: hash } }
           }
         };
         spendOps.push(updateQuery);
@@ -506,7 +512,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         { projection: { spentTxid: 1 } }
       );
       if (coin) {
-        prunedTxs[coin.spentTxid.toString('hex')] = true;
+        prunedTxs[coin.spentTxidStr] = true;
       }
     }
     if (Object.keys(prunedTxs).length) {
@@ -537,7 +543,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
   _apiTransform(tx: Partial<MongoBound<ITransaction>>, options?: TransformOptions): TransactionJSON | string {
     const transaction: TransactionJSON = {
       _id: tx._id ? tx._id.toString() : '',
-      txid: tx.txid || '',
+      txid: (tx.txid || Buffer.alloc(0)).toString('hex'),
       network: tx.network || '',
       chain: tx.chain || '',
       blockHeight: tx.blockHeight || -1,

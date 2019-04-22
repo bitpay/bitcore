@@ -286,7 +286,8 @@ describe('Block Model', function() {
 
       // setting TX model
       await TransactionStorage.collection.insertOne({
-        txid: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919g',
+        txid: Buffer.from('a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919g'),
+        txidStr: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919g',
         chain: 'BTC',
         network: 'regtest',
         blockHash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
@@ -303,7 +304,8 @@ describe('Block Model', function() {
       });
 
       await TransactionStorage.collection.insertOne({
-        txid: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
+        txid: Buffer.from('8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f'),
+        txidStr: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
         chain: 'BTC',
         network: 'regtest',
         blockHash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
@@ -320,7 +322,8 @@ describe('Block Model', function() {
       });
 
       await TransactionStorage.collection.insertOne({
-        txid: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
+        txid: Buffer.from('a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e'),
+        txidStr: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
         chain: 'BTC',
         network: 'regtest',
         blockHash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
@@ -337,7 +340,8 @@ describe('Block Model', function() {
       });
 
       await TransactionStorage.collection.insertOne({
-        txid: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
+        txid: Buffer.from('8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826'),
+        txidStr: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
         chain: 'BTC',
         network: 'regtest',
         blockHash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
@@ -358,7 +362,9 @@ describe('Block Model', function() {
         network: 'regtest',
         chain: 'BTC',
         mintTxid: Buffer.from('a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919g'),
+        mintTxidStr: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919g',
         spentTxid: Buffer.from(''),
+        spentTxidStr: '',
         mintIndex: 0,
         spentHeight: SpentHeightIndicators.unspent,
         mintHeight: 5,
@@ -373,7 +379,9 @@ describe('Block Model', function() {
         network: 'regtest',
         chain: 'BTC',
         mintTxid: Buffer.from('a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e'),
+        mintTxidStr: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
         spentTxid: Buffer.from(''),
+        spentTxidStr: '',
         mintIndex: 0,
         spentHeight: SpentHeightIndicators.unspent,
         mintHeight: 7,
@@ -387,7 +395,9 @@ describe('Block Model', function() {
         network: 'regtest',
         chain: 'BTC',
         mintTxid: Buffer.from('8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826'),
+        mintTxidStr: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
         spentTxid: Buffer.from(''),
+        spentTxidStr: '',
         mintIndex: 0,
         spentHeight: SpentHeightIndicators.unspent,
         mintHeight: 7,
@@ -401,6 +411,7 @@ describe('Block Model', function() {
         network: 'regtest',
         chain: 'BTC',
         mintTxid: Buffer.from('8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f'),
+        mintTxidStr: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
         mintIndex: 0,
         spentHeight: 8,
         mintHeight: 7,
@@ -409,7 +420,8 @@ describe('Block Model', function() {
         wallets: [],
         value: 500.0,
         address: 'mkjB6LmjiNfJWgH4aP4v1GkFjRcQTfDSfj',
-        spentTxid: Buffer.from('eec8570a0c960b19fa6c86c71a06ebda379b86b5fe0be0e64ba83b2e0a3d05a3')
+        spentTxid: Buffer.from('eec8570a0c960b19fa6c86c71a06ebda379b86b5fe0be0e64ba83b2e0a3d05a3'),
+        spentTxidStr: 'eec8570a0c960b19fa6c86c71a06ebda379b86b5fe0be0e64ba83b2e0a3d05a3'
       });
 
       await BlockStorage.handleReorg({

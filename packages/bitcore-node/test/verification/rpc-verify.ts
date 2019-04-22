@@ -108,7 +108,7 @@ export async function blocks(
 
       for (const our of ours) {
         // Check every one of our txs is contained in `truth`
-        const tx = truth.tx.find(tx => tx.txid === our.txid);
+        const tx = truth.tx.find(tx => tx.txid === our.txidStr);
         expect(tx, 'tx to be in the block').to.not.be.undefined;
         // Check our txs' block hash matches the mongo block
         expect(our.blockHash, 'tx block hash').to.equal(block.hash);
@@ -122,15 +122,14 @@ export async function blocks(
       }
 
       // Check no other tx points to our block hash
-      const extra = await TransactionStorage.collection
-        .countDocuments({
-          chain: info.chain,
-          network: info.network,
-          blockHash: block.hash,
-          txid: {
-            $nin: truth.tx.map(tx => tx.txid)
-          }
-        });
+      const extra = await TransactionStorage.collection.countDocuments({
+        chain: info.chain,
+        network: info.network,
+        blockHash: block.hash,
+        txid: {
+          $nin: truth.tx.map(tx => tx.txid)
+        }
+      });
       expect(extra, 'number of extra transactions').to.equal(0);
     }
   }
@@ -165,7 +164,7 @@ export async function transactions(
       break;
     }
     logger.info(`verifying tx ${tx.txid}: ${tx.blockHeight}`);
-    const truth = await rpc.transaction(tx.txid, tx.blockHash);
+    const truth = await rpc.transaction(tx.txidStr, tx.blockHash);
 
     if (info.network !== 'regtest') {
       expect(tx.size, 'tx size').to.equal(truth.size);

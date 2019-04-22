@@ -10,6 +10,7 @@ export type ICoin = {
   network: string;
   chain: string;
   mintTxid: Buffer;
+  mintTxidStr: string;
   mintIndex: number;
   mintHeight: number;
   coinbase: boolean;
@@ -18,6 +19,7 @@ export type ICoin = {
   script: Buffer;
   wallets: Array<ObjectID>;
   spentTxid: Buffer;
+  spentTxidStr: string;
   spentHeight: number;
   confirmations?: number;
 };
