@@ -127,7 +127,7 @@ Credentials.fromExtendedPrivateKey = function(coin, xPrivKey, account, derivatio
   x.account = account;
   x.derivationStrategy = derivationStrategy;
   x.compliantDerivation = !opts.nonCompliantDerivation;
-  x.use145forBCH = !opts.use0forBCH;
+  x.use145forBCH = !opts.useLegacyCoinType;
 
   if (opts.walletPrivKey) {
     x.addWalletPrivateKey(opts.walletPrivKey);
@@ -154,7 +154,7 @@ Credentials.fromMnemonic = function(coin, network, words, passphrase, account, d
 
   // Derivation Settings
   x.compliantDerivation = !opts.nonCompliantDerivation;
-  x.use145forBCH = !opts.use0forBCH;
+  x.use145forBCH = !opts.useLegacyCoinType;
   x.derivationStrategy = derivationStrategy;
 
   // this are wallet specific
