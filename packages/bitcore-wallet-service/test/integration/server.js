@@ -423,8 +423,10 @@ describe('Wallet service', function() {
         pubKey: TestData.keyPair.pub,
       };
       async.each(pairs, function(pair, cb) {
+        var pub = (new Bitcore.PrivateKey()).toPublicKey();
         opts.m = pair.m;
         opts.n = pair.n;
+        opts.pubKey = pub.toString();
         server.createWallet(opts, function(err) {
           if (!pair.valid) {
             should.exist(err);
