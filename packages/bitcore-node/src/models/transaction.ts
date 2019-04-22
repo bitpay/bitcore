@@ -290,7 +290,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
 
         return {
           updateOne: {
-            filter: { txid: Buffer.from(txid), chain, network },
+            filter: { txid: Buffer.from(txid, 'hex'), chain, network },
             update: {
               $set: {
                 chain,
@@ -369,7 +369,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         mintOps.push({
           updateOne: {
             filter: {
-              mintTxid: Buffer.from(tx._hash),
+              mintTxid: Buffer.from(tx._hash, 'hex'),
               mintIndex: index,
               chain,
               network
@@ -461,19 +461,19 @@ export class TransactionModel extends BaseModel<ITransaction> {
           if (!Object.keys(sameBlockSpend.updateOne.update.$setOnInsert).length) {
             delete sameBlockSpend.updateOne.update.$setOnInsert;
           }
-          sameBlockSpend.updateOne.update.$set.spentTxid = Buffer.from(hash);
+          sameBlockSpend.updateOne.update.$set.spentTxid = Buffer.from(hash, 'hex');
           continue;
         }
         const updateQuery = {
           updateOne: {
             filter: {
-              mintTxid: Buffer.from(inputObj.prevTxId),
+              mintTxid: Buffer.from(inputObj.prevTxId, 'hex'),
               mintIndex: inputObj.outputIndex,
               spentHeight: { $lt: SpentHeightIndicators.minimum },
               chain,
               network
             },
-            update: { $set: { spentTxid: Buffer.from(hash), spentHeight: height, spentTxidStr: hash } }
+            update: { $set: { spentTxid: Buffer.from(hash, 'hex'), spentHeight: height, spentTxidStr: hash } }
           }
         };
         spendOps.push(updateQuery);
