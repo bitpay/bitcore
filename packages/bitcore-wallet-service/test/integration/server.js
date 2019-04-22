@@ -39,13 +39,16 @@ var storage, blockchainExplorer, request;
 describe('Wallet service', function() {
 
   before(function(done) {
-    helpers.before(done);
-  });
-  beforeEach(function(done) {
-    helpers.beforeEach(function(res) {
+    helpers.before(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
       request = res.request;
+      done();
+    });
+ 
+  });
+  beforeEach(function(done) {
+    helpers.beforeEach(function(res) {
       done();
     });
   });
@@ -1212,6 +1215,33 @@ describe('Wallet service', function() {
         });
       });
 
+
+      it('should create next address if insertion fail ', function(done) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+          should.exist(address);
+          server.getWallet({}, (err,w) => {
+
+            var old = server.getWallet;
+            server.getWallet = sinon.stub();
+
+            // return main address index to 0;
+            w.addressManager.receiveAddressIndex = 0;
+            server.getWallet.callsArgWith(1, null, w);
+
+            server.createAddress({}, function(err, address) {
+              server.getWallet = old;
+              should.not.exist(err);
+
+              should.exist(address);
+              done();
+            });
+          });
+        });
+      });
+
+
+
       it('should create many addresses on simultaneous requests', function(done) {
         var N = 5;
         async.mapSeries(_.range(N), function(i, cb) {
@@ -1744,6 +1774,29 @@ describe('Wallet service', function() {
         });
       });
     });
+
+
+    it('should get UTXOs for wallet addresses', function(done) {
+      helpers.stubUtxos(server, wallet, [1, 2], function() {
+        server.getUtxos({}, function(err, utxos) {
+          should.not.exist(err);
+          should.exist(utxos);
+          utxos.length.should.equal(2);
+          _.sumBy(utxos, 'satoshis').should.equal(3 * 1e8);
+          server.getMainAddresses({}, function(err, addresses) {
+            var utxo = utxos[0];
+            var address = _.find(addresses, {
+              address: utxo.address
+            });
+            should.exist(address);
+            utxo.path.should.equal(address.path);
+            utxo.publicKeys.should.deep.equal(address.publicKeys);
+            done();
+          });
+        });
+      });
+    });
+
     it('should return empty UTXOs for specific addresses if network mismatch', function(done) {
       helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
         _.uniqBy(utxos, 'address').length.should.be.above(1);

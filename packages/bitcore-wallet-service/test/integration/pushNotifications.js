@@ -21,9 +21,14 @@ var helpers = require('./helpers');
 describe('Push notifications', function() {
   var server, wallet, requestStub, pushNotificationsService, walletId;
 
+
   before(function(done) {
-    helpers.before(done);
+    helpers.before((res) => {
+      done();
+    });
   });
+
+
   after(function(done) {
     helpers.after(done);
   });
