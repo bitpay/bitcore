@@ -1,22 +1,16 @@
-/**
- * The official client library for bitcore-wallet-service.
- * @module Client
- */
+import { Verifier } from 'lib/verifier';
+import { Utils } from 'lib/common/utils';
+import { sjcl } from 'sjcl';
+import { Bitcore } from 'bitcore-lib';
+import { BitcoreCash } from 'bitcore-lib-cash';
 
-/**
- * Client API.
- * @alias module:Client.API
- */
-var client = module.exports = require('./api');
+const client = {
+  Verifier,
+  Utils,
+  sjcl,
+  // Expose bitcore
+  Bitcore,
+  BitcoreCash
+}
 
-/**
- * Verifier module.
- * @alias module:Client.Verifier
- */
-client.Verifier = require('./verifier');
-client.Utils = require('./common/utils');
-client.sjcl = require('sjcl');
-
-// Expose bitcore
-client.Bitcore = require('bitcore-lib');
-client.BitcoreCash = require('bitcore-lib-cash');
+module.exports = client;

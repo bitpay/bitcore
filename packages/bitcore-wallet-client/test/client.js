@@ -1,6 +1,6 @@
 'use strict';
 
-var _ = require('lodash');
+import * as _ from 'lodash';
 var $ = require('preconditions').singleton();
 var chai = require('chai');
 chai.config.includeStack = true;

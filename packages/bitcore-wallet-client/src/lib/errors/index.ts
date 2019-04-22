@@ -43,7 +43,7 @@ var traverseRoot = function (parent, errorsDefinition) {
 };
 
 
-var bwc = {};
+var bwc: any = {};
 bwc.Error = function () {
   this.message = 'Internal error';
   this.stack = this.message + '\n' + (new Error()).stack;
