@@ -1112,7 +1112,7 @@ describe('client API', function() {
     });
   });
 
-  describe.only('Notification polling', function() {
+  describe('Notification polling', function() {
     var clock, interval;
     beforeEach(function() {
       clock = sinon.useFakeTimers({now:1234000, toFake:[ 'Date']});
@@ -1120,9 +1120,8 @@ describe('client API', function() {
     afterEach(function() {
       clock.restore();
     });
-    it.only('should fetch notifications at intervals', function(done) {
+    it('should fetch notifications at intervals', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function() {
-console.log('[api.test.js.1123]'); // TODO
         clients[0].on('notification', function(data) {
           notifications.push(data);
         });
