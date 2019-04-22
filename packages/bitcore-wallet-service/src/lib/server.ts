@@ -387,15 +387,28 @@ export class WalletService {
 
   logw(...args) {
     if (!this) {
-      return log.info.apply(this, args);
+      return log.warn.apply(this, args);
     }
     if (!this.walletId) {
-      return log.info.apply(this, arguments);
+      return log.warn.apply(this, arguments);
     }
 
     const argz = [].slice.call(args);
     argz.unshift('<' + this.walletId + '>');
     log.warn.apply(this, argz);
+  }
+
+  logd(...args) {
+    if (!this) {
+      return log.verbose.apply(this, args);
+    }
+    if (!this.walletId) {
+      return log.verbose.apply(this, arguments);
+    }
+
+    const argz = [].slice.call(args);
+    argz.unshift('<' + this.walletId + '>');
+    log.verbose.apply(this, argz);
   }
 
   login(opts, cb) {
@@ -528,7 +541,7 @@ export class WalletService {
             nativeCashAddr: opts.nativeCashAddr
           });
           this.storage.storeWallet(wallet, (err) => {
-            this.logi('Wallet created', wallet.id, opts.network);
+            this.logd('Wallet created', wallet.id, opts.network);
             newWallet = wallet;
             return acb(err);
           });
@@ -2084,7 +2097,7 @@ export class WalletService {
         totalValueInUtxos - baseTxpFee - utxos.length * feePerInput;
 
       if (totalValueInUtxos < txpAmount) {
-        this.logi(
+        this.logd(
           'Total value in all utxos (' +
           Utils.formatAmountInBtc(totalValueInUtxos) +
           ') is insufficient to cover for txp amount (' +
@@ -2094,7 +2107,7 @@ export class WalletService {
         return cb(Errors.INSUFFICIENT_FUNDS);
       }
       if (netValueInUtxos < txpAmount) {
-        this.logi(
+        this.logd(
           'Value after fees in all utxos (' +
           Utils.formatAmountInBtc(netValueInUtxos) +
           ') is insufficient to cover for txp amount (' +
@@ -2107,7 +2120,7 @@ export class WalletService {
       const bigInputThreshold =
         txpAmount * Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR +
         (baseTxpFee + feePerInput);
-      this.logi(
+      this.logd(
         'Big input threshold ' + Utils.formatAmountInBtc(bigInputThreshold)
       );
 
@@ -2315,7 +2328,7 @@ export class WalletService {
               _.sumBy(txp.inputs, 'satoshis') -
               _.sumBy(txp.outputs, 'amount') -
               txp.fee;
-            this.logi(
+            this.logd(
               'Successfully built transaction. Total fees: ' +
               Utils.formatAmountInBtc(txp.fee) +
               ', total change: ' +
@@ -2355,7 +2368,7 @@ export class WalletService {
         const backoffTime = Defaults.BACKOFF_TIME;
 
         if (timeSinceLastRejection <= backoffTime)
-          this.logi(
+          this.logd(
             'Not allowing to create TX: timeSinceLastRejection/backoffTime',
             timeSinceLastRejection,
             backoffTime
@@ -3603,7 +3616,7 @@ export class WalletService {
 
   updateWalletV8Keys(wallet) {
     if (!wallet.beAuthPrivateKey2) {
-      this.logi('Adding wallet beAuthKey...');
+      this.logd('Adding wallet beAuthKey');
       wallet.updateBEKeys();
     }
   }
@@ -3614,7 +3627,7 @@ export class WalletService {
     }
     const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
 
-    this.logi('Registering wallet');
+    this.logd('Registering wallet');
     bc.register(wallet, err => {
       if (err) {
         return cb(err);
@@ -3697,7 +3710,7 @@ export class WalletService {
           }
 
           const addressStr = _.map(addresses, 'address');
-          this.logi('Syncing addresses: ', addressStr.length);
+          this.logd('Syncing addresses: ', addressStr.length);
           bc.addAddresses(wallet, addressStr, err => {
             if (err) return cb(err);
 
@@ -4235,11 +4248,11 @@ export class WalletService {
               if (res.txs.fromBc) {
                 p = 'Partial';
               }
-              this.logi(
+              this.logd(
                 `${p} History from cache ${from}/${to}: ${finalTxs.length} txs`
               );
             } else {
-              this.logi(
+              this.logd(
                 `History from bc ${from}/${to}: ${finalTxs.length} txs`
               );
             }
@@ -4392,7 +4405,7 @@ export class WalletService {
           addresses = addresses.concat(scannedAddresses);
 
           if (step > 1) {
-            this.logi(
+            this.logd(
               'Deriving addresses for scan steps gaps DERIVATOR:' + derivator.id
             );
 

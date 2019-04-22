@@ -26,7 +26,7 @@ function Verifier(opts) {};
 Verifier.checkAddress = function(credentials, address) {
   $.checkState(credentials.isComplete());
 
-  var local = Utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin);
+  var local = Utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin); 
   return (local.address == address.address &&
     _.difference(local.publicKeys, address.publicKeys).length === 0);
 };
@@ -106,7 +106,6 @@ Verifier.checkProposalCreation = function(args, txp, encryptingKey) {
   if (txp.changeAddress) {
     changeAddress = txp.changeAddress.address;
   }
-
   if (args.changeAddress && !strEqual(changeAddress, args.changeAddress)) return false;
   if (_.isNumber(args.feePerKb) && (txp.feePerKb != args.feePerKb)) return false;
   if (!strEqual(txp.payProUrl, args.payProUrl)) return false;
@@ -215,7 +214,7 @@ Verifier.checkTxProposal = function(credentials, txp, opts) {
 
   if (!this.checkTxProposalSignature(credentials, txp))
     return false;
-
+ 
   if (opts.paypro && !this.checkPaypro(txp, opts.paypro))
     return false;
 

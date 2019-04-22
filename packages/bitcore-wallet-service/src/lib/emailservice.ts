@@ -339,7 +339,7 @@ export class EmailService {
         let errStr;
         try { errStr = err.toString().substr(0, 100); } catch (e) { }
 
-        log.error(
+        log.warn(
           'An error occurred when trying to send email to ' + email.to,
           errStr || err
         );
@@ -481,7 +481,7 @@ export class EmailService {
                   let errStr;
                   try { errStr = err.toString().substr(0, 100); } catch (e) { }
 
-                  log.error(
+                  log.warn(
                     'An error ocurred generating email notification',
                     errStr || err
                   );

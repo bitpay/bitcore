@@ -16,6 +16,9 @@ const V8UTXOS = [
 {"_id":"5c21088f7adced963b33eea2","chain":"BCH","network":"testnet","coinbase":false,"mintIndex":0,"spentTxid":"","mintTxid":"42eeb1d139521fa5206685ffec5df3b302cf85561201178680a0efe6bd23d449","mintHeight":-1,"spentHeight":-2,"address":"qrua7vsdmks4522wwv8rtamfph7g8s8vpq6a0g3veh","script":"76a914f9df320ddda15a294e730e35f7690dfc83c0ec0888ac","value":2000000,"confirmations":-1}];
 
 
+const V8UTXOS2 = [ 
+  { _id: '5cb4f9d612025b0a3931b13c', chain: 'BTC', network: 'mainnet', coinbase: false, mintIndex: 0, spentTxid: '', mintTxid: '623f72b089da60a179d7b85b50ed655e8580747ee06f2f77369cacfb99de11a0', mintHeight: 571792, spentHeight: -2, address: '38o49rd64PFDmvUV7928K1a5SRnoVgJSFW', script: 'a9144ded3cc47fcf6883a78c29134f90b0c1b0c368c887', value: 109810934, confirmations: 126 },
+  { _id: '5cb503e612025b0a393d2ea9', chain: 'BTC', network: 'mainnet', coinbase: false, mintIndex: 0, spentTxid: '', mintTxid: '06ab9db9100409132a4c1367b87f16983938007dbae7b96a0746a64a7755e3e6', mintHeight: 571797, spentHeight: -2, address: '36pUaXzGouNdCqUDRWRXX9NJYungJEWJC2', script: 'a9143841ca886a1c4276966a77a15d0d1c4fe1e841bd87', value: 350000000, confirmations: 121 }]; 
 
 var t = (new Date).toISOString();
 var external = '11234';
@@ -166,6 +169,38 @@ describe('V8', () => {
         return done();
       });
     });
+
+    it('should get uxtos 2', (done) => {
+
+
+      class PartialJson {
+        getAddressTxos(opts) {
+          return new Promise(function (resolve) {
+            resolve(V8UTXOS2);
+          })
+        };
+      };
+
+      var be = new V8({
+        coin: 'bch',
+        network: 'livenet',
+        url: 'http://dummy/',
+        apiPrefix: 'dummyPath',
+        userAgent: 'testAgent',
+        client: PartialJson,
+      });
+
+      be.getAddressUtxos('36pUaXzGouNdCqUDRWRXX9NJYungJEWJC2', 571920, (err, utxos) => {
+        should.not.exist(err);
+        should.exist(utxos);
+        let x = utxos[1];
+        x.confirmations.should.equal(124);
+        x.satoshis.should.equal(350000000);
+        x.amount.should.equal(3.5);
+        return done();
+      });
+    });
+
   });
 
   describe('#estimateFee', () => {
