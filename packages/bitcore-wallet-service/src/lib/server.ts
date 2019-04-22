@@ -3987,12 +3987,12 @@ export class WalletService {
             if (!result) return next();
 
             if (result.streamKey != streamKey) {
-              log.info('Deleting old stream cache:' + result.streamKey);
+              log.debug('Deleting old stream cache:' + result.streamKey);
               return this.storage.clearTxHistoryStreamV8(wallet.id, next);
             }
 
             streamData = result.items;
-            log.info(`Using stream cache: ${streamData.length} txs`);
+            log.debug(`Using stream cache: ${streamData.length} txs`);
             return next();
           });
         },

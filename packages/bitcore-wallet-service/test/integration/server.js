@@ -8,7 +8,6 @@ var sinon = require('sinon');
 var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
-log.level = 'info';
 
 var config = require('../test-config');
 
@@ -39,6 +38,7 @@ var storage, blockchainExplorer, request;
 describe('Wallet service', function() {
 
   before(function(done) {
+    log.level = 'warn';
     helpers.before(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
@@ -430,6 +430,7 @@ describe('Wallet service', function() {
             should.exist(err);
             err.message.should.equal('Invalid combination of required copayers / total copayers');
           } else {
+            if (err) console.log(err);
             should.not.exist(err);
           }
           return cb();

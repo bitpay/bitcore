@@ -15,6 +15,9 @@ var { WalletService } = require('../ts_build/lib/server');
 
 
 describe('ExpressApp', function() {
+  before(()=>{
+    log.level = 'warn';
+  });
   describe('#constructor', function() {
     it('will set an express app', function() {
       var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {});
