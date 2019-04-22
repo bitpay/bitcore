@@ -427,12 +427,13 @@ describe('Wallet service', function() {
         opts.m = pair.m;
         opts.n = pair.n;
         opts.pubKey = pub.toString();
+console.log('[server.js.429:opts:]',opts); // TODO
         server.createWallet(opts, function(err) {
           if (!pair.valid) {
             should.exist(err);
             err.message.should.equal('Invalid combination of required copayers / total copayers');
           } else {
-            if (err) console.log(err);
+            if (err) console.log("ERROR", opts, err);
             should.not.exist(err);
           }
           return cb();
