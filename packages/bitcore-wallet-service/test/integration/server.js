@@ -8,7 +8,6 @@ var sinon = require('sinon');
 var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
-log.level = 'info';
 
 var config = require('../test-config');
 
@@ -48,6 +47,7 @@ describe('Wallet service', function() {
  
   });
   beforeEach(function(done) {
+    log.level = 'error';
     helpers.beforeEach(function(res) {
       done();
     });
@@ -423,13 +423,17 @@ describe('Wallet service', function() {
         pubKey: TestData.keyPair.pub,
       };
       async.each(pairs, function(pair, cb) {
+        var pub = (new Bitcore.PrivateKey()).toPublicKey();
         opts.m = pair.m;
         opts.n = pair.n;
+        opts.pubKey = pub.toString();
+console.log('[server.js.429:opts:]',opts); // TODO
         server.createWallet(opts, function(err) {
           if (!pair.valid) {
             should.exist(err);
             err.message.should.equal('Invalid combination of required copayers / total copayers');
           } else {
+            if (err) console.log("ERROR", opts, err);
             should.not.exist(err);
           }
           return cb();
