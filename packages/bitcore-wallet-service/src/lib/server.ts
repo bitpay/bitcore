@@ -37,6 +37,7 @@ const Errors = require('./errors/errordefinitions');
 
 let request = require('request');
 let initialized = false;
+let doNotCheckV8 = false;
 
 let lock;
 let storage;
@@ -123,6 +124,7 @@ export class WalletService {
    * @param {Object} opts
    * @param {Storage} [opts.storage] - The storage provider.
    * @param {Storage} [opts.blockchainExplorer] - The blockchainExporer provider.
+   * @param {Storage} [opts.doNotCheckV8] - only for testing
    * @param {Callback} cb
    */
   static initialize(opts, cb) {
@@ -131,6 +133,8 @@ export class WalletService {
     opts = opts || {};
     blockchainExplorer = opts.blockchainExplorer;
     blockchainExplorerOpts = opts.blockchainExplorerOpts;
+
+    doNotCheckV8 = opts.doNotCheckV8;
 
     if (opts.request) {
       request = opts.request;
@@ -3719,7 +3723,7 @@ export class WalletService {
         };
 
         syncAddr(addresses, err => {
-          if (skipCheck) return cb();
+          if (skipCheck || doNotCheckV8) return cb();
 
           this.checkWalletSync(bc, wallet, (err, isOK) => {
             // ignore err

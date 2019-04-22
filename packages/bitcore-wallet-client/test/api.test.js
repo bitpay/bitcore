@@ -122,6 +122,7 @@ helpers.createAndJoinWallet = function(clients, m, n, opts, cb) {
     coin: coin,
     network: network,
     singleAddress: !!opts.singleAddress,
+    doNotCheck: true,
   }, function(err, secret) {
     should.not.exist(err);
 
@@ -352,6 +353,7 @@ describe('client API', function() {
         storage: storage,
         blockchainExplorer: blockchainExplorerMock,
         disableLogs: true,
+        doNotCheckV8: true,
       },
       function() {
         app = expressApp.app;
@@ -1110,7 +1112,7 @@ describe('client API', function() {
     });
   });
 
-  describe('Notification polling', function() {
+  describe.only('Notification polling', function() {
     var clock, interval;
     beforeEach(function() {
       clock = sinon.useFakeTimers({now:1234000, toFake:[ 'Date']});
@@ -1118,8 +1120,9 @@ describe('client API', function() {
     afterEach(function() {
       clock.restore();
     });
-    it('should fetch notifications at intervals', function(done) {
+    it.only('should fetch notifications at intervals', function(done) {
       helpers.createAndJoinWallet(clients, 2, 2, function() {
+console.log('[api.test.js.1123]'); // TODO
         clients[0].on('notification', function(data) {
           notifications.push(data);
         });
