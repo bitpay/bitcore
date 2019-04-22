@@ -19,7 +19,7 @@ describe('Email notifications', function() {
   var storage, server, wallet, mailerStub, emailService;
 
   before(function(done) {
-    log.level = 'warn';
+    log.level = 'error';
     helpers.before((res) => {
       storage = res.storage;
       done();

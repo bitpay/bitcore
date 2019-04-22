@@ -38,7 +38,6 @@ var storage, blockchainExplorer, request;
 describe('Wallet service', function() {
 
   before(function(done) {
-    log.level = 'warn';
     helpers.before(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
@@ -48,6 +47,7 @@ describe('Wallet service', function() {
  
   });
   beforeEach(function(done) {
+    log.level = 'error';
     helpers.beforeEach(function(res) {
       done();
     });
