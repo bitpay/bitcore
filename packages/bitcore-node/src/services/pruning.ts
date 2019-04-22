@@ -48,7 +48,9 @@ export class PruningService {
     const coins = await this.coinModel.collection.find({ chain, network, mintHeight: -3 }).toArray();
     logger.info('Pruning worker found', coins.length, 'invalid coins for ', chain, network);
     for (const coin of coins) {
-      yield await this.scanForInvalid(coin.spentTxid);
+      if (coin.spentTxid) {
+        yield await this.scanForInvalid(coin.spentTxid);
+      }
     }
   }
 
