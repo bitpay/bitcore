@@ -1,4 +1,4 @@
-# Bitcore v8.2.0
+# Bitcore v8.3.0
 
 ## Principles
 
