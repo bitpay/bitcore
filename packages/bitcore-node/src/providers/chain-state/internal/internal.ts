@@ -293,8 +293,9 @@ export class InternalStateProvider implements CSP.IChainStateService {
       through2(
         { objectMode: true },
         async (spentCoin: MongoBound<ICoin>, _, done) => {
-          if (!seen[spentCoin.spentTxid]) {
-            seen[spentCoin.spentTxid] = true;
+          const spentTxid = spentCoin.spentTxid.toString('hex');
+          if (!seen[spentTxid]) {
+            seen[spentTxid] = true;
             // find coins that were spent with my coins
             const spends = await CoinStorage.collection
               .find({ chain, network, spentTxid: spentCoin.spentTxid })

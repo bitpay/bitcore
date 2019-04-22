@@ -14,7 +14,7 @@ describe('Coin Model', function() {
         _id: id,
         network: 'regtest',
         chain: 'BTC',
-        mintTxid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
+        mintTxid: Buffer.from('81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13'),
         mintIndex: 0,
         mintHeight: 1,
         coinbase: true,
@@ -22,7 +22,7 @@ describe('Coin Model', function() {
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
         script: Buffer.from(''),
         wallets: [],
-        spentTxid: '',
+        spentTxid: Buffer.from(''),
         spentHeight: SpentHeightIndicators.unspent
       } as ICoin;
 
@@ -51,7 +51,7 @@ describe('Coin Model', function() {
         _id: id,
         network: 'regtest',
         chain: 'BTC',
-        mintTxid: '81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13',
+        mintTxid: Buffer.from('81f24ac62a6ffb634b74e6278997f0788f3c64e844453f8831d2a526dc3ecb13'),
         mintIndex: 0,
         mintHeight: 1,
         coinbase: true,
@@ -59,7 +59,7 @@ describe('Coin Model', function() {
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
         script: Buffer.from(''),
         wallets: [],
-        spentTxid: '',
+        spentTxid: Buffer.from(''),
         spentHeight: SpentHeightIndicators.unspent
       } as ICoin;
 

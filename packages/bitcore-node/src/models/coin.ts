@@ -9,7 +9,7 @@ import { BlockStorage } from './block';
 export type ICoin = {
   network: string;
   chain: string;
-  mintTxid: string;
+  mintTxid: Buffer;
   mintIndex: number;
   mintHeight: number;
   coinbase: boolean;
@@ -17,7 +17,7 @@ export type ICoin = {
   address: string;
   script: Buffer;
   wallets: Array<ObjectID>;
-  spentTxid: string;
+  spentTxid: Buffer;
   spentHeight: number;
   confirmations?: number;
 };
@@ -192,8 +192,8 @@ class CoinModel extends BaseModel<ICoin> {
       network: valueOrDefault(coin.network, ''),
       coinbase: valueOrDefault(coin.coinbase, false),
       mintIndex: valueOrDefault(coin.mintIndex, -1),
-      spentTxid: valueOrDefault(coin.spentTxid, ''),
-      mintTxid: valueOrDefault(coin.mintTxid, ''),
+      spentTxid: valueOrDefault(coin.spentTxid, Buffer.alloc(0)).toString('hex'),
+      mintTxid: valueOrDefault(coin.mintTxid, Buffer.alloc(0)).toString('hex'),
       mintHeight: valueOrDefault(coin.mintHeight, -1),
       spentHeight: valueOrDefault(coin.spentHeight, SpentHeightIndicators.error),
       address: valueOrDefault(coin.address, ''),

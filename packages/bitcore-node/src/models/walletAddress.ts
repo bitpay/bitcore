@@ -101,7 +101,6 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
             })
           ),
             { ordered: false };
-
         } catch (err) {
           // Ignore duplicate keys, they may be half processed
           if (err.code !== 11000) {
@@ -155,12 +154,14 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
           .find({ chain, network, address: { $in: addressBatch } })
           .project({ mintTxid: 1, spentTxid: 1 });
         coinStream.on('data', (coin: ICoin) => {
-          if (!this.txids[coin.mintTxid]) {
-            this.txids[coin.mintTxid] = true;
+          const mintTxid = coin.mintTxid.toString('hex');
+          const spentTxid = coin.spentTxid.toString('hex');
+          if (!this.txids[mintTxid]) {
+            this.txids[mintTxid] = true;
             this.push({ txid: coin.mintTxid });
           }
-          if (!this.txids[coin.spentTxid]) {
-            this.txids[coin.spentTxid] = true;
+          if (!this.txids[spentTxid]) {
+            this.txids[spentTxid] = true;
             this.push({ txid: coin.spentTxid });
           }
         });

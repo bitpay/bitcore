@@ -37,7 +37,7 @@ export type ITransaction = {
 export type MintOp = {
   updateOne: {
     filter: {
-      mintTxid: string;
+      mintTxid: Buffer;
       mintIndex: number;
       chain: string;
       network: string;
@@ -51,7 +51,7 @@ export type MintOp = {
         coinbase: boolean;
         value: number;
         script: Buffer;
-        spentTxid?: string;
+        spentTxid?: Buffer;
         spentHeight?: SpentHeightIndicators;
         wallets?: Array<ObjectID>;
       };
@@ -68,7 +68,7 @@ export type MintOp = {
 export type SpendOp = {
   updateOne: {
     filter: {
-      mintTxid: string;
+      mintTxid: Buffer;
       mintIndex: number;
       spentHeight: { $lt: SpentHeightIndicators };
       chain: string;
@@ -157,7 +157,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
           const tx = { ...op.updateOne.update.$set, ...filter };
           await EventStorage.signalTx(tx);
           await mintOps
-            .filter(coinOp => coinOp.updateOne.filter.mintTxid === filter.txid)
+            .filter(coinOp => coinOp.updateOne.filter.mintTxid.toString('hex') === filter.txid)
             .map(coinOp => {
               const address = coinOp.updateOne.update.$set.address;
               const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
@@ -239,7 +239,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         .toArray();
       type CoinGroup = { [txid: string]: { total: number; wallets: Array<ObjectID> } };
       const groupedMints = params.mintOps.reduce<CoinGroup>((agg, coinOp) => {
-        const mintTxid = coinOp.updateOne.filter.mintTxid;
+        const mintTxid = coinOp.updateOne.filter.mintTxid.toString('hex');
         const coin = coinOp.updateOne.update.$set;
         const { value, wallets = [] } = coin;
         if (!agg[mintTxid]) {
@@ -255,14 +255,15 @@ export class TransactionModel extends BaseModel<ITransaction> {
       }, {});
 
       const groupedSpends = spent.reduce<CoinGroup>((agg, coin) => {
-        if (!agg[coin.spentTxid]) {
-          agg[coin.spentTxid] = {
+        const spentTxid = coin.spentTxid.toString('hex');
+        if (!agg[spentTxid]) {
+          agg[spentTxid] = {
             total: coin.value,
             wallets: coin.wallets || []
           };
         } else {
-          agg[coin.spentTxid].total += coin.value;
-          agg[coin.spentTxid].wallets.push(...coin.wallets);
+          agg[spentTxid].total += coin.value;
+          agg[spentTxid].wallets.push(...coin.wallets);
         }
         return agg;
       }, {});
@@ -364,7 +365,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         mintOps.push({
           updateOne: {
             filter: {
-              mintTxid: tx._hash,
+              mintTxid: Buffer.from(tx._hash),
               mintIndex: index,
               chain,
               network
@@ -437,8 +438,9 @@ export class TransactionModel extends BaseModel<ITransaction> {
     }
     let mintMap = {} as Mapping<Mapping<MintOp>>;
     for (let mintOp of params.mintOps || []) {
-      mintMap[mintOp.updateOne.filter.mintTxid] = mintMap[mintOp.updateOne.filter.mintIndex] || {};
-      mintMap[mintOp.updateOne.filter.mintTxid][mintOp.updateOne.filter.mintIndex] = mintOp;
+      const mintTxid = mintOp.updateOne.filter.mintTxid.toString('hex');
+      mintMap[mintTxid] = mintMap[mintOp.updateOne.filter.mintIndex] || {};
+      mintMap[mintTxid][mintOp.updateOne.filter.mintIndex] = mintOp;
     }
     for (let tx of params.txs) {
       if (tx.isCoinbase()) {
@@ -453,13 +455,13 @@ export class TransactionModel extends BaseModel<ITransaction> {
           if (!Object.keys(sameBlockSpend.updateOne.update.$setOnInsert).length) {
             delete sameBlockSpend.updateOne.update.$setOnInsert;
           }
-          sameBlockSpend.updateOne.update.$set.spentTxid = tx._hash;
+          sameBlockSpend.updateOne.update.$set.spentTxid = Buffer.from(tx._hash!);
           continue;
         }
         const updateQuery = {
           updateOne: {
             filter: {
-              mintTxid: inputObj.prevTxId,
+              mintTxid: Buffer.from(inputObj.prevTxId),
               mintIndex: inputObj.outputIndex,
               spentHeight: { $lt: SpentHeightIndicators.minimum },
               chain,
@@ -504,7 +506,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         { projection: { spentTxid: 1 } }
       );
       if (coin) {
-        prunedTxs[coin.spentTxid] = true;
+        prunedTxs[coin.spentTxid.toString('hex')] = true;
       }
     }
     if (Object.keys(prunedTxs).length) {

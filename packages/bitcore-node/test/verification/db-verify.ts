@@ -62,7 +62,8 @@ export async function validateDataForBlock(blockNum: number, log = false) {
   }
 
   for (let coin of coinsForTx) {
-    if (seenTxCoins[coin.mintTxid] && seenTxCoins[coin.mintTxid][coin.mintIndex]) {
+    const mintTxid = coin.mintTxid.toString('hex');
+    if (seenTxCoins[mintTxid] && seenTxCoins[mintTxid][coin.mintIndex]) {
       success = false;
       const error = { model: 'coin', err: true, type: 'DUPE_COIN', payload: { coin, blockNum } };
       errors.push(error);
@@ -70,8 +71,8 @@ export async function validateDataForBlock(blockNum: number, log = false) {
         console.log(JSON.stringify(error));
       }
     } else {
-      seenTxCoins[coin.mintTxid] = seenTxCoins[coin.mintTxid] || {};
-      seenTxCoins[coin.mintTxid][coin.mintIndex] = coin;
+      seenTxCoins[mintTxid] = seenTxCoins[mintTxid] || {};
+      seenTxCoins[mintTxid][coin.mintIndex] = coin;
     }
   }
 
