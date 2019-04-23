@@ -8,7 +8,6 @@ var sinon = require('sinon');
 var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
-log.level = 'info';
 
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
@@ -43,6 +42,7 @@ describe('Cash address migration', function() {
  
   });
   beforeEach(function(done) {
+    log.level = 'error';
     helpers.beforeEach(function(res) {
       done();
     });

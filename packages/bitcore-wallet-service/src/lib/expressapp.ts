@@ -1,5 +1,6 @@
 import express from 'express';
 import _ from 'lodash';
+import * as log from 'npmlog';
 import { ClientError } from './errors/clienterror';
 import { WalletService } from './server';
 import { Stats } from './stats';
@@ -10,7 +11,6 @@ const RateLimit = require('express-rate-limit');
 const Common = require('./common');
 const Defaults = Common.Defaults;
 
-let log = require('npmlog');
 log.disableColor();
 log.debug = log.verbose;
 log.level = 'verbose';
@@ -27,6 +27,7 @@ export class ExpressApp {
    * @param opts.WalletService options for WalletService class
    * @param opts.basePath
    * @param opts.disableLogs
+   * @param opts.doNotCheckV8
    * @param {Callback} cb
    */
   start(opts, cb) {

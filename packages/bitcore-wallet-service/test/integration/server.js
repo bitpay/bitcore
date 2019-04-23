@@ -8,7 +8,6 @@ var sinon = require('sinon');
 var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
-log.level = 'info';
 
 var config = require('../test-config');
 
@@ -48,6 +47,7 @@ describe('Wallet service', function() {
  
   });
   beforeEach(function(done) {
+    log.level = 'error';
     helpers.beforeEach(function(res) {
       done();
     });
@@ -417,19 +417,22 @@ describe('Wallet service', function() {
         n: -2,
         valid: false,
       },];
-      var opts = {
-        id: '123',
-        name: 'my wallet',
-        pubKey: TestData.keyPair.pub,
-      };
-      async.each(pairs, function(pair, cb) {
+     async.eachSeries(pairs, function(pair, cb) {
+        let opts = {
+          name: 'my wallet',
+          pubKey: TestData.keyPair.pub,
+        };
+   
+        var pub = (new Bitcore.PrivateKey()).toPublicKey();
         opts.m = pair.m;
         opts.n = pair.n;
+        opts.pubKey = pub.toString();
         server.createWallet(opts, function(err) {
           if (!pair.valid) {
             should.exist(err);
             err.message.should.equal('Invalid combination of required copayers / total copayers');
           } else {
+            if (err) console.log("ERROR", opts, err);
             should.not.exist(err);
           }
           return cb();
