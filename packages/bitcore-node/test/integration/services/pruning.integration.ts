@@ -40,7 +40,7 @@ describe('Pruning Service', function() {
     return [invalidCoin, mempoolCoin, mempoolCoin2];
   }
 
-  it.only('should detect coins that should be invalid but are not', async () => {
+  it('should detect coins that should be invalid but are not', async () => {
     await insertBadCoins();
     const shouldBeInvalid = Pruning.detectInvalidCoins('BTC', 'mainnet');
     let count = 0;
@@ -54,7 +54,7 @@ describe('Pruning Service', function() {
     expect(count).eq(1);
   });
 
-  it.only('should mark detected coins as invalid', async () => {
+  it('should mark detected coins as invalid', async () => {
     await insertBadCoins();
     const shouldBeInvalid = Pruning.detectInvalidCoins('BTC', 'mainnet');
     for await (const shouldBeInvalidCoins of shouldBeInvalid) {
