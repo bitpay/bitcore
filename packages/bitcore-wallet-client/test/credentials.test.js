@@ -194,14 +194,14 @@ describe('Credentials', function() {
       c.network.should.equal('livenet');
       c.account.should.equal(0);
       c.derivationStrategy.should.equal('BIP44');
-      c.xPubKey.should.equal('xpub6ByHsPNSQXTWZ7PLESMY2FufyYWtLXagSUpMQq7Un96SiThZH2iJB1X7pwviH1WtKVeDP6K8d6xxFzzoaFzF3s8BKCZx8oEDdDkNnp4owAZ');
       c.getBaseAddressDerivationPath().should.equal("m/44'/145'/0'");
+      c.xPubKey.should.equal('xpub6ByHsPNSQXTWZ7PLESMY2FufyYWtLXagSUpMQq7Un96SiThZH2iJB1X7pwviH1WtKVeDP6K8d6xxFzzoaFzF3s8BKCZx8oEDdDkNnp4owAZ');
     });
 
     it('Should create credentials from mnemonic BIP44 BCH, coin =0 ', function() {
       var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
       var c = Credentials.fromMnemonic('bch', 'livenet', words, '', 0, 'BIP44', 
-        { use0forBCH: true}
+        { useLegacyCoinType: true}
       );
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
       c.network.should.equal('livenet');

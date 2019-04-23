@@ -482,12 +482,12 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
   opts = opts || {};
   opts.coin = opts.coin || 'btc';
 
-  function derive(nonCompliantDerivation, use0forBCH) {
+  function derive(nonCompliantDerivation, useLegacyCoinType) {
     return Credentials.fromMnemonic(opts.coin, opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, {
       nonCompliantDerivation: nonCompliantDerivation,
       entropySourcePath: opts.entropySourcePath,
       walletPrivKey: opts.walletPrivKey,
-      use0forBCH, 
+      useLegacyCoinType, 
     });
   };
 
