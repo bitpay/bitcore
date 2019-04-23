@@ -214,7 +214,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
                 blockTimeNormalized,
                 coinbase: parentTx.coinbase,
                 fee: parentTx.fee,
-                txidStr: parentTx.txid.toString('hex'),
+                txidStr: parentTx.txidStr,
                 size: parentTx.size,
                 locktime: parentTx.locktime,
                 inputCount: parentTx.inputCount,
@@ -543,7 +543,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
   _apiTransform(tx: Partial<MongoBound<ITransaction>>, options?: TransformOptions): TransactionJSON | string {
     const transaction: TransactionJSON = {
       _id: tx._id ? tx._id.toString() : '',
-      txid: (tx.txid || Buffer.alloc(0)).toString('hex'),
+      txid: tx.txidStr || '',
       network: tx.network || '',
       chain: tx.chain || '',
       blockHeight: tx.blockHeight || -1,

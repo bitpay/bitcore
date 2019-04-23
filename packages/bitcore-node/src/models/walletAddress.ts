@@ -154,8 +154,8 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
           .find({ chain, network, address: { $in: addressBatch } })
           .project({ mintTxid: 1, spentTxid: 1 });
         coinStream.on('data', (coin: ICoin) => {
-          const mintTxid = coin.mintTxid.toString('hex');
-          const spentTxid = coin.spentTxid.toString('hex');
+          const mintTxid = coin.mintTxidStr;
+          const spentTxid = coin.spentTxidStr;
           if (!this.txids[mintTxid]) {
             this.txids[mintTxid] = true;
             this.push({ txid: coin.mintTxid });
