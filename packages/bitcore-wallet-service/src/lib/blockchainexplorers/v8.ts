@@ -74,46 +74,6 @@ export class V8 {
     this.Client = opts.client || Client || require('./v8/client');
   }
 
-  // Translate Request Address query
-  translateQueryAddresses(addresses) {
-    if (!this.addressFormat) return addresses;
-
-    return BCHAddressTranslator.translate(
-      addresses,
-      this.addressFormat,
-      'copay'
-    );
-  }
-
-  // Translate Result Address
-  translateResultAddresses(addresses) {
-    if (!this.addressFormat) return addresses;
-
-    return BCHAddressTranslator.translate(
-      addresses,
-      'copay',
-      this.addressFormat
-    );
-  }
-
-  translateTx(tx) {
-    if (!this.addressFormat) return tx;
-
-    _.each(tx.vin, (x) => {
-      if (x.addr) {
-        x.addr = this.translateResultAddresses(x.addr);
-      }
-    });
-
-    _.each(tx.vout, (x) => {
-      if (x.scriptPubKey && x.scriptPubKey.addresses) {
-        x.scriptPubKey.addresses = this.translateResultAddresses(
-          x.scriptPubKey.addresses
-        );
-      }
-    });
-  }
-
   _getClient() {
     return new this.Client({
       baseUrl: this.baseUrl
@@ -496,12 +456,9 @@ export class V8 {
       if (!data.address) return;
       let out;
       try {
-        const addr =
-          this.coin == 'bch'
-            ? BCHAddressTranslator.translate(data.address, 'copay', 'cashaddr')
-            : data.address;
+        // TODO
         out = {
-          address: addr,
+          address: data.address,
           amount: data.value / 1e8
         };
       } catch (e) {
