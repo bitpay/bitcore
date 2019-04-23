@@ -1,9 +1,9 @@
 import express from 'express';
 import _ from 'lodash';
+import * as log from 'npmlog';
 import { ClientError } from './errors/clienterror';
 import { WalletService } from './server';
 import { Stats } from './stats';
-import * as log from 'npmlog';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
@@ -27,6 +27,7 @@ export class ExpressApp {
    * @param opts.WalletService options for WalletService class
    * @param opts.basePath
    * @param opts.disableLogs
+   * @param opts.doNotCheckV8
    * @param {Callback} cb
    */
   start(opts, cb) {

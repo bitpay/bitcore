@@ -417,17 +417,16 @@ describe('Wallet service', function() {
         n: -2,
         valid: false,
       },];
-      var opts = {
-        id: '123',
-        name: 'my wallet',
-        pubKey: TestData.keyPair.pub,
-      };
-      async.each(pairs, function(pair, cb) {
+     async.eachSeries(pairs, function(pair, cb) {
+        let opts = {
+          name: 'my wallet',
+          pubKey: TestData.keyPair.pub,
+        };
+   
         var pub = (new Bitcore.PrivateKey()).toPublicKey();
         opts.m = pair.m;
         opts.n = pair.n;
         opts.pubKey = pub.toString();
-console.log('[server.js.429:opts:]',opts); // TODO
         server.createWallet(opts, function(err) {
           if (!pair.valid) {
             should.exist(err);

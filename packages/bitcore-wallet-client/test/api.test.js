@@ -122,6 +122,7 @@ helpers.createAndJoinWallet = function(clients, m, n, opts, cb) {
     coin: coin,
     network: network,
     singleAddress: !!opts.singleAddress,
+    doNotCheck: true,
   }, function(err, secret) {
     should.not.exist(err);
 
@@ -352,6 +353,7 @@ describe('client API', function() {
         storage: storage,
         blockchainExplorer: blockchainExplorerMock,
         disableLogs: true,
+        doNotCheckV8: true,
       },
       function() {
         app = expressApp.app;
@@ -1272,7 +1274,7 @@ describe('client API', function() {
       var xPriv = 'xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu';
       clients[0].seedFromExtendedPrivateKey(xPriv, {
         'coin': 'bch',
-        use0forBCH: true,
+        useLegacyCoinType: true,
       });
       clients[0].createWallet('mycashwallet', 'pepe', 1, 1, {
         coin: 'bch',
@@ -4634,7 +4636,7 @@ describe('client API', function() {
       importedClient = null;
     });
 
-    it('should be able to restore a  Use0ForBCH wallet', function(done) {
+    it('should be able to restore a  useLegacyCoinType wallet', function(done) {
 
       var check = function(x) {
         x.credentials.getBaseAddressDerivationPath().should.equal('m/44\'/0\'/0\'');
@@ -4647,7 +4649,7 @@ describe('client API', function() {
       clients[0].seedFromMnemonic(m, {
         network: 'livenet',
         coin: 'bch',
-        use0forBCH: 'true',
+        useLegacyCoinType: 'true',
       });
       check(clients[0]);
 
