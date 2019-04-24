@@ -200,11 +200,6 @@ export class BlockchainMonitor {
           let addr = _.keys(v)[0];
           const amount = +v[addr];
 
-          // This is because a bug on insight, that always return no copay addr
-          if (coin == 'bch' && Utils.getAddressCoin(addr) != 'bch') {
-            addr = Utils.translateAddress(addr, coin);
-          }
-
           return {
             address: addr,
             amount
