@@ -3411,13 +3411,9 @@ export class WalletService {
   _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, cb) {
     if (_.isEmpty(txs)) return cb(null, txs);
 
-    // This is PARTIAL history??  TODO TODO TODO TODO!~
     // console.log('[server.js.2915:txs:] IN NORMALIZE',txs); //TODO
     const now = Math.floor(Date.now() / 1000);
 
-    // TODO make this better...
-    // Group fees and moves
-    //
     // One fee per TXID
     const indexedFee: any = _.keyBy(
       _.filter(txs, { category: 'fee' } as any),
@@ -3433,13 +3429,17 @@ export class WalletService {
     const moves: { [txid: string]: ITxProposal } = {};
 
     // remove 'fees' and 'moves' (probably change addresses)
-    // also remove conflincting TXs (height=-3)
     txs = _.filter(txs, tx => {
       // double spend or error
+      // This should be shown on the client, so we dont remove it here
       //    if (tx.height && tx.height <= -3)
       //      return false;
 
       if (tx.category == 'receive') {
+
+        if (tx.satoshis < dustThreshold)
+          return false;
+
         const output = {
           address: tx.address,
           amount: Math.abs(tx.satoshis)
@@ -3555,7 +3555,7 @@ export class WalletService {
           case 'receive':
             ret.action = 'received';
             ret.outputs = tx.outputs;
-            ret.amount = Math.abs(tx.satoshis);
+            ret.amount = Math.abs(_.sumBy(tx.outputs, 'amount'));
             ret.dust = ret.amount < dustThreshold;
             break;
           case 'move':
