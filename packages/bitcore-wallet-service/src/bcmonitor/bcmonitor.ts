@@ -10,5 +10,6 @@ const bcm = new BlockchainMonitor();
 bcm.start(config, (err) => {
   if (err) throw err;
 
-  console.log('Blockchain monitor started');
+  log.level = 'verbose';
+  log.debug('Blockchain monitor started');
 });
