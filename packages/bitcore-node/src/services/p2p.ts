@@ -1,4 +1,4 @@
-import { logger, timestamp } from '../logger';
+import logger, { timestamp } from '../logger';
 import { EventEmitter } from 'events';
 import { BlockStorage, BlockModel } from '../models/block';
 import { ChainStateProvider } from '../providers/chain-state';
