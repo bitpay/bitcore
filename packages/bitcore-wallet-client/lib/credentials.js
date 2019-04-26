@@ -14,7 +14,7 @@ var Utils = Common.Utils;
 var FIELDS = [
   'coin',
   'network',
-  'xPrivKey',             // obsolte
+  'xPrivKey',             //obsolete
   'xPrivKeyEncrypted',   // obsolte
   'xPubKey',
   'requestPrivKey',
@@ -38,8 +38,8 @@ var FIELDS = [
   'account',
   'compliantDerivation',
   'addressType',
-  'hwInfo',                 // Obsolete, only for backwards compat
-  'entropySourcePath',      // Obsolete, only for backwards compat 
+  'hwInfo',                 // Obsolete
+  'entropySourcePath',      // Obsolete
   'use145forBCH',          // use the appropiate coin' path element in BIP44 for BCH 
   'version',
   'keyFingerprint',
@@ -158,7 +158,6 @@ Credentials.fromMnemonic = function(coin, network, words, passphrase, account, d
   x.compliantDerivation = !opts.nonCompliantDerivation;
   x.use145forBCH = !opts.useLegacyCoinType;
   x.derivationStrategy = derivationStrategy;
-  x.entropySourcePath = opts.entropySourcePath;
 
   // this are wallet specific
   x.coin = coin;
@@ -169,9 +168,6 @@ Credentials.fromMnemonic = function(coin, network, words, passphrase, account, d
     x.addWalletPrivateKey(opts.walletPrivKey);
   }
 
-
-  // obsolete
-  x.entropySourcePath = opts.entropySourcePath;
 
   x._expand();
   return x;
@@ -219,16 +215,8 @@ Credentials._getNetworkFromExtendedKey = function(xKey) {
   return xKey.charAt(0) == 't' ? 'testnet' : 'livenet';
 };
 
-Credentials.prototype._hashFromEntropy = function(prefix, length) {
-  $.checkState(prefix);
-  var b = new Buffer(this.entropySource, 'hex');
-  var b2 = Bitcore.crypto.Hash.sha256hmac(b, new Buffer(prefix));
-  return b2.slice(0, length);
-};
-
-
 Credentials.prototype._expand = function() {
-  $.checkState(this.xPrivKey || (this.xPubKey && this.entropySource));
+  $.checkState(this.xPubKey && this.requestPrivKey));
 
   /* Derivation dependencies
    *
@@ -254,8 +242,6 @@ Credentials.prototype._expand = function() {
                       -> personalEncryptingKey
 
    * For Hardware wallets
-      entropySourcePath -> (+hw xPub derivation)  entropySource 
-
       xPubKey -> (+ coin) copayerId
       entropySource   -> reqPrivKey
                       -> personalEncryptingKey
@@ -263,51 +249,27 @@ Credentials.prototype._expand = function() {
  
   */
 
-  var network = Credentials._getNetworkFromExtendedKey(this.xPrivKey || this.xPubKey);
+  var network = Credentials._getNetworkFromExtendedKey(this.xPubKey);
   if (this.network) {
     $.checkState(this.network == network);
   } else {
     this.network = network;
   }
 
-  if (this.xPrivKey) {
-    var xPrivKey = new Bitcore.HDPrivateKey.fromString(this.xPrivKey);
+  var xPrivKey = new Bitcore.HDPrivateKey.fromString(this.xPrivKey);
+  var deriveFn = this.compliantDerivation ? _.bind(xPrivKey.deriveChild, xPrivKey) : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
 
-    var deriveFn = this.compliantDerivation ? _.bind(xPrivKey.deriveChild, xPrivKey) : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
+  // request keys derived from xPriv
+  var requestDerivation = deriveFn(Constants.PATHS.REQUEST_KEY);
+  this. = requestDerivation.privateKey.toString();
 
-    var derivedXPrivKey = deriveFn(this.getBaseAddressDerivationPath());
+  var priv = Bitcore.PrivateKey(this.requestPrivKey);
+  this.requestPubKey = pubKey.priv.publicKey.toString();
 
-    // this is the xPubKey shared with the server.
-    this.xPubKey = derivedXPrivKey.hdPublicKey.toString();
-  }
-
-  // requests keys from mnemonics, but using a xPubkey
-  // This is only used when importing mnemonics FROM 
-  // an hwwallet, in which xPriv was not available when
-  // the wallet was created.
-  if (this.entropySourcePath) {
-    var seed = deriveFn(this.entropySourcePath).publicKey.toBuffer();
-    this.entropySource = Bitcore.crypto.Hash.sha256sha256(seed).toString('hex');
-  }
-
-  if (this.entropySource) {
-    // request keys from entropy (hw wallets)
-    var seed = this._hashFromEntropy('reqPrivKey', 32);
-    var privKey = new Bitcore.PrivateKey(seed.toString('hex'), network);
-    this.requestPrivKey = privKey.toString();
-    this.requestPubKey = privKey.toPublicKey().toString();
-  } else {
-    // request keys derived from xPriv
-    var requestDerivation = deriveFn(Constants.PATHS.REQUEST_KEY);
-    this.requestPrivKey = requestDerivation.privateKey.toString();
-
-    var pubKey = requestDerivation.publicKey;
-    this.requestPubKey = pubKey.toString();
-
-    this.entropySource = Bitcore.crypto.Hash.sha256(requestDerivation.privateKey.toBuffer()).toString('hex');
-  }
-
-  this.personalEncryptingKey = this._hashFromEntropy('personalKey', 16).toString('base64');
+  let entropySource = Bitcore.crypto.Hash.sha256(priv.toBuffer()).toString('hex')
+  var b = new Buffer(entropySource, 'hex');
+  var b2 = Bitcore.crypto.Hash.sha256hmac(b, new Buffer(prefix));
+  this.personalEncryptingKey = b2.slice(0, 16).toString('base64');
 
   $.checkState(this.coin);
 
@@ -379,13 +341,6 @@ Credentials.prototype.getBaseAddressDerivationPath = function() {
   return "m/" + purpose + "'/" + coin + "'/" + this.account + "'";
 };
 
-Credentials.prototype.getDerivedXPrivKey = function(password) {
-  var path = this.getBaseAddressDerivationPath();
-  var xPrivKey = new Bitcore.HDPrivateKey(this.getKeys(password).xPrivKey, this.network);
-  var deriveFn = !!this.compliantDerivation ? _.bind(xPrivKey.deriveChild, xPrivKey) : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
-  return deriveFn(path);
-};
-
 Credentials.prototype.addWalletPrivateKey = function(walletPrivKey) {
   this.walletPrivKey = walletPrivKey;
   this.sharedEncryptingKey = Utils.privateKeyToAESKey(walletPrivKey);
@@ -405,7 +360,7 @@ Credentials.prototype.addWalletInfo = function(walletId, walletName, m, n, copay
   else
     this.addressType = Constants.SCRIPT_TYPES.P2SH;
 
-  // Use m/48' for multisig hardware wallets
+  // Use m/48' for multisig wallets
   if (!this.xPrivKey && this.externalSource && n > 1) {
     this.derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP48;
   }
