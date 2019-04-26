@@ -3526,7 +3526,7 @@ export class WalletService {
 
       const ret = _.filter(_.map([].concat(txs), (tx) => {
         const t = new Date(tx.blockTime).getTime() / 1000;
-        const c = bcHeight && tx.height >= 0 ? bcHeight - tx.height + 1 : 0;
+        const c = tx.height >= 0  && bcHeight >= tx.height ? bcHeight - tx.height + 1 : 0;
         const ret = {
           id: tx.id,
           txid: tx.txid,
@@ -4097,7 +4097,7 @@ export class WalletService {
 
               // update confirmations from height
               _.each(oldTxs, x => {
-                if (x.blockheight > 0) {
+                if (x.blockheight > 0 && bcHeight >= x.blockheight) {
                   x.confirmations = bcHeight - x.blockheight + 1;
                 }
               });
