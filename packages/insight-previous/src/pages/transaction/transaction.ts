@@ -41,27 +41,25 @@ export class TransactionPage {
     this.vout = navParams.get('vout');
     this.fromVout = navParams.get('fromVout') || undefined;
 
-    const chain: string =
-      navParams.get('chain') || this.apiProvider.getConfig().chain;
-    const network: string =
-      navParams.get('network') || this.apiProvider.getConfig().network;
+    const chain: string = navParams.get('chain');
+    const network: string = navParams.get('network');
 
     this.chainNetwork = {
       chain,
       network
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
-    this.currencyProvider.setCurrency();
+    this.currencyProvider.setCurrency(this.chainNetwork);
     this.priceProvider.setCurrency();
   }
 
-  public ionViewDidLoad(): void {
-    this.txProvider.getTx(this.txId).subscribe(
+  public ionViewDidEnter(): void {
+    this.txProvider.getTx(this.txId, this.chainNetwork).subscribe(
       data => {
         this.tx = this.txProvider.toAppTx(data);
         this.loading = false;
         this.txProvider
-          .getConfirmations(this.tx.blockheight)
+          .getConfirmations(this.tx.blockheight, this.chainNetwork)
           .subscribe(confirmations => {
             if (confirmations === -3) {
               this.errorMessage =

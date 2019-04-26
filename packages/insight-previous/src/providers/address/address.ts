@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiProvider } from '../../providers/api/api';
+import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { BlocksProvider } from '../blocks/blocks';
 import { ApiCoin, TxsProvider } from '../transactions/transactions';
@@ -19,18 +19,23 @@ export class AddressProvider {
     public currency: CurrencyProvider,
     public blocks: BlocksProvider,
     public txsProvider: TxsProvider,
-    private api: ApiProvider
+    private apiProvider: ApiProvider
   ) {}
 
-  public getAddressBalance(addrStr?: string): Observable<ApiAddr> {
+  public getAddressBalance(
+    addrStr?: string,
+    chainNetwork?: ChainNetwork
+  ): Observable<ApiAddr> {
     return this.httpClient.get<ApiAddr>(
-      this.api.getUrl() + `/address/${addrStr}/balance`
+      `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
+        chainNetwork.network
+      }/address/${addrStr}/balance`
     );
   }
 
   public getAddressActivity(addrStr?: string): Observable<ApiCoin[]> {
     return this.httpClient.get<ApiCoin[]>(
-      this.api.getUrl() + `/address/${addrStr}/txs?limit=1000`
+      `${this.apiProvider.getUrl()}/address/${addrStr}/txs?limit=1000`
     );
   }
 }

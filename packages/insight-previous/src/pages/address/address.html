@@ -1,4 +1,4 @@
-<head-nav></head-nav>
+<head-nav [chainNetwork]="chainNetwork"></head-nav>
 
 <ion-content>
   <ion-grid fixed>
@@ -50,7 +50,7 @@
         </ion-grid>
 
         <h1>Transactions</h1>
-        <coin-list [addrStr]="address.addrStr"></coin-list>
+        <coin-list [addrStr]="address.addrStr" [chainNetwork]="chainNetwork"></coin-list>
       </div>
 
     </div>

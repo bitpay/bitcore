@@ -21,8 +21,6 @@ export class PriceProvider {
       currency = this.currencyProvider.getCurrency();
     }
 
-    localStorage.setItem('insight-currency', currency);
-
     if (currency === 'USD') {
       const ratesAPI =
         this.api.getConfig().chain === 'BTC'
@@ -45,7 +43,7 @@ export class PriceProvider {
       );
     } else {
       this.currencyProvider.factor =
-        currency === 'm' + this.api.networkSettings.value.selectedNetwork.chain
+        currency === 'm' + this.api.networkSettings.selectedNetwork.chain
           ? 1000
           : 1;
     }

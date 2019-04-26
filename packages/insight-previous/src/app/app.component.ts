@@ -25,18 +25,13 @@ export class InsightApp {
     this.platform = platform;
 
     this.initializeApp();
-
-    this.apiProvider.networkSettings.subscribe(d => {
-      this.chain = d.selectedNetwork.chain;
-      this.network = d.selectedNetwork.network;
-    });
   }
 
   private initializeApp(): void {
     this.platform.ready().then(() => {
       this.nav.setRoot('home', {
-        chain: this.chain,
-        network: this.network
+        chain: this.apiProvider.networkSettings.selectedNetwork.chain,
+        network: this.apiProvider.networkSettings.selectedNetwork.network
       });
       this.subscribeRedirEvent();
     });
