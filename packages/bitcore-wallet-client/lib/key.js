@@ -10,6 +10,7 @@ var sjcl = require('sjcl');
 var Common = require('./common');
 var Constants = Common.Constants;
 var Utils = Common.Utils;
+var Credentials = require('./credentials');
 
 var FIELDS = [
   'xPrivKey',             // obsolte
@@ -20,12 +21,14 @@ var FIELDS = [
 
   // data for derived credentials.
   'use145forBCH',          // use the appropiate coin' path element in BIP44 for BCH 
+  'use48forMultisig',       // use the purpose 48' for multisig wallts (default)
   'version',
 ];
 
 function Key() {
   this.version = '1.0.0';
   this.use145forBCH = true;
+  this.use48forMultisig = true;
   this.compliantDerivation = true;
 };
 
@@ -58,7 +61,9 @@ Key.create = function(passphrase, language,  opts) {
   x.mnemonicHasPassphrase = !!passphrase;
 
   // bug backwards compatibility flags
-  x.use145forBCH = !opts.use0forBCH;
+  x.use145forBCH = !opts.useLegacyCoinType;
+  x.use48forMultisig = !opts.useLegacyPurpose;
+
   x.compliantDerivation = !opts.nonCompliantDerivation;
 
   return x;
@@ -74,7 +79,9 @@ Key.fromMnemonic = function(words, passphrase, opts) {
   x.mnemonic = words;
   x.mnemonicHasPassphrase = !!passphrase;
 
-  x.use145forBCH = !opts.use0forBCH;
+  x.use145forBCH = !opts.useLegacyCoinType;
+  x.use48forMultisig = !opts.useLegacyPurpose;
+
   x.compliantDerivation = !opts.nonCompliantDerivation;
 
   return x;
@@ -96,6 +103,8 @@ Key.fromExtendedPrivateKey = function(xPriv, opts) {
   x.mnemonicHasPassphrase = null;
 
   x.use145forBCH = !opts.use0forBCH;
+  x.use48forMultisig = !opts.useLegacyPurpose;
+
   x.compliantDerivation = !opts.nonCompliantDerivation;
 
   return x;
@@ -197,6 +206,73 @@ Key.prototype.derive = function(password, path) {
   var xPrivKey = new Bitcore.HDPrivateKey(this.get(password).xPrivKey, NETWORK);
   var deriveFn = !!this.compliantDerivation ? _.bind(xPrivKey.deriveChild, xPrivKey) : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
   return deriveFn(path);
+};
+
+function _checkCoin(coin) {
+  if (!_.includes(['btc', 'bch'], coin)) throw new Error('Invalid coin');
+};
+
+function _checkNetwork(network) {
+  if (!_.includes(['livenet', 'testnet'], network)) throw new Error('Invalid network');
+};
+
+/*
+ * This is only used on "create"
+ * no need to include/support
+ * BIP45
+ */
+
+Key.prototype.getBaseAddressDerivationPath = function(opts) {
+  $.checkArgument(opts, 'Need to provide options');
+
+  let purpose = (opts.n > 1 && this.use48forMultisig) ? '48' : '44';
+  var coinCode = '0';
+
+  if (opts.network == 'testnet' ) {
+    coinCode = '1';
+  } else if (opts.coin == 'bch') {
+    if (this.use145forBCH) {
+      coinCode = '145';
+    } else {
+      coinCode = '0';
+    }
+  } else if (opts.coin == 'eth') {
+    coin = '60';
+  };
+
+  return "m/" + purpose + "'/" + coinCode + "'/" + opts.account + "'";
+};
+
+
+
+/*
+ * opts.coin
+ * opts.network
+ * opts.account
+ * opts.n
+ */
+
+Key.prototype.createCredentials = function(password, opts) {
+  opts = opts || {};
+
+  _checkCoin(opts.coin);
+  _checkNetwork(opts.network);
+  $.shouldBeNumber(opts.account);
+  $.shouldBeNumber(opts.n);
+
+  let path = this.getBaseAddressDerivationPath(opts);
+  let xPrivKey = this.derive(password, path);
+  let requestPrivKey = this.derive(password, Constants.PATHS.REQUEST_KEY).privateKey.toString();
+
+  return Credentials.fromDerivedKey({
+    xPubKey: xPrivKey.hdPublicKey.toString(),
+    coin: opts.coin,
+    network: opts.network,
+    account: opts.account,
+    n: opts.n,
+    rootPath: path,
+    requestPrivKey: requestPrivKey,
+  });
 };
 
 
