@@ -203,7 +203,7 @@ Key.prototype.decrypt = function(password) {
 Key.prototype.derive = function(password, path) {
   $.checkArgument(path, 'no path');
 
-  var xPrivKey = new Bitcore.HDPrivateKey(this.get(password).xPrivKey, NETWORK);
+  var xPrivKey = new Bitcore.HDPrivateKey(this.get(password).xPrivKey,NETWORK);
   var deriveFn = !!this.compliantDerivation ? _.bind(xPrivKey.deriveChild, xPrivKey) : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
   return deriveFn(path);
 };
@@ -261,8 +261,20 @@ Key.prototype.createCredentials = function(password, opts) {
   $.shouldBeNumber(opts.n);
 
   let path = this.getBaseAddressDerivationPath(opts);
+
   let xPrivKey = this.derive(password, path);
   let requestPrivKey = this.derive(password, Constants.PATHS.REQUEST_KEY).privateKey.toString();
+
+  if (opts.network == 'testnet') {
+
+    // Hacky: BTC/BCH xPriv depends on network: This code is to
+    // convert a livenet xPriv to a testnet xPriv
+    let x = xPrivKey.toObject();
+    x.network = 'testnet';
+    delete x.xprivkey;
+    delete x.checksum;
+    xPrivKey = new Bitcore.HDPrivateKey(x);
+  }
 
   return Credentials.fromDerivedKey({
     xPubKey: xPrivKey.hdPublicKey.toString(),

@@ -261,7 +261,9 @@ describe('Key', function() {
       path.should.equal("m/44'/1'/1'");
     });
 
+  });
 
+  describe('#createCredentials', function() {
     it('should return different copayerId for different coin / accounts', function() {
       var k = Key.fromExtendedPrivateKey('xprv9s21ZrQH143K3zLpjtB4J4yrRfDTEfbrMa9vLZaTAv5BzASwBmA16mdBmZKpMLssw1AzTnm31HAD2pk2bsnZ9dccxaLD48mRdhtw82XoiBi');
 
@@ -287,7 +289,7 @@ describe('Key', function() {
       c2.copayerId.should.equal('dc9577aa5054563f31047463e25ec52f96c5b1fa93c4b567f2329eb6a66517d0');
     });
 
-    it('should return different copayerId for differnt network', function() {
+    it('should return different copayerId for different network', function() {
 
       var words = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about";
       var k = Key.fromMnemonic(words);
@@ -297,6 +299,8 @@ describe('Key', function() {
         network: 'livenet',
         n: 1,
       });
+      c.copayerId.should.equal('af4e120530f26ffa834739b0eb030093c881bf73f8f893fc6837823325da83f2');
+
       var c2 = k.createCredentials(null, {
         coin: 'btc',
         account: 0,
@@ -304,11 +308,9 @@ describe('Key', function() {
         n: 1,
       });
 
-      c.copayerId.should.equal('af4e120530f26ffa834739b0eb030093c881bf73f8f893fc6837823325da83f2');
       c2.copayerId.should.equal('51d883fcd4ec010a89503c4b64e0cf22fe706495a9cf086bec69194c1c8f8952');
     });
   });
-
 });
 
 
