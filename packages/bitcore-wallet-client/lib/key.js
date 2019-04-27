@@ -204,7 +204,7 @@ Key.prototype.derive = function(password, path) {
   $.checkArgument(path, 'no path');
 
   var xPrivKey = new Bitcore.HDPrivateKey(this.get(password).xPrivKey,NETWORK);
-  var deriveFn = !!this.compliantDerivation ? _.bind(xPrivKey.deriveChild, xPrivKey) : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
+  var deriveFn = this.compliantDerivation ? _.bind(xPrivKey.deriveChild, xPrivKey) : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
   return deriveFn(path);
 };
 
@@ -284,6 +284,7 @@ Key.prototype.createCredentials = function(password, opts) {
     n: opts.n,
     rootPath: path,
     requestPrivKey: requestPrivKey,
+    walletPrivKey: opts.walletPrivKey,
   });
 };
 

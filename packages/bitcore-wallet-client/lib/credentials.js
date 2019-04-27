@@ -60,6 +60,7 @@ Credentials.fromDerivedKey = function(opts) {
   $.shouldBeString(opts.xPubKey, 'Invalid xPubKey');
   $.shouldBeString(opts.rootPath, 'Invalid rootPath');
   $.shouldBeString(opts.requestPrivKey, 'Invalid requestPrivKey');
+  $.checkArgument(_.isUndefined(opts.nonCompliantDerivation));
   opts = opts || {};
 
 
@@ -68,6 +69,7 @@ Credentials.fromDerivedKey = function(opts) {
   x.network = opts.network;
   x.account = opts.account;
   x.n = opts.n;
+  x.xPubKey = opts.xPubKey;
 
   //this allows to set P2SH in old n=1 wallets
   if (_.isUndefined(opts.addressType)){
@@ -76,15 +78,16 @@ Credentials.fromDerivedKey = function(opts) {
     x.addressType = opts.addressType;
   }
 
-  x.xPubKey = opts.xPubKey;
-  x.compliantDerivation = !opts.nonCompliantDerivation;
+
+  // Only  used for info
+  x.rootPath = opts.rootPath;
 
   if (opts.walletPrivKey) {
     x.addWalletPrivateKey(opts.walletPrivKey);
   }
   x.requestPrivKey = opts.requestPrivKey;
 
-  const priv = Bitcore.PrivateKey(this.requestPrivKey);
+  const priv = Bitcore.PrivateKey(x.requestPrivKey);
   x.requestPubKey = priv.toPublicKey().toString();
 
   const prefix= 'personalKey';
@@ -92,7 +95,6 @@ Credentials.fromDerivedKey = function(opts) {
   const b = new Buffer(entropySource, 'hex');
   const b2 = Bitcore.crypto.Hash.sha256hmac(b, new Buffer(prefix));
   x.personalEncryptingKey = b2.slice(0, 16).toString('base64');
-  x.rootPath = opts.rootPath;
   x.copayerId = Utils.xPubToCopayerId(x.coin, x.xPubKey);
   x.publicKeyRing = [{
     xPubKey: x.xPubKey,
