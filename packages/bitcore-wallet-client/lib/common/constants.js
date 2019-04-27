@@ -14,7 +14,7 @@ Constants.DERIVATION_STRATEGIES = {
 
 Constants.PATHS = {
   REQUEST_KEY: "m/1'/0",
-  TXPROPOSAL_KEY: "m/1'/1",
+//  TXPROPOSAL_KEY: "m/1'/1",
   REQUEST_KEY_AUTH: "m/2", // relative to BASE
 };
 
