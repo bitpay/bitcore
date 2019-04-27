@@ -62,6 +62,7 @@ Credentials.fromDerivedKey = function(opts) {
   $.shouldBeString(opts.requestPrivKey, 'Invalid requestPrivKey');
   opts = opts || {};
 
+
   var x = new Credentials();
   x.coin = opts.coin;
   x.network = opts.network;
@@ -92,8 +93,6 @@ Credentials.fromDerivedKey = function(opts) {
   const b2 = Bitcore.crypto.Hash.sha256hmac(b, new Buffer(prefix));
   x.personalEncryptingKey = b2.slice(0, 16).toString('base64');
   x.rootPath = opts.rootPath;
-console.log('[credentials.js.94:rootPath:]',x.rootPath); // TODO
-
   x.copayerId = Utils.xPubToCopayerId(x.coin, x.xPubKey);
   x.publicKeyRing = [{
     xPubKey: x.xPubKey,
