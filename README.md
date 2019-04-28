@@ -13,6 +13,7 @@
 
 ```sh
 git clone git@github.com:vergecurrency/bitcore.git
+cd bitcore
 git checkout master
 npm install
 ```
