@@ -279,9 +279,9 @@ describe('Key', function() {
         account: 0,
         n: 1,
       });
+      c.compliantDerivation.should.equal(true);
       cred.addressType.should.equal('P2PKH');
       cred.rootPath.should.equal('m/44\'/1\'/0\'');
-      cred.compliantDerivation.should.equal(true);
     });
 
     it('should create 2-2 credentials', function() {
@@ -297,7 +297,7 @@ describe('Key', function() {
       cred.addressType.should.equal('P2SH');
       cred.n.should.equal(2);
       cred.rootPath.should.equal('m/48\'/145\'/1\'');
-      cred.compliantDerivation.should.equal(true);
+      c.compliantDerivation.should.equal(true);
     });
   });
 
