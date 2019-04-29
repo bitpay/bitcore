@@ -38,7 +38,7 @@ describe('Key', function() {
 
     it('Should create keys from mnemonic (with passphrase) ', function() {
       var all = {};
-      var c = Key.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about', 'pepe');
+      var c = Key.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about', {passphrase: 'pepe'});
       c.xPrivKey.should.equal('xprv9s21ZrQH143K4C14pRZ5fTForcjAuRXLHs7Td28XuG2JMEC17Xm6JMGpNMRdNgfKZnyT3nmfeH8yVzxp6jnhmpVQAEmNBxLBh6t6t5UTVxo');
     });
 
@@ -388,6 +388,51 @@ describe('Key', function() {
       });
 
       c2.copayerId.should.equal('51d883fcd4ec010a89503c4b64e0cf22fe706495a9cf086bec69194c1c8f8952');
+    });
+  });
+
+
+  describe('#createWithMnemonic #fromMnemonic roundtrip', function() {
+    _.each(['en', 'es', 'ja', 'zh', 'fr'], function(lang) {
+      it('Should verify roundtrip create/from with ' + lang + '/passphrase', function() {
+        var c = Key.create({language: lang});
+        should.exist(c.mnemonic);
+        var words = c.mnemonic;
+        var xPriv = c.xPrivKey;
+
+        var c2 = Key.fromMnemonic(words);
+        should.exist(c2.mnemonic);
+        words.should.be.equal(c2.mnemonic);
+        c2.xPrivKey.should.equal(c.xPrivKey);
+      });
+    });
+
+    it('Should fail roundtrip create/from with ES/passphrase with wrong passphrase', function() {
+      var c = Key.create({language:'es', passphrase: 'holamundo'});
+      should.exist(c.mnemonic);
+      var words = c.mnemonic;
+      var xPriv = c.xPrivKey;
+
+      var c2 = Key.fromMnemonic(words,  {passphrase:'chaumundo'});
+      c2.xPrivKey.should.not.equal(c.xPrivKey);
+    });
+    it('Should fail roundtrip create/from with ES/passphrase with null passphrase', function() {
+      var c = Key.create({language:'es', passphrase: 'holamundo'});
+      should.exist(c.mnemonic);
+      var words = c.mnemonic;
+      var xPriv = c.xPrivKey;
+
+      var c2 = Key.fromMnemonic(words);
+      c2.xPrivKey.should.not.equal(c.xPrivKey);
+    });
+    it('Should verify roundtrip create/from with ES/passphrase with ok passphrase', function() {
+      var c = Key.create({language:'es', passphrase: 'holamundo'});
+      should.exist(c.mnemonic);
+      var words = c.mnemonic;
+      var xPriv = c.xPrivKey;
+
+      var c2 = Key.fromMnemonic(words,  {passphrase:'holamundo'});
+      c2.xPrivKey.should.equal(c.xPrivKey);
     });
   });
 });

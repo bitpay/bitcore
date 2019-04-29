@@ -45,20 +45,18 @@ const wordsForLang = {
 // other than the serialization
 const NETWORK = 'livenet';
 
-Key.create = function(passphrase, language,  opts) {
-  language = language || 'en';
-
-  if (!wordsForLang[language]) throw new Error('Unsupported language');
+Key.create = function(opts) {
   opts = opts || {};
+  if (opts.language && !wordsForLang[opts.language]) throw new Error('Unsupported language');
 
-  var m = new Mnemonic(wordsForLang[language]);
+  var m = new Mnemonic(wordsForLang[opts.language]);
   while (!Mnemonic.isValid(m.toString())) {
-    m = new Mnemonic(wordsForLang[language])
+    m = new Mnemonic(wordsForLang[opts.language])
   };
   var x = new Key();
-  x.xPrivKey = m.toHDPrivateKey(passphrase, NETWORK).toString();
+  x.xPrivKey = m.toHDPrivateKey(opts.passphrase, NETWORK).toString();
   x.mnemonic = m.phrase;
-  x.mnemonicHasPassphrase = !!passphrase;
+  x.mnemonicHasPassphrase = !!opts.passphrase;
 
   // bug backwards compatibility flags
   x.use145forBCH = !opts.useLegacyCoinType;
@@ -69,15 +67,16 @@ Key.create = function(passphrase, language,  opts) {
   return x;
 };
 
-Key.fromMnemonic = function(words, passphrase, opts) {
+Key.fromMnemonic = function(words, opts) {
   $.checkArgument(words);
+  if (opts) $.shouldBeObject(opts);
   opts = opts || {};
 
   var m = new Mnemonic(words);
   var x = new Key();
-  x.xPrivKey = m.toHDPrivateKey(passphrase, NETWORK).toString();
+  x.xPrivKey = m.toHDPrivateKey(opts.passphrase, NETWORK).toString();
   x.mnemonic = words;
-  x.mnemonicHasPassphrase = !!passphrase;
+  x.mnemonicHasPassphrase = !!opts.passphrase;
 
   x.use145forBCH = !opts.useLegacyCoinType;
   x.use48forMultisig = !opts.useLegacyPurpose;
