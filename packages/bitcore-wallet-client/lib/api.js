@@ -702,10 +702,10 @@ API.signTxp = function(txp, derivedXPrivKey) {
   return signatures;
 };
 
-API.prototype._signTxp = function(txp, password) {
-  var derived = this.credentials.getDerivedXPrivKey(password);
-  return API.signTxp(txp, derived);
-};
+//API.prototype._signTxp = function(txp, password) {
+//  var derived = this.credentials.getDerivedXPrivKey(password);
+//  return API.signTxp(txp, derived);
+//};
 
 API.prototype._getCurrentSignatures = function(txp) {
   var acceptedActions = _.filter(txp.actions, {
