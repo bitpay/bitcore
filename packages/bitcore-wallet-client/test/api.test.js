@@ -91,7 +91,7 @@ helpers.generateUtxos = function(scriptType, publicKeyRing, path, requiredSignat
     should.exist(scriptPubKey);
 
     var obj = {
-      txid: Bitcore.crypto.Hash.sha256(new Buffer(i)).toString('hex'),
+      txid: Bitcore.crypto.Hash.sha256(Buffer.from(i)).toString('hex'),
       vout: 100,
       satoshis: helpers.toSatoshi(amount),
       scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
@@ -230,7 +230,7 @@ blockchainExplorerMock.setUtxo = function(address, amount, m, confirmations) {
   }
   should.exist(scriptPubKey);
   blockchainExplorerMock.utxos.push({
-    txid: Bitcore.crypto.Hash.sha256(new Buffer(Math.random() * 100000)).toString('hex'),
+    txid: Bitcore.crypto.Hash.sha256(Buffer.from(Math.random() * 100000)).toString('hex'),
     outputIndex: 0,
     amount: amount,
     satoshis: amount *1e8,
@@ -1208,7 +1208,7 @@ describe('client API', function() {
     });
   });
 
-  describe.only('Wallet Creation BTC', function() {
+  describe('Wallet Creation', function() {
     var k;
 
     beforeEach((done) => {
@@ -1589,7 +1589,6 @@ describe('client API', function() {
         })
       );
 
- 
       // Unknown walletId
       var oldSecret = '3bJKRn1HkQTpwhVaJMaJ22KwsjN24ML9uKfkSrP7iDuq91vSsTEygfGMMpo6kWLp1pXG9wZSKcT';
       clients[0].joinWallet(oldSecret, 'copayer', {}, function(err, result) {
@@ -1657,12 +1656,26 @@ describe('client API', function() {
       });
     });
     it('should perform a dry join without actually joining', function(done) {
-      clients[0].seedFromRandom({
-      });
+      clients[0].import(
+        k.createCredentials(null, {
+          coin: 'btc', 
+          network: 'livenet', 
+          account:0, 
+          n:2,
+        })
+      );
 
       clients[0].createWallet('mywallet', 'creator', 1, 2, {}, function(err, secret) {
         should.not.exist(err);
         should.exist(secret);
+        clients[1].import(
+          k.createCredentials(null, {
+            coin: 'btc', 
+            network: 'livenet', 
+            account:1, 
+            n:2,
+          })
+        );
         clients[1].joinWallet(secret, 'dummy', {
           dryRun: true
         }, function(err, wallet) {
@@ -1676,9 +1689,14 @@ describe('client API', function() {
     });
 
     it('should return wallet status even if wallet is not yet complete', function(done) {
-      clients[0].seedFromRandom({
-        network: 'testnet'
-      });
+      clients[0].import(
+        k.createCredentials(null, {
+          coin: 'btc', 
+          network: 'testnet', 
+          account:0, 
+          n:2,
+        })
+      );
 
       clients[0].createWallet('mywallet', 'creator', 1, 2, {
         network: 'testnet'
@@ -1698,9 +1716,14 @@ describe('client API', function() {
     });
       
     it('should return status using v2 version', function(done) {
-      clients[0].seedFromRandom({
-        network: 'testnet'
-      });
+      clients[0].import(
+        k.createCredentials(null, {
+          coin: 'btc', 
+          network: 'testnet', 
+          account:0, 
+          n:1,
+        })
+      );
 
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
@@ -1715,9 +1738,14 @@ describe('client API', function() {
       });
     });
     it('should return extended status using v2 version', function(done) {
-      clients[0].seedFromRandom({
-        network: 'testnet'
-      });
+      clients[0].import(
+        k.createCredentials(null, {
+          coin: 'btc', 
+          network: 'testnet', 
+          account:0, 
+          n:1,
+        })
+      );
 
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
@@ -1735,9 +1763,14 @@ describe('client API', function() {
     });
 
     it('should store walletPrivKey', function(done) {
-      clients[0].seedFromRandom({
-        network: 'testnet'
-      });
+      clients[0].import(
+        k.createCredentials(null, {
+          coin: 'btc', 
+          network: 'testnet', 
+          account:0, 
+          n:1,
+        })
+      );
 
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
@@ -1760,9 +1793,14 @@ describe('client API', function() {
     });
 
     it('should set walletPrivKey from BWS', function(done) {
-      clients[0].seedFromRandom({
-        network: 'testnet'
-      });
+      clients[0].import(
+        k.createCredentials(null, {
+          coin: 'btc', 
+          network: 'testnet', 
+          account:0, 
+          n:1,
+        })
+      );
 
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
@@ -1784,41 +1822,17 @@ describe('client API', function() {
       });
     });
 
-    it('should prepare wallet with external xpubkey', function(done) {
-      var client = helpers.newClient(app);
-      client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00', {
-        account: 1,
-        derivationStrategy: 'BIP48',
-      });
-      client.isPrivKeyExternal().should.equal(true);
-      client.credentials.account.should.equal(1);
-      client.credentials.derivationStrategy.should.equal('BIP48');
-      client.credentials.requestPrivKey.should.equal('36a4504f0c6651db30484c2c128304a7ea548ef5935f19ed6af99db8000c75a4');
-      client.credentials.personalEncryptingKey.should.equal('wYI1597BfOv06NI6Uye3tA==');
-      client.getPrivKeyExternalSourceName().should.equal('ledger');
-      done();
-    });
-
-    it('should create a 1-1 wallet with random mnemonic', function(done) {
-      clients[0].seedFromRandomWithMnemonic();
-      clients[0].createWallet('mywallet', 'creator', 1, 1, {
-          network: 'livenet'
-        },
-        function(err) {
-          should.not.exist(err);
-          clients[0].openWallet(function(err) {
-            should.not.exist(err);
-            should.not.exist(err);
-            clients[0].credentials.network.should.equal('livenet');
-            clients[0].getMnemonic().split(' ').length.should.equal(12);
-            done();
-          });
-        });
-    });
-
     it('should create a 1-1 wallet with given mnemonic', function(done) {
-      var words = 'forget announce travel fury farm alpha chaos choice talent sting eagle supreme';
-      clients[0].seedFromMnemonic(words);
+      var c = Key.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
+      c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
+      clients[0].import(
+        c.createCredentials(null, {
+          coin: 'btc', 
+          network: 'livenet',
+          account:0, 
+          n:1,
+        })
+      );
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
           network: 'livenet',
           derivationStrategy: 'BIP48',
@@ -1827,18 +1841,24 @@ describe('client API', function() {
           should.not.exist(err);
           clients[0].openWallet(function(err) {
             should.not.exist(err);
-            should.exist(clients[0].getMnemonic());
-            words.should.be.equal(clients[0].getMnemonic());
-            clients[0].credentials.xPrivKey.should.equal('xprv9s21ZrQH143K4X2frJxRmGsmef9UfXhmfL4hdTGLm5ruSX46gekuSTspJX63d5nEi9q2wqUgg4KZ4yhSPy13CzVezAH6t6gCox1DN2hXV3L')
+            clients[0].credentials.xPubKey.should.equal('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj')
+            should.not.exist(clients[0].credentials.xPrivKey);
             done();
           });
         });
     });
 
     it('should create a 2-3 wallet with given mnemonic', function(done) {
-
-      var words = 'forget announce travel fury farm alpha chaos choice talent sting eagle supreme';
-      clients[0].seedFromMnemonic(words);
+      var c = Key.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
+      c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
+      clients[0].import(
+        c.createCredentials(null, {
+          coin: 'btc', 
+          network: 'livenet',
+          account:0, 
+          n:3,
+        })
+      );
       clients[0].createWallet('mywallet', 'creator', 2, 3, {
           network: 'livenet'
         },
@@ -1847,19 +1867,13 @@ describe('client API', function() {
           should.exist(secret);
           clients[0].openWallet(function(err) {
             should.not.exist(err);
-            should.exist(clients[0].getMnemonic());
-            words.should.be.equal(clients[0].getMnemonic());
-            clients[0].credentials.xPrivKey.should.equal('xprv9s21ZrQH143K4X2frJxRmGsmef9UfXhmfL4hdTGLm5ruSX46gekuSTspJX63d5nEi9q2wqUgg4KZ4yhSPy13CzVezAH6t6gCox1DN2hXV3L')
+            clients[0].credentials.xPubKey.should.equal('xpub6CKZtUaK1YHpQbg6CLaGRmsMKLQB1iKzsvmxtyHD6X7gzLqCB2VNZYd1XCxrccQnE8hhDxtYbR1Sakkvisy2J4CcTxWeeGjmkasCoNS9vZm')
             done();
           });
         });
     });
-  });
 
-
-  describe.only('Wallet Creation BCH', function() {
-
-    beforeEach((done) => {
+    it('should create Bitcoin Cash wallet', function(done) {
       let k = Key.create();
       clients[0].import(
         k.createCredentials(null, {
@@ -1869,13 +1883,7 @@ describe('client API', function() {
           n:1,
         })
       );
-      db.dropDatabase(function(err) {
-        return done(err);
-      });
-    });
-
-
-    it('should create Bitcoin Cash wallet', function(done) {
+ 
       clients[0].createWallet('mycashwallet', 'pepe', 1, 1, {
         coin: 'bch'
       }, function(err, secret) {
@@ -1890,10 +1898,18 @@ describe('client API', function() {
 
     it('should create a BCH  address correctly', function(done) {
       var xPriv = 'xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu';
-      clients[0].seedFromExtendedPrivateKey(xPriv, {
-        'coin': 'bch',
+      let k = Key.fromExtendedPrivateKey(xPriv, {
         useLegacyCoinType: true,
       });
+      clients[0].import(
+        k.createCredentials(null, {
+          coin: 'bch', 
+          network: 'livenet', 
+          account:0, 
+          n:1,
+        })
+      );
+ 
       clients[0].createWallet('mycashwallet', 'pepe', 1, 1, {
         coin: 'bch',
       }, function(err, secret) {
@@ -2346,7 +2362,7 @@ describe('client API', function() {
     });
   });
 
-  describe('Notifications', function() {
+  describe.only('Notifications', function() {
     var clock;
     beforeEach(function(done) {
       this.timeout(5000);

@@ -275,22 +275,6 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
   return cb(null, self.keyDerivationOk);
 };
 
-
-API.prototype.getMnemonic = function() {
-  return this.credentials.getMnemonic();
-};
-
-API.prototype.mnemonicHasPassphrase = function() {
-  return this.credentials.mnemonicHasPassphrase;
-};
-
-
-
-API.prototype.clearMnemonic = function() {
-  return this.credentials.clearMnemonic();
-};
-
-
 /**
  * Export wallet
  *
@@ -513,7 +497,7 @@ API.prototype.decryptBIP38PrivateKey = function(encryptedPrivateKeyBase58, passp
 
   var privateKey = new Bitcore.PrivateKey(privateKeyWif);
   var address = privateKey.publicKey.toAddress().toString();
-  var addrBuff = new Buffer(address, 'ascii');
+  var addrBuff = Buffer.from(address, 'ascii');
   var actualChecksum = Bitcore.crypto.Hash.sha256sha256(addrBuff).toString('hex').substring(0, 8);
   var expectedChecksum = Bitcore.encoding.Base58Check.decode(encryptedPrivateKeyBase58).toString('hex').substring(6, 14);
 
@@ -645,7 +629,7 @@ API._buildSecret = function(walletId, walletPrivKey, coin, network) {
   if (_.isString(walletPrivKey)) {
     walletPrivKey = Bitcore.PrivateKey.fromString(walletPrivKey);
   }
-  var widHex = new Buffer(walletId.replace(/-/g, ''), 'hex');
+  var widHex = Buffer.from(walletId.replace(/-/g, ''), 'hex');
   var widBase58 = new Bitcore.encoding.Base58(widHex).toString();
   return _.padEnd(widBase58, 22, '0') + walletPrivKey.toWIF() + (network == 'testnet' ? 'T' : 'L') + coin;
 };

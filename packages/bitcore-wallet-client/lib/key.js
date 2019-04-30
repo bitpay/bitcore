@@ -101,11 +101,10 @@ Key.fromExtendedPrivateKey = function(xPriv, opts) {
   x.mnemonic = null;
   x.mnemonicHasPassphrase = null;
 
-  x.use145forBCH = !opts.use0forBCH;
   x.use48forMultisig = !opts.useLegacyPurpose;
+  x.use145forBCH = !opts.useLegacyCoinType;
 
   x.compliantDerivation = !opts.nonCompliantDerivation;
-
   return x;
 };
 
@@ -275,6 +274,7 @@ Key.prototype.createCredentials = function(password, opts) {
     x.network = 'testnet';
     delete x.xprivkey;
     delete x.checksum;
+    x.privateKey = _.padStart(x.privateKey, 32, '0');
     xPrivKey = new Bitcore.HDPrivateKey(x);
   }
 

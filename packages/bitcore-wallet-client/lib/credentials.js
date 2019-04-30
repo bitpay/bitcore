@@ -92,8 +92,8 @@ Credentials.fromDerivedKey = function(opts) {
 
   const prefix= 'personalKey';
   const entropySource = Bitcore.crypto.Hash.sha256(priv.toBuffer()).toString('hex')
-  const b = new Buffer(entropySource, 'hex');
-  const b2 = Bitcore.crypto.Hash.sha256hmac(b, new Buffer(prefix));
+  const b = Buffer.from(entropySource, 'hex');
+  const b2 = Bitcore.crypto.Hash.sha256hmac(b, Buffer.from(prefix));
   x.personalEncryptingKey = b2.slice(0, 16).toString('base64');
   x.copayerId = Utils.xPubToCopayerId(x.coin, x.xPubKey);
   x.publicKeyRing = [{

@@ -87,8 +87,8 @@ PayPro._verify = function (requestUrl, headers, network, trustedKeys, callback) 
   var hashbuf = Buffer.from(hash,'hex');
   let sigbuf = Buffer.from(signature,'hex'); 
 
-  let s_r = new Buffer(32); 
-  let s_s = new Buffer(32); 
+  let s_r = Buffer.alloc(32); 
+  let s_s = Buffer.alloc(32); 
 
   sigbuf.copy(s_r,0,0); 
   sigbuf.copy(s_s,0,32);
