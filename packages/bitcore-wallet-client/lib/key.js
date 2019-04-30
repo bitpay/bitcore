@@ -254,10 +254,13 @@ Key.prototype.getBaseAddressDerivationPath = function(opts) {
 Key.prototype.createCredentials = function(password, opts) {
   opts = opts || {};
 
+  if (password) 
+    $.shouldBeString(password);
+
   _checkCoin(opts.coin);
   _checkNetwork(opts.network);
-  $.shouldBeNumber(opts.account);
-  $.shouldBeNumber(opts.n);
+  $.shouldBeNumber(opts.account, 'Invalid account');
+  $.shouldBeNumber(opts.n, 'Invalid n');
 
   let path = this.getBaseAddressDerivationPath(opts);
 

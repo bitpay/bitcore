@@ -14,6 +14,7 @@ var client = module.exports = require('./api');
  * @alias module:Client.Verifier
  */
 client.Verifier = require('./verifier');
+client.Key = require('./key');
 client.Utils = require('./common/utils');
 client.sjcl = require('sjcl');
 

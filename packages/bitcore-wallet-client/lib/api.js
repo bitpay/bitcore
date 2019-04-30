@@ -211,33 +211,8 @@ API.prototype._processTxps = function(txps) {
   });
 };
 
-/**
- * Seed from random
- *
- * @param {Object} opts
- * @param {String} opts.coin - default 'btc'
- * @param {String} opts.network - default 'livenet'
- */
-API.prototype.seedFromRandom = function(opts) {
-  $.checkArgument(arguments.length <= 1, 'DEPRECATED: only 1 argument accepted.');
-  $.checkArgument(_.isUndefined(opts) || _.isObject(opts), 'DEPRECATED: argument should be an options object.');
-
-  opts = opts || {};
-  this.credentials = Credentials.create(opts.coin || 'btc', opts.network || 'livenet');
-
-  this.request.setCredentials(this.credentials);
-};
-
-
 var _deviceValidated;
 
-/**
- * Seed from random
- *
- * @param {Object} opts
- * @param {String} opts.passphrase
- * @param {Boolean} opts.skipDeviceValidation
- */
 API.prototype.validateKeyDerivation = function(opts, cb) {
   var self = this;
 
@@ -300,24 +275,6 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
   return cb(null, self.keyDerivationOk);
 };
 
-/**
- * Seed from random with mnemonic
- *
- * @param {Object} opts
- * @param {String} opts.coin - default 'btc'
- * @param {String} opts.network - default 'livenet'
- * @param {String} opts.passphrase
- * @param {Number} opts.language - default 'en'
- * @param {Number} opts.account - default 0
- */
-API.prototype.seedFromRandomWithMnemonic = function(opts) {
-  $.checkArgument(arguments.length <= 1, 'DEPRECATED: only 1 argument accepted.');
-  $.checkArgument(_.isUndefined(opts) || _.isObject(opts), 'DEPRECATED: argument should be an options object.');
-
-  opts = opts || {};
-  this.credentials = Credentials.createWithMnemonic(opts.coin || 'btc', opts.network || 'livenet', opts.passphrase, opts.language || 'en', opts.account || 0);
-  this.request.setCredentials(this.credentials);
-};
 
 API.prototype.getMnemonic = function() {
   return this.credentials.getMnemonic();
@@ -331,61 +288,6 @@ API.prototype.mnemonicHasPassphrase = function() {
 
 API.prototype.clearMnemonic = function() {
   return this.credentials.clearMnemonic();
-};
-
-
-/**
- * Seed from extended private key
- *
- * @param {String} xPrivKey
- * @param {String} opts.coin - default 'btc'
- * @param {Number} opts.account - default 0
- * @param {String} opts.derivationStrategy - default 'BIP44'
- */
-API.prototype.seedFromExtendedPrivateKey = function(xPrivKey, opts) {
-  opts = opts || {};
-  this.credentials = Credentials.fromExtendedPrivateKey(opts.coin || 'btc', xPrivKey, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
-  this.request.setCredentials(this.credentials);
-};
-
-
-/**
- * Seed from Mnemonics (language autodetected)
- * Can throw an error if mnemonic is invalid
- *
- * @param {String} BIP39 words
- * @param {Object} opts
- * @param {String} opts.coin - default 'btc'
- * @param {String} opts.network - default 'livenet'
- * @param {String} opts.passphrase
- * @param {Number} opts.account - default 0
- * @param {String} opts.derivationStrategy - default 'BIP44'
- */
-API.prototype.seedFromMnemonic = function(words, opts) {
-  $.checkArgument(_.isUndefined(opts) || _.isObject(opts), 'DEPRECATED: second argument should be an options object.');
-
-  opts = opts || {};
-  this.credentials = Credentials.fromMnemonic(opts.coin || 'btc', opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
-  this.request.setCredentials(this.credentials);
-};
-
-/**
- * Seed from external wallet public key
- *
- * @param {String} xPubKey
- * @param {String} source - A name identifying the source of the xPrivKey (e.g. ledger, TREZOR, ...)
- * @param {String} entropySourceHex - A HEX string containing pseudo-random data, that can be deterministically derived from the xPrivKey, and should not be derived from xPubKey.
- * @param {Object} opts
- * @param {String} opts.coin - default 'btc'
- * @param {Number} opts.account - default 0
- * @param {String} opts.derivationStrategy - default 'BIP44'
- */
-API.prototype.seedFromExtendedPublicKey = function(xPubKey, source, entropySourceHex, opts) {
-  $.checkArgument(_.isUndefined(opts) || _.isObject(opts));
-
-  opts = opts || {};
-  this.credentials = Credentials.fromExtendedPublicKey(opts.coin || 'btc', xPubKey, source, entropySourceHex, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44);
-  this.request.setCredentials(this.credentials);
 };
 
 
@@ -422,11 +324,14 @@ API.prototype.export = function(opts) {
  *
  * @param {Object} str - The serialized JSON created with #export
  */
-API.prototype.import = function(str) {
+API.prototype.import = function(credentials) {
   try {
-    var credentials = Credentials.fromObj(JSON.parse(str));
+    if ( !_.isObject(credentials) || ! credentials.xPubKey) {
+      credentials = Credentials.fromObj(JSON.parse(credentials));
+    }
     this.credentials = credentials;
   } catch (ex) {
+console.log('[api.js.334:ex:]',ex); // TODO
     throw new Errors.INVALID_BACKUP;
   }
   this.request.setCredentials(this.credentials);
@@ -492,13 +397,6 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
       entropySourcePath: opts.entropySourcePath,
       walletPrivKey: opts.walletPrivKey,
       useLegacyCoinType, 
-    return Credentials.fromMnemonic(opts.coin || 'btc', opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, {
-      nonCompliantDerivation: nonCompliantDerivation,
-      entropySourcePath: opts.entropySourcePath,
-      walletPrivKey: opts.walletPrivKey,
-      use0forBCH: use0forBCH,
->>>>>>> update test name files
->>>>>>> update test name files
     });
   };
 
@@ -1102,7 +1000,7 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
   if (!_.includes(['testnet', 'livenet'], network)) return cb(new Error('Invalid network'));
 
   if (!self.credentials) {
-    return cb(new Error('Generate keys first using seedFrom*'));
+    return cb(new Error('Import credentials first with setCredentials()'));
   }
 
   if (coin != self.credentials.coin) { 
@@ -1180,10 +1078,7 @@ API.prototype.joinWallet = function(secret, copayerName, opts, cb) {
   }
 
   if (!self.credentials) {
-    self.seedFromRandom({
-      coin: coin,
-      network: secretData.network
-    });
+    return cb(new Error('Import credentials first with setCredentials()'));
   }
 
   self.credentials.addWalletPrivateKey(secretData.walletPrivKey.toString());
@@ -1887,6 +1782,7 @@ API.signTxProposalFromAirGapped = function(key, txp, unencryptedPkr, m, n, opts)
     baseUrl: 'https://bws.example.com/bws/api'
   });
 
+  // TODO TODO TODO
   if (key.slice(0, 4) === 'xprv' || key.slice(0, 4) === 'tprv') {
     if (key.slice(0, 4) === 'xprv' && txp.network == 'testnet') throw new Error("testnet HD keys must start with tprv");
     if (key.slice(0, 4) === 'tprv' && txp.network == 'livenet') throw new Error("livenet HD keys must start with xprv");
@@ -1896,6 +1792,7 @@ API.signTxProposalFromAirGapped = function(key, txp, unencryptedPkr, m, n, opts)
       'derivationStrategy': opts.derivationStrategy
     });
   } else {
+    
     newClient.seedFromMnemonic(key, {
       'coin': coin,
       'network': txp.network,
