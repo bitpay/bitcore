@@ -478,13 +478,15 @@ export class WalletService {
   createWallet(opts, cb) {
     let pubKey;
 
-    const version = Utils.parseVersion(opts.clientVersion);
-    if (version && version.agent === 'bwc' && opts.n > 1) {
-      if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
-        return cb(new ClientError(
-          Errors.codes.UPGRADE_NEEDED,
-          'BWC clients < 8.3 are no longer supported.'
-        ));
+    if (opts.coin === 'bch' && opts.n > 1) {
+      const version = Utils.parseVersion(opts.clientVersion);
+      if (version && version.agent === 'bwc') {
+        if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
+          return cb(new ClientError(
+            Errors.codes.UPGRADE_NEEDED,
+            'BWC clients < 8.3 are no longer supported for multisig BCH wallets.'
+          ));
+        }
       }
     }
 
@@ -1045,13 +1047,15 @@ export class WalletService {
    * @param {string} opts.dryRun[=false] - (optional) Simulate the action but do not change server state.
    */
   joinWallet(opts, cb) {
-    const version = Utils.parseVersion(opts.clientVersion);
-    if (version && version.agent === 'bwc') {
-      if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
-        return cb(new ClientError(
-          Errors.codes.UPGRADE_NEEDED,
-          'BWC clients < 8.3 are no longer supported.'
-        ));
+    if (opts.coin === 'bch') {
+      const version = Utils.parseVersion(opts.clientVersion);
+      if (version && version.agent === 'bwc') {
+        if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
+          return cb(new ClientError(
+            Errors.codes.UPGRADE_NEEDED,
+            'BWC clients < 8.3 are no longer supported for multisig BCH wallets.'
+          ));
+        }
       }
     }
 
