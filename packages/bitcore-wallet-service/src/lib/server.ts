@@ -478,6 +478,16 @@ export class WalletService {
   createWallet(opts, cb) {
     let pubKey;
 
+    const version = Utils.parseVersion(opts.clientVersion);
+    if (version && version.agent === 'bwc' && opts.n > 1) {
+      if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
+        return cb(new ClientError(
+          Errors.codes.UPGRADE_NEEDED,
+          'BWC clients < 8.3 are no longer supported.'
+        ));
+      }
+    }
+
     if (!checkRequired(opts, ['name', 'm', 'n', 'pubKey'], cb)) {
       return;
     }
@@ -506,8 +516,8 @@ export class WalletService {
 
     const derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44;
     const addressType = opts.n === 1
-        ? Constants.SCRIPT_TYPES.P2PKH
-        : Constants.SCRIPT_TYPES.P2SH;
+      ? Constants.SCRIPT_TYPES.P2PKH
+      : Constants.SCRIPT_TYPES.P2SH;
 
     try {
       pubKey = new Bitcore.PublicKey.fromString(opts.pubKey);
@@ -1035,6 +1045,16 @@ export class WalletService {
    * @param {string} opts.dryRun[=false] - (optional) Simulate the action but do not change server state.
    */
   joinWallet(opts, cb) {
+    const version = Utils.parseVersion(opts.clientVersion);
+    if (version && version.agent === 'bwc') {
+      if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
+        return cb(new ClientError(
+          Errors.codes.UPGRADE_NEEDED,
+          'BWC clients < 8.3 are no longer supported.'
+        ));
+      }
+    }
+
     if (
       !checkRequired(
         opts,
@@ -3526,7 +3546,7 @@ export class WalletService {
 
       const ret = _.filter(_.map([].concat(txs), (tx) => {
         const t = new Date(tx.blockTime).getTime() / 1000;
-        const c = tx.height >= 0  && bcHeight >= tx.height ? bcHeight - tx.height + 1 : 0;
+        const c = tx.height >= 0 && bcHeight >= tx.height ? bcHeight - tx.height + 1 : 0;
         const ret = {
           id: tx.id,
           txid: tx.txid,
@@ -3657,7 +3677,7 @@ export class WalletService {
       }
 
       this.storage
-        .walletCheck({ walletId: wallet.id})
+        .walletCheck({ walletId: wallet.id })
         .then((localCheck: { sum: number }) => {
           bc.getCheckData(wallet, (err, serverCheck) => {
             // If there is an error, just ignore it (server does not support walletCheck)

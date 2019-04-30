@@ -44,7 +44,7 @@ describe('Wallet service', function() {
       request = res.request;
       done();
     });
- 
+
   });
   beforeEach(function(done) {
     log.level = 'error';
@@ -352,6 +352,39 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should create wallet BCH if n > 1 and BWC version is 8.3.0 or higher', function(done) {
+      var opts = {
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: TestData.keyPair.pub,
+        clientVersion: 'bwc-8.3.0'
+      };
+
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(err);
+        should.exist(walletId);
+        done();
+      });
+    });
+
+    it('should fail to create wallets BCH if n > 1 and BWC version is lower than 8.3.0', function(done) {
+      var opts = {
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: TestData.keyPair.pub,
+        clientVersion: 'bwc-8.2.0'
+      };
+
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(walletId);
+        should.exist(err);
+        err.message.should.contain('BWC clients < 8.3 are no longer supported.');
+        done();
+      });
+    });
+
     it('should fail to create wallet with no name', function(done) {
       var opts = {
         name: '',
@@ -417,12 +450,12 @@ describe('Wallet service', function() {
         n: -2,
         valid: false,
       },];
-     async.eachSeries(pairs, function(pair, cb) {
+      async.eachSeries(pairs, function(pair, cb) {
         let opts = {
           name: 'my wallet',
           pubKey: TestData.keyPair.pub,
         };
-   
+
         var pub = (new Bitcore.PrivateKey()).toPublicKey();
         opts.m = pair.m;
         opts.n = pair.n;
@@ -529,6 +562,7 @@ describe('Wallet service', function() {
           m: 1,
           n: 2,
           pubKey: TestData.keyPair.pub,
+          clientVersion: 'bwc-8.3.0'
         };
         server.createWallet(walletOpts, function(err, wId) {
           should.not.exist(err);
@@ -601,6 +635,41 @@ describe('Wallet service', function() {
               done();
             });
           });
+        });
+      });
+
+      it('should join wallet BCH if BWC version is 8.3.0 or higher', function(done) {
+        var copayerOpts = helpers.getSignedCopayerOpts({
+          walletId: walletId,
+          name: 'me',
+          xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+          customData: 'dummy custom data',
+          clientVersion: 'bwc-8.3.0'
+        });
+
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.not.exist(err);
+          should.exist(result);
+          should.exist(result.copayerId);
+          done();
+        });
+      });
+
+      it('should fail to join wallets BCH if BWC version is lower than 8.3.0', function(done) {
+        var opts = {
+          name: 'my wallet',
+          m: 2,
+          n: 3,
+          pubKey: TestData.keyPair.pub,
+          clientVersion: 'bwc-8.2.0'
+        };
+
+        server.joinWallet(opts, function(err, result) {
+          should.not.exist(result);
+          should.exist(err);
+          err.message.should.contain('BWC clients < 8.3 are no longer supported.');
+          done();
         });
       });
 
@@ -1101,7 +1170,7 @@ describe('Wallet service', function() {
     });
     it('should get status including server messages', function(done) {
       server.appName = 'bitpay';
-      server.appVersion = {major: 5, minor: 0, patch: 0};
+      server.appVersion = { major: 5, minor: 0, patch: 0 };
       server.getStatus({
         includeServerMessages: true
       }, function(err, status) {
@@ -1118,30 +1187,30 @@ describe('Wallet service', function() {
           category: 'critical',
           app: 'bitpay',
           priority: 1
-        }]); 
+        }]);
         done();
       });
     });
     it('should get status including deprecated server message', function(done) {
       server.appName = 'bitpay';
-      server.appVersion = {major: 5, minor: 0, patch: 0};
-        server.getStatus({}, function(err, status) {
-          should.not.exist(err);
-          should.exist(status);
-          should.exist(status.serverMessage);
-          _.isObject(status.serverMessage).should.be.true;
-          status.serverMessage.should.deep.equal({
-            title: 'Deprecated Test message',
-            body: 'Only for bitpay, old wallets',
-            link: 'http://bitpay.com',
-            id: 'bitpay1',
-            dismissible: true,
-            category: 'critical',
-            app: 'bitpay',
-          }); 
-          done();
+      server.appVersion = { major: 5, minor: 0, patch: 0 };
+      server.getStatus({}, function(err, status) {
+        should.not.exist(err);
+        should.exist(status);
+        should.exist(status.serverMessage);
+        _.isObject(status.serverMessage).should.be.true;
+        status.serverMessage.should.deep.equal({
+          title: 'Deprecated Test message',
+          body: 'Only for bitpay, old wallets',
+          link: 'http://bitpay.com',
+          id: 'bitpay1',
+          dismissible: true,
+          category: 'critical',
+          app: 'bitpay',
         });
+        done();
       });
+    });
   });
 
   describe('#verifyMessageSignature', function() {
@@ -1223,7 +1292,7 @@ describe('Wallet service', function() {
         server.createAddress({}, function(err, address) {
           should.not.exist(err);
           should.exist(address);
-          server.getWallet({}, (err,w) => {
+          server.getWallet({}, (err, w) => {
 
             var old = server.getWallet;
             server.getWallet = sinon.stub();
@@ -4903,7 +4972,7 @@ describe('Wallet service', function() {
     it('should include the note in tx history listing', function(done) {
       helpers.createAddresses(server, wallet, 1, 1, function(mainAddresses, changeAddress) {
         blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000);
-        server._normalizeTxHistory = function(a, b, c, e,  d) { return d(null, b); }
+        server._normalizeTxHistory = function(a, b, c, e, d) { return d(null, b); }
         var txs = [{
           txid: '123',
           blockheight: 100,
@@ -5826,7 +5895,7 @@ describe('Wallet service', function() {
           txProposalId: txpid
         }, function(err, txp) {
           should.not.exist(err);
-         
+
           should.exist(txp.raw);
           // used to be like this. No sure why we won't like raw to be shown.
           //should.not.exist(txp.raw);
