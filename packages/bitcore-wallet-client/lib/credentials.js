@@ -147,7 +147,7 @@ Credentials.prototype.addWalletInfo = function(walletId, walletName, m, n, copay
   this.m = m;
 
   if (this.n && this.n != n) {
-    throw new Error('Bad nr of copayers in addWalletInfo:' + n);
+    throw new Error(`Bad nr of copayers in addWalletInfo: this: ${this.n} got: ${n}`, this.n, n);
   }
   this.n = n;
 
