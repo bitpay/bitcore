@@ -91,7 +91,7 @@ helpers.generateUtxos = function(scriptType, publicKeyRing, path, requiredSignat
     should.exist(scriptPubKey);
 
     var obj = {
-      txid: Bitcore.crypto.Hash.sha256(Buffer.from(i)).toString('hex'),
+      txid: Bitcore.crypto.Hash.sha256(Buffer.alloc(i)).toString('hex'),
       vout: 100,
       satoshis: helpers.toSatoshi(amount),
       scriptPubKey: scriptPubKey.toBuffer().toString('hex'),
@@ -230,7 +230,7 @@ blockchainExplorerMock.setUtxo = function(address, amount, m, confirmations) {
   }
   should.exist(scriptPubKey);
   blockchainExplorerMock.utxos.push({
-    txid: Bitcore.crypto.Hash.sha256(Buffer.from(Math.random() * 100000)).toString('hex'),
+    txid: Bitcore.crypto.Hash.sha256(Buffer.alloc(Math.random() * 100000)).toString('hex'),
     outputIndex: 0,
     amount: amount,
     satoshis: amount *1e8,
@@ -2362,7 +2362,7 @@ describe('client API', function() {
     });
   });
 
-  describe.only('Notifications', function() {
+  describe('Notifications', function() {
     var clock;
     beforeEach(function(done) {
       this.timeout(5000);
@@ -2931,7 +2931,7 @@ describe('client API', function() {
     });
   });
 
-  describe('Transaction Proposal signing', function() {
+  describe.only('Transaction Proposal signing', function() {
     this.timeout(5000);
     function setup(m, n, coin, network, cb) {
       helpers.createAndJoinWallet(clients, keys, m, n, {
@@ -2982,7 +2982,8 @@ describe('client API', function() {
             should.not.exist(err);
             should.exist(publishedTxp);
             publishedTxp.status.should.equal('pending');
-            clients[0].signTxProposal(publishedTxp, function(err, txp) {
+            clients[0].signTxProposal(publishedTxp, key[0], function(err, txp) {
+console.log('[api.test.js.2984:err:]',err); // TODO
               should.not.exist(err);
               clients[1].signTxProposal(publishedTxp, function(err, txp) {
                 should.not.exist(err);

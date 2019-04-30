@@ -274,7 +274,7 @@ Key.prototype.createCredentials = function(password, opts) {
     x.network = 'testnet';
     delete x.xprivkey;
     delete x.checksum;
-    x.privateKey = _.padStart(x.privateKey, 32, '0');
+    x.privateKey = _.padStart(x.privateKey, 64, '0');
     xPrivKey = new Bitcore.HDPrivateKey(x);
   }
 
