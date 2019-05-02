@@ -479,7 +479,7 @@ export class WalletService {
     let pubKey;
 
     if (opts.coin === 'bch' && opts.n > 1) {
-      const version = Utils.parseVersion(opts.clientVersion);
+      const version = Utils.parseVersion(this.clientVersion);
       if (version && version.agent === 'bwc') {
         if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
           return cb(new ClientError(
@@ -1048,7 +1048,7 @@ export class WalletService {
    */
   joinWallet(opts, cb) {
     if (opts.coin === 'bch') {
-      const version = Utils.parseVersion(opts.clientVersion);
+      const version = Utils.parseVersion(this.clientVersion);
       if (version && version.agent === 'bwc') {
         if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
           return cb(new ClientError(
