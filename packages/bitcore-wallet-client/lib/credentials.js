@@ -104,6 +104,38 @@ Credentials.fromDerivedKey = function(opts) {
   return x;
 };
 
+Credentials.getRootPath = function() {
+  if (!this.rootPath) {
+    // legacy base path schema
+    var purpose;
+    switch (this.derivationStrategy) {
+      case Constants.DERIVATION_STRATEGIES.BIP45:
+        return "m/45'";
+      case Constants.DERIVATION_STRATEGIES.BIP44:
+        purpose = '44';
+        break;
+      case Constants.DERIVATION_STRATEGIES.BIP48:
+        purpose = '48';
+        break;
+    }
+
+  var coin = '0';
+  if (this.network != 'livenet' ) {
+    coin = '1';
+  } else if (this.coin == 'bch') {
+    if (this.use145forBCH) {
+      coin = '145';
+    } else {
+      coin = '0';
+    }
+  } else {
+    throw new Error('unknown coin: ' + this.coin);
+  };
+
+  return "m/" + purpose + "'/" + coin + "'/" + this.account + "'";
+  return this.rootPath;
+};
+
 Credentials.fromObj = function(obj) {
 
   var x = new Credentials();

@@ -2982,6 +2982,11 @@ describe('client API', function() {
             should.not.exist(err);
             should.exist(publishedTxp);
             publishedTxp.status.should.equal('pending');
+
+
+            key[0].sign(txp)
+
+
             clients[0].signTxProposal(publishedTxp, key[0], function(err, txp) {
 console.log('[api.test.js.2984:err:]',err); // TODO
               should.not.exist(err);

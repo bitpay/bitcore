@@ -236,6 +236,8 @@ Key.prototype.getBaseAddressDerivationPath = function(opts) {
     }
   } else if (opts.coin == 'eth') {
     coin = '60';
+  } else {
+    throw new Error('unknown coin: ' + opts.coin);
   };
 
   return "m/" + purpose + "'/" + coinCode + "'/" + opts.account + "'";
@@ -289,6 +291,35 @@ Key.prototype.createCredentials = function(password, opts) {
     walletPrivKey: opts.walletPrivKey,
   });
 };
+
+
+Key.prototype.sign = function(rootPath, txp, password) {
+  var privs = [];
+  var derived = {};
+
+  var derived = this.derive(rootPath, password);
+  var xpriv = new Bitcore.HDPrivateKey(derived);
+
+  _.each(txp.inputs, function(i) {
+    $.checkState(i.path, "Input derivation path not available (signing transaction)")
+    if (!derived[i.path]) {
+      derived[i.path] = xpriv.deriveChild(i.path).privateKey;
+      privs.push(derived[i.path]);
+    }
+  });
+
+  var t = Utils.buildTx(txp);
+  var signatures = _.map(privs, function(priv, i) { 
+    return t.getSignatures(priv);
+  });
+
+  signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
+    return s.signature.toDER().toString('hex');
+  });
+
+  return signatures;
+};
+
 
 
 
