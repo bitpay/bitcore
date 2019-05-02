@@ -358,9 +358,10 @@ describe('Wallet service', function() {
         name: 'my wallet',
         m: 2,
         n: 3,
-        pubKey: TestData.keyPair.pub,
-        clientVersion: 'bwc-8.3.0'
+        pubKey: TestData.keyPair.pub
       };
+
+      server.clientVersion = 'bwc-8.3.0';
 
       server.createWallet(opts, function(err, walletId) {
         should.not.exist(err);
@@ -375,9 +376,10 @@ describe('Wallet service', function() {
         name: 'my wallet',
         m: 2,
         n: 3,
-        pubKey: TestData.keyPair.pub,
-        clientVersion: 'bwc-8.3.0'
+        pubKey: TestData.keyPair.pub
       };
+
+      server.clientVersion = 'bwc-8.3.0';
 
       server.createWallet(opts, function(err, walletId) {
         should.not.exist(err);
@@ -392,9 +394,11 @@ describe('Wallet service', function() {
         name: 'my wallet',
         m: 2,
         n: 3,
-        pubKey: TestData.keyPair.pub,
-        clientVersion: 'bwc-8.2.0'
+        pubKey: TestData.keyPair.pub
       };
+
+      server.clientVersion = 'bwc-8.2.0';
+
 
       server.createWallet(opts, function(err, walletId) {
         should.not.exist(walletId);
@@ -664,9 +668,11 @@ describe('Wallet service', function() {
           name: 'my wallet',
           m: 1,
           n: 2,
-          pubKey: TestData.keyPair.pub,
-          clientVersion: 'bwc-8.3.0'
+          pubKey: TestData.keyPair.pub
         };
+
+        serverForBch.clientVersion = 'bwc-8.3.0';
+
         serverForBch.createWallet(walletOpts, function(err, wId) {
           should.not.exist(err);
           walletIdForBch = wId;
@@ -678,9 +684,10 @@ describe('Wallet service', function() {
             name: 'me',
             xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
             requestPubKey: TestData.copayers[0].pubKey_1H_0,
-            customData: 'dummy custom data',
-            clientVersion: 'bwc-8.3.0'
+            customData: 'dummy custom data'
           });
+
+          serverForBch.clientVersion = 'bwc-8.3.0';
 
           serverForBch.joinWallet(copayerOpts, function(err, result) {
             should.not.exist(err);
@@ -699,12 +706,13 @@ describe('Wallet service', function() {
           m: 2,
           n: 3,
           pubKey: TestData.keyPair.pub,
-          clientVersion: 'bwc-8.2.0',
           walletId: walletId,
           xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
           requestPubKey: TestData.copayers[0].pubKey_1H_0,
           customData: 'dummy custom data',
         });
+
+        server.clientVersion = 'bwc-8.2.0';
 
         server.joinWallet(copayerOpts, function(err, result) {
           should.not.exist(err);
@@ -722,9 +730,11 @@ describe('Wallet service', function() {
           m: 1,
           n: 2,
           pubKey: TestData.keyPair.pub,
-          clientVersion: 'bwc-8.3.0',
           walletId: walletId
         };
+
+        serverForBch.clientVersion = 'bwc-8.3.0';
+
         serverForBch.createWallet(walletOpts, function(err, wId) {
           should.not.exist(err);
           walletIdForBch = wId;
@@ -735,9 +745,10 @@ describe('Wallet service', function() {
             name: 'my wallet',
             m: 2,
             n: 3,
-            pubKey: TestData.keyPair.pub,
-            clientVersion: 'bwc-8.2.0'
+            pubKey: TestData.keyPair.pub
           };
+
+          serverForBch.clientVersion = 'bwc-8.2.0';
 
           serverForBch.joinWallet(opts, function(err, result) {
             should.not.exist(result);
