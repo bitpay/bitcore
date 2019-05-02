@@ -414,7 +414,7 @@ export class P2pWorker {
     const [hostname, pid, timestamp] = this.lastHeartBeat.split(':');
     const hostNameMatches = hostname === os.hostname();
     const pidMatches = pid === process.pid.toString();
-    const timestampIsFresh = Date.now() - parseInt(timestamp) < 60 * 1000;
+    const timestampIsFresh = Date.now() - parseInt(timestamp) < 5 * 60 * 1000;
     const amSyncingNode = hostNameMatches && pidMatches && timestampIsFresh;
     return amSyncingNode;
   }
@@ -450,7 +450,7 @@ export class P2pWorker {
           lastHeartBeat
         });
       },
-      primary ? 0 : 60 * 1000
+      primary ? 0 : 5 * 60 * 1000
     );
     this.queuedRegistrations.push(queuedRegistration);
   }
