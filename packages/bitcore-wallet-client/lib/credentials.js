@@ -104,8 +104,10 @@ Credentials.fromDerivedKey = function(opts) {
   return x;
 };
 
-Credentials.getRootPath = function() {
-  if (!this.rootPath) {
+Credentials.prototype.getRootPath = function() {
+
+
+  function legacyRootPath () {
     // legacy base path schema
     var purpose;
     switch (this.derivationStrategy) {
@@ -119,21 +121,25 @@ Credentials.getRootPath = function() {
         break;
     }
 
-  var coin = '0';
-  if (this.network != 'livenet' ) {
-    coin = '1';
-  } else if (this.coin == 'bch') {
-    if (this.use145forBCH) {
-      coin = '145';
+    var coin = '0';
+    if (this.network != 'livenet' ) {
+      coin = '1';
+    } else if (this.coin == 'bch') {
+      if (this.use145forBCH) {
+        coin = '145';
+      } else {
+        coin = '0';
+      }
     } else {
-      coin = '0';
-    }
-  } else {
-    throw new Error('unknown coin: ' + this.coin);
+      throw new Error('unknown coin: ' + this.coin);
+    };
+    return "m/" + purpose + "'/" + coin + "'/" + this.account + "'";
   };
 
-  return "m/" + purpose + "'/" + coin + "'/" + this.account + "'";
-  return this.rootPath;
+  if (!this.rootPath) {
+    this.rootPath = legacyRootPath();
+  }
+ return this.rootPath;
 };
 
 Credentials.fromObj = function(obj) {
@@ -202,14 +208,6 @@ Credentials.prototype.hasWalletInfo = function() {
 
 Credentials.prototype.addPublicKeyRing = function(publicKeyRing) {
   this.publicKeyRing = _.clone(publicKeyRing);
-};
-
-Credentials.prototype.canSign = function() {
-  return (!!this.keyFingerprint);
-};
-
-Credentials.prototype.setNotSign = function() {
-  this.keyFingerprint = null;
 };
 
 Credentials.prototype.isComplete = function() {

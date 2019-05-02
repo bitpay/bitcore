@@ -145,6 +145,9 @@ API.prototype.setNotificationsInterval = function(notificationIntervalSeconds) {
   }
 };
 
+API.prototype.getRootPath = function() {
+  return this.credentials.getRootPath();
+}
 
 /**
  * Encrypt a message
@@ -843,16 +846,6 @@ API.prototype.checkPassword = function(password) {
   };
 };
 
-
-/**
- * Can this credentials sign a transaction?
- * (Only returns fail on a 'proxy' setup for airgapped operation)
- *
- * @return {undefined}
- */
-API.prototype.canSign = function() {
-  return this.credentials && this.credentials.canSign();
-};
 
 
 API._extractPublicKeyRing = function(copayers) {
@@ -1597,30 +1590,20 @@ API.prototype.getPayPro = function(txp, cb) {
 
 
 /**
- * Sign a transaction proposal
+ * push transaction proposal signatures
  *
  * @param {Object} txp
- * @param {String} password - (optional) A password to decrypt the encrypted private key (if encryption is set).
+ * @param {Array} signatures
  * @param {Callback} cb
  * @return {Callback} cb - Return error or object
  */
-API.prototype.signTxProposal = function(txp, password, cb) {
+API.prototype.pushSignatures = function(txp, signatures, cb) {
   $.checkState(this.credentials && this.credentials.isComplete());
   $.checkArgument(txp.creatorId);
-
-  if (_.isFunction(password)) {
-    cb = password;
-    password = null;
-  }
-
   var self = this;
 
-  if (!txp.signatures) {
-    if (!self.canSign())
-      return cb(new Errors.MISSING_PRIVATE_KEY);
-
-    if (self.isPrivKeyEncrypted() && !password)
-      return cb(new Errors.ENCRYPTED_PRIVATE_KEY);
+  if (_.isEmpty(signatures)) {
+    return cb('No signatures to push. Sign the transaction with Key first');
   }
 
   self.getPayPro(txp, function(err, paypro) {
@@ -1633,16 +1616,6 @@ API.prototype.signTxProposal = function(txp, password, cb) {
     if (!isLegit)
       return cb(new Errors.SERVER_COMPROMISED);
 
-    var signatures = txp.signatures;
-
-    if (_.isEmpty(signatures)) {
-      try {
-        signatures = self._signTxp(txp, password);
-      } catch (ex) {
-        log.error('Error signing tx', ex);
-        return cb(ex);
-      }
-    }
 
     var url = '/v1/txproposals/' + txp.id + '/signatures/';
     var args = {

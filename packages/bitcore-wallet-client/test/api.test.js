@@ -2984,13 +2984,11 @@ describe('client API', function() {
             publishedTxp.status.should.equal('pending');
 
 
-            key[0].sign(txp)
-
-
-            clients[0].signTxProposal(publishedTxp, key[0], function(err, txp) {
-console.log('[api.test.js.2984:err:]',err); // TODO
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, function(err, txp) {
               should.not.exist(err);
-              clients[1].signTxProposal(publishedTxp, function(err, txp) {
+              let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+              clients[1].pushSignatures(publishedTxp, signatures2, function(err, txp) {
                 should.not.exist(err);
                 txp.status.should.equal('accepted');
                 done();
