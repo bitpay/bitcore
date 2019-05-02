@@ -245,6 +245,7 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
     return testMessageSigning(xpriv, xpub);
   };
 
+  // TODO => Key refactor
   function testLiveKeys() {
     var words;
     try {
@@ -271,9 +272,9 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
     _deviceValidated = true;
   }
 
-  var liveOk = (c.canSign() && !c.isPrivKeyEncrypted()) ? testLiveKeys() : true;
-
-  self.keyDerivationOk = hardcodedOk && liveOk;
+  // TODO
+//  var liveOk = (c.canSign() && !c.isPrivKeyEncrypted()) ? testLiveKeys() : true;
+  self.keyDerivationOk = hardcodedOk; // && liveOk;
 
   return cb(null, self.keyDerivationOk);
 };
