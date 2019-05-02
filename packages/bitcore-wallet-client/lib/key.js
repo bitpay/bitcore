@@ -200,7 +200,6 @@ Key.prototype.decrypt = function(password) {
 
 Key.prototype.derive = function(password, path) {
   $.checkArgument(path, 'no path');
-
   var xPrivKey = new Bitcore.HDPrivateKey(this.get(password).xPrivKey,NETWORK);
   var deriveFn = this.compliantDerivation ? _.bind(xPrivKey.deriveChild, xPrivKey) : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
   return deriveFn(path);
@@ -294,10 +293,16 @@ Key.prototype.createCredentials = function(password, opts) {
 
 
 Key.prototype.sign = function(rootPath, txp, password) {
+  $.shouldBeString(rootPath);
+
+
+  if (this.isPrivKeyEncrypted() && !password) {
+    return cb(new Errors.ENCRYPTED_PRIVATE_KEY);
+  }
   var privs = [];
   var derived = {};
 
-  var derived = this.derive(rootPath, password);
+  var derived = this.derive(password, rootPath);
   var xpriv = new Bitcore.HDPrivateKey(derived);
 
   _.each(txp.inputs, function(i) {
