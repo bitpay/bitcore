@@ -674,39 +674,6 @@ API.getRawTx = function(txp) {
   return t.uncheckedSerialize();
 };
 
-API.signTxp = function(txp, derivedXPrivKey) {
-  //Derive proper key to sign, for each input
-  var privs = [];
-  var derived = {};
-
-  var xpriv = new Bitcore.HDPrivateKey(derivedXPrivKey);
-
-  _.each(txp.inputs, function(i) {
-    $.checkState(i.path, "Input derivation path not available (signing transaction)")
-    if (!derived[i.path]) {
-      derived[i.path] = xpriv.deriveChild(i.path).privateKey;
-      privs.push(derived[i.path]);
-    }
-  });
-
-  var t = Utils.buildTx(txp);
-
-  var signatures = _.map(privs, function(priv, i) { 
-    return t.getSignatures(priv);
-  });
-
-  signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
-    return s.signature.toDER().toString('hex');
-  });
-
-  return signatures;
-};
-
-//API.prototype._signTxp = function(txp, password) {
-//  var derived = this.credentials.getDerivedXPrivKey(password);
-//  return API.signTxp(txp, derived);
-//};
-
 API.prototype._getCurrentSignatures = function(txp) {
   var acceptedActions = _.filter(txp.actions, {
     type: 'accept'
