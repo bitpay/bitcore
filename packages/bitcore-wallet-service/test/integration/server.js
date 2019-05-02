@@ -408,6 +408,24 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should create wallet BCH if n == 1 and BWC version is lower than 8.3.0', function(done) {
+      var opts = {
+        coin: 'bch',
+        name: 'my wallet',
+        m: 1,
+        n: 1,
+        pubKey: TestData.keyPair.pub
+      };
+
+      server.clientVersion = 'bwc-8.2.0';
+
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(err);
+        should.exist(walletId);
+        done();
+      });
+    });
+
     it('should fail to create wallet with no name', function(done) {
       var opts = {
         name: '',
@@ -740,17 +758,19 @@ describe('Wallet service', function() {
           walletIdForBch = wId;
           should.exist(walletIdForBch);
 
-          var opts = {
+          var copayerOpts = helpers.getSignedCopayerOpts({
             coin: 'bch',
-            name: 'my wallet',
+            walletId: walletIdForBch,
+            name: 'me',
             m: 2,
             n: 3,
-            pubKey: TestData.keyPair.pub
-          };
+            xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+            requestPubKey: TestData.copayers[0].pubKey_1H_0
+          });
 
           serverForBch.clientVersion = 'bwc-8.2.0';
 
-          serverForBch.joinWallet(opts, function(err, result) {
+          serverForBch.joinWallet(copayerOpts, function(err, result) {
             should.not.exist(result);
             should.exist(err);
             err.message.should.contain('BWC clients < 8.3 are no longer supported for multisig BCH wallets.');
