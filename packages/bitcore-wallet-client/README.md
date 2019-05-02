@@ -58,6 +58,7 @@ client.createWallet("My Wallet", "Irene", 2, 2, {network: 'testnet'}, function(e
   };
   // Handle err
   console.log('Wallet Created. Share this secret with your copayers: ' + secret);
+  fs.writeFileSync('irene-secret.dat', ireneKeys.export());
   fs.writeFileSync('irene.dat', client.export());
 });
 ```
@@ -78,6 +79,7 @@ if (!secret) {
   process.exit(0);
 }
 
+var tomasKeys = Keys.create();
 var client = new Client({
   baseUrl: BWS_INSTANCE_URL,
   verbose: false,

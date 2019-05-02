@@ -233,8 +233,10 @@ Key.prototype.getBaseAddressDerivationPath = function(opts) {
     } else {
       coinCode = '0';
     }
+  } else if (opts.coin == 'btc') {
+    coinCode = '0';
   } else if (opts.coin == 'eth') {
-    coin = '60';
+    coinCode = '60';
   } else {
     throw new Error('unknown coin: ' + opts.coin);
   };
