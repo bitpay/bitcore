@@ -2008,7 +2008,7 @@ describe('client API', function() {
         });
       });
     });
-    it.skip('TODO: Should return UTXOs for specific addresses', function(done) {
+    it('Should return UTXOs for specific addresses', function(done) {
       async.map(_.range(3), function(i, next) {
         clients[0].createAddress(function(err, x) {
           should.not.exist(err);
@@ -2018,12 +2018,12 @@ describe('client API', function() {
         });
       }, function(err, addresses) {
         var opts = {
-          addresses: _.take(addresses, 2),
+          addresses: _.take(addresses, 1),
         };
         clients[0].getUtxos(opts, function(err, utxos) {
           should.not.exist(err);
-          utxos.length.should.equal(2);
-          _.sumBy(utxos, 'satoshis').should.equal(2 * 1e8);
+          utxos.length.should.equal(1);
+          _.sumBy(utxos, 'satoshis').should.equal(1 * 1e8);
           done();
         });
       });
@@ -3396,16 +3396,16 @@ console.log('[api.test.js.2499:err:]',err); // TODO
       });
 
 
-      it.skip('Should fail if requiredFeeRate is not meet', function(done) {
+      it('Should NOT fail if requiredFeeRate is not meet', function(done) {
         clients[0].getTxProposals({}, function(err, txps) {
           should.not.exist(err);
           let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, function(err, xx, paypro) {
             should.not.exist(err);
             xx.feePerKb/=2;
-            let signatures2 = keys[0].sign(clients[1].getRootPath(), xx);
+            let signatures2 = keys[1].sign(clients[1].getRootPath(), xx);
             clients[1].pushSignatures(xx, signatures2, function(err, yy, paypro) {
-              err.message.should.equal('Server response could not be verified.');
+              should.not.exist(err);
               done()
             });
           });
@@ -3799,8 +3799,8 @@ console.log('[api.test.js.2499:err:]',err); // TODO
       });
     });
 
-    it.skip('Send, reject actions in 2-3 wallet must have correct copayerNames', function(done) {
-      helpers.createAndJoinWallet( clients, keys, 2, 3, function(w) {
+    it('Send, reject actions in 2-3 wallet must have correct copayerNames', function(done) {
+      helpers.createAndJoinWallet( clients, keys, 2, 3, {}, function(w) {
         clients[0].createAddress(function(err, x0) {
           should.not.exist(err);
           blockchainExplorerMock.setUtxo(x0, 10, 2);
@@ -4307,85 +4307,58 @@ console.log('[api.test.js.2499:err:]',err); // TODO
           });
         });
 
-        it('should export & import', function() {
-          var exported = clients[0].export();
-
-          importedClient = helpers.newClient(app);
-          importedClient.import(exported);
-        });
-
-        it.skip('should export & import encrypted', function() {
-          clients[0].encryptPrivateKey('password');
-
-          var exported = clients[0].export();
-
-          importedClient = helpers.newClient(app);
-          importedClient.import(exported);
-
-          importedClient.isPrivKeyEncrypted().should.be.true;
-        });
-
-        it.skip('should export & import decrypted when password is supplied', function() {
-          clients[0].encryptPrivateKey('password');
-
-          var exported = clients[0].export({
-            password: 'password'
-          });
-
-          importedClient = helpers.newClient(app);
-          importedClient.import(exported);
-
-          importedClient.isPrivKeyEncrypted().should.be.false;
-          clients[0].isPrivKeyEncrypted().should.be.true;
-          should.not.exist(clients[0].xPrivKey);
-          should.not.exist(clients[0].mnemonic);
-        });
-
-        it.skip('should export & import with mnemonics + BWS', function(done) {
+       it('should export & import with mnemonics + BWS', function(done) {
           var c = clients[0].credentials;
           var walletId = c.walletId;
           var walletName = c.walletName;
           var copayerName = c.copayerName;
-          var key = c.xPrivKey;
+          var key = c.xPubKey;
 
-          var exported = clients[0].getMnemonic();
+          var exported = clients[0].export()
           importedClient = helpers.newClient(app);
-          importedClient.importFromMnemonic(exported, {
-            network: c.network,
-          }, function(err) {
-            var c2 = importedClient.credentials;
-            c2.xPrivKey.should.equal(key);
-            should.not.exist(err);
-            c2.walletId.should.equal(walletId);
-            c2.walletName.should.equal(walletName);
-            c2.copayerName.should.equal(copayerName);
-            done();
-          });
+          importedClient.import(exported);
+          var c2 = importedClient.credentials;
+          c2.xPubKey.should.equal(key);
+          c2.walletId.should.equal(walletId);
+          c2.walletName.should.equal(walletName);
+          c2.copayerName.should.equal(copayerName);
+
+          // Will check addresses on afterEach
+          done();
         });
 
-        it.skip('should export & import with xprivkey + BWS', function(done) {
+        it('should export & import from Key +  BWS', function(done) {
           var c = clients[0].credentials;
           var walletId = c.walletId;
           var walletName = c.walletName;
           var copayerName = c.copayerName;
           var network = c.network;
-          var key = c.xPrivKey;
+          var pub = c.xPubKey;
 
-          var exported = clients[0].getMnemonic();
           importedClient = helpers.newClient(app);
-          importedClient.importFromExtendedPrivateKey(key, function(err) {
-            var c2 = importedClient.credentials;
-            c2.xPrivKey.should.equal(key);
+          importedClient.import(
+            keys[0].createCredentials(null, {
+              coin:'btc',
+              network:'testnet',
+              account:0,
+              n:1,
+            })
+          );
+          var c2 = importedClient.credentials;
+          c2.xPubKey.should.equal(pub);
+          importedClient.openWallet((err) => {
             should.not.exist(err);
             c2.walletId.should.equal(walletId);
             c2.walletName.should.equal(walletName);
             c2.copayerName.should.equal(copayerName);
+
+            // Will check addresses on afterEach
             done();
           });
         });
       });
 
-      describe.skip('Non-compliant derivation', function() {
+      describe('Non-compliant derivation', function() {
         function setup(done) {
           clients[0].createWallet('mywallet', 'creator', 1, 1, {
             network: 'livenet'
@@ -4413,58 +4386,77 @@ console.log('[api.test.js.2499:err:]',err); // TODO
           });
         });
         it('should export & import with mnemonics + BWS', function(done) {
-          clients[0].seedFromMnemonic('pink net pet stove boy receive task nephew book spawn pull regret', {
-            network: 'livenet',
+          let k = Key.fromMnemonic('pink net pet stove boy receive task nephew book spawn pull regret', {
             nonCompliantDerivation: true,
           });
-          clients[0].credentials.xPrivKey.toString().should.equal('xprv9s21ZrQH143K3E71Wm5nrxuMdqCTMG6AM5Xyp4dJ3ZkUj2gEpfifT5Hc1cfqnycKooRpzoH4gjmAKDmGGaH2k2cSe29EcQSarveq6STBZZW');
+
+          clients[0].import(
+            k.createCredentials(null, {
+              coin: 'btc',
+              network: 'livenet',
+              account: 0,
+              n:1,
+            })
+          );
+
+          k.get().xPrivKey.should.equal('xprv9s21ZrQH143K3E71Wm5nrxuMdqCTMG6AM5Xyp4dJ3ZkUj2gEpfifT5Hc1cfqnycKooRpzoH4gjmAKDmGGaH2k2cSe29EcQSarveq6STBZZW');
           clients[0].credentials.xPubKey.toString().should.equal('xpub6CLj2x8T5zwngq3Uq42PbXbAXnyaUtsANEZaBjAPNBn5PbhSJM29DM5nhrdJDNpEy9X3n5sQhk6CNA7PKTp48Xvq3QFdiYAXAcaWEJ6Xmug');
           setup(function() {
             importedClient = helpers.newClient(app);
-            var spy = sinon.spy(importedClient, 'openWallet');
-            importedClient.importFromMnemonic(clients[0].getMnemonic(), {
-              network: 'livenet',
-            }, function(err) {
+            let k2 = Key.fromMnemonic('pink net pet stove boy receive task nephew book spawn pull regret', {
+              nonCompliantDerivation: true,
+            });
+            importedClient.import(
+              k2.createCredentials(null, {
+                coin:'btc',
+                network:'livenet',
+                account:0,
+                n:1,
+              })
+            );
+            importedClient.openWallet(function(err) {
               should.not.exist(err);
-              spy.getCalls().length.should.equal(2);
               done();
             });
           });
         });
 
         it('should check BWS once if specific derivation is not problematic', function(done) {
-          clients[0].seedFromMnemonic('relax about label gentle insect cross summer helmet come price elephant seek', {
-            network: 'livenet',
-          });
-          importedClient = helpers.newClient(app);
-          var spy = sinon.spy(importedClient, 'openWallet');
-          importedClient.importFromMnemonic(clients[0].getMnemonic(), {
-            network: 'livenet',
-          }, function(err) {
-            should.exist(err);
-            err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
-            spy.getCalls().length.should.equal(1);
-            importedClient = null;
-            done();
-          });
-        });
-        it('should export & import with xprivkey + BWS', function(done) {
-          clients[0].seedFromMnemonic('relax about label gentle insect cross summer helmet come price elephant seek', {
-            network: 'livenet',
-          });
-          importedClient = helpers.newClient(app);
-          var spy = sinon.spy(importedClient, 'openWallet');
-          importedClient.importFromExtendedPrivateKey(clients[0].getKeys().xPrivKey, {
-            network: 'livenet',
-          }, function(err) {
-            should.exist(err);
-            err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
-            spy.getCalls().length.should.equal(1);
-            importedClient = null;
-            done();
-          });
-        });
 
+          // this key derivation is equal for compliant and non-compliant
+          let k = Key.fromMnemonic('relax about label gentle insect cross summer helmet come price elephant seek',{
+            nonCompliantDerivation: true,
+          });
+
+          clients[0].import(
+            k.createCredentials(null, {
+              coin: 'btc',
+              network: 'livenet',
+              account: 0,
+              n:1,
+            })
+          );
+
+          // no setup.
+          importedClient = helpers.newClient(app);
+          importedClient.import(
+            k.createCredentials(null, {
+              coin: 'btc',
+              network: 'livenet',
+              account: 0,
+              n:1,
+            })
+          );
+
+          var spy = sinon.spy(importedClient, 'openWallet');
+          importedClient.openWallet(function(err) {
+            should.exist(err);
+            err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
+            spy.getCalls().length.should.equal(1);
+            importedClient = null;
+            done();
+          });
+        });
       });
     });
 
@@ -4475,80 +4467,25 @@ console.log('[api.test.js.2499:err:]',err); // TODO
           done();
         });
       });
-      it.skip('should validate key derivation', function(done) {
+      it('should validate key derivation (fail)', function(done) {
+        let x  = Utils.signMessage;
+        Utils.signMessage = () => {
+          return 'xxxx';
+        };
+        clients[0].validateKeyDerivation({}, function(err, isValid) {
+          should.not.exist(err);
+          isValid.should.be.false;
+          clients[0].keyDerivationOk.should.be.false;
+          Utils.signMessage = x;
+          done();
+        });
+      });
+
+      it('should validate key derivation', function(done) {
         clients[0].validateKeyDerivation({}, function(err, isValid) {
           should.not.exist(err);
           isValid.should.be.true;
           clients[0].keyDerivationOk.should.be.true;
-
-          var exported = JSON.parse(clients[0].export());
-
-          // Tamper export with a wrong xpub
-          exported.xPubKey = 'tpubD6NzVbkrYhZ4XJEQQWBgysPKJcBv8zLhHpfhcw4RyhakMxmffNRRRFDUe1Zh7fxvjt1FdNJcaxHgqxyKLL8XiZug7C8KJFLFtGfPVBcY6Nb';
-
-          var importedClient = helpers.newClient(app);
-          should.not.exist(importedClient.keyDerivationOk);
-
-          importedClient.import(JSON.stringify(exported));
-          importedClient.validateKeyDerivation({}, function(err, isValid) {
-            should.not.exist(err);
-            isValid.should.be.false;
-            importedClient.keyDerivationOk.should.be.false;
-            done();
-          });
-        });
-      });
-    });
-
-    describe('Mnemonic related tests', function() {
-      var importedClient;
-
-      it('should import with mnemonics livenet', function(done) {
-        var client = helpers.newClient(app);
-        client.seedFromRandomWithMnemonic();
-        var exported = client.getMnemonic();
-        client.createWallet('mywallet', 'creator', 1, 1, {
-          network: 'livenet'
-        }, function(err) {
-          should.not.exist(err);
-          var c = client.credentials;
-          importedClient = helpers.newClient(app);
-          importedClient.importFromMnemonic(exported, {}, function(err) {
-            should.not.exist(err);
-            var c2 = importedClient.credentials;
-            c2.network.should.equal('livenet');
-            c2.xPubKey.should.equal(client.credentials.xPubKey);
-            c2.personalEncryptingKey.should.equal(c.personalEncryptingKey);
-            c2.walletId.should.equal(c.walletId);
-            c2.walletName.should.equal(c.walletName);
-            c2.copayerName.should.equal(c.copayerName);
-            done();
-          });
-        });
-      });
-      // Generated with https://dcpos.github.io/bip39/
-      it('should fail to import from words if not at BWS', function(done) {
-        var exported = 'bounce tonight little spy earn void nominee ankle walk ten type update';
-        importedClient = helpers.newClient(app);
-        importedClient.importFromMnemonic(exported, {
-          network: 'testnet',
-        }, function(err) {
-          err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
-          importedClient.mnemonicHasPassphrase().should.equal(false);
-          importedClient.credentials.xPrivKey.should.equal('tprv8ZgxMBicQKsPdTYGTn3cPvTJJuuKHCYbfH1fbu4ceZ5tzYrcjYMKY1JfZiEFDDpEXWquSpX6jRsEoVPoaSw82tQ1Wn1U3K1bQDZBj3UGuEG');
-          done();
-        });
-      });
-      it('should fail to import from words if not at BWS, with passphrase', function(done) {
-        var exported = 'bounce tonight little spy earn void nominee ankle walk ten type update';
-        importedClient = helpers.newClient(app);
-        importedClient.importFromMnemonic(exported, {
-          network: 'testnet',
-          passphrase: 'hola',
-        }, function(err) {
-          err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
-          importedClient.mnemonicHasPassphrase().should.equal(true);
-          importedClient.credentials.xPrivKey.should.equal('tprv8ZgxMBicQKsPdVijVxEu7gVDi86PUZqbCe7xTGLwVXwZpsG3HuxLDjXL3DXRSaaNymMD7gRpXimxnUDYa5N7pLTKLQymdSotrb4co7Nwrs7');
           done();
         });
       });
@@ -4567,7 +4504,7 @@ console.log('[api.test.js.2499:err:]',err); // TODO
 
       it('should be able to gain access to a 1-1 wallet with just the xPriv', function(done) {
         helpers.createAndJoinWallet( clients, keys, 1, 1, {}, function() {
-          var xpriv = clients[0].credentials.xPrivKey;
+          var xpriv = keys[0].get().xPrivKey;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
 
@@ -4576,7 +4513,15 @@ console.log('[api.test.js.2499:err:]',err); // TODO
             should.exist(addr);
 
             var recoveryClient = helpers.newClient(app);
-            recoveryClient.seedFromExtendedPrivateKey(xpriv);
+            let k = Key.fromExtendedPrivateKey(xpriv);
+            recoveryClient.import(
+              k.createCredentials(null, {
+                coin: 'btc',
+                network: 'testnet',
+                account: 0,
+                n:1,
+              })
+            );
             recoveryClient.openWallet(function(err) {
               should.not.exist(err);
               recoveryClient.credentials.walletName.should.equal(walletName);
@@ -4594,7 +4539,7 @@ console.log('[api.test.js.2499:err:]',err); // TODO
 
       it('should be able to see txp messages after gaining access', function(done) {
         helpers.createAndJoinWallet( clients, keys, 1, 1, {}, function() {
-          var xpriv = clients[0].credentials.xPrivKey;
+          var xpriv = keys[0].get().xPrivKey;
           var walletName = clients[0].credentials.walletName;
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
@@ -4608,7 +4553,16 @@ console.log('[api.test.js.2499:err:]',err); // TODO
             helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
               should.not.exist(err);
               var recoveryClient = helpers.newClient(app);
-              recoveryClient.seedFromExtendedPrivateKey(xpriv);
+              let k = Key.fromExtendedPrivateKey(xpriv);
+              recoveryClient.import(
+                k.createCredentials(null, {
+                  coin: 'btc',
+                  network: 'testnet',
+                  account: 0,
+                  n:1,
+                })
+              );
+
               recoveryClient.openWallet(function(err) {
                 should.not.exist(err);
                 recoveryClient.credentials.walletName.should.equal(walletName);
@@ -4801,11 +4755,17 @@ console.log('[api.test.js.2499:err:]',err); // TODO
         });
       });
 
-      it('should be able to recreate 1-of-1 wallet with external key (m/48) account 2', function(done) {
-        clients[0].seedFromExtendedPublicKey('tprv8ZgxMBicQKsPdeZR4tV14PAJmzrWGsmafRVaHXUVYezrSbtnFM1CnqdbQuXfmSLxwr71axKewd3LTRDcQmtttUnZe27TQoGmGMeddv1H9JQ', 'ledger', 'b0937662dddea83b0ce037ff3991dd', {
-          account: 2,
-          derivationStrategy: 'BIP48',
-        });
+      it('should be able to recreate 1-of-1 wallet with account 2', function(done) {
+        let k = Key.fromExtendedPrivateKey('tprv8ZgxMBicQKsPdeZR4tV14PAJmzrWGsmafRVaHXUVYezrSbtnFM1CnqdbQuXfmSLxwr71axKewd3LTRDcQmtttUnZe27TQoGmGMeddv1H9JQ');
+        clients[0].import(
+          k.createCredentials(null, {
+            coin: 'btc',
+            network: 'testnet',
+            account: 2,
+            n: 1,
+          })
+        );
+
         clients[0].createWallet('mywallet', 'creator', 1, 1, {
           network: 'testnet'
         }, function(err, secret) {
@@ -4831,8 +4791,8 @@ console.log('[api.test.js.2499:err:]',err); // TODO
               var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
               var recoveryClient = helpers.newClient(newApp);
               recoveryClient.import(clients[0].export());
-              recoveryClient.credentials.derivationStrategy.should.equal('BIP48');
               recoveryClient.credentials.account.should.equal(2);
+              recoveryClient.credentials.rootPath.should.equal('m/44\'/1\'/2\'');
               recoveryClient.getStatus({}, function(err, status) {
                 should.exist(err);
                 err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
