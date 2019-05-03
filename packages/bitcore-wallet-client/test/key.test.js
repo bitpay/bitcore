@@ -435,6 +435,53 @@ describe('Key', function() {
       c2.xPrivKey.should.equal(c.xPrivKey);
     });
   });
+
+
+  describe('from/toObj', () =>{
+    it('should export & import', function() {
+      var c = Key.create();
+
+      var exported = c.toObj();
+      let imported = Key.fromObj(exported);
+      imported.get().xPrivKey.should.equal(c.get().xPrivKey);
+      imported.get(false,true).mnemonic.should.equal(c.get(false,true).mnemonic);
+    });
+
+    it('should export & import encrypted and fail if password not supplied', function() {
+      let c = Key.create();
+      let x=c.get().xPrivKey;
+
+      c.encrypt('pepe');
+
+      var exported = c.toObj();
+      let imported = Key.fromObj(exported);
+      (()=>{
+        imported.get().xPrivKey.should.equal(x);
+      }).should.throw('encrypted');
+
+      should.not.exist(imported.xPrivKey);
+      should.not.exist(imported.mnemonic);
+      should.exist(imported.xPrivKeyEncrypted);
+      should.exist(imported.mnemonicEncrypted);
+    });
+    it('should export & import encrypted and restore if password supplied', function() {
+      var c = Key.create();
+      let x=c.get().xPrivKey;
+      let m=c.get(null, true).mnemonic;
+
+      c.encrypt('pepe');
+
+      var exported = c.toObj();
+      let imported = Key.fromObj(exported);
+      imported.get('pepe').xPrivKey.should.equal(x);
+      imported.get('pepe',true).mnemonic.should.equal(m);
+
+      should.not.exist(imported.xPrivKey);
+      should.not.exist(imported.mnemonic);
+      should.exist(imported.xPrivKeyEncrypted);
+      should.exist(imported.mnemonicEncrypted);
+    });
+  });
 });
 
 

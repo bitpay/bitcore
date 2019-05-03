@@ -245,7 +245,7 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
     return testMessageSigning(xpriv, xpub);
   };
 
-  // TODO => Key refactor
+  // TODO => Key refactor to Key class.
   function testLiveKeys() {
     var words;
     try {
@@ -283,26 +283,17 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
  * Export wallet
  *
  * @param {Object} opts
- * @param {Boolean} opts.password
- * @param {Boolean} opts.noSign
  */
 API.prototype.export = function(opts) {
   $.checkState(this.credentials);
+  $.checkArgument(!this.noSign, 'no Sign not supported');
 
   opts = opts || {};
 
   var output;
 
   var c = Credentials.fromObj(this.credentials);
-
-  if (opts.noSign) {
-    c.setNoSign();
-  } else if (opts.password) {
-    c.decryptPrivateKey(opts.password);
-  }
-
   output = JSON.stringify(c.toObj());
-
   return output;
 };
 
@@ -319,7 +310,7 @@ API.prototype.import = function(credentials) {
     }
     this.credentials = credentials;
   } catch (ex) {
-console.log('[api.js.334:ex:]',ex); // TODO
+    log.warn(`Error importing wallet: ${ex}`);
     throw new Errors.INVALID_BACKUP;
   }
   this.request.setCredentials(this.credentials);
@@ -855,26 +846,6 @@ API._extractPublicKeyRing = function(copayers) {
     pkr.copayerName = copayer.name;
     return pkr;
   });
-};
-
-/**
- * sets up encryption for the extended private key
- *
- * @param {String} password Password used to encrypt
- * @param {Object} opts optional: SJCL options to encrypt (.iter, .salt, etc).
- * @return {undefined}
- */
-API.prototype.encryptPrivateKey = function(password, opts) {
-  this.credentials.encryptPrivateKey(password, opts || API.privateKeyEncryptionOpts);
-};
-
-/**
- * disables encryption for private key.
- *
- * @param {String} password Password used to encrypt
- */
-API.prototype.decryptPrivateKey = function(password) {
-  return this.credentials.decryptPrivateKey(password);
 };
 
 /**

@@ -257,7 +257,7 @@ Key.prototype.createCredentials = function(password, opts) {
   opts = opts || {};
 
   if (password) 
-    $.shouldBeString(password);
+    $.shouldBeString(password, 'provide password');
 
   _checkCoin(opts.coin);
   _checkNetwork(opts.network);
@@ -265,7 +265,6 @@ Key.prototype.createCredentials = function(password, opts) {
   $.shouldBeNumber(opts.n, 'Invalid n');
 
   let path = this.getBaseAddressDerivationPath(opts);
-
   let xPrivKey = this.derive(password, path);
   let requestPrivKey = this.derive(password, Constants.PATHS.REQUEST_KEY).privateKey.toString();
 
