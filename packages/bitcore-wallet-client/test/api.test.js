@@ -4825,22 +4825,27 @@ console.log('[api.test.js.2499:err:]',err); // TODO
     });
 
     it('should be able to restore a  useLegacyCoinType wallet', function(done) {
+      this.timeout(5000);
 
       var check = function(x) {
-        x.credentials.getBaseAddressDerivationPath().should.equal('m/44\'/0\'/0\'');
-        x.credentials.xPrivKey.toString().should.equal('xprv9s21ZrQH143K3E71Wm5nrxuMdqCTMG6AM5Xyp4dJ3ZkUj2gEpfifT5Hc1cfqnycKooRpzoH4gjmAKDmGGaH2k2cSe29EcQSarveq6STBZZW');
+        x.credentials.rootPath.should.equal('m/44\'/0\'/0\'');
         x.credentials.xPubKey.toString().should.equal('xpub6DJEsBSYZrjsrHssifihdekpoWcKRHR6WVfbyk6Hhq1HxZSDoyEvT2pMHmSnNKEvdQNmfVqn1Ef1yWgYcrnhc3mSegUCbMvVJCPLYJ1PNen');
       };
 
       var m = 'pink net pet stove boy receive task nephew book spawn pull regret';
       // first create a "old" bch wallet (coin = 0).
-      clients[0].seedFromMnemonic(m, {
-        network: 'livenet',
-        coin: 'bch',
-        useLegacyCoinType: 'true',
+      //
+      let k = Key.fromMnemonic(m,{
+        useLegacyCoinType: true
       });
-      check(clients[0]);
-
+      clients[0].import(
+        k.createCredentials(null, {
+          coin: 'bch',
+          network: 'livenet',
+          account: 0,
+          n: 1,
+        })
+      );
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         coin: 'bch',
         network: 'livenet',
@@ -4850,11 +4855,16 @@ console.log('[api.test.js.2499:err:]',err); // TODO
           should.not.exist(err);
           address = x.address;
           var importedClient = helpers.newClient(app);
+          importedClient.import(
+            k.createCredentials(null, {
+              coin: 'bch',
+              network: 'livenet',
+              account: 0,
+              n: 1,
+            })
+          );
           var spy = sinon.spy(importedClient, 'openWallet');
-          importedClient.importFromMnemonic(clients[0].getMnemonic(), {
-            network: 'livenet',
-            coin: 'bch',
-          }, function(err) {
+          importedClient.openWallet(function(err) {
             should.not.exist(err);
             check(importedClient);
             importedClient.getMainAddresses({}, function(err, x) {

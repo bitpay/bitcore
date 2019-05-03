@@ -264,6 +264,9 @@ Key.prototype.createCredentials = function(password, opts) {
   $.shouldBeNumber(opts.account, 'Invalid account');
   $.shouldBeNumber(opts.n, 'Invalid n');
 
+  $.shouldBeUndefined(opts.useLegacyCoinType);
+  $.shouldBeUndefined(opts.useLegacyPurpose);
+
   let path = this.getBaseAddressDerivationPath(opts);
   let xPrivKey = this.derive(password, path);
   let requestPrivKey = this.derive(password, Constants.PATHS.REQUEST_KEY).privateKey.toString();
