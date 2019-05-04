@@ -199,7 +199,7 @@ Key.prototype.decrypt = function(password) {
 
 
 Key.prototype.derive = function(password, path) {
-  $.checkArgument(path, 'no path');
+  $.checkArgument(path, 'no path at derive()');
   var xPrivKey = new Bitcore.HDPrivateKey(this.get(password).xPrivKey,NETWORK);
   var deriveFn = this.compliantDerivation ? _.bind(xPrivKey.deriveChild, xPrivKey) : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
   return deriveFn(path);
@@ -295,6 +295,28 @@ Key.prototype.createCredentials = function(password, opts) {
   });
 };
 
+/*
+ * opts
+ * opts.path
+ * opts.requestPrivKey
+ */
+
+Key.prototype.createAccess = function(password, opts) {
+  opts = opts || {};
+  $.shouldBeString(opts.path);
+
+  var requestPrivKey = new Bitcore.PrivateKey(opts.requestPrivKey || null);
+  var requestPubKey = requestPrivKey.toPublicKey().toString();
+
+  var xPriv =  this.derive(password, opts.path);
+  var signature = Utils.signRequestPubKey(requestPubKey, xPriv);
+  requestPrivKey = requestPrivKey.toString();
+
+  return {
+    signature,
+    requestPrivKey,
+  };
+};
 
 Key.prototype.sign = function(rootPath, txp, password) {
   $.shouldBeString(rootPath);

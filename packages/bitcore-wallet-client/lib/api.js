@@ -1613,6 +1613,7 @@ API.prototype.pushSignatures = function(txp, signatures, cb) {
  * @return {Object} txp - Return transaction
  */
 API.prototype.signTxProposalFromAirGapped = function(txp, encryptedPkr, m, n, password) {
+  throw new Error('signTxProposalFromAirGapped not yet implemented in v9.0.0');
   $.checkState(this.credentials);
 
   var self = this;
@@ -1915,10 +1916,13 @@ API.prototype.startScan = function(opts, cb) {
   });
 };
 
+
+
 /**
  * Adds access to the current copayer
  * @param {Object} opts
- * @param {bool} opts.generateNewKey Optional: generate a new key for the new access
+ * @param {bool} opts.reqPrivKey
+ * @param {bool} opts.signature of the private key, from master key.
  * @param {string} opts.restrictions
  *    - cannotProposeTXs
  *    - cannotXXX TODO
@@ -1927,31 +1931,30 @@ API.prototype.startScan = function(opts, cb) {
  * return the accesses Wallet and the requestPrivateKey
  */
 API.prototype.addAccess = function(opts, cb) {
-  $.checkState(this.credentials && this.credentials.canSign());
+  $.checkState(this.credentials);
+  $.shouldBeString(opts.requestPrivKey, 'no requestPrivKey at addAccess() ');
+  $.shouldBeString(opts.signature, 'no signature at addAccess()');
+
+  var self = this;
 
   opts = opts || {};
-
-  var reqPrivKey = new Bitcore.PrivateKey(opts.generateNewKey ? null : this.credentials.requestPrivKey);
-  var requestPubKey = reqPrivKey.toPublicKey().toString();
-
-  var xPriv = new Bitcore.HDPrivateKey(this.credentials.xPrivKey)
-    .deriveChild(this.credentials.getBaseAddressDerivationPath());
-  var sig = Utils.signRequestPubKey(requestPubKey, xPriv);
+  var requestPubKey = (new Bitcore.PrivateKey(opts.requestPrivKey)).toPublicKey().toString();
   var copayerId = this.credentials.copayerId;
-
   var encCopayerName = opts.name ? Utils.encryptMessage(opts.name, this.credentials.sharedEncryptingKey) : null;
 
-  var opts = {
+  var opts2 = {
     copayerId: copayerId,
     requestPubKey: requestPubKey,
-    signature: sig,
+    signature: opts.signature,
     name: encCopayerName,
     restrictions: opts.restrictions,
   };
 
-  this.request.put('/v1/copayers/' + copayerId + '/', opts, function(err, res) {
+  this.request.put('/v1/copayers/' + copayerId + '/', opts2, function(err, res) {
     if (err) return cb(err);
-    return cb(null, res.wallet, reqPrivKey);
+    // Do not set the key. Return it (for compatibility)
+    //self.credentials.requestPrivKey = opts.requestPrivKey;
+    return cb(null, res.wallet, opts.requestPrivKey);
   });
 };
 
