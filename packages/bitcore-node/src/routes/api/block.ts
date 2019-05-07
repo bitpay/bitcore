@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { IBlock } from '../../types/Block';
 import { SetCache, CacheTimes } from '../middleware';
+import { BlockStorage } from '../../models/block';
 const router = require('express').Router({ mergeParams: true });
 
 router.get('/', async function(req: Request, res: Response) {
@@ -39,6 +40,34 @@ router.get('/:blockId', async function(req: Request, res: Response) {
   let { blockId, chain, network } = req.params;
   try {
     let block = await ChainStateProvider.getBlock({ chain, network, blockId });
+    if (!block) {
+      return res.status(404).send('block not found');
+    }
+    const tip = await ChainStateProvider.getLocalTip({ chain, network });
+    if (block && tip.height - (<IBlock>block).height > 100) {
+      SetCache(res, CacheTimes.Month);
+    }
+    return res.json(block);
+  } catch (err) {
+    return res.status(500).send(err);
+  }
+});
+
+router.get('at-time/:time', async function(req: Request, res: Response) {
+  let { time, chain, network } = req.params;
+  try {
+    const [block] = await BlockStorage.collection
+      .find({
+        $query: {
+          chain,
+          network,
+          timeNormalized: { $lte: new Date(time) }
+        }
+      })
+      .limit(1)
+      .sort({ timeNormalized: -1 })
+      .toArray();
+
     if (!block) {
       return res.status(404).send('block not found');
     }
