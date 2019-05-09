@@ -109,8 +109,8 @@ export class RPC {
     return this.asyncCall('estimatesmartfee', [target]);
   }
 
-  async getEstimateFee(target: number) {
-    return this.asyncCall('estimatefee', [target]);
+  async getEstimateFee() {
+    return this.asyncCall('estimatefee', []);
   }
 }
 
