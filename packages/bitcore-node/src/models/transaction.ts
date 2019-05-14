@@ -121,7 +121,12 @@ export class TransactionModel extends BaseModel<ITransaction> {
   }) {
     const mintOps = await this.getMintOps(params);
     const spendOps = this.getSpendOps({ ...params, mintOps });
-    await this.pruneMempool({ ...params, mintOps, spendOps });
+    await this.pruneMempool({
+      chain: params.chain,
+      network: params.network,
+      initialSyncComplete: params.initialSyncComplete,
+      spendOps
+    });
 
     logger.debug('Minting Coins', mintOps.length);
     if (mintOps.length) {
@@ -475,22 +480,16 @@ export class TransactionModel extends BaseModel<ITransaction> {
   }
 
   async pruneMempool(params: {
-    txs: Array<Bitcoin.Transaction>;
-    height: number;
-    parentChain?: string;
-    forkHeight?: number;
     chain: string;
     network: string;
-    mintOps: Array<MintOp>;
     spendOps: Array<SpendOp>;
     initialSyncComplete: boolean;
-    [rest: string]: any;
   }) {
     const { chain, network, spendOps, initialSyncComplete } = params;
     if (!initialSyncComplete || !spendOps.length) {
       return;
     }
-    let prunedTxs = {};
+    let prunedTxs = new Set();
     for (const spendOp of spendOps) {
       let coin = await CoinStorage.collection.findOne(
         {
@@ -503,24 +502,21 @@ export class TransactionModel extends BaseModel<ITransaction> {
         },
         { projection: { spentTxid: 1 } }
       );
-      if (coin) {
-        prunedTxs[coin.spentTxid] = true;
+      if (coin && !prunedTxs.has(coin.spentTxid)) {
+        prunedTxs.add(coin.spentTxid);
+        await Promise.all([
+          this.collection.update(
+            { txid: coin.spentTxid },
+            { $set: { blockHeight: SpentHeightIndicators.conflicting } },
+            { multi: true }
+          ),
+          CoinStorage.collection.update(
+            { mintTxid: coin.spentTxid },
+            { $set: { mintHeight: SpentHeightIndicators.conflicting } },
+            { multi: true }
+          )
+        ]);
       }
-    }
-    if (Object.keys(prunedTxs).length) {
-      prunedTxs = Object.keys(prunedTxs);
-      await Promise.all([
-        this.collection.update(
-          { txid: { $in: prunedTxs } },
-          { $set: { blockHeight: SpentHeightIndicators.conflicting } },
-          { w: 0, j: false, multi: true }
-        ),
-        CoinStorage.collection.update(
-          { mintTxid: { $in: prunedTxs } },
-          { $set: { mintHeight: SpentHeightIndicators.conflicting } },
-          { w: 0, j: false, multi: true }
-        )
-      ]);
     }
     return;
   }
