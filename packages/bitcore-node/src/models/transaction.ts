@@ -508,12 +508,12 @@ export class TransactionModel extends BaseModel<ITransaction> {
           this.collection.update(
             { txid: coin.spentTxid },
             { $set: { blockHeight: SpentHeightIndicators.conflicting } },
-            { w: 0, j: false, multi: true }
+            { multi: true }
           ),
           CoinStorage.collection.update(
             { mintTxid: coin.spentTxid },
             { $set: { mintHeight: SpentHeightIndicators.conflicting } },
-            { w: 0, j: false, multi: true }
+            { multi: true }
           )
         ]);
       }
