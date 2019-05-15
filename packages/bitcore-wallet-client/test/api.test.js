@@ -4386,6 +4386,20 @@ console.log('[api.test.js.2499:err:]',err); // TODO
             done();
           });
         });
+
+/*
+          k.get().xPrivKey.should.equal('xprv9s21ZrQH143K3E71Wm5nrxuMdqCTMG6AM5Xyp4dJ3ZkUj2gEpfifT5Hc1cfqnycKooRpzoH4gjmAKDmGGaH2k2cSe29EcQSarveq6STBZZW');
+          clients[0].credentials.xPubKey.toString().should.equal('xpub6CLj2x8T5zwngq3Uq42PbXbAXnyaUtsANEZaBjAPNBn5PbhSJM29DM5nhrdJDNpEy9X3n5sQhk6CNA7PKTp48Xvq3QFdiYAXAcaWEJ6Xmug');
+          setup(function() {
+            let k2 = Key.fromMnemonicAndServer('pink net pet stove boy receive task nephew book spawn pull regret', { client: helpers.newClient(app)}, (err, clients) => {
+              should.not.exist(err);
+              clients.length.should.equal(1);
+              importedClient = clients[0];
+              importedClient.openWallet(function(err) {
+                should.not.exist(err);
+                done();
+              });
+*/
         it('should export & import with mnemonics + BWS', function(done) {
           let k = Key.fromMnemonic('pink net pet stove boy receive task nephew book spawn pull regret', {
             nonCompliantDerivation: true,
@@ -4498,6 +4512,37 @@ console.log('[api.test.js.2499:err:]',err); // TODO
         helpers.newDb(2,(err,in_db) => {
           db2 = in_db;
           return done(err);
+        });
+      });
+
+      it.only('should be able to gain access to a 1-1 wallet from mnemonic', function(done) {
+        helpers.createAndJoinWallet( clients, keys, 1, 1, {}, function() {
+          var words = keys[0].get(null,true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          clients[0].createAddress(function(err, addr) {
+            should.not.exist(err);
+            should.exist(addr);
+            let k2 = Key.fromMnemonicAndServer(words, { 
+              clientFactory: () => { 
+                return helpers.newClient(app) 
+              }}, (err, c) => {
+              should.not.exist(err);
+              c.length.should.equal(1);
+              let recoveryClient = c[0];
+              recoveryClient.openWallet(function(err) {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.getMainAddresses({}, function(err, list) {
+                  should.not.exist(err);
+                  should.exist(list);
+                  list[0].address.should.equal(addr.address);
+                  done();
+                });
+              });
+            });
+          });
         });
       });
 
@@ -5605,6 +5650,7 @@ console.log('[api.test.js.2499:err:]',err); // TODO
         var client = new Client();
         var mnemonicWords = 'this is an invalid mnemonic';
         client.importFromMnemonic(mnemonicWords, {}, function(err) {
+console.log('[api.test.js.5606:err:]',err); // TODO
           should.exist(err);
           err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
           done();
