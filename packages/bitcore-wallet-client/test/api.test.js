@@ -4523,7 +4523,7 @@ console.log('[api.test.js.2499:err:]',err); // TODO
           clients[0].createAddress(function(err, addr) {
             should.not.exist(err);
             should.exist(addr);
-            let k2 = Key.fromMnemonicAndServer(words, { 
+            let k2 = Key.import({words}, { 
               clientFactory: () => { 
                 return helpers.newClient(app) 
               }}, (err, c) => {
@@ -4546,37 +4546,31 @@ console.log('[api.test.js.2499:err:]',err); // TODO
         });
       });
 
-
-
-      it('should be able to gain access to a 1-1 wallet with just the xPriv', function(done) {
+      it.only('should be able to gain access to a 1-1 wallet with just the xPriv', function(done) {
         helpers.createAndJoinWallet( clients, keys, 1, 1, {}, function() {
-          var xpriv = keys[0].get().xPrivKey;
+          var xPrivKey = keys[0].get(null,true).xPrivKey;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
-
           clients[0].createAddress(function(err, addr) {
             should.not.exist(err);
             should.exist(addr);
-
-            var recoveryClient = helpers.newClient(app);
-            let k = Key.fromExtendedPrivateKey(xpriv);
-            recoveryClient.import(
-              k.createCredentials(null, {
-                coin: 'btc',
-                network: 'testnet',
-                account: 0,
-                n:1,
-              })
-            );
-            recoveryClient.openWallet(function(err) {
+            let k2 = Key.import({xPrivKey}, { 
+              clientFactory: () => { 
+                return helpers.newClient(app) 
+              }}, (err, c) => {
               should.not.exist(err);
-              recoveryClient.credentials.walletName.should.equal(walletName);
-              recoveryClient.credentials.copayerName.should.equal(copayerName);
-              recoveryClient.getMainAddresses({}, function(err, list) {
+              c.length.should.equal(1);
+              let recoveryClient = c[0];
+              recoveryClient.openWallet(function(err) {
                 should.not.exist(err);
-                should.exist(list);
-                list[0].address.should.equal(addr.address);
-                done();
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.getMainAddresses({}, function(err, list) {
+                  should.not.exist(err);
+                  should.exist(list);
+                  list[0].address.should.equal(addr.address);
+                  done();
+                });
               });
             });
           });

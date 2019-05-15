@@ -365,8 +365,11 @@ Key.prototype.sign = function(rootPath, txp, password) {
 // Returns { key, clients[] }
 //
 // TODO: name
-Key.fromMnemonicAndServer = (words, clientOpts, cb) => {
+Key.import = (opts, clientOpts, cb) => {
   var self = this;
+
+  $.checkArgument(opts.words || opts.xPrivKey, "provide opts.words or opts.xPrivKey");
+
   let copayerIdAlreadyTested = {};
 
 
@@ -516,7 +519,11 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
   let s= sets.shift(), cont=true, k;
   async.whilst(() => {
     if (!s) return false;
-    k  = Key.fromMnemonic(words, s);
+    if (opts.words) { 
+      k  = Key.fromMnemonic(opts.words, s);
+    } else {
+      k  = Key.fromExtendedPrivateKey(opts.xPrivKey, s);
+    }
     s = sets.shift();
     return cont;
   }, (icb) => {
