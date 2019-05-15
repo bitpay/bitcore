@@ -304,6 +304,10 @@ API.prototype.export = function(opts) {
  * @param {Object} str - The serialized JSON created with #export
  */
 API.prototype.import = function(credentials) {
+
+
+console.log('[api.js.308] TODO check credentials VERSION'); // TODO
+  // TODO check credentials VERSION
   try {
     if ( !_.isObject(credentials) || ! credentials.xPubKey) {
       credentials = Credentials.fromObj(JSON.parse(credentials));
@@ -360,6 +364,8 @@ API.prototype.open = function(cb) {
  * @param {String} opts.walletPrivKey - if available, walletPrivKey for encrypting metadata
  */
 API.prototype.importFromMnemonic = function(words, opts, cb) {
+  $.checkState(false, 'not supported');
+
   log.debug('Importing from Mnemonic');
 
   var self = this;
@@ -427,6 +433,7 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
  * @param {Callback} cb - The callback that handles the response. It returns a flag indicating that the wallet is imported.
  */
 API.prototype.importFromExtendedPrivateKey = function(xPrivKey, opts, cb) {
+  $.checkState(false, 'not supported');
   log.debug('Importing from Extended Private Key');
 
   if (!cb) {
@@ -459,6 +466,7 @@ API.prototype.importFromExtendedPrivateKey = function(xPrivKey, opts, cb) {
  * @param {String} opts.compliantDerivation - default 'true'
  */
 API.prototype.importFromExtendedPublicKey = function(xPubKey, source, entropySourceHex, opts, cb) {
+  $.checkState(false, 'not supported');
   $.checkArgument(arguments.length == 5, "DEPRECATED: should receive 5 arguments");
   $.checkArgument(_.isUndefined(opts) || _.isObject(opts));
   $.shouldBeFunction(cb);

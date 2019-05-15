@@ -8,6 +8,8 @@ var should = chai.should();
 var Constants = require('../lib/common/constants');
 var Key = require('../lib/key');
 var TestData = require('./testdata');
+var Errors = require('../lib/errors');
+var Client = require('../lib');
 
 describe('Key', function() {
 
@@ -482,6 +484,60 @@ describe('Key', function() {
       should.exist(imported.mnemonicEncrypted);
     });
   });
+
+
+  describe('#import fails', function() {
+    it('should handle not being able to add access', function(done) {
+      var sandbox = sinon.sandbox.create();
+      var client = new Client();
+      client.credentials = {};
+
+      var ow = sandbox.stub(client, 'openWallet').callsFake(function(callback) {
+        callback(new Error());
+      });
+
+      var ip = sandbox.stub(client, 'isPrivKeyExternal').callsFake(function() {
+        return false;
+      });
+
+      var aa = sandbox.stub(client, 'addAccess').callsFake(function(options, callback) {
+        callback(new Error());
+      });
+
+      let words = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+
+      Key.import({words}, { clientFactory: () => {return client;}}, function(err, cs) {
+        should.not.exist(err);
+        cs.length.should.equal(0);
+        sandbox.restore();
+        done();
+      });
+    });
+  });
+
+  describe('#import FromMnemonic', function() {
+    it('should handle importing an invalid mnemonic', function(done) {
+      var mnemonicWords = 'this is an invalid mnemonic';
+      Key.import({words:mnemonicWords}, {}, function(err) {
+        should.exist(err);
+        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+        done();
+      });
+    });
+  });
+
+  describe('#import FromExtendedPrivateKey', function() {
+    it('should handle importing an invalid extended private key', function(done) {
+      var xPrivKey = 'this is an invalid key';
+      Key.import({xPrivKey},{},  function(err) {
+        should.exist(err);
+        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+        done();
+      });
+    });
+  });
+
+
 });
 
 
