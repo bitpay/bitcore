@@ -4579,7 +4579,7 @@ console.log('[api.test.js.2499:err:]',err); // TODO
 
       it('should be able to see txp messages after gaining access', function(done) {
         helpers.createAndJoinWallet( clients, keys, 1, 1, {}, function() {
-          var xpriv = keys[0].get().xPrivKey;
+          var xPrivKey = keys[0].get().xPrivKey;
           var walletName = clients[0].credentials.walletName;
           clients[0].createAddress(function(err, x0) {
             should.not.exist(err);
@@ -4592,24 +4592,24 @@ console.log('[api.test.js.2499:err:]',err); // TODO
             };
             helpers.createAndPublishTxProposal(clients[0], opts, function(err, x) {
               should.not.exist(err);
-              var recoveryClient = helpers.newClient(app);
-              let k = Key.fromExtendedPrivateKey(xpriv);
-              recoveryClient.import(
-                k.createCredentials(null, {
-                  coin: 'btc',
-                  network: 'testnet',
-                  account: 0,
-                  n:1,
-                })
-              );
 
-              recoveryClient.openWallet(function(err) {
-                should.not.exist(err);
-                recoveryClient.credentials.walletName.should.equal(walletName);
-                recoveryClient.getTx(x.id, function(err, x2) {
+
+              let k2 = Key.import({xPrivKey}, { 
+                clientFactory: () => { 
+                  return helpers.newClient(app) 
+                }}, (err, c) => {
                   should.not.exist(err);
-                  x2.message.should.equal(opts.message);
-                  done();
+                  c.length.should.equal(1);
+                  let recoveryClient = c[0];
+                  recoveryClient.openWallet(function(err) {
+                    should.not.exist(err);
+                    recoveryClient.credentials.walletName.should.equal(walletName);
+                    recoveryClient.getTx(x.id, function(err, x2) {
+                      should.not.exist(err);
+                      x2.message.should.equal(opts.message);
+                      done();
+                    });
+                  });
                 });
               });
             });
