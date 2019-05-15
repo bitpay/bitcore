@@ -4515,7 +4515,7 @@ console.log('[api.test.js.2499:err:]',err); // TODO
         });
       });
 
-      it.only('should be able to gain access to a 1-1 wallet from mnemonic', function(done) {
+      it('should be able to gain access to a 1-1 wallet from mnemonic', function(done) {
         helpers.createAndJoinWallet( clients, keys, 1, 1, {}, function() {
           var words = keys[0].get(null,true).mnemonic;
           var walletName = clients[0].credentials.walletName;
@@ -4546,7 +4546,7 @@ console.log('[api.test.js.2499:err:]',err); // TODO
         });
       });
 
-      it.only('should be able to gain access to a 1-1 wallet with just the xPriv', function(done) {
+      it('should be able to gain access to a 1-1 wallet with just the xPriv', function(done) {
         helpers.createAndJoinWallet( clients, keys, 1, 1, {}, function() {
           var xPrivKey = keys[0].get(null,true).xPrivKey;
           var walletName = clients[0].credentials.walletName;
@@ -4615,7 +4615,6 @@ console.log('[api.test.js.2499:err:]',err); // TODO
             });
           });
         });
-      });
 
       it('should be able to recreate wallet 2-2', function(done) {
         helpers.createAndJoinWallet( clients, keys, 2, 2, {}, function() {
@@ -5611,60 +5610,7 @@ console.log('[api.test.js.2499:err:]',err); // TODO
         done();
       });
     });
-
-    describe('#_import', function() {
-      it('should handle not being able to add access', function(done) {
-        var sandbox = sinon.sandbox.create();
-        var client = new Client();
-        client.credentials = {};
-
-        var ow = sandbox.stub(client, 'openWallet').callsFake(function(callback) {
-          callback(new Error());
-        });
-
-        var ip = sandbox.stub(client, 'isPrivKeyExternal').callsFake(function() {
-          return false;
-        });
-
-        var aa = sandbox.stub(client, 'addAccess').callsFake(function(options, callback) {
-          callback(new Error());
-        });
-
-        client._import(function(err) {
-          should.exist(err);
-          err.should.be.an.instanceOf(Errors.WALLET_DOES_NOT_EXIST);
-          sandbox.restore();
-          done();
-        });
-      });
-    });
-
-    describe('#importFromMnemonic', function() {
-      it('should handle importing an invalid mnemonic', function(done) {
-        var client = new Client();
-        var mnemonicWords = 'this is an invalid mnemonic';
-        client.importFromMnemonic(mnemonicWords, {}, function(err) {
-console.log('[api.test.js.5606:err:]',err); // TODO
-          should.exist(err);
-          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
-          done();
-        });
-      });
-    });
-
-    describe('#importFromExtendedPrivateKey', function() {
-      it('should handle importing an invalid extended private key', function(done) {
-        var client = new Client();
-        var xPrivKey = 'this is an invalid key';
-        client.importFromExtendedPrivateKey(xPrivKey, function(err) {
-          should.exist(err);
-          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
-          done();
-        });
-      });
-    });
-
-    describe('#importFromExtendedPublicKey', function() {
+    describe.skip('#importFromExtendedPublicKey', function() {
       it('should handle importing an invalid extended private key', function(done) {
         var client = new Client();
         var xPubKey = 'this is an invalid key';
@@ -5674,39 +5620,39 @@ console.log('[api.test.js.5606:err:]',err); // TODO
           done();
         });
       });
-    });
+      it('should import with external public key', function(done) {
+        var client = helpers.newClient(app);
 
-    it('should import with external priv key', function(done) {
-      var client = helpers.newClient(app);
-      client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00');
+        client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00');
 
-      client.createWallet('mywallet', 'creator', 1, 1, {
-        network: 'livenet'
-      }, function(err) {
-        should.not.exist(err);
-        var c = client.credentials;
-        var importedClient = helpers.newClient(app);
-        importedClient.importFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00', {}, function(err) {
+        client.createWallet('mywallet', 'creator', 1, 1, {
+          network: 'livenet'
+        }, function(err) {
           should.not.exist(err);
-          var c2 = importedClient.credentials;
-          c2.account.should.equal(0);
-          c2.xPubKey.should.equal(client.credentials.xPubKey);
-          c2.personalEncryptingKey.should.equal(c.personalEncryptingKey);
-          c2.walletId.should.equal(c.walletId);
-          c2.walletName.should.equal(c.walletName);
-          c2.copayerName.should.equal(c.copayerName);
-          done();
+          var c = client.credentials;
+          var importedClient = helpers.newClient(app);
+          importedClient.importFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00', {}, function(err) {
+            should.not.exist(err);
+            var c2 = importedClient.credentials;
+            c2.account.should.equal(0);
+            c2.xPubKey.should.equal(client.credentials.xPubKey);
+            c2.personalEncryptingKey.should.equal(c.personalEncryptingKey);
+            c2.walletId.should.equal(c.walletId);
+            c2.walletName.should.equal(c.walletName);
+            c2.copayerName.should.equal(c.copayerName);
+            done();
+          });
         });
       });
-    });
 
-    it('should fail to import with external priv key when not enought entropy', function() {
-      var client = helpers.newClient(app);
-      (function() {
-        client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f00');
-      }).should.throw('entropy');
-    });
+      it('should fail to import with external priv key when not enought entropy', function() {
+        var client = helpers.newClient(app);
+        (function() {
+          client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f00');
+        }).should.throw('entropy');
+      });
 
+    });
   });
 
   describe('doRequest', function() {

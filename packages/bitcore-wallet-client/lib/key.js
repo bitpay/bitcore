@@ -6,6 +6,7 @@ var _ = require('lodash');
 var Bitcore = require('bitcore-lib');
 var Mnemonic = require('bitcore-mnemonic');
 var sjcl = require('sjcl');
+var log = require('./log');
 const async = require('async');
 
 var Common = require('./common');
@@ -371,8 +372,6 @@ Key.import = (opts, clientOpts, cb) => {
   $.checkArgument(opts.words || opts.xPrivKey, "provide opts.words or opts.xPrivKey");
 
   let copayerIdAlreadyTested = {};
-
-
   function checkCredentials(key, opts, icb) {
     let c = key.createCredentials(null, {
       coin: opts.coin, 
@@ -515,14 +514,19 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
     },
   ];
 
-
   let s= sets.shift(), cont=true, k;
   async.whilst(() => {
     if (!s) return false;
-    if (opts.words) { 
-      k  = Key.fromMnemonic(opts.words, s);
-    } else {
-      k  = Key.fromExtendedPrivateKey(opts.xPrivKey, s);
+
+    try {
+      if (opts.words) { 
+        k  = Key.fromMnemonic(opts.words, s);
+      } else {
+        k  = Key.fromExtendedPrivateKey(opts.xPrivKey, s);
+      }
+    } catch (e) {
+      log.info('Backup error:', e);
+      return cb(new Errors.INVALID_BACKUP);
     }
     s = sets.shift();
     return cont;
