@@ -4,7 +4,7 @@
   <ion-grid>
     <ion-row *ngFor="let tx of transactions; let i = index">
       <ion-col col-12 *ngIf="i < limit">
-        <transaction [tx]="tx"></transaction>
+        <transaction [tx]="tx" [chainNetwork]="chainNetwork"></transaction>
       </ion-col>
     </ion-row>
     <ion-row *ngIf="limit < transactions.length">

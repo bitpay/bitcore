@@ -28,8 +28,9 @@ export class HeadNavComponent implements OnInit {
   public loading: boolean;
   @Input()
   public title: string;
+  @Input()
+  public chainNetwork: ChainNetwork;
   public q: string;
-  public config: ChainNetwork;
   public redirTo: any;
   public params: any;
 
@@ -48,17 +49,16 @@ export class HeadNavComponent implements OnInit {
   ) {}
 
   public ngOnInit(): void {
-    this.config = this.apiProvider.getConfig();
     this.params = {
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+      chain: this.chainNetwork.chain,
+      network: this.chainNetwork.network
     };
   }
 
-  public goHome(): void {
+  public goHome(chainNetwork): void {
     this.navCtrl.setRoot('home', {
-      chain: this.config.chain,
-      network: this.config.network
+      chain: chainNetwork.chain,
+      network: chainNetwork.network
     });
   }
 
@@ -68,25 +68,27 @@ export class HeadNavComponent implements OnInit {
 
     if (this.q !== '' && inputDetails.isValid) {
       this.showSearch = false;
-      this.searchProvider.search(this.q, inputDetails.type).subscribe(
-        res => {
-          const nextView = this.processResponse(res);
-          if (!_.includes(nextView, '')) {
-            this.params[nextView.type] = nextView.params;
-            this.redirTo = nextView.redirTo;
-            this.navCtrl.setRoot('home', this.params, { animate: false });
-            this.redirProvider.redir(this.redirTo, this.params);
-          } else {
-            const message = 'No matching records found!';
-            this.wrongSearch(message);
-            this.logger.info(message);
+      this.searchProvider
+        .search(this.q, inputDetails.type, this.chainNetwork)
+        .subscribe(
+          res => {
+            const nextView = this.processResponse(res);
+            if (!_.includes(nextView, '')) {
+              this.params[nextView.type] = nextView.params;
+              this.redirTo = nextView.redirTo;
+              this.navCtrl.setRoot('home', this.params, { animate: false });
+              this.redirProvider.redir(this.redirTo, this.params);
+            } else {
+              const message = 'No matching records found!';
+              this.wrongSearch(message);
+              this.logger.info(message);
+            }
+          },
+          err => {
+            this.wrongSearch('Server error. Please try again');
+            this.logger.error(err);
           }
-        },
-        err => {
-          this.wrongSearch('Server error. Please try again');
-          this.logger.error(err);
-        }
-      );
+        );
     } else {
       this.wrongSearch('No matching records found!');
     }
@@ -142,7 +144,7 @@ export class HeadNavComponent implements OnInit {
 
   public changeCurrency(myEvent: any): void {
     const popover: any = this.popoverCtrl.create(DenominationComponent, {
-      config: this.config,
+      config: this.chainNetwork,
       currencySymbol: this.currencyProvider.getCurrency()
     });
     popover.present({
@@ -151,18 +153,17 @@ export class HeadNavComponent implements OnInit {
     popover.onDidDismiss(data => {
       if (!data) {
         return;
-      } else if (data.chainNetwork !== this.config) {
+      } else if (data.chainNetwork !== this.chainNetwork) {
         this.apiProvider.changeNetwork(data.chainNetwork);
-        this.config = this.apiProvider.getConfig();
-        this.setCurrency(data.currencySymbol);
-        this.goHome();
+        this.setCurrency(data.chainNetwork);
+        this.goHome(data.chainNetwork);
       } else if (data.currencySymbol !== this.currencyProvider.getCurrency()) {
         this.setCurrency(data.currencySymbol);
       }
     });
   }
 
-  private setCurrency(currencySymbol) {
+  private setCurrency(currencySymbol?) {
     this.currencyProvider.setCurrency(currencySymbol);
     this.priceProvider.setCurrency(currencySymbol);
   }
@@ -200,8 +201,8 @@ export class HeadNavComponent implements OnInit {
   }
 
   private isValidAddress(inputValue): boolean {
-    const coin = this.config.chain;
-    const network = this.config.network;
+    const coin = this.chainNetwork.chain;
+    const network = this.chainNetwork.network;
     const addr = this.extractAddress(inputValue);
 
     if (coin.toLowerCase() === 'btc' && network === 'mainnet') {

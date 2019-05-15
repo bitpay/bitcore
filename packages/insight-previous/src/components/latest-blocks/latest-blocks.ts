@@ -1,6 +1,6 @@
 import { Component, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { ApiProvider } from '../../providers/api/api';
+import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { AppBlock, BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { DefaultProvider } from '../../providers/default/default';
@@ -20,6 +20,8 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   public showLoadMoreButton = false;
   @Input()
   public showTimeAs: string;
+  @Input()
+  public chainNetwork: ChainNetwork;
   public loading = true;
   public blocks: AppBlock[] = [];
   public subscriber: Subscription;
@@ -52,57 +54,61 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   }
 
   private loadBlocks(): void {
-    this.subscriber = this.blocksProvider.getBlocks(this.numBlocks).subscribe(
-      response => {
-        const blocks = response.map(block =>
-          this.blocksProvider.toAppBlock(block)
-        );
-        this.blocks = blocks;
-        this.loading = false;
-      },
-      err => {
-        this.subscriber.unsubscribe();
-        clearInterval(this.reloadInterval);
-        this.logger.error(err.message);
-        this.errorMessage = err.message;
-        this.loading = false;
-      }
-    );
+    this.subscriber = this.blocksProvider
+      .getBlocks(this.chainNetwork, this.numBlocks)
+      .subscribe(
+        response => {
+          const blocks = response.map(block =>
+            this.blocksProvider.toAppBlock(block)
+          );
+          this.blocks = blocks;
+          this.loading = false;
+        },
+        err => {
+          this.subscriber.unsubscribe();
+          clearInterval(this.reloadInterval);
+          this.logger.error(err.message);
+          this.errorMessage = err.message;
+          this.loading = false;
+        }
+      );
   }
 
   public loadMoreBlocks(infiniteScroll) {
     clearInterval(this.reloadInterval);
     const since: number =
       this.blocks.length > 0 ? this.blocks[this.blocks.length - 1].height : 0;
-    return this.blocksProvider.pageBlocks(since, this.numBlocks).subscribe(
-      response => {
-        const blocks = response.map(block =>
-          this.blocksProvider.toAppBlock(block)
-        );
-        this.blocks = this.blocks.concat(blocks);
-        this.loading = false;
-        infiniteScroll.complete();
-      },
-      err => {
-        this.logger.error(err.message);
-        this.errorMessage = err.message;
-        this.loading = false;
-      }
-    );
+    return this.blocksProvider
+      .pageBlocks(since, this.numBlocks, this.chainNetwork)
+      .subscribe(
+        response => {
+          const blocks = response.map(block =>
+            this.blocksProvider.toAppBlock(block)
+          );
+          this.blocks = this.blocks.concat(blocks);
+          this.loading = false;
+          infiniteScroll.complete();
+        },
+        err => {
+          this.logger.error(err.message);
+          this.errorMessage = err.message;
+          this.loading = false;
+        }
+      );
   }
 
   public goToBlock(blockHash: string): void {
     this.redirProvider.redir('block-detail', {
       blockHash,
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+      chain: this.chainNetwork.chain,
+      network: this.chainNetwork.network
     });
   }
 
   public goToBlocks(): void {
     this.redirProvider.redir('blocks', {
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+      chain: this.chainNetwork.chain,
+      network: this.chainNetwork.network
     });
   }
 

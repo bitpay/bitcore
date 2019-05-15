@@ -42,7 +42,7 @@ export class LatestTransactionsComponent implements OnChanges {
   }
 
   private loadTransactions(): void {
-    const url: string = this.apiProvider.getUrl() + 'txs';
+    const url = `${this.apiProvider.getUrl()}/txs`;
 
     this.httpClient.get(url).subscribe(
       (data: any) => {
@@ -59,8 +59,8 @@ export class LatestTransactionsComponent implements OnChanges {
   public goToTx(txId: string): void {
     this.redirProvider.redir('transaction', {
       txId,
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+      chain: this.apiProvider.networkSettings.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.selectedNetwork.network
     });
   }
 }

@@ -1,4 +1,4 @@
-<head-nav></head-nav>
+<head-nav [chainNetwork]="chainNetwork"></head-nav>
 <ion-content>
   <ion-grid fixed>
 
@@ -68,7 +68,7 @@
 
         <h2>Details</h2>
 
-        <transaction [tx]="tx" [showCoins]="true"></transaction>
+        <transaction [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction>
       </div>
 
     </div>

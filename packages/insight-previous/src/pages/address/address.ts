@@ -38,17 +38,15 @@ export class AddressPage {
   ) {
     this.addrStr = navParams.get('addrStr');
 
-    const chain: string =
-      navParams.get('chain') || this.apiProvider.getConfig().chain;
-    const network: string =
-      navParams.get('network') || this.apiProvider.getConfig().network;
+    const chain: string = navParams.get('chain');
+    const network: string = navParams.get('network');
 
     this.chainNetwork = {
       chain,
       network
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
-    this.currencyProvider.setCurrency();
+    this.currencyProvider.setCurrency(this.chainNetwork);
     this.priceProvider.setCurrency();
 
     this.events.subscribe('CoinList', (d: any) => {
@@ -57,22 +55,24 @@ export class AddressPage {
   }
 
   public ionViewWillLoad(): void {
-    this.addrProvider.getAddressBalance(this.addrStr).subscribe(
-      data => {
-        this.address = {
-          balance: data.balance || 0,
-          confirmed: data.confirmed || 0,
-          unconfirmed: data.unconfirmed,
-          addrStr: this.addrStr
-        };
-        this.loading = false;
-      },
-      err => {
-        this.logger.error(err.message);
-        this.errorMessage = err.message;
-        this.loading = false;
-      }
-    );
+    this.addrProvider
+      .getAddressBalance(this.addrStr, this.chainNetwork)
+      .subscribe(
+        data => {
+          this.address = {
+            balance: data.balance || 0,
+            confirmed: data.confirmed || 0,
+            unconfirmed: data.unconfirmed,
+            addrStr: this.addrStr
+          };
+          this.loading = false;
+        },
+        err => {
+          this.logger.error(err.message);
+          this.errorMessage = err.message;
+          this.loading = false;
+        }
+      );
   }
 
   public getConvertedNumber(n: number): number {

@@ -1,5 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { ApiProvider } from '../../providers/api/api';
+import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { RedirProvider } from '../../providers/redir/redir';
@@ -24,6 +24,8 @@ export class TransactionComponent implements OnInit {
   public tx: any = {};
   @Input()
   public showCoins = false;
+  @Input()
+  public chainNetwork: ChainNetwork;
   public confirmations: number;
 
   private COIN = 100000000;
@@ -41,13 +43,15 @@ export class TransactionComponent implements OnInit {
   }
 
   public getCoins(): void {
-    this.txProvider.getCoins(this.tx.txid).subscribe(data => {
-      this.tx.vin = data.inputs;
-      this.tx.vout = data.outputs;
-      this.tx.fee = this.txProvider.getFee(this.tx);
-      this.tx.valueOut = data.outputs.reduce((a, b) => a + b.value, 0);
-      this.getConfirmations();
-    });
+    this.txProvider
+      .getCoins(this.tx.txid, this.chainNetwork)
+      .subscribe(data => {
+        this.tx.vin = data.inputs;
+        this.tx.vout = data.outputs;
+        this.tx.fee = this.txProvider.getFee(this.tx);
+        this.tx.valueOut = data.outputs.reduce((a, b) => a + b.value, 0);
+        this.getConfirmations();
+      });
   }
 
   public getAddress(v: ApiCoin): string {
@@ -60,7 +64,7 @@ export class TransactionComponent implements OnInit {
 
   public getConfirmations() {
     this.txProvider
-      .getConfirmations(this.tx.blockheight)
+      .getConfirmations(this.tx.blockheight, this.chainNetwork)
       .subscribe(confirmations => {
         this.confirmations = confirmations;
       });
@@ -69,8 +73,8 @@ export class TransactionComponent implements OnInit {
   public goToTx(txId: string, vout?: number, fromVout?: boolean): void {
     this.redirProvider.redir('transaction', {
       txId,
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network,
+      chain: this.chainNetwork.chain,
+      network: this.chainNetwork.network,
       vout,
       fromVout
     });
@@ -79,8 +83,8 @@ export class TransactionComponent implements OnInit {
   public goToAddress(addrStr: string): void {
     this.redirProvider.redir('address', {
       addrStr,
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+      chain: this.chainNetwork.chain,
+      network: this.chainNetwork.network
     });
   }
 

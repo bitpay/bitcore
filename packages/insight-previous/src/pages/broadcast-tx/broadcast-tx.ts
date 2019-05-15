@@ -35,10 +35,8 @@ export class BroadcastTxPage {
     private priceProvider: PriceProvider,
     private currencyProvider: CurrencyProvider
   ) {
-    const chain: string =
-      navParams.get('chain') || this.apiProvider.getConfig().chain;
-    const network: string =
-      navParams.get('network') || this.apiProvider.getConfig().network;
+    const chain: string = navParams.get('chain');
+    const network: string = navParams.get('network');
 
     this.chainNetwork = {
       chain,
@@ -46,7 +44,7 @@ export class BroadcastTxPage {
     };
 
     this.apiProvider.changeNetwork(this.chainNetwork);
-    this.currencyProvider.setCurrency();
+    this.currencyProvider.setCurrency(this.chainNetwork);
     this.priceProvider.setCurrency();
 
     this.title = 'Broadcast Transaction';

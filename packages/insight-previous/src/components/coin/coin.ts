@@ -1,5 +1,5 @@
 import { Component, Input } from '@angular/core';
-import { ApiProvider } from '../../providers/api/api';
+import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { RedirProvider } from '../../providers/redir/redir';
 import { AppCoin } from '../../providers/transactions/transactions';
@@ -10,6 +10,8 @@ import { AppCoin } from '../../providers/transactions/transactions';
 export class CoinComponent {
   @Input()
   public coin: AppCoin | {} = {};
+  @Input()
+  public chainNetwork: ChainNetwork;
 
   constructor(
     public apiProvider: ApiProvider,
@@ -20,8 +22,8 @@ export class CoinComponent {
   public goToTx(txId: string): void {
     this.redirProvider.redir('transaction', {
       txId,
-      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
-      network: this.apiProvider.networkSettings.value.selectedNetwork.network
+      chain: this.chainNetwork.chain,
+      network: this.chainNetwork.network
     });
   }
 }
