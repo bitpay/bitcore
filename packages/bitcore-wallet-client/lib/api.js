@@ -316,7 +316,8 @@ API.prototype.import = function(credentials) {
   this.request.setCredentials(this.credentials);
 };
 
-API.prototype._import = function(cb) {
+
+API.prototype.open = function(cb) {
   $.checkState(this.credentials);
 
   var self = this;
@@ -328,7 +329,7 @@ API.prototype._import = function(cb) {
     if (!err) return cb(null, ret);
 
     // Is the error other than "copayer was not found"? || or no priv key.
-    if (err instanceof Errors.NOT_AUTHORIZED || self.isPrivKeyExternal())
+    if (err instanceof Errors.NOT_AUTHORIZED)
       return cb(err);
 
     //Second option, lets try to add an access
@@ -342,10 +343,6 @@ API.prototype._import = function(cb) {
     });
   });
 };
-
-
-API.prototype.importAllFromMnemonic = function(words, opts, cb) {
-}
 
 /**
  * Import from Mnemonics (language autodetected)
@@ -591,11 +588,13 @@ API.prototype.openWallet = function(cb) {
     var wallet = ret.wallet;
 
     self._processStatus(ret);
-
     if (!self.credentials.hasWalletInfo()) {
       var me = _.find(wallet.copayers, {
         id: self.credentials.copayerId
       });
+
+      if(!me) return cb(new Error('Copayer not in wallet'));
+
       self.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, me.name);
     }
 
