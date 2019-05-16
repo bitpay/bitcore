@@ -50,7 +50,7 @@ function setTrustedPeers(config: ConfigType): ConfigType {
   }
   return config;
 }
-const Config = function (): ConfigType {
+const Config = function(): ConfigType {
   let config: ConfigType = {
     maxPoolSize: 50,
     port: 3000,
@@ -73,7 +73,7 @@ const Config = function (): ConfigType {
         }
       },
       event: {
-        onlyFireForWallets: true
+        onlyWalletEvents: true
       },
       p2p: {},
       socket: {},
