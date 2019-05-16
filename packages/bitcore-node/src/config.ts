@@ -74,7 +74,9 @@ const Config = function (): ConfigType {
       },
       event: {},
       p2p: {},
-      socket: {},
+      socket: {
+        onlyFireForWallets: true
+      },
       storage: {}
     }
   };

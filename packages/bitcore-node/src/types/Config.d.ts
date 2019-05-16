@@ -31,6 +31,7 @@ export interface ConfigType {
     };
     socket: {
       disabled?: boolean;
+      onlyFireForWallets: boolean;
     };
     storage: {
       disabled?: boolean;
