@@ -25,13 +25,13 @@ export interface ConfigType {
     };
     event: {
       disabled?: boolean;
+      onlyFireForWallets: boolean;
     };
     p2p: {
       disabled?: boolean;
     };
     socket: {
       disabled?: boolean;
-      onlyFireForWallets: boolean;
     };
     storage: {
       disabled?: boolean;

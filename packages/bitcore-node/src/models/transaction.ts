@@ -156,7 +156,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
       );
 
       // Create events for mempool txs
-      const { onlyFireForWallets } = Config.get().services.socket;
+      const { onlyFireForWallets } = Config.get().services.event;
       function shouldFire(obj: { wallets?: Array<ObjectID> }) {
         return !onlyFireForWallets || (onlyFireForWallets && obj.wallets && obj.wallets.length > 0);
       }

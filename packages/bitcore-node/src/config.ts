@@ -72,11 +72,11 @@ const Config = function (): ConfigType {
           allowUnauthenticatedCalls: true
         }
       },
-      event: {},
-      p2p: {},
-      socket: {
+      event: {
         onlyFireForWallets: true
       },
+      p2p: {},
+      socket: {},
       storage: {}
     }
   };
