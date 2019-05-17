@@ -37,10 +37,10 @@ export class DerivationProxy {
     return derivers[chain];
   }
 
-  deriveAddress(chain, network, pubKey, addressIndex, isChange) {
+  deriveAddress(chain, network, xpubKey, addressIndex, isChange) {
     return this.get(chain).deriveAddress(
       network,
-      pubKey,
+      xpubKey,
       addressIndex,
       isChange
     );
@@ -64,4 +64,4 @@ export class DerivationProxy {
   }
 }
 
-export const Deriver = new DerivationProxy();
+export default new DerivationProxy();

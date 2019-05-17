@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "rm -rf ts_build",
     "compile": "npm run clean && ./node_modules/.bin/tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "jest"
   },
   "keywords": [
     "multi-currency",
@@ -29,10 +29,13 @@
   "devDependencies": {
     "@types/elliptic": "^6.4.3",
     "@types/ethereumjs-util": "^5.2.0",
+    "@types/jest": "^24.0.13",
     "@types/node": "^10.12.15",
     "@types/secp256k1": "^3.5.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
+    "jest": "^24.8.0",
+    "ts-jest": "^24.0.2",
     "typescript": "^3.4.3"
   }
 }
