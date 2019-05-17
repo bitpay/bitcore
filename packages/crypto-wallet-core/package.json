@@ -6,7 +6,7 @@
   "scripts": {
     "clean": "rm -rf ts_build",
     "compile": "npm run clean && ./node_modules/.bin/tsc",
-    "test": "jest"
+    "test": "npx jest"
   },
   "keywords": [
     "multi-currency",
