@@ -2,11 +2,12 @@
   "name": "crypto-wallet-core",
   "version": "8.3.0",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
-  "main": "ts_build/index.js",
+  "main": "./ts_build/index.js",
+  "types": "./ts_build/index.d.ts",
   "scripts": {
     "clean": "rm -rf ts_build",
     "compile": "npm run clean && ./node_modules/.bin/tsc",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "npx mocha -r ts-node/register tests/**/*.ts"
   },
   "keywords": [
     "multi-currency",
@@ -27,12 +28,17 @@
     "web3": "^1.0.0-beta.46"
   },
   "devDependencies": {
+    "@types/chai": "^4.1.7",
     "@types/elliptic": "^6.4.3",
     "@types/ethereumjs-util": "^5.2.0",
+    "@types/mocha": "^5.2.6",
     "@types/node": "^10.12.15",
     "@types/secp256k1": "^3.5.0",
+    "chai": "^4.2.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
+    "mocha": "^6.1.4",
+    "ts-node": "^8.1.0",
     "typescript": "^3.4.3"
   }
 }

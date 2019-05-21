@@ -1,5 +1,5 @@
 import { ec } from 'elliptic';
-import { pubToAddress } from 'ethereumjs-util';
+import { pubToAddress, toChecksumAddress } from 'ethereumjs-util';
 import { IDeriver } from '..';
 
 const BitcoreLib = require('bitcore-lib');
@@ -16,8 +16,8 @@ export class EthDeriver implements IDeriver {
     return msg;
   }
 
-  deriveAddress(network, pubKey, addressIndex, isChange) {
-    const xpub = new BitcoreLib.HDPublicKey(pubKey, network);
+  deriveAddress(network, xpubkey, addressIndex, isChange) {
+    const xpub = new BitcoreLib.HDPublicKey(xpubkey, network);
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;
     const derived = xpub.derive(path).publicKey;
@@ -26,12 +26,17 @@ export class EthDeriver implements IDeriver {
 
   addressFromPublicKeyBuffer(pubKey: Buffer): string {
     const ecKey = secp.keyFromPublic(pubKey);
-    const ecPub = ecKey.getPublic().toJSON();
-    const paddedBuffer = Buffer.concat([
-      this.padTo32(new Buffer(ecPub[0].toArray())),
-      this.padTo32(new Buffer(ecPub[1].toArray()))
-    ]);
-    return `0x${pubToAddress(paddedBuffer).toString('hex')}`;
+    const x = ecKey
+      .getPublic()
+      .getX()
+      .toBuffer();
+    const y = ecKey
+      .getPublic()
+      .getY()
+      .toBuffer();
+    const paddedBuffer = Buffer.concat([this.padTo32(x), this.padTo32(y)]);
+    const address = `0x${pubToAddress(paddedBuffer).toString('hex')}`;
+    return toChecksumAddress(address);
   }
 
   derivePrivateKey(network, xPriv, addressIndex, isChange) {
