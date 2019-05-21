@@ -31,7 +31,6 @@ var Request = require('../lib/request.js');
 var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;
 var TestData = require('./testdata');
-var ImportData = require('./legacyImportData.js');
 var Errors = require('../lib/errors');
 
 var helpers = {};
