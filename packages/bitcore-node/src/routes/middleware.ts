@@ -47,6 +47,11 @@ export function LogMiddleware() {
   };
 }
 
+export enum Confirmations {
+  None = 0,
+  Shallow = 1,
+  Deep = 100
+}
 export enum CacheTimes {
   None = 0,
   Second = 1,
@@ -78,7 +83,7 @@ export function RateLimiter(method: string, perSecond: number, perMinute: number
       const rateLimiter = Config.for('api').rateLimiter;
       const whitelist = rateLimiter && rateLimiter.whitelist;
       const isDisabled = rateLimiter && rateLimiter.disabled;
-      if ( isDisabled || isWhiteListed(whitelist, identifier)) {
+      if (isDisabled || isWhiteListed(whitelist, identifier)) {
         return next();
       }
       let [perSecondResult, perMinuteResult, perHourResult] = await RateLimitStorage.incrementAndCheck(

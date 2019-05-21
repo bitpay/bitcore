@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
-import { IBlock } from '../../types/Block';
-import { SetCache, CacheTimes } from '../middleware';
+import { SetCache, CacheTimes, Confirmations } from '../middleware';
 import { BlockStorage } from '../../models/block';
 const router = require('express').Router({ mergeParams: true });
 
@@ -44,7 +43,7 @@ router.get('/:blockId', async function(req: Request, res: Response) {
       return res.status(404).send('block not found');
     }
     const tip = await ChainStateProvider.getLocalTip({ chain, network });
-    if (block && tip.height - (<IBlock>block).height > 100) {
+    if (block && tip && tip.height - block.height > Confirmations.Deep) {
       SetCache(res, CacheTimes.Month);
     }
     return res.json(block);
@@ -53,7 +52,7 @@ router.get('/:blockId', async function(req: Request, res: Response) {
   }
 });
 
-router.get('at-time/:time', async function(req: Request, res: Response) {
+router.get('before-time/:time', async function(req: Request, res: Response) {
   let { time, chain, network } = req.params;
   try {
     const [block] = await BlockStorage.collection
@@ -72,7 +71,7 @@ router.get('at-time/:time', async function(req: Request, res: Response) {
       return res.status(404).send('block not found');
     }
     const tip = await ChainStateProvider.getLocalTip({ chain, network });
-    if (block && tip.height - (<IBlock>block).height > 100) {
+    if (block && tip && tip.height - block.height > Confirmations.Deep) {
       SetCache(res, CacheTimes.Month);
     }
     return res.json(block);
