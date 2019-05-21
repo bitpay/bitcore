@@ -11,7 +11,13 @@ const Common = require('./common');
 const Constants = Common.Constants;
 const Utils = Common.Utils;
 
-var FIELDS = [
+function Credentials() {
+  this.version = '2.0.0';
+  this.account = 0;
+};
+
+
+Credentials.FIELDS = [
   'coin',
   'network',
   'xPrivKey',             //obsolete
@@ -44,10 +50,6 @@ var FIELDS = [
   'rootPath',               // this is only for information
 ];
 
-function Credentials() {
-  this.version = '2.0.0';
-  this.account = 0;
-};
 
 /*
  *coin, xPrivKey, account, network
@@ -106,11 +108,12 @@ Credentials.fromDerivedKey = function(opts) {
 
 Credentials.prototype.getRootPath = function() {
 
+  var self = this;
 
   function legacyRootPath () {
     // legacy base path schema
     var purpose;
-    switch (this.derivationStrategy) {
+    switch (self.derivationStrategy) {
       case Constants.DERIVATION_STRATEGIES.BIP45:
         return "m/45'";
       case Constants.DERIVATION_STRATEGIES.BIP44:
@@ -122,18 +125,18 @@ Credentials.prototype.getRootPath = function() {
     }
 
     var coin = '0';
-    if (this.network != 'livenet' ) {
+    if (self.network != 'livenet' ) {
       coin = '1';
-    } else if (this.coin == 'bch') {
-      if (this.use145forBCH) {
+    } else if (self.coin == 'bch') {
+      if (self.use145forBCH) {
         coin = '145';
       } else {
         coin = '0';
       }
     } else {
-      throw new Error('unknown coin: ' + this.coin);
+      throw new Error('unknown coin: ' + self.coin);
     };
-    return "m/" + purpose + "'/" + coin + "'/" + this.account + "'";
+    return "m/" + purpose + "'/" + coin + "'/" + self.account + "'";
   };
 
   if (!this.rootPath) {
@@ -149,7 +152,7 @@ Credentials.fromObj = function(obj) {
     throw 'Bad Credentials version';
   }
 
-  _.each(FIELDS, function(k) {
+  _.each(Credentials.FIELDS, function(k) {
     x[k] = obj[k];
   });
 
@@ -169,7 +172,7 @@ Credentials.prototype.toObj = function() {
   var self = this;
 
   var x = {};
-  _.each(FIELDS, function(k) {
+  _.each(Credentials.FIELDS, function(k) {
     x[k] = self[k];
   });
   return x;

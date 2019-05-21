@@ -10,6 +10,7 @@ var Key = require('../lib/key');
 var TestData = require('./testdata');
 var Errors = require('../lib/errors');
 var Client = require('../lib');
+var oldCredentials = require('./legacyCredentialsExports');
 
 describe('Key', function() {
 
@@ -485,6 +486,28 @@ describe('Key', function() {
     });
   });
 
+  describe.only('from Old credentials', () =>{
+
+    _.each(oldCredentials, (x) => {
+      it(`should  import old ${x.name} credentials`, function() {
+        let imported = Key.fromOld(JSON.parse(x.blob));
+        let k = imported.key;
+        let c = imported.credentials;
+        _.each(x.test.key, (expectedValue, expectedKey)=> {
+console.log('[key.test.js.497:expectedKey:]',expectedKey); // TODO
+console.log('[key.test.js.496:expectedValue:]',expectedValue); // TODO
+          k[expectedKey].should.be.equal(expectedValue);
+        });
+console.log('[key.test.js.502]',c); // TODO
+        _.each(x.test.credentials, (expectedValue, expectedKey)=> {
+
+console.log('[key.test.js.497:expectedKey:]',expectedKey); // TODO
+console.log('[key.test.js.496:expectedValue:]',expectedValue); // TODO
+          c[expectedKey].should.be.equal(expectedValue);
+        });
+      });
+    });
+  });
 
   describe('#import fails', function() {
     it('should handle not being able to add access', function(done) {

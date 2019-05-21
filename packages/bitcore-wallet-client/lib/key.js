@@ -114,10 +114,11 @@ Key.fromExtendedPrivateKey = function(xPriv, opts) {
 
 
 Key.fromObj = function(obj) {
+  $.shouldBeObject(x);
 
   var x = new Key();
   if (obj.version != x.version) {
-    throw 'Bad Credentials version';
+    throw 'Bad Key version';
   }
 
   _.each(FIELDS, function(k) {
@@ -127,6 +128,44 @@ Key.fromObj = function(obj) {
   $.checkState(x.xPrivKey || x.xPrivKeyEncrypted, "invalid input");
   return x;
 };
+
+
+Key.fromOld = function(x) {
+  $.shouldBeObject(x);
+
+  // TODO RO clients
+  if (!_.isUndefined(x.version) || (!x.xPrivKey && !x.xPrivKeyEncrypted)) {
+    throw 'Could not recognize old version';
+  }
+
+  var k = new Key();
+  _.each(FIELDS, (i) => {
+    if (!_.isUndefined(x[i])) {
+      k[i] = x[i];
+    }
+  });
+
+  // ALL old credentials have multi wallets in 44'.
+  k.use48forMultisig = false;
+
+  let oldFIELDS = [
+  ];
+
+  var c = new Credentials();
+  _.each(Credentials.FIELDS, function(i) {
+    c[i] = x[i];
+  });
+  if (c.externalSource) {
+    throw new Error('External Wallets are no longer supported');
+  }
+  c.coin = c.coin || 'btc';
+  c.addressType = c.addressType || Constants.SCRIPT_TYPES.P2SH;
+  c.account = c.account || 0;
+  c.rootPath = c.getRootPath();
+  return {key: k, credentials: c};
+};
+
+
 
 Key.prototype.toObj = function() {
   var self = this;
@@ -356,14 +395,14 @@ Key.prototype.sign = function(rootPath, txp, password) {
 
 
 //
-//  account 0 will be used to check
+//  account 0 will be used to check:
 //    - compliantDerivation or not
 //    - useLegacyCoinType or not  (only for bch)
 //    - useLegacyPurpose or not   (only for multisig)
 //
 // Checks EXISTING wallets against BWS and return clients for each account / coin
 // 
-// Returns { key, clients[] }
+// Returns { err, clients[] }
 //
 // TODO: name
 Key.import = (opts, clientOpts, cb) => {
