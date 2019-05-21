@@ -28,7 +28,7 @@ describe('Transaction Creation', () => {
       gasPrice: 20000000000
     };
     const { value, to, data, gasPrice } = rawEthTx;
-    const recipients = [{ address: to, amount: value.toString() }];
+    const recipients = [{ address: to, amount: value }];
     const cryptoTx = await Transactions.create({
       chain: 'ETH',
       recipients,
