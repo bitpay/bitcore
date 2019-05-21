@@ -114,7 +114,7 @@ Key.fromExtendedPrivateKey = function(xPriv, opts) {
 
 
 Key.fromObj = function(obj) {
-  $.shouldBeObject(x);
+  $.shouldBeObject(obj);
 
   var x = new Key();
   if (obj.version != x.version) {
@@ -228,13 +228,13 @@ Key.prototype.decrypt = function(password) {
 
   try {
     this.xPrivKey = sjcl.decrypt(password, this.xPrivKeyEncrypted);
-
     if (this.mnemonicEncrypted) {
       this.mnemonic = sjcl.decrypt(password, this.mnemonicEncrypted);
     }
     delete this.xPrivKeyEncrypted;
     delete this.mnemonicEncrypted;
   } catch (ex) {
+    log.error('error decrypting:', ex);
     throw new Error('Could not decrypt');
   }
 };
