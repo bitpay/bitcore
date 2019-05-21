@@ -10,11 +10,11 @@ export class ETHTxProvider {
     data: string;
     gasLimit: number;
   }) {
-    const { recipients, from, nonce, fee, data } = params;
+    const { recipients, from, nonce, fee, data, gasLimit } = params;
     const { address, amount } = recipients[0];
     const txData = {
-      nonce,
-      gasLimit: utils.toHex(25000),
+      nonce: utils.toHex(nonce),
+      gasLimit: utils.toHex(gasLimit),
       gasPrice: utils.toHex(fee),
       to: address,
       data,
