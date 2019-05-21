@@ -1,7 +1,7 @@
 import { BtcDeriver } from './btc';
 import { BchDeriver } from './bch';
 import { EthDeriver } from './eth';
-import { Paths } from "./paths";
+import { Paths } from './paths';
 
 export type Key = {
   address: string;
@@ -31,8 +31,7 @@ const derivers: { [chain: string]: IDeriver } = {
   ETH: new EthDeriver()
 };
 
-
-export class DerivationProxy {
+export class Deriver {
   get(chain) {
     return derivers[chain];
   }
@@ -64,4 +63,4 @@ export class DerivationProxy {
   }
 }
 
-export default new DerivationProxy();
+export default new Deriver();
