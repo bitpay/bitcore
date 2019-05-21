@@ -304,10 +304,6 @@ API.prototype.export = function(opts) {
  * @param {Object} str - The serialized JSON created with #export
  */
 API.prototype.import = function(credentials) {
-
-
-console.log('[api.js.308] TODO check credentials VERSION'); // TODO
-  // TODO check credentials VERSION
   try {
     if ( !_.isObject(credentials) || ! credentials.xPubKey) {
       credentials = Credentials.fromObj(JSON.parse(credentials));

@@ -4577,6 +4577,41 @@ console.log('[api.test.js.2499:err:]',err); // TODO
         });
       });
 
+      it('should be able to gain access to a 2-2 wallet from mnemonic', function(done) {
+        helpers.createAndJoinWallet( clients, keys, 2, 2, {}, function() {
+          var words = keys[0].get(null,true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          clients[0].createAddress(function(err, addr) {
+            should.not.exist(err);
+            should.exist(addr);
+            let k2 = Key.import({words}, { 
+              clientFactory: () => { 
+                return helpers.newClient(app) 
+              }}, (err, c) => {
+              should.not.exist(err);
+              c.length.should.equal(1);
+              let recoveryClient = c[0];
+              recoveryClient.openWallet(function(err) {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.m.should.equal(2);
+                recoveryClient.credentials.n.should.equal(2);
+                recoveryClient.getMainAddresses({}, function(err, list) {
+                  should.not.exist(err);
+                  should.exist(list);
+                  list[0].address.should.equal(addr.address);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
+
+
       it('should be able to see txp messages after gaining access', function(done) {
         helpers.createAndJoinWallet( clients, keys, 1, 1, {}, function() {
           var xPrivKey = keys[0].get().xPrivKey;
