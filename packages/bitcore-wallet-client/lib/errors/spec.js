@@ -1,8 +1,10 @@
-'use strict';
-
+'use strict'; 
 var errorSpec = [{
   name: 'INVALID_BACKUP',
   message: 'Invalid Backup.'
+}, {
+  name: 'OBSOLETE_BACKUP',
+  message: 'Wallet backup is obsolete.'
 }, {
   name: 'WALLET_DOES_NOT_EXIST',
   message: 'Wallet does not exist.'

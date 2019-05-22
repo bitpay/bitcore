@@ -311,7 +311,11 @@ API.prototype.import = function(credentials) {
     this.credentials = credentials;
   } catch (ex) {
     log.warn(`Error importing wallet: ${ex}`);
-    throw new Errors.INVALID_BACKUP;
+    if (ex.toString().match(/Obsolete/)) {
+      throw new Errors.OBSOLETE_BACKUP;
+    } else {
+      throw new Errors.INVALID_BACKUP;
+    }
   }
   this.request.setCredentials(this.credentials);
 };
