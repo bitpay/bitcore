@@ -23,6 +23,7 @@ var Utils = Common.Utils;
 var PayPro = require('./paypro');
 var log = require('./log');
 var Credentials = require('./credentials');
+var Key = require('./key');
 var Verifier = require('./verifier');
 var Errors = require('./errors');
 const Request = require('./request');
@@ -2215,6 +2216,40 @@ API.prototype.getWalletIdsFromOldCopay = function(username, password, blob) {
   return _.uniq(ids);
 };
 
-API.PayPro = PayPro;
+API.fromOld = function(x) {
+  $.shouldBeObject(x);
 
+  // TODO RO clients
+  if (!_.isUndefined(x.version) || (!x.xPrivKey && !x.xPrivKeyEncrypted)) {
+    throw 'Could not recognize old version';
+  }
+
+  var k = new Key();
+  _.each(Key.FIELDS, (i) => {
+    if (!_.isUndefined(x[i])) {
+      k[i] = x[i];
+    }
+  });
+
+  // ALL old credentials have multi wallets in 44'.
+  k.use48forMultisig = false;
+
+  let oldFIELDS = [
+  ];
+
+  var c = new Credentials();
+  _.each(Credentials.FIELDS, function(i) {
+    c[i] = x[i];
+  });
+  if (c.externalSource) {
+    throw new Error('External Wallets are no longer supported');
+  }
+  c.coin = c.coin || 'btc';
+  c.addressType = c.addressType || Constants.SCRIPT_TYPES.P2SH;
+  c.account = c.account || 0;
+  c.rootPath = c.getRootPath();
+  return {key: k, credentials: c};
+};
+
+API.PayPro = PayPro;
 module.exports = API;

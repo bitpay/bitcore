@@ -10,7 +10,6 @@ var Key = require('../lib/key');
 var TestData = require('./testdata');
 var Errors = require('../lib/errors');
 var Client = require('../lib');
-var oldCredentials = require('./legacyCredentialsExports');
 
 describe('Key', function() {
 
@@ -483,28 +482,6 @@ describe('Key', function() {
       should.not.exist(imported.mnemonic);
       should.exist(imported.xPrivKeyEncrypted);
       should.exist(imported.mnemonicEncrypted);
-    });
-  });
-
-  describe('from Old credentials', () =>{
-
-    _.each(oldCredentials, (x) => {
-      it(`should  import old ${x.name} credentials`, function() {
-        let imported = Key.fromOld(JSON.parse(x.blob));
-        let k = imported.key;
-        let c = imported.credentials;
-
-        if (x.password) {
-          k.decrypt(x.password);
-        }
-
-        _.each(x.test.key, (expectedValue, expectedKey)=> {
-          k[expectedKey].should.be.equal(expectedValue);
-        });
-        _.each(x.test.credentials, (expectedValue, expectedKey)=> {
-          c[expectedKey].should.be.equal(expectedValue);
-        });
-      });
     });
   });
 

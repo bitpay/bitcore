@@ -13,6 +13,7 @@ var sjcl = require('sjcl');
 var log = require('../lib/log');
 var mongodb = require('mongodb');
 var config = require('./test-config');
+var oldCredentials = require('./legacyCredentialsExports');
 
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
@@ -4279,6 +4280,28 @@ describe('client API', function() {
       });
     });
   });
+
+  describe('from Old credentials', () =>{
+    _.each(oldCredentials, (x) => {
+      it(`should  import old ${x.name} credentials`, function() {
+        let imported = Client.fromOld(JSON.parse(x.blob));
+        let k = imported.key;
+        let c = imported.credentials;
+
+        if (x.password) {
+          k.decrypt(x.password);
+        }
+
+        _.each(x.test.key, (expectedValue, expectedKey)=> {
+          k[expectedKey].should.be.equal(expectedValue);
+        });
+        _.each(x.test.credentials, (expectedValue, expectedKey)=> {
+          c[expectedKey].should.be.equal(expectedValue);
+        });
+      });
+    });
+  });
+
 
   describe('Mobility, backup & restore', function() {
     describe('Export & Import', function() {
