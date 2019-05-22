@@ -2498,7 +2498,6 @@ describe('client API', function() {
         should.exist(txp.outputs[0].encryptedMessage);
 
         clients[0].getTxProposals({}, function(err, txps) {
-console.log('[api.test.js.2499:err:]',err); // TODO
           should.not.exist(err);
           txps.should.be.empty;
 
@@ -5643,6 +5642,15 @@ console.log('[api.test.js.2499:err:]',err); // TODO
         }).should.throw(Errors.INVALID_BACKUP);
         done();
       });
+      it('should handle old credentials', function(done) {
+        var importString = '{"version": 1, "xPubKey": "xxx"}';
+        var client = new Client();
+        (function() {
+          client.import(importString);
+        }).should.throw(Errors.OBSOLETE_BACKUP);
+        done();
+      });
+ 
     });
     describe.skip('#importFromExtendedPublicKey', function() {
       it('should handle importing an invalid extended private key', function(done) {

@@ -12,7 +12,7 @@ const Constants = Common.Constants;
 const Utils = Common.Utils;
 
 function Credentials() {
-  this.version = '2.0.0';
+  this.version = 2;
   this.account = 0;
 };
 
@@ -146,10 +146,14 @@ Credentials.prototype.getRootPath = function() {
 };
 
 Credentials.fromObj = function(obj) {
-
   var x = new Credentials();
+
+  if (!obj.version  || obj.version < x.version) {
+    throw 'Obsolete credentials version';
+  }
+
   if (obj.version != x.version) {
-    throw 'Bad Credentials version';
+    throw 'Bad credentials version';
   }
 
   _.each(Credentials.FIELDS, function(k) {
