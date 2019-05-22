@@ -73,7 +73,7 @@ const Config = function(): ConfigType {
         }
       },
       event: {
-        onlyWalletEvents: true
+        onlyWalletEvents: false
       },
       p2p: {},
       socket: {},
