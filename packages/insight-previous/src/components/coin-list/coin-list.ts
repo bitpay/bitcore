@@ -27,7 +27,7 @@ export class CoinListComponent implements OnInit {
     private addrProvider: AddressProvider,
     private txsProvider: TxsProvider,
     private events: Events
-  ) { }
+  ) {}
 
   public ngOnInit(): void {
     if (this.txs && this.txs.length === 0) {
@@ -40,10 +40,9 @@ export class CoinListComponent implements OnInit {
           this.loading = false;
           this.events.publish('CoinList', { length: data.length });
         },
-        err => {
+        () => {
           this.loading = false;
           this.showTransactions = false;
-          throw err;
         }
       );
     }

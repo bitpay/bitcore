@@ -46,7 +46,7 @@ export class HeadNavComponent implements OnInit {
     private navCtrl: NavController,
     private logger: Logger,
     private apiProvider: ApiProvider
-  ) { }
+  ) {}
 
   public ngOnInit(): void {
     this.params = {

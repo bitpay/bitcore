@@ -1,5 +1,5 @@
-import { HttpClientModule } from '@angular/common/http';
-import { ErrorHandler, NgModule } from '@angular/core';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
+import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { IonicApp, IonicModule } from 'ionic-angular';
 import { BlocksPage, HomePage, PagesModule } from '../pages';
@@ -8,7 +8,7 @@ import { ApiProvider } from '../providers/api/api';
 import { BlocksProvider } from '../providers/blocks/blocks';
 import { CurrencyProvider } from '../providers/currency/currency';
 import { DefaultProvider } from '../providers/default/default';
-import { ErrorsHandler } from '../providers/error-handler/error-handler';
+import { HttpErrorInterceptor } from '../providers/error-handler/error-handler';
 import { Logger } from '../providers/logger/logger';
 import { PriceProvider } from '../providers/price/price';
 import { RedirProvider } from '../providers/redir/redir';
@@ -31,8 +31,9 @@ import { InsightApp } from './app.component';
   entryComponents: [InsightApp, HomePage, BlocksPage],
   providers: [
     {
-      provide: ErrorHandler,
-      useClass: ErrorsHandler
+      provide: HTTP_INTERCEPTORS,
+      useClass: HttpErrorInterceptor,
+      multi: true
     },
     ApiProvider,
     CurrencyProvider,

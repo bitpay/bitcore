@@ -1,22 +1,32 @@
-import { HttpErrorResponse } from '@angular/common/http';
-import { ErrorHandler, Injectable } from '@angular/core';
+import {
+  HttpErrorResponse,
+  HttpHandler,
+  HttpInterceptor,
+  HttpRequest
+} from '@angular/common/http';
+import { Injectable } from '@angular/core';
+import 'rxjs/add/observable/empty';
+import 'rxjs/add/observable/of';
+import 'rxjs/add/operator/catch';
+import 'rxjs/add/operator/retry';
+import { Observable } from 'rxjs/Observable';
 import { Logger } from '../logger/logger';
+
 @Injectable()
-export class ErrorsHandler implements ErrorHandler {
+export class HttpErrorInterceptor implements HttpInterceptor {
   constructor(private logger: Logger) {}
-  handleError(error: Error | HttpErrorResponse) {
-    if (error instanceof HttpErrorResponse) {
-      // Server or connection error happened
-      if (!navigator.onLine) {
-        // Handle offline error
-        this.logger.error('No Internet Connection');
-      } else {
-        // Handle Http Error (error.status === 403, 404...)
-        this.logger.error(`${error.status} - ${error.message}`);
-      }
-    } else {
-      // Handle Client Error (Angular Error, ReferenceError...)
-      this.logger.error(error.message);
-    }
+
+  intercept(request: HttpRequest<any>, next: HttpHandler): Observable<any> {
+    return next
+      .handle(request)
+      .retry(1)
+      .catch((err: HttpErrorResponse) => {
+        const errorMessage =
+          err.error instanceof Error
+            ? `An error occurred: ${err.error.message}`
+            : `Error ${err.status}: ${err.message || err.error}`;
+        this.logger.error(errorMessage);
+        throw errorMessage;
+      });
   }
 }

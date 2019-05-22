@@ -65,9 +65,8 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
         err => {
           this.subscriber.unsubscribe();
           clearInterval(this.reloadInterval);
-          this.errorMessage = err.message;
+          this.errorMessage = err;
           this.loading = false;
-          throw err;
         }
       );
   }
@@ -90,7 +89,6 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
         err => {
           this.errorMessage = err.message;
           this.loading = false;
-          throw err;
         }
       );
   }

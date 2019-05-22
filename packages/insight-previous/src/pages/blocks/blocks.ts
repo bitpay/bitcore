@@ -43,9 +43,8 @@ export class BlocksPage {
         this.blocks = blocks;
         this.loading = false;
       },
-      err => {
+      () => {
         this.loading = false;
-        throw err;
       }
     );
   }

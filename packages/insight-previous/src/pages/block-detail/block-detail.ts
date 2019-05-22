@@ -61,9 +61,8 @@ export class BlockDetailPage {
         this.loading = false;
       },
       err => {
-        this.errorMessage = err.message;
+        this.errorMessage = err;
         this.loading = false;
-        throw err;
       }
     );
   }

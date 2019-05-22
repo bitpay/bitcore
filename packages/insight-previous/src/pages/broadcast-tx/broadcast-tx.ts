@@ -63,8 +63,7 @@ export class BroadcastTxPage {
           this.presentToast(true, response);
         },
         err => {
-          this.presentToast(false, err.message);
-          throw err;
+          this.presentToast(false, err);
         }
       );
   }

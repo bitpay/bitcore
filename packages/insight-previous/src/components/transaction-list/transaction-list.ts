@@ -21,9 +21,7 @@ export class TransactionListComponent implements OnInit {
   public limit = 10;
   public chunkSize = 100;
 
-  constructor(
-    private txProvider: TxsProvider
-  ) { }
+  constructor(private txProvider: TxsProvider) {}
 
   public ngOnInit(): void {
     if (this.transactions && this.transactions.length === 0) {
@@ -39,9 +37,8 @@ export class TransactionListComponent implements OnInit {
             this.transactions = sortedTxs;
             this.loading = false;
           },
-          err => {
+          () => {
             this.loading = false;
-            throw err;
           }
         );
     } else {

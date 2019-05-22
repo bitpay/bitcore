@@ -68,9 +68,8 @@ export class TransactionPage {
         // Be aware that the tx component is loading data into the tx object
       },
       err => {
-        this.errorMessage = err.message;
+        this.errorMessage = err;
         this.loading = false;
-        throw err;
       }
     );
   }

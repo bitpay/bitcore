@@ -78,8 +78,7 @@ export class MessagesPage {
         this.error = message.error;
       }
     } catch (e) {
-      this.error = e.message;
-      throw e;
+      this.error = e;
     }
   }
 

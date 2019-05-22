@@ -48,9 +48,8 @@ export class LatestTransactionsComponent implements OnChanges {
         this.transactions = JSON.parse(data._body);
         this.loading = false;
       },
-      err => {
+      () => {
         this.loading = false;
-        throw err;
       }
     );
   }

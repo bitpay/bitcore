@@ -33,10 +33,9 @@ export class PriceProvider {
           this.currencyProvider.factor = this.rates[currency];
           this.currencyProvider.loading = false;
         },
-        err => {
+        () => {
           this.currencyProvider.loading = false;
           this.showErrorToast();
-          throw err;
         }
       );
     } else {
