@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiProvider } from '../../providers/api/api';
+import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { BlocksProvider } from '../blocks/blocks';
 
@@ -116,7 +116,7 @@ export class TxsProvider {
     public httpClient: HttpClient,
     public currency: CurrencyProvider,
     public blocksProvider: BlocksProvider,
-    private api: ApiProvider
+    private apiProvider: ApiProvider
   ) {}
 
   public getFee(tx: AppTx): number {
@@ -159,27 +159,42 @@ export class TxsProvider {
     };
   }
 
-  public getTxs(args?: { blockHash?: string }): Observable<ApiTx[]> {
+  public getTxs(
+    chainNetwork: ChainNetwork,
+    args?: { blockHash?: string }
+  ): Observable<ApiTx[]> {
     let queryString = '';
     if (args.blockHash) {
       queryString += `?blockHash=${args.blockHash}`;
     }
-    const url: string = this.api.getUrl() + '/tx' + queryString;
+    const url = `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
+      chainNetwork.network
+    }/tx/${queryString}`;
     return this.httpClient.get<ApiTx[]>(url);
   }
 
-  public getTx(hash: string): Observable<ApiTx> {
-    const url: string = this.api.getUrl() + '/tx/' + hash;
+  public getTx(hash: string, chainNetwork: ChainNetwork): Observable<ApiTx> {
+    const url = `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
+      chainNetwork.network
+    }/tx/${hash}`;
     return this.httpClient.get<ApiTx>(url);
   }
 
-  public getCoins(txId: string): Observable<CoinsApiResponse> {
-    const url: string = this.api.getUrl() + '/tx/' + txId + '/coins';
+  public getCoins(
+    txId: string,
+    chainNetwork: ChainNetwork
+  ): Observable<CoinsApiResponse> {
+    const url = `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
+      chainNetwork.network
+    }/tx/${txId}/coins`;
     return this.httpClient.get<CoinsApiResponse>(url);
   }
 
-  public getConfirmations(blockheight: number): Observable<number> {
-    return this.blocksProvider.getCurrentHeight().map(data => {
+  public getConfirmations(
+    blockheight: number,
+    chainNetwork: ChainNetwork
+  ): Observable<number> {
+    return this.blocksProvider.getCurrentHeight(chainNetwork).map(data => {
       return blockheight > 0 ? data.height - blockheight + 1 : blockheight;
     });
   }

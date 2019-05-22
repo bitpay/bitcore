@@ -2,6 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { Events } from 'ionic-angular';
 import _ from 'lodash';
 import { AddressProvider } from '../../providers/address/address';
+import { ChainNetwork } from '../../providers/api/api';
 import { Logger } from '../../providers/logger/logger';
 import { TxsProvider } from '../../providers/transactions/transactions';
 
@@ -12,6 +13,8 @@ import { TxsProvider } from '../../providers/transactions/transactions';
 export class CoinListComponent implements OnInit {
   @Input()
   public addrStr?: string;
+  @Input()
+  public chainNetwork: ChainNetwork;
 
   public txs: any = [];
   public showTransactions: boolean;

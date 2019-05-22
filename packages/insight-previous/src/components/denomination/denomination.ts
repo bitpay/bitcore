@@ -18,22 +18,20 @@ export class DenominationComponent {
     public navParams: NavParams
   ) {}
 
-  public ionViewDidLoad() {
+  public ionViewDidEnter() {
     this.currencySymbol = this.navParams.data.currencySymbol;
-    this.api.getAvailableNetworks().subscribe(data => {
-      this.availableNetworks = data;
-      this.showUnits = _.some(
-        this.availableNetworks,
-        this.api.networkSettings.value.selectedNetwork
-      )
-        ? true
-        : false;
-      this.units = [
-        'USD',
-        this.api.networkSettings.value.selectedNetwork.chain,
-        'm' + this.api.networkSettings.value.selectedNetwork.chain
-      ];
-    });
+    this.availableNetworks = this.api.networkSettings.availableNetworks;
+    this.showUnits = _.some(
+      this.availableNetworks,
+      this.api.networkSettings.selectedNetwork
+    )
+      ? true
+      : false;
+    this.units = [
+      'USD',
+      this.api.networkSettings.selectedNetwork.chain,
+      'm' + this.api.networkSettings.selectedNetwork.chain
+    ];
   }
 
   public changeUnit(unit: string): void {

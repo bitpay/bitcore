@@ -1,4 +1,4 @@
-<head-nav></head-nav>
+<head-nav [chainNetwork]="chainNetwork"></head-nav>
 <ion-content>
   <ion-grid fixed>
 
@@ -119,7 +119,8 @@
         </ion-list>
 
         <h2>Transactions</h2>
-        <transaction-list [queryType]="'blockHash'" [queryValue]="block.hash"></transaction-list>
+        <transaction-list [queryType]="'blockHash'" [queryValue]="block.hash" [chainNetwork]="chainNetwork">
+        </transaction-list>
       </div>
 
     </div>

@@ -1,7 +1,7 @@
 import { BtcDeriver } from './btc';
 import { BchDeriver } from './bch';
 import { EthDeriver } from './eth';
-import { Paths } from "./paths";
+import { Paths } from './paths';
 
 export type Key = {
   address: string;
@@ -31,16 +31,15 @@ const derivers: { [chain: string]: IDeriver } = {
   ETH: new EthDeriver()
 };
 
-
-export class DerivationProxy {
+export class Deriver {
   get(chain) {
     return derivers[chain];
   }
 
-  deriveAddress(chain, network, pubKey, addressIndex, isChange) {
+  deriveAddress(chain, network, xpubKey, addressIndex, isChange) {
     return this.get(chain).deriveAddress(
       network,
-      pubKey,
+      xpubKey,
       addressIndex,
       isChange
     );
@@ -64,4 +63,4 @@ export class DerivationProxy {
   }
 }
 
-export const Deriver = new DerivationProxy();
+export default new Deriver();

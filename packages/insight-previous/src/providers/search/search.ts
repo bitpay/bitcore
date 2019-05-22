@@ -17,8 +17,15 @@ export class SearchProvider {
     private httpClient: HttpClient
   ) {}
 
-  public search(input: string, type: string): Observable<any> {
-    this.apiURL = this.apiProvider.getUrl();
+  public search(
+    input: string,
+    type: string,
+    chainNetwork: ChainNetwork
+  ): Observable<any> {
+    this.apiURL = `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
+      chainNetwork.network
+    }`;
+
     switch (type) {
       case 'blockOrTx':
         return Observable.forkJoin(
@@ -32,18 +39,18 @@ export class SearchProvider {
 
   private searchBlock(block: string): Observable<{ block: any }> {
     return this.httpClient
-      .get<{ block: any }>(this.apiURL + '/block/' + block)
+      .get<{ block: any }>(`${this.apiURL}/block/${block}`)
       .pipe(map(res => ({ block: res })));
   }
   private searchTx(txid: string): Observable<{ tx: any }> {
     return this.httpClient
-      .get<{ tx: any }>(this.apiURL + '/tx/' + txid)
+      .get<{ tx: any }>(`${this.apiURL}/tx/${txid}`)
       .pipe(map(res => ({ tx: res })));
   }
   private searchAddr(addr: string): Observable<{ addr: any }> {
     const address = this.extractAddress(addr);
     return this.httpClient
-      .get<{ addr: any }>(this.apiURL + '/address/' + address)
+      .get<{ addr: any }>(`${this.apiURL}/address/${address}`)
       .pipe(map(res => ({ addr: res })));
   }
 

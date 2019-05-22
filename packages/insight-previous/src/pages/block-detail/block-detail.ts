@@ -40,27 +40,25 @@ export class BlockDetailPage {
     private priceProvider: PriceProvider
   ) {
     this.blockHash = navParams.get('blockHash');
-    const chain: string =
-      navParams.get('chain') || this.apiProvider.getConfig().chain;
-    const network: string =
-      navParams.get('network') || this.apiProvider.getConfig().network;
+    const chain: string = navParams.get('chain');
+    const network: string = navParams.get('network');
 
     this.chainNetwork = {
       chain,
       network
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
-    this.currencyProvider.setCurrency();
+    this.currencyProvider.setCurrency(this.chainNetwork);
     this.priceProvider.setCurrency();
   }
 
-  ionViewDidLoad() {
-    this.blocksProvider.getBlock(this.blockHash).subscribe(
+  ionViewDidEnter() {
+    this.blocksProvider.getBlock(this.blockHash, this.chainNetwork).subscribe(
       response => {
         const block = this.blocksProvider.toAppBlock(response);
         this.block = block;
         this.txProvider
-          .getConfirmations(this.block.height)
+          .getConfirmations(this.block.height, this.chainNetwork)
           .subscribe(confirmations => (this.confirmations = confirmations));
         this.loading = false;
       },
