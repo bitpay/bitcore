@@ -792,62 +792,6 @@ API.prototype.isComplete = function() {
   return this.credentials && this.credentials.isComplete();
 };
 
-/**
- * Is private key currently encrypted?
- *
- * @return {Boolean}
- */
-API.prototype.isPrivKeyEncrypted = function() {
-  return this.credentials && this.credentials.isPrivKeyEncrypted();
-};
-
-/**
- * Is private key external?
- *
- * @return {Boolean}
- */
-API.prototype.isPrivKeyExternal = function() {
-  return this.credentials && this.credentials.hasExternalSource();
-};
-
-/**
- * Get external wallet source name
- *
- * @return {String}
- */
-API.prototype.getPrivKeyExternalSourceName = function() {
-  return this.credentials ? this.credentials.getExternalSourceName() : null;
-};
-
-/**
- * Returns unencrypted extended private key and mnemonics
- *
- * @param password
- */
-API.prototype.getKeys = function(password) {
-  return this.credentials.getKeys(password);
-};
-
-
-/**
- * Checks is password is valid
- * Returns null (keys not encrypted), true or false.
- *
- * @param password
- */
-API.prototype.checkPassword = function(password) {
-  if (!this.isPrivKeyEncrypted()) return;
-
-  try {
-    var keys = this.getKeys(password);
-    return !!keys.xPrivKey;
-  } catch (e) {
-    return false;
-  };
-};
-
-
-
 API._extractPublicKeyRing = function(copayers) {
   return _.map(copayers, function(copayer) {
     var pkr = _.pick(copayer, ['xPubKey', 'requestPubKey']);
@@ -2234,12 +2178,21 @@ API.fromOld = function(x) {
   // ALL old credentials have multi wallets in 44'.
   k.use48forMultisig = false;
 
-  let oldFIELDS = [
-  ];
+  let obsolteFields = {
+    version: true,
+    xPrivKey: true,
+    xPrivKeyEncrypted: true,
+    hwInfo: true,
+    entropySourcePath: true,
+    mnemonic: true,
+    mnemonicEncrypted: true,
+  };
 
   var c = new Credentials();
   _.each(Credentials.FIELDS, function(i) {
-    c[i] = x[i];
+    if (!obsolteFields[i]) {
+      c[i] = x[i];
+    }
   });
   if (c.externalSource) {
     throw new Error('External Wallets are no longer supported');
@@ -2252,4 +2205,5 @@ API.fromOld = function(x) {
 };
 
 API.PayPro = PayPro;
+API.Key = Key;
 module.exports = API;
