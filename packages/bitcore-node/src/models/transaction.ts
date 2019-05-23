@@ -156,19 +156,24 @@ export class TransactionModel extends BaseModel<ITransaction> {
       );
 
       // Create events for mempool txs
+      const { onlyWalletEvents } = Config.get().services.event;
+      function shouldFire(obj: { wallets?: Array<ObjectID> }) {
+        return !onlyWalletEvents || (onlyWalletEvents && obj.wallets && obj.wallets.length > 0);
+      }
       if (params.height < SpentHeightIndicators.minimum) {
         for (let op of txOps) {
           const filter = op.updateOne.filter;
           const tx = { ...op.updateOne.update.$set, ...filter };
-          await EventStorage.signalTx(tx);
-          await mintOps
-            .filter(coinOp => coinOp.updateOne.filter.mintTxid === filter.txid)
-            .map(coinOp => {
-              const address = coinOp.updateOne.update.$set.address;
-              const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
-              return () => EventStorage.signalAddressCoin({ address, coin }) as any;
-            })
-            .reduce((promises, promise) => promises.then(promise), Promise.resolve());
+          if (shouldFire(tx)) {
+            EventStorage.signalTx(tx);
+          }
+        }
+        for (const coinOp of mintOps) {
+          const address = coinOp.updateOne.update.$set.address;
+          const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
+          if (shouldFire(coin)) {
+            EventStorage.signalAddressCoin({ address, coin });
+          }
         }
       }
     }
