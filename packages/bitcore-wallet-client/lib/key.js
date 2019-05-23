@@ -8,6 +8,7 @@ var Mnemonic = require('bitcore-mnemonic');
 var sjcl = require('sjcl');
 var log = require('./log');
 const async = require('async');
+const Uuid = require('uuid');
 
 var Common = require('./common');
 var Errors = require('./errors');
@@ -17,10 +18,11 @@ var Credentials = require('./credentials');
 
 
 function Key() {
-  this.version = '1.0.0';
+  this.version = 1;
   this.use145forBCH = true;
   this.use48forMultisig = true;
   this.compliantDerivation = true;
+  this.id = Uuid.v4();
 };
 
 Key.FIELDS = [
@@ -34,6 +36,7 @@ Key.FIELDS = [
   'use145forBCH',          // use the appropiate coin' path element in BIP44 for BCH 
   'use48forMultisig',       // use the purpose 48' for multisig wallts (default)
   'version',
+  'id',
 ];
 
 
@@ -298,6 +301,7 @@ Key.prototype.createCredentials = function(password, opts) {
     account: opts.account,
     n: opts.n,
     rootPath: path,
+    keyId: this.id,
     requestPrivKey: requestPrivKey,
     walletPrivKey: opts.walletPrivKey,
   });

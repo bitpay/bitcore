@@ -36,8 +36,8 @@ Credentials.FIELDS = [
   'sharedEncryptingKey',
   'copayerName',
   'externalSource',
-  'mnemonic',
-  'mnemonicEncrypted',
+  'mnemonic',               // Obsolete
+  'mnemonicEncrypted',      // Obsolete
   'entropySource',
   'mnemonicHasPassphrase',
   'derivationStrategy',
@@ -48,6 +48,7 @@ Credentials.FIELDS = [
   'entropySourcePath',      // Obsolete
   'version',
   'rootPath',               // this is only for information
+  'keyId',                  // this is only for information
 ];
 
 
@@ -61,6 +62,7 @@ Credentials.fromDerivedKey = function(opts) {
   $.shouldBeNumber(opts.account, 'Invalid account');
   $.shouldBeString(opts.xPubKey, 'Invalid xPubKey');
   $.shouldBeString(opts.rootPath, 'Invalid rootPath');
+  $.shouldBeString(opts.keyId, 'Invalid keyId');
   $.shouldBeString(opts.requestPrivKey, 'Invalid requestPrivKey');
   $.checkArgument(_.isUndefined(opts.nonCompliantDerivation));
   opts = opts || {};
@@ -72,6 +74,7 @@ Credentials.fromDerivedKey = function(opts) {
   x.account = opts.account;
   x.n = opts.n;
   x.xPubKey = opts.xPubKey;
+  x.keyId = opts.keyId;
 
   //this allows to set P2SH in old n=1 wallets
   if (_.isUndefined(opts.addressType)){
@@ -107,7 +110,6 @@ Credentials.fromDerivedKey = function(opts) {
 };
 
 Credentials.prototype.getRootPath = function() {
-
   var self = this;
 
   function legacyRootPath () {
@@ -133,6 +135,8 @@ Credentials.prototype.getRootPath = function() {
       } else {
         coin = '0';
       }
+    } else if (self.coin == 'btc') {
+      coin = '0';
     } else {
       throw new Error('unknown coin: ' + self.coin);
     };
