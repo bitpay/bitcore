@@ -120,7 +120,7 @@ PayPro.runRequest = function (opts, cb) {
 
   PayPro.request(opts, (err, res, body) => {
     if (err) return cb(err);
-    let ret;
+    let ret = {};
 
     if (!res || res.statusCode != 200) {
 
@@ -137,16 +137,6 @@ PayPro.runRequest = function (opts, cb) {
       return cb(new Error('Could not fetch invoice: ' + m) );
     }
 
-    try {
-      ret = JSON.parse(body.toString());
-    } catch (e)  {
-      try { body = body.toString(); } catch (e) {};
-      return cb(new Error('Could not fetch invoice: ' +  body ));
-    }
-
-
-    // read and check
-    ret.url = opts.url;
 
     //console.log('########################### SKIPPING VERIFICATION!!!!!!!!!!! ');
     // TODO TODO TODO 

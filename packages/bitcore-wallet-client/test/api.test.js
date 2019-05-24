@@ -2958,7 +2958,7 @@ describe('client API', function() {
         };
         clients[0].fetchPayPro(opts, function(err, paypro) {
           should.exist(err);
-          err.message.should.contain('Could not');
+          err.message.should.contain('match');
           done();
         });
       });
