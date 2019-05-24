@@ -37,8 +37,18 @@ export class EventModel extends BaseModel<IEvent> {
     return this.collection.insertOne({ payload: tx, emitTime: new Date(), type: 'tx' });
   }
 
+  public signalTxs(txs: IEvent.TxEvent[]) {
+    this.collection.insertMany(txs.map(tx => ({ payload: tx, emitTime: new Date(), type: 'tx' as 'tx' })));
+  }
+
   public signalAddressCoin(payload: IEvent.CoinEvent) {
     return this.collection.insertOne({ payload, emitTime: new Date(), type: 'coin' });
+  }
+
+  public signalAddressCoins(coins: IEvent.CoinEvent[]) {
+    return this.collection.insertMany(
+      coins.map(coin => ({ payload: coin, emitTime: new Date(), type: 'coin' as 'coin' }))
+    );
   }
 
   public getBlockTail(lastSeen: Date) {

@@ -161,20 +161,18 @@ export class TransactionModel extends BaseModel<ITransaction> {
         return !onlyWalletEvents || (onlyWalletEvents && obj.wallets && obj.wallets.length > 0);
       }
       if (params.height < SpentHeightIndicators.minimum) {
-        for (let op of txOps) {
-          const filter = op.updateOne.filter;
-          const tx = { ...op.updateOne.update.$set, ...filter };
-          if (shouldFire(tx)) {
-            EventStorage.signalTx(tx);
-          }
-        }
-        for (const coinOp of mintOps) {
-          const address = coinOp.updateOne.update.$set.address;
-          const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
-          if (shouldFire(coin)) {
-            EventStorage.signalAddressCoin({ address, coin });
-          }
-        }
+        const txEvents = txOps
+          .map(tx => ({ ...tx.updateOne.update.$set, ...tx.updateOne.filter }))
+          .filter(event => shouldFire(event));
+        EventStorage.signalTxs(txEvents);
+
+        const coinEvents = mintOps
+          .map(coin => ({
+            coin: { ...coin.updateOne.update.$set, ...coin.updateOne.filter },
+            address: coin.updateOne.update.$set.address
+          }))
+          .filter(event => shouldFire(event.coin));
+        EventStorage.signalAddressCoins(coinEvents);
       }
     }
   }
