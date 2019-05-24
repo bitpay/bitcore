@@ -50,5 +50,6 @@
     "karma-phantomjs-launcher": "^1.0.4",
     "sinon": "^7.1.1"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

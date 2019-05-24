@@ -71,5 +71,6 @@
     "wallet-mnemonic": "./bin/wallet-mnemonic",
     "wallet-derive": "./bin/wallet-derive"
   },
-  "licence": "MIT"
+  "licence": "MIT",
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

@@ -48,5 +48,6 @@
   },
   "peerDependencies": {
     "bitcore-lib": "^8.0.0"
-  }
+  },
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }
