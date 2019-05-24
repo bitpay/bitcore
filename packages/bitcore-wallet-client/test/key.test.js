@@ -60,6 +60,26 @@ describe('Key', function() {
     });
   });
 
+  describe('match', function() {
+    it('Should match', function() {
+      var c = Key.create();
+      Key.match(c,c).should.equal(true);
+    });
+
+    it('Should match (after import)', function() {
+      var c = Key.create();
+      var c2 = Key.fromObj(c.toObj());
+
+      Key.match(c,c2).should.equal(true);
+    });
+ 
+    it('Shouldn\'t match', function() {
+      var c = Key.create();
+      var c2 = Key.create();
+      Key.match(c,c2).should.equal(false);
+    });
+  });
+
   describe('Encryption', function() {
     describe('#encrypt', function() {
       it('should encrypt private key and remove cleartext', function() {
@@ -493,10 +513,6 @@ describe('Key', function() {
 
       var ow = sandbox.stub(client, 'openWallet').callsFake(function(callback) {
         callback(new Error());
-      });
-
-      var ip = sandbox.stub(client, 'isPrivKeyExternal').callsFake(function() {
-        return false;
       });
 
       var aa = sandbox.stub(client, 'addAccess').callsFake(function(options, callback) {
