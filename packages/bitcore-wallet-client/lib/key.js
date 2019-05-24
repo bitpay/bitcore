@@ -25,6 +25,11 @@ function Key() {
   this.id = Uuid.v4();
 };
 
+
+Key.match = (a,b) => {
+  return a.id == b.id;
+};
+
 Key.FIELDS = [
   'xPrivKey',             // obsolte
   'xPrivKeyEncrypted',   // obsolte
@@ -551,6 +556,7 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
     return callback(null, clients);
   });
 };
+
 
 
 
