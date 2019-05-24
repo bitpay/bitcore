@@ -1,6 +1,6 @@
 {
   "name": "crypto-wallet-core",
-  "version": "8.3.1",
+  "version": "8.3.3",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
   "main": "./ts_build/index.js",
   "types": "./ts_build/index.d.ts",
@@ -19,8 +19,8 @@
   "license": "MIT",
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "bitcore-lib": "^8.3.1",
-    "bitcore-lib-cash": "^8.3.1",
+    "bitcore-lib": "^8.3.3",
+    "bitcore-lib-cash": "^8.3.3",
     "elliptic": "^6.4.1",
     "ethereumjs-tx": "^1.3.7",
     "ethereumjs-util": "^6.0.0",
@@ -40,5 +40,6 @@
     "mocha": "^6.1.4",
     "ts-node": "^8.1.0",
     "typescript": "^3.4.3"
-  }
+  },
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }
