@@ -1771,7 +1771,6 @@ API.prototype.signTxProposal = function(txp, password, cb) {
     var isLegit = Verifier.checkTxProposal(self.credentials, txp, {
       paypro: paypro,
     });
-console.log('[api.js.1775:isLegit:]',isLegit); // TODO
 
     if (!isLegit)
       return cb(new Errors.SERVER_COMPROMISED);
