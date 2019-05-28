@@ -164,7 +164,9 @@ export class TransactionModel extends BaseModel<ITransaction> {
         const txEvents = txOps
           .map(tx => ({ ...tx.updateOne.update.$set, ...tx.updateOne.filter }))
           .filter(event => shouldFire(event));
-        EventStorage.signalTxs(txEvents);
+        partition(txEvents, txEvents.length / Config.get().maxPoolSize).map(txBatch => {
+          EventStorage.signalTxs(txBatch);
+        });
 
         const coinEvents = mintOps
           .map(coin => ({
@@ -172,7 +174,9 @@ export class TransactionModel extends BaseModel<ITransaction> {
             address: coin.updateOne.update.$set.address
           }))
           .filter(event => shouldFire(event.coin));
-        EventStorage.signalAddressCoins(coinEvents);
+        partition(coinEvents, coinEvents.length / Config.get().maxPoolSize).map(coinBatch => {
+          EventStorage.signalAddressCoins(coinBatch);
+        });
       }
     }
   }
