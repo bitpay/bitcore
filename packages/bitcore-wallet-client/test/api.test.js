@@ -4547,7 +4547,7 @@ describe('client API', function() {
             let k2 = Key.import({words}, { 
               clientFactory: () => { 
                 return helpers.newClient(app) 
-              }}, (err, c) => {
+              }}, (err, k, c) => {
               should.not.exist(err);
               c.length.should.equal(1);
               let recoveryClient = c[0];
@@ -4578,7 +4578,11 @@ describe('client API', function() {
             let k2 = Key.import({xPrivKey}, { 
               clientFactory: () => { 
                 return helpers.newClient(app) 
-              }}, (err, c) => {
+              }}, (err, k, c) => {
+              k.xPrivKey.should.equal(xPrivKey);
+              k.compliantDerivation.should.equal(true);
+              k.use145forBCH.should.equal(true);
+              k.use48forMultisig.should.equal(true);
               should.not.exist(err);
               c.length.should.equal(1);
               let recoveryClient = c[0];
@@ -4609,7 +4613,10 @@ describe('client API', function() {
             let k2 = Key.import({words}, { 
               clientFactory: () => { 
                 return helpers.newClient(app) 
-              }}, (err, c) => {
+              }}, (err, k, c) => {
+              k.compliantDerivation.should.equal(true);
+              k.use145forBCH.should.equal(true);
+              k.use48forMultisig.should.equal(true);
               should.not.exist(err);
               c.length.should.equal(1);
               let recoveryClient = c[0];
@@ -4653,7 +4660,7 @@ describe('client API', function() {
               let k2 = Key.import({xPrivKey}, { 
                 clientFactory: () => { 
                   return helpers.newClient(app) 
-                }}, (err, c) => {
+                }}, (err, k, c) => {
                   should.not.exist(err);
                   c.length.should.equal(1);
                   let recoveryClient = c[0];
