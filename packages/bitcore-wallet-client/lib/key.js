@@ -375,10 +375,10 @@ Key.prototype.sign = function(rootPath, txp, password) {
 //
 // Checks EXISTING wallets against BWS and return clients for each account / coin
 // 
-// Returns { err, clients[] }
+// Returns { err, key, clients[] }
 //
 // TODO: name
-Key.import = (opts, clientOpts, cb) => {
+Key.import = (opts, clientOpts, callback) => {
   var self = this;
 
   $.checkArgument(opts.words || opts.xPrivKey, "provide opts.words or opts.xPrivKey");
@@ -414,7 +414,7 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
     })
   };
   
-  function checkKey(key, callback) {
+  function checkKey(key, cb) {
     let opts = [
       //coin, network,  multisig
       ['btc', 'livenet', ],          
@@ -526,9 +526,15 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
     },
   ];
 
-  let s= sets.shift(), cont=true, k;
+  let s, resultingClients, k;
   async.whilst(() => {
-    if (!s) return false;
+
+    if (! _.isEmpty(resultingClients))
+      return false;
+
+    s = sets.shift();
+    if (!s) 
+      return false;
 
     try {
       if (opts.words) { 
@@ -538,20 +544,21 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
       }
     } catch (e) {
       log.info('Backup error:', e);
-      return cb(new Errors.INVALID_BACKUP);
+      return callback(new Errors.INVALID_BACKUP);
     }
-    s = sets.shift();
-    return cont;
+    return true;
   }, (icb) => {
     checkKey(k, (err, clients) => {
       if (err) return icb(err);
 
-      if (clients && clients.length) cont=false;
+      if (clients && clients.length) {
+        resultingClients = clients;
+      }
       return icb();
     });
   }, (err) => {
     if (err) return callback(err);
-    return callback(null, clients);
+    return callback(null, k, resultingClients);
   });
 };
 
