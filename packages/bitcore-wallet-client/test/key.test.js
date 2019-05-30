@@ -56,7 +56,7 @@ describe('Key', function() {
     it('Should return mnemonic', function() {
       var all = {};
       var c = Key.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
-      c.get(null, true).mnemonic.should.be.equal('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
+      c.get().mnemonic.should.be.equal('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
     });
   });
 
@@ -148,7 +148,7 @@ describe('Key', function() {
     describe('#getKeys', function() {
       it('should get keys regardless of encryption', function() {
         var c = Key.create();
-        var keys = c.get(null, true);
+        var keys = c.get();
         should.exist(keys.xPrivKey);
         should.exist(keys.mnemonic);
         keys.xPrivKey.should.equal(c.xPrivKey);
@@ -156,13 +156,13 @@ describe('Key', function() {
 
         c.encrypt('password');
         c.isPrivKeyEncrypted().should.be.true;
-        var keys2 = c.get('password', true);
+        var keys2 = c.get('password');
         should.exist(keys2);
         keys2.should.deep.equal(keys);
 
         c.decrypt('password');
         c.isPrivKeyEncrypted().should.be.false;
-        var keys3 = c.get(null, true);
+        var keys3 = c.get();
         should.exist(keys3);
         keys3.should.deep.equal(keys);
       });
@@ -466,7 +466,7 @@ describe('Key', function() {
       var exported = c.toObj();
       let imported = Key.fromObj(exported);
       imported.get().xPrivKey.should.equal(c.get().xPrivKey);
-      imported.get(false,true).mnemonic.should.equal(c.get(false,true).mnemonic);
+      imported.get().mnemonic.should.equal(c.get().mnemonic);
     });
 
     it('should export & import encrypted and fail if password not supplied', function() {
@@ -489,14 +489,14 @@ describe('Key', function() {
     it('should export & import encrypted and restore if password supplied', function() {
       var c = Key.create();
       let x=c.get().xPrivKey;
-      let m=c.get(null, true).mnemonic;
+      let m=c.get().mnemonic;
 
       c.encrypt('pepe');
 
       var exported = c.toObj();
       let imported = Key.fromObj(exported);
       imported.get('pepe').xPrivKey.should.equal(x);
-      imported.get('pepe',true).mnemonic.should.equal(m);
+      imported.get('pepe').mnemonic.should.equal(m);
 
       should.not.exist(imported.xPrivKey);
       should.not.exist(imported.mnemonic);
