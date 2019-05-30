@@ -9,6 +9,19 @@ const Defaults = Common.Defaults;
 let log = require('npmlog');
 log.debug = log.verbose;
 
+const fiatCodes = {
+  USD: 1,
+  INR: 1,
+  GBP: 1,
+  EUR: 1,
+  CAD: 1, // 5
+  COP: 1,
+  NGN: 1,
+  BRL: 1,
+  ARS: 1,
+  AUD: 1,
+};
+
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
   defaultProvider: any;
@@ -102,9 +115,12 @@ export class FiatRateService {
             new Error('No parse function for provider ' + provider.name)
           );
         }
-        const rates = provider.parseFn(body);
-
-        return cb(null, rates);
+        try {
+          const rates = _.filter( provider.parseFn(body), (x) => fiatCodes[x.code] );
+          return cb(null, rates);
+        } catch (e)  {
+          return cb(e);
+        }
       }
     );
   }
