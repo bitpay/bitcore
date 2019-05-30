@@ -155,7 +155,7 @@ Key.prototype.isPrivKeyEncrypted = function() {
   return (!!this.xPrivKeyEncrypted) && !this.xPrivKey;
 };
 
-Key.prototype.get = function(password, getMnemonic) {
+Key.prototype.get = function(password) {
   var keys = {};
 
   if (this.isPrivKeyEncrypted()) {
@@ -163,7 +163,7 @@ Key.prototype.get = function(password, getMnemonic) {
     try {
       keys.xPrivKey = sjcl.decrypt(password, this.xPrivKeyEncrypted);
 
-      if (getMnemonic && this.mnemonicEncrypted) {
+      if (this.mnemonicEncrypted) {
         keys.mnemonic = sjcl.decrypt(password, this.mnemonicEncrypted);
       }
     } catch (ex) {
@@ -171,9 +171,7 @@ Key.prototype.get = function(password, getMnemonic) {
     }
   } else {
     keys.xPrivKey = this.xPrivKey;
-
-    if (getMnemonic) 
-      keys.mnemonic = this.mnemonic;
+    keys.mnemonic = this.mnemonic;
   }
   return keys;
 };
