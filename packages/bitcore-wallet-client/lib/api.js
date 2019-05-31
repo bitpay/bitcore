@@ -2240,7 +2240,7 @@ API.prototype.getFiatRate = function(opts, cb) {
     qs = '?' + args.join('&');
   }
 
-  self.request.get('/v2/fiatrates/' + opts.code + '/' + qs, function(err, rates) {
+  self.request.get('/v1/fiatrates/' + opts.code + '/' + qs, function(err, rates) {
     if (err) return cb(err);
     return cb(null, rates);
   });
