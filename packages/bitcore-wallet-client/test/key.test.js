@@ -521,8 +521,9 @@ describe('Key', function() {
 
       let words = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 
-      Key.import({words}, { clientFactory: () => {return client;}}, function(err, cs) {
+      Key.serverAssistedImport({words}, { clientFactory: () => {return client;}}, function(err, key, cs) {
         should.not.exist(err);
+        should.not.exist(key);
         cs.length.should.equal(0);
         sandbox.restore();
         done();
@@ -533,7 +534,7 @@ describe('Key', function() {
   describe('#import FromMnemonic', function() {
     it('should handle importing an invalid mnemonic', function(done) {
       var mnemonicWords = 'this is an invalid mnemonic';
-      Key.import({words:mnemonicWords}, {}, function(err) {
+      Key.serverAssistedImport({words:mnemonicWords}, {}, function(err) {
         should.exist(err);
         err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
         done();
@@ -544,7 +545,7 @@ describe('Key', function() {
   describe('#import FromExtendedPrivateKey', function() {
     it('should handle importing an invalid extended private key', function(done) {
       var xPrivKey = 'this is an invalid key';
-      Key.import({xPrivKey},{},  function(err) {
+      Key.serverAssistedImport({xPrivKey},{},  function(err) {
         should.exist(err);
         err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
         done();

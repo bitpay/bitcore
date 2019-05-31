@@ -281,13 +281,15 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
 };
 
 /**
- * Export wallet
+ * toString() wallet
  *
  * @param {Object} opts
  */
-API.prototype.export = function(opts) {
+API.prototype.toString = function(opts) {
   $.checkState(this.credentials);
-  $.checkArgument(!this.noSign, 'no Sign not supported');
+  
+console.log('[api.js.290] TODO Handle noSign in toString()'); // TODO
+  //$.checkArgument(!this.noSign, 'no Sign not supported');
 
   opts = opts || {};
 
@@ -300,11 +302,11 @@ API.prototype.export = function(opts) {
 
 
 /**
- * Import wallet
+ * fromString wallet
  *
  * @param {Object} str - The serialized JSON created with #export
  */
-API.prototype.import = function(credentials) {
+API.prototype.fromString = function(credentials) {
   try {
     if ( !_.isObject(credentials) || ! credentials.xPubKey) {
       credentials = Credentials.fromObj(JSON.parse(credentials));

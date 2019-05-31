@@ -112,7 +112,7 @@ helpers.createAndJoinWallet = function(clients, keys, m, n, opts, cb) {
   var network = opts.network || 'testnet';
 
   keys[0] = Key.create();
-  clients[0].import(
+  clients[0].fromString(
     keys[0].createCredentials(null, {coin: coin, n:1, network: network, account:0, n:n})
   );
 
@@ -135,7 +135,7 @@ helpers.createAndJoinWallet = function(clients, keys, m, n, opts, cb) {
         function(next) {
           async.each(_.range(1, n), function(i, cb) {
             keys[i] = Key.create();
-            clients[i].import(
+            clients[i].fromString(
               keys[i].createCredentials(null, {
                 coin: coin, 
                 network: network, 
@@ -480,7 +480,7 @@ describe('client API', function() {
         s2.load = sinon.stub().yields(null);
         var client = helpers.newClient(app);
         client.storage = s2;
-        client.import(
+        client.fromString(
           k.createCredentials(null, {coin: 'btc', n:1, network:'testnet', account:0})
         );
         client.createWallet('1', '2', 1, 1, {
@@ -511,7 +511,7 @@ describe('client API', function() {
         s2.load = sinon.stub().yields(null);
         var client = helpers.newClient(app);
         client.storage = s2;
-        client.import(
+        client.fromString(
           k.createCredentials(null, {coin: 'btc', n:1, network:'testnet', account:0})
         );
  
@@ -543,7 +543,7 @@ describe('client API', function() {
         s2.load = sinon.stub().yields(null);
         var client = helpers.newClient(app);
         client.storage = s2;
-        client.import(
+        client.fromString(
           k.createCredentials(null, {coin: 'btc', n:1, network:'testnet', account:0})
         );
  
@@ -570,7 +570,7 @@ describe('client API', function() {
 
     it('should handle critical errors (Case5)', function(done) {
       clients[0].request.r = helpers.stubRequest('some error');
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {coin: 'btc', n:1, network:'testnet', account:0})
       );
  
@@ -1238,7 +1238,7 @@ describe('client API', function() {
     });
 
     it('should fail to create wallet in bogus device', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'livenet', 
@@ -1256,7 +1256,7 @@ describe('client API', function() {
       });
     });
     it('should encrypt wallet name', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'livenet', 
@@ -1280,7 +1280,7 @@ describe('client API', function() {
       });
     });
     it('should encrypt copayer name in wallet creation', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'livenet', 
@@ -1304,7 +1304,7 @@ describe('client API', function() {
       });
     });
     it('should be able to access wallet name in non-encrypted wallet (legacy)', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'livenet', 
@@ -1357,7 +1357,7 @@ describe('client API', function() {
  
 
     it('should check balance in a 1-1 ', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'livenet', 
@@ -1377,7 +1377,7 @@ describe('client API', function() {
       });
     });
     it('should be able to complete wallet in copayer that joined later', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'livenet', 
@@ -1403,7 +1403,7 @@ describe('client API', function() {
 
 
     it('should fire event when wallet is complete', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'livenet', 
@@ -1427,7 +1427,7 @@ describe('client API', function() {
         clients[0].credentials.isComplete().should.equal(false);
 
         let k2 = Key.create();
-        clients[1].import(
+        clients[1].fromString(
           k2.createCredentials(null, {
             coin: 'btc', 
             network: 'livenet', 
@@ -1450,7 +1450,7 @@ describe('client API', function() {
     });
 
     it('should fill wallet info in an incomplete wallet', function(done) {
-     clients[0].import(
+     clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'livenet', 
@@ -1462,7 +1462,7 @@ describe('client API', function() {
       clients[0].createWallet('XXX', 'creator', 2, 3, {}, function(err, secret) {
         should.not.exist(err);
         let k2 = Key.fromMnemonic(k.get(null, true).mnemonic);
-        clients[1].import(
+        clients[1].fromString(
           k2.createCredentials(null, {
             coin: 'btc', 
             network: 'livenet', 
@@ -1482,7 +1482,7 @@ describe('client API', function() {
     });
 
     it('should return wallet on successful join', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'testnet', 
@@ -1496,7 +1496,7 @@ describe('client API', function() {
       }, function(err, secret) {
         should.not.exist(err);
         let k2 = Key.create();
-        clients[1].import(
+        clients[1].fromString(
           k2.createCredentials(null, {
             coin: 'btc', 
             network: 'testnet', 
@@ -1519,7 +1519,7 @@ describe('client API', function() {
 
     it('should not allow to join wallet on bogus device', function(done) {
 
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'testnet', 
@@ -1533,7 +1533,7 @@ describe('client API', function() {
       }, function(err, secret) {
         should.not.exist(err);
         let k2 = Key.create();
-        clients[1].import(
+        clients[1].fromString(
           k2.createCredentials(null, {
             coin: 'btc', 
             network: 'testnet', 
@@ -1551,7 +1551,7 @@ describe('client API', function() {
     });
 
     it('should not allow to join a full wallet ', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'testnet', 
@@ -1563,7 +1563,7 @@ describe('client API', function() {
       helpers.createAndJoinWallet(clients, keys, 2, 2, {}, function(w) {
         should.exist(w.secret);
 
-        clients[4].import(
+        clients[4].fromString(
           k.createCredentials(null, {
             coin: 'btc', 
             network: 'testnet', 
@@ -1579,7 +1579,7 @@ describe('client API', function() {
       });
     });
     it('should fail with an invalid secret', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'testnet', 
@@ -1599,7 +1599,7 @@ describe('client API', function() {
       });
     });
     it('should fail with an unknown secret', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'testnet', 
@@ -1675,7 +1675,7 @@ describe('client API', function() {
       });
     });
     it('should perform a dry join without actually joining', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'livenet', 
@@ -1687,7 +1687,7 @@ describe('client API', function() {
       clients[0].createWallet('mywallet', 'creator', 1, 2, {}, function(err, secret) {
         should.not.exist(err);
         should.exist(secret);
-        clients[1].import(
+        clients[1].fromString(
           k.createCredentials(null, {
             coin: 'btc', 
             network: 'livenet', 
@@ -1708,7 +1708,7 @@ describe('client API', function() {
     });
 
     it('should return wallet status even if wallet is not yet complete', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'testnet', 
@@ -1735,7 +1735,7 @@ describe('client API', function() {
     });
       
     it('should return status using v2 version', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'testnet', 
@@ -1757,7 +1757,7 @@ describe('client API', function() {
       });
     });
     it('should return extended status using v2 version', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'testnet', 
@@ -1782,7 +1782,7 @@ describe('client API', function() {
     });
 
     it('should store walletPrivKey', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'testnet', 
@@ -1812,7 +1812,7 @@ describe('client API', function() {
     });
 
     it('should set walletPrivKey from BWS', function(done) {
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc', 
           network: 'testnet', 
@@ -1844,7 +1844,7 @@ describe('client API', function() {
     it('should create a 1-1 wallet with given mnemonic', function(done) {
       var c = Key.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
-      clients[0].import(
+      clients[0].fromString(
         c.createCredentials(null, {
           coin: 'btc', 
           network: 'livenet',
@@ -1870,7 +1870,7 @@ describe('client API', function() {
     it('should create a 2-3 wallet with given mnemonic', function(done) {
       var c = Key.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
-      clients[0].import(
+      clients[0].fromString(
         c.createCredentials(null, {
           coin: 'btc', 
           network: 'livenet',
@@ -1894,7 +1894,7 @@ describe('client API', function() {
 
     it('should create Bitcoin Cash wallet', function(done) {
       let k = Key.create();
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'bch', 
           network: 'livenet', 
@@ -1920,7 +1920,7 @@ describe('client API', function() {
       let k = Key.fromExtendedPrivateKey(xPriv, {
         useLegacyCoinType: true,
       });
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'bch', 
           network: 'livenet', 
@@ -4336,9 +4336,9 @@ describe('client API', function() {
           var copayerName = c.copayerName;
           var key = c.xPubKey;
 
-          var exported = clients[0].export()
+          var exported = clients[0].toString()
           importedClient = helpers.newClient(app);
-          importedClient.import(exported);
+          importedClient.fromString(exported);
           var c2 = importedClient.credentials;
           c2.xPubKey.should.equal(key);
           c2.walletId.should.equal(walletId);
@@ -4358,7 +4358,7 @@ describe('client API', function() {
           var pub = c.xPubKey;
 
           importedClient = helpers.newClient(app);
-          importedClient.import(
+          importedClient.fromString(
             keys[0].createCredentials(null, {
               coin:'btc',
               network:'testnet',
@@ -4426,7 +4426,7 @@ describe('client API', function() {
             nonCompliantDerivation: true,
           });
 
-          clients[0].import(
+          clients[0].fromString(
             k.createCredentials(null, {
               coin: 'btc',
               network: 'livenet',
@@ -4442,7 +4442,7 @@ describe('client API', function() {
             let k2 = Key.fromMnemonic('pink net pet stove boy receive task nephew book spawn pull regret', {
               nonCompliantDerivation: true,
             });
-            importedClient.import(
+            importedClient.fromString(
               k2.createCredentials(null, {
                 coin:'btc',
                 network:'livenet',
@@ -4464,7 +4464,7 @@ describe('client API', function() {
             nonCompliantDerivation: true,
           });
 
-          clients[0].import(
+          clients[0].fromString(
             k.createCredentials(null, {
               coin: 'btc',
               network: 'livenet',
@@ -4475,7 +4475,7 @@ describe('client API', function() {
 
           // no setup.
           importedClient = helpers.newClient(app);
-          importedClient.import(
+          importedClient.fromString(
             k.createCredentials(null, {
               coin: 'btc',
               network: 'livenet',
@@ -4544,7 +4544,7 @@ describe('client API', function() {
           clients[0].createAddress(function(err, addr) {
             should.not.exist(err);
             should.exist(addr);
-            let k2 = Key.import({words}, { 
+            let k2 = Key.serverAssistedImport({words}, { 
               clientFactory: () => { 
                 return helpers.newClient(app) 
               }}, (err, k, c) => {
@@ -4575,7 +4575,7 @@ describe('client API', function() {
           clients[0].createAddress(function(err, addr) {
             should.not.exist(err);
             should.exist(addr);
-            let k2 = Key.import({xPrivKey}, { 
+            let k2 = Key.serverAssistedImport({xPrivKey}, { 
               clientFactory: () => { 
                 return helpers.newClient(app) 
               }}, (err, k, c) => {
@@ -4610,7 +4610,7 @@ describe('client API', function() {
           clients[0].createAddress(function(err, addr) {
             should.not.exist(err);
             should.exist(addr);
-            let k2 = Key.import({words}, { 
+            let k2 = Key.serverAssistedImport({words}, { 
               clientFactory: () => { 
                 return helpers.newClient(app) 
               }}, (err, k, c) => {
@@ -4657,7 +4657,7 @@ describe('client API', function() {
               should.not.exist(err);
 
 
-              let k2 = Key.import({xPrivKey}, { 
+              let k2 = Key.serverAssistedImport({xPrivKey}, { 
                 clientFactory: () => { 
                   return helpers.newClient(app) 
                 }}, (err, k, c) => {
@@ -4700,7 +4700,7 @@ describe('client API', function() {
 
               var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
               var recoveryClient = helpers.newClient(newApp);
-              recoveryClient.import(clients[0].export());
+              recoveryClient.fromString(clients[0].toString());
 
               recoveryClient.getStatus({}, function(err, status) {
                 should.exist(err);
@@ -4731,7 +4731,7 @@ describe('client API', function() {
                       addr2.path.should.equal(addr.path);
 
                       var recoveryClient2 = helpers.newClient(newApp);
-                      recoveryClient2.import(clients[1].export());
+                      recoveryClient2.fromString(clients[1].toString());
                       recoveryClient2.getStatus({}, function(err, status) {
                         should.not.exist(err);
                         done();
@@ -4767,7 +4767,7 @@ describe('client API', function() {
                 newApp = expressApp.app;
 
                 var recoveryClient = helpers.newClient(newApp);
-                recoveryClient.import(clients[0].export());
+                recoveryClient.fromString(clients[0].toString());
 
                 recoveryClient.getStatus({}, function(err, status) {
                   should.exist(err);
@@ -4823,7 +4823,7 @@ describe('client API', function() {
 
                 var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
                 var recoveryClient = helpers.newClient(newApp);
-                recoveryClient.import(clients[0].export());
+                recoveryClient.fromString(clients[0].toString());
 
                 recoveryClient.getStatus({}, function(err, status) {
                   should.exist(err);
@@ -4842,7 +4842,7 @@ describe('client API', function() {
                           addr2.path.should.equal(addr.path);
 
                           var recoveryClient2 = helpers.newClient(newApp);
-                          recoveryClient2.import(clients[1].export());
+                          recoveryClient2.fromString(clients[1].toString());
                           recoveryClient2.getStatus({}, function(err, status) {
                             should.not.exist(err);
                             done();
@@ -4859,7 +4859,7 @@ describe('client API', function() {
 
       it('should be able to recreate 1-of-1 wallet with account 2', function(done) {
         let k = Key.fromExtendedPrivateKey('tprv8ZgxMBicQKsPdeZR4tV14PAJmzrWGsmafRVaHXUVYezrSbtnFM1CnqdbQuXfmSLxwr71axKewd3LTRDcQmtttUnZe27TQoGmGMeddv1H9JQ');
-        clients[0].import(
+        clients[0].fromString(
           k.createCredentials(null, {
             coin: 'btc',
             network: 'testnet',
@@ -4892,7 +4892,7 @@ describe('client API', function() {
 
               var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
               var recoveryClient = helpers.newClient(newApp);
-              recoveryClient.import(clients[0].export());
+              recoveryClient.fromString(clients[0].toString());
               recoveryClient.credentials.account.should.equal(2);
               recoveryClient.credentials.rootPath.should.equal('m/44\'/1\'/2\'');
               recoveryClient.getStatus({}, function(err, status) {
@@ -4940,7 +4940,7 @@ describe('client API', function() {
       let k = Key.fromMnemonic(m,{
         useLegacyCoinType: true
       });
-      clients[0].import(
+      clients[0].fromString(
         k.createCredentials(null, {
           coin: 'bch',
           network: 'livenet',
@@ -4957,7 +4957,7 @@ describe('client API', function() {
           should.not.exist(err);
           address = x.address;
           var importedClient = helpers.newClient(app);
-          importedClient.import(
+          importedClient.fromString(
             k.createCredentials(null, {
               coin: 'bch',
               network: 'livenet',
@@ -4986,12 +4986,12 @@ describe('client API', function() {
       airgapped.seedFromRandom({
         network: 'testnet'
       });
-      var exported = airgapped.export({
+      var exported = airgapped.toString({
         noSign: true
       });
 
       var proxy = helpers.newClient(app);
-      proxy.import(exported);
+      proxy.fromString(exported);
       should.not.exist(proxy.credentials.xPrivKey);
 
       var seedSpy = sinon.spy(proxy, 'seedFromRandom');
@@ -5012,12 +5012,12 @@ describe('client API', function() {
       airgapped.seedFromRandom({
         network: 'testnet'
       });
-      var exported = airgapped.export({
+      var exported = airgapped.toString({
         noSign: true
       });
 
       var proxy = helpers.newClient(app);
-      proxy.import(exported);
+      proxy.fromString(exported);
       should.not.exist(proxy.credentials.xPrivKey);
 
       var seedSpy = sinon.spy(proxy, 'seedFromRandom');
@@ -5035,12 +5035,12 @@ describe('client API', function() {
       airgapped.seedFromRandom({
         network: 'testnet'
       });
-      var exported = airgapped.export({
+      var exported = airgapped.toString({
         noSign: true
       });
 
       var proxy = helpers.newClient(app);
-      proxy.import(exported);
+      proxy.fromString(exported);
       should.not.exist(proxy.credentials.xPrivKey);
 
       async.waterfall([
@@ -5189,12 +5189,12 @@ describe('client API', function() {
         airgapped.seedFromRandom({
           network: 'testnet'
         });
-        var exported = airgapped.export({
+        var exported = airgapped.toString({
           noSign: true
         });
 
         proxy = helpers.newClient(app);
-        proxy.import(exported);
+        proxy.fromString(exported);
         should.not.exist(proxy.credentials.xPrivKey);
 
         async.waterfall([
@@ -5668,7 +5668,7 @@ describe('client API', function() {
         var importString = 'this is not valid JSON';
         var client = new Client();
         (function() {
-          client.import(importString);
+          client.fromString(importString);
         }).should.throw(Errors.INVALID_BACKUP);
         done();
       });
@@ -5676,7 +5676,7 @@ describe('client API', function() {
         var importString = '{"version": 1, "xPubKey": "xxx"}';
         var client = new Client();
         (function() {
-          client.import(importString);
+          client.fromString(importString);
         }).should.throw(Errors.OBSOLETE_BACKUP);
         done();
       });
