@@ -92,7 +92,7 @@ export class FiatRateService {
         });
       });
     },
-      //        next), 
+      //        next),
       cb);
   }
 
