@@ -837,13 +837,7 @@ export class ExpressApp {
       });
     });
 
-    // DEPRECATED
     router.get('/v1/fiatrates/:code/', (req, res) => {
-      logDeprecated(req);
-      return returnError(new ClientError('/v1/fiatrates no longer supported'), res, req);
-    });
-
-    router.get('/v2/fiatrates/:code/', (req, res) => {
       let server;
       const opts = {
         code: req.params['code'],
