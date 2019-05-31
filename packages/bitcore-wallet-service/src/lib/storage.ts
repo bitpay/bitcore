@@ -1127,7 +1127,7 @@ export class Storage {
       (rate: { code: string; value: string }, next) => {
         let i = {
             ts: now,
-            coin: coin,
+            coin,
             code: rate.code,
             value: rate.value
           };
