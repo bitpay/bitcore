@@ -365,20 +365,18 @@ Key.prototype.sign = function(rootPath, txp, password) {
 };
 
 
+/**
+ * serverAssistedImport 
+ * Imports  EXISTING wallets against BWS and return key & clients[] for each account / coin
+ *
+ * @param {Object} opts
+ * @param {String} opts.words - mnemonic
+ * @param {String} opts.xPrivKey - extended Private Key 
+ * @param {Object} clientOpts  - BWS connection options (see
+ * @returns {Callback} cb - Returns { err, key, clients[] }
+ */
 
-
-//
-//  account 0 will be used to check:
-//    - compliantDerivation or not
-//    - useLegacyCoinType or not  (only for bch)
-//    - useLegacyPurpose or not   (only for multisig)
-//
-// Checks EXISTING wallets against BWS and return clients for each account / coin
-// 
-// Returns { err, key, clients[] }
-//
-// TODO: name
-Key.import = (opts, clientOpts, callback) => {
+Key.serverAssistedImport = (opts, clientOpts, callback) => {
   var self = this;
 
   $.checkArgument(opts.words || opts.xPrivKey, "provide opts.words or opts.xPrivKey");
@@ -401,7 +399,7 @@ Key.import = (opts, clientOpts, callback) => {
 
     let client  = clientOpts.clientFactory ?  clientOpts.clientFactory() :  new Client(clientOpts);
 
-    client.import(c);
+    client.fromString(c);
     client.open(function(err) {
 console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FOUND!'); // TODO
       // Exists
@@ -526,7 +524,7 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
     },
   ];
 
-  let s, resultingClients, k;
+  let s, resultingClients = [], k;
   async.whilst(() => {
 
     if (! _.isEmpty(resultingClients))
@@ -558,6 +556,10 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
     });
   }, (err) => {
     if (err) return callback(err);
+
+    if (_.isEmpty(resultingClients)) 
+      k=null;
+
     return callback(null, k, resultingClients);
   });
 };
