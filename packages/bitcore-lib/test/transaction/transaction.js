@@ -446,8 +446,10 @@ describe('Transaction', function() {
         .feePerByte(20)
         .change(changeAddress)
         .sign(privateKey);
-      const minSize = ( 37 * 148 ) + ( 2 * 34 + 10 - 37 );
-      const maxSize = ( 37 * 148 ) + ( 2 * 34 + 10 + 37 );
+      const inputCount = inputs.length;
+      const outputCount = transaction.outputs.length;
+      const minSize = ( inputCount * 148 ) + ( outputCount * 34 + 10 - inputCount );
+      const maxSize = ( inputCount * 148 ) + ( outputCount * 34 + 10 + inputCount );
       transaction._estimateSize().should.be.within(minSize, maxSize);
       transaction.outputs.length.should.equal(2);
     });
