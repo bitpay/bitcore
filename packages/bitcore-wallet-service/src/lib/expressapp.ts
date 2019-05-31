@@ -837,12 +837,18 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.get('/v1/fiatrates/:code/', (req, res) => {
+      logDeprecated(req);
+      return returnError(new ClientError('/v1/fiatrates no longer supported'), res, req);
+    });
+
+    router.get('/v2/fiatrates/:code/', (req, res) => {
       let server;
       const opts = {
         code: req.params['code'],
-        provider: req.query.provider,
-        ts: +req.query.ts
+        coin: req.query.coin || 'btc',
+        ts: (req.query.ts ? +req.query.ts : null),
       };
       try {
         server = getServer(req, res);

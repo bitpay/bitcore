@@ -2222,7 +2222,7 @@ API.prototype.getTxNotes = function(opts, cb) {
  * @param {Object} opts
  * @param {string} opts.code - Currency ISO code.
  * @param {Date} [opts.ts] - A timestamp to base the rate on (default Date.now()).
- * @param {String} [opts.provider] - A provider of exchange rates (default 'BitPay').
+ * @param {String} [opts.coin] - Coin (detault: 'btc')
  * @returns {Object} rates - The exchange rate.
  */
 API.prototype.getFiatRate = function(opts, cb) {
@@ -2234,13 +2234,13 @@ API.prototype.getFiatRate = function(opts, cb) {
 
   var args = [];
   if (opts.ts) args.push('ts=' + opts.ts);
-  if (opts.provider) args.push('provider=' + opts.provider);
+  if (opts.coin) args.push('coin=' + opts.coin);
   var qs = '';
   if (args.length > 0) {
     qs = '?' + args.join('&');
   }
 
-  self.request.get('/v1/fiatrates/' + opts.code + '/' + qs, function(err, rates) {
+  self.request.get('/v2/fiatrates/' + opts.code + '/' + qs, function(err, rates) {
     if (err) return cb(err);
     return cb(null, rates);
   });
