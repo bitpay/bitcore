@@ -333,7 +333,6 @@ helpers.newDb = (extra, cb) => {
   });
 }
 
-console.log('[api.test.js.331]'); // TODO
 var db;
 describe('client API', function() {
   var clients, app, sandbox, storage, keys, i;

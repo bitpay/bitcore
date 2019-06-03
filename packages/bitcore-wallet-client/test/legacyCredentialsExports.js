@@ -6,8 +6,8 @@ let x = [
     test: {
       key: {
         xPrivKey: 'tprv8ZgxMBicQKsPdG9XcQ3VH5eN9mSnHD7SbJEZkXmiQuMpjtNqnba1b643y8mH8WjFCJPj2Jjyy2U79Nayd48NoGgCjTx9BPbDLzkQjFGitty',
-        use145forBCH: true,
-        use48forMultisig: false,
+        use0forBCH: false,
+        use44forMultisig: true,
         compliantDerivation: true,
       },
       credentials: {
@@ -22,8 +22,8 @@ let x = [
     test: {
       key: {
         xPrivKeyEncrypted: '{"iv":"jBiIFQ2SgH12vEZkb+dDbw==","v":1,"iter":10000,"ks":128,"ts":64,"mode":"ccm","adata":"","cipher":"aes","salt":"WXncRtIR9qU=","ct":"nQmvBl3GllfFefkVECfRDVruuT3ci4j4gJ4k++80ilt9KqA8A5X4xxD5VuiwomlDEPAsmbt2EaoKze0X1XKJv40tRsNtstWA64UJdavj2+2bCj4Al1ju8WZg0nAtMFgU9MauBlJf8xFI+51KtLdLo2FQn57raCQ="}',
-        use145forBCH: true,
-        use48forMultisig: false,
+        use0forBCH: false,
+        use44forMultisig: true,
         compliantDerivation: true,
       },
       credentials: {
@@ -39,8 +39,8 @@ let x = [
     test: {
       key: {
         xPrivKeyEncrypted: JSON.stringify(JSON.parse('{\"iv\":\"WP3FP98hFcGIky57JVAHTQ==\",\"v\":1,\"iter\":10000,\"ks\":128,\"ts\":64,\"mode\":\"ccm\",\"adata\":\"\",\"cipher\":\"aes\",\"salt\":\"yJFdLdWTujc=\",\"ct\":\"x70kUzaGow28Etfzcg7JHXmdcK3NlPUG+/LALSnOVVkY+qMyR4sdICJvqAxNGTkKM6/kbePDV9+ZkqJpCHR4bmR9JK/oH2qWgTHZJYxb9O+JOQX0quX0ASUEVIsmE8MgDpwFyEsMp5lBaZdaM3KOSW4prESz2pc=\"}')),
-        use145forBCH: true,
-        use48forMultisig: false,
+        use0forBCH: false,
+        use44forMultisig: true,
         compliantDerivation: true,
       },
       credentials: {
@@ -57,8 +57,8 @@ let x = [
     test: {
       key: {
         xPrivKey: 'tprv8ZgxMBicQKsPdG5k3D43eNpvxSvGVk3AyCFiyho4yETefs22pXKKaopUhK7PKdpEhYqGNKzyMQbKpZzo98U3LJ8sDwLS6ft5SVoAzheFzZr',
-        use145forBCH: true,
-        use48forMultisig: false,
+        use0forBCH: false,
+        use44forMultisig: true,
         compliantDerivation: true,
       },
       credentials: {
