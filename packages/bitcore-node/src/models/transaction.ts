@@ -127,6 +127,9 @@ export class TransactionModel extends BaseModel<ITransaction> {
     const mintOps = await this.getMintOps(params);
     const spendOps = this.getSpendOps({ ...params, mintOps });
     const txOps = await this.addTransactions({ ...params, mintOps });
+    const handleMempoolOpSafely = op => {
+      return this.toMempoolSafeUpsert(op, params.height);
+    };
     await this.pruneMempool({
       chain: params.chain,
       network: params.network,
@@ -138,16 +141,18 @@ export class TransactionModel extends BaseModel<ITransaction> {
     if (mintOps.length) {
       await Promise.all(
         partition(mintOps, mintOps.length / Config.get().maxPoolSize).map(async mintBatch => {
-          await CoinStorage.collection.bulkWrite(mintBatch, { ordered: false });
+          await CoinStorage.collection.bulkWrite(mintBatch.map(handleMempoolOpSafely), {
+            ordered: false
+          });
           if (params.height < SpentHeightIndicators.minimum) {
             EventStorage.signalAddressCoins(
               mintBatch
-              .map(coinOp => {
-                const address = coinOp.updateOne.update.$set.address;
-                const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
-                return { address, coin };
-              })
-              .filter(({ coin }) => shouldFire(coin))
+                .map(coinOp => {
+                  const address = coinOp.updateOne.update.$set.address;
+                  const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
+                  return { address, coin };
+                })
+                .filter(({ coin }) => shouldFire(coin))
             );
           }
         })
@@ -167,7 +172,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
       logger.debug('Writing Transactions', txOps.length);
       await Promise.all(
         partition(txOps, txOps.length / Config.get().maxPoolSize).map(async txBatch => {
-          await this.collection.bulkWrite(txBatch, { ordered: false });
+          await this.collection.bulkWrite(txBatch.map(handleMempoolOpSafely), { ordered: false });
           if (params.height < SpentHeightIndicators.minimum) {
             EventStorage.signalTxs(
               txBatch.map(op => ({ ...op.updateOne.update.$set, ...op.updateOne.filter })).filter(shouldFire)
@@ -175,6 +180,26 @@ export class TransactionModel extends BaseModel<ITransaction> {
           }
         })
       );
+    }
+  }
+
+  toMempoolSafeUpsert(
+    mongoOp: { updateOne: { filter: any; update: { $set: any; $setOnInsert?: any } } },
+    height: number
+  ) {
+    if (height >= SpentHeightIndicators.minimum) {
+      return mongoOp;
+    } else {
+      return {
+        updateOne: {
+          filter: mongoOp.updateOne.filter,
+          update: {
+            $setOnInsert: { ...mongoOp.updateOne.update.$set, ...mongoOp.updateOne.update.$setOnInsert }
+          },
+          upsert: true,
+          forceServerObjectId: true
+        }
+      };
     }
   }
 
