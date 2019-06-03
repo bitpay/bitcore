@@ -19,8 +19,8 @@ var Credentials = require('./credentials');
 
 function Key() {
   this.version = 1;
-  this.use145forBCH = true;
-  this.use48forMultisig = true;
+  this.use0forBCH = false;
+  this.use44forMultisig = false;
   this.compliantDerivation = true;
   this.id = Uuid.v4();
 };
@@ -38,8 +38,8 @@ Key.FIELDS = [
   'mnemonicHasPassphrase',
 
   // data for derived credentials.
-  'use145forBCH',          // use the appropiate coin' path element in BIP44 for BCH 
-  'use48forMultisig',       // use the purpose 48' for multisig wallts (default)
+  'use0forBCH',          // use the 0 coin' path element in BCH  (legacy)
+  'use44forMultisig',    // use the purpose 44' for multisig wallts (legacy)
   'version',
   'id',
 ];
@@ -72,8 +72,8 @@ Key.create = function(opts) {
   x.mnemonicHasPassphrase = !!opts.passphrase;
 
   // bug backwards compatibility flags
-  x.use145forBCH = !opts.useLegacyCoinType;
-  x.use48forMultisig = !opts.useLegacyPurpose;
+  x.use0forBCH = opts.useLegacyCoinType;
+  x.use44forMultisig = opts.useLegacyPurpose;
 
   x.compliantDerivation = !opts.nonCompliantDerivation;
 
@@ -91,8 +91,8 @@ Key.fromMnemonic = function(words, opts) {
   x.mnemonic = words;
   x.mnemonicHasPassphrase = !!opts.passphrase;
 
-  x.use145forBCH = !opts.useLegacyCoinType;
-  x.use48forMultisig = !opts.useLegacyPurpose;
+  x.use0forBCH = opts.useLegacyCoinType;
+  x.use44forMultisig = opts.useLegacyPurpose;
 
   x.compliantDerivation = !opts.nonCompliantDerivation;
 
@@ -114,8 +114,8 @@ Key.fromExtendedPrivateKey = function(xPriv, opts) {
   x.mnemonic = null;
   x.mnemonicHasPassphrase = null;
 
-  x.use48forMultisig = !opts.useLegacyPurpose;
-  x.use145forBCH = !opts.useLegacyCoinType;
+  x.use44forMultisig = opts.useLegacyPurpose;
+  x.use0forBCH = opts.useLegacyCoinType;
 
   x.compliantDerivation = !opts.nonCompliantDerivation;
   return x;
@@ -236,16 +236,16 @@ function _checkNetwork(network) {
 Key.prototype.getBaseAddressDerivationPath = function(opts) {
   $.checkArgument(opts, 'Need to provide options');
 
-  let purpose = (opts.n > 1 && this.use48forMultisig) ? '48' : '44';
+  let purpose = (opts.n > 1 && !this.use44forMultisig) ? '48' : '44';
   var coinCode = '0';
 
   if (opts.network == 'testnet' ) {
     coinCode = '1';
   } else if (opts.coin == 'bch') {
-    if (this.use145forBCH) {
-      coinCode = '145';
-    } else {
+    if (this.use0forBCH) {
       coinCode = '0';
+    } else {
+      coinCode = '145';
     }
   } else if (opts.coin == 'btc') {
     coinCode = '0';
@@ -420,14 +420,14 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
       ['btc', 'livenet', true ],    
       ['bch', 'livenet', true ],    
     ];
-    if (!key.use48forMultisig) {
+    if (key.use44forMultisig) {
       //  testing old multi sig
       opts = opts.filter((x) => {
         return !x[2];
       });
     }
 
-    if (!key.use145forBCH) {
+    if (key.use0forBCH) {
       //  testing BCH, old coin=0 wallets
       opts = opts.filter((x) => {
         return x[0] == 'bch';
