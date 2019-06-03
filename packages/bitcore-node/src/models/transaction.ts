@@ -124,12 +124,14 @@ export class TransactionModel extends BaseModel<ITransaction> {
     network: string;
     initialSyncComplete: boolean;
   }) {
+    const { height } = params;
     const mintOps = await this.getMintOps(params);
     const spendOps = this.getSpendOps({ ...params, mintOps });
     const txOps = await this.addTransactions({ ...params, mintOps });
-    const handleMempoolOpSafely = op => {
-      return this.toMempoolSafeUpsert(op, params.height);
-    };
+
+    const getUpdatedBatchIfMempool = batch =>
+      height >= SpentHeightIndicators.minimum ? batch : batch.map(op => this.toMempoolSafeUpsert(op, height));
+
     await this.pruneMempool({
       chain: params.chain,
       network: params.network,
@@ -141,9 +143,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
     if (mintOps.length) {
       await Promise.all(
         partition(mintOps, mintOps.length / Config.get().maxPoolSize).map(async mintBatch => {
-          await CoinStorage.collection.bulkWrite(mintBatch.map(handleMempoolOpSafely), {
-            ordered: false
-          });
+          await CoinStorage.collection.bulkWrite(getUpdatedBatchIfMempool(mintBatch));
           if (params.height < SpentHeightIndicators.minimum) {
             EventStorage.signalAddressCoins(
               mintBatch
@@ -172,7 +172,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
       logger.debug('Writing Transactions', txOps.length);
       await Promise.all(
         partition(txOps, txOps.length / Config.get().maxPoolSize).map(async txBatch => {
-          await this.collection.bulkWrite(txBatch.map(handleMempoolOpSafely), { ordered: false });
+          await this.collection.bulkWrite(getUpdatedBatchIfMempool(txBatch));
           if (params.height < SpentHeightIndicators.minimum) {
             EventStorage.signalTxs(
               txBatch.map(op => ({ ...op.updateOne.update.$set, ...op.updateOne.filter })).filter(shouldFire)
@@ -190,11 +190,12 @@ export class TransactionModel extends BaseModel<ITransaction> {
     if (height >= SpentHeightIndicators.minimum) {
       return mongoOp;
     } else {
+      const update = mongoOp.updateOne.update;
       return {
         updateOne: {
           filter: mongoOp.updateOne.filter,
           update: {
-            $setOnInsert: { ...mongoOp.updateOne.update.$set, ...mongoOp.updateOne.update.$setOnInsert }
+            $setOnInsert: { ...(update.$set && update.$set), ...(update.$setOnInsert && update.$setOnInsert) }
           },
           upsert: true,
           forceServerObjectId: true
@@ -336,7 +337,8 @@ export class TransactionModel extends BaseModel<ITransaction> {
                 inputCount: tx.inputs.length,
                 outputCount: tx.outputs.length,
                 value: tx.outputAmount,
-                wallets
+                wallets,
+                ...(mempoolTime && { mempoolTime })
               }
             },
             upsert: true,
@@ -524,6 +526,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         {
           chain,
           network,
+          mintHeight: SpentHeightIndicators.pending,
           spentHeight: SpentHeightIndicators.pending,
           mintTxid: spendOp.updateOne.filter.mintTxid,
           mintIndex: spendOp.updateOne.filter.mintIndex,
@@ -535,12 +538,12 @@ export class TransactionModel extends BaseModel<ITransaction> {
         prunedTxs.add(coin.spentTxid);
         await Promise.all([
           this.collection.update(
-            { txid: coin.spentTxid },
+            { chain, network, txid: coin.spentTxid },
             { $set: { blockHeight: SpentHeightIndicators.conflicting } },
             { multi: true }
           ),
           CoinStorage.collection.update(
-            { mintTxid: coin.spentTxid },
+            { chain, network, mintTxid: coin.spentTxid },
             { $set: { mintHeight: SpentHeightIndicators.conflicting } },
             { multi: true }
           )

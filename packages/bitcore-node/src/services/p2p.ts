@@ -154,7 +154,7 @@ export class P2pWorker {
         network: this.network,
         hash
       });
-      if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash) && !this.isSyncing) {
+      if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash)) {
         this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, hash);
         this.processTransaction(message.transaction);
         this.events.emit('transaction', message.transaction);
