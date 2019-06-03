@@ -343,13 +343,6 @@ describe('Key', function() {
       });
       path.should.equal("m/44'/1'/2'");
     });
-    it.skip('should return path for BIP45', function() {
-      var c = Credentials.create('btc', 'livenet');
-      c.derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP45;
-      var path = c.getBaseAddressDerivationPath();
-
-      path.should.equal("m/45'");
-    });
 
     it('should return path for testnet account 1', function() {
       var c = Key.fromExtendedPrivateKey('xprv9s21ZrQH143K3zLpjtB4J4yrRfDTEfbrMa9vLZaTAv5BzASwBmA16mdBmZKpMLssw1AzTnm31HAD2pk2bsnZ9dccxaLD48mRdhtw82XoiBi');
