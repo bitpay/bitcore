@@ -236,7 +236,7 @@ function _checkNetwork(network) {
 Key.prototype.getBaseAddressDerivationPath = function(opts) {
   $.checkArgument(opts, 'Need to provide options');
 
-  let purpose = (opts.n > 1 && !this.use44forMultisig) ? '48' : '44';
+  let purpose = (opts.n == 1 || this.use44forMultisig) ? '44' : '48';
   var coinCode = '0';
 
   if (opts.network == 'testnet' ) {
