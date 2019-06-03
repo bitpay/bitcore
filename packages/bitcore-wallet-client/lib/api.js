@@ -2178,7 +2178,7 @@ API.fromOld = function(x) {
   });
 
   // ALL old credentials have multi wallets in 44'.
-  k.use48forMultisig = false;
+  k.use44forMultisig = true;
 
   let obsolteFields = {
     version: true,
@@ -2203,6 +2203,7 @@ API.fromOld = function(x) {
   c.addressType = c.addressType || Constants.SCRIPT_TYPES.P2SH;
   c.account = c.account || 0;
   c.rootPath = c.getRootPath();
+  c.keyId = k.id;
   return {key: k, credentials: c};
 };
 

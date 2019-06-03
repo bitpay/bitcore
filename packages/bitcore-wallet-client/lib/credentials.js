@@ -112,6 +112,7 @@ Credentials.fromDerivedKey = function(opts) {
 Credentials.prototype.getRootPath = function() {
   var self = this;
 
+  // This is for OLD v1.0 credentials only.
   function legacyRootPath () {
     // legacy base path schema
     var purpose;
