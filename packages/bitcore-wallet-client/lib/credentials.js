@@ -46,6 +46,7 @@ Credentials.FIELDS = [
   'addressType',
   'hwInfo',                 // Obsolete
   'entropySourcePath',      // Obsolete
+  'use145forBCH',           // Obsolete
   'version',
   'rootPath',               // this is only for information
   'keyId',                  // this is only for information
