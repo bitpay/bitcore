@@ -4581,8 +4581,8 @@ describe('client API', function() {
               }}, (err, k, c) => {
               k.xPrivKey.should.equal(xPrivKey);
               k.compliantDerivation.should.equal(true);
-              k.use145forBCH.should.equal(true);
-              k.use48forMultisig.should.equal(true);
+              k.use0forBCH.should.equal(false);
+              k.use44forMultisig.should.equal(false);
               should.not.exist(err);
               c.length.should.equal(1);
               let recoveryClient = c[0];
@@ -4615,8 +4615,8 @@ describe('client API', function() {
                 return helpers.newClient(app) 
               }}, (err, k, c) => {
               k.compliantDerivation.should.equal(true);
-              k.use145forBCH.should.equal(true);
-              k.use48forMultisig.should.equal(true);
+              k.use0forBCH.should.equal(false);
+              k.use44forMultisig.should.equal(false);
               should.not.exist(err);
               c.length.should.equal(1);
               let recoveryClient = c[0];
