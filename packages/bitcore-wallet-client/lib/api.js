@@ -22,10 +22,10 @@ var Utils = Common.Utils;
 
 var PayPro = require('./paypro');
 var log = require('./log');
-var Credentials = require('./credentials');
-var Key = require('./key');
-var Verifier = require('./verifier');
-var Errors = require('./errors');
+const Credentials = require('./credentials');
+const Key = require('./key');
+const Verifier = require('./verifier');
+const Errors = require('./errors');
 const Request = require('./request');
 
 var BASE_URL = 'http://localhost:3232/bws/api';
@@ -2206,6 +2206,208 @@ API.fromOld = function(x) {
   c.keyId = k.id;
   return {key: k, credentials: c};
 };
+
+/**
+ * serverAssistedImport 
+ * Imports  EXISTING wallets against BWS and return key & clients[] for each account / coin
+ *
+ * @param {Object} opts
+ * @param {String} opts.words - mnemonic
+ * @param {String} opts.xPrivKey - extended Private Key 
+ * @param {Object} clientOpts  - BWS connection options (see ClientAPI constructor)
+ 
+ * @returns {Callback} cb - Returns { err, key, clients[] }
+ */
+
+API.serverAssistedImport = (opts, clientOpts, callback) => {
+  var self = this;
+
+  $.checkArgument(opts.words || opts.xPrivKey, "provide opts.words or opts.xPrivKey");
+
+  let copayerIdAlreadyTested = {};
+  function checkCredentials(key, opts, icb) {
+    let c = key.createCredentials(null, {
+      coin: opts.coin, 
+      network: opts.network, 
+      account: opts.account, 
+      n: opts.n,
+    });
+
+
+    if (copayerIdAlreadyTested[c.copayerId]) {
+      return  icb();
+    } else {
+     copayerIdAlreadyTested[c.copayerId] = true;
+    }
+
+    let client  = clientOpts.clientFactory ?  clientOpts.clientFactory() :  new API(clientOpts);
+
+    client.fromString(c);
+    client.open(function(err) {
+console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FOUND!'); // TODO
+      // Exists
+      if (!err) return icb(null, client);
+      if (err instanceof Errors.NOT_AUTHORIZED || 
+        err instanceof Errors.WALLET_DOES_NOT_EXIST) {
+        return icb();
+      }
+      return icb(err);
+    })
+  };
+  
+  function checkKey(key, cb) {
+    let opts = [
+      //coin, network,  multisig
+      ['btc', 'livenet', ],          
+      ['bch', 'livenet', ],          
+      ['btc', 'livenet', true ],    
+      ['bch', 'livenet', true ],    
+    ];
+    if (key.use44forMultisig) {
+      //  testing old multi sig
+      opts = opts.filter((x) => {
+        return !x[2];
+      });
+    }
+
+    if (key.use0forBCH) {
+      //  testing BCH, old coin=0 wallets
+      opts = opts.filter((x) => {
+        return x[0] == 'bch';
+      });
+    }
+
+    if (key.compliantDerivation) {
+      // TESTNET
+      let testnet = _.cloneDeep(opts);
+      testnet.forEach((x) => { x[1] = 'testnet' });
+      opts = opts.concat(testnet);
+   } else {
+      //  leave only BTC, and no testnet
+      opts = opts.filter((x) => {
+        return x[0] == 'btc';
+      });
+   }
+
+    let clients = [];
+    async.each(opts, 
+      (x, next) => {
+        let optsObj = {
+          coin: x[0] ,
+          network: x[1],
+          account: 0,
+          n: x[2] ? 2: 1,
+        };
+        // TODO OPTI: do not scan accounts if XX
+        //
+        // 1. check account 0
+        checkCredentials(key, optsObj, (err, iclient) => {
+          if (err) return next(err);
+          if (!iclient) return next();
+          clients.push(iclient);
+          // Now, lets scan all accounts for the found client
+          let cont = true, account = 1;
+          async.whilst(() => {
+            return cont;
+          }, (icb) => {
+            optsObj.account = account++;
+            checkCredentials(key, optsObj, (err, iclient) => {
+              if (err) return icb(err);
+              cont = !!iclient;
+              if (iclient) {
+                clients.push(iclient);
+              } else {
+                // we do not allow accounts nr gaps in BWS. 
+                cont = false;
+              };
+              return icb();
+            });
+          }, (err) => {
+            return next(err);
+          });
+        });
+      }, 
+      (err) => {
+        if (err) return cb(err);
+        return cb(null, clients);
+      });
+  };
+
+
+  let sets = [ 
+    {
+      // current wallets: /[44,48]/[0,145]'/
+      compliantDerivation: true,
+      useLegacyCoinType: false,
+      useLegacyPurpose: false,
+    },
+    {
+      // older bch wallets: /[44,48]/[0,0]'/
+      compliantDerivation: true,
+      useLegacyCoinType: true,
+      useLegacyPurpose: false,
+    },
+    {
+      // older BTC/BCH  multisig wallets: /[44]/[0,145]'/
+      compliantDerivation: true,
+      useLegacyCoinType: false,
+      useLegacyPurpose: true,
+    },
+    {
+      // not that // older multisig BCH wallets: /[44]/[0]'/
+      compliantDerivation: true,
+      useLegacyCoinType: true,
+      useLegacyPurpose: true,
+    },
+ 
+    {
+      // old BTC no-comp wallets: /44'/[0]'/
+      compliantDerivation: false,
+      useLegacyPurpose: true,
+    },
+  ];
+
+  let s, resultingClients = [], k;
+  async.whilst(() => {
+
+    if (! _.isEmpty(resultingClients))
+      return false;
+
+    s = sets.shift();
+    if (!s) 
+      return false;
+
+    try {
+      if (opts.words) { 
+        k  = Key.fromMnemonic(opts.words, s);
+      } else {
+        k  = Key.fromExtendedPrivateKey(opts.xPrivKey, s);
+      }
+    } catch (e) {
+      log.info('Backup error:', e);
+      return callback(new Errors.INVALID_BACKUP);
+    }
+    return true;
+  }, (icb) => {
+    checkKey(k, (err, clients) => {
+      if (err) return icb(err);
+
+      if (clients && clients.length) {
+        resultingClients = clients;
+      }
+      return icb();
+    });
+  }, (err) => {
+    if (err) return callback(err);
+
+    if (_.isEmpty(resultingClients)) 
+      k=null;
+
+    return callback(null, k, resultingClients);
+  });
+};
+
+
 
 API.PayPro = PayPro;
 API.Key = Key;

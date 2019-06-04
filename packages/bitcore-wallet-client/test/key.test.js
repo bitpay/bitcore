@@ -515,55 +515,6 @@ describe('Key', function() {
     });
   });
 
-  describe('#import fails', function() {
-    it('should handle not being able to add access', function(done) {
-      var sandbox = sinon.sandbox.create();
-      var client = new Client();
-      client.credentials = {};
-
-      var ow = sandbox.stub(client, 'openWallet').callsFake(function(callback) {
-        callback(new Error());
-      });
-
-      var aa = sandbox.stub(client, 'addAccess').callsFake(function(options, callback) {
-        callback(new Error());
-      });
-
-      let words = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
-
-      Key.serverAssistedImport({words}, { clientFactory: () => {return client;}}, function(err, key, cs) {
-        should.not.exist(err);
-        should.not.exist(key);
-        cs.length.should.equal(0);
-        sandbox.restore();
-        done();
-      });
-    });
-  });
-
-  describe('#import FromMnemonic', function() {
-    it('should handle importing an invalid mnemonic', function(done) {
-      var mnemonicWords = 'this is an invalid mnemonic';
-      Key.serverAssistedImport({words:mnemonicWords}, {}, function(err) {
-        should.exist(err);
-        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
-        done();
-      });
-    });
-  });
-
-  describe('#import FromExtendedPrivateKey', function() {
-    it('should handle importing an invalid extended private key', function(done) {
-      var xPrivKey = 'this is an invalid key';
-      Key.serverAssistedImport({xPrivKey},{},  function(err) {
-        should.exist(err);
-        err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
-        done();
-      });
-    });
-  });
-
-
 });
 
 
