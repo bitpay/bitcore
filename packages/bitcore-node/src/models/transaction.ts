@@ -124,7 +124,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
     network: string;
     initialSyncComplete: boolean;
   }) {
-    const { height } = params;
+    const { initialSyncComplete, height } = params;
     const mintOps = await this.getMintOps(params);
     const spendOps = this.getSpendOps({ ...params, mintOps });
     const txOps = await this.addTransactions({ ...params, mintOps });
@@ -132,18 +132,20 @@ export class TransactionModel extends BaseModel<ITransaction> {
     const getUpdatedBatchIfMempool = batch =>
       height >= SpentHeightIndicators.minimum ? batch : batch.map(op => this.toMempoolSafeUpsert(op, height));
 
-    await this.pruneMempool({
-      chain: params.chain,
-      network: params.network,
-      initialSyncComplete: params.initialSyncComplete,
-      spendOps
-    });
+    if (initialSyncComplete) {
+      await this.pruneMempool({
+        chain: params.chain,
+        network: params.network,
+        initialSyncComplete: params.initialSyncComplete,
+        spendOps
+      });
+    }
 
     logger.debug('Minting Coins', mintOps.length);
     if (mintOps.length) {
       await Promise.all(
         partition(mintOps, mintOps.length / Config.get().maxPoolSize).map(async mintBatch => {
-          await CoinStorage.collection.bulkWrite(getUpdatedBatchIfMempool(mintBatch));
+          await CoinStorage.collection.bulkWrite(getUpdatedBatchIfMempool(mintBatch), { ordered: false });
           if (params.height < SpentHeightIndicators.minimum) {
             EventStorage.signalAddressCoins(
               mintBatch
@@ -172,7 +174,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
       logger.debug('Writing Transactions', txOps.length);
       await Promise.all(
         partition(txOps, txOps.length / Config.get().maxPoolSize).map(async txBatch => {
-          await this.collection.bulkWrite(getUpdatedBatchIfMempool(txBatch));
+          await this.collection.bulkWrite(getUpdatedBatchIfMempool(txBatch), { ordered: false });
           if (params.height < SpentHeightIndicators.minimum) {
             EventStorage.signalTxs(
               txBatch.map(op => ({ ...op.updateOne.update.$set, ...op.updateOne.filter })).filter(shouldFire)
@@ -526,7 +528,6 @@ export class TransactionModel extends BaseModel<ITransaction> {
         {
           chain,
           network,
-          mintHeight: SpentHeightIndicators.pending,
           spentHeight: SpentHeightIndicators.pending,
           mintTxid: spendOp.updateOne.filter.mintTxid,
           mintIndex: spendOp.updateOne.filter.mintIndex,
