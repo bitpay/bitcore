@@ -1,5 +1,4 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { Logger } from '../../providers/logger/logger';
 import { TxsProvider } from '../../providers/transactions/transactions';
 
 import * as _ from 'lodash';
@@ -22,11 +21,7 @@ export class TransactionListComponent implements OnInit {
   public limit = 10;
   public chunkSize = 100;
 
-  constructor(
-    private txProvider: TxsProvider,
-    private logger: Logger,
-    private apiProvider: ApiProvider
-  ) {}
+  constructor(private txProvider: TxsProvider) {}
 
   public ngOnInit(): void {
     if (this.transactions && this.transactions.length === 0) {
@@ -42,8 +37,7 @@ export class TransactionListComponent implements OnInit {
             this.transactions = sortedTxs;
             this.loading = false;
           },
-          err => {
-            this.logger.error(err);
+          () => {
             this.loading = false;
           }
         );

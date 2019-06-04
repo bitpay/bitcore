@@ -17,6 +17,7 @@ export class CoinListComponent implements OnInit {
   public chainNetwork: ChainNetwork;
 
   public txs: any = [];
+  public coins: any = [];
   public showTransactions: boolean;
   public loading;
   public limit = 10;
@@ -25,7 +26,6 @@ export class CoinListComponent implements OnInit {
   constructor(
     private addrProvider: AddressProvider,
     private txsProvider: TxsProvider,
-    private logger: Logger,
     private events: Events
   ) {}
 
@@ -40,8 +40,7 @@ export class CoinListComponent implements OnInit {
           this.loading = false;
           this.events.publish('CoinList', { length: data.length });
         },
-        err => {
-          this.logger.error(err);
+        () => {
           this.loading = false;
           this.showTransactions = false;
         }

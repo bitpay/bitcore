@@ -4,7 +4,6 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { IonicPage, NavParams, ToastController } from 'ionic-angular';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
 
 @Injectable()
@@ -31,7 +30,6 @@ export class BroadcastTxPage {
     public navParams: NavParams,
     private httpClient: HttpClient,
     private apiProvider: ApiProvider,
-    private logger: Logger,
     private priceProvider: PriceProvider,
     private currencyProvider: CurrencyProvider
   ) {
@@ -65,8 +63,7 @@ export class BroadcastTxPage {
           this.presentToast(true, response);
         },
         err => {
-          this.logger.error(err.message);
-          this.presentToast(false, err.message);
+          this.presentToast(false, err);
         }
       );
   }

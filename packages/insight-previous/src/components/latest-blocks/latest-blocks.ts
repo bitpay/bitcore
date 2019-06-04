@@ -4,7 +4,6 @@ import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { AppBlock, BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { DefaultProvider } from '../../providers/default/default';
-import { Logger } from '../../providers/logger/logger';
 import { RedirProvider } from '../../providers/redir/redir';
 
 @Component({
@@ -35,8 +34,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
     public redirProvider: RedirProvider,
     private blocksProvider: BlocksProvider,
     private apiProvider: ApiProvider,
-    private ngZone: NgZone,
-    private logger: Logger
+    private ngZone: NgZone
   ) {
     this.numBlocks = parseInt(defaults.getDefault('%NUM_BLOCKS%'), 10);
   }
@@ -67,8 +65,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
         err => {
           this.subscriber.unsubscribe();
           clearInterval(this.reloadInterval);
-          this.logger.error(err.message);
-          this.errorMessage = err.message;
+          this.errorMessage = err;
           this.loading = false;
         }
       );
@@ -90,7 +87,6 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
           infiniteScroll.complete();
         },
         err => {
-          this.logger.error(err.message);
           this.errorMessage = err.message;
           this.loading = false;
         }
