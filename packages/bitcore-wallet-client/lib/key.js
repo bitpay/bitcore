@@ -14,7 +14,8 @@ var Common = require('./common');
 var Errors = require('./errors');
 var Constants = Common.Constants;
 var Utils = Common.Utils;
-var Credentials = require('./credentials');
+const Credentials = require('./credentials');
+const Client = require('./api');
 
 
 function Key() {
