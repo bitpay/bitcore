@@ -155,6 +155,21 @@ Key.prototype.isPrivKeyEncrypted = function() {
   return (!!this.xPrivKeyEncrypted) && !this.xPrivKey;
 };
 
+
+Key.prototype.checkPassword = function(password) {
+  if (this.isPrivKeyEncrypted()) {
+    try {
+      sjcl.decrypt(password, this.xPrivKeyEncrypted);
+    } catch (ex) {
+      return false;
+    }
+    return true;
+  } 
+  return null;
+};
+
+
+
 Key.prototype.get = function(password) {
   var keys = {};
 
@@ -235,6 +250,7 @@ function _checkNetwork(network) {
 
 Key.prototype.getBaseAddressDerivationPath = function(opts) {
   $.checkArgument(opts, 'Need to provide options');
+  $.checkArgument(opts.n>=1, 'n need to be >=1');
 
   let purpose = (opts.n == 1 || this.use44forMultisig) ? '44' : '48';
   var coinCode = '0';

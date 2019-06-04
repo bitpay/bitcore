@@ -60,7 +60,24 @@ describe('Key', function() {
     });
   });
 
-  describe('match', function() {
+ 
+  describe('#checkPassword', function() {
+    it('Should return null', function() {
+      var all = {};
+      var c = Key.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
+      should.not.exist(c.checkPassword('xx'));
+    });
+    it('Should return true/false', function() {
+      var all = {};
+      var c = Key.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
+      c.encrypt('xx');
+      c.checkPassword('xx').should.equal(true);
+      c.checkPassword('yy').should.equal(false);
+    });
+ 
+  });
+
+  describe('#match', function() {
     it('Should match', function() {
       var c = Key.create();
       Key.match(c,c).should.equal(true);
@@ -329,7 +346,7 @@ describe('Key', function() {
       var path = c.getBaseAddressDerivationPath({
         account: 0,
         coin: 'btc',
-        n: 0,
+        n: 1,
       });
       path.should.equal("m/44'/0'/0'");
     });
