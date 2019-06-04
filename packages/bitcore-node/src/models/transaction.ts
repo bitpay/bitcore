@@ -132,14 +132,12 @@ export class TransactionModel extends BaseModel<ITransaction> {
     const getUpdatedBatchIfMempool = batch =>
       height >= SpentHeightIndicators.minimum ? batch : batch.map(op => this.toMempoolSafeUpsert(op, height));
 
-    if (initialSyncComplete) {
-      await this.pruneMempool({
-        chain: params.chain,
-        network: params.network,
-        initialSyncComplete: params.initialSyncComplete,
-        spendOps
-      });
-    }
+    await this.pruneMempool({
+      chain: params.chain,
+      network: params.network,
+      initialSyncComplete,
+      spendOps
+    });
 
     logger.debug('Minting Coins', mintOps.length);
     if (mintOps.length) {
