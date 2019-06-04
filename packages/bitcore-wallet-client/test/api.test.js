@@ -4526,6 +4526,55 @@ describe('client API', function() {
       });
     });
 
+    describe('#serverAssistedImport fails', function() {
+      it('should handle not being able to add access', function(done) {
+        var sandbox = sinon.sandbox.create();
+        var client = new Client();
+        client.credentials = {};
+
+        var ow = sandbox.stub(client, 'openWallet').callsFake(function(callback) {
+          callback(new Error());
+        });
+
+        var aa = sandbox.stub(client, 'addAccess').callsFake(function(options, callback) {
+          callback(new Error());
+        });
+
+        let words = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+
+        Client.serverAssistedImport({words}, { clientFactory: () => {return client;}}, function(err, key, cs) {
+          should.not.exist(err);
+          should.not.exist(key);
+          cs.length.should.equal(0);
+          sandbox.restore();
+          done();
+        });
+      });
+    });
+
+    describe('#import FromMnemonic', function() {
+      it('should handle importing an invalid mnemonic', function(done) {
+        var mnemonicWords = 'this is an invalid mnemonic';
+        Client.serverAssistedImport({words:mnemonicWords}, {}, function(err) {
+          should.exist(err);
+          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+          done();
+        });
+      });
+    });
+
+    describe('#import FromExtendedPrivateKey', function() {
+      it('should handle importing an invalid extended private key', function(done) {
+        var xPrivKey = 'this is an invalid key';
+        Client.serverAssistedImport({xPrivKey},{},  function(err) {
+          should.exist(err);
+          err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
+          done();
+        });
+      });
+    });
+
+
     describe('Recovery', function() {
       var db2; 
       before( (done) => {
@@ -4535,6 +4584,7 @@ describe('client API', function() {
         });
       });
 
+
       it('should be able to gain access to a 1-1 wallet from mnemonic', function(done) {
         helpers.createAndJoinWallet( clients, keys, 1, 1, {}, function() {
           var words = keys[0].get(null,true).mnemonic;
@@ -4543,7 +4593,7 @@ describe('client API', function() {
           clients[0].createAddress(function(err, addr) {
             should.not.exist(err);
             should.exist(addr);
-            let k2 = Key.serverAssistedImport({words}, { 
+            Client.serverAssistedImport({words}, { 
               clientFactory: () => { 
                 return helpers.newClient(app) 
               }}, (err, k, c) => {
@@ -4574,7 +4624,7 @@ describe('client API', function() {
           clients[0].createAddress(function(err, addr) {
             should.not.exist(err);
             should.exist(addr);
-            let k2 = Key.serverAssistedImport({xPrivKey}, { 
+            Client.serverAssistedImport({xPrivKey}, { 
               clientFactory: () => { 
                 return helpers.newClient(app) 
               }}, (err, k, c) => {
@@ -4609,7 +4659,7 @@ describe('client API', function() {
           clients[0].createAddress(function(err, addr) {
             should.not.exist(err);
             should.exist(addr);
-            let k2 = Key.serverAssistedImport({words}, { 
+            Client.serverAssistedImport({words}, { 
               clientFactory: () => { 
                 return helpers.newClient(app) 
               }}, (err, k, c) => {
@@ -4656,7 +4706,7 @@ describe('client API', function() {
               should.not.exist(err);
 
 
-              let k2 = Key.serverAssistedImport({xPrivKey}, { 
+              Client.serverAssistedImport({xPrivKey}, { 
                 clientFactory: () => { 
                   return helpers.newClient(app) 
                 }}, (err, k, c) => {
