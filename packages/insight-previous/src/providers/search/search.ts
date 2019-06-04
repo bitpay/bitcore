@@ -80,8 +80,9 @@ export class SearchProvider {
     const coin = this.config.chain;
     const network = this.config.network;
     const addr = this.extractAddress(inputValue);
-
-    if (coin.toLowerCase() === 'btc' && network === 'mainnet') {
+    if (addr.charAt(0) === 'C' || addr.charAt(0) === 'H') {
+      return false;
+    } else if (coin.toLowerCase() === 'btc' && network === 'mainnet') {
       return this.isValidBitcoinMainnetAddress(addr);
     } else if (coin.toLowerCase() === 'btc' && network === 'testnet') {
       return this.isValidBitcoinTestnetAddress(addr);
