@@ -17,8 +17,7 @@ export function SavePerformance(logPrefix, startTime, endTime) {
     PerformanceTracker[logPrefix].time += totalTime;
     PerformanceTracker[logPrefix].count++;
     PerformanceTracker[logPrefix].avg = PerformanceTracker[logPrefix].time / PerformanceTracker[logPrefix].count;
-    const currentMax = PerformanceTracker[logPrefix].max;
-    PerformanceTracker[logPrefix].max = totalTime > currentMax ? totalTime : currentMax;
+    PerformanceTracker[logPrefix].max = Math.max(totalTime, PerformanceTracker[logPrefix].max);
   }
 }
 
