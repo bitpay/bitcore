@@ -15,6 +15,14 @@ const chainConfig = config.chains[chain][network];
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
+function getSocket() {
+  const socket = io.connect(
+    'http://localhost:3000',
+    { transports: ['websocket'] }
+  );
+  return socket;
+}
+
 let p2pWorker: P2pWorker;
 
 describe('Websockets', function() {
@@ -73,10 +81,7 @@ describe('Websockets', function() {
 
     let hasSeenABlockEvent = false;
 
-    const socket = io.connect(
-      'http://localhost:3000',
-      { transports: ['websocket'] }
-    );
+    const socket = getSocket();
     let sawEvents = new Promise(resolve => {
       socket.on('connect', () => {
         socket.emit('room', '/BTC/regtest/inv');
@@ -102,11 +107,41 @@ describe('Websockets', function() {
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
 
-    const socket = io.connect(
-      'http://localhost:3000',
-      { transports: ['websocket'] }
-    );
+    const socket = getSocket();
+    let sawEvents = new Promise(resolve => {
+      socket.on('connect', () => {
+        socket.emit('room', '/BTC/regtest/inv');
+      });
+      socket.on('tx', () => {
+        hasSeenTxEvent = true;
+        if (hasSeenTxEvent && hasSeenCoinEvent) {
+          resolve();
+        }
+      });
+      socket.on('coin', () => {
+        hasSeenCoinEvent = true;
+        if (hasSeenTxEvent && hasSeenCoinEvent) {
+          resolve();
+        }
+      });
+    });
+    await p2pWorker.start();
+    await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
+    await sawEvents;
 
+    await p2pWorker.stop();
+    await socket.disconnect();
+
+    expect([hasSeenTxEvent, hasSeenCoinEvent]).to.deep.eq([true, true]);
+  });
+
+  it('should get a mempool event while syncing', async () => {
+    const p2pWorker = new P2pWorker({ chain, network, chainConfig });
+
+    let hasSeenTxEvent = false;
+    let hasSeenCoinEvent = false;
+
+    const socket = getSocket();
     let sawEvents = new Promise(resolve => {
       socket.on('connect', () => {
         socket.emit('room', '/BTC/regtest/inv');
@@ -126,6 +161,8 @@ describe('Websockets', function() {
     });
     await p2pWorker.start();
     await wait(3000);
+    p2pWorker.sync();
+    p2pWorker.isSyncing = true;
     await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
     await sawEvents;
 
