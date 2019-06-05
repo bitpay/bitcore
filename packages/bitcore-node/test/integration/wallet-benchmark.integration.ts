@@ -1,3 +1,4 @@
+import * as io from 'socket.io-client';
 import { wait } from '../../src/utils/wait';
 import { expect } from 'chai';
 import { AsyncRPC } from '../../src/rpc';
@@ -96,6 +97,19 @@ describe('Wallet Benchmark', function() {
       });
       await p2pWorker.start();
 
+      const seenCoins = new Set();
+      const socket = io.connect(
+        'http://localhost:3000',
+        { transports: ['websocket'] }
+      );
+      socket.on('connect', () => {
+        const room = `/${chain}/${network}/inv`;
+        socket.emit('room', room);
+      });
+      socket.on('coin', (coin: ICoin) => {
+        seenCoins.add(coin.mintTxid);
+      });
+
       const address1 = await rpc.getnewaddress('');
       const address2 = await rpc.getnewaddress('');
       await rpc.call('generatetoaddress', [1, address1]);
@@ -115,12 +129,14 @@ describe('Wallet Benchmark', function() {
       const fundedTx = await rpc.call('fundrawtransaction', [tx]);
       const signedTx = await rpc.call('signrawtransaction', [fundedTx.hex]);
       const broadcastedTx = await rpc.call('sendrawtransaction', [signedTx.hex]);
-
-      await wait(10000);
+      while (!seenCoins.has(broadcastedTx)) {
+        await wait(1000);
+      }
       await verifyCoinSpent(utxos[0], broadcastedTx, dbWallet1!);
       await checkWalletReceived(dbWallet1!, broadcastedTx, address1);
       await checkWalletReceived(dbWallet2!, broadcastedTx, address2);
       await wait(1000);
+      await socket.disconnect();
       await p2pWorker.stop();
       await Event.stop();
       await Api.stop();

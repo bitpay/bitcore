@@ -254,7 +254,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         if (!agg[mintTxid]) {
           agg[mintTxid] = {
             total: value,
-            wallets: [...wallets] || []
+            wallets: wallets ? [...wallets] : []
           };
         } else {
           agg[mintTxid].total += value;
@@ -267,7 +267,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         if (!agg[coin.spentTxid]) {
           agg[coin.spentTxid] = {
             total: coin.value,
-            wallets: [...coin.wallets] || []
+            wallets: coin.wallets ? [...coin.wallets] : []
           };
         } else {
           agg[coin.spentTxid].total += coin.value;
