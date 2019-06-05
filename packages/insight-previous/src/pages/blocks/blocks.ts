@@ -3,7 +3,6 @@ import { IonicPage, NavParams } from 'ionic-angular';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
 
 @Injectable()
@@ -26,7 +25,6 @@ export class BlocksPage {
     public navParams: NavParams,
     private apiProvider: ApiProvider,
     private blocksProvider: BlocksProvider,
-    private logger: Logger,
     private currencyProvider: CurrencyProvider,
     private priceProvider: PriceProvider
   ) {
@@ -45,8 +43,7 @@ export class BlocksPage {
         this.blocks = blocks;
         this.loading = false;
       },
-      err => {
-        this.logger.error(err);
+      () => {
         this.loading = false;
       }
     );

@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ToastController } from 'ionic-angular';
 import * as _ from 'lodash';
-import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../api/api';
 import { CurrencyProvider } from '../currency/currency';
 
@@ -12,8 +11,7 @@ export class PriceProvider {
   constructor(
     public currencyProvider: CurrencyProvider,
     public api: ApiProvider,
-    private toastCtrl: ToastController,
-    private logger: Logger
+    private toastCtrl: ToastController
   ) {}
 
   public setCurrency(currency?: string): void {
@@ -35,9 +33,8 @@ export class PriceProvider {
           this.currencyProvider.factor = this.rates[currency];
           this.currencyProvider.loading = false;
         },
-        err => {
+        () => {
           this.currencyProvider.loading = false;
-          this.logger.error(err);
           this.showErrorToast();
         }
       );
