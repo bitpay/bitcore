@@ -624,9 +624,10 @@ API.prototype.getBalanceFromPrivateKey = function(privateKey, coin, cb) {
   var B = Bitcore_[coin];
  
   var privateKey = new B.PrivateKey(privateKey);
-  var address = privateKey.publicKey.toAddress();
+  var address = privateKey.publicKey.toAddress().toString();
+
   self.getUtxos({
-    addresses: coin == 'bch' ? address.toLegacyAddress() : address.toString(),
+    addresses: address,
   }, function(err, utxos) {
     if (err) return cb(err);
     return cb(null, _.sumBy(utxos, 'satoshis'));
@@ -641,13 +642,13 @@ API.prototype.buildTxFromPrivateKey = function(privateKey, destinationAddress, o
   var coin = opts.coin || 'btc';
   var B = Bitcore_[coin];
   var privateKey = B.PrivateKey(privateKey);
-  var address = privateKey.publicKey.toAddress();
+  var address = privateKey.publicKey.toAddress().toString();
 
   async.waterfall([
 
     function(next) {
       self.getUtxos({
-        addresses: coin == 'bch' ?  address.toLegacyAddress() : address.toString(),
+        addresses: address,
       }, function(err, utxos) {
         return next(err, utxos);
       });
