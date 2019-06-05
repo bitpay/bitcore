@@ -624,11 +624,7 @@ API.prototype.getBalanceFromPrivateKey = function(privateKey, coin, cb) {
   var B = Bitcore_[coin];
  
   var privateKey = new B.PrivateKey(privateKey);
-
   var address = privateKey.publicKey.toAddress().toString();
-  if (coin == 'bch') {
-    address = privateKey.publicKey.toAddress().toCashAddress().replace('bitcoincash:', '');
-  }
 
   self.getUtxos({
     addresses: address,
@@ -646,11 +642,7 @@ API.prototype.buildTxFromPrivateKey = function(privateKey, destinationAddress, o
   var coin = opts.coin || 'btc';
   var B = Bitcore_[coin];
   var privateKey = B.PrivateKey(privateKey);
-
   var address = privateKey.publicKey.toAddress().toString();
-  if (coin == 'bch') {
-    address = privateKey.publicKey.toAddress().toCashAddress().replace('bitcoincash:', '');
-  }
 
   async.waterfall([
 
