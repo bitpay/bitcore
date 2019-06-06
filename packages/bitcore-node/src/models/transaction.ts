@@ -142,12 +142,12 @@ export class TransactionModel extends BaseModel<ITransaction> {
           if (params.height < SpentHeightIndicators.minimum) {
             EventStorage.signalAddressCoins(
               mintBatch
-              .map(coinOp => {
-                const address = coinOp.updateOne.update.$set.address;
-                const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
-                return { address, coin };
-              })
-              .filter(({ coin }) => shouldFire(coin))
+                .map(coinOp => {
+                  const address = coinOp.updateOne.update.$set.address;
+                  const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
+                  return { address, coin };
+                })
+                .filter(({ coin }) => shouldFire(coin))
             );
           }
         })
@@ -254,7 +254,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         if (!agg[mintTxid]) {
           agg[mintTxid] = {
             total: value,
-            wallets: wallets || []
+            wallets: wallets ? [...wallets] : []
           };
         } else {
           agg[mintTxid].total += value;
@@ -267,7 +267,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         if (!agg[coin.spentTxid]) {
           agg[coin.spentTxid] = {
             total: coin.value,
-            wallets: coin.wallets || []
+            wallets: coin.wallets ? [...coin.wallets] : []
           };
         } else {
           agg[coin.spentTxid].total += coin.value;
