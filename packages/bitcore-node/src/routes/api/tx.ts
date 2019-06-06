@@ -3,7 +3,6 @@ import { Router } from 'express';
 import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { ChainStateProvider } from '../../providers/chain-state';
 import logger from '../../logger';
-import { TransactionJSON } from '../../types/Transaction';
 import { CacheTimes } from '../middleware';
 const router = Router({ mergeParams: true });
 
@@ -48,7 +47,7 @@ router.get('/:txId', async (req, res) => {
       return res.status(404).send(`The requested txid ${txId} could not be found.`);
     } else {
       const tip = await ChainStateProvider.getLocalTip({ chain, network });
-      if (tx && tip.height - (<TransactionJSON>tx).blockHeight > 100) {
+      if (tx && tip && tip.height - tx.blockHeight > 100) {
         SetCache(res, CacheTimes.Month);
       }
       return res.send(tx);
