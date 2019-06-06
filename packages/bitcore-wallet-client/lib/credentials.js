@@ -197,7 +197,8 @@ Credentials.prototype.addWalletInfo = function(walletId, walletName, m, n, copay
   this.walletName = walletName;
   this.m = m;
 
-  if (this.n && this.n != n) {
+  // We allow n overwritting only between multisig wallets
+  if ( (this.n == 1 && n != 1) || ( this.n > 1 &&  n == 1 )) {
     throw new Error(`Bad nr of copayers in addWalletInfo: this: ${this.n} got: ${n}`, this.n, n);
   }
   this.n = n;
