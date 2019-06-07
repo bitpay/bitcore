@@ -2165,22 +2165,28 @@ API.prototype.getWalletIdsFromOldCopay = function(username, password, blob) {
 API.fromOld = function(x) {
   $.shouldBeObject(x);
 
-  // TODO RO clients
-  if (!_.isUndefined(x.version) || (!x.xPrivKey && !x.xPrivKeyEncrypted)) {
+  if (!_.isUndefined(x.version) || (!x.xPrivKey && !x.xPrivKeyEncrypted && !x.xPubKey)) {
     throw 'Could not recognize old version';
   }
 
-  var k = new Key();
-  _.each(Key.FIELDS, (i) => {
-    if (!_.isUndefined(x[i])) {
-      k[i] = x[i];
-    }
-  });
+  let k;
+  if (x.xPrivKey || x.xPrivKeyEncrypted) {
+    k = new Key();
+    _.each(Key.FIELDS, (i) => {
+      if (!_.isUndefined(x[i])) {
+        k[i] = x[i];
+      }
+    });
 
-  // ALL old credentials have multi wallets in 44'.
-  k.use44forMultisig = true;
+    // ALL old credentials have multi wallets in 44'.
+    k.use44forMultisig = true;
+  } else {
+    // RO credentials
+    k = false;
+  }
 
-  let obsolteFields = {
+
+  let obsoleteFields = {
     version: true,
     xPrivKey: true,
     xPrivKeyEncrypted: true,
@@ -2190,9 +2196,10 @@ API.fromOld = function(x) {
     mnemonicEncrypted: true,
   };
 
+
   var c = new Credentials();
   _.each(Credentials.FIELDS, function(i) {
-    if (!obsolteFields[i]) {
+    if (!obsoleteFields[i]) {
       c[i] = x[i];
     }
   });

@@ -69,14 +69,48 @@ let x = [
       }
     },
   }, {
-    name: 'bch11b145',
+    name: 'bch11b145TESTNET',
     blob: JSON.stringify({"coin":"bch","network":"testnet","xPrivKey":"tprv8ZgxMBicQKsPdVNTSYvWfaTq9aWucQoNLPyRxLEZnW4zK28d3hVvsfaMXDcW9WWVmCFKSarT6ZEA2Zp6P1qhCSDzTf1GhLw8pu7qDLiGA6Z","xPubKey":"tpubDDdQQXx4yEwKRqTUWyKmSh8SGXUetfeYmdZPh9NEveSD1QQ1CTbGuCDYKjr8wa7LwM1hyCmgTMSficQ2Ro1S79pssoQYCotwHa4Xp9chPLn","requestPrivKey":"56f15869ce9ed3255417c0124e0330517962e6f8b5d8ee2158af9a66aa8eaf6a","requestPubKey":"0381b0b57c4d67cfecf148cc9a82415c12d389249569f374ae5e98c7cab22c103d","copayerId":"7c8b785b07b8b7f41e7297a7d2c3e85b4b1687ee466a3e47fecb77cfc9f4f8d8","publicKeyRing":[{"xPubKey":"tpubDDdQQXx4yEwKRqTUWyKmSh8SGXUetfeYmdZPh9NEveSD1QQ1CTbGuCDYKjr8wa7LwM1hyCmgTMSficQ2Ro1S79pssoQYCotwHa4Xp9chPLn","requestPubKey":"0381b0b57c4d67cfecf148cc9a82415c12d389249569f374ae5e98c7cab22c103d"}],"walletId":"dd1d5ca8-968e-4da5-a1d9-13d20da441e3","walletName":"mywallet","m":1,"n":1,"walletPrivKey":"38e0eb15851e279be1b19ccba848aeb7cadaf7e528c53f06f677a643cef1d1eb","personalEncryptingKey":"gMNXEsZZWSbPMI8ytZevLw==","sharedEncryptingKey":"M8EJ9Ssgn0Ma7soBdN2qtA==","copayerName":"creator","mnemonic":"stand inch mammal ocean coin want prepare section stove cart payment word","entropySource":"fe70cd4f48feb5925886f79741a70cda5f2a66c4b37c2b033ae72b92e934204f","mnemonicHasPassphrase":false,"derivationStrategy":"BIP44","account":0,"compliantDerivation":true,"addressType":"P2PKH","use145forBCH":true}),
-    test: {m:1, xpriv:'xx'},
+    test: {
+      key: {
+        xPrivKey: 'tprv8ZgxMBicQKsPdVNTSYvWfaTq9aWucQoNLPyRxLEZnW4zK28d3hVvsfaMXDcW9WWVmCFKSarT6ZEA2Zp6P1qhCSDzTf1GhLw8pu7qDLiGA6Z',
+        use0forBCH: false,
+        use44forMultisig: true,
+        compliantDerivation: true,
+      },
+      credentials: {
+        coin: 'bch',
+        network: 'testnet',
+        account: 0,
+        rootPath: 'm/44\'/1\'/0\'',
+      }
+    },
   }, {
     name: 'btc45',
     blob: JSON.stringify({"coin":"btc","network":"testnet","xPrivKey":"tprv8ZgxMBicQKsPdAYhtd2RKsiMCKBKZfTqgTQp8aSFnE8UaHWdHEeWkX4ruppk5mUJNvbQddBs72qy6AdxzUS6jrXap9vrwHttwAgscY7WHJM","xPubKey":"tpubD9SH8gKTWgxWMMzZKcXLVoyNbw67bfrwxr3yXEJv66jXvRFCQ6hCaV438An9zYNMWN6CbxvV9HmAHUpHtbxmYz2KncBTut5JWM3VHLQLHEp","requestPrivKey":"806ef1863cd031c5a69c4d86943e3fb0af18c9150e5f24be244c0d97432fc831","requestPubKey":"021dc46507b5bb3e197a1afdfb1f2de3e53f64bf78595da408a0f27dbbb8a72041","copayerId":"626b8281414d7e2330d8f8ca265af0269350c860f6e121d83179b192252338c7","publicKeyRing":[{"xPubKey":"tpubD9SH8gKTWgxWMMzZKcXLVoyNbw67bfrwxr3yXEJv66jXvRFCQ6hCaV438An9zYNMWN6CbxvV9HmAHUpHtbxmYz2KncBTut5JWM3VHLQLHEp","requestPubKey":"021dc46507b5bb3e197a1afdfb1f2de3e53f64bf78595da408a0f27dbbb8a72041"}],"walletId":"02261d7a-5be8-4513-b657-c14fe3f30c13","walletName":"Unopauno","m":1,"n":1,"walletPrivKey":"e6b299550eb97c19599329bd3a3f9d2f670915b5f22a4f9f4ef41bccc7806b38","personalEncryptingKey":"HlsjOme+PsNvhnNk452ZwA==","sharedEncryptingKey":"n+lDtNlDXEAHLPmx3quz0g==","copayerName":"me","derivationStrategy":"BIP45","account":0,"addressType":"P2SH","use145forBCH":false,"addressBook":{"qz5thp3kxx4fhmmht2a0t62a9vekx6p5vgypvaf6wf":{"name":"Devolve BCH","email":"","address":"qz5thp3kxx4fhmmht2a0t62a9vekx6p5vgypvaf6wf"},"mmxPMVAtA4HbWYhGm91iaTEh5dTNTaz17H":{"name":"Desktop BitPay","email":"","address":"mmxPMVAtA4HbWYhGm91iaTEh5dTNTaz17H"}}}),
-    test: {m:1, xpriv:'xx'},
+    test: {
+            key: {
+        xPrivKey: 'tprv8ZgxMBicQKsPdAYhtd2RKsiMCKBKZfTqgTQp8aSFnE8UaHWdHEeWkX4ruppk5mUJNvbQddBs72qy6AdxzUS6jrXap9vrwHttwAgscY7WHJM',
+        use0forBCH: false,
+        use44forMultisig: true,
+        compliantDerivation: true,
+      },
+      credentials: {
+        coin: 'btc',
+        network: 'testnet',
+        account: 0,
+        rootPath: 'm/45\'',
+      }
+    },
   },
+  {
+    name: 'btc44ro',
+    blob: JSON.stringify({"coin":"btc","network":"testnet","xPubKey":"tpubDDspVdLhVHT2fCQ4egsQTNQkEJV7xWR5X1qkiKHQziRVyz325Hvhhvdh5RFNJdAg1uuSjsfLDdPg1jrNcjeHUoQq1ADtBe1JJ77U7YFTWFu","requestPrivKey":"29016f64a8e852dd04dcac04baa6d914c1c3b0a9215f32816df517eb9b4fb437","requestPubKey":"036b370f47009c63b73a678b8e5bc6f1eb0f7657fd19550c3e62fd0d5ae7be0e77","copayerId":"f02bdff36efae4c948ac3891c33a1316fff2a7ff0e2b6e414484e928f544812d","publicKeyRing":[{"xPubKey":"tpubDDspVdLhVHT2fCQ4egsQTNQkEJV7xWR5X1qkiKHQziRVyz325Hvhhvdh5RFNJdAg1uuSjsfLDdPg1jrNcjeHUoQq1ADtBe1JJ77U7YFTWFu","requestPubKey":"036b370f47009c63b73a678b8e5bc6f1eb0f7657fd19550c3e62fd0d5ae7be0e77","copayerName":"me"}],"walletId":"d92370cc-5a64-4077-af78-12a4231ca54e","walletName":"Prueba","m":1,"n":1,"walletPrivKey":"8fa948b6424da0c020a48ed9089d580afa2bece4b987157b2234420d34de04e7","personalEncryptingKey":"xXo6iM/9Ff9JWy53cwZY+A==","sharedEncryptingKey":"8o+VGScR2LrIX6z0h/i04A==","copayerName":"me","entropySource":"379ee24c7a214646a475d1f8d6cd479200a1cce62116807b180394424713afc7","mnemonicHasPassphrase":false,"derivationStrategy":"BIP44","account":0,"compliantDerivation":true,"addressType":"P2PKH"}),
+    test: {
+      key: false, 
+      credentials: { xPubKey: 'tpubDDspVdLhVHT2fCQ4egsQTNQkEJV7xWR5X1qkiKHQziRVyz325Hvhhvdh5RFNJdAg1uuSjsfLDdPg1jrNcjeHUoQq1ADtBe1JJ77U7YFTWFu'}
+    },
+  }
 ];
 
 module.exports =x;
