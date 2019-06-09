@@ -36,7 +36,7 @@ describe('Address', function() {
   it('should throw an error because of bad type param', function() {
     (function() {
       return new Address(PKHLivenet[0], 'livenet', 'pubkey');
-    }).should.throw('Third argument must be "pubkeyhash" or "scripthash"');
+    }).should.throw('Third argument must be "pubkeyhash", "scripthash", "witnesspubkeyhash", or "witnessscripthash".');
   });
 
   describe('bitcoind compliance', function() {
@@ -283,7 +283,7 @@ describe('Address', function() {
     it('should error because of incorrect length buffer for transform buffer', function() {
       (function() {
         return Address._transformBuffer(new Buffer(20));
-      }).should.throw('Address buffers must be exactly 21 bytes.');
+      }).should.throw('Address buffer is incorrect length.');
     });
 
     it('should error because of incorrect type for pubkey transform', function() {

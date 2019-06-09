@@ -875,6 +875,24 @@ Script.buildPublicKeyHashOut = function(to) {
 };
 
 /**
+ * @returns {Script} a new pay to witness v0 output for the given
+ * address
+ * @param {Address} to - destination address
+ */
+Script.buildWitnessV0Out = function(to) {
+  $.checkArgument(!_.isUndefined(to));
+  $.checkArgument(to instanceof Address || _.isString(to));
+  if (_.isString(to)) {
+    to = new Address(to);
+  }
+  var s = new Script();
+  s.add(Opcode.OP_0)
+    .add(to.hashBuffer);
+  s._network = to.network;
+  return s;
+};
+
+/**
  * @returns {Script} a new pay to public key output for the given
  *  public key
  */
@@ -987,6 +1005,10 @@ Script.fromAddress = function(address) {
     return Script.buildScriptHashOut(address);
   } else if (address.isPayToPublicKeyHash()) {
     return Script.buildPublicKeyHashOut(address);
+  } else if (address.isPayToWitnessPublicKeyHash()) {
+    return Script.buildWitnessV0Out(address);
+  } else if (address.isPayToWitnessScriptHash()) {
+    return Script.buildWitnessV0Out(address);
   }
   throw new errors.Script.UnrecognizedAddress(address);
 };
