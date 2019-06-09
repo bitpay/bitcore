@@ -52,16 +52,14 @@ router.get('/:blockId', async function(req: Request, res: Response) {
   }
 });
 
-router.get('before-time/:time', async function(req: Request, res: Response) {
+router.get('/before-time/:time', async function(req: Request, res: Response) {
   let { time, chain, network } = req.params;
   try {
     const [block] = await BlockStorage.collection
       .find({
-        $query: {
-          chain,
-          network,
-          timeNormalized: { $lte: new Date(time) }
-        }
+        chain,
+        network,
+        timeNormalized: { $lte: new Date(time) }
       })
       .limit(1)
       .sort({ timeNormalized: -1 })
