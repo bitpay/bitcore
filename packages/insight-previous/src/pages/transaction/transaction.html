@@ -43,13 +43,13 @@
           <ion-item>
             Received Time
             <ion-note item-end>
-              {{ tx.time * 1000 | date:'medium' }}
+              {{ tx.time * 1000 | date:'medium':'UTC' }}
             </ion-note>
           </ion-item>
           <ion-item *ngIf="confirmations > 0">
             Mined Time
             <ion-note item-end>
-              {{ tx.blocktime * 1000 | date:'medium' }}
+              {{ tx.blocktime * 1000 | date:'medium':'UTC' }}
             </ion-note>
           </ion-item>
           <ion-item>

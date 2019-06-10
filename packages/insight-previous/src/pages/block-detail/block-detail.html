@@ -46,7 +46,7 @@
                 <ion-item>
                   Timestamp
                   <ion-note item-end>
-                    {{ block.time * 1000 | date:'medium' }}
+                    {{ block.time * 1000 | date:'medium':'UTC' }}
                   </ion-note>
                 </ion-item>
                 <ion-item>
