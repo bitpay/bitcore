@@ -111,10 +111,14 @@ helpers.createAndJoinWallet = function(clients, keys, m, n, opts, cb) {
   var coin = opts.coin || 'btc';
   var network = opts.network || 'testnet';
 
-  keys[0] = Key.create();
-  clients[0].fromString(
-    keys[0].createCredentials(null, {coin: coin, n:1, network: network, account:0, n:n})
-  );
+  let keyOpts = {
+    useLegacyCoinType: opts.useLegacyCoinType,
+    useLegacyPurpose: opts.useLegacyPurpose,
+  };
+
+  keys[0] = Key.create(keyOpts);
+  let cred = keys[0].createCredentials(null, {coin: coin, network: network, account:0, n:n});
+  clients[0].fromString(cred);
 
 
   clients[0].createWallet('mywallet', 'creator', m, n, {
@@ -134,7 +138,7 @@ helpers.createAndJoinWallet = function(clients, keys, m, n, opts, cb) {
 
         function(next) {
           async.each(_.range(1, n), function(i, cb) {
-            keys[i] = Key.create();
+            keys[i] = Key.create(keyOpts);
             clients[i].fromString(
               keys[i].createCredentials(null, {
                 coin: coin, 
@@ -4687,6 +4691,111 @@ describe('client API', function() {
         });
       });
 
+      it('should fail to gain access to a 1-1 wallet from wrong mnemonic', function(done) {
+        helpers.createAndJoinWallet( clients, keys, 1, 1, {}, function() {
+          var words = (Key.create()).get().mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          Client.serverAssistedImport({words}, { 
+            clientFactory: () => { 
+              return helpers.newClient(app) 
+            }}, (err, k, c) => {
+              should.not.exist(err);
+              c.length.should.equal(0);
+              done();
+            });
+        });
+      });
+
+
+      it('should be able to gain access to a OLD 44\' 2-2 wallet from mnemonic', function(done) {
+        this.timeout(5000);
+        helpers.createAndJoinWallet( clients, keys, 2, 2, {
+          useLegacyPurpose: true,
+        }, function() {
+          var words = keys[0].get(null,true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          clients[0].createAddress(function(err, addr) {
+            should.not.exist(err);
+            should.exist(addr);
+            Client.serverAssistedImport({words}, { 
+              clientFactory: () => { 
+                return helpers.newClient(app) 
+              }}, (err, k, c) => {
+                should.exist(k);
+                should.exist(c[0]);
+              k.compliantDerivation.should.equal(true);
+              k.use0forBCH.should.equal(false);
+              k.use44forMultisig.should.equal(true);
+
+
+              should.not.exist(err);
+              c.length.should.equal(1);
+              let recoveryClient = c[0];
+              recoveryClient.openWallet(function(err) {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.m.should.equal(2);
+                recoveryClient.credentials.n.should.equal(3);
+                recoveryClient.getMainAddresses({}, function(err, list) {
+                  should.not.exist(err);
+                  should.exist(list);
+                  list[0].address.should.equal(addr.address);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
+
+
+
+      it('should be able to gain access to a OLD 44\' 2-3 wallet from mnemonic', function(done) {
+        this.timeout(5000);
+        helpers.createAndJoinWallet( clients, keys, 2, 3, {
+          useLegacyPurpose: true,
+        }, function() {
+          var words = keys[0].get(null,true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          clients[0].createAddress(function(err, addr) {
+            should.not.exist(err);
+            should.exist(addr);
+            Client.serverAssistedImport({words}, { 
+              clientFactory: () => { 
+                return helpers.newClient(app) 
+              }}, (err, k, c) => {
+                should.exist(k);
+                should.exist(c[0]);
+              k.compliantDerivation.should.equal(true);
+              k.use0forBCH.should.equal(false);
+              k.use44forMultisig.should.equal(true);
+
+
+              should.not.exist(err);
+              c.length.should.equal(1);
+              let recoveryClient = c[0];
+              recoveryClient.openWallet(function(err) {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.m.should.equal(2);
+                recoveryClient.credentials.n.should.equal(3);
+                recoveryClient.getMainAddresses({}, function(err, list) {
+                  should.not.exist(err);
+                  should.exist(list);
+                  list[0].address.should.equal(addr.address);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
 
 
       it('should be able to see txp messages after gaining access', function(done) {
