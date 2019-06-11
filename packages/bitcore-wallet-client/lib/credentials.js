@@ -118,7 +118,7 @@ Credentials.prototype.getRootPath = function() {
     // legacy base path schema
     var purpose;
     switch (self.derivationStrategy) {
-      case Constants.DERIVATION_STRATEGIES.BIP45:
+      case Constants.ERIVATION_STRATEGIES.BIP45:
         return "m/45'";
       case Constants.DERIVATION_STRATEGIES.BIP44:
         purpose = '44';
@@ -192,15 +192,19 @@ Credentials.prototype.addWalletPrivateKey = function(walletPrivKey) {
   this.sharedEncryptingKey = Utils.privateKeyToAESKey(walletPrivKey);
 };
 
-Credentials.prototype.addWalletInfo = function(walletId, walletName, m, n, copayerName) {
+Credentials.prototype.addWalletInfo = function(walletId, walletName, m, n, copayerName, opts) {
+  opts = opts || {};
   this.walletId = walletId;
   this.walletName = walletName;
   this.m = m;
 
-  // We allow n overwritting only between multisig wallets
-  if ( (this.n == 1 && n != 1) || ( this.n > 1 &&  n == 1 )) {
-    throw new Error(`Bad nr of copayers in addWalletInfo: this: ${this.n} got: ${n}`, this.n, n);
+  if ( this.n != n && !opts.allowOverwrite) {
+    // we always allow multisig n overwrite
+    if ( this.n == 1 || n == 1 ) { 
+      throw new Error(`Bad nr of copayers in addWalletInfo: this: ${this.n} got: ${n}`);
+    }
   }
+  
   this.n = n;
 
   if (copayerName)

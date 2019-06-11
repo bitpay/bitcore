@@ -287,9 +287,7 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
  */
 API.prototype.toString = function(opts) {
   $.checkState(this.credentials);
-  
-console.log('[api.js.290] TODO Handle noSign in toString()'); // TODO
-  //$.checkArgument(!this.noSign, 'no Sign not supported');
+  $.checkArgument(!this.noSign, 'no Sign not supported');
 
   opts = opts || {};
 
@@ -323,33 +321,6 @@ API.prototype.fromString = function(credentials) {
   this.request.setCredentials(this.credentials);
 };
 
-
-API.prototype.open = function(cb) {
-  $.checkState(this.credentials);
-
-  var self = this;
-
-  // First option, grab wallet info from BWS.
-  self.openWallet(function(err, ret) {
-
-    // it worked?
-    if (!err) return cb(null, ret);
-
-    // Is the error other than "copayer was not found"? || or no priv key.
-    if (err instanceof Errors.NOT_AUTHORIZED)
-      return cb(err);
-
-    //Second option, lets try to add an access
-    log.info('Copayer not found, trying to add access');
-    self.addAccess({}, function(err) {
-      if (err) {
-        return cb(new Errors.WALLET_DOES_NOT_EXIST);
-      }
-
-      self.openWallet(cb);
-    });
-  });
-};
 
 /**
  * Import from Mnemonics (language autodetected)
@@ -584,7 +555,12 @@ API.prototype.buildTxFromPrivateKey = function(privateKey, destinationAddress, o
  * @param {Callback} cb - The callback that handles the response. It returns a flag indicating that the wallet is complete.
  * @fires API#walletCompleted
  */
-API.prototype.openWallet = function(cb) {
+API.prototype.openWallet = function(opts, cb) {
+  if (_.isFunction(opts)) {
+    cb = opts
+  }
+  opts = opts || {};
+
   $.checkState(this.credentials);
   var self = this;
   if (self.credentials.isComplete() && self.credentials.hasWalletInfo())
@@ -599,6 +575,7 @@ API.prototype.openWallet = function(cb) {
     var wallet = ret.wallet;
 
     self._processStatus(ret);
+
     if (!self.credentials.hasWalletInfo()) {
       var me = _.find(wallet.copayers, {
         id: self.credentials.copayerId
@@ -606,7 +583,17 @@ API.prototype.openWallet = function(cb) {
 
       if(!me) return cb(new Error('Copayer not in wallet'));
 
-      self.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, me.name);
+      try {
+        self.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, me.name, opts);
+      } catch (e) {
+        if (e.message) {
+          log.info('Trying credentials...', e.message); 
+        }
+        if (e.message && e.message.match(/Bad\snr/)) {
+          return cb(new Errors.WALLET_DOES_NOT_EXIST);
+        }
+        throw e;
+      }
     }
 
     if (wallet.status != 'complete')
@@ -622,7 +609,6 @@ API.prototype.openWallet = function(cb) {
     }
 
     self.credentials.addPublicKeyRing(API._extractPublicKeyRing(wallet.copayers));
-
     self.emit('walletCompleted', wallet);
 
     return cb(null, ret);
@@ -958,7 +944,7 @@ API.prototype.joinWallet = function(secret, copayerName, opts, cb) {
   }, function(err, wallet) {
     if (err) return cb(err);
     if (!opts.dryRun) {
-      self.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, copayerName);
+      self.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, copayerName, {allowOverwrite: true});
     }
     return cb(null, wallet);
   });
@@ -1006,15 +992,9 @@ API.prototype.recreateWallet = function(cb) {
 
     self.request.post('/v2/wallets/', args, function(err, body) {
       if (err) {
-        if (!(err instanceof Errors.WALLET_ALREADY_EXISTS))
-          return cb(err);
-
-        return self.addAccess({}, function(err) {
-          if (err) return cb(err);
-          self.openWallet(function(err) {
-            return cb(err);
-          });
-        });
+        // return all errors. Can't call addAccess.
+        log.info('openWallet error' + err);
+        return cb(new Errors.WALLET_DOES_NOT_EXIST);
       }
 
       if (!walletId) {
@@ -2241,23 +2221,25 @@ API.serverAssistedImport = (opts, clientOpts, callback) => {
     });
 
 
-    if (copayerIdAlreadyTested[c.copayerId]) {
+    if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
+//console.log('[api.js.2226] ALREADY T:', opts.n); // TODO
       return  icb();
     } else {
-     copayerIdAlreadyTested[c.copayerId] = true;
+     copayerIdAlreadyTested[c.copayerId+ ':' + opts.n] = true;
     }
 
     let client  = clientOpts.clientFactory ?  clientOpts.clientFactory() :  new API(clientOpts);
 
     client.fromString(c);
-    client.open(function(err) {
-console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FOUND!'); // TODO
+    client.openWallet({}, function(err) {
+      console.log(`PATH: ${c.rootPath} n: ${c.n}:`, (err && err.message) ? err.message : 'FOUND!'); // TODO
       // Exists
       if (!err) return icb(null, client);
       if (err instanceof Errors.NOT_AUTHORIZED || 
         err instanceof Errors.WALLET_DOES_NOT_EXIST) {
         return icb();
       }
+
       return icb(err);
     })
   };
@@ -2265,19 +2247,16 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
   function checkKey(key, cb) {
     let opts = [
 
-      // Test multisig first to avoid
-      // errors instanciating single sig and then
-      // addWalletInfo set n>1
       //coin, network,  multisig
-      ['btc', 'livenet', true ],    
-      ['bch', 'livenet', true ],    
       ['btc', 'livenet', ],          
       ['bch', 'livenet', ],          
+      ['btc', 'livenet', true ],    
+      ['bch', 'livenet', true ],    
     ];
     if (key.use44forMultisig) {
       //  testing old multi sig
       opts = opts.filter((x) => {
-        return !x[2];
+        return x[2];
       });
     }
 
@@ -2288,20 +2267,20 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
       });
     }
 
-    if (key.compliantDerivation) {
+    if (!key.nonCompliantDerivation) {
       // TESTNET
       let testnet = _.cloneDeep(opts);
       testnet.forEach((x) => { x[1] = 'testnet' });
       opts = opts.concat(testnet);
-   } else {
+    } else {
       //  leave only BTC, and no testnet
       opts = opts.filter((x) => {
         return x[0] == 'btc';
       });
-   }
+    }
 
     let clients = [];
-    async.each(opts, 
+    async.eachSeries(opts, 
       (x, next) => {
         let optsObj = {
           coin: x[0] ,
@@ -2309,6 +2288,7 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
           account: 0,
           n: x[2] ? 2: 1,
         };
+//console.log('[api.js.2287:optsObj:]',optsObj); // TODO
         // TODO OPTI: do not scan accounts if XX
         //
         // 1. check account 0
@@ -2316,17 +2296,23 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
           if (err) return next(err);
           if (!iclient) return next();
           clients.push(iclient);
+
+          // Accounts not allowed?
+          if (key.use0forBCH || !key.compliantDerivation || key.use44forMultisig) 
+            return next();
+
           // Now, lets scan all accounts for the found client
           let cont = true, account = 1;
           async.whilst(() => {
             return cont;
           }, (icb) => {
             optsObj.account = account++;
+
             checkCredentials(key, optsObj, (err, iclient) => {
               if (err) return icb(err);
               cont = !!iclient;
               if (iclient) {
-                clients.push(iclient);
+               clients.push(iclient);
               } else {
                 // we do not allow accounts nr gaps in BWS. 
                 cont = false;
@@ -2348,39 +2334,38 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
   let sets = [ 
     {
       // current wallets: /[44,48]/[0,145]'/
-      compliantDerivation: true,
+      nonCompliantDerivation: false,
       useLegacyCoinType: false,
       useLegacyPurpose: false,
     },
     {
       // older bch wallets: /[44,48]/[0,0]'/
-      compliantDerivation: true,
+      nonCompliantDerivation: false,
       useLegacyCoinType: true,
       useLegacyPurpose: false,
     },
     {
       // older BTC/BCH  multisig wallets: /[44]/[0,145]'/
-      compliantDerivation: true,
+      nonCompliantDerivation: false,
       useLegacyCoinType: false,
       useLegacyPurpose: true,
     },
     {
       // not that // older multisig BCH wallets: /[44]/[0]'/
-      compliantDerivation: true,
+      nonCompliantDerivation: false,
       useLegacyCoinType: true,
       useLegacyPurpose: true,
     },
  
     {
       // old BTC no-comp wallets: /44'/[0]'/
-      compliantDerivation: false,
+      nonCompliantDerivation: true,
       useLegacyPurpose: true,
     },
   ];
 
   let s, resultingClients = [], k;
   async.whilst(() => {
-
     if (! _.isEmpty(resultingClients))
       return false;
 
