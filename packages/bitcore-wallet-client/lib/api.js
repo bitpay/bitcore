@@ -2264,11 +2264,15 @@ console.log('TRYING PATH:', c.rootPath, (err && err.message) ? err.message : 'FO
   
   function checkKey(key, cb) {
     let opts = [
+
+      // Test multisig first to avoid
+      // errors instanciating single sig and then
+      // addWalletInfo set n>1
       //coin, network,  multisig
-      ['btc', 'livenet', ],          
-      ['bch', 'livenet', ],          
       ['btc', 'livenet', true ],    
       ['bch', 'livenet', true ],    
+      ['btc', 'livenet', ],          
+      ['bch', 'livenet', ],          
     ];
     if (key.use44forMultisig) {
       //  testing old multi sig
