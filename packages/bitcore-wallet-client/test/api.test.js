@@ -5301,7 +5301,7 @@ describe('client API', function() {
 
   var addrMap = {
     btc: ['1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3','1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC'],
-    bch: ['bitcoincash:qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e','bitcoincash:qznkyz7hdd3jvkqc76zsf585dcp5czmz5udnlj26ya']
+    bch: ['qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e','qznkyz7hdd3jvkqc76zsf585dcp5czmz5udnlj26ya']
   };
   _.each(['bch', 'btc'], function(coin) {
     var addr= addrMap[coin];
