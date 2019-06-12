@@ -13,13 +13,12 @@
     </ion-col>
     <ion-col col-5 text-right>
       <ion-note [hidden]="!tx.firstSeenTs">
-        <span translate>first seen at</span>
-        <time>{{ tx.firstSeenTs * 1000 | date:'medium':'UTC' }}</time>
+        <span translate>first seen on</span>
+        <time>{{ tx.firstSeenTs * 1000 | date:'long' }}</time>
       </ion-note>
       <ion-note [hidden]="!tx.blocktime && tx.firstSeenTs">
-        <span translate>mined</span>
-        <time>{{ tx.time * 1000 | date:'MMM d, y':'UTC' }}</time>
-        <time>{{ tx.time * 1000 | date:'hh:mm:ss a':'UTC' }}</time>
+        <span translate>mined on</span>
+        <time>{{ tx.time * 1000 | date:'long' }}</time>
       </ion-note>
     </ion-col>
   </ion-row>

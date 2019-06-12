@@ -4,19 +4,19 @@
 </div>
 
 <ion-row *ngIf="type == 'grid'">
-  <ion-col>
+  <ion-col col-2>
     <div class="left-item animated-background"></div>
   </ion-col>
-  <ion-col>
-    <div class="left-item animated-background"></div>
+  <ion-col col-4>
+    <div class="right-item animated-background"></div>
   </ion-col>
   <ion-col text-right>
     <div class="right-item animated-background"></div>
   </ion-col>
-  <ion-col hideWhen="portrait">
-    <div class=" animated-background"></div>
+  <ion-col col-2 hideWhen="portrait">
+    <div class="animated-background"></div>
   </ion-col>
-  <ion-col text-right>
+  <ion-col col-2 text-right>
     <div class="right-item animated-background"></div>
   </ion-col>
 </ion-row>
