@@ -118,7 +118,7 @@ Credentials.prototype.getRootPath = function() {
     // legacy base path schema
     var purpose;
     switch (self.derivationStrategy) {
-      case Constants.ERIVATION_STRATEGIES.BIP45:
+      case Constants.DERIVATION_STRATEGIES.BIP45:
         return "m/45'";
       case Constants.DERIVATION_STRATEGIES.BIP44:
         purpose = '44';

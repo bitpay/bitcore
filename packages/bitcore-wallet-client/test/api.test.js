@@ -4530,32 +4530,6 @@ describe('client API', function() {
       });
     });
 
-    describe('#serverAssistedImport fails', function() {
-      it('should handle not being able to add access', function(done) {
-        var sandbox = sinon.sandbox.create();
-        var client = new Client();
-        client.credentials = {};
-
-        var ow = sandbox.stub(client, 'openWallet').callsFake(function(callback) {
-          callback(new Error());
-        });
-
-        var aa = sandbox.stub(client, 'addAccess').callsFake(function(options, callback) {
-          callback(new Error());
-        });
-
-        let words = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
-
-        Client.serverAssistedImport({words}, { clientFactory: () => {return client;}}, function(err, key, cs) {
-          should.not.exist(err);
-          should.not.exist(key);
-          cs.length.should.equal(0);
-          sandbox.restore();
-          done();
-        });
-      });
-    });
-
     describe('#import FromMnemonic', function() {
       it('should handle importing an invalid mnemonic', function(done) {
         var mnemonicWords = 'this is an invalid mnemonic';
@@ -4738,7 +4712,7 @@ describe('client API', function() {
                 recoveryClient.credentials.walletName.should.equal(walletName);
                 recoveryClient.credentials.copayerName.should.equal(copayerName);
                 recoveryClient.credentials.m.should.equal(2);
-                recoveryClient.credentials.n.should.equal(3);
+                recoveryClient.credentials.n.should.equal(2);
                 recoveryClient.getMainAddresses({}, function(err, list) {
                   should.not.exist(err);
                   should.exist(list);
