@@ -20,7 +20,7 @@ const collections = {
   PREFERENCES: 'preferences',
   EMAIL_QUEUE: 'email_queue',
   CACHE: 'cache',
-  FIAT_RATES: 'fiat_rates',
+  FIAT_RATES2: 'fiat_rates2',
   TX_NOTES: 'tx_notes',
   SESSIONS: 'sessions',
   PUSH_NOTIFICATION_SUBS: 'push_notification_subs',
@@ -106,8 +106,8 @@ export class Storage {
     db.collection(collections.PREFERENCES).createIndex({
       walletId: 1
     });
-    db.collection(collections.FIAT_RATES).createIndex({
-      provider: 1,
+    db.collection(collections.FIAT_RATES2).createIndex({
+      coin: 1,
       code: 1,
       ts: 1
     });
@@ -1120,18 +1120,19 @@ export class Storage {
     );
   }
 
-  storeFiatRate(providerName, rates, cb) {
+  storeFiatRate(coin, rates, cb) {
     const now = Date.now();
     async.each(
       rates,
       (rate: { code: string; value: string }, next) => {
-        this.db.collection(collections.FIAT_RATES).insert(
-          {
-            provider: providerName,
+        let i = {
             ts: now,
+            coin,
             code: rate.code,
             value: rate.value
-          },
+          };
+        this.db.collection(collections.FIAT_RATES2).insert(i
+          ,
           {
             w: 1
           },
@@ -1142,11 +1143,11 @@ export class Storage {
     );
   }
 
-  fetchFiatRate(providerName, code, ts, cb) {
+  fetchFiatRate(coin, code, ts, cb) {
     this.db
-      .collection(collections.FIAT_RATES)
+      .collection(collections.FIAT_RATES2)
       .find({
-        provider: providerName,
+        coin,
         code,
         ts: {
           $lte: ts

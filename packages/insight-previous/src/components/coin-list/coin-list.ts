@@ -17,6 +17,7 @@ export class CoinListComponent implements OnInit {
   public chainNetwork: ChainNetwork;
 
   public txs: any = [];
+  public coins: any = [];
   public showTransactions: boolean;
   public loading;
   public limit = 10;
@@ -25,7 +26,6 @@ export class CoinListComponent implements OnInit {
   constructor(
     private addrProvider: AddressProvider,
     private txsProvider: TxsProvider,
-    private logger: Logger,
     private events: Events
   ) {}
 
@@ -35,13 +35,12 @@ export class CoinListComponent implements OnInit {
       this.addrProvider.getAddressActivity(this.addrStr).subscribe(
         data => {
           const formattedData = data.map(this.txsProvider.toAppCoin);
-          this.txs = this.orderByHeight(formattedData);
+          this.txs = this.processData(formattedData);
           this.showTransactions = true;
           this.loading = false;
           this.events.publish('CoinList', { length: data.length });
         },
-        err => {
-          this.logger.error(err);
+        () => {
           this.loading = false;
           this.showTransactions = false;
         }
@@ -49,24 +48,14 @@ export class CoinListComponent implements OnInit {
     }
   }
 
-  orderByHeight(data) {
-    const unconfirmedTxs = [];
-    let confirmedTxs = [];
-
+  processData(data) {
+    const txs = [];
     data.forEach(tx => {
       const { mintHeight, mintTxid, value, spentHeight, spentTxid } = tx;
-
-      mintHeight < 0
-        ? unconfirmedTxs.push({ height: mintHeight, mintTxid, value })
-        : confirmedTxs.push({ height: mintHeight, mintTxid, value });
-
-      spentHeight < 0
-        ? unconfirmedTxs.push({ height: spentHeight, spentTxid, value })
-        : confirmedTxs.push({ height: spentHeight, spentTxid, value });
+      txs.push({ height: spentHeight, spentTxid, value });
+      txs.push({ height: mintHeight, mintTxid, value });
     });
-
-    confirmedTxs = _.orderBy(confirmedTxs, ['height'], ['desc']);
-    return unconfirmedTxs.concat(confirmedTxs);
+    return txs;
   }
 
   public loadMore(infiniteScroll) {

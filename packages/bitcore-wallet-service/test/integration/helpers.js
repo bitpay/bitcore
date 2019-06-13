@@ -98,7 +98,7 @@ helpers.beforeEach = function(cb) {
     PREFERENCES: 'preferences',
     EMAIL_QUEUE: 'email_queue',
     CACHE: 'cache',
-    FIAT_RATES: 'fiat_rates',
+    FIAT_RATES2: 'fiat_rates2',
     TX_NOTES: 'tx_notes',
     SESSIONS: 'sessions',
     PUSH_NOTIFICATION_SUBS: 'push_notification_subs',

@@ -13,13 +13,12 @@
     </ion-col>
     <ion-col col-5 text-right>
       <ion-note [hidden]="!tx.firstSeenTs">
-        <span translate>first seen at</span>
-        <time>{{ tx.firstSeenTs * 1000 | date:'medium' }}</time>
+        <span translate>first seen on</span>
+        <time>{{ tx.firstSeenTs * 1000 | date:'long' }}</time>
       </ion-note>
       <ion-note [hidden]="!tx.blocktime && tx.firstSeenTs">
-        <span translate>mined</span>
-        <time>{{ tx.time * 1000 | date:'MMM d, y' }}</time>
-        <time>{{ tx.time * 1000 | date:'hh:mm:ss a' }}</time>
+        <span translate>mined on</span>
+        <time>{{ tx.time * 1000 | date:'long' }}</time>
       </ion-note>
     </ion-col>
   </ion-row>
@@ -36,7 +35,7 @@
           Unconfirmed
         </ion-label>
       </ion-chip>
-      <ion-chip item-end color="brand" *ngIf="confirmations === 1">
+      <ion-chip item-end color="primary" *ngIf="confirmations === 1">
         <ion-label>
           1 Confirmation
         </ion-label>
@@ -160,7 +159,7 @@
       <ion-chip color="warning" *ngIf="confirmations === -1">
         <ion-label>Unconfirmed</ion-label>
       </ion-chip>
-      <ion-chip color="brand" *ngIf="confirmations === 1">
+      <ion-chip color="primary" *ngIf="confirmations === 1">
         <ion-label>1 Confirmation</ion-label>
       </ion-chip>
       <ion-chip color="primary" *ngIf="confirmations > 1">

@@ -841,8 +841,8 @@ export class ExpressApp {
       let server;
       const opts = {
         code: req.params['code'],
-        provider: req.query.provider,
-        ts: +req.query.ts
+        coin: req.query.coin || 'btc',
+        ts: (req.query.ts ? +req.query.ts : null),
       };
       try {
         server = getServer(req, res);

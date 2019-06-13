@@ -14,6 +14,11 @@ import { SpentHeightIndicators } from '../types/Coin';
 import { Config } from '../services/config';
 import { EventStorage } from './events';
 
+const { onlyWalletEvents } = Config.get().services.event;
+function shouldFire(obj: { wallets?: Array<ObjectID> }) {
+  return !onlyWalletEvents || (onlyWalletEvents && obj.wallets && obj.wallets.length > 0);
+}
+
 const Chain = require('../chain');
 
 export type ITransaction = {
@@ -121,6 +126,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
   }) {
     const mintOps = await this.getMintOps(params);
     const spendOps = this.getSpendOps({ ...params, mintOps });
+    const txOps = await this.addTransactions({ ...params, mintOps });
     await this.pruneMempool({
       chain: params.chain,
       network: params.network,
@@ -131,9 +137,20 @@ export class TransactionModel extends BaseModel<ITransaction> {
     logger.debug('Minting Coins', mintOps.length);
     if (mintOps.length) {
       await Promise.all(
-        partition(mintOps, mintOps.length / Config.get().maxPoolSize).map(mintBatch =>
-          CoinStorage.collection.bulkWrite(mintBatch, { ordered: false })
-        )
+        partition(mintOps, mintOps.length / Config.get().maxPoolSize).map(async mintBatch => {
+          await CoinStorage.collection.bulkWrite(mintBatch, { ordered: false });
+          if (params.height < SpentHeightIndicators.minimum) {
+            EventStorage.signalAddressCoins(
+              mintBatch
+                .map(coinOp => {
+                  const address = coinOp.updateOne.update.$set.address;
+                  const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
+                  return { address, coin };
+                })
+                .filter(({ coin }) => shouldFire(coin))
+            );
+          }
+        })
       );
     }
 
@@ -146,36 +163,18 @@ export class TransactionModel extends BaseModel<ITransaction> {
       );
     }
 
-    if (mintOps) {
-      const txOps = await this.addTransactions({ ...params, mintOps });
+    if (txOps.length) {
       logger.debug('Writing Transactions', txOps.length);
       await Promise.all(
-        partition(txOps, txOps.length / Config.get().maxPoolSize).map(txBatch =>
-          this.collection.bulkWrite(txBatch, { ordered: false })
-        )
+        partition(txOps, txOps.length / Config.get().maxPoolSize).map(async txBatch => {
+          await this.collection.bulkWrite(txBatch, { ordered: false });
+          if (params.height < SpentHeightIndicators.minimum) {
+            EventStorage.signalTxs(
+              txBatch.map(op => ({ ...op.updateOne.update.$set, ...op.updateOne.filter })).filter(shouldFire)
+            );
+          }
+        })
       );
-
-      // Create events for mempool txs
-      const { onlyWalletEvents } = Config.get().services.event;
-      function shouldFire(obj: { wallets?: Array<ObjectID> }) {
-        return !onlyWalletEvents || (onlyWalletEvents && obj.wallets && obj.wallets.length > 0);
-      }
-      if (params.height < SpentHeightIndicators.minimum) {
-        for (let op of txOps) {
-          const filter = op.updateOne.filter;
-          const tx = { ...op.updateOne.update.$set, ...filter };
-          if (shouldFire(tx)) {
-            EventStorage.signalTx(tx);
-          }
-        }
-        for (const coinOp of mintOps) {
-          const address = coinOp.updateOne.update.$set.address;
-          const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
-          if (shouldFire(coin)) {
-            EventStorage.signalAddressCoin({ address, coin });
-          }
-        }
-      }
     }
   }
 
@@ -255,7 +254,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         if (!agg[mintTxid]) {
           agg[mintTxid] = {
             total: value,
-            wallets: wallets || []
+            wallets: wallets ? [...wallets] : []
           };
         } else {
           agg[mintTxid].total += value;
@@ -268,7 +267,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         if (!agg[coin.spentTxid]) {
           agg[coin.spentTxid] = {
             total: coin.value,
-            wallets: coin.wallets || []
+            wallets: coin.wallets ? [...coin.wallets] : []
           };
         } else {
           agg[coin.spentTxid].total += coin.value;

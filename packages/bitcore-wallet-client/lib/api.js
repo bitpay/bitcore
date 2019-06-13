@@ -624,9 +624,10 @@ API.prototype.getBalanceFromPrivateKey = function(privateKey, coin, cb) {
   var B = Bitcore_[coin];
  
   var privateKey = new B.PrivateKey(privateKey);
-  var address = privateKey.publicKey.toAddress();
+  var address = privateKey.publicKey.toAddress().toString(true);
+
   self.getUtxos({
-    addresses: coin == 'bch' ? address.toLegacyAddress() : address.toString(),
+    addresses: address,
   }, function(err, utxos) {
     if (err) return cb(err);
     return cb(null, _.sumBy(utxos, 'satoshis'));
@@ -641,13 +642,13 @@ API.prototype.buildTxFromPrivateKey = function(privateKey, destinationAddress, o
   var coin = opts.coin || 'btc';
   var B = Bitcore_[coin];
   var privateKey = B.PrivateKey(privateKey);
-  var address = privateKey.publicKey.toAddress();
+  var address = privateKey.publicKey.toAddress().toString(true);
 
   async.waterfall([
 
     function(next) {
       self.getUtxos({
-        addresses: coin == 'bch' ?  address.toLegacyAddress() : address.toString(),
+        addresses: address,
       }, function(err, utxos) {
         return next(err, utxos);
       });
@@ -2222,7 +2223,7 @@ API.prototype.getTxNotes = function(opts, cb) {
  * @param {Object} opts
  * @param {string} opts.code - Currency ISO code.
  * @param {Date} [opts.ts] - A timestamp to base the rate on (default Date.now()).
- * @param {String} [opts.provider] - A provider of exchange rates (default 'BitPay').
+ * @param {String} [opts.coin] - Coin (detault: 'btc')
  * @returns {Object} rates - The exchange rate.
  */
 API.prototype.getFiatRate = function(opts, cb) {
@@ -2234,7 +2235,7 @@ API.prototype.getFiatRate = function(opts, cb) {
 
   var args = [];
   if (opts.ts) args.push('ts=' + opts.ts);
-  if (opts.provider) args.push('provider=' + opts.provider);
+  if (opts.coin) args.push('coin=' + opts.coin);
   var qs = '';
   if (args.length > 0) {
     qs = '?' + args.join('&');

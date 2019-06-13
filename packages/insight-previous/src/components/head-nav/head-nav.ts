@@ -35,17 +35,17 @@ export class HeadNavComponent implements OnInit {
   public params: any;
 
   constructor(
-    private navCtrl: NavController,
-    private apiProvider: ApiProvider,
     public app: App,
     public currencyProvider: CurrencyProvider,
     public priceProvider: PriceProvider,
     public actionSheetCtrl: ActionSheetController,
     public popoverCtrl: PopoverController,
     public toastCtrl: ToastController,
-    private logger: Logger,
     public searchProvider: SearchProvider,
-    public redirProvider: RedirProvider
+    public redirProvider: RedirProvider,
+    private navCtrl: NavController,
+    private logger: Logger,
+    private apiProvider: ApiProvider
   ) {}
 
   public ngOnInit(): void {

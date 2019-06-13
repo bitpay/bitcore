@@ -24,9 +24,9 @@ export async function blocks(
 ) {
   const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
   const tip = await ChainStateProvider.getLocalTip({ chain: info.chain, network: info.network });
-  const heights = new Array(tip.height).fill(false);
-  const times = new Array(tip.height).fill(0);
-  const normalizedTimes = new Array(tip.height).fill(0);
+  const heights = new Array(tip!.height).fill(false);
+  const times = new Array(tip!.height).fill(0);
+  const normalizedTimes = new Array(tip!.height).fill(0);
 
   // check each block
   const cursor = BlockStorage.collection.find({
@@ -42,7 +42,7 @@ export async function blocks(
 
     // Check there's all unique heights
     expect(block.height, 'block height').to.be.gte(1);
-    expect(block.height, 'block height').to.be.lte(tip.height);
+    expect(block.height, 'block height').to.be.lte(tip!.height);
     expect(heights[block.height - 1], 'height already used').to.be.false;
     heights[block.height - 1] = true;
 
@@ -65,7 +65,7 @@ export async function blocks(
     expect(block.processed, 'block processed').to.equal(true);
     expect(block.time.getTime(), 'block time').to.equal(truth.time * 1000);
 
-    if (block.height < tip.height) {
+    if (block.height < tip!.height) {
       expect(block.nextBlockHash, 'block next hash').to.equal(truth.nextblockhash);
     }
 

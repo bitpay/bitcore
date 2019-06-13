@@ -9,7 +9,7 @@ module.exports = {
         if (!d.code || !d.rate) return null;
         return {
           code: d.code,
-          value: d.rate
+          value: +d.rate.toFixed(2)
         };
       })
     );

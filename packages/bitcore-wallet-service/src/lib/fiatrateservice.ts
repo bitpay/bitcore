@@ -9,6 +9,19 @@ const Defaults = Common.Defaults;
 let log = require('npmlog');
 log.debug = log.verbose;
 
+const fiatCodes = {
+  USD: 1,
+  INR: 1,
+  GBP: 1,
+  EUR: 1,
+  CAD: 1, // 5
+  COP: 1,
+  NGN: 1,
+  BRL: 1,
+  ARS: 1,
+  AUD: 1,
+};
+
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
   defaultProvider: any;
@@ -48,7 +61,6 @@ export class FiatRateService {
     opts = opts || {};
 
     this.providers = _.values(require('./fiatrateproviders'));
-
     const interval = opts.fetchInterval || Defaults.FIAT_RATE_FETCH_INTERVAL;
     if (interval) {
       this._fetch();
@@ -62,32 +74,33 @@ export class FiatRateService {
 
   _fetch(cb?) {
     cb = cb || function() { };
+    const coins = ['btc', 'bch'];
+    const provider = this.providers[0];
 
-    async.each(
-      this.providers,
-      (provider, next) => {
-        this._retrieve(provider, (err, res) => {
+    //    async.each(this.providers, (provider, next) => {
+    async.each(coins, (coin, next2) => {
+      this._retrieve(provider, coin, (err, res) => {
+        if (err) {
+          log.warn('Error retrieving data for ' + provider.name + coin, err);
+          return next2();
+        }
+        this.storage.storeFiatRate(coin, res, (err) => {
           if (err) {
-            log.warn('Error retrieving data for ' + provider.name, err);
-            return next();
+            log.warn('Error storing data for ' + provider.name, err);
           }
-          this.storage.storeFiatRate(provider.name, res, (err) => {
-            if (err) {
-              log.warn('Error storing data for ' + provider.name, err);
-            }
-            return next();
-          });
+          return next2();
         });
-      },
-      cb
-    );
+      });
+    },
+      //        next),
+      cb);
   }
 
-  _retrieve(provider, cb) {
-    log.debug('Fetching data for ' + provider.name);
+  _retrieve(provider, coin, cb) {
+    log.debug(`Fetching data for ${provider.name} / ${coin} `);
     this.request.get(
       {
-        url: provider.url,
+        url: provider.url + coin.toUpperCase(),
         json: true
       },
       (err, res, body) => {
@@ -95,16 +108,19 @@ export class FiatRateService {
           return cb(err);
         }
 
-        log.debug('Data for ' + provider.name + ' fetched successfully');
+        log.debug(`Data for ${provider.name} /  ${coin} fetched successfully`);
 
         if (!provider.parseFn) {
           return cb(
             new Error('No parse function for provider ' + provider.name)
           );
         }
-        const rates = provider.parseFn(body);
-
-        return cb(null, rates);
+        try {
+          const rates = _.filter( provider.parseFn(body), (x) => fiatCodes[x.code] );
+          return cb(null, rates);
+        } catch (e)  {
+          return cb(e);
+        }
       }
     );
   }
@@ -115,13 +131,14 @@ export class FiatRateService {
     opts = opts || {};
 
     const now = Date.now();
-    const provider = opts.provider || this.defaultProvider;
+    const coin = opts.coin || 'btc';
+//    const provider = opts.provider || this.defaultProvider;
     const ts = _.isNumber(opts.ts) || _.isArray(opts.ts) ? opts.ts : now;
 
     async.map(
       [].concat(ts),
       (ts, cb) => {
-        this.storage.fetchFiatRate(provider, opts.code, ts, (
+        this.storage.fetchFiatRate(coin, opts.code, ts, (
           err,
           rate
         ) => {
