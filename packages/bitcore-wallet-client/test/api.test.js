@@ -114,6 +114,7 @@ helpers.createAndJoinWallet = function(clients, keys, m, n, opts, cb) {
   let keyOpts = {
     useLegacyCoinType: opts.useLegacyCoinType,
     useLegacyPurpose: opts.useLegacyPurpose,
+    passphrase: opts.passphrase,
   };
 
   keys[0] = Key.create(keyOpts);
@@ -4352,6 +4353,28 @@ describe('client API', function() {
           done();
         });
 
+       it.skip('should export & import with mnemonic encrypted ', function(done) {
+          var c = clients[0].credentials;
+          var walletId = c.walletId;
+          var walletName = c.walletName;
+          var copayerName = c.copayerName;
+          var key = c.xPubKey;
+
+          var exported = clients[0].toString()
+          importedClient = helpers.newClient(app);
+          importedClient.fromString(exported);
+          var c2 = importedClient.credentials;
+          c2.xPubKey.should.equal(key);
+          c2.walletId.should.equal(walletId);
+          c2.walletName.should.equal(walletName);
+          c2.copayerName.should.equal(copayerName);
+
+          // Will check addresses on afterEach
+          done();
+        });
+
+
+
         it('should export & import from Key +  BWS', function(done) {
           var c = clients[0].credentials;
           var walletId = c.walletId;
@@ -4593,6 +4616,42 @@ describe('client API', function() {
           });
         });
       });
+
+
+      it('should be able to gain access to a 1-1 wallet from mnemonic with passphrase', function(done) {
+        let passphrase = 'xxx';
+        helpers.createAndJoinWallet( clients, keys, 1, 1, { passphrase }, function() {
+          var words = keys[0].get(null,true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+          clients[0].createAddress(function(err, addr) {
+            should.not.exist(err);
+            should.exist(addr);
+            Client.serverAssistedImport({words, passphrase}, { 
+              clientFactory: () => { 
+                return helpers.newClient(app) 
+              }}, (err, k, c) => {
+              should.not.exist(err);
+              c.length.should.equal(1);
+
+              let recoveryClient = c[0];
+              recoveryClient.openWallet(function(err) {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.getMainAddresses({}, function(err, list) {
+                  should.not.exist(err);
+                  should.exist(list);
+                  list[0].address.should.equal(addr.address);
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
+
 
       it('should be able to gain access to a 1-1 wallet with just the xPriv', function(done) {
         helpers.createAndJoinWallet( clients, keys, 1, 1, {}, function() {
