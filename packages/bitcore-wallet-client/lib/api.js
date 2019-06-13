@@ -292,8 +292,14 @@ API.prototype.toString = function(opts) {
   opts = opts || {};
 
   var output;
-
   var c = Credentials.fromObj(this.credentials);
+  if (opts.password) {
+    c.decryptPrivateKey(opts.password);
+  }
+
+  if (c.isPrivKeyEncrypted())
+    throw 'toString of encrypted keys is not allowed';
+
   output = JSON.stringify(c.toObj());
   return output;
 };
@@ -2201,6 +2207,7 @@ API.fromOld = function(x) {
  * @param {Object} opts
  * @param {String} opts.words - mnemonic
  * @param {String} opts.xPrivKey - extended Private Key 
+ * @param {String} opts.passphrase - mnemonic's passphrase (optional)
  * @param {Object} clientOpts  - BWS connection options (see ClientAPI constructor)
  
  * @returns {Callback} cb - Returns { err, key, clients[] }
@@ -2373,8 +2380,14 @@ API.serverAssistedImport = (opts, clientOpts, callback) => {
     if (!s) 
       return false;
 
+
     try {
       if (opts.words) { 
+
+        if (opts.passphrase) {
+          s.passphrase = opts.passphrase;
+        }
+
         k  = Key.fromMnemonic(opts.words, s);
       } else {
         k  = Key.fromExtendedPrivateKey(opts.xPrivKey, s);
