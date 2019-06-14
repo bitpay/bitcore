@@ -614,7 +614,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness, o
   if (_.isArray(utxo)) {
     var self = this;
     _.each(utxo, function(utxo) {
-      self.from(utxo, pubkeys, threshold);
+      self.from(utxo, pubkeys, threshold, nestedWitness, opts);
     });
     return this;
   }
