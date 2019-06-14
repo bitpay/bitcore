@@ -293,12 +293,10 @@ API.prototype.toString = function(opts) {
 
   var output;
   var c = Credentials.fromObj(this.credentials);
+
   if (opts.password) {
     c.decryptPrivateKey(opts.password);
   }
-
-  if (c.isPrivKeyEncrypted())
-    throw 'toString of encrypted keys is not allowed';
 
   output = JSON.stringify(c.toObj());
   return output;
