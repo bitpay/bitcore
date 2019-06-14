@@ -288,16 +288,12 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
 API.prototype.toString = function(opts) {
   $.checkState(this.credentials);
   $.checkArgument(!this.noSign, 'no Sign not supported');
+  $.checkArgument(!this.password, 'password not supported');
 
   opts = opts || {};
 
   var output;
   var c = Credentials.fromObj(this.credentials);
-
-  if (opts.password) {
-    c.decryptPrivateKey(opts.password);
-  }
-
   output = JSON.stringify(c.toObj());
   return output;
 };
