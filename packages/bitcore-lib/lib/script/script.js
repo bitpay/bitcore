@@ -516,12 +516,12 @@ Script.prototype.isDataOut = function() {
 
 /**
  * Retrieve the associated data for this script.
- * In the case of a pay to public key hash or P2SH, return the hash.
+ * In the case of a pay to public key hash, P2SH, P2WSH, or P2WPKH, return the hash.
  * In the case of a standard OP_RETURN, return the data
  * @returns {Buffer}
  */
 Script.prototype.getData = function() {
-  if (this.isDataOut() || this.isScriptHashOut()) {
+  if (this.isDataOut() || this.isScriptHashOut() || this.isWitnessScriptHashOut() || this.isWitnessPublicKeyHashOut()) {
     if (_.isUndefined(this.chunks[1])) {
       return Buffer.alloc(0);
     } else {
@@ -1044,6 +1044,12 @@ Script.prototype._getOutputAddressInfo = function() {
   } else if (this.isPublicKeyHashOut()) {
     info.hashBuffer = this.getData();
     info.type = Address.PayToPublicKeyHash;
+  } else if (this.isWitnessScriptHashOut()) {
+    info.hashBuffer = this.getData();
+    info.type = Address.PayToWitnessScriptHash;
+  } else if (this.isWitnessPublicKeyHashOut()) {
+    info.hashBuffer = this.getData();
+    info.type = Address.PayToWitnessPublicKeyHash;
   } else {
     return false;
   }

@@ -14,4 +14,16 @@ var decode = function(str) {
   };
 };
 
-module.exports = { decode: decode };
+var encode = function(prefix, version, data) {
+	if (typeof prefix !== 'string') {
+		throw new Error('Prefix should be a string');
+	}
+	if (typeof version !== 'number') {
+		throw new Error('version should be a number');
+	}
+  var words = bech32.toWords(data);
+  words.unshift(version);
+	return bech32.encode(prefix, words);
+}
+
+module.exports = { decode: decode, encode: encode };
