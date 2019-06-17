@@ -6,6 +6,8 @@ Constants.SCRIPT_TYPES = {
   P2SH: 'P2SH',
   P2PKH: 'P2PKH',
 };
+
+// not used, since Credentials 2.0
 Constants.DERIVATION_STRATEGIES = {
   BIP44: 'BIP44',
   BIP45: 'BIP45',
