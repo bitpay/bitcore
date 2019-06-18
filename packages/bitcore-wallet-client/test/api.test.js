@@ -4285,27 +4285,68 @@ describe('client API', function() {
     });
   });
 
-  describe('from Old credentials', () =>{
-    _.each(oldCredentials, (x) => {
-      it(`should  import old ${x.name} credentials`, function() {
-        let imported = Client.fromOld(JSON.parse(x.blob));
-        let k = imported.key;
-        let c = imported.credentials;
+  describe.only('from Old credentials', () =>{
+    describe(`#upgradeCredentialsV1`, function() {
+      _.each(oldCredentials, (x) => {
+        it(`should  import old ${x.name} credentials`, function() {
+          let imported = Client.upgradeCredentialsV1(JSON.parse(x.blob));
+          let k = imported.key;
+          let c = imported.credentials;
 
-        if (x.password) {
-          k.decrypt(x.password);
-        }
+          if (x.password) {
+            k.decrypt(x.password);
+          }
 
-        _.each(x.test.key, (expectedValue, expectedKey)=> {
-          k[expectedKey].should.be.equal(expectedValue);
-        });
-        _.each(x.test.credentials, (expectedValue, expectedKey)=> {
-          c[expectedKey].should.be.equal(expectedValue);
+          _.each(x.test.key, (expectedValue, expectedKey)=> {
+            k[expectedKey].should.be.equal(expectedValue);
+          });
+          _.each(x.test.credentials, (expectedValue, expectedKey)=> {
+            c[expectedKey].should.be.equal(expectedValue);
+          });
         });
       });
     });
-  });
 
+    describe(`#upgradeMultipleCredentialsV1`, function() {
+      it(`should  import many credentials`, function() {
+        let oldies = _.map(oldCredentials, x => JSON.parse(x.blob));
+        let imported = Client.upgradeMultipleCredentialsV1(oldies);
+
+        imported.credentials.length.should.equal(oldies.length);
+
+        // 1 read-only
+        imported.keys.length.should.equal(oldies.length - 1);
+        _.uniq(_.filter(_.map(imported.credentials,'keyId'))).length.should.equal(oldies.length -1);
+
+        _.each(oldies, (x, i)=> {
+          x.xPubKey.should.equal(imported.credentials[i].xPubKey);
+        });
+      });
+
+      it.skip(`should detect and merge with existing keys`, function() {
+        let oldies = _.map(oldCredentials, x => JSON.parse(x.blob));
+
+        let wk = _.filter(oldies,'xPrivKey');
+
+        // Create some keys.
+        let keys = [
+          Key.fromExtendedPrivateKey(wk[0].xPrivKey),
+          Key.fromExtendedPrivateKey(wk[1].xPrivKey),
+        ];
+
+        let imported = Client.upgradeMultipleCredentialsV1(oldies, keys);
+        imported.credentials.length.should.equal(oldies.length);
+
+        // 1 read-only - 2 existing
+        imported.keys.length.should.equal(oldies.length - 1 - 2);
+
+        // should assign keyIds to existing keys
+        imported.credentials[0].keyId.should.equal(keys[0].id);
+        imported.credentials[1].keyId.should.equal(keys[1].id);
+      });
+ 
+    });
+  });
 
   describe('Mobility, backup & restore', function() {
     describe('Export & Import', function() {

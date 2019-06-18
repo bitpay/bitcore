@@ -36,6 +36,7 @@ Key.FIELDS = [
   'mnemonic',
   'mnemonicEncrypted',
   'mnemonicHasPassphrase',
+  'fingerPrint',    // BIP32  32bit fingerprint
 
   // data for derived credentials.
   'use0forBCH',          // use the 0 coin' path element in BCH  (legacy)
@@ -66,8 +67,12 @@ Key.create = function(opts) {
   while (!Mnemonic.isValid(m.toString())) {
     m = new Mnemonic(wordsForLang[opts.language])
   };
-  var x = new Key();
-  x.xPrivKey = m.toHDPrivateKey(opts.passphrase, NETWORK).toString();
+
+  let x = new Key();
+  let xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK);
+  x.xPrivKey = xpriv.toString();
+  x.fingerPrint = xpriv.fingerPrint.toString('hex');
+
   x.mnemonic = m.phrase;
   x.mnemonicHasPassphrase = !!opts.passphrase;
 
@@ -87,7 +92,9 @@ Key.fromMnemonic = function(words, opts) {
 
   var m = new Mnemonic(words);
   var x = new Key();
-  x.xPrivKey = m.toHDPrivateKey(opts.passphrase, NETWORK).toString();
+  let xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK);
+  x.xPrivKey = xpriv.toString();
+  x.fingerPrint = xpriv.fingerPrint.toString('hex');
   x.mnemonic = words;
   x.mnemonicHasPassphrase = !!opts.passphrase;
 
@@ -103,14 +110,17 @@ Key.fromExtendedPrivateKey = function(xPriv, opts) {
   $.checkArgument(xPriv);
   opts = opts || {};
 
+  let xpriv;
   try {
-    new Bitcore.HDPrivateKey(xPriv);
+    xpriv = new Bitcore.HDPrivateKey(xPriv);
   } catch (e) {
     throw 'Invalid argument';
   }
 
   var x = new Key();
-  x.xPrivKey = xPriv;
+  x.xPrivKey = xpriv.toString();
+  x.fingerPrint = xpriv.fingerPrint.toString('hex');
+
   x.mnemonic = null;
   x.mnemonicHasPassphrase = null;
 
@@ -168,15 +178,21 @@ Key.prototype.checkPassword = function(password) {
   return null;
 };
 
-
-
 Key.prototype.get = function(password) {
   var keys = {};
+  let fingerPrintUpdated = false;
 
   if (this.isPrivKeyEncrypted()) {
     $.checkArgument(password, 'Private keys are encrypted, a password is needed');
     try {
       keys.xPrivKey = sjcl.decrypt(password, this.xPrivKeyEncrypted);
+
+      // update fingerPrint if not set.
+      if (!this.fingerPrint) {
+        let xpriv = new Bitcore.HDPrivateKey(xPriv);
+        this.fingerPrint = xpriv.fingerPrint.toString('hex');
+        fingerPrintUpdated = true;
+      }
 
       if (this.mnemonicEncrypted) {
         keys.mnemonic = sjcl.decrypt(password, this.mnemonicEncrypted);
@@ -187,6 +203,9 @@ Key.prototype.get = function(password) {
   } else {
     keys.xPrivKey = this.xPrivKey;
     keys.mnemonic = this.mnemonic;
+    if (fingerPrintUpdated) {
+      keys.fingerPrintUpdated = true;
+    }
   }
   return keys;
 };

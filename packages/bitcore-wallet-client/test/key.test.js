@@ -35,6 +35,7 @@ describe('Key', function() {
       var all = {};
       var c = Key.fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
+      c.fingerPrint.should.equal('73c5da0a');
     });
 
 
@@ -512,6 +513,7 @@ describe('Key', function() {
       should.not.exist(imported.mnemonic);
       should.exist(imported.xPrivKeyEncrypted);
       should.exist(imported.mnemonicEncrypted);
+      should.exist(imported.fingerPrint);
     });
   });
 
