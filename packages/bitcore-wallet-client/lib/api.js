@@ -2142,7 +2142,16 @@ API.prototype.getWalletIdsFromOldCopay = function(username, password, blob) {
   return _.uniq(ids);
 };
 
-API.fromOld = function(x) {
+/**
+ * upgradeCredentialsV1 
+ * upgrade Credentials V1 to Key and Credentials V2 object
+ *
+ * @param {Object} x - Credentials V1 Object
+ 
+ * @returns {Callback} cb - Returns { err, {key, credentials} }
+ */
+
+API.upgradeCredentialsV1 = function(x) {
   $.shouldBeObject(x);
 
   if (!_.isUndefined(x.version) || (!x.xPrivKey && !x.xPrivKeyEncrypted && !x.xPubKey)) {
@@ -2193,6 +2202,75 @@ API.fromOld = function(x) {
   c.keyId = k.id;
   return {key: k, credentials: c};
 };
+
+
+/**
+ * upgradeMultipleCredentialsV1 
+ * upgrade multiple Credentials V1 and (opionally) keys to Key and Credentials V2 object
+ * Duplicate keys will be identified and merged.
+ *
+ * @param {Object} credentials - Credentials V1 Object
+ * @param {Object} keys - Key object
+ *
+ 
+ * @returns {Callback} cb - Returns { err, {keys, credentials} }
+ */
+
+
+API.upgradeMultipleCredentialsV1 = function(oldCredentials, oldKeys) {
+
+  let newKeys = [],
+    newCrededentials = [];
+  // Try to migrate to Credentials 2.0
+  _.each(oldCredentials, credentials => {
+    let migrated;
+
+    if (!credentials.version || credentials.version < 2) {
+      log.info('About to migrate : ' + credentials.walletId);
+
+      migrated = API.upgradeCredentialsV1(credentials);
+      newCrededentials.push(migrated.credentials);
+
+      if (migrated.key) {
+        log.info(`Wallet ${credentials.walletId} key's extracted`);
+        newKeys.push(migrated.key);
+      } else {
+        log.info(`READ-ONLY Wallet ${credentials.walletId} migrated`);
+      }
+    }
+  });
+
+  if (newKeys.length > 0) {
+    // Find and merge dup keys.
+    let ukeys = _.groupBy(newKeys, x => x.xPrivKey || x.xPrivKeyEncrypted);
+
+    if (_.keys(ukeys).length < newKeys.length) {
+      this.logger.info(`Found some wallets using the SAME key. Merging...`);
+
+      let newKeys2 = [];
+
+      _.each(_.values(ukeys), kList => {
+        let kToKeep = kList.shift();
+        newKeys2.push(kToKeep);
+        if (!kList.length) return;
+        this.logger.info(`Merging ${kList.length} keys to ${kToKeep.id}`);
+        let toBeMerged = _.keyBy(kList, 'id');
+        _.each(newCrededentials, x => {
+          if (toBeMerged[x.keyId]) {
+            this.logger.info(`\t${x.keyId} is now ${kToKeep.id}`);
+            x.keyId = kToKeep.id;
+          }
+        });
+      });
+    }
+  }
+
+  return  {
+    keys: newKeys,
+    credentials: newCrededentials,
+  };
+};
+
 
 /**
  * serverAssistedImport 
