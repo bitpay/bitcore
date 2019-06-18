@@ -2217,7 +2217,7 @@ API.upgradeCredentialsV1 = function(x) {
  */
 
 
-API.upgradeMultipleCredentialsV1 = function(oldCredentials, oldKeys) {
+API.upgradeMultipleCredentialsV1 = function(oldCredentials) {
 
   let newKeys = [],
     newCrededentials = [];
@@ -2242,26 +2242,32 @@ API.upgradeMultipleCredentialsV1 = function(oldCredentials, oldKeys) {
 
   if (newKeys.length > 0) {
     // Find and merge dup keys.
-    let ukeys = _.groupBy(newKeys, x => x.xPrivKey || x.xPrivKeyEncrypted);
+    let credGroups = _.groupBy(newCrededentials, (x) => {
+      $.checkState(x.xPubKey, 'no xPubKey at credentials!');
+      let xpub = new Bitcore.HDPublicKey(x.xPubKey);
+      let fingerPrint = xpub.fingerPrint.toString('hex');
+      return fingerPrint;
+    });
 
-    if (_.keys(ukeys).length < newKeys.length) {
-      this.logger.info(`Found some wallets using the SAME key. Merging...`);
+    if (_.keys(credGroups).length < newCrededentials.length) {
+      log.info(`Found some wallets using the SAME key. Merging...`);
 
-      let newKeys2 = [];
+      let uniqIds = {};
 
-      _.each(_.values(ukeys), kList => {
-        let kToKeep = kList.shift();
-        newKeys2.push(kToKeep);
-        if (!kList.length) return;
-        this.logger.info(`Merging ${kList.length} keys to ${kToKeep.id}`);
-        let toBeMerged = _.keyBy(kList, 'id');
-        _.each(newCrededentials, x => {
-          if (toBeMerged[x.keyId]) {
-            this.logger.info(`\t${x.keyId} is now ${kToKeep.id}`);
-            x.keyId = kToKeep.id;
-          }
+      _.each(_.values(credGroups), credList => {
+        let toKeep = credList.shift();
+        if (!toKeep.keyId) return;
+        uniqIds[toKeep.keyId]=true;
+
+        if (!credList.length) return;
+        log.info(`Merging ${credList.length} keys to ${toKeep.keyId}`);
+        _.each(credList, x => {
+          log.info(`\t${x.keyId} is now ${toKeep.keyId}`);
+            x.keyId = toKeep.keyId;
         });
       });
+
+      newKeys = _.filter(newKeys, x => uniqIds[x.id]);;
     }
   }
 

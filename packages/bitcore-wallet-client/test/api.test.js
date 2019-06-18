@@ -49,6 +49,7 @@ helpers.newClient = function(app) {
   return new Client({
     baseUrl: '/bws/api',
     request: request(app),
+    logLevel: 'debug',
   });
 };
 
@@ -4285,7 +4286,7 @@ describe('client API', function() {
     });
   });
 
-  describe.only('from Old credentials', () =>{
+  describe('from Old credentials', () =>{
     describe(`#upgradeCredentialsV1`, function() {
       _.each(oldCredentials, (x) => {
         it(`should  import old ${x.name} credentials`, function() {
@@ -4323,28 +4324,49 @@ describe('client API', function() {
         });
       });
 
-      it.skip(`should detect and merge with existing keys`, function() {
+      it(`should detect and merge with existing keys`, function() {
         let oldies = _.map(oldCredentials, x => JSON.parse(x.blob));
 
-        let wk = _.filter(oldies,'xPrivKey');
 
         // Create some keys.
-        let keys = [
-          Key.fromExtendedPrivateKey(wk[0].xPrivKey),
-          Key.fromExtendedPrivateKey(wk[1].xPrivKey),
-        ];
+        oldies[0]=_.clone(oldies[2]);
+        oldies[1]=_.clone(oldies[2]);
 
-        let imported = Client.upgradeMultipleCredentialsV1(oldies, keys);
+        let imported = Client.upgradeMultipleCredentialsV1(oldies);
         imported.credentials.length.should.equal(oldies.length);
 
         // 1 read-only - 2 existing
         imported.keys.length.should.equal(oldies.length - 1 - 2);
 
         // should assign keyIds to existing keys
-        imported.credentials[0].keyId.should.equal(keys[0].id);
-        imported.credentials[1].keyId.should.equal(keys[1].id);
+        let k = imported.credentials[0].keyId;
+        imported.credentials[1].keyId.should.equal(k);
+        imported.credentials[2].keyId.should.equal(k);
+
+        // the resulting key should be returned
+        _.filter(imported.keys, x => x.id == k).length.should.equal(1);
       });
- 
+
+
+      it(`should detect and merge with existing keys (2 wallets)`, function() {
+        let oldies = _.map(oldCredentials, x => JSON.parse(x.blob));
+        oldies = oldies.splice(0,2);
+
+        // Create some keys.
+        oldies[0]=_.clone(oldies[1]);
+
+        let imported = Client.upgradeMultipleCredentialsV1(oldies);
+        imported.credentials.length.should.equal(oldies.length);
+
+        imported.keys.length.should.equal(1);
+
+        // should assign keyIds to existing keys
+        let k = imported.credentials[0].keyId;
+        imported.credentials[1].keyId.should.equal(k);
+
+        // the resulting key should be returned
+        _.filter(imported.keys, x => x.id == k).length.should.equal(1);
+      });
     });
   });
 
