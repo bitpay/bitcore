@@ -84,6 +84,7 @@ async function checkWalletReceived(wallet: IWallet, txid: string, address: strin
   const broadcastedTransaction = await TransactionStorage.collection.findOne({ chain, network, txid });
   expect(broadcastedTransaction!.txid).to.eq(txid);
   expect(broadcastedTransaction!.fee).gt(0);
+  expect(broadcastedTransaction!.wallets[0].toHexString()).to.eq(wallet!._id!.toHexString());
 }
 
 describe('Wallet Benchmark', function() {
