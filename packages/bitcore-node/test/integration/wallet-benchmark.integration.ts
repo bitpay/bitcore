@@ -69,7 +69,7 @@ async function verifyCoinSpent(coin: MongoBound<ICoin>, spentTxid: string, walle
   expect(wallet1Coin!.spentTxid).to.eq(spentTxid);
   expect(wallet1Coin!.wallets[0].toHexString()).to.eq(wallet!._id!.toHexString());
 }
-async function checkWalletReceived(wallet: IWallet, txid: string, address: string) {
+async function checkWalletReceived(receivingWallet: IWallet, txid: string, address: string, sendingWallet: IWallet) {
   const broadcastedOutput = await CoinStorage.collection.findOne({
     chain,
     network,
@@ -79,15 +79,16 @@ async function checkWalletReceived(wallet: IWallet, txid: string, address: strin
 
   expect(broadcastedOutput!.address).to.eq(address);
   expect(broadcastedOutput!.wallets.length).to.eq(1);
-  expect(broadcastedOutput!.wallets[0].toHexString()).to.eq(wallet!._id!.toHexString());
+  expect(broadcastedOutput!.wallets[0].toHexString()).to.eq(receivingWallet!._id!.toHexString());
 
   const broadcastedTransaction = await TransactionStorage.collection.findOne({ chain, network, txid });
   expect(broadcastedTransaction!.txid).to.eq(txid);
   expect(broadcastedTransaction!.fee).gt(0);
 
   const txWallets = broadcastedTransaction!.wallets.map(w => w.toHexString());
-  expect(txWallets).to.eq(2);
-  expect(txWallets).to.include(wallet!._id!.toHexString());
+  expect(txWallets.length).to.eq(2);
+  expect(txWallets).to.include(receivingWallet!._id!.toHexString());
+  expect(txWallets).to.include(sendingWallet!._id!.toHexString());
 }
 
 describe('Wallet Benchmark', function() {
@@ -142,8 +143,8 @@ describe('Wallet Benchmark', function() {
         await wait(1000);
       }
       await verifyCoinSpent(utxos[0], broadcastedTx, dbWallet1!);
-      await checkWalletReceived(dbWallet1!, broadcastedTx, address1);
-      await checkWalletReceived(dbWallet2!, broadcastedTx, address2);
+      await checkWalletReceived(dbWallet1!, broadcastedTx, address1, dbWallet2!);
+      await checkWalletReceived(dbWallet2!, broadcastedTx, address2, dbWallet1!);
       await wait(1000);
       await socket.disconnect();
       await p2pWorker.stop();
