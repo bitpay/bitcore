@@ -51,7 +51,7 @@ describe('Partition', () => {
       if (!lastBatch) {
         console.error('Array partition fails with length', randomLen);
       }
-      expect(randomArr).to.deep.equal([]);
+      expect(randomArr.length).to.deep.equal(randomLen);
     }
   });
 });
