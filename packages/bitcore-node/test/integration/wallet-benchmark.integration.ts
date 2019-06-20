@@ -15,6 +15,7 @@ import { Wallet } from 'bitcore-client';
 import { ICoin, CoinStorage } from '../../src/models/coin';
 import { MongoBound } from '../../src/models/base';
 import { ObjectId } from 'mongodb';
+import { TransactionStorage } from '../../src/models/transaction';
 
 const chain = 'BTC';
 const network = 'regtest';
@@ -79,6 +80,10 @@ async function checkWalletReceived(wallet: IWallet, txid: string, address: strin
   expect(broadcastedOutput!.address).to.eq(address);
   expect(broadcastedOutput!.wallets.length).to.eq(1);
   expect(broadcastedOutput!.wallets[0].toHexString()).to.eq(wallet!._id!.toHexString());
+
+  const broadcastedTransaction = await TransactionStorage.collection.findOne({ chain, network, txid });
+  expect(broadcastedTransaction!.txid).to.eq(txid);
+  expect(broadcastedTransaction!.fee).gt(0);
 }
 
 describe('Wallet Benchmark', function() {
