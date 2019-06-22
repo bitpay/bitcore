@@ -1,0 +1,24 @@
+{
+  "bitcoreNode": {
+    "pruneSpentScripts": true,
+    "chains": {
+      "XVG": {
+        "mainnet": {
+          "chainSource": "p2p",
+          "trustedPeers": [
+            {
+              "host": "host.docker.internal",
+              "port": 21102
+            }
+          ],
+          "rpc": {
+            "host": "host.docker.internal",
+            "port": 20102,
+            "username": "test",
+            "password": "test"
+          }
+        }
+      }
+    }
+  }
+}

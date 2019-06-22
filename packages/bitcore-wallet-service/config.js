@@ -21,7 +21,7 @@ var config = {
 
   storageOpts: {
     mongoDb: {
-      uri: 'mongodb://localhost:27017/bws',
+      uri: process.env.BWS_MONGODB_URI || 'mongodb://localhost:27017/bws',
     },
   },
   messageBrokerOpts: {

@@ -11,22 +11,16 @@ COPY ./packages/bitcore-lib/package.json ./packages/bitcore-lib/package.json
 COPY ./packages/bitcore-lib-cash/package.json ./packages/bitcore-lib-cash/package.json
 COPY ./packages/bitcore-p2p/package.json ./packages/bitcore-p2p/package.json
 COPY ./packages/bitcore-p2p-cash/package.json ./packages/bitcore-p2p-cash/package.json
-COPY ./packages/bitcore-wallet-client/package.json ./packages/bitcore-wallet-client/package.json
 COPY ./packages/bitcore-client/package.json ./packages/bitcore-client/package.json
 COPY ./packages/bitcore-wallet/package.json ./packages/bitcore-wallet/package.json
-COPY ./packages/bitcore-wallet-client/package.json ./packages/bitcore-wallet-client/package.json
 COPY ./packages/bitcore-wallet-service/package.json ./packages/bitcore-wallet-service/package.json
 COPY ./packages/bitcore-node/package.json ./packages/bitcore-node/package.json
-COPY ./packages/insight/package.json ./packages/insight/package.json
 
 RUN ./node_modules/.bin/lerna bootstrap
 
 COPY . .
 COPY .env.example .env
+COPY bitcore-docker.config.json bitcore.config.json
 EXPOSE 3000
-EXPOSE 8100
-
-RUN npm run compile
-# WORKDIR /usr/src/app/packages/bitcore-node
-
-CMD ["npm", "run", "node"]
+EXPOSE 3232
+CMD npm run bws && npm run node

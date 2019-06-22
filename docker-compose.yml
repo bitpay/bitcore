@@ -2,21 +2,22 @@ version: '3'
 services:
   database:
     image: mongo:3.4-jessie
-    ports: 
-    - 27017:27017
-    volumes: 
-    - /data/db:/data/db
-    
+    ports:
+      - 27017:27017
+    volumes:
+      - /usr/local/var/mongodb:/data/db
+
   bitcore-node:
     build: .
     image: bitcore-node
     links:
       - database
     ports:
-      - 8100:8100
       - 3000:3000
+      - 3232:3232
     environment:
       - DB_HOST=database
+      - BWS_MONGODB_URI=mongodb://host.docker.internal:27017/bws
     env_file: .env
 
 #insight:

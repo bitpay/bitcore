@@ -100,6 +100,14 @@ rpcpassword=RPCPASS
 npm run node
 ```
 
+### 5. Using Docker for Bitcore
+
+```sh
+docker-compose up -d --build
+# or if you don't need to build the images.
+docker-compose up -d
+```
+
 ## Applications
 
 - [Bitcore Node](https://github.com/bitpay/bitcore/tree/master/packages/bitcore-node) - A full node with extended capabilities using Bitcoin Core
