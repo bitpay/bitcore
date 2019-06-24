@@ -95,7 +95,7 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
             addressBatch.map(address => {
               return {
                 insertOne: {
-                  document: { chain, network, wallet: wallet._id, address: address.toLowerCase(), processed: false }
+                  document: { chain, network, wallet: wallet._id, address, processed: false }
                 }
               };
             })
