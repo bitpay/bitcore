@@ -13,7 +13,6 @@ import { TransactionJSON } from '../types/Transaction';
 import { SpentHeightIndicators } from '../types/Coin';
 import { Config } from '../services/config';
 import { EventStorage } from './events';
-
 const { onlyWalletEvents } = Config.get().services.event;
 function shouldFire(obj: { wallets?: Array<ObjectID> }) {
   return !onlyWalletEvents || (onlyWalletEvents && obj.wallets && obj.wallets.length > 0);
@@ -126,7 +125,6 @@ export class TransactionModel extends BaseModel<ITransaction> {
   }) {
     const mintOps = await this.getMintOps(params);
     const spendOps = this.getSpendOps({ ...params, mintOps });
-    const txOps = await this.addTransactions({ ...params, mintOps });
     await this.pruneMempool({
       chain: params.chain,
       network: params.network,
@@ -163,7 +161,8 @@ export class TransactionModel extends BaseModel<ITransaction> {
       );
     }
 
-    if (txOps.length) {
+    if (mintOps) {
+      const txOps = await this.addTransactions({ ...params, mintOps });
       logger.debug('Writing Transactions', txOps.length);
       await Promise.all(
         partition(txOps, txOps.length / Config.get().maxPoolSize).map(async txBatch => {

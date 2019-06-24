@@ -7,34 +7,35 @@ describe('Partition', () => {
     let testArr = [1, 2, 3, 4, 5];
     let partitioned = partition(testArr, 5);
     expect(partitioned).to.deep.equal([[1, 2, 3, 4, 5]]);
+    expect(testArr).to.deep.equal([1, 2, 3, 4, 5]);
   });
 
   it('should handle 0', () => {
     let testArr = [1, 2, 3, 4, 5];
     let partitioned = partition(testArr, 0);
     expect(partitioned).to.deep.equal([[1], [2], [3], [4], [5]]);
-    expect(testArr).to.deep.equal([]);
+    expect(testArr).to.deep.equal([1, 2, 3, 4, 5]);
   });
 
   it('should handle one', () => {
     let testArr = [1, 2, 3, 4, 5];
     let partitioned = partition(testArr, 1);
     expect(partitioned).to.deep.equal([[1], [2], [3], [4], [5]]);
-    expect(testArr).to.deep.equal([]);
+    expect(testArr).to.deep.equal([1, 2, 3, 4, 5]);
   });
 
   it('should handle two', () => {
     let testArr = [1, 2, 3, 4, 5];
     let partitioned = partition(testArr, 2);
     expect(partitioned).to.deep.equal([[1, 2], [3, 4], [5]]);
-    expect(testArr).to.deep.equal([]);
+    expect(testArr).to.deep.equal([1, 2, 3, 4, 5]);
   });
 
   it('should handle between one and zero', () => {
     let testArr = [1, 2, 3, 4, 5];
     let partitioned = partition(testArr, 0.15);
     expect(partitioned).to.deep.equal([[1], [2], [3], [4], [5]]);
-    expect(testArr).to.deep.equal([]);
+    expect(testArr).to.deep.equal([1, 2, 3, 4, 5]);
   });
 
   it('should handle different sizes of arrays', () => {
@@ -50,7 +51,7 @@ describe('Partition', () => {
       if (!lastBatch) {
         console.error('Array partition fails with length', randomLen);
       }
-      expect(randomArr).to.deep.equal([]);
+      expect(randomArr.length).to.deep.equal(randomLen);
     }
   });
 });
