@@ -189,7 +189,7 @@ Key.prototype.get = function(password) {
 
       // update fingerPrint if not set.
       if (!this.fingerPrint) {
-        let xpriv = new Bitcore.HDPrivateKey(xPriv);
+        let xpriv = new Bitcore.HDPrivateKey(keys.xPrivKey);
         this.fingerPrint = xpriv.fingerPrint.toString('hex');
         fingerPrintUpdated = true;
       }
