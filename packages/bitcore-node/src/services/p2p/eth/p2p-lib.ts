@@ -13,19 +13,6 @@ const PRIVATE_KEY = randomBytes(32);
 const CHAIN_ID = 4;
 const requests = { headers: new Array<string>(), bodies: new Array<any>(), msgTypes: {} };
 
-/*
- *const BOOTNODES = require('ethereum-common')
- *  .bootstrapNodes.filter(node => {
- *    return node.chainId === CHAIN_ID;
- *  })
- *  .map(node => {
- *    return {
- *      address: node.ip,
- *      udpPort: node.port,
- *      tcpPort: node.port
- *    };
- *  });
- */
 const REMOTE_CLIENTID_FILTER = ['go1.5', 'go1.6', 'go1.7', 'quorum', 'pirl', 'ubiq', 'gmc', 'gwhale', 'prichain'];
 
 // To start syncing from a higher block height.
@@ -35,13 +22,13 @@ const ETH = {
   NETWORKS: {
     rinkeby: {
       networkId: CHAIN_ID,
-      td: devp2p._util.int2buffer(1), // total difficulty in genesis block
+      td: devp2p._util.int2buffer(1),
       bestHash: Buffer.from('6341fd3daf94b748c72ced5a5b26028f2474f5f00d824504e4fa37a75767e177', 'hex'),
       genesisHash: Buffer.from('6341fd3daf94b748c72ced5a5b26028f2474f5f00d824504e4fa37a75767e177', 'hex')
     },
     mainnet: {
       networkId: 1,
-      td: devp2p._util.int2buffer(1), // total difficulty in genesis block
+      td: devp2p._util.int2buffer(1),
       bestHash: Buffer.from('d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3', 'hex'),
       genesisHash: Buffer.from('d4e56740f876aef8c010b86a40d5f56745a118d0906a34e69aec8c0db1cb8fa3', 'hex')
     },
@@ -243,13 +230,6 @@ export class BitcoreP2PEth extends EventEmitter {
   }
 
   establishHeartbeat() {
-    /*
-     *for (let bootnode of BOOTNODES) {
-     *  dpt.bootstrap(bootnode).catch(err => {
-     *    console.error(chalk.bold.red(`DPT bootstrap error: ${err.stack || err}`));
-     *  });
-     *}
-     */
     setInterval(() => {
       const peersCount = dpt.getPeers().length;
       const openSlots = this.rlpx._getOpenSlots();
@@ -270,9 +250,6 @@ export class BitcoreP2PEth extends EventEmitter {
     this.txCache.set(txHashHex, true);
     tx.hash = tx.hash();
     this.emit('peertx', peer, { transaction: tx });
-    /*
-     *console.log(`New tx: ${txHashHex} (from ${getPeerAddr(peer)})`);
-     */
   }
 
   onNewBlock(block, peer) {
@@ -359,7 +336,3 @@ export class BitcoreP2PEth extends EventEmitter {
     this.sendPoolMessage(devp2p.ETH.MESSAGE_CODES.GET_BLOCK_BODIES, hashes);
   }
 }
-
-// uncomment, if you want accept incoming connections
-// rlpx.listen(30303, '0.0.0.0')
-// dpt.bind(30303, '0.0.0.0')
