@@ -48,7 +48,6 @@ module.exports = {
         // url: 'http://localhost:3000',
         url: 'https://api.bitcore.io',
       },
-
     },
   },
   pushNotificationsOpts: {
@@ -62,6 +61,9 @@ module.exports = {
   fiatRateServiceOpts: {
     defaultProvider: 'BitPay',
     fetchInterval: 60, // in minutes
+  },
+  maintenanceOpts: {
+    bwsIsLive: true,
   },
   // To use email notifications uncomment this:
   // emailOpts: {

@@ -7,6 +7,7 @@ import { Stats } from './stats';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
+const config = require('../config');
 const RateLimit = require('express-rate-limit');
 const Common = require('./common');
 const Defaults = Common.Defaults;
@@ -48,6 +49,17 @@ export class ExpressApp {
       res.setHeader('x-service-version', WalletService.getServiceVersion());
       next();
     });
+
+    this.app.use((req,res,next) => {
+      if((config.maintenanceOpts.bwsIsLive === false)) {
+        // send a 503 error, with a message to the bitpay status page
+        let errorCode = 503;
+        res.status(errorCode).json({code: errorCode, message: 'Bitcore Wallet Service is currently under maintenance. Please periodically check https://status.bitpay.com/ to stay up to date with our current status.'}).end();
+      } else {
+        next();
+      }
+    });
+    
     const allowCORS = (req, res, next) => {
       if ('OPTIONS' == req.method) {
         res.sendStatus(200);
