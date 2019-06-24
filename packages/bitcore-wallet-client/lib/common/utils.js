@@ -17,6 +17,7 @@ var encoding = Bitcore.encoding;
 
 var Constants = require('./constants');
 var Defaults = require('./defaults');
+var CWC = require('../../../crypto-wallet-core').default;
 function Utils() {}
 
 Utils.SJCL = {};
@@ -179,7 +180,7 @@ Utils.deriveAddress = function(
   let addrStr = bitcoreAddress;
   if (coin === 'btc') {
    addrStr = bitcoreAddress.toString(true);
-  } else if (noNativeCashAddr && coin == 'bch') {
+  } else if (coin == 'bch') {
     addrStr = bitcoreAddress.toLegacyAddress();
   }
 
