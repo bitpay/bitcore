@@ -1,12 +1,12 @@
 import { resetDatabase } from '../helpers';
 import { AsyncRPC } from '../../src/rpc';
-import { BlockStorage } from '../../src/models/block';
 import { expect } from 'chai';
 import io = require('socket.io-client');
 import config from '../../src/config';
-import { P2pWorker } from '../../src/services/p2p';
 import { Event } from '../../src/services/event';
 import { Api } from '../../src/services/api';
+import { BtcBlockStorage } from "../../src/models/block/btc/btcBlock";
+import { BitcoreP2pWorker } from "../../src/services/p2p/btc";
 
 const wait = time => new Promise(resolve => setTimeout(resolve, time));
 const chain = 'BTC';
@@ -15,7 +15,7 @@ const chainConfig = config.chains[chain][network];
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
-let p2pWorker: P2pWorker;
+let p2pWorker: BitcoreP2pWorker;
 
 describe('Websockets', function() {
   this.timeout(50000);
@@ -24,7 +24,7 @@ describe('Websockets', function() {
   });
 
   beforeEach(() => {
-    p2pWorker = new P2pWorker({
+    p2pWorker = new BitcoreP2pWorker({
       chain,
       network,
       chainConfig
@@ -44,7 +44,7 @@ describe('Websockets', function() {
 
     await rpc.generate(5);
     await p2pWorker.syncDone();
-    const beforeGenTip = await BlockStorage.getLocalTip({ chain, network });
+    const beforeGenTip = await BtcBlockStorage.getLocalTip({ chain, network });
     expect(beforeGenTip).to.not.eq(null);
 
     if (beforeGenTip && beforeGenTip.height && beforeGenTip.height < 100) {
@@ -53,7 +53,7 @@ describe('Websockets', function() {
     await rpc.generate(1);
     await p2pWorker.syncDone();
     await wait(1000);
-    const afterGenTip = await BlockStorage.getLocalTip({ chain, network });
+    const afterGenTip = await BtcBlockStorage.getLocalTip({ chain, network });
     expect(afterGenTip).to.not.eq(null);
 
     if (beforeGenTip != null && afterGenTip != null) {
@@ -65,7 +65,7 @@ describe('Websockets', function() {
     await Event.start();
     await Api.start();
 
-    const p2pWorker = new P2pWorker({
+    const p2pWorker = new BitcoreP2pWorker({
       chain,
       network,
       chainConfig
@@ -97,7 +97,7 @@ describe('Websockets', function() {
   });
 
   it('should get a mempool tx and coin when mempool event, senttoaddress, occurs', async () => {
-    const p2pWorker = new P2pWorker({ chain, network, chainConfig });
+    const p2pWorker = new BitcoreP2pWorker({ chain, network, chainConfig });
 
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;

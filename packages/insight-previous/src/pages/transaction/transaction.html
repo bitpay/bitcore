@@ -1,4 +1,4 @@
-<head-nav [chainNetwork]="chainNetwork"></head-nav>
+<head-nav></head-nav>
 <ion-content>
   <ion-grid fixed>
 
@@ -43,13 +43,13 @@
           <ion-item>
             Received Time
             <ion-note item-end>
-              {{ tx.time * 1000 | date:'long' }}
+              {{ tx.time * 1000 | date:'medium' }}
             </ion-note>
           </ion-item>
           <ion-item *ngIf="confirmations > 0">
             Mined Time
             <ion-note item-end>
-              {{ tx.blocktime * 1000 | date:'long' }}
+              {{ tx.blocktime * 1000 | date:'medium' }}
             </ion-note>
           </ion-item>
           <ion-item>
@@ -68,7 +68,7 @@
 
         <h2>Details</h2>
 
-        <transaction [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction>
+        <transaction [tx]="tx" [showCoins]="true"></transaction>
       </div>
 
     </div>

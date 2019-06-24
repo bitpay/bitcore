@@ -28,37 +28,37 @@ export class HeadNavComponent implements OnInit {
   public loading: boolean;
   @Input()
   public title: string;
-  @Input()
-  public chainNetwork: ChainNetwork;
   public q: string;
+  public config: ChainNetwork;
   public redirTo: any;
   public params: any;
 
   constructor(
+    private navCtrl: NavController,
+    private apiProvider: ApiProvider,
     public app: App,
     public currencyProvider: CurrencyProvider,
     public priceProvider: PriceProvider,
     public actionSheetCtrl: ActionSheetController,
     public popoverCtrl: PopoverController,
     public toastCtrl: ToastController,
-    public searchProvider: SearchProvider,
-    public redirProvider: RedirProvider,
-    private navCtrl: NavController,
     private logger: Logger,
-    private apiProvider: ApiProvider
+    public searchProvider: SearchProvider,
+    public redirProvider: RedirProvider
   ) {}
 
   public ngOnInit(): void {
+    this.config = this.apiProvider.getConfig();
     this.params = {
-      chain: this.chainNetwork.chain,
-      network: this.chainNetwork.network
+      chain: this.apiProvider.networkSettings.value.selectedNetwork.chain,
+      network: this.apiProvider.networkSettings.value.selectedNetwork.network
     };
   }
 
-  public goHome(chainNetwork): void {
+  public goHome(): void {
     this.navCtrl.setRoot('home', {
-      chain: chainNetwork.chain,
-      network: chainNetwork.network
+      chain: this.config.chain,
+      network: this.config.network
     });
   }
 
@@ -68,27 +68,25 @@ export class HeadNavComponent implements OnInit {
 
     if (this.q !== '' && inputDetails.isValid) {
       this.showSearch = false;
-      this.searchProvider
-        .search(this.q, inputDetails.type, this.chainNetwork)
-        .subscribe(
-          res => {
-            const nextView = this.processResponse(res);
-            if (!_.includes(nextView, '')) {
-              this.params[nextView.type] = nextView.params;
-              this.redirTo = nextView.redirTo;
-              this.navCtrl.setRoot('home', this.params, { animate: false });
-              this.redirProvider.redir(this.redirTo, this.params);
-            } else {
-              const message = 'No matching records found!';
-              this.wrongSearch(message);
-              this.logger.info(message);
-            }
-          },
-          err => {
-            this.wrongSearch('Server error. Please try again');
-            this.logger.error(err);
+      this.searchProvider.search(this.q, inputDetails.type).subscribe(
+        res => {
+          const nextView = this.processResponse(res);
+          if (!_.includes(nextView, '')) {
+            this.params[nextView.type] = nextView.params;
+            this.redirTo = nextView.redirTo;
+            this.navCtrl.setRoot('home', this.params, { animate: false });
+            this.redirProvider.redir(this.redirTo, this.params);
+          } else {
+            const message = 'No matching records found!';
+            this.wrongSearch(message);
+            this.logger.info(message);
           }
-        );
+        },
+        err => {
+          this.wrongSearch('Server error. Please try again');
+          this.logger.error(err);
+        }
+      );
     } else {
       this.wrongSearch('No matching records found!');
     }
@@ -144,7 +142,7 @@ export class HeadNavComponent implements OnInit {
 
   public changeCurrency(myEvent: any): void {
     const popover: any = this.popoverCtrl.create(DenominationComponent, {
-      config: this.chainNetwork,
+      config: this.config,
       currencySymbol: this.currencyProvider.getCurrency()
     });
     popover.present({
@@ -153,17 +151,18 @@ export class HeadNavComponent implements OnInit {
     popover.onDidDismiss(data => {
       if (!data) {
         return;
-      } else if (data.chainNetwork !== this.chainNetwork) {
+      } else if (data.chainNetwork !== this.config) {
         this.apiProvider.changeNetwork(data.chainNetwork);
-        this.setCurrency(data.chainNetwork);
-        this.goHome(data.chainNetwork);
+        this.config = this.apiProvider.getConfig();
+        this.setCurrency(data.currencySymbol);
+        this.goHome();
       } else if (data.currencySymbol !== this.currencyProvider.getCurrency()) {
         this.setCurrency(data.currencySymbol);
       }
     });
   }
 
-  private setCurrency(currencySymbol?) {
+  private setCurrency(currencySymbol) {
     this.currencyProvider.setCurrency(currencySymbol);
     this.priceProvider.setCurrency(currencySymbol);
   }
@@ -201,8 +200,8 @@ export class HeadNavComponent implements OnInit {
   }
 
   private isValidAddress(inputValue): boolean {
-    const coin = this.chainNetwork.chain;
-    const network = this.chainNetwork.network;
+    const coin = this.config.chain;
+    const network = this.config.network;
     const addr = this.extractAddress(inputValue);
 
     if (coin.toLowerCase() === 'btc' && network === 'mainnet') {

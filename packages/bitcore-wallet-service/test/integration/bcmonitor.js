@@ -8,6 +8,7 @@ var sinon = require('sinon');
 var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
+log.level = 'info';
 
 var { WalletService } = require('../../ts_build/lib/server');
 var { BlockchainMonitor } = require('../../ts_build/lib/blockchainmonitor');
@@ -26,8 +27,13 @@ describe('Blockchain monitor', function() {
   var server, wallet;
 
   before(function(done) {
-    log.level = 'warn';
-    helpers.before(function(res) {
+    helpers.before(done);
+  });
+  after(function(done) {
+    helpers.after(done);
+  });
+  beforeEach(function(done) {
+    helpers.beforeEach(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
       blockchainExplorer.initSocket = function(callbacks) {
@@ -37,37 +43,7 @@ describe('Blockchain monitor', function() {
         };
         socket.handlers['block'] =  callbacks.onBlock;
       }
-      done();
-    });
-  });
-  after(function(done) {
-    helpers.after(done);
-  });
-  beforeEach(function(done) {
 
-    // TODO
-    const collections = {
-      WALLETS: 'wallets',
-      TXS: 'txs',
-      ADDRESSES: 'addresses',
-      NOTIFICATIONS: 'notifications',
-      COPAYERS_LOOKUP: 'copayers_lookup',
-      PREFERENCES: 'preferences',
-      EMAIL_QUEUE: 'email_queue',
-      CACHE: 'cache',
-      FIAT_RATES: 'fiat_rates',
-      TX_NOTES: 'tx_notes',
-      SESSIONS: 'sessions',
-      PUSH_NOTIFICATION_SUBS: 'push_notification_subs',
-      TX_CONFIRMATION_SUBS: 'tx_confirmation_subs',
-      LOCKS: 'locks'
-    };
-
-
-    async.each(_.values(collections), (x, icb)=> {
-      storage.db.collection(x).remove({}, icb);
-    }, (err) => {
-      should.not.exist(err);
       helpers.createAndJoinWallet(2, 3, function(s, w) {
         server = s;
         wallet = w;

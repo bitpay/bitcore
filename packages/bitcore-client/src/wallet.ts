@@ -2,7 +2,8 @@ import * as Bcrypt from 'bcryptjs';
 import { Encryption } from './encryption';
 import { Client } from './client';
 import { Storage } from './storage';
-import { Transactions, Deriver } from 'crypto-wallet-core';
+import TxProvider from './providers/tx-provider';
+import { AddressProvider } from './providers/address-provider/deriver';
 const { PrivateKey } = require('bitcore-lib');
 const Mnemonic = require('bitcore-mnemonic');
 
@@ -71,7 +72,7 @@ export class Wallet {
     const mnemonic = new Mnemonic(phrase);
     const hdPrivKey = mnemonic
       .toHDPrivateKey()
-      .derive(Deriver.pathFor(chain, network));
+      .derive(AddressProvider.pathFor(chain, network));
     const privKeyObj = hdPrivKey.toObject();
 
     // Generate authentication keys
@@ -261,7 +262,7 @@ export class Wallet {
       wallet: this,
       utxos: params.utxos
     };
-    return Transactions.create(payload);
+    return TxProvider.create(payload);
   }
 
   async broadcast(params: { tx: string }) {
@@ -303,7 +304,7 @@ export class Wallet {
       from
     };
 
-    return Transactions.sign({ ...payload, wallet: this });
+    return TxProvider.sign({ ...payload, wallet: this });
   }
 
   async checkWallet() {
@@ -319,7 +320,7 @@ export class Wallet {
   }
 
   async deriveAddress(addressIndex, isChange) {
-    const address = Deriver.deriveAddress(
+    const address = AddressProvider.derive(
       this.chain,
       this.network,
       this.xPubKey,
@@ -330,7 +331,7 @@ export class Wallet {
   }
 
   async derivePrivateKey(isChange) {
-    const keyToImport = await Deriver.derivePrivateKey(
+    const keyToImport = await AddressProvider.derivePrivateKey(
       this.chain,
       this.network,
       this.unlocked.masterKey,

@@ -1,14 +1,16 @@
-import logger, { timestamp } from '../logger';
+import logger from '../logger';
 import { EventEmitter } from 'events';
-import { BlockStorage, BlockModel } from '../models/block';
 import { ChainStateProvider } from '../providers/chain-state';
-import { TransactionStorage } from '../models/transaction';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
 import { StateStorage } from '../models/state';
 import { SpentHeightIndicators } from '../types/Coin';
 import os from 'os';
 import { Config, ConfigService } from './config';
 import { wait } from '../utils/wait';
+import { BitcoreP2pWorker } from './p2p/btc';
+import { EthP2pWorker } from './p2p/eth';
+import { BtcBlockModel, BtcBlockStorage } from '../models/block/btc/btcBlock';
+import { BtcTransactionStorage } from '../models/transaction/btc/btcTransaction';
 const Chain = require('../chain');
 
 export class P2pManager {
@@ -16,6 +18,11 @@ export class P2pManager {
 
   private configService: ConfigService;
   private p2pWorkers: Array<P2pWorker>;
+  p2pClasses = {
+    BTC: BitcoreP2pWorker,
+    BCH: BitcoreP2pWorker,
+    ETH: EthP2pWorker
+  };
 
   constructor({ configService = Config } = {}) {
     this.configService = configService;
@@ -29,7 +36,7 @@ export class P2pManager {
     }
   }
 
-  async start({ blockModel = BlockStorage } = {}) {
+  async start() {
     if (this.configService.isDisabled('p2p')) {
       logger.info('Disabled P2P Manager');
       return;
@@ -42,11 +49,11 @@ export class P2pManager {
       if (chainConfig.chainSource && chainConfig.chainSource !== 'p2p') {
         continue;
       }
-      const p2pWorker = new P2pWorker({
+      const p2pClass = this.p2pClasses[chain];
+      const p2pWorker = new p2pClass({
         chain,
         network,
         chainConfig,
-        blockModel
       });
       this.p2pWorkers.push(p2pWorker);
       try {
@@ -73,10 +80,10 @@ export class P2pWorker {
   private invCacheLimits: any;
   private initialSyncComplete: boolean;
   private stopping?: boolean;
-  private blockModel: BlockModel;
+  private blockModel: BtcBlockModel;
   private lastHeartBeat: string;
   private queuedRegistrations: Array<NodeJS.Timer>;
-  constructor({ chain, network, chainConfig, blockModel = BlockStorage }) {
+  constructor({ chain, network, chainConfig, blockModel = BtcBlockStorage }) {
     this.blockModel = blockModel;
     this.chain = chain;
     this.network = network;
@@ -131,19 +138,18 @@ export class P2pWorker {
 
   setupListeners() {
     this.pool.on('peerready', peer => {
-      logger.info(
-        `${timestamp()} | Connected to peer: ${peer.host}:${peer.port.toString().padEnd(5)} | Chain: ${
-          this.chain
-        } | Network: ${this.network}`
-      );
+      logger.info(`Connected to peer ${peer.host}`, {
+        chain: this.chain,
+        network: this.network
+      });
     });
 
     this.pool.on('peerdisconnect', peer => {
-      logger.warn(
-        `${timestamp()} | Not connected to peer: ${peer.host}:${peer.port.toString().padEnd(5)} | Chain: ${
-          this.chain
-        } | Network: ${this.network}`
-      );
+      logger.warn(`Not connected to peer ${peer.host}`, {
+        chain: this.chain,
+        network: this.network,
+        port: peer.port
+      });
     });
 
     this.pool.on('peertx', (peer, message) => {
@@ -246,7 +252,7 @@ export class P2pWorker {
     logger.debug('Getting block, hash:', hash);
     let received = false;
     return new Promise<Bitcoin.Block>(async resolve => {
-      this.events.once(hash, (block: Bitcoin.Block) => {
+      this.events.once(hash, block => {
         logger.debug('Received block, hash:', hash);
         received = true;
         resolve(block);
@@ -268,7 +274,7 @@ export class P2pWorker {
     return best;
   }
 
-  async processBlock(block: Bitcoin.Block): Promise<any> {
+  async processBlock(block): Promise<any> {
     await this.blockModel.addBlock({
       chain: this.chain,
       network: this.network,
@@ -281,7 +287,7 @@ export class P2pWorker {
 
   async processTransaction(tx: Bitcoin.Transaction): Promise<any> {
     const now = new Date();
-    TransactionStorage.batchImport({
+    BtcTransactionStorage.batchImport({
       chain: this.chain,
       network: this.network,
       txs: [tx],
@@ -326,37 +332,30 @@ export class P2pWorker {
     while (headers.length > 0) {
       tip = await ChainStateProvider.getLocalTip({ chain, network });
       let currentHeight = tip ? tip.height : 0;
-      const startingHeight = currentHeight;
-      const startingTime = Date.now();
-      let lastLog = startingTime;
-      logger.info(`${timestamp()} | Syncing ${headers.length} blocks | Chain: ${chain} | Network: ${network}`);
+      let lastLog = 0;
+      logger.info(`Syncing ${headers.length} blocks for ${chain} ${network}`);
       for (const header of headers) {
         try {
           const block = await this.getBlock(header.hash);
           await this.processBlock(block);
           currentHeight++;
-          const now = Date.now();
-          const oneSecond = 1000;
-          if (now - lastLog > oneSecond) {
-            const blocksProcessed = currentHeight - startingHeight;
-            const elapsedMinutes = (now - startingTime) / (60 * oneSecond);
-            logger.info(
-              `${timestamp()} | Syncing... | Chain: ${chain} | Network: ${network} |${(blocksProcessed / elapsedMinutes)
-                .toFixed(2)
-                .padStart(8)} blocks/min | Height: ${currentHeight.toString().padStart(7)}`
-            );
-            lastLog = now;
+          if (Date.now() - lastLog > 100) {
+            logger.info(`Sync `, {
+              chain,
+              network,
+              height: currentHeight
+            });
+            lastLog = Date.now();
           }
         } catch (err) {
-          logger.error(`${timestamp()} | Error syncing | Chain: ${chain} | Network: ${network}`, err);
+          logger.error(`Error syncing ${chain} ${network}`, err);
           this.isSyncing = false;
           return this.sync();
         }
       }
       headers = await getHeaders();
     }
-
-    logger.info(`${timestamp()} | Sync completed | Chain: ${chain} | Network: ${network}`);
+    logger.info(`${chain}:${network} up to date.`);
     this.isSyncing = false;
     await StateStorage.collection.findOneAndUpdate(
       {},
@@ -392,7 +391,7 @@ export class P2pWorker {
           break;
         }
         const block = await this.getBlock(header.hash);
-        await BlockStorage.processBlock({ chain, network, block, initialSyncComplete: true });
+        await this.blockModel.processBlock({ chain, network, block, initialSyncComplete: true });
         currentHeight++;
         if (Date.now() - lastLog > 100) {
           logger.info(`Re-Sync `, {
@@ -414,7 +413,7 @@ export class P2pWorker {
     const [hostname, pid, timestamp] = this.lastHeartBeat.split(':');
     const hostNameMatches = hostname === os.hostname();
     const pidMatches = pid === process.pid.toString();
-    const timestampIsFresh = Date.now() - parseInt(timestamp) < 5 * 60 * 1000;
+    const timestampIsFresh = Date.now() - parseInt(timestamp) < 60 * 1000;
     const amSyncingNode = hostNameMatches && pidMatches && timestampIsFresh;
     return amSyncingNode;
   }
@@ -450,7 +449,7 @@ export class P2pWorker {
           lastHeartBeat
         });
       },
-      primary ? 0 : 5 * 60 * 1000
+      primary ? 0 : 60 * 1000
     );
     this.queuedRegistrations.push(queuedRegistration);
   }

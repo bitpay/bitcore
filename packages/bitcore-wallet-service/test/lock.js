@@ -10,26 +10,22 @@ var helpers = require('./integration/helpers');
     var step=50;
 
 describe('Locks', function() {
-  var lock, clock, order = [], storage;
+  var lock, clock, order = [];
 
   before(function(done) {
     helpers.before(function(res) {
-      storage = res.storage;
       done();
     });
   });
-
-
   beforeEach(function(done) {
     var self = this;
-    helpers.beforeEach(function() {
+    helpers.beforeEach(function(res) {
+      let storage = res.storage;
       lock = new Lock(storage);
       order = [];
       done();
     });
   });
-
-
   afterEach(function() {
   });
 

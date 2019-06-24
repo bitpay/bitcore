@@ -1,19 +1,31 @@
 export type IBlock = {
   chain: string;
-  confirmations?: number;
   network: string;
   height: number;
   hash: string;
-  version: number;
   merkleRoot: string;
   time: Date;
   timeNormalized: Date;
-  nonce: number;
   previousBlockHash: string;
   nextBlockHash: string;
   transactionCount: number;
+  nonce: number | string;
+  version?: number;
+  bits?: number;
   size: number;
-  bits: number;
   reward: number;
   processed: boolean;
+};
+
+export type IBtcBlock = IBlock & {
+  version: number;
+  bits: number;
+};
+export type IEthBlock = IBlock & {
+  coinbase: string;
+  nonce: string;
+  gasLimit: number;
+  gasUsed: number;
+  stateRoot: Buffer;
+  uncleReward?: Array<number>;
 };

@@ -31,15 +31,16 @@ const derivers: { [chain: string]: IDeriver } = {
   ETH: new EthDeriver()
 };
 
-export class Deriver {
+export class DerivationProxy {
   get(chain) {
-    return derivers[chain];
+    const normalizedChain = chain.toUpperCase();
+    return derivers[normalizedChain];
   }
 
-  deriveAddress(chain, network, xpubKey, addressIndex, isChange) {
+  deriveAddress(chain, network, pubKey, addressIndex, isChange) {
     return this.get(chain).deriveAddress(
       network,
-      xpubKey,
+      pubKey,
       addressIndex,
       isChange
     );
@@ -54,13 +55,16 @@ export class Deriver {
     );
   }
 
-  pathFor(chain, network) {
-    if (network != 'mainnet') {
-      return Paths.default.testnet;
+  pathFor(chain, network, account = 0) {
+    const normalizedChain = chain.toUpperCase();
+    const accountStr = `${account}'`;
+    const chainConfig = Paths[normalizedChain];
+    if (chainConfig && chainConfig[network]) {
+      return chainConfig[network] + accountStr;
     } else {
-      return Paths[chain][network];
+      return Paths.default.testnet + accountStr;
     }
   }
 }
 
-export default new Deriver();
+export default new DerivationProxy();

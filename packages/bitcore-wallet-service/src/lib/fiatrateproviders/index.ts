@@ -1,6 +1,6 @@
 var Providers = {
   BitPay: require('./bitpay'),
-//  Bitstamp: require('./bitstamp'), // no longer used
+  Bitstamp: require('./bitstamp'),
 };
 
 module.exports = Providers;

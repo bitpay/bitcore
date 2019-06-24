@@ -1,4 +1,4 @@
-<head-nav [chainNetwork]="chainNetwork"></head-nav>
+<head-nav></head-nav>
 <ion-content>
   <ion-grid fixed>
 
@@ -46,7 +46,7 @@
                 <ion-item>
                   Timestamp
                   <ion-note item-end>
-                    {{ block.time * 1000 | date:'long' }}
+                    {{ block.time * 1000 | date:'medium' }}
                   </ion-note>
                 </ion-item>
                 <ion-item>
@@ -119,8 +119,7 @@
         </ion-list>
 
         <h2>Transactions</h2>
-        <transaction-list [queryType]="'blockHash'" [queryValue]="block.hash" [chainNetwork]="chainNetwork">
-        </transaction-list>
+        <transaction-list [queryType]="'blockHash'" [queryValue]="block.hash"></transaction-list>
       </div>
 
     </div>

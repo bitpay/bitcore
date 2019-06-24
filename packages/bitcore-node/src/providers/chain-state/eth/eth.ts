@@ -5,8 +5,8 @@ import { InternalStateProvider } from '../internal/internal';
 import { ObjectID } from 'mongodb';
 import Web3 from 'web3';
 import { Storage } from '../../../services/storage';
-import { Readable } from 'stream';
-import { ParityRPC, ParityTraceResponse } from './parityRpc';
+import { EthTransactionStorage } from '../../../models/transaction/eth/ethTransaction';
+import { ITransaction, EthTransactionJSON } from '../../../types/Transaction';
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -19,8 +19,10 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   getWeb3(network: string) {
     const networkConfig = this.config[network];
     const provider = networkConfig.provider;
-    const portString = provider.port ? `:${provider.port}` : '';
-    const connUrl = `${provider.protocol}://${provider.host}${portString}`;
+    const host = provider.host || 'localhost';
+    const protocol = provider.protocol || 'http';
+    const portString = provider.port || '8545';
+    const connUrl = `${protocol}://${host}:${portString}`;
     let ProviderType;
     switch (provider.protocol) {
       case 'wss':
@@ -33,63 +35,71 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     return new Web3(new ProviderType(connUrl));
   }
 
+  async getFee(params) {
+    let { network, target = 4 } = params;
+    if (network === 'livenet') {
+      network = 'mainnet'
+    }
+    const bestBlock = await this.getWeb3(network).eth.getBlockNumber();
+    const gasPrices: number[] = [];
+    for (let i = 0; i < target; i++) {
+      const block = await this.getWeb3(network).eth.getBlock(bestBlock - i);
+      const txs: any[] = await Promise.all(
+        block.transactions.map(txid => {
+          return this.getWeb3(network).eth.getTransaction(txid);
+        })
+      );
+      var blockGasPrices = txs.map(tx => {
+        return tx.gasPrice
+      });
+      // sort gas prices in descending order
+      blockGasPrices = blockGasPrices.sort((a, b) => {
+        return b - a;
+      });
+      var txCount = txs.length;
+      var lowGasPriceIndex = txCount > 1 ? txCount - 2 : 0;
+      if (txCount > 0) {
+        gasPrices.push(blockGasPrices[lowGasPriceIndex]);
+      }
+    }
+    var gethGasPrice = await this.getWeb3(network).eth.getGasPrice();
+    var estimate = gasPrices.reduce((a, b) => {
+      return Math.max(a, b);
+    }, gethGasPrice);
+    return estimate;
+  }
+
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { network, address } = params;
     const balance = Number(await this.getWeb3(network).eth.getBalance(address));
     return { confirmed: balance, unconfirmed: 0, balance };
   }
 
-  async getBlock(params: CSP.GetBlockParams) {
-    const { network, blockId } = params;
-    return this.getWeb3(network).eth.getBlock(Number(blockId)) as any;
-  }
-
-  async streamBlocks(params: CSP.StreamBlocksParams) {
-    const { network, blockId } = params;
-
-    const web3 = this.getWeb3(network);
-
-    return new Promise<Array<ParityTraceResponse>>(resolve =>
-      web3.eth.currentProvider.send(
-        {
-          method: 'trace_block',
-          params: [web3.utils.toHex(parseInt(blockId!))],
-          jsonrpc: '2.0',
-          id: 0
-        },
-        (_, data) => resolve(data.result)
-      )
-    );
-  }
-
   async getTransaction(params: CSP.StreamTransactionParams) {
-    const { network, txId } = params;
-    const transaction = await this.getWeb3(network).eth.getTransaction(txId);
-    return transaction as any;
-  }
-
-  async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
-    const { network, wallet, req, res } = params;
-
-    const web3 = this.getWeb3(network);
-    const addresses = await this.getWalletAddresses(wallet._id!);
-
-    Storage.stream(
-      new Readable({
-        objectMode: true,
-        read: async function() {
-          for (const walletAddress of addresses) {
-            const transactions = await new ParityRPC(web3).getTransactionsForAddress(100000, walletAddress.address);
-            for await (const tx of transactions) {
-              this.push(tx);
-            }
-          }
-          this.push(null);
+    try {
+      let { chain, network, txId } = params;
+      if (typeof txId !== 'string' || !chain || !network) {
+        throw 'Missing required param';
+      }
+      network = network.toLowerCase();
+      let query = { chain: chain, network, txid: txId };
+      const tip = await this.getLocalTip(params);
+      const tipHeight = tip ? tip.height : 0;
+      const found = await EthTransactionStorage.collection.findOne(query);
+      if (found) {
+        let confirmations = 0;
+        if (found.blockHeight && found.blockHeight >= 0) {
+          confirmations = tipHeight - found.blockHeight + 1;
         }
-      }),
-      req,
-      res
-    );
+        const convertedTx = EthTransactionStorage._apiTransform(found, { object: true }) as EthTransactionJSON;
+        return { ...convertedTx, confirmations: confirmations };
+      } else {
+        return undefined;
+      }
+    } catch (err) {
+      console.error(err);
+    }
+    return undefined;
   }
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
@@ -104,6 +114,34 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       .find(query)
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
+  }
+
+  async streamTransactions(params: CSP.StreamTransactionsParams) {
+    const { chain, network, req, res, args } = params;
+    let { blockHash, blockHeight } = args;
+    if (!chain || !network) {
+      throw 'Missing chain or network';
+    }
+    let query: any = {
+      chain: chain,
+      network: network.toLowerCase()
+    };
+    if (blockHeight !== undefined) {
+      query.blockHeight = Number(blockHeight);
+    }
+    if (blockHash !== undefined) {
+      query.blockHash = blockHash;
+    }
+    const tip = await this.getLocalTip(params);
+    const tipHeight = tip ? tip.height : 0;
+    return Storage.apiStreamingFind(EthTransactionStorage, query, args, req, res, t => {
+      let confirmations = 0;
+      if (t.blockHeight !== undefined && t.blockHeight >= 0) {
+        confirmations = tipHeight - t.blockHeight + 1;
+      }
+      const convertedTx = EthTransactionStorage._apiTransform(t, { object: true }) as Partial<ITransaction>;
+      return JSON.stringify({ ...convertedTx, confirmations: confirmations });
+    });
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {

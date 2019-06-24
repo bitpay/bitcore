@@ -21,11 +21,10 @@ export class ApiProvider {
     chain: this.defaults.getDefault('%CHAIN%'),
     network: this.defaults.getDefault('%NETWORK%')
   };
-  public networkSettings = {
+  public networkSettings = new BehaviorSubject<NetworkSettings>({
     availableNetworks: [this.defaultNetwork],
     selectedNetwork: this.defaultNetwork
-  };
-
+  });
   public ratesAPI = {
     btc: 'https://bitpay.com/api/rates',
     bch: 'https://bitpay.com/api/rates/bch'
@@ -38,10 +37,10 @@ export class ApiProvider {
   ) {
     this.getAvailableNetworks().subscribe(data => {
       const availableNetworks = data;
-      this.networkSettings = {
+      this.networkSettings.next({
         availableNetworks,
-        selectedNetwork: this.networkSettings.selectedNetwork
-      };
+        selectedNetwork: this.networkSettings.value.selectedNetwork
+      });
     });
   }
 
@@ -57,22 +56,22 @@ export class ApiProvider {
   }
   public getUrl(): string {
     const prefix: string = this.defaults.getDefault('%API_PREFIX%');
-    const chain: string = this.networkSettings.selectedNetwork.chain;
-    const network: string = this.networkSettings.selectedNetwork.network;
+    const chain: string = this.networkSettings.value.selectedNetwork.chain;
+    const network: string = this.networkSettings.value.selectedNetwork.network;
     const apiPrefix = `${prefix}/${chain}/${network}`;
     return apiPrefix;
   }
 
   public getConfig(): ChainNetwork {
     const config = {
-      chain: this.networkSettings.selectedNetwork.chain,
-      network: this.networkSettings.selectedNetwork.network
+      chain: this.networkSettings.value.selectedNetwork.chain,
+      network: this.networkSettings.value.selectedNetwork.network
     };
     return config;
   }
 
   public changeNetwork(network: ChainNetwork): void {
-    const availableNetworks = this.networkSettings.availableNetworks;
+    const availableNetworks = this.networkSettings.value.availableNetworks;
     const isValid = _.some(availableNetworks, network);
     if (!isValid) {
       this.logger.error(
@@ -80,9 +79,9 @@ export class ApiProvider {
       );
       return;
     }
-    this.networkSettings = {
+    this.networkSettings.next({
       availableNetworks,
       selectedNetwork: network
-    };
+    });
   }
 }

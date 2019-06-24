@@ -3,8 +3,8 @@
 <div *ngIf="!loading">
   <ion-grid>
     <ion-row *ngFor="let tx of txs; let i = index">
-      <ion-col col-12 *ngIf="i < limit && (tx.spentTxid !== '' || tx.mintTxid)">
-        <coin [coin]="tx" [chainNetwork]="chainNetwork"></coin>
+      <ion-col col-12 *ngIf="i < limit">
+        <coin [coin]="tx"></coin>
       </ion-col>
     </ion-row>
     <ion-row *ngIf="limit < txs.length">

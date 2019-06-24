@@ -8,6 +8,7 @@ var sinon = require('sinon');
 var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
+log.level = 'info';
 
 var config = require('../test-config');
 
@@ -38,17 +39,13 @@ var storage, blockchainExplorer, request;
 describe('Wallet service', function() {
 
   before(function(done) {
-    helpers.before(function(res) {
+    helpers.before(done);
+  });
+  beforeEach(function(done) {
+    helpers.beforeEach(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
       request = res.request;
-      done();
-    });
-
-  });
-  beforeEach(function(done) {
-    log.level = 'error';
-    helpers.beforeEach(function(res) {
       done();
     });
   });
@@ -352,80 +349,6 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should create wallet BCH if n > 1 and BWC version is 8.3.0 or higher', function(done) {
-      var opts = {
-        coin: 'bch',
-        name: 'my wallet',
-        m: 2,
-        n: 3,
-        pubKey: TestData.keyPair.pub
-      };
-
-      server.clientVersion = 'bwc-8.3.0';
-
-      server.createWallet(opts, function(err, walletId) {
-        should.not.exist(err);
-        should.exist(walletId);
-        done();
-      });
-    });
-
-    it('should create wallet BTC if n > 1 and BWC version is lower than 8.3.0', function(done) {
-      var opts = {
-        coin: 'btc',
-        name: 'my wallet',
-        m: 2,
-        n: 3,
-        pubKey: TestData.keyPair.pub
-      };
-
-      server.clientVersion = 'bwc-8.3.0';
-
-      server.createWallet(opts, function(err, walletId) {
-        should.not.exist(err);
-        should.exist(walletId);
-        done();
-      });
-    });
-
-    it('should fail to create wallets BCH if n > 1 and BWC version is lower than 8.3.0', function(done) {
-      var opts = {
-        coin: 'bch',
-        name: 'my wallet',
-        m: 2,
-        n: 3,
-        pubKey: TestData.keyPair.pub
-      };
-
-      server.clientVersion = 'bwc-8.2.0';
-
-
-      server.createWallet(opts, function(err, walletId) {
-        should.not.exist(walletId);
-        should.exist(err);
-        err.message.should.contain('BWC clients < 8.3 are no longer supported for multisig BCH wallets.');
-        done();
-      });
-    });
-
-    it('should create wallet BCH if n == 1 and BWC version is lower than 8.3.0', function(done) {
-      var opts = {
-        coin: 'bch',
-        name: 'my wallet',
-        m: 1,
-        n: 1,
-        pubKey: TestData.keyPair.pub
-      };
-
-      server.clientVersion = 'bwc-8.2.0';
-
-      server.createWallet(opts, function(err, walletId) {
-        should.not.exist(err);
-        should.exist(walletId);
-        done();
-      });
-    });
-
     it('should fail to create wallet with no name', function(done) {
       var opts = {
         name: '',
@@ -491,22 +414,19 @@ describe('Wallet service', function() {
         n: -2,
         valid: false,
       },];
-      async.eachSeries(pairs, function(pair, cb) {
-        let opts = {
-          name: 'my wallet',
-          pubKey: TestData.keyPair.pub,
-        };
-
-        var pub = (new Bitcore.PrivateKey()).toPublicKey();
+      var opts = {
+        id: '123',
+        name: 'my wallet',
+        pubKey: TestData.keyPair.pub,
+      };
+      async.each(pairs, function(pair, cb) {
         opts.m = pair.m;
         opts.n = pair.n;
-        opts.pubKey = pub.toString();
         server.createWallet(opts, function(err) {
           if (!pair.valid) {
             should.exist(err);
             err.message.should.equal('Invalid combination of required copayers / total copayers');
           } else {
-            if (err) console.log("ERROR", opts, err);
             should.not.exist(err);
           }
           return cb();
@@ -572,6 +492,24 @@ describe('Wallet service', function() {
           });
         });
       });
+      it('should use BIP45 & P2SH for 1-of-1 wallet if not supported', function(done) {
+        var walletOpts = {
+          name: 'my wallet',
+          m: 1,
+          n: 1,
+          pubKey: TestData.keyPair.pub,
+          supportBIP44AndP2PKH: false,
+        };
+        server.createWallet(walletOpts, function(err, wid) {
+          should.not.exist(err);
+          server.storage.fetchWallet(wid, function(err, wallet) {
+            should.not.exist(err);
+            wallet.derivationStrategy.should.equal('BIP45');
+            wallet.addressType.should.equal('P2SH');
+            done();
+          });
+        });
+      });
       it('should use BIP44 & P2SH for shared wallet if supported', function(done) {
         var walletOpts = {
           name: 'my wallet',
@@ -589,13 +527,31 @@ describe('Wallet service', function() {
           });
         });
       });
+      it('should use BIP45 & P2SH for shared wallet if supported', function(done) {
+        var walletOpts = {
+          name: 'my wallet',
+          m: 2,
+          n: 3,
+          pubKey: TestData.keyPair.pub,
+          supportBIP44AndP2PKH: false,
+        };
+        server.createWallet(walletOpts, function(err, wid) {
+          should.not.exist(err);
+          server.storage.fetchWallet(wid, function(err, wallet) {
+            should.not.exist(err);
+            wallet.derivationStrategy.should.equal('BIP45');
+            wallet.addressType.should.equal('P2SH');
+            done();
+          });
+        });
+      });
     });
   });
 
   describe('#joinWallet', function() {
     describe('New clients', function() {
 
-      var server, serverForBch, walletId, walletIdForBch;
+      var server, walletId;
       beforeEach(function(done) {
         server = new WalletService();
         var walletOpts = {
@@ -603,7 +559,6 @@ describe('Wallet service', function() {
           m: 1,
           n: 2,
           pubKey: TestData.keyPair.pub,
-          clientVersion: 'bwc-8.3.0'
         };
         server.createWallet(walletOpts, function(err, wId) {
           should.not.exist(err);
@@ -675,106 +630,6 @@ describe('Wallet service', function() {
               status.balance.availableAmount.should.equal(0);
               done();
             });
-          });
-        });
-      });
-
-      it('should join wallet BCH if BWC version is 8.3.0 or higher', function(done) {
-        serverForBch = new WalletService();
-        var walletOpts = {
-          coin: 'bch',
-          name: 'my wallet',
-          m: 1,
-          n: 2,
-          pubKey: TestData.keyPair.pub
-        };
-
-        serverForBch.clientVersion = 'bwc-8.3.0';
-
-        serverForBch.createWallet(walletOpts, function(err, wId) {
-          should.not.exist(err);
-          walletIdForBch = wId;
-          should.exist(walletIdForBch);
-
-          var copayerOpts = helpers.getSignedCopayerOpts({
-            coin: 'bch',
-            walletId: walletIdForBch,
-            name: 'me',
-            xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
-            requestPubKey: TestData.copayers[0].pubKey_1H_0,
-            customData: 'dummy custom data'
-          });
-
-          serverForBch.clientVersion = 'bwc-8.3.0';
-
-          serverForBch.joinWallet(copayerOpts, function(err, result) {
-            should.not.exist(err);
-            should.exist(result);
-            should.exist(result.copayerId);
-            done();
-          });
-        });
-      });
-
-      it('should join wallet BTC if BWC version is lower than 8.3.0', function(done) {
-        var copayerOpts = helpers.getSignedCopayerOpts({
-          walletId: walletId,
-          coin: 'btc',
-          name: 'my wallet',
-          m: 2,
-          n: 3,
-          pubKey: TestData.keyPair.pub,
-          walletId: walletId,
-          xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
-          requestPubKey: TestData.copayers[0].pubKey_1H_0,
-          customData: 'dummy custom data',
-        });
-
-        server.clientVersion = 'bwc-8.2.0';
-
-        server.joinWallet(copayerOpts, function(err, result) {
-          should.not.exist(err);
-          should.exist(result);
-          should.exist(result.copayerId);
-          done();
-        });
-      });
-
-      it('should fail to join wallets BCH if BWC version is lower than 8.3.0', function(done) {
-        serverForBch = new WalletService();
-        var walletOpts = {
-          coin: 'bch',
-          name: 'my wallet',
-          m: 1,
-          n: 2,
-          pubKey: TestData.keyPair.pub,
-          walletId: walletId
-        };
-
-        serverForBch.clientVersion = 'bwc-8.3.0';
-
-        serverForBch.createWallet(walletOpts, function(err, wId) {
-          should.not.exist(err);
-          walletIdForBch = wId;
-          should.exist(walletIdForBch);
-
-          var copayerOpts = helpers.getSignedCopayerOpts({
-            coin: 'bch',
-            walletId: walletIdForBch,
-            name: 'me',
-            m: 2,
-            n: 3,
-            xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
-            requestPubKey: TestData.copayers[0].pubKey_1H_0
-          });
-
-          serverForBch.clientVersion = 'bwc-8.2.0';
-
-          serverForBch.joinWallet(copayerOpts, function(err, result) {
-            should.not.exist(result);
-            should.exist(err);
-            err.message.should.contain('BWC clients < 8.3 are no longer supported for multisig BCH wallets.');
-            done();
           });
         });
       });
@@ -1052,6 +907,62 @@ describe('Wallet service', function() {
       });
     });
 
+    describe('Interaction new/legacy clients', function() {
+      var server;
+      beforeEach(function() {
+        server = new WalletService();
+      });
+
+      it('should fail to join legacy wallet from new client', function(done) {
+        var walletOpts = {
+          name: 'my wallet',
+          m: 1,
+          n: 2,
+          pubKey: TestData.keyPair.pub,
+          supportBIP44AndP2PKH: false,
+        };
+        server.createWallet(walletOpts, function(err, walletId) {
+          should.not.exist(err);
+          should.exist(walletId);
+          var copayerOpts = helpers.getSignedCopayerOpts({
+            walletId: walletId,
+            name: 'me',
+            xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+            requestPubKey: TestData.copayers[0].pubKey_1H_0,
+          });
+          server.joinWallet(copayerOpts, function(err, result) {
+            should.exist(err);
+            err.message.should.contain('The wallet you are trying to join was created with an older version of the client app');
+            done();
+          });
+        });
+      });
+
+      it('should fail to join new wallet from legacy client', function(done) {
+        var walletOpts = {
+          name: 'my wallet',
+          m: 1,
+          n: 2,
+          pubKey: TestData.keyPair.pub,
+        };
+        server.createWallet(walletOpts, function(err, walletId) {
+          should.not.exist(err);
+          should.exist(walletId);
+          var copayerOpts = helpers.getSignedCopayerOpts({
+            walletId: walletId,
+            name: 'me',
+            xPubKey: TestData.copayers[0].xPubKey_45H,
+            requestPubKey: TestData.copayers[0].pubKey_1H_0,
+            supportBIP44AndP2PKH: false,
+          });
+          server.joinWallet(copayerOpts, function(err, result) {
+            should.exist(err);
+            err.code.should.equal('UPGRADE_NEEDED');
+            done();
+          });
+        });
+      });
+    });
   });
 
   describe('#removeWallet', function() {
@@ -1276,7 +1187,7 @@ describe('Wallet service', function() {
     });
     it('should get status including server messages', function(done) {
       server.appName = 'bitpay';
-      server.appVersion = { major: 5, minor: 0, patch: 0 };
+      server.appVersion = {major: 5, minor: 0, patch: 0};
       server.getStatus({
         includeServerMessages: true
       }, function(err, status) {
@@ -1293,30 +1204,30 @@ describe('Wallet service', function() {
           category: 'critical',
           app: 'bitpay',
           priority: 1
-        }]);
+        }]); 
         done();
       });
     });
     it('should get status including deprecated server message', function(done) {
       server.appName = 'bitpay';
-      server.appVersion = { major: 5, minor: 0, patch: 0 };
-      server.getStatus({}, function(err, status) {
-        should.not.exist(err);
-        should.exist(status);
-        should.exist(status.serverMessage);
-        _.isObject(status.serverMessage).should.be.true;
-        status.serverMessage.should.deep.equal({
-          title: 'Deprecated Test message',
-          body: 'Only for bitpay, old wallets',
-          link: 'http://bitpay.com',
-          id: 'bitpay1',
-          dismissible: true,
-          category: 'critical',
-          app: 'bitpay',
+      server.appVersion = {major: 5, minor: 0, patch: 0};
+        server.getStatus({}, function(err, status) {
+          should.not.exist(err);
+          should.exist(status);
+          should.exist(status.serverMessage);
+          _.isObject(status.serverMessage).should.be.true;
+          status.serverMessage.should.deep.equal({
+            title: 'Deprecated Test message',
+            body: 'Only for bitpay, old wallets',
+            link: 'http://bitpay.com',
+            id: 'bitpay1',
+            dismissible: true,
+            category: 'critical',
+            app: 'bitpay',
+          }); 
+          done();
         });
-        done();
       });
-    });
   });
 
   describe('#verifyMessageSignature', function() {
@@ -1361,6 +1272,56 @@ describe('Wallet service', function() {
   describe('#createAddress', function() {
     var server, wallet;
 
+    describe('shared wallets (BIP45)', function() {
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(2, 2, {
+          supportBIP44AndP2PKH: false
+        }, function(s, w) {
+          server = s;
+          wallet = w;
+          done();
+        });
+      });
+
+      it('should create address', function(done) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+          should.exist(address);
+          address.walletId.should.equal(wallet.id);
+          address.network.should.equal('livenet');
+          address.address.should.equal('3BVJZ4CYzeTtawDtgwHvWV5jbvnXtYe97i');
+          address.isChange.should.be.false;
+          address.path.should.equal('m/2147483647/0/0');
+          address.type.should.equal('P2SH');
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var notif = _.find(notifications, {
+              type: 'NewAddress'
+            });
+            should.exist(notif);
+            notif.data.address.should.equal(address.address);
+            done();
+          });
+        });
+      });
+
+      it('should create many addresses on simultaneous requests', function(done) {
+        var N = 5;
+        async.mapSeries(_.range(N), function(i, cb) {
+          server.createAddress({}, cb);
+        }, function(err, addresses) {
+          var x = _.map(addresses, 'path');
+          addresses.length.should.equal(N);
+          _.each(_.range(N), function(i) {
+            addresses[i].path.should.equal('m/2147483647/0/' + i);
+          });
+          // No two identical addresses
+          _.uniq(_.map(addresses, 'address')).length.should.equal(N);
+          done();
+        });
+      });
+    });
+
     describe('shared wallets (BIP44)', function() {
       beforeEach(function(done) {
         helpers.createAndJoinWallet(2, 2, function(s, w) {
@@ -1392,33 +1353,6 @@ describe('Wallet service', function() {
           });
         });
       });
-
-
-      it('should create next address if insertion fail ', function(done) {
-        server.createAddress({}, function(err, address) {
-          should.not.exist(err);
-          should.exist(address);
-          server.getWallet({}, (err, w) => {
-
-            var old = server.getWallet;
-            server.getWallet = sinon.stub();
-
-            // return main address index to 0;
-            w.addressManager.receiveAddressIndex = 0;
-            server.getWallet.callsArgWith(1, null, w);
-
-            server.createAddress({}, function(err, address) {
-              server.getWallet = old;
-              should.not.exist(err);
-
-              should.exist(address);
-              done();
-            });
-          });
-        });
-      });
-
-
 
       it('should create many addresses on simultaneous requests', function(done) {
         var N = 5;
@@ -1952,29 +1886,6 @@ describe('Wallet service', function() {
         });
       });
     });
-
-
-    it('should get UTXOs for wallet addresses', function(done) {
-      helpers.stubUtxos(server, wallet, [1, 2], function() {
-        server.getUtxos({}, function(err, utxos) {
-          should.not.exist(err);
-          should.exist(utxos);
-          utxos.length.should.equal(2);
-          _.sumBy(utxos, 'satoshis').should.equal(3 * 1e8);
-          server.getMainAddresses({}, function(err, addresses) {
-            var utxo = utxos[0];
-            var address = _.find(addresses, {
-              address: utxo.address
-            });
-            should.exist(address);
-            utxo.path.should.equal(address.path);
-            utxo.publicKeys.should.deep.equal(address.publicKeys);
-            done();
-          });
-        });
-      });
-    });
-
     it('should return empty UTXOs for specific addresses if network mismatch', function(done) {
       helpers.stubUtxos(server, wallet, [1, 2, 3], function(utxos) {
         _.uniqBy(utxos, 'address').length.should.be.above(1);
@@ -2042,43 +1953,7 @@ describe('Wallet service', function() {
         });
       });
     });
-
-
-    it('should skip dust UTXOs ', function(done) {
-      helpers.stubUtxos(server, wallet, ['1 sat', 2, '10 sat', '100 sat', '1000 sat'], function() {
-        server.getUtxos({}, function(err, utxos) {
-          should.not.exist(err);
-          should.exist(utxos);
-          utxos.length.should.equal(2);
-          _.sumBy(utxos, 'satoshis').should.equal(2 * 1e8 + 1000);
-          server.getMainAddresses({}, function(err, addresses) {
-            var utxo = utxos[0];
-            var address = _.find(addresses, {
-              address: utxo.address
-            });
-            should.exist(address);
-            utxo.path.should.equal(address.path);
-            utxo.publicKeys.should.deep.equal(address.publicKeys);
-            done();
-          });
-        });
-      });
-    });
-
-    it('should report no UTXOs if only dust', function(done) {
-      helpers.stubUtxos(server, wallet, ['1 sat', '10 sat', '100 sat', '500 sat'], function() {
-        server.getUtxos({}, function(err, utxos) {
-          should.not.exist(err);
-          should.exist(utxos);
-          utxos.length.should.equal(0);
-          _.sumBy(utxos, 'satoshis').should.equal(0);
-          done();
-        });
-      });
-    });
   });
-
-
 
   describe('Multiple request Pub Keys', function() {
     var server, wallet;
@@ -5078,7 +4953,7 @@ describe('Wallet service', function() {
     it('should include the note in tx history listing', function(done) {
       helpers.createAddresses(server, wallet, 1, 1, function(mainAddresses, changeAddress) {
         blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000);
-        server._normalizeTxHistory = function(a, b, c, e, d) { return d(null, b); }
+        server._normalizeTxHistory = function(a, b, c, d) { return d(null, b); }
         var txs = [{
           txid: '123',
           blockheight: 100,
@@ -5523,9 +5398,7 @@ describe('Wallet service', function() {
       });
     });
     it('should ignore utxos not contributing to total amount (below their cost in fee)', function(done) {
-
-      // 10 sat and 100 sat should be completely ignored. (under dust)
-      helpers.stubUtxos(server, wallet, ['u0.1', '100 sat', 0.2, 0.3, 0.4, '10bit', '100bit', '200bit', '10 sat'], function() {
+      helpers.stubUtxos(server, wallet, ['u0.1', 0.2, 0.3, 0.4, '1bit', '100bit', '200bit'], function() {
         server.getSendMaxInfo({
           feePerKb: 0.001e8,
           returnInputs: true,
@@ -5537,7 +5410,7 @@ describe('Wallet service', function() {
           info.fee.should.equal(info.size * 0.001e8 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
           info.utxosBelowFee.should.equal(3);
-          info.amountBelowFee.should.equal(310e2);
+          info.amountBelowFee.should.equal(301e2);
           server.getSendMaxInfo({
             feePerKb: 0.0001e8,
             returnInputs: true,
@@ -5549,7 +5422,7 @@ describe('Wallet service', function() {
             info.fee.should.equal(info.size * 0.0001e8 / 1000.);
             info.amount.should.equal(1.0003e8 - info.fee);
             info.utxosBelowFee.should.equal(1);
-            info.amountBelowFee.should.equal(1e3);
+            info.amountBelowFee.should.equal(1e2);
             sendTx(info, done);
           });
         });
@@ -6001,7 +5874,7 @@ describe('Wallet service', function() {
           txProposalId: txpid
         }, function(err, txp) {
           should.not.exist(err);
-
+         
           should.exist(txp.raw);
           // used to be like this. No sure why we won't like raw to be shown.
           //should.not.exist(txp.raw);
@@ -7300,6 +7173,83 @@ describe('Wallet service', function() {
       });
     });
 
+    describe('shared wallet (BIP45)', function() {
+
+      beforeEach(function(done) {
+        this.timeout(5000);
+        Defaults.SCAN_ADDRESS_GAP = 2;
+
+        helpers.createAndJoinWallet(1, 2, {
+          supportBIP44AndP2PKH: false
+        }, function(s, w) {
+          server = s;
+          wallet = w;
+          done();
+        });
+      });
+      afterEach(function() { });
+
+      it('should scan main addresses', function(done) {
+        helpers.stubAddressActivity(
+          ['39AA1Y2VvPJhV3RFbc7cKbUax1WgkPwweR', // m/2147483647/0/0
+            '3QX2MNSijnhCALBmUVnDo5UGPj3SEGASWx', // m/2147483647/0/2
+            '3MzGaz4KKX66w8ShKaR536ZqzVvREBqqYu', // m/2147483647/1/0
+          ]);
+        var expectedPaths = [
+          'm/2147483647/0/0',
+          'm/2147483647/0/1',
+          'm/2147483647/0/2',
+          'm/2147483647/1/0',
+        ];
+        server.scan({}, function(err) {
+          should.not.exist(err);
+          server.getWallet({}, function(err, wallet) {
+            should.not.exist(err);
+            wallet.scanStatus.should.equal('success');
+            server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+              should.exist(addresses);
+              addresses.length.should.equal(expectedPaths.length);
+              var paths = _.map(addresses, 'path');
+              _.difference(paths, expectedPaths).length.should.equal(0);
+              server.createAddress({}, function(err, address) {
+                should.not.exist(err);
+                address.path.should.equal('m/2147483647/0/3');
+                done();
+              });
+            });
+          });
+        });
+      });
+      it('should scan main addresses & copayer addresses', function(done) {
+        helpers.stubAddressActivity(
+          ['39AA1Y2VvPJhV3RFbc7cKbUax1WgkPwweR', // m/2147483647/0/0
+            '3MzGaz4KKX66w8ShKaR536ZqzVvREBqqYu', // m/2147483647/1/0
+            '3BYoynejwBH9q4Jhr9m9P5YTnLTu57US6g', // m/0/0/1
+            '37Pb8c32hzm16tCZaVHj4Dtjva45L2a3A3', // m/1/1/0
+            '32TB2n283YsXdseMqUm9zHSRcfS5JxTWxx', // m/1/0/0
+          ]);
+        var expectedPaths = [
+          'm/2147483647/0/0',
+          'm/2147483647/1/0',
+          'm/0/0/0',
+          'm/0/0/1',
+          'm/1/0/0',
+          'm/1/1/0',
+        ];
+        server.scan({
+          includeCopayerBranches: true
+        }, function(err) {
+          should.not.exist(err);
+          server.storage.fetchAddresses(wallet.id, function(err, addresses) {
+            should.exist(addresses);
+            addresses.length.should.equal(expectedPaths.length);
+            var paths = _.map(addresses, 'path');
+            _.difference(paths, expectedPaths).length.should.equal(0);
+            done();
+          })
+        });
+      });
+    });
   });
 
   describe('#startScan', function() {
@@ -7309,6 +7259,7 @@ describe('Wallet service', function() {
       Defaults.SCAN_ADDRESS_GAP = 2;
 
       helpers.createAndJoinWallet(1, 1, {
+        supportBIP44AndP2PKH: false
       }, function(s, w) {
         server = s;
         wallet = w;
@@ -7321,15 +7272,15 @@ describe('Wallet service', function() {
 
     it('should start an asynchronous scan', function(done) {
       helpers.stubAddressActivity(
-        ['1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG', // m/0/0/0
-          '1GdXraZ1gtoVAvBh49D4hK9xLm6SKgesoE', // m/0/0/2
-          '1FUzgKcyPJsYwDLUEVJYeE2N3KVaoxTjGS', // m/0/1/0
+        ['3GvvHimEMk2GBZnPxTF89GHZL6QhZjUZVs', // m/2147483647/0/0
+          '37pd1jjTUiGBh8JL2hKLDgsyrhBoiz5vsi', // m/2147483647/0/2
+          '3C3tBn8Sr1wHTp2brMgYsj9ncB7R7paYuB', // m/2147483647/1/0
         ]);
       var expectedPaths = [
-        'm/0/0',
-        'm/0/1',
-        'm/0/2',
-        'm/1/0',
+        'm/2147483647/0/0',
+        'm/2147483647/0/1',
+        'm/2147483647/0/2',
+        'm/2147483647/1/0',
       ];
       server.messageBroker.onMessage(function(n) {
         if (n.type == 'ScanFinished') {
@@ -7344,7 +7295,7 @@ describe('Wallet service', function() {
               _.difference(paths, expectedPaths).length.should.equal(0);
               server.createAddress({}, function(err, address) {
                 should.not.exist(err);
-                address.path.should.equal('m/0/3');
+                address.path.should.equal('m/2147483647/0/3');
                 done();
               });
             })

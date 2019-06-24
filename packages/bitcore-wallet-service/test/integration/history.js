@@ -8,6 +8,7 @@ var sinon = require('sinon');
 var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
+log.level = 'info';
 
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
@@ -32,14 +33,9 @@ var storage, blockchainExplorer, request;
 
 describe('History V8', function() {
   before(function(done) {
-    helpers.before((res) => {
-      done();
-    });
+    helpers.before(done);
   });
-
-
   beforeEach(function(done) {
-    log.level = 'error';
     helpers.beforeEach(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
@@ -114,93 +110,6 @@ describe('History V8', function() {
         done();
       });
     });
-
-    it('should filter out DUST amount', function(done) {
-      let txs= helpers.createTxsV8(50, BCHEIGHT);
-      txs[5].satoshis=100;
-      txs[15].satoshis=10;
-      txs[25].satoshis=1;
-
-      helpers.stubHistoryV8(null, null, txs);
-      server.getTxHistory({limit: 50}, function(err, txs, fromCache) {
-        should.not.exist(err);
-        fromCache.should.equal(false);
-        should.exist(txs);
-        txs.length.should.equal(47);
-        done();
-      });
-    });
-
-    it('should handle 2 incoming payments on the same txs, 2 different addr', function(done) {
-     let txs= helpers.createTxsV8(3, BCHEIGHT);
-      txs[1].address=txs[0].address;
-      txs[1].txid=txs[0].txid;
-      txs[1].id=txs[0].id;
-      txs[1].satoshis = 10000;
-      txs[1].address='other address';
- 
-      helpers.stubHistoryV8(null, null, txs);
-      server.getTxHistory({limit: 50}, function(err, txs, fromCache) {
-        should.not.exist(err);
-        fromCache.should.equal(false);
-        should.exist(txs);
-        txs.length.should.equal(2);
-        // one tx from 2 items
-        txs[0].amount.should.equal(40001);
-
-
-        txs[0].outputs.should.deep.equal([
-          {
-            "address": "muFJi3ZPfR5nhxyD7dfpx2nYZA8Wmwzgck",
-            "amount": 30001,
-          },
-          {
-            "address": "other address",
-              "amount": 10000,
-          }]);
-
-        txs[0].txid.should.equal('txid0');
-
-        txs[1].amount.should.equal(30001);
-        done();
-      });
-    });
-
-
-    it('should handle 2 incoming payments on the same txs, 2 different addr, one dust', function(done) {
-     let txs= helpers.createTxsV8(3, BCHEIGHT);
-      txs[1].address=txs[0].address;
-      txs[1].txid=txs[0].txid;
-      txs[1].id=txs[0].id;
-      txs[1].satoshis = 100;
-      txs[1].address='other address';
- 
-      helpers.stubHistoryV8(null, null, txs);
-      server.getTxHistory({limit: 50}, function(err, txs, fromCache) {
-        should.not.exist(err);
-        fromCache.should.equal(false);
-        should.exist(txs);
-        txs.length.should.equal(2);
-        // one tx from 2 items
-        txs[0].amount.should.equal(30001);
-
-
-        txs[0].outputs.should.deep.equal([
-          {
-            "address": "muFJi3ZPfR5nhxyD7dfpx2nYZA8Wmwzgck",
-            "amount": 30001,
-          },
-          ]);
-
-        txs[0].txid.should.equal('txid0');
-
-        txs[1].amount.should.equal(30001);
-        done();
-      });
-    });
-
-
-
 
     it('should handle moves, filtering change addresses (case 1)', function(done) {
       let txs= helpers.createTxsV8(20, 1000);

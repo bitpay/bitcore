@@ -17,15 +17,8 @@ export class SearchProvider {
     private httpClient: HttpClient
   ) {}
 
-  public search(
-    input: string,
-    type: string,
-    chainNetwork: ChainNetwork
-  ): Observable<any> {
-    this.apiURL = `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
-      chainNetwork.network
-    }`;
-
+  public search(input: string, type: string): Observable<any> {
+    this.apiURL = this.apiProvider.getUrl();
     switch (type) {
       case 'blockOrTx':
         return Observable.forkJoin(
@@ -39,18 +32,18 @@ export class SearchProvider {
 
   private searchBlock(block: string): Observable<{ block: any }> {
     return this.httpClient
-      .get<{ block: any }>(`${this.apiURL}/block/${block}`)
+      .get<{ block: any }>(this.apiURL + '/block/' + block)
       .pipe(map(res => ({ block: res })));
   }
   private searchTx(txid: string): Observable<{ tx: any }> {
     return this.httpClient
-      .get<{ tx: any }>(`${this.apiURL}/tx/${txid}`)
+      .get<{ tx: any }>(this.apiURL + '/tx/' + txid)
       .pipe(map(res => ({ tx: res })));
   }
   private searchAddr(addr: string): Observable<{ addr: any }> {
     const address = this.extractAddress(addr);
     return this.httpClient
-      .get<{ addr: any }>(`${this.apiURL}/address/${address}`)
+      .get<{ addr: any }>(this.apiURL + '/address/' + address)
       .pipe(map(res => ({ addr: res })));
   }
 
@@ -80,9 +73,8 @@ export class SearchProvider {
     const coin = this.config.chain;
     const network = this.config.network;
     const addr = this.extractAddress(inputValue);
-    if (addr.charAt(0) === 'C' || addr.charAt(0) === 'H') {
-      return false;
-    } else if (coin.toLowerCase() === 'btc' && network === 'mainnet') {
+
+    if (coin.toLowerCase() === 'btc' && network === 'mainnet') {
       return this.isValidBitcoinMainnetAddress(addr);
     } else if (coin.toLowerCase() === 'btc' && network === 'testnet') {
       return this.isValidBitcoinTestnetAddress(addr);

@@ -25,7 +25,7 @@ export interface IWallet {
   n: number;
   singleAddress: boolean;
   status: string;
-  publicKeyRing: Array<{ xPubKey: string, requestPubKey: string }>;
+  publicKeyRing: Array<{ xPubKey: string; requestPubKey: string }>;
   addressIndex: number;
   copayers: string[];
   pubKey: string;
@@ -51,7 +51,7 @@ export class Wallet {
   n: number;
   singleAddress: boolean;
   status: string;
-  publicKeyRing: Array<{ xPubKey: string, requestPubKey: string }>;
+  publicKeyRing: Array<{ xPubKey: string; requestPubKey: string }>;
   addressIndex: number;
   copayers: Array<Copayer>;
   pubKey: string;
@@ -135,7 +135,7 @@ export class Wallet {
     x.singleAddress = !!obj.singleAddress;
     x.status = obj.status;
     x.publicKeyRing = obj.publicKeyRing;
-    x.copayers = _.map(obj.copayers, (copayer) => {
+    x.copayers = _.map(obj.copayers, copayer => {
       return Copayer.fromObj(copayer);
     });
     x.pubKey = obj.pubKey;
@@ -185,7 +185,7 @@ export class Wallet {
   updateBEKeys() {
     $.checkState(this.isComplete());
 
-    const bitcore = Bitcore[this.coin];
+    const bitcore = Bitcore.btc;
     const salt = config.BE_KEY_SALT || Defaults.BE_KEY_SALT;
 
     var seed =
@@ -204,7 +204,7 @@ export class Wallet {
   }
 
   _updatePublicKeyRing() {
-    this.publicKeyRing = _.map(this.copayers, (copayer) => {
+    this.publicKeyRing = _.map(this.copayers, copayer => {
       return _.pick(copayer, ['xPubKey', 'requestPubKey']);
     });
   }
@@ -241,7 +241,7 @@ export class Wallet {
   }
 
   getCopayer(copayerId): Copayer {
-    return this.copayers.find((c) => c.id == copayerId);
+    return this.copayers.find(c => c.id == copayerId);
   }
 
   isComplete() {

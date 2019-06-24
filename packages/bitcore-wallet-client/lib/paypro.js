@@ -120,7 +120,7 @@ PayPro.runRequest = function (opts, cb) {
 
   PayPro.request(opts, (err, res, body) => {
     if (err) return cb(err);
-    let ret = {};
+    let ret;
 
     if (!res || res.statusCode != 200) {
 
@@ -137,6 +137,16 @@ PayPro.runRequest = function (opts, cb) {
       return cb(new Error('Could not fetch invoice: ' + m) );
     }
 
+    try {
+      ret = JSON.parse(body.toString());
+    } catch (e)  {
+      try { body = body.toString(); } catch (e) {};
+      return cb(new Error('Could not fetch invoice: ' +  body ));
+    }
+
+
+    // read and check
+    ret.url = opts.url;
 
     //console.log('########################### SKIPPING VERIFICATION!!!!!!!!!!! ');
     // TODO TODO TODO 
@@ -233,7 +243,7 @@ PayPro.get = function(opts, cb) {
     ret.amount = data.outputs[0].amount;
 
     try {
-      ret.toAddress = (new bitcore.Address(data.outputs[0].address)).toString(true);
+      ret.toAddress = (new bitcore.Address(data.outputs[0].address)).toString();
     } catch (e) {
       return cb(new Error('Bad output address '+ e));
     }
@@ -278,7 +288,7 @@ PayPro.send = function(opts, cb) {
   // verify request
   PayPro.runRequest(opts, function(err, rawData) {
     if (err) {
-      console.log('Error at verify-payment:', err.message ? err.message: '', opts);
+      console.log('Error at verify-payment:', err, opts);
       return cb(err);
     }
 
@@ -300,7 +310,7 @@ PayPro.send = function(opts, cb) {
 
     PayPro.runRequest(opts, function(err, rawData) {
       if (err) {
-        console.log('Error at payment:', err.message ? err.message: '', opts);
+        console.log('Error at payment:', err, opts);
         return cb(err);
       }
   

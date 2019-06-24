@@ -1,22 +1,26 @@
-import { TransactionJSON } from '../../../types/Transaction';
+import { TransactionJSON, ITransaction } from '../../../types/Transaction';
 import through2 from 'through2';
 
 import { MongoBound } from '../../../models/base';
 import { ObjectId } from 'mongodb';
 import { CoinStorage, ICoin } from '../../../models/coin';
-import { BlockStorage, IBlock } from '../../../models/block';
+import { BlockStorage } from '../../../models/block';
 import { WalletStorage, IWallet } from '../../../models/wallet';
 import { WalletAddressStorage, IWalletAddress } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { Storage } from '../../../services/storage';
 import { RPC } from '../../../rpc';
 import { LoggifyClass } from '../../../decorators/Loggify';
-import { TransactionStorage, ITransaction } from '../../../models/transaction';
-import { ListTransactionsStream } from './transforms';
+import { TransactionStorage } from '../../../models/transaction/base/base';
 import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
 import { StateStorage } from '../../../models/state';
 import { SpentHeightIndicators, CoinJSON } from '../../../types/Coin';
 import { Config } from '../../../services/config';
+import { IBlock } from '../../../types/Block';
+import { EthTransactionStorage } from '../../../models/transaction/eth/ethTransaction';
+import { BtcTransactionStorage } from '../../../models/transaction/btc/btcTransaction';
+import { EthListTransactionsStream } from './transforms/eth/ethTransforms';
+import { ListTransactionsStream } from './transforms/btc/transforms';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -49,16 +53,15 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   streamAddressUtxos(params: CSP.StreamAddressUtxosParams) {
     const { req, res, args } = params;
-    const { limit, since } = args;
+    const { limit } = args;
     const query = this.getAddressQuery(params);
-    Storage.apiStreamingFind(CoinStorage, query, { limit, since, paging: '_id' }, req, res);
+    Storage.apiStreamingFind(CoinStorage, query, { limit }, req, res);
   }
 
   async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
-    const { req, res, args } = params;
-    const { limit, since } = args;
+    const { req, res } = params;
     const query = this.getAddressQuery(params);
-    Storage.apiStreamingFind(CoinStorage, query, { limit, since, paging: '_id' }, req, res);
+    Storage.apiStreamingFind(CoinStorage, query, {}, req, res);
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
@@ -116,6 +119,8 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (blockId) {
       if (blockId.length === 64) {
         query.hash = blockId;
+      } else if (chain === 'ETH' && blockId.length === 66) {
+        query.hash = blockId;
       } else {
         let height = parseInt(blockId, 10);
         if (Number.isNaN(height) || height.toString(10) !== blockId) {
@@ -148,6 +153,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getBlock(params: CSP.GetBlockParams) {
     let blocks = await this.getBlocks(params);
+    console.log(blocks[0]);
     return blocks[0];
   }
 
@@ -368,12 +374,21 @@ export class InternalStateProvider implements CSP.IChainStateService {
       }
     }
 
-    const transactionStream = TransactionStorage.collection
-      .find(query)
-      .sort({ blockTimeNormalized: 1 })
-      .addCursorFlag('noCursorTimeout', true);
-    const listTransactionsStream = new ListTransactionsStream(wallet);
-    transactionStream.pipe(listTransactionsStream).pipe(res);
+    if (chain === 'ETH') {
+      const ethTransactionStream = EthTransactionStorage.collection
+        .find(query)
+        .sort({ blockTimeNormalized: 1 })
+        .addCursorFlag('noCursorTimeout', true);
+      const ethListTransactionsStream = new EthListTransactionsStream(wallet);
+      ethTransactionStream.pipe(ethListTransactionsStream).pipe(res);
+    } else {
+      const transactionStream = BtcTransactionStorage.collection
+        .find(query)
+        .sort({ blockTimeNormalized: 1 })
+        .addCursorFlag('noCursorTimeout', true);
+      const listTransactionsStream = new ListTransactionsStream(wallet);
+      transactionStream.pipe(listTransactionsStream).pipe(res);
+    }
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {
@@ -517,11 +532,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getLocalTip({ chain, network }) {
-    if (BlockStorage.chainTips[chain] && BlockStorage.chainTips[chain][network]) {
-      return BlockStorage.chainTips[chain][network];
-    } else {
-      return BlockStorage.getLocalTip({ chain, network });
-    }
+    return BlockStorage.getLocalTip({ chain, network });
   }
 
   async getLocatorHashes(params) {

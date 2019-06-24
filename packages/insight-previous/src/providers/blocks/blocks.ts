@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { ApiProvider, ChainNetwork } from '../../providers/api/api';
+import { ApiProvider } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 
 export interface ApiBlock {
@@ -66,7 +66,7 @@ export class BlocksProvider {
       merkleroot: block.merkleRoot,
       version: block.version,
       difficulty,
-      bits: block.bits.toString(16),
+      bits: block.bits ? block.bits.toString(16) : '',
       hash: block.hash,
       time: new Date(block.time).getTime() / 1000,
       tx: {
@@ -83,20 +83,13 @@ export class BlocksProvider {
     };
   }
 
-  public getCurrentHeight(chainNetwork: ChainNetwork): Observable<ApiBlock> {
-    const heightUrl = `${this.api.getUrlPrefix()}/${chainNetwork.chain}/${
-      chainNetwork.network
-    }/block/tip`;
+  public getCurrentHeight(): Observable<ApiBlock> {
+    const heightUrl: string = this.api.getUrl() + '/block/tip';
     return this.httpClient.get<ApiBlock>(heightUrl);
   }
 
-  public getBlocks(
-    chainNetwork: ChainNetwork,
-    numBlocks: number = 10
-  ): Observable<ApiBlock[]> {
-    const url = `${this.api.getUrlPrefix()}/${chainNetwork.chain}/${
-      chainNetwork.network
-    }/block?limit=${numBlocks}`;
+  public getBlocks(numBlocks: number = 10): Observable<ApiBlock[]> {
+    const url: string = this.api.getUrl() + '/block?limit=' + numBlocks;
     return this.httpClient.get<ApiBlock[]>(url);
   }
 
@@ -105,22 +98,14 @@ export class BlocksProvider {
    */
   public pageBlocks(
     since: number,
-    numBlocks: number = 10,
-    chainNetwork: ChainNetwork
+    numBlocks: number = 10
   ): Observable<ApiBlock[]> {
-    const url = `${this.api.getUrlPrefix()}/${chainNetwork.chain}/${
-      chainNetwork.network
-    }/block?since=${since}&limit=${numBlocks}&paging=height&direction=-1`;
+    const url = `${this.api.getUrl()}/block?since=${since}&limit=${numBlocks}&paging=height&direction=-1`;
     return this.httpClient.get<ApiBlock[]>(url);
   }
 
-  public getBlock(
-    hash: string,
-    chainNetwork: ChainNetwork
-  ): Observable<ApiBlock> {
-    const url = `${this.api.getUrlPrefix()}/${chainNetwork.chain}/${
-      chainNetwork.network
-    }/block/${hash}`;
+  public getBlock(hash: string): Observable<ApiBlock> {
+    const url: string = this.api.getUrl() + '/block/' + hash;
     return this.httpClient.get<ApiBlock>(url);
   }
 }

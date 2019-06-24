@@ -281,7 +281,6 @@ export class EmailService {
 
     this.storage.fetchWallet(notification.walletId, (err, wallet) => {
       if (err) return cb(err);
-      if (!wallet) return cb('no wallet');
       data.walletId = wallet.id;
       data.walletName = wallet.name;
       data.walletM = wallet.m;
@@ -339,7 +338,7 @@ export class EmailService {
         let errStr;
         try { errStr = err.toString().substr(0, 100); } catch (e) { }
 
-        log.warn(
+        log.error(
           'An error occurred when trying to send email to ' + email.to,
           errStr || err
         );
@@ -481,7 +480,7 @@ export class EmailService {
                   let errStr;
                   try { errStr = err.toString().substr(0, 100); } catch (e) { }
 
-                  log.warn(
+                  log.error(
                     'An error ocurred generating email notification',
                     errStr || err
                   );

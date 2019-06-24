@@ -1,6 +1,5 @@
 import express from 'express';
 import _ from 'lodash';
-import * as log from 'npmlog';
 import { ClientError } from './errors/clienterror';
 import { WalletService } from './server';
 import { Stats } from './stats';
@@ -11,6 +10,7 @@ const RateLimit = require('express-rate-limit');
 const Common = require('./common');
 const Defaults = Common.Defaults;
 
+let log = require('npmlog');
 log.disableColor();
 log.debug = log.verbose;
 log.level = 'verbose';
@@ -27,7 +27,6 @@ export class ExpressApp {
    * @param opts.WalletService options for WalletService class
    * @param opts.basePath
    * @param opts.disableLogs
-   * @param opts.doNotCheckV8
    * @param {Callback} cb
    */
   start(opts, cb) {
@@ -245,7 +244,19 @@ export class ExpressApp {
     // DEPRECATED
     router.post('/v1/wallets/', createWalletLimiter, (req, res) => {
       logDeprecated(req);
-      return returnError(new ClientError('BIP45 wallet creation no longer supported'), res, req);
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      req.body.supportBIP44AndP2PKH = false;
+      server.createWallet(req.body, (err, walletId) => {
+        if (err) return returnError(err, res, req);
+        res.json({
+          walletId
+        });
+      });
     });
 
     router.post('/v2/wallets/', createWalletLimiter, (req, res) => {
@@ -280,7 +291,19 @@ export class ExpressApp {
     // DEPRECATED
     router.post('/v1/wallets/:id/copayers/', (req, res) => {
       logDeprecated(req);
-      return returnError(new ClientError('BIP45 wallet creation no longer supported'), res, req);
+      req.body.walletId = req.params['id'];
+      req.body.supportBIP44AndP2PKH = false;
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.joinWallet(req.body, (err, result) => {
+        if (err) return returnError(err, res, req);
+
+        res.json(result);
+      });
     });
 
     router.post('/v2/wallets/:id/copayers/', (req, res) => {
@@ -557,6 +580,7 @@ export class ExpressApp {
       });
     });
 
+    //  router.get('/v2/feelevels/', estimateFeeLimiter, (req, res) => {
     router.get('/v2/feelevels/', (req, res) => {
       const opts: { coin?: string; network?: string } = {};
       if (req.query.coin) opts.coin = req.query.coin;
@@ -841,8 +865,8 @@ export class ExpressApp {
       let server;
       const opts = {
         code: req.params['code'],
-        coin: req.query.coin || 'btc',
-        ts: (req.query.ts ? +req.query.ts : null),
+        provider: req.query.provider,
+        ts: +req.query.ts
       };
       try {
         server = getServer(req, res);

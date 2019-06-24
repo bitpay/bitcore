@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { ApiProvider, ChainNetwork } from '../api/api';
+import { ApiProvider } from '../api/api';
 
 @Injectable()
 export class CurrencyProvider {
@@ -19,12 +19,15 @@ export class CurrencyProvider {
     );
   }
 
-  public setCurrency(chainNetwork?: ChainNetwork, currency?: string): void {
+  public setCurrency(currency?: string): void {
     if (!currency) {
-      currency = chainNetwork.chain.toUpperCase();
+      currency =
+        localStorage.getItem('insight-currency') ||
+        this.apiProvider.networkSettings.value.selectedNetwork.chain.toUpperCase();
     }
+
     if (currency !== 'USD') {
-      const chain = chainNetwork.chain.toUpperCase();
+      const chain = this.apiProvider.networkSettings.value.selectedNetwork.chain.toUpperCase();
       this.currencySymbol = currency.startsWith('m') ? 'm' + chain : chain;
     } else {
       this.currencySymbol = 'USD';
@@ -48,7 +51,7 @@ export class CurrencyProvider {
       response = this.roundFloat(value * this.factor, 2);
     } else if (
       this.currencySymbol ===
-      'm' + this.apiProvider.networkSettings.selectedNetwork.chain
+      'm' + this.apiProvider.networkSettings.value.selectedNetwork.chain
     ) {
       this.factor = 1000;
       response = this.roundFloat(value * this.factor, 5);
@@ -77,7 +80,7 @@ export class CurrencyProvider {
       response = this.roundFloat(value * this.factor, 2);
     } else if (
       this.currencySymbol ===
-      'm' + this.apiProvider.networkSettings.selectedNetwork.chain
+      'm' + this.apiProvider.networkSettings.value.selectedNetwork.chain
     ) {
       this.factor = 1000;
       response = this.roundFloat(value * this.factor, 5);

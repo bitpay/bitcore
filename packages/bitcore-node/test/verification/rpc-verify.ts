@@ -1,8 +1,6 @@
 #!/usr/bin/env node
-import { BlockStorage, IBlock } from '../../src/models/block';
 import { AsyncRPC } from '../../src/rpc';
 import { expect } from 'chai';
-import { TransactionStorage, ITransaction } from '../../src/models/transaction';
 import { CoinStorage } from '../../src/models/coin';
 import { ChainNetwork } from '../../src/types/ChainNetwork';
 import { WalletAddressStorage } from '../../src/models/walletAddress';
@@ -10,6 +8,9 @@ import { Storage } from '../../src/services/storage';
 import config from '../../src/config';
 import logger from '../../src/logger';
 import { ChainStateProvider } from '../../src/providers/chain-state';
+import { BtcBlockStorage } from '../../src/models/block/btc/btcBlock';
+import { BtcTransactionStorage } from '../../src/models/transaction/btc/btcTransaction';
+import { IBtcBlock } from '../../src/types/Block';
 
 const SATOSHI = 100000000.0;
 
@@ -24,25 +25,25 @@ export async function blocks(
 ) {
   const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
   const tip = await ChainStateProvider.getLocalTip({ chain: info.chain, network: info.network });
-  const heights = new Array(tip!.height).fill(false);
-  const times = new Array(tip!.height).fill(0);
-  const normalizedTimes = new Array(tip!.height).fill(0);
+  const heights = new Array(tip.height).fill(false);
+  const times = new Array(tip.height).fill(0);
+  const normalizedTimes = new Array(tip.height).fill(0);
 
   // check each block
-  const cursor = BlockStorage.collection.find({
+  const cursor = BtcBlockStorage.collection.find({
     chain: info.chain,
     network: info.network
   });
 
   while (await cursor.hasNext()) {
-    const block: IBlock | null = await cursor.next();
+    const block: IBtcBlock | null = await cursor.next();
     if (!block) break;
     if (!block.processed) continue;
     logger.info(`verifying block ${block.hash}: ${block.height}`);
 
     // Check there's all unique heights
     expect(block.height, 'block height').to.be.gte(1);
-    expect(block.height, 'block height').to.be.lte(tip!.height);
+    expect(block.height, 'block height').to.be.lte(tip.height);
     expect(heights[block.height - 1], 'height already used').to.be.false;
     heights[block.height - 1] = true;
 
@@ -65,7 +66,7 @@ export async function blocks(
     expect(block.processed, 'block processed').to.equal(true);
     expect(block.time.getTime(), 'block time').to.equal(truth.time * 1000);
 
-    if (block.height < tip!.height) {
+    if (block.height < tip.height) {
       expect(block.nextBlockHash, 'block next hash').to.equal(truth.nextblockhash);
     }
 
@@ -78,7 +79,7 @@ export async function blocks(
       expect(block.reward, 'block reward').to.equal(Math.round(reward * SATOSHI));
 
       // Check block only has all `truth`'s transactions
-      const ours = await TransactionStorage.collection
+      const ours = await BtcTransactionStorage.collection
         .find({
           chain: info.chain,
           network: info.network,
@@ -122,15 +123,14 @@ export async function blocks(
       }
 
       // Check no other tx points to our block hash
-      const extra = await TransactionStorage.collection
-        .countDocuments({
-          chain: info.chain,
-          network: info.network,
-          blockHash: block.hash,
-          txid: {
-            $nin: truth.tx.map(tx => tx.txid)
-          }
-        });
+      const extra = await BtcTransactionStorage.collection.countDocuments({
+        chain: info.chain,
+        network: info.network,
+        blockHash: block.hash,
+        txid: {
+          $nin: truth.tx.map(tx => tx.txid)
+        }
+      });
       expect(extra, 'number of extra transactions').to.equal(0);
     }
   }
@@ -154,13 +154,13 @@ export async function transactions(
 ) {
   const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
-  const txcursor = TransactionStorage.collection.find({
+  const txcursor = BtcTransactionStorage.collection.find({
     chain: info.chain,
     network: info.network
   });
 
   while (await txcursor.hasNext()) {
-    const tx: ITransaction | null = await txcursor.next();
+    const tx = await txcursor.next();
     if (!tx) {
       break;
     }
