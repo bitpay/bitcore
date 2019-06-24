@@ -66,7 +66,7 @@ Credentials.create = function(coin, network) {
 
   x.coin = coin;
   x.network = network;
-  x.xPrivKey = new Bitcore.HDPrivateKey().toString();
+  x.xPrivKey = new Bitcore.HDPrivateKey(network).toString();
   x.compliantDerivation = true;
   x._expand();
   return x;
@@ -105,7 +105,7 @@ Credentials.createWithMnemonic = function(
   x.coin = coin;
   x.network = network;
   x.account = account;
-  x.xPrivKey = m.toHDPrivateKey(passphrase).toString();
+  x.xPrivKey = m.toHDPrivateKey(passphrase, network).toString();
   x.compliantDerivation = true;
   x._expand();
   x.mnemonic = m.phrase;
@@ -165,7 +165,7 @@ Credentials.fromMnemonic = function(
   var m = new Mnemonic(words);
   var x = new Credentials();
   x.coin = coin;
-  x.xPrivKey = m.toHDPrivateKey(passphrase).toString();
+  x.xPrivKey = m.toHDPrivateKey(passphrase, network).toString();
   x.mnemonic = words;
   x.mnemonicHasPassphrase = !!passphrase;
   x.account = account;
