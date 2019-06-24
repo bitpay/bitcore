@@ -117,9 +117,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       processed: true
     };
     if (blockId) {
-      if (blockId.length === 64) {
-        query.hash = blockId;
-      } else if (chain === 'ETH' && blockId.length === 66) {
+      if (blockId.length >= 64) {
         query.hash = blockId;
       } else {
         let height = parseInt(blockId, 10);
