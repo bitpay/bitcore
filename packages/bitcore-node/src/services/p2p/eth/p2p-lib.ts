@@ -78,8 +78,6 @@ export class BitcoreP2PEth extends EventEmitter {
 
   constructor(network: 'rinkeby' | 'mainnet') {
     super();
-    // connect to local ethereum node (debug)
-
     this.setupListeners(network);
   }
 
@@ -201,10 +199,6 @@ export class BitcoreP2PEth extends EventEmitter {
             }
             break;
 
-          case devp2p.ETH.MESSAGE_CODES.NODE_DATA:
-            console.log('MESSAGE:NODE_DATA');
-            break;
-
           case devp2p.ETH.MESSAGE_CODES.GET_RECEIPTS:
             console.log('MESSAGE:GET_RECEIPTS');
             if (requests.headers.length === 0 && requests.msgTypes[code] >= 8) {
@@ -212,10 +206,6 @@ export class BitcoreP2PEth extends EventEmitter {
             } else {
               eth.sendMessage(devp2p.ETH.MESSAGE_CODES.RECEIPTS, []);
             }
-            break;
-
-          case devp2p.ETH.MESSAGE_CODES.RECEIPTS:
-            console.log('MESSAGE:RECEIPTS');
             break;
 
           default:
