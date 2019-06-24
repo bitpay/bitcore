@@ -298,7 +298,6 @@ describe('ExpressApp', function() {
             });
           });
         });
-
         it('Server under maintenance check, should return 503 status code', function(done) {
           var server = {
             getStatus: sinon.stub().callsArgWith(1, null, {}),
@@ -312,9 +311,7 @@ describe('ExpressApp', function() {
               }
             }
           });
-
           start(TestExpressApp, function(err, data) {
-            
             var requestOptions = {
               //test link, for either a 503 or 200 code response
               url: testHost + ':' + testPort + config.basePath + "/v2/wallets",
@@ -323,7 +320,6 @@ describe('ExpressApp', function() {
                 'x-signature': 'signature'
               }
             };
-  
             request(requestOptions, function(err,res,body){
               if(config.maintenanceOpts.bwsIsLive === false) {
                 should.not.exist(err);
@@ -337,7 +333,6 @@ describe('ExpressApp', function() {
             });
           });
         });
-        
       });
     });
   });
