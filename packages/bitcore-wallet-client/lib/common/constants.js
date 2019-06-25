@@ -32,6 +32,17 @@ Constants.UNITS = {
       minDecimals: 2,
     }
   },
+  eth: {
+    toSatoshis: 1000000000000000000,
+    full: {
+      maxDecimals: 18,
+      minDecimals: 18,
+    },
+    short: {
+      maxDecimals: 6,
+      minDecimals: 2,
+    }
+  },
   bit: {
     toSatoshis: 100,
     full: {
