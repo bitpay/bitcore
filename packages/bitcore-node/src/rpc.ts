@@ -141,10 +141,6 @@ export class AsyncRPC {
     return (await this.call('getblock', [hash, 2])) as RPCBlock<RPCTransaction>;
   }
 
-  async generate(n: number): Promise<string[]> {
-    return (await this.call('generate', [n])) as string[];
-  }
-
   async getnewaddress(account: string): Promise<string> {
     return (await this.call('getnewaddress', [account])) as string;
   }
