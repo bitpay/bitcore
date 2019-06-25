@@ -1660,6 +1660,25 @@ export class WalletService {
   }
 
   /**
+   * Converts Bitcore Balance Response.
+   * @param {Object} { unconfirmed, confirmed, balance }
+   * @returns {Object} balance - Total amount & locked amount.
+   */
+  _convertBitcoreBalance(bitcoreBalance) {
+    const { unconfirmed, confirmed, balance } = bitcoreBalance;
+    const convertedBalance = {
+      totalAmount: balance,
+      totalConfirmedAmount: confirmed,
+      lockedAmount: unconfirmed,
+      lockedConfirmedAmount: unconfirmed,
+      availableAmount: balance - unconfirmed,
+      availableConfirmedAmount: confirmed - unconfirmed
+    };
+
+    return convertedBalance;
+  }
+
+  /**
    * Get wallet balance.
    * @param {Object} opts
    * @returns {Object} balance - Total amount & locked amount.
@@ -1694,67 +1713,13 @@ export class WalletService {
 
       this.syncWallet(wallet, err => {
         if (err) return cb(err);
-        // can remove this section to make balance universal non UTXO based
-        // if (wallet.coin === 'btc' || wallet.coin === 'bch') {
-        if (false) {
-          this._getUtxosForCurrentWallet(
-            {
-              coin: opts.coin,
-              addresses: opts.addresses
-            },
-            (err, utxos) => {
-              if (err) return cb(err);
-
-              const balance = { ...this._totalizeUtxos(utxos), byAddress: [] };
-
-              // Compute balance by address
-              const byAddress = {};
-              _.each(_.keyBy(_.sortBy(utxos, 'address'), 'address'), (
-                value,
-                key
-              ) => {
-                byAddress[key] = {
-                  address: key,
-                  path: value.path,
-                  amount: 0
-                };
-              });
-
-              _.each(utxos, (utxo) => {
-                byAddress[utxo.address].amount += utxo.satoshis;
-              });
-
-              balance.byAddress = _.values(byAddress);
-
-              return cb(null, balance);
-            }
-          );
-        } else {
-          bc.getBalance(wallet, (err, balance) => {
+        bc.getBalance(wallet, (err, balance) => {
             if (err) {
               return cb(err);
             }
-            const { unconfirmed, confirmed } = balance;
-            if (wallet.coin === 'eth') {
-              Object.assign(balance, {
-                totalAmount: balance.balance / 1e10,
-                totalConfirmedAmount: confirmed / 1e10,
-                lockedAmount: unconfirmed / 1e10,
-                availableAmount: (balance.balance - unconfirmed) / 1e10,
-                availableConfirmedAmount: (balance.balance - unconfirmed) / 1e10
-              })
-            } else {
-              Object.assign(balance, {
-                totalAmount: balance.balance,
-                totalConfirmedAmount: confirmed,
-                lockedAmount: unconfirmed,
-                availableAmount: (balance.balance - unconfirmed),
-                availableConfirmedAmount: (balance.balance - unconfirmed)
-              })
-            }
-            return cb(null, balance)
-          })
-        }
+            const convertedBalance = this._convertBitcoreBalance(balance);
+            return cb(null, convertedBalance);
+          });
       });
     });
   }
