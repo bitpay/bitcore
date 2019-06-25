@@ -546,7 +546,7 @@ Address.prototype.toObject = Address.prototype.toJSON = function toObject() {
  */
 Address.prototype.toString = function() {
   if (this.isPayToWitnessPublicKeyHash() || this.isPayToWitnessScriptHash()) {
-    var prefix = this.network['bech32prefix'];
+    var prefix = this.network.bech32prefix;
     var version = 0; // Only supporting segwit v0 for now
     return Bech32.encode(prefix, version, this.hashBuffer);
   }
