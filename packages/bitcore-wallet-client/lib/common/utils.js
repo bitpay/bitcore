@@ -252,83 +252,92 @@ Utils.formatAmount = function(satoshis, unit, opts) {
   );
 };
 
-Utils.buildTx = function(txp) {
+Utils.buildTx = async function(txp) {
   var coin = txp.coin || 'btc';
 
-  var bitcore = Bitcore_[coin];
+  if (coin !== 'eth') {
+    var bitcore = Bitcore_[coin];
 
-  var t = new bitcore.Transaction();
+    var t = new bitcore.Transaction();
 
-  $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
+    $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
 
-  switch (txp.addressType) {
-    case Constants.SCRIPT_TYPES.P2SH:
-      _.each(txp.inputs, function(i) {
-        t.from(i, i.publicKeys, txp.requiredSignatures);
-      });
-      break;
-    case Constants.SCRIPT_TYPES.P2PKH:
-      t.from(txp.inputs);
-      break;
-  }
+    switch (txp.addressType) {
+      case Constants.SCRIPT_TYPES.P2SH:
+        _.each(txp.inputs, function(i) {
+          t.from(i, i.publicKeys, txp.requiredSignatures);
+        });
+        break;
+      case Constants.SCRIPT_TYPES.P2PKH:
+        t.from(txp.inputs);
+        break;
+    }
 
-  if (txp.toAddress && txp.amount && !txp.outputs) {
-    t.to(txp.toAddress, txp.amount);
-  } else if (txp.outputs) {
-    _.each(txp.outputs, function(o) {
-      $.checkState(
-        o.script || o.toAddress,
-        'Output should have either toAddress or script specified'
-      );
-      if (o.script) {
-        t.addOutput(
-          new bitcore.Transaction.Output({
-            script: o.script,
-            satoshis: o.amount
-          })
+    if (txp.toAddress && txp.amount && !txp.outputs) {
+      t.to(txp.toAddress, txp.amount);
+    } else if (txp.outputs) {
+      _.each(txp.outputs, function(o) {
+        $.checkState(
+          o.script || o.toAddress,
+          'Output should have either toAddress or script specified'
         );
-      } else {
-        t.to(o.toAddress, o.amount);
-      }
-    });
-  }
-
-  t.fee(txp.fee);
-  t.change(txp.changeAddress.address);
-
-  // Shuffle outputs for improved privacy
-  if (t.outputs.length > 1) {
-    var outputOrder = _.reject(txp.outputOrder, function(order) {
-      return order >= t.outputs.length;
-    });
-    $.checkState(t.outputs.length == outputOrder.length);
-    t.sortOutputs(function(outputs) {
-      return _.map(outputOrder, function(i) {
-        return outputs[i];
+        if (o.script) {
+          t.addOutput(
+            new bitcore.Transaction.Output({
+              script: o.script,
+              satoshis: o.amount
+            })
+          );
+        } else {
+          t.to(o.toAddress, o.amount);
+        }
       });
-    });
+    }
+
+    t.fee(txp.fee);
+    t.change(txp.changeAddress.address);
+
+    // Shuffle outputs for improved privacy
+    if (t.outputs.length > 1) {
+      var outputOrder = _.reject(txp.outputOrder, function(order) {
+        return order >= t.outputs.length;
+      });
+      $.checkState(t.outputs.length == outputOrder.length);
+      t.sortOutputs(function(outputs) {
+        return _.map(outputOrder, function(i) {
+          return outputs[i];
+        });
+      });
+    }
+
+    // Validate inputs vs outputs independently of Bitcore
+    var totalInputs = _.reduce(
+      txp.inputs,
+      function(memo, i) {
+        return +i.satoshis + memo;
+      },
+      0
+    );
+    var totalOutputs = _.reduce(
+      t.outputs,
+      function(memo, o) {
+        return +o.satoshis + memo;
+      },
+      0
+    );
+
+    $.checkState(totalInputs - totalOutputs >= 0);
+    $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE);
+
+    return t;
+  } else {
+    const recipients = [{
+      address: txp.toAddress,
+      amount: txp.amount
+    }]
+    const tp = await CWC.transaction.create({chain: coin.toUpperCase(), recipients, from: '0xe58314792db6d2dfca0d389e61516def8cdf45f3', nonce: 0, fee: txp.feeRate});
+    return tp;
   }
-
-  // Validate inputs vs outputs independently of Bitcore
-  var totalInputs = _.reduce(
-    txp.inputs,
-    function(memo, i) {
-      return +i.satoshis + memo;
-    },
-    0
-  );
-  var totalOutputs = _.reduce(
-    t.outputs,
-    function(memo, o) {
-      return +o.satoshis + memo;
-    },
-    0
-  );
-
-  $.checkState(totalInputs - totalOutputs >= 0);
-  $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE);
-
-  return t;
 };
 
 module.exports = Utils;

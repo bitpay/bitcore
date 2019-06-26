@@ -2670,31 +2670,35 @@ export class WalletService {
             async.series(
               [
                 (next) => {
-                  this._validateAndSanitizeTxOpts(wallet, opts, next);
+                  // this._validateAndSanitizeTxOpts(wallet, opts, next);
+                  next();
                 },
                 (next) => {
-                  this._canCreateTx((err, canCreate) => {
-                    if (err) return next(err);
-                    if (!canCreate) return next(Errors.TX_CANNOT_CREATE);
-                    next();
-                  });
+                  // this._canCreateTx((err, canCreate) => {
+                  //   if (err) return next(err);
+                  //   if (!canCreate) return next(Errors.TX_CANNOT_CREATE);
+                  //   next();
+                  // });
+                  next();
                 },
                 (next) => {
                   if (opts.sendMax) return next();
-                  getChangeAddress(wallet, (err, address, isNew) => {
-                    if (err) return next(err);
-                    changeAddress = address;
+                  // getChangeAddress(wallet, (err, address, isNew) => {
+                  //   if (err) return next(err);
+                  //   changeAddress = address;
 
-                    return next();
-                  });
+                  //   return next();
+                  // });
+                  next();
                 },
                 (next) => {
-                  if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
-                    return next();
-                  this._getFeePerKb(wallet, opts, (err, fee) => {
-                    feePerKb = fee;
-                    next();
-                  });
+                  // if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
+                  //   return next();
+                  // this._getFeePerKb(wallet, opts, (err, fee) => {
+                  //   feePerKb = fee;
+                  //   next();
+                  // });
+                  next();
                 },
                 (next) => {
                   const txOpts = {
@@ -2705,7 +2709,7 @@ export class WalletService {
                     network: wallet.network,
                     outputs: opts.outputs,
                     message: opts.message,
-                    changeAddress,
+                    changeAddress: changeAddress || '',
                     feeLevel: opts.feeLevel,
                     feePerKb,
                     payProUrl: opts.payProUrl,
@@ -2727,15 +2731,16 @@ export class WalletService {
                   next();
                 },
                 (next) => {
-                  this._selectTxInputs(txp, opts.utxosToExclude, next);
+                  // this._selectTxInputs(txp, opts.utxosToExclude, next);
+                  next();
                 },
                 (next) => {
-                  if (!changeAddress || wallet.singleAddress || opts.dryRun)
-                    return next();
+                  // if (!changeAddress || wallet.singleAddress || opts.dryRun)
+                  //   return next();
                   this._store(wallet, txp.changeAddress, next, true);
                 },
                 (next) => {
-                  if (opts.dryRun) return next();
+                  // if (opts.dryRun) return next();
 
                   if (txp.coin == 'bch') {
                     if (opts.noCashAddr && txp.changeAddress) {
@@ -2765,7 +2770,6 @@ export class WalletService {
           });
         });
       },
-      10 * 1000
     );
   }
 
@@ -2780,7 +2784,6 @@ export class WalletService {
     const utxoKey = (utxo) => {
       return utxo.txid + '|' + utxo.vout;
     };
-
     if (!checkRequired(opts, ['txProposalId', 'proposalSignature'], cb)) return;
 
     this._runLocked(cb, (cb) => {
@@ -2799,10 +2802,12 @@ export class WalletService {
 
           let raw;
           try {
-            raw = txp.getRawTx();
+            // raw = txp.getRawTx();
+            raw = txp;
           } catch (ex) {
             return cb(ex);
           }
+
           const signingKey = this._getSigningKey(
             raw,
             opts.proposalSignature,
@@ -2820,7 +2825,6 @@ export class WalletService {
           }
 
           // Verify UTXOs are still available
-
           log.debug('Rechecking UTXOs availability for publishTx');
 
           this._getUtxosForCurrentWallet(

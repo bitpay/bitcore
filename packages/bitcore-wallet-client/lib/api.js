@@ -1762,7 +1762,7 @@ API.prototype.createTxProposal = function(opts, cb) {
  * @param {Object} opts.txp - The transaction proposal object returned by the API#createTxProposal method
  * @returns {Callback} cb - Return error or null
  */
-API.prototype.publishTxProposal = function(opts, cb) {
+API.prototype.publishTxProposal = async function(opts, cb) {
   $.checkState(this.credentials && this.credentials.isComplete());
   $.checkArgument(opts).checkArgument(opts.txp);
 
@@ -1770,8 +1770,9 @@ API.prototype.publishTxProposal = function(opts, cb) {
 
   var self = this;
 
-  var t = Utils.buildTx(opts.txp);
-  var hash = t.uncheckedSerialize();
+  var t = await Utils.buildTx(opts.txp);
+  let hash = t;
+  // var hash = t.uncheckedSerialize();
   var args = {
     proposalSignature: Utils.signMessage(hash, self.credentials.requestPrivKey)
   };
