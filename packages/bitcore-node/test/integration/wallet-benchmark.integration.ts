@@ -141,7 +141,7 @@ describe('Wallet Benchmark', function() {
           { [address1]: 0.1, [address2]: 0.1 }
         ]);
         const fundedTx = await rpc.call('fundrawtransaction', [tx]);
-        const signedTx = await rpc.call('signrawtransactionwithwallet', [fundedTx.hex]);
+        const signedTx = await rpc.signrawtx(fundedTx.hex);
         const broadcastedTx = await rpc.call('sendrawtransaction', [signedTx.hex]);
         while (!seenCoins.has(broadcastedTx)) {
           console.log('...WAITING...'); // TODO
