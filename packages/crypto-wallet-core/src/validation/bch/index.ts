@@ -13,13 +13,11 @@ const BitcoreCash = require('bitcore-lib-cash');
         if (URICash.isValid(address)) {
           uri = new URICash(address);
           uriAddress = uri.address.toString();
-          if (AddressCash.isValid(uriAddress, network)) return true;
+          return AddressCash.isValid(uriAddress, network);
         }
       }
 
        // Regular Address: try Bitcoin Cash
-      if (AddressCash.isValid(address, network)) return true;
-
-       return false;
+      return AddressCash.isValid(address, network);
     }
 }

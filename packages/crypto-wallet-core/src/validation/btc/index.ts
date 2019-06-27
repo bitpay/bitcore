@@ -13,13 +13,11 @@ const Bitcore = require('bitcore-lib');
         if (URI.isValid(address)) {
           uri = new URI(address);
           uriAddress = uri.address.toString();
-          if (Address.isValid(uriAddress, network)) return true;
+          return Address.isValid(uriAddress, network);
         }
       }
 
        // Regular Address: try Bitcoin
-      if (Address.isValid(address, network)) return true;
-
-       return false;
+      return Address.isValid(address, network);
     }
 }
