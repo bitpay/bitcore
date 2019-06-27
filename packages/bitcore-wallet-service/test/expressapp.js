@@ -321,7 +321,7 @@ describe('ExpressApp', function() {
               }
             };
             request(requestOptions, function(err,res,body){
-              if(config.maintenanceOpts.bwsIsLive === false) {
+              if(config.maintenanceOpts.maintenanceMode === true) {
                 should.not.exist(err);
                 res.statusCode.should.equal(503);
                 body.should.equal(`{"code":503,"message":"Bitcore Wallet Service is currently under maintenance. Please periodically check https://status.bitpay.com/ to stay up to date with our current status."}`);

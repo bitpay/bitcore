@@ -33,20 +33,25 @@ module.exports = {
   blockchainExplorerOpts: {
     btc: {
       livenet: {
-        url: 'https://api.bitcore.io',
+        // url: 'https://api.bitcore.io',
+        url: 'http://localhost:3000',
       },
       testnet: {
-        url: 'https://api.bitcore.io',
-        regtestEnabled: false
+        // url: 'https://api.bitcore.io',
+        url: 'http://localhost:3000',
+        regtestEnabled: true,
       },
     },
     bch: {
       livenet: {
-        url: 'https://api.bitcore.io',
+        // url: 'https://api.bitcore.io',
+        url: 'http://localhost:3000',
       },
       testnet: {
         // url: 'http://localhost:3000',
-        url: 'https://api.bitcore.io',
+        // url: 'https://api.bitcore.io',
+        url: 'http://localhost:3000',
+        regtestEnabled: true,
       },
     },
   },
@@ -63,7 +68,7 @@ module.exports = {
     fetchInterval: 60, // in minutes
   },
   maintenanceOpts: {
-    bwsIsLive: true,
+    maintenanceMode: false,
   },
   // To use email notifications uncomment this:
   // emailOpts: {
