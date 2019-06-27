@@ -33,25 +33,20 @@ module.exports = {
   blockchainExplorerOpts: {
     btc: {
       livenet: {
-        // url: 'https://api.bitcore.io',
-        url: 'http://localhost:3000',
+        url: 'https://api.bitcore.io',
       },
       testnet: {
-        // url: 'https://api.bitcore.io',
-        url: 'http://localhost:3000',
-        regtestEnabled: true,
+        url: 'https://api.bitcore.io',
+        regtestEnabled: false,
       },
     },
     bch: {
       livenet: {
-        // url: 'https://api.bitcore.io',
-        url: 'http://localhost:3000',
+        url: 'https://api.bitcore.io',
       },
       testnet: {
         // url: 'http://localhost:3000',
-        // url: 'https://api.bitcore.io',
-        url: 'http://localhost:3000',
-        regtestEnabled: true,
+         url: 'https://api.bitcore.io',
       },
     },
   },
