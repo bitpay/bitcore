@@ -207,7 +207,7 @@ describe('Wallet Benchmark', function() {
           { [address1]: 0.1, [address2]: 0.1 }
         ]);
         const fundedTx = await rpc.call('fundrawtransaction', [tx]);
-        const signedTx = await rpc.call('signrawtransactionwithwallet', [fundedTx.hex]);
+        const signedTx = await rpc.signrawtx(fundedTx.hex);
 
         await rpc.call('generatetoaddress', [100, anAddress]);
         p2pWorker.sync();
