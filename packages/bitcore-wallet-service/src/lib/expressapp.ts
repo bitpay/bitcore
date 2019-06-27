@@ -49,17 +49,7 @@ export class ExpressApp {
       res.setHeader('x-service-version', WalletService.getServiceVersion());
       next();
     });
-    this.app.use((req, res, next) => {
-      if((config.maintenanceOpts.maintenanceMode === true)) {
-        // send a 503 error, with a message to the bitpay status page
-        let errorCode = 503;
-        let errorMessage = 'Bitcore Wallet Service is currently under maintenance. Please periodically check https://status.bitpay.com/ to stay up to date with our current status.';
-        let err = {code: errorCode, message: errorMessage };
-        res.status(errorCode).json(err).end();
-      } else {
-        next();
-      }
-    });
+    
     const allowCORS = (req, res, next) => {
       if ('OPTIONS' == req.method) {
         res.sendStatus(200);
@@ -86,6 +76,18 @@ export class ExpressApp {
         limit: POST_LIMIT
       })
     );
+
+    this.app.use((req, res, next) => {
+      if((config.maintenanceOpts.maintenanceMode === true)) {
+        // send a 503 error, with a message to the bitpay status page
+        let errorCode = 503;
+        let errorMessage = 'BWS down for maintenance';
+        let err = {code: errorCode, message: errorMessage};
+        res.status(503).send({code: errorCode, message: errorMessage});
+      } else {
+        next();
+      }
+    });
 
     if (opts.disableLogs) {
       log.level = 'silent';

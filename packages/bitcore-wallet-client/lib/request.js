@@ -111,6 +111,7 @@ Request.prototype.doRequest = function(method, url, args, useSession, cb) {
       }));
 
     if (res.status !== 200) {
+      if (res.status === 503) return cb(new Errors.MAINTENANCE_ERROR);
       if (res.status === 404)
         return cb(new Errors.NOT_FOUND);
 
