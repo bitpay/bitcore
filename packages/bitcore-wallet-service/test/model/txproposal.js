@@ -38,7 +38,7 @@ describe('TxProposal', function() {
         signatures: 'ss',
         xpub: 'xx',
       }];
-
+      
       var txp = TxProposal.fromObj(txpObj);
       should.exist(txp);
       txp.amount.should.equal(aTXP().amount);
@@ -82,32 +82,8 @@ describe('TxProposal', function() {
 
   describe('#getEstimatedSize', function() {
     it('should return estimated size in bytes', function() {
-      const largeInputTXP = aTXP();
-      largeInputTXP.inputs = [];
-      console.log(largeInputTXP.inputs);
-      let i = 0;
-      while (i < 30) {
-        largeInputTXP.inputs.push({
-        "txid": "6ee699846d2d6605f96d20c7cc8230382e5da43342adb11b499bbe73709f06ab",
-        "vout": 8,
-        "satoshis": 1000000,
-        "scriptPubKey": "a914a8a9648754fbda1b6c208ac9d4e252075447f36887",
-        "address": "3H4pNP6J4PW4NnvdrTg37VvZ7h2QWuAwtA",
-        "path": "m/2147483647/0/1",
-        "publicKeys": ["0319008ffe1b3e208f5ebed8f46495c056763f87b07930a7027a92ee477fb0cb0f", "03b5f035af8be40d0db5abb306b7754949ab39032cf99ad177691753b37d101301"]
-      });
-      i++;
-    }
-    console.log(largeInputTXP.inputs.length);
-      var x = TxProposal.fromObj(largeInputTXP);
-      // x.getEstimatedSize().should.equal(396);
-      const inputCount = largeInputTXP.inputs.length;
-      const outputCount = largeInputTXP.outputs.length;
-      console.log(inputCount);
-      console.log(outputCount);
-      const minSize = ( inputCount * 148 ) + ( outputCount * 34 + 10 - inputCount );
-      const maxSize = ( inputCount * 148 ) + ( outputCount * 34 + 10 + inputCount );
-      x.getEstimatedSize().should.be.within(minSize, maxSize);
+      var x = TxProposal.fromObj(aTXP());
+      x.getEstimatedSize().should.equal(396);
     });
   });
 
