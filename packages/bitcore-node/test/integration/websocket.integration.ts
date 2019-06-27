@@ -14,6 +14,7 @@ const network = 'regtest';
 const chainConfig = config.chains[chain][network];
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+const anAddress = 'mkzAfSHtmTh5Xsc352jf6TBPj55Lne5g21';
 
 function getSocket() {
   const socket = io.connect(
@@ -50,15 +51,15 @@ describe('Websockets', function() {
   it('should get a new block when one is generated', async () => {
     await p2pWorker.start();
 
-    await rpc.generate(5);
+    await rpc.call('generatetoaddress', [5, anAddress]);
     await p2pWorker.syncDone();
     const beforeGenTip = await BlockStorage.getLocalTip({ chain, network });
     expect(beforeGenTip).to.not.eq(null);
 
     if (beforeGenTip && beforeGenTip.height && beforeGenTip.height < 100) {
-      await rpc.generate(100);
+      await rpc.call('generatetoaddress', [100, anAddress]);
     }
-    await rpc.generate(1);
+    await rpc.call('generatetoaddress', [1, anAddress]);
     await p2pWorker.syncDone();
     await wait(1000);
     const afterGenTip = await BlockStorage.getLocalTip({ chain, network });
@@ -93,7 +94,7 @@ describe('Websockets', function() {
     });
 
     await p2pWorker.start();
-    await rpc.generate(1);
+    await rpc.call('generatetoaddress', [1, anAddress]);
     await sawEvents;
     await p2pWorker.stop();
     await socket.disconnect();
