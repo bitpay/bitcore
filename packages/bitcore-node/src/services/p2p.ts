@@ -65,7 +65,6 @@ export class P2pWorker {
   private bitcoreP2p: any;
   private chainConfig: any;
   private events: EventEmitter;
-  private isSyncing: boolean;
   private messages: any;
   private pool: any;
   private connectInterval?: NodeJS.Timer;
@@ -76,6 +75,7 @@ export class P2pWorker {
   private blockModel: BlockModel;
   private lastHeartBeat: string;
   private queuedRegistrations: Array<NodeJS.Timer>;
+  public isSyncing: boolean;
   constructor({ chain, network, chainConfig, blockModel = BlockStorage }) {
     this.blockModel = blockModel;
     this.chain = chain;
@@ -154,7 +154,7 @@ export class P2pWorker {
         network: this.network,
         hash
       });
-      if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash) && !this.isSyncing) {
+      if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash)) {
         this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, hash);
         this.processTransaction(message.transaction);
         this.events.emit('transaction', message.transaction);
