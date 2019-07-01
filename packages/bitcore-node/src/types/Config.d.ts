@@ -25,7 +25,6 @@ export interface ConfigType {
     };
     event: {
       disabled?: boolean;
-      onlyWalletEvents: boolean;
     };
     p2p: {
       disabled?: boolean;

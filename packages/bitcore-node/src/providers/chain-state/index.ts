@@ -109,7 +109,7 @@ class ChainStateProxy implements CSP.ChainStateProvider {
   }
 
   async getLocalTip(params) {
-    return this.get(params).getLocalTip(params);
+    return await this.get(params).getLocalTip(params);
   }
 
   async getLocatorHashes(params) {

@@ -1,43 +1,21 @@
-import { CoinStorage } from './coin';
-import { WalletAddressStorage } from './walletAddress';
-import { partition } from '../utils/partition';
+import { IBtcTransaction } from '../../../types/Transaction';
+import { CoinStorage } from '../.././coin';
+import { WalletAddressStorage } from '../.././walletAddress';
+import { partition } from '../../../utils/partition';
 import { ObjectID } from 'bson';
-import { TransformOptions } from '../types/TransformOptions';
-import { LoggifyClass } from '../decorators/Loggify';
-import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { BaseModel, MongoBound } from './base';
-import logger from '../logger';
-import { StreamingFindOptions, Storage, StorageService } from '../services/storage';
+import { TransformOptions } from '../../../types/TransformOptions';
+import { LoggifyClass } from '../../../decorators/Loggify';
+import { Bitcoin } from '../../../types/namespaces/Bitcoin';
+import { MongoBound } from '../.././base';
+import { StreamingFindOptions, Storage, StorageService } from '../../../services/storage';
+import { BtcTransactionJSON } from '../../../types/Transaction';
+import { SpentHeightIndicators } from '../../../types/Coin';
+import { Config } from '../../../services/config';
+import { EventStorage } from '../.././events';
 import * as lodash from 'lodash';
-import { TransactionJSON } from '../types/Transaction';
-import { SpentHeightIndicators } from '../types/Coin';
-import { Config } from '../services/config';
-import { EventStorage } from './events';
-
-const { onlyWalletEvents } = Config.get().services.event;
-function shouldFire(obj: { wallets?: Array<ObjectID> }) {
-  return !onlyWalletEvents || (onlyWalletEvents && obj.wallets && obj.wallets.length > 0);
-}
-
-const Chain = require('../chain');
-
-export type ITransaction = {
-  txid: string;
-  chain: string;
-  network: string;
-  blockHeight?: number;
-  blockHash?: string;
-  blockTime?: Date;
-  blockTimeNormalized?: Date;
-  coinbase: boolean;
-  fee: number;
-  size: number;
-  locktime: number;
-  inputCount: number;
-  outputCount: number;
-  value: number;
-  wallets: ObjectID[];
-};
+import logger from '../../../logger';
+import { TransactionModel } from '../base/base';
+import { BitcoreLibs } from '../../../chain';
 
 export type MintOp = {
   updateOne: {
@@ -84,9 +62,9 @@ export type SpendOp = {
 };
 
 @LoggifyClass
-export class TransactionModel extends BaseModel<ITransaction> {
-  constructor(storage?: StorageService) {
-    super('transactions', storage);
+export class BtcTransactionModel extends TransactionModel<IBtcTransaction> {
+  constructor(storage: StorageService = Storage) {
+    super(storage);
   }
 
   allowedPaging = [
@@ -126,31 +104,14 @@ export class TransactionModel extends BaseModel<ITransaction> {
   }) {
     const mintOps = await this.getMintOps(params);
     const spendOps = this.getSpendOps({ ...params, mintOps });
-    const txOps = await this.addTransactions({ ...params, mintOps });
-    await this.pruneMempool({
-      chain: params.chain,
-      network: params.network,
-      initialSyncComplete: params.initialSyncComplete,
-      spendOps
-    });
+    await this.pruneMempool({ ...params, mintOps, spendOps });
 
     logger.debug('Minting Coins', mintOps.length);
     if (mintOps.length) {
       await Promise.all(
-        partition(mintOps, mintOps.length / Config.get().maxPoolSize).map(async mintBatch => {
-          await CoinStorage.collection.bulkWrite(mintBatch, { ordered: false });
-          if (params.height < SpentHeightIndicators.minimum) {
-            EventStorage.signalAddressCoins(
-              mintBatch
-                .map(coinOp => {
-                  const address = coinOp.updateOne.update.$set.address;
-                  const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
-                  return { address, coin };
-                })
-                .filter(({ coin }) => shouldFire(coin))
-            );
-          }
-        })
+        partition(mintOps, mintOps.length / Config.get().maxPoolSize).map(mintBatch =>
+          CoinStorage.collection.bulkWrite(mintBatch, { ordered: false })
+        )
       );
     }
 
@@ -163,18 +124,31 @@ export class TransactionModel extends BaseModel<ITransaction> {
       );
     }
 
-    if (txOps.length) {
+    if (mintOps) {
+      const txOps = await this.addTransactions({ ...params, mintOps });
       logger.debug('Writing Transactions', txOps.length);
       await Promise.all(
-        partition(txOps, txOps.length / Config.get().maxPoolSize).map(async txBatch => {
-          await this.collection.bulkWrite(txBatch, { ordered: false });
-          if (params.height < SpentHeightIndicators.minimum) {
-            EventStorage.signalTxs(
-              txBatch.map(op => ({ ...op.updateOne.update.$set, ...op.updateOne.filter })).filter(shouldFire)
-            );
-          }
-        })
+        partition(txOps, txOps.length / Config.get().maxPoolSize).map(txBatch =>
+          this.collection.bulkWrite(txBatch, { ordered: false })
+        )
       );
+
+      // Create events for mempool txs
+      if (params.height < SpentHeightIndicators.minimum) {
+        for (let op of txOps) {
+          const filter = op.updateOne.filter;
+          const tx = { ...op.updateOne.update.$set, ...filter };
+          await EventStorage.signalTx(tx);
+          await mintOps
+            .filter(coinOp => coinOp.updateOne.filter.mintTxid === filter.txid)
+            .map(coinOp => {
+              const address = coinOp.updateOne.update.$set.address;
+              const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter };
+              return () => EventStorage.signalAddressCoin({ address, coin }) as any;
+            })
+            .reduce((promises, promise) => promises.then(promise), Promise.resolve());
+        }
+      }
     }
   }
 
@@ -204,7 +178,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
       mempoolTime
     } = params;
     if (parentChain && forkHeight && height < forkHeight) {
-      const parentTxs = await TransactionStorage.collection
+      const parentTxs = await BtcTransactionStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
         .toArray();
       return parentTxs.map(parentTx => {
@@ -254,7 +228,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         if (!agg[mintTxid]) {
           agg[mintTxid] = {
             total: value,
-            wallets: wallets ? [...wallets] : []
+            wallets: wallets || []
           };
         } else {
           agg[mintTxid].total += value;
@@ -267,7 +241,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
         if (!agg[coin.spentTxid]) {
           agg[coin.spentTxid] = {
             total: coin.value,
-            wallets: coin.wallets ? [...coin.wallets] : []
+            wallets: coin.wallets || []
           };
         } else {
           agg[coin.spentTxid].total += coin.value;
@@ -366,8 +340,8 @@ export class TransactionModel extends BaseModel<ITransaction> {
         if (output.script) {
           address = output.script.toAddress(network).toString(true);
           if (address === 'false' && output.script.classify() === 'Pay to public key') {
-            let hash = Chain[chain].lib.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
-            address = Chain[chain].lib.Address(hash, network).toString(true);
+            let hash = BitcoreLibs[chain].lib.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
+            address = BitcoreLibs[chain].lib.Address(hash, network).toString(true);
           }
         }
         mintOps.push({
@@ -484,16 +458,22 @@ export class TransactionModel extends BaseModel<ITransaction> {
   }
 
   async pruneMempool(params: {
+    txs: Array<Bitcoin.Transaction>;
+    height: number;
+    parentChain?: string;
+    forkHeight?: number;
     chain: string;
     network: string;
+    mintOps: Array<MintOp>;
     spendOps: Array<SpendOp>;
     initialSyncComplete: boolean;
+    [rest: string]: any;
   }) {
     const { chain, network, spendOps, initialSyncComplete } = params;
     if (!initialSyncComplete || !spendOps.length) {
       return;
     }
-    let prunedTxs = new Set();
+    let prunedTxs = {};
     for (const spendOp of spendOps) {
       let coin = await CoinStorage.collection.findOne(
         {
@@ -506,34 +486,37 @@ export class TransactionModel extends BaseModel<ITransaction> {
         },
         { projection: { spentTxid: 1 } }
       );
-      if (coin && !prunedTxs.has(coin.spentTxid)) {
-        prunedTxs.add(coin.spentTxid);
-        await Promise.all([
-          this.collection.update(
-            { txid: coin.spentTxid },
-            { $set: { blockHeight: SpentHeightIndicators.conflicting } },
-            { multi: true }
-          ),
-          CoinStorage.collection.update(
-            { mintTxid: coin.spentTxid },
-            { $set: { mintHeight: SpentHeightIndicators.conflicting } },
-            { multi: true }
-          )
-        ]);
+      if (coin) {
+        prunedTxs[coin.spentTxid] = true;
       }
+    }
+    if (Object.keys(prunedTxs).length) {
+      prunedTxs = Object.keys(prunedTxs);
+      await Promise.all([
+        this.collection.update(
+          { txid: { $in: prunedTxs } },
+          { $set: { blockHeight: SpentHeightIndicators.conflicting } },
+          { w: 0, j: false, multi: true }
+        ),
+        CoinStorage.collection.update(
+          { mintTxid: { $in: prunedTxs } },
+          { $set: { mintHeight: SpentHeightIndicators.conflicting } },
+          { w: 0, j: false, multi: true }
+        )
+      ]);
     }
     return;
   }
 
-  getTransactions(params: { query: any; options: StreamingFindOptions<ITransaction> }) {
+  getTransactions(params: { query: any; options: StreamingFindOptions<IBtcTransaction> }) {
     let originalQuery = params.query;
     const { query, options } = Storage.getFindOptions(this, params.options);
     const finalQuery = Object.assign({}, originalQuery, query);
     return this.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true);
   }
 
-  _apiTransform(tx: Partial<MongoBound<ITransaction>>, options?: TransformOptions): TransactionJSON | string {
-    const transaction: TransactionJSON = {
+  _apiTransform(tx: Partial<MongoBound<IBtcTransaction>>, options?: TransformOptions): BtcTransactionJSON | string {
+    const transaction: BtcTransactionJSON = {
       _id: tx._id ? tx._id.toString() : '',
       txid: tx.txid || '',
       network: tx.network || '',
@@ -556,4 +539,4 @@ export class TransactionModel extends BaseModel<ITransaction> {
     return JSON.stringify(transaction);
   }
 }
-export let TransactionStorage = new TransactionModel();
+export let BtcTransactionStorage = new BtcTransactionModel();

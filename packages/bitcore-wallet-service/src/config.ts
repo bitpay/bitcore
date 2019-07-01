@@ -50,6 +50,11 @@ module.exports = {
       },
 
     },
+    eth: {
+      livenet: {
+        url: 'http://localhost:3000',
+      },
+    },
   },
   pushNotificationsOpts: {
     templatePath: 'templates',

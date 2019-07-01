@@ -25,7 +25,8 @@ const EmailValidator = require('email-validator');
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash')
+  bch: require('bitcore-lib-cash'),
+  eth: Bitcore
 };
 
 const Common = require('./common');
@@ -1685,6 +1686,25 @@ export class WalletService {
   }
 
   /**
+   * Converts Bitcore Balance Response.
+   * @param {Object} { unconfirmed, confirmed, balance }
+   * @returns {Object} balance - Total amount & locked amount.
+   */
+  _convertBitcoreBalance(bitcoreBalance) {
+    const { unconfirmed, confirmed, balance } = bitcoreBalance;
+    const convertedBalance = {
+      totalAmount: balance,
+      totalConfirmedAmount: confirmed,
+      lockedAmount: unconfirmed,
+      lockedConfirmedAmount: unconfirmed,
+      availableAmount: balance - unconfirmed,
+      availableConfirmedAmount: confirmed - unconfirmed
+    };
+
+    return convertedBalance;
+  }
+
+  /**
    * Get wallet balance.
    * @param {Object} opts
    * @returns {Object} balance - Total amount & locked amount.
@@ -1720,6 +1740,16 @@ export class WalletService {
       this.syncWallet(wallet, err => {
         if (err) return cb(err);
 
+        if (wallet.coin !== 'btc' && wallet.coin !== 'bch') {
+          bc.getBalance(wallet, (err, balance) => {
+            if (err) {
+              return cb(err);
+            }
+            const convertedBalance = this._convertBitcoreBalance(balance);
+            return cb(null, convertedBalance);
+          });
+        } else {
+
         this._getUtxosForCurrentWallet(
           {
             coin: opts.coin,
@@ -1752,6 +1782,7 @@ export class WalletService {
             return cb(null, balance);
           }
         );
+        }
       });
     });
   }
@@ -2061,8 +2092,8 @@ export class WalletService {
       disableLargeFees: true
     };
 
-    if (txp.getEstimatedSize() / 1000 > Defaults.MAX_TX_SIZE_IN_KB)
-      return Errors.TX_MAX_SIZE_EXCEEDED;
+    // if (txp.getEstimatedSize() / 1000 > Defaults.MAX_TX_SIZE_IN_KB)
+    //   return Errors.TX_MAX_SIZE_EXCEEDED;
 
     if (_.isEmpty(txp.inputPaths)) return Errors.NO_INPUT_PATHS;
 
@@ -2703,31 +2734,34 @@ export class WalletService {
             async.series(
               [
                 (next) => {
-                  this._validateAndSanitizeTxOpts(wallet, opts, next);
+                  // this._validateAndSanitizeTxOpts(wallet, opts, next);
+                  next();
                 },
                 (next) => {
-                  this._canCreateTx((err, canCreate) => {
-                    if (err) return next(err);
-                    if (!canCreate) return next(Errors.TX_CANNOT_CREATE);
+                  // this._canCreateTx((err, canCreate) => {
+                  //   if (err) return next(err);
+                  //   if (!canCreate) return next(Errors.TX_CANNOT_CREATE);
                     next();
-                  });
+                  // });
                 },
                 (next) => {
                   if (opts.sendMax) return next();
-                  getChangeAddress(wallet, (err, address, isNew) => {
-                    if (err) return next(err);
-                    changeAddress = address;
+                  // getChangeAddress(wallet, (err, address, isNew) => {
+                  //   if (err) return next(err);
+                  //   changeAddress = address;
 
-                    return next();
-                  });
+                  //   return next();
+                  // });
+                  next();
                 },
                 (next) => {
-                  if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
-                    return next();
-                  this._getFeePerKb(wallet, opts, (err, fee) => {
-                    feePerKb = fee;
-                    next();
-                  });
+                  // if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
+                  //   return next();
+                  // this._getFeePerKb(wallet, opts, (err, fee) => {
+                  //   feePerKb = fee;
+                  //   next();
+                  // });
+                  next();
                 },
                 (next) => {
                   const txOpts = {
@@ -2760,11 +2794,12 @@ export class WalletService {
                   next();
                 },
                 (next) => {
-                  this._selectTxInputs(txp, opts.utxosToExclude, next);
+                  // this._selectTxInputs(txp, opts.utxosToExclude, next);
+                  next();
                 },
                 (next) => {
-                  if (!changeAddress || wallet.singleAddress || opts.dryRun || opts.changeAddress)
-                    return next();
+                  // if (!changeAddress || wallet.singleAddress || opts.dryRun || opts.changeAddress)
+                  //   return next();
 
                   this._store(wallet, txp.changeAddress, next, true);
                 },
@@ -4508,7 +4543,6 @@ export class WalletService {
   getFiatRate(opts, cb) {
     if (!checkRequired(opts, ['code'], cb)) return;
 
-console.log('[server.ts.4487:opts:]',opts); // TODO
     this.fiatRateService.getRate(opts, (err, rate) => {
       if (err) return cb(err);
       return cb(null, rate);

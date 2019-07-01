@@ -1,3 +1,4 @@
+import { Deriver } from 'crypto-wallet-core';
 import _ from 'lodash';
 
 const $ = require('preconditions').singleton();
@@ -37,7 +38,8 @@ export class Address {
 
   static Bitcore = {
     btc: require('bitcore-lib'),
-    bch: require('bitcore-lib-cash')
+    bch: require('bitcore-lib-cash'),
+    eth: require('bitcore-lib'),
   };
 
   static create(opts) {
@@ -55,9 +57,10 @@ export class Address {
     x.path = opts.path;
     x.publicKeys = opts.publicKeys;
     x.coin = opts.coin;
-    x.network = Address.Bitcore[opts.coin]
-      .Address(x.address)
-      .toObject().network;
+    x.network = opts.network || 'mainnet',
+    // x.network = Address.Bitcore[opts.coin]
+    //   .Address(x.address)
+    //   .toObject().network;
     x.type = opts.type || Constants.SCRIPT_TYPES.P2SH;
     x.hasActivity = undefined;
     x.beRegistered = null;
@@ -96,14 +99,14 @@ export class Address {
     );
 
     const publicKeys = _.map(publicKeyRing, (item) => {
-      const xpub = new Address.Bitcore[coin].HDPublicKey(item.xPubKey);
+      const xpub = new Address.Bitcore['btc'].HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
     });
 
     let bitcoreAddress;
     switch (scriptType) {
       case Constants.SCRIPT_TYPES.P2SH:
-        bitcoreAddress = Address.Bitcore[coin].Address.createMultisig(
+        bitcoreAddress = Address.Bitcore['btc'].Address.createMultisig(
           publicKeys,
           m,
           network
@@ -111,10 +114,21 @@ export class Address {
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
-        bitcoreAddress = Address.Bitcore[coin].Address.fromPublicKey(
-          publicKeys[0],
-          network
+        const pathIndex = /m\/([0-9]*)\/([0-9]*)/;
+        const [_input, changeIndex, addressIndex] = path.match(pathIndex);
+        const isChange = changeIndex > 0;
+        const [{ xPubKey }] = publicKeyRing;
+        bitcoreAddress = Deriver.deriveAddress(
+          coin.toUpperCase(),
+          network,
+          xPubKey,
+          addressIndex,
+          isChange
         );
+        // bitcoreAddress = Address.Bitcore[coin].Address.fromPublicKey(
+        //   publicKeys[0],
+        //   network
+        // );
         break;
     }
 

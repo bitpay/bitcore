@@ -254,7 +254,7 @@ Key.prototype.derive = function(password, path) {
 };
 
 function _checkCoin(coin) {
-  if (!_.includes(['btc', 'bch'], coin)) throw new Error('Invalid coin');
+  if (!_.includes(['btc', 'bch', 'eth'], coin)) throw new Error('Invalid coin');
 };
 
 function _checkNetwork(network) {

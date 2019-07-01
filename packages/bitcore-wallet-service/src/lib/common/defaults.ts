@@ -58,6 +58,13 @@ module.exports = {
         nbBlocks: 2,
         defaultValue: 2000
       }
+    ],
+    eth: [
+      {
+        name: 'normal',
+        nbBlocks: 2,
+        defaultValue: 20000
+      }
     ]
   },
 

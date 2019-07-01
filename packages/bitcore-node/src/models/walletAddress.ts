@@ -101,7 +101,6 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
             })
           ),
             { ordered: false };
-
         } catch (err) {
           // Ignore duplicate keys, they may be half processed
           if (err.code !== 11000) {
