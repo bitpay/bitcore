@@ -1689,13 +1689,13 @@ export class WalletService {
    * @param {Object} { unconfirmed, confirmed, balance }
    * @returns {Object} balance - Total amount & locked amount.
    */
-  _convertBitcoreBalance(bitcoreBalance) {
+  _convertBitcoreBalance(bitcoreBalance, locked) {
     const { unconfirmed, confirmed, balance } = bitcoreBalance;
     const convertedBalance = {
       totalAmount: balance,
       totalConfirmedAmount: confirmed,
-      lockedAmount: unconfirmed,
-      lockedConfirmedAmount: unconfirmed,
+      lockedAmount: locked,
+      lockedConfirmedAmount: confirmed - locked,
       availableAmount: balance - unconfirmed,
       availableConfirmedAmount: confirmed - unconfirmed
     };
@@ -1739,48 +1739,52 @@ export class WalletService {
       this.syncWallet(wallet, err => {
         if (err) return cb(err);
 
-        if (wallet.coin !== 'btc' && wallet.coin !== 'bch') {
+        if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
           bc.getBalance(wallet, (err, balance) => {
             if (err) {
               return cb(err);
             }
-            const convertedBalance = this._convertBitcoreBalance(balance);
-            return cb(null, convertedBalance);
+            this.getPendingTxs({}, (err, txps) => {
+              if (err) return cb(err);
+              const lockedSum = _.sumBy(txps, 'amount');
+              const convertedBalance = this._convertBitcoreBalance(balance, lockedSum);
+              return cb(null, convertedBalance);
+            });
           });
+        } else {
+          this._getUtxosForCurrentWallet(
+            {
+              coin: opts.coin,
+              addresses: opts.addresses
+            },
+            (err, utxos) => {
+              if (err) return cb(err);
+
+              const balance = { ...this._totalizeUtxos(utxos), byAddress: [] };
+
+              // Compute balance by address
+              const byAddress = {};
+              _.each(_.keyBy(_.sortBy(utxos, 'address'), 'address'), (
+                value,
+                key
+              ) => {
+                byAddress[key] = {
+                  address: key,
+                  path: value.path,
+                  amount: 0
+                };
+              });
+
+              _.each(utxos, (utxo) => {
+                byAddress[utxo.address].amount += utxo.satoshis;
+              });
+
+              balance.byAddress = _.values(byAddress);
+
+              return cb(null, balance);
+            }
+          );
         }
-
-        this._getUtxosForCurrentWallet(
-          {
-            coin: opts.coin,
-            addresses: opts.addresses
-          },
-          (err, utxos) => {
-            if (err) return cb(err);
-
-            const balance = { ...this._totalizeUtxos(utxos), byAddress: [] };
-
-            // Compute balance by address
-            const byAddress = {};
-            _.each(_.keyBy(_.sortBy(utxos, 'address'), 'address'), (
-              value,
-              key
-            ) => {
-              byAddress[key] = {
-                address: key,
-                path: value.path,
-                amount: 0
-              };
-            });
-
-            _.each(utxos, (utxo) => {
-              byAddress[utxo.address].amount += utxo.satoshis;
-            });
-
-            balance.byAddress = _.values(byAddress);
-
-            return cb(null, balance);
-          }
-        );
       });
     });
   }

@@ -155,7 +155,7 @@ export class TxProposal {
 
     x.customData = opts.customData;
 
-    x.amount = x.getTotalAmount();
+    x.amount = opts.amount ? opts.amount : x.getTotalAmount();
 
     x.setInputs(opts.inputs);
     x.fee = opts.fee;
