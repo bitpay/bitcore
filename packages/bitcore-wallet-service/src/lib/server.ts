@@ -1746,7 +1746,6 @@ export class WalletService {
             }
             this.getPendingTxs({}, (err, txps) => {
               if (err) return cb(err);
-              console.log(txps);
               const lockedSum = _.sumBy(txps, 'amount');
               const convertedBalance = this._convertBitcoreBalance(balance, lockedSum);
               return cb(null, convertedBalance);
