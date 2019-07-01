@@ -19,8 +19,6 @@ import { Config } from '../../../services/config';
 import { IBlock } from '../../../types/Block';
 import { EthTransactionStorage } from '../../../models/transaction/eth/ethTransaction';
 import { BtcTransactionStorage } from '../../../models/transaction/btc/btcTransaction';
-import { EthListTransactionsStream } from './transforms/eth/ethTransforms';
-import { ListTransactionsStream } from './transforms/btc/transforms';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -333,7 +331,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
-    const { chain, network, wallet, res, args } = params;
+    const { chain, network, wallet, args } = params;
     const query: any = {
       chain,
       network,
@@ -373,19 +371,19 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
 
     if (chain === 'ETH') {
-      const ethTransactionStream = EthTransactionStorage.collection
+      const ethTransactions = await EthTransactionStorage.collection
         .find(query)
         .sort({ blockTimeNormalized: 1 })
-        .addCursorFlag('noCursorTimeout', true);
-      const ethListTransactionsStream = new EthListTransactionsStream(wallet);
-      ethTransactionStream.pipe(ethListTransactionsStream).pipe(res);
+        .addCursorFlag('noCursorTimeout', true)
+        .toArray();
+        return ethTransactions;
     } else {
-      const transactionStream = BtcTransactionStorage.collection
+      const transactions = await BtcTransactionStorage.collection
         .find(query)
         .sort({ blockTimeNormalized: 1 })
-        .addCursorFlag('noCursorTimeout', true);
-      const listTransactionsStream = new ListTransactionsStream(wallet);
-      transactionStream.pipe(listTransactionsStream).pipe(res);
+        .addCursorFlag('noCursorTimeout', true)
+        .toArray();
+        return transactions;
     }
   }
 

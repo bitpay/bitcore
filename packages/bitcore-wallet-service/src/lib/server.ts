@@ -4076,8 +4076,9 @@ export class WalletService {
 
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
-
-            const dustThreshold = Bitcore_[wallet.coin].Transaction.DUST_AMOUNT;
+            console.log(txs);
+            // const dustThreshold = Bitcore_[wallet.coin].Transaction.DUST_AMOUNT;
+            const dustThreshold = 0.00000001;
             this._normalizeTxHistory(wallet.id, txs, dustThreshold, bcHeight, (
               err,
               inTxs: any[]
