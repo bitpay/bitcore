@@ -8,11 +8,11 @@ describe('Address Validation', () => {
 
   // BCH
   const bchAddress = 'qr8uujscckc56ancdkmqnyyl2rx6pnp24gmdfrf8qd';
-  const bchLegacyAddress = '1Kwmzx8V9waJLmaYov5ia4C6Ngdo52qA53';
   const bchTestLegacyAddress = 'mms6yCDGo3fDdapguTSMtCyF9XGfWJpD6H';
 
   // ETH
-  const ethAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+  const ethAddress = '37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+  const prefixEthAddress = '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
 
   // Uri
   const btcUri = 'bitcoin:1NuKwkDtCymgA1FNLUBaUWLD8s4kdKWvgn';
@@ -23,7 +23,7 @@ describe('Address Validation', () => {
   // Invalid
   const invalidBtcAddress = '1NuKwkDtCymgA1FNLUBaUWLD8s4kKWvgn';
   const invalidBchAddress = 'r8uujscckc56ancdkmqnyyl2rx6pnp24gmdfrf8qd';
-  const invalidEthAddress = '37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
+  const invalidEthAddress = '37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08';
 
   it('should be able to validate an BTC address', async () => {
     const isValidAddress = await Validation.validateAddress('BTC', 'mainnet', btcAddress);
@@ -34,16 +34,16 @@ describe('Address Validation', () => {
 
   it('should be able to validate an BCH address', async () => {
     const isValidAddress = await Validation.validateAddress('BCH', 'mainnet', bchAddress);
-    const isValidLegacyAddress = await Validation.validateAddress('BCH', 'mainnet', bchLegacyAddress);
     const isValidTestLegacyAddress = await Validation.validateAddress('BCH', 'testnet', bchTestLegacyAddress);
     expect(isValidAddress).to.equal(true);
-    expect(isValidLegacyAddress).to.equal(true);
     expect(isValidTestLegacyAddress).to.equal(true);
   });
 
   it('should be able to validate an ETH address', async () => {
     const isValidAddress = await Validation.validateAddress('ETH', 'mainnet', ethAddress);
+    const isValidPrefixAddress = await Validation.validateAddress('ETH', 'mainnet', prefixEthAddress);
     expect(isValidAddress).to.equal(true);
+    expect(isValidPrefixAddress).to.equal(true);
   });
 
   it('should be able to validate an BTC Uri', async () => {
@@ -72,8 +72,6 @@ describe('Address Validation', () => {
 
   it('should be able to invalidate an incorrect ETH address', async () => {
     const inValidAddress = await Validation.validateAddress('ETH', 'mainnet', invalidEthAddress);
-    const inValidTestAddress = await Validation.validateAddress('ETH', 'testnet', ethAddress);
     expect(inValidAddress).to.equal(false);
-    expect(inValidTestAddress).to.equal(false);
   });
 });
