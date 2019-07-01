@@ -62,18 +62,18 @@ describe('Address Validation', () => {
 
   it('should be able to invalidate an incorrect BTC address', async () => {
     const inValidAddress = await Validation.validateAddress('BTC', 'mainnet', invalidBtcAddress);
-    expect(inValidAddress).to.equal(true);
+    expect(inValidAddress).to.equal(false);
   });
 
   it('should be able to invalidate an incorrect BCH address', async () => {
     const inValidAddress = await Validation.validateAddress('BCH', 'mainnet', invalidBchAddress);
-    expect(inValidAddress).to.equal(true);
+    expect(inValidAddress).to.equal(false);
   });
 
   it('should be able to invalidate an incorrect ETH address', async () => {
     const inValidAddress = await Validation.validateAddress('ETH', 'mainnet', invalidEthAddress);
     const inValidTestAddress = await Validation.validateAddress('ETH', 'testnet', ethAddress);
-    expect(inValidAddress).to.equal(true);
-    expect(inValidTestAddress).to.equal(true);
+    expect(inValidAddress).to.equal(false);
+    expect(inValidTestAddress).to.equal(false);
   });
 });
