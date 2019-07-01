@@ -49,7 +49,7 @@ helpers.newClient = function(app) {
   return new Client({
     baseUrl: '/bws/api',
     request: request(app),
-    logLevel: 'debug',
+//    logLevel: 'debug',
   });
 };
 
