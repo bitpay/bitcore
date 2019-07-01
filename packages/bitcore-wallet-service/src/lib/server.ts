@@ -1739,7 +1739,6 @@ export class WalletService {
 
       this.syncWallet(wallet, err => {
         if (err) return cb(err);
-
         if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
           bc.getBalance(wallet, (err, balance) => {
             if (err) {

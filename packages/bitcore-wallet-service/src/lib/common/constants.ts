@@ -7,6 +7,11 @@ module.exports = {
     ETH: 'eth'
   },
 
+  UTXO_COINS: {
+    BTC: 'btc',
+    BCH: 'bch'
+  },
+
   NETWORKS: {
     LIVENET: 'livenet',
     TESTNET: 'testnet'
