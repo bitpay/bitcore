@@ -7,7 +7,7 @@
  * Client API.
  * @alias module:Client.API
  */
-var client = module.exports = require('./api');
+var client = (module.exports = require('./api'));
 
 /**
  * Verifier module.
@@ -20,3 +20,4 @@ client.sjcl = require('sjcl');
 // Expose bitcore
 client.Bitcore = require('bitcore-lib');
 client.BitcoreCash = require('bitcore-lib-cash');
+client.Core = require('crypto-wallet-core');
