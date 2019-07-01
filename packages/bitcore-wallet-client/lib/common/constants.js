@@ -47,4 +47,6 @@ Constants.UNITS = {
   },
 };
 
+Constants.COINS = [ 'btc', 'bch'];
+
 module.exports = Constants;
