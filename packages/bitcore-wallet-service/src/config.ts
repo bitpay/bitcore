@@ -63,6 +63,9 @@ module.exports = {
     defaultProvider: 'BitPay',
     fetchInterval: 60, // in minutes
   },
+  maintenanceOpts: {
+    maintenanceMode: false,
+  },
   // To use email notifications uncomment this:
   // emailOpts: {
   //  host: 'localhost',
