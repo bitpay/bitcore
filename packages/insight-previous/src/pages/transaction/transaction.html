@@ -6,8 +6,7 @@
 
       <loader *ngIf="loading" [type]="'title'"></loader>
 
-      <alert-component [message]="errorMessage" [messageType]="'error'" *ngIf="!loading && errorMessage && confirmations !== -3 ">
-      </alert-component>
+      <alert-component [message]="alertMessage" [messageType]="alertType" [link]="link" *ngIf="!loading && ((alertType == 'error' && confirmations === -3) || (alertType == 'warn' && tx.isRBF && confirmations === -1))"></alert-component>
 
       <div *ngIf="(!loading && !errorMessage) || confirmations === -3">
         <h1 ion-text>

@@ -9,4 +9,6 @@ export class AlertComponent {
   public message: string;
   @Input()
   public messageType: string;
+  @Input()
+  public link: string;
 }
