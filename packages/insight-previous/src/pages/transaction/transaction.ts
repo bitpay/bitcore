@@ -63,7 +63,7 @@ export class TransactionPage {
           .subscribe(confirmations => {
             if (confirmations === -1) {
               this.alertMessage =
-                'Be careful, this transaction can be easily replaced before confirmation (RBF).';
+                'This is an RBF transaction. Until it confirms, the transaction could be replaced/redirected by the sender.';
               this.alertType = 'warn';
               this.link =
                 'https://support.bitpay.com/hc/en-us/articles/360028824532-Why-can-t-I-pay-a-BitPay-invoice-using-RBF-';

@@ -65,6 +65,12 @@
               Unconfirmed
             </ion-note>
           </ion-item>
+          <ion-item *ngIf="tx.isRBF">
+            RBF
+            <ion-note item-end>
+              {{ tx.isRBF }}
+            </ion-note>
+          </ion-item>
         </ion-list>
 
         <h2>Details</h2>
