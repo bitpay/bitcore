@@ -22,6 +22,7 @@ export class CoinListComponent implements OnInit {
   public loading;
   public limit = 10;
   public chunkSize = 100;
+  public warnMessage: string;
 
   constructor(
     private addrProvider: AddressProvider,
@@ -36,6 +37,10 @@ export class CoinListComponent implements OnInit {
         data => {
           const formattedData = data.map(this.txsProvider.toAppCoin);
           this.txs = this.processData(formattedData);
+          if (this.txs.length === 0) {
+            this.warnMessage =
+              'There are no transactions involving this address.';
+          }
           this.showTransactions = true;
           this.loading = false;
           this.events.publish('CoinList', { length: data.length });

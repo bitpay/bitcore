@@ -1,8 +1,8 @@
 import { NgModule } from '@angular/core';
 import { MomentModule } from 'angular2-moment';
 import { IonicModule } from 'ionic-angular';
+import { AlertComponentModule } from '../../components/alert/alert.module';
 import { LoaderComponentModule } from '../../components/loader/loader.module';
-import { ErrorComponentModule } from '../error/error.module';
 import { LatestBlocksComponent } from './latest-blocks';
 
 @NgModule({
@@ -11,7 +11,7 @@ import { LatestBlocksComponent } from './latest-blocks';
     IonicModule,
     MomentModule,
     LoaderComponentModule,
-    ErrorComponentModule
+    AlertComponentModule
   ],
   exports: [LatestBlocksComponent]
 })

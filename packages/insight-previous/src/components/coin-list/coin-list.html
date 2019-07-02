@@ -12,10 +12,7 @@
         <loader [type]="'tx-list'"></loader>
       </ion-infinite-scroll>
     </ion-row>
-    <ion-row *ngIf="txs.length === 0" class="no-txs">
-      <ion-col col-12>
-        There are no transactions involving this address.
-      </ion-col>
-    </ion-row>
+    <alert-component [message]="warnMessage" [messageType]="'warn'" *ngIf="warnMessage">
+    </alert-component>
   </ion-grid>
 </div>

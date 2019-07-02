@@ -1,4 +1,20 @@
 .page-content {
   margin-top: 56px;
   margin-bottom: 36px;
+  .error {
+    background-color: #f2dede;
+    border: 1px solid #ebccd1;
+    color: #a94442;
+    border-radius: 3px;
+    margin: 5px;
+    padding: 5px;
+  }
+  .warn {
+    background-color: #fcf8e3;
+    border: 1px solid #faebcc;
+    color: #8a6d3b;
+    border-radius: 3px;
+    margin: 5px;
+    padding: 5px;
+  }
 }
