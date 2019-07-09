@@ -3,11 +3,11 @@ import fs from 'fs';
 import { Transform } from 'stream';
 import { CoinStorage } from '../../src/models/coin';
 import { Storage } from '../../src/services/storage';
-import { P2pWorker } from '../../src/services/p2p';
 import { Config } from '../../src/services/config';
 import { BlockStorage } from '../../src/models/block';
 import { validateDataForBlock } from './db-verify';
 import { TransactionStorage } from '../../src/models/transaction';
+import { BitcoinP2PWorker } from "../../src/modules/bitcoin/p2p";
 
 (async () => {
   const { CHAIN, NETWORK, FILE, DRYRUN } = process.env;
@@ -19,7 +19,7 @@ import { TransactionStorage } from '../../src/models/transaction';
   const network = NETWORK || '';
   await Storage.start();
   const chainConfig = Config.chainConfig({ chain, network });
-  const worker = new P2pWorker({ chain, network, chainConfig });
+  const worker = new BitcoinP2PWorker({ chain, network, chainConfig });
   await worker.connect();
 
   const handleRepair = async data => {

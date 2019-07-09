@@ -13,12 +13,12 @@ import { TransactionJSON } from '../types/Transaction';
 import { SpentHeightIndicators } from '../types/Coin';
 import { Config } from '../services/config';
 import { EventStorage } from './events';
+import { Libs } from '../providers/libs';
+
 const { onlyWalletEvents } = Config.get().services.event;
 function shouldFire(obj: { wallets?: Array<ObjectID> }) {
   return !onlyWalletEvents || (onlyWalletEvents && obj.wallets && obj.wallets.length > 0);
 }
-
-const Chain = require('../chain');
 
 export type ITransaction = {
   txid: string;
@@ -392,8 +392,10 @@ export class TransactionModel extends BaseModel<ITransaction> {
         if (output.script) {
           address = output.script.toAddress(network).toString(true);
           if (address === 'false' && output.script.classify() === 'Pay to public key') {
-            let hash = Chain[chain].lib.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
-            address = Chain[chain].lib.Address(hash, network).toString(true);
+            let hash = Libs.get(chain).lib.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
+            address = Libs.get(chain)
+              .lib.Address(hash, network)
+              .toString(true);
           }
         }
         mintOps.push({

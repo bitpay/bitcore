@@ -9,13 +9,13 @@ import { Api } from '../../src/services/api';
 import { WalletAddressStorage } from '../../src/models/walletAddress';
 import { WalletStorage, IWallet } from '../../src/models/wallet';
 import { ParseApiStream } from 'bitcore-client';
-import { P2pWorker } from '../../src/services/p2p';
 import { resetDatabase } from '../helpers';
 import { Wallet } from 'bitcore-client';
 import { ICoin, CoinStorage } from '../../src/models/coin';
 import { MongoBound } from '../../src/models/base';
 import { ObjectId } from 'mongodb';
 import { TransactionStorage } from '../../src/models/transaction';
+import { BitcoinP2PWorker } from "../../src/modules/bitcoin/p2p";
 
 const chain = 'BTC';
 const network = 'regtest';
@@ -100,7 +100,7 @@ describe('Wallet Benchmark', function() {
     it('should be able to create two wallets and have them interact', async () => {
       await Event.start();
       await Api.start();
-      const p2pWorker = new P2pWorker({
+      const p2pWorker = new BitcoinP2PWorker({
         chain,
         network,
         chainConfig
@@ -164,7 +164,7 @@ describe('Wallet Benchmark', function() {
     it('should be able to create two wallets and have them interact, while syncing', async () => {
       await Event.start();
       await Api.start();
-      const p2pWorker = new P2pWorker({
+      const p2pWorker = new BitcoinP2PWorker({
         chain,
         network,
         chainConfig

@@ -4,9 +4,9 @@ import { BlockStorage } from '../../src/models/block';
 import { expect } from 'chai';
 import io = require('socket.io-client');
 import config from '../../src/config';
-import { P2pWorker } from '../../src/services/p2p';
 import { Event } from '../../src/services/event';
 import { Api } from '../../src/services/api';
+import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
 
 const wait = time => new Promise(resolve => setTimeout(resolve, time));
 const chain = 'BTC';
@@ -24,7 +24,7 @@ function getSocket() {
   return socket;
 }
 
-let p2pWorker: P2pWorker;
+let p2pWorker: BitcoinP2PWorker;
 
 describe('Websockets', function() {
   this.timeout(50000);
@@ -33,7 +33,7 @@ describe('Websockets', function() {
   });
 
   beforeEach(() => {
-    p2pWorker = new P2pWorker({
+    p2pWorker = new BitcoinP2PWorker({
       chain,
       network,
       chainConfig
@@ -74,7 +74,7 @@ describe('Websockets', function() {
     await Event.start();
     await Api.start();
 
-    const p2pWorker = new P2pWorker({
+    const p2pWorker = new BitcoinP2PWorker({
       chain,
       network,
       chainConfig
@@ -103,7 +103,7 @@ describe('Websockets', function() {
   });
 
   it('should get a mempool tx and coin when mempool event, senttoaddress, occurs', async () => {
-    const p2pWorker = new P2pWorker({ chain, network, chainConfig });
+    const p2pWorker = new BitcoinP2PWorker({ chain, network, chainConfig });
 
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
@@ -137,7 +137,7 @@ describe('Websockets', function() {
   });
 
   it('should get a mempool event while syncing', async () => {
-    const p2pWorker = new P2pWorker({ chain, network, chainConfig });
+    const p2pWorker = new BitcoinP2PWorker({ chain, network, chainConfig });
 
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;

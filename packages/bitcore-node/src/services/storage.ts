@@ -25,6 +25,7 @@ export class StorageService {
 
   constructor({ configService = Config } = {}) {
     this.configService = configService;
+    this.connection.setMaxListeners(30);
   }
 
   start(args: Partial<ConfigType> = {}): Promise<MongoClient> {
