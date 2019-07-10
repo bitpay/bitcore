@@ -298,6 +298,41 @@ describe('ExpressApp', function() {
             });
           });
         });
+        it('Server under maintenance check, should return 503 status code', function(done) {
+          var server = {
+            getStatus: sinon.stub().callsArgWith(1, null, {}),
+          };
+          var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+            './server': {
+              WalletService:  {
+                initialize: sinon.stub().callsArg(1),
+                getServiceVersion: WalletService.getServiceVersion,
+                getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+              }
+            }
+          });
+          start(TestExpressApp, function(err, data) {
+            var requestOptions = {
+              //test link, for either a 503 or 200 code response
+              url: testHost + ':' + testPort + config.basePath + "/v2/wallets",
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              }
+            };
+            request(requestOptions, function(err,res,body){
+              if(config.maintenanceOpts.maintenanceMode === true) {
+                should.not.exist(err);
+                res.statusCode.should.equal(503);
+                body.should.equal(`{"code":503,"message":"Bitcore Wallet Service is currently under maintenance. Please periodically check https://status.bitpay.com/ to stay up to date with our current status."}`);
+              } else {
+                should.not.exist(err);
+                res.statusCode.should.equal(200);
+              }
+              done();
+            });
+          });
+        });
       });
     });
   });

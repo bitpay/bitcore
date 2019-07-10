@@ -2,8 +2,8 @@
   "name": "crypto-wallet-core",
   "version": "8.3.4",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
-  "main": "./ts_build/index.js",
-  "types": "./ts_build/index.d.ts",
+  "main": "./ts_build/src/index.js",
+  "types": "./ts_build/src/index.d.ts",
   "scripts": {
     "clean": "rm -rf ts_build",
     "compile": "npm run clean && ./node_modules/.bin/tsc",

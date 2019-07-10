@@ -25,6 +25,9 @@ var errorSpec = [{
   name: 'CONNECTION_ERROR',
   message: 'Wallet service connection error.'
 }, {
+  name: 'MAINTENANCE_ERROR',
+  message: 'Wallet service is under maintenance.',
+}, {
   name: 'NOT_FOUND',
   message: 'Wallet service not found.'
 }, {

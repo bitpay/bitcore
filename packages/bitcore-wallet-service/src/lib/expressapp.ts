@@ -7,6 +7,7 @@ import { Stats } from './stats';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
+const config = require('../config');
 const RateLimit = require('express-rate-limit');
 const Common = require('./common');
 const Defaults = Common.Defaults;
@@ -74,6 +75,17 @@ export class ExpressApp {
         limit: POST_LIMIT
       })
     );
+
+    this.app.use((req, res, next) => {
+      if(config.maintenanceOpts.maintenanceMode === true) {
+        // send a 503 error, with a message to the bitpay status page
+        let errorCode = 503;
+        let errorMessage = 'BWS down for maintenance';
+        res.status(503).send({code: errorCode, message: errorMessage});
+      } else {
+        next();
+      }
+    });
 
     if (opts.disableLogs) {
       log.level = 'silent';

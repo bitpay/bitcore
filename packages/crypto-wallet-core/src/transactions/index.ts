@@ -8,7 +8,7 @@ const providers = {
   ETH: new ETHTxProvider()
 };
 
-export class Transactions {
+export class TransactionsProxy {
   get({ chain }) {
     return providers[chain];
   }
@@ -22,4 +22,4 @@ export class Transactions {
   }
 }
 
-export default new Transactions();
+export default new TransactionsProxy();
