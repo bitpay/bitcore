@@ -57,9 +57,9 @@ export class Address {
     x.path = opts.path;
     x.publicKeys = opts.publicKeys;
     x.coin = opts.coin;
-    x.network = Address.Bitcore[opts.coin]
+    x.network = opts.coin !== 'eth' ? Address.Bitcore[opts.coin]
       .Address(x.address)
-      .toObject().network || 'mainnet';
+      .toObject().network : 'mainnet';
     x.type = opts.type || Constants.SCRIPT_TYPES.P2SH;
     x.hasActivity = undefined;
     x.beRegistered = null;
