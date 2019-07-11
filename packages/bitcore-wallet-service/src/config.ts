@@ -52,7 +52,7 @@ module.exports = {
     },
     eth: {
       livenet: {
-        url: 'http://localhost:3000',
+        url: 'https://api.bitcore.io',
       },
     },
   },
@@ -67,6 +67,9 @@ module.exports = {
   fiatRateServiceOpts: {
     defaultProvider: 'BitPay',
     fetchInterval: 60, // in minutes
+  },
+  maintenanceOpts: {
+    maintenanceMode: false,
   },
   // To use email notifications uncomment this:
   // emailOpts: {
