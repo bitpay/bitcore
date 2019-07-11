@@ -3,6 +3,12 @@
 module.exports = {
   COINS: {
     BTC: 'btc',
+    BCH: 'bch',
+    ETH: 'eth'
+  },
+
+  UTXO_COINS: {
+    BTC: 'btc',
     BCH: 'bch'
   },
 
