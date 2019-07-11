@@ -332,7 +332,7 @@ describe('Address', function() {
     it('should throw an error for invalid length hashBuffer', function() {
       (function() {
         return Address.fromPublicKeyHash(buf);
-      }).should.throw('Address hashbuffers must be exactly 20 bytes.');
+      }).should.throw('Address hashbuffers must be either 20 or 32 bytes.');
     });
 
     it('should make this address from a compressed pubkey', function() {
