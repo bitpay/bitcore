@@ -1,10 +1,11 @@
 #!/usr/bin/env node
 
-import { BlockStorage } from '../../src/models/block';
 import { CoinStorage, ICoin } from '../../src/models/coin';
-import { TransactionStorage, ITransaction } from '../../src/models/transaction';
 import { Storage } from '../../src/services/storage';
 import * as _ from 'lodash';
+import { BtcBlockStorage } from "../../src/models/block/btc/btcBlock";
+import { BtcTransactionStorage } from "../../src/models/transaction/btc/btcTransaction";
+import { IBtcTransaction } from "../../src/types/Transaction";
 
 const { CHAIN, NETWORK, HEIGHT } = process.env;
 const resumeHeight = Number(HEIGHT) || 1;
@@ -20,14 +21,14 @@ type ErrorType = {
 
 export async function validateDataForBlock(blockNum: number, log = false) {
   let success = true;
-  const blockTxs = await TransactionStorage.collection.find({ chain, network, blockHeight: blockNum }).toArray();
+  const blockTxs = await BtcTransactionStorage.collection.find({ chain, network, blockHeight: blockNum }).toArray();
   const blockTxids = blockTxs.map(t => t.txid);
   const coinsForTx = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: blockTxids } }).toArray();
-  const mempoolTxs = await TransactionStorage.collection
+  const mempoolTxs = await BtcTransactionStorage.collection
     .find({ chain, network, blockHeight: -1, txid: { $in: blockTxids } })
     .toArray();
 
-  const seenTxs = {} as { [txid: string]: ITransaction };
+  const seenTxs = {} as { [txid: string]: IBtcTransaction };
   const errors = new Array<ErrorType>();
 
   for (const tx of mempoolTxs) {
@@ -125,7 +126,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
     }
   }
 
-  const blocksForHeight = await BlockStorage.collection.countDocuments({
+  const blocksForHeight = await BtcBlockStorage.collection.countDocuments({
     chain,
     network,
     height: blockNum,
@@ -161,7 +162,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
   //blocks with same hash
   if (blockTxs.length > 0) {
     const hashFromTx = blockTxs[0].blockHash;
-    const blocksForHash = await BlockStorage.collection.countDocuments({ chain, network, hash: hashFromTx });
+    const blocksForHash = await BtcBlockStorage.collection.countDocuments({ chain, network, hash: hashFromTx });
     if (blocksForHash > 1) {
       success = false;
       const error = { model: 'block', err: true, type: 'DUPE_BLOCKHASH', payload: { hash: hashFromTx, blockNum } };
@@ -182,7 +183,7 @@ if (require.main === module) {
       console.log('Please provide a CHAIN and NETWORK environment variable');
       process.exit(1);
     }
-    const tip = await BlockStorage.getLocalTip({ chain, network });
+    const tip = await BtcBlockStorage.getLocalTip({ chain, network });
 
     if (tip) {
       for (let i = resumeHeight; i <= tip.height; i++) {

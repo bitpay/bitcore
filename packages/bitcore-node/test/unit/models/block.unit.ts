@@ -1,6 +1,6 @@
 import { expect } from 'chai';
-import { BlockStorage, IBlock } from '../../../src/models/block';
-import { TransactionStorage } from '../../../src/models/transaction';
+import { BtcBlockStorage } from '../../../src/models/block/btc/btcBlock';
+import { BtcTransactionStorage } from '../../../src/models/transaction/btc/btcTransaction';
 import { CoinStorage } from '../../../src/models/coin';
 import * as sinon from 'sinon';
 import { TEST_BLOCK } from '../../data/test-block';
@@ -10,6 +10,7 @@ import { mockCollection } from '../../helpers/index.js';
 import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { ObjectID } from 'mongodb';
 import { MongoBound } from '../../../src/models/base';
+import { IBtcBlock } from '../../../src/types/Block';
 
 describe('Block Model', function() {
   let addBlockParams = {
@@ -29,13 +30,13 @@ describe('Block Model', function() {
       sandbox.restore();
     });
     it('should be able to add a block', async () => {
-      let newBlock = Object.assign({ save: () => Promise.resolve() }, BlockStorage, addBlockParams);
+      let newBlock = Object.assign({ save: () => Promise.resolve() }, BtcBlockStorage, addBlockParams);
 
       mockStorage(newBlock);
-      sandbox.stub(BlockStorage, 'handleReorg').resolves();
-      sandbox.stub(TransactionStorage, 'batchImport').resolves();
+      sandbox.stub(BtcBlockStorage, 'handleReorg').resolves();
+      sandbox.stub(BtcTransactionStorage, 'batchImport').resolves();
 
-      const result = await BlockStorage.addBlock(addBlockParams);
+      const result = await BtcBlockStorage.addBlock(addBlockParams);
       expect(result);
     });
   });
@@ -43,7 +44,7 @@ describe('Block Model', function() {
   describe('BlockModel find options', () => {
     it('should be able to create query options', () => {
       const id = new ObjectID();
-      const { query, options } = Storage.getFindOptions<MongoBound<IBlock>>(BlockStorage, {
+      const { query, options } = Storage.getFindOptions<MongoBound<IBtcBlock>>(BtcBlockStorage, {
         since: id,
         paging: '_id',
         limit: 100,
@@ -56,7 +57,7 @@ describe('Block Model', function() {
 
     it('should default to descending', () => {
       const id = new ObjectID();
-      const { query, options } = Storage.getFindOptions<MongoBound<IBlock>>(BlockStorage, {
+      const { query, options } = Storage.getFindOptions<MongoBound<IBtcBlock>>(BtcBlockStorage, {
         since: id,
         paging: '_id',
         limit: 100
@@ -68,7 +69,7 @@ describe('Block Model', function() {
 
     it('should allow ascending', () => {
       const id = new ObjectID();
-      const { query, options } = Storage.getFindOptions<MongoBound<IBlock>>(BlockStorage, {
+      const { query, options } = Storage.getFindOptions<MongoBound<IBtcBlock>>(BtcBlockStorage, {
         since: id,
         paging: '_id',
         limit: 100,
@@ -89,12 +90,16 @@ describe('Block Model', function() {
       sandbox.restore();
     });
     it('should return the new tip', async () => {
-      mockStorage(null);
+      Object.assign(BtcBlockStorage.collection, mockCollection({
+        height: addBlockParams.height + 1,
+        chain: 'BTC',
+        network: 'regtest'
+      }));
       const params = { chain: 'BTC', network: 'regtest' };
       const result = await ChainStateProvider.getLocalTip(params);
-      expect(result!.height).to.deep.equal(addBlockParams.height + 1);
-      expect(result!.chain).to.deep.equal(addBlockParams.chain);
-      expect(result!.network).to.deep.equal(addBlockParams.network);
+      expect(result.height).to.deep.equal(addBlockParams.height + 1);
+      expect(result.chain).to.deep.equal(addBlockParams.chain);
+      expect(result.network).to.deep.equal(addBlockParams.network);
     });
   });
 
@@ -127,11 +132,11 @@ describe('Block Model', function() {
     });
 
     it('should return if localTip hash equals the previous hash', async () => {
-      Object.assign(BlockStorage.collection, mockCollection(null));
-      Object.assign(TransactionStorage.collection, mockCollection(null));
+      Object.assign(BtcBlockStorage.collection, mockCollection(null));
+      Object.assign(BtcTransactionStorage.collection, mockCollection(null));
       Object.assign(CoinStorage.collection, mockCollection(null));
-      let blockModelRemoveSpy = BlockStorage.collection.deleteMany as sinon.SinonSpy;
-      let transactionModelRemoveSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
+      let blockModelRemoveSpy = BtcBlockStorage.collection.deleteMany as sinon.SinonSpy;
+      let transactionModelRemoveSpy = BtcTransactionStorage.collection.deleteMany as sinon.SinonSpy;
       let coinModelRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
       let coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 
@@ -149,7 +154,7 @@ describe('Block Model', function() {
         network: 'regtest'
       };
 
-      await BlockStorage.handleReorg(params);
+      await BtcBlockStorage.handleReorg(params);
       expect(blockModelRemoveSpy.notCalled).to.be.true;
       expect(transactionModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelRemoveSpy.notCalled).to.be.true;
@@ -157,8 +162,8 @@ describe('Block Model', function() {
     });
 
     it('should return if localTip height is zero', async () => {
-      let blockModelRemoveSpy = BlockStorage.collection.deleteMany as sinon.SinonSpy;
-      let transactionModelRemoveSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
+      let blockModelRemoveSpy = BtcBlockStorage.collection.deleteMany as sinon.SinonSpy;
+      let transactionModelRemoveSpy = BtcTransactionStorage.collection.deleteMany as sinon.SinonSpy;
       let coinModelRemoveSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
       let coinModelUpdateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 
@@ -168,9 +173,9 @@ describe('Block Model', function() {
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BlockStorage, blockMethodParams);
+      let params = Object.assign(BtcBlockStorage, blockMethodParams);
 
-      await BlockStorage.handleReorg(params);
+      await BtcBlockStorage.handleReorg(params);
       expect(blockModelRemoveSpy.notCalled).to.be.true;
       expect(transactionModelRemoveSpy.notCalled).to.be.true;
       expect(coinModelRemoveSpy.notCalled).to.be.true;
@@ -188,10 +193,10 @@ describe('Block Model', function() {
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BlockStorage, blockMethodParams);
-      const removeSpy = BlockStorage.collection.deleteMany as sinon.SinonSpy;
+      let params = Object.assign(BtcBlockStorage, blockMethodParams);
+      const removeSpy = BtcBlockStorage.collection.deleteMany as sinon.SinonSpy;
 
-      await BlockStorage.handleReorg(params);
+      await BtcBlockStorage.handleReorg(params);
       expect(removeSpy.called).to.be.true;
     });
 
@@ -207,10 +212,10 @@ describe('Block Model', function() {
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BlockStorage, blockMethodParams);
-      const removeSpy = TransactionStorage.collection.deleteMany as sinon.SinonSpy;
+      let params = Object.assign(BtcBlockStorage, blockMethodParams);
+      const removeSpy = BtcTransactionStorage.collection.deleteMany as sinon.SinonSpy;
 
-      await BlockStorage.handleReorg(params);
+      await BtcBlockStorage.handleReorg(params);
       expect(removeSpy.called).to.be.true;
     });
 
@@ -226,11 +231,11 @@ describe('Block Model', function() {
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BlockStorage, blockMethodParams);
+      let params = Object.assign(BtcBlockStorage, blockMethodParams);
       const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
       const removeSpy = CoinStorage.collection.deleteMany as sinon.SinonSpy;
 
-      await BlockStorage.handleReorg(params);
+      await BtcBlockStorage.handleReorg(params);
       expect(collectionSpy.calledOnceWith('coins'));
       expect(removeSpy.callCount).to.eq(3);
     });
@@ -247,11 +252,11 @@ describe('Block Model', function() {
         block: TEST_BLOCK,
         height: 1355
       };
-      let params = Object.assign(BlockStorage, blockMethodParams);
+      let params = Object.assign(BtcBlockStorage, blockMethodParams);
       const collectionSpy = Storage.db!.collection as sinon.SinonSpy;
       const updateSpy = CoinStorage.collection.updateMany as sinon.SinonSpy;
 
-      await BlockStorage.handleReorg(params);
+      await BtcBlockStorage.handleReorg(params);
       expect(collectionSpy.calledOnceWith('coins'));
       expect(updateSpy.called).to.be.true;
     });
@@ -259,7 +264,7 @@ describe('Block Model', function() {
 
   describe('_apiTransform', () => {
     it('should return the transform object with block values', () => {
-      const block: IBlock = {
+      const block: IBtcBlock = {
         chain: 'BTC',
         network: 'mainnet',
         height: 1,
@@ -278,7 +283,7 @@ describe('Block Model', function() {
         processed: true
       };
 
-      const result = BlockStorage._apiTransform(block, { object: true });
+      const result = BtcBlockStorage._apiTransform(block, { object: true });
 
       expect(result.hash).to.be.equal(block.hash);
       expect(result.height).to.be.equal(block.height);
