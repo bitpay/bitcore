@@ -25,7 +25,8 @@ const EmailValidator = require('email-validator');
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash')
+  bch: require('bitcore-lib-cash'),
+  eth: Bitcore
 };
 
 const Common = require('./common');
@@ -1719,41 +1720,40 @@ export class WalletService {
 
       this.syncWallet(wallet, err => {
         if (err) return cb(err);
+          this._getUtxosForCurrentWallet(
+            {
+              coin: opts.coin,
+              addresses: opts.addresses
+            },
+            (err, utxos) => {
+              if (err) return cb(err);
 
-        this._getUtxosForCurrentWallet(
-          {
-            coin: opts.coin,
-            addresses: opts.addresses
-          },
-          (err, utxos) => {
-            if (err) return cb(err);
+              const balance = { ...this._totalizeUtxos(utxos), byAddress: [] };
 
-            const balance = { ...this._totalizeUtxos(utxos), byAddress: [] };
+              // Compute balance by address
+              const byAddress = {};
+              _.each(_.keyBy(_.sortBy(utxos, 'address'), 'address'), (
+                value,
+                key
+              ) => {
+                byAddress[key] = {
+                  address: key,
+                  path: value.path,
+                  amount: 0
+                };
+              });
 
-            // Compute balance by address
-            const byAddress = {};
-            _.each(_.keyBy(_.sortBy(utxos, 'address'), 'address'), (
-              value,
-              key
-            ) => {
-              byAddress[key] = {
-                address: key,
-                path: value.path,
-                amount: 0
-              };
-            });
+              _.each(utxos, (utxo) => {
+                byAddress[utxo.address].amount += utxo.satoshis;
+              });
 
-            _.each(utxos, (utxo) => {
-              byAddress[utxo.address].amount += utxo.satoshis;
-            });
+              balance.byAddress = _.values(byAddress);
 
-            balance.byAddress = _.values(byAddress);
-
-            return cb(null, balance);
-          }
-        );
+              return cb(null, balance);
+            }
+          );
+        });
       });
-    });
   }
 
   /**
@@ -2709,7 +2709,6 @@ export class WalletService {
                   this._canCreateTx((err, canCreate) => {
                     if (err) return next(err);
                     if (!canCreate) return next(Errors.TX_CANNOT_CREATE);
-                    next();
                   });
                 },
                 (next) => {
@@ -2761,6 +2760,7 @@ export class WalletService {
                 },
                 (next) => {
                   this._selectTxInputs(txp, opts.utxosToExclude, next);
+                  next();
                 },
                 (next) => {
                   if (!changeAddress || wallet.singleAddress || opts.dryRun || opts.changeAddress)
@@ -3465,7 +3465,7 @@ export class WalletService {
           return false;
 
         const output = {
-          address: tx.address,
+          address: tx.address || tx.to,
           amount: Math.abs(tx.satoshis)
         };
         if (seenReceive[tx.txid]) {
@@ -3479,7 +3479,7 @@ export class WalletService {
       }
       if (tx.category == 'send') {
         const output = {
-          address: tx.address,
+          address: tx.address || tx.to,
           amount: Math.abs(tx.satoshis)
         };
         if (seenSend[tx.txid]) {
@@ -3495,7 +3495,7 @@ export class WalletService {
       // move without send?
       if (tx.category == 'move' && !indexedSend[tx.txid]) {
         const output = {
-          address: tx.address,
+          address: tx.address || tx.to,
           amount: Math.abs(tx.satoshis)
         };
 
