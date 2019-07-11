@@ -3471,7 +3471,6 @@ export class WalletService {
 
   _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, cb) {
     if (_.isEmpty(txs)) return cb(null, txs);
-
     // console.log('[server.js.2915:txs:] IN NORMALIZE',txs); //TODO
     const now = Math.floor(Date.now() / 1000);
 
@@ -3502,7 +3501,7 @@ export class WalletService {
           return false;
 
         const output = {
-          address: tx.address,
+          address: tx.address || tx.to,
           amount: Math.abs(tx.satoshis)
         };
         if (seenReceive[tx.txid]) {
@@ -3516,7 +3515,7 @@ export class WalletService {
       }
       if (tx.category == 'send') {
         const output = {
-          address: tx.address,
+          address: tx.address || tx.to,
           amount: Math.abs(tx.satoshis)
         };
         if (seenSend[tx.txid]) {
@@ -3532,7 +3531,7 @@ export class WalletService {
       // move without send?
       if (tx.category == 'move' && !indexedSend[tx.txid]) {
         const output = {
-          address: tx.address,
+          address: tx.address || tx.to,
           amount: Math.abs(tx.satoshis)
         };
 
@@ -4076,7 +4075,6 @@ export class WalletService {
 
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
-            console.log(txs);
             // const dustThreshold = Bitcore_[wallet.coin].Transaction.DUST_AMOUNT;
             const dustThreshold = 0.00000001;
             this._normalizeTxHistory(wallet.id, txs, dustThreshold, bcHeight, (

@@ -19,6 +19,8 @@ import { Config } from '../../../services/config';
 import { IBlock } from '../../../types/Block';
 import { EthTransactionStorage } from '../../../models/transaction/eth/ethTransaction';
 import { BtcTransactionStorage } from '../../../models/transaction/btc/btcTransaction';
+import { EthListTransactionsStream } from './transforms/eth/ethTransforms';
+import { ListTransactionsStream } from './transforms/btc/transforms';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -149,7 +151,6 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async getBlock(params: CSP.GetBlockParams) {
     let blocks = await this.getBlocks(params);
-    console.log(blocks[0]);
     return blocks[0];
   }
 
@@ -331,7 +332,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
-    const { chain, network, wallet, args } = params;
+    const { chain, network, wallet, res, args } = params;
     const query: any = {
       chain,
       network,
@@ -371,19 +372,19 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
 
     if (chain === 'ETH') {
-      const ethTransactions = await EthTransactionStorage.collection
+      const ethTransactionStream = EthTransactionStorage.collection
         .find(query)
         .sort({ blockTimeNormalized: 1 })
-        .addCursorFlag('noCursorTimeout', true)
-        .toArray();
-        return ethTransactions;
+        .addCursorFlag('noCursorTimeout', true);
+      const ethListTransactionsStream = new EthListTransactionsStream(wallet);
+      ethTransactionStream.pipe(ethListTransactionsStream).pipe(res);
     } else {
-      const transactions = await BtcTransactionStorage.collection
+      const transactionStream = BtcTransactionStorage.collection
         .find(query)
         .sort({ blockTimeNormalized: 1 })
-        .addCursorFlag('noCursorTimeout', true)
-        .toArray();
-        return transactions;
+        .addCursorFlag('noCursorTimeout', true);
+      const listTransactionsStream = new ListTransactionsStream(wallet);
+      transactionStream.pipe(listTransactionsStream).pipe(res);
     }
   }
 

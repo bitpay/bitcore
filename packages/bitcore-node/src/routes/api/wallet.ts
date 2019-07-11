@@ -176,7 +176,7 @@ router.post('/:pubKey', authenticate, async (req: AuthenticatedRequest, res) => 
 router.get('/:pubKey/transactions', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
   try {
-    const result = await ChainStateProvider.streamWalletTransactions({
+    return ChainStateProvider.streamWalletTransactions({
       chain,
       network,
       wallet: req.wallet!,
@@ -184,7 +184,6 @@ router.get('/:pubKey/transactions', authenticate, async (req: AuthenticatedReque
       res,
       args: req.query
     })
-    return res.send(result);
   } catch (err) {
     return res.status(500).send(err);
   }
