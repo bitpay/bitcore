@@ -529,11 +529,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getLocalTip({ chain, network }) {
-    if (BlockStorage.chainTips[chain] && BlockStorage.chainTips[chain][network]) {
-      return BlockStorage.chainTips[chain][network];
-    } else {
-      return BlockStorage.getLocalTip({ chain, network });
-    }
+    return BlockStorage.getLocalTip({ chain, network });
   }
 
   async getLocatorHashes(params) {
