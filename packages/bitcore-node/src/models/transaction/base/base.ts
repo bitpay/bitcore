@@ -3,7 +3,7 @@ import { StorageService, Storage } from '../../../services/storage';
 import { ITransaction } from '../../../types/Transaction';
 import { TransformOptions } from '../../../types/TransformOptions';
 import { EthTransactionStorage } from '../eth/ethTransaction';
-import { BtcTransactionStorage } from '..';
+import { BtcTransactionStorage } from '../btc/btcTransaction';
 
 export class TransactionModel<T extends ITransaction> extends BaseModel<T> {
   constructor(storage: StorageService = Storage) {
