@@ -75,6 +75,11 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     return { confirmed: balance, unconfirmed: 0, balance };
   }
 
+  async getBlock(params: CSP.GetBlockParams) {
+    const { network, blockId } = params;
+    return this.getWeb3(network).eth.getBlock(Number(blockId)) as any;
+  }
+
   async getTransaction(params: CSP.StreamTransactionParams) {
     try {
       let { chain, network, txId } = params;
