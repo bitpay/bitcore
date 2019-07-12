@@ -376,7 +376,7 @@ export class V8 {
                 return icb();
               }
 
-              result[x] = ret.feerate;
+              result[x] = ret.feerate ? ret.feerate : ret;
             } catch (e) {
               log.warn('fee error:', e);
             }

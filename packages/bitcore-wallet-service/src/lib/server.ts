@@ -2094,8 +2094,8 @@ export class WalletService {
       disableLargeFees: true
     };
 
-    // if (txp.getEstimatedSize() / 1000 > Defaults.MAX_TX_SIZE_IN_KB)
-    //   return Errors.TX_MAX_SIZE_EXCEEDED;
+    if (txp.getEstimatedSize() / 1000 > Defaults.MAX_TX_SIZE_IN_KB)
+      return Errors.TX_MAX_SIZE_EXCEEDED;
 
     if (_.isEmpty(txp.inputPaths)) return Errors.NO_INPUT_PATHS;
 
@@ -2593,6 +2593,9 @@ export class WalletService {
         },
         (next) => {
           if (opts.validateOutputs === false) return next();
+          if (!Constants.UTXO_COINS[wallet.coin]) {
+            return next();
+          }
           const validationError = this._validateOutputs(opts, wallet, next);
           if (validationError) {
             return next(validationError);
@@ -2659,6 +2662,18 @@ export class WalletService {
       }
     );
   }
+
+  _estimateGasPrice(wallet, nBlocks, cb) {
+    const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+    if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
+    bc.estimateFee([nBlocks], (err, result) => {
+      if (err) {
+        this.logw('Error estimating fee', err);
+        return cb(err);
+      }
+      return cb(null, result[nBlocks]);
+    });
+  };
 
   /**
    * Creates a new transaction proposal.
@@ -2736,34 +2751,33 @@ export class WalletService {
             async.series(
               [
                 (next) => {
-                  // this._validateAndSanitizeTxOpts(wallet, opts, next);
-                  next();
+                  this._validateAndSanitizeTxOpts(wallet, opts, next);
                 },
                 (next) => {
-                  // this._canCreateTx((err, canCreate) => {
-                  //   if (err) return next(err);
-                  //   if (!canCreate) return next(Errors.TX_CANNOT_CREATE);
+                  this._canCreateTx((err, canCreate) => {
+                    if (err) return next(err);
+                    if (!canCreate) return next(Errors.TX_CANNOT_CREATE);
                     next();
-                  // });
+                  });
                 },
                 (next) => {
                   if (opts.sendMax) return next();
-                  // getChangeAddress(wallet, (err, address, isNew) => {
-                  //   if (err) return next(err);
-                  //   changeAddress = address;
+                  if (!Constants.UTXO_COINS[wallet.coin]) return next();
+                  getChangeAddress(wallet, (err, address, isNew) => {
+                    if (err) return next(err);
+                    changeAddress = address;
 
-                  //   return next();
-                  // });
-                  next();
+                    return next();
+                  });
                 },
                 (next) => {
-                  // if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
-                  //   return next();
-                  // this._getFeePerKb(wallet, opts, (err, fee) => {
-                  //   feePerKb = fee;
-                  //   next();
-                  // });
-                  next();
+                  if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs) || !Constants.UTXO_COINS[wallet.coin]) {
+                    return next();
+                  }
+                  this._getFeePerKb(wallet, opts, (err, fee) => {
+                    feePerKb = fee;
+                    next();
+                  });
                 },
                 (next) => {
                   const txOpts = {
@@ -2785,10 +2799,9 @@ export class WalletService {
                     addressType: wallet.addressType,
                     customData: opts.customData,
                     inputs: opts.inputs,
-                    fee:
-                      opts.inputs && !_.isNumber(opts.feePerKb)
-                        ? opts.fee
-                        : null,
+                    fee: opts.inputs && !_.isNumber(opts.feePerKb)
+                      ? opts.fee
+                      : null,
                     noShuffleOutputs: opts.noShuffleOutputs
                   };
 
@@ -2796,12 +2809,21 @@ export class WalletService {
                   next();
                 },
                 (next) => {
-                  // this._selectTxInputs(txp, opts.utxosToExclude, next);
-                  next();
+                  if (!Constants.UTXO_COINS[wallet.coin]) {
+                    const nBlocks = Defaults.FEE_LEVELS[wallet.coin].nBlocks || Defaults.FEE_LEVELS_FALLBACK;
+                    const gasLimit = Defaults.DEFAULT_GAS_LIMIT;
+                    this._estimateGasPrice(wallet, nBlocks, (err, gasPrice) => {
+                      // Need to dynamically estimate gas limit / gas
+                      txp.fee = gasPrice * gasLimit;
+                      next();
+                    });
+                  } else {
+                    this._selectTxInputs(txp, opts.utxosToExclude, next);
+                  }
                 },
                 (next) => {
-                  // if (!changeAddress || wallet.singleAddress || opts.dryRun || opts.changeAddress)
-                  //   return next();
+                  if (!changeAddress || wallet.singleAddress || opts.dryRun || opts.changeAddress)
+                    return next();
 
                   this._store(wallet, txp.changeAddress, next, true);
                 },
