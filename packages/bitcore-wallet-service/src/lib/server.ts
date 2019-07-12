@@ -2593,7 +2593,7 @@ export class WalletService {
         },
         (next) => {
           if (opts.validateOutputs === false) return next();
-          if (!Constants.UTXO_COINS[wallet.coin]) {
+          if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
             return next();
           }
           const validationError = this._validateOutputs(opts, wallet, next);
@@ -2762,7 +2762,7 @@ export class WalletService {
                 },
                 (next) => {
                   if (opts.sendMax) return next();
-                  if (!Constants.UTXO_COINS[wallet.coin]) return next();
+                  if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) return next();
                   getChangeAddress(wallet, (err, address, isNew) => {
                     if (err) return next(err);
                     changeAddress = address;
@@ -2771,7 +2771,7 @@ export class WalletService {
                   });
                 },
                 (next) => {
-                  if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs) || !Constants.UTXO_COINS[wallet.coin]) {
+                  if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs) || !Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
                     return next();
                   }
                   this._getFeePerKb(wallet, opts, (err, fee) => {
@@ -2809,7 +2809,7 @@ export class WalletService {
                   next();
                 },
                 (next) => {
-                  if (!Constants.UTXO_COINS[wallet.coin]) {
+                  if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
                     const nBlocks = Defaults.FEE_LEVELS[wallet.coin].nBlocks || Defaults.FEE_LEVELS_FALLBACK;
                     const gasLimit = Defaults.DEFAULT_GAS_LIMIT;
                     this._estimateGasPrice(wallet, nBlocks, (err, gasPrice) => {
