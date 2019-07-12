@@ -1,5 +1,6 @@
 import { Deriver } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { AddressManager } from './addressmanager';
 
 const $ = require('preconditions').singleton();
 const Common = require('../common');
@@ -111,9 +112,7 @@ export class Address {
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
-        const pathIndex = /m\/([0-9]*)\/([0-9]*)/;
-        const [_input, changeIndex, addressIndex] = path.match(pathIndex);
-        const isChange = changeIndex > 0;
+        const { addressIndex, isChange } = new AddressManager().parseDerivationPath(path);
         const [{ xPubKey }] = publicKeyRing;
         bitcoreAddress = Deriver.deriveAddress(
           coin.toUpperCase(),
