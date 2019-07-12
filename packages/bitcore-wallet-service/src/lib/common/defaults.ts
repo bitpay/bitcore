@@ -7,6 +7,9 @@ module.exports = {
   MAX_TX_FEE: 0.1 * 1e8,
   MAX_TX_SIZE_IN_KB: 100,
 
+  // ETH
+  DEFAULT_GAS_LIMIT: 100000,
+
   MAX_KEYS: 100,
 
   // Time after which a tx proposal can be erased by any copayer. in seconds
