@@ -2897,7 +2897,7 @@ export class WalletService {
             return cb(ex);
           }
           const signingKey = this._getSigningKey(
-            raw,
+            raw.toString('hex'),
             opts.proposalSignature,
             copayer.requestPubKeys
           );
@@ -2913,7 +2913,7 @@ export class WalletService {
           }
 
           // Verify UTXOs are still available
-
+          if (Constants.UTXO_COINS[txp.coin]) {
           log.debug('Rechecking UTXOs availability for publishTx');
 
           this._getUtxosForCurrentWallet(
@@ -2951,6 +2951,9 @@ export class WalletService {
               });
             }
           );
+          } else {
+            return cb(null, txp);
+          }
         });
       });
     });

@@ -8,9 +8,11 @@ const log = require('npmlog');
 log.debug = log.verbose;
 log.disableColor();
 
+const { Transactions } = require('crypto-wallet-core');
 const Bitcore = {
   btc: require('bitcore-lib'),
-  bch: require('bitcore-lib-cash')
+  bch: require('bitcore-lib-cash'),
+  eth: require('bitcore-lib')
 };
 
 const Common = require('../common');
@@ -240,68 +242,81 @@ export class TxProposal {
       Utils.checkValueInCollection(this.addressType, Constants.SCRIPT_TYPES)
     );
 
-    switch (this.addressType) {
-      case Constants.SCRIPT_TYPES.P2SH:
-        _.each(this.inputs, (i) => {
-          $.checkState(i.publicKeys, 'Inputs should include public keys');
-          t.from(i, i.publicKeys, this.requiredSignatures);
-        });
-        break;
-      case Constants.SCRIPT_TYPES.P2PKH:
-        t.from(this.inputs);
-        break;
-    }
-
-    _.each(this.outputs, (o) => {
-      $.checkState(
-        o.script || o.toAddress,
-        'Output should have either toAddress or script specified'
-      );
-      if (o.script) {
-        t.addOutput(
-          new Bitcore[this.coin].Transaction.Output({
-            script: o.script,
-            satoshis: o.amount
-          })
-        );
-      } else {
-        t.to(o.toAddress, o.amount);
+    if (this.coin === 'eth') {
+      const rawTx = Transactions.create({
+        chain: this.coin.toUpperCase(),
+        recipients: [{ address: '0x32ed5be73f5c395621287f5cbe1da96caf3c5dec', amount: this.amount || 2000000000000000000}],
+        from: '0x32ed5be73f5c395621287f5cbe1da96caf3c5dec',
+        nonce: 0,
+        fee: 20000000000,
+        data: null,
+        gasLimit: 100000
+      });
+      return { uncheckedSerialize: () => rawTx };
+    } else {
+      switch (this.addressType) {
+        case Constants.SCRIPT_TYPES.P2SH:
+          _.each(this.inputs, (i) => {
+            $.checkState(i.publicKeys, 'Inputs should include public keys');
+            t.from(i, i.publicKeys, this.requiredSignatures);
+          });
+          break;
+        case Constants.SCRIPT_TYPES.P2PKH:
+          t.from(this.inputs);
+          break;
       }
-    });
 
-    t.fee(this.fee);
-
-    if (this.changeAddress) {
-      t.change(this.changeAddress.address);
-    }
-
-    // Shuffle outputs for improved privacy
-    if (t.outputs.length > 1) {
-      const outputOrder = _.reject(this.outputOrder, (order: number) => {
-        return order >= t.outputs.length;
+      _.each(this.outputs, (o) => {
+        $.checkState(
+          o.script || o.toAddress,
+          'Output should have either toAddress or script specified'
+        );
+        if (o.script) {
+          t.addOutput(
+            new Bitcore[this.coin].Transaction.Output({
+              script: o.script,
+              satoshis: o.amount
+            })
+          );
+        } else {
+          t.to(o.toAddress, o.amount);
+        }
       });
-      $.checkState(t.outputs.length == outputOrder.length);
-      t.sortOutputs((outputs) => {
-        return _.map(outputOrder, (i) => {
-          return outputs[i];
+
+      t.fee(this.fee);
+
+      if (this.changeAddress) {
+        t.change(this.changeAddress.address);
+      }
+
+      // Shuffle outputs for improved privacy
+      if (t.outputs.length > 1) {
+        const outputOrder = _.reject(this.outputOrder, (order: number) => {
+          return order >= t.outputs.length;
         });
-      });
+        $.checkState(t.outputs.length == outputOrder.length);
+        t.sortOutputs((outputs) => {
+          return _.map(outputOrder, (i) => {
+            return outputs[i];
+          });
+        });
+      }
+
+      // Validate actual inputs vs outputs independently of Bitcore
+      const totalInputs = _.sumBy(t.inputs, 'output.satoshis');
+      const totalOutputs = _.sumBy(t.outputs, 'satoshis');
+
+      $.checkState(
+        totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs,
+        'not-enought-inputs'
+      );
+      $.checkState(
+        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE,
+        'fee-too-high'
+      );
+
+      return t;
     }
-
-    // Validate actual inputs vs outputs independently of Bitcore
-    const totalInputs = _.sumBy(t.inputs, 'output.satoshis');
-    const totalOutputs = _.sumBy(t.outputs, 'satoshis');
-
-    $.checkState(
-      totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs,
-      'not-enought-inputs'
-    );
-    $.checkState(
-      totalInputs - totalOutputs <= Defaults.MAX_TX_FEE,
-      'fee-too-high'
-    );
-
-    return t;
   }
 
   _getCurrentSignatures() {
