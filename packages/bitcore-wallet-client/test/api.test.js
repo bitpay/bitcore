@@ -106,7 +106,6 @@ helpers.generateUtxos = function(scriptType, publicKeyRing, path, requiredSignat
 };
 
 helpers.createAndJoinWallet = function(clients, keys, m, n, opts, cb) {
-  $.shouldBeFunction(cb, 'provide callback');
   opts = opts || {};
 
   var coin = opts.coin || 'btc';
@@ -118,7 +117,7 @@ helpers.createAndJoinWallet = function(clients, keys, m, n, opts, cb) {
     passphrase: opts.passphrase,
   };
 
-  keys[0] = Key.create(keyOpts);
+  keys[0] = opts.key || Key.create(keyOpts);
   let cred = keys[0].createCredentials(null, {coin: coin, network: network, account:0, n:n});
   clients[0].fromString(cred);
 
@@ -4679,6 +4678,86 @@ describe('client API', function() {
           });
         });
       });
+
+      it('should be able to gain access to two TESTNET btc/bch 1-1 wallets from mnemonic', function(done) {
+
+        let key =  Key.create();
+        helpers.createAndJoinWallet( clients, keys, 1, 1, { key:key}, function() {
+          helpers.createAndJoinWallet( clients, keys, 1, 1, {  coin: 'bch', key:key }, function() {
+            var words = keys[0].get(null,true).mnemonic;
+            var walletName = clients[0].credentials.walletName;
+            var copayerName = clients[0].credentials.copayerName;
+            clients[0].createAddress(function(err, addr) {
+              should.not.exist(err);
+              should.exist(addr);
+              Client.serverAssistedImport({words}, { 
+                clientFactory: () => { 
+                  return helpers.newClient(app) 
+                }}, (err, k, c) => {
+                should.not.exist(err);
+                c.length.should.equal(2);
+                c[0].credentials.coin.should.equal('btc');
+                c[1].credentials.coin.should.equal('bch');
+                c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
+
+                let recoveryClient = c[1];
+                recoveryClient.openWallet(function(err) {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.getMainAddresses({}, function(err, list) {
+                    should.not.exist(err);
+                    should.exist(list);
+                    list[0].address.should.equal(addr.address);
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+
+      it('should be able to gain access to two TESTNET btc/bch 1-1 wallets from mnemonic', function(done) {
+
+        let key =  Key.create();
+        helpers.createAndJoinWallet( clients, keys, 1, 1, { key:key, network: 'livenet'}, function() {
+          helpers.createAndJoinWallet( clients, keys, 1, 1, {  coin: 'bch', key:key, network: 'livenet' }, function() {
+            var words = keys[0].get(null,true).mnemonic;
+            var walletName = clients[0].credentials.walletName;
+            var copayerName = clients[0].credentials.copayerName;
+            clients[0].createAddress(function(err, addr) {
+              should.not.exist(err);
+              should.exist(addr);
+              Client.serverAssistedImport({words}, { 
+                clientFactory: () => { 
+                  return helpers.newClient(app) 
+                }}, (err, k, c) => {
+                should.not.exist(err);
+                c.length.should.equal(2);
+                c[0].credentials.coin.should.equal('btc');
+                c[1].credentials.coin.should.equal('bch');
+                c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
+                let recoveryClient = c[1];
+                recoveryClient.openWallet(function(err) {
+                  should.not.exist(err);
+                  recoveryClient.credentials.walletName.should.equal(walletName);
+                  recoveryClient.credentials.copayerName.should.equal(copayerName);
+                  recoveryClient.getMainAddresses({}, function(err, list) {
+                    should.not.exist(err);
+                    should.exist(list);
+                    list[0].address.should.equal(addr.address);
+                    done();
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+
+
+
 
 
       it('should be able to gain access to a 1-1 wallet from mnemonic with passphrase', function(done) {
