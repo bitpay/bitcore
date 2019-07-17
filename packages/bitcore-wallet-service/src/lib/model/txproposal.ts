@@ -32,6 +32,7 @@ export interface ITxProposal {
   network: string;
   message: string;
   payProUrl: string;
+  from: string;
   changeAddress: string;
   inputs: any[];
   outputs: Array<{
@@ -62,6 +63,10 @@ export interface ITxProposal {
   proposalSignaturePubKey: string;
   proposalSignaturePubKeySig: string;
   lowFees: boolean;
+  nonce?: number;
+  gasLimit?: number;
+  gasPrice?: number;
+  data?: string;
 }
 
 export class TxProposal {
@@ -76,6 +81,7 @@ export class TxProposal {
   network: string;
   message: string;
   payProUrl: string;
+  from: string;
   changeAddress: any;
   inputs: any[];
   outputs: Array<{
@@ -106,6 +112,10 @@ export class TxProposal {
   proposalSignaturePubKey: string;
   proposalSignaturePubKeySig: string;
   raw?: any;
+  nonce?: number;
+  gasLimit?: number;
+  gasPrice?: number;
+  data?: string;
 
   static create(opts) {
     opts = opts || {};
@@ -162,6 +172,13 @@ export class TxProposal {
     x.setInputs(opts.inputs);
     x.fee = opts.fee;
 
+    // ETH tx properties
+    x.gasLimit = opts.gasLimit;
+    x.gasPrice = opts.gasPrice;
+    x.from = opts.from;
+    x.nonce = opts.nonce;
+    x.data = opts.data;
+
     return x;
   }
 
@@ -207,6 +224,13 @@ export class TxProposal {
     x.proposalSignature = obj.proposalSignature;
     x.proposalSignaturePubKey = obj.proposalSignaturePubKey;
     x.proposalSignaturePubKeySig = obj.proposalSignaturePubKeySig;
+
+    x.gasLimit = obj.gasLimit;
+    x.gasPrice = obj.gasPrice;
+    x.from = obj.from;
+    x.nonce = obj.nonce;
+    x.data = obj.data;
+
     if (x.status == 'broadcasted') {
       x.raw = obj.raw;
     }
@@ -242,15 +266,15 @@ export class TxProposal {
       Utils.checkValueInCollection(this.addressType, Constants.SCRIPT_TYPES)
     );
 
-    if (this.coin === 'eth') {
+    if (!Constants.UTXO_COINS[this.coin.toUpperCase()]) {
       const rawTx = Transactions.create({
         chain: this.coin.toUpperCase(),
-        recipients: [{ address: '0x32ed5be73f5c395621287f5cbe1da96caf3c5dec', amount: this.amount || 2000000000000000000}],
-        from: '0x32ed5be73f5c395621287f5cbe1da96caf3c5dec',
-        nonce: 0,
-        fee: 20000000000,
-        data: null,
-        gasLimit: 100000
+        recipients: [{ address: this.outputs[0].toAddress, amount: this.amount}],
+        from: this.from,
+        nonce: this.nonce,
+        fee: this.gasPrice,
+        data: this.data,
+        gasLimit: this.gasLimit
       });
       return { uncheckedSerialize: () => rawTx };
     } else {

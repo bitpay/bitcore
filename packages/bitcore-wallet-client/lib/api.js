@@ -1307,7 +1307,7 @@ API.prototype.publishTxProposal = function(opts, cb) {
   var t = Utils.buildTx(opts.txp);
   var hash = t.uncheckedSerialize();
   var args = {
-    proposalSignature: Utils.signMessage(`${hash}`, self.credentials.requestPrivKey)
+    proposalSignature: Utils.signMessage(hash, self.credentials.requestPrivKey)
   };
   
   var url = '/v2/txproposals/' + opts.txp.id + '/publish/';

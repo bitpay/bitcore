@@ -2675,6 +2675,18 @@ export class WalletService {
     });
   };
 
+  _getTransactionCount(wallet, address, cb) {
+    const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+    if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
+    bc.getTransactionCount(address, (err, nonce) => {
+      if (err) {
+        this.logw('Error estimating nonce', err);
+        return cb(err);
+      }
+      return cb(null, nonce);
+    });
+  };
+
   /**
    * Creates a new transaction proposal.
    * @param {Object} opts
@@ -2788,6 +2800,7 @@ export class WalletService {
                     network: wallet.network,
                     outputs: opts.outputs,
                     message: opts.message,
+                    from: opts.from,
                     changeAddress,
                     feeLevel: opts.feeLevel,
                     feePerKb,
@@ -2802,7 +2815,8 @@ export class WalletService {
                     fee: opts.inputs && !_.isNumber(opts.feePerKb)
                       ? opts.fee
                       : null,
-                    noShuffleOutputs: opts.noShuffleOutputs
+                    noShuffleOutputs: opts.noShuffleOutputs,
+                    data: opts.data,
                   };
 
                   txp = TxProposal.create(txOpts);
@@ -2815,10 +2829,22 @@ export class WalletService {
                     this._estimateGasPrice(wallet, nBlocks, (err, gasPrice) => {
                       // Need to dynamically estimate gas limit / gas
                       txp.fee = gasPrice * gasLimit;
+                      txp.gasPrice = gasPrice;
+                      txp.gasLimit = gasLimit;
                       next();
                     });
                   } else {
                     this._selectTxInputs(txp, opts.utxosToExclude, next);
+                  }
+                },
+                (next) => {
+                  if (Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
+                    return next();
+                  } else {
+                    this._getTransactionCount(wallet, txp.from, (err, nonce) => {
+                      txp.nonce = nonce;
+                      next();
+                    });
                   }
                 },
                 (next) => {
@@ -2897,7 +2923,7 @@ export class WalletService {
             return cb(ex);
           }
           const signingKey = this._getSigningKey(
-            raw.toString('hex'),
+            raw,
             opts.proposalSignature,
             copayer.requestPubKeys
           );
@@ -2913,7 +2939,7 @@ export class WalletService {
           }
 
           // Verify UTXOs are still available
-          if (Constants.UTXO_COINS[txp.coin]) {
+          if (Constants.UTXO_COINS[txp.coin.toUpperCase()]) {
           log.debug('Rechecking UTXOs availability for publishTx');
 
           this._getUtxosForCurrentWallet(

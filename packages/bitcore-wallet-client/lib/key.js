@@ -3,6 +3,8 @@
 var $ = require('preconditions').singleton();
 var _ = require('lodash');
 
+var { Transactions } = require('crypto-wallet-core');
+
 var Bitcore = require('bitcore-lib');
 var Mnemonic = require('bitcore-mnemonic');
 var sjcl = require('sjcl');
@@ -379,24 +381,44 @@ Key.prototype.sign = function(rootPath, txp, password) {
   var derived = this.derive(password, rootPath);
   var xpriv = new Bitcore.HDPrivateKey(derived);
 
-  _.each(txp.inputs, function(i) {
-    $.checkState(i.path, "Input derivation path not available (signing transaction)")
-    if (!derived[i.path]) {
-      derived[i.path] = xpriv.deriveChild(i.path).privateKey;
-      privs.push(derived[i.path]);
-    }
-  });
-
   var t = Utils.buildTx(txp);
-  var signatures = _.map(privs, function(priv, i) { 
-    return t.getSignatures(priv);
-  });
 
-  signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
-    return s.signature.toDER().toString('hex');
-  });
+  if (Constants.UTXO_COINS.includes(txp.coin)) {
+    _.each(txp.inputs, function(i) {
+      $.checkState(i.path, "Input derivation path not available (signing transaction)")
+      if (!derived[i.path]) {
+        derived[i.path] = xpriv.deriveChild(i.path).privateKey;
+        privs.push(derived[i.path]);
+      }
+    });
 
-  return signatures;
+    derived[i.path] = xpriv.deriveChild(rootPath).privateKey;
+    privs.push(derived[i.path]);
+
+    var signatures = _.map(privs, function(priv, i) { 
+      return t.getSignatures(priv);
+    });
+
+    signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
+      return s.signature.toDER().toString('hex');
+    });
+
+    return signatures;
+
+  } else {
+    const addressPath = Constants.PATHS.SINGLE_ADDRESS;
+    const privKey = xpriv.deriveChild(addressPath).privateKey
+    const tx = t.uncheckedSerialize();
+    const signedRawTx = Transactions.sign({
+      chain: txp.coin.toUpperCase(),
+      tx,
+      key: { privKey: privKey.toString('hex') },
+      from: txp.from
+    });
+
+    return Object.assign(txp, { rawTx: signedRawTx, status: 'accepted' });
+  }
+
 };
 
 

@@ -282,14 +282,15 @@ Utils.buildTx = function(txp) {
 
     return t;
   } else {
+    const { outputs, amount, from, nonce, gasPrice, data, gasLimit } = txp;
     const rawTx = Transactions.create({
       chain: coin.toUpperCase(),
-      recipients: [{ address: txp.toAddress || '0x32ed5be73f5c395621287f5cbe1da96caf3c5dec', amount: txp.amount || 2000000000000000000}],
-      from: txp.from || '0x32ed5be73f5c395621287f5cbe1da96caf3c5dec',
-      nonce: txp.nonce || 0,
-      fee: txp.fee || 20000000000,
-      data: txp.data || null,
-      gasLimit: txp.gasLimit || 100000
+      recipients: [{ address: outputs[0].toAddress, amount }],
+      from,
+      nonce,
+      fee: gasPrice,
+      data,
+      gasLimit
     });
     return { uncheckedSerialize: () => rawTx };
   }
