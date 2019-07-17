@@ -2827,7 +2827,6 @@ export class WalletService {
                     const nBlocks = Defaults.FEE_LEVELS[wallet.coin].nBlocks || Defaults.FEE_LEVELS_FALLBACK;
                     const gasLimit = Defaults.DEFAULT_GAS_LIMIT;
                     this._estimateGasPrice(wallet, nBlocks, (err, gasPrice) => {
-                      // Need to dynamically estimate gas limit / gas
                       txp.fee = gasPrice * gasLimit;
                       txp.gasPrice = gasPrice;
                       txp.gasLimit = gasLimit;
