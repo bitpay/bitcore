@@ -17,7 +17,7 @@ export class TransactionsProxy {
     return this.get(params).create(params);
   }
 
-  async sign(params): Promise<any> {
+  sign(params): string {
     return this.get(params).sign(params);
   }
 }
