@@ -31,7 +31,6 @@ export class ETHTxProvider {
     const bufferKey = Buffer.from(key.privKey, 'hex');
     rawTx.sign(bufferKey);
     const serializedTx = rawTx.serialize();
-
     return '0x' + serializedTx.toString('hex');
   }
 }
