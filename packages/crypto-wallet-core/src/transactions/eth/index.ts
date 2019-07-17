@@ -28,13 +28,10 @@ export class ETHTxProvider {
     const { tx, key, from } = params;
     const rawTx = new EthereumTx(tx);
     const address = from.toLowerCase();
-    try {
-      const bufferKey = Buffer.from(key.privKey, 'hex');
-      rawTx.sign(bufferKey);
-      const serializedTx = rawTx.serialize();
-      return '0x' + serializedTx.toString('hex');
-    } catch (err) {
-      console.log(err);
-    }
+    const bufferKey = Buffer.from(key.privKey, 'hex');
+    rawTx.sign(bufferKey);
+    const serializedTx = rawTx.serialize();
+
+    return '0x' + serializedTx.toString('hex');
   }
 }
