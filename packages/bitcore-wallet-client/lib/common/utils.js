@@ -221,65 +221,79 @@ Utils.buildTx = function(txp) {
 
   var bitcore = Bitcore_[coin];
 
-  var t = new bitcore.Transaction();
+  if (bitcore) {
+    var t = new bitcore.Transaction();
 
-  $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
+    $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
 
-  switch (txp.addressType) {
-    case Constants.SCRIPT_TYPES.P2SH:
-      _.each(txp.inputs, function(i) {
-        t.from(i, i.publicKeys, txp.requiredSignatures);
+    switch (txp.addressType) {
+      case Constants.SCRIPT_TYPES.P2SH:
+        _.each(txp.inputs, function(i) {
+          t.from(i, i.publicKeys, txp.requiredSignatures);
+        });
+        break;
+      case Constants.SCRIPT_TYPES.P2PKH:
+        t.from(txp.inputs);
+        break;
+    }
+
+    if (txp.toAddress && txp.amount && !txp.outputs) {
+      t.to(txp.toAddress, txp.amount);
+    } else if (txp.outputs) {
+      _.each(txp.outputs, function(o) {
+        $.checkState(o.script || o.toAddress, 'Output should have either toAddress or script specified');
+        if (o.script) {
+          t.addOutput(new bitcore.Transaction.Output({
+            script: o.script,
+            satoshis: o.amount
+          }));
+        } else {
+          t.to(o.toAddress, o.amount);
+        }
       });
-      break;
-    case Constants.SCRIPT_TYPES.P2PKH:
-      t.from(txp.inputs);
-      break;
-  }
+    }
 
-  if (txp.toAddress && txp.amount && !txp.outputs) {
-    t.to(txp.toAddress, txp.amount);
-  } else if (txp.outputs) {
-    _.each(txp.outputs, function(o) {
-      $.checkState(o.script || o.toAddress, 'Output should have either toAddress or script specified');
-      if (o.script) {
-        t.addOutput(new bitcore.Transaction.Output({
-          script: o.script,
-          satoshis: o.amount
-        }));
-      } else {
-        t.to(o.toAddress, o.amount);
-      }
-    });
-  }
+    t.fee(txp.fee);
+    t.change(txp.changeAddress.address);
 
-  t.fee(txp.fee);
-  t.change(txp.changeAddress.address);
-
-  // Shuffle outputs for improved privacy
-  if (t.outputs.length > 1) {
-    var outputOrder = _.reject(txp.outputOrder, function(order) {
-      return order >= t.outputs.length;
-    });
-    $.checkState(t.outputs.length == outputOrder.length);
-    t.sortOutputs(function(outputs) {
-      return _.map(outputOrder, function(i) {
-        return outputs[i];
+    // Shuffle outputs for improved privacy
+    if (t.outputs.length > 1) {
+      var outputOrder = _.reject(txp.outputOrder, function(order) {
+        return order >= t.outputs.length;
       });
+      $.checkState(t.outputs.length == outputOrder.length);
+      t.sortOutputs(function(outputs) {
+        return _.map(outputOrder, function(i) {
+          return outputs[i];
+        });
+      });
+    }
+
+    // Validate inputs vs outputs independently of Bitcore
+    var totalInputs = _.reduce(txp.inputs, function(memo, i) {
+      return +i.satoshis + memo;
+    }, 0);
+    var totalOutputs = _.reduce(t.outputs, function(memo, o) {
+      return +o.satoshis + memo;
+    }, 0);
+
+    $.checkState(totalInputs - totalOutputs >= 0);
+    $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE);
+
+    return t;
+  } else {
+    const { outputs, amount, from, nonce, gasPrice, data, gasLimit } = txp;
+    const rawTx = Transactions.create({
+      chain: coin.toUpperCase(),
+      recipients: [{ address: outputs[0].toAddress, amount }],
+      from,
+      nonce,
+      fee: gasPrice,
+      data,
+      gasLimit
     });
+    return { uncheckedSerialize: () => rawTx };
   }
-
-  // Validate inputs vs outputs independently of Bitcore
-  var totalInputs = _.reduce(txp.inputs, function(memo, i) {
-    return +i.satoshis + memo;
-  }, 0);
-  var totalOutputs = _.reduce(t.outputs, function(memo, o) {
-    return +o.satoshis + memo;
-  }, 0);
-
-  $.checkState(totalInputs - totalOutputs >= 0);
-  $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE);
-
-  return t;
 };
 
 

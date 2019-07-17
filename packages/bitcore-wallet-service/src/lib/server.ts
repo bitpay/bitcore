@@ -2643,6 +2643,18 @@ export class WalletService {
     });
   };
 
+  _getTransactionCount(wallet, address, cb) {
+    const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+    if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
+    bc.getTransactionCount(address, (err, nonce) => {
+      if (err) {
+        this.logw('Error estimating nonce', err);
+        return cb(err);
+      }
+      return cb(null, nonce);
+    });
+  };
+
   /**
    * Creates a new transaction proposal.
    * @param {Object} opts
@@ -2755,6 +2767,7 @@ export class WalletService {
                     network: wallet.network,
                     outputs: opts.outputs,
                     message: opts.message,
+                    from: opts.from,
                     changeAddress,
                     feeLevel: opts.feeLevel,
                     feePerKb,
@@ -2770,7 +2783,8 @@ export class WalletService {
                       opts.inputs && !_.isNumber(opts.feePerKb)
                         ? opts.fee
                         : null,
-                    noShuffleOutputs: opts.noShuffleOutputs
+                    noShuffleOutputs: opts.noShuffleOutputs,
+                    data: opts.data,
                   };
 
                   txp = TxProposal.create(txOpts);
@@ -2781,12 +2795,23 @@ export class WalletService {
                     const nBlocks = Defaults.FEE_LEVELS[wallet.coin].nBlocks || Defaults.FEE_LEVELS_FALLBACK;
                     const gasLimit = Defaults.DEFAULT_GAS_LIMIT;
                     this._estimateGasPrice(wallet, nBlocks, (err, gasPrice) => {
-                      // Need to dynamically estimate gas limit / gas
                       txp.fee = gasPrice * gasLimit;
+                      txp.gasPrice = gasPrice;
+                      txp.gasLimit = gasLimit;
                       next();
                     });
                   } else {
                     this._selectTxInputs(txp, opts.utxosToExclude, next);
+                  }
+                },
+                (next) => {
+                  if (Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
+                    return next();
+                  } else {
+                    this._getTransactionCount(wallet, txp.from, (err, nonce) => {
+                      txp.nonce = nonce;
+                      next();
+                    });
                   }
                 },
                 (next) => {
@@ -2881,44 +2906,45 @@ export class WalletService {
           }
 
           // Verify UTXOs are still available
+          if (Constants.UTXO_COINS[txp.coin.toUpperCase()]) {
+            log.debug('Rechecking UTXOs availability for publishTx');
 
-          log.debug('Rechecking UTXOs availability for publishTx');
-
-          this._getUtxosForCurrentWallet(
-            {
-              addresses: txp.inputs
-            },
-            (err, utxos) => {
-              if (err) return cb(err);
-
-              const txpInputs = _.map(txp.inputs, utxoKey);
-              const utxosIndex = _.keyBy(utxos, utxoKey);
-              const unavailable = _.some(txpInputs, (i) => {
-                const utxo = utxosIndex[i];
-                return !utxo || utxo.locked;
-              });
-
-              if (unavailable) return cb(Errors.UNAVAILABLE_UTXOS);
-
-              txp.status = 'pending';
-              this.storage.storeTx(this.walletId, txp, (err) => {
+            this._getUtxosForCurrentWallet(
+              {
+                addresses: txp.inputs
+              },
+              (err, utxos) => {
                 if (err) return cb(err);
 
-                this._notifyTxProposalAction('NewTxProposal', txp, () => {
-                  if (opts.noCashAddr && txp.coin == 'bch') {
-                    if (txp.changeAddress) {
-                      txp.changeAddress.address = BCHAddressTranslator.translate(
-                        txp.changeAddress.address,
-                        'copay'
-                      );
-                    }
-                  }
-
-                  return cb(null, txp);
+                const txpInputs = _.map(txp.inputs, utxoKey);
+                const utxosIndex = _.keyBy(utxos, utxoKey);
+                const unavailable = _.some(txpInputs, (i) => {
+                  const utxo = utxosIndex[i];
+                  return !utxo || utxo.locked;
                 });
-              });
-            }
-          );
+
+                if (unavailable) return cb(Errors.UNAVAILABLE_UTXOS);
+
+                txp.status = 'pending';
+                this.storage.storeTx(this.walletId, txp, (err) => {
+                  if (err) return cb(err);
+
+                  this._notifyTxProposalAction('NewTxProposal', txp, () => {
+                    if (opts.noCashAddr && txp.coin == 'bch') {
+                      if (txp.changeAddress) {
+                        txp.changeAddress.address = BCHAddressTranslator.translate(
+                          txp.changeAddress.address,
+                          'copay'
+                        );
+                      }
+                    }
+
+                    return cb(null, txp);
+                  });
+                });
+              }
+            );
+          }
         });
       });
     });

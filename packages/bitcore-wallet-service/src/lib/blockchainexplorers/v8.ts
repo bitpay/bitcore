@@ -355,6 +355,20 @@ export class V8 {
       });
   }
 
+  getTransactionCount(address, cb) {
+    const url = this.baseUrl + '/address/' + address + '/txs/count';
+    console.log('[v8.js.328:url:] CHECKING ADDRESS NONCE', url); // TODO
+    this.request
+      .get(url, {})
+      .then(ret => {
+        ret = JSON.parse(ret);
+        return cb(null, ret.nonce);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+  
   estimateFee(nbBlocks, cb) {
     nbBlocks = nbBlocks || [1, 2, 6, 24];
     const result = {};
