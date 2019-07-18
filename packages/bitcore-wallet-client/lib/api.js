@@ -2334,7 +2334,8 @@ API.serverAssistedImport = (opts, clientOpts, callback) => {
 
       //coin, network,  multisig
       ['btc', 'livenet', ],          
-      ['bch', 'livenet', ],          
+      ['bch', 'livenet', ],
+      ['eth', 'livenet', ],                    
       ['btc', 'livenet', true ],    
       ['bch', 'livenet', true ],    
     ];
