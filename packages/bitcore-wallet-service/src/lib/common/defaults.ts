@@ -6,7 +6,7 @@ module.exports = {
   MIN_TX_FEE: 0,
   MAX_TX_FEE: 0.1 * 1e8,
   MAX_TX_SIZE_IN_KB: 100,
-  DEFAULT_GAS_LIMIT: 100000,
+  DEFAULT_GAS_LIMIT: 21000,
 
   MAX_KEYS: 100,
 
