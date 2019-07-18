@@ -1831,19 +1831,11 @@ export class WalletService {
       }
 
       if (_.isNumber(opts.feePerKb)) {
-        if (Constants.UTXO_COINS[opts.coin.toUpperCase()]) {
           if (
             opts.feePerKb < Defaults.MIN_FEE_PER_KB ||
             opts.feePerKb > Defaults.MAX_FEE_PER_KB
           )
             return cb(new ClientError('Invalid fee per KB'));
-          } else {
-            if (
-              opts.feePerKb < Defaults.MIN_GAS_PRICE ||
-              opts.feePerKb > Defaults.MAX_GAS_PRICE
-            )
-              return cb(new ClientError('Invalid gas price'));
-          }
       }
 
       this._getUtxosForCurrentWallet({}, (err, utxos) => {
@@ -2542,19 +2534,11 @@ export class WalletService {
           }
 
           if (_.isNumber(opts.feePerKb)) {
-            if (Constants.UTXO_COINS[opts.coin.toUpperCase()]) {
               if (
                 opts.feePerKb < Defaults.MIN_FEE_PER_KB ||
                 opts.feePerKb > Defaults.MAX_FEE_PER_KB
               )
                 return cb(new ClientError('Invalid fee per KB'));
-              } else {
-                if (
-                  opts.feePerKb < Defaults.MIN_GAS_PRICE ||
-                  opts.feePerKb > Defaults.MAX_GAS_PRICE
-                )
-                  return cb(new ClientError('Invalid gas price'));
-              }
           }
 
           if (_.isNumber(opts.fee) && _.isEmpty(opts.inputs))
