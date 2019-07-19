@@ -15,8 +15,8 @@ var Networks = bitcore.Networks;
 describe('Witness Address', function() {
 
   var pubkeyhash = new Buffer('2a9540f5cd929bf742d16b4e1bf1b0e874c907c9', 'hex');
-  var buf = pubkeyhash;
   var str = 'bc1q9225pawdj2dlwsk3dd8phudsap6vjp7fg3nwdl';
+  var buf = Buffer.from(str, 'utf8');
 
   it('should throw an error because of bad network param', function() {
     (function() {
@@ -171,7 +171,7 @@ describe('Witness Address', function() {
 
   describe('instantiation', function() {
     it('can be instantiated from another address', function() {
-      var address = Address.fromString(str);
+      var address = Address.fromBuffer(buf);
       var address2 = new Address({
         hashBuffer: address.hashBuffer,
         network: address.network,
@@ -182,6 +182,12 @@ describe('Witness Address', function() {
   });
 
   describe('encodings', function() {
+
+    it('should make an address from a buffer', function() {
+      Address.fromBuffer(buf).toString().should.equal(str);
+      new Address(buf).toString().should.equal(str);
+      new Address(buf).toString().should.equal(str);
+    });
 
     it('should make an address from a string', function() {
       Address.fromString(str).toString().should.equal(str);
@@ -253,7 +259,7 @@ describe('Witness Address', function() {
     it('should derive from this known address string livenet', function() {
       var address = new Address(str);
       var buffer = address.toBuffer();
-      buffer.toString('hex').should.equal(pubkeyhash.toString('hex'));
+      buffer.toString().should.equal(Buffer.from(str, 'utf8').toString());
     });
 
     it('should derive from this known address string testnet', function() {
@@ -281,7 +287,8 @@ describe('Witness Address', function() {
 
     it('2a9540f5cd929bf742d16b4e1bf1b0e874c907c9 corresponds to hash bc1q9225pawdj2dlwsk3dd8phudsap6vjp7fg3nwdl', function() {
       var address = new Address(str);
-      address.toBuffer().toString('hex').should.equal(pubkeyhash.toString('hex'));
+      var fromBuffer = new Address(address.toBuffer())
+      address.hashBuffer.toString('hex').should.equal(pubkeyhash.toString('hex'));
     });
 
   });

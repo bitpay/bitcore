@@ -106,7 +106,7 @@ Address.prototype._classifyArguments = function(data, network, type) {
   // transform and validate input data
   if ((data instanceof Buffer || data instanceof Uint8Array) && (data.length === 20 || data.length === 32)) {
     return Address._transformHash(data, network, type);
-  } else if ((data instanceof Buffer || data instanceof Uint8Array) && data.length === 21) {
+  } else if ((data instanceof Buffer || data instanceof Uint8Array) && data.length >= 21) {
     return Address._transformBuffer(data, network, type);
   } else if (data instanceof PublicKey) {
     return Address._transformPublicKey(data);
@@ -173,22 +173,22 @@ Address._transformObject = function(data) {
  * Internal function to discover the network and type based on the first data byte
  *
  * @param {Buffer} buffer - An instance of a hex encoded address Buffer
- * @param {String} prefix - The bech32 human readable prefix
  * @returns {Object} An object with keys: network and type
  * @private
  */
-Address._classifyFromVersion = function(buffer, prefix) {
+Address._classifyFromVersion = function(buffer) {
   var version = {};
 
-  if (prefix) {
-    if (buffer.length === 20) {
+  if (buffer.length > 21) {
+    var info = Bech32.decode(buffer.toString('utf8'));
+    if (info.data.length === 20) {
       version.type = Address.PayToWitnessPublicKeyHash;
-    } else if (buffer.length === 32) {
+    } else if (info.data.length === 32) {
       version.type = Address.PayToWitnessScriptHash;
     } else {
-      throw new TypeError('Invalid buffer length for segwit address')
+      throw new TypeError('Witness data must be either 20 or 32 bytes.')
     }
-    version.network = Networks.get(prefix, 'bech32prefix');
+    version.network = Networks.get(info.prefix, 'bech32prefix');
   } else {
 
     var pubkeyhashNetwork = Networks.get(buffer[0], 'pubkeyhash');
@@ -212,25 +212,22 @@ Address._classifyFromVersion = function(buffer, prefix) {
  * @param {Buffer} buffer - An instance of a hex encoded address Buffer
  * @param {string=} network - The network: 'livenet' or 'testnet'
  * @param {string=} type - The type: 'pubkeyhash', 'scripthash', 'witnesspubkeyhash', or 'witnessscripthash'
- * @param {string} prefix - The optional bech32 prefix
  * @returns {Object} An object with keys: hashBuffer, network and type
  * @private
  */
-Address._transformBuffer = function(buffer, network, type, prefix) {
+Address._transformBuffer = function(buffer, network, type) {
   /* jshint maxcomplexity: 9 */
   var info = {};
   if (!(buffer instanceof Buffer) && !(buffer instanceof Uint8Array)) {
     throw new TypeError('Address supplied is not a buffer.');
   }
 
-  if (prefix && buffer.length !== 20 && buffer.length !== 32) {
-    throw new TypeError('Address buffer is incorrect length.');
-  } else if (!prefix && buffer.length !== 1 + 20) {
+  if (buffer.length < 21) {
     throw new TypeError('Address buffer is incorrect length.');
   }
 
   var networkObj = Networks.get(network);
-  var bufferVersion = Address._classifyFromVersion(buffer, prefix);
+  var bufferVersion = Address._classifyFromVersion(buffer);
 
   if (network && !networkObj) {
     throw new TypeError('Unknown network');
@@ -244,7 +241,11 @@ Address._transformBuffer = function(buffer, network, type, prefix) {
     throw new TypeError('Address has mismatched type.');
   }
 
-  info.hashBuffer = prefix ? buffer : buffer.slice(1);
+  if (buffer.length > 21) {
+    info.hashBuffer = Bech32.decode(buffer.toString('utf8')).data;
+  } else {
+    info.hashBuffer = buffer.slice(1);
+  }
   info.network = bufferVersion.network;
   info.type = bufferVersion.type;
   return info;
@@ -326,13 +327,12 @@ Address._transformString = function(data, network, type) {
   data = data.trim();
 
   try {
-    var addressInfo = Bech32.decode(data);
-    var info = Address._transformBuffer(addressInfo.data, network, type, addressInfo.prefix);
+    var info = Address._transformBuffer(Buffer.from(data, 'utf8'), network, type);
     return info;
   } catch (e) {
-      if (type === Address.PayToWitnessPublicKeyHash || type === Address.PayToWitnessScriptHash) {
-        throw e;
-      }
+    if (type === Address.PayToWitnessPublicKeyHash || type === Address.PayToWitnessScriptHash) {
+      throw e;
+    }
   }
   
   var addressBuffer = Base58Check.decode(data);
@@ -534,7 +534,7 @@ Address.prototype.isPayToWitnessScriptHash = function() {
  */
 Address.prototype.toBuffer = function() {
   if (this.isPayToWitnessPublicKeyHash() || this.isPayToWitnessScriptHash()) {
-    return this.hashBuffer;
+    return Buffer.from(this.toString(), 'utf8')
   }
   var version = Buffer.from([this.network[this.type]]);
   return Buffer.concat([version, this.hashBuffer]);
