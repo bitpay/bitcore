@@ -1096,7 +1096,7 @@ export class WalletService {
         if (wallet.n > 1 && wallet.usePurpose48) {
           const version = Utils.parseVersion(this.clientVersion);
           if (version && version.agent === 'bwc') {
-            if (version.major < 8 || (version.major === 8 && version.minor < 7)) {
+            if (version.major < 8 || (version.major === 8 && version.minor < 4)) {
               return cb(new ClientError(
                 Errors.codes.UPGRADE_NEEDED,
                 'Please upgrade your client to join this multisig wallet',
