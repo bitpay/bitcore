@@ -196,6 +196,21 @@ export class Utils {
     return v;
   }
 
+  static versionToInt(version) {
+    if (!version) return null;
+
+    let x = version.split('-');
+    if (x.length != 2) {
+      return 0;
+    }
+    x = x[1].split('.');
+    let major = x[0] ? parseInt(x[0]) : 0;
+    let minor = x[1] ? parseInt(x[1]) : 0;
+    let patch = x[2] ? parseInt(x[2]) : 0;
+
+    return major * 1e4 + minor * 1e2  + patch;
+  }
+
   static parseAppVersion(agent) {
     const v: {
       app?: string;

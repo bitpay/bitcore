@@ -40,6 +40,7 @@ export interface IWallet {
   beAuthPublicKey2: string;
   nativeCashAddr: boolean;
   isTestnet?: boolean;
+  minVersionInt: number;
 }
 
 export class Wallet {
@@ -66,6 +67,7 @@ export class Wallet {
   beAuthPublicKey2: string;
   nativeCashAddr: boolean;
   isTestnet?: boolean;
+  minVersionInt: number;
 
   scanning: boolean;
   static COPAYER_PAIR_LIMITS = {};
@@ -116,6 +118,8 @@ export class Wallet {
         ? true
         : null
       : opts.nativeCashAddr;
+  
+    x.minVersionInt  = null;
 
     return x;
   }
@@ -154,6 +158,7 @@ export class Wallet {
     x.beAuthPublicKey2 = obj.beAuthPublicKey2;
 
     x.nativeCashAddr = obj.nativeCashAddr;
+    x.minVersionInt = obj.minVersionInt;
 
     return x;
   }

@@ -1085,9 +1085,19 @@ export class WalletService {
             if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
               return cb(new ClientError(
                 Errors.codes.UPGRADE_NEEDED,
-                'BWC clients < 8.3 are no longer supported for multisig BCH wallets.'
+                'bwc clients < 8.3 are no longer supported for multisig bch wallets.'
               ));
             }
+          }
+        }
+
+        if (wallet.n > 1 && wallet.minVersionInt) {
+          const versionInt = Utils.versionToInt(this.clientVersion);
+          if (versionInt < wallet.minVersionInt) {
+            return cb(new ClientError(
+              Errors.codes.UPGRADE_NEEDED,
+              'Please upgrade to join this multisig wallet',
+            ));
           }
         }
 
