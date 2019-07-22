@@ -2167,8 +2167,15 @@ API.upgradeCredentialsV1 = function(x) {
       }
     });
 
-    // ALL old credentials have multi wallets in 44'.
-    k.use44forMultisig = true;
+    // If the wallet was single seed... multisig walelts accounts
+    // will be 48'
+    k.use44forMultisig = x.n > 1 ? true : false;
+
+    // if old credentials had use145forBCH...use it.
+    // else,if the wallet is bch, set it to true.
+    k.use0forBCH = x.use145forBCH ? false : ( x.coin =='bch' ? true : false );
+
+    k.BIP45 = x.derivationStrategy == 'BIP45';
   } else {
     // RO credentials
     k = false;
@@ -2383,7 +2390,7 @@ API.serverAssistedImport = (opts, clientOpts, callback) => {
           clients.push(iclient);
 
           // Accounts not allowed?
-          if (key.use0forBCH || !key.compliantDerivation || key.use44forMultisig) 
+          if (key.use0forBCH || !key.compliantDerivation || key.use44forMultisig || key.BIP45) 
             return next();
 
           // Now, lets scan all accounts for the found client

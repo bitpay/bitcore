@@ -37,6 +37,8 @@ Key.FIELDS = [
   'mnemonicEncrypted',
   'mnemonicHasPassphrase',
   'fingerPrint',    // BIP32  32bit fingerprint
+  'compliantDerivation',
+  'BIP45',
 
   // data for derived credentials.
   'use0forBCH',          // use the 0 coin' path element in BCH  (legacy)

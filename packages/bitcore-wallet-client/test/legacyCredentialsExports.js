@@ -7,8 +7,12 @@ let x = [
       key: {
         xPrivKey: 'tprv8ZgxMBicQKsPdG9XcQ3VH5eN9mSnHD7SbJEZkXmiQuMpjtNqnba1b643y8mH8WjFCJPj2Jjyy2U79Nayd48NoGgCjTx9BPbDLzkQjFGitty',
         use0forBCH: false,
-        use44forMultisig: true,
+
+        // FALSE because this is a 1-1 wallet. 
+        // new multisig wallet should use 48'
+        use44forMultisig: false,
         compliantDerivation: true,
+              BIP45: false,
       },
       credentials: {
         coin: 'btc',
@@ -23,8 +27,9 @@ let x = [
       key: {
         xPrivKeyEncrypted: '{"iv":"jBiIFQ2SgH12vEZkb+dDbw==","v":1,"iter":10000,"ks":128,"ts":64,"mode":"ccm","adata":"","cipher":"aes","salt":"WXncRtIR9qU=","ct":"nQmvBl3GllfFefkVECfRDVruuT3ci4j4gJ4k++80ilt9KqA8A5X4xxD5VuiwomlDEPAsmbt2EaoKze0X1XKJv40tRsNtstWA64UJdavj2+2bCj4Al1ju8WZg0nAtMFgU9MauBlJf8xFI+51KtLdLo2FQn57raCQ="}',
         use0forBCH: false,
-        use44forMultisig: true,
+        use44forMultisig: false,
         compliantDerivation: true,
+              BIP45: false,
       },
       credentials: {
         coin: 'btc',
@@ -42,6 +47,7 @@ let x = [
         use0forBCH: false,
         use44forMultisig: true,
         compliantDerivation: true,
+              BIP45: false,
       },
       credentials: {
         coin: 'btc',
@@ -58,8 +64,9 @@ let x = [
       key: {
         xPrivKey: 'tprv8ZgxMBicQKsPdG5k3D43eNpvxSvGVk3AyCFiyho4yETefs22pXKKaopUhK7PKdpEhYqGNKzyMQbKpZzo98U3LJ8sDwLS6ft5SVoAzheFzZr',
         use0forBCH: false,
-        use44forMultisig: true,
+        use44forMultisig: false,
         compliantDerivation: true,
+              BIP45: false,
       },
       credentials: {
         coin: 'bch',
@@ -75,7 +82,7 @@ let x = [
       key: {
         xPrivKey: 'tprv8ZgxMBicQKsPdVNTSYvWfaTq9aWucQoNLPyRxLEZnW4zK28d3hVvsfaMXDcW9WWVmCFKSarT6ZEA2Zp6P1qhCSDzTf1GhLw8pu7qDLiGA6Z',
         use0forBCH: false,
-        use44forMultisig: true,
+        use44forMultisig: false,
         compliantDerivation: true,
       },
       credentials: {
@@ -92,8 +99,9 @@ let x = [
             key: {
         xPrivKey: 'tprv8ZgxMBicQKsPdAYhtd2RKsiMCKBKZfTqgTQp8aSFnE8UaHWdHEeWkX4ruppk5mUJNvbQddBs72qy6AdxzUS6jrXap9vrwHttwAgscY7WHJM',
         use0forBCH: false,
-        use44forMultisig: true,
+        use44forMultisig: false,
         compliantDerivation: true,
+              BIP45: true,
       },
       credentials: {
         coin: 'btc',
