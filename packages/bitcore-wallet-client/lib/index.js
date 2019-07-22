@@ -21,3 +21,6 @@ client.sjcl = require('sjcl');
 // Expose bitcore
 client.Bitcore = require('bitcore-lib');
 client.BitcoreCash = require('bitcore-lib-cash');
+
+// Expose crypto-wallet-core
+client.Core = require('crypto-wallet-core');
