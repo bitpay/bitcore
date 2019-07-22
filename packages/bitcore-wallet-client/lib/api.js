@@ -882,6 +882,7 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
     network: network,
     singleAddress: !!opts.singleAddress,
     id: opts.id,
+    usePurpose48: n>1,
   };
   self.request.post('/v2/wallets/', args, function(err, res) {
     if (err) return cb(err);

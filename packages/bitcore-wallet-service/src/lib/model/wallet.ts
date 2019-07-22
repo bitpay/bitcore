@@ -40,7 +40,7 @@ export interface IWallet {
   beAuthPublicKey2: string;
   nativeCashAddr: boolean;
   isTestnet?: boolean;
-  minVersionInt: number;
+  usePurpose48?: boolean;
 }
 
 export class Wallet {
@@ -67,7 +67,7 @@ export class Wallet {
   beAuthPublicKey2: string;
   nativeCashAddr: boolean;
   isTestnet?: boolean;
-  minVersionInt: number;
+  usePurpose48?: boolean;
 
   scanning: boolean;
   static COPAYER_PAIR_LIMITS = {};
@@ -105,6 +105,8 @@ export class Wallet {
     x.addressManager = AddressManager.create({
       derivationStrategy: x.derivationStrategy
     });
+    x.usePurpose48  = opts.usePurpose48;
+
     x.scanStatus = null;
 
     // v8 related
@@ -119,7 +121,6 @@ export class Wallet {
         : null
       : opts.nativeCashAddr;
   
-    x.minVersionInt  = null;
 
     return x;
   }
@@ -158,7 +159,7 @@ export class Wallet {
     x.beAuthPublicKey2 = obj.beAuthPublicKey2;
 
     x.nativeCashAddr = obj.nativeCashAddr;
-    x.minVersionInt = obj.minVersionInt;
+    x.usePurpose48 = obj.usePurpose48;
 
     return x;
   }
