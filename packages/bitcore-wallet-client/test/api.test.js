@@ -4285,7 +4285,7 @@ describe('client API', function() {
     });
   });
 
-  describe.only('from Old credentials', () =>{
+  describe('from Old credentials', () =>{
     describe(`#upgradeCredentialsV1`, function() {
       _.each(oldCredentials, (x) => {
         it(`should  import old ${x.name} credentials`, function() {
