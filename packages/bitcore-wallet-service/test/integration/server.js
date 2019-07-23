@@ -592,7 +592,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe.only('#joinWallet', function() {
+  describe('#joinWallet', function() {
     describe('New clients', function() {
 
       var server, serverForBch, walletId, walletIdForBch;
@@ -989,7 +989,7 @@ describe('Wallet service', function() {
           pubKey: TestData.keyPair.pub
         };
 
-        serverForBch.clientVersion = 'bwc-8.3.0';
+        serverForBch.clientVersion = 'bwc-8.3.4';
 
         serverForBch.createWallet(walletOpts, function(err, wId) {
           should.not.exist(err);
@@ -1042,7 +1042,7 @@ describe('Wallet service', function() {
             requestPubKey: TestData.copayers[0].pubKey_1H_0
           });
 
-          serverForBch.clientVersion = 'bwc-8.4.0';
+          serverForBch.clientVersion = 'bwc-8.3.0';
           serverForBch.joinWallet(copayerOpts, function(err, result) {
             should.not.exist(result);
             should.exist(err);
