@@ -77,7 +77,7 @@ Utils.decryptMessageNoThrow = function(cyphertextJson, encryptingKey) {
  * the hash is calculated there? */
 Utils.hashMessage = function(text) {
   $.checkArgument(text);
-  var buf = new Buffer(text);
+  var buf = Buffer.from(text);
   var ret = crypto.Hash.sha256sha256(buf);
   ret = new Bitcore.encoding.BufferReader(ret).readReverse();
   return ret;

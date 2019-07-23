@@ -22,9 +22,10 @@ var Utils = Common.Utils;
 
 var PayPro = require('./paypro');
 var log = require('./log');
-var Credentials = require('./credentials');
-var Verifier = require('./verifier');
-var Errors = require('./errors');
+const Credentials = require('./credentials');
+const Key = require('./key');
+const Verifier = require('./verifier');
+const Errors = require('./errors');
 const Request = require('./request');
 
 var BASE_URL = 'http://localhost:3232/bws/api';
@@ -145,6 +146,9 @@ API.prototype.setNotificationsInterval = function(notificationIntervalSeconds) {
   }
 };
 
+API.prototype.getRootPath = function() {
+  return this.credentials.getRootPath();
+}
 
 /**
  * Encrypt a message
@@ -211,33 +215,8 @@ API.prototype._processTxps = function(txps) {
   });
 };
 
-/**
- * Seed from random
- *
- * @param {Object} opts
- * @param {String} opts.coin - default 'btc'
- * @param {String} opts.network - default 'livenet'
- */
-API.prototype.seedFromRandom = function(opts) {
-  $.checkArgument(arguments.length <= 1, 'DEPRECATED: only 1 argument accepted.');
-  $.checkArgument(_.isUndefined(opts) || _.isObject(opts), 'DEPRECATED: argument should be an options object.');
-
-  opts = opts || {};
-  this.credentials = Credentials.create(opts.coin || 'btc', opts.network || 'livenet');
-
-  this.request.setCredentials(this.credentials);
-};
-
-
 var _deviceValidated;
 
-/**
- * Seed from random
- *
- * @param {Object} opts
- * @param {String} opts.passphrase
- * @param {Boolean} opts.skipDeviceValidation
- */
 API.prototype.validateKeyDerivation = function(opts, cb) {
   var self = this;
 
@@ -267,6 +246,7 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
     return testMessageSigning(xpriv, xpub);
   };
 
+  // TODO => Key refactor to Key class.
   function testLiveKeys() {
     var words;
     try {
@@ -293,176 +273,59 @@ API.prototype.validateKeyDerivation = function(opts, cb) {
     _deviceValidated = true;
   }
 
-  var liveOk = (c.canSign() && !c.isPrivKeyEncrypted()) ? testLiveKeys() : true;
-
-  self.keyDerivationOk = hardcodedOk && liveOk;
+  // TODO
+//  var liveOk = (c.canSign() && !c.isPrivKeyEncrypted()) ? testLiveKeys() : true;
+  self.keyDerivationOk = hardcodedOk; // && liveOk;
 
   return cb(null, self.keyDerivationOk);
 };
 
 /**
- * Seed from random with mnemonic
+ * toString() wallet
  *
  * @param {Object} opts
- * @param {String} opts.coin - default 'btc'
- * @param {String} opts.network - default 'livenet'
- * @param {String} opts.passphrase
- * @param {Number} opts.language - default 'en'
- * @param {Number} opts.account - default 0
  */
-API.prototype.seedFromRandomWithMnemonic = function(opts) {
-  $.checkArgument(arguments.length <= 1, 'DEPRECATED: only 1 argument accepted.');
-  $.checkArgument(_.isUndefined(opts) || _.isObject(opts), 'DEPRECATED: argument should be an options object.');
-
-  opts = opts || {};
-  this.credentials = Credentials.createWithMnemonic(opts.coin || 'btc', opts.network || 'livenet', opts.passphrase, opts.language || 'en', opts.account || 0);
-  this.request.setCredentials(this.credentials);
-};
-
-API.prototype.getMnemonic = function() {
-  return this.credentials.getMnemonic();
-};
-
-API.prototype.mnemonicHasPassphrase = function() {
-  return this.credentials.mnemonicHasPassphrase;
-};
-
-
-
-API.prototype.clearMnemonic = function() {
-  return this.credentials.clearMnemonic();
-};
-
-
-/**
- * Seed from extended private key
- *
- * @param {String} xPrivKey
- * @param {String} opts.coin - default 'btc'
- * @param {Number} opts.account - default 0
- * @param {String} opts.derivationStrategy - default 'BIP44'
- */
-API.prototype.seedFromExtendedPrivateKey = function(xPrivKey, opts) {
-  opts = opts || {};
-  this.credentials = Credentials.fromExtendedPrivateKey(opts.coin || 'btc', xPrivKey, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
-  this.request.setCredentials(this.credentials);
-};
-
-
-/**
- * Seed from Mnemonics (language autodetected)
- * Can throw an error if mnemonic is invalid
- *
- * @param {String} BIP39 words
- * @param {Object} opts
- * @param {String} opts.coin - default 'btc'
- * @param {String} opts.network - default 'livenet'
- * @param {String} opts.passphrase
- * @param {Number} opts.account - default 0
- * @param {String} opts.derivationStrategy - default 'BIP44'
- */
-API.prototype.seedFromMnemonic = function(words, opts) {
-  $.checkArgument(_.isUndefined(opts) || _.isObject(opts), 'DEPRECATED: second argument should be an options object.');
-
-  opts = opts || {};
-  this.credentials = Credentials.fromMnemonic(opts.coin || 'btc', opts.network || 'livenet', words, opts.passphrase, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44, opts);
-  this.request.setCredentials(this.credentials);
-};
-
-/**
- * Seed from external wallet public key
- *
- * @param {String} xPubKey
- * @param {String} source - A name identifying the source of the xPrivKey (e.g. ledger, TREZOR, ...)
- * @param {String} entropySourceHex - A HEX string containing pseudo-random data, that can be deterministically derived from the xPrivKey, and should not be derived from xPubKey.
- * @param {Object} opts
- * @param {String} opts.coin - default 'btc'
- * @param {Number} opts.account - default 0
- * @param {String} opts.derivationStrategy - default 'BIP44'
- */
-API.prototype.seedFromExtendedPublicKey = function(xPubKey, source, entropySourceHex, opts) {
-  $.checkArgument(_.isUndefined(opts) || _.isObject(opts));
-
-  opts = opts || {};
-  this.credentials = Credentials.fromExtendedPublicKey(opts.coin || 'btc', xPubKey, source, entropySourceHex, opts.account || 0, opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP44);
-  this.request.setCredentials(this.credentials);
-};
-
-
-/**
- * Export wallet
- *
- * @param {Object} opts
- * @param {Boolean} opts.password
- * @param {Boolean} opts.noSign
- */
-API.prototype.export = function(opts) {
+API.prototype.toString = function(opts) {
   $.checkState(this.credentials);
+  $.checkArgument(!this.noSign, 'no Sign not supported');
+  $.checkArgument(!this.password, 'password not supported');
 
   opts = opts || {};
 
   var output;
-
   var c = Credentials.fromObj(this.credentials);
-
-  if (opts.noSign) {
-    c.setNoSign();
-  } else if (opts.password) {
-    c.decryptPrivateKey(opts.password);
-  }
-
   output = JSON.stringify(c.toObj());
-
   return output;
 };
 
 
 /**
- * Import wallet
+ * fromString wallet
  *
  * @param {Object} str - The serialized JSON created with #export
  */
-API.prototype.import = function(str) {
+API.prototype.fromString = function(credentials) {
   try {
-    var credentials = Credentials.fromObj(JSON.parse(str));
+    if ( !_.isObject(credentials) || ! credentials.xPubKey) {
+      credentials = Credentials.fromObj(JSON.parse(credentials));
+    }
     this.credentials = credentials;
   } catch (ex) {
-    throw new Errors.INVALID_BACKUP;
+    log.warn(`Error importing wallet: ${ex}`);
+    if (ex.toString().match(/Obsolete/)) {
+      throw new Errors.OBSOLETE_BACKUP;
+    } else {
+      throw new Errors.INVALID_BACKUP;
+    }
   }
   this.request.setCredentials(this.credentials);
 };
 
-API.prototype._import = function(cb) {
-  $.checkState(this.credentials);
-
-  var self = this;
-
-  // First option, grab wallet info from BWS.
-  self.openWallet(function(err, ret) {
-
-    // it worked?
-    if (!err) return cb(null, ret);
-
-    // Is the error other than "copayer was not found"? || or no priv key.
-    if (err instanceof Errors.NOT_AUTHORIZED || self.isPrivKeyExternal())
-      return cb(err);
-
-    //Second option, lets try to add an access
-    log.info('Copayer not found, trying to add access');
-    self.addAccess({}, function(err) {
-      if (err) {
-        return cb(new Errors.WALLET_DOES_NOT_EXIST);
-      }
-
-      self.openWallet(cb);
-    });
-  });
-};
 
 /**
  * Import from Mnemonics (language autodetected)
  * Can throw an error if mnemonic is invalid
- * Will try compliant and non-compliantDerivation
+ * Will try compilant and non-compliantDerivation
  *
  * @param {String} BIP39 words
  * @param {Object} opts
@@ -475,6 +338,8 @@ API.prototype._import = function(cb) {
  * @param {String} opts.walletPrivKey - if available, walletPrivKey for encrypting metadata
  */
 API.prototype.importFromMnemonic = function(words, opts, cb) {
+  $.checkState(false, 'not supported');
+
   log.debug('Importing from Mnemonic');
 
   var self = this;
@@ -542,6 +407,7 @@ API.prototype.importFromMnemonic = function(words, opts, cb) {
  * @param {Callback} cb - The callback that handles the response. It returns a flag indicating that the wallet is imported.
  */
 API.prototype.importFromExtendedPrivateKey = function(xPrivKey, opts, cb) {
+  $.checkState(false, 'not supported');
   log.debug('Importing from Extended Private Key');
 
   if (!cb) {
@@ -574,6 +440,7 @@ API.prototype.importFromExtendedPrivateKey = function(xPrivKey, opts, cb) {
  * @param {String} opts.compliantDerivation - default 'true'
  */
 API.prototype.importFromExtendedPublicKey = function(xPubKey, source, entropySourceHex, opts, cb) {
+  $.checkState(false, 'not supported');
   $.checkArgument(arguments.length == 5, "DEPRECATED: should receive 5 arguments");
   $.checkArgument(_.isUndefined(opts) || _.isObject(opts));
   $.shouldBeFunction(cb);
@@ -604,7 +471,7 @@ API.prototype.decryptBIP38PrivateKey = function(encryptedPrivateKeyBase58, passp
 
   var privateKey = new Bitcore.PrivateKey(privateKeyWif);
   var address = privateKey.publicKey.toAddress().toString();
-  var addrBuff = new Buffer(address, 'ascii');
+  var addrBuff = Buffer.from(address, 'ascii');
   var actualChecksum = Bitcore.crypto.Hash.sha256sha256(addrBuff).toString('hex').substring(0, 8);
   var expectedChecksum = Bitcore.encoding.Base58Check.decode(encryptedPrivateKeyBase58).toString('hex').substring(6, 14);
 
@@ -688,7 +555,12 @@ API.prototype.buildTxFromPrivateKey = function(privateKey, destinationAddress, o
  * @param {Callback} cb - The callback that handles the response. It returns a flag indicating that the wallet is complete.
  * @fires API#walletCompleted
  */
-API.prototype.openWallet = function(cb) {
+API.prototype.openWallet = function(opts, cb) {
+  if (_.isFunction(opts)) {
+    cb = opts
+  }
+  opts = opts || {};
+
   $.checkState(this.credentials);
   var self = this;
   if (self.credentials.isComplete() && self.credentials.hasWalletInfo())
@@ -708,7 +580,20 @@ API.prototype.openWallet = function(cb) {
       var me = _.find(wallet.copayers, {
         id: self.credentials.copayerId
       });
-      self.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, me.name);
+
+      if(!me) return cb(new Error('Copayer not in wallet'));
+
+      try {
+        self.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, me.name, opts);
+      } catch (e) {
+        if (e.message) {
+          log.info('Trying credentials...', e.message); 
+        }
+        if (e.message && e.message.match(/Bad\snr/)) {
+          return cb(new Errors.WALLET_DOES_NOT_EXIST);
+        }
+        throw e;
+      }
     }
 
     if (wallet.status != 'complete')
@@ -724,7 +609,6 @@ API.prototype.openWallet = function(cb) {
     }
 
     self.credentials.addPublicKeyRing(API._extractPublicKeyRing(wallet.copayers));
-
     self.emit('walletCompleted', wallet);
 
     return cb(null, ret);
@@ -736,7 +620,7 @@ API._buildSecret = function(walletId, walletPrivKey, coin, network) {
   if (_.isString(walletPrivKey)) {
     walletPrivKey = Bitcore.PrivateKey.fromString(walletPrivKey);
   }
-  var widHex = new Buffer(walletId.replace(/-/g, ''), 'hex');
+  var widHex = Buffer.from(walletId.replace(/-/g, ''), 'hex');
   var widBase58 = new Bitcore.encoding.Base58(widHex).toString();
   return _.padEnd(widBase58, 22, '0') + walletPrivKey.toWIF() + (network == 'testnet' ? 'T' : 'L') + coin;
 };
@@ -779,39 +663,6 @@ API.parseSecret = function(secret) {
 API.getRawTx = function(txp) {
   var t = Utils.buildTx(txp);
   return t.uncheckedSerialize();
-};
-
-API.signTxp = function(txp, derivedXPrivKey) {
-  //Derive proper key to sign, for each input
-  var privs = [];
-  var derived = {};
-
-  var xpriv = new Bitcore.HDPrivateKey(derivedXPrivKey);
-
-  _.each(txp.inputs, function(i) {
-    $.checkState(i.path, "Input derivation path not available (signing transaction)")
-    if (!derived[i.path]) {
-      derived[i.path] = xpriv.deriveChild(i.path).privateKey;
-      privs.push(derived[i.path]);
-    }
-  });
-
-  var t = Utils.buildTx(txp);
-
-  var signatures = _.map(privs, function(priv, i) { 
-    return t.getSignatures(priv);
-  });
-
-  signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
-    return s.signature.toDER().toString('hex');
-  });
-
-  return signatures;
-};
-
-API.prototype._signTxp = function(txp, password) {
-  var derived = this.credentials.getDerivedXPrivKey(password);
-  return API.signTxp(txp, derived);
 };
 
 API.prototype._getCurrentSignatures = function(txp) {
@@ -929,98 +780,12 @@ API.prototype.isComplete = function() {
   return this.credentials && this.credentials.isComplete();
 };
 
-/**
- * Is private key currently encrypted?
- *
- * @return {Boolean}
- */
-API.prototype.isPrivKeyEncrypted = function() {
-  return this.credentials && this.credentials.isPrivKeyEncrypted();
-};
-
-/**
- * Is private key external?
- *
- * @return {Boolean}
- */
-API.prototype.isPrivKeyExternal = function() {
-  return this.credentials && this.credentials.hasExternalSource();
-};
-
-/**
- * Get external wallet source name
- *
- * @return {String}
- */
-API.prototype.getPrivKeyExternalSourceName = function() {
-  return this.credentials ? this.credentials.getExternalSourceName() : null;
-};
-
-/**
- * Returns unencrypted extended private key and mnemonics
- *
- * @param password
- */
-API.prototype.getKeys = function(password) {
-  return this.credentials.getKeys(password);
-};
-
-
-/**
- * Checks is password is valid
- * Returns null (keys not encrypted), true or false.
- *
- * @param password
- */
-API.prototype.checkPassword = function(password) {
-  if (!this.isPrivKeyEncrypted()) return;
-
-  try {
-    var keys = this.getKeys(password);
-    return !!keys.xPrivKey;
-  } catch (e) {
-    return false;
-  };
-};
-
-
-/**
- * Can this credentials sign a transaction?
- * (Only returns fail on a 'proxy' setup for airgapped operation)
- *
- * @return {undefined}
- */
-API.prototype.canSign = function() {
-  return this.credentials && this.credentials.canSign();
-};
-
-
 API._extractPublicKeyRing = function(copayers) {
   return _.map(copayers, function(copayer) {
     var pkr = _.pick(copayer, ['xPubKey', 'requestPubKey']);
     pkr.copayerName = copayer.name;
     return pkr;
   });
-};
-
-/**
- * sets up encryption for the extended private key
- *
- * @param {String} password Password used to encrypt
- * @param {Object} opts optional: SJCL options to encrypt (.iter, .salt, etc).
- * @return {undefined}
- */
-API.prototype.encryptPrivateKey = function(password, opts) {
-  this.credentials.encryptPrivateKey(password, opts || API.privateKeyEncryptionOpts);
-};
-
-/**
- * disables encryption for private key.
- *
- * @param {String} password Password used to encrypt
- */
-API.prototype.decryptPrivateKey = function(password) {
-  return this.credentials.decryptPrivateKey(password);
 };
 
 /**
@@ -1034,7 +799,7 @@ API.prototype.decryptPrivateKey = function(password) {
 API.prototype.getFeeLevels = function(coin, network, cb) {
   var self = this;
 
-  $.checkArgument(coin || _.includes(['btc', 'bch'], coin));
+  $.checkArgument(coin || _.includes(Constants.COINS, coin));
   $.checkArgument(network || _.includes(['livenet', 'testnet'], network));
 
   self.request.get('/v2/feelevels/?coin=' + (coin || 'btc') + '&network=' + (network || 'livenet'), function(err, result) {
@@ -1085,13 +850,13 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
   opts = opts || {};
 
   var coin = opts.coin || 'btc';
-  if (!_.includes(['btc', 'bch'], coin)) return cb(new Error('Invalid coin'));
+  if (!_.includes(Constants.COINS, coin)) return cb(new Error('Invalid coin'));
 
   var network = opts.network || 'livenet';
   if (!_.includes(['testnet', 'livenet'], network)) return cb(new Error('Invalid network'));
 
   if (!self.credentials) {
-    return cb(new Error('Generate keys first using seedFrom*'));
+    return cb(new Error('Import credentials first with setCredentials()'));
   }
 
   if (coin != self.credentials.coin) { 
@@ -1117,6 +882,7 @@ API.prototype.createWallet = function(walletName, copayerName, m, n, opts, cb) {
     network: network,
     singleAddress: !!opts.singleAddress,
     id: opts.id,
+    usePurpose48: n>1,
   };
   self.request.post('/v2/wallets/', args, function(err, res) {
     if (err) return cb(err);
@@ -1160,7 +926,7 @@ API.prototype.joinWallet = function(secret, copayerName, opts, cb) {
   opts = opts || {};
 
   var coin = opts.coin || 'btc';
-  if (!_.includes(['btc', 'bch'], coin)) return cb(new Error('Invalid coin'));
+  if (!_.includes(Constants.COINS, coin)) return cb(new Error('Invalid coin'));
 
   try {
     var secretData = API.parseSecret(secret);
@@ -1169,10 +935,7 @@ API.prototype.joinWallet = function(secret, copayerName, opts, cb) {
   }
 
   if (!self.credentials) {
-    self.seedFromRandom({
-      coin: coin,
-      network: secretData.network
-    });
+    return cb(new Error('Import credentials first with setCredentials()'));
   }
 
   self.credentials.addWalletPrivateKey(secretData.walletPrivKey.toString());
@@ -1182,7 +945,7 @@ API.prototype.joinWallet = function(secret, copayerName, opts, cb) {
   }, function(err, wallet) {
     if (err) return cb(err);
     if (!opts.dryRun) {
-      self.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, copayerName);
+      self.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, copayerName, {allowOverwrite: true});
     }
     return cb(null, wallet);
   });
@@ -1230,15 +993,9 @@ API.prototype.recreateWallet = function(cb) {
 
     self.request.post('/v2/wallets/', args, function(err, body) {
       if (err) {
-        if (!(err instanceof Errors.WALLET_ALREADY_EXISTS))
-          return cb(err);
-
-        return self.addAccess({}, function(err) {
-          if (err) return cb(err);
-          self.openWallet(function(err) {
-            return cb(err);
-          });
-        });
+        // return all errors. Can't call addAccess.
+        log.info('openWallet error' + err);
+        return cb(new Errors.WALLET_DOES_NOT_EXIST);
       }
 
       if (!walletId) {
@@ -1656,7 +1413,7 @@ API.prototype.getBalance = function(opts, cb) {
 
   var args = [];
   if (opts.coin) {
-    if (!_.includes(['btc', 'bch'], opts.coin)) return cb(new Error('Invalid coin'));
+    if (!_.includes(Constants.COINS, opts.coin)) return cb(new Error('Invalid coin'));
     args.push('coin=' + opts.coin);
   }
   var qs = '';
@@ -1740,30 +1497,20 @@ API.prototype.getPayPro = function(txp, cb) {
 
 
 /**
- * Sign a transaction proposal
+ * push transaction proposal signatures
  *
  * @param {Object} txp
- * @param {String} password - (optional) A password to decrypt the encrypted private key (if encryption is set).
+ * @param {Array} signatures
  * @param {Callback} cb
  * @return {Callback} cb - Return error or object
  */
-API.prototype.signTxProposal = function(txp, password, cb) {
+API.prototype.pushSignatures = function(txp, signatures, cb) {
   $.checkState(this.credentials && this.credentials.isComplete());
   $.checkArgument(txp.creatorId);
-
-  if (_.isFunction(password)) {
-    cb = password;
-    password = null;
-  }
-
   var self = this;
 
-  if (!txp.signatures) {
-    if (!self.canSign())
-      return cb(new Errors.MISSING_PRIVATE_KEY);
-
-    if (self.isPrivKeyEncrypted() && !password)
-      return cb(new Errors.ENCRYPTED_PRIVATE_KEY);
+  if (_.isEmpty(signatures)) {
+    return cb('No signatures to push. Sign the transaction with Key first');
   }
 
   self.getPayPro(txp, function(err, paypro) {
@@ -1776,16 +1523,6 @@ API.prototype.signTxProposal = function(txp, password, cb) {
     if (!isLegit)
       return cb(new Errors.SERVER_COMPROMISED);
 
-    var signatures = txp.signatures;
-
-    if (_.isEmpty(signatures)) {
-      try {
-        signatures = self._signTxp(txp, password);
-      } catch (ex) {
-        log.error('Error signing tx', ex);
-        return cb(ex);
-      }
-    }
 
     var url = '/v1/txproposals/' + txp.id + '/signatures/';
     var args = {
@@ -1811,6 +1548,7 @@ API.prototype.signTxProposal = function(txp, password, cb) {
  * @return {Object} txp - Return transaction
  */
 API.prototype.signTxProposalFromAirGapped = function(txp, encryptedPkr, m, n, password) {
+  throw new Error('signTxProposalFromAirGapped not yet implemented in v9.0.0');
   $.checkState(this.credentials);
 
   var self = this;
@@ -1864,7 +1602,7 @@ API.signTxProposalFromAirGapped = function(key, txp, unencryptedPkr, m, n, opts)
   opts = opts || {}
 
   var coin = opts.coin || 'btc';
-  if (!_.includes(['btc', 'bch'], coin)) return cb(new Error('Invalid coin'));
+  if (!_.includes(Constants.COINS, coin)) return cb(new Error('Invalid coin'));
 
   var publicKeyRing = JSON.parse(unencryptedPkr);
 
@@ -1876,6 +1614,7 @@ API.signTxProposalFromAirGapped = function(key, txp, unencryptedPkr, m, n, opts)
     baseUrl: 'https://bws.example.com/bws/api'
   });
 
+  // TODO TODO TODO
   if (key.slice(0, 4) === 'xprv' || key.slice(0, 4) === 'tprv') {
     if (key.slice(0, 4) === 'xprv' && txp.network == 'testnet') throw new Error("testnet HD keys must start with tprv");
     if (key.slice(0, 4) === 'tprv' && txp.network == 'livenet') throw new Error("livenet HD keys must start with xprv");
@@ -1885,6 +1624,7 @@ API.signTxProposalFromAirGapped = function(key, txp, unencryptedPkr, m, n, opts)
       'derivationStrategy': opts.derivationStrategy
     });
   } else {
+    
     newClient.seedFromMnemonic(key, {
       'coin': coin,
       'network': txp.network,
@@ -2111,10 +1851,13 @@ API.prototype.startScan = function(opts, cb) {
   });
 };
 
+
+
 /**
  * Adds access to the current copayer
  * @param {Object} opts
- * @param {bool} opts.generateNewKey Optional: generate a new key for the new access
+ * @param {bool} opts.reqPrivKey
+ * @param {bool} opts.signature of the private key, from master key.
  * @param {string} opts.restrictions
  *    - cannotProposeTXs
  *    - cannotXXX TODO
@@ -2123,31 +1866,30 @@ API.prototype.startScan = function(opts, cb) {
  * return the accesses Wallet and the requestPrivateKey
  */
 API.prototype.addAccess = function(opts, cb) {
-  $.checkState(this.credentials && this.credentials.canSign());
+  $.checkState(this.credentials);
+  $.shouldBeString(opts.requestPrivKey, 'no requestPrivKey at addAccess() ');
+  $.shouldBeString(opts.signature, 'no signature at addAccess()');
+
+  var self = this;
 
   opts = opts || {};
-
-  var reqPrivKey = new Bitcore.PrivateKey(opts.generateNewKey ? null : this.credentials.requestPrivKey);
-  var requestPubKey = reqPrivKey.toPublicKey().toString();
-
-  var xPriv = new Bitcore.HDPrivateKey(this.credentials.xPrivKey)
-    .deriveChild(this.credentials.getBaseAddressDerivationPath());
-  var sig = Utils.signRequestPubKey(requestPubKey, xPriv);
+  var requestPubKey = (new Bitcore.PrivateKey(opts.requestPrivKey)).toPublicKey().toString();
   var copayerId = this.credentials.copayerId;
-
   var encCopayerName = opts.name ? Utils.encryptMessage(opts.name, this.credentials.sharedEncryptingKey) : null;
 
-  var opts = {
+  var opts2 = {
     copayerId: copayerId,
     requestPubKey: requestPubKey,
-    signature: sig,
+    signature: opts.signature,
     name: encCopayerName,
     restrictions: opts.restrictions,
   };
 
-  this.request.put('/v1/copayers/' + copayerId + '/', opts, function(err, res) {
+  this.request.put('/v1/copayers/' + copayerId + '/', opts2, function(err, res) {
     if (err) return cb(err);
-    return cb(null, res.wallet, reqPrivKey);
+    // Do not set the key. Return it (for compatibility)
+    //self.credentials.requestPrivKey = opts.requestPrivKey;
+    return cb(null, res.wallet, opts.requestPrivKey);
   });
 };
 
@@ -2401,6 +2143,367 @@ API.prototype.getWalletIdsFromOldCopay = function(username, password, blob) {
   return _.uniq(ids);
 };
 
-API.PayPro = PayPro;
+/**
+ * upgradeCredentialsV1 
+ * upgrade Credentials V1 to Key and Credentials V2 object
+ *
+ * @param {Object} x - Credentials V1 Object
+ 
+ * @returns {Callback} cb - Returns { err, {key, credentials} }
+ */
 
+API.upgradeCredentialsV1 = function(x) {
+  $.shouldBeObject(x);
+
+  if (!_.isUndefined(x.version) || (!x.xPrivKey && !x.xPrivKeyEncrypted && !x.xPubKey)) {
+    throw 'Could not recognize old version';
+  }
+
+  let k;
+  if (x.xPrivKey || x.xPrivKeyEncrypted) {
+    k = new Key();
+    _.each(Key.FIELDS, (i) => {
+      if (!_.isUndefined(x[i])) {
+        k[i] = x[i];
+      }
+    });
+
+    // If the wallet was single seed... multisig walelts accounts
+    // will be 48'
+    k.use44forMultisig = x.n > 1 ? true : false;
+
+    // if old credentials had use145forBCH...use it.
+    // else,if the wallet is bch, set it to true.
+    k.use0forBCH = x.use145forBCH ? false : ( x.coin =='bch' ? true : false );
+
+    k.BIP45 = x.derivationStrategy == 'BIP45';
+  } else {
+    // RO credentials
+    k = false;
+  }
+
+
+  let obsoleteFields = {
+    version: true,
+    xPrivKey: true,
+    xPrivKeyEncrypted: true,
+    hwInfo: true,
+    entropySourcePath: true,
+    mnemonic: true,
+    mnemonicEncrypted: true,
+  };
+
+
+  var c = new Credentials();
+  _.each(Credentials.FIELDS, function(i) {
+    if (!obsoleteFields[i]) {
+      c[i] = x[i];
+    }
+  });
+  if (c.externalSource) {
+    throw new Error('External Wallets are no longer supported');
+  }
+  c.coin = c.coin || 'btc';
+  c.addressType = c.addressType || Constants.SCRIPT_TYPES.P2SH;
+  c.account = c.account || 0;
+  c.rootPath = c.getRootPath();
+  c.keyId = k.id;
+  return {key: k, credentials: c};
+};
+
+
+/**
+ * upgradeMultipleCredentialsV1 
+ * upgrade multiple Credentials V1 and (opionally) keys to Key and Credentials V2 object
+ * Duplicate keys will be identified and merged.
+ *
+ * @param {Object} credentials - Credentials V1 Object
+ * @param {Object} keys - Key object
+ *
+ 
+ * @returns {Callback} cb - Returns { err, {keys, credentials} }
+ */
+
+
+API.upgradeMultipleCredentialsV1 = function(oldCredentials) {
+
+  let newKeys = [],
+    newCrededentials = [];
+  // Try to migrate to Credentials 2.0
+  _.each(oldCredentials, credentials => {
+    let migrated;
+
+    if (!credentials.version || credentials.version < 2) {
+      log.info('About to migrate : ' + credentials.walletId);
+
+      migrated = API.upgradeCredentialsV1(credentials);
+      newCrededentials.push(migrated.credentials);
+
+      if (migrated.key) {
+        log.info(`Wallet ${credentials.walletId} key's extracted`);
+        newKeys.push(migrated.key);
+      } else {
+        log.info(`READ-ONLY Wallet ${credentials.walletId} migrated`);
+      }
+    }
+  });
+
+  if (newKeys.length > 0) {
+    // Find and merge dup keys.
+    let credGroups = _.groupBy(newCrededentials, (x) => {
+      $.checkState(x.xPubKey, 'no xPubKey at credentials!');
+      let xpub = new Bitcore.HDPublicKey(x.xPubKey);
+      let fingerPrint = xpub.fingerPrint.toString('hex');
+      return fingerPrint;
+    });
+
+    if (_.keys(credGroups).length < newCrededentials.length) {
+      log.info(`Found some wallets using the SAME key. Merging...`);
+
+      let uniqIds = {};
+
+      _.each(_.values(credGroups), credList => {
+        let toKeep = credList.shift();
+        if (!toKeep.keyId) return;
+        uniqIds[toKeep.keyId]=true;
+
+        if (!credList.length) return;
+        log.info(`Merging ${credList.length} keys to ${toKeep.keyId}`);
+        _.each(credList, x => {
+          log.info(`\t${x.keyId} is now ${toKeep.keyId}`);
+            x.keyId = toKeep.keyId;
+        });
+      });
+
+      newKeys = _.filter(newKeys, x => uniqIds[x.id]);;
+    }
+  }
+
+  return  {
+    keys: newKeys,
+    credentials: newCrededentials,
+  };
+};
+
+
+/**
+ * serverAssistedImport 
+ * Imports  EXISTING wallets against BWS and return key & clients[] for each account / coin
+ *
+ * @param {Object} opts
+ * @param {String} opts.words - mnemonic
+ * @param {String} opts.xPrivKey - extended Private Key 
+ * @param {String} opts.passphrase - mnemonic's passphrase (optional)
+ * @param {Object} clientOpts  - BWS connection options (see ClientAPI constructor)
+ 
+ * @returns {Callback} cb - Returns { err, key, clients[] }
+ */
+
+API.serverAssistedImport = (opts, clientOpts, callback) => {
+  var self = this;
+
+  $.checkArgument(opts.words || opts.xPrivKey, "provide opts.words or opts.xPrivKey");
+
+  let copayerIdAlreadyTested = {};
+  function checkCredentials(key, opts, icb) {
+    let c = key.createCredentials(null, {
+      coin: opts.coin, 
+      network: opts.network, 
+      account: opts.account, 
+      n: opts.n,
+    });
+
+
+    if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
+//console.log('[api.js.2226] ALREADY T:', opts.n); // TODO
+      return  icb();
+    } else {
+     copayerIdAlreadyTested[c.copayerId+ ':' + opts.n] = true;
+    }
+
+    let client  = clientOpts.clientFactory ?  clientOpts.clientFactory() :  new API(clientOpts);
+
+    client.fromString(c);
+    client.openWallet({}, function(err) {
+      console.log(`PATH: ${c.rootPath} n: ${c.n}:`, (err && err.message) ? err.message : 'FOUND!'); // TODO
+      // Exists
+      if (!err) return icb(null, client);
+      if (err instanceof Errors.NOT_AUTHORIZED || 
+        err instanceof Errors.WALLET_DOES_NOT_EXIST) {
+        return icb();
+      }
+
+      return icb(err);
+    })
+  };
+  
+  function checkKey(key, cb) {
+    let opts = [
+
+      //coin, network,  multisig
+      ['btc', 'livenet', ],          
+      ['bch', 'livenet', ],          
+      ['btc', 'livenet', true ],    
+      ['bch', 'livenet', true ],    
+    ];
+    if (key.use44forMultisig) {
+      //  testing old multi sig
+      opts = opts.filter((x) => {
+        return x[2];
+      });
+    }
+
+    if (key.use0forBCH) {
+      //  testing BCH, old coin=0 wallets
+      opts = opts.filter((x) => {
+        return x[0] == 'bch';
+      });
+    }
+
+    if (!key.nonCompliantDerivation) {
+      // TESTNET
+      let testnet = _.cloneDeep(opts);
+      testnet.forEach((x) => { x[1] = 'testnet' });
+      opts = opts.concat(testnet);
+    } else {
+      //  leave only BTC, and no testnet
+      opts = opts.filter((x) => {
+        return x[0] == 'btc';
+      });
+    }
+
+    let clients = [];
+    async.eachSeries(opts, 
+      (x, next) => {
+        let optsObj = {
+          coin: x[0] ,
+          network: x[1],
+          account: 0,
+          n: x[2] ? 2: 1,
+        };
+//console.log('[api.js.2287:optsObj:]',optsObj); // TODO
+        // TODO OPTI: do not scan accounts if XX
+        //
+        // 1. check account 0
+        checkCredentials(key, optsObj, (err, iclient) => {
+          if (err) return next(err);
+          if (!iclient) return next();
+          clients.push(iclient);
+
+          // Accounts not allowed?
+          if (key.use0forBCH || !key.compliantDerivation || key.use44forMultisig || key.BIP45) 
+            return next();
+
+          // Now, lets scan all accounts for the found client
+          let cont = true, account = 1;
+          async.whilst(() => {
+            return cont;
+          }, (icb) => {
+            optsObj.account = account++;
+
+            checkCredentials(key, optsObj, (err, iclient) => {
+              if (err) return icb(err);
+              cont = !!iclient;
+              if (iclient) {
+               clients.push(iclient);
+              } else {
+                // we do not allow accounts nr gaps in BWS. 
+                cont = false;
+              };
+              return icb();
+            });
+          }, (err) => {
+            return next(err);
+          });
+        });
+      }, 
+      (err) => {
+        if (err) return cb(err);
+        return cb(null, clients);
+      });
+  };
+
+
+  let sets = [ 
+    {
+      // current wallets: /[44,48]/[0,145]'/
+      nonCompliantDerivation: false,
+      useLegacyCoinType: false,
+      useLegacyPurpose: false,
+    },
+    {
+      // older bch wallets: /[44,48]/[0,0]'/
+      nonCompliantDerivation: false,
+      useLegacyCoinType: true,
+      useLegacyPurpose: false,
+    },
+    {
+      // older BTC/BCH  multisig wallets: /[44]/[0,145]'/
+      nonCompliantDerivation: false,
+      useLegacyCoinType: false,
+      useLegacyPurpose: true,
+    },
+    {
+      // not that // older multisig BCH wallets: /[44]/[0]'/
+      nonCompliantDerivation: false,
+      useLegacyCoinType: true,
+      useLegacyPurpose: true,
+    },
+ 
+    {
+      // old BTC no-comp wallets: /44'/[0]'/
+      nonCompliantDerivation: true,
+      useLegacyPurpose: true,
+    },
+  ];
+
+  let s, resultingClients = [], k;
+  async.whilst(() => {
+    if (! _.isEmpty(resultingClients))
+      return false;
+
+    s = sets.shift();
+    if (!s) 
+      return false;
+
+
+    try {
+      if (opts.words) { 
+
+        if (opts.passphrase) {
+          s.passphrase = opts.passphrase;
+        }
+
+        k  = Key.fromMnemonic(opts.words, s);
+      } else {
+        k  = Key.fromExtendedPrivateKey(opts.xPrivKey, s);
+      }
+    } catch (e) {
+      log.info('Backup error:', e);
+      return callback(new Errors.INVALID_BACKUP);
+    }
+    return true;
+  }, (icb) => {
+    checkKey(k, (err, clients) => {
+      if (err) return icb(err);
+
+      if (clients && clients.length) {
+        resultingClients = clients;
+      }
+      return icb();
+    });
+  }, (err) => {
+    if (err) return callback(err);
+
+    if (_.isEmpty(resultingClients)) 
+      k=null;
+
+    return callback(null, k, resultingClients);
+  });
+};
+
+
+
+API.PayPro = PayPro;
+API.Key = Key;
 module.exports = API;

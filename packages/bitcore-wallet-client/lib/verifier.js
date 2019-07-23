@@ -188,7 +188,7 @@ Verifier.checkPaypro = function(txp, payproOpts) {
   if (txp.coin == 'btc' && toAddress != payproOpts.toAddress)
     return false;
 
-  // To circunvent cashaddr/legacy address problems...
+  // Workaround for cashaddr/legacy address problems...
   if (txp.coin == 'bch' && (new BCHAddress(toAddress).toString()) != (new BCHAddress(payproOpts.toAddress).toString())) 
     return false;
 
