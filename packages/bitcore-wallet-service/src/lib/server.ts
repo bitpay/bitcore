@@ -556,7 +556,7 @@ export class WalletService {
             derivationStrategy,
             addressType,
             nativeCashAddr: opts.nativeCashAddr,
-            usePurpose48: opts.n >1 && !!opts.usePurpose48,
+            usePurpose48: opts.n > 1 && !!opts.usePurpose48,
           });
           this.storage.storeWallet(wallet, (err) => {
             this.logd('Wallet created', wallet.id, opts.network);
@@ -4522,7 +4522,7 @@ export class WalletService {
   getFiatRate(opts, cb) {
     if (!checkRequired(opts, ['code'], cb)) return;
 
-console.log('[server.ts.4487:opts:]',opts); // TODO
+    console.log('[server.ts.4487:opts:]', opts); // TODO
     this.fiatRateService.getRate(opts, (err, rate) => {
       if (err) return cb(err);
       return cb(null, rate);

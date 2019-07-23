@@ -77,7 +77,7 @@ export class ExpressApp {
     );
 
     this.app.use((req, res, next) => {
-      if(config.maintenanceOpts.maintenanceMode === true) {
+      if (config.maintenanceOpts.maintenanceMode === true) {
         // send a 503 error, with a message to the bitpay status page
         let errorCode = 503;
         let errorMessage = 'BWS down for maintenance';
