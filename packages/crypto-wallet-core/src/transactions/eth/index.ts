@@ -2,7 +2,7 @@ import EthereumTx from 'ethereumjs-tx';
 import { Key } from '../../derivation';
 const utils = require('web3-utils');
 export class ETHTxProvider {
-  create(params: {
+  async create(params: {
     recipients: Array<{ address: string; amount: string }>;
     from: string;
     nonce: number;
@@ -24,14 +24,17 @@ export class ETHTxProvider {
     return rawTx;
   }
 
-  sign(params: { tx: string; key: Key; from: string }) {
+  async sign(params: { tx: string; key: Key; from: string }) {
     const { tx, key, from } = params;
     const rawTx = new EthereumTx(tx);
     const address = from.toLowerCase();
-    const bufferKey = Buffer.from(key.privKey, 'hex');
-    rawTx.sign(bufferKey);
-    const serializedTx = rawTx.serialize();
-    
-    return '0x' + serializedTx.toString('hex');
+    try {
+      const bufferKey = Buffer.from(key.privKey, 'hex');
+      rawTx.sign(bufferKey);
+      const serializedTx = rawTx.serialize();
+      return '0x' + serializedTx.toString('hex');
+    } catch (err) {
+      console.log(err);
+    }
   }
 }

@@ -28,8 +28,8 @@ export class BTCTxProvider {
     return filteredUtxos;
   }
 
-  create({ recipients, utxos = [], change, wallet, fee = 20000 }) {
-    change = change || (wallet.deriveAddress(wallet.addressIndex, true));
+  async create({ recipients, utxos = [], change, wallet, fee = 20000 }) {
+    change = change || (await wallet.deriveAddress(wallet.addressIndex, true));
 
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
@@ -48,16 +48,16 @@ export class BTCTxProvider {
     return tx.uncheckedSerialize();
   }
 
-  sign(params: { tx: string; keys: Array<Key>; utxos: any[] }) {
+  async sign(params: { tx: string; keys: Array<Key>; utxos: any[] }) {
     const { tx, keys } = params;
     let utxos = params.utxos || [];
-    let inputAddresses = this.getSigningAddresses({ tx, utxos });
+    let inputAddresses = await this.getSigningAddresses({ tx, utxos });
     let bitcoreTx = new this.lib.Transaction(tx);
-    let applicableUtxos = this.getRelatedUtxos({
+    let applicableUtxos = await this.getRelatedUtxos({
       outputs: bitcoreTx.inputs,
       utxos
     });
-    const outputs = this.getOutputsFromTx({ tx: bitcoreTx });
+    const outputs = await this.getOutputsFromTx({ tx: bitcoreTx });
     let newTx = new this.lib.Transaction().from(applicableUtxos).to(outputs);
     const privKeys = _.uniq(keys.map(key => key.privKey.toString()));
     const signedTx = newTx.sign(privKeys).toString();
