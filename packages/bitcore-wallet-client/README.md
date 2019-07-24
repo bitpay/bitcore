@@ -42,9 +42,13 @@ var Client = require('bitcore-wallet-client');
 var fs = require('fs');
 var BWS_INSTANCE_URL = 'https://bws.bitpay.com/bws/api'
 
+// Generates a new extended private key
+var ireneKeys = Keys.create();
+
 var client = new Client({
   baseUrl: BWS_INSTANCE_URL,
   verbose: false,
+  
 });
 
 client.createWallet("My Wallet", "Irene", 2, 2, {network: 'testnet'}, function(err, secret) {
@@ -54,6 +58,7 @@ client.createWallet("My Wallet", "Irene", 2, 2, {network: 'testnet'}, function(e
   };
   // Handle err
   console.log('Wallet Created. Share this secret with your copayers: ' + secret);
+  fs.writeFileSync('irene-secret.dat', ireneKeys.export());
   fs.writeFileSync('irene.dat', client.export());
 });
 ```
@@ -74,6 +79,7 @@ if (!secret) {
   process.exit(0);
 }
 
+var tomasKeys = Keys.create();
 var client = new Client({
   baseUrl: BWS_INSTANCE_URL,
   verbose: false,
