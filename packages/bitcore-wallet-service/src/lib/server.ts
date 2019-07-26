@@ -4522,7 +4522,6 @@ export class WalletService {
   getFiatRate(opts, cb) {
     if (!checkRequired(opts, ['code'], cb)) return;
 
-    console.log('[server.ts.4487:opts:]', opts); // TODO
     this.fiatRateService.getRate(opts, (err, rate) => {
       if (err) return cb(err);
       return cb(null, rate);

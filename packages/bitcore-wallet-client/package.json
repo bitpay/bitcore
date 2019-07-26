@@ -31,8 +31,8 @@
     "bitcore-lib-cash": "^8.5.0",
     "bitcore-mnemonic": "^8.5.0",
     "json-stable-stringify": "^1.0.1",
-    "lodash": "^4.17.11",
-    "preconditions": "^2.2.1",
+    "lodash": "^4.17.15",
+    "preconditions": "^2.2.3",
     "sjcl": "1.0.3",
     "superagent": "^3.4.1"
   },
