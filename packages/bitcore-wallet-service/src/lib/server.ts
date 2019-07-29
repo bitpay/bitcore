@@ -474,6 +474,7 @@ export class WalletService {
    * @param {string} opts.coin[='btc'] - The coin for this wallet (btc, bch).
    * @param {string} opts.network[='livenet'] - The Bitcoin network for this wallet.
    * @param {string} opts.account[=0] - BIP44 account number
+   * @param {string} opts.usePurpose48 - for Multisig wallet, use purpose=48
    */
   createWallet(opts, cb) {
     let pubKey;
@@ -554,7 +555,8 @@ export class WalletService {
             singleAddress: !!opts.singleAddress,
             derivationStrategy,
             addressType,
-            nativeCashAddr: opts.nativeCashAddr
+            nativeCashAddr: opts.nativeCashAddr,
+            usePurpose48: opts.n > 1 && !!opts.usePurpose48,
           });
           this.storage.storeWallet(wallet, (err) => {
             this.logd('Wallet created', wallet.id, opts.network);
@@ -1085,7 +1087,19 @@ export class WalletService {
             if (version.major < 8 || (version.major === 8 && version.minor < 3)) {
               return cb(new ClientError(
                 Errors.codes.UPGRADE_NEEDED,
-                'BWC clients < 8.3 are no longer supported for multisig BCH wallets.'
+                'BWC clients < 8.3 are no longer supported for multisig BCH wallets.',
+              ));
+            }
+          }
+        }
+
+        if (wallet.n > 1 && wallet.usePurpose48) {
+          const version = Utils.parseVersion(this.clientVersion);
+          if (version && version.agent === 'bwc') {
+            if (version.major < 8 || (version.major === 8 && version.minor < 4)) {
+              return cb(new ClientError(
+                Errors.codes.UPGRADE_NEEDED,
+                'Please upgrade your client to join this multisig wallet',
               ));
             }
           }

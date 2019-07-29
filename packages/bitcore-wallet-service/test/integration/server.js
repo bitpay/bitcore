@@ -679,43 +679,6 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should join wallet BCH if BWC version is 8.3.0 or higher', function(done) {
-        serverForBch = new WalletService();
-        var walletOpts = {
-          coin: 'bch',
-          name: 'my wallet',
-          m: 1,
-          n: 2,
-          pubKey: TestData.keyPair.pub
-        };
-
-        serverForBch.clientVersion = 'bwc-8.3.0';
-
-        serverForBch.createWallet(walletOpts, function(err, wId) {
-          should.not.exist(err);
-          walletIdForBch = wId;
-          should.exist(walletIdForBch);
-
-          var copayerOpts = helpers.getSignedCopayerOpts({
-            coin: 'bch',
-            walletId: walletIdForBch,
-            name: 'me',
-            xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
-            requestPubKey: TestData.copayers[0].pubKey_1H_0,
-            customData: 'dummy custom data'
-          });
-
-          serverForBch.clientVersion = 'bwc-8.3.0';
-
-          serverForBch.joinWallet(copayerOpts, function(err, result) {
-            should.not.exist(err);
-            should.exist(result);
-            should.exist(result.copayerId);
-            done();
-          });
-        });
-      });
-
       it('should join wallet BTC if BWC version is lower than 8.3.0', function(done) {
         var copayerOpts = helpers.getSignedCopayerOpts({
           walletId: walletId,
@@ -737,45 +700,6 @@ describe('Wallet service', function() {
           should.exist(result);
           should.exist(result.copayerId);
           done();
-        });
-      });
-
-      it('should fail to join wallets BCH if BWC version is lower than 8.3.0', function(done) {
-        serverForBch = new WalletService();
-        var walletOpts = {
-          coin: 'bch',
-          name: 'my wallet',
-          m: 1,
-          n: 2,
-          pubKey: TestData.keyPair.pub,
-          walletId: walletId
-        };
-
-        serverForBch.clientVersion = 'bwc-8.3.0';
-
-        serverForBch.createWallet(walletOpts, function(err, wId) {
-          should.not.exist(err);
-          walletIdForBch = wId;
-          should.exist(walletIdForBch);
-
-          var copayerOpts = helpers.getSignedCopayerOpts({
-            coin: 'bch',
-            walletId: walletIdForBch,
-            name: 'me',
-            m: 2,
-            n: 3,
-            xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
-            requestPubKey: TestData.copayers[0].pubKey_1H_0
-          });
-
-          serverForBch.clientVersion = 'bwc-8.2.0';
-
-          serverForBch.joinWallet(copayerOpts, function(err, result) {
-            should.not.exist(result);
-            should.exist(err);
-            err.message.should.contain('BWC clients < 8.3 are no longer supported for multisig BCH wallets.');
-            done();
-          });
         });
       });
 
@@ -1052,6 +976,117 @@ describe('Wallet service', function() {
       });
     });
 
+    describe('New clients 2', function() {
+      var server, serverForBch, walletId, walletIdForBch;
+
+      it('should join wallet BCH if BWC version is 8.3.0 or higher', function(done) {
+        serverForBch = new WalletService();
+        var walletOpts = {
+          coin: 'bch',
+          name: 'my wallet',
+          m: 1,
+          n: 2,
+          pubKey: TestData.keyPair.pub
+        };
+
+        serverForBch.clientVersion = 'bwc-8.3.4';
+
+        serverForBch.createWallet(walletOpts, function(err, wId) {
+          should.not.exist(err);
+          walletIdForBch = wId;
+          should.exist(walletIdForBch);
+
+          var copayerOpts = helpers.getSignedCopayerOpts({
+            coin: 'bch',
+            walletId: walletIdForBch,
+            name: 'me',
+            xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+            requestPubKey: TestData.copayers[0].pubKey_1H_0,
+            customData: 'dummy custom data'
+          });
+
+          serverForBch.clientVersion = 'bwc-8.3.0';
+
+          serverForBch.joinWallet(copayerOpts, function(err, result) {
+            should.not.exist(err);
+            should.exist(result);
+            should.exist(result.copayerId);
+            done();
+          });
+        });
+      });
+
+      it('should fail to join BIP48 wallets from old clients ', function(done) {
+        serverForBch = new WalletService();
+        var walletOpts = {
+          coin: 'bch',
+          name: 'my wallet',
+          m: 1,
+          n: 2,
+          pubKey: TestData.keyPair.pub,
+          walletId: walletId,
+          usePurpose48: true,
+        };
+        serverForBch.createWallet(walletOpts, function(err, wId) {
+          should.not.exist(err);
+          walletIdForBch = wId;
+          should.exist(walletIdForBch);
+
+          var copayerOpts = helpers.getSignedCopayerOpts({
+            coin: 'bch',
+            walletId: walletIdForBch,
+            name: 'me',
+            m: 2,
+            n: 3,
+            xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+            requestPubKey: TestData.copayers[0].pubKey_1H_0
+          });
+
+          serverForBch.clientVersion = 'bwc-8.3.0';
+          serverForBch.joinWallet(copayerOpts, function(err, result) {
+            should.not.exist(result);
+            should.exist(err);
+            err.message.should.contain('upgrade');
+            done();
+          });
+        });
+      });
+
+      it('should join BIP48 wallets from new clients ', function(done) {
+        serverForBch = new WalletService();
+        var walletOpts = {
+          coin: 'bch',
+          name: 'my wallet',
+          m: 1,
+          n: 2,
+          pubKey: TestData.keyPair.pub,
+          walletId: walletId,
+          usePurpose48: true,
+        };
+        serverForBch.createWallet(walletOpts, function(err, wId) {
+          should.not.exist(err);
+          walletIdForBch = wId;
+          should.exist(walletIdForBch);
+
+          var copayerOpts = helpers.getSignedCopayerOpts({
+            coin: 'bch',
+            walletId: walletIdForBch,
+            name: 'me',
+            m: 2,
+            n: 3,
+            xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+            requestPubKey: TestData.copayers[0].pubKey_1H_0
+          });
+
+          serverForBch.clientVersion = 'bwc-8.7.0';
+          serverForBch.joinWallet(copayerOpts, function(err, result) {
+            should.not.exist(err);
+            should.exist(result);
+            done();
+          });
+        });
+      });
+    });
   });
 
   describe('#removeWallet', function() {
