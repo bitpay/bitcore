@@ -1,7 +1,5 @@
-var Common = {};
-
-Common.Constants = require('./constants');
-Common.Defaults = require('./defaults');
-Common.Utils = require('./utils');
-
-module.exports = Common;
+module.exports = {
+  Constants: require('./constants'),
+  Defaults: require('./defaults'),
+  Utils: require('./utils')
+};

@@ -13,274 +13,272 @@ var Bitcore_ = {
 var PrivateKey = Bitcore.PrivateKey;
 var PublicKey = Bitcore.PublicKey;
 var crypto = Bitcore.crypto;
-var encoding = Bitcore.encoding;
 
 var Constants = require('./constants');
 var Defaults = require('./defaults');
+let SJCL = {};
 
-function Utils() {};
+export class Utils {
 
-Utils.SJCL = {};
+  encryptMessage(message, encryptingKey) {
+    var key = sjcl.codec.base64.toBits(encryptingKey);
+    return sjcl.encrypt(key, message, _.defaults({
+      ks: 128,
+      iter: 1,
+    }, SJCL));
+  };
 
-Utils.encryptMessage = function(message, encryptingKey) {
-  var key = sjcl.codec.base64.toBits(encryptingKey);
-  return sjcl.encrypt(key, message, _.defaults({
-    ks: 128,
-    iter: 1,
-  }, Utils.SJCL));
-};
+  // Will throw if it can't decrypt
+  decryptMessage(cyphertextJson, encryptingKey) {
+    if (!cyphertextJson) return;
 
-// Will throw if it can't decrypt
-Utils.decryptMessage = function(cyphertextJson, encryptingKey) {
-  if (!cyphertextJson) return;
+    if (!encryptingKey)
+      throw 'No key';
 
-  if (!encryptingKey)
-    throw 'No key';
-
-  var key = sjcl.codec.base64.toBits(encryptingKey);
-  return sjcl.decrypt(key, cyphertextJson);
-};
+    var key = sjcl.codec.base64.toBits(encryptingKey);
+    return sjcl.decrypt(key, cyphertextJson);
+  };
 
 
-Utils.decryptMessageNoThrow = function(cyphertextJson, encryptingKey) {
-  function isJsonString(str) {
-    var r;
+  decryptMessageNoThrow(cyphertextJson, encryptingKey) {
+    function isJsonString(str) {
+      var r;
+      try {
+        r = JSON.parse(str);
+      } catch (e) {
+        return false;
+      }
+      return r;
+    }
+
+    if (!encryptingKey)
+      return '<ECANNOTDECRYPT>';
+
+    if (!cyphertextJson)
+      return '';
+
+    // no sjcl encrypted json
+    var r = isJsonString(cyphertextJson);
+    if (!r || !r.iv || !r.ct) {
+      return cyphertextJson;
+    }
+
     try {
-      r=JSON.parse(str);
+      return this.decryptMessage(cyphertextJson, encryptingKey);
+    } catch (e) {
+      return '<ECANNOTDECRYPT>';
+    }
+  };
+
+
+  /* TODO: It would be nice to be compatible with bitcoind signmessage. How
+   * the hash is calculated there? */
+  hashMessage(text) {
+    $.checkArgument(text);
+    var buf = Buffer.from(text);
+    var ret = crypto.Hash.sha256sha256(buf);
+    ret = new Bitcore.encoding.BufferReader(ret).readReverse();
+    return ret;
+  };
+
+
+  signMessage(text, privKey) {
+    $.checkArgument(text);
+    var priv = new PrivateKey(privKey);
+    var hash = this.hashMessage(text);
+    return crypto.ECDSA.sign(hash, priv, 'little').toString();
+  };
+
+
+  verifyMessage(text, signature, pubKey) {
+    $.checkArgument(text);
+    $.checkArgument(pubKey);
+
+    if (!signature)
+      return false;
+
+    var pub = new PublicKey(pubKey);
+    var hash = this.hashMessage(text);
+
+    try {
+      var sig = new crypto.Signature.fromString(signature);
+      return crypto.ECDSA.verify(hash, sig, pub, 'little');
     } catch (e) {
       return false;
     }
-    return r;
-  }
-
-  if (!encryptingKey)
-    return '<ECANNOTDECRYPT>';
-
-  if (!cyphertextJson)
-    return '';
-
-  // no sjcl encrypted json
-  var r= isJsonString(cyphertextJson);
-  if (!r|| !r.iv || !r.ct) {
-    return cyphertextJson;
-  }
-
-  try {
-    return Utils.decryptMessage(cyphertextJson, encryptingKey);
-  } catch (e) {
-    return '<ECANNOTDECRYPT>';
-  }
-};
-
-
-/* TODO: It would be nice to be compatible with bitcoind signmessage. How
- * the hash is calculated there? */
-Utils.hashMessage = function(text) {
-  $.checkArgument(text);
-  var buf = Buffer.from(text);
-  var ret = crypto.Hash.sha256sha256(buf);
-  ret = new Bitcore.encoding.BufferReader(ret).readReverse();
-  return ret;
-};
-
-
-Utils.signMessage = function(text, privKey) {
-  $.checkArgument(text);
-  var priv = new PrivateKey(privKey);
-  var hash = Utils.hashMessage(text);
-  return crypto.ECDSA.sign(hash, priv, 'little').toString();
-};
-
-
-Utils.verifyMessage = function(text, signature, pubKey) {
-  $.checkArgument(text);
-  $.checkArgument(pubKey);
-
-  if (!signature)
-    return false;
-
-  var pub = new PublicKey(pubKey);
-  var hash = Utils.hashMessage(text);
-
-  try {
-    var sig = new crypto.Signature.fromString(signature);
-    return crypto.ECDSA.verify(hash, sig, pub, 'little');
-  } catch (e) {
-    return false;
-  }
-};
-
-Utils.privateKeyToAESKey = function(privKey) {
-  $.checkArgument(privKey && _.isString(privKey));
-  $.checkArgument(Bitcore.PrivateKey.isValid(privKey), 'The private key received is invalid');
-  var pk = Bitcore.PrivateKey.fromString(privKey);
-  return Bitcore.crypto.Hash.sha256(pk.toBuffer()).slice(0, 16).toString('base64');
-};
-
-Utils.getCopayerHash = function(name, xPubKey, requestPubKey) {
-  return [name, xPubKey, requestPubKey].join('|');
-};
-
-Utils.getProposalHash = function(proposalHeader) {
-  function getOldHash(toAddress, amount, message, payProUrl) {
-    return [toAddress, amount, (message || ''), (payProUrl || '')].join('|');
   };
 
-  // For backwards compatibility
-  if (arguments.length > 1) {
-    return getOldHash.apply(this, arguments);
-  }
-
-  return Stringify(proposalHeader);
-};
-
-Utils.deriveAddress = function(scriptType, publicKeyRing, path, m, network, coin) {
-  $.checkArgument(_.includes(_.values(Constants.SCRIPT_TYPES), scriptType));
-
-  coin = coin || 'btc';
-  var bitcore = Bitcore_[coin];
-  var publicKeys = _.map(publicKeyRing, function(item) {
-    var xpub = new bitcore.HDPublicKey(item.xPubKey);
-    return xpub.deriveChild(path).publicKey;
-  });
-
-  var bitcoreAddress;
-  switch (scriptType) {
-    case Constants.SCRIPT_TYPES.P2SH:
-      bitcoreAddress = bitcore.Address.createMultisig(publicKeys, m, network);
-      break;
-    case Constants.SCRIPT_TYPES.P2PKH:
-      $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
-      bitcoreAddress = bitcore.Address.fromPublicKey(publicKeys[0], network);
-      break;
-  }
-
-  return {
-    address: bitcoreAddress.toString(true),
-    path: path,
-    publicKeys: _.invokeMap(publicKeys, 'toString'),
-  };
-};
-
-Utils.xPubToCopayerId = function(coin, xpub) {
-
-  // this is only because we allowed coin = 0' wallets for BCH 
-  // for the  "wallet duplication" feature
-
-  var str = coin == 'btc' ? xpub : coin + xpub;
-
-  var hash = sjcl.hash.sha256.hash(str);
-  return sjcl.codec.hex.fromBits(hash);
-};
-
-Utils.signRequestPubKey = function(requestPubKey, xPrivKey) {
-  var priv = new Bitcore.HDPrivateKey(xPrivKey).deriveChild(Constants.PATHS.REQUEST_KEY_AUTH).privateKey;
-  return Utils.signMessage(requestPubKey, priv);
-};
-
-Utils.verifyRequestPubKey = function(requestPubKey, signature, xPubKey) {
-  var pub = (new Bitcore.HDPublicKey(xPubKey)).deriveChild(Constants.PATHS.REQUEST_KEY_AUTH).publicKey;
-  return Utils.verifyMessage(requestPubKey, signature, pub.toString());
-};
-
-Utils.formatAmount = function(satoshis, unit, opts) {
-  $.shouldBeNumber(satoshis);
-  $.checkArgument(_.includes(_.keys(Constants.UNITS), unit));
-
-  function clipDecimals(number, decimals) {
-    var x = number.toString().split('.');
-    var d = (x[1] || '0').substring(0, decimals);
-    return parseFloat(x[0] + '.' + d);
+  privateKeyToAESKey(privKey) {
+    $.checkArgument(privKey && _.isString(privKey));
+    $.checkArgument(Bitcore.PrivateKey.isValid(privKey), 'The private key received is invalid');
+    var pk = Bitcore.PrivateKey.fromString(privKey);
+    return Bitcore.crypto.Hash.sha256(pk.toBuffer()).slice(0, 16).toString('base64');
   };
 
-  function addSeparators(nStr, thousands, decimal, minDecimals) {
-    nStr = nStr.replace('.', decimal);
-    var x = nStr.split(decimal);
-    var x0 = x[0];
-    var x1 = x[1];
-
-    x1 = _.dropRightWhile(x1, function(n, i) {
-      return n == '0' && i >= minDecimals;
-    }).join('');
-    var x2 = x.length > 1 ? decimal + x1 : '';
-
-    x0 = x0.replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
-    return x0 + x2;
+  getCopayerHash(name, xPubKey, requestPubKey) {
+    return [name, xPubKey, requestPubKey].join('|');
   };
 
-  opts = opts || {};
+  getProposalHash(proposalHeader) {
+    function getOldHash(toAddress, amount, message, payProUrl) {
+      return [toAddress, amount, (message || ''), (payProUrl || '')].join('|');
+    };
 
-  var u = Constants.UNITS[unit];
-  var precision = opts.fullPrecision ? 'full' : 'short';
-  var amount = clipDecimals((satoshis / u.toSatoshis), u[precision].maxDecimals).toFixed(u[precision].maxDecimals);
-  return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u[precision].minDecimals);
-};
+    // For backwards compatibility
+    if (arguments.length > 1) {
+      return getOldHash.apply(this, arguments);
+    }
 
-Utils.buildTx = function(txp) {
-  var coin = txp.coin || 'btc';
+    return Stringify(proposalHeader);
+  };
 
-  var bitcore = Bitcore_[coin];
+  deriveAddress(scriptType, publicKeyRing, path, m, network, coin) {
+    $.checkArgument(_.includes(_.values(Constants.SCRIPT_TYPES), scriptType));
 
-  var t = new bitcore.Transaction();
+    coin = coin || 'btc';
+    var bitcore = Bitcore_[coin];
+    var publicKeys = _.map(publicKeyRing, function (item) {
+      var xpub = new bitcore.HDPublicKey(item.xPubKey);
+      return xpub.deriveChild(path).publicKey;
+    });
 
-  $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
+    var bitcoreAddress;
+    switch (scriptType) {
+      case Constants.SCRIPT_TYPES.P2SH:
+        bitcoreAddress = bitcore.Address.createMultisig(publicKeys, m, network);
+        break;
+      case Constants.SCRIPT_TYPES.P2PKH:
+        $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
+        bitcoreAddress = bitcore.Address.fromPublicKey(publicKeys[0], network);
+        break;
+    }
 
-  switch (txp.addressType) {
-    case Constants.SCRIPT_TYPES.P2SH:
-      _.each(txp.inputs, function(i) {
-        t.from(i, i.publicKeys, txp.requiredSignatures);
+    return {
+      address: bitcoreAddress.toString(true),
+      path: path,
+      publicKeys: _.invokeMap(publicKeys, 'toString'),
+    };
+  };
+
+  xPubToCopayerId(coin, xpub) {
+
+    // this is only because we allowed coin = 0' wallets for BCH 
+    // for the  "wallet duplication" feature
+
+    var str = coin == 'btc' ? xpub : coin + xpub;
+
+    var hash = sjcl.hash.sha256.hash(str);
+    return sjcl.codec.hex.fromBits(hash);
+  };
+
+  signRequestPubKey(requestPubKey, xPrivKey) {
+    var priv = new Bitcore.HDPrivateKey(xPrivKey).deriveChild(Constants.PATHS.REQUEST_KEY_AUTH).privateKey;
+    return this.signMessage(requestPubKey, priv);
+  };
+
+  verifyRequestPubKey(requestPubKey, signature, xPubKey) {
+    var pub = (new Bitcore.HDPublicKey(xPubKey)).deriveChild(Constants.PATHS.REQUEST_KEY_AUTH).publicKey;
+    return this.verifyMessage(requestPubKey, signature, pub.toString());
+  };
+
+  formatAmount(satoshis, unit, opts) {
+    $.shouldBeNumber(satoshis);
+    $.checkArgument(_.includes(_.keys(Constants.UNITS), unit));
+
+    function clipDecimals(number, decimals) {
+      var x = number.toString().split('.');
+      var d = (x[1] || '0').substring(0, decimals);
+      return parseFloat(x[0] + '.' + d);
+    };
+
+    function addSeparators(nStr, thousands, decimal, minDecimals) {
+      nStr = nStr.replace('.', decimal);
+      var x = nStr.split(decimal);
+      var x0 = x[0];
+      var x1 = x[1];
+
+      x1 = _.dropRightWhile(x1, function (n, i) {
+        return n == '0' && i >= minDecimals;
+      }).join('');
+      var x2 = x.length > 1 ? decimal + x1 : '';
+
+      x0 = x0.replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
+      return x0 + x2;
+    };
+
+    opts = opts || {};
+
+    var u = Constants.UNITS[unit];
+    var precision = opts.fullPrecision ? 'full' : 'short';
+    var amount = clipDecimals((satoshis / u.toSatoshis), u[precision].maxDecimals).toFixed(u[precision].maxDecimals);
+    return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u[precision].minDecimals);
+  };
+
+  buildTx(txp) {
+    var coin = txp.coin || 'btc';
+
+    var bitcore = Bitcore_[coin];
+
+    var t = new bitcore.Transaction();
+
+    $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
+
+    switch (txp.addressType) {
+      case Constants.SCRIPT_TYPES.P2SH:
+        _.each(txp.inputs, function (i) {
+          t.from(i, i.publicKeys, txp.requiredSignatures);
+        });
+        break;
+      case Constants.SCRIPT_TYPES.P2PKH:
+        t.from(txp.inputs);
+        break;
+    }
+
+    if (txp.toAddress && txp.amount && !txp.outputs) {
+      t.to(txp.toAddress, txp.amount);
+    } else if (txp.outputs) {
+      _.each(txp.outputs, function (o) {
+        $.checkState(o.script || o.toAddress, 'Output should have either toAddress or script specified');
+        if (o.script) {
+          t.addOutput(new bitcore.Transaction.Output({
+            script: o.script,
+            satoshis: o.amount
+          }));
+        } else {
+          t.to(o.toAddress, o.amount);
+        }
       });
-      break;
-    case Constants.SCRIPT_TYPES.P2PKH:
-      t.from(txp.inputs);
-      break;
-  }
+    }
 
-  if (txp.toAddress && txp.amount && !txp.outputs) {
-    t.to(txp.toAddress, txp.amount);
-  } else if (txp.outputs) {
-    _.each(txp.outputs, function(o) {
-      $.checkState(o.script || o.toAddress, 'Output should have either toAddress or script specified');
-      if (o.script) {
-        t.addOutput(new bitcore.Transaction.Output({
-          script: o.script,
-          satoshis: o.amount
-        }));
-      } else {
-        t.to(o.toAddress, o.amount);
-      }
-    });
-  }
+    t.fee(txp.fee);
+    t.change(txp.changeAddress.address);
 
-  t.fee(txp.fee);
-  t.change(txp.changeAddress.address);
-
-  // Shuffle outputs for improved privacy
-  if (t.outputs.length > 1) {
-    var outputOrder = _.reject(txp.outputOrder, function(order) {
-      return order >= t.outputs.length;
-    });
-    $.checkState(t.outputs.length == outputOrder.length);
-    t.sortOutputs(function(outputs) {
-      return _.map(outputOrder, function(i) {
-        return outputs[i];
+    // Shuffle outputs for improved privacy
+    if (t.outputs.length > 1) {
+      var outputOrder = _.reject(txp.outputOrder, function (order) {
+        return order >= t.outputs.length;
       });
-    });
-  }
+      $.checkState(t.outputs.length == outputOrder.length);
+      t.sortOutputs(function (outputs) {
+        return _.map(outputOrder, function (i) {
+          return outputs[i];
+        });
+      });
+    }
 
-  // Validate inputs vs outputs independently of Bitcore
-  var totalInputs = _.reduce(txp.inputs, function(memo, i) {
-    return +i.satoshis + memo;
-  }, 0);
-  var totalOutputs = _.reduce(t.outputs, function(memo, o) {
-    return +o.satoshis + memo;
-  }, 0);
+    // Validate inputs vs outputs independently of Bitcore
+    var totalInputs = _.reduce(txp.inputs, function (memo, i) {
+      return +i.satoshis + memo;
+    }, 0);
+    var totalOutputs = _.reduce(t.outputs, function (memo, o) {
+      return +o.satoshis + memo;
+    }, 0);
 
-  $.checkState(totalInputs - totalOutputs >= 0);
-  $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE);
+    $.checkState(totalInputs - totalOutputs >= 0);
+    $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE);
 
-  return t;
-};
-
+    return t;
+  };
+}
 
 module.exports = Utils;
