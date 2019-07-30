@@ -403,7 +403,7 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction._estimateSize().should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.be.within(48001, 49000); 
+      transaction.outputs[1].satoshis.should.be.within(48001, 49000);
     });
     it('fee per byte (high fee) can be set up manually', function () {
       var inputs = _.map(_.range(10), function (i) {
@@ -419,7 +419,7 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction._estimateSize().should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.be.within(46002, 48000); 
+      transaction.outputs[1].satoshis.should.be.within(46002, 48000);
     });
     it('fee per byte can be set up manually', function () {
       var inputs = _.map(_.range(10), function (i) {
@@ -435,7 +435,7 @@ describe('Transaction', function() {
         .sign(privateKey);
       transaction._estimateSize().should.be.within(1000, 1999);
       transaction.outputs.length.should.equal(2);
-      transaction.outputs[1].satoshis.should.be.within(24013, 37000); 
+      transaction.outputs[1].satoshis.should.be.within(24013, 37000);
     });
     it('fee per byte not enough for change', function () {
       var inputs = _.map(_.range(10), function (i) {
@@ -1172,7 +1172,7 @@ describe('Transaction', function() {
       // returns index-based order of sorted against original
       var getIndexOrder = function(original, sorted) {
         return sorted.map(function(value) {
-          return original.indexOf(value);
+          return original.findIndex(output => output.script === value.script && output.value === value.value);
         });
       };
 

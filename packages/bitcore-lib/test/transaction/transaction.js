@@ -1160,7 +1160,7 @@ describe('Transaction', function() {
       // returns index-based order of sorted against original
       var getIndexOrder = function(original, sorted) {
         return sorted.map(function (value) {
-          return original.indexOf(value);
+          return original.findIndex(output => output.script === value.script && output.value === value.value);
         });
       };
 
