@@ -1,6 +1,5 @@
-import { TransactionJSON } from '../Transaction';
 import { ObjectId } from 'mongodb';
-import { IBlock } from '../../models/block';
+import { IBtcBlock } from '../../models/block';
 import { Request, Response } from 'express';
 import { IWallet } from '../../models/wallet';
 import { ChainNetwork } from '../../types/ChainNetwork';
@@ -11,6 +10,7 @@ import { AuthheadJSON } from '../Authhead';
 import { CoinListingJSON } from '../Coin';
 import { DailyTransactionsJSON } from '../stats';
 import { ICoin } from '../../models/coin';
+import { IBlock } from '../../models/baseBlock';
 export declare namespace CSP {
   export type StreamWalletTransactionsArgs = {
     startBlock: number;
@@ -35,12 +35,12 @@ export declare namespace CSP {
   export type GetBlockParams = ChainNetwork & {
     blockId?: string;
     sinceBlock?: number | string;
-    args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBlock>>;
+    args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBtcBlock>>;
   };
   export type StreamBlocksParams = ChainNetwork & {
     blockId?: string;
     sinceBlock: number | string;
-    args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBlock>>;
+    args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBtcBlock>>;
     req: Request;
     res: Response;
   };
@@ -120,7 +120,7 @@ export declare namespace CSP {
     getBalanceForAddress(
       params: GetBalanceForAddressParams
     ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
-    getBlock(params: GetBlockParams): Promise<IBlock>;
+    getBlock(params: GetBlockParams): Promise<IBtcBlock>;
     streamBlocks(params: StreamBlocksParams): any;
     getFee(params: GetEstimateSmartFeeParams): any;
     broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
@@ -138,7 +138,7 @@ export declare namespace CSP {
     streamTransactions(params: StreamTransactionsParams): any;
     getAuthhead(params: StreamTransactionParams): Promise<AuthheadJSON | undefined>;
     getDailyTransactions(params: { chain: string; network: string }): Promise<DailyTransactionsJSON>;
-    getTransaction(params: StreamTransactionParams): Promise<TransactionJSON | undefined>;
+    getTransaction(params: StreamTransactionParams): Promise<any | undefined>;
     streamWalletAddresses(params: StreamWalletAddressesParams): any;
     walletCheck(params: WalletCheckParams): any;
     streamWalletTransactions(params: StreamWalletTransactionsParams): any;

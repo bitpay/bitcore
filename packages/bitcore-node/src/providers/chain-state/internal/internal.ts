@@ -1,10 +1,9 @@
-import { TransactionJSON } from '../../../types/Transaction';
 import through2 from 'through2';
 
 import { MongoBound } from '../../../models/base';
 import { ObjectId } from 'mongodb';
 import { CoinStorage, ICoin } from '../../../models/coin';
-import { BlockStorage, IBlock } from '../../../models/block';
+import { BitcoinBlockStorage, IBtcBlock } from '../../../models/block';
 import { WalletStorage, IWallet } from '../../../models/wallet';
 import { WalletAddressStorage, IWalletAddress } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
@@ -17,6 +16,7 @@ import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
 import { StateStorage } from '../../../models/state';
 import { SpentHeightIndicators, CoinJSON } from '../../../types/Coin';
 import { Config } from '../../../services/config';
+import { TransactionJSON } from '../../../types/Transaction';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -77,24 +77,24 @@ export class InternalStateProvider implements CSP.IChainStateService {
   streamBlocks(params: CSP.StreamBlocksParams) {
     const { req, res } = params;
     const { query, options } = this.getBlocksQuery(params);
-    Storage.apiStreamingFind(BlockStorage, query, options, req, res);
+    Storage.apiStreamingFind(BitcoinBlockStorage, query, options, req, res);
   }
 
   async getBlocks(params: CSP.GetBlockParams) {
     const { query, options } = this.getBlocksQuery(params);
-    let cursor = BlockStorage.collection.find<IBlock>(query, options).addCursorFlag('noCursorTimeout', true);
+    let cursor = BitcoinBlockStorage.collection.find(query, options).addCursorFlag('noCursorTimeout', true);
     if (options.sort) {
       cursor = cursor.sort(options.sort);
     }
     let blocks = await cursor.toArray();
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
-    const blockTransform = (b: IBlock) => {
+    const blockTransform = (b: IBtcBlock) => {
       let confirmations = 0;
       if (b.height && b.height >= 0) {
         confirmations = tipHeight - b.height + 1;
       }
-      const convertedBlock = BlockStorage._apiTransform(b, { object: true }) as IBlock;
+      const convertedBlock = BitcoinBlockStorage._apiTransform(b, { object: true }) as IBtcBlock;
       return { ...convertedBlock, confirmations };
     };
     return blocks.map(blockTransform);
@@ -114,7 +114,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       processed: true
     };
     if (blockId) {
-      if (blockId.length === 64) {
+      if (blockId.length >= 64) {
         query.hash = blockId;
       } else {
         let height = parseInt(blockId, 10);
@@ -195,7 +195,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
         confirmations = tipHeight - found.blockHeight + 1;
       }
       const convertedTx = TransactionStorage._apiTransform(found, { object: true }) as TransactionJSON;
-      return { ...convertedTx, confirmations: confirmations };
+      return { ...convertedTx, confirmations: confirmations } as any;
     } else {
       return undefined;
     }
@@ -467,7 +467,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   async getDailyTransactions({ chain, network }: { chain: string; network: string }) {
     const beforeBitcoin = new Date('2009-01-09T00:00:00.000Z');
     const todayTruncatedUTC = new Date(new Date().toISOString().split('T')[0]);
-    const results = await BlockStorage.collection
+    const results = await BitcoinBlockStorage.collection
       .aggregate<{
         date: string;
         transactionCount: number;
@@ -517,10 +517,10 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getLocalTip({ chain, network }) {
-    if (BlockStorage.chainTips[chain] && BlockStorage.chainTips[chain][network]) {
-      return BlockStorage.chainTips[chain][network];
+    if (BitcoinBlockStorage.chainTips[chain] && BitcoinBlockStorage.chainTips[chain][network]) {
+      return BitcoinBlockStorage.chainTips[chain][network];
     } else {
-      return BlockStorage.getLocalTip({ chain, network });
+      return BitcoinBlockStorage.getLocalTip({ chain, network });
     }
   }
 
@@ -539,7 +539,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
             chain,
             network
           };
-    const locatorBlocks = await BlockStorage.collection
+    const locatorBlocks = await BitcoinBlockStorage.collection
       .find(query, { sort: { height: -1 }, limit: 30 })
       .addCursorFlag('noCursorTimeout', true)
       .toArray();

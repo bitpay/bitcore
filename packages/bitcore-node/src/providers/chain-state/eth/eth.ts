@@ -23,6 +23,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     const connUrl = `${provider.protocol}://${provider.host}${portString}`;
     let ProviderType;
     switch (provider.protocol) {
+      case 'ws':
       case 'wss':
         ProviderType = Web3.providers.WebsocketProvider;
         break;
@@ -55,7 +56,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           method: 'trace_block',
           params: [web3.utils.toHex(parseInt(blockId!))],
           jsonrpc: '2.0',
-          id: 0
+          id: 1
         },
         (_, data) => resolve(data.result)
       )

@@ -1,6 +1,6 @@
 import { ChainNetwork } from "../ChainNetwork";
-import { IBlock } from "../../models/block";
 import { ITransaction } from "../../models/transaction";
+import { IBlock } from "../../models/baseBlock";
 export declare namespace Adapter {
   type ConvertBlockParams<T> = ChainNetwork & {
     block: T;
