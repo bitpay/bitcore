@@ -54890,7 +54890,7 @@ exports.createContext = Script.createContext = function (context) {
 },{}],216:[function(require,module,exports){
 module.exports={
   "name": "bitcore-lib",
-  "version": "8.5.0",
+  "version": "8.5.1",
   "description": "A pure and powerful JavaScript Bitcoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -54933,7 +54933,7 @@ module.exports={
     "lodash": "=4.17.15"
   },
   "devDependencies": {
-    "bitcore-build": "^8.5.0",
+    "bitcore-build": "^8.5.1",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
