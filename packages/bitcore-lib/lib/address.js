@@ -4,6 +4,7 @@ var _ = require('lodash');
 var $ = require('./util/preconditions');
 var errors = require('./errors');
 var Base58Check = require('./encoding/base58check');
+var Bech32 = require('./encoding/bech32');
 var Networks = require('./networks');
 var Hash = require('./crypto/hash');
 var JSUtil = require('./util/js');
@@ -16,11 +17,15 @@ var PublicKey = require('./publickey');
  * This is an immutable class, and if the first parameter provided to this constructor is an
  * `Address` instance, the same argument will be returned.
  *
- * An address has two key properties: `network` and `type`. The type is either
- * `Address.PayToPublicKeyHash` (value is the `'pubkeyhash'` string)
- * or `Address.PayToScriptHash` (the string `'scripthash'`). The network is an instance of {@link Network}.
+ * An address has two key properties: `network` and `type`. The type is one of
+ * `Address.PayToPublicKeyHash` (value is the `'pubkeyhash'` string),
+ * `Address.PayToScriptHash` (the string `'scripthash'`),
+ * `Address.PayToWitnessPublicKeyHash` (the string `'witnesspubkeyhash'`),
+ * or `Address.PayToWitnessScriptHash` (the string `'witnessscripthash'`).
+ * The network is an instance of {@link Network}.
  * You can quickly check whether an address is of a given kind by using the methods
- * `isPayToPublicKeyHash` and `isPayToScriptHash`
+ * `isPayToPublicKeyHash`, `isPayToScriptHash`, `isPayToWitnessPublicKeyHash`,
+ * and `isPayToWitnessScriptHash`.
  *
  * @example
  * ```javascript
@@ -66,8 +71,12 @@ function Address(data, network, type) {
     throw new TypeError('Second argument must be "livenet" or "testnet".');
   }
 
-  if (type && (type !== Address.PayToPublicKeyHash && type !== Address.PayToScriptHash)) {
-    throw new TypeError('Third argument must be "pubkeyhash" or "scripthash".');
+  if (type && (
+    type !== Address.PayToPublicKeyHash 
+    && type !== Address.PayToScriptHash
+    && type !== Address.PayToWitnessPublicKeyHash
+    && type !== Address.PayToWitnessScriptHash)) {
+    throw new TypeError('Third argument must be "pubkeyhash", "scripthash", "witnesspubkeyhash", or "witnessscripthash".');
   }
 
   var info = this._classifyArguments(data, network, type);
@@ -95,9 +104,9 @@ function Address(data, network, type) {
 Address.prototype._classifyArguments = function(data, network, type) {
   /* jshint maxcomplexity: 10 */
   // transform and validate input data
-  if ((data instanceof Buffer || data instanceof Uint8Array) && data.length === 20) {
-    return Address._transformHash(data);
-  } else if ((data instanceof Buffer || data instanceof Uint8Array) && data.length === 21) {
+  if ((data instanceof Buffer || data instanceof Uint8Array) && (data.length === 20 || data.length === 32)) {
+    return Address._transformHash(data, network, type);
+  } else if ((data instanceof Buffer || data instanceof Uint8Array) && data.length >= 21) {
     return Address._transformBuffer(data, network, type);
   } else if (data instanceof PublicKey) {
     return Address._transformPublicKey(data);
@@ -116,21 +125,29 @@ Address.prototype._classifyArguments = function(data, network, type) {
 Address.PayToPublicKeyHash = 'pubkeyhash';
 /** @static */
 Address.PayToScriptHash = 'scripthash';
+/** @static */
+Address.PayToWitnessPublicKeyHash = 'witnesspubkeyhash';
+/** @static */
+Address.PayToWitnessScriptHash = 'witnessscripthash';
 
 /**
  * @param {Buffer} hash - An instance of a hash Buffer
+ * @param {string} type - either 'pubkeyhash', 'scripthash', 'witnesspubkeyhash', or 'witnessscripthash'
+ * @param {Network=} network - the name of the network associated
  * @returns {Object} An object with keys: hashBuffer
  * @private
  */
-Address._transformHash = function(hash) {
+Address._transformHash = function(hash, network, type) {
   var info = {};
   if (!(hash instanceof Buffer) && !(hash instanceof Uint8Array)) {
     throw new TypeError('Address supplied is not a buffer.');
   }
-  if (hash.length !== 20) {
-    throw new TypeError('Address hashbuffers must be exactly 20 bytes.');
+  if (hash.length !== 20 && hash.length !== 32) {
+    throw new TypeError('Address hashbuffers must be either 20 or 32 bytes.');
   }
   info.hashBuffer = hash;
+  info.network = Networks.get(network) || Networks.defaultNetwork;
+  info.type = type;
   return info;
 };
 
@@ -138,7 +155,7 @@ Address._transformHash = function(hash) {
  * Deserializes an address serialized through `Address#toObject()`
  * @param {Object} data
  * @param {string} data.hash - the hash that this address encodes
- * @param {string} data.type - either 'pubkeyhash' or 'scripthash'
+ * @param {string} data.type - either 'pubkeyhash', 'scripthash', 'witnesspubkeyhash', or 'witnessscripthash'
  * @param {Network=} data.network - the name of the network associated
  * @return {Address}
  */
@@ -162,15 +179,28 @@ Address._transformObject = function(data) {
 Address._classifyFromVersion = function(buffer) {
   var version = {};
 
-  var pubkeyhashNetwork = Networks.get(buffer[0], 'pubkeyhash');
-  var scripthashNetwork = Networks.get(buffer[0], 'scripthash');
+  if (buffer.length > 21) {
+    var info = Bech32.decode(buffer.toString('utf8'));
+    if (info.data.length === 20) {
+      version.type = Address.PayToWitnessPublicKeyHash;
+    } else if (info.data.length === 32) {
+      version.type = Address.PayToWitnessScriptHash;
+    } else {
+      throw new TypeError('Witness data must be either 20 or 32 bytes.')
+    }
+    version.network = Networks.get(info.prefix, 'bech32prefix');
+  } else {
 
-  if (pubkeyhashNetwork) {
-    version.network = pubkeyhashNetwork;
-    version.type = Address.PayToPublicKeyHash;
-  } else if (scripthashNetwork) {
-    version.network = scripthashNetwork;
-    version.type = Address.PayToScriptHash;
+    var pubkeyhashNetwork = Networks.get(buffer[0], 'pubkeyhash');
+    var scripthashNetwork = Networks.get(buffer[0], 'scripthash');
+
+    if (pubkeyhashNetwork) {
+      version.network = pubkeyhashNetwork;
+      version.type = Address.PayToPublicKeyHash;
+    } else if (scripthashNetwork) {
+      version.network = scripthashNetwork;
+      version.type = Address.PayToScriptHash;
+    }
   }
 
   return version;
@@ -181,7 +211,7 @@ Address._classifyFromVersion = function(buffer) {
  *
  * @param {Buffer} buffer - An instance of a hex encoded address Buffer
  * @param {string=} network - The network: 'livenet' or 'testnet'
- * @param {string=} type - The type: 'pubkeyhash' or 'scripthash'
+ * @param {string=} type - The type: 'pubkeyhash', 'scripthash', 'witnesspubkeyhash', or 'witnessscripthash'
  * @returns {Object} An object with keys: hashBuffer, network and type
  * @private
  */
@@ -191,8 +221,9 @@ Address._transformBuffer = function(buffer, network, type) {
   if (!(buffer instanceof Buffer) && !(buffer instanceof Uint8Array)) {
     throw new TypeError('Address supplied is not a buffer.');
   }
-  if (buffer.length !== 1 + 20) {
-    throw new TypeError('Address buffers must be exactly 21 bytes.');
+
+  if (buffer.length < 21) {
+    throw new TypeError('Address buffer is incorrect length.');
   }
 
   var networkObj = Networks.get(network);
@@ -210,7 +241,11 @@ Address._transformBuffer = function(buffer, network, type) {
     throw new TypeError('Address has mismatched type.');
   }
 
-  info.hashBuffer = buffer.slice(1);
+  if (buffer.length > 21) {
+    info.hashBuffer = Bech32.decode(buffer.toString('utf8')).data;
+  } else {
+    info.hashBuffer = buffer.slice(1);
+  }
   info.network = bufferVersion.network;
   info.type = bufferVersion.type;
   return info;
@@ -276,7 +311,7 @@ Address.createMultisig = function(publicKeys, threshold, network, nestedWitness)
  *
  * @param {string} data
  * @param {String|Network=} network - either a Network instance, 'livenet', or 'testnet'
- * @param {string=} type - The type: 'pubkeyhash' or 'scripthash'
+ * @param {string=} type - The type: 'pubkeyhash', 'scripthash', 'witnesspubkeyhash', or 'witnessscripthash'
  * @returns {Object} An object with keys: hashBuffer, network and type
  * @private
  */
@@ -284,7 +319,22 @@ Address._transformString = function(data, network, type) {
   if (typeof(data) !== 'string') {
     throw new TypeError('data parameter supplied is not a string.');
   }
+
+  if (network && !Networks.get(network)) {
+    throw new TypeError('Unknown network');
+  }
+
   data = data.trim();
+
+  try {
+    var info = Address._transformBuffer(Buffer.from(data, 'utf8'), network, type);
+    return info;
+  } catch (e) {
+    if (type === Address.PayToWitnessPublicKeyHash || type === Address.PayToWitnessScriptHash) {
+      throw e;
+    }
+  }
+  
   var addressBuffer = Base58Check.decode(data);
   var info = Address._transformBuffer(addressBuffer, network, type);
   return info;
@@ -462,11 +512,30 @@ Address.prototype.isPayToScriptHash = function() {
 };
 
 /**
+ * Returns true if an address is of pay to witness public key hash type
+ * @return boolean
+ */
+Address.prototype.isPayToWitnessPublicKeyHash = function() {
+  return this.type === Address.PayToWitnessPublicKeyHash;
+};
+
+/**
+ * Returns true if an address is of pay to witness script hash type
+ * @return boolean
+ */
+Address.prototype.isPayToWitnessScriptHash = function() {
+  return this.type === Address.PayToWitnessScriptHash;
+};
+
+/**
  * Will return a buffer representation of the address
  *
  * @returns {Buffer} Bitcoin address buffer
  */
 Address.prototype.toBuffer = function() {
+  if (this.isPayToWitnessPublicKeyHash() || this.isPayToWitnessScriptHash()) {
+    return Buffer.from(this.toString(), 'utf8')
+  }
   var version = Buffer.from([this.network[this.type]]);
   return Buffer.concat([version, this.hashBuffer]);
 };
@@ -488,6 +557,11 @@ Address.prototype.toObject = Address.prototype.toJSON = function toObject() {
  * @returns {string} Bitcoin address
  */
 Address.prototype.toString = function() {
+  if (this.isPayToWitnessPublicKeyHash() || this.isPayToWitnessScriptHash()) {
+    var prefix = this.network.bech32prefix;
+    var version = 0; // Only supporting segwit v0 for now
+    return Bech32.encode(prefix, version, this.hashBuffer);
+  }
   return Base58Check.encode(this.toBuffer());
 };
 

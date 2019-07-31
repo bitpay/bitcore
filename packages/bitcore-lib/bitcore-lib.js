@@ -11321,7 +11321,7 @@ Transaction.prototype.sort = function() {
   this.sortInputs(function(inputs) {
     var copy = Array.prototype.concat.apply([], inputs);
     copy.sort(function(first, second) {
-      return compare(first.prevTxId, second.prevTxId)
+     return compare(first.prevTxId, second.prevTxId)
         || first.outputIndex - second.outputIndex;
     });
     return copy;
@@ -54890,7 +54890,7 @@ exports.createContext = Script.createContext = function (context) {
 },{}],216:[function(require,module,exports){
 module.exports={
   "name": "bitcore-lib",
-  "version": "8.5.0",
+  "version": "8.5.1",
   "description": "A pure and powerful JavaScript Bitcoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -54919,7 +54919,7 @@ module.exports={
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/bitcore-lib.git"
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-lib"
   },
   "browser": {
     "request": "browser-request"
@@ -54933,11 +54933,10 @@ module.exports={
     "lodash": "=4.17.15"
   },
   "devDependencies": {
-    "bitcore-build": "^8.5.0",
+    "bitcore-build": "^8.5.1",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
-    "karma-phantomjs-launcher": "^1.0.4",
     "sinon": "^7.1.1"
   },
   "license": "MIT",

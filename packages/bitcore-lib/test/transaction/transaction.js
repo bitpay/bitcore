@@ -1163,7 +1163,6 @@ describe('Transaction', function() {
           return original.indexOf(value);
         });
       };
-
       fixture.inputs.forEach(function(inputSet) {
         it(inputSet.description, function() {
           var tx = new Transaction();
