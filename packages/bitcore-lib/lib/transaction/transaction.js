@@ -1041,7 +1041,7 @@ Transaction.prototype.sort = function() {
   this.sortInputs(function(inputs) {
     var copy = Array.prototype.concat.apply([], inputs);
     copy.sort(function(first, second) {
-      return compare(first.prevTxId, second.prevTxId)
+     return compare(first.prevTxId, second.prevTxId)
         || first.outputIndex - second.outputIndex;
     });
     return copy;

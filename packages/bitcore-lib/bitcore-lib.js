@@ -11321,7 +11321,7 @@ Transaction.prototype.sort = function() {
   this.sortInputs(function(inputs) {
     var copy = Array.prototype.concat.apply([], inputs);
     copy.sort(function(first, second) {
-      return compare(first.prevTxId, second.prevTxId)
+     return compare(first.prevTxId, second.prevTxId)
         || first.outputIndex - second.outputIndex;
     });
     return copy;
@@ -54919,7 +54919,7 @@ module.exports={
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/bitpay/bitcore-lib.git"
+    "url": "https://github.com/bitpay/bitcore/tree/master/packages/bitcore-lib"
   },
   "browser": {
     "request": "browser-request"
@@ -54937,7 +54937,6 @@ module.exports={
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
-    "karma-phantomjs-launcher": "^1.0.4",
     "sinon": "^7.1.1"
   },
   "license": "MIT",
