@@ -167,7 +167,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
               .toFixed(2)
               .padStart(8)} blocks/min | Height: ${currentHeight.toString().padStart(7)}`
           );
-          lastLog = now;
+          lastLog = Date.now();
         }
       } catch (err) {
         logger.error(`Error syncing ${chain} ${network}`, err);

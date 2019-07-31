@@ -1,8 +1,8 @@
 import logger from '../logger';
-import { P2P, P2pWorker as p2pWorker } from '../services/p2p';
+import { P2P } from '../services/p2p';
 import { Storage } from '../services/storage';
 import { Event } from '../services/event';
-import { Modules } from "../modules";
+import { Modules } from '../modules';
 import { Config } from '../services/config';
 import '../utils/polyfills';
 require('heapdump');
@@ -24,7 +24,8 @@ export const P2pWorker = async () => {
   const { CHAIN: chain, NETWORK: network } = process.env;
   if (chain && network) {
     const chainConfig = Config.chainConfig({ chain, network });
-    const worker = new p2pWorker({
+    const p2pClass = P2P.get(chain);
+    const worker = new p2pClass({
       chain,
       network,
       chainConfig
