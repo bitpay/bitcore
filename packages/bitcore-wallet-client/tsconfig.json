@@ -6,11 +6,7 @@
       "es2017"
     ],
     "noImplicitAny": false,
-    "removeComments": true,
-    "declaration": true,
-    "declarationMap": true,
     "module": "commonjs",
-    "allowJS": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "moduleResolution": "node",
@@ -26,12 +22,13 @@
         "./src/*"
       ]
     },
-    "outDir": "ts_build",
-    "sourceMap": true
+    "outDir": "./built",
+    "sourceMap": true,
+    "allowJs": true
   },
   "include": [
     "./src/**/*.ts",
-    "./tests/**/*.ts"
+    "./test/*.ts"
   ],
   "exclude": [
     "node_modules"

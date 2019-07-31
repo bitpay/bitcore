@@ -14,7 +14,7 @@ module.exports = {
   PATHS: {
     REQUEST_KEY: "m/1'/0",
     //  TXPROPOSAL_KEY: "m/1'/1",
-    REQUEST_KEY_AUTH: "m/2", // relative to BASE
+    REQUEST_KEY_AUTH: 'm/2', // relative to BASE
   },
   BIP45_SHARED_INDEX: 0x80000000 - 1,
   UNITS: {
@@ -42,4 +42,4 @@ module.exports = {
     },
   },
   COINS: ['btc', 'bch']
-}
+};

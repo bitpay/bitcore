@@ -47,3 +47,22 @@ Session.vim
 .AppleDouble
 .LSOverride
 
+ts_build
+
+*debug.log
+node_modules/
+.env
+*bitcore.config.*
+.vscode
+.DS_Store
+*.swp
+
+# VIM ignore
+[._]*.s[a-w][a-z]
+[._]s[a-w][a-z]
+*.un~
+Session.vim
+.netrwhist
+*~
+ts_build
+built/

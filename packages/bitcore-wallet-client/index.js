@@ -1,5 +1,5 @@
-var Client = require('./lib');
+var Client = require('./src/lib');
 module.exports = Client;
 
 // Errors thrown by the library
-Client.errors = require('./lib/errors');
+Client.errors = require('./src/lib/errors');

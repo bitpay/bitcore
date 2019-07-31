@@ -1,5 +1,5 @@
-'use strict'; 
-var errorSpec = [{
+'use strict';
+module.exports = [{
   name: 'INVALID_BACKUP',
   message: 'Invalid Backup.'
 }, {
@@ -80,10 +80,8 @@ var errorSpec = [{
 }, {
   name: 'INVOICE_NOT_AVAILABLE',
   message: 'The invoice is no available.'
-},  {
+}, {
   name: 'INVOICE_EXPIRED',
   message: 'The invoice is no longer receiving payments.'
 }
 ];
-
-module.exports = errorSpec;
