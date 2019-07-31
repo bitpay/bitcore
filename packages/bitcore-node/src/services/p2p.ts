@@ -39,7 +39,7 @@ export class P2pManager {
     for (let chainNetwork of Config.chainNetworks()) {
       const { chain, network } = chainNetwork;
       const chainConfig = Config.chainConfig(chainNetwork);
-      if (chainConfig.chainSource && chainConfig.chainSource !== 'p2p') {
+      if (chainConfig.chainSource && chainConfig.chainSource !== 'p2p' || chainConfig.disabled) {
         continue;
       }
       const p2pWorker = new P2pWorker({
