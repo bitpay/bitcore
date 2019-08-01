@@ -1,5 +1,3 @@
-'use strict';
-
 var $ = require('preconditions').singleton();
 var _ = require('lodash');
 
@@ -35,6 +33,15 @@ export class Key {
     'id',
   ];
 
+  wordsForLang = {
+    en: Mnemonic.Words.ENGLISH,
+    es: Mnemonic.Words.SPANISH,
+    ja: Mnemonic.Words.JAPANESE,
+    zh: Mnemonic.Words.CHINESE,
+    fr: Mnemonic.Words.FRENCH,
+    it: Mnemonic.Words.ITALIAN,
+  };
+
   // we always set 'livenet' for xprivs. it has not consecuences
   // other than the serialization
   NETWORK = 'livenet';
@@ -48,34 +55,26 @@ export class Key {
   fingerPrint: any;
   mnemonicEncrypted: any;
   mnemonic: any;
-  constructor() {
 
+  constructor() {
     this.version = 1;
     this.use0forBCH = false;
     this.use44forMultisig = false;
     this.compliantDerivation = true;
     this.id = Uuid.v4();
   }
+
   match = (a, b) => {
     return a.id == b.id;
   }
 
   create(opts) {
-
-    const wordsForLang = {
-      en: Mnemonic.Words.ENGLISH,
-      es: Mnemonic.Words.SPANISH,
-      ja: Mnemonic.Words.JAPANESE,
-      zh: Mnemonic.Words.CHINESE,
-      fr: Mnemonic.Words.FRENCH,
-      it: Mnemonic.Words.ITALIAN,
-    };
     opts = opts || {};
-    if (opts.language && !wordsForLang[opts.language]) throw new Error('Unsupported language');
+    if (opts.language && !this.wordsForLang[opts.language]) throw new Error('Unsupported language');
 
-    var m = new Mnemonic(wordsForLang[opts.language]);
+    var m = new Mnemonic(this.wordsForLang[opts.language]);
     while (!Mnemonic.isValid(m.toString())) {
-      m = new Mnemonic(wordsForLang[opts.language]);
+      m = new Mnemonic(this.wordsForLang[opts.language]);
     }
 
     let x: any = new Key();
@@ -266,10 +265,10 @@ export class Key {
   }
 
   /*
-   * This is only used on "create"
-   * no need to include/support
-   * BIP45
-   */
+  * This is only used on "create"
+  * no need to include/support
+  * BIP45
+  */
 
   getBaseAddressDerivationPath(opts) {
     $.checkArgument(opts, 'Need to provide options');
@@ -298,11 +297,11 @@ export class Key {
   }
 
   /*
-   * opts.coin
-   * opts.network
-   * opts.account
-   * opts.n
-   */
+  * opts.coin
+  * opts.network
+  * opts.account
+  * opts.n
+  */
 
   createCredentials(password, opts) {
     opts = opts || {};
@@ -320,7 +319,7 @@ export class Key {
 
     let path = this.getBaseAddressDerivationPath(opts);
     let xPrivKey = this.derive(password, path);
-    let requestPrivKey = this.derive(password, Constants.PATHS.REQUEST_KEY).privatetoString();
+    let requestPrivKey = this.derive(password, Constants.PATHS.REQUEST_KEY).privateKey.toString();
 
     if (opts.network == 'testnet') {
 
@@ -349,10 +348,10 @@ export class Key {
   }
 
   /*
-   * opts
-   * opts.path
-   * opts.requestPrivKey
-   */
+  * opts
+  * opts.path
+  * opts.requestPrivKey
+  */
 
   createAccess(password, opts) {
     opts = opts || {};
@@ -401,7 +400,4 @@ export class Key {
 
     return signatures;
   }
-
 }
-
-module.exports = Key;

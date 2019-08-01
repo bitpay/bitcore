@@ -1,4 +1,4 @@
-var _ = require('lodash');
+import _ from 'lodash';
 
 var DEFAULT_LOG_LEVEL = 'silent';
 
@@ -19,10 +19,6 @@ var DEFAULT_LOG_LEVEL = 'silent';
  * @constructor
  */
 export class Logger {
-  name: any;
-  level: string;
-  logger = new Logger('copay');
-
   levels = {
     silent: -1,
     debug: 0,
@@ -32,12 +28,13 @@ export class Logger {
     error: 4,
     fatal: 5
   };
-
+  name: any;
+  level: string;
   constructor(name) {
 
     this.name = name || 'log';
     this.level = DEFAULT_LOG_LEVEL;
-    _.each(this.levels, function (level, levelName) {
+    _.each(this.levels, (level, levelName) => {
       if (levelName === 'silent') { // dont create a log.silent() method
         return;
       }
@@ -59,9 +56,11 @@ export class Logger {
             } catch (e) {
               stack = e.stack;
             }
-            var lines = stack.split('\n');
-            var caller = lines[2];
-            caller = ':' + caller.substr(6);
+            if (stack) {
+              var lines = stack.split('\n');
+              var caller = lines[2];
+              caller = ':' + caller.substr(6);
+            }
             Error.stackTraceLimit = old;
           }
 
@@ -82,10 +81,6 @@ export class Logger {
     });
   }
 
-  getLevels() {
-    return this.levels;
-  }
-
   /**
    * @desc
    * Sets the level of a logger. A level can be any bewteen: 'debug', 'info', 'log',
@@ -94,9 +89,12 @@ export class Logger {
    *
    * @param {string} level - the name of the logging level
    */
-  setLevel(level) {
+  getLevels = function () {
+    return this.levels;
+  };
+  setLevel = function (level) {
     this.level = level;
-  }
+  };
 
   /**
    * @class Logger
@@ -134,5 +132,4 @@ export class Logger {
    * @desc Log messages at the fatal level.
    * @param {*} args - the arguments to be logged.
    */
-
 }
