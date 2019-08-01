@@ -538,16 +538,16 @@ export class TransactionModel extends BaseModel<ITransaction> {
         ) > -1
     );
 
-    const spentTxids = Array.from(new Set(coins.map(c => c.spentTxid)));
+    const invalidatedTxids = Array.from(new Set(coins.map(c => c.spentTxid)));
 
     await Promise.all([
       this.collection.update(
-        { chain, network, txid: { $in: spentTxids } },
+        { chain, network, txid: { $in: invalidatedTxids } },
         { $set: { blockHeight: SpentHeightIndicators.conflicting } },
         { multi: true }
       ),
       CoinStorage.collection.update(
-        { chain, network, mintTxid: spentTxids },
+        { chain, network, mintTxid: invalidatedTxids },
         { $set: { mintHeight: SpentHeightIndicators.conflicting } },
         { multi: true }
       )
