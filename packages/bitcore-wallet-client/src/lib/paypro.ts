@@ -219,7 +219,7 @@ export class PayPro {
       }
 
       if (!_.isNumber(data.outputs[0].amount)) {
-        return cb(new Error('Bad output amount ' + e));
+        return cb(new Error('Bad output amount'));
       }
       ret.amount = data.outputs[0].amount;
 

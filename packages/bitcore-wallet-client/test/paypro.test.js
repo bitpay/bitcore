@@ -4,15 +4,15 @@ var _ = require('lodash');
 var chai = chai || require('chai');
 var sinon = sinon || require('sinon');
 var should = chai.should();
-var PayPro = require('../lib/paypro');
+var PayPro = require('../ts_build/paypro');
 var TestData = require('./testdata');
 
 
 
 
 function mockRequest(bodyBuf, headers) {
-  bodyBuf = _.isArray(bodyBuf) ? bodyBuf  : [bodyBuf];
-  PayPro.request = function(opts, cb) {
+  bodyBuf = _.isArray(bodyBuf) ? bodyBuf : [bodyBuf];
+  PayPro.request = function (opts, cb) {
 
     return cb(null, {
       headers: headers || {},
@@ -22,9 +22,9 @@ function mockRequest(bodyBuf, headers) {
   };
 };
 
-describe('paypro', function() {
-  var clock,oldreq;
-  before(function() {
+describe('paypro', function () {
+  var clock, oldreq;
+  before(function () {
     // Stub time before cert expiration at Mar 27 2016
     clock = sinon.useFakeTimers(1459105693843);
 
@@ -32,20 +32,20 @@ describe('paypro', function() {
   beforeEach(() => {
     oldreq = PayPro.request;
   });
-  after(function() {
+  after(function () {
     clock.restore();
   });
-  afterEach(function() {
-    PayPro.request = oldreq ;
+  afterEach(function () {
+    PayPro.request = oldreq;
   });
 
-  it('Make and verify PP request', function(done) {
-    mockRequest(Buffer.from(TestData.payProJson.bch.body,'hex'), TestData.payProJson.bch.headers);
+  it('Make and verify PP request', function (done) {
+    mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), TestData.payProJson.bch.headers);
     PayPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
-    }, function(err, res) {
+    }, function (err, res) {
       should.not.exist(err);
       res.should.be.deep.equal({
         "amount": 769200,
@@ -63,65 +63,65 @@ describe('paypro', function() {
   });
 
 
-  it('Should handle a failed (404) request', function(done) {
-    PayPro.request = function(opts, cb) {
+  it('Should handle a failed (404) request', function (done) {
+    PayPro.request = function (opts, cb) {
       return cb(null, {
         statusCode: 404,
         statusMessage: 'Not Found',
-      } , 'This invoice was not found or has been archived');
+      }, 'This invoice was not found or has been archived');
     };
     PayPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
-    }, function(err, res) {
+    }, function (err, res) {
       should.exist(err);
       done();
     });
   });
 
-  it('Should detect a tampered PP request (bad signature)', function(done) {
-    let h = _.clone( TestData.payProJson.bch.headers);
+  it('Should detect a tampered PP request (bad signature)', function (done) {
+    let h = _.clone(TestData.payProJson.bch.headers);
     h.signature = 'xx';
-    mockRequest(Buffer.from(TestData.payProJson.bch.body,'hex'), h);
+    mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), h);
     PayPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
-    }, function(err, res) {
+    }, function (err, res) {
       err.toString().should.contain('signature invalid');
       done();
     });
   });
 
 
-  it('Should detect a tampered PP request (bad amount)', function(done) {
-    let b = JSON.parse (TestData.payProJson.bch.body);
+  it('Should detect a tampered PP request (bad amount)', function (done) {
+    let b = JSON.parse(TestData.payProJson.bch.body);
     b.outputs[0].amount = 100;
-    b=JSON.stringify(b);
+    b = JSON.stringify(b);
     mockRequest(Buffer.from(b), TestData.payProJson.bch.headers);
     PayPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
-    }, function(err, res) {
+    }, function (err, res) {
       err.toString().should.contain('not match digest');
       done();
     });
   });
 
 
-  it('should send a PP payment', function(done) {
+  it('should send a PP payment', function (done) {
     var data = TestData.payProData;
-    var opts = { 
+    var opts = {
       rawTx: 'rawTx1',
       rawTxUnsigned: 'rawTxUnsigned',
       url: 'http://an.url.com/paypro',
       coin: 'bch',
     };
-    mockRequest([Buffer.from('{"memo":"Payment seems OK"}'), Buffer.from('{"memo":"memo1"}') ], {
+    mockRequest([Buffer.from('{"memo":"Payment seems OK"}'), Buffer.from('{"memo":"memo1"}')], {
     });
-    var payment = PayPro.send(opts, function(err, data, memo) {
+    var payment = PayPro.send(opts, function (err, data, memo) {
       should.not.exist(err);
       memo.should.equal('memo1');
       done();
@@ -129,22 +129,22 @@ describe('paypro', function() {
   });
 
 
-  it('should not send PP payment if verify fails', function(done) {
+  it('should not send PP payment if verify fails', function (done) {
     var data = TestData.payProData;
-    var opts = { 
+    var opts = {
       rawTx: 'rawTx1',
       rawTxUnsigned: 'rawTxUnsigned',
       url: 'http://an.url.com/paypro',
       coin: 'bch',
     };
-    PayPro.request = function(opts, cb) {
+    PayPro.request = function (opts, cb) {
       return cb(null, {
         statusCode: 400,
         statusMessage: 'ss',
-      } , 'This invoice was not found or has been archived');
+      }, 'This invoice was not found or has been archived');
     };
- 
-    var payment = PayPro.send(opts, function(err, data, memo) {
+
+    var payment = PayPro.send(opts, function (err, data, memo) {
       should.exist(err);
       done();
     });

@@ -6,6 +6,9 @@
       "es2017"
     ],
     "noImplicitAny": false,
+    "removeComments": true,
+    "declaration": true,
+    "declarationMap": true,
     "module": "commonjs",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -22,12 +25,13 @@
         "./src/*"
       ]
     },
-    "outDir": "./built",
-    "sourceMap": true,
-    "allowJs": true
+    "outDir": "ts_build",
+    "sourceMap": true
   },
   "include": [
+    "./scripts/**/*.ts",
     "./src/**/*.ts",
+    "./tests/**/*.ts",
     "./test/*.ts"
   ],
   "exclude": [

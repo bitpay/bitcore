@@ -10,7 +10,7 @@ var async = require('async');
 var request = require('supertest');
 var Uuid = require('uuid');
 var sjcl = require('sjcl');
-var log = require('../src/lib/log');
+var log = require('../ts_build/log');
 var mongodb = require('mongodb');
 var config = require('./test-config');
 var oldCredentials = require('./legacyCredentialsExports');
@@ -23,16 +23,16 @@ var Bitcore_ = {
 
 var BWS = require('bitcore-wallet-service');
 
-var Common = require('../src/lib/common');
+var Common = require('../ts_build/common');
 var Constants = Common.Constants;
 var Utils = Common.Utils;
-var Client = require('../src/lib');
+var Client = require('../ts_build');
 var Key = Client.Key;
-var Request = require('../src/lib/request.js');
+var Request = require('../ts_build/request.js');
 var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;
 var TestData = require('./testdata');
-var Errors = require('../src/lib/errors');
+var Errors = require('../ts_build/errors');
 
 var helpers = {};
 
