@@ -22,11 +22,11 @@ function Message(message) {
   return this;
 }
 
-Message.MAGIC_BYTES = new Buffer('Bitcoin Signed Message:\n');
+Message.MAGIC_BYTES = Buffer.from('Bitcoin Signed Message:\n');
 
 Message.prototype.magicHash = function magicHash() {
   var prefix1 = BufferWriter.varintBufNum(Message.MAGIC_BYTES.length);
-  var messageBuffer = new Buffer(this.message);
+  var messageBuffer = Buffer.from(this.message);
   var prefix2 = BufferWriter.varintBufNum(messageBuffer.length);
   var buf = Buffer.concat([prefix1, Message.MAGIC_BYTES, prefix2, messageBuffer]);
   var hash = sha256sha256(buf);
@@ -83,7 +83,7 @@ Message.prototype.verify = function verify(bitcoinAddress, signatureString) {
   if (_.isString(bitcoinAddress)) {
     bitcoinAddress = Address.fromString(bitcoinAddress);
   }
-  var signature = Signature.fromCompact(new Buffer(signatureString, 'base64'));
+  var signature = Signature.fromCompact(Buffer.from(signatureString, 'base64'));
 
   // recover the public key
   var ecdsa = new ECDSA();
