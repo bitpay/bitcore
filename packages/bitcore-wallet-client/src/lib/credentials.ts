@@ -7,10 +7,10 @@ const Bitcore = require('bitcore-lib');
 
 const Common = require('./common');
 const Constants = Common.Constants;
-const Utils = Common.Utils;
+import { Utils } from './common/utils';
 
 export class Credentials {
-
+  utils: Utils;
   FIELDS = [
     'coin',
     'network',
@@ -62,7 +62,7 @@ export class Credentials {
   constructor() {
     this.version = 2;
     this.account = 0;
-
+    this.utils = new Utils();
   }
   /*
    *coin, xPrivKey, account, network
@@ -110,7 +110,7 @@ export class Credentials {
     const b = Buffer.from(entropySource, 'hex');
     const b2 = Bitcore.crypto.Hash.sha256hmac(b, Buffer.from(prefix));
     x.personalEncryptingKey = b2.slice(0, 16).toString('base64');
-    x.copayerId = Utils.xPubToCopayerId(x.coin, x.xPubKey);
+    x.copayerId = this.utils.xPubToCopayerId(x.coin, x.xPubKey);
     x.publicKeyRing = [{
       xPubKey: x.xPubKey,
       requestPubKey: x.requestPubKey,
@@ -197,7 +197,7 @@ export class Credentials {
   }
   addWalletPrivateKey(walletPrivKey) {
     this.walletPrivKey = walletPrivKey;
-    this.sharedEncryptingKey = Utils.privateKeyToAESKey(walletPrivKey);
+    this.sharedEncryptingKey = this.utils.privateKeyToAESKey(walletPrivKey);
   }
 
   addWalletInfo(walletId, walletName, m, n, copayerName, opts) {
@@ -240,4 +240,3 @@ export class Credentials {
     return true;
   }
 }
-module.exports = Credentials;

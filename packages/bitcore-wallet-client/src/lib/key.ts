@@ -1,21 +1,21 @@
 var $ = require('preconditions').singleton();
-var _ = require('lodash');
+import * as _ from 'lodash';
 
-var Bitcore = require('bitcore-lib');
-var Mnemonic = require('bitcore-mnemonic');
-var sjcl = require('sjcl');
-var log = require('./log');
-const async = require('async');
+import * as Bitcore from 'bitcore-lib';
+import * as sjcl from 'sjcl';
+
+const log = require('./log');
+const Mnemonic = require('bitcore-mnemonic');
 const Uuid = require('uuid');
 
 var Common = require('./common');
 var Errors = require('./errors');
 var Constants = Common.Constants;
 var Utils = Common.Utils;
-const Credentials = require('./credentials');
+import { Credentials } from './credentials';
 
 export class Key {
-
+  credentials: Credentials;
   FIELDS = [
     'xPrivKey',             // obsolte
     'xPrivKeyEncrypted',   // obsolte
@@ -62,6 +62,7 @@ export class Key {
     this.use44forMultisig = false;
     this.compliantDerivation = true;
     this.id = Uuid.v4();
+    this.credentials = new Credentials();
   }
 
   match = (a, b) => {
@@ -193,7 +194,7 @@ export class Key {
 
         // update fingerPrint if not set.
         if (!this.fingerPrint) {
-          let xpriv = new Bitcore.HDPrivateKey(keys.xPrivKey);
+          let xpriv: any = new Bitcore.HDPrivateKey(keys.xPrivKey);
           this.fingerPrint = xpriv.fingerPrint.toString('hex');
           fingerPrintUpdated = true;
         }
@@ -251,7 +252,7 @@ export class Key {
 
   derive(password, path) {
     $.checkArgument(path, 'no path at derive()');
-    var xPrivKey = new Bitcore.HDPrivateKey(this.get(password).xPrivKey, this.NETWORK);
+    var xPrivKey = new Bitcore.HDPrivateKey(this.get(password).xPrivKey);
     var deriveFn = this.compliantDerivation ? _.bind(xPrivKey.deriveChild, xPrivKey) : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
     return deriveFn(path);
   }
@@ -333,7 +334,7 @@ export class Key {
       xPrivKey = new Bitcore.HDPrivateKey(x);
     }
 
-    return Credentials.fromDerivedKey({
+    return this.credentials.fromDerivedKey({
       xPubKey: xPrivKey.hdPublicKey.toString(),
       coin: opts.coin,
       network: opts.network,
@@ -379,7 +380,7 @@ export class Key {
     var derived: any = {};
 
     var derived = this.derive(password, rootPath);
-    var xpriv = new Bitcore.HDPrivateKey(derived);
+    var xpriv: any = new Bitcore.HDPrivateKey(derived);
 
     _.each(txp.inputs, function (i) {
       $.checkState(i.path, 'Input derivation path not available (signing transaction)');

@@ -133,7 +133,7 @@ export class Utils {
 
     coin = coin || 'btc';
     var bitcore = Bitcore_[coin];
-    var publicKeys = _.map(publicKeyRing, function(item) {
+    var publicKeys = _.map(publicKeyRing, function (item) {
       var xpub = new bitcore.HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
     });
@@ -193,7 +193,7 @@ export class Utils {
       var x0 = x[0];
       var x1 = x[1];
 
-      x1 = _.dropRightWhile(x1, function(n, i) {
+      x1 = _.dropRightWhile(x1, function (n, i) {
         return n == '0' && i >= minDecimals;
       }).join('');
       var x2 = x.length > 1 ? decimal + x1 : '';
@@ -221,7 +221,7 @@ export class Utils {
 
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2SH:
-        _.each(txp.inputs, function(i) {
+        _.each(txp.inputs, function (i) {
           t.from(i, i.publicKeys, txp.requiredSignatures);
         });
         break;
@@ -233,7 +233,7 @@ export class Utils {
     if (txp.toAddress && txp.amount && !txp.outputs) {
       t.to(txp.toAddress, txp.amount);
     } else if (txp.outputs) {
-      _.each(txp.outputs, function(o) {
+      _.each(txp.outputs, function (o) {
         $.checkState(o.script || o.toAddress, 'Output should have either toAddress or script specified');
         if (o.script) {
           t.addOutput(new bitcore.Transaction.Output({
@@ -251,22 +251,22 @@ export class Utils {
 
     // Shuffle outputs for improved privacy
     if (t.outputs.length > 1) {
-      var outputOrder = _.reject(txp.outputOrder, function(order) {
+      var outputOrder = _.reject(txp.outputOrder, function (order) {
         return order >= t.outputs.length;
       });
       $.checkState(t.outputs.length == outputOrder.length);
-      t.sortOutputs(function(outputs) {
-        return _.map(outputOrder, function(i) {
+      t.sortOutputs(function (outputs) {
+        return _.map(outputOrder, function (i) {
           return outputs[i];
         });
       });
     }
 
     // Validate inputs vs outputs independently of Bitcore
-    var totalInputs = _.reduce(txp.inputs, function(memo, i) {
+    var totalInputs = _.reduce(txp.inputs, function (memo, i) {
       return +i.satoshis + memo;
     }, 0);
-    var totalOutputs = _.reduce(t.outputs, function(memo, o) {
+    var totalOutputs = _.reduce(t.outputs, function (memo, o) {
       return +o.satoshis + memo;
     }, 0);
 
@@ -276,5 +276,3 @@ export class Utils {
     return t;
   }
 }
-
-module.exports = Utils;
