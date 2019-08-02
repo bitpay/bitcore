@@ -167,7 +167,7 @@ describe('Wallet Benchmark', function() {
       }
     });
 
-    it('should be able to create two wallets and have them interact, while syncing', async () => {
+    xit('should be able to create two wallets and have them interact, while syncing', async () => {
       await Event.start();
       await Api.start();
 
