@@ -1,4 +1,4 @@
-<head-nav></head-nav>
+<head-nav [chainNetwork]="chainNetwork"></head-nav>
 <ion-content>
   <ion-grid fixed>
 
@@ -12,7 +12,10 @@
 
         <h1>Block #{{ block.height }}</h1>
         <p class="item-hash">
-          <b>Block Hash</b> {{ block.hash }}</p>
+          <b>Block Hash</b> {{ block.hash }} <button [copyToClipboard]="block.hash">
+            <ion-icon md="md-copy"></ion-icon>
+          </button>
+        </p>
 
         <h2>Summary</h2>
 
@@ -43,7 +46,7 @@
                 <ion-item>
                   Timestamp
                   <ion-note item-end>
-                    {{ block.time * 1000 | date:'medium' }}
+                    {{ block.time * 1000 | date:'long' }}
                   </ion-note>
                 </ion-item>
                 <ion-item>
@@ -61,7 +64,8 @@
                 <ion-item>
                   Previous Block
                   <ion-note item-end>
-                    <a (click)="goToPreviousBlock()">{{ block.height - 1 }}</a>
+                    <a (click)="goToPreviousBlock()"
+                      [ngClass]="{'disabled-link': block.height - 1 === 0 }">{{ block.height - 1 }}</a>
                   </ion-note>
                 </ion-item>
               </ion-col>
@@ -99,7 +103,8 @@
                 <ion-item>
                   Next Block
                   <ion-note item-end>
-                    <a (click)="goToNextBlock()">{{ block.height + 1 }}</a>
+                    <a (click)="goToNextBlock()"
+                      [ngClass]="{'disabled-link': !block.nextblockhash }">{{ block.height + 1 }}</a>
                   </ion-note>
                 </ion-item>
                 <ion-item>
@@ -114,7 +119,8 @@
         </ion-list>
 
         <h2>Transactions</h2>
-        <transaction-list [queryType]="'blockHash'" [queryValue]="block.hash"></transaction-list>
+        <transaction-list [queryType]="'blockHash'" [queryValue]="block.hash" [chainNetwork]="chainNetwork">
+        </transaction-list>
       </div>
 
     </div>

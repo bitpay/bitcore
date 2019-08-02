@@ -1,6 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { Events } from 'ionic-angular';
+import _ from 'lodash';
 import { AddressProvider } from '../../providers/address/address';
+import { ChainNetwork } from '../../providers/api/api';
 import { Logger } from '../../providers/logger/logger';
 import { TxsProvider } from '../../providers/transactions/transactions';
 
@@ -11,7 +13,10 @@ import { TxsProvider } from '../../providers/transactions/transactions';
 export class CoinListComponent implements OnInit {
   @Input()
   public addrStr?: string;
+  @Input()
+  public chainNetwork: ChainNetwork;
 
+  public txs: any = [];
   public coins: any = [];
   public showTransactions: boolean;
   public loading;
@@ -21,27 +26,36 @@ export class CoinListComponent implements OnInit {
   constructor(
     private addrProvider: AddressProvider,
     private txsProvider: TxsProvider,
-    private logger: Logger,
     private events: Events
   ) {}
 
   public ngOnInit(): void {
-    if (this.coins && this.coins.length === 0) {
+    if (this.txs && this.txs.length === 0) {
       this.loading = true;
       this.addrProvider.getAddressActivity(this.addrStr).subscribe(
         data => {
-          this.coins = data.map(this.txsProvider.toAppCoin);
+          const formattedData = data.map(this.txsProvider.toAppCoin);
+          this.txs = this.processData(formattedData);
           this.showTransactions = true;
           this.loading = false;
           this.events.publish('CoinList', { length: data.length });
         },
-        err => {
-          this.logger.error(err);
+        () => {
           this.loading = false;
           this.showTransactions = false;
         }
       );
     }
+  }
+
+  processData(data) {
+    const txs = [];
+    data.forEach(tx => {
+      const { mintHeight, mintTxid, value, spentHeight, spentTxid } = tx;
+      txs.push({ height: spentHeight, spentTxid, value });
+      txs.push({ height: mintHeight, mintTxid, value });
+    });
+    return txs;
   }
 
   public loadMore(infiniteScroll) {

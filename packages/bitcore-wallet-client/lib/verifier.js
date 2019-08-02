@@ -2,6 +2,7 @@ var $ = require('preconditions').singleton();
 var _ = require('lodash');
 
 var Bitcore = require('bitcore-lib');
+var BCHAddress = require('bitcore-lib-cash').Address;
 
 var Common = require('./common');
 var Utils = Common.Utils;
@@ -25,7 +26,7 @@ function Verifier(opts) {};
 Verifier.checkAddress = function(credentials, address) {
   $.checkState(credentials.isComplete());
 
-  var local = Utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin);
+  var local = Utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin); 
   return (local.address == address.address &&
     _.difference(local.publicKeys, address.publicKeys).length === 0);
 };
@@ -105,7 +106,6 @@ Verifier.checkProposalCreation = function(args, txp, encryptingKey) {
   if (txp.changeAddress) {
     changeAddress = txp.changeAddress.address;
   }
-
   if (args.changeAddress && !strEqual(changeAddress, args.changeAddress)) return false;
   if (_.isNumber(args.feePerKb) && (txp.feePerKb != args.feePerKb)) return false;
   if (!strEqual(txp.payProUrl, args.payProUrl)) return false;
@@ -180,11 +180,24 @@ Verifier.checkPaypro = function(txp, payproOpts) {
     amount = txp.amount;
   }
 
+
+  if (amount != payproOpts.amount)
+    return false;
+
+
+  if (txp.coin == 'btc' && toAddress != payproOpts.toAddress)
+    return false;
+
+  // Workaround for cashaddr/legacy address problems...
+  if (txp.coin == 'bch' && (new BCHAddress(toAddress).toString()) != (new BCHAddress(payproOpts.toAddress).toString())) 
+    return false;
+
+// this generates problems...
 //  if (feeRate && payproOpts.requiredFeeRate &&
 //      feeRate < payproOpts.requiredFeeRate)
 //  return false;
 
-  return toAddress == payproOpts.toAddress && amount == payproOpts.amount;
+    return true;
 };
 
 
@@ -201,7 +214,7 @@ Verifier.checkTxProposal = function(credentials, txp, opts) {
 
   if (!this.checkTxProposalSignature(credentials, txp))
     return false;
-
+ 
   if (opts.paypro && !this.checkPaypro(txp, opts.paypro))
     return false;
 

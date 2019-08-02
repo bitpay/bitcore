@@ -4,12 +4,12 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var BlockchainExplorer = require('../lib/blockchainexplorer');
+var { BlockChainExplorer } = require('../ts_build/lib/blockchainexplorer');
 
-describe('Blockchain explorer', function() {
+describe('BlockChain explorer', function() {
   describe('#constructor', function() {
     it('should return a blockchain explorer with basic methods', function() {
-      var exp = new BlockchainExplorer({
+      var exp = new BlockChainExplorer({
         network: 'testnet',
       });
       should.exist(exp);
@@ -19,12 +19,12 @@ describe('Blockchain explorer', function() {
       exp.should.respondTo('getAddressActivity');
       exp.should.respondTo('estimateFee');
       exp.should.respondTo('initSocket');
-      var exp = new BlockchainExplorer({
+      var exp = new BlockChainExplorer({
         network: 'livenet',
       });
       should.exist(exp);
 
-      var exp2 = new BlockchainExplorer({
+      var exp2 = new BlockChainExplorer({
         provider: 'v8',
         network: 'livenet',
       });
@@ -37,11 +37,11 @@ describe('Blockchain explorer', function() {
       exp2.should.respondTo('initSocket');
       exp2.should.respondTo('register');
       exp2.should.respondTo('addAddresses');
- 
+
     });
     it('should fail on unsupported provider', function() {
       (function() {
-        var exp = new BlockchainExplorer({
+        var exp = new BlockChainExplorer({
           provider: 'dummy',
         });
       }).should.throw('not supported');
@@ -49,7 +49,7 @@ describe('Blockchain explorer', function() {
   });
   describe('#v8', function() {
     it.skip('should sign registration', function() {
-      var exp = new BlockchainExplorer({
+      var exp = new BlockChainExplorer({
         provider: 'v8',
         network: 'livenet',
       });

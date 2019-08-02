@@ -1,6 +1,5 @@
 import Web3 from 'web3';
-
-if (Symbol['asyncIterator'] === undefined) (Symbol as any)['asyncIterator'] = Symbol.for('asyncIterator');
+import "../../../utils/polyfills";
 
 interface ParityBlockReward {
   author: string;

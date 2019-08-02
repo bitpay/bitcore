@@ -8,7 +8,6 @@ var sinon = require('sinon');
 var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
-log.level = 'info';
 
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
@@ -18,14 +17,14 @@ var Bitcore_ = {
 
 
 
-var Common = require('../../lib/common');
+var Common = require('../../ts_build/lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;
 
-var Model = require('../../lib/model');
+var Model = require('../../ts_build/lib/model');
 
-var WalletService = require('../../lib/server');
+var WalletService = require('../../ts_build/lib/server');
 
 var TestData = require('../testdata');
 var helpers = require('./helpers');
@@ -34,13 +33,17 @@ var storage, blockchainExplorer, request;
 
 describe('Cash address migration', function() {
   before(function(done) {
-    helpers.before(done);
-  });
-  beforeEach(function(done) {
-    helpers.beforeEach(function(res) {
+    helpers.before(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
       request = res.request;
+      done();
+    });
+ 
+  });
+  beforeEach(function(done) {
+    log.level = 'error';
+    helpers.beforeEach(function(res) {
       done();
     });
   });

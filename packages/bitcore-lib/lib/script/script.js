@@ -516,12 +516,12 @@ Script.prototype.isDataOut = function() {
 
 /**
  * Retrieve the associated data for this script.
- * In the case of a pay to public key hash or P2SH, return the hash.
+ * In the case of a pay to public key hash, P2SH, P2WSH, or P2WPKH, return the hash.
  * In the case of a standard OP_RETURN, return the data
  * @returns {Buffer}
  */
 Script.prototype.getData = function() {
-  if (this.isDataOut() || this.isScriptHashOut()) {
+  if (this.isDataOut() || this.isScriptHashOut() || this.isWitnessScriptHashOut() || this.isWitnessPublicKeyHashOut()) {
     if (_.isUndefined(this.chunks[1])) {
       return Buffer.alloc(0);
     } else {
@@ -875,6 +875,24 @@ Script.buildPublicKeyHashOut = function(to) {
 };
 
 /**
+ * @returns {Script} a new pay to witness v0 output for the given
+ * address
+ * @param {Address} to - destination address
+ */
+Script.buildWitnessV0Out = function(to) {
+  $.checkArgument(!_.isUndefined(to));
+  $.checkArgument(to instanceof Address || _.isString(to));
+  if (_.isString(to)) {
+    to = new Address(to);
+  }
+  var s = new Script();
+  s.add(Opcode.OP_0)
+    .add(to.hashBuffer);
+  s._network = to.network;
+  return s;
+};
+
+/**
  * @returns {Script} a new pay to public key output for the given
  *  public key
  */
@@ -987,6 +1005,10 @@ Script.fromAddress = function(address) {
     return Script.buildScriptHashOut(address);
   } else if (address.isPayToPublicKeyHash()) {
     return Script.buildPublicKeyHashOut(address);
+  } else if (address.isPayToWitnessPublicKeyHash()) {
+    return Script.buildWitnessV0Out(address);
+  } else if (address.isPayToWitnessScriptHash()) {
+    return Script.buildWitnessV0Out(address);
   }
   throw new errors.Script.UnrecognizedAddress(address);
 };
@@ -1022,6 +1044,12 @@ Script.prototype._getOutputAddressInfo = function() {
   } else if (this.isPublicKeyHashOut()) {
     info.hashBuffer = this.getData();
     info.type = Address.PayToPublicKeyHash;
+  } else if (this.isWitnessScriptHashOut()) {
+    info.hashBuffer = this.getData();
+    info.type = Address.PayToWitnessScriptHash;
+  } else if (this.isWitnessPublicKeyHashOut()) {
+    info.hashBuffer = this.getData();
+    info.type = Address.PayToWitnessPublicKeyHash;
   } else {
     return false;
   }

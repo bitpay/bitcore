@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ToastController } from 'ionic-angular';
 import * as _ from 'lodash';
-import { Logger } from '../../providers/logger/logger';
 import { ApiProvider } from '../api/api';
 import { CurrencyProvider } from '../currency/currency';
 
@@ -12,8 +11,7 @@ export class PriceProvider {
   constructor(
     public currencyProvider: CurrencyProvider,
     public api: ApiProvider,
-    private toastCtrl: ToastController,
-    private logger: Logger
+    private toastCtrl: ToastController
   ) {}
 
   public setCurrency(currency?: string): void {
@@ -21,31 +19,28 @@ export class PriceProvider {
       currency = this.currencyProvider.getCurrency();
     }
 
-    localStorage.setItem('insight-currency', currency);
-
     if (currency === 'USD') {
       const ratesAPI =
         this.api.getConfig().chain === 'BTC'
           ? this.api.ratesAPI.btc
           : this.api.ratesAPI.bch;
-      this.api.http.get(ratesAPI).subscribe(
+      this.api.httpClient.get(ratesAPI).subscribe(
         (data: any) => {
-          const currencyParsed: any = JSON.parse(data._body);
+          const currencyParsed: any = data;
           _.each(currencyParsed, o => {
             this.rates[o.code] = o.rate;
           });
           this.currencyProvider.factor = this.rates[currency];
           this.currencyProvider.loading = false;
         },
-        err => {
+        () => {
           this.currencyProvider.loading = false;
-          this.logger.error(err);
           this.showErrorToast();
         }
       );
     } else {
       this.currencyProvider.factor =
-        currency === 'm' + this.api.networkSettings.value.selectedNetwork.chain
+        currency === 'm' + this.api.networkSettings.selectedNetwork.chain
           ? 1000
           : 1;
     }

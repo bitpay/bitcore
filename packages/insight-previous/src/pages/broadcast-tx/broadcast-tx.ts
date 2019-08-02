@@ -1,10 +1,9 @@
+import { HttpClient } from '@angular/common/http';
 import { Component, Injectable } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
-import { Http } from '@angular/http';
 import { IonicPage, NavParams, ToastController } from 'ionic-angular';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
 
 @Injectable()
@@ -21,7 +20,7 @@ export class BroadcastTxPage {
   public title: string;
   public transaction: string;
   public txForm: FormGroup;
-  private status: string;
+
   private toast: any;
   private chainNetwork: ChainNetwork;
 
@@ -29,16 +28,13 @@ export class BroadcastTxPage {
     private toastCtrl: ToastController,
     public formBuilder: FormBuilder,
     public navParams: NavParams,
-    private http: Http,
+    private httpClient: HttpClient,
     private apiProvider: ApiProvider,
-    private logger: Logger,
     private priceProvider: PriceProvider,
     private currencyProvider: CurrencyProvider
   ) {
-    const chain: string =
-      navParams.get('chain') || this.apiProvider.getConfig().chain;
-    const network: string =
-      navParams.get('network') || this.apiProvider.getConfig().network;
+    const chain: string = navParams.get('chain');
+    const network: string = navParams.get('network');
 
     this.chainNetwork = {
       chain,
@@ -46,7 +42,7 @@ export class BroadcastTxPage {
     };
 
     this.apiProvider.changeNetwork(this.chainNetwork);
-    this.currencyProvider.setCurrency();
+    this.currencyProvider.setCurrency(this.chainNetwork);
     this.priceProvider.setCurrency();
 
     this.title = 'Broadcast Transaction';
@@ -59,24 +55,23 @@ export class BroadcastTxPage {
     const postData: any = {
       rawtx: this.transaction
     };
-    this.status = 'loading';
 
-    this.http.post(this.apiProvider.getUrl() + '/tx/send', postData).subscribe(
-      response => {
-        this.presentToast(true, response);
-      },
-      err => {
-        this.logger.error(err._body);
-        this.presentToast(false, err);
-      }
-    );
+    this.httpClient
+      .post(this.apiProvider.getUrl() + '/tx/send', postData)
+      .subscribe(
+        response => {
+          this.presentToast(true, response);
+        },
+        err => {
+          this.presentToast(false, err);
+        }
+      );
   }
 
   private presentToast(success: boolean, response: any): void {
     const message: string = success
-      ? 'Transaction successfully broadcast. Trasaction id: ' +
-        JSON.parse(response._body).txid
-      : 'An error occurred: ' + response._body;
+      ? 'Transaction successfully broadcast. Trasaction id: ' + response.txid
+      : 'An error occurred: ' + response;
     if (this.toast) {
       this.toast.dismiss();
     }

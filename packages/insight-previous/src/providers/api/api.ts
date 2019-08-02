@@ -1,6 +1,6 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Http } from '@angular/http';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, Observable } from 'rxjs';
 import { DefaultProvider } from '../../providers/default/default';
 import { Logger } from '../../providers/logger/logger';
 
@@ -21,10 +21,10 @@ export class ApiProvider {
     chain: this.defaults.getDefault('%CHAIN%'),
     network: this.defaults.getDefault('%NETWORK%')
   };
-  public networkSettings = new BehaviorSubject<NetworkSettings>({
+  public networkSettings = {
     availableNetworks: [this.defaultNetwork],
     selectedNetwork: this.defaultNetwork
-  });
+  };
 
   public ratesAPI = {
     btc: 'https://bitpay.com/api/rates',
@@ -32,21 +32,23 @@ export class ApiProvider {
   };
 
   constructor(
-    public http: Http,
+    public httpClient: HttpClient,
     private defaults: DefaultProvider,
     private logger: Logger
   ) {
     this.getAvailableNetworks().subscribe(data => {
-      const availableNetworks = data.json() as ChainNetwork[];
-      this.networkSettings.next({
+      const availableNetworks = data;
+      this.networkSettings = {
         availableNetworks,
-        selectedNetwork: this.networkSettings.value.selectedNetwork
-      });
+        selectedNetwork: this.networkSettings.selectedNetwork
+      };
     });
   }
 
-  public getAvailableNetworks() {
-    return this.http.get(this.getUrlPrefix() + '/status/enabled-chains');
+  public getAvailableNetworks(): Observable<ChainNetwork[]> {
+    return this.httpClient.get<ChainNetwork[]>(
+      this.getUrlPrefix() + '/status/enabled-chains'
+    );
   }
 
   public getUrlPrefix(): string {
@@ -55,22 +57,22 @@ export class ApiProvider {
   }
   public getUrl(): string {
     const prefix: string = this.defaults.getDefault('%API_PREFIX%');
-    const chain: string = this.networkSettings.value.selectedNetwork.chain;
-    const network: string = this.networkSettings.value.selectedNetwork.network;
+    const chain: string = this.networkSettings.selectedNetwork.chain;
+    const network: string = this.networkSettings.selectedNetwork.network;
     const apiPrefix = `${prefix}/${chain}/${network}`;
     return apiPrefix;
   }
 
   public getConfig(): ChainNetwork {
     const config = {
-      chain: this.networkSettings.value.selectedNetwork.chain,
-      network: this.networkSettings.value.selectedNetwork.network
+      chain: this.networkSettings.selectedNetwork.chain,
+      network: this.networkSettings.selectedNetwork.network
     };
     return config;
   }
 
   public changeNetwork(network: ChainNetwork): void {
-    const availableNetworks = this.networkSettings.value.availableNetworks;
+    const availableNetworks = this.networkSettings.availableNetworks;
     const isValid = _.some(availableNetworks, network);
     if (!isValid) {
       this.logger.error(
@@ -78,9 +80,9 @@ export class ApiProvider {
       );
       return;
     }
-    this.networkSettings.next({
+    this.networkSettings = {
       availableNetworks,
       selectedNetwork: network
-    });
+    };
   }
 }

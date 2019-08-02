@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var Utils = require('../lib/common/utils');
+var Utils = require('../ts_build/lib/common/utils');
 
 describe('Utils', function() {
   describe('#getMissingFields', function() {
@@ -118,7 +118,7 @@ describe('Utils', function() {
          args: [129900000, 'bch'],
         expected: '1.299',
       }, {
- 
+
         args: [1234567899999, 'btc'],
         expected: '12,345.679',
       }, {
@@ -156,7 +156,7 @@ describe('Utils', function() {
       should.not.exist(Utils.getAddressCoin('1L'));
     });
   });
- 
+
   describe('#parseVersion', function() {
     it('should parse version', function() {
       Utils.parseVersion('bwc-2.3.1').should.deep.equal({
@@ -182,7 +182,7 @@ describe('Utils', function() {
 
 
   });
- 
+
   describe('#parseAppVersion', function() {
     it('should parse user version', function() {
       Utils.parseAppVersion('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Copay/5.2.2 Chrome/66.0.3359.181 Electron/3.0.8 Safari/537.36').should.deep.equal({
@@ -226,7 +226,7 @@ describe('Utils', function() {
       var res = Utils.translateAddress('HBf8isgS8EXG1r3X6GP89FmooUmiJ42wHS', 'btc');
       res.should.equal('36q2G5FMGvJbPgAVEaiyAsFGmpkhPKwk2r');
     });
- 
+
     it('should keep the address if there is nothing to do (bch)', function() {
       var res = Utils.translateAddress('CcJ4qUfyQ8x5NwhAeCQkrBSWVeXxXghcNz', 'bch');
       res.should.equal('CcJ4qUfyQ8x5NwhAeCQkrBSWVeXxXghcNz');
@@ -240,5 +240,5 @@ describe('Utils', function() {
 
 
   });
-  
+
 });

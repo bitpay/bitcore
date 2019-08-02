@@ -3,7 +3,6 @@ import { IonicPage, NavParams } from 'ionic-angular';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
 import { RedirProvider } from '../../providers/redir/redir';
 import { TxsProvider } from '../../providers/transactions/transactions';
@@ -19,9 +18,6 @@ import { TxsProvider } from '../../providers/transactions/transactions';
   templateUrl: 'block-detail.html'
 })
 export class BlockDetailPage {
-  private blockHash: string;
-  private chainNetwork: ChainNetwork;
-
   public loading = true;
   public errorMessage: string;
   public confirmations: number;
@@ -29,42 +25,42 @@ export class BlockDetailPage {
     tx: []
   };
 
+  private blockHash: string;
+  private chainNetwork: ChainNetwork;
+
   constructor(
     public navParams: NavParams,
     public currencyProvider: CurrencyProvider,
     public redirProvider: RedirProvider,
     public txProvider: TxsProvider,
-    private blockProvider: BlocksProvider,
-    private logger: Logger,
+    private blocksProvider: BlocksProvider,
     private apiProvider: ApiProvider,
     private priceProvider: PriceProvider
   ) {
     this.blockHash = navParams.get('blockHash');
-    const chain: string =
-      navParams.get('chain') || this.apiProvider.getConfig().chain;
-    const network: string =
-      navParams.get('network') || this.apiProvider.getConfig().network;
+    const chain: string = navParams.get('chain');
+    const network: string = navParams.get('network');
 
     this.chainNetwork = {
       chain,
       network
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
-    this.currencyProvider.setCurrency();
+    this.currencyProvider.setCurrency(this.chainNetwork);
     this.priceProvider.setCurrency();
   }
 
-  ionViewDidLoad() {
-    this.blockProvider.getBlock(this.blockHash).subscribe(
-      data => {
-        this.block = data.block;
+  ionViewDidEnter() {
+    this.blocksProvider.getBlock(this.blockHash, this.chainNetwork).subscribe(
+      response => {
+        const block = this.blocksProvider.toAppBlock(response);
+        this.block = block;
         this.txProvider
-          .getConfirmations(this.block.height)
+          .getConfirmations(this.block.height, this.chainNetwork)
           .subscribe(confirmations => (this.confirmations = confirmations));
         this.loading = false;
       },
       err => {
-        this.logger.error(err);
         this.errorMessage = err;
         this.loading = false;
       }

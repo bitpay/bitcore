@@ -1,4 +1,4 @@
-<head-nav></head-nav>
+<head-nav [chainNetwork]="chainNetwork"></head-nav>
 <ion-content>
   <ion-grid fixed>
 
@@ -6,9 +6,9 @@
 
       <loader *ngIf="loading" [type]="'title'"></loader>
 
-      <error [message]="errorMessage" *ngIf="!loading && errorMessage "></error>
+      <error [message]="errorMessage" *ngIf="!loading && errorMessage && confirmations !== -3 "></error>
 
-      <div *ngIf="!loading && !errorMessage">
+      <div *ngIf="(!loading && !errorMessage) || confirmations === -3">
         <h1 ion-text>
           Transaction
           <ion-note *ngIf="vout !== undefined">
@@ -18,9 +18,14 @@
         </h1>
 
         <p class="item-hash">
-          <b>Transaction Hash</b> {{ tx.txid }}</p>
+          <b>Transaction Hash</b> {{ tx.txid }} <button [copyToClipboard]="tx.txid">
+            <ion-icon md="md-copy"></ion-icon>
+          </button>
+        </p>
 
         <h2>Summary</h2>
+
+        <error [message]="errorMessage" *ngIf="!loading && errorMessage"></error>
 
         <ion-list class="list--summary">
           <ion-item>
@@ -38,13 +43,13 @@
           <ion-item>
             Received Time
             <ion-note item-end>
-              {{ tx.time * 1000 | date:'medium' }}
+              {{ tx.time * 1000 | date:'long' }}
             </ion-note>
           </ion-item>
           <ion-item *ngIf="confirmations > 0">
             Mined Time
             <ion-note item-end>
-              {{ tx.blocktime * 1000 | date:'medium' }}
+              {{ tx.blocktime * 1000 | date:'long' }}
             </ion-note>
           </ion-item>
           <ion-item>
@@ -52,7 +57,10 @@
             <ion-note item-end>
               <a (click)="goToBlock(tx.blockhash)">{{ tx.blockhash }}</a>
             </ion-note>
-            <ion-note *ngIf="confirmations <= 0" item-end>
+            <ion-note *ngIf="confirmations === -3" item-end>
+              Invalid
+            </ion-note>
+            <ion-note *ngIf="confirmations === -1" item-end>
               Unconfirmed
             </ion-note>
           </ion-item>
@@ -60,7 +68,7 @@
 
         <h2>Details</h2>
 
-        <transaction [tx]="tx" [showCoins]="true"></transaction>
+        <transaction [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction>
       </div>
 
     </div>

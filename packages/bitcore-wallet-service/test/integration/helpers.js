@@ -20,14 +20,14 @@ var Bitcore_ = {
   bch: require('bitcore-lib-cash')
 };
 
-var Common = require('../../lib/common');
+var Common = require('../../ts_build/lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;
 
-var Storage = require('../../lib/storage');
-var Model = require('../../lib/model');
-var WalletService = require('../../lib/server');
+var { Storage } = require('../../ts_build/lib/storage');
+var { WalletService } = require('../../ts_build/lib/server');
+var Model = require('../../ts_build/lib/model');
 var TestData = require('../testdata');
 
 var storage, blockchainExplorer;
@@ -52,22 +52,16 @@ helpers.before = function(cb) {
       //var db = new tingodb.Db('./db/test', {});
       //return cb(db);
     }
+
   }
   getDb(function(db) {
     storage = new Storage({
       db: db
     });
-    return cb();
-  });
-};
+    Storage.createIndexes(db);
 
-helpers.beforeEach = function(cb) {
-  if (!storage.db) return cb();
-  storage.db.dropDatabase(function(err) {
-    if (err) return cb(err);
+
     let be = blockchainExplorer = sinon.stub();
-
-
     be.register = sinon.stub().callsArgWith(1, null, null);
     be.addAddresses = sinon.stub().callsArgWith(2, null, null);
     be.getAddressUtxos = sinon.stub().callsArgWith(2, null, []);
@@ -75,7 +69,48 @@ helpers.beforeEach = function(cb) {
     be.getUtxos = sinon.stub().callsArgWith(1, null,[]);
     be.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000, 'hash');
 
+    var opts = {
+      storage: storage,
+      blockchainExplorer: blockchainExplorer,
+      request: sinon.stub()
+    };
+    WalletService.initialize(opts, function() {
+      return cb(opts);
+    });
+  });
+};
 
+helpers.beforeEach = function(cb) {
+  if (!storage.db) return cb();
+
+  // Left overs to be initalized
+  let be = blockchainExplorer;
+  be.register = sinon.stub().callsArgWith(1, null, null);
+  be.addAddresses = sinon.stub().callsArgWith(2, null, null);
+ 
+  // TODO
+  const collections = {
+    WALLETS: 'wallets',
+    TXS: 'txs',
+    ADDRESSES: 'addresses',
+    NOTIFICATIONS: 'notifications',
+    COPAYERS_LOOKUP: 'copayers_lookup',
+    PREFERENCES: 'preferences',
+    EMAIL_QUEUE: 'email_queue',
+    CACHE: 'cache',
+    FIAT_RATES2: 'fiat_rates2',
+    TX_NOTES: 'tx_notes',
+    SESSIONS: 'sessions',
+    PUSH_NOTIFICATION_SUBS: 'push_notification_subs',
+    TX_CONFIRMATION_SUBS: 'tx_confirmation_subs',
+    LOCKS: 'locks'
+  };
+
+
+  async.each(_.values(collections), (x, icb)=> {
+    storage.db.collection(x).remove({}, icb);
+  }, (err) => {
+    should.not.exist(err);
     var opts = {
       storage: storage,
       blockchainExplorer: blockchainExplorer,
@@ -216,7 +251,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
 
     var pub = (_.isBoolean(opts.supportBIP44AndP2PKH) && !opts.supportBIP44AndP2PKH) ? copayerData.xPubKey_45H : copayerData.xPubKey_44H_0H_0H;
 
-    if (opts.network == 'testnet') 
+    if (opts.network == 'testnet')
       pub = copayerData.xPubKey_44H_0H_0Ht;
 
       var copayerOpts = helpers.getSignedCopayerOpts({
@@ -273,7 +308,6 @@ helpers._parseAmount = function(str) {
 
   var re = /^((?:\d+c)|u)?\s*([\d\.]+)\s*(btc|bit|sat)?$/;
   var match = str.match(re);
-
   if (!match) throw new Error('Could not parse amount ' + str);
 
   if (match[1]) {
@@ -355,7 +389,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
       }
 
       blockchainExplorer.getUtxos = function(param1, height, cb) {
-        
+
         var selected;
         selected = _.filter(helpers._utxos, {'wallet': param1.id});
         return cb(null, selected);
@@ -400,7 +434,7 @@ helpers.createTxsV8 = function(nr, bcHeight, txs) {
         size: 226,
         category: 'receive',
         satoshis: 30001,
-        // this is translated on V8.prototype.getTransactions 
+        // this is translated on V8.prototype.getTransactions
         amount: 30001 /1e8,
         height: (i == 0) ? -1 :  bcHeight - i + 1,
         address: 'muFJi3ZPfR5nhxyD7dfpx2nYZA8Wmwzgck',
@@ -418,7 +452,7 @@ helpers.stubHistoryV8 = function(nr, bcHeight, txs) {
   txs= helpers.createTxsV8(nr,bcHeight, txs);
   blockchainExplorer.getTransactions = function(walletId, startBlock, cb) {
     startBlock = startBlock || 0;
-    var page = _.filter(txs, (x) => { 
+    var page = _.filter(txs, (x) => {
       return x.height >=startBlock || x.height == -1
     });
     return cb(null, page);
@@ -443,7 +477,7 @@ helpers.stubFeeLevels = function(levels, fill) {
 
     if (fill) {
       let last;
-      _.each(nbBlocks, (n) => { 
+      _.each(nbBlocks, (n) => {
         if (result[n]) {
           last = result[n];
         }
@@ -465,7 +499,7 @@ helpers.stubAddressActivity = function(activeAddresses, failsOn) {
   stubAddressActivityFailsOn = failsOn;
 
   blockchainExplorer.getAddressActivity = function(address, cb) {
-    if (stubAddressActivityFailsOnCount === stubAddressActivityFailsOn) 
+    if (stubAddressActivityFailsOnCount === stubAddressActivityFailsOn)
       return cb('failed on request');
 
     stubAddressActivityFailsOnCount++;
@@ -516,7 +550,7 @@ helpers.getProposalSignatureOpts = function(txp, signingKey) {
 
 helpers.createAddresses = function(server, wallet, main, change, cb) {
   // var clock = sinon.useFakeTimers('Date');
-  
+
   async.mapSeries(_.range(main + change), function(i, next) {
     // clock.tick(1000);
     var address = wallet.createAddress(i >= main);

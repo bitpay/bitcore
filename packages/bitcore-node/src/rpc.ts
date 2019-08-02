@@ -109,8 +109,8 @@ export class RPC {
     return this.asyncCall('estimatesmartfee', [target]);
   }
 
-  async getEstimateFee(target: number) {
-    return this.asyncCall('estimatefee', [target]);
+  async getEstimateFee() {
+    return this.asyncCall('estimatefee', []);
   }
 }
 
@@ -141,13 +141,20 @@ export class AsyncRPC {
     return (await this.call('getblock', [hash, 2])) as RPCBlock<RPCTransaction>;
   }
 
-  async generate(n: number): Promise<string[]> {
-    return (await this.call('generate', [n])) as string[];
-  }
-
   async getnewaddress(account: string): Promise<string> {
     return (await this.call('getnewaddress', [account])) as string;
   }
+
+  async signrawtx(txs: string): Promise<any> {
+    try {
+      const ret =  await this.call('signrawtransactionwithwallet', [txs]);
+      return ret;
+    } catch (e) {
+      if (!e.code || e.code != -32601) return Promise.reject(e);
+      return  await this.call('signrawtransaction', [txs]);
+    }
+  };
+
 
   async transaction(txid: string, block?: string): Promise<RPCTransaction> {
     const args = [txid, true];

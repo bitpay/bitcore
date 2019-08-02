@@ -77,7 +77,7 @@ Utils.decryptMessageNoThrow = function(cyphertextJson, encryptingKey) {
  * the hash is calculated there? */
 Utils.hashMessage = function(text) {
   $.checkArgument(text);
-  var buf = new Buffer(text);
+  var buf = Buffer.from(text);
   var ret = crypto.Hash.sha256sha256(buf);
   ret = new Bitcore.encoding.BufferReader(ret).readReverse();
   return ret;
@@ -156,14 +156,19 @@ Utils.deriveAddress = function(scriptType, publicKeyRing, path, m, network, coin
   }
 
   return {
-    address: coin == 'bch' ?  bitcoreAddress.toLegacyAddress() : bitcoreAddress.toString(),
+    address: bitcoreAddress.toString(true),
     path: path,
     publicKeys: _.invokeMap(publicKeys, 'toString'),
   };
 };
 
 Utils.xPubToCopayerId = function(coin, xpub) {
+
+  // this is only because we allowed coin = 0' wallets for BCH 
+  // for the  "wallet duplication" feature
+
   var str = coin == 'btc' ? xpub : coin + xpub;
+
   var hash = sjcl.hash.sha256.hash(str);
   return sjcl.codec.hex.fromBits(hash);
 };

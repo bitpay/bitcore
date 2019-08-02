@@ -614,7 +614,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness, o
   if (_.isArray(utxo)) {
     var self = this;
     _.each(utxo, function(utxo) {
-      self.from(utxo, pubkeys, threshold);
+      self.from(utxo, pubkeys, threshold, nestedWitness, opts);
     });
     return this;
   }
@@ -1040,17 +1040,23 @@ Transaction.prototype.removeOutput = function(index) {
 Transaction.prototype.sort = function() {
   this.sortInputs(function(inputs) {
     var copy = Array.prototype.concat.apply([], inputs);
+    let i = 0; 
+    copy.forEach((x) => { x.i = i++});
     copy.sort(function(first, second) {
-      return compare(first.prevTxId, second.prevTxId)
-        || first.outputIndex - second.outputIndex;
+     return compare(first.prevTxId, second.prevTxId)
+        || first.outputIndex - second.outputIndex 
+        || first.i - second.i;  // to ensure stable sort
     });
     return copy;
   });
   this.sortOutputs(function(outputs) {
     var copy = Array.prototype.concat.apply([], outputs);
+    let i = 0; 
+    copy.forEach((x) => { x.i = i++});
     copy.sort(function(first, second) {
       return first.satoshis - second.satoshis
-        || compare(first.script.toBuffer(), second.script.toBuffer());
+        || compare(first.script.toBuffer(), second.script.toBuffer())
+        || first.i - second.i;  // to ensure stable sort
     });
     return copy;
   });

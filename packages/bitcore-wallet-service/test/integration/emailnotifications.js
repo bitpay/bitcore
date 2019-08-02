@@ -8,115 +8,35 @@ var sinon = require('sinon');
 var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
-log.level = 'info';
 
-var WalletService = require('../../lib/server');
-var EmailService = require('../../lib/emailservice');
+var WalletService = require('../../ts_build/lib/server');
+var EmailService = require('../../ts_build/lib/emailservice');
 
 var TestData = require('../testdata');
 var helpers = require('./helpers');
 
 describe('Email notifications', function() {
-  var server, wallet, mailerStub, emailService;
+  var storage, server, wallet, mailerStub, emailService;
 
   before(function(done) {
-    helpers.before(done);
+    log.level = 'error';
+    helpers.before((res) => {
+      storage = res.storage;
+      done();
+    });
   });
   after(function(done) {
     helpers.after(done);
   });
 
-  describe('1-1 wallet', function() {
-    beforeEach(function(done) {
-      helpers.beforeEach(function(res) {
-        helpers.createAndJoinWallet(1, 1,  {coin:'bch'}, function(s, w) {
-          server = s;
-          wallet = w;
-
-          var i = 0;
-          async.eachSeries(w.copayers, function(copayer, next) {
-            helpers.getAuthServer(copayer.id, function(server) {
-              server.savePreferences({
-                email: 'copayer' + (++i) + '@domain.com',
-                unit: 'bit',
-              }, next);
-            });
-          }, function(err) {
-            should.not.exist(err);
-
-            mailerStub = sinon.stub();
-            mailerStub.send = sinon.stub();
-            mailerStub.send.returns(Promise.resolve('ok'));
-            //mailerStub.returns(Promise.reject('err'));
-
-            emailService = new EmailService();
-            emailService.start({
-              lockOpts: {},
-              messageBroker: server.messageBroker,
-              storage: helpers.getStorage(),
-              mailer: mailerStub,
-              emailOpts: {
-                from: 'bws@dummy.net',
-                subjectPrefix: '[test wallet]',
-                publicTxUrlTemplate: {
-                  btc: {
-                    livenet: 'https://insight.bitpay.com/tx/{{txid}}',
-                    testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
-                  },
-                  bch: {
-                    livenet: 'https://bch-insight.bitpay.com/#/tx/{{txid}}',
-                    testnet: 'https://test-bch-insight.bitpay.com/#/tx/{{txid}}',
-                  }
-                },
-              },
-            }, function(err) {
-              should.not.exist(err);
-              done();
-            });
-          });
-        });
-      });
-    });
-
- 
-
-    it('should handle small incomming payments (bch)', function(done) {
-      server.createAddress({}, function(err, address) {
-        should.not.exist(err);
-
-        // Simulate incoming tx notification
-        server._notify('NewIncomingTx', {
-          txid: '999',
-          address: address,
-          amount: 221340,
-        }, function(err) {
-          setTimeout(function() {
-            var calls = mailerStub.send.getCalls();
-            calls.length.should.equal(1);
-            var emails = _.map(calls, function(c) {
-              return c.args[0];
-            });
-            _.difference(['copayer1@domain.com'], _.map(emails, 'to')).should.be.empty;
-            var one = emails[0];
-            one.from.should.equal('bws@dummy.net');
-            one.subject.should.contain('New payment received');
-            one.text.should.contain('0.002213 BCH');
-            server.storage.fetchUnsentEmails(function(err, unsent) {
-              should.not.exist(err);
-              unsent.should.be.empty;
-              done();
-            });
-          }, 100);
-        });
-      });
+  beforeEach(function(done) {
+    helpers.beforeEach(function(res) {
+      done();
     });
   });
-
-
-
+ 
   describe('Shared wallet', function() {
     beforeEach(function(done) {
-      helpers.beforeEach(function(res) {
         helpers.createAndJoinWallet(2, 3, function(s, w) {
           server = s;
           wallet = w;
@@ -141,7 +61,7 @@ describe('Email notifications', function() {
             emailService.start({
               lockOpts: {},
               messageBroker: server.messageBroker,
-              storage: helpers.getStorage(),
+              storage: storage,
               mailer: mailerStub,
               emailOpts: {
                 from: 'bws@dummy.net',
@@ -163,7 +83,6 @@ describe('Email notifications', function() {
             });
           });
         });
-      });
     });
 
     it('should notify copayers a new tx proposal has been created', function(done) {
@@ -283,9 +202,11 @@ describe('Email notifications', function() {
           },
           function(next) {
             helpers.stubBroadcast();
+            setTimeout(() => {
             server.broadcastTx({
               txProposalId: txp.id,
             }, next);
+            }, 100);
           },
         ], function(err) {
           should.not.exist(err);
@@ -619,7 +540,6 @@ describe('Email notifications', function() {
 
   describe('1-of-N wallet', function() {
     beforeEach(function(done) {
-      helpers.beforeEach(function(res) {
         helpers.createAndJoinWallet(1, 2, function(s, w) {
           server = s;
           wallet = w;
@@ -664,7 +584,6 @@ describe('Email notifications', function() {
               done();
             });
           });
-        });
       });
 
       it('should NOT notify copayers a new tx proposal has been created', function(done) {
@@ -687,4 +606,89 @@ describe('Email notifications', function() {
       });
     });
   });
+
+  describe('1-1 wallet', function() {
+    beforeEach(function(done) {
+        helpers.createAndJoinWallet(1, 1,  {coin:'bch'}, function(s, w) {
+          server = s;
+          wallet = w;
+
+          var i = 0;
+          async.eachSeries(w.copayers, function(copayer, next) {
+            helpers.getAuthServer(copayer.id, function(server) {
+              server.savePreferences({
+                email: 'copayer' + (++i) + '@domain.com',
+                unit: 'bit',
+              }, next);
+            });
+          }, function(err) {
+            should.not.exist(err);
+
+            mailerStub = sinon.stub();
+            mailerStub.send = sinon.stub();
+            mailerStub.send.returns(Promise.resolve('ok'));
+            //mailerStub.returns(Promise.reject('err'));
+
+            emailService = new EmailService();
+            emailService.start({
+              lockOpts: {},
+              messageBroker: server.messageBroker,
+              storage: helpers.getStorage(),
+              mailer: mailerStub,
+              emailOpts: {
+                from: 'bws@dummy.net',
+                subjectPrefix: '[test wallet]',
+                publicTxUrlTemplate: {
+                  btc: {
+                    livenet: 'https://insight.bitpay.com/tx/{{txid}}',
+                    testnet: 'https://test-insight.bitpay.com/tx/{{txid}}',
+                  },
+                  bch: {
+                    livenet: 'https://bch-insight.bitpay.com/#/tx/{{txid}}',
+                    testnet: 'https://test-bch-insight.bitpay.com/#/tx/{{txid}}',
+                  }
+                },
+              },
+            }, function(err) {
+              should.not.exist(err);
+              done();
+            });
+          });
+      });
+    });
+
+
+
+    it('should handle small incomming payments (bch)', function(done) {
+      server.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+        // Simulate incoming tx notification
+        server._notify('NewIncomingTx', {
+          txid: '999',
+          address: address,
+          amount: 221340,
+        }, function(err) {
+          setTimeout(function() {
+            var calls = mailerStub.send.getCalls();
+            calls.length.should.equal(1);
+            var emails = _.map(calls, function(c) {
+              return c.args[0];
+            });
+            _.difference(['copayer1@domain.com'], _.map(emails, 'to')).should.be.empty;
+            var one = emails[0];
+            one.from.should.equal('bws@dummy.net');
+            one.subject.should.contain('New payment received');
+            one.text.should.contain('0.002213 BCH');
+            server.storage.fetchUnsentEmails(function(err, unsent) {
+              should.not.exist(err);
+              unsent.should.be.empty;
+              done();
+            });
+          }, 100);
+        });
+      });
+    });
+  });
+
 });

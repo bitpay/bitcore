@@ -1,8 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { Logger } from '../../providers/logger/logger';
 import { TxsProvider } from '../../providers/transactions/transactions';
 
 import * as _ from 'lodash';
+import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 
 @Component({
   selector: 'transaction-list',
@@ -16,28 +16,31 @@ export class TransactionListComponent implements OnInit {
   public queryValue?: string;
   @Input()
   public transactions?: any = [];
-
+  @Input()
+  public chainNetwork: ChainNetwork;
   public limit = 10;
   public chunkSize = 100;
 
-  constructor(private txProvider: TxsProvider, private logger: Logger) {}
+  constructor(private txProvider: TxsProvider) {}
 
   public ngOnInit(): void {
     if (this.transactions && this.transactions.length === 0) {
-      this.txProvider.getTxs({ [this.queryType]: this.queryValue }).subscribe(
-        data => {
-          // Newly Generated Coins (Coinbase) First
-          const sortedTxs = _.sortBy(data.txs, (tx: any) => {
-            return tx.isCoinBase ? 0 : 1;
-          });
-          this.transactions = sortedTxs;
-          this.loading = false;
-        },
-        err => {
-          this.logger.error(err);
-          this.loading = false;
-        }
-      );
+      this.txProvider
+        .getTxs(this.chainNetwork, { [this.queryType]: this.queryValue })
+        .subscribe(
+          response => {
+            // Newly Generated Coins (Coinbase) First
+            const txs = response.map(tx => this.txProvider.toAppTx(tx));
+            const sortedTxs = _.sortBy(txs, (tx: any) => {
+              return tx.isCoinBase ? 0 : 1;
+            });
+            this.transactions = sortedTxs;
+            this.loading = false;
+          },
+          () => {
+            this.loading = false;
+          }
+        );
     } else {
       this.loading = false;
     }

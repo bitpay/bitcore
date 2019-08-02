@@ -23,7 +23,7 @@ export type ICoin = {
 };
 
 @LoggifyClass
-class CoinModel extends BaseModel<ICoin> {
+export class CoinModel extends BaseModel<ICoin> {
   constructor(storage?: StorageService) {
     super('coins', storage);
   }

@@ -4,28 +4,32 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var Lock = require('../lib/lock');
+var { Lock } = require('../ts_build/lib/lock');
 var helpers = require('./integration/helpers');
 
     var step=50;
 
 describe('Locks', function() {
-  var lock, clock, order = [];
+  var lock, clock, order = [], storage;
 
   before(function(done) {
     helpers.before(function(res) {
+      storage = res.storage;
       done();
     });
   });
+
+
   beforeEach(function(done) {
     var self = this;
-    helpers.beforeEach(function(res) {
-      let storage = res.storage;
+    helpers.beforeEach(function() {
       lock = new Lock(storage);
       order = [];
       done();
     });
   });
+
+
   afterEach(function() {
   });
 
@@ -104,7 +108,7 @@ describe('Locks', function() {
     pushEvent(4);
 
   });
- 
+
   it('should not lock tasks using different tokens', function(done) {
 
     pushEvent(0);

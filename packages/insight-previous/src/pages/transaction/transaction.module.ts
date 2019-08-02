@@ -5,6 +5,7 @@ import { FooterComponentModule } from '../../components/footer/footer.module';
 import { HeadNavComponentModule } from '../../components/head-nav/head-nav.module';
 import { LoaderComponentModule } from '../../components/loader/loader.module';
 import { TransactionComponentModule } from '../../components/transaction/transaction.module';
+import { CopyToClipboardModule } from '../../directives/copy-to-clipboard/copy-to-clipboard.module';
 import { TransactionPage } from './transaction';
 
 @NgModule({
@@ -15,7 +16,8 @@ import { TransactionPage } from './transaction';
     FooterComponentModule,
     HeadNavComponentModule,
     LoaderComponentModule,
-    ErrorComponentModule
+    ErrorComponentModule,
+    CopyToClipboardModule
   ],
   exports: [TransactionPage]
 })

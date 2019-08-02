@@ -1,9 +1,7 @@
 import { Component, Injectable } from '@angular/core';
 import { IonicPage, NavParams } from 'ionic-angular';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
-import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
 import { RedirProvider } from '../../providers/redir/redir';
 import { TxsProvider } from '../../providers/transactions/transactions';
@@ -20,54 +18,56 @@ import { TxsProvider } from '../../providers/transactions/transactions';
 })
 export class TransactionPage {
   public loading = true;
-  private txId: string;
-  private chainNetwork: ChainNetwork;
   public tx: any = {};
   public vout: number;
   public fromVout: boolean;
   public confirmations: number;
   public errorMessage: string;
 
+  private txId: string;
+  private chainNetwork: ChainNetwork;
+
   constructor(
     public navParams: NavParams,
+    public currencyProvider: CurrencyProvider,
+    public redirProvider: RedirProvider,
     private apiProvider: ApiProvider,
     private txProvider: TxsProvider,
-    public currencyProvider: CurrencyProvider,
-    private logger: Logger,
-    private priceProvider: PriceProvider,
-    public redirProvider: RedirProvider,
-    private blocksProvider: BlocksProvider
+    private priceProvider: PriceProvider
   ) {
     this.txId = navParams.get('txId');
     this.vout = navParams.get('vout');
     this.fromVout = navParams.get('fromVout') || undefined;
 
-    const chain: string =
-      navParams.get('chain') || this.apiProvider.getConfig().chain;
-    const network: string =
-      navParams.get('network') || this.apiProvider.getConfig().network;
+    const chain: string = navParams.get('chain');
+    const network: string = navParams.get('network');
 
     this.chainNetwork = {
       chain,
       network
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
-    this.currencyProvider.setCurrency();
+    this.currencyProvider.setCurrency(this.chainNetwork);
     this.priceProvider.setCurrency();
   }
 
-  public ionViewDidLoad(): void {
-    this.txProvider.getTx(this.txId).subscribe(
+  public ionViewDidEnter(): void {
+    this.txProvider.getTx(this.txId, this.chainNetwork).subscribe(
       data => {
-        this.tx = data.tx;
+        this.tx = this.txProvider.toAppTx(data);
         this.loading = false;
         this.txProvider
-          .getConfirmations(this.tx.blockheight)
-          .subscribe(confirmations => (this.confirmations = confirmations));
+          .getConfirmations(this.tx.blockheight, this.chainNetwork)
+          .subscribe(confirmations => {
+            if (confirmations === -3) {
+              this.errorMessage =
+                'This transaction is invalid and will never confirm, because some of its inputs are already spent.';
+            }
+            this.confirmations = confirmations;
+          });
         // Be aware that the tx component is loading data into the tx object
       },
       err => {
-        this.logger.error(err);
         this.errorMessage = err;
         this.loading = false;
       }

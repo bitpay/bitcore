@@ -1,7 +1,7 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Http } from '@angular/http';
 import { Observable } from 'rxjs';
-import { ApiProvider } from '../../providers/api/api';
+import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 
 export interface ApiBlock {
@@ -50,12 +50,12 @@ export interface AppBlock {
 @Injectable()
 export class BlocksProvider {
   constructor(
-    public http: Http,
-    private api: ApiProvider,
-    public currency: CurrencyProvider
+    public httpClient: HttpClient,
+    public currency: CurrencyProvider,
+    private api: ApiProvider
   ) {}
 
-  private toAppBlock(block: ApiBlock): AppBlock {
+  public toAppBlock(block: ApiBlock): AppBlock {
     const difficulty: number = 0x1d00ffff / block.bits;
     return {
       height: block.height,
@@ -83,21 +83,21 @@ export class BlocksProvider {
     };
   }
 
-  public getCurrentHeight(): Observable<number> {
-    const heightUrl: string = this.api.getUrl() + '/block/tip';
-    return this.http.get(heightUrl).map(blockResp => {
-      const block: ApiBlock = blockResp.json();
-      return block.height;
-    });
+  public getCurrentHeight(chainNetwork: ChainNetwork): Observable<ApiBlock> {
+    const heightUrl = `${this.api.getUrlPrefix()}/${chainNetwork.chain}/${
+      chainNetwork.network
+    }/block/tip`;
+    return this.httpClient.get<ApiBlock>(heightUrl);
   }
 
-  public getBlocks(numBlocks: number = 10): Observable<{ blocks: AppBlock[] }> {
-    const url: string = this.api.getUrl() + '/block?limit=' + numBlocks;
-    return this.http.get(url).map(data => {
-      const blocks: ApiBlock[] = data.json();
-      const appBlocks: AppBlock[] = blocks.map(block => this.toAppBlock(block));
-      return { blocks: appBlocks };
-    });
+  public getBlocks(
+    chainNetwork: ChainNetwork,
+    numBlocks: number = 10
+  ): Observable<ApiBlock[]> {
+    const url = `${this.api.getUrlPrefix()}/${chainNetwork.chain}/${
+      chainNetwork.network
+    }/block?limit=${numBlocks}`;
+    return this.httpClient.get<ApiBlock[]>(url);
   }
 
   /**
@@ -105,22 +105,22 @@ export class BlocksProvider {
    */
   public pageBlocks(
     since: number,
-    numBlocks: number = 10
-  ): Observable<{ blocks: AppBlock[] }> {
-    const url = `${this.api.getUrl()}/block?since=${since}&limit=${numBlocks}&paging=height&direction=-1`;
-    return this.http.get(url).map(data => {
-      const blocks: ApiBlock[] = data.json();
-      const appBlocks: AppBlock[] = blocks.map(block => this.toAppBlock(block));
-      return { blocks: appBlocks };
-    });
+    numBlocks: number = 10,
+    chainNetwork: ChainNetwork
+  ): Observable<ApiBlock[]> {
+    const url = `${this.api.getUrlPrefix()}/${chainNetwork.chain}/${
+      chainNetwork.network
+    }/block?since=${since}&limit=${numBlocks}&paging=height&direction=-1`;
+    return this.httpClient.get<ApiBlock[]>(url);
   }
 
-  public getBlock(hash: string): Observable<{ block: AppBlock }> {
-    const url: string = this.api.getUrl() + '/block/' + hash;
-    return this.http.get(url).map(data => {
-      const block: ApiBlock = data.json();
-      const appBlock: AppBlock = this.toAppBlock(block);
-      return { block: appBlock };
-    });
+  public getBlock(
+    hash: string,
+    chainNetwork: ChainNetwork
+  ): Observable<ApiBlock> {
+    const url = `${this.api.getUrlPrefix()}/${chainNetwork.chain}/${
+      chainNetwork.network
+    }/block/${hash}`;
+    return this.httpClient.get<ApiBlock>(url);
   }
 }

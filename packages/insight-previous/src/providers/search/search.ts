@@ -1,9 +1,10 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Http } from '@angular/http';
 import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
 import * as _ from 'lodash';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { ApiProvider, ChainNetwork } from '../api/api';
 
 @Injectable()
@@ -11,10 +12,20 @@ export class SearchProvider {
   private config: ChainNetwork;
   private apiURL: string;
 
-  constructor(private apiProvider: ApiProvider, private http: Http) {}
+  constructor(
+    private apiProvider: ApiProvider,
+    private httpClient: HttpClient
+  ) {}
 
-  public search(input: string, type: string): Observable<any> {
-    this.apiURL = this.apiProvider.getUrl();
+  public search(
+    input: string,
+    type: string,
+    chainNetwork: ChainNetwork
+  ): Observable<any> {
+    this.apiURL = `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
+      chainNetwork.network
+    }`;
+
     switch (type) {
       case 'blockOrTx':
         return Observable.forkJoin(
@@ -26,21 +37,21 @@ export class SearchProvider {
     }
   }
 
-  private searchBlock(block: string): Observable<any> {
-    return this.http
-      .get(this.apiURL + '/block/' + block)
-      .map(data => ({ block: data.json() }));
+  private searchBlock(block: string): Observable<{ block: any }> {
+    return this.httpClient
+      .get<{ block: any }>(`${this.apiURL}/block/${block}`)
+      .pipe(map(res => ({ block: res })));
   }
-  private searchTx(txid: string): Observable<any> {
-    return this.http
-      .get(this.apiURL + '/tx/' + txid)
-      .map(data => ({ tx: data.json() }));
+  private searchTx(txid: string): Observable<{ tx: any }> {
+    return this.httpClient
+      .get<{ tx: any }>(`${this.apiURL}/tx/${txid}`)
+      .pipe(map(res => ({ tx: res })));
   }
-  private searchAddr(addr: string): Observable<any> {
+  private searchAddr(addr: string): Observable<{ addr: any }> {
     const address = this.extractAddress(addr);
-    return this.http
-      .get(this.apiURL + '/address/' + address)
-      .map(data => ({ addr: data.json() }));
+    return this.httpClient
+      .get<{ addr: any }>(`${this.apiURL}/address/${address}`)
+      .pipe(map(res => ({ addr: res })));
   }
 
   public isInputValid(inputValue) {
@@ -69,8 +80,9 @@ export class SearchProvider {
     const coin = this.config.chain;
     const network = this.config.network;
     const addr = this.extractAddress(inputValue);
-
-    if (coin.toLowerCase() === 'btc' && network === 'mainnet') {
+    if (addr.charAt(0) === 'C' || addr.charAt(0) === 'H') {
+      return false;
+    } else if (coin.toLowerCase() === 'btc' && network === 'mainnet') {
       return this.isValidBitcoinMainnetAddress(addr);
     } else if (coin.toLowerCase() === 'btc' && network === 'testnet') {
       return this.isValidBitcoinTestnetAddress(addr);

@@ -1,8 +1,10 @@
-'use strict';
-
+'use strict'; 
 var errorSpec = [{
   name: 'INVALID_BACKUP',
   message: 'Invalid Backup.'
+}, {
+  name: 'OBSOLETE_BACKUP',
+  message: 'Wallet backup is obsolete.'
 }, {
   name: 'WALLET_DOES_NOT_EXIST',
   message: 'Wallet does not exist.'
@@ -24,6 +26,9 @@ var errorSpec = [{
 }, {
   name: 'CONNECTION_ERROR',
   message: 'Wallet service connection error.'
+}, {
+  name: 'MAINTENANCE_ERROR',
+  message: 'Wallet service is under maintenance.',
 }, {
   name: 'NOT_FOUND',
   message: 'Wallet service not found.'
@@ -69,6 +74,15 @@ var errorSpec = [{
 }, {
   name: 'COPAYER_REGISTERED',
   message: 'Copayer already register on server.'
+}, {
+  name: 'UNCONFIRMED_INPUTS_NOT_ACCEPTED',
+  message: 'Can not pay this invoice using unconfirmed inputs.'
+}, {
+  name: 'INVOICE_NOT_AVAILABLE',
+  message: 'The invoice is no available.'
+},  {
+  name: 'INVOICE_EXPIRED',
+  message: 'The invoice is no longer receiving payments.'
 }
 ];
 

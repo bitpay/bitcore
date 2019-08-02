@@ -19,23 +19,38 @@ export class StateModel extends BaseModel<IState> {
   async getSingletonState() {
     return this.collection.findOneAndUpdate(
       {},
-      { $setOnInsert: { created: new Date()}},
+      { $setOnInsert: { created: new Date() } },
       { upsert: true, returnOriginal: false }
     );
   }
 
-  async getSyncingNode(params: { chain: string, network: string }): Promise<string> {
+  async getSyncingNode(params: { chain: string; network: string }): Promise<string> {
     const { chain, network } = params;
     const state = await this.getSingletonState();
     return state.value![`syncingNode:${chain}:${network}`];
   }
 
-  async selfNominateSyncingNode(params: { chain: string, network: string, lastHeartBeat: any }) {
+  async selfNominateSyncingNode(params: { chain: string; network: string; lastHeartBeat: any }) {
     const { chain, network, lastHeartBeat } = params;
     const singleState = await this.getSingletonState();
-    this.collection.findOneAndUpdate(
-      { _id: singleState.value!._id, $or: [{ [`syncingNode:${chain}:${network}`]: { $exists: false } }, { [`syncingNode:${chain}:${network}`]: lastHeartBeat }]},
+    return this.collection.findOneAndUpdate(
+      {
+        _id: singleState.value!._id,
+        $or: [
+          { [`syncingNode:${chain}:${network}`]: { $exists: false } },
+          { [`syncingNode:${chain}:${network}`]: lastHeartBeat }
+        ]
+      },
       { $set: { [`syncingNode:${chain}:${network}`]: `${os.hostname}:${process.pid}:${Date.now()}` } }
+    );
+  }
+
+  async selfResignSyncingNode(params: { chain: string; network: string; lastHeartBeat: any }) {
+    const { chain, network, lastHeartBeat } = params;
+    const singleState = await this.getSingletonState();
+    return this.collection.findOneAndUpdate(
+      { _id: singleState.value!._id, [`syncingNode:${chain}:${network}`]: lastHeartBeat },
+      { $unset: { [`syncingNode:${chain}:${network}`]: true } }
     );
   }
 }

@@ -7,6 +7,7 @@ describe('Partition', () => {
     let testArr = [1, 2, 3, 4, 5];
     let partitioned = partition(testArr, 5);
     expect(partitioned).to.deep.equal([[1, 2, 3, 4, 5]]);
+    expect(testArr).to.deep.equal([1, 2, 3, 4, 5]);
   });
 
   it('should handle 0', () => {
@@ -50,7 +51,7 @@ describe('Partition', () => {
       if (!lastBatch) {
         console.error('Array partition fails with length', randomLen);
       }
-      expect(randomArr[randomArr.length - 1]).to.equal(lastBatch[lastBatch.length - 1]);
+      expect(randomArr.length).to.deep.equal(randomLen);
     }
   });
 });

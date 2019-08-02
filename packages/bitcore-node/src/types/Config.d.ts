@@ -4,6 +4,8 @@ export interface ConfigType {
   dbHost: string;
   dbName: string;
   dbPort: string;
+  dbUser: string;
+  dbPass: string;
   numWorkers: number;
 
   chains: {
@@ -23,6 +25,7 @@ export interface ConfigType {
     };
     event: {
       disabled?: boolean;
+      onlyWalletEvents: boolean;
     };
     p2p: {
       disabled?: boolean;

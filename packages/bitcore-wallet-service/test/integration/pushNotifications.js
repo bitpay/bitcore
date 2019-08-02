@@ -12,8 +12,8 @@ log.level = 'info';
 
 var sjcl = require('sjcl');
 
-var WalletService = require('../../lib/server');
-var PushNotificationsService = require('../../lib/pushnotificationsservice');
+var { WalletService } = require('../../ts_build/lib/server');
+var { PushNotificationsService } = require('../../ts_build/lib/pushnotificationsservice');
 
 var TestData = require('../testdata');
 var helpers = require('./helpers');
@@ -21,9 +21,14 @@ var helpers = require('./helpers');
 describe('Push notifications', function() {
   var server, wallet, requestStub, pushNotificationsService, walletId;
 
+
   before(function(done) {
-    helpers.before(done);
+    helpers.before((res) => {
+      done();
+    });
   });
+
+
   after(function(done) {
     helpers.after(done);
   });
@@ -70,7 +75,7 @@ describe('Push notifications', function() {
               storage: helpers.getStorage(),
               request: requestStub,
               pushNotificationsOpts: {
-                templatePath: './lib/templates',
+                templatePath: 'templates',
                 defaultLanguage: 'en',
                 defaultUnit: 'btc',
                 subjectPrefix: '',
@@ -225,7 +230,7 @@ describe('Push notifications', function() {
               storage: helpers.getStorage(),
               request: requestStub,
               pushNotificationsOpts: {
-                templatePath: './lib/templates',
+                templatePath: 'templates',
                 defaultLanguage: 'en',
                 defaultUnit: 'btc',
                 subjectPrefix: '',
@@ -478,7 +483,7 @@ describe('Push notifications', function() {
             storage: helpers.getStorage(),
             request: requestStub,
             pushNotificationsOpts: {
-              templatePath: './lib/templates',
+              templatePath: 'templates',
               defaultLanguage: 'en',
               defaultUnit: 'btc',
               subjectPrefix: '',

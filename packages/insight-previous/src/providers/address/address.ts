@@ -1,7 +1,7 @@
+import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Http } from '@angular/http';
 import { Observable } from 'rxjs';
-import { ApiProvider } from '../../providers/api/api';
+import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { BlocksProvider } from '../blocks/blocks';
 import { ApiCoin, TxsProvider } from '../transactions/transactions';
@@ -15,28 +15,27 @@ export interface ApiAddr {
 @Injectable()
 export class AddressProvider {
   constructor(
-    public http: Http,
-    private api: ApiProvider,
+    public httpClient: HttpClient,
     public currency: CurrencyProvider,
     public blocks: BlocksProvider,
-    public txsProvider: TxsProvider
+    public txsProvider: TxsProvider,
+    private apiProvider: ApiProvider
   ) {}
 
-  public getAddressBalance(addrStr?: string): Observable<ApiAddr> {
-    return this.http
-      .get(this.api.getUrl() + `/address/${addrStr}/balance`)
-      .map(data => {
-        const addr: ApiAddr = data.json();
-        return addr;
-      });
+  public getAddressBalance(
+    addrStr?: string,
+    chainNetwork?: ChainNetwork
+  ): Observable<ApiAddr> {
+    return this.httpClient.get<ApiAddr>(
+      `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
+        chainNetwork.network
+      }/address/${addrStr}/balance`
+    );
   }
 
   public getAddressActivity(addrStr?: string): Observable<ApiCoin[]> {
-    return this.http
-      .get(this.api.getUrl() + `/address/${addrStr}/txs?limit=1000`)
-      .map(data => {
-        const txs = data.json() as ApiCoin[];
-        return txs;
-      });
+    return this.httpClient.get<ApiCoin[]>(
+      `${this.apiProvider.getUrl()}/address/${addrStr}/txs?limit=1000`
+    );
   }
 }

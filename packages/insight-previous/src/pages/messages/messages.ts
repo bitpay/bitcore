@@ -1,15 +1,8 @@
 import { Component, Injectable } from '@angular/core';
-import {
-  AbstractControl,
-  FormBuilder,
-  FormGroup,
-  ValidationErrors,
-  Validators
-} from '@angular/forms';
+import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { IonicPage, NavParams } from 'ionic-angular';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
-import { Logger } from '../../providers/logger/logger';
 import { PriceProvider } from '../../providers/price/price';
 
 import * as bitcoreLib from 'bitcore-lib';
@@ -26,30 +19,28 @@ import * as bitcoreLibCash from 'bitcore-lib-cash';
   templateUrl: 'messages.html'
 })
 export class MessagesPage {
-  private chainNetwork: ChainNetwork;
   public messageForm: FormGroup;
   public error: string;
   public success: string;
+
+  private chainNetwork: ChainNetwork;
 
   constructor(
     public formBuilder: FormBuilder,
     public navParams: NavParams,
     private apiProvider: ApiProvider,
-    private logger: Logger,
     private priceProvider: PriceProvider,
     private currencyProvider: CurrencyProvider
   ) {
-    const chain: string =
-      navParams.get('chain') || this.apiProvider.getConfig().chain;
-    const network: string =
-      navParams.get('network') || this.apiProvider.getConfig().network;
+    const chain: string = navParams.get('chain');
+    const network: string = navParams.get('network');
 
     this.chainNetwork = {
       chain,
       network
     };
     this.apiProvider.changeNetwork(this.chainNetwork);
-    this.currencyProvider.setCurrency();
+    this.currencyProvider.setCurrency(this.chainNetwork);
     this.priceProvider.setCurrency();
 
     this.messageForm = formBuilder.group({
@@ -87,8 +78,7 @@ export class MessagesPage {
         this.error = message.error;
       }
     } catch (e) {
-      this.error = e.message;
-      this.logger.error(e.message);
+      this.error = e;
     }
   }
 

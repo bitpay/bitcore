@@ -5,12 +5,13 @@ import logger from '../logger';
 import { LoggifyClass } from '../decorators/Loggify';
 import { ObjectID } from 'mongodb';
 import { MongoClient, Db, Cursor } from 'mongodb';
-import { MongoBound } from '../models/base';
 import '../models';
 import { StreamingFindOptions } from '../types/Query';
 import { ConfigType } from '../types/Config';
 import { Config, ConfigService } from './config';
 import { Readable } from 'stream';
+import { MongoBound } from '../models/base';
+import { ObjectId } from 'bson';
 
 export { StreamingFindOptions };
 
@@ -29,8 +30,9 @@ export class StorageService {
   start(args: Partial<ConfigType> = {}): Promise<MongoClient> {
     return new Promise((resolve, reject) => {
       let options = Object.assign({}, this.configService.get(), args);
-      let { dbName, dbHost, dbPort } = options;
-      const connectUrl = `mongodb://${dbHost}:${dbPort}/${dbName}?socketTimeoutMS=3600000&noDelay=true`;
+      let { dbName, dbHost, dbPort, dbUser, dbPass } = options;
+      let auth = dbUser !== '' && dbPass !== '' ? `${dbUser}:${dbPass}@` : '';
+      const connectUrl = `mongodb://${auth}${dbHost}:${dbPort}/${dbName}?socketTimeoutMS=3600000&noDelay=true`;
       let attemptConnect = async () => {
         return MongoClient.connect(
           connectUrl,
@@ -62,7 +64,7 @@ export class StorageService {
     });
   }
 
-  stop() {}
+  async stop() {}
 
   validPagingProperty<T>(model: TransformableModel<T>, property: keyof MongoBound<T>) {
     const defaultCase = property === '_id';
@@ -74,7 +76,7 @@ export class StorageService {
    *
    * For a given model, return the typecasted value based on a key and the type associated with that key
    */
-  typecastForDb<T>(model: TransformableModel<T>, modelKey: keyof T, modelValue: T[keyof T]) {
+  typecastForDb<T>(model: TransformableModel<T>, modelKey: keyof MongoBound<T>, modelValue: T[keyof T] | ObjectId) {
     let typecastedValue = modelValue;
     if (modelKey) {
       let oldValue = modelValue as any;

@@ -6,18 +6,25 @@ var request = require('request');
 var http = require('http');
 var should = chai.should();
 var proxyquire = require('proxyquire');
-var config = require('../config.js');
+var config = require('../ts_build/config.js');
+var log = require('npmlog');
 
-var Common = require('../lib/common');
+var Common = require('../ts_build/lib/common');
 var Defaults = Common.Defaults;
+var { WalletService } = require('../ts_build/lib/server');
 
 
 
 describe('ExpressApp', function() {
+  beforeEach(()=>{
+    log.level = 'error';
+    config.disableLogs = true;
+  });
   describe('#constructor', function() {
     it('will set an express app', function() {
-      var TestExpressApp = proxyquire('../lib/expressapp', {});
-      var express = new TestExpressApp();
+      var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {});
+      var express = new TestExpressApp({
+      });
       should.exist(express.app);
       should.exist(express.app.use);
       should.exist(express.app.enable);
@@ -26,9 +33,12 @@ describe('ExpressApp', function() {
   describe('#start', function() {
     it('will listen at the specified port', function(done) {
       var initialize = sinon.stub().callsArg(1);
-      var TestExpressApp = proxyquire('../lib/expressapp', {
+      var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
         './server': {
-          initialize: initialize
+          WalletService : {
+            initialize: initialize,
+            getServiceVersion: WalletService.getServiceVersion
+          }
         }
       });
       var app = new TestExpressApp();
@@ -46,7 +56,8 @@ describe('ExpressApp', function() {
       var httpServer;
 
       function start(ExpressApp, done) {
-        var app = new ExpressApp();
+        var app = new ExpressApp({
+        });
         httpServer = http.Server(app.app);
 
         app.start(config, function(err) {
@@ -64,10 +75,13 @@ describe('ExpressApp', function() {
         var server = {
           getStatus: sinon.stub().callsArgWith(1, null, {}),
         };
-        var TestExpressApp = proxyquire('../lib/expressapp', {
+        var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
           './server': {
-            initialize: sinon.stub().callsArg(1),
-            getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            WalletService:  {
+              initialize: sinon.stub().callsArg(1),
+              getServiceVersion: WalletService.getServiceVersion,
+              getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            }
           }
         });
         start(TestExpressApp, function() {
@@ -93,10 +107,13 @@ describe('ExpressApp', function() {
         var server = {
           getMainAddresses: sinon.stub().callsArgWith(1, null, {}),
         };
-        var TestExpressApp = proxyquire('../lib/expressapp', {
+        var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
           './server': {
-            initialize: sinon.stub().callsArg(1),
-            getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            WalletService: {
+              initialize: sinon.stub().callsArg(1),
+              getServiceVersion: WalletService.getServiceVersion,
+              getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            }
           }
         });
         start(TestExpressApp, function() {
@@ -124,10 +141,13 @@ describe('ExpressApp', function() {
             amount: 123
           }),
         };
-        var TestExpressApp = proxyquire('../lib/expressapp', {
+        var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
           './server': {
-            initialize: sinon.stub().callsArg(1),
-            getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            WalletService : {
+              initialize: sinon.stub().callsArg(1),
+              getServiceVersion: WalletService.getServiceVersion,
+              getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+            }
           }
         });
         start(TestExpressApp, function() {
@@ -155,10 +175,13 @@ describe('ExpressApp', function() {
           var server = {
             getBalance: sinon.stub().callsArgWith(1, null, {}),
           };
-          var TestExpressApp = proxyquire('../lib/expressapp', {
+          var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
             './server': {
-              initialize: sinon.stub().callsArg(1),
-              getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+              WalletService : {
+                initialize: sinon.stub().callsArg(1),
+                getServiceVersion: WalletService.getServiceVersion,
+                getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+              }
             }
           });
           start(TestExpressApp, function() {
@@ -189,19 +212,23 @@ describe('ExpressApp', function() {
       });
 
       describe('/v1/notifications', function(done) {
-        var server, TestExpressApp, clock;
+        var server, clock, TestExpressApp;
         beforeEach(function() {
           clock = sinon.useFakeTimers(2000000000, 'Date');
 
           server = {
             getNotifications: sinon.stub().callsArgWith(1, null, {})
           };
-          TestExpressApp = proxyquire('../lib/expressapp', {
+          var {ExpressApp} = proxyquire('../ts_build/lib/expressapp', {
             './server': {
-              initialize: sinon.stub().callsArg(1),
-              getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+              WalletService: {
+                initialize: sinon.stub().callsArg(1),
+                getServiceVersion: WalletService.getServiceVersion,
+                getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+              }
             }
           });
+          TestExpressApp = ExpressApp;
         });
         afterEach(function() {
           clock.restore();
@@ -267,6 +294,41 @@ describe('ExpressApp', function() {
                 notificationId: undefined,
                 minTs: Date.now() - Defaults.MAX_NOTIFICATIONS_TIMESPAN * 1000, // override minTs argument
               }).should.be.true;
+              done();
+            });
+          });
+        });
+        it('Server under maintenance check, should return 503 status code', function(done) {
+          var server = {
+            getStatus: sinon.stub().callsArgWith(1, null, {}),
+          };
+          var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+            './server': {
+              WalletService:  {
+                initialize: sinon.stub().callsArg(1),
+                getServiceVersion: WalletService.getServiceVersion,
+                getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
+              }
+            }
+          });
+          start(TestExpressApp, function(err, data) {
+            var requestOptions = {
+              //test link, for either a 503 or 200 code response
+              url: testHost + ':' + testPort + config.basePath + "/v2/wallets",
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              }
+            };
+            request(requestOptions, function(err,res,body){
+              if(config.maintenanceOpts.maintenanceMode === true) {
+                should.not.exist(err);
+                res.statusCode.should.equal(503);
+                body.should.equal(`{"code":503,"message":"Bitcore Wallet Service is currently under maintenance. Please periodically check https://status.bitpay.com/ to stay up to date with our current status."}`);
+              } else {
+                should.not.exist(err);
+                res.statusCode.should.equal(200);
+              }
               done();
             });
           });
