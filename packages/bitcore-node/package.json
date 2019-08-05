@@ -76,6 +76,7 @@
   "dependencies": {
     "JSONStream": "~1.3.1",
     "async": "^2.5.0",
+    "crypto-wallet-core": "^8.5.1",
     "bitcore-client": "^8.5.1",
     "bitcore-lib": "^8.5.1",
     "bitcore-lib-cash": "^8.5.1",

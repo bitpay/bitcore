@@ -54,7 +54,11 @@ export class ApiService {
   stop() {
     this.stopped = true;
     return new Promise(resolve => {
-      this.httpServer.close(resolve);
+      this.httpServer.close(() => {
+        logger.info("Stopped API Service")
+        resolve();
+      });
+      this.httpServer.emit('close');
     });
   }
 }

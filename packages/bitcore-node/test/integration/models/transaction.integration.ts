@@ -86,5 +86,10 @@ describe('Transaction Model', function() {
     expect(badTxs.length).to.eq(1);
     expect(badTxs[0].txid).to.eq(badMempoolTx.txid);
     expect(badTxs[0].blockHeight).to.eq(SpentHeightIndicators.conflicting);
+
+    const goodTxs = await TransactionStorage.collection.find({ chain, network, txid: blockTx.txid }).toArray();
+    expect(goodTxs.length).to.eq(1);
+    expect(goodTxs[0].txid).to.eq(blockTx.txid);
+    expect(goodTxs[0].blockHeight).to.eq(blockTx.blockHeight);
   });
 });
