@@ -46,19 +46,19 @@ const authenticate: RequestHandler = async (req: PreAuthRequest, res: Response, 
   } catch (err) {
     return res.status(500).send('Problem authenticating wallet');
   }
-
-  if (req.is('application/octet-stream')) {
-    req.body = JSON.parse(req.body.toString());
-  }
-  if (!wallet) {
-    return res.status(404).send('Wallet not found');
-  }
-  Object.assign(req, { wallet });
-  const walletConfig = Config.for('api').wallets;
-  if (walletConfig && walletConfig.allowUnauthenticatedCalls) {
-    return next();
-  }
   try {
+    if (req.is('application/octet-stream')) {
+      req.body = JSON.parse(req.body.toString());
+    }
+    if (!wallet) {
+      return res.status(404).send('Wallet not found');
+    }
+    Object.assign(req, { wallet });
+    const walletConfig = Config.for('api').wallets;
+    if (walletConfig && walletConfig.allowUnauthenticatedCalls) {
+      return next();
+    }
+
     const validRequestSignature = verifyRequestSignature({
       message: [req.method, req.originalUrl, JSON.stringify(req.body)].join('|'),
       pubKey: wallet.pubKey,
