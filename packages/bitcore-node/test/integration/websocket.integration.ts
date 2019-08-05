@@ -14,7 +14,7 @@ const network = 'regtest';
 const chainConfig = config.chains[chain][network];
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
-const anAddress = 'mkzAfSHtmTh5Xsc352jf6TBPj55Lne5g21';
+let anAddress;
 
 function getSocket() {
   const socket = io.connect(
@@ -51,6 +51,7 @@ describe('Websockets', function() {
   it('should get a new block when one is generated', async () => {
     await p2pWorker.start();
 
+    anAddress = await rpc.getnewaddress('');
     await rpc.call('generatetoaddress', [5, anAddress]);
     await p2pWorker.syncDone();
     const beforeGenTip = await BitcoinBlockStorage.getLocalTip({ chain, network });
@@ -74,7 +75,7 @@ describe('Websockets', function() {
     await Event.start();
     await Api.start();
 
-    const p2pWorker = new BitcoinP2PWorker({
+    p2pWorker = new BitcoinP2PWorker({
       chain,
       network,
       chainConfig
@@ -103,7 +104,7 @@ describe('Websockets', function() {
   });
 
   it('should get a mempool tx and coin when mempool event, senttoaddress, occurs', async () => {
-    const p2pWorker = new BitcoinP2PWorker({ chain, network, chainConfig });
+    p2pWorker = new BitcoinP2PWorker({ chain, network, chainConfig });
 
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
@@ -137,7 +138,7 @@ describe('Websockets', function() {
   });
 
   it('should get a mempool event while syncing', async () => {
-    const p2pWorker = new BitcoinP2PWorker({ chain, network, chainConfig });
+    p2pWorker = new BitcoinP2PWorker({ chain, network, chainConfig });
 
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;

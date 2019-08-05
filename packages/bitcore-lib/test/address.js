@@ -36,7 +36,7 @@ describe('Address', function() {
   it('should throw an error because of bad type param', function() {
     (function() {
       return new Address(PKHLivenet[0], 'livenet', 'pubkey');
-    }).should.throw('Third argument must be "pubkeyhash" or "scripthash"');
+    }).should.throw('Third argument must be "pubkeyhash", "scripthash", "witnesspubkeyhash", or "witnessscripthash".');
   });
 
   describe('bitcoind compliance', function() {
@@ -219,6 +219,13 @@ describe('Address', function() {
       should.not.exist(error);
       Address.fromString(ws).toString().should.equal('1A6ut1tWnUq1SEQLMr4ttDh24wcbJ5o9TT');
     });
+
+    it('testnet addresses are also valid regtest addresses', function() {
+      for (var i = 0; i < P2SHTestnet.length; i++) {
+        var error = Address.getValidationError(P2SHTestnet[i], 'regtest');
+        should.not.exist(error);
+      }
+    });
   });
 
   describe('instantiation', function() {
@@ -283,7 +290,7 @@ describe('Address', function() {
     it('should error because of incorrect length buffer for transform buffer', function() {
       (function() {
         return Address._transformBuffer(new Buffer(20));
-      }).should.throw('Address buffers must be exactly 21 bytes.');
+      }).should.throw('Address buffer is incorrect length.');
     });
 
     it('should error because of incorrect type for pubkey transform', function() {
@@ -332,7 +339,7 @@ describe('Address', function() {
     it('should throw an error for invalid length hashBuffer', function() {
       (function() {
         return Address.fromPublicKeyHash(buf);
-      }).should.throw('Address hashbuffers must be exactly 20 bytes.');
+      }).should.throw('Address hashbuffers must be either 20 or 32 bytes.');
     });
 
     it('should make this address from a compressed pubkey', function() {

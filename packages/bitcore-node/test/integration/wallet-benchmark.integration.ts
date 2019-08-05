@@ -9,13 +9,13 @@ import { Api } from '../../src/services/api';
 import { WalletAddressStorage } from '../../src/models/walletAddress';
 import { WalletStorage, IWallet } from '../../src/models/wallet';
 import { ParseApiStream } from 'bitcore-client';
+import { P2pWorker } from '../../src/services/p2p';
 import { resetDatabase } from '../helpers';
 import { Wallet } from 'bitcore-client';
 import { ICoin, CoinStorage } from '../../src/models/coin';
 import { MongoBound } from '../../src/models/base';
 import { ObjectId } from 'mongodb';
 import { TransactionStorage } from '../../src/models/transaction';
-import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
 
 const chain = 'BTC';
 const network = 'regtest';
@@ -92,12 +92,19 @@ async function checkWalletReceived(receivingWallet: IWallet, txid: string, addre
 }
 
 describe('Wallet Benchmark', function() {
-  this.timeout(500000);
-  before(async () => {
+  this.timeout(5000000);
+  let p2pWorker: P2pWorker;
+
+  beforeEach(async () => {
     await resetDatabase();
   });
+  afterEach(async () => {
+    if (p2pWorker) {
+      await p2pWorker.stop();
+    }
+  });
   describe('Wallet import', () => {
-    it('should be able to create two wallets and have them interact', async () => {
+    it.skip('should be able to create two wallets and have them interact', async () => {
       await Event.start();
       await Api.start();
 
@@ -114,7 +121,7 @@ describe('Wallet Benchmark', function() {
         seenCoins.add(coin.mintTxid);
       });
 
-      const p2pWorker = new BitcoinP2PWorker({
+      p2pWorker = new P2pWorker({
         chain,
         network,
         chainConfig
@@ -162,7 +169,7 @@ describe('Wallet Benchmark', function() {
       }
     });
 
-    it('should be able to create two wallets and have them interact, while syncing', async () => {
+    xit('should be able to create two wallets and have them interact, while syncing', async () => {
       await Event.start();
       await Api.start();
 
@@ -179,7 +186,7 @@ describe('Wallet Benchmark', function() {
         seenCoins.add(coin.mintTxid);
       });
 
-      const p2pWorker = new BitcoinP2PWorker({
+      p2pWorker = new P2pWorker({
         chain,
         network,
         chainConfig
