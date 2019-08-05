@@ -4,25 +4,23 @@ var _ = require('lodash');
 var chai = chai || require('chai');
 var sinon = sinon || require('sinon');
 var should = chai.should();
-var PayPro = require('../ts_build/paypro');
+var { PayPro } = require('../ts_build/paypro');
+var payPro;
 var TestData = require('./testdata');
 
 
-
-
-function mockRequest(bodyBuf, headers) {
-  bodyBuf = _.isArray(bodyBuf) ? bodyBuf : [bodyBuf];
-  PayPro.request = function (opts, cb) {
-
-    return cb(null, {
-      headers: headers || {},
-      statusCode: 200,
-      statusMessage: 'OK',
-    }, bodyBuf.shift());
-  };
-};
-
 describe('paypro', function () {
+  function mockRequest(bodyBuf, headers) {
+    bodyBuf = _.isArray(bodyBuf) ? bodyBuf : [bodyBuf];
+    payPro = new PayPro();
+    payPro.request = function (opts, cb) {
+      return cb(null, {
+        headers: headers || {},
+        statusCode: 200,
+        statusMessage: 'OK',
+      }, bodyBuf.shift());
+    };
+  };
   var clock, oldreq;
   before(function () {
     // Stub time before cert expiration at Mar 27 2016
@@ -30,18 +28,20 @@ describe('paypro', function () {
 
   });
   beforeEach(() => {
-    oldreq = PayPro.request;
+    payPro = new PayPro();
+    oldreq = payPro.request;
   });
   after(function () {
     clock.restore();
   });
   afterEach(function () {
-    PayPro.request = oldreq;
+    payPro.request = oldreq;
   });
+
 
   it('Make and verify PP request', function (done) {
     mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), TestData.payProJson.bch.headers);
-    PayPro.get({
+    payPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
@@ -64,13 +64,13 @@ describe('paypro', function () {
 
 
   it('Should handle a failed (404) request', function (done) {
-    PayPro.request = function (opts, cb) {
+    payPro.request = function (opts, cb) {
       return cb(null, {
         statusCode: 404,
         statusMessage: 'Not Found',
       }, 'This invoice was not found or has been archived');
     };
-    PayPro.get({
+    payPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
@@ -84,7 +84,7 @@ describe('paypro', function () {
     let h = _.clone(TestData.payProJson.bch.headers);
     h.signature = 'xx';
     mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), h);
-    PayPro.get({
+    payPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
@@ -100,7 +100,7 @@ describe('paypro', function () {
     b.outputs[0].amount = 100;
     b = JSON.stringify(b);
     mockRequest(Buffer.from(b), TestData.payProJson.bch.headers);
-    PayPro.get({
+    payPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
       coin: 'bch',
@@ -112,7 +112,6 @@ describe('paypro', function () {
 
 
   it('should send a PP payment', function (done) {
-    var data = TestData.payProData;
     var opts = {
       rawTx: 'rawTx1',
       rawTxUnsigned: 'rawTxUnsigned',
@@ -121,7 +120,7 @@ describe('paypro', function () {
     };
     mockRequest([Buffer.from('{"memo":"Payment seems OK"}'), Buffer.from('{"memo":"memo1"}')], {
     });
-    var payment = PayPro.send(opts, function (err, data, memo) {
+    payPro.send(opts, function (err, data, memo) {
       should.not.exist(err);
       memo.should.equal('memo1');
       done();
@@ -130,24 +129,22 @@ describe('paypro', function () {
 
 
   it('should not send PP payment if verify fails', function (done) {
-    var data = TestData.payProData;
     var opts = {
       rawTx: 'rawTx1',
       rawTxUnsigned: 'rawTxUnsigned',
       url: 'http://an.url.com/paypro',
       coin: 'bch',
     };
-    PayPro.request = function (opts, cb) {
+    payPro.request = function (opts, cb) {
       return cb(null, {
         statusCode: 400,
         statusMessage: 'ss',
       }, 'This invoice was not found or has been archived');
     };
 
-    var payment = PayPro.send(opts, function (err, data, memo) {
+    payPro.send(opts, function (err, data, memo) {
       should.exist(err);
       done();
     });
   });
-
 });

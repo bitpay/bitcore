@@ -1,27 +1,25 @@
 var $ = require('preconditions').singleton();
 const URL = require('url');
-const _ = require('lodash');
+import * as  _ from 'lodash';
+import * as request from 'request';
 var Bitcore = require('bitcore-lib');
 const Errors = require('./errors');
 var Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
 };
-const request = require('request');
 const JSON_PAYMENT_REQUEST_CONTENT_TYPE = 'application/payment-request';
 const JSON_PAYMENT_VERIFY_CONTENT_TYPE = 'application/verify-payment';
 const JSON_PAYMENT_CONTENT_TYPE = 'application/payment';
 const JSON_PAYMENT_ACK_CONTENT_TYPE = 'application/payment-ack';
 
 const dfltTrustedKeys = require('../util/JsonPaymentProtocolKeys.js');
+const MAX_FEE_PER_KB = 500000;
 
 export class PayPro {
+  request: request.RequestAPI<any, any, any>;
 
-  MAX_FEE_PER_KB = 500000;
-
-  /**
-   * Verifies the signature of a given payment request is both valid and from a trusted key
-   */
+  //  Verifies the signature of a given payment request is both valid and from a trusted key
   _verify(requestUrl, headers, network, trustedKeys, callback) {
     let hash = headers.digest.split('=')[1];
     let signature = headers.signature;
@@ -111,7 +109,7 @@ export class PayPro {
   runRequest(opts, cb) {
     $.checkArgument(opts.network, 'should pass network');
 
-    request(opts, (err, res, body) => {
+    this.request(opts, (err, res, body) => {
       if (err) return cb(err);
       let ret = {};
 
@@ -146,7 +144,7 @@ export class PayPro {
       //
 
       // Step 1: Check digest from header
-      let digest = res.headers.digest.split('=')[1];
+      let digest = res.headers.digest.toString().split('=')[1];
       let hash = Bitcore.crypto.Hash.sha256(Buffer.from(body, 'utf8')).toString('hex');
 
       if (digest !== hash) {
@@ -162,8 +160,7 @@ export class PayPro {
       });
     });
   }
-
-  get = function (opts, cb) {
+  get(opts, cb) {
     $.checkArgument(opts && opts.url);
     opts.trustedKeys = opts.trustedKeys || dfltTrustedKeys;
 
@@ -178,7 +175,7 @@ export class PayPro {
     opts.method = 'GET';
     opts.network = opts.network || 'livenet';
 
-    this.runRequest(opts, function (err, data) {
+    this.runRequest(opts, (err, data) => {
       if (err) return cb(err);
 
       var ret: any = {};
@@ -208,7 +205,7 @@ export class PayPro {
       ret.coin = coin;
 
       // fee
-      if (data.requiredFeeRate > this.MAX_FEE_PER_KB)
+      if (data.requiredFeeRate > MAX_FEE_PER_KB)
         return cb(new Error('Fee rate too high:' + data.requiredFeeRate));
 
       ret.requiredFeeRate = data.requiredFeeRate;
@@ -238,9 +235,8 @@ export class PayPro {
       }
       return cb(null, ret);
     });
-  };
-
-  send = function (opts, cb) {
+  }
+  send(opts, cb) {
     $.checkArgument(opts.rawTxUnsigned)
       .checkArgument(opts.url)
       .checkArgument(opts.rawTx);
@@ -264,7 +260,7 @@ export class PayPro {
     opts.noVerify = true;
 
     // verify request
-    this.runRequest(opts, function (err, rawData) {
+    this.runRequest(opts, (err, rawData) => {
       if (err) {
         console.log('Error at verify-payment:', err.message ? err.message : '', opts);
         return cb(err);
@@ -285,7 +281,7 @@ export class PayPro {
       // Do not verify payment message's response
       opts.noVerify = true;
 
-      this.runRequest(opts, function (err, rawData) {
+      this.runRequest(opts, (err, rawData) => {
         if (err) {
           console.log('Error at payment:', err.message ? err.message : '', opts);
           return cb(err);
@@ -303,7 +299,5 @@ export class PayPro {
         return cb(null, rawData, memo);
       });
     });
-  };
+  }
 }
-
-module.exports = PayPro;

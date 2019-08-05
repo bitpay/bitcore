@@ -1,4 +1,4 @@
-const _ = require('lodash');
+import * as _ from 'lodash';
 const request = require('superagent');
 const async = require('async');
 const Package = require('../package.json');
@@ -10,17 +10,16 @@ const Utils = Common.Utils;
 
 export class Request {
   baseUrl: any;
-  r: any;
   session: any;
+  r: any;
   credentials: any;
   supportStaffWalletId: any;
 
-  constructor(url, opts) {
-
+  constructor(url?, opts?) {
     this.baseUrl = url;
 
     // request can be overload only for testing
-    this.r = opts.r || request;
+    this.r = opts ? opts.r : request;
 
     this.session = null;
     this.credentials = null;
@@ -41,42 +40,39 @@ export class Request {
     return headers;
   }
 
-  /**
-   * Sign an HTTP request
-   * @private
-   * @static
-   * @memberof Client.API
-   * @param {String} method - The HTTP method
-   * @param {String} url - The URL for the request
-   * @param {Object} args - The arguments in case this is a POST/PUT request
-   * @param {String} privKey - Private key to sign the request
-   */
+  //  Sign an HTTP request
+  //  @private
+  //  @static
+  //  @memberof Client.API
+  //  @param {String} method - The HTTP method
+  //  @param {String} url - The URL for the request
+  //  @param {Object} args - The arguments in case this is a POST/PUT request
+  //  @param {String} privKey - Private key to sign the request
   _signRequest(method, url, args, privKey) {
     var message = [method.toLowerCase(), url, JSON.stringify(args)].join('|');
     return Utils.signMessage(message, privKey);
   }
 
-  /**
-   * Do an HTTP request
-   * @private
-   *
-   * @param {Object} method
-   * @param {String} url
-   * @param {Object} args
-   * @param {Callback} cb
-   */
+  //  Do an HTTP request
+  //  @private
+  //
+  //  @param {Object} method
+  //  @param {String} url
+  //  @param {Object} args
+  //  @param {Callback} cb
   doRequest(method, url, args, useSession, cb) {
+    var self: any = this;
 
-    var headers = this.getHeaders(method, url, args);
+    var headers = self.getHeaders(method, url, args);
 
-    if (this.credentials) {
-      headers['x-identity'] = this.credentials.copayerId;
+    if (self.credentials) {
+      headers['x-identity'] = self.credentials.copayerId;
 
-      if (useSession && this.session) {
-        headers['x-session'] = this.session;
+      if (useSession && self.session) {
+        headers['x-session'] = self.session;
       } else {
         var reqSignature;
-        var key = args._requestPrivKey || this.credentials.requestPrivKey;
+        var key = args._requestPrivKey || self.credentials.requestPrivKey;
         if (key) {
           delete args['_requestPrivKey'];
           reqSignature = this._signRequest(method, url, args, key);
@@ -85,7 +81,7 @@ export class Request {
       }
     }
 
-    var r = this.r[method](this.baseUrl + url);
+    var r = self.r[method](self.baseUrl + url);
     r.accept('json');
 
     _.each(headers, function (v, k) {
@@ -101,7 +97,7 @@ export class Request {
       }
     }
 
-    r.timeout(this.timeout);
+    r.timeout(self.timeout);
 
     r.end(function (err, res) {
       if (!res) {
@@ -135,17 +131,13 @@ export class Request {
 
       return cb(null, res.body, res.header);
     });
-  } timeout(timeout: any) {
-    throw new Error('Method not implemented.');
   }
 
-  /**
-   * Parse errors
-   * @private
-   * @static
-   * @memberof Client.API
-   * @param {Object} body
-   */
+  //  Parse errors
+  //  @private
+  //  @static
+  //  @memberof Client.API
+  //  @param {Object} body
   _parseError(body) {
     if (!body) return;
 
@@ -173,14 +165,12 @@ export class Request {
     return ret;
   }
 
-  /**
-   * Do a POST request
-   * @private
-   *
-   * @param {String} url
-   * @param {Object} args
-   * @param {Callback} cb
-   */
+  //  Do a POST request
+  //  @private
+  //
+  //  @param {String} url
+  //  @param {Object} args
+  //  @param {Callback} cb
   post(url, args, cb) {
     return this.doRequest('post', url, args, false, cb);
   }
@@ -189,13 +179,11 @@ export class Request {
     return this.doRequest('put', url, args, false, cb);
   }
 
-  /**
-   * Do a GET request
-   * @private
-   *
-   * @param {String} url
-   * @param {Callback} cb
-   */
+  //  Do a GET request
+  //  @private
+  //
+  //  @param {String} url
+  //  @param {Callback} cb
   get(url, cb) {
     url += url.indexOf('?') > 0 ? '&' : '?';
     url += 'r=' + _.random(10000, 99999);
@@ -216,22 +204,21 @@ export class Request {
     this.post('/v1/logout', {}, cb);
   }
 
-  /**
-   * Do an HTTP request
-   * @private
-   *
-   * @param {Object} method
-   * @param {String} url
-   * @param {Object} args
-   * @param {Callback} cb
-   */
+  //  Do an HTTP request
+  //  @private
+  //
+  //  @param {Object} method
+  //  @param {String} url
+  //  @param {Object} args
+  //  @param {Callback} cb
   doRequestWithLogin(method, url, args, cb) {
+    var self = this;
 
     function doLogin(cb) {
-      this._login(function (err, s) {
+      self._login(function (err, s) {
         if (err) return cb(err);
         if (!s) return cb(new Errors.NOT_AUTHORIZED);
-        this.session = s;
+        self.session = s;
         cb();
       });
     }
@@ -239,15 +226,15 @@ export class Request {
     async.waterfall([
 
       function (next) {
-        if (this.session) return next();
+        if (self.session) return next();
         doLogin(next);
       },
       function (next) {
-        this.doRequest(method, url, args, true, function (err, body, header) {
+        self.doRequest(method, url, args, true, function (err, body, header) {
           if (err && err instanceof Errors.NOT_AUTHORIZED) {
             doLogin(function (err) {
               if (err) return next(err);
-              return this.doRequest(method, url, args, true, next);
+              return self.doRequest(method, url, args, true, next);
             });
           }
           next(null, body, header);
@@ -255,17 +242,14 @@ export class Request {
       },
     ], cb);
   }
-  /**
-   * Do a DELETE request
-   * @private
-   *
-   * @param {String} url
-   * @param {Callback} cb
-   */
+
+  // Do a DELETE request
+  // @private
+  //
+  // @param {String} url
+  // @param {Callback} cb
+
   delete(url, cb) {
     return this.doRequest('delete', url, {}, false, cb);
   }
-
 }
-
-module.exports = Request;

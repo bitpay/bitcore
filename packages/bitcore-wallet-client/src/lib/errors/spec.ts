@@ -1,4 +1,3 @@
-'use strict';
 module.exports = [{
   name: 'INVALID_BACKUP',
   message: 'Invalid Backup.'
