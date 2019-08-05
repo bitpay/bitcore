@@ -99,7 +99,9 @@ describe('Wallet Benchmark', function() {
     await resetDatabase();
   });
   afterEach(async () => {
-    await p2pWorker.stop();
+    if (p2pWorker) {
+      await p2pWorker.stop();
+    }
   });
   describe('Wallet import', () => {
     it.skip('should be able to create two wallets and have them interact', async () => {
