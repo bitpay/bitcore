@@ -12,12 +12,12 @@ export class EthListTransactionsStream extends Transform {
   async _transform(transaction: MongoBound<IEthTransaction>, _, done) {
     const sending = await WalletAddressStorage.collection.countDocuments({
       wallet: this.wallet._id,
-      address: transaction.from.toLowerCase()
+      address: transaction.from
     });
     if (sending > 0) {
       const sendingToOurself = await WalletAddressStorage.collection.countDocuments({
         wallets: this.wallet._id,
-        address: transaction.to.toLowerCase()
+        address: transaction.to
       });
       if (!sendingToOurself) {
         this.push(
@@ -58,7 +58,7 @@ export class EthListTransactionsStream extends Transform {
     } else {
       const weReceived = await WalletAddressStorage.collection.countDocuments({
         wallet: this.wallet._id,
-        address: transaction.to.toLowerCase()
+        address: transaction.to
       });
       if (weReceived > 0) {
         this.push(
