@@ -113,7 +113,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     let bestBlock = await this.rpc.web3.eth.getBlockNumber();
     let currentHeight = tip ? tip.height : 0;
     logger.info(`Syncing ${bestBlock - currentHeight} blocks for ${chain} ${network}`);
-    while (currentHeight < bestBlock) {
+    while (currentHeight <= bestBlock) {
       tip = await ChainStateProvider.getLocalTip({ chain, network });
       let lastLog = 0;
       try {
