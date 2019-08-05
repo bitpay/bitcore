@@ -2,13 +2,13 @@ import Web3 from 'web3';
 import logger from '../../logger';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { StateStorage } from '../../models/state';
-import { ETHStateProvider } from '../../providers/chain-state/eth/eth';
 import { EthBlockModel, EthBlockStorage } from './models/block';
 import { IEthTransaction, IEthBlock, Parity } from './types';
 import { ParityRPC } from './parityRpc';
 import { BaseP2PWorker } from '../../services/p2p';
 import { EthTransactionModel, EthTransactionStorage } from './models/transaction';
 import { timestamp } from '../../logger';
+import { ETHStateProvider } from "./csp";
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   private chainConfig: any;

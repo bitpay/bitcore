@@ -27,6 +27,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     const connUrl = `${protocol}://${host}:${portString}`;
     let ProviderType;
     switch (provider.protocol) {
+      case 'ws':
       case 'wss':
         ProviderType = Web3.providers.WebsocketProvider;
         break;
