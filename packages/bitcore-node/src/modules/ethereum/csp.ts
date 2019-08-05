@@ -9,6 +9,8 @@ import { EthTransactionStorage } from './models/transaction';
 import { ITransaction } from '../../models/baseTransaction';
 import { EthTransactionJSON } from './types';
 import { EthBlockStorage } from './models/block';
+import { SpentHeightIndicators } from '../../types/Coin';
+import { EthListTransactionsStream } from './api/transform';
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -172,5 +174,53 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       { unconfirmed: 0, confirmed: 0, balance: 0 }
     );
     return balance;
+  }
+
+  async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
+    const { chain, network, wallet, res, args } = params;
+    const query: any = {
+      chain,
+      network,
+      wallets: wallet._id,
+      'wallets.0': { $exists: true }
+    };
+
+    if (args) {
+      if (args.startBlock || args.endBlock) {
+        query.$or = [];
+        if (args.includeMempool) {
+          query.$or.push({ blockHeight: SpentHeightIndicators.pending });
+        }
+        let blockRangeQuery = {} as any;
+        if (args.startBlock) {
+          blockRangeQuery.$gte = Number(args.startBlock);
+        }
+        if (args.endBlock) {
+          blockRangeQuery.$lte = Number(args.endBlock);
+        }
+        query.$or.push({ blockHeight: blockRangeQuery });
+      } else {
+        if (args.startDate) {
+          const startDate = new Date(args.startDate);
+          if (startDate.getTime()) {
+            query.blockTimeNormalized = { $gte: new Date(args.startDate) };
+          }
+        }
+        if (args.endDate) {
+          const endDate = new Date(args.endDate);
+          if (endDate.getTime()) {
+            query.blockTimeNormalized = query.blockTimeNormalized || {};
+            query.blockTimeNormalized.$lt = new Date(args.endDate);
+          }
+        }
+      }
+    }
+
+    const transactionStream = EthTransactionStorage.collection
+      .find(query)
+      .sort({ blockTimeNormalized: 1 })
+      .addCursorFlag('noCursorTimeout', true);
+    const listTransactionsStream = new EthListTransactionsStream(wallet);
+    transactionStream.pipe(listTransactionsStream).pipe(res);
   }
 }
