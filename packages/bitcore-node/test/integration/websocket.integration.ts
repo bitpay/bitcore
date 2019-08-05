@@ -74,7 +74,7 @@ describe('Websockets', function() {
     await Event.start();
     await Api.start();
 
-    const p2pWorker = new P2pWorker({
+    p2pWorker = new P2pWorker({
       chain,
       network,
       chainConfig
@@ -103,7 +103,7 @@ describe('Websockets', function() {
   });
 
   it('should get a mempool tx and coin when mempool event, senttoaddress, occurs', async () => {
-    const p2pWorker = new P2pWorker({ chain, network, chainConfig });
+    p2pWorker = new P2pWorker({ chain, network, chainConfig });
 
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
@@ -137,7 +137,7 @@ describe('Websockets', function() {
   });
 
   it('should get a mempool event while syncing', async () => {
-    const p2pWorker = new P2pWorker({ chain, network, chainConfig });
+    p2pWorker = new P2pWorker({ chain, network, chainConfig });
 
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
