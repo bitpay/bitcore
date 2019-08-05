@@ -14,7 +14,7 @@ const network = 'regtest';
 const chainConfig = config.chains[chain][network];
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
-const anAddress = 'mkzAfSHtmTh5Xsc352jf6TBPj55Lne5g21';
+let anAddress;
 
 function getSocket() {
   const socket = io.connect(
@@ -51,6 +51,7 @@ describe('Websockets', function() {
   it('should get a new block when one is generated', async () => {
     await p2pWorker.start();
 
+    anAddress = await rpc.getnewaddress('');
     await rpc.call('generatetoaddress', [5, anAddress]);
     await p2pWorker.syncDone();
     const beforeGenTip = await BlockStorage.getLocalTip({ chain, network });
