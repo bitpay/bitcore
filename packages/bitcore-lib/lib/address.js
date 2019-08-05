@@ -233,7 +233,7 @@ Address._transformBuffer = function(buffer, network, type) {
     throw new TypeError('Unknown network');
   }
 
-  if (!bufferVersion.network || (networkObj && networkObj !== bufferVersion.network)) {
+  if (!bufferVersion.network || (networkObj && networkObj.xpubkey !== bufferVersion.network.xpubkey)) {
     throw new TypeError('Address has mismatched network type.');
   }
 
