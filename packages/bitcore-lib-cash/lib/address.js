@@ -379,6 +379,11 @@ Address._transformString = function(data, network, type) {
   if (data.length < 34){
     throw new Error('Invalid Address string provided');
   }
+
+  if(data.length > 100) {
+    throw new TypeError('address string is too long');
+  }
+
   data = data.trim();
   var networkObj = Networks.get(network);
 
