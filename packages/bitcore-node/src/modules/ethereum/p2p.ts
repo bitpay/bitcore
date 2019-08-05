@@ -35,8 +35,9 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   setupListeners() {
-    this.txSubscription = this.rpc.web3.eth.subscribe('pendingTransactions', tx => {
+    this.txSubscription = this.rpc.web3.eth.subscribe('pendingTransactions', async (_err, txid) => {
       if (!this.syncing) {
+        const tx = await this.rpc.web3.eth.getTransaction(txid);
         this.processTransaction(tx);
       }
     });
