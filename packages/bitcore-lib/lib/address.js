@@ -72,7 +72,7 @@ function Address(data, network, type) {
   }
 
   if (type && (
-    type !== Address.PayToPublicKeyHash 
+    type !== Address.PayToPublicKeyHash
     && type !== Address.PayToScriptHash
     && type !== Address.PayToWitnessPublicKeyHash
     && type !== Address.PayToWitnessScriptHash)) {
@@ -320,6 +320,10 @@ Address._transformString = function(data, network, type) {
     throw new TypeError('data parameter supplied is not a string.');
   }
 
+  if(data.length > 100) {
+    throw new TypeError('address string is too long');
+  }
+
   if (network && !Networks.get(network)) {
     throw new TypeError('Unknown network');
   }
@@ -334,7 +338,7 @@ Address._transformString = function(data, network, type) {
       throw e;
     }
   }
-  
+
   var addressBuffer = Base58Check.decode(data);
   var info = Address._transformBuffer(addressBuffer, network, type);
   return info;
