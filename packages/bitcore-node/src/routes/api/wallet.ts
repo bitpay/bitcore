@@ -4,6 +4,7 @@ import { ChainNetwork } from '../../types/ChainNetwork';
 import { IWallet } from '../../models/wallet';
 import { RequestHandler } from 'express-serve-static-core';
 import { ChainStateProvider } from '../../providers/chain-state';
+import { Validation } from 'crypto-wallet-core';
 import logger from '../../logger';
 import { MongoBound } from '../../models/base';
 const router = Router({ mergeParams: true });
@@ -85,6 +86,9 @@ router.post('/', async function(req, res) {
     if (existingWallet) {
       return res.status(200).send('Wallet already exists');
     }
+    if (name.length > 255) {
+      return res.status(413).send('String length exceeds limit');
+    }
     let result = await ChainStateProvider.createWallet({
       chain,
       network,
@@ -155,6 +159,11 @@ router.post('/:pubKey', authenticate, async (req: AuthenticatedRequest, res) => 
   let keepAlive;
   try {
     let addresses = addressLines.map(({ address }) => address);
+    for (const address of addresses) {
+      if (!Validation.validateAddress(chain, network, address)) {
+        return res.status(413).send('Invalid address');
+      }
+    }
     res.status(200);
     keepAlive = setInterval(() => {
       res.write('\n');
