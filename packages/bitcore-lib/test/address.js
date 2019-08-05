@@ -219,6 +219,13 @@ describe('Address', function() {
       should.not.exist(error);
       Address.fromString(ws).toString().should.equal('1A6ut1tWnUq1SEQLMr4ttDh24wcbJ5o9TT');
     });
+
+    it('testnet addresses are also valid regtest addresses', function() {
+      for (var i = 0; i < P2SHTestnet.length; i++) {
+        var error = Address.getValidationError(P2SHTestnet[i], 'regtest');
+        should.not.exist(error);
+      }
+    });
   });
 
   describe('instantiation', function() {
