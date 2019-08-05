@@ -73,6 +73,9 @@ const authenticate: RequestHandler = async (req: PreAuthRequest, res: Response, 
   }
 };
 
+function isTooLong(field, maxLength = 255) {
+  return field && field.toString().length >= maxLength;
+}
 // create wallet
 router.post('/', async function(req, res) {
   let { chain, network } = req.params;
@@ -86,7 +89,7 @@ router.post('/', async function(req, res) {
     if (existingWallet) {
       return res.status(200).send('Wallet already exists');
     }
-    if (name.length > 255) {
+    if (isTooLong(name) || isTooLong(pubKey) || isTooLong(path) || isTooLong(singleAddress)) {
       return res.status(413).send('String length exceeds limit');
     }
     let result = await ChainStateProvider.createWallet({
@@ -160,7 +163,7 @@ router.post('/:pubKey', authenticate, async (req: AuthenticatedRequest, res) => 
   try {
     let addresses = addressLines.map(({ address }) => address);
     for (const address of addresses) {
-      if (!Validation.validateAddress(chain, network, address)) {
+      if (isTooLong(address) || !Validation.validateAddress(chain, network, address)) {
         return res.status(413).send('Invalid address');
       }
     }
