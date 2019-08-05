@@ -1,6 +1,8 @@
 'use strict';
 
-var _ = require('lodash');
+import * as _ from 'lodash';
+import { Constants } from './constants';
+
 var $ = require('preconditions').singleton();
 var sjcl = require('sjcl');
 var Stringify = require('json-stable-stringify');
@@ -14,7 +16,6 @@ var PrivateKey = Bitcore.PrivateKey;
 var PublicKey = Bitcore.PublicKey;
 var crypto = Bitcore.crypto;
 
-var Constants = require('./constants');
 var Defaults = require('./defaults');
 let SJCL = {};
 
@@ -177,7 +178,7 @@ export class Utils {
     return this.verifyMessage(requestPubKey, signature, pub.toString());
   }
 
-  formatAmount(satoshis, unit, opts) {
+  formatAmount(satoshis, unit, opts?) {
     $.shouldBeNumber(satoshis);
     $.checkArgument(_.includes(_.keys(Constants.UNITS), unit));
 
