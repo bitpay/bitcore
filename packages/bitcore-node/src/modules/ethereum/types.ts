@@ -105,6 +105,9 @@ export type IEthBlock = IBlock & {
   gasLimit: number;
   gasUsed: number;
   stateRoot: Buffer;
+  logsBloom: string;
+  sha3Uncles: string;
+  receiptsRoot: string;
   uncleReward?: Array<number>;
 };
 
@@ -116,6 +119,7 @@ export type IEthTransaction = ITransaction & {
   to: string;
   from: string;
   internal: Array<ClassifiedTrace>;
+  transactionIndex: number;
   abiType?: 'ERC20' | 'ERC721';
   error?: string;
 };
@@ -144,7 +148,6 @@ export type EthTransactionJSON = {
   blockTime: string;
   blockTimeNormalized: string;
   fee: number;
-  size: number;
   value: number;
   gasLimit: number;
   gasPrice: number;

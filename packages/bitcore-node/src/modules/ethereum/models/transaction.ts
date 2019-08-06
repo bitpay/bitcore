@@ -201,7 +201,6 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       blockHash: tx.blockHash || '',
       blockTime: tx.blockTime ? tx.blockTime.toISOString() : '',
       blockTimeNormalized: tx.blockTimeNormalized ? tx.blockTimeNormalized.toISOString() : '',
-      size: tx.size || -1,
       fee: tx.fee || -1,
       value: tx.value || -1,
       gasLimit: tx.gasLimit || -1,

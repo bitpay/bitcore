@@ -12,7 +12,6 @@ export type ITransaction = {
   blockTime?: Date;
   blockTimeNormalized?: Date;
   fee: number;
-  size: number;
   value: number;
   wallets: ObjectID[];
 };

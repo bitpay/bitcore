@@ -1,4 +1,3 @@
-import logger from '../logger';
 import { P2P } from '../services/p2p';
 import { Storage } from '../services/storage';
 import { Event } from '../services/event';
@@ -43,7 +42,6 @@ class ModuleManager extends BaseModule {
   internalServices = new Array<IService>();
   loadConfigured() {
     for (const modulePath of Config.get().modules) {
-      logger.info('Loading module', modulePath);
       const moduleClass = require(modulePath).default || (require(modulePath) as Class<BaseModule>);
       this.internalServices.push(new moduleClass(this.bitcoreServices));
     }

@@ -28,6 +28,7 @@ export type IBtcTransaction = ITransaction & {
   locktime: number;
   inputCount: number;
   outputCount: number;
+  size: number;
 };
 
 export type MintOp = {
