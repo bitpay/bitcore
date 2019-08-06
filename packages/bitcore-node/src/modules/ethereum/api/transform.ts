@@ -66,7 +66,7 @@ export class EthListTransactionsStream extends Transform {
             id: transaction._id,
             txid: transaction.txid,
             fee: transaction.fee,
-            category: 'recieve',
+            category: 'receive',
             satoshis: transaction.value,
             height: transaction.blockHeight,
             from: transaction.from,

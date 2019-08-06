@@ -223,4 +223,10 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     const listTransactionsStream = new EthListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(res);
   }
+
+  async estimateGas(params): Promise<Number> {
+    const { network, from, to, value, data, gasPrice } = params;
+    const gasLimit = await this.getWeb3(network).eth.estimateGas({ from, to, value, data, gasPrice });
+    return gasLimit;
+  }
 }
