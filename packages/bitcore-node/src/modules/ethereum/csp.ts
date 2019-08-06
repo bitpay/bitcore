@@ -14,6 +14,7 @@ import { EthListTransactionsStream } from './api/transform';
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
+  web3: Web3;
 
   constructor(public chain: string = 'ETH') {
     super(chain);
@@ -21,23 +22,26 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   }
 
   getWeb3(network: string) {
-    const networkConfig = this.config[network];
-    const provider = networkConfig.provider;
-    const host = provider.host || 'localhost';
-    const protocol = provider.protocol || 'http';
-    const portString = provider.port || '8545';
-    const connUrl = `${protocol}://${host}:${portString}`;
-    let ProviderType;
-    switch (provider.protocol) {
-      case 'ws':
-      case 'wss':
-        ProviderType = Web3.providers.WebsocketProvider;
-        break;
-      default:
-        ProviderType = Web3.providers.HttpProvider;
-        break;
+    if (!this.web3) {
+      const networkConfig = this.config[network];
+      const provider = networkConfig.provider;
+      const host = provider.host || 'localhost';
+      const protocol = provider.protocol || 'http';
+      const portString = provider.port || '8545';
+      const connUrl = `${protocol}://${host}:${portString}`;
+      let ProviderType;
+      switch (provider.protocol) {
+        case 'ws':
+        case 'wss':
+          ProviderType = Web3.providers.WebsocketProvider;
+          break;
+        default:
+          ProviderType = Web3.providers.HttpProvider;
+          break;
+      }
+      this.web3 = new Web3(new ProviderType(connUrl));
     }
-    return new Web3(new ProviderType(connUrl));
+    return this.web3;
   }
 
   async getFee(params) {

@@ -8,7 +8,7 @@ import { ParityRPC } from './parityRpc';
 import { BaseP2PWorker } from '../../services/p2p';
 import { EthTransactionModel, EthTransactionStorage } from './models/transaction';
 import { timestamp } from '../../logger';
-import { ETHStateProvider } from "./csp";
+import { ETHStateProvider } from './csp';
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   private chainConfig: any;
@@ -206,7 +206,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       network: this.network,
       height,
       hash,
-      coinbase: block.author.toLowerCase(),
+      coinbase: block.author,
       merkleRoot: block.transactionsRoot,
       time: new Date(blockTime),
       timeNormalized: new Date(blockTime),
@@ -231,8 +231,8 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   convertTx(tx: Parity.Transaction, block?: IEthBlock): IEthTransaction {
     if (!block) {
       const txid = tx.hash;
-      const to = (tx.to || '').toLowerCase();
-      const from = tx.from.toLowerCase();
+      const to = tx.to || '';
+      const from = tx.from;
       const value = Number(tx.value);
       const fee = Number(tx.gas) * Number(tx.gasPrice);
       const abiType = this.rpc.abiDecode(tx.input);
