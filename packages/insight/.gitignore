@@ -12,25 +12,32 @@ log.txt
 .vscode/
 npm-debug.log*
 
-.idea/
-.ionic/
 .sourcemaps/
+
+.idea/
 .sass-cache/
 .tmp/
 .versions/
 coverage/
-www/
+dist/
 node_modules/
 tmp/
 temp/
+hooks/
 platforms/
 plugins/
 plugins/android.json
 plugins/ios.json
+www/
 $RECYCLE.BIN/
+
+# e2e
+/e2e/*.js
+/e2e/*.map
 
 .DS_Store
 Thumbs.db
 UserInterfaceState.xcuserstate
 
-proxy.conf.override.js*
+# .docker env
+.docker/env/*.env

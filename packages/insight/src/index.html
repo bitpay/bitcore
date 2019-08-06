@@ -1,29 +1,30 @@
-<!doctype html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8">
-        <title>Insight Block Explorer</title>
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+  <title>Insight</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="format-detection" content="telephone=no">
+  <meta name="msapplication-tap-highlight" content="no">
 
-        <base href="/">
-
-        <meta name="viewport" content="viewport-fit=cover, width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <meta name="format-detection" content="telephone=no">
-        <meta name="msapplication-tap-highlight" content="no">
-
-        <link rel="icon" type="image/png" href="assets/icon/favicon.png" sizes="64x64">
-        <link rel="icon" type="image/png" href="assets/icon/favicon@2x.png" sizes="128x128">
-        <link rel="icon" type="image/png" href="assets/icon/favicon@4x.png" sizes="256x256">
-        <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,700" rel="stylesheet">
-
-        <!-- add to homescreen for ios -->
-        <meta name="apple-mobile-web-app-capable" content="yes">
-        <meta name="apple-mobile-web-app-status-bar-style" content="black">
-
-      <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#1976d2">
+  <link rel="icon" type="image/x-icon" href="assets/icon/favicon.ico">
+  <link rel="manifest" href="manifest.json">
+  <link href="build/main.css" rel="stylesheet">
 </head>
-    <body>
-        <app-root></app-root>
-      <noscript>Please enable JavaScript to continue using this application.</noscript>
+<body>
+
+  <!-- Ionic's root component and where the app will load -->
+  <ion-app class="md"></ion-app>
+
+  <!-- The polyfills js is generated during the build process -->
+  <script src="build/polyfills.js"></script>
+
+  <!-- The vendor js is generated during the build process
+       It contains all of the dependencies in node_modules -->
+  <script src="build/vendor.js"></script>
+
+  <!-- The bundle js is generated during the build process -->
+  <script src="build/main.js"></script>
+
 </body>
 </html>
