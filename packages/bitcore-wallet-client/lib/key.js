@@ -343,6 +343,7 @@ Key.prototype.createCredentials = function(password, opts) {
     rootPath: path,
     keyId: this.id,
     requestPrivKey: requestPrivKey,
+    addressType: opts.addressType,
     walletPrivKey: opts.walletPrivKey,
   });
 };
