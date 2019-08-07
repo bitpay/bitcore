@@ -248,24 +248,24 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
   async getWalletTokenTransactions(network: string, walletId: ObjectID, tokenAddress: string) {
     const addresses = await this.getWalletAddresses(walletId);
-    const allTokenQueries = Array<Promise<Array<Array<EventLog>>>>();
+    const allTokenQueries = Array<Promise<Array<EventLog>>>();
     for (const address of addresses) {
       const token = this.erc20For(network, tokenAddress);
       allTokenQueries.push(
-        Promise.all([
-          token.getPastEvents('Transfer', {
-            filter: { from: address },
-            fromBlock: 0
-          }),
-          token.getPastEvents('Transfer', {
-            filter: { to: address },
-            fromBlock: 0
-          })
-        ])
+        token.getPastEvents('Transfer', {
+          filter: { from: address },
+          fromBlock: 0
+        })
+      );
+      allTokenQueries.push(
+        token.getPastEvents('Transfer', {
+          filter: { to: address },
+          fromBlock: 0
+        })
       );
     }
     let batches = await Promise.all(allTokenQueries);
-    let txs = batches.reduce((agg, addressTxs) => agg.flat().concat(addressTxs.flat()), new Array<EventLog>());
+    let txs = batches.flat();
     return txs.sort((tx1, tx2) => tx1.blockNumber - tx2.blockNumber);
   }
 

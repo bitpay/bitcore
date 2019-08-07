@@ -9,7 +9,7 @@ import { BaseP2PWorker } from '../../services/p2p';
 import { EthTransactionModel, EthTransactionStorage } from './models/transaction';
 import { timestamp } from '../../logger';
 import { ETHStateProvider } from './api/csp';
-import { Block, Transaction } from 'web3/eth/types';
+import { Transaction } from 'web3/eth/types';
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   private chainConfig: any;
@@ -121,7 +121,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       tip = await ChainStateProvider.getLocalTip({ chain, network });
       let lastLog = 0;
       try {
-        const block = await this.getBlock(currentHeight);
+        const block = ((await this.getBlock(currentHeight)) as unknown) as Parity.Block;
         const { convertedBlock, convertedTxs } = this.convertBlock(block);
         const internalTxs = await this.rpc.getTransactionsFromBlock(convertedBlock.height);
         for (const tx of internalTxs) {
@@ -188,7 +188,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return true;
   }
 
-  convertBlock(block: Block) {
+  convertBlock(block: Parity.Block) {
     const blockTime = Number(block.timestamp) * 1000;
     const hash = block.hash;
     const height = block.number;
@@ -210,10 +210,10 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       height,
       hash,
       coinbase: block.miner,
-      merkleRoot: block.transactionRoot,
+      merkleRoot: block.transactionsRoot,
       time: new Date(blockTime),
       timeNormalized: new Date(blockTime),
-      nonce: block.nonce,
+      nonce: block.extraData,
       previousBlockHash: block.parentHash,
       nextBlockHash: '',
       transactionCount: block.transactions.length,
@@ -221,7 +221,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       reward,
       logsBloom: block.logsBloom,
       sha3Uncles: block.sha3Uncles,
-      receiptsRoot: block.receiptRoot,
+      receiptsRoot: block.receiptsRoot,
       processed: false,
       gasLimit: block.gasLimit,
       gasUsed: block.gasUsed,
