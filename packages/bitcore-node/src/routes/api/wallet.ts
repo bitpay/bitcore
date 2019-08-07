@@ -207,7 +207,8 @@ router.get('/:pubKey/balance', authenticate, async (req: AuthenticatedRequest, r
     const result = await ChainStateProvider.getWalletBalance({
       chain,
       network,
-      wallet: req.wallet!
+      wallet: req.wallet!,
+      args: req.query
     });
     return res.send(result || { confirmed: 0, unconfirmed: 0, balance: 0 });
   } catch (err) {
@@ -222,7 +223,8 @@ router.get('/:pubKey/balance/:time', authenticate, async (req: AuthenticatedRequ
       chain,
       network,
       wallet: req.wallet!,
-      time
+      time,
+      args: req.query
     });
     return res.send(result || { confirmed: 0, unconfirmed: 0, balance: 0 });
   } catch (err) {

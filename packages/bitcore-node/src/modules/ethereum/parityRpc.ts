@@ -1,7 +1,7 @@
 import { LoggifyClass } from '../../decorators/Loggify';
-import { Web3 } from 'web3';
+import Web3 from 'web3';
 import AbiDecoder from 'abi-decoder';
-import { IEthTransaction, Parity } from './types';
+import { IEthTransaction } from './types';
 import { ERC20Abi } from './abi/erc20';
 import { ERC721Abi } from './abi/erc721';
 
@@ -43,6 +43,24 @@ export interface TokenTransferResponse {
   params?: [{ name: string; value: string; type: string }];
 }
 
+interface Callback<ResultType> {
+  (error: Error): void;
+  (error: null, val: ResultType): void;
+}
+
+interface JsonRPCRequest {
+  jsonrpc: string;
+  method: string;
+  params: any[];
+  id: number;
+}
+interface JsonRPCResponse {
+  jsonrpc: string;
+  id: number;
+  result?: any;
+  error?: string;
+}
+
 @LoggifyClass
 export class ParityRPC {
   web3: Web3;
@@ -51,7 +69,7 @@ export class ParityRPC {
     this.web3 = web3;
   }
 
-  public getBlock(blockNumber: number): Parity.Block {
+  public getBlock(blockNumber: number) {
     return this.web3.eth.getBlock(blockNumber, true);
   }
 
@@ -70,12 +88,12 @@ export class ParityRPC {
     return txs.map(tx => this.transactionFromParityTrace(tx));
   }
 
-  public send<T>(data: any) {
+  public send<T>(data: JsonRPCRequest) {
     return new Promise<T>((resolve, reject) => {
-      this.web3.eth.currentProvider.send(data, (err, data) => {
+      this.web3.eth.currentProvider.send(data, function(err, data) {
         if (err) return reject(err);
-        resolve(data.result);
-      });
+        resolve(data.result as T);
+      } as Callback<JsonRPCResponse>);
     });
   }
 

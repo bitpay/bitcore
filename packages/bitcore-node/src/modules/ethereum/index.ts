@@ -1,6 +1,6 @@
 import { EthP2pWorker } from './p2p';
 import { BaseModule } from '..';
-import { ETHStateProvider } from './csp';
+import { ETHStateProvider } from './api/csp';
 import { EthRoutes } from './api/eth-routes';
 
 export default class ETHModule extends BaseModule {

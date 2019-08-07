@@ -8,7 +8,8 @@ import { ParityRPC } from './parityRpc';
 import { BaseP2PWorker } from '../../services/p2p';
 import { EthTransactionModel, EthTransactionStorage } from './models/transaction';
 import { timestamp } from '../../logger';
-import { ETHStateProvider } from './csp';
+import { ETHStateProvider } from './api/csp';
+import { Block, Transaction } from 'web3/eth/types';
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   private chainConfig: any;
@@ -34,14 +35,16 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     this.rpc = new ParityRPC(this.web3);
   }
 
-  setupListeners() {
-    this.txSubscription = this.rpc.web3.eth.subscribe('pendingTransactions', async (_err, txid) => {
+  async setupListeners() {
+    this.txSubscription = await this.rpc.web3.eth.subscribe('pendingTransactions');
+    this.txSubscription.subscribe((_err, tx) => {
       if (!this.syncing) {
-        const tx = await this.rpc.web3.eth.getTransaction(txid);
+        //const tx = await this.rpc.web3.eth.getTransaction(txid);
         this.processTransaction(tx);
       }
     });
-    this.blockSubscription = this.rpc.web3.eth.subscribe('newBlockHeaders', () => {
+    this.blockSubscription = await this.rpc.web3.eth.subscribe('newBlockHeaders');
+    this.blockSubscription.subscribe(() => {
       if (!this.syncing) {
         this.sync();
       }
@@ -185,7 +188,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return true;
   }
 
-  convertBlock(block: Parity.Block) {
+  convertBlock(block: Block) {
     const blockTime = Number(block.timestamp) * 1000;
     const hash = block.hash;
     const height = block.number;
@@ -206,8 +209,8 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       network: this.network,
       height,
       hash,
-      coinbase: block.author,
-      merkleRoot: block.transactionsRoot,
+      coinbase: block.miner,
+      merkleRoot: block.transactionRoot,
       time: new Date(blockTime),
       timeNormalized: new Date(blockTime),
       nonce: block.nonce,
@@ -218,17 +221,18 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       reward,
       logsBloom: block.logsBloom,
       sha3Uncles: block.sha3Uncles,
-      receiptsRoot: block.receiptsRoot,
+      receiptsRoot: block.receiptRoot,
       processed: false,
       gasLimit: block.gasLimit,
       gasUsed: block.gasUsed,
       stateRoot: Buffer.from(block.stateRoot)
     };
-    const convertedTxs = block.transactions.map(t => this.convertTx(t, convertedBlock));
+    const transactions = block.transactions as Array<Transaction>;
+    const convertedTxs = transactions.map(t => this.convertTx(t, convertedBlock));
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Parity.Transaction, block?: IEthBlock): IEthTransaction {
+  convertTx(tx: Transaction, block?: IEthBlock): IEthTransaction {
     if (!block) {
       const txid = tx.hash;
       const to = tx.to || '';

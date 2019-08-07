@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { EthTransactionStorage } from '../models/transaction';
-import { ETHStateProvider } from '../csp';
+import { ETHStateProvider } from "./csp";
 export const EthRoutes = Router();
 
 EthRoutes.get('/api/ETH/:network/address/:address/txs/count', async function(req, res) {

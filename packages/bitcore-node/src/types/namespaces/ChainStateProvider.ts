@@ -30,6 +30,7 @@ export declare namespace CSP {
 
   export type GetBalanceForAddressParams = ChainNetwork & {
     address: string;
+    args: any;
   };
 
   export type GetBlockParams = ChainNetwork & {
@@ -60,11 +61,13 @@ export declare namespace CSP {
 
   export type GetWalletBalanceParams = ChainNetwork & {
     wallet: MongoBound<IWallet>;
+    args: any;
   };
 
   export type GetWalletBalanceAtTimeParams = ChainNetwork & {
     wallet: MongoBound<IWallet>;
     time: string;
+    args: any;
   };
 
   export type StreamAddressUtxosParams = ChainNetwork & {
@@ -103,7 +106,7 @@ export declare namespace CSP {
     wallet: MongoBound<IWallet>;
     req: Request;
     res: Response;
-    args: StreamWalletTransactionsArgs;
+    args: StreamWalletTransactionsArgs & any;
   };
   export type StreamWalletUtxosArgs = { includeSpent: 'true' | undefined };
   export type StreamWalletUtxosParams = ChainNetwork & {
