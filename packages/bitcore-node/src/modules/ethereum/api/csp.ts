@@ -62,7 +62,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     const bestBlock = await this.getWeb3(network).eth.getBlockNumber();
     const gasPrices: number[] = [];
     for (let i = 0; i < target; i++) {
-      const block = await this.getWeb3(network).eth.getBlock(bestBlock - i);
+      const block = await this.getWeb3(network).eth.getBlock(bestBlock - i, true);
       const txs = block.transactions as Array<Transaction>;
       var blockGasPrices = txs.map(tx => {
         return Number(tx.gasPrice);

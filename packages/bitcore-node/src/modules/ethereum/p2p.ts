@@ -37,9 +37,9 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
 
   async setupListeners() {
     this.txSubscription = await this.rpc.web3.eth.subscribe('pendingTransactions');
-    this.txSubscription.subscribe((_err, tx) => {
+    this.txSubscription.subscribe(async (_err, txid) => {
       if (!this.syncing) {
-        //const tx = await this.rpc.web3.eth.getTransaction(txid);
+        const tx = await this.rpc.web3.eth.getTransaction(txid) as Parity.Transaction;
         this.processTransaction(tx);
       }
     });
@@ -209,19 +209,19 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       network: this.network,
       height,
       hash,
-      coinbase: block.miner,
-      merkleRoot: block.transactionsRoot,
+      coinbase: Buffer.from(block.miner),
+      merkleRoot: Buffer.from(block.transactionsRoot),
       time: new Date(blockTime),
       timeNormalized: new Date(blockTime),
-      nonce: block.extraData,
+      nonce: Buffer.from(block.extraData),
       previousBlockHash: block.parentHash,
       nextBlockHash: '',
       transactionCount: block.transactions.length,
       size: block.size,
       reward,
-      logsBloom: block.logsBloom,
-      sha3Uncles: block.sha3Uncles,
-      receiptsRoot: block.receiptsRoot,
+      logsBloom: Buffer.from(block.logsBloom),
+      sha3Uncles: Buffer.from(block.sha3Uncles),
+      receiptsRoot: Buffer.from(block.receiptsRoot),
       processed: false,
       gasLimit: block.gasLimit,
       gasUsed: block.gasUsed,

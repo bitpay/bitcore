@@ -100,14 +100,15 @@ export declare namespace Ethereum {
 }
 
 export type IEthBlock = IBlock & {
-  coinbase: string;
-  nonce: string;
+  coinbase: Buffer;
+  nonce: Buffer;
   gasLimit: number;
   gasUsed: number;
   stateRoot: Buffer;
-  logsBloom: string;
-  sha3Uncles: string;
-  receiptsRoot: string;
+  logsBloom: Buffer;
+  sha3Uncles: Buffer;
+  receiptsRoot: Buffer;
+  merkleRoot: Buffer;
   uncleReward?: Array<number>;
 };
 

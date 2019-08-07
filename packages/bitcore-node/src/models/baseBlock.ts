@@ -11,10 +11,8 @@ export type IBlock = {
   network: string;
   height: number;
   hash: string;
-  merkleRoot: string;
   time: Date;
   timeNormalized: Date;
-  nonce: string | number;
   previousBlockHash: string;
   nextBlockHash: string;
   transactionCount: number;

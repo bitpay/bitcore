@@ -12,7 +12,9 @@ import { BaseBlock, IBlock } from './baseBlock';
 
 export type IBtcBlock = IBlock & {
   version: number;
+  merkleRoot: string;
   bits: number;
+  nonce: number;
 };
 
 @LoggifyClass

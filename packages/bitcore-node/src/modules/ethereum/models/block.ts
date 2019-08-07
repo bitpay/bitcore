@@ -1,4 +1,3 @@
-import { IBlock } from '../../../types/Block';
 import { TransformOptions } from '../../../types/TransformOptions';
 import logger from '../../../logger';
 import { LoggifyClass } from '../../../decorators/Loggify';
@@ -145,7 +144,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     return localTip.hash !== prevHash;
   }
 
-  _apiTransform(block: Partial<MongoBound<IBlock>>, options?: TransformOptions): any {
+  _apiTransform(block: Partial<MongoBound<IEthBlock>>, options?: TransformOptions): any {
     const transform = {
       _id: block._id,
       chain: block.chain,
