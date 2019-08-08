@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { EthTransactionStorage } from '../models/transaction';
-import { ETHStateProvider } from "./csp";
+import { ETHStateProvider } from './csp';
 export const EthRoutes = Router();
 
 EthRoutes.get('/api/ETH/:network/address/:address/txs/count', async function(req, res) {
@@ -20,6 +20,22 @@ EthRoutes.post('/api/ETH/:network/fee/gas', async function(req, res) {
     const gasLimit = await new ETHStateProvider().estimateGas({ network, from, to, value, data, gasPrice });
     res.json(gasLimit);
   } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+EthRoutes.get('/api/ETH/:network/token/:tokenAddress', async function(req, res) {
+  const { network, tokenAddress } = req.params;
+  try {
+    const token = await new ETHStateProvider().erc20For(network, tokenAddress);
+    const [name, decimals, symbol] = await Promise.all([
+      token.methods.name().call(),
+      token.methods.decimals().call(),
+      token.methods.symbol().call()
+    ]);
+    res.json({ name, decimals, symbol, tokenAddress });
+  } catch (err) {
+    console.log(err);
     res.status(500).send(err);
   }
 });

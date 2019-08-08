@@ -11,7 +11,7 @@ router.get('/:address/txs', function(req, res) {
     address,
     req,
     res,
-    args: { unspent, limit, since }
+    args: { ...req.query, unspent, limit, since }
   };
   ChainStateProvider.streamAddressTransactions(payload);
 });

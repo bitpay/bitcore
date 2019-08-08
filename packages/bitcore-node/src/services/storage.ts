@@ -228,7 +228,7 @@ export class StorageService {
       .find(finalQuery, options)
       .addCursorFlag('noCursorTimeout', true)
       .stream({
-        transform: transform || model._apiTransform
+        transform: transform || model._apiTransform.bind(model)
       });
     if (options.sort) {
       cursor = cursor.sort(options.sort);

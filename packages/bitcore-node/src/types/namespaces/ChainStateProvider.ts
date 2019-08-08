@@ -74,7 +74,7 @@ export declare namespace CSP {
     address: string;
     req: Request;
     res: Response;
-    args: Partial<StreamAddressUtxosArgs & StreamingFindOptions<ICoin>>;
+    args: Partial<StreamAddressUtxosArgs & StreamingFindOptions<ICoin> & any>;
   };
 
   export type StreamTransactionsParams = ChainNetwork & {

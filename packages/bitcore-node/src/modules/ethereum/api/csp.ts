@@ -13,8 +13,16 @@ import { EthBlockStorage } from '../models/block';
 import { SpentHeightIndicators } from '../../../types/Coin';
 import { EthListTransactionsStream } from './transform';
 import { ERC20Abi } from '../abi/erc20';
-import { EventLog } from 'web3/types';
 import { Transaction } from 'web3/eth/types';
+import { EventLog } from 'web3/types';
+
+interface ERC20Transfer extends EventLog {
+  returnValues: {
+    _from: string;
+    _to: string;
+    _value: string;
+  };
+}
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -141,6 +149,18 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       .toArray();
   }
 
+  async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
+    const { req, res, args, chain, network, address } = params;
+    const { limit, since, tokenAddress } = args;
+    if (!args.tokenAddress) {
+      const query = { chain, network, $or: [{ from: address }, { to: address }] };
+      Storage.apiStreamingFind(EthTransactionStorage, query, { limit, since, paging: '_id' }, req, res);
+    } else {
+      const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress);
+      res.json(tokenTransfers);
+    }
+  }
+
   async streamTransactions(params: CSP.StreamTransactionsParams) {
     const { chain, network, req, res, args } = params;
     let { blockHash, blockHeight } = args;
@@ -246,27 +266,54 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     transactionStream.pipe(listTransactionsStream).pipe(res);
   }
 
+  async getErc20Transfers(
+    network: string,
+    address: string,
+    tokenAddress: string
+  ): Promise<Array<Partial<Transaction>>> {
+    const token = this.erc20For(network, tokenAddress);
+    console.log(network, address, tokenAddress);
+    const [sent, received] = await Promise.all([
+      token.getPastEvents('Transfer', {
+        filter: { from: address },
+        fromBlock: 0
+      }),
+      token.getPastEvents('Transfer', {
+        filter: { to: address },
+        fromBlock: 0
+      })
+    ]);
+    return this.convertTokenTransfers([...sent, ...received]);
+  }
+
+  convertTokenTransfers(tokenTransfers: Array<ERC20Transfer>) {
+    return tokenTransfers.map(this.convertTokenTransfer);
+  }
+
+  convertTokenTransfer(transfer: ERC20Transfer) {
+    const { blockHash, blockNumber, transactionHash, returnValues, transactionIndex } = transfer;
+    return {
+      blockHash,
+      blockNumber,
+      transactionHash,
+      transactionIndex,
+      hash: transactionHash,
+      from: returnValues._from,
+      to: returnValues._from,
+      value: returnValues._value
+    } as Partial<Transaction>;
+  }
+
   async getWalletTokenTransactions(network: string, walletId: ObjectID, tokenAddress: string) {
     const addresses = await this.getWalletAddresses(walletId);
-    const allTokenQueries = Array<Promise<Array<EventLog>>>();
-    for (const address of addresses) {
-      const token = this.erc20For(network, tokenAddress);
-      allTokenQueries.push(
-        token.getPastEvents('Transfer', {
-          filter: { from: address },
-          fromBlock: 0
-        })
-      );
-      allTokenQueries.push(
-        token.getPastEvents('Transfer', {
-          filter: { to: address },
-          fromBlock: 0
-        })
-      );
+    const allTokenQueries = Array<Promise<Array<Partial<Transaction>>>>();
+    for (const walletAddress of addresses) {
+      const transfers = this.getErc20Transfers(network, walletAddress.address, tokenAddress);
+      allTokenQueries.push(transfers);
     }
     let batches = await Promise.all(allTokenQueries);
     let txs = batches.flat();
-    return txs.sort((tx1, tx2) => tx1.blockNumber - tx2.blockNumber);
+    return txs.sort((tx1, tx2) => tx1.blockNumber! - tx2.blockNumber!);
   }
 
   async estimateGas(params): Promise<Number> {

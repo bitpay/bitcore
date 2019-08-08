@@ -9,7 +9,6 @@ import { BaseP2PWorker } from '../../services/p2p';
 import { EthTransactionModel, EthTransactionStorage } from './models/transaction';
 import { timestamp } from '../../logger';
 import { ETHStateProvider } from './api/csp';
-import { Transaction } from 'web3/eth/types';
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   private chainConfig: any;
@@ -39,7 +38,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     this.txSubscription = await this.rpc.web3.eth.subscribe('pendingTransactions');
     this.txSubscription.subscribe(async (_err, txid) => {
       if (!this.syncing) {
-        const tx = await this.rpc.web3.eth.getTransaction(txid) as Parity.Transaction;
+        const tx = (await this.rpc.web3.eth.getTransaction(txid)) as Parity.Transaction;
         this.processTransaction(tx);
       }
     });
@@ -227,12 +226,12 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       gasUsed: block.gasUsed,
       stateRoot: Buffer.from(block.stateRoot)
     };
-    const transactions = block.transactions as Array<Transaction>;
+    const transactions = block.transactions as Array<Parity.Transaction>;
     const convertedTxs = transactions.map(t => this.convertTx(t, convertedBlock));
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Transaction, block?: IEthBlock): IEthTransaction {
+  convertTx(tx: Parity.Transaction, block?: IEthBlock): IEthTransaction {
     if (!block) {
       const txid = tx.hash;
       const to = tx.to || '';
