@@ -15,6 +15,7 @@ import { EthListTransactionsStream } from './transform';
 import { ERC20Abi } from '../abi/erc20';
 import { Transaction } from 'web3/eth/types';
 import { EventLog } from 'web3/types';
+import { EthP2pWorker } from '../p2p';
 
 interface ERC20Transfer extends EventLog {
   returnValues: {
@@ -254,13 +255,15 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
     let transactionStream = new Readable();
     if (!args.tokenAddress) {
-      EthTransactionStorage.collection
+      transactionStream = EthTransactionStorage.collection
         .find(query)
         .sort({ blockTimeNormalized: 1 })
         .addCursorFlag('noCursorTimeout', true);
     } else {
       const erc20Txs = await this.getWalletTokenTransactions(network, wallet._id!, args.tokenAddress);
-      erc20Txs.forEach(tx => transactionStream.push(tx));
+      const p2p = new EthP2pWorker({ chain, network, chainConfig: {} });
+      erc20Txs.forEach(tx => transactionStream.push(p2p.convertTx(tx)));
+      transactionStream.push(null);
     }
     const listTransactionsStream = new EthListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(res);

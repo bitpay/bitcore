@@ -9,6 +9,7 @@ import { BaseP2PWorker } from '../../services/p2p';
 import { EthTransactionModel, EthTransactionStorage } from './models/transaction';
 import { timestamp } from '../../logger';
 import { ETHStateProvider } from './api/csp';
+import { valueOrDefault } from '../../utils/check';
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   private chainConfig: any;
@@ -231,26 +232,26 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Parity.Transaction, block?: IEthBlock): IEthTransaction {
+  convertTx(tx: Partial<Parity.Transaction>, block?: IEthBlock): IEthTransaction {
     if (!block) {
-      const txid = tx.hash;
+      const txid = tx.hash || '';
       const to = tx.to || '';
-      const from = tx.from;
+      const from = tx.from || '';
       const value = Number(tx.value);
       const fee = Number(tx.gas) * Number(tx.gasPrice);
       const abiType = this.rpc.abiDecode(tx.input);
-      const nonce = tx.nonce;
+      const nonce = tx.nonce || 0;
       const convertedTx: IEthTransaction = {
         chain: this.chain,
         network: this.network,
-        blockHeight: -1,
-        data: Buffer.from(tx.input),
+        blockHeight: valueOrDefault(tx.blockNumber, -1),
+        blockHash: valueOrDefault(tx.blockHash, undefined),
+        data: Buffer.from(tx.input || '0x'),
         txid,
-        blockHash: undefined,
         blockTime: new Date(),
         blockTimeNormalized: new Date(),
         fee,
-        transactionIndex: tx.transactionIndex,
+        transactionIndex: tx.transactionIndex || 0,
         value,
         wallets: [],
         to,

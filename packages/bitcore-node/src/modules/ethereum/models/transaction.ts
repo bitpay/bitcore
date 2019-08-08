@@ -17,6 +17,7 @@ import { StreamingFindOptions } from '../../../types/Query';
 import { ERC721Abi } from '../abi/erc721';
 import { ERC20Abi } from '../abi/erc20';
 import { BaseTransaction } from '../../../models/baseTransaction';
+import { valueOrDefault } from '../../../utils/check';
 
 @LoggifyClass
 export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
@@ -193,21 +194,21 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       txid: tx.txid || '',
       network: tx.network || '',
       chain: tx.chain || '',
-      blockHeight: tx.blockHeight || -1,
+      blockHeight: valueOrDefault(tx.blockHeight, -1),
       blockHash: tx.blockHash || '',
       blockTime: tx.blockTime ? tx.blockTime.toISOString() : '',
       blockTimeNormalized: tx.blockTimeNormalized ? tx.blockTimeNormalized.toISOString() : '',
-      fee: tx.fee || -1,
-      value: tx.value || -1,
-      gasLimit: tx.gasLimit || -1,
-      gasPrice: tx.gasPrice || -1,
-      nonce: tx.nonce || 0,
+      fee: valueOrDefault(tx.fee, -1),
+      value: valueOrDefault(tx.value, -1),
+      gasLimit: valueOrDefault(tx.gasLimit, -1),
+      gasPrice: valueOrDefault(tx.gasPrice, -1),
+      nonce: valueOrDefault(tx.nonce, 0),
       to: tx.to || '',
       from: tx.from || '',
       internal: tx.internal
         ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t.action.input || '0x') }))
         : [],
-      decodedData: decodedData ? decodedData : undefined
+      decodedData: valueOrDefault(decodedData, undefined)
     };
     if (options && options.object) {
       return transaction;
