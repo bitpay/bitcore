@@ -57,6 +57,10 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
         const filter = op.updateOne.filter;
         const tx = { ...op.updateOne.update.$set, ...filter } as IEthTransaction;
         await EventStorage.signalTx(tx);
+        await EventStorage.signalAddressCoin({
+          address: tx.to,
+          coin: { value: tx.value, address: tx.to, chain: params.chain, network: params.network, mintTxid: tx.txid }
+        });
       }
     }
   }
