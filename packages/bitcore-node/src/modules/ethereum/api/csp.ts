@@ -157,8 +157,12 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       const query = { chain, network, $or: [{ from: address }, { to: address }] };
       Storage.apiStreamingFind(EthTransactionStorage, query, { limit, since, paging: '_id' }, req, res);
     } else {
-      const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress);
-      res.json(tokenTransfers);
+      try {
+        const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress);
+        res.json(tokenTransfers);
+      } catch (e) {
+        res.status(500).send(e);
+      }
     }
   }
 
@@ -275,7 +279,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     tokenAddress: string
   ): Promise<Array<Partial<Transaction>>> {
     const token = this.erc20For(network, tokenAddress);
-    console.log(network, address, tokenAddress);
     const [sent, received] = await Promise.all([
       token.getPastEvents('Transfer', {
         filter: { from: address },
