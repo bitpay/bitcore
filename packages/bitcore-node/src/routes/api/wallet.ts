@@ -115,7 +115,7 @@ router.get('/:pubKey/addresses/missing', authenticate, async (req: Authenticated
       pubKey,
       stream: res
     };
-    return ChainStateProvider.streamMissingWalletAddresses(payload);
+    return await ChainStateProvider.streamMissingWalletAddresses(payload);
   } catch (err) {
     return res.status(500).send(err);
   }
@@ -134,7 +134,7 @@ router.get('/:pubKey/addresses', authenticate, async (req: AuthenticatedRequest,
       req,
       res
     };
-    return ChainStateProvider.streamWalletAddresses(payload);
+    return await ChainStateProvider.streamWalletAddresses(payload);
   } catch (err) {
     return res.status(500).send(err);
   }
@@ -188,7 +188,7 @@ router.post('/:pubKey', authenticate, async (req: AuthenticatedRequest, res) => 
 router.get('/:pubKey/transactions', authenticate, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
   try {
-    return ChainStateProvider.streamWalletTransactions({
+    return await ChainStateProvider.streamWalletTransactions({
       chain,
       network,
       wallet: req.wallet!,
