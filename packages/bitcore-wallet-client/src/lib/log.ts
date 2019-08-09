@@ -1,4 +1,4 @@
-import _ from 'lodash';
+import * as _ from 'lodash';
 
 var DEFAULT_LOG_LEVEL = 'silent';
 
@@ -30,8 +30,7 @@ export class Logger {
   };
   name: any;
   level: string;
-  constructor(name) {
-
+  constructor(name?) {
     this.name = name || 'log';
     this.level = DEFAULT_LOG_LEVEL;
     _.each(this.levels, (level, levelName) => {

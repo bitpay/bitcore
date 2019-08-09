@@ -117,11 +117,11 @@ export class PayPro {
 
         // some know codes
         if (res.statusCode == 400) {
-          return cb(new Errors.INVOICE_EXPIRED);
+          return cb(Errors.INVOICE_EXPIRED);
         } else if (res.statusCode == 404) {
-          return cb(new Errors.INVOICE_NOT_AVAILABLE);
+          return cb(Errors.INVOICE_NOT_AVAILABLE);
         } else if (res.statusCode == 422) {
-          return cb(new Errors.UNCONFIRMED_INPUTS_NOT_ACCEPTED);
+          return cb(Errors.UNCONFIRMED_INPUTS_NOT_ACCEPTED);
         }
 
         let m = res ? (res.statusMessage || res.statusCode) : '';

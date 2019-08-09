@@ -4,18 +4,20 @@ import * as _ from 'lodash';
 import * as Bitcore from 'bitcore-lib';
 import * as sjcl from 'sjcl';
 
-const log = require('./log');
+import { Logger } from './log';
+var log;
 const Mnemonic = require('bitcore-mnemonic');
 const Uuid = require('uuid');
 
 var Common = require('./common');
 var Errors = require('./errors');
 var Constants = Common.Constants;
-var Utils = Common.Utils;
-import { Credentials } from './credentials';
+import { Utils } from './common/utils';
+var utils;
 
+import { Credentials } from './credentials';
+var credentials;
 export class Key {
-  credentials: Credentials;
   FIELDS = [
     'xPrivKey',             // obsolte
     'xPrivKeyEncrypted',   // obsolte
@@ -62,7 +64,9 @@ export class Key {
     this.use44forMultisig = false;
     this.compliantDerivation = true;
     this.id = Uuid.v4();
-    this.credentials = new Credentials();
+    credentials = new Credentials();
+    utils = new Utils();
+    log = new Logger();
   }
 
   match = (a, b) => {
@@ -334,7 +338,7 @@ export class Key {
       xPrivKey = new Bitcore.HDPrivateKey(x);
     }
 
-    return this.credentials.fromDerivedKey({
+    return credentials.fromDerivedKey({
       xPubKey: xPrivKey.hdPublicKey.toString(),
       coin: opts.coin,
       network: opts.network,
@@ -362,7 +366,7 @@ export class Key {
     var requestPubKey = requestPrivKey.toPublicKey().toString();
 
     var xPriv = this.derive(password, opts.path);
-    var signature = Utils.signRequestPubKey(requestPubKey, xPriv);
+    var signature = utils.signRequestPubKey(requestPubKey, xPriv);
     requestPrivKey = requestPrivKey.toString();
 
     return {
@@ -374,7 +378,7 @@ export class Key {
   sign(rootPath, txp, password, cb) {
     $.shouldBeString(rootPath);
     if (this.isPrivKeyEncrypted() && !password) {
-      return cb(new Errors.ENCRYPTED_PRIVATE_KEY);
+      return cb(Errors.ENCRYPTED_PRIVATE_KEY);
     }
     var privs = [];
     var derived: any = {};
@@ -390,7 +394,7 @@ export class Key {
       }
     });
 
-    var t = Utils.buildTx(txp);
+    var t = utils.buildTx(txp);
     var signatures = _.map(privs, function (priv, i) {
       return t.getSignatures(priv);
     });

@@ -2,20 +2,22 @@ import * as _ from 'lodash';
 const request = require('superagent');
 const async = require('async');
 const Package = require('../package.json');
-const log = require('./log');
+import { Logger } from './log';
 const util = require('util');
 const Errors = require('./errors');
-const Common = require('./common');
-const Utils = Common.Utils;
+import { Utils } from './common/utils';
+var utils;
 
 export class Request {
   baseUrl: any;
   session: any;
   r: any;
+  log: any = new Logger();
   credentials: any;
   supportStaffWalletId: any;
 
   constructor(url?, opts?) {
+    utils = new Utils();
     this.baseUrl = url;
 
     // request can be overload only for testing
@@ -50,7 +52,7 @@ export class Request {
   //  @param {String} privKey - Private key to sign the request
   _signRequest(method, url, args, privKey) {
     var message = [method.toLowerCase(), url, JSON.stringify(args)].join('|');
-    return Utils.signMessage(message, privKey);
+    return utils.signMessage(message, privKey);
   }
 
   //  Do an HTTP request
@@ -84,7 +86,7 @@ export class Request {
     var r = self.r[method](self.baseUrl + url);
     r.accept('json');
 
-    _.each(headers, function (v, k) {
+    _.each(headers, (v, k) => {
       if (v) r.set(k, v);
     });
 
@@ -99,26 +101,26 @@ export class Request {
 
     r.timeout(self.timeout);
 
-    r.end(function (err, res) {
+    r.end((err, res) => {
       if (!res) {
-        return cb(new Errors.CONNECTION_ERROR);
+        return cb(Errors.CONNECTION_ERROR);
       }
 
       if (res.body)
 
-        log.debug(util.inspect(res.body, {
+        this.log.debug(util.inspect(res.body, {
           depth: 10
         }));
 
       if (res.status !== 200) {
-        if (res.status === 503) return cb(new Errors.MAINTENANCE_ERROR);
+        if (res.status === 503) return cb(Errors.MAINTENANCE_ERROR);
         if (res.status === 404)
-          return cb(new Errors.NOT_FOUND);
+          return cb(Errors.NOT_FOUND);
 
         if (!res.status)
-          return cb(new Errors.CONNECTION_ERROR);
+          return cb(Errors.CONNECTION_ERROR);
 
-        log.error('HTTP Error:' + res.status);
+        this.log.error('HTTP Error:' + res.status);
 
         if (!res.body)
           return cb(new Error(res.status));
@@ -127,7 +129,7 @@ export class Request {
       }
 
       if (res.body === '{"error":"read ECONNRESET"}')
-        return cb(new Errors.ECONNRESET_ERROR(JSON.parse(res.body)));
+        return cb(Errors.ECONNRESET_ERROR(JSON.parse(res.body)));
 
       return cb(null, res.body, res.header);
     });
@@ -153,7 +155,7 @@ export class Request {
     var ret;
     if (body.code) {
       if (Errors[body.code]) {
-        ret = new Errors[body.code];
+        ret = Errors[body.code];
         if (body.message) ret.message = body.message;
       } else {
         ret = new Error(body.code + ': ' + (_.isObject(body.message) ? JSON.stringify(body.message) : body.message));
@@ -161,7 +163,7 @@ export class Request {
     } else {
       ret = new Error(body.error || JSON.stringify(body));
     }
-    log.error(ret);
+    this.log.error(ret);
     return ret;
   }
 
@@ -215,9 +217,9 @@ export class Request {
     var self = this;
 
     function doLogin(cb) {
-      self._login(function (err, s) {
+      self._login((err, s) => {
         if (err) return cb(err);
-        if (!s) return cb(new Errors.NOT_AUTHORIZED);
+        if (!s) return cb(Errors.NOT_AUTHORIZED);
         self.session = s;
         cb();
       });
@@ -225,14 +227,14 @@ export class Request {
 
     async.waterfall([
 
-      function (next) {
+      (next) => {
         if (self.session) return next();
         doLogin(next);
       },
-      function (next) {
-        self.doRequest(method, url, args, true, function (err, body, header) {
+      (next) => {
+        self.doRequest(method, url, args, true, (err, body, header) => {
           if (err && err instanceof Errors.NOT_AUTHORIZED) {
-            doLogin(function (err) {
+            doLogin((err) => {
               if (err) return next(err);
               return self.doRequest(method, url, args, true, next);
             });

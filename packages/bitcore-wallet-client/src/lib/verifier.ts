@@ -1,13 +1,14 @@
-import _ from 'lodash';
+import * as _ from 'lodash';
 var $ = require('preconditions').singleton();
 
 var Bitcore = require('bitcore-lib');
 var BCHAddress = require('bitcore-lib-cash').Address;
 
-var Common = require('./common');
-var Utils = Common.Utils;
+import { Utils } from './common/utils';
+var utils;
 
-var log = require('./log');
+import { Logger } from './log';
+var log;
 
 /**
  * @desc Verifier constructor. Checks data given by the server
@@ -15,8 +16,9 @@ var log = require('./log');
  * @constructor
  */
 export class Verifier {
-  constructor(opts) {
-
+  constructor() {
+    utils = new Utils();
+    log = new Logger();
   }
 
   /**
@@ -29,7 +31,7 @@ export class Verifier {
   checkAddress(credentials, address) {
     $.checkState(credentials.isComplete());
 
-    var local = Utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin);
+    var local = utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin);
     return (local.address == address.address &&
       _.difference(local.publicKeys, address.publicKeys).length === 0);
   }
@@ -66,8 +68,8 @@ export class Verifier {
         log.error('Missing copayer fields in server response');
         error = true;
       } else {
-        var hash = Utils.getCopayerHash(copayer.encryptedName || copayer.name, copayer.xPubKey, copayer.requestPubKey);
-        if (!Utils.verifyMessage(hash, copayer.signature, walletPubKey)) {
+        var hash = utils.getCopayerHash(copayer.encryptedName || copayer.name, copayer.xPubKey, copayer.requestPubKey);
+        if (!utils.verifyMessage(hash, copayer.signature, walletPubKey)) {
           log.error('Invalid signatures in server response');
           error = true;
         }
@@ -98,7 +100,7 @@ export class Verifier {
       if (o1.amount != o2.amount) return false;
       var decryptedMessage = null;
       try {
-        decryptedMessage = Utils.decryptMessage(o2.message, encryptingKey);
+        decryptedMessage = utils.decryptMessage(o2.message, encryptingKey);
       } catch (e) {
         return false;
       }
@@ -115,7 +117,7 @@ export class Verifier {
 
     var decryptedMessage = null;
     try {
-      decryptedMessage = Utils.decryptMessage(args.message, encryptingKey);
+      decryptedMessage = utils.decryptMessage(args.message, encryptingKey);
     } catch (e) {
       return false;
     }
@@ -130,7 +132,7 @@ export class Verifier {
     $.checkState(credentials.isComplete());
 
     var creatorKeys = _.find(credentials.publicKeyRing, function (item) {
-      if (Utils.xPubToCopayerId(txp.coin || 'btc', item.xPubKey) === txp.creatorId) return true;
+      if (utils.xPubToCopayerId(txp.coin || 'btc', item.xPubKey) === txp.creatorId) return true;
     });
 
     if (!creatorKeys) return false;
@@ -140,7 +142,7 @@ export class Verifier {
     if (txp.proposalSignaturePubKey) {
 
       // Verify it...
-      if (!Utils.verifyRequestPubKey(txp.proposalSignaturePubKey, txp.proposalSignaturePubKeySig, creatorKeys.xPubKey))
+      if (!utils.verifyRequestPubKey(txp.proposalSignaturePubKey, txp.proposalSignaturePubKeySig, creatorKeys.xPubKey))
         return false;
 
       creatorSigningPubKey = txp.proposalSignaturePubKey;
@@ -151,14 +153,14 @@ export class Verifier {
 
     var hash;
     if (parseInt(txp.version) >= 3) {
-      var t = Utils.buildTx(txp);
+      var t = utils.buildTx(txp);
       hash = t.uncheckedSerialize();
     } else {
       throw new Error('Transaction proposal not supported');
     }
 
     log.debug('Regenerating & verifying tx proposal hash -> Hash: ', hash, ' Signature: ', txp.proposalSignature);
-    if (!Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
+    if (!utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
       return false;
 
     if (!this.checkAddress(credentials, txp.changeAddress))
@@ -219,4 +221,3 @@ export class Verifier {
     return true;
   }
 }
-module.exports = Verifier;

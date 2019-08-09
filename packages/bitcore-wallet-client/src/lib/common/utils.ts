@@ -16,10 +16,11 @@ var PrivateKey = Bitcore.PrivateKey;
 var PublicKey = Bitcore.PublicKey;
 var crypto = Bitcore.crypto;
 
-var Defaults = require('./defaults');
+import { Defaults } from './defaults';
 let SJCL = {};
 
 export class Utils {
+  constructor() { }
 
   encryptMessage(message, encryptingKey) {
     var key = sjcl.codec.base64.toBits(encryptingKey);

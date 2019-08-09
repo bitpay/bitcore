@@ -1,4 +1,4 @@
-module.exports = [{
+export const bwcErrors = [{
   name: 'INVALID_BACKUP',
   message: 'Invalid Backup.'
 }, {

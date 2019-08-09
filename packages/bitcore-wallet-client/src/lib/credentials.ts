@@ -1,7 +1,7 @@
 'use strict';
 
 const $ = require('preconditions').singleton();
-const _ = require('lodash');
+import * as _ from 'lodash';
 
 const Bitcore = require('bitcore-lib');
 
@@ -10,7 +10,6 @@ const Constants = Common.Constants;
 import { Utils } from './common/utils';
 
 export class Credentials {
-  utils: Utils;
   FIELDS = [
     'coin',
     'network',
@@ -58,11 +57,12 @@ export class Credentials {
   xPubKey: any;
   requestPubKey: any;
   publicKeyRing: any;
+  coin: string;
+  utils = new Utils();
 
   constructor() {
     this.version = 2;
     this.account = 0;
-    this.utils = new Utils();
   }
   /*
    *coin, xPrivKey, account, network
@@ -120,7 +120,6 @@ export class Credentials {
   }
 
   getRootPath() {
-
     // This is for OLD v1.0 credentials only.
     function legacyRootPath() {
       // legacy base path schema
