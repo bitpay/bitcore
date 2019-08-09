@@ -257,7 +257,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       }
     }
 
-    let transactionStream = new Readable();
+    let transactionStream = new Readable({ objectMode: true });
     if (!args.tokenAddress) {
       transactionStream = EthTransactionStorage.collection
         .find(query)
@@ -281,11 +281,11 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     const token = this.erc20For(network, tokenAddress);
     const [sent, received] = await Promise.all([
       token.getPastEvents('Transfer', {
-        filter: { from: address },
+        filter: { _from: address },
         fromBlock: 0
       }),
       token.getPastEvents('Transfer', {
-        filter: { to: address },
+        filter: { _to: address },
         fromBlock: 0
       })
     ]);
@@ -305,7 +305,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       transactionIndex,
       hash: transactionHash,
       from: returnValues._from,
-      to: returnValues._from,
+      to: returnValues._to,
       value: returnValues._value
     } as Partial<Transaction>;
   }
@@ -318,7 +318,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       allTokenQueries.push(transfers);
     }
     let batches = await Promise.all(allTokenQueries);
-    let txs = batches.flat();
+    let txs = batches.reduce((agg, batch) => agg.concat(batch));
     return txs.sort((tx1, tx2) => tx1.blockNumber! - tx2.blockNumber!);
   }
 
