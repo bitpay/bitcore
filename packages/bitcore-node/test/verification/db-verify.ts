@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { BlockStorage } from '../../src/models/block';
+import { BitcoinBlockStorage } from '../../src/models/block';
 import { CoinStorage, ICoin } from '../../src/models/coin';
 import { TransactionStorage, ITransaction } from '../../src/models/transaction';
 import { Storage } from '../../src/services/storage';
@@ -125,7 +125,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
     }
   }
 
-  const blocksForHeight = await BlockStorage.collection.countDocuments({
+  const blocksForHeight = await BitcoinBlockStorage.collection.countDocuments({
     chain,
     network,
     height: blockNum,
@@ -161,7 +161,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
   //blocks with same hash
   if (blockTxs.length > 0) {
     const hashFromTx = blockTxs[0].blockHash;
-    const blocksForHash = await BlockStorage.collection.countDocuments({ chain, network, hash: hashFromTx });
+    const blocksForHash = await BitcoinBlockStorage.collection.countDocuments({ chain, network, hash: hashFromTx });
     if (blocksForHash > 1) {
       success = false;
       const error = { model: 'block', err: true, type: 'DUPE_BLOCKHASH', payload: { hash: hashFromTx, blockNum } };
@@ -182,7 +182,7 @@ if (require.main === module) {
       console.log('Please provide a CHAIN and NETWORK environment variable');
       process.exit(1);
     }
-    const tip = await BlockStorage.getLocalTip({ chain, network });
+    const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
 
     if (tip) {
       for (let i = resumeHeight; i <= tip.height; i++) {
