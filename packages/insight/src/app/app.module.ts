@@ -1,40 +1,50 @@
-import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS, HttpClientModule } from '@angular/common/http';
 import { NgModule } from '@angular/core';
-import { BrowserModule, Title } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { RouteReuseStrategy } from '@angular/router';
-import { ServiceWorkerModule } from '@angular/service-worker';
-import { AppPreferences } from '@ionic-native/app-preferences/ngx';
-import { SplashScreen } from '@ionic-native/splash-screen/ngx';
-import { StatusBar } from '@ionic-native/status-bar/ngx';
-import { IonicModule, IonicRouteStrategy } from '@ionic/angular';
-import { LoggerModule } from 'ngx-logger';
-import { environment } from '../environments/environment';
-import { AppRoutingModule } from './app-routing.module';
-import { AppComponent } from './app.component';
-import { StatusNotifierComponent } from './status-notifier/status-notifier.component';
+import { BrowserModule } from '@angular/platform-browser';
+import { IonicApp, IonicModule } from 'ionic-angular';
+import { BlocksPage, HomePage, PagesModule } from '../pages';
+import { AddressProvider } from '../providers/address/address';
+import { ApiProvider } from '../providers/api/api';
+import { BlocksProvider } from '../providers/blocks/blocks';
+import { CurrencyProvider } from '../providers/currency/currency';
+import { DefaultProvider } from '../providers/default/default';
+import { HttpErrorInterceptor } from '../providers/error-handler/error-handler';
+import { Logger } from '../providers/logger/logger';
+import { PriceProvider } from '../providers/price/price';
+import { RedirProvider } from '../providers/redir/redir';
+import { SearchProvider } from '../providers/search/search';
+import { TxsProvider } from '../providers/transactions/transactions';
+import { InsightApp } from './app.component';
 
 @NgModule({
-  declarations: [AppComponent, StatusNotifierComponent],
-  entryComponents: [],
+  declarations: [InsightApp],
   imports: [
     BrowserModule,
-    BrowserAnimationsModule,
-    IonicModule.forRoot(),
-    AppRoutingModule,
-    LoggerModule.forRoot(environment.loggingSettings),
     HttpClientModule,
-    ServiceWorkerModule.register('ngsw-worker.js', {
-      enabled: environment.production
+    PagesModule,
+    IonicModule.forRoot(InsightApp, {
+      mode: 'md',
+      animate: false
     })
   ],
+  bootstrap: [IonicApp],
+  entryComponents: [InsightApp, HomePage, BlocksPage],
   providers: [
-    Title,
-    AppPreferences,
-    StatusBar,
-    SplashScreen,
-    { provide: RouteReuseStrategy, useClass: IonicRouteStrategy }
-  ],
-  bootstrap: [AppComponent]
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: HttpErrorInterceptor,
+      multi: true
+    },
+    ApiProvider,
+    CurrencyProvider,
+    BlocksProvider,
+    TxsProvider,
+    DefaultProvider,
+    PriceProvider,
+    SearchProvider,
+    RedirProvider,
+    Logger,
+    AddressProvider
+  ]
 })
 export class AppModule {}
