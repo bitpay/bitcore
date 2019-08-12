@@ -1,4 +1,6 @@
+import { Deriver } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { AddressManager } from './addressmanager';
 
 const $ = require('preconditions').singleton();
 const Common = require('../common');
@@ -37,7 +39,8 @@ export class Address {
 
   static Bitcore = {
     btc: require('bitcore-lib'),
-    bch: require('bitcore-lib-cash')
+    bch: require('bitcore-lib-cash'),
+    eth: require('bitcore-lib'),
   };
 
   static create(opts) {
@@ -55,9 +58,7 @@ export class Address {
     x.path = opts.path;
     x.publicKeys = opts.publicKeys;
     x.coin = opts.coin;
-    x.network = Address.Bitcore[opts.coin]
-      .Address(x.address)
-      .toObject().network;
+    x.network = opts.network;
     x.type = opts.type || Constants.SCRIPT_TYPES.P2SH;
     x.hasActivity = undefined;
     x.beRegistered = null;
@@ -111,9 +112,14 @@ export class Address {
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
-        bitcoreAddress = Address.Bitcore[coin].Address.fromPublicKey(
-          publicKeys[0],
-          network
+        const { addressIndex, isChange } = new AddressManager().parseDerivationPath(path);
+        const [{ xPubKey }] = publicKeyRing;
+        bitcoreAddress = Deriver.deriveAddress(
+          coin.toUpperCase(),
+          network,
+          xPubKey,
+          addressIndex,
+          isChange
         );
         break;
     }

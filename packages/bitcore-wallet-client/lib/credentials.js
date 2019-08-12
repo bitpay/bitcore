@@ -139,6 +139,8 @@ Credentials.prototype.getRootPath = function() {
       }
     } else if (self.coin == 'btc') {
       coin = '0';
+    } else if (self.coin == 'eth') {
+      coin = '60';
     } else {
       throw new Error('unknown coin: ' + self.coin);
     };

@@ -9,6 +9,7 @@ var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
+  eth: Bitcore
 };
 var Mnemonic = require('bitcore-mnemonic');
 var sjcl = require('sjcl');
@@ -2341,10 +2342,12 @@ API.serverAssistedImport = (opts, clientOpts, callback) => {
     let opts = [
 
       //coin, network,  multisig
-      ['btc', 'livenet', ],          
-      ['bch', 'livenet', ],          
-      ['btc', 'livenet', true ],    
-      ['bch', 'livenet', true ],    
+      ['btc', 'livenet', ],
+      ['bch', 'livenet', ],
+      ['eth', 'livenet', ],
+      ['eth', 'testnet', ],
+      ['btc', 'livenet', true ],
+      ['bch', 'livenet', true ],
     ];
     if (key.use44forMultisig) {
       //  testing old multi sig
