@@ -105,30 +105,29 @@ describe('Email notifications', function() {
           }],
           feePerKb: 100e2
         };
-        helpers.stubTransactionCount(wallet, txOpts.from, () => {
+        helpers.stubTransactionCount(wallet, txOpts.from);
 
-          helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
+        helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
 
-            setTimeout(function() {
-              var calls = mailerStub.send.getCalls();
-              calls.length.should.equal(2);
-              var emails = _.map(calls, function(c) {
-                return c.args[0];
-              });
-              _.difference(['copayer2@domain.com', 'copayer3@domain.com'], _.map(emails, 'to')).should.be.empty;
-              var one = emails[0];
-              one.from.should.equal('bws@dummy.net');
-              one.subject.should.contain('New payment proposal');
-              should.exist(one.html);
-              one.html.indexOf('<html>').should.equal(0);
-              server.storage.fetchUnsentEmails(function(err, unsent) {
-                should.not.exist(err);
-                unsent.should.be.empty;
-                emailService._readTemplateFile = _readTemplateFile_old;
-                done();
-              });
-            }, 100);
-          });
+          setTimeout(function() {
+            var calls = mailerStub.send.getCalls();
+            calls.length.should.equal(2);
+            var emails = _.map(calls, function(c) {
+              return c.args[0];
+            });
+            _.difference(['copayer2@domain.com', 'copayer3@domain.com'], _.map(emails, 'to')).should.be.empty;
+            var one = emails[0];
+            one.from.should.equal('bws@dummy.net');
+            one.subject.should.contain('New payment proposal');
+            should.exist(one.html);
+            one.html.indexOf('<html>').should.equal(0);
+            server.storage.fetchUnsentEmails(function(err, unsent) {
+              should.not.exist(err);
+              unsent.should.be.empty;
+              emailService._readTemplateFile = _readTemplateFile_old;
+              done();
+            });
+          }, 100);
         });
       })
     });

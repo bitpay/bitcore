@@ -416,7 +416,7 @@ helpers.stubBroadcast = function(thirdPartyBroadcast) {
   blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
 };
 
-helpers.stubTransactionCount = () => {
+helpers.stubTransactionCount = (wallet, from) => {
   blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, 1);
 };
 
