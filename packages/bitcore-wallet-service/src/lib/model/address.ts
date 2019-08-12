@@ -112,15 +112,23 @@ export class Address {
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
-        const { addressIndex, isChange } = new AddressManager().parseDerivationPath(path);
-        const [{ xPubKey }] = publicKeyRing;
-        bitcoreAddress = Deriver.deriveAddress(
-          coin.toUpperCase(),
-          network,
-          xPubKey,
-          addressIndex,
-          isChange
-        );
+
+        if (Constants.UTXO_COINS[coin.toUpperCase()]) {
+          bitcoreAddress = Address.Bitcore[coin].Address.fromPublicKey(
+            publicKeys[0],
+            network
+          );
+        } else {
+          const { addressIndex, isChange } = new AddressManager().parseDerivationPath(path);
+          const [{ xPubKey }] = publicKeyRing;
+          bitcoreAddress = Deriver.deriveAddress(
+            coin.toUpperCase(),
+            network,
+            xPubKey,
+            addressIndex,
+            isChange
+          );
+        }
         break;
     }
 
