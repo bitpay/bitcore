@@ -416,6 +416,10 @@ helpers.stubBroadcast = function(thirdPartyBroadcast) {
   blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
 };
 
+helpers.stubTransactionCount = function(wallet, from, cb) {
+  blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(wallet, from, cb);
+};
+
 helpers.createTxsV8 = function(nr, bcHeight, txs) {
   txs = txs || [];
   // Will generate
