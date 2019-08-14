@@ -20,6 +20,8 @@ type ErrorType = {
 
 export async function validateDataForBlock(blockNum: number, log = false) {
   let success = true;
+  const block = await BlockStorage.collection.findOne({ chain, network, height: blockNum });
+
   const blockTxs = await TransactionStorage.collection.find({ chain, network, blockHeight: blockNum }).toArray();
   const blockTxids = blockTxs.map(t => t.txid);
   const coinsForTx = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: blockTxids } }).toArray();
@@ -29,6 +31,21 @@ export async function validateDataForBlock(blockNum: number, log = false) {
 
   const seenTxs = {} as { [txid: string]: ITransaction };
   const errors = new Array<ErrorType>();
+
+  if (!block || block.transactionCount != blockTxs.length) {
+    const error = {
+      model: 'block',
+      err: true,
+      type: 'CORRUPTED_BLOCK',
+      payload: { blockNum }
+    };
+
+    errors.push(error);
+
+    if (log) {
+      console.log(JSON.stringify(error));
+    }
+  }
 
   for (const tx of mempoolTxs) {
     success = false;
