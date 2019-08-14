@@ -20,7 +20,7 @@ export class ERC20TxProvider extends ETHTxProvider {
     const { tokenAddress } = params;
     const [{ address, amount }] = params.recipients;
     const data = this.getERC20Contract(tokenAddress)
-      .methods.approve(address, amount)
+      .methods.transfer(address, amount)
       .encodeABI();
     const recipients = [{ address: tokenAddress, amount: '0' }];
     const newParams = { ...params, recipients, data };
