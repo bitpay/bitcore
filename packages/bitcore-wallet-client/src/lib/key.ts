@@ -16,7 +16,7 @@ import { Utils } from './common/utils';
 var utils;
 
 import { Credentials } from './credentials';
-var credentials;
+
 export class Key {
   FIELDS = [
     'xPrivKey',             // obsolte
@@ -64,7 +64,6 @@ export class Key {
     this.use44forMultisig = false;
     this.compliantDerivation = true;
     this.id = Uuid.v4();
-    credentials = new Credentials();
     utils = new Utils();
     log = new Logger();
   }
@@ -153,7 +152,7 @@ export class Key {
       throw new Error('Bad Key version');
     }
 
-    _.each(this.FIELDS, function (k) {
+    _.each(this.FIELDS, (k) => {
       x[k] = obj[k];
     });
 
@@ -165,7 +164,7 @@ export class Key {
     var self = this;
 
     var x = {};
-    _.each(this.FIELDS, function (k) {
+    _.each(this.FIELDS, (k) => {
       x[k] = self[k];
     });
     return x;
@@ -338,7 +337,7 @@ export class Key {
       xPrivKey = new Bitcore.HDPrivateKey(x);
     }
 
-    return credentials.fromDerivedKey({
+    return new Credentials().fromDerivedKey({
       xPubKey: xPrivKey.hdPublicKey.toString(),
       coin: opts.coin,
       network: opts.network,
@@ -378,7 +377,7 @@ export class Key {
   sign(rootPath, txp, password, cb) {
     $.shouldBeString(rootPath);
     if (this.isPrivKeyEncrypted() && !password) {
-      return cb(Errors.ENCRYPTED_PRIVATE_KEY);
+      return cb(new Errors.ENCRYPTED_PRIVATE_KEY);
     }
     var privs = [];
     var derived: any = {};
@@ -386,7 +385,7 @@ export class Key {
     var derived = this.derive(password, rootPath);
     var xpriv: any = new Bitcore.HDPrivateKey(derived);
 
-    _.each(txp.inputs, function (i) {
+    _.each(txp.inputs, (i) => {
       $.checkState(i.path, 'Input derivation path not available (signing transaction)');
       if (!derived[i.path]) {
         derived[i.path] = xpriv.deriveChild(i.path).privateKey;
@@ -395,11 +394,11 @@ export class Key {
     });
 
     var t = utils.buildTx(txp);
-    var signatures = _.map(privs, function (priv, i) {
+    var signatures = _.map(privs, (priv, i) => {
       return t.getSignatures(priv);
     });
 
-    signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function (s) {
+    signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), (s) => {
       return s.signature.toDER().toString('hex');
     });
 

@@ -4,7 +4,7 @@ const async = require('async');
 const Package = require('../package.json');
 import { Logger } from './log';
 const util = require('util');
-const Errors = require('./errors');
+var Errors = require('./errors');
 import { Utils } from './common/utils';
 var utils;
 
@@ -15,6 +15,7 @@ export class Request {
   log: any = new Logger();
   credentials: any;
   supportStaffWalletId: any;
+  timeout: any;
 
   constructor(url?, opts?) {
     utils = new Utils();
@@ -63,18 +64,17 @@ export class Request {
   //  @param {Object} args
   //  @param {Callback} cb
   doRequest(method, url, args, useSession, cb) {
-    var self: any = this;
 
-    var headers = self.getHeaders(method, url, args);
+    var headers = this.getHeaders(method, url, args);
 
-    if (self.credentials) {
-      headers['x-identity'] = self.credentials.copayerId;
+    if (this.credentials) {
+      headers['x-identity'] = this.credentials.copayerId;
 
-      if (useSession && self.session) {
-        headers['x-session'] = self.session;
+      if (useSession && this.session) {
+        headers['x-session'] = this.session;
       } else {
         var reqSignature;
-        var key = args._requestPrivKey || self.credentials.requestPrivKey;
+        var key = args._requestPrivKey || this.credentials.requestPrivKey;
         if (key) {
           delete args['_requestPrivKey'];
           reqSignature = this._signRequest(method, url, args, key);
@@ -83,7 +83,7 @@ export class Request {
       }
     }
 
-    var r = self.r[method](self.baseUrl + url);
+    var r = this.r[method](this.baseUrl + url);
     r.accept('json');
 
     _.each(headers, (v, k) => {
@@ -99,11 +99,11 @@ export class Request {
       }
     }
 
-    r.timeout(self.timeout);
+    r.timeout(this.timeout);
 
     r.end((err, res) => {
       if (!res) {
-        return cb(Errors.CONNECTION_ERROR);
+        return cb(new Errors.CONNECTION_ERROR);
       }
 
       if (res.body)
@@ -113,23 +113,22 @@ export class Request {
         }));
 
       if (res.status !== 200) {
-        if (res.status === 503) return cb(Errors.MAINTENANCE_ERROR);
+        if (res.status === 503) return cb(new Errors.MAINTENANCE_ERROR);
         if (res.status === 404)
-          return cb(Errors.NOT_FOUND);
+          return cb(new Errors.NOT_FOUND);
 
         if (!res.status)
-          return cb(Errors.CONNECTION_ERROR);
+          return cb(new Errors.CONNECTION_ERROR);
 
         this.log.error('HTTP Error:' + res.status);
 
         if (!res.body)
           return cb(new Error(res.status));
-
         return cb(this._parseError(res.body));
       }
 
       if (res.body === '{"error":"read ECONNRESET"}')
-        return cb(Errors.ECONNRESET_ERROR(JSON.parse(res.body)));
+        return cb(new Errors.ECONNRESET_ERROR(JSON.parse(res.body)));
 
       return cb(null, res.body, res.header);
     });
@@ -155,7 +154,7 @@ export class Request {
     var ret;
     if (body.code) {
       if (Errors[body.code]) {
-        ret = Errors[body.code];
+        ret = new Errors[body.code];
         if (body.message) ret.message = body.message;
       } else {
         ret = new Error(body.code + ': ' + (_.isObject(body.message) ? JSON.stringify(body.message) : body.message));
@@ -214,35 +213,34 @@ export class Request {
   //  @param {Object} args
   //  @param {Callback} cb
   doRequestWithLogin(method, url, args, cb) {
-    var self = this;
-
-    function doLogin(cb) {
-      self._login((err, s) => {
-        if (err) return cb(err);
-        if (!s) return cb(Errors.NOT_AUTHORIZED);
-        self.session = s;
-        cb();
-      });
-    }
 
     async.waterfall([
 
       (next) => {
-        if (self.session) return next();
-        doLogin(next);
+        if (this.session) return next();
+        this.doLogin(next);
       },
       (next) => {
-        self.doRequest(method, url, args, true, (err, body, header) => {
+        this.doRequest(method, url, args, true, (err, body, header) => {
           if (err && err instanceof Errors.NOT_AUTHORIZED) {
-            doLogin((err) => {
+            this.doLogin((err) => {
               if (err) return next(err);
-              return self.doRequest(method, url, args, true, next);
+              return this.doRequest(method, url, args, true, next);
             });
           }
           next(null, body, header);
         });
       },
     ], cb);
+  }
+
+  doLogin(cb) {
+    this._login((err, s) => {
+      if (err) return cb(err);
+      if (!s) return cb(new Errors.NOT_AUTHORIZED);
+      this.session = s;
+      cb();
+    });
   }
 
   // Do a DELETE request

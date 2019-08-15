@@ -11,7 +11,7 @@ var request = require('supertest');
 var Uuid = require('uuid');
 var sjcl = require('sjcl');
 var { Logger } = require('../ts_build/log');
-var log = new Logger();
+var log;
 var mongodb = require('mongodb');
 var config = require('./test-config');
 var oldCredentials = require('./legacyCredentialsExports');
@@ -26,18 +26,19 @@ var BWS = require('bitcore-wallet-service');
 
 var Common = require('../ts_build/common');
 var Constants = Common.Constants;
-var { Utils } = require('../ts_build/common/utils');
 var Client = require('../ts_build');
 var { Key } = require('../ts_build/key');
 var { Request } = require('../ts_build/request.js');
+var { Utils } = require('../ts_build/common/utils');
 var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;
 var TestData = require('./testdata');
 var Errors = require('../ts_build/errors');
 
 var helpers = {};
-
-helpers.toSatoshi = function (btc) {
+var { PayPro } = require('../ts_build/paypro');
+var payPro;
+helpers.toSatoshi = (btc) => {
   if (_.isArray(btc)) {
     return _.map(btc, helpers.toSatoshi);
   } else {
@@ -45,7 +46,7 @@ helpers.toSatoshi = function (btc) {
   }
 };
 
-helpers.newClient = function (app) {
+helpers.newClient = (app) => {
   $.checkArgument(app);
   return new Client.API({
     baseUrl: '/bws/api',
@@ -54,7 +55,7 @@ helpers.newClient = function (app) {
   });
 };
 
-helpers.stubRequest = function (err, res) {
+helpers.stubRequest = (err, res) => {
   var request = {
     accept: sinon.stub(),
     set: sinon.stub(),
@@ -63,8 +64,8 @@ helpers.stubRequest = function (err, res) {
     timeout: sinon.stub(),
     end: sinon.stub().yields(err, res),
   };
-  var reqFactory = _.reduce(['get', 'post', 'put', 'delete'], function (mem, verb) {
-    mem[verb] = function (url) {
+  var reqFactory = _.reduce(['get', 'post', 'put', 'delete'], (mem, verb) => {
+    mem[verb] = (url) => {
       return request;
     };
     return mem;
@@ -75,9 +76,9 @@ helpers.stubRequest = function (err, res) {
 
 
 
-helpers.generateUtxos = function (scriptType, publicKeyRing, path, requiredSignatures, amounts) {
+helpers.generateUtxos = (scriptType, publicKeyRing, path, requiredSignatures, amounts) => {
   var amounts = [].concat(amounts);
-  var utxos = _.map(amounts, function (amount, i) {
+  var utxos = _.map(amounts, (amount, i) => {
 
     var address = new Utils().deriveAddress(scriptType, publicKeyRing, path, requiredSignatures, 'testnet');
 
@@ -106,7 +107,7 @@ helpers.generateUtxos = function (scriptType, publicKeyRing, path, requiredSigna
   return utxos;
 };
 
-helpers.createAndJoinWallet = function (clients, keys, m, n, opts, cb) {
+helpers.createAndJoinWallet = (clients, keys, m, n, opts, cb) => {
   opts = opts || {};
 
   var coin = opts.coin || 'btc';
@@ -128,7 +129,7 @@ helpers.createAndJoinWallet = function (clients, keys, m, n, opts, cb) {
     network: network,
     singleAddress: !!opts.singleAddress,
     doNotCheck: true,
-  }, function (err, secret) {
+  }, (err, secret) => {
     if (err) console.log(err);
     should.not.exist(err);
 
@@ -138,8 +139,8 @@ helpers.createAndJoinWallet = function (clients, keys, m, n, opts, cb) {
 
     async.series([
 
-      function (next) {
-        async.each(_.range(1, n), function (i, cb) {
+      (next) => {
+        async.each(_.range(1, n), (i, cb) => {
           keys[i] = new Key().create(keyOpts);
           clients[i].fromString(
             keys[i].createCredentials(null, {
@@ -154,13 +155,13 @@ helpers.createAndJoinWallet = function (clients, keys, m, n, opts, cb) {
           }, cb);
         }, next);
       },
-      function (next) {
-        async.each(_.range(n), function (i, cb) {
+      (next) => {
+        async.each(_.range(n), (i, cb) => {
           clients[i].openWallet(cb);
         }, next);
       },
     ],
-      function (err) {
+      (err) => {
         should.not.exist(err);
         return cb({
           m: m,
@@ -171,28 +172,28 @@ helpers.createAndJoinWallet = function (clients, keys, m, n, opts, cb) {
   });
 };
 
-helpers.tamperResponse = function (clients, method, url, args, tamper, cb) {
+helpers.tamperResponse = (clients, method, url, args, tamper, cb) => {
   clients = [].concat(clients);
   // Use first client to get a clean response from server
-  clients[0].request.doRequest(method, url, args, false, function (err, result) {
+  clients[0].request.doRequest(method, url, args, false, (err, result) => {
     should.not.exist(err);
     tamper(result);
     // Return tampered data for every client in the list
-    _.each(clients, function (client) {
+    _.each(clients, (client) => {
       client.request.doRequest = sinon.stub().withArgs(method, url).yields(null, result);
     });
     return cb();
   });
 };
 
-helpers.createAndPublishTxProposal = function (client, opts, cb) {
+helpers.createAndPublishTxProposal = (client, opts, cb) => {
   if (!opts.outputs) {
     opts.outputs = [{
       toAddress: opts.toAddress,
       amount: opts.amount,
     }];
   }
-  client.createTxProposal(opts, function (err, txp) {
+  client.createTxProposal(opts, (err, txp) => {
     if (err) return cb(err);
     client.publishTxProposal({
       txp: txp
@@ -208,14 +209,14 @@ var blockchainExplorerMock = {
 
 
 
-blockchainExplorerMock.getUtxos = function (wallet, height, cb) {
+blockchainExplorerMock.getUtxos = (wallet, height, cb) => {
   return cb(null, _.cloneDeep(blockchainExplorerMock.utxos));
 };
 
 
 // v8
-blockchainExplorerMock.getAddressUtxos = function (address, height, cb) {
-  var selected = _.filter(blockchainExplorerMock.utxos, function (utxo) {
+blockchainExplorerMock.getAddressUtxos = (address, height, cb) => {
+  var selected = _.filter(blockchainExplorerMock.utxos, (utxo) => {
     return _.includes(address, utxo.address);
   });
 
@@ -224,7 +225,7 @@ blockchainExplorerMock.getAddressUtxos = function (address, height, cb) {
 
 
 
-blockchainExplorerMock.setUtxo = function (address, amount, m, confirmations) {
+blockchainExplorerMock.setUtxo = (address, amount, m, confirmations) => {
   var B = Bitcore_[address.coin];
   var scriptPubKey;
   switch (address.type) {
@@ -251,20 +252,20 @@ blockchainExplorerMock.setUtxo = function (address, amount, m, confirmations) {
 blockchainExplorerMock.supportsGrouping = () => { return false; }
 blockchainExplorerMock.getBlockchainHeight = (cb) => { return cb(null, 1000); }
 
-blockchainExplorerMock.broadcast = function (raw, cb) {
+blockchainExplorerMock.broadcast = (raw, cb) => {
   blockchainExplorerMock.lastBroadcasted = raw;
   return cb(null, (new Bitcore.Transaction(raw)).id);
 };
 
-blockchainExplorerMock.setHistory = function (txs) {
+blockchainExplorerMock.setHistory = (txs) => {
   blockchainExplorerMock.txHistory = txs;
 };
 
-blockchainExplorerMock.getTransaction = function (txid, cb) {
+blockchainExplorerMock.getTransaction = (txid, cb) => {
   return cb();
 };
 
-function createTxsV8(nr, bcHeight, txs) {
+var createTxsV8 = (nr, bcHeight, txs) => {
   txs = txs || [];
   // Will generate
   // order / confirmations  / height / txid
@@ -296,25 +297,25 @@ function createTxsV8(nr, bcHeight, txs) {
 
 
 
-blockchainExplorerMock.getTransactions = function (wallet, startBlock, cb) {
+blockchainExplorerMock.getTransactions = (wallet, startBlock, cb) => {
   var list = [].concat(blockchainExplorerMock.txHistory);
   // -1 = mempool, always included in server' s v8.js
   list = _.filter(list, (x) => { return x.height >= startBlock || x.height == -1; });
   return cb(null, list);
 };
 
-blockchainExplorerMock.getAddressActivity = function (address, cb) {
+blockchainExplorerMock.getAddressActivity = (address, cb) => {
   var activeAddresses = _.map(blockchainExplorerMock.utxos || [], 'address');
   return cb(null, _.includes(activeAddresses, address));
 };
 
-blockchainExplorerMock.setFeeLevels = function (levels) {
+blockchainExplorerMock.setFeeLevels = (levels) => {
   blockchainExplorerMock.feeLevels = levels;
 };
 
-blockchainExplorerMock.estimateFee = function (nbBlocks, cb) {
+blockchainExplorerMock.estimateFee = (nbBlocks, cb) => {
   var levels = {};
-  _.each(nbBlocks, function (nb) {
+  _.each(nbBlocks, (nb) => {
     var feePerKb = blockchainExplorerMock.feeLevels[nb];
     levels[nb] = _.isNumber(feePerKb) ? feePerKb / 1e8 : -1;
   });
@@ -322,7 +323,7 @@ blockchainExplorerMock.estimateFee = function (nbBlocks, cb) {
   return cb(null, levels);
 };
 
-blockchainExplorerMock.reset = function () {
+blockchainExplorerMock.reset = () => {
   blockchainExplorerMock.utxos = [];
   blockchainExplorerMock.txHistory = [];
   blockchainExplorerMock.feeLevels = [];
@@ -331,19 +332,20 @@ blockchainExplorerMock.reset = function () {
 
 helpers.newDb = (extra, cb) => {
   extra = extra || '';
-  mongodb.MongoClient.connect(config.mongoDb.uri + extra, function (err, in_db) {
+  mongodb.MongoClient.connect(config.mongoDb.uri + extra, (err, in_db) => {
     if (err) return cb(err);
-    in_db.dropDatabase(function (err) {
+    in_db.dropDatabase((err) => {
       return cb(err, in_db);
     });
   });
 }
 
 var db;
-describe.only('client API', function () {
+describe('client API', () => {
   var clients, app, sandbox, storage, keys, i;
 
   before((done) => {
+    payPro = new PayPro();
     i = 0;
     clients = [];
     keys = [];
@@ -357,8 +359,8 @@ describe.only('client API', function () {
     });
   });
 
-  beforeEach(function (done) {
-    // log = new Logger();
+  beforeEach((done) => {
+    log = new Logger();
     var expressApp = new ExpressApp();
     expressApp.start({
       ignoreRateLimiter: true,
@@ -367,11 +369,11 @@ describe.only('client API', function () {
       disableLogs: true,
       doNotCheckV8: true,
     },
-      function () {
+      () => {
         app = expressApp.app;
 
         // Generates 5 clients
-        clients = _.map(_.range(5), function (i) {
+        clients = _.map(_.range(5), (i) => {
           return helpers.newClient(app);
         });
         blockchainExplorerMock.reset();
@@ -385,13 +387,13 @@ describe.only('client API', function () {
         done();
       });
   });
-  afterEach(function (done) {
+  afterEach((done) => {
     sandbox.restore();
     done();
   });
 
-  describe('constructor', function () {
-    it('should set the log level based on the logLevel option', function () {
+  describe('constructor', () => {
+    it('should set the log level based on the logLevel option', () => {
       var originalLogLevel = log.level;
       var client = new Client.API({
         logLevel: 'info'
@@ -399,16 +401,16 @@ describe.only('client API', function () {
       client.logLevel.should.equal('info');
       log.level.should.equal('info');
 
-      var client = new Client.API({
+      var client2 = new Client.API({
         logLevel: 'debug'
       });
-      client.logLevel.should.equal('debug');
+      client2.logLevel.should.equal('debug');
       log.level.should.equal('debug');
 
       log.level = originalLogLevel; //restore since log is a singleton
     });
 
-    it('should use silent for the log level if no logLevel is specified', function () {
+    it('should use silent for the log level if no logLevel is specified', () => {
       var originalLogLevel = log.level;
 
       log.level = 'foo;'
@@ -421,14 +423,14 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Client Internals', function () {
-    it('should expose bitcore', function () {
+  describe('Client Internals', () => {
+    it('should expose bitcore', () => {
       should.exist(Bitcore);
       should.exist(Bitcore.HDPublicKey);
     });
   });
-
-  describe('Server internals', function () {
+  // todo
+  describe('Server internals', () => {
 
     var k;
 
@@ -436,9 +438,9 @@ describe.only('client API', function () {
       k = new Key().create();
     });
 
-    it('should allow cors', function (done) {
+    it('should allow cors', (done) => {
       clients[0].credentials = {};
-      clients[0].request.doRequest('options', '/', {}, false, function (err, x, headers) {
+      clients[0].request.doRequest('options', '/', {}, false, (err, x, headers) => {
         headers['access-control-allow-origin'].should.equal('*');
         should.exist(headers['access-control-allow-methods']);
         should.exist(headers['access-control-allow-headers']);
@@ -446,7 +448,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should request set credentials before creating/joining', function (done) {
+    it('should request set credentials before creating/joining', (done) => {
       var s = sinon.stub();
       s.storeWallet = sinon.stub().yields('bigerror');
       s.fetchWallet = sinon.stub().yields(null);
@@ -455,12 +457,12 @@ describe.only('client API', function () {
         storage: s,
         blockchainExplorer: blockchainExplorerMock,
         disableLogs: true,
-      }, function () {
+      }, () => {
         var client = helpers.newClient(app);
         client.createWallet('1', '2', 1, 1, {
           network: 'testnet'
         },
-          function (err) {
+          (err) => {
             should.exist(err);
             err.toString().should.contain('credentials');
             done();
@@ -468,9 +470,7 @@ describe.only('client API', function () {
       });
     });
 
-
-
-    it('should handle critical errors', function (done) {
+    it('should handle critical errors', (done) => {
       var s = sinon.stub();
       s.storeWallet = sinon.stub().yields('bigerror');
       s.fetchWallet = sinon.stub().yields(null);
@@ -479,7 +479,7 @@ describe.only('client API', function () {
         storage: s,
         blockchainExplorer: blockchainExplorerMock,
         disableLogs: true,
-      }, function () {
+      }, () => {
         var s2 = sinon.stub();
         s2.load = sinon.stub().yields(null);
         var client = helpers.newClient(app);
@@ -490,7 +490,7 @@ describe.only('client API', function () {
         client.createWallet('1', '2', 1, 1, {
           network: 'testnet'
         },
-          function (err) {
+          (err) => {
             err.should.be.an.instanceOf(Error);
             err.message.should.equal('bigerror');
             done();
@@ -498,7 +498,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should handle critical errors (Case2)', function (done) {
+    it('should handle critical errors (Case2)', (done) => {
       var s = sinon.stub();
       s.storeWallet = sinon.stub().yields({
         code: 501,
@@ -510,7 +510,7 @@ describe.only('client API', function () {
         storage: s,
         blockchainExplorer: blockchainExplorerMock,
         disableLogs: true,
-      }, function () {
+      }, () => {
         var s2 = sinon.stub();
         s2.load = sinon.stub().yields(null);
         var client = helpers.newClient(app);
@@ -522,7 +522,7 @@ describe.only('client API', function () {
         client.createWallet('1', '2', 1, 1, {
           network: 'testnet'
         },
-          function (err) {
+          (err) => {
             err.should.be.an.instanceOf(Error);
             err.message.should.equal('wow');
             done();
@@ -530,7 +530,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should handle critical errors (Case3)', function (done) {
+    it('should handle critical errors (Case3)', (done) => {
       var s = sinon.stub();
       s.storeWallet = sinon.stub().yields({
         code: 404,
@@ -542,7 +542,7 @@ describe.only('client API', function () {
         storage: s,
         blockchainExplorer: blockchainExplorerMock,
         disableLogs: true,
-      }, function () {
+      }, () => {
         var s2 = sinon.stub();
         s2.load = sinon.stub().yields(null);
         var client = helpers.newClient(app);
@@ -554,14 +554,14 @@ describe.only('client API', function () {
         client.createWallet('1', '2', 1, 1, {
           network: 'testnet'
         },
-          function (err) {
+          (err) => {
             err.should.be.an.instanceOf(Errors.NOT_FOUND);
             done();
           });
       });
     });
 
-    it('should handle critical errors (Case4)', function (done) {
+    it('should handle critical errors (Case4)', (done) => {
       var body = {
         code: 999,
         message: 'unexpected body'
@@ -572,7 +572,7 @@ describe.only('client API', function () {
       done();
     });
 
-    it('should handle critical errors (Case5)', function (done) {
+    it('should handle critical errors (Case5)', (done) => {
       clients[0].request.r = helpers.stubRequest('some error');
       clients[0].fromString(
         k.createCredentials(null, { coin: 'btc', n: 1, network: 'testnet', account: 0 })
@@ -580,14 +580,14 @@ describe.only('client API', function () {
 
       clients[0].createWallet('mywallet', 'creator', 1, 2, {
         network: 'testnet'
-      }, function (err, secret) {
+      }, (err, secret) => {
         should.exist(err);
         err.should.be.an.instanceOf(Errors.CONNECTION_ERROR);
         done();
       });
     });
 
-    it('should correctly use remote message', function (done) {
+    it('should correctly use remote message', (done) => {
       var body = {
         code: 'INSUFFICIENT_FUNDS',
       };
@@ -614,7 +614,7 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Build & sign txs', function () {
+  describe('Build & sign txs', () => {
     var masterPrivateKey = 'tprv8ZgxMBicQKsPd8U9aBBJ5J2v8XMwKwZvf8qcu2gLK5FRrsrPeSgkEcNHqKx4zwv6cP536m68q2UD7wVM24zdSCpaJRmpowaeJTeVMXL5v5k';
     var derivedPrivateKey = {
       'BIP44': new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild("m/44'/1'/0'").toString(),
@@ -622,8 +622,8 @@ describe.only('client API', function () {
       'BIP48': new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild("m/48'/1'/0'").toString(),
     };
 
-    describe('#buildTx', function () {
-      it('Raw tx roundtrip', function () {
+    describe('#buildTx', () => {
+      it('Raw tx roundtrip', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -656,7 +656,7 @@ describe.only('client API', function () {
         t2.outputs.length.should.equal(2);
         t2.outputs[0].satoshis.should.equal(1200);
       });
-      it('should build a tx correctly (BIP44)', function () {
+      it('should build a tx correctly (BIP44)', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -689,7 +689,7 @@ describe.only('client API', function () {
         should.not.exist(bitcoreError);
         t.getFee().should.equal(10050);
       });
-      it('should build a tx correctly (BIP48)', function () {
+      it('should build a tx correctly (BIP48)', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -722,7 +722,7 @@ describe.only('client API', function () {
         should.not.exist(bitcoreError);
         t.getFee().should.equal(10050);
       });
-      it('should protect from creating excessive fee', function () {
+      it('should protect from creating excessive fee', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -747,7 +747,7 @@ describe.only('client API', function () {
 
         var x = new Utils();
 
-        x.newBitcoreTransaction = function () {
+        x.newBitcoreTransaction = () => {
           return {
             from: sinon.stub(),
             to: sinon.stub(),
@@ -759,13 +759,13 @@ describe.only('client API', function () {
           }
         };
 
-        (function () {
+        (() => {
           var t = x.buildTx(txp);
         }).should.throw('Illegal State');
 
         x.newBitcoreTransaction = x;
       });
-      it('should build a tx with multiple outputs', function () {
+      it('should build a tx with multiple outputs', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -800,7 +800,7 @@ describe.only('client API', function () {
         });
         should.not.exist(bitcoreError);
       });
-      it('should build a tx with provided output scripts', function () {
+      it('should build a tx with provided output scripts', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -847,7 +847,7 @@ describe.only('client API', function () {
         var changeScript = Bitcore.Script.fromAddress(txp.changeAddress.address).toHex();
         t.outputs[3].script.toHex().should.equal(changeScript);
       });
-      it('should fail if provided output has no either toAddress or script', function () {
+      it('should fail if provided output has no either toAddress or script', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -877,7 +877,7 @@ describe.only('client API', function () {
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH',
         };
-        (function () {
+        (() => {
           var t = new Utils().buildTx(txp);
         }).should.throw('Output should have either toAddress or script specified');
 
@@ -896,7 +896,7 @@ describe.only('client API', function () {
         });
         should.not.exist(bitcoreError);
       });
-      it('should build a v3 tx proposal', function () {
+      it('should build a v3 tx proposal', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -934,8 +934,8 @@ describe.only('client API', function () {
       });
     });
 
-    describe('#pushSignatures', function () {
-      it('should sign BIP45 P2SH correctly', function () {
+    describe('#pushSignatures', () => {
+      it('should sign BIP45 P2SH correctly', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -964,7 +964,7 @@ describe.only('client API', function () {
         // This is a GOOD tests, since bitcore ONLY accept VALID signatures
         signatures.length.should.be.equal(utxos.length);
       });
-      it('should sign BIP44 P2PKH correctly', function () {
+      it('should sign BIP44 P2PKH correctly', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -993,7 +993,7 @@ describe.only('client API', function () {
         // This is a GOOD tests, since bitcore ONLY accept VALID signatures
         signatures.length.should.be.equal(utxos.length);
       });
-      it('should sign multiple-outputs proposal correctly', function () {
+      it('should sign multiple-outputs proposal correctly', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -1027,7 +1027,7 @@ describe.only('client API', function () {
         var signatures = key.sign(path, txp);
         signatures.length.should.be.equal(utxos.length);
       });
-      it('should sign proposal with provided output scripts correctly', function () {
+      it('should sign proposal with provided output scripts correctly', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -1063,7 +1063,7 @@ describe.only('client API', function () {
         var signatures = key.sign(path, txp);
         signatures.length.should.be.equal(utxos.length);
       });
-      it('should sign btc proposal correctly', function () {
+      it('should sign btc proposal correctly', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -1101,7 +1101,7 @@ describe.only('client API', function () {
         signatures[0].should.equal('3045022100cfacaf8e4c9782f33f717eba3162d44cf9f34d9768a3bcd66b7052eb0868a0880220015e930e1f7d9a8b6b9e54d1450556bf4ba95c2cf8ef5c55d97de7df270cc6fd');
         signatures[1].should.equal('3044022069cf6e5d8700ff117f754e4183e81690d99d6a6443e86c9589efa072ecb7d82c02204c254506ac38774a2176f9ef56cc239ef7867fbd24da2bef795128c75a063301');
       });
-      it('should sign BCH proposal correctly', function () {
+      it('should sign BCH proposal correctly', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
@@ -1143,8 +1143,8 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Wallet secret round trip', function () {
-    it('should create secret and parse secret', function () {
+  describe('Wallet secret round trip', () => {
+    it('should create secret and parse secret', () => {
       var i = 0;
       while (i++ < 100) {
         var walletId = Uuid.v4();
@@ -1159,13 +1159,13 @@ describe.only('client API', function () {
         result.network.should.equal(network);
       };
     });
-    it('should fail on invalid secret', function () {
-      (function () {
+    it('should fail on invalid secret', () => {
+      (() => {
         new Client.API().parseSecret('invalidSecret');
       }).should.throw('Invalid secret');
     });
 
-    it('should create secret and parse secret from string', function () {
+    it('should create secret and parse secret from string', () => {
       var walletId = Uuid.v4();
       var walletPrivKey = new Bitcore.PrivateKey();
       var coin = 'btc';
@@ -1177,48 +1177,48 @@ describe.only('client API', function () {
       result.coin.should.equal(coin);
       result.network.should.equal(network);
     });
-    it('should default to btc for secrets not specifying coin', function () {
+    it('should default to btc for secrets not specifying coin', () => {
       var result = new Client.API().parseSecret('5ZN64RxKWCJXcy1pZwgrAzL1NnN5FQic5M2tLJVG5bEHaGXNRQs2uzJjMa9pMAbP5rz9Vu2xSaT');
       result.coin.should.equal('btc');
     });
   });
 
-  describe('Notification polling', function () {
+  describe('Notification polling', () => {
     var clock, interval;
-    beforeEach(function () {
+    beforeEach(() => {
       clock = sinon.useFakeTimers({ now: 1234000, toFake: ['Date'] });
     });
-    afterEach(function () {
+    afterEach(() => {
       clock.restore();
     });
-    it('should fetch notifications at intervals', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 2, 2, {}, function () {
-        clients[0].on('notification', function (data) {
+    it('should fetch notifications at intervals', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 2, 2, {}, () => {
+        clients[0].on('notification', (data) => {
           notifications.push(data);
         });
 
         var notifications = [];
-        clients[0]._fetchLatestNotifications(5, function () {
+        clients[0]._fetchLatestNotifications(5, () => {
           _.map(notifications, 'type').should.deep.equal(['NewCopayer', 'WalletComplete']);
           clock.tick(2000);
           notifications = [];
 
 
-          clients[0]._fetchLatestNotifications(5, function () {
+          clients[0]._fetchLatestNotifications(5, () => {
             notifications.length.should.equal(0);
             clock.tick(2000);
-            clients[1].createAddress(function (err, x) {
+            clients[1].createAddress((err, x) => {
               should.not.exist(err);
-              clients[0]._fetchLatestNotifications(5, function () {
+              clients[0]._fetchLatestNotifications(5, () => {
                 _.map(notifications, 'type').should.deep.equal(['NewAddress']);
                 clock.tick(2000);
                 notifications = [];
-                clients[0]._fetchLatestNotifications(5, function () {
+                clients[0]._fetchLatestNotifications(5, () => {
                   notifications.length.should.equal(0);
-                  clients[1].createAddress(function (err, x) {
+                  clients[1].createAddress((err, x) => {
                     should.not.exist(err);
                     clock.tick(60 * 1000);
-                    clients[0]._fetchLatestNotifications(5, function () {
+                    clients[0]._fetchLatestNotifications(5, () => {
                       notifications.length.should.equal(0);
                       done();
                     });
@@ -1232,17 +1232,17 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Wallet Creation', function () {
+  describe('Wallet Creation', () => {
     var k;
 
     beforeEach((done) => {
       k = new Key().create();
-      db.dropDatabase(function (err) {
+      db.dropDatabase((err) => {
         return done(err);
       });
     });
 
-    it('should fail to create wallet in bogus device', function (done) {
+    it('should fail to create wallet in bogus device', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1253,7 +1253,7 @@ describe.only('client API', function () {
       );
 
       clients[0].keyDerivationOk = false;
-      clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, function (err, secret) {
+      clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, (err, secret) => {
         should.exist(err);
         err.toString().should.contain('Cannot');
         should.not.exist(secret);
@@ -1261,7 +1261,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should encrypt wallet name', function (done) {
+    it('should encrypt wallet name', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1272,13 +1272,13 @@ describe.only('client API', function () {
       );
 
       var spy = sinon.spy(clients[0].request, 'post');
-      clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, function (err, secret) {
+      clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, (err, secret) => {
         should.not.exist(err);
         var url = spy.getCall(0).args[0];
         var body = JSON.stringify(spy.getCall(0).args[1]);
         url.should.contain('/wallets');
         body.should.not.contain('mywallet');
-        clients[0].getStatus({}, function (err, status) {
+        clients[0].getStatus({}, (err, status) => {
           should.not.exist(err);
           status.wallet.name.should.equal('mywallet');
           done();
@@ -1286,7 +1286,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should encrypt copayer name in wallet creation', function (done) {
+    it('should encrypt copayer name in wallet creation', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1297,13 +1297,13 @@ describe.only('client API', function () {
       );
 
       var spy = sinon.spy(clients[0].request, 'post');
-      clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, function (err, secret) {
+      clients[0].createWallet('mywallet', 'pepe', 1, 1, {}, (err, secret) => {
         should.not.exist(err);
         var url = spy.getCall(1).args[0];
         var body = JSON.stringify(spy.getCall(1).args[1]);
         url.should.contain('/copayers');
         body.should.not.contain('pepe');
-        clients[0].getStatus({}, function (err, status) {
+        clients[0].getStatus({}, (err, status) => {
           should.not.exist(err);
           status.wallet.copayers[0].name.should.equal('pepe');
           done();
@@ -1311,7 +1311,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should be able to access wallet name in non-encrypted wallet (legacy)', function (done) {
+    it('should be able to access wallet name in non-encrypted wallet (legacy)', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1330,7 +1330,7 @@ describe.only('client API', function () {
         network: 'livenet',
         id: '123',
       };
-      clients[0].request.post('/v2/wallets/', args, function (err, wallet) {
+      clients[0].request.post('/v2/wallets/', args, (err, wallet) => {
         should.not.exist(err);
         var c = clients[0].credentials;
 
@@ -1345,11 +1345,11 @@ describe.only('client API', function () {
         };
         var hash = new Utils().getCopayerHash(args.name, args.xPubKey, args.requestPubKey);
         args.copayerSignature = new Utils().signMessage(hash, wpk);
-        clients[0].request.post('/v2/wallets/123/copayers', args, function (err, wallet) {
+        clients[0].request.post('/v2/wallets/123/copayers', args, (err, wallet) => {
           should.not.exist(err);
-          clients[0].openWallet(function (err) {
+          clients[0].openWallet((err) => {
             should.not.exist(err);
-            clients[0].getStatus({}, function (err, status) {
+            clients[0].getStatus({}, (err, status) => {
               should.not.exist(err);
               var wallet = status.wallet;
               wallet.name.should.equal('mywallet');
@@ -1363,7 +1363,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should check balance in a 1-1 ', function (done) {
+    it('should check balance in a 1-1 ', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1373,8 +1373,8 @@ describe.only('client API', function () {
         })
       );
 
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
-        clients[0].getBalance({}, function (err, balance) {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+        clients[0].getBalance({}, (err, balance) => {
           should.not.exist(err);
           balance.totalAmount.should.equal(0);
           balance.availableAmount.should.equal(0);
@@ -1385,7 +1385,7 @@ describe.only('client API', function () {
     });
 
 
-    it('should be able to complete wallet in copayer that joined later', function (done) {
+    it('should be able to complete wallet in copayer that joined later', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1395,12 +1395,12 @@ describe.only('client API', function () {
         })
       );
 
-      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, function () {
-        clients[0].getBalance({}, function (err, x) {
+      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, () => {
+        clients[0].getBalance({}, (err, x) => {
           should.not.exist(err);
-          clients[1].getBalance({}, function (err, x) {
+          clients[1].getBalance({}, (err, x) => {
             should.not.exist(err);
-            clients[2].getBalance({}, function (err, x) {
+            clients[2].getBalance({}, (err, x) => {
               should.not.exist(err);
               done();
             })
@@ -1411,7 +1411,7 @@ describe.only('client API', function () {
 
 
 
-    it('should fire event when wallet is complete', function (done) {
+    it('should fire event when wallet is complete', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1423,14 +1423,14 @@ describe.only('client API', function () {
 
       var checks = 0;
 
-      clients[0].on('walletCompleted', function (wallet) {
+      clients[0].on('walletCompleted', (wallet) => {
         wallet.name.should.equal('mywallet');
         wallet.status.should.equal('complete');
         clients[0].isComplete().should.equal(true);
         clients[0].credentials.isComplete().should.equal(true);
         if (++checks == 2) done();
       });
-      clients[0].createWallet('mywallet', 'creator', 2, 2, {}, function (err, secret) {
+      clients[0].createWallet('mywallet', 'creator', 2, 2, {}, (err, secret) => {
         should.not.exist(err);
         clients[0].isComplete().should.equal(false);
         clients[0].credentials.isComplete().should.equal(false);
@@ -1445,10 +1445,10 @@ describe.only('client API', function () {
           })
         );
 
-        clients[1].joinWallet(secret, 'guest', {}, function (err, wallet) {
+        clients[1].joinWallet(secret, 'guest', {}, (err, wallet) => {
           should.not.exist(err);
           wallet.name.should.equal('mywallet');
-          clients[0].openWallet(function (err, walletStatus) {
+          clients[0].openWallet((err, walletStatus) => {
             should.not.exist(err);
             should.exist(walletStatus);
             _.difference(_.map(walletStatus.copayers, 'name'), ['creator', 'guest']).length.should.equal(0);
@@ -1460,7 +1460,7 @@ describe.only('client API', function () {
 
 
 
-    it('should fill wallet info in an incomplete wallet', function (done) {
+    it('should fill wallet info in an incomplete wallet', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1470,7 +1470,7 @@ describe.only('client API', function () {
         })
       );
 
-      clients[0].createWallet('XXX', 'creator', 2, 3, {}, function (err, secret) {
+      clients[0].createWallet('XXX', 'creator', 2, 3, {}, (err, secret) => {
         should.not.exist(err);
         let k2 = new Key().fromMnemonic(k.get(null, true).mnemonic);
         clients[1].fromString(
@@ -1482,7 +1482,7 @@ describe.only('client API', function () {
           })
         );
 
-        clients[1].openWallet(function (err) {
+        clients[1].openWallet((err) => {
           clients[1].credentials.walletName.should.equal('XXX');
           clients[1].credentials.m.should.equal(2);
           clients[1].credentials.n.should.equal(3);
@@ -1494,7 +1494,7 @@ describe.only('client API', function () {
 
 
 
-    it('should return wallet on successful join', function (done) {
+    it('should return wallet on successful join', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1506,7 +1506,7 @@ describe.only('client API', function () {
 
       clients[0].createWallet('mywallet', 'creator', 2, 2, {
         network: 'testnet'
-      }, function (err, secret) {
+      }, (err, secret) => {
         should.not.exist(err);
         let k2 = new Key().create();
         clients[1].fromString(
@@ -1520,7 +1520,7 @@ describe.only('client API', function () {
         clients[0].credentials.rootPath.should.equal('m/48\'/1\'/0\'');
         clients[1].credentials.rootPath.should.equal('m/48\'/1\'/5\'');
 
-        clients[1].joinWallet(secret, 'guest', {}, function (err, wallet) {
+        clients[1].joinWallet(secret, 'guest', {}, (err, wallet) => {
           should.not.exist(err);
           wallet.name.should.equal('mywallet');
           wallet.copayers[0].name.should.equal('creator');
@@ -1532,7 +1532,7 @@ describe.only('client API', function () {
 
 
 
-    it('should not allow to join wallet on bogus device', function (done) {
+    it('should not allow to join wallet on bogus device', (done) => {
 
       clients[0].fromString(
         k.createCredentials(null, {
@@ -1545,7 +1545,7 @@ describe.only('client API', function () {
 
       clients[0].createWallet('mywallet', 'creator', 2, 2, {
         network: 'testnet'
-      }, function (err, secret) {
+      }, (err, secret) => {
         should.not.exist(err);
         let k2 = new Key().create();
         clients[1].fromString(
@@ -1558,14 +1558,14 @@ describe.only('client API', function () {
         );
 
         clients[1].keyDerivationOk = false;
-        clients[1].joinWallet(secret, 'guest', {}, function (err, wallet) {
+        clients[1].joinWallet(secret, 'guest', {}, (err, wallet) => {
           should.exist(err);
           done();
         });
       });
     });
 
-    it('should not allow to join a full wallet ', function (done) {
+    it('should not allow to join a full wallet ', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1575,7 +1575,7 @@ describe.only('client API', function () {
         })
       );
 
-      helpers.createAndJoinWallet(clients, keys, 2, 2, {}, function (w) {
+      helpers.createAndJoinWallet(clients, keys, 2, 2, {}, (w) => {
         should.exist(w.secret);
 
         clients[4].fromString(
@@ -1587,14 +1587,14 @@ describe.only('client API', function () {
           })
         );
 
-        clients[4].joinWallet(w.secret, 'copayer', {}, function (err, result) {
+        clients[4].joinWallet(w.secret, 'copayer', {}, (err, result) => {
           err.should.be.an.instanceOf(Errors.WALLET_FULL);
           done();
         });
       });
     });
 
-    it('should fail with an invalid secret', function (done) {
+    it('should fail with an invalid secret', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1605,17 +1605,17 @@ describe.only('client API', function () {
       );
 
       // Invalid
-      clients[0].joinWallet('dummy', 'copayer', {}, function (err, result) {
+      clients[0].joinWallet('dummy', 'copayer', {}, (err, result) => {
         err.message.should.contain('Invalid secret');
         // Right length, invalid char for base 58
-        clients[0].joinWallet('DsZbqNQQ9LrTKU8EknR7gFKyCQMPg2UUHNPZ1BzM5EbJwjRZaUNBfNtdWLluuFc0f7f7sTCkh7T', 'copayer', {}, function (err, result) {
+        clients[0].joinWallet('DsZbqNQQ9LrTKU8EknR7gFKyCQMPg2UUHNPZ1BzM5EbJwjRZaUNBfNtdWLluuFc0f7f7sTCkh7T', 'copayer', {}, (err, result) => {
           err.message.should.contain('Invalid secret');
           done();
         });
       });
     });
 
-    it('should fail with an unknown secret', function (done) {
+    it('should fail with an unknown secret', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1627,23 +1627,23 @@ describe.only('client API', function () {
 
       // Unknown walletId
       var oldSecret = '3bJKRn1HkQTpwhVaJMaJ22KwsjN24ML9uKfkSrP7iDuq91vSsTEygfGMMpo6kWLp1pXG9wZSKcT';
-      clients[0].joinWallet(oldSecret, 'copayer', {}, function (err, result) {
+      clients[0].joinWallet(oldSecret, 'copayer', {}, (err, result) => {
         err.should.be.an.instanceOf(Errors.WALLET_NOT_FOUND);
         done();
       });
     });
 
-    it('should detect wallets with bad signatures', function (done) {
+    it('should detect wallets with bad signatures', (done) => {
       // Do not complete clients[1] pkr
       var openWalletStub = sinon.stub(clients[1], 'openWallet').yields();
 
-      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, function () {
-        helpers.tamperResponse([clients[0], clients[1]], 'get', '/v1/wallets/', {}, function (status) {
+      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, () => {
+        helpers.tamperResponse([clients[0], clients[1]], 'get', '/v1/wallets/', {}, (status) => {
           status.wallet.copayers[0].xPubKey = status.wallet.copayers[1].xPubKey;
-        }, function () {
+        }, () => {
           openWalletStub.restore();
 
-          clients[1].openWallet(function (err, x) {
+          clients[1].openWallet((err, x) => {
 
             err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
@@ -1652,16 +1652,16 @@ describe.only('client API', function () {
       });
     });
 
-    it('should detect wallets with missing signatures', function (done) {
+    it('should detect wallets with missing signatures', (done) => {
       // Do not complete clients[1] pkr
       var openWalletStub = sinon.stub(clients[1], 'openWallet').yields();
 
-      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, function () {
-        helpers.tamperResponse([clients[0], clients[1]], 'get', '/v1/wallets/', {}, function (status) {
+      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, () => {
+        helpers.tamperResponse([clients[0], clients[1]], 'get', '/v1/wallets/', {}, (status) => {
           delete status.wallet.copayers[1].xPubKey;
-        }, function () {
+        }, () => {
           openWalletStub.restore();
-          clients[1].openWallet(function (err, x) {
+          clients[1].openWallet((err, x) => {
             err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
@@ -1669,12 +1669,12 @@ describe.only('client API', function () {
       });
     });
 
-    it('should detect wallets missing callers pubkey', function (done) {
+    it('should detect wallets missing callers pubkey', (done) => {
       // Do not complete clients[1] pkr
       var openWalletStub = sinon.stub(clients[1], 'openWallet').yields();
 
-      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, function () {
-        helpers.tamperResponse([clients[0], clients[1]], 'get', '/v1/wallets/', {}, function (status) {
+      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, () => {
+        helpers.tamperResponse([clients[0], clients[1]], 'get', '/v1/wallets/', {}, (status) => {
           // Replace caller's pubkey
           status.wallet.copayers[1].xPubKey = (new Bitcore.HDPrivateKey()).publicKey;
           // Add a correct signature
@@ -1682,9 +1682,9 @@ describe.only('client API', function () {
             status.wallet.copayers[1].xPubKey.toString(),
             clients[0].credentials.walletPrivKey
           );
-        }, function () {
+        }, () => {
           openWalletStub.restore();
-          clients[1].openWallet(function (err, x) {
+          clients[1].openWallet((err, x) => {
             err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
@@ -1692,7 +1692,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should perform a dry join without actually joining', function (done) {
+    it('should perform a dry join without actually joining', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1702,7 +1702,7 @@ describe.only('client API', function () {
         })
       );
 
-      clients[0].createWallet('mywallet', 'creator', 1, 2, {}, function (err, secret) {
+      clients[0].createWallet('mywallet', 'creator', 1, 2, {}, (err, secret) => {
         should.not.exist(err);
         should.exist(secret);
         clients[1].fromString(
@@ -1715,7 +1715,7 @@ describe.only('client API', function () {
         );
         clients[1].joinWallet(secret, 'dummy', {
           dryRun: true
-        }, function (err, wallet) {
+        }, (err, wallet) => {
           should.not.exist(err);
           should.exist(wallet);
           wallet.status.should.equal('pending');
@@ -1725,7 +1725,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should return wallet status even if wallet is not yet complete', function (done) {
+    it('should return wallet status even if wallet is not yet complete', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1737,11 +1737,11 @@ describe.only('client API', function () {
 
       clients[0].createWallet('mywallet', 'creator', 1, 2, {
         network: 'testnet'
-      }, function (err, secret) {
+      }, (err, secret) => {
         should.not.exist(err);
         should.exist(secret);
 
-        clients[0].getStatus({}, function (err, status) {
+        clients[0].getStatus({}, (err, status) => {
           should.not.exist(err);
           should.exist(status);
           status.wallet.status.should.equal('pending');
@@ -1752,7 +1752,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should return status using v2 version', function (done) {
+    it('should return status using v2 version', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1764,9 +1764,9 @@ describe.only('client API', function () {
 
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
-      }, function (err, secret) {
+      }, (err, secret) => {
         should.not.exist(err);
-        clients[0].getStatus({}, function (err, status) {
+        clients[0].getStatus({}, (err, status) => {
           should.not.exist(err);
           should.not.exist(status.wallet.publicKeyRing);
           status.wallet.status.should.equal('complete');
@@ -1775,7 +1775,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should return extended status using v2 version', function (done) {
+    it('should return extended status using v2 version', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1787,11 +1787,11 @@ describe.only('client API', function () {
 
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
-      }, function (err, secret) {
+      }, (err, secret) => {
         should.not.exist(err);
         clients[0].getStatus({
           includeExtendedInfo: true
-        }, function (err, status) {
+        }, (err, status) => {
           should.not.exist(err);
           status.wallet.publicKeyRing.length.should.equal(1);
           status.wallet.status.should.equal('complete');
@@ -1800,7 +1800,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should store walletPrivKey', function (done) {
+    it('should store walletPrivKey', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1812,13 +1812,13 @@ describe.only('client API', function () {
 
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
-      }, function (err) {
+      }, (err) => {
 
         var key = clients[0].credentials.walletPrivKey;
         should.not.exist(err);
         clients[0].getStatus({
           includeExtendedInfo: true
-        }, function (err, status) {
+        }, (err, status) => {
           should.not.exist(err);
           status.wallet.publicKeyRing.length.should.equal(1);
           status.wallet.status.should.equal('complete');
@@ -1830,7 +1830,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should set walletPrivKey from BWS', function (done) {
+    it('should set walletPrivKey from BWS', (done) => {
       clients[0].fromString(
         k.createCredentials(null, {
           coin: 'btc',
@@ -1842,7 +1842,7 @@ describe.only('client API', function () {
 
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
-      }, function (err) {
+      }, (err) => {
 
         var wkey = clients[0].credentials.walletPrivKey;
         var skey = clients[0].credentials.sharedEncryptingKey;
@@ -1851,7 +1851,7 @@ describe.only('client API', function () {
         should.not.exist(err);
         clients[0].getStatus({
           includeExtendedInfo: true
-        }, function (err, status) {
+        }, (err, status) => {
           should.not.exist(err);
           clients[0].credentials.walletPrivKey.should.equal(wkey);
           clients[0].credentials.sharedEncryptingKey.should.equal(skey);
@@ -1860,7 +1860,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should create a 1-1 wallet with given mnemonic', function (done) {
+    it('should create a 1-1 wallet with given mnemonic', (done) => {
       var c = new Key().fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
       clients[0].fromString(
@@ -1875,9 +1875,9 @@ describe.only('client API', function () {
         network: 'livenet',
         derivationStrategy: 'BIP48',
       },
-        function (err) {
+        (err) => {
           should.not.exist(err);
-          clients[0].openWallet(function (err) {
+          clients[0].openWallet((err) => {
             should.not.exist(err);
             clients[0].credentials.xPubKey.should.equal('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj')
             should.not.exist(clients[0].credentials.xPrivKey);
@@ -1886,7 +1886,7 @@ describe.only('client API', function () {
         });
     });
 
-    it('should create a 2-3 wallet with given mnemonic', function (done) {
+    it('should create a 2-3 wallet with given mnemonic', (done) => {
       var c = new Key().fromMnemonic('abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about');
       c.xPrivKey.should.equal('xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu');
       clients[0].fromString(
@@ -1900,10 +1900,10 @@ describe.only('client API', function () {
       clients[0].createWallet('mywallet', 'creator', 2, 3, {
         network: 'livenet'
       },
-        function (err, secret) {
+        (err, secret) => {
           should.not.exist(err);
           should.exist(secret);
-          clients[0].openWallet(function (err) {
+          clients[0].openWallet((err) => {
             should.not.exist(err);
             clients[0].credentials.xPubKey.should.equal('xpub6CKZtUaK1YHpQbg6CLaGRmsMKLQB1iKzsvmxtyHD6X7gzLqCB2VNZYd1XCxrccQnE8hhDxtYbR1Sakkvisy2J4CcTxWeeGjmkasCoNS9vZm')
             done();
@@ -1911,7 +1911,7 @@ describe.only('client API', function () {
         });
     });
 
-    it('should create Bitcoin Cash wallet', function (done) {
+    it('should create Bitcoin Cash wallet', (done) => {
       let k = new Key().create();
       clients[0].fromString(
         k.createCredentials(null, {
@@ -1924,9 +1924,9 @@ describe.only('client API', function () {
 
       clients[0].createWallet('mycashwallet', 'pepe', 1, 1, {
         coin: 'bch'
-      }, function (err, secret) {
+      }, (err, secret) => {
         should.not.exist(err);
-        clients[0].getStatus({}, function (err, status) {
+        clients[0].getStatus({}, (err, status) => {
           should.not.exist(err);
           status.wallet.coin.should.equal('bch');
           done();
@@ -1934,7 +1934,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('should create a BCH  address correctly', function (done) {
+    it('should create a BCH  address correctly', (done) => {
       var xPriv = 'xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu';
       let k = new Key().fromExtendedPrivateKey(xPriv, {
         useLegacyCoinType: true,
@@ -1950,10 +1950,10 @@ describe.only('client API', function () {
 
       clients[0].createWallet('mycashwallet', 'pepe', 1, 1, {
         coin: 'bch',
-      }, function (err, secret) {
+      }, (err, secret) => {
         should.not.exist(err);
 
-        clients[0].createAddress(function (err, x) {
+        clients[0].createAddress((err, x) => {
           should.not.exist(err);
           should.not.exist(err);
           x.coin.should.equal('bch');
@@ -1965,12 +1965,12 @@ describe.only('client API', function () {
     });
   });
 
-  describe('#getMainAddresses', function () {
-    beforeEach(function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function (w) {
-        clients[0].createAddress(function (err, x0) {
+  describe('#getMainAddresses', () => {
+    beforeEach((done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, (w) => {
+        clients[0].createAddress((err, x0) => {
           should.not.exist(err);
-          clients[0].createAddress(function (err, x0) {
+          clients[0].createAddress((err, x0) => {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 1, 1);
             done();
@@ -1978,24 +1978,24 @@ describe.only('client API', function () {
         });
       });
     });
-    it('Should return all main addresses', function (done) {
+    it('Should return all main addresses', (done) => {
       clients[0].getMainAddresses({
         doNotVerify: true
-      }, function (err, addr) {
+      }, (err, addr) => {
         should.not.exist(err);
         addr.length.should.equal(2);
         done();
       });
     });
-    it('Should return only main addresses when change addresses exist', function (done) {
+    it('Should return only main addresses when change addresses exist', (done) => {
       var opts = {
         amount: 0.1e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'hello 1-1',
       };
-      helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+      helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
         should.not.exist(err);
-        clients[0].getMainAddresses({}, function (err, addr) {
+        clients[0].getMainAddresses({}, (err, addr) => {
           should.not.exist(err);
           addr.length.should.equal(2);
           done();
@@ -2004,21 +2004,21 @@ describe.only('client API', function () {
     });
   });
 
-  describe('#getUtxos', function () {
-    beforeEach(function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function (w) {
+  describe('#getUtxos', () => {
+    beforeEach((done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, (w) => {
         done();
       });
     });
-    it('Should return UTXOs', function (done) {
-      clients[0].getUtxos({}, function (err, utxos) {
+    it('Should return UTXOs', (done) => {
+      clients[0].getUtxos({}, (err, utxos) => {
         should.not.exist(err);
         utxos.length.should.equal(0);
-        clients[0].createAddress(function (err, x0) {
+        clients[0].createAddress((err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 1, 1);
-          clients[0].getUtxos({}, function (err, utxos) {
+          clients[0].getUtxos({}, (err, utxos) => {
             should.not.exist(err);
             utxos.length.should.equal(1);
             done();
@@ -2026,19 +2026,19 @@ describe.only('client API', function () {
         });
       });
     });
-    it('Should return UTXOs for specific addresses', function (done) {
-      async.map(_.range(3), function (i, next) {
-        clients[0].createAddress(function (err, x) {
+    it('Should return UTXOs for specific addresses', (done) => {
+      async.map(_.range(3), (i, next) => {
+        clients[0].createAddress((err, x) => {
           should.not.exist(err);
           should.exist(x.address);
           blockchainExplorerMock.setUtxo(x, 1, 1);
           next(null, x.address);
         });
-      }, function (err, addresses) {
+      }, (err, addresses) => {
         var opts = {
           addresses: _.take(addresses, 1),
         };
-        clients[0].getUtxos(opts, function (err, utxos) {
+        clients[0].getUtxos(opts, (err, utxos) => {
           should.not.exist(err);
           utxos.length.should.equal(1);
           _.sumBy(utxos, 'satoshis').should.equal(1 * 1e8);
@@ -2048,25 +2048,25 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Network fees', function () {
-    it('should get current fee levels for BTC', function (done) {
+  describe('Network fees', () => {
+    it('should get current fee levels for BTC', (done) => {
       blockchainExplorerMock.setFeeLevels({
         1: 40000,
         3: 20000,
         10: 18000,
       });
       clients[0].credentials = {};
-      clients[0].getFeeLevels('btc', 'livenet', function (err, levels) {
+      clients[0].getFeeLevels('btc', 'livenet', (err, levels) => {
         should.not.exist(err);
         should.exist(levels);
         _.difference(['priority', 'normal', 'economy'], _.map(levels, 'level')).should.be.empty;
         done();
       });
     });
-    it('should get default fee levels for BCH', function (done) {
+    it('should get default fee levels for BCH', (done) => {
       blockchainExplorerMock.setFeeLevels({});
       clients[0].credentials = {};
-      clients[0].getFeeLevels('bch', 'livenet', function (err, levels) {
+      clients[0].getFeeLevels('bch', 'livenet', (err, levels) => {
         should.not.exist(err);
         should.exist(levels);
         levels[0].level.should.equal('normal');
@@ -2076,10 +2076,10 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Version', function () {
-    it('should get version of bws', function (done) {
+  describe('Version', () => {
+    it('should get version of bws', (done) => {
       clients[0].credentials = {};
-      clients[0].getVersion(function (err, version) {
+      clients[0].getVersion((err, version) => {
         if (err) {
           // if bws is older version without getVersion support
           err.should.be.an.instanceOf(Errors.NOT_FOUND);
@@ -2094,17 +2094,17 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Preferences', function () {
-    it('should save and retrieve preferences', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
-        clients[0].getPreferences(function (err, preferences) {
+  describe('Preferences', () => {
+    it('should save and retrieve preferences', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+        clients[0].getPreferences((err, preferences) => {
           should.not.exist(err);
           preferences.should.be.empty;
           clients[0].savePreferences({
             email: 'dummy@dummy.com'
-          }, function (err) {
+          }, (err) => {
             should.not.exist(err);
-            clients[0].getPreferences(function (err, preferences) {
+            clients[0].getPreferences((err, preferences) => {
               should.not.exist(err);
               should.exist(preferences);
               preferences.email.should.equal('dummy@dummy.com');
@@ -2116,14 +2116,14 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Fiat rates', function () {
-    it('should get fiat exchange rate', function (done) {
+  describe('Fiat rates', () => {
+    it('should get fiat exchange rate', (done) => {
       var now = Date.now();
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
         clients[0].getFiatRate({
           code: 'USD',
           ts: now,
-        }, function (err, res) {
+        }, (err, res) => {
           should.not.exist(err);
           should.exist(res);
           res.ts.should.equal(now);
@@ -2134,13 +2134,13 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Push notifications', function () {
-    it('should do a post request', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
+  describe('Push notifications', () => {
+    it('should do a post request', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
         clients[0].request.doRequest = sinon.stub().yields(null, {
           statusCode: 200,
         });
-        clients[0].pushNotificationsSubscribe(function (err, res) {
+        clients[0].pushNotificationsSubscribe((err, res) => {
           should.not.exist(err);
           should.exist(res);
           res.statusCode.should.be.equal(200);
@@ -2149,10 +2149,10 @@ describe.only('client API', function () {
       });
     });
 
-    it('should do a delete request', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
+    it('should do a delete request', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
         clients[0].request.doRequest = sinon.stub().yields(null);
-        clients[0].pushNotificationsUnsubscribe('123', function (err) {
+        clients[0].pushNotificationsUnsubscribe('123', (err) => {
           should.not.exist(err);
           done();
         });
@@ -2160,15 +2160,15 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Tx confirmations', function () {
-    it('should do a post request', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
+  describe('Tx confirmations', () => {
+    it('should do a post request', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
         clients[0].request.doRequest = sinon.stub().yields(null, {
           statusCode: 200,
         });
         clients[0].txConfirmationSubscribe({
           txid: '123'
-        }, function (err, res) {
+        }, (err, res) => {
           should.not.exist(err);
           should.exist(res);
           res.statusCode.should.be.equal(200);
@@ -2177,10 +2177,10 @@ describe.only('client API', function () {
       });
     });
 
-    it('should do a delete request', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
+    it('should do a delete request', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
         clients[0].request.doRequest = sinon.stub().yields(null);
-        clients[0].txConfirmationUnsubscribe('123', function (err) {
+        clients[0].txConfirmationUnsubscribe('123', (err) => {
           should.not.exist(err);
           done();
         });
@@ -2188,16 +2188,16 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Get send max information', function () {
+  describe('Get send max information', () => {
     var balance;
-    beforeEach(function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
-        clients[0].createAddress(function (err, address) {
+    beforeEach((done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+        clients[0].createAddress((err, address) => {
           should.not.exist(err);
           should.exist(address.address);
           blockchainExplorerMock.setUtxo(address, 2, 1, 1);
           blockchainExplorerMock.setUtxo(address, 1, 1, 0);
-          clients[0].getBalance({}, function (err, bl) {
+          clients[0].getBalance({}, (err, bl) => {
             should.not.exist(err);
             balance = bl;
             done();
@@ -2205,7 +2205,7 @@ describe.only('client API', function () {
         });
       });
     });
-    it('should return send max info', function (done) {
+    it('should return send max info', (done) => {
       blockchainExplorerMock.setFeeLevels({
         1: 200e2,
       });
@@ -2214,7 +2214,7 @@ describe.only('client API', function () {
         excludeUnconfirmedUtxos: false,
         returnInputs: true
       };
-      clients[0].getSendMaxInfo(opts, function (err, result) {
+      clients[0].getSendMaxInfo(opts, (err, result) => {
         should.not.exist(err);
         should.exist(result);
         result.inputs.length.should.be.equal(2);
@@ -2226,53 +2226,53 @@ describe.only('client API', function () {
         done();
       });
     });
-    it('should return data excluding unconfirmed UTXOs', function (done) {
+    it('should return data excluding unconfirmed UTXOs', (done) => {
       var opts = {
         feePerKb: 200,
         excludeUnconfirmedUtxos: true,
         returnInputs: true
       };
-      clients[0].getSendMaxInfo(opts, function (err, result) {
+      clients[0].getSendMaxInfo(opts, (err, result) => {
         should.not.exist(err);
         result.amount.should.be.equal(balance.availableConfirmedAmount - result.fee);
         done();
       });
     });
-    it('should return data including unconfirmed UTXOs', function (done) {
+    it('should return data including unconfirmed UTXOs', (done) => {
       var opts = {
         feePerKb: 200,
         excludeUnconfirmedUtxos: false,
         returnInputs: true
       };
-      clients[0].getSendMaxInfo(opts, function (err, result) {
+      clients[0].getSendMaxInfo(opts, (err, result) => {
         should.not.exist(err);
         result.amount.should.be.equal(balance.totalAmount - result.fee);
         done();
       });
     });
-    it('should return data without inputs', function (done) {
+    it('should return data without inputs', (done) => {
       var opts = {
         feePerKb: 200,
         excludeUnconfirmedUtxos: true,
         returnInputs: false
       };
-      clients[0].getSendMaxInfo(opts, function (err, result) {
+      clients[0].getSendMaxInfo(opts, (err, result) => {
         should.not.exist(err);
         result.inputs.length.should.be.equal(0);
         done();
       });
     });
-    it('should return data with inputs', function (done) {
+    it('should return data with inputs', (done) => {
       var opts = {
         feePerKb: 200,
         excludeUnconfirmedUtxos: true,
         returnInputs: true
       };
-      clients[0].getSendMaxInfo(opts, function (err, result) {
+      clients[0].getSendMaxInfo(opts, (err, result) => {
         should.not.exist(err);
         result.inputs.length.should.not.equal(0);
         var totalSatoshis = 0;
-        _.each(result.inputs, function (i) {
+        _.each(result.inputs, (i) => {
           totalSatoshis = totalSatoshis + i.satoshis;
         });
         result.amount.should.be.equal(totalSatoshis - result.fee);
@@ -2281,10 +2281,10 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Address Creation', function () {
-    it('should be able to create address in 1-of-1 wallet', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
-        clients[0].createAddress(function (err, x) {
+  describe('Address Creation', () => {
+    it('should be able to create address in 1-of-1 wallet', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+        clients[0].createAddress((err, x) => {
           should.not.exist(err);
           should.exist(x.address);
           x.address.charAt(0).should.not.equal('2');
@@ -2292,10 +2292,10 @@ describe.only('client API', function () {
         });
       });
     });
-    it('should fail if key derivation is not ok', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
+    it('should fail if key derivation is not ok', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
         clients[0].keyDerivationOk = false;
-        clients[0].createAddress(function (err, address) {
+        clients[0].createAddress((err, address) => {
           should.exist(err);
           should.not.exist(address);
           err.message.should.contain('new address');
@@ -2305,15 +2305,15 @@ describe.only('client API', function () {
     });
     it('should be able to create address in all copayers in a 2-3 wallet', function (done) {
       this.timeout(5000);
-      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, function () {
-        clients[0].createAddress(function (err, x) {
+      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, () => {
+        clients[0].createAddress((err, x) => {
           should.not.exist(err);
           should.exist(x.address);
           x.address.charAt(0).should.equal('2');
-          clients[1].createAddress(function (err, x) {
+          clients[1].createAddress((err, x) => {
             should.not.exist(err);
             should.exist(x.address);
-            clients[2].createAddress(function (err, x) {
+            clients[2].createAddress((err, x) => {
               should.not.exist(err);
               should.exist(x.address);
               done();
@@ -2322,19 +2322,19 @@ describe.only('client API', function () {
         });
       });
     });
-    it('should see balance on address created by others', function (done) {
-      this.timeout(5000);
-      helpers.createAndJoinWallet(clients, keys, 2, 2, {}, function (w) {
-        clients[0].createAddress(function (err, x0) {
+    it('should see balance on address created by others', (done) => {
+      // timeout(5000);
+      helpers.createAndJoinWallet(clients, keys, 2, 2, {}, (w) => {
+        clients[0].createAddress((err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
 
           blockchainExplorerMock.setUtxo(x0, 10, w.m);
-          clients[0].getBalance({}, function (err, bal0) {
+          clients[0].getBalance({}, (err, bal0) => {
             should.not.exist(err);
             bal0.totalAmount.should.equal(10 * 1e8);
             bal0.lockedAmount.should.equal(0);
-            clients[1].getBalance({}, function (err, bal1) {
+            clients[1].getBalance({}, (err, bal1) => {
               bal1.totalAmount.should.equal(10 * 1e8);
               bal1.lockedAmount.should.equal(0);
               done();
@@ -2343,27 +2343,27 @@ describe.only('client API', function () {
         });
       });
     });
-    it('should detect fake addresses', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
-        helpers.tamperResponse(clients[0], 'post', '/v3/addresses/', {}, function (address) {
+    it('should detect fake addresses', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+        helpers.tamperResponse(clients[0], 'post', '/v3/addresses/', {}, (address) => {
           address.address = '2N86pNEpREGpwZyHVC5vrNUCbF9nM1Geh4K';
-        }, function () {
-          clients[0].createAddress(function (err, x0) {
+        }, () => {
+          clients[0].createAddress((err, x0) => {
             err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
         });
       });
     });
-    it('should detect fake public keys', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
-        helpers.tamperResponse(clients[0], 'post', '/v3/addresses/', {}, function (address) {
+    it('should detect fake public keys', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+        helpers.tamperResponse(clients[0], 'post', '/v3/addresses/', {}, (address) => {
           address.publicKeys = [
             '0322defe0c3eb9fcd8bc01878e6dbca7a6846880908d214b50a752445040cc5c54',
             '02bf3aadc17131ca8144829fa1883c1ac0a8839067af4bca47a90ccae63d0d8037'
           ];
-        }, function () {
-          clients[0].createAddress(function (err, x0) {
+        }, () => {
+          clients[0].createAddress((err, x0) => {
             err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             done();
           });
@@ -2373,11 +2373,11 @@ describe.only('client API', function () {
     it('should be able to derive 25 addresses', function (done) {
       this.timeout(5000);
       var num = 25;
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
-        function create(callback) {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+        var create = (callback) => {
           clients[0].createAddress({
             ignoreMaxGap: true
-          }, function (err, x) {
+          }, (err, x) => {
             should.not.exist(err);
             should.exist(x.address);
             callback(err, x);
@@ -2389,7 +2389,7 @@ describe.only('client API', function () {
           tasks.push(create);
         }
 
-        async.parallel(tasks, function (err, results) {
+        async.parallel(tasks, (err, results) => {
           should.not.exist(err);
           results.length.should.equal(num);
           done();
@@ -2398,56 +2398,56 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Notifications', function () {
+  describe('Notifications', () => {
     var clock;
     beforeEach(function (done) {
       this.timeout(5000);
       clock = sinon.useFakeTimers({ now: 1234000, toFake: ['Date'] });
-      helpers.createAndJoinWallet(clients, keys, 2, 2, {}, function () {
+      helpers.createAndJoinWallet(clients, keys, 2, 2, {}, () => {
         clock.tick(25 * 1000);
-        clients[0].createAddress(function (err, x) {
+        clients[0].createAddress((err, x) => {
           should.not.exist(err);
           clock.tick(25 * 1000);
-          clients[1].createAddress(function (err, x) {
+          clients[1].createAddress((err, x) => {
             should.not.exist(err);
             done();
           });
         });
       });
     });
-    afterEach(function () {
+    afterEach(() => {
       clock.restore();
     });
-    it('should receive notifications', function (done) {
-      clients[0].getNotifications({}, function (err, notifications) {
+    it('should receive notifications', (done) => {
+      clients[0].getNotifications({}, (err, notifications) => {
         should.not.exist(err);
         notifications.length.should.equal(3);
         _.map(notifications, 'type').should.deep.equal(['NewCopayer', 'WalletComplete', 'NewAddress']);
         clients[0].getNotifications({
           lastNotificationId: _.last(notifications).id
-        }, function (err, notifications) {
+        }, (err, notifications) => {
           should.not.exist(err);
           notifications.length.should.equal(0, 'should only return unread notifications');
           done();
         });
       });
     });
-    it('should not receive old notifications', function (done) {
+    it('should not receive old notifications', (done) => {
       clock.tick(61 * 1000); // more than 60 seconds
-      clients[0].getNotifications({}, function (err, notifications) {
+      clients[0].getNotifications({}, (err, notifications) => {
         should.not.exist(err);
         notifications.length.should.equal(0);
         done();
       });
     });
-    it('should not receive notifications for self generated events unless specified', function (done) {
-      clients[0].getNotifications({}, function (err, notifications) {
+    it('should not receive notifications for self generated events unless specified', (done) => {
+      clients[0].getNotifications({}, (err, notifications) => {
         should.not.exist(err);
         notifications.length.should.equal(3);
         _.map(notifications, 'type').should.deep.equal(['NewCopayer', 'WalletComplete', 'NewAddress']);
         clients[0].getNotifications({
           includeOwn: true,
-        }, function (err, notifications) {
+        }, (err, notifications) => {
           should.not.exist(err);
           notifications.length.should.equal(5);
           _.map(notifications, 'type').should.deep.equal(['NewCopayer', 'NewCopayer', 'WalletComplete', 'NewAddress', 'NewAddress']);
@@ -2457,13 +2457,13 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Transaction Proposals Creation and Locked funds', function () {
+  describe('Transaction Proposals Creation and Locked funds', () => {
     var myAddress;
-    beforeEach(function (done) {
-      db.dropDatabase(function (err) {
-        helpers.createAndJoinWallet(clients, keys, 2, 3, {}, function (w) {
+    beforeEach((done) => {
+      db.dropDatabase((err) => {
+        helpers.createAndJoinWallet(clients, keys, 2, 3, {}, (w) => {
 
-          clients[0].createAddress(function (err, address) {
+          clients[0].createAddress((err, address) => {
             should.not.exist(err);
             myAddress = address;
             blockchainExplorerMock.setUtxo(address, 2, 2);
@@ -2475,7 +2475,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('Should create & publish proposal', function (done) {
+    it('Should create & publish proposal', (done) => {
       blockchainExplorerMock.setFeeLevels({
         2: 123e2,
       });
@@ -2497,7 +2497,7 @@ describe.only('client API', function () {
           someStr: "str"
         }
       };
-      clients[0].createTxProposal(opts, function (err, txp) {
+      clients[0].createTxProposal(opts, (err, txp) => {
         should.not.exist(err);
         should.exist(txp);
 
@@ -2515,17 +2515,17 @@ describe.only('client API', function () {
         should.exist(txp.encryptedMessage);
         should.exist(txp.outputs[0].encryptedMessage);
 
-        clients[0].getTxProposals({}, function (err, txps) {
+        clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
           txps.should.be.empty;
 
           clients[0].publishTxProposal({
             txp: txp,
-          }, function (err, publishedTxp) {
+          }, (err, publishedTxp) => {
             should.not.exist(err);
             should.exist(publishedTxp);
             publishedTxp.status.should.equal('pending');
-            clients[0].getTxProposals({}, function (err, txps) {
+            clients[0].getTxProposals({}, (err, txps) => {
               should.not.exist(err);
               txps.length.should.equal(1);
               var x = txps[0];
@@ -2534,7 +2534,7 @@ describe.only('client API', function () {
               should.not.exist(x.proposalSignaturePubKey);
               should.not.exist(x.proposalSignaturePubKeySig);
               // Should be visible for other copayers as well
-              clients[1].getTxProposals({}, function (err, txps) {
+              clients[1].getTxProposals({}, (err, txps) => {
                 should.not.exist(err);
                 txps.length.should.equal(1);
                 txps[0].id.should.equal(txp.id);
@@ -2545,7 +2545,7 @@ describe.only('client API', function () {
         });
       });
     });
-    it('Should create, publish, recreate, republish proposal', function (done) {
+    it('Should create, publish, recreate, republish proposal', (done) => {
       blockchainExplorerMock.setFeeLevels({
         1: 456e2,
         6: 123e2,
@@ -2570,7 +2570,7 @@ describe.only('client API', function () {
           someStr: "str"
         }
       };
-      clients[0].createTxProposal(opts, function (err, txp) {
+      clients[0].createTxProposal(opts, (err, txp) => {
         should.not.exist(err);
         should.exist(txp);
         txp.status.should.equal('temporary');
@@ -2578,21 +2578,21 @@ describe.only('client API', function () {
         txp.feePerKb.should.equal(123e2);
         clients[0].publishTxProposal({
           txp: txp,
-        }, function (err, publishedTxp) {
+        }, (err, publishedTxp) => {
           should.not.exist(err);
           should.exist(publishedTxp);
           publishedTxp.status.should.equal('pending');
-          clients[0].getTxProposals({}, function (err, txps) {
+          clients[0].getTxProposals({}, (err, txps) => {
             should.not.exist(err);
             txps.length.should.equal(1);
             // Try to republish from copayer 1
-            clients[1].createTxProposal(opts, function (err, txp) {
+            clients[1].createTxProposal(opts, (err, txp) => {
               should.not.exist(err);
               should.exist(txp);
               txp.status.should.equal('pending');
               clients[1].publishTxProposal({
                 txp: txp
-              }, function (err, publishedTxp) {
+              }, (err, publishedTxp) => {
                 should.not.exist(err);
                 should.exist(publishedTxp);
                 publishedTxp.status.should.equal('pending');
@@ -2603,7 +2603,7 @@ describe.only('client API', function () {
         });
       });
     });
-    it('Should protect against tampering at proposal creation', function (done) {
+    it('Should protect against tampering at proposal creation', (done) => {
       var opts = {
         outputs: [{
           amount: 1e8,
@@ -2620,34 +2620,34 @@ describe.only('client API', function () {
 
       var tamperings = [
 
-        function (txp) {
+        (txp) => {
           txp.feePerKb = 45600;
         },
-        function (txp) {
+        (txp) => {
           txp.message = 'dummy';
         },
-        function (txp) {
+        (txp) => {
           txp.payProUrl = 'dummy';
         },
-        function (txp) {
+        (txp) => {
           txp.customData = 'dummy';
         },
-        function (txp) {
+        (txp) => {
           txp.outputs.push(txp.outputs[0]);
         },
-        function (txp) {
+        (txp) => {
           txp.outputs[0].toAddress = 'mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE';
         },
-        function (txp) {
+        (txp) => {
           txp.outputs[0].amount = 2e8;
         },
-        function (txp) {
+        (txp) => {
           txp.outputs[1].amount = 3e8;
         },
-        function (txp) {
+        (txp) => {
           txp.outputs[0].message = 'dummy';
         },
-        function (txp) {
+        (txp) => {
           txp.changeAddress.address = 'mjfjcbuYwBUdEyq2m7AezjCAR4etUBqyiE';
         },
       ];
@@ -2655,24 +2655,24 @@ describe.only('client API', function () {
       var tmp = clients[0]._getCreateTxProposalArgs;
       var args = clients[0]._getCreateTxProposalArgs(opts);
 
-      clients[0]._getCreateTxProposalArgs = function (opts) {
+      clients[0]._getCreateTxProposalArgs = (opts) => {
         return args;
       };
-      async.each(tamperings, function (tamperFn, next) {
-        helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', args, tamperFn, function () {
-          clients[0].createTxProposal(opts, function (err, txp) {
+      async.each(tamperings, (tamperFn, next) => {
+        helpers.tamperResponse(clients[0], 'post', '/v2/txproposals/', args, tamperFn, () => {
+          clients[0].createTxProposal(opts, (err, txp) => {
             should.exist(err, 'For tamper function ' + tamperFn);
             err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
             next();
           });
         });
-      }, function (err) {
+      }, (err) => {
         should.not.exist(err);
         clients[0]._getCreateTxProposalArgs = tmp;
         done();
       });
     });
-    it('Should fail to publish when not enough available UTXOs', function (done) {
+    it('Should fail to publish when not enough available UTXOs', (done) => {
       var opts = {
         outputs: [{
           amount: 3e8,
@@ -2684,91 +2684,91 @@ describe.only('client API', function () {
       var txp1, txp2;
       async.series([
 
-        function (next) {
-          clients[0].createTxProposal(opts, function (err, txp) {
+        (next) => {
+          clients[0].createTxProposal(opts, (err, txp) => {
             txp1 = txp;
             next(err);
           });
         },
-        function (next) {
-          clients[0].createTxProposal(opts, function (err, txp) {
+        (next) => {
+          clients[0].createTxProposal(opts, (err, txp) => {
             txp2 = txp;
             next(err);
           });
 
         },
-        function (next) {
+        (next) => {
           clients[0].publishTxProposal({
             txp: txp1
           }, next);
         },
-        function (next) {
+        (next) => {
           clients[0].publishTxProposal({
             txp: txp2
-          }, function (err) {
+          }, (err) => {
             should.exist(err);
             err.should.be.an.instanceOf(Errors.UNAVAILABLE_UTXOS);
             next();
           });
         },
-        function (next) {
+        (next) => {
           clients[1].rejectTxProposal(txp1, 'Free locked UTXOs', next);
         },
-        function (next) {
+        (next) => {
           clients[2].rejectTxProposal(txp1, 'Free locked UTXOs', next);
         },
-        function (next) {
+        (next) => {
 
           clients[0].publishTxProposal({
             txp: txp2
           }, next);
         },
-      ], function (err) {
+      ], (err) => {
         should.not.exist(err);
         done();
       });
     });
-    it('Should create proposal with unconfirmed inputs', function (done) {
+    it('Should create proposal with unconfirmed inputs', (done) => {
       var opts = {
         amount: 4.5e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'hello',
       };
-      helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+      helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
         should.not.exist(err);
-        clients[0].getTx(x.id, function (err, x2) {
+        clients[0].getTx(x.id, (err, x2) => {
           should.not.exist(err);
           x2.hasUnconfirmedInputs.should.equal(true);
           done();
         });
       });
     });
-    it('Should fail to create proposal with insufficient funds', function (done) {
+    it('Should fail to create proposal with insufficient funds', (done) => {
       var opts = {
         amount: 6e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'hello 1-1',
       };
-      helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+      helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
         should.exist(err);
         err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS);
         done();
       });
     });
-    it('Should fail to create proposal with insufficient funds for fee', function (done) {
+    it('Should fail to create proposal with insufficient funds for fee', (done) => {
       var opts = {
         amount: 5e8 - 200e2,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'hello 1-1',
         feePerKb: 800e2,
       };
-      helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+      helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
         should.exist(err);
         err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
         opts.feePerKb = 100e2;
-        helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+        helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
           should.not.exist(err);
-          clients[0].getTx(x.id, function (err, x2) {
+          clients[0].getTx(x.id, (err, x2) => {
             should.not.exist(err);
             should.exist(x2);
             done();
@@ -2776,23 +2776,23 @@ describe.only('client API', function () {
         });
       });
     });
-    it('Should lock and release funds through rejection', function (done) {
+    it('Should lock and release funds through rejection', (done) => {
       var opts = {
         amount: 2.2e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
       };
-      helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+      helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
         should.not.exist(err);
 
-        helpers.createAndPublishTxProposal(clients[0], opts, function (err, y) {
+        helpers.createAndPublishTxProposal(clients[0], opts, (err, y) => {
           err.should.be.an.instanceOf(Errors.LOCKED_FUNDS);
 
-          clients[1].rejectTxProposal(x, 'no', function (err) {
+          clients[1].rejectTxProposal(x, 'no', (err) => {
             should.not.exist(err);
-            clients[2].rejectTxProposal(x, 'no', function (err, z) {
+            clients[2].rejectTxProposal(x, 'no', (err, z) => {
               should.not.exist(err);
               z.status.should.equal('rejected');
-              helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+              helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
                 should.not.exist(err);
                 done();
               });
@@ -2801,22 +2801,22 @@ describe.only('client API', function () {
         });
       });
     });
-    it('Should lock and release funds through removal', function (done) {
+    it('Should lock and release funds through removal', (done) => {
       var opts = {
         amount: 2.2e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'hello 1-1',
       };
-      helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+      helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
         should.not.exist(err);
 
-        helpers.createAndPublishTxProposal(clients[0], opts, function (err, y) {
+        helpers.createAndPublishTxProposal(clients[0], opts, (err, y) => {
           err.should.be.an.instanceOf(Errors.LOCKED_FUNDS);
 
-          clients[0].removeTxProposal(x, function (err) {
+          clients[0].removeTxProposal(x, (err) => {
             should.not.exist(err);
 
-            helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+            helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
               should.not.exist(err);
               done();
             });
@@ -2824,18 +2824,18 @@ describe.only('client API', function () {
         });
       });
     });
-    it('Should keep message and refusal texts', function (done) {
+    it('Should keep message and refusal texts', (done) => {
       var opts = {
         amount: 1e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'some message',
       };
-      helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+      helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
         should.not.exist(err);
-        clients[1].rejectTxProposal(x, 'rejection comment', function (err, tx1) {
+        clients[1].rejectTxProposal(x, 'rejection comment', (err, tx1) => {
           should.not.exist(err);
 
-          clients[2].getTxProposals({}, function (err, txs) {
+          clients[2].getTxProposals({}, (err, txs) => {
             should.not.exist(err);
             txs[0].message.should.equal('some message');
             txs[0].actions[0].copayerName.should.equal('copayer 1');
@@ -2845,20 +2845,20 @@ describe.only('client API', function () {
         });
       });
     });
-    it('Should hide message and refusal texts if not key is present', function (done) {
+    it('Should hide message and refusal texts if not key is present', (done) => {
       var opts = {
         amount: 1e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
         message: 'some message',
       };
-      helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+      helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
         should.not.exist(err);
-        clients[1].rejectTxProposal(x, 'rejection comment', function (err, tx1) {
+        clients[1].rejectTxProposal(x, 'rejection comment', (err, tx1) => {
           should.not.exist(err);
 
           clients[2].credentials.sharedEncryptingKey = null;
 
-          clients[2].getTxProposals({}, function (err, txs) {
+          clients[2].getTxProposals({}, (err, txs) => {
             should.not.exist(err);
             txs[0].message.should.equal('<ECANNOTDECRYPT>');
             txs[0].actions[0].copayerName.should.equal('<ECANNOTDECRYPT>');
@@ -2869,7 +2869,7 @@ describe.only('client API', function () {
       });
     });
 
-    it('Should encrypt proposal message', function (done) {
+    it('Should encrypt proposal message', (done) => {
       var opts = {
         outputs: [{
           amount: 1000e2,
@@ -2879,22 +2879,22 @@ describe.only('client API', function () {
         feePerKb: 100e2,
       };
       var spy = sinon.spy(clients[0].request, 'post');
-      clients[0].createTxProposal(opts, function (err, x) {
+      clients[0].createTxProposal(opts, (err, x) => {
         should.not.exist(err);
         spy.calledOnce.should.be.true;
         JSON.stringify(spy.getCall(0).args).should.not.contain('some message');
         done();
       });
     });
-    it('Should encrypt proposal refusal comment', function (done) {
+    it('Should encrypt proposal refusal comment', (done) => {
       var opts = {
         amount: 1e8,
         toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
       };
-      helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+      helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
         should.not.exist(err);
         var spy = sinon.spy(clients[1].request, 'post');
-        clients[1].rejectTxProposal(x, 'rejection comment', function (err, tx1) {
+        clients[1].rejectTxProposal(x, 'rejection comment', (err, tx1) => {
           should.not.exist(err);
           spy.calledOnce.should.be.true;
           JSON.stringify(spy.getCall(0).args).should.not.contain('rejection comment');
@@ -2903,20 +2903,20 @@ describe.only('client API', function () {
       });
     });
 
-    describe('Detecting tampered tx proposals', function () {
-      it('should detect wrong signature', function (done) {
+    describe('Detecting tampered tx proposals', () => {
+      it('should detect wrong signature', (done) => {
         var opts = {
           amount: 1000e2,
           toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
           message: 'hello',
         };
-        helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+        helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
           should.not.exist(err);
 
-          helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function (txps) {
+          helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, (txps) => {
             txps[0].proposalSignature = '304402206e4a1db06e00068582d3be41cfc795dcf702451c132581e661e7241ef34ca19202203e17598b4764913309897d56446b51bc1dcd41a25d90fdb5f87a6b58fe3a6920';
-          }, function () {
-            clients[0].getTxProposals({}, function (err, txps) {
+          }, () => {
+            clients[0].getTxProposals({}, (err, txps) => {
               should.exist(err);
               err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
               done();
@@ -2924,19 +2924,19 @@ describe.only('client API', function () {
           });
         });
       });
-      it('should detect tampered amount', function (done) {
+      it('should detect tampered amount', (done) => {
         var opts = {
           amount: 1000e2,
           toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
           message: 'hello',
         };
-        helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+        helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
           should.not.exist(err);
 
-          helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function (txps) {
+          helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, (txps) => {
             txps[0].outputs[0].amount = 1e8;
-          }, function () {
-            clients[0].getTxProposals({}, function (err, txps) {
+          }, () => {
+            clients[0].getTxProposals({}, (err, txps) => {
               should.exist(err);
               err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
               done();
@@ -2944,19 +2944,19 @@ describe.only('client API', function () {
           });
         });
       });
-      it('should detect change address not it wallet', function (done) {
+      it('should detect change address not it wallet', (done) => {
         var opts = {
           amount: 1000e2,
           toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
           message: 'hello',
         };
-        helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+        helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
           should.not.exist(err);
 
-          helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function (txps) {
+          helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, (txps) => {
             txps[0].changeAddress.address = 'mnA11ZwktRp4sZJbS8MbXmmFPZAgriuwhh';
-          }, function () {
-            clients[0].getTxProposals({}, function (err, txps) {
+          }, () => {
+            clients[0].getTxProposals({}, (err, txps) => {
               should.exist(err);
               err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
               done();
@@ -2969,13 +2969,12 @@ describe.only('client API', function () {
 
   describe('Transaction Proposal signing', function () {
     this.timeout(5000);
-    function setup(m, n, coin, network, cb) {
+    var setup = (m, n, coin, network, cb) => {
       helpers.createAndJoinWallet(clients, keys, m, n, {
         coin: coin,
         network: network,
-      }, function (w) {
-        clients[0].createAddress(function (err, address) {
-          console.log("------------------", err);
+      }, (w) => {
+        clients[0].createAddress((err, address) => {
           should.not.exist(err);
 
           // TODO change createAddress to /v4/, and remove this.
@@ -2992,12 +2991,12 @@ describe.only('client API', function () {
       });
     };
 
-    describe('BTC', function (done) {
-      beforeEach(function (done) {
+    describe('BTC', (done) => {
+      beforeEach((done) => {
         setup(2, 3, 'btc', 'testnet', done);
       });
 
-      it('Should sign proposal', function (done) {
+      it('Should sign proposal', (done) => {
         var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
         var opts = {
           outputs: [{
@@ -3010,22 +3009,22 @@ describe.only('client API', function () {
           feePerKb: 100e2,
           message: 'just some message',
         };
-        clients[0].createTxProposal(opts, function (err, txp) {
+        clients[0].createTxProposal(opts, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           clients[0].publishTxProposal({
             txp: txp,
-          }, function (err, publishedTxp) {
+          }, (err, publishedTxp) => {
             should.not.exist(err);
             should.exist(publishedTxp);
             publishedTxp.status.should.equal('pending');
 
 
             let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-            clients[0].pushSignatures(publishedTxp, signatures, function (err, txp) {
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
               should.not.exist(err);
               let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
-              clients[1].pushSignatures(publishedTxp, signatures2, function (err, txp) {
+              clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                 should.not.exist(err);
                 txp.status.should.equal('accepted');
                 done();
@@ -3034,7 +3033,7 @@ describe.only('client API', function () {
           });
         });
       });
-      it('Should sign proposal with no change', function (done) {
+      it('Should sign proposal with no change', (done) => {
         var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
         var opts = {
           outputs: [{
@@ -3044,22 +3043,22 @@ describe.only('client API', function () {
           excludeUnconfirmedUtxos: true,
           feePerKb: 1,
         };
-        clients[0].createTxProposal(opts, function (err, txp) {
+        clients[0].createTxProposal(opts, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           var t = new Utils().buildTx(txp);
           should.not.exist(t.getChangeOutput());
           clients[0].publishTxProposal({
             txp: txp,
-          }, function (err, publishedTxp) {
+          }, (err, publishedTxp) => {
             should.not.exist(err);
             should.exist(publishedTxp);
             publishedTxp.status.should.equal('pending');
             let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-            clients[0].pushSignatures(publishedTxp, signatures, function (err, txp) {
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
               should.not.exist(err);
               let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
-              clients[1].pushSignatures(publishedTxp, signatures2, function (err, txp) {
+              clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                 should.not.exist(err);
                 txp.status.should.equal('accepted');
                 done();
@@ -3068,12 +3067,12 @@ describe.only('client API', function () {
           });
         });
       });
-      it('Should sign proposal created with send max settings', function (done) {
+      it('Should sign proposal created with send max settings', (done) => {
         var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
         clients[0].getSendMaxInfo({
           feePerKb: 100e2,
           returnInputs: true
-        }, function (err, info) {
+        }, (err, info) => {
           should.not.exist(err);
           var opts = {
             outputs: [{
@@ -3083,25 +3082,25 @@ describe.only('client API', function () {
             inputs: info.inputs,
             fee: info.fee,
           };
-          clients[0].createTxProposal(opts, function (err, txp) {
+          clients[0].createTxProposal(opts, (err, txp) => {
             should.not.exist(err);
             should.exist(txp);
             var t = new Utils().buildTx(txp);
             should.not.exist(t.getChangeOutput());
             clients[0].publishTxProposal({
               txp: txp,
-            }, function (err, publishedTxp) {
+            }, (err, publishedTxp) => {
               should.not.exist(err);
               should.exist(publishedTxp);
               publishedTxp.status.should.equal('pending');
               let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-              clients[0].pushSignatures(publishedTxp, signatures, function (err, txp) {
+              clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
                 should.not.exist(err);
                 let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
-                clients[1].pushSignatures(publishedTxp, signatures2, function (err, txp) {
+                clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
-                  clients[0].getBalance({}, function (err, balance) {
+                  clients[0].getBalance({}, (err, balance) => {
                     should.not.exist(err);
                     balance.lockedAmount.should.equal(5e8);
                     done();
@@ -3115,12 +3114,12 @@ describe.only('client API', function () {
 
     });
 
-    describe('BCH', function (done) {
-      beforeEach(function (done) {
+    describe('BCH', (done) => {
+      beforeEach((done) => {
         setup(1, 1, 'bch', 'livenet', done);
       });
 
-      it('Should sign proposal', function (done) {
+      it('Should sign proposal', (done) => {
         var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
         var opts = {
           outputs: [{
@@ -3134,17 +3133,17 @@ describe.only('client API', function () {
           message: 'just some message',
           coin: 'bch',
         };
-        clients[0].createTxProposal(opts, function (err, txp) {
+        clients[0].createTxProposal(opts, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           clients[0].publishTxProposal({
             txp: txp,
-          }, function (err, publishedTxp) {
+          }, (err, publishedTxp) => {
             should.not.exist(err);
             should.exist(publishedTxp);
             publishedTxp.status.should.equal('pending');
             let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-            clients[0].pushSignatures(publishedTxp, signatures, function (err, txp) {
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
               should.not.exist(err);
               txp.status.should.equal('accepted');
               done();
@@ -3155,12 +3154,11 @@ describe.only('client API', function () {
     });
   });
 
-
-  describe('Payment Protocol', function () {
-    var PP, DATA, oldreq;
-    function mockRequest(bodyBuf, headers) {
-      //      bodyBuf = _.isArray(bodyBuf) ? bodyBuf  : [bodyBuf];
-      new Client.PayPro().request = function (opts, cb) {
+  describe.only('Payment Protocol', () => {
+    var PP, oldreq, DATA;
+    var mockRequest = (bodyBuf, headers) => {
+      // bodyBuf = _.isArray(bodyBuf) ? bodyBuf : [bodyBuf];
+      payPro.request = (opts, cb) => {
         if (opts.headers.Accept == 'application/payment-request') {
           return cb(null, {
             headers: headers || {},
@@ -3176,25 +3174,23 @@ describe.only('client API', function () {
         }
       };
     };
-
+    before(() => {
+      payPro = new PayPro();
+    });
     beforeEach(() => {
-      oldreq = new Client.PayPro().request;
+      oldreq = payPro.request;
     });
-    afterEach(function (done) {
-      new Client.PayPro().request = oldreq;
-      db.dropDatabase(function (err) {
-        done();
-      });
+    afterEach(() => {
+      payPro.request = oldreq;
     });
 
-    describe('Shared wallet BTC', function () {
-      beforeEach(function (done) {
+    describe('Shared wallet BTC', () => {
+      beforeEach((done) => {
         PP = TestData.payProJson.btc;
         DATA = JSON.parse(TestData.payProJsonBody.btc);
-
         mockRequest(Buffer.from(TestData.payProJson.btc.body, 'hex'), TestData.payProJson.btc.headers);
-        helpers.createAndJoinWallet(clients, keys, 2, 2, { network: 'livenet' }, function (w) {
-          clients[0].createAddress(function (err, x0) {
+        helpers.createAndJoinWallet(clients, keys, 2, 2, { network: 'livenet' }, (w) => {
+          clients[0].createAddress((err, x0) => {
             should.not.exist(err);
             should.exist(x0.address);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
@@ -3203,14 +3199,14 @@ describe.only('client API', function () {
               payProUrl: 'https://bitpay.com/i/4Zrpank3aA2EAdYaQwMXbz',
             };
 
-            clients[0].fetchPayPro(opts, function (err, paypro) {
+            clients[0].fetchPayPro(opts, (err, paypro) => {
               //              http.getCall(0).args[0].coin.should.equal('btc');
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
                 amount: paypro.amount,
                 message: paypro.memo,
                 payProUrl: opts.payProUrl,
-              }, function (err, x) {
+              }, (err, x) => {
                 should.not.exist(err);
                 done();
               });
@@ -3219,8 +3215,8 @@ describe.only('client API', function () {
         });
       });
 
-      it('Should Create and Verify a Tx from PayPro', function (done) {
-        clients[1].getTxProposals({}, function (err, txps) {
+      it('Should Create and Verify a Tx from PayPro', (done) => {
+        clients[1].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
           var tx = txps[0];
           // From the hardcoded paypro request
@@ -3232,22 +3228,22 @@ describe.only('client API', function () {
         });
       });
 
-      it('Should handle broken paypro data', function (done) {
+      it('Should handle broken paypro data', (done) => {
         mockRequest(Buffer.from('broken data'), TestData.payProJson.btc.headers);
         var opts = {
           payProUrl: 'dummy',
         };
-        clients[0].fetchPayPro(opts, function (err, paypro) {
+        clients[0].fetchPayPro(opts, (err, paypro) => {
           should.exist(err);
           err.message.should.contain('match');
           done();
         });
       });
 
-      it('Should ignore PayPro at getTxProposals if instructed', function (done) {
+      it('Should ignore PayPro at getTxProposals if instructed', (done) => {
         mockRequest(Buffer.from('broken data'), TestData.payProJson.btc.headers);
         clients[1].doNotVerifyPayPro = true;
-        clients[1].getTxProposals({}, function (err, txps) {
+        clients[1].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
           var tx = txps[0];
           // From the hardcoded paypro request
@@ -3259,33 +3255,33 @@ describe.only('client API', function () {
         });
       });
 
-      it('Should ignore PayPro at pushSignatures if instructed', function (done) {
+      it('Should ignore PayPro at pushSignatures if instructed', (done) => {
         mockRequest(Buffer.from('broken data'), TestData.payProJson.btc.headers);
         clients[1].doNotVerifyPayPro = true;
-        clients[1].getTxProposals({}, function (err, txps) {
+        clients[1].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
           let signatures = keys[1].sign(clients[1].getRootPath(), txps[0]);
-          clients[1].pushSignatures(txps[0], signatures, function (err, txps) {
+          clients[1].pushSignatures(txps[0], signatures, (err, txps) => {
             should.not.exist(err);
             done();
           });
         });
       });
 
-      it('Should send the "payment message" when last copayer sign', function (done) {
-        clients[0].getTxProposals({}, function (err, txps) {
+      it('Should send the "payment message" when last copayer sign', (done) => {
+        clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
           let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
-          clients[0].pushSignatures(txps[0], signatures, function (err, xx, paypro) {
+          clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
             let signatures2 = keys[1].sign(clients[1].getRootPath(), txps[0]);
-            clients[1].pushSignatures(xx, signatures2, function (err, yy, paypro) {
+            clients[1].pushSignatures(xx, signatures2, (err, yy, paypro) => {
               should.not.exist(err);
               yy.status.should.equal('accepted');
-              let spy = sinon.spy(new Client.PayPro(), 'request');
+              let spy = sinon.spy(payPro, 'request');
               //              http.onCall(5).yields(null, TestData.payProAckHex);
 
-              clients[1].broadcastTxProposal(yy, function (err, zz, memo) {
+              clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
                 var args = spy.lastCall.args[0];
                 args.method.should.equal('POST');
@@ -3302,20 +3298,20 @@ describe.only('client API', function () {
         });
       });
 
-      it('Should send the signed tx in paypro', function (done) {
-        clients[0].getTxProposals({}, function (err, txps) {
+      it('Should send the signed tx in paypro', (done) => {
+        clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
           var changeAddress = txps[0].changeAddress.address;
           let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
-          clients[0].pushSignatures(txps[0], signatures, function (err, xx, paypro) {
+          clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
             let signatures = keys[1].sign(clients[1].getRootPath(), txps[0]);
-            clients[1].pushSignatures(xx, signatures, function (err, yy, paypro) {
+            clients[1].pushSignatures(xx, signatures, (err, yy, paypro) => {
               should.not.exist(err);
 
               yy.status.should.equal('accepted');
-              let spy = sinon.spy(new Client.PayPro(), 'request');
-              clients[1].broadcastTxProposal(yy, function (err, zz, memo) {
+              let spy = sinon.spy(payPro, 'request');
+              clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
                 var args = spy.lastCall.args[0];
                 var data = JSON.parse(args.body);
@@ -3333,14 +3329,14 @@ describe.only('client API', function () {
     });
 
 
-    describe('Shared wallet / requiredFeeRate BTC', function () {
+    describe('Shared wallet / requiredFeeRate BTC', () => {
       var DATA;
-      beforeEach(function (done) {
+      beforeEach((done) => {
         DATA = JSON.parse(TestData.payProJsonBody.btc);
 
         mockRequest(Buffer.from(TestData.payProJson.btc.body, 'hex'), TestData.payProJson.btc.headers);
-        helpers.createAndJoinWallet(clients, keys, 2, 2, { network: 'livenet' }, function (w) {
-          clients[0].createAddress(function (err, x0) {
+        helpers.createAndJoinWallet(clients, keys, 2, 2, { network: 'livenet' }, (w) => {
+          clients[0].createAddress((err, x0) => {
             should.not.exist(err);
             should.exist(x0.address);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
@@ -3348,7 +3344,7 @@ describe.only('client API', function () {
             var opts = {
               payProUrl: 'https://bitpay.com/i/4Zrpank3aA2EAdYaQwMXbz',
             };
-            clients[0].fetchPayPro(opts, function (err, paypro) {
+            clients[0].fetchPayPro(opts, (err, paypro) => {
               paypro.requiredFeeRate.should.equal(27.001);
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
@@ -3356,7 +3352,7 @@ describe.only('client API', function () {
                 message: paypro.memo,
                 payProUrl: opts.payProUrl,
                 feePerKb: paypro.requiredFeeRate * 1024,
-              }, function (err, x) {
+              }, (err, x) => {
                 should.not.exist(err);
                 done();
               });
@@ -3365,8 +3361,8 @@ describe.only('client API', function () {
         });
       });
 
-      it('Should Create and Verify a Tx from PayPro', function (done) {
-        clients[1].getTxProposals({}, function (err, txps) {
+      it('Should Create and Verify a Tx from PayPro', (done) => {
+        clients[1].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
           var tx = txps[0];
 
@@ -3381,20 +3377,20 @@ describe.only('client API', function () {
         });
       });
 
-      it('Should send the "payment message" when last copayer sign', function (done) {
-        clients[0].getTxProposals({}, function (err, txps) {
+      it('Should send the "payment message" when last copayer sign', (done) => {
+        clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
           let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
-          clients[0].pushSignatures(txps[0], signatures, function (err, xx, paypro) {
+          clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
 
             let signatures = keys[1].sign(clients[1].getRootPath(), xx);
-            clients[1].pushSignatures(xx, signatures, function (err, yy, paypro) {
+            clients[1].pushSignatures(xx, signatures, (err, yy, paypro) => {
               should.not.exist(err);
               yy.status.should.equal('accepted');
 
               let spy = sinon.spy(new Client.PayPro(), 'request');
-              clients[1].broadcastTxProposal(yy, function (err, zz, memo) {
+              clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
                 var args = spy.lastCall.args[0];
                 args.method.should.equal('POST');
@@ -3414,15 +3410,15 @@ describe.only('client API', function () {
       });
 
 
-      it('Should NOT fail if requiredFeeRate is not meet', function (done) {
-        clients[0].getTxProposals({}, function (err, txps) {
+      it('Should NOT fail if requiredFeeRate is not meet', (done) => {
+        clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
           let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
-          clients[0].pushSignatures(txps[0], signatures, function (err, xx, paypro) {
+          clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
             xx.feePerKb /= 2;
             let signatures2 = keys[1].sign(clients[1].getRootPath(), xx);
-            clients[1].pushSignatures(xx, signatures2, function (err, yy, paypro) {
+            clients[1].pushSignatures(xx, signatures2, (err, yy, paypro) => {
               should.not.exist(err);
               done()
             });
@@ -3433,13 +3429,13 @@ describe.only('client API', function () {
 
 
 
-    describe('1-of-1 wallet BTC', function () {
+    describe('1-of-1 wallet BTC', () => {
       var DATA;
-      beforeEach(function (done) {
+      beforeEach((done) => {
         DATA = JSON.parse(TestData.payProJsonBody.btc);
         mockRequest(Buffer.from(TestData.payProJson.btc.body, 'hex'), TestData.payProJson.btc.headers);
-        helpers.createAndJoinWallet(clients, keys, 1, 1, { network: 'livenet' }, function (w) {
-          clients[0].createAddress(function (err, x0) {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { network: 'livenet' }, (w) => {
+          clients[0].createAddress((err, x0) => {
             should.not.exist(err);
             should.exist(x0.address);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
@@ -3447,13 +3443,13 @@ describe.only('client API', function () {
             var opts = {
               payProUrl: 'https://bitpay.com/i/4Zrpank3aA2EAdYaQwMXbz',
             };
-            clients[0].fetchPayPro(opts, function (err, paypro) {
+            clients[0].fetchPayPro(opts, (err, paypro) => {
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
                 amount: paypro.amount,
                 message: paypro.memo,
                 payProUrl: opts.payProUrl,
-              }, function (err, x) {
+              }, (err, x) => {
                 should.not.exist(err);
                 done();
               });
@@ -3462,17 +3458,17 @@ describe.only('client API', function () {
         });
       });
 
-      it('Should send the signed tx in paypro', function (done) {
-        clients[0].getTxProposals({}, function (err, txps) {
+      it('Should send the signed tx in paypro', (done) => {
+        clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
           var changeAddress = txps[0].changeAddress.address;
           let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
-          clients[0].pushSignatures(txps[0], signatures, function (err, xx, paypro) {
+          clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
             xx.status.should.equal('accepted');
             let spy = sinon.spy(new Client.PayPro(), 'request');
 
-            clients[0].broadcastTxProposal(xx, function (err, zz, memo) {
+            clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
               should.not.exist(err);
               var args = spy.lastCall.args[0];
               var data = JSON.parse(args.body);
@@ -3489,15 +3485,15 @@ describe.only('client API', function () {
     });
 
 
-    describe('1-of-1 BCH wallet', function () {
+    describe('1-of-1 BCH wallet', () => {
 
       // note this is using BCH with BTC format testnet address
-      beforeEach(function (done) {
+      beforeEach((done) => {
         DATA = JSON.parse(TestData.payProJsonBody.btc);
         mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), TestData.payProJson.bch.headers);
 
-        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'bch', network: 'testnet' }, function (w) {
-          clients[0].createAddress(function (err, x0) {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'bch', network: 'testnet' }, (w) => {
+          clients[0].createAddress((err, x0) => {
             should.not.exist(err);
             should.exist(x0.address);
 
@@ -3510,14 +3506,14 @@ describe.only('client API', function () {
               payProUrl: 'https://test.bitpay.com/i/4Zrpank3aA2EAdYaQwMXbz',
             };
 
-            clients[0].fetchPayPro(opts, function (err, paypro) {
+            clients[0].fetchPayPro(opts, (err, paypro) => {
               should.not.exist(err);
               helpers.createAndPublishTxProposal(clients[0], {
                 toAddress: paypro.toAddress,
                 amount: paypro.amount,
                 message: paypro.memo,
                 payProUrl: opts.payProUrl,
-              }, function (err, x) {
+              }, (err, x) => {
                 should.not.exist(err);
                 done();
               });
@@ -3526,17 +3522,17 @@ describe.only('client API', function () {
         });
       });
 
-      it('Should send the signed tx in paypro', function (done) {
-        clients[0].getTxProposals({}, function (err, txps) {
+      it('Should send the signed tx in paypro', (done) => {
+        clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
           var changeAddress = txps[0].changeAddress.address;
           let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
-          clients[0].pushSignatures(txps[0], signatures, function (err, xx, paypro) {
+          clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
             xx.status.should.equal('accepted');
 
             let spy = sinon.spy(new Client.PayPro(), 'request');
-            clients[0].broadcastTxProposal(xx, function (err, zz, memo) {
+            clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
               should.not.exist(err);
               var args = spy.lastCall.args[0];
               var data = JSON.parse(args.body);
@@ -3553,14 +3549,14 @@ describe.only('client API', function () {
     });
 
 
-    describe('New proposal flow', function () {
+    describe('New proposal flow', () => {
 
-      beforeEach(function (done) {
+      beforeEach((done) => {
         DATA = JSON.parse(TestData.payProJsonBody.btc);
         mockRequest(Buffer.from(TestData.payProJson.btc.body, 'hex'), TestData.payProJson.btc.headers);
 
-        helpers.createAndJoinWallet(clients, keys, 2, 2, { network: 'livenet' }, function (w) {
-          clients[0].createAddress(function (err, x0) {
+        helpers.createAndJoinWallet(clients, keys, 2, 2, { network: 'livenet' }, (w) => {
+          clients[0].createAddress((err, x0) => {
             should.not.exist(err);
             should.exist(x0.address);
             blockchainExplorerMock.setUtxo(x0, 1, 2);
@@ -3568,7 +3564,7 @@ describe.only('client API', function () {
             var opts = {
               payProUrl: 'dummy',
             };
-            clients[0].fetchPayPro(opts, function (err, paypro) {
+            clients[0].fetchPayPro(opts, (err, paypro) => {
               clients[0].createTxProposal({
                 outputs: [{
                   toAddress: DATA.outputs[0].address,
@@ -3577,11 +3573,11 @@ describe.only('client API', function () {
                 message: DATA.memo,
                 payProUrl: opts.payProUrl,
                 feePerKb: 100e2,
-              }, function (err, txp) {
+              }, (err, txp) => {
                 should.not.exist(err);
                 clients[0].publishTxProposal({
                   txp: txp
-                }, function (err) {
+                }, (err) => {
                   should.not.exist(err);
                   done();
                 });
@@ -3591,8 +3587,8 @@ describe.only('client API', function () {
         });
       });
 
-      it('Should Create and Verify a Tx from PayPro', function (done) {
-        clients[1].getTxProposals({}, function (err, txps) {
+      it('Should Create and Verify a Tx from PayPro', (done) => {
+        clients[1].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
           var tx = txps[0];
           // From the hardcoded paypro request
@@ -3606,11 +3602,11 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Proposals with explicit ID', function () {
-    it('Should create and publish a proposal', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function (w) {
+  describe('Proposals with explicit ID', () => {
+    it('Should create and publish a proposal', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, (w) => {
         var id = 'anId';
-        clients[0].createAddress(function (err, x0) {
+        clients[0].createAddress((err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 1, 2);
@@ -3623,17 +3619,17 @@ describe.only('client API', function () {
             feePerKb: 100e2,
             txProposalId: id,
           };
-          clients[0].createTxProposal(opts, function (err, txp) {
+          clients[0].createTxProposal(opts, (err, txp) => {
             should.not.exist(err);
             should.exist(txp);
             clients[0].publishTxProposal({
               txp: txp,
-            }, function (err, publishedTxp) {
+            }, (err, publishedTxp) => {
               should.not.exist(err);
               publishedTxp.id.should.equal(id);
-              clients[0].removeTxProposal(publishedTxp, function (err) {
+              clients[0].removeTxProposal(publishedTxp, (err) => {
                 opts.txProposalId = null;
-                clients[0].createTxProposal(opts, function (err, txp) {
+                clients[0].createTxProposal(opts, (err, txp) => {
                   should.not.exist(err);
                   should.exist(txp);
                   txp.id.should.not.equal(id);
@@ -3647,10 +3643,10 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Multiple output proposals', function () {
+  describe('Multiple output proposals', () => {
     var toAddress;
     var opts;
-    beforeEach(function (done) {
+    beforeEach((done) => {
       toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
       opts = {
         message: 'hello',
@@ -3664,8 +3660,8 @@ describe.only('client API', function () {
 
       var http = sinon.stub();
       http.yields(null, TestData.payProBuf);
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function (w) {
-        clients[0].createAddress(function (err, x0) {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, (w) => {
+        clients[0].createAddress((err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 1, 1);
@@ -3675,10 +3671,10 @@ describe.only('client API', function () {
       });
     });
 
-    function doit(opts, doNotVerifyPayPro, doBroadcast, done) {
-      helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+    var doit = (opts, doNotVerifyPayPro, doBroadcast, done) => {
+      helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
         should.not.exist(err);
-        clients[0].getTx(x.id, function (err, x2) {
+        clients[0].getTx(x.id, (err, x2) => {
           should.not.exist(err);
           x2.creatorName.should.equal('creator');
           x2.message.should.equal('hello');
@@ -3687,11 +3683,11 @@ describe.only('client API', function () {
           x2.outputs[0].message.should.equal('world');
           clients[0].doNotVerifyPayPro = doNotVerifyPayPro;
           let signatures = keys[0].sign(clients[0].getRootPath(), x2);
-          clients[0].pushSignatures(x2, signatures, function (err, txp) {
+          clients[0].pushSignatures(x2, signatures, (err, txp) => {
             should.not.exist(err);
             txp.status.should.equal('accepted');
             if (doBroadcast) {
-              clients[0].broadcastTxProposal(txp, function (err, txp) {
+              clients[0].broadcastTxProposal(txp, (err, txp) => {
                 should.not.exist(err);
                 txp.status.should.equal('broadcasted');
                 txp.txid.should.equal((new Bitcore.Transaction(blockchainExplorerMock.lastBroadcasted)).id);
@@ -3704,23 +3700,23 @@ describe.only('client API', function () {
         });
       });
     };
-    it('should create, get, sign, and broadcast proposal with no payProUrl', function (done) {
+    it('should create, get, sign, and broadcast proposal with no payProUrl', (done) => {
       delete opts.payProUrl;
       doit(opts, false, true, done);
     });
-    it('should create, get, sign, and broadcast proposal with null payProUrl', function (done) {
+    it('should create, get, sign, and broadcast proposal with null payProUrl', (done) => {
       opts.payProUrl = null;
       doit(opts, false, true, done);
     });
-    it('should create, get, sign, and broadcast proposal with empty string payProUrl', function (done) {
+    it('should create, get, sign, and broadcast proposal with empty string payProUrl', (done) => {
       opts.payProUrl = '';
       doit(opts, false, true, done);
     });
-    it('should create, get, and sign proposal with mal-formed payProUrl', function (done) {
+    it('should create, get, and sign proposal with mal-formed payProUrl', (done) => {
       opts.payProUrl = 'dummy';
       doit(opts, true, false, done);
     });
-    it('should create, get, and sign proposal with well-formed payProUrl', function (done) {
+    it('should create, get, and sign proposal with well-formed payProUrl', (done) => {
       opts.payProUrl = 'https://merchant.com/pay.php?h%3D2a8628fc2fbe';
       doit(opts, true, false, done);
     });
@@ -3728,9 +3724,9 @@ describe.only('client API', function () {
 
   describe('Transactions Signatures and Rejection', function () {
     this.timeout(5000);
-    it('Send and broadcast in 1-1 wallet', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function (w) {
-        clients[0].createAddress(function (err, x0) {
+    it('Send and broadcast in 1-1 wallet', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, (w) => {
+        clients[0].createAddress((err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 1, 1);
@@ -3743,7 +3739,7 @@ describe.only('client API', function () {
             message: 'hello',
             feePerKb: 100e2,
           };
-          helpers.createAndPublishTxProposal(clients[0], opts, function (err, txp) {
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
             should.not.exist(err);
             txp.requiredRejections.should.equal(1);
             txp.requiredSignatures.should.equal(1);
@@ -3752,12 +3748,12 @@ describe.only('client API', function () {
             txp.outputs[0].message.should.equal('output 0');
             txp.message.should.equal('hello');
             let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-            clients[0].pushSignatures(txp, signatures, function (err, txp) {
+            clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);
               txp.status.should.equal('accepted');
               txp.outputs[0].message.should.equal('output 0');
               txp.message.should.equal('hello');
-              clients[0].broadcastTxProposal(txp, function (err, txp) {
+              clients[0].broadcastTxProposal(txp, (err, txp) => {
                 should.not.exist(err);
                 txp.status.should.equal('broadcasted');
                 txp.txid.should.equal((new Bitcore.Transaction(blockchainExplorerMock.lastBroadcasted)).id);
@@ -3771,9 +3767,9 @@ describe.only('client API', function () {
       });
     });
 
-    it('Send and broadcast in 2-3 wallet', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, function (w) {
-        clients[0].createAddress(function (err, x0) {
+    it('Send and broadcast in 2-3 wallet', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, (w) => {
+        clients[0].createAddress((err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 10, 2);
@@ -3782,9 +3778,9 @@ describe.only('client API', function () {
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello',
           };
-          helpers.createAndPublishTxProposal(clients[0], opts, function (err, txp) {
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
             should.not.exist(err);
-            clients[0].getStatus({}, function (err, st) {
+            clients[0].getStatus({}, (err, st) => {
               should.not.exist(err);
               var txp = st.pendingTxps[0];
               txp.status.should.equal('pending');
@@ -3797,14 +3793,14 @@ describe.only('client API', function () {
               b.totalAmount.should.equal(1000000000);
               b.lockedAmount.should.equal(1000000000);
               let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-              clients[0].pushSignatures(txp, signatures, function (err, txp) {
+              clients[0].pushSignatures(txp, signatures, (err, txp) => {
                 should.not.exist(err, err);
                 txp.status.should.equal('pending');
                 let signatures = keys[1].sign(clients[1].getRootPath(), txp);
-                clients[1].pushSignatures(txp, signatures, function (err, txp) {
+                clients[1].pushSignatures(txp, signatures, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
-                  clients[1].broadcastTxProposal(txp, function (err, txp) {
+                  clients[1].broadcastTxProposal(txp, (err, txp) => {
                     txp.status.should.equal('broadcasted');
                     txp.txid.should.equal((new Bitcore.Transaction(blockchainExplorerMock.lastBroadcasted)).id);
                     done();
@@ -3817,9 +3813,9 @@ describe.only('client API', function () {
       });
     });
 
-    it('Send, reject actions in 2-3 wallet must have correct copayerNames', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, function (w) {
-        clients[0].createAddress(function (err, x0) {
+    it('Send, reject actions in 2-3 wallet must have correct copayerNames', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, (w) => {
+        clients[0].createAddress((err, x0) => {
           should.not.exist(err);
           blockchainExplorerMock.setUtxo(x0, 10, 2);
           var opts = {
@@ -3827,12 +3823,12 @@ describe.only('client API', function () {
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1',
           };
-          helpers.createAndPublishTxProposal(clients[0], opts, function (err, txp) {
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
             should.not.exist(err);
-            clients[0].rejectTxProposal(txp, 'wont sign', function (err, txp) {
+            clients[0].rejectTxProposal(txp, 'wont sign', (err, txp) => {
               should.not.exist(err, err);
               let signatures = keys[1].sign(clients[1].getRootPath(), txp);
-              clients[1].pushSignatures(txp, signatures, function (err, txp) {
+              clients[1].pushSignatures(txp, signatures, (err, txp) => {
                 should.not.exist(err);
                 done();
               });
@@ -3844,9 +3840,9 @@ describe.only('client API', function () {
 
 
 
-    it('Send, reject, 2 signs and broadcast in 2-3 wallet', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, function (w) {
-        clients[0].createAddress(function (err, x0) {
+    it('Send, reject, 2 signs and broadcast in 2-3 wallet', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, (w) => {
+        clients[0].createAddress((err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 10, 2);
@@ -3855,22 +3851,22 @@ describe.only('client API', function () {
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1',
           };
-          helpers.createAndPublishTxProposal(clients[0], opts, function (err, txp) {
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
             should.not.exist(err);
             txp.status.should.equal('pending');
             txp.requiredRejections.should.equal(2);
             txp.requiredSignatures.should.equal(2);
-            clients[0].rejectTxProposal(txp, 'wont sign', function (err, txp) {
+            clients[0].rejectTxProposal(txp, 'wont sign', (err, txp) => {
               should.not.exist(err, err);
               txp.status.should.equal('pending');
               let signatures = keys[1].sign(clients[1].getRootPath(), txp);
-              clients[1].pushSignatures(txp, signatures, function (err, txp) {
+              clients[1].pushSignatures(txp, signatures, (err, txp) => {
                 should.not.exist(err);
                 let signatures = keys[2].sign(clients[2].getRootPath(), txp);
-                clients[2].pushSignatures(txp, signatures, function (err, txp) {
+                clients[2].pushSignatures(txp, signatures, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
-                  clients[2].broadcastTxProposal(txp, function (err, txp) {
+                  clients[2].broadcastTxProposal(txp, (err, txp) => {
                     txp.status.should.equal('broadcasted');
                     txp.txid.should.equal((new Bitcore.Transaction(blockchainExplorerMock.lastBroadcasted)).id);
                     done();
@@ -3883,9 +3879,9 @@ describe.only('client API', function () {
       });
     });
 
-    it('Send, reject in 3-4 wallet', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 3, 4, {}, function (w) {
-        clients[0].createAddress(function (err, x0) {
+    it('Send, reject in 3-4 wallet', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 3, 4, {}, (w) => {
+        clients[0].createAddress((err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 10, 3);
@@ -3894,20 +3890,20 @@ describe.only('client API', function () {
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1',
           };
-          helpers.createAndPublishTxProposal(clients[0], opts, function (err, txp) {
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
             should.not.exist(err);
             txp.status.should.equal('pending');
             txp.requiredRejections.should.equal(2);
             txp.requiredSignatures.should.equal(3);
 
-            clients[0].rejectTxProposal(txp, 'wont sign', function (err, txp) {
+            clients[0].rejectTxProposal(txp, 'wont sign', (err, txp) => {
               should.not.exist(err, err);
               txp.status.should.equal('pending');
               let signatures = keys[1].sign(clients[1].getRootPath(), txp);
-              clients[1].pushSignatures(txp, signatures, function (err, txp) {
+              clients[1].pushSignatures(txp, signatures, (err, txp) => {
                 should.not.exist(err);
                 txp.status.should.equal('pending');
-                clients[2].rejectTxProposal(txp, 'me neither', function (err, txp) {
+                clients[2].rejectTxProposal(txp, 'me neither', (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('rejected');
                   done();
@@ -3919,9 +3915,9 @@ describe.only('client API', function () {
       });
     });
 
-    it('Should not allow to reject or sign twice', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, function (w) {
-        clients[0].createAddress(function (err, x0) {
+    it('Should not allow to reject or sign twice', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, (w) => {
+        clients[0].createAddress((err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
           blockchainExplorerMock.setUtxo(x0, 10, 2);
@@ -3930,21 +3926,21 @@ describe.only('client API', function () {
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'hello 1-1',
           };
-          helpers.createAndPublishTxProposal(clients[0], opts, function (err, txp) {
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
             should.not.exist(err);
             txp.status.should.equal('pending');
             txp.requiredRejections.should.equal(2);
             txp.requiredSignatures.should.equal(2);
             let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-            clients[0].pushSignatures(txp, signatures, function (err, txp) {
+            clients[0].pushSignatures(txp, signatures, (err, txp) => {
               should.not.exist(err);
               txp.status.should.equal('pending');
-              clients[0].pushSignatures(txp, signatures, function (err) {
+              clients[0].pushSignatures(txp, signatures, (err) => {
                 should.exist(err);
                 err.should.be.an.instanceOf(Errors.COPAYER_VOTED);
-                clients[1].rejectTxProposal(txp, 'xx', function (err, txp) {
+                clients[1].rejectTxProposal(txp, 'xx', (err, txp) => {
                   should.not.exist(err);
-                  clients[1].rejectTxProposal(txp, 'xx', function (err) {
+                  clients[1].rejectTxProposal(txp, 'xx', (err) => {
                     should.exist(err);
                     err.should.be.an.instanceOf(Errors.COPAYER_VOTED);
                     done();
@@ -3958,14 +3954,14 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Broadcast raw transaction', function () {
-    it('should broadcast raw tx', function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function (w) {
+  describe('Broadcast raw transaction', () => {
+    it('should broadcast raw tx', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, (w) => {
         var opts = {
           network: 'testnet',
           rawTx: '0100000001b1b1b1b0d9786e237ec6a4b80049df9e926563fee7bdbc1ac3c4efc3d0af9a1c010000006a47304402207c612d36d0132ed463526a4b2370de60b0aa08e76b6f370067e7915c2c74179b02206ae8e3c6c84cee0bca8521704eddb40afe4590f14fd5d6434da980787ba3d5110121031be732b984b0f1f404840f2479bcc81f90187298efecc67dd83e1f93d9b2860dfeffffff0200ab9041000000001976a91403383bd4cff200de3690db1ed17d0b1a228ea43f88ac25ad6ed6190000001976a9147ccbaf7bcc1e323548bd1d57d7db03f6e6daf76a88acaec70700',
         };
-        clients[0].broadcastRawTx(opts, function (err, txid) {
+        clients[0].broadcastRawTx(opts, (err, txid) => {
           should.not.exist(err);
           txid.should.equal('d19871cf7c123d413ac71f9240ea234fac77bc95bcf41015d8bf5c03f221b92c');
           done();
@@ -3974,14 +3970,14 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Transaction history', function () {
-    it('should get transaction history', function (done) {
+  describe('Transaction history', () => {
+    it('should get transaction history', (done) => {
       blockchainExplorerMock.setHistory(createTxsV8(2, 1000));
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function (w) {
-        clients[0].createAddress(function (err, x0) {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, (w) => {
+        clients[0].createAddress((err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);
-          clients[0].getTxHistory({}, function (err, txs) {
+          clients[0].getTxHistory({}, (err, txs) => {
             should.not.exist(err);
             should.exist(txs);
             txs.length.should.equal(2);
@@ -3990,10 +3986,10 @@ describe.only('client API', function () {
         });
       });
     });
-    it('should get empty transaction history when there are no addresses', function (done) {
+    it('should get empty transaction history when there are no addresses', (done) => {
       blockchainExplorerMock.setHistory([]);
-      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function (w) {
-        clients[0].getTxHistory({}, function (err, txs) {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, (w) => {
+        clients[0].getTxHistory({}, (err, txs) => {
           should.not.exist(err);
           should.exist(txs);
           txs.length.should.equal(0);
@@ -4005,34 +4001,34 @@ describe.only('client API', function () {
       this.timeout(5000);
       async.waterfall([
 
-        function (next) {
-          helpers.createAndJoinWallet(clients, keys, 2, 3, {}, function (w) {
-            clients[0].createAddress(function (err, address) {
+        (next) => {
+          helpers.createAndJoinWallet(clients, keys, 2, 3, {}, (w) => {
+            clients[0].createAddress((err, address) => {
               should.not.exist(err);
               should.exist(address);
               next(null, address);
             });
           });
         },
-        function (address, next) {
+        (address, next) => {
           blockchainExplorerMock.setUtxo(address, 10, 2);
           var opts = {
             amount: 10000,
             toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
             message: 'some message',
           };
-          helpers.createAndPublishTxProposal(clients[0], opts, function (err, txp) {
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
             should.not.exist(err);
-            clients[1].rejectTxProposal(txp, 'some reason', function (err, txp) {
+            clients[1].rejectTxProposal(txp, 'some reason', (err, txp) => {
               should.not.exist(err);
               let signatures = keys[2].sign(clients[2].getRootPath(), txp);
-              clients[2].pushSignatures(txp, signatures, function (err, txp) {
+              clients[2].pushSignatures(txp, signatures, (err, txp) => {
                 should.not.exist(err);
                 let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-                clients[0].pushSignatures(txp, signatures, function (err, txp) {
+                clients[0].pushSignatures(txp, signatures, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('accepted');
-                  clients[0].broadcastTxProposal(txp, function (err, txp) {
+                  clients[0].broadcastTxProposal(txp, (err, txp) => {
                     should.not.exist(err);
                     txp.status.should.equal('broadcasted');
                     next(null, txp);
@@ -4042,22 +4038,22 @@ describe.only('client API', function () {
             });
           });
         },
-        function (txp, next) {
+        (txp, next) => {
           clients[1].editTxNote({
             txid: txp.txid,
             body: 'just a note'
-          }, function (err) {
+          }, (err) => {
             return next(err, txp);
           });
         },
-        function (txp, next) {
+        (txp, next) => {
           var history = createTxsV8(2, 1000);
           history[0].txid = txp.txid;
-          _.each(history, function (h) {
+          _.each(history, (h) => {
             h.blockTime = (new Date).toISOString();
           });
           blockchainExplorerMock.setHistory(history);
-          clients[0].getTxHistory({}, function (err, txs) {
+          clients[0].getTxHistory({}, (err, txs) => {
             should.not.exist(err);
             should.exist(txs);
             txs.length.should.equal(2);
@@ -4081,12 +4077,12 @@ describe.only('client API', function () {
             next();
           });
         }
-      ], function (err) {
+      ], (err) => {
         should.not.exist(err);
         done();
       });
     });
-    describe('should get paginated transaction history', function (done) {
+    describe('should get paginated transaction history', (done) => {
       let testCases = [{
         opts: {},
         expected: [20, 10]
@@ -4118,18 +4114,18 @@ describe.only('client API', function () {
         txs[0].blockTime = (new Date(20 * 1000)).toISOString();
         txs[1].blockTime = (new Date(10 * 1000)).toISOString();
         blockchainExplorerMock.setHistory(txs);
-        helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function (w) {
-          clients[0].createAddress(function (err, x0) {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, {}, (w) => {
+          clients[0].createAddress((err, x0) => {
             should.not.exist(err);
             should.exist(x0.address);
             done();
           });
         });
       });
-      _.each(testCases, function (testCase) {
+      _.each(testCases, (testCase) => {
 
         it(`should skip ${testCase.opts.skip} limit ${testCase.opts.limit}`, (done) => {
-          clients[0].getTxHistory(testCase.opts, function (err, txs) {
+          clients[0].getTxHistory(testCase.opts, (err, txs) => {
             should.not.exist(err);
             should.exist(txs);
             var times = _.map(txs, 'time');
@@ -4141,24 +4137,24 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Transaction notes', function (done) {
-    beforeEach(function (done) {
-      helpers.createAndJoinWallet(clients, keys, 1, 2, {}, function (w) {
+  describe('Transaction notes', (done) => {
+    beforeEach((done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 2, {}, (w) => {
         done();
       });
     });
 
-    it('should edit a note for an arbitrary txid', function (done) {
+    it('should edit a note for an arbitrary txid', (done) => {
       clients[0].editTxNote({
         txid: '123',
         body: 'note body'
-      }, function (err, note) {
+      }, (err, note) => {
         should.not.exist(err);
         should.exist(note);
         note.body.should.equal('note body');
         clients[0].getTxNote({
           txid: '123',
-        }, function (err, note) {
+        }, (err, note) => {
           should.not.exist(err);
           should.exist(note);
           note.txid.should.equal('123');
@@ -4171,12 +4167,12 @@ describe.only('client API', function () {
         });
       });
     });
-    it('should not send note body in clear text', function (done) {
+    it('should not send note body in clear text', (done) => {
       var spy = sinon.spy(clients[0].request, 'put');
       clients[0].editTxNote({
         txid: '123',
         body: 'a random note'
-      }, function (err) {
+      }, (err) => {
         should.not.exist(err);
         var url = spy.getCall(0).args[0];
         var body = JSON.stringify(spy.getCall(0).args[1]);
@@ -4187,22 +4183,22 @@ describe.only('client API', function () {
       });
     });
 
-    it('should share notes between copayers', function (done) {
+    it('should share notes between copayers', (done) => {
       clients[0].editTxNote({
         txid: '123',
         body: 'note body'
-      }, function (err) {
+      }, (err) => {
         should.not.exist(err);
         clients[0].getTxNote({
           txid: '123',
-        }, function (err, note) {
+        }, (err, note) => {
           should.not.exist(err);
           should.exist(note);
           note.editedBy.should.equal(clients[0].credentials.copayerId);
           var creator = note.editedBy;
           clients[1].getTxNote({
             txid: '123',
-          }, function (err, note) {
+          }, (err, note) => {
             should.not.exist(err);
             should.exist(note);
             note.body.should.equal('note body');
@@ -4212,71 +4208,71 @@ describe.only('client API', function () {
         });
       });
     });
-    it('should get all notes edited past a given date', function (done) {
+    it('should get all notes edited past a given date', (done) => {
       var clock = sinon.useFakeTimers({ toFake: ['Date'] });
       async.series([
 
-        function (next) {
-          clients[0].getTxNotes({}, function (err, notes) {
+        (next) => {
+          clients[0].getTxNotes({}, (err, notes) => {
             should.not.exist(err);
             notes.should.be.empty;
             next();
           });
         },
-        function (next) {
+        (next) => {
           clients[0].editTxNote({
             txid: '123',
             body: 'note body'
           }, next);
         },
-        function (next) {
+        (next) => {
           clients[0].getTxNotes({
             minTs: 0,
-          }, function (err, notes) {
+          }, (err, notes) => {
             should.not.exist(err);
             notes.length.should.equal(1);
             notes[0].txid.should.equal('123');
             next();
           });
         },
-        function (next) {
+        (next) => {
           clock.tick(60 * 1000);
           clients[0].editTxNote({
             txid: '456',
             body: 'another note'
           }, next);
         },
-        function (next) {
+        (next) => {
           clients[0].getTxNotes({
             minTs: 0,
-          }, function (err, notes) {
+          }, (err, notes) => {
             should.not.exist(err);
             notes.length.should.equal(2);
             _.difference(_.map(notes, 'txid'), ['123', '456']).should.be.empty;
             next();
           });
         },
-        function (next) {
+        (next) => {
           clients[0].getTxNotes({
             minTs: 50,
-          }, function (err, notes) {
+          }, (err, notes) => {
             should.not.exist(err);
             notes.length.should.equal(1);
             notes[0].txid.should.equal('456');
             next();
           });
         },
-        function (next) {
+        (next) => {
           clock.tick(60 * 1000);
           clients[0].editTxNote({
             txid: '123',
             body: 'an edit'
           }, next);
         },
-        function (next) {
+        (next) => {
           clients[0].getTxNotes({
             minTs: 100,
-          }, function (err, notes) {
+          }, (err, notes) => {
             should.not.exist(err);
             notes.length.should.equal(1);
             notes[0].txid.should.equal('123');
@@ -4284,14 +4280,14 @@ describe.only('client API', function () {
             next();
           });
         },
-        function (next) {
-          clients[0].getTxNotes({}, function (err, notes) {
+        (next) => {
+          clients[0].getTxNotes({}, (err, notes) => {
             should.not.exist(err);
             notes.length.should.equal(2);
             next();
           });
         },
-      ], function (err) {
+      ], (err) => {
         should.not.exist(err);
         clock.restore();
         done();
@@ -4300,9 +4296,9 @@ describe.only('client API', function () {
   });
 
   describe('from Old credentials', () => {
-    describe(`#upgradeCredentialsV1`, function () {
+    describe(`#upgradeCredentialsV1`, () => {
       _.each(oldCredentials, (x) => {
-        it(`should  import old ${x.name} credentials`, function () {
+        it(`should  import old ${x.name} credentials`, () => {
           let imported = new Client.API().upgradeCredentialsV1(JSON.parse(x.blob));
           let k = imported.key;
           let c = imported.credentials;
@@ -4321,8 +4317,8 @@ describe.only('client API', function () {
       });
     });
 
-    describe(`#upgradeMultipleCredentialsV1`, function () {
-      it(`should  import many credentials`, function () {
+    describe(`#upgradeMultipleCredentialsV1`, () => {
+      it(`should  import many credentials`, () => {
         let oldies = _.map(oldCredentials, x => JSON.parse(x.blob));
         let imported = new Client.API().upgradeMultipleCredentialsV1(oldies);
 
@@ -4337,7 +4333,7 @@ describe.only('client API', function () {
         });
       });
 
-      it(`should detect and merge with existing keys`, function () {
+      it(`should detect and merge with existing keys`, () => {
         let oldies = _.map(oldCredentials, x => JSON.parse(x.blob));
 
 
@@ -4361,7 +4357,7 @@ describe.only('client API', function () {
       });
 
 
-      it(`should detect and merge with existing keys (2 wallets)`, function () {
+      it(`should detect and merge with existing keys (2 wallets)`, () => {
         let oldies = _.map(oldCredentials, x => JSON.parse(x.blob));
         oldies = oldies.splice(0, 2);
 
@@ -4383,14 +4379,14 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Mobility, backup & restore', function () {
-    describe('Export & Import', function () {
+  describe('Mobility, backup & restore', () => {
+    describe('Export & Import', () => {
       var address, importedClient;
-      describe('Compliant derivation', function () {
-        beforeEach(function (done) {
+      describe('Compliant derivation', () => {
+        beforeEach((done) => {
           importedClient = null;
-          helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
-            clients[0].createAddress(function (err, addr) {
+          helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+            clients[0].createAddress((err, addr) => {
               should.not.exist(err);
               should.exist(addr.address);
               address = addr.address;
@@ -4398,9 +4394,9 @@ describe.only('client API', function () {
             });
           });
         });
-        afterEach(function (done) {
+        afterEach((done) => {
           if (!importedClient) return done();
-          importedClient.getMainAddresses({}, function (err, list) {
+          importedClient.getMainAddresses({}, (err, list) => {
             should.not.exist(err);
             should.exist(list);
             list.length.should.equal(1);
@@ -4409,7 +4405,7 @@ describe.only('client API', function () {
           });
         });
 
-        it('should export & import with mnemonics + BWS', function (done) {
+        it('should export & import with mnemonics + BWS', (done) => {
           var c = clients[0].credentials;
           var walletId = c.walletId;
           var walletName = c.walletName;
@@ -4429,7 +4425,7 @@ describe.only('client API', function () {
           done();
         });
 
-        it.skip('should export & import with mnemonic encrypted ', function (done) {
+        it.skip('should export & import with mnemonic encrypted ', (done) => {
           var c = clients[0].credentials;
           var walletId = c.walletId;
           var walletName = c.walletName;
@@ -4451,7 +4447,7 @@ describe.only('client API', function () {
 
 
 
-        it('should export & import from Key +  BWS', function (done) {
+        it('should export & import from Key +  BWS', (done) => {
           var c = clients[0].credentials;
           var walletId = c.walletId;
           var walletName = c.walletName;
@@ -4482,13 +4478,13 @@ describe.only('client API', function () {
         });
       });
 
-      describe('Non-compliant derivation', function () {
-        function setup(done) {
+      describe('Non-compliant derivation', () => {
+        var setup = (done) => {
           clients[0].createWallet('mywallet', 'creator', 1, 1, {
             network: 'livenet'
-          }, function (err) {
+          }, (err) => {
             should.not.exist(err);
-            clients[0].createAddress(function (err, addr) {
+            clients[0].createAddress((err, addr) => {
               should.not.exist(err);
               address = addr.address;
               done();
@@ -4496,12 +4492,12 @@ describe.only('client API', function () {
           });
         };
 
-        beforeEach(function () {
+        beforeEach(() => {
           importedClient = null;
         });
-        afterEach(function (done) {
+        afterEach((done) => {
           if (!importedClient) return done();
-          importedClient.getMainAddresses({}, function (err, list) {
+          importedClient.getMainAddresses({}, (err, list) => {
             should.not.exist(err);
             should.exist(list);
             list.length.should.equal(1);
@@ -4513,17 +4509,17 @@ describe.only('client API', function () {
         /*
                   k.get().xPrivKey.should.equal('xprv9s21ZrQH143K3E71Wm5nrxuMdqCTMG6AM5Xyp4dJ3ZkUj2gEpfifT5Hc1cfqnycKooRpzoH4gjmAKDmGGaH2k2cSe29EcQSarveq6STBZZW');
                   clients[0].credentials.xPubKey.toString().should.equal('xpub6CLj2x8T5zwngq3Uq42PbXbAXnyaUtsANEZaBjAPNBn5PbhSJM29DM5nhrdJDNpEy9X3n5sQhk6CNA7PKTp48Xvq3QFdiYAXAcaWEJ6Xmug');
-                  setup(function() {
+                  setup(() =>{
                     let k2 = new Key().fromMnemonicAndServer('pink net pet stove boy receive task nephew book spawn pull regret', { client: helpers.newClient(app)}, (err, clients) => {
                       should.not.exist(err);
                       clients.length.should.equal(1);
                       importedClient = clients[0];
-                      importedClient.openWallet(function(err) {
+                      importedClient.openWallet((err) =>{
                         should.not.exist(err);
                         done();
                       });
         */
-        it('should export & import with mnemonics + BWS', function (done) {
+        it('should export & import with mnemonics + BWS', (done) => {
           let k = new Key().fromMnemonic('pink net pet stove boy receive task nephew book spawn pull regret', {
             nonCompliantDerivation: true,
           });
@@ -4539,7 +4535,7 @@ describe.only('client API', function () {
 
           k.get().xPrivKey.should.equal('xprv9s21ZrQH143K3E71Wm5nrxuMdqCTMG6AM5Xyp4dJ3ZkUj2gEpfifT5Hc1cfqnycKooRpzoH4gjmAKDmGGaH2k2cSe29EcQSarveq6STBZZW');
           clients[0].credentials.xPubKey.toString().should.equal('xpub6CLj2x8T5zwngq3Uq42PbXbAXnyaUtsANEZaBjAPNBn5PbhSJM29DM5nhrdJDNpEy9X3n5sQhk6CNA7PKTp48Xvq3QFdiYAXAcaWEJ6Xmug');
-          setup(function () {
+          setup(() => {
             importedClient = helpers.newClient(app);
             let k2 = new Key().fromMnemonic('pink net pet stove boy receive task nephew book spawn pull regret', {
               nonCompliantDerivation: true,
@@ -4552,14 +4548,14 @@ describe.only('client API', function () {
                 n: 1,
               })
             );
-            importedClient.openWallet(function (err) {
+            importedClient.openWallet((err) => {
               should.not.exist(err);
               done();
             });
           });
         });
 
-        it('should check BWS once if specific derivation is not problematic', function (done) {
+        it('should check BWS once if specific derivation is not problematic', (done) => {
 
           // this key derivation is equal for compliant and non-compliant
           let k = new Key().fromMnemonic('relax about label gentle insect cross summer helmet come price elephant seek', {
@@ -4587,7 +4583,7 @@ describe.only('client API', function () {
           );
 
           var spy = sinon.spy(importedClient, 'openWallet');
-          importedClient.openWallet(function (err) {
+          importedClient.openWallet((err) => {
             should.exist(err);
             err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
             spy.getCalls().length.should.equal(1);
@@ -4599,28 +4595,29 @@ describe.only('client API', function () {
     });
 
 
-    describe('#validateKeyDerivation', function () {
-      beforeEach(function (done) {
-        helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
+    describe('#validateKeyDerivation', () => {
+      var utils = new Utils();
+      beforeEach((done) => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
           done();
         });
       });
-      it('should validate key derivation (fail)', function (done) {
-        let x = new Utils().signMessage;
-        new Utils().signMessage = () => {
+      it('should validate key derivation (fail)', (done) => {
+        let x = utils.signMessage;
+        utils.signMessage = () => {
           return 'xxxx';
         };
-        clients[0].validateKeyDerivation({}, function (err, isValid) {
+        clients[0].validateKeyDerivation({}, (err, isValid) => {
           should.not.exist(err);
           isValid.should.be.false;
           clients[0].keyDerivationOk.should.be.false;
-          new Utils().signMessage = x;
+          utils.signMessage = x;
           done();
         });
       });
 
-      it('should validate key derivation', function (done) {
-        clients[0].validateKeyDerivation({}, function (err, isValid) {
+      it('should validate key derivation', (done) => {
+        clients[0].validateKeyDerivation({}, (err, isValid) => {
           should.not.exist(err);
           isValid.should.be.true;
           clients[0].keyDerivationOk.should.be.true;
@@ -4629,10 +4626,10 @@ describe.only('client API', function () {
       });
     });
 
-    describe('#import FromMnemonic', function () {
-      it('should handle importing an invalid mnemonic', function (done) {
+    describe('#import FromMnemonic', () => {
+      it('should handle importing an invalid mnemonic', (done) => {
         var mnemonicWords = 'this is an invalid mnemonic';
-        new Client.API().serverAssistedImport({ words: mnemonicWords }, {}, function (err) {
+        new Client.API().serverAssistedImport({ words: mnemonicWords }, {}, (err) => {
           should.exist(err);
           err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
           done();
@@ -4640,10 +4637,10 @@ describe.only('client API', function () {
       });
     });
 
-    describe('#import FromExtendedPrivateKey', function () {
-      it('should handle importing an invalid extended private key', function (done) {
+    describe('#import FromExtendedPrivateKey', () => {
+      it('should handle importing an invalid extended private key', (done) => {
         var xPrivKey = 'this is an invalid key';
-        new Client.API().serverAssistedImport({ xPrivKey }, {}, function (err) {
+        new Client.API().serverAssistedImport({ xPrivKey }, {}, (err) => {
           should.exist(err);
           err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
           done();
@@ -4651,8 +4648,7 @@ describe.only('client API', function () {
       });
     });
 
-
-    describe('Recovery', function () {
+    describe('Recovery', () => {
       var db2;
       before((done) => {
         helpers.newDb(2, (err, in_db) => {
@@ -4662,12 +4658,12 @@ describe.only('client API', function () {
       });
 
 
-      it('should be able to gain access to a 1-1 wallet from mnemonic', function (done) {
-        helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
+      it('should be able to gain access to a 1-1 wallet from mnemonic', (done) => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
-          clients[0].createAddress(function (err, addr) {
+          clients[0].createAddress((err, addr) => {
             should.not.exist(err);
             should.exist(addr);
             new Client.API().serverAssistedImport({ words }, {
@@ -4678,11 +4674,11 @@ describe.only('client API', function () {
               should.not.exist(err);
               c.length.should.equal(1);
               let recoveryClient = c[0];
-              recoveryClient.openWallet(function (err) {
+              recoveryClient.openWallet((err) => {
                 should.not.exist(err);
                 recoveryClient.credentials.walletName.should.equal(walletName);
                 recoveryClient.credentials.copayerName.should.equal(copayerName);
-                recoveryClient.getMainAddresses({}, function (err, list) {
+                recoveryClient.getMainAddresses({}, (err, list) => {
                   should.not.exist(err);
                   should.exist(list);
                   list[0].address.should.equal(addr.address);
@@ -4694,15 +4690,15 @@ describe.only('client API', function () {
         });
       });
 
-      it('should be able to gain access to two TESTNET btc/bch 1-1 wallets from mnemonic', function (done) {
+      it('should be able to gain access to two TESTNET btc/bch 1-1 wallets from mnemonic', (done) => {
 
         let key = new Key().create();
-        helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key }, function () {
-          helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'bch', key: key }, function () {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key }, () => {
+          helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'bch', key: key }, () => {
             var words = keys[0].get(null, true).mnemonic;
             var walletName = clients[0].credentials.walletName;
             var copayerName = clients[0].credentials.copayerName;
-            clients[0].createAddress(function (err, addr) {
+            clients[0].createAddress((err, addr) => {
               should.not.exist(err);
               should.exist(addr);
               new Client.API().serverAssistedImport({ words }, {
@@ -4717,11 +4713,11 @@ describe.only('client API', function () {
                 c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
 
                 let recoveryClient = c[1];
-                recoveryClient.openWallet(function (err) {
+                recoveryClient.openWallet((err) => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.getMainAddresses({}, function (err, list) {
+                  recoveryClient.getMainAddresses({}, (err, list) => {
                     should.not.exist(err);
                     should.exist(list);
                     list[0].address.should.equal(addr.address);
@@ -4734,15 +4730,15 @@ describe.only('client API', function () {
         });
       });
 
-      it('should be able to gain access to two TESTNET btc/bch 1-1 wallets from mnemonic', function (done) {
+      it('should be able to gain access to two TESTNET btc/bch 1-1 wallets from mnemonic', (done) => {
 
         let key = new Key().create();
-        helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, network: 'livenet' }, function () {
-          helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'bch', key: key, network: 'livenet' }, function () {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { key: key, network: 'livenet' }, () => {
+          helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'bch', key: key, network: 'livenet' }, () => {
             var words = keys[0].get(null, true).mnemonic;
             var walletName = clients[0].credentials.walletName;
             var copayerName = clients[0].credentials.copayerName;
-            clients[0].createAddress(function (err, addr) {
+            clients[0].createAddress((err, addr) => {
               should.not.exist(err);
               should.exist(addr);
               new Client.API().serverAssistedImport({ words }, {
@@ -4756,11 +4752,11 @@ describe.only('client API', function () {
                 c[1].credentials.coin.should.equal('bch');
                 c[0].credentials.copayerId.should.not.equal(c[1].credentials.copayerId);
                 let recoveryClient = c[1];
-                recoveryClient.openWallet(function (err) {
+                recoveryClient.openWallet((err) => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
                   recoveryClient.credentials.copayerName.should.equal(copayerName);
-                  recoveryClient.getMainAddresses({}, function (err, list) {
+                  recoveryClient.getMainAddresses({}, (err, list) => {
                     should.not.exist(err);
                     should.exist(list);
                     list[0].address.should.equal(addr.address);
@@ -4777,13 +4773,13 @@ describe.only('client API', function () {
 
 
 
-      it('should be able to gain access to a 1-1 wallet from mnemonic with passphrase', function (done) {
+      it('should be able to gain access to a 1-1 wallet from mnemonic with passphrase', (done) => {
         let passphrase = 'xxx';
-        helpers.createAndJoinWallet(clients, keys, 1, 1, { passphrase }, function () {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { passphrase }, () => {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
-          clients[0].createAddress(function (err, addr) {
+          clients[0].createAddress((err, addr) => {
             should.not.exist(err);
             should.exist(addr);
             new Client.API().serverAssistedImport({ words, passphrase }, {
@@ -4795,11 +4791,11 @@ describe.only('client API', function () {
               c.length.should.equal(1);
 
               let recoveryClient = c[0];
-              recoveryClient.openWallet(function (err) {
+              recoveryClient.openWallet((err) => {
                 should.not.exist(err);
                 recoveryClient.credentials.walletName.should.equal(walletName);
                 recoveryClient.credentials.copayerName.should.equal(copayerName);
-                recoveryClient.getMainAddresses({}, function (err, list) {
+                recoveryClient.getMainAddresses({}, (err, list) => {
                   should.not.exist(err);
                   should.exist(list);
                   list[0].address.should.equal(addr.address);
@@ -4813,12 +4809,12 @@ describe.only('client API', function () {
 
 
 
-      it('should be able to gain access to a 1-1 wallet with just the xPriv', function (done) {
-        helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
+      it('should be able to gain access to a 1-1 wallet with just the xPriv', (done) => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
           var xPrivKey = keys[0].get(null, true).xPrivKey;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
-          clients[0].createAddress(function (err, addr) {
+          clients[0].createAddress((err, addr) => {
             should.not.exist(err);
             should.exist(addr);
             new Client.API().serverAssistedImport({ xPrivKey }, {
@@ -4833,11 +4829,11 @@ describe.only('client API', function () {
               should.not.exist(err);
               c.length.should.equal(1);
               let recoveryClient = c[0];
-              recoveryClient.openWallet(function (err) {
+              recoveryClient.openWallet((err) => {
                 should.not.exist(err);
                 recoveryClient.credentials.walletName.should.equal(walletName);
                 recoveryClient.credentials.copayerName.should.equal(copayerName);
-                recoveryClient.getMainAddresses({}, function (err, list) {
+                recoveryClient.getMainAddresses({}, (err, list) => {
                   should.not.exist(err);
                   should.exist(list);
                   list[0].address.should.equal(addr.address);
@@ -4849,12 +4845,12 @@ describe.only('client API', function () {
         });
       });
 
-      it('should be able to gain access to a 2-2 wallet from mnemonic', function (done) {
-        helpers.createAndJoinWallet(clients, keys, 2, 2, {}, function () {
+      it('should be able to gain access to a 2-2 wallet from mnemonic', (done) => {
+        helpers.createAndJoinWallet(clients, keys, 2, 2, {}, () => {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
-          clients[0].createAddress(function (err, addr) {
+          clients[0].createAddress((err, addr) => {
             should.not.exist(err);
             should.exist(addr);
             new Client.API().serverAssistedImport({ words }, {
@@ -4868,13 +4864,13 @@ describe.only('client API', function () {
               should.not.exist(err);
               c.length.should.equal(1);
               let recoveryClient = c[0];
-              recoveryClient.openWallet(function (err) {
+              recoveryClient.openWallet((err) => {
                 should.not.exist(err);
                 recoveryClient.credentials.walletName.should.equal(walletName);
                 recoveryClient.credentials.copayerName.should.equal(copayerName);
                 recoveryClient.credentials.m.should.equal(2);
                 recoveryClient.credentials.n.should.equal(2);
-                recoveryClient.getMainAddresses({}, function (err, list) {
+                recoveryClient.getMainAddresses({}, (err, list) => {
                   should.not.exist(err);
                   should.exist(list);
                   list[0].address.should.equal(addr.address);
@@ -4886,11 +4882,10 @@ describe.only('client API', function () {
         });
       });
 
-      it('should fail to gain access to a 1-1 wallet from wrong mnemonic', function (done) {
-        helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
-          var words = (new Key().create()).get().mnemonic;
-          var walletName = clients[0].credentials.walletName;
-          var copayerName = clients[0].credentials.copayerName;
+      it('should fail to gain access to a 1-1 wallet from wrong mnemonic', (done) => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+          var words = new Key().create();
+          words = words.get().mnemonic;
           new Client.API().serverAssistedImport({ words }, {
             clientFactory: () => {
               return helpers.newClient(app)
@@ -4908,11 +4903,11 @@ describe.only('client API', function () {
         this.timeout(5000);
         helpers.createAndJoinWallet(clients, keys, 2, 2, {
           useLegacyPurpose: true,
-        }, function () {
+        }, () => {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
-          clients[0].createAddress(function (err, addr) {
+          clients[0].createAddress((err, addr) => {
             should.not.exist(err);
             should.exist(addr);
             new Client.API().serverAssistedImport({ words }, {
@@ -4930,13 +4925,13 @@ describe.only('client API', function () {
               should.not.exist(err);
               c.length.should.equal(1);
               let recoveryClient = c[0];
-              recoveryClient.openWallet(function (err) {
+              recoveryClient.openWallet((err) => {
                 should.not.exist(err);
                 recoveryClient.credentials.walletName.should.equal(walletName);
                 recoveryClient.credentials.copayerName.should.equal(copayerName);
                 recoveryClient.credentials.m.should.equal(2);
                 recoveryClient.credentials.n.should.equal(2);
-                recoveryClient.getMainAddresses({}, function (err, list) {
+                recoveryClient.getMainAddresses({}, (err, list) => {
                   should.not.exist(err);
                   should.exist(list);
                   list[0].address.should.equal(addr.address);
@@ -4955,11 +4950,11 @@ describe.only('client API', function () {
         this.timeout(5000);
         helpers.createAndJoinWallet(clients, keys, 2, 3, {
           useLegacyPurpose: true,
-        }, function () {
+        }, () => {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
-          clients[0].createAddress(function (err, addr) {
+          clients[0].createAddress((err, addr) => {
             should.not.exist(err);
             should.exist(addr);
             new Client.API().serverAssistedImport({ words }, {
@@ -4977,13 +4972,13 @@ describe.only('client API', function () {
               should.not.exist(err);
               c.length.should.equal(1);
               let recoveryClient = c[0];
-              recoveryClient.openWallet(function (err) {
+              recoveryClient.openWallet((err) => {
                 should.not.exist(err);
                 recoveryClient.credentials.walletName.should.equal(walletName);
                 recoveryClient.credentials.copayerName.should.equal(copayerName);
                 recoveryClient.credentials.m.should.equal(2);
                 recoveryClient.credentials.n.should.equal(3);
-                recoveryClient.getMainAddresses({}, function (err, list) {
+                recoveryClient.getMainAddresses({}, (err, list) => {
                   should.not.exist(err);
                   should.exist(list);
                   list[0].address.should.equal(addr.address);
@@ -4996,11 +4991,11 @@ describe.only('client API', function () {
       });
 
 
-      it('should be able to see txp messages after gaining access', function (done) {
-        helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
+      it('should be able to see txp messages after gaining access', (done) => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
           var xPrivKey = keys[0].get().xPrivKey;
           var walletName = clients[0].credentials.walletName;
-          clients[0].createAddress(function (err, x0) {
+          clients[0].createAddress((err, x0) => {
             should.not.exist(err);
             should.exist(x0.address);
             blockchainExplorerMock.setUtxo(x0, 1, 1, 0);
@@ -5009,7 +5004,7 @@ describe.only('client API', function () {
               toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
               message: 'hello',
             };
-            helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+            helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
               should.not.exist(err);
 
 
@@ -5021,10 +5016,10 @@ describe.only('client API', function () {
                 should.not.exist(err);
                 c.length.should.equal(1);
                 let recoveryClient = c[0];
-                recoveryClient.openWallet(function (err) {
+                recoveryClient.openWallet((err) => {
                   should.not.exist(err);
                   recoveryClient.credentials.walletName.should.equal(walletName);
-                  recoveryClient.getTx(x.id, function (err, x2) {
+                  recoveryClient.getTx(x.id, (err, x2) => {
                     should.not.exist(err);
                     x2.message.should.equal(opts.message);
                     done();
@@ -5036,9 +5031,9 @@ describe.only('client API', function () {
         });
       });
 
-      it('should be able to recreate wallet 2-2', function (done) {
-        helpers.createAndJoinWallet(clients, keys, 2, 2, {}, function () {
-          clients[0].createAddress(function (err, addr) {
+      it('should be able to recreate wallet 2-2', (done) => {
+        helpers.createAndJoinWallet(clients, keys, 2, 2, {}, () => {
+          clients[0].createAddress((err, addr) => {
             should.not.exist(err);
             should.exist(addr);
 
@@ -5052,18 +5047,18 @@ describe.only('client API', function () {
               storage: storage,
               blockchainExplorer: blockchainExplorerMock,
               disableLogs: true,
-            }, function () {
+            }, () => {
               newApp = expressApp.app;
 
               var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
               var recoveryClient = helpers.newClient(newApp);
               recoveryClient.fromString(clients[0].toString());
 
-              recoveryClient.getStatus({}, function (err, status) {
+              recoveryClient.getStatus({}, (err, status) => {
                 should.exist(err);
                 err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
                 var spy = sinon.spy(recoveryClient.request, 'post');
-                recoveryClient.recreateWallet(function (err) {
+                recoveryClient.recreateWallet((err) => {
                   should.not.exist(err);
 
                   // Do not send wallet name and copayer names in clear text
@@ -5077,11 +5072,11 @@ describe.only('client API', function () {
                   body.should.not.contain('creator');
                   body.should.not.contain('copayer 1');
 
-                  recoveryClient.getStatus({}, function (err, status) {
+                  recoveryClient.getStatus({}, (err, status) => {
                     should.not.exist(err);
                     status.wallet.name.should.equal('mywallet');
                     _.difference(_.map(status.wallet.copayers, 'name'), ['creator', 'copayer 1']).length.should.equal(0);
-                    recoveryClient.createAddress(function (err, addr2) {
+                    recoveryClient.createAddress((err, addr2) => {
                       should.not.exist(err);
                       should.exist(addr2);
                       addr2.address.should.equal(addr.address);
@@ -5089,7 +5084,7 @@ describe.only('client API', function () {
 
                       var recoveryClient2 = helpers.newClient(newApp);
                       recoveryClient2.fromString(clients[1].toString());
-                      recoveryClient2.getStatus({}, function (err, status) {
+                      recoveryClient2.getStatus({}, (err, status) => {
                         should.not.exist(err);
                         done();
                       });
@@ -5104,8 +5099,8 @@ describe.only('client API', function () {
 
       it('should be able to recover funds from recreated wallet', function (done) {
         this.timeout(10000);
-        helpers.createAndJoinWallet(clients, keys, 2, 2, {}, function () {
-          clients[0].createAddress(function (err, addr) {
+        helpers.createAndJoinWallet(clients, keys, 2, 2, {}, () => {
+          clients[0].createAddress((err, addr) => {
             should.not.exist(err);
             should.exist(addr);
             blockchainExplorerMock.setUtxo(addr, 1, 2);
@@ -5120,32 +5115,32 @@ describe.only('client API', function () {
               blockchainExplorer: blockchainExplorerMock,
               disableLogs: true,
             },
-              function () {
+              () => {
                 newApp = expressApp.app;
 
                 var recoveryClient = helpers.newClient(newApp);
                 recoveryClient.fromString(clients[0].toString());
 
-                recoveryClient.getStatus({}, function (err, status) {
+                recoveryClient.getStatus({}, (err, status) => {
                   should.exist(err);
                   err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
-                  recoveryClient.recreateWallet(function (err) {
+                  recoveryClient.recreateWallet((err) => {
                     should.not.exist(err);
-                    recoveryClient.getStatus({}, function (err, status) {
+                    recoveryClient.getStatus({}, (err, status) => {
                       should.not.exist(err);
-                      recoveryClient.startScan({}, function (err) {
+                      recoveryClient.startScan({}, (err) => {
                         should.not.exist(err);
                         var balance = 0;
-                        async.whilst(function () {
+                        async.whilst(() => {
                           return balance == 0;
-                        }, function (next) {
-                          setTimeout(function () {
-                            recoveryClient.getBalance({}, function (err, b) {
+                        }, (next) => {
+                          setTimeout(() => {
+                            recoveryClient.getBalance({}, (err, b) => {
                               balance = b.totalAmount;
                               next(err);
                             });
                           }, 200);
-                        }, function (err) {
+                        }, (err) => {
                           should.not.exist(err);
                           balance.should.equal(1e8);
                           done();
@@ -5159,9 +5154,9 @@ describe.only('client API', function () {
         });
       });
 
-      it('should be able call recreate wallet twice', function (done) {
-        helpers.createAndJoinWallet(clients, keys, 2, 2, {}, function () {
-          clients[0].createAddress(function (err, addr) {
+      it('should be able call recreate wallet twice', (done) => {
+        helpers.createAndJoinWallet(clients, keys, 2, 2, {}, () => {
+          clients[0].createAddress((err, addr) => {
             should.not.exist(err);
             should.exist(addr);
 
@@ -5175,24 +5170,24 @@ describe.only('client API', function () {
               blockchainExplorer: blockchainExplorerMock,
               disableLogs: true,
             },
-              function () {
+              () => {
                 newApp = expressApp.app;
 
                 var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
                 var recoveryClient = helpers.newClient(newApp);
                 recoveryClient.fromString(clients[0].toString());
 
-                recoveryClient.getStatus({}, function (err, status) {
+                recoveryClient.getStatus({}, (err, status) => {
                   should.exist(err);
                   err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
-                  recoveryClient.recreateWallet(function (err) {
+                  recoveryClient.recreateWallet((err) => {
                     should.not.exist(err);
-                    recoveryClient.recreateWallet(function (err) {
+                    recoveryClient.recreateWallet((err) => {
                       should.not.exist(err);
-                      recoveryClient.getStatus({}, function (err, status) {
+                      recoveryClient.getStatus({}, (err, status) => {
                         should.not.exist(err);
                         _.difference(_.map(status.wallet.copayers, 'name'), ['creator', 'copayer 1']).length.should.equal(0);
-                        recoveryClient.createAddress(function (err, addr2) {
+                        recoveryClient.createAddress((err, addr2) => {
                           should.not.exist(err);
                           should.exist(addr2);
                           addr2.address.should.equal(addr.address);
@@ -5200,7 +5195,7 @@ describe.only('client API', function () {
 
                           var recoveryClient2 = helpers.newClient(newApp);
                           recoveryClient2.fromString(clients[1].toString());
-                          recoveryClient2.getStatus({}, function (err, status) {
+                          recoveryClient2.getStatus({}, (err, status) => {
                             should.not.exist(err);
                             done();
                           });
@@ -5214,7 +5209,7 @@ describe.only('client API', function () {
         });
       });
 
-      it('should be able to recreate 1-of-1 wallet with account 2', function (done) {
+      it('should be able to recreate 1-of-1 wallet with account 2', (done) => {
         let k = new Key().fromExtendedPrivateKey('tprv8ZgxMBicQKsPdeZR4tV14PAJmzrWGsmafRVaHXUVYezrSbtnFM1CnqdbQuXfmSLxwr71axKewd3LTRDcQmtttUnZe27TQoGmGMeddv1H9JQ');
         clients[0].fromString(
           k.createCredentials(null, {
@@ -5227,10 +5222,10 @@ describe.only('client API', function () {
 
         clients[0].createWallet('mywallet', 'creator', 1, 1, {
           network: 'testnet'
-        }, function (err, secret) {
+        }, (err, secret) => {
           should.not.exist(err);
 
-          clients[0].createAddress(function (err, addr) {
+          clients[0].createAddress((err, addr) => {
             should.not.exist(err);
             should.exist(addr);
 
@@ -5244,7 +5239,7 @@ describe.only('client API', function () {
               storage: storage,
               blockchainExplorer: blockchainExplorerMock,
               disableLogs: true,
-            }, function () {
+            }, () => {
               newApp = expressApp.app;
 
               var oldPKR = _.clone(clients[0].credentials.publicKeyRing);
@@ -5252,14 +5247,14 @@ describe.only('client API', function () {
               recoveryClient.fromString(clients[0].toString());
               recoveryClient.credentials.account.should.equal(2);
               recoveryClient.credentials.rootPath.should.equal('m/44\'/1\'/2\'');
-              recoveryClient.getStatus({}, function (err, status) {
+              recoveryClient.getStatus({}, (err, status) => {
                 should.exist(err);
                 err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
-                recoveryClient.recreateWallet(function (err) {
+                recoveryClient.recreateWallet((err) => {
                   should.not.exist(err);
-                  recoveryClient.getStatus({}, function (err, status) {
+                  recoveryClient.getStatus({}, (err, status) => {
                     should.not.exist(err);
-                    recoveryClient.createAddress(function (err, addr2) {
+                    recoveryClient.createAddress((err, addr2) => {
                       should.not.exist(err);
                       should.exist(addr2);
                       addr2.address.should.equal(addr.address);
@@ -5276,17 +5271,17 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Mobility, backup & restore BCH ONLY', function () {
+  describe('Mobility, backup & restore BCH ONLY', () => {
     var importedClient = null, address;
 
-    beforeEach(function () {
+    beforeEach(() => {
       importedClient = null;
     });
 
     it('should be able to restore a  useLegacyCoinType wallet', function (done) {
       this.timeout(5000);
 
-      var check = function (x) {
+      var check = (x) => {
         x.credentials.rootPath.should.equal('m/44\'/0\'/0\'');
         x.credentials.xPubKey.toString().should.equal('xpub6DJEsBSYZrjsrHssifihdekpoWcKRHR6WVfbyk6Hhq1HxZSDoyEvT2pMHmSnNKEvdQNmfVqn1Ef1yWgYcrnhc3mSegUCbMvVJCPLYJ1PNen');
       };
@@ -5308,9 +5303,9 @@ describe.only('client API', function () {
       clients[0].createWallet('mywallet', 'creator', 1, 1, {
         coin: 'bch',
         network: 'livenet',
-      }, function (err, secret) {
+      }, (err, secret) => {
         should.not.exist(err);
-        clients[0].createAddress(function (err, x) {
+        clients[0].createAddress((err, x) => {
           should.not.exist(err);
           address = x.address;
           var importedClient = helpers.newClient(app);
@@ -5323,10 +5318,10 @@ describe.only('client API', function () {
             })
           );
           var spy = sinon.spy(importedClient, 'openWallet');
-          importedClient.openWallet(function (err) {
+          importedClient.openWallet((err) => {
             should.not.exist(err);
             check(importedClient);
-            importedClient.getMainAddresses({}, function (err, x) {
+            importedClient.getMainAddresses({}, (err, x) => {
               should.not.exist(err);
               x[0].address.should.equal(address);
               done();
@@ -5337,8 +5332,8 @@ describe.only('client API', function () {
     });
   });
 
-  describe.skip('Air gapped related flows', function () {
-    it('should create wallet in proxy from airgapped', function (done) {
+  describe.skip('Air gapped related flows', () => {
+    it('should create wallet in proxy from airgapped', (done) => {
       var airgapped = new Client.API();
       airgapped.seedFromRandom({
         network: 'testnet'
@@ -5354,17 +5349,17 @@ describe.only('client API', function () {
       var seedSpy = sinon.spy(proxy, 'seedFromRandom');
       proxy.createWallet('mywallet', 'creator', 1, 1, {
         network: 'testnet'
-      }, function (err) {
+      }, (err) => {
         should.not.exist(err);
         seedSpy.called.should.be.false;
-        proxy.getStatus({}, function (err, status) {
+        proxy.getStatus({}, (err, status) => {
           should.not.exist(err);
           status.wallet.name.should.equal('mywallet');
           done();
         });
       });
     });
-    it('should fail to create wallet in proxy from airgapped when networks do not match', function (done) {
+    it('should fail to create wallet in proxy from airgapped when networks do not match', (done) => {
       var airgapped = new Client.API();
       airgapped.seedFromRandom({
         network: 'testnet'
@@ -5381,13 +5376,13 @@ describe.only('client API', function () {
       should.not.exist(proxy.credentials.xPrivKey);
       proxy.createWallet('mywallet', 'creator', 1, 1, {
         network: 'livenet'
-      }, function (err) {
+      }, (err) => {
         should.exist(err);
         err.message.should.equal('Existing keys were created for a different network');
         done();
       });
     });
-    it('should be able to sign from airgapped client and broadcast from proxy', function (done) {
+    it('should be able to sign from airgapped client and broadcast from proxy', (done) => {
       var airgapped = new Client.API();
       airgapped.seedFromRandom({
         network: 'testnet'
@@ -5402,12 +5397,12 @@ describe.only('client API', function () {
 
       async.waterfall([
 
-        function (next) {
+        (next) => {
           proxy.createWallet('mywallet', 'creator', 1, 1, {
             network: 'testnet'
-          }, function (err) {
+          }, (err) => {
             should.not.exist(err);
-            proxy.createAddress(function (err, address) {
+            proxy.createAddress((err, address) => {
               should.not.exist(err);
               should.exist(address.address);
               blockchainExplorerMock.setUtxo(address, 1, 1);
@@ -5420,52 +5415,52 @@ describe.only('client API', function () {
             });
           });
         },
-        function (txp, next) {
+        (txp, next) => {
           should.exist(txp);
-          proxy.signTxProposal(txp, function (err, txp) {
+          proxy.signTxProposal(txp, (err, txp) => {
             should.exist(err);
             should.not.exist(txp);
             err.message.should.equal('Missing private keys to sign.');
             next(null, txp);
           });
         },
-        function (txp, next) {
+        (txp, next) => {
           proxy.getTxProposals({
             forAirGapped: true
           }, next);
         },
-        function (bundle, next) {
+        (bundle, next) => {
           var signatures = airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
           next(null, signatures);
         },
-        function (signatures, next) {
-          proxy.getTxProposals({}, function (err, txps) {
+        (signatures, next) => {
+          proxy.getTxProposals({}, (err, txps) => {
             should.not.exist(err);
             var txp = txps[0];
             txp.signatures = signatures;
-            async.each(txps, function (txp, cb) {
-              proxy.signTxProposal(txp, function (err, txp) {
+            async.each(txps, (txp, cb) => {
+              proxy.signTxProposal(txp, (err, txp) => {
                 should.not.exist(err);
-                proxy.broadcastTxProposal(txp, function (err, txp) {
+                proxy.broadcastTxProposal(txp, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('broadcasted');
                   should.exist(txp.txid);
                   cb();
                 });
               });
-            }, function (err) {
+            }, (err) => {
               next(err);
             });
           });
         },
       ],
-        function (err) {
+        (err) => {
           should.not.exist(err);
           done();
         }
       );
     });
-    it('should be able to sign from airgapped client with mnemonics (with unencrypted xpubkey ring)', function (done) {
+    it('should be able to sign from airgapped client with mnemonics (with unencrypted xpubkey ring)', (done) => {
       var client = helpers.newClient(app);
       client.seedFromRandomWithMnemonic({
         network: 'testnet',
@@ -5478,12 +5473,12 @@ describe.only('client API', function () {
 
       async.waterfall([
 
-        function (next) {
+        (next) => {
           client.createWallet('mywallet', 'creator', 1, 1, {
             network: 'testnet'
-          }, function (err) {
+          }, (err) => {
             should.not.exist(err);
-            client.createAddress(function (err, address) {
+            client.createAddress((err, address) => {
               should.not.exist(err);
               should.exist(address.address);
               blockchainExplorerMock.setUtxo(address, 1, 1);
@@ -5496,14 +5491,14 @@ describe.only('client API', function () {
             });
           });
         },
-        function (txp, next) {
+        (txp, next) => {
           should.exist(txp);
           client.getTxProposals({
             forAirGapped: true,
             doNotEncryptPkr: true,
           }, next);
         },
-        function (bundle, next) {
+        (bundle, next) => {
           var signatures = new Client.API().signTxProposalFromAirGapped(mnemonic, bundle.txps[0], bundle.unencryptedPkr, bundle.m, bundle.n, {
             passphrase: 'passphrase',
             account: 0,
@@ -5511,37 +5506,37 @@ describe.only('client API', function () {
           });
           next(null, signatures);
         },
-        function (signatures, next) {
-          client.getTxProposals({}, function (err, txps) {
+        (signatures, next) => {
+          client.getTxProposals({}, (err, txps) => {
             should.not.exist(err);
             var txp = txps[0];
             txp.signatures = signatures;
-            async.each(txps, function (txp, cb) {
-              client.signTxProposal(txp, function (err, txp) {
+            async.each(txps, (txp, cb) => {
+              client.signTxProposal(txp, (err, txp) => {
                 should.not.exist(err);
-                client.broadcastTxProposal(txp, function (err, txp) {
+                client.broadcastTxProposal(txp, (err, txp) => {
                   should.not.exist(err);
                   txp.status.should.equal('broadcasted');
                   should.exist(txp.txid);
                   cb();
                 });
               });
-            }, function (err) {
+            }, (err) => {
               next(err);
             });
           });
         },
       ],
-        function (err) {
+        (err) => {
           should.not.exist(err);
           done();
         }
       );
     });
-    describe('Failure and tampering', function () {
+    describe('Failure and tampering', () => {
       var airgapped, proxy, bundle;
 
-      beforeEach(function (done) {
+      beforeEach((done) => {
         airgapped = new Client.API();
         airgapped.seedFromRandom({
           network: 'testnet'
@@ -5556,12 +5551,12 @@ describe.only('client API', function () {
 
         async.waterfall([
 
-          function (next) {
+          (next) => {
             proxy.createWallet('mywallet', 'creator', 1, 1, {
               network: 'testnet'
-            }, function (err) {
+            }, (err) => {
               should.not.exist(err);
-              proxy.createAddress(function (err, address) {
+              proxy.createAddress((err, address) => {
                 should.not.exist(err);
                 should.exist(address.address);
                 blockchainExplorerMock.setUtxo(address, 1, 1);
@@ -5574,52 +5569,52 @@ describe.only('client API', function () {
               });
             });
           },
-          function (txp, next) {
+          (txp, next) => {
             proxy.getTxProposals({
               forAirGapped: true
-            }, function (err, result) {
+            }, (err, result) => {
               should.not.exist(err);
               bundle = result;
               next();
             });
           },
         ],
-          function (err) {
+          (err) => {
             should.not.exist(err);
             done();
           }
         );
       });
-      it('should fail to sign from airgapped client when there is no extended private key', function (done) {
+      it('should fail to sign from airgapped client when there is no extended private key', (done) => {
         delete airgapped.credentials.xPrivKey;
-        (function () {
+        (() => {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
         }).should.throw('Missing private keys');
         done();
       });
-      it('should fail gracefully when PKR cannot be decrypted in airgapped client', function (done) {
+      it('should fail gracefully when PKR cannot be decrypted in airgapped client', (done) => {
         bundle.encryptedPkr = 'dummy';
-        (function () {
+        (() => {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
         }).should.throw('Could not decrypt public key ring');
         done();
       });
-      it('should be able to detect invalid or tampered PKR when signing on airgapped client', function (done) {
-        (function () {
+      it('should be able to detect invalid or tampered PKR when signing on airgapped client', (done) => {
+        (() => {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, 2);
         }).should.throw('Invalid public key ring');
         done();
       });
-      it.skip('should be able to detect tampered proposal when signing on airgapped client', function (done) {
+      it.skip('should be able to detect tampered proposal when signing on airgapped client', (done) => {
         bundle.txps[0].encryptedMessage = 'tampered message';
-        (function () {
+        (() => {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
         }).should.throw('Fake transaction proposal');
         done();
       });
-      it('should be able to detect tampered change address when signing on airgapped client', function (done) {
+      it('should be able to detect tampered change address when signing on airgapped client', (done) => {
         bundle.txps[0].changeAddress.address = 'mqNkvNuhzZKeXYNRZ1bdj55smmW3acr6K7';
-        (function () {
+        (() => {
           airgapped.signTxProposalFromAirGapped(bundle.txps[0], bundle.encryptedPkr, bundle.m, bundle.n);
         }).should.throw('Fake transaction proposal');
         done();
@@ -5627,19 +5622,19 @@ describe.only('client API', function () {
     });
   });
 
-  describe('#addAccess', function () {
-    describe('1-1 wallets', function () {
+  describe('#addAccess', () => {
+    describe('1-1 wallets', () => {
       var opts;
 
-      beforeEach(function (done) {
+      beforeEach((done) => {
         opts = {
           amount: 10000,
           toAddress: 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5',
           message: 'hello',
         };
 
-        helpers.createAndJoinWallet(clients, keys, 1, 1, {}, function () {
-          clients[0].createAddress(function (err, x0) {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+          clients[0].createAddress((err, x0) => {
             should.not.exist(err);
             blockchainExplorerMock.setUtxo(x0, 10, 1);
             var c = clients[0].credentials;
@@ -5653,22 +5648,22 @@ describe.only('client API', function () {
         });
       });
 
-      it('should deny access before registering it ', function (done) {
-        helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+      it('should deny access before registering it ', (done) => {
+        helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
           err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
           done();
         });
       });
 
-      it('should grant access with current keys', function (done) {
+      it('should grant access with current keys', (done) => {
         let rk = clients[0].credentials.requestPrivKey;
         clients[0].addAccess(
           keys[0].createAccess(null, {
             path: clients[0].credentials.rootPath,
             requestPrivKey: clients[0].credentials.requestPrivKey,
-          }), function (err, x) {
+          }), (err, x) => {
             should.not.exist(err);
-            helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+            helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
               should.not.exist(err);
               clients[0].credentials.requestPrivKey.should.be.equal(rk);
               done();
@@ -5676,14 +5671,14 @@ describe.only('client API', function () {
           });
       });
 
-      it('should add access with copayer name', function (done) {
+      it('should add access with copayer name', (done) => {
         var spy = sinon.spy(clients[0].request, 'put');
 
         var opts2 = keys[0].createAccess(null, {
           path: clients[0].credentials.rootPath,
         });
         opts2.name = 'pepe';
-        clients[0].addAccess(opts2, function (err, x, key) {
+        clients[0].addAccess(opts2, (err, x, key) => {
           should.not.exist(err);
           var url = spy.getCall(0).args[0];
           var body = JSON.stringify(spy.getCall(0).args[1]);
@@ -5695,7 +5690,7 @@ describe.only('client API', function () {
           c.requestPrivKey = k.toString();
           c.requestPubKey = k.toPublicKey().toString();
 
-          clients[0].getStatus({}, function (err, status) {
+          clients[0].getStatus({}, (err, status) => {
             should.not.exist(err);
             var keys = status.wallet.copayers[0].requestPubKeys;
             keys.length.should.equal(2);
@@ -5703,7 +5698,7 @@ describe.only('client API', function () {
               name: 'pepe'
             }).length.should.equal(1);
 
-            helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+            helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
               should.not.exist(err);
               // TODO: verify tx's creator is 'pepe'
               done();
@@ -5712,46 +5707,46 @@ describe.only('client API', function () {
         });
       });
 
-      it('should grant access with *new* keys then deny access with old keys', function (done) {
+      it('should grant access with *new* keys then deny access with old keys', (done) => {
         var opts2 = keys[0].createAccess(null, {
           path: clients[0].credentials.rootPath,
           // Generate new keys:  Do not pass this param
           //requestPrivKey: clients[0].credentials.requestPrivKey,
         });
-        clients[0].addAccess(opts2, function (err, x) {
-          helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+        clients[0].addAccess(opts2, (err, x) => {
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
             err.should.be.an.instanceOf(Errors.NOT_AUTHORIZED);
             done();
           });
         });
       });
 
-      it('should grant access with new keys', function (done) {
+      it('should grant access with new keys', (done) => {
         var opts2 = keys[0].createAccess(null, {
           path: clients[0].credentials.rootPath,
         });
 
-        clients[0].addAccess(opts2, function (err, x, key) {
+        clients[0].addAccess(opts2, (err, x, key) => {
           var k = new Bitcore.PrivateKey(key);
           var c = clients[0].credentials;
           c.requestPrivKey = k.toString();
           c.requestPubKey = k.toPublicKey().toString();
-          helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
             should.not.exist(err);
             done();
           });
         });
       });
 
-      it('should verify tx proposals of added access', function (done) {
+      it('should verify tx proposals of added access', (done) => {
         var opts2 = keys[0].createAccess(null, {
           path: clients[0].credentials.rootPath,
           requestPrivKey: clients[0].credentials.requestPrivKey,
         });
-        clients[0].addAccess(opts2, function (err, x) {
-          helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+        clients[0].addAccess(opts2, (err, x) => {
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
             should.not.exist(err);
-            clients[0].getTxProposals({}, function (err, txps) {
+            clients[0].getTxProposals({}, (err, txps) => {
               should.not.exist(err);
               done();
             });
@@ -5760,18 +5755,18 @@ describe.only('client API', function () {
       });
 
 
-      it('should detect tampered tx proposals of added access (case 1)', function (done) {
+      it('should detect tampered tx proposals of added access (case 1)', (done) => {
         var opts2 = keys[0].createAccess(null, {
           path: clients[0].credentials.rootPath,
           requestPrivKey: clients[0].credentials.requestPrivKey,
         });
-        clients[0].addAccess(opts2, function (err, x) {
-          helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+        clients[0].addAccess(opts2, (err, x) => {
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
             should.not.exist(err);
-            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function (txps) {
+            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, (txps) => {
               txps[0].proposalSignature = '304402206e4a1db06e00068582d3be41cfc795dcf702451c132581e661e7241ef34ca19202203e17598b4764913309897d56446b51bc1dcd41a25d90fdb5f87a6b58fe3a6920';
-            }, function () {
-              clients[0].getTxProposals({}, function (err, txps) {
+            }, () => {
+              clients[0].getTxProposals({}, (err, txps) => {
                 err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
                 done();
               });
@@ -5780,18 +5775,18 @@ describe.only('client API', function () {
         });
       });
 
-      it('should detect tampered tx proposals of added access (case 2)', function (done) {
+      it('should detect tampered tx proposals of added access (case 2)', (done) => {
         var opts2 = keys[0].createAccess(null, {
           path: clients[0].credentials.rootPath,
           requestPrivKey: clients[0].credentials.requestPrivKey,
         });
-        clients[0].addAccess(opts2, function (err, x) {
-          helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+        clients[0].addAccess(opts2, (err, x) => {
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
             should.not.exist(err);
-            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function (txps) {
+            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, (txps) => {
               txps[0].proposalSignaturePubKey = '02d368d7f03a57b2ad3ad9c2766739da83b85ab9c3718fb02ad36574f9391d6bf6';
-            }, function () {
-              clients[0].getTxProposals({}, function (err, txps) {
+            }, () => {
+              clients[0].getTxProposals({}, (err, txps) => {
                 err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
                 done();
               });
@@ -5801,18 +5796,18 @@ describe.only('client API', function () {
       });
 
 
-      it('should detect tampered tx proposals of added access (case 3)', function (done) {
+      it('should detect tampered tx proposals of added access (case 3)', (done) => {
         var opts2 = keys[0].createAccess(null, {
           path: clients[0].credentials.rootPath,
           requestPrivKey: clients[0].credentials.requestPrivKey,
         });
-        clients[0].addAccess(opts2, function (err, x) {
-          helpers.createAndPublishTxProposal(clients[0], opts, function (err, x) {
+        clients[0].addAccess(opts2, (err, x) => {
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
             should.not.exist(err);
-            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, function (txps) {
+            helpers.tamperResponse(clients[0], 'get', '/v1/txproposals/', {}, (txps) => {
               txps[0].proposalSignaturePubKeySig = '304402201528748eafc5083fe67c84cbf0eb996eba9a65584a73d8c07ed6e0dc490c195802204f340488266c804cf1033f8b852efd1d4e05d862707c119002dc3fbe7a805c35';
-            }, function () {
-              clients[0].getTxProposals({}, function (err, txps) {
+            }, () => {
+              clients[0].getTxProposals({}, (err, txps) => {
                 err.should.be.an.instanceOf(Errors.SERVER_COMPROMISED);
                 done();
               });
@@ -5827,10 +5822,10 @@ describe.only('client API', function () {
     btc: ['1PuKMvRFfwbLXyEPXZzkGi111gMUCs6uE3', '1GG3JQikGC7wxstyavUBDoCJ66bWLLENZC'],
     bch: ['qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e', 'qznkyz7hdd3jvkqc76zsf585dcp5czmz5udnlj26ya']
   };
-  _.each(['bch', 'btc'], function (coin) {
+  _.each(['bch', 'btc'], (coin) => {
     var addr = addrMap[coin];
 
-    describe('Sweep paper wallet ' + coin, function () {
+    describe('Sweep paper wallet ' + coin, () => {
 
 
       beforeEach(() => {
@@ -5843,48 +5838,48 @@ describe.only('client API', function () {
       });
 
       var B = Bitcore_[coin];
-      it.skip('should decrypt bip38 encrypted private key', function (done) {
+      it.skip('should decrypt bip38 encrypted private key', (done) => {
         this.timeout(60000);
-        clients[0].decryptBIP38PrivateKey('6PfRh9ZnWtiHrGoPPSzXe6iafTXc6FSXDhSBuDvvDmGd1kpX2Gvy1CfTcA', 'passphrase', {}, function (err, result) {
+        clients[0].decryptBIP38PrivateKey('6PfRh9ZnWtiHrGoPPSzXe6iafTXc6FSXDhSBuDvvDmGd1kpX2Gvy1CfTcA', 'passphrase', {}, (err, result) => {
           should.not.exist(err);
           result.should.equal('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp');
           done();
         });
       });
-      it.skip('should fail to decrypt bip38 encrypted private key with incorrect passphrase', function (done) {
+      it.skip('should fail to decrypt bip38 encrypted private key with incorrect passphrase', (done) => {
         this.timeout(60000);
-        clients[0].decryptBIP38PrivateKey('6PfRh9ZnWtiHrGoPPSzXe6iafTXc6FSXDhSBuDvvDmGd1kpX2Gvy1CfTcA', 'incorrect passphrase', {}, function (err, result) {
+        clients[0].decryptBIP38PrivateKey('6PfRh9ZnWtiHrGoPPSzXe6iafTXc6FSXDhSBuDvvDmGd1kpX2Gvy1CfTcA', 'incorrect passphrase', {}, (err, result) => {
           should.exist(err);
           err.message.should.contain('passphrase');
           done();
         });
       });
-      it('should get balance from single private key', function (done) {
+      it('should get balance from single private key', (done) => {
         var address = {
           address: addr[0],
           type: 'P2PKH',
           coin: coin,
         };
-        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: coin, network: 'livenet' }, function () {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: coin, network: 'livenet' }, () => {
           blockchainExplorerMock.setUtxo(address, 123, 1);
-          clients[0].getBalanceFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', coin, function (err, balance) {
+          clients[0].getBalanceFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', coin, (err, balance) => {
             should.not.exist(err);
             balance.should.equal(123 * 1e8);
             done();
           });
         });
       });
-      it('should build tx for single private key', function (done) {
+      it('should build tx for single private key', (done) => {
         var address = {
           address: addr[0],
           type: 'P2PKH',
           coin: coin,
         };
-        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: coin, network: 'livenet' }, function () {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: coin, network: 'livenet' }, () => {
           blockchainExplorerMock.setUtxo(address, 123, 1);
           clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1], {
             coin: coin
-          }, function (err, tx) {
+          }, (err, tx) => {
             should.not.exist(err);
             should.exist(tx);
             tx.outputs.length.should.equal(1);
@@ -5897,10 +5892,10 @@ describe.only('client API', function () {
         });
       });
 
-      it('should handle tx serialization error when building tx', function (done) {
+      it('should handle tx serialization error when building tx', (done) => {
         var sandbox = sinon.sandbox.create();
 
-        var se = sandbox.stub(B.Transaction.prototype, 'serialize').callsFake(function () {
+        var se = sandbox.stub(B.Transaction.prototype, 'serialize').callsFake(() => {
           throw new Error('this is an error');
         });
 
@@ -5909,11 +5904,11 @@ describe.only('client API', function () {
           type: 'P2PKH',
           coin: coin,
         };
-        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: coin, network: 'livenet' }, function () {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: coin, network: 'livenet' }, () => {
           blockchainExplorerMock.setUtxo(address, 123, 1);
           clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1], {
             coin: coin,
-          }, function (err, tx) {
+          }, (err, tx) => {
             should.exist(err);
             should.not.exist(tx);
             err.should.be.an.instanceOf(Errors.COULD_NOT_BUILD_TRANSACTION);
@@ -5923,18 +5918,18 @@ describe.only('client API', function () {
         });
       });
 
-      it('should fail to build tx for single private key if insufficient funds', function (done) {
+      it('should fail to build tx for single private key if insufficient funds', (done) => {
         var address = {
           address: addr[0],
           type: 'P2PKH',
           coin: coin,
         };
-        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: coin, network: 'livenet' }, function () {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: coin, network: 'livenet' }, () => {
           blockchainExplorerMock.setUtxo(address, 123 / 1e8, 1);
           clients[0].buildTxFromPrivateKey('5KjBgBiadWGhjWmLN1v4kcEZqWSZFqzgv7cSUuZNJg4tD82c4xp', addr[1], {
             fee: 500,
             coin: coin,
-          }, function (err, tx) {
+          }, (err, tx) => {
             should.exist(err);
             err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS);
             done();
@@ -5944,8 +5939,8 @@ describe.only('client API', function () {
     });
   });
 
-  describe('#formatAmount', function () {
-    it('should successfully format amount', function () {
+  describe('#formatAmount', () => {
+    it('should successfully format amount', () => {
       var cases = [{
         args: [1, 'bit'],
         expected: '0',
@@ -5970,21 +5965,21 @@ describe.only('client API', function () {
         expected: '12 345,678999',
       },];
 
-      _.each(cases, function (testCase) {
+      _.each(cases, (testCase) => {
         new Utils().formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
       });
     });
   });
 
-  describe('_initNotifications', function () {
-    it('should handle NOT_FOUND error from _fetchLatestNotifications', function (done) {
+  describe('_initNotifications', () => {
+    it('should handle NOT_FOUND error from _fetchLatestNotifications', (done) => {
       var sandbox = sinon.sandbox.create();
       var clock = sandbox.useFakeTimers();
 
       var client = new Client.API();
 
-      var _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake(function (interval, cb) {
-        cb(Errors.NOT_FOUND);
+      var _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake((interval, cb) => {
+        cb(new Errors.NOT_FOUND);
       });
 
       client._initNotifications({
@@ -5997,14 +5992,14 @@ describe.only('client API', function () {
       done();
     });
 
-    it('should handle NOT_AUTHORIZED error from _fetLatestNotifications', function (done) {
+    it('should handle NOT_AUTHORIZED error from _fetLatestNotifications', (done) => {
       var sandbox = sinon.sandbox.create();
       var clock = sandbox.useFakeTimers();
 
       var client = new Client.API();
 
-      var _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake(function (interval, cb) {
-        cb(Errors.NOT_AUTHORIZED);
+      var _f = sandbox.stub(client, '_fetchLatestNotifications').callsFake((interval, cb) => {
+        cb(new Errors.NOT_AUTHORIZED);
       });
 
       client._initNotifications({
@@ -6018,49 +6013,49 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Import', function () {
+  describe('Import', () => {
 
-    describe('#import', function (done) {
-      it('should handle import with invalid JSON', function (done) {
+    describe('#import', (done) => {
+      it('should handle import with invalid JSON', (done) => {
         var importString = 'this is not valid JSON';
         var client = new Client.API();
-        (function () {
+        (() => {
           client.fromString(importString);
         }).should.throw(Errors.INVALID_BACKUP);
         done();
       });
-      it('should handle old credentials', function (done) {
+      it('should handle old credentials', (done) => {
         var importString = '{"version": 1, "xPubKey": "xxx"}';
         var client = new Client.API();
-        (function () {
+        (() => {
           client.fromString(importString);
         }).should.throw(Errors.OBSOLETE_BACKUP);
         done();
       });
 
     });
-    describe.skip('#importFromExtendedPublicKey', function () {
-      it('should handle importing an invalid extended private key', function (done) {
+    describe.skip('#importFromExtendedPublicKey', () => {
+      it('should handle importing an invalid extended private key', (done) => {
         var client = new Client.API();
         var xPubKey = 'this is an invalid key';
-        client.importFromExtendedPublicKey(xPubKey, {}, {}, {}, function (err) {
+        client.importFromExtendedPublicKey(xPubKey, {}, {}, {}, (err) => {
           should.exist(err);
           err.should.be.an.instanceOf(Errors.INVALID_BACKUP);
           done();
         });
       });
-      it('should import with external public key', function (done) {
+      it('should import with external public key', (done) => {
         var client = helpers.newClient(app);
 
         client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00');
 
         client.createWallet('mywallet', 'creator', 1, 1, {
           network: 'livenet'
-        }, function (err) {
+        }, (err) => {
           should.not.exist(err);
           var c = client.credentials;
           var importedClient = helpers.newClient(app);
-          importedClient.importFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00', {}, function (err) {
+          importedClient.importFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f001a1f00', {}, (err) => {
             should.not.exist(err);
             var c2 = importedClient.credentials;
             c2.account.should.equal(0);
@@ -6074,9 +6069,9 @@ describe.only('client API', function () {
         });
       });
 
-      it('should fail to import with external priv key when not enought entropy', function () {
+      it('should fail to import with external priv key when not enought entropy', () => {
         var client = helpers.newClient(app);
-        (function () {
+        (() => {
           client.seedFromExtendedPublicKey('xpub661MyMwAqRbcGVyYUcHbZi9KNhN9Tdj8qHi9ZdoUXP1VeKiXDGGrE9tSoJKYhGFE2rimteYdwvoP6e87zS5LsgcEvsvdrpPBEmeWz9EeAUq', 'ledger', '1a1f00');
         }).should.throw('entropy');
       });
@@ -6084,12 +6079,12 @@ describe.only('client API', function () {
     });
   });
 
-  describe('doRequest', function () {
-    it('should handle connection error', function (done) {
+  describe('doRequest', () => {
+    it('should handle connection error', (done) => {
       var client = new Client.API();
       client.credentials = {};
       client.request.r = helpers.stubRequest(null, {});
-      client.request.doRequest('get', 'url', {}, false, function (err, body, header) {
+      client.request.doRequest('get', 'url', {}, false, (err, body, header) => {
         should.exist(err);
         should.not.exist(body);
         should.not.exist(header);
@@ -6098,14 +6093,14 @@ describe.only('client API', function () {
       });
     });
 
-    it('should handle ECONNRESET error', function (done) {
+    it('should handle ECONNRESET error', (done) => {
       var client = new Client.API();
       client.credentials = {};
       client.request.r = helpers.stubRequest(null, {
         status: 200,
         body: '{"error":"read ECONNRESET"}',
       });
-      client.request.doRequest('get', 'url', {}, false, function (err, body, header) {
+      client.request.doRequest('get', 'url', {}, false, (err, body, header) => {
         should.exist(err);
         should.not.exist(body);
         should.not.exist(header);
@@ -6115,30 +6110,30 @@ describe.only('client API', function () {
     });
   });
 
-  describe('Single-address wallets', function () {
-    beforeEach(function (done) {
+  describe('Single-address wallets', () => {
+    beforeEach((done) => {
       helpers.createAndJoinWallet(clients, keys, 1, 2, {
         singleAddress: true
-      }, function (wallet) {
+      }, (wallet) => {
         done();
       });
     });
-    it('should always return same address', function (done) {
-      clients[0].createAddress(function (err, x) {
+    it('should always return same address', (done) => {
+      clients[0].createAddress((err, x) => {
         should.not.exist(err);
         should.exist(x);
         x.path.should.equal('m/0/0');
-        clients[0].createAddress(function (err, y) {
+        clients[0].createAddress((err, y) => {
           should.not.exist(err);
           should.exist(y);
           y.path.should.equal('m/0/0');
           y.address.should.equal(x.address);
-          clients[1].createAddress(function (err, z) {
+          clients[1].createAddress((err, z) => {
             should.not.exist(err);
             should.exist(z);
             z.path.should.equal('m/0/0');
             z.address.should.equal(x.address);
-            clients[0].getMainAddresses({}, function (err, addr) {
+            clients[0].getMainAddresses({}, (err, addr) => {
               should.not.exist(err);
               addr.length.should.equal(1);
               done();
@@ -6147,8 +6142,8 @@ describe.only('client API', function () {
         });
       });
     });
-    it('should reuse address as change address on tx proposal creation', function (done) {
-      clients[0].createAddress(function (err, address) {
+    it('should reuse address as change address on tx proposal creation', (done) => {
+      clients[0].createAddress((err, address) => {
         should.not.exist(err);
         should.exist(address.address);
         blockchainExplorerMock.setUtxo(address, 2, 1);
@@ -6161,7 +6156,7 @@ describe.only('client API', function () {
           }],
           feePerKb: 100e2,
         };
-        clients[0].createTxProposal(opts, function (err, txp) {
+        clients[0].createTxProposal(opts, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
           should.exist(txp.changeAddress);

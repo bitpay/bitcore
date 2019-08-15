@@ -8,27 +8,27 @@ var { PayPro } = require('../ts_build/paypro');
 var payPro;
 var TestData = require('./testdata');
 
+function mockRequest(bodyBuf, headers) {
+  bodyBuf = _.isArray(bodyBuf) ? bodyBuf : [bodyBuf];
+  payPro.request = function (opts, cb) {
+
+    return cb(null, {
+      headers: headers || {},
+      statusCode: 200,
+      statusMessage: 'OK',
+    }, bodyBuf.shift());
+  };
+};
 
 describe('paypro', function () {
-  function mockRequest(bodyBuf, headers) {
-    bodyBuf = _.isArray(bodyBuf) ? bodyBuf : [bodyBuf];
-    payPro = new PayPro();
-    payPro.request = function (opts, cb) {
-      return cb(null, {
-        headers: headers || {},
-        statusCode: 200,
-        statusMessage: 'OK',
-      }, bodyBuf.shift());
-    };
-  };
   var clock, oldreq;
   before(function () {
     // Stub time before cert expiration at Mar 27 2016
+    payPro = new PayPro();
     clock = sinon.useFakeTimers(1459105693843);
 
   });
   beforeEach(() => {
-    payPro = new PayPro();
     oldreq = payPro.request;
   });
   after(function () {
@@ -37,7 +37,6 @@ describe('paypro', function () {
   afterEach(function () {
     payPro.request = oldreq;
   });
-
 
   it('Make and verify PP request', function (done) {
     mockRequest(Buffer.from(TestData.payProJson.bch.body, 'hex'), TestData.payProJson.bch.headers);
@@ -141,10 +140,10 @@ describe('paypro', function () {
         statusMessage: 'ss',
       }, 'This invoice was not found or has been archived');
     };
-
     payPro.send(opts, function (err, data, memo) {
       should.exist(err);
       done();
     });
   });
+
 });

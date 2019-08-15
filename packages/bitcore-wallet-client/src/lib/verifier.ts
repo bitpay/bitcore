@@ -55,7 +55,7 @@ export class Verifier {
     // Repeated xpub kes?
     var uniq = [];
     var error;
-    _.each(copayers, function (copayer) {
+    _.each(copayers, (copayer) => {
       if (error) return;
 
       if (uniq[copayers.xPubKey]++) {
@@ -86,17 +86,14 @@ export class Verifier {
   }
 
   checkProposalCreation(args, txp, encryptingKey) {
-    function strEqual(str1, str2) {
-      return ((!str1 && !str2) || (str1 === str2));
-    }
 
     if (txp.outputs.length != args.outputs.length) return false;
 
     for (var i = 0; i < txp.outputs.length; i++) {
       var o1 = txp.outputs[i];
       var o2 = args.outputs[i];
-      if (!strEqual(o1.toAddress, o2.toAddress)) return false;
-      if (!strEqual(o1.script, o2.script)) return false;
+      if (!this.strEqual(o1.toAddress, o2.toAddress)) return false;
+      if (!this.strEqual(o1.script, o2.script)) return false;
       if (o1.amount != o2.amount) return false;
       var decryptedMessage = null;
       try {
@@ -104,16 +101,16 @@ export class Verifier {
       } catch (e) {
         return false;
       }
-      if (!strEqual(o1.message, decryptedMessage)) return false;
+      if (!this.strEqual(o1.message, decryptedMessage)) return false;
     }
 
     var changeAddress;
     if (txp.changeAddress) {
       changeAddress = txp.changeAddress.address;
     }
-    if (args.changeAddress && !strEqual(changeAddress, args.changeAddress)) return false;
+    if (args.changeAddress && !this.strEqual(changeAddress, args.changeAddress)) return false;
     if (_.isNumber(args.feePerKb) && (txp.feePerKb != args.feePerKb)) return false;
-    if (!strEqual(txp.payProUrl, args.payProUrl)) return false;
+    if (!this.strEqual(txp.payProUrl, args.payProUrl)) return false;
 
     var decryptedMessage = null;
     try {
@@ -121,17 +118,20 @@ export class Verifier {
     } catch (e) {
       return false;
     }
-    if (!strEqual(txp.message, decryptedMessage)) return false;
+    if (!this.strEqual(txp.message, decryptedMessage)) return false;
     if ((args.customData || txp.customData) && !_.isEqual(txp.customData, args.customData)) return false;
 
     return true;
   }
 
+  strEqual(str1, str2) {
+    return ((!str1 && !str2) || (str1 === str2));
+  }
   checkTxProposalSignature(credentials, txp) {
     $.checkArgument(txp.creatorId);
     $.checkState(credentials.isComplete());
 
-    var creatorKeys = _.find(credentials.publicKeyRing, function (item) {
+    var creatorKeys = _.find(credentials.publicKeyRing, (item) => {
       if (utils.xPubToCopayerId(txp.coin || 'btc', item.xPubKey) === txp.creatorId) return true;
     });
 

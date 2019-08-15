@@ -1,7 +1,8 @@
+import request = require('request');
+
 var $ = require('preconditions').singleton();
 const URL = require('url');
-import * as  _ from 'lodash';
-import * as request from 'request';
+const _ = require('lodash');
 var Bitcore = require('bitcore-lib');
 const Errors = require('./errors');
 var Bitcore_ = {
@@ -14,12 +15,17 @@ const JSON_PAYMENT_CONTENT_TYPE = 'application/payment';
 const JSON_PAYMENT_ACK_CONTENT_TYPE = 'application/payment-ack';
 
 const dfltTrustedKeys = require('../util/JsonPaymentProtocolKeys.js');
-const MAX_FEE_PER_KB = 500000;
 
 export class PayPro {
-  request: request.RequestAPI<any, any, any>;
+  MAX_FEE_PER_KB = 500000;
+  public request: request.RequestAPI<any, any, any>;
 
-  //  Verifies the signature of a given payment request is both valid and from a trusted key
+  constructor() {
+  }
+
+  // /**
+  // * Verifies the signature of a given payment request is both valid and from a trusted key
+  // */
   _verify(requestUrl, headers, network, trustedKeys, callback) {
     let hash = headers.digest.split('=')[1];
     let signature = headers.signature;
@@ -117,11 +123,11 @@ export class PayPro {
 
         // some know codes
         if (res.statusCode == 400) {
-          return cb(Errors.INVOICE_EXPIRED);
+          return cb(new Errors.INVOICE_EXPIRED);
         } else if (res.statusCode == 404) {
-          return cb(Errors.INVOICE_NOT_AVAILABLE);
+          return cb(new Errors.INVOICE_NOT_AVAILABLE);
         } else if (res.statusCode == 422) {
-          return cb(Errors.UNCONFIRMED_INPUTS_NOT_ACCEPTED);
+          return cb(new Errors.UNCONFIRMED_INPUTS_NOT_ACCEPTED);
         }
 
         let m = res ? (res.statusMessage || res.statusCode) : '';
@@ -160,6 +166,7 @@ export class PayPro {
       });
     });
   }
+
   get(opts, cb) {
     $.checkArgument(opts && opts.url);
     opts.trustedKeys = opts.trustedKeys || dfltTrustedKeys;
@@ -205,7 +212,7 @@ export class PayPro {
       ret.coin = coin;
 
       // fee
-      if (data.requiredFeeRate > MAX_FEE_PER_KB)
+      if (data.requiredFeeRate > this.MAX_FEE_PER_KB)
         return cb(new Error('Fee rate too high:' + data.requiredFeeRate));
 
       ret.requiredFeeRate = data.requiredFeeRate;
@@ -236,6 +243,7 @@ export class PayPro {
       return cb(null, ret);
     });
   }
+
   send(opts, cb) {
     $.checkArgument(opts.rawTxUnsigned)
       .checkArgument(opts.url)

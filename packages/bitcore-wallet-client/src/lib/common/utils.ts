@@ -20,7 +20,6 @@ import { Defaults } from './defaults';
 let SJCL = {};
 
 export class Utils {
-  constructor() { }
 
   encryptMessage(message, encryptingKey) {
     var key = sjcl.codec.base64.toBits(encryptingKey);
@@ -42,15 +41,6 @@ export class Utils {
   }
 
   decryptMessageNoThrow(cyphertextJson, encryptingKey) {
-    function isJsonString(str) {
-      var r;
-      try {
-        r = JSON.parse(str);
-      } catch (e) {
-        return false;
-      }
-      return r;
-    }
 
     if (!encryptingKey)
       return '<ECANNOTDECRYPT>';
@@ -59,7 +49,7 @@ export class Utils {
       return '';
 
     // no sjcl encrypted json
-    var r = isJsonString(cyphertextJson);
+    var r = this.isJsonString(cyphertextJson);
     if (!r || !r.iv || !r.ct) {
       return cyphertextJson;
     }
@@ -71,6 +61,15 @@ export class Utils {
     }
   }
 
+  isJsonString(str) {
+    var r;
+    try {
+      r = JSON.parse(str);
+    } catch (e) {
+      return false;
+    }
+    return r;
+  }
   /* TODO: It would be nice to be compatible with bitcoind signmessage. How
    * the hash is calculated there? */
   hashMessage(text) {
@@ -118,16 +117,17 @@ export class Utils {
   }
 
   getProposalHash(proposalHeader) {
-    function getOldHash(toAddress, amount, message, payProUrl) {
-      return [toAddress, amount, (message || ''), (payProUrl || '')].join('|');
-    }
 
     // For backwards compatibility
     if (arguments.length > 1) {
-      return getOldHash.apply(this, arguments);
+      return this.getOldHash.apply(this, arguments);
     }
 
     return Stringify(proposalHeader);
+  }
+
+  getOldHash(toAddress, amount, message, payProUrl) {
+    return [toAddress, amount, (message || ''), (payProUrl || '')].join('|');
   }
 
   deriveAddress(scriptType, publicKeyRing, path, m, network, coin) {
@@ -135,7 +135,7 @@ export class Utils {
 
     coin = coin || 'btc';
     var bitcore = Bitcore_[coin];
-    var publicKeys = _.map(publicKeyRing, function (item) {
+    var publicKeys = _.map(publicKeyRing, (item) => {
       var xpub = new bitcore.HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
     });
@@ -183,26 +183,26 @@ export class Utils {
     $.shouldBeNumber(satoshis);
     $.checkArgument(_.includes(_.keys(Constants.UNITS), unit));
 
-    function clipDecimals(number, decimals) {
+    var clipDecimals = (number, decimals) => {
       var x = number.toString().split('.');
       var d = (x[1] || '0').substring(0, decimals);
       return parseFloat(x[0] + '.' + d);
-    }
+    };
 
-    function addSeparators(nStr, thousands, decimal, minDecimals) {
+    var addSeparators = (nStr, thousands, decimal, minDecimals) => {
       nStr = nStr.replace('.', decimal);
       var x = nStr.split(decimal);
       var x0 = x[0];
       var x1 = x[1];
 
-      x1 = _.dropRightWhile(x1, function (n, i) {
+      x1 = _.dropRightWhile(x1, (n, i) => {
         return n == '0' && i >= minDecimals;
       }).join('');
       var x2 = x.length > 1 ? decimal + x1 : '';
 
       x0 = x0.replace(/\B(?=(\d{3})+(?!\d))/g, thousands);
       return x0 + x2;
-    }
+    };
 
     opts = opts || {};
 
@@ -223,7 +223,7 @@ export class Utils {
 
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2SH:
-        _.each(txp.inputs, function (i) {
+        _.each(txp.inputs, (i) => {
           t.from(i, i.publicKeys, txp.requiredSignatures);
         });
         break;
@@ -235,7 +235,7 @@ export class Utils {
     if (txp.toAddress && txp.amount && !txp.outputs) {
       t.to(txp.toAddress, txp.amount);
     } else if (txp.outputs) {
-      _.each(txp.outputs, function (o) {
+      _.each(txp.outputs, (o) => {
         $.checkState(o.script || o.toAddress, 'Output should have either toAddress or script specified');
         if (o.script) {
           t.addOutput(new bitcore.Transaction.Output({
@@ -253,22 +253,22 @@ export class Utils {
 
     // Shuffle outputs for improved privacy
     if (t.outputs.length > 1) {
-      var outputOrder = _.reject(txp.outputOrder, function (order) {
+      var outputOrder = _.reject(txp.outputOrder, (order) => {
         return order >= t.outputs.length;
       });
       $.checkState(t.outputs.length == outputOrder.length);
-      t.sortOutputs(function (outputs) {
-        return _.map(outputOrder, function (i) {
+      t.sortOutputs((outputs) => {
+        return _.map(outputOrder, (i) => {
           return outputs[i];
         });
       });
     }
 
     // Validate inputs vs outputs independently of Bitcore
-    var totalInputs = _.reduce(txp.inputs, function (memo, i) {
+    var totalInputs = _.reduce(txp.inputs, (memo, i) => {
       return +i.satoshis + memo;
     }, 0);
-    var totalOutputs = _.reduce(t.outputs, function (memo, o) {
+    var totalOutputs = _.reduce(t.outputs, (memo, o) => {
       return +o.satoshis + memo;
     }, 0);
 

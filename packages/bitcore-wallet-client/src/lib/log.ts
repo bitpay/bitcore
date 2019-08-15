@@ -37,7 +37,7 @@ export class Logger {
       if (levelName === 'silent') { // dont create a log.silent() method
         return;
       }
-      Logger.prototype[levelName] = function () {
+      Logger.prototype[levelName] = (...args) => {
         if (this.level === 'silent') {
           return;
         }
@@ -63,9 +63,9 @@ export class Logger {
             Error.stackTraceLimit = old;
           }
 
-          var str = '[' + levelName + (caller || '') + '] ' + arguments[0],
+          var str = '[' + levelName + (caller || '') + '] ' + args[0],
             extraArgs,
-            extraArgs = [].slice.call(arguments, 1);
+            extraArgs = [].slice.call(args, 1);
           if (console[levelName]) {
             extraArgs.unshift(str);
             console[levelName].apply(console, extraArgs);
@@ -88,12 +88,12 @@ export class Logger {
    *
    * @param {string} level - the name of the logging level
    */
-  getLevels = function () {
+  getLevels() {
     return this.levels;
-  };
-  setLevel = function (level) {
+  }
+  setLevel(level) {
     this.level = level;
-  };
+  }
 
   /**
    * @class Logger

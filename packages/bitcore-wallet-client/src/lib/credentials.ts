@@ -59,6 +59,9 @@ export class Credentials {
   publicKeyRing: any;
   coin: string;
   utils = new Utils();
+  network: string;
+  use145forBCH: any;
+  derivationStrategy: any;
 
   constructor() {
     this.version = 2;
@@ -120,42 +123,43 @@ export class Credentials {
   }
 
   getRootPath() {
-    // This is for OLD v1.0 credentials only.
-    function legacyRootPath() {
-      // legacy base path schema
-      var purpose;
-      switch (this.derivationStrategy) {
-        case Constants.DERIVATION_STRATEGIES.BIP45:
-          return "m/45'";
-        case Constants.DERIVATION_STRATEGIES.BIP44:
-          purpose = '44';
-          break;
-        case Constants.DERIVATION_STRATEGIES.BIP48:
-          purpose = '48';
-          break;
-      }
-
-      var coin = '0';
-      if (this.network != 'livenet') {
-        coin = '1';
-      } else if (this.coin == 'bch') {
-        if (this.use145forBCH) {
-          coin = '145';
-        } else {
-          coin = '0';
-        }
-      } else if (this.coin == 'btc') {
-        coin = '0';
-      } else {
-        throw new Error('unknown coin: ' + this.coin);
-      }
-      return 'm/' + purpose + "'/" + coin + "'/" + this.account + "'";
-    }
 
     if (!this.rootPath) {
-      this.rootPath = legacyRootPath();
+      this.rootPath = this.legacyRootPath();
     }
     return this.rootPath;
+  }
+
+  // This is for OLD v1.0 credentials only.
+  legacyRootPath() {
+    // legacy base path schema
+    var purpose;
+    switch (this.derivationStrategy) {
+      case Constants.DERIVATION_STRATEGIES.BIP45:
+        return "m/45'";
+      case Constants.DERIVATION_STRATEGIES.BIP44:
+        purpose = '44';
+        break;
+      case Constants.DERIVATION_STRATEGIES.BIP48:
+        purpose = '48';
+        break;
+    }
+
+    var coin = '0';
+    if (this.network != 'livenet') {
+      coin = '1';
+    } else if (this.coin == 'bch') {
+      if (this.use145forBCH) {
+        coin = '145';
+      } else {
+        coin = '0';
+      }
+    } else if (this.coin == 'btc') {
+      coin = '0';
+    } else {
+      throw new Error('unknown coin: ' + this.coin);
+    }
+    return 'm/' + purpose + "'/" + coin + "'/" + this.account + "'";
   }
 
   fromObj(obj) {
@@ -169,7 +173,7 @@ export class Credentials {
       throw new Error('Bad credentials version');
     }
 
-    _.each(this.FIELDS, function (k) {
+    _.each(this.FIELDS, (k) => {
       x[k] = obj[k];
     });
 
@@ -189,7 +193,7 @@ export class Credentials {
     var self = this;
 
     var x = {};
-    _.each(this.FIELDS, function (k) {
+    _.each(this.FIELDS, (k) => {
       x[k] = self[k];
     });
     return x;

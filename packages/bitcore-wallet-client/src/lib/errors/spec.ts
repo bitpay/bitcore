@@ -1,4 +1,4 @@
-export const bwcErrors = [{
+var errorSpec = [{
   name: 'INVALID_BACKUP',
   message: 'Invalid Backup.'
 }, {
@@ -84,3 +84,4 @@ export const bwcErrors = [{
   message: 'The invoice is no longer receiving payments.'
 }
 ];
+module.exports = errorSpec;
