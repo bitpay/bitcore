@@ -1,6 +1,6 @@
 'use strict';
 
-export const Constants = {
+module.exports = {
   SCRIPT_TYPES: {
     P2SH: 'P2SH',
     P2PKH: 'P2PKH',

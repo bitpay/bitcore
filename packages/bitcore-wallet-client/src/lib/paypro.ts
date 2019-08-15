@@ -9,24 +9,28 @@ var Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
 };
+// const request = require('request');
 const JSON_PAYMENT_REQUEST_CONTENT_TYPE = 'application/payment-request';
 const JSON_PAYMENT_VERIFY_CONTENT_TYPE = 'application/verify-payment';
 const JSON_PAYMENT_CONTENT_TYPE = 'application/payment';
 const JSON_PAYMENT_ACK_CONTENT_TYPE = 'application/payment-ack';
 
 const dfltTrustedKeys = require('../util/JsonPaymentProtocolKeys.js');
+const MAX_FEE_PER_KB = 500000;
 
 export class PayPro {
-  MAX_FEE_PER_KB = 500000;
-  public request: request.RequestAPI<any, any, any>;
-
+  static request: request.RequestAPI<any, any, any>;
+  // static request: request;
   constructor() {
   }
+  // var PayPro = {
+  //
+  // };
 
   // /**
   // * Verifies the signature of a given payment request is both valid and from a trusted key
   // */
-  _verify(requestUrl, headers, network, trustedKeys, callback) {
+  static _verify(requestUrl, headers, network, trustedKeys, callback) {
     let hash = headers.digest.split('=')[1];
     let signature = headers.signature;
     let signatureType = headers['x-signature-type'];
@@ -112,10 +116,10 @@ export class PayPro {
     return callback(null, keyData.owner);
   }
 
-  runRequest(opts, cb) {
+  static runRequest(opts, cb) {
     $.checkArgument(opts.network, 'should pass network');
 
-    this.request(opts, (err, res, body) => {
+    PayPro.request(opts, (err, res, body) => {
       if (err) return cb(err);
       let ret = {};
 
@@ -157,7 +161,7 @@ export class PayPro {
         return cb(new Error(`Response body hash does not match digest header. Actual: ${hash} Expected: ${digest}`));
       }
       // Step 2: verify digest's signature
-      this._verify(opts.url, res.headers, opts.network, opts.trustedKeys, (err) => {
+      PayPro._verify(opts.url, res.headers, opts.network, opts.trustedKeys, (err) => {
         if (err) return cb(err);
 
         let ret = body;
@@ -167,7 +171,7 @@ export class PayPro {
     });
   }
 
-  get(opts, cb) {
+  static get(opts, cb) {
     $.checkArgument(opts && opts.url);
     opts.trustedKeys = opts.trustedKeys || dfltTrustedKeys;
 
@@ -182,7 +186,7 @@ export class PayPro {
     opts.method = 'GET';
     opts.network = opts.network || 'livenet';
 
-    this.runRequest(opts, (err, data) => {
+    PayPro.runRequest(opts, function (err, data) {
       if (err) return cb(err);
 
       var ret: any = {};
@@ -212,7 +216,7 @@ export class PayPro {
       ret.coin = coin;
 
       // fee
-      if (data.requiredFeeRate > this.MAX_FEE_PER_KB)
+      if (data.requiredFeeRate > MAX_FEE_PER_KB)
         return cb(new Error('Fee rate too high:' + data.requiredFeeRate));
 
       ret.requiredFeeRate = data.requiredFeeRate;
@@ -244,7 +248,7 @@ export class PayPro {
     });
   }
 
-  send(opts, cb) {
+  static send(opts, cb) {
     $.checkArgument(opts.rawTxUnsigned)
       .checkArgument(opts.url)
       .checkArgument(opts.rawTx);
@@ -268,7 +272,7 @@ export class PayPro {
     opts.noVerify = true;
 
     // verify request
-    this.runRequest(opts, (err, rawData) => {
+    PayPro.runRequest(opts, function (err, rawData) {
       if (err) {
         console.log('Error at verify-payment:', err.message ? err.message : '', opts);
         return cb(err);
@@ -289,7 +293,7 @@ export class PayPro {
       // Do not verify payment message's response
       opts.noVerify = true;
 
-      this.runRequest(opts, (err, rawData) => {
+      PayPro.runRequest(opts, function (err, rawData) {
         if (err) {
           console.log('Error at payment:', err.message ? err.message : '', opts);
           return cb(err);
@@ -309,3 +313,5 @@ export class PayPro {
     });
   }
 }
+
+module.exports = PayPro;

@@ -4,13 +4,9 @@ var _ = require('lodash');
 var chai = chai || require('chai');
 var sinon = sinon || require('sinon');
 var should = chai.should();
-var { Logger } = require('../ts_build/log');
-var log;
+var log = require('../ts_build/log');
 
 describe('log utils', function () {
-  beforeEach(function () {
-    log = new Logger();
-  });
   afterEach(function () {
     log.setLevel('info');
   });

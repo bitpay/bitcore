@@ -2,23 +2,22 @@ import * as _ from 'lodash';
 const request = require('superagent');
 const async = require('async');
 const Package = require('../package.json');
-import { Logger } from './log';
+var log = require('./log');
+
 const util = require('util');
 var Errors = require('./errors');
-import { Utils } from './common/utils';
-var utils;
+var Common = require('./common');
+const Utils = Common.Utils;
 
 export class Request {
   baseUrl: any;
   session: any;
   r: any;
-  log: any = new Logger();
   credentials: any;
   supportStaffWalletId: any;
   timeout: any;
 
   constructor(url?, opts?) {
-    utils = new Utils();
     this.baseUrl = url;
 
     // request can be overload only for testing
@@ -51,9 +50,9 @@ export class Request {
   //  @param {String} url - The URL for the request
   //  @param {Object} args - The arguments in case this is a POST/PUT request
   //  @param {String} privKey - Private key to sign the request
-  _signRequest(method, url, args, privKey) {
+  static _signRequest(method, url, args, privKey) {
     var message = [method.toLowerCase(), url, JSON.stringify(args)].join('|');
-    return utils.signMessage(message, privKey);
+    return Utils.signMessage(message, privKey);
   }
 
   //  Do an HTTP request
@@ -77,7 +76,7 @@ export class Request {
         var key = args._requestPrivKey || this.credentials.requestPrivKey;
         if (key) {
           delete args['_requestPrivKey'];
-          reqSignature = this._signRequest(method, url, args, key);
+          reqSignature = Request._signRequest(method, url, args, key);
         }
         headers['x-signature'] = reqSignature;
       }
@@ -108,7 +107,7 @@ export class Request {
 
       if (res.body)
 
-        this.log.debug(util.inspect(res.body, {
+        log.debug(util.inspect(res.body, {
           depth: 10
         }));
 
@@ -120,11 +119,11 @@ export class Request {
         if (!res.status)
           return cb(new Errors.CONNECTION_ERROR);
 
-        this.log.error('HTTP Error:' + res.status);
+        log.error('HTTP Error:' + res.status);
 
         if (!res.body)
           return cb(new Error(res.status));
-        return cb(this._parseError(res.body));
+        return cb(Request._parseError(res.body));
       }
 
       if (res.body === '{"error":"read ECONNRESET"}')
@@ -139,7 +138,7 @@ export class Request {
   //  @static
   //  @memberof Client.API
   //  @param {Object} body
-  _parseError(body) {
+  static _parseError(body) {
     if (!body) return;
 
     if (_.isString(body)) {
@@ -162,7 +161,7 @@ export class Request {
     } else {
       ret = new Error(body.error || JSON.stringify(body));
     }
-    this.log.error(ret);
+    log.error(ret);
     return ret;
   }
 
@@ -253,3 +252,4 @@ export class Request {
     return this.doRequest('delete', url, {}, false, cb);
   }
 }
+module.exports = Request;

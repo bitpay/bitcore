@@ -1,16 +1,17 @@
 'use strict';
 
 const $ = require('preconditions').singleton();
-import * as _ from 'lodash';
+const _ = require('lodash');
 
 const Bitcore = require('bitcore-lib');
+const Mnemonic = require('bitcore-mnemonic');
+const sjcl = require('sjcl');
 
 const Common = require('./common');
 const Constants = Common.Constants;
-import { Utils } from './common/utils';
-
+const Utils = Common.Utils;
 export class Credentials {
-  FIELDS = [
+  static FIELDS = [
     'coin',
     'network',
     'xPrivKey',             // obsolete
@@ -46,7 +47,6 @@ export class Credentials {
   ];
   version: number;
   account: number;
-  rootPath: any;
   walletPrivKey: any;
   sharedEncryptingKey: any;
   walletId: any;
@@ -57,21 +57,22 @@ export class Credentials {
   xPubKey: any;
   requestPubKey: any;
   publicKeyRing: any;
-  coin: string;
-  utils = new Utils();
-  network: string;
-  use145forBCH: any;
+  rootPath: any;
   derivationStrategy: any;
+  network: string;
+  coin: string;
+  use145forBCH: any;
 
   constructor() {
     this.version = 2;
     this.account = 0;
   }
-  /*
-   *coin, xPrivKey, account, network
-   */
 
-  fromDerivedKey(opts) {
+  /*
+  *coin, xPrivKey, account, network
+  */
+
+  static fromDerivedKey(opts) {
     $.shouldBeString(opts.coin);
     $.shouldBeString(opts.network);
     $.shouldBeNumber(opts.account, 'Invalid account');
@@ -113,7 +114,7 @@ export class Credentials {
     const b = Buffer.from(entropySource, 'hex');
     const b2 = Bitcore.crypto.Hash.sha256hmac(b, Buffer.from(prefix));
     x.personalEncryptingKey = b2.slice(0, 16).toString('base64');
-    x.copayerId = this.utils.xPubToCopayerId(x.coin, x.xPubKey);
+    x.copayerId = Utils.xPubToCopayerId(x.coin, x.xPubKey);
     x.publicKeyRing = [{
       xPubKey: x.xPubKey,
       requestPubKey: x.requestPubKey,
@@ -121,48 +122,47 @@ export class Credentials {
 
     return x;
   }
-
   getRootPath() {
 
+    // This is for OLD v1.0 credentials only.
+    var legacyRootPath = () => {
+      // legacy base path schema
+      var purpose;
+      switch (this.derivationStrategy) {
+        case Constants.DERIVATION_STRATEGIES.BIP45:
+          return "m/45'";
+        case Constants.DERIVATION_STRATEGIES.BIP44:
+          purpose = '44';
+          break;
+        case Constants.DERIVATION_STRATEGIES.BIP48:
+          purpose = '48';
+          break;
+      }
+
+      var coin = '0';
+      if (this.network != 'livenet') {
+        coin = '1';
+      } else if (this.coin == 'bch') {
+        if (this.use145forBCH) {
+          coin = '145';
+        } else {
+          coin = '0';
+        }
+      } else if (this.coin == 'btc') {
+        coin = '0';
+      } else {
+        throw new Error('unknown coin: ' + this.coin);
+      }
+      return 'm/' + purpose + "'/" + coin + "'/" + this.account + "'";
+    };
+
     if (!this.rootPath) {
-      this.rootPath = this.legacyRootPath();
+      this.rootPath = legacyRootPath();
     }
     return this.rootPath;
   }
 
-  // This is for OLD v1.0 credentials only.
-  legacyRootPath() {
-    // legacy base path schema
-    var purpose;
-    switch (this.derivationStrategy) {
-      case Constants.DERIVATION_STRATEGIES.BIP45:
-        return "m/45'";
-      case Constants.DERIVATION_STRATEGIES.BIP44:
-        purpose = '44';
-        break;
-      case Constants.DERIVATION_STRATEGIES.BIP48:
-        purpose = '48';
-        break;
-    }
-
-    var coin = '0';
-    if (this.network != 'livenet') {
-      coin = '1';
-    } else if (this.coin == 'bch') {
-      if (this.use145forBCH) {
-        coin = '145';
-      } else {
-        coin = '0';
-      }
-    } else if (this.coin == 'btc') {
-      coin = '0';
-    } else {
-      throw new Error('unknown coin: ' + this.coin);
-    }
-    return 'm/' + purpose + "'/" + coin + "'/" + this.account + "'";
-  }
-
-  fromObj(obj) {
+  static fromObj(obj) {
     var x: any = new Credentials();
 
     if (!obj.version || obj.version < x.version) {
@@ -173,7 +173,7 @@ export class Credentials {
       throw new Error('Bad credentials version');
     }
 
-    _.each(this.FIELDS, (k) => {
+    _.each(Credentials.FIELDS, function (k) {
       x[k] = obj[k];
     });
 
@@ -193,14 +193,14 @@ export class Credentials {
     var self = this;
 
     var x = {};
-    _.each(this.FIELDS, (k) => {
+    _.each(Credentials.FIELDS, function (k) {
       x[k] = self[k];
     });
     return x;
   }
   addWalletPrivateKey(walletPrivKey) {
     this.walletPrivKey = walletPrivKey;
-    this.sharedEncryptingKey = this.utils.privateKeyToAESKey(walletPrivKey);
+    this.sharedEncryptingKey = Utils.privateKeyToAESKey(walletPrivKey);
   }
 
   addWalletInfo(walletId, walletName, m, n, copayerName, opts) {
@@ -243,3 +243,5 @@ export class Credentials {
     return true;
   }
 }
+
+module.exports = Credentials;

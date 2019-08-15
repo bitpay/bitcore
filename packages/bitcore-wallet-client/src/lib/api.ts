@@ -1,6 +1,7 @@
 'use strict';
 
-var _ = require('lodash');
+import { EventEmitter } from 'events';
+import _ from 'lodash';
 var $ = require('preconditions').singleton();
 var util = require('util');
 var async = require('async');
@@ -17,16 +18,16 @@ var querystring = require('querystring');
 
 var Common = require('./common');
 var Constants = Common.Constants;
-import { Utils } from './common/utils';
+var Defaults = Common.Defaults;
+var Utils = Common.Utils;
 
-import { Credentials } from './credentials';
-import { Key } from './key';
-import { Logger } from './log';
-import { PayPro } from './paypro';
-import { Verifier } from './verifier';
+var PayPro = require('./paypro');
+var log = require('./log');
+const Credentials = require('./credentials');
+const Key = require('./key');
+const Verifier = require('./verifier');
 const Errors = require('./errors');
-import { EventEmitter } from 'events';
-import { Request } from './request';
+const Request = require('./request');
 
 var BASE_URL = 'http://localhost:3232/bws/api';
 
@@ -42,7 +43,6 @@ export class API extends EventEmitter {
   logLevel: any;
   supportStaffWalletId: any;
   request: any;
-  log: any = new Logger();
   credentials: any;
   notificationIncludeOwn: boolean;
   lastNotificationId: any;
@@ -50,10 +50,8 @@ export class API extends EventEmitter {
   keyDerivationOk: boolean;
   noSign: any;
   password: any;
-  privateKeyEncryptionOpts: { iter: number; };
-  verifier: Verifier;
-  clientOpts: any;
-
+  static PayPro: any;
+  static Key: any;
   constructor(opts) {
     super();
     opts = opts || {};
@@ -62,16 +60,18 @@ export class API extends EventEmitter {
     this.timeout = opts.timeout || 50000;
     this.logLevel = opts.logLevel || 'silent';
     this.supportStaffWalletId = opts.supportStaffWalletId;
+
     this.request = new Request(opts.baseUrl || BASE_URL, { r: opts.request });
-    this.log.setLevel(this.logLevel);
-    this.privateKeyEncryptionOpts = {
-      iter: 10000
-    };
+    log.setLevel(this.logLevel);
     util.inherits(API, events.EventEmitter);
   }
 
+  static privateKeyEncryptionOpts = {
+    iter: 10000
+  };
+
   initNotifications(cb) {
-    this.log.warn('DEPRECATED: use initialize() instead.');
+    log.warn('DEPRECATED: use initialize() instead.');
     this.initialize({}, cb);
   }
 
@@ -89,8 +89,8 @@ export class API extends EventEmitter {
   }
 
   _fetchLatestNotifications(interval, cb) {
-    var defaultFunction = () => { };
-    cb = cb || defaultFunction;
+
+    cb = cb || function () { };
 
     var opts: any = {
       lastNotificationId: this.lastNotificationId,
@@ -103,12 +103,12 @@ export class API extends EventEmitter {
 
     this.getNotifications(opts, (err, notifications) => {
       if (err) {
-        this.log.warn('Error receiving notifications.');
-        this.log.debug(err);
+        log.warn('Error receiving notifications.');
+        log.debug(err);
         return cb(err);
       }
       if (notifications.length > 0) {
-        this.lastNotificationId = _.last(notifications).id;
+        this.lastNotificationId = (_.last(notifications) as any).id;
       }
 
       _.each(notifications, (notification) => {
@@ -167,9 +167,9 @@ export class API extends EventEmitter {
   // * @param {String} message
   // * @param {String} encryptingKey
   // */
-  _encryptMessage(message, encryptingKey) {
+  static _encryptMessage(message, encryptingKey) {
     if (!message) return null;
-    return new Utils().encryptMessage(message, encryptingKey);
+    return Utils.encryptMessage(message, encryptingKey);
   }
 
   _processTxNotes(notes) {
@@ -179,9 +179,9 @@ export class API extends EventEmitter {
     var encryptingKey = this.credentials.sharedEncryptingKey;
     _.each([].concat(notes), (note) => {
       note.encryptedBody = note.body;
-      note.body = new Utils().decryptMessageNoThrow(note.body, encryptingKey);
+      note.body = Utils.decryptMessageNoThrow(note.body, encryptingKey);
       note.encryptedEditedByName = note.editedByName;
-      note.editedByName = new Utils().decryptMessageNoThrow(note.editedByName, encryptingKey);
+      note.editedByName = Utils.decryptMessageNoThrow(note.editedByName, encryptingKey);
     });
   }
 
@@ -199,21 +199,21 @@ export class API extends EventEmitter {
     var encryptingKey = this.credentials.sharedEncryptingKey;
     _.each([].concat(txps), (txp) => {
       txp.encryptedMessage = txp.message;
-      txp.message = new Utils().decryptMessageNoThrow(txp.message, encryptingKey) || null;
-      txp.creatorName = new Utils().decryptMessageNoThrow(txp.creatorName, encryptingKey);
+      txp.message = Utils.decryptMessageNoThrow(txp.message, encryptingKey) || null;
+      txp.creatorName = Utils.decryptMessageNoThrow(txp.creatorName, encryptingKey);
 
       _.each(txp.actions, (action) => {
 
         // CopayerName encryption is optional (not available in older wallets)
-        action.copayerName = new Utils().decryptMessageNoThrow(action.copayerName, encryptingKey);
+        action.copayerName = Utils.decryptMessageNoThrow(action.copayerName, encryptingKey);
 
-        action.comment = new Utils().decryptMessageNoThrow(action.comment, encryptingKey);
+        action.comment = Utils.decryptMessageNoThrow(action.comment, encryptingKey);
         // TODO get copayerName from Credentials -> copayerId to copayerName
         // action.copayerName = null;
       });
       _.each(txp.outputs, (output) => {
         output.encryptedMessage = output.message;
-        output.message = new Utils().decryptMessageNoThrow(output.message, encryptingKey) || null;
+        output.message = Utils.decryptMessageNoThrow(output.message, encryptingKey) || null;
       });
       txp.hasUnconfirmedInputs = _.some(txp.inputs, (input) => {
         return input.confirmations == 0;
@@ -227,9 +227,54 @@ export class API extends EventEmitter {
 
     opts = opts || {};
 
+    var c = this.credentials;
+
+    var testMessageSigning = (xpriv, xpub) => {
+      var nonHardenedPath = 'm/0/0';
+      var message = 'Lorem ipsum dolor sit amet, ne amet urbanitas percipitur vim, libris disputando his ne, et facer suavitate qui. Ei quidam laoreet sea. Cu pro dico aliquip gubergren, in mundi postea usu. Ad labitur posidonium interesset duo, est et doctus molestie adipiscing.';
+      var priv = xpriv.deriveChild(nonHardenedPath).privateKey;
+      var signature = Utils.signMessage(message, priv);
+      var pub = xpub.deriveChild(nonHardenedPath).publicKey;
+      return Utils.verifyMessage(message, signature, pub);
+    };
+
+    var testHardcodedKeys = () => {
+      var words = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
+      var xpriv = Mnemonic(words).toHDPrivateKey();
+
+      if (xpriv.toString() != 'xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu') return false;
+
+      xpriv = xpriv.deriveChild("m/44'/0'/0'");
+      if (xpriv.toString() != 'xprv9xpXFhFpqdQK3TmytPBqXtGSwS3DLjojFhTGht8gwAAii8py5X6pxeBnQ6ehJiyJ6nDjWGJfZ95WxByFXVkDxHXrqu53WCRGypk2ttuqncb') return false;
+
+      var xpub = Bitcore.HDPublicKey.fromString('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj');
+      return testMessageSigning(xpriv, xpub);
+    };
+
+    // TODO => Key refactor to Key class.
+    var testLiveKeys = () => {
+      var words;
+      try {
+        words = c.getMnemonic();
+      } catch (ex) { }
+
+      var xpriv;
+      if (words && (!c.mnemonicHasPassphrase || opts.passphrase)) {
+        var m = new Mnemonic(words);
+        xpriv = m.toHDPrivateKey(opts.passphrase, c.network);
+      }
+      if (!xpriv) {
+        xpriv = new Bitcore.HDPrivateKey(c.xPrivKey);
+      }
+      xpriv = xpriv.deriveChild(c.getBaseAddressDerivationPath());
+      var xpub = new Bitcore.HDPublicKey(c.xPubKey);
+
+      return testMessageSigning(xpriv, xpub);
+    };
+
     var hardcodedOk = true;
     if (!_deviceValidated && !opts.skipDeviceValidation) {
-      hardcodedOk = this.testHardcodedKeys();
+      hardcodedOk = testHardcodedKeys();
       _deviceValidated = true;
     }
 
@@ -238,49 +283,6 @@ export class API extends EventEmitter {
     this.keyDerivationOk = hardcodedOk; // && liveOk;
 
     return cb(null, this.keyDerivationOk);
-  }
-  // TODO => Key refactor to Key class.
-  // testLiveKeys() {
-  //   var words;
-  //   var c = this.credentials;
-  //   try {
-  //     words = c.getMnemonic();
-  //   } catch (ex) { }
-
-  //   var xpriv;
-  //   if (words && (!c.mnemonicHasPassphrase || opts.passphrase)) {
-  //     var m = new Mnemonic(words);
-  //     xpriv = m.toHDPrivateKey(opts.passphrase, c.network);
-  //   }
-  //   if (!xpriv) {
-  //     xpriv = new Bitcore.HDPrivateKey(c.xPrivKey);
-  //   }
-  //   xpriv = xpriv.deriveChild(c.getBaseAddressDerivationPath());
-  //   var xpub = new Bitcore.HDPublicKey(c.xPubKey);
-
-  //   return this.testMessageSigning(xpriv, xpub);
-  // }
-
-  testMessageSigning(xpriv, xpub) {
-    var nonHardenedPath = 'm/0/0';
-    var message = 'Lorem ipsum dolor sit amet, ne amet urbanitas percipitur vim, libris disputando his ne, et facer suavitate qui. Ei quidam laoreet sea. Cu pro dico aliquip gubergren, in mundi postea usu. Ad labitur posidonium interesset duo, est et doctus molestie adipiscing.';
-    var priv = xpriv.deriveChild(nonHardenedPath).privateKey;
-    var signature = new Utils().signMessage(message, priv);
-    var pub = xpub.deriveChild(nonHardenedPath).publicKey;
-    return new Utils().verifyMessage(message, signature, pub);
-  }
-
-  testHardcodedKeys() {
-    var words = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
-    var xpriv = new Mnemonic(words).toHDPrivateKey();
-
-    if (xpriv.toString() != 'xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu') return false;
-
-    xpriv = xpriv.deriveChild("m/44'/0'/0'");
-    if (xpriv.toString() != 'xprv9xpXFhFpqdQK3TmytPBqXtGSwS3DLjojFhTGht8gwAAii8py5X6pxeBnQ6ehJiyJ6nDjWGJfZ95WxByFXVkDxHXrqu53WCRGypk2ttuqncb') return false;
-
-    var xpub = new Bitcore.HDPublicKey.fromString('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj');
-    return this.testMessageSigning(xpriv, xpub);
   }
 
   // /**
@@ -296,7 +298,7 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var output;
-    var c = new Credentials().fromObj(this.credentials);
+    var c = Credentials.fromObj(this.credentials);
     output = JSON.stringify(c.toObj());
     return output;
   }
@@ -308,12 +310,12 @@ export class API extends EventEmitter {
   // */
   fromString(credentials) {
     try {
-      if (!_.isObject(credentials) || !credentials.xPubKey) {
-        credentials = new Credentials().fromObj(JSON.parse(credentials));
+      if (!_.isObject(credentials) || !(credentials as any).xPubKey) {
+        credentials = Credentials.fromObj(JSON.parse(credentials));
       }
       this.credentials = credentials;
     } catch (ex) {
-      this.log.warn(`Error importing wallet: ${ex}`);
+      log.warn(`Error importing wallet: ${ex}`);
       if (ex.toString().match(/Obsolete/)) {
         throw new Errors.OBSOLETE_BACKUP;
       } else {
@@ -331,7 +333,7 @@ export class API extends EventEmitter {
     try {
       privateKeyWif = bip38.decrypt(encryptedPrivateKeyBase58, passphrase);
     } catch (ex) {
-      return cb(new Error('Could not decrypt BIP38 private key ' + ex));
+      return cb(new Error('Could not decrypt BIP38 private key' + ex));
     }
 
     var privateKey = new Bitcore.PrivateKey(privateKeyWif);
@@ -404,7 +406,7 @@ export class API extends EventEmitter {
           tx.serialize();
 
         } catch (ex) {
-          this.log.error('Could not build transaction from private key', ex);
+          log.error('Could not build transaction from private key', ex);
           return next(new Errors.COULD_NOT_BUILD_TRANSACTION);
         }
         return next(null, tx);
@@ -449,7 +451,7 @@ export class API extends EventEmitter {
           this.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, me.name, opts);
         } catch (e) {
           if (e.message) {
-            this.log.info('Trying credentials...', e.message);
+            log.info('Trying credentials...', e.message);
           }
           if (e.message && e.message.match(/Bad\snr/)) {
             return cb(new Errors.WALLET_DOES_NOT_EXIST);
@@ -462,12 +464,12 @@ export class API extends EventEmitter {
         return cb();
 
       if (this.credentials.walletPrivKey) {
-        if (!new Verifier().checkCopayers(this.credentials, wallet.copayers)) {
+        if (!Verifier.checkCopayers(this.credentials, wallet.copayers)) {
           return cb(new Errors.SERVER_COMPROMISED);
         }
       } else {
         // this should only happen in AIR-GAPPED flows
-        this.log.warn('Could not verify copayers key (missing wallet Private Key)');
+        log.warn('Could not verify copayers key (missing wallet Private Key)');
       }
 
       this.credentials.addPublicKeyRing(this._extractPublicKeyRing(wallet.copayers));
@@ -477,16 +479,16 @@ export class API extends EventEmitter {
     });
   }
 
-  _buildSecret(walletId, walletPrivKey, coin, network) {
+  static _buildSecret(walletId, walletPrivKey, coin, network) {
     if (_.isString(walletPrivKey)) {
-      walletPrivKey = new Bitcore.PrivateKey.fromString(walletPrivKey);
+      walletPrivKey = Bitcore.PrivateKey.fromString(walletPrivKey);
     }
     var widHex = Buffer.from(walletId.replace(/-/g, ''), 'hex');
     var widBase58 = new Bitcore.encoding.Base58(widHex).toString();
     return _.padEnd(widBase58, 22, '0') + walletPrivKey.toWIF() + (network == 'testnet' ? 'T' : 'L') + coin;
   }
 
-  parseSecret(secret) {
+  static parseSecret(secret) {
     $.checkArgument(secret);
 
     var split = (str, indexes) => {
@@ -521,8 +523,8 @@ export class API extends EventEmitter {
     }
   }
 
-  getRawTx(txp) {
-    var t = new Utils().buildTx(txp);
+  static getRawTx(txp) {
+    var t = Utils.buildTx(txp);
     return t.uncheckedSerialize();
   }
 
@@ -558,7 +560,8 @@ export class API extends EventEmitter {
         var s = {
           inputIndex: i,
           signature,
-          sigtype: bitcore.crypto.Signature.SIGHASH_ALL || bitcore.crypto.Signature.SIGHASH_FORKID,
+          // tslint:disable-next-line:no-bitwise
+          sigtype: bitcore.crypto.Signature.SIGHASH_ALL | bitcore.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub,
         }
           ;
@@ -566,7 +569,6 @@ export class API extends EventEmitter {
         i++;
       } catch (e) { }
     });
-
     if (i != txp.inputs.length)
       throw new Error('Wrong signatures');
   }
@@ -599,11 +601,12 @@ export class API extends EventEmitter {
     $.shouldBeFunction(cb);
 
     opts = opts || {};
+
     // Adds encrypted walletPrivateKey to CustomData
     opts.customData = opts.customData || {};
     opts.customData.walletPrivKey = walletPrivKey.toString();
-    var encCustomData = new Utils().encryptMessage(JSON.stringify(opts.customData), this.credentials.personalEncryptingKey);
-    var encCopayerName = new Utils().encryptMessage(copayerName, this.credentials.sharedEncryptingKey);
+    var encCustomData = Utils.encryptMessage(JSON.stringify(opts.customData), this.credentials.personalEncryptingKey);
+    var encCopayerName = Utils.encryptMessage(copayerName, this.credentials.sharedEncryptingKey);
 
     var args: any = {
       walletId,
@@ -618,8 +621,8 @@ export class API extends EventEmitter {
     if (_.isBoolean(opts.supportBIP44AndP2PKH))
       args.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
 
-    var hash = new Utils().getCopayerHash(args.name, args.xPubKey, args.requestPubKey);
-    args.copayerSignature = new Utils().signMessage(hash, walletPrivKey);
+    var hash = Utils.getCopayerHash(args.name, args.xPubKey, args.requestPubKey);
+    args.copayerSignature = Utils.signMessage(hash, walletPrivKey);
 
     var url = '/v2/wallets/' + walletId + '/copayers';
     this.request.post(url, args, (err, body) => {
@@ -638,7 +641,7 @@ export class API extends EventEmitter {
 
   _extractPublicKeyRing(copayers) {
     return _.map(copayers, (copayer) => {
-      var pkr = _.pick(copayer, ['xPubKey', 'requestPubKey']);
+      var pkr: any = _.pick(copayer, ['xPubKey', 'requestPubKey']);
       pkr.copayerName = copayer.name;
       return pkr;
     });
@@ -675,7 +678,7 @@ export class API extends EventEmitter {
   _checkKeyDerivation() {
     var isInvalid = (this.keyDerivationOk === false);
     if (isInvalid) {
-      this.log.error('Key derivation for this device is not working as expected');
+      log.error('Key derivation for this device is not working as expected');
     }
     return !isInvalid;
   }
@@ -725,7 +728,8 @@ export class API extends EventEmitter {
 
     var c = this.credentials;
     c.addWalletPrivateKey(walletPrivKey.toString());
-    var encWalletName = new Utils().encryptMessage(walletName, c.sharedEncryptingKey);
+    var encWalletName = Utils.encryptMessage(walletName, c.sharedEncryptingKey);
+
     var args = {
       name: encWalletName,
       m,
@@ -742,7 +746,7 @@ export class API extends EventEmitter {
 
       var walletId = res.walletId;
       c.addWalletInfo(walletId, walletName, m, n, copayerName);
-      var secret = this._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
+      var secret = API._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
 
       this._doJoinWallet(walletId, walletPrivKey, c.xPubKey, c.requestPubKey, copayerName, {
         coin
@@ -770,7 +774,7 @@ export class API extends EventEmitter {
     if (!cb) {
       cb = opts;
       opts = {};
-      this.log.warn('DEPRECATED WARN: joinWallet should receive 4 parameters.');
+      log.warn('DEPRECATED WARN: joinWallet should receive 4 parameters.');
     }
 
     if (!this._checkKeyDerivation()) return cb(new Error('Cannot join wallet'));
@@ -781,7 +785,7 @@ export class API extends EventEmitter {
     if (!_.includes(Constants.COINS, coin)) return cb(new Error('Invalid coin'));
 
     try {
-      var secretData = this.parseSecret(secret);
+      var secretData = API.parseSecret(secret);
     } catch (ex) {
       return cb(ex);
     }
@@ -820,7 +824,7 @@ export class API extends EventEmitter {
     }, (err) => {
       // No error? -> Wallet is ready.
       if (!err) {
-        this.log.info('Wallet is already created');
+        log.info('Wallet is already created');
         return cb();
       }
 
@@ -828,7 +832,7 @@ export class API extends EventEmitter {
       var walletPrivKey = Bitcore.PrivateKey.fromString(c.walletPrivKey);
       var walletId = c.walletId;
       var supportBIP44AndP2PKH = c.derivationStrategy != Constants.DERIVATION_STRATEGIES.BIP45;
-      var encWalletName = new Utils().encryptMessage(c.walletName || 'recovered wallet', c.sharedEncryptingKey);
+      var encWalletName = Utils.encryptMessage(c.walletName || 'recovered wallet', c.sharedEncryptingKey);
       var coin = c.coin;
 
       var args = {
@@ -845,7 +849,7 @@ export class API extends EventEmitter {
       this.request.post('/v2/wallets/', args, (err, body) => {
         if (err) {
           // return all errors. Can't call addAccess.
-          this.log.info('openWallet error' + err);
+          log.info('openWallet error' + err);
           return cb(new Errors.WALLET_DOES_NOT_EXIST);
         }
 
@@ -873,13 +877,13 @@ export class API extends EventEmitter {
 
     var encryptingKey = this.credentials.sharedEncryptingKey;
 
-    var name = new Utils().decryptMessageNoThrow(wallet.name, encryptingKey);
+    var name = Utils.decryptMessageNoThrow(wallet.name, encryptingKey);
     if (name != wallet.name) {
       wallet.encryptedName = wallet.name;
     }
     wallet.name = name;
     _.each(wallet.copayers, (copayer) => {
-      var name = new Utils().decryptMessageNoThrow(copayer.name, encryptingKey);
+      var name = Utils.decryptMessageNoThrow(copayer.name, encryptingKey);
       if (name != copayer.name) {
         copayer.encryptedName = copayer.name;
       }
@@ -887,7 +891,7 @@ export class API extends EventEmitter {
       _.each(copayer.requestPubKeys, (access) => {
         if (!access.name) return;
 
-        var name = new Utils().decryptMessageNoThrow(access.name, encryptingKey);
+        var name = Utils.decryptMessageNoThrow(access.name, encryptingKey);
         if (name != access.name) {
           access.encryptedName = access.name;
         }
@@ -909,9 +913,9 @@ export class API extends EventEmitter {
 
       var customData;
       try {
-        customData = JSON.parse(new Utils().decryptMessage(me.customData, this.credentials.personalEncryptingKey));
+        customData = JSON.parse(Utils.decryptMessage(me.customData, this.credentials.personalEncryptingKey));
       } catch (e) {
-        this.log.warn('Could not decrypt customData:', me.customData);
+        log.warn('Could not decrypt customData:', me.customData);
       }
       if (!customData) return;
 
@@ -973,7 +977,7 @@ export class API extends EventEmitter {
     if (!cb) {
       cb = opts;
       opts = {};
-      this.log.warn('DEPRECATED WARN: getStatus should receive 2 parameters.');
+      log.warn('DEPRECATED WARN: getStatus should receive 2 parameters.');
     }
 
     opts = opts || {};
@@ -987,7 +991,7 @@ export class API extends EventEmitter {
       if (err) return cb(err);
       if (result.wallet.status == 'pending') {
         var c = this.credentials;
-        result.wallet.secret = this._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
+        result.wallet.secret = API._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
       }
 
       this._processStatus(result);
@@ -1040,7 +1044,7 @@ export class API extends EventEmitter {
     $.checkArgument(opts)
       .checkArgument(opts.payProUrl);
 
-    new PayPro().get({
+    PayPro.get({
       url: opts.payProUrl,
       coin: this.credentials.coin || 'btc',
       network: this.credentials.network || 'livenet',
@@ -1078,10 +1082,10 @@ export class API extends EventEmitter {
   _getCreateTxProposalArgs(opts) {
 
     var args = _.cloneDeep(opts);
-    args.message = this._encryptMessage(opts.message, this.credentials.sharedEncryptingKey) || null;
+    args.message = API._encryptMessage(opts.message, this.credentials.sharedEncryptingKey) || null;
     args.payProUrl = opts.payProUrl || null;
     _.each(args.outputs, (o) => {
-      o.message = this._encryptMessage(o.message, this.credentials.sharedEncryptingKey) || null;
+      o.message = API._encryptMessage(o.message, this.credentials.sharedEncryptingKey) || null;
     });
 
     return args;
@@ -1121,7 +1125,7 @@ export class API extends EventEmitter {
       if (err) return cb(err);
 
       this._processTxps(txp);
-      if (!new Verifier().checkProposalCreation(args, txp, this.credentials.sharedEncryptingKey)) {
+      if (!Verifier.checkProposalCreation(args, txp, this.credentials.sharedEncryptingKey)) {
         return cb(new Errors.SERVER_COMPROMISED);
       }
 
@@ -1143,10 +1147,10 @@ export class API extends EventEmitter {
 
     $.checkState(parseInt(opts.txp.version) >= 3);
 
-    var t = new Utils().buildTx(opts.txp);
+    var t = Utils.buildTx(opts.txp);
     var hash = t.uncheckedSerialize();
     var args = {
-      proposalSignature: new Utils().signMessage(hash, this.credentials.requestPrivKey)
+      proposalSignature: Utils.signMessage(hash, this.credentials.requestPrivKey)
     };
 
     var url = '/v2/txproposals/' + opts.txp.id + '/publish/';
@@ -1171,7 +1175,7 @@ export class API extends EventEmitter {
     if (!cb) {
       cb = opts;
       opts = {};
-      this.log.warn('DEPRECATED WARN: createAddress should receive 2 parameters.');
+      log.warn('DEPRECATED WARN: createAddress should receive 2 parameters.');
     }
 
     if (!this._checkKeyDerivation()) return cb(new Error('Cannot create new address for this wallet'));
@@ -1181,7 +1185,7 @@ export class API extends EventEmitter {
     this.request.post('/v4/addresses/', opts, (err, address) => {
       if (err) return cb(err);
 
-      if (!new Verifier().checkAddress(this.credentials, address)) {
+      if (!Verifier.checkAddress(this.credentials, address)) {
         return cb(new Errors.SERVER_COMPROMISED);
       }
 
@@ -1218,7 +1222,7 @@ export class API extends EventEmitter {
 
       if (!opts.doNotVerify) {
         var fake = _.some(addresses, (address) => {
-          return !new Verifier().checkAddress(this.credentials, address);
+          return !Verifier.checkAddress(this.credentials, address);
         });
         if (fake)
           return cb(new Errors.SERVER_COMPROMISED);
@@ -1237,7 +1241,7 @@ export class API extends EventEmitter {
     if (!cb) {
       cb = opts;
       opts = {};
-      this.log.warn('DEPRECATED WARN: getBalance should receive 2 parameters.');
+      log.warn('DEPRECATED WARN: getBalance should receive 2 parameters.');
     }
 
     opts = opts || {};
@@ -1278,7 +1282,7 @@ export class API extends EventEmitter {
         (txp, acb) => {
           if (opts.doNotVerify) return acb(true);
           this.getPayPro(txp, (err, paypro) => {
-            var isLegit = new Verifier().checkTxProposal(this.credentials, txp, {
+            var isLegit = Verifier.checkTxProposal(this.credentials, txp, {
               paypro,
             });
 
@@ -1293,7 +1297,7 @@ export class API extends EventEmitter {
           if (opts.forAirGapped) {
             result = {
               txps: JSON.parse(JSON.stringify(txps)),
-              encryptedPkr: opts.doNotEncryptPkr ? null : new Utils().encryptMessage(JSON.stringify(this.credentials.publicKeyRing), this.credentials.personalEncryptingKey),
+              encryptedPkr: opts.doNotEncryptPkr ? null : Utils.encryptMessage(JSON.stringify(this.credentials.publicKeyRing), this.credentials.personalEncryptingKey),
               unencryptedPkr: opts.doNotEncryptPkr ? JSON.stringify(this.credentials.publicKeyRing) : null,
               m: this.credentials.m,
               n: this.credentials.n,
@@ -1311,7 +1315,7 @@ export class API extends EventEmitter {
     if (!txp.payProUrl || this.doNotVerifyPayPro)
       return cb();
 
-    new PayPro().get({
+    PayPro.get({
       url: txp.payProUrl,
       coin: txp.coin || 'btc',
       network: txp.network || 'livenet',
@@ -1343,7 +1347,7 @@ export class API extends EventEmitter {
     this.getPayPro(txp, (err, paypro) => {
       if (err) return cb(err);
 
-      var isLegit = new Verifier().checkTxProposal(this.credentials, txp, {
+      var isLegit = Verifier.checkTxProposal(this.credentials, txp, {
         paypro,
       });
 
@@ -1373,7 +1377,7 @@ export class API extends EventEmitter {
   // * @param {String} password - (optional) A password to decrypt the encrypted private key (if encryption is set).
   // * @return {Object} txp - Return transaction
   // */
-  signTxProposalFromAirGapped2(txp, encryptedPkr, m, n, password) {
+  signTxProposalFromAirGapped(txp, encryptedPkr, m, n, password) {
     throw new Error('signTxProposalFromAirGapped not yet implemented in v9.0.0');
     // $.checkState(this.credentials);
 
@@ -1385,7 +1389,7 @@ export class API extends EventEmitter {
 
     // var publicKeyRing;
     // try {
-    //   publicKeyRing = JSON.parse(new Utils().decryptMessage(encryptedPkr, this.credentials.personalEncryptingKey));
+    //   publicKeyRing = JSON.parse(Utils.decryptMessage(encryptedPkr, this.credentials.personalEncryptingKey));
     // } catch (ex) {
     //   throw new Error('Could not decrypt public key ring');
     // }
@@ -1420,7 +1424,7 @@ export class API extends EventEmitter {
   // * @param {String} opts.derivationStrategy - default 'BIP44'
   // * @return {Object} txp - Return transaction
   // */
-  signTxProposalFromAirGapped(key, txp, unencryptedPkr, m, n, opts, cb) {
+  static signTxProposalFromAirGapped(key, txp, unencryptedPkr, m, n, opts, cb) {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
@@ -1460,7 +1464,7 @@ export class API extends EventEmitter {
     newClient.credentials.addressType = txp.addressType;
     newClient.credentials.addPublicKeyRing(publicKeyRing);
 
-    if (!new Verifier().checkTxProposalSignature(newClient.credentials, txp))
+    if (!Verifier.checkTxProposalSignature(newClient.credentials, txp))
       throw new Error('Fake transaction proposal');
 
     return newClient._signTxp(txp);
@@ -1480,7 +1484,7 @@ export class API extends EventEmitter {
 
     var url = '/v1/txproposals/' + txp.id + '/rejections/';
     var args = {
-      reason: this._encryptMessage(reason, this.credentials.sharedEncryptingKey) || '',
+      reason: API._encryptMessage(reason, this.credentials.sharedEncryptingKey) || '',
     };
     this.request.post(url, args, (err, txp) => {
       if (err) return cb(err);
@@ -1535,11 +1539,11 @@ export class API extends EventEmitter {
 
       if (paypro) {
 
-        var t_unsigned = new Utils().buildTx(txp);
-        var t = new Utils().buildTx(txp);
+        var t_unsigned = Utils.buildTx(txp);
+        var t = Utils.buildTx(txp);
         this._applyAllSignatures(txp, t);
 
-        new PayPro().send({
+        PayPro.send({
           url: txp.payProUrl,
           amountSat: txp.amount,
           rawTxUnsigned: t_unsigned.uncheckedSerialize(),
@@ -1559,7 +1563,7 @@ export class API extends EventEmitter {
           }
 
           if (memo) {
-            this.log.debug('Merchant memo:', memo);
+            log.debug('Merchant memo:', memo);
           }
           this._doBroadcast(txp, (err2, txp) => {
             return cb(err2, txp, memo, err);
@@ -1677,7 +1681,7 @@ export class API extends EventEmitter {
     opts = opts || {};
     var requestPubKey = (new Bitcore.PrivateKey(opts.requestPrivKey)).toPublicKey().toString();
     var copayerId = this.credentials.copayerId;
-    var encCopayerName = opts.name ? new Utils().encryptMessage(opts.name, this.credentials.sharedEncryptingKey) : null;
+    var encCopayerName = opts.name ? Utils.encryptMessage(opts.name, this.credentials.sharedEncryptingKey) : null;
 
     var opts2 = {
       copayerId,
@@ -1722,7 +1726,7 @@ export class API extends EventEmitter {
 
     opts = opts || {};
     if (opts.body) {
-      opts.body = this._encryptMessage(opts.body, this.credentials.sharedEncryptingKey);
+      opts.body = API._encryptMessage(opts.body, this.credentials.sharedEncryptingKey);
     }
     this.request.put('/v1/txnotes/' + opts.txid + '/', opts, (err, note) => {
       if (err) return cb(err);
@@ -1884,7 +1888,7 @@ export class API extends EventEmitter {
       if (err || !result || !result.wallet) return cb(err);
       if (result.wallet.status == 'pending') {
         var c = this.credentials;
-        result.wallet.secret = this._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
+        result.wallet.secret = API._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
       }
 
       this._processStatus(result);
@@ -1912,7 +1916,7 @@ export class API extends EventEmitter {
       try {
         decrypted = sjcl.decrypt(passphrase, blob);
       } catch (e) {
-        this.log.debug(e);
+        log.debug(e);
       }
     }
 
@@ -1942,7 +1946,7 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Returns { err, {key, credentials} }
   // */
 
-  upgradeCredentialsV1(x) {
+  static upgradeCredentialsV1(x) {
     $.shouldBeObject(x);
 
     if (!_.isUndefined(x.version) || (!x.xPrivKey && !x.xPrivKeyEncrypted && !x.xPubKey)) {
@@ -1952,7 +1956,7 @@ export class API extends EventEmitter {
     let k;
     if (x.xPrivKey || x.xPrivKeyEncrypted) {
       k = new Key();
-      _.each(k.FIELDS, (i) => {
+      _.each(Key.FIELDS, (i) => {
         if (!_.isUndefined(x[i])) {
           k[i] = x[i];
         }
@@ -1982,8 +1986,8 @@ export class API extends EventEmitter {
       mnemonicEncrypted: true,
     };
 
-    var c: any = new Credentials();
-    _.each(new Credentials().FIELDS, (i) => {
+    var c = new Credentials();
+    _.each(Credentials.FIELDS, (i) => {
       if (!obsoleteFields[i]) {
         c[i] = x[i];
       }
@@ -2011,7 +2015,7 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Returns { err, {keys, credentials} }
   // */
 
-  upgradeMultipleCredentialsV1(oldCredentials) {
+  static upgradeMultipleCredentialsV1(oldCredentials) {
 
     let newKeys = [],
       newCrededentials = [];
@@ -2020,16 +2024,16 @@ export class API extends EventEmitter {
       let migrated;
 
       if (!credentials.version || credentials.version < 2) {
-        this.log.info('About to migrate : ' + credentials.walletId);
+        log.info('About to migrate : ' + credentials.walletId);
 
-        migrated = this.upgradeCredentialsV1(credentials);
+        migrated = API.upgradeCredentialsV1(credentials);
         newCrededentials.push(migrated.credentials);
 
         if (migrated.key) {
-          this.log.info(`Wallet ${credentials.walletId} key's extracted`);
+          log.info(`Wallet ${credentials.walletId} key's extracted`);
           newKeys.push(migrated.key);
         } else {
-          this.log.info(`READ-ONLY Wallet ${credentials.walletId} migrated`);
+          log.info(`READ-ONLY Wallet ${credentials.walletId} migrated`);
         }
       }
     });
@@ -2044,7 +2048,7 @@ export class API extends EventEmitter {
       });
 
       if (_.keys(credGroups).length < newCrededentials.length) {
-        this.log.info('Found some wallets using the SAME key. Merging...');
+        log.info('Found some wallets using the SAME key. Merging...');
 
         let uniqIds = {};
 
@@ -2054,9 +2058,9 @@ export class API extends EventEmitter {
           uniqIds[toKeep.keyId] = true;
 
           if (!credList.length) return;
-          this.log.info(`Merging ${credList.length} keys to ${toKeep.keyId}`);
+          log.info(`Merging ${credList.length} keys to ${toKeep.keyId}`);
           _.each(credList, x => {
-            this.log.info(`\t${x.keyId} is now ${toKeep.keyId}`);
+            log.info(`\t${x.keyId} is now ${toKeep.keyId}`);
             x.keyId = toKeep.keyId;
           });
         });
@@ -2084,10 +2088,127 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Returns { err, key, clients[] }
   // */
 
-  serverAssistedImport(opts, clientOpts, callback) {
-    this.clientOpts = clientOpts;
+  static serverAssistedImport = (opts, clientOpts, callback) => {
 
     $.checkArgument(opts.words || opts.xPrivKey, 'provide opts.words or opts.xPrivKey');
+
+    let copayerIdAlreadyTested = {};
+    var checkCredentials = (key, opts, icb) => {
+      let c = key.createCredentials(null, {
+        coin: opts.coin,
+        network: opts.network,
+        account: opts.account,
+        n: opts.n,
+      });
+
+      if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
+        // console.log('[api.js.2226] ALREADY T:', opts.n); // TODO
+        return icb();
+      } else {
+        copayerIdAlreadyTested[c.copayerId + ':' + opts.n] = true;
+      }
+
+      let client = clientOpts.clientFactory ? clientOpts.clientFactory() : new API(clientOpts);
+
+      client.fromString(c);
+      client.openWallet({}, (err) => {
+        console.log(`PATH: ${c.rootPath} n: ${c.n}:`, (err && err.message) ? err.message : 'FOUND!'); // TODO
+        // Exists
+        if (!err) return icb(null, client);
+        if (err instanceof Errors.NOT_AUTHORIZED ||
+          err instanceof Errors.WALLET_DOES_NOT_EXIST) {
+          return icb();
+        }
+
+        return icb(err);
+      });
+    };
+
+    var checkKey = (key, cb) => {
+      let opts = [
+
+        // coin, network,  multisig
+        ['btc', 'livenet'],
+        ['bch', 'livenet'],
+        ['btc', 'livenet', true],
+        ['bch', 'livenet', true],
+      ];
+      if (key.use44forMultisig) {
+        //  testing old multi sig
+        opts = opts.filter((x) => {
+          return x[2];
+        });
+      }
+
+      if (key.use0forBCH) {
+        //  testing BCH, old coin=0 wallets
+        opts = opts.filter((x) => {
+          return x[0] == 'bch';
+        });
+      }
+
+      if (!key.nonCompliantDerivation) {
+        // TESTNET
+        let testnet = _.cloneDeep(opts);
+        testnet.forEach((x) => { x[1] = 'testnet'; });
+        opts = opts.concat(testnet);
+      } else {
+        //  leave only BTC, and no testnet
+        opts = opts.filter((x) => {
+          return x[0] == 'btc';
+        });
+      }
+
+      let clients = [];
+      async.eachSeries(opts,
+        (x, next) => {
+          let optsObj = {
+            coin: x[0],
+            network: x[1],
+            account: 0,
+            n: x[2] ? 2 : 1,
+          };
+          // console.log('[api.js.2287:optsObj:]',optsObj); // TODO
+          // TODO OPTI: do not scan accounts if XX
+          //
+          // 1. check account 0
+          checkCredentials(key, optsObj, (err, iclient) => {
+            if (err) return next(err);
+            if (!iclient) return next();
+            clients.push(iclient);
+
+            // Accounts not allowed?
+            if (key.use0forBCH || !key.compliantDerivation || key.use44forMultisig || key.BIP45)
+              return next();
+
+            // Now, lets scan all accounts for the found client
+            let cont = true, account = 1;
+            async.whilst(() => {
+              return cont;
+            }, (icb) => {
+              optsObj.account = account++;
+
+              checkCredentials(key, optsObj, (err, iclient) => {
+                if (err) return icb(err);
+                cont = !!iclient;
+                if (iclient) {
+                  clients.push(iclient);
+                } else {
+                  // we do not allow accounts nr gaps in BWS.
+                  cont = false;
+                }
+                return icb();
+              });
+            }, (err) => {
+              return next(err);
+            });
+          });
+        },
+        (err) => {
+          if (err) return cb(err);
+          return cb(null, clients);
+        });
+    };
 
     let sets = [
       {
@@ -2138,17 +2259,17 @@ export class API extends EventEmitter {
             s.passphrase = opts.passphrase;
           }
 
-          k = new Key().fromMnemonic(opts.words, s);
+          k = Key.fromMnemonic(opts.words, s);
         } else {
-          k = new Key().fromExtendedPrivateKey(opts.xPrivKey, s);
+          k = Key.fromExtendedPrivateKey(opts.xPrivKey, s);
         }
       } catch (e) {
-        this.log.info('Backup error:', e);
+        log.info('Backup error:', e);
         return callback(new Errors.INVALID_BACKUP);
       }
       return true;
     }, (icb) => {
-      this.checkKey(k, (err, clients) => {
+      checkKey(k, (err, clients) => {
         if (err) return icb(err);
 
         if (clients && clients.length) {
@@ -2165,123 +2286,9 @@ export class API extends EventEmitter {
       return callback(null, k, resultingClients);
     });
   }
-  checkCredentials(key, opts, icb) {
-    let copayerIdAlreadyTested = {};
 
-    let c = key.createCredentials(null, {
-      coin: opts.coin,
-      network: opts.network,
-      account: opts.account,
-      n: opts.n,
-    });
-
-    if (copayerIdAlreadyTested[c.copayerId + ':' + opts.n]) {
-      // console.log('[this.js.2226] ALREADY T:', opts.n); // TODO
-      return icb();
-    } else {
-      copayerIdAlreadyTested[c.copayerId + ':' + opts.n] = true;
-    }
-
-    let client = this.clientOpts.clientFactory ? this.clientOpts.clientFactory() : new API(this.clientOpts);
-    client.fromString(c);
-    client.openWallet({}, (err) => {
-      console.log(`PATH: ${c.rootPath} n: ${c.n}:`, (err && err.message) ? err.message : 'FOUND!'); // TODO
-      // Exists
-      if (!err) return icb(null, client);
-      if (err instanceof Errors.NOT_AUTHORIZED ||
-        err instanceof Errors.WALLET_DOES_NOT_EXIST) {
-        return icb();
-      }
-
-      return icb(err);
-    });
-  }
-  checkKey(key, cb) {
-    let opts = [
-
-      // coin, network,  multisig
-      ['btc', 'livenet'],
-      ['bch', 'livenet'],
-      ['btc', 'livenet', true],
-      ['bch', 'livenet', true],
-    ];
-    if (key.use44forMultisig) {
-      //  testing old multi sig
-      opts = opts.filter((x) => {
-        return x[2];
-      });
-    }
-
-    if (key.use0forBCH) {
-      //  testing BCH, old coin=0 wallets
-      opts = opts.filter((x) => {
-        return x[0] == 'bch';
-      });
-    }
-
-    if (!key.nonCompliantDerivation) {
-      // TESTNET
-      let testnet = _.cloneDeep(opts);
-      testnet.forEach((x) => { x[1] = 'testnet'; });
-      opts = opts.concat(testnet);
-    } else {
-      //  leave only BTC, and no testnet
-      opts = opts.filter((x) => {
-        return x[0] == 'btc';
-      });
-    }
-
-    let clients = [];
-    async.eachSeries(opts,
-      (x, next) => {
-        let optsObj = {
-          coin: x[0],
-          network: x[1],
-          account: 0,
-          n: x[2] ? 2 : 1,
-        };
-        // console.log('[this.js.2287:optsObj:]',optsObj); // TODO
-        // TODO OPTI: do not scan accounts if XX
-        //
-        // 1. check account 0
-        this.checkCredentials(key, optsObj, (err, iclient) => {
-          if (err) return next(err);
-          if (!iclient) return next();
-          clients.push(iclient);
-
-          // Accounts not allowed?
-          if (key.use0forBCH || !key.compliantDerivation || key.use44forMultisig || key.BIP45)
-            return next();
-
-          // Now, lets scan all accounts for the found client
-          let cont = true, account = 1;
-          async.whilst(() => {
-            return cont;
-          }, (icb) => {
-            optsObj.account = account++;
-
-            this.checkCredentials(key, optsObj, (err, iclient) => {
-              if (err) return icb(err);
-              cont = !!iclient;
-              if (iclient) {
-                clients.push(iclient);
-              } else {
-                // we do not allow accounts nr gaps in BWS.
-                cont = false;
-              }
-              return icb();
-            });
-          }, (err) => {
-            return next(err);
-          });
-        });
-      },
-      (err) => {
-        if (err) return cb(err);
-        return cb(null, clients);
-      });
-  }
 }
-// this.PayPro = PayPro;
-// this.Key = Key;
-// module.exports = API;
+
+API.PayPro = PayPro;
+API.Key = Key;
+module.exports = API;

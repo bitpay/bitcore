@@ -3,12 +3,10 @@ var $ = require('preconditions').singleton();
 
 var Bitcore = require('bitcore-lib');
 var BCHAddress = require('bitcore-lib-cash').Address;
+var Common = require('./common');
+const Utils = Common.Utils;
 
-import { Utils } from './common/utils';
-var utils;
-
-import { Logger } from './log';
-var log;
+var log = require('./log');
 
 /**
  * @desc Verifier constructor. Checks data given by the server
@@ -16,10 +14,6 @@ var log;
  * @constructor
  */
 export class Verifier {
-  constructor() {
-    utils = new Utils();
-    log = new Logger();
-  }
 
   /**
    * Check address
@@ -28,10 +22,10 @@ export class Verifier {
    * @param {String} address
    * @returns {Boolean} true or false
    */
-  checkAddress(credentials, address) {
+  static checkAddress(credentials, address) {
     $.checkState(credentials.isComplete());
 
-    var local = utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin);
+    var local = Utils.deriveAddress(address.type || credentials.addressType, credentials.publicKeyRing, address.path, credentials.m, credentials.network, credentials.coin);
     return (local.address == address.address &&
       _.difference(local.publicKeys, address.publicKeys).length === 0);
   }
@@ -43,7 +37,7 @@ export class Verifier {
    * @param {Array} copayers
    * @returns {Boolean} true or false
    */
-  checkCopayers(credentials, copayers) {
+  static checkCopayers(credentials, copayers) {
     $.checkState(credentials.walletPrivKey);
     var walletPubKey = Bitcore.PrivateKey.fromString(credentials.walletPrivKey).toPublicKey().toString();
 
@@ -68,8 +62,8 @@ export class Verifier {
         log.error('Missing copayer fields in server response');
         error = true;
       } else {
-        var hash = utils.getCopayerHash(copayer.encryptedName || copayer.name, copayer.xPubKey, copayer.requestPubKey);
-        if (!utils.verifyMessage(hash, copayer.signature, walletPubKey)) {
+        var hash = Utils.getCopayerHash(copayer.encryptedName || copayer.name, copayer.xPubKey, copayer.requestPubKey);
+        if (!Utils.verifyMessage(hash, copayer.signature, walletPubKey)) {
           log.error('Invalid signatures in server response');
           error = true;
         }
@@ -85,54 +79,54 @@ export class Verifier {
     return true;
   }
 
-  checkProposalCreation(args, txp, encryptingKey) {
+  static checkProposalCreation(args, txp, encryptingKey) {
+    var strEqual = (str1, str2) => {
+      return ((!str1 && !str2) || (str1 === str2));
+    };
 
     if (txp.outputs.length != args.outputs.length) return false;
 
     for (var i = 0; i < txp.outputs.length; i++) {
       var o1 = txp.outputs[i];
       var o2 = args.outputs[i];
-      if (!this.strEqual(o1.toAddress, o2.toAddress)) return false;
-      if (!this.strEqual(o1.script, o2.script)) return false;
+      if (!strEqual(o1.toAddress, o2.toAddress)) return false;
+      if (!strEqual(o1.script, o2.script)) return false;
       if (o1.amount != o2.amount) return false;
       var decryptedMessage = null;
       try {
-        decryptedMessage = utils.decryptMessage(o2.message, encryptingKey);
+        decryptedMessage = Utils.decryptMessage(o2.message, encryptingKey);
       } catch (e) {
         return false;
       }
-      if (!this.strEqual(o1.message, decryptedMessage)) return false;
+      if (!strEqual(o1.message, decryptedMessage)) return false;
     }
 
     var changeAddress;
     if (txp.changeAddress) {
       changeAddress = txp.changeAddress.address;
     }
-    if (args.changeAddress && !this.strEqual(changeAddress, args.changeAddress)) return false;
+    if (args.changeAddress && !strEqual(changeAddress, args.changeAddress)) return false;
     if (_.isNumber(args.feePerKb) && (txp.feePerKb != args.feePerKb)) return false;
-    if (!this.strEqual(txp.payProUrl, args.payProUrl)) return false;
+    if (!strEqual(txp.payProUrl, args.payProUrl)) return false;
 
     var decryptedMessage = null;
     try {
-      decryptedMessage = utils.decryptMessage(args.message, encryptingKey);
+      decryptedMessage = Utils.decryptMessage(args.message, encryptingKey);
     } catch (e) {
       return false;
     }
-    if (!this.strEqual(txp.message, decryptedMessage)) return false;
+    if (!strEqual(txp.message, decryptedMessage)) return false;
     if ((args.customData || txp.customData) && !_.isEqual(txp.customData, args.customData)) return false;
 
     return true;
   }
 
-  strEqual(str1, str2) {
-    return ((!str1 && !str2) || (str1 === str2));
-  }
-  checkTxProposalSignature(credentials, txp) {
+  static checkTxProposalSignature(credentials, txp) {
     $.checkArgument(txp.creatorId);
     $.checkState(credentials.isComplete());
 
     var creatorKeys = _.find(credentials.publicKeyRing, (item) => {
-      if (utils.xPubToCopayerId(txp.coin || 'btc', item.xPubKey) === txp.creatorId) return true;
+      if (Utils.xPubToCopayerId(txp.coin || 'btc', item.xPubKey) === txp.creatorId) return true;
     });
 
     if (!creatorKeys) return false;
@@ -142,7 +136,7 @@ export class Verifier {
     if (txp.proposalSignaturePubKey) {
 
       // Verify it...
-      if (!utils.verifyRequestPubKey(txp.proposalSignaturePubKey, txp.proposalSignaturePubKeySig, creatorKeys.xPubKey))
+      if (!Utils.verifyRequestPubKey(txp.proposalSignaturePubKey, txp.proposalSignaturePubKeySig, creatorKeys.xPubKey))
         return false;
 
       creatorSigningPubKey = txp.proposalSignaturePubKey;
@@ -153,14 +147,14 @@ export class Verifier {
 
     var hash;
     if (parseInt(txp.version) >= 3) {
-      var t = utils.buildTx(txp);
+      var t = Utils.buildTx(txp);
       hash = t.uncheckedSerialize();
     } else {
       throw new Error('Transaction proposal not supported');
     }
 
     log.debug('Regenerating & verifying tx proposal hash -> Hash: ', hash, ' Signature: ', txp.proposalSignature);
-    if (!utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
+    if (!Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
       return false;
 
     if (!this.checkAddress(credentials, txp.changeAddress))
@@ -169,7 +163,7 @@ export class Verifier {
     return true;
   }
 
-  checkPaypro(txp, payproOpts) {
+  static checkPaypro(txp, payproOpts) {
     var toAddress, amount, feeRate;
 
     if (parseInt(txp.version) >= 3) {
@@ -209,7 +203,7 @@ export class Verifier {
    * @param {Object} Optional: paypro
    * @param {Boolean} isLegit
    */
-  checkTxProposal(credentials, txp, opts) {
+  static checkTxProposal(credentials, txp, opts) {
     opts = opts || {};
 
     if (!this.checkTxProposalSignature(credentials, txp))
@@ -221,3 +215,4 @@ export class Verifier {
     return true;
   }
 }
+module.exports = Verifier;

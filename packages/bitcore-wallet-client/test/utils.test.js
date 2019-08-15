@@ -4,14 +4,15 @@ var _ = require('lodash');
 var chai = require('chai');
 var should = chai.should();
 var Bitcore = require('bitcore-lib');
+var Common = require('../ts_build/common');
+var Utils = Common.Utils;
 
-var { Utils } = require('../ts_build/common/utils');
 
 describe('Utils', () => {
 
   describe('#hashMessage', () => {
     it('should create a hash', () => {
-      var res = new Utils().hashMessage('hola');
+      var res = Utils.hashMessage('hola');
       res.toString('hex').should.equal('4102b8a140ec642feaa1c645345f714bc7132d4fd2f7f6202db8db305a96172f');
     });
   });
@@ -19,48 +20,48 @@ describe('Utils', () => {
   describe('#xPubToCopayerId', () => {
     it('should generate copayerId BTC', () => {
       var xpub = Bitcore.HDPublicKey.fromString('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj');
-      var res = new Utils().xPubToCopayerId('btc', xpub);
+      var res = Utils.xPubToCopayerId('btc', xpub);
       res.should.equal('8b5ae039f102653a49be29ab1625c2e77a987bcbad60715dea147976386e8fa7');
     });
 
     it('should generate copayerId BCH', () => {
       var xpub = Bitcore.HDPublicKey.fromString('xpub6BosfCnifzxcFwrSzQiqu2DBVTshkCXacvNsWGYJVVhhawA7d4R5WSWGFNbi8Aw6ZRc1brxMyWMzG3DSSSSoekkudhUd9yLb6qx39T9nMdj');
-      var res = new Utils().xPubToCopayerId('bch', 'xpub');
+      var res = Utils.xPubToCopayerId('bch', 'xpub');
       res.should.equal('5ea2f70a79027e385fea0e47df952db5763d7a749679f639a9f1c7235c86de4b');
     });
   });
 
   describe('#signMessage', () => {
     it('should sign a message', () => {
-      var sig = new Utils().signMessage('hola', '09458c090a69a38368975fb68115df2f4b0ab7d1bc463fc60c67aa1730641d6c');
+      var sig = Utils.signMessage('hola', '09458c090a69a38368975fb68115df2f4b0ab7d1bc463fc60c67aa1730641d6c');
       should.exist(sig);
       sig.should.equal('3045022100f2e3369dd4813d4d42aa2ed74b5cf8e364a8fa13d43ec541e4bc29525e0564c302205b37a7d1ca73f684f91256806cdad4b320b4ed3000bee2e388bcec106e0280e0');
     });
     it('should fail to sign with wrong args', () => {
       (() => {
-        new Utils().signMessage('hola', '03bec86ad4a8a91fe7c11ec06af27246ec55094db3d86098b7d8b2f12afe47627f');
+        Utils.signMessage('hola', '03bec86ad4a8a91fe7c11ec06af27246ec55094db3d86098b7d8b2f12afe47627f');
       }).should.throw('Number');
     });
   });
 
   describe('#verifyMessage', () => {
     it('should fail to verify a malformed signature', () => {
-      var res = new Utils().verifyMessage('hola', 'badsignature', '02555a2d45e309c00cc8c5090b6ec533c6880ab2d3bc970b3943def989b3373f16');
+      var res = Utils.verifyMessage('hola', 'badsignature', '02555a2d45e309c00cc8c5090b6ec533c6880ab2d3bc970b3943def989b3373f16');
       should.exist(res);
       res.should.equal(false);
     });
     it('should fail to verify a null signature', () => {
-      var res = new Utils().verifyMessage('hola', null, '02555a2d45e309c00cc8c5090b6ec533c6880ab2d3bc970b3943def989b3373f16');
+      var res = Utils.verifyMessage('hola', null, '02555a2d45e309c00cc8c5090b6ec533c6880ab2d3bc970b3943def989b3373f16');
       should.exist(res);
       res.should.equal(false);
     });
     it('should fail to verify with wrong pubkey', () => {
-      var res = new Utils().verifyMessage('hola', '3045022100d6186930e4cd9984e3168e15535e2297988555838ad10126d6c20d4ac0e74eb502201095a6319ea0a0de1f1e5fb50f7bf10b8069de10e0083e23dbbf8de9b8e02785', '02555a2d45e309c00cc8c5090b6ec533c6880ab2d3bc970b3943def989b3373f16');
+      var res = Utils.verifyMessage('hola', '3045022100d6186930e4cd9984e3168e15535e2297988555838ad10126d6c20d4ac0e74eb502201095a6319ea0a0de1f1e5fb50f7bf10b8069de10e0083e23dbbf8de9b8e02785', '02555a2d45e309c00cc8c5090b6ec533c6880ab2d3bc970b3943def989b3373f16');
       should.exist(res);
       res.should.equal(false);
     });
     it('should verify', () => {
-      var res = new Utils().verifyMessage('hola', '3045022100d6186930e4cd9984e3168e15535e2297988555838ad10126d6c20d4ac0e74eb502201095a6319ea0a0de1f1e5fb50f7bf10b8069de10e0083e23dbbf8de9b8e02785', '03bec86ad4a8a91fe7c11ec06af27246ec55094db3d86098b7d8b2f12afe47627f');
+      var res = Utils.verifyMessage('hola', '3045022100d6186930e4cd9984e3168e15535e2297988555838ad10126d6c20d4ac0e74eb502201095a6319ea0a0de1f1e5fb50f7bf10b8069de10e0083e23dbbf8de9b8e02785', '03bec86ad4a8a91fe7c11ec06af27246ec55094db3d86098b7d8b2f12afe47627f');
       should.exist(res);
       res.should.equal(true);
     });
@@ -126,7 +127,7 @@ describe('Utils', () => {
       }];
 
       _.each(cases, (testCase) => {
-        new Utils().formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
+        Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
       });
     });
     it('should successfully format full amount', () => {
@@ -181,7 +182,7 @@ describe('Utils', () => {
       _.each(cases, (testCase) => {
         testCase.args[2] = testCase.args[2] || {};
         testCase.args[2].fullPrecision = true;
-        new Utils().formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
+        Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
       });
     });
   });
@@ -189,16 +190,16 @@ describe('Utils', () => {
   describe('#signMessage #verifyMessage round trip', () => {
     it('should sign and verify', () => {
       var msg = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.";
-      var sig = new Utils().signMessage(msg, '09458c090a69a38368975fb68115df2f4b0ab7d1bc463fc60c67aa1730641d6c');
-      new Utils().verifyMessage(msg, sig, '03bec86ad4a8a91fe7c11ec06af27246ec55094db3d86098b7d8b2f12afe47627f').should.equal(true);
+      var sig = Utils.signMessage(msg, '09458c090a69a38368975fb68115df2f4b0ab7d1bc463fc60c67aa1730641d6c');
+      Utils.verifyMessage(msg, sig, '03bec86ad4a8a91fe7c11ec06af27246ec55094db3d86098b7d8b2f12afe47627f').should.equal(true);
     });
   });
 
   describe('#encryptMessage #decryptMessage round trip', () => {
     it('should encrypt and decrypt', () => {
       var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
-      var ct = new Utils().encryptMessage('hello world', pwd);
-      var msg = new Utils().decryptMessage(ct, pwd);
+      var ct = Utils.encryptMessage('hello world', pwd);
+      var msg = Utils.decryptMessage(ct, pwd);
       msg.should.equal('hello world');
     });
   });
@@ -207,9 +208,9 @@ describe('Utils', () => {
   describe('#decryptMessage should throw', () => {
     it('should encrypt and decrypt', () => {
       var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
-      var ct = new Utils().encryptMessage('hello world', pwd);
+      var ct = Utils.encryptMessage('hello world', pwd);
       (() => {
-        new Utils().decryptMessage(ct, 'test')
+        Utils.decryptMessage(ct, 'test')
       }).should.throw('invalid aes key size');
     });
   });
@@ -217,16 +218,16 @@ describe('Utils', () => {
   describe('#decryptMessageNoThrow should not throw', () => {
     it('should encrypt and decrypt', () => {
       var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
-      var ct = new Utils().encryptMessage('hello world', pwd);
-      var msg = new Utils().decryptMessageNoThrow(ct, pwd);
+      var ct = Utils.encryptMessage('hello world', pwd);
+      var msg = Utils.decryptMessageNoThrow(ct, pwd);
 
       msg.should.equal('hello world');
     });
 
     it('should encrypt and  fail to decrypt', () => {
       var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
-      var ct = new Utils().encryptMessage('hello world', pwd);
-      var msg = new Utils().decryptMessageNoThrow(ct, 'hola');
+      var ct = Utils.encryptMessage('hello world', pwd);
+      var msg = Utils.decryptMessageNoThrow(ct, 'hola');
 
       msg.should.equal('<ECANNOTDECRYPT>');
     });
@@ -234,27 +235,27 @@ describe('Utils', () => {
 
     it('should failover to decrypt a non-encrypted msg', () => {
       var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
-      var msg = new Utils().decryptMessageNoThrow('hola mundo', 'hola');
+      var msg = Utils.decryptMessageNoThrow('hola mundo', 'hola');
 
       msg.should.equal('hola mundo');
     });
 
     it('should failover to decrypt a non-encrypted msg (case 2)', () => {
       var pwd = "ezDRS2NRchMJLf1IWtjL5A==";
-      var msg = new Utils().decryptMessageNoThrow('{"pepe":1}', 'hola');
+      var msg = Utils.decryptMessageNoThrow('{"pepe":1}', 'hola');
 
       msg.should.equal('{"pepe":1}');
     });
 
 
     it('should no try to decrypt empty', () => {
-      var msg = new Utils().decryptMessageNoThrow('', 'hola');
+      var msg = Utils.decryptMessageNoThrow('', 'hola');
       msg.should.equal('');
     });
 
 
     it('should no try to decrypt null', () => {
-      var msg = new Utils().decryptMessageNoThrow(null, 'hola');
+      var msg = Utils.decryptMessageNoThrow(null, 'hola');
       msg.should.equal('');
     });
 
@@ -265,7 +266,7 @@ describe('Utils', () => {
 
   describe('#getProposalHash', () => {
     it('should compute hash for old style proposals', () => {
-      var hash = new Utils().getProposalHash('msj42CCGruhRsFrGATiUuh25dtxYtnpbTx', 1234, 'the message');
+      var hash = Utils.getProposalHash('msj42CCGruhRsFrGATiUuh25dtxYtnpbTx', 1234, 'the message');
       hash.should.equal('msj42CCGruhRsFrGATiUuh25dtxYtnpbTx|1234|the message|');
     });
     it('should compute hash for arbitrary proposal', () => {
@@ -291,8 +292,8 @@ describe('Utils', () => {
         amount: 1234,
       };
 
-      var hash1 = new Utils().getProposalHash(header1);
-      var hash2 = new Utils().getProposalHash(header2);
+      var hash1 = Utils.getProposalHash(header1);
+      var hash2 = Utils.getProposalHash(header2);
 
       hash1.should.equal(hash2);
     });
@@ -301,7 +302,7 @@ describe('Utils', () => {
   describe('#privateKeyToAESKey', () => {
     it('should be ok', () => {
       var privKey = new Bitcore.PrivateKey('09458c090a69a38368975fb68115df2f4b0ab7d1bc463fc60c67aa1730641d6c').toString();
-      new Utils().privateKeyToAESKey(privKey).should.be.equal('2HvmUYBSD0gXLea6z0n7EQ==');
+      Utils.privateKeyToAESKey(privKey).should.be.equal('2HvmUYBSD0gXLea6z0n7EQ==');
     });
     it('should fail if pk has invalid values', () => {
       var values = [
@@ -312,7 +313,7 @@ describe('Utils', () => {
       _.each(values, (value) => {
         var valid = true;
         try {
-          new Utils().privateKeyToAESKey(value);
+          Utils.privateKeyToAESKey(value);
         } catch (e) {
           valid = false;
         }
@@ -328,8 +329,8 @@ describe('Utils', () => {
       var xPubKey = new Bitcore.HDPublicKey(xPrivKey);
 
 
-      var sig = new Utils().signRequestPubKey(reqPubKey.toString(), xPrivKey);
-      var valid = new Utils().verifyRequestPubKey(reqPubKey.toString(), sig, xPubKey);
+      var sig = Utils.signRequestPubKey(reqPubKey.toString(), xPrivKey);
+      var valid = Utils.verifyRequestPubKey(reqPubKey.toString(), sig, xPubKey);
       valid.should.be.equal(true);
     });
 
@@ -337,11 +338,11 @@ describe('Utils', () => {
       var reqPubKey = '02c2c1c6e75cfc50235ff4a2eb848385c2871b8c94e285ee82eaced1dcd5dd568e';
       var xPrivKey = new Bitcore.HDPrivateKey();
       var xPubKey = new Bitcore.HDPublicKey(xPrivKey);
-      var sig = new Utils().signRequestPubKey(reqPubKey, xPrivKey);
+      var sig = Utils.signRequestPubKey(reqPubKey, xPrivKey);
 
       var xPrivKey2 = new Bitcore.HDPrivateKey();
       var xPubKey2 = new Bitcore.HDPublicKey(xPrivKey2);
-      var valid = new Utils().verifyRequestPubKey(reqPubKey, sig, xPubKey2);
+      var valid = Utils.verifyRequestPubKey(reqPubKey, sig, xPubKey2);
       valid.should.be.equal(false);
     });
   });

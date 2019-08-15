@@ -4,8 +4,7 @@ var _ = require('lodash');
 var chai = chai || require('chai');
 var sinon = sinon || require('sinon');
 var should = chai.should();
-var { PayPro } = require('../ts_build/paypro');
-var payPro;
+var payPro = require('../ts_build/paypro');
 var TestData = require('./testdata');
 
 function mockRequest(bodyBuf, headers) {
@@ -24,7 +23,6 @@ describe('paypro', function () {
   var clock, oldreq;
   before(function () {
     // Stub time before cert expiration at Mar 27 2016
-    payPro = new PayPro();
     clock = sinon.useFakeTimers(1459105693843);
 
   });
