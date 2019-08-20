@@ -63,6 +63,21 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     return contract;
   }
 
+  async getERC20TokenInfo(network: string, tokenAddress: string) {
+    const token = ETH.erc20For(network, tokenAddress);
+    const [name, decimals, symbol] = await Promise.all([
+      token.methods.name().call(),
+      token.methods.decimals().call(),
+      token.methods.symbol().call()
+    ]);
+
+    return {
+      name,
+      decimals,
+      symbol
+    };
+  }
+
   async getFee(params) {
     let { network, target = 4 } = params;
     if (network === 'livenet') {
@@ -310,6 +325,10 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     } as Partial<Transaction>;
   }
 
+  async getAccountNonce(network: string, address: string) {
+    return EthTransactionStorage.collection.countDocuments({ chain: 'ETH', network, from: address });
+  }
+
   async getWalletTokenTransactions(network: string, walletId: ObjectID, tokenAddress: string) {
     const addresses = await this.getWalletAddresses(walletId);
     const allTokenQueries = Array<Promise<Array<Partial<Transaction>>>>();
@@ -328,3 +347,5 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     return gasLimit;
   }
 }
+
+export const ETH = new ETHStateProvider();
