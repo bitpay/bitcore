@@ -1,7 +1,5 @@
 import * as _ from 'lodash';
 import { ObjectID } from 'bson';
-import AbiDecoder from 'abi-decoder';
-
 import logger from '../../../logger';
 import { LoggifyClass } from '../../../decorators/Loggify';
 import { IEthTransaction, EthTransactionJSON } from '../types';
@@ -162,6 +160,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   }
 
   abiDecode(input: string) {
+    const AbiDecoder = require('abi-decoder');
     try {
       try {
         AbiDecoder.addABI(ERC20Abi);
