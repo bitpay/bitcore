@@ -5,7 +5,6 @@
   "version": "8.6.0",
   "license": "MIT",
   "main": "ts_build/index.js",
-  "types": "./ts_build/index.d.ts",
   "keywords": [
     "bitcoin",
     "copay",

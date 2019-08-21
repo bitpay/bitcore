@@ -21,7 +21,7 @@ export class Request {
     this.baseUrl = url;
 
     // request can be overload only for testing
-    this.r = opts ? opts.r : request;
+    this.r = opts.r || request;
 
     this.session = null;
     this.credentials = null;

@@ -52,7 +52,7 @@ export class API extends EventEmitter {
   password: any;
   static PayPro: any;
   static Key: any;
-  constructor(opts) {
+  constructor(opts?) {
     super();
     opts = opts || {};
 
@@ -63,7 +63,6 @@ export class API extends EventEmitter {
 
     this.request = new Request(opts.baseUrl || BASE_URL, { r: opts.request });
     log.setLevel(this.logLevel);
-    util.inherits(API, events.EventEmitter);
   }
 
   static privateKeyEncryptionOpts = {
