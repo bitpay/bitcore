@@ -252,4 +252,3 @@ export class Request {
     return this.doRequest('delete', url, {}, false, cb);
   }
 }
-module.exports = Request;

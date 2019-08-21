@@ -278,4 +278,3 @@ export class Utils {
     return t;
   }
 }
-module.exports = Utils;
