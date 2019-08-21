@@ -52,6 +52,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           ProviderType = Web3.providers.HttpProvider;
           break;
       }
+      console.log(connUrl);
       this.web3 = new Web3(new ProviderType(connUrl));
     }
     return this.web3;

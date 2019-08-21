@@ -10,6 +10,7 @@ import { EthTransactionModel, EthTransactionStorage } from './models/transaction
 import { timestamp } from '../../logger';
 import { ETHStateProvider } from './api/csp';
 import { valueOrDefault } from '../../utils/check';
+import { wait } from '../../utils/wait';
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   private chainConfig: any;
@@ -52,8 +53,38 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   async disconnect() {
-    this.txSubscription.unsubscribe();
-    this.blockSubscription.unsubscribe();
+    try {
+      if (this.txSubscription) {
+        this.txSubscription.unsubscribe();
+      }
+      if (this.blockSubscription) {
+        this.blockSubscription.unsubscribe();
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async connect() {
+    let connected = false;
+    let attempt = false;
+    const { host, port } = this.chainConfig.provider;
+    while (!connected) {
+      try {
+        if (attempt) {
+          logger.warn(
+            `${timestamp()} | Not connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
+          );
+        }
+        attempt = true;
+        connected = await this.web3.eth.net.isListening();
+      } catch (e) {}
+      await wait(20000);
+    }
+
+    logger.info(
+      `${timestamp()} | Connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
+    );
   }
 
   public async getBlock(height: number) {
@@ -239,7 +270,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       const from = tx.from || '';
       const value = Number(tx.value);
       const fee = Number(tx.gas) * Number(tx.gasPrice);
-      const abiType = this.rpc.abiDecode(tx.input);
+      const abiType = this.txModel.abiDecode(tx.input!);
       const nonce = tx.nonce || 0;
       const convertedTx: IEthTransaction = {
         chain: this.chain,
@@ -280,12 +311,13 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
 
   async stop() {
     this.stopping = true;
-    logger.debug(`Stopping worker for chain ${this.chain}`);
+    logger.debug(`Stopping worker for chain ${this.chain} ${this.network}`);
     await this.disconnect();
   }
 
   async start() {
-    logger.debug(`Started worker for chain ${this.chain}`);
+    logger.debug(`Started worker for chain ${this.chain} ${this.network}`);
+    await this.connect();
     this.setupListeners();
     this.sync();
   }
