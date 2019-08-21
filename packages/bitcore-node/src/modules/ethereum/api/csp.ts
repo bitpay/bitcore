@@ -8,7 +8,7 @@ import { Storage } from '../../../services/storage';
 import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
 import { EthTransactionStorage } from '../models/transaction';
 import { ITransaction } from '../../../models/baseTransaction';
-import { EthTransactionJSON } from '../types';
+import { EthTransactionJSON, IEthBlock } from '../types';
 import { EthBlockStorage } from '../models/block';
 import { SpentHeightIndicators } from '../../../types/Coin';
 import { EthListTransactionsStream } from './transform';
@@ -346,6 +346,26 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     const { network, from, to, value, data, gasPrice } = params;
     const gasLimit = await this.getWeb3(network).eth.estimateGas({ from, to, value, data, gasPrice });
     return gasLimit;
+  }
+
+  async getBlocks(params: CSP.GetBlockParams) {
+    const { query, options } = this.getBlocksQuery(params);
+    let cursor = EthBlockStorage.collection.find(query, options).addCursorFlag('noCursorTimeout', true);
+    if (options.sort) {
+      cursor = cursor.sort(options.sort);
+    }
+    let blocks = await cursor.toArray();
+    const tip = await this.getLocalTip(params);
+    const tipHeight = tip ? tip.height : 0;
+    const blockTransform = (b: IEthBlock) => {
+      let confirmations = 0;
+      if (b.height && b.height >= 0) {
+        confirmations = tipHeight - b.height + 1;
+      }
+      const convertedBlock = EthBlockStorage._apiTransform(b, { object: true }) as IEthBlock;
+      return { ...convertedBlock, confirmations };
+    };
+    return blocks.map(blockTransform);
   }
 }
 

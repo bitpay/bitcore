@@ -17,6 +17,7 @@ import { StateStorage } from '../../../models/state';
 import { SpentHeightIndicators, CoinJSON } from '../../../types/Coin';
 import { Config } from '../../../services/config';
 import { TransactionJSON } from '../../../types/Transaction';
+import { IBlock } from '../../../models/baseBlock';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -80,7 +81,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     Storage.apiStreamingFind(BitcoinBlockStorage, query, options, req, res);
   }
 
-  async getBlocks(params: CSP.GetBlockParams) {
+  async getBlocks(params: CSP.GetBlockParams): Promise<Array<IBlock>> {
     const { query, options } = this.getBlocksQuery(params);
     let cursor = BitcoinBlockStorage.collection.find(query, options).addCursorFlag('noCursorTimeout', true);
     if (options.sort) {
@@ -100,7 +101,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return blocks.map(blockTransform);
   }
 
-  private getBlocksQuery(params: CSP.GetBlockParams | CSP.StreamBlocksParams) {
+  protected getBlocksQuery(params: CSP.GetBlockParams | CSP.StreamBlocksParams) {
     const { chain, network, sinceBlock, blockId, args = {} } = params;
     let { startDate, endDate, date, since, direction, paging } = args;
     let { limit = 10, sort = { height: -1 } } = args;
