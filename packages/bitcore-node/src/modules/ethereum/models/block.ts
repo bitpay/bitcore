@@ -152,6 +152,8 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
       hash: block.hash,
       height: block.height,
       size: block.size,
+      gasLimit: block.gasLimit,
+      gasUsed: block.gasUsed,
       merkleRoot: block.merkleRoot,
       time: block.time,
       timeNormalized: block.timeNormalized,
