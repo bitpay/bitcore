@@ -1,4 +1,6 @@
 import * as _ from 'lodash';
+import { Common } from './common';
+
 const request = require('superagent');
 const async = require('async');
 const Package = require('../package.json');
@@ -6,7 +8,6 @@ var log = require('./log');
 
 const util = require('util');
 var Errors = require('./errors');
-var Common = require('./common');
 const Utils = Common.Utils;
 
 export class Request {
@@ -33,7 +34,7 @@ export class Request {
 
   getHeaders(method, url, args) {
     var headers = {
-      'x-client-version': 'bwc-' + Package.version,
+      'x-client-version': 'bwc-' + Package.version
     };
     if (this.supportStaffWalletId) {
       headers['x-wallet-id'] = this.supportStaffWalletId;
@@ -63,7 +64,6 @@ export class Request {
   //  @param {Object} args
   //  @param {Callback} cb
   doRequest(method, url, args, useSession, cb) {
-
     var headers = this.getHeaders(method, url, args);
 
     if (this.credentials) {
@@ -92,7 +92,6 @@ export class Request {
     if (args) {
       if (method == 'post' || method == 'put') {
         r.send(args);
-
       } else {
         r.query(args);
       }
@@ -102,27 +101,25 @@ export class Request {
 
     r.end((err, res) => {
       if (!res) {
-        return cb(new Errors.CONNECTION_ERROR);
+        return cb(new Errors.CONNECTION_ERROR());
       }
 
       if (res.body)
-
-        log.debug(util.inspect(res.body, {
-          depth: 10
-        }));
+        log.debug(
+          util.inspect(res.body, {
+            depth: 10
+          })
+        );
 
       if (res.status !== 200) {
-        if (res.status === 503) return cb(new Errors.MAINTENANCE_ERROR);
-        if (res.status === 404)
-          return cb(new Errors.NOT_FOUND);
+        if (res.status === 503) return cb(new Errors.MAINTENANCE_ERROR());
+        if (res.status === 404) return cb(new Errors.NOT_FOUND());
 
-        if (!res.status)
-          return cb(new Errors.CONNECTION_ERROR);
+        if (!res.status) return cb(new Errors.CONNECTION_ERROR());
 
         log.error('HTTP Error:' + res.status);
 
-        if (!res.body)
-          return cb(new Error(res.status));
+        if (!res.body) return cb(new Error(res.status));
         return cb(Request._parseError(res.body));
       }
 
@@ -153,10 +150,16 @@ export class Request {
     var ret;
     if (body.code) {
       if (Errors[body.code]) {
-        ret = new Errors[body.code];
+        ret = new Errors[body.code]();
         if (body.message) ret.message = body.message;
       } else {
-        ret = new Error(body.code + ': ' + (_.isObject(body.message) ? JSON.stringify(body.message) : body.message));
+        ret = new Error(
+          body.code +
+            ': ' +
+            (_.isObject(body.message)
+              ? JSON.stringify(body.message)
+              : body.message)
+        );
       }
     } else {
       ret = new Error(body.error || JSON.stringify(body));
@@ -212,31 +215,32 @@ export class Request {
   //  @param {Object} args
   //  @param {Callback} cb
   doRequestWithLogin(method, url, args, cb) {
-
-    async.waterfall([
-
-      (next) => {
-        if (this.session) return next();
-        this.doLogin(next);
-      },
-      (next) => {
-        this.doRequest(method, url, args, true, (err, body, header) => {
-          if (err && err instanceof Errors.NOT_AUTHORIZED) {
-            this.doLogin((err) => {
-              if (err) return next(err);
-              return this.doRequest(method, url, args, true, next);
-            });
-          }
-          next(null, body, header);
-        });
-      },
-    ], cb);
+    async.waterfall(
+      [
+        next => {
+          if (this.session) return next();
+          this.doLogin(next);
+        },
+        next => {
+          this.doRequest(method, url, args, true, (err, body, header) => {
+            if (err && err instanceof Errors.NOT_AUTHORIZED) {
+              this.doLogin(err => {
+                if (err) return next(err);
+                return this.doRequest(method, url, args, true, next);
+              });
+            }
+            next(null, body, header);
+          });
+        }
+      ],
+      cb
+    );
   }
 
   doLogin(cb) {
     this._login((err, s) => {
       if (err) return cb(err);
-      if (!s) return cb(new Errors.NOT_AUTHORIZED);
+      if (!s) return cb(new Errors.NOT_AUTHORIZED());
       this.session = s;
       cb();
     });

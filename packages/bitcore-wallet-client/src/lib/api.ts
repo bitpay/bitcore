@@ -619,9 +619,9 @@ export class API extends EventEmitter {
         var s = {
           inputIndex: i,
           signature,
-          // tslint:disable-next-line:no-bitwise
+          // tslint:disable:no-bitwise
           sigtype:
-            bitcore.crypto.Signature.SIGHASH_ALL ||
+            bitcore.crypto.Signature.SIGHASH_ALL |
             bitcore.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub
         };
@@ -2282,7 +2282,7 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Returns { err, key, clients[] }
   // */
 
-  static serverAssistedImport  (opts, clientOpts, callback) {
+  static serverAssistedImport(opts, clientOpts, callback) {
     $.checkArgument(
       opts.words || opts.xPrivKey,
       'provide opts.words or opts.xPrivKey'

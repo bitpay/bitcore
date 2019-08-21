@@ -1,5 +1,6 @@
 'use strict';
 
+import { Common } from './common';
 const $ = require('preconditions').singleton();
 const _ = require('lodash');
 
@@ -7,7 +8,6 @@ const Bitcore = require('bitcore-lib');
 const Mnemonic = require('bitcore-mnemonic');
 const sjcl = require('sjcl');
 
-const Common = require('./common');
 const Constants = Common.Constants;
 const Utils = Common.Utils;
 export class Credentials {
