@@ -47,6 +47,8 @@ export class API extends EventEmitter {
   keyDerivationOk: boolean;
   noSign: any;
   password: any;
+  bp_partner: string;
+  bp_partner_version: string;
 
   static PayPro = PayPro;
   static Key = Key;
@@ -67,6 +69,9 @@ export class API extends EventEmitter {
     this.timeout = opts.timeout || 50000;
     this.logLevel = opts.logLevel || 'silent';
     this.supportStaffWalletId = opts.supportStaffWalletId;
+
+    this.bp_partner = opts.bp_partner;
+    this.bp_partner_version = opts.bp_partner_version;
 
     this.request = new Request(opts.baseUrl || BASE_URL, { r: opts.request });
     log.setLevel(this.logLevel);
@@ -1727,6 +1732,9 @@ export class API extends EventEmitter {
             }),
             coin: txp.coin || 'btc',
             network: txp.network || 'livenet',
+
+            bp_partner: this.bp_partner,
+            bp_partner_version: this.bp_partner_version,
 
             // for testing
             request: this.request
