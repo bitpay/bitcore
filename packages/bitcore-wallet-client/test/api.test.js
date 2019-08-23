@@ -941,6 +941,7 @@ describe('client API', () => {
         var utxos = helpers.generateUtxos('P2SH', publicKeyRing, 'm/2147483647/0/0', 1, [1000, 2000]);
         var txp = {
           inputs: utxos,
+          coin: 'btc',
           toAddress: toAddress,
           amount: 1200,
           changeAddress: {
@@ -971,6 +972,7 @@ describe('client API', () => {
         var txp = {
           inputs: utxos,
           toAddress: toAddress,
+          coin: 'btc',
           amount: 1200,
           changeAddress: {
             address: changeAddress
@@ -999,6 +1001,7 @@ describe('client API', () => {
         var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
         var txp = {
           inputs: utxos,
+          coin: 'btc',
           outputs: [{
             toAddress: toAddress,
             amount: 800,
@@ -1034,6 +1037,7 @@ describe('client API', () => {
         var txp = {
           inputs: utxos,
           type: 'external',
+          coin: 'btc',
           outputs: [{
             "amount": 700,
             "script": "512103ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff210314a96cd6f5a20826070173fe5b7e9797f21fc8ca4a55bcb2d2bde99f55dd352352ae"
@@ -1069,6 +1073,7 @@ describe('client API', () => {
         var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
         var txp = {
           version: 3,
+          coin: 'btc',
           inputs: utxos,
           outputs: [{
             toAddress: toAddress,

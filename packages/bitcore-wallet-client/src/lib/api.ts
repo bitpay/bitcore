@@ -2,6 +2,7 @@
 
 import { EventEmitter } from 'events';
 import _ from 'lodash';
+import * as CWC from 'crypto-wallet-core';
 import sjcl from 'sjcl';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
@@ -17,7 +18,8 @@ var events = require('events');
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash')
+  bch: require('bitcore-lib-cash'),
+  eth: Bitcore
 };
 var Mnemonic = require('bitcore-mnemonic');
 var url = require('url');
@@ -51,6 +53,7 @@ export class API extends EventEmitter {
   static PayPro = PayPro;
   static Key = Key;
   static Verifier = Verifier;
+  static Core = CWC;
   static Utils = Utils;
   static sjcl = sjcl;
   static errors = Errors;
@@ -2328,6 +2331,8 @@ export class API extends EventEmitter {
         // coin, network,  multisig
         ['btc', 'livenet'],
         ['bch', 'livenet'],
+        ['eth', 'livenet'],
+        ['eth', 'testnet'],
         ['btc', 'livenet', true],
         ['bch', 'livenet', true]
       ];
