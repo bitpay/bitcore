@@ -141,7 +141,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     });
 
     this.pool.on('peerinv', (peer, message) => {
-      if (this.isSyncingNode && !this.isSyncing) {
+      if (this.isSyncingNode) {
         const filtered = message.inventory.filter(inv => {
           const hash = this.bitcoreLib.encoding
             .BufferReader(inv.hash)
