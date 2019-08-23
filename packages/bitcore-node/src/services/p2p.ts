@@ -39,7 +39,7 @@ export class P2pManager {
     for (let chainNetwork of Config.chainNetworks()) {
       const { chain, network } = chainNetwork;
       const chainConfig = Config.chainConfig(chainNetwork);
-      if (chainConfig.chainSource && chainConfig.chainSource !== 'p2p' || chainConfig.disabled) {
+      if ((chainConfig.chainSource && chainConfig.chainSource !== 'p2p') || chainConfig.disabled) {
         continue;
       }
       const p2pWorker = new P2pWorker({
@@ -195,7 +195,7 @@ export class P2pWorker {
     });
 
     this.pool.on('peerinv', (peer, message) => {
-      if (this.isSyncingNode && !this.isSyncing) {
+      if (this.isSyncingNode) {
         const filtered = message.inventory.filter(inv => {
           const hash = this.bitcoreLib.encoding
             .BufferReader(inv.hash)

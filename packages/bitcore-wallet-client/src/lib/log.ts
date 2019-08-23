@@ -1,48 +1,47 @@
-var _ = require('lodash');
+import * as _ from 'lodash';
 
 var DEFAULT_LOG_LEVEL = 'silent';
 
-/**
- * @desc
- * A simple logger that wraps the <tt>console.log</tt> methods when available.
- *
- * Usage:
- * <pre>
- *   log = new Logger('copay');
- *   log.setLevel('info');
- *   log.debug('Message!'); // won't show
- *   log.setLevel('debug');
- *   log.debug('Message!', 1); // will show '[debug] copay: Message!, 1'
- * </pre>
- *
- * @param {string} name - a name for the logger. This will show up on every log call
- * @constructor
- */
-var Logger = function(name) {
+//  /**
+//  * @desc
+//  * A simple logger that wraps the <tt>console.log</tt> methods when available.
+//  *
+//  * Usage:
+//  * <pre>
+//  *   log = new Logger('copay');
+//  *   log.setLevel('info');
+//  *   log.debug('Message!'); // won't show
+//  *   log.setLevel('debug');
+//  *   log.debug('Message!', 1); // will show '[debug] copay: Message!, 1'
+//  * </pre>
+//  *
+//  * @param {string} name - a name for the logger. This will show up on every log call
+//  * @constructor
+//  */
+var Logger = function (name) {
   this.name = name || 'log';
   this.level = DEFAULT_LOG_LEVEL;
 };
 
-Logger.prototype.getLevels = function() {
+Logger.prototype.getLevels = function () {
   return levels;
 };
 
-
 var levels = {
-  'silent': -1,
-  'debug': 0,
-  'info': 1,
-  'log': 2,
-  'warn': 3,
-  'error': 4,
-  'fatal': 5
+  silent: -1,
+  debug: 0,
+  info: 1,
+  log: 2,
+  warn: 3,
+  error: 4,
+  fatal: 5
 };
 
-_.each(levels, function(level, levelName) {
+_.each(levels, function (level, levelName) {
   if (levelName === 'silent') { // dont create a log.silent() method
     return;
   }
-  Logger.prototype[levelName] = function() {
+  Logger.prototype[levelName] = function () {
     if (this.level === 'silent') {
       return;
     }
@@ -56,13 +55,15 @@ _.each(levels, function(level, levelName) {
 
         // this hack is to be compatible with IE11
         try {
-          anerror();
+          console.trace();
         } catch (e) {
           stack = e.stack;
         }
-        var lines = stack.split('\n');
-        var caller = lines[2];
-        caller = ':' + caller.substr(6);
+        if (stack) {
+          var lines = stack.split('\n');
+          var caller = lines[2];
+          caller = ':' + caller.substr(6);
+        }
         Error.stackTraceLimit = old;
       }
 
@@ -82,24 +83,24 @@ _.each(levels, function(level, levelName) {
   };
 });
 
-/**
- * @desc
- * Sets the level of a logger. A level can be any bewteen: 'debug', 'info', 'log',
- * 'warn', 'error', and 'fatal'. That order matters: if a logger's level is set to
- * 'warn', calling <tt>level.debug</tt> won't have any effect.
- *
- * @param {string} level - the name of the logging level
- */
-Logger.prototype.setLevel = function(level) {
+//  /**
+//  * @desc
+//  * Sets the level of a logger. A level can be any bewteen: 'debug', 'info', 'log',
+//  * 'warn', 'error', and 'fatal'. That order matters: if a logger's level is set to
+//  * 'warn', calling <tt>level.debug</tt> won't have any effect.
+//  *
+//  * @param {string} level - the name of the logging level
+//  */
+Logger.prototype.setLevel = function (level) {
   this.level = level;
 };
 
-/**
- * @class Logger
- * @method debug
- * @desc Log messages at the debug level.
- * @param {*} args - the arguments to be logged.
- */
+// /**
+// * @class Logger
+// * @method debug
+// * @desc Log messages at the debug level.
+// * @param {*} args - the arguments to be logged.
+// */
 /**
  * @class Logger
  * @method info

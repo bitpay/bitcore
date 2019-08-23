@@ -31,7 +31,7 @@ module.exports = function(config) {
       'karma-phantomjs-launcher',
       'karma-firefox-launcher',
       'karma-detect-browsers'
-    ]
+    ],
     browsers: ['PhantomJS', 'Chrome', 'Firefox']
   });
 

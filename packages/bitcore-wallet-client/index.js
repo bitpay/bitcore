@@ -1,5 +1,2 @@
-var Client = require('./lib');
+var Client = require('./ts_build');
 module.exports = Client;
-
-// Errors thrown by the library
-Client.errors = require('./lib/errors');
