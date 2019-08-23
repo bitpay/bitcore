@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { Common } from './common';
+import { Utils } from './common';
 
 const request = require('superagent');
 const async = require('async');
@@ -8,7 +8,6 @@ var log = require('./log');
 
 const util = require('util');
 var Errors = require('./errors');
-const Utils = Common.Utils;
 
 export class Request {
   baseUrl: any;
@@ -155,10 +154,10 @@ export class Request {
       } else {
         ret = new Error(
           body.code +
-            ': ' +
-            (_.isObject(body.message)
-              ? JSON.stringify(body.message)
-              : body.message)
+          ': ' +
+          (_.isObject(body.message)
+            ? JSON.stringify(body.message)
+            : body.message)
         );
       }
     } else {
