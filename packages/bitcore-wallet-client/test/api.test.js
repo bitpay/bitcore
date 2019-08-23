@@ -23,11 +23,11 @@ var Bitcore_ = {
 
 var BWS = require('bitcore-wallet-service');
 
-var Common = require('../ts_build/common');
+var { Common } = require('../ts_build/common');
 var Constants = Common.Constants;
-var Client = require('../ts_build');
+var Client = require('../ts_build').default;
 var Key = Client.Key;
-var Request = require('../ts_build/request.js');
+var { Request } = require('../ts_build/request.js');
 var Utils = Common.Utils;
 var ExpressApp = BWS.ExpressApp;
 var Storage = BWS.Storage;

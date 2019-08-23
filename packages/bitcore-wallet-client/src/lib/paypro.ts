@@ -313,5 +313,3 @@ export class PayPro {
     });
   }
 }
-
-module.exports = PayPro;

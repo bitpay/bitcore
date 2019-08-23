@@ -1,8 +1,8 @@
 'use strict';
 
 import * as _ from 'lodash';
-var Constants = require('./constants');
-var Defaults = require('./defaults');
+import { Constants } from './constants';
+import { Defaults } from './defaults';
 
 var $ = require('preconditions').singleton();
 var sjcl = require('sjcl');
@@ -11,7 +11,7 @@ var Stringify = require('json-stable-stringify');
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
+  bch: require('bitcore-lib-cash')
 };
 var PrivateKey = Bitcore.PrivateKey;
 var PublicKey = Bitcore.PublicKey;
@@ -20,33 +20,35 @@ var crypto = Bitcore.crypto;
 let SJCL = {};
 
 export class Utils {
-
   static encryptMessage(message, encryptingKey) {
     var key = sjcl.codec.base64.toBits(encryptingKey);
-    return sjcl.encrypt(key, message, _.defaults({
-      ks: 128,
-      iter: 1,
-    }, SJCL));
+    return sjcl.encrypt(
+      key,
+      message,
+      _.defaults(
+        {
+          ks: 128,
+          iter: 1
+        },
+        SJCL
+      )
+    );
   }
 
   // Will throw if it can't decrypt
   static decryptMessage(cyphertextJson, encryptingKey) {
     if (!cyphertextJson) return;
 
-    if (!encryptingKey)
-      throw new Error('No key');
+    if (!encryptingKey) throw new Error('No key');
 
     var key = sjcl.codec.base64.toBits(encryptingKey);
     return sjcl.decrypt(key, cyphertextJson);
   }
 
   static decryptMessageNoThrow(cyphertextJson, encryptingKey) {
+    if (!encryptingKey) return '<ECANNOTDECRYPT>';
 
-    if (!encryptingKey)
-      return '<ECANNOTDECRYPT>';
-
-    if (!cyphertextJson)
-      return '';
+    if (!cyphertextJson) return '';
 
     // no sjcl encrypted json
     var r = this.isJsonString(cyphertextJson);
@@ -91,8 +93,7 @@ export class Utils {
     $.checkArgument(text);
     $.checkArgument(pubKey);
 
-    if (!signature)
-      return false;
+    if (!signature) return false;
 
     var pub = new PublicKey(pubKey);
     var hash = this.hashMessage(text);
@@ -107,9 +108,14 @@ export class Utils {
 
   static privateKeyToAESKey(privKey) {
     $.checkArgument(privKey && _.isString(privKey));
-    $.checkArgument(Bitcore.PrivateKey.isValid(privKey), 'The private key received is invalid');
+    $.checkArgument(
+      Bitcore.PrivateKey.isValid(privKey),
+      'The private key received is invalid'
+    );
     var pk = Bitcore.PrivateKey.fromString(privKey);
-    return Bitcore.crypto.Hash.sha256(pk.toBuffer()).slice(0, 16).toString('base64');
+    return Bitcore.crypto.Hash.sha256(pk.toBuffer())
+      .slice(0, 16)
+      .toString('base64');
   }
 
   static getCopayerHash(name, xPubKey, requestPubKey) {
@@ -117,7 +123,6 @@ export class Utils {
   }
 
   static getProposalHash(proposalHeader) {
-
     // For backwards compatibility
     if (arguments.length > 1) {
       return this.getOldHash.apply(this, arguments);
@@ -127,7 +132,7 @@ export class Utils {
   }
 
   static getOldHash(toAddress, amount, message, payProUrl) {
-    return [toAddress, amount, (message || ''), (payProUrl || '')].join('|');
+    return [toAddress, amount, message || '', payProUrl || ''].join('|');
   }
 
   static deriveAddress(scriptType, publicKeyRing, path, m, network, coin) {
@@ -135,7 +140,7 @@ export class Utils {
 
     coin = coin || 'btc';
     var bitcore = Bitcore_[coin];
-    var publicKeys = _.map(publicKeyRing, (item) => {
+    var publicKeys = _.map(publicKeyRing, item => {
       var xpub = new bitcore.HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
     });
@@ -154,12 +159,11 @@ export class Utils {
     return {
       address: bitcoreAddress.toString(true),
       path,
-      publicKeys: _.invokeMap(publicKeys, 'toString'),
+      publicKeys: _.invokeMap(publicKeys, 'toString')
     };
   }
 
   static xPubToCopayerId(coin, xpub) {
-
     // this is only because we allowed coin = 0' wallets for BCH
     // for the  "wallet duplication" feature
 
@@ -170,12 +174,16 @@ export class Utils {
   }
 
   static signRequestPubKey(requestPubKey, xPrivKey) {
-    var priv = new Bitcore.HDPrivateKey(xPrivKey).deriveChild(Constants.PATHS.REQUEST_KEY_AUTH).privateKey;
+    var priv = new Bitcore.HDPrivateKey(xPrivKey).deriveChild(
+      Constants.PATHS.REQUEST_KEY_AUTH
+    ).privateKey;
     return this.signMessage(requestPubKey, priv);
   }
 
   static verifyRequestPubKey(requestPubKey, signature, xPubKey) {
-    var pub = (new Bitcore.HDPublicKey(xPubKey)).deriveChild(Constants.PATHS.REQUEST_KEY_AUTH).publicKey;
+    var pub = new Bitcore.HDPublicKey(xPubKey).deriveChild(
+      Constants.PATHS.REQUEST_KEY_AUTH
+    ).publicKey;
     return this.verifyMessage(requestPubKey, signature, pub.toString());
   }
 
@@ -208,8 +216,16 @@ export class Utils {
 
     var u = Constants.UNITS[unit];
     var precision = opts.fullPrecision ? 'full' : 'short';
-    var amount = clipDecimals((satoshis / u.toSatoshis), u[precision].maxDecimals).toFixed(u[precision].maxDecimals);
-    return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u[precision].minDecimals);
+    var amount = clipDecimals(
+      satoshis / u.toSatoshis,
+      u[precision].maxDecimals
+    ).toFixed(u[precision].maxDecimals);
+    return addSeparators(
+      amount,
+      opts.thousandsSeparator || ',',
+      opts.decimalSeparator || '.',
+      u[precision].minDecimals
+    );
   }
 
   static buildTx(txp) {
@@ -223,7 +239,7 @@ export class Utils {
 
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2SH:
-        _.each(txp.inputs, (i) => {
+        _.each(txp.inputs, i => {
           t.from(i, i.publicKeys, txp.requiredSignatures);
         });
         break;
@@ -235,13 +251,18 @@ export class Utils {
     if (txp.toAddress && txp.amount && !txp.outputs) {
       t.to(txp.toAddress, txp.amount);
     } else if (txp.outputs) {
-      _.each(txp.outputs, (o) => {
-        $.checkState(o.script || o.toAddress, 'Output should have either toAddress or script specified');
+      _.each(txp.outputs, o => {
+        $.checkState(
+          o.script || o.toAddress,
+          'Output should have either toAddress or script specified'
+        );
         if (o.script) {
-          t.addOutput(new bitcore.Transaction.Output({
-            script: o.script,
-            satoshis: o.amount
-          }));
+          t.addOutput(
+            new bitcore.Transaction.Output({
+              script: o.script,
+              satoshis: o.amount
+            })
+          );
         } else {
           t.to(o.toAddress, o.amount);
         }
@@ -253,24 +274,32 @@ export class Utils {
 
     // Shuffle outputs for improved privacy
     if (t.outputs.length > 1) {
-      var outputOrder = _.reject(txp.outputOrder, (order) => {
+      var outputOrder = _.reject(txp.outputOrder, order => {
         return order >= t.outputs.length;
       });
       $.checkState(t.outputs.length == outputOrder.length);
-      t.sortOutputs((outputs) => {
-        return _.map(outputOrder, (i) => {
+      t.sortOutputs(outputs => {
+        return _.map(outputOrder, i => {
           return outputs[i];
         });
       });
     }
 
     // Validate inputs vs outputs independently of Bitcore
-    var totalInputs = _.reduce(txp.inputs, (memo, i) => {
-      return +i.satoshis + memo;
-    }, 0);
-    var totalOutputs = _.reduce(t.outputs, (memo, o) => {
-      return +o.satoshis + memo;
-    }, 0);
+    var totalInputs = _.reduce(
+      txp.inputs,
+      (memo, i) => {
+        return +i.satoshis + memo;
+      },
+      0
+    );
+    var totalOutputs = _.reduce(
+      t.outputs,
+      (memo, o) => {
+        return +o.satoshis + memo;
+      },
+      0
+    );
 
     $.checkState(totalInputs - totalOutputs >= 0);
     $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE);
@@ -278,4 +307,3 @@ export class Utils {
     return t;
   }
 }
-module.exports = Utils;

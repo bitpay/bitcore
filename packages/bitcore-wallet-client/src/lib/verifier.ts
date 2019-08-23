@@ -1,9 +1,9 @@
 import * as _ from 'lodash';
+import { Common } from "./common";
 var $ = require('preconditions').singleton();
 
 var Bitcore = require('bitcore-lib');
 var BCHAddress = require('bitcore-lib-cash').Address;
-var Common = require('./common');
 const Utils = Common.Utils;
 
 var log = require('./log');
@@ -215,4 +215,3 @@ export class Verifier {
     return true;
   }
 }
-module.exports = Verifier;
