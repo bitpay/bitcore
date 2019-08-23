@@ -1,6 +1,6 @@
 'use strict';
 
-import { Common } from './common';
+import { Constants, Utils } from './common';
 const $ = require('preconditions').singleton();
 const _ = require('lodash');
 
@@ -8,8 +8,6 @@ const Bitcore = require('bitcore-lib');
 const Mnemonic = require('bitcore-mnemonic');
 const sjcl = require('sjcl');
 
-const Constants = Common.Constants;
-const Utils = Common.Utils;
 export class Credentials {
   static FIELDS = [
     'coin',
@@ -183,7 +181,7 @@ export class Credentials {
       throw new Error('Bad credentials version');
     }
 
-    _.each(Credentials.FIELDS, function(k) {
+    _.each(Credentials.FIELDS, function (k) {
       x[k] = obj[k];
     });
 
@@ -206,7 +204,7 @@ export class Credentials {
     var self = this;
 
     var x = {};
-    _.each(Credentials.FIELDS, function(k) {
+    _.each(Credentials.FIELDS, function (k) {
       x[k] = self[k];
     });
     return x;
