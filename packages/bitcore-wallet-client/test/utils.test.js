@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var should = chai.should();
 var Bitcore = require('bitcore-lib');
-var Common = require('../ts_build/common');
+var { Common } = require('../ts_build/common');
 var Utils = Common.Utils;
 
 

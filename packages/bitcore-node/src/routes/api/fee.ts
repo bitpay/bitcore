@@ -7,7 +7,8 @@ const feeCache = {};
 
 router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, res: Response) => {
   let { target, chain, network } = req.params;
-  if (target < 0 || target > 100) {
+  const targetNum = Number(target);
+  if (targetNum < 0 || targetNum > 100) {
     return res.status(400).send('invalid target specified');
   }
   const cachedFee = feeCache[`${chain}:${network}:${target}`];
@@ -15,7 +16,7 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
     return res.json(cachedFee.fee);
   }
   try {
-    let fee = await ChainStateProvider.getFee({ chain, network, target });
+    let fee = await ChainStateProvider.getFee({ chain, network, target: targetNum });
     if (!fee) {
       return res.status(404).send('not available right now');
     }

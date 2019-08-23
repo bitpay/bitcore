@@ -384,9 +384,8 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       for (const mintOp of mintOps) {
         mintOpsAddresses[mintOp.updateOne.update.$set.address] = true;
       }
-      mintOpsAddresses = Object.keys(mintOpsAddresses);
       let wallets = await WalletAddressStorage.collection
-        .find({ address: { $in: mintOpsAddresses }, chain, network }, { batchSize: 100 })
+        .find({ address: { $in: Object.keys(mintOpsAddresses) }, chain, network }, { batchSize: 100 })
         .project({ wallet: 1, address: 1 })
         .toArray();
       if (wallets.length) {
@@ -499,7 +498,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         { multi: true }
       ),
       CoinStorage.collection.update(
-        { chain, network, mintTxid: invalidatedTxids },
+        { chain, network, mintTxid: { $in: invalidatedTxids } },
         { $set: { mintHeight: SpentHeightIndicators.conflicting } },
         { multi: true }
       )

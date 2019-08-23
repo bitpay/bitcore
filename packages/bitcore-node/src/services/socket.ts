@@ -75,14 +75,14 @@ export class SocketService {
       if (this.io) {
         const { chain, network } = tx;
         const sanitizedTx = SanitizeWallet(tx);
-        this.io.volatile.sockets.in(`/${chain}/${network}/inv`).emit('tx', sanitizedTx);
+        this.io.sockets.in(`/${chain}/${network}/inv`).emit('tx', sanitizedTx);
       }
     });
 
     this.eventService.blockEvent.on('block', (block: IEvent.BlockEvent) => {
       if (this.io) {
         const { chain, network } = block;
-        this.io.volatile.sockets.in(`/${chain}/${network}/inv`).emit('block', block);
+        this.io.sockets.in(`/${chain}/${network}/inv`).emit('block', block);
       }
     });
 
@@ -91,8 +91,8 @@ export class SocketService {
         const { coin, address } = addressCoin;
         const { chain, network } = coin;
         const sanitizedCoin = SanitizeWallet(coin);
-        this.io.volatile.sockets.in(`/${chain}/${network}/address`).emit(address, sanitizedCoin);
-        this.io.volatile.sockets.in(`/${chain}/${network}/inv`).emit('coin', sanitizedCoin);
+        this.io.sockets.in(`/${chain}/${network}/address`).emit(address, sanitizedCoin);
+        this.io.sockets.in(`/${chain}/${network}/inv`).emit('coin', sanitizedCoin);
       }
     });
   }

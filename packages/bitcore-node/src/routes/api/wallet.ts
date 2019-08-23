@@ -37,7 +37,7 @@ const verifyRequestSignature = (params: VerificationPayload): boolean => {
   }
 };
 
-const authenticate: RequestHandler = async (req: PreAuthRequest, res: Response, next: any) => {
+const authenticate: RequestHandler = async (req: Request, res: Response, next: any) => {
   const { chain, network, pubKey } = req.params as SignedApiRequest;
   logger.debug('Authenticating request with pubKey: ', pubKey);
   let wallet;
