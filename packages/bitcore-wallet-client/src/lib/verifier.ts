@@ -1,10 +1,9 @@
 import * as _ from 'lodash';
-import { Common } from "./common";
+import { Utils } from './common';
 var $ = require('preconditions').singleton();
 
 var Bitcore = require('bitcore-lib');
 var BCHAddress = require('bitcore-lib-cash').Address;
-const Utils = Common.Utils;
 
 var log = require('./log');
 

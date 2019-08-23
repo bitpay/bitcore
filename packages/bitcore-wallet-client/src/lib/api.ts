@@ -3,7 +3,7 @@
 import { EventEmitter } from 'events';
 import _ from 'lodash';
 import sjcl from 'sjcl';
-import { Common } from './common';
+import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
 import { Key } from './key';
 import { PayPro } from './paypro';
@@ -22,10 +22,6 @@ var Bitcore_ = {
 var Mnemonic = require('bitcore-mnemonic');
 var url = require('url');
 var querystring = require('querystring');
-
-var Constants = Common.Constants;
-var Defaults = Common.Defaults;
-var Utils = Common.Utils;
 
 var log = require('./log');
 const Errors = require('./errors');
@@ -99,7 +95,7 @@ export class API extends EventEmitter {
   }
 
   _fetchLatestNotifications(interval, cb) {
-    cb = cb || function() {};
+    cb = cb || function () { };
 
     var opts: any = {
       lastNotificationId: this.lastNotificationId,
@@ -290,7 +286,7 @@ export class API extends EventEmitter {
       var words;
       try {
         words = c.getMnemonic();
-      } catch (ex) {}
+      } catch (ex) { }
 
       var xpriv;
       if (words && (!c.mnemonicHasPassphrase || opts.passphrase)) {
@@ -627,7 +623,7 @@ export class API extends EventEmitter {
         };
         t.inputs[i].addSignature(t, s);
         i++;
-      } catch (e) {}
+      } catch (e) { }
     });
     if (i != txp.inputs.length) throw new Error('Wrong signatures');
   }
@@ -737,9 +733,9 @@ export class API extends EventEmitter {
 
     this.request.get(
       '/v2/feelevels/?coin=' +
-        (coin || 'btc') +
-        '&network=' +
-        (network || 'livenet'),
+      (coin || 'btc') +
+      '&network=' +
+      (network || 'livenet'),
       (err, result) => {
         if (err) return cb(err);
         return cb(err, result);
@@ -1458,9 +1454,9 @@ export class API extends EventEmitter {
               encryptedPkr: opts.doNotEncryptPkr
                 ? null
                 : Utils.encryptMessage(
-                    JSON.stringify(this.credentials.publicKeyRing),
-                    this.credentials.personalEncryptingKey
-                  ),
+                  JSON.stringify(this.credentials.publicKeyRing),
+                  this.credentials.personalEncryptingKey
+                ),
               unencryptedPkr: opts.doNotEncryptPkr
                 ? JSON.stringify(this.credentials.publicKeyRing)
                 : null,
@@ -2118,11 +2114,11 @@ export class API extends EventEmitter {
     var ret;
     try {
       ret = JSON.parse(decrypted);
-    } catch (e) {}
+    } catch (e) { }
     return ret;
   }
 
-  getWalletIdsFromOldCopay(username, password, blob) {
+  getWalletIdsFromOldCopay(username, password, blob): any[] {
     var p = this._oldCopayDecrypt(username, password, blob);
     if (!p) return null;
     var ids = p.walletIds.concat(_.keys(p.focusedTimestamps));
