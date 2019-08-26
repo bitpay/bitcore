@@ -1,4 +1,6 @@
 FROM amio/node-chrome
+RUN npm i -g npm@6.4.1
+
 WORKDIR /bitcore
 
 # Add source
