@@ -110,6 +110,8 @@ export type IEthBlock = IBlock & {
   receiptsRoot: Buffer;
   merkleRoot: Buffer;
   uncleReward?: Array<number>;
+  difficulty: string;
+  totalDifficulty: string;
 };
 
 export type IEthTransaction = ITransaction & {

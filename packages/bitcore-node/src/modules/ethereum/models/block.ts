@@ -161,7 +161,9 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
       previousBlockHash: block.previousBlockHash,
       nextBlockHash: block.nextBlockHash,
       reward: block.reward,
-      transactionCount: block.transactionCount
+      transactionCount: block.transactionCount,
+      difficulty: block.difficulty,
+      totalDifficulty: block.totalDifficulty
     };
     if (options && options.object) {
       return transform;

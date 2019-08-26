@@ -246,6 +246,8 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       timeNormalized: new Date(blockTime),
       nonce: Buffer.from(block.extraData),
       previousBlockHash: block.parentHash,
+      difficulty: block.difficulty,
+      totalDifficulty: block.totalDifficulty,
       nextBlockHash: '',
       transactionCount: block.transactions.length,
       size: block.size,
