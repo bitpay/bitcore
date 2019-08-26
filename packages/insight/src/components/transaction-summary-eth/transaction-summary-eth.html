@@ -1,0 +1,31 @@
+<ion-item>
+  Gas Limit
+  <ion-note item-end>
+      <span text-nowrap>{{ tx.gasLimit }}</span>
+  </ion-note>
+</ion-item>
+<ion-item>
+  Gas Price
+  <ion-note item-end>
+    <span text-nowrap>{{ currencyProvider.getConvertedNumber(tx.gasPrice, chainNetwork.chain) | number:'1.0-8' }}
+        {{ currencyProvider.currencySymbol }}</span>
+  </ion-note>
+</ion-item>
+<ion-item>
+  From
+  <ion-note item-end>
+    {{ tx.from }}
+  </ion-note>
+</ion-item>
+<ion-item>
+  To
+  <ion-note item-end>
+    {{ tx.to }}
+  </ion-note>
+</ion-item>
+<ion-item *ngIf="tx.confirmations > 0">
+  Mined Time
+  <ion-note item-end>
+    {{ tx.blocktime * 1000 | date:'long' }}
+  </ion-note>
+</ion-item>

@@ -9,6 +9,7 @@ interface CoinsApiResponse {
   inputs: ApiCoin[];
   outputs: ApiCoin[];
 }
+
 export interface ApiTx {
   address: string;
   chain: string;
@@ -32,6 +33,16 @@ export interface ApiTx {
   version: number;
 }
 
+export interface ApiEthTx extends ApiTx {
+  gasLimit: number;
+  gasPrice: number;
+  internal: any[];
+  nonce: number;
+  to: string;
+  from: string;
+  fee: number;
+}
+
 export interface ApiCoin {
   txid: string;
   mintTxid: string;
@@ -48,6 +59,23 @@ export interface ApiCoin {
   value: number;
 }
 
+export interface ApiEthCoin {
+  blockHash: string;
+  blockHeight: string;
+  blockTime: string;
+  blockTimeNormalized: string;
+  chain: string;
+  fee: number;
+  from: string;
+  gasLimit: number;
+  gasPrice: number;
+  network: string;
+  nonce: string;
+  to: string;
+  txid:string;
+  value: number;
+}
+
 export interface AppCoin {
   txid: string;
   valueOut: number;
@@ -56,6 +84,14 @@ export interface AppCoin {
   mintTxid: string;
   mintHeight: number;
   spentHeight: number;
+}
+
+export interface AppEthCoin {
+  to: string,
+  from: string,
+  txid: string,
+  fee: number,
+  valueOut: number,
 }
 
 export interface AppInput {
@@ -110,6 +146,14 @@ export interface AppTx {
   blocktime: number;
 }
 
+export interface AppEthTx extends AppTx {
+  gasLimit: number;
+  gasPrice: number;
+  to: string;
+  from: string;
+  fee: number;
+}
+
 @Injectable()
 export class TxsProvider {
   constructor(
@@ -117,7 +161,7 @@ export class TxsProvider {
     public currency: CurrencyProvider,
     public blocksProvider: BlocksProvider,
     private apiProvider: ApiProvider
-  ) {}
+  ) { }
 
   public getFee(tx: AppTx): number {
     const sumSatoshis: any = (arr: any): number =>
@@ -126,6 +170,10 @@ export class TxsProvider {
     const outputs: number = sumSatoshis(tx.vout);
     const fee: number = tx.isCoinBase ? 0 : inputs - outputs;
     return fee;
+  }
+
+  public toEthAppTx(tx: ApiEthTx): AppEthTx {
+    return { ...this.toAppTx(tx), fee: tx.fee, to: tx.to, from: tx.from, gasLimit: tx.gasLimit, gasPrice: tx.gasPrice };
   }
 
   public toAppTx(tx: ApiTx): AppTx {
@@ -144,6 +192,16 @@ export class TxsProvider {
       vout: [], // populated when coins are retrieved
       valueOut: tx.value,
       version: tx.version
+    };
+  }
+
+  public toAppEthCoin(coin: ApiEthCoin): AppEthCoin {
+    return {
+      to: coin.to,
+      from: coin.from,
+      txid: coin.txid,
+      fee: coin.fee,
+      valueOut: coin.value,
     };
   }
 
@@ -169,15 +227,15 @@ export class TxsProvider {
     }
     const url = `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
       chainNetwork.network
-    }/tx/${queryString}`;
+      }/tx/${queryString}`;
     return this.httpClient.get<ApiTx[]>(url);
   }
 
-  public getTx(hash: string, chainNetwork: ChainNetwork): Observable<ApiTx> {
+  public getTx(hash: string, chainNetwork: ChainNetwork): Observable<ApiEthTx & ApiTx> {
     const url = `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
       chainNetwork.network
-    }/tx/${hash}`;
-    return this.httpClient.get<ApiTx>(url);
+      }/tx/${hash}`;
+    return this.httpClient.get<ApiEthTx & ApiTx>(url);
   }
 
   public getCoins(
@@ -186,7 +244,7 @@ export class TxsProvider {
   ): Observable<CoinsApiResponse> {
     const url = `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
       chainNetwork.network
-    }/tx/${txId}/coins`;
+      }/tx/${txId}/coins`;
     return this.httpClient.get<CoinsApiResponse>(url);
   }
 

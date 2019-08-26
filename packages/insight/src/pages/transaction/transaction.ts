@@ -23,9 +23,9 @@ export class TransactionPage {
   public fromVout: boolean;
   public confirmations: number;
   public errorMessage: string;
+  public chainNetwork: ChainNetwork;
 
   private txId: string;
-  private chainNetwork: ChainNetwork;
 
   constructor(
     public navParams: NavParams,
@@ -53,8 +53,17 @@ export class TransactionPage {
 
   public ionViewDidEnter(): void {
     this.txProvider.getTx(this.txId, this.chainNetwork).subscribe(
-      data => {
-        this.tx = this.txProvider.toAppTx(data);
+      response => {
+        let tx;
+        switch (this.chainNetwork.chain) {
+          case  'ETH':
+            tx = this.txProvider.toEthAppTx(response);
+            break;
+          default:
+            tx = this.txProvider.toAppTx(response);
+            break;
+        }
+        this.tx = tx;
         this.loading = false;
         this.txProvider
           .getConfirmations(this.tx.blockheight, this.chainNetwork)

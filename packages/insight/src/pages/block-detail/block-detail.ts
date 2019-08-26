@@ -24,9 +24,9 @@ export class BlockDetailPage {
   public block: any = {
     tx: []
   };
+  public chainNetwork: ChainNetwork;
 
   private blockHash: string;
-  private chainNetwork: ChainNetwork;
 
   constructor(
     public navParams: NavParams,
@@ -53,7 +53,15 @@ export class BlockDetailPage {
   ionViewDidEnter() {
     this.blocksProvider.getBlock(this.blockHash, this.chainNetwork).subscribe(
       response => {
-        const block = this.blocksProvider.toAppBlock(response);
+        let block;
+        switch (this.chainNetwork.chain) {
+          case  'ETH':
+            block = this.blocksProvider.toEthAppBlock(response);
+            break;
+          default:
+            block = this.blocksProvider.toAppBlock(response);
+            break;
+        }
         this.block = block;
         this.txProvider
           .getConfirmations(this.block.height, this.chainNetwork)
