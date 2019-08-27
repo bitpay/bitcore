@@ -280,8 +280,15 @@ export class PayPro {
 
       opts.headers = {
         'Content-Type': JSON_PAYMENT_CONTENT_TYPE,
-        'Accept': JSON_PAYMENT_ACK_CONTENT_TYPE,
+        'Accept': JSON_PAYMENT_ACK_CONTENT_TYPE
       };
+
+      if (opts.bp_partner){
+        opts.headers['BP_PARTNER'] =  opts.bp_partner;
+        if (opts.bp_partner_version){
+          opts.headers['BP_PARTNER_VERSION'] =  opts.bp_partner_version;
+        }
+      }
 
       opts.body = JSON.stringify({
         currency: COIN,
