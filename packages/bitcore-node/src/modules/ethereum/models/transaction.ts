@@ -26,7 +26,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   onConnect() {
     super.onConnect();
     this.collection.createIndex({ chain: 1, network: 1, to: 1 }, { background: true, sparse: true });
-    this.collection.createIndex({ chain: 1, network: 1, from: 1 }, { background: true, sparse: true });
+    this.collection.createIndex({ chain: 1, network: 1, from: 1, nonce: 1 }, { background: true, sparse: true });
   }
 
   async batchImport(params: {
