@@ -134,21 +134,38 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     network: string;
     initialSyncComplete: boolean;
   }) {
-    const { chain, network, initialSyncComplete } = params;
+    const { chain, network, initialSyncComplete, txs } = params;
     if (!initialSyncComplete) {
       return;
     }
-    let prunedTxs = {};
-    if (Object.keys(prunedTxs).length) {
-      prunedTxs = Object.keys(prunedTxs);
-      await Promise.all([
-        this.collection.update(
-          { chain, network, txid: { $in: prunedTxs } },
-          { $set: { blockHeight: SpentHeightIndicators.conflicting } },
-          { w: 0, j: false, multi: true }
-        )
-      ]);
-    }
+    const users = txs.map(tx => tx.from);
+    let invalidatedTxs = await this.collection
+      .find({
+        chain,
+        network,
+        from: { $in: users },
+        blockHeight: SpentHeightIndicators.pending
+      })
+      .toArray();
+
+    invalidatedTxs = invalidatedTxs.filter(
+      toFilter =>
+        txs.findIndex(
+          truth => toFilter.from === truth.from && toFilter.nonce === truth.nonce && toFilter.txid !== truth.txid
+        ) > -1
+    );
+
+    await this.collection.update(
+      {
+        chain,
+        network,
+        txid: { $in: invalidatedTxs.map(tx => tx.txid) },
+        blockHeight: SpentHeightIndicators.pending
+      },
+      { $set: { blockHeight: SpentHeightIndicators.conflicting } },
+      { w: 0, j: false, multi: true }
+    );
+
     return;
   }
 
