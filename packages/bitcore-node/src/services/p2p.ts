@@ -76,6 +76,7 @@ export class P2pWorker {
   private lastHeartBeat: string;
   private queuedRegistrations: Array<NodeJS.Timer>;
   public isSyncing: boolean;
+  public isSyncingNode = false;
   constructor({ chain, network, chainConfig, blockModel = BlockStorage }) {
     this.blockModel = blockModel;
     this.chain = chain;
@@ -371,8 +372,10 @@ export class P2pWorker {
     const { chain, network } = this;
     let currentHeight = Math.max(1, from);
     const originalSyncValue = this.isSyncing;
+    const originalSyncNodeValue = this.isSyncingNode;
     while (currentHeight < to) {
       this.isSyncing = true;
+      this.isSyncingNode = true;
       const locatorHashes = await ChainStateProvider.getLocatorHashes({
         chain,
         network,
@@ -405,9 +408,10 @@ export class P2pWorker {
       }
     }
     this.isSyncing = originalSyncValue;
+    this.isSyncingNode = originalSyncNodeValue;
   }
 
-  get isSyncingNode(): boolean {
+  getIsSyncingNode(): boolean {
     if (!this.lastHeartBeat) {
       return false;
     }
@@ -421,9 +425,10 @@ export class P2pWorker {
 
   async refreshSyncingNode() {
     while (!this.stopping) {
-      const wasSyncingNode = this.isSyncingNode;
+      const wasSyncingNode = this.getIsSyncingNode();
       this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
-      const nowSyncingNode = this.isSyncingNode;
+      const nowSyncingNode = this.getIsSyncingNode();
+      this.isSyncingNode = nowSyncingNode;
       if (wasSyncingNode && !nowSyncingNode) {
         throw new Error('Syncing Node Renewal Failure');
       }
@@ -431,7 +436,7 @@ export class P2pWorker {
         logger.info(`This worker is now the syncing node for ${this.chain} ${this.network}`);
         this.sync();
       }
-      if (!this.lastHeartBeat || this.isSyncingNode) {
+      if (!this.lastHeartBeat || this.getIsSyncingNode()) {
         this.registerSyncingNode({ primary: true });
       } else {
         this.registerSyncingNode({ primary: false });
@@ -458,7 +463,7 @@ export class P2pWorker {
   async unregisterSyncingNode() {
     await wait(1000);
     this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
-    if (this.isSyncingNode) {
+    if (this.getIsSyncingNode()) {
       await StateStorage.selfResignSyncingNode({
         chain: this.chain,
         network: this.network,
