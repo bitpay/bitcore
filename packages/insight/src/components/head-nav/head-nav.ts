@@ -158,13 +158,13 @@ export class HeadNavComponent implements OnInit {
         this.setCurrency(data.chainNetwork);
         this.goHome(data.chainNetwork);
       } else if (data.currencySymbol !== this.currencyProvider.getCurrency()) {
-        this.setCurrency(data.currencySymbol);
+        this.setCurrency(this.chainNetwork, data.currencySymbol);
       }
     });
   }
 
-  private setCurrency(currencySymbol?) {
-    this.currencyProvider.setCurrency(currencySymbol);
+  private setCurrency(chainNetwork, currencySymbol?) {
+    this.currencyProvider.setCurrency(chainNetwork, currencySymbol);
     this.priceProvider.setCurrency(currencySymbol);
   }
 

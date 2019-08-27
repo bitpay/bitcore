@@ -18,7 +18,7 @@ export class HomePage {
   @ViewChild('latestBlocks')
   public latestBlocks: LatestBlocksComponent;
   public chain: string;
-  private chainNetwork: ChainNetwork;
+  public chainNetwork: ChainNetwork;
   public network: string;
   constructor(
     public nav: Nav,
