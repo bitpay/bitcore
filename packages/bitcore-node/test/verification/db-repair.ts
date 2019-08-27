@@ -88,6 +88,8 @@ import { TransactionStorage } from '../../src/models/transaction';
         }
         break;
       case 'COIN_HEIGHT_MISMATCH':
+
+      case 'CORRUPTED_BLOCK':
       case 'MISSING_BLOCK':
       case 'MISSING_TX':
       case 'MISSING_COIN_FOR_TXID':
