@@ -4,6 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
+var expect = require('chai').expect;
 var { Lock } = require('../ts_build/lib/lock');
 var helpers = require('./integration/helpers');
 
@@ -59,7 +60,7 @@ describe('Locks', function() {
           pushEvent(3);
           setTimeout(function() {
             release();
-            order.should.be.deep.equal([0,4,1,5,2,6,3]);
+            expect(order).to.deep.equal([0,4,1,5,2,6,3]);
             done();
           },step);
         });
@@ -124,7 +125,7 @@ describe('Locks', function() {
         pushEvent(2);
         setTimeout(function() {
           release();
-          order.indexOf(3).should.be.below(order.indexOf(2));
+          expect(order.indexOf(3)).to.be.below(order.indexOf(2));
           done();
         }, step);
       });
@@ -150,7 +151,7 @@ describe('Locks', function() {
       pushEvent(1);
       lock.acquire('123', {waitTime:1}, function(err, release2) {
         release();
-        err.should.contain('LOCKED');
+        expect(err).to.contain('LOCKED');
         done();
       });
     });
@@ -199,7 +200,7 @@ describe('Locks', function() {
 
       function task() {
         setTimeout(() => {
-          called.should.equal(0);
+          expect(called).to.equal(0);
           done();
         },200);
       }
@@ -213,7 +214,7 @@ describe('Locks', function() {
 
       function end() {
         called++;
-        called.should.equal(1);
+        expect(called).to.equal(1);
         done();
       }
 

@@ -8,6 +8,18 @@ import { Storage } from '../../../services/storage';
 import { Readable } from 'stream';
 import { ParityRPC, ParityTraceResponse } from './parityRpc';
 
+export interface JsonRPCResponse {
+  jsonrpc: string;
+  id: number;
+  result?: any;
+  error?: string;
+}
+
+export interface Callback<ResultType> {
+  (error: Error): void;
+  (error: null, val: ResultType): void;
+}
+
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
 
@@ -57,7 +69,9 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           jsonrpc: '2.0',
           id: 0
         },
-        (_, data) => resolve(data.result)
+        function(_, data) {
+          resolve(data.result);
+        } as Callback<JsonRPCResponse>
       )
     );
   }
