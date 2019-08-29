@@ -73,9 +73,6 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   async start() {}
   async stop() {}
   async sync() {}
-    const originalSyncNodeValue = this.isSyncingNode;
-      this.isSyncingNode = true;
-    this.isSyncingNode = originalSyncNodeValue;
 
   getIsSyncingNode(): boolean {
     if (!this.lastHeartBeat) {

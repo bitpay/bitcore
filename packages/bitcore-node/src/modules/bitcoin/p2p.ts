@@ -317,8 +317,10 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     const { chain, network } = this;
     let currentHeight = Math.max(1, from);
     const originalSyncValue = this.isSyncing;
+    const originalSyncingNodeValue = this.isSyncingNode;
     while (currentHeight < to) {
       this.isSyncing = true;
+      this.isSyncingNode = true;
       const locatorHashes = await ChainStateProvider.getLocatorHashes({
         chain,
         network,
@@ -351,6 +353,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
       }
     }
     this.isSyncing = originalSyncValue;
+    this.isSyncingNode = originalSyncingNodeValue;
   }
 
   async stop() {
