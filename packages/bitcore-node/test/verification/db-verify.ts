@@ -31,7 +31,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
     })
   ]);
   const blockTxids = blockTxs.map(t => t.txid);
-  const firstHash = blockTxs[0].blockHash;
+  const firstHash = blockTxs[0] ? blockTxs[0].blockHash : block!.hash;
   const [coinsForTx, mempoolTxs, blocksForHash] = await Promise.all([
     CoinStorage.collection.find({ chain, network, mintTxid: { $in: blockTxids } }).toArray(),
     TransactionStorage.collection.find({ chain, network, blockHeight: -1, txid: { $in: blockTxids } }).toArray(),
@@ -42,6 +42,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
   const errors = new Array<ErrorType>();
 
   if (!block || block.transactionCount != blockTxs.length) {
+    success = false;
     const error = {
       model: 'block',
       err: true,

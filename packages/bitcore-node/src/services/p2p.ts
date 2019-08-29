@@ -67,13 +67,17 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   protected stopping = false;
   protected chain = '';
   protected network = '';
+  public isSyncingNode = false;
 
   constructor(protected params: { chain; network; chainConfig; blockModel: BaseBlock<T> }) {}
   async start() {}
   async stop() {}
   async sync() {}
+    const originalSyncNodeValue = this.isSyncingNode;
+      this.isSyncingNode = true;
+    this.isSyncingNode = originalSyncNodeValue;
 
-  get isSyncingNode(): boolean {
+  getIsSyncingNode(): boolean {
     if (!this.lastHeartBeat) {
       return false;
     }
@@ -87,9 +91,10 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
 
   async refreshSyncingNode() {
     while (!this.stopping) {
-      const wasSyncingNode = this.isSyncingNode;
+      const wasSyncingNode = this.getIsSyncingNode();
       this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
-      const nowSyncingNode = this.isSyncingNode;
+      const nowSyncingNode = this.getIsSyncingNode();
+      this.isSyncingNode = nowSyncingNode;
       if (wasSyncingNode && !nowSyncingNode) {
         throw new Error('Syncing Node Renewal Failure');
       }
@@ -97,7 +102,7 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
         logger.info(`This worker is now the syncing node for ${this.chain} ${this.network}`);
         this.sync();
       }
-      if (!this.lastHeartBeat || this.isSyncingNode) {
+      if (!this.lastHeartBeat || this.getIsSyncingNode()) {
         this.registerSyncingNode({ primary: true });
       } else {
         this.registerSyncingNode({ primary: false });
@@ -124,7 +129,7 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   async unregisterSyncingNode() {
     await wait(1000);
     this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
-    if (this.isSyncingNode) {
+    if (this.getIsSyncingNode()) {
       await StateStorage.selfResignSyncingNode({
         chain: this.chain,
         network: this.network,

@@ -27,7 +27,7 @@ function getSocket() {
 let p2pWorker: BitcoinP2PWorker;
 
 describe('Websockets', function() {
-  this.timeout(50000);
+  this.timeout(180000);
   before(async () => {
     await resetDatabase();
   });
