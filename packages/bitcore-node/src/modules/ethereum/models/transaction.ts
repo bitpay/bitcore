@@ -17,6 +17,12 @@ import { ERC20Abi } from '../abi/erc20';
 import { BaseTransaction } from '../../../models/baseTransaction';
 import { valueOrDefault } from '../../../utils/check';
 
+const Erc20Decoder = require('abi-decoder');
+Erc20Decoder.addABI(ERC20Abi);
+
+const Erc721Decoder = require('abi-decoder');
+Erc721Decoder.addABI(ERC721Abi);
+
 @LoggifyClass
 export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   constructor(storage: StorageService = Storage) {
@@ -177,11 +183,9 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   }
 
   abiDecode(input: string) {
-    const AbiDecoder = require('abi-decoder');
     try {
       try {
-        AbiDecoder.addABI(ERC20Abi);
-        const decodedData = AbiDecoder.decodeMethod(input);
+        const decodedData = Erc20Decoder.decodeMethod(input);
         if (!decodedData || decodedData.length === 0) {
           throw new Error();
         }
@@ -190,8 +194,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
           ...decodedData
         };
       } catch {
-        AbiDecoder.addABI(ERC721Abi);
-        const decodedData = AbiDecoder.decodeMethod(input);
+        const decodedData = Erc721Decoder.decodeMethod(input);
         if (!decodedData || decodedData.length === 0) {
           throw new Error();
         }
