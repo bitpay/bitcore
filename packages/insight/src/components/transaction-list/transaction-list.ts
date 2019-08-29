@@ -1,10 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { TxsProvider } from '../../providers/transactions/transactions';
+import { ChainNetwork } from '../../providers/api/api';
+import { ApiEthTx, ApiUtxoCoinTx, TxsProvider } from '../../providers/transactions/transactions';
 
 import * as _ from 'lodash';
-import { ChainNetwork } from '../../providers/api/api';
-import { ApiEthTx, ApiUtxoCoinTx } from '../../providers/transactions/transactions';
-
 @Component({
   selector: 'transaction-list',
   templateUrl: 'transaction-list.html'
