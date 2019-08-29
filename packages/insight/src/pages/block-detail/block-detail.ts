@@ -54,13 +54,11 @@ export class BlockDetailPage {
     this.blocksProvider.getBlock(this.blockHash, this.chainNetwork).subscribe(
       response => {
         let block;
-        switch (this.chainNetwork.chain) {
-          case  'ETH':
-            block = this.blocksProvider.toEthAppBlock(response);
-            break;
-          default:
-            block = this.blocksProvider.toAppBlock(response);
-            break;
+        if(this.chainNetwork.chain === "BTC" || this.chainNetwork.chain === "BCH") {
+          block = this.blocksProvider.toUtxoCoinAppBlock(response);
+        }
+        if(this.chainNetwork.chain === "ETH") {
+          block = this.blocksProvider.toEthAppBlock(response);
         }
         this.block = block;
         this.txProvider

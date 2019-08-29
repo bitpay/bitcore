@@ -55,13 +55,11 @@ export class TransactionPage {
     this.txProvider.getTx(this.txId, this.chainNetwork).subscribe(
       response => {
         let tx;
-        switch (this.chainNetwork.chain) {
-          case  'ETH':
-            tx = this.txProvider.toEthAppTx(response);
-            break;
-          default:
-            tx = this.txProvider.toAppTx(response);
-            break;
+        if(this.chainNetwork.chain === "BTC" || this.chainNetwork.chain === "BCH") {
+          tx = this.txProvider.toUtxoCoinsAppTx(response);
+        }
+        if(this.chainNetwork.chain === "ETH") {
+          tx = this.txProvider.toEthAppTx(response);
         }
         this.tx = tx;
         this.loading = false;
