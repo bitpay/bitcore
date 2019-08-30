@@ -9,7 +9,7 @@ import { ChainNetwork } from '../../providers/api/api';
 })
 export class FooterComponent {
   @Input()
-  private chainNetwork: ChainNetwork;
+  public chainNetwork: ChainNetwork;
 
   constructor(public nav: Nav) {}
 
