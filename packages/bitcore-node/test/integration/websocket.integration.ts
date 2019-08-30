@@ -43,12 +43,16 @@ describe('Websockets', function() {
 
   beforeEach(async () => {
     socket = getSocket();
+    socket.on('connect', () => {
+      socket.emit('room', '/BTC/regtest/inv');
+    });
     p2pWorker = new P2pWorker({
       chain,
       network,
       chainConfig
     });
     p2pWorker.start();
+    await p2pWorker.syncDone();
   });
 
   afterEach(async () => {
@@ -84,11 +88,9 @@ describe('Websockets', function() {
   it('should get a websocket event when a block is added', async () => {
     let hasSeenABlockEvent = false;
     let sawEvents = new Promise(resolve => {
-      socket.on('connect', () => {
-        socket.emit('room', '/BTC/regtest/inv');
-      });
       socket.on('block', () => {
         hasSeenABlockEvent = true;
+        console.log('Block event received');
         resolve();
       });
     });
@@ -101,24 +103,24 @@ describe('Websockets', function() {
   it('should get a mempool tx and coin when mempool event, senttoaddress, occurs', async () => {
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
+    let sent: any;
     let sawEvents = new Promise(resolve => {
-      socket.on('connect', () => {
-        socket.emit('room', '/BTC/regtest/inv');
-      });
       socket.on('tx', () => {
         hasSeenTxEvent = true;
+        console.log('Transaction event received', sent);
         if (hasSeenTxEvent && hasSeenCoinEvent) {
           resolve();
         }
       });
       socket.on('coin', () => {
         hasSeenCoinEvent = true;
+        console.log('Coin event received', sent);
         if (hasSeenTxEvent && hasSeenCoinEvent) {
           resolve();
         }
       });
     });
-    await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
+    sent = await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
     await sawEvents;
     expect([hasSeenTxEvent, hasSeenCoinEvent]).to.deep.eq([true, true]);
   });
@@ -126,25 +128,25 @@ describe('Websockets', function() {
   it('should get a mempool event while syncing', async () => {
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
+    let sent: any;
     let sawEvents = new Promise(resolve => {
-      socket.on('connect', () => {
-        socket.emit('room', '/BTC/regtest/inv');
-      });
       socket.on('tx', () => {
         hasSeenTxEvent = true;
+        console.log('Transaction event received', sent);
         if (hasSeenTxEvent && hasSeenCoinEvent) {
           resolve();
         }
       });
       socket.on('coin', () => {
         hasSeenCoinEvent = true;
+        console.log('Coin event received', sent);
         if (hasSeenTxEvent && hasSeenCoinEvent) {
           resolve();
         }
       });
     });
     p2pWorker.isSyncing = true;
-    await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
+    sent = await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
     await sawEvents;
     expect([hasSeenTxEvent, hasSeenCoinEvent]).to.deep.eq([true, true]);
   });
