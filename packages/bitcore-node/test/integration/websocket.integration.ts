@@ -67,14 +67,17 @@ describe('Websockets', function() {
   it('should get a new block when one is generated', async () => {
     anAddress = await rpc.getnewaddress('');
     await rpc.call('generatetoaddress', [5, anAddress]);
+    console.log('Generating 5 blocks');
     await p2pWorker.syncDone();
     const beforeGenTip = await BlockStorage.getLocalTip({ chain, network });
     expect(beforeGenTip).to.not.eq(null);
 
     if (beforeGenTip && beforeGenTip.height && beforeGenTip.height < 100) {
       await rpc.call('generatetoaddress', [100, anAddress]);
+      console.log('Generating 5 blocks');
     }
     await rpc.call('generatetoaddress', [1, anAddress]);
+    console.log('Generating 1 block');
     await p2pWorker.syncDone();
     await wait(1000);
     const afterGenTip = await BlockStorage.getLocalTip({ chain, network });
