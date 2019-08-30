@@ -1,0 +1,70 @@
+transaction-details {
+  // TODO Customize the grid to have 13 columns so that we have 6-col inputs, 6-col outputs, 1 col arrow
+  // See http://ionicframework.com/docs/api/components/grid/Grid/#customizing-the-grid
+
+  ion-grid {
+    background-color: #f7f7f7;
+    border: 1px solid #f3f3f3;
+    border-radius: 3px;
+
+    ion-row {
+
+      &.small {
+        font-size: 1.1rem;
+      }
+
+      ion-col {
+        ion-note {
+          font-size: 1.2rem;
+        }
+      }
+    }
+  }
+
+  ion-icon {
+    color: rgba(0, 0, 0, 0.25);
+  }
+
+  .item,
+  .item p {
+    font-size: 1.4rem;
+  }
+
+  $transaction-item-boarder-radius: 3px;
+  .item:first-of-type {
+    border-top-left-radius: $transaction-item-boarder-radius;
+    border-top-right-radius: $transaction-item-boarder-radius;
+  }
+  .item:last-of-type {
+    border-bottom-left-radius: $transaction-item-boarder-radius;
+    border-bottom-right-radius: $transaction-item-boarder-radius;
+  }
+
+  .list {
+    margin-bottom: 5px;
+  }
+
+  .chip {
+    padding-left: 1em;
+    padding-right: 1em;
+    border-radius: 3px;
+    -webkit-font-smoothing: subpixel-antialiased;
+
+    &.chip-md-primary {
+      //background-color: blue;
+    }
+  }
+
+  .note-md {
+    color: #888;
+  }
+
+  .unlocking-script,
+  .locking-script {
+    white-space: normal;
+    font-family: monospace;
+  }
+  .arrow-forward{
+    padding: 18px 0px;
+  }
+}

@@ -28,7 +28,7 @@
       </ion-chip>
       <ion-chip item-end color="default" class="size-fixed">
         <ion-label>
-          {{ currencyProvider.getConvertedNumber(coin.value) | number:'1.0-8' }}
+          {{ currencyProvider.getConvertedNumber(coin.value, chainNetwork.chain) | number:'1.0-8' }}
           {{ currencyProvider.currencySymbol }}
         </ion-label>
       </ion-chip>
@@ -70,7 +70,7 @@
       </ion-chip>
       <ion-chip item-end class="size-fixed">
         <ion-label color="danger">
-          - {{ currencyProvider.getConvertedNumber(coin.value) | number:'1.0-8' }}
+          - {{ currencyProvider.getConvertedNumber(coin.value, chainNetwork.chain) | number:'1.0-8' }}
           {{ currencyProvider.currencySymbol }}
         </ion-label>
       </ion-chip>

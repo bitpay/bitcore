@@ -48,6 +48,8 @@ helpers.newClient = (app) => {
   return new Client({
     baseUrl: '/bws/api',
     request: request(app),
+    bp_partner: 'xxx',
+    bp_partner_version: 'yyy',
     //    logLevel: 'debug',
   });
 };
@@ -3316,6 +3318,32 @@ describe('client API', () => {
                 var script = tx.inputs[0].script;
                 script.isScriptHashIn().should.equal(true);
                 memo.should.be.equal('an ack memo');
+                done();
+              });
+            });
+          });
+        });
+      });
+
+      it('Should set bp_partner', (done) => {
+        clients[0].getTxProposals({}, (err, txps) => {
+          should.not.exist(err);
+          var changeAddress = txps[0].changeAddress.address;
+          let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
+          clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
+            should.not.exist(err);
+            let signatures = keys[1].sign(clients[1].getRootPath(), txps[0]);
+            clients[1].pushSignatures(xx, signatures, (err, yy, paypro) => {
+              should.not.exist(err);
+
+              yy.status.should.equal('accepted');
+              let spy = sinon.spy(Client.PayPro, 'request');
+              clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
+                should.not.exist(err);
+                var args = spy.lastCall.args[0];
+                var data = args.headers;
+                data.BP_PARTNER.should.equal('xxx');
+                data.BP_PARTNER_VERSION.should.equal('yyy');
                 done();
               });
             });

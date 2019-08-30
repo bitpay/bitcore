@@ -35,13 +35,20 @@ export class CurrencyProvider {
     return this.currencySymbol;
   }
 
-  public getConvertedNumber(value: number): number {
+  public getConvertedNumber(value: number, chain): number {
     // TODO: Change this function to make use of satoshis so that we don't have to do all these roundabout conversions.
-    value = value * 1e-8;
+    switch (chain) {
+      case 'ETH':
+          value = value * 1e-18;
+        break;
+        default:
+          value = value * 1e-8;
+        break;
+    }
     if (value === 0.0) {
       return 0;
     }
-
+    
     let response: number;
 
     if (this.currencySymbol === 'USD') {
