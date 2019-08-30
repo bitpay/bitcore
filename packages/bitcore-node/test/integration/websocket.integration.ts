@@ -25,32 +25,42 @@ function getSocket() {
 }
 
 let p2pWorker: P2pWorker;
+let socket = getSocket();
 
 describe('Websockets', function() {
   this.timeout(180000);
+
   before(async () => {
     await resetDatabase();
+    await Event.start();
+    await Api.start();
   });
 
-  beforeEach(() => {
+  after(async () => {
+    await Event.stop();
+    await Api.stop();
+  });
+
+  beforeEach(async () => {
+    socket = getSocket();
     p2pWorker = new P2pWorker({
       chain,
       network,
       chainConfig
     });
+    p2pWorker.start();
   });
 
   afterEach(async () => {
     try {
       await p2pWorker.stop();
+      await socket.disconnect();
     } catch (e) {
       console.log('Error stopping p2p worker');
     }
   });
 
   it('should get a new block when one is generated', async () => {
-    await p2pWorker.start();
-
     anAddress = await rpc.getnewaddress('');
     await rpc.call('generatetoaddress', [5, anAddress]);
     await p2pWorker.syncDone();
@@ -72,18 +82,7 @@ describe('Websockets', function() {
   });
 
   it('should get a websocket event when a block is added', async () => {
-    await Event.start();
-    await Api.start();
-
-    p2pWorker = new P2pWorker({
-      chain,
-      network,
-      chainConfig
-    });
-
     let hasSeenABlockEvent = false;
-
-    const socket = getSocket();
     let sawEvents = new Promise(resolve => {
       socket.on('connect', () => {
         socket.emit('room', '/BTC/regtest/inv');
@@ -94,22 +93,14 @@ describe('Websockets', function() {
       });
     });
 
-    await p2pWorker.start();
     await rpc.call('generatetoaddress', [1, anAddress]);
     await sawEvents;
-    await p2pWorker.stop();
-    await socket.disconnect();
-
     expect(hasSeenABlockEvent).to.be.eq(true);
   });
 
   it('should get a mempool tx and coin when mempool event, senttoaddress, occurs', async () => {
-    p2pWorker = new P2pWorker({ chain, network, chainConfig });
-
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
-
-    const socket = getSocket();
     let sawEvents = new Promise(resolve => {
       socket.on('connect', () => {
         socket.emit('room', '/BTC/regtest/inv');
@@ -127,23 +118,14 @@ describe('Websockets', function() {
         }
       });
     });
-    await p2pWorker.start();
     await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
     await sawEvents;
-
-    await p2pWorker.stop();
-    await socket.disconnect();
-
     expect([hasSeenTxEvent, hasSeenCoinEvent]).to.deep.eq([true, true]);
   });
 
   it('should get a mempool event while syncing', async () => {
-    p2pWorker = new P2pWorker({ chain, network, chainConfig });
-
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
-
-    const socket = getSocket();
     let sawEvents = new Promise(resolve => {
       socket.on('connect', () => {
         socket.emit('room', '/BTC/regtest/inv');
@@ -161,16 +143,9 @@ describe('Websockets', function() {
         }
       });
     });
-    await p2pWorker.start();
-    await wait(3000);
-    p2pWorker.sync();
     p2pWorker.isSyncing = true;
     await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
     await sawEvents;
-
-    await p2pWorker.stop();
-    await socket.disconnect();
-
     expect([hasSeenTxEvent, hasSeenCoinEvent]).to.deep.eq([true, true]);
   });
 });
