@@ -1,20 +1,17 @@
+import { expect } from 'chai';
 import { resetDatabase } from '../helpers';
 import { AsyncRPC } from '../../src/rpc';
-import { BlockStorage } from '../../src/models/block';
-import { expect } from 'chai';
 import io = require('socket.io-client');
 import config from '../../src/config';
 import { P2pWorker } from '../../src/services/p2p';
 import { Event } from '../../src/services/event';
 import { Api } from '../../src/services/api';
 
-const wait = time => new Promise(resolve => setTimeout(resolve, time));
 const chain = 'BTC';
 const network = 'regtest';
 const chainConfig = config.chains[chain][network];
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
-let anAddress;
 
 function getSocket() {
   const socket = io.connect(
@@ -44,6 +41,7 @@ describe('Websockets', function() {
   beforeEach(async () => {
     socket = getSocket();
     socket.on('connect', () => {
+      console.log('Socket connected');
       socket.emit('room', '/BTC/regtest/inv');
     });
     p2pWorker = new P2pWorker({
@@ -52,7 +50,9 @@ describe('Websockets', function() {
       chainConfig
     });
     p2pWorker.start();
-    await p2pWorker.syncDone();
+    if (p2pWorker.isSyncing) {
+      await p2pWorker.syncDone();
+    }
   });
 
   afterEach(async () => {
@@ -64,93 +64,44 @@ describe('Websockets', function() {
     }
   });
 
-  it('should get a new block when one is generated', async () => {
-    anAddress = await rpc.getnewaddress('');
-    await rpc.call('generatetoaddress', [5, anAddress]);
-    console.log('Generating 5 blocks');
-    await p2pWorker.syncDone();
-    const beforeGenTip = await BlockStorage.getLocalTip({ chain, network });
-    expect(beforeGenTip).to.not.eq(null);
-
-    if (beforeGenTip && beforeGenTip.height && beforeGenTip.height < 100) {
-      await rpc.call('generatetoaddress', [100, anAddress]);
-      console.log('Generating 5 blocks');
-    }
-    await rpc.call('generatetoaddress', [1, anAddress]);
-    console.log('Generating 1 block');
-    await p2pWorker.syncDone();
-    await wait(1000);
-    const afterGenTip = await BlockStorage.getLocalTip({ chain, network });
-    expect(afterGenTip).to.not.eq(null);
-
-    if (beforeGenTip != null && afterGenTip != null) {
-      expect(beforeGenTip.height).to.be.lt(afterGenTip.height);
-    }
-  });
-
-  it('should get a websocket event when a block is added', async () => {
-    let hasSeenABlockEvent = false;
+  it('should get websocket events', async () => {
+    let hasSeenTxEvent = false;
+    let hasSeenBlockEvent = false;
+    let hasSeenCoinEvent = false;
+    const anAddress = await rpc.getnewaddress('');
     let sawEvents = new Promise(resolve => {
       socket.on('block', () => {
-        hasSeenABlockEvent = true;
+        hasSeenBlockEvent = true;
         console.log('Block event received');
-        resolve();
+        if (hasSeenTxEvent && hasSeenCoinEvent && hasSeenBlockEvent) {
+          resolve();
+        }
+      });
+      socket.on('tx', () => {
+        hasSeenTxEvent = true;
+        console.log('Transaction event received');
+        if (hasSeenTxEvent && hasSeenCoinEvent && hasSeenBlockEvent) {
+          resolve();
+        }
+      });
+      socket.on('coin', () => {
+        hasSeenCoinEvent = true;
+        console.log('Coin event received');
+        if (hasSeenTxEvent && hasSeenCoinEvent && hasSeenBlockEvent) {
+          resolve();
+        }
       });
     });
-
+    console.log('Generating 100 blocks');
+    await rpc.call('generatetoaddress', [101, anAddress]);
+    await p2pWorker.syncDone();
+    console.log('Sync done, generating new block');
     await rpc.call('generatetoaddress', [1, anAddress]);
+    console.log('Sending bitcoin');
+    await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
     await sawEvents;
-    expect(hasSeenABlockEvent).to.be.eq(true);
-  });
-
-  it('should get a mempool tx and coin when mempool event, senttoaddress, occurs', async () => {
-    let hasSeenTxEvent = false;
-    let hasSeenCoinEvent = false;
-    let sent: any;
-    let sawEvents = new Promise(resolve => {
-      socket.on('tx', () => {
-        hasSeenTxEvent = true;
-        console.log('Transaction event received', sent);
-        if (hasSeenTxEvent && hasSeenCoinEvent) {
-          resolve();
-        }
-      });
-      socket.on('coin', () => {
-        hasSeenCoinEvent = true;
-        console.log('Coin event received', sent);
-        if (hasSeenTxEvent && hasSeenCoinEvent) {
-          resolve();
-        }
-      });
-    });
-    sent = await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
-    await sawEvents;
-    expect([hasSeenTxEvent, hasSeenCoinEvent]).to.deep.eq([true, true]);
-  });
-
-  it('should get a mempool event while syncing', async () => {
-    let hasSeenTxEvent = false;
-    let hasSeenCoinEvent = false;
-    let sent: any;
-    let sawEvents = new Promise(resolve => {
-      socket.on('tx', () => {
-        hasSeenTxEvent = true;
-        console.log('Transaction event received', sent);
-        if (hasSeenTxEvent && hasSeenCoinEvent) {
-          resolve();
-        }
-      });
-      socket.on('coin', () => {
-        hasSeenCoinEvent = true;
-        console.log('Coin event received', sent);
-        if (hasSeenTxEvent && hasSeenCoinEvent) {
-          resolve();
-        }
-      });
-    });
-    p2pWorker.isSyncing = true;
-    sent = await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
-    await sawEvents;
-    expect([hasSeenTxEvent, hasSeenCoinEvent]).to.deep.eq([true, true]);
+    expect(hasSeenBlockEvent).to.equal(true);
+    expect(hasSeenTxEvent).to.equal(true);
+    expect(hasSeenCoinEvent).to.equal(true);
   });
 });
