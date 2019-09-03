@@ -77,6 +77,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
           );
         }
         attempt = true;
+        this.web3 = new ETHStateProvider().getWeb3(this.network);
         connected = await this.web3.eth.net.isListening();
       } catch (e) {}
       await wait(20000);
