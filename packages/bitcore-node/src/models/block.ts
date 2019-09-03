@@ -196,7 +196,7 @@ export class BlockModel extends BaseModel<IBlock> {
       const prevBlock = await this.collection.findOne({ chain, network, hash: header.prevHash });
       if (prevBlock) {
         localTip = prevBlock;
-        this.updateCachedChainTip({chain, network, block: prevBlock})
+        this.updateCachedChainTip({ chain, network, block: prevBlock });
       } else {
         delete this.chainTips[chain][network];
         logger.error(`Previous block isn't in the DB need to roll back until we have a block in common`);
