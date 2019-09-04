@@ -7,6 +7,7 @@ import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
 import { Key } from './key';
 import { PayPro } from './paypro';
+import { PayProV2 } from './payproV2';
 import { Request } from './request';
 import { Verifier } from './verifier';
 
@@ -50,6 +51,7 @@ export class API extends EventEmitter {
   bp_partner: string;
   bp_partner_version: string;
 
+  static PayProV2 = PayProV2;
   static PayPro = PayPro;
   static Key = Key;
   static Verifier = Verifier;
@@ -100,7 +102,7 @@ export class API extends EventEmitter {
   }
 
   _fetchLatestNotifications(interval, cb) {
-    cb = cb || function () { };
+    cb = cb || function() {};
 
     var opts: any = {
       lastNotificationId: this.lastNotificationId,
@@ -291,7 +293,7 @@ export class API extends EventEmitter {
       var words;
       try {
         words = c.getMnemonic();
-      } catch (ex) { }
+      } catch (ex) {}
 
       var xpriv;
       if (words && (!c.mnemonicHasPassphrase || opts.passphrase)) {
@@ -628,7 +630,7 @@ export class API extends EventEmitter {
         };
         t.inputs[i].addSignature(t, s);
         i++;
-      } catch (e) { }
+      } catch (e) {}
     });
     if (i != txp.inputs.length) throw new Error('Wrong signatures');
   }
@@ -738,9 +740,9 @@ export class API extends EventEmitter {
 
     this.request.get(
       '/v2/feelevels/?coin=' +
-      (coin || 'btc') +
-      '&network=' +
-      (network || 'livenet'),
+        (coin || 'btc') +
+        '&network=' +
+        (network || 'livenet'),
       (err, result) => {
         if (err) return cb(err);
         return cb(err, result);
@@ -1459,9 +1461,9 @@ export class API extends EventEmitter {
               encryptedPkr: opts.doNotEncryptPkr
                 ? null
                 : Utils.encryptMessage(
-                  JSON.stringify(this.credentials.publicKeyRing),
-                  this.credentials.personalEncryptingKey
-                ),
+                    JSON.stringify(this.credentials.publicKeyRing),
+                    this.credentials.personalEncryptingKey
+                  ),
               unencryptedPkr: opts.doNotEncryptPkr
                 ? JSON.stringify(this.credentials.publicKeyRing)
                 : null,
@@ -2122,7 +2124,7 @@ export class API extends EventEmitter {
     var ret;
     try {
       ret = JSON.parse(decrypted);
-    } catch (e) { }
+    } catch (e) {}
     return ret;
   }
 

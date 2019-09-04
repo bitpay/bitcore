@@ -1,24 +1,23 @@
 'use strict';
 
 // Native
-const crypto = require('crypto');
-const https = require('https');
+import request = require('request');
 const query = require('querystring');
 const url = require('url');
 const dfltTrustedKeys = require('../util/JsonPaymentProtocolKeys.js');
-
-// Modules
-const secp256k1 = require('secp256k1');
+const Bitcore = require('bitcore-lib');
+const sha256 = Bitcore.crypto.Hash.sha256;
+const BN = Bitcore.crypto.BN;
 
 export class PaymentProtocolV2Client {
-  options: { headers: any; rawBody: string; agent: boolean } = {
+  options: { headers?: any; rawBody?: string; agent?: boolean } = {
     headers: {},
     rawBody: '',
     agent: false
   };
   trustedKeys = new Array<string>();
 
-  constructor(requestOptions, trustedKeys = dfltTrustedKeys) {
+  constructor(requestOptions = {}, trustedKeys = dfltTrustedKeys) {
     this.options = Object.assign({}, { agent: false }, requestOptions);
     this.trustedKeys = trustedKeys;
     if (!this.trustedKeys || !Object.keys(this.trustedKeys).length) {
@@ -43,13 +42,13 @@ export class PaymentProtocolV2Client {
       options.headers
     );
 
-    requestOptions.hostname = parsedUrl.hostname;
+    requestOptions.host = parsedUrl.hostname;
     requestOptions.path = parsedUrl.path;
     requestOptions.port = parsedUrl.port;
     delete requestOptions.url;
 
     return new Promise<{ rawBody: string; headers: any }>((resolve, reject) => {
-      const request = https.request(requestOptions, response => {
+      const req = request(requestOptions, response => {
         const body = [];
         response.on('data', chunk => body.push(chunk));
         response.on('end', () => {
@@ -62,11 +61,11 @@ export class PaymentProtocolV2Client {
           });
         });
       });
-      request.on('error', reject);
+      req.on('error', reject);
       if (requestOptions.body) {
-        request.write(requestOptions.body);
+        req.write(requestOptions.body);
       }
-      request.end();
+      req.end();
     });
   }
 
@@ -293,11 +292,7 @@ export class PaymentProtocolV2Client {
     }
 
     const keyData = this.trustedKeys[identity];
-    const actualHash = crypto
-      .createHash('sha256')
-      .update(rawBody, 'utf8')
-      .digest('hex');
-
+    const actualHash = sha256(Buffer.from(rawBody, 'utf8')).toString('hex');
     if (hash !== actualHash) {
       throw new Error(
         `Response body hash does not match digest header. Actual: ${actualHash} Expected: ${hash}`
@@ -310,11 +305,15 @@ export class PaymentProtocolV2Client {
       );
     }
 
-    let valid = secp256k1.verify(
-      Buffer.from(hash, 'hex'),
-      Buffer.from(signature, 'hex'),
-      Buffer.from(keyData.publicKey, 'hex')
-    );
+    const hashbuf = Buffer.from(hash, 'hex');
+    const sigbuf = Buffer.from(signature, 'hex');
+
+    let s_r = BN.fromBuffer(sigbuf.slice(0, 32));
+    let s_s = BN.fromBuffer(sigbuf.slice(32));
+
+    let pub = Bitcore.PublicKey.fromString(keyData.publicKey);
+    let sig = new Bitcore.crypto.Signature(s_r, s_s);
+    let valid = Bitcore.crypto.ECDSA.verify(hashbuf, sig, pub);
 
     if (!valid) {
       throw new Error('Response signature invalid');
@@ -323,3 +322,4 @@ export class PaymentProtocolV2Client {
     return { requestUrl, responseData, keyData };
   }
 }
+export const PayProV2 = new PaymentProtocolV2Client();
