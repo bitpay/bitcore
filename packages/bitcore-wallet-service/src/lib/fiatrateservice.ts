@@ -104,7 +104,7 @@ export class FiatRateService {
         json: true
       },
       (err, res, body) => {
-        if (err || !body) {
+        if (err || !body.data) {
           return cb(err);
         }
 
@@ -116,7 +116,7 @@ export class FiatRateService {
           );
         }
         try {
-          const rates = _.filter( provider.parseFn(body), (x) => fiatCodes[x.code] );
+          const rates = _.filter( provider.parseFn(body.data), (x) => fiatCodes[x.code] );
           return cb(null, rates);
         } catch (e)  {
           return cb(e);

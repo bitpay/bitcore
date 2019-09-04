@@ -230,11 +230,11 @@ describe('Fiat rate service', function() {
       }];
 
       request.get.withArgs({
-        url: 'https://bitpay.com/api/rates/BTC',
+        url: 'https://bitpay.com/rates/BTC',
         json: true
       }).yields(null, null, btc);
       request.get.withArgs({
-        url: 'https://bitpay.com/api/rates/BCH',
+        url: 'https://bitpay.com/rates/BCH',
         json: true
       }).yields(null, null, bch);
 
