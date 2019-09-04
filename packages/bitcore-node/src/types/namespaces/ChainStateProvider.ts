@@ -117,6 +117,10 @@ export declare namespace CSP {
     res: Response;
   };
 
+  export type isValidParams = ChainNetwork & {
+    input: string;
+  }
+
   export type Provider<T> = { get(params: { chain: string }): T };
   export type ChainStateProvider = Provider<IChainStateService> & IChainStateService;
   export interface IChainStateService {
@@ -150,6 +154,7 @@ export declare namespace CSP {
     getCoinsForTx(params: { chain: string; network: string; txid: string }): Promise<CoinListingJSON>;
     getLocalTip(params): Promise<IBlock | null>;
     getLocatorHashes(params): Promise<any>;
+    isValid(params: isValidParams): {isValid: boolean, type:string};
   }
 
   type ChainStateServices = { [key: string]: IChainStateService };
