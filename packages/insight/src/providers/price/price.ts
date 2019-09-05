@@ -3,6 +3,7 @@ import { ToastController } from 'ionic-angular';
 import * as _ from 'lodash';
 import { ApiProvider } from '../api/api';
 import { CurrencyProvider } from '../currency/currency';
+import { Observable } from 'rxjs';
 
 @Injectable()
 export class PriceProvider {
@@ -52,6 +53,30 @@ export class PriceProvider {
           ? 1000
           : 1;
     }
+  }
+
+  // Get historical rates for currency at ts timestamp
+  public getHistoricalRate(currency?: string, isoCode?: string, days?: number) {
+    const dates = Array.apply(null, Array(days));
+    const secondsInADay = 24 * 60 * 60;
+    const today = Date.now();
+    let observableBatch = [];
+  
+    // Get the last 7 days in unix time
+    dates.forEach(function (value, index) {
+      this[index] = (today - (index * secondsInADay) * 1000);
+    }, dates);
+
+    dates.reverse();
+
+    _.forEach(dates, date => {
+      let url = this.api.bwsUrl.urlPrefix + isoCode + "?coin=" + currency + "&" + "ts=" + date;
+      observableBatch.push(
+        this.api.httpClient.get(url)
+      )
+    });
+
+   return Observable.forkJoin(observableBatch);
   }
 
   private showErrorToast() {

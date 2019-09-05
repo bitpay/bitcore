@@ -1,2 +1,12 @@
 page-home {
+    .chart {
+        width: 500px;
+        height: 500px;
+    }
+
+    .menu {
+        display: flex;
+        flex-direction: column;
+        width: 150px;
+    }
 }

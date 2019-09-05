@@ -6,12 +6,14 @@ import { HeadNavComponentModule } from '../../components/head-nav/head-nav.modul
 import { LatestBlocksComponentModule } from '../../components/latest-blocks/latest-blocks.module';
 import { LoaderComponentModule } from '../../components/loader/loader.module';
 import { HomePage } from './home';
+import { PriceChartModule } from '../../components/price-card/price-chart/price-chart.module';
 
 @NgModule({
   declarations: [HomePage],
   imports: [
     IonicPageModule.forChild(HomePage),
     LatestBlocksComponentModule,
+    PriceChartModule,
     FooterComponentModule,
     HeadNavComponentModule,
     LoaderComponentModule,
