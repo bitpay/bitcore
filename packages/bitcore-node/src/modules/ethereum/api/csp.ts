@@ -284,7 +284,12 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     } else {
       const erc20Txs = await this.getWalletTokenTransactions(network, wallet._id!, args.tokenAddress);
       const p2p = new EthP2pWorker({ chain, network, chainConfig: {} });
-      erc20Txs.forEach(tx => transactionStream.push(p2p.convertTx(tx)));
+      const heights = Array.from(new Set(erc20Txs.map(tx => tx.blockNumber)));
+      const blocks = await EthBlockStorage.collection.find({ chain, network, height: { $in: heights } }).toArray();
+      for (const tx of erc20Txs) {
+        const block = blocks.find(b => b.height === tx.blockNumber);
+        transactionStream.push(p2p.convertTx(tx, block));
+      }
       transactionStream.push(null);
     }
     const listTransactionsStream = new EthListTransactionsStream(wallet);
