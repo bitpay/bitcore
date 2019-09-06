@@ -20,6 +20,7 @@ export type ICoin = {
   spentTxid: string;
   spentHeight: number;
   confirmations?: number;
+  sequenceNumber?: number;
 };
 
 @LoggifyClass
@@ -199,7 +200,8 @@ export class CoinModel extends BaseModel<ICoin> {
       address: valueOrDefault(coin.address, ''),
       script: valueOrDefault(coin.script, Buffer.alloc(0)).toString('hex'),
       value: valueOrDefault(coin.value, -1),
-      confirmations: valueOrDefault(coin.confirmations, -1)
+      confirmations: valueOrDefault(coin.confirmations, -1),
+      sequenceNumber: valueOrDefault(coin.sequenceNumber, undefined)
     };
     if (options && options.object) {
       return transform;
