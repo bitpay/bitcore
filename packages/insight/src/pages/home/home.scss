@@ -9,4 +9,10 @@ page-home {
         flex-direction: column;
         width: 150px;
     }
+
+    .menu-button {
+        font-size: 18px;
+        color: color($colors, light-blue)
+    }
+
 }

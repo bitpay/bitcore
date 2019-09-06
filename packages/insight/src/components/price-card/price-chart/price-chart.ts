@@ -18,41 +18,68 @@ export class PriceChartComponent {
     public lineChart;
     public isoCode;
     public coinName;
+    public coinPrice: string;
     public chainNetwork: ChainNetwork;
 
 
-    constructor(private currencyProvider: CurrencyProvider,
-        public nav: Nav,
+    constructor(public nav: Nav,
         public navParams: NavParams,
-        private priceProvider: PriceProvider,
-        private apiProvider: ApiProvider,
         ) {
             
         }
 
-    // ngAfterViewInit() {
-    //     console.log(this.coin);
-    //     this.drawCanvas(this.coin);
-    // }
-    
-    drawPriceChart(coin) {
-      this.drawCanvas(coin);
+    public numberWithCommas(x) {
+        return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
     }
 
-    drawCanvas(coin) {
+    drawPriceChart(coin, numOfDays) {
+      this.coinPrice = this.numberWithCommas(coin.currentPrice);
+      this.drawCanvas(coin, numOfDays);
+    }
+
+    getMonthAbbrev(month) {
+        let monthMapping = {
+            0: "Jan",
+            1: "Feb",
+            2: "Mar",
+            3: "Apr",
+            4: "May",
+            5: "June",
+            6: "Jul",
+            7: "Aug",
+            8: "Sept",
+            9: "Oct",
+            10: "Nov",
+            12: "Dec",
+        }
+        return monthMapping[month];
+    }
+    
+
+    public dateToString(day) {
+        let secondsInADay = 24 * 60 * 60;
+        let date = new Date(Date.now() - ((day * secondsInADay) * 1000));
+        return this.getMonthAbbrev(date.getMonth()) +  " " + date.getDate();
+    }
+
+    drawCanvas(coin, numOfDays) {
         let rates = [];
         let labels  = [];
 
-        _.forEach(coin.historicalRates, (historicalRates, i) => {
+        _.forEach(coin.historicalRates, (historicalRates, index) => {
             rates.push(historicalRates.rate);
-            labels.push(`${i}`);
+            labels.push(this.dateToString(index));
         });
+
+        labels.reverse();
 
         const context: CanvasRenderingContext2D = (this.lineCanvas.nativeElement as HTMLCanvasElement).getContext('2d');
         let gradient = context.createLinearGradient(0, 0, 0, 275);
         gradient.addColorStop(0, coin.gradientBackgroundColor);
         gradient.addColorStop(0.35, 'rgba(255,255,255, 0.25)');
         gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        let graphTicks = (numOfDays === 30) ? coin.ticks.thirtyDayTicks : coin.ticks.sevenDayTicks;
 
         const options = {
             legend: {
@@ -66,10 +93,7 @@ export class PriceChartComponent {
                             display: true,
                             drawBorder: true,
                         },
-                        ticks: {
-                            maxTicksLimit: 10,
-                            stepSize: 250
-                        }
+                        ticks: graphTicks.yAxesTicks
                     }
                 ],
                 xAxes: [
@@ -79,10 +103,7 @@ export class PriceChartComponent {
                             display: true,
                             drawBorder: true,
                         },
-                        ticks: {
-                            maxTicksLimit: 30,
-                            stepSize: 1,
-                        }
+                        ticks: graphTicks.xAxesTicks,
 
                     }
                 ],
@@ -120,6 +141,7 @@ export class PriceChartComponent {
                 data: rates,
                 spanGaps: true,
                 responsive: true,
+                label: 'Market Price (USD)',
             }
           ],
         };

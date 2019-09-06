@@ -54,37 +54,81 @@ export class HomePage {
     this.priceProvider.setCurrency();
     this.coins = {
       'btc': {
+        name: 'Bitcoin',
         historicalRates: [],
         currentPrice: 0,
         averagePrice: 0,
         backgroundColor: 'rgba(69,99,246,1)',
-        gradientBackgroundColor: 'rgba(247,146,26, 0.2)',
-        name: 'Bitcoin',
+        gradientBackgroundColor: 'rgba(69,99,246, 0.2)',
+        ticks: {
+          thirtyDayTicks: {
+            yAxesTicks: {
+              maxTicksLimit: 10,
+              stepSize: 500
+            },
+            xAxesTicks: {
+              maxTicksLimit: 5,
+              stepSize: 5,
+            }
+          },
+          sevenDayTicks: {
+            yAxesTicks: {
+              maxTicksLimit: 10,
+              stepSize: 500
+            },
+            xAxesTicks: {
+              maxTicksLimit: 7,
+              stepSize: 1,
+            }
+          }
+        },
       },
       'bch': {
+        name: 'Bitcoin Cash',
         historicalRates: [],
         currentPrice: 0,
         averagePrice: 0,
         backgroundColor: 'rgba(69,99,246,1)',
-        gradientBackgroundColor: 'rgba(47,207,110, 0.2)',
-        name: 'Bitcoin Cash',
-      }
-    };
-    
-    this.getHistoricalPriceForCurrencies(chain.toLowerCase(), 'USD', 30);
+        gradientBackgroundColor: 'rgba(69,99,246, 0.2)',
+        ticks: {
+          thirtyDayTicks: {
+            yAxesTicks: {
+              maxTicksLimit: 10,
+              stepSize: 25
+            },
+            xAxesTicks: {
+              maxTicksLimit: 5,
+              stepSize: 5,
+            }
+          },
+          sevenDayTicks: {
+            yAxesTicks: {
+              maxTicksLimit: 10,
+              stepSize: 25,
+            },
+            xAxesTicks: {
+              maxTicksLimit: 7,
+              stepSize: 1,
+            }
+          }
+      },
+    }
   }
+ 
+}
 
 
   public getHistoricalPriceForCurrencies(currency?: string, isoCode?: string, days?: number) {
     this.priceProvider.getHistoricalRate(currency, isoCode ,days).subscribe((response) => {
+      this.coins[currency].currentPrice = response[(days-1)].rate; 
       this.coins[currency].historicalRates = response;
-      this.priceChart.drawPriceChart(this.coins[currency]);
+      this.priceChart.drawPriceChart(this.coins[currency], days);
     });
   }
 
   public goToPriceChartHandler() {
     this.showPriceChart = true;
-    this.getHistoricalPriceForCurrencies(this.coin.toLowerCase(), 'USD', 30);
+    this.getHistoricalPriceForCurrencies(this.coin.toLowerCase(), 'USD', 7);
   }
 
   public goToBlocks() {

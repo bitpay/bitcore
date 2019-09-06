@@ -4,13 +4,10 @@
   <ion-grid fixed>
       <ion-row>
         <ion-col col-2 class="page-content">
-            <div class="menu">
-              <h2>Data</h2>
-              <a (click)="goToBlocks(chain)"> Blocks </a>
-              <a (click)="goToBlocks(chain)"> Transactions </a>
-              <a (click)="goToPriceChartHandler(chain)"> Price </a>
-              <a> Avg Amount Sent </a>
-              <a> Avg Fee </a>
+            <div class= "menu">
+              <h2> Explore </h2>
+              <div class="menu-button" (click)="goToBlocks()"> Blocks </div>
+              <div class="menu-button" (click)="goToPriceChartHandler()"> Price </div>
             </div>
           </ion-col>
 

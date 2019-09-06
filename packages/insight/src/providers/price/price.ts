@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
 import { ToastController } from 'ionic-angular';
 import * as _ from 'lodash';
+import { Observable } from 'rxjs';
 import { ApiProvider } from '../api/api';
 import { CurrencyProvider } from '../currency/currency';
-import { Observable } from 'rxjs';
 
 @Injectable()
 export class PriceProvider {
@@ -62,7 +62,7 @@ export class PriceProvider {
     const today = Date.now();
     let observableBatch = [];
   
-    // Get the last 7 days in unix time
+    // Get the X days in unix time
     dates.forEach(function (value, index) {
       this[index] = (today - (index * secondsInADay) * 1000);
     }, dates);
@@ -70,7 +70,7 @@ export class PriceProvider {
     dates.reverse();
 
     _.forEach(dates, date => {
-      let url = this.api.bwsUrl.urlPrefix + isoCode + "?coin=" + currency + "&" + "ts=" + date;
+      const url = this.api.bwsUrl.urlPrefix + isoCode + "?coin=" + currency + "&" + "ts=" + date;
       observableBatch.push(
         this.api.httpClient.get(url)
       )
