@@ -21,7 +21,7 @@ export class HomePage {
   @ViewChild('priceChart') priceChart
 
   public latestBlocks: LatestBlocksComponent;
-  public priceChart: PriceChartComponent;
+  public priceChart: any;
   public coin: string;
   public chain: string;
   public showPriceChart: boolean;
