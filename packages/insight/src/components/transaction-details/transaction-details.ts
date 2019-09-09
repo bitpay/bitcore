@@ -32,6 +32,7 @@ export class TransactionDetailsComponent implements OnInit {
   public page: string;
 
   private COIN = 100000000;
+  private DEFAULT_RBF_SEQNUMBER = 0xffffffff;
 
   constructor(
     public currencyProvider: CurrencyProvider,
@@ -51,6 +52,15 @@ export class TransactionDetailsComponent implements OnInit {
     }
   }
 
+  private isRBF(data): boolean {
+    for (const input of data.inputs) {
+      if (input.sequenceNumber && input.sequenceNumber < this.DEFAULT_RBF_SEQNUMBER - 1) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   public getCoins(): void {
     this.txProvider
       .getCoins(this.tx.txid, this.chainNetwork)
@@ -58,6 +68,7 @@ export class TransactionDetailsComponent implements OnInit {
         this.tx.vin = data.inputs;
         this.tx.vout = data.outputs;
         this.tx.fee = this.txProvider.getFee(this.tx);
+        this.tx.isRBF = this.isRBF(data);
         this.tx.valueOut = data.outputs.reduce((a, b) => a + b.value, 0);
         this.getConfirmations();
       });
