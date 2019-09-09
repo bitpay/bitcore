@@ -442,6 +442,9 @@ export class InternalStateProvider implements CSP.IChainStateService {
       throw new Error(`No such transaction ${txid}`);
     }
 
+    const tip = await this.getLocalTip({chain, network});
+    const tipHeight = tip ? tip.height : 0;
+
     let inputs = await CoinStorage.collection
       .find({
         chain,
@@ -461,7 +464,14 @@ export class InternalStateProvider implements CSP.IChainStateService {
       .toArray();
 
     return {
-      inputs: inputs.map(input => CoinStorage._apiTransform(input, { object: true })),
+      inputs: inputs.map(input => {
+        let confirmations = 0;
+        if (input.mintHeight && input.mintHeight >= 0) {
+          confirmations = tipHeight - input.mintHeight + 1;
+        }
+        input.confirmations = confirmations;
+        return CoinStorage._apiTransform(input, { object: true })
+      }),
       outputs: outputs.map(output => CoinStorage._apiTransform(output, { object: true }))
     };
   }

@@ -62,6 +62,8 @@ export interface ApiCoin {
   mintHeight: number;
   spentHeight: number;
   value: number;
+  confirmations: number;
+  sequenceNumber: number;
 }
 
 export interface ApiEthCoin {

@@ -184,8 +184,12 @@
         <ion-label>{{ confirmations }} Confirmations
         </ion-label>
       </ion-chip>
-      <ion-chip color="danger" *ngIf="tx.isRBF && confirmations === -1">
+      <ion-chip color="danger" *ngIf="tx.isRBF && !tx.hasUnconfirmedInputs && confirmations === -1">
         <ion-label>Replace By Fee (RBF) enabled
+        </ion-label>
+      </ion-chip>
+      <ion-chip color="danger" *ngIf="tx.hasUnconfirmedInputs">
+        <ion-label>Tx has unconfirmed inputs
         </ion-label>
       </ion-chip>
       <ion-chip color="default">

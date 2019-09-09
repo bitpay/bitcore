@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { Nav, NavParams } from 'ionic-angular';
+import _ from 'lodash';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
@@ -52,15 +53,6 @@ export class TransactionDetailsComponent implements OnInit {
     }
   }
 
-  private isRBF(data): boolean {
-    for (const input of data.inputs) {
-      if (input.sequenceNumber && input.sequenceNumber < this.DEFAULT_RBF_SEQNUMBER - 1) {
-        return true;
-      }
-    }
-    return false;
-  };
-
   public getCoins(): void {
     this.txProvider
       .getCoins(this.tx.txid, this.chainNetwork)
@@ -68,7 +60,12 @@ export class TransactionDetailsComponent implements OnInit {
         this.tx.vin = data.inputs;
         this.tx.vout = data.outputs;
         this.tx.fee = this.txProvider.getFee(this.tx);
-        this.tx.isRBF = this.isRBF(data);
+        this.tx.isRBF = _.some(data.inputs, input => {
+          return input.sequenceNumber && input.sequenceNumber < this.DEFAULT_RBF_SEQNUMBER - 1;
+        });
+        this.tx.hasUnconfirmedInputs = _.some(data.inputs, input => {
+          return input.confirmations === 0;
+        });
         this.tx.valueOut = data.outputs.reduce((a, b) => a + b.value, 0);
         this.getConfirmations();
       });
