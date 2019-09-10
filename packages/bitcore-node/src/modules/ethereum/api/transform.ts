@@ -16,7 +16,7 @@ export class EthListTransactionsStream extends Transform {
     });
     if (sending > 0) {
       const sendingToOurself = await WalletAddressStorage.collection.countDocuments({
-        wallets: this.wallet._id,
+        wallet: this.wallet._id,
         address: transaction.to
       });
       if (!sendingToOurself) {
