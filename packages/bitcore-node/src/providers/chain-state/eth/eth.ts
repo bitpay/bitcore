@@ -7,7 +7,6 @@ import Web3 from 'web3';
 import { Storage } from '../../../services/storage';
 import { Readable } from 'stream';
 import { ParityRPC, ParityTraceResponse } from './parityRpc';
-import { Callback, JsonRPCResponse } from 'web3/providers';
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -58,7 +57,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           jsonrpc: '2.0',
           id: 0
         },
-        function (_, data)  {resolve(data.result)} as Callback<JsonRPCResponse>
+        (_, data) => resolve(data.result)
       )
     );
   }
