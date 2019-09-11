@@ -18,9 +18,8 @@ import { PriceProvider } from '../../providers/price/price';
 export class BlocksPage {
   public loading = true;
   public blocks;
-
-  private chainNetwork: ChainNetwork;
-
+  public chainNetwork: ChainNetwork;
+  
   constructor(
     public navParams: NavParams,
     private apiProvider: ApiProvider,

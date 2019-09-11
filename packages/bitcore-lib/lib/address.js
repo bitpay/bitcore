@@ -181,6 +181,9 @@ Address._classifyFromVersion = function(buffer) {
 
   if (buffer.length > 21) {
     var info = Bech32.decode(buffer.toString('utf8'));
+    if (info.version !== 0) {
+      throw new TypeError('Only witness v0 addresses are supported.');
+    }
     if (info.data.length === 20) {
       version.type = Address.PayToWitnessPublicKeyHash;
     } else if (info.data.length === 32) {

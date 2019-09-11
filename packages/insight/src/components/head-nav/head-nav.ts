@@ -1,6 +1,4 @@
 import { Component, Input, OnInit, ViewChild } from '@angular/core';
-import * as bitcoreLib from 'bitcore-lib';
-import * as bitcoreLibCash from 'bitcore-lib-cash';
 import {
   ActionSheetController,
   App,
@@ -64,9 +62,8 @@ export class HeadNavComponent implements OnInit {
 
   public search(): void {
     this.q = this.q.replace(/\s/g, '');
-    const inputDetails = this.searchProvider.isInputValid(this.q);
-
-    if (this.q !== '' && inputDetails.isValid) {
+    this.searchProvider.isInputValid(this.q, this.chainNetwork).subscribe((inputDetails)=>{
+      if (this.q !== '' && inputDetails.isValid) {
       this.showSearch = false;
       this.searchProvider
         .search(this.q, inputDetails.type, this.chainNetwork)
@@ -89,9 +86,10 @@ export class HeadNavComponent implements OnInit {
             this.logger.error(err);
           }
         );
-    } else {
-      this.wrongSearch('No matching records found!');
-    }
+      } else {
+        this.wrongSearch('No matching records found!');
+      }
+    });
   }
 
   private processResponse(response) {
@@ -158,81 +156,17 @@ export class HeadNavComponent implements OnInit {
         this.setCurrency(data.chainNetwork);
         this.goHome(data.chainNetwork);
       } else if (data.currencySymbol !== this.currencyProvider.getCurrency()) {
-        this.setCurrency(data.currencySymbol);
+        this.setCurrency(this.chainNetwork, data.currencySymbol);
       }
     });
   }
 
-  private setCurrency(currencySymbol?) {
-    this.currencyProvider.setCurrency(currencySymbol);
+  private setCurrency(chainNetwork, currencySymbol?) {
+    this.currencyProvider.setCurrency(chainNetwork, currencySymbol);
     this.priceProvider.setCurrency(currencySymbol);
   }
 
   public toggleSearch(): void {
     this.showSearch = !this.showSearch;
-  }
-
-  public extractAddress(address: string): string {
-    const extractedAddress = address
-      .replace(/^(bitcoincash:|bchtest:|bitcoin:)/i, '')
-      .replace(/\?.*/, '');
-    return extractedAddress || address;
-  }
-
-  public isInputValid(inputValue): boolean {
-    if (this.isValidBlockOrTx(inputValue)) {
-      return true;
-    } else if (this.isValidAddress(inputValue)) {
-      return true;
-    } else if (this.isValidBlockIndex(inputValue)) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  private isValidBlockOrTx(inputValue): boolean {
-    const regexp = /^[0-9a-fA-F]{64}$/;
-    if (regexp.test(inputValue)) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  private isValidAddress(inputValue): boolean {
-    const coin = this.chainNetwork.chain;
-    const network = this.chainNetwork.network;
-    const addr = this.extractAddress(inputValue);
-
-    if (coin.toLowerCase() === 'btc' && network === 'mainnet') {
-      return this.isValidBitcoinMainnetAddress(addr);
-    } else if (coin.toLowerCase() === 'btc' && network === 'testnet') {
-      return this.isValidBitcoinTestnetAddress(addr);
-    } else if (coin.toLowerCase() === 'bch' && network === 'mainnet') {
-      return (
-        this.isValidBitcoinCashMainnetAddress(addr) ||
-        this.isValidBitcoinCashLegacyMainnetAddress(addr)
-      );
-    }
-  }
-
-  private isValidBitcoinMainnetAddress(data: string): boolean {
-    return !!bitcoreLib.Address.isValid(data, 'mainnet');
-  }
-  private isValidBitcoinTestnetAddress(data: string): boolean {
-    return !!bitcoreLib.Address.isValid(data, 'testnet');
-  }
-
-  private isValidBitcoinCashLegacyMainnetAddress(data: string): boolean {
-    return !!bitcoreLib.Address.isValid(data, 'mainnet');
-  }
-
-  private isValidBitcoinCashMainnetAddress(data: string): boolean {
-    return !!bitcoreLibCash.Address.isValid(data, 'mainnet');
-  }
-
-  private isValidBlockIndex(inputValue): boolean {
-    return isFinite(inputValue);
   }
 }

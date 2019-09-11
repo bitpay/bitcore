@@ -1,0 +1,18 @@
+  <ion-item>
+    Merkle Root
+    <ion-note item-end>
+      {{ block.merkleroot }}
+    </ion-note>
+  </ion-item>
+  <ion-item *ngIf="block.bits">
+    Bits
+    <ion-note item-end>
+      {{ block.bits }}
+    </ion-note>
+  </ion-item>
+  <ion-item *ngIf="block.version">
+    Version
+    <ion-note item-end>
+      {{ block.version }}
+    </ion-note>
+  </ion-item>

@@ -9,16 +9,16 @@ import {
 } from '../../providers/transactions/transactions';
 
 /**
- * Generated class for the TransactionComponent component.
+ * Generated class for the TransactionDetailsComponent component.
  *
  * See https://angular.io/docs/ts/latest/api/core/index/ComponentMetadata-class.html
  * for more info on Angular Components.
  */
 @Component({
-  selector: 'transaction',
-  templateUrl: 'transaction.html'
+  selector: 'transaction-details',
+  templateUrl: 'transaction-details.html'
 })
-export class TransactionComponent implements OnInit {
+export class TransactionDetailsComponent implements OnInit {
   public expanded = false;
   @Input()
   public tx: any = {};
@@ -36,10 +36,13 @@ export class TransactionComponent implements OnInit {
     public txProvider: TxsProvider,
     public redirProvider: RedirProvider,
     public blocksProvider: BlocksProvider
-  ) {}
+  ) {
+  }
 
   public ngOnInit(): void {
-    this.showCoins ? this.getCoins() : this.getConfirmations();
+    if (this.chainNetwork.chain !== 'ETH') {
+      this.showCoins ? this.getCoins() : this.getConfirmations();
+    }
   }
 
   public getCoins(): void {

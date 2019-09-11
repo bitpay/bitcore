@@ -64,6 +64,12 @@ describe('Witness Address', function() {
     'bc1q9225rawdn2dlwsk3dd8phudsap6vjp7fgwh455'
   ];
 
+  //livenet incorrect witness version
+  var incorrectWitnessVersions = [
+    'bc1p9225pawdj2dlwsk3dd8phudsap6vjp7fr0y9q5',
+    'bc1p9225pawdn2dlwsk3dd8phudsap6vjp7fhqj5wnrpg457qjq0ycvsjzekl8'
+  ];
+
   //testnet valid
   var P2WPKHTestnet = [
     'tb1q5lrlddcjejvu0qyx0f5fg59zj89danlxtt058g',
@@ -129,6 +135,14 @@ describe('Witness Address', function() {
         var error = Address.getValidationError(badChecksums[i], 'livenet', 'witnesspubkeyhash');
         should.exist(error);
         error.message.should.equal('Invalid checksum for ' + badChecksums[i]);
+      }
+    });
+
+    it('should not validate if witness version is not 0', function() {
+      for (var i = 0; i < incorrectWitnessVersions.length; i++) {
+        var error = Address.getValidationError(incorrectWitnessVersions[i], 'livenet', 'witnesspubkeyhash');
+        should.exist(error);
+        error.message.should.equal('Only witness v0 addresses are supported.');
       }
     });
 

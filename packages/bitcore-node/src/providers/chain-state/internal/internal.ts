@@ -17,6 +17,7 @@ import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
 import { StateStorage } from '../../../models/state';
 import { SpentHeightIndicators, CoinJSON } from '../../../types/Coin';
 import { Config } from '../../../services/config';
+import { Validation } from 'crypto-wallet-core';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -547,5 +548,45 @@ export class InternalStateProvider implements CSP.IChainStateService {
       return [Array(65).join('0')];
     }
     return locatorBlocks.map(block => block.hash);
+  }
+
+  public isValid(params) {
+    const { input } = params;
+
+    if (this.isValidBlockOrTx(input)) {
+      return { isValid: true, type: 'blockOrTx' };
+    } else if (this.isValidAddress(params)) {
+      return { isValid: true, type: 'addr' };
+    } else if (this.isValidBlockIndex(input)) {
+      return { isValid: true, type: 'blockOrTx' };
+    } else {
+      return { isValid: false, type: 'invalid' };
+    }
+  }
+
+  private isValidBlockOrTx(inputValue: string): boolean {
+    const regexp = /^[0-9a-fA-F]{64}$/;
+    if (regexp.test(inputValue)) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  private isValidAddress(params): boolean {
+    const { chain, network, input } = params;
+    const addr = this.extractAddress(input);
+    return !!Validation.validateAddress(chain, network, addr);
+  }
+
+  private isValidBlockIndex(inputValue): boolean {
+    return isFinite(inputValue);
+  }
+
+  private extractAddress(address: string): string {
+    const extractedAddress = address
+      .replace(/^(bitcoincash:|bchtest:|bitcoin:)/i, '')
+      .replace(/\?.*/, '');
+    return extractedAddress || address;
   }
 }

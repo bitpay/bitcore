@@ -1,6 +1,6 @@
 import Web3 from 'web3';
-import "../../../utils/polyfills";
-import { Callback, JsonRPCResponse } from 'web3/providers';
+import { JsonRPCResponse, Callback } from './eth';
+import '../../../utils/polyfills';
 
 interface ParityBlockReward {
   author: string;
@@ -65,7 +65,9 @@ export class ParityRPC {
           jsonrpc: '2.0',
           id: 0
         },
-        function (_, data) {resolve(data.result as Array<ParityTraceResponse>)} as Callback<JsonRPCResponse>
+        function(_, data) {
+          resolve(data.result as Array<ParityTraceResponse>);
+        } as Callback<JsonRPCResponse>
       )
     );
   }

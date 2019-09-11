@@ -28,28 +28,14 @@
         <error [message]="errorMessage" *ngIf="!loading && errorMessage"></error>
 
         <ion-list class="list--summary">
-          <ion-item>
-            Size
-            <ion-note item-end>
-              {{ tx.size }} (bytes)
-            </ion-note>
-          </ion-item>
-          <ion-item *ngIf="tx.fee >= 0">
-            Fee Rate
-            <ion-note item-end>
-              {{ (tx.fee / tx.size) | number:'1.0-2' }} sats/byte
-            </ion-note>
-          </ion-item>
+
+          <transaction-summary *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH'" [tx]="tx" [chainNetwork]="chainNetwork"></transaction-summary>
+          <transaction-summary-eth *ngIf="chainNetwork.chain === 'ETH'" [tx]="tx" [chainNetwork]="chainNetwork"></transaction-summary-eth>
+
           <ion-item>
             Received Time
             <ion-note item-end>
               {{ tx.time * 1000 | date:'long' }}
-            </ion-note>
-          </ion-item>
-          <ion-item *ngIf="confirmations > 0">
-            Mined Time
-            <ion-note item-end>
-              {{ tx.blocktime * 1000 | date:'long' }}
             </ion-note>
           </ion-item>
           <ion-item>
@@ -68,7 +54,8 @@
 
         <h2>Details</h2>
 
-        <transaction [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction>
+        <transaction-details *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH'" [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction-details>
+        <transaction-details-eth *ngIf="chainNetwork.chain === 'ETH'" [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction-details-eth>
       </div>
 
     </div>

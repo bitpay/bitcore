@@ -47,7 +47,7 @@
       </ion-chip>
       <ion-chip item-end color="default">
         <ion-label>
-          {{ currencyProvider.getConvertedNumber(tx.valueOut) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+          {{ currencyProvider.getConvertedNumber(tx.valueOut, chainNetwork.chain) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
         </ion-label>
       </ion-chip>
     </ion-col>
@@ -91,7 +91,15 @@
           </div>
 
           <div item-end>
-            {{ currencyProvider.getConvertedNumber(vin.value) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+            {{ currencyProvider.getConvertedNumber(vin.value, chainNetwork.chain) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+          </div>
+        </ion-item>
+
+        <ion-item *ngIf="tx.from">
+          <div class="ellipsis">
+            <p>
+              <a (click)="goToAddress(tx.from)">{{ tx.from }}</a>
+            </p>
           </div>
         </ion-item>
       </ion-list>
@@ -127,7 +135,7 @@
           </div>
 
           <div item-end>
-            {{ currencyProvider.getConvertedNumber(vout.value) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+            {{ currencyProvider.getConvertedNumber(vout.value, chainNetwork.chain) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
             <span [hidden]="!vout.spentTxid">(S)</span>
             <span [hidden]="vout.spentTxid">(U)</span>
           </div>
@@ -136,6 +144,16 @@
             goToTx(vout.spentTxid, i, true)" clear icon-only>
             <ion-icon color="primary" name="ios-arrow-forward"></ion-icon>
           </button>
+        </ion-item>
+
+        <ion-item *ngIf="tx.to">
+          <div>
+            <div class="ellipsis">
+              <p>
+                <a (click)="goToAddress(tx.to)">{{ tx.to }}</a>
+              </p>
+            </div>
+          </div>
         </ion-item>
       </ion-list>
     </ion-col>
@@ -146,7 +164,7 @@
       <div *ngIf="!tx.isCoinBase && currencyProvider.getConvertedNumber(tx.fee) >= 0">
         <ion-chip>
           <ion-label>Fee
-            <span text-nowrap>{{ currencyProvider.getConvertedNumber(tx.fee) | number:'1.0-8' }}
+            <span text-nowrap>{{ currencyProvider.getConvertedNumber(tx.fee, chainNetwork.chain) | number:'1.0-8' }}
               {{ currencyProvider.currencySymbol }}</span>
           </ion-label>
         </ion-chip>
@@ -167,7 +185,7 @@
         </ion-label>
       </ion-chip>
       <ion-chip color="default">
-        <ion-label>{{ currencyProvider.getConvertedNumber(tx.valueOut) | number:'1.0-8' }}
+        <ion-label>{{ currencyProvider.getConvertedNumber(tx.valueOut, chainNetwork.chain) | number:'1.0-8' }}
           {{ currencyProvider.currencySymbol }}
         </ion-label>
       </ion-chip>

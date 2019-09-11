@@ -21,9 +21,9 @@ export class AddressPage {
   public address: any = {};
   public nroTransactions = 0;
   public errorMessage: string;
+  public chainNetwork: ChainNetwork;
 
   private addrStr: string;
-  private chainNetwork: ChainNetwork;
 
   constructor(
     public navParams: NavParams,
@@ -73,6 +73,6 @@ export class AddressPage {
   }
 
   public getConvertedNumber(n: number): number {
-    return this.currencyProvider.getConvertedNumber(n);
+    return this.currencyProvider.getConvertedNumber(n, this.chainNetwork.chain);
   }
 }

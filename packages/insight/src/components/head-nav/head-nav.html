@@ -5,14 +5,14 @@
       <ion-icon name="search" [color]="!showSearch ? 'light' : 'dark'"></ion-icon>
     </button>
     <form class="search" (ngSubmit)="search($event)">
-      <input dir="auto" placeholder="{{ 'Search for block, transaction or address' }}" [(ngModel)]="q" name="search"
-        autocomplete="off" autocorrect="off" spellcheck="false">
+      <input dir="auto" placeholder="{{ 'Search for block, transaction or address' }}" [(ngModel)]="q" name="search" autocomplete="off" autocorrect="off" spellcheck="false">
     </form>
 
     <ion-buttons>
-      <button ion-button (click)="changeCurrency($event)">
-        <ion-icon name="logo-bitcoin" *ngIf="currencyProvider?.currencySymbol !== 'USD'"></ion-icon>
+      <button ion-button (click)="changeCurrency($event)" class="cn-button">
+        <ion-icon name="logo-bitcoin" *ngIf="(chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH') && currencyProvider?.currencySymbol !== 'USD'"></ion-icon>
         <ion-icon name="logo-usd" *ngIf="currencyProvider?.currencySymbol === 'USD'"></ion-icon>
+        <img class="eth-icon" src="assets/img/ethicon.svg" *ngIf="chainNetwork.chain === 'ETH' && currencyProvider?.currencySymbol !== 'USD'" width="12">
         &nbsp;
         {{ currencyProvider?.currencySymbol }}
         &nbsp;
@@ -26,8 +26,7 @@
 
   <ion-toolbar class="mobile-searchbar" fixed [hidden]="!showSearch">
     <form (ngSubmit)="search($event)">
-      <ion-searchbar #searchbar placeholder="{{ 'Search for block, transaction or address' }}" [(ngModel)]="q"
-        name="search"></ion-searchbar>
+      <ion-searchbar #searchbar placeholder="{{ 'Search for block, transaction or address' }}" [(ngModel)]="q" name="search"></ion-searchbar>
     </form>
   </ion-toolbar>
 </ion-header>
