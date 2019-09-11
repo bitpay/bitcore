@@ -74,9 +74,7 @@ export class EventService {
         if (blockEvent) {
           const block = <IEvent.BlockEvent>blockEvent.payload;
           this.blockEvent.emit('block', block);
-          console.log('EVENT::Emitting block');
           lastBlockUpdate = new Date();
-          console.log('Updated last block seen', lastBlockUpdate);
         }
       }
       if (!this.stopped) {
