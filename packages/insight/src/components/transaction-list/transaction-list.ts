@@ -1,9 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { TxsProvider } from '../../providers/transactions/transactions';
+import { ChainNetwork } from '../../providers/api/api';
+import { ApiEthTx, ApiUtxoCoinTx, TxsProvider } from '../../providers/transactions/transactions';
 
 import * as _ from 'lodash';
-import { ApiProvider, ChainNetwork } from '../../providers/api/api';
-
 @Component({
   selector: 'transaction-list',
   templateUrl: 'transaction-list.html'
@@ -28,9 +27,16 @@ export class TransactionListComponent implements OnInit {
       this.txProvider
         .getTxs(this.chainNetwork, { [this.queryType]: this.queryValue })
         .subscribe(
-          response => {
+          response => {            
             // Newly Generated Coins (Coinbase) First
-            const txs = response.map(tx => this.txProvider.toAppTx(tx));
+            const txs = response.map((tx: ApiEthTx & ApiUtxoCoinTx) => {
+              if(this.chainNetwork.chain === "BTC" || this.chainNetwork.chain === "BCH") {
+                return this.txProvider.toUtxoCoinsAppTx(tx)
+              }
+              if(this.chainNetwork.chain === "ETH") {
+                return this.txProvider.toEthAppTx(tx)
+              }
+            });
             const sortedTxs = _.sortBy(txs, (tx: any) => {
               return tx.isCoinBase ? 0 : 1;
             });

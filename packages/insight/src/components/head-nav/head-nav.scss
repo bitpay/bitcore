@@ -62,4 +62,10 @@ head-nav {
       display: none;
     }
   }
+  .cn-button:hover,
+  .cn-button:focus {
+    img{
+      filter:  invert(100%) contrast(44%);
+    }
+  }
 }

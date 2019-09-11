@@ -23,6 +23,8 @@
           <ion-grid>
             <ion-row>
               <ion-col col-12 col-md class="allow-truncated-text">
+                <block-summary *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH'" [block]="block" [chainNetwork]="chainNetwork"></block-summary>
+                <block-summary-eth *ngIf="chainNetwork.chain === 'ETH'" [block]="block" [chainNetwork]="chainNetwork"></block-summary-eth>
                 <ion-item>
                   Number of Transactions
                   <ion-note item-end>
@@ -39,7 +41,7 @@
                 <ion-item>
                   Block Reward
                   <ion-note item-end>
-                    {{ currencyProvider.getConvertedNumber(block.reward) | number }}
+                    {{ currencyProvider.getConvertedNumber(block.reward, chainNetwork.chain) | number }}
                     {{ currencyProvider.currencySymbol }}
                   </ion-note>
                 </ion-item>
@@ -49,25 +51,12 @@
                     {{ block.time * 1000 | date:'long' }}
                   </ion-note>
                 </ion-item>
-                <ion-item>
+          <!-- TODO      <ion-item>
                   Mined by
                   <ion-note item-end *ngIf="block.poolInfo">
                     <a href="{{ block.poolInfo.url }}">{{ block.poolInfo.poolName }}</a>
                   </ion-note>
-                </ion-item>
-                <ion-item>
-                  Merkle Root
-                  <ion-note item-end>
-                    {{ block.merkleroot }}
-                  </ion-note>
-                </ion-item>
-                <ion-item>
-                  Previous Block
-                  <ion-note item-end>
-                    <a (click)="goToPreviousBlock()"
-                      [ngClass]="{'disabled-link': block.height - 1 === 0 }">{{ block.height - 1 }}</a>
-                  </ion-note>
-                </ion-item>
+                </ion-item> -->
               </ion-col>
               <ion-col col-12 col-md class="allow-truncated-text">
                 <ion-item>
@@ -77,27 +66,22 @@
                   </ion-note>
                 </ion-item>
                 <ion-item>
-                  Bits
-                  <ion-note item-end>
-                    {{ block.bits }}
-                  </ion-note>
-                </ion-item>
-                <ion-item>
                   Size (bytes)
                   <ion-note item-end>
                     {{ block.size }}
                   </ion-note>
                 </ion-item>
                 <ion-item>
-                  Version
-                  <ion-note item-end>
-                    {{ block.version }}
-                  </ion-note>
-                </ion-item>
-                <ion-item>
                   Nonce
                   <ion-note item-end>
                     {{ block.nonce }}
+                  </ion-note>
+                </ion-item>
+                <ion-item>
+                  Previous Block
+                  <ion-note item-end>
+                    <a (click)="goToPreviousBlock()"
+                      [ngClass]="{'disabled-link': block.height - 1 === 0 }">{{ block.height - 1 }}</a>
                   </ion-note>
                 </ion-item>
                 <ion-item>

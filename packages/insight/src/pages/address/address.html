@@ -10,7 +10,7 @@
       <error [message]="errorMessage" *ngIf="!loading && errorMessage "></error>
 
       <div *ngIf="!loading && !errorMessage">
-        <h1>Address <small>{{ getConvertedNumber(address.balance) | number:'1.0-8' }}
+        <h1>Address <small>{{ getConvertedNumber(address.balance, chainNetwork.chain) | number:'1.0-8' }}
             {{ currencyProvider.currencySymbol }}</small></h1>
         <p class="ellipsis">{{ address.addrStr }}
           <button [copyToClipboard]="address.addrStr">
@@ -26,13 +26,13 @@
                 <ion-item>
                   Confirmed Balance
                   <ion-note item-end>
-                    {{ getConvertedNumber(address.confirmed) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+                    {{ getConvertedNumber(address.confirmed, chainNetwork.chain) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
                   </ion-note>
                 </ion-item>
                 <ion-item *ngIf="address.unconfirmed > 0">
                   Unconfirmed Balance
                   <ion-note item-end>
-                    {{ getConvertedNumber(address.unconfirmed) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+                    {{ getConvertedNumber(address.unconfirmed, chainNetwork.chain) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
                   </ion-note>
                 </ion-item>
                 <ion-item>

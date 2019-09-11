@@ -3,7 +3,6 @@ import { Events } from 'ionic-angular';
 import _ from 'lodash';
 import { AddressProvider } from '../../providers/address/address';
 import { ChainNetwork } from '../../providers/api/api';
-import { Logger } from '../../providers/logger/logger';
 import { TxsProvider } from '../../providers/transactions/transactions';
 
 @Component({
@@ -34,8 +33,9 @@ export class CoinListComponent implements OnInit {
       this.loading = true;
       this.addrProvider.getAddressActivity(this.addrStr).subscribe(
         data => {
-          const formattedData = data.map(this.txsProvider.toAppCoin);
-          this.txs = this.processData(formattedData);
+          const toAppCoin: any = this.chainNetwork.chain !== 'ETH' ? this.txsProvider.toAppCoin: this.txsProvider.toAppEthCoin;
+          const formattedData = data.map(toAppCoin);
+          this.txs = this.chainNetwork.chain !== 'ETH' ? this.processData(formattedData): formattedData;
           this.showTransactions = true;
           this.loading = false;
           this.events.publish('CoinList', { length: data.length });

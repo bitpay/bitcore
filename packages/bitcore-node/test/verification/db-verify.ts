@@ -20,15 +20,42 @@ type ErrorType = {
 
 export async function validateDataForBlock(blockNum: number, log = false) {
   let success = true;
-  const blockTxs = await TransactionStorage.collection.find({ chain, network, blockHeight: blockNum }).toArray();
+  const [block, blockTxs, blocksForHeight] = await Promise.all([
+    BlockStorage.collection.findOne({ chain, network, height: blockNum, processed: true }),
+    TransactionStorage.collection.find({ chain, network, blockHeight: blockNum }).toArray(),
+    BlockStorage.collection.countDocuments({
+      chain,
+      network,
+      height: blockNum,
+      processed: true
+    })
+  ]);
   const blockTxids = blockTxs.map(t => t.txid);
-  const coinsForTx = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: blockTxids } }).toArray();
-  const mempoolTxs = await TransactionStorage.collection
-    .find({ chain, network, blockHeight: -1, txid: { $in: blockTxids } })
-    .toArray();
+  const firstHash = blockTxs[0] ? blockTxs[0].blockHash : block!.hash;
+  const [coinsForTx, mempoolTxs, blocksForHash] = await Promise.all([
+    CoinStorage.collection.find({ chain, network, mintTxid: { $in: blockTxids } }).toArray(),
+    TransactionStorage.collection.find({ chain, network, blockHeight: -1, txid: { $in: blockTxids } }).toArray(),
+    BlockStorage.collection.countDocuments({ chain, network, hash: firstHash })
+  ]);
 
   const seenTxs = {} as { [txid: string]: ITransaction };
   const errors = new Array<ErrorType>();
+
+  if (!block || block.transactionCount != blockTxs.length) {
+    success = false;
+    const error = {
+      model: 'block',
+      err: true,
+      type: 'CORRUPTED_BLOCK',
+      payload: { blockNum }
+    };
+
+    errors.push(error);
+
+    if (log) {
+      console.log(JSON.stringify(error));
+    }
+  }
 
   for (const tx of mempoolTxs) {
     success = false;
@@ -125,12 +152,6 @@ export async function validateDataForBlock(blockNum: number, log = false) {
     }
   }
 
-  const blocksForHeight = await BlockStorage.collection.countDocuments({
-    chain,
-    network,
-    height: blockNum,
-    processed: true
-  });
   if (blocksForHeight === 0) {
     success = false;
     const error = {
@@ -161,7 +182,6 @@ export async function validateDataForBlock(blockNum: number, log = false) {
   //blocks with same hash
   if (blockTxs.length > 0) {
     const hashFromTx = blockTxs[0].blockHash;
-    const blocksForHash = await BlockStorage.collection.countDocuments({ chain, network, hash: hashFromTx });
     if (blocksForHash > 1) {
       success = false;
       const error = { model: 'block', err: true, type: 'DUPE_BLOCKHASH', payload: { hash: hashFromTx, blockNum } };

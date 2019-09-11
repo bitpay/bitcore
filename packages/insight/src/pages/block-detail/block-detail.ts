@@ -24,9 +24,9 @@ export class BlockDetailPage {
   public block: any = {
     tx: []
   };
+  public chainNetwork: ChainNetwork;
 
   private blockHash: string;
-  private chainNetwork: ChainNetwork;
 
   constructor(
     public navParams: NavParams,
@@ -53,7 +53,13 @@ export class BlockDetailPage {
   ionViewDidEnter() {
     this.blocksProvider.getBlock(this.blockHash, this.chainNetwork).subscribe(
       response => {
-        const block = this.blocksProvider.toAppBlock(response);
+        let block;
+        if(this.chainNetwork.chain === "BTC" || this.chainNetwork.chain === "BCH") {
+          block = this.blocksProvider.toUtxoCoinAppBlock(response);
+        }
+        if(this.chainNetwork.chain === "ETH") {
+          block = this.blocksProvider.toEthAppBlock(response);
+        }
         this.block = block;
         this.txProvider
           .getConfirmations(this.block.height, this.chainNetwork)
