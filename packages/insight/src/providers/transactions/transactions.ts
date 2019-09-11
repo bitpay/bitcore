@@ -249,6 +249,16 @@ export class TxsProvider {
     return this.httpClient.get<ApiEthTx & ApiUtxoCoinTx>(url);
   }
 
+  public getDailyTransactionHistory(chainNetwork: ChainNetwork) {
+    console.log(this.apiProvider.getUrlPrefix());
+    const url = `https://api.bitcore.io${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
+      chainNetwork.network
+      }/stats/daily-transactions`;
+
+    console.log(url);
+    return this.httpClient.get(url);
+  }
+
   public getCoins(
     txId: string,
     chainNetwork: ChainNetwork
