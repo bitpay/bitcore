@@ -7,7 +7,6 @@ import Web3 from 'web3';
 import { Storage } from '../../../services/storage';
 import { Readable } from 'stream';
 import { ParityRPC, ParityTraceResponse } from './parityRpc';
-import { Callback, JsonRPCResponse } from 'web3/providers';
 
 export interface JsonRPCResponse {
   jsonrpc: string;
