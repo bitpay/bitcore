@@ -1,4 +1,5 @@
 head-nav {
+
   .toolbar-content {
     display: grid;
     grid-template-columns: 20% 1fr 20%;
@@ -34,20 +35,20 @@ head-nav {
           width: 500px;
           margin-top: 4px;
           padding: 9px 12px;
-          color: color($colors, light);
-          background-color: #7CAD23;
+          color: color($colors, dark-light);
+          background-color: #FFF;
           border: 0;
           box-shadow: 1px 1px 0 0 rgba(255,255,255,.41), inset 1px 1px 3px 0 rgba(0,0,0,.10);
         }
         
         ::-webkit-input-placeholder {
-          color: #BCDF7E;
+          color: color($colors, dark-light);
           font-style: italic;
           font-weight: 100;
         }
         
         ::-moz-placeholder {
-          color: #BCDF7E;
+          color: color($colors, dark-light);
           font-family: 'Ubuntu', sans-serif;
           font-weight: 100;
         }
@@ -65,7 +66,9 @@ head-nav {
   .cn-button:hover,
   .cn-button:focus {
     img{
-      filter:  invert(100%) contrast(44%);
+      filter:  invert(0%) contrast(50%);
+      opacity: 0.2;
+      color: color($colors, dark-light);
     }
   }
 }
