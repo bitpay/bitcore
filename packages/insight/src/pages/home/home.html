@@ -1,30 +1,37 @@
 <head-nav [chainNetwork]="chainNetwork"></head-nav>
 
 <ion-content>
-  <ion-grid fixed>
-      <ion-row>
-        <ion-col col-2 class="page-content">
-            <div class= "menu">
-              <h2> Explore </h2>
-              <div class="menu-button" (click)="goToBlocks()"> Blocks </div>
-              <div class="menu-button" (click)="goToPriceChartHandler()"> Price </div>
-            </div>
-          </ion-col>
-
-        
-            <ion-col col-10 class="page-content" *ngIf="!this.showPriceChart">
-              <h2>Latest Blocks</h2>
-              <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" [chainNetwork]="chainNetwork" #latestBlocks>
-              </latest-blocks>
+  <ion-grid class="page-content-grid-desktop">
+        <ion-row>
+            <ion-col col-2 class="page-content-menu">
+                <div class= "menu">
+                  <h2> Explore </h2>
+                  <div class="menu-button" (click)="goToBlocks()"> Blocks </div>
+                  <div class="menu-button" (click)="goToPriceChartHandler()"> Price </div>
+                </div>
             </ion-col>
 
-        
-            <ion-col col-10 class="page-content" *ngIf="this.showPriceChart">
-              <h2>Price Chart</h2>
-              <price-chart #priceChart> </price-chart>
-            </ion-col>
-        
-      </ion-row>
+            
+              <ion-col col-10 class="page-content" *ngIf="!this.showPriceChart">
+                <h2>Latest Blocks</h2>
+                <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" [chainNetwork]="chainNetwork" #latestBlocks>
+                </latest-blocks>
+              </ion-col>
+            
+              
+              <ion-col col-10 class="page-content" *ngIf="this.showPriceChart">
+                <h2>Price Chart</h2>
+                <price-chart #priceChart> </price-chart>
+              </ion-col>
+        </ion-row>
+    </ion-grid>
+
+    <ion-grid class="page-content-grid-mobile">
+        <ion-col class="page-content" col-12>
+            <h2>Latest Blocks</h2>
+            <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" [chainNetwork]="chainNetwork" #latestBlocks>
+            </latest-blocks>
+        </ion-col>
     </ion-grid>
 </ion-content>
 <footer [chainNetwork]="chainNetwork"></footer>

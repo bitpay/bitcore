@@ -107,8 +107,8 @@ ion-footer .toolbar[fixed] {
  ion-footer .toolbar[fixed],
  ion-tabs .tabbar {
    margin: 0;
-   padding-right: calc((100% - #{map-get($grid-max-widths, lg)}) / 2);
-   padding-left: calc((100% - #{map-get($grid-max-widths, lg)}) / 2);
+   padding-right: calc((100% - #{map-get($grid-max-widths, lg)}) / 4);
+   padding-left: calc((100% - #{map-get($grid-max-widths, lg)}) / 4);
  }
 }
 

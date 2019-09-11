@@ -1,27 +1,32 @@
 <ion-header no-border>
   <ion-navbar color="bp-blue" hideBackButton>
     <ion-title (click)="goHome(chainNetwork)" class="logo-header">insight</ion-title>
-    <button class="search-button" ion-button clear icon-only (click)="toggleSearch()">
-      <ion-icon name="search" [color]="!showSearch ? 'light' : 'dark'"></ion-icon>
-    </button>
-    <form class="search" (ngSubmit)="search($event)">
-      <input dir="auto" placeholder="{{ 'Search for block, transaction or address' }}" [(ngModel)]="q" name="search" autocomplete="off" autocorrect="off" spellcheck="false">
-    </form>
-
-    <ion-buttons>
-      <button ion-button (click)="changeCurrency($event)" class="cn-button">
-        <ion-icon name="logo-bitcoin" *ngIf="(chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH') && currencyProvider?.currencySymbol !== 'USD'"></ion-icon>
-        <ion-icon name="logo-usd" *ngIf="currencyProvider?.currencySymbol === 'USD'"></ion-icon>
-        <img class="eth-icon" src="assets/img/ethicon.svg" *ngIf="chainNetwork.chain === 'ETH' && currencyProvider?.currencySymbol !== 'USD'" width="12">
-        &nbsp;
-        {{ currencyProvider?.currencySymbol }}
-        &nbsp;
-        <i>( <span *ngIf="currencyProvider?.currencySymbol === 'USD'">{{ chainNetwork?.chain }} - </span>
-          {{ chainNetwork?.network }} )</i>
-        &nbsp;
-        <ion-icon name="md-arrow-dropdown"></ion-icon>
+      <button class="search-button" ion-button clear icon-only (click)="toggleSearch()">
+            <ion-icon name="search"></ion-icon>
       </button>
-    </ion-buttons>
+      <form class="search" (ngSubmit)="search($event)">
+        <div class="input-container">
+          <div class="search-image-container">
+            <img class="search-image" src="assets/img/search.png">
+          </div>
+          <input dir="auto" placeholder="{{ 'Search for block, transaction or address' }}" [(ngModel)]="q" name="search" autocomplete="off" autocorrect="off" spellcheck="false">
+        </div>
+      </form>
+
+      <ion-buttons>
+        <button ion-button (click)="changeCurrency($event)" class="cn-button">
+          <ion-icon name="logo-bitcoin" *ngIf="(chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH') && currencyProvider?.currencySymbol !== 'USD'"></ion-icon>
+          <ion-icon name="logo-usd" *ngIf="currencyProvider?.currencySymbol === 'USD'"></ion-icon>
+          <img class="eth-icon" src="assets/img/ethicon.svg" *ngIf="chainNetwork.chain === 'ETH' && currencyProvider?.currencySymbol !== 'USD'" width="12">
+          &nbsp;
+          {{ currencyProvider?.currencySymbol }}
+          &nbsp;
+          <i>( <span *ngIf="currencyProvider?.currencySymbol === 'USD'">{{ chainNetwork?.chain }} - </span>
+            {{ chainNetwork?.network }} )</i>
+          &nbsp;
+          <ion-icon name="md-arrow-dropdown"></ion-icon>
+        </button>
+      </ion-buttons>
   </ion-navbar>
 
   <ion-toolbar class="mobile-searchbar" fixed [hidden]="!showSearch">

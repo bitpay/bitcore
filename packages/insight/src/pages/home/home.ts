@@ -117,9 +117,8 @@ export class HomePage {
  
 }
 
-
   public getHistoricalPriceForCurrencies(currency?: string, isoCode?: string, days?: number) {
-    this.priceProvider.getHistoricalRate(currency, isoCode ,days).subscribe((response) => {
+    this.priceProvider.getHistoricalRate(currency, isoCode ,days).subscribe((response: any) => {
       this.coins[currency].currentPrice = response[(days-1)].rate; 
       this.coins[currency].historicalRates = response;
       this.priceChart.drawPriceChart(this.coins[currency], days);

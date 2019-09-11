@@ -75,7 +75,6 @@ export class PriceProvider {
         this.api.httpClient.get(url)
       )
     });
-
    return Observable.forkJoin(observableBatch);
   }
 
