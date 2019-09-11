@@ -2,11 +2,29 @@
 
 <ion-content>
   <ion-grid fixed>
-    <div class="page-content">
-      <h2>Latest Blocks</h2>
-      <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" [chainNetwork]="chainNetwork" #latestBlocks>
-      </latest-blocks>
-    </div>
-  </ion-grid>
+      <ion-row>
+        <ion-col col-2 class="page-content">
+            <div class= "menu">
+              <h2> Explore </h2>
+              <div class="menu-button" (click)="goToBlocks()"> Blocks </div>
+              <div class="menu-button" (click)="goToPriceChartHandler()"> Price </div>
+            </div>
+          </ion-col>
+
+        
+            <ion-col col-10 class="page-content" *ngIf="!this.showPriceChart">
+              <h2>Latest Blocks</h2>
+              <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" [chainNetwork]="chainNetwork" #latestBlocks>
+              </latest-blocks>
+            </ion-col>
+
+        
+            <ion-col col-10 class="page-content" *ngIf="this.showPriceChart">
+              <h2>Price Chart</h2>
+              <price-chart #priceChart> </price-chart>
+            </ion-col>
+        
+      </ion-row>
+    </ion-grid>
 </ion-content>
 <footer [chainNetwork]="chainNetwork"></footer>
