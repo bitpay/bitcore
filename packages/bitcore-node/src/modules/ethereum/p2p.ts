@@ -41,7 +41,9 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     this.txSubscription.subscribe(async (_err, txid) => {
       if (!this.syncing) {
         const tx = (await this.rpc.web3.eth.getTransaction(txid)) as Parity.Transaction;
-        this.processTransaction(tx);
+        if (tx) {
+          this.processTransaction(tx);
+        }
       }
     });
     this.blockSubscription = await this.rpc.web3.eth.subscribe('newBlockHeaders');
