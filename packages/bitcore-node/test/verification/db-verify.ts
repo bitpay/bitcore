@@ -5,11 +5,16 @@ import { CoinStorage, ICoin } from '../../src/models/coin';
 import { TransactionStorage, ITransaction } from '../../src/models/transaction';
 import { Storage } from '../../src/services/storage';
 import * as _ from 'lodash';
+import { P2pWorker } from '../../src/services/p2p';
+import { Config } from '../../src/services/config';
 
 const { CHAIN, NETWORK, HEIGHT } = process.env;
 const resumeHeight = Number(HEIGHT) || 1;
-const chain = CHAIN;
-const network = NETWORK;
+const chain = CHAIN || '';
+const network = NETWORK || '';
+
+const chainConfig = Config.chainConfig({ chain, network });
+const worker = new P2pWorker({ chain, network, chainConfig });
 
 type ErrorType = {
   model: string;
@@ -57,7 +62,35 @@ export async function validateDataForBlock(blockNum: number, log = false) {
     }
   }
 
-  for (const tx of mempoolTxs) {
+  if (block) {
+    const p2pBlock = await worker.getBlock(block.hash);
+    const spends = p2pBlock.transactions.flatMap(tx => tx.inputs).map(input => input.toObject());
+    const coins = await CoinStorage.collection
+      .find({ chain, network, mintTxid: { $in: spends.map(tx => tx.prevTxId) } })
+      .toArray();
+    for (let spend of spends) {
+      const found = coins.find(c => c.mintTxid === spend.prevTxId && c.mintIndex === spend.outputIndex);
+      if (found && found.spentHeight !== block.height) {
+        success = false;
+        const error = { model: 'coin', err: true, type: 'COIN_SHOULD_BE_SPENT', payload: { coin: found, blockNum } };
+        errors.push(error);
+        if (log) {
+          console.log(JSON.stringify(error));
+        }
+      } else {
+        success = false;
+        const error = {
+          model: 'coin',
+          err: true,
+          type: 'MISSING_INPUT',
+          payload: { coin: { mintTxid: spend.prevTxId, mintIndex: spend.outputIndex }, blockNum }
+        };
+        errors.push(error);
+      }
+    }
+  }
+
+  for (let tx of mempoolTxs) {
     success = false;
     const error = { model: 'transaction', err: true, type: 'DUPE_TRANSACTION', payload: { tx, blockNum } };
     errors.push(error);
