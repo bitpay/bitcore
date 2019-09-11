@@ -57,7 +57,11 @@ const main = async () => {
     if (program.encrypted) {
       try {
         const bitcoinCorePassword = await promptly.password('Enter Bitcoin Core Password:');
-        keyInput = bitcoinCoreDecrypt(keyInput, bitcoinCorePassword);
+        let decryptedParams = bitcoinCoreDecrypt(keyInput, bitcoinCorePassword);
+        keyInput = decryptedParams.jsonlDecrypted;
+        console.log(keyInput);
+        let encryptionKey = decryptedParams.master;
+        wallet.unlocked.encryptionKey = encryptionKey;
       } catch (e) {
         console.error(e);
       }

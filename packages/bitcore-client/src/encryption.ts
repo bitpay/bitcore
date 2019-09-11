@@ -104,13 +104,12 @@ export function bitcoinCoreDecrypt(jsonl, passphrase) {
       let keyObj = {
         privKey: privKey,
         pubKey: line.pubKey,
-        iv: bitcore.crypto.Hash.sha256sha256(Buffer.from(line.pubKey, 'hex')),
         address: line.address
       };
       jsonlDecrypted.push(keyObj);
     }
   }
-  return jsonlDecrypted;
+  return { jsonlDecrypted, master };
   function hashPassphrase(opts) {
     return opts && opts.method === 0 ? sha512KDF : scryptKDF;
   }
