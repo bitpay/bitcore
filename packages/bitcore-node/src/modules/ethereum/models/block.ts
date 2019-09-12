@@ -135,8 +135,8 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
       logger.info(`Resetting tip to ${localTip.height - 1}`, { chain, network });
     }
     const reorgOps = [
-      this.collection.deleteMany({ chain, network, height: { $gt: localTip.height } }),
-      EthTransactionStorage.collection.deleteMany({ chain, network, blockHeight: { $gt: localTip.height } })
+      this.collection.deleteMany({ chain, network, height: { $gte: localTip.height } }),
+      EthTransactionStorage.collection.deleteMany({ chain, network, blockHeight: { $gte: localTip.height } })
     ];
     await Promise.all(reorgOps);
 
