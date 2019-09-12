@@ -1,9 +1,9 @@
+import { Nav, NavParams } from 'ionic-angular';
 import { Component, Input, ViewChild } from '@angular/core';
 import * as Chart from 'chart.js';
-import { Nav, NavParams } from 'ionic-angular';
 import * as _ from 'lodash';
-import { ApiProvider, ChainNetwork } from '../../../providers/api/api';
 import { CurrencyProvider } from '../../../providers/currency/currency';
+import { ChainNetwork, ApiProvider } from '../../../providers/api/api';
 import { PriceProvider } from '../../../providers/price/price';
 
 @Component({
@@ -57,8 +57,8 @@ export class PriceChartComponent {
     
 
     public dateToString(day) {
-        const secondsInADay = 24 * 60 * 60;
-        const date = new Date(Date.now() - ((day * secondsInADay) * 1000));
+        let secondsInADay = 24 * 60 * 60;
+        let date = new Date(Date.now() - ((day * secondsInADay) * 1000));
         return this.getMonthAbbrev(date.getMonth()) +  " " + date.getDate();
     }
 

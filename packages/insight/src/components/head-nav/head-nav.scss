@@ -100,7 +100,7 @@ head-nav {
     img{
       filter:  invert(0%) contrast(50%);
       opacity: 0.2;
-      color: white;//color($colors, whi);
+      color: color($colors, dark-light);
     }
   }
 }
