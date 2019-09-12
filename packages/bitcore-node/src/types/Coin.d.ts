@@ -8,7 +8,7 @@ export interface CoinJSON {
   coinbase: boolean;
   value: number;
   address: string;
-  script: string;
+  lockingBytecode: string;
   spentTxid: string;
   spentHeight: number;
   confirmations?: number;

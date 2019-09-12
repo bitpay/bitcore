@@ -15,7 +15,7 @@ export type ICoin = {
   coinbase: boolean;
   value: number;
   address: string;
-  script: Buffer;
+  lockingBytecode: string;
   wallets: Array<ObjectID>;
   spentTxid: string;
   spentHeight: number;
@@ -197,7 +197,7 @@ export class CoinModel extends BaseModel<ICoin> {
       mintHeight: valueOrDefault(coin.mintHeight, -1),
       spentHeight: valueOrDefault(coin.spentHeight, SpentHeightIndicators.error),
       address: valueOrDefault(coin.address, ''),
-      script: valueOrDefault(coin.script, Buffer.alloc(0)).toString('hex'),
+      lockingBytecode: valueOrDefault(coin.lockingBytecode, ''),
       value: valueOrDefault(coin.value, -1),
       confirmations: valueOrDefault(coin.confirmations, -1)
     };

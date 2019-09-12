@@ -363,7 +363,7 @@ describe('Block Model', function() {
         spentHeight: SpentHeightIndicators.unspent,
         mintHeight: 5,
         coinbase: true,
-        script: Buffer.from(''),
+        lockingBytecode: '',
         wallets: [],
         value: 500.0,
         address: 'mkjB6LmjiNfJWgH4aP4v1GkFjRcQTfDSfj'
@@ -378,7 +378,7 @@ describe('Block Model', function() {
         spentHeight: SpentHeightIndicators.unspent,
         mintHeight: 7,
         coinbase: true,
-        script: Buffer.from(''),
+        lockingBytecode: '',
         wallets: [],
         value: 500.0,
         address: 'mkjB6LmjiNfJWgH4aP4v1GkFjRcQTfDSfj'
@@ -392,7 +392,7 @@ describe('Block Model', function() {
         spentHeight: SpentHeightIndicators.unspent,
         mintHeight: 7,
         coinbase: true,
-        script: Buffer.from(''),
+        lockingBytecode: '',
         wallets: [],
         value: 500.0,
         address: 'mkjB6LmjiNfJWgH4aP4v1GkFjRcQTfDSfj'
@@ -405,7 +405,7 @@ describe('Block Model', function() {
         spentHeight: 8,
         mintHeight: 7,
         coinbase: true,
-        script: Buffer.from(''),
+        lockingBytecode: '',
         wallets: [],
         value: 500.0,
         address: 'mkjB6LmjiNfJWgH4aP4v1GkFjRcQTfDSfj',

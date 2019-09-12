@@ -20,7 +20,7 @@ describe('Coin Model', function() {
         coinbase: true,
         value: 5000000000.0,
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
-        script: Buffer.from(''),
+        lockingBytecode: '',
         wallets: [],
         spentTxid: '',
         spentHeight: SpentHeightIndicators.unspent
@@ -40,7 +40,7 @@ describe('Coin Model', function() {
         spentTxid: '',
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
         coinbase: true,
-        script: '',
+        lockingBytecode: '',
         spentHeight: SpentHeightIndicators.unspent,
         value: 5000000000.0
       });
@@ -57,7 +57,7 @@ describe('Coin Model', function() {
         coinbase: true,
         value: 5000000000.0,
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
-        script: Buffer.from(''),
+        lockingBytecode: '',
         wallets: [],
         spentTxid: '',
         spentHeight: SpentHeightIndicators.unspent
@@ -76,7 +76,7 @@ describe('Coin Model', function() {
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
         coinbase: true,
         confirmations: -1,
-        script: '',
+        lockingBytecode: '',
         value: 5000000000.0
       });
     });
