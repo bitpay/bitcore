@@ -1,6 +1,6 @@
 {
   "name": "bitcore-p2p-cash",
-  "version": "8.7.0",
+  "version": "8.7.1",
   "description": "Interface to the bitcoin P2P network for bitcore",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -60,14 +60,14 @@
     "url": "https://github.com/bitpay/bitcore-p2p.git"
   },
   "dependencies": {
-    "bitcore-lib": "^8.7.0",
-    "bitcore-lib-cash": "^8.7.0",
+    "bitcore-lib": "^8.7.1",
+    "bitcore-lib-cash": "^8.7.1",
     "bloom-filter": "^0.2.0",
     "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
     "socks5-client": "^0.3.6"
   },
   "devDependencies": {
-    "bitcore-build": "^8.7.0",
+    "bitcore-build": "^8.7.1",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
     "gulp": "^4.0.0",
