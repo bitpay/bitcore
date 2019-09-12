@@ -133,7 +133,7 @@ export declare namespace CSP {
     broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
     createWallet(params: CreateWalletParams): Promise<IWallet>;
     getWallet(params: GetWalletParams): Promise<IWallet | null>;
-    updateWallet(params: UpdateWalletParams): Promise<any>;
+    updateWallet(params: UpdateWalletParams): Promise<void>;
     getWalletBalance(
       params: GetWalletBalanceParams
     ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;

@@ -350,7 +350,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     return txs.sort((tx1, tx2) => tx1.blockNumber! - tx2.blockNumber!);
   }
 
-  async updateCoins(params: CSP.UpdateWalletParams) {
+  async updateWallet(params: CSP.UpdateWalletParams) {
     const { addresses, wallet, chain, network } = params;
     for (const addressBatch of partition(addresses, 1000)) {
       await Promise.all([

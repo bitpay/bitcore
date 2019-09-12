@@ -327,7 +327,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async updateWallet(params: CSP.UpdateWalletParams) {
     const { wallet, addresses } = params;
-    return WalletAddressStorage.updateCoins({ wallet, addresses });
+    await WalletAddressStorage.updateCoins({ wallet, addresses });
   }
 
   async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
