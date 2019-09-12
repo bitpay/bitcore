@@ -3155,7 +3155,7 @@ describe('client API', () => {
     var PP, oldreq, DATA;
     var mockRequest = (bodyBuf, headers) => {
       // bodyBuf = _.isArray(bodyBuf) ? bodyBuf : [bodyBuf];
-      Client.PayPro.request = (opts, cb) => {
+      Client.PayPro.r = (opts, cb) => {
         if (opts.headers.Accept == 'application/payment-request') {
           return cb(null, {
             headers: headers || {},
@@ -3172,10 +3172,10 @@ describe('client API', () => {
       };
     };
     beforeEach(() => {
-      oldreq = Client.PayPro.request;
+      oldreq = Client.PayPro.r;
     });
     afterEach((done) => {
-      Client.PayPro.request = oldreq;
+      Client.PayPro.r = oldreq;
       db.dropDatabase((err) => {
         done();
       })
@@ -3276,7 +3276,7 @@ describe('client API', () => {
             clients[1].pushSignatures(xx, signatures2, (err, yy, paypro) => {
               should.not.exist(err);
               yy.status.should.equal('accepted');
-              let spy = sinon.spy(Client.PayPro, 'request');
+              let spy = sinon.spy(Client.PayPro, 'r');
               //              http.onCall(5).yields(null, TestData.payProAckHex);
 
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
@@ -3308,7 +3308,7 @@ describe('client API', () => {
               should.not.exist(err);
 
               yy.status.should.equal('accepted');
-              let spy = sinon.spy(Client.PayPro, 'request');
+              let spy = sinon.spy(Client.PayPro, 'r');
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
                 var args = spy.lastCall.args[0];
@@ -3337,7 +3337,7 @@ describe('client API', () => {
               should.not.exist(err);
 
               yy.status.should.equal('accepted');
-              let spy = sinon.spy(Client.PayPro, 'request');
+              let spy = sinon.spy(Client.PayPro, 'r');
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
                 var args = spy.lastCall.args[0];
@@ -3413,7 +3413,7 @@ describe('client API', () => {
               should.not.exist(err);
               yy.status.should.equal('accepted');
 
-              let spy = sinon.spy(Client.PayPro, 'request');
+              let spy = sinon.spy(Client.PayPro, 'r');
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
                 var args = spy.lastCall.args[0];
@@ -3490,7 +3490,7 @@ describe('client API', () => {
           clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
             xx.status.should.equal('accepted');
-            let spy = sinon.spy(Client.PayPro, 'request');
+            let spy = sinon.spy(Client.PayPro, 'r');
 
             clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
               should.not.exist(err);
@@ -3555,7 +3555,7 @@ describe('client API', () => {
             should.not.exist(err);
             xx.status.should.equal('accepted');
 
-            let spy = sinon.spy(Client.PayPro, 'request');
+            let spy = sinon.spy(Client.PayPro, 'r');
             clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
               should.not.exist(err);
               var args = spy.lastCall.args[0];
