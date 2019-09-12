@@ -16,6 +16,7 @@ import { ERC20Abi } from '../abi/erc20';
 import { Transaction } from 'web3/eth/types';
 import { EventLog } from 'web3/types';
 import { EthP2pWorker } from '../p2p';
+import { partition } from '../../../utils/partition';
 
 interface ERC20Transfer extends EventLog {
   returnValues: {
@@ -347,6 +348,26 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     let batches = await Promise.all(allTokenQueries);
     let txs = batches.reduce((agg, batch) => agg.concat(batch));
     return txs.sort((tx1, tx2) => tx1.blockNumber! - tx2.blockNumber!);
+  }
+
+  async updateCoins(params: CSP.UpdateWalletParams) {
+    const { addresses, wallet, chain, network } = params;
+    for (const addressBatch of partition(addresses, 1000)) {
+      await Promise.all([
+        EthTransactionStorage.collection.updateMany(
+          { chain, network, to: { $in: addressBatch } },
+          { $addToSet: { wallets: wallet._id } }
+        ),
+        EthTransactionStorage.collection.updateMany(
+          { chain, network, from: { $in: addressBatch } },
+          { $addToSet: { wallets: wallet._id } }
+        )
+      ]);
+      await WalletAddressStorage.collection.updateMany(
+        { chain, network, wallet: wallet._id, address: { $in: addressBatch } },
+        { $set: { processed: true } }
+      );
+    }
   }
 
   async estimateGas(params): Promise<Number> {
