@@ -5,8 +5,8 @@ import { FooterComponentModule } from '../../components/footer/footer.module';
 import { HeadNavComponentModule } from '../../components/head-nav/head-nav.module';
 import { LatestBlocksComponentModule } from '../../components/latest-blocks/latest-blocks.module';
 import { LoaderComponentModule } from '../../components/loader/loader.module';
-import { HomePage } from './home';
 import { PriceChartModule } from '../../components/price-card/price-chart/price-chart.module';
+import { HomePage } from './home';
 
 @NgModule({
   declarations: [HomePage],

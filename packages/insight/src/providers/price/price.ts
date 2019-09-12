@@ -60,7 +60,7 @@ export class PriceProvider {
     const dates = Array.apply(null, Array(days));
     const secondsInADay = 24 * 60 * 60;
     const today = Date.now();
-    let observableBatch = [];
+    const observableBatch = [];
   
     // Get the X days in unix time
     dates.forEach(function (value, index) {

@@ -1,9 +1,9 @@
-import { Nav, NavParams } from 'ionic-angular';
 import { Component, Input, ViewChild } from '@angular/core';
 import * as Chart from 'chart.js';
+import { Nav, NavParams } from 'ionic-angular';
 import * as _ from 'lodash';
+import { ApiProvider, ChainNetwork } from '../../../providers/api/api';
 import { CurrencyProvider } from '../../../providers/currency/currency';
-import { ChainNetwork, ApiProvider } from '../../../providers/api/api';
 import { PriceProvider } from '../../../providers/price/price';
 
 @Component({
@@ -38,7 +38,7 @@ export class PriceChartComponent {
     }
 
     getMonthAbbrev(month) {
-        let monthMapping = {
+        const monthMapping = {
             0: "Jan",
             1: "Feb",
             2: "Mar",
@@ -57,14 +57,14 @@ export class PriceChartComponent {
     
 
     public dateToString(day) {
-        let secondsInADay = 24 * 60 * 60;
-        let date = new Date(Date.now() - ((day * secondsInADay) * 1000));
+        const secondsInADay = 24 * 60 * 60;
+        const date = new Date(Date.now() - ((day * secondsInADay) * 1000));
         return this.getMonthAbbrev(date.getMonth()) +  " " + date.getDate();
     }
 
     drawCanvas(coin, numOfDays) {
-        let rates = [];
-        let labels  = [];
+        const rates = [];
+        const labels  = [];
 
         _.forEach(coin.historicalRates, (historicalRates, index) => {
             rates.push(historicalRates.rate);
@@ -74,12 +74,12 @@ export class PriceChartComponent {
         labels.reverse();
 
         const context: CanvasRenderingContext2D = (this.lineCanvas.nativeElement as HTMLCanvasElement).getContext('2d');
-        let gradient = context.createLinearGradient(0, 0, 0, 275);
+        const gradient = context.createLinearGradient(0, 0, 0, 275);
         gradient.addColorStop(0, coin.gradientBackgroundColor);
         gradient.addColorStop(0.35, 'rgba(255,255,255, 0.25)');
         gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
 
-        let graphTicks = (numOfDays === 30) ? coin.ticks.thirtyDayTicks : coin.ticks.sevenDayTicks;
+        const graphTicks = (numOfDays === 30) ? coin.ticks.thirtyDayTicks : coin.ticks.sevenDayTicks;
 
         const options = {
             legend: {
