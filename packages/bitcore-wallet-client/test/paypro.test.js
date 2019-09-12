@@ -9,7 +9,7 @@ var TestData = require('./testdata');
 
 function mockRequest(bodyBuf, headers) {
   bodyBuf = _.isArray(bodyBuf) ? bodyBuf : [bodyBuf];
-  payPro.request = function (opts, cb) {
+  payPro.r = function (opts, cb) {
 
     return cb(null, {
       headers: headers || {},
@@ -27,13 +27,13 @@ describe('paypro', function () {
 
   });
   beforeEach(() => {
-    oldreq = payPro.request;
+    oldreq = payPro.r;
   });
   after(function () {
     clock.restore();
   });
   afterEach(function () {
-    payPro.request = oldreq;
+    payPro.r = oldreq;
   });
 
   it('Make and verify PP request', function (done) {
@@ -61,7 +61,7 @@ describe('paypro', function () {
 
 
   it('Should handle a failed (404) request', function (done) {
-    payPro.request = function (opts, cb) {
+    payPro.r = function (opts, cb) {
       return cb(null, {
         statusCode: 404,
         statusMessage: 'Not Found',
@@ -132,7 +132,7 @@ describe('paypro', function () {
       url: 'http://an.url.com/paypro',
       coin: 'bch',
     };
-    payPro.request = function (opts, cb) {
+    payPro.r = function (opts, cb) {
       return cb(null, {
         statusCode: 400,
         statusMessage: 'ss',
