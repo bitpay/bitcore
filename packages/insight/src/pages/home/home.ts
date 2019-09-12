@@ -1,11 +1,9 @@
 import { Component, Injectable, ViewChild } from '@angular/core';
 import { Events, IonicPage, Nav, NavParams } from 'ionic-angular';
 import { LatestBlocksComponent } from '../../components/latest-blocks/latest-blocks';
-import { PriceChartComponent } from '../../components/price-card/price-chart/price-chart';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { PriceProvider } from '../../providers/price/price';
-import _ from 'lodash';
 
 @Injectable()
 @IonicPage({
@@ -21,7 +19,6 @@ export class HomePage {
   @ViewChild('priceChart') priceChart
 
   public latestBlocks: LatestBlocksComponent;
-  public priceChart: any;
   public coin: string;
   public chain: string;
   public showPriceChart: boolean;
