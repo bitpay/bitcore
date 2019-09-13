@@ -1,4 +1,6 @@
+import { Deriver } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { AddressManager } from './addressmanager';
 
 const $ = require('preconditions').singleton();
 const Common = require('../common');
@@ -56,8 +58,10 @@ export class Address {
     x.publicKeys = opts.publicKeys;
     x.coin = opts.coin;
     x.network = Address.Bitcore[opts.coin]
-      .Address(x.address)
-      .toObject().network;
+      ? Address.Bitcore[opts.coin]
+        .Address(x.address)
+        .toObject().network
+      : opts.network;
     x.type = opts.type || Constants.SCRIPT_TYPES.P2SH;
     x.hasActivity = undefined;
     x.beRegistered = null;
@@ -96,7 +100,9 @@ export class Address {
     );
 
     const publicKeys = _.map(publicKeyRing, (item) => {
-      const xpub = new Address.Bitcore[coin].HDPublicKey(item.xPubKey);
+      const xpub = Address.Bitcore[coin]
+        ? new Address.Bitcore[coin].HDPublicKey(item.xPubKey)
+        : new Address.Bitcore.btc.HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
     });
 
@@ -111,10 +117,23 @@ export class Address {
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
-        bitcoreAddress = Address.Bitcore[coin].Address.fromPublicKey(
-          publicKeys[0],
-          network
-        );
+
+        if (Address.Bitcore[coin]) {
+          bitcoreAddress = Address.Bitcore[coin].Address.fromPublicKey(
+            publicKeys[0],
+            network
+          );
+        } else {
+          const { addressIndex, isChange } = new AddressManager().parseDerivationPath(path);
+          const [{ xPubKey }] = publicKeyRing;
+          bitcoreAddress = Deriver.deriveAddress(
+            coin.toUpperCase(),
+            network,
+            xPubKey,
+            addressIndex,
+            isChange
+          );
+        }
         break;
     }
 
@@ -155,6 +174,7 @@ export class Address {
     return Address.create(
       _.extend(raw, {
         coin,
+        network,
         walletId,
         type: scriptType,
         isChange

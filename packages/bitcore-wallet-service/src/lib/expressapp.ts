@@ -586,6 +586,15 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v3/estimateGas/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.estimateGas(req.body, (err, gasLimit) => {
+          if (err) return returnError(err, res, req);
+          res.json(gasLimit);
+        });
+      });
+    });
+
     router.get('/v1/sendmaxinfo/', (req, res) => {
       getServerWithAuth(req, res, (server) => {
         const q = req.query;

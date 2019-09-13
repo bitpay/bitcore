@@ -2,6 +2,7 @@
 
 import * as _ from 'lodash';
 import { Constants } from './constants';
+import { Deriver, Transactions } from 'crypto-wallet-core';
 import { Defaults } from './defaults';
 
 var $ = require('preconditions').singleton();
@@ -11,7 +12,8 @@ var Stringify = require('json-stable-stringify');
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash')
+  bch: require('bitcore-lib-cash'),
+  eth: Bitcore
 };
 var PrivateKey = Bitcore.PrivateKey;
 var PublicKey = Bitcore.PublicKey;
@@ -135,6 +137,13 @@ export class Utils {
     return [toAddress, amount, message || '', payProUrl || ''].join('|');
   }
 
+  static parseDerivationPath(path: string) {
+    const pathIndex = /m\/([0-9]*)\/([0-9]*)/;
+    const [_input, changeIndex, addressIndex] = path.match(pathIndex);
+    const isChange = Number.parseInt(changeIndex) > 0;
+    return { _input, addressIndex, isChange };
+  }
+
   static deriveAddress(scriptType, publicKeyRing, path, m, network, coin) {
     $.checkArgument(_.includes(_.values(Constants.SCRIPT_TYPES), scriptType));
 
@@ -152,7 +161,19 @@ export class Utils {
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
-        bitcoreAddress = bitcore.Address.fromPublicKey(publicKeys[0], network);
+        if (Constants.UTXO_COINS.includes(coin)) {
+          bitcoreAddress = bitcore.Address.fromPublicKey(publicKeys[0], network);
+        } else {
+          const { addressIndex, isChange } = this.parseDerivationPath(path);
+          const [{ xPubKey }] = publicKeyRing;
+          bitcoreAddress = Deriver.deriveAddress(
+            coin.toUpperCase(),
+            network,
+            xPubKey,
+            addressIndex,
+            isChange
+          );
+        }
         break;
     }
 
@@ -231,79 +252,78 @@ export class Utils {
   static buildTx(txp) {
     var coin = txp.coin || 'btc';
 
-    var bitcore = Bitcore_[coin];
+    if (Constants.UTXO_COINS.includes(coin)) {
 
-    var t = new bitcore.Transaction();
+      var bitcore = Bitcore_[coin];
 
-    $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
+      var t = new bitcore.Transaction();
 
-    switch (txp.addressType) {
-      case Constants.SCRIPT_TYPES.P2SH:
-        _.each(txp.inputs, i => {
-          t.from(i, i.publicKeys, txp.requiredSignatures);
-        });
-        break;
-      case Constants.SCRIPT_TYPES.P2PKH:
-        t.from(txp.inputs);
-        break;
-    }
+      $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
 
-    if (txp.toAddress && txp.amount && !txp.outputs) {
-      t.to(txp.toAddress, txp.amount);
-    } else if (txp.outputs) {
-      _.each(txp.outputs, o => {
-        $.checkState(
-          o.script || o.toAddress,
-          'Output should have either toAddress or script specified'
-        );
-        if (o.script) {
-          t.addOutput(
-            new bitcore.Transaction.Output({
+      switch (txp.addressType) {
+        case Constants.SCRIPT_TYPES.P2SH:
+          _.each(txp.inputs, (i) => {
+            t.from(i, i.publicKeys, txp.requiredSignatures);
+          });
+          break;
+        case Constants.SCRIPT_TYPES.P2PKH:
+          t.from(txp.inputs);
+          break;
+      }
+
+      if (txp.toAddress && txp.amount && !txp.outputs) {
+        t.to(txp.toAddress, txp.amount);
+      } else if (txp.outputs) {
+        _.each(txp.outputs, (o) => {
+          $.checkState(o.script || o.toAddress, 'Output should have either toAddress or script specified');
+          if (o.script) {
+            t.addOutput(new bitcore.Transaction.Output({
               script: o.script,
               satoshis: o.amount
-            })
-          );
-        } else {
-          t.to(o.toAddress, o.amount);
-        }
-      });
-    }
-
-    t.fee(txp.fee);
-    t.change(txp.changeAddress.address);
-
-    // Shuffle outputs for improved privacy
-    if (t.outputs.length > 1) {
-      var outputOrder = _.reject(txp.outputOrder, order => {
-        return order >= t.outputs.length;
-      });
-      $.checkState(t.outputs.length == outputOrder.length);
-      t.sortOutputs(outputs => {
-        return _.map(outputOrder, i => {
-          return outputs[i];
+            }));
+          } else {
+            t.to(o.toAddress, o.amount);
+          }
         });
-      });
-    }
+      }
 
-    // Validate inputs vs outputs independently of Bitcore
-    var totalInputs = _.reduce(
-      txp.inputs,
-      (memo, i) => {
+      t.fee(txp.fee);
+      t.change(txp.changeAddress.address);
+
+      // Shuffle outputs for improved privacy
+      if (t.outputs.length > 1) {
+        var outputOrder = _.reject(txp.outputOrder, (order) => {
+          return order >= t.outputs.length;
+        });
+        $.checkState(t.outputs.length == outputOrder.length);
+        t.sortOutputs((outputs) => {
+          return _.map(outputOrder, (i) => {
+            return outputs[i];
+          });
+        });
+      }
+
+      // Validate inputs vs outputs independently of Bitcore
+      var totalInputs = _.reduce(txp.inputs, (memo, i) => {
         return +i.satoshis + memo;
-      },
-      0
-    );
-    var totalOutputs = _.reduce(
-      t.outputs,
-      (memo, o) => {
+      }, 0);
+      var totalOutputs = _.reduce(t.outputs, (memo, o) => {
         return +o.satoshis + memo;
-      },
-      0
-    );
+      }, 0);
 
-    $.checkState(totalInputs - totalOutputs >= 0);
-    $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE);
+      $.checkState(totalInputs - totalOutputs >= 0);
+      $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE);
 
-    return t;
+      return t;
+    } else {
+      const { outputs, amount, gasPrice } = txp;
+      const rawTx = Transactions.create({
+        ...txp,
+        chain: coin.toUpperCase(),
+        recipients: [{ address: outputs[0].toAddress, amount }],
+        fee: gasPrice
+      });
+      return { uncheckedSerialize: () => rawTx };
+    }
   }
 }
