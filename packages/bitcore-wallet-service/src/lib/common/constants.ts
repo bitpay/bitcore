@@ -3,6 +3,12 @@
 module.exports = {
   COINS: {
     BTC: 'btc',
+    BCH: 'bch',
+    ETH: 'eth'
+  },
+
+  UTXO_COINS: {
+    BTC: 'btc',
     BCH: 'bch'
   },
 
@@ -23,6 +29,7 @@ module.exports = {
   },
 
   PATHS: {
+    SINGLE_ADDRESS: "m/0'/0",
     REQUEST_KEY: "m/1'/0",
     TXPROPOSAL_KEY: "m/1'/1",
     REQUEST_KEY_AUTH: 'm/2' // relative to BASE

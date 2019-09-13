@@ -7,6 +7,9 @@ module.exports = {
   MAX_TX_FEE: 0.1 * 1e8,
   MAX_TX_SIZE_IN_KB: 100,
 
+  // ETH
+  DEFAULT_GAS_LIMIT: 21000,
+
   MAX_KEYS: 100,
 
   // Time after which a tx proposal can be erased by any copayer. in seconds
@@ -57,6 +60,33 @@ module.exports = {
         name: 'normal',
         nbBlocks: 2,
         defaultValue: 2000
+      }
+    ],
+    eth: [
+      {
+        name: 'urgent',
+        nbBlocks: 10, // < 2 min
+        defaultValue: 3000000000
+      },
+      {
+        name: 'priority',
+        nbBlocks: 15, // 3 min
+        defaultValue: 2000000000
+      },
+      {
+        name: 'normal',
+        nbBlocks: 25, // 5 min
+        defaultValue: 1000000000
+      },
+      {
+        name: 'economy',
+        nbBlocks: 50, // 10 minutes
+        defaultValue: 1000000000
+      },
+      {
+        name: 'superEconomy',
+        nbBlocks: 75, // 15 minutes
+        defaultValue: 1000000000
       }
     ]
   },

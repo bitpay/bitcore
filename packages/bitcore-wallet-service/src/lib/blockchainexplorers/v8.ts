@@ -12,7 +12,8 @@ const BCHAddressTranslator = require('../bchaddresstranslator');
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash')
+  bch: require('bitcore-lib-cash'),
+  eth: Bitcore
 };
 const config = require('../../config');
 const Constants = Common.Constants,
@@ -355,6 +356,34 @@ export class V8 {
       });
   }
 
+  getTransactionCount(address, cb) {
+    const url = this.baseUrl + '/address/' + address + '/txs/count';
+    console.log('[v8.js.364:url:] CHECKING ADDRESS NONCE', url);
+    this.request
+      .get(url, {})
+      .then(ret => {
+        ret = JSON.parse(ret);
+        return cb(null, ret.nonce);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
+  estimateGas(opts, cb) {
+    const url = this.baseUrl + '/fee/gas';
+    console.log('[v8.js.378:url:] CHECKING GAS LIMIT', url);
+    this.request
+      .post(url, { body: opts, json: true })
+      .then(gasLimit => {
+        gasLimit = JSON.parse(gasLimit);
+        return cb(null, gasLimit);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
   estimateFee(nbBlocks, cb) {
     nbBlocks = nbBlocks || [1, 2, 6, 24];
     const result = {};
@@ -375,7 +404,7 @@ export class V8 {
                 return icb();
               }
 
-              result[x] = ret.feerate;
+              result[x] = ret.feerate ? ret.feerate : ret;
             } catch (e) {
               log.warn('fee error:', e);
             }

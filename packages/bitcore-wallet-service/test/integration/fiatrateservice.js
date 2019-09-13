@@ -228,6 +228,13 @@ describe('Fiat rate service', function() {
         code: 'EUR',
         rate: 120,
       }];
+      var eth = [{
+        code: 'USD',
+        rate: 121,
+      }, {
+        code: 'EUR',
+        rate: 121,
+      }];
 
       request.get.withArgs({
         url: 'https://bitpay.com/api/rates/BTC',
@@ -237,6 +244,10 @@ describe('Fiat rate service', function() {
         url: 'https://bitpay.com/api/rates/BCH',
         json: true
       }).yields(null, null, bch);
+      request.get.withArgs({
+        url: 'https://bitpay.com/api/rates/ETH',
+        json: true
+      }).yields(null, null, eth);
 
       service._fetch(function(err) {
         should.not.exist(err);
@@ -254,13 +265,21 @@ describe('Fiat rate service', function() {
             res.fetchedOn.should.equal(100);
             res.rate.should.equal(120.00);
             service.getRate({
-              code: 'EUR'
+              code: 'USD',
+              coin: 'eth',
             }, function(err, res) {
               should.not.exist(err);
               res.fetchedOn.should.equal(100);
-              res.rate.should.equal(234.56);
-              clock.restore();
-              done();
+              res.rate.should.equal(121.00);
+              service.getRate({
+                code: 'EUR'
+              }, function(err, res) {
+                should.not.exist(err);
+                res.fetchedOn.should.equal(100);
+                res.rate.should.equal(234.56);
+                clock.restore();
+                done();
+              });
             });
           });
         });
