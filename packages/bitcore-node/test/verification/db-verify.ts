@@ -7,6 +7,7 @@ import { Storage } from '../../src/services/storage';
 import * as _ from 'lodash';
 import { P2pWorker } from '../../src/services/p2p';
 import { Config } from '../../src/services/config';
+import { ChainStateProvider } from '../../src/providers/chain-state';
 
 const { CHAIN, NETWORK, HEIGHT } = process.env;
 const resumeHeight = Number(HEIGHT) || 1;
@@ -15,6 +16,7 @@ const network = NETWORK || '';
 
 const chainConfig = Config.chainConfig({ chain, network });
 const worker = new P2pWorker({ chain, network, chainConfig });
+worker.connect();
 
 type ErrorType = {
   model: string;
@@ -22,6 +24,20 @@ type ErrorType = {
   type: string;
   payload: any;
 };
+
+async function getBlock(currentHeight: number) {
+  worker.isSyncing = true;
+  worker.isSyncingNode = true;
+
+  const locatorHashes = await ChainStateProvider.getLocatorHashes({
+    chain,
+    network,
+    startHeight: Math.max(1, currentHeight - 30),
+    endHeight: currentHeight
+  });
+  const headers = await worker.getHeaders(locatorHashes);
+  return worker.getBlock(headers[0].hash);
+}
 
 export async function validateDataForBlock(blockNum: number, log = false) {
   let success = true;
@@ -63,8 +79,14 @@ export async function validateDataForBlock(blockNum: number, log = false) {
   }
 
   if (block) {
-    const p2pBlock = await worker.getBlock(block.hash);
-    const spends = p2pBlock.transactions.flatMap(tx => tx.inputs).map(input => input.toObject());
+    const p2pBlock = await getBlock(blockNum);
+    const txs = p2pBlock.transactions ? p2pBlock.transactions.slice(1) : [];
+    const spends = _.chain(txs)
+      .map(tx => tx.inputs)
+      .flatten()
+      .map(input => input.toObject())
+      .value();
+
     const coins = await CoinStorage.collection
       .find({ chain, network, mintTxid: { $in: spends.map(tx => tx.prevTxId) } })
       .toArray();
@@ -78,14 +100,20 @@ export async function validateDataForBlock(blockNum: number, log = false) {
           console.log(JSON.stringify(error));
         }
       } else {
-        success = false;
-        const error = {
-          model: 'coin',
-          err: true,
-          type: 'MISSING_INPUT',
-          payload: { coin: { mintTxid: spend.prevTxId, mintIndex: spend.outputIndex }, blockNum }
-        };
-        errors.push(error);
+        if (!found && spend.prevTxId != '0000000000000000000000000000000000000000000000000000000000000000') {
+          success = false;
+          const error = {
+            model: 'coin',
+            err: true,
+            type: 'MISSING_INPUT',
+            payload: { coin: { mintTxid: spend.prevTxId, mintIndex: spend.outputIndex }, blockNum }
+          };
+          errors.push(error);
+          if (log) {
+            console.log(JSON.stringify(error));
+            console.log(coins.filter(c => c.mintTxid === spend.prevTxId));
+          }
+        }
       }
     }
   }
