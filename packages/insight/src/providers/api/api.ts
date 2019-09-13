@@ -37,8 +37,11 @@ export class ApiProvider {
     private defaults: DefaultProvider,
     private logger: Logger
   ) {
-    this.getAvailableNetworks().subscribe(data => {
-      const availableNetworks = data;
+    Observable.forkJoin(
+      this.getAvailableNetworks('BTC').catch(err => Observable.of(undefined)),
+      this.getAvailableNetworks('ETH').catch(err => Observable.of(undefined))
+    ).subscribe(data => {
+      const availableNetworks = _.compact(_.flatten(data));
       this.networkSettings = {
         availableNetworks,
         selectedNetwork: this.networkSettings.selectedNetwork
@@ -46,19 +49,27 @@ export class ApiProvider {
     });
   }
 
-  public getAvailableNetworks(): Observable<ChainNetwork[]> {
+  public getAvailableNetworks(chain): Observable<ChainNetwork[]> {
     return this.httpClient.get<ChainNetwork[]>(
-      this.getUrlPrefix() + '/status/enabled-chains'
+      this.getUrlPrefix(chain) + '/status/enabled-chains'
     );
   }
 
-  public getUrlPrefix(): string {
-    const prefix: string = this.defaults.getDefault('%API_PREFIX%');
+  public getUrlPrefix(chain?): string {
+    const c = chain ? chain : this.networkSettings.selectedNetwork.chain;
+    const prefix: string =
+      c === 'ETH'
+        ? this.defaults.getDefault('%API_PREFIX_ETH%')
+        : this.defaults.getDefault('%API_PREFIX%');
     return prefix;
   }
+
   public getUrl(): string {
-    const prefix: string = this.defaults.getDefault('%API_PREFIX%');
     const chain: string = this.networkSettings.selectedNetwork.chain;
+    const prefix: string =
+      chain === 'ETH'
+        ? this.defaults.getDefault('%API_PREFIX_ETH%')
+        : this.defaults.getDefault('%API_PREFIX%');
     const network: string = this.networkSettings.selectedNetwork.network;
     const apiPrefix = `${prefix}/${chain}/${network}`;
     return apiPrefix;

@@ -5,11 +5,13 @@ export class DefaultProvider {
   private defaults: {
     '%CHAIN%': string;
     '%API_PREFIX%': string;
+    '%API_PREFIX_ETH%': string;
     '%NETWORK%': string;
     '%NUM_BLOCKS%': string;
   } = {
     '%CHAIN%': process.env.CHAIN || 'BTC',
     '%API_PREFIX%': process.env.API_PREFIX || '/api',
+    '%API_PREFIX_ETH%': process.env.API_PREFIX_ETH || '/api',
     '%NETWORK%': process.env.NETWORK || 'mainnet',
     '%NUM_BLOCKS%': process.env.NUM_BLOCKS || '15'
   };
