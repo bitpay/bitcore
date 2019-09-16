@@ -1,6 +1,6 @@
 {
   "name": "bitcore-mnemonic",
-  "version": "8.7.2",
+  "version": "8.7.3",
   "description": "BIP39 Mnemonics implemented for Bitcore.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -44,7 +44,7 @@
     "mocha": "^5.2.0"
   },
   "dependencies": {
-    "bitcore-lib": "^8.7.2",
+    "bitcore-lib": "^8.7.3",
     "unorm": "^1.4.1"
   },
   "peerDependencies": {
