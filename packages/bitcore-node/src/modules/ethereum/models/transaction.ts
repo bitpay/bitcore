@@ -33,6 +33,13 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     super.onConnect();
     this.collection.createIndex({ chain: 1, network: 1, to: 1 }, { background: true, sparse: true });
     this.collection.createIndex({ chain: 1, network: 1, from: 1, nonce: 1 }, { background: true, sparse: true });
+    this.collection.createIndex(
+      { chain: 1, network: 1, 'abiType.params.0.value': 1 },
+      {
+        background: true,
+        partialFilterExpression: { chain: 'ETH', 'abiType.type': 'ERC20', 'abiType.name': 'transfer' }
+      }
+    );
   }
 
   async batchImport(params: {
