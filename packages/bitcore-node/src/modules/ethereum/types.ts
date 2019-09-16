@@ -123,7 +123,11 @@ export type IEthTransaction = ITransaction & {
   from: string;
   internal: Array<ClassifiedTrace>;
   transactionIndex: number;
-  abiType?: 'ERC20' | 'ERC721';
+  abiType?: {
+    type: string;
+    name: string;
+    params: Array<{ name: string; value: string; type: string }>;
+  };
   error?: string;
 };
 
@@ -157,7 +161,7 @@ export type EthTransactionJSON = {
   nonce: number;
   to: string;
   from: string;
-  abiType?: 'ERC20' | 'ERC721';
+  abiType?: IEthTransaction['abiType'];
   decodedData?: AbiDecodedData;
   data: string;
   internal: Array<DecodedTrace>;

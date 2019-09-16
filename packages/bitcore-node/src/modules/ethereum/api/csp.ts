@@ -1,4 +1,4 @@
-import { Readable } from 'stream';
+import { Transform, Readable } from 'stream';
 import Config from '../../../config';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
@@ -15,7 +15,6 @@ import { EthListTransactionsStream } from './transform';
 import { ERC20Abi } from '../abi/erc20';
 import { Transaction } from 'web3/eth/types';
 import { EventLog } from 'web3/types';
-import { EthP2pWorker } from '../p2p';
 import { partition } from '../../../utils/partition';
 
 interface ERC20Transfer extends EventLog {
@@ -287,15 +286,25 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         .sort({ blockTimeNormalized: 1 })
         .addCursorFlag('noCursorTimeout', true);
     } else {
-      const erc20Txs = await this.getWalletTokenTransactions(network, wallet._id!, args.tokenAddress, args);
-      const p2p = new EthP2pWorker({ chain, network, chainConfig: {} });
-      const heights = Array.from(new Set(erc20Txs.map(tx => tx.blockNumber)));
-      const blocks = await EthBlockStorage.collection.find({ chain, network, height: { $in: heights } }).toArray();
-      for (const tx of erc20Txs) {
-        const block = blocks.find(b => b.height === tx.blockNumber);
-        transactionStream.push(p2p.convertTx(tx, block));
-      }
-      transactionStream.push(null);
+      const walletAddresses = await this.getWalletAddresses(wallet._id!);
+      transactionStream = EthTransactionStorage.collection
+        .find({
+          chain,
+          network,
+          to: args.tokenAddress,
+          $or: [
+            { wallets: wallet._id, 'abiType.name': 'transfer' },
+            { 'abiType.name': 'transfer', 'abiType.params.0.value': { $in: walletAddresses.map(w => w.address) } }
+          ]
+        })
+        .pipe(
+          new Transform({
+            objectMode: true,
+            transform: function(tx: any, _, done) {
+              return done({ ...tx, value: tx.abiType.params[1].value, to: tx.abiType.params[0].value });
+            }
+          })
+        );
     }
     const listTransactionsStream = new EthListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(res);

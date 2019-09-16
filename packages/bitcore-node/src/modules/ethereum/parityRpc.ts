@@ -41,7 +41,7 @@ export interface ClassifiedTrace extends ParityTraceResponse {
 
 export interface TokenTransferResponse {
   name?: 'transfer';
-  params?: [{ name: string; value: string; type: string }];
+  params?: Array<{ name: string; value: string; type: string }>;
 }
 
 interface Callback<ResultType> {
