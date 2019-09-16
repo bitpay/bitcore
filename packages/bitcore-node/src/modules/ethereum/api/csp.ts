@@ -89,32 +89,28 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
   async getFee(params) {
     let { network, target = 4 } = params;
+    const chain = this.chain;
     if (network === 'livenet') {
       network = 'mainnet';
     }
     const web3 = await this.getWeb3(network);
-    const bestBlock = await web3.eth.getBlockNumber();
-    const gasPrices: number[] = [];
-    for (let i = 0; i < target; i++) {
-      const block = await web3.eth.getBlock(bestBlock - i, true);
-      const txs = block.transactions as Array<Transaction>;
-      var blockGasPrices = txs.map(tx => {
-        return Number(tx.gasPrice);
-      });
-      // sort gas prices in descending order
-      blockGasPrices = blockGasPrices.sort((a, b) => {
-        return b - a;
-      });
-      var txCount = txs.length;
-      var lowGasPriceIndex = txCount > 1 ? txCount - 2 : 0;
-      if (txCount > 0) {
-        gasPrices.push(blockGasPrices[lowGasPriceIndex]);
-      }
+    const [gethGasPrice, bestBlock] = await Promise.all([web3.eth.getGasPrice(), this.getLocalTip({ chain, network })]);
+    if (!bestBlock) {
+      return gethGasPrice;
     }
-    var gethGasPrice = await web3.eth.getGasPrice();
-    var estimate = gasPrices.reduce((a, b) => {
-      return Math.max(a, b);
-    }, gethGasPrice);
+
+    const gasPrices: number[] = [];
+    const txs = await EthTransactionStorage.collection
+      .find({ chain, network, blockHeight: { $gte: bestBlock.height - target } })
+      .toArray();
+
+    const blockGasPrices = txs.map(tx => Number(tx.gasPrice)).sort((a, b) => b - a);
+    const txCount = txs.length;
+    const lowGasPriceIndex = txCount > 1 ? txCount - 1 : 0;
+    if (txCount > 0) {
+      gasPrices.push(blockGasPrices[lowGasPriceIndex]);
+    }
+    const estimate = Math.max(...gasPrices, gethGasPrice);
     return estimate;
   }
 
