@@ -35,7 +35,14 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     this.config = Config.chains[this.chain];
   }
 
-  getWeb3(network: string) {
+  async getWeb3(network: string) {
+    try {
+      if (ETHStateProvider.web3) {
+        await ETHStateProvider.web3.eth.getBlockNumber();
+      }
+    } catch (e) {
+      ETHStateProvider.web3 = undefined;
+    }
     if (!ETHStateProvider.web3) {
       const networkConfig = this.config[network];
       const provider = networkConfig.provider;
@@ -59,14 +66,14 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     return ETHStateProvider.web3;
   }
 
-  erc20For(network: string, address: string) {
-    const web3 = this.getWeb3(network);
+  async erc20For(network: string, address: string) {
+    const web3 = await this.getWeb3(network);
     const contract = new web3.eth.Contract(ERC20Abi, address);
     return contract;
   }
 
   async getERC20TokenInfo(network: string, tokenAddress: string) {
-    const token = ETH.erc20For(network, tokenAddress);
+    const token = await ETH.erc20For(network, tokenAddress);
     const [name, decimals, symbol] = await Promise.all([
       token.methods.name().call(),
       token.methods.decimals().call(),
@@ -85,10 +92,11 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     if (network === 'livenet') {
       network = 'mainnet';
     }
-    const bestBlock = await this.getWeb3(network).eth.getBlockNumber();
+    const web3 = await this.getWeb3(network);
+    const bestBlock = await web3.eth.getBlockNumber();
     const gasPrices: number[] = [];
     for (let i = 0; i < target; i++) {
-      const block = await this.getWeb3(network).eth.getBlock(bestBlock - i, true);
+      const block = await web3.eth.getBlock(bestBlock - i, true);
       const txs = block.transactions as Array<Transaction>;
       var blockGasPrices = txs.map(tx => {
         return Number(tx.gasPrice);
@@ -103,7 +111,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         gasPrices.push(blockGasPrices[lowGasPriceIndex]);
       }
     }
-    var gethGasPrice = await this.getWeb3(network).eth.getGasPrice();
+    var gethGasPrice = await web3.eth.getGasPrice();
     var estimate = gasPrices.reduce((a, b) => {
       return Math.max(a, b);
     }, gethGasPrice);
@@ -112,15 +120,14 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { network, address } = params;
+    const web3 = await this.getWeb3(network);
     if (params.args && params.args.tokenAddress) {
-      const balance = Number(
-        await this.erc20For(network, params.args.tokenAddress)
-          .methods.balanceOf(address)
-          .call()
-      );
+      const token = await this.erc20For(network, params.args.tokenAddress);
+
+      const balance = Number(await token.methods.balanceOf(address).call());
       return { confirmed: balance, unconfirmed: 0, balance };
     }
-    const balance = Number(await this.getWeb3(network).eth.getBalance(address));
+    const balance = Number(await web3.eth.getBalance(address));
     return { confirmed: balance, unconfirmed: 0, balance };
   }
 
@@ -157,7 +164,8 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     const { network, rawTx } = params;
-    const tx = await this.getWeb3(network).eth.sendSignedTransaction(rawTx);
+    const web3 = await this.getWeb3(network);
+    const tx = await web3.eth.sendSignedTransaction(rawTx);
     return tx;
   }
 
@@ -302,7 +310,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     address: string,
     tokenAddress: string
   ): Promise<Array<Partial<Transaction>>> {
-    const token = this.erc20For(network, tokenAddress);
+    const token = await this.erc20For(network, tokenAddress);
     const [sent, received] = await Promise.all([
       token.getPastEvents('Transfer', {
         filter: { _from: address },
@@ -372,7 +380,8 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
   async estimateGas(params): Promise<Number> {
     const { network, from, to, value, data, gasPrice } = params;
-    const gasLimit = await this.getWeb3(network).eth.estimateGas({ from, to, value, data, gasPrice });
+    const web3 = await this.getWeb3(network);
+    const gasLimit = await web3.eth.estimateGas({ from, to, value, data, gasPrice });
     return gasLimit;
   }
 
