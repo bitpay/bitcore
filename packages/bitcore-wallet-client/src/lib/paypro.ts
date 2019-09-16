@@ -2,7 +2,7 @@
 var $ = require('preconditions').singleton();
 const URL = require('url');
 const _ = require('lodash');
-const request = require('request');
+const superagent = require('superagent');
 var Bitcore = require('bitcore-lib');
 const Errors = require('./errors');
 var Bitcore_ = {
@@ -20,7 +20,7 @@ const MAX_FEE_PER_KB = 500000;
 
 export class PayPro {
   // static request: request;
-  static r = request;
+  static r = superagent;
   constructor() {}
   // var PayPro = {
   //
@@ -127,11 +127,21 @@ export class PayPro {
 
   static runRequest(opts, cb) {
     $.checkArgument(opts.network, 'should pass network');
-
-    PayPro.r(opts, (err, res, body) => {
+    var r = this.r[opts.method.toLowerCase()](opts.url);
+    _.each(opts.headers, function (v, k) {
+      if (v)
+        r.set(k, v);
+    });
+    if (opts.args) {
+      if (opts.method.toLowerCase() == 'post' || opts.method.toLowerCase() == 'put') {
+          r.send(opts.args);
+      } else {
+          r.query(opts.args);
+      }
+    }
+    r.end((err, res) => {
       if (err) return cb(err);
-      let ret = {};
-
+      var body = res.text;
       if (!res || res.statusCode != 200) {
         // some know codes
         if (res.statusCode == 400) {
