@@ -241,6 +241,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
   async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
     const { chain, network, wallet, res, args } = params;
+    const web3 = await this.getWeb3(network);
     const query: any = {
       chain,
       network,
@@ -287,24 +288,28 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         .addCursorFlag('noCursorTimeout', true);
     } else {
       const walletAddresses = await this.getWalletAddresses(wallet._id!);
-      transactionStream = EthTransactionStorage.collection
-        .find({
-          chain,
-          network,
-          to: args.tokenAddress,
-          $or: [
-            { wallets: wallet._id, 'abiType.name': 'transfer' },
-            { 'abiType.name': 'transfer', 'abiType.params.0.value': { $in: walletAddresses.map(w => w.address) } }
-          ]
+      const query = {
+        chain,
+        network,
+        to: web3.utils.toChecksumAddress(args.tokenAddress),
+        $or: [
+          {
+            wallets: wallet._id,
+            'abiType.name': 'transfer',
+            'wallets.0': { $exists: true }
+          },
+          { 'abiType.name': 'transfer', 'abiType.params.0.value': { $in: walletAddresses.map(w => w.address) } }
+        ]
+      };
+      console.log(JSON.stringify(query));
+      transactionStream = EthTransactionStorage.collection.find().pipe(
+        new Transform({
+          objectMode: true,
+          transform: function(tx: any, _, done) {
+            return done({ ...tx, value: tx.abiType.params[1].value, to: tx.abiType.params[0].value });
+          }
         })
-        .pipe(
-          new Transform({
-            objectMode: true,
-            transform: function(tx: any, _, done) {
-              return done({ ...tx, value: tx.abiType.params[1].value, to: tx.abiType.params[0].value });
-            }
-          })
-        );
+      );
     }
     const listTransactionsStream = new EthListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(res);
