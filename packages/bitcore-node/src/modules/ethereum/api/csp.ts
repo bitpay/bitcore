@@ -295,6 +295,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         $or: [
           {
             wallets: wallet._id,
+            'abiType.type': 'ERC20',
             'abiType.name': 'transfer',
             'wallets.0': { $exists: true }
           },
@@ -311,6 +312,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         new Transform({
           objectMode: true,
           transform: function(tx: any, _, done) {
+            console.log(tx);
             return done({ ...tx, value: tx.abiType.params[1].value, to: tx.abiType.params[0].value });
           }
         })
