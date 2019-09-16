@@ -1,8 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core';
-import { ChainNetwork } from '../../providers/api/api';
-import { ApiEthTx, ApiUtxoCoinTx, TxsProvider } from '../../providers/transactions/transactions';
-
 import * as _ from 'lodash';
+import { Observable } from 'rxjs';
+import { AddressProvider } from '../../providers/address/address';
+import { ApiProvider, ChainNetwork } from '../../providers/api/api';
+import { TxsProvider } from '../../providers/transactions/transactions';
+
 @Component({
   selector: 'transaction-list',
   templateUrl: 'transaction-list.html'
@@ -20,33 +22,118 @@ export class TransactionListComponent implements OnInit {
   public limit = 10;
   public chunkSize = 100;
 
-  constructor(private txProvider: TxsProvider) {}
+  constructor(
+    private txProvider: TxsProvider,
+    private api: ApiProvider,
+    private addrProvider: AddressProvider
+  ) {}
 
   public ngOnInit(): void {
     if (this.transactions && this.transactions.length === 0) {
-      this.txProvider
-        .getTxs(this.chainNetwork, { [this.queryType]: this.queryValue })
-        .subscribe(
-          response => {            
-            // Newly Generated Coins (Coinbase) First
-            const txs = response.map((tx: ApiEthTx & ApiUtxoCoinTx) => {
-              if(this.chainNetwork.chain === "BTC" || this.chainNetwork.chain === "BCH") {
-                return this.txProvider.toUtxoCoinsAppTx(tx)
-              }
-              if(this.chainNetwork.chain === "ETH") {
-                return this.txProvider.toEthAppTx(tx)
+      if (this.queryType === 'blockHash') {
+        this.txProvider
+          .getTxs(this.chainNetwork, { [this.queryType]: this.queryValue })
+          .subscribe(
+            response => {
+              const txIds = [];
+
+              _.forEach(response, tx => {
+                txIds.push(tx.txid);
+              });
+
+              const txsPopulated = [];
+              const observableBatch = [];
+
+              _.forEach(txIds, value => {
+                this.txProvider.getTx(value, this.chainNetwork);
+                observableBatch.push(
+                  this.txProvider.getTx(value, this.chainNetwork)
+                );
+              });
+
+              Observable.forkJoin(observableBatch).subscribe(
+                (response: any) => {
+                  _.forEach(response, tx => {
+                    if (
+                      this.chainNetwork.chain === 'BTC' ||
+                      this.chainNetwork.chain === 'BCH'
+                    ) {
+                      txsPopulated.push(this.txProvider.toUtxoCoinsAppTx(tx));
+                    }
+                    if (this.chainNetwork.chain === 'ETH') {
+                      txsPopulated.push(this.txProvider.toEthAppTx(tx));
+                    }
+                  });
+
+                  // Newly Generated Coins (Coinbase) First
+                  const sortedTxs = _.sortBy(txsPopulated, (tx: any) => {
+                    return tx.isCoinBase ? 0 : 1;
+                  });
+                  this.transactions = sortedTxs;
+                }
+              );
+              this.loading = false;
+            },
+            () => {
+              this.loading = false;
+            }
+          );
+      } else if (this.queryType === 'address') {
+        
+        this.addrProvider
+          .getAddressActivity(this.queryValue)
+          .subscribe((response: any) => {
+            const mintedTxIds = [];
+            const spentTxIds = [];
+
+            _.forEach(response, tx => {
+              if (tx.mintTxId !== '') {
+                mintedTxIds.push(tx.mintTxid);
+              } else if (tx.spentTxId !== '') {
+                spentTxIds.push(tx.spentTxid);
               }
             });
-            const sortedTxs = _.sortBy(txs, (tx: any) => {
-              return tx.isCoinBase ? 0 : 1;
+
+            const txsPopulated = [];
+            const observableBatch = [];
+
+            _.forEach(mintedTxIds, tx => {
+              this.txProvider.getTx(tx, this.chainNetwork);
+              observableBatch.push(
+                this.txProvider.getTx(tx, this.chainNetwork)
+              );
             });
-            this.transactions = sortedTxs;
+
+            _.forEach(spentTxIds, tx => {
+              this.txProvider.getTx(tx, this.chainNetwork);
+              observableBatch.push(
+                this.txProvider.getTx(tx, this.chainNetwork)
+              );
+            });
+            
+            Observable.forkJoin(observableBatch).subscribe((response: any) => {
+              _.forEach(response, tx => {
+                if (
+                  this.chainNetwork.chain === 'BTC' ||
+                  this.chainNetwork.chain === 'BCH'
+                ) {
+                  txsPopulated.push(this.txProvider.toUtxoCoinsAppTx(tx));
+                }
+                if (this.chainNetwork.chain === 'ETH') {
+                  txsPopulated.push(this.txProvider.toEthAppTx(tx));
+                }
+              });
+
+              // Newly Generated Coins (Coinbase) First
+              const sortedTxs = _.sortBy(txsPopulated, (tx: any) => {
+                return tx.isCoinBase ? 0 : 1;
+              });
+              this.transactions = sortedTxs;
+            });
+
             this.loading = false;
-          },
-          () => {
-            this.loading = false;
-          }
-        );
+          });
+      }
     } else {
       this.loading = false;
     }

@@ -33,7 +33,9 @@ export class AddressProvider {
     );
   }
 
-  public getAddressActivity(addrStr?: string): Observable<ApiCoin[] & ApiEthCoin[]> {
+  public getAddressActivity(
+    addrStr?: string
+  ): Observable<ApiCoin[] & ApiEthCoin[]> {
     return this.httpClient.get<ApiCoin[] & ApiEthCoin[]>(
       `${this.apiProvider.getUrl()}/address/${addrStr}/txs?limit=1000`
     );

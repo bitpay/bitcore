@@ -48,6 +48,7 @@
     "angular2-moment": "1.7.1",
     "angular2-qrcode": "2.0.1",
     "bs58": "^4.0.1",
+    "chart.js": "^2.8.0",
     "ionic-angular": "3.9.2",
     "ionicons": "3.0.0",
     "lodash": "4.17.11",
@@ -78,7 +79,7 @@
     "tslint-angular": "^1.1.2",
     "tslint-config-prettier": "^1.15.0",
     "tslint-eslint-rules": "4.1.1",
-    "typescript": "2.6.2",
+    "typescript": "^3.3.4000",
     "webdriver-manager": "^12.1.1"
   },
   "engines": {
