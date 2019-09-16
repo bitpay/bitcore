@@ -70,7 +70,8 @@
     "build": "tsc && npm run lint",
     "clean": "rimraf ./ts_build",
     "lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "lint-fix": "tslint --fix -c tslint.json 'src/**/*.ts'"
+    "lint-fix": "tslint --fix -c tslint.json 'src/**/*.ts'",
+    "pub": "npm run build && npm publish"
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }

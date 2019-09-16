@@ -89,7 +89,8 @@
     "build": "tsc && npm run lint",
     "clean": "rm -rf ./ts_build",
     "lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "lint-fix": "tslint --fix -c tslint.json 'src/**/*.ts'"
+    "lint-fix": "tslint --fix -c tslint.json 'src/**/*.ts'",
+    "pub": "npm run build && npm publish"
   },
   "bitcoreNode": "./bitcorenode",
   "contributors": [

@@ -8,7 +8,8 @@
     "lint": "gulp lint",
     "test": "gulp test",
     "coverage": "gulp coverage",
-    "build": "gulp"
+    "build": "gulp",
+    "pub": "npm run build && npm publish"
   },
   "contributors": [
     {
