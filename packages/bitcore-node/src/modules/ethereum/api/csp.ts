@@ -310,7 +310,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         ]
       };
       console.log(JSON.stringify(query));
-      transactionStream = EthTransactionStorage.collection.find().pipe(
+      transactionStream = EthTransactionStorage.collection.find(query).pipe(
         new Transform({
           objectMode: true,
           transform: function(tx: any, _, done) {
