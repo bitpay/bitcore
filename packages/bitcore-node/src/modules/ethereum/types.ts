@@ -157,6 +157,7 @@ export type EthTransactionJSON = {
   nonce: number;
   to: string;
   from: string;
+  abiType?: 'ERC20' | 'ERC721';
   decodedData?: AbiDecodedData;
   data: string;
   internal: Array<DecodedTrace>;

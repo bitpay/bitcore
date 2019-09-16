@@ -231,6 +231,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       nonce: valueOrDefault(tx.nonce, 0),
       to: tx.to || '',
       from: tx.from || '',
+      abiType: tx.abiType,
       internal: tx.internal
         ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t.action.input || '0x') }))
         : [],
