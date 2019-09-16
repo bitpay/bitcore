@@ -18,10 +18,11 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   private initialSyncComplete: boolean;
   private blockModel: EthBlockModel;
   private txModel: EthTransactionModel;
-  private web3: Web3;
   private txSubscription: any;
   private blockSubscription: any;
-  private rpc: ParityRPC;
+  private rpc?: ParityRPC;
+  private provider: ETHStateProvider;
+  private web3?: Web3;
 
   constructor({ chain, network, chainConfig, blockModel = EthBlockStorage, txModel = EthTransactionStorage }) {
     super({ chain, network, chainConfig, blockModel });
@@ -32,21 +33,20 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     this.initialSyncComplete = false;
     this.blockModel = blockModel;
     this.txModel = txModel;
-    this.web3 = new ETHStateProvider().getWeb3(network);
-    this.rpc = new ParityRPC(this.web3);
+    this.provider = new ETHStateProvider();
   }
 
   async setupListeners() {
-    this.txSubscription = await this.rpc.web3.eth.subscribe('pendingTransactions');
+    this.txSubscription = await this.web3!.eth.subscribe('pendingTransactions');
     this.txSubscription.subscribe(async (_err, txid) => {
       if (!this.syncing) {
-        const tx = (await this.rpc.web3.eth.getTransaction(txid)) as Parity.Transaction;
+        const tx = (await this.web3!.eth.getTransaction(txid)) as Parity.Transaction;
         if (tx) {
           this.processTransaction(tx);
         }
       }
     });
-    this.blockSubscription = await this.rpc.web3.eth.subscribe('newBlockHeaders');
+    this.blockSubscription = await this.web3!.eth.subscribe('newBlockHeaders');
     this.blockSubscription.subscribe(() => {
       if (!this.syncing) {
         this.sync();
@@ -67,6 +67,10 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     }
   }
 
+  async getWeb3() {
+    return this.provider.getWeb3(this.network);
+  }
+
   async connect() {
     let connected = false;
     let attempt = false;
@@ -79,7 +83,8 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
           );
         }
         attempt = true;
-        this.web3 = new ETHStateProvider().getWeb3(this.network);
+        this.web3 = await this.getWeb3();
+        this.rpc = new ParityRPC(this.web3);
         connected = await this.web3.eth.net.isListening();
       } catch (e) {}
       await wait(20000);
@@ -91,7 +96,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   public async getBlock(height: number) {
-    return this.rpc.getBlock(height);
+    return this.rpc!.getBlock(height);
   }
 
   async processBlock(block: IEthBlock, transactions: IEthTransaction[]): Promise<any> {
@@ -148,7 +153,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
 
     const startHeight = tip ? tip.height : 0;
     const startTime = Date.now();
-    let bestBlock = await this.rpc.web3.eth.getBlockNumber();
+    let bestBlock = await this.web3!.eth.getBlockNumber();
     let lastLog = 0;
     let currentHeight = tip ? tip.height : 0;
     logger.info(`Syncing ${bestBlock - currentHeight} blocks for ${chain} ${network}`);
@@ -157,7 +162,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       try {
         const block = ((await this.getBlock(currentHeight)) as unknown) as Parity.Block;
         const { convertedBlock, convertedTxs } = this.convertBlock(block);
-        const internalTxs = await this.rpc.getTransactionsFromBlock(convertedBlock.height);
+        const internalTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
         for (const tx of internalTxs) {
           if (tx.type === 'reward') {
             if (tx.action.rewardType && tx.action.rewardType === 'block') {
@@ -193,7 +198,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         await this.processBlock(convertedBlock, convertedTxs);
         currentHeight++;
         if (currentHeight === bestBlock) {
-          bestBlock = await this.rpc.web3.eth.getBlockNumber();
+          bestBlock = await this.web3!.eth.getBlockNumber();
         }
         const oneSecond = 1000;
         const now = Date.now();
