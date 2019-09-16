@@ -212,7 +212,8 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     tx: IEthTransaction | Partial<MongoBound<IEthTransaction>>,
     options?: TransformOptions
   ): EthTransactionJSON | string {
-    const decodedData = this.abiDecode(`0x${tx.data!.toString('hex')}`);
+    const dataStr = `0x${tx.data!.toString('hex')}`;
+    const decodedData = this.abiDecode(dataStr);
 
     const transaction: EthTransactionJSON = {
       txid: tx.txid || '',
@@ -224,6 +225,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       blockTimeNormalized: tx.blockTimeNormalized ? tx.blockTimeNormalized.toISOString() : '',
       fee: valueOrDefault(tx.fee, -1),
       value: valueOrDefault(tx.value, -1),
+      data: dataStr,
       gasLimit: valueOrDefault(tx.gasLimit, -1),
       gasPrice: valueOrDefault(tx.gasPrice, -1),
       nonce: valueOrDefault(tx.nonce, 0),

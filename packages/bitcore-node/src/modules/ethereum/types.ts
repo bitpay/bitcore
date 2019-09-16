@@ -158,5 +158,6 @@ export type EthTransactionJSON = {
   to: string;
   from: string;
   decodedData?: AbiDecodedData;
+  data: string;
   internal: Array<DecodedTrace>;
 };
