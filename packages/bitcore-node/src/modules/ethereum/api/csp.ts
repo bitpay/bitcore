@@ -287,7 +287,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         .sort({ blockTimeNormalized: 1 })
         .addCursorFlag('noCursorTimeout', true);
     } else {
-      const erc20Txs = await this.getWalletTokenTransactions(network, wallet._id!, args.tokenAddress);
+      const erc20Txs = await this.getWalletTokenTransactions(network, wallet._id!, args.tokenAddress, args);
       const p2p = new EthP2pWorker({ chain, network, chainConfig: {} });
       const heights = Array.from(new Set(erc20Txs.map(tx => tx.blockNumber)));
       const blocks = await EthBlockStorage.collection.find({ chain, network, height: { $in: heights } }).toArray();
@@ -304,17 +304,20 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   async getErc20Transfers(
     network: string,
     address: string,
-    tokenAddress: string
+    tokenAddress: string,
+    args: Partial<CSP.StreamWalletTransactionsArgs> = {}
   ): Promise<Array<Partial<Transaction>>> {
     const token = await this.erc20For(network, tokenAddress);
     const [sent, received] = await Promise.all([
       token.getPastEvents('Transfer', {
         filter: { _from: address },
-        fromBlock: 0
+        fromBlock: args.startBlock || 0,
+        toBlock: args.endBlock || 'latest'
       }),
       token.getPastEvents('Transfer', {
         filter: { _to: address },
-        fromBlock: 0
+        fromBlock: args.startBlock || 0,
+        toBlock: args.endBlock || 'latest'
       })
     ]);
     return this.convertTokenTransfers([...sent, ...received]);
@@ -342,11 +345,16 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     return EthTransactionStorage.collection.countDocuments({ chain: 'ETH', network, from: address });
   }
 
-  async getWalletTokenTransactions(network: string, walletId: ObjectID, tokenAddress: string) {
+  async getWalletTokenTransactions(
+    network: string,
+    walletId: ObjectID,
+    tokenAddress: string,
+    args: CSP.StreamWalletTransactionsArgs
+  ) {
     const addresses = await this.getWalletAddresses(walletId);
     const allTokenQueries = Array<Promise<Array<Partial<Transaction>>>>();
     for (const walletAddress of addresses) {
-      const transfers = this.getErc20Transfers(network, walletAddress.address, tokenAddress);
+      const transfers = this.getErc20Transfers(network, walletAddress.address, tokenAddress, args);
       allTokenQueries.push(transfers);
     }
     let batches = await Promise.all(allTokenQueries);
