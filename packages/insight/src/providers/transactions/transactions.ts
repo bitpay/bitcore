@@ -259,9 +259,9 @@ export class TxsProvider {
   }
 
   public getDailyTransactionHistory(chainNetwork: ChainNetwork) {
-    const url = `https://api.bitcore.io${this.apiProvider.getUrlPrefix()}/${
-      chainNetwork.chain
-    }/${chainNetwork.network}/stats/daily-transactions`;
+    const url = `https://api.bitcore.io${this.apiProvider.getUrl(
+      chainNetwork
+    )}/${chainNetwork.chain}/${chainNetwork.network}/stats/daily-transactions`;
     return this.httpClient.get(url);
   }
 

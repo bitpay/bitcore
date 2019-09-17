@@ -12,7 +12,7 @@ export class ERC20TxProvider extends ETHTxProvider {
     recipients: Array<{ address: string; amount: string }>;
     from: string;
     nonce: number;
-    fee: number;
+    gasPrice: number;
     data: string;
     gasLimit: number;
     tokenAddress: string;
