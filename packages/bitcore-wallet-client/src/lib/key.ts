@@ -5,6 +5,8 @@ import * as _ from 'lodash';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
 
+import { Transactions } from 'crypto-wallet-core';
+
 var Bitcore = require('bitcore-lib');
 var Mnemonic = require('bitcore-mnemonic');
 var sjcl = require('sjcl');
@@ -278,7 +280,7 @@ export class Key {
     let purpose = opts.n == 1 || this.use44forMultisig ? '44' : '48';
     var coinCode = '0';
 
-    if (opts.network == 'testnet') {
+    if (opts.network == 'testnet' && opts.coin !== 'eth') {
       coinCode = '1';
     } else if (opts.coin == 'bch') {
       if (this.use0forBCH) {
@@ -383,28 +385,38 @@ export class Key {
     var derived = this.derive(password, rootPath);
     var xpriv = new Bitcore.HDPrivateKey(derived);
 
-    _.each(txp.inputs, function (i) {
-      $.checkState(
-        i.path,
-        'Input derivation path not available (signing transaction)'
-      );
-      if (!derived[i.path]) {
-        derived[i.path] = xpriv.deriveChild(i.path).privateKey;
-        privs.push(derived[i.path]);
-      }
-    });
-
     var t = Utils.buildTx(txp);
-    var signatures = _.map(privs, function (priv, i) {
-      return t.getSignatures(priv);
-    });
 
-    signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function (
-      s
-    ) {
-      return s.signature.toDER().toString('hex');
-    });
+    if (Constants.UTXO_COINS.includes(txp.coin)) {
+      _.each(txp.inputs, function (i) {
+        $.checkState(i.path, 'Input derivation path not available (signing transaction)');
+        if (!derived[i.path]) {
+          derived[i.path] = xpriv.deriveChild(i.path).privateKey;
+          privs.push(derived[i.path]);
+        }
+      });
 
-    return signatures;
+      var signatures = _.map(privs, function (priv, i) {
+        return t.getSignatures(priv);
+      });
+
+      signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function (s) {
+        return s.signature.toDER().toString('hex');
+      });
+
+      return signatures;
+    } else {
+      const addressPath = Constants.PATHS.SINGLE_ADDRESS;
+      const privKey = xpriv.deriveChild(addressPath).privateKey;
+      const tx = t.uncheckedSerialize();
+      const signedRawTx = Transactions.sign({
+        chain: txp.coin.toUpperCase(),
+        tx,
+        key: { privKey: privKey.toString('hex') },
+        from: txp.from
+      });
+  
+       return Object.assign(txp, { rawTx: signedRawTx, status: 'accepted' });
+    }
   };
 }
