@@ -47,8 +47,6 @@
     "@angular/platform-browser-dynamic": "5.2.10",
     "angular2-moment": "1.7.1",
     "angular2-qrcode": "2.0.1",
-    "bitcore-lib": "^8.6.0",
-    "bitcore-lib-cash": "^8.6.0",
     "bs58": "^4.0.1",
     "ionic-angular": "3.9.2",
     "ionicons": "3.0.0",
@@ -80,7 +78,7 @@
     "tslint-angular": "^1.1.2",
     "tslint-config-prettier": "^1.15.0",
     "tslint-eslint-rules": "4.1.1",
-    "typescript": "2.6.2",
+    "typescript": "^3.3.4000",
     "webdriver-manager": "^12.1.1"
   },
   "engines": {

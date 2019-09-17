@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import { resetDatabase } from '../../helpers';
-import { TransactionStorage, ITransaction, SpendOp } from '../../../src/models/transaction';
+import { TransactionStorage, SpendOp, IBtcTransaction } from '../../../src/models/transaction';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
 import { SpentHeightIndicators } from '../../../src/types/Coin';
 
@@ -29,7 +29,7 @@ describe('Transaction Model', function() {
     };
 
     // insert a valid tx, with a valid output
-    await TransactionStorage.collection.insertOne(blockTx as ITransaction);
+    await TransactionStorage.collection.insertOne(blockTx as IBtcTransaction);
     await CoinStorage.collection.insertOne(blockTxOutputs as ICoin);
 
     const badMempoolTx = {
@@ -48,7 +48,7 @@ describe('Transaction Model', function() {
     };
 
     // insert a valid mempool tx, with a valid output, which will be marked invalid by block2 tx
-    await TransactionStorage.collection.insertOne(badMempoolTx as ITransaction);
+    await TransactionStorage.collection.insertOne(badMempoolTx as IBtcTransaction);
     await CoinStorage.collection.insertOne(badMempoolOutputs as ICoin);
 
     const block2TxOutputs = {

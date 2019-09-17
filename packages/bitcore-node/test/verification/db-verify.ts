@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { BlockStorage } from '../../src/models/block';
+import { BitcoinBlockStorage } from '../../src/models/block';
 import { CoinStorage, ICoin } from '../../src/models/coin';
 import { TransactionStorage, ITransaction } from '../../src/models/transaction';
 import { Storage } from '../../src/services/storage';
@@ -21,9 +21,9 @@ type ErrorType = {
 export async function validateDataForBlock(blockNum: number, log = false) {
   let success = true;
   const [block, blockTxs, blocksForHeight] = await Promise.all([
-    BlockStorage.collection.findOne({ chain, network, height: blockNum, processed: true }),
+    BitcoinBlockStorage.collection.findOne({ chain, network, height: blockNum, processed: true }),
     TransactionStorage.collection.find({ chain, network, blockHeight: blockNum }).toArray(),
-    BlockStorage.collection.countDocuments({
+    BitcoinBlockStorage.collection.countDocuments({
       chain,
       network,
       height: blockNum,
@@ -35,7 +35,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
   const [coinsForTx, mempoolTxs, blocksForHash] = await Promise.all([
     CoinStorage.collection.find({ chain, network, mintTxid: { $in: blockTxids } }).toArray(),
     TransactionStorage.collection.find({ chain, network, blockHeight: -1, txid: { $in: blockTxids } }).toArray(),
-    BlockStorage.collection.countDocuments({ chain, network, hash: firstHash })
+    BitcoinBlockStorage.collection.countDocuments({ chain, network, hash: firstHash })
   ]);
 
   const seenTxs = {} as { [txid: string]: ITransaction };
@@ -202,7 +202,7 @@ if (require.main === module) {
       console.log('Please provide a CHAIN and NETWORK environment variable');
       process.exit(1);
     }
-    const tip = await BlockStorage.getLocalTip({ chain, network });
+    const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
 
     if (tip) {
       for (let i = resumeHeight; i <= tip.height; i++) {

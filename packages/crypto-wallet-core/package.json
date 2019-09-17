@@ -18,27 +18,28 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "bitcore-lib": "^8.6.0",
-    "bitcore-lib-cash": "^8.6.0",
-    "elliptic": "^6.4.1",
-    "ethereumjs-tx": "^1.3.7",
-    "ethereumjs-util": "^6.0.0",
-    "web3": "^1.0.0-beta.46"
+    "bcryptjs": "2.4.3",
+    "bitcore-lib": "8.6.0",
+    "bitcore-lib-cash": "8.6.0",
+    "elliptic": "6.4.1",
+    "ethereumjs-tx": "1.3.7",
+    "ethereumjs-util": "6.0.0",
+    "web3": "1.2.1"
   },
   "devDependencies": {
-    "@types/chai": "^4.1.7",
-    "@types/elliptic": "^6.4.3",
-    "@types/ethereumjs-util": "^5.2.0",
-    "@types/mocha": "^5.2.6",
-    "@types/node": "^10.12.15",
-    "@types/secp256k1": "^3.5.0",
-    "chai": "^4.2.0",
-    "eslint-config-airbnb-base": "^12.1.0",
-    "eslint-plugin-import": "^2.8.0",
-    "mocha": "^6.1.4",
-    "ts-node": "^8.1.0",
-    "typescript": "^3.4.3"
+    "@types/chai": "4.1.7",
+    "@types/elliptic": "6.4.3",
+    "@types/ethereumjs-util": "5.2.0",
+    "@types/mocha": "5.2.6",
+    "@types/node": "10.12.15",
+    "@types/web3": "1.0.19",
+    "@types/secp256k1": "3.5.0",
+    "chai": "4.2.0",
+    "eslint-config-airbnb-base": "12.1.0",
+    "eslint-plugin-import": "2.8.0",
+    "mocha": "6.1.4",
+    "ts-node": "8.1.0",
+    "typescript": "3.3.4000"
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }
