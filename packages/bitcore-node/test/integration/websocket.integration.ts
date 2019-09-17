@@ -3,9 +3,9 @@ import { resetDatabase } from '../helpers';
 import { AsyncRPC } from '../../src/rpc';
 import io = require('socket.io-client');
 import config from '../../src/config';
-import { P2pWorker } from '../../src/services/p2p';
 import { Event } from '../../src/services/event';
 import { Api } from '../../src/services/api';
+import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
 
 const chain = 'BTC';
 const network = 'regtest';
@@ -21,7 +21,7 @@ function getSocket() {
   return socket;
 }
 
-let p2pWorker: P2pWorker;
+let p2pWorker: BitcoinP2PWorker;
 let socket = getSocket();
 
 describe('Websockets', function() {
@@ -44,7 +44,7 @@ describe('Websockets', function() {
       console.log('Socket connected');
       socket.emit('room', '/BTC/regtest/inv');
     });
-    p2pWorker = new P2pWorker({
+    p2pWorker = new BitcoinP2PWorker({
       chain,
       network,
       chainConfig

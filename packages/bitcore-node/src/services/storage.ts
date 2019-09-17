@@ -25,6 +25,7 @@ export class StorageService {
 
   constructor({ configService = Config } = {}) {
     this.configService = configService;
+    this.connection.setMaxListeners(30);
   }
 
   start(args: Partial<ConfigType> = {}): Promise<MongoClient> {
@@ -227,7 +228,7 @@ export class StorageService {
       .find(finalQuery, options)
       .addCursorFlag('noCursorTimeout', true)
       .stream({
-        transform: transform || model._apiTransform
+        transform: transform || model._apiTransform.bind(model)
       });
     if (options.sort) {
       cursor = cursor.sort(options.sort);

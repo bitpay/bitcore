@@ -1,51 +1,26 @@
-import { valueOrDefault } from '../utils/check';
+import logger from '../logger';
 import { CoinStorage } from './coin';
 import { TransactionStorage } from './transaction';
 import { TransformOptions } from '../types/TransformOptions';
 import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { BaseModel, MongoBound } from './base';
-import logger from '../logger';
-import { IBlock } from '../types/Block';
+import { MongoBound } from './base';
 import { SpentHeightIndicators } from '../types/Coin';
 import { EventStorage } from './events';
-import config from '../config';
 import { StorageService } from '../services/storage';
+import { BaseBlock, IBlock } from './baseBlock';
 
-export { IBlock };
+export type IBtcBlock = IBlock & {
+  version: number;
+  merkleRoot: string;
+  bits: number;
+  nonce: number;
+};
 
 @LoggifyClass
-export class BlockModel extends BaseModel<IBlock> {
+export class BitcoinBlock extends BaseBlock<IBtcBlock> {
   constructor(storage?: StorageService) {
-    super('blocks', storage);
-  }
-
-  chainTips: Mapping<Mapping<IBlock>> = {};
-
-  allowedPaging = [
-    {
-      key: 'height' as 'height',
-      type: 'number' as 'number'
-    }
-  ];
-
-  async onConnect() {
-    this.collection.createIndex({ hash: 1 }, { background: true });
-    this.collection.createIndex({ chain: 1, network: 1, processed: 1, height: -1 }, { background: true });
-    this.collection.createIndex({ chain: 1, network: 1, timeNormalized: 1 }, { background: true });
-    this.collection.createIndex({ previousBlockHash: 1 }, { background: true });
-    this.wireup();
-  }
-
-  async wireup() {
-    for (let chain of Object.keys(config.chains)) {
-      for (let network of Object.keys(config.chains[chain])) {
-        const tip = await this.getLocalTip({ chain, network });
-        if (tip) {
-          this.chainTips[chain] = { [network]: tip };
-        }
-      }
-    }
+    super(storage);
   }
 
   async addBlock(params: {
@@ -131,7 +106,7 @@ export class BlockModel extends BaseModel<IBlock> {
     const height = (previousBlock && previousBlock.height + 1) || 1;
     logger.debug('Setting blockheight', height);
 
-    const convertedBlock: IBlock = {
+    const convertedBlock: IBtcBlock = {
       chain,
       network,
       hash: block.hash,
@@ -162,25 +137,6 @@ export class BlockModel extends BaseModel<IBlock> {
         upsert: true
       }
     };
-  }
-
-  updateCachedChainTip(params: { block: IBlock; chain: string; network: string }) {
-    const { chain, network, block } = params;
-    this.chainTips[chain] = valueOrDefault(this.chainTips[chain], {});
-    this.chainTips[chain][network] = valueOrDefault(this.chainTips[chain][network], block);
-    if (this.chainTips[chain][network].height < block.height) {
-      this.chainTips[chain][network] = block;
-    }
-  }
-
-  getPoolInfo(coinbase: string) {
-    //TODO need to make this actually parse the coinbase input and map to miner strings
-    // also should go somewhere else
-    return coinbase;
-  }
-
-  getLocalTip({ chain, network }) {
-    return this.collection.findOne({ chain, network, processed: true }, { sort: { height: -1 } });
   }
 
   async handleReorg(params: { header?: Bitcoin.Block.HeaderObj; chain: string; network: string }): Promise<boolean> {
@@ -219,7 +175,7 @@ export class BlockModel extends BaseModel<IBlock> {
     return true;
   }
 
-  _apiTransform(block: Partial<MongoBound<IBlock>>, options?: TransformOptions): any {
+  _apiTransform(block: Partial<MongoBound<IBtcBlock>>, options?: TransformOptions): any {
     const transform = {
       _id: block._id,
       chain: block.chain,
@@ -257,4 +213,4 @@ export class BlockModel extends BaseModel<IBlock> {
   }
 }
 
-export let BlockStorage = new BlockModel();
+export let BitcoinBlockStorage = new BitcoinBlock();
