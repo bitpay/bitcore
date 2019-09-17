@@ -5,9 +5,9 @@ import { CoinStorage, ICoin } from '../../src/models/coin';
 import { TransactionStorage, ITransaction } from '../../src/models/transaction';
 import { Storage } from '../../src/services/storage';
 import * as _ from 'lodash';
-import { P2pWorker } from '../../src/services/p2p';
 import { Config } from '../../src/services/config';
 import { ChainStateProvider } from '../../src/providers/chain-state';
+import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
 
 const { CHAIN, NETWORK, HEIGHT } = process.env;
 const resumeHeight = Number(HEIGHT) || 1;
@@ -15,7 +15,7 @@ const chain = CHAIN || '';
 const network = NETWORK || '';
 
 const chainConfig = Config.chainConfig({ chain, network });
-const worker = new P2pWorker({ chain, network, chainConfig });
+const worker = new BitcoinP2PWorker({ chain, network, chainConfig });
 worker.connect();
 
 type ErrorType = {
