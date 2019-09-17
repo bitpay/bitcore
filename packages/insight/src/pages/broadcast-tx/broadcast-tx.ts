@@ -57,7 +57,7 @@ export class BroadcastTxPage {
     };
 
     this.httpClient
-      .post(this.apiProvider.getUrl() + '/tx/send', postData)
+      .post(this.apiProvider.getUrl(this.chainNetwork) + '/tx/send', postData)
       .subscribe(
         response => {
           this.presentToast(true, response);

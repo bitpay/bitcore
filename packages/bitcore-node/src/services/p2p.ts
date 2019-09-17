@@ -1,25 +1,28 @@
-import logger, { timestamp } from '../logger';
-import { EventEmitter } from 'events';
-import { BlockStorage, BlockModel } from '../models/block';
-import { ChainStateProvider } from '../providers/chain-state';
-import { TransactionStorage } from '../models/transaction';
-import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { StateStorage } from '../models/state';
-import { SpentHeightIndicators } from '../types/Coin';
-import os from 'os';
+import * as os from 'os';
+import logger from '../logger';
 import { Config, ConfigService } from './config';
+import { BaseBlock, IBlock } from '../models/baseBlock';
 import { wait } from '../utils/wait';
-const Chain = require('../chain');
+import { StateStorage } from '../models/state';
 
 export class P2pManager {
-  workers = new Array<P2pWorker>();
+  workers = new Array<BaseP2PWorker>();
+  workerClasses: { [chain: string]: Class<BaseP2PWorker> } = {};
 
   private configService: ConfigService;
-  private p2pWorkers: Array<P2pWorker>;
+  private p2pWorkers: Array<BaseP2PWorker>;
 
   constructor({ configService = Config } = {}) {
     this.configService = configService;
-    this.p2pWorkers = new Array<P2pWorker>();
+    this.p2pWorkers = new Array<BaseP2PWorker>();
+  }
+
+  register(chain: string, worker: Class<BaseP2PWorker<any>>) {
+    this.workerClasses[chain] = worker;
+  }
+
+  get(chain: string) {
+    return this.workerClasses[chain];
   }
 
   async stop() {
@@ -29,7 +32,7 @@ export class P2pManager {
     }
   }
 
-  async start({ blockModel = BlockStorage } = {}) {
+  async start() {
     if (this.configService.isDisabled('p2p')) {
       logger.info('Disabled P2P Manager');
       return;
@@ -42,11 +45,11 @@ export class P2pManager {
       if ((chainConfig.chainSource && chainConfig.chainSource !== 'p2p') || chainConfig.disabled) {
         continue;
       }
-      const p2pWorker = new P2pWorker({
+      logger.info(`Starting ${chain} p2p worker`);
+      const p2pWorker = new this.workerClasses[chain]({
         chain,
         network,
-        chainConfig,
-        blockModel
+        chainConfig
       });
       this.p2pWorkers.push(p2pWorker);
       try {
@@ -58,358 +61,18 @@ export class P2pManager {
   }
 }
 
-export class P2pWorker {
-  private chain: string;
-  private network: string;
-  private bitcoreLib: any;
-  private bitcoreP2p: any;
-  private chainConfig: any;
-  private events: EventEmitter;
-  private messages: any;
-  private pool: any;
-  private connectInterval?: NodeJS.Timer;
-  private invCache: any;
-  private invCacheLimits: any;
-  private initialSyncComplete: boolean;
-  private stopping?: boolean;
-  private blockModel: BlockModel;
-  private lastHeartBeat: string;
-  private queuedRegistrations: Array<NodeJS.Timer>;
-  public isSyncing: boolean;
+export class BaseP2PWorker<T extends IBlock = IBlock> {
+  protected lastHeartBeat = '';
+  protected queuedRegistrations = new Array<NodeJS.Timer>();
+  protected stopping = false;
+  protected chain = '';
+  protected network = '';
   public isSyncingNode = false;
-  constructor({ chain, network, chainConfig, blockModel = BlockStorage }) {
-    this.blockModel = blockModel;
-    this.chain = chain;
-    this.network = network;
-    this.bitcoreLib = Chain[this.chain].lib;
-    this.bitcoreP2p = Chain[this.chain].p2p;
-    this.chainConfig = chainConfig;
-    this.events = new EventEmitter();
-    this.isSyncing = false;
-    this.lastHeartBeat = '';
-    this.queuedRegistrations = [];
-    this.initialSyncComplete = false;
-    this.invCache = {};
-    this.invCacheLimits = {
-      [this.bitcoreP2p.Inventory.TYPE.BLOCK]: 100,
-      [this.bitcoreP2p.Inventory.TYPE.TX]: 100000
-    };
-    this.messages = new this.bitcoreP2p.Messages({
-      network: this.bitcoreLib.Networks.get(this.network)
-    });
-    this.pool = new this.bitcoreP2p.Pool({
-      addrs: this.chainConfig.trustedPeers.map(peer => {
-        return {
-          ip: {
-            v4: peer.host
-          },
-          port: peer.port
-        };
-      }),
-      dnsSeed: false,
-      listenAddr: false,
-      network: this.network,
-      messages: this.messages
-    });
-  }
 
-  cacheInv(type: number, hash: string): void {
-    if (!this.invCache[type]) {
-      this.invCache[type] = [];
-    }
-    if (this.invCache[type].length > this.invCacheLimits[type]) {
-      this.invCache[type].shift();
-    }
-    this.invCache[type].push(hash);
-  }
-
-  isCachedInv(type: number, hash: string): boolean {
-    if (!this.invCache[type]) {
-      this.invCache[type] = [];
-    }
-    return this.invCache[type].includes(hash);
-  }
-
-  setupListeners() {
-    this.pool.on('peerready', peer => {
-      logger.info(
-        `${timestamp()} | Connected to peer: ${peer.host}:${peer.port.toString().padEnd(5)} | Chain: ${
-          this.chain
-        } | Network: ${this.network}`
-      );
-    });
-
-    this.pool.on('peerdisconnect', peer => {
-      logger.warn(
-        `${timestamp()} | Not connected to peer: ${peer.host}:${peer.port.toString().padEnd(5)} | Chain: ${
-          this.chain
-        } | Network: ${this.network}`
-      );
-    });
-
-    this.pool.on('peertx', (peer, message) => {
-      const hash = message.transaction.hash;
-      logger.debug('peer tx received', {
-        peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
-        network: this.network,
-        hash
-      });
-      if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash)) {
-        this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, hash);
-        this.processTransaction(message.transaction);
-        this.events.emit('transaction', message.transaction);
-      }
-    });
-
-    this.pool.on('peerblock', async (peer, message) => {
-      const { block } = message;
-      const { hash } = block;
-      logger.debug('peer block received', {
-        peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
-        network: this.network,
-        hash
-      });
-
-      const blockInCache = this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
-      if (!blockInCache) {
-        this.cacheInv(this.bitcoreP2p.Inventory.TYPE.BLOCK, hash);
-      }
-      if (this.isSyncingNode && (!blockInCache || this.isSyncing)) {
-        this.events.emit(hash, message.block);
-        this.events.emit('block', message.block);
-        if (!this.isSyncing) {
-          this.sync();
-        }
-      }
-    });
-
-    this.pool.on('peerheaders', (peer, message) => {
-      logger.debug('peerheaders message received', {
-        peer: `${peer.host}:${peer.port}`,
-        chain: this.chain,
-        network: this.network,
-        count: message.headers.length
-      });
-      this.events.emit('headers', message.headers);
-    });
-
-    this.pool.on('peerinv', (peer, message) => {
-      if (this.isSyncingNode) {
-        const filtered = message.inventory.filter(inv => {
-          const hash = this.bitcoreLib.encoding
-            .BufferReader(inv.hash)
-            .readReverse()
-            .toString('hex');
-          return !this.isCachedInv(inv.type, hash);
-        });
-
-        if (filtered.length) {
-          peer.sendMessage(this.messages.GetData(filtered));
-        }
-      }
-    });
-  }
-
-  async connect() {
-    this.setupListeners();
-    this.pool.connect();
-    this.connectInterval = setInterval(this.pool.connect.bind(this.pool), 5000);
-    return new Promise<void>(resolve => {
-      this.pool.once('peerready', () => resolve());
-    });
-  }
-
-  async disconnect() {
-    this.pool.removeAllListeners();
-    this.pool.disconnect();
-    if (this.connectInterval) {
-      clearInterval(this.connectInterval);
-    }
-  }
-
-  public async getHeaders(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
-    let received = false;
-    return new Promise<Bitcoin.Block.HeaderObj[]>(async resolve => {
-      this.events.once('headers', headers => {
-        received = true;
-        resolve(headers);
-      });
-      while (!received) {
-        this.pool.sendMessage(this.messages.GetHeaders({ starts: candidateHashes }));
-        await wait(1000);
-      }
-    });
-  }
-
-  public async getBlock(hash: string) {
-    logger.debug('Getting block, hash:', hash);
-    let received = false;
-    return new Promise<Bitcoin.Block>(async resolve => {
-      this.events.once(hash, (block: Bitcoin.Block) => {
-        logger.debug('Received block, hash:', hash);
-        received = true;
-        resolve(block);
-      });
-      while (!received) {
-        this.pool.sendMessage(this.messages.GetData.forBlock(hash));
-        await wait(1000);
-      }
-    });
-  }
-
-  getBestPoolHeight(): number {
-    let best = 0;
-    for (const peer of Object.values(this.pool._connectedPeers) as { bestHeight: number }[]) {
-      if (peer.bestHeight > best) {
-        best = peer.bestHeight;
-      }
-    }
-    return best;
-  }
-
-  async processBlock(block: Bitcoin.Block): Promise<any> {
-    await this.blockModel.addBlock({
-      chain: this.chain,
-      network: this.network,
-      forkHeight: this.chainConfig.forkHeight,
-      parentChain: this.chainConfig.parentChain,
-      initialSyncComplete: this.initialSyncComplete,
-      block
-    });
-  }
-
-  async processTransaction(tx: Bitcoin.Transaction): Promise<any> {
-    const now = new Date();
-    TransactionStorage.batchImport({
-      chain: this.chain,
-      network: this.network,
-      txs: [tx],
-      height: SpentHeightIndicators.pending,
-      mempoolTime: now,
-      blockTime: now,
-      blockTimeNormalized: now,
-      initialSyncComplete: true
-    });
-  }
-
-  async syncDone() {
-    return new Promise(resolve => this.events.once('SYNCDONE', resolve));
-  }
-
-  async sync() {
-    if (this.isSyncing) {
-      return false;
-    }
-    this.isSyncing = true;
-    const { chain, chainConfig, network } = this;
-    const { parentChain, forkHeight } = chainConfig;
-    const state = await StateStorage.collection.findOne({});
-    this.initialSyncComplete =
-      state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
-    let tip = await ChainStateProvider.getLocalTip({ chain, network });
-    if (parentChain && (!tip || tip.height < forkHeight)) {
-      let parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
-      while (!parentTip || parentTip.height < forkHeight) {
-        logger.info(`Waiting until ${parentChain} syncs before ${chain} ${network}`);
-        await wait(5000);
-        parentTip = await ChainStateProvider.getLocalTip({ chain: parentChain, network });
-      }
-    }
-
-    const getHeaders = async () => {
-      const locators = await ChainStateProvider.getLocatorHashes({ chain, network });
-      return this.getHeaders(locators);
-    };
-
-    let headers = await getHeaders();
-    while (headers.length > 0) {
-      tip = await ChainStateProvider.getLocalTip({ chain, network });
-      let currentHeight = tip ? tip.height : 0;
-      const startingHeight = currentHeight;
-      const startingTime = Date.now();
-      let lastLog = startingTime;
-      logger.info(`${timestamp()} | Syncing ${headers.length} blocks | Chain: ${chain} | Network: ${network}`);
-      for (const header of headers) {
-        try {
-          const block = await this.getBlock(header.hash);
-          await this.processBlock(block);
-          currentHeight++;
-          const now = Date.now();
-          const oneSecond = 1000;
-          if (now - lastLog > oneSecond) {
-            const blocksProcessed = currentHeight - startingHeight;
-            const elapsedMinutes = (now - startingTime) / (60 * oneSecond);
-            logger.info(
-              `${timestamp()} | Syncing... | Chain: ${chain} | Network: ${network} |${(blocksProcessed / elapsedMinutes)
-                .toFixed(2)
-                .padStart(8)} blocks/min | Height: ${currentHeight.toString().padStart(7)}`
-            );
-            lastLog = now;
-          }
-        } catch (err) {
-          logger.error(`${timestamp()} | Error syncing | Chain: ${chain} | Network: ${network}`, err);
-          this.isSyncing = false;
-          return this.sync();
-        }
-      }
-      headers = await getHeaders();
-    }
-
-    logger.info(`${timestamp()} | Sync completed | Chain: ${chain} | Network: ${network}`);
-    this.isSyncing = false;
-    await StateStorage.collection.findOneAndUpdate(
-      {},
-      { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
-      { upsert: true }
-    );
-    this.events.emit('SYNCDONE');
-    return true;
-  }
-
-  async resync(from: number, to: number) {
-    const { chain, network } = this;
-    let currentHeight = Math.max(1, from);
-    const originalSyncValue = this.isSyncing;
-    const originalSyncNodeValue = this.isSyncingNode;
-    while (currentHeight < to) {
-      this.isSyncing = true;
-      this.isSyncingNode = true;
-      const locatorHashes = await ChainStateProvider.getLocatorHashes({
-        chain,
-        network,
-        startHeight: Math.max(1, currentHeight - 30),
-        endHeight: currentHeight
-      });
-      const headers = await this.getHeaders(locatorHashes);
-      if (!headers.length) {
-        logger.info(`${chain}:${network} up to date.`);
-        break;
-      }
-      const headerCount = Math.min(headers.length, to - currentHeight);
-      logger.info(`Re-Syncing ${headerCount} blocks for ${chain} ${network}`);
-      let lastLog = Date.now();
-      for (let header of headers) {
-        if (currentHeight > to) {
-          break;
-        }
-        const block = await this.getBlock(header.hash);
-        await BlockStorage.processBlock({ chain, network, block, initialSyncComplete: true });
-        currentHeight++;
-        if (Date.now() - lastLog > 100) {
-          logger.info(`Re-Sync `, {
-            chain,
-            network,
-            height: currentHeight
-          });
-          lastLog = Date.now();
-        }
-      }
-    }
-    this.isSyncing = originalSyncValue;
-    this.isSyncingNode = originalSyncNodeValue;
-  }
+  constructor(protected params: { chain; network; chainConfig; blockModel: BaseBlock<T> }) {}
+  async start() {}
+  async stop() {}
+  async sync() {}
 
   getIsSyncingNode(): boolean {
     if (!this.lastHeartBeat) {
@@ -470,20 +133,6 @@ export class P2pWorker {
         lastHeartBeat: this.lastHeartBeat
       });
     }
-  }
-
-  async stop() {
-    this.stopping = true;
-    logger.debug(`Stopping worker for chain ${this.chain}`);
-    this.queuedRegistrations.forEach(clearTimeout);
-    await this.unregisterSyncingNode();
-    await this.disconnect();
-  }
-
-  async start() {
-    logger.debug(`Started worker for chain ${this.chain}`);
-    await this.connect();
-    this.refreshSyncingNode();
   }
 }
 

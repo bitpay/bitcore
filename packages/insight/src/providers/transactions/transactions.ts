@@ -246,9 +246,7 @@ export class TxsProvider {
     if (args.blockHash) {
       queryString += `?blockHash=${args.blockHash}`;
     }
-    const url = `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
-      chainNetwork.network
-    }/tx/${queryString}`;
+    const url = `${this.apiProvider.getUrl(chainNetwork)}/tx/${queryString}`;
     return this.httpClient.get<ApiEthTx[] & ApiUtxoCoinTx[]>(url);
   }
 
@@ -256,9 +254,7 @@ export class TxsProvider {
     hash: string,
     chainNetwork: ChainNetwork
   ): Observable<ApiEthTx & ApiUtxoCoinTx> {
-    const url = `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
-      chainNetwork.network
-    }/tx/${hash}/populated`;
+    const url = `${this.apiProvider.getUrl(chainNetwork)}/tx/${hash}`;
     return this.httpClient.get<ApiEthTx & ApiUtxoCoinTx>(url);
   }
 
@@ -273,9 +269,7 @@ export class TxsProvider {
     txId: string,
     chainNetwork: ChainNetwork
   ): Observable<CoinsApiResponse> {
-    const url = `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
-      chainNetwork.network
-    }/tx/${txId}/coins`;
+    const url = `${this.apiProvider.getUrl(chainNetwork)}/tx/${txId}/coins`;
     return this.httpClient.get<CoinsApiResponse>(url);
   }
 

@@ -1,10 +1,11 @@
 {
   "name": "bitcore-build",
-  "version": "8.6.0",
+  "version": "8.7.2",
   "description": "A helper for common tasks to build bitcore modules'",
   "main": "index.js",
   "scripts": {
-    "test": "gulp test"
+    "test": "gulp test",
+    "pub": "npm  publish"
   },
   "repository": {
     "type": "git",

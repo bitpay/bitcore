@@ -31,7 +31,7 @@ export abstract class BaseModel<T> {
     if (this.storageService.connected) {
       await doConnect();
     } else {
-      this.storageService.connection.on('CONNECTED', async () => {
+      this.storageService.connection.once('CONNECTED', async () => {
         await doConnect();
       });
     }

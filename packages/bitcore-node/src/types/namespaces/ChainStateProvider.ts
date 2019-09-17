@@ -1,6 +1,5 @@
-import { TransactionJSON } from '../Transaction';
 import { ObjectId } from 'mongodb';
-import { IBlock } from '../../models/block';
+import { IBtcBlock } from '../../models/block';
 import { Request, Response } from 'express';
 import { IWallet } from '../../models/wallet';
 import { ChainNetwork } from '../../types/ChainNetwork';
@@ -11,6 +10,7 @@ import { AuthheadJSON } from '../Authhead';
 import { CoinListingJSON } from '../Coin';
 import { DailyTransactionsJSON } from '../stats';
 import { ICoin } from '../../models/coin';
+import { IBlock } from '../../models/baseBlock';
 export declare namespace CSP {
   export type StreamWalletTransactionsArgs = {
     startBlock: number;
@@ -30,17 +30,18 @@ export declare namespace CSP {
 
   export type GetBalanceForAddressParams = ChainNetwork & {
     address: string;
+    args: any;
   };
 
   export type GetBlockParams = ChainNetwork & {
     blockId?: string;
     sinceBlock?: number | string;
-    args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBlock>>;
+    args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBtcBlock>>;
   };
   export type StreamBlocksParams = ChainNetwork & {
     blockId?: string;
     sinceBlock: number | string;
-    args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBlock>>;
+    args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBtcBlock>>;
     req: Request;
     res: Response;
   };
@@ -60,18 +61,20 @@ export declare namespace CSP {
 
   export type GetWalletBalanceParams = ChainNetwork & {
     wallet: MongoBound<IWallet>;
+    args: any;
   };
 
   export type GetWalletBalanceAtTimeParams = ChainNetwork & {
     wallet: MongoBound<IWallet>;
     time: string;
+    args: any;
   };
 
   export type StreamAddressUtxosParams = ChainNetwork & {
     address: string;
     req: Request;
     res: Response;
-    args: Partial<StreamAddressUtxosArgs & StreamingFindOptions<ICoin>>;
+    args: Partial<StreamAddressUtxosArgs & StreamingFindOptions<ICoin> & any>;
   };
 
   export type StreamTransactionsParams = ChainNetwork & {
@@ -103,7 +106,7 @@ export declare namespace CSP {
     wallet: MongoBound<IWallet>;
     req: Request;
     res: Response;
-    args: StreamWalletTransactionsArgs;
+    args: StreamWalletTransactionsArgs & any;
   };
   export type StreamWalletUtxosArgs = { includeSpent: 'true' | undefined };
   export type StreamWalletUtxosParams = ChainNetwork & {
@@ -130,7 +133,7 @@ export declare namespace CSP {
     broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
     createWallet(params: CreateWalletParams): Promise<IWallet>;
     getWallet(params: GetWalletParams): Promise<IWallet | null>;
-    updateWallet(params: UpdateWalletParams): Promise<any>;
+    updateWallet(params: UpdateWalletParams): Promise<void>;
     getWalletBalance(
       params: GetWalletBalanceParams
     ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
@@ -142,7 +145,7 @@ export declare namespace CSP {
     streamTransactions(params: StreamTransactionsParams): any;
     getAuthhead(params: StreamTransactionParams): Promise<AuthheadJSON | undefined>;
     getDailyTransactions(params: { chain: string; network: string }): Promise<DailyTransactionsJSON>;
-    getTransaction(params: StreamTransactionParams): Promise<TransactionJSON | undefined>;
+    getTransaction(params: StreamTransactionParams): Promise<any | undefined>;
     streamWalletAddresses(params: StreamWalletAddressesParams): any;
     walletCheck(params: WalletCheckParams): any;
     streamWalletTransactions(params: StreamWalletTransactionsParams): any;

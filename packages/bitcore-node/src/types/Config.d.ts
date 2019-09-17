@@ -11,6 +11,7 @@ export interface ConfigType {
   chains: {
     [currency: string]: { [network: string]: any };
   };
+  modules: string[];
   services: {
     api: {
       disabled?: boolean;

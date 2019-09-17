@@ -5,6 +5,7 @@ import { Config } from './config';
 import '../utils/polyfills';
 
 import parseArgv from '../utils/parseArgv';
+import { partition } from '../utils/partition';
 let args = parseArgv([], ['EXIT']);
 
 export class PruningService {
@@ -33,6 +34,7 @@ export class PruningService {
   async detectAndClear() {
     for (let chainNetwork of Config.chainNetworks()) {
       const { chain, network } = chainNetwork;
+      await this.detectInvalidMempoolCoins(chain, network);
       const invalids = this.detectInvalidCoins(chain, network);
       for await (const invalidCoins of invalids) {
         if (this.stopping) {
@@ -44,10 +46,21 @@ export class PruningService {
     }
   }
 
+  async detectInvalidMempoolCoins(chain, network) {
+    const txs = await this.transactionModel.collection.find({ chain, network, blockHeight: -3 }).toArray();
+    for (let groups of partition(txs, 1000)) {
+      const updated = await this.coinModel.collection.updateMany(
+        { chain, network, mintTxid: { $in: groups.map(tx => tx.txid) }, mintHeight: -1 },
+        { $set: { mintHeight: -3 } }
+      );
+      logger.info('Mempool coins updated', updated);
+    }
+  }
+
   async *detectInvalidCoins(chain, network) {
     const coins = await this.coinModel.collection.find({ chain, network, mintHeight: -3 }).toArray();
     logger.info('Pruning worker found', coins.length, 'invalid coins for ', chain, network);
-    for (const coin of coins) {
+    for (let coin of coins) {
       if (coin.spentTxid) {
         yield await this.scanForInvalid(coin.spentTxid);
       }
@@ -59,7 +72,7 @@ export class PruningService {
     if (foundCoins.length === 0) {
       return foundCoins;
     } else {
-      for (const coin of foundCoins) {
+      for (let coin of foundCoins) {
         if (coin.spentTxid) {
           foundCoins.push(...(await this.scanForInvalid(coin.spentTxid)));
         }
