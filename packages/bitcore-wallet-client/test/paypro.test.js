@@ -4,19 +4,42 @@ var _ = require('lodash');
 var chai = chai || require('chai');
 var sinon = sinon || require('sinon');
 var should = chai.should();
-var {PayPro: payPro} = require('../ts_build/paypro');
+var { PayPro: payPro } = require('../ts_build/paypro');
 var TestData = require('./testdata');
 
 function mockRequest(bodyBuf, headers) {
   bodyBuf = _.isArray(bodyBuf) ? bodyBuf : [bodyBuf];
-  payPro.r = function (opts, cb) {
+  payPro.r = {
+    'get': (_url) => {
+      return {
+        set: (_k, _v) => { },
+        query: (_opts) => { },
+        end: (cb) => {
+          return cb(null, {
+            headers: headers || {},
+            statusCode: 200,
+            statusMessage: 'OK',
+            text: bodyBuf.shift()
+          })
+        }
+      }
+    },
+    'post': (_url) => {
+      return {
+        set: (_k, _v) => { },
+        send: (_opts) => { },
+        end: (cb) => {
+          return cb(null, {
+            headers: headers || {},
+            statusCode: 200,
+            statusMessage: 'OK',
+            text: bodyBuf.shift()
+          })
+        }
+      }
+    }
+  }
 
-    return cb(null, {
-      headers: headers || {},
-      statusCode: 200,
-      statusMessage: 'OK',
-    }, bodyBuf.shift());
-  };
 };
 
 describe('paypro', function () {
@@ -61,12 +84,21 @@ describe('paypro', function () {
 
 
   it('Should handle a failed (404) request', function (done) {
-    payPro.r = function (opts, cb) {
-      return cb(null, {
-        statusCode: 404,
-        statusMessage: 'Not Found',
-      }, 'This invoice was not found or has been archived');
-    };
+    payPro.r = {
+      'get': (_url) => {
+        return {
+          set: (_k, _v) => { },
+          query: (_opts) => { },
+          end: (cb) => {
+            return cb(null, {
+              statusCode: 404,
+              statusMessage: 'Not Found',
+            }, 'This invoice was not found or has been archived');
+          }
+        }
+      },
+      'post': () => { }
+    }
     payPro.get({
       url: 'https://test.bitpay.com/paypro',
       network: 'testnet',
@@ -132,12 +164,20 @@ describe('paypro', function () {
       url: 'http://an.url.com/paypro',
       coin: 'bch',
     };
-    payPro.r = function (opts, cb) {
-      return cb(null, {
-        statusCode: 400,
-        statusMessage: 'ss',
-      }, 'This invoice was not found or has been archived');
-    };
+    payPro.r = {
+      'post': (_url) => {
+        return {
+          set: (_k, _v) => { },
+          send: (_opts) => { },
+          end: (cb) => {
+            return cb(null, {
+              statusCode: 400,
+              statusMessage: 'ss',
+            }, 'This invoice was not found or has been archived');
+          }
+        }
+      }
+    }
     payPro.send(opts, function (err, data, memo) {
       should.exist(err);
       done();

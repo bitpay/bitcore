@@ -3157,22 +3157,69 @@ describe('client API', () => {
   });
 
   describe('Payment Protocol', () => {
-    var PP, oldreq, DATA;
+    var PP, oldreq, DATA, postArgs;
+    var header = {};
     var mockRequest = (bodyBuf, headers) => {
       // bodyBuf = _.isArray(bodyBuf) ? bodyBuf : [bodyBuf];
-      Client.PayPro.r = (opts, cb) => {
-        if (opts.headers.Accept == 'application/payment-request') {
-          return cb(null, {
-            headers: headers || {},
-            statusCode: 200,
-            statusMessage: 'OK',
-          }, bodyBuf);
-        } else {
-          return cb(null, {
-            headers: headers || {},
-            statusCode: 200,
-            statusMessage: 'OK',
-          }, TestData.payProAckHex);
+      Client.PayPro.r = {
+        'get': (_url) => {
+          return {
+            set: (_k, _v) => {
+              if (_k && _v) {
+                header[_k] = _v;
+              }
+            },
+            query: (_opts) => { },
+            end: (cb) => {
+              if (header.Accept == 'application/payment-request') {
+                return cb(null, {
+                  headers: headers || {},
+                  statusCode: 200,
+                  statusMessage: 'OK',
+                  text: bodyBuf
+                });
+              } else {
+                return cb(null, {
+                  headers: headers || {},
+                  statusCode: 200,
+                  statusMessage: 'OK',
+                  text: TestData.payProAckHex
+                });
+              }
+            }
+          }
+        },
+        'post': (_url) => {
+          return {
+            set: (_k, _v) => {
+              if (_k && _v) {
+                header[_k] = _v;
+              }
+            },
+            send: (opts) => {
+              var _opts = JSON.parse(opts);
+              if (_opts.transactions) {
+                postArgs = _opts;
+              }
+            },
+            end: (cb) => {
+              if (header.Accept == 'application/payment-request') {
+                return cb(null, {
+                  headers: headers || {},
+                  statusCode: 200,
+                  statusMessage: 'OK',
+                  text: bodyBuf
+                });
+              } else {
+                return cb(null, {
+                  headers: headers || {},
+                  statusCode: 200,
+                  statusMessage: 'OK',
+                  text: TestData.payProAckHex
+                });
+              }
+            }
+          }
         }
       };
     };
@@ -3281,17 +3328,15 @@ describe('client API', () => {
             clients[1].pushSignatures(xx, signatures2, (err, yy, paypro) => {
               should.not.exist(err);
               yy.status.should.equal('accepted');
-              let spy = sinon.spy(Client.PayPro, 'r');
+              let spy = sinon.spy(Client.PayPro.r, 'post');
               //              http.onCall(5).yields(null, TestData.payProAckHex);
 
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
-                var args = spy.lastCall.args[0];
-                args.method.should.equal('POST');
-                let x = JSON.parse(args.body);
-                x.currency.should.equal('BTC');
-                x.transactions.length.should.equal(1);
-                x.transactions[0].length.should.be.within(665, 680);
+                spy.called.should.be.true;
+                postArgs.currency.should.equal('BTC');
+                postArgs.transactions.length.should.equal(1);
+                postArgs.transactions[0].length.should.be.within(665, 680);
                 memo.should.equal('an ack memo');
                 zz.message.should.equal('Payment request for BitPay invoice 4Zrpank3aA2EAdYaQwMXbz for merchant Electronic Frontier Foundation');
                 done();
@@ -3313,12 +3358,11 @@ describe('client API', () => {
               should.not.exist(err);
 
               yy.status.should.equal('accepted');
-              let spy = sinon.spy(Client.PayPro, 'r');
+              let spy = sinon.spy(Client.PayPro.r, 'post');
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
-                var args = spy.lastCall.args[0];
-                var data = JSON.parse(args.body);
-                var rawTx = Buffer.from(data.transactions[0], 'hex');
+                spy.called.should.be.true;
+                var rawTx = Buffer.from(postArgs.transactions[0], 'hex');
                 var tx = new Bitcore.Transaction(rawTx);
                 var script = tx.inputs[0].script;
                 script.isScriptHashIn().should.equal(true);
@@ -3342,13 +3386,13 @@ describe('client API', () => {
               should.not.exist(err);
 
               yy.status.should.equal('accepted');
-              let spy = sinon.spy(Client.PayPro, 'r');
+              let spy = sinon.spy(Client.PayPro.r, 'post');
+
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
-                var args = spy.lastCall.args[0];
-                var data = args.headers;
-                data.BP_PARTNER.should.equal('xxx');
-                data.BP_PARTNER_VERSION.should.equal('yyy');
+                spy.called.should.be.true;
+                header.BP_PARTNER.should.equal('xxx');
+                header.BP_PARTNER_VERSION.should.equal('yyy');
                 done();
               });
             });
@@ -3417,16 +3461,13 @@ describe('client API', () => {
             clients[1].pushSignatures(xx, signatures, (err, yy, paypro) => {
               should.not.exist(err);
               yy.status.should.equal('accepted');
-
-              let spy = sinon.spy(Client.PayPro, 'r');
+              let spy = sinon.spy(Client.PayPro.r, 'post');
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
-                var args = spy.lastCall.args[0];
-                args.method.should.equal('POST');
-                let x = JSON.parse(args.body);
-                x.currency.should.equal('BTC');
-                x.transactions.length.should.equal(1);
-                x.transactions[0].length.should.be.within(665, 680);
+                spy.called.should.be.true;
+                postArgs.currency.should.equal('BTC');
+                postArgs.transactions.length.should.equal(1);
+                postArgs.transactions[0].length.should.be.within(665, 680);
 
                 memo.should.equal('an ack memo');
                 zz.message.should.equal('Payment request for BitPay invoice 4Zrpank3aA2EAdYaQwMXbz for merchant Electronic Frontier Foundation');
@@ -3495,13 +3536,11 @@ describe('client API', () => {
           clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
             xx.status.should.equal('accepted');
-            let spy = sinon.spy(Client.PayPro, 'r');
-
+            let spy = sinon.spy(Client.PayPro.r, 'post');
             clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
               should.not.exist(err);
-              var args = spy.lastCall.args[0];
-              var data = JSON.parse(args.body);
-              var rawTx = Buffer.from(data.transactions[0], 'hex');
+              spy.called.should.be.true;
+              var rawTx = Buffer.from(postArgs.transactions[0], 'hex');
               var tx = new Bitcore.Transaction(rawTx);
               var script = tx.inputs[0].script;
               script.isPublicKeyHashIn().should.equal(true);
@@ -3560,12 +3599,11 @@ describe('client API', () => {
             should.not.exist(err);
             xx.status.should.equal('accepted');
 
-            let spy = sinon.spy(Client.PayPro, 'r');
+            let spy = sinon.spy(Client.PayPro.r, 'post');
             clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
               should.not.exist(err);
-              var args = spy.lastCall.args[0];
-              var data = JSON.parse(args.body);
-              var rawTx = Buffer.from(data.transactions[0], 'hex');
+              spy.called.should.be.true;
+              var rawTx = Buffer.from(postArgs.transactions[0], 'hex');
               var tx = Bitcore_['bch'].Transaction(rawTx);
               var script = tx.inputs[0].script;
               script.isPublicKeyHashIn().should.equal(true);
