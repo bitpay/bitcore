@@ -290,7 +290,7 @@ export class PayPro {
       'Content-Type': JSON_PAYMENT_VERIFY_CONTENT_TYPE
     };
     let size = opts.rawTx.length / 2;
-    opts.body = JSON.stringify({
+    opts.args = JSON.stringify({
       currency: COIN,
       unsignedTransaction: opts.rawTxUnsigned,
       weightedSize: size
@@ -322,7 +322,7 @@ export class PayPro {
         }
       }
 
-      opts.body = JSON.stringify({
+      opts.args = JSON.stringify({
         currency: COIN,
         transactions: [opts.rawTx]
       });
