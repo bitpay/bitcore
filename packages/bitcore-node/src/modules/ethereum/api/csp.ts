@@ -314,6 +314,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       erc20.forEach(tx =>
         transactionStream.push({ ...tx, value: tx.abiType!.params[1].value, to: tx.abiType!.params[0].value })
       );
+      transactionStream.push(null);
     }
     const listTransactionsStream = new EthListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(res);
