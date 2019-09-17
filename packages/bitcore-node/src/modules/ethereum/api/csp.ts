@@ -305,7 +305,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
             abiType: { $exists: true },
             'abiType.type': 'ERC20',
             'abiType.name': 'transfer',
-            'abiType.params.0.value': { $in: walletAddresses.map(w => w.address) }
+            'abiType.params.0.value': { $in: walletAddresses.map(w => w.address.toLowerCase()) }
           }
         ]
       };
