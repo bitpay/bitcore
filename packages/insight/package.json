@@ -33,6 +33,7 @@
     "ionic:serve": "ionic-app-scripts serve --port 8200",
     "postinstall": "./node_modules/.bin/webdriver-manager update --gecko false",
     "start": "npm run ionic:serve",
+    "start:prod": "ENV=prod CHAIN=BTC NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:serve",
     "test": "ng test --watch=false --code-coverage --no-progress",
     "fix:prettier": "prettier '{*,**/*}.{js,ts,md,json,css}' --write",
     "fix:tslint": "tslint --type-check --fix --project ."
