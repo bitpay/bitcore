@@ -4,18 +4,17 @@ const utils = require('web3-utils');
 export class ETHTxProvider {
   create(params: {
     recipients: Array<{ address: string; amount: string }>;
-    from: string;
     nonce: number;
-    fee: number;
+    gasPrice: number;
     data: string;
     gasLimit: number;
   }) {
-    const { recipients, from, nonce, fee, data, gasLimit } = params;
+    const { recipients, nonce, gasPrice, data, gasLimit } = params;
     const { address, amount } = recipients[0];
     const txData = {
       nonce: utils.toHex(nonce),
       gasLimit: utils.toHex(gasLimit),
-      gasPrice: utils.toHex(fee),
+      gasPrice: utils.toHex(gasPrice),
       to: address,
       data,
       value: utils.toHex(amount)
@@ -24,10 +23,9 @@ export class ETHTxProvider {
     return rawTx;
   }
 
-  sign(params: { tx: string; key: Key; from: string }) {
-    const { tx, key, from } = params;
+  sign(params: { tx: string; key: Key; }) {
+    const { tx, key } = params;
     const rawTx = new EthereumTx(tx);
-    const address = from.toLowerCase();
     const bufferKey = Buffer.from(key.privKey, 'hex');
     rawTx.sign(bufferKey);
     const serializedTx = rawTx.serialize();
