@@ -5,11 +5,18 @@ import { CoinStorage, ICoin } from '../../src/models/coin';
 import { TransactionStorage, ITransaction } from '../../src/models/transaction';
 import { Storage } from '../../src/services/storage';
 import * as _ from 'lodash';
+import { Config } from '../../src/services/config';
+import { ChainStateProvider } from '../../src/providers/chain-state';
+import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
 
 const { CHAIN, NETWORK, HEIGHT } = process.env;
 const resumeHeight = Number(HEIGHT) || 1;
-const chain = CHAIN;
-const network = NETWORK;
+const chain = CHAIN || '';
+const network = NETWORK || '';
+
+const chainConfig = Config.chainConfig({ chain, network });
+const worker = new BitcoinP2PWorker({ chain, network, chainConfig });
+worker.connect();
 
 type ErrorType = {
   model: string;
@@ -17,6 +24,20 @@ type ErrorType = {
   type: string;
   payload: any;
 };
+
+async function getBlock(currentHeight: number) {
+  worker.isSyncing = true;
+  worker.isSyncingNode = true;
+
+  const locatorHashes = await ChainStateProvider.getLocatorHashes({
+    chain,
+    network,
+    startHeight: Math.max(1, currentHeight - 30),
+    endHeight: currentHeight
+  });
+  const headers = await worker.getHeaders(locatorHashes);
+  return worker.getBlock(headers[0].hash);
+}
 
 export async function validateDataForBlock(blockNum: number, log = false) {
   let success = true;
@@ -57,7 +78,47 @@ export async function validateDataForBlock(blockNum: number, log = false) {
     }
   }
 
-  for (const tx of mempoolTxs) {
+  if (block) {
+    const p2pBlock = await getBlock(blockNum);
+    const txs = p2pBlock.transactions ? p2pBlock.transactions.slice(1) : [];
+    const spends = _.chain(txs)
+      .map(tx => tx.inputs)
+      .flatten()
+      .map(input => input.toObject())
+      .value();
+
+    const coins = await CoinStorage.collection
+      .find({ chain, network, mintTxid: { $in: spends.map(tx => tx.prevTxId) } })
+      .toArray();
+    for (let spend of spends) {
+      const found = coins.find(c => c.mintTxid === spend.prevTxId && c.mintIndex === spend.outputIndex);
+      if (found && found.spentHeight !== block.height) {
+        success = false;
+        const error = { model: 'coin', err: true, type: 'COIN_SHOULD_BE_SPENT', payload: { coin: found, blockNum } };
+        errors.push(error);
+        if (log) {
+          console.log(JSON.stringify(error));
+        }
+      } else {
+        if (!found && spend.prevTxId != '0000000000000000000000000000000000000000000000000000000000000000') {
+          success = false;
+          const error = {
+            model: 'coin',
+            err: true,
+            type: 'MISSING_INPUT',
+            payload: { coin: { mintTxid: spend.prevTxId, mintIndex: spend.outputIndex }, blockNum }
+          };
+          errors.push(error);
+          if (log) {
+            console.log(JSON.stringify(error));
+            console.log(coins.filter(c => c.mintTxid === spend.prevTxId));
+          }
+        }
+      }
+    }
+  }
+
+  for (let tx of mempoolTxs) {
     success = false;
     const error = { model: 'transaction', err: true, type: 'DUPE_TRANSACTION', payload: { tx, blockNum } };
     errors.push(error);

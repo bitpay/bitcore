@@ -94,6 +94,7 @@ import { BitcoinP2PWorker } from "../../src/modules/bitcoin/p2p";
       case 'MISSING_TX':
       case 'MISSING_COIN_FOR_TXID':
       case 'VALUE_MISMATCH':
+      case 'COIN_SHOULD_BE_SPENT':
       case 'NEG_FEE':
         const blockHeight = Number(data.payload.blockNum);
         const { success } = await validateDataForBlock(blockHeight);
