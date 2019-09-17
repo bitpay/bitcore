@@ -1,4 +1,4 @@
-import { Transform, Readable } from 'stream';
+import { Readable } from 'stream';
 import Config from '../../../config';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
@@ -310,14 +310,9 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         ]
       };
       console.log(JSON.stringify(query));
-      transactionStream = EthTransactionStorage.collection.find(query).pipe(
-        new Transform({
-          objectMode: true,
-          transform: function(tx: any, _, done) {
-            console.log(tx);
-            return done(null, { ...tx, value: tx.abiType.params[1].value, to: tx.abiType.params[0].value });
-          }
-        })
+      const erc20 = await EthTransactionStorage.collection.find(query).toArray();
+      erc20.forEach(tx =>
+        transactionStream.push({ ...tx, value: tx.abiType!.params[1].value, to: tx.abiType!.params[0].value })
       );
     }
     const listTransactionsStream = new EthListTransactionsStream(wallet);
