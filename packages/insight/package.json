@@ -1,7 +1,7 @@
 {
   "name": "@bitpay/insight-previous",
   "description": "A blockchain explorer for Bitcore",
-  "version": "8.6.0",
+  "version": "8.7.2",
   "repository": "git://github.com/bitpay/bitcore.git",
   "bugs": {
     "url": "https://github.com/bitpay/bitcore/issues"
@@ -33,6 +33,7 @@
     "ionic:serve": "ionic-app-scripts serve --port 8200",
     "postinstall": "./node_modules/.bin/webdriver-manager update --gecko false",
     "start": "npm run ionic:serve",
+    "start:prod": "ENV=prod CHAIN=BTC NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:serve",
     "test": "ng test --watch=false --code-coverage --no-progress",
     "fix:prettier": "prettier '{*,**/*}.{js,ts,md,json,css}' --write",
     "fix:tslint": "tslint --type-check --fix --project ."

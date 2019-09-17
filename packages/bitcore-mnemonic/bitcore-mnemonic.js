@@ -72,7 +72,7 @@ Entity.prototype.encode = function encode(data, enc, /* internal */ reporter) {
   return this._getEncoder(enc).encode(data, reporter);
 };
 
-},{"../asn1":1,"inherits":99,"vm":153}],3:[function(require,module,exports){
+},{"../asn1":1,"inherits":99,"vm":154}],3:[function(require,module,exports){
 var inherits = require('inherits');
 var Reporter = require('../base').Reporter;
 var Buffer = require('buffer').Buffer;
@@ -5612,7 +5612,7 @@ AES.prototype.scrub = function () {
 
 module.exports.AES = AES
 
-},{"safe-buffer":140}],20:[function(require,module,exports){
+},{"safe-buffer":127}],20:[function(require,module,exports){
 var aes = require('./aes')
 var Buffer = require('safe-buffer').Buffer
 var Transform = require('cipher-base')
@@ -5731,7 +5731,7 @@ StreamCipher.prototype.setAAD = function setAAD (buf) {
 
 module.exports = StreamCipher
 
-},{"./aes":19,"./ghash":24,"./incr32":25,"buffer-xor":46,"cipher-base":48,"inherits":99,"safe-buffer":140}],21:[function(require,module,exports){
+},{"./aes":19,"./ghash":24,"./incr32":25,"buffer-xor":46,"cipher-base":48,"inherits":99,"safe-buffer":127}],21:[function(require,module,exports){
 var ciphers = require('./encrypter')
 var deciphers = require('./decrypter')
 var modes = require('./modes/list.json')
@@ -5872,7 +5872,7 @@ function createDecipher (suite, password) {
 exports.createDecipher = createDecipher
 exports.createDecipheriv = createDecipheriv
 
-},{"./aes":19,"./authCipher":20,"./modes":32,"./streamCipher":35,"cipher-base":48,"evp_bytestokey":83,"inherits":99,"safe-buffer":140}],23:[function(require,module,exports){
+},{"./aes":19,"./authCipher":20,"./modes":32,"./streamCipher":35,"cipher-base":48,"evp_bytestokey":83,"inherits":99,"safe-buffer":127}],23:[function(require,module,exports){
 var MODES = require('./modes')
 var AuthCipher = require('./authCipher')
 var Buffer = require('safe-buffer').Buffer
@@ -5988,7 +5988,7 @@ function createCipher (suite, password) {
 exports.createCipheriv = createCipheriv
 exports.createCipher = createCipher
 
-},{"./aes":19,"./authCipher":20,"./modes":32,"./streamCipher":35,"cipher-base":48,"evp_bytestokey":83,"inherits":99,"safe-buffer":140}],24:[function(require,module,exports){
+},{"./aes":19,"./authCipher":20,"./modes":32,"./streamCipher":35,"cipher-base":48,"evp_bytestokey":83,"inherits":99,"safe-buffer":127}],24:[function(require,module,exports){
 var Buffer = require('safe-buffer').Buffer
 var ZEROES = Buffer.alloc(16, 0)
 
@@ -6079,7 +6079,7 @@ GHASH.prototype.final = function (abl, bl) {
 
 module.exports = GHASH
 
-},{"safe-buffer":140}],25:[function(require,module,exports){
+},{"safe-buffer":127}],25:[function(require,module,exports){
 function incr32 (iv) {
   var len = iv.length
   var item
@@ -6150,7 +6150,7 @@ exports.encrypt = function (self, data, decrypt) {
   return out
 }
 
-},{"buffer-xor":46,"safe-buffer":140}],28:[function(require,module,exports){
+},{"buffer-xor":46,"safe-buffer":127}],28:[function(require,module,exports){
 var Buffer = require('safe-buffer').Buffer
 
 function encryptByte (self, byteParam, decrypt) {
@@ -6194,7 +6194,7 @@ exports.encrypt = function (self, chunk, decrypt) {
   return out
 }
 
-},{"safe-buffer":140}],29:[function(require,module,exports){
+},{"safe-buffer":127}],29:[function(require,module,exports){
 var Buffer = require('safe-buffer').Buffer
 
 function encryptByte (self, byteParam, decrypt) {
@@ -6221,7 +6221,7 @@ exports.encrypt = function (self, chunk, decrypt) {
   return out
 }
 
-},{"safe-buffer":140}],30:[function(require,module,exports){
+},{"safe-buffer":127}],30:[function(require,module,exports){
 var xor = require('buffer-xor')
 var Buffer = require('safe-buffer').Buffer
 var incr32 = require('../incr32')
@@ -6253,7 +6253,7 @@ exports.encrypt = function (self, chunk) {
   return xor(chunk, pad)
 }
 
-},{"../incr32":25,"buffer-xor":46,"safe-buffer":140}],31:[function(require,module,exports){
+},{"../incr32":25,"buffer-xor":46,"safe-buffer":127}],31:[function(require,module,exports){
 exports.encrypt = function (self, block) {
   return self._cipher.encryptBlock(block)
 }
@@ -6524,7 +6524,7 @@ StreamCipher.prototype._final = function () {
 
 module.exports = StreamCipher
 
-},{"./aes":19,"cipher-base":48,"inherits":99,"safe-buffer":140}],36:[function(require,module,exports){
+},{"./aes":19,"cipher-base":48,"inherits":99,"safe-buffer":127}],36:[function(require,module,exports){
 var DES = require('browserify-des')
 var aes = require('browserify-aes/browser')
 var aesModes = require('browserify-aes/modes')
@@ -6645,7 +6645,7 @@ DES.prototype._final = function () {
   return Buffer.from(this._des.final())
 }
 
-},{"cipher-base":48,"des.js":56,"inherits":99,"safe-buffer":140}],38:[function(require,module,exports){
+},{"cipher-base":48,"des.js":56,"inherits":99,"safe-buffer":127}],38:[function(require,module,exports){
 exports['des-ecb'] = {
   key: 8,
   iv: 0
@@ -6977,7 +6977,7 @@ module.exports = {
 }
 
 }).call(this,require("buffer").Buffer)
-},{"./algorithms.json":41,"./sign":44,"./verify":45,"buffer":47,"create-hash":51,"inherits":99,"stream":149}],44:[function(require,module,exports){
+},{"./algorithms.json":41,"./sign":44,"./verify":45,"buffer":47,"create-hash":51,"inherits":99,"stream":136}],44:[function(require,module,exports){
 (function (Buffer){
 // much of this based on https://github.com/indutny/self-signed/blob/gh-pages/lib/rsa.js
 var createHmac = require('create-hmac')
@@ -7228,6 +7228,7 @@ module.exports = function xor (a, b) {
 
 }).call(this,require("buffer").Buffer)
 },{"buffer":47}],47:[function(require,module,exports){
+(function (Buffer){
 /*!
  * The buffer module from node.js, for the browser.
  *
@@ -9006,7 +9007,8 @@ function numberIsNaN (obj) {
   return obj !== obj // eslint-disable-line no-self-compare
 }
 
-},{"base64-js":15,"ieee754":98}],48:[function(require,module,exports){
+}).call(this,require("buffer").Buffer)
+},{"base64-js":15,"buffer":47,"ieee754":98}],48:[function(require,module,exports){
 var Buffer = require('safe-buffer').Buffer
 var Transform = require('stream').Transform
 var StringDecoder = require('string_decoder').StringDecoder
@@ -9107,7 +9109,7 @@ CipherBase.prototype._toString = function (value, enc, fin) {
 
 module.exports = CipherBase
 
-},{"inherits":99,"safe-buffer":140,"stream":149,"string_decoder":150}],49:[function(require,module,exports){
+},{"inherits":99,"safe-buffer":127,"stream":136,"string_decoder":151}],49:[function(require,module,exports){
 (function (Buffer){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -9378,7 +9380,7 @@ module.exports = function createHash (alg) {
   return new Hash(sha(alg))
 }
 
-},{"cipher-base":48,"inherits":99,"md5.js":102,"ripemd160":139,"sha.js":142}],52:[function(require,module,exports){
+},{"cipher-base":48,"inherits":99,"md5.js":102,"ripemd160":126,"sha.js":129}],52:[function(require,module,exports){
 var MD5 = require('md5.js')
 
 module.exports = function (buffer) {
@@ -9449,7 +9451,7 @@ module.exports = function createHmac (alg, key) {
   return new Hmac(alg, key)
 }
 
-},{"./legacy":54,"cipher-base":48,"create-hash/md5":52,"inherits":99,"ripemd160":139,"safe-buffer":140,"sha.js":142}],54:[function(require,module,exports){
+},{"./legacy":54,"cipher-base":48,"create-hash/md5":52,"inherits":99,"ripemd160":126,"safe-buffer":127,"sha.js":129}],54:[function(require,module,exports){
 'use strict'
 var inherits = require('inherits')
 var Buffer = require('safe-buffer').Buffer
@@ -9497,7 +9499,7 @@ Hmac.prototype._final = function () {
 }
 module.exports = Hmac
 
-},{"cipher-base":48,"inherits":99,"safe-buffer":140}],55:[function(require,module,exports){
+},{"cipher-base":48,"inherits":99,"safe-buffer":127}],55:[function(require,module,exports){
 'use strict'
 
 exports.randomBytes = exports.rng = exports.pseudoRandomBytes = exports.prng = require('randombytes')
@@ -14491,7 +14493,7 @@ module.exports={
   "_args": [
     [
       "elliptic@6.4.1",
-      "/Users/micah/dev/bitcore/packages/bitcore-build"
+      "/Users/ematiu/dev/v8/packages/bitcore-build"
     ]
   ],
   "_from": "elliptic@6.4.1",
@@ -14516,7 +14518,7 @@ module.exports={
   ],
   "_resolved": "https://registry.npmjs.org/elliptic/-/elliptic-6.4.1.tgz",
   "_spec": "6.4.1",
-  "_where": "/Users/micah/dev/bitcore/packages/bitcore-build",
+  "_where": "/Users/ematiu/dev/v8/packages/bitcore-build",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"
@@ -15150,7 +15152,7 @@ function EVP_BytesToKey (password, salt, keyBits, ivLen) {
 
 module.exports = EVP_BytesToKey
 
-},{"md5.js":102,"safe-buffer":140}],84:[function(require,module,exports){
+},{"md5.js":102,"safe-buffer":127}],84:[function(require,module,exports){
 'use strict'
 var Buffer = require('safe-buffer').Buffer
 var Transform = require('stream').Transform
@@ -15247,7 +15249,7 @@ HashBase.prototype._digest = function () {
 
 module.exports = HashBase
 
-},{"inherits":99,"safe-buffer":140,"stream":149}],85:[function(require,module,exports){
+},{"inherits":99,"safe-buffer":127,"stream":136}],85:[function(require,module,exports){
 var hash = exports;
 
 hash.utils = require('./hash/utils');
@@ -16207,6 +16209,16 @@ var inherits = require('inherits');
 
 exports.inherits = inherits;
 
+function isSurrogatePair(msg, i) {
+  if ((msg.charCodeAt(i) & 0xFC00) !== 0xD800) {
+    return false;
+  }
+  if (i < 0 || i + 1 >= msg.length) {
+    return false;
+  }
+  return (msg.charCodeAt(i + 1) & 0xFC00) === 0xDC00;
+}
+
 function toArray(msg, enc) {
   if (Array.isArray(msg))
     return msg.slice();
@@ -16215,14 +16227,29 @@ function toArray(msg, enc) {
   var res = [];
   if (typeof msg === 'string') {
     if (!enc) {
+      // Inspired by stringToUtf8ByteArray() in closure-library by Google
+      // https://github.com/google/closure-library/blob/8598d87242af59aac233270742c8984e2b2bdbe0/closure/goog/crypt/crypt.js#L117-L143
+      // Apache License 2.0
+      // https://github.com/google/closure-library/blob/master/LICENSE
+      var p = 0;
       for (var i = 0; i < msg.length; i++) {
         var c = msg.charCodeAt(i);
-        var hi = c >> 8;
-        var lo = c & 0xff;
-        if (hi)
-          res.push(hi, lo);
-        else
-          res.push(lo);
+        if (c < 128) {
+          res[p++] = c;
+        } else if (c < 2048) {
+          res[p++] = (c >> 6) | 192;
+          res[p++] = (c & 63) | 128;
+        } else if (isSurrogatePair(msg, i)) {
+          c = 0x10000 + ((c & 0x03FF) << 10) + (msg.charCodeAt(++i) & 0x03FF);
+          res[p++] = (c >> 18) | 240;
+          res[p++] = ((c >> 12) & 63) | 128;
+          res[p++] = ((c >> 6) & 63) | 128;
+          res[p++] = (c & 63) | 128;
+        } else {
+          res[p++] = (c >> 12) | 224;
+          res[p++] = ((c >> 6) & 63) | 128;
+          res[p++] = (c & 63) | 128;
+        }
       }
     } else if (enc === 'hex') {
       msg = msg.replace(/[^a-z0-9]+/ig, '');
@@ -16858,7 +16885,7 @@ function fnI (a, b, c, d, m, k, s) {
 
 module.exports = MD5
 
-},{"hash-base":84,"inherits":99,"safe-buffer":140}],103:[function(require,module,exports){
+},{"hash-base":84,"inherits":99,"safe-buffer":127}],103:[function(require,module,exports){
 var bn = require('bn.js');
 var brorand = require('brorand');
 
@@ -17211,7 +17238,8 @@ var AttributeTypeValue = asn.define('AttributeTypeValue', function () {
 var AlgorithmIdentifier = asn.define('AlgorithmIdentifier', function () {
   this.seq().obj(
     this.key('algorithm').objid(),
-    this.key('parameters').optional()
+    this.key('parameters').optional(),
+    this.key('curve').objid().optional()
   )
 })
 
@@ -17253,7 +17281,7 @@ var Extension = asn.define('Extension', function () {
 
 var TBSCertificate = asn.define('TBSCertificate', function () {
   this.seq().obj(
-    this.key('version').explicit(0).int(),
+    this.key('version').explicit(0).int().optional(),
     this.key('serialNumber').int(),
     this.key('signature').use(AlgorithmIdentifier),
     this.key('issuer').use(Name),
@@ -17277,13 +17305,13 @@ var X509Certificate = asn.define('X509Certificate', function () {
 module.exports = X509Certificate
 
 },{"asn1.js":1}],109:[function(require,module,exports){
-(function (Buffer){
 // adapted from https://github.com/apatil/pemstrip
 var findProc = /Proc-Type: 4,ENCRYPTED[\n\r]+DEK-Info: AES-((?:128)|(?:192)|(?:256))-CBC,([0-9A-H]+)[\n\r]+([0-9A-z\n\r\+\/\=]+)[\n\r]+/m
-var startRegex = /^-----BEGIN ((?:.* KEY)|CERTIFICATE)-----/m
-var fullRegex = /^-----BEGIN ((?:.* KEY)|CERTIFICATE)-----([0-9A-z\n\r\+\/\=]+)-----END \1-----$/m
+var startRegex = /^-----BEGIN ((?:.*? KEY)|CERTIFICATE)-----/m
+var fullRegex = /^-----BEGIN ((?:.*? KEY)|CERTIFICATE)-----([0-9A-z\n\r\+\/\=]+)-----END \1-----$/m
 var evp = require('evp_bytestokey')
 var ciphers = require('browserify-aes')
+var Buffer = require('safe-buffer').Buffer
 module.exports = function (okey, password) {
   var key = okey.toString()
   var match = key.match(findProc)
@@ -17293,8 +17321,8 @@ module.exports = function (okey, password) {
     decrypted = new Buffer(match2[2].replace(/[\r\n]/g, ''), 'base64')
   } else {
     var suite = 'aes' + match[1]
-    var iv = new Buffer(match[2], 'hex')
-    var cipherText = new Buffer(match[3].replace(/[\r\n]/g, ''), 'base64')
+    var iv = Buffer.from(match[2], 'hex')
+    var cipherText = Buffer.from(match[3].replace(/[\r\n]/g, ''), 'base64')
     var cipherKey = evp(password, iv.slice(0, 8), parseInt(match[1], 10)).key
     var out = []
     var cipher = ciphers.createDecipheriv(suite, cipherKey, iv)
@@ -17309,14 +17337,13 @@ module.exports = function (okey, password) {
   }
 }
 
-}).call(this,require("buffer").Buffer)
-},{"browserify-aes":21,"buffer":47,"evp_bytestokey":83}],110:[function(require,module,exports){
-(function (Buffer){
+},{"browserify-aes":21,"evp_bytestokey":83,"safe-buffer":127}],110:[function(require,module,exports){
 var asn1 = require('./asn1')
 var aesid = require('./aesid.json')
 var fixProc = require('./fixProc')
 var ciphers = require('browserify-aes')
 var compat = require('pbkdf2')
+var Buffer = require('safe-buffer').Buffer
 module.exports = parseKeys
 
 function parseKeys (buffer) {
@@ -17326,7 +17353,7 @@ function parseKeys (buffer) {
     buffer = buffer.key
   }
   if (typeof buffer === 'string') {
-    buffer = new Buffer(buffer)
+    buffer = Buffer.from(buffer)
   }
 
   var stripped = fixProc(buffer, password)
@@ -17411,7 +17438,7 @@ function decrypt (data, password) {
   var iv = data.algorithm.decrypt.cipher.iv
   var cipherText = data.subjectPrivateKey
   var keylen = parseInt(algo.split('-')[1], 10) / 8
-  var key = compat.pbkdf2Sync(password, salt, iters, keylen)
+  var key = compat.pbkdf2Sync(password, salt, iters, keylen, 'sha1')
   var cipher = ciphers.createDecipheriv(algo, key, iv)
   var out = []
   out.push(cipher.update(cipherText))
@@ -17419,8 +17446,7 @@ function decrypt (data, password) {
   return Buffer.concat(out)
 }
 
-}).call(this,require("buffer").Buffer)
-},{"./aesid.json":106,"./asn1":107,"./fixProc":109,"browserify-aes":21,"buffer":47,"pbkdf2":111}],111:[function(require,module,exports){
+},{"./aesid.json":106,"./asn1":107,"./fixProc":109,"browserify-aes":21,"pbkdf2":111,"safe-buffer":127}],111:[function(require,module,exports){
 exports.pbkdf2 = require('./lib/async')
 exports.pbkdf2Sync = require('./lib/sync')
 
@@ -17528,7 +17554,7 @@ module.exports = function (password, salt, iterations, keylen, digest, callback)
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./default-encoding":113,"./precondition":114,"./sync":115,"_process":117,"safe-buffer":140}],113:[function(require,module,exports){
+},{"./default-encoding":113,"./precondition":114,"./sync":115,"_process":117,"safe-buffer":127}],113:[function(require,module,exports){
 (function (process){
 var defaultEncoding
 /* istanbul ignore next */
@@ -17680,7 +17706,7 @@ function pbkdf2 (password, salt, iterations, keylen, digest) {
 
 module.exports = pbkdf2
 
-},{"./default-encoding":113,"./precondition":114,"create-hash/md5":52,"ripemd160":139,"safe-buffer":140,"sha.js":142}],116:[function(require,module,exports){
+},{"./default-encoding":113,"./precondition":114,"create-hash/md5":52,"ripemd160":126,"safe-buffer":127,"sha.js":129}],116:[function(require,module,exports){
 (function (process){
 'use strict';
 
@@ -17947,7 +17973,7 @@ function i2ops (c) {
   return out
 }
 
-},{"create-hash":51,"safe-buffer":140}],120:[function(require,module,exports){
+},{"create-hash":51,"safe-buffer":127}],120:[function(require,module,exports){
 var parseKeys = require('parse-asn1')
 var mgf = require('./mgf')
 var xor = require('./xor')
@@ -18054,7 +18080,7 @@ function compare (a, b) {
   return dif
 }
 
-},{"./mgf":119,"./withPublic":122,"./xor":123,"bn.js":16,"browserify-rsa":39,"create-hash":51,"parse-asn1":110,"safe-buffer":140}],121:[function(require,module,exports){
+},{"./mgf":119,"./withPublic":122,"./xor":123,"bn.js":16,"browserify-rsa":39,"create-hash":51,"parse-asn1":110,"safe-buffer":127}],121:[function(require,module,exports){
 var parseKeys = require('parse-asn1')
 var randomBytes = require('randombytes')
 var createHash = require('create-hash')
@@ -18144,7 +18170,7 @@ function nonZero (len) {
   return out
 }
 
-},{"./mgf":119,"./withPublic":122,"./xor":123,"bn.js":16,"browserify-rsa":39,"create-hash":51,"parse-asn1":110,"randombytes":124,"safe-buffer":140}],122:[function(require,module,exports){
+},{"./mgf":119,"./withPublic":122,"./xor":123,"bn.js":16,"browserify-rsa":39,"create-hash":51,"parse-asn1":110,"randombytes":124,"safe-buffer":127}],122:[function(require,module,exports){
 var BN = require('bn.js')
 var Buffer = require('safe-buffer').Buffer
 
@@ -18158,7 +18184,7 @@ function withPublic (paddedMsg, key) {
 
 module.exports = withPublic
 
-},{"bn.js":16,"safe-buffer":140}],123:[function(require,module,exports){
+},{"bn.js":16,"safe-buffer":127}],123:[function(require,module,exports){
 module.exports = function xor (a, b) {
   var len = a.length
   var i = -1
@@ -18171,6 +18197,14 @@ module.exports = function xor (a, b) {
 },{}],124:[function(require,module,exports){
 (function (process,global){
 'use strict'
+
+// limit of Crypto.getRandomValues()
+// https://developer.mozilla.org/en-US/docs/Web/API/Crypto/getRandomValues
+var MAX_BYTES = 65536
+
+// Node supports requesting up to this number of bytes
+// https://github.com/nodejs/node/blob/master/lib/internal/crypto/random.js#L48
+var MAX_UINT32 = 4294967295
 
 function oldBrowser () {
   throw new Error('Secure random number generation is not supported by this browser.\nUse Chrome, Firefox or Internet Explorer 11')
@@ -18187,18 +18221,22 @@ if (crypto && crypto.getRandomValues) {
 
 function randomBytes (size, cb) {
   // phantomjs needs to throw
-  if (size > 65536) throw new Error('requested too many random bytes')
-  // in case browserify  isn't using the Uint8Array version
-  var rawBytes = new global.Uint8Array(size)
+  if (size > MAX_UINT32) throw new RangeError('requested too many random bytes')
 
-  // This will not work in older browsers.
-  // See https://developer.mozilla.org/en-US/docs/Web/API/window.crypto.getRandomValues
+  var bytes = Buffer.allocUnsafe(size)
+
   if (size > 0) {  // getRandomValues fails on IE if size == 0
-    crypto.getRandomValues(rawBytes)
+    if (size > MAX_BYTES) { // this is the max bytes crypto.getRandomValues
+      // can do at once see https://developer.mozilla.org/en-US/docs/Web/API/window.crypto.getRandomValues
+      for (var generated = 0; generated < size; generated += MAX_BYTES) {
+        // buffer.slice automatically checks if the end is past the end of
+        // the buffer so we don't have to here
+        crypto.getRandomValues(bytes.slice(generated, generated + MAX_BYTES))
+      }
+    } else {
+      crypto.getRandomValues(bytes)
+    }
   }
-
-  // XXX: phantomjs doesn't like a buffer being passed here
-  var bytes = Buffer.from(rawBytes.buffer)
 
   if (typeof cb === 'function') {
     return process.nextTick(function () {
@@ -18210,7 +18248,7 @@ function randomBytes (size, cb) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":117,"safe-buffer":140}],125:[function(require,module,exports){
+},{"_process":117,"safe-buffer":127}],125:[function(require,module,exports){
 (function (process,global){
 'use strict'
 
@@ -18322,10 +18360,1178 @@ function randomFillSync (buf, offset, size) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":117,"randombytes":124,"safe-buffer":140}],126:[function(require,module,exports){
+},{"_process":117,"randombytes":124,"safe-buffer":127}],126:[function(require,module,exports){
+'use strict'
+var Buffer = require('buffer').Buffer
+var inherits = require('inherits')
+var HashBase = require('hash-base')
+
+var ARRAY16 = new Array(16)
+
+var zl = [
+  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+  7, 4, 13, 1, 10, 6, 15, 3, 12, 0, 9, 5, 2, 14, 11, 8,
+  3, 10, 14, 4, 9, 15, 8, 1, 2, 7, 0, 6, 13, 11, 5, 12,
+  1, 9, 11, 10, 0, 8, 12, 4, 13, 3, 7, 15, 14, 5, 6, 2,
+  4, 0, 5, 9, 7, 12, 2, 10, 14, 1, 3, 8, 11, 6, 15, 13
+]
+
+var zr = [
+  5, 14, 7, 0, 9, 2, 11, 4, 13, 6, 15, 8, 1, 10, 3, 12,
+  6, 11, 3, 7, 0, 13, 5, 10, 14, 15, 8, 12, 4, 9, 1, 2,
+  15, 5, 1, 3, 7, 14, 6, 9, 11, 8, 12, 2, 10, 0, 4, 13,
+  8, 6, 4, 1, 3, 11, 15, 0, 5, 12, 2, 13, 9, 7, 10, 14,
+  12, 15, 10, 4, 1, 5, 8, 7, 6, 2, 13, 14, 0, 3, 9, 11
+]
+
+var sl = [
+  11, 14, 15, 12, 5, 8, 7, 9, 11, 13, 14, 15, 6, 7, 9, 8,
+  7, 6, 8, 13, 11, 9, 7, 15, 7, 12, 15, 9, 11, 7, 13, 12,
+  11, 13, 6, 7, 14, 9, 13, 15, 14, 8, 13, 6, 5, 12, 7, 5,
+  11, 12, 14, 15, 14, 15, 9, 8, 9, 14, 5, 6, 8, 6, 5, 12,
+  9, 15, 5, 11, 6, 8, 13, 12, 5, 12, 13, 14, 11, 8, 5, 6
+]
+
+var sr = [
+  8, 9, 9, 11, 13, 15, 15, 5, 7, 7, 8, 11, 14, 14, 12, 6,
+  9, 13, 15, 7, 12, 8, 9, 11, 7, 7, 12, 7, 6, 15, 13, 11,
+  9, 7, 15, 11, 8, 6, 6, 14, 12, 13, 5, 14, 13, 13, 7, 5,
+  15, 5, 8, 11, 14, 14, 6, 14, 6, 9, 12, 9, 12, 5, 15, 8,
+  8, 5, 12, 9, 12, 5, 14, 6, 8, 13, 6, 5, 15, 13, 11, 11
+]
+
+var hl = [0x00000000, 0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xa953fd4e]
+var hr = [0x50a28be6, 0x5c4dd124, 0x6d703ef3, 0x7a6d76e9, 0x00000000]
+
+function RIPEMD160 () {
+  HashBase.call(this, 64)
+
+  // state
+  this._a = 0x67452301
+  this._b = 0xefcdab89
+  this._c = 0x98badcfe
+  this._d = 0x10325476
+  this._e = 0xc3d2e1f0
+}
+
+inherits(RIPEMD160, HashBase)
+
+RIPEMD160.prototype._update = function () {
+  var words = ARRAY16
+  for (var j = 0; j < 16; ++j) words[j] = this._block.readInt32LE(j * 4)
+
+  var al = this._a | 0
+  var bl = this._b | 0
+  var cl = this._c | 0
+  var dl = this._d | 0
+  var el = this._e | 0
+
+  var ar = this._a | 0
+  var br = this._b | 0
+  var cr = this._c | 0
+  var dr = this._d | 0
+  var er = this._e | 0
+
+  // computation
+  for (var i = 0; i < 80; i += 1) {
+    var tl
+    var tr
+    if (i < 16) {
+      tl = fn1(al, bl, cl, dl, el, words[zl[i]], hl[0], sl[i])
+      tr = fn5(ar, br, cr, dr, er, words[zr[i]], hr[0], sr[i])
+    } else if (i < 32) {
+      tl = fn2(al, bl, cl, dl, el, words[zl[i]], hl[1], sl[i])
+      tr = fn4(ar, br, cr, dr, er, words[zr[i]], hr[1], sr[i])
+    } else if (i < 48) {
+      tl = fn3(al, bl, cl, dl, el, words[zl[i]], hl[2], sl[i])
+      tr = fn3(ar, br, cr, dr, er, words[zr[i]], hr[2], sr[i])
+    } else if (i < 64) {
+      tl = fn4(al, bl, cl, dl, el, words[zl[i]], hl[3], sl[i])
+      tr = fn2(ar, br, cr, dr, er, words[zr[i]], hr[3], sr[i])
+    } else { // if (i<80) {
+      tl = fn5(al, bl, cl, dl, el, words[zl[i]], hl[4], sl[i])
+      tr = fn1(ar, br, cr, dr, er, words[zr[i]], hr[4], sr[i])
+    }
+
+    al = el
+    el = dl
+    dl = rotl(cl, 10)
+    cl = bl
+    bl = tl
+
+    ar = er
+    er = dr
+    dr = rotl(cr, 10)
+    cr = br
+    br = tr
+  }
+
+  // update state
+  var t = (this._b + cl + dr) | 0
+  this._b = (this._c + dl + er) | 0
+  this._c = (this._d + el + ar) | 0
+  this._d = (this._e + al + br) | 0
+  this._e = (this._a + bl + cr) | 0
+  this._a = t
+}
+
+RIPEMD160.prototype._digest = function () {
+  // create padding and handle blocks
+  this._block[this._blockOffset++] = 0x80
+  if (this._blockOffset > 56) {
+    this._block.fill(0, this._blockOffset, 64)
+    this._update()
+    this._blockOffset = 0
+  }
+
+  this._block.fill(0, this._blockOffset, 56)
+  this._block.writeUInt32LE(this._length[0], 56)
+  this._block.writeUInt32LE(this._length[1], 60)
+  this._update()
+
+  // produce result
+  var buffer = Buffer.alloc ? Buffer.alloc(20) : new Buffer(20)
+  buffer.writeInt32LE(this._a, 0)
+  buffer.writeInt32LE(this._b, 4)
+  buffer.writeInt32LE(this._c, 8)
+  buffer.writeInt32LE(this._d, 12)
+  buffer.writeInt32LE(this._e, 16)
+  return buffer
+}
+
+function rotl (x, n) {
+  return (x << n) | (x >>> (32 - n))
+}
+
+function fn1 (a, b, c, d, e, m, k, s) {
+  return (rotl((a + (b ^ c ^ d) + m + k) | 0, s) + e) | 0
+}
+
+function fn2 (a, b, c, d, e, m, k, s) {
+  return (rotl((a + ((b & c) | ((~b) & d)) + m + k) | 0, s) + e) | 0
+}
+
+function fn3 (a, b, c, d, e, m, k, s) {
+  return (rotl((a + ((b | (~c)) ^ d) + m + k) | 0, s) + e) | 0
+}
+
+function fn4 (a, b, c, d, e, m, k, s) {
+  return (rotl((a + ((b & d) | (c & (~d))) + m + k) | 0, s) + e) | 0
+}
+
+function fn5 (a, b, c, d, e, m, k, s) {
+  return (rotl((a + (b ^ (c | (~d))) + m + k) | 0, s) + e) | 0
+}
+
+module.exports = RIPEMD160
+
+},{"buffer":47,"hash-base":84,"inherits":99}],127:[function(require,module,exports){
+/* eslint-disable node/no-deprecated-api */
+var buffer = require('buffer')
+var Buffer = buffer.Buffer
+
+// alternative to using Object.keys for old browsers
+function copyProps (src, dst) {
+  for (var key in src) {
+    dst[key] = src[key]
+  }
+}
+if (Buffer.from && Buffer.alloc && Buffer.allocUnsafe && Buffer.allocUnsafeSlow) {
+  module.exports = buffer
+} else {
+  // Copy properties from require('buffer')
+  copyProps(buffer, exports)
+  exports.Buffer = SafeBuffer
+}
+
+function SafeBuffer (arg, encodingOrOffset, length) {
+  return Buffer(arg, encodingOrOffset, length)
+}
+
+// Copy static methods from Buffer
+copyProps(Buffer, SafeBuffer)
+
+SafeBuffer.from = function (arg, encodingOrOffset, length) {
+  if (typeof arg === 'number') {
+    throw new TypeError('Argument must not be a number')
+  }
+  return Buffer(arg, encodingOrOffset, length)
+}
+
+SafeBuffer.alloc = function (size, fill, encoding) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  var buf = Buffer(size)
+  if (fill !== undefined) {
+    if (typeof encoding === 'string') {
+      buf.fill(fill, encoding)
+    } else {
+      buf.fill(fill)
+    }
+  } else {
+    buf.fill(0)
+  }
+  return buf
+}
+
+SafeBuffer.allocUnsafe = function (size) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  return Buffer(size)
+}
+
+SafeBuffer.allocUnsafeSlow = function (size) {
+  if (typeof size !== 'number') {
+    throw new TypeError('Argument must be a number')
+  }
+  return buffer.SlowBuffer(size)
+}
+
+},{"buffer":47}],128:[function(require,module,exports){
+var Buffer = require('safe-buffer').Buffer
+
+// prototype class for hash functions
+function Hash (blockSize, finalSize) {
+  this._block = Buffer.alloc(blockSize)
+  this._finalSize = finalSize
+  this._blockSize = blockSize
+  this._len = 0
+}
+
+Hash.prototype.update = function (data, enc) {
+  if (typeof data === 'string') {
+    enc = enc || 'utf8'
+    data = Buffer.from(data, enc)
+  }
+
+  var block = this._block
+  var blockSize = this._blockSize
+  var length = data.length
+  var accum = this._len
+
+  for (var offset = 0; offset < length;) {
+    var assigned = accum % blockSize
+    var remainder = Math.min(length - offset, blockSize - assigned)
+
+    for (var i = 0; i < remainder; i++) {
+      block[assigned + i] = data[offset + i]
+    }
+
+    accum += remainder
+    offset += remainder
+
+    if ((accum % blockSize) === 0) {
+      this._update(block)
+    }
+  }
+
+  this._len += length
+  return this
+}
+
+Hash.prototype.digest = function (enc) {
+  var rem = this._len % this._blockSize
+
+  this._block[rem] = 0x80
+
+  // zero (rem + 1) trailing bits, where (rem + 1) is the smallest
+  // non-negative solution to the equation (length + 1 + (rem + 1)) === finalSize mod blockSize
+  this._block.fill(0, rem + 1)
+
+  if (rem >= this._finalSize) {
+    this._update(this._block)
+    this._block.fill(0)
+  }
+
+  var bits = this._len * 8
+
+  // uint32
+  if (bits <= 0xffffffff) {
+    this._block.writeUInt32BE(bits, this._blockSize - 4)
+
+  // uint64
+  } else {
+    var lowBits = (bits & 0xffffffff) >>> 0
+    var highBits = (bits - lowBits) / 0x100000000
+
+    this._block.writeUInt32BE(highBits, this._blockSize - 8)
+    this._block.writeUInt32BE(lowBits, this._blockSize - 4)
+  }
+
+  this._update(this._block)
+  var hash = this._hash()
+
+  return enc ? hash.toString(enc) : hash
+}
+
+Hash.prototype._update = function () {
+  throw new Error('_update must be implemented by subclass')
+}
+
+module.exports = Hash
+
+},{"safe-buffer":127}],129:[function(require,module,exports){
+var exports = module.exports = function SHA (algorithm) {
+  algorithm = algorithm.toLowerCase()
+
+  var Algorithm = exports[algorithm]
+  if (!Algorithm) throw new Error(algorithm + ' is not supported (we accept pull requests)')
+
+  return new Algorithm()
+}
+
+exports.sha = require('./sha')
+exports.sha1 = require('./sha1')
+exports.sha224 = require('./sha224')
+exports.sha256 = require('./sha256')
+exports.sha384 = require('./sha384')
+exports.sha512 = require('./sha512')
+
+},{"./sha":130,"./sha1":131,"./sha224":132,"./sha256":133,"./sha384":134,"./sha512":135}],130:[function(require,module,exports){
+/*
+ * A JavaScript implementation of the Secure Hash Algorithm, SHA-0, as defined
+ * in FIPS PUB 180-1
+ * This source code is derived from sha1.js of the same repository.
+ * The difference between SHA-0 and SHA-1 is just a bitwise rotate left
+ * operation was added.
+ */
+
+var inherits = require('inherits')
+var Hash = require('./hash')
+var Buffer = require('safe-buffer').Buffer
+
+var K = [
+  0x5a827999, 0x6ed9eba1, 0x8f1bbcdc | 0, 0xca62c1d6 | 0
+]
+
+var W = new Array(80)
+
+function Sha () {
+  this.init()
+  this._w = W
+
+  Hash.call(this, 64, 56)
+}
+
+inherits(Sha, Hash)
+
+Sha.prototype.init = function () {
+  this._a = 0x67452301
+  this._b = 0xefcdab89
+  this._c = 0x98badcfe
+  this._d = 0x10325476
+  this._e = 0xc3d2e1f0
+
+  return this
+}
+
+function rotl5 (num) {
+  return (num << 5) | (num >>> 27)
+}
+
+function rotl30 (num) {
+  return (num << 30) | (num >>> 2)
+}
+
+function ft (s, b, c, d) {
+  if (s === 0) return (b & c) | ((~b) & d)
+  if (s === 2) return (b & c) | (b & d) | (c & d)
+  return b ^ c ^ d
+}
+
+Sha.prototype._update = function (M) {
+  var W = this._w
+
+  var a = this._a | 0
+  var b = this._b | 0
+  var c = this._c | 0
+  var d = this._d | 0
+  var e = this._e | 0
+
+  for (var i = 0; i < 16; ++i) W[i] = M.readInt32BE(i * 4)
+  for (; i < 80; ++i) W[i] = W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16]
+
+  for (var j = 0; j < 80; ++j) {
+    var s = ~~(j / 20)
+    var t = (rotl5(a) + ft(s, b, c, d) + e + W[j] + K[s]) | 0
+
+    e = d
+    d = c
+    c = rotl30(b)
+    b = a
+    a = t
+  }
+
+  this._a = (a + this._a) | 0
+  this._b = (b + this._b) | 0
+  this._c = (c + this._c) | 0
+  this._d = (d + this._d) | 0
+  this._e = (e + this._e) | 0
+}
+
+Sha.prototype._hash = function () {
+  var H = Buffer.allocUnsafe(20)
+
+  H.writeInt32BE(this._a | 0, 0)
+  H.writeInt32BE(this._b | 0, 4)
+  H.writeInt32BE(this._c | 0, 8)
+  H.writeInt32BE(this._d | 0, 12)
+  H.writeInt32BE(this._e | 0, 16)
+
+  return H
+}
+
+module.exports = Sha
+
+},{"./hash":128,"inherits":99,"safe-buffer":127}],131:[function(require,module,exports){
+/*
+ * A JavaScript implementation of the Secure Hash Algorithm, SHA-1, as defined
+ * in FIPS PUB 180-1
+ * Version 2.1a Copyright Paul Johnston 2000 - 2002.
+ * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
+ * Distributed under the BSD License
+ * See http://pajhome.org.uk/crypt/md5 for details.
+ */
+
+var inherits = require('inherits')
+var Hash = require('./hash')
+var Buffer = require('safe-buffer').Buffer
+
+var K = [
+  0x5a827999, 0x6ed9eba1, 0x8f1bbcdc | 0, 0xca62c1d6 | 0
+]
+
+var W = new Array(80)
+
+function Sha1 () {
+  this.init()
+  this._w = W
+
+  Hash.call(this, 64, 56)
+}
+
+inherits(Sha1, Hash)
+
+Sha1.prototype.init = function () {
+  this._a = 0x67452301
+  this._b = 0xefcdab89
+  this._c = 0x98badcfe
+  this._d = 0x10325476
+  this._e = 0xc3d2e1f0
+
+  return this
+}
+
+function rotl1 (num) {
+  return (num << 1) | (num >>> 31)
+}
+
+function rotl5 (num) {
+  return (num << 5) | (num >>> 27)
+}
+
+function rotl30 (num) {
+  return (num << 30) | (num >>> 2)
+}
+
+function ft (s, b, c, d) {
+  if (s === 0) return (b & c) | ((~b) & d)
+  if (s === 2) return (b & c) | (b & d) | (c & d)
+  return b ^ c ^ d
+}
+
+Sha1.prototype._update = function (M) {
+  var W = this._w
+
+  var a = this._a | 0
+  var b = this._b | 0
+  var c = this._c | 0
+  var d = this._d | 0
+  var e = this._e | 0
+
+  for (var i = 0; i < 16; ++i) W[i] = M.readInt32BE(i * 4)
+  for (; i < 80; ++i) W[i] = rotl1(W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16])
+
+  for (var j = 0; j < 80; ++j) {
+    var s = ~~(j / 20)
+    var t = (rotl5(a) + ft(s, b, c, d) + e + W[j] + K[s]) | 0
+
+    e = d
+    d = c
+    c = rotl30(b)
+    b = a
+    a = t
+  }
+
+  this._a = (a + this._a) | 0
+  this._b = (b + this._b) | 0
+  this._c = (c + this._c) | 0
+  this._d = (d + this._d) | 0
+  this._e = (e + this._e) | 0
+}
+
+Sha1.prototype._hash = function () {
+  var H = Buffer.allocUnsafe(20)
+
+  H.writeInt32BE(this._a | 0, 0)
+  H.writeInt32BE(this._b | 0, 4)
+  H.writeInt32BE(this._c | 0, 8)
+  H.writeInt32BE(this._d | 0, 12)
+  H.writeInt32BE(this._e | 0, 16)
+
+  return H
+}
+
+module.exports = Sha1
+
+},{"./hash":128,"inherits":99,"safe-buffer":127}],132:[function(require,module,exports){
+/**
+ * A JavaScript implementation of the Secure Hash Algorithm, SHA-256, as defined
+ * in FIPS 180-2
+ * Version 2.2-beta Copyright Angel Marin, Paul Johnston 2000 - 2009.
+ * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
+ *
+ */
+
+var inherits = require('inherits')
+var Sha256 = require('./sha256')
+var Hash = require('./hash')
+var Buffer = require('safe-buffer').Buffer
+
+var W = new Array(64)
+
+function Sha224 () {
+  this.init()
+
+  this._w = W // new Array(64)
+
+  Hash.call(this, 64, 56)
+}
+
+inherits(Sha224, Sha256)
+
+Sha224.prototype.init = function () {
+  this._a = 0xc1059ed8
+  this._b = 0x367cd507
+  this._c = 0x3070dd17
+  this._d = 0xf70e5939
+  this._e = 0xffc00b31
+  this._f = 0x68581511
+  this._g = 0x64f98fa7
+  this._h = 0xbefa4fa4
+
+  return this
+}
+
+Sha224.prototype._hash = function () {
+  var H = Buffer.allocUnsafe(28)
+
+  H.writeInt32BE(this._a, 0)
+  H.writeInt32BE(this._b, 4)
+  H.writeInt32BE(this._c, 8)
+  H.writeInt32BE(this._d, 12)
+  H.writeInt32BE(this._e, 16)
+  H.writeInt32BE(this._f, 20)
+  H.writeInt32BE(this._g, 24)
+
+  return H
+}
+
+module.exports = Sha224
+
+},{"./hash":128,"./sha256":133,"inherits":99,"safe-buffer":127}],133:[function(require,module,exports){
+/**
+ * A JavaScript implementation of the Secure Hash Algorithm, SHA-256, as defined
+ * in FIPS 180-2
+ * Version 2.2-beta Copyright Angel Marin, Paul Johnston 2000 - 2009.
+ * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
+ *
+ */
+
+var inherits = require('inherits')
+var Hash = require('./hash')
+var Buffer = require('safe-buffer').Buffer
+
+var K = [
+  0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5,
+  0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5,
+  0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3,
+  0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174,
+  0xE49B69C1, 0xEFBE4786, 0x0FC19DC6, 0x240CA1CC,
+  0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA,
+  0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7,
+  0xC6E00BF3, 0xD5A79147, 0x06CA6351, 0x14292967,
+  0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13,
+  0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85,
+  0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3,
+  0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070,
+  0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5,
+  0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3,
+  0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208,
+  0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2
+]
+
+var W = new Array(64)
+
+function Sha256 () {
+  this.init()
+
+  this._w = W // new Array(64)
+
+  Hash.call(this, 64, 56)
+}
+
+inherits(Sha256, Hash)
+
+Sha256.prototype.init = function () {
+  this._a = 0x6a09e667
+  this._b = 0xbb67ae85
+  this._c = 0x3c6ef372
+  this._d = 0xa54ff53a
+  this._e = 0x510e527f
+  this._f = 0x9b05688c
+  this._g = 0x1f83d9ab
+  this._h = 0x5be0cd19
+
+  return this
+}
+
+function ch (x, y, z) {
+  return z ^ (x & (y ^ z))
+}
+
+function maj (x, y, z) {
+  return (x & y) | (z & (x | y))
+}
+
+function sigma0 (x) {
+  return (x >>> 2 | x << 30) ^ (x >>> 13 | x << 19) ^ (x >>> 22 | x << 10)
+}
+
+function sigma1 (x) {
+  return (x >>> 6 | x << 26) ^ (x >>> 11 | x << 21) ^ (x >>> 25 | x << 7)
+}
+
+function gamma0 (x) {
+  return (x >>> 7 | x << 25) ^ (x >>> 18 | x << 14) ^ (x >>> 3)
+}
+
+function gamma1 (x) {
+  return (x >>> 17 | x << 15) ^ (x >>> 19 | x << 13) ^ (x >>> 10)
+}
+
+Sha256.prototype._update = function (M) {
+  var W = this._w
+
+  var a = this._a | 0
+  var b = this._b | 0
+  var c = this._c | 0
+  var d = this._d | 0
+  var e = this._e | 0
+  var f = this._f | 0
+  var g = this._g | 0
+  var h = this._h | 0
+
+  for (var i = 0; i < 16; ++i) W[i] = M.readInt32BE(i * 4)
+  for (; i < 64; ++i) W[i] = (gamma1(W[i - 2]) + W[i - 7] + gamma0(W[i - 15]) + W[i - 16]) | 0
+
+  for (var j = 0; j < 64; ++j) {
+    var T1 = (h + sigma1(e) + ch(e, f, g) + K[j] + W[j]) | 0
+    var T2 = (sigma0(a) + maj(a, b, c)) | 0
+
+    h = g
+    g = f
+    f = e
+    e = (d + T1) | 0
+    d = c
+    c = b
+    b = a
+    a = (T1 + T2) | 0
+  }
+
+  this._a = (a + this._a) | 0
+  this._b = (b + this._b) | 0
+  this._c = (c + this._c) | 0
+  this._d = (d + this._d) | 0
+  this._e = (e + this._e) | 0
+  this._f = (f + this._f) | 0
+  this._g = (g + this._g) | 0
+  this._h = (h + this._h) | 0
+}
+
+Sha256.prototype._hash = function () {
+  var H = Buffer.allocUnsafe(32)
+
+  H.writeInt32BE(this._a, 0)
+  H.writeInt32BE(this._b, 4)
+  H.writeInt32BE(this._c, 8)
+  H.writeInt32BE(this._d, 12)
+  H.writeInt32BE(this._e, 16)
+  H.writeInt32BE(this._f, 20)
+  H.writeInt32BE(this._g, 24)
+  H.writeInt32BE(this._h, 28)
+
+  return H
+}
+
+module.exports = Sha256
+
+},{"./hash":128,"inherits":99,"safe-buffer":127}],134:[function(require,module,exports){
+var inherits = require('inherits')
+var SHA512 = require('./sha512')
+var Hash = require('./hash')
+var Buffer = require('safe-buffer').Buffer
+
+var W = new Array(160)
+
+function Sha384 () {
+  this.init()
+  this._w = W
+
+  Hash.call(this, 128, 112)
+}
+
+inherits(Sha384, SHA512)
+
+Sha384.prototype.init = function () {
+  this._ah = 0xcbbb9d5d
+  this._bh = 0x629a292a
+  this._ch = 0x9159015a
+  this._dh = 0x152fecd8
+  this._eh = 0x67332667
+  this._fh = 0x8eb44a87
+  this._gh = 0xdb0c2e0d
+  this._hh = 0x47b5481d
+
+  this._al = 0xc1059ed8
+  this._bl = 0x367cd507
+  this._cl = 0x3070dd17
+  this._dl = 0xf70e5939
+  this._el = 0xffc00b31
+  this._fl = 0x68581511
+  this._gl = 0x64f98fa7
+  this._hl = 0xbefa4fa4
+
+  return this
+}
+
+Sha384.prototype._hash = function () {
+  var H = Buffer.allocUnsafe(48)
+
+  function writeInt64BE (h, l, offset) {
+    H.writeInt32BE(h, offset)
+    H.writeInt32BE(l, offset + 4)
+  }
+
+  writeInt64BE(this._ah, this._al, 0)
+  writeInt64BE(this._bh, this._bl, 8)
+  writeInt64BE(this._ch, this._cl, 16)
+  writeInt64BE(this._dh, this._dl, 24)
+  writeInt64BE(this._eh, this._el, 32)
+  writeInt64BE(this._fh, this._fl, 40)
+
+  return H
+}
+
+module.exports = Sha384
+
+},{"./hash":128,"./sha512":135,"inherits":99,"safe-buffer":127}],135:[function(require,module,exports){
+var inherits = require('inherits')
+var Hash = require('./hash')
+var Buffer = require('safe-buffer').Buffer
+
+var K = [
+  0x428a2f98, 0xd728ae22, 0x71374491, 0x23ef65cd,
+  0xb5c0fbcf, 0xec4d3b2f, 0xe9b5dba5, 0x8189dbbc,
+  0x3956c25b, 0xf348b538, 0x59f111f1, 0xb605d019,
+  0x923f82a4, 0xaf194f9b, 0xab1c5ed5, 0xda6d8118,
+  0xd807aa98, 0xa3030242, 0x12835b01, 0x45706fbe,
+  0x243185be, 0x4ee4b28c, 0x550c7dc3, 0xd5ffb4e2,
+  0x72be5d74, 0xf27b896f, 0x80deb1fe, 0x3b1696b1,
+  0x9bdc06a7, 0x25c71235, 0xc19bf174, 0xcf692694,
+  0xe49b69c1, 0x9ef14ad2, 0xefbe4786, 0x384f25e3,
+  0x0fc19dc6, 0x8b8cd5b5, 0x240ca1cc, 0x77ac9c65,
+  0x2de92c6f, 0x592b0275, 0x4a7484aa, 0x6ea6e483,
+  0x5cb0a9dc, 0xbd41fbd4, 0x76f988da, 0x831153b5,
+  0x983e5152, 0xee66dfab, 0xa831c66d, 0x2db43210,
+  0xb00327c8, 0x98fb213f, 0xbf597fc7, 0xbeef0ee4,
+  0xc6e00bf3, 0x3da88fc2, 0xd5a79147, 0x930aa725,
+  0x06ca6351, 0xe003826f, 0x14292967, 0x0a0e6e70,
+  0x27b70a85, 0x46d22ffc, 0x2e1b2138, 0x5c26c926,
+  0x4d2c6dfc, 0x5ac42aed, 0x53380d13, 0x9d95b3df,
+  0x650a7354, 0x8baf63de, 0x766a0abb, 0x3c77b2a8,
+  0x81c2c92e, 0x47edaee6, 0x92722c85, 0x1482353b,
+  0xa2bfe8a1, 0x4cf10364, 0xa81a664b, 0xbc423001,
+  0xc24b8b70, 0xd0f89791, 0xc76c51a3, 0x0654be30,
+  0xd192e819, 0xd6ef5218, 0xd6990624, 0x5565a910,
+  0xf40e3585, 0x5771202a, 0x106aa070, 0x32bbd1b8,
+  0x19a4c116, 0xb8d2d0c8, 0x1e376c08, 0x5141ab53,
+  0x2748774c, 0xdf8eeb99, 0x34b0bcb5, 0xe19b48a8,
+  0x391c0cb3, 0xc5c95a63, 0x4ed8aa4a, 0xe3418acb,
+  0x5b9cca4f, 0x7763e373, 0x682e6ff3, 0xd6b2b8a3,
+  0x748f82ee, 0x5defb2fc, 0x78a5636f, 0x43172f60,
+  0x84c87814, 0xa1f0ab72, 0x8cc70208, 0x1a6439ec,
+  0x90befffa, 0x23631e28, 0xa4506ceb, 0xde82bde9,
+  0xbef9a3f7, 0xb2c67915, 0xc67178f2, 0xe372532b,
+  0xca273ece, 0xea26619c, 0xd186b8c7, 0x21c0c207,
+  0xeada7dd6, 0xcde0eb1e, 0xf57d4f7f, 0xee6ed178,
+  0x06f067aa, 0x72176fba, 0x0a637dc5, 0xa2c898a6,
+  0x113f9804, 0xbef90dae, 0x1b710b35, 0x131c471b,
+  0x28db77f5, 0x23047d84, 0x32caab7b, 0x40c72493,
+  0x3c9ebe0a, 0x15c9bebc, 0x431d67c4, 0x9c100d4c,
+  0x4cc5d4be, 0xcb3e42b6, 0x597f299c, 0xfc657e2a,
+  0x5fcb6fab, 0x3ad6faec, 0x6c44198c, 0x4a475817
+]
+
+var W = new Array(160)
+
+function Sha512 () {
+  this.init()
+  this._w = W
+
+  Hash.call(this, 128, 112)
+}
+
+inherits(Sha512, Hash)
+
+Sha512.prototype.init = function () {
+  this._ah = 0x6a09e667
+  this._bh = 0xbb67ae85
+  this._ch = 0x3c6ef372
+  this._dh = 0xa54ff53a
+  this._eh = 0x510e527f
+  this._fh = 0x9b05688c
+  this._gh = 0x1f83d9ab
+  this._hh = 0x5be0cd19
+
+  this._al = 0xf3bcc908
+  this._bl = 0x84caa73b
+  this._cl = 0xfe94f82b
+  this._dl = 0x5f1d36f1
+  this._el = 0xade682d1
+  this._fl = 0x2b3e6c1f
+  this._gl = 0xfb41bd6b
+  this._hl = 0x137e2179
+
+  return this
+}
+
+function Ch (x, y, z) {
+  return z ^ (x & (y ^ z))
+}
+
+function maj (x, y, z) {
+  return (x & y) | (z & (x | y))
+}
+
+function sigma0 (x, xl) {
+  return (x >>> 28 | xl << 4) ^ (xl >>> 2 | x << 30) ^ (xl >>> 7 | x << 25)
+}
+
+function sigma1 (x, xl) {
+  return (x >>> 14 | xl << 18) ^ (x >>> 18 | xl << 14) ^ (xl >>> 9 | x << 23)
+}
+
+function Gamma0 (x, xl) {
+  return (x >>> 1 | xl << 31) ^ (x >>> 8 | xl << 24) ^ (x >>> 7)
+}
+
+function Gamma0l (x, xl) {
+  return (x >>> 1 | xl << 31) ^ (x >>> 8 | xl << 24) ^ (x >>> 7 | xl << 25)
+}
+
+function Gamma1 (x, xl) {
+  return (x >>> 19 | xl << 13) ^ (xl >>> 29 | x << 3) ^ (x >>> 6)
+}
+
+function Gamma1l (x, xl) {
+  return (x >>> 19 | xl << 13) ^ (xl >>> 29 | x << 3) ^ (x >>> 6 | xl << 26)
+}
+
+function getCarry (a, b) {
+  return (a >>> 0) < (b >>> 0) ? 1 : 0
+}
+
+Sha512.prototype._update = function (M) {
+  var W = this._w
+
+  var ah = this._ah | 0
+  var bh = this._bh | 0
+  var ch = this._ch | 0
+  var dh = this._dh | 0
+  var eh = this._eh | 0
+  var fh = this._fh | 0
+  var gh = this._gh | 0
+  var hh = this._hh | 0
+
+  var al = this._al | 0
+  var bl = this._bl | 0
+  var cl = this._cl | 0
+  var dl = this._dl | 0
+  var el = this._el | 0
+  var fl = this._fl | 0
+  var gl = this._gl | 0
+  var hl = this._hl | 0
+
+  for (var i = 0; i < 32; i += 2) {
+    W[i] = M.readInt32BE(i * 4)
+    W[i + 1] = M.readInt32BE(i * 4 + 4)
+  }
+  for (; i < 160; i += 2) {
+    var xh = W[i - 15 * 2]
+    var xl = W[i - 15 * 2 + 1]
+    var gamma0 = Gamma0(xh, xl)
+    var gamma0l = Gamma0l(xl, xh)
+
+    xh = W[i - 2 * 2]
+    xl = W[i - 2 * 2 + 1]
+    var gamma1 = Gamma1(xh, xl)
+    var gamma1l = Gamma1l(xl, xh)
+
+    // W[i] = gamma0 + W[i - 7] + gamma1 + W[i - 16]
+    var Wi7h = W[i - 7 * 2]
+    var Wi7l = W[i - 7 * 2 + 1]
+
+    var Wi16h = W[i - 16 * 2]
+    var Wi16l = W[i - 16 * 2 + 1]
+
+    var Wil = (gamma0l + Wi7l) | 0
+    var Wih = (gamma0 + Wi7h + getCarry(Wil, gamma0l)) | 0
+    Wil = (Wil + gamma1l) | 0
+    Wih = (Wih + gamma1 + getCarry(Wil, gamma1l)) | 0
+    Wil = (Wil + Wi16l) | 0
+    Wih = (Wih + Wi16h + getCarry(Wil, Wi16l)) | 0
+
+    W[i] = Wih
+    W[i + 1] = Wil
+  }
+
+  for (var j = 0; j < 160; j += 2) {
+    Wih = W[j]
+    Wil = W[j + 1]
+
+    var majh = maj(ah, bh, ch)
+    var majl = maj(al, bl, cl)
+
+    var sigma0h = sigma0(ah, al)
+    var sigma0l = sigma0(al, ah)
+    var sigma1h = sigma1(eh, el)
+    var sigma1l = sigma1(el, eh)
+
+    // t1 = h + sigma1 + ch + K[j] + W[j]
+    var Kih = K[j]
+    var Kil = K[j + 1]
+
+    var chh = Ch(eh, fh, gh)
+    var chl = Ch(el, fl, gl)
+
+    var t1l = (hl + sigma1l) | 0
+    var t1h = (hh + sigma1h + getCarry(t1l, hl)) | 0
+    t1l = (t1l + chl) | 0
+    t1h = (t1h + chh + getCarry(t1l, chl)) | 0
+    t1l = (t1l + Kil) | 0
+    t1h = (t1h + Kih + getCarry(t1l, Kil)) | 0
+    t1l = (t1l + Wil) | 0
+    t1h = (t1h + Wih + getCarry(t1l, Wil)) | 0
+
+    // t2 = sigma0 + maj
+    var t2l = (sigma0l + majl) | 0
+    var t2h = (sigma0h + majh + getCarry(t2l, sigma0l)) | 0
+
+    hh = gh
+    hl = gl
+    gh = fh
+    gl = fl
+    fh = eh
+    fl = el
+    el = (dl + t1l) | 0
+    eh = (dh + t1h + getCarry(el, dl)) | 0
+    dh = ch
+    dl = cl
+    ch = bh
+    cl = bl
+    bh = ah
+    bl = al
+    al = (t1l + t2l) | 0
+    ah = (t1h + t2h + getCarry(al, t1l)) | 0
+  }
+
+  this._al = (this._al + al) | 0
+  this._bl = (this._bl + bl) | 0
+  this._cl = (this._cl + cl) | 0
+  this._dl = (this._dl + dl) | 0
+  this._el = (this._el + el) | 0
+  this._fl = (this._fl + fl) | 0
+  this._gl = (this._gl + gl) | 0
+  this._hl = (this._hl + hl) | 0
+
+  this._ah = (this._ah + ah + getCarry(this._al, al)) | 0
+  this._bh = (this._bh + bh + getCarry(this._bl, bl)) | 0
+  this._ch = (this._ch + ch + getCarry(this._cl, cl)) | 0
+  this._dh = (this._dh + dh + getCarry(this._dl, dl)) | 0
+  this._eh = (this._eh + eh + getCarry(this._el, el)) | 0
+  this._fh = (this._fh + fh + getCarry(this._fl, fl)) | 0
+  this._gh = (this._gh + gh + getCarry(this._gl, gl)) | 0
+  this._hh = (this._hh + hh + getCarry(this._hl, hl)) | 0
+}
+
+Sha512.prototype._hash = function () {
+  var H = Buffer.allocUnsafe(64)
+
+  function writeInt64BE (h, l, offset) {
+    H.writeInt32BE(h, offset)
+    H.writeInt32BE(l, offset + 4)
+  }
+
+  writeInt64BE(this._ah, this._al, 0)
+  writeInt64BE(this._bh, this._bl, 8)
+  writeInt64BE(this._ch, this._cl, 16)
+  writeInt64BE(this._dh, this._dl, 24)
+  writeInt64BE(this._eh, this._el, 32)
+  writeInt64BE(this._fh, this._fl, 40)
+  writeInt64BE(this._gh, this._gl, 48)
+  writeInt64BE(this._hh, this._hl, 56)
+
+  return H
+}
+
+module.exports = Sha512
+
+},{"./hash":128,"inherits":99,"safe-buffer":127}],136:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+module.exports = Stream;
+
+var EE = require('events').EventEmitter;
+var inherits = require('inherits');
+
+inherits(Stream, EE);
+Stream.Readable = require('readable-stream/readable.js');
+Stream.Writable = require('readable-stream/writable.js');
+Stream.Duplex = require('readable-stream/duplex.js');
+Stream.Transform = require('readable-stream/transform.js');
+Stream.PassThrough = require('readable-stream/passthrough.js');
+
+// Backwards-compat with node 0.4.x
+Stream.Stream = Stream;
+
+
+
+// old-style streams.  Note that the pipe method (the only relevant
+// part of this class) is overridden in the Readable class.
+
+function Stream() {
+  EE.call(this);
+}
+
+Stream.prototype.pipe = function(dest, options) {
+  var source = this;
+
+  function ondata(chunk) {
+    if (dest.writable) {
+      if (false === dest.write(chunk) && source.pause) {
+        source.pause();
+      }
+    }
+  }
+
+  source.on('data', ondata);
+
+  function ondrain() {
+    if (source.readable && source.resume) {
+      source.resume();
+    }
+  }
+
+  dest.on('drain', ondrain);
+
+  // If the 'end' option is not supplied, dest.end() will be called when
+  // source gets the 'end' or 'close' events.  Only dest.end() once.
+  if (!dest._isStdio && (!options || options.end !== false)) {
+    source.on('end', onend);
+    source.on('close', onclose);
+  }
+
+  var didOnEnd = false;
+  function onend() {
+    if (didOnEnd) return;
+    didOnEnd = true;
+
+    dest.end();
+  }
+
+
+  function onclose() {
+    if (didOnEnd) return;
+    didOnEnd = true;
+
+    if (typeof dest.destroy === 'function') dest.destroy();
+  }
+
+  // don't leave dangling pipes when there are errors.
+  function onerror(er) {
+    cleanup();
+    if (EE.listenerCount(this, 'error') === 0) {
+      throw er; // Unhandled stream error in pipe.
+    }
+  }
+
+  source.on('error', onerror);
+  dest.on('error', onerror);
+
+  // remove all the event listeners that were added.
+  function cleanup() {
+    source.removeListener('data', ondata);
+    dest.removeListener('drain', ondrain);
+
+    source.removeListener('end', onend);
+    source.removeListener('close', onclose);
+
+    source.removeListener('error', onerror);
+    dest.removeListener('error', onerror);
+
+    source.removeListener('end', cleanup);
+    source.removeListener('close', cleanup);
+
+    dest.removeListener('close', cleanup);
+  }
+
+  source.on('end', cleanup);
+  source.on('close', cleanup);
+
+  dest.on('close', cleanup);
+
+  dest.emit('pipe', source);
+
+  // Allow for unix-like usage: A.pipe(B).pipe(C)
+  return dest;
+};
+
+},{"events":82,"inherits":99,"readable-stream/duplex.js":137,"readable-stream/passthrough.js":146,"readable-stream/readable.js":147,"readable-stream/transform.js":148,"readable-stream/writable.js":149}],137:[function(require,module,exports){
 module.exports = require('./lib/_stream_duplex.js');
 
-},{"./lib/_stream_duplex.js":127}],127:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":138}],138:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -18457,7 +19663,7 @@ Duplex.prototype._destroy = function (err, cb) {
 
   pna.nextTick(cb, err);
 };
-},{"./_stream_readable":129,"./_stream_writable":131,"core-util-is":49,"inherits":99,"process-nextick-args":116}],128:[function(require,module,exports){
+},{"./_stream_readable":140,"./_stream_writable":142,"core-util-is":49,"inherits":99,"process-nextick-args":116}],139:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -18505,7 +19711,7 @@ function PassThrough(options) {
 PassThrough.prototype._transform = function (chunk, encoding, cb) {
   cb(null, chunk);
 };
-},{"./_stream_transform":130,"core-util-is":49,"inherits":99}],129:[function(require,module,exports){
+},{"./_stream_transform":141,"core-util-is":49,"inherits":99}],140:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -19527,7 +20733,7 @@ function indexOf(xs, x) {
   return -1;
 }
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./_stream_duplex":127,"./internal/streams/BufferList":132,"./internal/streams/destroy":133,"./internal/streams/stream":134,"_process":117,"core-util-is":49,"events":82,"inherits":99,"isarray":101,"process-nextick-args":116,"safe-buffer":140,"string_decoder/":150,"util":18}],130:[function(require,module,exports){
+},{"./_stream_duplex":138,"./internal/streams/BufferList":143,"./internal/streams/destroy":144,"./internal/streams/stream":145,"_process":117,"core-util-is":49,"events":82,"inherits":99,"isarray":101,"process-nextick-args":116,"safe-buffer":127,"string_decoder/":150,"util":18}],141:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -19742,7 +20948,7 @@ function done(stream, er, data) {
 
   return stream.push(null);
 }
-},{"./_stream_duplex":127,"core-util-is":49,"inherits":99}],131:[function(require,module,exports){
+},{"./_stream_duplex":138,"core-util-is":49,"inherits":99}],142:[function(require,module,exports){
 (function (process,global,setImmediate){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -20432,7 +21638,7 @@ Writable.prototype._destroy = function (err, cb) {
   cb(err);
 };
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},require("timers").setImmediate)
-},{"./_stream_duplex":127,"./internal/streams/destroy":133,"./internal/streams/stream":134,"_process":117,"core-util-is":49,"inherits":99,"process-nextick-args":116,"safe-buffer":140,"timers":151,"util-deprecate":152}],132:[function(require,module,exports){
+},{"./_stream_duplex":138,"./internal/streams/destroy":144,"./internal/streams/stream":145,"_process":117,"core-util-is":49,"inherits":99,"process-nextick-args":116,"safe-buffer":127,"timers":152,"util-deprecate":153}],143:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -20512,7 +21718,7 @@ if (util && util.inspect && util.inspect.custom) {
     return this.constructor.name + ' ' + obj;
   };
 }
-},{"safe-buffer":140,"util":18}],133:[function(require,module,exports){
+},{"safe-buffer":127,"util":18}],144:[function(require,module,exports){
 'use strict';
 
 /*<replacement>*/
@@ -20587,13 +21793,13 @@ module.exports = {
   destroy: destroy,
   undestroy: undestroy
 };
-},{"process-nextick-args":116}],134:[function(require,module,exports){
+},{"process-nextick-args":116}],145:[function(require,module,exports){
 module.exports = require('events').EventEmitter;
 
-},{"events":82}],135:[function(require,module,exports){
+},{"events":82}],146:[function(require,module,exports){
 module.exports = require('./readable').PassThrough
 
-},{"./readable":136}],136:[function(require,module,exports){
+},{"./readable":147}],147:[function(require,module,exports){
 exports = module.exports = require('./lib/_stream_readable.js');
 exports.Stream = exports;
 exports.Readable = exports;
@@ -20602,1181 +21808,13 @@ exports.Duplex = require('./lib/_stream_duplex.js');
 exports.Transform = require('./lib/_stream_transform.js');
 exports.PassThrough = require('./lib/_stream_passthrough.js');
 
-},{"./lib/_stream_duplex.js":127,"./lib/_stream_passthrough.js":128,"./lib/_stream_readable.js":129,"./lib/_stream_transform.js":130,"./lib/_stream_writable.js":131}],137:[function(require,module,exports){
+},{"./lib/_stream_duplex.js":138,"./lib/_stream_passthrough.js":139,"./lib/_stream_readable.js":140,"./lib/_stream_transform.js":141,"./lib/_stream_writable.js":142}],148:[function(require,module,exports){
 module.exports = require('./readable').Transform
 
-},{"./readable":136}],138:[function(require,module,exports){
+},{"./readable":147}],149:[function(require,module,exports){
 module.exports = require('./lib/_stream_writable.js');
 
-},{"./lib/_stream_writable.js":131}],139:[function(require,module,exports){
-'use strict'
-var Buffer = require('buffer').Buffer
-var inherits = require('inherits')
-var HashBase = require('hash-base')
-
-var ARRAY16 = new Array(16)
-
-var zl = [
-  0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-  7, 4, 13, 1, 10, 6, 15, 3, 12, 0, 9, 5, 2, 14, 11, 8,
-  3, 10, 14, 4, 9, 15, 8, 1, 2, 7, 0, 6, 13, 11, 5, 12,
-  1, 9, 11, 10, 0, 8, 12, 4, 13, 3, 7, 15, 14, 5, 6, 2,
-  4, 0, 5, 9, 7, 12, 2, 10, 14, 1, 3, 8, 11, 6, 15, 13
-]
-
-var zr = [
-  5, 14, 7, 0, 9, 2, 11, 4, 13, 6, 15, 8, 1, 10, 3, 12,
-  6, 11, 3, 7, 0, 13, 5, 10, 14, 15, 8, 12, 4, 9, 1, 2,
-  15, 5, 1, 3, 7, 14, 6, 9, 11, 8, 12, 2, 10, 0, 4, 13,
-  8, 6, 4, 1, 3, 11, 15, 0, 5, 12, 2, 13, 9, 7, 10, 14,
-  12, 15, 10, 4, 1, 5, 8, 7, 6, 2, 13, 14, 0, 3, 9, 11
-]
-
-var sl = [
-  11, 14, 15, 12, 5, 8, 7, 9, 11, 13, 14, 15, 6, 7, 9, 8,
-  7, 6, 8, 13, 11, 9, 7, 15, 7, 12, 15, 9, 11, 7, 13, 12,
-  11, 13, 6, 7, 14, 9, 13, 15, 14, 8, 13, 6, 5, 12, 7, 5,
-  11, 12, 14, 15, 14, 15, 9, 8, 9, 14, 5, 6, 8, 6, 5, 12,
-  9, 15, 5, 11, 6, 8, 13, 12, 5, 12, 13, 14, 11, 8, 5, 6
-]
-
-var sr = [
-  8, 9, 9, 11, 13, 15, 15, 5, 7, 7, 8, 11, 14, 14, 12, 6,
-  9, 13, 15, 7, 12, 8, 9, 11, 7, 7, 12, 7, 6, 15, 13, 11,
-  9, 7, 15, 11, 8, 6, 6, 14, 12, 13, 5, 14, 13, 13, 7, 5,
-  15, 5, 8, 11, 14, 14, 6, 14, 6, 9, 12, 9, 12, 5, 15, 8,
-  8, 5, 12, 9, 12, 5, 14, 6, 8, 13, 6, 5, 15, 13, 11, 11
-]
-
-var hl = [0x00000000, 0x5a827999, 0x6ed9eba1, 0x8f1bbcdc, 0xa953fd4e]
-var hr = [0x50a28be6, 0x5c4dd124, 0x6d703ef3, 0x7a6d76e9, 0x00000000]
-
-function RIPEMD160 () {
-  HashBase.call(this, 64)
-
-  // state
-  this._a = 0x67452301
-  this._b = 0xefcdab89
-  this._c = 0x98badcfe
-  this._d = 0x10325476
-  this._e = 0xc3d2e1f0
-}
-
-inherits(RIPEMD160, HashBase)
-
-RIPEMD160.prototype._update = function () {
-  var words = ARRAY16
-  for (var j = 0; j < 16; ++j) words[j] = this._block.readInt32LE(j * 4)
-
-  var al = this._a | 0
-  var bl = this._b | 0
-  var cl = this._c | 0
-  var dl = this._d | 0
-  var el = this._e | 0
-
-  var ar = this._a | 0
-  var br = this._b | 0
-  var cr = this._c | 0
-  var dr = this._d | 0
-  var er = this._e | 0
-
-  // computation
-  for (var i = 0; i < 80; i += 1) {
-    var tl
-    var tr
-    if (i < 16) {
-      tl = fn1(al, bl, cl, dl, el, words[zl[i]], hl[0], sl[i])
-      tr = fn5(ar, br, cr, dr, er, words[zr[i]], hr[0], sr[i])
-    } else if (i < 32) {
-      tl = fn2(al, bl, cl, dl, el, words[zl[i]], hl[1], sl[i])
-      tr = fn4(ar, br, cr, dr, er, words[zr[i]], hr[1], sr[i])
-    } else if (i < 48) {
-      tl = fn3(al, bl, cl, dl, el, words[zl[i]], hl[2], sl[i])
-      tr = fn3(ar, br, cr, dr, er, words[zr[i]], hr[2], sr[i])
-    } else if (i < 64) {
-      tl = fn4(al, bl, cl, dl, el, words[zl[i]], hl[3], sl[i])
-      tr = fn2(ar, br, cr, dr, er, words[zr[i]], hr[3], sr[i])
-    } else { // if (i<80) {
-      tl = fn5(al, bl, cl, dl, el, words[zl[i]], hl[4], sl[i])
-      tr = fn1(ar, br, cr, dr, er, words[zr[i]], hr[4], sr[i])
-    }
-
-    al = el
-    el = dl
-    dl = rotl(cl, 10)
-    cl = bl
-    bl = tl
-
-    ar = er
-    er = dr
-    dr = rotl(cr, 10)
-    cr = br
-    br = tr
-  }
-
-  // update state
-  var t = (this._b + cl + dr) | 0
-  this._b = (this._c + dl + er) | 0
-  this._c = (this._d + el + ar) | 0
-  this._d = (this._e + al + br) | 0
-  this._e = (this._a + bl + cr) | 0
-  this._a = t
-}
-
-RIPEMD160.prototype._digest = function () {
-  // create padding and handle blocks
-  this._block[this._blockOffset++] = 0x80
-  if (this._blockOffset > 56) {
-    this._block.fill(0, this._blockOffset, 64)
-    this._update()
-    this._blockOffset = 0
-  }
-
-  this._block.fill(0, this._blockOffset, 56)
-  this._block.writeUInt32LE(this._length[0], 56)
-  this._block.writeUInt32LE(this._length[1], 60)
-  this._update()
-
-  // produce result
-  var buffer = Buffer.alloc ? Buffer.alloc(20) : new Buffer(20)
-  buffer.writeInt32LE(this._a, 0)
-  buffer.writeInt32LE(this._b, 4)
-  buffer.writeInt32LE(this._c, 8)
-  buffer.writeInt32LE(this._d, 12)
-  buffer.writeInt32LE(this._e, 16)
-  return buffer
-}
-
-function rotl (x, n) {
-  return (x << n) | (x >>> (32 - n))
-}
-
-function fn1 (a, b, c, d, e, m, k, s) {
-  return (rotl((a + (b ^ c ^ d) + m + k) | 0, s) + e) | 0
-}
-
-function fn2 (a, b, c, d, e, m, k, s) {
-  return (rotl((a + ((b & c) | ((~b) & d)) + m + k) | 0, s) + e) | 0
-}
-
-function fn3 (a, b, c, d, e, m, k, s) {
-  return (rotl((a + ((b | (~c)) ^ d) + m + k) | 0, s) + e) | 0
-}
-
-function fn4 (a, b, c, d, e, m, k, s) {
-  return (rotl((a + ((b & d) | (c & (~d))) + m + k) | 0, s) + e) | 0
-}
-
-function fn5 (a, b, c, d, e, m, k, s) {
-  return (rotl((a + (b ^ (c | (~d))) + m + k) | 0, s) + e) | 0
-}
-
-module.exports = RIPEMD160
-
-},{"buffer":47,"hash-base":84,"inherits":99}],140:[function(require,module,exports){
-/* eslint-disable node/no-deprecated-api */
-var buffer = require('buffer')
-var Buffer = buffer.Buffer
-
-// alternative to using Object.keys for old browsers
-function copyProps (src, dst) {
-  for (var key in src) {
-    dst[key] = src[key]
-  }
-}
-if (Buffer.from && Buffer.alloc && Buffer.allocUnsafe && Buffer.allocUnsafeSlow) {
-  module.exports = buffer
-} else {
-  // Copy properties from require('buffer')
-  copyProps(buffer, exports)
-  exports.Buffer = SafeBuffer
-}
-
-function SafeBuffer (arg, encodingOrOffset, length) {
-  return Buffer(arg, encodingOrOffset, length)
-}
-
-// Copy static methods from Buffer
-copyProps(Buffer, SafeBuffer)
-
-SafeBuffer.from = function (arg, encodingOrOffset, length) {
-  if (typeof arg === 'number') {
-    throw new TypeError('Argument must not be a number')
-  }
-  return Buffer(arg, encodingOrOffset, length)
-}
-
-SafeBuffer.alloc = function (size, fill, encoding) {
-  if (typeof size !== 'number') {
-    throw new TypeError('Argument must be a number')
-  }
-  var buf = Buffer(size)
-  if (fill !== undefined) {
-    if (typeof encoding === 'string') {
-      buf.fill(fill, encoding)
-    } else {
-      buf.fill(fill)
-    }
-  } else {
-    buf.fill(0)
-  }
-  return buf
-}
-
-SafeBuffer.allocUnsafe = function (size) {
-  if (typeof size !== 'number') {
-    throw new TypeError('Argument must be a number')
-  }
-  return Buffer(size)
-}
-
-SafeBuffer.allocUnsafeSlow = function (size) {
-  if (typeof size !== 'number') {
-    throw new TypeError('Argument must be a number')
-  }
-  return buffer.SlowBuffer(size)
-}
-
-},{"buffer":47}],141:[function(require,module,exports){
-var Buffer = require('safe-buffer').Buffer
-
-// prototype class for hash functions
-function Hash (blockSize, finalSize) {
-  this._block = Buffer.alloc(blockSize)
-  this._finalSize = finalSize
-  this._blockSize = blockSize
-  this._len = 0
-}
-
-Hash.prototype.update = function (data, enc) {
-  if (typeof data === 'string') {
-    enc = enc || 'utf8'
-    data = Buffer.from(data, enc)
-  }
-
-  var block = this._block
-  var blockSize = this._blockSize
-  var length = data.length
-  var accum = this._len
-
-  for (var offset = 0; offset < length;) {
-    var assigned = accum % blockSize
-    var remainder = Math.min(length - offset, blockSize - assigned)
-
-    for (var i = 0; i < remainder; i++) {
-      block[assigned + i] = data[offset + i]
-    }
-
-    accum += remainder
-    offset += remainder
-
-    if ((accum % blockSize) === 0) {
-      this._update(block)
-    }
-  }
-
-  this._len += length
-  return this
-}
-
-Hash.prototype.digest = function (enc) {
-  var rem = this._len % this._blockSize
-
-  this._block[rem] = 0x80
-
-  // zero (rem + 1) trailing bits, where (rem + 1) is the smallest
-  // non-negative solution to the equation (length + 1 + (rem + 1)) === finalSize mod blockSize
-  this._block.fill(0, rem + 1)
-
-  if (rem >= this._finalSize) {
-    this._update(this._block)
-    this._block.fill(0)
-  }
-
-  var bits = this._len * 8
-
-  // uint32
-  if (bits <= 0xffffffff) {
-    this._block.writeUInt32BE(bits, this._blockSize - 4)
-
-  // uint64
-  } else {
-    var lowBits = (bits & 0xffffffff) >>> 0
-    var highBits = (bits - lowBits) / 0x100000000
-
-    this._block.writeUInt32BE(highBits, this._blockSize - 8)
-    this._block.writeUInt32BE(lowBits, this._blockSize - 4)
-  }
-
-  this._update(this._block)
-  var hash = this._hash()
-
-  return enc ? hash.toString(enc) : hash
-}
-
-Hash.prototype._update = function () {
-  throw new Error('_update must be implemented by subclass')
-}
-
-module.exports = Hash
-
-},{"safe-buffer":140}],142:[function(require,module,exports){
-var exports = module.exports = function SHA (algorithm) {
-  algorithm = algorithm.toLowerCase()
-
-  var Algorithm = exports[algorithm]
-  if (!Algorithm) throw new Error(algorithm + ' is not supported (we accept pull requests)')
-
-  return new Algorithm()
-}
-
-exports.sha = require('./sha')
-exports.sha1 = require('./sha1')
-exports.sha224 = require('./sha224')
-exports.sha256 = require('./sha256')
-exports.sha384 = require('./sha384')
-exports.sha512 = require('./sha512')
-
-},{"./sha":143,"./sha1":144,"./sha224":145,"./sha256":146,"./sha384":147,"./sha512":148}],143:[function(require,module,exports){
-/*
- * A JavaScript implementation of the Secure Hash Algorithm, SHA-0, as defined
- * in FIPS PUB 180-1
- * This source code is derived from sha1.js of the same repository.
- * The difference between SHA-0 and SHA-1 is just a bitwise rotate left
- * operation was added.
- */
-
-var inherits = require('inherits')
-var Hash = require('./hash')
-var Buffer = require('safe-buffer').Buffer
-
-var K = [
-  0x5a827999, 0x6ed9eba1, 0x8f1bbcdc | 0, 0xca62c1d6 | 0
-]
-
-var W = new Array(80)
-
-function Sha () {
-  this.init()
-  this._w = W
-
-  Hash.call(this, 64, 56)
-}
-
-inherits(Sha, Hash)
-
-Sha.prototype.init = function () {
-  this._a = 0x67452301
-  this._b = 0xefcdab89
-  this._c = 0x98badcfe
-  this._d = 0x10325476
-  this._e = 0xc3d2e1f0
-
-  return this
-}
-
-function rotl5 (num) {
-  return (num << 5) | (num >>> 27)
-}
-
-function rotl30 (num) {
-  return (num << 30) | (num >>> 2)
-}
-
-function ft (s, b, c, d) {
-  if (s === 0) return (b & c) | ((~b) & d)
-  if (s === 2) return (b & c) | (b & d) | (c & d)
-  return b ^ c ^ d
-}
-
-Sha.prototype._update = function (M) {
-  var W = this._w
-
-  var a = this._a | 0
-  var b = this._b | 0
-  var c = this._c | 0
-  var d = this._d | 0
-  var e = this._e | 0
-
-  for (var i = 0; i < 16; ++i) W[i] = M.readInt32BE(i * 4)
-  for (; i < 80; ++i) W[i] = W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16]
-
-  for (var j = 0; j < 80; ++j) {
-    var s = ~~(j / 20)
-    var t = (rotl5(a) + ft(s, b, c, d) + e + W[j] + K[s]) | 0
-
-    e = d
-    d = c
-    c = rotl30(b)
-    b = a
-    a = t
-  }
-
-  this._a = (a + this._a) | 0
-  this._b = (b + this._b) | 0
-  this._c = (c + this._c) | 0
-  this._d = (d + this._d) | 0
-  this._e = (e + this._e) | 0
-}
-
-Sha.prototype._hash = function () {
-  var H = Buffer.allocUnsafe(20)
-
-  H.writeInt32BE(this._a | 0, 0)
-  H.writeInt32BE(this._b | 0, 4)
-  H.writeInt32BE(this._c | 0, 8)
-  H.writeInt32BE(this._d | 0, 12)
-  H.writeInt32BE(this._e | 0, 16)
-
-  return H
-}
-
-module.exports = Sha
-
-},{"./hash":141,"inherits":99,"safe-buffer":140}],144:[function(require,module,exports){
-/*
- * A JavaScript implementation of the Secure Hash Algorithm, SHA-1, as defined
- * in FIPS PUB 180-1
- * Version 2.1a Copyright Paul Johnston 2000 - 2002.
- * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
- * Distributed under the BSD License
- * See http://pajhome.org.uk/crypt/md5 for details.
- */
-
-var inherits = require('inherits')
-var Hash = require('./hash')
-var Buffer = require('safe-buffer').Buffer
-
-var K = [
-  0x5a827999, 0x6ed9eba1, 0x8f1bbcdc | 0, 0xca62c1d6 | 0
-]
-
-var W = new Array(80)
-
-function Sha1 () {
-  this.init()
-  this._w = W
-
-  Hash.call(this, 64, 56)
-}
-
-inherits(Sha1, Hash)
-
-Sha1.prototype.init = function () {
-  this._a = 0x67452301
-  this._b = 0xefcdab89
-  this._c = 0x98badcfe
-  this._d = 0x10325476
-  this._e = 0xc3d2e1f0
-
-  return this
-}
-
-function rotl1 (num) {
-  return (num << 1) | (num >>> 31)
-}
-
-function rotl5 (num) {
-  return (num << 5) | (num >>> 27)
-}
-
-function rotl30 (num) {
-  return (num << 30) | (num >>> 2)
-}
-
-function ft (s, b, c, d) {
-  if (s === 0) return (b & c) | ((~b) & d)
-  if (s === 2) return (b & c) | (b & d) | (c & d)
-  return b ^ c ^ d
-}
-
-Sha1.prototype._update = function (M) {
-  var W = this._w
-
-  var a = this._a | 0
-  var b = this._b | 0
-  var c = this._c | 0
-  var d = this._d | 0
-  var e = this._e | 0
-
-  for (var i = 0; i < 16; ++i) W[i] = M.readInt32BE(i * 4)
-  for (; i < 80; ++i) W[i] = rotl1(W[i - 3] ^ W[i - 8] ^ W[i - 14] ^ W[i - 16])
-
-  for (var j = 0; j < 80; ++j) {
-    var s = ~~(j / 20)
-    var t = (rotl5(a) + ft(s, b, c, d) + e + W[j] + K[s]) | 0
-
-    e = d
-    d = c
-    c = rotl30(b)
-    b = a
-    a = t
-  }
-
-  this._a = (a + this._a) | 0
-  this._b = (b + this._b) | 0
-  this._c = (c + this._c) | 0
-  this._d = (d + this._d) | 0
-  this._e = (e + this._e) | 0
-}
-
-Sha1.prototype._hash = function () {
-  var H = Buffer.allocUnsafe(20)
-
-  H.writeInt32BE(this._a | 0, 0)
-  H.writeInt32BE(this._b | 0, 4)
-  H.writeInt32BE(this._c | 0, 8)
-  H.writeInt32BE(this._d | 0, 12)
-  H.writeInt32BE(this._e | 0, 16)
-
-  return H
-}
-
-module.exports = Sha1
-
-},{"./hash":141,"inherits":99,"safe-buffer":140}],145:[function(require,module,exports){
-/**
- * A JavaScript implementation of the Secure Hash Algorithm, SHA-256, as defined
- * in FIPS 180-2
- * Version 2.2-beta Copyright Angel Marin, Paul Johnston 2000 - 2009.
- * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
- *
- */
-
-var inherits = require('inherits')
-var Sha256 = require('./sha256')
-var Hash = require('./hash')
-var Buffer = require('safe-buffer').Buffer
-
-var W = new Array(64)
-
-function Sha224 () {
-  this.init()
-
-  this._w = W // new Array(64)
-
-  Hash.call(this, 64, 56)
-}
-
-inherits(Sha224, Sha256)
-
-Sha224.prototype.init = function () {
-  this._a = 0xc1059ed8
-  this._b = 0x367cd507
-  this._c = 0x3070dd17
-  this._d = 0xf70e5939
-  this._e = 0xffc00b31
-  this._f = 0x68581511
-  this._g = 0x64f98fa7
-  this._h = 0xbefa4fa4
-
-  return this
-}
-
-Sha224.prototype._hash = function () {
-  var H = Buffer.allocUnsafe(28)
-
-  H.writeInt32BE(this._a, 0)
-  H.writeInt32BE(this._b, 4)
-  H.writeInt32BE(this._c, 8)
-  H.writeInt32BE(this._d, 12)
-  H.writeInt32BE(this._e, 16)
-  H.writeInt32BE(this._f, 20)
-  H.writeInt32BE(this._g, 24)
-
-  return H
-}
-
-module.exports = Sha224
-
-},{"./hash":141,"./sha256":146,"inherits":99,"safe-buffer":140}],146:[function(require,module,exports){
-/**
- * A JavaScript implementation of the Secure Hash Algorithm, SHA-256, as defined
- * in FIPS 180-2
- * Version 2.2-beta Copyright Angel Marin, Paul Johnston 2000 - 2009.
- * Other contributors: Greg Holt, Andrew Kepert, Ydnar, Lostinet
- *
- */
-
-var inherits = require('inherits')
-var Hash = require('./hash')
-var Buffer = require('safe-buffer').Buffer
-
-var K = [
-  0x428A2F98, 0x71374491, 0xB5C0FBCF, 0xE9B5DBA5,
-  0x3956C25B, 0x59F111F1, 0x923F82A4, 0xAB1C5ED5,
-  0xD807AA98, 0x12835B01, 0x243185BE, 0x550C7DC3,
-  0x72BE5D74, 0x80DEB1FE, 0x9BDC06A7, 0xC19BF174,
-  0xE49B69C1, 0xEFBE4786, 0x0FC19DC6, 0x240CA1CC,
-  0x2DE92C6F, 0x4A7484AA, 0x5CB0A9DC, 0x76F988DA,
-  0x983E5152, 0xA831C66D, 0xB00327C8, 0xBF597FC7,
-  0xC6E00BF3, 0xD5A79147, 0x06CA6351, 0x14292967,
-  0x27B70A85, 0x2E1B2138, 0x4D2C6DFC, 0x53380D13,
-  0x650A7354, 0x766A0ABB, 0x81C2C92E, 0x92722C85,
-  0xA2BFE8A1, 0xA81A664B, 0xC24B8B70, 0xC76C51A3,
-  0xD192E819, 0xD6990624, 0xF40E3585, 0x106AA070,
-  0x19A4C116, 0x1E376C08, 0x2748774C, 0x34B0BCB5,
-  0x391C0CB3, 0x4ED8AA4A, 0x5B9CCA4F, 0x682E6FF3,
-  0x748F82EE, 0x78A5636F, 0x84C87814, 0x8CC70208,
-  0x90BEFFFA, 0xA4506CEB, 0xBEF9A3F7, 0xC67178F2
-]
-
-var W = new Array(64)
-
-function Sha256 () {
-  this.init()
-
-  this._w = W // new Array(64)
-
-  Hash.call(this, 64, 56)
-}
-
-inherits(Sha256, Hash)
-
-Sha256.prototype.init = function () {
-  this._a = 0x6a09e667
-  this._b = 0xbb67ae85
-  this._c = 0x3c6ef372
-  this._d = 0xa54ff53a
-  this._e = 0x510e527f
-  this._f = 0x9b05688c
-  this._g = 0x1f83d9ab
-  this._h = 0x5be0cd19
-
-  return this
-}
-
-function ch (x, y, z) {
-  return z ^ (x & (y ^ z))
-}
-
-function maj (x, y, z) {
-  return (x & y) | (z & (x | y))
-}
-
-function sigma0 (x) {
-  return (x >>> 2 | x << 30) ^ (x >>> 13 | x << 19) ^ (x >>> 22 | x << 10)
-}
-
-function sigma1 (x) {
-  return (x >>> 6 | x << 26) ^ (x >>> 11 | x << 21) ^ (x >>> 25 | x << 7)
-}
-
-function gamma0 (x) {
-  return (x >>> 7 | x << 25) ^ (x >>> 18 | x << 14) ^ (x >>> 3)
-}
-
-function gamma1 (x) {
-  return (x >>> 17 | x << 15) ^ (x >>> 19 | x << 13) ^ (x >>> 10)
-}
-
-Sha256.prototype._update = function (M) {
-  var W = this._w
-
-  var a = this._a | 0
-  var b = this._b | 0
-  var c = this._c | 0
-  var d = this._d | 0
-  var e = this._e | 0
-  var f = this._f | 0
-  var g = this._g | 0
-  var h = this._h | 0
-
-  for (var i = 0; i < 16; ++i) W[i] = M.readInt32BE(i * 4)
-  for (; i < 64; ++i) W[i] = (gamma1(W[i - 2]) + W[i - 7] + gamma0(W[i - 15]) + W[i - 16]) | 0
-
-  for (var j = 0; j < 64; ++j) {
-    var T1 = (h + sigma1(e) + ch(e, f, g) + K[j] + W[j]) | 0
-    var T2 = (sigma0(a) + maj(a, b, c)) | 0
-
-    h = g
-    g = f
-    f = e
-    e = (d + T1) | 0
-    d = c
-    c = b
-    b = a
-    a = (T1 + T2) | 0
-  }
-
-  this._a = (a + this._a) | 0
-  this._b = (b + this._b) | 0
-  this._c = (c + this._c) | 0
-  this._d = (d + this._d) | 0
-  this._e = (e + this._e) | 0
-  this._f = (f + this._f) | 0
-  this._g = (g + this._g) | 0
-  this._h = (h + this._h) | 0
-}
-
-Sha256.prototype._hash = function () {
-  var H = Buffer.allocUnsafe(32)
-
-  H.writeInt32BE(this._a, 0)
-  H.writeInt32BE(this._b, 4)
-  H.writeInt32BE(this._c, 8)
-  H.writeInt32BE(this._d, 12)
-  H.writeInt32BE(this._e, 16)
-  H.writeInt32BE(this._f, 20)
-  H.writeInt32BE(this._g, 24)
-  H.writeInt32BE(this._h, 28)
-
-  return H
-}
-
-module.exports = Sha256
-
-},{"./hash":141,"inherits":99,"safe-buffer":140}],147:[function(require,module,exports){
-var inherits = require('inherits')
-var SHA512 = require('./sha512')
-var Hash = require('./hash')
-var Buffer = require('safe-buffer').Buffer
-
-var W = new Array(160)
-
-function Sha384 () {
-  this.init()
-  this._w = W
-
-  Hash.call(this, 128, 112)
-}
-
-inherits(Sha384, SHA512)
-
-Sha384.prototype.init = function () {
-  this._ah = 0xcbbb9d5d
-  this._bh = 0x629a292a
-  this._ch = 0x9159015a
-  this._dh = 0x152fecd8
-  this._eh = 0x67332667
-  this._fh = 0x8eb44a87
-  this._gh = 0xdb0c2e0d
-  this._hh = 0x47b5481d
-
-  this._al = 0xc1059ed8
-  this._bl = 0x367cd507
-  this._cl = 0x3070dd17
-  this._dl = 0xf70e5939
-  this._el = 0xffc00b31
-  this._fl = 0x68581511
-  this._gl = 0x64f98fa7
-  this._hl = 0xbefa4fa4
-
-  return this
-}
-
-Sha384.prototype._hash = function () {
-  var H = Buffer.allocUnsafe(48)
-
-  function writeInt64BE (h, l, offset) {
-    H.writeInt32BE(h, offset)
-    H.writeInt32BE(l, offset + 4)
-  }
-
-  writeInt64BE(this._ah, this._al, 0)
-  writeInt64BE(this._bh, this._bl, 8)
-  writeInt64BE(this._ch, this._cl, 16)
-  writeInt64BE(this._dh, this._dl, 24)
-  writeInt64BE(this._eh, this._el, 32)
-  writeInt64BE(this._fh, this._fl, 40)
-
-  return H
-}
-
-module.exports = Sha384
-
-},{"./hash":141,"./sha512":148,"inherits":99,"safe-buffer":140}],148:[function(require,module,exports){
-var inherits = require('inherits')
-var Hash = require('./hash')
-var Buffer = require('safe-buffer').Buffer
-
-var K = [
-  0x428a2f98, 0xd728ae22, 0x71374491, 0x23ef65cd,
-  0xb5c0fbcf, 0xec4d3b2f, 0xe9b5dba5, 0x8189dbbc,
-  0x3956c25b, 0xf348b538, 0x59f111f1, 0xb605d019,
-  0x923f82a4, 0xaf194f9b, 0xab1c5ed5, 0xda6d8118,
-  0xd807aa98, 0xa3030242, 0x12835b01, 0x45706fbe,
-  0x243185be, 0x4ee4b28c, 0x550c7dc3, 0xd5ffb4e2,
-  0x72be5d74, 0xf27b896f, 0x80deb1fe, 0x3b1696b1,
-  0x9bdc06a7, 0x25c71235, 0xc19bf174, 0xcf692694,
-  0xe49b69c1, 0x9ef14ad2, 0xefbe4786, 0x384f25e3,
-  0x0fc19dc6, 0x8b8cd5b5, 0x240ca1cc, 0x77ac9c65,
-  0x2de92c6f, 0x592b0275, 0x4a7484aa, 0x6ea6e483,
-  0x5cb0a9dc, 0xbd41fbd4, 0x76f988da, 0x831153b5,
-  0x983e5152, 0xee66dfab, 0xa831c66d, 0x2db43210,
-  0xb00327c8, 0x98fb213f, 0xbf597fc7, 0xbeef0ee4,
-  0xc6e00bf3, 0x3da88fc2, 0xd5a79147, 0x930aa725,
-  0x06ca6351, 0xe003826f, 0x14292967, 0x0a0e6e70,
-  0x27b70a85, 0x46d22ffc, 0x2e1b2138, 0x5c26c926,
-  0x4d2c6dfc, 0x5ac42aed, 0x53380d13, 0x9d95b3df,
-  0x650a7354, 0x8baf63de, 0x766a0abb, 0x3c77b2a8,
-  0x81c2c92e, 0x47edaee6, 0x92722c85, 0x1482353b,
-  0xa2bfe8a1, 0x4cf10364, 0xa81a664b, 0xbc423001,
-  0xc24b8b70, 0xd0f89791, 0xc76c51a3, 0x0654be30,
-  0xd192e819, 0xd6ef5218, 0xd6990624, 0x5565a910,
-  0xf40e3585, 0x5771202a, 0x106aa070, 0x32bbd1b8,
-  0x19a4c116, 0xb8d2d0c8, 0x1e376c08, 0x5141ab53,
-  0x2748774c, 0xdf8eeb99, 0x34b0bcb5, 0xe19b48a8,
-  0x391c0cb3, 0xc5c95a63, 0x4ed8aa4a, 0xe3418acb,
-  0x5b9cca4f, 0x7763e373, 0x682e6ff3, 0xd6b2b8a3,
-  0x748f82ee, 0x5defb2fc, 0x78a5636f, 0x43172f60,
-  0x84c87814, 0xa1f0ab72, 0x8cc70208, 0x1a6439ec,
-  0x90befffa, 0x23631e28, 0xa4506ceb, 0xde82bde9,
-  0xbef9a3f7, 0xb2c67915, 0xc67178f2, 0xe372532b,
-  0xca273ece, 0xea26619c, 0xd186b8c7, 0x21c0c207,
-  0xeada7dd6, 0xcde0eb1e, 0xf57d4f7f, 0xee6ed178,
-  0x06f067aa, 0x72176fba, 0x0a637dc5, 0xa2c898a6,
-  0x113f9804, 0xbef90dae, 0x1b710b35, 0x131c471b,
-  0x28db77f5, 0x23047d84, 0x32caab7b, 0x40c72493,
-  0x3c9ebe0a, 0x15c9bebc, 0x431d67c4, 0x9c100d4c,
-  0x4cc5d4be, 0xcb3e42b6, 0x597f299c, 0xfc657e2a,
-  0x5fcb6fab, 0x3ad6faec, 0x6c44198c, 0x4a475817
-]
-
-var W = new Array(160)
-
-function Sha512 () {
-  this.init()
-  this._w = W
-
-  Hash.call(this, 128, 112)
-}
-
-inherits(Sha512, Hash)
-
-Sha512.prototype.init = function () {
-  this._ah = 0x6a09e667
-  this._bh = 0xbb67ae85
-  this._ch = 0x3c6ef372
-  this._dh = 0xa54ff53a
-  this._eh = 0x510e527f
-  this._fh = 0x9b05688c
-  this._gh = 0x1f83d9ab
-  this._hh = 0x5be0cd19
-
-  this._al = 0xf3bcc908
-  this._bl = 0x84caa73b
-  this._cl = 0xfe94f82b
-  this._dl = 0x5f1d36f1
-  this._el = 0xade682d1
-  this._fl = 0x2b3e6c1f
-  this._gl = 0xfb41bd6b
-  this._hl = 0x137e2179
-
-  return this
-}
-
-function Ch (x, y, z) {
-  return z ^ (x & (y ^ z))
-}
-
-function maj (x, y, z) {
-  return (x & y) | (z & (x | y))
-}
-
-function sigma0 (x, xl) {
-  return (x >>> 28 | xl << 4) ^ (xl >>> 2 | x << 30) ^ (xl >>> 7 | x << 25)
-}
-
-function sigma1 (x, xl) {
-  return (x >>> 14 | xl << 18) ^ (x >>> 18 | xl << 14) ^ (xl >>> 9 | x << 23)
-}
-
-function Gamma0 (x, xl) {
-  return (x >>> 1 | xl << 31) ^ (x >>> 8 | xl << 24) ^ (x >>> 7)
-}
-
-function Gamma0l (x, xl) {
-  return (x >>> 1 | xl << 31) ^ (x >>> 8 | xl << 24) ^ (x >>> 7 | xl << 25)
-}
-
-function Gamma1 (x, xl) {
-  return (x >>> 19 | xl << 13) ^ (xl >>> 29 | x << 3) ^ (x >>> 6)
-}
-
-function Gamma1l (x, xl) {
-  return (x >>> 19 | xl << 13) ^ (xl >>> 29 | x << 3) ^ (x >>> 6 | xl << 26)
-}
-
-function getCarry (a, b) {
-  return (a >>> 0) < (b >>> 0) ? 1 : 0
-}
-
-Sha512.prototype._update = function (M) {
-  var W = this._w
-
-  var ah = this._ah | 0
-  var bh = this._bh | 0
-  var ch = this._ch | 0
-  var dh = this._dh | 0
-  var eh = this._eh | 0
-  var fh = this._fh | 0
-  var gh = this._gh | 0
-  var hh = this._hh | 0
-
-  var al = this._al | 0
-  var bl = this._bl | 0
-  var cl = this._cl | 0
-  var dl = this._dl | 0
-  var el = this._el | 0
-  var fl = this._fl | 0
-  var gl = this._gl | 0
-  var hl = this._hl | 0
-
-  for (var i = 0; i < 32; i += 2) {
-    W[i] = M.readInt32BE(i * 4)
-    W[i + 1] = M.readInt32BE(i * 4 + 4)
-  }
-  for (; i < 160; i += 2) {
-    var xh = W[i - 15 * 2]
-    var xl = W[i - 15 * 2 + 1]
-    var gamma0 = Gamma0(xh, xl)
-    var gamma0l = Gamma0l(xl, xh)
-
-    xh = W[i - 2 * 2]
-    xl = W[i - 2 * 2 + 1]
-    var gamma1 = Gamma1(xh, xl)
-    var gamma1l = Gamma1l(xl, xh)
-
-    // W[i] = gamma0 + W[i - 7] + gamma1 + W[i - 16]
-    var Wi7h = W[i - 7 * 2]
-    var Wi7l = W[i - 7 * 2 + 1]
-
-    var Wi16h = W[i - 16 * 2]
-    var Wi16l = W[i - 16 * 2 + 1]
-
-    var Wil = (gamma0l + Wi7l) | 0
-    var Wih = (gamma0 + Wi7h + getCarry(Wil, gamma0l)) | 0
-    Wil = (Wil + gamma1l) | 0
-    Wih = (Wih + gamma1 + getCarry(Wil, gamma1l)) | 0
-    Wil = (Wil + Wi16l) | 0
-    Wih = (Wih + Wi16h + getCarry(Wil, Wi16l)) | 0
-
-    W[i] = Wih
-    W[i + 1] = Wil
-  }
-
-  for (var j = 0; j < 160; j += 2) {
-    Wih = W[j]
-    Wil = W[j + 1]
-
-    var majh = maj(ah, bh, ch)
-    var majl = maj(al, bl, cl)
-
-    var sigma0h = sigma0(ah, al)
-    var sigma0l = sigma0(al, ah)
-    var sigma1h = sigma1(eh, el)
-    var sigma1l = sigma1(el, eh)
-
-    // t1 = h + sigma1 + ch + K[j] + W[j]
-    var Kih = K[j]
-    var Kil = K[j + 1]
-
-    var chh = Ch(eh, fh, gh)
-    var chl = Ch(el, fl, gl)
-
-    var t1l = (hl + sigma1l) | 0
-    var t1h = (hh + sigma1h + getCarry(t1l, hl)) | 0
-    t1l = (t1l + chl) | 0
-    t1h = (t1h + chh + getCarry(t1l, chl)) | 0
-    t1l = (t1l + Kil) | 0
-    t1h = (t1h + Kih + getCarry(t1l, Kil)) | 0
-    t1l = (t1l + Wil) | 0
-    t1h = (t1h + Wih + getCarry(t1l, Wil)) | 0
-
-    // t2 = sigma0 + maj
-    var t2l = (sigma0l + majl) | 0
-    var t2h = (sigma0h + majh + getCarry(t2l, sigma0l)) | 0
-
-    hh = gh
-    hl = gl
-    gh = fh
-    gl = fl
-    fh = eh
-    fl = el
-    el = (dl + t1l) | 0
-    eh = (dh + t1h + getCarry(el, dl)) | 0
-    dh = ch
-    dl = cl
-    ch = bh
-    cl = bl
-    bh = ah
-    bl = al
-    al = (t1l + t2l) | 0
-    ah = (t1h + t2h + getCarry(al, t1l)) | 0
-  }
-
-  this._al = (this._al + al) | 0
-  this._bl = (this._bl + bl) | 0
-  this._cl = (this._cl + cl) | 0
-  this._dl = (this._dl + dl) | 0
-  this._el = (this._el + el) | 0
-  this._fl = (this._fl + fl) | 0
-  this._gl = (this._gl + gl) | 0
-  this._hl = (this._hl + hl) | 0
-
-  this._ah = (this._ah + ah + getCarry(this._al, al)) | 0
-  this._bh = (this._bh + bh + getCarry(this._bl, bl)) | 0
-  this._ch = (this._ch + ch + getCarry(this._cl, cl)) | 0
-  this._dh = (this._dh + dh + getCarry(this._dl, dl)) | 0
-  this._eh = (this._eh + eh + getCarry(this._el, el)) | 0
-  this._fh = (this._fh + fh + getCarry(this._fl, fl)) | 0
-  this._gh = (this._gh + gh + getCarry(this._gl, gl)) | 0
-  this._hh = (this._hh + hh + getCarry(this._hl, hl)) | 0
-}
-
-Sha512.prototype._hash = function () {
-  var H = Buffer.allocUnsafe(64)
-
-  function writeInt64BE (h, l, offset) {
-    H.writeInt32BE(h, offset)
-    H.writeInt32BE(l, offset + 4)
-  }
-
-  writeInt64BE(this._ah, this._al, 0)
-  writeInt64BE(this._bh, this._bl, 8)
-  writeInt64BE(this._ch, this._cl, 16)
-  writeInt64BE(this._dh, this._dl, 24)
-  writeInt64BE(this._eh, this._el, 32)
-  writeInt64BE(this._fh, this._fl, 40)
-  writeInt64BE(this._gh, this._gl, 48)
-  writeInt64BE(this._hh, this._hl, 56)
-
-  return H
-}
-
-module.exports = Sha512
-
-},{"./hash":141,"inherits":99,"safe-buffer":140}],149:[function(require,module,exports){
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-module.exports = Stream;
-
-var EE = require('events').EventEmitter;
-var inherits = require('inherits');
-
-inherits(Stream, EE);
-Stream.Readable = require('readable-stream/readable.js');
-Stream.Writable = require('readable-stream/writable.js');
-Stream.Duplex = require('readable-stream/duplex.js');
-Stream.Transform = require('readable-stream/transform.js');
-Stream.PassThrough = require('readable-stream/passthrough.js');
-
-// Backwards-compat with node 0.4.x
-Stream.Stream = Stream;
-
-
-
-// old-style streams.  Note that the pipe method (the only relevant
-// part of this class) is overridden in the Readable class.
-
-function Stream() {
-  EE.call(this);
-}
-
-Stream.prototype.pipe = function(dest, options) {
-  var source = this;
-
-  function ondata(chunk) {
-    if (dest.writable) {
-      if (false === dest.write(chunk) && source.pause) {
-        source.pause();
-      }
-    }
-  }
-
-  source.on('data', ondata);
-
-  function ondrain() {
-    if (source.readable && source.resume) {
-      source.resume();
-    }
-  }
-
-  dest.on('drain', ondrain);
-
-  // If the 'end' option is not supplied, dest.end() will be called when
-  // source gets the 'end' or 'close' events.  Only dest.end() once.
-  if (!dest._isStdio && (!options || options.end !== false)) {
-    source.on('end', onend);
-    source.on('close', onclose);
-  }
-
-  var didOnEnd = false;
-  function onend() {
-    if (didOnEnd) return;
-    didOnEnd = true;
-
-    dest.end();
-  }
-
-
-  function onclose() {
-    if (didOnEnd) return;
-    didOnEnd = true;
-
-    if (typeof dest.destroy === 'function') dest.destroy();
-  }
-
-  // don't leave dangling pipes when there are errors.
-  function onerror(er) {
-    cleanup();
-    if (EE.listenerCount(this, 'error') === 0) {
-      throw er; // Unhandled stream error in pipe.
-    }
-  }
-
-  source.on('error', onerror);
-  dest.on('error', onerror);
-
-  // remove all the event listeners that were added.
-  function cleanup() {
-    source.removeListener('data', ondata);
-    dest.removeListener('drain', ondrain);
-
-    source.removeListener('end', onend);
-    source.removeListener('close', onclose);
-
-    source.removeListener('error', onerror);
-    dest.removeListener('error', onerror);
-
-    source.removeListener('end', cleanup);
-    source.removeListener('close', cleanup);
-
-    dest.removeListener('close', cleanup);
-  }
-
-  source.on('end', cleanup);
-  source.on('close', cleanup);
-
-  dest.on('close', cleanup);
-
-  dest.emit('pipe', source);
-
-  // Allow for unix-like usage: A.pipe(B).pipe(C)
-  return dest;
-};
-
-},{"events":82,"inherits":99,"readable-stream/duplex.js":126,"readable-stream/passthrough.js":135,"readable-stream/readable.js":136,"readable-stream/transform.js":137,"readable-stream/writable.js":138}],150:[function(require,module,exports){
+},{"./lib/_stream_writable.js":142}],150:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -22073,7 +22111,9 @@ function simpleWrite(buf) {
 function simpleEnd(buf) {
   return buf && buf.length ? this.write(buf) : '';
 }
-},{"safe-buffer":140}],151:[function(require,module,exports){
+},{"safe-buffer":127}],151:[function(require,module,exports){
+arguments[4][150][0].apply(exports,arguments)
+},{"dup":150,"safe-buffer":127}],152:[function(require,module,exports){
 (function (setImmediate,clearImmediate){
 var nextTick = require('process/browser.js').nextTick;
 var apply = Function.prototype.apply;
@@ -22152,7 +22192,7 @@ exports.clearImmediate = typeof clearImmediate === "function" ? clearImmediate :
   delete immediateIds[id];
 };
 }).call(this,require("timers").setImmediate,require("timers").clearImmediate)
-},{"process/browser.js":117,"timers":151}],152:[function(require,module,exports){
+},{"process/browser.js":117,"timers":152}],153:[function(require,module,exports){
 (function (global){
 
 /**
@@ -22223,7 +22263,7 @@ function config (name) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],153:[function(require,module,exports){
+},{}],154:[function(require,module,exports){
 var indexOf = function (xs, item) {
     if (xs.indexOf) return xs.indexOf(item);
     else for (var i = 0; i < xs.length; i++) {
@@ -22374,7 +22414,7 @@ exports.createContext = Script.createContext = function (context) {
     return copy;
 };
 
-},{}],154:[function(require,module,exports){
+},{}],155:[function(require,module,exports){
 'use strict';
 
 var spec = {
@@ -22394,7 +22434,7 @@ var spec = {
 
 module.exports = require('bitcore-lib').errors.extend(spec);
 
-},{"bitcore-lib":"bitcore-lib"}],155:[function(require,module,exports){
+},{"bitcore-lib":"bitcore-lib"}],156:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -22696,7 +22736,7 @@ Mnemonic.bitcore = bitcore;
 module.exports = Mnemonic;
 
 }).call(this,require("buffer").Buffer)
-},{"./errors":154,"./pbkdf2":156,"./words":160,"bitcore-lib":"bitcore-lib","buffer":47,"unorm":165}],156:[function(require,module,exports){
+},{"./errors":155,"./pbkdf2":157,"./words":161,"bitcore-lib":"bitcore-lib","buffer":47,"unorm":166}],157:[function(require,module,exports){
 (function (Buffer){
 'use strict';
 
@@ -22771,25 +22811,25 @@ function pbkdf2(key, salt, iterations, dkLen) {
 module.exports = pbkdf2;
 
 }).call(this,require("buffer").Buffer)
-},{"buffer":47,"crypto":55}],157:[function(require,module,exports){
+},{"buffer":47,"crypto":55}],158:[function(require,module,exports){
 'use strict';
 
 var chinese = ['的', '一', '是', '在', '不', '了', '有', '和', '人', '这', '中', '大', '为', '上', '个', '国', '我', '以', '要', '他', '时', '来', '用', '们', '生', '到', '作', '地', '于', '出', '就', '分', '对', '成', '会', '可', '主', '发', '年', '动', '同', '工', '也', '能', '下', '过', '子', '说', '产', '种', '面', '而', '方', '后', '多', '定', '行', '学', '法', '所', '民', '得', '经', '十', '三', '之', '进', '着', '等', '部', '度', '家', '电', '力', '里', '如', '水', '化', '高', '自', '二', '理', '起', '小', '物', '现', '实', '加', '量', '都', '两', '体', '制', '机', '当', '使', '点', '从', '业', '本', '去', '把', '性', '好', '应', '开', '它', '合', '还', '因', '由', '其', '些', '然', '前', '外', '天', '政', '四', '日', '那', '社', '义', '事', '平', '形', '相', '全', '表', '间', '样', '与', '关', '各', '重', '新', '线', '内', '数', '正', '心', '反', '你', '明', '看', '原', '又', '么', '利', '比', '或', '但', '质', '气', '第', '向', '道', '命', '此', '变', '条', '只', '没', '结', '解', '问', '意', '建', '月', '公', '无', '系', '军', '很', '情', '者', '最', '立', '代', '想', '已', '通', '并', '提', '直', '题', '党', '程', '展', '五', '果', '料', '象', '员', '革', '位', '入', '常', '文', '总', '次', '品', '式', '活', '设', '及', '管', '特', '件', '长', '求', '老', '头', '基', '资', '边', '流', '路', '级', '少', '图', '山', '统', '接', '知', '较', '将', '组', '见', '计', '别', '她', '手', '角', '期', '根', '论', '运', '农', '指', '几', '九', '区', '强', '放', '决', '西', '被', '干', '做', '必', '战', '先', '回', '则', '任', '取', '据', '处', '队', '南', '给', '色', '光', '门', '即', '保', '治', '北', '造', '百', '规', '热', '领', '七', '海', '口', '东', '导', '器', '压', '志', '世', '金', '增', '争', '济', '阶', '油', '思', '术', '极', '交', '受', '联', '什', '认', '六', '共', '权', '收', '证', '改', '清', '美', '再', '采', '转', '更', '单', '风', '切', '打', '白', '教', '速', '花', '带', '安', '场', '身', '车', '例', '真', '务', '具', '万', '每', '目', '至', '达', '走', '积', '示', '议', '声', '报', '斗', '完', '类', '八', '离', '华', '名', '确', '才', '科', '张', '信', '马', '节', '话', '米', '整', '空', '元', '况', '今', '集', '温', '传', '土', '许', '步', '群', '广', '石', '记', '需', '段', '研', '界', '拉', '林', '律', '叫', '且', '究', '观', '越', '织', '装', '影', '算', '低', '持', '音', '众', '书', '布', '复', '容', '儿', '须', '际', '商', '非', '验', '连', '断', '深', '难', '近', '矿', '千', '周', '委', '素', '技', '备', '半', '办', '青', '省', '列', '习', '响', '约', '支', '般', '史', '感', '劳', '便', '团', '往', '酸', '历', '市', '克', '何', '除', '消', '构', '府', '称', '太', '准', '精', '值', '号', '率', '族', '维', '划', '选', '标', '写', '存', '候', '毛', '亲', '快', '效', '斯', '院', '查', '江', '型', '眼', '王', '按', '格', '养', '易', '置', '派', '层', '片', '始', '却', '专', '状', '育', '厂', '京', '识', '适', '属', '圆', '包', '火', '住', '调', '满', '县', '局', '照', '参', '红', '细', '引', '听', '该', '铁', '价', '严', '首', '底', '液', '官', '德', '随', '病', '苏', '失', '尔', '死', '讲', '配', '女', '黄', '推', '显', '谈', '罪', '神', '艺', '呢', '席', '含', '企', '望', '密', '批', '营', '项', '防', '举', '球', '英', '氧', '势', '告', '李', '台', '落', '木', '帮', '轮', '破', '亚', '师', '围', '注', '远', '字', '材', '排', '供', '河', '态', '封', '另', '施', '减', '树', '溶', '怎', '止', '案', '言', '士', '均', '武', '固', '叶', '鱼', '波', '视', '仅', '费', '紧', '爱', '左', '章', '早', '朝', '害', '续', '轻', '服', '试', '食', '充', '兵', '源', '判', '护', '司', '足', '某', '练', '差', '致', '板', '田', '降', '黑', '犯', '负', '击', '范', '继', '兴', '似', '余', '坚', '曲', '输', '修', '故', '城', '夫', '够', '送', '笔', '船', '占', '右', '财', '吃', '富', '春', '职', '觉', '汉', '画', '功', '巴', '跟', '虽', '杂', '飞', '检', '吸', '助', '升', '阳', '互', '初', '创', '抗', '考', '投', '坏', '策', '古', '径', '换', '未', '跑', '留', '钢', '曾', '端', '责', '站', '简', '述', '钱', '副', '尽', '帝', '射', '草', '冲', '承', '独', '令', '限', '阿', '宣', '环', '双', '请', '超', '微', '让', '控', '州', '良', '轴', '找', '否', '纪', '益', '依', '优', '顶', '础', '载', '倒', '房', '突', '坐', '粉', '敌', '略', '客', '袁', '冷', '胜', '绝', '析', '块', '剂', '测', '丝', '协', '诉', '念', '陈', '仍', '罗', '盐', '友', '洋', '错', '苦', '夜', '刑', '移', '频', '逐', '靠', '混', '母', '短', '皮', '终', '聚', '汽', '村', '云', '哪', '既', '距', '卫', '停', '烈', '央', '察', '烧', '迅', '境', '若', '印', '洲', '刻', '括', '激', '孔', '搞', '甚', '室', '待', '核', '校', '散', '侵', '吧', '甲', '游', '久', '菜', '味', '旧', '模', '湖', '货', '损', '预', '阻', '毫', '普', '稳', '乙', '妈', '植', '息', '扩', '银', '语', '挥', '酒', '守', '拿', '序', '纸', '医', '缺', '雨', '吗', '针', '刘', '啊', '急', '唱', '误', '训', '愿', '审', '附', '获', '茶', '鲜', '粮', '斤', '孩', '脱', '硫', '肥', '善', '龙', '演', '父', '渐', '血', '欢', '械', '掌', '歌', '沙', '刚', '攻', '谓', '盾', '讨', '晚', '粒', '乱', '燃', '矛', '乎', '杀', '药', '宁', '鲁', '贵', '钟', '煤', '读', '班', '伯', '香', '介', '迫', '句', '丰', '培', '握', '兰', '担', '弦', '蛋', '沉', '假', '穿', '执', '答', '乐', '谁', '顺', '烟', '缩', '征', '脸', '喜', '松', '脚', '困', '异', '免', '背', '星', '福', '买', '染', '井', '概', '慢', '怕', '磁', '倍', '祖', '皇', '促', '静', '补', '评', '翻', '肉', '践', '尼', '衣', '宽', '扬', '棉', '希', '伤', '操', '垂', '秋', '宜', '氢', '套', '督', '振', '架', '亮', '末', '宪', '庆', '编', '牛', '触', '映', '雷', '销', '诗', '座', '居', '抓', '裂', '胞', '呼', '娘', '景', '威', '绿', '晶', '厚', '盟', '衡', '鸡', '孙', '延', '危', '胶', '屋', '乡', '临', '陆', '顾', '掉', '呀', '灯', '岁', '措', '束', '耐', '剧', '玉', '赵', '跳', '哥', '季', '课', '凯', '胡', '额', '款', '绍', '卷', '齐', '伟', '蒸', '殖', '永', '宗', '苗', '川', '炉', '岩', '弱', '零', '杨', '奏', '沿', '露', '杆', '探', '滑', '镇', '饭', '浓', '航', '怀', '赶', '库', '夺', '伊', '灵', '税', '途', '灭', '赛', '归', '召', '鼓', '播', '盘', '裁', '险', '康', '唯', '录', '菌', '纯', '借', '糖', '盖', '横', '符', '私', '努', '堂', '域', '枪', '润', '幅', '哈', '竟', '熟', '虫', '泽', '脑', '壤', '碳', '欧', '遍', '侧', '寨', '敢', '彻', '虑', '斜', '薄', '庭', '纳', '弹', '饲', '伸', '折', '麦', '湿', '暗', '荷', '瓦', '塞', '床', '筑', '恶', '户', '访', '塔', '奇', '透', '梁', '刀', '旋', '迹', '卡', '氯', '遇', '份', '毒', '泥', '退', '洗', '摆', '灰', '彩', '卖', '耗', '夏', '择', '忙', '铜', '献', '硬', '予', '繁', '圈', '雪', '函', '亦', '抽', '篇', '阵', '阴', '丁', '尺', '追', '堆', '雄', '迎', '泛', '爸', '楼', '避', '谋', '吨', '野', '猪', '旗', '累', '偏', '典', '馆', '索', '秦', '脂', '潮', '爷', '豆', '忽', '托', '惊', '塑', '遗', '愈', '朱', '替', '纤', '粗', '倾', '尚', '痛', '楚', '谢', '奋', '购', '磨', '君', '池', '旁', '碎', '骨', '监', '捕', '弟', '暴', '割', '贯', '殊', '释', '词', '亡', '壁', '顿', '宝', '午', '尘', '闻', '揭', '炮', '残', '冬', '桥', '妇', '警', '综', '招', '吴', '付', '浮', '遭', '徐', '您', '摇', '谷', '赞', '箱', '隔', '订', '男', '吹', '园', '纷', '唐', '败', '宋', '玻', '巨', '耕', '坦', '荣', '闭', '湾', '键', '凡', '驻', '锅', '救', '恩', '剥', '凝', '碱', '齿', '截', '炼', '麻', '纺', '禁', '废', '盛', '版', '缓', '净', '睛', '昌', '婚', '涉', '筒', '嘴', '插', '岸', '朗', '庄', '街', '藏', '姑', '贸', '腐', '奴', '啦', '惯', '乘', '伙', '恢', '匀', '纱', '扎', '辩', '耳', '彪', '臣', '亿', '璃', '抵', '脉', '秀', '萨', '俄', '网', '舞', '店', '喷', '纵', '寸', '汗', '挂', '洪', '贺', '闪', '柬', '爆', '烯', '津', '稻', '墙', '软', '勇', '像', '滚', '厘', '蒙', '芳', '肯', '坡', '柱', '荡', '腿', '仪', '旅', '尾', '轧', '冰', '贡', '登', '黎', '削', '钻', '勒', '逃', '障', '氨', '郭', '峰', '币', '港', '伏', '轨', '亩', '毕', '擦', '莫', '刺', '浪', '秘', '援', '株', '健', '售', '股', '岛', '甘', '泡', '睡', '童', '铸', '汤', '阀', '休', '汇', '舍', '牧', '绕', '炸', '哲', '磷', '绩', '朋', '淡', '尖', '启', '陷', '柴', '呈', '徒', '颜', '泪', '稍', '忘', '泵', '蓝', '拖', '洞', '授', '镜', '辛', '壮', '锋', '贫', '虚', '弯', '摩', '泰', '幼', '廷', '尊', '窗', '纲', '弄', '隶', '疑', '氏', '宫', '姐', '震', '瑞', '怪', '尤', '琴', '循', '描', '膜', '违', '夹', '腰', '缘', '珠', '穷', '森', '枝', '竹', '沟', '催', '绳', '忆', '邦', '剩', '幸', '浆', '栏', '拥', '牙', '贮', '礼', '滤', '钠', '纹', '罢', '拍', '咱', '喊', '袖', '埃', '勤', '罚', '焦', '潜', '伍', '墨', '欲', '缝', '姓', '刊', '饱', '仿', '奖', '铝', '鬼', '丽', '跨', '默', '挖', '链', '扫', '喝', '袋', '炭', '污', '幕', '诸', '弧', '励', '梅', '奶', '洁', '灾', '舟', '鉴', '苯', '讼', '抱', '毁', '懂', '寒', '智', '埔', '寄', '届', '跃', '渡', '挑', '丹', '艰', '贝', '碰', '拔', '爹', '戴', '码', '梦', '芽', '熔', '赤', '渔', '哭', '敬', '颗', '奔', '铅', '仲', '虎', '稀', '妹', '乏', '珍', '申', '桌', '遵', '允', '隆', '螺', '仓', '魏', '锐', '晓', '氮', '兼', '隐', '碍', '赫', '拨', '忠', '肃', '缸', '牵', '抢', '博', '巧', '壳', '兄', '杜', '讯', '诚', '碧', '祥', '柯', '页', '巡', '矩', '悲', '灌', '龄', '伦', '票', '寻', '桂', '铺', '圣', '恐', '恰', '郑', '趣', '抬', '荒', '腾', '贴', '柔', '滴', '猛', '阔', '辆', '妻', '填', '撤', '储', '签', '闹', '扰', '紫', '砂', '递', '戏', '吊', '陶', '伐', '喂', '疗', '瓶', '婆', '抚', '臂', '摸', '忍', '虾', '蜡', '邻', '胸', '巩', '挤', '偶', '弃', '槽', '劲', '乳', '邓', '吉', '仁', '烂', '砖', '租', '乌', '舰', '伴', '瓜', '浅', '丙', '暂', '燥', '橡', '柳', '迷', '暖', '牌', '秧', '胆', '详', '簧', '踏', '瓷', '谱', '呆', '宾', '糊', '洛', '辉', '愤', '竞', '隙', '怒', '粘', '乃', '绪', '肩', '籍', '敏', '涂', '熙', '皆', '侦', '悬', '掘', '享', '纠', '醒', '狂', '锁', '淀', '恨', '牲', '霸', '爬', '赏', '逆', '玩', '陵', '祝', '秒', '浙', '貌', '役', '彼', '悉', '鸭', '趋', '凤', '晨', '畜', '辈', '秩', '卵', '署', '梯', '炎', '滩', '棋', '驱', '筛', '峡', '冒', '啥', '寿', '译', '浸', '泉', '帽', '迟', '硅', '疆', '贷', '漏', '稿', '冠', '嫩', '胁', '芯', '牢', '叛', '蚀', '奥', '鸣', '岭', '羊', '凭', '串', '塘', '绘', '酵', '融', '盆', '锡', '庙', '筹', '冻', '辅', '摄', '袭', '筋', '拒', '僚', '旱', '钾', '鸟', '漆', '沈', '眉', '疏', '添', '棒', '穗', '硝', '韩', '逼', '扭', '侨', '凉', '挺', '碗', '栽', '炒', '杯', '患', '馏', '劝', '豪', '辽', '勃', '鸿', '旦', '吏', '拜', '狗', '埋', '辊', '掩', '饮', '搬', '骂', '辞', '勾', '扣', '估', '蒋', '绒', '雾', '丈', '朵', '姆', '拟', '宇', '辑', '陕', '雕', '偿', '蓄', '崇', '剪', '倡', '厅', '咬', '驶', '薯', '刷', '斥', '番', '赋', '奉', '佛', '浇', '漫', '曼', '扇', '钙', '桃', '扶', '仔', '返', '俗', '亏', '腔', '鞋', '棱', '覆', '框', '悄', '叔', '撞', '骗', '勘', '旺', '沸', '孤', '吐', '孟', '渠', '屈', '疾', '妙', '惜', '仰', '狠', '胀', '谐', '抛', '霉', '桑', '岗', '嘛', '衰', '盗', '渗', '脏', '赖', '涌', '甜', '曹', '阅', '肌', '哩', '厉', '烃', '纬', '毅', '昨', '伪', '症', '煮', '叹', '钉', '搭', '茎', '笼', '酷', '偷', '弓', '锥', '恒', '杰', '坑', '鼻', '翼', '纶', '叙', '狱', '逮', '罐', '络', '棚', '抑', '膨', '蔬', '寺', '骤', '穆', '冶', '枯', '册', '尸', '凸', '绅', '坯', '牺', '焰', '轰', '欣', '晋', '瘦', '御', '锭', '锦', '丧', '旬', '锻', '垄', '搜', '扑', '邀', '亭', '酯', '迈', '舒', '脆', '酶', '闲', '忧', '酚', '顽', '羽', '涨', '卸', '仗', '陪', '辟', '惩', '杭', '姚', '肚', '捉', '飘', '漂', '昆', '欺', '吾', '郎', '烷', '汁', '呵', '饰', '萧', '雅', '邮', '迁', '燕', '撒', '姻', '赴', '宴', '烦', '债', '帐', '斑', '铃', '旨', '醇', '董', '饼', '雏', '姿', '拌', '傅', '腹', '妥', '揉', '贤', '拆', '歪', '葡', '胺', '丢', '浩', '徽', '昂', '垫', '挡', '览', '贪', '慰', '缴', '汪', '慌', '冯', '诺', '姜', '谊', '凶', '劣', '诬', '耀', '昏', '躺', '盈', '骑', '乔', '溪', '丛', '卢', '抹', '闷', '咨', '刮', '驾', '缆', '悟', '摘', '铒', '掷', '颇', '幻', '柄', '惠', '惨', '佳', '仇', '腊', '窝', '涤', '剑', '瞧', '堡', '泼', '葱', '罩', '霍', '捞', '胎', '苍', '滨', '俩', '捅', '湘', '砍', '霞', '邵', '萄', '疯', '淮', '遂', '熊', '粪', '烘', '宿', '档', '戈', '驳', '嫂', '裕', '徙', '箭', '捐', '肠', '撑', '晒', '辨', '殿', '莲', '摊', '搅', '酱', '屏', '疫', '哀', '蔡', '堵', '沫', '皱', '畅', '叠', '阁', '莱', '敲', '辖', '钩', '痕', '坝', '巷', '饿', '祸', '丘', '玄', '溜', '曰', '逻', '彭', '尝', '卿', '妨', '艇', '吞', '韦', '怨', '矮', '歇'];
 
 module.exports = chinese;
-},{}],158:[function(require,module,exports){
+},{}],159:[function(require,module,exports){
 'use strict';
 
 var english = ['abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract', 'absurd', 'abuse', 'access', 'accident', 'account', 'accuse', 'achieve', 'acid', 'acoustic', 'acquire', 'across', 'act', 'action', 'actor', 'actress', 'actual', 'adapt', 'add', 'addict', 'address', 'adjust', 'admit', 'adult', 'advance', 'advice', 'aerobic', 'affair', 'afford', 'afraid', 'again', 'age', 'agent', 'agree', 'ahead', 'aim', 'air', 'airport', 'aisle', 'alarm', 'album', 'alcohol', 'alert', 'alien', 'all', 'alley', 'allow', 'almost', 'alone', 'alpha', 'already', 'also', 'alter', 'always', 'amateur', 'amazing', 'among', 'amount', 'amused', 'analyst', 'anchor', 'ancient', 'anger', 'angle', 'angry', 'animal', 'ankle', 'announce', 'annual', 'another', 'answer', 'antenna', 'antique', 'anxiety', 'any', 'apart', 'apology', 'appear', 'apple', 'approve', 'april', 'arch', 'arctic', 'area', 'arena', 'argue', 'arm', 'armed', 'armor', 'army', 'around', 'arrange', 'arrest', 'arrive', 'arrow', 'art', 'artefact', 'artist', 'artwork', 'ask', 'aspect', 'assault', 'asset', 'assist', 'assume', 'asthma', 'athlete', 'atom', 'attack', 'attend', 'attitude', 'attract', 'auction', 'audit', 'august', 'aunt', 'author', 'auto', 'autumn', 'average', 'avocado', 'avoid', 'awake', 'aware', 'away', 'awesome', 'awful', 'awkward', 'axis', 'baby', 'bachelor', 'bacon', 'badge', 'bag', 'balance', 'balcony', 'ball', 'bamboo', 'banana', 'banner', 'bar', 'barely', 'bargain', 'barrel', 'base', 'basic', 'basket', 'battle', 'beach', 'bean', 'beauty', 'because', 'become', 'beef', 'before', 'begin', 'behave', 'behind', 'believe', 'below', 'belt', 'bench', 'benefit', 'best', 'betray', 'better', 'between', 'beyond', 'bicycle', 'bid', 'bike', 'bind', 'biology', 'bird', 'birth', 'bitter', 'black', 'blade', 'blame', 'blanket', 'blast', 'bleak', 'bless', 'blind', 'blood', 'blossom', 'blouse', 'blue', 'blur', 'blush', 'board', 'boat', 'body', 'boil', 'bomb', 'bone', 'bonus', 'book', 'boost', 'border', 'boring', 'borrow', 'boss', 'bottom', 'bounce', 'box', 'boy', 'bracket', 'brain', 'brand', 'brass', 'brave', 'bread', 'breeze', 'brick', 'bridge', 'brief', 'bright', 'bring', 'brisk', 'broccoli', 'broken', 'bronze', 'broom', 'brother', 'brown', 'brush', 'bubble', 'buddy', 'budget', 'buffalo', 'build', 'bulb', 'bulk', 'bullet', 'bundle', 'bunker', 'burden', 'burger', 'burst', 'bus', 'business', 'busy', 'butter', 'buyer', 'buzz', 'cabbage', 'cabin', 'cable', 'cactus', 'cage', 'cake', 'call', 'calm', 'camera', 'camp', 'can', 'canal', 'cancel', 'candy', 'cannon', 'canoe', 'canvas', 'canyon', 'capable', 'capital', 'captain', 'car', 'carbon', 'card', 'cargo', 'carpet', 'carry', 'cart', 'case', 'cash', 'casino', 'castle', 'casual', 'cat', 'catalog', 'catch', 'category', 'cattle', 'caught', 'cause', 'caution', 'cave', 'ceiling', 'celery', 'cement', 'census', 'century', 'cereal', 'certain', 'chair', 'chalk', 'champion', 'change', 'chaos', 'chapter', 'charge', 'chase', 'chat', 'cheap', 'check', 'cheese', 'chef', 'cherry', 'chest', 'chicken', 'chief', 'child', 'chimney', 'choice', 'choose', 'chronic', 'chuckle', 'chunk', 'churn', 'cigar', 'cinnamon', 'circle', 'citizen', 'city', 'civil', 'claim', 'clap', 'clarify', 'claw', 'clay', 'clean', 'clerk', 'clever', 'click', 'client', 'cliff', 'climb', 'clinic', 'clip', 'clock', 'clog', 'close', 'cloth', 'cloud', 'clown', 'club', 'clump', 'cluster', 'clutch', 'coach', 'coast', 'coconut', 'code', 'coffee', 'coil', 'coin', 'collect', 'color', 'column', 'combine', 'come', 'comfort', 'comic', 'common', 'company', 'concert', 'conduct', 'confirm', 'congress', 'connect', 'consider', 'control', 'convince', 'cook', 'cool', 'copper', 'copy', 'coral', 'core', 'corn', 'correct', 'cost', 'cotton', 'couch', 'country', 'couple', 'course', 'cousin', 'cover', 'coyote', 'crack', 'cradle', 'craft', 'cram', 'crane', 'crash', 'crater', 'crawl', 'crazy', 'cream', 'credit', 'creek', 'crew', 'cricket', 'crime', 'crisp', 'critic', 'crop', 'cross', 'crouch', 'crowd', 'crucial', 'cruel', 'cruise', 'crumble', 'crunch', 'crush', 'cry', 'crystal', 'cube', 'culture', 'cup', 'cupboard', 'curious', 'current', 'curtain', 'curve', 'cushion', 'custom', 'cute', 'cycle', 'dad', 'damage', 'damp', 'dance', 'danger', 'daring', 'dash', 'daughter', 'dawn', 'day', 'deal', 'debate', 'debris', 'decade', 'december', 'decide', 'decline', 'decorate', 'decrease', 'deer', 'defense', 'define', 'defy', 'degree', 'delay', 'deliver', 'demand', 'demise', 'denial', 'dentist', 'deny', 'depart', 'depend', 'deposit', 'depth', 'deputy', 'derive', 'describe', 'desert', 'design', 'desk', 'despair', 'destroy', 'detail', 'detect', 'develop', 'device', 'devote', 'diagram', 'dial', 'diamond', 'diary', 'dice', 'diesel', 'diet', 'differ', 'digital', 'dignity', 'dilemma', 'dinner', 'dinosaur', 'direct', 'dirt', 'disagree', 'discover', 'disease', 'dish', 'dismiss', 'disorder', 'display', 'distance', 'divert', 'divide', 'divorce', 'dizzy', 'doctor', 'document', 'dog', 'doll', 'dolphin', 'domain', 'donate', 'donkey', 'donor', 'door', 'dose', 'double', 'dove', 'draft', 'dragon', 'drama', 'drastic', 'draw', 'dream', 'dress', 'drift', 'drill', 'drink', 'drip', 'drive', 'drop', 'drum', 'dry', 'duck', 'dumb', 'dune', 'during', 'dust', 'dutch', 'duty', 'dwarf', 'dynamic', 'eager', 'eagle', 'early', 'earn', 'earth', 'easily', 'east', 'easy', 'echo', 'ecology', 'economy', 'edge', 'edit', 'educate', 'effort', 'egg', 'eight', 'either', 'elbow', 'elder', 'electric', 'elegant', 'element', 'elephant', 'elevator', 'elite', 'else', 'embark', 'embody', 'embrace', 'emerge', 'emotion', 'employ', 'empower', 'empty', 'enable', 'enact', 'end', 'endless', 'endorse', 'enemy', 'energy', 'enforce', 'engage', 'engine', 'enhance', 'enjoy', 'enlist', 'enough', 'enrich', 'enroll', 'ensure', 'enter', 'entire', 'entry', 'envelope', 'episode', 'equal', 'equip', 'era', 'erase', 'erode', 'erosion', 'error', 'erupt', 'escape', 'essay', 'essence', 'estate', 'eternal', 'ethics', 'evidence', 'evil', 'evoke', 'evolve', 'exact', 'example', 'excess', 'exchange', 'excite', 'exclude', 'excuse', 'execute', 'exercise', 'exhaust', 'exhibit', 'exile', 'exist', 'exit', 'exotic', 'expand', 'expect', 'expire', 'explain', 'expose', 'express', 'extend', 'extra', 'eye', 'eyebrow', 'fabric', 'face', 'faculty', 'fade', 'faint', 'faith', 'fall', 'false', 'fame', 'family', 'famous', 'fan', 'fancy', 'fantasy', 'farm', 'fashion', 'fat', 'fatal', 'father', 'fatigue', 'fault', 'favorite', 'feature', 'february', 'federal', 'fee', 'feed', 'feel', 'female', 'fence', 'festival', 'fetch', 'fever', 'few', 'fiber', 'fiction', 'field', 'figure', 'file', 'film', 'filter', 'final', 'find', 'fine', 'finger', 'finish', 'fire', 'firm', 'first', 'fiscal', 'fish', 'fit', 'fitness', 'fix', 'flag', 'flame', 'flash', 'flat', 'flavor', 'flee', 'flight', 'flip', 'float', 'flock', 'floor', 'flower', 'fluid', 'flush', 'fly', 'foam', 'focus', 'fog', 'foil', 'fold', 'follow', 'food', 'foot', 'force', 'forest', 'forget', 'fork', 'fortune', 'forum', 'forward', 'fossil', 'foster', 'found', 'fox', 'fragile', 'frame', 'frequent', 'fresh', 'friend', 'fringe', 'frog', 'front', 'frost', 'frown', 'frozen', 'fruit', 'fuel', 'fun', 'funny', 'furnace', 'fury', 'future', 'gadget', 'gain', 'galaxy', 'gallery', 'game', 'gap', 'garage', 'garbage', 'garden', 'garlic', 'garment', 'gas', 'gasp', 'gate', 'gather', 'gauge', 'gaze', 'general', 'genius', 'genre', 'gentle', 'genuine', 'gesture', 'ghost', 'giant', 'gift', 'giggle', 'ginger', 'giraffe', 'girl', 'give', 'glad', 'glance', 'glare', 'glass', 'glide', 'glimpse', 'globe', 'gloom', 'glory', 'glove', 'glow', 'glue', 'goat', 'goddess', 'gold', 'good', 'goose', 'gorilla', 'gospel', 'gossip', 'govern', 'gown', 'grab', 'grace', 'grain', 'grant', 'grape', 'grass', 'gravity', 'great', 'green', 'grid', 'grief', 'grit', 'grocery', 'group', 'grow', 'grunt', 'guard', 'guess', 'guide', 'guilt', 'guitar', 'gun', 'gym', 'habit', 'hair', 'half', 'hammer', 'hamster', 'hand', 'happy', 'harbor', 'hard', 'harsh', 'harvest', 'hat', 'have', 'hawk', 'hazard', 'head', 'health', 'heart', 'heavy', 'hedgehog', 'height', 'hello', 'helmet', 'help', 'hen', 'hero', 'hidden', 'high', 'hill', 'hint', 'hip', 'hire', 'history', 'hobby', 'hockey', 'hold', 'hole', 'holiday', 'hollow', 'home', 'honey', 'hood', 'hope', 'horn', 'horror', 'horse', 'hospital', 'host', 'hotel', 'hour', 'hover', 'hub', 'huge', 'human', 'humble', 'humor', 'hundred', 'hungry', 'hunt', 'hurdle', 'hurry', 'hurt', 'husband', 'hybrid', 'ice', 'icon', 'idea', 'identify', 'idle', 'ignore', 'ill', 'illegal', 'illness', 'image', 'imitate', 'immense', 'immune', 'impact', 'impose', 'improve', 'impulse', 'inch', 'include', 'income', 'increase', 'index', 'indicate', 'indoor', 'industry', 'infant', 'inflict', 'inform', 'inhale', 'inherit', 'initial', 'inject', 'injury', 'inmate', 'inner', 'innocent', 'input', 'inquiry', 'insane', 'insect', 'inside', 'inspire', 'install', 'intact', 'interest', 'into', 'invest', 'invite', 'involve', 'iron', 'island', 'isolate', 'issue', 'item', 'ivory', 'jacket', 'jaguar', 'jar', 'jazz', 'jealous', 'jeans', 'jelly', 'jewel', 'job', 'join', 'joke', 'journey', 'joy', 'judge', 'juice', 'jump', 'jungle', 'junior', 'junk', 'just', 'kangaroo', 'keen', 'keep', 'ketchup', 'key', 'kick', 'kid', 'kidney', 'kind', 'kingdom', 'kiss', 'kit', 'kitchen', 'kite', 'kitten', 'kiwi', 'knee', 'knife', 'knock', 'know', 'lab', 'label', 'labor', 'ladder', 'lady', 'lake', 'lamp', 'language', 'laptop', 'large', 'later', 'latin', 'laugh', 'laundry', 'lava', 'law', 'lawn', 'lawsuit', 'layer', 'lazy', 'leader', 'leaf', 'learn', 'leave', 'lecture', 'left', 'leg', 'legal', 'legend', 'leisure', 'lemon', 'lend', 'length', 'lens', 'leopard', 'lesson', 'letter', 'level', 'liar', 'liberty', 'library', 'license', 'life', 'lift', 'light', 'like', 'limb', 'limit', 'link', 'lion', 'liquid', 'list', 'little', 'live', 'lizard', 'load', 'loan', 'lobster', 'local', 'lock', 'logic', 'lonely', 'long', 'loop', 'lottery', 'loud', 'lounge', 'love', 'loyal', 'lucky', 'luggage', 'lumber', 'lunar', 'lunch', 'luxury', 'lyrics', 'machine', 'mad', 'magic', 'magnet', 'maid', 'mail', 'main', 'major', 'make', 'mammal', 'man', 'manage', 'mandate', 'mango', 'mansion', 'manual', 'maple', 'marble', 'march', 'margin', 'marine', 'market', 'marriage', 'mask', 'mass', 'master', 'match', 'material', 'math', 'matrix', 'matter', 'maximum', 'maze', 'meadow', 'mean', 'measure', 'meat', 'mechanic', 'medal', 'media', 'melody', 'melt', 'member', 'memory', 'mention', 'menu', 'mercy', 'merge', 'merit', 'merry', 'mesh', 'message', 'metal', 'method', 'middle', 'midnight', 'milk', 'million', 'mimic', 'mind', 'minimum', 'minor', 'minute', 'miracle', 'mirror', 'misery', 'miss', 'mistake', 'mix', 'mixed', 'mixture', 'mobile', 'model', 'modify', 'mom', 'moment', 'monitor', 'monkey', 'monster', 'month', 'moon', 'moral', 'more', 'morning', 'mosquito', 'mother', 'motion', 'motor', 'mountain', 'mouse', 'move', 'movie', 'much', 'muffin', 'mule', 'multiply', 'muscle', 'museum', 'mushroom', 'music', 'must', 'mutual', 'myself', 'mystery', 'myth', 'naive', 'name', 'napkin', 'narrow', 'nasty', 'nation', 'nature', 'near', 'neck', 'need', 'negative', 'neglect', 'neither', 'nephew', 'nerve', 'nest', 'net', 'network', 'neutral', 'never', 'news', 'next', 'nice', 'night', 'noble', 'noise', 'nominee', 'noodle', 'normal', 'north', 'nose', 'notable', 'note', 'nothing', 'notice', 'novel', 'now', 'nuclear', 'number', 'nurse', 'nut', 'oak', 'obey', 'object', 'oblige', 'obscure', 'observe', 'obtain', 'obvious', 'occur', 'ocean', 'october', 'odor', 'off', 'offer', 'office', 'often', 'oil', 'okay', 'old', 'olive', 'olympic', 'omit', 'once', 'one', 'onion', 'online', 'only', 'open', 'opera', 'opinion', 'oppose', 'option', 'orange', 'orbit', 'orchard', 'order', 'ordinary', 'organ', 'orient', 'original', 'orphan', 'ostrich', 'other', 'outdoor', 'outer', 'output', 'outside', 'oval', 'oven', 'over', 'own', 'owner', 'oxygen', 'oyster', 'ozone', 'pact', 'paddle', 'page', 'pair', 'palace', 'palm', 'panda', 'panel', 'panic', 'panther', 'paper', 'parade', 'parent', 'park', 'parrot', 'party', 'pass', 'patch', 'path', 'patient', 'patrol', 'pattern', 'pause', 'pave', 'payment', 'peace', 'peanut', 'pear', 'peasant', 'pelican', 'pen', 'penalty', 'pencil', 'people', 'pepper', 'perfect', 'permit', 'person', 'pet', 'phone', 'photo', 'phrase', 'physical', 'piano', 'picnic', 'picture', 'piece', 'pig', 'pigeon', 'pill', 'pilot', 'pink', 'pioneer', 'pipe', 'pistol', 'pitch', 'pizza', 'place', 'planet', 'plastic', 'plate', 'play', 'please', 'pledge', 'pluck', 'plug', 'plunge', 'poem', 'poet', 'point', 'polar', 'pole', 'police', 'pond', 'pony', 'pool', 'popular', 'portion', 'position', 'possible', 'post', 'potato', 'pottery', 'poverty', 'powder', 'power', 'practice', 'praise', 'predict', 'prefer', 'prepare', 'present', 'pretty', 'prevent', 'price', 'pride', 'primary', 'print', 'priority', 'prison', 'private', 'prize', 'problem', 'process', 'produce', 'profit', 'program', 'project', 'promote', 'proof', 'property', 'prosper', 'protect', 'proud', 'provide', 'public', 'pudding', 'pull', 'pulp', 'pulse', 'pumpkin', 'punch', 'pupil', 'puppy', 'purchase', 'purity', 'purpose', 'purse', 'push', 'put', 'puzzle', 'pyramid', 'quality', 'quantum', 'quarter', 'question', 'quick', 'quit', 'quiz', 'quote', 'rabbit', 'raccoon', 'race', 'rack', 'radar', 'radio', 'rail', 'rain', 'raise', 'rally', 'ramp', 'ranch', 'random', 'range', 'rapid', 'rare', 'rate', 'rather', 'raven', 'raw', 'razor', 'ready', 'real', 'reason', 'rebel', 'rebuild', 'recall', 'receive', 'recipe', 'record', 'recycle', 'reduce', 'reflect', 'reform', 'refuse', 'region', 'regret', 'regular', 'reject', 'relax', 'release', 'relief', 'rely', 'remain', 'remember', 'remind', 'remove', 'render', 'renew', 'rent', 'reopen', 'repair', 'repeat', 'replace', 'report', 'require', 'rescue', 'resemble', 'resist', 'resource', 'response', 'result', 'retire', 'retreat', 'return', 'reunion', 'reveal', 'review', 'reward', 'rhythm', 'rib', 'ribbon', 'rice', 'rich', 'ride', 'ridge', 'rifle', 'right', 'rigid', 'ring', 'riot', 'ripple', 'risk', 'ritual', 'rival', 'river', 'road', 'roast', 'robot', 'robust', 'rocket', 'romance', 'roof', 'rookie', 'room', 'rose', 'rotate', 'rough', 'round', 'route', 'royal', 'rubber', 'rude', 'rug', 'rule', 'run', 'runway', 'rural', 'sad', 'saddle', 'sadness', 'safe', 'sail', 'salad', 'salmon', 'salon', 'salt', 'salute', 'same', 'sample', 'sand', 'satisfy', 'satoshi', 'sauce', 'sausage', 'save', 'say', 'scale', 'scan', 'scare', 'scatter', 'scene', 'scheme', 'school', 'science', 'scissors', 'scorpion', 'scout', 'scrap', 'screen', 'script', 'scrub', 'sea', 'search', 'season', 'seat', 'second', 'secret', 'section', 'security', 'seed', 'seek', 'segment', 'select', 'sell', 'seminar', 'senior', 'sense', 'sentence', 'series', 'service', 'session', 'settle', 'setup', 'seven', 'shadow', 'shaft', 'shallow', 'share', 'shed', 'shell', 'sheriff', 'shield', 'shift', 'shine', 'ship', 'shiver', 'shock', 'shoe', 'shoot', 'shop', 'short', 'shoulder', 'shove', 'shrimp', 'shrug', 'shuffle', 'shy', 'sibling', 'sick', 'side', 'siege', 'sight', 'sign', 'silent', 'silk', 'silly', 'silver', 'similar', 'simple', 'since', 'sing', 'siren', 'sister', 'situate', 'six', 'size', 'skate', 'sketch', 'ski', 'skill', 'skin', 'skirt', 'skull', 'slab', 'slam', 'sleep', 'slender', 'slice', 'slide', 'slight', 'slim', 'slogan', 'slot', 'slow', 'slush', 'small', 'smart', 'smile', 'smoke', 'smooth', 'snack', 'snake', 'snap', 'sniff', 'snow', 'soap', 'soccer', 'social', 'sock', 'soda', 'soft', 'solar', 'soldier', 'solid', 'solution', 'solve', 'someone', 'song', 'soon', 'sorry', 'sort', 'soul', 'sound', 'soup', 'source', 'south', 'space', 'spare', 'spatial', 'spawn', 'speak', 'special', 'speed', 'spell', 'spend', 'sphere', 'spice', 'spider', 'spike', 'spin', 'spirit', 'split', 'spoil', 'sponsor', 'spoon', 'sport', 'spot', 'spray', 'spread', 'spring', 'spy', 'square', 'squeeze', 'squirrel', 'stable', 'stadium', 'staff', 'stage', 'stairs', 'stamp', 'stand', 'start', 'state', 'stay', 'steak', 'steel', 'stem', 'step', 'stereo', 'stick', 'still', 'sting', 'stock', 'stomach', 'stone', 'stool', 'story', 'stove', 'strategy', 'street', 'strike', 'strong', 'struggle', 'student', 'stuff', 'stumble', 'style', 'subject', 'submit', 'subway', 'success', 'such', 'sudden', 'suffer', 'sugar', 'suggest', 'suit', 'summer', 'sun', 'sunny', 'sunset', 'super', 'supply', 'supreme', 'sure', 'surface', 'surge', 'surprise', 'surround', 'survey', 'suspect', 'sustain', 'swallow', 'swamp', 'swap', 'swarm', 'swear', 'sweet', 'swift', 'swim', 'swing', 'switch', 'sword', 'symbol', 'symptom', 'syrup', 'system', 'table', 'tackle', 'tag', 'tail', 'talent', 'talk', 'tank', 'tape', 'target', 'task', 'taste', 'tattoo', 'taxi', 'teach', 'team', 'tell', 'ten', 'tenant', 'tennis', 'tent', 'term', 'test', 'text', 'thank', 'that', 'theme', 'then', 'theory', 'there', 'they', 'thing', 'this', 'thought', 'three', 'thrive', 'throw', 'thumb', 'thunder', 'ticket', 'tide', 'tiger', 'tilt', 'timber', 'time', 'tiny', 'tip', 'tired', 'tissue', 'title', 'toast', 'tobacco', 'today', 'toddler', 'toe', 'together', 'toilet', 'token', 'tomato', 'tomorrow', 'tone', 'tongue', 'tonight', 'tool', 'tooth', 'top', 'topic', 'topple', 'torch', 'tornado', 'tortoise', 'toss', 'total', 'tourist', 'toward', 'tower', 'town', 'toy', 'track', 'trade', 'traffic', 'tragic', 'train', 'transfer', 'trap', 'trash', 'travel', 'tray', 'treat', 'tree', 'trend', 'trial', 'tribe', 'trick', 'trigger', 'trim', 'trip', 'trophy', 'trouble', 'truck', 'true', 'truly', 'trumpet', 'trust', 'truth', 'try', 'tube', 'tuition', 'tumble', 'tuna', 'tunnel', 'turkey', 'turn', 'turtle', 'twelve', 'twenty', 'twice', 'twin', 'twist', 'two', 'type', 'typical', 'ugly', 'umbrella', 'unable', 'unaware', 'uncle', 'uncover', 'under', 'undo', 'unfair', 'unfold', 'unhappy', 'uniform', 'unique', 'unit', 'universe', 'unknown', 'unlock', 'until', 'unusual', 'unveil', 'update', 'upgrade', 'uphold', 'upon', 'upper', 'upset', 'urban', 'urge', 'usage', 'use', 'used', 'useful', 'useless', 'usual', 'utility', 'vacant', 'vacuum', 'vague', 'valid', 'valley', 'valve', 'van', 'vanish', 'vapor', 'various', 'vast', 'vault', 'vehicle', 'velvet', 'vendor', 'venture', 'venue', 'verb', 'verify', 'version', 'very', 'vessel', 'veteran', 'viable', 'vibrant', 'vicious', 'victory', 'video', 'view', 'village', 'vintage', 'violin', 'virtual', 'virus', 'visa', 'visit', 'visual', 'vital', 'vivid', 'vocal', 'voice', 'void', 'volcano', 'volume', 'vote', 'voyage', 'wage', 'wagon', 'wait', 'walk', 'wall', 'walnut', 'want', 'warfare', 'warm', 'warrior', 'wash', 'wasp', 'waste', 'water', 'wave', 'way', 'wealth', 'weapon', 'wear', 'weasel', 'weather', 'web', 'wedding', 'weekend', 'weird', 'welcome', 'west', 'wet', 'whale', 'what', 'wheat', 'wheel', 'when', 'where', 'whip', 'whisper', 'wide', 'width', 'wife', 'wild', 'will', 'win', 'window', 'wine', 'wing', 'wink', 'winner', 'winter', 'wire', 'wisdom', 'wise', 'wish', 'witness', 'wolf', 'woman', 'wonder', 'wood', 'wool', 'word', 'work', 'world', 'worry', 'worth', 'wrap', 'wreck', 'wrestle', 'wrist', 'write', 'wrong', 'yard', 'year', 'yellow', 'you', 'young', 'youth', 'zebra', 'zero', 'zone', 'zoo'];
 
 module.exports = english;
-},{}],159:[function(require,module,exports){
+},{}],160:[function(require,module,exports){
 'use string';
 
 var french = ['abaisser', 'abandon', 'abdiquer', 'abeille', 'abolir', 'aborder', 'aboutir', 'aboyer', 'abrasif', 'abreuver', 'abriter', 'abroger', 'abrupt', 'absence', 'absolu', 'absurde', 'abusif', 'abyssal', 'académie', 'acajou', 'acarien', 'accabler', 'accepter', 'acclamer', 'accolade', 'accroche', 'accuser', 'acerbe', 'achat', 'acheter', 'aciduler', 'acier', 'acompte', 'acquérir', 'acronyme', 'acteur', 'actif', 'actuel', 'adepte', 'adéquat', 'adhésif', 'adjectif', 'adjuger', 'admettre', 'admirer', 'adopter', 'adorer', 'adoucir', 'adresse', 'adroit', 'adulte', 'adverbe', 'aérer', 'aéronef', 'affaire', 'affecter', 'affiche', 'affreux', 'affubler', 'agacer', 'agencer', 'agile', 'agiter', 'agrafer', 'agréable', 'agrume', 'aider', 'aiguille', 'ailier', 'aimable', 'aisance', 'ajouter', 'ajuster', 'alarmer', 'alchimie', 'alerte', 'algèbre', 'algue', 'aliéner', 'aliment', 'alléger', 'alliage', 'allouer', 'allumer', 'alourdir', 'alpaga', 'altesse', 'alvéole', 'amateur', 'ambigu', 'ambre', 'aménager', 'amertume', 'amidon', 'amiral', 'amorcer', 'amour', 'amovible', 'amphibie', 'ampleur', 'amusant', 'analyse', 'anaphore', 'anarchie', 'anatomie', 'ancien', 'anéantir', 'angle', 'angoisse', 'anguleux', 'animal', 'annexer', 'annonce', 'annuel', 'anodin', 'anomalie', 'anonyme', 'anormal', 'antenne', 'antidote', 'anxieux', 'apaiser', 'apéritif', 'aplanir', 'apologie', 'appareil', 'appeler', 'apporter', 'appuyer', 'aquarium', 'aqueduc', 'arbitre', 'arbuste', 'ardeur', 'ardoise', 'argent', 'arlequin', 'armature', 'armement', 'armoire', 'armure', 'arpenter', 'arracher', 'arriver', 'arroser', 'arsenic', 'artériel', 'article', 'aspect', 'asphalte', 'aspirer', 'assaut', 'asservir', 'assiette', 'associer', 'assurer', 'asticot', 'astre', 'astuce', 'atelier', 'atome', 'atrium', 'atroce', 'attaque', 'attentif', 'attirer', 'attraper', 'aubaine', 'auberge', 'audace', 'audible', 'augurer', 'aurore', 'automne', 'autruche', 'avaler', 'avancer', 'avarice', 'avenir', 'averse', 'aveugle', 'aviateur', 'avide', 'avion', 'aviser', 'avoine', 'avouer', 'avril', 'axial', 'axiome', 'badge', 'bafouer', 'bagage', 'baguette', 'baignade', 'balancer', 'balcon', 'baleine', 'balisage', 'bambin', 'bancaire', 'bandage', 'banlieue', 'bannière', 'banquier', 'barbier', 'baril', 'baron', 'barque', 'barrage', 'bassin', 'bastion', 'bataille', 'bateau', 'batterie', 'baudrier', 'bavarder', 'belette', 'bélier', 'belote', 'bénéfice', 'berceau', 'berger', 'berline', 'bermuda', 'besace', 'besogne', 'bétail', 'beurre', 'biberon', 'bicycle', 'bidule', 'bijou', 'bilan', 'bilingue', 'billard', 'binaire', 'biologie', 'biopsie', 'biotype', 'biscuit', 'bison', 'bistouri', 'bitume', 'bizarre', 'blafard', 'blague', 'blanchir', 'blessant', 'blinder', 'blond', 'bloquer', 'blouson', 'bobard', 'bobine', 'boire', 'boiser', 'bolide', 'bonbon', 'bondir', 'bonheur', 'bonifier', 'bonus', 'bordure', 'borne', 'botte', 'boucle', 'boueux', 'bougie', 'boulon', 'bouquin', 'bourse', 'boussole', 'boutique', 'boxeur', 'branche', 'brasier', 'brave', 'brebis', 'brèche', 'breuvage', 'bricoler', 'brigade', 'brillant', 'brioche', 'brique', 'brochure', 'broder', 'bronzer', 'brousse', 'broyeur', 'brume', 'brusque', 'brutal', 'bruyant', 'buffle', 'buisson', 'bulletin', 'bureau', 'burin', 'bustier', 'butiner', 'butoir', 'buvable', 'buvette', 'cabanon', 'cabine', 'cachette', 'cadeau', 'cadre', 'caféine', 'caillou', 'caisson', 'calculer', 'calepin', 'calibre', 'calmer', 'calomnie', 'calvaire', 'camarade', 'caméra', 'camion', 'campagne', 'canal', 'caneton', 'canon', 'cantine', 'canular', 'capable', 'caporal', 'caprice', 'capsule', 'capter', 'capuche', 'carabine', 'carbone', 'caresser', 'caribou', 'carnage', 'carotte', 'carreau', 'carton', 'cascade', 'casier', 'casque', 'cassure', 'causer', 'caution', 'cavalier', 'caverne', 'caviar', 'cédille', 'ceinture', 'céleste', 'cellule', 'cendrier', 'censurer', 'central', 'cercle', 'cérébral', 'cerise', 'cerner', 'cerveau', 'cesser', 'chagrin', 'chaise', 'chaleur', 'chambre', 'chance', 'chapitre', 'charbon', 'chasseur', 'chaton', 'chausson', 'chavirer', 'chemise', 'chenille', 'chéquier', 'chercher', 'cheval', 'chien', 'chiffre', 'chignon', 'chimère', 'chiot', 'chlorure', 'chocolat', 'choisir', 'chose', 'chouette', 'chrome', 'chute', 'cigare', 'cigogne', 'cimenter', 'cinéma', 'cintrer', 'circuler', 'cirer', 'cirque', 'citerne', 'citoyen', 'citron', 'civil', 'clairon', 'clameur', 'claquer', 'classe', 'clavier', 'client', 'cligner', 'climat', 'clivage', 'cloche', 'clonage', 'cloporte', 'cobalt', 'cobra', 'cocasse', 'cocotier', 'coder', 'codifier', 'coffre', 'cogner', 'cohésion', 'coiffer', 'coincer', 'colère', 'colibri', 'colline', 'colmater', 'colonel', 'combat', 'comédie', 'commande', 'compact', 'concert', 'conduire', 'confier', 'congeler', 'connoter', 'consonne', 'contact', 'convexe', 'copain', 'copie', 'corail', 'corbeau', 'cordage', 'corniche', 'corpus', 'correct', 'cortège', 'cosmique', 'costume', 'coton', 'coude', 'coupure', 'courage', 'couteau', 'couvrir', 'coyote', 'crabe', 'crainte', 'cravate', 'crayon', 'créature', 'créditer', 'crémeux', 'creuser', 'crevette', 'cribler', 'crier', 'cristal', 'critère', 'croire', 'croquer', 'crotale', 'crucial', 'cruel', 'crypter', 'cubique', 'cueillir', 'cuillère', 'cuisine', 'cuivre', 'culminer', 'cultiver', 'cumuler', 'cupide', 'curatif', 'curseur', 'cyanure', 'cycle', 'cylindre', 'cynique', 'daigner', 'damier', 'danger', 'danseur', 'dauphin', 'débattre', 'débiter', 'déborder', 'débrider', 'débutant', 'décaler', 'décembre', 'déchirer', 'décider', 'déclarer', 'décorer', 'décrire', 'décupler', 'dédale', 'déductif', 'déesse', 'défensif', 'défiler', 'défrayer', 'dégager', 'dégivrer', 'déglutir', 'dégrafer', 'déjeuner', 'délice', 'déloger', 'demander', 'demeurer', 'démolir', 'dénicher', 'dénouer', 'dentelle', 'dénuder', 'départ', 'dépenser', 'déphaser', 'déplacer', 'déposer', 'déranger', 'dérober', 'désastre', 'descente', 'désert', 'désigner', 'désobéir', 'dessiner', 'destrier', 'détacher', 'détester', 'détourer', 'détresse', 'devancer', 'devenir', 'deviner', 'devoir', 'diable', 'dialogue', 'diamant', 'dicter', 'différer', 'digérer', 'digital', 'digne', 'diluer', 'dimanche', 'diminuer', 'dioxyde', 'directif', 'diriger', 'discuter', 'disposer', 'dissiper', 'distance', 'divertir', 'diviser', 'docile', 'docteur', 'dogme', 'doigt', 'domaine', 'domicile', 'dompter', 'donateur', 'donjon', 'donner', 'dopamine', 'dortoir', 'dorure', 'dosage', 'doseur', 'dossier', 'dotation', 'douanier', 'double', 'douceur', 'douter', 'doyen', 'dragon', 'draper', 'dresser', 'dribbler', 'droiture', 'duperie', 'duplexe', 'durable', 'durcir', 'dynastie', 'éblouir', 'écarter', 'écharpe', 'échelle', 'éclairer', 'éclipse', 'éclore', 'écluse', 'école', 'économie', 'écorce', 'écouter', 'écraser', 'écrémer', 'écrivain', 'écrou', 'écume', 'écureuil', 'édifier', 'éduquer', 'effacer', 'effectif', 'effigie', 'effort', 'effrayer', 'effusion', 'égaliser', 'égarer', 'éjecter', 'élaborer', 'élargir', 'électron', 'élégant', 'éléphant', 'élève', 'éligible', 'élitisme', 'éloge', 'élucider', 'éluder', 'emballer', 'embellir', 'embryon', 'émeraude', 'émission', 'emmener', 'émotion', 'émouvoir', 'empereur', 'employer', 'emporter', 'emprise', 'émulsion', 'encadrer', 'enchère', 'enclave', 'encoche', 'endiguer', 'endosser', 'endroit', 'enduire', 'énergie', 'enfance', 'enfermer', 'enfouir', 'engager', 'engin', 'englober', 'énigme', 'enjamber', 'enjeu', 'enlever', 'ennemi', 'ennuyeux', 'enrichir', 'enrobage', 'enseigne', 'entasser', 'entendre', 'entier', 'entourer', 'entraver', 'énumérer', 'envahir', 'enviable', 'envoyer', 'enzyme', 'éolien', 'épaissir', 'épargne', 'épatant', 'épaule', 'épicerie', 'épidémie', 'épier', 'épilogue', 'épine', 'épisode', 'épitaphe', 'époque', 'épreuve', 'éprouver', 'épuisant', 'équerre', 'équipe', 'ériger', 'érosion', 'erreur', 'éruption', 'escalier', 'espadon', 'espèce', 'espiègle', 'espoir', 'esprit', 'esquiver', 'essayer', 'essence', 'essieu', 'essorer', 'estime', 'estomac', 'estrade', 'étagère', 'étaler', 'étanche', 'étatique', 'éteindre', 'étendoir', 'éternel', 'éthanol', 'éthique', 'ethnie', 'étirer', 'étoffer', 'étoile', 'étonnant', 'étourdir', 'étrange', 'étroit', 'étude', 'euphorie', 'évaluer', 'évasion', 'éventail', 'évidence', 'éviter', 'évolutif', 'évoquer', 'exact', 'exagérer', 'exaucer', 'exceller', 'excitant', 'exclusif', 'excuse', 'exécuter', 'exemple', 'exercer', 'exhaler', 'exhorter', 'exigence', 'exiler', 'exister', 'exotique', 'expédier', 'explorer', 'exposer', 'exprimer', 'exquis', 'extensif', 'extraire', 'exulter', 'fable', 'fabuleux', 'facette', 'facile', 'facture', 'faiblir', 'falaise', 'fameux', 'famille', 'farceur', 'farfelu', 'farine', 'farouche', 'fasciner', 'fatal', 'fatigue', 'faucon', 'fautif', 'faveur', 'favori', 'fébrile', 'féconder', 'fédérer', 'félin', 'femme', 'fémur', 'fendoir', 'féodal', 'fermer', 'féroce', 'ferveur', 'festival', 'feuille', 'feutre', 'février', 'fiasco', 'ficeler', 'fictif', 'fidèle', 'figure', 'filature', 'filetage', 'filière', 'filleul', 'filmer', 'filou', 'filtrer', 'financer', 'finir', 'fiole', 'firme', 'fissure', 'fixer', 'flairer', 'flamme', 'flasque', 'flatteur', 'fléau', 'flèche', 'fleur', 'flexion', 'flocon', 'flore', 'fluctuer', 'fluide', 'fluvial', 'folie', 'fonderie', 'fongible', 'fontaine', 'forcer', 'forgeron', 'formuler', 'fortune', 'fossile', 'foudre', 'fougère', 'fouiller', 'foulure', 'fourmi', 'fragile', 'fraise', 'franchir', 'frapper', 'frayeur', 'frégate', 'freiner', 'frelon', 'frémir', 'frénésie', 'frère', 'friable', 'friction', 'frisson', 'frivole', 'froid', 'fromage', 'frontal', 'frotter', 'fruit', 'fugitif', 'fuite', 'fureur', 'furieux', 'furtif', 'fusion', 'futur', 'gagner', 'galaxie', 'galerie', 'gambader', 'garantir', 'gardien', 'garnir', 'garrigue', 'gazelle', 'gazon', 'géant', 'gélatine', 'gélule', 'gendarme', 'général', 'génie', 'genou', 'gentil', 'géologie', 'géomètre', 'géranium', 'germe', 'gestuel', 'geyser', 'gibier', 'gicler', 'girafe', 'givre', 'glace', 'glaive', 'glisser', 'globe', 'gloire', 'glorieux', 'golfeur', 'gomme', 'gonfler', 'gorge', 'gorille', 'goudron', 'gouffre', 'goulot', 'goupille', 'gourmand', 'goutte', 'graduel', 'graffiti', 'graine', 'grand', 'grappin', 'gratuit', 'gravir', 'grenat', 'griffure', 'griller', 'grimper', 'grogner', 'gronder', 'grotte', 'groupe', 'gruger', 'grutier', 'gruyère', 'guépard', 'guerrier', 'guide', 'guimauve', 'guitare', 'gustatif', 'gymnaste', 'gyrostat', 'habitude', 'hachoir', 'halte', 'hameau', 'hangar', 'hanneton', 'haricot', 'harmonie', 'harpon', 'hasard', 'hélium', 'hématome', 'herbe', 'hérisson', 'hermine', 'héron', 'hésiter', 'heureux', 'hiberner', 'hibou', 'hilarant', 'histoire', 'hiver', 'homard', 'hommage', 'homogène', 'honneur', 'honorer', 'honteux', 'horde', 'horizon', 'horloge', 'hormone', 'horrible', 'houleux', 'housse', 'hublot', 'huileux', 'humain', 'humble', 'humide', 'humour', 'hurler', 'hydromel', 'hygiène', 'hymne', 'hypnose', 'idylle', 'ignorer', 'iguane', 'illicite', 'illusion', 'image', 'imbiber', 'imiter', 'immense', 'immobile', 'immuable', 'impact', 'impérial', 'implorer', 'imposer', 'imprimer', 'imputer', 'incarner', 'incendie', 'incident', 'incliner', 'incolore', 'indexer', 'indice', 'inductif', 'inédit', 'ineptie', 'inexact', 'infini', 'infliger', 'informer', 'infusion', 'ingérer', 'inhaler', 'inhiber', 'injecter', 'injure', 'innocent', 'inoculer', 'inonder', 'inscrire', 'insecte', 'insigne', 'insolite', 'inspirer', 'instinct', 'insulter', 'intact', 'intense', 'intime', 'intrigue', 'intuitif', 'inutile', 'invasion', 'inventer', 'inviter', 'invoquer', 'ironique', 'irradier', 'irréel', 'irriter', 'isoler', 'ivoire', 'ivresse', 'jaguar', 'jaillir', 'jambe', 'janvier', 'jardin', 'jauger', 'jaune', 'javelot', 'jetable', 'jeton', 'jeudi', 'jeunesse', 'joindre', 'joncher', 'jongler', 'joueur', 'jouissif', 'journal', 'jovial', 'joyau', 'joyeux', 'jubiler', 'jugement', 'junior', 'jupon', 'juriste', 'justice', 'juteux', 'juvénile', 'kayak', 'kimono', 'kiosque', 'label', 'labial', 'labourer', 'lacérer', 'lactose', 'lagune', 'laine', 'laisser', 'laitier', 'lambeau', 'lamelle', 'lampe', 'lanceur', 'langage', 'lanterne', 'lapin', 'largeur', 'larme', 'laurier', 'lavabo', 'lavoir', 'lecture', 'légal', 'léger', 'légume', 'lessive', 'lettre', 'levier', 'lexique', 'lézard', 'liasse', 'libérer', 'libre', 'licence', 'licorne', 'liège', 'lièvre', 'ligature', 'ligoter', 'ligue', 'limer', 'limite', 'limonade', 'limpide', 'linéaire', 'lingot', 'lionceau', 'liquide', 'lisière', 'lister', 'lithium', 'litige', 'littoral', 'livreur', 'logique', 'lointain', 'loisir', 'lombric', 'loterie', 'louer', 'lourd', 'loutre', 'louve', 'loyal', 'lubie', 'lucide', 'lucratif', 'lueur', 'lugubre', 'luisant', 'lumière', 'lunaire', 'lundi', 'luron', 'lutter', 'luxueux', 'machine', 'magasin', 'magenta', 'magique', 'maigre', 'maillon', 'maintien', 'mairie', 'maison', 'majorer', 'malaxer', 'maléfice', 'malheur', 'malice', 'mallette', 'mammouth', 'mandater', 'maniable', 'manquant', 'manteau', 'manuel', 'marathon', 'marbre', 'marchand', 'mardi', 'maritime', 'marqueur', 'marron', 'marteler', 'mascotte', 'massif', 'matériel', 'matière', 'matraque', 'maudire', 'maussade', 'mauve', 'maximal', 'méchant', 'méconnu', 'médaille', 'médecin', 'méditer', 'méduse', 'meilleur', 'mélange', 'mélodie', 'membre', 'mémoire', 'menacer', 'mener', 'menhir', 'mensonge', 'mentor', 'mercredi', 'mérite', 'merle', 'messager', 'mesure', 'métal', 'météore', 'méthode', 'métier', 'meuble', 'miauler', 'microbe', 'miette', 'mignon', 'migrer', 'milieu', 'million', 'mimique', 'mince', 'minéral', 'minimal', 'minorer', 'minute', 'miracle', 'miroiter', 'missile', 'mixte', 'mobile', 'moderne', 'moelleux', 'mondial', 'moniteur', 'monnaie', 'monotone', 'monstre', 'montagne', 'monument', 'moqueur', 'morceau', 'morsure', 'mortier', 'moteur', 'motif', 'mouche', 'moufle', 'moulin', 'mousson', 'mouton', 'mouvant', 'multiple', 'munition', 'muraille', 'murène', 'murmure', 'muscle', 'muséum', 'musicien', 'mutation', 'muter', 'mutuel', 'myriade', 'myrtille', 'mystère', 'mythique', 'nageur', 'nappe', 'narquois', 'narrer', 'natation', 'nation', 'nature', 'naufrage', 'nautique', 'navire', 'nébuleux', 'nectar', 'néfaste', 'négation', 'négliger', 'négocier', 'neige', 'nerveux', 'nettoyer', 'neurone', 'neutron', 'neveu', 'niche', 'nickel', 'nitrate', 'niveau', 'noble', 'nocif', 'nocturne', 'noirceur', 'noisette', 'nomade', 'nombreux', 'nommer', 'normatif', 'notable', 'notifier', 'notoire', 'nourrir', 'nouveau', 'novateur', 'novembre', 'novice', 'nuage', 'nuancer', 'nuire', 'nuisible', 'numéro', 'nuptial', 'nuque', 'nutritif', 'obéir', 'objectif', 'obliger', 'obscur', 'observer', 'obstacle', 'obtenir', 'obturer', 'occasion', 'occuper', 'océan', 'octobre', 'octroyer', 'octupler', 'oculaire', 'odeur', 'odorant', 'offenser', 'officier', 'offrir', 'ogive', 'oiseau', 'oisillon', 'olfactif', 'olivier', 'ombrage', 'omettre', 'onctueux', 'onduler', 'onéreux', 'onirique', 'opale', 'opaque', 'opérer', 'opinion', 'opportun', 'opprimer', 'opter', 'optique', 'orageux', 'orange', 'orbite', 'ordonner', 'oreille', 'organe', 'orgueil', 'orifice', 'ornement', 'orque', 'ortie', 'osciller', 'osmose', 'ossature', 'otarie', 'ouragan', 'ourson', 'outil', 'outrager', 'ouvrage', 'ovation', 'oxyde', 'oxygène', 'ozone', 'paisible', 'palace', 'palmarès', 'palourde', 'palper', 'panache', 'panda', 'pangolin', 'paniquer', 'panneau', 'panorama', 'pantalon', 'papaye', 'papier', 'papoter', 'papyrus', 'paradoxe', 'parcelle', 'paresse', 'parfumer', 'parler', 'parole', 'parrain', 'parsemer', 'partager', 'parure', 'parvenir', 'passion', 'pastèque', 'paternel', 'patience', 'patron', 'pavillon', 'pavoiser', 'payer', 'paysage', 'peigne', 'peintre', 'pelage', 'pélican', 'pelle', 'pelouse', 'peluche', 'pendule', 'pénétrer', 'pénible', 'pensif', 'pénurie', 'pépite', 'péplum', 'perdrix', 'perforer', 'période', 'permuter', 'perplexe', 'persil', 'perte', 'peser', 'pétale', 'petit', 'pétrir', 'peuple', 'pharaon', 'phobie', 'phoque', 'photon', 'phrase', 'physique', 'piano', 'pictural', 'pièce', 'pierre', 'pieuvre', 'pilote', 'pinceau', 'pipette', 'piquer', 'pirogue', 'piscine', 'piston', 'pivoter', 'pixel', 'pizza', 'placard', 'plafond', 'plaisir', 'planer', 'plaque', 'plastron', 'plateau', 'pleurer', 'plexus', 'pliage', 'plomb', 'plonger', 'pluie', 'plumage', 'pochette', 'poésie', 'poète', 'pointe', 'poirier', 'poisson', 'poivre', 'polaire', 'policier', 'pollen', 'polygone', 'pommade', 'pompier', 'ponctuel', 'pondérer', 'poney', 'portique', 'position', 'posséder', 'posture', 'potager', 'poteau', 'potion', 'pouce', 'poulain', 'poumon', 'pourpre', 'poussin', 'pouvoir', 'prairie', 'pratique', 'précieux', 'prédire', 'préfixe', 'prélude', 'prénom', 'présence', 'prétexte', 'prévoir', 'primitif', 'prince', 'prison', 'priver', 'problème', 'procéder', 'prodige', 'profond', 'progrès', 'proie', 'projeter', 'prologue', 'promener', 'propre', 'prospère', 'protéger', 'prouesse', 'proverbe', 'prudence', 'pruneau', 'psychose', 'public', 'puceron', 'puiser', 'pulpe', 'pulsar', 'punaise', 'punitif', 'pupitre', 'purifier', 'puzzle', 'pyramide', 'quasar', 'querelle', 'question', 'quiétude', 'quitter', 'quotient', 'racine', 'raconter', 'radieux', 'ragondin', 'raideur', 'raisin', 'ralentir', 'rallonge', 'ramasser', 'rapide', 'rasage', 'ratisser', 'ravager', 'ravin', 'rayonner', 'réactif', 'réagir', 'réaliser', 'réanimer', 'recevoir', 'réciter', 'réclamer', 'récolter', 'recruter', 'reculer', 'recycler', 'rédiger', 'redouter', 'refaire', 'réflexe', 'réformer', 'refrain', 'refuge', 'régalien', 'région', 'réglage', 'régulier', 'réitérer', 'rejeter', 'rejouer', 'relatif', 'relever', 'relief', 'remarque', 'remède', 'remise', 'remonter', 'remplir', 'remuer', 'renard', 'renfort', 'renifler', 'renoncer', 'rentrer', 'renvoi', 'replier', 'reporter', 'reprise', 'reptile', 'requin', 'réserve', 'résineux', 'résoudre', 'respect', 'rester', 'résultat', 'rétablir', 'retenir', 'réticule', 'retomber', 'retracer', 'réunion', 'réussir', 'revanche', 'revivre', 'révolte', 'révulsif', 'richesse', 'rideau', 'rieur', 'rigide', 'rigoler', 'rincer', 'riposter', 'risible', 'risque', 'rituel', 'rival', 'rivière', 'rocheux', 'romance', 'rompre', 'ronce', 'rondin', 'roseau', 'rosier', 'rotatif', 'rotor', 'rotule', 'rouge', 'rouille', 'rouleau', 'routine', 'royaume', 'ruban', 'rubis', 'ruche', 'ruelle', 'rugueux', 'ruiner', 'ruisseau', 'ruser', 'rustique', 'rythme', 'sabler', 'saboter', 'sabre', 'sacoche', 'safari', 'sagesse', 'saisir', 'salade', 'salive', 'salon', 'saluer', 'samedi', 'sanction', 'sanglier', 'sarcasme', 'sardine', 'saturer', 'saugrenu', 'saumon', 'sauter', 'sauvage', 'savant', 'savonner', 'scalpel', 'scandale', 'scélérat', 'scénario', 'sceptre', 'schéma', 'science', 'scinder', 'score', 'scrutin', 'sculpter', 'séance', 'sécable', 'sécher', 'secouer', 'sécréter', 'sédatif', 'séduire', 'seigneur', 'séjour', 'sélectif', 'semaine', 'sembler', 'semence', 'séminal', 'sénateur', 'sensible', 'sentence', 'séparer', 'séquence', 'serein', 'sergent', 'sérieux', 'serrure', 'sérum', 'service', 'sésame', 'sévir', 'sevrage', 'sextuple', 'sidéral', 'siècle', 'siéger', 'siffler', 'sigle', 'signal', 'silence', 'silicium', 'simple', 'sincère', 'sinistre', 'siphon', 'sirop', 'sismique', 'situer', 'skier', 'social', 'socle', 'sodium', 'soigneux', 'soldat', 'soleil', 'solitude', 'soluble', 'sombre', 'sommeil', 'somnoler', 'sonde', 'songeur', 'sonnette', 'sonore', 'sorcier', 'sortir', 'sosie', 'sottise', 'soucieux', 'soudure', 'souffle', 'soulever', 'soupape', 'source', 'soutirer', 'souvenir', 'spacieux', 'spatial', 'spécial', 'sphère', 'spiral', 'stable', 'station', 'sternum', 'stimulus', 'stipuler', 'strict', 'studieux', 'stupeur', 'styliste', 'sublime', 'substrat', 'subtil', 'subvenir', 'succès', 'sucre', 'suffixe', 'suggérer', 'suiveur', 'sulfate', 'superbe', 'supplier', 'surface', 'suricate', 'surmener', 'surprise', 'sursaut', 'survie', 'suspect', 'syllabe', 'symbole', 'symétrie', 'synapse', 'syntaxe', 'système', 'tabac', 'tablier', 'tactile', 'tailler', 'talent', 'talisman', 'talonner', 'tambour', 'tamiser', 'tangible', 'tapis', 'taquiner', 'tarder', 'tarif', 'tartine', 'tasse', 'tatami', 'tatouage', 'taupe', 'taureau', 'taxer', 'témoin', 'temporel', 'tenaille', 'tendre', 'teneur', 'tenir', 'tension', 'terminer', 'terne', 'terrible', 'tétine', 'texte', 'thème', 'théorie', 'thérapie', 'thorax', 'tibia', 'tiède', 'timide', 'tirelire', 'tiroir', 'tissu', 'titane', 'titre', 'tituber', 'toboggan', 'tolérant', 'tomate', 'tonique', 'tonneau', 'toponyme', 'torche', 'tordre', 'tornade', 'torpille', 'torrent', 'torse', 'tortue', 'totem', 'toucher', 'tournage', 'tousser', 'toxine', 'traction', 'trafic', 'tragique', 'trahir', 'train', 'trancher', 'travail', 'trèfle', 'tremper', 'trésor', 'treuil', 'triage', 'tribunal', 'tricoter', 'trilogie', 'triomphe', 'tripler', 'triturer', 'trivial', 'trombone', 'tronc', 'tropical', 'troupeau', 'tuile', 'tulipe', 'tumulte', 'tunnel', 'turbine', 'tuteur', 'tutoyer', 'tuyau', 'tympan', 'typhon', 'typique', 'tyran', 'ubuesque', 'ultime', 'ultrason', 'unanime', 'unifier', 'union', 'unique', 'unitaire', 'univers', 'uranium', 'urbain', 'urticant', 'usage', 'usine', 'usuel', 'usure', 'utile', 'utopie', 'vacarme', 'vaccin', 'vagabond', 'vague', 'vaillant', 'vaincre', 'vaisseau', 'valable', 'valise', 'vallon', 'valve', 'vampire', 'vanille', 'vapeur', 'varier', 'vaseux', 'vassal', 'vaste', 'vecteur', 'vedette', 'végétal', 'véhicule', 'veinard', 'véloce', 'vendredi', 'vénérer', 'venger', 'venimeux', 'ventouse', 'verdure', 'vérin', 'vernir', 'verrou', 'verser', 'vertu', 'veston', 'vétéran', 'vétuste', 'vexant', 'vexer', 'viaduc', 'viande', 'victoire', 'vidange', 'vidéo', 'vignette', 'vigueur', 'vilain', 'village', 'vinaigre', 'violon', 'vipère', 'virement', 'virtuose', 'virus', 'visage', 'viseur', 'vision', 'visqueux', 'visuel', 'vital', 'vitesse', 'viticole', 'vitrine', 'vivace', 'vivipare', 'vocation', 'voguer', 'voile', 'voisin', 'voiture', 'volaille', 'volcan', 'voltiger', 'volume', 'vorace', 'vortex', 'voter', 'vouloir', 'voyage', 'voyelle', 'wagon', 'xénon', 'yacht', 'zèbre', 'zénith', 'zeste', 'zoologie'];
 
 module.exports = french;
-},{}],160:[function(require,module,exports){
+},{}],161:[function(require,module,exports){
 module.exports = {
   'CHINESE': require('./chinese'),
   'ENGLISH': require('./english'),
@@ -22800,35 +22840,35 @@ module.exports = {
   'SPANISH': require('./spanish')
 };
 
-},{"./chinese":157,"./english":158,"./french":159,"./italian":161,"./japanese":162,"./korean":163,"./spanish":164}],161:[function(require,module,exports){
+},{"./chinese":158,"./english":159,"./french":160,"./italian":162,"./japanese":163,"./korean":164,"./spanish":165}],162:[function(require,module,exports){
 'use strict';
 
 var italian = ['abaco', 'abbaglio', 'abbinato', 'abete', 'abisso', 'abolire', 'abrasivo', 'abrogato', 'accadere', 'accenno', 'accusato', 'acetone', 'achille', 'acido', 'acqua', 'acre', 'acrilico', 'acrobata', 'acuto', 'adagio', 'addebito', 'addome', 'adeguato', 'aderire', 'adipe', 'adottare', 'adulare', 'affabile', 'affetto', 'affisso', 'affranto', 'aforisma', 'afoso', 'africano', 'agave', 'agente', 'agevole', 'aggancio', 'agire', 'agitare', 'agonismo', 'agricolo', 'agrumeto', 'aguzzo', 'alabarda', 'alato', 'albatro', 'alberato', 'albo', 'albume', 'alce', 'alcolico', 'alettone', 'alfa', 'algebra', 'aliante', 'alibi', 'alimento', 'allagato', 'allegro', 'allievo', 'allodola', 'allusivo', 'almeno', 'alogeno', 'alpaca', 'alpestre', 'altalena', 'alterno', 'alticcio', 'altrove', 'alunno', 'alveolo', 'alzare', 'amalgama', 'amanita', 'amarena', 'ambito', 'ambrato', 'ameba', 'america', 'ametista', 'amico', 'ammasso', 'ammenda', 'ammirare', 'ammonito', 'amore', 'ampio', 'ampliare', 'amuleto', 'anacardo', 'anagrafe', 'analista', 'anarchia', 'anatra', 'anca', 'ancella', 'ancora', 'andare', 'andrea', 'anello', 'angelo', 'angolare', 'angusto', 'anima', 'annegare', 'annidato', 'anno', 'annuncio', 'anonimo', 'anticipo', 'anzi', 'apatico', 'apertura', 'apode', 'apparire', 'appetito', 'appoggio', 'approdo', 'appunto', 'aprile', 'arabica', 'arachide', 'aragosta', 'araldica', 'arancio', 'aratura', 'arazzo', 'arbitro', 'archivio', 'ardito', 'arenile', 'argento', 'argine', 'arguto', 'aria', 'armonia', 'arnese', 'arredato', 'arringa', 'arrosto', 'arsenico', 'arso', 'artefice', 'arzillo', 'asciutto', 'ascolto', 'asepsi', 'asettico', 'asfalto', 'asino', 'asola', 'aspirato', 'aspro', 'assaggio', 'asse', 'assoluto', 'assurdo', 'asta', 'astenuto', 'astice', 'astratto', 'atavico', 'ateismo', 'atomico', 'atono', 'attesa', 'attivare', 'attorno', 'attrito', 'attuale', 'ausilio', 'austria', 'autista', 'autonomo', 'autunno', 'avanzato', 'avere', 'avvenire', 'avviso', 'avvolgere', 'azione', 'azoto', 'azzimo', 'azzurro', 'babele', 'baccano', 'bacino', 'baco', 'badessa', 'badilata', 'bagnato', 'baita', 'balcone', 'baldo', 'balena', 'ballata', 'balzano', 'bambino', 'bandire', 'baraonda', 'barbaro', 'barca', 'baritono', 'barlume', 'barocco', 'basilico', 'basso', 'batosta', 'battuto', 'baule', 'bava', 'bavosa', 'becco', 'beffa', 'belgio', 'belva', 'benda', 'benevole', 'benigno', 'benzina', 'bere', 'berlina', 'beta', 'bibita', 'bici', 'bidone', 'bifido', 'biga', 'bilancia', 'bimbo', 'binocolo', 'biologo', 'bipede', 'bipolare', 'birbante', 'birra', 'biscotto', 'bisesto', 'bisnonno', 'bisonte', 'bisturi', 'bizzarro', 'blando', 'blatta', 'bollito', 'bonifico', 'bordo', 'bosco', 'botanico', 'bottino', 'bozzolo', 'braccio', 'bradipo', 'brama', 'branca', 'bravura', 'bretella', 'brevetto', 'brezza', 'briglia', 'brillante', 'brindare', 'broccolo', 'brodo', 'bronzina', 'brullo', 'bruno', 'bubbone', 'buca', 'budino', 'buffone', 'buio', 'bulbo', 'buono', 'burlone', 'burrasca', 'bussola', 'busta', 'cadetto', 'caduco', 'calamaro', 'calcolo', 'calesse', 'calibro', 'calmo', 'caloria', 'cambusa', 'camerata', 'camicia', 'cammino', 'camola', 'campale', 'canapa', 'candela', 'cane', 'canino', 'canotto', 'cantina', 'capace', 'capello', 'capitolo', 'capogiro', 'cappero', 'capra', 'capsula', 'carapace', 'carcassa', 'cardo', 'carisma', 'carovana', 'carretto', 'cartolina', 'casaccio', 'cascata', 'caserma', 'caso', 'cassone', 'castello', 'casuale', 'catasta', 'catena', 'catrame', 'cauto', 'cavillo', 'cedibile', 'cedrata', 'cefalo', 'celebre', 'cellulare', 'cena', 'cenone', 'centesimo', 'ceramica', 'cercare', 'certo', 'cerume', 'cervello', 'cesoia', 'cespo', 'ceto', 'chela', 'chiaro', 'chicca', 'chiedere', 'chimera', 'china', 'chirurgo', 'chitarra', 'ciao', 'ciclismo', 'cifrare', 'cigno', 'cilindro', 'ciottolo', 'circa', 'cirrosi', 'citrico', 'cittadino', 'ciuffo', 'civetta', 'civile', 'classico', 'clinica', 'cloro', 'cocco', 'codardo', 'codice', 'coerente', 'cognome', 'collare', 'colmato', 'colore', 'colposo', 'coltivato', 'colza', 'coma', 'cometa', 'commando', 'comodo', 'computer', 'comune', 'conciso', 'condurre', 'conferma', 'congelare', 'coniuge', 'connesso', 'conoscere', 'consumo', 'continuo', 'convegno', 'coperto', 'copione', 'coppia', 'copricapo', 'corazza', 'cordata', 'coricato', 'cornice', 'corolla', 'corpo', 'corredo', 'corsia', 'cortese', 'cosmico', 'costante', 'cottura', 'covato', 'cratere', 'cravatta', 'creato', 'credere', 'cremoso', 'crescita', 'creta', 'criceto', 'crinale', 'crisi', 'critico', 'croce', 'cronaca', 'crostata', 'cruciale', 'crusca', 'cucire', 'cuculo', 'cugino', 'cullato', 'cupola', 'curatore', 'cursore', 'curvo', 'cuscino', 'custode', 'dado', 'daino', 'dalmata', 'damerino', 'daniela', 'dannoso', 'danzare', 'datato', 'davanti', 'davvero', 'debutto', 'decennio', 'deciso', 'declino', 'decollo', 'decreto', 'dedicato', 'definito', 'deforme', 'degno', 'delegare', 'delfino', 'delirio', 'delta', 'demenza', 'denotato', 'dentro', 'deposito', 'derapata', 'derivare', 'deroga', 'descritto', 'deserto', 'desiderio', 'desumere', 'detersivo', 'devoto', 'diametro', 'dicembre', 'diedro', 'difeso', 'diffuso', 'digerire', 'digitale', 'diluvio', 'dinamico', 'dinnanzi', 'dipinto', 'diploma', 'dipolo', 'diradare', 'dire', 'dirotto', 'dirupo', 'disagio', 'discreto', 'disfare', 'disgelo', 'disposto', 'distanza', 'disumano', 'dito', 'divano', 'divelto', 'dividere', 'divorato', 'doblone', 'docente', 'doganale', 'dogma', 'dolce', 'domato', 'domenica', 'dominare', 'dondolo', 'dono', 'dormire', 'dote', 'dottore', 'dovuto', 'dozzina', 'drago', 'druido', 'dubbio', 'dubitare', 'ducale', 'duna', 'duomo', 'duplice', 'duraturo', 'ebano', 'eccesso', 'ecco', 'eclissi', 'economia', 'edera', 'edicola', 'edile', 'editoria', 'educare', 'egemonia', 'egli', 'egoismo', 'egregio', 'elaborato', 'elargire', 'elegante', 'elencato', 'eletto', 'elevare', 'elfico', 'elica', 'elmo', 'elsa', 'eluso', 'emanato', 'emblema', 'emesso', 'emiro', 'emotivo', 'emozione', 'empirico', 'emulo', 'endemico', 'enduro', 'energia', 'enfasi', 'enoteca', 'entrare', 'enzima', 'epatite', 'epilogo', 'episodio', 'epocale', 'eppure', 'equatore', 'erario', 'erba', 'erboso', 'erede', 'eremita', 'erigere', 'ermetico', 'eroe', 'erosivo', 'errante', 'esagono', 'esame', 'esanime', 'esaudire', 'esca', 'esempio', 'esercito', 'esibito', 'esigente', 'esistere', 'esito', 'esofago', 'esortato', 'esoso', 'espanso', 'espresso', 'essenza', 'esso', 'esteso', 'estimare', 'estonia', 'estroso', 'esultare', 'etilico', 'etnico', 'etrusco', 'etto', 'euclideo', 'europa', 'evaso', 'evidenza', 'evitato', 'evoluto', 'evviva', 'fabbrica', 'faccenda', 'fachiro', 'falco', 'famiglia', 'fanale', 'fanfara', 'fango', 'fantasma', 'fare', 'farfalla', 'farinoso', 'farmaco', 'fascia', 'fastoso', 'fasullo', 'faticare', 'fato', 'favoloso', 'febbre', 'fecola', 'fede', 'fegato', 'felpa', 'feltro', 'femmina', 'fendere', 'fenomeno', 'fermento', 'ferro', 'fertile', 'fessura', 'festivo', 'fetta', 'feudo', 'fiaba', 'fiducia', 'fifa', 'figurato', 'filo', 'finanza', 'finestra', 'finire', 'fiore', 'fiscale', 'fisico', 'fiume', 'flacone', 'flamenco', 'flebo', 'flemma', 'florido', 'fluente', 'fluoro', 'fobico', 'focaccia', 'focoso', 'foderato', 'foglio', 'folata', 'folclore', 'folgore', 'fondente', 'fonetico', 'fonia', 'fontana', 'forbito', 'forchetta', 'foresta', 'formica', 'fornaio', 'foro', 'fortezza', 'forzare', 'fosfato', 'fosso', 'fracasso', 'frana', 'frassino', 'fratello', 'freccetta', 'frenata', 'fresco', 'frigo', 'frollino', 'fronde', 'frugale', 'frutta', 'fucilata', 'fucsia', 'fuggente', 'fulmine', 'fulvo', 'fumante', 'fumetto', 'fumoso', 'fune', 'funzione', 'fuoco', 'furbo', 'furgone', 'furore', 'fuso', 'futile', 'gabbiano', 'gaffe', 'galateo', 'gallina', 'galoppo', 'gambero', 'gamma', 'garanzia', 'garbo', 'garofano', 'garzone', 'gasdotto', 'gasolio', 'gastrico', 'gatto', 'gaudio', 'gazebo', 'gazzella', 'geco', 'gelatina', 'gelso', 'gemello', 'gemmato', 'gene', 'genitore', 'gennaio', 'genotipo', 'gergo', 'ghepardo', 'ghiaccio', 'ghisa', 'giallo', 'gilda', 'ginepro', 'giocare', 'gioiello', 'giorno', 'giove', 'girato', 'girone', 'gittata', 'giudizio', 'giurato', 'giusto', 'globulo', 'glutine', 'gnomo', 'gobba', 'golf', 'gomito', 'gommone', 'gonfio', 'gonna', 'governo', 'gracile', 'grado', 'grafico', 'grammo', 'grande', 'grattare', 'gravoso', 'grazia', 'greca', 'gregge', 'grifone', 'grigio', 'grinza', 'grotta', 'gruppo', 'guadagno', 'guaio', 'guanto', 'guardare', 'gufo', 'guidare', 'ibernato', 'icona', 'identico', 'idillio', 'idolo', 'idra', 'idrico', 'idrogeno', 'igiene', 'ignaro', 'ignorato', 'ilare', 'illeso', 'illogico', 'illudere', 'imballo', 'imbevuto', 'imbocco', 'imbuto', 'immane', 'immerso', 'immolato', 'impacco', 'impeto', 'impiego', 'importo', 'impronta', 'inalare', 'inarcare', 'inattivo', 'incanto', 'incendio', 'inchino', 'incisivo', 'incluso', 'incontro', 'incrocio', 'incubo', 'indagine', 'india', 'indole', 'inedito', 'infatti', 'infilare', 'inflitto', 'ingaggio', 'ingegno', 'inglese', 'ingordo', 'ingrosso', 'innesco', 'inodore', 'inoltrare', 'inondato', 'insano', 'insetto', 'insieme', 'insonnia', 'insulina', 'intasato', 'intero', 'intonaco', 'intuito', 'inumidire', 'invalido', 'invece', 'invito', 'iperbole', 'ipnotico', 'ipotesi', 'ippica', 'iride', 'irlanda', 'ironico', 'irrigato', 'irrorare', 'isolato', 'isotopo', 'isterico', 'istituto', 'istrice', 'italia', 'iterare', 'labbro', 'labirinto', 'lacca', 'lacerato', 'lacrima', 'lacuna', 'laddove', 'lago', 'lampo', 'lancetta', 'lanterna', 'lardoso', 'larga', 'laringe', 'lastra', 'latenza', 'latino', 'lattuga', 'lavagna', 'lavoro', 'legale', 'leggero', 'lembo', 'lentezza', 'lenza', 'leone', 'lepre', 'lesivo', 'lessato', 'lesto', 'letterale', 'leva', 'levigato', 'libero', 'lido', 'lievito', 'lilla', 'limatura', 'limitare', 'limpido', 'lineare', 'lingua', 'liquido', 'lira', 'lirica', 'lisca', 'lite', 'litigio', 'livrea', 'locanda', 'lode', 'logica', 'lombare', 'londra', 'longevo', 'loquace', 'lorenzo', 'loto', 'lotteria', 'luce', 'lucidato', 'lumaca', 'luminoso', 'lungo', 'lupo', 'luppolo', 'lusinga', 'lusso', 'lutto', 'macabro', 'macchina', 'macero', 'macinato', 'madama', 'magico', 'maglia', 'magnete', 'magro', 'maiolica', 'malafede', 'malgrado', 'malinteso', 'malsano', 'malto', 'malumore', 'mana', 'mancia', 'mandorla', 'mangiare', 'manifesto', 'mannaro', 'manovra', 'mansarda', 'mantide', 'manubrio', 'mappa', 'maratona', 'marcire', 'maretta', 'marmo', 'marsupio', 'maschera', 'massaia', 'mastino', 'materasso', 'matricola', 'mattone', 'maturo', 'mazurca', 'meandro', 'meccanico', 'mecenate', 'medesimo', 'meditare', 'mega', 'melassa', 'melis', 'melodia', 'meninge', 'meno', 'mensola', 'mercurio', 'merenda', 'merlo', 'meschino', 'mese', 'messere', 'mestolo', 'metallo', 'metodo', 'mettere', 'miagolare', 'mica', 'micelio', 'michele', 'microbo', 'midollo', 'miele', 'migliore', 'milano', 'milite', 'mimosa', 'minerale', 'mini', 'minore', 'mirino', 'mirtillo', 'miscela', 'missiva', 'misto', 'misurare', 'mitezza', 'mitigare', 'mitra', 'mittente', 'mnemonico', 'modello', 'modifica', 'modulo', 'mogano', 'mogio', 'mole', 'molosso', 'monastero', 'monco', 'mondina', 'monetario', 'monile', 'monotono', 'monsone', 'montato', 'monviso', 'mora', 'mordere', 'morsicato', 'mostro', 'motivato', 'motosega', 'motto', 'movenza', 'movimento', 'mozzo', 'mucca', 'mucosa', 'muffa', 'mughetto', 'mugnaio', 'mulatto', 'mulinello', 'multiplo', 'mummia', 'munto', 'muovere', 'murale', 'musa', 'muscolo', 'musica', 'mutevole', 'muto', 'nababbo', 'nafta', 'nanometro', 'narciso', 'narice', 'narrato', 'nascere', 'nastrare', 'naturale', 'nautica', 'naviglio', 'nebulosa', 'necrosi', 'negativo', 'negozio', 'nemmeno', 'neofita', 'neretto', 'nervo', 'nessuno', 'nettuno', 'neutrale', 'neve', 'nevrotico', 'nicchia', 'ninfa', 'nitido', 'nobile', 'nocivo', 'nodo', 'nome', 'nomina', 'nordico', 'normale', 'norvegese', 'nostrano', 'notare', 'notizia', 'notturno', 'novella', 'nucleo', 'nulla', 'numero', 'nuovo', 'nutrire', 'nuvola', 'nuziale', 'oasi', 'obbedire', 'obbligo', 'obelisco', 'oblio', 'obolo', 'obsoleto', 'occasione', 'occhio', 'occidente', 'occorrere', 'occultare', 'ocra', 'oculato', 'odierno', 'odorare', 'offerta', 'offrire', 'offuscato', 'oggetto', 'oggi', 'ognuno', 'olandese', 'olfatto', 'oliato', 'oliva', 'ologramma', 'oltre', 'omaggio', 'ombelico', 'ombra', 'omega', 'omissione', 'ondoso', 'onere', 'onice', 'onnivoro', 'onorevole', 'onta', 'operato', 'opinione', 'opposto', 'oracolo', 'orafo', 'ordine', 'orecchino', 'orefice', 'orfano', 'organico', 'origine', 'orizzonte', 'orma', 'ormeggio', 'ornativo', 'orologio', 'orrendo', 'orribile', 'ortensia', 'ortica', 'orzata', 'orzo', 'osare', 'oscurare', 'osmosi', 'ospedale', 'ospite', 'ossa', 'ossidare', 'ostacolo', 'oste', 'otite', 'otre', 'ottagono', 'ottimo', 'ottobre', 'ovale', 'ovest', 'ovino', 'oviparo', 'ovocito', 'ovunque', 'ovviare', 'ozio', 'pacchetto', 'pace', 'pacifico', 'padella', 'padrone', 'paese', 'paga', 'pagina', 'palazzina', 'palesare', 'pallido', 'palo', 'palude', 'pandoro', 'pannello', 'paolo', 'paonazzo', 'paprica', 'parabola', 'parcella', 'parere', 'pargolo', 'pari', 'parlato', 'parola', 'partire', 'parvenza', 'parziale', 'passivo', 'pasticca', 'patacca', 'patologia', 'pattume', 'pavone', 'peccato', 'pedalare', 'pedonale', 'peggio', 'peloso', 'penare', 'pendice', 'penisola', 'pennuto', 'penombra', 'pensare', 'pentola', 'pepe', 'pepita', 'perbene', 'percorso', 'perdonato', 'perforare', 'pergamena', 'periodo', 'permesso', 'perno', 'perplesso', 'persuaso', 'pertugio', 'pervaso', 'pesatore', 'pesista', 'peso', 'pestifero', 'petalo', 'pettine', 'petulante', 'pezzo', 'piacere', 'pianta', 'piattino', 'piccino', 'picozza', 'piega', 'pietra', 'piffero', 'pigiama', 'pigolio', 'pigro', 'pila', 'pilifero', 'pillola', 'pilota', 'pimpante', 'pineta', 'pinna', 'pinolo', 'pioggia', 'piombo', 'piramide', 'piretico', 'pirite', 'pirolisi', 'pitone', 'pizzico', 'placebo', 'planare', 'plasma', 'platano', 'plenario', 'pochezza', 'poderoso', 'podismo', 'poesia', 'poggiare', 'polenta', 'poligono', 'pollice', 'polmonite', 'polpetta', 'polso', 'poltrona', 'polvere', 'pomice', 'pomodoro', 'ponte', 'popoloso', 'porfido', 'poroso', 'porpora', 'porre', 'portata', 'posa', 'positivo', 'possesso', 'postulato', 'potassio', 'potere', 'pranzo', 'prassi', 'pratica', 'precluso', 'predica', 'prefisso', 'pregiato', 'prelievo', 'premere', 'prenotare', 'preparato', 'presenza', 'pretesto', 'prevalso', 'prima', 'principe', 'privato', 'problema', 'procura', 'produrre', 'profumo', 'progetto', 'prolunga', 'promessa', 'pronome', 'proposta', 'proroga', 'proteso', 'prova', 'prudente', 'prugna', 'prurito', 'psiche', 'pubblico', 'pudica', 'pugilato', 'pugno', 'pulce', 'pulito', 'pulsante', 'puntare', 'pupazzo', 'pupilla', 'puro', 'quadro', 'qualcosa', 'quasi', 'querela', 'quota', 'raccolto', 'raddoppio', 'radicale', 'radunato', 'raffica', 'ragazzo', 'ragione', 'ragno', 'ramarro', 'ramingo', 'ramo', 'randagio', 'rantolare', 'rapato', 'rapina', 'rappreso', 'rasatura', 'raschiato', 'rasente', 'rassegna', 'rastrello', 'rata', 'ravveduto', 'reale', 'recepire', 'recinto', 'recluta', 'recondito', 'recupero', 'reddito', 'redimere', 'regalato', 'registro', 'regola', 'regresso', 'relazione', 'remare', 'remoto', 'renna', 'replica', 'reprimere', 'reputare', 'resa', 'residente', 'responso', 'restauro', 'rete', 'retina', 'retorica', 'rettifica', 'revocato', 'riassunto', 'ribadire', 'ribelle', 'ribrezzo', 'ricarica', 'ricco', 'ricevere', 'riciclato', 'ricordo', 'ricreduto', 'ridicolo', 'ridurre', 'rifasare', 'riflesso', 'riforma', 'rifugio', 'rigare', 'rigettato', 'righello', 'rilassato', 'rilevato', 'rimanere', 'rimbalzo', 'rimedio', 'rimorchio', 'rinascita', 'rincaro', 'rinforzo', 'rinnovo', 'rinomato', 'rinsavito', 'rintocco', 'rinuncia', 'rinvenire', 'riparato', 'ripetuto', 'ripieno', 'riportare', 'ripresa', 'ripulire', 'risata', 'rischio', 'riserva', 'risibile', 'riso', 'rispetto', 'ristoro', 'risultato', 'risvolto', 'ritardo', 'ritegno', 'ritmico', 'ritrovo', 'riunione', 'riva', 'riverso', 'rivincita', 'rivolto', 'rizoma', 'roba', 'robotico', 'robusto', 'roccia', 'roco', 'rodaggio', 'rodere', 'roditore', 'rogito', 'rollio', 'romantico', 'rompere', 'ronzio', 'rosolare', 'rospo', 'rotante', 'rotondo', 'rotula', 'rovescio', 'rubizzo', 'rubrica', 'ruga', 'rullino', 'rumine', 'rumoroso', 'ruolo', 'rupe', 'russare', 'rustico', 'sabato', 'sabbiare', 'sabotato', 'sagoma', 'salasso', 'saldatura', 'salgemma', 'salivare', 'salmone', 'salone', 'saltare', 'saluto', 'salvo', 'sapere', 'sapido', 'saporito', 'saraceno', 'sarcasmo', 'sarto', 'sassoso', 'satellite', 'satira', 'satollo', 'saturno', 'savana', 'savio', 'saziato', 'sbadiglio', 'sbalzo', 'sbancato', 'sbarra', 'sbattere', 'sbavare', 'sbendare', 'sbirciare', 'sbloccato', 'sbocciato', 'sbrinare', 'sbruffone', 'sbuffare', 'scabroso', 'scadenza', 'scala', 'scambiare', 'scandalo', 'scapola', 'scarso', 'scatenare', 'scavato', 'scelto', 'scenico', 'scettro', 'scheda', 'schiena', 'sciarpa', 'scienza', 'scindere', 'scippo', 'sciroppo', 'scivolo', 'sclerare', 'scodella', 'scolpito', 'scomparto', 'sconforto', 'scoprire', 'scorta', 'scossone', 'scozzese', 'scriba', 'scrollare', 'scrutinio', 'scuderia', 'scultore', 'scuola', 'scuro', 'scusare', 'sdebitare', 'sdoganare', 'seccatura', 'secondo', 'sedano', 'seggiola', 'segnalato', 'segregato', 'seguito', 'selciato', 'selettivo', 'sella', 'selvaggio', 'semaforo', 'sembrare', 'seme', 'seminato', 'sempre', 'senso', 'sentire', 'sepolto', 'sequenza', 'serata', 'serbato', 'sereno', 'serio', 'serpente', 'serraglio', 'servire', 'sestina', 'setola', 'settimana', 'sfacelo', 'sfaldare', 'sfamato', 'sfarzoso', 'sfaticato', 'sfera', 'sfida', 'sfilato', 'sfinge', 'sfocato', 'sfoderare', 'sfogo', 'sfoltire', 'sforzato', 'sfratto', 'sfruttato', 'sfuggito', 'sfumare', 'sfuso', 'sgabello', 'sgarbato', 'sgonfiare', 'sgorbio', 'sgrassato', 'sguardo', 'sibilo', 'siccome', 'sierra', 'sigla', 'signore', 'silenzio', 'sillaba', 'simbolo', 'simpatico', 'simulato', 'sinfonia', 'singolo', 'sinistro', 'sino', 'sintesi', 'sinusoide', 'sipario', 'sisma', 'sistole', 'situato', 'slitta', 'slogatura', 'sloveno', 'smarrito', 'smemorato', 'smentito', 'smeraldo', 'smilzo', 'smontare', 'smottato', 'smussato', 'snellire', 'snervato', 'snodo', 'sobbalzo', 'sobrio', 'soccorso', 'sociale', 'sodale', 'soffitto', 'sogno', 'soldato', 'solenne', 'solido', 'sollazzo', 'solo', 'solubile', 'solvente', 'somatico', 'somma', 'sonda', 'sonetto', 'sonnifero', 'sopire', 'soppeso', 'sopra', 'sorgere', 'sorpasso', 'sorriso', 'sorso', 'sorteggio', 'sorvolato', 'sospiro', 'sosta', 'sottile', 'spada', 'spalla', 'spargere', 'spatola', 'spavento', 'spazzola', 'specie', 'spedire', 'spegnere', 'spelatura', 'speranza', 'spessore', 'spettrale', 'spezzato', 'spia', 'spigoloso', 'spillato', 'spinoso', 'spirale', 'splendido', 'sportivo', 'sposo', 'spranga', 'sprecare', 'spronato', 'spruzzo', 'spuntino', 'squillo', 'sradicare', 'srotolato', 'stabile', 'stacco', 'staffa', 'stagnare', 'stampato', 'stantio', 'starnuto', 'stasera', 'statuto', 'stelo', 'steppa', 'sterzo', 'stiletto', 'stima', 'stirpe', 'stivale', 'stizzoso', 'stonato', 'storico', 'strappo', 'stregato', 'stridulo', 'strozzare', 'strutto', 'stuccare', 'stufo', 'stupendo', 'subentro', 'succoso', 'sudore', 'suggerito', 'sugo', 'sultano', 'suonare', 'superbo', 'supporto', 'surgelato', 'surrogato', 'sussurro', 'sutura', 'svagare', 'svedese', 'sveglio', 'svelare', 'svenuto', 'svezia', 'sviluppo', 'svista', 'svizzera', 'svolta', 'svuotare', 'tabacco', 'tabulato', 'tacciare', 'taciturno', 'tale', 'talismano', 'tampone', 'tannino', 'tara', 'tardivo', 'targato', 'tariffa', 'tarpare', 'tartaruga', 'tasto', 'tattico', 'taverna', 'tavolata', 'tazza', 'teca', 'tecnico', 'telefono', 'temerario', 'tempo', 'temuto', 'tendone', 'tenero', 'tensione', 'tentacolo', 'teorema', 'terme', 'terrazzo', 'terzetto', 'tesi', 'tesserato', 'testato', 'tetro', 'tettoia', 'tifare', 'tigella', 'timbro', 'tinto', 'tipico', 'tipografo', 'tiraggio', 'tiro', 'titanio', 'titolo', 'titubante', 'tizio', 'tizzone', 'toccare', 'tollerare', 'tolto', 'tombola', 'tomo', 'tonfo', 'tonsilla', 'topazio', 'topologia', 'toppa', 'torba', 'tornare', 'torrone', 'tortora', 'toscano', 'tossire', 'tostatura', 'totano', 'trabocco', 'trachea', 'trafila', 'tragedia', 'tralcio', 'tramonto', 'transito', 'trapano', 'trarre', 'trasloco', 'trattato', 'trave', 'treccia', 'tremolio', 'trespolo', 'tributo', 'tricheco', 'trifoglio', 'trillo', 'trincea', 'trio', 'tristezza', 'triturato', 'trivella', 'tromba', 'trono', 'troppo', 'trottola', 'trovare', 'truccato', 'tubatura', 'tuffato', 'tulipano', 'tumulto', 'tunisia', 'turbare', 'turchino', 'tuta', 'tutela', 'ubicato', 'uccello', 'uccisore', 'udire', 'uditivo', 'uffa', 'ufficio', 'uguale', 'ulisse', 'ultimato', 'umano', 'umile', 'umorismo', 'uncinetto', 'ungere', 'ungherese', 'unicorno', 'unificato', 'unisono', 'unitario', 'unte', 'uovo', 'upupa', 'uragano', 'urgenza', 'urlo', 'usanza', 'usato', 'uscito', 'usignolo', 'usuraio', 'utensile', 'utilizzo', 'utopia', 'vacante', 'vaccinato', 'vagabondo', 'vagliato', 'valanga', 'valgo', 'valico', 'valletta', 'valoroso', 'valutare', 'valvola', 'vampata', 'vangare', 'vanitoso', 'vano', 'vantaggio', 'vanvera', 'vapore', 'varano', 'varcato', 'variante', 'vasca', 'vedetta', 'vedova', 'veduto', 'vegetale', 'veicolo', 'velcro', 'velina', 'velluto', 'veloce', 'venato', 'vendemmia', 'vento', 'verace', 'verbale', 'vergogna', 'verifica', 'vero', 'verruca', 'verticale', 'vescica', 'vessillo', 'vestale', 'veterano', 'vetrina', 'vetusto', 'viandante', 'vibrante', 'vicenda', 'vichingo', 'vicinanza', 'vidimare', 'vigilia', 'vigneto', 'vigore', 'vile', 'villano', 'vimini', 'vincitore', 'viola', 'vipera', 'virgola', 'virologo', 'virulento', 'viscoso', 'visione', 'vispo', 'vissuto', 'visura', 'vita', 'vitello', 'vittima', 'vivanda', 'vivido', 'viziare', 'voce', 'voga', 'volatile', 'volere', 'volpe', 'voragine', 'vulcano', 'zampogna', 'zanna', 'zappato', 'zattera', 'zavorra', 'zefiro', 'zelante', 'zelo', 'zenzero', 'zerbino', 'zibetto', 'zinco', 'zircone', 'zitto', 'zolla', 'zotico', 'zucchero', 'zufolo', 'zulu', 'zuppa'];
 
 module.exports = italian;
 
-},{}],162:[function(require,module,exports){
+},{}],163:[function(require,module,exports){
 'use strict';
 
 var japanese = ['あいこくしん', 'あいさつ', 'あいだ', 'あおぞら', 'あかちゃん', 'あきる', 'あけがた', 'あける', 'あこがれる', 'あさい', 'あさひ', 'あしあと', 'あじわう', 'あずかる', 'あずき', 'あそぶ', 'あたえる', 'あたためる', 'あたりまえ', 'あたる', 'あつい', 'あつかう', 'あっしゅく', 'あつまり', 'あつめる', 'あてな', 'あてはまる', 'あひる', 'あぶら', 'あぶる', 'あふれる', 'あまい', 'あまど', 'あまやかす', 'あまり', 'あみもの', 'あめりか', 'あやまる', 'あゆむ', 'あらいぐま', 'あらし', 'あらすじ', 'あらためる', 'あらゆる', 'あらわす', 'ありがとう', 'あわせる', 'あわてる', 'あんい', 'あんがい', 'あんこ', 'あんぜん', 'あんてい', 'あんない', 'あんまり', 'いいだす', 'いおん', 'いがい', 'いがく', 'いきおい', 'いきなり', 'いきもの', 'いきる', 'いくじ', 'いくぶん', 'いけばな', 'いけん', 'いこう', 'いこく', 'いこつ', 'いさましい', 'いさん', 'いしき', 'いじゅう', 'いじょう', 'いじわる', 'いずみ', 'いずれ', 'いせい', 'いせえび', 'いせかい', 'いせき', 'いぜん', 'いそうろう', 'いそがしい', 'いだい', 'いだく', 'いたずら', 'いたみ', 'いたりあ', 'いちおう', 'いちじ', 'いちど', 'いちば', 'いちぶ', 'いちりゅう', 'いつか', 'いっしゅん', 'いっせい', 'いっそう', 'いったん', 'いっち', 'いってい', 'いっぽう', 'いてざ', 'いてん', 'いどう', 'いとこ', 'いない', 'いなか', 'いねむり', 'いのち', 'いのる', 'いはつ', 'いばる', 'いはん', 'いびき', 'いひん', 'いふく', 'いへん', 'いほう', 'いみん', 'いもうと', 'いもたれ', 'いもり', 'いやがる', 'いやす', 'いよかん', 'いよく', 'いらい', 'いらすと', 'いりぐち', 'いりょう', 'いれい', 'いれもの', 'いれる', 'いろえんぴつ', 'いわい', 'いわう', 'いわかん', 'いわば', 'いわゆる', 'いんげんまめ', 'いんさつ', 'いんしょう', 'いんよう', 'うえき', 'うえる', 'うおざ', 'うがい', 'うかぶ', 'うかべる', 'うきわ', 'うくらいな', 'うくれれ', 'うけたまわる', 'うけつけ', 'うけとる', 'うけもつ', 'うける', 'うごかす', 'うごく', 'うこん', 'うさぎ', 'うしなう', 'うしろがみ', 'うすい', 'うすぎ', 'うすぐらい', 'うすめる', 'うせつ', 'うちあわせ', 'うちがわ', 'うちき', 'うちゅう', 'うっかり', 'うつくしい', 'うったえる', 'うつる', 'うどん', 'うなぎ', 'うなじ', 'うなずく', 'うなる', 'うねる', 'うのう', 'うぶげ', 'うぶごえ', 'うまれる', 'うめる', 'うもう', 'うやまう', 'うよく', 'うらがえす', 'うらぐち', 'うらない', 'うりあげ', 'うりきれ', 'うるさい', 'うれしい', 'うれゆき', 'うれる', 'うろこ', 'うわき', 'うわさ', 'うんこう', 'うんちん', 'うんてん', 'うんどう', 'えいえん', 'えいが', 'えいきょう', 'えいご', 'えいせい', 'えいぶん', 'えいよう', 'えいわ', 'えおり', 'えがお', 'えがく', 'えきたい', 'えくせる', 'えしゃく', 'えすて', 'えつらん', 'えのぐ', 'えほうまき', 'えほん', 'えまき', 'えもじ', 'えもの', 'えらい', 'えらぶ', 'えりあ', 'えんえん', 'えんかい', 'えんぎ', 'えんげき', 'えんしゅう', 'えんぜつ', 'えんそく', 'えんちょう', 'えんとつ', 'おいかける', 'おいこす', 'おいしい', 'おいつく', 'おうえん', 'おうさま', 'おうじ', 'おうせつ', 'おうたい', 'おうふく', 'おうべい', 'おうよう', 'おえる', 'おおい', 'おおう', 'おおどおり', 'おおや', 'おおよそ', 'おかえり', 'おかず', 'おがむ', 'おかわり', 'おぎなう', 'おきる', 'おくさま', 'おくじょう', 'おくりがな', 'おくる', 'おくれる', 'おこす', 'おこなう', 'おこる', 'おさえる', 'おさない', 'おさめる', 'おしいれ', 'おしえる', 'おじぎ', 'おじさん', 'おしゃれ', 'おそらく', 'おそわる', 'おたがい', 'おたく', 'おだやか', 'おちつく', 'おっと', 'おつり', 'おでかけ', 'おとしもの', 'おとなしい', 'おどり', 'おどろかす', 'おばさん', 'おまいり', 'おめでとう', 'おもいで', 'おもう', 'おもたい', 'おもちゃ', 'おやつ', 'おやゆび', 'およぼす', 'おらんだ', 'おろす', 'おんがく', 'おんけい', 'おんしゃ', 'おんせん', 'おんだん', 'おんちゅう', 'おんどけい', 'かあつ', 'かいが', 'がいき', 'がいけん', 'がいこう', 'かいさつ', 'かいしゃ', 'かいすいよく', 'かいぜん', 'かいぞうど', 'かいつう', 'かいてん', 'かいとう', 'かいふく', 'がいへき', 'かいほう', 'かいよう', 'がいらい', 'かいわ', 'かえる', 'かおり', 'かかえる', 'かがく', 'かがし', 'かがみ', 'かくご', 'かくとく', 'かざる', 'がぞう', 'かたい', 'かたち', 'がちょう', 'がっきゅう', 'がっこう', 'がっさん', 'がっしょう', 'かなざわし', 'かのう', 'がはく', 'かぶか', 'かほう', 'かほご', 'かまう', 'かまぼこ', 'かめれおん', 'かゆい', 'かようび', 'からい', 'かるい', 'かろう', 'かわく', 'かわら', 'がんか', 'かんけい', 'かんこう', 'かんしゃ', 'かんそう', 'かんたん', 'かんち', 'がんばる', 'きあい', 'きあつ', 'きいろ', 'ぎいん', 'きうい', 'きうん', 'きえる', 'きおう', 'きおく', 'きおち', 'きおん', 'きかい', 'きかく', 'きかんしゃ', 'ききて', 'きくばり', 'きくらげ', 'きけんせい', 'きこう', 'きこえる', 'きこく', 'きさい', 'きさく', 'きさま', 'きさらぎ', 'ぎじかがく', 'ぎしき', 'ぎじたいけん', 'ぎじにってい', 'ぎじゅつしゃ', 'きすう', 'きせい', 'きせき', 'きせつ', 'きそう', 'きぞく', 'きぞん', 'きたえる', 'きちょう', 'きつえん', 'ぎっちり', 'きつつき', 'きつね', 'きてい', 'きどう', 'きどく', 'きない', 'きなが', 'きなこ', 'きぬごし', 'きねん', 'きのう', 'きのした', 'きはく', 'きびしい', 'きひん', 'きふく', 'きぶん', 'きぼう', 'きほん', 'きまる', 'きみつ', 'きむずかしい', 'きめる', 'きもだめし', 'きもち', 'きもの', 'きゃく', 'きやく', 'ぎゅうにく', 'きよう', 'きょうりゅう', 'きらい', 'きらく', 'きりん', 'きれい', 'きれつ', 'きろく', 'ぎろん', 'きわめる', 'ぎんいろ', 'きんかくじ', 'きんじょ', 'きんようび', 'ぐあい', 'くいず', 'くうかん', 'くうき', 'くうぐん', 'くうこう', 'ぐうせい', 'くうそう', 'ぐうたら', 'くうふく', 'くうぼ', 'くかん', 'くきょう', 'くげん', 'ぐこう', 'くさい', 'くさき', 'くさばな', 'くさる', 'くしゃみ', 'くしょう', 'くすのき', 'くすりゆび', 'くせげ', 'くせん', 'ぐたいてき', 'くださる', 'くたびれる', 'くちこみ', 'くちさき', 'くつした', 'ぐっすり', 'くつろぐ', 'くとうてん', 'くどく', 'くなん', 'くねくね', 'くのう', 'くふう', 'くみあわせ', 'くみたてる', 'くめる', 'くやくしょ', 'くらす', 'くらべる', 'くるま', 'くれる', 'くろう', 'くわしい', 'ぐんかん', 'ぐんしょく', 'ぐんたい', 'ぐんて', 'けあな', 'けいかく', 'けいけん', 'けいこ', 'けいさつ', 'げいじゅつ', 'けいたい', 'げいのうじん', 'けいれき', 'けいろ', 'けおとす', 'けおりもの', 'げきか', 'げきげん', 'げきだん', 'げきちん', 'げきとつ', 'げきは', 'げきやく', 'げこう', 'げこくじょう', 'げざい', 'けさき', 'げざん', 'けしき', 'けしごむ', 'けしょう', 'げすと', 'けたば', 'けちゃっぷ', 'けちらす', 'けつあつ', 'けつい', 'けつえき', 'けっこん', 'けつじょ', 'けっせき', 'けってい', 'けつまつ', 'げつようび', 'げつれい', 'けつろん', 'げどく', 'けとばす', 'けとる', 'けなげ', 'けなす', 'けなみ', 'けぬき', 'げねつ', 'けねん', 'けはい', 'げひん', 'けぶかい', 'げぼく', 'けまり', 'けみかる', 'けむし', 'けむり', 'けもの', 'けらい', 'けろけろ', 'けわしい', 'けんい', 'けんえつ', 'けんお', 'けんか', 'げんき', 'けんげん', 'けんこう', 'けんさく', 'けんしゅう', 'けんすう', 'げんそう', 'けんちく', 'けんてい', 'けんとう', 'けんない', 'けんにん', 'げんぶつ', 'けんま', 'けんみん', 'けんめい', 'けんらん', 'けんり', 'こあくま', 'こいぬ', 'こいびと', 'ごうい', 'こうえん', 'こうおん', 'こうかん', 'ごうきゅう', 'ごうけい', 'こうこう', 'こうさい', 'こうじ', 'こうすい', 'ごうせい', 'こうそく', 'こうたい', 'こうちゃ', 'こうつう', 'こうてい', 'こうどう', 'こうない', 'こうはい', 'ごうほう', 'ごうまん', 'こうもく', 'こうりつ', 'こえる', 'こおり', 'ごかい', 'ごがつ', 'ごかん', 'こくご', 'こくさい', 'こくとう', 'こくない', 'こくはく', 'こぐま', 'こけい', 'こける', 'ここのか', 'こころ', 'こさめ', 'こしつ', 'こすう', 'こせい', 'こせき', 'こぜん', 'こそだて', 'こたい', 'こたえる', 'こたつ', 'こちょう', 'こっか', 'こつこつ', 'こつばん', 'こつぶ', 'こてい', 'こてん', 'ことがら', 'ことし', 'ことば', 'ことり', 'こなごな', 'こねこね', 'このまま', 'このみ', 'このよ', 'ごはん', 'こひつじ', 'こふう', 'こふん', 'こぼれる', 'ごまあぶら', 'こまかい', 'ごますり', 'こまつな', 'こまる', 'こむぎこ', 'こもじ', 'こもち', 'こもの', 'こもん', 'こやく', 'こやま', 'こゆう', 'こゆび', 'こよい', 'こよう', 'こりる', 'これくしょん', 'ころっけ', 'こわもて', 'こわれる', 'こんいん', 'こんかい', 'こんき', 'こんしゅう', 'こんすい', 'こんだて', 'こんとん', 'こんなん', 'こんびに', 'こんぽん', 'こんまけ', 'こんや', 'こんれい', 'こんわく', 'ざいえき', 'さいかい', 'さいきん', 'ざいげん', 'ざいこ', 'さいしょ', 'さいせい', 'ざいたく', 'ざいちゅう', 'さいてき', 'ざいりょう', 'さうな', 'さかいし', 'さがす', 'さかな', 'さかみち', 'さがる', 'さぎょう', 'さくし', 'さくひん', 'さくら', 'さこく', 'さこつ', 'さずかる', 'ざせき', 'さたん', 'さつえい', 'ざつおん', 'ざっか', 'ざつがく', 'さっきょく', 'ざっし', 'さつじん', 'ざっそう', 'さつたば', 'さつまいも', 'さてい', 'さといも', 'さとう', 'さとおや', 'さとし', 'さとる', 'さのう', 'さばく', 'さびしい', 'さべつ', 'さほう', 'さほど', 'さます', 'さみしい', 'さみだれ', 'さむけ', 'さめる', 'さやえんどう', 'さゆう', 'さよう', 'さよく', 'さらだ', 'ざるそば', 'さわやか', 'さわる', 'さんいん', 'さんか', 'さんきゃく', 'さんこう', 'さんさい', 'ざんしょ', 'さんすう', 'さんせい', 'さんそ', 'さんち', 'さんま', 'さんみ', 'さんらん', 'しあい', 'しあげ', 'しあさって', 'しあわせ', 'しいく', 'しいん', 'しうち', 'しえい', 'しおけ', 'しかい', 'しかく', 'じかん', 'しごと', 'しすう', 'じだい', 'したうけ', 'したぎ', 'したて', 'したみ', 'しちょう', 'しちりん', 'しっかり', 'しつじ', 'しつもん', 'してい', 'してき', 'してつ', 'じてん', 'じどう', 'しなぎれ', 'しなもの', 'しなん', 'しねま', 'しねん', 'しのぐ', 'しのぶ', 'しはい', 'しばかり', 'しはつ', 'しはらい', 'しはん', 'しひょう', 'しふく', 'じぶん', 'しへい', 'しほう', 'しほん', 'しまう', 'しまる', 'しみん', 'しむける', 'じむしょ', 'しめい', 'しめる', 'しもん', 'しゃいん', 'しゃうん', 'しゃおん', 'じゃがいも', 'しやくしょ', 'しゃくほう', 'しゃけん', 'しゃこ', 'しゃざい', 'しゃしん', 'しゃせん', 'しゃそう', 'しゃたい', 'しゃちょう', 'しゃっきん', 'じゃま', 'しゃりん', 'しゃれい', 'じゆう', 'じゅうしょ', 'しゅくはく', 'じゅしん', 'しゅっせき', 'しゅみ', 'しゅらば', 'じゅんばん', 'しょうかい', 'しょくたく', 'しょっけん', 'しょどう', 'しょもつ', 'しらせる', 'しらべる', 'しんか', 'しんこう', 'じんじゃ', 'しんせいじ', 'しんちく', 'しんりん', 'すあげ', 'すあし', 'すあな', 'ずあん', 'すいえい', 'すいか', 'すいとう', 'ずいぶん', 'すいようび', 'すうがく', 'すうじつ', 'すうせん', 'すおどり', 'すきま', 'すくう', 'すくない', 'すける', 'すごい', 'すこし', 'ずさん', 'すずしい', 'すすむ', 'すすめる', 'すっかり', 'ずっしり', 'ずっと', 'すてき', 'すてる', 'すねる', 'すのこ', 'すはだ', 'すばらしい', 'ずひょう', 'ずぶぬれ', 'すぶり', 'すふれ', 'すべて', 'すべる', 'ずほう', 'すぼん', 'すまい', 'すめし', 'すもう', 'すやき', 'すらすら', 'するめ', 'すれちがう', 'すろっと', 'すわる', 'すんぜん', 'すんぽう', 'せあぶら', 'せいかつ', 'せいげん', 'せいじ', 'せいよう', 'せおう', 'せかいかん', 'せきにん', 'せきむ', 'せきゆ', 'せきらんうん', 'せけん', 'せこう', 'せすじ', 'せたい', 'せたけ', 'せっかく', 'せっきゃく', 'ぜっく', 'せっけん', 'せっこつ', 'せっさたくま', 'せつぞく', 'せつだん', 'せつでん', 'せっぱん', 'せつび', 'せつぶん', 'せつめい', 'せつりつ', 'せなか', 'せのび', 'せはば', 'せびろ', 'せぼね', 'せまい', 'せまる', 'せめる', 'せもたれ', 'せりふ', 'ぜんあく', 'せんい', 'せんえい', 'せんか', 'せんきょ', 'せんく', 'せんげん', 'ぜんご', 'せんさい', 'せんしゅ', 'せんすい', 'せんせい', 'せんぞ', 'せんたく', 'せんちょう', 'せんてい', 'せんとう', 'せんぬき', 'せんねん', 'せんぱい', 'ぜんぶ', 'ぜんぽう', 'せんむ', 'せんめんじょ', 'せんもん', 'せんやく', 'せんゆう', 'せんよう', 'ぜんら', 'ぜんりゃく', 'せんれい', 'せんろ', 'そあく', 'そいとげる', 'そいね', 'そうがんきょう', 'そうき', 'そうご', 'そうしん', 'そうだん', 'そうなん', 'そうび', 'そうめん', 'そうり', 'そえもの', 'そえん', 'そがい', 'そげき', 'そこう', 'そこそこ', 'そざい', 'そしな', 'そせい', 'そせん', 'そそぐ', 'そだてる', 'そつう', 'そつえん', 'そっかん', 'そつぎょう', 'そっけつ', 'そっこう', 'そっせん', 'そっと', 'そとがわ', 'そとづら', 'そなえる', 'そなた', 'そふぼ', 'そぼく', 'そぼろ', 'そまつ', 'そまる', 'そむく', 'そむりえ', 'そめる', 'そもそも', 'そよかぜ', 'そらまめ', 'そろう', 'そんかい', 'そんけい', 'そんざい', 'そんしつ', 'そんぞく', 'そんちょう', 'ぞんび', 'ぞんぶん', 'そんみん', 'たあい', 'たいいん', 'たいうん', 'たいえき', 'たいおう', 'だいがく', 'たいき', 'たいぐう', 'たいけん', 'たいこ', 'たいざい', 'だいじょうぶ', 'だいすき', 'たいせつ', 'たいそう', 'だいたい', 'たいちょう', 'たいてい', 'だいどころ', 'たいない', 'たいねつ', 'たいのう', 'たいはん', 'だいひょう', 'たいふう', 'たいへん', 'たいほ', 'たいまつばな', 'たいみんぐ', 'たいむ', 'たいめん', 'たいやき', 'たいよう', 'たいら', 'たいりょく', 'たいる', 'たいわん', 'たうえ', 'たえる', 'たおす', 'たおる', 'たおれる', 'たかい', 'たかね', 'たきび', 'たくさん', 'たこく', 'たこやき', 'たさい', 'たしざん', 'だじゃれ', 'たすける', 'たずさわる', 'たそがれ', 'たたかう', 'たたく', 'ただしい', 'たたみ', 'たちばな', 'だっかい', 'だっきゃく', 'だっこ', 'だっしゅつ', 'だったい', 'たてる', 'たとえる', 'たなばた', 'たにん', 'たぬき', 'たのしみ', 'たはつ', 'たぶん', 'たべる', 'たぼう', 'たまご', 'たまる', 'だむる', 'ためいき', 'ためす', 'ためる', 'たもつ', 'たやすい', 'たよる', 'たらす', 'たりきほんがん', 'たりょう', 'たりる', 'たると', 'たれる', 'たれんと', 'たろっと', 'たわむれる', 'だんあつ', 'たんい', 'たんおん', 'たんか', 'たんき', 'たんけん', 'たんご', 'たんさん', 'たんじょうび', 'だんせい', 'たんそく', 'たんたい', 'だんち', 'たんてい', 'たんとう', 'だんな', 'たんにん', 'だんねつ', 'たんのう', 'たんぴん', 'だんぼう', 'たんまつ', 'たんめい', 'だんれつ', 'だんろ', 'だんわ', 'ちあい', 'ちあん', 'ちいき', 'ちいさい', 'ちえん', 'ちかい', 'ちから', 'ちきゅう', 'ちきん', 'ちけいず', 'ちけん', 'ちこく', 'ちさい', 'ちしき', 'ちしりょう', 'ちせい', 'ちそう', 'ちたい', 'ちたん', 'ちちおや', 'ちつじょ', 'ちてき', 'ちてん', 'ちぬき', 'ちぬり', 'ちのう', 'ちひょう', 'ちへいせん', 'ちほう', 'ちまた', 'ちみつ', 'ちみどろ', 'ちめいど', 'ちゃんこなべ', 'ちゅうい', 'ちゆりょく', 'ちょうし', 'ちょさくけん', 'ちらし', 'ちらみ', 'ちりがみ', 'ちりょう', 'ちるど', 'ちわわ', 'ちんたい', 'ちんもく', 'ついか', 'ついたち', 'つうか', 'つうじょう', 'つうはん', 'つうわ', 'つかう', 'つかれる', 'つくね', 'つくる', 'つけね', 'つける', 'つごう', 'つたえる', 'つづく', 'つつじ', 'つつむ', 'つとめる', 'つながる', 'つなみ', 'つねづね', 'つのる', 'つぶす', 'つまらない', 'つまる', 'つみき', 'つめたい', 'つもり', 'つもる', 'つよい', 'つるぼ', 'つるみく', 'つわもの', 'つわり', 'てあし', 'てあて', 'てあみ', 'ていおん', 'ていか', 'ていき', 'ていけい', 'ていこく', 'ていさつ', 'ていし', 'ていせい', 'ていたい', 'ていど', 'ていねい', 'ていひょう', 'ていへん', 'ていぼう', 'てうち', 'ておくれ', 'てきとう', 'てくび', 'でこぼこ', 'てさぎょう', 'てさげ', 'てすり', 'てそう', 'てちがい', 'てちょう', 'てつがく', 'てつづき', 'でっぱ', 'てつぼう', 'てつや', 'でぬかえ', 'てぬき', 'てぬぐい', 'てのひら', 'てはい', 'てぶくろ', 'てふだ', 'てほどき', 'てほん', 'てまえ', 'てまきずし', 'てみじか', 'てみやげ', 'てらす', 'てれび', 'てわけ', 'てわたし', 'でんあつ', 'てんいん', 'てんかい', 'てんき', 'てんぐ', 'てんけん', 'てんごく', 'てんさい', 'てんし', 'てんすう', 'でんち', 'てんてき', 'てんとう', 'てんない', 'てんぷら', 'てんぼうだい', 'てんめつ', 'てんらんかい', 'でんりょく', 'でんわ', 'どあい', 'といれ', 'どうかん', 'とうきゅう', 'どうぐ', 'とうし', 'とうむぎ', 'とおい', 'とおか', 'とおく', 'とおす', 'とおる', 'とかい', 'とかす', 'ときおり', 'ときどき', 'とくい', 'とくしゅう', 'とくてん', 'とくに', 'とくべつ', 'とけい', 'とける', 'とこや', 'とさか', 'としょかん', 'とそう', 'とたん', 'とちゅう', 'とっきゅう', 'とっくん', 'とつぜん', 'とつにゅう', 'とどける', 'ととのえる', 'とない', 'となえる', 'となり', 'とのさま', 'とばす', 'どぶがわ', 'とほう', 'とまる', 'とめる', 'ともだち', 'ともる', 'どようび', 'とらえる', 'とんかつ', 'どんぶり', 'ないかく', 'ないこう', 'ないしょ', 'ないす', 'ないせん', 'ないそう', 'なおす', 'ながい', 'なくす', 'なげる', 'なこうど', 'なさけ', 'なたでここ', 'なっとう', 'なつやすみ', 'ななおし', 'なにごと', 'なにもの', 'なにわ', 'なのか', 'なふだ', 'なまいき', 'なまえ', 'なまみ', 'なみだ', 'なめらか', 'なめる', 'なやむ', 'ならう', 'ならび', 'ならぶ', 'なれる', 'なわとび', 'なわばり', 'にあう', 'にいがた', 'にうけ', 'におい', 'にかい', 'にがて', 'にきび', 'にくしみ', 'にくまん', 'にげる', 'にさんかたんそ', 'にしき', 'にせもの', 'にちじょう', 'にちようび', 'にっか', 'にっき', 'にっけい', 'にっこう', 'にっさん', 'にっしょく', 'にっすう', 'にっせき', 'にってい', 'になう', 'にほん', 'にまめ', 'にもつ', 'にやり', 'にゅういん', 'にりんしゃ', 'にわとり', 'にんい', 'にんか', 'にんき', 'にんげん', 'にんしき', 'にんずう', 'にんそう', 'にんたい', 'にんち', 'にんてい', 'にんにく', 'にんぷ', 'にんまり', 'にんむ', 'にんめい', 'にんよう', 'ぬいくぎ', 'ぬかす', 'ぬぐいとる', 'ぬぐう', 'ぬくもり', 'ぬすむ', 'ぬまえび', 'ぬめり', 'ぬらす', 'ぬんちゃく', 'ねあげ', 'ねいき', 'ねいる', 'ねいろ', 'ねぐせ', 'ねくたい', 'ねくら', 'ねこぜ', 'ねこむ', 'ねさげ', 'ねすごす', 'ねそべる', 'ねだん', 'ねつい', 'ねっしん', 'ねつぞう', 'ねったいぎょ', 'ねぶそく', 'ねふだ', 'ねぼう', 'ねほりはほり', 'ねまき', 'ねまわし', 'ねみみ', 'ねむい', 'ねむたい', 'ねもと', 'ねらう', 'ねわざ', 'ねんいり', 'ねんおし', 'ねんかん', 'ねんきん', 'ねんぐ', 'ねんざ', 'ねんし', 'ねんちゃく', 'ねんど', 'ねんぴ', 'ねんぶつ', 'ねんまつ', 'ねんりょう', 'ねんれい', 'のいず', 'のおづま', 'のがす', 'のきなみ', 'のこぎり', 'のこす', 'のこる', 'のせる', 'のぞく', 'のぞむ', 'のたまう', 'のちほど', 'のっく', 'のばす', 'のはら', 'のべる', 'のぼる', 'のみもの', 'のやま', 'のらいぬ', 'のらねこ', 'のりもの', 'のりゆき', 'のれん', 'のんき', 'ばあい', 'はあく', 'ばあさん', 'ばいか', 'ばいく', 'はいけん', 'はいご', 'はいしん', 'はいすい', 'はいせん', 'はいそう', 'はいち', 'ばいばい', 'はいれつ', 'はえる', 'はおる', 'はかい', 'ばかり', 'はかる', 'はくしゅ', 'はけん', 'はこぶ', 'はさみ', 'はさん', 'はしご', 'ばしょ', 'はしる', 'はせる', 'ぱそこん', 'はそん', 'はたん', 'はちみつ', 'はつおん', 'はっかく', 'はづき', 'はっきり', 'はっくつ', 'はっけん', 'はっこう', 'はっさん', 'はっしん', 'はったつ', 'はっちゅう', 'はってん', 'はっぴょう', 'はっぽう', 'はなす', 'はなび', 'はにかむ', 'はぶらし', 'はみがき', 'はむかう', 'はめつ', 'はやい', 'はやし', 'はらう', 'はろうぃん', 'はわい', 'はんい', 'はんえい', 'はんおん', 'はんかく', 'はんきょう', 'ばんぐみ', 'はんこ', 'はんしゃ', 'はんすう', 'はんだん', 'ぱんち', 'ぱんつ', 'はんてい', 'はんとし', 'はんのう', 'はんぱ', 'はんぶん', 'はんぺん', 'はんぼうき', 'はんめい', 'はんらん', 'はんろん', 'ひいき', 'ひうん', 'ひえる', 'ひかく', 'ひかり', 'ひかる', 'ひかん', 'ひくい', 'ひけつ', 'ひこうき', 'ひこく', 'ひさい', 'ひさしぶり', 'ひさん', 'びじゅつかん', 'ひしょ', 'ひそか', 'ひそむ', 'ひたむき', 'ひだり', 'ひたる', 'ひつぎ', 'ひっこし', 'ひっし', 'ひつじゅひん', 'ひっす', 'ひつぜん', 'ぴったり', 'ぴっちり', 'ひつよう', 'ひてい', 'ひとごみ', 'ひなまつり', 'ひなん', 'ひねる', 'ひはん', 'ひびく', 'ひひょう', 'ひほう', 'ひまわり', 'ひまん', 'ひみつ', 'ひめい', 'ひめじし', 'ひやけ', 'ひやす', 'ひよう', 'びょうき', 'ひらがな', 'ひらく', 'ひりつ', 'ひりょう', 'ひるま', 'ひるやすみ', 'ひれい', 'ひろい', 'ひろう', 'ひろき', 'ひろゆき', 'ひんかく', 'ひんけつ', 'ひんこん', 'ひんしゅ', 'ひんそう', 'ぴんち', 'ひんぱん', 'びんぼう', 'ふあん', 'ふいうち', 'ふうけい', 'ふうせん', 'ぷうたろう', 'ふうとう', 'ふうふ', 'ふえる', 'ふおん', 'ふかい', 'ふきん', 'ふくざつ', 'ふくぶくろ', 'ふこう', 'ふさい', 'ふしぎ', 'ふじみ', 'ふすま', 'ふせい', 'ふせぐ', 'ふそく', 'ぶたにく', 'ふたん', 'ふちょう', 'ふつう', 'ふつか', 'ふっかつ', 'ふっき', 'ふっこく', 'ぶどう', 'ふとる', 'ふとん', 'ふのう', 'ふはい', 'ふひょう', 'ふへん', 'ふまん', 'ふみん', 'ふめつ', 'ふめん', 'ふよう', 'ふりこ', 'ふりる', 'ふるい', 'ふんいき', 'ぶんがく', 'ぶんぐ', 'ふんしつ', 'ぶんせき', 'ふんそう', 'ぶんぽう', 'へいあん', 'へいおん', 'へいがい', 'へいき', 'へいげん', 'へいこう', 'へいさ', 'へいしゃ', 'へいせつ', 'へいそ', 'へいたく', 'へいてん', 'へいねつ', 'へいわ', 'へきが', 'へこむ', 'べにいろ', 'べにしょうが', 'へらす', 'へんかん', 'べんきょう', 'べんごし', 'へんさい', 'へんたい', 'べんり', 'ほあん', 'ほいく', 'ぼうぎょ', 'ほうこく', 'ほうそう', 'ほうほう', 'ほうもん', 'ほうりつ', 'ほえる', 'ほおん', 'ほかん', 'ほきょう', 'ぼきん', 'ほくろ', 'ほけつ', 'ほけん', 'ほこう', 'ほこる', 'ほしい', 'ほしつ', 'ほしゅ', 'ほしょう', 'ほせい', 'ほそい', 'ほそく', 'ほたて', 'ほたる', 'ぽちぶくろ', 'ほっきょく', 'ほっさ', 'ほったん', 'ほとんど', 'ほめる', 'ほんい', 'ほんき', 'ほんけ', 'ほんしつ', 'ほんやく', 'まいにち', 'まかい', 'まかせる', 'まがる', 'まける', 'まこと', 'まさつ', 'まじめ', 'ますく', 'まぜる', 'まつり', 'まとめ', 'まなぶ', 'まぬけ', 'まねく', 'まほう', 'まもる', 'まゆげ', 'まよう', 'まろやか', 'まわす', 'まわり', 'まわる', 'まんが', 'まんきつ', 'まんぞく', 'まんなか', 'みいら', 'みうち', 'みえる', 'みがく', 'みかた', 'みかん', 'みけん', 'みこん', 'みじかい', 'みすい', 'みすえる', 'みせる', 'みっか', 'みつかる', 'みつける', 'みてい', 'みとめる', 'みなと', 'みなみかさい', 'みねらる', 'みのう', 'みのがす', 'みほん', 'みもと', 'みやげ', 'みらい', 'みりょく', 'みわく', 'みんか', 'みんぞく', 'むいか', 'むえき', 'むえん', 'むかい', 'むかう', 'むかえ', 'むかし', 'むぎちゃ', 'むける', 'むげん', 'むさぼる', 'むしあつい', 'むしば', 'むじゅん', 'むしろ', 'むすう', 'むすこ', 'むすぶ', 'むすめ', 'むせる', 'むせん', 'むちゅう', 'むなしい', 'むのう', 'むやみ', 'むよう', 'むらさき', 'むりょう', 'むろん', 'めいあん', 'めいうん', 'めいえん', 'めいかく', 'めいきょく', 'めいさい', 'めいし', 'めいそう', 'めいぶつ', 'めいれい', 'めいわく', 'めぐまれる', 'めざす', 'めした', 'めずらしい', 'めだつ', 'めまい', 'めやす', 'めんきょ', 'めんせき', 'めんどう', 'もうしあげる', 'もうどうけん', 'もえる', 'もくし', 'もくてき', 'もくようび', 'もちろん', 'もどる', 'もらう', 'もんく', 'もんだい', 'やおや', 'やける', 'やさい', 'やさしい', 'やすい', 'やすたろう', 'やすみ', 'やせる', 'やそう', 'やたい', 'やちん', 'やっと', 'やっぱり', 'やぶる', 'やめる', 'ややこしい', 'やよい', 'やわらかい', 'ゆうき', 'ゆうびんきょく', 'ゆうべ', 'ゆうめい', 'ゆけつ', 'ゆしゅつ', 'ゆせん', 'ゆそう', 'ゆたか', 'ゆちゃく', 'ゆでる', 'ゆにゅう', 'ゆびわ', 'ゆらい', 'ゆれる', 'ようい', 'ようか', 'ようきゅう', 'ようじ', 'ようす', 'ようちえん', 'よかぜ', 'よかん', 'よきん', 'よくせい', 'よくぼう', 'よけい', 'よごれる', 'よさん', 'よしゅう', 'よそう', 'よそく', 'よっか', 'よてい', 'よどがわく', 'よねつ', 'よやく', 'よゆう', 'よろこぶ', 'よろしい', 'らいう', 'らくがき', 'らくご', 'らくさつ', 'らくだ', 'らしんばん', 'らせん', 'らぞく', 'らたい', 'らっか', 'られつ', 'りえき', 'りかい', 'りきさく', 'りきせつ', 'りくぐん', 'りくつ', 'りけん', 'りこう', 'りせい', 'りそう', 'りそく', 'りてん', 'りねん', 'りゆう', 'りゅうがく', 'りよう', 'りょうり', 'りょかん', 'りょくちゃ', 'りょこう', 'りりく', 'りれき', 'りろん', 'りんご', 'るいけい', 'るいさい', 'るいじ', 'るいせき', 'るすばん', 'るりがわら', 'れいかん', 'れいぎ', 'れいせい', 'れいぞうこ', 'れいとう', 'れいぼう', 'れきし', 'れきだい', 'れんあい', 'れんけい', 'れんこん', 'れんさい', 'れんしゅう', 'れんぞく', 'れんらく', 'ろうか', 'ろうご', 'ろうじん', 'ろうそく', 'ろくが', 'ろこつ', 'ろじうら', 'ろしゅつ', 'ろせん', 'ろてん', 'ろめん', 'ろれつ', 'ろんぎ', 'ろんぱ', 'ろんぶん', 'ろんり', 'わかす', 'わかめ', 'わかやま', 'わかれる', 'わしつ', 'わじまし', 'わすれもの', 'わらう', 'われる'];
 
 module.exports = japanese;
 
-},{}],163:[function(require,module,exports){
+},{}],164:[function(require,module,exports){
 'use strict';
 
 var korean = ['가격', '가끔', '가난', '가능', '가득', '가르침', '가뭄', '가방', '가상', '가슴', '가운데', '가을', '가이드', '가입', '가장', '가정', '가족', '가죽', '각오', '각자', '간격', '간부', '간섭', '간장', '간접', '간판', '갈등', '갈비', '갈색', '갈증', '감각', '감기', '감소', '감수성', '감자', '감정', '갑자기', '강남', '강당', '강도', '강력히', '강변', '강북', '강사', '강수량', '강아지', '강원도', '강의', '강제', '강조', '같이', '개구리', '개나리', '개방', '개별', '개선', '개성', '개인', '객관적', '거실', '거액', '거울', '거짓', '거품', '걱정', '건강', '건물', '건설', '건조', '건축', '걸음', '검사', '검토', '게시판', '게임', '겨울', '견해', '결과', '결국', '결론', '결석', '결승', '결심', '결정', '결혼', '경계', '경고', '경기', '경력', '경복궁', '경비', '경상도', '경영', '경우', '경쟁', '경제', '경주', '경찰', '경치', '경향', '경험', '계곡', '계단', '계란', '계산', '계속', '계약', '계절', '계층', '계획', '고객', '고구려', '고궁', '고급', '고등학생', '고무신', '고민', '고양이', '고장', '고전', '고집', '고춧가루', '고통', '고향', '곡식', '골목', '골짜기', '골프', '공간', '공개', '공격', '공군', '공급', '공기', '공동', '공무원', '공부', '공사', '공식', '공업', '공연', '공원', '공장', '공짜', '공책', '공통', '공포', '공항', '공휴일', '과목', '과일', '과장', '과정', '과학', '관객', '관계', '관광', '관념', '관람', '관련', '관리', '관습', '관심', '관점', '관찰', '광경', '광고', '광장', '광주', '괴로움', '굉장히', '교과서', '교문', '교복', '교실', '교양', '교육', '교장', '교직', '교통', '교환', '교훈', '구경', '구름', '구멍', '구별', '구분', '구석', '구성', '구속', '구역', '구입', '구청', '구체적', '국가', '국기', '국내', '국립', '국물', '국민', '국수', '국어', '국왕', '국적', '국제', '국회', '군대', '군사', '군인', '궁극적', '권리', '권위', '권투', '귀국', '귀신', '규정', '규칙', '균형', '그날', '그냥', '그늘', '그러나', '그룹', '그릇', '그림', '그제서야', '그토록', '극복', '극히', '근거', '근교', '근래', '근로', '근무', '근본', '근원', '근육', '근처', '글씨', '글자', '금강산', '금고', '금년', '금메달', '금액', '금연', '금요일', '금지', '긍정적', '기간', '기관', '기념', '기능', '기독교', '기둥', '기록', '기름', '기법', '기본', '기분', '기쁨', '기숙사', '기술', '기억', '기업', '기온', '기운', '기원', '기적', '기준', '기침', '기혼', '기획', '긴급', '긴장', '길이', '김밥', '김치', '김포공항', '깍두기', '깜빡', '깨달음', '깨소금', '껍질', '꼭대기', '꽃잎', '나들이', '나란히', '나머지', '나물', '나침반', '나흘', '낙엽', '난방', '날개', '날씨', '날짜', '남녀', '남대문', '남매', '남산', '남자', '남편', '남학생', '낭비', '낱말', '내년', '내용', '내일', '냄비', '냄새', '냇물', '냉동', '냉면', '냉방', '냉장고', '넥타이', '넷째', '노동', '노란색', '노력', '노인', '녹음', '녹차', '녹화', '논리', '논문', '논쟁', '놀이', '농구', '농담', '농민', '농부', '농업', '농장', '농촌', '높이', '눈동자', '눈물', '눈썹', '뉴욕', '느낌', '늑대', '능동적', '능력', '다방', '다양성', '다음', '다이어트', '다행', '단계', '단골', '단독', '단맛', '단순', '단어', '단위', '단점', '단체', '단추', '단편', '단풍', '달걀', '달러', '달력', '달리', '닭고기', '담당', '담배', '담요', '담임', '답변', '답장', '당근', '당분간', '당연히', '당장', '대규모', '대낮', '대단히', '대답', '대도시', '대략', '대량', '대륙', '대문', '대부분', '대신', '대응', '대장', '대전', '대접', '대중', '대책', '대출', '대충', '대통령', '대학', '대한민국', '대합실', '대형', '덩어리', '데이트', '도대체', '도덕', '도둑', '도망', '도서관', '도심', '도움', '도입', '도자기', '도저히', '도전', '도중', '도착', '독감', '독립', '독서', '독일', '독창적', '동화책', '뒷모습', '뒷산', '딸아이', '마누라', '마늘', '마당', '마라톤', '마련', '마무리', '마사지', '마약', '마요네즈', '마을', '마음', '마이크', '마중', '마지막', '마찬가지', '마찰', '마흔', '막걸리', '막내', '막상', '만남', '만두', '만세', '만약', '만일', '만점', '만족', '만화', '많이', '말기', '말씀', '말투', '맘대로', '망원경', '매년', '매달', '매력', '매번', '매스컴', '매일', '매장', '맥주', '먹이', '먼저', '먼지', '멀리', '메일', '며느리', '며칠', '면담', '멸치', '명단', '명령', '명예', '명의', '명절', '명칭', '명함', '모금', '모니터', '모델', '모든', '모범', '모습', '모양', '모임', '모조리', '모집', '모퉁이', '목걸이', '목록', '목사', '목소리', '목숨', '목적', '목표', '몰래', '몸매', '몸무게', '몸살', '몸속', '몸짓', '몸통', '몹시', '무관심', '무궁화', '무더위', '무덤', '무릎', '무슨', '무엇', '무역', '무용', '무조건', '무지개', '무척', '문구', '문득', '문법', '문서', '문제', '문학', '문화', '물가', '물건', '물결', '물고기', '물론', '물리학', '물음', '물질', '물체', '미국', '미디어', '미사일', '미술', '미역', '미용실', '미움', '미인', '미팅', '미혼', '민간', '민족', '민주', '믿음', '밀가루', '밀리미터', '밑바닥', '바가지', '바구니', '바나나', '바늘', '바닥', '바닷가', '바람', '바이러스', '바탕', '박물관', '박사', '박수', '반대', '반드시', '반말', '반발', '반성', '반응', '반장', '반죽', '반지', '반찬', '받침', '발가락', '발걸음', '발견', '발달', '발레', '발목', '발바닥', '발생', '발음', '발자국', '발전', '발톱', '발표', '밤하늘', '밥그릇', '밥맛', '밥상', '밥솥', '방금', '방면', '방문', '방바닥', '방법', '방송', '방식', '방안', '방울', '방지', '방학', '방해', '방향', '배경', '배꼽', '배달', '배드민턴', '백두산', '백색', '백성', '백인', '백제', '백화점', '버릇', '버섯', '버튼', '번개', '번역', '번지', '번호', '벌금', '벌레', '벌써', '범위', '범인', '범죄', '법률', '법원', '법적', '법칙', '베이징', '벨트', '변경', '변동', '변명', '변신', '변호사', '변화', '별도', '별명', '별일', '병실', '병아리', '병원', '보관', '보너스', '보라색', '보람', '보름', '보상', '보안', '보자기', '보장', '보전', '보존', '보통', '보편적', '보험', '복도', '복사', '복숭아', '복습', '볶음', '본격적', '본래', '본부', '본사', '본성', '본인', '본질', '볼펜', '봉사', '봉지', '봉투', '부근', '부끄러움', '부담', '부동산', '부문', '부분', '부산', '부상', '부엌', '부인', '부작용', '부장', '부정', '부족', '부지런히', '부친', '부탁', '부품', '부회장', '북부', '북한', '분노', '분량', '분리', '분명', '분석', '분야', '분위기', '분필', '분홍색', '불고기', '불과', '불교', '불꽃', '불만', '불법', '불빛', '불안', '불이익', '불행', '브랜드', '비극', '비난', '비닐', '비둘기', '비디오', '비로소', '비만', '비명', '비밀', '비바람', '비빔밥', '비상', '비용', '비율', '비중', '비타민', '비판', '빌딩', '빗물', '빗방울', '빗줄기', '빛깔', '빨간색', '빨래', '빨리', '사건', '사계절', '사나이', '사냥', '사람', '사랑', '사립', '사모님', '사물', '사방', '사상', '사생활', '사설', '사슴', '사실', '사업', '사용', '사월', '사장', '사전', '사진', '사촌', '사춘기', '사탕', '사투리', '사흘', '산길', '산부인과', '산업', '산책', '살림', '살인', '살짝', '삼계탕', '삼국', '삼십', '삼월', '삼촌', '상관', '상금', '상대', '상류', '상반기', '상상', '상식', '상업', '상인', '상자', '상점', '상처', '상추', '상태', '상표', '상품', '상황', '새벽', '색깔', '색연필', '생각', '생명', '생물', '생방송', '생산', '생선', '생신', '생일', '생활', '서랍', '서른', '서명', '서민', '서비스', '서양', '서울', '서적', '서점', '서쪽', '서클', '석사', '석유', '선거', '선물', '선배', '선생', '선수', '선원', '선장', '선전', '선택', '선풍기', '설거지', '설날', '설렁탕', '설명', '설문', '설사', '설악산', '설치', '설탕', '섭씨', '성공', '성당', '성명', '성별', '성인', '성장', '성적', '성질', '성함', '세금', '세미나', '세상', '세월', '세종대왕', '세탁', '센터', '센티미터', '셋째', '소규모', '소극적', '소금', '소나기', '소년', '소득', '소망', '소문', '소설', '소속', '소아과', '소용', '소원', '소음', '소중히', '소지품', '소질', '소풍', '소형', '속담', '속도', '속옷', '손가락', '손길', '손녀', '손님', '손등', '손목', '손뼉', '손실', '손질', '손톱', '손해', '솔직히', '솜씨', '송아지', '송이', '송편', '쇠고기', '쇼핑', '수건', '수년', '수단', '수돗물', '수동적', '수면', '수명', '수박', '수상', '수석', '수술', '수시로', '수업', '수염', '수영', '수입', '수준', '수집', '수출', '수컷', '수필', '수학', '수험생', '수화기', '숙녀', '숙소', '숙제', '순간', '순서', '순수', '순식간', '순위', '숟가락', '술병', '술집', '숫자', '스님', '스물', '스스로', '스승', '스웨터', '스위치', '스케이트', '스튜디오', '스트레스', '스포츠', '슬쩍', '슬픔', '습관', '습기', '승객', '승리', '승부', '승용차', '승진', '시각', '시간', '시골', '시금치', '시나리오', '시댁', '시리즈', '시멘트', '시민', '시부모', '시선', '시설', '시스템', '시아버지', '시어머니', '시월', '시인', '시일', '시작', '시장', '시절', '시점', '시중', '시즌', '시집', '시청', '시합', '시험', '식구', '식기', '식당', '식량', '식료품', '식물', '식빵', '식사', '식생활', '식초', '식탁', '식품', '신고', '신규', '신념', '신문', '신발', '신비', '신사', '신세', '신용', '신제품', '신청', '신체', '신화', '실감', '실내', '실력', '실례', '실망', '실수', '실습', '실시', '실장', '실정', '실질적', '실천', '실체', '실컷', '실태', '실패', '실험', '실현', '심리', '심부름', '심사', '심장', '심정', '심판', '쌍둥이', '씨름', '씨앗', '아가씨', '아나운서', '아드님', '아들', '아쉬움', '아스팔트', '아시아', '아울러', '아저씨', '아줌마', '아직', '아침', '아파트', '아프리카', '아픔', '아홉', '아흔', '악기', '악몽', '악수', '안개', '안경', '안과', '안내', '안녕', '안동', '안방', '안부', '안주', '알루미늄', '알코올', '암시', '암컷', '압력', '앞날', '앞문', '애인', '애정', '액수', '앨범', '야간', '야단', '야옹', '약간', '약국', '약속', '약수', '약점', '약품', '약혼녀', '양념', '양력', '양말', '양배추', '양주', '양파', '어둠', '어려움', '어른', '어젯밤', '어쨌든', '어쩌다가', '어쩐지', '언니', '언덕', '언론', '언어', '얼굴', '얼른', '얼음', '얼핏', '엄마', '업무', '업종', '업체', '엉덩이', '엉망', '엉터리', '엊그제', '에너지', '에어컨', '엔진', '여건', '여고생', '여관', '여군', '여권', '여대생', '여덟', '여동생', '여든', '여론', '여름', '여섯', '여성', '여왕', '여인', '여전히', '여직원', '여학생', '여행', '역사', '역시', '역할', '연결', '연구', '연극', '연기', '연락', '연설', '연세', '연속', '연습', '연애', '연예인', '연인', '연장', '연주', '연출', '연필', '연합', '연휴', '열기', '열매', '열쇠', '열심히', '열정', '열차', '열흘', '염려', '엽서', '영국', '영남', '영상', '영양', '영역', '영웅', '영원히', '영하', '영향', '영혼', '영화', '옆구리', '옆방', '옆집', '예감', '예금', '예방', '예산', '예상', '예선', '예술', '예습', '예식장', '예약', '예전', '예절', '예정', '예컨대', '옛날', '오늘', '오락', '오랫동안', '오렌지', '오로지', '오른발', '오븐', '오십', '오염', '오월', '오전', '오직', '오징어', '오페라', '오피스텔', '오히려', '옥상', '옥수수', '온갖', '온라인', '온몸', '온종일', '온통', '올가을', '올림픽', '올해', '옷차림', '와이셔츠', '와인', '완성', '완전', '왕비', '왕자', '왜냐하면', '왠지', '외갓집', '외국', '외로움', '외삼촌', '외출', '외침', '외할머니', '왼발', '왼손', '왼쪽', '요금', '요일', '요즘', '요청', '용기', '용서', '용어', '우산', '우선', '우승', '우연히', '우정', '우체국', '우편', '운동', '운명', '운반', '운전', '운행', '울산', '울음', '움직임', '웃어른', '웃음', '워낙', '원고', '원래', '원서', '원숭이', '원인', '원장', '원피스', '월급', '월드컵', '월세', '월요일', '웨이터', '위반', '위법', '위성', '위원', '위험', '위협', '윗사람', '유난히', '유럽', '유명', '유물', '유산', '유적', '유치원', '유학', '유행', '유형', '육군', '육상', '육십', '육체', '은행', '음력', '음료', '음반', '음성', '음식', '음악', '음주', '의견', '의논', '의문', '의복', '의식', '의심', '의외로', '의욕', '의원', '의학', '이것', '이곳', '이념', '이놈', '이달', '이대로', '이동', '이렇게', '이력서', '이론적', '이름', '이민', '이발소', '이별', '이불', '이빨', '이상', '이성', '이슬', '이야기', '이용', '이웃', '이월', '이윽고', '이익', '이전', '이중', '이튿날', '이틀', '이혼', '인간', '인격', '인공', '인구', '인근', '인기', '인도', '인류', '인물', '인생', '인쇄', '인연', '인원', '인재', '인종', '인천', '인체', '인터넷', '인하', '인형', '일곱', '일기', '일단', '일대', '일등', '일반', '일본', '일부', '일상', '일생', '일손', '일요일', '일월', '일정', '일종', '일주일', '일찍', '일체', '일치', '일행', '일회용', '임금', '임무', '입대', '입력', '입맛', '입사', '입술', '입시', '입원', '입장', '입학', '자가용', '자격', '자극', '자동', '자랑', '자부심', '자식', '자신', '자연', '자원', '자율', '자전거', '자정', '자존심', '자판', '작가', '작년', '작성', '작업', '작용', '작은딸', '작품', '잔디', '잔뜩', '잔치', '잘못', '잠깐', '잠수함', '잠시', '잠옷', '잠자리', '잡지', '장관', '장군', '장기간', '장래', '장례', '장르', '장마', '장면', '장모', '장미', '장비', '장사', '장소', '장식', '장애인', '장인', '장점', '장차', '장학금', '재능', '재빨리', '재산', '재생', '재작년', '재정', '재채기', '재판', '재학', '재활용', '저것', '저고리', '저곳', '저녁', '저런', '저렇게', '저번', '저울', '저절로', '저축', '적극', '적당히', '적성', '적용', '적응', '전개', '전공', '전기', '전달', '전라도', '전망', '전문', '전반', '전부', '전세', '전시', '전용', '전자', '전쟁', '전주', '전철', '전체', '전통', '전혀', '전후', '절대', '절망', '절반', '절약', '절차', '점검', '점수', '점심', '점원', '점점', '점차', '접근', '접시', '접촉', '젓가락', '정거장', '정도', '정류장', '정리', '정말', '정면', '정문', '정반대', '정보', '정부', '정비', '정상', '정성', '정오', '정원', '정장', '정지', '정치', '정확히', '제공', '제과점', '제대로', '제목', '제발', '제법', '제삿날', '제안', '제일', '제작', '제주도', '제출', '제품', '제한', '조각', '조건', '조금', '조깅', '조명', '조미료', '조상', '조선', '조용히', '조절', '조정', '조직', '존댓말', '존재', '졸업', '졸음', '종교', '종로', '종류', '종소리', '종업원', '종종', '종합', '좌석', '죄인', '주관적', '주름', '주말', '주머니', '주먹', '주문', '주민', '주방', '주변', '주식', '주인', '주일', '주장', '주전자', '주택', '준비', '줄거리', '줄기', '줄무늬', '중간', '중계방송', '중국', '중년', '중단', '중독', '중반', '중부', '중세', '중소기업', '중순', '중앙', '중요', '중학교', '즉석', '즉시', '즐거움', '증가', '증거', '증권', '증상', '증세', '지각', '지갑', '지경', '지극히', '지금', '지급', '지능', '지름길', '지리산', '지방', '지붕', '지식', '지역', '지우개', '지원', '지적', '지점', '지진', '지출', '직선', '직업', '직원', '직장', '진급', '진동', '진로', '진료', '진리', '진짜', '진찰', '진출', '진통', '진행', '질문', '질병', '질서', '짐작', '집단', '집안', '집중', '짜증', '찌꺼기', '차남', '차라리', '차량', '차림', '차별', '차선', '차츰', '착각', '찬물', '찬성', '참가', '참기름', '참새', '참석', '참여', '참외', '참조', '찻잔', '창가', '창고', '창구', '창문', '창밖', '창작', '창조', '채널', '채점', '책가방', '책방', '책상', '책임', '챔피언', '처벌', '처음', '천국', '천둥', '천장', '천재', '천천히', '철도', '철저히', '철학', '첫날', '첫째', '청년', '청바지', '청소', '청춘', '체계', '체력', '체온', '체육', '체중', '체험', '초등학생', '초반', '초밥', '초상화', '초순', '초여름', '초원', '초저녁', '초점', '초청', '초콜릿', '촛불', '총각', '총리', '총장', '촬영', '최근', '최상', '최선', '최신', '최악', '최종', '추석', '추억', '추진', '추천', '추측', '축구', '축소', '축제', '축하', '출근', '출발', '출산', '출신', '출연', '출입', '출장', '출판', '충격', '충고', '충돌', '충분히', '충청도', '취업', '취직', '취향', '치약', '친구', '친척', '칠십', '칠월', '칠판', '침대', '침묵', '침실', '칫솔', '칭찬', '카메라', '카운터', '칼국수', '캐릭터', '캠퍼스', '캠페인', '커튼', '컨디션', '컬러', '컴퓨터', '코끼리', '코미디', '콘서트', '콜라', '콤플렉스', '콩나물', '쾌감', '쿠데타', '크림', '큰길', '큰딸', '큰소리', '큰아들', '큰어머니', '큰일', '큰절', '클래식', '클럽', '킬로', '타입', '타자기', '탁구', '탁자', '탄생', '태권도', '태양', '태풍', '택시', '탤런트', '터널', '터미널', '테니스', '테스트', '테이블', '텔레비전', '토론', '토마토', '토요일', '통계', '통과', '통로', '통신', '통역', '통일', '통장', '통제', '통증', '통합', '통화', '퇴근', '퇴원', '퇴직금', '튀김', '트럭', '특급', '특별', '특성', '특수', '특징', '특히', '튼튼히', '티셔츠', '파란색', '파일', '파출소', '판결', '판단', '판매', '판사', '팔십', '팔월', '팝송', '패션', '팩스', '팩시밀리', '팬티', '퍼센트', '페인트', '편견', '편의', '편지', '편히', '평가', '평균', '평생', '평소', '평양', '평일', '평화', '포스터', '포인트', '포장', '포함', '표면', '표정', '표준', '표현', '품목', '품질', '풍경', '풍속', '풍습', '프랑스', '프린터', '플라스틱', '피곤', '피망', '피아노', '필름', '필수', '필요', '필자', '필통', '핑계', '하느님', '하늘', '하드웨어', '하룻밤', '하반기', '하숙집', '하순', '하여튼', '하지만', '하천', '하품', '하필', '학과', '학교', '학급', '학기', '학년', '학력', '학번', '학부모', '학비', '학생', '학술', '학습', '학용품', '학원', '학위', '학자', '학점', '한계', '한글', '한꺼번에', '한낮', '한눈', '한동안', '한때', '한라산', '한마디', '한문', '한번', '한복', '한식', '한여름', '한쪽', '할머니', '할아버지', '할인', '함께', '함부로', '합격', '합리적', '항공', '항구', '항상', '항의', '해결', '해군', '해답', '해당', '해물', '해석', '해설', '해수욕장', '해안', '핵심', '핸드백', '햄버거', '햇볕', '햇살', '행동', '행복', '행사', '행운', '행위', '향기', '향상', '향수', '허락', '허용', '헬기', '현관', '현금', '현대', '현상', '현실', '현장', '현재', '현지', '혈액', '협력', '형부', '형사', '형수', '형식', '형제', '형태', '형편', '혜택', '호기심', '호남', '호랑이', '호박', '호텔', '호흡', '혹시', '홀로', '홈페이지', '홍보', '홍수', '홍차', '화면', '화분', '화살', '화요일', '화장', '화학', '확보', '확인', '확장', '확정', '환갑', '환경', '환영', '환율', '환자', '활기', '활동', '활발히', '활용', '활짝', '회견', '회관', '회복', '회색', '회원', '회장', '회전', '횟수', '횡단보도', '효율적', '후반', '후춧가루', '훈련', '훨씬', '휴식', '휴일', '흉내', '흐름', '흑백', '흑인', '흔적', '흔히', '흥미', '흥분', '희곡', '희망', '희생', '흰색', '힘껏'];
 
 module.exports = korean;
 
-},{}],164:[function(require,module,exports){
+},{}],165:[function(require,module,exports){
 'use strict';
 
 var spanish = ['ábaco', 'abdomen', 'abeja', 'abierto', 'abogado', 'abono', 'aborto', 'abrazo', 'abrir', 'abuelo', 'abuso', 'acabar', 'academia', 'acceso', 'acción', 'aceite', 'acelga', 'acento', 'aceptar', 'ácido', 'aclarar', 'acné', 'acoger', 'acoso', 'activo', 'acto', 'actriz', 'actuar', 'acudir', 'acuerdo', 'acusar', 'adicto', 'admitir', 'adoptar', 'adorno', 'aduana', 'adulto', 'aéreo', 'afectar', 'afición', 'afinar', 'afirmar', 'ágil', 'agitar', 'agonía', 'agosto', 'agotar', 'agregar', 'agrio', 'agua', 'agudo', 'águila', 'aguja', 'ahogo', 'ahorro', 'aire', 'aislar', 'ajedrez', 'ajeno', 'ajuste', 'alacrán', 'alambre', 'alarma', 'alba', 'álbum', 'alcalde', 'aldea', 'alegre', 'alejar', 'alerta', 'aleta', 'alfiler', 'alga', 'algodón', 'aliado', 'aliento', 'alivio', 'alma', 'almeja', 'almíbar', 'altar', 'alteza', 'altivo', 'alto', 'altura', 'alumno', 'alzar', 'amable', 'amante', 'amapola', 'amargo', 'amasar', 'ámbar', 'ámbito', 'ameno', 'amigo', 'amistad', 'amor', 'amparo', 'amplio', 'ancho', 'anciano', 'ancla', 'andar', 'andén', 'anemia', 'ángulo', 'anillo', 'ánimo', 'anís', 'anotar', 'antena', 'antiguo', 'antojo', 'anual', 'anular', 'anuncio', 'añadir', 'añejo', 'año', 'apagar', 'aparato', 'apetito', 'apio', 'aplicar', 'apodo', 'aporte', 'apoyo', 'aprender', 'aprobar', 'apuesta', 'apuro', 'arado', 'araña', 'arar', 'árbitro', 'árbol', 'arbusto', 'archivo', 'arco', 'arder', 'ardilla', 'arduo', 'área', 'árido', 'aries', 'armonía', 'arnés', 'aroma', 'arpa', 'arpón', 'arreglo', 'arroz', 'arruga', 'arte', 'artista', 'asa', 'asado', 'asalto', 'ascenso', 'asegurar', 'aseo', 'asesor', 'asiento', 'asilo', 'asistir', 'asno', 'asombro', 'áspero', 'astilla', 'astro', 'astuto', 'asumir', 'asunto', 'atajo', 'ataque', 'atar', 'atento', 'ateo', 'ático', 'atleta', 'átomo', 'atraer', 'atroz', 'atún', 'audaz', 'audio', 'auge', 'aula', 'aumento', 'ausente', 'autor', 'aval', 'avance', 'avaro', 'ave', 'avellana', 'avena', 'avestruz', 'avión', 'aviso', 'ayer', 'ayuda', 'ayuno', 'azafrán', 'azar', 'azote', 'azúcar', 'azufre', 'azul', 'baba', 'babor', 'bache', 'bahía', 'baile', 'bajar', 'balanza', 'balcón', 'balde', 'bambú', 'banco', 'banda', 'baño', 'barba', 'barco', 'barniz', 'barro', 'báscula', 'bastón', 'basura', 'batalla', 'batería', 'batir', 'batuta', 'baúl', 'bazar', 'bebé', 'bebida', 'bello', 'besar', 'beso', 'bestia', 'bicho', 'bien', 'bingo', 'blanco', 'bloque', 'blusa', 'boa', 'bobina', 'bobo', 'boca', 'bocina', 'boda', 'bodega', 'boina', 'bola', 'bolero', 'bolsa', 'bomba', 'bondad', 'bonito', 'bono', 'bonsái', 'borde', 'borrar', 'bosque', 'bote', 'botín', 'bóveda', 'bozal', 'bravo', 'brazo', 'brecha', 'breve', 'brillo', 'brinco', 'brisa', 'broca', 'broma', 'bronce', 'brote', 'bruja', 'brusco', 'bruto', 'buceo', 'bucle', 'bueno', 'buey', 'bufanda', 'bufón', 'búho', 'buitre', 'bulto', 'burbuja', 'burla', 'burro', 'buscar', 'butaca', 'buzón', 'caballo', 'cabeza', 'cabina', 'cabra', 'cacao', 'cadáver', 'cadena', 'caer', 'café', 'caída', 'caimán', 'caja', 'cajón', 'cal', 'calamar', 'calcio', 'caldo', 'calidad', 'calle', 'calma', 'calor', 'calvo', 'cama', 'cambio', 'camello', 'camino', 'campo', 'cáncer', 'candil', 'canela', 'canguro', 'canica', 'canto', 'caña', 'cañón', 'caoba', 'caos', 'capaz', 'capitán', 'capote', 'captar', 'capucha', 'cara', 'carbón', 'cárcel', 'careta', 'carga', 'cariño', 'carne', 'carpeta', 'carro', 'carta', 'casa', 'casco', 'casero', 'caspa', 'castor', 'catorce', 'catre', 'caudal', 'causa', 'cazo', 'cebolla', 'ceder', 'cedro', 'celda', 'célebre', 'celoso', 'célula', 'cemento', 'ceniza', 'centro', 'cerca', 'cerdo', 'cereza', 'cero', 'cerrar', 'certeza', 'césped', 'cetro', 'chacal', 'chaleco', 'champú', 'chancla', 'chapa', 'charla', 'chico', 'chiste', 'chivo', 'choque', 'choza', 'chuleta', 'chupar', 'ciclón', 'ciego', 'cielo', 'cien', 'cierto', 'cifra', 'cigarro', 'cima', 'cinco', 'cine', 'cinta', 'ciprés', 'circo', 'ciruela', 'cisne', 'cita', 'ciudad', 'clamor', 'clan', 'claro', 'clase', 'clave', 'cliente', 'clima', 'clínica', 'cobre', 'cocción', 'cochino', 'cocina', 'coco', 'código', 'codo', 'cofre', 'coger', 'cohete', 'cojín', 'cojo', 'cola', 'colcha', 'colegio', 'colgar', 'colina', 'collar', 'colmo', 'columna', 'combate', 'comer', 'comida', 'cómodo', 'compra', 'conde', 'conejo', 'conga', 'conocer', 'consejo', 'contar', 'copa', 'copia', 'corazón', 'corbata', 'corcho', 'cordón', 'corona', 'correr', 'coser', 'cosmos', 'costa', 'cráneo', 'cráter', 'crear', 'crecer', 'creído', 'crema', 'cría', 'crimen', 'cripta', 'crisis', 'cromo', 'crónica', 'croqueta', 'crudo', 'cruz', 'cuadro', 'cuarto', 'cuatro', 'cubo', 'cubrir', 'cuchara', 'cuello', 'cuento', 'cuerda', 'cuesta', 'cueva', 'cuidar', 'culebra', 'culpa', 'culto', 'cumbre', 'cumplir', 'cuna', 'cuneta', 'cuota', 'cupón', 'cúpula', 'curar', 'curioso', 'curso', 'curva', 'cutis', 'dama', 'danza', 'dar', 'dardo', 'dátil', 'deber', 'débil', 'década', 'decir', 'dedo', 'defensa', 'definir', 'dejar', 'delfín', 'delgado', 'delito', 'demora', 'denso', 'dental', 'deporte', 'derecho', 'derrota', 'desayuno', 'deseo', 'desfile', 'desnudo', 'destino', 'desvío', 'detalle', 'detener', 'deuda', 'día', 'diablo', 'diadema', 'diamante', 'diana', 'diario', 'dibujo', 'dictar', 'diente', 'dieta', 'diez', 'difícil', 'digno', 'dilema', 'diluir', 'dinero', 'directo', 'dirigir', 'disco', 'diseño', 'disfraz', 'diva', 'divino', 'doble', 'doce', 'dolor', 'domingo', 'don', 'donar', 'dorado', 'dormir', 'dorso', 'dos', 'dosis', 'dragón', 'droga', 'ducha', 'duda', 'duelo', 'dueño', 'dulce', 'dúo', 'duque', 'durar', 'dureza', 'duro', 'ébano', 'ebrio', 'echar', 'eco', 'ecuador', 'edad', 'edición', 'edificio', 'editor', 'educar', 'efecto', 'eficaz', 'eje', 'ejemplo', 'elefante', 'elegir', 'elemento', 'elevar', 'elipse', 'élite', 'elixir', 'elogio', 'eludir', 'embudo', 'emitir', 'emoción', 'empate', 'empeño', 'empleo', 'empresa', 'enano', 'encargo', 'enchufe', 'encía', 'enemigo', 'enero', 'enfado', 'enfermo', 'engaño', 'enigma', 'enlace', 'enorme', 'enredo', 'ensayo', 'enseñar', 'entero', 'entrar', 'envase', 'envío', 'época', 'equipo', 'erizo', 'escala', 'escena', 'escolar', 'escribir', 'escudo', 'esencia', 'esfera', 'esfuerzo', 'espada', 'espejo', 'espía', 'esposa', 'espuma', 'esquí', 'estar', 'este', 'estilo', 'estufa', 'etapa', 'eterno', 'ética', 'etnia', 'evadir', 'evaluar', 'evento', 'evitar', 'exacto', 'examen', 'exceso', 'excusa', 'exento', 'exigir', 'exilio', 'existir', 'éxito', 'experto', 'explicar', 'exponer', 'extremo', 'fábrica', 'fábula', 'fachada', 'fácil', 'factor', 'faena', 'faja', 'falda', 'fallo', 'falso', 'faltar', 'fama', 'familia', 'famoso', 'faraón', 'farmacia', 'farol', 'farsa', 'fase', 'fatiga', 'fauna', 'favor', 'fax', 'febrero', 'fecha', 'feliz', 'feo', 'feria', 'feroz', 'fértil', 'fervor', 'festín', 'fiable', 'fianza', 'fiar', 'fibra', 'ficción', 'ficha', 'fideo', 'fiebre', 'fiel', 'fiera', 'fiesta', 'figura', 'fijar', 'fijo', 'fila', 'filete', 'filial', 'filtro', 'fin', 'finca', 'fingir', 'finito', 'firma', 'flaco', 'flauta', 'flecha', 'flor', 'flota', 'fluir', 'flujo', 'flúor', 'fobia', 'foca', 'fogata', 'fogón', 'folio', 'folleto', 'fondo', 'forma', 'forro', 'fortuna', 'forzar', 'fosa', 'foto', 'fracaso', 'frágil', 'franja', 'frase', 'fraude', 'freír', 'freno', 'fresa', 'frío', 'frito', 'fruta', 'fuego', 'fuente', 'fuerza', 'fuga', 'fumar', 'función', 'funda', 'furgón', 'furia', 'fusil', 'fútbol', 'futuro', 'gacela', 'gafas', 'gaita', 'gajo', 'gala', 'galería', 'gallo', 'gamba', 'ganar', 'gancho', 'ganga', 'ganso', 'garaje', 'garza', 'gasolina', 'gastar', 'gato', 'gavilán', 'gemelo', 'gemir', 'gen', 'género', 'genio', 'gente', 'geranio', 'gerente', 'germen', 'gesto', 'gigante', 'gimnasio', 'girar', 'giro', 'glaciar', 'globo', 'gloria', 'gol', 'golfo', 'goloso', 'golpe', 'goma', 'gordo', 'gorila', 'gorra', 'gota', 'goteo', 'gozar', 'grada', 'gráfico', 'grano', 'grasa', 'gratis', 'grave', 'grieta', 'grillo', 'gripe', 'gris', 'grito', 'grosor', 'grúa', 'grueso', 'grumo', 'grupo', 'guante', 'guapo', 'guardia', 'guerra', 'guía', 'guiño', 'guion', 'guiso', 'guitarra', 'gusano', 'gustar', 'haber', 'hábil', 'hablar', 'hacer', 'hacha', 'hada', 'hallar', 'hamaca', 'harina', 'haz', 'hazaña', 'hebilla', 'hebra', 'hecho', 'helado', 'helio', 'hembra', 'herir', 'hermano', 'héroe', 'hervir', 'hielo', 'hierro', 'hígado', 'higiene', 'hijo', 'himno', 'historia', 'hocico', 'hogar', 'hoguera', 'hoja', 'hombre', 'hongo', 'honor', 'honra', 'hora', 'hormiga', 'horno', 'hostil', 'hoyo', 'hueco', 'huelga', 'huerta', 'hueso', 'huevo', 'huida', 'huir', 'humano', 'húmedo', 'humilde', 'humo', 'hundir', 'huracán', 'hurto', 'icono', 'ideal', 'idioma', 'ídolo', 'iglesia', 'iglú', 'igual', 'ilegal', 'ilusión', 'imagen', 'imán', 'imitar', 'impar', 'imperio', 'imponer', 'impulso', 'incapaz', 'índice', 'inerte', 'infiel', 'informe', 'ingenio', 'inicio', 'inmenso', 'inmune', 'innato', 'insecto', 'instante', 'interés', 'íntimo', 'intuir', 'inútil', 'invierno', 'ira', 'iris', 'ironía', 'isla', 'islote', 'jabalí', 'jabón', 'jamón', 'jarabe', 'jardín', 'jarra', 'jaula', 'jazmín', 'jefe', 'jeringa', 'jinete', 'jornada', 'joroba', 'joven', 'joya', 'juerga', 'jueves', 'juez', 'jugador', 'jugo', 'juguete', 'juicio', 'junco', 'jungla', 'junio', 'juntar', 'júpiter', 'jurar', 'justo', 'juvenil', 'juzgar', 'kilo', 'koala', 'labio', 'lacio', 'lacra', 'lado', 'ladrón', 'lagarto', 'lágrima', 'laguna', 'laico', 'lamer', 'lámina', 'lámpara', 'lana', 'lancha', 'langosta', 'lanza', 'lápiz', 'largo', 'larva', 'lástima', 'lata', 'látex', 'latir', 'laurel', 'lavar', 'lazo', 'leal', 'lección', 'leche', 'lector', 'leer', 'legión', 'legumbre', 'lejano', 'lengua', 'lento', 'leña', 'león', 'leopardo', 'lesión', 'letal', 'letra', 'leve', 'leyenda', 'libertad', 'libro', 'licor', 'líder', 'lidiar', 'lienzo', 'liga', 'ligero', 'lima', 'límite', 'limón', 'limpio', 'lince', 'lindo', 'línea', 'lingote', 'lino', 'linterna', 'líquido', 'liso', 'lista', 'litera', 'litio', 'litro', 'llaga', 'llama', 'llanto', 'llave', 'llegar', 'llenar', 'llevar', 'llorar', 'llover', 'lluvia', 'lobo', 'loción', 'loco', 'locura', 'lógica', 'logro', 'lombriz', 'lomo', 'lonja', 'lote', 'lucha', 'lucir', 'lugar', 'lujo', 'luna', 'lunes', 'lupa', 'lustro', 'luto', 'luz', 'maceta', 'macho', 'madera', 'madre', 'maduro', 'maestro', 'mafia', 'magia', 'mago', 'maíz', 'maldad', 'maleta', 'malla', 'malo', 'mamá', 'mambo', 'mamut', 'manco', 'mando', 'manejar', 'manga', 'maniquí', 'manjar', 'mano', 'manso', 'manta', 'mañana', 'mapa', 'máquina', 'mar', 'marco', 'marea', 'marfil', 'margen', 'marido', 'mármol', 'marrón', 'martes', 'marzo', 'masa', 'máscara', 'masivo', 'matar', 'materia', 'matiz', 'matriz', 'máximo', 'mayor', 'mazorca', 'mecha', 'medalla', 'medio', 'médula', 'mejilla', 'mejor', 'melena', 'melón', 'memoria', 'menor', 'mensaje', 'mente', 'menú', 'mercado', 'merengue', 'mérito', 'mes', 'mesón', 'meta', 'meter', 'método', 'metro', 'mezcla', 'miedo', 'miel', 'miembro', 'miga', 'mil', 'milagro', 'militar', 'millón', 'mimo', 'mina', 'minero', 'mínimo', 'minuto', 'miope', 'mirar', 'misa', 'miseria', 'misil', 'mismo', 'mitad', 'mito', 'mochila', 'moción', 'moda', 'modelo', 'moho', 'mojar', 'molde', 'moler', 'molino', 'momento', 'momia', 'monarca', 'moneda', 'monja', 'monto', 'moño', 'morada', 'morder', 'moreno', 'morir', 'morro', 'morsa', 'mortal', 'mosca', 'mostrar', 'motivo', 'mover', 'móvil', 'mozo', 'mucho', 'mudar', 'mueble', 'muela', 'muerte', 'muestra', 'mugre', 'mujer', 'mula', 'muleta', 'multa', 'mundo', 'muñeca', 'mural', 'muro', 'músculo', 'museo', 'musgo', 'música', 'muslo', 'nácar', 'nación', 'nadar', 'naipe', 'naranja', 'nariz', 'narrar', 'nasal', 'natal', 'nativo', 'natural', 'náusea', 'naval', 'nave', 'navidad', 'necio', 'néctar', 'negar', 'negocio', 'negro', 'neón', 'nervio', 'neto', 'neutro', 'nevar', 'nevera', 'nicho', 'nido', 'niebla', 'nieto', 'niñez', 'niño', 'nítido', 'nivel', 'nobleza', 'noche', 'nómina', 'noria', 'norma', 'norte', 'nota', 'noticia', 'novato', 'novela', 'novio', 'nube', 'nuca', 'núcleo', 'nudillo', 'nudo', 'nuera', 'nueve', 'nuez', 'nulo', 'número', 'nutria', 'oasis', 'obeso', 'obispo', 'objeto', 'obra', 'obrero', 'observar', 'obtener', 'obvio', 'oca', 'ocaso', 'océano', 'ochenta', 'ocho', 'ocio', 'ocre', 'octavo', 'octubre', 'oculto', 'ocupar', 'ocurrir', 'odiar', 'odio', 'odisea', 'oeste', 'ofensa', 'oferta', 'oficio', 'ofrecer', 'ogro', 'oído', 'oír', 'ojo', 'ola', 'oleada', 'olfato', 'olivo', 'olla', 'olmo', 'olor', 'olvido', 'ombligo', 'onda', 'onza', 'opaco', 'opción', 'ópera', 'opinar', 'oponer', 'optar', 'óptica', 'opuesto', 'oración', 'orador', 'oral', 'órbita', 'orca', 'orden', 'oreja', 'órgano', 'orgía', 'orgullo', 'oriente', 'origen', 'orilla', 'oro', 'orquesta', 'oruga', 'osadía', 'oscuro', 'osezno', 'oso', 'ostra', 'otoño', 'otro', 'oveja', 'óvulo', 'óxido', 'oxígeno', 'oyente', 'ozono', 'pacto', 'padre', 'paella', 'página', 'pago', 'país', 'pájaro', 'palabra', 'palco', 'paleta', 'pálido', 'palma', 'paloma', 'palpar', 'pan', 'panal', 'pánico', 'pantera', 'pañuelo', 'papá', 'papel', 'papilla', 'paquete', 'parar', 'parcela', 'pared', 'parir', 'paro', 'párpado', 'parque', 'párrafo', 'parte', 'pasar', 'paseo', 'pasión', 'paso', 'pasta', 'pata', 'patio', 'patria', 'pausa', 'pauta', 'pavo', 'payaso', 'peatón', 'pecado', 'pecera', 'pecho', 'pedal', 'pedir', 'pegar', 'peine', 'pelar', 'peldaño', 'pelea', 'peligro', 'pellejo', 'pelo', 'peluca', 'pena', 'pensar', 'peñón', 'peón', 'peor', 'pepino', 'pequeño', 'pera', 'percha', 'perder', 'pereza', 'perfil', 'perico', 'perla', 'permiso', 'perro', 'persona', 'pesa', 'pesca', 'pésimo', 'pestaña', 'pétalo', 'petróleo', 'pez', 'pezuña', 'picar', 'pichón', 'pie', 'piedra', 'pierna', 'pieza', 'pijama', 'pilar', 'piloto', 'pimienta', 'pino', 'pintor', 'pinza', 'piña', 'piojo', 'pipa', 'pirata', 'pisar', 'piscina', 'piso', 'pista', 'pitón', 'pizca', 'placa', 'plan', 'plata', 'playa', 'plaza', 'pleito', 'pleno', 'plomo', 'pluma', 'plural', 'pobre', 'poco', 'poder', 'podio', 'poema', 'poesía', 'poeta', 'polen', 'policía', 'pollo', 'polvo', 'pomada', 'pomelo', 'pomo', 'pompa', 'poner', 'porción', 'portal', 'posada', 'poseer', 'posible', 'poste', 'potencia', 'potro', 'pozo', 'prado', 'precoz', 'pregunta', 'premio', 'prensa', 'preso', 'previo', 'primo', 'príncipe', 'prisión', 'privar', 'proa', 'probar', 'proceso', 'producto', 'proeza', 'profesor', 'programa', 'prole', 'promesa', 'pronto', 'propio', 'próximo', 'prueba', 'público', 'puchero', 'pudor', 'pueblo', 'puerta', 'puesto', 'pulga', 'pulir', 'pulmón', 'pulpo', 'pulso', 'puma', 'punto', 'puñal', 'puño', 'pupa', 'pupila', 'puré', 'quedar', 'queja', 'quemar', 'querer', 'queso', 'quieto', 'química', 'quince', 'quitar', 'rábano', 'rabia', 'rabo', 'ración', 'radical', 'raíz', 'rama', 'rampa', 'rancho', 'rango', 'rapaz', 'rápido', 'rapto', 'rasgo', 'raspa', 'rato', 'rayo', 'raza', 'razón', 'reacción', 'realidad', 'rebaño', 'rebote', 'recaer', 'receta', 'rechazo', 'recoger', 'recreo', 'recto', 'recurso', 'red', 'redondo', 'reducir', 'reflejo', 'reforma', 'refrán', 'refugio', 'regalo', 'regir', 'regla', 'regreso', 'rehén', 'reino', 'reír', 'reja', 'relato', 'relevo', 'relieve', 'relleno', 'reloj', 'remar', 'remedio', 'remo', 'rencor', 'rendir', 'renta', 'reparto', 'repetir', 'reposo', 'reptil', 'res', 'rescate', 'resina', 'respeto', 'resto', 'resumen', 'retiro', 'retorno', 'retrato', 'reunir', 'revés', 'revista', 'rey', 'rezar', 'rico', 'riego', 'rienda', 'riesgo', 'rifa', 'rígido', 'rigor', 'rincón', 'riñón', 'río', 'riqueza', 'risa', 'ritmo', 'rito', 'rizo', 'roble', 'roce', 'rociar', 'rodar', 'rodeo', 'rodilla', 'roer', 'rojizo', 'rojo', 'romero', 'romper', 'ron', 'ronco', 'ronda', 'ropa', 'ropero', 'rosa', 'rosca', 'rostro', 'rotar', 'rubí', 'rubor', 'rudo', 'rueda', 'rugir', 'ruido', 'ruina', 'ruleta', 'rulo', 'rumbo', 'rumor', 'ruptura', 'ruta', 'rutina', 'sábado', 'saber', 'sabio', 'sable', 'sacar', 'sagaz', 'sagrado', 'sala', 'saldo', 'salero', 'salir', 'salmón', 'salón', 'salsa', 'salto', 'salud', 'salvar', 'samba', 'sanción', 'sandía', 'sanear', 'sangre', 'sanidad', 'sano', 'santo', 'sapo', 'saque', 'sardina', 'sartén', 'sastre', 'satán', 'sauna', 'saxofón', 'sección', 'seco', 'secreto', 'secta', 'sed', 'seguir', 'seis', 'sello', 'selva', 'semana', 'semilla', 'senda', 'sensor', 'señal', 'señor', 'separar', 'sepia', 'sequía', 'ser', 'serie', 'sermón', 'servir', 'sesenta', 'sesión', 'seta', 'setenta', 'severo', 'sexo', 'sexto', 'sidra', 'siesta', 'siete', 'siglo', 'signo', 'sílaba', 'silbar', 'silencio', 'silla', 'símbolo', 'simio', 'sirena', 'sistema', 'sitio', 'situar', 'sobre', 'socio', 'sodio', 'sol', 'solapa', 'soldado', 'soledad', 'sólido', 'soltar', 'solución', 'sombra', 'sondeo', 'sonido', 'sonoro', 'sonrisa', 'sopa', 'soplar', 'soporte', 'sordo', 'sorpresa', 'sorteo', 'sostén', 'sótano', 'suave', 'subir', 'suceso', 'sudor', 'suegra', 'suelo', 'sueño', 'suerte', 'sufrir', 'sujeto', 'sultán', 'sumar', 'superar', 'suplir', 'suponer', 'supremo', 'sur', 'surco', 'sureño', 'surgir', 'susto', 'sutil', 'tabaco', 'tabique', 'tabla', 'tabú', 'taco', 'tacto', 'tajo', 'talar', 'talco', 'talento', 'talla', 'talón', 'tamaño', 'tambor', 'tango', 'tanque', 'tapa', 'tapete', 'tapia', 'tapón', 'taquilla', 'tarde', 'tarea', 'tarifa', 'tarjeta', 'tarot', 'tarro', 'tarta', 'tatuaje', 'tauro', 'taza', 'tazón', 'teatro', 'techo', 'tecla', 'técnica', 'tejado', 'tejer', 'tejido', 'tela', 'teléfono', 'tema', 'temor', 'templo', 'tenaz', 'tender', 'tener', 'tenis', 'tenso', 'teoría', 'terapia', 'terco', 'término', 'ternura', 'terror', 'tesis', 'tesoro', 'testigo', 'tetera', 'texto', 'tez', 'tibio', 'tiburón', 'tiempo', 'tienda', 'tierra', 'tieso', 'tigre', 'tijera', 'tilde', 'timbre', 'tímido', 'timo', 'tinta', 'tío', 'típico', 'tipo', 'tira', 'tirón', 'titán', 'títere', 'título', 'tiza', 'toalla', 'tobillo', 'tocar', 'tocino', 'todo', 'toga', 'toldo', 'tomar', 'tono', 'tonto', 'topar', 'tope', 'toque', 'tórax', 'torero', 'tormenta', 'torneo', 'toro', 'torpedo', 'torre', 'torso', 'tortuga', 'tos', 'tosco', 'toser', 'tóxico', 'trabajo', 'tractor', 'traer', 'tráfico', 'trago', 'traje', 'tramo', 'trance', 'trato', 'trauma', 'trazar', 'trébol', 'tregua', 'treinta', 'tren', 'trepar', 'tres', 'tribu', 'trigo', 'tripa', 'triste', 'triunfo', 'trofeo', 'trompa', 'tronco', 'tropa', 'trote', 'trozo', 'truco', 'trueno', 'trufa', 'tubería', 'tubo', 'tuerto', 'tumba', 'tumor', 'túnel', 'túnica', 'turbina', 'turismo', 'turno', 'tutor', 'ubicar', 'úlcera', 'umbral', 'unidad', 'unir', 'universo', 'uno', 'untar', 'uña', 'urbano', 'urbe', 'urgente', 'urna', 'usar', 'usuario', 'útil', 'utopía', 'uva', 'vaca', 'vacío', 'vacuna', 'vagar', 'vago', 'vaina', 'vajilla', 'vale', 'válido', 'valle', 'valor', 'válvula', 'vampiro', 'vara', 'variar', 'varón', 'vaso', 'vecino', 'vector', 'vehículo', 'veinte', 'vejez', 'vela', 'velero', 'veloz', 'vena', 'vencer', 'venda', 'veneno', 'vengar', 'venir', 'venta', 'venus', 'ver', 'verano', 'verbo', 'verde', 'vereda', 'verja', 'verso', 'verter', 'vía', 'viaje', 'vibrar', 'vicio', 'víctima', 'vida', 'vídeo', 'vidrio', 'viejo', 'viernes', 'vigor', 'vil', 'villa', 'vinagre', 'vino', 'viñedo', 'violín', 'viral', 'virgo', 'virtud', 'visor', 'víspera', 'vista', 'vitamina', 'viudo', 'vivaz', 'vivero', 'vivir', 'vivo', 'volcán', 'volumen', 'volver', 'voraz', 'votar', 'voto', 'voz', 'vuelo', 'vulgar', 'yacer', 'yate', 'yegua', 'yema', 'yerno', 'yeso', 'yodo', 'yoga', 'yogur', 'zafiro', 'zanja', 'zapato', 'zarza', 'zona', 'zorro', 'zumo', 'zurdo'];
 
 module.exports = spanish;
 
-},{}],165:[function(require,module,exports){
+},{}],166:[function(require,module,exports){
 (function (root) {
    "use strict";
 
@@ -23275,4 +23315,4 @@ UChar.udata={
 },{}],"bitcore-mnemonic":[function(require,module,exports){
 module.exports = require('./lib/mnemonic');
 
-},{"./lib/mnemonic":155}]},{},[]);
+},{"./lib/mnemonic":156}]},{},[]);

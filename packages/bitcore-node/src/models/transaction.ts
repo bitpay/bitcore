@@ -2,7 +2,7 @@ import logger from '../logger';
 import * as lodash from 'lodash';
 
 import { CoinStorage } from './coin';
-import { WalletAddressStorage } from './walletAddress';
+import { WalletAddressStorage, IWalletAddress } from './walletAddress';
 import { partition } from '../utils/partition';
 import { ObjectID } from 'bson';
 import { TransformOptions } from '../types/TransformOptions';
@@ -380,14 +380,25 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
 
     const walletConfig = Config.for('api').wallets;
     if (initialSyncComplete || (walletConfig && walletConfig.allowCreationBeforeCompleteSync)) {
-      let mintOpsAddresses = {};
+      let mintOpsAddressesSet = {};
       for (const mintOp of mintOps) {
-        mintOpsAddresses[mintOp.updateOne.update.$set.address] = true;
+        mintOpsAddressesSet[mintOp.updateOne.update.$set.address] = true;
       }
-      let wallets = await WalletAddressStorage.collection
-        .find({ address: { $in: Object.keys(mintOpsAddresses) }, chain, network }, { batchSize: 100 })
-        .project({ wallet: 1, address: 1 })
-        .toArray();
+      let mintOpsAddresses = Object.keys(mintOpsAddressesSet);
+
+      let wallets: IWalletAddress[] = [];
+
+      await Promise.all(
+        partition(mintOpsAddresses, mintOpsAddresses.length / Config.get().maxPoolSize).map(async addressesBatch => {
+          let partialWallets = await WalletAddressStorage.collection
+            .find({ address: { $in: addressesBatch }, chain, network }, { batchSize: 100 })
+            .project({ wallet: 1, address: 1 })
+            .toArray();
+
+          wallets = wallets.concat(partialWallets);
+        })
+      );
+
       if (wallets.length) {
         mintOps = mintOps.map(mintOp => {
           let transformedWallets = wallets

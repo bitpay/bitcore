@@ -15,6 +15,15 @@ export interface NetworkSettings {
   selectedNetwork: ChainNetwork;
 }
 
+const CurrentEnv = process.env.ENV || 'dev';
+
+const EnvApiHosts: { [env: string]: string[] } = {
+  prod: ['https://api.bitcore.io/api', 'https://api-eth.bitcore.io/api'],
+  dev: ['/api']
+};
+
+const CurrentApiHosts = EnvApiHosts[CurrentEnv];
+
 @Injectable()
 export class ApiProvider {
   public defaultNetwork = {
@@ -23,7 +32,8 @@ export class ApiProvider {
   };
   public networkSettings = {
     availableNetworks: [this.defaultNetwork],
-    selectedNetwork: this.defaultNetwork
+    selectedNetwork: this.defaultNetwork,
+    chainNetworkLookup: {}
   };
 
   public ratesAPI = {
@@ -38,28 +48,69 @@ export class ApiProvider {
     private logger: Logger
   ) {
     this.getAvailableNetworks().subscribe(data => {
-      const availableNetworks = data;
+      const newNetworks = data
+        .map(x => x.supported)
+        .reduce((agg, arr) => [...agg].concat(arr), []);
+
+      const chainNetworkLookup = {};
+      for (const hostConfig of data) {
+        for (const chainNetwork of hostConfig.supported) {
+          const key = `${chainNetwork.chain}:${chainNetwork.network}`;
+          chainNetworkLookup[key] = hostConfig.host;
+        }
+      }
+
+      for (const { chain, network } of newNetworks) {
+        const found = this.networkSettings.availableNetworks.find(
+          available =>
+            available.chain === chain && available.network === network
+        );
+        if (!found) {
+          this.networkSettings.availableNetworks.push({ chain, network });
+        }
+      }
+
       this.networkSettings = {
-        availableNetworks,
-        selectedNetwork: this.networkSettings.selectedNetwork
+        availableNetworks: this.networkSettings.availableNetworks,
+        selectedNetwork: this.networkSettings.selectedNetwork,
+        chainNetworkLookup
       };
     });
   }
 
-  public getAvailableNetworks(): Observable<ChainNetwork[]> {
-    return this.httpClient.get<ChainNetwork[]>(
-      this.getUrlPrefix() + '/status/enabled-chains'
+  public getAvailableNetworks(): Observable<
+    Array<{ host: string; supported: ChainNetwork[] }>
+  > {
+    const hosts = EnvApiHosts[CurrentEnv];
+    return Observable.fromPromise(
+      Promise.all(
+        hosts.map(async host => {
+          const supported = await this.httpClient
+            .get<ChainNetwork[]>(host + '/status/enabled-chains')
+            .toPromise();
+          return {
+            host,
+            supported
+          };
+        })
+      )
     );
   }
 
-  public getUrlPrefix(): string {
-    const prefix: string = this.defaults.getDefault('%API_PREFIX%');
+  public getUrlPrefix(chain, network): string {
+    const defaultChain = chain || this.defaultNetwork.chain;
+    const defaultNetwork = network || this.defaultNetwork.network;
+    const key = `${defaultChain}:${defaultNetwork}`;
+    const lookupHost = this.networkSettings.chainNetworkLookup[key];
+    const prefix = lookupHost || this.defaults.getDefault('%API_PREFIX%');
     return prefix;
   }
-  public getUrl(): string {
-    const prefix: string = this.defaults.getDefault('%API_PREFIX%');
-    const chain: string = this.networkSettings.selectedNetwork.chain;
-    const network: string = this.networkSettings.selectedNetwork.network;
+
+  public getUrl(params?: { chain?: string; network?: string }): string {
+    let { chain, network } = params;
+    chain = chain || this.networkSettings.selectedNetwork.chain;
+    network = network || this.networkSettings.selectedNetwork.network;
+    const prefix: string = this.getUrlPrefix(chain, network);
     const apiPrefix = `${prefix}/${chain}/${network}`;
     return apiPrefix;
   }
@@ -74,16 +125,20 @@ export class ApiProvider {
 
   public changeNetwork(network: ChainNetwork): void {
     const availableNetworks = this.networkSettings.availableNetworks;
-    const isValid = _.some(availableNetworks, network);
-    if (!isValid) {
-      this.logger.error(
-        'Invalid URL: missing or invalid COIN or NETWORK param'
-      );
-      return;
-    }
+    // Can't do the following because availableNetworks is loaded
+    /*
+     *const isValid = _.some(availableNetworks, network);
+     *if (!isValid) {
+     *  this.logger.error(
+     *    'Invalid URL: missing or invalid COIN or NETWORK param'
+     *  );
+     *  return;
+     *}
+     */
     this.networkSettings = {
       availableNetworks,
-      selectedNetwork: network
+      selectedNetwork: network,
+      chainNetworkLookup: this.networkSettings.chainNetworkLookup || {}
     };
   }
 }

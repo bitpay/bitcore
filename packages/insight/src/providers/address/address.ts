@@ -27,15 +27,18 @@ export class AddressProvider {
     chainNetwork?: ChainNetwork
   ): Observable<ApiAddr> {
     return this.httpClient.get<ApiAddr>(
-      `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
-        chainNetwork.network
-      }/address/${addrStr}/balance`
+      `${this.apiProvider.getUrl(chainNetwork)}/address/${addrStr}/balance`
     );
   }
 
-  public getAddressActivity(addrStr?: string): Observable<ApiCoin[] & ApiEthCoin[]> {
+  public getAddressActivity(
+    addrStr?: string,
+    chainNetwork?: ChainNetwork
+  ): Observable<ApiCoin[] & ApiEthCoin[]> {
     return this.httpClient.get<ApiCoin[] & ApiEthCoin[]>(
-      `${this.apiProvider.getUrl()}/address/${addrStr}/txs?limit=1000`
+      `${this.apiProvider.getUrl(
+        chainNetwork
+      )}/address/${addrStr}/txs?limit=1000`
     );
   }
 }
