@@ -1,41 +1,34 @@
+import logger from '../logger';
+import * as lodash from 'lodash';
+
 import { CoinStorage } from './coin';
-import { WalletAddressStorage } from './walletAddress';
+import { WalletAddressStorage, IWalletAddress } from './walletAddress';
 import { partition } from '../utils/partition';
 import { ObjectID } from 'bson';
 import { TransformOptions } from '../types/TransformOptions';
 import { LoggifyClass } from '../decorators/Loggify';
 import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { BaseModel, MongoBound } from './base';
-import logger from '../logger';
-import { StreamingFindOptions, Storage, StorageService } from '../services/storage';
-import * as lodash from 'lodash';
+import { MongoBound } from './base';
+import { StorageService } from '../services/storage';
 import { TransactionJSON } from '../types/Transaction';
 import { SpentHeightIndicators } from '../types/Coin';
 import { Config } from '../services/config';
 import { EventStorage } from './events';
+import { Libs } from '../providers/libs';
+import { BaseTransaction, ITransaction } from './baseTransaction';
+export { ITransaction };
+
 const { onlyWalletEvents } = Config.get().services.event;
 function shouldFire(obj: { wallets?: Array<ObjectID> }) {
   return !onlyWalletEvents || (onlyWalletEvents && obj.wallets && obj.wallets.length > 0);
 }
 
-const Chain = require('../chain');
-
-export type ITransaction = {
-  txid: string;
-  chain: string;
-  network: string;
-  blockHeight?: number;
-  blockHash?: string;
-  blockTime?: Date;
-  blockTimeNormalized?: Date;
+export type IBtcTransaction = ITransaction & {
   coinbase: boolean;
-  fee: number;
-  size: number;
   locktime: number;
   inputCount: number;
   outputCount: number;
-  value: number;
-  wallets: ObjectID[];
+  size: number;
 };
 
 export type MintOp = {
@@ -83,31 +76,9 @@ export type SpendOp = {
 };
 
 @LoggifyClass
-export class TransactionModel extends BaseModel<ITransaction> {
+export class TransactionModel extends BaseTransaction<IBtcTransaction> {
   constructor(storage?: StorageService) {
-    super('transactions', storage);
-  }
-
-  allowedPaging = [
-    { key: 'blockHash' as 'blockHash', type: 'string' as 'string' },
-    { key: 'blockHeight' as 'blockHeight', type: 'number' as 'number' },
-    { key: 'blockTimeNormalized' as 'blockTimeNormalized', type: 'date' as 'date' },
-    { key: 'txid' as 'txid', type: 'string' as 'string' }
-  ];
-
-  onConnect() {
-    this.collection.createIndex({ txid: 1 }, { background: true });
-    this.collection.createIndex({ chain: 1, network: 1, blockHeight: 1 }, { background: true });
-    this.collection.createIndex({ blockHash: 1 }, { background: true });
-    this.collection.createIndex({ chain: 1, network: 1, blockTimeNormalized: 1 }, { background: true });
-    this.collection.createIndex(
-      { wallets: 1, blockTimeNormalized: 1 },
-      { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } }
-    );
-    this.collection.createIndex(
-      { wallets: 1, blockHeight: 1 },
-      { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } }
-    );
+    super(storage);
   }
 
   async batchImport(params: {
@@ -179,27 +150,6 @@ export class TransactionModel extends BaseModel<ITransaction> {
           }
         })
       );
-    }
-  }
-
-  toMempoolSafeUpsert(
-    mongoOp: { updateOne: { filter: any; update: { $set: any; $setOnInsert?: any } } },
-    height: number
-  ) {
-    if (height >= SpentHeightIndicators.minimum) {
-      return mongoOp;
-    } else {
-      const update = mongoOp.updateOne.update;
-      return {
-        updateOne: {
-          filter: mongoOp.updateOne.filter,
-          update: {
-            $setOnInsert: { ...(update.$set && update.$set), ...(update.$setOnInsert && update.$setOnInsert) }
-          },
-          upsert: true,
-          forceServerObjectId: true
-        }
-      };
     }
   }
 
@@ -392,8 +342,10 @@ export class TransactionModel extends BaseModel<ITransaction> {
         if (output.script) {
           address = output.script.toAddress(network).toString(true);
           if (address === 'false' && output.script.classify() === 'Pay to public key') {
-            let hash = Chain[chain].lib.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
-            address = Chain[chain].lib.Address(hash, network).toString(true);
+            let hash = Libs.get(chain).lib.crypto.Hash.sha256ripemd160(output.script.chunks[0].buf);
+            address = Libs.get(chain)
+              .lib.Address(hash, network)
+              .toString(true);
           }
         }
         mintOps.push({
@@ -428,14 +380,25 @@ export class TransactionModel extends BaseModel<ITransaction> {
 
     const walletConfig = Config.for('api').wallets;
     if (initialSyncComplete || (walletConfig && walletConfig.allowCreationBeforeCompleteSync)) {
-      let mintOpsAddresses = {};
+      let mintOpsAddressesSet = {};
       for (const mintOp of mintOps) {
-        mintOpsAddresses[mintOp.updateOne.update.$set.address] = true;
+        mintOpsAddressesSet[mintOp.updateOne.update.$set.address] = true;
       }
-      let wallets = await WalletAddressStorage.collection
-        .find({ address: { $in: Object.keys(mintOpsAddresses) }, chain, network }, { batchSize: 100 })
-        .project({ wallet: 1, address: 1 })
-        .toArray();
+      let mintOpsAddresses = Object.keys(mintOpsAddressesSet);
+
+      let wallets: IWalletAddress[] = [];
+
+      await Promise.all(
+        partition(mintOpsAddresses, mintOpsAddresses.length / Config.get().maxPoolSize).map(async addressesBatch => {
+          let partialWallets = await WalletAddressStorage.collection
+            .find({ address: { $in: addressesBatch }, chain, network }, { batchSize: 100 })
+            .project({ wallet: 1, address: 1 })
+            .toArray();
+
+          wallets = wallets.concat(partialWallets);
+        })
+      );
+
       if (wallets.length) {
         mintOps = mintOps.map(mintOp => {
           let transformedWallets = wallets
@@ -555,14 +518,7 @@ export class TransactionModel extends BaseModel<ITransaction> {
     return;
   }
 
-  getTransactions(params: { query: any; options: StreamingFindOptions<ITransaction> }) {
-    let originalQuery = params.query;
-    const { query, options } = Storage.getFindOptions(this, params.options);
-    const finalQuery = Object.assign({}, originalQuery, query);
-    return this.collection.find(finalQuery, options).addCursorFlag('noCursorTimeout', true);
-  }
-
-  _apiTransform(tx: Partial<MongoBound<ITransaction>>, options?: TransformOptions): TransactionJSON | string {
+  _apiTransform(tx: Partial<MongoBound<IBtcTransaction>>, options?: TransformOptions): TransactionJSON | string {
     const transaction: TransactionJSON = {
       _id: tx._id ? tx._id.toString() : '',
       txid: tx.txid || '',

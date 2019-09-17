@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { SetCache, CacheTimes, Confirmations } from '../middleware';
-import { BlockStorage } from '../../models/block';
+import { BitcoinBlockStorage } from '../../models/block';
 const router = require('express').Router({ mergeParams: true });
 
 router.get('/', async function(req: Request, res: Response) {
@@ -31,6 +31,7 @@ router.get('/tip', async function(req: Request, res: Response) {
     let tip = await ChainStateProvider.getBlock({ chain, network });
     return res.json(tip);
   } catch (err) {
+    console.error(err);
     return res.status(500).send(err);
   }
 });
@@ -55,7 +56,7 @@ router.get('/:blockId', async function(req: Request, res: Response) {
 router.get('/before-time/:time', async function(req: Request, res: Response) {
   let { time, chain, network } = req.params;
   try {
-    const [block] = await BlockStorage.collection
+    const [block] = await BitcoinBlockStorage.collection
       .find({
         chain,
         network,

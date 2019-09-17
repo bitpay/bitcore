@@ -19,9 +19,7 @@ export class SearchProvider {
     type: string,
     chainNetwork: ChainNetwork
   ): Observable<any> {
-    this.apiURL = `${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
-      chainNetwork.network
-    }`;
+    this.apiURL = `${this.apiProvider.getUrl(chainNetwork)}`;
 
     switch (type) {
       case 'blockOrTx':
@@ -36,10 +34,10 @@ export class SearchProvider {
 
   public isInputValid(inputValue, chainNetwork) {
     return this.httpClient
-      .get<{isValid: boolean, type: string}>(`${this.apiProvider.getUrlPrefix()}/${chainNetwork.chain}/${
-        chainNetwork.network
-      }/valid/${inputValue}`)
-      .pipe(map(res => ({ isValid: res.isValid , type: res.type})));
+      .get<{ isValid: boolean; type: string }>(
+        `${this.apiProvider.getUrl(chainNetwork)}/valid/${inputValue}`
+      )
+      .pipe(map(res => ({ isValid: res.isValid, type: res.type })));
   }
 
   private searchBlock(block: string): Observable<{ block: any }> {

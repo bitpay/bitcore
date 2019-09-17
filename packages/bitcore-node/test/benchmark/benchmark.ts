@@ -4,7 +4,7 @@ const UnspentOutput = Transaction.UnspentOutput;
 
 import config from '../../src/config';
 import { Storage } from '../../src/services/storage';
-import { BlockStorage } from '../../src/models/block';
+import { BitcoinBlockStorage } from '../../src/models/block';
 import { BitcoinBlockType } from '../../src/types/namespaces/Bitcoin/Block';
 import { resetDatabase } from '../helpers/index.js';
 import * as crypto from 'crypto';
@@ -123,7 +123,7 @@ async function benchmark(blockCount: number, blockSizeMb: number) {
   console.log('Adding blocks');
   for (let block of blocks) {
     process.stdout.write('.');
-    await BlockStorage.addBlock({ block, chain: 'BENCH', network: 'MARK', initialSyncComplete: false });
+    await BitcoinBlockStorage.addBlock({ block, chain: 'BENCH', network: 'MARK', initialSyncComplete: false });
   }
   process.stdout.write('\n');
   const endTime = new Date();

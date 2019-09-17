@@ -1748,7 +1748,10 @@ export class API extends EventEmitter {
               log.debug('Merchant memo:', memo);
             }
             this._doBroadcast(txp, (err2, txp) => {
-              return cb(err2, txp, memo, err);
+              if (err2) {
+                log.error('Error broadcasting payment', err2);
+              }
+              return cb(null, txp, memo);
             });
           }
         );

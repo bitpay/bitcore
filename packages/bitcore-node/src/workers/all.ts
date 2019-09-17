@@ -5,6 +5,7 @@ import { Api } from '../services/api';
 import { Event } from '../services/event';
 import cluster = require('cluster');
 import parseArgv from '../utils/parseArgv';
+import { Modules } from '../modules';
 import '../utils/polyfills';
 require('heapdump');
 let args = parseArgv([], ['DEBUG']);
@@ -29,6 +30,9 @@ export const FullClusteredWorker = async () => {
   } else {
     services.push(Api);
   }
+
+  Modules.loadConfigured();
+
   for (const service of services) {
     await service.start();
   }
