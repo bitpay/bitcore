@@ -32,6 +32,7 @@
     "bitcore-lib": "^8.7.3",
     "bitcore-lib-cash": "^8.7.3",
     "bitcore-mnemonic": "^8.7.3",
+    "crypto-wallet-core": "^8.7.3",
     "json-stable-stringify": "^1.0.1",
     "lodash": "^4.17.15",
     "preconditions": "^2.2.3",
