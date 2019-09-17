@@ -315,7 +315,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           objectMode: true,
           transform: function(tx: any, _, done) {
             console.log(tx);
-            return done({ ...tx, value: tx.abiType.params[1].value, to: tx.abiType.params[0].value });
+            return done(null, { ...tx, value: tx.abiType.params[1].value, to: tx.abiType.params[0].value });
           }
         })
       );
