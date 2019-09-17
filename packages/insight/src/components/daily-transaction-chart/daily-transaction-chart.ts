@@ -78,6 +78,7 @@ export class DailyTransactionChartComponent {
     const graphTicks =
       numOfDays === 30 ? coin.ticks.thirtyDayTicks : coin.ticks.sevenDayTicks;
 
+    const max = (Math.max(...transactionCounts) * 1.05).toFixed();
     const options = {
       legend: {
         display: true
@@ -90,7 +91,7 @@ export class DailyTransactionChartComponent {
               display: true,
               drawBorder: true
             },
-            ticks: graphTicks.yAxesTicks
+            ticks: {...graphTicks.yAxesTicks, max}
           }
         ],
         xAxes: [

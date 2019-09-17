@@ -45,33 +45,30 @@ export class TransactionListComponent implements OnInit {
               const observableBatch = [];
 
               _.forEach(txIds, value => {
-                this.txProvider.getTx(value, this.chainNetwork);
                 observableBatch.push(
                   this.txProvider.getTx(value, this.chainNetwork)
                 );
               });
 
-              Observable.forkJoin(observableBatch).subscribe(
-                (response: any) => {
-                  _.forEach(response, tx => {
-                    if (
-                      this.chainNetwork.chain === 'BTC' ||
-                      this.chainNetwork.chain === 'BCH'
-                    ) {
-                      txsPopulated.push(this.txProvider.toUtxoCoinsAppTx(tx));
-                    }
-                    if (this.chainNetwork.chain === 'ETH') {
-                      txsPopulated.push(this.txProvider.toEthAppTx(tx));
-                    }
-                  });
+              Observable.forkJoin(observableBatch).subscribe((txs: any[]) => {
+                _.forEach(response, tx => {
+                  if (
+                    this.chainNetwork.chain === 'BTC' ||
+                    this.chainNetwork.chain === 'BCH'
+                  ) {
+                    txsPopulated.push(this.txProvider.toUtxoCoinsAppTx(tx));
+                  }
+                  if (this.chainNetwork.chain === 'ETH') {
+                    txsPopulated.push(this.txProvider.toEthAppTx(tx as any));
+                  }
+                });
 
-                  // Newly Generated Coins (Coinbase) First
-                  const sortedTxs = _.sortBy(txsPopulated, (tx: any) => {
-                    return tx.isCoinBase ? 0 : 1;
-                  });
-                  this.transactions = sortedTxs;
-                }
-              );
+                // Newly Generated Coins (Coinbase) First
+                const sortedTxs = _.sortBy(txsPopulated, (tx: any) => {
+                  return tx.isCoinBase ? 0 : 1;
+                });
+                this.transactions = sortedTxs;
+              });
               this.loading = false;
             },
             () => {
@@ -79,7 +76,6 @@ export class TransactionListComponent implements OnInit {
             }
           );
       } else if (this.queryType === 'address') {
-        
         this.addrProvider
           .getAddressActivity(this.queryValue)
           .subscribe((response: any) => {
@@ -110,9 +106,9 @@ export class TransactionListComponent implements OnInit {
                 this.txProvider.getTx(tx, this.chainNetwork)
               );
             });
-            
-            Observable.forkJoin(observableBatch).subscribe((response: any) => {
-              _.forEach(response, tx => {
+
+            Observable.forkJoin(observableBatch).subscribe((txs: any) => {
+              _.forEach(txs, tx => {
                 if (
                   this.chainNetwork.chain === 'BTC' ||
                   this.chainNetwork.chain === 'BCH'
