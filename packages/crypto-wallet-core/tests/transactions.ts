@@ -15,7 +15,7 @@ describe('Transaction Creation', () => {
     const cryptoTx = await Transactions.create({
       chain: 'ETH',
       recipients,
-      fee: gasPrice,
+      gasPrice,
       nonce: 0,
       data
     });
@@ -35,12 +35,12 @@ describe('Transaction Creation', () => {
     const cryptoTx = await Transactions.create({
       chain: 'ERC20',
       recipients,
-      fee: gasPrice,
+      gasPrice,
       nonce: 0,
       tokenAddress: '0x692a70d2e424a56d2c6c27aa97d1a86395877b3a'
     });
     const expectedTx =
-      'f867808504a817c8008094692a70d2e424a56d2c6c27aa97d1a86395877b3a80b844095ea7b300000000000000000000000037d7b3bbd88efde6a93cf74d2f5b0385d3e3b08a000000000000000000000000000000000000000000000000000dd764300b80001c8080';
+      'f867808504a817c8008094692a70d2e424a56d2c6c27aa97d1a86395877b3a80b844a9059cbb00000000000000000000000037d7b3bbd88efde6a93cf74d2f5b0385d3e3b08a000000000000000000000000000000000000000000000000000dd764300b80001c8080';
 
     expect(cryptoTx).to.equal(expectedTx);
   });
