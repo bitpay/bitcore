@@ -170,8 +170,8 @@ export class MongoWriteStream extends Transform {
     super({ objectMode: true });
   }
 
-  _transform(data: Array<any>, _, done) {
-    this.collection.bulkWrite(data);
+  async _transform(data: Array<any>, _, done) {
+    await this.collection.bulkWrite(data);
     done(null, data);
   }
 }
