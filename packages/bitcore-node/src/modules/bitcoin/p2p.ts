@@ -192,7 +192,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     logger.debug('Getting block, hash:', hash);
     let received = false;
     return new Promise<Bitcoin.Block>(async resolve => {
-      this.events.once(hash, (block: Bitcoin.Block) => {
+      this.events.once(hash, async (block: Bitcoin.Block) => {
         logger.debug('Received block, hash:', hash);
         received = true;
         resolve(block);
