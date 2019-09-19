@@ -100,7 +100,7 @@ interface TxOp {
         wallets: Array<ObjectID>;
         mempoolTime?: Date;
       };
-      $setOnInsert?: TxOp["updateOne"]["update"]["$set"]
+      $setOnInsert?: TxOp['updateOne']['update']['$set'];
     };
     upsert: true;
     forceServerObjectId: true;
@@ -134,7 +134,11 @@ export class MempoolCoinEventTransform extends Transform {
       console.log(coinBatch);
       const eventPayload = coinBatch
         .map(coinOp => {
-          const coin = { ...coinOp.updateOne.update.$set, ...coinOp.updateOne.filter, ...coinOp.updateOne.update.$setOnInsert };
+          const coin = {
+            ...coinOp.updateOne.update.$set,
+            ...coinOp.updateOne.filter,
+            ...coinOp.updateOne.update.$setOnInsert
+          };
           const address = coin.address;
           return { address, coin };
         })
@@ -210,17 +214,17 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     const { initialSyncComplete, height, chain, network } = params;
     const mintStream = new Readable({
       objectMode: true,
-      read: () => { }
+      read: () => {}
     });
 
     const spentStream = new Readable({
       objectMode: true,
-      read: () => { }
+      read: () => {}
     });
 
     const txStream = new Readable({
       objectMode: true,
-      read: () => { }
+      read: () => {}
     });
 
     this.streamMintOps({ ...params, mintStream });
