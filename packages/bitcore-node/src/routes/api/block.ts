@@ -72,10 +72,10 @@ router.get('/:blockHash/coins', async function (req: Request, res: Response) {
     let txidCoins = await Promise.all(txidCoinPromises).then(
         (data) => 
         { 
-          let response : any = [];
+          let response : any = {};
           data.forEach((coin, index) => {
             let txid : string = txidIndexes[index];
-            response.push( { txid, coin })
+            response[txid] = coin;
         }); 
         return response;
       }
