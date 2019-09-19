@@ -2,6 +2,8 @@ import { Request, Response } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { SetCache, CacheTimes, Confirmations } from '../middleware';
 import { BitcoinBlockStorage } from '../../models/block';
+import { TransactionStorage } from '../../models/transaction';
+
 const router = require('express').Router({ mergeParams: true });
 
 router.get('/', async function(req: Request, res: Response) {
@@ -48,6 +50,37 @@ router.get('/:blockId', async function(req: Request, res: Response) {
       SetCache(res, CacheTimes.Month);
     }
     return res.json(block);
+  } catch (err) {
+    return res.status(500).send(err);
+  }
+});
+
+//return mapping of { txid, coin } for a block
+router.get('/:blockHash/coins', async function (req: Request, res: Response) {
+  let { chain, network, blockHash } = req.params;
+  try {
+    const txs = await TransactionStorage.collection.find({ chain, network, blockHash }).toArray();
+    
+    const txidIndexes : any= {};
+    
+    const txidCoinPromises = txs.map(function(tx, index) {
+      let txid = tx.txid;
+      txidIndexes[index] = txid;
+      return ChainStateProvider.getCoinsForTx({ chain, network, txid });
+    });
+  
+    let txidCoins = await Promise.all(txidCoinPromises).then(
+        (data) => 
+        { 
+          let response : any = [];
+          data.forEach((coin, index) => {
+            let txid : string = txidIndexes[index];
+            response.push( { txid, coin })
+        }); 
+        return response;
+      }
+    );
+    return res.json(txidCoins);
   } catch (err) {
     return res.status(500).send(err);
   }
