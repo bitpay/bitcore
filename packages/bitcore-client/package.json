@@ -6,7 +6,7 @@
   },
   "version": "8.7.3",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
-  "main": "ts_build/index.js",
+  "main": "./ts_build/index.js",
   "types": "./ts_build/index.d.ts",
   "prettier": {
     "singleQuote": true
