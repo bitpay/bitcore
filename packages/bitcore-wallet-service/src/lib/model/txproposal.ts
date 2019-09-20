@@ -1,5 +1,5 @@
-import _ from 'lodash';
 import { Transactions } from 'crypto-wallet-core';
+import _ from 'lodash';
 import { TxProposalLegacy } from './txproposal_legacy';
 import { TxProposalAction } from './txproposalaction';
 
