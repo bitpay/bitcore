@@ -44,7 +44,7 @@ export function decryptEncryptionKey(encEncryptionKey, password) {
 }
 
 export function encryptPrivateKey(privKey, pubKey, encryptionKey) {
-  const key = encryptionKey;
+  const key = Buffer.from(encryptionKey, 'hex');
   const doubleHash = Buffer.from(SHA256(SHA256(pubKey)), 'hex');
   const iv = doubleHash.slice(0, 16);
   const cipher = crypto.createCipheriv(algo, key, iv);
@@ -52,7 +52,7 @@ export function encryptPrivateKey(privKey, pubKey, encryptionKey) {
   return encData;
 }
 
-function decryptPrivateKey(encPrivateKey, pubKey, encryptionKey) {
+function decryptPrivateKey(encPrivateKey: string, pubKey: string, encryptionKey: string) {
   const key = Buffer.from(encryptionKey, 'hex');
   const doubleHash = Buffer.from(SHA256(SHA256(pubKey)), 'hex');
   const iv = doubleHash.slice(0, 16);

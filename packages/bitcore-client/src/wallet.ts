@@ -294,16 +294,23 @@ export class Wallet {
   }
 
   async signTx(params) {
-    let { tx, from } = params;
+    let { tx, keys, utxos } = params;
+    if (!keys) {
+      let addresses = [];
+      for (let utxo of utxos) {
+        addresses.push(utxo.address);
+      }
+      keys = await this.storage.getKeys({addresses, name: this.name, encryptionKey: this.unlocked.encryptionKey});
+    }
     const payload = {
       chain: this.chain,
       network: this.network,
       tx,
-      utxos: params.utxos,
-      from
+      keys,
+      utxos
     };
 
-    return Transactions.sign({ ...payload, wallet: this });
+    return Transactions.sign({ ...payload });
   }
 
   async checkWallet() {

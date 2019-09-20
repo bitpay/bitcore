@@ -1,33 +1,127 @@
 #!/usr/bin/env node
+'use strict';
 
 const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
+const fs = require('fs');
+const { Transform } = require('stream');
+const { bitcoinCoreDecrypt } = require('../ts_build/encryption');
 
+/**
+ * USAGE -
+ * Pass in a raw transaction or a jsonl file of rawTransactions
+ * Pass in the bitcore wallet name or a jsonl file of encrypted bitcoin core keys or
+ * Pass in the utxos if you want to use specific utxos
+ */
 program
   .version(require('../package.json').version)
   .option('--name <name>', 'REQUIRED - Wallet Name')
   .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--tx <tx>', 'REQUIRED - The transaction to sign')
+  .option('--tx [tx]', 'The raw transaction to sign')
+  .option('--txfile [txfile]', 'path to a jsonl file with rawTransaction and utxos')
+  .option('--utxos', 'Pass in utxos to use to sign transaction')
+  .option('keyFile [keyFile]', 'jsonl file of {privKey, pubKey, address} pairs')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, tx } = program;
+  const { name, path, tx, txfile, keyfile, utxos } = program;
   let wallet;
+  let keys;
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ name, path });
     wallet = await wallet.unlock(password);
-    let signedTx = await wallet.signTx({ tx });
-
-    console.log(
-      JSON.stringify({
-        signedTx: signedTx.uncheckedSerialize()
-      })
-    );
+    if (keyfile) {
+      let contents = fs.readFileSync(keyfile).toString();
+      keys = contents
+        .split('\n')
+        .filter(line => line !== '')
+        .map(line => JSON.parse(line));
+      try {
+        const bitcoinCorePassword = await promptly.password('Enter Bitcoin Core Password:');
+        let decryptedParams = bitcoinCoreDecrypt(keys, bitcoinCorePassword);
+        keys = decryptedParams.jsonlDecrypted;
+      } catch (e) {
+        console.error(e);
+      }
+    }
+    if (tx) {
+      let signedTx = await wallet.signTx({ tx, keys, utxos });
+      console.log(JSON.stringify(signedTx));
+    }
+    if (txfile) {
+      const readStream = fs.createReadStream(txfile, {flags: 'r', encoding: 'utf8'});
+      const writeStream = fs.createWriteStream('signedTx.jsonl');
+      readStream
+        .pipe(jsonlBufferToObjectMode()).on('error', (err) => console.error(err))
+        .pipe(signTxStream(wallet, keys, utxos)).on('error', (err) => console.error(err))
+        .pipe(objectModeToJsonlBuffer()).on('error', (err) => console.error(err))
+        .pipe(writeStream).on('error', (err) => console.error(err));
+    }
   } catch (e) {
     console.error(e);
   }
 };
+
+function signTxStream(wallet, keys, utxosPassedIn) {
+  return new Transform({
+    objectMode: true,
+    async transform(chunk, encoding, callback) {
+      const rawTransaction = chunk.rawTransaction;
+      const utxos = utxosPassedIn || chunk.utxos;
+      const signedTx = await wallet.signTx({tx: rawTransaction, utxos, keys});
+      chunk.signedTransaction = signedTx;
+      return callback(null, chunk);
+    }
+  });
+}
+
+function objectModeToJsonlBuffer() {
+  return new Transform({
+    writableObjectMode: true,
+    readableObjectMode: false,
+    transform(chunk, encoding, callback) {
+      if (typeof chunk !== 'object') {
+        return callback(new Error(`invalid data not in form of object: ${chunk}`));
+      }
+      let jsonl;
+      try {
+        jsonl = JSON.stringify(chunk);
+      } catch (e) {
+        return callback(e);
+      }
+      callback(null, `${jsonl}\n`);
+    }
+  });
+}
+
+function jsonlBufferToObjectMode() {
+  return new Transform({
+    writableObjectMode: false,
+    readableObjectMode: true,
+    transform(chunk, encoding, callback) {
+      if (!this.buffer) {
+        this.buffer = '';
+      }
+      this.buffer = `${this.buffer}${chunk}`;
+      let lineArray = this.buffer.toString().split('\n');
+      while (lineArray.length > 1) {
+        try {
+          const data = lineArray.shift();
+          if (data === '') {
+            continue;
+          }
+          const obj = JSON.parse(data);
+          this.push(obj);
+        } catch (e) {
+          return callback(e);
+        }
+      }
+      this.buffer = Buffer.from(lineArray[0], 'utf-8');
+      callback();
+    }
+  });
+}
 
 main();
