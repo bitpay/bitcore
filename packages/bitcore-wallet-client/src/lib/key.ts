@@ -415,8 +415,8 @@ export class Key {
         key: { privKey: privKey.toString('hex') },
         from: txp.from
       });
-  
-       return Object.assign(txp, { rawTx: signedRawTx, status: 'accepted' });
+
+      return Object.assign(txp, { rawTx: signedRawTx, status: 'accepted' });
     }
   };
 }

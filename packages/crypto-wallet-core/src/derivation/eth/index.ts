@@ -1,5 +1,5 @@
-import { pubToAddress, toChecksumAddress } from 'ethereumjs-util';
 import { IDeriver } from '..';
+import utils from 'web3-utils';
 
 const BitcoreLib = require('bitcore-lib');
 
@@ -27,8 +27,8 @@ export class EthDeriver implements IDeriver {
     const x = ecPoint.getX().toBuffer({ size: 32 });
     const y = ecPoint.getY().toBuffer({ size: 32 });
     const paddedBuffer = Buffer.concat([x, y]);
-    const address = `0x${pubToAddress(paddedBuffer).toString('hex')}`;
-    return toChecksumAddress(address);
+    const address = utils.keccak256(paddedBuffer).slice(26);
+    return utils.toChecksumAddress(address);
   }
 
   derivePrivateKey(network, xPriv, addressIndex, isChange) {
