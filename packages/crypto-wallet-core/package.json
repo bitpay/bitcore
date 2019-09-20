@@ -7,7 +7,8 @@
   "scripts": {
     "clean": "rm -rf ts_build",
     "compile": "npm run clean && ./node_modules/.bin/tsc",
-    "test": "npx mocha -r ts-node/register tests/**/*.ts"
+    "test": "npx mocha -r ts-node/register tests/**/*.ts",
+    "pub": "npm run compile && npm publish"
   },
   "keywords": [
     "multi-currency",
