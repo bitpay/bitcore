@@ -1,8 +1,8 @@
 'use strict';
 
+import { Deriver, Transactions } from 'crypto-wallet-core';
 import * as _ from 'lodash';
 import { Constants } from './constants';
-import { Deriver, Transactions } from 'crypto-wallet-core';
 import { Defaults } from './defaults';
 
 var $ = require('preconditions').singleton();

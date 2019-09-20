@@ -12,7 +12,7 @@ export const Constants = {
     BIP48: 'BIP48',
   },
   PATHS: {
-    SINGLE_ADDRESS: "m/0/0",
+    SINGLE_ADDRESS: 'm/0/0',
     REQUEST_KEY: "m/1'/0",
     //  TXPROPOSAL_KEY: "m/1'/1",
     REQUEST_KEY_AUTH: 'm/2', // relative to BASE
