@@ -1,6 +1,6 @@
 {
   "name": "bitcore-p2p",
-  "version": "8.7.3",
+  "version": "8.7.4",
   "description": "Interface to the bitcoin P2P network for bitcore",
   "main": "index.js",
   "scripts": {
@@ -21,13 +21,13 @@
   },
   "dependencies": {
     "bcoin": "1.0.0-beta.12",
-    "bitcore-lib": "^8.7.3",
+    "bitcore-lib": "^8.7.4",
     "bloom-filter": "^0.2.0",
     "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
     "socks5-client": "^0.3.6"
   },
   "devDependencies": {
-    "bitcore-build": "^8.7.2",
+    "bitcore-build": "^8.7.4",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
     "gulp": "^4.0.0",

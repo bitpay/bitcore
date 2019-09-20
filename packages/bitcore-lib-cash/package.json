@@ -1,6 +1,6 @@
 {
   "name": "bitcore-lib-cash",
-  "version": "8.7.3",
+  "version": "8.7.4",
   "description": "A pure and powerful JavaScript Bitcoin Cash library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
@@ -36,7 +36,7 @@
     "request": "browser-request"
   },
   "dependencies": {
-    "bitcore-lib": "^8.7.3",
+    "bitcore-lib": "^8.7.4",
     "bn.js": "=4.11.8",
     "bs58": "^4.0.1",
     "buffer-compare": "=1.1.1",
@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "base-x": "=3.0.4",
-    "bitcore-build": "^8.7.2",
+    "bitcore-build": "^8.7.4",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",
