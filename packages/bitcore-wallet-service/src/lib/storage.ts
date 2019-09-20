@@ -1469,7 +1469,7 @@ export class Storage {
         resolve({ lastAddress, sum });
       });
     });
-  };
+  }
 
   acquireLock(key, expireTs, cb) {
     this.db.collection(collections.LOCKS).insert(

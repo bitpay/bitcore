@@ -1773,8 +1773,8 @@ export class WalletService {
                 if (err) return cb(err);
                 if (addresses.length > 0) {
                   const byAddress = [{
-                    address: addresses[0].address, 
-                    path: Constants.PATHS.SINGLE_ADDRESS, 
+                    address: addresses[0].address,
+                    path: Constants.PATHS.SINGLE_ADDRESS,
                     amount: convertedBalance.totalAmount
                   }];
                   convertedBalance.byAddress = byAddress;

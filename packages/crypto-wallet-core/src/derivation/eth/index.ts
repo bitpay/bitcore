@@ -1,9 +1,7 @@
-import { ec } from 'elliptic';
 import { pubToAddress, toChecksumAddress } from 'ethereumjs-util';
 import { IDeriver } from '..';
 
 const BitcoreLib = require('bitcore-lib');
-const secp = new ec('secp256k1');
 
 export class EthDeriver implements IDeriver {
   padTo32(msg) {
@@ -25,16 +23,10 @@ export class EthDeriver implements IDeriver {
   }
 
   addressFromPublicKeyBuffer(pubKey: Buffer): string {
-    const ecKey = secp.keyFromPublic(pubKey);
-    const x = ecKey
-      .getPublic()
-      .getX()
-      .toBuffer();
-    const y = ecKey
-      .getPublic()
-      .getY()
-      .toBuffer();
-    const paddedBuffer = Buffer.concat([this.padTo32(x), this.padTo32(y)]);
+    const ecPoint = new BitcoreLib.PublicKey.fromBuffer(pubKey).point;
+    const x = ecPoint.getX().toBuffer({ size: 32 });
+    const y = ecPoint.getY().toBuffer({ size: 32 });
+    const paddedBuffer = Buffer.concat([x, y]);
     const address = `0x${pubToAddress(paddedBuffer).toString('hex')}`;
     return toChecksumAddress(address);
   }
