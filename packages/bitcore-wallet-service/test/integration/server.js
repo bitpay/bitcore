@@ -7386,8 +7386,9 @@ describe('Wallet service', function() {
           });
         }
       });
-      server.startScan({}, function(err) {
+      server.startScan({}, function(err, ret) {
         should.not.exist(err);
+        ret.started.should.equal(true);
       });
     });
     it('should set scan status error when unable to reach blockchain', function(done) {
@@ -7451,6 +7452,34 @@ describe('Wallet service', function() {
       });
     });
   });
+
+  describe('#startScan ETH', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      this.timeout(5000);
+      Defaults.SCAN_ADDRESS_GAP = 2;
+
+      helpers.createAndJoinWallet(1, 1, {
+        coin: 'eth',
+      }, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+    afterEach(function() {
+      server.messageBroker.removeAllListeners();
+    });
+
+    it('should start an asynchronous scan', function(done) {
+      server.startScan({}, function(err, ret) {
+        should.not.exist(err);
+        should.not.exist(ret);
+        return done();
+      });
+    });
+  });
+
 
   describe('PayPro', function() {
     var server, wallet;
