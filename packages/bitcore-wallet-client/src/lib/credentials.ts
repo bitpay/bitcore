@@ -7,7 +7,6 @@ const $ = require('preconditions').singleton();
 const _ = require('lodash');
 
 const Bitcore = BitcoreLib;
-const Mnemonic = require('bitcore-mnemonic');
 const sjcl = require('sjcl');
 
 export class Credentials {
