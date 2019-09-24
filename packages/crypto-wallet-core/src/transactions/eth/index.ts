@@ -1,4 +1,4 @@
-import EthereumTx from 'ethereumjs-tx';
+import { ethers } from 'ethers';
 import { Key } from '../../derivation';
 const utils = require('web3-utils');
 export class ETHTxProvider {
@@ -19,16 +19,13 @@ export class ETHTxProvider {
       data,
       value: utils.toHex(amount)
     };
-    const rawTx = new EthereumTx(txData).serialize().toString('hex');
-    return rawTx;
+    return ethers.utils.serializeTransaction(txData);
   }
 
   sign(params: { tx: string; key: Key; }) {
     const { tx, key } = params;
-    const rawTx = new EthereumTx(tx);
-    const bufferKey = Buffer.from(key.privKey, 'hex');
-    rawTx.sign(bufferKey);
-    const serializedTx = rawTx.serialize();
-    return '0x' + serializedTx.toString('hex');
+    let wallet = new ethers.Wallet(key.privKey);
+    const parsedTx = ethers.utils.parseTransaction(tx);
+    return wallet.sign(parsedTx);
   }
 }

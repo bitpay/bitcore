@@ -15,10 +15,12 @@ var mongodb = require('mongodb');
 var config = require('./test-config');
 var oldCredentials = require('./legacyCredentialsExports');
 
-var Bitcore = require('bitcore-lib');
+var CWC = require('crypto-wallet-core');
+
+var Bitcore = CWC.BitcoreLib;
 var Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
+  bch: CWC.BitcoreLibCash,
 };
 
 var BWS = require('bitcore-wallet-service');
