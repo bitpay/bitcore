@@ -8,8 +8,9 @@ export class ETHTxProvider {
     gasPrice: number;
     data: string;
     gasLimit: number;
+    chainId?: number;
   }) {
-    const { recipients, nonce, gasPrice, data, gasLimit } = params;
+    const { recipients, nonce, gasPrice, data, gasLimit, chainId = 1} = params;
     const { address, amount } = recipients[0];
     const txData = {
       nonce: utils.toHex(nonce),
@@ -17,7 +18,8 @@ export class ETHTxProvider {
       gasPrice: utils.toHex(gasPrice),
       to: address,
       data,
-      value: utils.toHex(amount)
+      value: utils.toHex(amount),
+      chainId
     };
     return ethers.utils.serializeTransaction(txData);
   }
