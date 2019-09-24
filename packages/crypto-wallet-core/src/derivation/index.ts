@@ -1,13 +1,13 @@
-import { BtcDeriver } from './btc';
 import { BchDeriver } from './bch';
+import { BtcDeriver } from './btc';
 import { EthDeriver } from './eth';
 import { Paths } from './paths';
 
-export type Key = {
+export interface Key {
   address: string;
   privKey?: string;
   pubKey?: string;
-};
+}
 
 export interface IDeriver {
   deriveAddress(

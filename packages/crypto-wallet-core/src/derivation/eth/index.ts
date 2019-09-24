@@ -1,4 +1,5 @@
 import { IDeriver } from '..';
+
 import utils from 'web3-utils';
 
 const BitcoreLib = require('bitcore-lib');

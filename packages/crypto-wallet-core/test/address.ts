@@ -1,33 +1,25 @@
 import { expect } from 'chai';
 import { Deriver } from '../src';
-var Mnemonic = require('../../bitcore-mnemonic');
 
 describe('Address Derivation', () => {
   it('should be able to generate a valid ETH address', () => {
-    const words =
+    const xPub = 'xpub6D8rChqkgFuaZULuq2n6VrS4zB5Cmv24gcRc889dFRRgYAH1CGQmQZ9kcPfMAfWGPnyMd1X5foBYFmJ5ZPfvwhm6tXjaY13ao1rQHRtkKDv';
       'select scout crash enforce riot rival spring whale hollow radar rule sentence';
 
-    const mnemonic = new Mnemonic(words);
-    const xPriv = mnemonic.toHDPrivateKey();
     const path = Deriver.pathFor('ETH', 'mainnet');
     expect(path).to.equal(`m/44'/60'/0'`);
 
-    const xPub = xPriv.derive(path).xpubkey;
     const address = Deriver.deriveAddress('ETH', 'mainnet', xPub, 0, false);
     const expectedAddress = '0x9dbfE221A6EEa27a0e2f52961B339e95426931F9';
     expect(address).to.equal(expectedAddress);
   });
 
   it('should be able to generate a valid ETH address, privKey, pubKey', () => {
-    const words =
-      'loop door limb pear fire betray track awkward embrace prevent wall basic';
+    const privKey = 'xprv9ypBjKErGMqCdzd44hfSdy1Vk6PGtU3si8ogZcow7rA23HTxMi9XfT99EKmiNdLMr9BAZ9S8ZKCYfN1eCmzYSmXYHje1jnYQseV1VJDDfdS';
 
-    const mnemonic = new Mnemonic(words);
-    const xPriv = mnemonic.toHDPrivateKey();
     const path = Deriver.pathFor('ETH', 'mainnet');
     expect(path).to.equal(`m/44'/60'/0'`);
 
-    const privKey = xPriv.deriveChild(path).toString();
     const result = Deriver.derivePrivateKey('ETH', 'mainnet', privKey, 0, false);
     const expectedResult = { 
       address: '0xb497281830dE4F19a3482AbF3D5C35c514e6fB36',

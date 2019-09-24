@@ -5,9 +5,11 @@
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
   "scripts": {
+    "build": "tsc && npm run lint",
     "clean": "rm -rf ts_build",
-    "compile": "npm run clean && ./node_modules/.bin/tsc",
-    "test": "npx mocha -r ts-node/register tests/**/*.ts",
+    "compile": "npm run clean && npm run build",
+    "lint": "tslint -c tslint.json 'src/**/*.ts'",
+    "test": "npm run compile && mocha ts_build/test/*.js",
     "pub": "npm run compile && npm publish"
   },
   "keywords": [
