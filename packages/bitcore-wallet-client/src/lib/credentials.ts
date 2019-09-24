@@ -1,10 +1,12 @@
 'use strict';
 
+import { BitcoreLib } from 'crypto-wallet-core';
+
 import { Constants, Utils } from './common';
 const $ = require('preconditions').singleton();
 const _ = require('lodash');
 
-const Bitcore = require('bitcore-lib');
+const Bitcore = BitcoreLib;
 const Mnemonic = require('bitcore-mnemonic');
 const sjcl = require('sjcl');
 
