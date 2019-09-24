@@ -36,6 +36,7 @@
     "eslint-plugin-import": "2.8.0",
     "mocha": "6.1.4",
     "ts-node": "8.1.0",
+    "tslint": "5.14.0",
     "typescript": "3.3.4000"
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
