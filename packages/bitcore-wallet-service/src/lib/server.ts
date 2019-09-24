@@ -4475,6 +4475,12 @@ export class WalletService {
       }
 
       this.storage.clearWalletCache(this.walletId, () => {
+        // single address or non UTXO coins do not scan.
+        if (wallet.singleAddress)
+          return cb();
+        if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()])
+          return cb();
+
         this._runLocked(cb, (cb) => {
           wallet.scanStatus = 'running';
           this.storage.storeWallet(wallet, (err) => {
@@ -4639,6 +4645,12 @@ export class WalletService {
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
       if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
+
+      // single address or non UTXO coins do not scan.
+      if (wallet.singleAddress)
+        return cb();
+      if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()])
+        return cb();
 
       setTimeout(() => {
         wallet.beRegistered = false;
