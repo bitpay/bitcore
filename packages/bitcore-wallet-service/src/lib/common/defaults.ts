@@ -66,27 +66,30 @@ module.exports = {
       {
         name: 'urgent',
         nbBlocks: 10, // < 2 min
-        defaultValue: 3000000000
+        multiplier: 1.1,
+        defaultValue: 30000000000
       },
       {
         name: 'priority',
         nbBlocks: 15, // 3 min
-        defaultValue: 2000000000
+        defaultValue: 25000000000
       },
       {
         name: 'normal',
         nbBlocks: 25, // 5 min
-        defaultValue: 1000000000
+        defaultValue: 20000000000
       },
       {
         name: 'economy',
         nbBlocks: 50, // 10 minutes
-        defaultValue: 1000000000
+        multiplier: 0.9,
+        defaultValue: 15000000000
       },
       {
         name: 'superEconomy',
         nbBlocks: 75, // 15 minutes
-        defaultValue: 1000000000
+        multiplier: 0.8,
+        defaultValue: 10000000000
       }
     ]
   },

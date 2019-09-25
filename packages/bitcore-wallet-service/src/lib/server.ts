@@ -2568,14 +2568,6 @@ export class WalletService {
               );
           }
 
-          if (_.isNumber(opts.feePerKb)) {
-            if (
-              opts.feePerKb < Defaults.MIN_FEE_PER_KB ||
-              opts.feePerKb > Defaults.MAX_FEE_PER_KB
-            )
-              return next(new ClientError('Invalid fee per KB'));
-          }
-
           if (_.isNumber(opts.fee) && _.isEmpty(opts.inputs))
             return next(
               new ClientError('fee can only be set when inputs are specified')
