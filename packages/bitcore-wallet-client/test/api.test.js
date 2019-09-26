@@ -324,6 +324,26 @@ blockchainExplorerMock.estimateFee = (nbBlocks, cb) => {
   return cb(null, levels);
 };
 
+blockchainExplorerMock.estimateGas = (nbBlocks, cb) => {
+  return cb(null, '20000000000');
+};
+
+
+blockchainExplorerMock.getBalance = (nbBlocks, cb) => {
+  return cb(null,{
+    unconfirmed: 0,
+    confirmed: 20000000000*5,  
+    balance: 20000000000*5,  
+  });
+};
+
+
+
+blockchainExplorerMock.getTransactionCount = (addr, cb) => {
+  return cb(null, 0);
+};
+
+
 blockchainExplorerMock.reset = () => {
   blockchainExplorerMock.utxos = [];
   blockchainExplorerMock.txHistory = [];
@@ -3869,7 +3889,7 @@ describe('client API', () => {
 
   describe('Transactions Signatures and Rejection', function () {
     this.timeout(5000);
-    it('Send and broadcast in 1-1 wallet', (done) => {
+    it('Send and broadcast in 1-1 wallet BTC', (done) => {
       helpers.createAndJoinWallet(clients, keys, 1, 1, {}, (w) => {
         clients[0].createAddress((err, x0) => {
           should.not.exist(err);
@@ -3911,6 +3931,49 @@ describe('client API', () => {
         });
       });
     });
+
+  it.only('Send and broadcast in 1-1 wallet ETH', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin:'eth'}, (w) => {
+        clients[0].createAddress((err, x0) => {
+          should.not.exist(err);
+          should.exist(x0.address);
+          //blockchainExplorerMock.setUtxo(x0, 1, 1);
+          var opts = {
+            outputs: [{
+              amount: 10000000,
+              toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+              message: 'output 0',
+            }],
+            message: 'hello',
+            feePerKb: 100e2,
+          };
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
+            should.not.exist(err);
+            txp.requiredRejections.should.equal(1);
+            txp.requiredSignatures.should.equal(1);
+            txp.status.should.equal('pending');
+            txp.outputs[0].message.should.equal('output 0');
+            txp.message.should.equal('hello');
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(txp, signatures, (err, txp) => {
+              should.not.exist(err);
+              txp.status.should.equal('accepted');
+              txp.outputs[0].message.should.equal('output 0');
+              txp.message.should.equal('hello');
+              clients[0].broadcastTxProposal(txp, (err, txp) => {
+                should.not.exist(err);
+                txp.status.should.equal('broadcasted');
+                txp.txid.should.equal((new Bitcore.Transaction(blockchainExplorerMock.lastBroadcasted)).id);
+                txp.outputs[0].message.should.equal('output 0');
+                txp.message.should.equal('hello');
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
 
     it('Send and broadcast in 2-3 wallet', (done) => {
       helpers.createAndJoinWallet(clients, keys, 2, 3, {}, (w) => {
