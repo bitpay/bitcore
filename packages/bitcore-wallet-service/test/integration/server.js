@@ -549,6 +549,24 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should  fail to create a multisig ETH wallet', function(done) {
+      var opts = {
+        coin: 'eth',
+        name: 'my wallet',
+        m: 2,
+        n: 3,
+        pubKey: TestData.keyPair.pub,
+      };
+      server.createWallet(opts, function(err, walletId) {
+        should.exist(err);
+        err.message.should.contain('not supported');
+        done();
+      });
+    });
+
+
+
+
 
     describe('Address derivation strategy', function() {
       var server;

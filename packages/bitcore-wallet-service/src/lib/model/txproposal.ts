@@ -495,8 +495,11 @@ export class TxProposal {
     try {
       // Tests signatures are OK
       const tx = this.getBitcoreTx();
+
+console.log('[txproposal.ts.500:signatures:]',signatures); // TODO
       this._addSignaturesToBitcoreTx(tx, signatures, xpub);
 
+console.log('[txproposal.ts.499]'); // TODO
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {

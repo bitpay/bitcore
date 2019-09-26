@@ -529,6 +529,14 @@ export class WalletService {
       return cb(new ClientError('Invalid public key'));
     }
 
+
+    if (opts.coin === 'eth' && opts.n > 1) {
+      return cb(
+        new ClientError( 'Multisig ETH wallet not supported')
+      );
+    };
+ 
+
     let newWallet;
     async.series(
       [
@@ -3250,6 +3258,7 @@ export class WalletService {
           const copayer = wallet.getCopayer(this.copayerId);
 
           try {
+console.log('[server.ts.3253:opts:]',opts); // TODO
             if (!txp.sign(this.copayerId, opts.signatures, copayer.xPubKey)) {
               this.logw('Error signing transaction (BAD_SIGNATURES)');
               this.logw('Client version:', this.clientVersion);
