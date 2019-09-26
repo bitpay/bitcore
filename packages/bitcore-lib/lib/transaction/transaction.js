@@ -433,12 +433,12 @@ Transaction.prototype.fromObject = function fromObject(arg, opts) {
     }
     var script = new Script(input.output.script);
     var txin;
-    if (script.isPublicKeyHashOut()) {
-      txin = new Input.PublicKeyHash(input);
-    } else if (script.isScriptHashOut() && input.publicKeys && input.threshold) {
+    if ((script.isScriptHashOut() || script.isWitnessScriptHashOut()) && input.publicKeys && input.threshold) {
       txin = new Input.MultiSigScriptHash(
-        input, input.publicKeys, input.threshold, input.signatures, null, opts
+        input, input.publicKeys, input.threshold, input.signatures, opts
       );
+    } else if (script.isPublicKeyHashOut() || script.isWitnessPublicKeyHashOut() || script.isScriptHashOut()) {
+      txin = new Input.PublicKeyHash(input);
     } else if (script.isPublicKeyOut()) {
       txin = new Input.PublicKey(input);
     } else {
@@ -605,16 +605,15 @@ Transaction.prototype._newTransaction = function() {
  * @param {(Array.<Transaction~fromObject>|Transaction~fromObject)} utxo
  * @param {Array=} pubkeys
  * @param {number=} threshold
- * @param {boolean=} nestedWitness - Indicates that the utxo is nested witness p2sh
  * @param {Object=} opts - Several options:
  *        - noSorting: defaults to false, if true and is multisig, don't
  *                      sort the given public keys before creating the script
  */
-Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness, opts) {
+Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
   if (_.isArray(utxo)) {
     var self = this;
     _.each(utxo, function(utxo) {
-      self.from(utxo, pubkeys, threshold, nestedWitness, opts);
+      self.from(utxo, pubkeys, threshold, opts);
     });
     return this;
   }
@@ -626,7 +625,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness, o
     return this;
   }
   if (pubkeys && threshold) {
-    this._fromMultisigUtxo(utxo, pubkeys, threshold, nestedWitness, opts);
+    this._fromMultisigUtxo(utxo, pubkeys, threshold, opts);
   } else {
     this._fromNonP2SH(utxo);
   }
@@ -636,7 +635,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, nestedWitness, o
 Transaction.prototype._fromNonP2SH = function(utxo) {
   var clazz;
   utxo = new UnspentOutput(utxo);
-  if (utxo.script.isPublicKeyHashOut()) {
+  if (utxo.script.isPublicKeyHashOut() || utxo.script.isWitnessPublicKeyHashOut() || utxo.script.isScriptHashOut()) {
     clazz = PublicKeyHashInput;
   } else if (utxo.script.isPublicKeyOut()) {
     clazz = PublicKeyInput;
@@ -654,14 +653,14 @@ Transaction.prototype._fromNonP2SH = function(utxo) {
   }));
 };
 
-Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, nestedWitness, opts) {
+Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, opts) {
   $.checkArgument(threshold <= pubkeys.length,
     'Number of required signatures must be greater than the number of public keys');
   var clazz;
   utxo = new UnspentOutput(utxo);
   if (utxo.script.isMultisigOut()) {
     clazz = MultiSigInput;
-  } else if (utxo.script.isScriptHashOut()) {
+  } else if (utxo.script.isScriptHashOut() || utxo.script.isWitnessScriptHashOut()) {
     clazz = MultiSigScriptHashInput;
   } else {
     throw new Error("@TODO");
@@ -674,7 +673,7 @@ Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, nes
     prevTxId: utxo.txId,
     outputIndex: utxo.outputIndex,
     script: Script.empty()
-  }, pubkeys, threshold, false, nestedWitness, opts));
+  }, pubkeys, threshold, false, opts));
 };
 
 /**

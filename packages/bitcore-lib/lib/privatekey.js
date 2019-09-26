@@ -366,13 +366,14 @@ PrivateKey.prototype.toPublicKey = function(){
 /**
  * Will return an address for the private key
  * @param {Network=} network - optional parameter specifying
+ * @param {string} type - Either 'pubkeyhash', 'witnesspubkeyhash', or 'scripthash'
  * the desired network for the address
  *
  * @returns {Address} An address generated from the private key
  */
-PrivateKey.prototype.toAddress = function(network) {
+PrivateKey.prototype.toAddress = function(network, type) {
   var pubkey = this.toPublicKey();
-  return Address.fromPublicKey(pubkey, network || this.network);
+  return Address.fromPublicKey(pubkey, network || this.network, type);
 };
 
 /**

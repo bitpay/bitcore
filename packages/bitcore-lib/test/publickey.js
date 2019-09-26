@@ -346,6 +346,30 @@ describe('PublicKey', function() {
       address.toString().should.equal('mtX8nPZZdJ8d3QNLRJ1oJTiEi26Sj6LQXS');
     });
 
+    it('should output this known mainnet witness address correctly', function() {
+      var pk = new PublicKey('03c87bd0e162f26969da8509cafcb7b8c8d202af30b928c582e263dd13ee9a9781');
+      var address = pk.toAddress('livenet', Address.PayToWitnessPublicKeyHash);
+      address.toString().should.equal('bc1qv0t45lutg37ghyg7lg22vgducs3d9hvuarwr89');
+    });
+
+    it('should output this known testnet witness address correctly', function() {
+      var pk = new PublicKey('0293126ccc927c111b88a0fe09baa0eca719e2a3e087e8a5d1059163f5c566feef');
+      var address = pk.toAddress('testnet', Address.PayToWitnessPublicKeyHash);
+      address.toString().should.equal('tb1q363x8lv54fdsywyc9494upd6sp4rg6glhsyzk0');
+    });
+
+    it('should output this known mainnet wrapped witness address correctly', function() {
+      var pk = new PublicKey('03c87bd0e162f26969da8509cafcb7b8c8d202af30b928c582e263dd13ee9a9781');
+      var address = pk.toAddress('livenet', Address.PayToScriptHash);
+      address.toString().should.equal('39wREM7dxb7KNMNR1py1W8nUheUtkPPA5r');
+    });
+
+    it('should output this known testnet wrapped witness address correctly', function() {
+      var pk = new PublicKey('0293126ccc927c111b88a0fe09baa0eca719e2a3e087e8a5d1059163f5c566feef');
+      var address = pk.toAddress('testnet', Address.PayToScriptHash);
+      address.toString().should.equal('2NDgQSsQGdLDGoYvh4NTmesQ2wWgx6RGu3m');
+    });
+
   });
 
   describe('hashes', function() {
