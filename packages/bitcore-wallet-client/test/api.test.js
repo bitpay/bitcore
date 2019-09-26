@@ -721,6 +721,42 @@ describe('client API', () => {
         should.not.exist(bitcoreError);
         t.getFee().should.equal(10050);
       });
+      it('should build an eth txp correctly', () => {
+
+        const toAddress = '0xa062a07a0a56beb2872b12f388f511d694626730';
+        const key = Key.fromExtendedPrivateKey(masterPrivateKey);
+        const path = 'm/44\'/60\'/0\'';
+        const publicKeyRing = [{
+          xPubKey: 
+            new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild(path).toString(),
+        }];
+
+        const from = Utils.deriveAddress('P2PKH', publicKeyRing, 'm/0/0', 1, 'livenet', 'eth');
+
+        const txp = {
+          version: 3,
+          from: from.address,
+          coin: 'eth',
+          outputs: [{
+            toAddress: toAddress,
+            amount: 3896000000000000,
+            message: 'first output'
+          }
+          ],
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2],
+          fee: 420000000000000,
+          nonce: 6,
+          gasPrice: 20000000000,
+          gasLimit: 21000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+          amount: 3896000000000000
+        };
+        var t = Utils.buildTx(txp);
+        const rawTxp = t.uncheckedSerialize();
+        rawTxp.should.equal('0xeb068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b800080018080');
+      });
       it('should protect from creating excessive fee', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
@@ -1104,6 +1140,46 @@ describe('client API', () => {
         signatures.length.should.be.equal(utxos.length);
         signatures[0].should.equal('3045022100cfacaf8e4c9782f33f717eba3162d44cf9f34d9768a3bcd66b7052eb0868a0880220015e930e1f7d9a8b6b9e54d1450556bf4ba95c2cf8ef5c55d97de7df270cc6fd');
         signatures[1].should.equal('3044022069cf6e5d8700ff117f754e4183e81690d99d6a6443e86c9589efa072ecb7d82c02204c254506ac38774a2176f9ef56cc239ef7867fbd24da2bef795128c75a063301');
+      });
+      it('should sign eth proposal correctly', () => {
+
+        const toAddress = '0xa062a07a0a56beb2872b12f388f511d694626730';
+        const key = Key.fromExtendedPrivateKey(masterPrivateKey);
+        const path = 'm/44\'/60\'/0\'';
+        const publicKeyRing = [{
+          xPubKey: 
+            new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild(path).toString(),
+        }];
+
+        const from = Utils.deriveAddress('P2PKH', publicKeyRing, 'm/0/0', 1, 'livenet', 'eth');
+
+        const txp = {
+          version: 3,
+          from: from.address,
+          coin: 'eth',
+          outputs: [{
+            toAddress: toAddress,
+            amount: 3896000000000000,
+            message: 'first output'
+          }
+          ],
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2],
+          fee: 420000000000000,
+          nonce: 6,
+          gasPrice: 20000000000,
+          gasLimit: 21000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+          amount: 3896000000000000
+        };
+        const signatures = key.sign(path, txp);
+        const expectedSignedTx = {
+          ...txp,
+          rawTx: '0xf86b068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b80008026a04f761cd5f1cf1008d398c854ee338f82b457dc67ae794a987083b36b83fc6c91a07247fe72fe1880c0ee914c6e1b608625d8ab4e735520c33b2f7f76e0dcaf5980',
+          status: 'accepted'
+        };
+        signatures.should.deep.equal(expectedSignedTx);
       });
       it('should sign BCH proposal correctly', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
