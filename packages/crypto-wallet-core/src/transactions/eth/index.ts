@@ -26,8 +26,11 @@ export class ETHTxProvider {
 
   sign(params: { tx: string; key: Key; }) {
     const { tx, key } = params;
-    let wallet = new ethers.Wallet(key.privKey);
+    const signingKey = new ethers.utils.SigningKey(key.privKey);
+    const signDigest = signingKey.signDigest.bind(signingKey);
+    const signature = signDigest(ethers.utils.keccak256(tx));
     const parsedTx = ethers.utils.parseTransaction(tx);
-    return wallet.sign(parsedTx);
+    const signedTx = ethers.utils.serializeTransaction(parsedTx, signature);
+    return signedTx;
   }
 }
