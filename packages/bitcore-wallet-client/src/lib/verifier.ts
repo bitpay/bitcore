@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { Utils } from './common';
+import { Constants, Utils } from './common';
 var $ = require('preconditions').singleton();
 
 import { BitcoreLib, BitcoreLibCash } from 'crypto-wallet-core';
@@ -158,7 +158,8 @@ export class Verifier {
     if (!Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
       return false;
 
-    if (!this.checkAddress(credentials, txp.changeAddress))
+
+    if (Constants.UTXO_COINS.includes(txp.coin) &&  !this.checkAddress(credentials, txp.changeAddress))
       return false;
 
     return true;
