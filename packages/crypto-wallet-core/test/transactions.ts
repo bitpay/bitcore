@@ -2,7 +2,7 @@ import { expect } from 'chai';
 import { Transactions } from '../src';
 
 describe('Transaction Creation', () => {
-  it('should be able to create an ETH tx', async () => {
+  it('should be able to create an ETH tx', () => {
     const rawEthTx = {
       value: 3896000000000000,
       to: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
@@ -12,7 +12,7 @@ describe('Transaction Creation', () => {
     };
     const { value, to, data, gasPrice } = rawEthTx;
     const recipients = [{ address: to, amount: value }];
-    const cryptoTx = await Transactions.create({
+    const cryptoTx = Transactions.create({
       chain: 'ETH',
       recipients,
       gasPrice,
@@ -24,7 +24,7 @@ describe('Transaction Creation', () => {
     expect(cryptoTx).to.equal(expectedTx);
   });
 
-  it('should be able to create an ERC20 tx', async () => {
+  it('should be able to create an ERC20 tx', () => {
     const rawEthTx = {
       value: 3896000000000000,
       to: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
@@ -32,7 +32,7 @@ describe('Transaction Creation', () => {
     };
     const { value, to, gasPrice } = rawEthTx;
     const recipients = [{ address: to, amount: value }];
-    const cryptoTx = await Transactions.create({
+    const cryptoTx = Transactions.create({
       chain: 'ERC20',
       recipients,
       gasPrice,

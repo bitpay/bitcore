@@ -30,7 +30,9 @@ export class ETHTxProvider {
     const signDigest = signingKey.signDigest.bind(signingKey);
     const signature = signDigest(ethers.utils.keccak256(tx));
     const parsedTx = ethers.utils.parseTransaction(tx);
-    const signedTx = ethers.utils.serializeTransaction(parsedTx, signature);
+    const { nonce, gasPrice, gasLimit, to, value, data, chainId } = parsedTx;
+    const txData = { nonce: utils.toHex(nonce), gasPrice: utils.toHex(gasPrice), gasLimit: utils.toHex(gasLimit), to, value: utils.toHex(value), data, chainId };
+    const signedTx = ethers.utils.serializeTransaction(txData, signature);
     return signedTx;
   }
 }
