@@ -2542,11 +2542,6 @@ export class WalletService {
   }
 
   _validateOutputs(opts, wallet, cb) {
-    const dustThreshold = Math.max(
-      Defaults.MIN_OUTPUT_AMOUNT,
-      Bitcore_[wallet.coin].Transaction.DUST_AMOUNT
-    );
-
     if (_.isEmpty(opts.outputs))
       return new ClientError('No outputs were specified');
 
@@ -2568,10 +2563,21 @@ export class WalletService {
       ) {
         return new ClientError('Invalid amount');
       }
-      if (output.amount < dustThreshold) {
-        return Errors.DUST_AMOUNT;
-      }
 
+      if (!wallet.isUTXOCoin()) {
+        const dustThreshold = Math.max(
+          Defaults.MIN_OUTPUT_AMOUNT,
+          Bitcore_[wallet.coin].Transaction.DUST_AMOUNT
+        );
+
+        if (output.amount < dustThreshold) {
+          return Errors.DUST_AMOUNT;
+        }
+      } else {
+        if (opts.outputs.length != 1) {
+          return Errors.MORE_THAT_ONE_OUTPUT;
+        }
+      }
       output.valid = true;
     }
     return null;
@@ -2627,16 +2633,7 @@ export class WalletService {
             );
           next();
         },
-        (next) => {
-          if (opts.coin != 'eth') return next();
-          if (!_.isArray(opts.outputs) || opts.outputs.length > 1) {
-            return next(
-              new ClientError(
-                'Only one output allowed on ETH'
-              )
-            );
-          }
-        },
+
         (next) => {
           if (!opts.sendMax) return next();
           if (!_.isArray(opts.outputs) || opts.outputs.length > 1) {
@@ -2677,15 +2674,11 @@ export class WalletService {
         },
         (next) => {
           if (opts.validateOutputs === false) return next();
-          if (! wallet.isUTXOCoin()) {
-            next();
-          } else {
-            const validationError = this._validateOutputs(opts, wallet, next);
-            if (validationError) {
-              return next(validationError);
-            }
-            next();
+          const validationError = this._validateOutputs(opts, wallet, next);
+          if (validationError) {
+            return next(validationError);
           }
+          next();
         },
         (next) => {
           // check outputs are on 'copay' format for BCH

@@ -2985,16 +2985,17 @@ describe('Wallet service', function() {
       addr: 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X',
       flags: { noCashAddr: true },
     },
+    {
+      coin: 'eth',
+      key: 'id44btc',
+      addr: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+      flags: { noChange: true},
+    },
+ 
 
   ];
 
    testSet = [
-    {
-      coin: 'bch',
-      key: 'id44bch',
-      addr: 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X',
-      flags: { noCashAddr: true },
-    },
     {
       coin: 'eth',
       key: 'id44btc',
@@ -3065,7 +3066,7 @@ describe('Wallet service', function() {
           });
         });
 
-        describe('Validations', function() {
+        describe.only('Validations', function() {
           it('should fail to create a tx without outputs', function(done) {
             helpers.stubUtxos(server, wallet, [1, 2], function() {
               var txOpts = {
