@@ -1,0 +1,8 @@
+#!/bin/sh
+
+MODULES=' crypto-wallet-core  bitcore-wallet-service bitcore-wallet-client'
+
+for i in $MODULES; 
+do
+  cd $i && npm run compile || (echo "ERROR" && exit) && cd ..
+done
