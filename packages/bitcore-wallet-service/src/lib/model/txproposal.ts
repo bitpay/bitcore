@@ -90,6 +90,7 @@ export class TxProposal {
     toAddress?: string;
     message?: string;
     script?: string;
+    satoshis?: number;
   }>;
   outputOrder: number[];
   walletM: number;
@@ -259,8 +260,6 @@ export class TxProposal {
   }
 
   _buildTx() {
-    const t = new Bitcore[this.coin].Transaction();
-
     $.checkState(
       Utils.checkValueInCollection(this.addressType, Constants.SCRIPT_TYPES)
     );
@@ -272,8 +271,22 @@ export class TxProposal {
         recipients: [{ address: this.outputs[0].toAddress, amount: this.amount}],
         fee: this.gasPrice
       });
-      return { uncheckedSerialize: () => rawTx };
+      return { 
+        uncheckedSerialize: () => rawTx, 
+        toObject: () => {
+          let ret = _.clone(this)
+          ret.outputs[0].satoshis = ret.outputs[0].amount;
+          return ret;
+        },
+        getFee: () => {
+          return this.fee;
+        },
+        getChangeOutput: () => null,
+ 
+      };
     } else {
+      const t = new Bitcore[this.coin].Transaction();
+
       switch (this.addressType) {
         case Constants.SCRIPT_TYPES.P2SH:
           _.each(this.inputs, (i) => {
@@ -331,7 +344,7 @@ export class TxProposal {
         'not-enought-inputs'
       );
       $.checkState(
-        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE,
+        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[this.coin],
         'fee-too-high'
       );
 
@@ -354,7 +367,6 @@ export class TxProposal {
 
   getBitcoreTx() {
     const t = this._buildTx();
-
     const sigs = this._getCurrentSignatures();
     _.each(sigs, (x) => {
       this._addSignaturesToBitcoreTx(t, x.signatures, x.xpub);
@@ -498,8 +510,6 @@ export class TxProposal {
 
 console.log('[txproposal.ts.500:signatures:]',signatures); // TODO
       this._addSignaturesToBitcoreTx(tx, signatures, xpub);
-
-console.log('[txproposal.ts.499]'); // TODO
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {

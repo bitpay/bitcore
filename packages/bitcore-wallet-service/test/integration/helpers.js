@@ -59,8 +59,6 @@ helpers.before = function(cb) {
       db: db
     });
     Storage.createIndexes(db);
-
-
     let be = blockchainExplorer = sinon.stub();
     be.register = sinon.stub().callsArgWith(1, null, null);
     be.addAddresses = sinon.stub().callsArgWith(2, null, null);
@@ -68,6 +66,10 @@ helpers.before = function(cb) {
     be.getCheckData = sinon.stub().callsArgWith(1, null, {sum: 100});
     be.getUtxos = sinon.stub().callsArgWith(1, null,[]);
     be.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000, 'hash');
+    be.estimateGas = sinon.stub().callsArgWith(1, null, '20000000000');
+    be.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: '10000000000', balance: '10000000000' });
+    be.getTransactionCount = sinon.stub().callsArgWith(1, null, '0');
+
 
     var opts = {
       storage: storage,
@@ -338,6 +340,13 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
   }
   opts = opts || {};
 
+  if (wallet.coin == 'eth') {
+    amounts = _.isArray(amounts) ? amounts : [amounts];
+    let conf =  _.sum(_.map(amounts, x =>  Number((x*1e18).toFixed(0))));
+    blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: conf, balance: conf });
+    return cb();
+  }
+
   if (!helpers._utxos) helpers._utxos = {};
 
   var S = Bitcore_[wallet.coin].Script;
@@ -486,7 +495,10 @@ helpers.stubFeeLevels = function(levels, fill) {
     }
     return cb(null, result);
   };
+
 };
+
+
 
 
 var stubAddressActivityFailsOn = null;

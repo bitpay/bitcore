@@ -1715,16 +1715,16 @@ export class WalletService {
    */
   _convertBitcoreBalance(bitcoreBalance, locked) {
     const { unconfirmed, confirmed, balance } = bitcoreBalance;
+    // we ASUME all locked as confirmed, for ETH.
     const convertedBalance = {
       totalAmount: balance,
       totalConfirmedAmount: confirmed,
       lockedAmount: locked,
       lockedConfirmedAmount: confirmed - locked,
-      availableAmount: balance - unconfirmed,
-      availableConfirmedAmount: confirmed - unconfirmed,
+      availableAmount: balance - locked,
+      availableConfirmedAmount: confirmed - locked,
       byAddress: []
     };
-
     return convertedBalance;
   }
 
@@ -1764,7 +1764,7 @@ export class WalletService {
       this.syncWallet(wallet, err => {
         if (err) return cb(err);
 
-        if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
+        if (! wallet.isUTXOCoin()) {
           bc.getBalance(wallet, (err, balance) => {
             if (err) {
               return cb(err);
@@ -1773,7 +1773,6 @@ export class WalletService {
               if (err) return cb(err);
               const lockedSum = _.sumBy(txps, 'amount');
               const convertedBalance = this._convertBitcoreBalance(balance, lockedSum);
-
               this.storage.fetchAddresses(this.walletId, (
                 err,
                 addresses: IAddress[]
@@ -1873,90 +1872,117 @@ export class WalletService {
       if (_.isNumber(opts.feePerKb)) {
         if (
           opts.feePerKb < Defaults.MIN_FEE_PER_KB ||
-          opts.feePerKb > Defaults.MAX_FEE_PER_KB
+          opts.feePerKb > Defaults.MAX_FEE_PER_KB[wallet.coin]
         )
           return cb(new ClientError('Invalid fee per KB'));
       }
 
-      this._getUtxosForCurrentWallet({}, (err, utxos) => {
-        if (err) return cb(err);
 
-        const info = {
-          size: 0,
-          amount: 0,
-          fee: 0,
-          feePerKb: 0,
-          inputs: [],
-          utxosBelowFee: 0,
-          amountBelowFee: 0,
-          utxosAboveMaxSize: 0,
-          amountAboveMaxSize: 0
-        };
-
-        let inputs = _.reject(utxos, 'locked');
-        if (!!opts.excludeUnconfirmedUtxos) {
-          inputs = _.filter(inputs, 'confirmations');
-        }
-        inputs = _.sortBy(inputs, (input) => {
-          return -input.satoshis;
-        });
-
-        if (_.isEmpty(inputs)) return cb(null, info);
-
-        this._getFeePerKb(wallet, opts, (err, feePerKb) => {
+      if (!wallet.isUTXOCoin() ) {
+        this.getBalance({}, (err, balance) => {
           if (err) return cb(err);
+          const { totalAmount, availableAmount } = balance;
 
-          info.feePerKb = feePerKb;
-
-          const txp = TxProposal.create({
-            walletId: this.walletId,
+          this.estimateGas({
             coin: wallet.coin,
             network: wallet.network,
-            walletM: wallet.m,
-            walletN: wallet.n,
-            feePerKb
+            from: opts.from,
+            to: '0x0', // a dummy address
+            value: totalAmount, // it will be lest that this, at the end
+            data: null,
+            gasPrice: opts.feePerKb,
+          }, (err, gasLimit) => {
+            let fee = opts.feePerKb * (gasLimit || Defaults.DEFAULT_GAS_LIMIT);
+            return cb(null, {
+              utxosBelowFee: 0,
+              amountBelowFee: 0,
+              amount: availableAmount - fee,
+              feePerKb: opts.feePerKb,
+              fee: fee,
+            });
           });
-
-          const baseTxpSize = txp.getEstimatedSize();
-          const sizePerInput = txp.getEstimatedSizeForSingleInput();
-          const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
-
-          const partitionedByAmount = _.partition(inputs, (input) => {
-            return input.satoshis > feePerInput;
-          });
-
-          info.utxosBelowFee = partitionedByAmount[1].length;
-          info.amountBelowFee = _.sumBy(partitionedByAmount[1], 'satoshis');
-          inputs = partitionedByAmount[0];
-
-          _.each(inputs, (input, i) => {
-            const sizeInKb = (baseTxpSize + (i + 1) * sizePerInput) / 1000;
-            if (sizeInKb > Defaults.MAX_TX_SIZE_IN_KB) {
-              info.utxosAboveMaxSize = inputs.length - i;
-              info.amountAboveMaxSize = _.sumBy(_.slice(inputs, i), 'satoshis');
-              return false;
-            }
-            txp.inputs.push(input);
-          });
-
-          if (_.isEmpty(txp.inputs)) return cb(null, info);
-
-          const fee = txp.getEstimatedFee();
-          const amount = _.sumBy(txp.inputs, 'satoshis') - fee;
-
-          if (amount < Defaults.MIN_OUTPUT_AMOUNT) return cb(null, info);
-
-          info.size = txp.getEstimatedSize();
-          info.fee = fee;
-          info.amount = amount;
-
-          if (opts.returnInputs) {
-            info.inputs = _.shuffle(txp.inputs);
-          }
-
-          return cb(null, info);
         });
-      });
+      }  else {
+        this._getUtxosForCurrentWallet({}, (err, utxos) => {
+          if (err) return cb(err);
+
+          const info = {
+            size: 0,
+            amount: 0,
+            fee: 0,
+            feePerKb: 0,
+            inputs: [],
+            utxosBelowFee: 0,
+            amountBelowFee: 0,
+            utxosAboveMaxSize: 0,
+            amountAboveMaxSize: 0
+          };
+
+          let inputs = _.reject(utxos, 'locked');
+          if (!!opts.excludeUnconfirmedUtxos) {
+            inputs = _.filter(inputs, 'confirmations');
+          }
+          inputs = _.sortBy(inputs, (input) => {
+            return -input.satoshis;
+          });
+
+          if (_.isEmpty(inputs)) return cb(null, info);
+
+          this._getFeePerKb(wallet, opts, (err, feePerKb) => {
+            if (err) return cb(err);
+
+            info.feePerKb = feePerKb;
+
+            const txp = TxProposal.create({
+              walletId: this.walletId,
+              coin: wallet.coin,
+              network: wallet.network,
+              walletM: wallet.m,
+              walletN: wallet.n,
+              feePerKb
+            });
+
+            const baseTxpSize = txp.getEstimatedSize();
+            const sizePerInput = txp.getEstimatedSizeForSingleInput();
+            const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
+
+            const partitionedByAmount = _.partition(inputs, (input) => {
+              return input.satoshis > feePerInput;
+            });
+
+            info.utxosBelowFee = partitionedByAmount[1].length;
+            info.amountBelowFee = _.sumBy(partitionedByAmount[1], 'satoshis');
+            inputs = partitionedByAmount[0];
+
+            _.each(inputs, (input, i) => {
+              const sizeInKb = (baseTxpSize + (i + 1) * sizePerInput) / 1000;
+              if (sizeInKb > Defaults.MAX_TX_SIZE_IN_KB[wallet.coin]) {
+                info.utxosAboveMaxSize = inputs.length - i;
+                info.amountAboveMaxSize = _.sumBy(_.slice(inputs, i), 'satoshis');
+                return false;
+              }
+              txp.inputs.push(input);
+            });
+
+            if (_.isEmpty(txp.inputs)) return cb(null, info);
+
+            const fee = txp.getEstimatedFee();
+            const amount = _.sumBy(txp.inputs, 'satoshis') - fee;
+
+            if (amount < Defaults.MIN_OUTPUT_AMOUNT) return cb(null, info);
+
+            info.size = txp.getEstimatedSize();
+            info.fee = fee;
+            info.amount = amount;
+
+            if (opts.returnInputs) {
+              info.inputs = _.shuffle(txp.inputs);
+            }
+
+            return cb(null, info);
+          });
+        });
+      }
     });
   }
 
@@ -2124,49 +2150,58 @@ export class WalletService {
     );
   }
 
-  _estimateFee(txp) {
-    txp.estimateFee();
-  }
 
   _checkTx(txp) {
-    let bitcoreError;
-
-    const serializationOpts = {
-      disableIsFullySigned: true,
-      disableSmallFees: true,
-      disableLargeFees: true
-    };
-
-    if (txp.getEstimatedSize() / 1000 > Defaults.MAX_TX_SIZE_IN_KB)
+    if (txp.getEstimatedSize() / 1000 > Defaults.MAX_TX_SIZE_IN_KB[txp.coin])
       return Errors.TX_MAX_SIZE_EXCEEDED;
 
-    if (_.isEmpty(txp.inputPaths)) return Errors.NO_INPUT_PATHS;
-
-    try {
-      const bitcoreTx = txp.getBitcoreTx();
-      bitcoreError = bitcoreTx.getSerializationError(serializationOpts);
-      if (!bitcoreError) {
-        txp.fee = bitcoreTx.getFee();
+    if (!Constants.UTXO_COINS[txp.coin.toUpperCase()]) {
+      try {
+        const bitcoreTx = txp.getBitcoreTx();
+      } catch (ex) {
+        this.logw('Error building Bitcore transaction', ex);
+        return ex;
       }
-    } catch (ex) {
-      this.logw('Error building Bitcore transaction', ex);
-      return ex;
+    } else {
+      let bitcoreError;
+
+      const serializationOpts = {
+        disableIsFullySigned: true,
+        disableSmallFees: true,
+        disableLargeFees: true
+      };
+      if (_.isEmpty(txp.inputPaths)) return Errors.NO_INPUT_PATHS;
+
+      try {
+        const bitcoreTx = txp.getBitcoreTx();
+        bitcoreError = bitcoreTx.getSerializationError(serializationOpts);
+        if (!bitcoreError) {
+          txp.fee = bitcoreTx.getFee();
+        }
+      } catch (ex) {
+        this.logw('Error building Bitcore transaction', ex);
+        return ex;
+      }
+
+      if (bitcoreError instanceof Bitcore_[txp.coin].errors.Transaction.FeeError)
+        return Errors.INSUFFICIENT_FUNDS_FOR_FEE;
+
+      if (
+        bitcoreError instanceof Bitcore_[txp.coin].errors.Transaction.DustOutputs
+      )
+        return Errors.DUST_AMOUNT;
+      return bitcoreError;
     }
-
-    if (bitcoreError instanceof Bitcore_[txp.coin].errors.Transaction.FeeError)
-      return Errors.INSUFFICIENT_FUNDS_FOR_FEE;
-
-    if (
-      bitcoreError instanceof Bitcore_[txp.coin].errors.Transaction.DustOutputs
-    )
-      return Errors.DUST_AMOUNT;
-    return bitcoreError;
   }
 
   _selectTxInputs(txp, utxosToExclude, cb) {
+
     // todo: check inputs are ours and have enough value
     if (txp.inputs && !_.isEmpty(txp.inputs)) {
-      if (!_.isNumber(txp.fee)) this._estimateFee(txp);
+
+      if (!_.isNumber(txp.fee)) 
+        txp.estimateFee();
+
       return cb(this._checkTx(txp));
     }
 
@@ -2195,7 +2230,7 @@ export class WalletService {
       });
     };
 
-    const select = (utxos, cb) => {
+    const select = (utxos, coin, cb) => {
       const totalValueInUtxos = _.sumBy(utxos, 'satoshis');
       const netValueInUtxos =
         totalValueInUtxos - baseTxpFee - utxos.length * feePerInput;
@@ -2269,8 +2304,8 @@ export class WalletService {
         // log.debug('Fee/Tx amount: ' + Utils.formatRatio(feeVsAmountRatio) + ' (max: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MAX_FEE_VS_TX_AMOUNT_FACTOR) + ')');
         // log.debug('Tx amount/Input amount:' + Utils.formatRatio(amountVsUtxoRatio) + ' (min: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) + ')');
 
-        if (txpSize / 1000 > Defaults.MAX_TX_SIZE_IN_KB) {
-          // log.debug('Breaking because tx size (' + Utils.formatSize(txpSize) + ') is too big (max: ' + Utils.formatSize(Defaults.MAX_TX_SIZE_IN_KB * 1000.) + ')');
+        if (txpSize / 1000 > Defaults.MAX_TX_SIZE_IN_KB[coin]) {
+          // log.debug('Breaking because tx size (' + Utils.formatSize(txpSize) + ') is too big (max: ' + Utils.formatSize(Defaults.MAX_TX_SIZE_IN_KB[coin] * 1000.) + ')');
           error = Errors.TX_MAX_SIZE_EXCEEDED;
           return false;
         }
@@ -2399,7 +2434,7 @@ export class WalletService {
 
           lastGroupLength = candidateUtxos.length;
 
-          select(candidateUtxos, (err, selectedInputs, selectedFee) => {
+          select(candidateUtxos, txp.coin, (err, selectedInputs, selectedFee) => {
             if (err) {
               // log.debug('No inputs selected on this group: ', err);
               selectionError = err;
@@ -2593,6 +2628,16 @@ export class WalletService {
           next();
         },
         (next) => {
+          if (opts.coin != 'eth') return next();
+          if (!_.isArray(opts.outputs) || opts.outputs.length > 1) {
+            return next(
+              new ClientError(
+                'Only one output allowed on ETH'
+              )
+            );
+          }
+        },
+        (next) => {
           if (!opts.sendMax) return next();
           if (!_.isArray(opts.outputs) || opts.outputs.length > 1) {
             return next(
@@ -2621,14 +2666,18 @@ export class WalletService {
             (err, info) => {
               if (err) return next(err);
               opts.outputs[0].amount = info.amount;
-              opts.inputs = info.inputs;
+
+              if (wallet.isUTXOCoin()) {
+                opts.inputs = info.inputs;
+              }
+
               return next();
             }
           );
         },
         (next) => {
           if (opts.validateOutputs === false) return next();
-          if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
+          if (! wallet.isUTXOCoin()) {
             next();
           } else {
             const validationError = this._validateOutputs(opts, wallet, next);
@@ -2747,7 +2796,7 @@ export class WalletService {
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */
   createTx(opts, cb) {
-    opts = opts || {};
+    opts = opts ? _.clone(opts) : {};
 
     const getChangeAddress = (wallet, cb) => {
       if (wallet.singleAddress) {
@@ -2810,7 +2859,7 @@ export class WalletService {
                 },
                 (next) => {
                   if (opts.sendMax) return next();
-                  if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
+                  if (! wallet.isUTXOCoin()) {
                     return next();
                   }
                   getChangeAddress(wallet, (err, address, isNew) => {
@@ -2823,10 +2872,10 @@ export class WalletService {
                 (next) => {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
                     return next();
-                  this._getFeePerKb(wallet, opts, (err, fee) => {
-                    feePerKb = fee;
-                    if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
-                      gasPrice = fee;
+                  this._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
+                    feePerKb = inFeePerKb;
+                    if (! wallet.isUTXOCoin()) {
+                      gasPrice = inFeePerKb;
                       const { from, data, outputs } = opts;
                       const { coin, network } = wallet;
                       this.estimateGas({
@@ -2838,9 +2887,8 @@ export class WalletService {
                         data,
                         gasPrice
                       },
-                        (err, gas) => {
-                        gasLimit = gas || Defaults.DEFAULT_GAS_LIMIT;
-                        opts.fee = fee * gasLimit;
+                        (err, gasLimit) => {
+                        opts.fee = feePerKb * (gasLimit || Defaults.DEFAULT_GAS_LIMIT);
                         return next();
                       });
                     } else {
@@ -2872,7 +2920,7 @@ export class WalletService {
                     fee:
                       opts.inputs && !_.isNumber(opts.feePerKb)
                         ? opts.fee
-                        : !Constants.UTXO_COINS[wallet.coin.toUpperCase()]
+                        : ! wallet.isUTXOCoin()
                           ? opts.fee
                           : null,
                     noShuffleOutputs: opts.noShuffleOutputs,
@@ -2884,23 +2932,26 @@ export class WalletService {
                   next();
                 },
                 (next) => {
-                  if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
+                  if (! wallet.isUTXOCoin() ) {
                     this.getBalance({ wallet }, (err, balance) => {
+                      if (err) return next(err);
+
                       const { totalAmount, availableAmount } = balance;
                       if (totalAmount < txp.getTotalAmount()) {
                         return cb(Errors.INSUFFICIENT_FUNDS);
                       } else if (availableAmount < txp.getTotalAmount()) {
                         return cb(Errors.LOCKED_FUNDS);
                       } else {
-                        return next();
+                        return next(this._checkTx(txp));
                       }
                     });
                   } else {
+
                     this._selectTxInputs(txp, opts.utxosToExclude, next);
                   }
                 },
                 (next) => {
-                  if (Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
+                  if (wallet.isUTXOCoin() ) {
                     return next();
                   }
                   this._getTransactionCount(wallet, txp.from, (err, nonce) => {
@@ -2938,7 +2989,6 @@ export class WalletService {
                     txp.outputs = opts.origAddrOutputs;
                   }
                 }
-
                 return cb(null, txp);
               }
             );
@@ -3258,7 +3308,6 @@ export class WalletService {
           const copayer = wallet.getCopayer(this.copayerId);
 
           try {
-console.log('[server.ts.3253:opts:]',opts); // TODO
             if (!txp.sign(this.copayerId, opts.signatures, copayer.xPubKey)) {
               this.logw('Error signing transaction (BAD_SIGNATURES)');
               this.logw('Client version:', this.clientVersion);
@@ -4195,7 +4244,7 @@ console.log('[server.ts.3253:opts:]',opts); // TODO
 
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
-            const dustThreshold = Constants.UTXO_COINS[wallet.coin.toUpperCase()]
+            const dustThreshold = wallet.isUTXOCoin() 
               ? Bitcore_[wallet.coin].Transaction.DUST_AMOUNT
               : 0;
             this._normalizeTxHistory(wallet.id, txs, dustThreshold, bcHeight, (
@@ -4479,7 +4528,7 @@ console.log('[server.ts.3253:opts:]',opts); // TODO
         // single address or non UTXO coins do not scan.
         if (wallet.singleAddress)
           return cb();
-        if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()])
+        if (! wallet.isUTXOCoin() ) 
           return cb();
 
         this._runLocked(cb, (cb) => {
@@ -4650,7 +4699,7 @@ console.log('[server.ts.3253:opts:]',opts); // TODO
       // single address or non UTXO coins do not scan.
       if (wallet.singleAddress)
         return cb();
-      if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()])
+      if (! wallet.isUTXOCoin() ) 
         return cb();
 
       setTimeout(() => {
