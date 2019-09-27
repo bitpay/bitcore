@@ -22,6 +22,7 @@ log.level = 'error';
 
 const EmailValidator = require('email-validator');
 
+const CWC = require('crypto-wallet-core');
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -2519,23 +2520,32 @@ export class WalletService {
   }
 
   _validateAddr(wallet, inaddr, opts) {
-    const A = Bitcore_[wallet.coin].Address;
 
-    let addr: {
-      network?: string;
-      toString?: (cashAddr: boolean) => string;
-    } = {};
-    try {
-      addr = new A(inaddr);
-    } catch (ex) {
-      return Errors.INVALID_ADDRESS;
-    }
-    if (addr.network.toString() != wallet.network) {
-      return Errors.INCORRECT_ADDRESS_NETWORK;
-    }
+    if (wallet.coin == 'eth') {:
+      try {
+        CWC.Validation.validateAddress(inaddr);
+      } catch (ex) {
+        return Errors.INVALID_ADDRESS;
+      }
+      
+    } else { 
+      const A = Bitcore_[wallet.coin].Address;
+      let addr: {
+        network?: string;
+        toString?: (cashAddr: boolean) => string;
+      } = {};
+      try {
+        addr = new A(inaddr);
+      } catch (ex) {
+        return Errors.INVALID_ADDRESS;
+      }
+      if (addr.network.toString() != wallet.network) {
+        return Errors.INCORRECT_ADDRESS_NETWORK;
+      }
 
-    if (wallet.coin == 'bch' && !opts.noCashAddr) {
-      if (addr.toString(true) != inaddr) return Errors.ONLY_CASHADDR;
+      if (wallet.coin == 'bch' && !opts.noCashAddr) {
+        if (addr.toString(true) != inaddr) return Errors.ONLY_CASHADDR;
+      }
     }
 
     return;
