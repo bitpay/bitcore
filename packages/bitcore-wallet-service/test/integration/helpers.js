@@ -478,10 +478,16 @@ helpers.stubCheckData = function(bc, server, isBCH, cb) {
 
 
 // fill => fill intermediary levels
-helpers.stubFeeLevels = function(levels, fill) {
+helpers.stubFeeLevels = function(levels, fill, coin) {
+  coin = coin || 'btc';
+  let div = 1;
+  if (coin == 'btc' || coin == 'bch') {
+    div = 1e8;  // bitcoind returns values in BTC amounts
+  }
+
   blockchainExplorer.estimateFee = function(nbBlocks, cb) {
     var result = _.fromPairs(_.map(_.pick(levels, nbBlocks), function(fee, n) {
-      return [+n, fee > 0 ? fee / 1e8 : fee];
+      return [+n, fee > 0 ? fee / div : fee];
     }));
 
     if (fill) {
@@ -495,7 +501,6 @@ helpers.stubFeeLevels = function(levels, fill) {
     }
     return cb(null, result);
   };
-
 };
 
 

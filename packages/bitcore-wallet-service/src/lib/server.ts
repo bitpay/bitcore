@@ -22,7 +22,7 @@ log.level = 'error';
 
 const EmailValidator = require('email-validator');
 
-const CWC = require('crypto-wallet-core');
+import { Validation } from 'crypto-wallet-core';
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -54,6 +54,7 @@ interface IAddress {
   network: string;
   address: string;
   hasActivity: boolean;
+  isChange?: boolean;
 }
 
 export interface IWalletService {
@@ -1257,12 +1258,8 @@ export class WalletService {
       addresses: IAddress[]
     ) => {
       if (err) return cb(err);
-      const latestAddresses = _.takeRight(
-        _.reject(addresses, {
-          isChange: true
-        }),
-        Defaults.MAX_MAIN_ADDRESS_GAP
-      ) as IAddress[];
+      const latestAddresses = 
+        addresses.filter(x => !x.isChange).slice(-Defaults.MAX_MAIN_ADDRESS_GAP) as IAddress[];
       if (
         latestAddresses.length < Defaults.MAX_MAIN_ADDRESS_GAP ||
         _.some(latestAddresses, {
@@ -2004,6 +2001,10 @@ export class WalletService {
               ? +result[p]
               : -1;
           if (feePerKb < 0) failed.push(p);
+
+          // NOTE: ONLY BTC/BCH expect feePerKb to be Bitcoin amounts
+          // others... expect wei.
+
           if (!Constants.UTXO_COINS[coin.toUpperCase()]) {
             return [p, feePerKb];
           } else {
@@ -2520,10 +2521,13 @@ export class WalletService {
   }
 
   _validateAddr(wallet, inaddr, opts) {
-
-    if (wallet.coin == 'eth') {:
+    if (wallet.coin == 'eth') {
       try {
-        CWC.Validation.validateAddress(inaddr);
+        Validation.validateAddress(
+          wallet.coin.toUpperCase(), 
+          'mainnet', 
+          inaddr,
+        );
       } catch (ex) {
         return Errors.INVALID_ADDRESS;
       }
@@ -2739,6 +2743,7 @@ export class WalletService {
         network: wallet.network
       },
       (err, levels) => {
+console.log('[server.ts.2745:levels:]',levels); // TODO
         if (err) return cb(err);
         const level = levels.find(l => l.level === opts.feeLevel);
         if (!level) {
@@ -2876,6 +2881,7 @@ export class WalletService {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
                     return next();
                   this._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
+console.log('[server.ts.2882:feePerKb:]',inFeePerKb); // TODO
                     feePerKb = inFeePerKb;
                     if (! wallet.isUTXOCoin()) {
                       gasPrice = inFeePerKb;
