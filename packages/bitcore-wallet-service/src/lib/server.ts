@@ -2578,7 +2578,7 @@ export class WalletService {
         return new ClientError('Invalid amount');
       }
 
-      if (!wallet.isUTXOCoin()) {
+      if (wallet.isUTXOCoin()) {
         const dustThreshold = Math.max(
           Defaults.MIN_OUTPUT_AMOUNT,
           Bitcore_[wallet.coin].Transaction.DUST_AMOUNT
@@ -2743,7 +2743,6 @@ export class WalletService {
         network: wallet.network
       },
       (err, levels) => {
-console.log('[server.ts.2745:levels:]',levels); // TODO
         if (err) return cb(err);
         const level = levels.find(l => l.level === opts.feeLevel);
         if (!level) {
@@ -2881,7 +2880,6 @@ console.log('[server.ts.2745:levels:]',levels); // TODO
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
                     return next();
                   this._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
-console.log('[server.ts.2882:feePerKb:]',inFeePerKb); // TODO
                     feePerKb = inFeePerKb;
                     if (! wallet.isUTXOCoin()) {
                       gasPrice = inFeePerKb;
