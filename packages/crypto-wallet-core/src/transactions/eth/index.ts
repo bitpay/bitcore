@@ -38,7 +38,8 @@ export class ETHTxProvider {
 
   getHash(params: { tx: string}) {
     const { tx } = params;
-    return ethers.utils.keccak256(tx);
+    // tx must be signed, for hash to exist
+    return ethers.utils.parseTransaction(tx).hash;
   };
 
   applySignature(params: { tx: string; signature: any}) {
@@ -50,7 +51,10 @@ export class ETHTxProvider {
       signature = ethers.utils.splitSignature(signature);
     }
     const signedTx = ethers.utils.serializeTransaction(txData, signature);
-    const parsedTx2 = ethers.utils.parseTransaction(tx);
+    const parsedTxSigned = ethers.utils.parseTransaction(signedTx);
+    if (!parsedTxSigned.hash) {
+      throw 'Signature invalid';
+    }
     return signedTx;
   }
 

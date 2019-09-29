@@ -5957,7 +5957,7 @@ console.log('[server.js.3925:err:]',err); // TODO
             txp.status.should.equal('accepted');
             // The raw Tx should contain the Signatures.
             txp.raw.length.should.equal(204);
-            txp.txid.should.equal('0x75a0b1d6937e2a81196134a8c7b662a654c20433164f1785bedf448703e25a63');
+            txp.txid.should.equal('0x020a2a1647c3adb4678dac7755b8afdebec097d1d281d482efb09d858b5d830b');
 
             // Get pending should also contains the raw TX
             server.getPendingTxs({}, function(err, txs) {
@@ -5965,6 +5965,46 @@ console.log('[server.js.3925:err:]',err); // TODO
               should.not.exist(err);
               tx.status.should.equal('accepted');
               txp.raw.length.should.equal(204);
+              done();
+            });
+          });
+        });
+      });
+      it('should fail sign a TX  with empty signature', function(done) {
+        blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
+        server.getPendingTxs({}, function(err, txs) {
+          var tx = txs[0];
+          tx.id.should.equal(txid);
+          should.not.exist(tx.raw);
+          server.signTx({
+            txProposalId: txid,
+            signatures: '',
+          }, function(err, txp) {
+            err.code.should.contain('BAD_SIG');
+            server.getPendingTxs({}, function(err, txs) {
+              var tx = txs[0];
+              should.not.exist(err);
+              tx.status.should.equal('pending');
+              done();
+            });
+          });
+        });
+      });
+      it('should fail sign a TX  with wrong signature', function(done) {
+        blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
+        server.getPendingTxs({}, function(err, txs) {
+          var tx = txs[0];
+          tx.id.should.equal(txid);
+          should.not.exist(tx.raw);
+          server.signTx({
+            txProposalId: txid,
+            signatures: 'a bad signature',
+          }, function(err, txp) {
+            err.code.should.contain('BAD_SIG');
+            server.getPendingTxs({}, function(err, txs) {
+              var tx = txs[0];
+              should.not.exist(err);
+              tx.status.should.equal('pending');
               done();
             });
           });

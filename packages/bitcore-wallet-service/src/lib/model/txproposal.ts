@@ -274,7 +274,7 @@ export class TxProposal {
       });
       return { 
         uncheckedSerialize: () => rawTx, 
-        txid: Transactions.getHash({ tx:rawTx, chain: this.coin.toUpperCase() }), 
+        txid: () => this.txid,
         toObject: () => {
           let ret = _.clone(this)
           ret.outputs[0].satoshis = ret.outputs[0].amount;
@@ -514,7 +514,7 @@ export class TxProposal {
           signature: signatures[0],
         });
         tx.uncheckedSerialize = () => { return raw } ;
-        tx.id = tx.txid;
+        tx.txid = Transactions.getHash({ tx:raw, chain: this.coin.toUpperCase() });
         break;
       default:
         return this._addSignaturesToBitcoreTxBitcoin(tx, signatures, xpub);
@@ -530,7 +530,7 @@ export class TxProposal {
 
       if (this.status == 'accepted') {
         this.raw = tx.uncheckedSerialize();
-        this.txid = tx.id;
+        this.txid = tx.txid;
       }
 
       return true;
