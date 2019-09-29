@@ -40,7 +40,7 @@ export class ETHTxProvider {
     const { tx } = params;
     // tx must be signed, for hash to exist
     return ethers.utils.parseTransaction(tx).hash;
-  };
+  }
 
   applySignature(params: { tx: string; signature: any}) {
     let { tx, signature } = params;
@@ -53,7 +53,7 @@ export class ETHTxProvider {
     const signedTx = ethers.utils.serializeTransaction(txData, signature);
     const parsedTxSigned = ethers.utils.parseTransaction(signedTx);
     if (!parsedTxSigned.hash) {
-      throw 'Signature invalid';
+      throw new Error('Signature invalid');
     }
     return signedTx;
   }
