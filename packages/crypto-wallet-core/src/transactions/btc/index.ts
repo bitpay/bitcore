@@ -56,6 +56,10 @@ export class BTCTxProvider {
     throw new Error('No implemented for UTXO coins');
   }
 
+  getHash(params: { tx: string}) {
+    throw new Error('No implemented for UTXO coins');
+  }
+
   sign(params: { tx: string; keys: Array<Key>; utxos: any[] }) {
     const { tx, keys } = params;
     let utxos = params.utxos || [];

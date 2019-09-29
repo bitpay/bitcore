@@ -507,7 +507,13 @@ export class TxProposal {
   _addSignaturesToBitcoreTx(tx, signatures, xpub) {
     switch(this.coin) {
       case 'eth':
-        const signature = ethers.utils.splitSignature(this.getSignatureObject(params));
+        const raw = Transactions.applySignature({
+          chain: 'ETH',
+          tx: tx.uncheckedSerialize(),
+          signature: signatures[0],
+        });
+        tx.uncheckedSerialize = () => { return raw } ;
+        tx.id = 'TODO!';
         break;
       default:
         return this._addSignaturesToBitcoreTxBitcoin(tx, signatures, xpub);
@@ -518,7 +524,6 @@ export class TxProposal {
     try {
       // Tests signatures are OK
       const tx = this.getBitcoreTx();
-console.log('[txproposal.ts.500:signatures:]',signatures); // TODO
       this._addSignaturesToBitcoreTx(tx, signatures, xpub);
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 

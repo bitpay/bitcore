@@ -27,8 +27,12 @@ export class TransactionsProxy {
     return this.get(params).getSignature(params);
   }
 
-  applySignature(params): string {
+  applySignature(params) {
     return this.get(params).applySignature(params);
+  }
+
+  getHash(params) {
+    return this.get(params).getHash(params);
   }
 
 }

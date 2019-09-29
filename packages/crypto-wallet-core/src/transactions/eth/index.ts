@@ -36,6 +36,11 @@ export class ETHTxProvider {
     return signatureHex;
   }
 
+  getHash(params: { tx: string}) {
+    const { tx } = params;
+    return ethers.utils.keccak256(tx);
+  };
+
   applySignature(params: { tx: string; signature: any}) {
     let { tx, signature } = params;
     const parsedTx = ethers.utils.parseTransaction(tx);
@@ -45,6 +50,7 @@ export class ETHTxProvider {
       signature = ethers.utils.splitSignature(signature);
     }
     const signedTx = ethers.utils.serializeTransaction(txData, signature);
+    const parsedTx2 = ethers.utils.parseTransaction(tx);
     return signedTx;
   }
 

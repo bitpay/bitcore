@@ -5888,7 +5888,7 @@ console.log('[server.js.3925:err:]',err); // TODO
         });
       });
 
-      it('should sign a TX and return raw', function(done) {
+      it('should sign a TX with multiple inputs, different paths, and return raw', function(done) {
         blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
         server.getPendingTxs({}, function(err, txs) {
           var tx = txs[0];
@@ -5917,7 +5917,7 @@ console.log('[server.js.3925:err:]',err); // TODO
       });
     });
 
-    describe.only('1-of-1 (BIP44 & P2PKH ETH)', function() {
+    describe.only('1-of-1 (BIP44 ETH)', function() {
       var server, wallet, txid;
 
       beforeEach(function(done) {
@@ -5942,30 +5942,29 @@ console.log('[server.js.3925:err:]',err); // TODO
         });
       });
 
-      it('should sign a TX with multiple inputs, different paths, and return raw', function(done) {
+      it('should sign a TX and return raw', function(done) {
         blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
         server.getPendingTxs({}, function(err, txs) {
           var tx = txs[0];
           tx.id.should.equal(txid);
           var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
-console.log('[server.js.5950:signatures:]',signatures); // TODO
           should.not.exist(tx.raw);
           server.signTx({
             txProposalId: txid,
             signatures: signatures,
           }, function(err, txp) {
-console.log('[server.js.5955:err:]',err); // TODO
             should.not.exist(err);
             txp.status.should.equal('accepted');
             // The raw Tx should contain the Signatures.
-            txp.raw.should.contain(signatures[0]);
+            txp.raw.length.should.equal(204);
+            txp.txid.should.equal('111');
 
             // Get pending should also contains the raw TX
             server.getPendingTxs({}, function(err, txs) {
               var tx = txs[0];
               should.not.exist(err);
               tx.status.should.equal('accepted');
-              tx.raw.should.contain(signatures[0]);
+              txp.raw.length.should.equal(204);
               done();
             });
           });
