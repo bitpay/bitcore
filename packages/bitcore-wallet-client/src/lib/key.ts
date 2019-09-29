@@ -409,14 +409,14 @@ export class Key {
       const addressPath = Constants.PATHS.SINGLE_ADDRESS;
       const privKey = xpriv.deriveChild(addressPath).privateKey;
       const tx = t.uncheckedSerialize();
-      const signedRawTx = Transactions.sign({
+      const signature = Transactions.getSignature({
         chain: txp.coin.toUpperCase(),
         tx,
         key: { privKey: privKey.toString('hex') },
-        from: txp.from
+        from: txp.from,
       });
 
-      return Object.assign(txp, { rawTx: signedRawTx, status: 'accepted' });
+      return [signature];
     }
   };
 }

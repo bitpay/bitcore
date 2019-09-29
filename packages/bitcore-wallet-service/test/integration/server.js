@@ -6432,6 +6432,66 @@ console.log('[server.js.3925:err:]',err); // TODO
     });
   });
 
+  describe('#broadcastTx ETH', function() {
+    var server, wallet, txpid, txid;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, {coin: 'eth'},  function(s, w) {
+        server = s;
+        wallet = w;
+        helpers.stubUtxos(server, wallet, [10, 10], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+              amount: 9e8,
+            }],
+            message: 'some message',
+            feePerKb: 100e2,
+          };
+          helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
+            should.exist(txp);
+            var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+            server.signTx({
+              txProposalId: txp.id,
+              signatures: signatures,
+            }, function(err, txp) {
+              should.not.exist(err);
+              should.exist(txp);
+              txp.isAccepted().should.be.true;
+              txp.isBroadcasted().should.be.false;
+              txid = txp.txid;
+              txpid = txp.id;
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should broadcast a tx', function(done) {
+      var clock = sinon.useFakeTimers({ now: 1234000, toFake: ['Date'] });
+      helpers.stubBroadcast();
+      server.broadcastTx({
+        txProposalId: txpid
+      }, function(err) {
+        should.not.exist(err);
+        server.getTx({
+          txProposalId: txpid
+        }, function(err, txp) {
+          should.not.exist(err);
+          should.exist(txp.raw);
+          // used to be like this. No sure why we won't like raw to be shown.
+          //should.not.exist(txp.raw);
+          txp.txid.should.equal(txid);
+          txp.isBroadcasted().should.be.true;
+          txp.broadcastedOn.should.equal(1234);
+          clock.restore();
+          done();
+        });
+      });
+    });
+  });
+ 
+
   describe('Tx proposal workflow', function() {
     var server, wallet;
     beforeEach(function(done) {

@@ -514,7 +514,9 @@ export class TxProposal {
           signature: signatures[0],
         });
         tx.uncheckedSerialize = () => { return raw } ;
-        tx.txid = Transactions.getHash({ tx:raw, chain: this.coin.toUpperCase() });
+
+        // bitcore users id for txid...
+        tx.id = Transactions.getHash({ tx:raw, chain: this.coin.toUpperCase() });
         break;
       default:
         return this._addSignaturesToBitcoreTxBitcoin(tx, signatures, xpub);
@@ -530,7 +532,7 @@ export class TxProposal {
 
       if (this.status == 'accepted') {
         this.raw = tx.uncheckedSerialize();
-        this.txid = tx.txid;
+        this.txid = tx.id;
       }
 
       return true;
