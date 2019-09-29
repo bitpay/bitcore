@@ -3315,10 +3315,7 @@ export class WalletService {
           const copayer = wallet.getCopayer(this.copayerId);
 
           try {
-
-console.log('[server.ts.3318]', opts.signatures); // TODO
             if (!txp.sign(this.copayerId, opts.signatures, copayer.xPubKey)) {
-console.log('[server.ts.3319]'); // TODO
               this.logw('Error signing transaction (BAD_SIGNATURES)');
               this.logw('Client version:', this.clientVersion);
               this.logw('Arguments:', JSON.stringify(opts));

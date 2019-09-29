@@ -5917,7 +5917,7 @@ console.log('[server.js.3925:err:]',err); // TODO
       });
     });
 
-    describe.only('1-of-1 (BIP44 ETH)', function() {
+    describe('1-of-1 (BIP44 ETH)', function() {
       var server, wallet, txid;
 
       beforeEach(function(done) {
@@ -5957,7 +5957,7 @@ console.log('[server.js.3925:err:]',err); // TODO
             txp.status.should.equal('accepted');
             // The raw Tx should contain the Signatures.
             txp.raw.length.should.equal(204);
-            txp.txid.should.equal('111');
+            txp.txid.should.equal('0x75a0b1d6937e2a81196134a8c7b662a654c20433164f1785bedf448703e25a63');
 
             // Get pending should also contains the raw TX
             server.getPendingTxs({}, function(err, txs) {
