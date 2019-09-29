@@ -34,6 +34,7 @@ var storage, blockchainExplorer;
 
 // tinodb not longer supported
 var useMongoDb =  true; // !!process.env.USE_MONGO_DB;
+const CWC =  require('crypto-wallet-core');
 
 var helpers = {};
 
@@ -220,6 +221,7 @@ helpers.getSignedCopayerOpts = function(opts) {
   return opts;
 };
 
+/* ETH wallet use the provided key here, probably 44'/0'/0' */
 helpers.createAndJoinWallet = function(m, n, opts, cb) {
   if (_.isFunction(opts)) {
     cb = opts;
@@ -531,25 +533,40 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
   //Derive proper key to sign, for each input
   var privs = [];
   var derived = {};
+  var signatures;
 
   var xpriv = new Bitcore.HDPrivateKey(derivedXPrivKey, txp.network);
 
-  _.each(txp.inputs, function(i) {
-    if (!derived[i.path]) {
-      derived[i.path] = xpriv.deriveChild(i.path).privateKey;
-      privs.push(derived[i.path]);
-    }
-  });
+  switch(txp.coin) {
+    case 'eth': 
 
-  var t = txp.getBitcoreTx();
+      // For eth => account, 0, change = 0
+      const priv =  xpriv.derive('m/0/0').privateKey;
+      const privKey = priv.toString('hex');
+      const rawTx = txp.getBitcoreTx().uncheckedSerialize();
+      signatures = [CWC.Transactions.getSignature({
+        chain: 'ETH',
+        tx: rawTx,
+        key: {privKey},
+      })];
+      break;
+    default:
+      _.each(txp.inputs, function(i) {
+        if (!derived[i.path]) {
+          derived[i.path] = xpriv.deriveChild(i.path).privateKey;
+          privs.push(derived[i.path]);
+        }
+      });
 
-  var signatures = _.map(privs, function(priv, i) {
-    return t.getSignatures(priv);
-  });
+      var t = txp.getBitcoreTx();
+      signatures = _.map(privs, function(priv, i) {
+        return t.getSignatures(priv);
+      });
 
-  signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
-    return s.signature.toDER().toString('hex');
-  });
+      signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
+        return s.signature.toDER().toString('hex');
+      });
+  };
 
   return signatures;
 };

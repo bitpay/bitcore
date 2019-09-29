@@ -22,6 +22,15 @@ export class TransactionsProxy {
   sign(params): string {
     return this.get(params).sign(params);
   }
+
+  getSignature(params): string {
+    return this.get(params).getSignature(params);
+  }
+
+  applySignature(params): string {
+    return this.get(params).applySignature(params);
+  }
+
 }
 
 export default new TransactionsProxy();

@@ -24,15 +24,33 @@ export class ETHTxProvider {
     return ethers.utils.serializeTransaction(txData);
   }
 
-  sign(params: { tx: string; key: Key; }) {
+  getSignatureObject (params: { tx: string; key: Key; }) {
     const { tx, key } = params;
     const signingKey = new ethers.utils.SigningKey(key.privKey);
     const signDigest = signingKey.signDigest.bind(signingKey);
-    const signature = signDigest(ethers.utils.keccak256(tx));
+    return signDigest(ethers.utils.keccak256(tx));
+  }
+
+  getSignature (params: { tx: string; key: Key; }) {
+    const signatureHex = ethers.utils.joinSignature(this.getSignatureObject(params));
+    return signatureHex;
+  }
+
+  applySignature(params: { tx: string; signature: any}) {
+    let { tx, signature } = params;
     const parsedTx = ethers.utils.parseTransaction(tx);
     const { nonce, gasPrice, gasLimit, to, value, data, chainId } = parsedTx;
     const txData = { nonce, gasPrice, gasLimit, to, value, data, chainId };
+    if ( (typeof signature) =='string') {
+      signature = ethers.utils.splitSignature(signature);
+    }
     const signedTx = ethers.utils.serializeTransaction(txData, signature);
     return signedTx;
+  }
+
+  sign(params: { tx: string; key: Key; }) {
+    const { tx, key } = params;
+    const signature = this.getSignatureObject( {tx, key});
+    return this.applySignature({tx, signature});
   }
 }

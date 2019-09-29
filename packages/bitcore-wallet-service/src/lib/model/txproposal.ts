@@ -259,6 +259,7 @@ export class TxProposal {
     }
   }
 
+  /* this will build the Bitcoin-lib tx OR an adaptor for CWC transactions */
   _buildTx() {
     $.checkState(
       Utils.checkValueInCollection(this.addressType, Constants.SCRIPT_TYPES)
@@ -473,7 +474,7 @@ export class TxProposal {
     this._updateStatus();
   }
 
-  _addSignaturesToBitcoreTx(tx, signatures, xpub) {
+  _addSignaturesToBitcoreTxBitcoin(tx, signatures, xpub) {
     const bitcore = Bitcore[this.coin];
 
     if (signatures.length != this.inputs.length)
@@ -501,13 +502,22 @@ export class TxProposal {
     });
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');
+  };
+
+  _addSignaturesToBitcoreTx(tx, signatures, xpub) {
+    switch(this.coin) {
+      case 'eth':
+        const signature = ethers.utils.splitSignature(this.getSignatureObject(params));
+        break;
+      default:
+        return this._addSignaturesToBitcoreTxBitcoin(tx, signatures, xpub);
+    }
   }
 
   sign(copayerId, signatures, xpub) {
     try {
       // Tests signatures are OK
       const tx = this.getBitcoreTx();
-
 console.log('[txproposal.ts.500:signatures:]',signatures); // TODO
       this._addSignaturesToBitcoreTx(tx, signatures, xpub);
       this.addAction(copayerId, 'accept', null, signatures, xpub);
