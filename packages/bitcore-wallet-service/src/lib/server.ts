@@ -537,6 +537,11 @@ export class WalletService {
       );
     }
 
+    // All ETH wallet are singleAddress
+    if (opts.coin === 'eth') {
+      opts.singleAddress = true;
+    }
+
     let newWallet;
     async.series(
       [
@@ -1368,43 +1373,56 @@ export class WalletService {
       });
     };
 
-    this._canCreateAddress(opts.ignoreMaxGap, (err, canCreate) => {
+    this.getWallet({ doNotMigrate: opts.doNotMigrate }, (
+      err,
+      wallet
+    ) => {
       if (err) return cb(err);
-      if (!canCreate) return cb(Errors.MAIN_ADDRESS_GAP_REACHED);
 
-      this._runLocked(
-        cb,
-        (cb) => {
-          this.getWallet({ doNotMigrate: opts.doNotMigrate }, (
-            err,
-            wallet
-          ) => {
-            if (err) return cb(err);
-            if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
-            if (wallet.scanStatus == 'error')
-              return cb(Errors.WALLET_NEED_SCAN);
+      // ETH has only one address
+      if (wallet.coin == 'eth') {
+        opts.ignoreMaxGap = true;
+        opts.singleAddress = true;
+      }
 
-            const createFn = wallet.singleAddress
-              ? getFirstAddress
-              : createNewAddress;
-            return createFn(wallet, (err, address) => {
-              if (err) {
-                return cb(err);
-              }
+      this._canCreateAddress(opts.ignoreMaxGap || opts.singleAddress ||  wallet.singleAddress, (err, canCreate) => {
+        if (err) return cb(err);
+        if (!canCreate) return cb(Errors.MAIN_ADDRESS_GAP_REACHED);
 
-              if (wallet.coin == 'bch' && opts.noCashAddr) {
-                address.address = BCHAddressTranslator.translate(
-                  address.address,
-                  'copay'
-                );
-              }
+        this._runLocked(
+          cb,
+          (cb) => {
+            this.getWallet({ doNotMigrate: opts.doNotMigrate }, (
+              err,
+              wallet
+            ) => {
+              if (err) return cb(err);
+              if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
+              if (wallet.scanStatus == 'error')
+                return cb(Errors.WALLET_NEED_SCAN);
 
-              return cb(err, address);
+              const createFn = opts.singleAddress || wallet.singleAddress
+                ? getFirstAddress
+                : createNewAddress;
+              return createFn(wallet, (err, address) => {
+                if (err) {
+                  return cb(err);
+                }
+
+                if (wallet.coin == 'bch' && opts.noCashAddr) {
+                  address.address = BCHAddressTranslator.translate(
+                    address.address,
+                    'copay'
+                  );
+                }
+
+                return cb(err, address);
+              });
             });
-          });
-        },
-        10 * 1000
-      );
+          },
+          10 * 1000
+        );
+      });
     });
   }
 
@@ -2890,10 +2908,11 @@ export class WalletService {
                         data,
                         gasPrice
                       },
-                        (err, gasLimit) => {
-                        opts.fee = feePerKb * (gasLimit || Defaults.DEFAULT_GAS_LIMIT);
-                        return next();
-                      });
+                        (err, inGasLimit) => {
+                          gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
+                          opts.fee = feePerKb * gasLimit;
+                          return next();
+                        });
                     } else {
                       next();
                     }

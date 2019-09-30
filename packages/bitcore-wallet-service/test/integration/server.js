@@ -572,6 +572,14 @@ describe('Wallet service', function() {
       });
     });
 
+
+    it('should create ETH wallet with singleAddress flag', function(done) {
+      helpers.createAndJoinWallet(1, 1, {coin:'eth'}, function(s, wallet) {
+        wallet.singleAddress.should.equal(true);
+        done();
+      });
+    });
+
     describe('Address derivation strategy', function() {
       var server;
       beforeEach(function() {
@@ -1798,6 +1806,65 @@ describe('Wallet service', function() {
     });
   });
 
+
+  describe('#createAddress ETH', function() {
+    var server, wallet;
+
+    describe('shared wallets (BIP44)', function() {
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(1, 1, {coin: 'eth'}, function(s, w) {
+          server = s;
+          wallet = w;
+          done();
+        });
+      });
+
+      it('should create address ', function(done) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+          should.exist(address);
+          address.walletId.should.equal(wallet.id);
+          address.network.should.equal('livenet');
+          address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
+          address.isChange.should.be.false;
+          address.coin.should.equal('eth');
+          address.path.should.equal('m/0/0');
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var notif = _.find(notifications, {
+              type: 'NewAddress'
+            });
+            should.exist(notif);
+            notif.data.address.should.equal(address.address);
+            done();
+          });
+        });
+      });
+
+      it('should not create  now addresses ', function(done) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+          address.walletId.should.equal(wallet.id);
+          address.network.should.equal('livenet');
+          address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
+          server.createAddress({}, function(err, address) {
+            should.not.exist(err);
+            should.exist(address);
+            address.walletId.should.equal(wallet.id);
+            address.network.should.equal('livenet');
+            address.path.should.equal('m/0/0');
+            address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
+            address.isChange.should.be.false;
+            address.coin.should.equal('eth');
+            done();
+          });
+        });
+      });
+    });
+  });
+
+
+
   describe('#getMainAddresses', function() {
     var server, wallet;
 
@@ -2995,23 +3062,6 @@ describe('Wallet service', function() {
 
   ];
 
-   testSet = [
-    {
-      coin: 'bch',
-      key: 'id44bch',
-      addr: 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X',
-      flags: { noCashAddr: true },
-    },
- 
-    {
-      coin: 'eth',
-      key: 'id44btc',
-      addr: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
-      flags: { noChange: true},
-    },
-   ];
- 
-
   _.each(testSet, function(x) {
 
     let coin = x.coin;
@@ -3033,6 +3083,8 @@ describe('Wallet service', function() {
         });
 
         it('should create a tx', function(done) {
+          let old = blockchainExplorer.getTransactionCount;
+          blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '5');
           helpers.stubUtxos(server, wallet, [1, 2],  {coin},  function() {
             let amount = 0.8 * 1e8;
             var txOpts = {
@@ -3063,10 +3115,17 @@ describe('Wallet service', function() {
                 amount: amount,
               }]);
 
+              if (coin == 'eth') {
+                tx.gasPrice.should.equal(12300);
+                tx.gasLimit.should.equal('20000000000');
+                tx.nonce.should.equal('5');
+              }
+
               should.not.exist(tx.feeLevel);
               server.getPendingTxs({}, function(err, txs) {
                 should.not.exist(err);
                 txs.should.be.empty;
+                blockchainExplorer.getTransactionCount = old;
                 done();
               });
             });
@@ -5956,15 +6015,15 @@ console.log('[server.js.3925:err:]',err); // TODO
             should.not.exist(err);
             txp.status.should.equal('accepted');
             // The raw Tx should contain the Signatures.
-            txp.raw.length.should.equal(204);
-            txp.txid.should.equal('0x020a2a1647c3adb4678dac7755b8afdebec097d1d281d482efb09d858b5d830b');
+            txp.raw.length.should.equal(214);
+            txp.txid.should.equal('0xfca83fa02095ffbeb63821c492936048c22c77d1c46707c6cf350694899a3fe8');
 
             // Get pending should also contains the raw TX
             server.getPendingTxs({}, function(err, txs) {
               var tx = txs[0];
               should.not.exist(err);
               tx.status.should.equal('accepted');
-              txp.raw.length.should.equal(204);
+              txp.raw.length.should.equal(214);
               done();
             });
           });
