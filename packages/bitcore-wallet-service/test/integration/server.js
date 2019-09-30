@@ -572,6 +572,14 @@ describe('Wallet service', function() {
       });
     });
 
+
+    it('should create ETH wallet with singleAddress flag', function(done) {
+      helpers.createAndJoinWallet(1, 1, {coin:'eth'}, function(s, wallet) {
+        wallet.singleAddress.should.equal(true);
+        done();
+      });
+    });
+
     describe('Address derivation strategy', function() {
       var server;
       beforeEach(function() {
@@ -1797,6 +1805,65 @@ describe('Wallet service', function() {
       });
     });
   });
+
+
+  describe('#createAddress ETH', function() {
+    var server, wallet;
+
+    describe('shared wallets (BIP44)', function() {
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(1, 1, {coin: 'eth'}, function(s, w) {
+          server = s;
+          wallet = w;
+          done();
+        });
+      });
+
+      it('should create address ', function(done) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+          should.exist(address);
+          address.walletId.should.equal(wallet.id);
+          address.network.should.equal('livenet');
+          address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
+          address.isChange.should.be.false;
+          address.coin.should.equal('eth');
+          address.path.should.equal('m/0/0');
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var notif = _.find(notifications, {
+              type: 'NewAddress'
+            });
+            should.exist(notif);
+            notif.data.address.should.equal(address.address);
+            done();
+          });
+        });
+      });
+
+      it('should not create  now addresses ', function(done) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+          address.walletId.should.equal(wallet.id);
+          address.network.should.equal('livenet');
+          address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
+          server.createAddress({}, function(err, address) {
+            should.not.exist(err);
+            should.exist(address);
+            address.walletId.should.equal(wallet.id);
+            address.network.should.equal('livenet');
+            address.path.should.equal('m/0/0');
+            address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
+            address.isChange.should.be.false;
+            address.coin.should.equal('eth');
+            done();
+          });
+        });
+      });
+    });
+  });
+
+
 
   describe('#getMainAddresses', function() {
     var server, wallet;
