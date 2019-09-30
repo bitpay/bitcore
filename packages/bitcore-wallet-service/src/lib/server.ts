@@ -2890,10 +2890,11 @@ export class WalletService {
                         data,
                         gasPrice
                       },
-                        (err, gasLimit) => {
-                        opts.fee = feePerKb * (gasLimit || Defaults.DEFAULT_GAS_LIMIT);
-                        return next();
-                      });
+                        (err, inGasLimit) => {
+                          gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
+                          opts.fee = feePerKb * gasLimit;
+                          return next();
+                        });
                     } else {
                       next();
                     }

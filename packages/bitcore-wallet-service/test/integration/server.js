@@ -2995,23 +2995,6 @@ describe('Wallet service', function() {
 
   ];
 
-   testSet = [
-    {
-      coin: 'bch',
-      key: 'id44bch',
-      addr: 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X',
-      flags: { noCashAddr: true },
-    },
- 
-    {
-      coin: 'eth',
-      key: 'id44btc',
-      addr: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
-      flags: { noChange: true},
-    },
-   ];
- 
-
   _.each(testSet, function(x) {
 
     let coin = x.coin;
@@ -3062,6 +3045,11 @@ describe('Wallet service', function() {
                 toAddress: addressStr,
                 amount: amount,
               }]);
+
+              if (coin == 'eth') {
+                tx.gasPrice.should.equal(12300);
+                tx.gasLimit.should.equal('20000000000');
+              }
 
               should.not.exist(tx.feeLevel);
               server.getPendingTxs({}, function(err, txs) {
@@ -5956,15 +5944,15 @@ console.log('[server.js.3925:err:]',err); // TODO
             should.not.exist(err);
             txp.status.should.equal('accepted');
             // The raw Tx should contain the Signatures.
-            txp.raw.length.should.equal(204);
-            txp.txid.should.equal('0x020a2a1647c3adb4678dac7755b8afdebec097d1d281d482efb09d858b5d830b');
+            txp.raw.length.should.equal(214);
+            txp.txid.should.equal('0xfca83fa02095ffbeb63821c492936048c22c77d1c46707c6cf350694899a3fe8');
 
             // Get pending should also contains the raw TX
             server.getPendingTxs({}, function(err, txs) {
               var tx = txs[0];
               should.not.exist(err);
               tx.status.should.equal('accepted');
-              txp.raw.length.should.equal(204);
+              txp.raw.length.should.equal(214);
               done();
             });
           });
