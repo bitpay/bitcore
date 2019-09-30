@@ -2520,7 +2520,7 @@ export class WalletService {
     if (wallet.coin == 'eth') {
       try {
         Validation.validateAddress(
-          wallet.coin.tUpperCase(),
+          wallet.coin.toUpperCase(),
           wallet.network,  // not really used for ETH. wallet.network is 'livenet/testnet/regtest' in wallet.
           inaddr,
         );
