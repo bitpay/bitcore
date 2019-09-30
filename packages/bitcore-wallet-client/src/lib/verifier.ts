@@ -158,7 +158,6 @@ export class Verifier {
     if (!Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
       return false;
 
-
     if (Constants.UTXO_COINS.includes(txp.coin) &&  !this.checkAddress(credentials, txp.changeAddress))
       return false;
 
