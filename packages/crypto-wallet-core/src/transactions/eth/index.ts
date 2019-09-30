@@ -47,7 +47,7 @@ export class ETHTxProvider {
     const parsedTx = ethers.utils.parseTransaction(tx);
     const { nonce, gasPrice, gasLimit, to, value, data, chainId } = parsedTx;
     const txData = { nonce, gasPrice, gasLimit, to, value, data, chainId };
-    if ( (typeof signature) =='string') {
+    if ( (typeof signature) == 'string') {
       signature = ethers.utils.splitSignature(signature);
     }
     const signedTx = ethers.utils.serializeTransaction(txData, signature);
