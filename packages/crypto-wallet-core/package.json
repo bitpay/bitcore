@@ -24,7 +24,7 @@
     "bitcore-lib": "^8.8.3",
     "bitcore-lib-cash": "^8.8.3",
     "ethers": "4.0.37",
-    "web3": "^1.2.1"
+    "web3": "1.2.1"
   },
   "devDependencies": {
     "@types/chai": "4.1.7",
