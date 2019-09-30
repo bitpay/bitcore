@@ -255,7 +255,18 @@ blockchainExplorerMock.getBlockchainHeight = (cb) => { return cb(null, 1000); }
 
 blockchainExplorerMock.broadcast = (raw, cb) => {
   blockchainExplorerMock.lastBroadcasted = raw;
-  return cb(null, (new Bitcore.Transaction(raw)).id);
+
+  try {
+    // btc/bch
+    return cb(null, (new Bitcore.Transaction(raw)).id);
+  } catch (e) {
+    // try eth
+    const hash = CWC.Transactions.getHash({
+      tx:raw,
+      chain: 'ETH',
+    });
+    return cb(null, hash);
+  };
 };
 
 blockchainExplorerMock.setHistory = (txs) => {
@@ -323,6 +334,26 @@ blockchainExplorerMock.estimateFee = (nbBlocks, cb) => {
 
   return cb(null, levels);
 };
+
+blockchainExplorerMock.estimateGas = (nbBlocks, cb) => {
+  return cb(null, '20000000000');
+};
+
+
+blockchainExplorerMock.getBalance = (nbBlocks, cb) => {
+  return cb(null,{
+    unconfirmed: 0,
+    confirmed: 20000000000*5,  
+    balance: 20000000000*5,  
+  });
+};
+
+
+
+blockchainExplorerMock.getTransactionCount = (addr, cb) => {
+  return cb(null, 0);
+};
+
 
 blockchainExplorerMock.reset = () => {
   blockchainExplorerMock.utxos = [];
@@ -1141,8 +1172,9 @@ describe('client API', () => {
         signatures[0].should.equal('3045022100cfacaf8e4c9782f33f717eba3162d44cf9f34d9768a3bcd66b7052eb0868a0880220015e930e1f7d9a8b6b9e54d1450556bf4ba95c2cf8ef5c55d97de7df270cc6fd');
         signatures[1].should.equal('3044022069cf6e5d8700ff117f754e4183e81690d99d6a6443e86c9589efa072ecb7d82c02204c254506ac38774a2176f9ef56cc239ef7867fbd24da2bef795128c75a063301');
       });
-      it('should sign eth proposal correctly', () => {
 
+
+      it('should sign eth proposal correctly', () => {
         const toAddress = '0xa062a07a0a56beb2872b12f388f511d694626730';
         const key = Key.fromExtendedPrivateKey(masterPrivateKey);
         const path = 'm/44\'/60\'/0\'';
@@ -1174,12 +1206,10 @@ describe('client API', () => {
           amount: 3896000000000000
         };
         const signatures = key.sign(path, txp);
-        const expectedSignedTx = {
-          ...txp,
-          rawTx: '0xf86b068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b80008026a04f761cd5f1cf1008d398c854ee338f82b457dc67ae794a987083b36b83fc6c91a07247fe72fe1880c0ee914c6e1b608625d8ab4e735520c33b2f7f76e0dcaf5980',
-          status: 'accepted'
-        };
-        signatures.should.deep.equal(expectedSignedTx);
+        const expectedSignatures =  [
+          '0x4f761cd5f1cf1008d398c854ee338f82b457dc67ae794a987083b36b83fc6c917247fe72fe1880c0ee914c6e1b608625d8ab4e735520c33b2f7f76e0dcaf59801c',
+        ];
+        signatures.should.deep.equal(expectedSignatures);
       });
       it('should sign BCH proposal correctly', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
@@ -3869,7 +3899,7 @@ describe('client API', () => {
 
   describe('Transactions Signatures and Rejection', function () {
     this.timeout(5000);
-    it('Send and broadcast in 1-1 wallet', (done) => {
+    it('Send and broadcast in 1-1 wallet BTC', (done) => {
       helpers.createAndJoinWallet(clients, keys, 1, 1, {}, (w) => {
         clients[0].createAddress((err, x0) => {
           should.not.exist(err);
@@ -3911,6 +3941,48 @@ describe('client API', () => {
         });
       });
     });
+
+  it('Send and broadcast in 1-1 wallet ETH', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin:'eth'}, (w) => {
+        clients[0].createAddress((err, x0) => {
+          should.not.exist(err);
+          should.exist(x0.address);
+          //blockchainExplorerMock.setUtxo(x0, 1, 1);
+          var opts = {
+            outputs: [{
+              amount: 10000000,
+              toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+              message: 'output 0',
+            }],
+            message: 'hello',
+            feePerKb: 100e2,
+          };
+          helpers.createAndPublishTxProposal(clients[0], opts, (err, txp) => {
+            should.not.exist(err);
+            txp.requiredRejections.should.equal(1);
+            txp.requiredSignatures.should.equal(1);
+            txp.status.should.equal('pending');
+            txp.outputs[0].message.should.equal('output 0');
+            txp.message.should.equal('hello');
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(txp, signatures, (err, txp) => {
+              should.not.exist(err);
+              txp.status.should.equal('accepted');
+              txp.outputs[0].message.should.equal('output 0');
+              txp.message.should.equal('hello');
+              clients[0].broadcastTxProposal(txp, (err, txp) => {
+                should.not.exist(err);
+                txp.status.should.equal('broadcasted');
+                txp.txid.should.contain('0x');
+                txp.message.should.equal('hello');
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
 
     it('Send and broadcast in 2-3 wallet', (done) => {
       helpers.createAndJoinWallet(clients, keys, 2, 3, {}, (w) => {

@@ -90,6 +90,7 @@ export class TxProposal {
     toAddress?: string;
     message?: string;
     script?: string;
+    satoshis?: number;
   }>;
   outputOrder: number[];
   walletM: number;
@@ -258,9 +259,8 @@ export class TxProposal {
     }
   }
 
+  /* this will build the Bitcoin-lib tx OR an adaptor for CWC transactions */
   _buildTx() {
-    const t = new Bitcore[this.coin].Transaction();
-
     $.checkState(
       Utils.checkValueInCollection(this.addressType, Constants.SCRIPT_TYPES)
     );
@@ -272,8 +272,23 @@ export class TxProposal {
         recipients: [{ address: this.outputs[0].toAddress, amount: this.amount}],
         fee: this.gasPrice
       });
-      return { uncheckedSerialize: () => rawTx };
+      return {
+        uncheckedSerialize: () => rawTx,
+        txid: () => this.txid,
+        toObject: () => {
+          let ret = _.clone(this);
+          ret.outputs[0].satoshis = ret.outputs[0].amount;
+          return ret;
+        },
+        getFee: () => {
+          return this.fee;
+        },
+        getChangeOutput: () => null,
+
+      };
     } else {
+      const t = new Bitcore[this.coin].Transaction();
+
       switch (this.addressType) {
         case Constants.SCRIPT_TYPES.P2SH:
           _.each(this.inputs, (i) => {
@@ -331,7 +346,7 @@ export class TxProposal {
         'not-enought-inputs'
       );
       $.checkState(
-        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE,
+        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[this.coin],
         'fee-too-high'
       );
 
@@ -354,7 +369,6 @@ export class TxProposal {
 
   getBitcoreTx() {
     const t = this._buildTx();
-
     const sigs = this._getCurrentSignatures();
     _.each(sigs, (x) => {
       this._addSignaturesToBitcoreTx(t, x.signatures, x.xpub);
@@ -461,7 +475,7 @@ export class TxProposal {
     this._updateStatus();
   }
 
-  _addSignaturesToBitcoreTx(tx, signatures, xpub) {
+  _addSignaturesToBitcoreTxBitcoin(tx, signatures, xpub) {
     const bitcore = Bitcore[this.coin];
 
     if (signatures.length != this.inputs.length)
@@ -491,12 +505,29 @@ export class TxProposal {
     if (i != tx.inputs.length) throw new Error('Wrong signatures');
   }
 
+  _addSignaturesToBitcoreTx(tx, signatures, xpub) {
+    switch (this.coin) {
+      case 'eth':
+        const raw = Transactions.applySignature({
+          chain: 'ETH',
+          tx: tx.uncheckedSerialize(),
+          signature: signatures[0],
+        });
+        tx.uncheckedSerialize = () => raw ;
+
+        // bitcore users id for txid...
+        tx.id = Transactions.getHash({ tx: raw, chain: this.coin.toUpperCase() });
+        break;
+      default:
+        return this._addSignaturesToBitcoreTxBitcoin(tx, signatures, xpub);
+    }
+  }
+
   sign(copayerId, signatures, xpub) {
     try {
       // Tests signatures are OK
       const tx = this.getBitcoreTx();
       this._addSignaturesToBitcoreTx(tx, signatures, xpub);
-
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {
