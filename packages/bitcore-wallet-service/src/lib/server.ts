@@ -2521,7 +2521,7 @@ export class WalletService {
       try {
         Validation.validateAddress(
           wallet.coin.toUpperCase(),
-          'mainnet',
+          wallet.network,
           inaddr,
         );
       } catch (ex) {

@@ -413,7 +413,6 @@ export class Key {
         chain: txp.coin.toUpperCase(),
         tx,
         key: { privKey: privKey.toString('hex') },
-        from: txp.from,
       });
 
       return [signature];
