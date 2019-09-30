@@ -3083,6 +3083,8 @@ describe('Wallet service', function() {
         });
 
         it('should create a tx', function(done) {
+          let old = blockchainExplorer.getTransactionCount;
+          blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '5');
           helpers.stubUtxos(server, wallet, [1, 2],  {coin},  function() {
             let amount = 0.8 * 1e8;
             var txOpts = {
@@ -3116,12 +3118,14 @@ describe('Wallet service', function() {
               if (coin == 'eth') {
                 tx.gasPrice.should.equal(12300);
                 tx.gasLimit.should.equal('20000000000');
+                tx.nonce.should.equal('5');
               }
 
               should.not.exist(tx.feeLevel);
               server.getPendingTxs({}, function(err, txs) {
                 should.not.exist(err);
                 txs.should.be.empty;
+                blockchainExplorer.getTransactionCount = old;
                 done();
               });
             });
