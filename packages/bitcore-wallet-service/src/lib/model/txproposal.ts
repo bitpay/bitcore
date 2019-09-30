@@ -272,11 +272,11 @@ export class TxProposal {
         recipients: [{ address: this.outputs[0].toAddress, amount: this.amount}],
         fee: this.gasPrice
       });
-      return { 
-        uncheckedSerialize: () => rawTx, 
+      return {
+        uncheckedSerialize: () => rawTx,
         txid: () => this.txid,
         toObject: () => {
-          let ret = _.clone(this)
+          let ret = _.clone(this);
           ret.outputs[0].satoshis = ret.outputs[0].amount;
           return ret;
         },
@@ -284,7 +284,7 @@ export class TxProposal {
           return this.fee;
         },
         getChangeOutput: () => null,
- 
+
       };
     } else {
       const t = new Bitcore[this.coin].Transaction();
@@ -503,20 +503,20 @@ export class TxProposal {
     });
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');
-  };
+  }
 
   _addSignaturesToBitcoreTx(tx, signatures, xpub) {
-    switch(this.coin) {
+    switch (this.coin) {
       case 'eth':
         const raw = Transactions.applySignature({
           chain: 'ETH',
           tx: tx.uncheckedSerialize(),
           signature: signatures[0],
         });
-        tx.uncheckedSerialize = () => { return raw } ;
+        tx.uncheckedSerialize = () => raw ;
 
         // bitcore users id for txid...
-        tx.id = Transactions.getHash({ tx:raw, chain: this.coin.toUpperCase() });
+        tx.id = Transactions.getHash({ tx: raw, chain: this.coin.toUpperCase() });
         break;
       default:
         return this._addSignaturesToBitcoreTxBitcoin(tx, signatures, xpub);

@@ -531,13 +531,11 @@ export class WalletService {
       return cb(new ClientError('Invalid public key'));
     }
 
-
     if (opts.coin === 'eth' && opts.n > 1) {
       return cb(
         new ClientError( 'Multisig ETH wallet not supported')
       );
-    };
- 
+    }
 
     let newWallet;
     async.series(
@@ -1258,7 +1256,7 @@ export class WalletService {
       addresses: IAddress[]
     ) => {
       if (err) return cb(err);
-      const latestAddresses = 
+      const latestAddresses =
         addresses.filter(x => !x.isChange).slice(-Defaults.MAX_MAIN_ADDRESS_GAP) as IAddress[];
       if (
         latestAddresses.length < Defaults.MAX_MAIN_ADDRESS_GAP ||
@@ -1875,7 +1873,6 @@ export class WalletService {
           return cb(new ClientError('Invalid fee per KB'));
       }
 
-
       if (!wallet.isUTXOCoin() ) {
         this.getBalance({}, (err, balance) => {
           if (err) return cb(err);
@@ -1896,7 +1893,7 @@ export class WalletService {
               amountBelowFee: 0,
               amount: availableAmount - fee,
               feePerKb: opts.feePerKb,
-              fee: fee,
+              fee,
             });
           });
         });
@@ -2152,7 +2149,6 @@ export class WalletService {
     );
   }
 
-
   _checkTx(txp) {
     if (txp.getEstimatedSize() / 1000 > Defaults.MAX_TX_SIZE_IN_KB[txp.coin])
       return Errors.TX_MAX_SIZE_EXCEEDED;
@@ -2201,7 +2197,7 @@ export class WalletService {
     // todo: check inputs are ours and have enough value
     if (txp.inputs && !_.isEmpty(txp.inputs)) {
 
-      if (!_.isNumber(txp.fee)) 
+      if (!_.isNumber(txp.fee))
         txp.estimateFee();
 
       return cb(this._checkTx(txp));
@@ -2524,15 +2520,15 @@ export class WalletService {
     if (wallet.coin == 'eth') {
       try {
         Validation.validateAddress(
-          wallet.coin.toUpperCase(), 
-          'mainnet', 
+          wallet.coin.toUpperCase(),
+          'mainnet',
           inaddr,
         );
       } catch (ex) {
         return Errors.INVALID_ADDRESS;
       }
-      
-    } else { 
+
+    } else {
       const A = Bitcore_[wallet.coin].Address;
       let addr: {
         network?: string;
@@ -4251,7 +4247,7 @@ export class WalletService {
 
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
-            const dustThreshold = wallet.isUTXOCoin() 
+            const dustThreshold = wallet.isUTXOCoin()
               ? Bitcore_[wallet.coin].Transaction.DUST_AMOUNT
               : 0;
             this._normalizeTxHistory(wallet.id, txs, dustThreshold, bcHeight, (
@@ -4535,7 +4531,7 @@ export class WalletService {
         // single address or non UTXO coins do not scan.
         if (wallet.singleAddress)
           return cb();
-        if (! wallet.isUTXOCoin() ) 
+        if (! wallet.isUTXOCoin() )
           return cb();
 
         this._runLocked(cb, (cb) => {
@@ -4706,7 +4702,7 @@ export class WalletService {
       // single address or non UTXO coins do not scan.
       if (wallet.singleAddress)
         return cb();
-      if (! wallet.isUTXOCoin() ) 
+      if (! wallet.isUTXOCoin() )
         return cb();
 
       setTimeout(() => {

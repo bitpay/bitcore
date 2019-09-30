@@ -4,27 +4,27 @@ module.exports = {
   MIN_FEE_PER_KB: 0,
 
   MAX_FEE_PER_KB: {
-    'btc': 10000 * 1000, // 10k sat/b
-    'bch': 10000 * 1000, // 10k sat/b
-    'eth': 50000000000, // 50 Gwei
+    btc: 10000 * 1000, // 10k sat/b
+    bch: 10000 * 1000, // 10k sat/b
+    eth: 50000000000, // 50 Gwei
   },
 
   MIN_TX_FEE: {
-    'btc': 0,
-    'bch': 0,
-    'eth': 0,
+    btc: 0,
+    bch: 0,
+    eth: 0,
   },
 
   MAX_TX_FEE: {
-    'btc': 0.05 * 1e8,
-    'bch': 0.05 * 1e8,
-    'eth': 1 * 1e18,  // 1 eth
+    btc: 0.05 * 1e8,
+    bch: 0.05 * 1e8,
+    eth: 1 * 1e18,  // 1 eth
   },
 
   MAX_TX_SIZE_IN_KB: {
-    'btc': 100,
-    'bch': 100,
-    'eth': 500,
+    btc: 100,
+    bch: 100,
+    eth: 500,
   },
 
   // ETH
