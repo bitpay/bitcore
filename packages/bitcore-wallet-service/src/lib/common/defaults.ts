@@ -2,10 +2,30 @@
 
 module.exports = {
   MIN_FEE_PER_KB: 0,
-  MAX_FEE_PER_KB: 10000 * 1000, // 10k sat/b
-  MIN_TX_FEE: 0,
-  MAX_TX_FEE: 0.1 * 1e8,
-  MAX_TX_SIZE_IN_KB: 100,
+
+  MAX_FEE_PER_KB: {
+    btc: 10000 * 1000, // 10k sat/b
+    bch: 10000 * 1000, // 10k sat/b
+    eth: 50000000000, // 50 Gwei
+  },
+
+  MIN_TX_FEE: {
+    btc: 0,
+    bch: 0,
+    eth: 0,
+  },
+
+  MAX_TX_FEE: {
+    btc: 0.05 * 1e8,
+    bch: 0.05 * 1e8,
+    eth: 1 * 1e18,  // 1 eth
+  },
+
+  MAX_TX_SIZE_IN_KB: {
+    btc: 100,
+    bch: 100,
+    eth: 500,
+  },
 
   // ETH
   DEFAULT_GAS_LIMIT: 21000,
@@ -66,27 +86,30 @@ module.exports = {
       {
         name: 'urgent',
         nbBlocks: 10, // < 2 min
-        defaultValue: 3000000000
+        multiplier: 1.1,
+        defaultValue: 30000000000
       },
       {
         name: 'priority',
         nbBlocks: 15, // 3 min
-        defaultValue: 2000000000
+        defaultValue: 25000000000
       },
       {
         name: 'normal',
         nbBlocks: 25, // 5 min
-        defaultValue: 1000000000
+        defaultValue: 20000000000
       },
       {
         name: 'economy',
         nbBlocks: 50, // 10 minutes
-        defaultValue: 1000000000
+        multiplier: 0.9,
+        defaultValue: 15000000000
       },
       {
         name: 'superEconomy',
         nbBlocks: 75, // 15 minutes
-        defaultValue: 1000000000
+        multiplier: 0.8,
+        defaultValue: 10000000000
       }
     ]
   },

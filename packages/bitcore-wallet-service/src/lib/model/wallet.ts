@@ -188,6 +188,10 @@ export class Wallet {
     return this.n > 1;
   }
 
+  isUTXOCoin() {
+    return !!Constants.UTXO_COINS[this.coin.toUpperCase()];
+  }
+
   updateBEKeys() {
     $.checkState(this.isComplete());
 

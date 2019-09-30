@@ -1,8 +1,8 @@
 'use strict';
 
+import * as CWC from 'crypto-wallet-core';
 import { EventEmitter } from 'events';
 import _ from 'lodash';
-import * as CWC from 'crypto-wallet-core';
 import sjcl from 'sjcl';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
@@ -15,11 +15,11 @@ var $ = require('preconditions').singleton();
 var util = require('util');
 var async = require('async');
 var events = require('events');
-var Bitcore = require('bitcore-lib');
+var Bitcore = CWC.BitcoreLib;
 var Bitcore_ = {
-  btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
-  eth: Bitcore
+  btc: CWC.BitcoreLib,
+  bch: CWC.BitcoreLibCash,
+  eth: CWC.BitcoreLib
 };
 var Mnemonic = require('bitcore-mnemonic');
 var url = require('url');
@@ -61,8 +61,8 @@ export class API extends EventEmitter {
   static errors = Errors;
 
   // Expose bitcore
-  static Bitcore = require('bitcore-lib');
-  static BitcoreCash = require('bitcore-lib-cash');
+  static Bitcore = CWC.BitcoreLib;
+  static BitcoreCash = CWC.BitcoreLibCash;
 
   constructor(opts?) {
     super();
@@ -103,7 +103,7 @@ export class API extends EventEmitter {
   }
 
   _fetchLatestNotifications(interval, cb) {
-    cb = cb || function () { };
+    cb = cb || function() {};
 
     var opts: any = {
       lastNotificationId: this.lastNotificationId,
@@ -294,7 +294,7 @@ export class API extends EventEmitter {
       var words;
       try {
         words = c.getMnemonic();
-      } catch (ex) { }
+      } catch (ex) {}
 
       var xpriv;
       if (words && (!c.mnemonicHasPassphrase || opts.passphrase)) {
@@ -631,7 +631,7 @@ export class API extends EventEmitter {
         };
         t.inputs[i].addSignature(t, s);
         i++;
-      } catch (e) { }
+      } catch (e) {}
     });
     if (i != txp.inputs.length) throw new Error('Wrong signatures');
   }
@@ -741,9 +741,9 @@ export class API extends EventEmitter {
 
     this.request.get(
       '/v2/feelevels/?coin=' +
-      (coin || 'btc') +
-      '&network=' +
-      (network || 'livenet'),
+        (coin || 'btc') +
+        '&network=' +
+        (network || 'livenet'),
       (err, result) => {
         if (err) return cb(err);
         return cb(err, result);
@@ -1462,9 +1462,9 @@ export class API extends EventEmitter {
               encryptedPkr: opts.doNotEncryptPkr
                 ? null
                 : Utils.encryptMessage(
-                  JSON.stringify(this.credentials.publicKeyRing),
-                  this.credentials.personalEncryptingKey
-                ),
+                    JSON.stringify(this.credentials.publicKeyRing),
+                    this.credentials.personalEncryptingKey
+                  ),
               unencryptedPkr: opts.doNotEncryptPkr
                 ? JSON.stringify(this.credentials.publicKeyRing)
                 : null,
@@ -2141,7 +2141,7 @@ export class API extends EventEmitter {
     var ret;
     try {
       ret = JSON.parse(decrypted);
-    } catch (e) { }
+    } catch (e) {}
     return ret;
   }
 
