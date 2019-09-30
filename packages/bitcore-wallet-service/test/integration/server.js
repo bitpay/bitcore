@@ -3117,7 +3117,7 @@ describe('Wallet service', function() {
 
               if (coin == 'eth') {
                 tx.gasPrice.should.equal(12300);
-                tx.gasLimit.should.equal('20000000000');
+                tx.gasLimit.should.equal('21000');
                 tx.nonce.should.equal('5');
               }
 
@@ -3982,7 +3982,6 @@ describe('Wallet service', function() {
               };
               txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, tx) {
-console.log('[server.js.3925:err:]',err); // TODO
                 should.exist(err);
                 err.code.should.equal('DUST_AMOUNT');
                 err.message.should.equal('Amount below dust threshold');
@@ -4841,6 +4840,52 @@ console.log('[server.js.3925:err:]',err); // TODO
       });
     };
   });
+
+describe('#createTX ETH Only tests', () => {
+  var server, wallet;
+  beforeEach(function(done) {
+    helpers.createAndJoinWallet(1, 1, {
+      coin: 'eth',
+    }, function(s, w) {
+      server = s;
+      wallet = w;
+      done();
+    });
+  });
+
+ 
+  it('should allow to create a TX with fee and no inputs', function(done) {
+    helpers.stubFeeLevels({
+    });
+    helpers.stubUtxos(server, wallet, [1, 2],  function() {
+      let amount = 0.8 * 1e8;
+      var txOpts = {
+        outputs: [{
+          toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+          amount: amount,
+        }],
+        message: 'some message',
+        customData: 'some custom data',
+        fee: 252000000000000,
+      };
+      txOpts = Object.assign(txOpts);
+      server.createTx(txOpts, function(err, tx) {
+        should.not.exist(err);
+        should.exist(tx);
+        tx.outputs.should.deep.equal([{
+          toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+          amount: amount,
+        }]);
+        tx.gasPrice.should.equal(12000000000);
+        tx.gasLimit.should.equal('21000');
+        (tx.gasPrice * tx.gasLimit).should.equal(txOpts.fee);
+        done();
+      });
+    });
+  });
+});
+
+
 
   describe("cashAddr backwards compat", (x) => {
     /// LEGACY MODE
@@ -6015,15 +6060,15 @@ console.log('[server.js.3925:err:]',err); // TODO
             should.not.exist(err);
             txp.status.should.equal('accepted');
             // The raw Tx should contain the Signatures.
-            txp.raw.length.should.equal(214);
-            txp.txid.should.equal('0xfca83fa02095ffbeb63821c492936048c22c77d1c46707c6cf350694899a3fe8');
+            txp.raw.length.should.equal(208);
+            txp.txid.should.equal('0xf631c31299a9bbbc955d1e8310f61f8b7b2335b2fa9ca1e4b034911257af63a1');
 
             // Get pending should also contains the raw TX
             server.getPendingTxs({}, function(err, txs) {
               var tx = txs[0];
               should.not.exist(err);
               tx.status.should.equal('accepted');
-              txp.raw.length.should.equal(214);
+              txp.raw.length.should.equal(208);
               done();
             });
           });
