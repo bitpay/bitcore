@@ -131,7 +131,6 @@ export class MempoolCoinEventTransform extends Transform {
 
   _transform(coinBatch: Array<MintOp>, _, done) {
     if (this.height < SpentHeightIndicators.minimum) {
-      console.log(coinBatch);
       const eventPayload = coinBatch
         .map(coinOp => {
           const coin = {
