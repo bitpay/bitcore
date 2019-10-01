@@ -268,6 +268,9 @@ Address._transformPublicKey = function(pubkey, network, type) {
   if (!(pubkey instanceof PublicKey)) {
     throw new TypeError('Address must be an instance of PublicKey.');
   }
+  if (type && type !== Address.PayToScriptHash && type !== Address.PayToWitnessPublicKeyHash && type !== Address.PayToPublicKeyHash) {
+    throw new TypeError('Type must be either pubkeyhash, witnesspubkeyhash, or scripthash to transform public key.');
+  }
   if (!pubkey.compressed && (type === Address.PayToScriptHash || type === Address.PayToWitnessPublicKeyHash)) {
     throw new TypeError('Witness addresses must use compressed public keys.');
   }
@@ -312,6 +315,9 @@ Address._transformScript = function(script, network) {
  */
 Address.createMultisig = function(publicKeys, threshold, network, nestedWitness, type) {
   network = network || publicKeys[0].network || Networks.defaultNetwork;
+  if (type && type !== Address.PayToScriptHash && type !== Address.PayToWitnessScriptHash) {
+    throw new TypeError('Type must be either scripthash or witnessscripthash to create multisig.');
+  }
   if (nestedWitness || type === Address.PayToWitnessScriptHash) {
     publicKeys = _.map(publicKeys, PublicKey);
     for (var i = 0; i < publicKeys.length; i++) {
