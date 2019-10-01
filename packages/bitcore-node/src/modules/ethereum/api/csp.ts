@@ -159,8 +159,12 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     const { network, rawTx } = params;
     const web3 = await this.getWeb3(network);
-    const tx = await web3.eth.sendSignedTransaction(rawTx);
-    return tx;
+    return new Promise((resolve, reject) => {
+      web3.eth
+        .sendSignedTransaction(rawTx)
+        .on('transactionHash', resolve)
+        .on('error', reject);
+    });
   }
 
   async getWalletAddresses(walletId: ObjectID) {
