@@ -2894,7 +2894,7 @@ export class WalletService {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
                     return next();
 
-                 this._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
+                  this._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
                     feePerKb = inFeePerKb;
                     if (! wallet.isUTXOCoin()) {
                       gasPrice = inFeePerKb;
@@ -2911,10 +2911,10 @@ export class WalletService {
                       },
                         (err, inGasLimit) => {
                           if (_.isNumber(opts.fee)) {
-                            // This is used for sendmax 
-                            gasPrice = feePerKb = 
+                            // This is used for sendmax
+                            gasPrice = feePerKb =
                               Number((opts.fee /  (inGasLimit || Defaults.DEFAULT_GAS_LIMIT)).toFixed());
-                          } 
+                          }
 
                           gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
                           opts.fee = feePerKb * gasLimit;
