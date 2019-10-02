@@ -417,6 +417,12 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
+    if (!_.includes(Constants.COINS, coin))
+      return cb(new Error('Invalid coin'));
+
+    if (coin == 'eth')
+      return cb(new Error('ETH not supported for this action'));
+
     var B = Bitcore_[coin];
     var privateKey = B.PrivateKey(privateKey);
     var address = privateKey.publicKey.toAddress().toString(true);
