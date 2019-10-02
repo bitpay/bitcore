@@ -604,36 +604,53 @@ export class API extends EventEmitter {
     });
   }
 
-  _addSignaturesToBitcoreTx(txp, t, signatures, xpub) {
+
+  _addSignaturesToBitcoreTxBitcoin(txp, t, signatures, xpub) {
+    $.checkState(txp.coin);
+    const bitcore = Bitcore_[txp.coin];
     if (signatures.length != txp.inputs.length)
       throw new Error('Number of signatures does not match number of inputs');
 
-    $.checkState(txp.coin);
+    let i = 0;
+    const x = new bitcore.HDPublicKey(xpub);
 
-    var bitcore = Bitcore_[txp.coin];
-
-    var i = 0,
-      x = new bitcore.HDPublicKey(xpub);
-
-    _.each(signatures, signatureHex => {
-      var input = txp.inputs[i];
+    _.each(signatures, (signatureHex) => {
       try {
-        var signature = bitcore.crypto.Signature.fromString(signatureHex);
-        var pub = x.deriveChild(txp.inputPaths[i]).publicKey;
-        var s = {
+        const signature = bitcore.crypto.Signature.fromString(signatureHex);
+        const pub = x.deriveChild(txp.inputPaths[i]).publicKey;
+        const s = {
           inputIndex: i,
           signature,
-          // tslint:disable:no-bitwise
           sigtype:
+            // tslint:disable-next-line:no-bitwise
             bitcore.crypto.Signature.SIGHASH_ALL |
             bitcore.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub
         };
         t.inputs[i].addSignature(t, s);
         i++;
-      } catch (e) {}
+      } catch (e) { }
     });
+
     if (i != txp.inputs.length) throw new Error('Wrong signatures');
+  }
+
+  _addSignaturesToBitcoreTx(txp, t, signatures, xpub) {
+    switch (txp.coin) {
+      case 'eth':
+        const raw = CWC.Transactions.applySignature({
+          chain: 'ETH',
+          tx: t.uncheckedSerialize(),
+          signature: signatures[0],
+        });
+        t.uncheckedSerialize = () => raw ;
+
+        // bitcore users id for txid...
+        t.id = CWC.Transactions.getHash({ tx: raw, chain: txp.coin.toUpperCase() });
+        break;
+      default:
+        return this._addSignaturesToBitcoreTxBitcoin(txp, t, signatures, xpub);
+    }
   }
 
   _applyAllSignatures(txp, t) {
@@ -1720,7 +1737,7 @@ export class API extends EventEmitter {
 
       if (paypro) {
         var t_unsigned = Utils.buildTx(txp);
-        var t = Utils.buildTx(txp);
+        var t = _.clone(t_unsigned);
         this._applyAllSignatures(txp, t);
 
         PayPro.send(
