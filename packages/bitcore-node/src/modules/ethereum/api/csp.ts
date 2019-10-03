@@ -370,7 +370,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   }
 
   async getAccountNonce(network: string, address: string) {
-    return EthTransactionStorage.collection.countDocuments({ chain: 'ETH', network, from: address });
+    return EthTransactionStorage.collection.countDocuments({ chain: 'ETH', network, from: address, blockHeight: { $ne: -1 } });
   }
 
   async getWalletTokenTransactions(
