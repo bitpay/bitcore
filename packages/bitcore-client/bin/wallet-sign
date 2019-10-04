@@ -16,38 +16,38 @@ const { bitcoinCoreDecrypt } = require('../ts_build/encryption');
  */
 program
   .version(require('../package.json').version)
-  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--name <name>', 'REQUIRED - Bitcore Wallet Name')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--tx [tx]', 'The raw transaction to sign')
   .option('--txfile [txfile]', 'path to a jsonl file with rawTransaction and utxos')
   .option('--utxos', 'Pass in utxos to use to sign transaction')
-  .option('keyFile [keyFile]', 'jsonl file of {privKey, pubKey, address} pairs')
+  .option('--keys [keys]', 'jsonl file of {privKey, pubKey, address} pairs')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, tx, txfile, keyfile, utxos } = program;
+  const { name, path, tx, txfile, keys, utxos } = program;
   let wallet;
-  let keys;
+  let decryptedKeys;
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ name, path });
     wallet = await wallet.unlock(password);
-    if (keyfile) {
-      let contents = fs.readFileSync(keyfile).toString();
-      keys = contents
+    if (keys) {
+      let contents = fs.readFileSync(keys).toString();
+      decryptedKeys = contents
         .split('\n')
         .filter(line => line !== '')
         .map(line => JSON.parse(line));
       try {
         const bitcoinCorePassword = await promptly.password('Enter Bitcoin Core Password:');
-        let decryptedParams = bitcoinCoreDecrypt(keys, bitcoinCorePassword);
-        keys = decryptedParams.jsonlDecrypted;
+        let decryptedParams = bitcoinCoreDecrypt(decryptedKeys, bitcoinCorePassword);
+        decryptedKeys = decryptedParams.jsonlDecrypted;
       } catch (e) {
         console.error(e);
       }
     }
     if (tx) {
-      let signedTx = await wallet.signTx({ tx, keys, utxos });
+      let signedTx = await wallet.signTx({ tx, keys: decryptedKeys, utxos });
       console.log(JSON.stringify(signedTx));
     }
     if (txfile) {
@@ -55,7 +55,7 @@ const main = async () => {
       const writeStream = fs.createWriteStream('signedTx.jsonl');
       readStream
         .pipe(jsonlBufferToObjectMode()).on('error', (err) => console.error(err))
-        .pipe(signTxStream(wallet, keys, utxos)).on('error', (err) => console.error(err))
+        .pipe(signTxStream(wallet, decryptedKeys, utxos)).on('error', (err) => console.error(err))
         .pipe(objectModeToJsonlBuffer()).on('error', (err) => console.error(err))
         .pipe(writeStream).on('error', (err) => console.error(err));
     }

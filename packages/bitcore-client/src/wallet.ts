@@ -5,6 +5,7 @@ import { Storage } from './storage';
 import { Transactions, Deriver } from 'crypto-wallet-core';
 const { PrivateKey } = require('bitcore-lib');
 const Mnemonic = require('bitcore-mnemonic');
+const { ParseApiStream } = require('./stream-util');
 
 export namespace Wallet {
   export type KeyImport = {
@@ -295,6 +296,13 @@ export class Wallet {
 
   async signTx(params) {
     let { tx, keys, utxos } = params;
+    if (!utxos) {
+      utxos = [];
+      await (new Promise((resolve) => {
+        this.getUtxos().pipe(new ParseApiStream()).on('data', (utxo) => utxos.push(utxo))
+          .on('end', () => {resolve()});
+      }));
+    }
     if (!keys) {
       let addresses = [];
       for (let utxo of utxos) {
@@ -309,7 +317,6 @@ export class Wallet {
       keys,
       utxos
     };
-
     return Transactions.sign({ ...payload });
   }
 
