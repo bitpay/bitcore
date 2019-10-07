@@ -33,62 +33,26 @@ router.get('/:address', function(req, res) {
 
 router.get('/:address/coins', async function (req, res) {
   let { address, chain, network } = req.params;
-  // let { unspent, limit = 10, since } = req.query;
+
   try {
-    let coins = await CoinStorage.collection.find({address, chain, network}).toArray();
+    let coins = await CoinStorage.collection.find({ address, chain, network }).toArray(); //rename coins
+    let spentTxids = coins.filter((tx) => { return tx.spentTxid; }).map((tx) => tx.spentTxid);
+    let mintedTxids = coins.filter((tx) => { return tx.mintTxid; }).map((tx) => tx.mintTxid);;
 
-    const mintTxids : string[] = [];
-    const spentTxids : string[] = [];
-    const mintTxidIndexes = {};
-    const spentTxidIndexes = {};
+    let fundingTxInputs = await CoinStorage.collection.find({ chain, network, spentTxid: { $in: mintedTxids } }).toArray();
+    let fundingTxOutputs = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: mintedTxids } }).toArray();
 
-    coins.forEach((coin) => {
-      if(coin.mintTxid) {
-        mintTxids.push(coin.mintTxid);
-      } 
-      
-      if(coin.spentTxid) {
-        spentTxids.push(coin.spentTxid);
-      }
+    let spendingTxInputs: any = [];
+    let spendingTxOutputs: any = [];
 
-    });
-
-    const mintTxidCoinPromises = mintTxids.map(function (txid, index) {
-      mintTxidIndexes[index] = txid;
-      return ChainStateProvider.getCoinsForTx({ chain, network, txid });
-    });
-
-    const spentTxidCoinPromises = spentTxids.map(function (txid, index) {
-      spentTxidIndexes[index] = txid;
-      return ChainStateProvider.getCoinsForTx({ chain, network, txid });
-    });
-
-    let mintTxidCoins = await Promise.all(mintTxidCoinPromises).then(
-      (data) => {
-        let response: any = {};
-        data.forEach((coin, index) => {
-          let txid: string = mintTxidIndexes[index];
-          response[txid] = coin;
-        });
-        return response;
-      }
-    );
-
-    let spentTxidCoins = await Promise.all(spentTxidCoinPromises).then(
-      (data) => {
-        let response: any = {};
-        data.forEach((coin, index) => {
-          let txid: string = spentTxidIndexes[index];
-          response[txid] = coin;
-        });
-        return response;
-      }
-    );
-    return res.json({mintTxidCoins, spentTxidCoins});
-  } catch(err) {
+    if (!(spentTxids === null)) {
+      spendingTxInputs = await CoinStorage.collection.find({ chain, network, spentTxid: { $in: spentTxids } }).toArray();
+      spendingTxOutputs = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: coins.map(c => c.spentTxid) } }).toArray();
+    }
+    return res.json({ coins, mintedTxids, fundingTxInputs, fundingTxOutputs, spentTxids, spendingTxInputs, spendingTxOutputs });
+  } catch (err) {
     return res.status(500).send(err);
   }
-  
 });
 
 router.get('/:address/balance', async function(req, res) {
