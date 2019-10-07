@@ -56,29 +56,28 @@ router.get('/:blockId', async function(req: Request, res: Response) {
   }
 });
 
-//return mapping of {txid: {inputs, ouputs}} paginated at 20 per page, to limit reqs and overload
+//return all { txids, inputs, ouputs} for a blockHash paginated at max 500 per page, to limit reqs and overload
 router.get('/:blockHash/coins/:limit/:pgnum', async function (req: Request, res: Response) {
   let { chain, network, blockHash, limit, pgnum } = req.params;
-   
+
   try {
     pgnum = parseInt(pgnum, 10);
     limit = parseInt(limit, 10);
-    if(!(typeof pgnum === "number" && typeof limit === "number")) {
+    if (!(typeof pgnum === "number" && typeof limit === "number")) {
       res.status(400).send("Please enter limit and number as valid decimal numbers")
-    } 
+    }
     if (limit) {
       if (limit > 500) limit = 500;
     }
-  } catch(err) {
+  } catch (err) {
     console.log(err);
   }
 
-
   let skips = limit * (pgnum - 1);
-  let numOfTxs : number = await TransactionStorage.collection.find({ chain, network, blockHash }).count();
+  let numOfTxs: number = await TransactionStorage.collection.find({ chain, network, blockHash }).count();
   try {
     let txs;
-    if(numOfTxs < limit) {
+    if (numOfTxs < limit) {
       txs = await TransactionStorage.collection.find({ chain, network, blockHash }).toArray();
     } else {
       console.log(limit);
@@ -89,73 +88,31 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function (req: Request, res:
       return res.status(422).send("No txs for page");
     }
 
-    const txidIndexes : any= {};
+    const txidIndexes: any = {};
     let txids = txs.map((tx, index) => { txidIndexes[index] = tx.txid; return tx.txid });
-    let inputTxidIndexes : any = {};
-    let outputTxidIndexes: any = {};
 
-    let inputsPromises = txids.map((txid,index) => {
-      try {
-        inputTxidIndexes[txid] = index;
-        return CoinStorage.collection
-          .find({
-            chain,
-            network,
-            spentTxid: txid
-          })
-          .addCursorFlag('noCursorTimeout', true)
-          .toArray();
-      }  catch(err) {
-        console.log("Error reading inputs", err)
-         return err;
-      }
-    });
+    let inputs = await CoinStorage.collection.find({ chain, network, spentTxid: { $in: txids } })
+      .addCursorFlag('noCursorTimeout', true)
+      .toArray();
 
-    let inputsResults = await Promise.all(inputsPromises).then(inputs => { return inputs; } );
-
-    let outputsPromises = txids.map((txid, index) => {
-      try {
-        outputTxidIndexes[txid] = index;
-        return CoinStorage.collection
-          .find({
-            chain,
-            network,
-            mintTxid: txid
-          })
-          .addCursorFlag('noCursorTimeout', true)
-          .toArray();
-
-      } catch (err) {
-        console.log("Error reading outputs", err)
-        return err;
-      }
-    });
-
-    let outputsResults = await Promise.all(outputsPromises).then(outputs => { return outputs; });
-
-    let txsResults : any = {};
-  
-    txids.forEach((txid) => {
-      let inputs = inputsResults[inputTxidIndexes[txid]];
-      let outputs = outputsResults[outputTxidIndexes[txid]];
-
-      txsResults[txid] = { inputs, outputs }
-    });
+    let outputs = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: txids } })
+      .addCursorFlag('noCursorTimeout', true)
+      .toArray();
 
     let prevPageNum;
     let nxtPageNum;
-    let previous: string = ''; 
-    let next : string = '';
-    if((pgnum !== 1)) {
+    let previous: string = '';
+    let next: string = '';
+    if ((pgnum !== 1)) {
       prevPageNum = parseInt(pgnum) - 1;
       previous = `/block/${blockHash}/coins/${limit}/${prevPageNum}`;
-    } 
-    if(numOfTxs - (limit * pgnum) > 0) {
+    }
+    if (numOfTxs - (limit * pgnum) > 0) {
       nxtPageNum = pgnum + 1;
       next = `/block/${blockHash}/coins/${limit}/${nxtPageNum}`;
     }
 
-    return res.json({ txsResults, previous, next });
+    return res.json({ txids, inputs, outputs, previous, next });
   } catch (err) {
     console.log(err);
     return res.status(500).send(err);
