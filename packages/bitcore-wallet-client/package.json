@@ -41,6 +41,7 @@
   "devDependencies": {
     "@types/lodash": "^4.14.136",
     "@types/node": "^10.0.2",
+    "kbpgp": "^2.1.4",
     "bitcore-wallet-service": "^8.8.4",
     "browserify": "^13.1.0",
     "chai": "^1.9.1",
@@ -48,6 +49,7 @@
     "istanbul": "*",
     "mocha": "^5.2.0",
     "mongodb": "^2.0.27",
+    "request-promise": "^4.2.4",
     "sinon": "^7.1.1",
     "supertest": "*",
     "ts-node": "^8.0.3",

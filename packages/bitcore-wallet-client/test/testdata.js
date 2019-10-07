@@ -101,7 +101,30 @@ exports.payProJson = {
     },
   }
 };
+exports.payProJsonV2Body = bodyV2 = {
+  bch: '{"time":"2019-10-07T16:11:47.171Z","expires":"2019-10-07T16:26:47.171Z","memo":"Payment request for BitPay invoice 8Ck3uMy64QgQTuYyYZkRxi for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/8Ck3uMy64QgQTuYyYZkRxi","paymentId":"8Ck3uMy64QgQTuYyYZkRxi","chain":"BCH","network":"main","currency":"","instructions":[{"type":"transaction","requiredFeeRate":1,"outputs":[{"amount":430200,"address":"qzugsfv82em5am88y66kd0gnqxlwdaa8ysy3xeq0um"}]}]}',
+  btc: '{"time":"2019-10-07T15:31:58.691Z","expires":"2019-10-07T15:46:58.691Z","memo":"Payment request for BitPay invoice TRrzNNTLyfgL6LxyHDF6Tz for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/TRrzNNTLyfgL6LxyHDF6Tz","paymentId":"TRrzNNTLyfgL6LxyHDF6Tz","chain":"BTC","network":"main","currency":"","instructions":[{"type":"transaction","requiredFeeRate":10.101,"outputs":[{"amount":13900,"address":"1N7yuoyQmso8zt2fv3MvtD3TDS2PVXiJGj"}]}]}',
+};
 
-exports.payProAckHex = Buffer.from('{"memo":"an ack memo"}');
+exports.payProJsonV2 = {
+  'bch': {
+    body: Buffer.from(bodyV2.bch),
+    headers: {
+      'x-identity': '1DbY94wCcLRM1Y6RGFg457JyqBbsYxzfiN',
+      signature: '73513cf53814b898cc498aefde50b0a26625286470ae1a7091032ecaaba918f80d8245e9fc8357e0788bcffcb0db22c32832c2b86acc1adcc08eac6b735a7abe',
+      digest: 'SHA-256=26823b2c880ed824912bca617f25a0f503944027703e84273fea2afbb2679e68',
+      'x-signature-type': 'ecc'
+    }
+  },
+  'btc': {
+    body:  Buffer.from(bodyV2.btc),
+    headers: {
+      'x-identity': '1GA2vgw5byxqTpAUHEyyh7ahXnHU1FDDAy',
+      signature: '60f02d8433b2cbf76ce76898ec8d36b38004c3575321f99d7c34bc773f6f4b757f9de905dfeede9c76545fa0a38b209323c518da5ed7251d85786dd24bf8df3b',
+      digest: 'SHA-256=76d0d885dbe09105911e048017dc6fb9ea9268de510520567171969433c10838',
+      'x-signature-type': 'ecc'
+    },
+  }
+};
 
 module.exports = exports;
