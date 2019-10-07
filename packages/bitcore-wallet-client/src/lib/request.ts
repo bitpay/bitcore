@@ -3,7 +3,7 @@ import { Utils } from './common';
 
 const request = require('superagent');
 const async = require('async');
-const Package = require('../package.json');
+const Package = require('../../package.json');
 var log = require('./log');
 
 const util = require('util');

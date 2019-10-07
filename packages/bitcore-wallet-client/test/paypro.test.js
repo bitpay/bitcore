@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = chai || require('chai');
 var sinon = sinon || require('sinon');
 var should = chai.should();
-var { PayPro: payPro } = require('../ts_build/paypro');
+var {PayPro: payPro} = require('../ts_build/lib/paypro');
 var TestData = require('./testdata');
 
 function mockRequest(bodyBuf, headers) {
