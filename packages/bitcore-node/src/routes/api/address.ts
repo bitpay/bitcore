@@ -47,7 +47,7 @@ router.get('/:address/coins', async function (req, res) {
 
     if (!(spentTxids === null)) {
       spendingTxInputs = await CoinStorage.collection.find({ chain, network, spentTxid: { $in: spentTxids } }).toArray();
-      spendingTxOutputs = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: coins.map(c => c.spentTxid) } }).toArray();
+      spendingTxOutputs = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: spentTxids } }).toArray();
     }
     return res.json({ coins, mintedTxids, fundingTxInputs, fundingTxOutputs, spentTxids, spendingTxInputs, spendingTxOutputs });
   } catch (err) {
