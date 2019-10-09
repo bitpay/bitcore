@@ -110,32 +110,35 @@ export function bitcoinCoreDecrypt(jsonl, passphrase) {
     }
   }
   return { jsonlDecrypted, master };
-  function hashPassphrase(opts) {
-    return opts && opts.method === 0 ? sha512KDF : scryptKDF;
-  }
-  function decrypt(opts) {
-    if (!Buffer.isBuffer(opts.key)) {
-      opts.key = Buffer.from(opts.key, 'hex');
-    }
-    let secondHalf;
-    if (opts.iv) {
-      secondHalf = opts.iv.slice(0, 16);
-    } else {
-      secondHalf = opts.key.slice(32, 48); // AES256-cbc IV
-    }
-    let cipherText = Buffer.from(opts.cipherText, 'hex');
-    let firstHalf = opts.key.slice(0, 32); // AES256-cbc shared key
-    let AESDecipher = crypto.createDecipheriv('aes-256-cbc', firstHalf, secondHalf);
-    let plainText;
-    try {
-      plainText = Buffer.concat([AESDecipher.update(cipherText), AESDecipher.final()]).toString('hex');
-    } catch (e) {
-      throw e;
-    }
-
-    return plainText;
-  }
 }
+
+function hashPassphrase(opts) {
+  return opts && opts.method === 0 ? sha512KDF : scryptKDF;
+}
+
+function decrypt(opts) {
+  if (!Buffer.isBuffer(opts.key)) {
+    opts.key = Buffer.from(opts.key, 'hex');
+  }
+  let secondHalf;
+  if (opts.iv) {
+    secondHalf = opts.iv.slice(0, 16);
+  } else {
+    secondHalf = opts.key.slice(32, 48); // AES256-cbc IV
+  }
+  let cipherText = Buffer.from(opts.cipherText, 'hex');
+  let firstHalf = opts.key.slice(0, 32); // AES256-cbc shared key
+  let AESDecipher = crypto.createDecipheriv('aes-256-cbc', firstHalf, secondHalf);
+  let plainText;
+  try {
+    plainText = Buffer.concat([AESDecipher.update(cipherText), AESDecipher.final()]).toString('hex');
+  } catch (e) {
+    throw e;
+  }
+
+  return plainText;
+}
+
 export function generateEncryptionKey() {
   return crypto.randomBytes(32);
 }
