@@ -34,6 +34,7 @@ var storage, blockchainExplorer;
 
 // tinodb not longer supported
 var useMongoDb =  true; // !!process.env.USE_MONGO_DB;
+const CWC =  require('crypto-wallet-core');
 
 var helpers = {};
 
@@ -59,8 +60,6 @@ helpers.before = function(cb) {
       db: db
     });
     Storage.createIndexes(db);
-
-
     let be = blockchainExplorer = sinon.stub();
     be.register = sinon.stub().callsArgWith(1, null, null);
     be.addAddresses = sinon.stub().callsArgWith(2, null, null);
@@ -68,6 +67,10 @@ helpers.before = function(cb) {
     be.getCheckData = sinon.stub().callsArgWith(1, null, {sum: 100});
     be.getUtxos = sinon.stub().callsArgWith(1, null,[]);
     be.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000, 'hash');
+    be.estimateGas = sinon.stub().callsArgWith(1, null, '21000');
+    be.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: '10000000000', balance: '10000000000' });
+    be.getTransactionCount = sinon.stub().callsArgWith(1, null, '0');
+
 
     var opts = {
       storage: storage,
@@ -218,6 +221,7 @@ helpers.getSignedCopayerOpts = function(opts) {
   return opts;
 };
 
+/* ETH wallet use the provided key here, probably 44'/0'/0' */
 helpers.createAndJoinWallet = function(m, n, opts, cb) {
   if (_.isFunction(opts)) {
     cb = opts;
@@ -337,6 +341,13 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
     opts = {};
   }
   opts = opts || {};
+
+  if (wallet.coin == 'eth') {
+    amounts = _.isArray(amounts) ? amounts : [amounts];
+    let conf =  _.sum(_.map(amounts, x =>  Number((x*1e18).toFixed(0))));
+    blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: conf, balance: conf });
+    return cb();
+  }
 
   if (!helpers._utxos) helpers._utxos = {};
 
@@ -469,10 +480,16 @@ helpers.stubCheckData = function(bc, server, isBCH, cb) {
 
 
 // fill => fill intermediary levels
-helpers.stubFeeLevels = function(levels, fill) {
+helpers.stubFeeLevels = function(levels, fill, coin) {
+  coin = coin || 'btc';
+  let div = 1;
+  if (coin == 'btc' || coin == 'bch') {
+    div = 1e8;  // bitcoind returns values in BTC amounts
+  }
+
   blockchainExplorer.estimateFee = function(nbBlocks, cb) {
     var result = _.fromPairs(_.map(_.pick(levels, nbBlocks), function(fee, n) {
-      return [+n, fee > 0 ? fee / 1e8 : fee];
+      return [+n, fee > 0 ? fee / div : fee];
     }));
 
     if (fill) {
@@ -487,6 +504,8 @@ helpers.stubFeeLevels = function(levels, fill) {
     return cb(null, result);
   };
 };
+
+
 
 
 var stubAddressActivityFailsOn = null;
@@ -514,25 +533,40 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
   //Derive proper key to sign, for each input
   var privs = [];
   var derived = {};
+  var signatures;
 
   var xpriv = new Bitcore.HDPrivateKey(derivedXPrivKey, txp.network);
 
-  _.each(txp.inputs, function(i) {
-    if (!derived[i.path]) {
-      derived[i.path] = xpriv.deriveChild(i.path).privateKey;
-      privs.push(derived[i.path]);
-    }
-  });
+  switch(txp.coin) {
+    case 'eth': 
 
-  var t = txp.getBitcoreTx();
+      // For eth => account, 0, change = 0
+      const priv =  xpriv.derive('m/0/0').privateKey;
+      const privKey = priv.toString('hex');
+      const rawTx = txp.getBitcoreTx().uncheckedSerialize();
+      signatures = [CWC.Transactions.getSignature({
+        chain: 'ETH',
+        tx: rawTx,
+        key: {privKey},
+      })];
+      break;
+    default:
+      _.each(txp.inputs, function(i) {
+        if (!derived[i.path]) {
+          derived[i.path] = xpriv.deriveChild(i.path).privateKey;
+          privs.push(derived[i.path]);
+        }
+      });
 
-  var signatures = _.map(privs, function(priv, i) {
-    return t.getSignatures(priv);
-  });
+      var t = txp.getBitcoreTx();
+      signatures = _.map(privs, function(priv, i) {
+        return t.getSignatures(priv);
+      });
 
-  signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
-    return s.signature.toDER().toString('hex');
-  });
+      signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
+        return s.signature.toDER().toString('hex');
+      });
+  };
 
   return signatures;
 };

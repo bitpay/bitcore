@@ -54,6 +54,7 @@ const Config = function(): ConfigType {
   let config: ConfigType = {
     maxPoolSize: 50,
     port: 3000,
+    dbUrl: process.env.DB_URL || '',
     dbHost: process.env.DB_HOST || '127.0.0.1',
     dbName: process.env.DB_NAME || 'bitcore',
     dbPort: process.env.DB_PORT || '27017',
@@ -61,6 +62,7 @@ const Config = function(): ConfigType {
     dbPass: process.env.DB_PASS || '',
     numWorkers: cpus().length,
     chains: {},
+    modules: ['./bitcoin', './bitcoin-cash', './ethereum'],
     services: {
       api: {
         rateLimiter: {
