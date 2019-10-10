@@ -3653,7 +3653,6 @@ describe('client API', () => {
 
     describe('1-of-1 BCH wallet', () => {
 
-      // note this is using BCH with BTC format livenet address
       beforeEach((done) => {
         new Promise((resolve)=>{
           DATA = JSON.parse(TestData.payProJsonV2Body.bch);
@@ -3717,7 +3716,7 @@ describe('client API', () => {
       });
     });
 
-
+    
     describe('New proposal flow', () => {
 
       beforeEach((done) => {
