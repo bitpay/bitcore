@@ -6,7 +6,7 @@ const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
 const fs = require('fs');
 const { ParseApiStream } = require('../ts_build/stream-util');
-const { bitcoinCoreDecrypt } = require('../ts_build/encryption');
+const { Encryption } = require('../ts_build/encryption');
 
 /**
  * USAGE -
@@ -41,7 +41,7 @@ const main = async () => {
         .map(line => JSON.parse(line));
       try {
         const bitcoinCorePassword = await promptly.password('Enter Bitcoin Core Password:');
-        let decryptedParams = bitcoinCoreDecrypt(decryptedKeys, bitcoinCorePassword);
+        let decryptedParams = Encryption.bitcoinCoreDecrypt(decryptedKeys, bitcoinCorePassword);
         decryptedKeys = decryptedParams.jsonlDecrypted;
       } catch (e) {
         console.error(e);
