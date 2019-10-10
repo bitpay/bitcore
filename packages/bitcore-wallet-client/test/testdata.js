@@ -102,7 +102,7 @@ exports.payProJson = {
   }
 };
 exports.payProJsonV2Body = bodyV2 = {
-  bch: '{"time":"2019-10-07T16:11:47.171Z","expires":"2019-10-07T16:26:47.171Z","memo":"Payment request for BitPay invoice 8Ck3uMy64QgQTuYyYZkRxi for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/8Ck3uMy64QgQTuYyYZkRxi","paymentId":"8Ck3uMy64QgQTuYyYZkRxi","chain":"BCH","network":"main","currency":"","instructions":[{"type":"transaction","requiredFeeRate":1,"outputs":[{"amount":430200,"address":"qzugsfv82em5am88y66kd0gnqxlwdaa8ysy3xeq0um"}]}]}',
+  bch: '{"time":"2019-10-10T14:39:55.593Z","expires":"2019-10-10T14:54:55.593Z","memo":"Payment request for BitPay invoice TctdC5R9dFTUHuhSpvqF5B for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/TctdC5R9dFTUHuhSpvqF5B","paymentId":"TctdC5R9dFTUHuhSpvqF5B","chain":"BCH","network":"main","currency":"BCH","instructions":[{"type":"transaction","requiredFeeRate":1,"outputs":[{"amount":430500,"address":"qz846nqdq5t6ykrz9zn3khlc7xwcel0xjvzexnr0j9"}]}]}',
   btc: '{"time":"2019-10-07T15:31:58.691Z","expires":"2019-10-07T15:46:58.691Z","memo":"Payment request for BitPay invoice TRrzNNTLyfgL6LxyHDF6Tz for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/TRrzNNTLyfgL6LxyHDF6Tz","paymentId":"TRrzNNTLyfgL6LxyHDF6Tz","chain":"BTC","network":"main","currency":"","instructions":[{"type":"transaction","requiredFeeRate":10.101,"outputs":[{"amount":13900,"address":"1N7yuoyQmso8zt2fv3MvtD3TDS2PVXiJGj"}]}]}',
 };
 
@@ -111,8 +111,8 @@ exports.payProJsonV2 = {
     body: Buffer.from(bodyV2.bch),
     headers: {
       'x-identity': '1DbY94wCcLRM1Y6RGFg457JyqBbsYxzfiN',
-      signature: '73513cf53814b898cc498aefde50b0a26625286470ae1a7091032ecaaba918f80d8245e9fc8357e0788bcffcb0db22c32832c2b86acc1adcc08eac6b735a7abe',
-      digest: 'SHA-256=26823b2c880ed824912bca617f25a0f503944027703e84273fea2afbb2679e68',
+      signature: '75ca242c4fef58b52afa2787f3032fc881879d9d1f669bea71178ce75aa125091bbe1019310bd483360301204668a42179788e9720be9bf10da1befc9e7b3ad7',
+      digest: 'SHA-256=8175f983e4a6693c8ba01c51e1a3b5f75c1a7f6a2a9222bc0a243882c975b8d8',
       'x-signature-type': 'ecc'
     }
   },
