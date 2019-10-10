@@ -104,7 +104,7 @@ describe('Wallet Benchmark', function() {
     }
   });
   describe('Wallet import', () => {
-    it.skip('should be able to create two wallets and have them interact', async () => {
+    it('should be able to create two wallets and have them interact', async () => {
       await Event.start();
       await Api.start();
 
@@ -169,7 +169,7 @@ describe('Wallet Benchmark', function() {
       }
     });
 
-    xit('should be able to create two wallets and have them interact, while syncing', async () => {
+    it('should be able to create two wallets and have them interact, while syncing', async () => {
       await Event.start();
       await Api.start();
 
