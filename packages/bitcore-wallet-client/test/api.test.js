@@ -3651,9 +3651,8 @@ describe('client API', () => {
     });
 
 
-    describe.skip('1-of-1 BCH wallet', () => {
+    describe('1-of-1 BCH wallet', () => {
 
-      // note this is using BCH with BTC format livenet address
       beforeEach((done) => {
         new Promise((resolve)=>{
           DATA = JSON.parse(TestData.payProJsonV2Body.bch);
@@ -3670,7 +3669,7 @@ describe('client API', () => {
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               var opts = {
-                paymentUrl: 'https://bitpay.com/i/8Ck3uMy64QgQTuYyYZkRxi',
+                paymentUrl: 'https://bitpay.com/i/TctdC5R9dFTUHuhSpvqF5B',
                 chain: 'BCH',
                 currency: 'BCH'
               };
@@ -3708,7 +3707,7 @@ describe('client API', () => {
               var tx = Bitcore_['bch'].Transaction(rawTx);
               var script = tx.inputs[0].script;
               script.isPublicKeyHashIn().should.equal(true);
-              memo.should.be.equal('Payment request for BitPay invoice TRrzNNTLyfgL6LxyHDF6Tz for merchant BitPay Visa® Load (USD-USA)');
+              memo.should.be.equal('Payment request for BitPay invoice TctdC5R9dFTUHuhSpvqF5B for merchant BitPay Visa® Load (USD-USA)');
               done();
             });
           });
