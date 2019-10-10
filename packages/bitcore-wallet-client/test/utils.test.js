@@ -4,7 +4,7 @@ var _ = require('lodash');
 var chai = require('chai');
 var should = chai.should();
 var Bitcore = require('crypto-wallet-core').BitcoreLib;
-var { Utils } = require('../ts_build/common');
+var { Utils } = require('../ts_build/lib/common');
 
 describe('Utils', () => {
 

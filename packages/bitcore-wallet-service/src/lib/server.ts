@@ -2645,7 +2645,7 @@ export class WalletService {
               );
           }
 
-          if (_.isNumber(opts.fee) && _.isEmpty(opts.inputs))
+          if (_.isNumber(opts.fee) && _.isEmpty(opts.inputs) && wallet.isUTXOCoin())
             return next(
               new ClientError('fee can only be set when inputs are specified')
             );
@@ -2893,6 +2893,7 @@ export class WalletService {
                 (next) => {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
                     return next();
+
                   this._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
                     feePerKb = inFeePerKb;
                     if (! wallet.isUTXOCoin()) {
@@ -2909,6 +2910,12 @@ export class WalletService {
                         gasPrice
                       },
                         (err, inGasLimit) => {
+                          if (_.isNumber(opts.fee)) {
+                            // This is used for sendmax
+                            gasPrice = feePerKb =
+                              Number((opts.fee /  (inGasLimit || Defaults.DEFAULT_GAS_LIMIT)).toFixed());
+                          }
+
                           gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
                           opts.fee = feePerKb * gasLimit;
                           return next();

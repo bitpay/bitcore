@@ -8,6 +8,7 @@ import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
 import { Key } from './key';
 import { PayPro } from './paypro';
+import { PayProV2 } from './payproV2';
 import { Request } from './request';
 import { Verifier } from './verifier';
 
@@ -52,6 +53,7 @@ export class API extends EventEmitter {
   bp_partner: string;
   bp_partner_version: string;
 
+  static PayProV2 = PayProV2;
   static PayPro = PayPro;
   static Key = Key;
   static Verifier = Verifier;
@@ -417,6 +419,12 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
+    if (!_.includes(Constants.COINS, coin))
+      return cb(new Error('Invalid coin'));
+
+    if (coin == 'eth')
+      return cb(new Error('ETH not supported for this action'));
+
     var B = Bitcore_[coin];
     var privateKey = B.PrivateKey(privateKey);
     var address = privateKey.publicKey.toAddress().toString(true);
@@ -604,27 +612,24 @@ export class API extends EventEmitter {
     });
   }
 
-  _addSignaturesToBitcoreTx(txp, t, signatures, xpub) {
+  _addSignaturesToBitcoreTxBitcoin(txp, t, signatures, xpub) {
+    $.checkState(txp.coin);
+    const bitcore = Bitcore_[txp.coin];
     if (signatures.length != txp.inputs.length)
       throw new Error('Number of signatures does not match number of inputs');
 
-    $.checkState(txp.coin);
+    let i = 0;
+    const x = new bitcore.HDPublicKey(xpub);
 
-    var bitcore = Bitcore_[txp.coin];
-
-    var i = 0,
-      x = new bitcore.HDPublicKey(xpub);
-
-    _.each(signatures, signatureHex => {
-      var input = txp.inputs[i];
+    _.each(signatures, (signatureHex) => {
       try {
-        var signature = bitcore.crypto.Signature.fromString(signatureHex);
-        var pub = x.deriveChild(txp.inputPaths[i]).publicKey;
-        var s = {
+        const signature = bitcore.crypto.Signature.fromString(signatureHex);
+        const pub = x.deriveChild(txp.inputPaths[i]).publicKey;
+        const s = {
           inputIndex: i,
           signature,
-          // tslint:disable:no-bitwise
           sigtype:
+            // tslint:disable-next-line:no-bitwise
             bitcore.crypto.Signature.SIGHASH_ALL |
             bitcore.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub
@@ -633,7 +638,27 @@ export class API extends EventEmitter {
         i++;
       } catch (e) {}
     });
+
     if (i != txp.inputs.length) throw new Error('Wrong signatures');
+  }
+
+  _addSignaturesToBitcoreTx(txp, t, signatures, xpub) {
+    switch (txp.coin) {
+      case 'eth':
+        const raw = CWC.Transactions.applySignature({
+          chain: 'ETH',
+          tx: t.uncheckedSerialize(),
+          signature: signatures[0],
+        });
+        t.uncheckedSerialize = () => raw ;
+        t.serialize = () => raw ;
+
+        // bitcore users id for txid...
+        t.id = CWC.Transactions.getHash({ tx: raw, chain: txp.coin.toUpperCase() });
+        break;
+      default:
+        return this._addSignaturesToBitcoreTxBitcoin(txp, t, signatures, xpub);
+    }
   }
 
   _applyAllSignatures(txp, t) {
@@ -1444,12 +1469,14 @@ export class API extends EventEmitter {
         txps,
         (txp, acb) => {
           if (opts.doNotVerify) return acb(true);
-          this.getPayPro(txp, (err, paypro) => {
-            var isLegit = Verifier.checkTxProposal(this.credentials, txp, {
+          this.getPayProV2(txp).then((paypro) => {
+          var isLegit = Verifier.checkTxProposal(this.credentials, txp, {
               paypro
             });
 
-            return acb(isLegit);
+          return acb(isLegit);
+          }).catch((err) => {
+            return acb(err);
           });
         },
         isLegit => {
@@ -1505,6 +1532,20 @@ export class API extends EventEmitter {
     );
   }
 
+  getPayProV2(txp) {
+    if (!txp.payProUrl || this.doNotVerifyPayPro) return Promise.resolve();
+
+    const currency = txp.coin ? txp.coin.toUpperCase() : null;
+    const chain = txp.coin ? txp.coin.toUpperCase() : 'BTC'; // TODO ERC20
+
+    return PayProV2.selectPaymentOption(
+      {
+        paymentUrl: txp.payProUrl,
+        chain,
+        currency
+      });
+  }
+
   // /**
   // * push transaction proposal signatures
   // *
@@ -1521,8 +1562,7 @@ export class API extends EventEmitter {
       return cb('No signatures to push. Sign the transaction with Key first');
     }
 
-    this.getPayPro(txp, (err, paypro) => {
-      if (err) return cb(err);
+    this.getPayProV2(txp).then((paypro) => {
 
       var isLegit = Verifier.checkTxProposal(this.credentials, txp, {
         paypro
@@ -1540,6 +1580,8 @@ export class API extends EventEmitter {
         this._processTxps(txp);
         return cb(null, txp);
       });
+    }).catch((err) => {
+      return cb(err);
     });
   }
 
@@ -1715,52 +1757,58 @@ export class API extends EventEmitter {
   broadcastTxProposal(txp, cb) {
     $.checkState(this.credentials && this.credentials.isComplete());
 
-    this.getPayPro(txp, (err, paypro) => {
-      if (err) return cb(err);
-
+    this.getPayProV2(txp).then((paypro) => {
       if (paypro) {
         var t_unsigned = Utils.buildTx(txp);
-        var t = Utils.buildTx(txp);
+        var t = _.clone(t_unsigned);
+
         this._applyAllSignatures(txp, t);
 
-        PayPro.send(
-          {
-            url: txp.payProUrl,
-            amountSat: txp.amount,
-            rawTxUnsigned: t_unsigned.uncheckedSerialize(),
-            rawTx: t.serialize({
-              disableSmallFees: true,
-              disableLargeFees: true,
-              disableDustOutputs: true
-            }),
-            coin: txp.coin || 'btc',
-            network: txp.network || 'livenet',
-
-            bp_partner: this.bp_partner,
-            bp_partner_version: this.bp_partner_version,
-
-            // for testing
-            request: this.request
-          },
-          (err, ack, memo) => {
-            if (err) {
-              return cb(err);
+        const currency = txp.coin ? txp.coin.toUpperCase() : null;
+        const chain = txp.coin ? txp.coin.toUpperCase() : 'BTC'; // TODO ERC20
+        const rawTxUnsigned = t_unsigned.uncheckedSerialize();
+        const rawTx = t.serialize({
+          disableSmallFees: true,
+          disableLargeFees: true,
+          disableDustOutputs: true
+        });
+        PayProV2.verifyUnsignedPayment({
+          paymentUrl: txp.payProUrl,
+          chain,
+          currency,
+          unsignedTransactions: [{
+            tx: rawTxUnsigned,
+            weightedSize: rawTx.length / 2
+          }]
+        }).then(() => {
+          PayProV2.sendSignedPayment({
+            paymentUrl: txp.payProUrl,
+            chain,
+            currency,
+            signedTransactions: [{
+              tx: rawTx,
+              weightedSize: rawTx.length / 2
+            }],
+            bpPartner: {
+              bp_partner: this.bp_partner,
+              bp_partner_version: this.bp_partner_version
             }
-
-            if (memo) {
-              log.debug('Merchant memo:', memo);
+          }).then((payProDetails) => {
+            if (payProDetails.memo) {
+              log.debug('Merchant memo:', payProDetails.memo);
             }
-            this._doBroadcast(txp, (err2, txp) => {
-              if (err2) {
-                log.error('Error broadcasting payment', err2);
-              }
-              return cb(null, txp, memo);
-            });
-          }
-        );
+            return cb(null, txp, payProDetails.memo);
+          }).catch((err) => {
+            return cb(err);
+          });
+       }).catch((err) => {
+          return cb(err);
+        });
       } else {
         this._doBroadcast(txp, cb);
       }
+    }).catch((err) => {
+      return cb(err);
     });
   }
 
