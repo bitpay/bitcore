@@ -5,7 +5,7 @@ const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
 const fs = require('fs');
-const { ParseApiStream } = require('../ts_build/stream-util');
+const { StreamUtil } = require('../ts_build/stream-util');
 const { Encryption } = require('../ts_build/encryption');
 
 /**
@@ -32,7 +32,6 @@ const main = async () => {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ name, path });
     wallet = await wallet.unlock(password);
-    const parseApiStream = new ParseApiStream();
     if (keys) {
       let contents = fs.readFileSync(keys).toString();
       decryptedKeys = contents
@@ -55,9 +54,9 @@ const main = async () => {
       const readStream = fs.createReadStream(txfile, {flags: 'r', encoding: 'utf8'});
       const writeStream = fs.createWriteStream('signedTx.jsonl');
       readStream
-        .pipe(parseApiStream.jsonlBufferToObjectMode()).on('error', (err) => console.error(err))
-        .pipe(parseApiStream.signTxStream(wallet, decryptedKeys, utxos)).on('error', (err) => console.error(err))
-        .pipe(parseApiStream.objectModeToJsonlBuffer()).on('error', (err) => console.error(err))
+        .pipe(StreamUtil.jsonlBufferToObjectMode()).on('error', (err) => console.error(err))
+        .pipe(StreamUtil.signTxStream(wallet, decryptedKeys, utxos)).on('error', (err) => console.error(err))
+        .pipe(StreamUtil.objectModeToJsonlBuffer()).on('error', (err) => console.error(err))
         .pipe(writeStream).on('error', (err) => console.error(err));
     }
   } catch (e) {
