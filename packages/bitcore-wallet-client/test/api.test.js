@@ -3693,7 +3693,6 @@ describe('client API', () => {
       it('Should send the signed tx in paypro', (done) => {
         clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
-          console.log(txps);
           var changeAddress = txps[0].changeAddress.address;
           let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
@@ -3716,7 +3715,7 @@ describe('client API', () => {
       });
     });
 
-    
+
     describe('New proposal flow', () => {
 
       beforeEach((done) => {
