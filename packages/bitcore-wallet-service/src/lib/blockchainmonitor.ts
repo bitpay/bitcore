@@ -298,6 +298,8 @@ export class BlockchainMonitor {
   }
 
   _handleTxConfirmations(coin, network, hash) {
+    if (coin == 'eth') return;
+
     const processTriggeredSubs = (subs, cb) => {
       async.each(subs, (sub: any) => {
         log.debug('New tx confirmation ' + sub.txid);
