@@ -79,7 +79,7 @@ export type SpendOp = {
   };
 };
 
-interface TxOp {
+export interface TxOp {
   updateOne: {
     filter: { txid: string; chain: string; network: string };
     update: {

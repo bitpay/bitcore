@@ -33,6 +33,7 @@ export function mockCollection(toReturn, collectionMethods = {}) {
       aggregate: sinon.stub().returnsThis(),
       count: sinon.stub().returnsThis(),
       sort: sinon.stub().returnsThis(),
+      project: sinon.stub().returnsThis(),
       insertOne: sinon.stub().resolves(),
       insertMany: sinon.stub().resolves(),
       bulkWrite: sinon.stub().resolves(),
