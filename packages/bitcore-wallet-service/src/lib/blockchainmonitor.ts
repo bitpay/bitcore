@@ -11,8 +11,18 @@ const $ = require('preconditions').singleton();
 const Common = require('./common');
 const Constants = Common.Constants;
 const Utils = Common.Utils;
+const Defaults = Common.Defaults;
 let log = require('npmlog');
 log.debug = log.verbose;
+
+
+
+type  throttledNewBlocksFnType = ((that: any, coin: any, network: any, hash: any) => void);
+
+var throttledNewBlocks = _.throttle((that, coin, network, hash) => {
+  that._notifyNewBlock(coin, network, hash);
+  that._handleTxConfirmations(coin, network, hash);
+}, Defaults.NEW_BLOCK_THROTTLE_TIME_MIN * 60 * 1000) as throttledNewBlocksFnType;
 
 export class BlockchainMonitor {
   explorers: any;
@@ -283,7 +293,7 @@ export class BlockchainMonitor {
   }
 
   _notifyNewBlock(coin, network, hash) {
-    log.debug(`New ${coin}/${network} block ${hash}`);
+    log.debug(` ** NOTIFY New ${coin}/${network} block ${hash}`);
     const notification = Notification.create({
       type: 'NewBlock',
       walletId: `${coin}:${network}`, // use coin:network name as wallet id for global notifications
@@ -298,6 +308,8 @@ export class BlockchainMonitor {
   }
 
   _handleTxConfirmations(coin, network, hash) {
+
+    // not Tx Confirmationsa notifications for ETH
     if (coin == 'eth') return;
 
     const processTriggeredSubs = (subs, cb) => {
@@ -351,13 +363,13 @@ export class BlockchainMonitor {
   }
 
   _handleNewBlock(coin, network, hash) {
+    log.debug(`New ${coin}/${network} block ${hash}`);
+
     // clear height cache.
     const cacheKey = Storage.BCHEIGHT_KEY + ':' + coin + ':' + network;
-
     this.storage.clearGlobalCache(cacheKey, () => { });
 
-    this._notifyNewBlock(coin, network, hash);
-    this._handleTxConfirmations(coin, network, hash);
+    throttledNewBlocks(this, coin, network, hash);
   }
 
   _storeAndBroadcastNotification(notification, cb?: () => void) {

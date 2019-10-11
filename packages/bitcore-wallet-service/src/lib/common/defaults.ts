@@ -202,5 +202,7 @@ module.exports = {
 
   BE_KEY_SALT: 'bws-auth-keysalt',
 
+  NEW_BLOCK_THROTTLE_TIME_MIN: 5,
+
   BROADCAST_RETRY_TIME: 350, // ms
 };
