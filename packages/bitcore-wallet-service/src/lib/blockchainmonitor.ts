@@ -286,7 +286,7 @@ export class BlockchainMonitor {
     log.debug(`New ${coin}/${network} block ${hash}`);
     const notification = Notification.create({
       type: 'NewBlock',
-      walletId: network, // use network name as wallet id for global notifications
+      walletId: `${coin}:${network}`, // use coin:network name as wallet id for global notifications
       data: {
         hash,
         coin,

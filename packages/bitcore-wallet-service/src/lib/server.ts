@@ -3640,7 +3640,7 @@ export class WalletService {
       if (err) return cb(err);
 
       async.map(
-        [wallet.network, this.walletId],
+        [`${wallet.coin}:${wallet.network}`, this.walletId],
         (walletId, next) => {
           this.storage.fetchNotifications(
             walletId,

@@ -127,14 +127,7 @@ export class API extends EventEmitter {
       }
 
       _.each(notifications, notification => {
-        if (notification.type === 'NewBlock') {
-          if ((notification.data.coin === this.credentials.coin) &&
-                (notification.data.network === this.credentials.network)) {
-                this.emit('notification', notification);
-            }
-        } else {
-          this.emit('notification', notification);
-        }
+        this.emit('notification', notification);
       });
       return cb();
     });
