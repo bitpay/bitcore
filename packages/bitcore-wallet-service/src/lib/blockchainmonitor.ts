@@ -15,8 +15,6 @@ const Defaults = Common.Defaults;
 let log = require('npmlog');
 log.debug = log.verbose;
 
-
-
 type  throttledNewBlocksFnType = ((that: any, coin: any, network: any, hash: any) => void);
 
 var throttledNewBlocks = _.throttle((that, coin, network, hash) => {
