@@ -3915,7 +3915,7 @@ export class WalletService {
       }
 
       // only check total number of addreses
-      if (simpleRun) 
+      if (simpleRun)
         return cb();
 
       this.storage
