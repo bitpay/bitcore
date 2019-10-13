@@ -16,6 +16,7 @@ import { Libs } from '../providers/libs';
 import { BaseTransaction, ITransaction } from './baseTransaction';
 import { Readable, Transform } from 'stream';
 import { Collection, BulkWriteOpResultObject } from 'mongodb';
+import { partition } from '../utils/partition';
 
 export { ITransaction };
 
@@ -165,13 +166,17 @@ export class MempoolTxEventTransform extends Transform {
 }
 
 export class MongoWriteStream extends Transform {
-  promiseChain = (Promise.resolve() as unknown) as Promise<BulkWriteOpResultObject>;
+  promiseChain = (Promise.resolve() as unknown) as Promise<BulkWriteOpResultObject[]>;
   constructor(private collection: Collection) {
     super({ objectMode: true });
   }
 
   async _transform(data: Array<any>, _, done) {
-    this.promiseChain = this.promiseChain.then(() => this.collection.bulkWrite(data));
+    this.promiseChain = this.promiseChain.then(() =>
+      Promise.all(
+        partition([...data], data.length / Config.get().maxPoolSize).map(batch => this.collection.bulkWrite(batch))
+      )
+    );
     done(null, data);
   }
 
