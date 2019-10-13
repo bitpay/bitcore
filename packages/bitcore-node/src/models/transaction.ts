@@ -15,7 +15,7 @@ import { EventStorage } from './events';
 import { Libs } from '../providers/libs';
 import { BaseTransaction, ITransaction } from './baseTransaction';
 import { Readable, Transform } from 'stream';
-import { Collection } from 'mongodb';
+import { Collection, BulkWriteOpResultObject } from 'mongodb';
 
 export { ITransaction };
 
@@ -165,13 +165,19 @@ export class MempoolTxEventTransform extends Transform {
 }
 
 export class MongoWriteStream extends Transform {
+  promiseChain = (Promise.resolve() as unknown) as Promise<BulkWriteOpResultObject>;
   constructor(private collection: Collection) {
     super({ objectMode: true });
   }
 
   async _transform(data: Array<any>, _, done) {
-    await this.collection.bulkWrite(data);
+    this.promiseChain = this.promiseChain.then(() => this.collection.bulkWrite(data));
     done(null, data);
+  }
+
+  async _flush(done) {
+    await this.promiseChain;
+    done();
   }
 }
 
