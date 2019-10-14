@@ -1,5 +1,5 @@
 import { Transform } from 'stream';
-import { Wallet } from 'wallet'
+
 export class ParseApiStream extends Transform {
   constructor() {
     super({ objectMode: true });
@@ -19,7 +19,7 @@ export class ParseApiStream extends Transform {
   }
 }
 
-function signTxStream(wallet: Wallet, keys: object, utxosPassedIn: object, password: string) {
+function signTxStream(wallet: any, keys: object, utxosPassedIn: object, password: string) {
   return new Transform({
     objectMode: true,
     async transform(chunk, encoding, callback) {
