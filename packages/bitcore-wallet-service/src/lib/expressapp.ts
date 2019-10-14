@@ -10,6 +10,7 @@ const compression = require('compression');
 const config = require('../config');
 const RateLimit = require('express-rate-limit');
 const Common = require('./common');
+const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 
 log.disableColor();
@@ -253,6 +254,24 @@ export class ExpressApp {
         next();
       };
     }
+
+    // retrieve latest version of copay
+    router.get('/latest-version', async (req, res) => {
+      try {
+        res.setHeader('User-Agent', 'copay');
+        var options = {
+          uri: 'https://api.github.com/repos/bitpay/copay/releases/latest',
+          headers: {
+            'User-Agent': 'Copay'
+          },
+          json: true
+        };
+        const htmlString = await rp(options);
+        res.json({ version: htmlString['tag_name'] });
+      } catch (err) {
+        res.send(err);
+      }
+  });
 
     // DEPRECATED
     router.post('/v1/wallets/', createWalletLimiter, (req, res) => {
