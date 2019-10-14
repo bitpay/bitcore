@@ -1,5 +1,7 @@
 import * as async from 'async';
 import _ from 'lodash';
+import 'source-map-support/register'
+
 import { BlockChainExplorer } from './blockchainexplorer';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';

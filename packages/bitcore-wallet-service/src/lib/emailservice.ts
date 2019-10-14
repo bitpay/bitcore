@@ -1,5 +1,7 @@
 import * as async from 'async';
 import * as _ from 'lodash';
+import 'source-map-support/register'
+
 // This has been changed in favor of @sendgrid.  To use nodemail, change the
 // sending function from `.send` to `.sendMail`.
 // import * as nodemailer from nodemailer';
