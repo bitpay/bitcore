@@ -11,7 +11,7 @@ import { RateLimitStorage } from '../../src/models/rateLimit';
 import { EventStorage } from '../../src/models/events';
 
 export async function resetDatabase() {
-  console.log('Restting database');
+  console.log('Resetting database');
   await resetModel(BitcoinBlockStorage);
   await resetModel(TransactionStorage);
   await resetModel(CoinStorage);
