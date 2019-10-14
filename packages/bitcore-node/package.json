@@ -101,6 +101,7 @@
     "snappy": "6.0.1",
     "socket.io": "2.1.1",
     "socket.io-client": "2.1.1",
+    "source-map-support": "^0.5.13",
     "through2": "2.0.3",
     "underscore": "1.8.3",
     "web3": "1.2.1",
