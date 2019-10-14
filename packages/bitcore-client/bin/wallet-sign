@@ -27,30 +27,29 @@ program
 const main = async () => {
   const { name, path, tx, txfile, keys, utxos } = program;
   let wallet;
-  let decryptedKeys;
+  let encryptedKeys;
+  let bitcoinCorePassword;
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ name, path });
     wallet = await wallet.unlock(password);
     if (keys) {
       let contents = fs.readFileSync(keys).toString();
-      decryptedKeys = contents
+      encryptedKeys = contents
         .split('\n')
         .filter(line => line !== '')
         .map(line => JSON.parse(line));
-      const bitcoinCorePassword = await promptly.password('Enter Bitcoin Core Password:');
-      let decryptedParams = Encryption.bitcoinCoreDecrypt(decryptedKeys, bitcoinCorePassword);
-      decryptedKeys = decryptedParams.jsonlDecrypted;
+      bitcoinCorePassword = await promptly.password('Enter Bitcoin Core Password:');
     }
     if (tx) {
-      let signedTx = await wallet.signTx({ tx, keys: decryptedKeys, utxos });
+      let signedTx = await wallet.signTx({ tx, keys: encryptedKeys, utxos, password: bitcoinCorePassword });
       console.log(JSON.stringify(signedTx));
     }
     if (txfile) {
       const readStream = fs.createReadStream(txfile, {flags: 'r', encoding: 'utf8'});
       readStream
         .pipe(StreamUtil.jsonlBufferToObjectMode()).on("error", console.error)
-        .pipe(StreamUtil.signTxStream(wallet, decryptedKeys, utxos)).on("error", console.error)
+        .pipe(StreamUtil.signTxStream(wallet, encryptedKeys, utxos, bitcoinCorePassword)).on("error", console.error)
         .pipe(StreamUtil.objectModeToJsonlBuffer()).on("error", console.error)
         .pipe(process.stdout).on("error", console.error);
     }
