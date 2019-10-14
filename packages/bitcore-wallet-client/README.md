@@ -47,7 +47,8 @@ var ireneKeys = Client.Key.create();
 
 var client = new Client({
   baseUrl: BWS_INSTANCE_URL,
-  verbose: false
+  verbose: false,
+
 });
 
 client.createWallet("My Wallet", "Irene", 2, 2, {network: 'testnet'}, function(err, secret) {
