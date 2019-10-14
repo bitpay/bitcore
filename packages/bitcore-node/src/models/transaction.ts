@@ -172,7 +172,7 @@ export class MongoWriteStream extends Transform {
 
   async _transform(data: Array<any>, _, done) {
     await Promise.all(
-      partition([...data], data.length / Config.get().maxPoolSize).map(batch => this.collection.bulkWrite(batch))
+      partition(data, data.length / Config.get().maxPoolSize).map(batch => this.collection.bulkWrite(batch))
     );
     done(null, data);
   }
