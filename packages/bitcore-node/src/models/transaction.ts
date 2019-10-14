@@ -16,6 +16,7 @@ import { Libs } from '../providers/libs';
 import { BaseTransaction, ITransaction } from './baseTransaction';
 import { Readable, Transform } from 'stream';
 import { Collection } from 'mongodb';
+import { partition } from '../utils/partition';
 
 export { ITransaction };
 
@@ -170,7 +171,9 @@ export class MongoWriteStream extends Transform {
   }
 
   async _transform(data: Array<any>, _, done) {
-    await this.collection.bulkWrite(data);
+    await Promise.all(
+      partition(data, data.length / Config.get().maxPoolSize).map(batch => this.collection.bulkWrite(batch))
+    );
     done(null, data);
   }
 }
