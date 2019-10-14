@@ -1,6 +1,8 @@
 import * as async from 'async';
 import * as _ from 'lodash';
 import * as log from 'npmlog';
+import 'source-map-support/register'
+
 
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
