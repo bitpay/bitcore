@@ -129,6 +129,10 @@ export class Storage {
       copayerId: 1,
       txid: 1
     });
+    db.collection(collections.TX_CONFIRMATION_SUBS).createIndex({
+      isActive: 1,
+      copayerId: 1
+    });
     db.collection(collections.SESSIONS).createIndex({
       copayerId: 1
     });
