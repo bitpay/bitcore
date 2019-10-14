@@ -42,7 +42,7 @@ const main = async () => {
       bitcoinCorePassword = await promptly.password('Enter Bitcoin Core Password:');
     }
     if (tx) {
-      let signedTx = await wallet.signTx({ tx, keys: encryptedKeys, utxos, password: bitcoinCorePassword });
+      let signedTx = await wallet.signTx({ tx, keys: encryptedKeys, utxos, passphrase: bitcoinCorePassword });
       console.log(JSON.stringify(signedTx));
     }
     if (txfile) {

@@ -1,5 +1,5 @@
 import { createHash, createCipheriv, createDecipheriv, randomBytes } from 'crypto';
-import bitcore from "bitcore-lib"
+import bitcore from 'bitcore-lib'
 
 const crypto = {
   createHash,
@@ -117,17 +117,15 @@ function hashPassphrase(opts) {
 }
 
 function decrypt(opts) {
-  if (!Buffer.isBuffer(opts.key)) {
-    opts.key = Buffer.from(opts.key, 'hex');
-  }
+  let key = Buffer.from(opts.key, 'hex');;
   let secondHalf;
   if (opts.iv) {
     secondHalf = opts.iv.slice(0, 16);
   } else {
-    secondHalf = opts.key.slice(32, 48); // AES256-cbc IV
+    secondHalf = key.slice(32, 48); // AES256-cbc IV
   }
   let cipherText = Buffer.from(opts.cipherText, 'hex');
-  let firstHalf = opts.key.slice(0, 32); // AES256-cbc shared key
+  let firstHalf = key.slice(0, 32); // AES256-cbc shared key
   let AESDecipher = crypto.createDecipheriv('aes-256-cbc', firstHalf, secondHalf);
   let plainText;
   try {

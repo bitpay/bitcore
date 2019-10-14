@@ -295,7 +295,7 @@ export class Wallet {
   }
 
   async signTx(params) {
-    let { tx, keys, utxos, password } = params;
+    let { tx, keys, utxos, passphrase } = params;
     if (!utxos) {
       utxos = [];
       await (new Promise((resolve, reject) => {
@@ -306,25 +306,26 @@ export class Wallet {
       }));
     }
     const addresses = [];
+    let decryptedKeys;
     if (!keys) {
       for (let utxo of utxos) {
         addresses.push(utxo.address);
       }
-      keys = await this.storage.getKeys({addresses, name: this.name, encryptionKey: this.unlocked.encryptionKey});
+      decryptedKeys = await this.storage.getKeys({addresses, name: this.name, encryptionKey: this.unlocked.encryptionKey});
     } else {
       addresses.push(keys[0]);
       utxos.forEach(function(element) {
         let keyToDecrypt = keys.find(key => key.address === element.address);
         addresses.push(keyToDecrypt);
       });
-      let decryptedParams = Encryption.bitcoinCoreDecrypt(addresses, password);
-      keys = decryptedParams.jsonlDecrypted;
+      let decryptedParams = Encryption.bitcoinCoreDecrypt(addresses, passphrase);
+      decryptedKeys = [...decryptedParams.jsonlDecrypted];
     }
     const payload = {
       chain: this.chain,
       network: this.network,
       tx,
-      keys,
+      keys: decryptedKeys,
       utxos
     };
     return Transactions.sign({ ...payload });

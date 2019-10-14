@@ -19,13 +19,13 @@ export class ParseApiStream extends Transform {
   }
 }
 
-function signTxStream(wallet: any, keys: object, utxosPassedIn: object, password: string) {
+function signTxStream(wallet: any, keys: object, utxosPassedIn: object, passphrase: string) {
   return new Transform({
     objectMode: true,
     async transform(chunk, encoding, callback) {
       const rawTransaction = chunk.rawTransaction;
       const utxos = utxosPassedIn || chunk.utxos;
-      const signedTx = await wallet.signTx({tx: rawTransaction, utxos, keys, password});
+      const signedTx = await wallet.signTx({tx: rawTransaction, utxos, keys, passphrase});
       chunk.signedTransaction = signedTx;
       return callback(null, chunk);
     }

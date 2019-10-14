@@ -1,3 +1,4 @@
+import 'source-map-support/register'
 import { Wallet } from './wallet';
 import { Storage } from './storage';
 import { Client } from './client';
