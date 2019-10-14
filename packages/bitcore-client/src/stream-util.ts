@@ -1,5 +1,5 @@
 import { Transform } from 'stream';
-
+import { Wallet } from 'wallet'
 export class ParseApiStream extends Transform {
   constructor() {
     super({ objectMode: true });
@@ -19,7 +19,7 @@ export class ParseApiStream extends Transform {
   }
 }
 
-function signTxStream(wallet, keys, utxosPassedIn) {
+function signTxStream(wallet: Wallet, keys: object, utxosPassedIn: object) {
   return new Transform({
     objectMode: true,
     async transform(chunk, encoding, callback) {
@@ -42,11 +42,11 @@ function objectModeToJsonlBuffer() {
       }
       let jsonl;
       try {
-        jsonl = JSON.stringify(chunk);
+        jsonl = JSON.stringify(chunk).concat('\n');
+        callback(null, jsonl);
       } catch (e) {
         return callback(e);
       }
-      callback(null, `${jsonl}\n`);
     }
   });
 }
@@ -56,8 +56,7 @@ function jsonlBufferToObjectMode() {
     writableObjectMode: false,
     readableObjectMode: true,
     transform(chunk, encoding, callback) {
-      let buffer = '';
-      buffer = `${buffer}${chunk}`;
+      let buffer = chunk;
       let lineArray = buffer.toString().split('\n');
       while (lineArray.length > 1) {
         try {
@@ -71,7 +70,6 @@ function jsonlBufferToObjectMode() {
           return callback(e);
         }
       }
-      buffer = lineArray[0];
       callback();
     }
   });

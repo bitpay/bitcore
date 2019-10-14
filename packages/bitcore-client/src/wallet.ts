@@ -298,9 +298,11 @@ export class Wallet {
     let { tx, keys, utxos } = params;
     if (!utxos) {
       utxos = [];
-      await (new Promise((resolve) => {
-        this.getUtxos().pipe(new ParseApiStream()).on('data', (utxo) => utxos.push(utxo))
-          .on('end', () => {resolve()});
+      await (new Promise((resolve, reject) => {
+        this.getUtxos().pipe(new ParseApiStream())
+          .on('data', (utxo) => utxos.push(utxo))
+          .on('end', () => resolve())
+          .on('err', (err) => reject(err));
       }));
     }
     if (!keys) {

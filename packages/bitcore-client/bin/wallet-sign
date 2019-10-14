@@ -38,13 +38,9 @@ const main = async () => {
         .split('\n')
         .filter(line => line !== '')
         .map(line => JSON.parse(line));
-      try {
-        const bitcoinCorePassword = await promptly.password('Enter Bitcoin Core Password:');
-        let decryptedParams = Encryption.bitcoinCoreDecrypt(decryptedKeys, bitcoinCorePassword);
-        decryptedKeys = decryptedParams.jsonlDecrypted;
-      } catch (e) {
-        console.error(e);
-      }
+      const bitcoinCorePassword = await promptly.password('Enter Bitcoin Core Password:');
+      let decryptedParams = Encryption.bitcoinCoreDecrypt(decryptedKeys, bitcoinCorePassword);
+      decryptedKeys = decryptedParams.jsonlDecrypted;
     }
     if (tx) {
       let signedTx = await wallet.signTx({ tx, keys: decryptedKeys, utxos });
@@ -52,12 +48,11 @@ const main = async () => {
     }
     if (txfile) {
       const readStream = fs.createReadStream(txfile, {flags: 'r', encoding: 'utf8'});
-      const writeStream = fs.createWriteStream('signedTx.jsonl');
       readStream
-        .pipe(StreamUtil.jsonlBufferToObjectMode()).on('error', (err) => console.error(err))
-        .pipe(StreamUtil.signTxStream(wallet, decryptedKeys, utxos)).on('error', (err) => console.error(err))
-        .pipe(StreamUtil.objectModeToJsonlBuffer()).on('error', (err) => console.error(err))
-        .pipe(writeStream).on('error', (err) => console.error(err));
+        .pipe(StreamUtil.jsonlBufferToObjectMode()).on("error", console.error)
+        .pipe(StreamUtil.signTxStream(wallet, decryptedKeys, utxos)).on("error", console.error)
+        .pipe(StreamUtil.objectModeToJsonlBuffer()).on("error", console.error)
+        .pipe(process.stdout).on("error", console.error);
     }
   } catch (e) {
     console.error(e);
