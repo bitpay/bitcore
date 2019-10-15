@@ -10,7 +10,6 @@ import { AuthheadJSON } from '../Authhead';
 import { CoinListingJSON } from '../Coin';
 import { DailyTransactionsJSON } from '../stats';
 import { ICoin } from '../../models/coin';
-import { IBlock } from '../../models/baseBlock';
 export declare namespace CSP {
   export type StreamWalletTransactionsArgs = {
     startBlock: number;
@@ -119,7 +118,7 @@ export declare namespace CSP {
 
   export type isValidParams = ChainNetwork & {
     input: string;
-  }
+  };
 
   export type Provider<T> = { get(params: { chain: string }): T };
   export type ChainStateProvider = Provider<IChainStateService> & IChainStateService;
@@ -127,7 +126,7 @@ export declare namespace CSP {
     getBalanceForAddress(
       params: GetBalanceForAddressParams
     ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
-    getBlock(params: GetBlockParams): Promise<IBlock>;
+    getBlock(params: GetBlockParams): Promise<any>;
     streamBlocks(params: StreamBlocksParams): any;
     getFee(params: GetEstimateSmartFeeParams): any;
     broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
@@ -152,9 +151,9 @@ export declare namespace CSP {
     streamWalletUtxos(params: StreamWalletUtxosParams): any;
     streamMissingWalletAddresses(params: StreamWalletMissingAddressesParams);
     getCoinsForTx(params: { chain: string; network: string; txid: string }): Promise<CoinListingJSON>;
-    getLocalTip(params): Promise<IBlock | null>;
+    getLocalTip(params): Promise<any | null>;
     getLocatorHashes(params): Promise<any>;
-    isValid(params: isValidParams): {isValid: boolean, type:string};
+    isValid(params: isValidParams): { isValid: boolean; type: string };
   }
 
   type ChainStateServices = { [key: string]: IChainStateService };

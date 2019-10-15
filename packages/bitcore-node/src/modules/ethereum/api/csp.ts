@@ -1,6 +1,5 @@
 import { Readable } from 'stream';
 import Config from '../../../config';
-import { WalletAddressStorage } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { ObjectID } from 'mongodb';
 import Web3 from 'web3';
@@ -167,13 +166,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     });
   }
 
-  async getWalletAddresses(walletId: ObjectID) {
-    let query = { chain: this.chain, wallet: walletId };
-    return WalletAddressStorage.collection
-      .find(query)
-      .addCursorFlag('noCursorTimeout', true)
-      .toArray();
-  }
 
   async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
     const { req, res, args, chain, network, address } = params;
@@ -370,7 +362,12 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   }
 
   async getAccountNonce(network: string, address: string) {
-    return EthTransactionStorage.collection.countDocuments({ chain: 'ETH', network, from: address, blockHeight: { $ne: -1 } });
+    return EthTransactionStorage.collection.countDocuments({
+      chain: 'ETH',
+      network,
+      from: address,
+      blockHeight: { $ne: -1 }
+    });
   }
 
   async getWalletTokenTransactions(

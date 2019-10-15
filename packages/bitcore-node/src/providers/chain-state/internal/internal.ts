@@ -518,7 +518,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     };
   }
 
-  async getLocalTip({ chain, network }) {
+  async getLocalTip({ chain, network }): Promise<any> {
     if (BitcoinBlockStorage.chainTips[chain] && BitcoinBlockStorage.chainTips[chain][network]) {
       return BitcoinBlockStorage.chainTips[chain][network];
     } else {
@@ -585,9 +585,15 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   private extractAddress(address: string): string {
-    const extractedAddress = address
-      .replace(/^(bitcoincash:|bchtest:|bitcoin:)/i, '')
-      .replace(/\?.*/, '');
+    const extractedAddress = address.replace(/^(bitcoincash:|bchtest:|bitcoin:)/i, '').replace(/\?.*/, '');
     return extractedAddress || address;
+  }
+
+  async getWalletAddresses(walletId: ObjectId) {
+    let query = { chain: this.chain, wallet: walletId };
+    return WalletAddressStorage.collection
+      .find(query)
+      .addCursorFlag('noCursorTimeout', true)
+      .toArray();
   }
 }
