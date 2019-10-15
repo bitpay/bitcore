@@ -33,6 +33,7 @@
     "express": "^4.10.0",
     "express-rate-limit": "^2.6.0",
     "inherits": "^2.0.1",
+    "istanbul": "^0.4.5",
     "json-stable-stringify": "^1.0.0",
     "lodash": "^4.17.15",
     "moment": "^2.10.3",
@@ -49,6 +50,7 @@
     "sjcl": "^1.0.2",
     "socket.io": "^2.2.0",
     "socket.io-client": "^2.2.0",
+    "source-map-support": "^0.5.13",
     "sticky-session": "^0.1.0",
     "uuid": "^3.3.2"
   },
@@ -65,7 +67,6 @@
     "@types/socket.io-client": "^1.4.32",
     "chai": "^1.9.1",
     "coveralls": "^3.0.2",
-    "istanbul": "*",
     "jsdoc": "^3.6.3",
     "memdown": "^1.0.0",
     "mocha": "^5.2.0",

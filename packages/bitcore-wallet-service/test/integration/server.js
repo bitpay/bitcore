@@ -7047,14 +7047,14 @@ describe('#createTX ETH Only tests', () => {
 
     it('should pull new block notifications along with wallet notifications in the last 60 seconds', function(done) {
       // Simulate new block notification
-      server.walletId = 'livenet';
+      server.walletId = 'btc:livenet';
       server._notify('NewBlock', {
         hash: 'dummy hash',
       }, {
           isGlobal: true
         }, function(err) {
           should.not.exist(err);
-          server.walletId = 'testnet';
+          server.walletId = 'btc:testnet';
           server._notify('NewBlock', {
             hash: 'dummy hash',
           }, {

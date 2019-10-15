@@ -11,15 +11,17 @@ import { RateLimitStorage } from '../../src/models/rateLimit';
 import { EventStorage } from '../../src/models/events';
 
 export async function resetDatabase() {
-  console.log('Restting database');
-  await resetModel(BitcoinBlockStorage);
-  await resetModel(TransactionStorage);
-  await resetModel(CoinStorage);
-  await resetModel(WalletAddressStorage);
-  await resetModel(WalletStorage);
-  await resetModel(StateStorage);
-  await resetModel(RateLimitStorage);
-  await resetModel(EventStorage);
+  console.log('Resetting database');
+  await Promise.all([
+    resetModel(BitcoinBlockStorage),
+    resetModel(TransactionStorage),
+    resetModel(CoinStorage),
+    resetModel(WalletAddressStorage),
+    resetModel(WalletStorage),
+    resetModel(StateStorage),
+    resetModel(RateLimitStorage),
+    resetModel(EventStorage)
+  ]);
 }
 
 export async function resetModel(model: BaseModel<any>) {
@@ -33,6 +35,7 @@ export function mockCollection(toReturn, collectionMethods = {}) {
       aggregate: sinon.stub().returnsThis(),
       count: sinon.stub().returnsThis(),
       sort: sinon.stub().returnsThis(),
+      project: sinon.stub().returnsThis(),
       insertOne: sinon.stub().resolves(),
       insertMany: sinon.stub().resolves(),
       bulkWrite: sinon.stub().resolves(),
