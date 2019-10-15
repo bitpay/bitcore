@@ -26,7 +26,7 @@ function signTxStream(wallet: any, keys: object, utxosPassedIn: object, passphra
       const rawTransaction = chunk.rawTransaction;
       const utxos = utxosPassedIn || chunk.utxos;
       const signedTx = await wallet.signTx({tx: rawTransaction, utxos, keys, passphrase});
-      chunk.signedTransaction = signedTx;
+      chunk.signedRawTransaction = signedTx;
       return callback(null, chunk);
     }
   });
