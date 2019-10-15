@@ -1,10 +1,10 @@
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
-import { Config } from '../../../services/config';
 import { RippleAPI } from 'ripple-lib';
 import { Readable } from 'stream';
 import { Storage } from '../../../services/storage';
 import { ChainNetwork } from '../../../types/ChainNetwork';
+import Config from '../../../config';
 
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -31,6 +31,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
       const portString = provider.port;
       const connUrl = portString ? `${protocol}://${host}:${portString}` : `${protocol}://${host}`;
       RippleStateProvider.client = new RippleAPI({ server: connUrl });
+      await RippleStateProvider.client.connect();
     }
     return RippleStateProvider.client;
   }
