@@ -8,10 +8,13 @@ export class ETHTxProvider {
     gasPrice: number;
     data: string;
     gasLimit: number;
+    network: string;
     chainId?: number;
   }) {
-    const { recipients, nonce, gasPrice, data, gasLimit, chainId = 1} = params;
+    const { recipients, nonce, gasPrice, data, gasLimit, network } = params;
     const { address, amount } = recipients[0];
+    let { chainId } = params;
+    chainId = chainId || this.getChainId(network);
     const txData = {
       nonce: utils.toHex(nonce),
       gasLimit: utils.toHex(gasLimit),
@@ -22,6 +25,26 @@ export class ETHTxProvider {
       chainId
     };
     return ethers.utils.serializeTransaction(txData);
+  }
+
+  getChainId(network: string) {
+    let chainId = 1;
+    switch (network) {
+      case 'testnet':
+      case 'kovan':
+        chainId = 42;
+        break;
+      case 'ropsten':
+        chainId = 3;
+        break;
+      case 'rinkeby':
+        chainId = 4;
+        break;
+      default:
+        chainId = 1;
+        break;
+    }
+    return chainId;
   }
 
   getSignatureObject (params: { tx: string; key: Key; }) {

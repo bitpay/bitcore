@@ -269,8 +269,7 @@ export class TxProposal {
       const rawTx = Transactions.create({
         ...this,
         chain: this.coin.toUpperCase(),
-        recipients: [{ address: this.outputs[0].toAddress, amount: this.amount}],
-        fee: this.gasPrice
+        recipients: [{ address: this.outputs[0].toAddress, amount: this.amount}]
       });
       return {
         uncheckedSerialize: () => rawTx,
