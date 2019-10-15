@@ -281,7 +281,11 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
         if (opts.earlyRet) return cb(s);
         s.getWallet({}, function(err, w) {
 
-          sinon.stub(s, 'checkWalletSync').callsArgWith(2, null, true);
+          // STUB for checkWalletSync.
+          s.checkWalletSync = function(a,b, simple, cb) {
+            if (simple) return cb(null, false);
+            return cb(null, true);
+          }
           cb(s, w);
         });
       });
