@@ -17,6 +17,9 @@ const Defaults = Common.Defaults;
 let log = require('npmlog');
 log.debug = log.verbose;
 
+// prevent checking same address if repeading with in 1000 events
+let last=[],Ni=0, N=1000;
+
 type  throttledNewBlocksFnType = ((that: any, coin: any, network: any, hash: any) => void);
 
 var throttledNewBlocks = _.throttle((that, coin, network, hash) => {
@@ -202,94 +205,67 @@ export class BlockchainMonitor {
     if (!data) return;
     // console.log('[blockchainmonitor.js.158:data:]',data); //TODO
 
-    let outs: any[];
-    // ! v8?
-    if (!data.outs) {
-      if (!data.vout) return;
-      outs = _.compact(
-        _.map(data.vout, (v) => {
-          let addr = _.keys(v)[0];
-          const amount = +v[addr];
+    let out = data.out;
+    if (! (out.amount>0)) return;
+    if (!out.address || out.address.length<10) return;
 
-          return {
-            address: addr,
-            amount
-          };
-        })
-      );
-      if (_.isEmpty(outs)) return;
-    } else {
-      outs = data.outs;
-      _.each(outs, x => {
-        if (x.amount) {
-          // to satoshis
-          x.amount = +(x.amount * 1e8).toFixed(0);
-        }
-      });
+    if (last.indexOf(out.address) >= 0) {
+      return;
     }
-    async.each(
-      outs,
-      (out, next) => {
-        if (!out.address) return next();
 
-        // toDo, remove coin  here: no more same address for diff coins
-        this.storage.fetchAddressByCoin(coin, out.address, (
-          err,
-          address
-        ) => {
-          if (err) {
-            log.error('Could not fetch addresses from the db');
-            return next(err);
-          }
-          if (!address || address.isChange) return next();
+    last[Ni++] = out.address;
+    if (Ni >= N) Ni = 0;
 
-          const walletId = address.walletId;
-          log.debug(
-            'Incoming tx for wallet ' +
-            walletId +
-            ' [' +
-            out.amount +
-            'sat -> ' +
-            out.address +
-            ']'
-          );
-
-          const fromTs = Date.now() - 24 * 3600 * 1000;
-          this.storage.fetchNotifications(walletId, null, fromTs, (
-            err,
-            notifications
-          ) => {
-            if (err) return next(err);
-            const alreadyNotified = _.some(notifications, (n) => {
-              return (
-                n.type == 'NewIncomingTx' && n.data && n.data.txid == data.txid
-              );
-            });
-            if (alreadyNotified) {
-              log.debug(
-                'The incoming tx ' + data.txid + ' was already notified'
-              );
-              return next();
-            }
-
-            const notification = Notification.create({
-              type: 'NewIncomingTx',
-              data: {
-                txid: data.txid,
-                address: out.address,
-                amount: out.amount
-              },
-              walletId
-            });
-
-            this._storeAndBroadcastNotification(notification, next);
-          });
-        });
-      },
-      (err) => {
+    //log.debug(`Checking ${coin}:${network}:${out.address} ${out.amount}`);
+    this.storage.fetchAddressByCoin(coin, out.address, ( err, address) => {
+      if (err) {
+        log.error('Could not fetch addresses from the db');
         return;
       }
-    );
+      if (!address || address.isChange) return;
+
+      const walletId = address.walletId;
+      log.debug(
+        'Incoming tx for wallet ' +
+        walletId +
+        ' [' +
+        out.amount +
+        'amount -> ' +
+        out.address +
+        ']'
+      );
+
+      const fromTs = Date.now() - 24 * 3600 * 1000;
+      this.storage.fetchNotifications(walletId, null, fromTs, (
+        err,
+        notifications
+      ) => {
+        if (err) return;
+        const alreadyNotified = _.some(notifications, (n) => {
+          return (
+            n.type == 'NewIncomingTx' && n.data && n.data.txid == data.txid
+          );
+        });
+        if (alreadyNotified) {
+          log.debug(
+            'The incoming tx ' + data.txid + ' was already notified'
+          );
+          return;
+        }
+
+        const notification = Notification.create({
+          type: 'NewIncomingTx',
+          data: {
+            txid: data.txid,
+            address: out.address,
+            amount: out.amount
+          },
+          walletId
+        });
+
+        this._storeAndBroadcastNotification(notification, () => { return });
+      });
+    });
   }
 
   _notifyNewBlock(coin, network, hash) {
