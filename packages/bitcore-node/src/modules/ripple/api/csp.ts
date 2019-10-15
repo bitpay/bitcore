@@ -5,6 +5,7 @@ import { Readable } from 'stream';
 import { Storage } from '../../../services/storage';
 import { ChainNetwork } from '../../../types/ChainNetwork';
 import Config from '../../../config';
+import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types';
 
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -79,11 +80,22 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     );
   }
 
+  streamTxs<T>(txs: Array<T>, stream: Readable) {
+    for (let tx of txs) {
+      stream.push(tx);
+    }
+  }
+
   async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
     const client = await this.getClient(params.network);
-    const txs = await client.getTransactions(params.address);
-    const readable = new Readable();
-    txs.forEach(tx => readable.push(tx));
+    const txs = await client.getTransactions(params.address, {
+      start: params.args.startTx,
+      limit: params.args.limit || 100,
+      binary: false
+    });
+    const readable = new Readable({ objectMode: true, read: () => {} });
+    this.streamTxs(txs, readable);
+    readable.push(null);
     Storage.stream(readable, params.req, params.res);
   }
 
@@ -91,9 +103,10 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     const client = await this.getClient(params.network);
     let { blockHash } = params.args;
     const ledger = await client.getLedger({ includeTransactions: true, ledgerHash: blockHash });
-    const readable = new Readable();
+    const readable = new Readable({ objectMode: true, read: () => {} });
     const txs = ledger.transactions || [];
-    txs.forEach(tx => readable.push(tx));
+    this.streamTxs(txs, readable);
+    readable.push(null);
     Storage.stream(readable, params.req, params.res);
   }
 
@@ -106,11 +119,16 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
   async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
     const client = await this.getClient(params.network);
     const addresses = await this.getWalletAddresses(params.wallet._id!);
-    const readable = new Readable();
+    const readable = new Readable({ objectMode: true, read: () => {} });
+    const promises = new Array<Promise<FormattedTransactionType[]>>();
     for (const walletAddress of addresses) {
-      const txs = await client.getTransactions(walletAddress.address);
-      txs.forEach(tx => readable.push(tx));
+      promises.push(client.getTransactions(walletAddress.address));
     }
+    const allTxs = await Promise.all(promises);
+    for (let txs of allTxs) {
+      this.streamTxs(txs, readable);
+    }
+    readable.push(null);
     Storage.stream(readable, params.req, params.res);
   }
 
