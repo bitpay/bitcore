@@ -74,15 +74,10 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function (req: Request, res:
   }
 
   let skips = limit * (pgnum - 1);
-  let numOfTxs: number = await TransactionStorage.collection.find({ chain, network, blockHash }).count();
+  let numOfTxs = await TransactionStorage.collection.find({ chain, network, blockHash }).count();
   try {
-    let txs;
-    if (numOfTxs < limit) {
-      txs = await TransactionStorage.collection.find({ chain, network, blockHash }).toArray();
-    } else {
-      console.log(limit);
-      txs = await TransactionStorage.collection.find({ chain, network, blockHash }).skip(skips).limit(limit).toArray();
-    }
+    let txs = numOfTxs < limit ? await TransactionStorage.collection.find({ chain, network, blockHash }).toArray() : 
+      await TransactionStorage.collection.find({ chain, network, blockHash }).skip(skips).limit(limit).toArray()
 
     if (!txs) {
       return res.status(422).send("No txs for page");
@@ -101,9 +96,9 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function (req: Request, res:
 
     let prevPageNum;
     let nxtPageNum;
-    let previous: string = '';
-    let next: string = '';
-    if ((pgnum !== 1)) {
+    let previous = '';
+    let next = '';
+    if (pgnum !== 1) {
       prevPageNum = parseInt(pgnum) - 1;
       previous = `/block/${blockHash}/coins/${limit}/${prevPageNum}`;
     }
@@ -114,7 +109,6 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function (req: Request, res:
 
     return res.json({ txids, inputs, outputs, previous, next });
   } catch (err) {
-    console.log(err);
     return res.status(500).send(err);
   }
 });
