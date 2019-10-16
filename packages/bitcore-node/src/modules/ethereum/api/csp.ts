@@ -15,6 +15,8 @@ import { EthListTransactionsStream } from './transform';
 import { ERC20Abi } from '../abi/erc20';
 import { Transaction } from 'web3/eth/types';
 import { EventLog } from 'web3/types';
+import { partition } from '../../../utils/partition';
+import { TransactionStorage } from '../../../models/transaction';
 
 interface ERC20Transfer extends EventLog {
   returnValues: {
@@ -174,7 +176,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
   }
-
   async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
     const { req, res, args, chain, network, address } = params;
     const { limit, since, tokenAddress } = args;
@@ -370,7 +371,12 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   }
 
   async getAccountNonce(network: string, address: string) {
-    return EthTransactionStorage.collection.countDocuments({ chain: 'ETH', network, from: address, blockHeight: { $ne: -1 } });
+    return EthTransactionStorage.collection.countDocuments({
+      chain: 'ETH',
+      network,
+      from: address,
+      blockHeight: { $ne: -1 }
+    });
   }
 
   async getWalletTokenTransactions(
@@ -415,6 +421,28 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       return { ...convertedBlock, confirmations };
     };
     return blocks.map(blockTransform);
+  }
+
+  async updateWallet(params: CSP.UpdateWalletParams) {
+    const { chain, network } = params;
+    await Promise.all(
+      partition(params.addresses, 1000).map(async addressBatch => {
+        await Promise.all([
+          TransactionStorage.collection.updateMany(
+            { chain, network, from: { $in: addressBatch } },
+            { $addToSet: { wallets: params.wallet._id } }
+          ),
+          TransactionStorage.collection.updateMany(
+            { chain, network, to: { $in: addressBatch } },
+            { $addToSet: { wallets: params.wallet._id } }
+          )
+        ]);
+        await WalletAddressStorage.collection.updateMany(
+          { chain, network, address: { $in: addressBatch } },
+          { $set: { processed: true } }
+        );
+      })
+    );
   }
 }
 
