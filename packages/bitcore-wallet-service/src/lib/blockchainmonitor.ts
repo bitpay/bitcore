@@ -1,6 +1,6 @@
 import * as async from 'async';
 import _ from 'lodash';
-import 'source-map-support/register'
+import 'source-map-support/register';
 
 import { BlockChainExplorer } from './blockchainexplorer';
 import { Lock } from './lock';
@@ -17,7 +17,6 @@ const Defaults = Common.Defaults;
 let log = require('npmlog');
 log.debug = log.verbose;
 
-
 type  throttledNewBlocksFnType = ((that: any, coin: any, network: any, hash: any) => void);
 
 var throttledNewBlocks = _.throttle((that, coin, network, hash) => {
@@ -31,13 +30,11 @@ export class BlockchainMonitor {
   messageBroker: MessageBroker;
   lock: Lock;
   walletId: string;
-  last: Array<string>; 
+  last: Array<string>;
   Ni: number;
   N: number;
-  lastTx: Array<string>; 
+  lastTx: Array<string>;
   Nix: number;
-
-
 
   start(opts, cb) {
     opts = opts || {};
@@ -156,8 +153,6 @@ export class BlockchainMonitor {
       this.lastTx[this.Nix++] = data.txid;
       if (this.Nix >= this.N) this.Nix = 0;
 
-
-
       log.debug(`\tChecking ${coin}/${network} txid: ${data.txid}`);
     }
 
@@ -228,8 +223,8 @@ export class BlockchainMonitor {
   _handleIncomingPayments(coin, network, data) {
     if (!data) return;
     let out = data.out;
-    if (!out || ! (out.amount>0)) return;
-    if (!out.address || out.address.length<10) return;
+    if (!out || ! (out.amount > 0)) return;
+    if (!out.address || out.address.length < 10) return;
 
     if (this.last.indexOf(out.address) >= 0) {
       return;
@@ -288,7 +283,7 @@ export class BlockchainMonitor {
           walletId
         });
 
-        this._storeAndBroadcastNotification(notification, () => { return });
+        this._storeAndBroadcastNotification(notification, () => { return; });
       });
     });
   }

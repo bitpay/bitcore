@@ -42,7 +42,7 @@ export class Stats {
   run(cb) {
     let uri = config.storageOpts.mongoDb.uri;
 
-    if (uri.indexOf('?')>0) {
+    if (uri.indexOf('?') > 0) {
       uri = uri + '&';
     } else {
       uri = uri + '?';
