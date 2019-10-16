@@ -5365,7 +5365,7 @@ describe('#createTX ETH Only tests', () => {
             amount: 200,
           }],
         }];
-        helpers.stubHistoryV8(null, null, txs);
+        helpers.stubHistory(null, null, txs);
         helpers.stubFeeLevels({
           24: 10000,
         });
@@ -8215,7 +8215,7 @@ describe('#createTX ETH Only tests', () => {
     });
   });
 
-  describe('Sync wallet with grouping block explorer', function() {
+  describe('Sync wallet', function() {
     var server, wallet;
     beforeEach(function(done) {
 
@@ -8249,6 +8249,36 @@ describe('#createTX ETH Only tests', () => {
           //  should only sync address 2
           calls[1].args[1].should.deep.equal([address2.address]);
           done();
+        });
+      });
+    });
+
+    it('should reregisted address is wallet is deregistered', function(done) {
+      helpers.stubFeeLevels({
+        1: 40002,
+        2: 20000,
+        6: 18000,
+        24: 9001,
+      }, true);
+
+
+      server.createAddress({}, function(err, address1) {
+        helpers.stubHistory(2, 1000);
+
+        // deregisted the wallet
+        server.storage.deregisterWallet(wallet.id, () => {
+          wallet.beRegistered = false;
+          server.getTxHistory({}, function(err) {
+            should.not.exist(err);
+            blockchainExplorer.register.calledTwice.should.equal(true);
+            blockchainExplorer.addAddresses.calledTwice.should.equal(true);
+            var calls = blockchainExplorer.addAddresses.getCalls();
+
+            // both calls should registed the same addr
+            calls[0].args[1].should.deep.equal([address1.address]);
+            calls[1].args[1].should.deep.equal([address1.address]);
+            done();
+          });
         });
       });
     });
