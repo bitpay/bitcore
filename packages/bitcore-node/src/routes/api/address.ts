@@ -36,19 +36,14 @@ router.get('/:address/coins', async function (req, res) {
 
   try {
     let coins = await CoinStorage.collection.find({ address, chain, network }).toArray(); //rename coins
-    let spentTxids = coins.filter((tx) => { return tx.spentTxid; }).map((tx) => tx.spentTxid);
-    let mintedTxids = coins.filter((tx) => { return tx.mintTxid; }).map((tx) => tx.mintTxid);;
+    let spentTxids : any[] = [];
+    spentTxids = coins.filter(tx => tx.spentTxid).map(tx => tx.spentTxid);
+    let mintedTxids = coins.filter(tx=> tx.mintTxid).map(tx => tx.mintTxid);
 
-    let fundingTxInputs = await CoinStorage.collection.find({ chain, network, spentTxid: { $in: mintedTxids } }).toArray();
-    let fundingTxOutputs = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: mintedTxids } }).toArray();
-
-    let spendingTxInputs: any = [];
-    let spendingTxOutputs: any = [];
-
-    if (!(spentTxids === null)) {
-      spendingTxInputs = await CoinStorage.collection.find({ chain, network, spentTxid: { $in: spentTxids } }).toArray();
-      spendingTxOutputs = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: spentTxids } }).toArray();
-    }
+    let [fundingTxInputs, fundingTxOutputs, spendingTxInputs, spendingTxOutputs] = await Promise.all([CoinStorage.collection.find({ chain, network, spentTxid: { $in: mintedTxids } }).toArray(),
+      CoinStorage.collection.find({ chain, network, mintTxid: { $in: mintedTxids } }).toArray(), 
+      CoinStorage.collection.find({ chain, network, mintTxid: { $in: mintedTxids } }).toArray(), 
+      CoinStorage.collection.find({ chain, network, mintTxid: { $in: spentTxids } }).toArray()]);
     return res.json({ coins, mintedTxids, fundingTxInputs, fundingTxOutputs, spentTxids, spendingTxInputs, spendingTxOutputs });
   } catch (err) {
     return res.status(500).send(err);
