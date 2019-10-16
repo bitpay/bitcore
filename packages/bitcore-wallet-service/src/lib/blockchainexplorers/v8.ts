@@ -476,7 +476,6 @@ export class V8 {
     socket.on('connect_error', () => {
       log.error('Error connecting to ' + this.getConnectionInfo());
     });
-    socket.on('tx', callbacks.onTx);
     socket.on('block', (data) => {
       return callbacks.onBlock(data.hash);
     });

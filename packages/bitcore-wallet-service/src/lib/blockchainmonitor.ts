@@ -17,8 +17,6 @@ const Defaults = Common.Defaults;
 let log = require('npmlog');
 log.debug = log.verbose;
 
-// prevent checking same address if repeading with in 1000 events
-let last=[],Ni=0, N=1000;
 
 type  throttledNewBlocksFnType = ((that: any, coin: any, network: any, hash: any) => void);
 
@@ -33,9 +31,21 @@ export class BlockchainMonitor {
   messageBroker: MessageBroker;
   lock: Lock;
   walletId: string;
+  last: Array<string>; 
+  Ni: number;
+  N: number;
+  lastTx: Array<string>; 
+  Nix: number;
+
+
 
   start(opts, cb) {
     opts = opts || {};
+
+    // prevent checking same address if repeading with in 1000 events
+    this.N = opts.N || 1000;
+    this.Ni = this.Nix = 0;
+    this.last = this.lastTx = [];
 
     async.parallel(
       [
@@ -96,7 +106,10 @@ export class BlockchainMonitor {
           } else {
             this.storage = new Storage();
             this.storage.connect(
-              opts.storageOpts,
+              {
+                ...opts.storageOpts,
+                secondaryPreferred: true,
+              },
               done
             );
           }
@@ -122,7 +135,6 @@ export class BlockchainMonitor {
 
   _initExplorer(coin, network, explorer) {
     explorer.initSocket({
-      onTx: _.bind(this._handleThirdPartyBroadcasts, this, coin, network),
       onBlock: _.bind(this._handleNewBlock, this, coin, network),
       onIncomingPayments: _.bind(
         this._handleIncomingPayments,
@@ -135,7 +147,19 @@ export class BlockchainMonitor {
 
   _handleThirdPartyBroadcasts(coin, network, data, processIt) {
     if (!data || !data.txid) return;
-    // log.info(`New ${coin}/${network} tx: ${data.txid}`);
+
+    if (!processIt)  {
+      if (this.lastTx.indexOf(data.txid) >= 0) {
+        return;
+      }
+
+      this.lastTx[this.Nix++] = data.txid;
+      if (this.Nix >= this.N) this.Nix = 0;
+
+
+
+      log.debug(`\tChecking ${coin}/${network} txid: ${data.txid}`);
+    }
 
     this.storage.fetchTxByHash(data.txid, (err, txp) => {
       if (err) {
@@ -203,26 +227,27 @@ export class BlockchainMonitor {
 
   _handleIncomingPayments(coin, network, data) {
     if (!data) return;
-    // console.log('[blockchainmonitor.js.158:data:]',data); //TODO
-
     let out = data.out;
-    if (! (out.amount>0)) return;
+    if (!out || ! (out.amount>0)) return;
     if (!out.address || out.address.length<10) return;
 
-    if (last.indexOf(out.address) >= 0) {
+    if (this.last.indexOf(out.address) >= 0) {
       return;
     }
 
-    last[Ni++] = out.address;
-    if (Ni >= N) Ni = 0;
+    this.last[this.Ni++] = out.address;
+    if (this.Ni >= this.N) this.Ni = 0;
 
-    //log.debug(`Checking ${coin}:${network}:${out.address} ${out.amount}`);
+    log.debug(`Checking ${coin}:${network}:${out.address} ${out.amount}`);
     this.storage.fetchAddressByCoin(coin, out.address, ( err, address) => {
       if (err) {
         log.error('Could not fetch addresses from the db');
         return;
       }
-      if (!address || address.isChange) return;
+      if (!address || address.isChange) {
+        // no incomming paymen
+        return this._handleThirdPartyBroadcasts(coin, network, data, null);
+      }
 
       const walletId = address.walletId;
       log.debug(
