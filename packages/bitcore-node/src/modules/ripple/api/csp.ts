@@ -54,7 +54,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
 
   async getFee(params: CSP.GetEstimateSmartFeeParams) {
     const client = await this.getClient(params.network);
-    const fee = client.getFee();
+    const fee = await client.getFee();
     return fee;
   }
 
