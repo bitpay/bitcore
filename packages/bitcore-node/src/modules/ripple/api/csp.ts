@@ -93,7 +93,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
       limit: params.args.limit || 100,
       binary: false
     });
-    const readable = new Readable({ objectMode: true, read: () => {} });
+    const readable = new Readable({ objectMode: true });
     this.streamTxs(txs, readable);
     readable.push(null);
     Storage.stream(readable, params.req, params.res);
@@ -103,7 +103,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     const client = await this.getClient(params.network);
     let { blockHash } = params.args;
     const ledger = await client.getLedger({ includeTransactions: true, ledgerHash: blockHash });
-    const readable = new Readable({ objectMode: true, read: () => {} });
+    const readable = new Readable({ objectMode: true });
     const txs = ledger.transactions || [];
     this.streamTxs(txs, readable);
     readable.push(null);
@@ -119,7 +119,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
   async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
     const client = await this.getClient(params.network);
     const addresses = await this.getWalletAddresses(params.wallet._id!);
-    const readable = new Readable({ objectMode: true, read: () => {} });
+    const readable = new Readable({ objectMode: true });
     const promises = new Array<Promise<FormattedTransactionType[]>>();
     for (const walletAddress of addresses) {
       promises.push(client.getTransactions(walletAddress.address));
