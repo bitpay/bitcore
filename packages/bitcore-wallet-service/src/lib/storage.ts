@@ -144,7 +144,7 @@ export class Storage {
     const config = opts.mongoDb || {};
 
     if (opts.secondaryPreferred) {
-      if (config.uri.indexOf('?')>0) {
+      if (config.uri.indexOf('?') > 0) {
         config.uri = config.uri + '&';
       } else {
         config.uri = config.uri + '?';

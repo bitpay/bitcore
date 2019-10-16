@@ -1,7 +1,7 @@
 import * as async from 'async';
 import * as fs from 'fs';
 import _ from 'lodash';
-import 'source-map-support/register'
+import 'source-map-support/register';
 
 import request from 'request';
 import { MessageBroker } from './messagebroker';

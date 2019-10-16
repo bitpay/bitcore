@@ -486,13 +486,13 @@ export class V8 {
       try {
         out = {
           address: data.address,
-          amount: data.value 
+          amount: data.value
         };
       } catch (e) {
         // non parsable address
         return;
       }
-      return callbacks.onIncomingPayments({ out: out, txid: data.mintTxid });
+      return callbacks.onIncomingPayments({ out, txid: data.mintTxid });
     });
 
     return socket;
