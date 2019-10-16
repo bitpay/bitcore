@@ -434,7 +434,13 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         };
       });
 
-      await WalletAddressStorage.collection.bulkWrite(walletAddressInserts);
+      try {
+        await WalletAddressStorage.collection.bulkWrite(walletAddressInserts);
+      } catch (err) {
+        if (err.code !== 11000) {
+          throw err;
+        }
+      }
 
       await EthTransactionStorage.collection.updateMany(
         { chain, network, $or: [{ from: { $in: addressBatch } }, { to: { $in: addressBatch } }] },
