@@ -16,7 +16,6 @@ import { ERC20Abi } from '../abi/erc20';
 import { Transaction } from 'web3/eth/types';
 import { EventLog } from 'web3/types';
 import { partition } from '../../../utils/partition';
-import { TransactionStorage } from '../../../models/transaction';
 
 interface ERC20Transfer extends EventLog {
   returnValues: {
@@ -425,24 +424,28 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
   async updateWallet(params: CSP.UpdateWalletParams) {
     const { chain, network } = params;
-    await Promise.all(
-      partition(params.addresses, 1000).map(async addressBatch => {
-        await Promise.all([
-          TransactionStorage.collection.updateMany(
-            { chain, network, from: { $in: addressBatch } },
-            { $addToSet: { wallets: params.wallet._id } }
-          ),
-          TransactionStorage.collection.updateMany(
-            { chain, network, to: { $in: addressBatch } },
-            { $addToSet: { wallets: params.wallet._id } }
-          )
-        ]);
-        await WalletAddressStorage.collection.updateMany(
-          { chain, network, address: { $in: addressBatch } },
-          { $set: { processed: true } }
-        );
-      })
-    );
+    const addressBatches = partition(params.addresses, 500);
+    for (let addressBatch of addressBatches) {
+      const walletAddressInserts = addressBatch.map(address => {
+        return {
+          insertOne: {
+            document: { chain, network, wallet: params.wallet._id, address, processed: false }
+          }
+        };
+      });
+
+      await WalletAddressStorage.collection.bulkWrite(walletAddressInserts);
+
+      await EthTransactionStorage.collection.updateMany(
+        { chain, network, $or: [{ from: { $in: addressBatch } }, { to: { $in: addressBatch } }] },
+        { $addToSet: { wallets: params.wallet._id } }
+      );
+
+      await WalletAddressStorage.collection.updateMany(
+        { chain, network, address: { $in: addressBatch }, wallet: params.wallet._id },
+        { $set: { processed: true } }
+      );
+    }
   }
 }
 
