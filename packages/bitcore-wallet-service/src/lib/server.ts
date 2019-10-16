@@ -3896,7 +3896,7 @@ export class WalletService {
         return cb(err);
       }
       wallet.beRegistered = true;
-      return this.storage.storeWallet(wallet, (err) => { return cb(err, true); });
+      return this.storage.storeWallet(wallet, (err) => cb(err, true));
     });
   }
 
