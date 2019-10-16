@@ -6,10 +6,7 @@
   "jsRules": {},
   "rules": {
     // "interface-name": [true, "never-prefix"],
-    "no-submodule-imports": [
-      true,
-      "src"
-    ],
+    "no-submodule-imports": false,
     // "no-any": true,
     // Temporarily relax rules
     "member-ordering": false,

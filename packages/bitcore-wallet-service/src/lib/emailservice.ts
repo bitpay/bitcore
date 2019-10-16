@@ -1,6 +1,6 @@
 import * as async from 'async';
 import * as _ from 'lodash';
-import 'source-map-support/register'
+import 'source-map-support/register';
 
 // This has been changed in favor of @sendgrid.  To use nodemail, change the
 // sending function from `.send` to `.sendMail`.
@@ -266,7 +266,8 @@ export class EmailService {
     const UNIT_LABELS = {
       btc: 'BTC',
       bit: 'bits',
-      bch: 'BCH'
+      bch: 'BCH',
+      eth: 'ETH'
     };
 
     const data = _.cloneDeep(notification.data);

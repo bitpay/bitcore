@@ -476,7 +476,6 @@ export class V8 {
     socket.on('connect_error', () => {
       log.error('Error connecting to ' + this.getConnectionInfo());
     });
-    socket.on('tx', callbacks.onTx);
     socket.on('block', (data) => {
       return callbacks.onBlock(data.hash);
     });
@@ -485,16 +484,15 @@ export class V8 {
       if (!data.address) return;
       let out;
       try {
-        // TODO
         out = {
           address: data.address,
-          amount: data.value / 1e8
+          amount: data.value
         };
       } catch (e) {
         // non parsable address
         return;
       }
-      return callbacks.onIncomingPayments({ outs: [out], txid: data.mintTxid });
+      return callbacks.onIncomingPayments({ out, txid: data.mintTxid });
     });
 
     return socket;
