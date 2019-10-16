@@ -1779,6 +1779,8 @@ export class WalletService {
       this.syncWallet(wallet, err => {
         if (err) return cb(err);
 
+
+        // getBalance
         if (! wallet.isUTXOCoin()) {
           bc.getBalance(wallet, (err, balance) => {
             if (err) {
@@ -1892,6 +1894,7 @@ export class WalletService {
           return cb(new ClientError('Invalid fee per KB'));
       }
 
+      // getSendMaxInfo
       if (!wallet.isUTXOCoin() ) {
         this.getBalance({}, (err, balance) => {
           if (err) return cb(err);
@@ -2021,6 +2024,7 @@ export class WalletService {
           // NOTE: ONLY BTC/BCH expect feePerKb to be Bitcoin amounts
           // others... expect wei.
 
+          // convertFeePerKb()
           if (!Constants.UTXO_COINS[coin.toUpperCase()]) {
             return [p, feePerKb];
           } else {
@@ -2593,6 +2597,7 @@ export class WalletService {
         return new ClientError('Invalid amount');
       }
 
+      // checkDust
       if (wallet.isUTXOCoin()) {
         const dustThreshold = Math.max(
           Defaults.MIN_OUTPUT_AMOUNT,
@@ -2646,6 +2651,7 @@ export class WalletService {
               );
           }
 
+          // checkUtxos
           if (_.isNumber(opts.fee) && _.isEmpty(opts.inputs) && wallet.isUTXOCoin())
             return next(
               new ClientError('fee can only be set when inputs are specified')
@@ -2693,6 +2699,7 @@ export class WalletService {
               if (err) return next(err);
               opts.outputs[0].amount = info.amount;
 
+              // getSendMaxInfo
               if (wallet.isUTXOCoin()) {
                 opts.inputs = info.inputs;
               }
@@ -2881,6 +2888,8 @@ export class WalletService {
                 },
                 (next) => {
                   if (opts.sendMax) return next();
+
+                  // isUTXOCoin
                   if (! wallet.isUTXOCoin()) {
                     return next();
                   }
@@ -2897,6 +2906,8 @@ export class WalletService {
 
                   this._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
                     feePerKb = inFeePerKb;
+
+                    // getFee...
                     if (! wallet.isUTXOCoin()) {
                       gasPrice = inFeePerKb;
                       const { from, data, outputs } = opts;
@@ -2962,6 +2973,7 @@ export class WalletService {
                   next();
                 },
                 (next) => {
+                  // postCreateTx
                   if (! wallet.isUTXOCoin() ) {
                     this.getBalance({ wallet }, (err, balance) => {
                       if (err) return next(err);
@@ -2981,6 +2993,7 @@ export class WalletService {
                   }
                 },
                 (next) => {
+                  // postCreateTx
                   if (wallet.isUTXOCoin() ) {
                     return next();
                   }
@@ -3079,6 +3092,7 @@ export class WalletService {
             txp.proposalSignaturePubKeySig = signingKey.signature;
           }
 
+          //verifyTxsBeforePublishing
           // Verify UTXOs are still available
           if (Constants.UTXO_COINS[txp.coin.toUpperCase()]) {
             log.debug('Rechecking UTXOs availability for publishTx');
@@ -3104,6 +3118,8 @@ export class WalletService {
                   if (err) return cb(err);
 
                   this._notifyTxProposalAction('NewTxProposal', txp, () => {
+
+                    //postVerifyTxBeforePublishing
                     if (opts.noCashAddr && txp.coin == 'bch') {
                       if (txp.changeAddress) {
                         txp.changeAddress.address = BCHAddressTranslator.translate(
@@ -4284,6 +4300,7 @@ export class WalletService {
 
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
+            //dustThreshold
             const dustThreshold = wallet.isUTXOCoin()
               ? Bitcore_[wallet.coin].Transaction.DUST_AMOUNT
               : 0;
@@ -4568,6 +4585,8 @@ export class WalletService {
         // single address or non UTXO coins do not scan.
         if (wallet.singleAddress)
           return cb();
+
+        //isUTXOCoin
         if (! wallet.isUTXOCoin() )
           return cb();
 
@@ -4739,6 +4758,8 @@ export class WalletService {
       // single address or non UTXO coins do not scan.
       if (wallet.singleAddress)
         return cb();
+
+      //isUTXOCoin
       if (! wallet.isUTXOCoin() )
         return cb();
 
