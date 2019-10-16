@@ -3896,7 +3896,7 @@ export class WalletService {
         return cb(err);
       }
       wallet.beRegistered = true;
-      return this.storage.storeWallet(wallet, cb);
+      return this.storage.storeWallet(wallet, (err) => { return cb(err, true); });
     });
   }
 
@@ -3959,8 +3959,7 @@ export class WalletService {
     }
 
     this.updateWalletV8Keys(wallet);
-
-    this.registerWalletV8(wallet, err => {
+    this.registerWalletV8(wallet, (err, justRegistered) => {
       if (err) {
         return cb(err);
       }
@@ -3968,7 +3967,7 @@ export class WalletService {
       // First
       this.checkWalletSync(bc, wallet, true, (err, isOK) => {
         // ignore err
-        if (isOK) return cb();
+        if (isOK && !justRegistered) return cb();
 
         this.storage.fetchUnsyncAddresses(this.walletId, (err, addresses) => {
           if (err) {
@@ -4225,6 +4224,7 @@ export class WalletService {
     async.series(
       [
         next => {
+
           // be sure the wallet is onsync
           this.syncWallet(wallet, next, true);
         },
