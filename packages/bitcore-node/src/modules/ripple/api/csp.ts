@@ -90,7 +90,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     const client = await this.getClient(params.network);
     const txs = await client.getTransactions(params.address, {
       start: params.args.startTx,
-      limit: params.args.limit || 100,
+      limit: Number(params.args.limit) || 100,
       binary: false
     });
     const readable = new Readable({ objectMode: true });
