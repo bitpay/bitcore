@@ -317,12 +317,11 @@ export class Utils {
 
       return t;
     } else {
-      const { outputs, amount, gasPrice } = txp;
+      const { outputs, amount } = txp;
       const rawTx = Transactions.create({
         ...txp,
         chain: coin.toUpperCase(),
-        recipients: [{ address: outputs[0].toAddress, amount }],
-        fee: gasPrice
+        recipients: [{ address: outputs[0].toAddress, amount }]
       });
       return { uncheckedSerialize: () => rawTx };
     }

@@ -1,5 +1,5 @@
 import { EventEmitter } from 'events';
-import 'source-map-support/register'
+import 'source-map-support/register';
 
 let log = require('npmlog');
 log.debug = log.verbose;
