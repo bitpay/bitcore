@@ -60,7 +60,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           ProviderType = Web3.providers.HttpProvider;
           break;
       }
-      console.log(connUrl);
       ETHStateProvider.web3 = new Web3(new ProviderType(connUrl));
     }
     return ETHStateProvider.web3;
@@ -313,7 +312,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           }
         ]
       };
-      console.log(JSON.stringify(query));
       const erc20 = await EthTransactionStorage.collection.find(query).toArray();
       erc20.forEach(tx => {
         const transformed = {
@@ -321,7 +319,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           value: tx.abiType!.params[1].value,
           to: web3.utils.toChecksumAddress(tx.abiType!.params[0].value)
         };
-        console.log(transformed);
         transactionStream.push(transformed);
       });
       transactionStream.push(null);

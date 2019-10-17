@@ -41,7 +41,7 @@ export class StorageService {
     let attempted = 0;
     while (attempted < 5) {
       try {
-        const connected = StorageService.client && StorageService.client.isConnected();
+        const connected = StorageService.client;
 
         if (connected) {
           console.log('Reusing connection');
@@ -64,7 +64,6 @@ export class StorageService {
         this.db = client.db(dbName);
         this.connected = true;
         this.connection.emit('CONNECTED');
-        console.log('connected');
         return StorageService.client;
       } catch (err) {
         logger.error(err);
