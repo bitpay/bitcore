@@ -19,6 +19,8 @@ export class RippleEventAdapter {
 
       client.connection.on('transaction', tx => {
         this.services.Event.txEvent.emit('tx', { chain, network, ...tx });
+        const address = tx.transaction.Account;
+        this.services.Event.addressCoinEvent.emit('coin', { address, coin: { chain, network, ...tx } });
       });
 
       client.connection.on('ledger', ledger => {
