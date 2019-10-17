@@ -36,33 +36,35 @@ export class StorageService {
       ? dbUrl
       : `mongodb://${auth}${dbHost}:${dbPort}/${dbName}?socketTimeoutMS=3600000&noDelay=true`;
 
-    let attemptConnect = async () => {
-      let client: MongoClient | undefined;
-      if (StorageService.client && StorageService.client.isConnected()) {
-        client = StorageService.client;
-      }
-
-      client =
-        client ||
-        (await MongoClient.connect(
-          connectUrl,
-          {
-            keepAlive: true,
-            poolSize: options.maxPoolSize,
-            useNewUrlParser: true
-          }
-        ));
-
-      this.db = client.db(dbName);
-      this.connected = true;
-      this.connection.emit('CONNECTED');
-      return client;
-    };
+    let client: MongoClient | undefined;
 
     let attempted = 0;
     while (attempted < 5) {
       try {
-        StorageService.client = await attemptConnect();
+        const connected = StorageService.client && StorageService.client.isConnected();
+
+        if (connected) {
+          console.log('Reusing connection');
+          client = StorageService.client;
+        }
+
+        client =
+          client ||
+          (await MongoClient.connect(
+            connectUrl,
+            {
+              keepAlive: true,
+              poolSize: options.maxPoolSize,
+              useNewUrlParser: true
+            }
+          ));
+
+        StorageService.client = client;
+
+        this.db = client.db(dbName);
+        this.connected = true;
+        this.connection.emit('CONNECTED');
+        console.log('connected');
         return StorageService.client;
       } catch (err) {
         logger.error(err);
