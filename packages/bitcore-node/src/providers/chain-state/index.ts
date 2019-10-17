@@ -11,6 +11,10 @@ class ChainStateProxy implements CSP.ChainStateProvider {
     return services[chain];
   }
 
+  streamUnspentsByBlock(params: CSP.GetUnspentsFromBlockParams) {
+    return this.get(params).streamUnspentsByBlock(params);
+  }
+
   streamAddressUtxos(params: CSP.StreamAddressUtxosParams) {
     return this.get(params).streamAddressUtxos(params);
   }

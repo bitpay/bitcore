@@ -79,6 +79,26 @@ router.get('/before-time/:time', async function(req: Request, res: Response) {
   }
 });
 
+
+router.get('/:blockId/coins', async function(req: Request, res: Response) {
+  let { blockId, chain, network } = req.params;
+  let { limit = 10, since, paging = '_id' } = req.query;
+  let payload = {
+    chain,
+    network,
+    blockHeight: Number(blockId),
+    req,
+    res,
+    args: { limit, since, paging }
+  };
+  try {
+    return ChainStateProvider.streamUnspentsByBlock(payload);
+  }
+  catch(err) {
+    return res.status(500).send(err);
+  }
+});
+
 module.exports = {
   router: router,
   path: '/block'

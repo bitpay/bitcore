@@ -565,6 +565,24 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
   }
 
+  streamUnspentsByBlock(params: CSP.GetUnspentsFromBlockParams) {
+    const { req, res, args } = params;
+    const { limit, since, paging } = args;
+
+
+    if (typeof params.blockHeight !== 'number' || !params.chain || !params.network)
+      throw 'Missing required param';
+
+    let query = {
+      chain: params.chain,
+      network: params.network,
+      mintHeight: params.blockHeight
+    };
+    let searchOptions = { limit, since, paging: paging ? paging : '_id' };
+
+    Storage.apiStreamingFind(CoinStorage, query, searchOptions, req, res);
+  }
+
   private isValidBlockOrTx(inputValue: string): boolean {
     const regexp = /^[0-9a-fA-F]{64}$/;
     if (regexp.test(inputValue)) {
