@@ -17,7 +17,7 @@ export { StreamingFindOptions };
 
 @LoggifyClass
 export class StorageService {
-  client?: MongoClient;
+  static client?: MongoClient;
   db?: Db;
   connected: boolean = false;
   connection = new EventEmitter();
@@ -28,41 +28,51 @@ export class StorageService {
     this.connection.setMaxListeners(30);
   }
 
-  start(args: Partial<ConfigType> = {}): Promise<MongoClient> {
-    return new Promise((resolve, reject) => {
-      let options = Object.assign({}, this.configService.get(), args);
-      let { dbUrl, dbName, dbHost, dbPort, dbUser, dbPass } = options;
-      let auth = dbUser !== '' && dbPass !== '' ? `${dbUser}:${dbPass}@` : '';
-      const connectUrl = dbUrl ? dbUrl :`mongodb://${auth}${dbHost}:${dbPort}/${dbName}?socketTimeoutMS=3600000&noDelay=true`;
-      let attemptConnect = async () => {
-        return MongoClient.connect(
+  async start(args: Partial<ConfigType> = {}) {
+    let options = Object.assign({}, this.configService.get(), args);
+    let { dbUrl, dbName, dbHost, dbPort, dbUser, dbPass } = options;
+    let auth = dbUser !== '' && dbPass !== '' ? `${dbUser}:${dbPass}@` : '';
+    const connectUrl = dbUrl
+      ? dbUrl
+      : `mongodb://${auth}${dbHost}:${dbPort}/${dbName}?socketTimeoutMS=3600000&noDelay=true`;
+
+    let attemptConnect = async () => {
+      let client: MongoClient | undefined;
+      if (StorageService.client && StorageService.client.isConnected()) {
+        client = StorageService.client;
+      }
+
+      client =
+        client ||
+        (await MongoClient.connect(
           connectUrl,
           {
             keepAlive: true,
             poolSize: options.maxPoolSize,
             useNewUrlParser: true
           }
-        );
-      };
-      let attempted = 0;
-      let attemptConnectId = setInterval(async () => {
-        try {
-          this.client = await attemptConnect();
-          this.db = this.client.db(dbName);
-          this.connected = true;
-          clearInterval(attemptConnectId);
-          this.connection.emit('CONNECTED');
-          resolve(this.client);
-        } catch (err) {
-          logger.error(err);
-          attempted++;
-          if (attempted > 5) {
-            clearInterval(attemptConnectId);
-            reject(new Error('Failed to connect to database'));
-          }
+        ));
+
+      this.db = client.db(dbName);
+      this.connected = true;
+      this.connection.emit('CONNECTED');
+      return client;
+    };
+
+    let attempted = 0;
+    while (attempted < 5) {
+      try {
+        StorageService.client = await attemptConnect();
+        return StorageService.client;
+      } catch (err) {
+        logger.error(err);
+        attempted++;
+        if (attempted > 5) {
+          throw new Error('Failed to connect to database');
         }
-      }, 5000);
-    });
+      }
+    }
+    throw new Error('Failed to connect to database');
   }
 
   async stop() {}
