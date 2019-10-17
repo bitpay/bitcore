@@ -15,6 +15,7 @@ import { ERC20Abi } from '../abi/erc20';
 import { Transaction } from 'web3/eth/types';
 import { EventLog } from 'web3/types';
 import { partition } from '../../../utils/partition';
+import { WalletAddressStorage } from "../../../models/walletAddress";
 
 interface ERC20Transfer extends EventLog {
   returnValues: {
