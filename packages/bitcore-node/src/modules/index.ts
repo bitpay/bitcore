@@ -6,7 +6,7 @@ import { Config } from '../services/config';
 import { ChainStateProvider } from '../providers/chain-state';
 import { Libs } from '../providers/libs';
 
-interface IService {
+export interface IService {
   start(): Promise<void>;
   stop(): Promise<void>;
 }
