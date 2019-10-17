@@ -463,7 +463,7 @@ helpers.createTxsV8 = function(nr, bcHeight, txs) {
 };
 
 
-helpers.stubHistoryV8 = function(nr, bcHeight, txs) {
+helpers.stubHistory = function(nr, bcHeight, txs) {
   txs= helpers.createTxsV8(nr,bcHeight, txs);
   blockchainExplorer.getTransactions = function(walletId, startBlock, cb) {
     startBlock = startBlock || 0;

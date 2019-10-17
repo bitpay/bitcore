@@ -14,6 +14,7 @@ import { EthListTransactionsStream } from './transform';
 import { ERC20Abi } from '../abi/erc20';
 import { Transaction } from 'web3/eth/types';
 import { EventLog } from 'web3/types';
+import { partition } from '../../../utils/partition';
 
 interface ERC20Transfer extends EventLog {
   returnValues: {
@@ -165,7 +166,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         .on('error', reject);
     });
   }
-
 
   async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
     const { req, res, args, chain, network, address } = params;
@@ -412,6 +412,38 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       return { ...convertedBlock, confirmations };
     };
     return blocks.map(blockTransform);
+  }
+
+  async updateWallet(params: CSP.UpdateWalletParams) {
+    const { chain, network } = params;
+    const addressBatches = partition(params.addresses, 500);
+    for (let addressBatch of addressBatches) {
+      const walletAddressInserts = addressBatch.map(address => {
+        return {
+          insertOne: {
+            document: { chain, network, wallet: params.wallet._id, address, processed: false }
+          }
+        };
+      });
+
+      try {
+        await WalletAddressStorage.collection.bulkWrite(walletAddressInserts);
+      } catch (err) {
+        if (err.code !== 11000) {
+          throw err;
+        }
+      }
+
+      await EthTransactionStorage.collection.updateMany(
+        { chain, network, $or: [{ from: { $in: addressBatch } }, { to: { $in: addressBatch } }] },
+        { $addToSet: { wallets: params.wallet._id } }
+      );
+
+      await WalletAddressStorage.collection.updateMany(
+        { chain, network, address: { $in: addressBatch }, wallet: params.wallet._id },
+        { $set: { processed: true } }
+      );
+    }
   }
 }
 
