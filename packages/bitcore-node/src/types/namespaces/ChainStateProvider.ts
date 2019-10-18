@@ -121,12 +121,12 @@ export declare namespace CSP {
     input: string;
   }
 
-  export type GetUnspentsFromBlockArgs = { unspent: boolean; };
-  export type GetUnspentsFromBlockParams = ChainNetwork & {
+  export type StreamCoinsByBlockArgs = { onlyUnspent: boolean; };
+  export type StreamCoinsByBlockParams = ChainNetwork & {
     blockHeight: number;
     req: Request;
     res: Response;
-    args: Partial<GetUnspentsFromBlockArgs & StreamingFindOptions<ICoin> & any>;
+    args: Partial<StreamCoinsByBlockArgs & StreamingFindOptions<ICoin> & any>;
   };
 
 
@@ -164,7 +164,7 @@ export declare namespace CSP {
     getLocalTip(params): Promise<IBlock | null>;
     getLocatorHashes(params): Promise<any>;
     isValid(params: isValidParams): {isValid: boolean, type:string};
-    streamUnspentsByBlock(params: GetUnspentsFromBlockParams): any;
+    streamCoinsByBlock(params: StreamCoinsByBlockParams): any;
   }
 
   type ChainStateServices = { [key: string]: IChainStateService };

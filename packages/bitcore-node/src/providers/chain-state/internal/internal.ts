@@ -565,19 +565,22 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
   }
 
-  streamUnspentsByBlock(params: CSP.GetUnspentsFromBlockParams) {
+  streamCoinsByBlock(params: CSP.StreamCoinsByBlockParams) {
     const { req, res, args } = params;
-    const { limit, since, paging } = args;
-
+    const { limit, since, paging, onlyUnspent } = args;
 
     if (typeof params.blockHeight !== 'number' || !params.chain || !params.network)
       throw 'Missing required param';
 
     let query = {
       chain: params.chain,
-      network: params.network,
-      mintHeight: params.blockHeight
-    };
+      network: params.network
+    } as any;
+    if (onlyUnspent)
+      query.$and = [{ mintHeight: params.blockHeight }, { spentHeight: { $lt: SpentHeightIndicators.minimum } }];
+    else
+      query.$or = [{ mintHeight: params.blockHeight }, { spentHeight: params.blockHeight }];
+
     let searchOptions = { limit, since, paging: paging ? paging : '_id' };
 
     Storage.apiStreamingFind(CoinStorage, query, searchOptions, req, res);

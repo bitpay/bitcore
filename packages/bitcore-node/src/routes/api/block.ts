@@ -82,17 +82,17 @@ router.get('/before-time/:time', async function(req: Request, res: Response) {
 
 router.get('/:blockId/coins', async function(req: Request, res: Response) {
   let { blockId, chain, network } = req.params;
-  let { limit = 10, since, paging = '_id' } = req.query;
+  let { limit = 10, since, paging = '_id', onlyUnspent = false } = req.query;
   let payload = {
     chain,
     network,
     blockHeight: Number(blockId),
     req,
     res,
-    args: { limit, since, paging }
+    args: { limit, since, paging, onlyUnspent }
   };
   try {
-    return ChainStateProvider.streamUnspentsByBlock(payload);
+    return ChainStateProvider.streamCoinsByBlock(payload);
   }
   catch(err) {
     return res.status(500).send(err);
