@@ -11,7 +11,6 @@ export class EventService {
   txEvent = new EventEmitter();
   blockEvent = new EventEmitter();
   addressCoinEvent = new EventEmitter();
-  walletEvents = new EventEmitter();
   storageService: StorageService;
   configService: ConfigService;
   eventModel: EventModel;
