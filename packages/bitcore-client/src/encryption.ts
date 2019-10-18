@@ -106,16 +106,14 @@ function scryptKDF(
 }
 
 export function bitcoinCoreDecrypt(
-  jsonl: [
-    {
-      cipherText?: string;
-      derivationMethod?: string;
-      rounds?: number;
-      salt?: Buffer | string;
-      pubKey?: string;
-      address?: string;
-    }
-  ],
+  jsonl: Array<{
+    cipherText?: string;
+    derivationMethod?: string;
+    rounds?: number;
+    salt?: Buffer | string;
+    pubKey?: string;
+    address?: string;
+  }>,
   passphrase: string
 ) {
   const derivationMethods = { SHA512: 0 };
@@ -149,7 +147,7 @@ export function bitcoinCoreDecrypt(
   return { jsonlDecrypted, master };
 }
 
-function hashPassphrase(opts) {
+function hashPassphrase(opts: { method?: number }) {
   return opts && opts.method === 0 ? sha512KDF : scryptKDF;
 }
 
