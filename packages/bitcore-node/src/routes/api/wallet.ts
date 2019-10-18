@@ -11,7 +11,7 @@ const router = Router({ mergeParams: true });
 const secp256k1 = require('secp256k1');
 const bitcoreLib = require('bitcore-lib');
 
-type VerificationPayload = {
+export type VerificationPayload = {
   message: string;
   pubKey: string;
   signature: string | string[] | undefined;
@@ -26,7 +26,7 @@ type AuthenticatedRequest = {
   wallet?: MongoBound<IWallet>;
 } & PreAuthRequest;
 
-const verifyRequestSignature = (params: VerificationPayload): boolean => {
+export function verifyRequestSignature(params: VerificationPayload): boolean {
   const { message, pubKey, signature } = params;
   const pub = new bitcoreLib.PublicKey(pubKey).toBuffer();
   const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
@@ -35,7 +35,7 @@ const verifyRequestSignature = (params: VerificationPayload): boolean => {
   } else {
     throw new Error('Signature must exist');
   }
-};
+}
 
 const authenticate: RequestHandler = async (req: Request, res: Response, next: any) => {
   const { chain, network, pubKey } = req.params as SignedApiRequest;

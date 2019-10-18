@@ -7,6 +7,8 @@ import { Event, EventService } from './event';
 import { ObjectID } from 'mongodb';
 import { Config, ConfigService } from './config';
 import { ConfigType } from '../types/Config';
+import { VerificationPayload, verifyRequestSignature } from '../routes/api/wallet';
+import { WalletStorage } from '../models/wallet';
 
 function SanitizeWallet(x: { wallets?: ObjectID[] }) {
   const sanitized = Object.assign({}, x, { wallets: new Array<ObjectID>() });
@@ -39,7 +41,17 @@ export class SocketService {
     this.signalAddressCoin = this.signalAddressCoin.bind(this);
   }
 
+  validateRequest(payload: VerificationPayload) {
+    try {
+      const valid = verifyRequestSignature(payload);
+      return valid;
+    } catch (e) {
+      return false;
+    }
+  }
+
   start({ server }: { server: http.Server }) {
+    const bwsKeys = this.configService.for('socket').bwsKeys;
     if (this.configService.isDisabled('socket')) {
       logger.info('Disabled Socket Service');
       return;
@@ -50,8 +62,23 @@ export class SocketService {
       this.httpServer = server;
       this.io = SocketIO(server);
       this.io.sockets.on('connection', socket => {
-        socket.on('room', room => {
-          socket.join(room);
+        socket.on('room', (room: string, payload: VerificationPayload) => {
+          const roomName = room.slice(room.lastIndexOf('/'));
+          switch (roomName) {
+            case 'wallets':
+              if (bwsKeys.includes(payload.pubKey) && this.validateRequest(payload)) {
+                socket.join(room);
+              }
+              break;
+            case 'wallet':
+              if (this.validateRequest(payload)) {
+                socket.join(payload.pubKey);
+              }
+              break;
+            default:
+              socket.join(room);
+              break;
+          }
         });
       });
     }
@@ -71,11 +98,19 @@ export class SocketService {
   }
 
   async wireup() {
-    this.eventService.txEvent.on('tx', (tx: IEvent.TxEvent) => {
+    this.eventService.txEvent.on('tx', async (tx: IEvent.TxEvent) => {
       if (this.io) {
         const { chain, network } = tx;
         const sanitizedTx = SanitizeWallet(tx);
         this.io.sockets.in(`/${chain}/${network}/inv`).emit('tx', sanitizedTx);
+
+        if (tx.wallets && tx.wallets.length) {
+          const wallets = await WalletStorage.collection.find({ _id: { $in: tx.wallets } }).toArray();
+          for (let wallet of wallets) {
+            this.io.sockets.in(`/${chain}/${network}/wallets`).emit('tx', tx);
+            this.io.sockets.in(wallet.pubKey).emit('tx', sanitizedTx);
+          }
+        }
       }
     });
 
@@ -86,13 +121,20 @@ export class SocketService {
       }
     });
 
-    this.eventService.addressCoinEvent.on('coin', (addressCoin: IEvent.CoinEvent) => {
+    this.eventService.addressCoinEvent.on('coin', async (addressCoin: IEvent.CoinEvent) => {
       if (this.io) {
         const { coin, address } = addressCoin;
         const { chain, network } = coin;
         const sanitizedCoin = SanitizeWallet(coin);
         this.io.sockets.in(`/${chain}/${network}/address`).emit(address, sanitizedCoin);
         this.io.sockets.in(`/${chain}/${network}/inv`).emit('coin', sanitizedCoin);
+        if (coin.wallets && coin.wallets.length) {
+          const wallets = await WalletStorage.collection.find({ _id: { $in: coin.wallets } }).toArray();
+          for (let wallet of wallets) {
+            this.io.sockets.in(`/${chain}/${network}/wallets`).emit('coin', coin);
+            this.io.sockets.in(wallet.pubKey).emit('coin', sanitizedCoin);
+          }
+        }
       }
     });
   }
