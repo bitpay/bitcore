@@ -5,6 +5,7 @@ import { Storage } from './storage';
 import { Transactions, Deriver } from 'crypto-wallet-core';
 const { PrivateKey } = require('bitcore-lib');
 const Mnemonic = require('bitcore-mnemonic');
+const { ParseApiStream } = require('./stream-util');
 
 export namespace Wallet {
   export type KeyImport = {
@@ -294,16 +295,40 @@ export class Wallet {
   }
 
   async signTx(params) {
-    let { tx, from } = params;
+    let { tx, keys, utxos, passphrase } = params;
+    if (!utxos) {
+      utxos = [];
+      await (new Promise((resolve, reject) => {
+        this.getUtxos().pipe(new ParseApiStream())
+          .on('data', (utxo) => utxos.push(utxo))
+          .on('end', () => resolve())
+          .on('err', (err) => reject(err));
+      }));
+    }
+    const addresses = [];
+    let decryptedKeys;
+    if (!keys) {
+      for (let utxo of utxos) {
+        addresses.push(utxo.address);
+      }
+      decryptedKeys = await this.storage.getKeys({addresses, name: this.name, encryptionKey: this.unlocked.encryptionKey});
+    } else {
+      addresses.push(keys[0]);
+      utxos.forEach(function(element) {
+        let keyToDecrypt = keys.find(key => key.address === element.address);
+        addresses.push(keyToDecrypt);
+      });
+      let decryptedParams = Encryption.bitcoinCoreDecrypt(addresses, passphrase);
+      decryptedKeys = [...decryptedParams.jsonlDecrypted];
+    }
     const payload = {
       chain: this.chain,
       network: this.network,
       tx,
-      utxos: params.utxos,
-      from
+      keys: decryptedKeys,
+      utxos
     };
-
-    return Transactions.sign({ ...payload, wallet: this });
+    return Transactions.sign({ ...payload });
   }
 
   async checkWallet() {
