@@ -17,7 +17,7 @@ utils.getClient(program, { mustExist: true }, function (client) {
   }, function(err, x) {
     utils.die(err);
 
-    if (x.length > 0) {
+    if (x.length > 7) {
       console.log('* Addresses:');
       _.each(x, function(a) {
         if (client.credentials.coin == 'bch') {
