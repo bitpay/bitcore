@@ -2,6 +2,7 @@ import express = require('express');
 const router = express.Router({ mergeParams: true });
 import { ChainStateProvider } from '../../providers/chain-state';
 import { CoinStorage } from '../../models/coin';
+import { Storage } from '../../services/storage';
 
 router.get('/:address/txs', function(req, res) {
   let { address, chain, network } = req.params;
@@ -31,20 +32,36 @@ router.get('/:address', function(req, res) {
   ChainStateProvider.streamAddressUtxos(payload);
 });
 
-router.get('/:address/coins', async function (req, res) {
+router.get('/:address/coins', async function(req, res) {
   let { address, chain, network } = req.params;
+  //let { limit = 1000, since, paging = '_id' } = req.query;
 
   try {
-    let coins = await CoinStorage.collection.find({ address, chain, network }).toArray(); //rename coins
-    let spentTxids : any[] = [];
-    spentTxids = coins.filter(tx => tx.spentTxid).map(tx => tx.spentTxid);
-    let mintedTxids = coins.filter(tx=> tx.mintTxid).map(tx => tx.mintTxid);
+    const { query, options } = Storage.getFindOptions(CoinStorage, req.query);
 
-    let [fundingTxInputs, fundingTxOutputs, spendingTxInputs, spendingTxOutputs] = await Promise.all([CoinStorage.collection.find({ chain, network, spentTxid: { $in: mintedTxids } }).toArray(),
-      CoinStorage.collection.find({ chain, network, mintTxid: { $in: mintedTxids } }).toArray(), 
-      CoinStorage.collection.find({ chain, network, mintTxid: { $in: mintedTxids } }).toArray(), 
-      CoinStorage.collection.find({ chain, network, mintTxid: { $in: spentTxids } }).toArray()]);
-    return res.json({ coins, mintedTxids, fundingTxInputs, fundingTxOutputs, spentTxids, spendingTxInputs, spendingTxOutputs });
+    console.log(query);
+
+    let coins = await CoinStorage.collection.find({ ...query, address, chain, network }, options).toArray();
+
+    let spentTxids: any[] = [];
+    spentTxids = coins.filter(tx => tx.spentTxid).map(tx => tx.spentTxid);
+    let mintedTxids = coins.filter(tx => tx.mintTxid).map(tx => tx.mintTxid);
+
+    let [fundingTxInputs, fundingTxOutputs, spendingTxInputs, spendingTxOutputs] = await Promise.all([
+      CoinStorage.collection.find({ chain, network, spentTxid: { $in: mintedTxids } }).toArray(),
+      CoinStorage.collection.find({ chain, network, mintTxid: { $in: mintedTxids } }).toArray(),
+      CoinStorage.collection.find({ chain, network, spentTxid: { $in: spentTxids } }).toArray(),
+      CoinStorage.collection.find({ chain, network, mintTxid: { $in: spentTxids } }).toArray()
+    ]);
+    return res.json({
+      coins,
+      mintedTxids,
+      fundingTxInputs,
+      fundingTxOutputs,
+      spentTxids,
+      spendingTxInputs,
+      spendingTxOutputs
+    });
   } catch (err) {
     return res.status(500).send(err);
   }
