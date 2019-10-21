@@ -6,12 +6,16 @@ import config from '../../src/config';
 import { Event } from '../../src/services/event';
 import { Api } from '../../src/services/api';
 import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
+const { PrivateKey } = require('bitcore-lib');
 
 const chain = 'BTC';
 const network = 'regtest';
 const chainConfig = config.chains[chain][network];
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
+import { Client } from 'bitcore-client';
+import { WalletStorage } from '../../src/models/wallet';
+import { WalletAddressStorage } from '../../src/models/walletAddress';
 
 function getSocket() {
   const socket = io.connect(
@@ -24,7 +28,7 @@ function getSocket() {
 let p2pWorker: BitcoinP2PWorker;
 let socket = getSocket();
 
-describe('Websockets', function() {
+describe.only('Websockets', function() {
   this.timeout(180000);
 
   before(async () => {
@@ -40,10 +44,13 @@ describe('Websockets', function() {
 
   beforeEach(async () => {
     socket = getSocket();
-    socket.on('connect', () => {
-      console.log('Socket connected');
-      socket.emit('room', '/BTC/regtest/inv');
+    const connected = new Promise(r => {
+      socket.on('connect', () => {
+        console.log('Socket connected');
+        r();
+      });
     });
+    await connected;
     p2pWorker = new BitcoinP2PWorker({
       chain,
       network,
@@ -65,6 +72,7 @@ describe('Websockets', function() {
   });
 
   it('should get websocket events', async () => {
+    socket.emit('room', '/BTC/regtest/inv');
     let hasSeenTxEvent = false;
     let hasSeenBlockEvent = false;
     let hasSeenCoinEvent = false;
@@ -101,6 +109,60 @@ describe('Websockets', function() {
     await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
     await sawEvents;
     expect(hasSeenBlockEvent).to.equal(true);
+    expect(hasSeenTxEvent).to.equal(true);
+    expect(hasSeenCoinEvent).to.equal(true);
+  });
+
+  it('should get wallet events', async () => {
+    const authKey = new PrivateKey();
+    const pubKey = authKey.publicKey.toString();
+    const authClient = new Client({ baseUrl: 'http://localhost:3000/api', authKey });
+    const authPayload = authClient.sign({ method: 'socket', url: 'http://localhost:3000/api' });
+    console.log(pubKey, authPayload);
+    const chain = 'BTC';
+    const network = 'regtest';
+    const roomPrefix = `/${chain}/${network}/`;
+    const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
+    socket.emit('room', roomPrefix + 'wallet', authPayload);
+
+    const inserted = await WalletStorage.collection.insertOne({
+      chain,
+      network,
+      name: 'WalletSocketTest',
+      singleAddress: false,
+      pubKey,
+      path: ''
+    });
+
+    await WalletAddressStorage.collection.insertOne({
+      address,
+      chain,
+      network,
+      processed: true,
+      wallet: inserted.insertedId
+    });
+
+    let hasSeenTxEvent = false;
+    let hasSeenCoinEvent = false;
+    let sawEvents = new Promise(resolve => {
+      socket.on('tx', () => {
+        hasSeenTxEvent = true;
+        console.log('Transaction event received');
+        if (hasSeenTxEvent && hasSeenCoinEvent) {
+          resolve();
+        }
+      });
+      socket.on('coin', () => {
+        hasSeenCoinEvent = true;
+        console.log('Coin event received');
+        if (hasSeenTxEvent && hasSeenCoinEvent) {
+          resolve();
+        }
+      });
+    });
+
+    await rpc.sendtoaddress(address, 0.1);
+    await sawEvents;
     expect(hasSeenTxEvent).to.equal(true);
     expect(hasSeenCoinEvent).to.equal(true);
   });

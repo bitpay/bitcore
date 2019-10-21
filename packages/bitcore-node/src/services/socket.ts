@@ -106,8 +106,11 @@ export class SocketService {
         this.io.sockets.in(`/${chain}/${network}/inv`).emit('tx', sanitizedTx);
 
         if (tx.wallets && tx.wallets.length) {
+          console.log('Emitting wallet event');
           const wallets = await WalletStorage.collection.find({ _id: { $in: tx.wallets } }).toArray();
+          console.log(tx.wallets);
           for (let wallet of wallets) {
+            console.log('Emitting for wallet', wallet.pubKey);
             this.io.sockets.in(`/${chain}/${network}/wallets`).emit('tx', tx);
             this.io.sockets
               .in(`/${chain}/${network}/${wallet.pubKey}`)
@@ -132,8 +135,11 @@ export class SocketService {
         this.io.sockets.in(`/${chain}/${network}/address`).emit(address, sanitizedCoin);
         this.io.sockets.in(`/${chain}/${network}/inv`).emit('coin', sanitizedCoin);
         if (coin.wallets && coin.wallets.length) {
+          console.log('Emitting coin wallets');
+          console.log(coin.wallets);
           const wallets = await WalletStorage.collection.find({ _id: { $in: coin.wallets } }).toArray();
           for (let wallet of wallets) {
+            console.log('Emitting for wallet', wallet.pubKey);
             this.io.sockets.in(`/${chain}/${network}/wallets`).emit('coin', coin);
             this.io.sockets
               .in(`/${chain}/${network}/${wallet.pubKey}`)
