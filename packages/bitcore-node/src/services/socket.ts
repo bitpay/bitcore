@@ -72,7 +72,7 @@ export class SocketService {
               break;
             case 'wallet':
               if (this.validateRequest(payload)) {
-                socket.join(room);
+                socket.join(payload.pubKey);
               }
               break;
             case 'inv':
@@ -109,7 +109,9 @@ export class SocketService {
           const wallets = await WalletStorage.collection.find({ _id: { $in: tx.wallets } }).toArray();
           for (let wallet of wallets) {
             this.io.sockets.in(`/${chain}/${network}/wallets`).emit('tx', tx);
-            this.io.sockets.in(`/${chain}/${network}/wallet`).emit('tx', { pubKey: wallet.pubKey, tx: sanitizedTx });
+            this.io.sockets
+              .in(`/${chain}/${network}/${wallet.pubKey}`)
+              .emit('tx', { pubKey: wallet.pubKey, tx: sanitizedTx });
           }
         }
       }
@@ -134,7 +136,7 @@ export class SocketService {
           for (let wallet of wallets) {
             this.io.sockets.in(`/${chain}/${network}/wallets`).emit('coin', coin);
             this.io.sockets
-              .in(`/${chain}/${network}/wallet`)
+              .in(`/${chain}/${network}/${wallet.pubKey}`)
               .emit('coin', { pubKey: wallet.pubKey, coin: sanitizedCoin });
           }
         }
