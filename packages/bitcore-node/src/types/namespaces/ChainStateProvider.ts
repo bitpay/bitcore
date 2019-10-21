@@ -120,6 +120,8 @@ export declare namespace CSP {
     input: string;
   };
 
+  export type GetCoinsForTxParams = { chain: string; network: string; txid: string };
+
   export type Provider<T> = { get(params: { chain: string }): T };
   export type ChainStateProvider = Provider<IChainStateService> & IChainStateService;
   export interface IChainStateService {
@@ -150,7 +152,7 @@ export declare namespace CSP {
     streamWalletTransactions(params: StreamWalletTransactionsParams): any;
     streamWalletUtxos(params: StreamWalletUtxosParams): any;
     streamMissingWalletAddresses(params: StreamWalletMissingAddressesParams);
-    getCoinsForTx(params: { chain: string; network: string; txid: string }): Promise<CoinListingJSON>;
+    getCoinsForTx(params: GetCoinsForTxParams): Promise<CoinListingJSON>;
     getLocalTip(params): Promise<any | null>;
     getLocatorHashes(params): Promise<any>;
     isValid(params: isValidParams): { isValid: boolean; type: string };
