@@ -40,7 +40,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const client = await this.getClient(params.network);
     const info = await client.getAccountInfo(params.address);
-    const confirmed = Number(info.xrpBalance);
+    const confirmed = Number(info.xrpBalance) * 1e6;
     const balance = confirmed;
     const unconfirmed = 0;
     return { confirmed, unconfirmed, balance };
