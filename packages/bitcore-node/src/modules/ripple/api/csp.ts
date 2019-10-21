@@ -92,7 +92,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
   async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
     const client = await this.getClient(params.network);
     const txs = await client.getTransactions(params.address, {
-      start: params.args.startTx,
+      ...(params.args.startTx && { start: params.args.startTx }),
       limit: Number(params.args.limit) || 100,
       binary: false
     });
