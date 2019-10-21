@@ -139,12 +139,12 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
       promises.push(this.getAddressTransactions({ ...params, address: walletAddress.address }));
     }
     const allTxs = await Promise.all(promises);
+    const transformed = readable.pipe(new RippleWalletTransactions(params.wallet, this));
     for (let txs of allTxs) {
       this.streamTxs(txs, readable);
     }
-    readable.pipe(new RippleWalletTransactions(params.wallet, this));
     readable.push(null);
-    Storage.stream(readable, params.req, params.res);
+    transformed.pipe(params.res);
   }
 
   async getLocalTip(params: ChainNetwork) {
