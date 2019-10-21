@@ -89,14 +89,25 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     }
   }
 
-  async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
+  async getAddressTransactions(params: CSP.StreamAddressUtxosParams) {
     const client = await this.getClient(params.network);
+    const serverInfo = await client.getServerInfo();
+    const ledgers = serverInfo.completeLedgers.split('-');
+    const minLedgerVersion = Number(ledgers[0]);
+    const maxLedgerVersion = Number(ledgers[1]);
     const txs = await client.getTransactions(params.address, {
       ...(params.args.startTx && { start: params.args.startTx }),
+      minLedgerVersion,
+      maxLedgerVersion,
       limit: Number(params.args.limit) || 100,
       binary: false
     });
+    return txs;
+  }
+
+  async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
     const readable = new Readable({ objectMode: true });
+    const txs = await this.getAddressTransactions(params);
     const transformed = txs.map(tx => this.transform(tx, params.network));
     this.streamTxs(transformed, readable);
     readable.push(null);
@@ -121,12 +132,11 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
   }
 
   async streamWalletTransactions(params: CSP.StreamWalletTransactionsParams) {
-    const client = await this.getClient(params.network);
     const addresses = await this.getWalletAddresses(params.wallet._id!);
     const readable = new Readable({ objectMode: true });
     const promises = new Array<Promise<FormattedTransactionType[]>>();
     for (const walletAddress of addresses) {
-      promises.push(client.getTransactions(walletAddress.address));
+      promises.push(this.getAddressTransactions({ ...params, address: walletAddress.address }));
     }
     const allTxs = await Promise.all(promises);
     for (let txs of allTxs) {
