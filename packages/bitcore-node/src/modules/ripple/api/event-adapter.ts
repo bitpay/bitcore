@@ -18,9 +18,11 @@ export class RippleEventAdapter {
       const client = await csp.getClient(network);
 
       client.connection.on('transaction', tx => {
-        this.services.Event.txEvent.emit('tx', { chain, network, ...tx });
+        const transformed = csp.transform(tx, network);
+        this.services.Event.txEvent.emit('tx', { chain, network, ...transformed });
         const address = tx.transaction.Account;
-        this.services.Event.addressCoinEvent.emit('coin', { address, coin: { chain, network, ...tx } });
+        const coin = csp.transformToCoin(tx, network);
+        this.services.Event.addressCoinEvent.emit('coin', { address, coin });
       });
 
       client.connection.on('ledger', ledger => {

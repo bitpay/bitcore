@@ -6,6 +6,9 @@ import { Storage } from '../../../services/storage';
 import { ChainNetwork } from '../../../types/ChainNetwork';
 import Config from '../../../config';
 import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types';
+import { ITransaction } from '../../../models/baseTransaction';
+import { ICoin } from '../../../models/coin';
+import { RippleWalletTransactions } from './transform';
 
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -94,7 +97,8 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
       binary: false
     });
     const readable = new Readable({ objectMode: true });
-    this.streamTxs(txs, readable);
+    const transformed = txs.map(tx => this.transform(tx, params.network));
+    this.streamTxs(transformed, readable);
     readable.push(null);
     Storage.stream(readable, params.req, params.res);
   }
@@ -126,8 +130,10 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     }
     const allTxs = await Promise.all(promises);
     for (let txs of allTxs) {
-      this.streamTxs(txs, readable);
+      const transformed = txs.map(tx => this.transform(tx, params.network));
+      this.streamTxs(transformed, readable);
     }
+    readable.pipe(new RippleWalletTransactions(params.wallet, this));
     readable.push(null);
     Storage.stream(readable, params.req, params.res);
   }
@@ -136,5 +142,47 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     const client = await this.getClient(params.network);
     const ledger = await client.getLedger();
     return ledger;
+  }
+
+  transform(tx: FormattedTransactionType, network: string): ITransaction | FormattedTransactionType {
+    if (tx.type === 'payment') {
+      return {
+        network,
+        chain: this.chain,
+        txid: tx.id,
+        blockHash: '',
+        blockHeight: tx.outcome.ledgerVersion,
+        blockTime: new Date(tx.outcome.timestamp!),
+        blockTimeNormalized: new Date(tx.outcome.timestamp!),
+        value: Number(tx.outcome.deliveredAmount!.value),
+        fee: Number(tx.outcome.fee),
+        wallets: []
+      };
+    } else {
+      return tx;
+    }
+  }
+
+  transformToCoin(tx: FormattedTransactionType, network: string) {
+    if (tx.type === 'payment') {
+      const changes = tx.outcome.balanceChanges;
+      const coins: Array<Partial<ICoin>> = Object.entries(changes).map(([k, v]) => {
+        const coin: Partial<ICoin> = {
+          chain: this.chain,
+          network,
+          address: k,
+          value: Number(v[0].value),
+          coinbase: false,
+          mintHeight: tx.outcome.ledgerVersion,
+          mintIndex: tx.outcome.indexInLedger,
+          mintTxid: tx.id,
+          wallets: []
+        };
+        return coin;
+      });
+      return coins;
+    } else {
+      return tx;
+    }
   }
 }
