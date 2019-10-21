@@ -28,7 +28,7 @@ function getSocket() {
 let p2pWorker: BitcoinP2PWorker;
 let socket = getSocket();
 
-describe.only('Websockets', function() {
+describe('Websockets', function() {
   this.timeout(180000);
 
   before(async () => {
@@ -115,10 +115,11 @@ describe.only('Websockets', function() {
 
   it('should get wallet events', async () => {
     const authKey = new PrivateKey();
-    const pubKey = authKey.publicKey.toString();
+    const pubKey = authKey.publicKey.toString('hex');
     const authClient = new Client({ baseUrl: 'http://localhost:3000/api', authKey });
-    const authPayload = authClient.sign({ method: 'socket', url: 'http://localhost:3000/api' });
-    console.log(pubKey, authPayload);
+
+    const payload = { method: 'socket', url: 'http://localhost:3000/api' };
+    const authPayload = { pubKey, message: authClient.getMessage(payload), signature: authClient.sign(payload) };
     const chain = 'BTC';
     const network = 'regtest';
     const roomPrefix = `/${chain}/${network}/`;

@@ -102,7 +102,6 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
       });
       if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash)) {
         this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, hash);
-        console.log('Saving transaction');
         this.processTransaction(message.transaction);
         this.events.emit('transaction', message.transaction);
       }

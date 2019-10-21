@@ -14,14 +14,18 @@ export class Client {
     Object.assign(this, params);
   }
 
-  sign(params) {
+  getMessage(params: { method: string; url: string; payload?: any }) {
     const { method, url, payload = {} } = params;
     const parsedUrl = new URLClass(url);
-    const message = [
+    return [
       method,
       parsedUrl.pathname + parsedUrl.search,
       JSON.stringify(payload)
     ].join('|');
+  }
+
+  sign(params: { method: string; url: string; payload?: any }) {
+    const message = this.getMessage(params);
     const privateKey = this.authKey.toBuffer();
     const messageHash = bitcoreLib.crypto.Hash.sha256sha256(
       Buffer.from(message)
@@ -29,7 +33,7 @@ export class Client {
     return secp256k1.sign(messageHash, privateKey).signature.toString('hex');
   }
 
-  async register(params) {
+  async register(params: { payload: { baseUrl?: string } & any }) {
     const { payload } = params;
     // allow you to overload the client's baseUrl
     const { baseUrl = this.baseUrl } = payload;

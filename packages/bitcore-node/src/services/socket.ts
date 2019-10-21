@@ -7,8 +7,8 @@ import { Event, EventService } from './event';
 import { ObjectID } from 'mongodb';
 import { Config, ConfigService } from './config';
 import { ConfigType } from '../types/Config';
-import { VerificationPayload, verifyRequestSignature } from '../routes/api/wallet';
 import { WalletStorage } from '../models/wallet';
+import { VerificationPayload, Signature } from '../utils/signature';
 
 function SanitizeWallet(x: { wallets?: ObjectID[] }) {
   const sanitized = Object.assign({}, x, { wallets: new Array<ObjectID>() });
@@ -43,7 +43,7 @@ export class SocketService {
 
   validateRequest(payload: VerificationPayload) {
     try {
-      const valid = verifyRequestSignature(payload);
+      const valid = Signature.verifyRequestSignature(payload);
       return valid;
     } catch (e) {
       return false;
@@ -63,6 +63,7 @@ export class SocketService {
       this.io = SocketIO(server);
       this.io.sockets.on('connection', socket => {
         socket.on('room', (room: string, payload: VerificationPayload) => {
+          const chainNetwork = room.slice(0, room.lastIndexOf('/') + 1);
           const roomName = room.slice(room.lastIndexOf('/') + 1);
           switch (roomName) {
             case 'wallets':
@@ -72,7 +73,7 @@ export class SocketService {
               break;
             case 'wallet':
               if (this.validateRequest(payload)) {
-                socket.join(payload.pubKey);
+                socket.join(chainNetwork + payload.pubKey);
               }
               break;
             case 'inv':
@@ -106,11 +107,9 @@ export class SocketService {
         this.io.sockets.in(`/${chain}/${network}/inv`).emit('tx', sanitizedTx);
 
         if (tx.wallets && tx.wallets.length) {
-          console.log('Emitting wallet event');
-          const wallets = await WalletStorage.collection.find({ _id: { $in: tx.wallets } }).toArray();
-          console.log(tx.wallets);
+          const objectIds = tx.wallets.map(w => new ObjectID(w));
+          const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
           for (let wallet of wallets) {
-            console.log('Emitting for wallet', wallet.pubKey);
             this.io.sockets.in(`/${chain}/${network}/wallets`).emit('tx', tx);
             this.io.sockets
               .in(`/${chain}/${network}/${wallet.pubKey}`)
@@ -135,11 +134,9 @@ export class SocketService {
         this.io.sockets.in(`/${chain}/${network}/address`).emit(address, sanitizedCoin);
         this.io.sockets.in(`/${chain}/${network}/inv`).emit('coin', sanitizedCoin);
         if (coin.wallets && coin.wallets.length) {
-          console.log('Emitting coin wallets');
-          console.log(coin.wallets);
-          const wallets = await WalletStorage.collection.find({ _id: { $in: coin.wallets } }).toArray();
+          const objectIds = coin.wallets.map(w => new ObjectID(w));
+          const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
           for (let wallet of wallets) {
-            console.log('Emitting for wallet', wallet.pubKey);
             this.io.sockets.in(`/${chain}/${network}/wallets`).emit('coin', coin);
             this.io.sockets
               .in(`/${chain}/${network}/${wallet.pubKey}`)
