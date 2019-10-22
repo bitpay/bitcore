@@ -5,7 +5,7 @@ import { EthChain } from './eth';
 
 export interface IChain {
   init(server: WalletService);
-  getWalletBalance(opts: any, cb);
+  getWalletBalance(wallet: any, opts: any, cb);
   getWalletSendMaxInfo(wallet: any, opts: any, cb);
   getDustAmountValue();
   getTransactionCount(wallet: any, from: string);
@@ -35,8 +35,8 @@ class ChainProxy {
     return chain[normalizedChain];
   }
 
-  getWalletBalance(opts, cb) {
-    return this.get(opts.wallet.coin).getWalletBalance(opts, cb);
+  getWalletBalance(wallet, opts, cb) {
+    return this.get(wallet.coin).getWalletBalance(wallet, opts, cb);
   }
 
   getWalletSendMaxInfo(wallet, opts, cb) {

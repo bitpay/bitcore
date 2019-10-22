@@ -1,4 +1,3 @@
-import { reject } from 'async';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain } from '..';
@@ -16,8 +15,7 @@ export class EthChain implements IChain {
     this.walletService = server;
   }
 
-  getWalletBalance(opts, cb) {
-    const wallet = opts.wallet;
+  getWalletBalance(wallet, opts, cb) {
     const bc = this.walletService._getBlockchainExplorer(
       wallet.coin,
       wallet.network
@@ -133,7 +131,7 @@ export class EthChain implements IChain {
 
             const gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
             opts.fee = feePerKb * gasLimit;
-            return resolve(feePerKb);
+            return resolve({feePerKb, gasPrice, gasLimit});
           }
         );
       });

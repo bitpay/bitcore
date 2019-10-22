@@ -14,7 +14,7 @@ export class BchChain extends BtcChain implements IChain {
   }
 
   storeAndNotifyTx(txp, opts, cb) {
-    log.debug('Rechecking UTXOs availability for publishTx');
+    this.walletService.logd('Rechecking UTXOs availability for publishTx');
 
     const utxoKey = utxo => {
       return utxo.txid + '|' + utxo.vout;

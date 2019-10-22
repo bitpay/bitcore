@@ -18,7 +18,7 @@ export class BtcChain implements IChain {
     this.walletService = server;
   }
 
-  getWalletBalance(opts, cb) {
+  getWalletBalance(wallet, opts, cb) {
     this.walletService._getUtxosForCurrentWallet(
       {
         coin: opts.coin,
@@ -199,8 +199,8 @@ export class BtcChain implements IChain {
 
   getFeePerKb(wallet, opts) {
     return new Promise(resolve => {
-      this.walletService._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
-        return resolve(inFeePerKb);
+      this.walletService._getFeePerKb(wallet, opts, (err, feePerKb) => {
+        return resolve({feePerKb});
       });
     });
   }
@@ -239,7 +239,7 @@ export class BtcChain implements IChain {
   }
 
   storeAndNotifyTx(txp, opts, cb) {
-    log.debug('Rechecking UTXOs availability for publishTx');
+    this.walletService.logd('Rechecking UTXOs availability for publishTx');
 
     const utxoKey = utxo => {
       return utxo.txid + '|' + utxo.vout;

@@ -1780,7 +1780,7 @@ export class WalletService {
 
       this.syncWallet(wallet, err => {
         if (err) return cb(err);
-        return ChainService.getWalletBalance(opts, cb);
+        return ChainService.getWalletBalance(wallet, opts, cb);
       });
     });
   }
@@ -2639,14 +2639,19 @@ export class WalletService {
                 },
                 async(next) => {
                   if (opts.sendMax) return next();
-                  changeAddress = await ChainService.getChangeAddress(wallet, opts);
+                  try {
+                    changeAddress = await ChainService.getChangeAddress(wallet, opts);
+                  } catch (error) {
+                    return next(error);
+                  }
                   return next();
                 },
                 async(next) => {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
                     return next();
 
-                  feePerKb = await ChainService.getFeePerKb(wallet, opts);
+                  ({ feePerKb, gasLimit, gasPrice} = await ChainService.getFeePerKb(wallet, opts));
+                  next();
                 },
                 (next) => {
                   const txOpts = {
@@ -2687,7 +2692,11 @@ export class WalletService {
                   return ChainService.selectTxInputs(txp, wallet, opts, cb, next);
                 },
                 async(next) => {
-                  txp.nonce = await ChainService.getTransactionCount(wallet, txp.from);
+                  try {
+                    txp.nonce = await ChainService.getTransactionCount(wallet, txp.from);
+                  } catch (error) {
+                    return next(error);
+                  }
                   return next();
                 },
                 (next) => {
