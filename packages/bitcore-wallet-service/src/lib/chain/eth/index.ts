@@ -9,69 +9,87 @@ const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
-export class EthChain extends WalletService implements IChain {
+export class EthChain implements IChain {
+  protected walletService: WalletService;
+
+  init(server: WalletService) {
+    this.walletService = server;
+  }
 
   getWalletBalance(opts, cb) {
     const wallet = opts.wallet;
-    const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+    const bc = this.walletService._getBlockchainExplorer(
+      wallet.coin,
+      wallet.network
+    );
     bc.getBalance(wallet, (err, balance) => {
       if (err) {
         return cb(err);
       }
-      this.getPendingTxs({}, (err, txps) => {
+      this.walletService.getPendingTxs({}, (err, txps) => {
         if (err) return cb(err);
         const lockedSum = _.sumBy(txps, 'amount');
-        const convertedBalance = this._convertBitcoreBalance(balance, lockedSum);
-        this.storage.fetchAddresses(this.walletId, (
-          err,
-          addresses: IAddress[]
-        ) => {
-          if (err) return cb(err);
-          if (addresses.length > 0) {
-            const byAddress = [{
-              address: addresses[0].address,
-              path: Constants.PATHS.SINGLE_ADDRESS,
-              amount: convertedBalance.totalAmount
-            }];
-            convertedBalance.byAddress = byAddress;
+        const convertedBalance = this.walletService._convertBitcoreBalance(
+          balance,
+          lockedSum
+        );
+        this.walletService.storage.fetchAddresses(
+          this.walletService.walletId,
+          (err, addresses: IAddress[]) => {
+            if (err) return cb(err);
+            if (addresses.length > 0) {
+              const byAddress = [
+                {
+                  address: addresses[0].address,
+                  path: Constants.PATHS.SINGLE_ADDRESS,
+                  amount: convertedBalance.totalAmount
+                }
+              ];
+              convertedBalance.byAddress = byAddress;
+            }
+            return cb(null, convertedBalance);
           }
-          return cb(null, convertedBalance);
-        });
+        );
       });
     });
   }
 
   getWalletSendMaxInfo(wallet, opts, cb) {
-    this.getBalance({}, (err, balance) => {
+    this.walletService.getBalance({}, (err, balance) => {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
 
-      this.estimateGas({
-        coin: wallet.coin,
-        network: wallet.network,
-        from: opts.from,
-        to: '0x0', // a dummy address
-        value: totalAmount, // it will be lest that this, at the end
-        data: null,
-        gasPrice: opts.feePerKb,
-      }, (err, gasLimit) => {
-        let fee = opts.feePerKb * (gasLimit || Defaults.DEFAULT_GAS_LIMIT);
-        return cb(null, {
-          utxosBelowFee: 0,
-          amountBelowFee: 0,
-          amount: availableAmount - fee,
-          feePerKb: opts.feePerKb,
-          fee,
-        });
-      });
+      this.walletService.estimateGas(
+        {
+          coin: wallet.coin,
+          network: wallet.network,
+          from: opts.from,
+          to: '0x0', // a dummy address
+          value: totalAmount, // it will be lest that this, at the end
+          data: null,
+          gasPrice: opts.feePerKb
+        },
+        (err, gasLimit) => {
+          let fee = opts.feePerKb * (gasLimit || Defaults.DEFAULT_GAS_LIMIT);
+          return cb(null, {
+            utxosBelowFee: 0,
+            amountBelowFee: 0,
+            amount: availableAmount - fee,
+            feePerKb: opts.feePerKb,
+            fee
+          });
+        }
+      );
     });
   }
 
-  getDustAmountValue() { return 0; }
+  getDustAmountValue() {
+    return 0;
+  }
 
   getTransactionCount(wallet, from) {
     return new Promise((resolve, reject) => {
-      this._getTransactionCount(wallet, from, (err, nonce) => {
+      this.walletService._getTransactionCount(wallet, from, (err, nonce) => {
         if (err) return reject(err);
         return resolve(nonce);
       });
@@ -87,13 +105,14 @@ export class EthChain extends WalletService implements IChain {
   }
 
   getFeePerKb(wallet, opts) {
-    return new Promise((resolve) => {
-      this._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
+    return new Promise(resolve => {
+      this.walletService._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
         let feePerKb = inFeePerKb;
         let gasPrice = inFeePerKb;
         const { from, data, outputs } = opts;
         const { coin, network } = wallet;
-        this.estimateGas({
+        this.walletService.estimateGas(
+          {
             coin,
             network,
             from,
@@ -102,17 +121,21 @@ export class EthChain extends WalletService implements IChain {
             data,
             gasPrice
           },
-            (err, inGasLimit) => {
-              if (_.isNumber(opts.fee)) {
-                // This is used for sendmax
-                gasPrice = feePerKb =
-                  Number((opts.fee /  (inGasLimit || Defaults.DEFAULT_GAS_LIMIT)).toFixed());
-              }
+          (err, inGasLimit) => {
+            if (_.isNumber(opts.fee)) {
+              // This is used for sendmax
+              gasPrice = feePerKb = Number(
+                (
+                  opts.fee / (inGasLimit || Defaults.DEFAULT_GAS_LIMIT)
+                ).toFixed()
+              );
+            }
 
-              const gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
-              opts.fee = feePerKb * gasLimit;
-              return resolve(feePerKb);
-            });
+            const gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
+            opts.fee = feePerKb * gasLimit;
+            return resolve(feePerKb);
+          }
+        );
       });
     });
   }
@@ -125,24 +148,28 @@ export class EthChain extends WalletService implements IChain {
     try {
       txp.getBitcoreTx();
     } catch (ex) {
-      this.logw('Error building Bitcore transaction', ex);
+      this.walletService.logw('Error building Bitcore transaction', ex);
       return ex;
     }
   }
 
   storeAndNotifyTx(txp, opts, cb) {
     txp.status = 'pending';
-    this.storage.storeTx(this.walletId, txp, (err) => {
-      if (err) return cb(err);
+    this.walletService.storage.storeTx(
+      this.walletService.walletId,
+      txp,
+      err => {
+        if (err) return cb(err);
 
-      this._notifyTxProposalAction('NewTxProposal', txp, () => {
-        return cb(null, txp);
-      });
-    });
+        this.walletService._notifyTxProposalAction('NewTxProposal', txp, () => {
+          return cb(null, txp);
+        });
+      }
+    );
   }
 
   selectTxInputs(txp, wallet, opts, cb, next) {
-    this.getBalance({ wallet }, (err, balance) => {
+    this.walletService.getBalance({ wallet }, (err, balance) => {
       if (err) return next(err);
 
       const { totalAmount, availableAmount } = balance;
@@ -151,7 +178,7 @@ export class EthChain extends WalletService implements IChain {
       } else if (availableAmount < txp.getTotalAmount()) {
         return cb(Errors.LOCKED_FUNDS);
       } else {
-        return next(this._checkTx(txp));
+        return next(this.walletService._checkTx(txp));
       }
     });
   }

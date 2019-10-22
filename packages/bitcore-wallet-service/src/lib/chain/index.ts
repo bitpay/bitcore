@@ -1,8 +1,10 @@
+import { WalletService } from '../server';
 import { BchChain } from './bch';
 import { BtcChain } from './btc';
 import { EthChain } from './eth';
 
 export interface IChain {
+  init(server: WalletService);
   getWalletBalance(opts: any, cb);
   getWalletSendMaxInfo(wallet: any, opts: any, cb);
   getDustAmountValue();
@@ -23,6 +25,11 @@ const chain: { [chain: string]: IChain } = {
 };
 
 class ChainProxy {
+  init(server: WalletService) {
+    for (let proxy of Object.values(chain)) {
+      proxy.init(server);
+    }
+  }
   get(coin) {
     const normalizedChain = coin.toUpperCase();
     return chain[normalizedChain];

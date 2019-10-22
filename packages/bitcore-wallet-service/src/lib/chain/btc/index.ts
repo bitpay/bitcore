@@ -10,10 +10,16 @@ const Utils = Common.Utils;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
-export class BtcChain extends WalletService implements IChain {
+export class BtcChain implements IChain {
+  protected walletService: WalletService;
+  constructor(private bitcoreLib = BitcoreLib) {}
+
+  init(server: WalletService) {
+    this.walletService = server;
+  }
 
   getWalletBalance(opts, cb) {
-    this._getUtxosForCurrentWallet(
+    this.walletService._getUtxosForCurrentWallet(
       {
         coin: opts.coin,
         addresses: opts.addresses
@@ -21,14 +27,14 @@ export class BtcChain extends WalletService implements IChain {
       (err, utxos) => {
         if (err) return cb(err);
 
-        const balance = { ...this._totalizeUtxos(utxos), byAddress: [] };
+        const balance = {
+          ...this.walletService._totalizeUtxos(utxos),
+          byAddress: []
+        };
 
         // Compute balance by address
         const byAddress = {};
-        _.each(_.keyBy(_.sortBy(utxos, 'address'), 'address'), (
-          value,
-          key
-        ) => {
+        _.each(_.keyBy(_.sortBy(utxos, 'address'), 'address'), (value, key) => {
           byAddress[key] = {
             address: key,
             path: value.path,
@@ -36,7 +42,7 @@ export class BtcChain extends WalletService implements IChain {
           };
         });
 
-        _.each(utxos, (utxo) => {
+        _.each(utxos, utxo => {
           byAddress[utxo.address].amount += utxo.satoshis;
         });
 
@@ -48,7 +54,7 @@ export class BtcChain extends WalletService implements IChain {
   }
 
   getWalletSendMaxInfo(wallet, opts, cb) {
-    this._getUtxosForCurrentWallet({}, (err, utxos) => {
+    this.walletService._getUtxosForCurrentWallet({}, (err, utxos) => {
       if (err) return cb(err);
 
       const info = {
@@ -67,19 +73,19 @@ export class BtcChain extends WalletService implements IChain {
       if (!!opts.excludeUnconfirmedUtxos) {
         inputs = _.filter(inputs, 'confirmations');
       }
-      inputs = _.sortBy(inputs, (input) => {
+      inputs = _.sortBy(inputs, input => {
         return -input.satoshis;
       });
 
       if (_.isEmpty(inputs)) return cb(null, info);
 
-      this._getFeePerKb(wallet, opts, (err, feePerKb) => {
+      this.walletService._getFeePerKb(wallet, opts, (err, feePerKb) => {
         if (err) return cb(err);
 
         info.feePerKb = feePerKb;
 
         const txp = TxProposal.create({
-          walletId: this.walletId,
+          walletId: this.walletService.walletId,
           coin: wallet.coin,
           network: wallet.network,
           walletM: wallet.m,
@@ -91,7 +97,7 @@ export class BtcChain extends WalletService implements IChain {
         const sizePerInput = txp.getEstimatedSizeForSingleInput();
         const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
 
-        const partitionedByAmount = _.partition(inputs, (input) => {
+        const partitionedByAmount = _.partition(inputs, input => {
           return input.satoshis > feePerInput;
         });
 
@@ -130,7 +136,7 @@ export class BtcChain extends WalletService implements IChain {
   }
 
   getDustAmountValue() {
-    return BitcoreLib.Transaction.DUST_AMOUNT;
+    return this.bitcoreLib.Transaction.DUST_AMOUNT;
   }
 
   getTransactionCount() {
@@ -139,22 +145,27 @@ export class BtcChain extends WalletService implements IChain {
 
   getChangeAddress(wallet, opts) {
     return new Promise((resolve, reject) => {
-
       const getChangeAddress = (wallet, cb) => {
         if (wallet.singleAddress) {
-          this.storage.fetchAddresses(this.walletId, (err, addresses) => {
-            if (err) return cb(err);
-            if (_.isEmpty(addresses))
-              return cb(new ClientError('The wallet has no addresses'));
-            return cb(null, _.head(addresses));
-          });
+          this.walletService.storage.fetchAddresses(
+            this.walletService.walletId,
+            (err, addresses) => {
+              if (err) return cb(err);
+              if (_.isEmpty(addresses))
+                return cb(new ClientError('The wallet has no addresses'));
+              return cb(null, _.head(addresses));
+            }
+          );
         } else {
-
           if (opts.changeAddress) {
-            const addrErr = this._validateAddr(wallet, opts.changeAddress, opts);
+            const addrErr = this.walletService._validateAddr(
+              wallet,
+              opts.changeAddress,
+              opts
+            );
             if (addrErr) return cb(addrErr);
 
-            this.storage.fetchAddressByWalletId(
+            this.walletService.storage.fetchAddressByWalletId(
               wallet.id,
               opts.changeAddress,
               (err, address) => {
@@ -178,7 +189,7 @@ export class BtcChain extends WalletService implements IChain {
   checkErrorOutputs(output) {
     const dustThreshold = Math.max(
       Defaults.MIN_OUTPUT_AMOUNT,
-      BitcoreLib.Transaction.DUST_AMOUNT
+      this.bitcoreLib.Transaction.DUST_AMOUNT
     );
 
     if (output.amount < dustThreshold) {
@@ -187,8 +198,8 @@ export class BtcChain extends WalletService implements IChain {
   }
 
   getFeePerKb(wallet, opts) {
-    return new Promise((resolve) => {
-      this._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
+    return new Promise(resolve => {
+      this.walletService._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
         return resolve(inFeePerKb);
       });
     });
@@ -215,16 +226,14 @@ export class BtcChain extends WalletService implements IChain {
         txp.fee = bitcoreTx.getFee();
       }
     } catch (ex) {
-      this.logw('Error building Bitcore transaction', ex);
+      this.walletService.logw('Error building Bitcore transaction', ex);
       return ex;
     }
 
-    if (bitcoreError instanceof BitcoreLib.errors.Transaction.FeeError)
+    if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.FeeError)
       return Errors.INSUFFICIENT_FUNDS_FOR_FEE;
 
-    if (
-      bitcoreError instanceof BitcoreLib.errors.Transaction.DustOutputs
-    )
+    if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.DustOutputs)
       return Errors.DUST_AMOUNT;
     return bitcoreError;
   }
@@ -232,11 +241,11 @@ export class BtcChain extends WalletService implements IChain {
   storeAndNotifyTx(txp, opts, cb) {
     log.debug('Rechecking UTXOs availability for publishTx');
 
-    const utxoKey = (utxo) => {
+    const utxoKey = utxo => {
       return utxo.txid + '|' + utxo.vout;
     };
 
-    this._getUtxosForCurrentWallet(
+    this.walletService._getUtxosForCurrentWallet(
       {
         addresses: txp.inputs
       },
@@ -245,7 +254,7 @@ export class BtcChain extends WalletService implements IChain {
 
         const txpInputs = _.map(txp.inputs, utxoKey);
         const utxosIndex = _.keyBy(utxos, utxoKey);
-        const unavailable = _.some(txpInputs, (i) => {
+        const unavailable = _.some(txpInputs, i => {
           const utxo = utxosIndex[i];
           return !utxo || utxo.locked;
         });
@@ -253,18 +262,26 @@ export class BtcChain extends WalletService implements IChain {
         if (unavailable) return cb(Errors.UNAVAILABLE_UTXOS);
 
         txp.status = 'pending';
-        this.storage.storeTx(this.walletId, txp, (err) => {
-          if (err) return cb(err);
+        this.walletService.storage.storeTx(
+          this.walletService.walletId,
+          txp,
+          err => {
+            if (err) return cb(err);
 
-          this._notifyTxProposalAction('NewTxProposal', txp, () => {
-            return cb(null, txp);
-          });
-        });
+            this.walletService._notifyTxProposalAction(
+              'NewTxProposal',
+              txp,
+              () => {
+                return cb(null, txp);
+              }
+            );
+          }
+        );
       }
     );
   }
 
   selectTxInputs(txp, wallet, opts, cb, next) {
-    return this._selectTxInputs(txp, opts.utxosToExclude, next);
+    return this.walletService._selectTxInputs(txp, opts.utxosToExclude, next);
   }
 }

@@ -112,6 +112,7 @@ export class WalletService {
     this.messageBroker = messageBroker;
     this.fiatRateService = fiatRateService;
     this.notifyTicker = 0;
+    ChainService.init(this);
   }
   /**
    * Gets the current version of BWS
