@@ -57,40 +57,51 @@ router.get('/:blockId', async function(req: Request, res: Response) {
 });
 
 //return all { txids, inputs, ouputs} for a blockHash paginated at max 500 per page, to limit reqs and overload
-router.get('/:blockHash/coins/:limit/:pgnum', async function (req: Request, res: Response) {
+router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: Response) {
   let { chain, network, blockHash, limit, pgnum } = req.params;
 
+  let pageNumber;
+  let maxLimit;
   try {
-    pgnum = parseInt(pgnum, 10);
-    limit = parseInt(limit, 10);
-    if (!(typeof pgnum === "number" && typeof limit === "number")) {
-      res.status(400).send("Please enter limit and number as valid decimal numbers")
-    }
-    if (limit) {
-      if (limit > 500) limit = 500;
+    pageNumber = parseInt(pgnum, 10);
+    maxLimit = parseInt(limit, 10);
+
+    if (maxLimit) {
+      if (maxLimit > 500) maxLimit = 500;
     }
   } catch (err) {
     console.log(err);
   }
 
-  let skips = limit * (pgnum - 1);
+  let skips = maxLimit * (pageNumber - 1);
   let numOfTxs = await TransactionStorage.collection.find({ chain, network, blockHash }).count();
   try {
-    let txs = numOfTxs < limit ? await TransactionStorage.collection.find({ chain, network, blockHash }).toArray() : 
-      await TransactionStorage.collection.find({ chain, network, blockHash }).skip(skips).limit(limit).toArray()
+    let txs =
+      numOfTxs < maxLimit
+        ? await TransactionStorage.collection.find({ chain, network, blockHash }).toArray()
+        : await TransactionStorage.collection
+            .find({ chain, network, blockHash })
+            .skip(skips)
+            .limit(maxLimit)
+            .toArray();
 
     if (!txs) {
-      return res.status(422).send("No txs for page");
+      return res.status(422).send('No txs for page');
     }
 
     const txidIndexes: any = {};
-    let txids = txs.map((tx, index) => { txidIndexes[index] = tx.txid; return tx.txid });
+    let txids = txs.map((tx, index) => {
+      txidIndexes[index] = tx.txid;
+      return tx.txid;
+    });
 
-    let inputs = await CoinStorage.collection.find({ chain, network, spentTxid: { $in: txids } })
+    let inputs = await CoinStorage.collection
+      .find({ chain, network, spentTxid: { $in: txids } })
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
 
-    let outputs = await CoinStorage.collection.find({ chain, network, mintTxid: { $in: txids } })
+    let outputs = await CoinStorage.collection
+      .find({ chain, network, mintTxid: { $in: txids } })
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
 
@@ -98,11 +109,11 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function (req: Request, res:
     let nxtPageNum;
     let previous = '';
     let next = '';
-    if (pgnum !== 1) {
+    if (pageNumber !== 1) {
       prevPageNum = parseInt(pgnum) - 1;
       previous = `/block/${blockHash}/coins/${limit}/${prevPageNum}`;
     }
-    if (numOfTxs - (limit * pgnum) > 0) {
+    if (numOfTxs - maxLimit * pageNumber > 0) {
       nxtPageNum = pgnum + 1;
       next = `/block/${blockHash}/coins/${limit}/${nxtPageNum}`;
     }
