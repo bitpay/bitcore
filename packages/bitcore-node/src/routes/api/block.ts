@@ -110,12 +110,12 @@ router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: 
     let previous = '';
     let next = '';
     if (pageNumber !== 1) {
-      prevPageNum = parseInt(pgnum) - 1;
-      previous = `/block/${blockHash}/coins/${limit}/${prevPageNum}`;
+      prevPageNum = parseInt(pageNumber) - 1;
+      previous = `/block/${blockHash}/coins/${maxLimit}/${prevPageNum}`;
     }
     if (numOfTxs - maxLimit * pageNumber > 0) {
-      nxtPageNum = pgnum + 1;
-      next = `/block/${blockHash}/coins/${limit}/${nxtPageNum}`;
+      nxtPageNum = pageNumber + 1;
+      next = `/block/${blockHash}/coins/${maxLimit}/${nxtPageNum}`;
     }
 
     return res.json({ txids, inputs, outputs, previous, next });
