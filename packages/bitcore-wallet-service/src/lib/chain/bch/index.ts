@@ -20,7 +20,7 @@ export class BchChain extends BtcChain implements IChain {
       return utxo.txid + '|' + utxo.vout;
     };
 
-    this._getUtxosForCurrentWallet(
+    this.walletService._getUtxosForCurrentWallet(
       {
         addresses: txp.inputs
       },
@@ -37,21 +37,29 @@ export class BchChain extends BtcChain implements IChain {
         if (unavailable) return cb(Errors.UNAVAILABLE_UTXOS);
 
         txp.status = 'pending';
-        this.storage.storeTx(this.walletId, txp, err => {
-          if (err) return cb(err);
+        this.walletService.storage.storeTx(
+          this.walletService.walletId,
+          txp,
+          err => {
+            if (err) return cb(err);
 
-          this._notifyTxProposalAction('NewTxProposal', txp, () => {
-            if (opts.noCashAddr) {
-              if (txp.changeAddress) {
-                txp.changeAddress.address = BCHAddressTranslator.translate(
-                  txp.changeAddress.address,
-                  'copay'
-                );
+            this.walletService._notifyTxProposalAction(
+              'NewTxProposal',
+              txp,
+              () => {
+                if (opts.noCashAddr) {
+                  if (txp.changeAddress) {
+                    txp.changeAddress.address = BCHAddressTranslator.translate(
+                      txp.changeAddress.address,
+                      'copay'
+                    );
+                  }
+                }
+                return cb(null, txp);
               }
-            }
-            return cb(null, txp);
-          });
-        });
+            );
+          }
+        );
       }
     );
   }
