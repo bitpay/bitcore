@@ -160,8 +160,12 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     const { network, rawTx } = params;
     const web3 = await this.getWeb3(network);
-    const tx = await web3.eth.sendSignedTransaction(rawTx);
-    return tx;
+    return new Promise((resolve, reject) => {
+      web3.eth
+        .sendSignedTransaction(rawTx)
+        .on('transactionHash', resolve)
+        .on('error', reject);
+    });
   }
 
   async getWalletAddresses(walletId: ObjectID) {
@@ -171,7 +175,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
   }
-
   async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
     const { req, res, args, chain, network, address } = params;
     const { limit, since, tokenAddress } = args;
@@ -367,7 +370,12 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   }
 
   async getAccountNonce(network: string, address: string) {
-    return EthTransactionStorage.collection.countDocuments({ chain: 'ETH', network, from: address });
+    return EthTransactionStorage.collection.countDocuments({
+      chain: 'ETH',
+      network,
+      from: address,
+      blockHeight: { $ne: -1 }
+    });
   }
 
   async getWalletTokenTransactions(
@@ -385,26 +393,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     let batches = await Promise.all(allTokenQueries);
     let txs = batches.reduce((agg, batch) => agg.concat(batch));
     return txs.sort((tx1, tx2) => tx1.blockNumber! - tx2.blockNumber!);
-  }
-
-  async updateWallet(params: CSP.UpdateWalletParams) {
-    const { addresses, wallet, chain, network } = params;
-    for (const addressBatch of partition(addresses, 1000)) {
-      await Promise.all([
-        EthTransactionStorage.collection.updateMany(
-          { chain, network, to: { $in: addressBatch } },
-          { $addToSet: { wallets: wallet._id } }
-        ),
-        EthTransactionStorage.collection.updateMany(
-          { chain, network, from: { $in: addressBatch } },
-          { $addToSet: { wallets: wallet._id } }
-        )
-      ]);
-      await WalletAddressStorage.collection.updateMany(
-        { chain, network, wallet: wallet._id, address: { $in: addressBatch } },
-        { $set: { processed: true } }
-      );
-    }
   }
 
   async estimateGas(params): Promise<Number> {
@@ -432,6 +420,38 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       return { ...convertedBlock, confirmations };
     };
     return blocks.map(blockTransform);
+  }
+
+  async updateWallet(params: CSP.UpdateWalletParams) {
+    const { chain, network } = params;
+    const addressBatches = partition(params.addresses, 500);
+    for (let addressBatch of addressBatches) {
+      const walletAddressInserts = addressBatch.map(address => {
+        return {
+          insertOne: {
+            document: { chain, network, wallet: params.wallet._id, address, processed: false }
+          }
+        };
+      });
+
+      try {
+        await WalletAddressStorage.collection.bulkWrite(walletAddressInserts);
+      } catch (err) {
+        if (err.code !== 11000) {
+          throw err;
+        }
+      }
+
+      await EthTransactionStorage.collection.updateMany(
+        { chain, network, $or: [{ from: { $in: addressBatch } }, { to: { $in: addressBatch } }] },
+        { $addToSet: { wallets: params.wallet._id } }
+      );
+
+      await WalletAddressStorage.collection.updateMany(
+        { chain, network, address: { $in: addressBatch }, wallet: params.wallet._id },
+        { $set: { processed: true } }
+      );
+    }
   }
 }
 
