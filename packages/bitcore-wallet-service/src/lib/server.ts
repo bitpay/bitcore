@@ -1792,6 +1792,7 @@ export class WalletService {
    * @param {number} opts.feePerKb - Optional. Specify the fee per KB for this TX (in satoshi).
    * @param {string} opts.excludeUnconfirmedUtxos[=false] - Optional. Do not use UTXOs of unconfirmed transactions as inputs
    * @param {string} opts.returnInputs[=false] - Optional. Return the list of UTXOs that would be included in the tx.
+   * @param {string} opts.from - Optional. Specify the sender ETH address.
    * @returns {Object} sendMaxInfo
    */
   getSendMaxInfo(opts, cb) {

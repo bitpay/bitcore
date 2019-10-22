@@ -1,3 +1,4 @@
+import { ITxProposal, IWallet } from '../model';
 import { WalletService } from '../server';
 import { BchChain } from './bch';
 import { BtcChain } from './btc';
@@ -5,17 +6,17 @@ import { EthChain } from './eth';
 
 export interface IChain {
   init(server: WalletService);
-  getWalletBalance(wallet: any, opts: any, cb);
-  getWalletSendMaxInfo(wallet: any, opts: any, cb);
+  getWalletBalance(wallet: IWallet, opts: {coin: string, addresses: string[]} & any, cb);
+  getWalletSendMaxInfo(wallet: IWallet, opts: {excludeUnconfirmedUtxos: string, returnInputs: string, from: string, feePerKb: number} & any, cb);
   getDustAmountValue();
-  getTransactionCount(wallet: any, from: string);
-  getChangeAddress(wallet: any, opts: any);
-  checkErrorOutputs(output, opts: any);
-  getFeePerKb(wallet: any, opts: any);
+  getTransactionCount(wallet: IWallet, from: string);
+  getChangeAddress(wallet: IWallet, opts: {changeAddress: string} & any);
+  checkErrorOutputs(output: {amount: number, toAddress: string, valid: boolean}, opts: {outputs: any[]} & any);
+  getFeePerKb(wallet: IWallet, opts: {fee: number, feePerKb: number} & any);
   getLevelsFee(p: number, feePerKb: number);
-  checkTx(txp: any);
-  storeAndNotifyTx(txp: any, opts: any, cb);
-  selectTxInputs(txp: any, wallet: any, opts: any, cb, next);
+  checkTx(txp: ITxProposal);
+  storeAndNotifyTx(txp: ITxProposal, opts: {noCashAddr: boolean} & any, cb);
+  selectTxInputs(txp: ITxProposal, wallet: IWallet, opts: {utxosToExclude: any[]} & any, cb, next);
 }
 
 const chain: { [chain: string]: IChain } = {
