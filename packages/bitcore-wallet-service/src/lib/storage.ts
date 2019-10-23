@@ -488,6 +488,13 @@ export class Storage {
 
   // TODO: remove walletId from signature
   storeNotification(walletId, notification, cb) {
+
+    // This should only happens in certain tests.
+    if (!this.db) {
+      log.warn( 'Trying to store a notification with close DB', notification);
+      return;
+    }
+
     this.db.collection(collections.NOTIFICATIONS).insert(
       notification,
       {
