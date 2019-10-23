@@ -19,6 +19,7 @@ export interface IChain {
   checkUtxos(opts: { fee: number, inputs: any[]});
   setInputs(info: {inputs: any[]});
   isUTXOCoin();
+  addSignaturesToBitcoreTx(tx: string, inputs: any[], inputPaths: any[], signatures: any[], xpub: string);
 }
 
 const chain: { [chain: string]: IChain } = {
@@ -88,6 +89,10 @@ class ChainProxy {
 
   isUTXOCoin(coin) {
     return this.get(coin).isUTXOCoin();
+  }
+
+  addSignaturesToBitcoreTx(coin, tx, inputs, inputPaths, signatures, xpub) {
+    return this.get(coin).addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub);
   }
 }
 

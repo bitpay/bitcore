@@ -1,5 +1,6 @@
 import { Transactions } from 'crypto-wallet-core';
 import _ from 'lodash';
+import { ChainService } from '../chain/index';
 import { TxProposalLegacy } from './txproposal_legacy';
 import { TxProposalAction } from './txproposalaction';
 
@@ -370,7 +371,7 @@ export class TxProposal {
     const t = this._buildTx();
     const sigs = this._getCurrentSignatures();
     _.each(sigs, (x) => {
-      this._addSignaturesToBitcoreTx(t, x.signatures, x.xpub);
+      ChainService.addSignaturesToBitcoreTx(this.coin, t, this.inputs, this.inputPaths, x.signatures, x.xpub);
     });
 
     return t;
@@ -474,59 +475,11 @@ export class TxProposal {
     this._updateStatus();
   }
 
-  _addSignaturesToBitcoreTxBitcoin(tx, signatures, xpub) {
-    const bitcore = Bitcore[this.coin];
-
-    if (signatures.length != this.inputs.length)
-      throw new Error('Number of signatures does not match number of inputs');
-
-    let i = 0;
-    const x = new bitcore.HDPublicKey(xpub);
-
-    _.each(signatures, (signatureHex) => {
-      try {
-        const signature = bitcore.crypto.Signature.fromString(signatureHex);
-        const pub = x.deriveChild(this.inputPaths[i]).publicKey;
-        const s = {
-          inputIndex: i,
-          signature,
-          sigtype:
-            // tslint:disable-next-line:no-bitwise
-            bitcore.crypto.Signature.SIGHASH_ALL |
-            bitcore.crypto.Signature.SIGHASH_FORKID,
-          publicKey: pub
-        };
-        tx.inputs[i].addSignature(tx, s);
-        i++;
-      } catch (e) { }
-    });
-
-    if (i != tx.inputs.length) throw new Error('Wrong signatures');
-  }
-
-  _addSignaturesToBitcoreTx(tx, signatures, xpub) {
-    switch (this.coin) {
-      case 'eth':
-        const raw = Transactions.applySignature({
-          chain: 'ETH',
-          tx: tx.uncheckedSerialize(),
-          signature: signatures[0],
-        });
-        tx.uncheckedSerialize = () => raw ;
-
-        // bitcore users id for txid...
-        tx.id = Transactions.getHash({ tx: raw, chain: this.coin.toUpperCase() });
-        break;
-      default:
-        return this._addSignaturesToBitcoreTxBitcoin(tx, signatures, xpub);
-    }
-  }
-
   sign(copayerId, signatures, xpub) {
     try {
       // Tests signatures are OK
       const tx = this.getBitcoreTx();
-      this._addSignaturesToBitcoreTx(tx, signatures, xpub);
+      ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub);
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {

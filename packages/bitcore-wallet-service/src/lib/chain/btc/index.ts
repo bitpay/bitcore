@@ -272,4 +272,32 @@ export class BtcChain implements IChain {
   }
 
   isUTXOCoin() { return true; }
+
+  addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub) {
+    if (signatures.length != inputs.length)
+      throw new Error('Number of signatures does not match number of inputs');
+
+    let i = 0;
+    const x = new this.bitcoreLib.HDPublicKey(xpub);
+
+    _.each(signatures, (signatureHex) => {
+      try {
+        const signature = this.bitcoreLib.crypto.Signature.fromString(signatureHex);
+        const pub = x.deriveChild(inputPaths[i]).publicKey;
+        const s = {
+          inputIndex: i,
+          signature,
+          sigtype:
+            // tslint:disable-next-line:no-bitwise
+            this.bitcoreLib.crypto.Signature.SIGHASH_ALL |
+            this.bitcoreLib.crypto.Signature.SIGHASH_FORKID,
+          publicKey: pub
+        };
+        tx.inputs[i].addSignature(tx, s);
+        i++;
+      } catch (e) { }
+    });
+
+    if (i != tx.inputs.length) throw new Error('Wrong signatures');
+  }
 }

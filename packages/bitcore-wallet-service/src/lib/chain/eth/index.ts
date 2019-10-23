@@ -1,3 +1,4 @@
+import { Transactions } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain } from '..';
@@ -169,4 +170,16 @@ export class EthChain implements IChain {
   setInputs() {}
 
   isUTXOCoin() { return false; }
+
+  addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub) {
+    const raw = Transactions.applySignature({
+      chain: 'ETH',
+      tx: tx.uncheckedSerialize(),
+      signature: signatures[0],
+    });
+    tx.uncheckedSerialize = () => raw ;
+
+    // bitcore users id for txid...
+    tx.id = Transactions.getHash({ tx: raw, chain: 'ETH' });
+  }
 }
