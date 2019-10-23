@@ -13,14 +13,14 @@ export class BchChain extends BtcChain implements IChain {
     super(BitcoreLibCash);
   }
 
-  storeAndNotifyTx(txp, opts, cb) {
-    this.walletService.logd('Rechecking UTXOs availability for publishTx');
+  storeAndNotifyTx(server, txp, opts, cb) {
+    server.logd('Rechecking UTXOs availability for publishTx');
 
     const utxoKey = utxo => {
       return utxo.txid + '|' + utxo.vout;
     };
 
-    this.walletService._getUtxosForCurrentWallet(
+    server._getUtxosForCurrentWallet(
       {
         addresses: txp.inputs
       },
@@ -37,13 +37,13 @@ export class BchChain extends BtcChain implements IChain {
         if (unavailable) return cb(Errors.UNAVAILABLE_UTXOS);
 
         txp.status = 'pending';
-        this.walletService.storage.storeTx(
-          this.walletService.walletId,
+        server.storage.storeTx(
+          server.walletId,
           txp,
           err => {
             if (err) return cb(err);
 
-            this.walletService._notifyTxProposalAction(
+            server._notifyTxProposalAction(
               'NewTxProposal',
               txp,
               () => {

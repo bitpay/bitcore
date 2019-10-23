@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain } from '..';
-import { WalletService } from '../../../lib/server';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
@@ -9,14 +8,9 @@ const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
 export class EthChain implements IChain {
-  protected walletService: WalletService;
 
-  init(server: WalletService) {
-    this.walletService = server;
-  }
-
-  getWalletBalance(wallet, opts, cb) {
-    const bc = this.walletService._getBlockchainExplorer(
+  getWalletBalance(server, wallet, opts, cb) {
+    const bc = server._getBlockchainExplorer(
       wallet.coin,
       wallet.network
     );
@@ -24,15 +18,15 @@ export class EthChain implements IChain {
       if (err) {
         return cb(err);
       }
-      this.walletService.getPendingTxs({}, (err, txps) => {
+      server.getPendingTxs({}, (err, txps) => {
         if (err) return cb(err);
         const lockedSum = _.sumBy(txps, 'amount');
-        const convertedBalance = this.walletService._convertBitcoreBalance(
+        const convertedBalance = server._convertBitcoreBalance(
           balance,
           lockedSum
         );
-        this.walletService.storage.fetchAddresses(
-          this.walletService.walletId,
+        server.storage.fetchAddresses(
+          server.walletId,
           (err, addresses: IAddress[]) => {
             if (err) return cb(err);
             if (addresses.length > 0) {
@@ -52,12 +46,12 @@ export class EthChain implements IChain {
     });
   }
 
-  getWalletSendMaxInfo(wallet, opts, cb) {
-    this.walletService.getBalance({}, (err, balance) => {
+  getWalletSendMaxInfo(server, wallet, opts, cb) {
+    server.getBalance({}, (err, balance) => {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
 
-      this.walletService.estimateGas(
+      server.estimateGas(
         {
           coin: wallet.coin,
           network: wallet.network,
@@ -85,9 +79,9 @@ export class EthChain implements IChain {
     return 0;
   }
 
-  getTransactionCount(wallet, from) {
+  getTransactionCount(server, wallet, from) {
     return new Promise((resolve, reject) => {
-      this.walletService._getTransactionCount(wallet, from, (err, nonce) => {
+      server._getTransactionCount(wallet, from, (err, nonce) => {
         if (err) return reject(err);
         return resolve(nonce);
       });
@@ -102,14 +96,14 @@ export class EthChain implements IChain {
     }
   }
 
-  getFeePerKb(wallet, opts) {
+  getFeePerKb(server, wallet, opts) {
     return new Promise(resolve => {
-      this.walletService._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
+      server._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
         let feePerKb = inFeePerKb;
         let gasPrice = inFeePerKb;
         const { from, data, outputs } = opts;
         const { coin, network } = wallet;
-        this.walletService.estimateGas(
+        server.estimateGas(
           {
             coin,
             network,
@@ -142,32 +136,32 @@ export class EthChain implements IChain {
     return [p, feePerKb];
   }
 
-  checkTx(txp) {
+  checkTx(server, txp) {
     try {
       txp.getBitcoreTx();
     } catch (ex) {
-      this.walletService.logw('Error building Bitcore transaction', ex);
+      server.logw('Error building Bitcore transaction', ex);
       return ex;
     }
   }
 
-  storeAndNotifyTx(txp, opts, cb) {
+  storeAndNotifyTx(server, txp, opts, cb) {
     txp.status = 'pending';
-    this.walletService.storage.storeTx(
-      this.walletService.walletId,
+    server.storage.storeTx(
+      server.walletId,
       txp,
       err => {
         if (err) return cb(err);
 
-        this.walletService._notifyTxProposalAction('NewTxProposal', txp, () => {
+        server._notifyTxProposalAction('NewTxProposal', txp, () => {
           return cb(null, txp);
         });
       }
     );
   }
 
-  selectTxInputs(txp, wallet, opts, cb, next) {
-    this.walletService.getBalance({ wallet }, (err, balance) => {
+  selectTxInputs(server, txp, wallet, opts, cb, next) {
+    server.getBalance({ wallet }, (err, balance) => {
       if (err) return next(err);
 
       const { totalAmount, availableAmount } = balance;
@@ -176,7 +170,7 @@ export class EthChain implements IChain {
       } else if (availableAmount < txp.getTotalAmount()) {
         return cb(Errors.LOCKED_FUNDS);
       } else {
-        return next(this.walletService._checkTx(txp));
+        return next(server._checkTx(txp));
       }
     });
   }

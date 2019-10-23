@@ -1,7 +1,6 @@
 import { BitcoreLib } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IChain } from '..';
-import { WalletService } from '../../../lib/server';
 import { ClientError } from '../../errors/clienterror';
 import { TxProposal } from '../../model';
 
@@ -11,15 +10,10 @@ const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
 export class BtcChain implements IChain {
-  protected walletService: WalletService;
   constructor(private bitcoreLib = BitcoreLib) {}
 
-  init(server: WalletService) {
-    this.walletService = server;
-  }
-
-  getWalletBalance(wallet, opts, cb) {
-    this.walletService._getUtxosForCurrentWallet(
+  getWalletBalance(server, wallet, opts, cb) {
+    server._getUtxosForCurrentWallet(
       {
         coin: opts.coin,
         addresses: opts.addresses
@@ -28,7 +22,7 @@ export class BtcChain implements IChain {
         if (err) return cb(err);
 
         const balance = {
-          ...this.walletService._totalizeUtxos(utxos),
+          ...server._totalizeUtxos(utxos),
           byAddress: []
         };
 
@@ -53,8 +47,8 @@ export class BtcChain implements IChain {
     );
   }
 
-  getWalletSendMaxInfo(wallet, opts, cb) {
-    this.walletService._getUtxosForCurrentWallet({}, (err, utxos) => {
+  getWalletSendMaxInfo(server, wallet, opts, cb) {
+    server._getUtxosForCurrentWallet({}, (err, utxos) => {
       if (err) return cb(err);
 
       const info = {
@@ -79,13 +73,13 @@ export class BtcChain implements IChain {
 
       if (_.isEmpty(inputs)) return cb(null, info);
 
-      this.walletService._getFeePerKb(wallet, opts, (err, feePerKb) => {
+      server._getFeePerKb(wallet, opts, (err, feePerKb) => {
         if (err) return cb(err);
 
         info.feePerKb = feePerKb;
 
         const txp = TxProposal.create({
-          walletId: this.walletService.walletId,
+          walletId: server.walletId,
           coin: wallet.coin,
           network: wallet.network,
           walletM: wallet.m,
@@ -143,12 +137,12 @@ export class BtcChain implements IChain {
     return null;
   }
 
-  getChangeAddress(wallet, opts) {
+  getChangeAddress(server, wallet, opts) {
     return new Promise((resolve, reject) => {
       const getChangeAddress = (wallet, cb) => {
         if (wallet.singleAddress) {
-          this.walletService.storage.fetchAddresses(
-            this.walletService.walletId,
+          server.storage.fetchAddresses(
+            server.walletId,
             (err, addresses) => {
               if (err) return cb(err);
               if (_.isEmpty(addresses))
@@ -158,14 +152,14 @@ export class BtcChain implements IChain {
           );
         } else {
           if (opts.changeAddress) {
-            const addrErr = this.walletService._validateAddr(
+            const addrErr = server._validateAddr(
               wallet,
               opts.changeAddress,
               opts
             );
             if (addrErr) return cb(addrErr);
 
-            this.walletService.storage.fetchAddressByWalletId(
+            server.storage.fetchAddressByWalletId(
               wallet.id,
               opts.changeAddress,
               (err, address) => {
@@ -197,9 +191,9 @@ export class BtcChain implements IChain {
     }
   }
 
-  getFeePerKb(wallet, opts) {
+  getFeePerKb(server, wallet, opts) {
     return new Promise(resolve => {
-      this.walletService._getFeePerKb(wallet, opts, (err, feePerKb) => {
+      server._getFeePerKb(wallet, opts, (err, feePerKb) => {
         return resolve({feePerKb});
       });
     });
@@ -209,7 +203,7 @@ export class BtcChain implements IChain {
     return [p, Utils.strip(feePerKb * 1e8)];
   }
 
-  checkTx(txp) {
+  checkTx(server, txp) {
     let bitcoreError;
 
     const serializationOpts = {
@@ -226,7 +220,7 @@ export class BtcChain implements IChain {
         txp.fee = bitcoreTx.getFee();
       }
     } catch (ex) {
-      this.walletService.logw('Error building Bitcore transaction', ex);
+      server.logw('Error building Bitcore transaction', ex);
       return ex;
     }
 
@@ -238,14 +232,14 @@ export class BtcChain implements IChain {
     return bitcoreError;
   }
 
-  storeAndNotifyTx(txp, opts, cb) {
-    this.walletService.logd('Rechecking UTXOs availability for publishTx');
+  storeAndNotifyTx(server, txp, opts, cb) {
+    server.logd('Rechecking UTXOs availability for publishTx');
 
     const utxoKey = utxo => {
       return utxo.txid + '|' + utxo.vout;
     };
 
-    this.walletService._getUtxosForCurrentWallet(
+    server._getUtxosForCurrentWallet(
       {
         addresses: txp.inputs
       },
@@ -262,13 +256,13 @@ export class BtcChain implements IChain {
         if (unavailable) return cb(Errors.UNAVAILABLE_UTXOS);
 
         txp.status = 'pending';
-        this.walletService.storage.storeTx(
-          this.walletService.walletId,
+        server.storage.storeTx(
+          server.walletId,
           txp,
           err => {
             if (err) return cb(err);
 
-            this.walletService._notifyTxProposalAction(
+            server._notifyTxProposalAction(
               'NewTxProposal',
               txp,
               () => {
@@ -281,7 +275,7 @@ export class BtcChain implements IChain {
     );
   }
 
-  selectTxInputs(txp, wallet, opts, cb, next) {
-    return this.walletService._selectTxInputs(txp, opts.utxosToExclude, next);
+  selectTxInputs(server, txp, wallet, opts, cb, next) {
+    return server._selectTxInputs(txp, opts.utxosToExclude, next);
   }
 }

@@ -112,7 +112,6 @@ export class WalletService {
     this.messageBroker = messageBroker;
     this.fiatRateService = fiatRateService;
     this.notifyTicker = 0;
-    ChainService.init(this);
   }
   /**
    * Gets the current version of BWS
@@ -1780,7 +1779,7 @@ export class WalletService {
 
       this.syncWallet(wallet, err => {
         if (err) return cb(err);
-        return ChainService.getWalletBalance(wallet, opts, cb);
+        return ChainService.getWalletBalance(this, wallet, opts, cb);
       });
     });
   }
@@ -1835,7 +1834,7 @@ export class WalletService {
           return cb(new ClientError('Invalid fee per KB'));
       }
 
-      return ChainService.getWalletSendMaxInfo(wallet, opts, cb);
+      return ChainService.getWalletSendMaxInfo(this, wallet, opts, cb);
     });
   }
 
@@ -2007,7 +2006,7 @@ export class WalletService {
     if (txp.getEstimatedSize() / 1000 > Defaults.MAX_TX_SIZE_IN_KB[txp.coin])
       return Errors.TX_MAX_SIZE_EXCEEDED;
 
-    return ChainService.checkTx(txp);
+    return ChainService.checkTx(this, txp);
   }
 
   _selectTxInputs(txp, utxosToExclude, cb) {
@@ -2641,7 +2640,7 @@ export class WalletService {
                 async(next) => {
                   if (opts.sendMax) return next();
                   try {
-                    changeAddress = await ChainService.getChangeAddress(wallet, opts);
+                    changeAddress = await ChainService.getChangeAddress(this, wallet, opts);
                   } catch (error) {
                     return next(error);
                   }
@@ -2651,7 +2650,7 @@ export class WalletService {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
                     return next();
 
-                  ({ feePerKb, gasLimit, gasPrice} = await ChainService.getFeePerKb(wallet, opts));
+                  ({ feePerKb, gasLimit, gasPrice} = await ChainService.getFeePerKb(this, wallet, opts));
                   next();
                 },
                 (next) => {
@@ -2690,11 +2689,11 @@ export class WalletService {
                   next();
                 },
                 (next) => {
-                  return ChainService.selectTxInputs(txp, wallet, opts, cb, next);
+                  return ChainService.selectTxInputs(this, txp, wallet, opts, cb, next);
                 },
                 async(next) => {
                   try {
-                    txp.nonce = await ChainService.getTransactionCount(wallet, txp.from);
+                    txp.nonce = await ChainService.getTransactionCount(this, wallet, txp.from);
                   } catch (error) {
                     return next(error);
                   }
@@ -2787,7 +2786,7 @@ export class WalletService {
             txp.proposalSignaturePubKeySig = signingKey.signature;
           }
 
-          return ChainService.storeAndNotifyTx(txp, opts, cb);
+          return ChainService.storeAndNotifyTx(this, txp, opts, cb);
         });
       });
     });
