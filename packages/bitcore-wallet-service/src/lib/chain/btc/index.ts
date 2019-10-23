@@ -180,7 +180,7 @@ export class BtcChain implements IChain {
     });
   }
 
-  checkErrorOutputs(output) {
+  checkDust(output) {
     const dustThreshold = Math.max(
       Defaults.MIN_OUTPUT_AMOUNT,
       this.bitcoreLib.Transaction.DUST_AMOUNT
@@ -191,7 +191,7 @@ export class BtcChain implements IChain {
     }
   }
 
-  getFeePerKb(server, wallet, opts) {
+  getFee(server, wallet, opts) {
     return new Promise(resolve => {
       server._getFeePerKb(wallet, opts, (err, feePerKb) => {
         return resolve({feePerKb});
@@ -199,7 +199,7 @@ export class BtcChain implements IChain {
     });
   }
 
-  getLevelsFee(p, feePerKb) {
+  convertFeePerKb(p, feePerKb) {
     return [p, Utils.strip(feePerKb * 1e8)];
   }
 
@@ -232,7 +232,7 @@ export class BtcChain implements IChain {
     return bitcoreError;
   }
 
-  storeAndNotifyTx(server, txp, opts, cb) {
+  checkTxUTXOs(server, txp, opts, cb) {
     server.logd('Rechecking UTXOs availability for publishTx');
 
     const utxoKey = utxo => {
@@ -254,23 +254,7 @@ export class BtcChain implements IChain {
         });
 
         if (unavailable) return cb(Errors.UNAVAILABLE_UTXOS);
-
-        txp.status = 'pending';
-        server.storage.storeTx(
-          server.walletId,
-          txp,
-          err => {
-            if (err) return cb(err);
-
-            server._notifyTxProposalAction(
-              'NewTxProposal',
-              txp,
-              () => {
-                return cb(null, txp);
-              }
-            );
-          }
-        );
+        return cb();
       }
     );
   }
@@ -278,4 +262,14 @@ export class BtcChain implements IChain {
   selectTxInputs(server, txp, wallet, opts, cb, next) {
     return server._selectTxInputs(txp, opts.utxosToExclude, next);
   }
+
+  checkUtxos(opts) {
+    if (_.isNumber(opts.fee) && _.isEmpty(opts.inputs)) return true;
+  }
+
+  setInputs(info) {
+    return info.inputs;
+  }
+
+  isUTXOCoin() { return true; }
 }

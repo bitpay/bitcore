@@ -1859,7 +1859,7 @@ export class WalletService {
           // NOTE: ONLY BTC/BCH expect feePerKb to be Bitcoin amounts
           // others... expect wei.
 
-          return ChainService.getLevelsFee(coin, p, feePerKb);
+          return ChainService.convertFeePerKb(coin, p, feePerKb);
         })
       );
 
@@ -2391,7 +2391,7 @@ export class WalletService {
         return new ClientError('Invalid amount');
       }
 
-      const error = ChainService.checkErrorOutputs(wallet.coin, output, opts);
+      const error = ChainService.checkDust(wallet.coin, output, opts);
       if (error) return error;
       output.valid = true;
     }
@@ -2432,11 +2432,12 @@ export class WalletService {
               );
           }
 
-          if (_.isNumber(opts.fee) && _.isEmpty(opts.inputs) && wallet.isUTXOCoin())
+          const error = ChainService.checkUtxos(wallet.coin, opts);
+          if (error) {
             return next(
               new ClientError('fee can only be set when inputs are specified')
             );
-
+          }
           next();
         },
         (next) => {
@@ -2479,10 +2480,7 @@ export class WalletService {
               if (err) return next(err);
               opts.outputs[0].amount = info.amount;
 
-              if (wallet.isUTXOCoin()) {
-                opts.inputs = info.inputs;
-              }
-
+              opts.inputs = ChainService.setInputs(wallet.coin, info);
               return next();
             }
           );
@@ -2650,7 +2648,7 @@ export class WalletService {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
                     return next();
 
-                  ({ feePerKb, gasLimit, gasPrice} = await ChainService.getFeePerKb(this, wallet, opts));
+                  ({ feePerKb, gasLimit, gasPrice} = await ChainService.getFee(this, wallet, opts));
                   next();
                 },
                 (next) => {
@@ -2677,7 +2675,7 @@ export class WalletService {
                     fee:
                       opts.inputs && !_.isNumber(opts.feePerKb)
                         ? opts.fee
-                        : !wallet.isUTXOCoin()
+                        : !ChainService.isUTXOCoin(wallet.coin)
                           ? opts.fee
                           : null,
                     noShuffleOutputs: opts.noShuffleOutputs,
@@ -2786,7 +2784,33 @@ export class WalletService {
             txp.proposalSignaturePubKeySig = signingKey.signature;
           }
 
-          return ChainService.storeAndNotifyTx(this, txp, opts, cb);
+          ChainService.checkTxUTXOs(this, txp, opts, (err) => {
+            if (err) return cb(err);
+            txp.status = 'pending';
+            this.storage.storeTx(
+              this.walletId,
+              txp,
+              err => {
+                if (err) return cb(err);
+
+                this._notifyTxProposalAction(
+                  'NewTxProposal',
+                  txp,
+                  () => {
+                    if (opts.noCashAddr) {
+                      if (txp.changeAddress) {
+                        txp.changeAddress.address = BCHAddressTranslator.translate(
+                          txp.changeAddress.address,
+                          'copay'
+                        );
+                      }
+                    }
+                    return cb(null, txp);
+                  }
+                );
+              }
+            );
+          });
         });
       });
     });
@@ -4226,7 +4250,7 @@ export class WalletService {
         // single address or non UTXO coins do not scan.
         if (wallet.singleAddress)
           return cb();
-        if (!wallet.isUTXOCoin() )
+        if (!ChainService.isUTXOCoin(wallet.coin))
           return cb();
 
         this._runLocked(cb, (cb) => {
@@ -4397,7 +4421,7 @@ export class WalletService {
       // single address or non UTXO coins do not scan.
       if (wallet.singleAddress)
         return cb();
-      if (!wallet.isUTXOCoin() )
+      if (!ChainService.isUTXOCoin(wallet.coin))
         return cb();
 
       setTimeout(() => {

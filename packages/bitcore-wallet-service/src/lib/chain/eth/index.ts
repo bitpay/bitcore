@@ -90,13 +90,13 @@ export class EthChain implements IChain {
 
   getChangeAddress() {}
 
-  checkErrorOutputs(output, opts) {
+  checkDust(output, opts) {
     if (opts.outputs.length != 1) {
       return Errors.MORE_THAT_ONE_OUTPUT;
     }
   }
 
-  getFeePerKb(server, wallet, opts) {
+  getFee(server, wallet, opts) {
     return new Promise(resolve => {
       server._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
         let feePerKb = inFeePerKb;
@@ -132,7 +132,7 @@ export class EthChain implements IChain {
     });
   }
 
-  getLevelsFee(p, feePerKb) {
+  convertFeePerKb(p, feePerKb) {
     return [p, feePerKb];
   }
 
@@ -145,19 +145,8 @@ export class EthChain implements IChain {
     }
   }
 
-  storeAndNotifyTx(server, txp, opts, cb) {
-    txp.status = 'pending';
-    server.storage.storeTx(
-      server.walletId,
-      txp,
-      err => {
-        if (err) return cb(err);
-
-        server._notifyTxProposalAction('NewTxProposal', txp, () => {
-          return cb(null, txp);
-        });
-      }
-    );
+  checkTxUTXOs(server, txp, opts, cb) {
+    return cb();
   }
 
   selectTxInputs(server, txp, wallet, opts, cb, next) {
@@ -174,4 +163,10 @@ export class EthChain implements IChain {
       }
     });
   }
+
+  checkUtxos(opts) {}
+
+  setInputs() {}
+
+  isUTXOCoin() { return false; }
 }

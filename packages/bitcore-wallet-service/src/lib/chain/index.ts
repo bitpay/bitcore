@@ -10,12 +10,15 @@ export interface IChain {
   getDustAmountValue();
   getTransactionCount(server: WalletService, wallet: IWallet, from: string);
   getChangeAddress(server: WalletService, wallet: IWallet, opts: {changeAddress: string} & any);
-  checkErrorOutputs(output: {amount: number, toAddress: string, valid: boolean}, opts: {outputs: any[]} & any);
-  getFeePerKb(server: WalletService, wallet: IWallet, opts: {fee: number, feePerKb: number} & any);
-  getLevelsFee(p: number, feePerKb: number);
+  checkDust(output: {amount: number, toAddress: string, valid: boolean}, opts: {outputs: any[]} & any);
+  getFee(server: WalletService, wallet: IWallet, opts: {fee: number, feePerKb: number} & any);
+  convertFeePerKb(p: number, feePerKb: number);
   checkTx(server: WalletService, txp: ITxProposal);
-  storeAndNotifyTx(server: WalletService, txp: ITxProposal, opts: {noCashAddr: boolean} & any, cb);
+  checkTxUTXOs(server: WalletService, txp: ITxProposal, opts: {noCashAddr: boolean} & any, cb);
   selectTxInputs(server: WalletService, txp: ITxProposal, wallet: IWallet, opts: {utxosToExclude: any[]} & any, cb, next);
+  checkUtxos(opts: { fee: number, inputs: any[]});
+  setInputs(info: {inputs: any[]});
+  isUTXOCoin();
 }
 
 const chain: { [chain: string]: IChain } = {
@@ -51,28 +54,40 @@ class ChainProxy {
     return this.get(wallet.coin).getChangeAddress(server, wallet, opts);
   }
 
-  checkErrorOutputs(coin, output, opts) {
-    return this.get(coin).checkErrorOutputs(output, opts);
+  checkDust(coin, output, opts) {
+    return this.get(coin).checkDust(output, opts);
   }
 
-  getFeePerKb(server, wallet, opts) {
-    return this.get(wallet.coin).getFeePerKb(server, wallet, opts);
+  getFee(server, wallet, opts) {
+    return this.get(wallet.coin).getFee(server, wallet, opts);
   }
 
-  getLevelsFee(coin, p, feePerKb) {
-    return this.get(coin).getLevelsFee(p, feePerKb);
+  convertFeePerKb(coin, p, feePerKb) {
+    return this.get(coin).convertFeePerKb(p, feePerKb);
   }
 
   checkTx(server, txp) {
     return this.get(txp.coin).checkTx(server, txp);
   }
 
-  storeAndNotifyTx(server, txp, opts, cb) {
-    return this.get(txp.coin).storeAndNotifyTx(server, txp, opts, cb);
+  checkTxUTXOs(server, txp, opts, cb) {
+    return this.get(txp.coin).checkTxUTXOs(server, txp, opts, cb);
   }
 
   selectTxInputs(server, txp, wallet, opts, cb, next) {
     return this.get(txp.coin).selectTxInputs(server, txp, wallet, opts, cb, next);
+  }
+
+  checkUtxos(coin, opts) {
+    return this.get(coin).checkUtxos(opts);
+  }
+
+  setInputs(coin, info) {
+    return this.get(coin).setInputs(info);
+  }
+
+  isUTXOCoin(coin) {
+    return this.get(coin).isUTXOCoin();
   }
 }
 
