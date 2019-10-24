@@ -110,6 +110,7 @@ export class Storage {
     encryptionKey: string;
   }): Promise<Wallet.KeyImport> {
     const { address, name, encryptionKey } = params;
+    console.log('\n\n', address, name, encryptionKey, '\n\n');
     const payload = (await this.db.get(`key|${name}|${address}`)) as string;
     const json = JSON.parse(payload) || payload;
     const { encKey, pubKey } = json;
@@ -133,8 +134,12 @@ export class Storage {
     const { addresses, name, encryptionKey } = params;
     const keys = new Array<Wallet.KeyImport>();
     for(const address of addresses) {
-      const key = await this.getKey({name, address, encryptionKey});
-      keys.push(key);
+      try {
+        const key = await this.getKey({name, address, encryptionKey});
+        keys.push(key);
+      } catch (err) {
+        console.error(err);
+      }
     }
     return keys;
   }
