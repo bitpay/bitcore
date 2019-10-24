@@ -110,7 +110,6 @@ export class Storage {
     encryptionKey: string;
   }): Promise<Wallet.KeyImport> {
     const { address, name, encryptionKey } = params;
-    console.log('\n\n', address, name, encryptionKey, '\n\n');
     const payload = (await this.db.get(`key|${name}|${address}`)) as string;
     const json = JSON.parse(payload) || payload;
     const { encKey, pubKey } = json;
