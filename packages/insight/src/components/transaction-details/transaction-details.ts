@@ -64,7 +64,7 @@ export class TransactionDetailsComponent implements OnInit {
           return input.sequenceNumber && input.sequenceNumber < this.DEFAULT_RBF_SEQNUMBER - 1;
         });
         this.tx.hasUnconfirmedInputs = _.some(data.inputs, input => {
-          return input.confirmations === 0;
+          return input.mintHeight < 0;
         });
         this.tx.valueOut = data.outputs.reduce((a, b) => a + b.value, 0);
         this.getConfirmations();
