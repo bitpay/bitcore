@@ -86,6 +86,15 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
     return amSyncingNode;
   }
 
+  async waitTilSync() {
+    while(true) {
+      if(this.isSyncingNode) {
+        return;
+      }
+      await wait(500);
+    }
+  }
+
   async refreshSyncingNode() {
     while (!this.stopping) {
       const wasSyncingNode = this.getIsSyncingNode();

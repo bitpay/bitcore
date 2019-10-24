@@ -1,3 +1,4 @@
+import sinon from 'sinon';
 import { expect } from 'chai';
 import { resetDatabase } from '../helpers';
 import { AsyncRPC } from '../../src/rpc';
@@ -16,6 +17,7 @@ const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port)
 import { Client } from 'bitcore-client';
 import { WalletStorage } from '../../src/models/wallet';
 import { WalletAddressStorage } from '../../src/models/walletAddress';
+import { Socket } from '../../src/services/socket';
 
 function getSocket() {
   const socket = io.connect(
@@ -27,11 +29,15 @@ function getSocket() {
 
 let p2pWorker: BitcoinP2PWorker;
 let socket = getSocket();
+const bwsPrivKey = new PrivateKey();
+const bwsKey = bwsPrivKey.publicKey.toString('hex');
+const sandbox = sinon.createSandbox();
 
-describe('Websockets', function() {
+describe.only('Websockets', function() {
   this.timeout(180000);
 
   before(async () => {
+    sandbox.stub(Socket.serviceConfig, 'bwsKeys').value([bwsKey]);
     await resetDatabase();
     await Event.start();
     await Api.start();
@@ -60,6 +66,7 @@ describe('Websockets', function() {
     if (p2pWorker.isSyncing) {
       await p2pWorker.syncDone();
     }
+    await p2pWorker.waitTilSync()
   });
 
   afterEach(async () => {
@@ -166,5 +173,50 @@ describe('Websockets', function() {
     await sawEvents;
     expect(hasSeenTxEvent).to.equal(true);
     expect(hasSeenCoinEvent).to.equal(true);
+  });
+
+  it('should get all wallet events', async () => {
+    const authKey = bwsPrivKey;
+    const authClient = new Client({ baseUrl: 'http://localhost:3000/api', authKey });
+    const payload = { method: 'socket', url: 'http://localhost:3000/api' };
+    const authPayload = {
+      pubKey: bwsKey,
+      message: authClient.getMessage(payload),
+      signature: authClient.sign(payload)
+    };
+    console.log(authPayload);
+
+    const chain = 'BTC';
+    const network = 'regtest';
+    const roomPrefix = `/${chain}/${network}/`;
+    const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
+    socket.emit('room', roomPrefix + 'wallets', authPayload);
+
+    let hasSeenTxEvent = false;
+    let hasSeenCoinEvent = false;
+    let sawEvents = new Promise(resolve => {
+      socket.on('tx', () => {
+        hasSeenTxEvent = true;
+        console.log('Transaction event received');
+        if (hasSeenTxEvent && hasSeenCoinEvent) {
+          resolve();
+        }
+      });
+      socket.on('coin', () => {
+        hasSeenCoinEvent = true;
+        console.log('Coin event received');
+        if (hasSeenTxEvent && hasSeenCoinEvent) {
+          resolve();
+        }
+      });
+    });
+
+    await rpc.sendtoaddress(address, 0.1);
+    console.log('Sent BTC');
+    await sawEvents;
+    expect(hasSeenTxEvent).to.equal(true);
+    expect(hasSeenCoinEvent).to.equal(true);
+
+    sandbox.restore();
   });
 });

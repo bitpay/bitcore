@@ -51,7 +51,8 @@ export class SocketService {
   }
 
   start({ server }: { server: http.Server }) {
-    const bwsKeys = this.configService.for('socket').bwsKeys;
+    const bwsKeys = this.serviceConfig.bwsKeys;
+    console.log(bwsKeys);
     if (this.configService.isDisabled('socket')) {
       logger.info('Disabled Socket Service');
       return;
@@ -65,10 +66,14 @@ export class SocketService {
         socket.on('room', (room: string, payload: VerificationPayload) => {
           const chainNetwork = room.slice(0, room.lastIndexOf('/') + 1);
           const roomName = room.slice(room.lastIndexOf('/') + 1);
+          console.log('Joining', room);
           switch (roomName) {
             case 'wallets':
               if (bwsKeys.includes(payload.pubKey) && this.validateRequest(payload)) {
+                console.log('Joined ', room);
                 socket.join(room);
+              } else {
+                console.log('Auth failed');
               }
               break;
             case 'wallet':
@@ -110,6 +115,7 @@ export class SocketService {
           const objectIds = tx.wallets.map(w => new ObjectID(w));
           const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
           for (let wallet of wallets) {
+            console.log('Emitting', `/${chain}/${network}/wallets`);
             this.io.sockets.in(`/${chain}/${network}/wallets`).emit('tx', tx);
             this.io.sockets
               .in(`/${chain}/${network}/${wallet.pubKey}`)
@@ -137,6 +143,7 @@ export class SocketService {
           const objectIds = coin.wallets.map(w => new ObjectID(w));
           const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
           for (let wallet of wallets) {
+            console.log('Emitting', `/${chain}/${network}/wallets`);
             this.io.sockets.in(`/${chain}/${network}/wallets`).emit('coin', coin);
             this.io.sockets
               .in(`/${chain}/${network}/${wallet.pubKey}`)
