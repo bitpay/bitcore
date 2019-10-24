@@ -27,7 +27,7 @@ interface ERC20Transfer extends EventLog {
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
-  static web3?: Web3;
+  static web3 = {} as { [network: string]: Web3 };
 
   constructor(public chain: string = 'ETH') {
     super(chain);
@@ -36,13 +36,13 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
   async getWeb3(network: string) {
     try {
-      if (ETHStateProvider.web3) {
-        await ETHStateProvider.web3.eth.getBlockNumber();
+      if (ETHStateProvider.web3[network]) {
+        await ETHStateProvider.web3[network].eth.getBlockNumber();
       }
     } catch (e) {
-      ETHStateProvider.web3 = undefined;
+      delete ETHStateProvider.web3[network];
     }
-    if (!ETHStateProvider.web3) {
+    if (!ETHStateProvider.web3[network]) {
       const networkConfig = this.config[network];
       const provider = networkConfig.provider;
       const host = provider.host || 'localhost';
@@ -60,9 +60,9 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           break;
       }
       console.log(connUrl);
-      ETHStateProvider.web3 = new Web3(new ProviderType(connUrl));
+      ETHStateProvider.web3[network] = new Web3(new ProviderType(connUrl));
     }
-    return ETHStateProvider.web3;
+    return ETHStateProvider.web3[network];
   }
 
   async erc20For(network: string, address: string) {
