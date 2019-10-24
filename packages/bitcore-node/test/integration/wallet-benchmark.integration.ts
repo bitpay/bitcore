@@ -95,6 +95,16 @@ describe('Wallet Benchmark', function() {
   this.timeout(5000000);
   let p2pWorker: BitcoinP2PWorker;
 
+  before(async () => {
+    await Event.start();
+    await Api.start();
+  });
+
+  after(async () => {
+    await Event.stop();
+    await Api.stop();
+  });
+
   beforeEach(async () => {
     await resetDatabase();
   });
@@ -105,15 +115,12 @@ describe('Wallet Benchmark', function() {
   });
   describe('Wallet import', () => {
     it('should be able to create two wallets and have them interact', async () => {
-      await Event.start();
-      await Api.start();
-
       const seenCoins = new Set();
       const socket = io.connect(
         'http://localhost:3000',
         { transports: ['websocket'] }
       );
-      socket.on('connect', () => {
+      socket.once('connect', () => {
         const room = `/${chain}/${network}/inv`;
         socket.emit('room', room);
       });
@@ -161,8 +168,6 @@ describe('Wallet Benchmark', function() {
         await wait(1000);
         await socket.disconnect();
         await p2pWorker.stop();
-        await Event.stop();
-        await Api.stop();
       } catch (e) {
         console.log('Error : ', e);
         expect(e).to.be.undefined;
@@ -170,15 +175,12 @@ describe('Wallet Benchmark', function() {
     });
 
     it('should be able to create two wallets and have them interact, while syncing', async () => {
-      await Event.start();
-      await Api.start();
-
       const seenCoins = new Set();
       const socket = io.connect(
         'http://localhost:3000',
         { transports: ['websocket'] }
       );
-      socket.on('connect', () => {
+      socket.once('connect', () => {
         const room = `/${chain}/${network}/inv`;
         socket.emit('room', room);
       });
@@ -235,8 +237,6 @@ describe('Wallet Benchmark', function() {
         await wait(1000);
         await socket.disconnect();
         await p2pWorker.stop();
-        await Event.stop();
-        await Api.stop();
       } catch (e) {
         console.log('Error : ', e);
         expect(e).to.be.undefined;
@@ -244,9 +244,6 @@ describe('Wallet Benchmark', function() {
     });
 
     it('should import all addresses and verify in database while below 300 mb of heapUsed memory', async () => {
-      await Event.start();
-      await Api.start();
-
       let smallAddressBatch = new Array<string>();
       let mediumAddressBatch = new Array<string>();
       let largeAddressBatch = new Array<string>();

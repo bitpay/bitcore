@@ -52,7 +52,6 @@ export class SocketService {
 
   start({ server }: { server: http.Server }) {
     const bwsKeys = this.serviceConfig.bwsKeys;
-    console.log(bwsKeys);
     if (this.configService.isDisabled('socket')) {
       logger.info('Disabled Socket Service');
       return;
@@ -66,14 +65,10 @@ export class SocketService {
         socket.on('room', (room: string, payload: VerificationPayload) => {
           const chainNetwork = room.slice(0, room.lastIndexOf('/') + 1);
           const roomName = room.slice(room.lastIndexOf('/') + 1);
-          console.log('Joining', room);
           switch (roomName) {
             case 'wallets':
               if (bwsKeys.includes(payload.pubKey) && this.validateRequest(payload)) {
-                console.log('Joined ', room);
                 socket.join(room);
-              } else {
-                console.log('Auth failed');
               }
               break;
             case 'wallet':
@@ -96,8 +91,23 @@ export class SocketService {
     logger.info('Stopping Socket Service');
     this.stopped = true;
     return new Promise(resolve => {
+      this.eventService.blockEvent.removeAllListeners();
+      this.eventService.txEvent.removeAllListeners();
+      this.eventService.addressCoinEvent.removeAllListeners();
       if (this.io) {
-        this.io.close(resolve);
+        Object.keys(this.io.sockets.sockets).forEach(s => {
+          if (this.io) {
+            this.io.sockets.sockets[s].disconnect(true);
+            for (const socket of Object.values(this.io.sockets.connected)) {
+              socket.disconnect(true);
+              socket.removeAllListeners();
+              socket.server.close();
+            }
+          }
+        });
+        this.io.clients().removeAllListeners();
+        this.httpServer = undefined;
+        resolve();
       } else {
         resolve();
       }
@@ -143,7 +153,6 @@ export class SocketService {
           const objectIds = coin.wallets.map(w => new ObjectID(w));
           const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
           for (let wallet of wallets) {
-            console.log('Emitting', `/${chain}/${network}/wallets`);
             this.io.sockets.in(`/${chain}/${network}/wallets`).emit('coin', coin);
             this.io.sockets
               .in(`/${chain}/${network}/${wallet.pubKey}`)

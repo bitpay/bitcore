@@ -33,7 +33,7 @@ const bwsPrivKey = new PrivateKey();
 const bwsKey = bwsPrivKey.publicKey.toString('hex');
 const sandbox = sinon.createSandbox();
 
-describe.only('Websockets', function() {
+describe('Websockets', function() {
   this.timeout(180000);
 
   before(async () => {
@@ -66,7 +66,7 @@ describe.only('Websockets', function() {
     if (p2pWorker.isSyncing) {
       await p2pWorker.syncDone();
     }
-    await p2pWorker.waitTilSync()
+    await p2pWorker.waitTilSync();
   });
 
   afterEach(async () => {
@@ -184,7 +184,6 @@ describe.only('Websockets', function() {
       message: authClient.getMessage(payload),
       signature: authClient.sign(payload)
     };
-    console.log(authPayload);
 
     const chain = 'BTC';
     const network = 'regtest';
@@ -212,7 +211,6 @@ describe.only('Websockets', function() {
     });
 
     await rpc.sendtoaddress(address, 0.1);
-    console.log('Sent BTC');
     await sawEvents;
     expect(hasSeenTxEvent).to.equal(true);
     expect(hasSeenCoinEvent).to.equal(true);

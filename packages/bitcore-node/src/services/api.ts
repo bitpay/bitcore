@@ -56,8 +56,9 @@ export class ApiService {
   stop() {
     this.stopped = true;
     return new Promise(resolve => {
-      this.httpServer.close(() => {
-        logger.info("Stopped API Service")
+      this.httpServer.close(async () => {
+        logger.info('Stopped API Service');
+        await this.socketService.stop();
         resolve();
       });
       this.httpServer.emit('close');
