@@ -34,12 +34,9 @@ router.get('/:address', function(req, res) {
 
 router.get('/:address/coins', async function(req, res) {
   let { address, chain, network } = req.params;
-  //let { limit = 1000, since, paging = '_id' } = req.query;
 
   try {
     const { query, options } = Storage.getFindOptions(CoinStorage, req.query);
-
-    console.log(query);
 
     let coins = await CoinStorage.collection.find({ ...query, address, chain, network }, options).toArray();
 
