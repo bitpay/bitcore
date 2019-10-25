@@ -47,7 +47,7 @@ export class Stats {
     } else {
       uri = uri + '?';
     }
-    uri = uri ; // + 'readPreference=secondaryPreferred';
+    uri = uri  + 'readPreference=secondaryPreferred';
 
     mongodb.MongoClient.connect(
       uri,
