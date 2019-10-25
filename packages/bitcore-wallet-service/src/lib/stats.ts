@@ -102,7 +102,7 @@ export class Stats {
     };
 
     const updateStats = (from, cb) => {
-      var emit:any; // just to cheat TS
+      var emit: any; // just to cheat TS
       const to = moment()
         .subtract(1, 'day')
         .endOf('day');
@@ -119,7 +119,7 @@ export class Stats {
         const value = {
           count: 1
         };
-         emit(key, value);
+        emit(key, value);
       };
       const reduce = (k, v: any[]) => {
         let count = 0;
