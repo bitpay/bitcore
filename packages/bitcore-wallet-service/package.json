@@ -91,7 +91,7 @@
     "clean": "rm -rf ./ts_build",
     "compile": "npm run clean && npm run build",
     "lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "lint-fix": "tslint --fix -c tslint.json 'src/**/*.ts'",
+    "fix": "tslint --fix -c tslint.json 'src/**/*.ts'",
     "pub": "npm run build && npm publish"
   },
   "bitcoreNode": "./bitcorenode",
