@@ -34,8 +34,8 @@ var TestData = require('../testdata');
 var storage, blockchainExplorer;
 
 // tinodb not longer supported
-var useMongoDb =  true; // !!process.env.USE_MONGO_DB;
-const CWC =  require('crypto-wallet-core');
+var useMongoDb = true; // !!process.env.USE_MONGO_DB;
+const CWC = require('crypto-wallet-core');
 
 var helpers = {};
 
@@ -65,11 +65,11 @@ helpers.before = function(cb) {
     be.register = sinon.stub().callsArgWith(1, null, null);
     be.addAddresses = sinon.stub().callsArgWith(2, null, null);
     be.getAddressUtxos = sinon.stub().callsArgWith(2, null, []);
-    be.getCheckData = sinon.stub().callsArgWith(1, null, {sum: 100});
-    be.getUtxos = sinon.stub().callsArgWith(1, null,[]);
+    be.getCheckData = sinon.stub().callsArgWith(1, null, { sum: 100 });
+    be.getUtxos = sinon.stub().callsArgWith(1, null, []);
     be.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000, 'hash');
     be.estimateGas = sinon.stub().callsArgWith(1, null, Defaults.MIN_GAS_LIMIT);
-    be.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: '10000000000', balance: '10000000000' });
+    be.getBalance = sinon.stub().callsArgWith(1, null, { unconfirmed: 0, confirmed: '10000000000', balance: '10000000000' });
     be.getTransactionCount = sinon.stub().callsArgWith(1, null, '0');
 
 
@@ -111,7 +111,7 @@ helpers.beforeEach = function(cb) {
   };
 
 
-  async.each(_.values(collections), (x, icb)=> {
+  async.each(_.values(collections), (x, icb) => {
     storage.db.collection(x).remove({}, icb);
   }, (err) => {
     should.not.exist(err);
@@ -142,7 +142,7 @@ helpers.getStorage = function() {
 
 helpers.signMessage = function(message, privKey) {
   var priv = new Bitcore.PrivateKey(privKey);
-  const flattenedMessage = _.isArray(message)? _.join(message) : message;
+  const flattenedMessage = _.isArray(message) ? _.join(message) : message;
   var hash = Utils.hashMessage(flattenedMessage);
   return Bitcore.crypto.ECDSA.sign(hash, priv, 'little').toString();
 };
@@ -287,15 +287,15 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
       if (err) return new Error('Could not generate wallet');
       helpers.getAuthServer(copayerIds[0], function(s) {
         if (opts.earlyRet) return cb(s);
-        s.getWallet({}, function(err, w) {
+        s.getWallet({}).then(w => {
 
           // STUB for checkWalletSync.
-          s.checkWalletSync = function(a,b, simple, cb) {
+          s.checkWalletSync = function(a, b, simple, cb) {
             if (simple) return cb(null, false);
             return cb(null, true);
           }
           cb(s, w);
-        });
+        }).catch(err => cb(err));
       });
     });
   });
@@ -356,8 +356,8 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
 
   if (wallet.coin == 'eth') {
     amounts = _.isArray(amounts) ? amounts : [amounts];
-    let conf =  _.sum(_.map(amounts, x =>  Number((x*1e18).toFixed(0))));
-    blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: conf, balance: conf });
+    let conf = _.sum(_.map(amounts, x => Number((x * 1e18).toFixed(0))));
+    blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, { unconfirmed: 0, confirmed: conf, balance: conf });
     return cb();
   }
 
@@ -414,14 +414,14 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
       blockchainExplorer.getUtxos = function(param1, height, cb) {
 
         var selected;
-        selected = _.filter(helpers._utxos, {'wallet': param1.id});
+        selected = _.filter(helpers._utxos, { 'wallet': param1.id });
         return cb(null, selected);
       };
 
 
       blockchainExplorer.getAddressUtxos = function(param1, height, cb) {
         var selected;
-        selected = _.filter(helpers._utxos, {'address': param1});
+        selected = _.filter(helpers._utxos, { 'address': param1 });
         return cb(null, selected);
       };
 
@@ -448,9 +448,9 @@ helpers.createTxsV8 = function(nr, bcHeight, txs) {
   //  2.  => 2      / bcHeight - 1  /   txid2
   //  3.  => 3...   / bcHeight - 2  /   txid3
 
-  var  i = 0;
+  var i = 0;
   if (_.isEmpty(txs)) {
-    while(i < nr) {
+    while (i < nr) {
       txs.push({
         id: 'id' + i,
         txid: 'txid' + i,
@@ -458,8 +458,8 @@ helpers.createTxsV8 = function(nr, bcHeight, txs) {
         category: 'receive',
         satoshis: 30001,
         // this is translated on V8.prototype.getTransactions
-        amount: 30001 /1e8,
-        height: (i == 0) ? -1 :  bcHeight - i + 1,
+        amount: 30001 / 1e8,
+        height: (i == 0) ? -1 : bcHeight - i + 1,
         address: 'muFJi3ZPfR5nhxyD7dfpx2nYZA8Wmwzgck',
         blockTime: '2018-09-21T18:08:31.000Z',
       });
@@ -472,11 +472,11 @@ helpers.createTxsV8 = function(nr, bcHeight, txs) {
 
 
 helpers.stubHistory = function(nr, bcHeight, txs) {
-  txs= helpers.createTxsV8(nr,bcHeight, txs);
+  txs = helpers.createTxsV8(nr, bcHeight, txs);
   blockchainExplorer.getTransactions = function(walletId, startBlock, cb) {
     startBlock = startBlock || 0;
     var page = _.filter(txs, (x) => {
-      return x.height >=startBlock || x.height == -1
+      return x.height >= startBlock || x.height == -1
     });
     return cb(null, page);
   };
@@ -484,8 +484,8 @@ helpers.stubHistory = function(nr, bcHeight, txs) {
 
 
 helpers.stubCheckData = function(bc, server, isBCH, cb) {
-  server.storage.walletCheck({walletId:server.walletId, bch: isBCH}).then((x) => {
-    bc.getCheckData = sinon.stub().callsArgWith(1, null, {sum: x.sum});
+  server.storage.walletCheck({ walletId: server.walletId, bch: isBCH }).then((x) => {
+    bc.getCheckData = sinon.stub().callsArgWith(1, null, { sum: x.sum });
     return cb();
   });
 };
@@ -521,10 +521,10 @@ helpers.stubFeeLevels = function(levels, fill, coin) {
 
 
 var stubAddressActivityFailsOn = null;
-var stubAddressActivityFailsOnCount=1;
+var stubAddressActivityFailsOnCount = 1;
 helpers.stubAddressActivity = function(activeAddresses, failsOn) {
 
-  stubAddressActivityFailsOnCount=1;
+  stubAddressActivityFailsOnCount = 1;
 
   // could be null
   stubAddressActivityFailsOn = failsOn;
@@ -549,16 +549,16 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
 
   var xpriv = new Bitcore.HDPrivateKey(derivedXPrivKey, txp.network);
 
-  switch(txp.coin) {
+  switch (txp.coin) {
     case 'eth':
 
       // For eth => account, 0, change = 0
-      const priv =  xpriv.derive('m/0/0').privateKey;
+      const priv = xpriv.derive('m/0/0').privateKey;
       const privKey = priv.toString('hex');
       let tx = txp.getBitcoreTx().uncheckedSerialize();
       const isERC20 = txp.tokenAddress && !txp.payProUrl;
       const chain = isERC20 ? 'ERC20' : ChainService.getChain(txp.coin);
-      tx = typeof tx === 'string'? [tx] : tx;
+      tx = typeof tx === 'string' ? [tx] : tx;
       signatures = [];
       for (const rawTx of tx) {
         const signed = CWC.Transactions.getSignature({
@@ -623,7 +623,7 @@ helpers.createAndPublishTx = function(server, txOpts, signingKey, cb) {
   server.createTx(txOpts, function(err, txp) {
     if (err) console.log(err);
     should.not.exist(err, "Error creating a TX");
-    should.exist(txp,"Error... no txp");
+    should.exist(txp, "Error... no txp");
     var publishOpts = helpers.getProposalSignatureOpts(txp, signingKey);
     server.publishTx(publishOpts, function(err) {
       if (err) console.log(err);

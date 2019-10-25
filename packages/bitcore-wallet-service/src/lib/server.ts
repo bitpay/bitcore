@@ -205,7 +205,7 @@ export class WalletService {
           initFiatRateService(next);
         }
       ],
-    (err) => {
+      (err) => {
         lock = opts.lock || new Lock(storage, opts.lockOpts);
 
         if (err) {
@@ -535,7 +535,7 @@ export class WalletService {
 
     if (opts.coin === 'eth' && opts.n > 1) {
       return cb(
-        new ClientError( 'Multisig ETH wallet not supported')
+        new ClientError('Multisig ETH wallet not supported')
       );
     }
 
@@ -591,26 +591,29 @@ export class WalletService {
    * @param {Object} opts
    * @returns {Object} wallet
    */
-  getWallet(opts, cb) {
-    this.storage.fetchWallet(this.walletId, (err, wallet) => {
-      if (err) return cb(err);
-      if (!wallet) return cb(Errors.WALLET_NOT_FOUND);
+  getWallet(opts): Promise<any> {
+    return new Promise((resolve, reject) => {
 
-      // cashAddress migration
-      if (wallet.coin != 'bch' || wallet.nativeCashAddr)
-        return cb(null, wallet);
+      this.storage.fetchWallet(this.walletId, (err, wallet) => {
+        if (err) return reject(err);
+        if (!wallet) return reject(Errors.WALLET_NOT_FOUND);
 
-      // only for testing
-      if (opts.doNotMigrate) return cb(null, wallet);
+        // cashAddress migration
+        if (wallet.coin != 'bch' || wallet.nativeCashAddr)
+          return resolve(wallet);
 
-      // remove someday...
-      log.info(`Migrating wallet ${wallet.id} to cashAddr`);
-      this.storage.migrateToCashAddr(this.walletId, e => {
-        if (e) return cb(e);
-        wallet.nativeCashAddr = true;
-        return this.storage.storeWallet(wallet, e => {
-          if (e) return cb(e);
-          return cb(e, wallet);
+        // only for testing
+        if (opts.doNotMigrate) return resolve(wallet);
+
+        // remove someday...
+        log.info(`Migrating wallet ${wallet.id} to cashAddr`);
+        this.storage.migrateToCashAddr(this.walletId, e => {
+          if (e) return reject(e);
+          wallet.nativeCashAddr = true;
+          return this.storage.storeWallet(wallet, e => {
+            if (e) return reject(e);
+            return resolve(wallet);
+          });
         });
       });
     });
@@ -711,9 +714,7 @@ export class WalletService {
     async.parallel(
       [
         (next) => {
-          this.getWallet({}, (err, wallet) => {
-            if (err) return next(err);
-
+          this.getWallet({}).then(wallet => {
             const walletExtendedKeys = [
               'publicKeyRing',
               'pubKey',
@@ -749,7 +750,7 @@ export class WalletService {
               status.serverMessage = deprecatedServerMessage(wallet, this.appName, this.appVersion);
             }
             next();
-          });
+          }).catch(err => next(err));
         },
         (next) => {
           opts.wallet = status.wallet;
@@ -1379,37 +1380,28 @@ export class WalletService {
       this.storage.fetchAddresses(this.walletId, (err, addresses) => {
         if (err) return cb(err);
         if (!_.isEmpty(addresses)) {
-          let x =  _.head(addresses);
+          let x = _.head(addresses);
           ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
           return cb(null, x);
         }
         return createNewAddress(wallet, cb);
       });
     };
-
-    this.getWallet({ doNotMigrate: opts.doNotMigrate }, (
-      err,
-      wallet
-    ) => {
-      if (err) return cb(err);
+    this.getWallet({ doNotMigrate: opts.doNotMigrate }).then(wallet => {
 
       if (ChainService.isSingleAddress(wallet.coin)) {
         opts.ignoreMaxGap = true;
         opts.singleAddress = true;
       }
 
-      this._canCreateAddress(opts.ignoreMaxGap || opts.singleAddress ||  wallet.singleAddress, (err, canCreate) => {
+      this._canCreateAddress(opts.ignoreMaxGap || opts.singleAddress || wallet.singleAddress, (err, canCreate) => {
         if (err) return cb(err);
         if (!canCreate) return cb(Errors.MAIN_ADDRESS_GAP_REACHED);
 
         this._runLocked(
           cb,
           (cb) => {
-            this.getWallet({ doNotMigrate: opts.doNotMigrate }, (
-              err,
-              wallet
-            ) => {
-              if (err) return cb(err);
+            this.getWallet({ doNotMigrate: opts.doNotMigrate }).then(wallet => {
               if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
               if (wallet.scanStatus == 'error')
                 return cb(Errors.WALLET_NEED_SCAN);
@@ -1423,14 +1415,13 @@ export class WalletService {
                 }
                 return cb(err, address);
               });
-            });
+            }).catch(err => cb(err));
           },
           10 * 1000
         );
       });
-    });
+    }).catch(err => cb(err));
   }
-
   /**
    * Get all addresses.
    * @param {Object} opts
@@ -1448,7 +1439,7 @@ export class WalletService {
       if (opts.reverse) onlyMain.reverse();
       if (opts.limit > 0) onlyMain = _.take(onlyMain, opts.limit);
 
-      this.getWallet({}, (err, wallet) => {
+      this.getWallet({}).then(wallet => {
         _.each(onlyMain, x => {
           ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
         });
@@ -1467,9 +1458,7 @@ export class WalletService {
   verifyMessageSignature(opts, cb) {
     if (!checkRequired(opts, ['message', 'signature'], cb)) return;
 
-    this.getWallet({}, (err, wallet) => {
-      if (err) return cb(err);
-
+    this.getWallet({}).then(wallet => {
       const copayer = wallet.getCopayer(this.copayerId);
 
       const isValid = !!this._getSigningKey(
@@ -1478,7 +1467,7 @@ export class WalletService {
         copayer.requestPubKeys
       );
       return cb(null, isValid);
-    });
+    }).catch(err => cb(err));
   }
 
   _getBlockchainExplorer(coin, network): ReturnType<typeof BlockChainExplorer> {
@@ -1527,9 +1516,7 @@ export class WalletService {
     async.series(
       [
         (next) => {
-          this.getWallet({}, (err, w) => {
-            if (err) return next(err);
-
+          this.getWallet({}).then(w => {
             wallet = w;
 
             if (wallet.scanStatus == 'error')
@@ -1543,7 +1530,8 @@ export class WalletService {
                 new Error('Could not get blockchain explorer instance')
               );
             return next();
-          });
+
+          }).catch(err => next(err));
         },
         (next) => {
           if (_.isArray(opts.addresses)) {
@@ -1674,8 +1662,7 @@ export class WalletService {
       if (opts.addresses.length > 1)
         return cb(new ClientError('Addresses option only support 1 address'));
 
-      this.getWallet({}, (err, wallet) => {
-        if (err) return cb(err);
+      this.getWallet({}).then(wallet => {
 
         const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
         if (!bc) {
@@ -1705,7 +1692,7 @@ export class WalletService {
             return cb(null, utxos);
           });
         });
-      });
+      }).catch(err => cb(err));
     } else {
       this._getUtxosForCurrentWallet({}, cb);
     }
@@ -1749,11 +1736,10 @@ export class WalletService {
 
     const setWallet = cb1 => {
       if (wallet) return cb1();
-      this.getWallet({}, (err, ret) => {
-        if (err) return cb(err);
+      this.getWallet({}).then(ret => {
         wallet = ret;
         return cb1(null, wallet);
-      });
+      }).catch(err => cb(err));
     };
 
     setWallet(() => {
@@ -1781,9 +1767,7 @@ export class WalletService {
   getSendMaxInfo(opts, cb) {
     opts = opts || {};
 
-    this.getWallet({}, (err, wallet) => {
-      if (err) return cb(err);
-
+    this.getWallet({}).then(wallet => {
       const feeArgs =
         boolToNum(!!opts.feeLevel) + boolToNum(_.isNumber(opts.feePerKb));
       if (feeArgs > 1)
@@ -1819,7 +1803,7 @@ export class WalletService {
       }
 
       return ChainService.getWalletSendMaxInfo(this, wallet, opts, cb);
-    });
+    }).catch(err => cb(err));
   }
 
   _sampleFeeLevels(coin, network, points, cb) {
@@ -2597,8 +2581,8 @@ export class WalletService {
       cb,
       (cb) => {
         let changeAddress, feePerKb, gasPrice, gasLimit;
-        this.getWallet({}, (err, wallet) => {
-          if (err) return cb(err);
+        this.getWallet({}).then(wallet => {
+
           if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
 
           if (wallet.scanStatus == 'error') return cb(Errors.WALLET_NEED_SCAN);
@@ -2717,7 +2701,8 @@ export class WalletService {
               }
             );
           });
-        });
+
+        }).catch(err => cb(err));
       },
       10 * 1000
     );
@@ -2735,9 +2720,7 @@ export class WalletService {
     if (!checkRequired(opts, ['txProposalId', 'proposalSignature'], cb)) return;
 
     this._runLocked(cb, (cb) => {
-      this.getWallet({}, (err, wallet) => {
-        if (err) return cb(err);
-
+      this.getWallet({}).then(wallet => {
         this.storage.fetchTx(this.walletId, opts.txProposalId, (
           err,
           txp
@@ -2798,7 +2781,8 @@ export class WalletService {
             );
           });
         });
-      });
+
+      }).catch(err => cb(err));
     });
   }
 
@@ -2989,8 +2973,7 @@ export class WalletService {
   signTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId', 'signatures'], cb)) return;
 
-    this.getWallet({}, (err, wallet) => {
-      if (err) return cb(err);
+    this.getWallet({}).then(wallet => {
 
       this.getTx(
         {
@@ -3056,7 +3039,8 @@ export class WalletService {
           });
         }
       );
-    });
+
+    }).catch(err => cb(err));
   }
 
   _processBroadcast(txp, opts, cb) {
@@ -3092,9 +3076,7 @@ export class WalletService {
   broadcastTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId'], cb)) return;
 
-    this.getWallet({}, (err, wallet) => {
-      if (err) return cb(err);
-
+    this.getWallet({}).then(wallet => {
       this.getTx(
         {
           txProposalId: opts.txProposalId
@@ -3152,7 +3134,8 @@ export class WalletService {
           });
         }
       );
-    });
+
+    }).catch(err => cb(err));
   }
 
   /**
@@ -3316,9 +3299,7 @@ export class WalletService {
   getNotifications(opts, cb) {
     opts = opts || {};
 
-    this.getWallet({}, (err, wallet) => {
-      if (err) return cb(err);
-
+    this.getWallet({}).then(wallet => {
       async.map(
         [`${wallet.coin}:${wallet.network}`, this.walletId],
         (walletId, next) => {
@@ -3343,7 +3324,8 @@ export class WalletService {
           return cb(null, notifications);
         }
       );
-    });
+
+    }).catch(err => cb(err));
   }
 
   _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, cb) {
@@ -4129,8 +4111,7 @@ export class WalletService {
     if (opts.limit > Defaults.HISTORY_LIMIT)
       return cb(Errors.HISTORY_LIMIT_EXCEEDED);
 
-    this.getWallet({}, (err, wallet) => {
-      if (err) return cb(err);
+    this.getWallet({}).then(wallet => {
 
       if (wallet.scanStatus == 'error') return cb(Errors.WALLET_NEED_SCAN);
 
@@ -4221,7 +4202,8 @@ export class WalletService {
           });
         }
       );
-    });
+
+    }).catch(err => cb(err));
   }
 
   /**
@@ -4236,8 +4218,8 @@ export class WalletService {
     opts = opts || {};
     opts.startingStep = opts.startingStep || 1000;
 
-    this.getWallet({}, (err, wallet) => {
-      if (err) return cb(err);
+    this.getWallet({}).then(wallet => {
+
       if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
 
       // OCT2018: We dont allow copayer's BIP45 addr scanning anymore (for performance)
@@ -4283,7 +4265,8 @@ export class WalletService {
           });
         });
       });
-    });
+
+    }).catch(err => cb(err));
   }
 
   _runScan(wallet: Wallet, step, opts, cb) {
@@ -4419,8 +4402,8 @@ export class WalletService {
       });
     };
 
-    this.getWallet({}, (err, wallet) => {
-      if (err) return cb(err);
+    this.getWallet({}).then(wallet => {
+
       if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
 
       // single address or non UTXO coins do not scan.
@@ -4439,7 +4422,8 @@ export class WalletService {
       return cb(null, {
         started: true
       });
-    });
+
+    }).catch(err => cb(err));
   }
 
   /**
