@@ -1861,7 +1861,6 @@ describe('Wallet service', function() {
         });
       });
 
-
       describe('BIP44 testnet (with storage transformation)', function() {
         beforeEach(function(done) {
           helpers.createAndJoinWallet(1, 1, {coin: 'eth', network: 'testnet'}, function(s, w) {
@@ -1895,6 +1894,22 @@ describe('Wallet service', function() {
                 addresses[0].address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
                 done();
               });
+            });
+          });
+        });
+
+        it('should sync  addresses with transformed strings', function(done) {
+          server.createAddress({}, function(err, address) {
+            should.not.exist(err);
+            address.walletId.should.equal(wallet.id);
+              address.path.should.equal('m/0/0');
+            address.network.should.equal('testnet');
+            address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
+            server.syncWallet(wallet, function(err) {
+              should.not.exist(err);
+              var calls = blockchainExplorer.addAddresses.getCalls();
+              calls[0].args[1].should.deep.equal(['0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622']);
+              done();
             });
           });
         });

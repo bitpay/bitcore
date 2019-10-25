@@ -3674,11 +3674,14 @@ export class WalletService {
               return icb();
             }
 
-            const addressStr = _.map(addresses, 'address');
+            const addressStr = _.map(addresses, x => {
+              ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+              return x.address;
+            });
+
             this.logd('Syncing addresses: ', addressStr.length);
             bc.addAddresses(wallet, addressStr, err => {
               if (err) return cb(err);
-
               this.storage.markSyncedAddresses(addressStr, icb);
             });
           };
