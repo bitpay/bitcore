@@ -69,11 +69,15 @@ export class SocketService {
             case 'wallets':
               if (bwsKeys.includes(payload.pubKey) && this.validateRequest(payload)) {
                 socket.join(room);
+              } else {
+                socket.emit('failure', { message: 'Authentication failed' });
               }
               break;
             case 'wallet':
               if (this.validateRequest(payload)) {
                 socket.join(chainNetwork + payload.pubKey);
+              } else {
+                socket.emit('failure', { message: 'Authentication failed' });
               }
               break;
             case 'inv':
