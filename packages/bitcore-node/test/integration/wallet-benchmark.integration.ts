@@ -120,10 +120,15 @@ describe('Wallet Benchmark', function() {
         'http://localhost:3000',
         { transports: ['websocket'] }
       );
-      socket.once('connect', () => {
-        const room = `/${chain}/${network}/inv`;
-        socket.emit('room', room);
+      const connected = new Promise(r => {
+        socket.on('connect', () => {
+          const room = `/${chain}/${network}/inv`;
+          socket.emit('room', room);
+          console.log('Connected to socket');
+          r();
+        });
       });
+      await connected;
       socket.on('coin', (coin: ICoin) => {
         seenCoins.add(coin.mintTxid);
       });
@@ -180,10 +185,15 @@ describe('Wallet Benchmark', function() {
         'http://localhost:3000',
         { transports: ['websocket'] }
       );
-      socket.once('connect', () => {
-        const room = `/${chain}/${network}/inv`;
-        socket.emit('room', room);
+      const connected = new Promise(r => {
+        socket.on('connect', () => {
+          const room = `/${chain}/${network}/inv`;
+          socket.emit('room', room);
+          console.log('Connected to socket');
+          r();
+        });
       });
+      await connected;
       socket.on('coin', (coin: ICoin) => {
         seenCoins.add(coin.mintTxid);
       });

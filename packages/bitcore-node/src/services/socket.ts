@@ -85,33 +85,15 @@ export class SocketService {
       });
     }
     this.wireup();
+    logger.info('Started Socket Service');
   }
 
-  stop() {
+  async stop() {
     logger.info('Stopping Socket Service');
     this.stopped = true;
-    return new Promise(resolve => {
-      this.eventService.blockEvent.removeAllListeners();
-      this.eventService.txEvent.removeAllListeners();
-      this.eventService.addressCoinEvent.removeAllListeners();
-      if (this.io) {
-        Object.keys(this.io.sockets.sockets).forEach(s => {
-          if (this.io) {
-            this.io.sockets.sockets[s].disconnect(true);
-            for (const socket of Object.values(this.io.sockets.connected)) {
-              socket.disconnect(true);
-              socket.removeAllListeners();
-              socket.server.close();
-            }
-          }
-        });
-        this.io.clients().removeAllListeners();
-        this.httpServer = undefined;
-        resolve();
-      } else {
-        resolve();
-      }
-    });
+    this.eventService.blockEvent.removeAllListeners();
+    this.eventService.txEvent.removeAllListeners();
+    this.eventService.addressCoinEvent.removeAllListeners();
   }
 
   async wireup() {
@@ -125,7 +107,7 @@ export class SocketService {
           const objectIds = tx.wallets.map(w => new ObjectID(w));
           const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
           for (let wallet of wallets) {
-            console.log('Emitting', `/${chain}/${network}/wallets`);
+            console.log('Emitting TX', `/${chain}/${network}/wallets`);
             this.io.sockets.in(`/${chain}/${network}/wallets`).emit('tx', tx);
             this.io.sockets
               .in(`/${chain}/${network}/${wallet.pubKey}`)
