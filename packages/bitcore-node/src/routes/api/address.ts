@@ -43,8 +43,7 @@ router.get('/:address/coins', async function(req, res) {
 
     let coins = await CoinStorage.collection.find({ ...query, address, chain, network }, options).toArray();
 
-    let spentTxids: any[] = [];
-    spentTxids = coins.filter(tx => tx.spentTxid).map(tx => tx.spentTxid);
+    let spentTxids = coins.filter(tx => tx.spentTxid).map(tx => tx.spentTxid);
     let mintedTxids = coins.filter(tx => tx.mintTxid).map(tx => tx.mintTxid);
 
     let [fundingTxInputs, fundingTxOutputs, spendingTxInputs, spendingTxOutputs] = await Promise.all([
