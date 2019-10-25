@@ -111,7 +111,6 @@ export class SocketService {
           const objectIds = tx.wallets.map(w => new ObjectID(w));
           const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
           for (let wallet of wallets) {
-            console.log('Emitting TX', `/${chain}/${network}/wallets`);
             this.io.sockets.in(`/${chain}/${network}/wallets`).emit('tx', tx);
             this.io.sockets
               .in(`/${chain}/${network}/${wallet.pubKey}`)

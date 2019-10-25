@@ -31,6 +31,9 @@ let p2pWorker: BitcoinP2PWorker;
 let socket = getSocket();
 const bwsPrivKey = new PrivateKey();
 const bwsKey = bwsPrivKey.publicKey.toString('hex');
+const authKey = new PrivateKey();
+const pubKey = authKey.publicKey.toString('hex');
+const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
 const sandbox = sinon.createSandbox();
 
 describe('Websockets', function() {
@@ -41,6 +44,22 @@ describe('Websockets', function() {
     await resetDatabase();
     await Event.start();
     await Api.start();
+    const inserted = await WalletStorage.collection.insertOne({
+      chain,
+      network,
+      name: 'WalletSocketTest',
+      singleAddress: false,
+      pubKey,
+      path: ''
+    });
+
+    await WalletAddressStorage.collection.insertOne({
+      address,
+      chain,
+      network,
+      processed: true,
+      wallet: inserted.insertedId
+    });
   });
 
   after(async () => {
@@ -113,7 +132,7 @@ describe('Websockets', function() {
     console.log('Sync done, generating new block');
     await rpc.call('generatetoaddress', [1, anAddress]);
     console.log('Sending bitcoin');
-    await rpc.sendtoaddress('2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t', 0.1);
+    await rpc.sendtoaddress(address, 0.1);
     await sawEvents;
     expect(hasSeenBlockEvent).to.equal(true);
     expect(hasSeenTxEvent).to.equal(true);
@@ -121,8 +140,6 @@ describe('Websockets', function() {
   });
 
   it('should get wallet events', async () => {
-    const authKey = new PrivateKey();
-    const pubKey = authKey.publicKey.toString('hex');
     const authClient = new Client({ baseUrl: 'http://localhost:3000/api', authKey });
 
     const payload = { method: 'socket', url: 'http://localhost:3000/api' };
@@ -130,25 +147,7 @@ describe('Websockets', function() {
     const chain = 'BTC';
     const network = 'regtest';
     const roomPrefix = `/${chain}/${network}/`;
-    const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
     socket.emit('room', roomPrefix + 'wallet', authPayload);
-
-    const inserted = await WalletStorage.collection.insertOne({
-      chain,
-      network,
-      name: 'WalletSocketTest',
-      singleAddress: false,
-      pubKey,
-      path: ''
-    });
-
-    await WalletAddressStorage.collection.insertOne({
-      address,
-      chain,
-      network,
-      processed: true,
-      wallet: inserted.insertedId
-    });
 
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
@@ -176,8 +175,7 @@ describe('Websockets', function() {
   });
 
   it('should get all wallet events', async () => {
-    const authKey = bwsPrivKey;
-    const authClient = new Client({ baseUrl: 'http://localhost:3000/api', authKey });
+    const authClient = new Client({ baseUrl: 'http://localhost:3000/api', authKey: bwsPrivKey });
     const payload = { method: 'socket', url: 'http://localhost:3000/api' };
     const authPayload = {
       pubKey: bwsKey,
@@ -188,7 +186,6 @@ describe('Websockets', function() {
     const chain = 'BTC';
     const network = 'regtest';
     const roomPrefix = `/${chain}/${network}/`;
-    const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
     socket.emit('room', roomPrefix + 'wallets', authPayload);
 
     let hasSeenTxEvent = false;
@@ -219,7 +216,6 @@ describe('Websockets', function() {
   });
 
   it('should get an error when the key does not match the bwsKey', async () => {
-    const authKey = new PrivateKey();
     const pubKey = authKey.publicKey.toString('hex');
     const wrongKey = new PrivateKey();
     const authClient = new Client({ baseUrl: 'http://localhost:3000/api', authKey: wrongKey });
@@ -241,8 +237,6 @@ describe('Websockets', function() {
   });
 
   it('should get an error when the signature is invalid', async () => {
-    const authKey = new PrivateKey();
-    const pubKey = authKey.publicKey.toString('hex');
     const wrongKey = new PrivateKey();
     const authClient = new Client({ baseUrl: 'http://localhost:3000/api', authKey: wrongKey });
 
@@ -257,7 +251,7 @@ describe('Websockets', function() {
         resolve();
       });
     });
-    socket.emit('room', roomPrefix + 'wallets', authPayload);
+    socket.emit('room', roomPrefix + 'wallet', authPayload);
 
     await failed;
   });
