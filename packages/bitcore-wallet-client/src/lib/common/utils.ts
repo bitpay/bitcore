@@ -185,12 +185,17 @@ export class Utils {
     };
   }
 
+  // note that we use the string version of xpub,
+  // serialized by BITCORE BTC.
+  // testnet xpub starts with t.
+  // livenet xpub starts with x.
+  // no matter WHICH coin
   static xPubToCopayerId(coin, xpub) {
-    // this is only because we allowed coin = 0' wallets for BCH
+    // this was introduced because we allowed coin = 0' wallets for BCH
     // for the  "wallet duplication" feature
-
+    // now it is effective for all coins.
+   
     var str = coin == 'btc' ? xpub : coin + xpub;
-
     var hash = sjcl.hash.sha256.hash(str);
     return sjcl.codec.hex.fromBits(hash);
   }

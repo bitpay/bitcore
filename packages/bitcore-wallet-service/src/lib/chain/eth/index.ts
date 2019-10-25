@@ -170,6 +170,22 @@ export class EthChain implements IChain {
   setInputs() {}
 
   isUTXOCoin() { return false; }
+  isSingleAddress() { return true; }
+
+  addressFromStorageTransform(network, address): void {
+    if (network == 'testnet') {
+      const x =  address.address.indexOf(':t');
+      if (x >= 0) {
+        address.address = address.address.substr(0,x);
+      }
+    }
+  }
+
+  addressToStorageTransform(network, address): void { 
+    if (network == 'testnet')
+      address.address += ':t';
+  }
+
 
   addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub) {
     const raw = Transactions.applySignature({

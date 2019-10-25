@@ -1310,7 +1310,9 @@ export class WalletService {
   }
 
   _store(wallet, address, cb, checkSync = false) {
-    this.storage.storeAddressAndWallet(wallet, address, (err, duplicate) => {
+    let stoAddress = _.clone(address);
+    ChainService.addressToStorageTransform(wallet.coin, wallet.network, stoAddress);
+    this.storage.storeAddressAndWallet(wallet, stoAddress, (err, isDuplicate) => {
       if (err) return cb(err);
       this.syncWallet(
         wallet,
@@ -1318,7 +1320,7 @@ export class WalletService {
           if (err2) {
             this.logw('Error syncing v8 addresses: ', err2);
           }
-          return cb(null, duplicate);
+          return cb(null, isDuplicate);
         },
         !checkSync
       );
@@ -1349,7 +1351,6 @@ export class WalletService {
         address,
         (err, duplicate) => {
           if (err) return cb(err);
-
           if (duplicate)
             return cb(null, address);
 
@@ -1370,7 +1371,11 @@ export class WalletService {
     const getFirstAddress = (wallet, cb) => {
       this.storage.fetchAddresses(this.walletId, (err, addresses) => {
         if (err) return cb(err);
-        if (!_.isEmpty(addresses)) return cb(null, _.head(addresses));
+        if (!_.isEmpty(addresses)) {
+          let x =  _.head(addresses);
+          ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+          return cb(null, x);
+        }
         return createNewAddress(wallet, cb);
       });
     };
@@ -1381,8 +1386,7 @@ export class WalletService {
     ) => {
       if (err) return cb(err);
 
-      // ETH has only one address
-      if (wallet.coin == 'eth') {
+      if (ChainService.isSingleAddress(wallet.coin)) {
         opts.ignoreMaxGap = true;
         opts.singleAddress = true;
       }
@@ -1417,7 +1421,6 @@ export class WalletService {
                     'copay'
                   );
                 }
-
                 return cb(err, address);
               });
             });
@@ -1439,14 +1442,18 @@ export class WalletService {
     opts = opts || {};
     this.storage.fetchAddresses(this.walletId, (err, addresses) => {
       if (err) return cb(err);
-
       let onlyMain = _.reject(addresses, {
         isChange: true
       });
       if (opts.reverse) onlyMain.reverse();
       if (opts.limit > 0) onlyMain = _.take(onlyMain, opts.limit);
 
-      return cb(null, onlyMain);
+      this.getWallet({}, (err, wallet) => {
+        _.each(onlyMain, x => {
+          ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+        });
+        return cb(null, onlyMain);
+      });
     });
   }
 
@@ -1546,6 +1553,9 @@ export class WalletService {
 
           // even with Grouping we need address for pubkeys and path (see last step)
           this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+            _.each(addresses, x => {
+              ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+            });
             allAddresses = addresses;
             if (allAddresses.length == 0) return cb(null, []);
 

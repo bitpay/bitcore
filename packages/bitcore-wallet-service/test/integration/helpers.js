@@ -243,6 +243,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     network: opts.network || 'livenet',
     nativeCashAddr: opts.nativeCashAddr,
   };
+  
   if (_.isBoolean(opts.supportBIP44AndP2PKH))
     walletOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
 
@@ -255,8 +256,13 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
 
     var pub = (_.isBoolean(opts.supportBIP44AndP2PKH) && !opts.supportBIP44AndP2PKH) ? copayerData.xPubKey_45H : copayerData.xPubKey_44H_0H_0H;
 
-    if (opts.network == 'testnet')
-      pub = copayerData.xPubKey_44H_0H_0Ht;
+      if (opts.network == 'testnet') {
+        if (opts.coin == 'btc' || opts.coin == 'bch') {
+          pub = copayerData.xPubKey_44H_0H_0Ht;
+        } else {
+          pub = copayerData.xPubKey_44H_0H_0HtSAME;
+        }
+      }
 
       var copayerOpts = helpers.getSignedCopayerOpts({
         walletId: walletId,

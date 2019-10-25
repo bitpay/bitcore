@@ -2506,6 +2506,52 @@ describe('client API', () => {
         });
       });
     });
+
+    describe('ETH testnet address creation', () => {
+      it('should be able to create address in 1-of-1 wallet', (done) => {
+
+        var xPriv = 'xprv9s21ZrQH143K3GJpoapnV8SFfukcVBSfeCficPSGfubmSFDxo1kuHnLisriDvSnRRuL2Qrg5ggqHKNVpxR86QEC8w35uxmGoggxtQTPvfUu';
+        let k = Key.fromExtendedPrivateKey(xPriv, {});
+
+        clients[0].fromString(
+          k.createCredentials(null, {
+            coin: 'eth',
+            network: 'livenet',
+            account: 0,
+            n: 1,
+          })
+        );
+        clients[0].createWallet('mywallet', 'creator', 1, 1, {
+          network: 'livenet',
+          coin:'eth',
+        }, (err) => {
+          should.not.exist(err);
+          clients[0].createAddress((err, x0) => {
+            clients[1].fromString(
+              k.createCredentials(null, {
+                coin: 'eth',
+                network: 'testnet',
+                account: 0,
+                n: 1,
+              })
+            );
+
+            clients[1].createWallet('mywallet', 'creator', 1, 1, {
+              network: 'testnet',
+              coin:'eth',
+            }, (err, ) => {
+              should.not.exist(err);
+              clients[1].createAddress((err, x1) => {
+                clients[0].credentials.copayerId.should.not.equal(clients[1].credentials.copayerId);
+                // in ETH, same account address for livenet and testnet should match
+                x1.address.should.equal(x0.address);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
   });
 
   describe('Notifications', () => {

@@ -19,7 +19,10 @@ export interface IChain {
   checkUtxos(opts: { fee: number, inputs: any[]});
   setInputs(info: {inputs: any[]});
   isUTXOCoin();
+  isSingleAddress();
   addSignaturesToBitcoreTx(tx: string, inputs: any[], inputPaths: any[], signatures: any[], xpub: string);
+  addressToStorageTransform(network: string, address: {}): void; 
+  addressFromStorageTransform(network: string, address: {}): void;
 }
 
 const chain: { [chain: string]: IChain } = {
@@ -67,6 +70,15 @@ class ChainProxy {
     return this.get(coin).convertFeePerKb(p, feePerKb);
   }
 
+
+  addressToStorageTransform(coin, network, address) {
+    return this.get(coin).addressToStorageTransform(network, address);
+  }
+
+  addressFromStorageTransform(coin, network, address) {
+    return this.get(coin).addressFromStorageTransform(network, address);
+  }
+
   checkTx(server, txp) {
     return this.get(txp.coin).checkTx(server, txp);
   }
@@ -89,6 +101,11 @@ class ChainProxy {
 
   isUTXOCoin(coin) {
     return this.get(coin).isUTXOCoin();
+  }
+
+
+  isSingleAddress(coin) {
+    return this.get(coin).isSingleAddress();
   }
 
   addSignaturesToBitcoreTx(coin, tx, inputs, inputPaths, signatures, xpub) {
