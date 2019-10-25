@@ -8,6 +8,7 @@ const errors = {
   COPAYER_REGISTERED: 'Copayer ID already registered on server',
   COPAYER_VOTED: 'Copayer already voted on this transaction proposal',
   DUST_AMOUNT: 'Amount below dust threshold',
+  MORE_THAT_ONE_OUTPUT: 'This wallet one support one output transactions',
   INCORRECT_ADDRESS_NETWORK: 'Incorrect address network',
   ONLY_CASHADDR: 'Only cashaddr wo prefix is allowed for outputs',
   INSUFFICIENT_FUNDS: 'Insufficient funds',

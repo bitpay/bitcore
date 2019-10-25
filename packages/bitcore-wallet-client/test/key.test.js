@@ -5,7 +5,7 @@ var chai = chai || require('chai');
 var sinon = sinon || require('sinon');
 var should = chai.should();
 
-var { Key } = require('../ts_build/key');
+var { Key } = require('../ts_build/lib/key');
 
 describe('Key', function () {
 

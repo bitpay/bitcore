@@ -1,6 +1,8 @@
 import express from 'express';
 import _ from 'lodash';
 import * as log from 'npmlog';
+import 'source-map-support/register';
+
 import { ClientError } from './errors/clienterror';
 import { WalletService } from './server';
 import { Stats } from './stats';

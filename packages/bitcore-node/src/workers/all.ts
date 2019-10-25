@@ -7,6 +7,7 @@ import cluster = require('cluster');
 import parseArgv from '../utils/parseArgv';
 import { Modules } from '../modules';
 import '../utils/polyfills';
+import 'source-map-support/register'
 require('heapdump');
 let args = parseArgv([], ['DEBUG']);
 const services: Array<any> = [];

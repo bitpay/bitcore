@@ -3,7 +3,7 @@ import { Utils } from './common';
 
 const request = require('superagent');
 const async = require('async');
-const Package = require('../package.json');
+const Package = require('../../package.json');
 var log = require('./log');
 
 const util = require('util');
@@ -22,6 +22,7 @@ export class Request {
 
     // request can be overload only for testing
     this.r = opts.r || request;
+    this.supportStaffWalletId = opts.supportStaffWalletId;
 
     this.session = null;
     this.credentials = null;

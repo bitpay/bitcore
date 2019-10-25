@@ -40,7 +40,15 @@ export class Stats {
   }
 
   run(cb) {
-    const uri = config.storageOpts.mongoDb.uri;
+    let uri = config.storageOpts.mongoDb.uri;
+
+    if (uri.indexOf('?') > 0) {
+      uri = uri + '&';
+    } else {
+      uri = uri + '?';
+    }
+    uri = uri + 'readPreference=secondaryPreferred';
+
     mongodb.MongoClient.connect(
       uri,
       (err, db) => {

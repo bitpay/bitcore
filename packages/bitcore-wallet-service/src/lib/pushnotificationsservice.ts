@@ -1,6 +1,8 @@
 import * as async from 'async';
 import * as fs from 'fs';
 import _ from 'lodash';
+import 'source-map-support/register';
+
 import request from 'request';
 import { MessageBroker } from './messagebroker';
 import { INotification, IPreferences } from './model';
@@ -368,7 +370,8 @@ export class PushNotificationsService {
     const UNIT_LABELS = {
       btc: 'BTC',
       bit: 'bits',
-      bch: 'BCH'
+      bch: 'BCH',
+      eth: 'ETH'
     };
 
     const data = _.cloneDeep(notification.data);

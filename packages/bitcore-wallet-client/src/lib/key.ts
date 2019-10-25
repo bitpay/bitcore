@@ -5,9 +5,9 @@ import * as _ from 'lodash';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
 
-import { Transactions } from 'crypto-wallet-core';
+import { BitcoreLib, Transactions } from 'crypto-wallet-core';
 
-var Bitcore = require('bitcore-lib');
+var Bitcore = BitcoreLib;
 var Mnemonic = require('bitcore-mnemonic');
 var sjcl = require('sjcl');
 var log = require('./log');
@@ -409,14 +409,13 @@ export class Key {
       const addressPath = Constants.PATHS.SINGLE_ADDRESS;
       const privKey = xpriv.deriveChild(addressPath).privateKey;
       const tx = t.uncheckedSerialize();
-      const signedRawTx = Transactions.sign({
+      const signature = Transactions.getSignature({
         chain: txp.coin.toUpperCase(),
         tx,
         key: { privKey: privKey.toString('hex') },
-        from: txp.from
       });
-  
-       return Object.assign(txp, { rawTx: signedRawTx, status: 'accepted' });
+
+      return [signature];
     }
   };
 }

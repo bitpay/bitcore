@@ -1,5 +1,6 @@
-import _ from 'lodash';
 import { Transactions } from 'crypto-wallet-core';
+import _ from 'lodash';
+import { ChainService } from '../chain/index';
 import { TxProposalLegacy } from './txproposal_legacy';
 import { TxProposalAction } from './txproposalaction';
 
@@ -90,6 +91,7 @@ export class TxProposal {
     toAddress?: string;
     message?: string;
     script?: string;
+    satoshis?: number;
   }>;
   outputOrder: number[];
   walletM: number;
@@ -258,9 +260,8 @@ export class TxProposal {
     }
   }
 
+  /* this will build the Bitcoin-lib tx OR an adaptor for CWC transactions */
   _buildTx() {
-    const t = new Bitcore[this.coin].Transaction();
-
     $.checkState(
       Utils.checkValueInCollection(this.addressType, Constants.SCRIPT_TYPES)
     );
@@ -269,11 +270,25 @@ export class TxProposal {
       const rawTx = Transactions.create({
         ...this,
         chain: this.coin.toUpperCase(),
-        recipients: [{ address: this.outputs[0].toAddress, amount: this.amount}],
-        fee: this.gasPrice
+        recipients: [{ address: this.outputs[0].toAddress, amount: this.amount}]
       });
-      return { uncheckedSerialize: () => rawTx };
+      return {
+        uncheckedSerialize: () => rawTx,
+        txid: () => this.txid,
+        toObject: () => {
+          let ret = _.clone(this);
+          ret.outputs[0].satoshis = ret.outputs[0].amount;
+          return ret;
+        },
+        getFee: () => {
+          return this.fee;
+        },
+        getChangeOutput: () => null,
+
+      };
     } else {
+      const t = new Bitcore[this.coin].Transaction();
+
       switch (this.addressType) {
         case Constants.SCRIPT_TYPES.P2SH:
           _.each(this.inputs, (i) => {
@@ -331,7 +346,7 @@ export class TxProposal {
         'not-enought-inputs'
       );
       $.checkState(
-        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE,
+        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[this.coin],
         'fee-too-high'
       );
 
@@ -354,10 +369,9 @@ export class TxProposal {
 
   getBitcoreTx() {
     const t = this._buildTx();
-
     const sigs = this._getCurrentSignatures();
     _.each(sigs, (x) => {
-      this._addSignaturesToBitcoreTx(t, x.signatures, x.xpub);
+      ChainService.addSignaturesToBitcoreTx(this.coin, t, this.inputs, this.inputPaths, x.signatures, x.xpub);
     });
 
     return t;
@@ -461,42 +475,11 @@ export class TxProposal {
     this._updateStatus();
   }
 
-  _addSignaturesToBitcoreTx(tx, signatures, xpub) {
-    const bitcore = Bitcore[this.coin];
-
-    if (signatures.length != this.inputs.length)
-      throw new Error('Number of signatures does not match number of inputs');
-
-    let i = 0;
-    const x = new bitcore.HDPublicKey(xpub);
-
-    _.each(signatures, (signatureHex) => {
-      try {
-        const signature = bitcore.crypto.Signature.fromString(signatureHex);
-        const pub = x.deriveChild(this.inputPaths[i]).publicKey;
-        const s = {
-          inputIndex: i,
-          signature,
-          sigtype:
-            // tslint:disable-next-line:no-bitwise
-            bitcore.crypto.Signature.SIGHASH_ALL |
-            bitcore.crypto.Signature.SIGHASH_FORKID,
-          publicKey: pub
-        };
-        tx.inputs[i].addSignature(tx, s);
-        i++;
-      } catch (e) { }
-    });
-
-    if (i != tx.inputs.length) throw new Error('Wrong signatures');
-  }
-
   sign(copayerId, signatures, xpub) {
     try {
       // Tests signatures are OK
       const tx = this.getBitcoreTx();
-      this._addSignaturesToBitcoreTx(tx, signatures, xpub);
-
+      ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub);
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {

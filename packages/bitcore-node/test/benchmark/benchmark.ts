@@ -137,4 +137,5 @@ async function benchmark(blockCount: number, blockSizeMb: number) {
 startBenchmarkDatabase()
   .then(() => benchmark(80, 1))
   .then(() => benchmark(5, 32))
+  .then(() => benchmark(1, 64))
   .then(() => process.exit());
