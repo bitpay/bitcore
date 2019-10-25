@@ -239,4 +239,26 @@ describe('Websockets', function() {
 
     await failed;
   });
+
+  it('should get an error when the signature is invalid', async () => {
+    const authKey = new PrivateKey();
+    const pubKey = authKey.publicKey.toString('hex');
+    const wrongKey = new PrivateKey();
+    const authClient = new Client({ baseUrl: 'http://localhost:3000/api', authKey: wrongKey });
+
+    const payload = { method: 'socket', url: 'http://localhost:3000/api' };
+    const authPayload = { pubKey, message: authClient.getMessage(payload), signature: 'invalid' };
+    const chain = 'BTC';
+    const network = 'regtest';
+    const roomPrefix = `/${chain}/${network}/`;
+    let failed = new Promise(resolve => {
+      socket.on('failure', e => {
+        expect(e.message).to.include('Authentication failed');
+        resolve();
+      });
+    });
+    socket.emit('room', roomPrefix + 'wallets', authPayload);
+
+    await failed;
+  });
 });
