@@ -4,6 +4,7 @@ import * as log from 'npmlog';
 import { ClientError } from './errors/clienterror';
 import { WalletService } from './server';
 import { Stats } from './stats';
+import { Storage } from './storage';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
@@ -19,6 +20,7 @@ log.level = 'verbose';
 
 export class ExpressApp {
   app: express.Express;
+  storage: Storage;
 
   constructor() {
     this.app = express();
@@ -267,6 +269,7 @@ export class ExpressApp {
           json: true
         };
         const htmlString = await rp(options);
+        this.storage.checkAndUseGlobalCache("latest-copay-version", Defaults.COPAY_VERSION_CACHE_DURATION, () => {});
         res.json({ version: htmlString['tag_name'] });
       } catch (err) {
         res.send(err);
