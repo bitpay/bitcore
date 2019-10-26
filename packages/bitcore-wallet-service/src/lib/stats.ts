@@ -242,7 +242,7 @@ export class Stats {
           count: 1,
           amount: this.amount
         };
-         emit(key, value);
+        emit(key, value);
       };
       const reduce = (k, v) => {
         let count = 0,
