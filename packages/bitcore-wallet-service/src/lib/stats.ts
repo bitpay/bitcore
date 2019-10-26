@@ -68,7 +68,7 @@ export class Stats {
 
   _getStats(cb) {
     let result = {};
-    async.parallel(
+    async.series(
       [
         (next) => {
           this._getNewWallets(next);
