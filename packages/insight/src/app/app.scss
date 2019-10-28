@@ -85,8 +85,16 @@ ion-infinite-scroll{
 
 // Desktop
 
+ion-navbar {
+  width: 100%;
+  height: 100%;
+  color: #1d326a;
+  background-image: linear-gradient(to right, #081124, #0b1a35, #0f2246, #152a58, #1d326a);
+}
+
 ion-header .toolbar {
  margin: auto;
+ 
 }
 
 ion-footer .toolbar[fixed] {
@@ -99,8 +107,8 @@ ion-footer .toolbar[fixed] {
  ion-footer .toolbar[fixed],
  ion-tabs .tabbar {
    margin: 0;
-   padding-right: calc((100% - #{map-get($grid-max-widths, lg)}) / 2);
-   padding-left: calc((100% - #{map-get($grid-max-widths, lg)}) / 2);
+   padding-right: calc((100% - #{map-get($grid-max-widths, lg)}) / 4);
+   padding-left: calc((100% - #{map-get($grid-max-widths, lg)}) / 4);
  }
 }
 

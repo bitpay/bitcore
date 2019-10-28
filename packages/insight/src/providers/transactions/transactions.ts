@@ -28,9 +28,11 @@ export interface ApiTx {
   spentTxid: string;
   spentHeight: number;
   value: number;
+  coins?: any;
 }
 
 export interface ApiUtxoCoinTx extends ApiTx {
+  coins: any;
   inputs: ApiCoin[];
   outputs: ApiCoin[];
   version: number;
@@ -144,9 +146,11 @@ export interface AppTx {
   fee: number;
   blockheight: number;
   blocktime: number;
+  coins?: any;
 }
 
 export interface AppUtxoCoinsTx extends AppTx {
+  coins?: any;
   vin: any[];
   vout: any[];
   version: number;
@@ -190,8 +194,8 @@ export class TxsProvider {
   public toUtxoCoinsAppTx(tx: ApiUtxoCoinTx): AppUtxoCoinsTx {
     return {
       ...this.toAppTx(tx),
-      vin: [], // populated when coins are retrieved
-      vout: [], // populated when coins are retrieved
+      vin: [],
+      vout: [],
       version: tx.version
     };
   }
@@ -252,6 +256,13 @@ export class TxsProvider {
   ): Observable<ApiEthTx & ApiUtxoCoinTx> {
     const url = `${this.apiProvider.getUrl(chainNetwork)}/tx/${hash}`;
     return this.httpClient.get<ApiEthTx & ApiUtxoCoinTx>(url);
+  }
+
+  public getDailyTransactionHistory(chainNetwork: ChainNetwork) {
+    const url = `${this.apiProvider.getUrl(
+      chainNetwork
+    )}/stats/daily-transactions`;
+    return this.httpClient.get(url);
   }
 
   public getCoins(

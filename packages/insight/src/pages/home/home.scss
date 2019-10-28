@@ -1,2 +1,58 @@
 page-home {
+    .chart {
+        width: 500px;
+        height: 500px;
+    }
+
+    .menu {
+        display: flex;
+        flex-direction: column;
+        width: 150px;
+        flex-wrap: wrap;
+    }
+
+    .menu-button {
+        font-size: 18px;
+        margin-bottom: 5px;
+        color: color($colors, light-blue);
+        cursor: pointer;
+    }
+
+    .price-chart-container {
+        display: flex;
+        flex: 1;
+        flex-wrap: wrap;
+    }
+
+    .body-container {
+        display: flex;
+        flex: 1;
+        flex-wrap: wrap;
+    }
+
+
+    .page-content-grid-desktop {
+         display: flex;
+         flex: 1;
+         padding-right: calc((100% - #{map-get($grid-max-widths, lg)}) / 4);
+         padding-left: calc((100% - #{map-get($grid-max-widths, lg)}) / 4);
+    }
+
+    @media (min-width: map-get($grid-breakpoints, lg)) {
+
+      .page-content-grid-mobile {
+        display: none;
+
+      }
+    }
+
+    @media (max-width: map-get($grid-breakpoints, md)) {
+        .menu {
+            display: none;
+        }
+
+        .page-content-grid-desktop {
+          display: none;
+        }
+    }
 }
