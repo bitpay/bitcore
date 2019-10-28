@@ -173,7 +173,7 @@ export class EthChain implements IChain {
   isSingleAddress() { return true; }
 
   addressFromStorageTransform(network, address): void {
-    if (network == 'testnet') {
+    if (network != 'livenet') {
       const x =  address.address.indexOf(':t');
       if (x >= 0) {
         address.address = address.address.substr(0,x);
@@ -182,8 +182,8 @@ export class EthChain implements IChain {
   }
 
   addressToStorageTransform(network, address): void { 
-    if (network == 'testnet')
-      address.address += ':t';
+    if (network != 'livenet')
+      address.address += ':' + network;
   }
 
 
