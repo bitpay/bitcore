@@ -2,6 +2,9 @@ import { Request, Response } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { SetCache, CacheTimes, Confirmations } from '../middleware';
 import { BitcoinBlockStorage } from '../../models/block';
+import { TransactionStorage } from '../../models/transaction';
+import { CoinStorage } from '../../models/coin';
+
 const router = require('express').Router({ mergeParams: true });
 
 router.get('/', async function(req: Request, res: Response) {
@@ -48,6 +51,74 @@ router.get('/:blockId', async function(req: Request, res: Response) {
       SetCache(res, CacheTimes.Month);
     }
     return res.json(block);
+  } catch (err) {
+    return res.status(500).send(err);
+  }
+});
+
+//return all { txids, inputs, ouputs} for a blockHash paginated at max 500 per page, to limit reqs and overload
+router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: Response) {
+  let { chain, network, blockHash, limit, pgnum } = req.params;
+
+  let pageNumber;
+  let maxLimit;
+  try {
+    pageNumber = parseInt(pgnum, 10);
+    maxLimit = parseInt(limit, 10);
+
+    if (maxLimit) {
+      if (maxLimit > 500) maxLimit = 500;
+    }
+  } catch (err) {
+    console.log(err);
+  }
+
+  let skips = maxLimit * (pageNumber - 1);
+  let numOfTxs = await TransactionStorage.collection.find({ chain, network, blockHash }).count();
+  try {
+    let txs =
+      numOfTxs < maxLimit
+        ? await TransactionStorage.collection.find({ chain, network, blockHash }).toArray()
+        : await TransactionStorage.collection
+            .find({ chain, network, blockHash })
+            .skip(skips)
+            .limit(maxLimit)
+            .toArray();
+
+    if (!txs) {
+      return res.status(422).send('No txs for page');
+    }
+
+    const txidIndexes: any = {};
+    let txids = txs.map((tx, index) => {
+      txidIndexes[index] = tx.txid;
+      return tx.txid;
+    });
+
+    let inputs = await CoinStorage.collection
+      .find({ chain, network, spentTxid: { $in: txids } })
+      .addCursorFlag('noCursorTimeout', true)
+      .toArray();
+
+    let outputs = await CoinStorage.collection
+      .find({ chain, network, mintTxid: { $in: txids } })
+      .addCursorFlag('noCursorTimeout', true)
+      .toArray();
+
+    let prevPageNum;
+    let nxtPageNum;
+    let previous = '';
+    let next = '';
+    if (pageNumber !== 1) {
+      prevPageNum = parseInt(pageNumber) - 1;
+      previous = `/block/${blockHash}/coins/${maxLimit}/${prevPageNum}`;
+    }
+    if (numOfTxs - maxLimit * pageNumber > 0) {
+      nxtPageNum = pageNumber + 1;
+      next = `/block/${blockHash}/coins/${maxLimit}/${nxtPageNum}`;
+    }
+
+    return res.json({ txids, inputs, outputs, previous, next });
   } catch (err) {
     return res.status(500).send(err);
   }
