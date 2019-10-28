@@ -4,7 +4,8 @@
   <ion-grid>
     <ion-row *ngFor="let tx of transactions; let i = index">
       <ion-col col-12 *ngIf="i < limit">
-        <transaction-details [tx]="tx" [chainNetwork]="chainNetwork"></transaction-details>
+        <transaction-details *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH'" [page]="tx-list" [showCoins]="true" [tx]="tx" [chainNetwork]="chainNetwork"></transaction-details>
+        <transaction-details-eth *ngIf="chainNetwork.chain === 'ETH'" [showCoins]="true" [tx]="tx" [chainNetwork]="chainNetwork"></transaction-details-eth>
       </ion-col>
     </ion-row>
     <ion-row *ngIf="limit < transactions.length">

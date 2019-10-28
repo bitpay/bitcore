@@ -62,34 +62,36 @@ export class HeadNavComponent implements OnInit {
 
   public search(): void {
     this.q = this.q.replace(/\s/g, '');
-    this.searchProvider.isInputValid(this.q, this.chainNetwork).subscribe((inputDetails)=>{
-      if (this.q !== '' && inputDetails.isValid) {
-      this.showSearch = false;
-      this.searchProvider
-        .search(this.q, inputDetails.type, this.chainNetwork)
-        .subscribe(
-          res => {
-            const nextView = this.processResponse(res);
-            if (!_.includes(nextView, '')) {
-              this.params[nextView.type] = nextView.params;
-              this.redirTo = nextView.redirTo;
-              this.navCtrl.setRoot('home', this.params, { animate: false });
-              this.redirProvider.redir(this.redirTo, this.params);
-            } else {
-              const message = 'No matching records found!';
-              this.wrongSearch(message);
-              this.logger.info(message);
-            }
-          },
-          err => {
-            this.wrongSearch('Server error. Please try again');
-            this.logger.error(err);
-          }
-        );
-      } else {
-        this.wrongSearch('No matching records found!');
-      }
-    });
+    this.searchProvider
+      .isInputValid(this.q, this.chainNetwork)
+      .subscribe(inputDetails => {
+        if (this.q !== '' && inputDetails.isValid) {
+          this.showSearch = false;
+          this.searchProvider
+            .search(this.q, inputDetails.type, this.chainNetwork)
+            .subscribe(
+              res => {
+                const nextView = this.processResponse(res);
+                if (!_.includes(nextView, '')) {
+                  this.params[nextView.type] = nextView.params;
+                  this.redirTo = nextView.redirTo;
+                  this.navCtrl.setRoot('home', this.params, { animate: false });
+                  this.redirProvider.redir(this.redirTo, this.params);
+                } else {
+                  const message = 'No matching records found!';
+                  this.wrongSearch(message);
+                  this.logger.info(message);
+                }
+              },
+              err => {
+                this.wrongSearch('Server error. Please try again');
+                this.logger.error(err);
+              }
+            );
+        } else {
+          this.wrongSearch('No matching records found!');
+        }
+      });
   }
 
   private processResponse(response) {

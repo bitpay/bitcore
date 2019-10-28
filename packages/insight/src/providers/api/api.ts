@@ -45,6 +45,10 @@ export class ApiProvider {
     eth: 'https://bitpay.com/api/rates/eth'
   };
 
+  public bwsUrl = {
+    urlPrefix: 'https://bws.bitpay.com/bws/api/v1/fiatrates/'
+  };
+
   constructor(
     public httpClient: HttpClient,
     private defaults: DefaultProvider,

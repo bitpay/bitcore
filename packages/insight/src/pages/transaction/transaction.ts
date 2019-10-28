@@ -24,7 +24,7 @@ export class TransactionPage {
   public confirmations: number;
   public errorMessage: string;
   public chainNetwork: ChainNetwork;
-
+  public prevPage: string;
   private txId: string;
 
   constructor(
@@ -55,10 +55,13 @@ export class TransactionPage {
     this.txProvider.getTx(this.txId, this.chainNetwork).subscribe(
       response => {
         let tx;
-        if(this.chainNetwork.chain === "BTC" || this.chainNetwork.chain === "BCH") {
+        if (
+          this.chainNetwork.chain === 'BTC' ||
+          this.chainNetwork.chain === 'BCH'
+        ) {
           tx = this.txProvider.toUtxoCoinsAppTx(response);
         }
-        if(this.chainNetwork.chain === "ETH") {
+        if (this.chainNetwork.chain === 'ETH') {
           tx = this.txProvider.toEthAppTx(response);
         }
         this.tx = tx;

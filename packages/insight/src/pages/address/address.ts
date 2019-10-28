@@ -47,9 +47,14 @@ export class AddressPage {
     this.currencyProvider.setCurrency(this.chainNetwork);
     this.priceProvider.setCurrency();
 
-    this.events.subscribe('CoinList', (d: any) => {
-      this.nroTransactions = d.length;
-    });
+    if (
+      this.chainNetwork.chain === 'BTC' ||
+      this.chainNetwork.chain === 'BCH'
+    ) {
+      this.events.subscribe('TransactionList', (d: any) => {
+        this.nroTransactions = d.length;
+      });
+    }
   }
 
   public ionViewWillLoad(): void {
