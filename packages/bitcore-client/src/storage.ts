@@ -133,8 +133,12 @@ export class Storage {
     const { addresses, name, encryptionKey } = params;
     const keys = new Array<Wallet.KeyImport>();
     for(const address of addresses) {
-      const key = await this.getKey({name, address, encryptionKey});
-      keys.push(key);
+      try {
+        const key = await this.getKey({name, address, encryptionKey});
+        keys.push(key);
+      } catch (err) {
+        console.error(err);
+      }
     }
     return keys;
   }

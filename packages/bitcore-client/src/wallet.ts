@@ -305,13 +305,18 @@ export class Wallet {
           .on('err', (err) => reject(err));
       }));
     }
-    const addresses = [];
+    let addresses = [];
     let decryptedKeys;
     if (!keys) {
       for (let utxo of utxos) {
         addresses.push(utxo.address);
       }
-      decryptedKeys = await this.storage.getKeys({addresses, name: this.name, encryptionKey: this.unlocked.encryptionKey});
+      addresses = addresses.length > 0 ? addresses : await this.getAddresses();
+      decryptedKeys = await this.storage.getKeys({
+          addresses,
+          name: this.name,
+          encryptionKey: this.unlocked.encryptionKey
+      });
     } else {
       addresses.push(keys[0]);
       utxos.forEach(function(element) {
@@ -326,6 +331,7 @@ export class Wallet {
       network: this.network,
       tx,
       keys: decryptedKeys,
+      key: decryptedKeys[0],
       utxos
     };
     return Transactions.sign({ ...payload });
@@ -337,10 +343,11 @@ export class Wallet {
     });
   }
 
-  getAddresses() {
-    return this.client.getAddresses({
+  async getAddresses() {
+    const walletAddresses = await this.client.getAddresses({
       pubKey: this.authPubKey
     });
+    return walletAddresses.map(walletAddress => walletAddress.address);
   }
 
   async deriveAddress(addressIndex, isChange) {
