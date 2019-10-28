@@ -222,6 +222,7 @@ export class Wallet {
   }
 
   getBalance(time?: string) {
+    console.log(this.authKey);
     return this.client.getBalance({ pubKey: this.authPubKey, time });
   }
 
@@ -312,7 +313,6 @@ export class Wallet {
         addresses.push(utxo.address);
       }
       addresses = addresses.length > 0 ? addresses : await this.getAddresses();
-      console.log(addresses);
       decryptedKeys = await this.storage.getKeys({
           addresses,
           name: this.name,
@@ -344,10 +344,11 @@ export class Wallet {
     });
   }
 
-  getAddresses() {
-    return this.client.getAddresses({
+  async getAddresses() {
+    const walletAddresses = await this.client.getAddresses({
       pubKey: this.authPubKey
     });
+    return walletAddresses.map(walletAddress => walletAddress.address);
   }
 
   async deriveAddress(addressIndex, isChange) {
