@@ -272,6 +272,11 @@ export class BtcChain implements IChain {
   }
 
   isUTXOCoin() { return true; }
+  isSingleAddress() { return false; }
+
+  addressFromStorageTransform(network, address) {}
+
+  addressToStorageTransform(network, address) {}
 
   addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub) {
     if (signatures.length != inputs.length)

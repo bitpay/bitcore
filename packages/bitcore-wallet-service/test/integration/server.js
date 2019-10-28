@@ -1459,6 +1459,7 @@ describe('Wallet service', function() {
       });
 
 
+
       it('should create next address if insertion fail ', function(done) {
         server.createAddress({}, function(err, address) {
           should.not.exist(err);
@@ -1804,66 +1805,117 @@ describe('Wallet service', function() {
         });
       });
     });
-  });
+    
+    describe('ETH', function() {
+      var server, wallet;
 
-
-  describe('#createAddress ETH', function() {
-    var server, wallet;
-
-    describe('shared wallets (BIP44)', function() {
-      beforeEach(function(done) {
-        helpers.createAndJoinWallet(1, 1, {coin: 'eth'}, function(s, w) {
-          server = s;
-          wallet = w;
-          done();
-        });
-      });
-
-      it('should create address ', function(done) {
-        server.createAddress({}, function(err, address) {
-          should.not.exist(err);
-          should.exist(address);
-          address.walletId.should.equal(wallet.id);
-          address.network.should.equal('livenet');
-          address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
-          address.isChange.should.be.false;
-          address.coin.should.equal('eth');
-          address.path.should.equal('m/0/0');
-          server.getNotifications({}, function(err, notifications) {
-            should.not.exist(err);
-            var notif = _.find(notifications, {
-              type: 'NewAddress'
-            });
-            should.exist(notif);
-            notif.data.address.should.equal(address.address);
+      describe('BIP44 livenet', function() {
+        beforeEach(function(done) {
+          helpers.createAndJoinWallet(1, 1, {coin: 'eth'}, function(s, w) {
+            server = s;
+            wallet = w;
             done();
           });
         });
-      });
 
-      it('should not create  now addresses ', function(done) {
-        server.createAddress({}, function(err, address) {
-          should.not.exist(err);
-          address.walletId.should.equal(wallet.id);
-          address.network.should.equal('livenet');
-          address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
+        it('should create address ', function(done) {
           server.createAddress({}, function(err, address) {
             should.not.exist(err);
             should.exist(address);
             address.walletId.should.equal(wallet.id);
             address.network.should.equal('livenet');
-            address.path.should.equal('m/0/0');
             address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
             address.isChange.should.be.false;
             address.coin.should.equal('eth');
+            address.path.should.equal('m/0/0');
+            server.getNotifications({}, function(err, notifications) {
+              should.not.exist(err);
+              var notif = _.find(notifications, {
+                type: 'NewAddress'
+              });
+              should.exist(notif);
+              notif.data.address.should.equal(address.address);
+              done();
+            });
+          });
+        });
+
+        it('should not create  new addresses ', function(done) {
+          server.createAddress({}, function(err, address) {
+            should.not.exist(err);
+            address.walletId.should.equal(wallet.id);
+            address.network.should.equal('livenet');
+            address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
+            server.createAddress({}, function(err, address) {
+              should.not.exist(err);
+              should.exist(address);
+              address.walletId.should.equal(wallet.id);
+              address.network.should.equal('livenet');
+              address.path.should.equal('m/0/0');
+              address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
+              address.isChange.should.be.false;
+              address.coin.should.equal('eth');
+              done();
+            });
+          });
+        });
+      });
+
+      describe('BIP44 testnet (with storage transformation)', function() {
+        beforeEach(function(done) {
+          helpers.createAndJoinWallet(1, 1, {coin: 'eth', network: 'testnet'}, function(s, w) {
+            server = s;
+          wallet = w;
             done();
+          });
+        });
+
+        it('should create  addresses', function(done) {
+          server.createAddress({}, function(err, address) {
+            should.not.exist(err);
+            address.walletId.should.equal(wallet.id);
+              address.path.should.equal('m/0/0');
+            address.network.should.equal('testnet');
+            address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
+            server.createAddress({}, function(err, address) {
+              should.not.exist(err);
+              should.exist(address);
+              address.walletId.should.equal(wallet.id);
+              address.network.should.equal('testnet');
+              address.path.should.equal('m/0/0');
+              address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
+              address.isChange.should.be.false;
+              address.coin.should.equal('eth');
+
+              // main addresses should transfrom addresses
+              server.getMainAddresses({}, function(err, addresses) {
+                should.not.exist(err);
+                addresses.length.should.equal(1);
+                addresses[0].address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
+                done();
+              });
+            });
+          });
+        });
+
+        it('should sync  addresses with transformed strings', function(done) {
+          server.createAddress({}, function(err, address) {
+            should.not.exist(err);
+            address.walletId.should.equal(wallet.id);
+              address.path.should.equal('m/0/0');
+            address.network.should.equal('testnet');
+            address.address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
+            server.syncWallet(wallet, function(err) {
+              should.not.exist(err);
+              var calls = blockchainExplorer.addAddresses.getCalls();
+              calls[0].args[1].should.deep.equal(['0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622']);
+              done();
+            });
           });
         });
       });
     });
   });
-
-
 
   describe('#getMainAddresses', function() {
     var server, wallet;
