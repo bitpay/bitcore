@@ -174,7 +174,7 @@ export class EthChain implements IChain {
 
   addressFromStorageTransform(network, address): void {
     if (network != 'livenet') {
-      const x =  address.address.indexOf(':t');
+      const x =  address.address.indexOf(':' + network);
       if (x >= 0) {
         address.address = address.address.substr(0, x);
       }
