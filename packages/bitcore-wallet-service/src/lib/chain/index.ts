@@ -21,7 +21,7 @@ export interface IChain {
   isUTXOCoin();
   isSingleAddress();
   addSignaturesToBitcoreTx(tx: string, inputs: any[], inputPaths: any[], signatures: any[], xpub: string);
-  addressToStorageTransform(network: string, address: {}): void; 
+  addressToStorageTransform(network: string, address: {}): void;
   addressFromStorageTransform(network: string, address: {}): void;
 }
 
@@ -70,7 +70,6 @@ class ChainProxy {
     return this.get(coin).convertFeePerKb(p, feePerKb);
   }
 
-
   addressToStorageTransform(coin, network, address) {
     return this.get(coin).addressToStorageTransform(network, address);
   }
@@ -102,7 +101,6 @@ class ChainProxy {
   isUTXOCoin(coin) {
     return this.get(coin).isUTXOCoin();
   }
-
 
   isSingleAddress(coin) {
     return this.get(coin).isSingleAddress();

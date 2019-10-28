@@ -176,16 +176,15 @@ export class EthChain implements IChain {
     if (network != 'livenet') {
       const x =  address.address.indexOf(':t');
       if (x >= 0) {
-        address.address = address.address.substr(0,x);
+        address.address = address.address.substr(0, x);
       }
     }
   }
 
-  addressToStorageTransform(network, address): void { 
+  addressToStorageTransform(network, address): void {
     if (network != 'livenet')
       address.address += ':' + network;
   }
-
 
   addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub) {
     const raw = Transactions.applySignature({
