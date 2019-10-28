@@ -222,7 +222,6 @@ export class Wallet {
   }
 
   getBalance(time?: string) {
-    console.log(this.authKey);
     return this.client.getBalance({ pubKey: this.authPubKey, time });
   }
 
