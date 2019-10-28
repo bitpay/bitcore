@@ -1468,7 +1468,7 @@ describe('Wallet service', function() {
 
             // return main address index to 0;
             w.addressManager.receiveAddressIndex = 0;
-            server.getWallet.returns(new Promise((resolve) => { resolve(w) }));
+            server.getWallet.resolves(w);
 
             server.createAddress({}, function(err, address) {
               server.getWallet = old;
