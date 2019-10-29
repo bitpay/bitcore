@@ -572,7 +572,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
               chain,
               network
             },
-            update: { $set: { spentTxid: tx._hash || tx.hash, spentHeight: height } }
+            update: { $set: { spentTxid: tx._hash || tx.hash, spentHeight: height, sequenceNumber: inputObj.sequenceNumber } }
           }
         };
         spendOpsBatch.push(updateQuery);

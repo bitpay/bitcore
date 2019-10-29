@@ -184,6 +184,14 @@
         <ion-label>{{ confirmations }} Confirmations
         </ion-label>
       </ion-chip>
+      <ion-chip color="danger" *ngIf="tx.isRBF && confirmations === -1">
+        <ion-label>Replace By Fee (RBF) enabled
+        </ion-label>
+      </ion-chip>
+      <ion-chip color="danger" *ngIf="tx.hasUnconfirmedInputs">
+        <ion-label>Tx has unconfirmed inputs
+        </ion-label>
+      </ion-chip>
       <ion-chip color="default">
         <ion-label>{{ currencyProvider.getConvertedNumber(tx.valueOut, chainNetwork.chain) | number:'1.0-8' }}
           {{ currencyProvider.currencySymbol }}
