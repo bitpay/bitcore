@@ -1,8 +1,8 @@
 #!/usr/bin/env node
-import { BlockStorage, IBlock } from '../../src/models/block';
+import { BitcoinBlockStorage, IBtcBlock } from '../../src/models/block';
 import { AsyncRPC } from '../../src/rpc';
 import { expect } from 'chai';
-import { TransactionStorage, ITransaction } from '../../src/models/transaction';
+import { TransactionStorage, IBtcTransaction } from '../../src/models/transaction';
 import { CoinStorage } from '../../src/models/coin';
 import { ChainNetwork } from '../../src/types/ChainNetwork';
 import { WalletAddressStorage } from '../../src/models/walletAddress';
@@ -29,13 +29,13 @@ export async function blocks(
   const normalizedTimes = new Array(tip!.height).fill(0);
 
   // check each block
-  const cursor = BlockStorage.collection.find({
+  const cursor = BitcoinBlockStorage.collection.find({
     chain: info.chain,
     network: info.network
   });
 
   while (await cursor.hasNext()) {
-    const block: IBlock | null = await cursor.next();
+    const block: IBtcBlock | null = await cursor.next();
     if (!block) break;
     if (!block.processed) continue;
     logger.info(`verifying block ${block.hash}: ${block.height}`);
@@ -122,15 +122,14 @@ export async function blocks(
       }
 
       // Check no other tx points to our block hash
-      const extra = await TransactionStorage.collection
-        .countDocuments({
-          chain: info.chain,
-          network: info.network,
-          blockHash: block.hash,
-          txid: {
-            $nin: truth.tx.map(tx => tx.txid)
-          }
-        });
+      const extra = await TransactionStorage.collection.countDocuments({
+        chain: info.chain,
+        network: info.network,
+        blockHash: block.hash,
+        txid: {
+          $nin: truth.tx.map(tx => tx.txid)
+        }
+      });
       expect(extra, 'number of extra transactions').to.equal(0);
     }
   }
@@ -160,7 +159,7 @@ export async function transactions(
   });
 
   while (await txcursor.hasNext()) {
-    const tx: ITransaction | null = await txcursor.next();
+    const tx: IBtcTransaction | null = await txcursor.next();
     if (!tx) {
       break;
     }

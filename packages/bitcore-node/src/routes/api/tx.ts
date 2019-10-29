@@ -4,6 +4,9 @@ import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { ChainStateProvider } from '../../providers/chain-state';
 import logger from '../../logger';
 import { CacheTimes } from '../middleware';
+import { ITransaction } from '../../models/transaction';
+import { ICoin } from '../../models/coin';
+
 const router = Router({ mergeParams: true });
 
 router.get('/', function(req, res) {
@@ -50,6 +53,40 @@ router.get('/:txId', async (req, res) => {
       if (tx && tip && tip.height - tx.blockHeight > 100) {
         SetCache(res, CacheTimes.Month);
       }
+      return res.send(tx);
+    }
+  } catch (err) {
+    return res.status(500).send(err);
+  }
+});
+
+// Get transaction with input and outputs, assigned to key coins
+router.get('/:txId/populated', async (req, res) => {
+  let { chain, network, txId } = req.params;
+  let txid = txId;
+  if (typeof txid !== 'string' || !chain || !network) {
+    return res.status(400).send('Missing required param');
+  }
+
+  try {
+    let tx: ITransaction & { blockHeight: number, coins?: Array<ICoin> };
+    let coins: any;
+    let tip: any;
+
+    [tx, coins, tip] = await Promise.all([ChainStateProvider.getTransaction({ chain, network, txId }), ChainStateProvider.getCoinsForTx({ chain, network, txid }),
+    ChainStateProvider.getLocalTip({ chain, network })]);
+
+    if (!tx) {
+      return res.status(404).send(`The requested txid ${txid} could not be found.`);
+    } else {
+      if (tx && tip && tip.height - tx.blockHeight > 100) {
+        SetCache(res, CacheTimes.Month);
+      }
+
+      if (!coins) {
+        res.status(404).send(`The requested coins for txid ${txid} could not be found.`);
+      }
+      tx.coins = coins;
       return res.send(tx);
     }
   } catch (err) {

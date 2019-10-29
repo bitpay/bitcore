@@ -40,7 +40,15 @@ export class Stats {
   }
 
   run(cb) {
-    const uri = config.storageOpts.mongoDb.uri;
+    let uri = config.storageOpts.mongoDb.uri;
+
+    if (uri.indexOf('?') > 0) {
+      uri = uri + '&';
+    } else {
+      uri = uri + '?';
+    }
+    uri = uri  + 'readPreference=secondaryPreferred';
+
     mongodb.MongoClient.connect(
       uri,
       (err, db) => {
@@ -60,7 +68,7 @@ export class Stats {
 
   _getStats(cb) {
     let result = {};
-    async.parallel(
+    async.series(
       [
         (next) => {
           this._getNewWallets(next);
@@ -94,6 +102,7 @@ export class Stats {
     };
 
     const updateStats = (from, cb) => {
+      var emit: any; // just to cheat TS
       const to = moment()
         .subtract(1, 'day')
         .endOf('day');
@@ -110,7 +119,7 @@ export class Stats {
         const value = {
           count: 1
         };
-        // emit(key, value);
+        emit(key, value);
       };
       const reduce = (k, v: any[]) => {
         let count = 0;
@@ -133,7 +142,7 @@ export class Stats {
         }
       };
       this.db
-        .collection(storage.collections.WALLETS)
+        .collection(storage.Storage.collections.WALLETS)
         .mapReduce(map, reduce, opts, (err) => {
           return cb(err);
         });
@@ -215,6 +224,7 @@ export class Stats {
     };
 
     const updateStats = (from, cb) => {
+      var emit: any; // just to cheat TS
       const to = moment()
         .subtract(1, 'day')
         .endOf('day');
@@ -232,7 +242,7 @@ export class Stats {
           count: 1,
           amount: this.amount
         };
-        // emit(key, value);
+        emit(key, value);
       };
       const reduce = (k, v) => {
         let count = 0,
@@ -259,7 +269,7 @@ export class Stats {
         }
       };
       this.db
-        .collection(storage.collections.TXS)
+        .collection(storage.Storage.collections.TXS)
         .mapReduce(map, reduce, opts, (err) => {
           return cb(err);
         });

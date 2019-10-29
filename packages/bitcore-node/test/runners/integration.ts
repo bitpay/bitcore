@@ -5,6 +5,7 @@ import Mocha from 'mocha';
 
 import config from '../../src/config';
 import { Storage } from '../../src/services/storage';
+import { Modules } from "../../src/modules";
 
 const TIMEOUT = 5000;
 const TEST_DIR = path.join(__dirname, '../integration');
@@ -29,6 +30,7 @@ function runTests() {
     const testRunner = new Mocha();
     testRunner.timeout(TIMEOUT);
     testRunner.reporter('spec');
+    Modules.loadConfigured();
 
     const files = glob.sync(`${TEST_DIR}/**/**.js`);
     files.forEach(function(file) {

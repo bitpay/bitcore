@@ -12,6 +12,7 @@ export const Constants = {
     BIP48: 'BIP48',
   },
   PATHS: {
+    SINGLE_ADDRESS: 'm/0/0',
     REQUEST_KEY: "m/1'/0",
     //  TXPROPOSAL_KEY: "m/1'/1",
     REQUEST_KEY_AUTH: 'm/2', // relative to BASE
@@ -20,6 +21,28 @@ export const Constants = {
   UNITS: {
     btc: {
       toSatoshis: 100000000,
+      full: {
+        maxDecimals: 8,
+        minDecimals: 8,
+      },
+      short: {
+        maxDecimals: 6,
+        minDecimals: 2,
+      }
+    },
+    bch: {
+      toSatoshis: 100000000,
+      full: {
+        maxDecimals: 8,
+        minDecimals: 8,
+      },
+      short: {
+        maxDecimals: 6,
+        minDecimals: 2,
+      }
+    },
+    eth: {
+      toSatoshis: 1e18,
       full: {
         maxDecimals: 8,
         minDecimals: 8,
@@ -41,5 +64,6 @@ export const Constants = {
       }
     },
   },
-  COINS: ['btc', 'bch']
+  COINS: ['btc', 'bch', 'eth'],
+  UTXO_COINS: ['btc', 'bch']
 };

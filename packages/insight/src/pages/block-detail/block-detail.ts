@@ -54,10 +54,13 @@ export class BlockDetailPage {
     this.blocksProvider.getBlock(this.blockHash, this.chainNetwork).subscribe(
       response => {
         let block;
-        if(this.chainNetwork.chain === "BTC" || this.chainNetwork.chain === "BCH") {
+        if (
+          this.chainNetwork.chain === 'BTC' ||
+          this.chainNetwork.chain === 'BCH'
+        ) {
           block = this.blocksProvider.toUtxoCoinAppBlock(response);
         }
-        if(this.chainNetwork.chain === "ETH") {
+        if (this.chainNetwork.chain === 'ETH') {
           block = this.blocksProvider.toEthAppBlock(response);
         }
         this.block = block;

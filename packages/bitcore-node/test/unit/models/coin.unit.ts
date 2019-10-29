@@ -3,7 +3,7 @@ import { CoinStorage, ICoin } from '../../../src/models/coin';
 import { SpentHeightIndicators } from '../../../src/types/Coin';
 import { ObjectId } from 'mongodb';
 import sinon from 'sinon';
-import { BlockStorage } from '../../../src/models/block';
+import { BitcoinBlockStorage } from '../../../src/models/block';
 import { mockStorage, mockModel } from '../../helpers/index.js';
 
 describe('Coin Model', function() {
@@ -58,6 +58,7 @@ describe('Coin Model', function() {
         value: 5000000000.0,
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
         lockingBytecode: '',
+        sequenceNumber: undefined,
         wallets: [],
         spentTxid: '',
         spentHeight: SpentHeightIndicators.unspent
@@ -77,6 +78,7 @@ describe('Coin Model', function() {
         coinbase: true,
         confirmations: -1,
         lockingBytecode: '',
+        sequenceNumber: undefined,
         value: 5000000000.0
       });
     });
@@ -119,7 +121,7 @@ describe('Coin Model', function() {
       mockModel('coins', [{ _id: 'confirmed', balance: 123123 }, { _id: 'unconfirmed', balance: 1 }]);
       mockModel('blocks', blockModelHeight);
       let coinModelAggregateSpy = CoinStorage.collection.aggregate as sinon.SinonSpy;
-      let blockModelFindSpy = BlockStorage.collection.find as sinon.SinonSpy;
+      let blockModelFindSpy = BitcoinBlockStorage.collection.find as sinon.SinonSpy;
 
       const result = await CoinStorage.getBalanceAtTime({ query, time, chain, network });
       expect(coinModelAggregateSpy.called).to.deep.equal(true, 'CoinStorage.aggregation should have been called');

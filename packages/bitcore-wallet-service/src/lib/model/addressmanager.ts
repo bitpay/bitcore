@@ -145,4 +145,11 @@ export class AddressManager {
     const ret = this.skippedPaths.pop();
     return ret;
   }
+
+  parseDerivationPath(path) {
+    const pathIndex = /m\/([0-9]*)\/([0-9]*)/;
+    const [_input, changeIndex, addressIndex] = path.match(pathIndex);
+    const isChange = changeIndex > 0;
+    return { _input, addressIndex, isChange };
+  }
 }

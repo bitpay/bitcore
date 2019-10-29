@@ -2,7 +2,18 @@ import * as async from 'async';
 import _ from 'lodash';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
-import { Address, Email, Notification, Preferences, PushNotificationSub, Session, TxConfirmationSub, TxNote, TxProposal, Wallet } from './model';
+import {
+  Address,
+  Email,
+  Notification,
+  Preferences,
+  PushNotificationSub,
+  Session,
+  TxConfirmationSub,
+  TxNote,
+  TxProposal,
+  Wallet
+} from './model';
 
 const BCHAddressTranslator = require('./bchaddresstranslator'); // only for migration
 const $ = require('preconditions').singleton();
@@ -118,6 +129,10 @@ export class Storage {
       copayerId: 1,
       txid: 1
     });
+    db.collection(collections.TX_CONFIRMATION_SUBS).createIndex({
+      isActive: 1,
+      copayerId: 1
+    });
     db.collection(collections.SESSIONS).createIndex({
       copayerId: 1
     });
@@ -127,6 +142,17 @@ export class Storage {
     opts = opts || {};
     if (this.db) return cb();
     const config = opts.mongoDb || {};
+
+    if (opts.secondaryPreferred) {
+      if (config.uri.indexOf('?') > 0) {
+        config.uri = config.uri + '&';
+      } else {
+        config.uri = config.uri + '?';
+      }
+      config.uri = config.uri + 'readPreference=secondaryPreferred';
+      log.info('Read operations set to secondaryPreferred');
+    }
+
     mongodb.MongoClient.connect(
       config.uri,
       (err, db) => {
@@ -136,7 +162,7 @@ export class Storage {
         }
         this.db = db;
 
-        log.info('Connection established to mongoDB');
+        log.info('Connection established to mongoDB:' + config.uri);
         Storage.createIndexes(db);
         return cb();
       }
@@ -144,7 +170,7 @@ export class Storage {
   }
 
   disconnect(cb) {
-    this.db.close(true, (err) => {
+    this.db.close(true, err => {
       if (err) return cb(err);
       this.db = null;
       return cb();
@@ -181,7 +207,7 @@ export class Storage {
   }
 
   storeWalletAndUpdateCopayersLookup(wallet, cb) {
-    const copayerLookups = _.map(wallet.copayers, (copayer) => {
+    const copayerLookups = _.map(wallet.copayers, copayer => {
       try {
         $.checkState(copayer.requestPubKeys);
       } catch (e) {
@@ -202,14 +228,14 @@ export class Storage {
       {
         w: 1
       },
-      (err) => {
+      err => {
         if (err) return cb(err);
         this.db.collection(collections.COPAYERS_LOOKUP).insert(
           copayerLookups,
           {
             w: 1
           },
-          (err) => {
+          err => {
             if (err) return cb(err);
             return this.storeWallet(wallet, cb);
           }
@@ -245,10 +271,10 @@ export class Storage {
   _completeTxData(walletId, txs, cb) {
     this.fetchWallet(walletId, (err, wallet) => {
       if (err) return cb(err);
-      _.each([].concat(txs), (tx) => {
+      _.each([].concat(txs), tx => {
         tx.derivationStrategy = wallet.derivationStrategy || 'BIP45';
         tx.creatorName = wallet.getCopayer(tx.creatorId).name;
-        _.each(tx.actions, (action) => {
+        _.each(tx.actions, action => {
           action.copayerName = wallet.getCopayer(action.copayerId).name;
         });
 
@@ -270,11 +296,7 @@ export class Storage {
       (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        return this._completeTxData(
-          walletId,
-          TxProposal.fromObj(result),
-          cb
-        );
+        return this._completeTxData(walletId, TxProposal.fromObj(result), cb);
       }
     );
   }
@@ -317,7 +339,7 @@ export class Storage {
       .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        const txs = _.map(result, (tx) => {
+        const txs = _.map(result, tx => {
           return TxProposal.fromObj(tx);
         });
         return cb(null, txs);
@@ -337,7 +359,7 @@ export class Storage {
       .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        const txs = _.map(result, (tx) => {
+        const txs = _.map(result, tx => {
           return TxProposal.fromObj(tx);
         });
         return this._completeTxData(walletId, txs, cb);
@@ -376,7 +398,7 @@ export class Storage {
       .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        const txs = _.map(result, (tx) => {
+        const txs = _.map(result, tx => {
           return TxProposal.fromObj(tx);
         });
         return this._completeTxData(walletId, txs, cb);
@@ -420,7 +442,7 @@ export class Storage {
       .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        const txs = _.map(result, (tx) => {
+        const txs = _.map(result, tx => {
           return TxProposal.fromObj(tx);
         });
         return this._completeTxData(walletId, txs, cb);
@@ -457,7 +479,7 @@ export class Storage {
       .toArray((err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        const notifications = _.map(result, (notification) => {
+        const notifications = _.map(result, notification => {
           return Notification.fromObj(notification);
         });
         return cb(null, notifications);
@@ -466,6 +488,13 @@ export class Storage {
 
   // TODO: remove walletId from signature
   storeNotification(walletId, notification, cb) {
+
+    // This should only happens in certain tests.
+    if (!this.db) {
+      log.warn( 'Trying to store a notification with close DB', notification);
+      return;
+    }
+
     this.db.collection(collections.NOTIFICATIONS).insert(
       notification,
       {
@@ -507,7 +536,7 @@ export class Storage {
   removeWallet(walletId, cb) {
     async.parallel(
       [
-        (next) => {
+        next => {
           this.db.collection(collections.WALLETS).remove(
             {
               id: walletId
@@ -515,7 +544,7 @@ export class Storage {
             next
           );
         },
-        (next) => {
+        next => {
           const otherCollections: string[] = _.without(
             _.values(collections),
             collections.WALLETS
@@ -565,11 +594,11 @@ export class Storage {
       return this.clearWalletCache(walletId, cb);
     });
 
-    cursor.on('err', (err) => {
+    cursor.on('err', err => {
       return cb(err);
     });
 
-    cursor.on('data', (doc) => {
+    cursor.on('data', doc => {
       cursor.pause();
       let x;
       try {
@@ -686,19 +715,21 @@ export class Storage {
       {
         w: 1
       },
-      (err) => {
+      err => {
         // duplicate address?
-        if ( err ) {
+        if (err) {
           if (!err.toString().match(/E11000/)) {
             return cb(err);
           } else {
             // just return it
             duplicate = true;
-            log.warn('Found duplicate address: ' +
-              _.join( _.map(clonedAddresses, 'address') , ',') );
+            log.warn(
+              'Found duplicate address: ' +
+                _.join(_.map(clonedAddresses, 'address'), ',')
+            );
           }
         }
-        this.storeWallet(wallet, (err) => {
+        this.storeWallet(wallet, err => {
           return cb(err, duplicate);
         });
       }
@@ -749,7 +780,7 @@ export class Storage {
         if (err) return cb(err);
         if (!result || _.isEmpty(result)) return cb();
         if (result.length > 1) {
-          result = _.find(result, (address) => {
+          result = _.find(result, address => {
             return coin == (address.coin || 'btc');
           });
         } else {
@@ -777,10 +808,11 @@ export class Storage {
         }
         if (!result) return cb();
 
-        const preferences = _.map([].concat(result), (r) => {
+        const preferences = _.map([].concat(result), r => {
           return Preferences.fromObj(r);
         });
-        if (copayerId) { // TODO: review if returs are correct
+        if (copayerId) {
+          // TODO: review if returs are correct
           return cb(null, preferences[0]);
         } else {
           return cb(null, preferences);
@@ -827,7 +859,7 @@ export class Storage {
         if (err) return cb(err);
         if (!result || _.isEmpty(result)) return cb(null, []);
 
-        const emails = _.map(result, (x) => {
+        const emails = _.map(result, x => {
           return Email.fromObj(x);
         });
 
@@ -1039,7 +1071,7 @@ export class Storage {
     // pos = 0; oldest one.
     // pos = tipIndex (item[0] => most recent).
 
-    _.each(items.reverse(), (item) => {
+    _.each(items.reverse(), item => {
       item.position = index++;
     });
     async.each(
@@ -1058,10 +1090,13 @@ export class Storage {
           next
         );
       },
-      (err) => {
+      err => {
         if (err) return cb(err);
 
-        interface CacheItem { txid?: string; blockheight?: number; }
+        interface CacheItem {
+          txid?: string;
+          blockheight?: number;
+        }
         const first: CacheItem = _.first(items);
         const last: CacheItem = _.last(items);
 
@@ -1091,7 +1126,7 @@ export class Storage {
 
         log.debug(
           `Cache Last Item: ${last.txid} blockh: ${
-          last.blockheight
+            last.blockheight
           } updatedh: ${updateHeight}`
         );
         this.db.collection(collections.CACHE).update(
@@ -1126,13 +1161,13 @@ export class Storage {
       rates,
       (rate: { code: string; value: string }, next) => {
         let i = {
-            ts: now,
-            coin,
-            code: rate.code,
-            value: rate.value
-          };
-        this.db.collection(collections.FIAT_RATES2).insert(i
-          ,
+          ts: now,
+          coin,
+          code: rate.code,
+          value: rate.value
+        };
+        this.db.collection(collections.FIAT_RATES2).insert(
+          i,
           {
             w: 1
           },
@@ -1172,11 +1207,7 @@ export class Storage {
       (err, result) => {
         if (err) return cb(err);
         if (!result) return cb();
-        return this._completeTxNotesData(
-          walletId,
-          TxNote.fromObj(result),
-          cb
-        );
+        return this._completeTxNotesData(walletId, TxNote.fromObj(result), cb);
       }
     );
   }
@@ -1185,7 +1216,7 @@ export class Storage {
   _completeTxNotesData(walletId, notes, cb) {
     this.fetchWallet(walletId, (err, wallet) => {
       if (err) return cb(err);
-      _.each([].concat(notes), (note) => {
+      _.each([].concat(notes), note => {
         note.editedByName = wallet.getCopayer(note.editedBy).name;
       });
       return cb(null, notes);
@@ -1212,7 +1243,7 @@ export class Storage {
       .toArray((err, result) => {
         if (err) return cb(err);
         const notes = _.compact(
-          _.map(result, (note) => {
+          _.map(result, note => {
             return TxNote.fromObj(note);
           })
         );
@@ -1272,7 +1303,7 @@ export class Storage {
 
         if (!result) return cb();
 
-        const tokens = _.map([].concat(result), (r) => {
+        const tokens = _.map([].concat(result), r => {
           return PushNotificationSub.fromObj(r);
         });
         return cb(null, tokens);
@@ -1308,24 +1339,31 @@ export class Storage {
   }
 
   fetchActiveTxConfirmationSubs(copayerId, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      log.warn( 'Trying to fetch notifications with closed DB');
+      return;
+    }
+
     const filter: { isActive: boolean; copayerId?: string } = {
-      isActive: true
+    isActive: true
     };
+
     if (copayerId) filter.copayerId = copayerId;
 
     this.db
-      .collection(collections.TX_CONFIRMATION_SUBS)
-      .find(filter)
-      .toArray((err, result) => {
-        if (err) return cb(err);
+    .collection(collections.TX_CONFIRMATION_SUBS)
+    .find(filter)
+    .toArray((err, result) => {
+      if (err) return cb(err);
 
-        if (!result) return cb();
+      if (!result) return cb();
 
-        const subs = _.map([].concat(result), (r) => {
-          return TxConfirmationSub.fromObj(r);
-        });
-        return cb(null, subs);
+      const subs = _.map([].concat(result), r => {
+        return TxConfirmationSub.fromObj(r);
       });
+      return cb(null, subs);
+    });
   }
 
   storeTxConfirmationSub(txConfirmationSub, cb) {
@@ -1358,7 +1396,7 @@ export class Storage {
 
   _dump(cb, fn) {
     fn = fn || console.log;
-    cb = cb || function() { };
+    cb = cb || function() {};
 
     this.db.collections((err, collections) => {
       if (err) return cb(err);
@@ -1449,7 +1487,7 @@ export class Storage {
       let lastAddress;
       addressStream.on('data', walletAddress => {
         if (walletAddress.address) {
-          lastAddress =  walletAddress.address;
+          lastAddress = walletAddress.address;
           const addressSum = Buffer.from(lastAddress).reduce(
             (tot, cur) => (tot + cur) % Number.MAX_SAFE_INTEGER
           );

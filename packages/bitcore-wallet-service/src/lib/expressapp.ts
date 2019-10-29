@@ -1,6 +1,8 @@
 import express from 'express';
 import _ from 'lodash';
 import * as log from 'npmlog';
+import 'source-map-support/register';
+
 import { ClientError } from './errors/clienterror';
 import { WalletService } from './server';
 import { Stats } from './stats';
@@ -583,6 +585,15 @@ export class ExpressApp {
       server.getFeeLevels(opts, (err, feeLevels) => {
         if (err) return returnError(err, res, req);
         res.json(feeLevels);
+      });
+    });
+
+    router.post('/v3/estimateGas/', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.estimateGas(req.body, (err, gasLimit) => {
+          if (err) return returnError(err, res, req);
+          res.json(gasLimit);
+        });
       });
     });
 

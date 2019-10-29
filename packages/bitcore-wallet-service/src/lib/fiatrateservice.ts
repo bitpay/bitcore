@@ -74,7 +74,7 @@ export class FiatRateService {
 
   _fetch(cb?) {
     cb = cb || function() { };
-    const coins = ['btc', 'bch'];
+    const coins = ['btc', 'bch', 'eth'];
     const provider = this.providers[0];
 
     //    async.each(this.providers, (provider, next) => {
