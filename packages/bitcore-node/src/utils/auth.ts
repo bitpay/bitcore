@@ -72,7 +72,7 @@ const authenticateMiddleware: RequestHandler = async (req: Request, res: Respons
   }
 };
 
-export const Signature = {
+export const Auth = {
   verifyRequestSignature,
   authenticateMiddleware
 };

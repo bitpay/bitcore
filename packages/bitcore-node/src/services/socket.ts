@@ -8,7 +8,7 @@ import { ObjectID } from 'mongodb';
 import { Config, ConfigService } from './config';
 import { ConfigType } from '../types/Config';
 import { WalletStorage } from '../models/wallet';
-import { VerificationPayload, Signature } from '../utils/signature';
+import { VerificationPayload, Auth } from '../utils/auth';
 
 function SanitizeWallet(x: { wallets?: ObjectID[] }) {
   const sanitized = Object.assign({}, x, { wallets: new Array<ObjectID>() });
@@ -43,7 +43,7 @@ export class SocketService {
 
   validateRequest(payload: VerificationPayload) {
     try {
-      const valid = Signature.verifyRequestSignature(payload);
+      const valid = Auth.verifyRequestSignature(payload);
       return valid;
     } catch (e) {
       return false;
