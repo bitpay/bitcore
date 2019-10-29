@@ -5,6 +5,7 @@ import { ClientError } from './errors/clienterror';
 import { WalletService } from './server';
 import { Stats } from './stats';
 import { Storage } from './storage';
+import { resolveNaptr } from 'dns';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
@@ -282,10 +283,16 @@ export class ExpressApp {
           if (version)  {
             res.json({ version });
           } else {
-            const htmlString = await rp(options);
-            server.storage.storeGlobalCache('latest-copay-version', htmlString['tag_name'], (err) => {
-              res.json({ version: htmlString['tag_name']});
-            });
+            try {
+              const htmlString = await rp(options);
+              if (htmlString['tag_name']) {
+                server.storage.storeGlobalCache('latest-copay-version', htmlString['tag_name'], (err) => {
+                  res.json({ version: htmlString['tag_name']});
+                });
+              }
+            } catch(err) {
+              res.send(err);
+            }
           }
         });
       } catch (err) {
