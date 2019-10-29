@@ -28,7 +28,7 @@ module.exports = {
   },
 
   // ETH
-  DEFAULT_GAS_LIMIT: 21000,
+  DEFAULT_GAS_LIMIT: 200000,
 
   MAX_KEYS: 100,
 

@@ -771,6 +771,7 @@ describe('client API', () => {
           outputs: [{
             toAddress: toAddress,
             amount: 3896000000000000,
+            gasLimit: 21000,
             message: 'first output'
           }
           ],
@@ -779,14 +780,13 @@ describe('client API', () => {
           fee: 420000000000000,
           nonce: 6,
           gasPrice: 20000000000,
-          gasLimit: 21000,
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH',
           amount: 3896000000000000
         };
         var t = Utils.buildTx(txp);
         const rawTxp = t.uncheckedSerialize();
-        rawTxp.should.equal('0xeb068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b800080018080');
+        rawTxp.should.deep.equal(['0xeb068504a817c80082520894a062a07a0a56beb2872b12f388f511d694626730870dd764300b800080018080']);
       });
       it('should protect from creating excessive fee', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
@@ -1192,6 +1192,7 @@ describe('client API', () => {
           outputs: [{
             toAddress: toAddress,
             amount: 3896000000000000,
+            gasLimit: 21000,
             message: 'first output'
           }
           ],
@@ -1200,7 +1201,6 @@ describe('client API', () => {
           fee: 420000000000000,
           nonce: 6,
           gasPrice: 20000000000,
-          gasLimit: 21000,
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH',
           amount: 3896000000000000
@@ -3392,8 +3392,8 @@ describe('client API', () => {
              Client.PayProV2.selectPaymentOption(opts).then((paypro)=>{
                //              http.getCall(0).args[0].coin.should.equal('btc');
                helpers.createAndPublishTxProposal(clients[0], {
-                 toAddress: paypro.toAddress,
-                 amount: paypro.amount,
+                 toAddress: paypro.instructions[0].outputs[0].address,
+                 amount: paypro.instructions[0].outputs[0].amount,
                  message: paypro.memo,
                  payProUrl: paypro.payProUrl,
                }, (err, x) => {
@@ -3562,8 +3562,8 @@ describe('client API', () => {
               Client.PayProV2.selectPaymentOption(opts).then((paypro) => {
                 paypro.requiredFeeRate.should.equal(10.101);
                 helpers.createAndPublishTxProposal(clients[0], {
-                  toAddress: paypro.toAddress,
-                  amount: paypro.amount,
+                  toAddress: paypro.instructions[0].outputs[0].address,
+                  amount: paypro.instructions[0].outputs[0].amount,
                   message: paypro.memo,
                   payProUrl: paypro.payProUrl,
                   feePerKb: paypro.requiredFeeRate * 1024,
@@ -3658,8 +3658,8 @@ describe('client API', () => {
               };
               Client.PayProV2.selectPaymentOption(opts).then((paypro) => {
                 helpers.createAndPublishTxProposal(clients[0], {
-                  toAddress: paypro.toAddress,
-                  amount: paypro.amount,
+                  toAddress: paypro.instructions[0].outputs[0].address,
+                  amount: paypro.instructions[0].outputs[0].amount,
                   message: paypro.memo,
                   payProUrl: paypro.payProUrl,
                 }, (err, x) => {
@@ -3722,8 +3722,8 @@ describe('client API', () => {
               
               Client.PayProV2.selectPaymentOption(opts).then((paypro) => {
                 helpers.createAndPublishTxProposal(clients[0], {
-                  toAddress: paypro.toAddress,
-                  amount: paypro.amount,
+                  toAddress: paypro.instructions[0].outputs[0].address,
+                  amount: paypro.instructions[0].outputs[0].amount,
                   message: paypro.memo,
                   payProUrl: paypro.payProUrl,
                 }, (err, x) => {

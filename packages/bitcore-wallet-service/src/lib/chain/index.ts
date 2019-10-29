@@ -1,8 +1,10 @@
-import { ITxProposal, IWallet } from '../model';
+import { ITxProposal, IWallet, TxProposal } from '../model';
 import { WalletService } from '../server';
 import { BchChain } from './bch';
 import { BtcChain } from './btc';
 import { EthChain } from './eth';
+const Common = require('../common');
+const Constants = Common.Constants;
 
 export interface IChain {
   getWalletBalance(server: WalletService, wallet: IWallet, opts: {coin: string, addresses: string[]} & any, cb);
@@ -12,14 +14,15 @@ export interface IChain {
   getChangeAddress(server: WalletService, wallet: IWallet, opts: {changeAddress: string} & any);
   checkDust(output: {amount: number, toAddress: string, valid: boolean}, opts: {outputs: any[]} & any);
   getFee(server: WalletService, wallet: IWallet, opts: {fee: number, feePerKb: number} & any);
+  buildTx(txp: TxProposal);
   convertFeePerKb(p: number, feePerKb: number);
   checkTx(server: WalletService, txp: ITxProposal);
   checkTxUTXOs(server: WalletService, txp: ITxProposal, opts: {noCashAddr: boolean} & any, cb);
   selectTxInputs(server: WalletService, txp: ITxProposal, wallet: IWallet, opts: {utxosToExclude: any[]} & any, cb, next);
   checkUtxos(opts: { fee: number, inputs: any[]});
   setInputs(info: {inputs: any[]});
-  isUTXOCoin();
-  isSingleAddress();
+  isUTXOCoin(): boolean;
+  isSingleAddress(): boolean;
   addSignaturesToBitcoreTx(tx: string, inputs: any[], inputPaths: any[], signatures: any[], xpub: string);
   addressToStorageTransform(network: string, address: {}): void;
   addressFromStorageTransform(network: string, address: {}): void;
@@ -33,9 +36,17 @@ const chain: { [chain: string]: IChain } = {
 
 class ChainProxy {
 
-  get(coin) {
-    const normalizedChain = coin.toUpperCase();
+  get(coin: string) {
+    const normalizedChain = this.getChain(coin);
     return chain[normalizedChain];
+  }
+
+  getChain(coin: string): string {
+    let normalizedChain = coin.toUpperCase();
+    if (Constants.ERC20[normalizedChain]) {
+      normalizedChain = 'ETH';
+    }
+    return normalizedChain;
   }
 
   getWalletBalance(server, wallet, opts, cb) {
@@ -64,6 +75,10 @@ class ChainProxy {
 
   getFee(server, wallet, opts) {
     return this.get(wallet.coin).getFee(server, wallet, opts);
+  }
+
+  buildTx(txp: TxProposal) {
+    return this.get(txp.coin).buildTx(txp);
   }
 
   convertFeePerKb(coin, p, feePerKb) {
@@ -98,11 +113,11 @@ class ChainProxy {
     return this.get(coin).setInputs(info);
   }
 
-  isUTXOCoin(coin) {
+  isUTXOCoin(coin: string): boolean {
     return this.get(coin).isUTXOCoin();
   }
 
-  isSingleAddress(coin) {
+  isSingleAddress(coin: string): boolean {
     return this.get(coin).isSingleAddress();
   }
 

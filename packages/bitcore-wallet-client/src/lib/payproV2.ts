@@ -376,6 +376,11 @@ export class PayProV2 {
     // otherwise, it returns err.
     payProDetails.verified = true;
 
+    // getPaymentOptions
+    if (responseData.paymentOptions) {
+      payProDetails.paymentOptions = responseData.paymentOptions;
+    }
+
     // network
     if (responseData.network == 'test')
       payProDetails.network = 'testnet';
@@ -395,50 +400,17 @@ export class PayProV2 {
       }
     }
 
-    let requiredFeeRate;
+    if (responseData.instructions) {
+      payProDetails.instructions = responseData.instructions;
+      const { requiredFeeRate, gasPrice } = responseData.instructions[0];
+      payProDetails.requiredFeeRate = requiredFeeRate || gasPrice;
 
-    // BTC Response - BCH Response
-    if (_.has(responseData, 'instructions[0].requiredFeeRate')) {
-      requiredFeeRate = responseData.instructions[0].requiredFeeRate;
-    }
-    if (_.has(responseData, 'instructions[0].outputs[0].amount')) {
-      payProDetails.amount = responseData.instructions[0].outputs[0].amount;
-    }
-    if (_.has(responseData, 'instructions[0].outputs[0].address')) {
-      try {
-        const bitcore = Bitcore_[payProDetails.coin];
-        payProDetails.toAddress = (bitcore.Address(responseData.instructions[0].outputs[0].address)).toString(true);
-      } catch (e) {
-        return new Error('Bad output address ' + e);
+      if (payProDetails.requiredFeeRate) {
+        if (payProDetails.requiredFeeRate > MAX_FEE_PER_KB[payProDetails.coin]) {
+          throw new Error('Fee rate too high:' + payProDetails.requiredFeeRate);
+        }
       }
     }
-
-    // ETH Response
-    if (_.has(responseData, 'instructions[0].value')) {
-      payProDetails.amount = responseData.instructions[0].value;
-    }
-
-    if (_.has(responseData, 'instructions[0].to')) {
-      payProDetails.toAddress = responseData.instructions[0].to;
-    }
-
-    if (_.has(responseData, 'instructions[0].gasPrice')) {
-      requiredFeeRate = responseData.instructions[0].gasPrice;
-    }
-
-    if (_.has(responseData, 'instructions[0].data')) {
-      payProDetails.data = responseData.instructions[0].data;
-  }
-
-    // ERC20 TODO
-
-    if (requiredFeeRate) {
-      if (requiredFeeRate > MAX_FEE_PER_KB[payProDetails.coin]) {
-        throw new Error('Fee rate too high:' + requiredFeeRate);
-      }
-      payProDetails.requiredFeeRate = requiredFeeRate;
-    }
-
     return payProDetails;
   }
 }

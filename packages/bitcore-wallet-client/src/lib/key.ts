@@ -409,13 +409,26 @@ export class Key {
       const addressPath = Constants.PATHS.SINGLE_ADDRESS;
       const privKey = xpriv.deriveChild(addressPath).privateKey;
       const tx = t.uncheckedSerialize();
-      const signature = Transactions.getSignature({
-        chain: txp.coin.toUpperCase(),
-        tx,
-        key: { privKey: privKey.toString('hex') },
-      });
-
-      return [signature];
+      const chain = Utils.getChain(txp.coin);
+      if (tx.length === 0) {
+        const signature = Transactions.getSignature({
+          chain,
+          tx,
+          key: { privKey: privKey.toString('hex') },
+        });
+        return [signature];
+      } else {
+        let signatures = [];
+        for (const rawTx of tx) {
+          const signed = Transactions.getSignature({
+            chain,
+            tx: rawTx,
+            key: { privKey: privKey.toString('hex') },
+          });
+          signatures.push(signed);
+        }
+        return signatures;
+      }
     }
   };
 }
