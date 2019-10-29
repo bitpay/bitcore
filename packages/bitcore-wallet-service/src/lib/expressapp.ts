@@ -268,10 +268,28 @@ export class ExpressApp {
           },
           json: true
         };
-        const htmlString = await rp(options);
-        this.storage.checkAndUseGlobalCache("latest-copay-version", Defaults.COPAY_VERSION_CACHE_DURATION, () => {});
-        res.json({ version: htmlString['tag_name'] });
+
+        let server;
+        try {
+          server = getServer(req, res);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+        server.storage.checkAndUseGlobalCache('latest-copay-version', Defaults.COPAY_VERSION_CACHE_DURATION, async (err, version) => {
+          if (err) {
+            console.log('Error', err);
+          }
+          if (version)  {
+            res.json({ version });
+          } else {
+            const htmlString = await rp(options);
+            server.storage.storeGlobalCache('latest-copay-version', htmlString['tag_name'], (err) => {
+              res.json({ version: htmlString['tag_name']});
+            });
+          }
+        });
       } catch (err) {
+        console.log('Error in catch', err);
         res.send(err);
       }
   });
