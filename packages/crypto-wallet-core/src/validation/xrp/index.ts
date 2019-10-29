@@ -1,6 +1,6 @@
-import baseX from 'base-x';
 import Bitcore from 'bitcore-lib';
 import { IValidation } from '..';
+import baseX from '../../../../bitcore-lib/node_modules/base-x';
 
 const RIPPLE_ALPHABET = 'rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz';
 
