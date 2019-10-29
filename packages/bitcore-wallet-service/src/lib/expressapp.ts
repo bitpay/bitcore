@@ -277,7 +277,7 @@ export class ExpressApp {
         }
         server.storage.checkAndUseGlobalCache('latest-copay-version', Defaults.COPAY_VERSION_CACHE_DURATION, async (err, version) => {
           if (err) {
-            console.log('Error', err);
+            res.send(err);
           }
           if (version)  {
             res.json({ version });
@@ -289,7 +289,6 @@ export class ExpressApp {
           }
         });
       } catch (err) {
-        console.log('Error in catch', err);
         res.send(err);
       }
   });
