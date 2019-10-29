@@ -4,8 +4,6 @@ import * as log from 'npmlog';
 import { ClientError } from './errors/clienterror';
 import { WalletService } from './server';
 import { Stats } from './stats';
-import { Storage } from './storage';
-import { resolveNaptr } from 'dns';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
@@ -21,7 +19,6 @@ log.level = 'verbose';
 
 export class ExpressApp {
   app: express.Express;
-  storage: Storage;
 
   constructor() {
     this.app = express();
