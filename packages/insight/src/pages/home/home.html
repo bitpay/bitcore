@@ -8,7 +8,7 @@
                   <h2> Explore </h2>
                   <div class="menu-button" (click)="goToBlocks()"> Blocks </div>
                   <div class="menu-button" (click)="goToPriceChartHandler()"> Price </div>
-                  <div class="menu-button" (click)=" drawDailyTxChartHandler()"> Txs per day </div>
+                  <!-- <div class="menu-button" (click)=" drawDailyTxChartHandler()"> Txs per day </div> -->
                 </div>
             </ion-col>
 
@@ -24,10 +24,10 @@
                 <price-chart #priceChart> </price-chart>
               </ion-col>
 
-              <ion-col col-10 class="page-content" *ngIf="currentView === 'txsperday'">
+              <!-- <ion-col col-10 class="page-content" *ngIf="currentView === 'txsperday'">
                 <h2>Daily Transaction Chart</h2>
                 <daily-transaction-chart #dailyTxChart> </daily-transaction-chart>
-              </ion-col>
+              </ion-col> -->
         </ion-row>
     </ion-grid>
 
