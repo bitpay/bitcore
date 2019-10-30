@@ -12,7 +12,7 @@ import { RippleWalletTransactions } from './transform';
 
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
-  static client?: RippleAPI;
+  static clients: { [network: string]: RippleAPI } = {};
 
   constructor(public chain: string = 'XRP') {
     super(chain);
@@ -21,23 +21,23 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
 
   async getClient(network: string) {
     try {
-      if (RippleStateProvider.client) {
-        await RippleStateProvider.client.getLedger();
+      if (RippleStateProvider.clients[network]) {
+        await RippleStateProvider.clients[network].getLedger();
       }
     } catch (e) {
-      RippleStateProvider.client = undefined;
+      delete RippleStateProvider.clients[network];
     }
-    if (!RippleStateProvider.client) {
+    if (!RippleStateProvider.clients[network]) {
       const networkConfig = this.config[network];
       const provider = networkConfig.provider;
       const host = provider.host || 'localhost';
       const protocol = provider.protocol || 'wss';
       const portString = provider.port;
       const connUrl = portString ? `${protocol}://${host}:${portString}` : `${protocol}://${host}`;
-      RippleStateProvider.client = new RippleAPI({ server: connUrl });
-      await RippleStateProvider.client.connect();
+      RippleStateProvider.clients[network] = new RippleAPI({ server: connUrl });
+      await RippleStateProvider.clients[network].connect();
     }
-    return RippleStateProvider.client;
+    return RippleStateProvider.clients[network];
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
