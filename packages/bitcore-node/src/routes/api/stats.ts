@@ -10,7 +10,12 @@ router.get('/', async function(_: Request, res: Response) {
 router.get('/daily-transactions', async function(req: Request, res: Response) {
   const { chain, network } = req.params;
   try {
-    let dailyTxs = await ChainStateProvider.getDailyTransactions({ chain, network });
+    let dailyTxs = await ChainStateProvider.getDailyTransactions({
+      chain,
+      network,
+      startDate: req.query.startDate,
+      endDate: req.query.endDate
+    });
     if (!dailyTxs) {
       return res.send(500);
     }
