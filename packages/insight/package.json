@@ -26,7 +26,7 @@
   },
   "scripts": {
     "clean": "ionic-app-scripts clean",
-    "build:prod": "ENV=prod CHAIN=BTC NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:build",
+    "build:prod": "ENV=prod CHAIN=BTC NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:build --prod",
     "serve:prod": "npm run clean && npm run build:prod && npm run serve",
     "serve": "serve www",
     "ionic:build": "ionic-app-scripts build",
