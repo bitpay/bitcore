@@ -488,6 +488,13 @@ export class Storage {
 
   // TODO: remove walletId from signature
   storeNotification(walletId, notification, cb) {
+
+    // This should only happens in certain tests.
+    if (!this.db) {
+      log.warn( 'Trying to store a notification with close DB', notification);
+      return;
+    }
+
     this.db.collection(collections.NOTIFICATIONS).insert(
       notification,
       {
@@ -1332,24 +1339,31 @@ export class Storage {
   }
 
   fetchActiveTxConfirmationSubs(copayerId, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      log.warn( 'Trying to fetch notifications with closed DB');
+      return;
+    }
+
     const filter: { isActive: boolean; copayerId?: string } = {
-      isActive: true
+    isActive: true
     };
+
     if (copayerId) filter.copayerId = copayerId;
 
     this.db
-      .collection(collections.TX_CONFIRMATION_SUBS)
-      .find(filter)
-      .toArray((err, result) => {
-        if (err) return cb(err);
+    .collection(collections.TX_CONFIRMATION_SUBS)
+    .find(filter)
+    .toArray((err, result) => {
+      if (err) return cb(err);
 
-        if (!result) return cb();
+      if (!result) return cb();
 
-        const subs = _.map([].concat(result), r => {
-          return TxConfirmationSub.fromObj(r);
-        });
-        return cb(null, subs);
+      const subs = _.map([].concat(result), r => {
+        return TxConfirmationSub.fromObj(r);
       });
+      return cb(null, subs);
+    });
   }
 
   storeTxConfirmationSub(txConfirmationSub, cb) {

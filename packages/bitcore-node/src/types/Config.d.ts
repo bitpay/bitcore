@@ -34,6 +34,7 @@ export interface ConfigType {
     };
     socket: {
       disabled?: boolean;
+      bwsKeys: Array<string>;
     };
     storage: {
       disabled?: boolean;

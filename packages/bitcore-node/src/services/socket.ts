@@ -7,6 +7,8 @@ import { Event, EventService } from './event';
 import { ObjectID } from 'mongodb';
 import { Config, ConfigService } from './config';
 import { ConfigType } from '../types/Config';
+import { WalletStorage } from '../models/wallet';
+import { VerificationPayload, Auth } from '../utils/auth';
 
 function SanitizeWallet(x: { wallets?: ObjectID[] }) {
   const sanitized = Object.assign({}, x, { wallets: new Array<ObjectID>() });
@@ -39,7 +41,17 @@ export class SocketService {
     this.signalAddressCoin = this.signalAddressCoin.bind(this);
   }
 
+  validateRequest(payload: VerificationPayload) {
+    try {
+      const valid = Auth.verifyRequestSignature(payload);
+      return valid;
+    } catch (e) {
+      return false;
+    }
+  }
+
   start({ server }: { server: http.Server }) {
+    const bwsKeys = this.serviceConfig.bwsKeys;
     if (this.configService.isDisabled('socket')) {
       logger.info('Disabled Socket Service');
       return;
@@ -50,32 +62,61 @@ export class SocketService {
       this.httpServer = server;
       this.io = SocketIO(server);
       this.io.sockets.on('connection', socket => {
-        socket.on('room', room => {
-          socket.join(room);
+        socket.on('room', (room: string, payload: VerificationPayload) => {
+          const chainNetwork = room.slice(0, room.lastIndexOf('/') + 1);
+          const roomName = room.slice(room.lastIndexOf('/') + 1);
+          switch (roomName) {
+            case 'wallets':
+              if (bwsKeys.includes(payload.pubKey) && this.validateRequest(payload)) {
+                socket.join(room);
+              } else {
+                socket.emit('failure', { message: 'Authentication failed' });
+              }
+              break;
+            case 'wallet':
+              if (this.validateRequest(payload)) {
+                socket.join(chainNetwork + payload.pubKey);
+              } else {
+                socket.emit('failure', { message: 'Authentication failed' });
+              }
+              break;
+            case 'inv':
+            case 'address':
+              socket.join(room);
+              break;
+          }
         });
       });
     }
     this.wireup();
+    logger.info('Started Socket Service');
   }
 
-  stop() {
+  async stop() {
     logger.info('Stopping Socket Service');
     this.stopped = true;
-    return new Promise(resolve => {
-      if (this.io) {
-        this.io.close(resolve);
-      } else {
-        resolve();
-      }
-    });
+    this.eventService.blockEvent.removeAllListeners();
+    this.eventService.txEvent.removeAllListeners();
+    this.eventService.addressCoinEvent.removeAllListeners();
   }
 
   async wireup() {
-    this.eventService.txEvent.on('tx', (tx: IEvent.TxEvent) => {
+    this.eventService.txEvent.on('tx', async (tx: IEvent.TxEvent) => {
       if (this.io) {
         const { chain, network } = tx;
         const sanitizedTx = SanitizeWallet(tx);
         this.io.sockets.in(`/${chain}/${network}/inv`).emit('tx', sanitizedTx);
+
+        if (tx.wallets && tx.wallets.length) {
+          const objectIds = tx.wallets.map(w => new ObjectID(w));
+          const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
+          for (let wallet of wallets) {
+            this.io.sockets.in(`/${chain}/${network}/wallets`).emit('tx', { pubKey: wallet.pubKey, tx });
+            this.io.sockets
+              .in(`/${chain}/${network}/${wallet.pubKey}`)
+              .emit('tx', { pubKey: wallet.pubKey, tx: sanitizedTx });
+          }
+        }
       }
     });
 
@@ -86,13 +127,23 @@ export class SocketService {
       }
     });
 
-    this.eventService.addressCoinEvent.on('coin', (addressCoin: IEvent.CoinEvent) => {
+    this.eventService.addressCoinEvent.on('coin', async (addressCoin: IEvent.CoinEvent) => {
       if (this.io) {
         const { coin, address } = addressCoin;
         const { chain, network } = coin;
         const sanitizedCoin = SanitizeWallet(coin);
         this.io.sockets.in(`/${chain}/${network}/address`).emit(address, sanitizedCoin);
         this.io.sockets.in(`/${chain}/${network}/inv`).emit('coin', sanitizedCoin);
+        if (coin.wallets && coin.wallets.length) {
+          const objectIds = coin.wallets.map(w => new ObjectID(w));
+          const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
+          for (let wallet of wallets) {
+            this.io.sockets.in(`/${chain}/${network}/wallets`).emit('coin', { pubKey: wallet.pubKey, coin });
+            this.io.sockets
+              .in(`/${chain}/${network}/${wallet.pubKey}`)
+              .emit('coin', { pubKey: wallet.pubKey, coin: sanitizedCoin });
+          }
+        }
       }
     });
   }

@@ -83,7 +83,7 @@
     "start": "npm run clean && npm run tsc && ./start.sh",
     "stop": "./stop.sh",
     "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
-    "test": "npm run compile && mocha",
+    "test": "npm run compile && mocha --exit",
     "test:ci": "npm run test",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "tsc": "npm run clean && tsc",
@@ -91,7 +91,7 @@
     "clean": "rm -rf ./ts_build",
     "compile": "npm run clean && npm run build",
     "lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "lint-fix": "tslint --fix -c tslint.json 'src/**/*.ts'",
+    "fix": "tslint --fix -c tslint.json 'src/**/*.ts'",
     "pub": "npm run build && npm publish"
   },
   "bitcoreNode": "./bitcorenode",
