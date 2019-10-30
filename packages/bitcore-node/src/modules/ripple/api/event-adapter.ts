@@ -1,6 +1,7 @@
 import { BaseModule } from '../..';
 import { RippleStateProvider } from './csp';
 import { RippleAPI } from 'ripple-lib';
+import { StateStorage } from '../../../models/state';
 
 export class RippleEventAdapter {
   clients: RippleAPI[] = [];
@@ -15,6 +16,11 @@ export class RippleEventAdapter {
     const csp = this.services.CSP.get({ chain }) as RippleStateProvider;
 
     for (let network of networks) {
+      await StateStorage.collection.findOneAndUpdate(
+        {},
+        { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
+        { upsert: true }
+      );
       const client = await csp.getClient(network);
 
       client.connection.on('transaction', tx => {
