@@ -111,7 +111,7 @@ export class SocketService {
           const objectIds = tx.wallets.map(w => new ObjectID(w));
           const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
           for (let wallet of wallets) {
-            this.io.sockets.in(`/${chain}/${network}/wallets`).emit('tx', tx);
+            this.io.sockets.in(`/${chain}/${network}/wallets`).emit('tx', { pubKey: wallet.pubKey, tx });
             this.io.sockets
               .in(`/${chain}/${network}/${wallet.pubKey}`)
               .emit('tx', { pubKey: wallet.pubKey, tx: sanitizedTx });
@@ -138,7 +138,7 @@ export class SocketService {
           const objectIds = coin.wallets.map(w => new ObjectID(w));
           const wallets = await WalletStorage.collection.find({ _id: { $in: objectIds } }).toArray();
           for (let wallet of wallets) {
-            this.io.sockets.in(`/${chain}/${network}/wallets`).emit('coin', coin);
+            this.io.sockets.in(`/${chain}/${network}/wallets`).emit('coin', { pubKey: wallet.pubKey, coin });
             this.io.sockets
               .in(`/${chain}/${network}/${wallet.pubKey}`)
               .emit('coin', { pubKey: wallet.pubKey, coin: sanitizedCoin });
