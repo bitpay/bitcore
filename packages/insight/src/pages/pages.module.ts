@@ -1,7 +1,7 @@
 import { NgModule } from '@angular/core';
 import { IonicModule } from 'ionic-angular';
 import { ComponentsModule } from '../components';
-// import { DailyTransactionChartComponentModule } from '../components/daily-transaction-chart/daily-transaction-chart.module';
+import { DailyTransactionChartComponentModule } from '../components/daily-transaction-chart/daily-transaction-chart.module';
 import { ErrorComponentModule } from '../components/error/error.module';
 import { FooterComponentModule } from '../components/footer/footer.module';
 import { HeadNavComponentModule } from '../components/head-nav/head-nav.module';
@@ -24,7 +24,7 @@ import { HomePageModule } from './home/home.module';
     LatestBlocksComponentModule,
     PriceChartModule,
     ErrorComponentModule,
-    /*DailyTransactionChartComponentModule*/
+    DailyTransactionChartComponentModule
   ],
   exports: [
     // CustomComponent,
