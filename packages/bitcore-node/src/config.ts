@@ -78,7 +78,9 @@ const Config = function(): ConfigType {
         onlyWalletEvents: false
       },
       p2p: {},
-      socket: {},
+      socket: {
+        bwsKeys: []
+      },
       storage: {}
     }
   };
