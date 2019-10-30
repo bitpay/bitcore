@@ -479,7 +479,6 @@ export class InternalStateProvider implements CSP.IChainStateService {
     };
     const start = startDate && isValidDate(startDate) ? new Date(startDate) : oneMonth;
     const end = endDate && isValidDate(endDate) ? formatDate(new Date(endDate)) : todayTruncatedUTC;
-    console.log(start, end);
     const results = await BitcoinBlockStorage.collection
       .aggregate<{
         date: string;

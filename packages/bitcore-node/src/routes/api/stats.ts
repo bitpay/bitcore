@@ -16,9 +16,6 @@ router.get('/daily-transactions', async function(req: Request, res: Response) {
       startDate: req.query.startDate,
       endDate: req.query.endDate
     });
-    if (!dailyTxs) {
-      return res.send(500);
-    }
     SetCache(res, CacheTimes.Day);
     return res.json(dailyTxs);
   } catch (err) {
