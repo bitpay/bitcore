@@ -83,7 +83,7 @@ export class ExpressApp {
         // send a 503 error, with a message to the bitpay status page
         let errorCode = 503;
         let errorMessage = 'BWS down for maintenance';
-        res.status(503).send({code: errorCode, message: errorMessage});
+        res.status(503).send({ code: errorCode, message: errorMessage });
       } else {
         next();
       }
@@ -316,15 +316,7 @@ export class ExpressApp {
     router.get('/v1/wallets/', (req, res) => {
       logDeprecated(req);
       getServerWithAuth(req, res, (server) => {
-        server.getStatus(
-          {
-            includeExtendedInfo: true
-          },
-          (err, status) => {
-            if (err) return returnError(err, res, req);
-            res.json(status);
-          }
-        );
+        server.getStatus({ includeExtendedInfo: true }).then(status => res.json(status)).catch(err => returnError(err, res, req));
       });
     });
 
@@ -336,10 +328,7 @@ export class ExpressApp {
           opts.includeExtendedInfo = true;
         if (req.query.twoStep == '1') opts.twoStep = true;
 
-        server.getStatus(opts, (err, status) => {
-          if (err) return returnError(err, res, req);
-          res.json(status);
-        });
+        server.getStatus(opts).then(status => res.json(status)).catch(err => returnError(err, res, req));
       });
     });
 
@@ -350,10 +339,7 @@ export class ExpressApp {
           opts.includeExtendedInfo = true;
         if (req.query.twoStep == '1') opts.twoStep = true;
         if (req.query.serverMessageArray == '1') opts.includeServerMessages = true;
-        server.getStatus(opts, (err, status) => {
-          if (err) return returnError(err, res, req);
-          res.json(status);
-        });
+        server.getStatus(opts).then(status => res.json(status)).catch(err => returnError(err, res, req));
       });
     });
 
@@ -377,10 +363,7 @@ export class ExpressApp {
             const opts = { includeExtendedInfo: false };
             if (req.query.includeExtendedInfo == '1')
               opts.includeExtendedInfo = true;
-            server.getStatus(opts, (err, status) => {
-              if (err) return returnError(err, res, req);
-              res.json(status);
-            });
+            server.getStatus(opts).then(status => res.json(status)).catch(err => returnError(err, res, req));
           });
         }
       );
@@ -388,10 +371,7 @@ export class ExpressApp {
 
     router.get('/v1/preferences/', (req, res) => {
       getServerWithAuth(req, res, (server) => {
-        server.getPreferences({}, (err, preferences) => {
-          if (err) return returnError(err, res, req);
-          res.json(preferences);
-        });
+        server.getPreferences({}).then(preferences => res.json(preferences)).catch(err => returnError(err, res, req));
       });
     });
 
@@ -508,11 +488,7 @@ export class ExpressApp {
         const opts: { limit?: number; reverse?: boolean } = {};
         if (req.query.limit) opts.limit = +req.query.limit;
         opts.reverse = req.query.reverse == '1';
-
-        server.getMainAddresses(opts, (err, addresses) => {
-          if (err) return returnError(err, res, req);
-          res.json(addresses);
-        });
+        server.getMainAddresses(opts).then(addresses => res.json(addresses)).catch(err => returnError(err, res, req));
       });
     });
 

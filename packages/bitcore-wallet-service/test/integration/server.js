@@ -697,8 +697,7 @@ describe('Wallet service', function() {
           helpers.getAuthServer(copayerId, function(server) {
             server.getStatus({
               includeExtendedInfo: true
-            }, function(err, status) {
-              should.not.exist(err);
+            }).then(status => {
               status.wallet.m.should.equal(1);
               status.wallet.beRegistered.should.equal(false);
               status.balance.totalAmount.should.equal(0);
@@ -1224,8 +1223,7 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          server2.getMainAddresses({}, function(err, addresses) {
-            should.not.exist(err);
+          server2.getMainAddresses({}).then(addresses => {
             should.exist(addresses);
             addresses.length.should.above(0);
             next();
@@ -1265,8 +1263,7 @@ describe('Wallet service', function() {
     });
 
     it('should get status', function(done) {
-      server.getStatus({}, function(err, status) {
-        should.not.exist(err);
+      server.getStatus({}).then(status => {
         should.exist(status);
         should.exist(status.wallet);
         status.wallet.name.should.equal(wallet.name);
@@ -1295,8 +1292,7 @@ describe('Wallet service', function() {
     it('should get status including extended info', function(done) {
       server.getStatus({
         includeExtendedInfo: true
-      }, function(err, status) {
-        should.not.exist(err);
+      }).then(status => {
         should.exist(status);
         should.exist(status.wallet.publicKeyRing);
         should.exist(status.wallet.pubKey);
@@ -1324,8 +1320,7 @@ describe('Wallet service', function() {
         };
         helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
           should.exist(tx);
-          server.getStatus({}, function(err, status) {
-            should.not.exist(err);
+          server.getStatus({}).then(status => {
             status.pendingTxps.length.should.equal(1);
             var balance = status.balance;
             balance.totalAmount.should.equal(3e8);
@@ -1341,8 +1336,7 @@ describe('Wallet service', function() {
       server.appVersion = { major: 5, minor: 0, patch: 0 };
       server.getStatus({
         includeServerMessages: true
-      }, function(err, status) {
-        should.not.exist(err);
+      }).then(status => {
         should.exist(status);
         should.exist(status.serverMessages);
         _.isArray(status.serverMessages).should.be.true;
@@ -1362,8 +1356,7 @@ describe('Wallet service', function() {
     it('should get status including deprecated server message', function(done) {
       server.appName = 'bitpay';
       server.appVersion = { major: 5, minor: 0, patch: 0 };
-      server.getStatus({}, function(err, status) {
-        should.not.exist(err);
+      server.getStatus({}).then(status => {
         should.exist(status);
         should.exist(status.serverMessage);
         _.isObject(status.serverMessage).should.be.true;
@@ -1397,8 +1390,7 @@ describe('Wallet service', function() {
         message: message,
         signature: helpers.signMessage(message, TestData.copayers[0].privKey_1H_0),
       };
-      server.verifyMessageSignature(opts, function(err, isValid) {
-        should.not.exist(err);
+      server.verifyMessageSignature(opts).then(isValid => {
         isValid.should.be.true;
         done();
       });
@@ -1411,8 +1403,7 @@ describe('Wallet service', function() {
         signature: helpers.signMessage(message, TestData.copayers[0].privKey_1H_0),
       };
       helpers.getAuthServer(wallet.copayers[1].id, function(server) {
-        server.verifyMessageSignature(opts, function(err, isValid) {
-          should.not.exist(err);
+        server.verifyMessageSignature(opts).then(isValid => {
           isValid.should.be.false;
           done();
         });
@@ -1504,7 +1495,7 @@ describe('Wallet service', function() {
           should.exist(err);
           should.not.exist(address);
 
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getMainAddresses({}).then(addresses => {
             addresses.length.should.equal(0);
 
             server.storage.storeAddressAndWallet.restore();
@@ -1574,7 +1565,7 @@ describe('Wallet service', function() {
           should.exist(err);
           should.not.exist(address);
 
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getMainAddresses({}).then(addresses => {
             addresses.length.should.equal(0);
 
             server.storage.storeAddressAndWallet.restore();
@@ -1643,7 +1634,7 @@ describe('Wallet service', function() {
           should.exist(err);
           should.not.exist(address);
 
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getMainAddresses({}).then(addresses => {
             addresses.length.should.equal(0);
 
             server.storage.storeAddressAndWallet.restore();
@@ -1944,8 +1935,7 @@ describe('Wallet service', function() {
               address.coin.should.equal('eth');
 
               // main addresses should transfrom addresses
-              server.getMainAddresses({}, function(err, addresses) {
-                should.not.exist(err);
+              server.getMainAddresses({}).then(addresses => {
                 addresses.length.should.equal(1);
                 addresses[0].address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
                 done();
@@ -1987,8 +1977,7 @@ describe('Wallet service', function() {
     });
 
     it('should get all addresses', function(done) {
-      server.getMainAddresses({}, function(err, addresses) {
-        should.not.exist(err);
+      server.getMainAddresses({}).then(addresses => {
         addresses.length.should.equal(5);
         addresses[0].path.should.equal('m/0/0');
         addresses[4].path.should.equal('m/0/4');
@@ -1998,8 +1987,7 @@ describe('Wallet service', function() {
     it('should get first N addresses', function(done) {
       server.getMainAddresses({
         limit: 3
-      }, function(err, addresses) {
-        should.not.exist(err);
+      }).then(addresses => {
         addresses.length.should.equal(3);
         addresses[0].path.should.equal('m/0/0');
         addresses[2].path.should.equal('m/0/2');
@@ -2010,8 +1998,7 @@ describe('Wallet service', function() {
       server.getMainAddresses({
         limit: 3,
         reverse: true,
-      }, function(err, addresses) {
-        should.not.exist(err);
+      }).then(addresses => {
         addresses.length.should.equal(3);
         addresses[0].path.should.equal('m/0/4');
         addresses[2].path.should.equal('m/0/2');
@@ -2038,8 +2025,7 @@ describe('Wallet service', function() {
         dummy: 'ignored',
       }, function(err) {
         should.not.exist(err);
-        server.getPreferences({}, function(err, preferences) {
-          should.not.exist(err);
+        server.getPreferences({}).then(preferences => {
           should.exist(preferences);
           preferences.email.should.equal('dummy@dummy.com');
           preferences.language.should.equal('es');
@@ -2055,8 +2041,7 @@ describe('Wallet service', function() {
       }, function(err) {
         should.not.exist(err);
         helpers.getAuthServer(wallet.copayers[1].id, function(server2) {
-          server2.getPreferences({}, function(err, preferences) {
-            should.not.exist(err);
+          server2.getPreferences({}).then(preferences => {
             should.not.exist(preferences.email);
             done();
           });
@@ -2072,8 +2057,7 @@ describe('Wallet service', function() {
           }, next);
         },
         function(next) {
-          server.getPreferences({}, function(err, preferences) {
-            should.not.exist(err);
+          server.getPreferences({}).then(preferences => {
             should.exist(preferences);
             preferences.email.should.equal('dummy@dummy.com');
             should.not.exist(preferences.language);
@@ -2086,8 +2070,7 @@ describe('Wallet service', function() {
           }, next);
         },
         function(next) {
-          server.getPreferences({}, function(err, preferences) {
-            should.not.exist(err);
+          server.getPreferences({}).then(preferences => {
             should.exist(preferences);
             preferences.language.should.equal('es');
             preferences.email.should.equal('dummy@dummy.com');
@@ -2101,8 +2084,7 @@ describe('Wallet service', function() {
           }, next);
         },
         function(next) {
-          server.getPreferences({}, function(err, preferences) {
-            should.not.exist(err);
+          server.getPreferences({}).then(preferences => {
             should.exist(preferences);
             preferences.unit.should.equal('bit');
             should.not.exist(preferences.language);
@@ -2171,7 +2153,7 @@ describe('Wallet service', function() {
           should.exist(utxos);
           utxos.length.should.equal(2);
           _.sumBy(utxos, 'satoshis').should.equal(3 * 1e8);
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getMainAddresses({}).then(addresses => {
             var utxo = utxos[0];
             var address = _.find(addresses, {
               address: utxo.address
@@ -2193,7 +2175,7 @@ describe('Wallet service', function() {
           should.exist(utxos);
           utxos.length.should.equal(2);
           _.sumBy(utxos, 'satoshis').should.equal(3 * 1e8);
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getMainAddresses({}).then(addresses => {
             var utxo = utxos[0];
             var address = _.find(addresses, {
               address: utxo.address
@@ -2283,7 +2265,7 @@ describe('Wallet service', function() {
           should.exist(utxos);
           utxos.length.should.equal(2);
           _.sumBy(utxos, 'satoshis').should.equal(2 * 1e8 + 1000);
-          server.getMainAddresses({}, function(err, addresses) {
+          server.getMainAddresses({}).then(addresses => {
             var utxo = utxos[0];
             var address = _.find(addresses, {
               address: utxo.address
@@ -2500,8 +2482,7 @@ describe('Wallet service', function() {
           balance.byAddress.length.should.equal(2);
           balance.byAddress[0].amount.should.equal(helpers.toSatoshi(4));
           balance.byAddress[1].amount.should.equal(helpers.toSatoshi(2));
-          server.getMainAddresses({}, function(err, addresses) {
-            should.not.exist(err);
+          server.getMainAddresses({}).then(addresses => {
             var addresses = _.uniq(_.map(addresses, 'address'));
             _.intersection(addresses, _.map(balance.byAddress, 'address')).length.should.equal(2);
             done();
@@ -8505,5 +8486,4 @@ describe('Wallet service', function() {
       });
     });
   });
-
 });

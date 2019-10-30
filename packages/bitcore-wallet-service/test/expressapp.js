@@ -16,13 +16,13 @@ var { WalletService } = require('../ts_build/lib/server');
 
 
 describe('ExpressApp', function() {
-  beforeEach(()=>{
+  beforeEach(() => {
     log.level = 'error';
     config.disableLogs = true;
   });
   describe('#constructor', function() {
     it('will set an express app', function() {
-      var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {});
+      var { ExpressApp: TestExpressApp } = proxyquire('../ts_build/lib/expressapp', {});
       var express = new TestExpressApp({
       });
       should.exist(express.app);
@@ -33,9 +33,9 @@ describe('ExpressApp', function() {
   describe('#start', function() {
     it('will listen at the specified port', function(done) {
       var initialize = sinon.stub().callsArg(1);
-      var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+      var { ExpressApp: TestExpressApp } = proxyquire('../ts_build/lib/expressapp', {
         './server': {
-          WalletService : {
+          WalletService: {
             initialize: initialize,
             getServiceVersion: WalletService.getServiceVersion
           }
@@ -73,11 +73,11 @@ describe('ExpressApp', function() {
 
       it('/v2/wallets', function(done) {
         var server = {
-          getStatus: sinon.stub().callsArgWith(1, null, {}),
+          getStatus: sinon.stub().resolves({}),
         };
-        var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+        var { ExpressApp: TestExpressApp } = proxyquire('../ts_build/lib/expressapp', {
           './server': {
-            WalletService:  {
+            WalletService: {
               initialize: sinon.stub().callsArg(1),
               getServiceVersion: WalletService.getServiceVersion,
               getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
@@ -105,9 +105,9 @@ describe('ExpressApp', function() {
 
       it('/v1/addresses', function(done) {
         var server = {
-          getMainAddresses: sinon.stub().callsArgWith(1, null, {}),
+          getMainAddresses: sinon.stub().resolves({}),
         };
-        var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+        var { ExpressApp: TestExpressApp } = proxyquire('../ts_build/lib/expressapp', {
           './server': {
             WalletService: {
               initialize: sinon.stub().callsArg(1),
@@ -141,9 +141,9 @@ describe('ExpressApp', function() {
             amount: 123
           }),
         };
-        var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+        var { ExpressApp: TestExpressApp } = proxyquire('../ts_build/lib/expressapp', {
           './server': {
-            WalletService : {
+            WalletService: {
               initialize: sinon.stub().callsArg(1),
               getServiceVersion: WalletService.getServiceVersion,
               getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
@@ -175,9 +175,9 @@ describe('ExpressApp', function() {
           var server = {
             getBalance: sinon.stub().callsArgWith(1, null, {}),
           };
-          var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+          var { ExpressApp: TestExpressApp } = proxyquire('../ts_build/lib/expressapp', {
             './server': {
-              WalletService : {
+              WalletService: {
                 initialize: sinon.stub().callsArg(1),
                 getServiceVersion: WalletService.getServiceVersion,
                 getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
@@ -219,7 +219,7 @@ describe('ExpressApp', function() {
           server = {
             getNotifications: sinon.stub().callsArgWith(1, null, {})
           };
-          var {ExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+          var { ExpressApp } = proxyquire('../ts_build/lib/expressapp', {
             './server': {
               WalletService: {
                 initialize: sinon.stub().callsArg(1),
@@ -277,9 +277,9 @@ describe('ExpressApp', function() {
         });
         it('should limit minTs to Defaults.MAX_NOTIFICATIONS_TIMESPAN', function(done) {
           start(TestExpressApp, function() {
-            var overLimit  = Defaults.MAX_NOTIFICATIONS_TIMESPAN * 2;
+            var overLimit = Defaults.MAX_NOTIFICATIONS_TIMESPAN * 2;
             var requestOptions = {
-              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?timeSpan=' + overLimit ,
+              url: testHost + ':' + testPort + config.basePath + '/v1/notifications' + '?timeSpan=' + overLimit,
               headers: {
                 'x-identity': 'identity',
                 'x-signature': 'signature'
@@ -300,11 +300,11 @@ describe('ExpressApp', function() {
         });
         it('Server under maintenance check, should return 503 status code', function(done) {
           var server = {
-            getStatus: sinon.stub().callsArgWith(1, null, {}),
+            getStatus: sinon.stub().resolves({}),
           };
-          var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+          var { ExpressApp: TestExpressApp } = proxyquire('../ts_build/lib/expressapp', {
             './server': {
-              WalletService:  {
+              WalletService: {
                 initialize: sinon.stub().callsArg(1),
                 getServiceVersion: WalletService.getServiceVersion,
                 getInstanceWithAuth: sinon.stub().callsArgWith(1, null, server),
@@ -320,8 +320,8 @@ describe('ExpressApp', function() {
                 'x-signature': 'signature'
               }
             };
-            request(requestOptions, function(err,res,body){
-              if(config.maintenanceOpts.maintenanceMode === true) {
+            request(requestOptions, function(err, res, body) {
+              if (config.maintenanceOpts.maintenanceMode === true) {
                 should.not.exist(err);
                 res.statusCode.should.equal(503);
                 body.should.equal(`{"code":503,"message":"Bitcore Wallet Service is currently under maintenance. Please periodically check https://status.bitpay.com/ to stay up to date with our current status."}`);

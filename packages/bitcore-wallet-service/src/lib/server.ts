@@ -219,7 +219,7 @@ export class WalletService {
   }
 
   static handleIncomingNotifications(notification, cb) {
-    cb = cb || function () { };
+    cb = cb || function() { };
 
     // do nothing here....
     // bc height cache is cleared on bcmonitor
@@ -715,6 +715,7 @@ export class WalletService {
       [
         (next) => {
           this.getWallet({}).then(wallet => {
+
             const walletExtendedKeys = [
               'publicKeyRing',
               'pubKey',
@@ -778,11 +779,10 @@ export class WalletService {
           });
         },
         (next) => {
-          this.getPreferences({}, (err, preferences) => {
-            if (err) return next(err);
+          this.getPreferences({}).then(preferences => {
             status.preferences = preferences;
             next();
-          });
+          }).catch(err => next(err));
         }
       ],
       (err) => {
@@ -844,7 +844,7 @@ export class WalletService {
 
     // this.logi('Notification', type);
 
-    cb = cb || function () { };
+    cb = cb || function() { };
 
     const walletId = this.walletId || data.walletId;
     const copayerId = this.copayerId || data.copayerId;
@@ -888,88 +888,94 @@ export class WalletService {
     this._notify(type, data, {}, cb);
   }
 
-  _addCopayerToWallet(wallet, opts, cb) {
-    const copayer = Copayer.create({
-      coin: wallet.coin,
-      name: opts.name,
-      copayerIndex: wallet.copayers.length,
-      xPubKey: opts.xPubKey,
-      requestPubKey: opts.requestPubKey,
-      signature: opts.copayerSignature,
-      customData: opts.customData,
-      derivationStrategy: wallet.derivationStrategy
-    });
+  _addCopayerToWallet(wallet, opts): Promise<any> {
+    return new Promise((resolve, reject) => {
 
-    this.storage.fetchCopayerLookup(copayer.id, (err, res) => {
-      if (err) return cb(err);
-      if (res) return cb(Errors.COPAYER_REGISTERED);
+      const copayer = Copayer.create({
+        coin: wallet.coin,
+        name: opts.name,
+        copayerIndex: wallet.copayers.length,
+        xPubKey: opts.xPubKey,
+        requestPubKey: opts.requestPubKey,
+        signature: opts.copayerSignature,
+        customData: opts.customData,
+        derivationStrategy: wallet.derivationStrategy
+      });
 
-      if (opts.dryRun)
-        return cb(null, {
-          copayerId: null,
-          wallet
-        });
+      this.storage.fetchCopayerLookup(copayer.id, (err, res) => {
+        if (err) return reject(err);
+        if (res) return reject(Errors.COPAYER_REGISTERED);
 
-      wallet.addCopayer(copayer);
-      this.storage.storeWalletAndUpdateCopayersLookup(wallet, (err) => {
-        if (err) return cb(err);
+        if (opts.dryRun)
+          return resolve({
+            copayerId: null,
+            wallet
+          });
 
-        async.series(
-          [
-            (next) => {
-              this._notify(
-                'NewCopayer',
-                {
-                  walletId: opts.walletId,
-                  copayerId: copayer.id,
-                  copayerName: copayer.name
-                },
-                {},
-                next
-              );
-            },
-            (next) => {
-              if (wallet.isComplete() && wallet.isShared()) {
+        wallet.addCopayer(copayer);
+        this.storage.storeWalletAndUpdateCopayersLookup(wallet, (err) => {
+          if (err) return reject(err);
+
+          async.series(
+            [
+              (next) => {
                 this._notify(
-                  'WalletComplete',
+                  'NewCopayer',
                   {
-                    walletId: opts.walletId
+                    walletId: opts.walletId,
+                    copayerId: copayer.id,
+                    copayerName: copayer.name
                   },
-                  {
-                    isGlobal: true
-                  },
+                  {},
                   next
                 );
-              } else {
-                next();
+              },
+              (next) => {
+                if (wallet.isComplete() && wallet.isShared()) {
+                  this._notify(
+                    'WalletComplete',
+                    {
+                      walletId: opts.walletId
+                    },
+                    {
+                      isGlobal: true
+                    },
+                    next
+                  );
+                } else {
+                  next();
+                }
               }
+            ],
+            () => {
+              return resolve({
+                copayerId: copayer.id,
+                wallet
+              });
             }
-          ],
-          () => {
-            return cb(null, {
-              copayerId: copayer.id,
-              wallet
-            });
-          }
-        );
+          );
+        });
       });
     });
   }
 
-  _addKeyToCopayer(wallet, copayer, opts, cb) {
-    wallet.addCopayerRequestKey(
-      copayer.copayerId,
-      opts.requestPubKey,
-      opts.signature,
-      opts.restrictions,
-      opts.name
-    );
-    this.storage.storeWalletAndUpdateCopayersLookup(wallet, (err) => {
-      if (err) return cb(err);
+  _addKeyToCopayer(wallet, copayer, opts): Promise<any> {
+    return new Promise((resolve, reject) => {
 
-      return cb(null, {
-        copayerId: copayer.id,
-        wallet
+      wallet.addCopayerRequestKey(
+        copayer.copayerId,
+        opts.requestPubKey,
+        opts.signature,
+        opts.restrictions,
+        opts.name
+      );
+      this.storage.storeWalletAndUpdateCopayersLookup(wallet, (err) => {
+        if (err) return reject(err);
+
+        return resolve({
+          copayerId: copayer.id,
+          wallet
+        });
       });
     });
   }
@@ -1013,7 +1019,7 @@ export class WalletService {
         if (copayer.requestPubKeys.length > Defaults.MAX_KEYS)
           return cb(Errors.TOO_MANY_KEYS);
 
-        this._addKeyToCopayer(wallet, copayer, opts, cb);
+        this._addKeyToCopayer(wallet, copayer, opts).then(res => cb(null, res)).catch(err => cb(err));
       });
     });
   }
@@ -1169,7 +1175,7 @@ export class WalletService {
 
         if (wallet.copayers.length == wallet.n) return cb(Errors.WALLET_FULL);
 
-        this._addCopayerToWallet(wallet, opts, cb);
+        this._addCopayerToWallet(wallet, opts).then(res => cb(null, res)).catch(err => cb(err));
       });
     });
   }
@@ -1246,67 +1252,74 @@ export class WalletService {
    * @param {Object} opts
    * @returns {Object} preferences
    */
-  getPreferences(opts, cb) {
-    this.storage.fetchPreferences(this.walletId, this.copayerId, (
-      err,
-      preferences
-    ) => {
-      if (err) return cb(err);
-      return cb(null, preferences || {});
+  getPreferences(opts): Promise<any> {
+    return new Promise((resolve, reject) => {
+
+      this.storage.fetchPreferences(this.walletId, this.copayerId, (
+        err,
+        preferences
+      ) => {
+        if (err) return reject(err);
+        return resolve(preferences || {});
+      });
     });
   }
 
-  _canCreateAddress(ignoreMaxGap, cb) {
-    if (ignoreMaxGap) return cb(null, true);
+  _canCreateAddress(ignoreMaxGap): Promise<any> {
+    return new Promise((resolve, reject) => {
 
-    this.storage.fetchAddresses(this.walletId, (
-      err,
-      addresses: IAddress[]
-    ) => {
-      if (err) return cb(err);
-      const latestAddresses =
-        addresses.filter(x => !x.isChange).slice(-Defaults.MAX_MAIN_ADDRESS_GAP) as IAddress[];
-      if (
-        latestAddresses.length < Defaults.MAX_MAIN_ADDRESS_GAP ||
-        _.some(latestAddresses, {
-          hasActivity: true
-        })
-      )
-        return cb(null, true);
+      if (ignoreMaxGap) return resolve(true);
 
-      const bc = this._getBlockchainExplorer(
-        latestAddresses[0].coin,
-        latestAddresses[0].network
-      );
-      if (!bc)
-        return cb(new Error('Could not get blockchain explorer instance'));
-      let activityFound = false;
-      let i = latestAddresses.length;
-      async.whilst(
-        () => {
-          return i > 0 && !activityFound;
-        },
-        (next) => {
-          bc.getAddressActivity(latestAddresses[--i].address, (
-            err,
-            res
-          ) => {
-            if (err) return next(err);
-            activityFound = !!res;
-            return next();
-          });
-        },
-        (err) => {
-          if (err) return cb(err);
-          if (!activityFound) return cb(null, false);
+      this.storage.fetchAddresses(this.walletId, (
+        err,
+        addresses: IAddress[]
+      ) => {
+        if (err) return reject(err);
+        const latestAddresses =
+          addresses.filter(x => !x.isChange).slice(-Defaults.MAX_MAIN_ADDRESS_GAP) as IAddress[];
+        if (
+          latestAddresses.length < Defaults.MAX_MAIN_ADDRESS_GAP ||
+          _.some(latestAddresses, {
+            hasActivity: true
+          })
+        )
+          return resolve(true);
 
-          const address = latestAddresses[i];
-          address.hasActivity = true;
-          this.storage.storeAddress(address, (err) => {
-            return cb(err, true);
-          });
-        }
-      );
+        const bc = this._getBlockchainExplorer(
+          latestAddresses[0].coin,
+          latestAddresses[0].network
+        );
+        if (!bc)
+          return reject(new Error('Could not get blockchain explorer instance'));
+        let activityFound = false;
+        let i = latestAddresses.length;
+        async.whilst(
+          () => {
+            return i > 0 && !activityFound;
+          },
+          (next) => {
+            bc.getAddressActivity(latestAddresses[--i].address, (
+              err,
+              res
+            ) => {
+              if (err) return next(err);
+              activityFound = !!res;
+              return next();
+            });
+          },
+          (err) => {
+            if (err) return reject(err);
+            if (!activityFound) return resolve(false);
+
+            const address = latestAddresses[i];
+            address.hasActivity = true;
+            this.storage.storeAddress(address, (err) => {
+              if (err) return reject(err);
+              return resolve(true);
+            });
+          }
+        );
+      });
     });
   }
 
@@ -1394,8 +1407,7 @@ export class WalletService {
         opts.singleAddress = true;
       }
 
-      this._canCreateAddress(opts.ignoreMaxGap || opts.singleAddress || wallet.singleAddress, (err, canCreate) => {
-        if (err) return cb(err);
+      this._canCreateAddress(opts.ignoreMaxGap || opts.singleAddress || wallet.singleAddress).then(canCreate => {
         if (!canCreate) return cb(Errors.MAIN_ADDRESS_GAP_REACHED);
 
         this._runLocked(
@@ -1419,7 +1431,7 @@ export class WalletService {
           },
           10 * 1000
         );
-      });
+      }).catch(err => cb(err));
     }).catch(err => cb(err));
   }
   /**
@@ -1429,21 +1441,24 @@ export class WalletService {
    * @param {Boolean} [opts.reverse=false] (optional) - Reverse the order of returned addresses.
    * @returns {Address[]}
    */
-  getMainAddresses(opts, cb) {
-    opts = opts || {};
-    this.storage.fetchAddresses(this.walletId, (err, addresses) => {
-      if (err) return cb(err);
-      let onlyMain = _.reject(addresses, {
-        isChange: true
-      });
-      if (opts.reverse) onlyMain.reverse();
-      if (opts.limit > 0) onlyMain = _.take(onlyMain, opts.limit);
+  getMainAddresses(opts): Promise<any> {
+    return new Promise((resolve, reject) => {
 
-      this.getWallet({}).then(wallet => {
-        _.each(onlyMain, x => {
-          ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+      opts = opts || {};
+      this.storage.fetchAddresses(this.walletId, (err, addresses) => {
+        if (err) return reject(err);
+        let onlyMain = _.reject(addresses, {
+          isChange: true
         });
-        return cb(null, onlyMain);
+        if (opts.reverse) onlyMain.reverse();
+        if (opts.limit > 0) onlyMain = _.take(onlyMain, opts.limit);
+
+        this.getWallet({}).then(wallet => {
+          _.each(onlyMain, x => {
+            ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+          });
+          return resolve(onlyMain);
+        });
       });
     });
   }
@@ -1455,19 +1470,22 @@ export class WalletService {
    * @param {string} opts.signature - The signature of message to verify.
    * @returns {truthy} The result of the verification.
    */
-  verifyMessageSignature(opts, cb) {
-    if (!checkRequired(opts, ['message', 'signature'], cb)) return;
+  verifyMessageSignature(opts) {
+    return new Promise((resolve) => {
 
-    this.getWallet({}).then(wallet => {
-      const copayer = wallet.getCopayer(this.copayerId);
+      if (!checkRequired(opts, ['message', 'signature'])) return;
 
-      const isValid = !!this._getSigningKey(
-        opts.message,
-        opts.signature,
-        copayer.requestPubKeys
-      );
-      return cb(null, isValid);
-    }).catch(err => cb(err));
+      this.getWallet({}).then(wallet => {
+        const copayer = wallet.getCopayer(this.copayerId);
+
+        const isValid = !!this._getSigningKey(
+          opts.message,
+          opts.signature,
+          copayer.requestPubKeys
+        );
+        return resolve(isValid);
+      });
+    });
   }
 
   _getBlockchainExplorer(coin, network): ReturnType<typeof BlockChainExplorer> {

@@ -60,8 +60,7 @@ describe('Cash address migration', function() {
           let calls = spy.getCalls();
           calls.should.be.empty();
           helpers.stubUtxos(s, w, 1, function() {
-            s.getStatus({}, function(err, a) {
-              should.not.exist(err);
+            s.getStatus({}).then(a => {
               spy.restore();
               done();
             });
@@ -75,8 +74,7 @@ describe('Cash address migration', function() {
       helpers.createAndJoinWallet(1, 1, { coin: 'bch' }, function(s, w) {
         helpers.createAddresses(s, w, 1, 1, function(main, change) {
           helpers.stubUtxos(s, w, 1, function() {
-            s.getMainAddresses({}, function(err, a) {
-              should.not.exist(err);
+            s.getMainAddresses({}).then(a => {
               a[0].address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
               done();
             });
@@ -103,8 +101,7 @@ describe('Cash address migration', function() {
     it('should create cashAddr in migrated wallets', function(done) {
       helpers.createAndJoinWallet(1, 1, { coin: 'bch', nativeCashAddr: false }, function(s, w) {
         helpers.createAddresses(s, w, 2, 2, function(main, change) {
-          s.getMainAddresses({}, function(err, a) {
-            should.not.exist(err);
+          s.getMainAddresses({}).then(a => {
             a[0].address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
             done();
           });
@@ -122,11 +119,10 @@ describe('Cash address migration', function() {
             s.createAddress({ doNotMigrate: true }, function(err, address) {
               address.address.should.equal('CY6RRcu5Zwn25467jtXzGpmyxtJrDWmVG4');
               s.getWallet({}).then(w => {
-                s.getMainAddresses({}, function(err, a) {
+                s.getMainAddresses({}).then(a => {
                   a[0].address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
                   a[1].address.should.equal('qrfere3rxlk3jjs7g28n952g8rjasjqcpgx3axq70t');
                   a[2].address.should.equal('qz4h98slcsjhgxdkt3yd8dxz02x8s0u4l5hs80s0q8');
-                  should.not.exist(err);
                   done();
                 });
               });
