@@ -47,7 +47,7 @@ export class XRPTxProvider {
 
     let rippleAPI = new RippleAPI();
     return rippleAPI.preparePayment(from, payment, instructions).then((preparedTx) => {
-      return rippleBinaryCodec.encode(preparedTx.txJSON);
+      return rippleBinaryCodec.encode(JSON.parse(preparedTx.txJSON));
     }).catch((err) => {
       console.error(err);
       return;
@@ -58,7 +58,7 @@ export class XRPTxProvider {
     const { tx, key } = params;
     const txJSON = rippleBinaryCodec.decode(tx);
     let rippleAPI = new RippleAPI();
-    const signedTx = rippleAPI.sign(txJSON, {
+    const signedTx = rippleAPI.sign(JSON.stringify(txJSON), {
       privateKey: key.privKey,
       publicKey: key.pubKey,
     });
