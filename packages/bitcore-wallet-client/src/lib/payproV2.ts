@@ -402,6 +402,10 @@ export class PayProV2 {
 
     if (responseData.instructions) {
       payProDetails.instructions = responseData.instructions;
+      payProDetails.instructions.forEach(output => {
+        output.toAddress = output.to || output.outputs[0].address;
+        output.amount = output.value !== undefined ? output.value : output.outputs[0].amount;
+      });
       const { requiredFeeRate, gasPrice } = responseData.instructions[0];
       payProDetails.requiredFeeRate = requiredFeeRate || gasPrice;
 

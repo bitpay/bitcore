@@ -410,7 +410,7 @@ export class Key {
       const privKey = xpriv.deriveChild(addressPath).privateKey;
       const tx = t.uncheckedSerialize();
       const chain = Utils.getChain(txp.coin);
-      if (tx.length === 0) {
+      if (typeof tx === 'string') {
         const signature = Transactions.getSignature({
           chain,
           tx,

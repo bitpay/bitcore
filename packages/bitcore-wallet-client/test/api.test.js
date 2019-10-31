@@ -3392,8 +3392,8 @@ describe('client API', () => {
              Client.PayProV2.selectPaymentOption(opts).then((paypro)=>{
                //              http.getCall(0).args[0].coin.should.equal('btc');
                helpers.createAndPublishTxProposal(clients[0], {
-                 toAddress: paypro.instructions[0].outputs[0].address,
-                 amount: paypro.instructions[0].outputs[0].amount,
+                 toAddress: paypro.instructions[0].toAddress,
+                 amount: paypro.instructions[0].amount,
                  message: paypro.memo,
                  payProUrl: paypro.payProUrl,
                }, (err, x) => {
@@ -3411,8 +3411,8 @@ describe('client API', () => {
           should.not.exist(err);
           var tx = txps[0];
           // From the hardcoded paypro request
-          tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
-          tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
+          tx.outputs[0].amount.should.equal(DATA.instructions[0].amount);
+          tx.outputs[0].toAddress.should.equal(DATA.instructions[0].toAddress);
           tx.message.should.equal(DATA.memo);
           tx.payProUrl.should.equal('https://bitpay.com/i/TRrzNNTLyfgL6LxyHDF6Tz');
           done();
@@ -3440,8 +3440,8 @@ describe('client API', () => {
           should.not.exist(err);
           var tx = txps[0];
           // From the hardcoded paypro request
-          tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
-          tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
+          tx.outputs[0].amount.should.equal(DATA.instructions[0].amount);
+          tx.outputs[0].toAddress.should.equal(DATA.instructions[0].toAddress);
           tx.message.should.equal(DATA.memo);
           tx.payProUrl.should.equal('https://bitpay.com/i/TRrzNNTLyfgL6LxyHDF6Tz');
           done();
@@ -3492,7 +3492,6 @@ describe('client API', () => {
       it('Should send the signed tx in paypro', (done) => {
         clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
-          var changeAddress = txps[0].changeAddress.address;
           let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
@@ -3562,8 +3561,8 @@ describe('client API', () => {
               Client.PayProV2.selectPaymentOption(opts).then((paypro) => {
                 paypro.requiredFeeRate.should.equal(10.101);
                 helpers.createAndPublishTxProposal(clients[0], {
-                  toAddress: paypro.instructions[0].outputs[0].address,
-                  amount: paypro.instructions[0].outputs[0].amount,
+                  toAddress: paypro.instructions[0].toAddress,
+                  amount: paypro.instructions[0].amount,
                   message: paypro.memo,
                   payProUrl: paypro.payProUrl,
                   feePerKb: paypro.requiredFeeRate * 1024,
@@ -3582,8 +3581,8 @@ describe('client API', () => {
           should.not.exist(err);
           var tx = txps[0];
 
-          tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
-          tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
+          tx.outputs[0].amount.should.equal(DATA.instructions[0].amount);
+          tx.outputs[0].toAddress.should.equal(DATA.instructions[0].toAddress);
           tx.message.should.equal(DATA.memo);
           tx.payProUrl.should.equal('https://bitpay.com/i/TRrzNNTLyfgL6LxyHDF6Tz');
           tx.feePerKb.should.equal(10.101 * 1024);
@@ -3658,8 +3657,8 @@ describe('client API', () => {
               };
               Client.PayProV2.selectPaymentOption(opts).then((paypro) => {
                 helpers.createAndPublishTxProposal(clients[0], {
-                  toAddress: paypro.instructions[0].outputs[0].address,
-                  amount: paypro.instructions[0].outputs[0].amount,
+                  toAddress: paypro.instructions[0].toAddress,
+                  amount: paypro.instructions[0].amount,
                   message: paypro.memo,
                   payProUrl: paypro.payProUrl,
                 }, (err, x) => {
@@ -3675,7 +3674,6 @@ describe('client API', () => {
       it('Should send the signed tx in paypro', (done) => {
         clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
-          var changeAddress = txps[0].changeAddress.address;
           let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
@@ -3722,8 +3720,8 @@ describe('client API', () => {
               
               Client.PayProV2.selectPaymentOption(opts).then((paypro) => {
                 helpers.createAndPublishTxProposal(clients[0], {
-                  toAddress: paypro.instructions[0].outputs[0].address,
-                  amount: paypro.instructions[0].outputs[0].amount,
+                  toAddress: paypro.instructions[0].toAddress,
+                  amount: paypro.instructions[0].amount,
                   message: paypro.memo,
                   payProUrl: paypro.payProUrl,
                 }, (err, x) => {
@@ -3739,7 +3737,6 @@ describe('client API', () => {
       it('Should send the signed tx in paypro', (done) => {
         clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
-          var changeAddress = txps[0].changeAddress.address;
           let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
@@ -3783,8 +3780,8 @@ describe('client API', () => {
 
                 clients[0].createTxProposal({
                   outputs: [{
-                    toAddress: DATA.instructions[0].outputs[0].address,
-                    amount: DATA.instructions[0].outputs[0].amount,
+                    toAddress: DATA.instructions[0].toAddress,
+                    amount: DATA.instructions[0].amount,
                   }],
                   message: DATA.memo,
                   payProUrl: opts.paymentUrl,
@@ -3809,8 +3806,8 @@ describe('client API', () => {
           should.not.exist(err);
           var tx = txps[0];
           // From the hardcoded paypro request
-          tx.amount.should.equal(DATA.instructions[0].outputs[0].amount);
-          tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
+          tx.amount.should.equal(DATA.instructions[0].amount);
+          tx.outputs[0].toAddress.should.equal(DATA.instructions[0].toAddress);
           tx.message.should.equal(DATA.memo);
           tx.payProUrl.should.equal('dummy');
           done();

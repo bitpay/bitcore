@@ -2345,10 +2345,11 @@ export class WalletService {
   }
 
   _validateAddr(wallet, inaddr, opts) {
-    if (wallet.coin == 'eth') {
+    if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
+      const chain = ChainService.getChain(wallet.coin);
       try {
         Validation.validateAddress(
-          wallet.coin.toUpperCase(),
+          chain,
           wallet.network,  // not really used for ETH. wallet.network is 'livenet/testnet/regtest' in wallet.
           inaddr,
         );

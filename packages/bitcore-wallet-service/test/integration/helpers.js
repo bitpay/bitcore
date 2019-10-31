@@ -557,7 +557,7 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
       const tx = txp.getBitcoreTx().uncheckedSerialize();
       const isERC20 = txp.tokenAddress && !txp.payProUrl;
       const chain = isERC20 ? 'ERC20' : ChainService.getChain(txp.coin);
-      if (tx.length === 0) {
+      if (typeof tx === 'string') {
         signatures = [CWC.Transactions.getSignature({
           chain,
           tx,
