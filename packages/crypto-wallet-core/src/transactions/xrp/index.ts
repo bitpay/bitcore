@@ -10,16 +10,16 @@ export class XRPTxProvider {
     recipients: Array<{ address: string; amount: string }>;
     data: string;
     tag: number;
-    sourceAddress: string;
+    from: string;
     invoiceID: string;
-    fee: string;
+    fee: number;
     nonce: number;
   }) {
-    const { recipients, tag, sourceAddress, invoiceID, fee, nonce } = params;
+    const { recipients, tag, from, invoiceID, fee, nonce } = params;
     const { address, amount } = recipients[0];
     const payment: Payment = {
       source: {
-        address: sourceAddress,
+        address: from,
         tag: tag || undefined,
         maxAmount: {
           value: amount.toString(),
@@ -38,15 +38,16 @@ export class XRPTxProvider {
     };
 
     const instructions: Instructions = {
-      fee,
+      fee: fee.toString(),
       sequence: nonce,
       maxLedgerVersion: null,
     };
 
     let rippleAPI = new RippleAPI();
-    return rippleAPI.preparePayment(sourceAddress, payment, instructions).then((preparedTx) => {
+    return rippleAPI.preparePayment(from, payment, instructions).then((preparedTx) => {
       return preparedTx.txJSON;
     }).catch((err) => {
+      console.error(err);
       return;
     });
   }

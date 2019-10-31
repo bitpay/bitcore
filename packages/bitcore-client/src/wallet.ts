@@ -251,6 +251,7 @@ export class Wallet {
     from?: string;
     change?: string;
     fee?: number;
+    nonce?: number;
   }) {
     const payload = {
       network: this.network,
@@ -260,7 +261,8 @@ export class Wallet {
       change: params.change,
       fee: params.fee,
       wallet: this,
-      utxos: params.utxos
+      utxos: params.utxos,
+      nonce: params.nonce
     };
     return Transactions.create(payload);
   }
