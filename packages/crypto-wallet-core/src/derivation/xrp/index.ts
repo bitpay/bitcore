@@ -18,8 +18,8 @@ export class XrpDeriver implements IDeriver {
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;
     const derivedXPriv = xpriv.derive(path);
-    const privKey = derivedXPriv.toObject().privateKey;
-    const pubKey = derivedXPriv.hdPublicKey.toObject().publicKey;
+    const privKey = derivedXPriv.toObject().privateKey.toUpperCase();
+    const pubKey = derivedXPriv.hdPublicKey.toObject().publicKey.toUpperCase();
     const address = rippleKeypairs.deriveAddress(pubKey);
     return { address, privKey, pubKey };
   }
