@@ -1734,27 +1734,6 @@ export class WalletService {
   }
 
   /**
-   * Converts Bitcore Balance Response.
-   * @param {Object} bitcoreBalance - { unconfirmed, confirmed, balance }
-   * @param {Number} locked - Sum of txp.amount
-   * @returns {Object} balance - Total amount & locked amount.
-   */
-  _convertBitcoreBalance(bitcoreBalance, locked) {
-    const { unconfirmed, confirmed, balance } = bitcoreBalance;
-    // we ASUME all locked as confirmed, for ETH.
-    const convertedBalance = {
-      totalAmount: balance,
-      totalConfirmedAmount: confirmed,
-      lockedAmount: locked,
-      lockedConfirmedAmount: confirmed - locked,
-      availableAmount: balance - locked,
-      availableConfirmedAmount: confirmed - locked,
-      byAddress: []
-    };
-    return convertedBalance;
-  }
-
-  /**
    * Get wallet balance.
    * @param {Object} opts
    * @returns {Object} balance - Total amount & locked amount.
@@ -1780,11 +1759,6 @@ export class WalletService {
     setWallet(() => {
       if (!wallet.isComplete()) {
         return cb(null, this._totalizeUtxos([]));
-      }
-
-      const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
-      if (!bc) {
-        return cb(new Error('Could not get blockchain explorer instance'));
       }
 
       this.syncWallet(wallet, err => {
