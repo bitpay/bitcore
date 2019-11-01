@@ -28,7 +28,7 @@ $colors: (
   light: #f4f4f4,
   dark-light: #a2a2a2,
   dark: #373d42,
-  bp-blue: #1d326a,
+  bp-blue: #0c204e,
   light-blue: #299AD1,
 );
 
@@ -64,11 +64,11 @@ $colors: (
 // --------------------------------------------------
 
 @font-face {
-  font-family: Ubuntu;
+  font-family: Heebo, Helvetica Neue, Arial, sans-serif;
   src: url('../assets/fonts/ubuntu.woff2') format('woff2');
 }
 * {
-  font-family: Ubuntu;
+  font-family: Heebo, Helvetica Neue, Arial, sans-serif;
   font-size: 14px;
 }
 
