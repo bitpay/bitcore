@@ -256,7 +256,7 @@ export class ExpressApp {
     }
 
     // retrieve latest version of copay
-    router.get('/latest-version', async (req, res) => {
+    router.get('/latest-version', async(req, res) => {
       try {
         res.setHeader('User-Agent', 'copay');
         var options = {
@@ -273,7 +273,7 @@ export class ExpressApp {
         } catch (ex) {
           return returnError(ex, res, req);
         }
-        server.storage.checkAndUseGlobalCache('latest-copay-version', Defaults.COPAY_VERSION_CACHE_DURATION, async (err, version) => {
+        server.storage.checkAndUseGlobalCache('latest-copay-version', Defaults.COPAY_VERSION_CACHE_DURATION, async(err, version) => {
           if (err) {
             res.send(err);
           }
@@ -287,7 +287,7 @@ export class ExpressApp {
                   res.json({ version: htmlString['tag_name']});
                 });
               }
-            } catch(err) {
+            } catch (err) {
               res.send(err);
             }
           }

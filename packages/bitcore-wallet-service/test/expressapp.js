@@ -50,7 +50,7 @@ describe('ExpressApp', function() {
       });
     });
 
-    describe('Routes', function() {
+    describe.only('Routes', function() {
       var testPort = 3239;
       var testHost = 'http://127.0.0.1';
       var httpServer;
@@ -130,6 +130,41 @@ describe('ExpressApp', function() {
             var args = server.getMainAddresses.getCalls()[0].args[0];
             args.limit.should.equal(4);
             args.reverse.should.be.true;
+            done();
+          });
+        });
+      });
+
+      it('latest-copay-version', function(done) {
+        var callback = sinon.spy();
+        var server = {
+          getStatus: sinon.stub().callsArgWith(1, null, {}),
+          storage: {
+            checkAndUseGlobalCache: sinon.stub().callsArgWith(3, null, 'latest-copay-version', 6 * 60 * 1000, callback),
+          },
+        };
+        var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
+          './server': {
+            WalletService: {
+              initialize: sinon.stub().callsArg(1),
+              getServiceVersion: WalletService.getServiceVersion,
+              getInstance: sinon.stub().callsArgWith(1, null, server),
+            }
+          }
+        });
+        start(TestExpressApp, function() {
+          callback.calledOnce === true;
+          var requestOptions = {
+            url: testHost + ':' + testPort + config.basePath + '/latest-version',
+            headers: {
+              'x-identity': 'identity',
+              'x-signature': 'signature'
+            }
+          };
+          request(requestOptions, function(err, res, body) {
+            should.not.exist(err);
+            res.statusCode.should.equal(500);
+            body.should.equal('{"version":"v7.0.4"}');
             done();
           });
         });
