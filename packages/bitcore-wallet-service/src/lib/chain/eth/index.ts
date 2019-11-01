@@ -87,16 +87,15 @@ export class EthChain implements IChain {
 
   getTransactionCount(server, wallet, from) {
     return new Promise((resolve, reject) => {
-      server._getTransactionCount(wallet, from, (err, nonce) => {
-        if (err) return reject(err);
+      server._getTransactionCount(wallet, from).then(nonce => {
         return resolve(nonce);
-      });
+      }).catch(err => reject(err));
     });
   }
 
-  getChangeAddress() {}
+  getChangeAddress() { }
 
-  checkDust(output, opts) {}
+  checkDust(output, opts) { }
 
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
@@ -213,7 +212,7 @@ export class EthChain implements IChain {
     );
   }
 
-  checkUtxos(opts) {}
+  checkUtxos(opts) { }
 
   checkValidTxAmount(output): boolean {
     if (
@@ -226,7 +225,7 @@ export class EthChain implements IChain {
     return true;
   }
 
-  setInputs() {}
+  setInputs() { }
 
   isUTXOCoin() {
     return false;

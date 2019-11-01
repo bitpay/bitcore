@@ -694,11 +694,10 @@ export class ExpressApp {
     router.get('/v1/txproposals/:id/', (req, res) => {
       getServerWithAuth(req, res, (server) => {
         req.body.txProposalId = req.params['id'];
-        server.getTx(req.body, (err, tx) => {
-          if (err) return returnError(err, res, req);
+        server.getTx(req.body).then(tx => {
           res.json(tx);
           res.end();
-        });
+        }).catch(err => returnError(err, res, req));
       });
     });
 
@@ -798,10 +797,9 @@ export class ExpressApp {
             notificationId: req.query.notificationId
           };
 
-          server.getNotifications(opts, (err, notifications) => {
-            if (err) return returnError(err, res, req);
+          server.getNotifications(opts).then(notifications => {
             res.json(notifications);
-          });
+          }).catch(err => returnError(err, res, req));
         }
       );
     });

@@ -31,10 +31,10 @@ describe('Blockchain monitor', function() {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
       blockchainExplorer.initSocket = function(callbacks) {
-        socket.handlers['coin']= function(data) {
+        socket.handlers['coin'] = function(data) {
           callbacks.onIncomingPayments(data);
         };
-        socket.handlers['block'] =  callbacks.onBlock;
+        socket.handlers['block'] = callbacks.onBlock;
       }
       done();
     });
@@ -64,7 +64,7 @@ describe('Blockchain monitor', function() {
     };
 
 
-    async.each(_.values(collections), (x, icb)=> {
+    async.each(_.values(collections), (x, icb) => {
       storage.db.collection(x).remove({}, icb);
     }, (err) => {
       should.not.exist(err);
@@ -102,8 +102,7 @@ describe('Blockchain monitor', function() {
       socket.handlers['coin'](incoming);
 
       setTimeout(function() {
-        server.getNotifications({}, function(err, notifications) {
-          should.not.exist(err);
+        server.getNotifications({}).then(notifications => {
           var notification = _.find(notifications, {
             type: 'NewIncomingTx'
           });
@@ -125,40 +124,38 @@ describe('Blockchain monitor', function() {
       var incoming = {
         txid: '123',
       };
-      incoming.out = {address : address.address, amount: 15000};
+      incoming.out = { address: address.address, amount: 15000 };
       socket.handlers['coin'](incoming);
       setTimeout(function() {
-      socket.handlers['coin'](incoming);
+        socket.handlers['coin'](incoming);
 
-      setTimeout(function() {
-        server.getNotifications({}, function(err, notifications) {
-          should.not.exist(err);
-          var notification = _.filter(notifications, {
-            type: 'NewIncomingTx'
+        setTimeout(function() {
+          server.getNotifications({}).then(notifications => {
+            var notification = _.filter(notifications, {
+              type: 'NewIncomingTx'
+            });
+
+            notification[0].data.amount.should.equal(15000);
+            notification.length.should.equal(1);
+            done();
           });
-
-          notification[0].data.amount.should.equal(15000);
-          notification.length.should.equal(1);
-          done();
-        });
-      }, 100);
-    }, 200);
+        }, 100);
+      }, 200);
+    });
   });
-});
 
 
-it('should parse v8 amount ', function(done) {
-  server.createAddress({}, function(err, address) {
-    should.not.exist(err);
+  it('should parse v8 amount ', function(done) {
+    server.createAddress({}, function(err, address) {
+      should.not.exist(err);
 
-    var incoming = {
-      txid: '123',
-    };
-    incoming.out = {address : address.address, amount: 1500};
-    socket.handlers['coin'](incoming);
+      var incoming = {
+        txid: '123',
+      };
+      incoming.out = { address: address.address, amount: 1500 };
+      socket.handlers['coin'](incoming);
       setTimeout(function() {
-        server.getNotifications({}, function(err, notifications) {
-          should.not.exist(err);
+        server.getNotifications({}).then(notifications => {
           var notification = _.filter(notifications, {
             type: 'NewIncomingTx'
           });
@@ -195,8 +192,7 @@ it('should parse v8 amount ', function(done) {
           socket.handlers['block']('block2');
 
           setTimeout(function() {
-            server.getNotifications({}, function(err, notifications) {
-              should.not.exist(err);
+            server.getNotifications({}).then(notifications => {
               var notifications = _.filter(notifications, {
                 type: 'TxConfirmation'
               });

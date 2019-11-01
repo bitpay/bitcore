@@ -662,8 +662,7 @@ describe('Wallet service', function() {
               copayer.name.should.equal('me');
               copayer.id.should.equal(copayerId);
               copayer.customData.should.equal('dummy custom data');
-              server.getNotifications({}, function(err, notifications) {
-                should.not.exist(err);
+              server.getNotifications({}).then(notifications => {
                 var notif = _.find(notifications, {
                   type: 'NewCopayer'
                 });
@@ -977,8 +976,7 @@ describe('Wallet service', function() {
           server.getWallet({}).then(wallet => {
             wallet.status.should.equal('complete');
             wallet.publicKeyRing.length.should.equal(3);
-            server.getNotifications({}, function(err, notifications) {
-              should.not.exist(err);
+            server.getNotifications({}).then(notifications => {
               var notif = _.find(notifications, {
                 type: 'WalletComplete'
               });
@@ -992,8 +990,7 @@ describe('Wallet service', function() {
 
       it('should not notify WalletComplete if 1-of-1', function(done) {
         helpers.createAndJoinWallet(1, 1, function(server) {
-          server.getNotifications({}, function(err, notifications) {
-            should.not.exist(err);
+          server.getNotifications({}).then(notifications => {
             var notif = _.find(notifications, {
               type: 'WalletComplete'
             });
@@ -1238,8 +1235,7 @@ describe('Wallet service', function() {
           });
         },
         function(next) {
-          server2.getNotifications({}, function(err, notifications) {
-            should.not.exist(err);
+          server2.getNotifications({}).then(notifications => {
             should.exist(notifications);
             notifications.length.should.above(0);
             next();
@@ -1434,8 +1430,7 @@ describe('Wallet service', function() {
           address.coin.should.equal('btc');
           address.path.should.equal('m/0/0');
           address.type.should.equal('P2SH');
-          server.getNotifications({}, function(err, notifications) {
-            should.not.exist(err);
+          server.getNotifications({}).then(notifications => {
             var notif = _.find(notifications, {
               type: 'NewAddress'
             });
@@ -1532,8 +1527,7 @@ describe('Wallet service', function() {
           address.path.should.equal('m/0/0');
           address.type.should.equal('P2SH');
           address.coin.should.equal('bch');
-          server.getNotifications({}, function(err, notifications) {
-            should.not.exist(err);
+          server.getNotifications({}).then(notifications => {
             var notif = _.find(notifications, {
               type: 'NewAddress'
             });
@@ -1601,8 +1595,7 @@ describe('Wallet service', function() {
           address.path.should.equal('m/0/0');
           address.type.should.equal('P2SH');
           address.coin.should.equal('bch');
-          server.getNotifications({}, function(err, notifications) {
-            should.not.exist(err);
+          server.getNotifications({}).then(notifications => {
             var notif = _.find(notifications, {
               type: 'NewAddress'
             });
@@ -1731,8 +1724,7 @@ describe('Wallet service', function() {
           address.path.should.equal('m/0/0');
           address.type.should.equal('P2PKH');
           address.coin.should.equal('bch');
-          server.getNotifications({}, function(err, notifications) {
-            should.not.exist(err);
+          server.getNotifications({}).then(notifications => {
             var notif = _.find(notifications, {
               type: 'NewAddress'
             });
@@ -1765,8 +1757,7 @@ describe('Wallet service', function() {
           address.isChange.should.be.false;
           address.path.should.equal('m/0/0');
           address.type.should.equal('P2PKH');
-          server.getNotifications({}, function(err, notifications) {
-            should.not.exist(err);
+          server.getNotifications({}).then(notifications => {
             var notif = _.find(notifications, {
               type: 'NewAddress'
             });
@@ -1875,8 +1866,7 @@ describe('Wallet service', function() {
             address.isChange.should.be.false;
             address.coin.should.equal('eth');
             address.path.should.equal('m/0/0');
-            server.getNotifications({}, function(err, notifications) {
-              should.not.exist(err);
+            server.getNotifications({}).then(notifications => {
               var notif = _.find(notifications, {
                 type: 'NewAddress'
               });
@@ -3594,14 +3584,12 @@ describe('Wallet service', function() {
               server.createTx(txOpts, function(err, txp) {
                 should.not.exist(err);
                 should.exist(txp);
-                server.getNotifications({}, function(err, notifications) {
-                  should.not.exist(err);
+                server.getNotifications({}).then(notifications => {
                   _.map(notifications, 'type').should.not.contain('NewTxProposal');
                   var publishOpts = helpers.getProposalSignatureOpts(txp, TestData.copayers[0].privKey_1H_0);
                   server.publishTx(publishOpts, function(err) {
                     should.not.exist(err);
-                    server.getNotifications({}, function(err, notifications) {
-                      should.not.exist(err);
+                    server.getNotifications({}).then(notifications => {
 
                       var n = _.find(notifications, {
                         'type': 'NewTxProposal'
@@ -4274,8 +4262,7 @@ describe('Wallet service', function() {
                     should.not.exist(err);
                     server.getTx({
                       txProposalId: txp.id
-                    }, function(err, x) {
-                      should.not.exist(err);
+                    }).then(x => {
                       x.proposalSignature.should.equal(publishOpts.proposalSignature);
                       x.proposalSignaturePubKey.should.equal(accessOpts.requestPubKey);
                       x.proposalSignaturePubKeySig.should.equal(accessOpts.signature);

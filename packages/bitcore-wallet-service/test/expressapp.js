@@ -217,7 +217,7 @@ describe('ExpressApp', function() {
           clock = sinon.useFakeTimers(2000000000, 'Date');
 
           server = {
-            getNotifications: sinon.stub().callsArgWith(1, null, {})
+            getNotifications: sinon.stub().resolves({})
           };
           var { ExpressApp } = proxyquire('../ts_build/lib/expressapp', {
             './server': {

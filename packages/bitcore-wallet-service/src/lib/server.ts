@@ -25,6 +25,7 @@ log.level = 'error';
 const EmailValidator = require('email-validator');
 
 import { Validation } from 'crypto-wallet-core';
+import { resolve } from 'url';
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -2537,15 +2538,18 @@ export class WalletService {
     );
   }
 
-  _getTransactionCount(wallet, address, cb) {
-    const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
-    if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
-    bc.getTransactionCount(address, (err, nonce) => {
-      if (err) {
-        this.logw('Error estimating nonce', err);
-        return cb(err);
-      }
-      return cb(null, nonce);
+  _getTransactionCount(wallet, address) {
+    return new Promise((resolve, reject) => {
+
+      const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getTransactionCount(address, (err, nonce) => {
+        if (err) {
+          this.logw('Error estimating nonce', err);
+          return reject(err);
+        }
+        return resolve(nonce);
+      });
     });
   }
 
@@ -2810,19 +2814,22 @@ export class WalletService {
    * @param {string} opts.txProposalId - The tx id.
    * @returns {Object} txProposal
    */
-  getTx(opts, cb) {
-    this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
-      if (err) return cb(err);
-      if (!txp) return cb(Errors.TX_NOT_FOUND);
+  getTx(opts): Promise<any> {
+    return new Promise((resolve, reject) => {
 
-      if (!txp.txid) return cb(null, txp);
+      this.storage.fetchTx(this.walletId, opts.txProposalId, (err, txp) => {
+        if (err) return reject(err);
+        if (!txp) return reject(Errors.TX_NOT_FOUND);
 
-      this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
-        if (err) {
-          this.logw('Error fetching tx note for ' + txp.txid);
-        }
-        txp.note = note;
-        return cb(null, txp);
+        if (!txp.txid) return resolve(txp);
+
+        this.storage.fetchTxNote(this.walletId, txp.txid, (err, note) => {
+          if (err) {
+            this.logw('Error fetching tx note for ' + txp.txid);
+          }
+          txp.note = note;
+          return resolve(txp);
+        });
       });
     });
   }
@@ -2922,23 +2929,17 @@ export class WalletService {
     if (!checkRequired(opts, ['txProposalId'], cb)) return;
 
     this._runLocked(cb, (cb) => {
-      this.getTx(
-        {
-          txProposalId: opts.txProposalId
-        },
-        (err, txp) => {
-          if (err) return cb(err);
+      this.getTx({ txProposalId: opts.txProposalId }).then(txp => {
 
-          if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
+        if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
 
-          const deleteLockTime = this.getRemainingDeleteLockTime(txp);
-          if (deleteLockTime > 0) return cb(Errors.TX_CANNOT_REMOVE);
+        const deleteLockTime = this.getRemainingDeleteLockTime(txp);
+        if (deleteLockTime > 0) return cb(Errors.TX_CANNOT_REMOVE);
 
-          this.storage.removeTx(this.walletId, txp.id, () => {
-            this._notifyTxProposalAction('TxProposalRemoved', txp, cb);
-          });
-        }
-      );
+        this.storage.removeTx(this.walletId, txp.id, () => {
+          this._notifyTxProposalAction('TxProposalRemoved', txp, cb);
+        });
+      }).catch(err => cb(err));
     });
   }
 
@@ -2972,13 +2973,16 @@ export class WalletService {
     this._broadcastRawTx(opts.coin, opts.network, opts.rawTx, cb);
   }
 
-  _checkTxInBlockchain(txp, cb) {
-    if (!txp.txid) return cb();
-    const bc = this._getBlockchainExplorer(txp.coin, txp.network);
-    if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
-    bc.getTransaction(txp.txid, (err, tx) => {
-      if (err) return cb(err);
-      return cb(null, !!tx);
+  _checkTxInBlockchain(txp): Promise<any> {
+    return new Promise((resolve, reject) => {
+
+      if (!txp.txid) return resolve();
+      const bc = this._getBlockchainExplorer(txp.coin, txp.network);
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getTransaction(txp.txid, (err, tx) => {
+        if (err) return reject(err);
+        return resolve(!!tx);
+      });
     });
   }
 
@@ -2993,71 +2997,64 @@ export class WalletService {
 
     this.getWallet({}).then(wallet => {
 
-      this.getTx(
-        {
-          txProposalId: opts.txProposalId
-        },
-        (err, txp) => {
+      this.getTx({ txProposalId: opts.txProposalId }).then(txp => {
+
+        const action = _.find(txp.actions, {
+          copayerId: this.copayerId
+        });
+        if (action) return cb(Errors.COPAYER_VOTED);
+        if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
+
+        const copayer = wallet.getCopayer(this.copayerId);
+
+        try {
+          if (!txp.sign(this.copayerId, opts.signatures, copayer.xPubKey)) {
+            this.logw('Error signing transaction (BAD_SIGNATURES)');
+            this.logw('Client version:', this.clientVersion);
+            this.logw('Arguments:', JSON.stringify(opts));
+            this.logw('Transaction proposal:', JSON.stringify(txp));
+            const raw = txp.getBitcoreTx().uncheckedSerialize();
+            this.logw('Raw tx:', raw);
+            return cb(Errors.BAD_SIGNATURES);
+          }
+        } catch (ex) {
+          this.logw('Error signing transaction proposal', ex);
+          return cb(ex);
+        }
+
+        this.storage.storeTx(this.walletId, txp, (err) => {
           if (err) return cb(err);
 
-          const action = _.find(txp.actions, {
-            copayerId: this.copayerId
-          });
-          if (action) return cb(Errors.COPAYER_VOTED);
-          if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
-
-          const copayer = wallet.getCopayer(this.copayerId);
-
-          try {
-            if (!txp.sign(this.copayerId, opts.signatures, copayer.xPubKey)) {
-              this.logw('Error signing transaction (BAD_SIGNATURES)');
-              this.logw('Client version:', this.clientVersion);
-              this.logw('Arguments:', JSON.stringify(opts));
-              this.logw('Transaction proposal:', JSON.stringify(txp));
-              const raw = txp.getBitcoreTx().uncheckedSerialize();
-              this.logw('Raw tx:', raw);
-              return cb(Errors.BAD_SIGNATURES);
-            }
-          } catch (ex) {
-            this.logw('Error signing transaction proposal', ex);
-            return cb(ex);
-          }
-
-          this.storage.storeTx(this.walletId, txp, (err) => {
-            if (err) return cb(err);
-
-            async.series(
-              [
-                (next) => {
+          async.series(
+            [
+              (next) => {
+                this._notifyTxProposalAction(
+                  'TxProposalAcceptedBy',
+                  txp,
+                  {
+                    copayerId: this.copayerId
+                  },
+                  next
+                );
+              },
+              (next) => {
+                if (txp.isAccepted()) {
                   this._notifyTxProposalAction(
-                    'TxProposalAcceptedBy',
+                    'TxProposalFinallyAccepted',
                     txp,
-                    {
-                      copayerId: this.copayerId
-                    },
                     next
                   );
-                },
-                (next) => {
-                  if (txp.isAccepted()) {
-                    this._notifyTxProposalAction(
-                      'TxProposalFinallyAccepted',
-                      txp,
-                      next
-                    );
-                  } else {
-                    next();
-                  }
+                } else {
+                  next();
                 }
-              ],
-              () => {
-                return cb(null, txp);
               }
-            );
-          });
-        }
-      );
-
+            ],
+            () => {
+              return cb(null, txp);
+            }
+          );
+        });
+      }).catch(err => cb(err));
     }).catch(err => cb(err));
   }
 
@@ -3095,12 +3092,11 @@ export class WalletService {
     if (!checkRequired(opts, ['txProposalId'], cb)) return;
 
     this.getWallet({}).then(wallet => {
+
       this.getTx(
         {
           txProposalId: opts.txProposalId
-        },
-        (err, txp) => {
-          if (err) return cb(err);
+        }).then(txp => {
 
           if (txp.status == 'broadcasted')
             return cb(Errors.TX_ALREADY_BROADCASTED);
@@ -3125,7 +3121,7 @@ export class WalletService {
 
               const broadcastErr = err;
               // Check if tx already in blockchain
-              this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
+              this._checkTxInBlockchain(txp).then(isInBlockchain => {
                 if (err) return cb(err);
                 if (!isInBlockchain) return cb(broadcastErr || 'broadcast error');
 
@@ -3136,7 +3132,7 @@ export class WalletService {
                   },
                   cb
                 );
-              });
+              }).catch(err => cb(err));
             } else {
               this._processBroadcast(
                 txp,
@@ -3150,9 +3146,7 @@ export class WalletService {
               );
             }
           });
-        }
-      );
-
+        }).catch(err => cb(err));
     }).catch(err => cb(err));
   }
 
@@ -3165,66 +3159,60 @@ export class WalletService {
   rejectTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId'], cb)) return;
 
-    this.getTx(
-      {
-        txProposalId: opts.txProposalId
-      },
-      (err, txp) => {
+    this.getTx({ txProposalId: opts.txProposalId }).then(txp => {
+
+      const action = _.find(txp.actions, {
+        copayerId: this.copayerId
+      });
+
+      if (action) return cb(Errors.COPAYER_VOTED);
+      if (txp.status != 'pending') return cb(Errors.TX_NOT_PENDING);
+
+      txp.reject(this.copayerId, opts.reason);
+
+      this.storage.storeTx(this.walletId, txp, (err) => {
         if (err) return cb(err);
 
-        const action = _.find(txp.actions, {
-          copayerId: this.copayerId
-        });
+        async.series(
+          [
+            (next) => {
+              this._notifyTxProposalAction(
+                'TxProposalRejectedBy',
+                txp,
+                {
+                  copayerId: this.copayerId
+                },
+                next
+              );
+            },
+            (next) => {
+              if (txp.status == 'rejected') {
+                const rejectedBy = _.map(
+                  _.filter(txp.actions, {
+                    type: 'reject'
+                  }),
+                  'copayerId'
+                );
 
-        if (action) return cb(Errors.COPAYER_VOTED);
-        if (txp.status != 'pending') return cb(Errors.TX_NOT_PENDING);
-
-        txp.reject(this.copayerId, opts.reason);
-
-        this.storage.storeTx(this.walletId, txp, (err) => {
-          if (err) return cb(err);
-
-          async.series(
-            [
-              (next) => {
                 this._notifyTxProposalAction(
-                  'TxProposalRejectedBy',
+                  'TxProposalFinallyRejected',
                   txp,
                   {
-                    copayerId: this.copayerId
+                    rejectedBy
                   },
                   next
                 );
-              },
-              (next) => {
-                if (txp.status == 'rejected') {
-                  const rejectedBy = _.map(
-                    _.filter(txp.actions, {
-                      type: 'reject'
-                    }),
-                    'copayerId'
-                  );
-
-                  this._notifyTxProposalAction(
-                    'TxProposalFinallyRejected',
-                    txp,
-                    {
-                      rejectedBy
-                    },
-                    next
-                  );
-                } else {
-                  next();
-                }
+              } else {
+                next();
               }
-            ],
-            () => {
-              return cb(null, txp);
             }
-          );
-        });
-      }
-    );
+          ],
+          () => {
+            return cb(null, txp);
+          }
+        );
+      });
+    }).catch(err => cb(err));
   }
 
   /**
@@ -3249,8 +3237,8 @@ export class WalletService {
         (txp: ITxProposal, next) => {
           if (txp.status != 'accepted') return next();
 
-          this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
-            if (err || !isInBlockchain) return next(err);
+          this._checkTxInBlockchain(txp).then(isInBlockchain => {
+            if (!isInBlockchain) return next();
             this._processBroadcast(
               txp,
               {
@@ -3258,7 +3246,7 @@ export class WalletService {
               },
               next
             );
-          });
+          }).catch(err => next(err));
         },
         (err) => {
           txps = _.reject(txps, (txp) => {
@@ -3314,36 +3302,39 @@ export class WalletService {
    * @param {Object} opts.minTs (optional) - default 0.
    * @returns {Notification[]} Notifications
    */
-  getNotifications(opts, cb) {
-    opts = opts || {};
+  getNotifications(opts): Promise<any> {
+    return new Promise((resolve, reject) => {
 
-    this.getWallet({}).then(wallet => {
-      async.map(
-        [`${wallet.coin}:${wallet.network}`, this.walletId],
-        (walletId, next) => {
-          this.storage.fetchNotifications(
-            walletId,
-            opts.notificationId,
-            opts.minTs || 0,
-            next
-          );
-        },
-        (err, res) => {
-          if (err) return cb(err);
+      opts = opts || {};
 
-          const notifications = _.sortBy(
-            _.map(_.flatten(res), (n: INotification) => {
-              n.walletId = this.walletId;
-              return n;
-            }),
-            'id'
-          );
+      this.getWallet({}).then(wallet => {
+        async.map(
+          [`${wallet.coin}:${wallet.network}`, this.walletId],
+          (walletId, next) => {
+            this.storage.fetchNotifications(
+              walletId,
+              opts.notificationId,
+              opts.minTs || 0,
+              next
+            );
+          },
+          (err, res) => {
+            if (err) return reject(err);
 
-          return cb(null, notifications);
-        }
-      );
+            const notifications = _.sortBy(
+              _.map(_.flatten(res), (n: INotification) => {
+                n.walletId = this.walletId;
+                return n;
+              }),
+              'id'
+            );
 
-    }).catch(err => cb(err));
+            return resolve(notifications);
+          }
+        );
+
+      }).catch(err => reject(err));
+    });
   }
 
   _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, cb) {
