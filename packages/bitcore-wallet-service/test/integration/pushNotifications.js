@@ -557,6 +557,8 @@ describe('Push notifications', function() {
             hashedCopayerIds[2].should.not.equal((args[1].body.data.copayerId));
             hashedCopayerIds[2].should.not.equal((args[2].body.data.copayerId));
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         }, 100);
       });

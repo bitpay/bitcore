@@ -677,6 +677,8 @@ describe('Wallet service', function() {
                 should.not.exist(notif);
                 done();
               });
+            }).catch(err => {
+              should.not.exist(err);
             });
           });
         });
@@ -702,7 +704,9 @@ describe('Wallet service', function() {
               status.balance.totalAmount.should.equal(0);
               status.balance.availableAmount.should.equal(0);
               done();
-            });
+            }).catch(err => {
+              should.not.exist(err);
+            });;
           });
         });
       });
@@ -984,6 +988,8 @@ describe('Wallet service', function() {
               notif.data.walletId.should.equal(wallet.id);
               done();
             });
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -996,6 +1002,8 @@ describe('Wallet service', function() {
             });
             should.not.exist(notif);
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -1143,34 +1151,37 @@ describe('Wallet service', function() {
     it('should delete a wallet', function(done) {
       server.removeWallet({}, function(err) {
         should.not.exist(err);
-        server.getWallet({}).catch(err => {
-          should.exist(err);
-          err.code.should.equal('WALLET_NOT_FOUND');
-          async.parallel([
+        server.getWallet({})
+          .then(res => {
+            should.not.exist(res);
+          }).catch(err => {
+            should.exist(err);
+            err.code.should.equal('WALLET_NOT_FOUND');
+            async.parallel([
 
-            function(next) {
-              server.storage.fetchAddresses(wallet.id, function(err, items) {
-                items.length.should.equal(0);
-                next();
-              });
-            },
-            function(next) {
-              server.storage.fetchTxs(wallet.id, {}, function(err, items) {
-                items.length.should.equal(0);
-                next();
-              });
-            },
-            function(next) {
-              server.storage.fetchNotifications(wallet.id, null, 0, function(err, items) {
-                items.length.should.equal(0);
-                next();
-              });
-            },
-          ], function(err) {
-            should.not.exist(err);
-            done();
+              function(next) {
+                server.storage.fetchAddresses(wallet.id, function(err, items) {
+                  items.length.should.equal(0);
+                  next();
+                });
+              },
+              function(next) {
+                server.storage.fetchTxs(wallet.id, {}, function(err, items) {
+                  items.length.should.equal(0);
+                  next();
+                });
+              },
+              function(next) {
+                server.storage.fetchNotifications(wallet.id, null, 0, function(err, items) {
+                  items.length.should.equal(0);
+                  next();
+                });
+              },
+            ], function(err) {
+              should.not.exist(err);
+              done();
+            });
           });
-        });
       });
     });
 
@@ -1206,17 +1217,22 @@ describe('Wallet service', function() {
           server.removeWallet({}, next);
         },
         function(next) {
-          server.getWallet({}).catch(err => {
-            should.exist(err);
-            err.code.should.equal('WALLET_NOT_FOUND');
-            next();
-          });
+          server.getWallet({})
+            .then(res => {
+              should.not.exist(res);
+            }).catch(err => {
+              should.exist(err);
+              err.code.should.equal('WALLET_NOT_FOUND');
+              next();
+            });
         },
         function(next) {
           server2.getWallet({}).then(wallet => {
             should.exist(wallet);
             wallet.id.should.equal(wallet2.id);
             next();
+          }).catch(err => {
+            should.not.exist(err);
           });
         },
         function(next) {
@@ -1224,6 +1240,8 @@ describe('Wallet service', function() {
             should.exist(addresses);
             addresses.length.should.above(0);
             next();
+          }).catch(err => {
+            should.not.exist(err);
           });
         },
         function(next) {
@@ -1239,6 +1257,8 @@ describe('Wallet service', function() {
             should.exist(notifications);
             notifications.length.should.above(0);
             next();
+          }).catch(err => {
+            should.not.exist(err);
           });
         },
       ], function(err) {
@@ -1283,6 +1303,8 @@ describe('Wallet service', function() {
           should.not.exist(copayer.customData);
         });
         done();
+      }).catch(err => {
+        should.not.exist(err);
       });
     });
     it('should get status including extended info', function(done) {
@@ -1303,6 +1325,8 @@ describe('Wallet service', function() {
           should.not.exist(copayer.customData);
         });
         done();
+      }).catch(err => {
+        should.not.exist(err);
       });
     });
     it('should get status after tx creation', function(done) {
@@ -1323,6 +1347,8 @@ describe('Wallet service', function() {
             balance.lockedAmount.should.equal(tx.inputs[0].satoshis);
             balance.availableAmount.should.equal(balance.totalAmount - balance.lockedAmount);
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -1347,6 +1373,8 @@ describe('Wallet service', function() {
           priority: 1
         }]);
         done();
+      }).catch(err => {
+        should.not.exist(err);
       });
     });
     it('should get status including deprecated server message', function(done) {
@@ -1366,43 +1394,8 @@ describe('Wallet service', function() {
           app: 'bitpay',
         });
         done();
-      });
-    });
-  });
-
-  describe('#verifyMessageSignature', function() {
-    var server, wallet;
-    beforeEach(function(done) {
-      helpers.createAndJoinWallet(2, 3, function(s, w) {
-        server = s;
-        wallet = w;
-        done();
-      });
-    });
-
-    it('should successfully verify message signature', function(done) {
-      var message = 'hello world';
-      var opts = {
-        message: message,
-        signature: helpers.signMessage(message, TestData.copayers[0].privKey_1H_0),
-      };
-      server.verifyMessageSignature(opts).then(isValid => {
-        isValid.should.be.true;
-        done();
-      });
-    });
-
-    it('should fail to verify message signature for different copayer', function(done) {
-      var message = 'hello world';
-      var opts = {
-        message: message,
-        signature: helpers.signMessage(message, TestData.copayers[0].privKey_1H_0),
-      };
-      helpers.getAuthServer(wallet.copayers[1].id, function(server) {
-        server.verifyMessageSignature(opts).then(isValid => {
-          isValid.should.be.false;
-          done();
-        });
+      }).catch(err => {
+        should.not.exist(err);
       });
     });
   });
@@ -1437,6 +1430,8 @@ describe('Wallet service', function() {
             should.exist(notif);
             notif.data.address.should.equal(address.address);
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -1463,6 +1458,8 @@ describe('Wallet service', function() {
               should.exist(address);
               done();
             });
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -1499,6 +1496,8 @@ describe('Wallet service', function() {
               should.exist(address);
               done();
             });
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -1534,6 +1533,8 @@ describe('Wallet service', function() {
             should.exist(notif);
             notif.data.address.should.equal(address.address);
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -1568,6 +1569,8 @@ describe('Wallet service', function() {
               should.exist(address);
               done();
             });
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -1602,6 +1605,8 @@ describe('Wallet service', function() {
             should.exist(notif);
             notif.data.address.should.equal(address.address);
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -1636,6 +1641,8 @@ describe('Wallet service', function() {
               should.exist(address);
               done();
             });
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -1731,6 +1738,8 @@ describe('Wallet service', function() {
             should.exist(notif);
             notif.data.address.should.equal(address.address);
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -1764,6 +1773,8 @@ describe('Wallet service', function() {
             should.exist(notif);
             notif.data.address.should.equal(address.address);
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -1873,6 +1884,8 @@ describe('Wallet service', function() {
               should.exist(notif);
               notif.data.address.should.equal(address.address);
               done();
+            }).catch(err => {
+              should.not.exist(err);
             });
           });
         });
@@ -1929,6 +1942,8 @@ describe('Wallet service', function() {
                 addresses.length.should.equal(1);
                 addresses[0].address.should.equal('0xE299d49C2cf9BfaFb7C6E861E80bb8c83f961622');
                 done();
+              }).catch(err => {
+                should.not.exist(err);
               });
             });
           });
@@ -1972,6 +1987,8 @@ describe('Wallet service', function() {
         addresses[0].path.should.equal('m/0/0');
         addresses[4].path.should.equal('m/0/4');
         done();
+      }).catch(err => {
+        should.not.exist(err);
       });
     });
     it('should get first N addresses', function(done) {
@@ -1982,6 +1999,8 @@ describe('Wallet service', function() {
         addresses[0].path.should.equal('m/0/0');
         addresses[2].path.should.equal('m/0/2');
         done();
+      }).catch(err => {
+        should.not.exist(err);
       });
     });
     it('should get last N addresses in reverse order', function(done) {
@@ -1993,6 +2012,8 @@ describe('Wallet service', function() {
         addresses[0].path.should.equal('m/0/4');
         addresses[2].path.should.equal('m/0/2');
         done();
+      }).catch(err => {
+        should.not.exist(err);
       });
     });
   });
@@ -2022,6 +2043,8 @@ describe('Wallet service', function() {
           preferences.unit.should.equal('bit');
           should.not.exist(preferences.dummy);
           done();
+        }).catch(err => {
+          should.not.exist(err);
         });
       });
     });
@@ -2034,6 +2057,8 @@ describe('Wallet service', function() {
           server2.getPreferences({}).then(preferences => {
             should.not.exist(preferences.email);
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -2052,6 +2077,8 @@ describe('Wallet service', function() {
             preferences.email.should.equal('dummy@dummy.com');
             should.not.exist(preferences.language);
             next();
+          }).catch(err => {
+            should.not.exist(err);
           });
         },
         function(next) {
@@ -2065,6 +2092,8 @@ describe('Wallet service', function() {
             preferences.language.should.equal('es');
             preferences.email.should.equal('dummy@dummy.com');
             next();
+          }).catch(err => {
+            should.not.exist(err);
           });
         },
         function(next) {
@@ -2080,6 +2109,8 @@ describe('Wallet service', function() {
             should.not.exist(preferences.language);
             preferences.email.should.equal('dummy@dummy.com');
             next();
+          }).catch(err => {
+            should.not.exist(err);
           });
         },
       ], function(err) {
@@ -2152,6 +2183,8 @@ describe('Wallet service', function() {
             utxo.path.should.equal(address.path);
             utxo.publicKeys.should.deep.equal(address.publicKeys);
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -2174,6 +2207,8 @@ describe('Wallet service', function() {
             utxo.path.should.equal(address.path);
             utxo.publicKeys.should.deep.equal(address.publicKeys);
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -2264,6 +2299,8 @@ describe('Wallet service', function() {
             utxo.path.should.equal(address.path);
             utxo.publicKeys.should.deep.equal(address.publicKeys);
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -2476,6 +2513,8 @@ describe('Wallet service', function() {
             var addresses = _.uniq(_.map(addresses, 'address'));
             _.intersection(addresses, _.map(balance.byAddress, 'address')).length.should.equal(2);
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -3600,8 +3639,12 @@ describe('Wallet service', function() {
                       should.exist(n.data.creatorId);
                       n.data.creatorId.should.equal(server.copayerId);
                       done();
+                    }).catch(err => {
+                      should.not.exist(err);
                     });
                   });
+                }).catch(err => {
+                  should.not.exist(err);
                 });
               });
             });
@@ -4267,6 +4310,8 @@ describe('Wallet service', function() {
                       x.proposalSignaturePubKey.should.equal(accessOpts.requestPubKey);
                       x.proposalSignaturePubKeySig.should.equal(accessOpts.signature);
                       done();
+                    }).catch(err => {
+                      should.not.exist(err);
                     });
                   });
                 });
@@ -5620,6 +5665,8 @@ describe('Wallet service', function() {
           should.not.exist(err);
           addr.length.should.equal(1);
           done();
+        }).catch(err => {
+          should.not.exist(err);
         });
       });
     });
@@ -6445,6 +6492,7 @@ describe('Wallet service', function() {
     });
   });
 
+
   describe('#broadcastTx & #broadcastRawTx', function() {
     var server, wallet, txpid, txid;
     beforeEach(function(done) {
@@ -6809,6 +6857,8 @@ describe('Wallet service', function() {
               var last = _.last(notifications);
               last.type.should.not.equal('TxProposalFinallyAccepted');
               next(null, txp);
+            }).catch(err => {
+              should.not.exist(err);
             });
           });
         },
@@ -6974,6 +7024,8 @@ describe('Wallet service', function() {
           should.not.exist(err);
           res.id.should.equal(txpid);
           done();
+        }).catch(err => {
+          should.not.exist(err);
         });
       });
 
@@ -7273,6 +7325,8 @@ describe('Wallet service', function() {
             var types = _.map(notifications, 'type');
             types.should.deep.equal(['TxProposalAcceptedBy', 'TxProposalFinallyAccepted']);
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -7292,6 +7346,8 @@ describe('Wallet service', function() {
             var types = _.map(notifications, 'type');
             types.should.deep.equal(['TxProposalRejectedBy', 'TxProposalFinallyRejected']);
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -7318,6 +7374,8 @@ describe('Wallet service', function() {
               var types = _.map(notifications, 'type');
               types.should.deep.equal(['TxProposalAcceptedBy', 'TxProposalFinallyAccepted', 'NewOutgoingTx']);
               done();
+            }).catch(err => {
+              should.not.exist(err);
             });
           });
         });
@@ -7348,6 +7406,8 @@ describe('Wallet service', function() {
               var types = _.map(notifications, 'type');
               types.should.deep.equal(['TxProposalAcceptedBy', 'TxProposalFinallyAccepted', 'NewOutgoingTxByThirdParty']);
               done();
+            }).catch(err => {
+              should.not.exist(err);
             });
           });
         });
@@ -7555,6 +7615,7 @@ describe('Wallet service', function() {
     });
   });
 
+
   describe('#scan', function() {
     var server, wallet;
 
@@ -7598,6 +7659,8 @@ describe('Wallet service', function() {
                 done();
               });
             });
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -7637,6 +7700,8 @@ describe('Wallet service', function() {
                 });
               });
             });
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -7699,6 +7764,8 @@ describe('Wallet service', function() {
                 err.code.should.equal('WALLET_NEED_SCAN');
                 done();
               });
+            }).catch(err => {
+              should.not.exist(err);
             });
           });
         });
@@ -7747,6 +7814,8 @@ describe('Wallet service', function() {
                 });
               });
             });
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -7785,6 +7854,8 @@ describe('Wallet service', function() {
                 });
               });
             });
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -7883,7 +7954,7 @@ describe('Wallet service', function() {
       ];
       server.messageBroker.onMessage(function(n) {
         if (n.type == 'ScanFinished') {
-          server.getWallet({}).then(wallet => {
+          server.getWallet({}, function(err, wallet) {
             should.exist(wallet.scanStatus);
             wallet.scanStatus.should.equal('success');
             should.not.exist(n.creatorId);
@@ -7911,7 +7982,7 @@ describe('Wallet service', function() {
       server.messageBroker.onMessage(function(n) {
         if (n.type == 'ScanFinished') {
           should.exist(n.data.error);
-          server.getWallet({}).then(wallet => {
+          server.getWallet({}, function(err, wallet) {
             should.exist(wallet.scanStatus);
             wallet.scanStatus.should.equal('error');
             done();
@@ -8468,6 +8539,8 @@ describe('Wallet service', function() {
               addresses[0].address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
               done();
             });
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });

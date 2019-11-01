@@ -1459,32 +1459,7 @@ export class WalletService {
             ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
           });
           return resolve(onlyMain);
-        });
-      });
-    });
-  }
-
-  /**
-   * Verifies that a given message was actually sent by an authorized copayer.
-   * @param {Object} opts
-   * @param {string} opts.message - The message to verify.
-   * @param {string} opts.signature - The signature of message to verify.
-   * @returns {truthy} The result of the verification.
-   */
-  verifyMessageSignature(opts) {
-    return new Promise((resolve) => {
-
-      if (!checkRequired(opts, ['message', 'signature'])) return;
-
-      this.getWallet({}).then(wallet => {
-        const copayer = wallet.getCopayer(this.copayerId);
-
-        const isValid = !!this._getSigningKey(
-          opts.message,
-          opts.signature,
-          copayer.requestPubKeys
-        );
-        return resolve(isValid);
+        }).catch(err => reject(err));
       });
     });
   }

@@ -487,6 +487,8 @@ helpers.stubCheckData = function(bc, server, isBCH, cb) {
   server.storage.walletCheck({ walletId: server.walletId, bch: isBCH }).then((x) => {
     bc.getCheckData = sinon.stub().callsArgWith(1, null, { sum: x.sum });
     return cb();
+  }).catch(err => {
+    should.not.exist(err);
   });
 };
 

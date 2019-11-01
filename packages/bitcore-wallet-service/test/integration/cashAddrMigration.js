@@ -63,8 +63,12 @@ describe('Cash address migration', function() {
             s.getStatus({}).then(a => {
               spy.restore();
               done();
+            }).catch(err => {
+              should.not.exist(err);
             });
           });
+        }).catch(err => {
+          should.not.exist(err);
         });
       });
     });
@@ -77,6 +81,8 @@ describe('Cash address migration', function() {
             s.getMainAddresses({}).then(a => {
               a[0].address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
               done();
+            }).catch(err => {
+              should.not.exist(err);
             });
           });
         });
@@ -93,6 +99,8 @@ describe('Cash address migration', function() {
           calls.length.should.equal(1);
           spy.restore();
           done();
+        }).catch(err => {
+          should.not.exist(err);
         });
       });
     });
@@ -104,6 +112,8 @@ describe('Cash address migration', function() {
           s.getMainAddresses({}).then(a => {
             a[0].address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -124,7 +134,11 @@ describe('Cash address migration', function() {
                   a[1].address.should.equal('qrfere3rxlk3jjs7g28n952g8rjasjqcpgx3axq70t');
                   a[2].address.should.equal('qz4h98slcsjhgxdkt3yd8dxz02x8s0u4l5hs80s0q8');
                   done();
+                }).catch(err => {
+                  should.not.exist(err);
                 });
+              }).catch(err => {
+                should.not.exist(err);
               });
             });
           });
