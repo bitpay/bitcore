@@ -22,6 +22,10 @@ export namespace Wallet {
     phrase: string;
     password: string;
     storage: Storage;
+    dbName: string;
+    lite: boolean;
+    authKey: any;
+    xPubKey: any;
   };
 }
 export class Wallet {
@@ -63,25 +67,38 @@ export class Wallet {
   }
 
   static async create(params: Partial<Wallet.WalletObj>) {
-    const { chain, network, name, phrase, password, path } = params;
-    let { storage } = params;
+    const { chain, network, name, phrase, password, path, dbName, lite } = params;
+    let { storage, authKey, xPubKey } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
-    // Generate wallet private keys
-    const mnemonic = new Mnemonic(phrase);
-    const hdPrivKey = mnemonic
-      .toHDPrivateKey()
-      .derive(Deriver.pathFor(chain, network));
-    const privKeyObj = hdPrivKey.toObject();
+
+    let mnemonic;
+    let hdPrivKey;
+    let privKeyObj;
+    if (!lite) {
+      // Generate wallet private keys
+      mnemonic = new Mnemonic(phrase);
+      hdPrivKey = mnemonic
+        .toHDPrivateKey()
+        .derive(Deriver.pathFor(chain, network));
+      privKeyObj = hdPrivKey.toObject();
+      xPubKey = hdPrivKey.xpubkey
+    }
 
     // Generate authentication keys
-    const authKey = new PrivateKey();
-    const authPubKey = authKey.toPublicKey().toString();
+    let authPubKey;
+    if (!authKey) {
+      authKey = new PrivateKey();
+      authPubKey = authKey.toPublicKey().toString();
+    }
 
-    // Generate public keys
-    // bip44 compatible pubKey
-    const pubKey = hdPrivKey.publicKey.toString();
+    let pubKey;
+    if (!lite) {
+      // Generate public keys
+      // bip44 compatible pubKey
+      pubKey = hdPrivKey.publicKey.toString();
+    }
 
     // Generate and encrypt the encryption key and private key
     const walletEncryptionKey = Encryption.generateEncryptionKey();
@@ -89,25 +106,28 @@ export class Wallet {
       walletEncryptionKey,
       password
     );
-    const encPrivateKey = Encryption.encryptPrivateKey(
-      JSON.stringify(privKeyObj),
-      pubKey,
-      walletEncryptionKey
-    );
-
+    let encPrivateKey;
+    if (!lite) {
+      encPrivateKey = Encryption.encryptPrivateKey(
+        JSON.stringify(privKeyObj),
+        pubKey,
+        walletEncryptionKey
+      );
+    }
     storage =
       storage ||
       new Storage({
         path,
         errorIfExists: false,
-        createIfMissing: true
+        createIfMissing: true,
+        dbName
       });
-
     let alreadyExists;
     try {
       alreadyExists = await this.loadWallet({ storage, name });
     } catch (err) {}
     if (alreadyExists) {
+      console.log('\n\n', name, alreadyExists, '\n\n');
       throw new Error('Wallet already exists');
     }
 
@@ -117,16 +137,21 @@ export class Wallet {
       authPubKey,
       masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
-      xPubKey: hdPrivKey.xpubkey,
+      xPubKey,
       pubKey
     });
+
     // save wallet to storage and then bitcore-node
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({
       storage,
       name
     });
-    console.log(mnemonic.toString());
+
+    if (!lite) {
+      console.log(mnemonic.toString());
+    }
+
     await loadedWallet.register().catch(e => {
       console.debug(e);
       console.error('Failed to register wallet with bitcore-node.');

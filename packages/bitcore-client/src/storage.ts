@@ -1,67 +1,44 @@
-import * as os from 'os';
-import * as fs from 'fs';
+import 'source-map-support/register'
 import { Encryption } from './encryption';
-import levelup, { LevelUp } from 'levelup';
-import { LevelDown } from 'leveldown';
 import { Wallet } from './wallet';
-import { Transform } from 'stream';
+import { Mongo } from './storage/mongo';
+import { Level } from './storage/level';
 
-let lvldwn: LevelDown;
-let usingBrowser = (global as any).window;
-if (usingBrowser) {
-  lvldwn = require('level-js');
-} else {
-  lvldwn = require('leveldown');
-}
 const bitcoreLib = require('bitcore-lib');
-const StorageCache: { [path: string]: LevelUp } = {};
 
 export class Storage {
   path: string;
-  db: LevelUp;
+  db: any;
+  collection: 'bitcoreWallets';
+  url?: string;
+  errorIfExists?: boolean;
+  createIfMissing: boolean;
+  dbName: string;
   constructor(params: {
     path?: string;
     createIfMissing: boolean;
     errorIfExists: boolean;
+    dbName?: string;
   }) {
     const { path, createIfMissing, errorIfExists } = params;
-    let basePath;
-    if (!path) {
-      basePath = `${os.homedir()}/.bitcore`;
-      try {
-        if (!usingBrowser) {
-          fs.mkdirSync(basePath);
-        }
-      } catch (e) {
-        if (e.errno !== -17) {
-          console.error('Unable to create bitcore storage directory');
-        }
-      }
+    let { dbName } = params;
+    this.path = path;
+    this.createIfMissing = createIfMissing;
+    this.errorIfExists = errorIfExists;
+    this.dbName = dbName;
+    const dbMap = {
+      Mongo: Mongo,
+      Level: Level
+    };
+    if (!dbName) {
+      dbName = 'Level'
     }
-    this.path = path || `${basePath}/bitcoreWallet`;
-    if (!createIfMissing && !usingBrowser) {
-      const walletExists =
-        fs.existsSync(this.path) &&
-        fs.existsSync(this.path + '/LOCK') &&
-        fs.existsSync(this.path + '/LOG');
-      if (!walletExists) {
-        throw new Error('Not a valid wallet path');
-      }
-    }
-    if (StorageCache[this.path]) {
-      this.db = StorageCache[this.path];
-    } else {
-      console.log('using wallets at', this.path);
-      this.db = StorageCache[this.path] = levelup(lvldwn(this.path), {
-        createIfMissing,
-        errorIfExists
-      });
-    }
+    this.db = new dbMap[dbName]({ createIfMissing, errorIfExists, path });
   }
 
   async loadWallet(params: { name: string }) {
     const { name } = params;
-    const wallet = (await this.db.get(`wallet|${name}`)) as string;
+    const wallet = await this.db.loadWallet({ name });
     if (!wallet) {
       return;
     }
@@ -69,39 +46,16 @@ export class Storage {
   }
 
   listWallets() {
-    return this.db.createReadStream().pipe(
-      new Transform({
-        objectMode: true,
-        write: function(data, enc, next) {
-          if (data.key.toString().startsWith('wallet')) {
-            this.push(data.value.toString());
-          }
-          next();
-        }
-      })
-    );
+    return this.db.listWallets();
   }
 
   listKeys() {
-    return this.db.createReadStream().pipe(
-      new Transform({
-        objectMode: true,
-        write: function(data, enc, next) {
-          if (data.key.toString().startsWith('key')) {
-            this.push({
-              data: data.value.toString(),
-              key: data.key.toString()
-            });
-          }
-          next();
-        }
-      })
-    );
+    return this.db.listKeys();
   }
 
   async saveWallet(params) {
     const { wallet } = params;
-    return this.db.put(`wallet|${wallet.name}`, JSON.stringify(wallet));
+    return this.db.saveWallet({ wallet });
   }
 
   async getKey(params: {
@@ -110,7 +64,7 @@ export class Storage {
     encryptionKey: string;
   }): Promise<Wallet.KeyImport> {
     const { address, name, encryptionKey } = params;
-    const payload = (await this.db.get(`key|${name}|${address}`)) as string;
+    const payload = await this.db.getKey({ name, address });
     const json = JSON.parse(payload) || payload;
     const { encKey, pubKey } = json;
     if (encryptionKey && pubKey) {
@@ -164,8 +118,7 @@ export class Storage {
         payload = { encKey, pubKey };
       }
       const toStore = JSON.stringify(payload);
-      await this.db.put(`key|${name}|${key.address}`, toStore);
-
+      await this.db.addKeys({name, key, toStore});
     }
   }
 }
