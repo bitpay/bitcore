@@ -10,7 +10,7 @@
       <error [message]="errorMessage" *ngIf="!loading && errorMessage "></error>
 
       <div *ngIf="!loading && !errorMessage">
-        <h1>Address <small>{{ getConvertedNumber(address.balance, chainNetwork.chain) | number:'1.0-8' }}
+        <h1 class="content-container--heading">Address <small>{{ getConvertedNumber(address.balance, chainNetwork.chain) | number:'1.0-8' }}
             {{ currencyProvider.currencySymbol }}</small></h1>
         <p class="ellipsis">{{ address.addrStr }}
           <button [copyToClipboard]="address.addrStr">
