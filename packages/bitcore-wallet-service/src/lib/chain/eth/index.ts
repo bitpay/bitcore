@@ -10,7 +10,6 @@ const Errors = require('../../errors/errordefinitions');
 
 export class EthChain implements IChain {
 
-
   /**
    * Converts Bitcore Balance Response.
    * @param {Object} bitcoreBalance - { unconfirmed, confirmed, balance }
@@ -31,7 +30,6 @@ export class EthChain implements IChain {
     };
     return convertedBalance;
   }
-
 
   getWalletBalance(server, wallet, opts, cb) {
     const bc = server._getBlockchainExplorer(
