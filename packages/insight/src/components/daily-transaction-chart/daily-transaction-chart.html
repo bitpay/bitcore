@@ -8,5 +8,7 @@
    <div *ngIf="coinName === 'Ethereum'">
     {{ coinTransactionPerDay }} ethereum transactions confirmed over last 24 hours
   </div>
-  <canvas #lineCanvas></canvas>
+  <div class="chart-container">
+    <canvas #lineCanvas></canvas>
+  </div>
 </div>

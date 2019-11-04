@@ -1,18 +1,30 @@
 price-chart {
   justify-self: end;
   align-self: center;
-  max-width: 200px;
+  // max-width: 200px;
 
-  @media (max-width: 500px) {
-    max-width: 170px;
+  // @media (max-width: 500px) {
+  //   //max-width: 170px;
+  // }
+
+  // @media (max-width: 400px) {
+  //   //max-width: 120px;
+  // }
+
+  .chart-container {
+    position: relative;
+    height: 35vh;
+    width: 70vh;
   }
 
-  @media (max-width: 400px) {
-    max-width: 120px;
-  }
+  @media (max-width: map-get($grid-breakpoints, sm)) {
+    .chart-container {
+      height: 60vh;
+    }
+}
 
   .price {
-    color: grey;
+    color: black;
     font-size: 22px;
 
   }

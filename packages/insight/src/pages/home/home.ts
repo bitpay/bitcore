@@ -51,7 +51,6 @@ export class HomePage {
     this.showDailyTxChart = false;
 
     this.currentView = 'blocks';
-
     this.chainNetwork = {
       chain,
       network
@@ -171,7 +170,10 @@ export class HomePage {
         }
       }
     };
+    this.drawDailyTxChartHandler();
+    this.goToPriceChartHandler();
   }
+
   public numberWithCommas(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
@@ -214,12 +216,12 @@ export class HomePage {
   }
 
   public goToPriceChartHandler() {
-    this.switchView('price-chart');
+    // this.switchView('price-chart');
     this.getHistoricalPriceForCurrencies(this.coin.toLowerCase(), 'USD', 7);
   }
 
   public drawDailyTxChartHandler() {
-    this.switchView('txsperday');
+    //this.switchView('txsperday');
     this.getDailyTransactionCount(this.coin.toLowerCase(), 7);
   }
 

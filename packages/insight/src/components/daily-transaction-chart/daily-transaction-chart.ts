@@ -81,6 +81,7 @@ export class DailyTransactionChartComponent {
 
     const max = (Math.max(...transactionCounts) * 1.05).toFixed();
     const options = {
+      maintainAspectRatio: false,
       legend: {
         display: true
       },

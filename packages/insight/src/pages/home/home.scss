@@ -18,10 +18,16 @@ page-home {
         cursor: pointer;
     }
 
+    .charts-container {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        flex-wrap: wrap;
+    }
+
     .price-chart-container {
         display: flex;
         flex: 1;
-        flex-wrap: wrap;
     }
 
     .body-container {
@@ -30,7 +36,18 @@ page-home {
         flex-wrap: wrap;
     }
 
+    .daily-tx-chart {
+        background-color: white;
+        border-radius: 8px;
+        padding: 10px;
+    }
 
+    .price-chart {
+        background-color: white;
+        border-radius: 8px;
+        padding: 10px;
+    }
+    
     .page-content-grid-desktop {
          display: flex;
          flex: 1;
@@ -46,9 +63,53 @@ page-home {
       }
     }
 
+    @media (min-width: map-get($grid-breakpoints, md)) {
+
+        .charts-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-evenly;
+            flex-wrap: wrap;
+            flex: 1;
+        }
+
+        // .tx-chart-container {
+        //     margin-right: 40px;
+        // }
+
+        // .px-chart-container {
+        //     margin-left: 40px
+        // }
+
+        .page-content-grid-mobile {
+          display: none;
+  
+        }
+      }
+
     @media (max-width: map-get($grid-breakpoints, md)) {
         .menu {
             display: none;
+        }
+
+        .charts-container {
+            display: flex;
+            flex-direction: column;
+            //justify-content: center;
+            align-items: center;
+            //flex-wrap: wrap;
+        }
+
+        .daily-tx-chart {
+            background-color: white;
+            border-radius: 8px;
+            // padding: 10px;
+        }
+    
+        .price-chart {
+            background-color: white;
+            border-radius: 8px;
+            // padding: 10px;
         }
 
         .page-content-grid-desktop {

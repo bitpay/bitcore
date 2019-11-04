@@ -77,8 +77,13 @@ export class PriceChartComponent {
       numOfDays === 30 ? coin.ticks.thirtyDayTicks : coin.ticks.sevenDayTicks;
 
     const options = {
+      maintainAspectRatio: false,
       legend: {
-        display: true
+        display: true,
+        labels: {
+          fontColor: 'rgb(0,0,0)',
+          fontFamily: 'bold'
+        }
       },
       scales: {
         yAxes: [
