@@ -45,15 +45,17 @@ export class Wallet {
 
   constructor(params: Wallet | Wallet.WalletObj) {
     Object.assign(this, params);
-    if (this.baseUrl) {
-      this.baseUrl = `${this.baseUrl}/${this.chain}/${this.network}`;
-    } else {
-      this.baseUrl = `https://api.bitcore.io/api/${this.chain}/${this.network}`;
+    if (!this.baseUrl) {
+      this.baseUrl = `https://api.bitcore.io/api`;
     }
     this.client = new Client({
-      baseUrl: this.baseUrl,
+      apiUrl: this.getApiUrl(),
       authKey: this.getAuthSigningKey()
     });
+  }
+
+  getApiUrl() {
+    return `${this.baseUrl}/${this.chain}/${this.network}`;
   }
 
   saveWallet() {
@@ -198,12 +200,10 @@ export class Wallet {
 
   async register(params: { baseUrl?: string } = {}) {
     const { baseUrl } = params;
-    let registerBaseUrl = this.baseUrl;
     if (baseUrl) {
       // save the new url without chain and network
       // then use the new url with chain and network below
       this.baseUrl = baseUrl;
-      registerBaseUrl = `${this.baseUrl}/${this.chain}/${this.network}`;
       await this.saveWallet();
     }
     const payload = {
@@ -212,7 +212,7 @@ export class Wallet {
       path: this.derivationPath,
       network: this.network,
       chain: this.chain,
-      baseUrl: registerBaseUrl
+      apiUrl: this.getApiUrl()
     };
     return this.client.register({ payload });
   }
@@ -298,12 +298,13 @@ export class Wallet {
     let { tx, keys, utxos, passphrase } = params;
     if (!utxos) {
       utxos = [];
-      await (new Promise((resolve, reject) => {
-        this.getUtxos().pipe(new ParseApiStream())
-          .on('data', (utxo) => utxos.push(utxo))
+      await new Promise((resolve, reject) => {
+        this.getUtxos()
+          .pipe(new ParseApiStream())
+          .on('data', utxo => utxos.push(utxo))
           .on('end', () => resolve())
-          .on('err', (err) => reject(err));
-      }));
+          .on('err', err => reject(err));
+      });
     }
     let addresses = [];
     let decryptedKeys;
@@ -313,9 +314,9 @@ export class Wallet {
       }
       addresses = addresses.length > 0 ? addresses : await this.getAddresses();
       decryptedKeys = await this.storage.getKeys({
-          addresses,
-          name: this.name,
-          encryptionKey: this.unlocked.encryptionKey
+        addresses,
+        name: this.name,
+        encryptionKey: this.unlocked.encryptionKey
       });
     } else {
       addresses.push(keys[0]);
@@ -323,7 +324,10 @@ export class Wallet {
         let keyToDecrypt = keys.find(key => key.address === element.address);
         addresses.push(keyToDecrypt);
       });
-      let decryptedParams = Encryption.bitcoinCoreDecrypt(addresses, passphrase);
+      let decryptedParams = Encryption.bitcoinCoreDecrypt(
+        addresses,
+        passphrase
+      );
       decryptedKeys = [...decryptedParams.jsonlDecrypted];
     }
     const payload = {
