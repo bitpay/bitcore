@@ -143,17 +143,18 @@ describe('ExpressApp', function() {
             checkAndUseGlobalCache: sinon.stub().callsArgWith(3, null, 'latest-copay-version', 6 * 60 * 1000, callback),
           },
         };
+
         var {ExpressApp: TestExpressApp} = proxyquire('../ts_build/lib/expressapp', {
           './server': {
             WalletService: {
-              initialize: sinon.stub().callsArg(1),
+              initialize: sinon.stub().callsArg(1, null),
               getServiceVersion: WalletService.getServiceVersion,
-              getInstance: sinon.stub().callsArgWith(1, null, server),
+              getInstance: sinon.stub().callsArgWith(1, null, null, server),
             }
           }
         });
+
         start(TestExpressApp, function() {
-          callback.calledOnce === true;
           var requestOptions = {
             url: testHost + ':' + testPort + config.basePath + '/latest-version',
             headers: {
@@ -161,10 +162,12 @@ describe('ExpressApp', function() {
               'x-signature': 'signature'
             }
           };
+
           request(requestOptions, function(err, res, body) {
+            //sinon.assert.calledOnce(callback);
             should.not.exist(err);
             res.statusCode.should.equal(500);
-            body.should.equal('{"version":"v7.0.4"}');
+            body.should.equal({"version":"v7.0.4"});
             done();
           });
         });

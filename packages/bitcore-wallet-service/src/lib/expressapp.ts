@@ -284,7 +284,7 @@ export class ExpressApp {
               const htmlString = await rp(options);
               if (htmlString['tag_name']) {
                 server.storage.storeGlobalCache('latest-copay-version', htmlString['tag_name'], (err) => {
-                  res.json({ version: htmlString['tag_name']});
+                  res.json({ version: htmlString['tag_name'] });
                 });
               }
             } catch (err) {
