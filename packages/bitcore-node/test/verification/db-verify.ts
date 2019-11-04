@@ -8,12 +8,14 @@ import * as _ from 'lodash';
 import { Config } from '../../src/services/config';
 import { ChainStateProvider } from '../../src/providers/chain-state';
 import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
+import { Modules } from '../../src/modules';
 
 const { CHAIN, NETWORK, HEIGHT } = process.env;
 const resumeHeight = Number(HEIGHT) || 1;
 const chain = CHAIN || '';
 const network = NETWORK || '';
 
+Modules.loadConfigured();
 const chainConfig = Config.chainConfig({ chain, network });
 const worker = new BitcoinP2PWorker({ chain, network, chainConfig });
 worker.connect();
