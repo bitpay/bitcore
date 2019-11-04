@@ -49,7 +49,7 @@ export class Wallet {
       this.baseUrl = `https://api.bitcore.io/api`;
     }
     this.client = new Client({
-      baseUrl: this.getApiUrl(),
+      apiUrl: this.getApiUrl(),
       authKey: this.getAuthSigningKey()
     });
   }
@@ -212,7 +212,7 @@ export class Wallet {
       path: this.derivationPath,
       network: this.network,
       chain: this.chain,
-      baseUrl: this.getApiUrl()
+      apiUrl: this.getApiUrl()
     };
     return this.client.register({ payload });
   }
