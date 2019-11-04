@@ -12,7 +12,7 @@
     "node": "cd packages/bitcore-node && npm start",
     "bws": "cd packages/bitcore-wallet-service && npm start",
     "compile": "./node_modules/.bin/lerna run compile",
-    "test:ci": "npm run test:ci:build && npm run test:ci:unit && npm run test:ci:integration",
+    "test:ci": "npm run test:ci:build && npm run ci:bitcore-wallet-service",
     "test:ci:build": "docker-compose -f docker-compose.test.yml build",
     "test:ci:unit": "./ci.sh 'npm run lerna:ci:unit'",
     "test:ci:integration": "./ci.sh 'npm run lerna:ci:integration'",
