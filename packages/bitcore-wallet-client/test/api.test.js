@@ -3734,9 +3734,10 @@ describe('client API', () => {
         }).then(() => done());
       });
 
-      it('Should send the signed tx in paypro', (done) => {
+      it.only('Should send the signed tx in paypro', (done) => {
         clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
+          console.log(txps);
           let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
