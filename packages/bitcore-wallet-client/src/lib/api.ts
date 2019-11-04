@@ -621,7 +621,7 @@ export class API extends EventEmitter {
     let i = 0;
     const x = new bitcore.HDPublicKey(xpub);
 
-    _.each(signatures, (signatureHex) => {
+    _.each(signatures, signatureHex => {
       try {
         const signature = bitcore.crypto.Signature.fromString(signatureHex);
         const pub = x.deriveChild(txp.inputPaths[i]).publicKey;
@@ -652,7 +652,7 @@ export class API extends EventEmitter {
           const signed = CWC.Transactions.applySignature({
             chain,
             tx: unsignedTxs[index],
-            signature: signatures[index],
+            signature: signatures[index]
           });
           signedTxs.push(signed);
 
@@ -660,7 +660,7 @@ export class API extends EventEmitter {
           t.id = CWC.Transactions.getHash({ tx: signed, chain });
         }
         t.uncheckedSerialize = () => signedTxs;
-        t.serialize = () => signedTxs ;
+        t.serialize = () => signedTxs;
         break;
       default:
         return this._addSignaturesToBitcoreTxBitcoin(txp, t, signatures, xpub);
@@ -1482,20 +1482,23 @@ export class API extends EventEmitter {
     this.request.get('/v2/txproposals/', (err, txps) => {
       if (err) return cb(err);
 
+      console.log('1485 txproposals', txps);
       this._processTxps(txps);
       async.every(
         txps,
         (txp, acb) => {
           if (opts.doNotVerify) return acb(true);
-          this.getPayProV2(txp).then((paypro) => {
-          var isLegit = Verifier.checkTxProposal(this.credentials, txp, {
-              paypro
-            });
+          this.getPayProV2(txp)
+            .then(paypro => {
+              var isLegit = Verifier.checkTxProposal(this.credentials, txp, {
+                paypro
+              });
 
-          return acb(isLegit);
-          }).catch((err) => {
-            return acb(err);
-          });
+              return acb(isLegit);
+            })
+            .catch(err => {
+              return acb(err);
+            });
         },
         isLegit => {
           if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
@@ -1556,12 +1559,11 @@ export class API extends EventEmitter {
     const chain = Utils.getChain(txp.coin);
     const currency = txp.coin.toUpperCase();
 
-    return PayProV2.selectPaymentOption(
-      {
-        paymentUrl: txp.payProUrl,
-        chain,
-        currency
-      });
+    return PayProV2.selectPaymentOption({
+      paymentUrl: txp.payProUrl,
+      chain,
+      currency
+    });
   }
 
   // /**
@@ -1580,25 +1582,26 @@ export class API extends EventEmitter {
       return cb('No signatures to push. Sign the transaction with Key first');
     }
 
-    this.getPayProV2(txp).then((paypro) => {
-
-      var isLegit = Verifier.checkTxProposal(this.credentials, txp, {
+    this.getPayProV2(txp)
+      .then(paypro => {
+        var isLegit = Verifier.checkTxProposal(this.credentials, txp, {
           paypro
         });
 
-      if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
+        if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
-      var url = '/v1/txproposals/' + txp.id + '/signatures/';
-      var args = {
+        var url = '/v1/txproposals/' + txp.id + '/signatures/';
+        var args = {
           signatures
         };
 
-      this.request.post(url, args, (err, txp) => {
+        this.request.post(url, args, (err, txp) => {
           if (err) return cb(err);
           this._processTxps(txp);
           return cb(null, txp);
         });
-      }).catch((err) => {
+      })
+      .catch(err => {
         return cb(err);
       });
   }
@@ -1775,8 +1778,9 @@ export class API extends EventEmitter {
   broadcastTxProposal(txp, cb) {
     $.checkState(this.credentials && this.credentials.isComplete());
 
-    this.getPayProV2(txp).then((paypro) => {
-      if (paypro) {
+    this.getPayProV2(txp)
+      .then(paypro => {
+        if (paypro) {
           var t_unsigned = Utils.buildTx(txp);
           var t = _.clone(t_unsigned);
 
@@ -1794,51 +1798,58 @@ export class API extends EventEmitter {
           const signedTransactions = [];
 
           // Convert string to array if string
-          const unserializedTxs = typeof rawTxUnsigned === 'string' ? [rawTxUnsigned] : rawTxUnsigned;
-          const serializedTxs = typeof serializedTx === 'string' ? [serializedTx] : serializedTx;
+          const unserializedTxs =
+            typeof rawTxUnsigned === 'string' ? [rawTxUnsigned] : rawTxUnsigned;
+          const serializedTxs =
+            typeof serializedTx === 'string' ? [serializedTx] : serializedTx;
 
           for (const unsigned of unserializedTxs) {
             unsignedTransactions.push({
               tx: unsigned,
               weightedSize: unsigned.length / 2
-              });
+            });
           }
           for (const signed of serializedTxs) {
             signedTransactions.push({
               tx: signed,
               weightedSize: signed.length / 2
-              });
+            });
           }
           PayProV2.verifyUnsignedPayment({
             paymentUrl: txp.payProUrl,
             chain,
             currency,
             unsignedTransactions
-            }).then(() => {
-                  PayProV2.sendSignedPayment({
+          })
+            .then(() => {
+              PayProV2.sendSignedPayment({
                 paymentUrl: txp.payProUrl,
                 chain,
                 currency,
                 signedTransactions,
-                  bpPartner: {
+                bpPartner: {
                   bp_partner: this.bp_partner,
                   bp_partner_version: this.bp_partner_version
                 }
-              }).then((payProDetails) => {
-                if (payProDetails.memo) {
+              })
+                .then(payProDetails => {
+                  if (payProDetails.memo) {
                     log.debug('Merchant memo:', payProDetails.memo);
                   }
-                return cb(null, txp, payProDetails.memo);
-                }).catch((err) => {
+                  return cb(null, txp, payProDetails.memo);
+                })
+                .catch(err => {
                   return cb(err);
                 });
-              }).catch((err) => {
-                return cb(err);
+            })
+            .catch(err => {
+              return cb(err);
             });
         } else {
           this._doBroadcast(txp, cb);
         }
-      }).catch((err) => {
+      })
+      .catch(err => {
         return cb(err);
       });
   }
