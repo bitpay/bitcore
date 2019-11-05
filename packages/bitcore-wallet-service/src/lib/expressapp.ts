@@ -590,7 +590,7 @@ export class ExpressApp {
     });
 
     router.post('/v3/estimateGas/', (req, res) => {
-      getServerWithAuth(req, res, async(server) => {
+      getServerWithAuth(req, res, async (server) => {
         try {
           const gasLimit = await server.estimateGas(req.body);
           res.json(gasLimit);

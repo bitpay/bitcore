@@ -2623,7 +2623,7 @@ export class WalletService {
                     next();
                   });
                 },
-                async(next) => {
+                async (next) => {
                   if (opts.sendMax) return next();
                   try {
                     changeAddress = await ChainService.getChangeAddress(this, wallet, opts);
@@ -2632,14 +2632,14 @@ export class WalletService {
                   }
                   return next();
                 },
-                async(next) => {
+                async (next) => {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
                     return next();
 
                   ({ feePerKb, gasPrice } = await ChainService.getFee(this, wallet, opts));
                   next();
                 },
-                async(next) => {
+                async (next) => {
                   try {
                     opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
                   } catch (error) {
