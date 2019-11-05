@@ -8,7 +8,7 @@ const bitcoreLib = require('bitcore-lib');
 
 export class Storage {
   path: string;
-  db: any;
+  db: Mongo | Level;
   collection: 'bitcoreWallets';
   url?: string;
   errorIfExists?: boolean;
@@ -52,8 +52,8 @@ export class Storage {
     return this.db.listWallets();
   }
 
-  async listKeys() {
-    return await this.db.listKeys();
+  listKeys() {
+    return this.db.listKeys();
   }
 
   async saveWallet(params) {

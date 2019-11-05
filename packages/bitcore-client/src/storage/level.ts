@@ -75,7 +75,7 @@ export class Level {
     );
   }
 
-  listKeys() {
+  async listKeys() {
     return this.db.createReadStream().pipe(
       new Transform({
         objectMode: true,
@@ -100,6 +100,8 @@ export class Level {
   async getKey(params: {
     address: string;
     name: string;
+    keepAlive: boolean;
+    open: boolean;
   }) {
     const { address, name } = params;
     return (await this.db.get(`key|${name}|${address}`)) as string;
@@ -110,6 +112,7 @@ export class Level {
     key: any
     toStore: string;
     keepAlive: boolean;
+    open: boolean;
   }) {
     const { name, key, toStore} = params;
     await this.db.put(`key|${name}|${key.address}`, toStore);

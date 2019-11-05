@@ -1,18 +1,17 @@
 import 'source-map-support/register'
-import { MongoClient } from 'mongodb'
-import {baToJSON} from "ethereumjs-util";
+import { MongoClient, Db } from 'mongodb'
 import {Transform} from "stream";
 
 export class Mongo {
   path: string;
-  db: any;
+  db: Db;
   collectionName: string;
   collection: any;
   errorIfExists?: boolean;
   createIfMissing: boolean;
   dbName: string;
   databaseName: string;
-  client: any;
+  client: MongoClient;
   port: string;
   addressCollectionName: string;
   constructor(params: {
@@ -49,6 +48,7 @@ export class Mongo {
       } else if (addresses) {
         this.collection = this.db.collection(this.addressCollectionName)
       }
+      await this.collection.createIndex({ 'name': 1 });
     } catch (error) {
       console.error(error);
     }
@@ -60,7 +60,7 @@ export class Mongo {
   }
 
   async listWallets() {
-    await this.init({wallet: 1});
+    await this.init({ wallet: 1 });
     const stream = new Transform({
       objectMode: true,
       transform(data, enc, next) {
@@ -73,7 +73,18 @@ export class Mongo {
     return cursor;
   }
 
-  listKeys() {
+  async listKeys() {
+    await this.init({ addresses: 1 });
+    const stream = new Transform({
+      objectMode: true,
+      transform(data, enc, next) {
+        this.push(JSON.parse(JSON.stringify(data)));
+        next();
+      }
+    });
+    const cursor = this.collection.find({}, { 'name': 1, 'key': 1, toStore: 1 }).pipe(stream);
+    stream.on('end', async () => await this.close());
+    return cursor;
   }
 
   async saveWallet(params) {
@@ -119,7 +130,7 @@ export class Mongo {
     if (!params.keepAlive) {
       await this.close();
     }
-    return key;
+    return key.data;
   }
 
 
@@ -135,7 +146,7 @@ export class Mongo {
         await this.init({ addresses: 1 });
       }
       const { name, key, toStore } = params;
-      await this.collection.insertOne({ name, address:key.address, encKey:toStore });
+      await this.collection.insertOne({ name, address:key.address, data:toStore });
       if (!params.keepAlive) {
         await this.close()
       }
