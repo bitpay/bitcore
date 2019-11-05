@@ -22,6 +22,9 @@ export class Storage {
   }) {
     const { path, createIfMissing, errorIfExists } = params;
     let { dbName } = params;
+    if (path && path.includes('mongo')) {
+      dbName = 'Mongo';
+    }
     this.path = path;
     this.createIfMissing = createIfMissing;
     this.errorIfExists = errorIfExists;
@@ -49,8 +52,8 @@ export class Storage {
     return this.db.listWallets();
   }
 
-  listKeys() {
-    return this.db.listKeys();
+  async listKeys() {
+    return await this.db.listKeys();
   }
 
   async saveWallet(params) {
@@ -62,9 +65,11 @@ export class Storage {
     address: string;
     name: string;
     encryptionKey: string;
+    keepAlive: boolean;
+    open: boolean;
   }): Promise<Wallet.KeyImport> {
-    const { address, name, encryptionKey } = params;
-    const payload = await this.db.getKey({ name, address });
+    const { address, name, encryptionKey, keepAlive, open } = params;
+    const payload = await this.db.getKey({ name, address, keepAlive, open });
     const json = JSON.parse(payload) || payload;
     const { encKey, pubKey } = json;
     if (encryptionKey && pubKey) {
@@ -86,13 +91,19 @@ export class Storage {
   }): Promise<Array<Wallet.KeyImport>> {
     const { addresses, name, encryptionKey } = params;
     const keys = new Array<Wallet.KeyImport>();
+    let keepAlive = true;
+    let open = true;
     for(const address of addresses) {
+      if (address === addresses[addresses.length - 1]) {
+        keepAlive = false;
+      }
       try {
-        const key = await this.getKey({name, address, encryptionKey});
+        const key = await this.getKey({name, address, encryptionKey, keepAlive, open });
         keys.push(key);
       } catch (err) {
         console.error(err);
       }
+      open = false;
     }
     return keys;
   }
@@ -103,6 +114,7 @@ export class Storage {
     encryptionKey: string;
   }) {
     const { name, keys, encryptionKey } = params;
+    let open = true;
     for(const key of keys)  {
       let { pubKey } = key;
       pubKey =
@@ -118,7 +130,12 @@ export class Storage {
         payload = { encKey, pubKey };
       }
       const toStore = JSON.stringify(payload);
-      await this.db.addKeys({name, key, toStore});
+      let keepAlive = true;
+      if (key === keys[keys.length - 1]) {
+        keepAlive = false;
+      }
+      await this.db.addKeys({name, key, toStore, keepAlive, open});
+      open = false;
     }
   }
 }

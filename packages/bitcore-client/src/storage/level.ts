@@ -61,7 +61,7 @@ export class Level {
     return (await this.db.get(`wallet|${name}`)) as string;
   }
 
-  listWallets() {
+  async listWallets() {
     return this.db.createReadStream().pipe(
       new Transform({
         objectMode: true,
@@ -109,6 +109,7 @@ export class Level {
     name: string;
     key: any
     toStore: string;
+    keepAlive: boolean;
   }) {
     const { name, key, toStore} = params;
     await this.db.put(`key|${name}|${key.address}`, toStore);

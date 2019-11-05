@@ -1,5 +1,7 @@
 import 'source-map-support/register'
 import { MongoClient } from 'mongodb'
+import {baToJSON} from "ethereumjs-util";
+import {Transform} from "stream";
 
 export class Mongo {
   path: string;
@@ -12,6 +14,7 @@ export class Mongo {
   databaseName: string;
   client: any;
   port: string;
+  addressCollectionName: string;
   constructor(params: {
     path?: string;
     createIfMissing: boolean;
@@ -31,15 +34,21 @@ export class Mongo {
     }
     this.databaseName = databasePath.pop();
     this.collectionName = 'bitcoreWallets';
+    this.addressCollectionName = 'bitcoreWalletAddresses';
   }
 
-  async init() {
+  async init(params) {
+    const { wallet, addresses } = params;
     try {
       this.client = new MongoClient(this.path, { useNewUrlParser: true });
       await this.client.connect();
       console.log('connected');
       this.db = this.client.db(this.databaseName);
-      this.collection = this.db.collection(this.collectionName);
+      if (wallet) {
+        this.collection = this.db.collection(this.collectionName);
+      } else if (addresses) {
+        this.collection = this.db.collection(this.addressCollectionName)
+      }
     } catch (error) {
       console.error(error);
     }
@@ -50,8 +59,18 @@ export class Mongo {
     console.log('closed connection');
   }
 
-  listWallets() {
-    // return this.db.
+  async listWallets() {
+    await this.init({wallet: 1});
+    const stream = new Transform({
+      objectMode: true,
+      transform(data, enc, next) {
+        this.push(JSON.stringify(data));
+        next();
+      }
+    });
+    const cursor = this.collection.find({'name': { '$exists': true }}, { 'name': 1, 'chain': 1, 'network': 1 }).pipe(stream);
+    stream.on('end', async () => await this.close());
+    return cursor;
   }
 
   listKeys() {
@@ -59,8 +78,12 @@ export class Mongo {
 
   async saveWallet(params) {
     const { wallet } = params;
-    await this.init();
-    wallet.authKey = JSON.stringify(wallet.authKey);
+    await this.init({wallet: 1});
+    if (wallet.lite) {
+      delete wallet.masterKey;
+      delete wallet.pubKey;
+    }
+    wallet.authKey = wallet.authKey.toString('hex');
     try {
       await this.collection.insertOne(wallet);
       console.log('inserted');
@@ -72,11 +95,10 @@ export class Mongo {
   }
 
   async loadWallet(params: { name: string }) {
-    await this.init();
+    await this.init({ wallet: 1 });
     const { name } = params;
     const wallet = await this.collection.findOne({ name:name });
     await this.close();
-    wallet.authKey = JSON.parse(wallet.authKey);
     if (!wallet) {
       return;
     }
@@ -86,17 +108,39 @@ export class Mongo {
   async getKey(params: {
     address: string;
     name: string;
+    keepAlive: boolean;
+    open: boolean;
   }) {
+    if (params.open) {
+      await this.init({ addresses: 1 });
+    }
     const { address, name } = params;
-    return (await this.db.get(`key|${name}|${address}`)) as string;
+    const key = await this.collection.findOne({ name, address });
+    if (!params.keepAlive) {
+      await this.close();
+    }
+    return key;
   }
+
 
   async addKeys(params: {
     name: string;
     key: any
     toStore: string;
+    keepAlive: boolean;
+    open: boolean;
   }) {
-    const { name, key, toStore} = params;
-    await this.db.put(`key|${name}|${key.address}`, toStore);
+    try {
+      if (params.open) {
+        await this.init({ addresses: 1 });
+      }
+      const { name, key, toStore } = params;
+      await this.collection.insertOne({ name, address:key.address, encKey:toStore });
+      if (!params.keepAlive) {
+        await this.close()
+      }
+    } catch (error) {
+      console.error(error);
+    }
   }
 }

@@ -7,12 +7,13 @@ const program = require('../ts_build/program');
 program
   .version(require('../package.json').version)
   .option('--path [path]', 'optional - Where wallets are stored')
+  .option('--dbName [dbName]', 'optional - default Level - choose the database from where to list wallets')
   .parse(process.argv);
 
 const main = async () => {
-  const { path } = program;
-  const storage = new Storage({createIfMissing: false, errorIfExists: false, path});
-  const walletStream = storage.listWallets();
+  const { path, dbName } = program;
+  const storage = new Storage({createIfMissing: false, errorIfExists: false, path, dbName});
+  const walletStream = await storage.listWallets();
   walletStream.on('data', (wallet) => {
     const { name, chain, network } = JSON.parse(wallet.toString());
     console.log({name, chain, network});

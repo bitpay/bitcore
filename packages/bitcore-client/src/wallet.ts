@@ -87,11 +87,8 @@ export class Wallet {
     }
 
     // Generate authentication keys
-    let authPubKey;
-    if (!authKey) {
-      authKey = new PrivateKey();
-      authPubKey = authKey.toPublicKey().toString();
-    }
+    authKey = new PrivateKey(authKey);
+    const authPubKey = authKey.toPublicKey().toString();
 
     let pubKey;
     if (!lite) {
@@ -181,12 +178,13 @@ export class Wallet {
     name: string;
     path?: string;
     storage?: Storage;
+    dbName?: string;
   }) {
-    const { name, path } = params;
+    const { name, path, dbName } = params;
     let { storage } = params;
     storage =
       storage ||
-      new Storage({ errorIfExists: false, createIfMissing: false, path });
+      new Storage({ errorIfExists: false, createIfMissing: false, path, dbName });
     const loadedWallet = await storage.loadWallet({ name });
     return new Wallet(Object.assign(loadedWallet, { storage }));
   }
@@ -299,6 +297,7 @@ export class Wallet {
     };
     return this.client.broadcast({ payload });
   }
+
   async importKeys(params: { keys: Wallet.KeyImport[] }) {
     const { keys } = params;
     const { encryptionKey } = this.unlocked;
