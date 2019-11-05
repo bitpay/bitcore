@@ -73,13 +73,17 @@ page-home {
             flex: 1;
         }
 
-        // .tx-chart-container {
-        //     margin-right: 40px;
-        // }
+        .tx-chart-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+        }
 
-        // .px-chart-container {
-        //     margin-left: 40px
-        // }
+        .px-chart-container {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+        }
 
         .page-content-grid-mobile {
           display: none;

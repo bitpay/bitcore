@@ -32,33 +32,11 @@
     <ion-grid class="page-content-grid-mobile">
 
         <ion-col class="page-content" col-12>
-            <!-- <div>
-                <h2>Daily Transaction Chart</h2>
-                <daily-transaction-chart #dailyTxChart> </daily-transaction-chart>
-
-                <h2> Price Chart </h2>
-                <daily-transaction-chart #dailyTxChart> </daily-transaction-chart>
-            </div> -->
-
+          
             <h2>Latest Blocks</h2>
             <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" [chainNetwork]="chainNetwork" #latestBlocks>
             </latest-blocks>
 
-            <!-- <div class="charts-container">
-                <div class="tx-chart-container">   
-                    <h2 class="content-container--heading"> Txs Per Day</h2>
-                    <div class="daily-tx-chart">
-                        <daily-transaction-chart #dailyTxChart> </daily-transaction-chart>
-                    </div>
-                </div>
-                
-                <div class="px-chart-container">
-                    <h2 class="content-container--heading">Price Chart</h2>
-                    <div class="price-chart">
-                        <price-chart #priceChart> </price-chart>
-                    </div>
-                </div>
-            </div> -->
         </ion-col>
     </ion-grid>
 </ion-content>

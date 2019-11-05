@@ -13,7 +13,7 @@
     <loader *ngIf="loading" [type]="'grid'"></loader>
 
     <div *ngIf="!loading" class="blocks-container__blocks">
-      <ion-row *ngFor="let block of blocks">
+      <ion-row *ngFor="let block of blocks" (click)="goToBlock(block.hash)">
         <ion-col>
           <a (click)="goToBlock(block.hash)">{{ block.height }}</a>
         </ion-col>
