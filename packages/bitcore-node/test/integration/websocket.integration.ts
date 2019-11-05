@@ -140,7 +140,7 @@ describe('Websockets', function() {
   });
 
   it('should get wallet events', async () => {
-    const authClient = new Client({ baseUrl: 'http://localhost:3000/api', authKey });
+    const authClient = new Client({ apiUrl: 'http://localhost:3000/api', authKey });
 
     const payload = { method: 'socket', url: 'http://localhost:3000/api' };
     const authPayload = { pubKey, message: authClient.getMessage(payload), signature: authClient.sign(payload) };
@@ -175,7 +175,7 @@ describe('Websockets', function() {
   });
 
   it('should get all wallet events', async () => {
-    const authClient = new Client({ baseUrl: 'http://localhost:3000/api', authKey: bwsPrivKey });
+    const authClient = new Client({ apiUrl: 'http://localhost:3000/api', authKey: bwsPrivKey });
     const payload = { method: 'socket', url: 'http://localhost:3000/api' };
     const authPayload = {
       pubKey: bwsKey,
@@ -218,7 +218,7 @@ describe('Websockets', function() {
   it('should get an error when the key does not match the bwsKey', async () => {
     const pubKey = authKey.publicKey.toString('hex');
     const wrongKey = new PrivateKey();
-    const authClient = new Client({ baseUrl: 'http://localhost:3000/api', authKey: wrongKey });
+    const authClient = new Client({ apiUrl: 'http://localhost:3000/api', authKey: wrongKey });
 
     const payload = { method: 'socket', url: 'http://localhost:3000/api' };
     const authPayload = { pubKey, message: authClient.getMessage(payload), signature: authClient.sign(payload) };
@@ -238,7 +238,7 @@ describe('Websockets', function() {
 
   it('should get an error when the signature is invalid', async () => {
     const wrongKey = new PrivateKey();
-    const authClient = new Client({ baseUrl: 'http://localhost:3000/api', authKey: wrongKey });
+    const authClient = new Client({ apiUrl: 'http://localhost:3000/api', authKey: wrongKey });
 
     const payload = { method: 'socket', url: 'http://localhost:3000/api' };
     const authPayload = { pubKey, message: authClient.getMessage(payload), signature: 'invalid' };
