@@ -4,8 +4,8 @@ price-chart {
   
   .chart-container {
     position: relative;
-    height: 35vh;
-    width: 70vh;
+    height: 300px;
+    width: 600px;
   }
 
   @media (max-width: map-get($grid-breakpoints, sm)) {
@@ -15,8 +15,10 @@ price-chart {
 }
 
   .price {
+    display: flex;
+    justify-content: flex-end;
     color: black;
     font-size: 22px;
-
+    font-weight: 500;
   }
 }

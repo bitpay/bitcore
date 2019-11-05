@@ -12,7 +12,14 @@
                         </div>
                     </div>
                     <div class="px-chart-container">
-                        <h2 class="content-container--heading">Price Chart</h2>
+                        <div class="price-chart-header">
+                            <div class="price-chart-title">
+                                    <h2 class="content-container--heading">Price Chart</h2>
+                            </div>
+                            <div class="price-chart-price">
+                                ${{ currentPrice }}
+                            </div>
+                        </div>
                         <div class="price-chart">
                             <price-chart #priceChart> </price-chart>
                         </div>

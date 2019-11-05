@@ -1,8 +1,8 @@
 daily-transaction-chart {
     .chart-container {
         position: relative;
-        height: 35vh;
-        width: 70vh;
+        height: 300px;
+        width: 600px;
       }
     
       @media (max-width: map-get($grid-breakpoints, sm)) {
