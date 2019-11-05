@@ -2781,7 +2781,7 @@ export class WalletService {
                   'NewTxProposal',
                   txp,
                   () => {
-                    if (opts.noCashAddr) {
+                    if (opts.noCashAddr && txp.coin == 'bch') {
                       if (txp.changeAddress) {
                         txp.changeAddress.address = BCHAddressTranslator.translate(
                           txp.changeAddress.address,
