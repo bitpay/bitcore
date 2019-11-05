@@ -262,7 +262,7 @@ blockchainExplorerMock.broadcast = (raw, cb) => {
   } catch (e) {
     // try eth
     const hash = CWC.Transactions.getHash({
-      tx:raw,
+      tx: raw,
       chain: 'ETH',
     });
     return cb(null, hash);
@@ -341,10 +341,10 @@ blockchainExplorerMock.estimateGas = (nbBlocks, cb) => {
 
 
 blockchainExplorerMock.getBalance = (nbBlocks, cb) => {
-  return cb(null,{
+  return cb(null, {
     unconfirmed: 0,
-    confirmed: 20000000000*5,  
-    balance: 20000000000*5,  
+    confirmed: 20000000000 * 5,
+    balance: 20000000000 * 5,
   });
 };
 
@@ -758,7 +758,7 @@ describe('client API', () => {
         const key = Key.fromExtendedPrivateKey(masterPrivateKey);
         const path = 'm/44\'/60\'/0\'';
         const publicKeyRing = [{
-          xPubKey: 
+          xPubKey:
             new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild(path).toString(),
         }];
 
@@ -1179,7 +1179,7 @@ describe('client API', () => {
         const key = Key.fromExtendedPrivateKey(masterPrivateKey);
         const path = 'm/44\'/60\'/0\'';
         const publicKeyRing = [{
-          xPubKey: 
+          xPubKey:
             new Bitcore.HDPrivateKey(masterPrivateKey).deriveChild(path).toString(),
         }];
 
@@ -1206,7 +1206,7 @@ describe('client API', () => {
           amount: 3896000000000000
         };
         const signatures = key.sign(path, txp);
-        const expectedSignatures =  [
+        const expectedSignatures = [
           '0x4f761cd5f1cf1008d398c854ee338f82b457dc67ae794a987083b36b83fc6c917247fe72fe1880c0ee914c6e1b608625d8ab4e735520c33b2f7f76e0dcaf59801c',
         ];
         signatures.should.deep.equal(expectedSignatures);
@@ -2523,7 +2523,7 @@ describe('client API', () => {
         );
         clients[0].createWallet('mywallet', 'creator', 1, 1, {
           network: 'livenet',
-          coin:'eth',
+          coin: 'eth',
         }, (err) => {
           should.not.exist(err);
           clients[0].createAddress((err, x0) => {
@@ -2538,7 +2538,7 @@ describe('client API', () => {
 
             clients[1].createWallet('mywallet', 'creator', 1, 1, {
               network: 'testnet',
-              coin:'eth',
+              coin: 'eth',
             }, (err, ) => {
               should.not.exist(err);
               clients[1].createAddress((err, x1) => {
@@ -3373,11 +3373,11 @@ describe('client API', () => {
 
     describe('Shared wallet BTC', () => {
       // Tests will be considered slow after 1 second elapses
-      beforeEach((done) => {
-        new Promise((resolve) => {
+      beforeEach(async () => {
+        await new Promise((resolve) => {
           PP = TestData.payProJsonV2.btc;
           DATA = JSON.parse(TestData.payProJsonV2Body.btc);
-          
+
           mockRequest(Buffer.from(TestData.payProJsonV2.btc.body, 'hex'), TestData.payProJsonV2.btc.headers);
           helpers.createAndJoinWallet(clients, keys, 2, 2, { network: 'livenet' }, (w) => {
             clients[0].createAddress((err, x0) => {
@@ -3386,65 +3386,69 @@ describe('client API', () => {
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               var opts = {
-                paymentUrl: 'https://bitpay.com/i/TRrzNNTLyfgL6LxyHDF6Tz'
+                paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
               };
-              
-             Client.PayProV2.selectPaymentOption(opts).then((paypro)=>{
-               //              http.getCall(0).args[0].coin.should.equal('btc');
-               helpers.createAndPublishTxProposal(clients[0], {
-                 toAddress: paypro.instructions[0].toAddress,
-                 amount: paypro.instructions[0].amount,
-                 message: paypro.memo,
-                 payProUrl: paypro.payProUrl,
-               }, (err, x) => {
-                 should.not.exist(err);
-                 resolve();
-               });
-             }).catch(() => done());
+
+              Client.PayProV2.selectPaymentOption(opts).then((paypro) => {
+                //              http.getCall(0).args[0].coin.should.equal('btc');
+                helpers.createAndPublishTxProposal(clients[0], {
+                  toAddress: paypro.instructions[0].toAddress,
+                  amount: paypro.instructions[0].amount,
+                  message: paypro.memo,
+                  payProUrl: paypro.payProUrl,
+                }, (err, x) => {
+                  should.not.exist(err);
+                  resolve();
+                });
+              });
             });
           });
-        }).then(() => done());
+        })
       });
 
       it('Should Create and Verify a Tx from PayPro', (done) => {
         clients[1].getTxProposals({}, (err, txps) => {
-          should.not.exist(err);
-          var tx = txps[0];
-          // From the hardcoded paypro request
-          tx.outputs[0].amount.should.equal(DATA.instructions[0].amount);
-          tx.outputs[0].toAddress.should.equal(DATA.instructions[0].toAddress);
-          tx.message.should.equal(DATA.memo);
-          tx.payProUrl.should.equal('https://bitpay.com/i/TRrzNNTLyfgL6LxyHDF6Tz');
-          done();
+          try {
+            should.not.exist(err);
+            var tx = txps[0];
+            // From the hardcoded paypro request
+            tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
+            tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
+            tx.message.should.equal(DATA.memo);
+            tx.payProUrl.should.equal('https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X');
+            done();
+          } catch (err) {
+            console.error(err);
+          }
         });
       });
 
-      it('Should handle broken paypro data', (done) => {
-        new Promise((resolve) => {
-          mockRequest(Buffer.from('broken data'), TestData.payProJsonV2.btc.headers);
-          var opts = {
-            payProUrl: 'dummy'
-          };
-          Client.PayProV2.selectPaymentOption(opts).catch((err) => {
-            should.exist(err);
-            err.message.should.contain('match');
-            resolve();
-          }).catch(() => done());
-        }).then(() => done());
+      it('Should handle broken paypro data', async () => {
+        mockRequest(Buffer.from('broken data'), TestData.payProJsonV2.btc.headers);
+        var opts = {
+          payProUrl: 'dummy'
+        };
+        await Client.PayProV2.selectPaymentOption(opts).catch((err) => {
+          should.exist(err);
+        });
       });
 
       it('Should ignore PayPro at getTxProposals if instructed', (done) => {
         mockRequest(Buffer.from('broken data'), TestData.payProJsonV2.btc.headers);
         clients[1].doNotVerifyPayPro = true;
         clients[1].getTxProposals({}, (err, txps) => {
-          should.not.exist(err);
-          var tx = txps[0];
-          // From the hardcoded paypro request
-          tx.outputs[0].amount.should.equal(DATA.instructions[0].amount);
-          tx.outputs[0].toAddress.should.equal(DATA.instructions[0].toAddress);
-          tx.message.should.equal(DATA.memo);
-          tx.payProUrl.should.equal('https://bitpay.com/i/TRrzNNTLyfgL6LxyHDF6Tz');
-          done();
+          try {
+            should.not.exist(err);
+            var tx = txps[0];
+            // From the hardcoded paypro request
+            tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
+            tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
+            tx.message.should.equal(DATA.memo);
+            tx.payProUrl.should.equal('https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X');
+            done();
+          } catch (e) {
+            console.error(e);
+          }
         });
       });
 
@@ -3480,8 +3484,8 @@ describe('client API', () => {
                 postArgs.currency.should.equal('BTC');
                 postArgs.transactions.length.should.equal(1);
                 postArgs.transactions[0].tx.length.should.be.within(665, 680);
-                memo.should.equal('Payment request for BitPay invoice TRrzNNTLyfgL6LxyHDF6Tz for merchant BitPay Visa® Load (USD-USA)');
-                zz.message.should.equal('Payment request for BitPay invoice TRrzNNTLyfgL6LxyHDF6Tz for merchant BitPay Visa® Load (USD-USA)');
+                memo.should.equal('Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)');
+                zz.message.should.equal('Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)');
                 done();
               });
             });
@@ -3508,7 +3512,7 @@ describe('client API', () => {
                 var tx = new Bitcore.Transaction(rawTx);
                 var script = tx.inputs[0].script;
                 script.isScriptHashIn().should.equal(true);
-                memo.should.be.equal('Payment request for BitPay invoice TRrzNNTLyfgL6LxyHDF6Tz for merchant BitPay Visa® Load (USD-USA)');
+                memo.should.be.equal('Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)');
                 done();
               });
             });
@@ -3545,8 +3549,8 @@ describe('client API', () => {
 
 
     describe('Shared wallet / requiredFeeRate BTC', () => {
-      beforeEach((done) => {
-        new Promise((resolve) => {
+      beforeEach(async () => {
+        await new Promise((resolve) => {
           DATA = JSON.parse(TestData.payProJsonV2Body.btc);
           mockRequest(Buffer.from(TestData.payProJsonV2.btc.body, 'hex'), TestData.payProJsonV2.btc.headers);
           helpers.createAndJoinWallet(clients, keys, 2, 2, { network: 'livenet' }, (w) => {
@@ -3556,13 +3560,13 @@ describe('client API', () => {
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               var opts = {
-                paymentUrl: 'https://bitpay.com/i/TRrzNNTLyfgL6LxyHDF6Tz',
+                paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X',
               };
               Client.PayProV2.selectPaymentOption(opts).then((paypro) => {
-                paypro.requiredFeeRate.should.equal(10.101);
+                paypro.requiredFeeRate.should.equal(34.337);
                 helpers.createAndPublishTxProposal(clients[0], {
-                  toAddress: paypro.instructions[0].toAddress,
-                  amount: paypro.instructions[0].amount,
+                  toAddress: paypro.instructions[0].outputs[0].address,
+                  amount: paypro.instructions[0].outputs[0].amount,
                   message: paypro.memo,
                   payProUrl: paypro.payProUrl,
                   feePerKb: paypro.requiredFeeRate * 1024,
@@ -3570,10 +3574,10 @@ describe('client API', () => {
                   should.not.exist(err);
                   resolve();
                 });
-              }).catch(() => done());
+              });
             });
           });
-        }).then(() => done());
+        });
       });
 
       it('Should Create and Verify a Tx from PayPro', (done) => {
@@ -3581,11 +3585,11 @@ describe('client API', () => {
           should.not.exist(err);
           var tx = txps[0];
 
-          tx.outputs[0].amount.should.equal(DATA.instructions[0].amount);
-          tx.outputs[0].toAddress.should.equal(DATA.instructions[0].toAddress);
+          tx.outputs[0].amount.should.equal(DATA.instructions[0].outputs[0].amount);
+          tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
           tx.message.should.equal(DATA.memo);
-          tx.payProUrl.should.equal('https://bitpay.com/i/TRrzNNTLyfgL6LxyHDF6Tz');
-          tx.feePerKb.should.equal(10.101 * 1024);
+          tx.payProUrl.should.equal('https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X');
+          tx.feePerKb.should.equal(34.337 * 1024);
 
           // From the hardcoded paypro request
           done();
@@ -3605,16 +3609,20 @@ describe('client API', () => {
               yy.status.should.equal('accepted');
               let spy = sinon.spy(Client.PayProV2.request, 'post');
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
-                should.not.exist(err);
-                spy.called.should.be.true;
-                postArgs.currency.should.equal('BTC');
-                postArgs.transactions.length.should.equal(1);
-                postArgs.transactions[0].tx.length.should.be.within(665, 680);
+                try {
+                  should.not.exist(err);
+                  spy.called.should.be.true;
+                  postArgs.currency.should.equal('BTC');
+                  postArgs.transactions.length.should.equal(1);
+                  postArgs.transactions[0].tx.length.should.be.within(665, 680);
 
-                memo.should.equal('Payment request for BitPay invoice TRrzNNTLyfgL6LxyHDF6Tz for merchant BitPay Visa® Load (USD-USA)');
-                zz.message.should.equal('Payment request for BitPay invoice TRrzNNTLyfgL6LxyHDF6Tz for merchant BitPay Visa® Load (USD-USA)');
-                zz.feePerKb.should.equal(10.101 * 1024);
-                done();
+                  memo.should.equal('Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)');
+                  zz.message.should.equal('Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)');
+                  zz.feePerKb.should.equal(34.337 * 1024);
+                  done();
+                } catch (e) {
+                  console.error(e);
+                }
               });
             });
           });
@@ -3642,8 +3650,8 @@ describe('client API', () => {
 
 
     describe('1-of-1 wallet BTC', () => {
-      beforeEach((done) => {
-        new Promise((resolve)=>{
+      beforeEach(async () => {
+        await new Promise((resolve) => {
           DATA = JSON.parse(TestData.payProJsonV2Body.btc);
           mockRequest(Buffer.from(TestData.payProJsonV2.btc.body, 'hex'), TestData.payProJsonV2.btc.headers);
           helpers.createAndJoinWallet(clients, keys, 1, 1, { network: 'livenet' }, (w) => {
@@ -3653,22 +3661,22 @@ describe('client API', () => {
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               var opts = {
-                paymentUrl: 'https://bitpay.com/i/TRrzNNTLyfgL6LxyHDF6Tz'
+                paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
               };
               Client.PayProV2.selectPaymentOption(opts).then((paypro) => {
                 helpers.createAndPublishTxProposal(clients[0], {
-                  toAddress: paypro.instructions[0].toAddress,
-                  amount: paypro.instructions[0].amount,
+                  toAddress: paypro.instructions[0].outputs[0].address,
+                  amount: paypro.instructions[0].outputs[0].amount,
                   message: paypro.memo,
                   payProUrl: paypro.payProUrl,
                 }, (err, x) => {
                   should.not.exist(err);
                   resolve();
                 });
-              }).catch(() => done());
+              })
             });
           });
-        }).then(() => done());
+        })
       });
 
       it('Should send the signed tx in paypro', (done) => {
@@ -3686,7 +3694,7 @@ describe('client API', () => {
               var tx = new Bitcore.Transaction(rawTx);
               var script = tx.inputs[0].script;
               script.isPublicKeyHashIn().should.equal(true);
-              memo.should.be.equal('Payment request for BitPay invoice TRrzNNTLyfgL6LxyHDF6Tz for merchant BitPay Visa® Load (USD-USA)');
+              memo.should.be.equal('Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)');
               done();
             });
           });
@@ -3697,44 +3705,47 @@ describe('client API', () => {
 
     describe('1-of-1 BCH wallet', () => {
 
-      beforeEach((done) => {
-        new Promise((resolve)=>{
+      beforeEach(async () => {
+        await new Promise((resolve) => {
           DATA = JSON.parse(TestData.payProJsonV2Body.bch);
           mockRequest(Buffer.from(TestData.payProJsonV2.bch.body, 'hex'), TestData.payProJsonV2.bch.headers);
-  
+
           helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'bch', network: 'livenet' }, (w) => {
-            clients[0].createAddress((err, x0) => {
+            clients[0].createAddress(async (err, x0) => {
               should.not.exist(err);
               should.exist(x0.address);
-  
+
               // TODO change createAddress to /v4/, and remove this.
               //x0.address = Bitcore_['bch'].Address(x0.address).toString(true);
               // ======
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
               var opts = {
-                paymentUrl: 'https://bitpay.com/i/TctdC5R9dFTUHuhSpvqF5B',
+                paymentUrl: 'https://bitpay.com/i/XM8XbreRs6cnKkR3yYT6qQ',
                 chain: 'BCH',
                 currency: 'BCH'
               };
-              
-              Client.PayProV2.selectPaymentOption(opts).then((paypro) => {
-                helpers.createAndPublishTxProposal(clients[0], {
-                  toAddress: paypro.instructions[0].toAddress,
-                  amount: paypro.instructions[0].amount,
-                  message: paypro.memo,
-                  payProUrl: paypro.payProUrl,
-                }, (err, x) => {
-                  should.not.exist(err);
-                  resolve();
+              try {
+                await Client.PayProV2.selectPaymentOption(opts).then((paypro) => {
+                  helpers.createAndPublishTxProposal(clients[0], {
+                    toAddress: paypro.instructions[0].toAddress,
+                    amount: paypro.instructions[0].amount,
+                    message: paypro.memo,
+                    payProUrl: paypro.payProUrl,
+                  }, (err, x) => {
+                    should.not.exist(err);
+                    resolve();
+                  });
                 });
-              }).catch(() => done());
+              } catch (e) {
+                console.error(e);
+              }
             });
           });
-        }).then(() => done());
+        });
       });
 
-      it.only('Should send the signed tx in paypro', (done) => {
+      it('Should send the signed tx in paypro', (done) => {
         clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
           console.log(txps);
@@ -3751,7 +3762,7 @@ describe('client API', () => {
               var tx = Bitcore_['bch'].Transaction(rawTx);
               var script = tx.inputs[0].script;
               script.isPublicKeyHashIn().should.equal(true);
-              memo.should.be.equal('Payment request for BitPay invoice TctdC5R9dFTUHuhSpvqF5B for merchant BitPay Visa® Load (USD-USA)');
+              memo.should.be.equal('Payment request for BitPay invoice XM8XbreRs6cnKkR3yYT6qQ for merchant BitPay Visa® Load (USD-USA)');
               done();
             });
           });
@@ -3762,13 +3773,13 @@ describe('client API', () => {
 
     describe('New proposal flow', () => {
 
-      beforeEach((done) => {
-        new Promise((resolve)=>{
+      beforeEach(async () => {
+        await new Promise((resolve) => {
           DATA = JSON.parse(TestData.payProJsonV2Body.btc);
           mockRequest(Buffer.from(TestData.payProJsonV2.btc.body, 'hex'), TestData.payProJsonV2.btc.headers);
-  
+
           helpers.createAndJoinWallet(clients, keys, 2, 2, { network: 'livenet' }, (w) => {
-            clients[0].createAddress((err, x0) => {
+            clients[0].createAddress(async (err, x0) => {
               should.not.exist(err);
               should.exist(x0.address);
               blockchainExplorerMock.setUtxo(x0, 1, 2);
@@ -3777,12 +3788,11 @@ describe('client API', () => {
                 paymentUrl: 'dummy'
               };
 
-              Client.PayProV2.selectPaymentOption(opts).catch(() => {
-
+              await Client.PayProV2.selectPaymentOption(opts).catch(() => {
                 clients[0].createTxProposal({
                   outputs: [{
-                    toAddress: DATA.instructions[0].toAddress,
-                    amount: DATA.instructions[0].amount,
+                    toAddress: DATA.instructions[0].outputs[0].address,
+                    amount: DATA.instructions[0].outputs[0].amount,
                   }],
                   message: DATA.memo,
                   payProUrl: opts.paymentUrl,
@@ -3796,10 +3806,10 @@ describe('client API', () => {
                     resolve();
                   });
                 });
-              }).catch(() => done());
+              });
             });
           });
-        }).then(() => done());
+        });
       });
 
       it('Should Create and Verify a Tx from PayPro', (done) => {
@@ -3807,8 +3817,8 @@ describe('client API', () => {
           should.not.exist(err);
           var tx = txps[0];
           // From the hardcoded paypro request
-          tx.amount.should.equal(DATA.instructions[0].amount);
-          tx.outputs[0].toAddress.should.equal(DATA.instructions[0].toAddress);
+          tx.amount.should.equal(DATA.instructions[0].outputs[0].amount);
+          tx.outputs[0].toAddress.should.equal(DATA.instructions[0].outputs[0].address);
           tx.message.should.equal(DATA.memo);
           tx.payProUrl.should.equal('dummy');
           done();
@@ -3982,8 +3992,8 @@ describe('client API', () => {
       });
     });
 
-  it('Send and broadcast in 1-1 wallet ETH', (done) => {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin:'eth'}, (w) => {
+    it('Send and broadcast in 1-1 wallet ETH', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth' }, (w) => {
         clients[0].createAddress((err, x0) => {
           should.not.exist(err);
           should.exist(x0.address);

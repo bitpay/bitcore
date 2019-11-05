@@ -1481,8 +1481,6 @@ export class API extends EventEmitter {
 
     this.request.get('/v2/txproposals/', (err, txps) => {
       if (err) return cb(err);
-
-      console.log('1485 txproposals', txps);
       this._processTxps(txps);
       async.every(
         txps,
