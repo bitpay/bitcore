@@ -80,10 +80,6 @@ export class PriceChartComponent {
       maintainAspectRatio: false,
       legend: {
         display: true,
-        labels: {
-          fontColor: 'rgb(0,0,0)',
-          fontFamily: 'bold'
-        }
       },
       scales: {
         yAxes: [

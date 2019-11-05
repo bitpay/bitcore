@@ -11,7 +11,6 @@
                             <daily-transaction-chart #dailyTxChart> </daily-transaction-chart>
                         </div>
                     </div>
-                    
                     <div class="px-chart-container">
                         <h2 class="content-container--heading">Price Chart</h2>
                         <div class="price-chart">
@@ -19,24 +18,19 @@
                         </div>
                     </div>
                 </div>
-           
                 <h2 class="content-container--heading">Latest Blocks</h2>
                 <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" [chainNetwork]="chainNetwork" #latestBlocks>
                 </latest-blocks>
               </ion-col>
-
         </ion-row>
     </ion-grid>
 
 
     <ion-grid class="page-content-grid-mobile">
-
         <ion-col class="page-content" col-12>
-          
             <h2>Latest Blocks</h2>
             <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" [chainNetwork]="chainNetwork" #latestBlocks>
             </latest-blocks>
-
         </ion-col>
     </ion-grid>
 </ion-content>

@@ -99,21 +99,17 @@ page-home {
         .charts-container {
             display: flex;
             flex-direction: column;
-            //justify-content: center;
             align-items: center;
-            //flex-wrap: wrap;
         }
 
         .daily-tx-chart {
             background-color: white;
             border-radius: 8px;
-            // padding: 10px;
         }
     
         .price-chart {
             background-color: white;
             border-radius: 8px;
-            // padding: 10px;
         }
 
         .page-content-grid-desktop {

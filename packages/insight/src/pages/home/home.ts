@@ -216,12 +216,10 @@ export class HomePage {
   }
 
   public goToPriceChartHandler() {
-    // this.switchView('price-chart');
     this.getHistoricalPriceForCurrencies(this.coin.toLowerCase(), 'USD', 7);
   }
 
   public drawDailyTxChartHandler() {
-    //this.switchView('txsperday');
     this.getDailyTransactionCount(this.coin.toLowerCase(), 7);
   }
 
