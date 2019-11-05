@@ -3122,9 +3122,13 @@ describe('Wallet service', function() {
     let flags = x.flags;
 
     describe('#createTx ' + coin + ' flags' + JSON.stringify(flags), function() {
+
       describe('Tx proposal creation & publishing ' + coin, function() {
         var server, wallet;
+        let sandbox;
+
         beforeEach(function(done) {
+          sandbox = sinon.createSandbox();
           helpers.createAndJoinWallet(1, 1, {
             coin: coin,
           }, function(s, w) {
@@ -3133,6 +3137,10 @@ describe('Wallet service', function() {
             done();
           });
         });
+
+        afterEach(() => {
+          sandbox.restore();
+        })
 
         it('should create a tx', function(done) {
           let old = blockchainExplorer.getTransactionCount;
@@ -3170,7 +3178,7 @@ describe('Wallet service', function() {
                 tx.nonce.should.equal('5');
                 tx.outputs.should.deep.equal([{
                   toAddress: addressStr,
-                  gasLimit: '21000',
+                  gasLimit: 21000,
                   amount: amount,
                 }]);
               }
@@ -3933,19 +3941,22 @@ describe('Wallet service', function() {
         });
         it('should fail gracefully when bitcore throws exception on raw tx creation', function(done) {
           helpers.stubUtxos(server, wallet, 1, {coin}, function() {
-            var cwcStub = sinon.stub(CWC.Transactions, 'create');
+            var cwcStub = sandbox.stub(CWC.Transactions, 'create');
             cwcStub.throws({
               name: 'dummy',
               message: 'dummy exception'
             });
             var bitcoreStub;
-            if (Bitcore_[coin]) {
-              var bitcoreStub = sinon.stub(Bitcore_[coin], 'Transaction');
-              bitcoreStub.throws({
-                name: 'dummy',
-                message: 'dummy exception'
-              });
-            }
+            var bitcoreStub = sandbox.stub(CWC.BitcoreLib, 'Transaction');
+            bitcoreStub.throws({
+              name: 'dummy',
+              message: 'dummy exception'
+            });
+            var bitcoreStub = sandbox.stub(CWC.BitcoreLibCash, 'Transaction');
+            bitcoreStub.throws({
+              name: 'dummy',
+              message: 'dummy exception'
+            });
             var txOpts = {
               outputs: [{
                 toAddress: addressStr,
@@ -4147,6 +4158,7 @@ describe('Wallet service', function() {
               outputs: [{
                 toAddress: addressStr,
                 amount: null,
+                gasLimit: 21000
               }],
               feePerKb: (coin == 'eth') ? 1e8 : 10000,
               sendMax: true,
@@ -4928,11 +4940,11 @@ describe('#createTX ETH Only tests', () => {
         should.exist(tx);
         tx.outputs.should.deep.equal([{
           toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
-          gasLimit: '21000',
+          gasLimit: 21000,
           amount: amount,
         }]);
         tx.gasPrice.should.equal(12000000000);
-        tx.outputs[0].gasLimit.should.equal('21000');
+        tx.outputs[0].gasLimit.should.equal(21000);
         (tx.gasPrice * tx.outputs[0].gasLimit).should.equal(txOpts.fee);
         done();
       });
