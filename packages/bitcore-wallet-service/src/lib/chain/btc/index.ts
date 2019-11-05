@@ -4,10 +4,17 @@ import { IChain } from '..';
 import { ClientError } from '../../errors/clienterror';
 import { TxProposal } from '../../model';
 
+const $ = require('preconditions').singleton();
 const Common = require('../../common');
+const Constants = Common.Constants;
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
+
+const Bitcore = {
+  btc: require('bitcore-lib'),
+  bch: require('bitcore-lib-cash')
+};
 
 export class BtcChain implements IChain {
   constructor(private bitcoreLib = BitcoreLib) {}
@@ -197,6 +204,73 @@ export class BtcChain implements IChain {
         return resolve({feePerKb});
       });
     });
+  }
+
+  buildTx(txp) {
+    const t = new Bitcore[txp.coin].Transaction();
+
+    switch (txp.addressType) {
+        case Constants.SCRIPT_TYPES.P2SH:
+          _.each(txp.inputs, (i) => {
+            $.checkState(i.publicKeys, 'Inputs should include public keys');
+            t.from(i, i.publicKeys, txp.requiredSignatures);
+          });
+          break;
+        case Constants.SCRIPT_TYPES.P2PKH:
+          t.from(txp.inputs);
+          break;
+      }
+
+    _.each(txp.outputs, (o) => {
+        $.checkState(
+          o.script || o.toAddress,
+          'Output should have either toAddress or script specified'
+        );
+        if (o.script) {
+          t.addOutput(
+            new Bitcore[txp.coin].Transaction.Output({
+              script: o.script,
+              satoshis: o.amount
+            })
+          );
+        } else {
+          t.to(o.toAddress, o.amount);
+        }
+      });
+
+    t.fee(txp.fee);
+
+    if (txp.changeAddress) {
+        t.change(txp.changeAddress.address);
+      }
+
+      // Shuffle outputs for improved privacy
+    if (t.outputs.length > 1) {
+        const outputOrder = _.reject(txp.outputOrder, (order: number) => {
+          return order >= t.outputs.length;
+        });
+        $.checkState(t.outputs.length == outputOrder.length);
+        t.sortOutputs((outputs) => {
+          return _.map(outputOrder, (i) => {
+            return outputs[i];
+          });
+        });
+      }
+
+      // Validate actual inputs vs outputs independently of Bitcore
+    const totalInputs = _.sumBy(t.inputs, 'output.satoshis');
+    const totalOutputs = _.sumBy(t.outputs, 'satoshis');
+
+    $.checkState(
+        totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs,
+        'not-enought-inputs'
+      );
+    $.checkState(
+        totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin],
+        'fee-too-high'
+      );
+
+    return t;
   }
 
   convertFeePerKb(p, feePerKb) {

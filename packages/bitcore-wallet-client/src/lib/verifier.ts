@@ -154,8 +154,9 @@ export class Verifier {
       throw new Error('Transaction proposal not supported');
     }
 
-    log.debug('Regenerating & verifying tx proposal hash -> Hash: ', hash, ' Signature: ', txp.proposalSignature);
-    if (!Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
+    const txHash = typeof hash === 'string' ? hash : hash[0];
+    log.debug('Regenerating & verifying tx proposal hash -> Hash: ', txHash, ' Signature: ', txp.proposalSignature);
+    if (!Utils.verifyMessage(txHash, txp.proposalSignature, creatorSigningPubKey))
       return false;
 
     if (Constants.UTXO_COINS.includes(txp.coin) &&  !this.checkAddress(credentials, txp.changeAddress))
@@ -178,14 +179,14 @@ export class Verifier {
       amount = txp.amount;
     }
 
-    if (amount != payproOpts.amount)
+    if (amount != _.sumBy(payproOpts.instructions, 'amount'))
       return false;
 
-    if (txp.coin == 'btc' && toAddress != payproOpts.toAddress)
+    if (txp.coin == 'btc' && toAddress != payproOpts.instructions[0].toAddress)
       return false;
 
     // Workaround for cashaddr/legacy address problems...
-    if (txp.coin == 'bch' && (new BCHAddress(toAddress).toString()) != (new BCHAddress(payproOpts.toAddress).toString()))
+    if (txp.coin == 'bch' && (new BCHAddress(toAddress).toString()) != (new BCHAddress(payproOpts.instructions[0].toAddress).toString()))
       return false;
 
     // this generates problems...

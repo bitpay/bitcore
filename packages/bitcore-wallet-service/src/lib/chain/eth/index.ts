@@ -36,6 +36,11 @@ export class EthChain implements IChain {
       wallet.coin,
       wallet.network
     );
+
+    if (opts.tokenAddress) {
+      wallet.tokenAddress = opts.tokenAddress;
+    }
+
     bc.getBalance(wallet, (err, balance) => {
       if (err) {
         return cb(err);
@@ -69,31 +74,32 @@ export class EthChain implements IChain {
   }
 
   getWalletSendMaxInfo(server, wallet, opts, cb) {
-    server.getBalance({}, (err, balance) => {
+    server.getBalance({}, async(err, balance) => {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
 
-      server.estimateGas(
-        {
-          coin: wallet.coin,
-          network: wallet.network,
-          from: opts.from,
-          to: '0x0', // a dummy address
-          value: totalAmount, // it will be lest that this, at the end
-          data: null,
-          gasPrice: opts.feePerKb
-        },
-        (err, gasLimit) => {
-          let fee = opts.feePerKb * (gasLimit || Defaults.DEFAULT_GAS_LIMIT);
-          return cb(null, {
-            utxosBelowFee: 0,
-            amountBelowFee: 0,
-            amount: availableAmount - fee,
-            feePerKb: opts.feePerKb,
-            fee
+      try {
+        const gasLimit = await server.estimateGas(
+          {
+            coin: wallet.coin,
+            network: wallet.network,
+            from: opts.from,
+            to: '0x0', // a dummy address
+            value: totalAmount, // it will be lest that this, at the end
+            data: null,
+            gasPrice: opts.feePerKb
           });
+        let fee = opts.feePerKb * (gasLimit || Defaults.DEFAULT_GAS_LIMIT);
+        return cb(null, {
+              utxosBelowFee: 0,
+              amountBelowFee: 0,
+              amount: availableAmount - fee,
+              feePerKb: opts.feePerKb,
+              fee
+            });
+        } catch (err) {
+          return cb(err, null);
         }
-      );
     });
   }
 
@@ -112,46 +118,85 @@ export class EthChain implements IChain {
 
   getChangeAddress() {}
 
-  checkDust(output, opts) {
-    if (opts.outputs.length != 1) {
-      return Errors.MORE_THAT_ONE_OUTPUT;
-    }
-  }
+  checkDust(output, opts) {}
 
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
-      server._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
+      server._getFeePerKb(wallet, opts, async(err, inFeePerKb) => {
         let feePerKb = inFeePerKb;
         let gasPrice = inFeePerKb;
-        const { from, data, outputs } = opts;
+        const { from } = opts;
         const { coin, network } = wallet;
-        server.estimateGas(
-          {
-            coin,
-            network,
-            from,
-            to: outputs[0].toAddress,
-            value: outputs[0].amount,
-            data,
-            gasPrice
-          },
-          (err, inGasLimit) => {
-            if (_.isNumber(opts.fee)) {
-              // This is used for sendmax
-              gasPrice = feePerKb = Number(
-                (
-                  opts.fee / (inGasLimit || Defaults.DEFAULT_GAS_LIMIT)
-                ).toFixed()
-              );
-            }
-
-            const gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
-            opts.fee = feePerKb * gasLimit;
-            return resolve({feePerKb, gasPrice, gasLimit});
+        let inGasLimit;
+        for (let output of opts.outputs) {
+          try {
+            inGasLimit = await server.estimateGas({
+              coin,
+              network,
+              from,
+              to: output.toAddress,
+              value: output.amount,
+              data: output.data,
+              gasPrice
+            });
+            output.gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
+          } catch (err) {
+            output.gasLimit = Defaults.DEFAULT_GAS_LIMIT;
           }
-        );
+        }
+        if (_.isNumber(opts.fee)) {
+          // This is used for sendmax
+          gasPrice = feePerKb = Number(
+            (
+              opts.fee / (inGasLimit || Defaults.DEFAULT_GAS_LIMIT)
+            ).toFixed()
+          );
+        }
+
+        const gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
+        opts.fee = feePerKb * gasLimit;
+        return resolve({feePerKb, gasPrice});
       });
     });
+  }
+
+  buildTx(txp) {
+    const isERC20 = txp.tokenAddress && !txp.payProUrl;
+    const chain = isERC20 ? 'ERC20' : 'ETH';
+    const outputs = txp.outputs.map(output => {
+      return {
+        amount: output.amount,
+        address: output.toAddress,
+        data: output.data,
+        gasLimit: output.gasLimit
+      };
+    });
+    const unsignedTxs = [];
+    for (let index = 0; index < outputs.length; index++) {
+      const rawTx = Transactions.create({
+          ...txp,
+          chain,
+          data: outputs[index].data,
+          gasLimit: outputs[index].gasLimit,
+          nonce: Number(txp.nonce) + Number(index),
+          recipients: [outputs[index]]
+        });
+      unsignedTxs.push(rawTx);
+    }
+    return {
+        uncheckedSerialize: () => unsignedTxs,
+        txid: () => txp.txid,
+        toObject: () => {
+          let ret = _.clone(txp);
+          ret.outputs[0].satoshis = ret.outputs[0].amount;
+          return ret;
+        },
+        getFee: () => {
+          return txp.fee;
+        },
+        getChangeOutput: () => null,
+
+      };
   }
 
   convertFeePerKb(p, feePerKb) {
@@ -172,7 +217,7 @@ export class EthChain implements IChain {
   }
 
   selectTxInputs(server, txp, wallet, opts, cb, next) {
-    server.getBalance({ wallet }, (err, balance) => {
+    server.getBalance({ wallet, tokenAddress: opts.tokenAddress }, (err, balance) => {
       if (err) return next(err);
 
       const { totalAmount, availableAmount } = balance;
@@ -208,14 +253,24 @@ export class EthChain implements IChain {
   }
 
   addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub) {
-    const raw = Transactions.applySignature({
-      chain: 'ETH',
-      tx: tx.uncheckedSerialize(),
-      signature: signatures[0],
-    });
-    tx.uncheckedSerialize = () => raw ;
+    if (signatures.length === 0) {
+      throw new Error('Signatures Required');
+    }
 
-    // bitcore users id for txid...
-    tx.id = Transactions.getHash({ tx: raw, chain: 'ETH' });
+    const chain = 'ETH';
+    const unsignedTxs = tx.uncheckedSerialize();
+    const signedTxs = [];
+    for (let index = 0; index < signatures.length; index++) {
+      const signed = Transactions.applySignature({
+        chain,
+        tx: unsignedTxs[index],
+        signature: signatures[index],
+      });
+      signedTxs.push(signed);
+
+      // bitcore users id for txid...
+      tx.id = Transactions.getHash({ tx: signed, chain });
+    }
+    tx.uncheckedSerialize = () => signedTxs;
   }
 }

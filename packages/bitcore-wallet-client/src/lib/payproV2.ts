@@ -20,6 +20,12 @@ var MAX_FEE_PER_KB = {
   eth: 50000000000 // 50 Gwei
 };
 
+// PayPro Network Map
+export enum NetworkMap {
+  main = 'livenet',
+  test = 'testnet'
+}
+
 export class PayProV2 {
   static options: { headers?: any; args?: string; agent?: boolean } = {
     headers: {},
@@ -376,12 +382,18 @@ export class PayProV2 {
     // otherwise, it returns err.
     payProDetails.verified = true;
 
-    // network
-    if (responseData.network == 'test')
-      payProDetails.network = 'testnet';
+    // getPaymentOptions
+    if (responseData.paymentOptions) {
+      payProDetails.paymentOptions = responseData.paymentOptions;
+      payProDetails.paymentOptions.forEach(option => {
+        option.network = NetworkMap[option.network];
+      });
+    }
 
-    if (responseData.network == 'main')
-      payProDetails.network = 'livenet';
+    // network
+    if (responseData.network) {
+      payProDetails.network = NetworkMap[responseData.network];
+    }
 
     if (responseData.chain) {
       payProDetails.coin = responseData.chain.toLowerCase();
@@ -395,50 +407,21 @@ export class PayProV2 {
       }
     }
 
-    let requiredFeeRate;
+    if (responseData.instructions) {
+      payProDetails.instructions = responseData.instructions;
+      payProDetails.instructions.forEach(output => {
+        output.toAddress = output.to || output.outputs[0].address;
+        output.amount = output.value !== undefined ? output.value : output.outputs[0].amount;
+      });
+      const { requiredFeeRate, gasPrice } = responseData.instructions[0];
+      payProDetails.requiredFeeRate = requiredFeeRate || gasPrice;
 
-    // BTC Response - BCH Response
-    if (_.has(responseData, 'instructions[0].requiredFeeRate')) {
-      requiredFeeRate = responseData.instructions[0].requiredFeeRate;
-    }
-    if (_.has(responseData, 'instructions[0].outputs[0].amount')) {
-      payProDetails.amount = responseData.instructions[0].outputs[0].amount;
-    }
-    if (_.has(responseData, 'instructions[0].outputs[0].address')) {
-      try {
-        const bitcore = Bitcore_[payProDetails.coin];
-        payProDetails.toAddress = (bitcore.Address(responseData.instructions[0].outputs[0].address)).toString(true);
-      } catch (e) {
-        return new Error('Bad output address ' + e);
+      if (payProDetails.requiredFeeRate) {
+        if (payProDetails.requiredFeeRate > MAX_FEE_PER_KB[payProDetails.coin]) {
+          throw new Error('Fee rate too high:' + payProDetails.requiredFeeRate);
+        }
       }
     }
-
-    // ETH Response
-    if (_.has(responseData, 'instructions[0].value')) {
-      payProDetails.amount = responseData.instructions[0].value;
-    }
-
-    if (_.has(responseData, 'instructions[0].to')) {
-      payProDetails.toAddress = responseData.instructions[0].to;
-    }
-
-    if (_.has(responseData, 'instructions[0].gasPrice')) {
-      requiredFeeRate = responseData.instructions[0].gasPrice;
-    }
-
-    if (_.has(responseData, 'instructions[0].data')) {
-      payProDetails.data = responseData.instructions[0].data;
-  }
-
-    // ERC20 TODO
-
-    if (requiredFeeRate) {
-      if (requiredFeeRate > MAX_FEE_PER_KB[payProDetails.coin]) {
-        throw new Error('Fee rate too high:' + requiredFeeRate);
-      }
-      payProDetails.requiredFeeRate = requiredFeeRate;
-    }
-
     return payProDetails;
   }
 }

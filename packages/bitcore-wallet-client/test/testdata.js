@@ -102,18 +102,18 @@ exports.payProJson = {
   }
 };
 exports.payProJsonV2Body = bodyV2 = {
-  bch: '{"time":"2019-10-10T14:39:55.593Z","expires":"2019-10-10T14:54:55.593Z","memo":"Payment request for BitPay invoice TctdC5R9dFTUHuhSpvqF5B for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/TctdC5R9dFTUHuhSpvqF5B","paymentId":"TctdC5R9dFTUHuhSpvqF5B","chain":"BCH","network":"main","currency":"BCH","instructions":[{"type":"transaction","requiredFeeRate":1,"outputs":[{"amount":430500,"address":"qz846nqdq5t6ykrz9zn3khlc7xwcel0xjvzexnr0j9"}]}]}',
-  btc: '{"time":"2019-10-07T15:31:58.691Z","expires":"2019-10-07T15:46:58.691Z","memo":"Payment request for BitPay invoice TRrzNNTLyfgL6LxyHDF6Tz for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/TRrzNNTLyfgL6LxyHDF6Tz","paymentId":"TRrzNNTLyfgL6LxyHDF6Tz","chain":"BTC","network":"main","currency":"","instructions":[{"type":"transaction","requiredFeeRate":10.101,"outputs":[{"amount":13900,"address":"1N7yuoyQmso8zt2fv3MvtD3TDS2PVXiJGj"}]}]}',
-  eth: '{"time":"2019-10-10T14:57:01.924Z","expires":"2019-10-10T15:12:01.924Z","memo":"Payment request for BitPay invoice GsbhMZeeUebqzEeDmNubEP for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/GsbhMZeeUebqzEeDmNubEP","paymentId":"GsbhMZeeUebqzEeDmNubEP","chain":"ETH","network":"main","currency":"ETH","instructions":[{"type":"transaction","value":5214000000000000,"to":"0x52dE8D3fEbd3a06d3c627f59D56e6892B80DCf12","data":"0xb6b4af050000000000000000000000000000000000000000000000000012861af9dbe00000000000000000000000000000000000000000000000000000000005a43875660000000000000000000000000000000000000000000000000000016db9644f77cadbc5e4ee0119e349b39e42a049f5526b4eca8c225709d3fd73550c87de3d2096c9e28e9f3b440d991720673f01a67d3f74a912339beb77ed696f65f35e5bc4000000000000000000000000000000000000000000000000000000000000001c84ebb3c8fdeb8c59e35b1248a1af05ba8a332d745cc38a3193b1792e414dbdae41b55cbb5dbddf27fc539dd13a3bf1c72671d744b8706fcfb3eb2fce968456b40000000000000000000000000000000000000000000000000000000000000000","gasPrice":24229999974}]}'
+  bch: '{"time":"2019-11-05T17:05:31.791Z","expires":"2019-11-05T17:20:31.791Z","memo":"Payment request for BitPay invoice XM8XbreRs6cnKkR3yYT6qQ for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/XM8XbreRs6cnKkR3yYT6qQ","paymentId":"XM8XbreRs6cnKkR3yYT6qQ","chain":"BCH","network":"main","instructions":[{"type":"transaction","requiredFeeRate":1,"outputs":[{"amount":337900,"address":"qpymzlw4dfgawe2hy6xalj0qnzwedrqfvg96jl5ev6"}]}]}',
+  btc: '{"time":"2019-11-05T15:21:09.047Z","expires":"2019-11-05T15:36:09.047Z","memo":"Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X","paymentId":"LanynqCPoL2JQb8z8s5Z3X","chain":"BTC","network":"main","instructions":[{"type":"transaction","requiredFeeRate":34.337,"outputs":[{"amount":19800,"address":"1CpEMwff6DA52FLoq4JAhd2xFSEjQxyokm"}]}]}',
+  eth: '{"time":"2019-10-10T14:57:01.924Z","expires":"2019-10-10T15:12:01.924Z","memo":"Payment request for BitPay invoice GsbhMZeeUebqzEeDmNubEP for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/GsbhMZeeUebqzEeDmNubEP","paymentId":"GsbhMZeeUebqzEeDmNubEP","chain":"ETH","network":"main","currency":"ETH","instructions":[{"type":"transaction","amount":5214000000000000,"toAddress":"0x52dE8D3fEbd3a06d3c627f59D56e6892B80DCf12","value":5214000000000000,"to":"0x52dE8D3fEbd3a06d3c627f59D56e6892B80DCf12","data":"0xb6b4af050000000000000000000000000000000000000000000000000012861af9dbe00000000000000000000000000000000000000000000000000000000005a43875660000000000000000000000000000000000000000000000000000016db9644f77cadbc5e4ee0119e349b39e42a049f5526b4eca8c225709d3fd73550c87de3d2096c9e28e9f3b440d991720673f01a67d3f74a912339beb77ed696f65f35e5bc4000000000000000000000000000000000000000000000000000000000000001c84ebb3c8fdeb8c59e35b1248a1af05ba8a332d745cc38a3193b1792e414dbdae41b55cbb5dbddf27fc539dd13a3bf1c72671d744b8706fcfb3eb2fce968456b40000000000000000000000000000000000000000000000000000000000000000","gasPrice":24229999974}]}'
 };
 
 exports.payProJsonV2 = {
   'btc': {
     body:  Buffer.from(bodyV2.btc),
     headers: {
-      'x-identity': '1GA2vgw5byxqTpAUHEyyh7ahXnHU1FDDAy',
-      signature: '60f02d8433b2cbf76ce76898ec8d36b38004c3575321f99d7c34bc773f6f4b757f9de905dfeede9c76545fa0a38b209323c518da5ed7251d85786dd24bf8df3b',
-      digest: 'SHA-256=76d0d885dbe09105911e048017dc6fb9ea9268de510520567171969433c10838',
+      'x-identity': '1DbY94wCcLRM1Y6RGFg457JyqBbsYxzfiN',
+      signature: '61e74de80655486d11490baa2da96bac8d2f7332b349e7de869f451fe80fb8892ecb69d48bc8d19ee96396bf0c7aeeaffcd84538cd96e600567499ab99f1d7ac',
+      digest: 'SHA-256=11d2c9d7f4ff8a843f567c3ce0982201252c78f7d29501fadfffed68aa49c6c9',
       'x-signature-type': 'ecc'
     },
   },
@@ -121,8 +121,8 @@ exports.payProJsonV2 = {
     body: Buffer.from(bodyV2.bch),
     headers: {
       'x-identity': '1DbY94wCcLRM1Y6RGFg457JyqBbsYxzfiN',
-      signature: '75ca242c4fef58b52afa2787f3032fc881879d9d1f669bea71178ce75aa125091bbe1019310bd483360301204668a42179788e9720be9bf10da1befc9e7b3ad7',
-      digest: 'SHA-256=8175f983e4a6693c8ba01c51e1a3b5f75c1a7f6a2a9222bc0a243882c975b8d8',
+      signature: '754b7fa51be429fe89faf5b72605a39846a433aa44464f178503b2d499d0b6951ae3ffa313c7b175f019aa0f4f94c73be03818840b27743ad88bef56c63171aa',
+      digest: 'SHA-256=512b6acba3fe082ff6486c7d4934fabee3e34d6466501c97351987326f107547',
       'x-signature-type': 'ecc'
     }
   },

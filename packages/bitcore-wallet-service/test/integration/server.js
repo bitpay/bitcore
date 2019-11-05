@@ -3162,15 +3162,17 @@ describe('Wallet service', function() {
               tx.isTemporary().should.equal.true;
               tx.amount.should.equal(helpers.toSatoshi(0.8));
               tx.feePerKb.should.equal(123e2);
-              tx.outputs.should.deep.equal([{
-                toAddress: addressStr,
-                amount: amount,
-              }]);
+              tx.outputs[0].toAddress.should.equal(addressStr);
+              tx.outputs[0].amount.should.equal(amount);
 
               if (coin == 'eth') {
                 tx.gasPrice.should.equal(12300);
-                tx.gasLimit.should.equal('21000');
                 tx.nonce.should.equal('5');
+                tx.outputs.should.deep.equal([{
+                  toAddress: addressStr,
+                  gasLimit: '21000',
+                  amount: amount,
+                }]);
               }
 
               should.not.exist(tx.feeLevel);
@@ -3224,7 +3226,7 @@ describe('Wallet service', function() {
             var txOpts = {
               outputs: [{
                 toAddress: addressStr,
-                amount: 0,
+                amount: -1,
               }],
               feePerKb: 100e2,
             };
@@ -4926,11 +4928,12 @@ describe('#createTX ETH Only tests', () => {
         should.exist(tx);
         tx.outputs.should.deep.equal([{
           toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+          gasLimit: '21000',
           amount: amount,
         }]);
         tx.gasPrice.should.equal(12000000000);
-        tx.gasLimit.should.equal('21000');
-        (tx.gasPrice * tx.gasLimit).should.equal(txOpts.fee);
+        tx.outputs[0].gasLimit.should.equal('21000');
+        (tx.gasPrice * tx.outputs[0].gasLimit).should.equal(txOpts.fee);
         done();
       });
     });
@@ -6112,7 +6115,7 @@ describe('#createTX ETH Only tests', () => {
             should.not.exist(err);
             txp.status.should.equal('accepted');
             // The raw Tx should contain the Signatures.
-            txp.raw.length.should.equal(208);
+            txp.raw.length.should.equal(1);
             txp.txid.should.equal('0xf631c31299a9bbbc955d1e8310f61f8b7b2335b2fa9ca1e4b034911257af63a1');
 
             // Get pending should also contains the raw TX
@@ -6120,7 +6123,7 @@ describe('#createTX ETH Only tests', () => {
               var tx = txs[0];
               should.not.exist(err);
               tx.status.should.equal('accepted');
-              txp.raw.length.should.equal(208);
+              txp.raw.length.should.equal(1);
               done();
             });
           });

@@ -539,8 +539,7 @@ export class WalletService {
       );
     }
 
-    // All ETH wallet are singleAddress
-    if (opts.coin === 'eth') {
+    if (ChainService.isSingleAddress(opts.coin)) {
       opts.singleAddress = true;
     }
 
@@ -678,6 +677,7 @@ export class WalletService {
    * @param {Object} opts
    * @param {Object} opts.includeExtendedInfo - Include PKR info & address managers for wallet & copayers
    * @param {Object} opts.includeServerMessages - Include server messages array
+   * @param {Object} opts.tokenAddress - (Optional) Token contract address to pass in getBalance
    * @returns {Object} status
    */
   getStatus(opts, cb) {
@@ -2318,10 +2318,11 @@ export class WalletService {
   }
 
   _validateAddr(wallet, inaddr, opts) {
-    if (wallet.coin == 'eth') {
+    if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
+      const chain = ChainService.getChain(wallet.coin);
       try {
         Validation.validateAddress(
-          wallet.coin.toUpperCase(),
+          chain,
           wallet.network,  // not really used for ETH. wallet.network is 'livenet/testnet/regtest' in wallet.
           inaddr,
         );
@@ -2370,7 +2371,7 @@ export class WalletService {
       if (
         !_.isNumber(output.amount) ||
         _.isNaN(output.amount) ||
-        output.amount <= 0
+        output.amount < 0
       ) {
         return new ClientError('Invalid amount');
       }
@@ -2550,15 +2551,17 @@ export class WalletService {
     });
   }
 
-  estimateGas(opts, cb) {
+  estimateGas(opts) {
     const bc = this._getBlockchainExplorer(opts.coin, opts.network);
-    if (!bc) return cb(new Error('Could not get blockchain explorer instance'));
-    bc.estimateGas(opts, (err, gasLimit) => {
-      if (err) {
-        this.logw('Error estimating gas limit', err);
-        return cb(err);
-      }
-      return cb(null, gasLimit);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.estimateGas(opts, (err, gasLimit) => {
+        if (err) {
+          this.logw('Error estimating gas limit', err);
+          return reject(err);
+        }
+        return resolve(gasLimit);
+      });
     });
   }
 
@@ -2566,6 +2569,7 @@ export class WalletService {
    * Creates a new transaction proposal.
    * @param {Object} opts
    * @param {string} opts.txProposalId - Optional. If provided it will be used as this TX proposal ID. Should be unique in the scope of the wallet.
+   * @param {String} opts.coin - tx coin.
    * @param {Array} opts.outputs - List of outputs.
    * @param {string} opts.outputs[].toAddress - Destination address.
    * @param {number} opts.outputs[].amount - Amount to transfer in satoshi.
@@ -2596,7 +2600,7 @@ export class WalletService {
     this._runLocked(
       cb,
       (cb) => {
-        let changeAddress, feePerKb, gasPrice, gasLimit;
+        let changeAddress, feePerKb, gasPrice;
         this.getWallet({}, (err, wallet) => {
           if (err) return cb(err);
           if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
@@ -2632,15 +2636,23 @@ export class WalletService {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
                     return next();
 
-                  ({ feePerKb, gasLimit, gasPrice} = await ChainService.getFee(this, wallet, opts));
+                  ({ feePerKb, gasPrice } = await ChainService.getFee(this, wallet, opts));
                   next();
+                },
+                async(next) => {
+                  try {
+                    opts.nonce = await ChainService.getTransactionCount(this, wallet, opts.from);
+                  } catch (error) {
+                    return next(error);
+                  }
+                  return next();
                 },
                 (next) => {
                   const txOpts = {
                     id: opts.txProposalId,
                     walletId: this.walletId,
                     creatorId: this.copayerId,
-                    coin: wallet.coin,
+                    coin: opts.coin || wallet.coin,
                     network: wallet.network,
                     outputs: opts.outputs,
                     message: opts.message,
@@ -2663,23 +2675,15 @@ export class WalletService {
                           ? opts.fee
                           : null,
                     noShuffleOutputs: opts.noShuffleOutputs,
-                    data: opts.data,
                     gasPrice,
-                    gasLimit
+                    nonce: opts.nonce,
+                    tokenAddress: opts.tokenAddress
                   };
                   txp = TxProposal.create(txOpts);
                   next();
                 },
                 (next) => {
                   return ChainService.selectTxInputs(this, txp, wallet, opts, cb, next);
-                },
-                async(next) => {
-                  try {
-                    txp.nonce = await ChainService.getTransactionCount(this, wallet, txp.from);
-                  } catch (error) {
-                    return next(error);
-                  }
-                  return next();
                 },
                 (next) => {
                   if (!changeAddress || wallet.singleAddress || opts.dryRun || opts.changeAddress)
@@ -2752,8 +2756,9 @@ export class WalletService {
           } catch (ex) {
             return cb(ex);
           }
+          const txHash = typeof raw === 'string' ? raw : raw[0];
           const signingKey = this._getSigningKey(
-            raw,
+            txHash,
             opts.proposalSignature,
             copayer.requestPubKeys
           );
@@ -3892,6 +3897,12 @@ export class WalletService {
     let streamData;
     let streamKey;
 
+    let walletId = wallet.id;
+    if (opts.tokenAddress) {
+      wallet.tokenAddress = opts.tokenAddress;
+      walletId = `${wallet.id}-${opts.tokenAddress}`;
+    }
+
     async.series(
       [
         next => {
@@ -3914,7 +3925,7 @@ export class WalletService {
         },
         next => {
           this.storage.getTxHistoryCacheStatusV8(
-            wallet.id,
+            walletId,
             (err, inCacheStatus) => {
               if (err) return cb(err);
               cacheStatus = inCacheStatus;
@@ -3926,13 +3937,13 @@ export class WalletService {
           if (skip == 0 || !streamKey) return next();
 
           log.debug('Checking streamKey/skip', streamKey, skip);
-          this.storage.getTxHistoryStreamV8(wallet.id, (err, result) => {
+          this.storage.getTxHistoryStreamV8(walletId, (err, result) => {
             if (err) return next(err);
             if (!result) return next();
 
             if (result.streamKey != streamKey) {
               log.debug('Deleting old stream cache:' + result.streamKey);
-              return this.storage.clearTxHistoryStreamV8(wallet.id, next);
+              return this.storage.clearTxHistoryStreamV8(walletId, next);
             }
 
             streamData = result.items;
@@ -3956,7 +3967,7 @@ export class WalletService {
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
             const dustThreshold = ChainService.getDustAmountValue(wallet.coin);
-            this._normalizeTxHistory(wallet.id, txs, dustThreshold, bcHeight, (
+            this._normalizeTxHistory(walletId, txs, dustThreshold, bcHeight, (
               err,
               inTxs: any[]
             ) => {
@@ -3973,10 +3984,10 @@ export class WalletService {
                 // only store stream IF cache is been used.
                 //
                 log.info(
-                  `Storing stream cache for ${wallet.id}: ${lastTxs.length} txs`
+                  `Storing stream cache for ${walletId}: ${lastTxs.length} txs`
                 );
                 return this.storage.storeTxHistoryStreamV8(
-                  wallet.id,
+                  walletId,
                   streamKey,
                   lastTxs,
                   next
@@ -4022,7 +4033,7 @@ export class WalletService {
           }
           // Complete result
           this.storage.getTxHistoryCacheV8(
-            this.walletId,
+            walletId,
             skip,
             limit,
             (err, oldTxs) => {
@@ -4071,7 +4082,7 @@ export class WalletService {
 
           const updateHeight = bcHeight - Defaults.CONFIRMATIONS_TO_START_CACHING;
           this.storage.storeTxHistoryCacheV8(
-            this.walletId,
+            walletId,
             cacheStatus.tipIndex,
             txsToCache,
             updateHeight,
@@ -4098,6 +4109,7 @@ export class WalletService {
    * @param {Object} opts
    * @param {Number} opts.skip (defaults to 0)
    * @param {Number} opts.limit
+   * @param {String} opts.tokenAddress ERC20 Token Contract Address
    * @param {Number} opts.includeExtendedInfo[=false] - Include all inputs/outputs for every tx.
    * @returns {TxProposal[]} Transaction proposals, first newer
    */

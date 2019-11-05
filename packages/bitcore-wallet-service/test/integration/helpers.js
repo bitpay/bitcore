@@ -20,6 +20,7 @@ var Bitcore_ = {
   bch: require('bitcore-lib-cash')
 };
 
+var { ChainService } = require('../../ts_build/lib/chain/index');
 var Common = require('../../ts_build/lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
@@ -553,12 +554,26 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
       // For eth => account, 0, change = 0
       const priv =  xpriv.derive('m/0/0').privateKey;
       const privKey = priv.toString('hex');
-      const rawTx = txp.getBitcoreTx().uncheckedSerialize();
-      signatures = [CWC.Transactions.getSignature({
-        chain: 'ETH',
-        tx: rawTx,
-        key: {privKey},
-      })];
+      const tx = txp.getBitcoreTx().uncheckedSerialize();
+      const isERC20 = txp.tokenAddress && !txp.payProUrl;
+      const chain = isERC20 ? 'ERC20' : ChainService.getChain(txp.coin);
+      if (typeof tx === 'string') {
+        signatures = [CWC.Transactions.getSignature({
+          chain,
+          tx,
+          key: { privKey: privKey.toString('hex') },
+        })];
+      } else {
+        signatures = [];
+        for (const rawTx of tx) {
+          const signed = CWC.Transactions.getSignature({
+            chain,
+            tx: rawTx,
+            key: { privKey: privKey.toString('hex') },
+          });
+          signatures.push(signed);
+        }
+      }
       break;
     default:
       _.each(txp.inputs, function(i) {
@@ -583,7 +598,8 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
 
 helpers.getProposalSignatureOpts = function(txp, signingKey) {
   var raw = txp.getRawTx();
-  var proposalSignature = helpers.signMessage(raw, signingKey);
+  const rawHash = typeof raw === 'string' ? raw : raw[0];
+  var proposalSignature = helpers.signMessage(rawHash, signingKey);
 
   return {
     txProposalId: txp.id,

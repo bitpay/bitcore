@@ -345,7 +345,7 @@ export class ExpressApp {
 
     router.get('/v3/wallets/', (req, res) => {
       getServerWithAuth(req, res, (server) => {
-        const opts = { includeExtendedInfo: false, twoStep: false, includeServerMessages: false };
+        const opts = { includeExtendedInfo: false, twoStep: false, includeServerMessages: false, tokenAddress: req.query.tokenAddress };
         if (req.query.includeExtendedInfo == '1')
           opts.includeExtendedInfo = true;
         if (req.query.twoStep == '1') opts.twoStep = true;
@@ -518,9 +518,10 @@ export class ExpressApp {
 
     router.get('/v1/balance/', (req, res) => {
       getServerWithAuth(req, res, (server) => {
-        const opts: { coin?: string; twoStep?: boolean } = {};
+        const opts: { coin?: string; twoStep?: boolean, tokenAddress?: string } = {};
         if (req.query.coin) opts.coin = req.query.coin;
         if (req.query.twoStep == '1') opts.twoStep = true;
+        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
         server.getBalance(opts, (err, balance) => {
           if (err) return returnError(err, res, req);
           res.json(balance);
@@ -589,11 +590,13 @@ export class ExpressApp {
     });
 
     router.post('/v3/estimateGas/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
-        server.estimateGas(req.body, (err, gasLimit) => {
-          if (err) return returnError(err, res, req);
+      getServerWithAuth(req, res, async(server) => {
+        try {
+          const gasLimit = await server.estimateGas(req.body);
           res.json(gasLimit);
-        });
+        } catch (err) {
+          returnError(err, res, req);
+        }
       });
     });
 
@@ -729,9 +732,11 @@ export class ExpressApp {
           skip?: number;
           limit?: number;
           includeExtendedInfo?: boolean;
+          tokenAddress?: string;
         } = {};
         if (req.query.skip) opts.skip = +req.query.skip;
         if (req.query.limit) opts.limit = +req.query.limit;
+        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
         if (req.query.includeExtendedInfo == '1')
           opts.includeExtendedInfo = true;
 

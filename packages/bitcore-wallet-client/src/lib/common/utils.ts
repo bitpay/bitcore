@@ -23,6 +23,14 @@ var crypto = Bitcore.crypto;
 let SJCL = {};
 
 export class Utils {
+  static getChain(coin: string): string {
+    let normalizedChain = coin.toUpperCase();
+    if (Constants.ERC20.includes(coin)) {
+      normalizedChain = 'ETH';
+    }
+    return normalizedChain;
+  }
+
   static encryptMessage(message, encryptingKey) {
     var key = sjcl.codec.base64.toBits(encryptingKey);
     return sjcl.encrypt(
@@ -194,8 +202,10 @@ export class Utils {
     // this was introduced because we allowed coin = 0' wallets for BCH
     // for the  "wallet duplication" feature
     // now it is effective for all coins.
-   
-    var str = coin == 'btc' ? xpub : coin + xpub;
+
+    const chain = this.getChain(coin).toLowerCase();
+    var str = chain == 'btc' ? xpub : chain + xpub;
+
     var hash = sjcl.hash.sha256.hash(str);
     return sjcl.codec.hex.fromBits(hash);
   }
@@ -322,13 +332,30 @@ export class Utils {
 
       return t;
     } else {
-      const { outputs, amount } = txp;
-      const rawTx = Transactions.create({
-        ...txp,
-        chain: coin.toUpperCase(),
-        recipients: [{ address: outputs[0].toAddress, amount }]
+      const { outputs, tokenAddress } = txp;
+      const txOutputs = outputs.map(output => {
+        return {
+          amount: output.amount,
+          address: output.toAddress,
+          data: output.data,
+          gasLimit: output.gasLimit
+        };
       });
-      return { uncheckedSerialize: () => rawTx };
+      const unsignedTxs = [];
+      const isERC20 = tokenAddress && !txp.payProUrl;
+      const chain = isERC20 ? 'ERC20' : this.getChain(coin);
+      for (let index = 0; index < txOutputs.length; index++) {
+        const rawTx = Transactions.create({
+          ...txp,
+          chain,
+          data: txOutputs[index].data,
+          gasLimit: txOutputs[index].gasLimit,
+          nonce: Number(txp.nonce) + Number(index),
+          recipients: [txOutputs[index]]
+        });
+        unsignedTxs.push(rawTx);
+      }
+      return { uncheckedSerialize: () => unsignedTxs };
     }
   }
 }
