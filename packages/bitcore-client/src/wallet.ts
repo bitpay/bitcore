@@ -368,7 +368,7 @@ export class Wallet {
       this.chain,
       this.network,
       this.unlocked.masterKey,
-      this.addressIndex,
+      this.addressIndex || 0,
       isChange
     );
     return keyToImport;

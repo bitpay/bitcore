@@ -16,11 +16,11 @@ program
   .option('--path [path]', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
-function derivePrivateKey(addressIndex, isChange, key) {
+/*function derivePrivateKey(addressIndex, isChange, key) {
   const changeNum = isChange ? 1 : 0;
   const path = `m/${changeNum}/${addressIndex}`;
   return key.derive(path);
-}
+}*/
 
 const main = async () => {
   const { name, path, gap=20, change=false } = program;
@@ -30,7 +30,6 @@ const main = async () => {
     wallet = await Wallet.loadWallet({ name, path });
     wallet = await wallet.unlock(password);
 
-    const { chain, network } = wallet;
     let unusedAddressCounter = 0;
 
     let index = 0;
@@ -39,13 +38,10 @@ const main = async () => {
       index = wallet.changeAddressIndex || 0;
     }
 
-    const xprivkey = wallet.unlocked.masterKey.xprivkey;
-    const HDPrivateKey = new bitcoreLibs[chain].HDPrivateKey(xprivkey);
-
     while (unusedAddressCounter < gap) {
-      const derived = derivePrivateKey(index, change, HDPrivateKey);
-      const privKey = derived.privateKey.toString();
-      const address = derived.privateKey.toAddress(network).toString(true);
+      const derived = await wallet.derivePrivateKey(change); // derivePrivateKey(index, change, HDPrivateKey);
+      const privKey = derived.privKey;
+      const address = derived.address;
       await wallet.importKeys({ keys: [{ privKey, address }] });
 
       const hasTransactions = await wallet.client.getAddressTxos({ address });
