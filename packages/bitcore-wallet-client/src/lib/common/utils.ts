@@ -371,7 +371,7 @@ export class Utils {
         const rawTx = Transactions.create({
           ...txp,
           chain,
-          data: txOutputs[index].data,
+          data: txOutputs[index].data || txp.data,
           gasLimit: txOutputs[index].gasLimit,
           nonce: Number(txp.nonce) + Number(index),
           recipients: [txOutputs[index]]

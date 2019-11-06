@@ -131,7 +131,7 @@ export class EthChain implements IChain {
 
         const gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
         opts.fee = feePerKb * gasLimit;
-        return resolve({ feePerKb, gasPrice });
+        return resolve({ feePerKb, gasPrice, gasLimit });
       });
     });
   }
@@ -152,7 +152,7 @@ export class EthChain implements IChain {
       const rawTx = Transactions.create({
         ...txp,
         chain,
-        data: outputs[index].data,
+        data: outputs[index].data || txp.data,
         gasLimit: outputs[index].gasLimit,
         nonce: Number(txp.nonce) + Number(index),
         recipients: [outputs[index]]

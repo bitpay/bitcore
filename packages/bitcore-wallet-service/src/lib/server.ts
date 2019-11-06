@@ -2596,7 +2596,7 @@ export class WalletService {
     this._runLocked(
       cb,
       (cb) => {
-        let changeAddress, feePerKb, gasPrice;
+        let changeAddress, feePerKb, gasPrice, gasLimit;
         this.getWallet({}, (err, wallet) => {
           if (err) return cb(err);
           if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
@@ -2632,7 +2632,7 @@ export class WalletService {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
                     return next();
 
-                  ({ feePerKb, gasPrice } = await ChainService.getFee(this, wallet, opts));
+                  ({ feePerKb, gasPrice, gasLimit } = await ChainService.getFee(this, wallet, opts));
                   next();
                 },
                 async (next) => {
@@ -2673,6 +2673,8 @@ export class WalletService {
                     noShuffleOutputs: opts.noShuffleOutputs,
                     gasPrice,
                     nonce: opts.nonce,
+                    gasLimit, // Backward compatibility for BWC < v7.1.1
+                    data: opts.data, // Backward compatibility for BWC < v7.1.1
                     tokenAddress: opts.tokenAddress
                   };
                   txp = TxProposal.create(txOpts);
