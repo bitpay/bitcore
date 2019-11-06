@@ -4,7 +4,7 @@
   <ion-grid class="page-content-grid-desktop">
         <ion-row>
             <ion-col col-12 class="page-content" *ngIf="currentView === 'blocks'">
-                <div class="charts-container">
+                <!-- <div class="charts-container">
                     <div class="tx-chart-container">   
                         <h2 class="content-container--heading"> Txs Per Day</h2>
                         <div class="daily-tx-chart">
@@ -24,7 +24,7 @@
                             <price-chart #priceChart> </price-chart>
                         </div>
                     </div>
-                </div>
+                </div> -->
                 <h2 class="content-container--heading">Latest Blocks</h2>
                 <latest-blocks [showTimeAs]="'age'" [showAllBlocksButton]="true" [chainNetwork]="chainNetwork" #latestBlocks>
                 </latest-blocks>
