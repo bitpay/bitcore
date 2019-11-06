@@ -2756,9 +2756,8 @@ export class WalletService {
           } catch (ex) {
             return cb(ex);
           }
-          const txHash = typeof raw === 'string' ? raw : raw[0];
           const signingKey = this._getSigningKey(
-            txHash,
+            raw,
             opts.proposalSignature,
             copayer.requestPubKeys
           );

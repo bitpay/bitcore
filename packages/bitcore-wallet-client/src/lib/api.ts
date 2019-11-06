@@ -1345,10 +1345,9 @@ export class API extends EventEmitter {
 
     var t = Utils.buildTx(opts.txp);
     var hash = t.uncheckedSerialize();
-    const txHash = typeof hash === 'string' ? hash : hash[0];
     var args = {
       proposalSignature: Utils.signMessage(
-        txHash,
+        hash,
         this.credentials.requestPrivKey
       )
     };

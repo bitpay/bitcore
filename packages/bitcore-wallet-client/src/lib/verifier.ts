@@ -154,9 +154,8 @@ export class Verifier {
       throw new Error('Transaction proposal not supported');
     }
 
-    const txHash = typeof hash === 'string' ? hash : hash[0];
-    log.debug('Regenerating & verifying tx proposal hash -> Hash: ', txHash, ' Signature: ', txp.proposalSignature);
-    if (!Utils.verifyMessage(txHash, txp.proposalSignature, creatorSigningPubKey))
+    log.debug('Regenerating & verifying tx proposal hash -> Hash: ', hash, ' Signature: ', txp.proposalSignature);
+    if (!Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
       return false;
 
     if (Constants.UTXO_COINS.includes(txp.coin) &&  !this.checkAddress(credentials, txp.changeAddress))
