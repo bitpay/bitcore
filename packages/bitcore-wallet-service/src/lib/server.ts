@@ -2368,11 +2368,7 @@ export class WalletService {
         return new ClientError('Argument missing in output #' + (i + 1) + '.');
       }
 
-      if (
-        !_.isNumber(output.amount) ||
-        _.isNaN(output.amount) ||
-        output.amount < 0
-      ) {
+      if (!ChainService.checkValidTxAmount(wallet.coin, output)) {
         return new ClientError('Invalid amount');
       }
 

@@ -410,25 +410,17 @@ export class Key {
       const privKey = xpriv.deriveChild(addressPath).privateKey;
       const tx = t.uncheckedSerialize();
       const chain = Utils.getChain(txp.coin);
-      if (typeof tx === 'string') {
-        const signature = Transactions.getSignature({
+      const txArray = _.isArray(tx) ? tx : [tx];
+      let signatures = [];
+      for (const rawTx of txArray) {
+        const signed = Transactions.getSignature({
           chain,
-          tx,
+          tx: rawTx,
           key: { privKey: privKey.toString('hex') },
         });
-        return [signature];
-      } else {
-        let signatures = [];
-        for (const rawTx of tx) {
-          const signed = Transactions.getSignature({
-            chain,
-            tx: rawTx,
-            key: { privKey: privKey.toString('hex') },
-          });
-          signatures.push(signed);
-        }
-        return signatures;
+        signatures.push(signed);
       }
+      return signatures;
     }
   };
 }

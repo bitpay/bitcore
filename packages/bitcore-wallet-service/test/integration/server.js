@@ -3229,23 +3229,40 @@ describe('Wallet service', function() {
               });
             });
           });
-
-         it('should fail to create tx for invalid amount', function(done) {
-            var txOpts = {
-              outputs: [{
-                toAddress: addressStr,
-                amount: -1,
-              }],
-              feePerKb: 100e2,
-            };
-            txOpts = Object.assign(txOpts, flags);
-            server.createTx(txOpts, function(err, tx) {
-              should.not.exist(tx);
-              should.exist(err);
-              err.message.should.equal('Invalid amount');
-              done();
+          if (coin === 'btc' || coin === 'bch') {
+            it('should fail to create BTC/BCH tx for invalid amount', function(done) {
+                var txOpts = {
+                  outputs: [{
+                    toAddress: addressStr,
+                    amount: 0,
+                  }],
+                  feePerKb: 100e2,
+                };
+                txOpts = Object.assign(txOpts, flags);
+                server.createTx(txOpts, function(err, tx) {
+                  should.not.exist(tx);
+                  should.exist(err);
+                  err.message.should.equal('Invalid amount');
+                  done();
+                });
+              });
+          } else if (coin === 'eth') {
+            it('should not fail to create ETH chain based tx for 0 amount', function(done) {
+              var txOpts = {
+                outputs: [{
+                  toAddress: addressStr,
+                  amount: 0,
+                }],
+                feePerKb: 2000000000,
+              };
+              txOpts = Object.assign(txOpts, flags);
+              server.createTx(txOpts, function(err, tx) {
+                should.not.exist(err);
+                should.exist(tx);
+                done();
+              });
             });
-          });
+          }
           it('should fail to specify both feeLevel & feePerKb', function(done) {
             helpers.stubUtxos(server, wallet, 2, function() {
               var txOpts = {
@@ -6127,6 +6144,9 @@ describe('#createTX ETH Only tests', () => {
             should.not.exist(err);
             txp.status.should.equal('accepted');
             // The raw Tx should contain the Signatures.
+            // Raw hash String
+            txp.raw[0].length.should.equal(208);
+            // Array length of 1
             txp.raw.length.should.equal(1);
             txp.txid.should.equal('0xf631c31299a9bbbc955d1e8310f61f8b7b2335b2fa9ca1e4b034911257af63a1');
 
@@ -6135,6 +6155,9 @@ describe('#createTX ETH Only tests', () => {
               var tx = txs[0];
               should.not.exist(err);
               tx.status.should.equal('accepted');
+              // Raw hash String
+              txp.raw[0].length.should.equal(208);
+              // Array length of 1
               txp.raw.length.should.equal(1);
               done();
             });
