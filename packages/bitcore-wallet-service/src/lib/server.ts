@@ -3896,10 +3896,10 @@ export class WalletService {
     let streamData;
     let streamKey;
 
-    let walletId = wallet.id;
+    let walletCacheKey = wallet.id;
     if (opts.tokenAddress) {
       wallet.tokenAddress = opts.tokenAddress;
-      walletId = `${wallet.id}-${opts.tokenAddress}`;
+      walletCacheKey = `${wallet.id}-${opts.tokenAddress}`;
     }
 
     async.series(
@@ -3924,7 +3924,7 @@ export class WalletService {
         },
         next => {
           this.storage.getTxHistoryCacheStatusV8(
-            walletId,
+            walletCacheKey,
             (err, inCacheStatus) => {
               if (err) return cb(err);
               cacheStatus = inCacheStatus;
@@ -3936,13 +3936,13 @@ export class WalletService {
           if (skip == 0 || !streamKey) return next();
 
           log.debug('Checking streamKey/skip', streamKey, skip);
-          this.storage.getTxHistoryStreamV8(walletId, (err, result) => {
+          this.storage.getTxHistoryStreamV8(walletCacheKey, (err, result) => {
             if (err) return next(err);
             if (!result) return next();
 
             if (result.streamKey != streamKey) {
               log.debug('Deleting old stream cache:' + result.streamKey);
-              return this.storage.clearTxHistoryStreamV8(walletId, next);
+              return this.storage.clearTxHistoryStreamV8(walletCacheKey, next);
             }
 
             streamData = result.items;
@@ -3966,7 +3966,7 @@ export class WalletService {
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
             const dustThreshold = ChainService.getDustAmountValue(wallet.coin);
-            this._normalizeTxHistory(walletId, txs, dustThreshold, bcHeight, (
+            this._normalizeTxHistory(walletCacheKey, txs, dustThreshold, bcHeight, (
               err,
               inTxs: any[]
             ) => {
@@ -3983,10 +3983,10 @@ export class WalletService {
                 // only store stream IF cache is been used.
                 //
                 log.info(
-                  `Storing stream cache for ${walletId}: ${lastTxs.length} txs`
+                  `Storing stream cache for ${walletCacheKey}: ${lastTxs.length} txs`
                 );
                 return this.storage.storeTxHistoryStreamV8(
-                  walletId,
+                  walletCacheKey,
                   streamKey,
                   lastTxs,
                   next
@@ -4032,7 +4032,7 @@ export class WalletService {
           }
           // Complete result
           this.storage.getTxHistoryCacheV8(
-            walletId,
+            walletCacheKey,
             skip,
             limit,
             (err, oldTxs) => {
@@ -4081,7 +4081,7 @@ export class WalletService {
 
           const updateHeight = bcHeight - Defaults.CONFIRMATIONS_TO_START_CACHING;
           this.storage.storeTxHistoryCacheV8(
-            walletId,
+            walletCacheKey,
             cacheStatus.tipIndex,
             txsToCache,
             updateHeight,

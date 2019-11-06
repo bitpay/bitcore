@@ -91,7 +91,7 @@ helpers.beforeEach = function(cb) {
   let be = blockchainExplorer;
   be.register = sinon.stub().callsArgWith(1, null, null);
   be.addAddresses = sinon.stub().callsArgWith(2, null, null);
- 
+
   // TODO
   const collections = {
     WALLETS: 'wallets',
@@ -244,7 +244,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     network: opts.network || 'livenet',
     nativeCashAddr: opts.nativeCashAddr,
   };
-  
+
   if (_.isBoolean(opts.supportBIP44AndP2PKH))
     walletOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
 
@@ -255,7 +255,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
       var copayerData = TestData.copayers[i + offset];
 
 
-    var pub = (_.isBoolean(opts.supportBIP44AndP2PKH) && !opts.supportBIP44AndP2PKH) ? copayerData.xPubKey_45H : copayerData.xPubKey_44H_0H_0H;
+      var pub = (_.isBoolean(opts.supportBIP44AndP2PKH) && !opts.supportBIP44AndP2PKH) ? copayerData.xPubKey_45H : copayerData.xPubKey_44H_0H_0H;
 
       if (opts.network == 'testnet') {
         if (opts.coin == 'btc' || opts.coin == 'bch') {
@@ -549,30 +549,23 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
   var xpriv = new Bitcore.HDPrivateKey(derivedXPrivKey, txp.network);
 
   switch(txp.coin) {
-    case 'eth': 
+    case 'eth':
 
       // For eth => account, 0, change = 0
       const priv =  xpriv.derive('m/0/0').privateKey;
       const privKey = priv.toString('hex');
-      const tx = txp.getBitcoreTx().uncheckedSerialize();
+      let tx = txp.getBitcoreTx().uncheckedSerialize();
       const isERC20 = txp.tokenAddress && !txp.payProUrl;
       const chain = isERC20 ? 'ERC20' : ChainService.getChain(txp.coin);
-      if (typeof tx === 'string') {
-        signatures = [CWC.Transactions.getSignature({
+      tx = typeof tx === 'string'? [tx] : tx;
+      signatures = [];
+      for (const rawTx of tx) {
+        const signed = CWC.Transactions.getSignature({
           chain,
-          tx,
+          tx: rawTx,
           key: { privKey: privKey.toString('hex') },
-        })];
-      } else {
-        signatures = [];
-        for (const rawTx of tx) {
-          const signed = CWC.Transactions.getSignature({
-            chain,
-            tx: rawTx,
-            key: { privKey: privKey.toString('hex') },
-          });
-          signatures.push(signed);
-        }
+        });
+        signatures.push(signed);
       }
       break;
     default:
