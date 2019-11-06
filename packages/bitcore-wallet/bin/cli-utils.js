@@ -2,7 +2,7 @@ var _ = require('lodash');
 var url = require('url');
 var read = require('read')
 var log = require('npmlog');
-var Client = require('bitcore-wallet-client');
+var Client = require('bitcore-wallet-client').default;
 var FileStorage = require('./filestorage');
 var sjcl = require('sjcl');
 
@@ -58,7 +58,9 @@ Utils.doLoad = function(client, doNotComplete, walletData, password, filename, c
   }
 
   try {
-    client.import(walletData);
+    walletData = JSON.parse(walletData);
+    let imported = Client.upgradeCredentialsV1(walletData);
+    client.fromString(JSON.stringify(imported.credentials));
   } catch (e) {
     die('Corrupt wallet file.');
   };
@@ -93,14 +95,14 @@ Utils.getClient = function(args, opts, cb) {
   opts = opts || {};
 
   var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
-  var host = args.host || process.env['BWS_HOST'] || 'https://bws.bitpay.com/';
+  var host = args.host || 'https://bws.bitpay.com/';
 
   var storage = new FileStorage({
     filename: filename,
   });
 
   var client = new Client({
-    baseUrl: url.resolve(host, '/bws/api'),
+    baseUrl: process.env['BWS_HOST'] || url.resolve(host, '/bws/api'),
     verbose: args.verbose,
     supportStaffWalletId: opts.walletId,
     timeout: 20 * 60 * 1000,
@@ -133,6 +135,7 @@ Utils.getClient = function(args, opts, cb) {
     if (json.ct) {
       Utils.loadEncrypted(client, opts, walletData, filename, cb);
     } else {
+
       Utils.doLoad(client, opts.doNotComplete, walletData, null, filename, cb);
     }
   });
@@ -227,7 +230,7 @@ Utils.UNITS2 = {
   'sat': 1,
 };
 
-Utils.parseAmount = function(text) {
+Utils.parseAmount = function(text, coin) {
   if (!_.isString(text))
     text = text.toString();
 
@@ -290,6 +293,13 @@ Utils.COIN = {
     maxDecimals: 8,
     minDecimals: 8,
   },
+  eth: {
+    name: 'eth',
+    toSatoshis: 1e18,
+    maxDecimals: 8,
+    minDecimals: 8,
+  },
+ 
  
 };
 
