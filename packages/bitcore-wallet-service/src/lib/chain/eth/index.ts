@@ -211,6 +211,17 @@ export class EthChain implements IChain {
 
   checkUtxos(opts) {}
 
+  checkValidTxAmount(output): boolean {
+    if (
+      !_.isNumber(output.amount) ||
+      _.isNaN(output.amount) ||
+      output.amount < 0
+    ) {
+      return false;
+    }
+    return true;
+  }
+
   setInputs() {}
 
   isUTXOCoin() {

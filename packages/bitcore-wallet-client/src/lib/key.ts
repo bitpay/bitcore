@@ -417,12 +417,13 @@ export class Key {
       let tx = t.uncheckedSerialize();
       tx = typeof tx === 'string' ? [tx] : tx;
       const chain = Utils.getChain(txp.coin);
+      const txArray = _.isArray(tx) ? tx : [tx];
       let signatures = [];
-      for (const rawTx of tx) {
+      for (const rawTx of txArray) {
         const signed = Transactions.getSignature({
           chain,
           tx: rawTx,
-          key: { privKey: privKey.toString('hex') }
+          key: { privKey: privKey.toString('hex') },
         });
         signatures.push(signed);
       }

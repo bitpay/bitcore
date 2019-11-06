@@ -333,6 +333,17 @@ export class BtcChain implements IChain {
     if (_.isNumber(opts.fee) && _.isEmpty(opts.inputs)) return true;
   }
 
+  checkValidTxAmount(output): boolean {
+    if (
+      !_.isNumber(output.amount) ||
+      _.isNaN(output.amount) ||
+      output.amount <= 0
+    ) {
+      return false;
+    }
+    return true;
+  }
+
   setInputs(info) {
     return info.inputs;
   }
