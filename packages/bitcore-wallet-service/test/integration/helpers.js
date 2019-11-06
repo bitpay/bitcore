@@ -140,9 +140,10 @@ helpers.getStorage = function() {
   return storage;
 };
 
-helpers.signMessage = function(text, privKey) {
+helpers.signMessage = function(message, privKey) {
   var priv = new Bitcore.PrivateKey(privKey);
-  var hash = Utils.hashMessage(text);
+  const flattenedMessage = _.isArray(message)? _.join(message) : message;
+  var hash = Utils.hashMessage(flattenedMessage);
   return Bitcore.crypto.ECDSA.sign(hash, priv, 'little').toString();
 };
 
@@ -591,8 +592,7 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
 
 helpers.getProposalSignatureOpts = function(txp, signingKey) {
   var raw = txp.getRawTx();
-  const rawHash = typeof raw === 'string' ? raw : raw[0];
-  var proposalSignature = helpers.signMessage(rawHash, signingKey);
+  var proposalSignature = helpers.signMessage(raw, signingKey);
 
   return {
     txProposalId: txp.id,
