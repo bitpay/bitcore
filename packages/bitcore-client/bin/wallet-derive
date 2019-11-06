@@ -14,6 +14,7 @@ program
   .option('--gap [gap]', 'optional - Number of addresses to derive (will derive that many change addresses too)')
   .option('--change [change]', 'optional - should derive change addresses')
   .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--dbName [dbName]', 'optional - name of the database to use (default Level)')
   .parse(process.argv);
 
 function derivePrivateKey(addressIndex, isChange, key) {
@@ -23,11 +24,11 @@ function derivePrivateKey(addressIndex, isChange, key) {
 }
 
 const main = async () => {
-  const { name, path, gap=20, change=false } = program;
+  const { name, path, gap=20, change=false, dbName } = program;
   let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
-    wallet = await Wallet.loadWallet({ name, path });
+    wallet = await Wallet.loadWallet({ name, path, dbName });
     wallet = await wallet.unlock(password);
 
     const { chain, network } = wallet;

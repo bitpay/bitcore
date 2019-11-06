@@ -15,14 +15,15 @@ program
   .option('--fee [fee]', 'optional - custom transaction fee to pay')
   .option('--target [target]', 'optional - custom target block for confirmation')
   .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--dbName [dbName]', 'optional - Name of the database to use (default Level)')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path } = program;
+  const { name, path, dbName } = program;
   let wallet;
   try {
     const { recipients, utxos, change, fee, target } = program;
-    wallet = await Wallet.loadWallet({ name, path });
+    wallet = await Wallet.loadWallet({ name, path, dbName });
 
     const parsedUtxos = utxos.includes('[') ? JSON.parse(utxos) : [];
     const parsedRecipients = recipients.includes('[') ? JSON.parse(recipients) : [];

@@ -9,6 +9,7 @@ try {
     .option('--name <name>', 'REQUIRED - Wallet name')
     .option('--time [time]', 'optional - Get balance at specific time')
     .option('--path [path]', 'optional - Custom wallet storage path')
+    .option('--dbName [dbName]', 'optional - name of the database to use (default level)')
     .parse(process.argv);
 } catch (e) {
   console.log(e.message);
@@ -16,8 +17,8 @@ try {
 }
 
 async function main() {
-  const { name, path, time } = program;
-  const wallet = await Wallet.loadWallet({ name, path });
+  const { name, path, time, dbName } = program;
+  const wallet = await Wallet.loadWallet({ name, path, dbName });
   const balance = await wallet.getBalance(time);
   return Object.assign(balance, {
     currency: wallet.chain,
