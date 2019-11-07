@@ -1,6 +1,18 @@
 $font-path: "../assets/fonts";
 
 @font-face {
+  font-family: Ubuntu;
+  src: url('../assets/fonts/ubuntu.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Heebo';
+  font-weight: 200;
+  font-display: swap;
+  src: url( $font-path + '/Heebo-Thin.ttf');
+}
+
+@font-face {
   font-family: 'Heebo';
   font-weight: 200;
   font-display: swap;

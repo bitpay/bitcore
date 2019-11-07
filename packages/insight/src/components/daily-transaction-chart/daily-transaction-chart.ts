@@ -81,8 +81,9 @@ export class DailyTransactionChartComponent {
 
     const max = (Math.max(...transactionCounts) * 1.05).toFixed();
     const options = {
+      maintainAspectRatio: false,
       legend: {
-        display: true
+        display: false,
       },
       scales: {
         yAxes: [
@@ -121,33 +122,31 @@ export class DailyTransactionChartComponent {
       datasets: [
         {
           fill: true,
-          lineTension: 0.5,
-          backgroundColor: gradient,
-          borderColor: coin.backgroundColor,
-          borderCapStyle: 'round',
-          borderDash: [],
-          borderDashOffset: 0.0,
-          borderJoinStyle: 'round',
-          pointBorderColor: coin.backgroundColor,
-          pointBackgroundColor: coin.backgroundColor,
-          pointBorderWidth: 1,
-          pointHoverRadius: 1,
-          pointHoverBackgroundColor: coin.backgroundColor,
-          pointHoverBorderColor: 'rgba(220,220,220,1)',
-          pointHoverBorderWidth: 1,
-          pointRadius: 1,
+          backgroundColor: 'rgba(69,99,246,0.5)',
+          borderColor: 'rgba(69,99,246,1)',
+          barPercentage: 0.5,
+          barThickness: 6,
+          maxBarThickness: 8,
+          minBarLength: 2,
           data: transactionCounts,
           spanGaps: true,
           responsive: true,
-          label: '# Transactions Confirmed Per Day'
+          label: '# Transactions Per Day',
+          legend: {
+            display: false,
+          }
         }
       ]
     };
 
     this.lineChart = new Chart(this.lineCanvas.nativeElement, {
-      type: 'line',
+      type: 'bar',
       data,
-      options
+      options: {
+        legend: {
+          display: false,
+        }
+      }
     });
   }
 }
