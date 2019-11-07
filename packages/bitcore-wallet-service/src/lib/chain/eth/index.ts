@@ -140,22 +140,26 @@ export class EthChain implements IChain {
     const { data, outputs, payProUrl, tokenAddress } = txp;
     const isERC20 = tokenAddress && !payProUrl;
     const chain = isERC20 ? 'ERC20' : 'ETH';
-    // Convert toAddress to address
-    outputs.forEach(output => {
-        output.address = output.toAddress;
+    const recipients = outputs.map(output => {
+      return {
+        amount: output.amount,
+        address: output.toAddress,
+        data: output.data,
+        gasLimit: output.gasLimit
+      };
     });
     // Backwards compatibility BWC <= 8.9.0
     if (data) {
       outputs[0].data = data;
     }
     const unsignedTxs = [];
-    for (let index = 0; index < outputs.length; index++) {
+    for (let index = 0; index < recipients.length; index++) {
       const rawTx = Transactions.create({
         ...txp,
-        ...outputs[index],
+        ...recipients[index],
         chain,
         nonce: Number(txp.nonce) + Number(index),
-        recipients: [outputs[index]]
+        recipients: [recipients[index]]
       });
       unsignedTxs.push(rawTx);
     }

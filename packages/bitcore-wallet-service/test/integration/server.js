@@ -3177,7 +3177,6 @@ describe('Wallet service', function() {
                 tx.gasPrice.should.equal(12300);
                 tx.nonce.should.equal('5');
                 tx.outputs.should.deep.equal([{
-                  address: addressStr,
                   toAddress: addressStr,
                   gasLimit: 21000,
                   amount: amount,
@@ -4957,7 +4956,6 @@ describe('#createTX ETH Only tests', () => {
         should.not.exist(err);
         should.exist(tx);
         tx.outputs.should.deep.equal([{
-          address: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
           toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
           gasLimit: 21000,
           amount: amount,
