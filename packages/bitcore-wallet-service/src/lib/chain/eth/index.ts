@@ -150,7 +150,7 @@ export class EthChain implements IChain {
     });
     // Backwards compatibility BWC <= 8.9.0
     if (data) {
-      outputs[0].data = data;
+      recipients[0].data = data;
     }
     const unsignedTxs = [];
     for (let index = 0; index < recipients.length; index++) {

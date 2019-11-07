@@ -355,7 +355,7 @@ export class Utils {
 
       return t;
     } else {
-      const { data, outputs, payProUrl, tokenAddress } = txp;      
+      const { data, outputs, payProUrl, tokenAddress } = txp;
       const recipients = outputs.map(output => {
         return {
           amount: output.amount,
@@ -366,7 +366,7 @@ export class Utils {
       });
       // Backwards compatibility BWC <= 8.9.0
       if (data) {
-        outputs[0].data = data;
+        recipients[0].data = data;
       }
       const unsignedTxs = [];
       const isERC20 = tokenAddress && !payProUrl;

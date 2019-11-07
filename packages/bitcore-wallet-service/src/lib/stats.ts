@@ -97,7 +97,7 @@ export class Stats {
           return cb(null, moment(lastRecord[0]._id.day));
         });
     };
-    const updateStats = async(from, cb) => {
+    const updateStats = async (from, cb) => {
       const to = moment()
         .subtract(1, 'day')
         .endOf('day');
@@ -209,7 +209,7 @@ export class Stats {
           return cb(null, moment(lastRecord[0]._id.day));
         });
     };
-    const updateStats = async(from, cb) => {
+    const updateStats = async (from, cb) => {
       const to = moment()
         .subtract(1, 'day')
         .endOf('day');
