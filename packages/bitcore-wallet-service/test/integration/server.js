@@ -1423,7 +1423,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('#createAddress', function() {
+  describe.only('#createAddress', function() {
     var server, wallet;
 
     describe('shared wallets (BIP44)', function() {
@@ -1660,6 +1660,64 @@ describe('Wallet service', function() {
       });
     });
 
+    describe.only('1-1 wallet (BIP44/BCH)', function() {
+      beforeEach(function(done) {
+        helpers.createAndJoinWallet(1, 1, {
+          coin: 'bch',
+        }, function(s, w) {
+          server = s;
+          wallet = w;
+          done();
+        });
+      });
+
+      it('should create address', function(done) {
+        server.createAddress({}, function(err, address) {
+          should.not.exist(err);
+          should.exist(address);
+          address.walletId.should.equal(wallet.id);
+          address.network.should.equal('livenet');
+          address.address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
+          address.isChange.should.be.false;
+          address.path.should.equal('m/0/0');
+          address.type.should.equal('P2PKH');
+          address.coin.should.equal('bch');
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var notif = _.find(notifications, {
+              type: 'NewAddress'
+            });
+            should.exist(notif);
+            notif.data.address.should.equal(address.address);
+            done();
+          });
+        });
+      });
+
+
+      it('should create address (no cash addr)', function(done) {
+        server.createAddress({noCashAddr:true}, function(err, address) {
+          should.not.exist(err);
+          should.exist(address);
+          address.walletId.should.equal(wallet.id);
+          address.network.should.equal('livenet');
+          address.address.should.equal('CbWsiNjh18ynQYc5jfYhhespEGrAaW8YUq');
+          address.isChange.should.be.false;
+          address.path.should.equal('m/0/0');
+          address.type.should.equal('P2PKH');
+          address.coin.should.equal('bch');
+          server.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var notif = _.find(notifications, {
+              type: 'NewAddress'
+            });
+            should.exist(notif);
+            notif.data.address.should.equal(address.address);
+            done();
+          });
+        });
+      });
+    });
 
     describe('1-1 wallet (BIP44/BCH/Testnet)', function() {
       beforeEach(function(done) {
@@ -4979,7 +5037,9 @@ describe('#createTX ETH Only tests', () => {
             tx.feePerKb.should.equal(123e2);
             should.not.exist(tx.feeLevel);
             var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
-            s.publishTx(publishOpts, function(err) {
+            publishOpts.noCashAddr = true;
+            s.publishTx(publishOpts, function(err, txp) {
+              txp.changeAddress.address.should.equal('CWwtFMy3GMr5qMEtvEdUDjePfShzkJXCnh');
               s.getPendingTxs({ noCashAddr: true }, function(err, txs) {
                 should.not.exist(err);
                 txs.length.should.equal(1);
@@ -5035,7 +5095,8 @@ describe('#createTX ETH Only tests', () => {
             should.not.exist(tx.feeLevel);
 
             var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
-            s.publishTx(publishOpts, function(err) {
+            s.publishTx(publishOpts, function(err, txp) {
+              txp.changeAddress.address.should.equal('CWwtFMy3GMr5qMEtvEdUDjePfShzkJXCnh');
               s.getPendingTxs({ noCashAddr: true }, function(err, txs) {
 
                 should.not.exist(err);

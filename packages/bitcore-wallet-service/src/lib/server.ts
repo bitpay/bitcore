@@ -1346,6 +1346,15 @@ export class WalletService {
         return cb('Bad xPub');
       }
 
+
+      if (wallet.coin == 'bch' && opts.noCashAddr) {
+        address.address = BCHAddressTranslator.translate(
+          address.address,
+          'copay'
+        );
+      }
+
+
       this._store(
         wallet,
         address,
@@ -1413,13 +1422,6 @@ export class WalletService {
               return createFn(wallet, (err, address) => {
                 if (err) {
                   return cb(err);
-                }
-
-                if (wallet.coin == 'bch' && opts.noCashAddr) {
-                  address.address = BCHAddressTranslator.translate(
-                    address.address,
-                    'copay'
-                  );
                 }
                 return cb(err, address);
               });
