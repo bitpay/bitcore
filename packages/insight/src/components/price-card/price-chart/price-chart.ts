@@ -1,6 +1,6 @@
 import { Component, Input, ViewChild } from '@angular/core';
 import * as Chart from 'chart.js';
-import { Nav, NavParams, Events } from 'ionic-angular';
+import { Events, Nav, NavParams } from 'ionic-angular';
 import * as _ from 'lodash';
 import { ApiProvider, ChainNetwork } from '../../../providers/api/api';
 import { CurrencyProvider } from '../../../providers/currency/currency';
