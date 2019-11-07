@@ -425,15 +425,13 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     const { chain, network, rawTx } = params;
-    return new Promise((resolve, reject) => {
-      this.getRPC(chain, network).sendTransaction(rawTx, (err: any, result: any) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result);
-        }
-      });
-    });
+    const txids = new Array<string>();
+    const rawTxs = typeof rawTx === 'string' ? [rawTx] : rawTx;
+    for (const tx of rawTxs) {
+      const txid = await this.getRPC(chain, network).sendTransaction(tx);
+      txids.push(txid);
+    }
+    return txids.length === 1 ? txids[0] : txids;
   }
 
   async getCoinsForTx({ chain, network, txid }: { chain: string; network: string; txid: string }) {

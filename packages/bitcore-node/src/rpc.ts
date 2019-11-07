@@ -39,8 +39,8 @@ export class RPC {
     );
   }
 
-  async asyncCall(method: string, params: any[]) {
-    return new Promise((resolve, reject) => {
+  async asyncCall<T>(method: string, params: any[]) {
+    return new Promise<T>((resolve, reject) => {
       this.callMethod(method, params, (err, data) => {
         if (err) {
           return reject(err);
@@ -50,59 +50,52 @@ export class RPC {
     });
   }
 
-  getChainTip(callback: CallbackType) {
-    this.callMethod('getchaintips', [], (err, result) => {
-      if (err) {
-        return callback(err);
-      }
-      return callback(null, result[0]);
-    });
+  async getChainTip() {
+    const tips = await this.asyncCall<{
+      height: number;
+      hash: string;
+      branchlen: number;
+      status: string;
+    }>('getchaintips', []);
+    return tips[0];
   }
 
-  getBestBlockHash(callback: CallbackType) {
-    this.callMethod('getbestblockhash', [], callback);
+  getBestBlockHash() {
+    return this.asyncCall('getbestblockhash', []);
   }
 
-  getBlockHeight(callback: CallbackType) {
-    this.callMethod('getblockcount', [], callback);
+  getBlockHeight() {
+    return this.asyncCall('getblockcount', []);
   }
 
-  getBlock(hash: string, verbose: boolean, callback: CallbackType) {
-    this.callMethod('getblock', [hash, verbose], callback);
+  getBlock(hash: string, verbose: boolean) {
+    return this.asyncCall('getblock', [hash, verbose]);
   }
 
-  getBlockHash(height: number, callback: CallbackType) {
-    this.callMethod('getblockhash', [height], callback);
+  getBlockHash(height: number) {
+    return this.asyncCall<string>('getblockhash', [height]);
   }
 
-  getBlockByHeight(height: number, callback: CallbackType) {
-    this.getBlockHash(height, (err, hash) => {
-      if (err) {
-        return callback(err);
-      }
-      this.getBlock(hash, false, callback);
-    });
+  async getBlockByHeight(height: number) {
+    const hash = await this.getBlockHash(height);
+    return this.getBlock(hash, false);
   }
 
-  getTransaction(txid: string, callback: CallbackType) {
-    this.callMethod('getrawtransaction', [txid, true], (err, result) => {
-      if (err) {
-        return callback(err);
-      }
-      return callback(null, result);
-    });
+  getTransaction(txid: string) {
+    return this.asyncCall('getrawtransaction', [txid, true]);
   }
 
-  sendTransaction(rawTx: string, callback: CallbackType) {
-    this.callMethod('sendrawtransaction', [rawTx], callback);
+  sendTransaction(rawTx: string | Array<string>) {
+    const txs = typeof rawTx === 'string' ? [rawTx] : rawTx;
+    return this.asyncCall<string>('sendrawtransaction', txs);
   }
 
-  decodeScript(hex: string, callback: CallbackType) {
-    this.callMethod('decodescript', [hex], callback);
+  decodeScript(hex: string) {
+    return this.asyncCall('decodescript', [hex]);
   }
 
-  getWalletAddresses(account: string, callback: CallbackType) {
-    this.callMethod('getaddressesbyaccount', [account], callback);
+  getWalletAddresses(account: string) {
+    return this.asyncCall('getaddressesbyaccount', [account]);
   }
 
   async getEstimateSmartFee(target: number) {
@@ -147,14 +140,13 @@ export class AsyncRPC {
 
   async signrawtx(txs: string): Promise<any> {
     try {
-      const ret =  await this.call('signrawtransactionwithwallet', [txs]);
+      const ret = await this.call('signrawtransactionwithwallet', [txs]);
       return ret;
     } catch (e) {
       if (!e.code || e.code != -32601) return Promise.reject(e);
-      return  await this.call('signrawtransaction', [txs]);
+      return await this.call('signrawtransaction', [txs]);
     }
-  };
-
+  }
 
   async transaction(txid: string, block?: string): Promise<RPCTransaction> {
     const args = [txid, true];
