@@ -1423,7 +1423,7 @@ describe('Wallet service', function() {
     });
   });
 
-  describe.only('#createAddress', function() {
+  describe('#createAddress', function() {
     var server, wallet;
 
     describe('shared wallets (BIP44)', function() {
@@ -1661,7 +1661,7 @@ describe('Wallet service', function() {
     });
 
 
-    describe.only('1-1 wallet (BIP44/BCH)', function() {
+    describe('1-1 wallet (BIP44/BCH)', function() {
       beforeEach(function(done) {
         helpers.createAndJoinWallet(1, 1, {
           coin: 'bch',
