@@ -1346,14 +1346,12 @@ export class WalletService {
         return cb('Bad xPub');
       }
 
-
       if (wallet.coin == 'bch' && opts.noCashAddr) {
         address.address = BCHAddressTranslator.translate(
           address.address,
           'copay'
         );
       }
-
 
       this._store(
         wallet,
