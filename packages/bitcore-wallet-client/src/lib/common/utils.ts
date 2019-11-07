@@ -355,26 +355,25 @@ export class Utils {
 
       return t;
     } else {
-      const { outputs, tokenAddress } = txp;
-      const txOutputs = outputs.map(output => {
-        return {
-          amount: output.amount,
-          address: output.toAddress,
-          data: output.data,
-          gasLimit: output.gasLimit
-        };
+      const { data, outputs, payProUrl, tokenAddress } = txp;
+      // Convert toAddress to address
+      outputs.forEach(output => {
+        output.address = output.toAddress;
       });
+      // Backwards compatibility BWC <= 8.9.0
+      if (data) {
+        outputs[0].data = data;
+      }
       const unsignedTxs = [];
-      const isERC20 = tokenAddress && !txp.payProUrl;
+      const isERC20 = tokenAddress && !payProUrl;
       const chain = isERC20 ? 'ERC20' : this.getChain(coin);
-      for (let index = 0; index < txOutputs.length; index++) {
+      for (let index = 0; index < outputs.length; index++) {
         const rawTx = Transactions.create({
           ...txp,
+          ...outputs[index],
           chain,
-          data: txOutputs[index].data || txp.data,
-          gasLimit: txOutputs[index].gasLimit,
           nonce: Number(txp.nonce) + Number(index),
-          recipients: [txOutputs[index]]
+          recipients: [outputs[index]]
         });
         unsignedTxs.push(rawTx);
       }

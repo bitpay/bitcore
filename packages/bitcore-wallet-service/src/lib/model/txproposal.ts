@@ -62,8 +62,8 @@ export interface ITxProposal {
   lowFees: boolean;
   nonce?: number;
   gasPrice?: number;
-  gasLimit?: number; // Backward compatibility for BWC < 8.9.0
-  data?: string; // Backward compatibility for BWC < 8.9.0
+  gasLimit?: number; // Backward compatibility for BWC <= 8.9.0
+  data?: string; // Backward compatibility for BWC <= 8.9.0
   tokenAddress?: string;
 }
 
@@ -115,8 +115,8 @@ export class TxProposal {
   raw?: Array<string> | string;
   nonce?: number;
   gasPrice?: number;
-  gasLimit?: number; // Backward compatibility for BWC < 8.9.0
-  data?: string; // Backward compatibility for BWC < 8.9.0
+  gasLimit?: number; // Backward compatibility for BWC <= 8.9.0
+  data?: string; // Backward compatibility for BWC <= 8.9.0
   tokenAddress?: string;
 
   static create(opts) {
@@ -177,8 +177,8 @@ export class TxProposal {
     x.gasPrice = opts.gasPrice;
     x.from = opts.from;
     x.nonce = opts.nonce;
-    x.gasLimit = opts.gasLimit; // Backward compatibility for BWC < 8.9.0
-    x.data = opts.data; // Backward compatibility for BWC < 8.9.0
+    x.gasLimit = opts.gasLimit; // Backward compatibility for BWC <= 8.9.0
+    x.data = opts.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = opts.tokenAddress;
 
     return x;
@@ -230,8 +230,8 @@ export class TxProposal {
     x.gasPrice = obj.gasPrice;
     x.from = obj.from;
     x.nonce = obj.nonce;
-    x.gasLimit = obj.gasLimit; // Backward compatibility for BWC < 8.9.0
-    x.data = obj.data; // Backward compatibility for BWC < 8.9.0
+    x.gasLimit = obj.gasLimit; // Backward compatibility for BWC <= 8.9.0
+    x.data = obj.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = obj.tokenAddress;
 
     if (x.status == 'broadcasted') {
