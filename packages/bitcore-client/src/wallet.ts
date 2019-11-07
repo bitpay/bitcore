@@ -124,7 +124,6 @@ export class Wallet {
       alreadyExists = await this.loadWallet({ storage, name });
     } catch (err) {}
     if (alreadyExists) {
-      console.log('\n\n', name, alreadyExists, '\n\n');
       throw new Error('Wallet already exists');
     }
 
