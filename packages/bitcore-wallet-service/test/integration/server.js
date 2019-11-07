@@ -1660,6 +1660,7 @@ describe('Wallet service', function() {
       });
     });
 
+
     describe.only('1-1 wallet (BIP44/BCH)', function() {
       beforeEach(function(done) {
         helpers.createAndJoinWallet(1, 1, {
