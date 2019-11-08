@@ -68,7 +68,7 @@ module.exports = {
    */
   emptyBuffer: function emptyBuffer(bytes) {
     $.checkArgumentType(bytes, 'number', 'bytes');
-    var result = new buffer.Buffer(bytes);
+    var result = Buffer.alloc(bytes);
     for (var i = 0; i < bytes; i++) {
       result.write('\0', i);
     }
@@ -93,7 +93,7 @@ module.exports = {
    */
   integerAsSingleByteBuffer: function integerAsSingleByteBuffer(integer) {
     $.checkArgumentType(integer, 'number', 'integer');
-    return new buffer.Buffer([integer & 0xff]);
+    return Buffer.from([integer & 0xff]);
   },
 
   /**
