@@ -10,7 +10,6 @@ export class ERC20TxProvider extends ETHTxProvider {
 
   create(params: {
     recipients: Array<{ address: string; amount: string }>;
-    from: string;
     nonce: number;
     gasPrice: number;
     data: string;
@@ -20,12 +19,22 @@ export class ERC20TxProvider extends ETHTxProvider {
     chainId?: number;
   }) {
     const { tokenAddress } = params;
-    const [{ address, amount }] = params.recipients;
-    const data = this.getERC20Contract(tokenAddress)
-      .methods.transfer(address, amount)
-      .encodeABI();
+    const data = this.encodeData(params);
     const recipients = [{ address: tokenAddress, amount: '0' }];
     const newParams = { ...params, recipients, data };
     return super.create(newParams);
+  }
+
+  encodeData(params: {
+    recipients: Array<{ address: string; amount: string }>;
+    tokenAddress: string;
+  }) {
+    const { tokenAddress } = params;
+    const [{ address, amount }] = params.recipients;
+    const amountStr = Number(amount).toLocaleString('en', {useGrouping: false});
+    const data = this.getERC20Contract(tokenAddress)
+      .methods.transfer(address, amountStr)
+      .encodeABI();
+    return data;
   }
 }

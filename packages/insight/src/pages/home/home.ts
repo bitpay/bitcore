@@ -32,6 +32,7 @@ export class HomePage {
   public chainNetwork: ChainNetwork;
   public network: string;
   public coins: any;
+  public currentPrice: number;
 
   constructor(
     public nav: Nav,
@@ -40,18 +41,18 @@ export class HomePage {
     private priceProvider: PriceProvider,
     public events: Events,
     public currencyProvider: CurrencyProvider,
-    public transactionProvider: TxsProvider
+    public transactionProvider: TxsProvider,
   ) {
     const chain = navParams.get('chain') || this.apiProvider.getConfig().chain;
     const network: string =
       navParams.get('network') || this.apiProvider.getConfig().network;
+
 
     this.coin = chain;
     this.showPriceChart = false;
     this.showDailyTxChart = false;
 
     this.currentView = 'blocks';
-
     this.chainNetwork = {
       chain,
       network
@@ -171,7 +172,10 @@ export class HomePage {
         }
       }
     };
+    this.drawDailyTxChartHandler();
+    this.goToPriceChartHandler();
   }
+
   public numberWithCommas(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   }
@@ -208,18 +212,17 @@ export class HomePage {
       .getHistoricalRate(currency, isoCode, days)
       .subscribe((response: any) => {
         this.coins[currency].currentPrice = response[days - 1].rate;
+        this.currentPrice = this.coins[this.chainNetwork.chain.toLowerCase()].currentPrice;
         this.coins[currency].historicalRates = response;
         this.priceChart.drawPriceChart(this.coins[currency], days);
       });
   }
 
   public goToPriceChartHandler() {
-    this.switchView('price-chart');
     this.getHistoricalPriceForCurrencies(this.coin.toLowerCase(), 'USD', 7);
   }
 
   public drawDailyTxChartHandler() {
-    this.switchView('txsperday');
     this.getDailyTransactionCount(this.coin.toLowerCase(), 7);
   }
 

@@ -367,7 +367,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       chain: 'ETH',
       network,
       from: address,
-      blockHeight: { $ne: -1 }
+      blockHeight: { $gt: -1 }
     });
   }
 

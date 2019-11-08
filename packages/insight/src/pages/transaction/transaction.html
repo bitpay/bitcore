@@ -9,7 +9,7 @@
       <error [message]="errorMessage" *ngIf="!loading && errorMessage && confirmations !== -3 "></error>
 
       <div *ngIf="(!loading && !errorMessage) || confirmations === -3">
-        <h1 ion-text>
+        <h1 ion-text class="content-container--heading">
           Transaction
           <ion-note *ngIf="vout !== undefined">
             <span class="tx-note" ion-text *ngIf="fromVout">Output {{ vout }}</span>

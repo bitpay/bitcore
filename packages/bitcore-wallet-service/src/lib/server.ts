@@ -1346,6 +1346,13 @@ export class WalletService {
         return cb('Bad xPub');
       }
 
+      if (wallet.coin == 'bch' && opts.noCashAddr) {
+        address.address = BCHAddressTranslator.translate(
+          address.address,
+          'copay'
+        );
+      }
+
       this._store(
         wallet,
         address,
@@ -1413,13 +1420,6 @@ export class WalletService {
               return createFn(wallet, (err, address) => {
                 if (err) {
                   return cb(err);
-                }
-
-                if (wallet.coin == 'bch' && opts.noCashAddr) {
-                  address.address = BCHAddressTranslator.translate(
-                    address.address,
-                    'copay'
-                  );
                 }
                 return cb(err, address);
               });
@@ -1734,27 +1734,6 @@ export class WalletService {
   }
 
   /**
-   * Converts Bitcore Balance Response.
-   * @param {Object} bitcoreBalance - { unconfirmed, confirmed, balance }
-   * @param {Number} locked - Sum of txp.amount
-   * @returns {Object} balance - Total amount & locked amount.
-   */
-  _convertBitcoreBalance(bitcoreBalance, locked) {
-    const { unconfirmed, confirmed, balance } = bitcoreBalance;
-    // we ASUME all locked as confirmed, for ETH.
-    const convertedBalance = {
-      totalAmount: balance,
-      totalConfirmedAmount: confirmed,
-      lockedAmount: locked,
-      lockedConfirmedAmount: confirmed - locked,
-      availableAmount: balance - locked,
-      availableConfirmedAmount: confirmed - locked,
-      byAddress: []
-    };
-    return convertedBalance;
-  }
-
-  /**
    * Get wallet balance.
    * @param {Object} opts
    * @returns {Object} balance - Total amount & locked amount.
@@ -1780,11 +1759,6 @@ export class WalletService {
     setWallet(() => {
       if (!wallet.isComplete()) {
         return cb(null, this._totalizeUtxos([]));
-      }
-
-      const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
-      if (!bc) {
-        return cb(new Error('Could not get blockchain explorer instance'));
       }
 
       this.syncWallet(wallet, err => {
@@ -2807,7 +2781,7 @@ export class WalletService {
                   'NewTxProposal',
                   txp,
                   () => {
-                    if (opts.noCashAddr) {
+                    if (opts.noCashAddr && txp.coin == 'bch') {
                       if (txp.changeAddress) {
                         txp.changeAddress.address = BCHAddressTranslator.translate(
                           txp.changeAddress.address,

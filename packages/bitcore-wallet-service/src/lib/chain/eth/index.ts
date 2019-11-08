@@ -10,6 +10,27 @@ const Errors = require('../../errors/errordefinitions');
 
 export class EthChain implements IChain {
 
+  /**
+   * Converts Bitcore Balance Response.
+   * @param {Object} bitcoreBalance - { unconfirmed, confirmed, balance }
+   * @param {Number} locked - Sum of txp.amount
+   * @returns {Object} balance - Total amount & locked amount.
+   */
+  private convertBitcoreBalance(bitcoreBalance, locked) {
+    const { unconfirmed, confirmed, balance } = bitcoreBalance;
+    // we ASUME all locked as confirmed, for ETH.
+    const convertedBalance = {
+      totalAmount: balance,
+      totalConfirmedAmount: confirmed,
+      lockedAmount: locked,
+      lockedConfirmedAmount: locked,
+      availableAmount: balance - locked,
+      availableConfirmedAmount: confirmed - locked,
+      byAddress: []
+    };
+    return convertedBalance;
+  }
+
   getWalletBalance(server, wallet, opts, cb) {
     const bc = server._getBlockchainExplorer(
       wallet.coin,
@@ -22,7 +43,7 @@ export class EthChain implements IChain {
       server.getPendingTxs({}, (err, txps) => {
         if (err) return cb(err);
         const lockedSum = _.sumBy(txps, 'amount');
-        const convertedBalance = server._convertBitcoreBalance(
+        const convertedBalance = this.convertBitcoreBalance(
           balance,
           lockedSum
         );
