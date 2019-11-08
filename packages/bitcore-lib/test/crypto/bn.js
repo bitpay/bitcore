@@ -94,21 +94,21 @@ describe('BN', function() {
   describe('@fromBuffer', function() {
 
     it('should work with big endian', function() {
-      var bn = BN.fromBuffer(new Buffer('0001', 'hex'), {
+      var bn = BN.fromBuffer( Buffer.from('0001', 'hex'), {
         endian: 'big'
       });
       bn.toString().should.equal('1');
     });
 
     it('should work with big endian 256', function() {
-      var bn = BN.fromBuffer(new Buffer('0100', 'hex'), {
+      var bn = BN.fromBuffer( Buffer.from('0100', 'hex'), {
         endian: 'big'
       });
       bn.toString().should.equal('256');
     });
 
     it('should work with little endian if we specify the size', function() {
-      var bn = BN.fromBuffer(new Buffer('0100', 'hex'), {
+      var bn = BN.fromBuffer( Buffer.from('0100', 'hex'), {
         size: 2,
         endian: 'little'
       });
