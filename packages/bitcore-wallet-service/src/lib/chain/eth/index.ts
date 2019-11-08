@@ -112,8 +112,8 @@ export class EthChain implements IChain {
               coin,
               network,
               from,
-              to: output.toAddress,
-              value: output.amount,
+              to: opts.tokenAddress || output.toAddress,
+              value: opts.tokenAddress ? 0 : output.amount,
               data: output.data,
               gasPrice
             });
