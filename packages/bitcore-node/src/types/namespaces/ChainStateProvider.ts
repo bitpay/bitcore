@@ -49,7 +49,7 @@ export declare namespace CSP {
     target: number;
   };
   export type BroadcastTransactionParams = ChainNetwork & {
-    rawTx: string;
+    rawTx: string | Array<string>;
   };
   export type CreateWalletParams = IWallet;
   export type GetWalletParams = ChainNetwork & PubKey;
