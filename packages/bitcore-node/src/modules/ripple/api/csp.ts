@@ -1,3 +1,4 @@
+import request from 'request';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
 import { RippleAPI } from 'ripple-lib';
@@ -52,6 +53,22 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
   async getBlock(params: CSP.GetBlockParams) {
     const client = await this.getClient(params.network);
     const ledger = await client.getLedger({ includeTransactions: true, ledgerHash: params.blockId });
+    return ledger as any;
+  }
+
+  async getBlockBeforeTime(params: CSP.GetBlockBeforeTimeParams) {
+    const { network, time } = params;
+    const date = new Date(time || Date.now()).toISOString();
+    const ledger = await new Promise((resolve, reject) => {
+      const url = this.config[network].provider.dataHost + '/v2/ledgers/' + date;
+      request.get({ url, json: true }, (err, _, body) => {
+        if (err) {
+          return reject(err);
+        } else {
+          return resolve(body);
+        }
+      });
+    });
     return ledger as any;
   }
 
