@@ -32,17 +32,10 @@ const main = async () => {
 
     let unusedAddressCounter = 0;
 
-    let index = 0;
-
-    if (change) {
-      index = wallet.changeAddressIndex || 0;
-    }
+    let index = wallet.addressIndex || 0;
 
     while (unusedAddressCounter < gap) {
-      const derived = await wallet.derivePrivateKey(change); // derivePrivateKey(index, change, HDPrivateKey);
-      const privKey = derived.privKey;
-      const address = derived.address;
-      await wallet.importKeys({ keys: [{ privKey, address }] });
+      const address = await wallet.nextAddressPair(change);
 
       const hasTransactions = await wallet.client.getAddressTxos({ address });
 
@@ -51,16 +44,13 @@ const main = async () => {
       } else {
         unusedAddressCounter = 0;
       }
-      index++;
       if (change) {
-        wallet.changeAddressIndex = index;
-        console.log('Current change index: ', index);
+        console.log(`Current change index: ${index}: ${address}`);
       } else {
-        wallet.addressIndex = index;
         console.log(`Current address index: ${index}: ${address}`);
       }
+      index++;
     }
-    wallet.saveWallet();
   } catch (e) {
     console.error(e);
   }
