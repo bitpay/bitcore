@@ -51,7 +51,7 @@
 
         <h1>Transactions</h1>
         <coin-list  *ngIf="chainNetwork.chain === 'ETH'" [addrStr]="address.addrStr" [chainNetwork]="chainNetwork"></coin-list>
-        <transaction-list *ngIf="chainNetwork.chain === 'BTC' || chainNetwork === 'BCH'" [queryType]="'address'" [queryValue]="address.addrStr" [chainNetwork]="chainNetwork"> </transaction-list>
+        <transaction-list *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH'" [queryType]="'address'" [queryValue]="address.addrStr" [chainNetwork]="chainNetwork"> </transaction-list>
       </div>
 
     </div>
