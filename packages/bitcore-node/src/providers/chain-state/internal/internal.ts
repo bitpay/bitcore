@@ -153,6 +153,20 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return blocks[0];
   }
 
+  async getBlockBeforeTime(params: { chain: string; network: string; time: Date }) {
+    const { chain, network, time } = params;
+    const [block] = await BitcoinBlockStorage.collection
+      .find({
+        chain,
+        network,
+        timeNormalized: { $lte: new Date(time) }
+      })
+      .limit(1)
+      .sort({ timeNormalized: -1 })
+      .toArray();
+    return block;
+  }
+
   async streamTransactions(params: CSP.StreamTransactionsParams) {
     const { chain, network, req, res, args } = params;
     let { blockHash, blockHeight } = args;

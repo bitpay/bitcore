@@ -37,6 +37,11 @@ export declare namespace CSP {
     sinceBlock?: number | string;
     args?: Partial<{ startDate: Date; endDate: Date; date: Date } & StreamingFindOptions<IBtcBlock>>;
   };
+
+  export type GetBlockBeforeTimeParams = ChainNetwork & {
+    time?: Date | string;
+  };
+
   export type StreamBlocksParams = ChainNetwork & {
     blockId?: string;
     sinceBlock: number | string;
@@ -134,6 +139,7 @@ export declare namespace CSP {
       params: GetBalanceForAddressParams
     ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
     getBlock(params: GetBlockParams): Promise<any>;
+    getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<any>;
     streamBlocks(params: StreamBlocksParams): any;
     getFee(params: GetEstimateSmartFeeParams): any;
     broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;
