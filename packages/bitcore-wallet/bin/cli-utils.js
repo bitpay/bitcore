@@ -86,7 +86,7 @@ Utils.doLoad = function(client, doNotComplete, walletData, password, filename, c
 
 
   client.on('walletCompleted', function(wallet) {
-    Utils.doSave(client, filename, password, function() {
+    Utils.doSave(key, client, filename, password, function() {
       log.info('Your wallet has just been completed. Please backup your wallet file or use the export command.');
     });
   });
@@ -161,9 +161,7 @@ Utils.getClient = function(args, opts, cb) {
 
 Utils.doSave = function(key, cred, filename, password, cb) {
   var opts = {};
-
   var str = JSON.stringify({key: key.toObj(), cred: cred.toObj()});
-console.log('[cli-utils.js.157:str:]',str); // TODO
   if (password) {
     str = sjcl.encrypt(password, str, WALLET_ENCRYPTION_OPTS);
   }
