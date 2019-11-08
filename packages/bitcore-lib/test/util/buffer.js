@@ -126,23 +126,6 @@ describe('buffer utils', function() {
     });
   });
 
-  describe('buffer to hex', function() {
-    it('returns an expected value in hexa', function() {
-      expect(BufferUtil.bufferToHex(new Buffer([255, 0, 128]))).to.equal('ff0080');
-    });
-    it('checks the argument type', function() {
-      expect(function() {
-        BufferUtil.bufferToHex('invalid');
-      }).to.throw(errors.InvalidArgumentType);
-    });
-    it('round trips', function() {
-      var original = new Buffer([255, 0, 128]);
-      var hexa = BufferUtil.bufferToHex(original);
-      var back = BufferUtil.hexToBuffer(hexa);
-      expect(BufferUtil.equal(original, back)).to.equal(true);
-    });
-  });
-
   describe('reverse', function() {
     it('reverses a buffer', function() {
       // http://bit.ly/1J2Ai4x

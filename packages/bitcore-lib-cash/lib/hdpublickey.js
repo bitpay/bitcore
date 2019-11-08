@@ -435,7 +435,7 @@ HDPublicKey.prototype.toObject = HDPublicKey.prototype.toJSON = function toObjec
     fingerPrint: BufferUtil.integerFromBuffer(this.fingerPrint),
     parentFingerPrint: BufferUtil.integerFromBuffer(this._buffers.parentFingerPrint),
     childIndex: BufferUtil.integerFromBuffer(this._buffers.childIndex),
-    chainCode: BufferUtil.bufferToHex(this._buffers.chainCode),
+    chainCode: Buffer.from(this._buffers.chainCode,'hex'),
     publicKey: this.publicKey.toString(),
     checksum: BufferUtil.integerFromBuffer(this._buffers.checksum),
     xpubkey: this.xpubkey

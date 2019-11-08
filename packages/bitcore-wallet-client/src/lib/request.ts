@@ -74,12 +74,15 @@ export class Request {
       } else {
         var reqSignature;
 
+console.log('[request.ts.76]'); // TODO
         var key = args._requestPrivKey || this.credentials.requestPrivKey;
         if (key) {
           delete args['_requestPrivKey'];
           reqSignature = Request._signRequest(method, url, args, key);
         }
         headers['x-signature'] = reqSignature;
+
+console.log('[request.ts.84]'); // TODO
       }
     }
 

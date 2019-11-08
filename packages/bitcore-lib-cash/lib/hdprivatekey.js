@@ -581,7 +581,7 @@ HDPrivateKey.prototype.toObject = HDPrivateKey.prototype.toJSON = function toObj
     fingerPrint: BufferUtil.integerFromBuffer(this.fingerPrint),
     parentFingerPrint: BufferUtil.integerFromBuffer(this._buffers.parentFingerPrint),
     childIndex: BufferUtil.integerFromBuffer(this._buffers.childIndex),
-    chainCode: BufferUtil.bufferToHex(this._buffers.chainCode),
+    chainCode: this._buffers.chainCode.toString('hex'),
     privateKey: this.privateKey.toBuffer().toString('hex'),
     checksum: BufferUtil.integerFromBuffer(this._buffers.checksum),
     xprivkey: this.xprivkey
