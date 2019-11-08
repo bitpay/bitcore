@@ -1433,11 +1433,9 @@ export class API extends EventEmitter {
     }
     var url = '/v1/addresses/' + qs;
 
-console.log('[api.ts.1422]'); // TODO
     this.request.get(url, (err, addresses) => {
       if (err) return cb(err);
 
-console.log('[api.ts.1425]'); // TODO
       if (!opts.doNotVerify) {
         var fake = _.some(addresses, address => {
           return !Verifier.checkAddress(this.credentials, address);

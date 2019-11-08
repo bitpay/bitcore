@@ -66,7 +66,6 @@ export class Request {
   doRequest(method, url, args, useSession, cb) {
     var headers = this.getHeaders(method, url, args);
 
-console.log('[request.ts.68]'); // TODO
     if (this.credentials) {
       headers['x-identity'] = this.credentials.copayerId;
 
@@ -75,7 +74,6 @@ console.log('[request.ts.68]'); // TODO
       } else {
         var reqSignature;
 
-console.log('[request.ts.77]'); // TODO
         var key = args._requestPrivKey || this.credentials.requestPrivKey;
         if (key) {
           delete args['_requestPrivKey'];
@@ -85,11 +83,9 @@ console.log('[request.ts.77]'); // TODO
       }
     }
 
-console.log('[request.ts.87]'); // TODO
     var r = this.r[method](this.baseUrl + url);
     r.accept('json');
 
-console.log('[request.ts.91]'); // TODO
     _.each(headers, (v, k) => {
       if (v) r.set(k, v);
     });
@@ -104,10 +100,8 @@ console.log('[request.ts.91]'); // TODO
 
     r.timeout(this.timeout);
 
-console.log('[request.ts.106]'); // TODO
     r.end((err, res) => {
 
-console.log('[request.ts.109] E'); // TODO
       if (!res) {
         return cb(new Errors.CONNECTION_ERROR());
       }
@@ -199,7 +193,6 @@ console.log('[request.ts.109] E'); // TODO
     url += url.indexOf('?') > 0 ? '&' : '?';
     url += 'r=' + _.random(10000, 99999);
 
-console.log('[request.ts.193]'); // TODO
     return this.doRequest('get', url, {}, false, cb);
   }
 
