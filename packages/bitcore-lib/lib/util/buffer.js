@@ -152,11 +152,7 @@ module.exports = {
    * @return {Buffer}
    */
   reverse: function reverse(param) {
-    var ret = new buffer.Buffer(param.length);
-    for (var i = 0; i < param.length; i++) {
-      ret[i] = param[param.length - i - 1];
-    }
-    return ret;
+    return (Buffer.from(param)).reverse();
   },
 };
 
