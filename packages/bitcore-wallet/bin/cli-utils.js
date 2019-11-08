@@ -82,7 +82,7 @@ Utils.doLoad = function(client, doNotComplete, walletData, password, filename, c
       die('Corrupt wallet file:' + e);
     };
   };
-  if (doNotComplete) return cb(client);
+  if (doNotComplete) return cb(client, key);
 
 
   client.on('walletCompleted', function(wallet) {
@@ -93,7 +93,7 @@ Utils.doLoad = function(client, doNotComplete, walletData, password, filename, c
   client.openWallet(function(err, isComplete) {
     if (err) throw err;
 
-    return cb(client);
+    return cb(client, key);
   });
 };
 
@@ -153,7 +153,6 @@ Utils.getClient = function(args, opts, cb) {
     if (json.ct) {
       Utils.loadEncrypted(client, opts, walletData, filename, cb);
     } else {
-
       Utils.doLoad(client, opts.doNotComplete, walletData, null, filename, cb);
     }
   });
