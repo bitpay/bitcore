@@ -10,10 +10,15 @@ program
 
 var args = program.args;
 
+console.log('[wallet-addresses.12]'); // TODO
 utils.getClient(program, { mustExist: true }, function (client) {
+  
+console.log('[wallet-addresses.15]'); // TODO
   client.getMainAddresses({
     doNotVerify: true
   }, function(err, x) {
+
+console.log('[wallet-addresses.20]'); // TODO
     utils.die(err);
 
     if (x.length > 0) {
