@@ -3,6 +3,7 @@ var url = require('url');
 var read = require('read')
 var log = require('npmlog');
 var Client = require('bitcore-wallet-client').default;
+const Key = Client.Key;
 var FileStorage = require('./filestorage');
 var sjcl = require('sjcl');
 
@@ -23,7 +24,16 @@ var die = Utils.die = function(err) {
   }
 };
 
+Utils.create = function(client, opts) {
+  let key = Key.create();
+  let cred = key.createCredentials(null, opts);
+  client.fromString(cred);
+
+  return {key, cred};
+}
+
 Utils.parseMN = function(text) {
+
   if (!text) throw new Error('No m-n parameter');
 
   var regex = /^(\d+)(-|of|-of-)?(\d+)$/i;
@@ -57,12 +67,20 @@ Utils.doLoad = function(client, doNotComplete, walletData, password, filename, c
     }
   }
 
+  let key;
   try {
     walletData = JSON.parse(walletData);
     let imported = Client.upgradeCredentialsV1(walletData);
     client.fromString(JSON.stringify(imported.credentials));
+
+    key = Key.fromObj(imported.key);
   } catch (e) {
-    die('Corrupt wallet file.');
+    try {
+      client.fromObj(walletData.cred);
+      key = Key.fromObj(walletData.key);
+    } catch (e) {
+      die('Corrupt wallet file:' + e);
+    };
   };
   if (doNotComplete) return cb(client);
 
@@ -94,7 +112,7 @@ Utils.loadEncrypted = function(client, opts, walletData, filename, cb) {
 Utils.getClient = function(args, opts, cb) {
   opts = opts || {};
 
-  var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
+  var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.json';
   var host = args.host || 'https://bws.bitpay.com/';
 
   var storage = new FileStorage({
@@ -141,10 +159,11 @@ Utils.getClient = function(args, opts, cb) {
   });
 };
 
-Utils.doSave = function(client, filename, password, cb) {
+Utils.doSave = function(key, cred, filename, password, cb) {
   var opts = {};
 
-  var str = client.export();
+  var str = JSON.stringify({key: key.toObj(), cred: cred.toObj()});
+console.log('[cli-utils.js.157:str:]',str); // TODO
   if (password) {
     str = sjcl.encrypt(password, str, WALLET_ENCRYPTION_OPTS);
   }
@@ -159,7 +178,7 @@ Utils.doSave = function(client, filename, password, cb) {
   });
 };
 
-Utils.saveEncrypted = function(client, filename, cb) {
+Utils.saveEncrypted = function(key, cred, filename, cb) {
   read({
     prompt: 'Enter password to encrypt:',
     silent: true
@@ -174,18 +193,18 @@ Utils.saveEncrypted = function(client, filename, cb) {
       if (password != password2)
         Utils.die("passwords were not equal");
 
-      Utils.doSave(client, filename, password, cb);
+      Utils.doSave(key, cred, filename, password, cb);
     });
   });
 };
 
-Utils.saveClient = function(args, client, opts, cb) {
+Utils.saveClient = function(args, key, cred, opts, cb) {
   if (_.isFunction(opts)) {
     cb = opts;
     opts = {};
   }
 
-  var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
+  var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.json';
 
   var storage = new FileStorage({
     filename: filename,
@@ -202,7 +221,7 @@ Utils.saveClient = function(args, client, opts, cb) {
     if (args.password) {
       Utils.saveEncrypted(client, filename, cb);
     } else {
-      Utils.doSave(client, filename, null, cb);
+      Utils.doSave(key, cred, filename, null, cb);
     };
   });
 };
