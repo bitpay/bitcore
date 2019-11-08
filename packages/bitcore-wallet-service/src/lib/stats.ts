@@ -22,10 +22,8 @@ export interface IStats {
 export class Stats {
   network: string;
   coin: string;
-  from: moment.Moment;
-  to: moment.Moment;
-  fromTs: number;
-  toTs: number;
+  from: moment.MomentFormatSpecification;
+  to: moment.MomentFormatSpecification;
   db: mongodb.Db;
 
   constructor(opts) {
@@ -33,10 +31,8 @@ export class Stats {
 
     this.network = opts.network || 'livenet';
     this.coin = opts.coin || 'btc';
-    this.from = moment(opts.from || INITIAL_DATE);
-    this.to = moment(opts.to);
-    this.fromTs = this.from.startOf('day').valueOf();
-    this.toTs = this.to.endOf('day').valueOf();
+    this.from = moment(opts.from || INITIAL_DATE).format('YYYY-MM-DD');
+    this.to = moment(opts.to).format('YYYY-MM-DD');
   }
 
   run(cb) {
@@ -73,12 +69,15 @@ export class Stats {
           this._getNewWallets(next);
         },
         (next) => {
+          this._getFiatRates(next);
+        },
+        (next) => {
           this._getTxProposals(next);
         }
       ],
       (err, results) => {
         if (err) return cb(err);
-        result = { newWallets: results[0], txProposals: results[1] };
+        result = { newWallets: results[0], fiatRates: results[1], txProposals: results[2] };
         return cb(null, result);
       }
     );
@@ -98,16 +97,20 @@ export class Stats {
         });
     };
     const updateStats = async (from, cb) => {
-      const to = moment()
-        .subtract(1, 'day')
-        .endOf('day');
       const results = await this.db
         .collection(storage.Storage.collections.WALLETS)
         .aggregate(
           [
             {
+              $match: {
+                createdOn: {
+                  $gt: 1546300800 // only 2019 wallets
+                }
+              }
+            },
+            {
               $project: {
-                date: { $toDate: { $multiply: ['$createdOn', 1000] } },
+                date: { $add: [new Date(0), { $multiply: ['$createdOn', 1000] }] },
                 network: '$network',
                 coin: '$coin',
               }
@@ -115,11 +118,7 @@ export class Stats {
             {
               $group: {
                 _id: {
-                  day: {
-                    $dateFromParts: {
-                      year: { $year: '$date' }, month: { $month: '$date' }, day: { $dayOfMonth: '$date' }
-                    }
-                  },
+                  day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
                   network: '$network',
                   coin: '$coin'
                 },
@@ -134,16 +133,14 @@ export class Stats {
       return cb(null, results);
     };
     const queryStats = (cb) => {
-      const to = new Date(this.toTs);
-      to.setDate(to.getDate() - 1);
       this.db
         .collection('stats_wallets')
         .find({
           '_id.network': this.network,
           '_id.coin': this.coin,
           '_id.day': {
-            $gte: new Date(this.fromTs),
-            $lte: to
+            $gte: this.from,
+            $lte: this.to
           }
         })
         .sort({
@@ -157,10 +154,121 @@ export class Stats {
               return {
                 day,
                 coin: record._id.coin,
+                value: record._id.value,
                 count: record.count ? record.count : record.value.count
               };
             })
           };
+          return cb(null, stats);
+        });
+    };
+
+    async.series(
+      [
+        (next) => {
+          getLastDate((err, lastDate) => {
+            if (err) return next(err);
+
+            lastDate = lastDate.startOf('day');
+            const yesterday = moment()
+              .subtract(1, 'day')
+              .startOf('day');
+            if (lastDate.isBefore(yesterday)) {
+              // Needs update
+              return updateStats(lastDate, next);
+            }
+            next();
+          });
+        },
+        (next) => {
+          queryStats(next);
+        }
+      ],
+      (err, res) => {
+        if (err) {
+          log.error(err);
+        }
+        return cb(err, res[1]);
+      }
+    );
+  }
+
+  _getFiatRates(cb) {
+    const getLastDate = cb => {
+      this.db
+        .collection('stats_fiat_rates')
+        .find({ '_id.coin': this.coin })
+        .sort({
+          '_id.day': -1
+        })
+        .limit(1)
+        .toArray((err, lastRecord) => {
+          if (_.isEmpty(lastRecord)) return cb(null, moment(INITIAL_DATE));
+          return cb(null, moment(lastRecord[0]._id.day));
+        });
+    };
+    const updateStats = async (from, cb) => {
+      const results = await this.db
+        .collection(storage.Storage.collections.FIAT_RATES2)
+        .aggregate(
+          [
+            {
+              $match: {
+                ts: {
+                  $gt: 1546300800 // only 2019 fiat rates
+                },
+                code: 'USD'
+              }
+            },
+            {
+              $project: {
+                date: { $add: [new Date(0), '$ts'] },
+                coin: '$coin',
+                value: '$value'
+              }
+            },
+            {
+              $group: {
+                _id: {
+                  day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+                  coin: '$coin',
+                  value: '$value'
+                }
+              }
+            },
+            {
+              $out: 'stats_fiat_rates'
+            }
+          ]
+        ).toArray();
+      return cb(null, results);
+    };
+    const queryStats = (cb) => {
+      this.db
+        .collection('stats_fiat_rates')
+        .find({
+          '_id.coin': this.coin,
+          '_id.day': {
+            $gte: this.from,
+            $lte: this.to
+          }
+        })
+        .sort({
+          '_id.day': 1
+        })
+        .toArray((err, results) => {
+          if (err) return cb(err);
+          const stats = {
+            byDay: [],
+          };
+          _.each(results, (record) => {
+            const day = moment(record._id.day).format('YYYYMMDD');
+            stats.byDay.push({
+              day,
+              coin: record._id.coin,
+              value: record._id.value
+            });
+          });
           return cb(null, stats);
         });
     };
@@ -210,29 +318,20 @@ export class Stats {
         });
     };
     const updateStats = async (from, cb) => {
-      const to = moment()
-        .subtract(1, 'day')
-        .endOf('day');
-      const opts = {
-        query: {
-          status: 'broadcasted',
-          broadcastedOn: {
-            $gt: from.unix(),
-            $lte: to.unix()
-          }
-        },
-        out: {
-          merge: 'stats_txps'
-        }
-      };
       const results = await this.db
         .collection(storage.Storage.collections.TXS)
         .aggregate(
           [
-            { $match: {} },
+            {
+              $match: {
+                broadcastedOn: {
+                  $gt: 1546300800 // only 2019 txs
+                }
+              }
+            },
             {
               $project: {
-                date: { $toDate: { $multiply: ['$broadcastedOn', 1000] } },
+                date: { $add: [new Date(0), { $multiply: ['$broadcastedOn', 1000] }] },
                 network: '$network',
                 coin: '$coin',
                 amount: '$amount'
@@ -241,16 +340,12 @@ export class Stats {
             {
               $group: {
                 _id: {
-                  day: {
-                    $dateFromParts: {
-                      year: { $year: '$date' }, month: { $month: '$date' }, day: { $dayOfMonth: '$date' }
-                    }
-                  },
+                  day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
                   network: '$network',
                   coin: '$coin'
                 },
                 amount: { $sum: '$amount' },
-                count: { $sum: 1 }
+                count: { $sum: 1 },
               }
             },
             {
@@ -262,16 +357,14 @@ export class Stats {
     };
 
     const queryStats = (cb) => {
-      const to = new Date(this.toTs);
-      to.setDate(to.getDate() - 1);
       this.db
         .collection('stats_txps')
         .find({
           '_id.network': this.network,
           '_id.coin': this.coin,
           '_id.day': {
-            $gte: new Date(this.fromTs),
-            $lte: to
+            $gte: this.from,
+            $lte: this.to
           }
         })
         .sort({
