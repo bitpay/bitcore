@@ -47,7 +47,6 @@ head-nav {
           font-size: 2em;
           font-style: italic;
           font-weight: 800;
-          font-family: 'Ubuntu';
         }
       }
     }
@@ -69,9 +68,7 @@ head-nav {
       @media (min-width: map-get($grid-breakpoints, lg)) {
         display: inline-block;
       }
-
       vertical-align: middle;
-
       input {
         width: 748px;
         margin-top: 4px;
@@ -82,11 +79,9 @@ head-nav {
         border: 0;
         border-radius: 5px;
       }
-
       ::-webkit-input-placeholder {
         font-size: 15px;
       }
-
       ::-moz-placeholder {
         font-size: 15px;
       }
@@ -98,23 +93,14 @@ head-nav {
     height: 80px;
   }
 
-  @media (max-width: map-get($grid-breakpoints, lg)) {
-    .currency-icon {
-    }
-  }
-
   .searchbar-md {
-
     .searchbar-input {
       border-radius: 5px;
     }
-
     input {
-
       ::-webkit-input-placeholder {
         font-size: 13px;
       }
-
       ::-moz-placeholder {
         font-size: 13px;
       }
@@ -123,21 +109,19 @@ head-nav {
   }
 
   .mobile-searchbar {
-
     display:block;
-
     @media (min-width: map-get($grid-breakpoints, lg)) {
       display: none;
     }
-
-
     .toolbar-content {
       display: grid;
       grid-template-columns: 100%;
     }
-
-
   }
+}
 
-
+.currency-symbol {
+  text-transform: none;
+  padding-right: 7px;
+  padding-left: 4px;
 }
