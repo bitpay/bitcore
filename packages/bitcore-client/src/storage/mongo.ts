@@ -126,7 +126,7 @@ export class Mongo {
       await this.init({ addresses: 1 });
     }
     const { address, name } = params;
-    const key = await this.collection.findOne({ name, address });
+    const key = await this.collection.findOne({ name:name, address:address });
     if (!params.keepAlive) {
       await this.close();
     }

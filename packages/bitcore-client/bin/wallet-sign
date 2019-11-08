@@ -26,7 +26,7 @@ program
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, tx, txfile, keys, utxos } = program;
+  const { name, path, tx, txfile, keys, utxos, dbName } = program;
   let wallet;
   let encryptedKeys;
   let bitcoinCorePassword;
