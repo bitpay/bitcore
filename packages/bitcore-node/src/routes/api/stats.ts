@@ -27,11 +27,12 @@ router.get('/daily-transactions', async function(req: Request, res: Response) {
         });
         cache[cacheKey] = { dailyTxs, expiry: Date.now() + CacheTimes.Day };
         updating = false;
+        return cache[cacheKey];
       } catch (e) {
         updating = false;
+        throw e;
       }
     }
-    return cache[cacheKey];
   };
   try {
     const { dailyTxs } = await updateCache();
