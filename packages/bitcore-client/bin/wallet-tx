@@ -15,13 +15,14 @@ program
   .option('--fee [fee]', 'optional - custom transaction fee to pay')
   .option('--target [target]', 'optional - custom target block for confirmation')
   .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--invoiceId [invoiceId]', 'optional - invoiceId for XRP transactions')
   .parse(process.argv);
 
 const main = async () => {
   const { name, path } = program;
   let wallet;
   try {
-    const { recipients, utxos, change, fee, target } = program;
+    const { recipients, utxos, change, fee, target, invoiceId } = program;
     wallet = await Wallet.loadWallet({ name, path });
 
     const parsedUtxos = utxos.includes('[') ? JSON.parse(utxos) : [];
@@ -44,6 +45,7 @@ const main = async () => {
     params.fee = Number(fee) || totalTransactionFee;
     params.recipients = parsedRecipients;
     params.utxos = parsedUtxos;
+    params.invoiceId = invoiceId;
     const tx = await wallet.newTx(params);
 
     console.log(
