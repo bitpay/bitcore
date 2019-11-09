@@ -10,7 +10,6 @@ router.get('/', async function(_: Request, res: Response) {
 });
 
 let cache = {};
-let cacheExpiry = Date.now() + CacheTimes.Day;
 let updating = false;
 
 router.get('/daily-transactions', async function(req: Request, res: Response) {
@@ -18,23 +17,22 @@ router.get('/daily-transactions', async function(req: Request, res: Response) {
   const cacheKey = chain + ':' + network;
   const updateCache = async () => {
     try {
-      const hasFreshData = cache[cacheKey] && cacheExpiry > Date.now();
+      const hasFreshData = cache[cacheKey] && cache[cacheKey].expiry > Date.now();
       if (!updating && !hasFreshData) {
         updating = true;
-        cache = {};
         let dailyTxs = await ChainStateProvider.getDailyTransactions({
           chain,
           network,
-          startDate: req.query.startDate,
-          endDate: req.query.endDate
+          startDate: '',
+          endDate: ''
         });
-        cache[cacheKey] = dailyTxs;
+        cache[cacheKey] = { dailyTxs, expiry: Date.now() + CacheTimes.Day };
       }
     } catch (e) {
       logger.error(e);
     } finally {
       updating = false;
-      return cache[cacheKey];
+      return cache[cacheKey].dailyTxs;
     }
   };
   try {
