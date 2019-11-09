@@ -1,7 +1,6 @@
 import { Request, Response } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { SetCache, CacheTimes } from '../middleware';
-import logger from '../../logger';
 
 const router = require('express').Router({ mergeParams: true });
 
@@ -16,10 +15,10 @@ router.get('/daily-transactions', async function(req: Request, res: Response) {
   const { chain, network } = req.params;
   const cacheKey = chain + ':' + network;
   const updateCache = async () => {
-    try {
-      const hasFreshData = cache[cacheKey] && cache[cacheKey].expiry > Date.now();
-      if (!updating && !hasFreshData) {
-        updating = true;
+    const hasFreshData = cache[cacheKey] && cache[cacheKey].expiry > Date.now();
+    if (!updating && !hasFreshData) {
+      updating = true;
+      try {
         let dailyTxs = await ChainStateProvider.getDailyTransactions({
           chain,
           network,
@@ -27,16 +26,15 @@ router.get('/daily-transactions', async function(req: Request, res: Response) {
           endDate: ''
         });
         cache[cacheKey] = { dailyTxs, expiry: Date.now() + CacheTimes.Day };
+        updating = false;
+      } catch (e) {
+        updating = false;
       }
-    } catch (e) {
-      logger.error(e);
-    } finally {
-      updating = false;
-      return cache[cacheKey].dailyTxs;
     }
+    return cache[cacheKey];
   };
   try {
-    const dailyTxs = await updateCache();
+    const { dailyTxs } = await updateCache();
     SetCache(res, CacheTimes.Day, CacheTimes.Hour);
     return res.json(dailyTxs);
   } catch (err) {
