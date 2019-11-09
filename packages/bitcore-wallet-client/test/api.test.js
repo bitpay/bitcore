@@ -1061,6 +1061,7 @@ describe('client API', () => {
         // This is a GOOD tests, since bitcore ONLY accept VALID signatures
         signatures.length.should.be.equal(utxos.length);
       });
+      it('should sign multiple-outputs proposal correctly', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
 
