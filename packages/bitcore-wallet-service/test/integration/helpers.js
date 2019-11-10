@@ -20,6 +20,7 @@ var Bitcore_ = {
   bch: require('bitcore-lib-cash')
 };
 
+var { ChainService } = require('../../ts_build/lib/chain/index');
 var Common = require('../../ts_build/lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
@@ -67,7 +68,7 @@ helpers.before = function(cb) {
     be.getCheckData = sinon.stub().callsArgWith(1, null, {sum: 100});
     be.getUtxos = sinon.stub().callsArgWith(1, null,[]);
     be.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000, 'hash');
-    be.estimateGas = sinon.stub().callsArgWith(1, null, '21000');
+    be.estimateGas = sinon.stub().callsArgWith(1, null, Defaults.MIN_GAS_LIMIT);
     be.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: '10000000000', balance: '10000000000' });
     be.getTransactionCount = sinon.stub().callsArgWith(1, null, '0');
 
@@ -90,7 +91,7 @@ helpers.beforeEach = function(cb) {
   let be = blockchainExplorer;
   be.register = sinon.stub().callsArgWith(1, null, null);
   be.addAddresses = sinon.stub().callsArgWith(2, null, null);
- 
+
   // TODO
   const collections = {
     WALLETS: 'wallets',
@@ -139,9 +140,10 @@ helpers.getStorage = function() {
   return storage;
 };
 
-helpers.signMessage = function(text, privKey) {
+helpers.signMessage = function(message, privKey) {
   var priv = new Bitcore.PrivateKey(privKey);
-  var hash = Utils.hashMessage(text);
+  const flattenedMessage = _.isArray(message)? _.join(message) : message;
+  var hash = Utils.hashMessage(flattenedMessage);
   return Bitcore.crypto.ECDSA.sign(hash, priv, 'little').toString();
 };
 
@@ -243,7 +245,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     network: opts.network || 'livenet',
     nativeCashAddr: opts.nativeCashAddr,
   };
-  
+
   if (_.isBoolean(opts.supportBIP44AndP2PKH))
     walletOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
 
@@ -254,7 +256,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
       var copayerData = TestData.copayers[i + offset];
 
 
-    var pub = (_.isBoolean(opts.supportBIP44AndP2PKH) && !opts.supportBIP44AndP2PKH) ? copayerData.xPubKey_45H : copayerData.xPubKey_44H_0H_0H;
+      var pub = (_.isBoolean(opts.supportBIP44AndP2PKH) && !opts.supportBIP44AndP2PKH) ? copayerData.xPubKey_45H : copayerData.xPubKey_44H_0H_0H;
 
       if (opts.network == 'testnet') {
         if (opts.coin == 'btc' || opts.coin == 'bch') {
@@ -548,17 +550,24 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
   var xpriv = new Bitcore.HDPrivateKey(derivedXPrivKey, txp.network);
 
   switch(txp.coin) {
-    case 'eth': 
+    case 'eth':
 
       // For eth => account, 0, change = 0
       const priv =  xpriv.derive('m/0/0').privateKey;
       const privKey = priv.toString('hex');
-      const rawTx = txp.getBitcoreTx().uncheckedSerialize();
-      signatures = [CWC.Transactions.getSignature({
-        chain: 'ETH',
-        tx: rawTx,
-        key: {privKey},
-      })];
+      let tx = txp.getBitcoreTx().uncheckedSerialize();
+      const isERC20 = txp.tokenAddress && !txp.payProUrl;
+      const chain = isERC20 ? 'ERC20' : ChainService.getChain(txp.coin);
+      tx = typeof tx === 'string'? [tx] : tx;
+      signatures = [];
+      for (const rawTx of tx) {
+        const signed = CWC.Transactions.getSignature({
+          chain,
+          tx: rawTx,
+          key: { privKey: privKey.toString('hex') },
+        });
+        signatures.push(signed);
+      }
       break;
     default:
       _.each(txp.inputs, function(i) {

@@ -1,6 +1,11 @@
 'use strict';
 
-import { BitcoreLib, BitcoreLibCash, Deriver, Transactions } from 'crypto-wallet-core';
+import {
+  BitcoreLib,
+  BitcoreLibCash,
+  Deriver,
+  Transactions
+} from 'crypto-wallet-core';
 
 import * as _ from 'lodash';
 import { Constants } from './constants';
@@ -23,6 +28,14 @@ var crypto = Bitcore.crypto;
 let SJCL = {};
 
 export class Utils {
+  static getChain(coin: string): string {
+    let normalizedChain = coin.toUpperCase();
+    if (Constants.ERC20.includes(coin)) {
+      normalizedChain = 'ETH';
+    }
+    return normalizedChain;
+  }
+
   static encryptMessage(message, encryptingKey) {
     var key = sjcl.codec.base64.toBits(encryptingKey);
     return sjcl.encrypt(
@@ -85,22 +98,23 @@ export class Utils {
     return ret;
   }
 
-  static signMessage(text, privKey) {
-    $.checkArgument(text);
+  static signMessage(message, privKey) {
+    $.checkArgument(message);
     var priv = new PrivateKey(privKey);
-    var hash = this.hashMessage(text);
+    const flattenedMessage = _.isArray(message) ? _.join(message) : message;
+    var hash = this.hashMessage(flattenedMessage);
     return crypto.ECDSA.sign(hash, priv, 'little').toString();
   }
 
-  static verifyMessage(text, signature, pubKey) {
-    $.checkArgument(text);
+  static verifyMessage(message: Array<string> | string, signature, pubKey) {
+    $.checkArgument(message);
     $.checkArgument(pubKey);
 
     if (!signature) return false;
 
     var pub = new PublicKey(pubKey);
-    var hash = this.hashMessage(text);
-
+    const flattenedMessage = _.isArray(message) ? _.join(message) : message;
+    const hash = this.hashMessage(flattenedMessage);
     try {
       var sig = new crypto.Signature.fromString(signature);
       return crypto.ECDSA.verify(hash, sig, pub, 'little');
@@ -163,7 +177,10 @@ export class Utils {
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
         if (Constants.UTXO_COINS.includes(coin)) {
-          bitcoreAddress = bitcore.Address.fromPublicKey(publicKeys[0], network);
+          bitcoreAddress = bitcore.Address.fromPublicKey(
+            publicKeys[0],
+            network
+          );
         } else {
           const { addressIndex, isChange } = this.parseDerivationPath(path);
           const [{ xPubKey }] = publicKeyRing;
@@ -194,8 +211,10 @@ export class Utils {
     // this was introduced because we allowed coin = 0' wallets for BCH
     // for the  "wallet duplication" feature
     // now it is effective for all coins.
-   
-    var str = coin == 'btc' ? xpub : coin + xpub;
+
+    const chain = this.getChain(coin).toLowerCase();
+    var str = chain == 'btc' ? xpub : chain + xpub;
+
     var hash = sjcl.hash.sha256.hash(str);
     return sjcl.codec.hex.fromBits(hash);
   }
@@ -259,16 +278,17 @@ export class Utils {
     var coin = txp.coin || 'btc';
 
     if (Constants.UTXO_COINS.includes(coin)) {
-
       var bitcore = Bitcore_[coin];
 
       var t = new bitcore.Transaction();
 
-      $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
+      $.checkState(
+        _.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType)
+      );
 
       switch (txp.addressType) {
         case Constants.SCRIPT_TYPES.P2SH:
-          _.each(txp.inputs, (i) => {
+          _.each(txp.inputs, i => {
             t.from(i, i.publicKeys, txp.requiredSignatures);
           });
           break;
@@ -280,13 +300,18 @@ export class Utils {
       if (txp.toAddress && txp.amount && !txp.outputs) {
         t.to(txp.toAddress, txp.amount);
       } else if (txp.outputs) {
-        _.each(txp.outputs, (o) => {
-          $.checkState(o.script || o.toAddress, 'Output should have either toAddress or script specified');
+        _.each(txp.outputs, o => {
+          $.checkState(
+            o.script || o.toAddress,
+            'Output should have either toAddress or script specified'
+          );
           if (o.script) {
-            t.addOutput(new bitcore.Transaction.Output({
-              script: o.script,
-              satoshis: o.amount
-            }));
+            t.addOutput(
+              new bitcore.Transaction.Output({
+                script: o.script,
+                satoshis: o.amount
+              })
+            );
           } else {
             t.to(o.toAddress, o.amount);
           }
@@ -298,37 +323,65 @@ export class Utils {
 
       // Shuffle outputs for improved privacy
       if (t.outputs.length > 1) {
-        var outputOrder = _.reject(txp.outputOrder, (order) => {
+        var outputOrder = _.reject(txp.outputOrder, order => {
           return order >= t.outputs.length;
         });
         $.checkState(t.outputs.length == outputOrder.length);
-        t.sortOutputs((outputs) => {
-          return _.map(outputOrder, (i) => {
+        t.sortOutputs(outputs => {
+          return _.map(outputOrder, i => {
             return outputs[i];
           });
         });
       }
 
       // Validate inputs vs outputs independently of Bitcore
-      var totalInputs = _.reduce(txp.inputs, (memo, i) => {
-        return +i.satoshis + memo;
-      }, 0);
-      var totalOutputs = _.reduce(t.outputs, (memo, o) => {
-        return +o.satoshis + memo;
-      }, 0);
+      var totalInputs = _.reduce(
+        txp.inputs,
+        (memo, i) => {
+          return +i.satoshis + memo;
+        },
+        0
+      );
+      var totalOutputs = _.reduce(
+        t.outputs,
+        (memo, o) => {
+          return +o.satoshis + memo;
+        },
+        0
+      );
 
       $.checkState(totalInputs - totalOutputs >= 0);
       $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE);
 
       return t;
     } else {
-      const { outputs, amount } = txp;
-      const rawTx = Transactions.create({
-        ...txp,
-        chain: coin.toUpperCase(),
-        recipients: [{ address: outputs[0].toAddress, amount }]
+      const { data, outputs, payProUrl, tokenAddress } = txp;
+      const recipients = outputs.map(output => {
+        return {
+          amount: output.amount,
+          address: output.toAddress,
+          data: output.data,
+          gasLimit: output.gasLimit
+        };
       });
-      return { uncheckedSerialize: () => rawTx };
+      // Backwards compatibility BWC <= 8.9.0
+      if (data) {
+        recipients[0].data = data;
+      }
+      const unsignedTxs = [];
+      const isERC20 = tokenAddress && !payProUrl;
+      const chain = isERC20 ? 'ERC20' : this.getChain(coin);
+      for (let index = 0; index < recipients.length; index++) {
+        const rawTx = Transactions.create({
+          ...txp,
+          ...recipients[index],
+          chain,
+          nonce: Number(txp.nonce) + Number(index),
+          recipients: [recipients[index]]
+        });
+        unsignedTxs.push(rawTx);
+      }
+      return { uncheckedSerialize: () => unsignedTxs };
     }
   }
 }

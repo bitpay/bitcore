@@ -4,7 +4,16 @@ module.exports = {
   COINS: {
     BTC: 'btc',
     BCH: 'bch',
-    ETH: 'eth'
+    ETH: 'eth',
+    USDC: 'usdc',
+    PAX: 'pax',
+    GUSD: 'gusd'
+  },
+
+  ERC20: {
+    USDC: 'usdc',
+    PAX: 'pax',
+    GUSD: 'gusd'
   },
 
   UTXO_COINS: {

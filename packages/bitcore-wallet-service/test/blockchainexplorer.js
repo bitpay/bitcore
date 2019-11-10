@@ -10,6 +10,7 @@ describe('BlockChain explorer', function() {
   describe('#constructor', function() {
     it('should return a blockchain explorer with basic methods', function() {
       var exp = new BlockChainExplorer({
+        coin: 'btc',
         network: 'testnet',
       });
       should.exist(exp);
@@ -26,6 +27,7 @@ describe('BlockChain explorer', function() {
 
       var exp2 = new BlockChainExplorer({
         provider: 'v8',
+        coin: 'btc',
         network: 'livenet',
       });
       should.exist(exp2);
@@ -43,6 +45,7 @@ describe('BlockChain explorer', function() {
       (function() {
         var exp = new BlockChainExplorer({
           provider: 'dummy',
+          coin: 'btc',
         });
       }).should.throw('not supported');
     });
@@ -51,6 +54,7 @@ describe('BlockChain explorer', function() {
     it.skip('should sign registration', function() {
       var exp = new BlockChainExplorer({
         provider: 'v8',
+        coin: 'btc',
         network: 'livenet',
       });
       should.exist(exp);
