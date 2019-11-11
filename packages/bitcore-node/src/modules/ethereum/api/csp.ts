@@ -320,7 +320,10 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         ]
       };
       console.log(JSON.stringify(query));
-      const erc20 = await EthTransactionStorage.collection.find(query).toArray();
+      const erc20 = await EthTransactionStorage.collection
+        .find(query)
+        .sort({ blockTimeNormalized: 1 })
+        .toArray();
       erc20.forEach(tx => {
         const transformed = {
           ...tx,
