@@ -1,0 +1,81 @@
+#!/usr/bin/env node
+'use strict';
+
+const program = require('../ts_build/program');
+const request = require('request');
+const util = require('util');
+
+const asyncRequest = util.promisify(request);
+const apiUrl = 'https://api.bitcore.io/api';
+
+try {
+  program
+    .version(require('../package.json').version)
+    .option('--currency <currency>', 'REQUIRED - currency for blockchain')
+    .option('--network <network>', 'REQUIRED - network for blockchain')
+    .option('--date <date>', 'REQUIRED - time to evaluate')
+    .option('--offset [offset]', 'number of blocks to offset from date')
+    .option('--offset-direction [offsetDirection]', 'whether offset should be forwards or backwards')
+    .option('--only [only]', 'valid options (date, height) - return only that property')
+    .option('--exclusive', 'do not include block if it matches time exactly')
+    .parse(process.argv);
+} catch (e) {
+  console.log(e.message);
+  return program.help();
+}
+const { currency, network, date, offsetDirection, only, exclusive } = program;
+let { offset } = program;
+
+async function makeBitcoreRequest(url) {
+  const res = await asyncRequest(url);
+  if (res.statusCode !== 200) {
+    throw new Error(res.body);
+  }
+  return JSON.parse(res.body);
+}
+
+async function blockBeforeTime({ currency, network, date }) {
+  if (!currency) {
+    throw new Error('currency is required');
+  }
+  if (!date) {
+    throw new Error('date is required');
+  }
+  if (!network) {
+    throw new Error('network is required');
+  }
+  if (offset && !['forwards', 'backwards'].includes(offsetDirection)) {
+    throw new Error('must set offset-direction to forwards or backwards when using offset');
+  }
+  if (only && !['date', 'height'].includes(only)) {
+    throw new Error('valid choices for only are date and height');
+  }
+  const theDate = new Date(date);
+  if (theDate.toString() === 'Invalid Date') {
+    throw new Error(`invalid date: ${date}`);
+  }
+  let block = await makeBitcoreRequest(`${apiUrl}/${currency}/${network}/block/before-time/${theDate.toISOString()}`);
+  if (exclusive && theDate.toISOString() === block.timeNormalized) {
+    if (!offset) {
+      offset = 0;
+    }
+    offset = offsetDirection === 'backwards' ? offset + 1 : offset - 1;
+  }
+  if (offset) {
+    const theOffset = offsetDirection === 'backwards' ? Number(offset) * -1 : Number(offset);
+    block = await makeBitcoreRequest(`${apiUrl}/${currency}/${network}/block/${block.height + Number(theOffset)}`);
+  }
+  if (!only) {
+    return block;
+  }
+  if (only === 'date') {
+    return block.timeNormalized;
+  }
+  if (only === 'height') {
+    return block.height;
+  }
+}
+
+blockBeforeTime({ currency, network, date })
+  .then(res => console.log(res))
+  .catch(err => console.error(err));
