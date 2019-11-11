@@ -319,20 +319,18 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           }
         ]
       };
-      console.log(JSON.stringify(query));
-      const erc20 = await EthTransactionStorage.collection
-        .find(query)
-        .sort({ blockTimeNormalized: 1 })
-        .toArray();
-      erc20.forEach(tx => {
+      const erc20 = await EthTransactionStorage.collection.find(query).toArray();
+      const sortedTxs = erc20.sort((tx1, tx2) => {
+        return tx1.blockHeight! - tx2.blockHeight!;
+      });
+      for (const tx of sortedTxs) {
         const transformed = {
           ...tx,
           value: tx.abiType!.params[1].value,
           to: web3.utils.toChecksumAddress(tx.abiType!.params[0].value)
         };
-        console.log(transformed);
         transactionStream.push(transformed);
-      });
+      }
       transactionStream.push(null);
     }
     const listTransactionsStream = new EthListTransactionsStream(wallet);
