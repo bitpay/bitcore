@@ -7,7 +7,7 @@ import { Config } from '../../src/services/config';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { validateDataForBlock } from './db-verify';
 import { TransactionStorage } from '../../src/models/transaction';
-import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
+import { VerificationPeer } from './VerificationPeer';
 
 (async () => {
   const { CHAIN, NETWORK, FILE, DRYRUN } = process.env;
@@ -19,7 +19,7 @@ import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
   const network = NETWORK || '';
   await Storage.start();
   const chainConfig = Config.chainConfig({ chain, network });
-  const worker = new BitcoinP2PWorker({ chain, network, chainConfig });
+  const worker = new VerificationPeer({ chain, network, chainConfig });
   await worker.connect();
 
   const handleRepair = async data => {
