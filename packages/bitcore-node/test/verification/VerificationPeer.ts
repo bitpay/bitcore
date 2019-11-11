@@ -1,7 +1,5 @@
 import logger, { timestamp } from '../../src/logger';
 import { BitcoinBlockStorage } from '../../src/models/block';
-import { Bitcoin } from '../../src/types/namespaces/Bitcoin';
-import { wait } from '../../src/utils/wait';
 import { ChainStateProvider } from '../../src/providers/chain-state';
 import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
 
@@ -21,6 +19,17 @@ export class VerificationPeer extends BitcoinP2PWorker {
           this.chain
         } | Network: ${this.network}`
       );
+    });
+
+    this.pool.on('peertx', async (peer, message) => {
+      const hash = message.transaction.hash;
+      logger.debug('peer tx received', {
+        peer: `${peer.host}:${peer.port}`,
+        chain: this.chain,
+        network: this.network,
+        hash
+      });
+      this.events.emit('transaction', message.transaction);
     });
 
     this.pool.on('peerblock', async (peer, message) => {
@@ -59,64 +68,6 @@ export class VerificationPeer extends BitcoinP2PWorker {
       if (filtered.length) {
         peer.sendMessage(this.messages.GetData(filtered));
       }
-    });
-  }
-
-  async connect() {
-    this.setupListeners();
-    this.pool.connect();
-    this.connectInterval = setInterval(this.pool.connect.bind(this.pool), 5000);
-    return new Promise<void>(resolve => {
-      this.pool.once('peerready', () => resolve());
-    });
-  }
-
-  async disconnect() {
-    this.pool.removeAllListeners();
-    this.pool.disconnect();
-    if (this.connectInterval) {
-      clearInterval(this.connectInterval);
-    }
-  }
-
-  public async getHeaders(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
-    let received = false;
-    return new Promise<Bitcoin.Block.HeaderObj[]>(async resolve => {
-      this.events.once('headers', headers => {
-        received = true;
-        resolve(headers);
-      });
-      while (!received) {
-        this.pool.sendMessage(this.messages.GetHeaders({ starts: candidateHashes }));
-        await wait(1000);
-      }
-    });
-  }
-
-  public async getBlock(hash: string) {
-    logger.debug('Getting block, hash:', hash);
-    let received = false;
-    return new Promise<Bitcoin.Block>(async resolve => {
-      this.events.once(hash, (block: Bitcoin.Block) => {
-        logger.debug('Received block, hash:', hash);
-        received = true;
-        resolve(block);
-      });
-      while (!received) {
-        this.pool.sendMessage(this.messages.GetData.forBlock(hash));
-        await wait(1000);
-      }
-    });
-  }
-
-  async processBlock(block: Bitcoin.Block): Promise<any> {
-    await this.blockModel.addBlock({
-      chain: this.chain,
-      network: this.network,
-      forkHeight: this.chainConfig.forkHeight,
-      parentChain: this.chainConfig.parentChain,
-      initialSyncComplete: this.initialSyncComplete,
-      block
     });
   }
 

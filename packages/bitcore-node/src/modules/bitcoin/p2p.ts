@@ -14,7 +14,6 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   protected bitcoreLib: any;
   protected bitcoreP2p: any;
   protected chainConfig: any;
-  protected events: EventEmitter;
   protected messages: any;
   protected connectInterval?: NodeJS.Timer;
   protected invCache: any;
@@ -22,6 +21,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   protected initialSyncComplete: boolean;
   protected blockModel: BitcoinBlock;
   protected pool: any;
+  public events: EventEmitter;
   public isSyncing: boolean;
   constructor({ chain, network, chainConfig, blockModel = BitcoinBlockStorage }) {
     super({ chain, network, chainConfig, blockModel });
@@ -92,7 +92,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
       );
     });
 
-    this.pool.on('peertx', (peer, message) => {
+    this.pool.on('peertx', async (peer, message) => {
       const hash = message.transaction.hash;
       logger.debug('peer tx received', {
         peer: `${peer.host}:${peer.port}`,
@@ -102,7 +102,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
       });
       if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash)) {
         this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, hash);
-        this.processTransaction(message.transaction);
+        await this.processTransaction(message.transaction);
         this.events.emit('transaction', message.transaction);
       }
     });
@@ -227,7 +227,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
 
   async processTransaction(tx: Bitcoin.Transaction): Promise<any> {
     const now = new Date();
-    TransactionStorage.batchImport({
+    await TransactionStorage.batchImport({
       chain: this.chain,
       network: this.network,
       txs: [tx],
