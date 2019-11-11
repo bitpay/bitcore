@@ -15,6 +15,30 @@ const chainConfig = config.chains[chain][network];
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
+async function sendBitcoin(worker: BitcoinP2PWorker) {
+  try {
+    await rpc.sendtoaddress(address, 0.1);
+    console.log('Sending');
+  } catch (e) {
+    // Handle insufficent balance issues
+    console.log('Generating blocks');
+    let count = 0;
+    const sawBlocks = new Promise(r =>
+      worker.events.on('block', () => {
+        count++;
+        if (count >= 100) {
+          r();
+        }
+      })
+    );
+    const ourAddress = await rpc.getnewaddress('');
+    await rpc.call('generatetoaddress', [101, ourAddress]);
+    console.log('Sending after generating');
+    await sawBlocks;
+    await rpc.sendtoaddress(address, 0.1);
+  }
+}
+
 describe('VerificationPeer', function() {
   this.timeout(500000);
   before(async () => {
@@ -25,24 +49,11 @@ describe('VerificationPeer', function() {
     Modules.loadConfigured();
     const chainConfig = Config.chainConfig({ chain, network });
     const worker = new VerificationPeer({ chain, network, chainConfig });
-    worker.isSyncingNode = true;
-    worker.isSyncing = true;
     await worker.connect();
     const sawTx = new Promise(r => {
       worker.events.on('transaction', r);
     });
-    for (let i = 0; i < 10; i++) {
-      try {
-        await rpc.sendtoaddress(address, 0.1);
-        console.log('Sending');
-      } catch (e) {
-        console.log('Generating blocks');
-        await rpc.call('generatetoaddress', [101, address]);
-        await worker.syncDone();
-        console.log('Sending after generating');
-        await rpc.sendtoaddress(address, 0.1);
-      }
-    }
+    await sendBitcoin(worker);
     await sawTx;
     const txCount = await TransactionStorage.collection.countDocuments({ chain, network });
     expect(txCount).to.be.eq(0);
@@ -59,18 +70,7 @@ describe('VerificationPeer', function() {
     const sawTx = new Promise(r => {
       worker.events.on('transaction', r);
     });
-    for (let i = 0; i < 10; i++) {
-      try {
-        await rpc.sendtoaddress(address, 0.1);
-        console.log('Sending');
-      } catch (e) {
-        console.log('Generating blocks');
-        await rpc.call('generatetoaddress', [101, address]);
-        await worker.syncDone();
-        console.log('Sending after generating');
-        await rpc.sendtoaddress(address, 0.1);
-      }
-    }
+    await sendBitcoin(worker);
     await sawTx;
     const txCount = await TransactionStorage.collection.countDocuments({ chain, network });
     expect(txCount).to.be.gt(0);
