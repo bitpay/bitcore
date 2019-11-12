@@ -89,11 +89,17 @@ export async function validateDataForBlock(blockNum: number, log = false) {
       .map(input => input.toObject())
       .value();
 
-    const coins = await CoinStorage.collection
+    const coins = (await CoinStorage.collection
       .find({ chain, network, mintTxid: { $in: spends.map(tx => tx.prevTxId) } })
-      .toArray();
+      .toArray()).reduce(
+      (agg, coin) => {
+        agg[coin.mintTxid + ':' + coin.mintIndex] = coin;
+        return agg;
+      },
+      {} as { [key: string]: ICoin }
+    );
     for (let spend of spends) {
-      const found = coins.find(c => c.mintTxid === spend.prevTxId && c.mintIndex === spend.outputIndex);
+      const found = coins[spend.prevTxId + ':' + spend.outputIndex];
       if (found && found.spentHeight !== block.height) {
         success = false;
         const error = { model: 'coin', err: true, type: 'COIN_SHOULD_BE_SPENT', payload: { coin: found, blockNum } };
@@ -113,7 +119,6 @@ export async function validateDataForBlock(blockNum: number, log = false) {
           errors.push(error);
           if (log) {
             console.log(JSON.stringify(error));
-            console.log(coins.filter(c => c.mintTxid === spend.prevTxId));
           }
         }
       }
