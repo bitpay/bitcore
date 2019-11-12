@@ -127,7 +127,7 @@ Mnemonic.isValid = function(mnemonic, wordlist) {
   var cs = bin.length / 33;
   var hash_bits = bin.slice(-cs);
   var nonhash_bits = bin.slice(0, bin.length - cs);
-  var buf = new Buffer(nonhash_bits.length / 8);
+  var buf = Buffer.alloc(nonhash_bits.length / 8);
   for (i = 0; i < nonhash_bits.length / 8; i++) {
     buf.writeUInt8(parseInt(bin.slice(i * 8, (i + 1) * 8), 2), i);
   }

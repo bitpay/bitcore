@@ -100,6 +100,7 @@ export class Request {
     r.timeout(this.timeout);
 
     r.end((err, res) => {
+
       if (!res) {
         return cb(new Errors.CONNECTION_ERROR());
       }
@@ -190,6 +191,7 @@ export class Request {
   get(url, cb) {
     url += url.indexOf('?') > 0 ? '&' : '?';
     url += 'r=' + _.random(10000, 99999);
+
     return this.doRequest('get', url, {}, false, cb);
   }
 

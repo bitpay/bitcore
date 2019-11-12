@@ -36,7 +36,7 @@
     "preconditions": "^2.2.3",
     "sjcl": "1.0.3",
     "source-map-loader": "^0.2.4",
-    "superagent": "^3.4.1"
+    "superagent": "^5.1.0"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.136",
