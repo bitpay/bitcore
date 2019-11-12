@@ -58,7 +58,7 @@ import { VerificationPeer } from './VerificationPeer';
           const coin = data.payload.coin;
           const dupeCoins = await CoinStorage.collection
             .find({ chain, network, mintTxid: coin.mintTxid, mintIndex: coin.mintIndex })
-            .sort({ _id: -1 })
+            .sort({ mintHeight: -1, spentHeight: -1 })
             .toArray();
 
           if (dupeCoins.length < 2) {
@@ -66,9 +66,7 @@ import { VerificationPeer } from './VerificationPeer';
             return;
           }
 
-          let toKeep = dupeCoins.sort((c1, c2) => {
-            return c2.mintHeight - c1.mintHeight;
-          })[0];
+          let toKeep = dupeCoins[0];
           const spentCoin = dupeCoins.find(c => c.spentHeight > toKeep.spentHeight);
           toKeep = spentCoin || toKeep;
           const wouldBeDeleted = dupeCoins.filter(c => c._id != toKeep._id);
