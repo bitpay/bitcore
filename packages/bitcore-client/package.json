@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=8.0.0"
   },
-  "version": "8.10.1",
+  "version": "8.10.2",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "main": "./ts_build/index.js",
   "types": "./ts_build/index.d.ts",
