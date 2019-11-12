@@ -9,7 +9,6 @@
     "test:ci": "npm run test",
     "coverage": "gulp coverage",
     "build": "gulp",
-    "compile": "gulp",
     "pub": "npm run build && npm publish"
   },
   "keywords": [
