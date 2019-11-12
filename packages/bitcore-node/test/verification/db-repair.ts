@@ -98,16 +98,16 @@ import { VerificationPeer } from './VerificationPeer';
       case 'NEG_FEE':
         const blockHeight = Number(data.payload.blockNum);
         const { success } = await validateDataForBlock(blockHeight);
+        if (success) {
+          console.log('No errors found, repaired previously');
+          return;
+        }
         if (DRYRUN) {
           console.log('WOULD RESYNC BLOCKS', blockHeight, 'to', blockHeight + 1);
           console.log(data.payload);
         } else {
-          if (!success) {
-            console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
-            await worker.resync(blockHeight - 1, blockHeight + 1);
-          } else {
-            console.log('No errors found, repaired previously');
-          }
+          console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
+          await worker.resync(blockHeight - 1, blockHeight + 1);
         }
         break;
       case 'DUPE_BLOCKHEIGHT':
