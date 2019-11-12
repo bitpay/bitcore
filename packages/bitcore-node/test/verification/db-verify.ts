@@ -28,14 +28,17 @@ type ErrorType = {
 };
 
 async function getBlock(currentHeight: number) {
-  const locatorHashes = await ChainStateProvider.getLocatorHashes({
-    chain,
-    network,
-    startHeight: Math.max(1, currentHeight - 30),
-    endHeight: currentHeight
-  });
-  const headers = await worker.getHeaders(locatorHashes);
-  return worker.getBlock(headers[0].hash);
+  if (VERIFYSPENDS) {
+    const locatorHashes = await ChainStateProvider.getLocatorHashes({
+      chain,
+      network,
+      startHeight: Math.max(1, currentHeight - 30),
+      endHeight: currentHeight
+    });
+    const headers = await worker.getHeaders(locatorHashes);
+    return worker.getBlock(headers[0].hash);
+  }
+  return null;
 }
 
 export async function validateDataForBlock(blockNum: number, log = false) {
@@ -46,7 +49,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
   ]);
   const blockTxids = blockTxs.map(t => t.txid);
   const firstHash = blockTxs[0] ? blockTxs[0].blockHash : block!.hash;
-  const [coinsForTx, mempoolTxs, blocksForHash, blocksForHeight] = await Promise.all([
+  const [coinsForTx, mempoolTxs, blocksForHash, blocksForHeight, p2pBlock] = await Promise.all([
     CoinStorage.collection.find({ chain, network, mintTxid: { $in: blockTxids } }).toArray(),
     TransactionStorage.collection.find({ chain, network, blockHeight: -1, txid: { $in: blockTxids } }).toArray(),
     BitcoinBlockStorage.collection.countDocuments({ chain, network, hash: firstHash }),
@@ -55,7 +58,8 @@ export async function validateDataForBlock(blockNum: number, log = false) {
       network,
       height: blockNum,
       processed: true
-    })
+    }),
+    getBlock(blockNum)
   ]);
 
   const seenTxs = {} as { [txid: string]: ITransaction };
@@ -77,8 +81,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
     }
   }
 
-  if (block && VERIFYSPENDS) {
-    const p2pBlock = await getBlock(blockNum);
+  if (block && VERIFYSPENDS && p2pBlock) {
     const txs = p2pBlock.transactions ? p2pBlock.transactions.slice(1) : [];
     const spends = _.chain(txs)
       .map(tx => tx.inputs)
