@@ -12,10 +12,11 @@
     "singleQuote": true
   },
   "scripts": {
+    "build": "npm run compile",
     "clean": "rm -rf ./ts_build",
-    "watch": "./node_modules/.bin/tsc --watch",
-    "compile": "npm run clean && ./node_modules/.bin/tsc",
     "pub": "npm run compile && npm  publish",
+    "watch": "tsc --watch",
+    "compile": "npm run clean && tsc",
     "test": "mocha ./test/unit"
   },
   "dependencies": {
