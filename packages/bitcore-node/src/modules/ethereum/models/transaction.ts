@@ -60,10 +60,8 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     const txOps = await this.addTransactions({ ...params });
     logger.debug('Writing Transactions', txOps.length);
     operations.push(
-      Promise.all(
-        partition(txOps, txOps.length / Config.get().maxPoolSize).map(txBatch =>
-          this.collection.bulkWrite(txBatch.map(op => this.toMempoolSafeUpsert(op, params.height)), { ordered: false })
-        )
+      ...partition(txOps, txOps.length / Config.get().maxPoolSize).map(txBatch =>
+        this.collection.bulkWrite(txBatch.map(op => this.toMempoolSafeUpsert(op, params.height)), { ordered: false })
       )
     );
     await Promise.all(operations);
