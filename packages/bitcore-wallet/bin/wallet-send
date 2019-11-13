@@ -12,7 +12,7 @@ var Bitcore_ = {
 program = utils.configureCommander(program);
 
 program
-  .option('--fee <fee-per-kb>', 'Fee per kB to use. Default 100bits.')
+  .option('--fee <fee-policy>', 'Fee policy to use (default "normal") [urgent, priority/normal/economy/superEconomy] ')
   .usage('[options] <address> <amount> [note]')
   .description('Create a proposal for sending bitcoins to a destination address.\n  The amount can be specified in bit, btc or sat (the default).');
 
@@ -47,21 +47,16 @@ function confirmDiag(amountStr, note, cb) {
 
 
 function send(client, address, amount, fee, note, uri) { 
-  var amount, feePerKb;
-  try {
-    feePerKb = !_.isUndefined(fee) ? utils.parseAmount(fee) : 100e2;
-  } catch (ex) {
-    utils.die(ex);
-  }
+  var amount;
 
-
+  fee = fee || 'normal';
   client.createTxProposal({
     outputs: [{
       toAddress: address,
       amount: amount,
     }],
     message: note,
-    feePerKb: feePerKb,
+    feeLevel: fee,
     payProUrl: uri,
   }, function(err, txp) {
     utils.die(err);

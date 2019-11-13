@@ -22,7 +22,8 @@ utils.getClient(program, {
   mustExist: true
 }, function(client) {
   client.getBalance(opts, function(err, x) {
+    const coin  = client.credentials.coin;
     utils.die(err);
-    console.log('* Wallet balance %s (Locked %s)', utils.renderAmount(x.totalAmount), utils.renderAmount(x.lockedAmount));
+    console.log('* Wallet balance %s (Locked %s)', utils.renderAmount(x.totalAmount, coin), utils.renderAmount(x.lockedAmount, coin));
   });
 });

@@ -1302,35 +1302,35 @@ describe('Transaction', function() {
   describe('Segregated Witness', function() {
     it('identify as segwit transaction', function() {
       // https://github.com/bitcoin/bips/blob/master/bip-0144.mediawiki
-      var version = new Buffer('01000000', 'hex');
-      var marker = new Buffer('00', 'hex'); //always zero
-      var flag = new Buffer('01', 'hex'); //non zero
-      var inputCount = new Buffer('01', 'hex');
-      var inputDummy = new Buffer('2052cda8bc0c2cb743f154881fc85cb675527dcf2f7a5938241020c33341b3f70000000000ffffffff', 'hex');
-      var outputCount = new Buffer('00', 'hex');
-      var witness = new Buffer('01', 'hex');
-      var witnessItems = new Buffer('00', 'hex');
-      var locktime = new Buffer('00000000', 'hex');
+      var version = Buffer.from('01000000', 'hex');
+      var marker = Buffer.from('00', 'hex'); //always zero
+      var flag = Buffer.from('01', 'hex'); //non zero
+      var inputCount = Buffer.from('01', 'hex');
+      var inputDummy = Buffer.from('2052cda8bc0c2cb743f154881fc85cb675527dcf2f7a5938241020c33341b3f70000000000ffffffff', 'hex');
+      var outputCount = Buffer.from('00', 'hex');
+      var witness = Buffer.from('01', 'hex');
+      var witnessItems =  Buffer.from('00', 'hex');
+      var locktime =  Buffer.from('00000000', 'hex');
       var txBuffer = Buffer.concat([version, marker, flag, inputCount, inputDummy, outputCount, witness,
                                     witnessItems, locktime]);
       var tx = bitcore.Transaction().fromBuffer(txBuffer);
       tx.hasWitnesses().should.equal(true);
     });
     it('correctly calculate hash for segwit transaction', function() {
-      var txBuffer = new Buffer('01000000000101b0e5caa7e37d4b8530c3e1071a36dd5e05d1065cf7224ddff42c69e3387689870000000000ffffffff017b911100000000001600144ff831574da8bef07f8bc97244a1666147b071570247304402203fcbcfddbd6ca3a90252610dd63f1be50b2d926b8d87c912da0a3e42bb03fba002202a90c8aad75da22b0549c72618b754114583e934c0b0d2ccd6c13fcd859ba4ed01210363f3f47f4555779de405eab8d0dc8c2a4f3e09f4171a3fa47c7a77715795319800000000', 'hex');
+      var txBuffer = Buffer.from('01000000000101b0e5caa7e37d4b8530c3e1071a36dd5e05d1065cf7224ddff42c69e3387689870000000000ffffffff017b911100000000001600144ff831574da8bef07f8bc97244a1666147b071570247304402203fcbcfddbd6ca3a90252610dd63f1be50b2d926b8d87c912da0a3e42bb03fba002202a90c8aad75da22b0549c72618b754114583e934c0b0d2ccd6c13fcd859ba4ed01210363f3f47f4555779de405eab8d0dc8c2a4f3e09f4171a3fa47c7a77715795319800000000', 'hex');
       var tx = bitcore.Transaction().fromBuffer(txBuffer);
       tx.hash.should.equal('7f1a2d46746f1bfbb22ab797d5aad1fd9723477b417fa34dff73d8a7dbb14570');
       tx.witnessHash.should.equal('3c26fc8b5cfe65f96d955cecfe4d11db2659d052171f9f31af043e9f5073e46b');
     });
     it('round trip nested witness p2sh', function() {
-      var txBuffer = new Buffer('010000000001010894bb2bbfd5249b1c55f7bc64352bb64894938bc6439f43f28a58bfa7c73205000000002322002077b16b966ee6a4b8a0901351221d279afd31d3f90df52a3fc53436ea9abde5b0ffffffff01010000000000000000030047304402200fa23efa9a8d6ae285cfc82f81e6c2196d14167553b10da1845abd2c9fe38dc502207a40a58ee5b739e902b275018dfa1bee0d608736ff4317b028fbc29391f4554f01475221037b8dc5861a0ef7b0a97b41d2d1e27186f019d4834dbc99f24952b6f5080f5cce21027152378182102b68b5fce42f9f365ec272c48afda6b0816e735c1dc4b96dd45a52ae00000000', 'hex');
+      var txBuffer = Buffer.from('010000000001010894bb2bbfd5249b1c55f7bc64352bb64894938bc6439f43f28a58bfa7c73205000000002322002077b16b966ee6a4b8a0901351221d279afd31d3f90df52a3fc53436ea9abde5b0ffffffff01010000000000000000030047304402200fa23efa9a8d6ae285cfc82f81e6c2196d14167553b10da1845abd2c9fe38dc502207a40a58ee5b739e902b275018dfa1bee0d608736ff4317b028fbc29391f4554f01475221037b8dc5861a0ef7b0a97b41d2d1e27186f019d4834dbc99f24952b6f5080f5cce21027152378182102b68b5fce42f9f365ec272c48afda6b0816e735c1dc4b96dd45a52ae00000000', 'hex');
       var tx = bitcore.Transaction().fromBuffer(txBuffer);
       tx.toBuffer().toString('hex').should.equal(txBuffer.toString('hex'));
     });
     describe('verifying', function() {
       it('will verify these signatures', function() {
-        var signedTxBuffer = new Buffer('0100000000010103752b9d2baadb95480e2571a4854a68ffd8264462168346461b7cdda76beac20000000023220020fde78ea47ae10cc93c6a850d8a86d8575ddacff38ee9b0bc6535dc016a197068ffffffff010100000000000000000400483045022100ea1508225a6d37c0545d22acaee88d29d1675696953f93d657a419613bcee9b802207b8d80ca8176586878f51e001cb9e92f7640b8c9dc530fabf9087142c752de89014830450221008c6f4a9ebdee89968ec00ecc12fda67442b589296e86bf3e9bde19f4ba923406022048c3409831a55bf61f2d5defffd3b91767643b6c5981cb32338dd7e9f02821b1014752210236c8204d62fd70e7ca206a36d39f9674fa832964d787c60d44250624242bada4210266cd5a3507d6df5346aa42bd23d4c44c079aef0d7a59534758a0dabb82345c2052ae00000000', 'hex');
-        var unsignedBuffer = new Buffer('0100000000010103752b9d2baadb95480e2571a4854a68ffd8264462168346461b7cdda76beac20000000023220020fde78ea47ae10cc93c6a850d8a86d8575ddacff38ee9b0bc6535dc016a197068ffffffff010100000000000000000300483045022100ea1508225a6d37c0545d22acaee88d29d1675696953f93d657a419613bcee9b802207b8d80ca8176586878f51e001cb9e92f7640b8c9dc530fabf9087142c752de89014752210236c8204d62fd70e7ca206a36d39f9674fa832964d787c60d44250624242bada4210266cd5a3507d6df5346aa42bd23d4c44c079aef0d7a59534758a0dabb82345c2052ae00000000', 'hex');
+        var signedTxBuffer = Buffer.from('0100000000010103752b9d2baadb95480e2571a4854a68ffd8264462168346461b7cdda76beac20000000023220020fde78ea47ae10cc93c6a850d8a86d8575ddacff38ee9b0bc6535dc016a197068ffffffff010100000000000000000400483045022100ea1508225a6d37c0545d22acaee88d29d1675696953f93d657a419613bcee9b802207b8d80ca8176586878f51e001cb9e92f7640b8c9dc530fabf9087142c752de89014830450221008c6f4a9ebdee89968ec00ecc12fda67442b589296e86bf3e9bde19f4ba923406022048c3409831a55bf61f2d5defffd3b91767643b6c5981cb32338dd7e9f02821b1014752210236c8204d62fd70e7ca206a36d39f9674fa832964d787c60d44250624242bada4210266cd5a3507d6df5346aa42bd23d4c44c079aef0d7a59534758a0dabb82345c2052ae00000000', 'hex');
+        var unsignedBuffer = Buffer.from('0100000000010103752b9d2baadb95480e2571a4854a68ffd8264462168346461b7cdda76beac20000000023220020fde78ea47ae10cc93c6a850d8a86d8575ddacff38ee9b0bc6535dc016a197068ffffffff010100000000000000000300483045022100ea1508225a6d37c0545d22acaee88d29d1675696953f93d657a419613bcee9b802207b8d80ca8176586878f51e001cb9e92f7640b8c9dc530fabf9087142c752de89014752210236c8204d62fd70e7ca206a36d39f9674fa832964d787c60d44250624242bada4210266cd5a3507d6df5346aa42bd23d4c44c079aef0d7a59534758a0dabb82345c2052ae00000000', 'hex');
         var signedTx = bitcore.Transaction().fromBuffer(signedTxBuffer);
 
         var signatures = [

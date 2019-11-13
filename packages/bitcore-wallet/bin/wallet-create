@@ -32,20 +32,15 @@ try {
 utils.getClient(program, {
   doNotComplete: true
 }, function(client) {
-  client.seedFromRandomWithMnemonic({
-    network: network,
-    passphrase: passphrase,
-    language: 'en',
-    coin: coin,
-  });
 
+  let {key, cred} = utils.create(client, { coin, network, account: 0, n: mn[1] });
   client.createWallet(walletName, copayerName, mn[0], mn[1], {
     network: network,
     coin: coin,
   }, function(err, secret) {
     utils.die(err);
     console.log(' * ' + _.capitalize(network) + ' Wallet Created.');
-    utils.saveClient(program, client, {
+    utils.saveClient(program, key, cred, {
       doNotOverwrite: true
     }, function() {
       if (secret) {

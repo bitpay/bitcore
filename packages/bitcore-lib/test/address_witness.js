@@ -14,7 +14,7 @@ var Networks = bitcore.Networks;
 
 describe('Witness Address', function() {
 
-  var pubkeyhash = new Buffer('2a9540f5cd929bf742d16b4e1bf1b0e874c907c9', 'hex');
+  var pubkeyhash = Buffer.from('2a9540f5cd929bf742d16b4e1bf1b0e874c907c9', 'hex');
   var str = 'bc1q9225pawdj2dlwsk3dd8phudsap6vjp7fg3nwdl';
   var buf = Buffer.from(str, 'utf8');
 

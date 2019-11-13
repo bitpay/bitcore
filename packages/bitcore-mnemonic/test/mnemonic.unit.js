@@ -171,7 +171,7 @@ describe('Mnemonic', function() {
 
     it('Mnemonic.fromSeed should fail with invalid wordlist', function() {
       (function() {
-        return Mnemonic.fromSeed(new Buffer(1));
+        return Mnemonic.fromSeed(Buffer.alloc(1));
       }).should.throw(errors.InvalidArgument);
     });
 
@@ -189,7 +189,7 @@ describe('Mnemonic', function() {
 
     it('Constructor should fail with invalid seed', function() {
       (function() {
-        return new Mnemonic(new Buffer(1));
+        return new Mnemonic(Buffer.alloc(1));
       }).should.throw(errors.InvalidEntropy);
     });
 
@@ -211,7 +211,7 @@ describe('Mnemonic', function() {
         var code = vector[1];
         var mnemonic = vector[2];
         var seed = vector[3];
-        var mnemonic1 = Mnemonic.fromSeed(new Buffer(code, 'hex'), wordlist).phrase;
+        var mnemonic1 = Mnemonic.fromSeed(Buffer.from(code, 'hex'), wordlist).phrase;
         mnemonic1.should.equal(mnemonic);
 
         var m = new Mnemonic(mnemonic);

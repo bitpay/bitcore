@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 var program = require('commander');
-var bitcoreCash = require('bitcore-wallet-client').BitcoreCash;
 var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
@@ -14,10 +13,6 @@ utils.getClient(program, {
 }, function(client) {
   client.createAddress({}, function(err, x) {
     utils.die(err);
-
-    if (client.credentials.coin == 'bch') {
-      x.address = (new bitcoreCash.Address(x.address)).toCashAddress();
-    }
 
     console.log('* New Address %s ', x.address);
   });
