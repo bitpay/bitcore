@@ -55,14 +55,18 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     network: string;
     initialSyncComplete: boolean;
   }) {
-    await this.pruneMempool({ ...params });
+    const operations = [] as Array<Promise<any>>;
+    operations.push(this.pruneMempool({ ...params }));
     const txOps = await this.addTransactions({ ...params });
     logger.debug('Writing Transactions', txOps.length);
-    await Promise.all(
-      partition(txOps, txOps.length / Config.get().maxPoolSize).map(txBatch =>
-        this.collection.bulkWrite(txBatch.map(op => this.toMempoolSafeUpsert(op, params.height)), { ordered: false })
+    operations.push(
+      Promise.all(
+        partition(txOps, txOps.length / Config.get().maxPoolSize).map(txBatch =>
+          this.collection.bulkWrite(txBatch.map(op => this.toMempoolSafeUpsert(op, params.height)), { ordered: false })
+        )
       )
     );
+    await Promise.all(operations);
 
     // Create events for mempool txs
     if (params.height < SpentHeightIndicators.minimum) {
