@@ -153,34 +153,20 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     if (!initialSyncComplete) {
       return;
     }
-    const users = txs.map(tx => tx.from);
-    let invalidatedTxs = await this.collection
-      .find({
-        chain,
-        network,
-        from: { $in: users },
-        blockHeight: SpentHeightIndicators.pending
-      })
-      .toArray();
-
-    invalidatedTxs = invalidatedTxs.filter(
-      toFilter =>
-        txs.findIndex(
-          truth => toFilter.from === truth.from && toFilter.nonce === truth.nonce && toFilter.txid !== truth.txid
-        ) > -1
-    );
-
-    await this.collection.update(
-      {
-        chain,
-        network,
-        txid: { $in: invalidatedTxs.map(tx => tx.txid) },
-        blockHeight: SpentHeightIndicators.pending
-      },
-      { $set: { blockHeight: SpentHeightIndicators.conflicting } },
-      { w: 0, j: false, multi: true }
-    );
-
+    for (const tx of txs) {
+      await this.collection.update(
+        {
+          chain,
+          network,
+          from: tx.from,
+          nonce: tx.nonce,
+          txid: { $ne: tx.txid },
+          blockHeight: SpentHeightIndicators.pending
+        },
+        { $set: { blockHeight: SpentHeightIndicators.conflicting } },
+        { w: 0, j: false, multi: true }
+      );
+    }
     return;
   }
 
