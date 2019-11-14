@@ -8331,6 +8331,7 @@ describe('#createTX ETH Only tests', () => {
       });
     });
     it('should get wallet from tx proposal', function(done) {
+      helpers.stubBroadcast('111');
       helpers.stubUtxos(server, wallet, '1 btc', function() {
         var txOpts = {
           outputs: [{
