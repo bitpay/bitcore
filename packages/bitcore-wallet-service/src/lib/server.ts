@@ -3116,8 +3116,7 @@ export class WalletService {
             err,
             txid
           ) => {
-            if (err || txid != txp.txid) {
-
+            if (err || txid != txp.txid) { 
               if (!err || txp.txid != txid) {
                 log.warn('Broadcast failed for: ${raw} ');
               } else {
@@ -3128,7 +3127,7 @@ export class WalletService {
               // Check if tx already in blockchain
               this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
                 if (err) return cb(err);
-                if (!isInBlockchain) return cb(broadcastErr);
+                if (!isInBlockchain) return cb(broadcastErr || 'broadcast error');
 
                 this._processBroadcast(
                   txp,
