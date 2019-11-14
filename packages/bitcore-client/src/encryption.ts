@@ -4,8 +4,7 @@ import {
   createDecipheriv,
   randomBytes
 } from 'crypto';
-import bitcore from 'bitcore-lib';
-
+const bitcore = require('crypto-wallet-core').BitcoreLib;
 const crypto = {
   createHash,
   createCipheriv,
