@@ -3112,11 +3112,20 @@ export class WalletService {
           } catch (ex) {
             return cb(ex);
           }
+console.log('[server.ts.3115:raw:]',raw); // TODO
           this._broadcastRawTx(wallet.coin, wallet.network, raw, (
             err,
             txid
           ) => {
-            if (err) {
+console.log('[server.ts.3117:txid:]',txid); // TODO
+            if (err || txid != txp.txid) {
+
+              if (!err || txp.txid != txid) {
+                log.warn("Broadcast failed for: ${raw} ");
+              } else {
+                log.warn("Broadcast failed: ${err}");
+              }
+
               const broadcastErr = err;
               // Check if tx already in blockchain
               this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
