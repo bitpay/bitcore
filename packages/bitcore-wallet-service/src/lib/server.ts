@@ -3112,12 +3112,10 @@ export class WalletService {
           } catch (ex) {
             return cb(ex);
           }
-console.log('[server.ts.3115:raw:]',raw); // TODO
           this._broadcastRawTx(wallet.coin, wallet.network, raw, (
             err,
             txid
           ) => {
-console.log('[server.ts.3117:txid:]',txid); // TODO
             if (err || txid != txp.txid) {
 
               if (!err || txp.txid != txid) {
