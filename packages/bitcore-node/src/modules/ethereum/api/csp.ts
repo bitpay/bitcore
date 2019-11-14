@@ -1,4 +1,4 @@
-import { Readable } from 'stream';
+import { Readable, Transform } from 'stream';
 import Config from '../../../config';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
@@ -59,7 +59,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           ProviderType = Web3.providers.HttpProvider;
           break;
       }
-      console.log(connUrl);
       ETHStateProvider.web3[network] = new Web3(new ProviderType(connUrl));
     }
     return ETHStateProvider.web3[network];
@@ -311,7 +310,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
             abiType: { $exists: true }
           },
           {
-            chain: 'ETH',
             abiType: { $exists: true },
             'abiType.type': 'ERC20',
             'abiType.name': 'transfer',
@@ -319,18 +317,22 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           }
         ]
       };
-      console.log(JSON.stringify(query));
-      const erc20 = await EthTransactionStorage.collection.find(query).toArray();
-      erc20.forEach(tx => {
-        const transformed = {
-          ...tx,
-          value: tx.abiType!.params[1].value,
-          to: web3.utils.toChecksumAddress(tx.abiType!.params[0].value)
-        };
-        console.log(transformed);
-        transactionStream.push(transformed);
-      });
-      transactionStream.push(null);
+      transactionStream = EthTransactionStorage.collection
+        .find(query)
+        .sort({ blockTimeNormalized: 1 })
+        .addCursorFlag('noCursorTimeout', true)
+        .pipe(
+          new Transform({
+            objectMode: true,
+            transform: (tx: any, _, cb) => {
+              cb(null, {
+                ...tx,
+                value: tx.abiType!.params[1].value,
+                to: web3.utils.toChecksumAddress(tx.abiType!.params[0].value)
+              });
+            }
+          })
+        );
     }
     const listTransactionsStream = new EthListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(res);
