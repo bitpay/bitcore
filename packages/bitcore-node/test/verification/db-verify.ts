@@ -9,6 +9,7 @@ import { Config } from '../../src/services/config';
 import { ChainStateProvider } from '../../src/providers/chain-state';
 import { Modules } from '../../src/modules';
 import { VerificationPeer } from './VerificationPeer';
+import { Libs } from '../../src/providers/libs';
 
 const { CHAIN, NETWORK, HEIGHT, VERIFYSPENDS } = process.env;
 const resumeHeight = Number(HEIGHT) || 1;
@@ -17,8 +18,16 @@ const network = NETWORK || '';
 
 Modules.loadConfigured();
 const chainConfig = Config.chainConfig({ chain, network });
-const worker = new VerificationPeer({ chain, network, chainConfig });
-worker.connect();
+
+const HasCoins = {
+  BTC: true,
+  BCH: true
+};
+let worker: VerificationPeer;
+if (Libs.get(CHAIN)) {
+  worker = new VerificationPeer({ chain, network, chainConfig });
+  worker.connect();
+}
 
 type ErrorType = {
   model: string;
@@ -28,7 +37,7 @@ type ErrorType = {
 };
 
 async function getBlock(currentHeight: number) {
-  if (VERIFYSPENDS) {
+  if (VERIFYSPENDS && worker) {
     const locatorHashes = await ChainStateProvider.getLocatorHashes({
       chain,
       network,
@@ -178,7 +187,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
 
   for (let txid of Object.keys(seenTxs)) {
     const coins = seenTxCoins[txid];
-    if (!coins) {
+    if (!coins && HasCoins[chain]) {
       success = false;
       const error = { model: 'coin', err: true, type: 'MISSING_COIN_FOR_TXID', payload: { txid, blockNum } };
       errors.push(error);
