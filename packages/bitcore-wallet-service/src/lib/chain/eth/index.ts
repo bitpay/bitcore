@@ -41,9 +41,9 @@ export class EthChain implements IChain {
       if (err) {
         return cb(err);
       }
-      server.getPendingTxs({}, (err, txps) => {
+      server.getPendingTxs(opts, (err, txps) => {
         if (err) return cb(err);
-        const lockedSum = _.sumBy(txps, 'amount');
+        const lockedSum = _.sumBy(txps, 'amount') || 0;
         const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
         server.storage.fetchAddresses(
           server.walletId,

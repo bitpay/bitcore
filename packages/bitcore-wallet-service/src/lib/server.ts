@@ -770,7 +770,7 @@ export class WalletService {
           });
         },
         (next) => {
-          this.getPendingTxs({}, (err, pendingTxps) => {
+          this.getPendingTxs(opts, (err, pendingTxps) => {
             if (err) return next(err);
             status.pendingTxps = pendingTxps;
             next();
@@ -3227,6 +3227,9 @@ export class WalletService {
    * @returns {TxProposal[]} Transaction proposal.
    */
   getPendingTxs(opts, cb) {
+    if (opts.tokenAddress) {
+      return cb();
+    }
     this.storage.fetchPendingTxs(this.walletId, (err, txps) => {
       if (err) return cb(err);
 
