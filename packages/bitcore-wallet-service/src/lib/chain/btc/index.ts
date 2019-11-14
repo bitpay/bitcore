@@ -4,7 +4,9 @@ import { IChain } from '..';
 import { ClientError } from '../../errors/clienterror';
 import { TxProposal } from '../../model';
 
+const $ = require('preconditions').singleton();
 const Common = require('../../common');
+const Constants = Common.Constants;
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
@@ -141,15 +143,12 @@ export class BtcChain implements IChain {
     return new Promise((resolve, reject) => {
       const getChangeAddress = (wallet, cb) => {
         if (wallet.singleAddress) {
-          server.storage.fetchAddresses(
-            server.walletId,
-            (err, addresses) => {
-              if (err) return cb(err);
-              if (_.isEmpty(addresses))
-                return cb(new ClientError('The wallet has no addresses'));
-              return cb(null, _.head(addresses));
-            }
-          );
+          server.storage.fetchAddresses(server.walletId, (err, addresses) => {
+            if (err) return cb(err);
+            if (_.isEmpty(addresses))
+              return cb(new ClientError('The wallet has no addresses'));
+            return cb(null, _.head(addresses));
+          });
         } else {
           if (opts.changeAddress) {
             const addrErr = server._validateAddr(
@@ -194,9 +193,76 @@ export class BtcChain implements IChain {
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
       server._getFeePerKb(wallet, opts, (err, feePerKb) => {
-        return resolve({feePerKb});
+        return resolve({ feePerKb });
       });
     });
+  }
+
+  buildTx(txp) {
+    const t = new this.bitcoreLib.Transaction();
+
+    switch (txp.addressType) {
+      case Constants.SCRIPT_TYPES.P2SH:
+        _.each(txp.inputs, i => {
+          $.checkState(i.publicKeys, 'Inputs should include public keys');
+          t.from(i, i.publicKeys, txp.requiredSignatures);
+        });
+        break;
+      case Constants.SCRIPT_TYPES.P2PKH:
+        t.from(txp.inputs);
+        break;
+    }
+
+    _.each(txp.outputs, o => {
+      $.checkState(
+        o.script || o.toAddress,
+        'Output should have either toAddress or script specified'
+      );
+      if (o.script) {
+        t.addOutput(
+          new this.bitcoreLib.Transaction.Output({
+            script: o.script,
+            satoshis: o.amount
+          })
+        );
+      } else {
+        t.to(o.toAddress, o.amount);
+      }
+    });
+
+    t.fee(txp.fee);
+
+    if (txp.changeAddress) {
+      t.change(txp.changeAddress.address);
+    }
+
+    // Shuffle outputs for improved privacy
+    if (t.outputs.length > 1) {
+      const outputOrder = _.reject(txp.outputOrder, (order: number) => {
+        return order >= t.outputs.length;
+      });
+      $.checkState(t.outputs.length == outputOrder.length);
+      t.sortOutputs(outputs => {
+        return _.map(outputOrder, i => {
+          return outputs[i];
+        });
+      });
+    }
+
+    // Validate actual inputs vs outputs independently of Bitcore
+    const totalInputs = _.sumBy(t.inputs, 'output.satoshis');
+    const totalOutputs = _.sumBy(t.outputs, 'satoshis');
+
+    $.checkState(
+      totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs,
+      'not-enought-inputs'
+    );
+    $.checkState(
+      totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin],
+      'fee-too-high'
+    );
+
+    return t;
   }
 
   convertFeePerKb(p, feePerKb) {
@@ -267,12 +333,27 @@ export class BtcChain implements IChain {
     if (_.isNumber(opts.fee) && _.isEmpty(opts.inputs)) return true;
   }
 
+  checkValidTxAmount(output): boolean {
+    if (
+      !_.isNumber(output.amount) ||
+      _.isNaN(output.amount) ||
+      output.amount <= 0
+    ) {
+      return false;
+    }
+    return true;
+  }
+
   setInputs(info) {
     return info.inputs;
   }
 
-  isUTXOCoin() { return true; }
-  isSingleAddress() { return false; }
+  isUTXOCoin() {
+    return true;
+  }
+  isSingleAddress() {
+    return false;
+  }
 
   addressFromStorageTransform(network, address) {}
 
@@ -285,9 +366,11 @@ export class BtcChain implements IChain {
     let i = 0;
     const x = new this.bitcoreLib.HDPublicKey(xpub);
 
-    _.each(signatures, (signatureHex) => {
+    _.each(signatures, signatureHex => {
       try {
-        const signature = this.bitcoreLib.crypto.Signature.fromString(signatureHex);
+        const signature = this.bitcoreLib.crypto.Signature.fromString(
+          signatureHex
+        );
         const pub = x.deriveChild(inputPaths[i]).publicKey;
         const s = {
           inputIndex: i,
@@ -300,7 +383,7 @@ export class BtcChain implements IChain {
         };
         tx.inputs[i].addSignature(tx, s);
         i++;
-      } catch (e) { }
+      } catch (e) {}
     });
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');

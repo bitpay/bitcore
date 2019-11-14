@@ -14,7 +14,7 @@ export class Utils {
   static getMissingFields(obj, args) {
     args = [].concat(args);
     if (!_.isObject(obj)) return args;
-    const missing = _.filter(args, (arg) => {
+    const missing = _.filter(args, arg => {
       return !obj.hasOwnProperty(arg);
     });
     return missing;
@@ -42,10 +42,11 @@ export class Utils {
     return ret;
   }
 
-  static verifyMessage(text, signature, publicKey) {
-    $.checkArgument(text);
+  static verifyMessage(message, signature, publicKey) {
+    $.checkArgument(message);
 
-    const hash = Utils.hashMessage(text, true);
+    const flattenedMessage = _.isArray(message) ? _.join(message) : message;
+    const hash = Utils.hashMessage(flattenedMessage, true);
 
     const sig = this._tryImportSignature(signature);
     if (!sig) {
@@ -118,7 +119,7 @@ export class Utils {
         toSatoshis: 1e18,
         maxDecimals: 6,
         minDecimals: 2
-      },
+      }
     };
 
     $.shouldBeNumber(satoshis);
@@ -162,7 +163,7 @@ export class Utils {
 
   static formatUtxos(utxos) {
     if (_.isEmpty(utxos)) return 'none';
-    return _.map([].concat(utxos), (i) => {
+    return _.map([].concat(utxos), i => {
       const amount = Utils.formatAmountInBtc(i.satoshis);
       const confirmations = i.confirmations ? i.confirmations + 'c' : 'u';
       return amount + '/' + confirmations;
