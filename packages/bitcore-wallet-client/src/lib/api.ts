@@ -325,7 +325,6 @@ export class API extends EventEmitter {
     return cb(null, this.keyDerivationOk);
   }
 
-
   // /**
   // * toObj() wallet
   // *
@@ -335,8 +334,6 @@ export class API extends EventEmitter {
     $.checkState(this.credentials);
     return Credentials.fromObj(this.credentials);
   }
-
-
 
   // /**
   // * toString() wallet
@@ -372,7 +369,6 @@ export class API extends EventEmitter {
     }
     this.request.setCredentials(this.credentials);
   }
-
 
   // /**
   // * fromString wallet

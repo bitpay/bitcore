@@ -163,7 +163,8 @@ export class Utils {
     $.checkArgument(_.includes(_.values(Constants.SCRIPT_TYPES), scriptType));
 
     coin = coin || 'btc';
-    var bitcore = Bitcore_[coin];
+    const chain = this.getChain(coin).toLowerCase();
+    var bitcore = Bitcore_[chain];
     var publicKeys = _.map(publicKeyRing, item => {
       var xpub = new bitcore.HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
@@ -185,7 +186,7 @@ export class Utils {
           const { addressIndex, isChange } = this.parseDerivationPath(path);
           const [{ xPubKey }] = publicKeyRing;
           bitcoreAddress = Deriver.deriveAddress(
-            coin.toUpperCase(),
+            chain.toUpperCase(),
             network,
             xPubKey,
             addressIndex,
