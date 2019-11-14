@@ -3116,7 +3116,7 @@ export class WalletService {
             err,
             txid
           ) => {
-            if (err || txid != txp.txid) { 
+            if (err || txid != txp.txid) {
               if (!err || txp.txid != txid) {
                 log.warn('Broadcast failed for: ${raw} ');
               } else {
