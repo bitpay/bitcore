@@ -7,6 +7,7 @@ import config from '../../src/config';
 import { TransactionStorage } from '../../src/models/transaction';
 import { resetDatabase } from '../helpers';
 import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
+import { wait } from '../../src/utils/wait';
 const chain = 'BTC';
 const network = 'regtest';
 const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
@@ -15,26 +16,17 @@ const chainConfig = config.chains[chain][network];
 const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
-async function sendBitcoin(worker: BitcoinP2PWorker) {
+async function sendBitcoin() {
   try {
     await rpc.sendtoaddress(address, 0.1);
     console.log('Sending');
   } catch (e) {
     // Handle insufficent balance issues
     console.log('Generating blocks');
-    let count = 0;
-    const sawBlocks = new Promise(r =>
-      worker.events.on('block', () => {
-        count++;
-        if (count >= 100) {
-          r();
-        }
-      })
-    );
     const ourAddress = await rpc.getnewaddress('');
-    await rpc.call('generatetoaddress', [101, ourAddress]);
+    await rpc.call('generatetoaddress', [130, ourAddress]);
+    await wait(5000);
     console.log('Sending after generating');
-    await sawBlocks;
     await rpc.sendtoaddress(address, 0.1);
   }
 }
@@ -53,7 +45,7 @@ describe('VerificationPeer', function() {
     const sawTx = new Promise(r => {
       worker.events.on('transaction', r);
     });
-    await sendBitcoin(worker);
+    await sendBitcoin();
     await sawTx;
     const txCount = await TransactionStorage.collection.countDocuments({ chain, network });
     expect(txCount).to.be.eq(0);
@@ -70,7 +62,7 @@ describe('VerificationPeer', function() {
     const sawTx = new Promise(r => {
       worker.events.on('transaction', r);
     });
-    await sendBitcoin(worker);
+    await sendBitcoin();
     await sawTx;
     const txCount = await TransactionStorage.collection.countDocuments({ chain, network });
     expect(txCount).to.be.gt(0);
