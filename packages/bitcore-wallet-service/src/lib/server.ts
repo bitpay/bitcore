@@ -3116,12 +3116,18 @@ export class WalletService {
             err,
             txid
           ) => {
-            if (err) {
+            if (err || txid != txp.txid) {
+              if (!err || txp.txid != txid) {
+                log.warn(`Broadcast failed for: ${raw}`);
+              } else {
+                log.warn(`Broadcast failed: ${err}`);
+              }
+
               const broadcastErr = err;
               // Check if tx already in blockchain
               this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
                 if (err) return cb(err);
-                if (!isInBlockchain) return cb(broadcastErr);
+                if (!isInBlockchain) return cb(broadcastErr || 'broadcast error');
 
                 this._processBroadcast(
                   txp,

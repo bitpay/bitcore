@@ -3822,7 +3822,7 @@ describe('Wallet service', function() {
                   }, function(err, txp) {
                     should.not.exist(err);
 
-                    helpers.stubBroadcast();
+                    helpers.stubBroadcast(txp.txid);
                     server.broadcastTx({
                       txProposalId: txp.id
                     }, function(err, txp) {
@@ -4960,7 +4960,7 @@ describe('Wallet service', function() {
                 should.not.exist(err);
                 should.exist(txp);
 
-                helpers.stubBroadcast();
+                helpers.stubBroadcast(txp.txid);
                 server.broadcastTx({
                   txProposalId: txp.id
                 }, function(err, txp) {
@@ -6518,7 +6518,7 @@ describe('#createTX ETH Only tests', () => {
 
     it('should broadcast a tx', function(done) {
       var clock = sinon.useFakeTimers({ now: 1234000, toFake: ['Date'] });
-      helpers.stubBroadcast();
+      helpers.stubBroadcast(txid);
       server.broadcastTx({
         txProposalId: txpid
       }, function(err) {
@@ -6540,7 +6540,7 @@ describe('#createTX ETH Only tests', () => {
       });
     });
     it('should broadcast a raw tx', function(done) {
-      helpers.stubBroadcast();
+      helpers.stubBroadcast(txid);
       server.broadcastRawTx({
         network: 'testnet',
         rawTx: 'raw tx',
@@ -6551,7 +6551,7 @@ describe('#createTX ETH Only tests', () => {
       });
     });
     it('should fail to brodcast a tx already marked as broadcasted', function(done) {
-      helpers.stubBroadcast();
+      helpers.stubBroadcast(txid);
       server.broadcastTx({
         txProposalId: txpid
       }, function(err) {
@@ -6565,8 +6565,19 @@ describe('#createTX ETH Only tests', () => {
         });
       });
     });
+    it('should fail to brodcast a tx is txid is wrong', function(done) {
+      helpers.stubBroadcast('xx');
+      server.broadcastTx({
+        txProposalId: txpid
+      }, function(err) {
+        should.exist(err);
+        err.should.contain('broadcast error');
+        done();
+      });
+    });
+ 
     it('should auto process already broadcasted txs', function(done) {
-      helpers.stubBroadcast();
+      helpers.stubBroadcast(txid);
       server.getPendingTxs({}, function(err, txs) {
         should.not.exist(err);
         txs.length.should.equal(1);
@@ -6581,7 +6592,7 @@ describe('#createTX ETH Only tests', () => {
       });
     });
     it('should process only broadcasted txs', function(done) {
-      helpers.stubBroadcast();
+      helpers.stubBroadcast(txid);
       var txOpts = {
         outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
@@ -6607,7 +6618,7 @@ describe('#createTX ETH Only tests', () => {
       });
     });
     it('should fail to brodcast a not yet accepted tx', function(done) {
-      helpers.stubBroadcast();
+      helpers.stubBroadcast(txid);
       var txOpts = {
         outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
@@ -6725,7 +6736,7 @@ describe('#createTX ETH Only tests', () => {
 
     it('should broadcast a tx', function(done) {
       var clock = sinon.useFakeTimers({ now: 1234000, toFake: ['Date'] });
-      helpers.stubBroadcast();
+      helpers.stubBroadcast(txid);
       server.broadcastTx({
         txProposalId: txpid
       }, function(err) {
@@ -6755,7 +6766,6 @@ describe('#createTX ETH Only tests', () => {
         server = s;
         wallet = w;
         helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-          helpers.stubBroadcast();
           done();
         });
       });
@@ -7333,9 +7343,9 @@ describe('#createTX ETH Only tests', () => {
         server.signTx({
           txProposalId: tx.id,
           signatures: signatures,
-        }, function(err) {
+        }, function(err,tx) {
           should.not.exist(err);
-          helpers.stubBroadcast();
+          helpers.stubBroadcast(tx.txid);
           server.broadcastTx({
             txProposalId: tx.id
           }, function(err, txp) {
@@ -8321,8 +8331,8 @@ describe('#createTX ETH Only tests', () => {
       });
     });
     it('should get wallet from tx proposal', function(done) {
+      helpers.stubBroadcast('111');
       helpers.stubUtxos(server, wallet, '1 btc', function() {
-        helpers.stubBroadcast();
         var txOpts = {
           outputs: [{
             toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',

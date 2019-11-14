@@ -434,8 +434,8 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
   });
 };
 
-helpers.stubBroadcast = function(thirdPartyBroadcast) {
-  blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, null, '112233');
+helpers.stubBroadcast = function(txid) {
+  blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, null, txid || '112233');
   blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
 };
 
