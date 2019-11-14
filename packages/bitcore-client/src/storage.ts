@@ -13,7 +13,7 @@ if (usingBrowser) {
 } else {
   lvldwn = require('leveldown');
 }
-const bitcoreLib = require('bitcore-lib');
+const bitcoreLib = require('crypto-wallet-core').BitcoreLib;
 const StorageCache: { [path: string]: LevelUp } = {};
 
 export class Storage {

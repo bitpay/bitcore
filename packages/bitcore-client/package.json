@@ -24,8 +24,6 @@
     "async": "2.5.0",
     "bcrypt": "2.0.1",
     "bcryptjs": "2.4.3",
-    "bitcore-lib": "^8.10.1",
-    "bitcore-lib-cash": "^8.10.1",
     "bitcore-mnemonic": "^8.10.1",
     "commander": "2.15.1",
     "crypto-wallet-core": "^8.10.1",

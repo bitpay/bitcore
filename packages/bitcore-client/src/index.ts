@@ -4,5 +4,5 @@ import { Storage } from './storage';
 import { Client } from './client';
 import { ParseApiStream, StreamUtil } from './stream-util';
 import { Encryption} from './encryption';
-import CryptoWalletCore from 'crypto-wallet-core'
+import * as CryptoWalletCore from 'crypto-wallet-core'
 export { Wallet, Client, Storage, ParseApiStream, Encryption, StreamUtil, CryptoWalletCore };
