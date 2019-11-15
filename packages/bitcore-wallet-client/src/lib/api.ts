@@ -332,7 +332,7 @@ export class API extends EventEmitter {
   // */
   toObj() {
     $.checkState(this.credentials);
-    return Credentials.fromObj(this.credentials);
+    return this.credentials.toObj();
   }
 
   // /**
@@ -348,8 +348,7 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var output;
-    var c = Credentials.fromObj(this.credentials);
-    output = JSON.stringify(c.toObj());
+    output = JSON.stringify(this.toObj());
     return output;
   }
 
