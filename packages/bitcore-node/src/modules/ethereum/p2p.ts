@@ -182,8 +182,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     let lastLog = 0;
     let currentHeight = tip ? tip.height : 0;
     logger.info(`Syncing ${bestBlock - currentHeight} blocks for ${chain} ${network}`);
-    while (startHeight < bestBlock && currentHeight <= bestBlock) {
-      tip = await ChainStateProvider.getLocalTip({ chain, network });
+    while (currentHeight <= bestBlock) {
       try {
         const block = ((await this.getBlock(currentHeight)) as unknown) as Parity.Block;
         const { convertedBlock, convertedTxs } = this.convertBlock(block);
@@ -221,10 +220,12 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         }
 
         await this.processBlock(convertedBlock, convertedTxs);
-        currentHeight++;
         if (currentHeight === bestBlock) {
           bestBlock = await this.web3!.eth.getBlockNumber();
         }
+        tip = await ChainStateProvider.getLocalTip({ chain, network });
+        currentHeight = tip ? tip.height + 1 : 0;
+
         const oneSecond = 1000;
         const now = Date.now();
         if (now - lastLog > oneSecond) {
