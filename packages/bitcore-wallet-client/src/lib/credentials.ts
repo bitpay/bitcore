@@ -142,7 +142,7 @@ export class Credentials {
     const ret = _.cloneDeep(this);
     ret.walletId = `${ret.walletId}-${token.address}`;
     ret.coin = token.symbol.toLowerCase();
-    ret.walletNane = token.name;
+    ret.walletName = token.name;
     ret.token = token;
 
     return ret;
