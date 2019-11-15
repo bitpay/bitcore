@@ -92,8 +92,9 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
   }
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
-    const client = await this.getClient(params.network);
-    return client.submit(params.rawTx);
+    const client = await this.getClient(params.network)
+    const rawTx = typeof params.rawTx === 'string' ? params.rawTx : params.rawTx[0];
+    return client.submit(rawTx);
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {
