@@ -54,7 +54,7 @@
 
         <h2>Details</h2>
 
-        <transaction-details *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH'" [page]="'transaction'" [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction-details>
+        <transaction-details *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH'" [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction-details>
         <transaction-details-eth *ngIf="chainNetwork.chain === 'ETH'" [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction-details-eth>
       </div>
 
