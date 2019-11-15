@@ -1671,8 +1671,7 @@ describe('Wallet service', function() {
           address.path.should.equal('m/0/0');
           address.type.should.equal('P2PKH');
           address.coin.should.equal('bch');
-          server.getNotifications({}, function(err, notifications) {
-            should.not.exist(err);
+          server.getNotifications({}).then(notifications => {
             var notif = _.find(notifications, {
               type: 'NewAddress'
             });
@@ -1695,8 +1694,7 @@ describe('Wallet service', function() {
           address.path.should.equal('m/0/0');
           address.type.should.equal('P2PKH');
           address.coin.should.equal('bch');
-          server.getNotifications({}, function(err, notifications) {
-            should.not.exist(err);
+          server.getNotifications({}).then(notifications => {
             var notif = _.find(notifications, {
               type: 'NewAddress'
             });
@@ -5424,8 +5422,7 @@ describe('Wallet service', function() {
               should.not.exist(err);
               server.getTx({
                 txProposalId: txp.id,
-              }, function(err, txp) {
-                should.not.exist(err);
+              }).then(txp => {
                 should.exist(txp.note);
                 txp.note.txid.should.equal(txp.txid);
                 txp.note.walletId.should.equal(wallet.id);
@@ -5661,8 +5658,7 @@ describe('Wallet service', function() {
         should.exist(x);
         x.path.should.equal('m/0/0');
         x.address.should.equal(firstAddress.address);
-        server.getMainAddresses({}, function(err, addr) {
-          should.not.exist(err);
+        server.getMainAddresses({}).then(addr => {
           addr.length.should.equal(1);
           done();
         }).catch(err => {
@@ -6068,7 +6064,7 @@ describe('Wallet service', function() {
             txs.should.be.empty;
             server.getTx({
               txProposalId: txid
-            }, function(err, tx) {
+            }).then(tx => {
               var actors = tx.getActors();
               actors.length.should.equal(1);
               actors[0].should.equal(wallet.copayers[0].id);
@@ -6473,8 +6469,7 @@ describe('Wallet service', function() {
             helpers.getAuthServer(wallet.copayers[2].id, function(server) {
               server.getTx({
                 txProposalId: txid
-              }, function(err, tx) {
-                should.not.exist(err);
+              }).then(tx => {
                 var signatures = helpers.clientSign(tx, TestData.copayers[2].xPrivKey_44H_0H_0H);
                 server.signTx({
                   txProposalId: txid,
@@ -6537,9 +6532,7 @@ describe('Wallet service', function() {
         should.not.exist(err);
         server.getTx({
           txProposalId: txpid
-        }, function(err, txp) {
-          should.not.exist(err);
-
+        }).then(txp => {
           should.exist(txp.raw);
           // used to be like this. No sure why we won't like raw to be shown.
           //should.not.exist(txp.raw);
@@ -6659,13 +6652,14 @@ describe('Wallet service', function() {
         err.toString().should.equal('broadcast error');
         server.getTx({
           txProposalId: txpid
-        }, function(err, txp) {
-          should.not.exist(err);
+        }).then(txp => {
           should.exist(txp.txid);
           txp.isBroadcasted().should.be.false;
           should.not.exist(txp.broadcastedOn);
           txp.isAccepted().should.be.true;
           done();
+        }).catch(err => {
+          should.not.exist(err);
         });
       });
     });
@@ -6680,12 +6674,13 @@ describe('Wallet service', function() {
         should.not.exist(err);
         server.getTx({
           txProposalId: txpid
-        }, function(err, txp) {
-          should.not.exist(err);
+        }).then(txp => {
           should.exist(txp.txid);
           txp.isBroadcasted().should.be.true;
           should.exist(txp.broadcastedOn);
           done();
+        }).catch(err => {
+          should.not.exist(err);
         });
       });
     });
@@ -6699,8 +6694,7 @@ describe('Wallet service', function() {
         err.toString().should.equal('bc check error');
         server.getTx({
           txProposalId: txpid
-        }, function(err, txp) {
-          should.not.exist(err);
+        }).then(txp => {
           should.exist(txp.txid);
           txp.isBroadcasted().should.be.false;
           should.not.exist(txp.broadcastedOn);
@@ -6754,8 +6748,7 @@ describe('Wallet service', function() {
         should.not.exist(err);
         server.getTx({
           txProposalId: txpid
-        }, function(err, txp) {
-          should.not.exist(err);
+        }).then(txp => {
           should.exist(txp.raw);
           // used to be like this. No sure why we won't like raw to be shown.
           //should.not.exist(txp.raw);
@@ -6852,8 +6845,7 @@ describe('Wallet service', function() {
             txp.actions.length.should.equal(1);
             var action = txp.getActionBy(wallet.copayers[0].id);
             action.type.should.equal('accept');
-            server.getNotifications({}, function(err, notifications) {
-              should.not.exist(err);
+            server.getNotifications({}).then(notifications => {
               var last = _.last(notifications);
               last.type.should.not.equal('TxProposalFinallyAccepted');
               next(null, txp);
@@ -6884,8 +6876,7 @@ describe('Wallet service', function() {
             txp.isBroadcasted().should.be.false;
             should.exist(txp.txid);
             txp.actions.length.should.equal(2);
-            server.getNotifications({}, function(err, notifications) {
-              should.not.exist(err);
+            server.getNotifications({}).then(notifications => {
               var last = _.last(notifications);
               last.type.should.equal('TxProposalFinallyAccepted');
               last.walletId.should.equal(wallet.id);
@@ -6970,8 +6961,7 @@ describe('Wallet service', function() {
         function(next) {
           server.getTx({
             txProposalId: txpId
-          }, function(err, txp) {
-            should.not.exist(err);
+          }).then(txp => {
             txp.isPending().should.be.false;
             txp.isRejected().should.be.true;
             txp.isAccepted().should.be.false;
@@ -7009,8 +6999,7 @@ describe('Wallet service', function() {
     it('should get own transaction proposal', function(done) {
       server.getTx({
         txProposalId: txpid
-      }, function(err, txp) {
-        should.not.exist(err);
+      }).then(txp => {
         should.exist(txp);
         txp.id.should.equal(txpid);
         done();
@@ -7020,8 +7009,7 @@ describe('Wallet service', function() {
       helpers.getAuthServer(wallet.copayers[1].id, function(server2, wallet) {
         server2.getTx({
           txProposalId: txpid
-        }, function(err, res) {
-          should.not.exist(err);
+        }).then(res => {
           res.id.should.equal(txpid);
           done();
         }).catch(err => {
@@ -7033,9 +7021,10 @@ describe('Wallet service', function() {
     it('should fail to get non-existent transaction proposal', function(done) {
       server.getTx({
         txProposalId: 'dummy'
-      }, function(err, txp) {
-        should.exist(err);
+      }).then(txp => {
         should.not.exist(txp);
+      }).catch(err => {
+        should.exist(err);
         err.code.should.equal('TX_NOT_FOUND')
         err.message.should.equal('Transaction proposal not found');
         done();
@@ -7167,8 +7156,7 @@ describe('Wallet service', function() {
       clock.restore();
     });
     it('should pull all notifications', function(done) {
-      server.getNotifications({}, function(err, notifications) {
-        should.not.exist(err);
+      server.getNotifications({}).then(notifications => {
         var types = _.map(notifications, 'type');
         types.should.deep.equal(['NewCopayer', 'NewAddress', 'NewAddress', 'NewTxProposal', 'NewTxProposal', 'NewTxProposal']);
         var walletIds = _.uniq(_.map(notifications, 'walletId'));
@@ -7202,8 +7190,7 @@ describe('Wallet service', function() {
               should.not.exist(err);
               s2.getNotifications({
                 minTs: +Date.now() - (60 * 1000),
-              }, function(err, notifications) {
-                should.not.exist(err);
+              }).then(notifications => {
                 var types = _.map(notifications, 'type');
                 types.should.deep.equal(['NewCopayer', 'NewIncomingTx']);
                 var walletIds = _.uniq(_.map(notifications, 'walletId'));
@@ -7238,8 +7225,7 @@ describe('Wallet service', function() {
               server.walletId = wallet.id;
               server.getNotifications({
                 minTs: +Date.now() - (60 * 1000),
-              }, function(err, notifications) {
-                should.not.exist(err);
+              }).then(notifications => {
                 var types = _.map(notifications, 'type');
                 types.should.deep.equal(['NewTxProposal', 'NewTxProposal', 'NewBlock']);
                 var walletIds = _.uniq(_.map(notifications, 'walletId'));
@@ -7253,22 +7239,19 @@ describe('Wallet service', function() {
     it('should pull notifications in the last 60 seconds', function(done) {
       server.getNotifications({
         minTs: +Date.now() - (60 * 1000),
-      }, function(err, notifications) {
-        should.not.exist(err);
+      }).then(notifications => {
         var types = _.map(notifications, 'type');
         types.should.deep.equal(['NewTxProposal', 'NewTxProposal']);
         done();
       });
     });
     it('should pull notifications after a given notification id', function(done) {
-      server.getNotifications({}, function(err, notifications) {
-        should.not.exist(err);
+      server.getNotifications({}).then(notifications => {
         var from = _.head(_.takeRight(notifications, 2)).id; // second to last
         server.getNotifications({
           notificationId: from,
           minTs: +Date.now() - (60 * 1000),
-        }, function(err, res) {
-          should.not.exist(err);
+        }).then(res => {
           res.length.should.equal(1);
           res[0].id.should.equal(_.head(_.takeRight(notifications)).id);
           done();
@@ -7276,13 +7259,11 @@ describe('Wallet service', function() {
       });
     });
     it('should return empty if no notifications found after a given id', function(done) {
-      server.getNotifications({}, function(err, notifications) {
-        should.not.exist(err);
+      server.getNotifications({}).then(notifications => {
         var from = _.head(_.takeRight(notifications)).id; // last one
         server.getNotifications({
           notificationId: from,
-        }, function(err, res) {
-          should.not.exist(err);
+        }).then(res => {
           res.length.should.equal(0);
           done();
         });
@@ -7292,15 +7273,13 @@ describe('Wallet service', function() {
       clock.tick(100 * 1000);
       server.getNotifications({
         minTs: +Date.now() - (60 * 1000),
-      }, function(err, res) {
-        should.not.exist(err);
+      }).then(res => {
         res.length.should.equal(0);
         done();
       });
     });
     it('should contain walletId & creatorId on NewCopayer', function(done) {
-      server.getNotifications({}, function(err, notifications) {
-        should.not.exist(err);
+      server.getNotifications({}).then(notifications => {
         var newCopayer = notifications[0];
         newCopayer.type.should.equal('NewCopayer');
         newCopayer.walletId.should.equal(wallet.id);
@@ -7319,8 +7298,7 @@ describe('Wallet service', function() {
         }, function(err) {
           server.getNotifications({
             minTs: Date.now(),
-          }, function(err, notifications) {
-            should.not.exist(err);
+          }).then(notifications => {
             notifications.length.should.equal(2);
             var types = _.map(notifications, 'type');
             types.should.deep.equal(['TxProposalAcceptedBy', 'TxProposalFinallyAccepted']);
@@ -7340,8 +7318,7 @@ describe('Wallet service', function() {
           should.not.exist(err);
           server.getNotifications({
             minTs: Date.now(),
-          }, function(err, notifications) {
-            should.not.exist(err);
+          }).then(notifications => {
             notifications.length.should.equal(2);
             var types = _.map(notifications, 'type');
             types.should.deep.equal(['TxProposalRejectedBy', 'TxProposalFinallyRejected']);
@@ -7368,8 +7345,7 @@ describe('Wallet service', function() {
             should.not.exist(err);
             server.getNotifications({
               minTs: Date.now(),
-            }, function(err, notifications) {
-              should.not.exist(err);
+            }).then(notifications => {
               notifications.length.should.equal(3);
               var types = _.map(notifications, 'type');
               types.should.deep.equal(['TxProposalAcceptedBy', 'TxProposalFinallyAccepted', 'NewOutgoingTx']);
@@ -7388,7 +7364,7 @@ describe('Wallet service', function() {
         server.signTx({
           txProposalId: tx.id,
           signatures: signatures,
-        }, function(err) {
+        }, (err) => {
           should.not.exist(err);
           blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, 'err');
           blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, {
@@ -7396,12 +7372,11 @@ describe('Wallet service', function() {
           });
           server.broadcastTx({
             txProposalId: tx.id
-          }, function(err, txp) {
+          }, (err, txp) => {
             should.not.exist(err);
             server.getNotifications({
               minTs: Date.now(),
-            }, function(err, notifications) {
-              should.not.exist(err);
+            }).then(notifications => {
               notifications.length.should.equal(3);
               var types = _.map(notifications, 'type');
               types.should.deep.equal(['TxProposalAcceptedBy', 'TxProposalFinallyAccepted', 'NewOutgoingTxByThirdParty']);
@@ -7721,6 +7696,8 @@ describe('Wallet service', function() {
                 done();
               });
             });
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -7742,6 +7719,8 @@ describe('Wallet service', function() {
                 err.code.should.equal('WALLET_NEED_SCAN');
                 done();
               });
+            }).catch(err => {
+              should.not.exist(err);
             });
           });
         });
@@ -7759,14 +7738,16 @@ describe('Wallet service', function() {
             server.storage.fetchAddresses(wallet.id, function(err, addresses) {
               should.not.exist(err);
               addresses.should.be.empty;
-              server.getStatus({}, function(err, status) {
+              server.getStatus({}).then(status => {
+                should.not.exist(status);
+              }).catch(err => {
                 should.exist(err);
                 err.code.should.equal('WALLET_NEED_SCAN');
                 done();
               });
-            }).catch(err => {
-              should.not.exist(err);
             });
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -7878,11 +7859,14 @@ describe('Wallet service', function() {
             should.not.exist(err);
             wallet.addressManager.receiveAddressIndex.should.equal(3);
             wallet.addressManager.changeAddressIndex.should.equal(1);
-            server.getMainAddresses({}, function(err, addr) {
-              should.not.exist(err);
+            server.getMainAddresses({}).then(addr => {
               addr.length.should.equal(3);
               done();
+            }).catch(err => {
+              should.not.exist(err);
             });
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -7909,13 +7893,16 @@ describe('Wallet service', function() {
             should.not.exist(err);
             wallet.addressManager.receiveAddressIndex.should.equal(201);
             wallet.addressManager.changeAddressIndex.should.equal(10);
-            server.getMainAddresses({}, function(err, addr) {
-              should.not.exist(err);
+            server.getMainAddresses({}).then(addr => {
 
               //201 MAIN addresses (0 to 200)
               addr.length.should.equal(201);
               done();
+            }).catch(err => {
+              should.not.exist(err);
             });
+          }).catch(err => {
+            should.not.exist(err);
           });
         });
       });
@@ -7954,7 +7941,7 @@ describe('Wallet service', function() {
       ];
       server.messageBroker.onMessage(function(n) {
         if (n.type == 'ScanFinished') {
-          server.getWallet({}, function(err, wallet) {
+          server.getWallet({}).then(wallet => {
             should.exist(wallet.scanStatus);
             wallet.scanStatus.should.equal('success');
             should.not.exist(n.creatorId);
@@ -7969,6 +7956,8 @@ describe('Wallet service', function() {
                 done();
               });
             })
+          }).catch(err => {
+            should.not.exist(err);
           });
         }
       });
@@ -7982,10 +7971,12 @@ describe('Wallet service', function() {
       server.messageBroker.onMessage(function(n) {
         if (n.type == 'ScanFinished') {
           should.exist(n.data.error);
-          server.getWallet({}, function(err, wallet) {
+          server.getWallet({}).then(wallet => {
             should.exist(wallet.scanStatus);
             wallet.scanStatus.should.equal('error');
             done();
+          }).catch(err => {
+            should.not.exist(err);
           });
         }
       });
@@ -8525,14 +8516,12 @@ describe('Wallet service', function() {
           address.coin.should.equal('bch');
           address.network.should.equal('livenet');
           address.address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
-          server.btc.getMainAddresses({}, function(err, addresses) {
-            should.not.exist(err);
+          server.btc.getMainAddresses({}).then(addresses => {
             addresses.length.should.equal(1);
             addresses[0].coin.should.equal('btc');
             addresses[0].walletId.should.equal(wallet.btc.id);
             addresses[0].address.should.equal('1L3z9LPd861FWQhf3vDn89Fnc9dkdBo2CG');
-            server.bch.getMainAddresses({}, function(err, addresses) {
-              should.not.exist(err);
+            server.bch.getMainAddresses({}).then(addresses => {
               addresses.length.should.equal(1);
               addresses[0].coin.should.equal('bch');
               addresses[0].walletId.should.equal(wallet.bch.id);

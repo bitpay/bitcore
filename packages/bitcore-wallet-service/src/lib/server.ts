@@ -684,113 +684,116 @@ export class WalletService {
    * @param {Object} opts.tokenAddress - (Optional) Token contract address to pass in getBalance
    * @returns {Object} status
    */
-  getStatus(opts, cb) {
-    opts = opts || {};
+  getStatus(opts): Promise<any> {
+    return new Promise((resolve, reject) => {
 
-    const status: {
-      wallet?: IWallet;
-      serverMessage?: {
-        title: string,
-        body: string,
-        link: string,
-        id: string,
-        dismissible: boolean,
-        category: string,
-        app: string
-      };
-      serverMessages?: Array<{
-        title: string,
-        body: string,
-        link: string,
-        id: string,
-        dismissible: boolean,
-        category: string,
-        app: string,
-        priority: number
-      }>;
-      balance?: string;
-      pendingTxps?: ITxProposal[];
-      preferences?: boolean;
-    } = {};
-    async.parallel(
-      [
-        (next) => {
-          this.getWallet({}).then(wallet => {
+      opts = opts || {};
 
-            const walletExtendedKeys = [
-              'publicKeyRing',
-              'pubKey',
-              'addressManager'
-            ];
-            const copayerExtendedKeys = [
-              'xPubKey',
-              'requestPubKey',
-              'signature',
-              'addressManager',
-              'customData'
-            ];
+      const status: {
+        wallet?: IWallet;
+        serverMessage?: {
+          title: string,
+          body: string,
+          link: string,
+          id: string,
+          dismissible: boolean,
+          category: string,
+          app: string
+        };
+        serverMessages?: Array<{
+          title: string,
+          body: string,
+          link: string,
+          id: string,
+          dismissible: boolean,
+          category: string,
+          app: string,
+          priority: number
+        }>;
+        balance?: string;
+        pendingTxps?: ITxProposal[];
+        preferences?: boolean;
+      } = {};
+      async.parallel(
+        [
+          (next) => {
+            this.getWallet({}).then(wallet => {
 
-            wallet.copayers = _.map(wallet.copayers, (copayer) => {
-              if (copayer.id == this.copayerId) return copayer;
-              return _.omit(copayer, 'customData');
-            });
-            if (!opts.includeExtendedInfo) {
-              wallet = _.omit(wallet, walletExtendedKeys);
+              const walletExtendedKeys = [
+                'publicKeyRing',
+                'pubKey',
+                'addressManager'
+              ];
+              const copayerExtendedKeys = [
+                'xPubKey',
+                'requestPubKey',
+                'signature',
+                'addressManager',
+                'customData'
+              ];
+
               wallet.copayers = _.map(wallet.copayers, (copayer) => {
-                return _.omit(copayer, copayerExtendedKeys);
+                if (copayer.id == this.copayerId) return copayer;
+                return _.omit(copayer, 'customData');
               });
-            }
-            status.wallet = wallet;
+              if (!opts.includeExtendedInfo) {
+                wallet = _.omit(wallet, walletExtendedKeys);
+                wallet.copayers = _.map(wallet.copayers, (copayer) => {
+                  return _.omit(copayer, copayerExtendedKeys);
+                });
+              }
+              status.wallet = wallet;
 
-            if (opts.includeServerMessages) {
-              status.serverMessages = serverMessages(
-                wallet,
-                this.appName,
-                this.appVersion
-              );
-            } else {
-              status.serverMessage = deprecatedServerMessage(wallet, this.appName, this.appVersion);
-            }
-            next();
-          }).catch(err => next(err));
-        },
-        (next) => {
-          opts.wallet = status.wallet;
-          this.getBalance(opts, (err, balance) => {
-            // ignore WALLET_NEED_SCAN err is includeExtendedInfo is given
-            // (to allow `importWallet` to import a wallet, while scan has
-            // failed)
-            if (opts.includeExtendedInfo) {
-              if (err && err.code != 'WALLET_NEED_SCAN') {
+              if (opts.includeServerMessages) {
+                status.serverMessages = serverMessages(
+                  wallet,
+                  this.appName,
+                  this.appVersion
+                );
+              } else {
+                status.serverMessage = deprecatedServerMessage(wallet, this.appName, this.appVersion);
+              }
+              next();
+            }).catch(err => next(err));
+          },
+          (next) => {
+            opts.wallet = status.wallet;
+            this.getBalance(opts, (err, balance) => {
+              // ignore WALLET_NEED_SCAN err is includeExtendedInfo is given
+              // (to allow `importWallet` to import a wallet, while scan has
+              // failed)
+              if (opts.includeExtendedInfo) {
+                if (err && err.code != 'WALLET_NEED_SCAN') {
+                  return next(err);
+                }
+              } else if (err) {
                 return next(err);
               }
-            } else if (err) {
-              return next(err);
-            }
 
-            status.balance = balance;
-            next();
-          });
-        },
-        (next) => {
-          this.getPendingTxs(opts, (err, pendingTxps) => {
-            if (err) return next(err);
-            status.pendingTxps = pendingTxps;
-            next();
-          });
-        },
-        (next) => {
-          this.getPreferences({}).then(preferences => {
-            status.preferences = preferences;
-            next();
-          }).catch(err => next(err));
+              status.balance = balance;
+              next();
+            });
+          },
+          (next) => {
+            this.getPendingTxs(opts, (err, pendingTxps) => {
+              if (err) return next(err);
+              status.pendingTxps = pendingTxps;
+              next();
+            });
+          },
+          (next) => {
+            this.getPreferences({}).then(preferences => {
+              status.preferences = preferences;
+              next();
+            }).catch(err => next(err));
+          }
+        ],
+        (err) => {
+          if (err) return reject(err);
+          return resolve(status);
         }
-      ],
-      (err) => {
-        if (err) return cb(err);
-        return cb(null, status);
-      }
-    );
+      );
+    });
   }
 
   /*
@@ -3097,7 +3100,6 @@ export class WalletService {
               const broadcastErr = err;
               // Check if tx already in blockchain
               this._checkTxInBlockchain(txp).then(isInBlockchain => {
-                if (err) return cb(err);
                 if (!isInBlockchain) return cb(broadcastErr || 'broadcast error');
 
                 this._processBroadcast(

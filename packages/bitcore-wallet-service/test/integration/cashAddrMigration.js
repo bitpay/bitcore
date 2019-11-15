@@ -59,7 +59,7 @@ describe('Cash address migration', function() {
         s.getWallet({}).then(w => {
           let calls = spy.getCalls();
           calls.should.be.empty();
-          helpers.stubUtxos(s, w, 1, function() {
+          helpers.stubUtxos(s, w, 1, () => {
             s.getStatus({}).then(a => {
               spy.restore();
               done();
