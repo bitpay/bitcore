@@ -3314,182 +3314,186 @@ export class WalletService {
     });
   }
 
-  _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight, cb) {
-    if (_.isEmpty(txs)) return cb(null, txs);
+  _normalizeTxHistory(walletId, txs: any[], dustThreshold, bcHeight): Promise<any> {
+    return new Promise((resolve, reject) => {
 
-    // console.log('[server.js.2915:txs:] IN NORMALIZE',txs); //TODO
-    const now = Math.floor(Date.now() / 1000);
+      if (_.isEmpty(txs)) return resolve(txs);
 
-    // One fee per TXID
-    const indexedFee: any = _.keyBy(
-      _.filter(txs, { category: 'fee' } as any),
-      'txid'
-    );
-    const indexedSend = _.keyBy(
-      _.filter(txs, { category: 'send' } as any),
-      'txid'
-    );
-    const seenSend = {};
-    const seenReceive = {};
+      // console.log('[server.js.2915:txs:] IN NORMALIZE',txs); //TODO
+      const now = Math.floor(Date.now() / 1000);
 
-    const moves: { [txid: string]: ITxProposal } = {};
-
-    // remove 'fees' and 'moves' (probably change addresses)
-    txs = _.filter(txs, tx => {
-      // double spend or error
-      // This should be shown on the client, so we dont remove it here
-      //    if (tx.height && tx.height <= -3)
-      //      return false;
-
-      if (tx.category == 'receive') {
-
-        if (tx.satoshis < dustThreshold)
-          return false;
-
-        const output = {
-          address: tx.address,
-          amount: Math.abs(tx.satoshis)
-        };
-        if (seenReceive[tx.txid]) {
-          seenReceive[tx.txid].outputs.push(output);
-          return false;
-        } else {
-          tx.outputs = [output];
-          seenReceive[tx.txid] = tx;
-          return true;
-        }
-      }
-      if (tx.category == 'send') {
-        const output = {
-          address: tx.address,
-          amount: Math.abs(tx.satoshis)
-        };
-        if (seenSend[tx.txid]) {
-          seenSend[tx.txid].outputs.push(output);
-          return false;
-        } else {
-          tx.outputs = [output];
-          seenSend[tx.txid] = tx;
-          return true;
-        }
-      }
-
-      // move without send?
-      if (tx.category == 'move' && !indexedSend[tx.txid]) {
-        const output = {
-          address: tx.address,
-          amount: Math.abs(tx.satoshis)
-        };
-
-        if (moves[tx.txid]) {
-          moves[tx.txid].outputs.push(output);
-          return false;
-        } else {
-          moves[tx.txid] = tx;
-          tx.outputs = [output];
-          return true;
-        }
-      }
-    });
-
-    // Filter out moves:
-    // This are moves from the wallet to itself. There are 2+ outputs. one if the change
-    // the other a main address for the wallet.
-    _.each(moves, (v, k) => {
-      if (v.outputs.length <= 1) {
-        delete moves[k];
-      }
-    });
-
-    const fixMoves = (cb2) => {
-      if (_.isEmpty(moves)) return cb2();
-
-      // each detected duplicate output move
-      const moves3 = _.flatten(_.map(_.values(moves), 'outputs'));
-      // check output address for change address
-      this.storage.fetchAddressesByWalletId(
-        walletId,
-        _.map(moves3, 'address'),
-        (err, addrs) => {
-          if (err) return cb(err);
-
-          const isChangeAddress = _.countBy(
-            _.filter(addrs, { isChange: true }),
-            'address'
-          );
-          _.each(moves, x => {
-            _.remove(x.outputs, i => {
-              return isChangeAddress[i.address];
-            });
-          });
-          return cb2();
-        }
+      // One fee per TXID
+      const indexedFee: any = _.keyBy(
+        _.filter(txs, { category: 'fee' } as any),
+        'txid'
       );
-    };
+      const indexedSend = _.keyBy(
+        _.filter(txs, { category: 'send' } as any),
+        'txid'
+      );
+      const seenSend = {};
+      const seenReceive = {};
 
-    fixMoves(err => {
-      if (err) return cb(err);
+      const moves: { [txid: string]: ITxProposal } = {};
 
-      const ret = _.filter(_.map([].concat(txs), (tx) => {
-        const t = new Date(tx.blockTime).getTime() / 1000;
-        const c = tx.height >= 0 && bcHeight >= tx.height ? bcHeight - tx.height + 1 : 0;
-        const ret = {
-          id: tx.id,
-          txid: tx.txid,
-          confirmations: c,
-          blockheight: tx.height > 0 ? tx.height : null,
-          fees:
-            tx.fee ||
-            (indexedFee[tx.txid]
-              ? Math.abs(indexedFee[tx.txid].satoshis)
-              : null),
-          time: t,
-          size: tx.size,
-          amount: 0,
-          action: undefined,
-          addressTo: undefined,
-          outputs: undefined,
-          dust: false,
-        };
-        switch (tx.category) {
-          case 'send':
-            ret.action = 'sent';
-            ret.amount = Math.abs(_.sumBy(tx.outputs, 'amount')) || Math.abs(tx.satoshis);
-            ret.addressTo = tx.outputs ? tx.outputs[0].address : null;
-            ret.outputs = tx.outputs;
-            break;
-          case 'receive':
-            ret.action = 'received';
-            ret.outputs = tx.outputs;
-            ret.amount = Math.abs(_.sumBy(tx.outputs, 'amount')) || Math.abs(tx.satoshis);
-            ret.dust = ret.amount < dustThreshold;
-            break;
-          case 'move':
-            ret.action = 'moved';
-            ret.amount = Math.abs(tx.satoshis);
-            ret.addressTo =
-              tx.outputs && tx.outputs.length ? tx.outputs[0].address : null;
-            ret.outputs = tx.outputs;
-            break;
-          default:
-            ret.action = 'invalid';
+      // remove 'fees' and 'moves' (probably change addresses)
+      txs = _.filter(txs, tx => {
+        // double spend or error
+        // This should be shown on the client, so we dont remove it here
+        //    if (tx.height && tx.height <= -3)
+        //      return false;
+
+        if (tx.category == 'receive') {
+
+          if (tx.satoshis < dustThreshold)
+            return false;
+
+          const output = {
+            address: tx.address,
+            amount: Math.abs(tx.satoshis)
+          };
+          if (seenReceive[tx.txid]) {
+            seenReceive[tx.txid].outputs.push(output);
+            return false;
+          } else {
+            tx.outputs = [output];
+            seenReceive[tx.txid] = tx;
+            return true;
+          }
+        }
+        if (tx.category == 'send') {
+          const output = {
+            address: tx.address,
+            amount: Math.abs(tx.satoshis)
+          };
+          if (seenSend[tx.txid]) {
+            seenSend[tx.txid].outputs.push(output);
+            return false;
+          } else {
+            tx.outputs = [output];
+            seenSend[tx.txid] = tx;
+            return true;
+          }
         }
 
-        // not available
-        // inputs: inputs,
-        return ret;
+        // move without send?
+        if (tx.category == 'move' && !indexedSend[tx.txid]) {
+          const output = {
+            address: tx.address,
+            amount: Math.abs(tx.satoshis)
+          };
 
-        // filter out dust
-      }), (x) => {
-        return !x.dust;
+          if (moves[tx.txid]) {
+            moves[tx.txid].outputs.push(output);
+            return false;
+          } else {
+            moves[tx.txid] = tx;
+            tx.outputs = [output];
+            return true;
+          }
+        }
       });
 
-      // console.log('[server.js.2965:ret:] END',ret); //TODO
-      return cb(null, ret);
+      // Filter out moves:
+      // This are moves from the wallet to itself. There are 2+ outputs. one if the change
+      // the other a main address for the wallet.
+      _.each(moves, (v, k) => {
+        if (v.outputs.length <= 1) {
+          delete moves[k];
+        }
+      });
+
+      const fixMoves = (cb2) => {
+        if (_.isEmpty(moves)) return cb2();
+
+        // each detected duplicate output move
+        const moves3 = _.flatten(_.map(_.values(moves), 'outputs'));
+        // check output address for change address
+        this.storage.fetchAddressesByWalletId(
+          walletId,
+          _.map(moves3, 'address'),
+          (err, addrs) => {
+            if (err) return reject(err);
+
+            const isChangeAddress = _.countBy(
+              _.filter(addrs, { isChange: true }),
+              'address'
+            );
+            _.each(moves, x => {
+              _.remove(x.outputs, i => {
+                return isChangeAddress[i.address];
+              });
+            });
+            return cb2();
+          }
+        );
+      };
+
+      fixMoves(err => {
+        if (err) return reject(err);
+
+        const ret = _.filter(_.map([].concat(txs), (tx) => {
+          const t = new Date(tx.blockTime).getTime() / 1000;
+          const c = tx.height >= 0 && bcHeight >= tx.height ? bcHeight - tx.height + 1 : 0;
+          const ret = {
+            id: tx.id,
+            txid: tx.txid,
+            confirmations: c,
+            blockheight: tx.height > 0 ? tx.height : null,
+            fees:
+              tx.fee ||
+              (indexedFee[tx.txid]
+                ? Math.abs(indexedFee[tx.txid].satoshis)
+                : null),
+            time: t,
+            size: tx.size,
+            amount: 0,
+            action: undefined,
+            addressTo: undefined,
+            outputs: undefined,
+            dust: false,
+          };
+          switch (tx.category) {
+            case 'send':
+              ret.action = 'sent';
+              ret.amount = Math.abs(_.sumBy(tx.outputs, 'amount')) || Math.abs(tx.satoshis);
+              ret.addressTo = tx.outputs ? tx.outputs[0].address : null;
+              ret.outputs = tx.outputs;
+              break;
+            case 'receive':
+              ret.action = 'received';
+              ret.outputs = tx.outputs;
+              ret.amount = Math.abs(_.sumBy(tx.outputs, 'amount')) || Math.abs(tx.satoshis);
+              ret.dust = ret.amount < dustThreshold;
+              break;
+            case 'move':
+              ret.action = 'moved';
+              ret.amount = Math.abs(tx.satoshis);
+              ret.addressTo =
+                tx.outputs && tx.outputs.length ? tx.outputs[0].address : null;
+              ret.outputs = tx.outputs;
+              break;
+            default:
+              ret.action = 'invalid';
+          }
+
+          // not available
+          // inputs: inputs,
+          return ret;
+
+          // filter out dust
+        }), (x) => {
+          return !x.dust;
+        });
+
+        // console.log('[server.js.2965:ret:] END',ret); //TODO
+        return resolve(ret);
+      });
     });
   }
 
   _getBlockchainHeight(coin, network, cb) {
+
     const cacheKey = Storage.BCHEIGHT_KEY + ':' + coin + ':' + network;
 
     this.storage.checkAndUseGlobalCache(
@@ -3547,53 +3551,56 @@ export class WalletService {
     });
   }
 
-  checkWalletSync(bc, wallet, simpleRun, cb) {
-    if (!wallet.addressManager && !wallet.addressManager.receiveAddressIndex)
-      return cb(null, true);
+  checkWalletSync(bc, wallet, simpleRun): Promise<any> {
+    return new Promise((resolve, reject) => {
 
-    // check cache
-    const totalAddresses =
-      wallet.addressManager.receiveAddressIndex +
-      wallet.addressManager.changeAddressIndex;
+      if (!wallet.addressManager && !wallet.addressManager.receiveAddressIndex)
+        return resolve(true);
 
-    this.storage.getWalletAddressChecked(wallet.id, (err, checkedTotal) => {
-      if (checkedTotal == totalAddresses) {
-        log.debug('addresses checked already');
-        return cb(null, true);
-      }
+      // check cache
+      const totalAddresses =
+        wallet.addressManager.receiveAddressIndex +
+        wallet.addressManager.changeAddressIndex;
 
-      // only check total number of addreses
-      if (simpleRun)
-        return cb();
+      this.storage.getWalletAddressChecked(wallet.id, (err, checkedTotal) => {
+        if (checkedTotal == totalAddresses) {
+          log.debug('addresses checked already');
+          return resolve(true);
+        }
 
-      this.storage
-        .walletCheck({ walletId: wallet.id })
-        .then((localCheck: { sum: number }) => {
-          bc.getCheckData(wallet, (err, serverCheck) => {
-            // If there is an error, just ignore it (server does not support walletCheck)
-            if (err) {
-              this.logw('Error at bitcore WalletCheck, ignoring' + err);
-              return cb();
-            }
+        // only check total number of addreses
+        if (simpleRun)
+          return resolve();
 
-            const isOK = serverCheck.sum == localCheck.sum;
-
-            if (isOK) {
-              log.debug('Wallet Sync Check OK');
-            } else {
-              log.warn('ERROR: Wallet check failed:', localCheck, serverCheck);
-              return cb(null, isOK);
-            }
-
-            this.storage.setWalletAddressChecked(
-              wallet.id,
-              totalAddresses,
-              err => {
-                return cb(null, isOK);
+        this.storage
+          .walletCheck({ walletId: wallet.id })
+          .then((localCheck: { sum: number }) => {
+            bc.getCheckData(wallet, (err, serverCheck) => {
+              // If there is an error, just ignore it (server does not support walletCheck)
+              if (err) {
+                this.logw('Error at bitcore WalletCheck, ignoring' + err);
+                return resolve();
               }
-            );
+
+              const isOK = serverCheck.sum == localCheck.sum;
+
+              if (isOK) {
+                log.debug('Wallet Sync Check OK');
+              } else {
+                log.warn('ERROR: Wallet check failed:', localCheck, serverCheck);
+                return resolve(isOK);
+              }
+
+              this.storage.setWalletAddressChecked(
+                wallet.id,
+                totalAddresses,
+                err => {
+                  return resolve(isOK);
+                }
+              );
+            });
           });
-        });
+      });
     });
   }
 
@@ -3612,7 +3619,7 @@ export class WalletService {
       }
 
       // First
-      this.checkWalletSync(bc, wallet, true, (err, isOK) => {
+      this.checkWalletSync(bc, wallet, true).then(isOK => {
         // ignore err
         if (isOK && !justRegistered) return cb();
 
@@ -3642,9 +3649,7 @@ export class WalletService {
           syncAddr(addresses, err => {
             if (skipCheck || doNotCheckV8) return cb();
 
-            this.checkWalletSync(bc, wallet, false, (err, isOK) => {
-              // ignore err
-              if (err) return cb();
+            this.checkWalletSync(bc, wallet, false).then(isOK => {
 
               if (isOK) return cb();
 
@@ -3659,10 +3664,10 @@ export class WalletService {
               this.storage.deregisterWallet(wallet.id, () => {
                 this.syncWallet(wallet, cb, false, count);
               });
-            });
+            }).catch(err => cb(err));
           });
         });
-      });
+      }).catch(err => cb(err));
     });
   }
 
@@ -3830,32 +3835,35 @@ export class WalletService {
     }
   }
 
-  tagLowFeeTxs(wallet: IWallet, txs: any[], cb) {
-    const unconfirmed = txs.filter(tx => tx.confirmations === 0);
-    if (_.isEmpty(unconfirmed)) return cb();
+  tagLowFeeTxs(wallet: IWallet, txs: any[]): Promise<any> {
+    return new Promise((resolve, reject) => {
 
-    this.getFeeLevels(
-      {
-        coin: wallet.coin,
-        network: wallet.network
-      },
-      (err, levels) => {
-        if (err) {
-          this.logw('Could not fetch fee levels', err);
-        } else {
-          const level = levels.find(l => l.level === 'superEconomy');
-          if (!level || !level.nbBlocks) {
-            this.logi('Cannot compute super economy fee level from blockchain');
+      const unconfirmed = txs.filter(tx => tx.confirmations === 0);
+      if (_.isEmpty(unconfirmed)) return resolve();
+
+      this.getFeeLevels(
+        {
+          coin: wallet.coin,
+          network: wallet.network
+        },
+        (err, levels) => {
+          if (err) {
+            this.logw('Could not fetch fee levels', err);
           } else {
-            const minFeePerKb = level.feePerKb;
-            _.each(unconfirmed, (tx) => {
-              tx.lowFees = tx.feePerKb < minFeePerKb;
-            });
+            const level = levels.find(l => l.level === 'superEconomy');
+            if (!level || !level.nbBlocks) {
+              this.logi('Cannot compute super economy fee level from blockchain');
+            } else {
+              const minFeePerKb = level.feePerKb;
+              _.each(unconfirmed, (tx) => {
+                tx.lowFees = tx.feePerKb < minFeePerKb;
+              });
+            }
           }
+          return resolve();
         }
-        return cb();
-      }
-    );
+      );
+    });
   }
 
   getTxHistoryV8(bc, wallet, opts, skip, limit, cb) {
@@ -3941,12 +3949,7 @@ export class WalletService {
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
             const dustThreshold = ChainService.getDustAmountValue(wallet.coin);
-            this._normalizeTxHistory(walletCacheKey, txs, dustThreshold, bcHeight, (
-              err,
-              inTxs: any[]
-            ) => {
-              if (err) return cb(err);
-
+            this._normalizeTxHistory(walletCacheKey, txs, dustThreshold, bcHeight).then((inTxs: any[]) => {
               if (cacheStatus.tipTxId) {
                 // first item is the most recent tx.
                 // removes already cache txs
@@ -3970,7 +3973,7 @@ export class WalletService {
 
               lastTxs = inTxs;
               return next();
-            });
+            }).catch(err => cb(err));
           });
         },
         next => {
@@ -4168,8 +4171,7 @@ export class WalletService {
             WalletService._addNotesInfo(tx, indexedNotes);
             return tx;
           });
-          this.tagLowFeeTxs(wallet, finalTxs, (err) => {
-            if (err) this.logw('Failed to tag unconfirmed with low fee');
+          this.tagLowFeeTxs(wallet, finalTxs).then(() => {
 
             if (res.txs.fromCache) {
               let p = '';
@@ -4185,6 +4187,8 @@ export class WalletService {
               );
             }
             return cb(null, finalTxs, !!res.txs.fromCache, !!res.txs.useStream);
+          }).catch(err => {
+            this.logw('Failed to tag unconfirmed with low fee');
           });
         }
       );

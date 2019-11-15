@@ -5502,7 +5502,7 @@ describe('Wallet service', function() {
     it('should include the note in tx history listing', function(done) {
       helpers.createAddresses(server, wallet, 1, 1, function(mainAddresses, changeAddress) {
         blockchainExplorer.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000);
-        server._normalizeTxHistory = function(a, b, c, e, d) { return d(null, b); }
+        server._normalizeTxHistory = (_a, b, _c, _d) => { return Promise.resolve(b) }
         var txs = [{
           txid: '123',
           blockheight: 100,

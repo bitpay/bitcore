@@ -290,9 +290,9 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
         s.getWallet({}).then(w => {
 
           // STUB for checkWalletSync.
-          s.checkWalletSync = function(a, b, simple, cb) {
-            if (simple) return cb(null, false);
-            return cb(null, true);
+          s.checkWalletSync = (_a, _b, simple) => {
+            if (simple) return Promise.resolve(false);
+            return Promise.resolve(true);
           }
           cb(s, w);
         }).catch(err => cb(err));
