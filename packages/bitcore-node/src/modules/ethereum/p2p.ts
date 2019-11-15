@@ -23,6 +23,8 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   private rpc?: ParityRPC;
   private provider: ETHStateProvider;
   private web3?: Web3;
+  protected invCache: any;
+  protected invCacheLimits: any;
 
   constructor({ chain, network, chainConfig, blockModel = EthBlockStorage, txModel = EthTransactionStorage }) {
     super({ chain, network, chainConfig, blockModel });
@@ -34,15 +36,38 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     this.blockModel = blockModel;
     this.txModel = txModel;
     this.provider = new ETHStateProvider();
+
+    this.invCache = {};
+    this.invCacheLimits = {
+      TX: 100000
+    };
+  }
+
+  cacheInv(type: 'TX', hash: string): void {
+    if (!this.invCache[type]) {
+      this.invCache[type] = [];
+    }
+    if (this.invCache[type].length > this.invCacheLimits[type]) {
+      this.invCache[type].shift();
+    }
+    this.invCache[type].push(hash);
+  }
+
+  isCachedInv(type: 'TX', hash: string): boolean {
+    if (!this.invCache[type]) {
+      this.invCache[type] = [];
+    }
+    return this.invCache[type].includes(hash);
   }
 
   async setupListeners() {
     this.txSubscription = await this.web3!.eth.subscribe('pendingTransactions');
     this.txSubscription.subscribe(async (_err, txid) => {
-      if (!this.syncing) {
+      if (!this.syncing && !this.isCachedInv('TX', txid)) {
         const tx = (await this.web3!.eth.getTransaction(txid)) as Parity.Transaction;
         if (tx) {
-          this.processTransaction(tx);
+          this.cacheInv('TX', txid);
+          await this.processTransaction(tx);
         }
       }
     });
