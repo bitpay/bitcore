@@ -52,10 +52,28 @@ async function getBlock(currentHeight: number) {
 
 export async function validateDataForBlock(blockNum: number, log = false) {
   let success = true;
+  const errors = new Array<ErrorType>();
+
   const [block, blockTxs] = await Promise.all([
     BitcoinBlockStorage.collection.findOne({ chain, network, height: blockNum, processed: true }),
     TransactionStorage.collection.find({ chain, network, blockHeight: blockNum }).toArray()
   ]);
+
+  if (!block) {
+    success = false;
+    const error = {
+      model: 'block',
+      err: true,
+      type: 'MISSING_BLOCK',
+      payload: { blockNum }
+    };
+    errors.push(error);
+    if (log) {
+      console.log(JSON.stringify(error));
+    }
+    return { success, errors };
+  }
+
   const blockTxids = blockTxs.map(t => t.txid);
   const firstHash = blockTxs[0] ? blockTxs[0].blockHash : block!.hash;
   const [coinsForTx, mempoolTxs, blocksForHash, blocksForHeight, p2pBlock] = await Promise.all([
@@ -72,7 +90,6 @@ export async function validateDataForBlock(blockNum: number, log = false) {
   ]);
 
   const seenTxs = {} as { [txid: string]: ITransaction };
-  const errors = new Array<ErrorType>();
 
   if (!block || block.transactionCount != blockTxs.length) {
     success = false;
