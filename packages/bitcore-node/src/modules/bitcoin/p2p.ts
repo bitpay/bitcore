@@ -11,17 +11,17 @@ import { ChainStateProvider } from '../../providers/chain-state';
 import { Libs } from '../../providers/libs';
 
 export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
-  private bitcoreLib: any;
-  private bitcoreP2p: any;
-  private chainConfig: any;
-  private events: EventEmitter;
-  private messages: any;
-  private pool: any;
-  private connectInterval?: NodeJS.Timer;
-  private invCache: any;
-  private invCacheLimits: any;
-  private initialSyncComplete: boolean;
-  private blockModel: BitcoinBlock;
+  protected bitcoreLib: any;
+  protected bitcoreP2p: any;
+  protected chainConfig: any;
+  protected messages: any;
+  protected connectInterval?: NodeJS.Timer;
+  protected invCache: any;
+  protected invCacheLimits: any;
+  protected initialSyncComplete: boolean;
+  protected blockModel: BitcoinBlock;
+  protected pool: any;
+  public events: EventEmitter;
   public isSyncing: boolean;
   constructor({ chain, network, chainConfig, blockModel = BitcoinBlockStorage }) {
     super({ chain, network, chainConfig, blockModel });
@@ -92,7 +92,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
       );
     });
 
-    this.pool.on('peertx', (peer, message) => {
+    this.pool.on('peertx', async (peer, message) => {
       const hash = message.transaction.hash;
       logger.debug('peer tx received', {
         peer: `${peer.host}:${peer.port}`,
@@ -102,7 +102,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
       });
       if (this.isSyncingNode && !this.isCachedInv(this.bitcoreP2p.Inventory.TYPE.TX, hash)) {
         this.cacheInv(this.bitcoreP2p.Inventory.TYPE.TX, hash);
-        this.processTransaction(message.transaction);
+        await this.processTransaction(message.transaction);
         this.events.emit('transaction', message.transaction);
       }
     });
@@ -227,7 +227,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
 
   async processTransaction(tx: Bitcoin.Transaction): Promise<any> {
     const now = new Date();
-    TransactionStorage.batchImport({
+    await TransactionStorage.batchImport({
       chain: this.chain,
       network: this.network,
       txs: [tx],
@@ -311,49 +311,6 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     );
     this.events.emit('SYNCDONE');
     return true;
-  }
-
-  async resync(from: number, to: number) {
-    const { chain, network } = this;
-    let currentHeight = Math.max(1, from);
-    const originalSyncValue = this.isSyncing;
-    const originalSyncingNodeValue = this.isSyncingNode;
-    while (currentHeight < to) {
-      this.isSyncing = true;
-      this.isSyncingNode = true;
-      const locatorHashes = await ChainStateProvider.getLocatorHashes({
-        chain,
-        network,
-        startHeight: Math.max(1, currentHeight - 30),
-        endHeight: currentHeight
-      });
-      const headers = await this.getHeaders(locatorHashes);
-      if (!headers.length) {
-        logger.info(`${chain}:${network} up to date.`);
-        break;
-      }
-      const headerCount = Math.min(headers.length, to - currentHeight);
-      logger.info(`Re-Syncing ${headerCount} blocks for ${chain} ${network}`);
-      let lastLog = Date.now();
-      for (let header of headers) {
-        if (currentHeight > to) {
-          break;
-        }
-        const block = await this.getBlock(header.hash);
-        await BitcoinBlockStorage.processBlock({ chain, network, block, initialSyncComplete: true });
-        currentHeight++;
-        if (Date.now() - lastLog > 100) {
-          logger.info(`Re-Sync `, {
-            chain,
-            network,
-            height: currentHeight
-          });
-          lastLog = Date.now();
-        }
-      }
-    }
-    this.isSyncing = originalSyncValue;
-    this.isSyncingNode = originalSyncingNodeValue;
   }
 
   async stop() {

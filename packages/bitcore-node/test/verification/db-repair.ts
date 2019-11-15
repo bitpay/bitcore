@@ -7,7 +7,7 @@ import { Config } from '../../src/services/config';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { validateDataForBlock } from './db-verify';
 import { TransactionStorage } from '../../src/models/transaction';
-import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
+import { VerificationPeer } from './VerificationPeer';
 
 (async () => {
   const { CHAIN, NETWORK, FILE, DRYRUN } = process.env;
@@ -19,7 +19,7 @@ import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
   const network = NETWORK || '';
   await Storage.start();
   const chainConfig = Config.chainConfig({ chain, network });
-  const worker = new BitcoinP2PWorker({ chain, network, chainConfig });
+  const worker = new VerificationPeer({ chain, network, chainConfig });
   await worker.connect();
 
   const handleRepair = async data => {
@@ -58,7 +58,7 @@ import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
           const coin = data.payload.coin;
           const dupeCoins = await CoinStorage.collection
             .find({ chain, network, mintTxid: coin.mintTxid, mintIndex: coin.mintIndex })
-            .sort({ _id: -1 })
+            .sort({ mintHeight: -1, spentHeight: -1 })
             .toArray();
 
           if (dupeCoins.length < 2) {
@@ -98,16 +98,16 @@ import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
       case 'NEG_FEE':
         const blockHeight = Number(data.payload.blockNum);
         const { success } = await validateDataForBlock(blockHeight);
+        if (success) {
+          console.log('No errors found, repaired previously');
+          return;
+        }
         if (DRYRUN) {
           console.log('WOULD RESYNC BLOCKS', blockHeight, 'to', blockHeight + 1);
           console.log(data.payload);
         } else {
-          if (!success) {
-            console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
-            await worker.resync(blockHeight - 1, blockHeight + 1);
-          } else {
-            console.log('No errors found, repaired previously');
-          }
+          console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
+          await worker.resync(blockHeight - 1, blockHeight + 1);
         }
         break;
       case 'DUPE_BLOCKHEIGHT':
