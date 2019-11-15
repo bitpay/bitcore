@@ -64,7 +64,7 @@ export class Credentials {
   use145forBCH: any;
   addressType: string;
   keyId: string;
-  token: string;
+  token?: string;
   externalSource?: boolean; // deprecated property?
 
   constructor() {
@@ -138,7 +138,7 @@ export class Credentials {
   /* 
    * creates an ERC20 wallet from a ETH wallet
    */
-  getTokenCredentials(token: { name: string, symbol: string, address:string }) {
+  getTokenCredentials(token: { name: string, symbol: string, address: string }) {
     const ret = _.cloneDeep(this);
     ret.walletId = `${ret.walletId}-${token.address}`;
     ret.coin = token.symbol.toLowerCase();
