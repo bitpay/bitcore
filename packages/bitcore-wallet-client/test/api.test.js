@@ -256,13 +256,19 @@ blockchainExplorerMock.getBlockchainHeight = (cb) => { return cb(null, 1000); }
 blockchainExplorerMock.broadcast = (raw, cb) => {
   blockchainExplorerMock.lastBroadcasted = raw;
 
+  let hash;
   try {
+    let tx = new Bitcore.Transaction(raw);
+    if (_.isEmpty(tx.outputs)) {
+      throw 'no bitcoin';
+    }
+    hash = tx.id;
     // btc/bch
-    return cb(null, (new Bitcore.Transaction(raw)).id);
+    return cb(null, hash);
   } catch (e) {
     // try eth
-    const hash = CWC.Transactions.getHash({
-      tx: raw,
+     hash = CWC.Transactions.getHash({
+      tx: raw[0],
       chain: 'ETH',
     });
     return cb(null, hash);
@@ -2488,6 +2494,7 @@ describe('client API', () => {
           clients[0].createAddress({
             ignoreMaxGap: true
           }, (err, x) => {
+            if (err) console.log(err);
             should.not.exist(err);
             should.exist(x.address);
             callback(err, x);

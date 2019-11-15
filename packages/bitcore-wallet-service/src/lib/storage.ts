@@ -1487,7 +1487,7 @@ export class Storage {
       let lastAddress;
       addressStream.on('data', walletAddress => {
         if (walletAddress.address) {
-          lastAddress = walletAddress.address;
+          lastAddress = walletAddress.address.replace(/:.*$/, '');
           const addressSum = Buffer.from(lastAddress).reduce(
             (tot, cur) => (tot + cur) % Number.MAX_SAFE_INTEGER
           );

@@ -688,7 +688,7 @@ describe('History', function() {
           }, function(err, tx) {
             should.not.exist(err);
 
-            helpers.stubBroadcast();
+            helpers.stubBroadcast(tx.txid);
             server.broadcastTx({
               txProposalId: tx.id
             }, function(err, txp) {
@@ -786,7 +786,7 @@ describe('History', function() {
           }, function(err, tx) {
             should.not.exist(err);
 
-            helpers.stubBroadcast();
+            helpers.stubBroadcast(tx.txid);
             server.broadcastTx({
               txProposalId: tx.id
             }, function(err, txp) {
