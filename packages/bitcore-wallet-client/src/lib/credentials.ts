@@ -72,7 +72,6 @@ export class Credentials {
     this.account = 0;
   }
 
-
   /*
    *coin, xPrivKey, account, network
    */
@@ -135,7 +134,7 @@ export class Credentials {
     return x;
   }
 
-  /* 
+  /*
    * creates an ERC20 wallet from a ETH wallet
    */
   getTokenCredentials(token: { name: string, symbol: string, address: string }) {
@@ -146,8 +145,7 @@ export class Credentials {
     ret.token = token;
 
     return ret;
-  };
-
+  }
 
   getRootPath() {
     // This is for OLD v1.0 credentials only.
