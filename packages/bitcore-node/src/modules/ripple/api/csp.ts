@@ -41,6 +41,16 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     return RippleStateProvider.clients[network];
   }
 
+  async getAccountNonce(network: string, address: string) {
+    const client = await this.getClient(network);
+    try {
+      const { sequence } = await client.getAccountInfo(address);
+      return sequence;
+    } catch (err) {
+      throw err;
+    }
+  }
+
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const client = await this.getClient(params.network);
     try {
@@ -225,3 +235,5 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     }
   }
 }
+
+export const XRP = new RippleStateProvider();
