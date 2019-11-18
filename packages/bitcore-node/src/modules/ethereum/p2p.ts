@@ -65,7 +65,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   async setupListeners() {
     this.txSubscription = await this.web3!.eth.subscribe('pendingTransactions');
     this.txSubscription.subscribe(async (_err, txid) => {
-      if (!this.syncing && !this.isCachedInv('TX', txid)) {
+      if (!this.isCachedInv('TX', txid)) {
         const tx = (await this.web3!.eth.getTransaction(txid)) as Parity.Transaction;
         if (tx) {
           this.cacheInv('TX', txid);
@@ -75,7 +75,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       }
     });
     this.blockSubscription = await this.web3!.eth.subscribe('newBlockHeaders');
-    this.blockSubscription.subscribe(block => {
+    this.blockSubscription.subscribe((_err, block) => {
       this.events.emit('block', block);
       if (!this.syncing) {
         this.sync();
