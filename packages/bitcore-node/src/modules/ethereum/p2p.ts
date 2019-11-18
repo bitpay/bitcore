@@ -13,16 +13,16 @@ import { valueOrDefault } from '../../utils/check';
 import { wait } from '../../utils/wait';
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
-  private chainConfig: any;
-  private syncing: boolean;
-  private initialSyncComplete: boolean;
-  private blockModel: EthBlockModel;
-  private txModel: EthTransactionModel;
-  private txSubscription: any;
-  private blockSubscription: any;
-  private rpc?: ParityRPC;
-  private provider: ETHStateProvider;
-  private web3?: Web3;
+  protected chainConfig: any;
+  protected syncing: boolean;
+  protected initialSyncComplete: boolean;
+  protected blockModel: EthBlockModel;
+  protected txModel: EthTransactionModel;
+  protected txSubscription: any;
+  protected blockSubscription: any;
+  protected rpc?: ParityRPC;
+  protected provider: ETHStateProvider;
+  protected web3?: Web3;
   protected invCache: any;
   protected invCacheLimits: any;
 
@@ -121,7 +121,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   public async getBlock(height: number) {
-    return this.rpc!.getBlock(height);
+    return (this.rpc!.getBlock(height) as unknown) as Parity.Block;
   }
 
   async processBlock(block: IEthBlock, transactions: IEthTransaction[]): Promise<any> {
@@ -184,41 +184,8 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     logger.info(`Syncing ${bestBlock - currentHeight} blocks for ${chain} ${network}`);
     while (currentHeight <= bestBlock) {
       try {
-        const block = ((await this.getBlock(currentHeight)) as unknown) as Parity.Block;
-        const { convertedBlock, convertedTxs } = this.convertBlock(block);
-        const internalTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
-        for (const tx of internalTxs) {
-          if (tx.type === 'reward') {
-            if (tx.action.rewardType && tx.action.rewardType === 'block') {
-              const gasSum = convertedTxs.reduce((sum, e) => sum + e.fee, 0);
-              const totalReward = Number.parseInt(tx.action.value, 16) + gasSum;
-              convertedBlock.reward = totalReward;
-            }
-            if (tx.action.rewardType && tx.action.rewardType === 'uncle') {
-              const uncles = convertedBlock.uncleReward || [];
-              const uncleValue = Number.parseInt(tx.action.value, 16);
-              Object.assign(convertedBlock, { uncleReward: uncles.concat([uncleValue]) });
-            }
-          }
-          if (tx && tx.action) {
-            const foundIndex = convertedTxs.findIndex(
-              t =>
-                t.txid === tx.transactionHash &&
-                t.from !== tx.action.from &&
-                t.to.toLowerCase() !== (tx.action.to || '').toLowerCase()
-            );
-            if (foundIndex > -1) {
-              convertedTxs[foundIndex].internal.push(tx);
-            }
-            if (tx.error) {
-              const errorIndex = convertedTxs.findIndex(t => t.txid === tx.transactionHash);
-              if (errorIndex && errorIndex > -1) {
-                convertedTxs[errorIndex].error = tx.error;
-              }
-            }
-          }
-        }
-
+        const block = await this.getBlock(currentHeight);
+        const { convertedBlock, convertedTxs } = await this.convertBlock(block);
         await this.processBlock(convertedBlock, convertedTxs);
         if (currentHeight === bestBlock) {
           bestBlock = await this.web3!.eth.getBlockNumber();
@@ -253,7 +220,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return true;
   }
 
-  convertBlock(block: Parity.Block) {
+  async convertBlock(block: Parity.Block) {
     const blockTime = Number(block.timestamp) * 1000;
     const hash = block.hash;
     const height = block.number;
@@ -296,6 +263,39 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     };
     const transactions = block.transactions as Array<Parity.Transaction>;
     const convertedTxs = transactions.map(t => this.convertTx(t, convertedBlock));
+    const internalTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
+    for (const tx of internalTxs) {
+      if (tx.type === 'reward') {
+        if (tx.action.rewardType && tx.action.rewardType === 'block') {
+          const gasSum = convertedTxs.reduce((sum, e) => sum + e.fee, 0);
+          const totalReward = Number.parseInt(tx.action.value, 16) + gasSum;
+          convertedBlock.reward = totalReward;
+        }
+        if (tx.action.rewardType && tx.action.rewardType === 'uncle') {
+          const uncles = convertedBlock.uncleReward || [];
+          const uncleValue = Number.parseInt(tx.action.value, 16);
+          Object.assign(convertedBlock, { uncleReward: uncles.concat([uncleValue]) });
+        }
+      }
+      if (tx && tx.action) {
+        const foundIndex = convertedTxs.findIndex(
+          t =>
+            t.txid === tx.transactionHash &&
+            t.from !== tx.action.from &&
+            t.to.toLowerCase() !== (tx.action.to || '').toLowerCase()
+        );
+        if (foundIndex > -1) {
+          convertedTxs[foundIndex].internal.push(tx);
+        }
+        if (tx.error) {
+          const errorIndex = convertedTxs.findIndex(t => t.txid === tx.transactionHash);
+          if (errorIndex && errorIndex > -1) {
+            convertedTxs[errorIndex].error = tx.error;
+          }
+        }
+      }
+    }
+
     return { convertedBlock, convertedTxs };
   }
 

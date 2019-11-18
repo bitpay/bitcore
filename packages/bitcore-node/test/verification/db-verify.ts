@@ -6,12 +6,10 @@ import { TransactionStorage, ITransaction } from '../../src/models/transaction';
 import { Storage } from '../../src/services/storage';
 import * as _ from 'lodash';
 import { Config } from '../../src/services/config';
-import { ChainStateProvider } from '../../src/providers/chain-state';
 import { Modules } from '../../src/modules';
-import { VerificationPeer } from './VerificationPeer';
-import { Libs } from '../../src/providers/libs';
+import { Verification, IVerificationPeer } from '../../src/services/verification';
 
-const { CHAIN, NETWORK, HEIGHT, VERIFYSPENDS } = process.env;
+const { CHAIN = '', NETWORK = '', HEIGHT, VERIFYSPENDS } = process.env;
 const resumeHeight = Number(HEIGHT) || 1;
 const chain = CHAIN || '';
 const network = NETWORK || '';
@@ -23,9 +21,10 @@ const HasCoins = {
   BTC: true,
   BCH: true
 };
-let worker: VerificationPeer;
-if (Libs.get(CHAIN)) {
-  worker = new VerificationPeer({ chain, network, chainConfig });
+let worker: IVerificationPeer;
+if (Verification.get(CHAIN)) {
+  const workerClass = Verification.get(CHAIN);
+  worker = new workerClass({ chain, network, chainConfig });
   worker.connect();
 }
 
@@ -38,14 +37,7 @@ type ErrorType = {
 
 async function getBlock(currentHeight: number) {
   if (VERIFYSPENDS && worker) {
-    const locatorHashes = await ChainStateProvider.getLocatorHashes({
-      chain,
-      network,
-      startHeight: Math.max(1, currentHeight - 30),
-      endHeight: currentHeight
-    });
-    const headers = await worker.getHeaders(locatorHashes);
-    return worker.getBlock(headers[0].hash);
+    return worker.getBlockForNumber(currentHeight);
   }
   return null;
 }

@@ -1,9 +1,10 @@
-import logger, { timestamp } from '../../src/logger';
-import { BitcoinBlockStorage } from '../../src/models/block';
-import { ChainStateProvider } from '../../src/providers/chain-state';
-import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
+import logger, { timestamp } from '../../logger';
+import { BitcoinBlockStorage } from '../../models/block';
+import { ChainStateProvider } from '../../providers/chain-state';
+import { BitcoinP2PWorker } from '../../modules/bitcoin/p2p';
+import { IVerificationPeer } from '../../services/verification';
 
-export class VerificationPeer extends BitcoinP2PWorker {
+export class VerificationPeer extends BitcoinP2PWorker implements IVerificationPeer {
   setupListeners() {
     this.pool.on('peerready', peer => {
       logger.info(
@@ -69,6 +70,18 @@ export class VerificationPeer extends BitcoinP2PWorker {
         peer.sendMessage(this.messages.GetData(filtered));
       }
     });
+  }
+
+  async getBlockForNumber(currentHeight: number) {
+    const { chain, network } = this;
+    const locatorHashes = await ChainStateProvider.getLocatorHashes({
+      chain,
+      network,
+      startHeight: Math.max(1, currentHeight - 30),
+      endHeight: currentHeight
+    });
+    const headers = await this.getHeaders(locatorHashes);
+    return this.getBlock(headers[0].hash);
   }
 
   async resync(from: number, to: number) {

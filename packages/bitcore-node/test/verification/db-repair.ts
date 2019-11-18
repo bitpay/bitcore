@@ -7,7 +7,7 @@ import { Config } from '../../src/services/config';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { validateDataForBlock } from './db-verify';
 import { TransactionStorage } from '../../src/models/transaction';
-import { VerificationPeer } from './VerificationPeer';
+import { Verification } from '../../src/services/verification';
 
 (async () => {
   const { CHAIN, NETWORK, FILE, DRYRUN } = process.env;
@@ -19,7 +19,8 @@ import { VerificationPeer } from './VerificationPeer';
   const network = NETWORK || '';
   await Storage.start();
   const chainConfig = Config.chainConfig({ chain, network });
-  const worker = new VerificationPeer({ chain, network, chainConfig });
+  const workerClass = Verification.get(chain);
+  const worker = new workerClass({ chain, network, chainConfig });
   await worker.connect();
 
   const handleRepair = async data => {
@@ -139,7 +140,7 @@ import { VerificationPeer } from './VerificationPeer';
         }
         break;
       default:
-        console.log('skipping');
+        console.log('skipping', data);
     }
   };
 
