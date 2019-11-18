@@ -24,7 +24,17 @@ export class EthVerificationPeer extends EthP2pWorker implements IVerificationPe
         break;
       }
       const { convertedBlock, convertedTxs } = await this.convertBlock(block);
-      await this.processBlock(convertedBlock, convertedTxs);
+
+      await this.blockModel.processBlock({
+        chain: this.chain,
+        network: this.network,
+        forkHeight: this.chainConfig.forkHeight,
+        parentChain: this.chainConfig.parentChain,
+        initialSyncComplete: this.initialSyncComplete,
+        block: convertedBlock,
+        transactions: convertedTxs
+      });
+
       currentHeight++;
 
       if (Date.now() - lastLog > 100) {
