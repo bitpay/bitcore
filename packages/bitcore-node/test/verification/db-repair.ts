@@ -140,7 +140,7 @@ import { Verification } from '../../src/services/verification';
         }
         break;
       default:
-        console.log('skipping', data);
+        console.log('skipping');
     }
   };
 

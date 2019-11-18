@@ -5,9 +5,13 @@ import { IVerificationPeer } from '../../services/verification';
 export class EthVerificationPeer extends EthP2pWorker implements IVerificationPeer {
   async setupListeners() {
     this.txSubscription = await this.web3!.eth.subscribe('pendingTransactions');
-    this.txSubscription.subscribe(() => {});
+    this.txSubscription.subscribe((_err, tx) => {
+      this.events.emit('transaction', tx);
+    });
     this.blockSubscription = await this.web3!.eth.subscribe('newBlockHeaders');
-    this.blockSubscription.subscribe(() => {});
+    this.blockSubscription.subscribe((_err, block) => {
+      this.events.emit('block', block);
+    });
   }
 
   async resync(from: number, to: number) {

@@ -1,5 +1,6 @@
 import Web3 from 'web3';
 import logger from '../../logger';
+import { EventEmitter } from 'events';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { StateStorage } from '../../models/state';
 import { EthBlockModel, EthBlockStorage } from './models/block';
@@ -25,6 +26,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   protected web3?: Web3;
   protected invCache: any;
   protected invCacheLimits: any;
+  public events: EventEmitter;
 
   constructor({ chain, network, chainConfig, blockModel = EthBlockStorage, txModel = EthTransactionStorage }) {
     super({ chain, network, chainConfig, blockModel });
@@ -36,7 +38,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     this.blockModel = blockModel;
     this.txModel = txModel;
     this.provider = new ETHStateProvider();
-
+    this.events = new EventEmitter();
     this.invCache = {};
     this.invCacheLimits = {
       TX: 100000
@@ -68,11 +70,13 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         if (tx) {
           this.cacheInv('TX', txid);
           await this.processTransaction(tx);
+          this.events.emit('transaction', tx);
         }
       }
     });
     this.blockSubscription = await this.web3!.eth.subscribe('newBlockHeaders');
-    this.blockSubscription.subscribe(() => {
+    this.blockSubscription.subscribe(block => {
+      this.events.emit('block', block);
       if (!this.syncing) {
         this.sync();
       }
