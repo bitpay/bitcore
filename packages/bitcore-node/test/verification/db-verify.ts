@@ -42,8 +42,9 @@ async function getBlock(currentHeight: number) {
   return null;
 }
 
-export async function validateDataForBlock(blockNum: number, log = false) {
+export async function validateDataForBlock(blockNum: number, tipHeight: number, log = false) {
   let success = true;
+  const atTipOfChain = blockNum === tipHeight;
   const errors = new Array<ErrorType>();
 
   const [block, blockTxs] = await Promise.all([
@@ -83,13 +84,14 @@ export async function validateDataForBlock(blockNum: number, log = false) {
 
   const seenTxs = {} as { [txid: string]: ITransaction };
 
-  if (!block || block.transactionCount != blockTxs.length) {
+  const missingData = (!atTipOfChain && !block.nextBlockHash) || !block.previousBlockHash;
+  if (!block || block.transactionCount != blockTxs.length || missingData) {
     success = false;
     const error = {
       model: 'block',
       err: true,
       type: 'CORRUPTED_BLOCK',
-      payload: { blockNum }
+      payload: { blockNum, txCount: block.transactionCount, foundTxs: blockTxs.length }
     };
 
     errors.push(error);
@@ -288,7 +290,7 @@ if (require.main === module) {
 
     if (tip) {
       for (let i = resumeHeight; i <= tip.height; i++) {
-        const { success } = await validateDataForBlock(i, true);
+        const { success } = await validateDataForBlock(i, tip.height, true);
         console.log({ block: i, success });
       }
     }

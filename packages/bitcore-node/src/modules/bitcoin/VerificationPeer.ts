@@ -107,7 +107,20 @@ export class VerificationPeer extends BitcoinP2PWorker implements IVerificationP
           break;
         }
         const block = await this.getBlock(header.hash);
+
         await BitcoinBlockStorage.processBlock({ chain, network, block, initialSyncComplete: true });
+        const nextBlock = await BitcoinBlockStorage.collection.findOne({
+          chain,
+          network,
+          previousBlockHash: block.hash
+        });
+        if (nextBlock) {
+          await BitcoinBlockStorage.collection.updateOne(
+            { chain, network, hash: block.hash },
+            { $set: { nextBlockHash: nextBlock.hash } }
+          );
+        }
+
         currentHeight++;
         if (Date.now() - lastLog > 100) {
           logger.info(`Re-Sync `, {

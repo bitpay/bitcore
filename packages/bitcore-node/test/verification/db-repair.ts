@@ -24,6 +24,7 @@ import { Verification } from '../../src/services/verification';
   await worker.connect();
 
   const handleRepair = async data => {
+    const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
     switch (data.type) {
       case 'DUPE_TRANSACTION':
         {
@@ -98,7 +99,7 @@ import { Verification } from '../../src/services/verification';
       case 'COIN_SHOULD_BE_SPENT':
       case 'NEG_FEE':
         const blockHeight = Number(data.payload.blockNum);
-        const { success } = await validateDataForBlock(blockHeight);
+        let { success } = await validateDataForBlock(blockHeight, tip!.height);
         if (success) {
           console.log('No errors found, repaired previously');
           return;
@@ -109,6 +110,12 @@ import { Verification } from '../../src/services/verification';
         } else {
           console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
           await worker.resync(blockHeight - 1, blockHeight + 1);
+          let { success } = await validateDataForBlock(blockHeight, tip!.height);
+          if (!success) {
+            console.log('REPAIR FAILED TO SOLVE ISSUE');
+          } else {
+            console.log('REPAIR SOLVED ISSUE');
+          }
         }
         break;
       case 'DUPE_BLOCKHEIGHT':

@@ -1,6 +1,7 @@
 import logger from '../../../logger';
 import { EthP2pWorker } from './p2p';
 import { IVerificationPeer } from '../../../services/verification';
+import { EthBlockStorage } from '../models/block';
 
 export class EthVerificationPeer extends EthP2pWorker implements IVerificationPeer {
   async setupListeners() {
@@ -24,6 +25,11 @@ export class EthVerificationPeer extends EthP2pWorker implements IVerificationPe
         break;
       }
       const { convertedBlock, convertedTxs } = await this.convertBlock(block);
+
+      const nextBlock = await EthBlockStorage.collection.findOne({ chain, network, previousBlockHash: block.hash });
+      if (nextBlock) {
+        convertedBlock.nextBlockHash = nextBlock.hash;
+      }
 
       await this.blockModel.processBlock({
         chain: this.chain,
