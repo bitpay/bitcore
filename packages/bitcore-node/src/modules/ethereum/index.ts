@@ -1,8 +1,8 @@
-import { EthP2pWorker } from './p2p';
 import { BaseModule } from '..';
 import { ETHStateProvider } from './api/csp';
 import { EthRoutes } from './api/eth-routes';
-import { EthVerificationPeer } from './EthVerificationPeer';
+import { EthP2pWorker } from './p2p/p2p';
+import { EthVerificationPeer } from './p2p/EthVerificationPeer';
 
 export default class ETHModule extends BaseModule {
   constructor(services: BaseModule['bitcoreServices']) {

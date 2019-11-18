@@ -1,6 +1,6 @@
-import logger from '../../logger';
+import logger from '../../../logger';
 import { EthP2pWorker } from './p2p';
-import { IVerificationPeer } from '../../services/verification';
+import { IVerificationPeer } from '../../../services/verification';
 
 export class EthVerificationPeer extends EthP2pWorker implements IVerificationPeer {
   async setupListeners() {
