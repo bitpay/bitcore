@@ -84,43 +84,42 @@ export class VerificationPeer extends BitcoinP2PWorker implements IVerificationP
     return this.getBlock(headers[0].hash);
   }
 
-  async resync(from: number, to: number) {
+  async resync(start: number, end: number) {
     const { chain, network } = this;
-    let currentHeight = Math.max(1, from);
-    while (currentHeight < to) {
+    let currentHeight = Math.max(1, start);
+    while (currentHeight < end) {
       const locatorHashes = await ChainStateProvider.getLocatorHashes({
         chain,
         network,
         startHeight: Math.max(1, currentHeight - 30),
-        endHeight: currentHeight
+        endHeight: currentHeight + 1
       });
       const headers = await this.getHeaders(locatorHashes);
       if (!headers.length) {
         logger.info(`${chain}:${network} up to date.`);
         break;
       }
-      const headerCount = Math.min(headers.length, to - currentHeight);
+      const headerCount = Math.min(headers.length, end - currentHeight);
       logger.info(`Re-Syncing ${headerCount} blocks for ${chain} ${network}`);
       let lastLog = Date.now();
       for (let header of headers) {
-        if (currentHeight > to) {
-          break;
-        }
-        const block = await this.getBlock(header.hash);
+        if (currentHeight < end && currentHeight >= start) {
+          const block = await this.getBlock(header.hash);
+          console.log('Processing', currentHeight, block.hash);
 
-        await BitcoinBlockStorage.processBlock({ chain, network, block, initialSyncComplete: true });
-        const nextBlock = await BitcoinBlockStorage.collection.findOne({
-          chain,
-          network,
-          previousBlockHash: block.hash
-        });
-        if (nextBlock) {
-          await BitcoinBlockStorage.collection.updateOne(
-            { chain, network, hash: block.hash },
-            { $set: { nextBlockHash: nextBlock.hash } }
-          );
+          await BitcoinBlockStorage.processBlock({ chain, network, block, initialSyncComplete: true });
+          const nextBlock = await BitcoinBlockStorage.collection.findOne({
+            chain,
+            network,
+            previousBlockHash: block.hash
+          });
+          if (nextBlock) {
+            await BitcoinBlockStorage.collection.updateOne(
+              { chain, network, hash: block.hash },
+              { $set: { nextBlockHash: nextBlock.hash } }
+            );
+          }
         }
-
         currentHeight++;
         if (Date.now() - lastLog > 100) {
           logger.info(`Re-Sync `, {
