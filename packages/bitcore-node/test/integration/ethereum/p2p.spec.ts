@@ -83,6 +83,7 @@ describe('Ethereum', function() {
     const web3 = await worker.getWeb3();
     await web3.eth.sendTransaction({ to: addresses[0], value: web3.utils.toWei('.02', 'ether'), from: account });
     await sawBlock;
+    await worker.syncDone();
     await worker.stop();
 
     const dbBlocks = await EthBlockStorage.collection.count({ chain, network });

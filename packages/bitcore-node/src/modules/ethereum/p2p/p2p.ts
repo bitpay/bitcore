@@ -221,7 +221,12 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
       { upsert: true }
     );
+    this.events.emit('SYNCDONE');
     return true;
+  }
+
+  async syncDone() {
+    return new Promise(resolve => this.events.once('SYNCDONE', resolve));
   }
 
   async convertBlock(block: Parity.Block) {
