@@ -1,7 +1,7 @@
 import express = require('express');
 const router = express.Router({ mergeParams: true });
 import { ChainStateProvider } from '../../providers/chain-state';
-import { CoinStorage } from '../../models/coin';
+import { CoinStorage, ICoin } from '../../models/coin';
 import { Storage } from '../../services/storage';
 
 router.get('/:address/txs', function(req, res) {
@@ -49,14 +49,17 @@ router.get('/:address/coins', async function(req, res) {
       CoinStorage.collection.find({ chain, network, spentTxid: { $in: spentTxids } }).toArray(),
       CoinStorage.collection.find({ chain, network, mintTxid: { $in: spentTxids } }).toArray()
     ]);
+    const sanitize = (coins: Array<ICoin>) => {
+      return coins.map(c => CoinStorage._apiTransform(c, { object: true }));
+    };
     return res.json({
-      coins,
-      mintedTxids,
-      fundingTxInputs,
-      fundingTxOutputs,
       spentTxids,
-      spendingTxInputs,
-      spendingTxOutputs
+      mintedTxids,
+      coins: sanitize(coins),
+      fundingTxInputs: sanitize(fundingTxInputs),
+      fundingTxOutputs: sanitize(fundingTxOutputs),
+      spendingTxInputs: sanitize(spendingTxInputs),
+      spendingTxOutputs: sanitize(spendingTxOutputs)
     });
   } catch (err) {
     return res.status(500).send(err);
