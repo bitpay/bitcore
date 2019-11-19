@@ -92,7 +92,7 @@ export class VerificationPeer extends BitcoinP2PWorker implements IVerificationP
         chain,
         network,
         startHeight: Math.max(1, currentHeight - 30),
-        endHeight: currentHeight + 1
+        endHeight: currentHeight
       });
       const headers = await this.getHeaders(locatorHashes);
       if (!headers.length) {
@@ -103,10 +103,8 @@ export class VerificationPeer extends BitcoinP2PWorker implements IVerificationP
       logger.info(`Re-Syncing ${headerCount} blocks for ${chain} ${network}`);
       let lastLog = Date.now();
       for (let header of headers) {
-        if (currentHeight < end && currentHeight >= start) {
+        if (currentHeight <= end) {
           const block = await this.getBlock(header.hash);
-          console.log('Processing', currentHeight, block.hash);
-
           await BitcoinBlockStorage.processBlock({ chain, network, block, initialSyncComplete: true });
           const nextBlock = await BitcoinBlockStorage.collection.findOne({
             chain,
