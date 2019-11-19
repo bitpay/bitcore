@@ -42,7 +42,8 @@ export class Credentials {
     'use145forBCH', // Obsolete
     'version',
     'rootPath', // this is only for information
-    'keyId' // this is only for information
+    'keyId', // this is only for information
+    'token' // is this wallet is for a ERC20 token
   ];
   version: number;
   account: number;
@@ -63,7 +64,7 @@ export class Credentials {
   use145forBCH: any;
   addressType: string;
   keyId: string;
-
+  token?: string;
   externalSource?: boolean; // deprecated property?
 
   constructor() {
@@ -132,6 +133,20 @@ export class Credentials {
 
     return x;
   }
+
+  /*
+   * creates an ERC20 wallet from a ETH wallet
+   */
+  getTokenCredentials(token: { name: string, symbol: string, address: string }) {
+    const ret = _.cloneDeep(this);
+    ret.walletId = `${ret.walletId}-${token.address}`;
+    ret.coin = token.symbol.toLowerCase();
+    ret.walletName = token.name;
+    ret.token = token;
+
+    return ret;
+  }
+
   getRootPath() {
     // This is for OLD v1.0 credentials only.
     var legacyRootPath = () => {

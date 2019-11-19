@@ -1707,6 +1707,8 @@ describe('Wallet service', function() {
           address.path.should.equal('m/0/0');
           address.type.should.equal('P2PKH');
           address.coin.should.equal('bch');
+
+          // notified address is Copay format
           server.getNotifications({}, function(err, notifications) {
             should.not.exist(err);
             var notif = _.find(notifications, {
@@ -1714,7 +1716,15 @@ describe('Wallet service', function() {
             });
             should.exist(notif);
             notif.data.address.should.equal(address.address);
-            done();
+
+            // stored address should be new format
+            server.getMainAddresses({}, function(err, addresses) {
+              should.not.exist(err);
+              addresses.length.should.equal(1);
+              addresses[0].address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
+              done();
+            });
+
           });
         });
       });
