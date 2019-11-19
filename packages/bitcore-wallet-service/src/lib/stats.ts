@@ -73,7 +73,7 @@ export class Stats {
         },
         (next) => {
           this._getTxProposals(next);
-        }
+        },
       ],
       (err, results) => {
         if (err) return cb(err);
@@ -82,6 +82,7 @@ export class Stats {
       }
     );
   }
+
   _getNewWallets(cb) {
     const getLastDate = cb => {
       this.db
@@ -96,15 +97,16 @@ export class Stats {
           return cb(null, moment(lastRecord[0]._id.day));
         });
     };
-    const updateStats = async (from, cb) => {
-      const results = await this.db
+    const updateStats = (from, yesterday, cb) => {
+      this.db
         .collection(storage.Storage.collections.WALLETS)
         .aggregate(
           [
             {
               $match: {
                 createdOn: {
-                  $gt: 1546300800 // only 2019 wallets
+                  $gt: from.valueOf() / 1000,
+                  $lt: yesterday.valueOf() / 1000
                 }
               }
             },
@@ -124,13 +126,15 @@ export class Stats {
                 },
                 count: { $sum: 1 },
               }
-            },
-            {
-              $out: 'stats_wallets'
             }
           ]
-        ).toArray();
-      return cb(null, results);
+        ).toArray(async (err, res) => {
+          if (err) return cb(err);
+          try {
+            await this.db.collection('stats_wallets').insertMany(res, { ordered: false });
+          } catch (err) { }
+          return cb();
+        });
     };
     const queryStats = (cb) => {
       this.db
@@ -175,7 +179,7 @@ export class Stats {
               .startOf('day');
             if (lastDate.isBefore(yesterday)) {
               // Needs update
-              return updateStats(lastDate, next);
+              return updateStats(lastDate, yesterday, next);
             }
             next();
           });
@@ -207,15 +211,16 @@ export class Stats {
           return cb(null, moment(lastRecord[0]._id.day));
         });
     };
-    const updateStats = async (from, cb) => {
-      const results = await this.db
+    const updateStats = (from, yesterday, cb) => {
+      this.db
         .collection(storage.Storage.collections.FIAT_RATES2)
         .aggregate(
           [
             {
               $match: {
                 ts: {
-                  $gt: 1546300800 // only 2019 fiat rates
+                  $gt: from.valueOf() / 1000,
+                  $lt: yesterday.valueOf() / 1000
                 },
                 code: 'USD'
               }
@@ -235,13 +240,15 @@ export class Stats {
                   value: '$value'
                 }
               }
-            },
-            {
-              $out: 'stats_fiat_rates'
             }
           ]
-        ).toArray();
-      return cb(null, results);
+        ).toArray(async (err, res) => {
+          if (err) return cb(err);
+          try {
+            await this.db.collection('stats_fiat_rates').insertMany(res, { ordered: false });
+          } catch (err) { }
+          return cb();
+        });
     };
     const queryStats = (cb) => {
       this.db
@@ -285,7 +292,7 @@ export class Stats {
               .startOf('day');
             if (lastDate.isBefore(yesterday)) {
               // Needs update
-              return updateStats(lastDate, next);
+              return updateStats(lastDate, yesterday, next);
             }
             next();
           });
@@ -317,15 +324,16 @@ export class Stats {
           return cb(null, moment(lastRecord[0]._id.day));
         });
     };
-    const updateStats = async (from, cb) => {
-      const results = await this.db
+    const updateStats = (from, yesterday, cb) => {
+      this.db
         .collection(storage.Storage.collections.TXS)
         .aggregate(
           [
             {
               $match: {
                 broadcastedOn: {
-                  $gt: 1546300800 // only 2019 txs
+                  $gt: from.valueOf() / 1000,
+                  $lt: yesterday.valueOf() / 1000
                 }
               }
             },
@@ -347,13 +355,16 @@ export class Stats {
                 amount: { $sum: '$amount' },
                 count: { $sum: 1 },
               }
-            },
-            {
-              $out: 'stats_txps'
             }
           ]
-        ).toArray();
-      return cb(null, results);
+        ).toArray(async (err, res) => {
+          if (err) return cb(err);
+          try {
+            await this.db.collection('stats_txps').insertMany(res, { ordered: false });
+          } catch (err) {
+          }
+          return cb();
+        });
     };
 
     const queryStats = (cb) => {
@@ -402,7 +413,7 @@ export class Stats {
               .startOf('day');
             if (lastDate.isBefore(yesterday)) {
               // Needs update
-              return updateStats(lastDate, next);
+              return updateStats(lastDate, yesterday, next);
             }
             next();
           });
