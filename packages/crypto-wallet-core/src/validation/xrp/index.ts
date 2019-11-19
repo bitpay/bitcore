@@ -34,9 +34,14 @@ export class XrpValidation implements IValidation {
   }
 
   validateUri(addressUri: string): boolean {
-    // Check if the input is a valid uri or address
-    const URI = Bitcore.URI;
-    // Bip21 uri
-    return URI.isValid(addressUri);
+    const address = this.extractAddress(addressUri);
+    const ripplePrefix = /ripple/i.exec(addressUri);
+    return !!ripplePrefix && this.validateAddress('livenet', address);
+  }
+
+  private extractAddress(data) {
+    const address = data.replace(/^[a-z]+:/i, '').replace(/\?.*/, '');
+    const params = /([\?\&]+[a-z]+=(\d+([\,\.]\d+)?))+/i;
+    return address.replace(params, '');
   }
 }
