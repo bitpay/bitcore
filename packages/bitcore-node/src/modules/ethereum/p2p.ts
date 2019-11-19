@@ -23,6 +23,8 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   private rpc?: ParityRPC;
   private provider: ETHStateProvider;
   private web3?: Web3;
+  protected invCache: any;
+  protected invCacheLimits: any;
 
   constructor({ chain, network, chainConfig, blockModel = EthBlockStorage, txModel = EthTransactionStorage }) {
     super({ chain, network, chainConfig, blockModel });
@@ -34,15 +36,38 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     this.blockModel = blockModel;
     this.txModel = txModel;
     this.provider = new ETHStateProvider();
+
+    this.invCache = {};
+    this.invCacheLimits = {
+      TX: 100000
+    };
+  }
+
+  cacheInv(type: 'TX', hash: string): void {
+    if (!this.invCache[type]) {
+      this.invCache[type] = [];
+    }
+    if (this.invCache[type].length > this.invCacheLimits[type]) {
+      this.invCache[type].shift();
+    }
+    this.invCache[type].push(hash);
+  }
+
+  isCachedInv(type: 'TX', hash: string): boolean {
+    if (!this.invCache[type]) {
+      this.invCache[type] = [];
+    }
+    return this.invCache[type].includes(hash);
   }
 
   async setupListeners() {
     this.txSubscription = await this.web3!.eth.subscribe('pendingTransactions');
     this.txSubscription.subscribe(async (_err, txid) => {
-      if (!this.syncing) {
+      if (!this.syncing && !this.isCachedInv('TX', txid)) {
         const tx = (await this.web3!.eth.getTransaction(txid)) as Parity.Transaction;
         if (tx) {
-          this.processTransaction(tx);
+          this.cacheInv('TX', txid);
+          await this.processTransaction(tx);
         }
       }
     });
@@ -157,8 +182,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     let lastLog = 0;
     let currentHeight = tip ? tip.height : 0;
     logger.info(`Syncing ${bestBlock - currentHeight} blocks for ${chain} ${network}`);
-    while (startHeight < bestBlock && currentHeight <= bestBlock) {
-      tip = await ChainStateProvider.getLocalTip({ chain, network });
+    while (currentHeight <= bestBlock) {
       try {
         const block = ((await this.getBlock(currentHeight)) as unknown) as Parity.Block;
         const { convertedBlock, convertedTxs } = this.convertBlock(block);
@@ -196,10 +220,12 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         }
 
         await this.processBlock(convertedBlock, convertedTxs);
-        currentHeight++;
         if (currentHeight === bestBlock) {
           bestBlock = await this.web3!.eth.getBlockNumber();
         }
+        tip = await ChainStateProvider.getLocalTip({ chain, network });
+        currentHeight = tip ? tip.height + 1 : 0;
+
         const oneSecond = 1000;
         const now = Date.now();
         if (now - lastLog > oneSecond) {
