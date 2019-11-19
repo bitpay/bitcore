@@ -1,10 +1,8 @@
 import express = require('express');
 const router = express.Router({ mergeParams: true });
 import { ChainStateProvider } from '../../providers/chain-state';
-import { CoinStorage, ICoin } from '../../models/coin';
-import { Storage } from '../../services/storage';
 
-router.get('/:address/txs', function(req, res) {
+function streamCoins(req, res) {
   let { address, chain, network } = req.params;
   let { unspent, limit = 10, since } = req.query;
   let payload = {
@@ -16,7 +14,7 @@ router.get('/:address/txs', function(req, res) {
     args: { ...req.query, unspent, limit, since }
   };
   ChainStateProvider.streamAddressTransactions(payload);
-});
+}
 
 router.get('/:address', function(req, res) {
   let { address, chain, network } = req.params;
@@ -32,39 +30,8 @@ router.get('/:address', function(req, res) {
   ChainStateProvider.streamAddressUtxos(payload);
 });
 
-router.get('/:address/coins', async function(req, res) {
-  let { address, chain, network } = req.params;
-
-  try {
-    const { query, options } = Storage.getFindOptions(CoinStorage, req.query);
-
-    let coins = await CoinStorage.collection.find({ ...query, address, chain, network }, options).toArray();
-
-    let spentTxids = coins.filter(tx => tx.spentTxid).map(tx => tx.spentTxid);
-    let mintedTxids = coins.filter(tx => tx.mintTxid).map(tx => tx.mintTxid);
-
-    let [fundingTxInputs, fundingTxOutputs, spendingTxInputs, spendingTxOutputs] = await Promise.all([
-      CoinStorage.collection.find({ chain, network, spentTxid: { $in: mintedTxids } }).toArray(),
-      CoinStorage.collection.find({ chain, network, mintTxid: { $in: mintedTxids } }).toArray(),
-      CoinStorage.collection.find({ chain, network, spentTxid: { $in: spentTxids } }).toArray(),
-      CoinStorage.collection.find({ chain, network, mintTxid: { $in: spentTxids } }).toArray()
-    ]);
-    const sanitize = (coins: Array<ICoin>) => {
-      return coins.map(c => CoinStorage._apiTransform(c, { object: true }));
-    };
-    return res.json({
-      spentTxids,
-      mintedTxids,
-      coins: sanitize(coins),
-      fundingTxInputs: sanitize(fundingTxInputs),
-      fundingTxOutputs: sanitize(fundingTxOutputs),
-      spendingTxInputs: sanitize(spendingTxInputs),
-      spendingTxOutputs: sanitize(spendingTxOutputs)
-    });
-  } catch (err) {
-    return res.status(500).send(err);
-  }
-});
+router.get('/:address/txs', streamCoins);
+router.get('/:address/coins', streamCoins);
 
 router.get('/:address/balance', async function(req, res) {
   let { address, chain, network } = req.params;
