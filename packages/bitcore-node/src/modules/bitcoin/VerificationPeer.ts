@@ -74,14 +74,11 @@ export class VerificationPeer extends BitcoinP2PWorker implements IVerificationP
 
   async getBlockForNumber(currentHeight: number) {
     const { chain, network } = this;
-    const locatorHashes = await ChainStateProvider.getLocatorHashes({
-      chain,
-      network,
-      startHeight: Math.max(1, currentHeight - 30),
-      endHeight: currentHeight
-    });
-    const headers = await this.getHeaders(locatorHashes);
-    return this.getBlock(headers[0].hash);
+    const [{ hash }] = await BitcoinBlockStorage.collection
+      .find({ chain, network, height: currentHeight })
+      .limit(1)
+      .toArray();
+    return this.getBlock(hash);
   }
 
   async resync(start: number, end: number) {

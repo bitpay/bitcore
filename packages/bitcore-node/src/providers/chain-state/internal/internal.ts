@@ -534,6 +534,11 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
   }
 
+  /**
+   * Get a series of hashes that come before a given height, or the 30 most recent hashes
+   *
+   * @returns Array<string>
+   */
   async getLocatorHashes(params) {
     const { chain, network, startHeight, endHeight } = params;
     const query =
