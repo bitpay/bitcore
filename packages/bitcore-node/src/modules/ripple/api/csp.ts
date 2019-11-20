@@ -95,7 +95,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
         }
       });
     });
-    return this.transformLedger(ledger as FormattedLedger, params.network);
+    return ledger as IBlock;
   }
 
   async getFee(params: CSP.GetEstimateSmartFeeParams) {

@@ -112,10 +112,10 @@ import { Verification } from '../../src/services/verification';
           await worker.resync(blockHeight - 1, blockHeight + 1);
           let { success, errors } = await validateDataForBlock(blockHeight, tip!.height);
           if (success) {
+            console.log('REPAIR SOLVED ISSUE');
+          } else {
             console.log('REPAIR FAILED TO SOLVE ISSUE');
             console.log(errors);
-          } else {
-            console.log('REPAIR SOLVED ISSUE');
           }
         }
         break;
