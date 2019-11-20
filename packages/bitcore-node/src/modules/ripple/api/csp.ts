@@ -10,31 +10,8 @@ import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types'
 import { ITransaction } from '../../../models/baseTransaction';
 import { ICoin } from '../../../models/coin';
 import { RippleWalletTransactions } from './transform';
+import { SubmitResponse } from "./types";
 
-interface SubmitResponse {
-  resultCode: string;
-  resultMessage: string;
-  engine_result: string;
-  engine_result_code: number;
-  engine_result_message: string;
-  tx_blob: string;
-  tx_json: {
-    Account: string;
-    Amount: {
-      currency: string;
-      issuer: string;
-      value: string;
-    };
-    Destination: string;
-    Fee: string;
-    Flags: number;
-    Sequence: number;
-    SigningPubKey: string;
-    TransactionType: string;
-    TxnSignature: string;
-    hash: string;
-  };
-}
 
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
