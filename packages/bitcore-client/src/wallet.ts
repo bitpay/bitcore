@@ -250,6 +250,7 @@ export class Wallet {
     recipients: { address: string; amount: number }[];
     from?: string;
     change?: string;
+    invoiceID?: string;
     fee?: number;
     nonce?: number;
   }) {
@@ -259,6 +260,7 @@ export class Wallet {
       recipients: params.recipients,
       from: params.from,
       change: params.change,
+      invoiceID: params.invoiceID,
       fee: params.fee,
       wallet: this,
       utxos: params.utxos,
@@ -298,6 +300,8 @@ export class Wallet {
 
   async signTx(params) {
     let { tx, keys, utxos, passphrase } = params;
+    console.log('!!!!!!');
+    console.log(tx);
     if (!utxos) {
       utxos = [];
       await new Promise((resolve, reject) => {
@@ -340,6 +344,7 @@ export class Wallet {
       key: decryptedKeys[0],
       utxos
     };
+    console.log(payload);
     return Transactions.sign({ ...payload });
   }
 
