@@ -78,7 +78,9 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
 
   async getBlock(params: CSP.GetBlockParams) {
     const client = await this.getClient(params.network);
-    const ledger = await client.getLedger({ includeTransactions: true, ledgerHash: params.blockId });
+    const isHash = params.blockId && params.blockId.length == 64;
+    const query = isHash ? { ledgerHash: params.blockId } : { ledgerVersion: Number(params.blockId) };
+    const ledger = await client.getLedger({ includeTransactions: true, ...query });
     return this.transformLedger(ledger, params.network);
   }
 
