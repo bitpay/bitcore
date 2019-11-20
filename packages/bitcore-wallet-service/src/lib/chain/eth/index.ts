@@ -1,4 +1,4 @@
-import { Transactions } from 'crypto-wallet-core';
+import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain } from '..';
@@ -94,9 +94,9 @@ export class EthChain implements IChain {
     });
   }
 
-  getChangeAddress() {}
+  getChangeAddress() { }
 
-  checkDust(output, opts) {}
+  checkDust(output, opts) { }
 
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
@@ -213,7 +213,7 @@ export class EthChain implements IChain {
     );
   }
 
-  checkUtxos(opts) {}
+  checkUtxos(opts) { }
 
   checkValidTxAmount(output): boolean {
     if (
@@ -226,7 +226,7 @@ export class EthChain implements IChain {
     return true;
   }
 
-  setInputs() {}
+  setInputs() { }
 
   isUTXOCoin() {
     return false;
@@ -268,5 +268,20 @@ export class EthChain implements IChain {
       tx.id = Transactions.getHash({ tx: signed, chain });
     }
     tx.uncheckedSerialize = () => signedTxs;
+  }
+
+  validateAddress(wallet, inaddr, opts) {
+    const chain = 'ETH';
+    try {
+      Validation.validateAddress(
+        chain,
+        wallet.network,  // not really used for ETH. wallet.network is 'livenet/testnet/regtest' in wallet.
+        inaddr,
+      );
+    } catch (ex) {
+      return Errors.INVALID_ADDRESS;
+    }
+
+    return;
   }
 }
