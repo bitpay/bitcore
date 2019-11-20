@@ -12,6 +12,7 @@ import { ICoin } from '../../../models/coin';
 import { RippleWalletTransactions } from './transform';
 import { SubmitResponse } from './types';
 import { IBlock } from '../../../models/baseBlock';
+import { FormattedLedger } from 'ripple-lib/dist/npm/ledger/parse/ledger';
 
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -78,7 +79,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
   async getBlock(params: CSP.GetBlockParams) {
     const client = await this.getClient(params.network);
     const ledger = await client.getLedger({ includeTransactions: true, ledgerHash: params.blockId });
-    return ledger as any;
+    return this.transformLedger(ledger, params.network);
   }
 
   async getBlockBeforeTime(params: CSP.GetBlockBeforeTimeParams) {
@@ -94,7 +95,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
         }
       });
     });
-    return ledger as any;
+    return this.transformLedger(ledger as FormattedLedger, params.network);
   }
 
   async getFee(params: CSP.GetEstimateSmartFeeParams) {
@@ -198,10 +199,14 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
   async getLocalTip(params: ChainNetwork) {
     const client = await this.getClient(params.network);
     const ledger = await client.getLedger();
+    return this.transformLedger(ledger, params.network);
+  }
+
+  transformLedger(ledger: FormattedLedger, network: string): IBlock {
     const txs = ledger.transactions || [];
-    const block: IBlock = {
+    return {
       chain: this.chain,
-      network: params.network,
+      network: network,
       confirmations: -1,
       hash: ledger.ledgerHash,
       height: ledger.ledgerVersion,
@@ -214,7 +219,6 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
       transactionCount: txs.length,
       nextBlockHash: ''
     };
-    return block;
   }
 
   transform(tx: FormattedTransactionType, network: string): ITransaction | FormattedTransactionType {

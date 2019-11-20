@@ -140,7 +140,7 @@ export declare namespace CSP {
       params: GetBalanceForAddressParams
     ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
     getBlock(params: GetBlockParams): Promise<any>;
-    getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<any>;
+    getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock>;
     streamBlocks(params: StreamBlocksParams): any;
     getFee(params: GetEstimateSmartFeeParams): any;
     broadcastTransaction(params: BroadcastTransactionParams): Promise<any>;

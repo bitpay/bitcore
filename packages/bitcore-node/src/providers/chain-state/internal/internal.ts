@@ -164,7 +164,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       .limit(1)
       .sort({ timeNormalized: -1 })
       .toArray();
-    return block;
+    return block as IBlock;
   }
 
   async streamTransactions(params: CSP.StreamTransactionsParams) {
