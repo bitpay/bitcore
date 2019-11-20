@@ -10,6 +10,7 @@ import { AuthheadJSON } from '../Authhead';
 import { CoinListingJSON } from '../Coin';
 import { DailyTransactionsJSON } from '../stats';
 import { ICoin } from '../../models/coin';
+import { IBlock } from '../../models/baseBlock';
 export declare namespace CSP {
   export type StreamWalletTransactionsArgs = {
     startBlock: number;
@@ -164,7 +165,7 @@ export declare namespace CSP {
     streamWalletUtxos(params: StreamWalletUtxosParams): any;
     streamMissingWalletAddresses(params: StreamWalletMissingAddressesParams);
     getCoinsForTx(params: GetCoinsForTxParams): Promise<CoinListingJSON>;
-    getLocalTip(params): Promise<any | null>;
+    getLocalTip(params): Promise<IBlock | null>;
     getLocatorHashes(params): Promise<any>;
     isValid(params: isValidParams): { isValid: boolean; type: string };
   }

@@ -11,6 +11,7 @@ import { ITransaction } from '../../../models/baseTransaction';
 import { ICoin } from '../../../models/coin';
 import { RippleWalletTransactions } from './transform';
 import { SubmitResponse } from './types';
+import { IBlock } from '../../../models/baseBlock';
 
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -197,7 +198,23 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
   async getLocalTip(params: ChainNetwork) {
     const client = await this.getClient(params.network);
     const ledger = await client.getLedger();
-    return ledger;
+    const txs = ledger.transactions || [];
+    const block: IBlock = {
+      chain: this.chain,
+      network: params.network,
+      confirmations: -1,
+      hash: ledger.ledgerHash,
+      height: ledger.ledgerVersion,
+      previousBlockHash: ledger.parentLedgerHash,
+      processed: true,
+      time: new Date(ledger.closeTime),
+      timeNormalized: new Date(ledger.closeTime),
+      reward: 0,
+      size: txs.length,
+      transactionCount: txs.length,
+      nextBlockHash: ''
+    };
+    return block;
   }
 
   transform(tx: FormattedTransactionType, network: string): ITransaction | FormattedTransactionType {
