@@ -1,9 +1,11 @@
 #!/usr/bin/env node
+'use strict';
 
 const fs = require('fs');
 const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
+const { bitcoinCoreDecrypt } = require('../ts_build/encryption');
 
 program
   .version(require('../package.json').version)
@@ -17,6 +19,7 @@ program
     'OPTIONAL - A jsonl file with {"address": "mXy1234", "privKey": "xxxxxxx", "pubKey": "yyyyyyyy"} in it'
   )
   .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--encrypted', 'optional - Bitcoin Core specific keys in which case we need to decrypt them before import')
   .parse(process.argv);
 
 const getFileKeys = file => {
@@ -51,6 +54,15 @@ const main = async () => {
       keyInput = getFileKeys(file);
     } else if (parse) {
       keyInput = parseKeys(parse);
+    }
+    if (program.encrypted) {
+      try {
+        const bitcoinCorePassword = await promptly.password('Enter Bitcoin Core Password:');
+        let decryptedParams = bitcoinCoreDecrypt(keyInput, bitcoinCorePassword);
+        keyInput = decryptedParams.jsonlDecrypted;
+      } catch (e) {
+        console.error(e);
+      }
     }
     await wallet.importKeys({ keys: keyInput });
     console.log(`${keyInput.length} Key(s) Imported`);

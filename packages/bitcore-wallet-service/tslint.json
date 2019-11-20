@@ -6,10 +6,7 @@
   "jsRules": {},
   "rules": {
     // "interface-name": [true, "never-prefix"],
-    "no-submodule-imports": [
-      true,
-      "src"
-    ],
+    "no-submodule-imports": false,
     // "no-any": true,
     // Temporarily relax rules
     "member-ordering": false,
@@ -53,10 +50,6 @@
     "no-console": false,
     "arrow-parens": false,
     "max-line-length": false,
-    "space-before-function-paren": [
-      true,
-      "never"
-    ],
     "array-type": false,
     "eofline": false
   },

@@ -1,45 +1,39 @@
 <error [message]="errorMessage" *ngIf="errorMessage"></error>
 <div *ngIf="!errorMessage">
-  <ion-grid class="grid--table">
+  <ion-grid class="grid--table blocks-container">
 
     <ion-row>
-      <ion-col col-2><b>Height</b></ion-col>
-      <ion-col col-4 text-right *ngIf="showTimeAs === 'age'"><b>Age</b></ion-col>
-      <ion-col col-4 text-right *ngIf="showTimeAs === 'timestamp'"><b>Timestamp</b></ion-col>
-      <ion-col text-right><b>Transactions</b></ion-col>
-      <ion-col col-2 hideWhen="portrait"><b>Mined By</b></ion-col>
-      <ion-col col-2 text-right><b>Size</b></ion-col>
+      <ion-col><h6>Height</h6></ion-col>
+      <ion-col   *ngIf="showTimeAs === 'age'"><h6>Mined</h6></ion-col>
+      <ion-col  *ngIf="showTimeAs === 'timestamp'"><h6>Timestamp</h6></ion-col>
+      <ion-col ><h6>Transactions</h6></ion-col>
+      <ion-col><h6>Size</h6></ion-col>
     </ion-row>
 
     <loader *ngIf="loading" [type]="'grid'"></loader>
 
-    <div *ngIf="!loading">
-      <ion-row *ngFor="let block of blocks">
-        <ion-col col-2>
+    <div *ngIf="!loading" class="blocks-container__blocks">
+      <ion-row *ngFor="let block of blocks" (click)="goToBlock(block.hash)">
+        <ion-col>
           <a (click)="goToBlock(block.hash)">{{ block.height }}</a>
         </ion-col>
-        <ion-col text-right *ngIf="showTimeAs === 'age'" col-4>
-          {{ block.time | amFromUnix | amTimeAgo }}
+        <ion-col  *ngIf="showTimeAs === 'age'" >
+          {{ block.time | amFromUnix | amTimeAgo:true }}
         </ion-col>
-        <ion-col text-right *ngIf="showTimeAs === 'timestamp'" col-4>
+        <ion-col  *ngIf="showTimeAs === 'timestamp'" >
           {{ block.time * 1000 | date:'long' }}
         </ion-col>
-        <ion-col text-right>
+        <ion-col >
           {{ block.txlength }}
         </ion-col>
-        <ion-col hideWhen="portrait" col-2>
-          <a *ngIf="block.poolInfo && block.poolInfo.poolName" href="{{ block.poolInfo.url }}">
-            {{ block.poolInfo.poolName }}
-          </a>
-        </ion-col>
-        <ion-col text-right col-2>
+        <ion-col>
           {{ block.size }}
         </ion-col>
       </ion-row>
 
-      <ion-row *ngIf="showAllBlocksButton">
+      <ion-row *ngIf="showAllBlocksButton" class="blocks-cta">
         <ion-col text-center>
-          <button ion-button small (click)="goToBlocks()" [disabled]="blocks.length == 0">See all blocks</button>
+          <button ion-button  (click)="goToBlocks()" [disabled]="blocks.length == 0">Load More</button>
         </ion-col>
       </ion-row>
 

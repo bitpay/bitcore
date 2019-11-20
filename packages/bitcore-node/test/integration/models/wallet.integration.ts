@@ -18,11 +18,20 @@ const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port)
 
 describe('Wallet Model', function() {
   this.timeout(50000);
+
+  before(async () => {
+    await Event.start();
+    await Api.start();
+  });
+
+  after(async () => {
+    await Event.stop();
+    await Api.stop();
+  });
+
   describe('Wallet Create', () => {
     it('should return a locked wallet on create', async () => {
       const baseUrl = 'http://localhost:3000/api';
-      await Event.start();
-      await Api.start();
 
       lockedWallet = await Wallet.create({
         name: walletName,
@@ -36,7 +45,7 @@ describe('Wallet Model', function() {
         name: walletName,
         chain,
         network,
-        baseUrl: 'http://localhost:3000/api/BTC/regtest'
+        baseUrl: 'http://localhost:3000/api'
       });
       expect(lockedWallet).to.have.property('pubKey');
       expect(lockedWallet).to.have.property('password');

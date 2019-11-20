@@ -129,6 +129,10 @@ export class Storage {
       copayerId: 1,
       txid: 1
     });
+    db.collection(collections.TX_CONFIRMATION_SUBS).createIndex({
+      isActive: 1,
+      copayerId: 1
+    });
     db.collection(collections.SESSIONS).createIndex({
       copayerId: 1
     });
@@ -138,6 +142,17 @@ export class Storage {
     opts = opts || {};
     if (this.db) return cb();
     const config = opts.mongoDb || {};
+
+    if (opts.secondaryPreferred) {
+      if (config.uri.indexOf('?') > 0) {
+        config.uri = config.uri + '&';
+      } else {
+        config.uri = config.uri + '?';
+      }
+      config.uri = config.uri + 'readPreference=secondaryPreferred';
+      log.info('Read operations set to secondaryPreferred');
+    }
+
     mongodb.MongoClient.connect(
       config.uri,
       (err, db) => {
@@ -147,7 +162,7 @@ export class Storage {
         }
         this.db = db;
 
-        log.info('Connection established to mongoDB');
+        log.info('Connection established to mongoDB:' + config.uri);
         Storage.createIndexes(db);
         return cb();
       }
@@ -473,6 +488,13 @@ export class Storage {
 
   // TODO: remove walletId from signature
   storeNotification(walletId, notification, cb) {
+
+    // This should only happens in certain tests.
+    if (!this.db) {
+      log.warn( 'Trying to store a notification with close DB', notification);
+      return;
+    }
+
     this.db.collection(collections.NOTIFICATIONS).insert(
       notification,
       {
@@ -1317,24 +1339,31 @@ export class Storage {
   }
 
   fetchActiveTxConfirmationSubs(copayerId, cb) {
+    // This should only happens in certain tests.
+    if (!this.db) {
+      log.warn( 'Trying to fetch notifications with closed DB');
+      return;
+    }
+
     const filter: { isActive: boolean; copayerId?: string } = {
-      isActive: true
+    isActive: true
     };
+
     if (copayerId) filter.copayerId = copayerId;
 
     this.db
-      .collection(collections.TX_CONFIRMATION_SUBS)
-      .find(filter)
-      .toArray((err, result) => {
-        if (err) return cb(err);
+    .collection(collections.TX_CONFIRMATION_SUBS)
+    .find(filter)
+    .toArray((err, result) => {
+      if (err) return cb(err);
 
-        if (!result) return cb();
+      if (!result) return cb();
 
-        const subs = _.map([].concat(result), r => {
-          return TxConfirmationSub.fromObj(r);
-        });
-        return cb(null, subs);
+      const subs = _.map([].concat(result), r => {
+        return TxConfirmationSub.fromObj(r);
       });
+      return cb(null, subs);
+    });
   }
 
   storeTxConfirmationSub(txConfirmationSub, cb) {
@@ -1458,7 +1487,7 @@ export class Storage {
       let lastAddress;
       addressStream.on('data', walletAddress => {
         if (walletAddress.address) {
-          lastAddress = walletAddress.address;
+          lastAddress = walletAddress.address.replace(/:.*$/, '');
           const addressSum = Buffer.from(lastAddress).reduce(
             (tot, cur) => (tot + cur) % Number.MAX_SAFE_INTEGER
           );

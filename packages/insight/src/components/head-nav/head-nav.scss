@@ -1,71 +1,127 @@
 head-nav {
+
+  .search-image-container {
+    width: 35px;
+  }
+
+  .search-image {
+    width: 16px;
+    opacity: .5;
+    position: absolute;
+    top: 15px;
+    right: 19px;
+
+  }
+
+  .input-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    position: relative;
+  }
+
+  .hover-lite {
+    &:hover {
+      color: #d7d8dc !important; //override default ionic on-hover color
+    }
+  }
+
   .toolbar-content {
     display: grid;
     grid-template-columns: 20% 1fr 20%;
+    @media (max-width: map-get($grid-breakpoints, lg)) {
+      grid-template-columns: 29% 1fr 1%;
+    }
     justify-items: stretch;
     align-items: center;
-      ion-title {
-        justify-self: start;
-        &.logo-header {
-          .toolbar-title{
-            width: auto;
-            cursor: pointer;
-            color: white;
-            font-weight: 700;
-            font-style: italic;
-            font-size: 2em;
-            padding-left: 0px;
-          }
-        }
-      }
-      ion-buttons {
-        justify-self: end;
-      }
-      .search{
-        justify-self: center;
-        @media (min-width: map-get($grid-breakpoints, lg)) {
-          display: inline-block;
-        }
-        
-        display: none;
-        
-        vertical-align: middle;
-        input {
-          width: 500px;
-          margin-top: 4px;
-          padding: 9px 12px;
-          color: color($colors, light);
-          background-color: #7CAD23;
-          border: 0;
-          box-shadow: 1px 1px 0 0 rgba(255,255,255,.41), inset 1px 1px 3px 0 rgba(0,0,0,.10);
-        }
-        
-        ::-webkit-input-placeholder {
-          color: #BCDF7E;
+
+    ion-title {
+      justify-self: start;
+      font-style: italic;
+
+      &.logo-header {
+        .toolbar-title {
+          width: auto;
+          cursor: pointer;
+          color: #fff;
+          font-size: 2em;
           font-style: italic;
-          font-weight: 100;
-        }
-        
-        ::-moz-placeholder {
-          color: #BCDF7E;
-          font-family: 'Ubuntu', sans-serif;
-          font-weight: 100;
+          font-weight: 800;
         }
       }
+    }
+
+    ion-buttons {
+      justify-self: end;
+    }
+
+    ion-row {
+      @media (min-width: map-get($grid-breakpoints, lg)) {
+        display: inline-block;
+      }
+    }
+
+    .search {
+      justify-self: center;
+      display: none;
+
+      @media (min-width: map-get($grid-breakpoints, lg)) {
+        display: inline-block;
+      }
+      vertical-align: middle;
+      input {
+        width: 748px;
+        margin-top: 4px;
+        margin-left: -62px;
+        padding: 9px 12px;
+        color: color($colors, dark-light);
+        background-color: #FFF;
+        border: 0;
+        border-radius: 5px;
+      }
+      ::-webkit-input-placeholder {
+        font-size: 15px;
+      }
+      ::-moz-placeholder {
+        font-size: 15px;
+      }
+    }
   }
-  .mobile-searchbar > .toolbar-content {
-    display: grid;
-    grid-template-columns: 100%;
+
+
+  .nav-container {
+    height: 80px;
   }
-  .search-button {
+
+  .searchbar-md {
+    .searchbar-input {
+      border-radius: 5px;
+    }
+    input {
+      ::-webkit-input-placeholder {
+        font-size: 13px;
+      }
+      ::-moz-placeholder {
+        font-size: 13px;
+      }
+
+    }
+  }
+
+  .mobile-searchbar {
+    display:block;
     @media (min-width: map-get($grid-breakpoints, lg)) {
       display: none;
     }
-  }
-  .cn-button:hover,
-  .cn-button:focus {
-    img{
-      filter:  invert(100%) contrast(44%);
+    .toolbar-content {
+      display: grid;
+      grid-template-columns: 100%;
     }
   }
+}
+
+.currency-symbol {
+  text-transform: none;
+  padding-right: 7px;
+  padding-left: 4px;
 }

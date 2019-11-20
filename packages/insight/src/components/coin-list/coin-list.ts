@@ -31,7 +31,7 @@ export class CoinListComponent implements OnInit {
   public ngOnInit(): void {
     if (this.txs && this.txs.length === 0) {
       this.loading = true;
-      this.addrProvider.getAddressActivity(this.addrStr).subscribe(
+      this.addrProvider.getAddressActivity(this.addrStr, this.chainNetwork).subscribe(
         data => {
           const toAppCoin: any = this.chainNetwork.chain !== 'ETH' ? this.txsProvider.toAppCoin: this.txsProvider.toAppEthCoin;
           const formattedData = data.map(toAppCoin);

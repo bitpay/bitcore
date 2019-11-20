@@ -201,7 +201,7 @@ describe('Email notifications', function() {
             }, next);
           },
           function(next) {
-            helpers.stubBroadcast();
+            helpers.stubBroadcast(txp.txid);
             setTimeout(() => {
             server.broadcastTx({
               txProposalId: txp.id,

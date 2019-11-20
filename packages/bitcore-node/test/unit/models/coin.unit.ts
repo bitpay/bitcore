@@ -58,6 +58,7 @@ describe('Coin Model', function() {
         value: 5000000000.0,
         address: 'n1ojJtS98D2VRLcTkaHH4YXLG4ytCyS7AL',
         script: Buffer.from(''),
+        sequenceNumber: undefined,
         wallets: [],
         spentTxid: '',
         spentHeight: SpentHeightIndicators.unspent
@@ -77,6 +78,7 @@ describe('Coin Model', function() {
         coinbase: true,
         confirmations: -1,
         script: '',
+        sequenceNumber: undefined,
         value: 5000000000.0
       });
     });

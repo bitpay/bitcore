@@ -1,0 +1,62 @@
+$font-path: "../assets/fonts";
+
+@font-face {
+  font-family: Ubuntu;
+  src: url('../assets/fonts/ubuntu.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Heebo';
+  font-weight: 200;
+  font-display: swap;
+  src: url( $font-path + '/Heebo-Thin.ttf');
+}
+
+@font-face {
+  font-family: 'Heebo';
+  font-weight: 200;
+  font-display: swap;
+  src: url( $font-path + '/Heebo-Thin.ttf');
+}
+@font-face {
+  font-family: 'Heebo';
+  font-weight: 300;
+  font-display: swap;
+  src: url( $font-path + '/Heebo-Light.ttf');
+}
+@font-face {
+  font-family: 'Heebo';
+  font-weight: 400;
+  font-display: swap;
+  src: url( $font-path + '/Heebo-Regular.ttf');
+}
+@font-face {
+  font-family: 'Heebo';
+  font-weight: 500;
+  font-display: swap;
+  src: url( $font-path + '/Heebo-Medium.ttf');
+}
+@font-face {
+  font-family: 'Heebo';
+  font-weight: 700;
+  font-display: swap;
+  src: url( $font-path + '/Heebo-Bold.ttf');
+}
+@font-face {
+  font-family: 'Heebo';
+  font-weight: 800;
+  font-display: swap;
+  src: url( $font-path + '/Heebo-ExtraBold.ttf');
+}
+@font-face {
+  font-family: 'Heebo';
+  font-weight: 900;
+  font-display: swap;
+  src: url( $font-path + '/Heebo-Black.ttf');
+}
+
+$font-family-base: 'Heebo';
+
+* {
+  font-family: 'Heebo', sans-serif;
+}

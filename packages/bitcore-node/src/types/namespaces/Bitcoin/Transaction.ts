@@ -11,6 +11,7 @@ export type BitcoinScript = {
 export type BitcoinInputObj = {
   prevTxId: string;
   outputIndex: number;
+  sequenceNumber: number;
 };
 export type BitcoinInput = {
   toObject: () => BitcoinInputObj;

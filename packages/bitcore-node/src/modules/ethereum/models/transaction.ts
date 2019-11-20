@@ -55,14 +55,16 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     network: string;
     initialSyncComplete: boolean;
   }) {
-    await this.pruneMempool({ ...params });
+    const operations = [] as Array<Promise<any>>;
+    operations.push(this.pruneMempool({ ...params }));
     const txOps = await this.addTransactions({ ...params });
     logger.debug('Writing Transactions', txOps.length);
-    await Promise.all(
-      partition(txOps, txOps.length / Config.get().maxPoolSize).map(txBatch =>
+    operations.push(
+      ...partition(txOps, txOps.length / Config.get().maxPoolSize).map(txBatch =>
         this.collection.bulkWrite(txBatch.map(op => this.toMempoolSafeUpsert(op, params.height)), { ordered: false })
       )
     );
+    await Promise.all(operations);
 
     // Create events for mempool txs
     if (params.height < SpentHeightIndicators.minimum) {
@@ -151,34 +153,20 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     if (!initialSyncComplete) {
       return;
     }
-    const users = txs.map(tx => tx.from);
-    let invalidatedTxs = await this.collection
-      .find({
-        chain,
-        network,
-        from: { $in: users },
-        blockHeight: SpentHeightIndicators.pending
-      })
-      .toArray();
-
-    invalidatedTxs = invalidatedTxs.filter(
-      toFilter =>
-        txs.findIndex(
-          truth => toFilter.from === truth.from && toFilter.nonce === truth.nonce && toFilter.txid !== truth.txid
-        ) > -1
-    );
-
-    await this.collection.update(
-      {
-        chain,
-        network,
-        txid: { $in: invalidatedTxs.map(tx => tx.txid) },
-        blockHeight: SpentHeightIndicators.pending
-      },
-      { $set: { blockHeight: SpentHeightIndicators.conflicting } },
-      { w: 0, j: false, multi: true }
-    );
-
+    for (const tx of txs) {
+      await this.collection.update(
+        {
+          chain,
+          network,
+          from: tx.from,
+          nonce: tx.nonce,
+          txid: { $ne: tx.txid },
+          blockHeight: SpentHeightIndicators.pending
+        },
+        { $set: { blockHeight: SpentHeightIndicators.conflicting } },
+        { w: 0, j: false, multi: true }
+      );
+    }
     return;
   }
 

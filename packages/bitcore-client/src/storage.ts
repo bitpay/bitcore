@@ -13,7 +13,7 @@ if (usingBrowser) {
 } else {
   lvldwn = require('leveldown');
 }
-const bitcoreLib = require('bitcore-lib');
+const bitcoreLib = require('crypto-wallet-core').BitcoreLib;
 const StorageCache: { [path: string]: LevelUp } = {};
 
 export class Storage {
@@ -116,13 +116,31 @@ export class Storage {
     if (encryptionKey && pubKey) {
       const decrypted = Encryption.decryptPrivateKey(
         encKey,
-        Buffer.from(pubKey, 'hex'),
-        Buffer.from(encryptionKey, 'hex')
+        pubKey,
+        encryptionKey
       );
       return JSON.parse(decrypted);
     } else {
       return json;
     }
+  }
+
+  async getKeys(params: {
+    addresses: string[];
+    name: string;
+    encryptionKey: string
+  }): Promise<Array<Wallet.KeyImport>> {
+    const { addresses, name, encryptionKey } = params;
+    const keys = new Array<Wallet.KeyImport>();
+    for(const address of addresses) {
+      try {
+        const key = await this.getKey({name, address, encryptionKey});
+        keys.push(key);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+    return keys;
   }
 
   async addKeys(params: {
@@ -131,29 +149,23 @@ export class Storage {
     encryptionKey: string;
   }) {
     const { name, keys, encryptionKey } = params;
-    const ops = keys.map(key => {
+    for(const key of keys)  {
       let { pubKey } = key;
       pubKey =
         pubKey || new bitcoreLib.PrivateKey(key.privKey).publicKey.toString();
       let payload = {};
       if (pubKey && key.privKey && encryptionKey) {
+        const toEncrypt = JSON.stringify(key);
         const encKey = Encryption.encryptPrivateKey(
-          JSON.stringify(key),
-          Buffer.from(pubKey, 'hex'),
-          Buffer.from(encryptionKey, 'hex')
+          toEncrypt,
+          pubKey,
+          encryptionKey
         );
         payload = { encKey, pubKey };
       }
-      return {
-        type: 'put',
-        key: `key|${name}|${key.address}`,
-        value: JSON.stringify(payload)
-      };
-    });
-    if (ops.length > 1) {
-      return this.db.batch(ops);
-    } else {
-      this.db.put(ops[0].key, ops[0].value);
+      const toStore = JSON.stringify(payload);
+      await this.db.put(`key|${name}|${key.address}`, toStore);
+
     }
   }
 }

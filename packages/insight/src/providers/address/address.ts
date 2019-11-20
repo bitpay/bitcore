@@ -41,4 +41,13 @@ export class AddressProvider {
       )}/address/${addrStr}/txs?limit=1000`
     );
   }
+
+  public getAddressActivityCoins(
+    addrStr?: string,
+    chainNetwork?: ChainNetwork
+  ): Observable<any> {
+    return this.httpClient.get<any>(
+      `${this.apiProvider.getUrl(chainNetwork)}/address/${addrStr}/coins`
+    );
+  }
 }

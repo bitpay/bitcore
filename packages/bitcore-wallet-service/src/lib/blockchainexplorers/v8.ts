@@ -2,6 +2,7 @@ import * as async from 'async';
 import _ from 'lodash';
 import * as request from 'request-promise-native';
 import io = require('socket.io-client');
+import { ChainService } from '../chain/index';
 import { Client } from './v8/client';
 
 const $ = require('preconditions').singleton();
@@ -53,7 +54,8 @@ export class V8 {
     $.checkArgument(opts.url);
 
     this.apiPrefix = _.isUndefined(opts.apiPrefix) ? '/api' : opts.apiPrefix;
-    this.coin = opts.coin || Defaults.COIN;
+    this.coin = ChainService.getChain(opts.coin || Defaults.COIN).toLowerCase();
+
     this.network = opts.network || 'livenet';
     this.v8network = v8network(this.network);
 
@@ -139,8 +141,9 @@ export class V8 {
 
   async getBalance(wallet, cb) {
     const client = this._getAuthClient(wallet);
+    const { tokenAddress } = wallet;
     client
-      .getBalance({ pubKey: wallet.beAuthPublicKey2, payload: {} })
+      .getBalance({ pubKey: wallet.beAuthPublicKey2, payload: {}, tokenAddress })
       .then(ret => {
         return cb(null, ret);
       })
@@ -295,7 +298,8 @@ export class V8 {
       includeMempool: true,
       pubKey: wallet.beAuthPublicKey2,
       payload: {},
-      startBlock: undefined
+      startBlock: undefined,
+      tokenAddress: wallet.tokenAddress
     };
 
     if (_.isNumber(startBlock)) opts.startBlock = startBlock;
@@ -476,7 +480,6 @@ export class V8 {
     socket.on('connect_error', () => {
       log.error('Error connecting to ' + this.getConnectionInfo());
     });
-    socket.on('tx', callbacks.onTx);
     socket.on('block', (data) => {
       return callbacks.onBlock(data.hash);
     });
@@ -485,16 +488,15 @@ export class V8 {
       if (!data.address) return;
       let out;
       try {
-        // TODO
         out = {
           address: data.address,
-          amount: data.value / 1e8
+          amount: data.value
         };
       } catch (e) {
         // non parsable address
         return;
       }
-      return callbacks.onIncomingPayments({ outs: [out], txid: data.mintTxid });
+      return callbacks.onIncomingPayments({ out, txid: data.mintTxid });
     });
 
     return socket;

@@ -425,15 +425,13 @@ export class InternalStateProvider implements CSP.IChainStateService {
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     const { chain, network, rawTx } = params;
-    return new Promise((resolve, reject) => {
-      this.getRPC(chain, network).sendTransaction(rawTx, (err: any, result: any) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(result);
-        }
-      });
-    });
+    const txids = new Array<string>();
+    const rawTxs = typeof rawTx === 'string' ? [rawTx] : rawTx;
+    for (const tx of rawTxs) {
+      const txid = await this.getRPC(chain, network).sendTransaction(tx);
+      txids.push(txid);
+    }
+    return txids.length === 1 ? txids[0] : txids;
   }
 
   async getCoinsForTx({ chain, network, txid }: { chain: string; network: string; txid: string }) {
@@ -466,9 +464,19 @@ export class InternalStateProvider implements CSP.IChainStateService {
     };
   }
 
-  async getDailyTransactions({ chain, network }: { chain: string; network: string }) {
-    const beforeBitcoin = new Date('2009-01-09T00:00:00.000Z');
-    const todayTruncatedUTC = new Date(new Date().toISOString().split('T')[0]);
+  async getDailyTransactions(params: CSP.DailyTransactionsParams) {
+    const { chain, network, startDate, endDate } = params;
+    const formatDate = (d: Date) => new Date(d.toISOString().split('T')[0]);
+    const todayTruncatedUTC = formatDate(new Date());
+    let oneMonth = new Date(todayTruncatedUTC);
+    oneMonth.setDate(todayTruncatedUTC.getDate() - 30);
+    oneMonth = formatDate(oneMonth);
+
+    const isValidDate = (d: string) => {
+      return new Date(d).toString() !== 'Invalid Date';
+    };
+    const start = startDate && isValidDate(startDate) ? new Date(startDate) : oneMonth;
+    const end = endDate && isValidDate(endDate) ? formatDate(new Date(endDate)) : todayTruncatedUTC;
     const results = await BitcoinBlockStorage.collection
       .aggregate<{
         date: string;
@@ -479,8 +487,8 @@ export class InternalStateProvider implements CSP.IChainStateService {
             chain,
             network,
             timeNormalized: {
-              $gte: beforeBitcoin,
-              $lt: todayTruncatedUTC
+              $gte: start,
+              $lt: end
             }
           }
         },
@@ -526,6 +534,11 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
   }
 
+  /**
+   * Get a series of hashes that come before a given height, or the 30 most recent hashes
+   *
+   * @returns Array<string>
+   */
   async getLocatorHashes(params) {
     const { chain, network, startHeight, endHeight } = params;
     const query =
@@ -585,9 +598,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   private extractAddress(address: string): string {
-    const extractedAddress = address
-      .replace(/^(bitcoincash:|bchtest:|bitcoin:)/i, '')
-      .replace(/\?.*/, '');
+    const extractedAddress = address.replace(/^(bitcoincash:|bchtest:|bitcoin:)/i, '').replace(/\?.*/, '');
     return extractedAddress || address;
   }
 }

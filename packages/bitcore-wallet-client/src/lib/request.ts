@@ -3,7 +3,7 @@ import { Utils } from './common';
 
 const request = require('superagent');
 const async = require('async');
-const Package = require('../package.json');
+const Package = require('../../package.json');
 var log = require('./log');
 
 const util = require('util');
@@ -22,6 +22,7 @@ export class Request {
 
     // request can be overload only for testing
     this.r = opts.r || request;
+    this.supportStaffWalletId = opts.supportStaffWalletId;
 
     this.session = null;
     this.credentials = null;
@@ -99,6 +100,7 @@ export class Request {
     r.timeout(this.timeout);
 
     r.end((err, res) => {
+
       if (!res) {
         return cb(new Errors.CONNECTION_ERROR());
       }
@@ -189,6 +191,7 @@ export class Request {
   get(url, cb) {
     url += url.indexOf('?') > 0 ? '&' : '?';
     url += 'r=' + _.random(10000, 99999);
+
     return this.doRequest('get', url, {}, false, cb);
   }
 

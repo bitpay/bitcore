@@ -48,6 +48,18 @@ export class BTCTxProvider {
     return tx.uncheckedSerialize();
   }
 
+  getSignature(params: { tx: string; keys: Array<Key>}) {
+    throw new Error('No implemented for UTXO coins');
+  }
+
+  applySignature(params: { tx: string; keys: Array<Key>}) {
+    throw new Error('No implemented for UTXO coins');
+  }
+
+  getHash(params: { tx: string}) {
+    throw new Error('No implemented for UTXO coins');
+  }
+
   sign(params: { tx: string; keys: Array<Key>; utxos: any[] }) {
     const { tx, keys } = params;
     let utxos = params.utxos || [];

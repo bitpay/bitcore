@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 import * as fs from 'fs';
+import 'source-map-support/register';
+
 import { ExpressApp } from './lib/expressapp';
 
 const config = require('./config');

@@ -5,6 +5,7 @@ import { Event } from '../services/event';
 import { Modules } from '../modules';
 import { Config } from '../services/config';
 import '../utils/polyfills';
+import 'source-map-support/register'
 require('heapdump');
 const services: Array<any> = [];
 

@@ -86,6 +86,15 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
     return amSyncingNode;
   }
 
+  async waitTilSync() {
+    while (true) {
+      if (this.isSyncingNode) {
+        return;
+      }
+      await wait(500);
+    }
+  }
+
   async refreshSyncingNode() {
     while (!this.stopping) {
       const wasSyncingNode = this.getIsSyncingNode();
@@ -125,13 +134,18 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
 
   async unregisterSyncingNode() {
     await wait(1000);
-    this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
-    if (this.getIsSyncingNode()) {
-      await StateStorage.selfResignSyncingNode({
-        chain: this.chain,
-        network: this.network,
-        lastHeartBeat: this.lastHeartBeat
-      });
+    try {
+      this.lastHeartBeat = await StateStorage.getSyncingNode({ chain: this.chain, network: this.network });
+      if (this.getIsSyncingNode()) {
+        await StateStorage.selfResignSyncingNode({
+          chain: this.chain,
+          network: this.network,
+          lastHeartBeat: this.lastHeartBeat
+        });
+      }
+    } catch (e) {
+      logger.warn('Issue unregistering');
+      logger.error(e);
     }
   }
 }

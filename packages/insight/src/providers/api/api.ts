@@ -17,9 +17,12 @@ export interface NetworkSettings {
 
 const CurrentEnv = process.env.ENV || 'dev';
 
-const EnvApiHosts: { [env: string]: string[] } = {
-  prod: ['https://api.bitcore.io/api', 'https://api-eth.bitcore.io/api'],
-  dev: ['/api']
+const EnvApiHosts: { [env: string]: { [chain: string]: string } } = {
+  prod: {
+    default: 'https://api.bitcore.io/api',
+    ETH: 'https://api-eth.bitcore.io/api'
+  },
+  dev: { default: '/api' }
 };
 
 const CurrentApiHosts = EnvApiHosts[CurrentEnv];
@@ -40,6 +43,10 @@ export class ApiProvider {
     btc: 'https://bitpay.com/api/rates',
     bch: 'https://bitpay.com/api/rates/bch',
     eth: 'https://bitpay.com/api/rates/eth'
+  };
+
+  public bwsUrl = {
+    urlPrefix: 'https://bws.bitpay.com/bws/api/v1/fiatrates/'
   };
 
   constructor(
@@ -81,10 +88,11 @@ export class ApiProvider {
   public getAvailableNetworks(): Observable<
     Array<{ host: string; supported: ChainNetwork[] }>
   > {
-    const hosts = EnvApiHosts[CurrentEnv];
+    const hosts = CurrentApiHosts;
     return Observable.fromPromise(
       Promise.all(
-        hosts.map(async host => {
+        Object.keys(hosts).map(async chain => {
+          const host = hosts[chain];
           const supported = await this.httpClient
             .get<ChainNetwork[]>(host + '/status/enabled-chains')
             .toPromise();
@@ -97,12 +105,16 @@ export class ApiProvider {
     );
   }
 
+  getHostForChain(chain: string) {
+    return CurrentApiHosts[chain] || CurrentApiHosts.default;
+  }
+
   public getUrlPrefix(chain, network): string {
     const defaultChain = chain || this.defaultNetwork.chain;
     const defaultNetwork = network || this.defaultNetwork.network;
     const key = `${defaultChain}:${defaultNetwork}`;
     const lookupHost = this.networkSettings.chainNetworkLookup[key];
-    const prefix = lookupHost || this.defaults.getDefault('%API_PREFIX%');
+    const prefix = lookupHost || this.getHostForChain(chain);
     return prefix;
   }
 

@@ -31,8 +31,7 @@ describe('Blockchain monitor', function() {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
       blockchainExplorer.initSocket = function(callbacks) {
-        socket.handlers['tx']= function(data) {
-          callbacks.onTx;
+        socket.handlers['coin']= function(data) {
           callbacks.onIncomingPayments(data);
         };
         socket.handlers['block'] =  callbacks.onBlock;
@@ -44,7 +43,8 @@ describe('Blockchain monitor', function() {
     helpers.after(done);
   });
   beforeEach(function(done) {
-
+    blockchainExplorer.last = [];
+    blockchainExplorer.lastTx = [];
     // TODO
     const collections = {
       WALLETS: 'wallets',
@@ -97,10 +97,9 @@ describe('Blockchain monitor', function() {
 
       var incoming = {
         txid: '123',
-        vout: [{}],
+        out: { 'address': address.address, amount: 1500 },
       };
-      incoming.vout[0][address.address] = 1500;
-      socket.handlers['tx'](incoming);
+      socket.handlers['coin'](incoming);
 
       setTimeout(function() {
         server.getNotifications({}, function(err, notifications) {
@@ -125,12 +124,11 @@ describe('Blockchain monitor', function() {
 
       var incoming = {
         txid: '123',
-        outs: [{}],
       };
-      incoming.outs[0] = {address : address.address, amount: 0.0001500};
-      socket.handlers['tx'](incoming);
+      incoming.out = {address : address.address, amount: 15000};
+      socket.handlers['coin'](incoming);
       setTimeout(function() {
-      socket.handlers['tx'](incoming);
+      socket.handlers['coin'](incoming);
 
       setTimeout(function() {
         server.getNotifications({}, function(err, notifications) {
@@ -138,6 +136,7 @@ describe('Blockchain monitor', function() {
           var notification = _.filter(notifications, {
             type: 'NewIncomingTx'
           });
+
           notification[0].data.amount.should.equal(15000);
           notification.length.should.equal(1);
           done();
@@ -154,10 +153,9 @@ it('should parse v8 amount ', function(done) {
 
     var incoming = {
       txid: '123',
-      vout: [{}],
     };
-    incoming.vout[0][address.address] = 1500;
-    socket.handlers['tx'](incoming);
+    incoming.out = {address : address.address, amount: 1500};
+    socket.handlers['coin'](incoming);
       setTimeout(function() {
         server.getNotifications({}, function(err, notifications) {
           should.not.exist(err);

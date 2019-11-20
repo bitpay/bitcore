@@ -36,19 +36,19 @@ Create two files `irene.js` and `tomas.js` with the content below:
 #### irene.js
 
 ```javascript
-var Client = require('bitcore-wallet-client');
+var Client = require('bitcore-wallet-client/index').default;
 
 
 var fs = require('fs');
 var BWS_INSTANCE_URL = 'https://bws.bitpay.com/bws/api'
 
 // Generates a new extended private key
-var ireneKeys = Keys.create();
+var ireneKeys = Client.Key.create();
 
 var client = new Client({
   baseUrl: BWS_INSTANCE_URL,
   verbose: false,
-  
+
 });
 
 client.createWallet("My Wallet", "Irene", 2, 2, {network: 'testnet'}, function(err, secret) {

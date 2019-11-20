@@ -18,8 +18,5 @@ export class BlockSummaryComponent {
   @Input()
   public chainNetwork: ChainNetwork;
 
-  constructor(
-    public currencyProvider: CurrencyProvider
-  ) {
-  }
+  constructor(public currencyProvider: CurrencyProvider) {}
 }

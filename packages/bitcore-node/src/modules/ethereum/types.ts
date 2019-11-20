@@ -1,7 +1,7 @@
 import BN from 'bn.js';
 
 import { IBlock } from '../../types/Block';
-import { ClassifiedTrace, TokenTransferResponse } from './parityRpc';
+import { ClassifiedTrace, TokenTransferResponse } from './p2p/parityRpc';
 import { ITransaction } from '../../models/baseTransaction';
 
 export declare namespace Parity {

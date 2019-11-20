@@ -39,7 +39,7 @@ class ChainStateProxy implements CSP.ChainStateProvider {
     return this.get(params).getAuthhead(params);
   }
 
-  getDailyTransactions(params: { chain: string; network: string }) {
+  getDailyTransactions(params: CSP.DailyTransactionsParams) {
     return this.get(params).getDailyTransactions(params);
   }
 

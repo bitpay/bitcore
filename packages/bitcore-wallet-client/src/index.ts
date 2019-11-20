@@ -7,5 +7,5 @@
 // * Client API.
 // * @alias module:Client.API
 // */
-import { API } from './api';
+import { API } from './lib/api';
 export default API;

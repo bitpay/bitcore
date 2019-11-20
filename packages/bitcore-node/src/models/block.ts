@@ -95,7 +95,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
     const previousBlock = await this.collection.findOne({ hash: header.prevHash, chain, network });
 
     const blockTimeNormalized = (() => {
-      const prevTime = previousBlock ? previousBlock.timeNormalized : null;
+      const prevTime = previousBlock ? new Date(previousBlock.timeNormalized) : null;
       if (prevTime && blockTime <= prevTime.getTime()) {
         return prevTime.getTime() + 1;
       } else {
@@ -104,7 +104,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
     })();
 
     const height = (previousBlock && previousBlock.height + 1) || 1;
-    logger.debug('Setting blockheight', height);
+    logger.debug('Setting blockheight: ' + height);
 
     const convertedBlock: IBtcBlock = {
       chain,

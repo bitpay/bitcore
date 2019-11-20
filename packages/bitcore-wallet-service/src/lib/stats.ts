@@ -40,7 +40,14 @@ export class Stats {
   }
 
   run(cb) {
-    const uri = config.storageOpts.mongoDb.uri;
+    let uri = config.storageOpts.mongoDb.uri;
+
+    if (uri.indexOf('?') > 0) {
+      uri = uri + '&';
+    } else {
+      uri = uri + '?';
+    }
+    uri = uri + 'readPreference=secondaryPreferred';
     mongodb.MongoClient.connect(
       uri,
       (err, db) => {
@@ -60,7 +67,7 @@ export class Stats {
 
   _getStats(cb) {
     let result = {};
-    async.parallel(
+    async.series(
       [
         (next) => {
           this._getNewWallets(next);
@@ -71,13 +78,11 @@ export class Stats {
       ],
       (err, results) => {
         if (err) return cb(err);
-
         result = { newWallets: results[0], txProposals: results[1] };
         return cb(null, result);
       }
     );
   }
-
   _getNewWallets(cb) {
     const getLastDate = cb => {
       this.db
@@ -92,62 +97,53 @@ export class Stats {
           return cb(null, moment(lastRecord[0]._id.day));
         });
     };
-
-    const updateStats = (from, cb) => {
+    const updateStats = async (from, cb) => {
       const to = moment()
         .subtract(1, 'day')
         .endOf('day');
-      const map = function() {
-        const day = new Date(this.createdOn * 1000);
-        day.setHours(0);
-        day.setMinutes(0);
-        day.setSeconds(0);
-        const key = {
-          day: +day,
-          network: this.network,
-          coin: this.coin
-        };
-        const value = {
-          count: 1
-        };
-        // emit(key, value);
-      };
-      const reduce = (k, v: any[]) => {
-        let count = 0;
-        for (let i = 0; i < v.length; i++) {
-          count += v[i].count;
-        }
-        return {
-          count
-        };
-      };
-      const opts = {
-        query: {
-          createdOn: {
-            $gt: from.unix(),
-            $lte: to.unix()
-          }
-        },
-        out: {
-          merge: 'stats_wallets'
-        }
-      };
-      this.db
-        .collection(storage.collections.WALLETS)
-        .mapReduce(map, reduce, opts, (err) => {
-          return cb(err);
-        });
+      const results = await this.db
+        .collection(storage.Storage.collections.WALLETS)
+        .aggregate(
+          [
+            {
+              $project: {
+                date: { $toDate: { $multiply: ['$createdOn', 1000] } },
+                network: '$network',
+                coin: '$coin',
+              }
+            },
+            {
+              $group: {
+                _id: {
+                  day: {
+                    $dateFromParts: {
+                      year: { $year: '$date' }, month: { $month: '$date' }, day: { $dayOfMonth: '$date' }
+                    }
+                  },
+                  network: '$network',
+                  coin: '$coin'
+                },
+                count: { $sum: 1 },
+              }
+            },
+            {
+              $out: 'stats_wallets'
+            }
+          ]
+        ).toArray();
+      return cb(null, results);
     };
-
     const queryStats = (cb) => {
+      const to = new Date(this.toTs);
+      to.setDate(to.getDate() - 1);
       this.db
         .collection('stats_wallets')
         .find({
           '_id.network': this.network,
           '_id.coin': this.coin,
           '_id.day': {
-            $gte: this.fromTs,
-            $lte: this.toTs
+            $gte: new Date(this.fromTs),
+            $lte: to
           }
         })
         .sort({
@@ -161,7 +157,7 @@ export class Stats {
               return {
                 day,
                 coin: record._id.coin,
-                count: record.value.count
+                count: record.count ? record.count : record.value.count
               };
             })
           };
@@ -213,39 +209,10 @@ export class Stats {
           return cb(null, moment(lastRecord[0]._id.day));
         });
     };
-
-    const updateStats = (from, cb) => {
+    const updateStats = async (from, cb) => {
       const to = moment()
         .subtract(1, 'day')
         .endOf('day');
-      const map = function() {
-        const day = new Date(this.broadcastedOn * 1000);
-        day.setHours(0);
-        day.setMinutes(0);
-        day.setSeconds(0);
-        const key = {
-          day: +day,
-          network: this.network,
-          coin: this.coin
-        };
-        const value = {
-          count: 1,
-          amount: this.amount
-        };
-        // emit(key, value);
-      };
-      const reduce = (k, v) => {
-        let count = 0,
-          amount = 0;
-        for (let i = 0; i < v.length; i++) {
-          count += v[i].count;
-          amount += v[i].amount;
-        }
-        return {
-          count,
-          amount
-        };
-      };
       const opts = {
         query: {
           status: 'broadcasted',
@@ -258,22 +225,53 @@ export class Stats {
           merge: 'stats_txps'
         }
       };
-      this.db
-        .collection(storage.collections.TXS)
-        .mapReduce(map, reduce, opts, (err) => {
-          return cb(err);
-        });
+      const results = await this.db
+        .collection(storage.Storage.collections.TXS)
+        .aggregate(
+          [
+            { $match: {} },
+            {
+              $project: {
+                date: { $toDate: { $multiply: ['$broadcastedOn', 1000] } },
+                network: '$network',
+                coin: '$coin',
+                amount: '$amount'
+              }
+            },
+            {
+              $group: {
+                _id: {
+                  day: {
+                    $dateFromParts: {
+                      year: { $year: '$date' }, month: { $month: '$date' }, day: { $dayOfMonth: '$date' }
+                    }
+                  },
+                  network: '$network',
+                  coin: '$coin'
+                },
+                amount: { $sum: '$amount' },
+                count: { $sum: 1 }
+              }
+            },
+            {
+              $out: 'stats_txps'
+            }
+          ]
+        ).toArray();
+      return cb(null, results);
     };
 
     const queryStats = (cb) => {
+      const to = new Date(this.toTs);
+      to.setDate(to.getDate() - 1);
       this.db
         .collection('stats_txps')
         .find({
           '_id.network': this.network,
           '_id.coin': this.coin,
           '_id.day': {
-            $gte: this.fromTs,
-            $lte: this.toTs
+            $gte: new Date(this.fromTs),
+            $lte: to
           }
         })
         .sort({
@@ -281,7 +279,6 @@ export class Stats {
         })
         .toArray((err, results) => {
           if (err) return cb(err);
-
           const stats = {
             nbByDay: [],
             amountByDay: []
@@ -291,23 +288,21 @@ export class Stats {
             stats.nbByDay.push({
               day,
               coin: record._id.coin,
-              count: record.value.count
+              count: record.count ? record.count : record.value.count
             });
             stats.amountByDay.push({
               day,
-              amount: record.value.amount
+              amount: record.amount ? record.amount : record.value.amount
             });
           });
           return cb(null, stats);
         });
     };
-
     async.series(
       [
         (next) => {
           getLastDate((err, lastDate) => {
             if (err) return next(err);
-
             lastDate = lastDate.startOf('day');
             const yesterday = moment()
               .subtract(1, 'day')

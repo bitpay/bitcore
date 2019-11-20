@@ -1,30 +1,58 @@
 #!/usr/bin/env node
+'use strict';
 
 const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
+const fs = require('fs');
+const { StreamUtil } = require('../ts_build/stream-util');
+const { Encryption } = require('../ts_build/encryption');
 
+/**
+ * USAGE -
+ * Pass in a raw transaction or a jsonl file of rawTransactions
+ * Pass in the bitcore wallet name or a jsonl file of encrypted bitcoin core keys or
+ * Pass in the utxos if you want to use specific utxos
+ */
 program
   .version(require('../package.json').version)
-  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--name <name>', 'REQUIRED - Bitcore Wallet Name')
   .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--tx <tx>', 'REQUIRED - The transaction to sign')
+  .option('--tx [tx]', 'The raw transaction to sign')
+  .option('--txfile [txfile]', 'path to a jsonl file with rawTransaction and utxos')
+  .option('--utxos', 'Pass in utxos to use to sign transaction')
+  .option('--keys [keys]', 'jsonl file of {privKey, pubKey, address} pairs')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, tx } = program;
+  const { name, path, tx, txfile, keys, utxos } = program;
   let wallet;
+  let encryptedKeys;
+  let bitcoinCorePassword;
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ name, path });
     wallet = await wallet.unlock(password);
-    let signedTx = await wallet.signTx({ tx });
-
-    console.log(
-      JSON.stringify({
-        signedTx: signedTx.uncheckedSerialize()
-      })
-    );
+    if (keys) {
+      let contents = fs.readFileSync(keys).toString();
+      encryptedKeys = contents
+        .split('\n')
+        .filter(line => line !== '')
+        .map(line => JSON.parse(line));
+      bitcoinCorePassword = await promptly.password('Enter Bitcoin Core Password:');
+    }
+    if (tx) {
+      let signedTx = await wallet.signTx({ tx, keys: encryptedKeys, utxos, passphrase: bitcoinCorePassword });
+      console.log(JSON.stringify(signedTx));
+    }
+    if (txfile) {
+      const readStream = fs.createReadStream(txfile, {flags: 'r', encoding: 'utf8'});
+      readStream
+        .pipe(StreamUtil.jsonlBufferToObjectMode()).on("error", console.error)
+        .pipe(StreamUtil.signTxStream(wallet, encryptedKeys, utxos, bitcoinCorePassword)).on("error", console.error)
+        .pipe(StreamUtil.objectModeToJsonlBuffer()).on("error", console.error)
+        .pipe(process.stdout).on("error", console.error);
+    }
   } catch (e) {
     console.error(e);
   }

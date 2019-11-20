@@ -3,9 +3,7 @@ import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
 import { RedirProvider } from '../../providers/redir/redir';
-import {
-  TxsProvider
-} from '../../providers/transactions/transactions';
+import { TxsProvider } from '../../providers/transactions/transactions';
 
 /**
  * Generated class for the TransactionDetailsEthComponent component.
@@ -32,8 +30,7 @@ export class TransactionDetailsEthComponent {
     public txProvider: TxsProvider,
     public redirProvider: RedirProvider,
     public blocksProvider: BlocksProvider
-  ) {
-  }
+  ) {}
 
   public goToTx(txId: string, vout?: number, fromVout?: boolean): void {
     this.redirProvider.redir('transaction', {

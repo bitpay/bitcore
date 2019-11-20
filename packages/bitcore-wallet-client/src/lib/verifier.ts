@@ -1,9 +1,11 @@
 import * as _ from 'lodash';
-import { Utils } from './common';
+import { Constants, Utils } from './common';
 var $ = require('preconditions').singleton();
 
-var Bitcore = require('bitcore-lib');
-var BCHAddress = require('bitcore-lib-cash').Address;
+import { BitcoreLib, BitcoreLibCash } from 'crypto-wallet-core';
+
+var Bitcore = BitcoreLib;
+var BCHAddress = BitcoreLibCash.Address;
 
 var log = require('./log');
 
@@ -156,7 +158,7 @@ export class Verifier {
     if (!Utils.verifyMessage(hash, txp.proposalSignature, creatorSigningPubKey))
       return false;
 
-    if (!this.checkAddress(credentials, txp.changeAddress))
+    if (Constants.UTXO_COINS.includes(txp.coin) &&  !this.checkAddress(credentials, txp.changeAddress))
       return false;
 
     return true;
@@ -176,14 +178,14 @@ export class Verifier {
       amount = txp.amount;
     }
 
-    if (amount != payproOpts.amount)
+    if (amount != _.sumBy(payproOpts.instructions, 'amount'))
       return false;
 
-    if (txp.coin == 'btc' && toAddress != payproOpts.toAddress)
+    if (txp.coin == 'btc' && toAddress != payproOpts.instructions[0].toAddress)
       return false;
 
     // Workaround for cashaddr/legacy address problems...
-    if (txp.coin == 'bch' && (new BCHAddress(toAddress).toString()) != (new BCHAddress(payproOpts.toAddress).toString()))
+    if (txp.coin == 'bch' && (new BCHAddress(toAddress).toString()) != (new BCHAddress(payproOpts.instructions[0].toAddress).toString()))
       return false;
 
     // this generates problems...

@@ -1,4 +1,5 @@
 # Bitcore
+![Circle CI](https://circleci.com/gh/bitpay/bitcore/tree/master.svg?style=shield)
 
 **Infrastructure to build Bitcoin and blockchain-based applications for the next generation of financial technology.**
 

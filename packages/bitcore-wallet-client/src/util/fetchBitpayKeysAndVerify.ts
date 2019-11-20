@@ -179,13 +179,12 @@ Promise.all(keyRequests).then(() => {
 
       let pubKeyHash = bs58.encode(Buffer.from(c + e.substr(0, 8), 'hex'));
 
-
       keyMap[pubKeyHash] = {
         owner: parsedEccPayload.owner,
         networks: ['main'],
         domains: parsedEccPayload.domains,
         publicKey: pubkey
-      }
+      };
 
       // Add Bitpay's testnet
       keyMap['mh65MN7drqmwpCRZcEeBEE9ceQCQ95HtZc'] = {
@@ -201,7 +200,7 @@ Promise.all(keyRequests).then(() => {
     const fs = require('fs');
 
     fs.writeFileSync('JsonPaymentProtocolKeys.js', 'module.exports = ' + JSON.stringify(keyMap, null, 2));
-      
+
   } else {
     return Promise.reject(`Insufficient good signatures ${signatureCount} for a proper validity check`);
   }

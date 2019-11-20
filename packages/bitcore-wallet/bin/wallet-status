@@ -29,7 +29,7 @@ utils.getClient(program, { mustExist: true }, function (client) {
     }
 
     var x = res.balance;
-    console.log('* Balance %s (Locked: %s)', utils.renderAmount(x.totalAmount), utils.renderAmount(x.lockedAmount));
+    console.log('* Balance %s (Locked: %s)', utils.renderAmount(x.totalAmount, client.credentials.coin), utils.renderAmount(x.lockedAmount, client.credentials.coin));
 
     utils.renderTxProposals(res.pendingTxps);
   });

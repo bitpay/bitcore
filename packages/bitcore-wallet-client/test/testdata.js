@@ -101,7 +101,40 @@ exports.payProJson = {
     },
   }
 };
+exports.payProJsonV2Body = bodyV2 = {
+  bch: '{"time":"2019-11-05T17:05:31.791Z","expires":"2019-11-05T17:20:31.791Z","memo":"Payment request for BitPay invoice XM8XbreRs6cnKkR3yYT6qQ for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/XM8XbreRs6cnKkR3yYT6qQ","paymentId":"XM8XbreRs6cnKkR3yYT6qQ","chain":"BCH","network":"main","instructions":[{"type":"transaction","requiredFeeRate":1,"outputs":[{"amount":337900,"address":"qpymzlw4dfgawe2hy6xalj0qnzwedrqfvg96jl5ev6"}]}]}',
+  btc: '{"time":"2019-11-05T15:21:09.047Z","expires":"2019-11-05T15:36:09.047Z","memo":"Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X","paymentId":"LanynqCPoL2JQb8z8s5Z3X","chain":"BTC","network":"main","instructions":[{"type":"transaction","requiredFeeRate":34.337,"outputs":[{"amount":19800,"address":"1CpEMwff6DA52FLoq4JAhd2xFSEjQxyokm"}]}]}',
+  eth: '{"time":"2019-10-10T14:57:01.924Z","expires":"2019-10-10T15:12:01.924Z","memo":"Payment request for BitPay invoice GsbhMZeeUebqzEeDmNubEP for merchant BitPay Visa® Load (USD-USA)","paymentUrl":"https://bitpay.com/i/GsbhMZeeUebqzEeDmNubEP","paymentId":"GsbhMZeeUebqzEeDmNubEP","chain":"ETH","network":"main","currency":"ETH","instructions":[{"type":"transaction","amount":5214000000000000,"toAddress":"0x52dE8D3fEbd3a06d3c627f59D56e6892B80DCf12","value":5214000000000000,"to":"0x52dE8D3fEbd3a06d3c627f59D56e6892B80DCf12","data":"0xb6b4af050000000000000000000000000000000000000000000000000012861af9dbe00000000000000000000000000000000000000000000000000000000005a43875660000000000000000000000000000000000000000000000000000016db9644f77cadbc5e4ee0119e349b39e42a049f5526b4eca8c225709d3fd73550c87de3d2096c9e28e9f3b440d991720673f01a67d3f74a912339beb77ed696f65f35e5bc4000000000000000000000000000000000000000000000000000000000000001c84ebb3c8fdeb8c59e35b1248a1af05ba8a332d745cc38a3193b1792e414dbdae41b55cbb5dbddf27fc539dd13a3bf1c72671d744b8706fcfb3eb2fce968456b40000000000000000000000000000000000000000000000000000000000000000","gasPrice":24229999974}]}'
+};
 
-exports.payProAckHex = Buffer.from('{"memo":"an ack memo"}');
+exports.payProJsonV2 = {
+  'btc': {
+    body:  Buffer.from(bodyV2.btc),
+    headers: {
+      'x-identity': '1DbY94wCcLRM1Y6RGFg457JyqBbsYxzfiN',
+      signature: '61e74de80655486d11490baa2da96bac8d2f7332b349e7de869f451fe80fb8892ecb69d48bc8d19ee96396bf0c7aeeaffcd84538cd96e600567499ab99f1d7ac',
+      digest: 'SHA-256=11d2c9d7f4ff8a843f567c3ce0982201252c78f7d29501fadfffed68aa49c6c9',
+      'x-signature-type': 'ecc'
+    },
+  },
+  'bch': {
+    body: Buffer.from(bodyV2.bch),
+    headers: {
+      'x-identity': '1DbY94wCcLRM1Y6RGFg457JyqBbsYxzfiN',
+      signature: '754b7fa51be429fe89faf5b72605a39846a433aa44464f178503b2d499d0b6951ae3ffa313c7b175f019aa0f4f94c73be03818840b27743ad88bef56c63171aa',
+      digest: 'SHA-256=512b6acba3fe082ff6486c7d4934fabee3e34d6466501c97351987326f107547',
+      'x-signature-type': 'ecc'
+    }
+  },
+  'eth': {
+    body: Buffer.from(bodyV2.bch),
+    headers: {
+      'x-identity': '1EMqSoDzMdBuuvM2RUnup3FnDeo6wuHxEg',
+      signature: '1701100e5bda63e7d4c311ab3c58d6edd01b6aa7b8cb314f36303dda3ce6a53b7ddebb9f9afe05fc6dd250cad215f8010472e57c4b71cab95e122d9fadb39957',
+      digest: 'SHA-256=1c1c47d338efaf7a45e693051b04e50eb0a86c1fec0e3882b1987c58bfe7d058',
+      'x-signature-type': 'ecc'
+    }
+  }
+};
 
 module.exports = exports;

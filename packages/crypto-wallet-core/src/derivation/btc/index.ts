@@ -1,5 +1,5 @@
 const BitcoreLib = require('bitcore-lib');
-import { IDeriver } from "..";
+import { IDeriver } from '..';
 export abstract class AbstractBitcoreLibDeriver implements IDeriver {
   public abstract bitcoreLib;
 

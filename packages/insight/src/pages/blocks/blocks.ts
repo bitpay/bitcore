@@ -19,7 +19,7 @@ export class BlocksPage {
   public loading = true;
   public blocks;
   public chainNetwork: ChainNetwork;
-  
+
   constructor(
     public navParams: NavParams,
     private apiProvider: ApiProvider,

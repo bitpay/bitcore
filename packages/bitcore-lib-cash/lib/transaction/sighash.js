@@ -220,7 +220,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript,
 
     for (i = 0; i < inputNumber; i++) {
       txcopy.outputs[i] = new Output({
-        satoshis: BN.fromBuffer(new buffer.Buffer(BITS_64_ON, 'hex')),
+        satoshis: BN.fromBuffer(Buffer.from(BITS_64_ON, 'hex')),
         script: Script.empty()
       });
     }
