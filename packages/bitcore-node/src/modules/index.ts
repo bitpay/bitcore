@@ -7,7 +7,7 @@ import { ChainStateProvider } from '../providers/chain-state';
 import { Libs } from '../providers/libs';
 import { Verification } from '../services/verification';
 
-interface IService {
+export interface IService {
   start(): Promise<void>;
   stop(): Promise<void>;
 }

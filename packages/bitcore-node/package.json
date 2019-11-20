@@ -35,6 +35,7 @@
     "test:integration": "npm run tsc && node ./build/test/runners/integration.js",
     "benchmark": "npm run tsc && node build/test/benchmark/benchmark.js",
     "api": "npm run tsc && node build/src/workers/api.js",
+    "api:debug": "npm run tsc && node build/src/workers/api.js --DEBUG true",
     "api:cluster": "npm run tsc && node build/src/workers/api.js --CLUSTER true",
     "pruning": "npm run tsc && node build/src/workers/pruning.js --EXIT true",
     "p2p": "npm run tsc && node build/src/workers/p2p.js"
@@ -96,6 +97,7 @@
     "mongoose": "5.0.11",
     "progress": "2.0.0",
     "request": "2.88.0",
+    "ripple-lib": "1.4.2",
     "rxjs": "6.1.0",
     "secp256k1": "3.5.0",
     "snappy": "6.0.1",

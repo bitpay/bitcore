@@ -1,6 +1,5 @@
 import { Readable } from 'stream';
 import Config from '../../../config';
-import { WalletAddressStorage } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { ObjectID } from 'mongodb';
 import Web3 from 'web3';
@@ -16,6 +15,7 @@ import { ERC20Abi } from '../abi/erc20';
 import { Transaction } from 'web3/eth/types';
 import { EventLog } from 'web3/types';
 import { partition } from '../../../utils/partition';
+import { WalletAddressStorage } from "../../../models/walletAddress";
 
 interface ERC20Transfer extends EventLog {
   returnValues: {
@@ -175,13 +175,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     return txids.length === 1 ? txids[0] : txids;
   }
 
-  async getWalletAddresses(walletId: ObjectID) {
-    let query = { chain: this.chain, wallet: walletId };
-    return WalletAddressStorage.collection
-      .find(query)
-      .addCursorFlag('noCursorTimeout', true)
-      .toArray();
-  }
   async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
     const { req, res, args, chain, network, address } = params;
     const { limit, since, tokenAddress } = args;
