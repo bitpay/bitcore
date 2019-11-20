@@ -326,6 +326,16 @@ export class API extends EventEmitter {
   }
 
   // /**
+  // * toObj() wallet
+  // *
+  // * @param {Object} opts
+  // */
+  toObj() {
+    $.checkState(this.credentials);
+    return this.credentials.toObj();
+  }
+
+  // /**
   // * toString() wallet
   // *
   // * @param {Object} opts
@@ -338,21 +348,15 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var output;
-    var c = Credentials.fromObj(this.credentials);
-    output = JSON.stringify(c.toObj());
+    output = JSON.stringify(this.toObj());
     return output;
   }
 
-  // /**
-  // * fromString wallet
-  // *
-  // * @param {Object} str - The serialized JSON created with #export
-  // */
-  fromString(credentials) {
+  fromObj(credentials) {
+    $.checkArgument(_.isObject(credentials), 'Argument should be an object');
+
     try {
-      if (!_.isObject(credentials) || !(credentials as any).xPubKey) {
-        credentials = Credentials.fromObj(JSON.parse(credentials));
-      }
+      credentials = Credentials.fromObj(credentials);
       this.credentials = credentials;
     } catch (ex) {
       log.warn(`Error importing wallet: ${ex}`);
@@ -363,6 +367,26 @@ export class API extends EventEmitter {
       }
     }
     this.request.setCredentials(this.credentials);
+  }
+
+  // /**
+  // * fromString wallet
+  // *
+  // * @param {Object} str - The serialized JSON created with #export
+  // */
+  fromString(credentials) {
+    if (_.isObject(credentials)) {
+      log.warn('WARN: Please use fromObj instead of fromString when importing strings');
+      return this.fromObj(credentials);
+    }
+    let c;
+    try {
+      c = JSON.parse(credentials);
+    } catch (ex) {
+      log.warn(`Error importing wallet: ${ex}`);
+      throw new Errors.INVALID_BACKUP();
+    }
+    return this.fromObj(c);
   }
 
   decryptBIP38PrivateKey(encryptedPrivateKeyBase58, passphrase, opts, cb) {

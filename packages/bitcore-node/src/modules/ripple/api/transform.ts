@@ -42,7 +42,7 @@ export class RippleWalletTransactions extends Transform {
               JSON.stringify({
                 id: tx.id,
                 txid: tx.id,
-                fee: transaction.fee,
+                fee: transaction.fee * 1e6,
                 size: 0,
                 category: 'send',
                 satoshis: -1 * Number(output.value) * 1e6,
@@ -57,7 +57,7 @@ export class RippleWalletTransactions extends Transform {
               JSON.stringify({
                 id: tx.id,
                 txid: tx.id,
-                fee: transaction.fee,
+                fee: transaction.fee * 1e6,
                 size: 0,
                 category: 'move',
                 satoshis: -1 * Number(output.value) * 1e6,
@@ -87,7 +87,7 @@ export class RippleWalletTransactions extends Transform {
               JSON.stringify({
                 id: tx.id,
                 txid: tx.id,
-                fee: transaction.fee,
+                fee: transaction.fee * 1e6,
                 size: 0,
                 category: 'receive',
                 satoshis: Number(output.value) * 1e6,

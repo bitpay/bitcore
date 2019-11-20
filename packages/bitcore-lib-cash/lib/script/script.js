@@ -172,12 +172,12 @@ Script.fromASM = function(str) {
 };
 
 Script.fromHex = function(str) {
-  return new Script(new buffer.Buffer(str, 'hex'));
+  return new Script(Buffer.from(str, 'hex'));
 };
 
 Script.fromString = function(str) {
   if (JSUtil.isHexa(str) || str.length === 0) {
-    return new Script(new buffer.Buffer(str, 'hex'));
+    return new Script(Buffer.from(str, 'hex'));
   }
   var script = new Script();
   script.chunks = [];

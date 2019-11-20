@@ -2,7 +2,8 @@ var _ = require('lodash');
 var url = require('url');
 var read = require('read')
 var log = require('npmlog');
-var Client = require('bitcore-wallet-client');
+var Client = require('bitcore-wallet-client').default;
+const Key = Client.Key;
 var FileStorage = require('./filestorage');
 var sjcl = require('sjcl');
 
@@ -23,7 +24,16 @@ var die = Utils.die = function(err) {
   }
 };
 
+Utils.create = function(client, opts) {
+  let key = Key.create();
+  let cred = key.createCredentials(null, opts);
+  client.fromString(cred);
+
+  return {key, cred};
+}
+
 Utils.parseMN = function(text) {
+
   if (!text) throw new Error('No m-n parameter');
 
   var regex = /^(\d+)(-|of|-of-)?(\d+)$/i;
@@ -57,23 +67,33 @@ Utils.doLoad = function(client, doNotComplete, walletData, password, filename, c
     }
   }
 
+  let key;
   try {
-    client.import(walletData);
+    walletData = JSON.parse(walletData);
+    let imported = Client.upgradeCredentialsV1(walletData);
+    client.fromString(JSON.stringify(imported.credentials));
+
+    key = Key.fromObj(imported.key);
   } catch (e) {
-    die('Corrupt wallet file.');
+    try {
+      client.fromObj(walletData.cred);
+      key = Key.fromObj(walletData.key);
+    } catch (e) {
+      die('Corrupt wallet file:' + e);
+    };
   };
-  if (doNotComplete) return cb(client);
+  if (doNotComplete) return cb(client, key);
 
 
   client.on('walletCompleted', function(wallet) {
-    Utils.doSave(client, filename, password, function() {
+    Utils.doSave(key, client, filename, password, function() {
       log.info('Your wallet has just been completed. Please backup your wallet file or use the export command.');
     });
   });
   client.openWallet(function(err, isComplete) {
     if (err) throw err;
 
-    return cb(client);
+    return cb(client, key);
   });
 };
 
@@ -92,15 +112,15 @@ Utils.loadEncrypted = function(client, opts, walletData, filename, cb) {
 Utils.getClient = function(args, opts, cb) {
   opts = opts || {};
 
-  var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
-  var host = args.host || process.env['BWS_HOST'] || 'https://bws.bitpay.com/';
+  var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.json';
+  var host = args.host || 'https://bws.bitpay.com/';
 
   var storage = new FileStorage({
     filename: filename,
   });
 
   var client = new Client({
-    baseUrl: url.resolve(host, '/bws/api'),
+    baseUrl: process.env['BWS_HOST'] || url.resolve(host, '/bws/api'),
     verbose: args.verbose,
     supportStaffWalletId: opts.walletId,
     timeout: 20 * 60 * 1000,
@@ -138,10 +158,9 @@ Utils.getClient = function(args, opts, cb) {
   });
 };
 
-Utils.doSave = function(client, filename, password, cb) {
+Utils.doSave = function(key, cred, filename, password, cb) {
   var opts = {};
-
-  var str = client.export();
+  var str = JSON.stringify({key: key.toObj(), cred: cred.toObj()});
   if (password) {
     str = sjcl.encrypt(password, str, WALLET_ENCRYPTION_OPTS);
   }
@@ -156,7 +175,7 @@ Utils.doSave = function(client, filename, password, cb) {
   });
 };
 
-Utils.saveEncrypted = function(client, filename, cb) {
+Utils.saveEncrypted = function(key, cred, filename, cb) {
   read({
     prompt: 'Enter password to encrypt:',
     silent: true
@@ -171,18 +190,18 @@ Utils.saveEncrypted = function(client, filename, cb) {
       if (password != password2)
         Utils.die("passwords were not equal");
 
-      Utils.doSave(client, filename, password, cb);
+      Utils.doSave(key, cred, filename, password, cb);
     });
   });
 };
 
-Utils.saveClient = function(args, client, opts, cb) {
+Utils.saveClient = function(args, key, cred, opts, cb) {
   if (_.isFunction(opts)) {
     cb = opts;
     opts = {};
   }
 
-  var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.dat';
+  var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.json';
 
   var storage = new FileStorage({
     filename: filename,
@@ -199,7 +218,7 @@ Utils.saveClient = function(args, client, opts, cb) {
     if (args.password) {
       Utils.saveEncrypted(client, filename, cb);
     } else {
-      Utils.doSave(client, filename, null, cb);
+      Utils.doSave(key, cred, filename, null, cb);
     };
   });
 };
@@ -227,7 +246,7 @@ Utils.UNITS2 = {
   'sat': 1,
 };
 
-Utils.parseAmount = function(text) {
+Utils.parseAmount = function(text, coin) {
   if (!_.isString(text))
     text = text.toString();
 
@@ -290,6 +309,13 @@ Utils.COIN = {
     maxDecimals: 8,
     minDecimals: 8,
   },
+  eth: {
+    name: 'eth',
+    toSatoshis: 1e18,
+    maxDecimals: 8,
+    minDecimals: 8,
+  },
+ 
  
 };
 

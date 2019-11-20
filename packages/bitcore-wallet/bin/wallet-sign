@@ -14,46 +14,16 @@ program
 var args = program.args;
 var txpid = args[0] || '';
 
-function processBatch(client, signatures) {
+utils.getClient(program, { mustExist: true }, function (client, key, err) {
   client.getTxProposals({}, function(err, txps) {
-    utils.die(err);
+    if (err)
+      utils.die(err);
 
-    var selected = [];
-    if (txpid) {
-      txp = utils.findOneTxProposal(txps, txpid);
-      selected.push(txp);
-    } else {
-      if (txps.length == 0) {
-        utils.die('There are no pending transaction proposals.');
-      }
-      selected = txps;
-    }
-
-    _.each(selected, function (txp) {
-      var sigs = _.find(signatures, { txpId: txp.id });
-      if (sigs) {
-        txp.signatures = sigs.signatures;
-        client.signTxProposal(txp, function(err, tx) {
-          utils.die(err);
-          console.log('Transaction %s signed by you.', txp.id);
-        });
-      }
+    var txp = utils.findOneTxProposal(txps, txpid);
+    let signatures = key.sign(client.getRootPath(), txp);
+    client.pushSignatures(txp, signatures, function(err, tx) {
+      utils.die(err);
+      console.log('Transaction signed by you.');
     });
   });
-};
-
-utils.getClient(program, { mustExist: true }, function (client) {
-  if (program.input) {
-    var inFile = JSON.parse(fs.readFileSync(program.input));
-    processBatch(client, inFile);
-  } else {
-    client.getTxProposals({}, function(err, txps) {
-      utils.die(err);
-      var txp = utils.findOneTxProposal(txps, txpid);
-      client.signTxProposal(txp, function(err, tx) {
-        utils.die(err);
-        console.log('Transaction signed by you.');
-      });
-    });
-  }
 });

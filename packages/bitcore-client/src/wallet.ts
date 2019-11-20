@@ -3,7 +3,7 @@ import { Encryption } from './encryption';
 import { Client } from './client';
 import { Storage } from './storage';
 import { Transactions, Deriver } from 'crypto-wallet-core';
-const { PrivateKey } = require('bitcore-lib');
+const { PrivateKey } = require('crypto-wallet-core').BitcoreLib;
 const Mnemonic = require('bitcore-mnemonic');
 const { ParseApiStream } = require('./stream-util');
 

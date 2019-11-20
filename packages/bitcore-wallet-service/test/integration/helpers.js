@@ -303,7 +303,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
 
 
 helpers.randomTXID = function() {
-  return Bitcore.crypto.Hash.sha256(new Buffer(Math.random() * 100000)).toString('hex');;
+  return Bitcore.crypto.Hash.sha256(Buffer.from((Math.random() * 100000).toString())).toString('hex');;
 };
 
 helpers.toSatoshi = function(btc) {
@@ -434,8 +434,8 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
   });
 };
 
-helpers.stubBroadcast = function(thirdPartyBroadcast) {
-  blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, null, '112233');
+helpers.stubBroadcast = function(txid) {
+  blockchainExplorer.broadcast = sinon.stub().callsArgWith(1, null, txid || '112233');
   blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
 };
 

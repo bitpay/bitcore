@@ -10,6 +10,9 @@ import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types'
 import { ITransaction } from '../../../models/baseTransaction';
 import { ICoin } from '../../../models/coin';
 import { RippleWalletTransactions } from './transform';
+import { SubmitResponse } from './types';
+import { IBlock } from '../../../models/baseBlock';
+import { FormattedLedger } from 'ripple-lib/dist/npm/ledger/parse/ledger';
 
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -41,6 +44,16 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     return RippleStateProvider.clients[network];
   }
 
+  async getAccountNonce(network: string, address: string) {
+    const client = await this.getClient(network);
+    try {
+      const { sequence } = await client.getAccountInfo(address);
+      return sequence;
+    } catch (err) {
+      throw err;
+    }
+  }
+
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const client = await this.getClient(params.network);
     try {
@@ -65,8 +78,10 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
 
   async getBlock(params: CSP.GetBlockParams) {
     const client = await this.getClient(params.network);
-    const ledger = await client.getLedger({ includeTransactions: true, ledgerHash: params.blockId });
-    return ledger as any;
+    const isHash = params.blockId && params.blockId.length == 64;
+    const query = isHash ? { ledgerHash: params.blockId } : { ledgerVersion: Number(params.blockId) };
+    const ledger = await client.getLedger({ includeTransactions: true, ...query });
+    return this.transformLedger(ledger, params.network);
   }
 
   async getBlockBeforeTime(params: CSP.GetBlockBeforeTimeParams) {
@@ -82,7 +97,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
         }
       });
     });
-    return ledger as any;
+    return ledger as IBlock;
   }
 
   async getFee(params: CSP.GetEstimateSmartFeeParams) {
@@ -92,9 +107,14 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
   }
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
-    const client = await this.getClient(params.network)
-    const rawTx = typeof params.rawTx === 'string' ? params.rawTx : params.rawTx[0];
-    return client.submit(rawTx);
+    const client = await this.getClient(params.network);
+    const rawTxs = typeof params.rawTx === 'string' ? [params.rawTx] : params.rawTx;
+    const txids = new Array<string>();
+    for (const tx of rawTxs) {
+      const resp = (await client.submit(tx)) as SubmitResponse;
+      txids.push(resp.tx_json.hash);
+    }
+    return txids.length === 1 ? txids[0] : txids;
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {
@@ -169,11 +189,11 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     for (const walletAddress of addresses) {
       promises.push(this.getAddressTransactions({ ...params, address: walletAddress.address }));
     }
-    const allTxs = await Promise.all(promises);
+    const allTxs = (await Promise.all(promises))
+      .reduce((agg, txs) => agg.concat(txs), new Array<FormattedTransactionType>())
+      .sort((tx1, tx2) => tx1.outcome.ledgerVersion - tx2.outcome.ledgerVersion);
     const transformed = readable.pipe(new RippleWalletTransactions(params.wallet, this));
-    for (let txs of allTxs) {
-      this.streamTxs(txs, readable);
-    }
+    this.streamTxs(allTxs, readable);
     readable.push(null);
     transformed.pipe(params.res);
   }
@@ -181,7 +201,26 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
   async getLocalTip(params: ChainNetwork) {
     const client = await this.getClient(params.network);
     const ledger = await client.getLedger();
-    return ledger;
+    return this.transformLedger(ledger, params.network);
+  }
+
+  transformLedger(ledger: FormattedLedger, network: string): IBlock {
+    const txs = ledger.transactions || [];
+    return {
+      chain: this.chain,
+      network: network,
+      confirmations: -1,
+      hash: ledger.ledgerHash,
+      height: ledger.ledgerVersion,
+      previousBlockHash: ledger.parentLedgerHash,
+      processed: true,
+      time: new Date(ledger.closeTime),
+      timeNormalized: new Date(ledger.closeTime),
+      reward: 0,
+      size: txs.length,
+      transactionCount: txs.length,
+      nextBlockHash: ''
+    };
   }
 
   transform(tx: FormattedTransactionType, network: string): ITransaction | FormattedTransactionType {
@@ -226,3 +265,5 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     }
   }
 }
+
+export const XRP = new RippleStateProvider();

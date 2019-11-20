@@ -312,7 +312,7 @@ Transaction.prototype.toBufferWriter = function(writer, noWitness) {
   var hasWitnesses = this.hasWitnesses();
 
   if (hasWitnesses && !noWitness) {
-    writer.write(new Buffer('0001', 'hex'));
+    writer.write(Buffer.from('0001', 'hex'));
   }
 
   writer.writeVarintNum(this.inputs.length);

@@ -239,12 +239,12 @@ HDPrivateKey.prototype._deriveWithNumber = function(index, hardened, nonComplian
     // The private key serialization in this case will not be exactly 32 bytes and can be
     // any value less, and the value is not zero-padded.
     var nonZeroPadded = this.privateKey.bn.toBuffer();
-    data = BufferUtil.concat([new buffer.Buffer([0]), nonZeroPadded, indexBuffer]);
+    data = BufferUtil.concat([Buffer.from([0]), nonZeroPadded, indexBuffer]);
   } else if (hardened) {
     // This will use a 32 byte zero padded serialization of the private key
     var privateKeyBuffer = this.privateKey.bn.toBuffer({size: 32});
     assert(privateKeyBuffer.length === 32, 'length of private key buffer is expected to be 32 bytes');
-    data = BufferUtil.concat([new buffer.Buffer([0]), privateKeyBuffer, indexBuffer]);
+    data = BufferUtil.concat([Buffer.from([0]), privateKeyBuffer, indexBuffer]);
   } else {
     data = BufferUtil.concat([this.publicKey.toBuffer(), indexBuffer]);
   }
@@ -369,8 +369,8 @@ HDPrivateKey.prototype._buildFromObject = function(arg) {
     depth: _.isNumber(arg.depth) ? BufferUtil.integerAsSingleByteBuffer(arg.depth) : arg.depth,
     parentFingerPrint: _.isNumber(arg.parentFingerPrint) ? BufferUtil.integerAsBuffer(arg.parentFingerPrint) : arg.parentFingerPrint,
     childIndex: _.isNumber(arg.childIndex) ? BufferUtil.integerAsBuffer(arg.childIndex) : arg.childIndex,
-    chainCode: _.isString(arg.chainCode) ? BufferUtil.hexToBuffer(arg.chainCode) : arg.chainCode,
-    privateKey: (_.isString(arg.privateKey) && JSUtil.isHexa(arg.privateKey)) ? BufferUtil.hexToBuffer(arg.privateKey) : arg.privateKey,
+    chainCode: _.isString(arg.chainCode) ? Buffer.from(arg.chainCode,'hex') : arg.chainCode,
+    privateKey: (_.isString(arg.privateKey) && JSUtil.isHexa(arg.privateKey)) ? Buffer.from(arg.privateKey,'hex') : arg.privateKey,
     checksum: arg.checksum ? (arg.checksum.length ? arg.checksum : BufferUtil.integerAsBuffer(arg.checksum)) : undefined
   };
   return this._buildFromBuffers(buffers);
@@ -406,7 +406,7 @@ HDPrivateKey.prototype._generateRandomly = function(network) {
 HDPrivateKey.fromSeed = function(hexa, network) {
   /* jshint maxcomplexity: 8 */
   if (JSUtil.isHexaString(hexa)) {
-    hexa = BufferUtil.hexToBuffer(hexa);
+    hexa = Buffer.from(hexa, 'hex');
   }
   if (!Buffer.isBuffer(hexa)) {
     throw new hdErrors.InvalidEntropyArgument(hexa);
@@ -417,7 +417,7 @@ HDPrivateKey.fromSeed = function(hexa, network) {
   if (hexa.length > MAXIMUM_ENTROPY_BITS * BITS_TO_BYTES) {
     throw new hdErrors.InvalidEntropyArgument.TooMuchEntropy(hexa);
   }
-  var hash = Hash.sha512hmac(hexa, new buffer.Buffer('Bitcoin seed'));
+  var hash = Hash.sha512hmac(hexa, Buffer.from('Bitcoin seed'));
 
   return new HDPrivateKey({
     network: Network.get(network) || Network.defaultNetwork,

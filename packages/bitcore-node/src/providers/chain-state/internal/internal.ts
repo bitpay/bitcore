@@ -164,7 +164,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       .limit(1)
       .sort({ timeNormalized: -1 })
       .toArray();
-    return block;
+    return block as IBlock;
   }
 
   async streamTransactions(params: CSP.StreamTransactionsParams) {
@@ -540,7 +540,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     };
   }
 
-  async getLocalTip({ chain, network }): Promise<any> {
+  async getLocalTip({ chain, network }) {
     if (BitcoinBlockStorage.chainTips[chain] && BitcoinBlockStorage.chainTips[chain][network]) {
       return BitcoinBlockStorage.chainTips[chain][network];
     } else {
@@ -548,6 +548,11 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
   }
 
+  /**
+   * Get a series of hashes that come before a given height, or the 30 most recent hashes
+   *
+   * @returns Array<string>
+   */
   async getLocatorHashes(params) {
     const { chain, network, startHeight, endHeight } = params;
     const query =

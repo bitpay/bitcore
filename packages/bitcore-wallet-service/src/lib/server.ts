@@ -770,7 +770,7 @@ export class WalletService {
           });
         },
         (next) => {
-          this.getPendingTxs({}, (err, pendingTxps) => {
+          this.getPendingTxs(opts, (err, pendingTxps) => {
             if (err) return next(err);
             status.pendingTxps = pendingTxps;
             next();
@@ -1346,13 +1346,6 @@ export class WalletService {
         return cb('Bad xPub');
       }
 
-      if (wallet.coin == 'bch' && opts.noCashAddr) {
-        address.address = BCHAddressTranslator.translate(
-          address.address,
-          'copay'
-        );
-      }
-
       this._store(
         wallet,
         address,
@@ -1360,6 +1353,13 @@ export class WalletService {
           if (err) return cb(err);
           if (duplicate)
             return cb(null, address);
+          if (wallet.coin == 'bch' && opts.noCashAddr) {
+            address = _.cloneDeep(address);
+            address.address = BCHAddressTranslator.translate(
+              address.address,
+              'copay'
+            );
+          }
 
           this._notify(
             'NewAddress',
@@ -3116,12 +3116,18 @@ export class WalletService {
             err,
             txid
           ) => {
-            if (err) {
+            if (err || txid != txp.txid) {
+              if (!err || txp.txid != txid) {
+                log.warn(`Broadcast failed for: ${raw}`);
+              } else {
+                log.warn(`Broadcast failed: ${err}`);
+              }
+
               const broadcastErr = err;
               // Check if tx already in blockchain
               this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
                 if (err) return cb(err);
-                if (!isInBlockchain) return cb(broadcastErr);
+                if (!isInBlockchain) return cb(broadcastErr || 'broadcast error');
 
                 this._processBroadcast(
                   txp,
@@ -3227,6 +3233,9 @@ export class WalletService {
    * @returns {TxProposal[]} Transaction proposal.
    */
   getPendingTxs(opts, cb) {
+    if (opts.tokenAddress) {
+      return cb();
+    }
     this.storage.fetchPendingTxs(this.walletId, (err, txps) => {
       if (err) return cb(err);
 
