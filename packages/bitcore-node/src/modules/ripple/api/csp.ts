@@ -11,6 +11,31 @@ import { ITransaction } from '../../../models/baseTransaction';
 import { ICoin } from '../../../models/coin';
 import { RippleWalletTransactions } from './transform';
 
+interface SubmitResponse {
+  resultCode: string;
+  resultMessage: string;
+  engine_result: string;
+  engine_result_code: number;
+  engine_result_message: string;
+  tx_blob: string;
+  tx_json: {
+    Account: string;
+    Amount: {
+      currency: string;
+      issuer: string;
+      value: string;
+    };
+    Destination: string;
+    Fee: string;
+    Flags: number;
+    Sequence: number;
+    SigningPubKey: string;
+    TransactionType: string;
+    TxnSignature: string;
+    hash: string;
+  };
+}
+
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
   static clients: { [network: string]: RippleAPI } = {};
@@ -103,7 +128,13 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     const client = await this.getClient(params.network);
-    return client.submit(params.rawTx);
+    const rawTxs = typeof params.rawTx === 'string' ? [params.rawTx] : params.rawTx;
+    const txids = new Array<string>();
+    for (const tx of rawTxs) {
+      const resp = (await client.submit(tx)) as SubmitResponse;
+      txids.push(resp.tx_json.hash);
+    }
+    return txids.length === 1 ? txids[0] : txids;
   }
 
   async getWalletBalance(params: CSP.GetWalletBalanceParams) {
