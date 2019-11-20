@@ -6,17 +6,27 @@ import { TransactionStorage, ITransaction } from '../../src/models/transaction';
 import { Storage } from '../../src/services/storage';
 import * as _ from 'lodash';
 import { Config } from '../../src/services/config';
-import { ChainStateProvider } from '../../src/providers/chain-state';
-import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
+import { Modules } from '../../src/modules';
+import { Verification, IVerificationPeer } from '../../src/services/verification';
 
-const { CHAIN, NETWORK, HEIGHT } = process.env;
+const { CHAIN = '', NETWORK = '', HEIGHT, VERIFYSPENDS } = process.env;
 const resumeHeight = Number(HEIGHT) || 1;
 const chain = CHAIN || '';
 const network = NETWORK || '';
 
+Modules.loadConfigured();
 const chainConfig = Config.chainConfig({ chain, network });
-const worker = new BitcoinP2PWorker({ chain, network, chainConfig });
-worker.connect();
+
+const HasCoins = {
+  BTC: true,
+  BCH: true
+};
+let worker: IVerificationPeer;
+if (Verification.get(CHAIN)) {
+  const workerClass = Verification.get(CHAIN);
+  worker = new workerClass({ chain, network, chainConfig });
+  worker.connect();
+}
 
 type ErrorType = {
   model: string;
@@ -26,49 +36,70 @@ type ErrorType = {
 };
 
 async function getBlock(currentHeight: number) {
-  worker.isSyncing = true;
-  worker.isSyncingNode = true;
-
-  const locatorHashes = await ChainStateProvider.getLocatorHashes({
-    chain,
-    network,
-    startHeight: Math.max(1, currentHeight - 30),
-    endHeight: currentHeight
-  });
-  const headers = await worker.getHeaders(locatorHashes);
-  return worker.getBlock(headers[0].hash);
+  if (VERIFYSPENDS && worker) {
+    return worker.getBlockForNumber(currentHeight);
+  }
+  return null;
 }
 
-export async function validateDataForBlock(blockNum: number, log = false) {
+let prevHash = '';
+let nextBlockHash = '';
+export async function validateDataForBlock(blockNum: number, tipHeight: number, log = false) {
   let success = true;
-  const [block, blockTxs, blocksForHeight] = await Promise.all([
+  const atTipOfChain = blockNum === tipHeight;
+  const errors = new Array<ErrorType>();
+
+  const [block, blockTxs] = await Promise.all([
     BitcoinBlockStorage.collection.findOne({ chain, network, height: blockNum, processed: true }),
-    TransactionStorage.collection.find({ chain, network, blockHeight: blockNum }).toArray(),
+    TransactionStorage.collection.find({ chain, network, blockHeight: blockNum }).toArray()
+  ]);
+
+  if (!block) {
+    success = false;
+    const error = {
+      model: 'block',
+      err: true,
+      type: 'MISSING_BLOCK',
+      payload: { blockNum }
+    };
+    errors.push(error);
+    if (log) {
+      console.log(JSON.stringify(error));
+    }
+    return { success, errors };
+  }
+
+  const blockTxids = blockTxs.map(t => t.txid);
+  const firstHash = blockTxs[0] ? blockTxs[0].blockHash : block!.hash;
+  const [coinsForTx, mempoolTxs, blocksForHash, blocksForHeight, p2pBlock] = await Promise.all([
+    CoinStorage.collection.find({ chain, network, mintTxid: { $in: blockTxids } }).toArray(),
+    TransactionStorage.collection.find({ chain, network, blockHeight: -1, txid: { $in: blockTxids } }).toArray(),
+    BitcoinBlockStorage.collection.countDocuments({ chain, network, hash: firstHash }),
     BitcoinBlockStorage.collection.countDocuments({
       chain,
       network,
       height: blockNum,
       processed: true
-    })
-  ]);
-  const blockTxids = blockTxs.map(t => t.txid);
-  const firstHash = blockTxs[0] ? blockTxs[0].blockHash : block!.hash;
-  const [coinsForTx, mempoolTxs, blocksForHash] = await Promise.all([
-    CoinStorage.collection.find({ chain, network, mintTxid: { $in: blockTxids } }).toArray(),
-    TransactionStorage.collection.find({ chain, network, blockHeight: -1, txid: { $in: blockTxids } }).toArray(),
-    BitcoinBlockStorage.collection.countDocuments({ chain, network, hash: firstHash })
+    }),
+    getBlock(blockNum)
   ]);
 
   const seenTxs = {} as { [txid: string]: ITransaction };
-  const errors = new Array<ErrorType>();
 
-  if (!block || block.transactionCount != blockTxs.length) {
+  const prevHashMismatch = prevHash && block.previousBlockHash != prevHash;
+  const nextHashMismatch = nextBlockHash && block.hash != nextBlockHash;
+  prevHash = block.hash;
+  nextBlockHash = block.nextBlockHash;
+
+  const missingData =
+    (!atTipOfChain && !block.nextBlockHash) || !block.previousBlockHash || prevHashMismatch || nextHashMismatch;
+  if (!block || block.transactionCount != blockTxs.length || missingData) {
     success = false;
     const error = {
       model: 'block',
       err: true,
       type: 'CORRUPTED_BLOCK',
-      payload: { blockNum }
+      payload: { blockNum, txCount: block.transactionCount, foundTxs: blockTxs.length }
     };
 
     errors.push(error);
@@ -78,8 +109,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
     }
   }
 
-  if (block) {
-    const p2pBlock = await getBlock(blockNum);
+  if (block && VERIFYSPENDS && p2pBlock) {
     const txs = p2pBlock.transactions ? p2pBlock.transactions.slice(1) : [];
     const spends = _.chain(txs)
       .map(tx => tx.inputs)
@@ -87,11 +117,13 @@ export async function validateDataForBlock(blockNum: number, log = false) {
       .map(input => input.toObject())
       .value();
 
-    const coins = await CoinStorage.collection
-      .find({ chain, network, mintTxid: { $in: spends.map(tx => tx.prevTxId) } })
-      .toArray();
     for (let spend of spends) {
-      const found = coins.find(c => c.mintTxid === spend.prevTxId && c.mintIndex === spend.outputIndex);
+      const found = await CoinStorage.collection.findOne({
+        chain,
+        network,
+        mintTxid: spend.prevTxId,
+        mintIndex: spend.outputIndex
+      });
       if (found && found.spentHeight !== block.height) {
         success = false;
         const error = { model: 'coin', err: true, type: 'COIN_SHOULD_BE_SPENT', payload: { coin: found, blockNum } };
@@ -111,7 +143,6 @@ export async function validateDataForBlock(blockNum: number, log = false) {
           errors.push(error);
           if (log) {
             console.log(JSON.stringify(error));
-            console.log(coins.filter(c => c.mintTxid === spend.prevTxId));
           }
         }
       }
@@ -175,7 +206,7 @@ export async function validateDataForBlock(blockNum: number, log = false) {
 
   for (let txid of Object.keys(seenTxs)) {
     const coins = seenTxCoins[txid];
-    if (!coins) {
+    if (!coins && HasCoins[chain]) {
       success = false;
       const error = { model: 'coin', err: true, type: 'MISSING_COIN_FOR_TXID', payload: { txid, blockNum } };
       errors.push(error);
@@ -267,7 +298,7 @@ if (require.main === module) {
 
     if (tip) {
       for (let i = resumeHeight; i <= tip.height; i++) {
-        const { success } = await validateDataForBlock(i, true);
+        const { success } = await validateDataForBlock(i, tip.height, true);
         console.log({ block: i, success });
       }
     }

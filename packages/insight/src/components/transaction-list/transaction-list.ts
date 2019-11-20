@@ -74,7 +74,7 @@ export class TransactionListComponent implements OnInit {
                   response.spendingTxInputs,
                   response.spendingTxOutputs
                 );
-                this.events.publish('TransactionList', { length: txs.length });
+                this.events.publish('TransactionList', { length: this.transactions.length });
                 this.loading = false;
               },
               () => {
@@ -109,9 +109,6 @@ export class TransactionListComponent implements OnInit {
         .reduce((a, b) => a + b.value, 0);
       tx.vin.length === 0 ? (tx.isCoinBase = true) : (tx.isCoinBase = false);
       this.transactions.push(tx);
-    });
-    this.events.publish('TransactionList', {
-      length: this.transactions.length
     });
   }
 

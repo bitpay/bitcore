@@ -1,6 +1,5 @@
+import baseX from 'base-x';
 import Bitcore from 'bitcore-lib';
-// tslint:disable-next-line:no-submodule-imports
-import baseX from 'bitcore-lib/node_modules/base-x';
 import { IValidation } from '..';
 
 const RIPPLE_ALPHABET = 'rpshnaf39wBUDNEGHJKLM4PQRST7VWXYZ2bcdeCg65jkm8oFqi1tuvAxyz';

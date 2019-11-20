@@ -5,6 +5,7 @@ import { Api } from '../services/api';
 import { Config } from '../services/config';
 import { ChainStateProvider } from '../providers/chain-state';
 import { Libs } from '../providers/libs';
+import { Verification } from '../services/verification';
 
 export interface IService {
   start(): Promise<void>;
@@ -22,7 +23,8 @@ export class BaseModule implements IService {
       Config: typeof Config;
       CSP: typeof ChainStateProvider;
       Libs: typeof Libs;
-    } = { P2P, Storage, Event, Api, Config, CSP: ChainStateProvider, Libs }
+      Verification: typeof Verification;
+    } = { P2P, Storage, Event, Api, Config, CSP: ChainStateProvider, Libs, Verification }
   ) {}
 
   async start() {

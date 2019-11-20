@@ -143,6 +143,16 @@ describe('Transaction Creation', () => {
     expect(cryptoTx).to.equal(expectedTx);
   });
 
+  it('should be able to encode Data in ERC20 tx', () => {
+    const recipients = [{ address: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A', amount: 3896000000000000 }];
+    const tokenAddress = '0x692a70d2e424a56d2c6c27aa97d1a86395877b3a';
+    const data = Transactions.get({chain: 'ERC20'}).encodeData({recipients, tokenAddress});
+    const expectedData =
+      '0xa9059cbb00000000000000000000000037d7b3bbd88efde6a93cf74d2f5b0385d3e3b08a000000000000000000000000000000000000000000000000000dd764300b8000';
+
+    expect(data).to.equal(expectedData);
+  });
+
   it('should be only create a mainnet ETH tx with one recipient', () => {
     const rawEthTx = {
       network: 'mainnet',

@@ -78,7 +78,7 @@ describe('HDPublicKey interface', function() {
     describe('xpubkey string serialization errors', function() {
       it('fails on invalid length', function() {
         expectFailBuilding(
-          Base58Check.encode(new buffer.Buffer([1, 2, 3])),
+          Base58Check.encode(Buffer.from([1, 2, 3])),
           hdErrors.InvalidLength
         );
       });

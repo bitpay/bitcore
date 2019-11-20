@@ -149,7 +149,7 @@ MultiSigScriptHashInput.prototype.addSignature = function(transaction, signature
 MultiSigScriptHashInput.prototype._updateScript = function() {
   if (this.nestedWitness) {
     var stack = [
-      new Buffer(0),
+      Buffer.alloc(0),
     ];
     var signatures = this._createSignatures();
     for (var i = 0; i < signatures.length; i++) {

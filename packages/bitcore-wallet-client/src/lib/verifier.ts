@@ -178,14 +178,14 @@ export class Verifier {
       amount = txp.amount;
     }
 
-    if (amount != payproOpts.amount)
+    if (amount != _.sumBy(payproOpts.instructions, 'amount'))
       return false;
 
-    if (txp.coin == 'btc' && toAddress != payproOpts.toAddress)
+    if (txp.coin == 'btc' && toAddress != payproOpts.instructions[0].toAddress)
       return false;
 
     // Workaround for cashaddr/legacy address problems...
-    if (txp.coin == 'bch' && (new BCHAddress(toAddress).toString()) != (new BCHAddress(payproOpts.toAddress).toString()))
+    if (txp.coin == 'bch' && (new BCHAddress(toAddress).toString()) != (new BCHAddress(payproOpts.instructions[0].toAddress).toString()))
       return false;
 
     // this generates problems...

@@ -28,8 +28,8 @@ describe('BlockHeader', function() {
 
   before(function () {
     version = data.version;
-    prevblockidbuf = new Buffer(data.prevblockidhex, 'hex');
-    merklerootbuf = new Buffer(data.merkleroothex, 'hex');
+    prevblockidbuf =  Buffer.from(data.prevblockidhex, 'hex');
+    merklerootbuf = Buffer.from(data.merkleroothex, 'hex');
     time = data.time;
     bits = data.bits;
     nonce = data.nonce;
@@ -42,7 +42,7 @@ describe('BlockHeader', function() {
       nonce: nonce
     });
     bhhex = data.blockheaderhex;
-    bhbuf = new Buffer(bhhex, 'hex');
+    bhbuf = Buffer.from(bhhex, 'hex');
   });
 
   it('should make a new blockheader', function() {
@@ -93,7 +93,7 @@ describe('BlockHeader', function() {
   describe('version', function() {
     it('is interpreted as an int32le', function() {
       var hex = 'ffffffff00000000000000000000000000000000000000000000000000000000000000004141414141414141414141414141414141414141414141414141414141414141010000000200000003000000';
-      var header = BlockHeader.fromBuffer(new Buffer(hex, 'hex'));
+      var header = BlockHeader.fromBuffer(Buffer.from(hex, 'hex'));
       header.version.should.equal(-1);
       header.timestamp.should.equal(1);
     });

@@ -13,7 +13,7 @@ const bitcoreLib = require('bitcore-lib');
 describe('Transaction Model', function() {
   let sandbox = sinon.sandbox.create();
   let address = 'mjVf6sFjt9q6aLY7M21Ap6CPSWdaoNHSf1';
-  this.timeout(50000);
+  this.timeout(500000);
   before(() => {
     mockStorage([]);
   });

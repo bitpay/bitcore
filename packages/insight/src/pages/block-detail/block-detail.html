@@ -10,7 +10,7 @@
 
       <div *ngIf="!loading && !errorMessage">
 
-        <h1>Block #{{ block.height }}</h1>
+        <h1 class="content-container--heading">Block #{{ block.height }}</h1>
         <p class="item-hash">
           <b>Block Hash</b> {{ block.hash }} <button [copyToClipboard]="block.hash">
             <ion-icon md="md-copy"></ion-icon>

@@ -6,7 +6,7 @@
       <loader *ngIf="loading" [type]="'title'"></loader>
 
       <div *ngIf="!loading">
-        <h1>Blocks</h1>
+        <h1 class="content-container--heading">Blocks</h1>
         <latest-blocks [numBlocks]="200" [showTimeAs]="'timestamp'" [showLoadMoreButton]="true"
           [chainNetwork]="chainNetwork"></latest-blocks>
       </div>
