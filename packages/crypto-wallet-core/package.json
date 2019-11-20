@@ -25,9 +25,9 @@
     "bitcore-lib": "^8.11.1",
     "bitcore-lib-cash": "^8.11.1",
     "ethers": "4.0.37",
+    "ripple-binary-codec": "0.2.4",
     "ripple-keypairs": "0.11.0",
-    "ripple-lib": "1.3.3",
-    "ripple-binary-codec": "^0.2.4",
+    "ripple-lib": "1.4.2",
     "web3": "1.2.1"
   },
   "devDependencies": {
