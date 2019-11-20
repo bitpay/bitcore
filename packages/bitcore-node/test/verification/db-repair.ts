@@ -7,7 +7,7 @@ import { Config } from '../../src/services/config';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { validateDataForBlock } from './db-verify';
 import { TransactionStorage } from '../../src/models/transaction';
-import { VerificationPeer } from './VerificationPeer';
+import { Verification } from '../../src/services/verification';
 
 (async () => {
   const { CHAIN, NETWORK, FILE, DRYRUN } = process.env;
@@ -19,10 +19,12 @@ import { VerificationPeer } from './VerificationPeer';
   const network = NETWORK || '';
   await Storage.start();
   const chainConfig = Config.chainConfig({ chain, network });
-  const worker = new VerificationPeer({ chain, network, chainConfig });
+  const workerClass = Verification.get(chain);
+  const worker = new workerClass({ chain, network, chainConfig });
   await worker.connect();
 
   const handleRepair = async data => {
+    const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
     switch (data.type) {
       case 'DUPE_TRANSACTION':
         {
@@ -97,7 +99,7 @@ import { VerificationPeer } from './VerificationPeer';
       case 'COIN_SHOULD_BE_SPENT':
       case 'NEG_FEE':
         const blockHeight = Number(data.payload.blockNum);
-        const { success } = await validateDataForBlock(blockHeight);
+        let { success } = await validateDataForBlock(blockHeight, tip!.height);
         if (success) {
           console.log('No errors found, repaired previously');
           return;
@@ -108,6 +110,13 @@ import { VerificationPeer } from './VerificationPeer';
         } else {
           console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
           await worker.resync(blockHeight - 1, blockHeight + 1);
+          let { success, errors } = await validateDataForBlock(blockHeight, tip!.height);
+          if (success) {
+            console.log('REPAIR FAILED TO SOLVE ISSUE');
+            console.log(errors);
+          } else {
+            console.log('REPAIR SOLVED ISSUE');
+          }
         }
         break;
       case 'DUPE_BLOCKHEIGHT':
