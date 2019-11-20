@@ -300,8 +300,6 @@ export class Wallet {
 
   async signTx(params) {
     let { tx, keys, utxos, passphrase } = params;
-    console.log('!!!!!!');
-    console.log(tx);
     if (!utxos) {
       utxos = [];
       await new Promise((resolve, reject) => {
@@ -344,7 +342,6 @@ export class Wallet {
       key: decryptedKeys[0],
       utxos
     };
-    console.log(payload);
     return Transactions.sign({ ...payload });
   }
 

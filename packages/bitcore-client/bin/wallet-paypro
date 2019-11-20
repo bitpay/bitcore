@@ -1,4 +1,4 @@
-#!/usr/bin/env node --inspect
+#!/usr/bin/env node
 
 const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
