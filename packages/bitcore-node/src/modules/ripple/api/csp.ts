@@ -10,8 +10,7 @@ import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types'
 import { ITransaction } from '../../../models/baseTransaction';
 import { ICoin } from '../../../models/coin';
 import { RippleWalletTransactions } from './transform';
-import { SubmitResponse } from "./types";
-
+import { SubmitResponse } from './types';
 
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -188,7 +187,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     }
     const allTxs = (await Promise.all(promises))
       .reduce((agg, txs) => agg.concat(txs), new Array<FormattedTransactionType>())
-      .sort((tx1, tx2) => tx1.sequence - tx2.sequence);
+      .sort((tx1, tx2) => tx1.outcome.ledgerVersion - tx2.outcome.ledgerVersion);
     const transformed = readable.pipe(new RippleWalletTransactions(params.wallet, this));
     this.streamTxs(allTxs, readable);
     readable.push(null);
