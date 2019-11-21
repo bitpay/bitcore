@@ -205,7 +205,7 @@ export class WalletService {
           initFiatRateService(next);
         }
       ],
-    (err) => {
+      (err) => {
         lock = opts.lock || new Lock(storage, opts.lockOpts);
 
         if (err) {
@@ -535,7 +535,7 @@ export class WalletService {
 
     if (opts.coin === 'eth' && opts.n > 1) {
       return cb(
-        new ClientError( 'Multisig ETH wallet not supported')
+        new ClientError('Multisig ETH wallet not supported')
       );
     }
 
@@ -1379,7 +1379,7 @@ export class WalletService {
       this.storage.fetchAddresses(this.walletId, (err, addresses) => {
         if (err) return cb(err);
         if (!_.isEmpty(addresses)) {
-          let x =  _.head(addresses);
+          let x = _.head(addresses);
           ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
           return cb(null, x);
         }
@@ -1398,7 +1398,7 @@ export class WalletService {
         opts.singleAddress = true;
       }
 
-      this._canCreateAddress(opts.ignoreMaxGap || opts.singleAddress ||  wallet.singleAddress, (err, canCreate) => {
+      this._canCreateAddress(opts.ignoreMaxGap || opts.singleAddress || wallet.singleAddress, (err, canCreate) => {
         if (err) return cb(err);
         if (!canCreate) return cb(Errors.MAIN_ADDRESS_GAP_REACHED);
 
@@ -2317,42 +2317,6 @@ export class WalletService {
     );
   }
 
-  _validateAddr(wallet, inaddr, opts) {
-    if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
-      const chain = ChainService.getChain(wallet.coin);
-      try {
-        Validation.validateAddress(
-          chain,
-          wallet.network,  // not really used for ETH. wallet.network is 'livenet/testnet/regtest' in wallet.
-          inaddr,
-        );
-      } catch (ex) {
-        return Errors.INVALID_ADDRESS;
-      }
-
-    } else {
-      const A = Bitcore_[wallet.coin].Address;
-      let addr: {
-        network?: string;
-        toString?: (cashAddr: boolean) => string;
-      } = {};
-      try {
-        addr = new A(inaddr);
-      } catch (ex) {
-        return Errors.INVALID_ADDRESS;
-      }
-      if (addr.network.toString() != wallet.network) {
-        return Errors.INCORRECT_ADDRESS_NETWORK;
-      }
-
-      if (wallet.coin == 'bch' && !opts.noCashAddr) {
-        if (addr.toString(true) != inaddr) return Errors.ONLY_CASHADDR;
-      }
-    }
-
-    return;
-  }
-
   _validateOutputs(opts, wallet, cb) {
     if (_.isEmpty(opts.outputs))
       return new ClientError('No outputs were specified');
@@ -2361,7 +2325,7 @@ export class WalletService {
       const output = opts.outputs[i];
       output.valid = false;
 
-      const addrErr = this._validateAddr(wallet, output.toAddress, opts);
+      const addrErr = ChainService.validateAddress(wallet, output.toAddress, opts);
       if (addrErr) return addrErr;
 
       if (!checkRequired(output, ['toAddress', 'amount'])) {
