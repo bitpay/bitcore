@@ -1211,7 +1211,18 @@ export class WalletService {
         name: 'tokenAddresses',
         isValid(value) {
           return (
-            _.isArray(value) && value.every(x => x.length < 45 && x.indexOf('0x') == 0)
+            _.isArray(value) && value.every(x => {
+              try {
+                Validation.validateAddress(
+                  'eth',
+                  'mainnet',
+                  x,
+                );
+                return true;
+              } catch (ex) {
+                return false;
+              }
+            })
           );
         }
       }
