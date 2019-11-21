@@ -250,6 +250,7 @@ export class Wallet {
     recipients: { address: string; amount: number }[];
     from?: string;
     change?: string;
+    invoiceID?: string;
     fee?: number;
     nonce?: number;
   }) {
@@ -259,6 +260,7 @@ export class Wallet {
       recipients: params.recipients,
       from: params.from,
       change: params.change,
+      invoiceID: params.invoiceID,
       fee: params.fee,
       wallet: this,
       utxos: params.utxos,

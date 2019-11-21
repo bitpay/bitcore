@@ -4,6 +4,7 @@ const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
 const request = require('request-promise-native');
 const promptly = require('promptly');
+const cwc = require('crypto-wallet-core');
 
 program
   .version(require('../package.json').version)
@@ -69,11 +70,11 @@ const main = async () => {
   const { type, requiredFeeRate, outputs } = instruction;
   const recipients = [{
     address: outputs[0].address,
-    amount: outputs[0].amount / scaleMap[currency]
+    amount: outputs[0].amount
   }];
   const fee = requiredFeeRate.satoshisPerByte;
-  const invoiceId = outputs[0].invoiceID;
-  const params = { recipients, fee, from, invoiceId };
+  const invoiceID = outputs[0].invoiceID;
+  const params = { recipients, fee, from, invoiceID };
   params.nonce = Number(nonce);
   const unsignedTx = await wallet.newTx(params);
   console.log(`unsignedRawTx: ${unsignedTx}`);
@@ -96,7 +97,8 @@ const main = async () => {
   //  Sign tx
   const password = await promptly.password('Wallet Password:');
   wallet = await wallet.unlock(password);
-  const {signedTransaction: signedTx, id: txid } = await wallet.signTx({ tx: unsignedTx });
+  const signedTx = await wallet.signTx({ tx: unsignedTx });
+  const txid = cwc.Transactions.getHash({chain, tx: signedTx});
   console.log(`signedRawTx: ${signedTx}`);
   console.log(`txid: ${txid}`);
 
