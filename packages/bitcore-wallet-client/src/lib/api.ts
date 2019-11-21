@@ -109,7 +109,7 @@ export class API extends EventEmitter {
   }
 
   _fetchLatestNotifications(interval, cb) {
-    cb = cb || function() {};
+    cb = cb || function () { };
 
     var opts: any = {
       lastNotificationId: this.lastNotificationId,
@@ -300,7 +300,7 @@ export class API extends EventEmitter {
       var words;
       try {
         words = c.getMnemonic();
-      } catch (ex) {}
+      } catch (ex) { }
 
       var xpriv;
       if (words && (!c.mnemonicHasPassphrase || opts.passphrase)) {
@@ -663,7 +663,7 @@ export class API extends EventEmitter {
         };
         t.inputs[i].addSignature(t, s);
         i++;
-      } catch (e) {}
+      } catch (e) { }
     });
 
     if (i != txp.inputs.length) throw new Error('Wrong signatures');
@@ -801,9 +801,9 @@ export class API extends EventEmitter {
 
     this.request.get(
       '/v2/feelevels/?coin=' +
-        (chain || 'btc') +
-        '&network=' +
-        (network || 'livenet'),
+      (chain || 'btc') +
+      '&network=' +
+      (network || 'livenet'),
       (err, result) => {
         if (err) return cb(err);
         return cb(err, result);
@@ -1534,9 +1534,9 @@ export class API extends EventEmitter {
               encryptedPkr: opts.doNotEncryptPkr
                 ? null
                 : Utils.encryptMessage(
-                    JSON.stringify(this.credentials.publicKeyRing),
-                    this.credentials.personalEncryptingKey
-                  ),
+                  JSON.stringify(this.credentials.publicKeyRing),
+                  this.credentials.personalEncryptingKey
+                ),
               unencryptedPkr: opts.doNotEncryptPkr
                 ? JSON.stringify(this.credentials.publicKeyRing)
                 : null,
@@ -2257,7 +2257,7 @@ export class API extends EventEmitter {
     var ret;
     try {
       ret = JSON.parse(decrypted);
-    } catch (e) {}
+    } catch (e) { }
     return ret;
   }
 
@@ -2662,4 +2662,25 @@ export class API extends EventEmitter {
       }
     );
   }
+
+  simplexGetQuote(opts): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request
+        .post('/service/simplex/quote', opts, (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        });
+    });
+  }
+
+  simplexPaymentRequest(opts): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request
+        .post('/service/simplex/paymentRequest', opts, (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        });
+    });
+  }
+
 }

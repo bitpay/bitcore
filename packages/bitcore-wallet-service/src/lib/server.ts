@@ -13,6 +13,7 @@ import { MessageBroker } from './messagebroker';
 import { Copayer, INotification, ITxProposal, IWallet, Notification, Preferences, PushNotificationSub, Session, TxConfirmationSub, TxNote, TxProposal, Wallet } from './model';
 import { Storage } from './storage';
 
+const config = require('../config');
 const $ = require('preconditions').singleton();
 const deprecatedServerMessage = require('../deprecated-serverMessages');
 const serverMessages = require('../serverMessages');
@@ -219,7 +220,7 @@ export class WalletService {
   }
 
   static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() { };
+    cb = cb || function () { };
 
     // do nothing here....
     // bc height cache is cleared on bcmonitor
@@ -846,7 +847,7 @@ export class WalletService {
 
     // this.logi('Notification', type);
 
-    cb = cb || function() { };
+    cb = cb || function () { };
 
     const walletId = this.walletId || data.walletId;
     const copayerId = this.copayerId || data.copayerId;
@@ -4508,6 +4509,61 @@ export class WalletService {
 
     this.storage.removeTxConfirmationSub(this.copayerId, opts.txid, cb);
   }
+
+  simplexGetQuote(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const API = config.simplex.sandbox.api;
+      const API_KEY = config.simplex.sandbox.apiKey;
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'ApiKey ' + API_KEY
+      };
+
+      const url = API + '/wallet/merchant/v2/quote';
+
+      request.post(url, {
+        headers,
+        body: req.body,
+        json: true
+      }, (err, data) => {
+        if (err) {
+          console.log('[simplexGetQuote.4503:err:]', err);
+          return reject(err);
+        } else {
+          return resolve(data);
+        }
+      });
+    });
+  }
+
+  simplexPaymentRequest(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const API = config.simplex.sandbox.api;
+      const API_KEY = config.simplex.sandbox.apiKey;
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'ApiKey ' + API_KEY
+      };
+
+      const url = API + '/wallet/merchant/v2/payments/partner/data';
+
+      request.post(url, {
+        headers,
+        body: req.body,
+        json: true
+      }, (err, data) => {
+        if (err) {
+          console.log('[simplexGetQuote.4530:err:]', err);
+          return reject(err);
+        } else {
+          return resolve(data);
+        }
+      });
+    });
+  }
+
 }
 
 function checkRequired(obj, args, cb?: (e: any) => void) {
