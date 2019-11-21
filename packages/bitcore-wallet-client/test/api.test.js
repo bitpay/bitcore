@@ -4968,7 +4968,7 @@ describe('client API', () => {
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
 
-          clients[0].savePreferences({tokenAddresses:['0x01', '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd']}, (err) => { 
+          clients[0].savePreferences({tokenAddresses:['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd']}, (err) => { 
             should.not.exist(err);
             Client.serverAssistedImport({ words }, {
               clientFactory: () => {

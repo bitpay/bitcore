@@ -42,6 +42,7 @@ const TO_SAT =  {
 };
 
 
+const TOKENS = ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'];
 
 describe('Wallet service', function() {
 
@@ -1320,14 +1321,15 @@ describe('Wallet service', function() {
     it('should get status including extended info with tokens', function(done) {
       server.savePreferences({
         email: 'dummy@dummy.com',
-        tokenAddresses: ['0x1', '0x2'],
+        tokenAddresses: TOKENS,
       }, function(err) {
+        should.not.exist(err);
         server.getStatus({
           includeExtendedInfo: true
         }, function(err, status) {
           should.not.exist(err);
           should.exist(status);
-          status.preferences.tokenAddresses.should.deep.equal(['0x1', '0x2']);
+          status.preferences.tokenAddresses.should.deep.equal(TOKENS);
           done();
         });
       });
@@ -2066,7 +2068,7 @@ describe('Wallet service', function() {
         language: 'es',
         unit: 'bit',
         dummy: 'ignored',
-        tokenAddresses: ['0x1', '0x2'],
+        tokenAddresses: TOKENS,
       }, function(err) {
         should.not.exist(err);
         server.getPreferences({}, function(err, preferences) {
@@ -2075,7 +2077,7 @@ describe('Wallet service', function() {
           preferences.email.should.equal('dummy@dummy.com');
           preferences.language.should.equal('es');
           preferences.unit.should.equal('bit');
-          preferences.tokenAddresses.should.deep.equal(['0x1', '0x2']);
+          preferences.tokenAddresses.should.deep.equal(TOKENS);
           should.not.exist(preferences.dummy);
           done();
         });
@@ -2084,7 +2086,7 @@ describe('Wallet service', function() {
     it('should failt to save wrong preferences', function(done) {
       server.savePreferences({
         email: 'dummy@dummy.com',
-        tokenAddresses: ['hola', '0x2'],
+        tokenAddresses: ['hola'],
       }, function(err) {
         err.message.toString().should.contain('tokenAddresses');
         done();
