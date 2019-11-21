@@ -779,6 +779,9 @@ export class WalletService {
         (next) => {
           this.getPreferences({}, (err, preferences) => {
             if (err) return next(err);
+            if (!opts.includeExtendedInfo) {
+              preferences.tokenAddresses = null;
+            }
             status.preferences = preferences;
             next();
           });
@@ -1202,6 +1205,15 @@ export class WalletService {
           return (
             _.isString(value) && _.includes(['btc', 'bit'], value.toLowerCase())
           );
+        }
+      },
+      {
+        name: 'tokenAddresses',
+        isValid(value) {
+          return (
+            _.isArray(value) && value.every(x =>
+              Validation.validateAddress( 'eth', 'mainnet', x))
+         );
         }
       }
     ];
