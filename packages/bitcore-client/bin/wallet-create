@@ -14,7 +14,7 @@ program
   )
   .option('--baseUrl [host]', 'optional - Specify custom Bitcore API URL')
   .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--mnemonic [phrase]', 'optional - Seed using existing backup phrase')
+  .option('--phrase [phrase]', 'optional - Seed using existing backup phrase')
   .parse(process.argv);
 
 const main = async () => {
