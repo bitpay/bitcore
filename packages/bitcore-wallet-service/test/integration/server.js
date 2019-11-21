@@ -1316,6 +1316,23 @@ describe('Wallet service', function() {
         done();
       });
     });
+
+    it('should get status including extended info with tokens', function(done) {
+      server.savePreferences({
+        email: 'dummy@dummy.com',
+        tokenAddresses: ['0x1', '0x2'],
+      }, function(err) {
+        server.getStatus({
+          includeExtendedInfo: true
+        }, function(err, status) {
+          should.not.exist(err);
+          should.exist(status);
+          status.preferences.tokenAddresses.should.deep.equal(['0x1', '0x2']);
+          done();
+        });
+      });
+    });
+
     it('should get status after tx creation', function(done) {
       helpers.stubUtxos(server, wallet, [1, 2], function() {
         var txOpts = {
@@ -2049,6 +2066,7 @@ describe('Wallet service', function() {
         language: 'es',
         unit: 'bit',
         dummy: 'ignored',
+        tokenAddresses: ['0x1', '0x2'],
       }, function(err) {
         should.not.exist(err);
         server.getPreferences({}, function(err, preferences) {
@@ -2057,11 +2075,22 @@ describe('Wallet service', function() {
           preferences.email.should.equal('dummy@dummy.com');
           preferences.language.should.equal('es');
           preferences.unit.should.equal('bit');
+          preferences.tokenAddresses.should.deep.equal(['0x1', '0x2']);
           should.not.exist(preferences.dummy);
           done();
         });
       });
     });
+    it('should failt to save wrong preferences', function(done) {
+      server.savePreferences({
+        email: 'dummy@dummy.com',
+        tokenAddresses: ['hola', '0x2'],
+      }, function(err) {
+        err.message.toString().should.contain('tokenAddresses');
+        done();
+      });
+    });
+ 
     it('should save preferences only for requesting copayer', function(done) {
       server.savePreferences({
         email: 'dummy@dummy.com'

@@ -2544,6 +2544,10 @@ export class API extends EventEmitter {
                   cont = !!iclient;
                   if (iclient) {
                     clients.push(iclient);
+
+                    // expand credentials with tokens?
+                    
+
                   } else {
                     // we do not allow accounts nr gaps in BWS.
                     cont = false;
