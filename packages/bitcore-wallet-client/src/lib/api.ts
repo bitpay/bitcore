@@ -12,6 +12,28 @@ import { PayProV2 } from './payproV2';
 import { Request } from './request';
 import { Verifier } from './verifier';
 
+// TODO put somewhere else
+export const TokenOpts = {
+  '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': {
+    name: 'USD Coin',
+    symbol: 'USDC',
+    decimal: 6,
+    address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+  },
+  '0x8e870d67f660d95d5be530380d0ec0bd388289e1': {
+    name: 'Paxos Standard',
+    symbol: 'PAX',
+    decimal: 18,
+    address: '0x8e870d67f660d95d5be530380d0ec0bd388289e1'
+  },
+  '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd': {
+    name: 'Gemini Dollar',
+    symbol: 'GUSD',
+    decimal: 2,
+    address: '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'
+  }
+};
+
 var $ = require('preconditions').singleton();
 var util = require('util');
 var async = require('async');
@@ -548,8 +570,7 @@ export class API extends EventEmitter {
           throw e;
         }
       }
-
-      if (wallet.status != 'complete') return cb();
+      if (wallet.status != 'complete') return cb(null, ret);
 
       if (this.credentials.walletPrivKey) {
         if (!Verifier.checkCopayers(this.credentials, wallet.copayers)) {
@@ -2445,13 +2466,33 @@ export class API extends EventEmitter {
         : new API(clientOpts);
 
       client.fromString(c);
-      client.openWallet({}, err => {
-        console.log(
-          `PATH: ${c.rootPath} n: ${c.n}:`,
-          err && err.message ? err.message : 'FOUND!'
-        ); // TODO
+      client.openWallet({}, (err, status) => {
+//        console.log(
+//          `PATH: ${c.rootPath} n: ${c.n}:`,
+//          err && err.message ? err.message : 'FOUND!'
+//        );
+
         // Exists
-        if (!err) return icb(null, client);
+        if (!err) {
+          let clients = [client];
+          // Eth wallet with tokens?
+          const tokenAddresses = status.preferences.tokenAddresses;
+          if (!_.isEmpty(tokenAddresses)) {
+            _.each(tokenAddresses, (t) => {
+              const token = TokenOpts[t];
+              if (!token) {
+                log.warn(`Token ${t} unknown`);
+                return;
+              }
+              log.info(`Importing token: ${token.name}`);
+              const tokenCredentials = client.credentials.getTokenCredentials(token);
+              let tokenClient = _.cloneDeep(client);
+              tokenClient.credentials = tokenCredentials;
+              clients.push(tokenClient);
+            });
+          }
+          return icb(null, clients);
+        }
         if (
           err instanceof Errors.NOT_AUTHORIZED ||
           err instanceof Errors.WALLET_DOES_NOT_EXIST
@@ -2515,10 +2556,10 @@ export class API extends EventEmitter {
           // TODO OPTI: do not scan accounts if XX
           //
           // 1. check account 0
-          checkCredentials(key, optsObj, (err, iclient) => {
+          checkCredentials(key, optsObj, (err, iclients) => {
             if (err) return next(err);
-            if (!iclient) return next();
-            clients.push(iclient);
+            if (_.isEmpty(iclients)) return next();
+            clients = clients.concat(iclients);
 
             // Accounts not allowed?
             if (
@@ -2539,18 +2580,12 @@ export class API extends EventEmitter {
               icb => {
                 optsObj.account = account++;
 
-                checkCredentials(key, optsObj, (err, iclient) => {
+                checkCredentials(key, optsObj, (err, iclients) => {
                   if (err) return icb(err);
-                  cont = !!iclient;
-                  if (iclient) {
-                    clients.push(iclient);
-
-                    // expand credentials with tokens?
-                    
-
-                  } else {
-                    // we do not allow accounts nr gaps in BWS.
-                    cont = false;
+                  // we do not allow accounts nr gaps in BWS.
+                  cont = !_.isEmpty(iclients);
+                  if (cont) {
+                    clients = clients.concat(iclients);
                   }
                   return icb();
                 });
@@ -2641,7 +2676,6 @@ export class API extends EventEmitter {
         if (err) return callback(err);
 
         if (_.isEmpty(resultingClients)) k = null;
-
         return callback(null, k, resultingClients);
       }
     );

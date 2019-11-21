@@ -4962,6 +4962,77 @@ describe('client API', () => {
         });
       });
 
+      it('should be able to gain access to tokens wallets from mnemonic', (done) => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth'}, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          clients[0].savePreferences({tokenAddresses:['0x01', '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd']}, (err) => { 
+            should.not.exist(err);
+            Client.serverAssistedImport({ words }, {
+              clientFactory: () => {
+                return helpers.newClient(app)
+              }
+            }, (err, k, c) => {
+              // the eth wallet + 2 tokens.
+              c.length.should.equal(3);
+              let recoveryClient = c[0];
+              recoveryClient.openWallet((err) => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.coin.should.equal('eth');
+                let recoveryClient2 = c[2] ;
+                recoveryClient2.openWallet((err) => {
+                  should.not.exist(err);
+                  recoveryClient2.credentials.coin.should.equal('gusd');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
+
+      it('should be able to gain access to tokens wallets from mnemonic (Case 2)', (done) => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth'}, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          clients[0].savePreferences({tokenAddresses:['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48']}, (err) => { 
+            should.not.exist(err);
+            Client.serverAssistedImport({ words }, {
+              clientFactory: () => {
+                return helpers.newClient(app)
+              }
+            }, (err, k, c) => {
+              // the eth wallet + 1 token.
+              c.length.should.equal(2);
+              let recoveryClient = c[0];
+              recoveryClient.openWallet((err) => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.coin.should.equal('eth');
+                let recoveryClient2 = c[1] ;
+                recoveryClient2.openWallet((err) => {
+                  should.not.exist(err);
+                  recoveryClient2.credentials.coin.should.equal('usdc');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
+
+
+
+
       it('should be able to gain access to two TESTNET btc/bch 1-1 wallets from mnemonic', (done) => {
 
         let key = Key.create();

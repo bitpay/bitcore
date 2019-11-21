@@ -1211,11 +1211,11 @@ export class WalletService {
         name: 'tokenAddresses',
         isValid(value) {
           return (
-            _.isArray(value) && value.every(x => x.length < 45 && x.indexOf('0x')== 0)
+            _.isArray(value) && value.every(x => x.length < 45 && x.indexOf('0x') == 0)
           );
         }
       }
- 
+
     ];
 
     opts = _.pick(opts, _.map(preferences, 'name'));
