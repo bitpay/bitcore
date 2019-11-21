@@ -42,6 +42,7 @@ async function getBlock(currentHeight: number) {
   return null;
 }
 
+let prevBlockNum = 0;
 let prevHash = '';
 let nextBlockHash = '';
 export async function validateDataForBlock(blockNum: number, tipHeight: number, log = false) {
@@ -86,13 +87,17 @@ export async function validateDataForBlock(blockNum: number, tipHeight: number, 
 
   const seenTxs = {} as { [txid: string]: ITransaction };
 
+  const linearProgress = prevBlockNum && prevBlockNum == blockNum - 1;
   const prevHashMismatch = prevHash && block.previousBlockHash != prevHash;
   const nextHashMismatch = nextBlockHash && block.hash != nextBlockHash;
   prevHash = block.hash;
   nextBlockHash = block.nextBlockHash;
+  prevBlockNum = blockNum;
+  const missingLinearData = linearProgress && (prevHashMismatch || nextHashMismatch);
+  const missingNextBlockHash = !atTipOfChain && !block.nextBlockHash;
+  const missingPrevBlockHash = !block.previousBlockHash;
+  const missingData = missingNextBlockHash || missingPrevBlockHash || missingLinearData;
 
-  const missingData =
-    (!atTipOfChain && !block.nextBlockHash) || !block.previousBlockHash || prevHashMismatch || nextHashMismatch;
   if (!block || block.transactionCount != blockTxs.length || missingData) {
     success = false;
     const error = {
