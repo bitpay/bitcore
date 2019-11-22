@@ -15,7 +15,7 @@ import { ERC20Abi } from '../abi/erc20';
 import { Transaction } from 'web3/eth/types';
 import { EventLog } from 'web3/types';
 import { partition } from '../../../utils/partition';
-import { WalletAddressStorage } from "../../../models/walletAddress";
+import { WalletAddressStorage } from '../../../models/walletAddress';
 
 interface ERC20Transfer extends EventLog {
   returnValues: {
@@ -370,12 +370,17 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   }
 
   async getAccountNonce(network: string, address: string) {
-    return EthTransactionStorage.collection.countDocuments({
-      chain: 'ETH',
-      network,
-      from: address,
-      blockHeight: { $gt: -1 }
-    });
+    const web3 = await this.getWeb3(network);
+    const count = await web3.eth.getTransactionCount(address);
+    return count;
+    /*
+     *return EthTransactionStorage.collection.countDocuments({
+     *  chain: 'ETH',
+     *  network,
+     *  from: address,
+     *  blockHeight: { $gt: -1 }
+     *});
+     */
   }
 
   async getWalletTokenTransactions(
