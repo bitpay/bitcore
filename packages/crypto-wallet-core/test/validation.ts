@@ -22,9 +22,11 @@ describe('Address Validation', () => {
   const btcUri = 'bitcoin:1NuKwkDtCymgA1FNLUBaUWLD8s4kdKWvgn';
   const bchUri = 'bitcoincash:pp8skudq3x5hzw8ew7vzsw8tn4k8wxsqsv0lt0mf3g';
   const ethUri = 'ethereum:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A';
-  const ethUriParams = 'ethereum:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A?value=123&gasPrice=123&gas=123&gasLimit=123'
+  const ethUriParams = 'ethereum:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A?value=123&gasPrice=123&gas=123&gasLimit=123';
   const btcTestUri = 'bitcoin:mkUNMewkQsHKRcUvv5HLKbqmepCqNH8goc';
   const bchTestUri = 'bchtest:qq083kgf3wjg7ya8nun36e8nf24g9xgvachahfnyle';
+  const xrpUri = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF';
+  const xrpUriParams = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF?amount=123456&dt=123456';
 
   // Invalid
   const invalidBtcAddress = '1NuKwkDtCymgA1FNLUBaUWLD8s4kKWvgn';
@@ -75,6 +77,13 @@ describe('Address Validation', () => {
   it('should be able to validate an ETH Uri', async () => {
     const isValidUri = await Validation.validateUri('ETH', ethUri);
     const isValidUriParams = await Validation.validateUri('ETH', ethUriParams);
+    expect(isValidUri).to.equal(true);
+    expect(isValidUriParams).to.equal(true);
+  });
+
+  it('should be able to validate an XRP Uri', async () => {
+    const isValidUri = await Validation.validateUri('XRP', xrpUri);
+    const isValidUriParams = await Validation.validateUri('XRP', xrpUriParams);
     expect(isValidUri).to.equal(true);
     expect(isValidUriParams).to.equal(true);
   });
