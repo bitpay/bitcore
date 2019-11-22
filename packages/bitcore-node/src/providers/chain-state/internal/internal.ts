@@ -437,7 +437,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return this.getRPC(chain, network).getEstimateSmartFee(Number(target));
   }
 
-  async broadcastTransaction(params: CSP.BroadcastTransactionParams): Promise<any> {
+  async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
     const { chain, network, rawTx } = params;
     const txids = new Array<string>();
     const rawTxs = typeof rawTx === 'string' ? [rawTx] : rawTx;
