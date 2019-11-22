@@ -29,15 +29,12 @@ export class EthVerificationPeer extends EthP2pWorker implements IVerificationPe
     });
   }
 
-  async resync(from: number, to: number) {
+  async resync(start: number, end: number) {
     const { chain, network } = this;
-    let currentHeight = Math.max(1, from);
-    while (currentHeight < to) {
+    let currentHeight = Math.max(1, start);
+    while (currentHeight <= end) {
       let lastLog = Date.now();
       const block = await this.getBlock(currentHeight);
-      if (currentHeight > to) {
-        break;
-      }
       const { convertedBlock, convertedTxs } = await this.convertBlock(block);
 
       const nextBlock = await EthBlockStorage.collection.findOne({ chain, network, previousBlockHash: block.hash });
