@@ -17,13 +17,14 @@ program
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--from [from]', 'optional - From Address')
   .option('--nonce [nonce]', 'optional - Nonce')
+  .option('--invoiceID [invoiceID]', 'optional - invoiceId for XRP transactions')
   .parse(process.argv);
 
 const main = async () => {
   const { name, path } = program;
   let wallet;
   try {
-    const { recipients, utxos, change, fee, target, from, nonce } = program;
+    const { recipients, utxos, change, fee, target, from, nonce, invoiceID } = program;
     wallet = await Wallet.loadWallet({ name, path });
 
     const parsedUtxos = utxos.includes('[') ? JSON.parse(utxos) : [];
@@ -47,6 +48,7 @@ const main = async () => {
     params.nonce = Number(nonce);
     params.recipients = parsedRecipients;
     params.utxos = parsedUtxos;
+    params.invoiceID = invoiceID;
     const tx = await wallet.newTx(params);
 
     console.log(
