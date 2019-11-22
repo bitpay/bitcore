@@ -1319,18 +1319,20 @@ describe('Wallet service', function() {
     });
 
     it('should get status including extended info with tokens', function(done) {
-      server.savePreferences({
-        email: 'dummy@dummy.com',
-        tokenAddresses: TOKENS,
-      }, function(err) {
-        should.not.exist(err);
-        server.getStatus({
-          includeExtendedInfo: true
-        }, function(err, status) {
+      helpers.createAndJoinWallet(1, 1, {coin: 'eth'}, function(s, w) {
+        s.savePreferences({
+          email: 'dummy@dummy.com',
+          tokenAddresses: TOKENS,
+        }, function(err) {
           should.not.exist(err);
-          should.exist(status);
-          status.preferences.tokenAddresses.should.deep.equal(TOKENS);
-          done();
+          s.getStatus({
+            includeExtendedInfo: true
+          }, function(err, status) {
+            should.not.exist(err);
+            should.exist(status);
+            status.preferences.tokenAddresses.should.deep.equal(TOKENS);
+            done();
+          });
         });
       });
     });
@@ -2052,10 +2054,10 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('Preferences', function() {
+  describe('Preferences tokens', function() {
     var server, wallet;
     beforeEach(function(done) {
-      helpers.createAndJoinWallet(2, 2, function(s, w) {
+      helpers.createAndJoinWallet(1, 1, { coin: 'eth'}, function(s, w) {
         server = s;
         wallet = w;
         done();
@@ -2083,7 +2085,111 @@ describe('Wallet service', function() {
         });
       });
     });
-    it('should failt to save wrong preferences', function(done) {
+
+
+    it('should concatenate token preferences', function(done) {
+      server.savePreferences({
+        email: 'dummy@dummy.com',
+        language: 'es',
+        unit: 'bit',
+        dummy: 'ignored',
+        tokenAddresses: [TOKENS[0]],
+      }, function(err) {
+        should.not.exist(err);
+        server.getPreferences({}, function(err, preferences) {
+          should.not.exist(err);
+          preferences.tokenAddresses.should.deep.equal([TOKENS[0]]);
+          server.savePreferences({
+            email: 'dummy@dummy.com',
+            language: 'es',
+            unit: 'bit',
+            dummy: 'ignored',
+            tokenAddresses: [TOKENS[1]],
+          }, function(err) {
+            server.getPreferences({}, function(err, preferences) {
+              should.not.exist(err);
+              should.exist(preferences);
+              preferences.email.should.equal('dummy@dummy.com');
+              preferences.language.should.equal('es');
+              preferences.unit.should.equal('bit');
+              preferences.tokenAddresses.should.deep.equal(TOKENS);
+              should.not.exist(preferences.dummy);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should concatenate token preferences (case2)', function(done) {
+      server.savePreferences({
+        email: 'dummy@dummy.com',
+        language: 'es',
+        unit: 'bit',
+        dummy: 'ignored',
+        tokenAddresses: [TOKENS[0]],
+      }, function(err) {
+        should.not.exist(err);
+        server.getPreferences({}, function(err, preferences) {
+          should.not.exist(err);
+          preferences.tokenAddresses.should.deep.equal([TOKENS[0]]);
+          server.savePreferences({
+            email: 'dummy@dummy.com',
+            language: 'es',
+            unit: 'bit',
+            dummy: 'ignored',
+            tokenAddresses: TOKENS,
+          }, function(err) {
+            server.getPreferences({}, function(err, preferences) {
+              should.not.exist(err);
+              should.exist(preferences);
+              preferences.email.should.equal('dummy@dummy.com');
+              preferences.language.should.equal('es');
+              preferences.unit.should.equal('bit');
+              preferences.tokenAddresses.should.deep.equal(TOKENS);
+              should.not.exist(preferences.dummy);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+
+
+  });
+ 
+
+  describe('Preferences', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(2, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should save & retrieve preferences', function(done) {
+      server.savePreferences({
+        email: 'dummy@dummy.com',
+        language: 'es',
+        unit: 'bit',
+        dummy: 'ignored',
+      }, function(err) {
+        should.not.exist(err);
+        server.getPreferences({}, function(err, preferences) {
+          should.not.exist(err);
+          should.exist(preferences);
+          preferences.email.should.equal('dummy@dummy.com');
+          preferences.language.should.equal('es');
+          preferences.unit.should.equal('bit');
+          should.not.exist(preferences.dummy);
+          done();
+        });
+      });
+    });
+    it('should fail to save wrong preferences', function(done) {
       server.savePreferences({
         email: 'dummy@dummy.com',
         tokenAddresses: ['hola'],
