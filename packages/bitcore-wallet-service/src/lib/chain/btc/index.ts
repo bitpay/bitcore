@@ -12,7 +12,7 @@ const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
 export class BtcChain implements IChain {
-  constructor(private bitcoreLib = BitcoreLib) {}
+  constructor(private bitcoreLib = BitcoreLib) { }
 
   getWalletBalance(server, wallet, opts, cb) {
     server._getUtxosForCurrentWallet(
@@ -151,7 +151,7 @@ export class BtcChain implements IChain {
           });
         } else {
           if (opts.changeAddress) {
-            const addrErr = server._validateAddr(
+            const addrErr = this.validateAddress(
               wallet,
               opts.changeAddress,
               opts
@@ -355,9 +355,9 @@ export class BtcChain implements IChain {
     return false;
   }
 
-  addressFromStorageTransform(network, address) {}
+  addressFromStorageTransform(network, address) { }
 
-  addressToStorageTransform(network, address) {}
+  addressToStorageTransform(network, address) { }
 
   addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub) {
     if (signatures.length != inputs.length)
@@ -383,9 +383,26 @@ export class BtcChain implements IChain {
         };
         tx.inputs[i].addSignature(tx, s);
         i++;
-      } catch (e) {}
+      } catch (e) { }
     });
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');
+  }
+
+  validateAddress(wallet, inaddr, opts) {
+    const A = this.bitcoreLib.Address;
+    let addr: {
+      network?: string;
+      toString?: (cashAddr: boolean) => string;
+    } = {};
+    try {
+      addr = new A(inaddr);
+    } catch (ex) {
+      return Errors.INVALID_ADDRESS;
+    }
+    if (addr.network.toString() != wallet.network) {
+      return Errors.INCORRECT_ADDRESS_NETWORK;
+    }
+    return;
   }
 }

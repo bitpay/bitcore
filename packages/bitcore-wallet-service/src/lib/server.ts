@@ -205,7 +205,7 @@ export class WalletService {
           initFiatRateService(next);
         }
       ],
-    (err) => {
+      (err) => {
         lock = opts.lock || new Lock(storage, opts.lockOpts);
 
         if (err) {
@@ -535,7 +535,7 @@ export class WalletService {
 
     if (opts.coin === 'eth' && opts.n > 1) {
       return cb(
-        new ClientError( 'Multisig ETH wallet not supported')
+        new ClientError('Multisig ETH wallet not supported')
       );
     }
 
@@ -779,6 +779,9 @@ export class WalletService {
         (next) => {
           this.getPreferences({}, (err, preferences) => {
             if (err) return next(err);
+            if (!opts.includeExtendedInfo) {
+              preferences.tokenAddresses = null;
+            }
             status.preferences = preferences;
             next();
           });
@@ -1203,6 +1206,15 @@ export class WalletService {
             _.isString(value) && _.includes(['btc', 'bit'], value.toLowerCase())
           );
         }
+      },
+      {
+        name: 'tokenAddresses',
+        isValid(value) {
+          return (
+            _.isArray(value) && value.every(x =>
+              Validation.validateAddress( 'eth', 'mainnet', x))
+         );
+        }
       }
     ];
 
@@ -1219,24 +1231,40 @@ export class WalletService {
       return cb(new ClientError(ex));
     }
 
-    this._runLocked(cb, (cb) => {
-      this.storage.fetchPreferences(this.walletId, this.copayerId, (
-        err,
-        oldPref
-      ) => {
-        if (err) return cb(err);
+    this.getWallet({}, (err, wallet) => {
+      if (err) return cb(err);
 
-        const newPref = Preferences.create({
-          walletId: this.walletId,
-          copayerId: this.copayerId
+      if (wallet.coin != 'eth') {
+        opts.tokenAddresses = null;
+      }
+
+      this._runLocked(cb, (cb) => {
+        this.storage.fetchPreferences(this.walletId, this.copayerId, (
+          err,
+          oldPref
+        ) => {
+          if (err) return cb(err);
+
+          const newPref = Preferences.create({
+            walletId: this.walletId,
+            copayerId: this.copayerId
+          });
+          const preferences = Preferences.fromObj(
+            _.defaults(newPref, opts, oldPref)
+          );
+
+          // merge tokenAddresses
+          if (opts.tokenAddresses) {
+            oldPref = oldPref || {};
+            oldPref.tokenAddresses = oldPref.tokenAddresses || [];
+            preferences.tokenAddresses = _.uniq(oldPref.tokenAddresses.concat(opts.tokenAddresses));
+          }
+
+          this.storage.storePreferences(preferences, (err) => {
+            return cb(err);
+          });
         });
-        const preferences = Preferences.fromObj(
-          _.defaults(newPref, opts, oldPref)
-        );
-        this.storage.storePreferences(preferences, (err) => {
-          return cb(err);
-        });
-      });
+    });
     });
   }
 
@@ -1346,13 +1374,6 @@ export class WalletService {
         return cb('Bad xPub');
       }
 
-      if (wallet.coin == 'bch' && opts.noCashAddr) {
-        address.address = BCHAddressTranslator.translate(
-          address.address,
-          'copay'
-        );
-      }
-
       this._store(
         wallet,
         address,
@@ -1360,6 +1381,13 @@ export class WalletService {
           if (err) return cb(err);
           if (duplicate)
             return cb(null, address);
+          if (wallet.coin == 'bch' && opts.noCashAddr) {
+            address = _.cloneDeep(address);
+            address.address = BCHAddressTranslator.translate(
+              address.address,
+              'copay'
+            );
+          }
 
           this._notify(
             'NewAddress',
@@ -1379,7 +1407,7 @@ export class WalletService {
       this.storage.fetchAddresses(this.walletId, (err, addresses) => {
         if (err) return cb(err);
         if (!_.isEmpty(addresses)) {
-          let x =  _.head(addresses);
+          let x = _.head(addresses);
           ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
           return cb(null, x);
         }
@@ -1398,7 +1426,7 @@ export class WalletService {
         opts.singleAddress = true;
       }
 
-      this._canCreateAddress(opts.ignoreMaxGap || opts.singleAddress ||  wallet.singleAddress, (err, canCreate) => {
+      this._canCreateAddress(opts.ignoreMaxGap || opts.singleAddress || wallet.singleAddress, (err, canCreate) => {
         if (err) return cb(err);
         if (!canCreate) return cb(Errors.MAIN_ADDRESS_GAP_REACHED);
 
@@ -2317,42 +2345,6 @@ export class WalletService {
     );
   }
 
-  _validateAddr(wallet, inaddr, opts) {
-    if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
-      const chain = ChainService.getChain(wallet.coin);
-      try {
-        Validation.validateAddress(
-          chain,
-          wallet.network,  // not really used for ETH. wallet.network is 'livenet/testnet/regtest' in wallet.
-          inaddr,
-        );
-      } catch (ex) {
-        return Errors.INVALID_ADDRESS;
-      }
-
-    } else {
-      const A = Bitcore_[wallet.coin].Address;
-      let addr: {
-        network?: string;
-        toString?: (cashAddr: boolean) => string;
-      } = {};
-      try {
-        addr = new A(inaddr);
-      } catch (ex) {
-        return Errors.INVALID_ADDRESS;
-      }
-      if (addr.network.toString() != wallet.network) {
-        return Errors.INCORRECT_ADDRESS_NETWORK;
-      }
-
-      if (wallet.coin == 'bch' && !opts.noCashAddr) {
-        if (addr.toString(true) != inaddr) return Errors.ONLY_CASHADDR;
-      }
-    }
-
-    return;
-  }
-
   _validateOutputs(opts, wallet, cb) {
     if (_.isEmpty(opts.outputs))
       return new ClientError('No outputs were specified');
@@ -2361,7 +2353,7 @@ export class WalletService {
       const output = opts.outputs[i];
       output.valid = false;
 
-      const addrErr = this._validateAddr(wallet, output.toAddress, opts);
+      const addrErr = ChainService.validateAddress(wallet, output.toAddress, opts);
       if (addrErr) return addrErr;
 
       if (!checkRequired(output, ['toAddress', 'amount'])) {
@@ -3116,12 +3108,18 @@ export class WalletService {
             err,
             txid
           ) => {
-            if (err) {
+            if (err || txid != txp.txid) {
+              if (!err || txp.txid != txid) {
+                log.warn(`Broadcast failed for: ${raw}`);
+              } else {
+                log.warn(`Broadcast failed: ${err}`);
+              }
+
               const broadcastErr = err;
               // Check if tx already in blockchain
               this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
                 if (err) return cb(err);
-                if (!isInBlockchain) return cb(broadcastErr);
+                if (!isInBlockchain) return cb(broadcastErr || 'broadcast error');
 
                 this._processBroadcast(
                   txp,

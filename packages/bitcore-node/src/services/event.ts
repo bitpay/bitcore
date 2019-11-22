@@ -11,6 +11,7 @@ export class EventService {
   txEvent = new EventEmitter();
   blockEvent = new EventEmitter();
   addressCoinEvent = new EventEmitter();
+  events = new EventEmitter();
   storageService: StorageService;
   configService: ConfigService;
   eventModel: EventModel;
@@ -32,6 +33,7 @@ export class EventService {
     }
     logger.info('Starting Event Service');
     this.stopped = false;
+    this.events.emit('start');
     if (this.storageService.connected) {
       this.wireup();
     } else {
@@ -44,6 +46,7 @@ export class EventService {
   async stop() {
     logger.info('Stopping Event Service');
     this.stopped = true;
+    this.events.emit('stop');
   }
 
   async wireup() {

@@ -433,7 +433,7 @@ describe('Push notifications', function() {
             }, next);
           },
           function(next) {
-            helpers.stubBroadcast();
+            helpers.stubBroadcast(txp.txid);
             server.broadcastTx({
               txProposalId: txp.id,
             }, next);

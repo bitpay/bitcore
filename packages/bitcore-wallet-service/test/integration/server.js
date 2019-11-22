@@ -42,6 +42,7 @@ const TO_SAT =  {
 };
 
 
+const TOKENS = ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'];
 
 describe('Wallet service', function() {
 
@@ -1316,6 +1317,26 @@ describe('Wallet service', function() {
         done();
       });
     });
+
+    it('should get status including extended info with tokens', function(done) {
+      helpers.createAndJoinWallet(1, 1, {coin: 'eth'}, function(s, w) {
+        s.savePreferences({
+          email: 'dummy@dummy.com',
+          tokenAddresses: TOKENS,
+        }, function(err) {
+          should.not.exist(err);
+          s.getStatus({
+            includeExtendedInfo: true
+          }, function(err, status) {
+            should.not.exist(err);
+            should.exist(status);
+            status.preferences.tokenAddresses.should.deep.equal(TOKENS);
+            done();
+          });
+        });
+      });
+    });
+
     it('should get status after tx creation', function(done) {
       helpers.stubUtxos(server, wallet, [1, 2], function() {
         var txOpts = {
@@ -1707,6 +1728,8 @@ describe('Wallet service', function() {
           address.path.should.equal('m/0/0');
           address.type.should.equal('P2PKH');
           address.coin.should.equal('bch');
+
+          // notified address is Copay format
           server.getNotifications({}, function(err, notifications) {
             should.not.exist(err);
             var notif = _.find(notifications, {
@@ -1714,7 +1737,15 @@ describe('Wallet service', function() {
             });
             should.exist(notif);
             notif.data.address.should.equal(address.address);
-            done();
+
+            // stored address should be new format
+            server.getMainAddresses({}, function(err, addresses) {
+              should.not.exist(err);
+              addresses.length.should.equal(1);
+              addresses[0].address.should.equal('qrg04mz8h67j9dck3f3f3sa560taep87yqnwra9ak6');
+              done();
+            });
+
           });
         });
       });
@@ -2023,6 +2054,112 @@ describe('Wallet service', function() {
     });
   });
 
+  describe('Preferences tokens', function() {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 1, { coin: 'eth'}, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+    it('should save & retrieve preferences', function(done) {
+      server.savePreferences({
+        email: 'dummy@dummy.com',
+        language: 'es',
+        unit: 'bit',
+        dummy: 'ignored',
+        tokenAddresses: TOKENS,
+      }, function(err) {
+        should.not.exist(err);
+        server.getPreferences({}, function(err, preferences) {
+          should.not.exist(err);
+          should.exist(preferences);
+          preferences.email.should.equal('dummy@dummy.com');
+          preferences.language.should.equal('es');
+          preferences.unit.should.equal('bit');
+          preferences.tokenAddresses.should.deep.equal(TOKENS);
+          should.not.exist(preferences.dummy);
+          done();
+        });
+      });
+    });
+
+
+    it('should concatenate token preferences', function(done) {
+      server.savePreferences({
+        email: 'dummy@dummy.com',
+        language: 'es',
+        unit: 'bit',
+        dummy: 'ignored',
+        tokenAddresses: [TOKENS[0]],
+      }, function(err) {
+        should.not.exist(err);
+        server.getPreferences({}, function(err, preferences) {
+          should.not.exist(err);
+          preferences.tokenAddresses.should.deep.equal([TOKENS[0]]);
+          server.savePreferences({
+            email: 'dummy@dummy.com',
+            language: 'es',
+            unit: 'bit',
+            dummy: 'ignored',
+            tokenAddresses: [TOKENS[1]],
+          }, function(err) {
+            server.getPreferences({}, function(err, preferences) {
+              should.not.exist(err);
+              should.exist(preferences);
+              preferences.email.should.equal('dummy@dummy.com');
+              preferences.language.should.equal('es');
+              preferences.unit.should.equal('bit');
+              preferences.tokenAddresses.should.deep.equal(TOKENS);
+              should.not.exist(preferences.dummy);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should concatenate token preferences (case2)', function(done) {
+      server.savePreferences({
+        email: 'dummy@dummy.com',
+        language: 'es',
+        unit: 'bit',
+        dummy: 'ignored',
+        tokenAddresses: [TOKENS[0]],
+      }, function(err) {
+        should.not.exist(err);
+        server.getPreferences({}, function(err, preferences) {
+          should.not.exist(err);
+          preferences.tokenAddresses.should.deep.equal([TOKENS[0]]);
+          server.savePreferences({
+            email: 'dummy@dummy.com',
+            language: 'es',
+            unit: 'bit',
+            dummy: 'ignored',
+            tokenAddresses: TOKENS,
+          }, function(err) {
+            server.getPreferences({}, function(err, preferences) {
+              should.not.exist(err);
+              should.exist(preferences);
+              preferences.email.should.equal('dummy@dummy.com');
+              preferences.language.should.equal('es');
+              preferences.unit.should.equal('bit');
+              preferences.tokenAddresses.should.deep.equal(TOKENS);
+              should.not.exist(preferences.dummy);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+
+
+  });
+ 
+
   describe('Preferences', function() {
     var server, wallet;
     beforeEach(function(done) {
@@ -2052,6 +2189,16 @@ describe('Wallet service', function() {
         });
       });
     });
+    it('should fail to save wrong preferences', function(done) {
+      server.savePreferences({
+        email: 'dummy@dummy.com',
+        tokenAddresses: ['hola'],
+      }, function(err) {
+        err.message.toString().should.contain('tokenAddresses');
+        done();
+      });
+    });
+ 
     it('should save preferences only for requesting copayer', function(done) {
       server.savePreferences({
         email: 'dummy@dummy.com'
@@ -3822,7 +3969,7 @@ describe('Wallet service', function() {
                   }, function(err, txp) {
                     should.not.exist(err);
 
-                    helpers.stubBroadcast();
+                    helpers.stubBroadcast(txp.txid);
                     server.broadcastTx({
                       txProposalId: txp.id
                     }, function(err, txp) {
@@ -4960,7 +5107,7 @@ describe('Wallet service', function() {
                 should.not.exist(err);
                 should.exist(txp);
 
-                helpers.stubBroadcast();
+                helpers.stubBroadcast(txp.txid);
                 server.broadcastTx({
                   txProposalId: txp.id
                 }, function(err, txp) {
@@ -6518,7 +6665,7 @@ describe('#createTX ETH Only tests', () => {
 
     it('should broadcast a tx', function(done) {
       var clock = sinon.useFakeTimers({ now: 1234000, toFake: ['Date'] });
-      helpers.stubBroadcast();
+      helpers.stubBroadcast(txid);
       server.broadcastTx({
         txProposalId: txpid
       }, function(err) {
@@ -6540,7 +6687,7 @@ describe('#createTX ETH Only tests', () => {
       });
     });
     it('should broadcast a raw tx', function(done) {
-      helpers.stubBroadcast();
+      helpers.stubBroadcast(txid);
       server.broadcastRawTx({
         network: 'testnet',
         rawTx: 'raw tx',
@@ -6551,7 +6698,7 @@ describe('#createTX ETH Only tests', () => {
       });
     });
     it('should fail to brodcast a tx already marked as broadcasted', function(done) {
-      helpers.stubBroadcast();
+      helpers.stubBroadcast(txid);
       server.broadcastTx({
         txProposalId: txpid
       }, function(err) {
@@ -6565,8 +6712,19 @@ describe('#createTX ETH Only tests', () => {
         });
       });
     });
+    it('should fail to brodcast a tx is txid is wrong', function(done) {
+      helpers.stubBroadcast('xx');
+      server.broadcastTx({
+        txProposalId: txpid
+      }, function(err) {
+        should.exist(err);
+        err.should.contain('broadcast error');
+        done();
+      });
+    });
+ 
     it('should auto process already broadcasted txs', function(done) {
-      helpers.stubBroadcast();
+      helpers.stubBroadcast(txid);
       server.getPendingTxs({}, function(err, txs) {
         should.not.exist(err);
         txs.length.should.equal(1);
@@ -6581,7 +6739,7 @@ describe('#createTX ETH Only tests', () => {
       });
     });
     it('should process only broadcasted txs', function(done) {
-      helpers.stubBroadcast();
+      helpers.stubBroadcast(txid);
       var txOpts = {
         outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
@@ -6607,7 +6765,7 @@ describe('#createTX ETH Only tests', () => {
       });
     });
     it('should fail to brodcast a not yet accepted tx', function(done) {
-      helpers.stubBroadcast();
+      helpers.stubBroadcast(txid);
       var txOpts = {
         outputs: [{
           toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
@@ -6725,7 +6883,7 @@ describe('#createTX ETH Only tests', () => {
 
     it('should broadcast a tx', function(done) {
       var clock = sinon.useFakeTimers({ now: 1234000, toFake: ['Date'] });
-      helpers.stubBroadcast();
+      helpers.stubBroadcast(txid);
       server.broadcastTx({
         txProposalId: txpid
       }, function(err) {
@@ -6755,7 +6913,6 @@ describe('#createTX ETH Only tests', () => {
         server = s;
         wallet = w;
         helpers.stubUtxos(server, wallet, _.range(1, 9), function() {
-          helpers.stubBroadcast();
           done();
         });
       });
@@ -7333,9 +7490,9 @@ describe('#createTX ETH Only tests', () => {
         server.signTx({
           txProposalId: tx.id,
           signatures: signatures,
-        }, function(err) {
+        }, function(err,tx) {
           should.not.exist(err);
-          helpers.stubBroadcast();
+          helpers.stubBroadcast(tx.txid);
           server.broadcastTx({
             txProposalId: tx.id
           }, function(err, txp) {
@@ -8321,8 +8478,8 @@ describe('#createTX ETH Only tests', () => {
       });
     });
     it('should get wallet from tx proposal', function(done) {
+      helpers.stubBroadcast('111');
       helpers.stubUtxos(server, wallet, '1 btc', function() {
-        helpers.stubBroadcast();
         var txOpts = {
           outputs: [{
             toAddress: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',

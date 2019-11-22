@@ -122,7 +122,7 @@ helpers.createAndJoinWallet = (clients, keys, m, n, opts, cb) => {
 
   keys[0] = opts.key || Key.create(keyOpts);
   let cred = keys[0].createCredentials(null, { coin: coin, network: network, account: 0, n: n });
-  clients[0].fromString(cred);
+  clients[0].fromObj(cred);
 
 
   clients[0].createWallet('mywallet', 'creator', m, n, {
@@ -256,13 +256,19 @@ blockchainExplorerMock.getBlockchainHeight = (cb) => { return cb(null, 1000); }
 blockchainExplorerMock.broadcast = (raw, cb) => {
   blockchainExplorerMock.lastBroadcasted = raw;
 
+  let hash;
   try {
+    let tx = new Bitcore.Transaction(raw);
+    if (_.isEmpty(tx.outputs)) {
+      throw 'no bitcoin';
+    }
+    hash = tx.id;
     // btc/bch
-    return cb(null, (new Bitcore.Transaction(raw)).id);
+    return cb(null, hash);
   } catch (e) {
     // try eth
-    const hash = CWC.Transactions.getHash({
-      tx: raw,
+     hash = CWC.Transactions.getHash({
+      tx: raw[0],
       chain: 'ETH',
     });
     return cb(null, hash);
@@ -2488,6 +2494,7 @@ describe('client API', () => {
           clients[0].createAddress({
             ignoreMaxGap: true
           }, (err, x) => {
+            if (err) console.log(err);
             should.not.exist(err);
             should.exist(x.address);
             callback(err, x);
@@ -4954,6 +4961,77 @@ describe('client API', () => {
           });
         });
       });
+
+      it('should be able to gain access to tokens wallets from mnemonic', (done) => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth'}, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          clients[0].savePreferences({tokenAddresses:['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd']}, (err) => { 
+            should.not.exist(err);
+            Client.serverAssistedImport({ words }, {
+              clientFactory: () => {
+                return helpers.newClient(app)
+              }
+            }, (err, k, c) => {
+              // the eth wallet + 2 tokens.
+              c.length.should.equal(3);
+              let recoveryClient = c[0];
+              recoveryClient.openWallet((err) => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.coin.should.equal('eth');
+                let recoveryClient2 = c[2] ;
+                recoveryClient2.openWallet((err) => {
+                  should.not.exist(err);
+                  recoveryClient2.credentials.coin.should.equal('gusd');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
+
+      it('should be able to gain access to tokens wallets from mnemonic (Case 2)', (done) => {
+        helpers.createAndJoinWallet(clients, keys, 1, 1, { coin: 'eth'}, () => {
+          var words = keys[0].get(null, true).mnemonic;
+          var walletName = clients[0].credentials.walletName;
+          var copayerName = clients[0].credentials.copayerName;
+
+          clients[0].savePreferences({tokenAddresses:['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48']}, (err) => { 
+            should.not.exist(err);
+            Client.serverAssistedImport({ words }, {
+              clientFactory: () => {
+                return helpers.newClient(app)
+              }
+            }, (err, k, c) => {
+              // the eth wallet + 1 token.
+              c.length.should.equal(2);
+              let recoveryClient = c[0];
+              recoveryClient.openWallet((err) => {
+                should.not.exist(err);
+                recoveryClient.credentials.walletName.should.equal(walletName);
+                recoveryClient.credentials.copayerName.should.equal(copayerName);
+                recoveryClient.credentials.coin.should.equal('eth');
+                let recoveryClient2 = c[1] ;
+                recoveryClient2.openWallet((err) => {
+                  should.not.exist(err);
+                  recoveryClient2.credentials.coin.should.equal('usdc');
+                  done();
+                });
+              });
+            });
+          });
+        });
+      });
+
+
+
+
 
       it('should be able to gain access to two TESTNET btc/bch 1-1 wallets from mnemonic', (done) => {
 
