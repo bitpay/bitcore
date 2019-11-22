@@ -250,7 +250,9 @@ export class Wallet {
     recipients: { address: string; amount: number }[];
     from?: string;
     change?: string;
+    invoiceID?: string;
     fee?: number;
+    nonce?: number;
   }) {
     const payload = {
       network: this.network,
@@ -258,9 +260,11 @@ export class Wallet {
       recipients: params.recipients,
       from: params.from,
       change: params.change,
+      invoiceID: params.invoiceID,
       fee: params.fee,
       wallet: this,
-      utxos: params.utxos
+      utxos: params.utxos,
+      nonce: params.nonce
     };
     return Transactions.create(payload);
   }
@@ -370,7 +374,7 @@ export class Wallet {
       this.chain,
       this.network,
       this.unlocked.masterKey,
-      this.addressIndex,
+      this.addressIndex || 0,
       isChange
     );
     return keyToImport;

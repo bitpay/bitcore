@@ -83,7 +83,7 @@ export class ExpressApp {
         // send a 503 error, with a message to the bitpay status page
         let errorCode = 503;
         let errorMessage = 'BWS down for maintenance';
-        res.status(503).send({code: errorCode, message: errorMessage});
+        res.status(503).send({ code: errorCode, message: errorMessage });
       } else {
         next();
       }
@@ -764,11 +764,13 @@ export class ExpressApp {
         coin?: string;
         from?: string;
         to?: string;
+        update?: boolean;
       } = {};
       if (req.query.network) opts.network = req.query.network;
       if (req.query.coin) opts.coin = req.query.coin;
       if (req.query.from) opts.from = req.query.from;
       if (req.query.to) opts.to = req.query.to;
+      if (req.query.update) opts.update = req.query.update;
 
       const stats = new Stats(opts);
       stats.run((err, data) => {

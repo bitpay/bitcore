@@ -114,6 +114,12 @@ Valid types of time (no slash marks allowed):
 ./bin/wallet-broadcast --name TestWalletBTC --tx 0100000001616db828f14f30177d17c01a58cbe69fbf241646add940fdb17de41c501f32280000000048473044022052cf595274c422c37d140989c8cc31c95b39d326b5eac8d4feb8bcceebdebc3f02205635c798c24ae1d44d0871e6938dbfd76293e695131d890838654816f28b942401ffffffff0200f90295000000001976a914578237b9848cc709ced0e098417e0494415add1488ac9cf80295000000001976a914caf0ee682de3daa9b3640da1f6d47cc04ce2c99e88ac00000000
 ```
 
+### Paypro Payment
+
+```sh
+./bin/wallet-paypro --name TestWalletBTC --payProUri 'https://bitpay.com/i/Dd8q13AnnVyYM7pcMBHfv'
+```
+
 ## Contributing
 
 See [CONTRIBUTING.md](https://github.com/bitpay/bitcore/blob/master/Contributing.md) on the main bitcore repo for information about how to contribute.

@@ -25,6 +25,7 @@ export class Stats {
   from: moment.MomentFormatSpecification;
   to: moment.MomentFormatSpecification;
   db: mongodb.Db;
+  update: boolean;
 
   constructor(opts) {
     opts = opts || {};
@@ -33,6 +34,7 @@ export class Stats {
     this.coin = opts.coin || 'btc';
     this.from = moment(opts.from || INITIAL_DATE).format('YYYY-MM-DD');
     this.to = moment(opts.to).format('YYYY-MM-DD');
+    this.update = opts.update || false;
   }
 
   run(cb) {
@@ -51,7 +53,6 @@ export class Stats {
           log.error('Unable to connect to the mongoDB', err);
           return cb(err, null);
         }
-        log.info('Connection established to ' + uri);
         this.db = db;
         this._getStats((err, stats) => {
           if (err) return cb(err);
@@ -84,6 +85,7 @@ export class Stats {
   }
 
   _getNewWallets(cb) {
+
     const getLastDate = cb => {
       this.db
         .collection('stats_wallets')
@@ -97,6 +99,7 @@ export class Stats {
           return cb(null, moment(lastRecord[0]._id.day));
         });
     };
+
     const updateStats = (from, yesterday, cb) => {
       this.db
         .collection(storage.Storage.collections.WALLETS)
@@ -136,6 +139,7 @@ export class Stats {
           return cb();
         });
     };
+
     const queryStats = (cb) => {
       this.db
         .collection('stats_wallets')
@@ -167,37 +171,26 @@ export class Stats {
         });
     };
 
-    async.series(
-      [
-        (next) => {
-          getLastDate((err, lastDate) => {
-            if (err) return next(err);
+    if (this.update) {
+      getLastDate((err, lastDate) => {
+        if (err) return cb(err);
 
-            lastDate = lastDate.startOf('day');
-            const yesterday = moment()
-              .subtract(1, 'day')
-              .startOf('day');
-            if (lastDate.isBefore(yesterday)) {
-              // Needs update
-              return updateStats(lastDate, yesterday, next);
-            }
-            next();
-          });
-        },
-        (next) => {
-          queryStats(next);
+        lastDate = lastDate.startOf('day');
+        const yesterday = moment()
+          .subtract(1, 'day')
+          .startOf('day');
+        if (lastDate.isBefore(yesterday)) {
+          // Needs update
+          return updateStats(lastDate, yesterday, cb);
         }
-      ],
-      (err, res) => {
-        if (err) {
-          log.error(err);
-        }
-        return cb(err, res[1]);
-      }
-    );
+      });
+    } else {
+      return queryStats(cb);
+    }
   }
 
   _getFiatRates(cb) {
+
     const getLastDate = cb => {
       this.db
         .collection('stats_fiat_rates')
@@ -211,6 +204,7 @@ export class Stats {
           return cb(null, moment(lastRecord[0]._id.day));
         });
     };
+
     const updateStats = (from, yesterday, cb) => {
       this.db
         .collection(storage.Storage.collections.FIAT_RATES2)
@@ -250,6 +244,7 @@ export class Stats {
           return cb();
         });
     };
+
     const queryStats = (cb) => {
       this.db
         .collection('stats_fiat_rates')
@@ -280,37 +275,26 @@ export class Stats {
         });
     };
 
-    async.series(
-      [
-        (next) => {
-          getLastDate((err, lastDate) => {
-            if (err) return next(err);
+    if (this.update) {
+      getLastDate((err, lastDate) => {
+        if (err) return cb(err);
 
-            lastDate = lastDate.startOf('day');
-            const yesterday = moment()
-              .subtract(1, 'day')
-              .startOf('day');
-            if (lastDate.isBefore(yesterday)) {
-              // Needs update
-              return updateStats(lastDate, yesterday, next);
-            }
-            next();
-          });
-        },
-        (next) => {
-          queryStats(next);
+        lastDate = lastDate.startOf('day');
+        const yesterday = moment()
+          .subtract(1, 'day')
+          .startOf('day');
+        if (lastDate.isBefore(yesterday)) {
+          // Needs update
+          return updateStats(lastDate, yesterday, cb);
         }
-      ],
-      (err, res) => {
-        if (err) {
-          log.error(err);
-        }
-        return cb(err, res[1]);
-      }
-    );
+      });
+    } else {
+      return queryStats(cb);
+    }
   }
 
   _getTxProposals(cb) {
+
     const getLastDate = (cb) => {
       this.db
         .collection('stats_txps')
@@ -324,6 +308,7 @@ export class Stats {
           return cb(null, moment(lastRecord[0]._id.day));
         });
     };
+
     const updateStats = (from, yesterday, cb) => {
       this.db
         .collection(storage.Storage.collections.TXS)
@@ -402,32 +387,22 @@ export class Stats {
           return cb(null, stats);
         });
     };
-    async.series(
-      [
-        (next) => {
-          getLastDate((err, lastDate) => {
-            if (err) return next(err);
-            lastDate = lastDate.startOf('day');
-            const yesterday = moment()
-              .subtract(1, 'day')
-              .startOf('day');
-            if (lastDate.isBefore(yesterday)) {
-              // Needs update
-              return updateStats(lastDate, yesterday, next);
-            }
-            next();
-          });
-        },
-        (next) => {
-          queryStats(next);
+
+    if (this.update) {
+      getLastDate((err, lastDate) => {
+        if (err) return cb(err);
+
+        lastDate = lastDate.startOf('day');
+        const yesterday = moment()
+          .subtract(1, 'day')
+          .startOf('day');
+        if (lastDate.isBefore(yesterday)) {
+          // Needs update
+          return updateStats(lastDate, yesterday, cb);
         }
-      ],
-      (err, res) => {
-        if (err) {
-          log.error(err);
-        }
-        return cb(err, res[1]);
-      }
-    );
+      });
+    } else {
+      return queryStats(cb);
+    }
   }
 }
