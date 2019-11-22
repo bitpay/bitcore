@@ -14,6 +14,7 @@ import { Copayer, INotification, ITxProposal, IWallet, Notification, Preferences
 import { Storage } from './storage';
 
 const config = require('../config');
+const Uuid = require('uuid');
 const $ = require('preconditions').singleton();
 const deprecatedServerMessage = require('../deprecated-serverMessages');
 const serverMessages = require('../serverMessages');
@@ -1213,8 +1214,8 @@ export class WalletService {
         isValid(value) {
           return (
             _.isArray(value) && value.every(x =>
-              Validation.validateAddress( 'eth', 'mainnet', x))
-         );
+              Validation.validateAddress('eth', 'mainnet', x))
+          );
         }
       }
     ];
@@ -4515,14 +4516,14 @@ export class WalletService {
       const API = config.simplex.sandbox.api;
       const API_KEY = config.simplex.sandbox.apiKey;
 
+      req.body.wallet_id = config.simplex.sandbox.appProviderId;
+
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': 'ApiKey ' + API_KEY
       };
 
-      const url = API + '/wallet/merchant/v2/quote';
-
-      request.post(url, {
+      request.post(API + '/wallet/merchant/v2/quote', {
         headers,
         body: req.body,
         json: true
@@ -4541,15 +4542,21 @@ export class WalletService {
     return new Promise((resolve, reject) => {
       const API = config.simplex.sandbox.api;
       const API_KEY = config.simplex.sandbox.apiKey;
+      const appProviderId = config.simplex.sandbox.appProviderId;
+      const paymentId = Uuid.v4();
+      const orderId = Uuid.v4();
+      const apiHost = config.simplex.sandbox.api;
+
+      req.body.account_details.app_provider_id = appProviderId;
+      req.body.transaction_details.payment_details.payment_id = paymentId;
+      req.body.transaction_details.payment_details.order_id = orderId;
 
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': 'ApiKey ' + API_KEY
       };
 
-      const url = API + '/wallet/merchant/v2/payments/partner/data';
-
-      request.post(url, {
+      request.post(API + '/wallet/merchant/v2/payments/partner/data', {
         headers,
         body: req.body,
         json: true
@@ -4558,6 +4565,10 @@ export class WalletService {
           console.log('[simplexGetQuote.4530:err:]', err);
           return reject(err);
         } else {
+          data.body.payment_id = paymentId;
+          data.body.order_id = orderId;
+          data.body.app_provider_id = appProviderId;
+          data.body.api_host = apiHost;
           return resolve(data);
         }
       });
