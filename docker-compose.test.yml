@@ -17,6 +17,7 @@ services:
       - db
       - bitcoin
       - parity
+      - rippled
 
   db:
     image: mongo
@@ -56,6 +57,10 @@ services:
       --unlock 00a329c0648769a73afac7f9381e08fb43dbea72
       --password /data/pw
 
+  rippled:
+    build:
+      context: .
+      dockerfile: ./.docker/rippled.Dockerfile
 
 networks:
   default:
