@@ -7,6 +7,7 @@ import { Config } from '../../src/services/config';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { TransactionStorage } from '../../src/models/transaction';
 import { Verification } from '../../src/services/verification';
+import { Modules } from '../../src/modules';
 
 (async () => {
   const { CHAIN, NETWORK, FILE, DRYRUN } = process.env;
@@ -17,6 +18,8 @@ import { Verification } from '../../src/services/verification';
   const chain = CHAIN || '';
   const network = NETWORK || '';
   await Storage.start();
+  Modules.loadConfigured();
+
   const chainConfig = Config.chainConfig({ chain, network });
   const workerClass = Verification.get(chain);
   const worker = new workerClass({ chain, network, chainConfig });
