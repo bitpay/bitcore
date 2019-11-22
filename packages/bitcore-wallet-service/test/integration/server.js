@@ -1319,18 +1319,20 @@ describe('Wallet service', function() {
     });
 
     it('should get status including extended info with tokens', function(done) {
-      server.savePreferences({
-        email: 'dummy@dummy.com',
-        tokenAddresses: TOKENS,
-      }, function(err) {
-        should.not.exist(err);
-        server.getStatus({
-          includeExtendedInfo: true
-        }, function(err, status) {
+      helpers.createAndJoinWallet(1, 1, {coin: 'eth'}, function(s, w) {
+        s.savePreferences({
+          email: 'dummy@dummy.com',
+          tokenAddresses: TOKENS,
+        }, function(err) {
           should.not.exist(err);
-          should.exist(status);
-          status.preferences.tokenAddresses.should.deep.equal(TOKENS);
-          done();
+          s.getStatus({
+            includeExtendedInfo: true
+          }, function(err, status) {
+            should.not.exist(err);
+            should.exist(status);
+            status.preferences.tokenAddresses.should.deep.equal(TOKENS);
+            done();
+          });
         });
       });
     });
