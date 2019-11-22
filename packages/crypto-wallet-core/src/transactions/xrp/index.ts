@@ -9,7 +9,9 @@ import { Key } from '../../derivation';
 
 enum HashPrefix {
   // transaction plus signature to give transaction ID
-  TRANSACTION_ID = 0x54584E00
+  livenet = 0x54584E00,
+  mainnet = 0x54584E00,
+  testnet = 0x73747800
 }
 export class XRPTxProvider {
   create(params: {
@@ -86,9 +88,9 @@ export class XRPTxProvider {
     return signedTransaction;
   }
 
-  getHash(params: { tx: string; }): string {
-    const { tx } = params;
-    const prefix = HashPrefix.TRANSACTION_ID.toString(16).toUpperCase();
+  getHash(params: { tx: string; network?: string; }): string {
+    const { tx, network = 'mainnet' } = params;
+    const prefix = HashPrefix[network].toString(16).toUpperCase();
     return this.sha512Half(prefix + tx);
   }
 
