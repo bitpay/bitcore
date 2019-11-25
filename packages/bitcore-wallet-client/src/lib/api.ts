@@ -2449,10 +2449,10 @@ export class API extends EventEmitter {
 
       client.fromString(c);
       client.openWallet({}, (err, status) => {
-//        console.log(
-//          `PATH: ${c.rootPath} n: ${c.n}:`,
-//          err && err.message ? err.message : 'FOUND!'
-//        );
+        //        console.log(
+        //          `PATH: ${c.rootPath} n: ${c.n}:`,
+        //          err && err.message ? err.message : 'FOUND!'
+        //        );
 
         // Exists
         if (!err) {
@@ -2663,20 +2663,20 @@ export class API extends EventEmitter {
     );
   }
 
-  simplexGetQuote(opts): Promise<any> {
+  simplexGetQuote(data): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request
-        .post('/service/simplex/quote', opts, (err, data) => {
+        .post('/service/simplex/quote', data, (err, data) => {
           if (err) return reject(err);
           return resolve(data);
         });
     });
   }
 
-  simplexPaymentRequest(opts): Promise<any> {
+  simplexPaymentRequest(data): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request
-        .post('/service/simplex/paymentRequest', opts, (err, data) => {
+        .post('/service/simplex/paymentRequest', data, (err, data) => {
           if (err) return reject(err);
           return resolve(data);
         });

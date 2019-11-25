@@ -4513,15 +4513,19 @@ export class WalletService {
 
   simplexGetQuote(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const API = config.simplex.sandbox.api;
-      const API_KEY = config.simplex.sandbox.apiKey;
+      if (!req.body.env || (req.body.env != 'sandbox' && req.body.env != 'production')) return reject(new Error('Simplex\'s request wrong environment'));
 
-      req.body.wallet_id = config.simplex.sandbox.appProviderId;
+      const API = config.simplex[req.body.env].api;
+      const API_KEY = config.simplex[req.body.env].apiKey;
+
+      req.body.client_ip = '1.2.3.4'; // TODO
+      req.body.wallet_id = config.simplex[req.body.env].appProviderId;
 
       const headers = {
         'Content-Type': 'application/json',
         'Authorization': 'ApiKey ' + API_KEY
       };
+      delete req.body.env;
 
       request.post(API + '/wallet/merchant/v2/quote', {
         headers,
@@ -4540,16 +4544,36 @@ export class WalletService {
 
   simplexPaymentRequest(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      const API = config.simplex.sandbox.api;
-      const API_KEY = config.simplex.sandbox.apiKey;
-      const appProviderId = config.simplex.sandbox.appProviderId;
+      if (!req.body.env || (req.body.env != 'sandbox' && req.body.env != 'production')) return reject(new Error('Simplex\'s request wrong environment'));
+
+      const API = config.simplex[req.body.env].api;
+      const API_KEY = config.simplex[req.body.env].apiKey;
+      const appProviderId = config.simplex[req.body.env].appProviderId;
       const paymentId = Uuid.v4();
       const orderId = Uuid.v4();
-      const apiHost = config.simplex.sandbox.api;
+      const apiHost = config.simplex[req.body.env].api;
+
+      if (!req.body.account_details || !req.body.transaction_details) {
+        return reject(new Error('Simplex\'s request missing arguments'));
+      }
 
       req.body.account_details.app_provider_id = appProviderId;
+      req.body.account_details.app_install_date = '2018-01-03T15:23:12Z'; // TODO
+      req.body.account_details.signup_login = { // TODO
+        ip: '1.2.3.4',
+        location: '36.848460,-174.763332',
+        uaid:
+          'IBAnKPg1bdxRiT6EDkIgo24Ri8akYQpsITRKIueg+3XjxWqZlmXin7YJtQzuY4K73PWTZOvmuhIHu + ee8m4Cs4WLEqd2SvQS9jW59pMDcYu + Tpl16U / Ss3SrcFKnriEn4VUVKG9QnpAJGYB3JUAPx1y7PbAugNoC8LX0Daqg66E = ',
+        accept_language: 'de,en-US;q=0.7,en;q=0.3',
+        http_accept_language: 'de,en-US;q=0.7,en;q=0.3',
+        user_agent: req.body.account_details ? req.body.account_details.signup_login.user_agent : '', // Format: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67.0) Gecko/20100101 Firefox/67.0'
+        cookie_session_id: '7r7rz_VfGC_viXTp5XPh5Bm--rWM6RyU',
+        timestamp: '2018-01-15T09:27:34.431Z'
+      };
+
       req.body.transaction_details.payment_details.payment_id = paymentId;
       req.body.transaction_details.payment_details.order_id = orderId;
+      delete req.body.env;
 
       const headers = {
         'Content-Type': 'application/json',
