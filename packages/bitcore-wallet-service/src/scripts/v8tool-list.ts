@@ -6,10 +6,11 @@ const Bitcore = require('bitcore-lib');
 const requestStream = require('request');
 import { Client } from '../lib//blockchainexplorers/v8/client';
 
-const coin = 'BTC';
+const coin = 'ETH';
 console.log('COIN:', coin);
 const network = 'mainnet';
 const authKey = process.argv[2];
+const extra = process.argv[3] ||  '';
 
 if (!authKey)
   throw new Error('provide authKey');
@@ -21,7 +22,8 @@ const authKeyObj =  Bitcore.PrivateKey(authKey);
 let tmp  = authKeyObj.toObject();
 tmp.compressed = false;
 const pubKey = Bitcore.PrivateKey(tmp).toPublicKey() ;
-const baseUrl = `https://api.bitcore.io/api/${coin}/${network}`;
+//const baseUrl = `https://api.bitcore.io/api/${coin}/${network}`;
+let baseUrl = `https://api-eth.bitcore.io/api/${coin}/${network}`;
 let client = new Client({
   baseUrl,
   authKey: authKeyObj,
@@ -31,7 +33,12 @@ let client = new Client({
 // addresses
 
 // const url = `${baseUrl}/wallet/${pubKey}/${path}`;
-const url = `${baseUrl}/wallet/${pubKey}/transactions?startBlock=0&includeMempool=true`;
+let url = `${baseUrl}/wallet/${pubKey}/transactions?startBlock=0&includeMempool=true`;
+if (extra) {
+  url = url + '&' + extra;
+}
+
+
 console.log('[v8tool.37:url:]', url);
 const signature = client.sign({ method: 'GET', url });
 const payload = {};
@@ -56,7 +63,7 @@ r.on('end', () => {
     try {
       tx = JSON.parse(rawTx);
     } catch (e) {
-      log.error('v8 error at JSON.parse:' + e  + ' Parsing:' + rawTx + ':');
+      console.log('v8 error at JSON.parse:' + e  + ' Parsing:' + rawTx + ':');
     }
     // v8 field name differences
     if (tx.value)
