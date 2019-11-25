@@ -207,10 +207,25 @@ export class EthChain implements IChain {
         } else if (availableAmount < txp.getTotalAmount()) {
           return cb(Errors.LOCKED_FUNDS);
         } else {
-          return next(server._checkTx(txp));
+          if (opts.tokenAddress) {
+            // ETH wallet balance
+            server.getBalance({ wallet }, (err, balance) => {
+              if (err) return next(err);
+
+              const { totalAmount, availableAmount } = balance;
+              if (totalAmount < txp.fee) {
+                return cb(Errors.INSUFFICIENT_ETH_FEE);
+              } else if (availableAmount < txp.fee) {
+                return cb(Errors.LOCKED_ETH_FEE);
+              } else {
+                return next(server._checkTx(txp));
+              }
+            });
+          } else {
+            return next(server._checkTx(txp));
+          }
         }
-      }
-    );
+    });
   }
 
   checkUtxos(opts) { }
