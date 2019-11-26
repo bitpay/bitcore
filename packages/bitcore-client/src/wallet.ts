@@ -393,4 +393,13 @@ export class Wallet {
     await this.saveWallet();
     return keys.map(key => key.address.toString());
   }
+
+  async getNonce(addressIndex: number = 0, isChange?: boolean) {
+    const address = await this.deriveAddress(0, isChange);
+    const count = await this.client.getNonce({ address });
+    if (!count || !count.nonce) {
+      throw new Error('Unable to get nonce');
+    }
+    return count.nonce;
+  }
 }
