@@ -988,6 +988,28 @@ export class ExpressApp {
       });
     });
 
+    router.get('/service/simplex/events', (req, res) => {
+      // getServerWithAuth(req, res, (server) => {
+      //   server.simplexGetEvents(req).then(response => {
+      //     res.json(response);
+      //   }).catch(err => {
+      //     if (err) return returnError(err, res, req);
+      //   });
+      // });
+      let server;
+      const opts = { env: req.query.env };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.simplexGetEvents(opts).then(response => {
+        res.json(response);
+      }).catch(err => {
+        if (err) return returnError(err, res, req);
+      });
+    });
+
     this.app.use(opts.basePath || '/bws/api', router);
 
     WalletService.initialize(opts, cb);

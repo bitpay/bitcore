@@ -2683,4 +2683,17 @@ export class API extends EventEmitter {
     });
   }
 
+  simplexGetEvents(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      let qs = [];
+      qs.push('env=' + data.env);
+
+      this.request
+        .get('/service/simplex/events/?' + qs.join('&'), (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        });
+    });
+  }
+
 }
