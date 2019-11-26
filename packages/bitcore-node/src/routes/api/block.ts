@@ -30,7 +30,7 @@ router.get('/', async function(req: Request, res: Response) {
 router.get('/tip', async function(req: Request, res: Response) {
   let { chain, network } = req.params;
   try {
-    let tip = await ChainStateProvider.getBlock({ chain, network });
+    let tip = await ChainStateProvider.getLocalTip({ chain, network });
     return res.json(tip);
   } catch (err) {
     console.error(err);

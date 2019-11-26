@@ -383,7 +383,7 @@ export class BtcChain implements IChain {
         };
         tx.inputs[i].addSignature(tx, s);
         i++;
-      } catch (e) {}
+      } catch (e) { }
     });
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');
@@ -403,11 +403,6 @@ export class BtcChain implements IChain {
     if (addr.network.toString() != wallet.network) {
       return Errors.INCORRECT_ADDRESS_NETWORK;
     }
-
-    if (wallet.coin == 'bch' && !opts.noCashAddr) {
-      if (addr.toString(true) != inaddr) return Errors.ONLY_CASHADDR;
-    }
-
     return;
   }
 }

@@ -63,7 +63,7 @@ export class Client {
   getAddressTxos = async function(params) {
     const { unspent, address } = params;
     const args = unspent ? `?unspent=${unspent}` : '';
-    const url = `${this.baseUrl}/address/${address}${args}`;
+    const url = `${this.apiUrl}/address/${address}${args}`;
     return request.get(url, {
       json: true
     });

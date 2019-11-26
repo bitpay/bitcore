@@ -779,6 +779,9 @@ export class WalletService {
         (next) => {
           this.getPreferences({}, (err, preferences) => {
             if (err) return next(err);
+            if (!opts.includeExtendedInfo) {
+              preferences.tokenAddresses = null;
+            }
             status.preferences = preferences;
             next();
           });
@@ -1203,6 +1206,15 @@ export class WalletService {
             _.isString(value) && _.includes(['btc', 'bit'], value.toLowerCase())
           );
         }
+      },
+      {
+        name: 'tokenAddresses',
+        isValid(value) {
+          return (
+            _.isArray(value) && value.every(x =>
+              Validation.validateAddress( 'eth', 'mainnet', x))
+         );
+        }
       }
     ];
 
@@ -1219,24 +1231,40 @@ export class WalletService {
       return cb(new ClientError(ex));
     }
 
-    this._runLocked(cb, (cb) => {
-      this.storage.fetchPreferences(this.walletId, this.copayerId, (
-        err,
-        oldPref
-      ) => {
-        if (err) return cb(err);
+    this.getWallet({}, (err, wallet) => {
+      if (err) return cb(err);
 
-        const newPref = Preferences.create({
-          walletId: this.walletId,
-          copayerId: this.copayerId
+      if (wallet.coin != 'eth') {
+        opts.tokenAddresses = null;
+      }
+
+      this._runLocked(cb, (cb) => {
+        this.storage.fetchPreferences(this.walletId, this.copayerId, (
+          err,
+          oldPref
+        ) => {
+          if (err) return cb(err);
+
+          const newPref = Preferences.create({
+            walletId: this.walletId,
+            copayerId: this.copayerId
+          });
+          const preferences = Preferences.fromObj(
+            _.defaults(newPref, opts, oldPref)
+          );
+
+          // merge tokenAddresses
+          if (opts.tokenAddresses) {
+            oldPref = oldPref || {};
+            oldPref.tokenAddresses = oldPref.tokenAddresses || [];
+            preferences.tokenAddresses = _.uniq(oldPref.tokenAddresses.concat(opts.tokenAddresses));
+          }
+
+          this.storage.storePreferences(preferences, (err) => {
+            return cb(err);
+          });
         });
-        const preferences = Preferences.fromObj(
-          _.defaults(newPref, opts, oldPref)
-        );
-        this.storage.storePreferences(preferences, (err) => {
-          return cb(err);
-        });
-      });
+    });
     });
   }
 
