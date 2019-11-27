@@ -4,38 +4,48 @@
 
 const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
+const promptly = require('promptly');
 
 program
   .version(require('../package.json').version)
   .option('--name <name>', 'REQUIRED - Wallet Name')
-  .option(
-    '--recipients <recipients>',
-    'REQUIRED - JSON array \'[{"address": "abc1234", "amount": xxxxxx}]\''
-  )
+  .option('--to <to>', 'REQUIRED - string address')
+  .option('--amount <amount>', 'REQUIRED - number amount (in xrp)')
   .option('--target [target]', 'optional - custom target block for confirmation')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, recipients, target } = program;
+  const { name, path, to, amount, target } = program;
   let wallet;
   try {
     wallet = await Wallet.loadWallet({ name, path });
     const { lastAddress } = await wallet.checkWallet();
-    const parsedRecipients = JSON.parse(recipients);
-    const fee = await wallet.getNetworkFee({ target });
+    const recipients = [{ address: to, amount: amount * 1e6 }];
+    const feerate = await wallet.getNetworkFee({ target });
+    const fee = JSON.parse(feerate).feerate;
     const nonce = await wallet.getNonce();
     const utxos = wallet.getUtxos();
     const params = {
-      fee: 12,
+      fee,
       nonce: Number(nonce),
       utxos,
-      recipients: parsedRecipients,
+      recipients,
       from: lastAddress
     };
     const tx = await wallet.newTx(params);
     console.log('unsignedRawTx: ', tx);
+    const password = await promptly.password('Wallet Password:');
+    wallet = await wallet.unlock(password);
     const signedTx = await wallet.signTx({ tx });
+    console.log('signedRawTx: ', signedTx);
+    const confirmed = await promptly.confirm('broadcast? (y/n)');
+    if (!confirmed) {
+      return;
+    }
+    const transaction = await wallet.broadcast({ tx:signedTx });
+    console.log('txid: ', transaction.txid);
+    console.log('Transaction broadcasted');
   } catch (e) {
     console.error(e);
   }
