@@ -523,35 +523,34 @@ export class V8 {
     walletsSocket.on('coin', data => {
       const coin = data.coin;
       // script output, or similar.
-      if (!coin.address || coin.chain === 'ETH') return;
-      let out;
-      try {
-        out = {
-          address: coin.address,
-          amount: coin.value
-        };
-      } catch (e) {
-        // non parsable address
-        return;
-      }
+      if (!coin || !coin.address || coin.chain === 'ETH') return;
+      const out = {
+        address: coin.address,
+        amount: coin.value
+      };
       return callbacks.onIncomingPayments({ out, txid: coin.mintTxid });
     });
 
     walletsSocket.on('tx', data => {
       const tx = data.tx;
       // script output, or similar.
-      if (tx.chain !== 'ETH') return;
-      let out;
-      try {
-        out = {
-          address: tx.to,
-          amount: tx.value,
-          tokenAddress: tx.tokenAddress
-        };
-      } catch (e) {
-        // non parsable address
-        return;
+      if (!tx || tx.chain !== 'ETH') return;
+      let tokenAddress;
+      let address;
+      let amount;
+      if (tx.abiType && tx.abiType.type === 'ERC20') {
+        tokenAddress = tx.to;
+        address = tx.abiType.params[0].value;
+        amount = tx.abiType.params[1].value;
+      } else {
+        address = tx.to;
+        amount = tx.value;
       }
+      const out = {
+        address,
+        amount,
+        tokenAddress
+      };
       return callbacks.onIncomingPayments({ out, txid: tx.txid });
     });
   }
