@@ -13,7 +13,7 @@ var { WalletService } = require('../../ts_build/lib/server');
 var { BlockchainMonitor } = require('../../ts_build/lib/blockchainmonitor');
 
 var helpers = require('./helpers');
-var storage, blockchainExplorer;
+var storage, blockchainExplorer, blockchainExplorerETH;
 
 var socket = {
   handlers: {},
@@ -30,12 +30,26 @@ describe('Blockchain monitor', function() {
     helpers.before(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;
+      blockchainExplorerETH =  _.cloneDeep(blockchainExplorer);
+
+
       blockchainExplorer.initSocket = function(callbacks) {
         socket.handlers['coin']= function(data) {
           callbacks.onIncomingPayments(data);
         };
         socket.handlers['block'] =  callbacks.onBlock;
       }
+
+      blockchainExplorerETH.initSocket = function(callbacks) {
+        socket.handlers['tx']= function(data) {
+          callbacks.onIncomingPayments(data);
+        };
+        // no uses in eth, interferes with btc
+        //socket.handlers['block'] =  callbacks.onBlock;
+      }
+
+
+
       done();
     });
   });
@@ -79,8 +93,10 @@ describe('Blockchain monitor', function() {
           storage: storage,
           blockchainExplorers: {
             'btc': {
-              'testnet': blockchainExplorer,
               'livenet': blockchainExplorer
+            },
+            'eth': {
+              'livenet': blockchainExplorerETH
             }
           },
         }, function(err) {
@@ -117,6 +133,61 @@ describe('Blockchain monitor', function() {
       }, 100);
     });
   });
+
+
+  it('should not notify copayers of incoming txs btc, amount =0', function(done) {
+    server.createAddress({}, function(err, address) {
+      should.not.exist(err);
+
+      var incoming = {
+        txid: '123',
+        out: { 'address': address.address, amount: 0 },
+      };
+      socket.handlers['coin'](incoming);
+
+      setTimeout(function() {
+        server.getNotifications({}, function(err, notifications) {
+          should.not.exist(err);
+          var notification = _.find(notifications, {
+            type: 'NewIncomingTx'
+          });
+          should.not.exist(notification);
+          done();
+        });
+      }, 100);
+    });
+  });
+
+
+  it('should notify copayers of incoming txs ETH, amount =0', function(done) {
+    helpers.createAndJoinWallet(1, 1, {coin: 'eth'}, function(s, w) {
+      s.createAddress({}, function(err, address) {
+        should.not.exist(err);
+
+        var incoming = {
+          txid: '123',
+          out: { 'address': address.address, amount: 0 },
+        };
+        socket.handlers['tx'](incoming);
+
+        setTimeout(function() {
+          s.getNotifications({}, function(err, notifications) {
+            should.not.exist(err);
+            var notification = _.find(notifications, {
+              type: 'NewIncomingTx'
+            });
+          should.exist(notification);
+          notification.data.txid.should.equal('123');
+          notification.data.address.should.equal(address.address);
+          notification.data.amount.should.equal(0);
+            done();
+          });
+        }, 100);
+      });
+    });
+  });
+
+
 
   it('should not notify copayers of incoming txs more than once', function(done) {
     server.createAddress({}, function(err, address) {

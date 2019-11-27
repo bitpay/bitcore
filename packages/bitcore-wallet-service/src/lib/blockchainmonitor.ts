@@ -91,6 +91,7 @@ export class BlockchainMonitor {
               });
             }
             $.checkState(explorer);
+
             this._initExplorer(pair.coin, pair.network, explorer);
             this.explorers[pair.coin][pair.network] = explorer;
           });
