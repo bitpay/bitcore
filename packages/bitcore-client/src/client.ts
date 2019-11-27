@@ -134,7 +134,7 @@ export class Client {
         .get(url, {
           json: true
         })
-        .on('data', d => resolve(d.toString()))
+        .on('data', d => resolve(d))
     );
   }
 

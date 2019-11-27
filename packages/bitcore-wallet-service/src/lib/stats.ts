@@ -70,15 +70,15 @@ export class Stats {
           this._getNewWallets(next);
         },
         (next) => {
-          this._getFiatRates(next);
-        },
-        (next) => {
           this._getTxProposals(next);
         },
+        (next) => {
+          this._getFiatRates(next);
+        }
       ],
       (err, results) => {
         if (err) return cb(err);
-        result = { newWallets: results[0], fiatRates: results[1], txProposals: results[2] };
+        result = { newWallets: results[0], txProposals: results[1], fiatRates: results[2] };
         return cb(null, result);
       }
     );
@@ -132,10 +132,15 @@ export class Stats {
             }
           ]
         ).toArray(async (err, res) => {
-          if (err) return cb(err);
+          if (err) {
+            log.error('Update wallet stats throws error:', err);
+            return cb(err);
+          }
           try {
             await this.db.collection('stats_wallets').insertMany(res, { ordered: false });
-          } catch (err) { }
+          } catch (err) {
+            log.error('Cannot insert into stats_wallets:', err);
+          }
           return cb();
         });
     };
@@ -237,10 +242,15 @@ export class Stats {
             }
           ]
         ).toArray(async (err, res) => {
-          if (err) return cb(err);
+          if (err) {
+            log.error('Update fiat rates stats throws error:', err);
+            return cb(err);
+          }
           try {
             await this.db.collection('stats_fiat_rates').insertMany(res, { ordered: false });
-          } catch (err) { }
+          } catch (err) {
+            log.error('Cannot insert into stats_fiat_rates:', err);
+          }
           return cb();
         });
     };
@@ -343,10 +353,14 @@ export class Stats {
             }
           ]
         ).toArray(async (err, res) => {
-          if (err) return cb(err);
+          if (err) {
+            log.error('Update txps stats throws error:', err);
+            return cb(err);
+          }
           try {
             await this.db.collection('stats_txps').insertMany(res, { ordered: false });
           } catch (err) {
+            log.error('Cannot insert into stats_txps:', err);
           }
           return cb();
         });

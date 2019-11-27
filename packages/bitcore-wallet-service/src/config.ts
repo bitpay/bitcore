@@ -56,6 +56,7 @@ module.exports = {
         url: 'https://api-eth.bitcore.io',
       },
     },
+    socketApiKey: 'socketApiKey'
   },
   pushNotificationsOpts: {
     templatePath: 'templates',
