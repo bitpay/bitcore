@@ -78,7 +78,11 @@ export class API extends EventEmitter {
     this.bp_partner = opts.bp_partner;
     this.bp_partner_version = opts.bp_partner_version;
 
-    this.request = new Request(opts.baseUrl || BASE_URL, { r: opts.request });
+    this.request = new Request(opts.baseUrl || BASE_URL, { 
+      r: opts.request,
+      supportStaffWalletId: opts.supportStaffWalletId,
+    });
+
     log.setLevel(this.logLevel);
   }
 
