@@ -123,7 +123,6 @@ export class Client {
   async getFee(params) {
     const { target } = params;
     const url = `${this.apiUrl}/fee/${target}`;
-    console.log(url);
     return new Promise(resolve =>
       request
         .get(url, {
