@@ -39,6 +39,7 @@ const TO_SAT =  {
   'bch' : 1e8,
   'btc' : 1e8,
   'eth' : 1e18,
+  'usdc': 1e6
 };
 
 
@@ -3316,6 +3317,12 @@ describe('Wallet service', function() {
       addr: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
       flags: { noChange: true},
     },
+    {
+      coin: 'usdc',
+      key: 'id44btc',
+      addr: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+      flags: { noChange: true},
+    },
  
 
   ];
@@ -4257,6 +4264,36 @@ describe('Wallet service', function() {
             });
           });
         });
+
+        if (coin === 'usdc') {
+          it('should fail with different error for ERC20 txs with insufficient ETH to cover miner fee', function(done) {
+            const ts = TO_SAT['usdc'];
+            helpers.stubUtxos(server, wallet, [1, 1], {coin: 'usdc'}, function() {
+              let txAmount = 1e6;
+              var txOpts = {
+                outputs: [{
+                  toAddress: addressStr,
+                  amount: txAmount,
+                }],
+                fee: 4.2e14,
+                tokenAddress: TOKENS[0]
+              };
+              txOpts = Object.assign(txOpts, flags);
+              server.createTx(txOpts, function(err, tx) {
+                should.exist(err);
+                err.code.should.equal('INSUFFICIENT_ETH_FEE');
+                err.message.should.equal('Your linked ETH wallet does not have enough ETH for fee');
+                server.getBalance({ tokenAddress: txOpts.tokenAddress }, function(err, balance) {
+                  should.not.exist(err);
+                  balance.totalAmount.should.equal(2 * ts );
+                  balance.lockedAmount.should.equal(0);
+                  txOpts.outputs[0].amount = 1 * ts;
+                  done();
+                });
+              });
+            });
+          });
+        }
 
         if (coin != 'eth') {
           it('should fail to create tx for dust amount in outputs', function(done) {

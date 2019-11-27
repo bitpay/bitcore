@@ -13,7 +13,7 @@ const errors = {
   ONLY_CASHADDR: 'Only cashaddr wo prefix is allowed for outputs',
   INSUFFICIENT_FUNDS: 'Insufficient funds',
   INSUFFICIENT_FUNDS_FOR_FEE: 'Insufficient funds for fee',
-  INSUFFICIENT_ETH_FEE: 'Your linked ETH wallet does not have enough ETH for fee.',
+  INSUFFICIENT_ETH_FEE: 'Your linked ETH wallet does not have enough ETH for fee',
   INVALID_ADDRESS: 'Invalid address',
   INVALID_CHANGE_ADDRESS: 'Invalid change address',
   KEY_IN_COPAYER: 'Key already registered',
