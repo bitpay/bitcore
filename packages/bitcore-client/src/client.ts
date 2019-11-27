@@ -123,12 +123,13 @@ export class Client {
   async getFee(params) {
     const { target } = params;
     const url = `${this.apiUrl}/fee/${target}`;
+    console.log(url);
     return new Promise(resolve =>
       request
         .get(url, {
           json: true
         })
-        .on('data', d => resolve(d.toString()))
+        .on('data', d => resolve(d))
     );
   }
 
