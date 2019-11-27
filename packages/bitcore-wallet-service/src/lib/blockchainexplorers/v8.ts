@@ -2,6 +2,7 @@ import * as async from 'async';
 import _ from 'lodash';
 import * as request from 'request-promise-native';
 import io = require('socket.io-client');
+import Web3 from 'web3';
 import { ChainService } from '../chain/index';
 import { Client } from './v8/client';
 
@@ -540,7 +541,7 @@ export class V8 {
       let amount;
       if (tx.abiType && tx.abiType.type === 'ERC20') {
         tokenAddress = tx.to;
-        address = tx.abiType.params[0].value;
+        address = Web3.utils.toChecksumAddress(tx.abiType.params[0].value);
         amount = tx.abiType.params[1].value;
       } else {
         address = tx.to;
