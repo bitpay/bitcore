@@ -81,6 +81,8 @@ r.on('end', () => {
     // v8 field name differences
     if (tx.value)
     tx.amount = tx.satoshis / 1e8;
+    if (tx.abiType)
+      tx.abiType = JSON.stringify(tx.abiType);
 
     if (tx.height >= 0)
       txs.push(tx);
