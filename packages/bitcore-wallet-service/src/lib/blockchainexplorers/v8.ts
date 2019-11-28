@@ -2,7 +2,7 @@ import * as async from 'async';
 import _ from 'lodash';
 import * as request from 'request-promise-native';
 import io = require('socket.io-client');
-import Web3 from 'web3';
+import { Web3 }  from 'crypto-wallet-core';
 import { ChainService } from '../chain/index';
 import { Client } from './v8/client';
 
