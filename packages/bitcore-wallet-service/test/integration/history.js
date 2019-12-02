@@ -949,30 +949,37 @@ describe('History', function() {
         done();
       });
     });
-    it.skip('should handle invalid tx in  history ', function(done) {
-      var h = _.clone(TestData.history);
-      h.push({
-        txid: 'xx'
-      })
-      helpers.stubHistory(h, BCHEIGHT);
-      var l = TestData.history.length;
+
+    it('should handle ETH/w ERC20 history  history ', function(done) {
+      helpers.stubHistory();
+      helpers.stubHistory(null, null, TestData.historyETH);
 
       server.getTxHistory({}, function(err, txs) {
         should.not.exist(err);
-        should.exist(txs);
-        txs.length.should.equal(l + 1);
-        txs[l].action.should.equal('invalid');
+        should.exist(txs)
+        txs.length.should.equal(9);
+        txs[2].should.deep.equal({
+          id: '5ddbf28d4ff191801711a948',
+          txid:
+          '0xf992febe3257518c00c09ae96cafe988dfe5b625bbf5515b679807f650f58e88',
+          confirmations: 0,
+          blockheight: 8999242,
+          fees: 1100740000000000,
+          time: 1574695599,
+          size: undefined,
+          amount: 0,
+          action: 'sent',
+          addressTo: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+          outputs:
+          [ { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+            amount: 0 } ],
+          dust: false,
+          lowFees: false,
+        });
         done();
       });
     });
-    it.skip('should handle exceeded limit', function(done) {
-      server.getTxHistory({
-        limit: 1000
-      }, function(err, txs) {
-        err.code.should.equal('HISTORY_LIMIT_EXCEEDED');
-        done();
-      });
-    });
+
     it.skip('should set lowFees atribute for sub-superEconomy level fees on unconfirmed txs', function(done) {
       helpers.stubFeeLevels({
         24: 10000,

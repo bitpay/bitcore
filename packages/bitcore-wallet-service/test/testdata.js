@@ -151,123 +151,121 @@ var copayers = [{
 }, ];
 
 
-var history = [{
-  txid: "0279ef7b21630f859deb723e28beac9e7011660bd1346c2da40321d2f7e34f04",
-  vin: [{
-    txid: "c8e221141e8bb60977896561b77fa59d6dacfcc10db82bf6f5f923048b11c70d",
-    vout: 0,
-    n: 0,
-    addr: "2N6Zutg26LEC4iYVxi7SHhopVLP1iZPU1rZ",
-    valueSat: 485645,
-    value: 0.00485645,
-  }, {
-    txid: "6e599eea3e2898b91087eb87e041c5d8dec5362447a8efba185ed593f6dc64c0",
-    vout: 1,
-    n: 1,
-    addr: "2MyqmcWjmVxW8i39wdk1CVPdEqKyFSY9H1S",
-    valueSat: 885590,
-    value: 0.0088559,
-  }],
-  vout: [{
-    value: "0.00045753",
-    n: 0,
-    scriptPubKey: {
-      addresses: [
-        "2NAVFnsHqy5JvqDJydbHPx393LFqFFBQ89V"
-      ]
-    },
-  }, {
-    value: "0.01300000",
-    n: 1,
-    scriptPubKey: {
-      addresses: [
-        "mq4D3Va5mYHohMEHrgHNGzCjKhBKvuEhPE"
-      ]
-    }
-  }],
-  confirmations: 0,
-  firstSeenTs: 1424471000,
-  valueOut: 0.01345753,
-  valueIn: 0.01371235,
-  fees: 0.00025482
-}, {
-  txid: "0279ef7b21630f859deb723e28beac9e7011660bd1346c2da40321d2f7e34f04",
-  vin: [{
-    txid: "c8e221141e8bb60977896561b77fa59d6dacfcc10db82bf6f5f923048b11c70d",
-    vout: 0,
-    n: 0,
-    addr: "2N6Zutg26LEC4iYVxi7SHhopVLP1iZPU1rZ",
-    valueSat: 485645,
-    value: 0.00485645,
-  }, {
-    txid: "6e599eea3e2898b91087eb87e041c5d8dec5362447a8efba185ed593f6dc64c0",
-    vout: 1,
-    n: 1,
-    addr: "2MyqmcWjmVxW8i39wdk1CVPdEqKyFSY9H1S",
-    valueSat: 885590,
-    value: 0.0088559,
-  }],
-  vout: [{
-    value: "0.00045753",
-    n: 0,
-    scriptPubKey: {
-      addresses: [
-        "2NAVFnsHqy5JvqDJydbHPx393LFqFFBQ89V"
-      ]
-    },
-  }, {
-    value: "0.01300000",
-    n: 1,
-    scriptPubKey: {
-      addresses: [
-        "mq4D3Va5mYHohMEHrgHNGzCjKhBKvuEhPE"
-      ]
-    }
-  }],
-  confirmations: 2,
-  firstSeenTs: 1424471041,
-  blocktime: 1424471051,
-  valueOut: 0.01345753,
-  valueIn: 0.01371235,
-  fees: 0.00025482
-}, {
-  txid: "fad88682ccd2ff34cac6f7355fe9ecd8addd9ef167e3788455972010e0d9d0de",
-  vin: [{
-    txid: "0279ef7b21630f859deb723e28beac9e7011660bd1346c2da40321d2f7e34f04",
-    vout: 0,
-    n: 0,
-    addr: "2NAVFnsHqy5JvqDJydbHPx393LFqFFBQ89V",
-    valueSat: 45753,
-    value: 0.00045753,
-  }],
-  vout: [{
-    value: "0.00011454",
-    n: 0,
-    scriptPubKey: {
-      addresses: [
-        "2N7GT7XaN637eBFMmeczton2aZz5rfRdZso"
-      ]
-    }
-  }, {
-    value: "0.00020000",
-    n: 1,
-    scriptPubKey: {
-      addresses: [
-        "mq4D3Va5mYHohMEHrgHNGzCjKhBKvuEhPE"
-      ]
-    }
-  }],
-  confirmations: 1,
-  time: 1424472242,
-  blocktime: 1424472242,
-  valueOut: 0.00031454,
-  valueIn: 0.00045753,
-  fees: 0.00014299
-}];
-
 
 
 
 module.exports.keyPair = keyPair;
 module.exports.copayers = copayers;
-module.exports.history = history;
+module.exports.historyETH = 
+[ { id: '5ddbf1894ff1918017104cf4',
+    txid:
+     '0x0a0705762b283daf5ec1f6576d57befd7ee12070ee6372553b926abfa85996c4',
+    fee: 420000000000000,
+    category: 'receive',
+    satoshis: 68054988430651970,
+    height: -1,
+    from: '0xEca2486A6A213fb40537658D7360AB6221EB26bE',
+    address: '0x0B178eE619D7DFe9925fBBf66ab8C15Da5dccA8E',
+    blockTime: '2019-11-25T15:21:45.534Z',
+    internal: [] },
+  { id: '5ddd367f4ff1918017f4def1',
+    txid:
+     '0x509364c953ac8b97cc9e7fbcbb28f8d87381d897004cfd5a22adb3d315e6ceba',
+    fee: 273000000000000,
+    category: 'receive',
+    satoshis: 6900835001035125,
+    height: 9004662,
+    from: '0xEca2486A6A213fb40537658D7360AB6221EB26bE',
+    address: '0x0B178eE619D7DFe9925fBBf66ab8C15Da5dccA8E',
+    blockTime: '2019-11-26T14:28:39.000Z',
+    internal: [] },
+  { id: '5ddbf28d4ff191801711a948',
+    txid:
+     '0xf992febe3257518c00c09ae96cafe988dfe5b625bbf5515b679807f650f58e88',
+    fee: 1100740000000000,
+    category: 'send',
+    satoshis: 0,
+    height: 8999242,
+    from: '0x0B178eE619D7DFe9925fBBf66ab8C15Da5dccA8E',
+    address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+    blockTime: '2019-11-25T15:26:39.000Z',
+    internal: [],
+    abiType:
+     '{"type":"ERC20","name":"transfer","params":[{"name":"_to","value":"0xeca2486a6a213fb40537658d7360ab6221eb26be","type":"address"},{"name":"_tokenId","value":"3000000","type":"uint256"}]}' },
+  { id: '5ddbf1894ff1918017104cef',
+    txid:
+     '0x0a0705762b283daf5ec1f6576d57befd7ee12070ee6372553b926abfa85996c4',
+    fee: 420000000000000,
+    category: 'receive',
+    satoshis: 68054988430651970,
+    height: 8999223,
+    from: '0xEca2486A6A213fb40537658D7360AB6221EB26bE',
+    address: '0x0B178eE619D7DFe9925fBBf66ab8C15Da5dccA8E',
+    blockTime: '2019-11-25T15:21:58.000Z',
+    internal: [] },
+  { id: '5d9363793fc0324dcc90fca6',
+    txid:
+     '0xf71539aec2e47751206fa03386c1cd6f4eb88cc077a67fb78434ce68f3e8c341',
+    fee: 252000000000000,
+    category: 'send',
+    satoshis: -748000000000000,
+    height: 8657023,
+    from: '0x0B178eE619D7DFe9925fBBf66ab8C15Da5dccA8E',
+    address: '0x93878cBE6a23aeBA4b1902E0B650b6dC61ee5823',
+    blockTime: '2019-10-01T14:31:17.000Z',
+    internal: [] },
+  { id: '5d935f173fc0324dcc8d206e',
+    txid:
+     '0x09349b777a0609d980566aa388b1dc964a0a7d7571532764f359728ad480317c',
+    fee: 60000000000000000,
+    category: 'receive',
+    satoshis: 1000000000000000,
+    height: 8656927,
+    from: '0x93878cBE6a23aeBA4b1902E0B650b6dC61ee5823',
+    address: '0x0B178eE619D7DFe9925fBBf66ab8C15Da5dccA8E',
+    blockTime: '2019-10-01T14:10:52.000Z',
+    internal: [] },
+  { id: '5d92a0cb3fc0324dcce80d5c',
+    txid:
+     '0x3bdbfd91b7e470d85f2741c0082cb4710493d79e6b60e5374a66d144598c7bfb',
+    fee: 210000000000000,
+    category: 'send',
+    satoshis: -7328000000000000,
+    height: 8653342,
+    from: '0x0B178eE619D7DFe9925fBBf66ab8C15Da5dccA8E',
+    address: '0x93878cBE6a23aeBA4b1902E0B650b6dC61ee5823',
+    blockTime: '2019-10-01T00:41:15.000Z',
+    internal: [] },
+  { id: '5d92768d3fc0324dccc4ca05',
+    txid:
+     '0xe1d6adbad056def4abb4db4ce3d5f1a2f9b3b4e193b8ab2acf685f634161e804',
+    fee: 252000000000000,
+    category: 'send',
+    satoshis: -1000000000000000,
+    height: 8652525,
+    from: '0x0B178eE619D7DFe9925fBBf66ab8C15Da5dccA8E',
+    address: '0x93878cBE6a23aeBA4b1902E0B650b6dC61ee5823',
+    blockTime: '2019-09-30T21:40:25.000Z',
+    internal: [] },
+  { id: '5d92715b3fc0324dccc07ec4',
+    txid:
+     '0x363904fb298a2ccc8d08b9445fcc985bf54ef4180485dfe06a1a4a3c28949ff2',
+    fee: 210000000000000,
+    category: 'send',
+    satoshis: -1000000000000000,
+    height: 8652434,
+    from: '0x0B178eE619D7DFe9925fBBf66ab8C15Da5dccA8E',
+    address: '0x93878cBE6a23aeBA4b1902E0B650b6dC61ee5823',
+    blockTime: '2019-09-30T21:18:12.000Z',
+    internal: [] },
+  { id: '5d925d5c3fc0324dccafa286',
+    txid:
+     '0x8bcb795dcbd711898157dedf0cd0d4215f87cfc0fc0b0a9eb6a5d71f57a6bd0d',
+    fee: 605000000000000,
+    category: 'receive',
+    satoshis: 10000000000000000,
+    height: 8652063,
+    from: '0x93878cBE6a23aeBA4b1902E0B650b6dC61ee5823',
+    address: '0x0B178eE619D7DFe9925fBBf66ab8C15Da5dccA8E',
+    blockTime: '2019-09-30T19:53:38.000Z',
+    internal: [] } ];
