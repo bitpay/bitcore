@@ -5,9 +5,9 @@ import { CoinStorage } from '../../src/models/coin';
 import { Storage } from '../../src/services/storage';
 import { Config } from '../../src/services/config';
 import { BitcoinBlockStorage } from '../../src/models/block';
-import { validateDataForBlock } from './db-verify';
 import { TransactionStorage } from '../../src/models/transaction';
 import { Verification } from '../../src/services/verification';
+import { Modules } from '../../src/modules';
 
 (async () => {
   const { CHAIN, NETWORK, FILE, DRYRUN } = process.env;
@@ -18,6 +18,8 @@ import { Verification } from '../../src/services/verification';
   const chain = CHAIN || '';
   const network = NETWORK || '';
   await Storage.start();
+  Modules.loadConfigured();
+
   const chainConfig = Config.chainConfig({ chain, network });
   const workerClass = Verification.get(chain);
   const worker = new workerClass({ chain, network, chainConfig });
@@ -99,7 +101,7 @@ import { Verification } from '../../src/services/verification';
       case 'COIN_SHOULD_BE_SPENT':
       case 'NEG_FEE':
         const blockHeight = Number(data.payload.blockNum);
-        let { success } = await validateDataForBlock(blockHeight, tip!.height);
+        let { success } = await worker.validateDataForBlock(blockHeight, tip!.height);
         if (success) {
           console.log('No errors found, repaired previously');
           return;
@@ -110,7 +112,7 @@ import { Verification } from '../../src/services/verification';
         } else {
           console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
           await worker.resync(blockHeight - 1, blockHeight + 1);
-          let { success, errors } = await validateDataForBlock(blockHeight, tip!.height);
+          let { success, errors } = await worker.validateDataForBlock(blockHeight, tip!.height);
           if (success) {
             console.log('REPAIR SOLVED ISSUE');
           } else {
