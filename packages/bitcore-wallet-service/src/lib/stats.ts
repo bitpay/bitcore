@@ -136,10 +136,12 @@ export class Stats {
             log.error('Update wallet stats throws error:', err);
             return cb(err);
           }
-          try {
-            await this.db.collection('stats_wallets').insertMany(res, { ordered: false });
-          } catch (err) {
-            log.error('Cannot insert into stats_wallets:', err);
+          if (res.length !== 0) {
+            try {
+              await this.db.collection('stats_wallets').insertMany(res, { ordered: false });
+            } catch (err) {
+              log.error('Cannot insert into stats_wallets:', err);
+            }
           }
           return cb();
         });
@@ -218,8 +220,8 @@ export class Stats {
             {
               $match: {
                 ts: {
-                  $gt: from.valueOf() / 1000,
-                  $lt: yesterday.valueOf() / 1000
+                  $gt: from.valueOf(),
+                  $lt: yesterday.valueOf()
                 },
                 code: 'USD'
               }
@@ -246,10 +248,12 @@ export class Stats {
             log.error('Update fiat rates stats throws error:', err);
             return cb(err);
           }
-          try {
-            await this.db.collection('stats_fiat_rates').insertMany(res, { ordered: false });
-          } catch (err) {
-            log.error('Cannot insert into stats_fiat_rates:', err);
+          if (res.length !== 0) {
+            try {
+              await this.db.collection('stats_fiat_rates').insertMany(res, { ordered: false });
+            } catch (err) {
+              log.error('Cannot insert into stats_fiat_rates:', err);
+            }
           }
           return cb();
         });
@@ -271,16 +275,15 @@ export class Stats {
         .toArray((err, results) => {
           if (err) return cb(err);
           const stats = {
-            byDay: [],
+            byDay: _.map(results, (record) => {
+              const day = moment(record._id.day).format('YYYYMMDD');
+              return {
+                day,
+                coin: record._id.coin,
+                value: record._id.value,
+              };
+            })
           };
-          _.each(results, (record) => {
-            const day = moment(record._id.day).format('YYYYMMDD');
-            stats.byDay.push({
-              day,
-              coin: record._id.coin,
-              value: record._id.value
-            });
-          });
           return cb(null, stats);
         });
     };
@@ -357,10 +360,12 @@ export class Stats {
             log.error('Update txps stats throws error:', err);
             return cb(err);
           }
-          try {
-            await this.db.collection('stats_txps').insertMany(res, { ordered: false });
-          } catch (err) {
-            log.error('Cannot insert into stats_txps:', err);
+          if (res.length !== 0) {
+            try {
+              await this.db.collection('stats_txps').insertMany(res, { ordered: false });
+            } catch (err) {
+              log.error('Cannot insert into stats_txps:', err);
+            }
           }
           return cb();
         });
