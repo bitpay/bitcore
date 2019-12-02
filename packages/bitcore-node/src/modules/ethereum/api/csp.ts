@@ -109,7 +109,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       gasPrices.push(blockGasPrices[lowGasPriceIndex]);
     }
     const estimate = Math.max(...gasPrices, gethGasPrice);
-    return { feerate: estimate };
+    return { feerate: estimate, blocks: target };
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
