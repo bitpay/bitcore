@@ -361,6 +361,13 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
     return cb();
   }
 
+  if (opts.tokenAddress) {
+    amounts = _.isArray(amounts) ? amounts : [amounts];
+    blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: 2e6, balance: 2e6 });
+    blockchainExplorer.estimateFee = sinon.stub().callsArgWith(1, null, 20000000000);
+    return cb();
+  }
+
   if (!helpers._utxos) helpers._utxos = {};
 
   var S = Bitcore_[wallet.coin].Script;
