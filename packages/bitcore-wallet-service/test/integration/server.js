@@ -8673,7 +8673,7 @@ describe('#createTX ETH Only tests', () => {
     beforeEach(function(done) {
       sandbox = sinon.createSandbox();
       helpers.createAndJoinWallet(1, 1, {
-        coin: 'usdc',
+        coin: 'eth',
       }, function(s, w) {
         server = s;
         wallet = w;
@@ -8703,12 +8703,18 @@ describe('#createTX ETH Only tests', () => {
           should.exist(err);
           err.code.should.equal('INSUFFICIENT_ETH_FEE');
           err.message.should.equal('Your linked ETH wallet does not have enough ETH for fee');
-          server.getBalance({ tokenAddress: txOpts.tokenAddress }, function(err, balance) {
+          server.getBalance({ tokenAddress: txOpts.tokenAddress }, function(err, tokenBalance) {
             should.not.exist(err);
-            balance.totalAmount.should.equal(2 * ts );
-            balance.lockedAmount.should.equal(0);
+            tokenBalance.totalAmount.should.equal(2 * ts );
+            tokenBalance.lockedAmount.should.equal(0);
             txOpts.outputs[0].amount = 1 * ts;
-            done();
+            server.getBalance({}, function(err, ethBalance) {
+              should.not.exist(err);
+              ethBalance.should.not.equal(tokenBalance);
+              ethBalance.totalAmount.should.equal(0);
+              ethBalance.lockedAmount.should.equal(0);
+              done();
+            });
           });
         });
       });
