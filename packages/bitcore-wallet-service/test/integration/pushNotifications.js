@@ -17,6 +17,7 @@ var { PushNotificationsService } = require('../../ts_build/lib/pushnotifications
 
 var TestData = require('../testdata');
 var helpers = require('./helpers');
+const TOKENS = ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'];
 
 describe('Push notifications', function() {
   var server, wallet, requestStub, pushNotificationsService, walletId;
@@ -559,6 +560,95 @@ describe('Push notifications', function() {
             done();
           });
         }, 100);
+      });
+    });
+  });
+
+  describe('ERC20 wallet', () => {
+    beforeEach((done) => {
+
+      helpers.beforeEach((res) => {
+        helpers.createAndJoinWallet(1, 1, { coin: 'eth' }, (s, w) => {
+          server = s;
+          wallet = w;
+
+          var i = 0;
+          async.eachSeries(w.copayers, function(copayer, next) {
+            helpers.getAuthServer(copayer.id, function(server) {
+              async.parallel([
+
+                function(done) {
+                  server.savePreferences({
+                    email: 'copayer' + (++i) + '@domain.com',
+                    language: 'en',
+                    unit: 'bit',
+                    tokenAddresses: TOKENS,
+                  }, done);
+                },
+                function(done) {
+                  server.pushNotificationsSubscribe({
+                    token: '1234',
+                    packageName: 'com.wallet',
+                    platform: 'Android',
+                  }, done);
+                },
+              ], next);
+
+            });
+          }, function(err) {
+            should.not.exist(err);
+
+            requestStub = sinon.stub();
+            requestStub.yields();
+
+            pushNotificationsService = new PushNotificationsService();
+            pushNotificationsService.start({
+              lockOpts: {},
+              messageBroker: server.messageBroker,
+              storage: helpers.getStorage(),
+              request: requestStub,
+              pushNotificationsOpts: {
+                templatePath: 'templates',
+                defaultLanguage: 'en',
+                defaultUnit: 'eth',
+                subjectPrefix: '',
+                pushServerUrl: 'http://localhost:8000',
+                authorizationKey: 'secret',
+              },
+            }, function(err) {
+              should.not.exist(err);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    // Provisional until ERC20 notifications are fixed
+    it('should not send notification if the tx is ERC20', (done) => {
+      server.savePreferences({
+        language: 'en',
+        unit: 'bit',
+      }, function(err) {
+        server.createAddress({}, (err, address) => {
+          should.not.exist(err);
+
+          // Simulate incoming tx notification
+          server._notify('NewIncomingTx', {
+            txid: '999',
+            address: address,
+            amount: 1230000000,
+            tokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+          }, {
+            isGlobal: false
+          }, (err) => {
+            setTimeout(function() {
+              var calls = requestStub.getCalls();
+              calls.length.should.equal(0);
+              done();
+            }, 100);
+          });
+        });
       });
     });
   });

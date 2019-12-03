@@ -373,8 +373,10 @@ export class PushNotificationsService {
       bch: 'BCH',
       eth: 'ETH'
     };
-
     const data = _.cloneDeep(notification.data);
+
+    if (data.tokenAddress) return cb();
+
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
     if (data.amount) {
       try {
