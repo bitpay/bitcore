@@ -146,6 +146,14 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           confirmations = tipHeight - found.blockHeight + 1;
         }
         const convertedTx = EthTransactionStorage._apiTransform(found, { object: true }) as EthTransactionJSON;
+        if (convertedTx.blockHeight === SpentHeightIndicators.pending) {
+          const web3 = await this.getWeb3(network);
+          const web3Tx = await web3.eth.getTransaction(convertedTx.txid);
+          if (!web3Tx) {
+            await EthTransactionStorage.collection.deleteOne({ _id: found._id });
+            return undefined;
+          }
+        }
         return { ...convertedTx, confirmations: confirmations } as any;
       } else {
         return undefined;
