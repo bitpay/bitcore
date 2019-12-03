@@ -209,10 +209,9 @@ export class EthChain implements IChain {
         } else {
           if (opts.tokenAddress) {
             // ETH wallet balance
-            server.getBalance({ wallet }, (err, balance) => {
+            server.getBalance({}, (err, ethBalance) => {
               if (err) return next(err);
-
-              const { totalAmount, availableAmount } = balance;
+              const { totalAmount, availableAmount } = ethBalance;
               if (totalAmount < txp.fee) {
                 return cb(Errors.INSUFFICIENT_ETH_FEE);
               } else if (availableAmount < txp.fee) {

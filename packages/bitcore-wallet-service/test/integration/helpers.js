@@ -354,17 +354,22 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
   }
   opts = opts || {};
 
+  if (opts.tokenAddress) {
+    amounts = _.isArray(amounts) ? amounts : [amounts];
+    blockchainExplorer.getBalance = function(opts, cb) {
+      if (opts.tokenAddress) {
+        return cb(null, {unconfirmed:0, confirmed: 2e6, balance: 2e6 });
+      }
+      return cb(null, {unconfirmed:0, confirmed: 0, balance: 0 });
+    }
+    blockchainExplorer.estimateFee = sinon.stub().callsArgWith(1, null, 20000000000);
+    return cb();
+  }
+
   if (wallet.coin == 'eth') {
     amounts = _.isArray(amounts) ? amounts : [amounts];
     let conf =  _.sum(_.map(amounts, x =>  Number((x*1e18).toFixed(0))));
     blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: conf, balance: conf });
-    return cb();
-  }
-
-  if (opts.tokenAddress) {
-    amounts = _.isArray(amounts) ? amounts : [amounts];
-    blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: 2e6, balance: 2e6 });
-    blockchainExplorer.estimateFee = sinon.stub().callsArgWith(1, null, 20000000000);
     return cb();
   }
 
