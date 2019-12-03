@@ -195,6 +195,7 @@ export class Wallet {
 
   updateBEKeys() {
     $.checkState(this.isComplete());
+
     const chain = ChainService.getChain(this.coin).toLowerCase();
     const bitcore = Bitcore[chain];
     const salt = config.BE_KEY_SALT || Defaults.BE_KEY_SALT;
