@@ -1266,7 +1266,7 @@ export class WalletService {
             return cb(err);
           });
         });
-    });
+      });
     });
   }
 
@@ -4558,17 +4558,16 @@ export class WalletService {
       }
 
       req.body.account_details.app_provider_id = appProviderId;
-      req.body.account_details.app_install_date = '2018-01-03T15:23:12Z'; // TODO
       req.body.account_details.signup_login = { // TODO
         ip: '1.2.3.4',
-        location: '36.848460,-174.763332',
+        location: '',
         uaid:
-          'IBAnKPg1bdxRiT6EDkIgo24Ri8akYQpsITRKIueg+3XjxWqZlmXin7YJtQzuY4K73PWTZOvmuhIHu + ee8m4Cs4WLEqd2SvQS9jW59pMDcYu + Tpl16U / Ss3SrcFKnriEn4VUVKG9QnpAJGYB3JUAPx1y7PbAugNoC8LX0Daqg66E = ',
+          '',
         accept_language: 'de,en-US;q=0.7,en;q=0.3',
         http_accept_language: 'de,en-US;q=0.7,en;q=0.3',
-        user_agent: req.body.account_details ? req.body.account_details.signup_login.user_agent : '', // Format: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67.0) Gecko/20100101 Firefox/67.0'
-        cookie_session_id: '7r7rz_VfGC_viXTp5XPh5Bm--rWM6RyU',
-        timestamp: '2018-01-15T09:27:34.431Z'
+        user_agent: req.body.account_details.signup_login ? req.body.account_details.signup_login.user_agent : '', // Format: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67.0) Gecko/20100101 Firefox/67.0'
+        cookie_session_id: '',
+        timestamp: req.body.account_details.signup_login ? req.body.account_details.signup_login.timestamp : '',
       };
 
       req.body.transaction_details.payment_details.payment_id = paymentId;
