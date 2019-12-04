@@ -625,34 +625,6 @@ describe('Push notifications', function() {
       });
     });
 
-    // Provisional until ERC20 notifications are fixed
-    it.skip('should not send notification if the tx is ERC20', (done) => {
-      server.savePreferences({
-        language: 'en',
-        unit: 'bit',
-      }, function(err) {
-        server.createAddress({}, (err, address) => {
-          should.not.exist(err);
-
-          // Simulate incoming tx notification
-          server._notify('NewIncomingTx', {
-            txid: '999',
-            address: address,
-            amount: 1230000000,
-            tokenAddress: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
-          }, {
-            isGlobal: true
-          }, (err) => {
-            setTimeout(function() {
-              var calls = requestStub.getCalls();
-              calls.length.should.equal(0);
-              done();
-            }, 100);
-          });
-        });
-      });
-    });
-
     it('should send notification if the tx is USDC', (done) => {
       server.savePreferences({
         language: 'en',
