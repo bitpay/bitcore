@@ -119,6 +119,21 @@ export class Utils {
         toSatoshis: 1e18,
         maxDecimals: 6,
         minDecimals: 2
+      },
+      usdc: {
+        toSatoshis: 1e6,
+        maxDecimals: 6,
+        minDecimals: 2,
+      },
+      pax: {
+        toSatoshis: 1e18,
+        maxDecimals: 6,
+        minDecimals: 2,
+      },
+      gusd: {
+        toSatoshis: 1e2,
+        maxDecimals: 6,
+        minDecimals: 2,
       }
     };
 
