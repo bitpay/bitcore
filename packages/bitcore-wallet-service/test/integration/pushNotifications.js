@@ -17,7 +17,7 @@ var { PushNotificationsService } = require('../../ts_build/lib/pushnotifications
 
 var TestData = require('../testdata');
 var helpers = require('./helpers');
-const TOKENS = ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0x8e870d67f660d95d5be530380d0ec0bd388289e1', '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'];
+const TOKENS = ['0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0x8E870D67F660D95d5be530380D0eC0bd388289E1', '0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd'];
 
 
 describe('Push notifications', function() {

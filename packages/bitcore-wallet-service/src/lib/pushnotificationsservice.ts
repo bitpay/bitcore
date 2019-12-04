@@ -382,7 +382,7 @@ export class PushNotificationsService {
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
     if (data.amount) {
       try {
-        const unit = data.tokenAddress ? Constants.TOKEN_OPTS[data.tokenAddress].symbol.toLowerCase() : recipient.unit.toLowerCase();
+        const unit = data.tokenAddress ? Constants.TOKEN_OPTS[data.tokenAddress.toLowerCase()].symbol.toLowerCase() : recipient.unit.toLowerCase();
         data.amount =
           Utils.formatAmount(+data.amount, unit) + ' ' + UNIT_LABELS[unit];
       } catch (ex) {
