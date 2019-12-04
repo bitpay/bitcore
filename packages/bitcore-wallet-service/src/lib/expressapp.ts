@@ -947,45 +947,32 @@ export class ExpressApp {
     });
 
     router.post('/service/simplex/quote', (req, res) => {
-      let server;
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      server.simplexGetQuote(req).then(response => {
-        res.json(response);
-      }).catch(err => {
-        if (err) return returnError(err, res, req);
+      getServerWithAuth(req, res, (server) => {
+        server.simplexGetQuote(req).then(response => {
+          res.json(response);
+        }).catch(err => {
+          if (err) return returnError(err, res, req);
+        });
       });
     });
 
     router.post('/service/simplex/paymentRequest', (req, res) => {
-      let server;
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      server.simplexPaymentRequest(req).then(response => {
-        res.json(response);
-      }).catch(err => {
-        if (err) return returnError(err, res, req);
+      getServerWithAuth(req, res, (server) => {
+        server.simplexPaymentRequest(req).then(response => {
+          res.json(response);
+        }).catch(err => {
+          if (err) return returnError(err, res, req);
+        });
       });
     });
 
     router.get('/service/simplex/events', (req, res) => {
-      let server;
-      const opts = { env: req.query.env };
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      server.simplexGetEvents(opts).then(response => {
-        res.json(response);
-      }).catch(err => {
-        if (err) return returnError(err, res, req);
+      getServerWithAuth(req, res, (server) => {
+        server.simplexGetEvents(req).then(response => {
+          res.json(response);
+        }).catch(err => {
+          if (err) return returnError(err, res, req);
+        });
       });
     });
 
