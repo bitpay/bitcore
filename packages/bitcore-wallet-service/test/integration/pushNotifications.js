@@ -645,6 +645,11 @@ describe('Push notifications', function() {
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(1);
+              var args = _.map(_.takeRight(calls, 2), function(c) {
+                return c.args[0];
+              });
+              args[0].body.notification.title.should.contain('New payment received');
+              args[0].body.notification.body.should.contain('4.00');
               done();
             }, 100);
           });
@@ -653,7 +658,7 @@ describe('Push notifications', function() {
     });
     it('should send notification if the tx is PAX', (done) => {
       server.savePreferences({
-        language: 'en',
+        language: 'es',
         unit: 'bit',
       }, function(err) {
         server.createAddress({}, (err, address) => {
@@ -671,6 +676,11 @@ describe('Push notifications', function() {
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(1);
+              var args = _.map(_.takeRight(calls, 2), function(c) {
+                return c.args[0];
+              });
+              args[0].body.notification.title.should.contain('Nuevo pago recibido');
+              args[0].body.notification.body.should.contain('4.00');
               done();
             }, 100);
           });
@@ -697,6 +707,11 @@ describe('Push notifications', function() {
             setTimeout(function() {
               var calls = requestStub.getCalls();
               calls.length.should.equal(1);
+              var args = _.map(_.takeRight(calls, 2), function(c) {
+                return c.args[0];
+              });
+              args[0].body.notification.title.should.contain('New payment received');
+              args[0].body.notification.body.should.contain('4.00');
               done();
             }, 100);
           });
