@@ -16,12 +16,16 @@ import { ERC721Abi } from '../abi/erc721';
 import { ERC20Abi } from '../abi/erc20';
 import { BaseTransaction } from '../../../models/baseTransaction';
 import { valueOrDefault } from '../../../utils/check';
+import { InvoiceAbi } from '../abi/invoice';
 
 const Erc20Decoder = require('abi-decoder');
 Erc20Decoder.addABI(ERC20Abi);
 
 const Erc721Decoder = require('abi-decoder');
 Erc721Decoder.addABI(ERC721Abi);
+
+const InvoiceDecoder = require('abi-decoder');
+InvoiceDecoder.addABI(InvoiceAbi);
 
 @LoggifyClass
 export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
@@ -178,29 +182,28 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   }
 
   abiDecode(input: string) {
-    try {
-      try {
-        const decodedData = Erc20Decoder.decodeMethod(input);
-        if (!decodedData || decodedData.length === 0) {
-          throw new Error();
-        }
-        return {
-          type: 'ERC20',
-          ...decodedData
-        };
-      } catch {
-        const decodedData = Erc721Decoder.decodeMethod(input);
-        if (!decodedData || decodedData.length === 0) {
-          throw new Error();
-        }
-        return {
-          type: 'ERC721',
-          ...decodedData
-        };
-      }
-    } catch {
-      return undefined;
+    const erc20Data = Erc20Decoder.decodeMethod(input);
+    if (erc20Data && erc20Data.length !== 0) {
+      return {
+        type: 'ERC20',
+        ...erc20Data
+      };
     }
+    const erc721Data = Erc721Decoder.decodeMethod(input);
+    if (erc721Data && erc721Data.length !== 0) {
+      return {
+        type: 'ERC721',
+        ...erc721Data
+      };
+    }
+    const invoiceData = InvoiceDecoder.decodeMethod(input);
+    if (invoiceData && invoiceData.length !== 0) {
+      return {
+        type: 'INVOICE',
+        ...invoiceData
+      };
+    }
+    return undefined;
   }
 
   _apiTransform(
