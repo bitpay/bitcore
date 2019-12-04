@@ -221,7 +221,7 @@ export class WalletService {
   }
 
   static handleIncomingNotifications(notification, cb) {
-    cb = cb || function () { };
+    cb = cb || function() { };
 
     // do nothing here....
     // bc height cache is cleared on bcmonitor
@@ -848,7 +848,7 @@ export class WalletService {
 
     // this.logi('Notification', type);
 
-    cb = cb || function () { };
+    cb = cb || function() { };
 
     const walletId = this.walletId || data.walletId;
     const copayerId = this.copayerId || data.copayerId;
@@ -4517,8 +4517,9 @@ export class WalletService {
 
       const API = config.simplex[req.body.env].api;
       const API_KEY = config.simplex[req.body.env].apiKey;
+      const ip = req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
 
-      req.body.client_ip = '1.2.3.4'; // TODO
+      req.body.client_ip = ip;
       req.body.wallet_id = config.simplex[req.body.env].appProviderId;
 
       const headers = {
@@ -4552,14 +4553,15 @@ export class WalletService {
       const paymentId = Uuid.v4();
       const orderId = Uuid.v4();
       const apiHost = config.simplex[req.body.env].api;
+      const ip = req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
 
       if (!req.body.account_details || !req.body.transaction_details) {
         return reject(new Error('Simplex\'s request missing arguments'));
       }
 
       req.body.account_details.app_provider_id = appProviderId;
-      req.body.account_details.signup_login = { // TODO
-        ip: '1.2.3.4',
+      req.body.account_details.signup_login = {
+        ip,
         location: '',
         uaid:
           '',
