@@ -78,7 +78,7 @@ export class API extends EventEmitter {
     this.bp_partner = opts.bp_partner;
     this.bp_partner_version = opts.bp_partner_version;
 
-    this.request = new Request(opts.baseUrl || BASE_URL, { 
+    this.request = new Request(opts.baseUrl || BASE_URL, {
       r: opts.request,
       supportStaffWalletId: opts.supportStaffWalletId,
     });
@@ -2666,7 +2666,7 @@ export class API extends EventEmitter {
   simplexGetQuote(data): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request
-        .post('/service/simplex/quote', data, (err, data) => {
+        .post('/v1/service/simplex/quote', data, (err, data) => {
           if (err) return reject(err);
           return resolve(data);
         });
@@ -2676,7 +2676,7 @@ export class API extends EventEmitter {
   simplexPaymentRequest(data): Promise<any> {
     return new Promise((resolve, reject) => {
       this.request
-        .post('/service/simplex/paymentRequest', data, (err, data) => {
+        .post('/v1/service/simplex/paymentRequest', data, (err, data) => {
           if (err) return reject(err);
           return resolve(data);
         });
@@ -2689,7 +2689,7 @@ export class API extends EventEmitter {
       qs.push('env=' + data.env);
 
       this.request
-        .get('/service/simplex/events/?' + qs.join('&'), (err, data) => {
+        .get('/v1/service/simplex/events/?' + qs.join('&'), (err, data) => {
           if (err) return reject(err);
           return resolve(data);
         });

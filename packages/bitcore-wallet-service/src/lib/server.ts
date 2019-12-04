@@ -4513,6 +4513,7 @@ export class WalletService {
 
   simplexGetQuote(req): Promise<any> {
     return new Promise((resolve, reject) => {
+      if (!config.simplex) return reject(new Error('Simplex missing credentials'));
       if (!req.body.env || (req.body.env != 'sandbox' && req.body.env != 'production')) return reject(new Error('Simplex\'s request wrong environment'));
 
       const API = config.simplex[req.body.env].api;
@@ -4545,6 +4546,7 @@ export class WalletService {
 
   simplexPaymentRequest(req): Promise<any> {
     return new Promise((resolve, reject) => {
+      if (!config.simplex) return reject(new Error('Simplex missing credentials'));
       if (!req.body.env || (req.body.env != 'sandbox' && req.body.env != 'production')) return reject(new Error('Simplex\'s request wrong environment'));
 
       const API = config.simplex[req.body.env].api;
@@ -4602,6 +4604,7 @@ export class WalletService {
 
   simplexGetEvents(req): Promise<any> {
     return new Promise((resolve, reject) => {
+      if (!config.simplex) return reject(new Error('Simplex missing credentials'));
       if (!req.env || (req.env != 'sandbox' && req.env != 'production')) return reject(new Error('Simplex\'s request wrong environment'));
 
       const API = config.simplex[req.env].api;

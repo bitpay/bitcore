@@ -73,18 +73,18 @@ module.exports = {
   maintenanceOpts: {
     maintenanceMode: false,
   },
-  simplex: {
-    sandbox: {
-      apiKey: 'simplex_sandbox_api_key_here',
-      api: 'https://sandbox.test-simplexcc.com',
-      appProviderId: 'simplex_provider_id_here'
-    },
-    production: {
-      apiKey: 'simplex_production_api_key_here',
-      api: 'https://backend-wallet-api.simplexcc.com',
-      appProviderId: 'simplex_provider_id_here'
-    }
-  },
+  // simplex: {
+  //   sandbox: {
+  //     apiKey: 'simplex_sandbox_api_key_here',
+  //     api: 'https://sandbox.test-simplexcc.com',
+  //     appProviderId: 'simplex_provider_id_here'
+  //   },
+  //   production: {
+  //     apiKey: 'simplex_production_api_key_here',
+  //     api: 'https://backend-wallet-api.simplexcc.com',
+  //     appProviderId: 'simplex_provider_id_here'
+  //   }
+  // },
   // To use email notifications uncomment this:
   // emailOpts: {
   //  host: 'localhost',

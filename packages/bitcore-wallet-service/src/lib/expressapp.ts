@@ -946,7 +946,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/service/simplex/quote', (req, res) => {
+    router.post('/v1/service/simplex/quote', (req, res) => {
       getServerWithAuth(req, res, (server) => {
         server.simplexGetQuote(req).then(response => {
           res.json(response);
@@ -956,7 +956,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/service/simplex/paymentRequest', (req, res) => {
+    router.post('/v1/service/simplex/paymentRequest', (req, res) => {
       getServerWithAuth(req, res, (server) => {
         server.simplexPaymentRequest(req).then(response => {
           res.json(response);
@@ -966,7 +966,7 @@ export class ExpressApp {
       });
     });
 
-    router.get('/service/simplex/events', (req, res) => {
+    router.get('/v1/service/simplex/events', (req, res) => {
       getServerWithAuth(req, res, (server) => {
         server.simplexGetEvents(req).then(response => {
           res.json(response);
