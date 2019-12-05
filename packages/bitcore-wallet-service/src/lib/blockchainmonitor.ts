@@ -226,14 +226,27 @@ export class BlockchainMonitor {
     let out = data.out;
     if (!out || !out.address || out.address.length < 10) return;
 
-    // For eth, amount = 0 is ok, repeating payments are ok (no change).
+    // For eth, amount = 0 is ok, repeating addr payments are ok (no change).
     if (coin != 'eth') {
       if (! (out.amount > 0)) return;
       if (this.last.indexOf(out.address) >= 0) {
+        log.debug(
+          'The incoming tx"s out ' + out.address + ' was already processed'
+        );
         return;
       }
       this.last[this.Ni++] = out.address;
       if (this.Ni >= this.N) this.Ni = 0;
+    } else if (coin == 'eth') {
+      if (this.lastTx.indexOf(data.txid) >= 0) {
+        log.debug(
+          'The incoming tx ' + data.txid + ' was already processed'
+        );
+        return;
+      }
+
+      this.lastTx[this.Nix++] = data.txid;
+      if (this.Nix >= this.N) this.Nix = 0;
     }
 
     log.debug(`Checking ${coin}:${network}:${out.address} ${out.amount}`);
@@ -248,16 +261,6 @@ export class BlockchainMonitor {
       }
 
       const walletId = address.walletId;
-      log.debug(
-        'Incoming tx for wallet ' +
-        walletId +
-        ' [' +
-        out.amount +
-        'amount -> ' +
-        out.address +
-        ']'
-      );
-
       const fromTs = Date.now() - 24 * 3600 * 1000;
       this.storage.fetchNotifications(walletId, null, fromTs, (
         err,
@@ -275,6 +278,18 @@ export class BlockchainMonitor {
           );
           return;
         }
+
+        log.debug(
+          'Incoming tx for wallet ' +
+          walletId +
+          ' [' +
+          out.amount +
+          'amount -> ' +
+          out.address +
+          ']'
+        );
+
+
 
         const notification = Notification.create({
           type: 'NewIncomingTx',
