@@ -78,7 +78,7 @@ export class API extends EventEmitter {
     this.bp_partner = opts.bp_partner;
     this.bp_partner_version = opts.bp_partner_version;
 
-    this.request = new Request(opts.baseUrl || BASE_URL, { 
+    this.request = new Request(opts.baseUrl || BASE_URL, {
       r: opts.request,
       supportStaffWalletId: opts.supportStaffWalletId,
     });
@@ -109,7 +109,7 @@ export class API extends EventEmitter {
   }
 
   _fetchLatestNotifications(interval, cb) {
-    cb = cb || function() {};
+    cb = cb || function () { };
 
     var opts: any = {
       lastNotificationId: this.lastNotificationId,
@@ -300,7 +300,7 @@ export class API extends EventEmitter {
       var words;
       try {
         words = c.getMnemonic();
-      } catch (ex) {}
+      } catch (ex) { }
 
       var xpriv;
       if (words && (!c.mnemonicHasPassphrase || opts.passphrase)) {
@@ -663,7 +663,7 @@ export class API extends EventEmitter {
         };
         t.inputs[i].addSignature(t, s);
         i++;
-      } catch (e) {}
+      } catch (e) { }
     });
 
     if (i != txp.inputs.length) throw new Error('Wrong signatures');
@@ -801,9 +801,9 @@ export class API extends EventEmitter {
 
     this.request.get(
       '/v2/feelevels/?coin=' +
-        (chain || 'btc') +
-        '&network=' +
-        (network || 'livenet'),
+      (chain || 'btc') +
+      '&network=' +
+      (network || 'livenet'),
       (err, result) => {
         if (err) return cb(err);
         return cb(err, result);
@@ -1534,9 +1534,9 @@ export class API extends EventEmitter {
               encryptedPkr: opts.doNotEncryptPkr
                 ? null
                 : Utils.encryptMessage(
-                    JSON.stringify(this.credentials.publicKeyRing),
-                    this.credentials.personalEncryptingKey
-                  ),
+                  JSON.stringify(this.credentials.publicKeyRing),
+                  this.credentials.personalEncryptingKey
+                ),
               unencryptedPkr: opts.doNotEncryptPkr
                 ? JSON.stringify(this.credentials.publicKeyRing)
                 : null,
@@ -2257,7 +2257,7 @@ export class API extends EventEmitter {
     var ret;
     try {
       ret = JSON.parse(decrypted);
-    } catch (e) {}
+    } catch (e) { }
     return ret;
   }
 
@@ -2449,10 +2449,10 @@ export class API extends EventEmitter {
 
       client.fromString(c);
       client.openWallet({}, (err, status) => {
-//        console.log(
-//          `PATH: ${c.rootPath} n: ${c.n}:`,
-//          err && err.message ? err.message : 'FOUND!'
-//        );
+        //        console.log(
+        //          `PATH: ${c.rootPath} n: ${c.n}:`,
+        //          err && err.message ? err.message : 'FOUND!'
+        //        );
 
         // Exists
         if (!err) {
@@ -2662,4 +2662,38 @@ export class API extends EventEmitter {
       }
     );
   }
+
+  simplexGetQuote(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request
+        .post('/v1/service/simplex/quote', data, (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        });
+    });
+  }
+
+  simplexPaymentRequest(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request
+        .post('/v1/service/simplex/paymentRequest', data, (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        });
+    });
+  }
+
+  simplexGetEvents(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      let qs = [];
+      qs.push('env=' + data.env);
+
+      this.request
+        .get('/v1/service/simplex/events/?' + qs.join('&'), (err, data) => {
+          if (err) return reject(err);
+          return resolve(data);
+        });
+    });
+  }
+
 }

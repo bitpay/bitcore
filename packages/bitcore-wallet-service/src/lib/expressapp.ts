@@ -946,6 +946,36 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/service/simplex/quote', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.simplexGetQuote(req).then(response => {
+          res.json(response);
+        }).catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+      });
+    });
+
+    router.post('/v1/service/simplex/paymentRequest', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.simplexPaymentRequest(req).then(response => {
+          res.json(response);
+        }).catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+      });
+    });
+
+    router.get('/v1/service/simplex/events', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.simplexGetEvents(req).then(response => {
+          res.json(response);
+        }).catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+      });
+    });
+
     this.app.use(opts.basePath || '/bws/api', router);
 
     WalletService.initialize(opts, cb);
