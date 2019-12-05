@@ -250,6 +250,16 @@ export class Utils {
     return v;
   }
 
+  static getIpFromReq(req): string {
+    if (req.headers) {
+      if (req.headers['x-forwarded-for']) return req.headers['x-forwarded-for'].split(',')[0];
+      if (req.headers['x-real-ip']) return req.headers['x-real-ip'].split(',')[0];
+    }
+    if (req.ip) return req.ip;
+    if (req.connection && req.connection.remoteAddress) return req.connection.remoteAddress;
+    return '';
+  }
+
   static checkValueInCollection(value, collection) {
     if (!value || !_.isString(value)) return false;
     return _.includes(_.values(collection), value);

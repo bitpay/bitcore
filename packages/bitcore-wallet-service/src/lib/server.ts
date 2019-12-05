@@ -101,6 +101,7 @@ export class WalletService {
   parsedClientVersion: { agent: string; major: number; minor: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
+  request;
 
   constructor() {
     if (!initialized) {
@@ -114,6 +115,9 @@ export class WalletService {
     this.messageBroker = messageBroker;
     this.fiatRateService = fiatRateService;
     this.notifyTicker = 0;
+    // for testing
+    //
+    this.request = request;
   }
   /**
    * Gets the current version of BWS
@@ -4518,7 +4522,7 @@ export class WalletService {
 
       const API = config.simplex[req.body.env].api;
       const API_KEY = config.simplex[req.body.env].apiKey;
-      const ip = req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
+      const ip = Utils.getIpFromReq(req);
 
       req.body.client_ip = ip;
       req.body.wallet_id = config.simplex[req.body.env].appProviderId;
@@ -4529,13 +4533,13 @@ export class WalletService {
       };
       delete req.body.env;
 
-      request.post(API + '/wallet/merchant/v2/quote', {
+      this.request.post(API + '/wallet/merchant/v2/quote', {
         headers,
         body: req.body,
         json: true
       }, (err, data) => {
         if (err) {
-          console.log('[simplexGetQuote.4503:err:]', err);
+          console.log('[simplexGetQuote.4542:err:]', err);
           return reject(err);
         } else {
           return resolve(data);
@@ -4555,9 +4559,9 @@ export class WalletService {
       const paymentId = Uuid.v4();
       const orderId = Uuid.v4();
       const apiHost = config.simplex[req.body.env].api;
-      const ip = req.headers['x-real-ip'] || req.connection.remoteAddress || req.ip;
+      const ip = Utils.getIpFromReq(req);
 
-      if (!req.body.account_details || !req.body.transaction_details) {
+      if (!req.body.account_details || !req.body.transaction_details || !req.body.transaction_details.payment_details) {
         return reject(new Error('Simplex\'s request missing arguments'));
       }
 
@@ -4565,8 +4569,7 @@ export class WalletService {
       req.body.account_details.signup_login = {
         ip,
         location: '',
-        uaid:
-          '',
+        uaid: '',
         accept_language: 'de,en-US;q=0.7,en;q=0.3',
         http_accept_language: 'de,en-US;q=0.7,en;q=0.3',
         user_agent: req.body.account_details.signup_login ? req.body.account_details.signup_login.user_agent : '', // Format: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67.0) Gecko/20100101 Firefox/67.0'
@@ -4583,13 +4586,13 @@ export class WalletService {
         'Authorization': 'ApiKey ' + API_KEY
       };
 
-      request.post(API + '/wallet/merchant/v2/payments/partner/data', {
+      this.request.post(API + '/wallet/merchant/v2/payments/partner/data', {
         headers,
         body: req.body,
         json: true
       }, (err, data) => {
         if (err) {
-          console.log('[simplexGetQuote.4530:err:]', err);
+          console.log('[simplexGetQuote.4595:err:]', err);
           return reject(err);
         } else {
           data.body.payment_id = paymentId;
@@ -4614,12 +4617,12 @@ export class WalletService {
         'Authorization': 'ApiKey ' + API_KEY
       };
 
-      request.get(API + '/wallet/merchant/v2/events', {
+      this.request.get(API + '/wallet/merchant/v2/events', {
         headers,
         json: true
       }, (err, data) => {
         if (err) {
-          console.log('[simplexGetEvents.4503:err:]', err);
+          console.log('[simplexGetEvents.4625:err:]', err);
           return reject(err);
         } else {
           return resolve(data);
