@@ -16,6 +16,8 @@ import { Transaction } from 'web3/eth/types';
 import { EventLog } from 'web3/types';
 import { partition } from '../../../utils/partition';
 import { WalletAddressStorage } from '../../../models/walletAddress';
+import { Etherscan } from './etherscan';
+import { Infura } from './infura';
 
 interface ERC20Transfer extends EventLog {
   returnValues: {
@@ -168,6 +170,12 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           .on('transactionHash', resolve)
           .on('error', reject)
           .catch(e => reject(e));
+        if (Etherscan.supportsNetwork(network)) {
+          Etherscan.broadcast(network, tx);
+        }
+        if (Infura.supportsNetwork(network)) {
+          Infura.broadcast(network, tx);
+        }
       });
       txids.push(txid);
     }
