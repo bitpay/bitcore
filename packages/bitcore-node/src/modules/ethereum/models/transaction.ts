@@ -18,14 +18,28 @@ import { BaseTransaction } from '../../../models/baseTransaction';
 import { valueOrDefault } from '../../../utils/check';
 import { InvoiceAbi } from '../abi/invoice';
 
-const Erc20Decoder = require('abi-decoder');
-Erc20Decoder.addABI(ERC20Abi);
+function requireUncached(module) {
+  delete require.cache[require.resolve(module)];
+  return require(module);
+}
 
-const Erc721Decoder = require('abi-decoder');
-Erc721Decoder.addABI(ERC721Abi);
+function getErc20Decoder() {
+  const Erc20Decoder = requireUncached('abi-decoder');
+  Erc20Decoder.addABI(ERC20Abi);
+  return Erc20Decoder;
+}
 
-const InvoiceDecoder = require('abi-decoder');
-InvoiceDecoder.addABI(InvoiceAbi);
+function getErc721Decoder() {
+  const Erc721Decoder = requireUncached('abi-decoder');
+  Erc721Decoder.addABI(ERC721Abi);
+  return Erc721Decoder;
+}
+
+function getInvoiceDecoder() {
+  const InvoiceDecoder = requireUncached('abi-decoder');
+  InvoiceDecoder.addABI(InvoiceAbi);
+  return InvoiceDecoder;
+}
 
 @LoggifyClass
 export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
@@ -182,21 +196,21 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   }
 
   abiDecode(input: string) {
-    const erc20Data = Erc20Decoder.decodeMethod(input);
+    const erc20Data = getErc20Decoder().decodeMethod(input);
     if (erc20Data) {
       return {
         type: 'ERC20',
         ...erc20Data
       };
     }
-    const erc721Data = Erc721Decoder.decodeMethod(input);
+    const erc721Data = getErc721Decoder().decodeMethod(input);
     if (erc721Data) {
       return {
         type: 'ERC721',
         ...erc721Data
       };
     }
-    const invoiceData = InvoiceDecoder.decodeMethod(input);
+    const invoiceData = getInvoiceDecoder().decodeMethod(input);
     if (invoiceData) {
       return {
         type: 'INVOICE',
