@@ -32,7 +32,7 @@ export class TransactionDetailsEthComponent {
     public blocksProvider: BlocksProvider
   ) {}
 
-  public ngOnInit(): void {
+  public onInit(): void {
     this.txProvider.getConfirmations(this.tx.blockheight, this.chainNetwork).subscribe((confirmations) => {
       this.tx.confirmations = confirmations;
     });
