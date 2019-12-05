@@ -378,7 +378,6 @@ export class PushNotificationsService {
       gusd: 'GUSD'
     };
     const data = _.cloneDeep(notification.data);
-
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
     if (data.amount) {
       try {
