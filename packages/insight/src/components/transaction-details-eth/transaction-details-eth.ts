@@ -32,6 +32,12 @@ export class TransactionDetailsEthComponent {
     public blocksProvider: BlocksProvider
   ) {}
 
+  public ngOnInit(): void {
+    this.txProvider.getConfirmations(this.tx.blockheight, this.chainNetwork).subscribe((confirmations) => {
+      this.tx.confirmations = confirmations;
+    });
+  }
+
   public goToTx(txId: string, vout?: number, fromVout?: boolean): void {
     this.redirProvider.redir('transaction', {
       txId,
