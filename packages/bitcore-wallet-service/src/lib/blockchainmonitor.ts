@@ -289,8 +289,6 @@ export class BlockchainMonitor {
           ']'
         );
 
-
-
         const notification = Notification.create({
           type: 'NewIncomingTx',
           data: {
