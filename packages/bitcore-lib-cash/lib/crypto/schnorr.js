@@ -54,49 +54,49 @@ Schnorr.prototype.sign = function() {
 };
 
 Schnorr.prototype._findSignature = function(d, e) {
-    var dPrime, p,P,N,G;
+    var dPrime, D, P, N, G, kPrime, K, R;
     N = Point.getN();
     G = Point.getG();
     p = new BN('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 'hex');
     dPrime = d;
-    
+    D = d;
+
     $.checkState(d.isNeg(), new Error('privkey out of field of curve'));
     $.checkState(d.gt(N), new Error('privkey out of field of curve'));
     P = G.mul(dPrime);
 
-    var dOld;
-    if(P.hasSquare(P)) {
-        dOld = N.sub(dPrime);
-    }
-    else {
-       dOld =  N.sub(dPrime);
+
+    if(!(P.hasSquare(P))) {
+        D = N.sub(dPrime);
+    } else {
+      D = d // D is secret key
     }
 
+    let k = (BN.fromBuffer(taggedHash("BIPSchnorrDerive", Buffer.concat([D.toBuffer(), e.toBuffer()])))).toNumber() % N.toNumber();
+    // k should be of type number here
+    $.checkState(k === 0, new Error('Failure. This happens only with negligible probability.'));
+    
+    R = G.mul(k);
 
+    if(!(R.hasSquare(R))) {
+      k = N.sub(k);
+    } else {
+      k = new BN(k);
+    }
     
+    // e = int_from_bytes(tagged_hash("BIPSchnorr", bytes_from_point(R) + bytes_from_point(P) + msg)) % n
+    // return bytes_from_point(R) + bytes_from_int((k + e * seckey) % n)
     
-    
-    
-    // try different values of k until r, s are valid
-    // var badrs = 0;
-    // var k, Q, r, s;
-    // do {
-    //   if (!this.k || badrs > 0) {
-    //     this.deterministicK(badrs);
-    //   }
-    //   badrs++;
-    //   k = this.k;
-    //   Q = G.mul(k);
-    //   r = Q.x.umod(N);
-    //   s = k.invm(N).mul(e.add(d.mul(r))).umod(N);
-    // } while (r.cmp(BN.Zero) <= 0 || s.cmp(BN.Zero) <= 0);
-  
-    // s = ECDSA.toLowS(s);
     return {
       s: s,
       r: r
     };
   
   };
+
+  function taggedHash(tag,bytesSecretKeyMessage) {
+    Buffer.concat([tag.toBuffer(), tag.toBuffer(), bytesSecretKeyMessage]);
+    return Hash.sha256(Buffer.concat([tag.toBuffer(), tag.toBuffer(), bytesSecretKeyMessage]))
+  }
 
 
