@@ -125,7 +125,9 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
           connected = false;
         }
         if (connected) {
-          this.events.emit('connected');
+          if (disconnected || firstConnect) {
+            this.events.emit('connected');
+          }
         } else {
           this.web3 = await this.getWeb3();
           this.rpc = new ParityRPC(this.web3);
@@ -144,7 +146,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         }
         disconnected = !connected;
       } catch (e) {}
-      await wait(2000);
+      await wait(5000);
     }
   }
 
