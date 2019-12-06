@@ -111,7 +111,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return this.provider.getWeb3(this.network);
   }
 
-  async connect() {
+  async handleReconnects() {
     this.disconnecting = false;
     let firstConnect = true;
     let connected = false;
@@ -152,6 +152,10 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       } catch (e) {}
       await wait(2000);
     }
+  }
+
+  async connect() {
+    this.handleReconnects();
   }
 
   public async getBlock(height: number) {
