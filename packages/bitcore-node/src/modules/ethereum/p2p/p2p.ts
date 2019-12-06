@@ -27,6 +27,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   protected invCache: any;
   protected invCacheLimits: any;
   public events: EventEmitter;
+  public disconnecting: boolean;
 
   constructor({ chain, network, chainConfig, blockModel = EthBlockStorage, txModel = EthTransactionStorage }) {
     super({ chain, network, chainConfig, blockModel });
@@ -43,6 +44,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     this.invCacheLimits = {
       TX: 100000
     };
+    this.disconnecting = false;
   }
 
   cacheInv(type: 'TX', hash: string): void {
@@ -92,6 +94,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   async disconnect() {
+    this.disconnecting = true;
     try {
       if (this.txSubscription) {
         this.txSubscription.unsubscribe();
@@ -109,11 +112,12 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   async connect() {
+    this.disconnecting = false;
     let firstConnect = true;
     let connected = false;
     let disconnected = false;
     const { host, port } = this.chainConfig.provider;
-    while (!this.stopping) {
+    while (!this.disconnecting && !this.stopping) {
       try {
         if (!this.web3) {
           this.web3 = await this.getWeb3();
@@ -146,7 +150,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         }
         disconnected = !connected;
       } catch (e) {}
-      await wait(5000);
+      await wait(2000);
     }
   }
 
