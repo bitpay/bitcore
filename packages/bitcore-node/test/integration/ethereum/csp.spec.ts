@@ -28,4 +28,19 @@ describe('Ethereum API', function() {
     expect(decoded).to.exist;
     expect(decoded.type).to.eq('INVOICE');
   });
+
+  it('should handle multiple decodes', () => {
+    const data =
+      '0x095ea7b300000000000000000000000052de8d3febd3a06d3c627f59d56e6892b80dcf1200000000000000000000000000000000000000000000000000000000000f4240';
+    EthTransactionStorage.abiDecode(data);
+    const decoded = EthTransactionStorage.abiDecode(data);
+    expect(decoded).to.exist;
+    expect(decoded.type).to.eq('ERC20');
+    const data2 =
+      '0xa22cb465000000000000000000000000efc70a1b18c432bdc64b596838b4d138f6bc6cad0000000000000000000000000000000000000000000000000000000000000001';
+    EthTransactionStorage.abiDecode(data);
+    const decoded2 = EthTransactionStorage.abiDecode(data2);
+    expect(decoded2).to.exist;
+    expect(decoded2.type).to.eq('ERC721');
+  });
 });
