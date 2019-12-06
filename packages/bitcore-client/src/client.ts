@@ -60,6 +60,12 @@ export class Client {
     });
   }
 
+  async getNonce(params) {
+    const { address } = params;
+    const url = `${this.apiUrl}/address/${address}/txs/count`;
+    return request.get(url, { json: true });
+  }
+
   getAddressTxos = async function(params) {
     const { unspent, address } = params;
     const args = unspent ? `?unspent=${unspent}` : '';
