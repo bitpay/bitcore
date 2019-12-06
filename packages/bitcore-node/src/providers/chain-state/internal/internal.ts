@@ -541,11 +541,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getLocalTip({ chain, network }) {
-    if (BitcoinBlockStorage.chainTips[chain] && BitcoinBlockStorage.chainTips[chain][network]) {
-      return BitcoinBlockStorage.chainTips[chain][network];
-    } else {
-      return BitcoinBlockStorage.getLocalTip({ chain, network });
-    }
+    return BitcoinBlockStorage.getLocalTip({ chain, network });
   }
 
   /**
