@@ -112,6 +112,21 @@ Schnorr.prototype._findSignature = function(d, e) {
   
   };
 
+  Schnorr.prototype.sigError = function() {
+    
+  };
+
+  Schnorr.prototype.verify = function() {
+    if (!this.sigError()) {
+      this.verified = true;
+    } else {
+      this.verified = false;
+    }
+    return this;
+  };
+
+
+
   function taggedHash(tag,bytesSecretKeyMessage) {
     Buffer.concat([tag.toBuffer(), tag.toBuffer(), bytesSecretKeyMessage]);
     return Hash.sha256(Buffer.concat([tag.toBuffer(), tag.toBuffer(), bytesSecretKeyMessage]))
