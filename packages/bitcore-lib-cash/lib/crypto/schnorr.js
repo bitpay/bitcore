@@ -54,6 +54,9 @@ Schnorr.prototype.sign = function() {
 };
 
 Schnorr.prototype._findSignature = function(d, e) {
+    // d is the private key;
+    // e is the message to be signed
+
     var dPrime, D, P, N, G, kPrime, K, R;
     N = Point.getN();
     G = Point.getG();
@@ -71,25 +74,40 @@ Schnorr.prototype._findSignature = function(d, e) {
     } else {
       D = d // D is secret key
     }
-
-    let k = (BN.fromBuffer(taggedHash("BIPSchnorrDerive", Buffer.concat([D.toBuffer(), e.toBuffer()])))).toNumber() % N.toNumber();
-    // k should be of type number here
-    $.checkState(k === 0, new Error('Failure. This happens only with negligible probability.'));
     
-    R = G.mul(k);
+    let secretKeyMessageConcat =  Buffer.concat([D.toBuffer(), e.toBuffer()]);
+    let secretKeyMessageConcatBIPSchnorrHash = taggedHash("BIPSchnorrDerive", secretKeyMessageConcat); //BN
+    let k0 = (BN.fromBuffer(secretKeyMessageConcatBIPSchnorrHash).mod(N)).toBuffer();
+    
+
+    // k should be of type number here
+    $.checkState(k0.eqn(0), new Error('Failure. This happens only with negligible probability.'));
+    
+    let R = G.mul(k0);
 
     if(!(R.hasSquare(R))) {
-      k = N.sub(k);
+      k = N.sub(k0);
     } else {
-      k = new BN(k);
+      k = new BN(k0);
     }
     
     // e = int_from_bytes(tagged_hash("BIPSchnorr", bytes_from_point(R) + bytes_from_point(P) + msg)) % n
-    // return bytes_from_point(R) + bytes_from_int((k + e * seckey) % n)
+    let pointConcat= taggedHash("BIPSchnorr", Buffer.concat([R.getX().toBuffer(), P.getX().toBuffer(), e.toBuffer()])); //Buffer
+    BN.fromBuffer(pointConcat)
+    let  e_sig = (BN.fromBuffer(pointConcat)).mod(N);
+
+    let sig_operation = k.add(e_sig.mul(D)); // k + ed
+    //let half_sig_buffer = new BN(new Number(sig_operation.toNumber().valueOf() % N.toNumber().valueOf())); // Bytes((k+ ed) mod n)
+    let half_sig_buffer = sig_operation.mod(N);
     
+    let sig = Buffer.concat([R.getX().toBuffer(), half_sig_buffer.toBuffer()]);
+
+    let r = sig.slice(0, 32);
+    let s = sig.slice(32, 64);
+
     return {
-      s: s,
-      r: r
+      r: r,
+      s: s
     };
   
   };
