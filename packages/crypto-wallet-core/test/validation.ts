@@ -28,11 +28,15 @@ describe('Address Validation', () => {
   const xrpUri = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF';
   const xrpUriParams = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF?amount=123456&dt=123456';
 
-  // Invalid
+  // Invalid Address
   const invalidBtcAddress = '1NuKwkDtCymgA1FNLUBaUWLD8s4kKWvgn';
   const invalidBchAddress = 'r8uujscckc56ancdkmqnyyl2rx6pnp24gmdfrf8qd';
   const invalidEthAddress = '37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08';
   const invalidXrpAddress = 'rHb9CJAWyB4rj91VRWn96DkukG4bwdtyTH';
+
+  // Invalid Uri
+  const invalidEthUriParams = 'ethereum:0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A?value=invalid&gasLimit=123&gas=123';
+  const invalidXrpUriParams = 'ripple:rEqj9WKSH7wEkPvWf6b4gCi26Y3F7HbKUF?amount=invalid&dt=123';
 
   it('should be able to validate an BTC address', async () => {
     const isValidAddress = await Validation.validateAddress('BTC', 'mainnet', btcAddress);
@@ -106,5 +110,15 @@ describe('Address Validation', () => {
   it('should be able to invalidate an incorrect XRP address', async () => {
     const inValidAddress = await Validation.validateAddress('XRP', 'mainnet', invalidXrpAddress);
     expect(inValidAddress).to.equal(false);
+  });
+
+  it('should be able to invalidate incorrect ETH Uri params', async () => {
+    const inValidEthUri = await Validation.validateUri('ETH', invalidEthUriParams);
+    expect(inValidEthUri).to.equal(false);
+  });
+
+  it('should be able to invalidate incorrect XRP Uri params', async () => {
+    const inValidXrpUri = await Validation.validateUri('XRP', invalidXrpUriParams);
+    expect(inValidXrpUri).to.equal(false);
   });
 });
