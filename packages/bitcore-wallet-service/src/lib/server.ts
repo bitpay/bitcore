@@ -13,6 +13,8 @@ import { MessageBroker } from './messagebroker';
 import { Copayer, INotification, ITxProposal, IWallet, Notification, Preferences, PushNotificationSub, Session, TxConfirmationSub, TxNote, TxProposal, Wallet } from './model';
 import { Storage } from './storage';
 
+const config = require('../config');
+const Uuid = require('uuid');
 const $ = require('preconditions').singleton();
 const deprecatedServerMessage = require('../deprecated-serverMessages');
 const serverMessages = require('../serverMessages');
@@ -99,6 +101,7 @@ export class WalletService {
   parsedClientVersion: { agent: string; major: number; minor: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
+  request;
 
   constructor() {
     if (!initialized) {
@@ -112,6 +115,9 @@ export class WalletService {
     this.messageBroker = messageBroker;
     this.fiatRateService = fiatRateService;
     this.notifyTicker = 0;
+    // for testing
+    //
+    this.request = request;
   }
   /**
    * Gets the current version of BWS
@@ -1212,8 +1218,8 @@ export class WalletService {
         isValid(value) {
           return (
             _.isArray(value) && value.every(x =>
-              Validation.validateAddress( 'eth', 'mainnet', x))
-         );
+              Validation.validateAddress('eth', 'mainnet', x))
+          );
         }
       }
     ];
@@ -1264,7 +1270,7 @@ export class WalletService {
             return cb(err);
           });
         });
-    });
+      });
     });
   }
 
@@ -4508,6 +4514,123 @@ export class WalletService {
 
     this.storage.removeTxConfirmationSub(this.copayerId, opts.txid, cb);
   }
+
+  simplexGetQuote(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!config.simplex) return reject(new Error('Simplex missing credentials'));
+      if (!req.body.env || (req.body.env != 'sandbox' && req.body.env != 'production')) return reject(new Error('Simplex\'s request wrong environment'));
+
+      const API = config.simplex[req.body.env].api;
+      const API_KEY = config.simplex[req.body.env].apiKey;
+      const ip = Utils.getIpFromReq(req);
+
+      req.body.client_ip = ip;
+      req.body.wallet_id = config.simplex[req.body.env].appProviderId;
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'ApiKey ' + API_KEY
+      };
+      delete req.body.env;
+
+      this.request.post(API + '/wallet/merchant/v2/quote', {
+        headers,
+        body: req.body,
+        json: true
+      }, (err, data) => {
+        if (err) {
+          console.log('[simplexGetQuote.4542:err:]', err);
+          return reject(err);
+        } else {
+          return resolve(data);
+        }
+      });
+    });
+  }
+
+  simplexPaymentRequest(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!config.simplex) return reject(new Error('Simplex missing credentials'));
+      if (!req.body.env || (req.body.env != 'sandbox' && req.body.env != 'production')) return reject(new Error('Simplex\'s request wrong environment'));
+
+      const API = config.simplex[req.body.env].api;
+      const API_KEY = config.simplex[req.body.env].apiKey;
+      const appProviderId = config.simplex[req.body.env].appProviderId;
+      const paymentId = Uuid.v4();
+      const orderId = Uuid.v4();
+      const apiHost = config.simplex[req.body.env].api;
+      const ip = Utils.getIpFromReq(req);
+
+      if (!req.body.account_details || !req.body.transaction_details || !req.body.transaction_details.payment_details) {
+        return reject(new Error('Simplex\'s request missing arguments'));
+      }
+
+      req.body.account_details.app_provider_id = appProviderId;
+      req.body.account_details.signup_login = {
+        ip,
+        location: '',
+        uaid: '',
+        accept_language: 'de,en-US;q=0.7,en;q=0.3',
+        http_accept_language: 'de,en-US;q=0.7,en;q=0.3',
+        user_agent: req.body.account_details.signup_login ? req.body.account_details.signup_login.user_agent : '', // Format: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67.0) Gecko/20100101 Firefox/67.0'
+        cookie_session_id: '',
+        timestamp: req.body.account_details.signup_login ? req.body.account_details.signup_login.timestamp : '',
+      };
+
+      req.body.transaction_details.payment_details.payment_id = paymentId;
+      req.body.transaction_details.payment_details.order_id = orderId;
+      delete req.body.env;
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'ApiKey ' + API_KEY
+      };
+
+      this.request.post(API + '/wallet/merchant/v2/payments/partner/data', {
+        headers,
+        body: req.body,
+        json: true
+      }, (err, data) => {
+        if (err) {
+          console.log('[simplexGetQuote.4595:err:]', err);
+          return reject(err);
+        } else {
+          data.body.payment_id = paymentId;
+          data.body.order_id = orderId;
+          data.body.app_provider_id = appProviderId;
+          data.body.api_host = apiHost;
+          return resolve(data);
+        }
+      });
+    });
+  }
+
+  simplexGetEvents(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!config.simplex) return reject(new Error('Simplex missing credentials'));
+      if (!req.env || (req.env != 'sandbox' && req.env != 'production')) return reject(new Error('Simplex\'s request wrong environment'));
+
+      const API = config.simplex[req.env].api;
+      const API_KEY = config.simplex[req.env].apiKey;
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'ApiKey ' + API_KEY
+      };
+
+      this.request.get(API + '/wallet/merchant/v2/events', {
+        headers,
+        json: true
+      }, (err, data) => {
+        if (err) {
+          console.log('[simplexGetEvents.4625:err:]', err);
+          return reject(err);
+        } else {
+          return resolve(data);
+        }
+      });
+    });
+  }
+
 }
 
 function checkRequired(obj, args, cb?: (e: any) => void) {

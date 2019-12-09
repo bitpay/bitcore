@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { ChainService } from '../chain/index';
 import { Address } from './address';
 import { AddressManager } from './addressmanager';
 import { Copayer } from './copayer';
@@ -195,7 +196,8 @@ export class Wallet {
   updateBEKeys() {
     $.checkState(this.isComplete());
 
-    const bitcore = Bitcore[this.coin];
+    const chain = ChainService.getChain(this.coin).toLowerCase();
+    const bitcore = Bitcore[chain];
     const salt = config.BE_KEY_SALT || Defaults.BE_KEY_SALT;
 
     var seed =

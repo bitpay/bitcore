@@ -76,6 +76,10 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
           );
           this.blocks = blocks;
           this.loading = false;
+          if(this.blocks[this.blocks.length - 1].height < this.numBlocks) { 
+            this.showLoadMoreButton = false;
+          }
+          
         },
         err => {
           this.subscriber.unsubscribe();

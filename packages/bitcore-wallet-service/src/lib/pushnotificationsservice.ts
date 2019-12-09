@@ -13,6 +13,7 @@ const defaultRequest = require('request');
 const path = require('path');
 const Utils = require('./common/utils');
 const Defaults = require('./common/defaults');
+const Constants = require('./common/constants');
 const sjcl = require('sjcl');
 const log = require('npmlog');
 log.debug = log.verbose;
@@ -371,14 +372,16 @@ export class PushNotificationsService {
       btc: 'BTC',
       bit: 'bits',
       bch: 'BCH',
-      eth: 'ETH'
+      eth: 'ETH',
+      usdc: 'USDC',
+      pax: 'PAX',
+      gusd: 'GUSD'
     };
-
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
     if (data.amount) {
       try {
-        const unit = recipient.unit.toLowerCase();
+        const unit = data.tokenAddress ? Constants.TOKEN_OPTS[data.tokenAddress.toLowerCase()].symbol.toLowerCase() : recipient.unit.toLowerCase();
         data.amount =
           Utils.formatAmount(+data.amount, unit) + ' ' + UNIT_LABELS[unit];
       } catch (ex) {

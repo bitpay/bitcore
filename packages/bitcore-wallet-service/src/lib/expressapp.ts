@@ -770,7 +770,7 @@ export class ExpressApp {
       if (req.query.coin) opts.coin = req.query.coin;
       if (req.query.from) opts.from = req.query.from;
       if (req.query.to) opts.to = req.query.to;
-      if (req.query.update) opts.update = req.query.update;
+      if (req.query.update && (req.ip === '::1' || req.ip === '127.0.0.1')) opts.update = req.query.update;
 
       const stats = new Stats(opts);
       stats.run((err, data) => {
@@ -942,6 +942,36 @@ export class ExpressApp {
         server.txConfirmationUnsubscribe(opts, (err, response) => {
           if (err) return returnError(err, res, req);
           res.json(response);
+        });
+      });
+    });
+
+    router.post('/v1/service/simplex/quote', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.simplexGetQuote(req).then(response => {
+          res.json(response);
+        }).catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+      });
+    });
+
+    router.post('/v1/service/simplex/paymentRequest', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.simplexPaymentRequest(req).then(response => {
+          res.json(response);
+        }).catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+      });
+    });
+
+    router.get('/v1/service/simplex/events', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.simplexGetEvents(req).then(response => {
+          res.json(response);
+        }).catch(err => {
+          if (err) return returnError(err, res, req);
         });
       });
     });

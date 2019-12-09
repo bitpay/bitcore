@@ -16,12 +16,30 @@ import { ERC721Abi } from '../abi/erc721';
 import { ERC20Abi } from '../abi/erc20';
 import { BaseTransaction } from '../../../models/baseTransaction';
 import { valueOrDefault } from '../../../utils/check';
+import { InvoiceAbi } from '../abi/invoice';
 
-const Erc20Decoder = require('abi-decoder');
-Erc20Decoder.addABI(ERC20Abi);
+function requireUncached(module) {
+  delete require.cache[require.resolve(module)];
+  return require(module);
+}
 
-const Erc721Decoder = require('abi-decoder');
-Erc721Decoder.addABI(ERC721Abi);
+function getErc20Decoder() {
+  const Erc20Decoder = requireUncached('abi-decoder');
+  Erc20Decoder.addABI(ERC20Abi);
+  return Erc20Decoder;
+}
+
+function getErc721Decoder() {
+  const Erc721Decoder = requireUncached('abi-decoder');
+  Erc721Decoder.addABI(ERC721Abi);
+  return Erc721Decoder;
+}
+
+function getInvoiceDecoder() {
+  const InvoiceDecoder = requireUncached('abi-decoder');
+  InvoiceDecoder.addABI(InvoiceAbi);
+  return InvoiceDecoder;
+}
 
 @LoggifyClass
 export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
@@ -178,29 +196,28 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   }
 
   abiDecode(input: string) {
-    try {
-      try {
-        const decodedData = Erc20Decoder.decodeMethod(input);
-        if (!decodedData || decodedData.length === 0) {
-          throw new Error();
-        }
-        return {
-          type: 'ERC20',
-          ...decodedData
-        };
-      } catch {
-        const decodedData = Erc721Decoder.decodeMethod(input);
-        if (!decodedData || decodedData.length === 0) {
-          throw new Error();
-        }
-        return {
-          type: 'ERC721',
-          ...decodedData
-        };
-      }
-    } catch {
-      return undefined;
+    const erc20Data = getErc20Decoder().decodeMethod(input);
+    if (erc20Data) {
+      return {
+        type: 'ERC20',
+        ...erc20Data
+      };
     }
+    const erc721Data = getErc721Decoder().decodeMethod(input);
+    if (erc721Data) {
+      return {
+        type: 'ERC721',
+        ...erc721Data
+      };
+    }
+    const invoiceData = getInvoiceDecoder().decodeMethod(input);
+    if (invoiceData) {
+      return {
+        type: 'INVOICE',
+        ...invoiceData
+      };
+    }
+    return undefined;
   }
 
   _apiTransform(

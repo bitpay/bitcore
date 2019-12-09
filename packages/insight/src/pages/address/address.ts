@@ -50,15 +50,9 @@ export class AddressPage {
 
   public ionViewWillLoad(): void {
 
-    if(this.chainNetwork.chain === 'BTC' || this.chainNetwork.chain === 'BCH') {
-      this.events.subscribe('TransactionList', (d: any) => {
-        this.nroTransactions = d.length;
-      });
-    } else {
-      this.events.subscribe('CoinList', (d: any) => {
-        this.nroTransactions = d.length;
-      });
-    }
+    this.events.subscribe('CoinList', (d: any) => {
+      this.nroTransactions = d.length;
+    });
     
     this.addrProvider
       .getAddressBalance(this.addrStr, this.chainNetwork)

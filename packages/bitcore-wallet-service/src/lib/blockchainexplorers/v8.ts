@@ -514,11 +514,11 @@ export class V8 {
     });
 
     walletsSocket.on('connect_error', () => {
-      log.error(`Error connecting to ${this.getConnectionInfo()}`);
+      log.error(`Error connecting to ${this.getConnectionInfo()}  ${this.coin.toUpperCase()}/${this.v8network}`);
     });
 
     walletsSocket.on('failure', (err) => {
-      log.error(`Error joining room ${err.message}`);
+      log.error(`Error joining room ${err.message} ${this.coin.toUpperCase()}/${this.v8network}`);
     });
 
     walletsSocket.on('coin', data => {
