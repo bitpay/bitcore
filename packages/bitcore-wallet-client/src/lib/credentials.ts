@@ -141,7 +141,7 @@ export class Credentials {
     const ret = _.cloneDeep(this);
     ret.walletId = `${ret.walletId}-${token.address}`;
     ret.coin = token.symbol.toLowerCase();
-    ret.walletName = token.name;
+    ret.walletName = `${this.walletName} (${token.symbol})`;
     ret.token = token;
 
     return ret;
