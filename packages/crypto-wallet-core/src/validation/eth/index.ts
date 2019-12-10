@@ -9,7 +9,15 @@ export class EthValidation implements IValidation {
   validateUri(addressUri: string): boolean {
     const address = this.extractAddress(addressUri);
     const ethereumPrefix = /ethereum/i.exec(addressUri);
-    return !!ethereumPrefix && utils.isAddress(address);
+    const hasParams = /[\?\&]/i.exec(addressUri);
+    const value = /[\?\&]value=(\d+([\,\.]\d+)?)/i.exec(addressUri);
+    const gas = /[\?\&]gas=(\d+([\,\.]\d+)?)/i.exec(addressUri);
+    const gasPrice = /[\?\&]gasPrice=(\d+([\,\.]\d+)?)/i.exec(addressUri);
+    const gasLimit = /[\?\&]gasLimit=(\d+([\,\.]\d+)?)/i.exec(addressUri);
+    // !(does not include any of the valid params)
+    const validParams = !(!value || !gas || !gasPrice || !gasLimit);
+    const validAddress = !!ethereumPrefix && utils.isAddress(address);
+    return hasParams ? validParams && validAddress : validAddress;
   }
 
   private extractAddress(data) {
