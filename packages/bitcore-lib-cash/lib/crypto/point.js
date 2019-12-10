@@ -151,13 +151,15 @@ Point.pointToCompressed = function pointToCompressed(point) {
 
 // todo: needs test case
 Point.hasSquare = function() {
-  return this.isInfinity() && this.isSquare(this.getY());
+  return !(this.isInfinity() && this.isSquare(this.getY()));
 }
 
 // todo: needs test cases
 Point.isSquare = function(x) {
-  p = new BN('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 'hex');
-  return Math.pow(x, (p.toNumber().valueOf() - 1) / 2) % p.toNumber().valueOf() === 1; //refactor to BN arithmetic operations
+  let p = new BN('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 'hex');
+  let x0 = new BN(x);
+  let result = x0.pow(((p.subn(1)).divn(2)));
+  return (result.mod(p)).eqn(1); //refactor to BN arithmetic operations
 }
 
 module.exports = Point;
