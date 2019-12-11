@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { BlocksProvider } from '../../providers/blocks/blocks';
 import { CurrencyProvider } from '../../providers/currency/currency';
@@ -15,7 +15,7 @@ import { TxsProvider } from '../../providers/transactions/transactions';
   selector: 'transaction-details-eth',
   templateUrl: 'transaction-details-eth.html'
 })
-export class TransactionDetailsEthComponent {
+export class TransactionDetailsEthComponent implements OnInit {
   @Input()
   public tx: any = {};
   @Input()
