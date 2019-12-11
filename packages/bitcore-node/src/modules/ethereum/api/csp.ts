@@ -321,6 +321,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       transactionStream = EthTransactionStorage.collection
         .find(query)
         .sort({ blockTimeNormalized: 1 })
+        .hint('wallets_1_blockTimeNormalized_1')
         .addCursorFlag('noCursorTimeout', true)
         .pipe(
           new Transform({
