@@ -420,7 +420,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
-    const utxoTransform = (c: ICoin): string => {
+    const utxoTransform = (c: Partial<ICoin>): string => {
       let confirmations = 0;
       if (c.mintHeight && c.mintHeight >= 0) {
         confirmations = tipHeight - c.mintHeight + 1;
@@ -541,11 +541,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getLocalTip({ chain, network }) {
-    if (BitcoinBlockStorage.chainTips[chain] && BitcoinBlockStorage.chainTips[chain][network]) {
-      return BitcoinBlockStorage.chainTips[chain][network];
-    } else {
-      return BitcoinBlockStorage.getLocalTip({ chain, network });
-    }
+    return BitcoinBlockStorage.getLocalTip({ chain, network });
   }
 
   /**
