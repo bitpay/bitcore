@@ -7,14 +7,17 @@ export class EthValidation implements IValidation {
   }
 
   validateUri(addressUri: string): boolean {
+    if (!addressUri) {
+      return false;
+    }
     const address = this.extractAddress(addressUri);
     const ethereumPrefix = /ethereum/i.exec(addressUri);
     return !!ethereumPrefix && utils.isAddress(address);
   }
 
   private extractAddress(data) {
-    const address = data.replace(/^[a-z]+:/i, '').replace(/\?.*/, '');
-    const params = /([\?\&]+[a-z]+=(\d+([\,\.]\d+)?))+/i;
-    return address.replace(params, '');
+    const prefix = /^[a-z]+:/i;
+    const params = /([\?\&](value|gas|gasPrice|gasLimit)=(\d+([\,\.]\d+)?))+/i;
+    return data.replace(prefix, '').replace(params, '');
   }
 }

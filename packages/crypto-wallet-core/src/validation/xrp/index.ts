@@ -34,14 +34,17 @@ export class XrpValidation implements IValidation {
   }
 
   validateUri(addressUri: string): boolean {
+    if (!addressUri) {
+      return false;
+    }
     const address = this.extractAddress(addressUri);
     const ripplePrefix = /ripple/i.exec(addressUri);
     return !!ripplePrefix && this.validateAddress('livenet', address);
   }
 
   private extractAddress(data) {
-    const address = data.replace(/^[a-z]+:/i, '').replace(/\?.*/, '');
-    const params = /([\?\&]+[a-z]+=(\d+([\,\.]\d+)?))+/i;
-    return address.replace(params, '');
+    const prefix = /^[a-z]+:/i;
+    const params = /([\?\&](amount|dt)=(\d+([\,\.]\d+)?))+/i;
+    return data.replace(prefix, '').replace(params, '');
   }
 }
