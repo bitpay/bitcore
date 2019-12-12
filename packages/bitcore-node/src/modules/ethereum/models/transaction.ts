@@ -196,27 +196,33 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   }
 
   abiDecode(input: string) {
-    const erc20Data = getErc20Decoder().decodeMethod(input);
-    if (erc20Data) {
-      return {
-        type: 'ERC20',
-        ...erc20Data
-      };
-    }
-    const erc721Data = getErc721Decoder().decodeMethod(input);
-    if (erc721Data) {
-      return {
-        type: 'ERC721',
-        ...erc721Data
-      };
-    }
-    const invoiceData = getInvoiceDecoder().decodeMethod(input);
-    if (invoiceData) {
-      return {
-        type: 'INVOICE',
-        ...invoiceData
-      };
-    }
+    try {
+      const erc20Data = getErc20Decoder().decodeMethod(input);
+      if (erc20Data) {
+        return {
+          type: 'ERC20',
+          ...erc20Data
+        };
+      }
+    } catch (e) {}
+    try {
+      const erc721Data = getErc721Decoder().decodeMethod(input);
+      if (erc721Data) {
+        return {
+          type: 'ERC721',
+          ...erc721Data
+        };
+      }
+    } catch (e) {}
+    try {
+      const invoiceData = getInvoiceDecoder().decodeMethod(input);
+      if (invoiceData) {
+        return {
+          type: 'INVOICE',
+          ...invoiceData
+        };
+      }
+    } catch (e) {}
     return undefined;
   }
 
