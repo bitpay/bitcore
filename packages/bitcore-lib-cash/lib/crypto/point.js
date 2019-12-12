@@ -27,7 +27,7 @@ var Point = function Point(x, y, isRed) {
     throw new Error('Invalid Point');
   }
   point.validate();
-  return point;s
+  return point;
 };
 
 Point.prototype = Object.getPrototypeOf(ec.curve.point());
@@ -151,15 +151,23 @@ Point.pointToCompressed = function pointToCompressed(point) {
 
 // todo: needs test case
 Point.prototype.hasSquare = function() {
-  return (!this.isInfinity() && this.isSquare(this.getY()));
+  console.log("Point", this.isInfinity());
+  console.log("isSquare:", this.isSquare(this.getY()));
+  return !this.isInfinity() && this.isSquare(this.getY());
 }
 
 // todo: needs test cases
 Point.prototype.isSquare = function(x) {
   let p = new BN('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 'hex');
   let x0 = new BN(x);
-  let base = x0.toRed(BN.red((p.sub(new BN(1))).div(new BN(2))));
-  return (base.redPow(p).fromRed()).eqn(1); //refactor to BN arithmetic operations
+
+  let base = x0.toRed(BN.red(p));
+  
+  
+  let res = (base.redPow((p.sub(new BN(1))).div(new BN(2)))).fromRed(); //refactor to BN arithmetic operations
+  // console.log(res.eq(new BN(1)));
+  // console.log(res.toString());
+  return res.eq(new BN(1));
 }
 
 module.exports = Point;
