@@ -91,7 +91,7 @@ export class ParityRPC {
 
   public send<T>(data: JsonRPCRequest) {
     return new Promise<T>((resolve, reject) => {
-      this.web3.eth.currentProvider.send(data, function(err, data) {
+      this.web3.eth.currentProvider!['send'](data, function(err, data) {
         if (err) return reject(err);
         resolve(data.result as T);
       } as Callback<JsonRPCResponse>);

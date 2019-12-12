@@ -13,15 +13,24 @@ import { SpentHeightIndicators } from '../../../types/Coin';
 import { EthListTransactionsStream } from './transform';
 import { ERC20Abi } from '../abi/erc20';
 import { Transaction } from 'web3/eth/types';
-import { EventLog } from 'web3/types';
 import { partition } from '../../../utils/partition';
 import { WalletAddressStorage } from '../../../models/walletAddress';
-
+import { Contract } from 'web3-eth-contract';
+type ContractAbiInput = ConstructorParameters<typeof Contract>[0];
+interface EventLog {
+  event: string;
+  address: string;
+  returnValues: any;
+  logIndex: number;
+  transactionIndex: number;
+  transactionHash: string;
+  blockHash: string;
+  blockNumber: number;
+  raw?: {data: string; topics: any[]};
+}
 interface ERC20Transfer extends EventLog {
   returnValues: {
-    _from: string;
-    _to: string;
-    _value: string;
+    [key: string]: string;
   };
 }
 
@@ -66,7 +75,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
   async erc20For(network: string, address: string) {
     const web3 = await this.getWeb3(network);
-    const contract = new web3.eth.Contract(ERC20Abi, address);
+    const contract = new web3.eth.Contract(ERC20Abi as ContractAbiInput, address);
     return contract;
   }
 
@@ -108,7 +117,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     if (txCount > 0) {
       gasPrices.push(blockGasPrices[lowGasPriceIndex]);
     }
-    const estimate = Math.max(...gasPrices, gethGasPrice);
+    const estimate = Math.max(...gasPrices, Number(gethGasPrice));
     return estimate;
   }
 
