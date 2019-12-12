@@ -57,35 +57,34 @@ Schnorr.prototype._findSignature = function(d, e) {
     // d is the private key;
     // e is the message to be signed
 
-    var dPrime, D, P, N, G, kPrime, K, R;
+    var dPrime, D, P, N, G, R, k;
     N = Point.getN();
     G = Point.getG();
-    p = new BN('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 'hex');
     dPrime = d;
     D = d;
 
-    $.checkState(d.isNeg(), new Error('privkey out of field of curve'));
-    $.checkState(d.gt(N), new Error('privkey out of field of curve'));
+    $.checkState(!d.lte(0), new Error('privkey out of field of curve'));
+    $.checkState(!d.gte(N), new Error('privkey out of field of curve'));
     P = G.mul(dPrime);
 
 
-    if(!(P.hasSquare(P))) {
+    if(!(P.hasSquare())) {
         D = N.sub(dPrime);
     } else {
       D = d // D is secret key
     }
     
     let secretKeyMessageConcat =  Buffer.concat([D.toBuffer(), e.toBuffer()]);
-    let secretKeyMessageConcatBIPSchnorrHash = taggedHash("BIPSchnorrDerive", secretKeyMessageConcat); //BN
-    let k0 = (BN.fromBuffer(secretKeyMessageConcatBIPSchnorrHash).mod(N)).toBuffer();
+    let secretKeyMessageConcatBIPSchnorrHash = taggedHash("BIPSchnorrDerive", secretKeyMessageConcat);
+    let k0 = (BN.fromBuffer(secretKeyMessageConcatBIPSchnorrHash).mod(N));
     
 
     // k should be of type number here
-    $.checkState(k0.eqn(0), new Error('Failure. This happens only with negligible probability.'));
+    $.checkState(!k0.eqn(0), new Error('Failure. This happens only with negligible probability.'));
     
-    let R = G.mul(k0);
+    R = G.mul(k0);
 
-    if(!(R.hasSquare(R))) {
+    if(!(R.hasSquare())) {
       k = N.sub(k0);
     } else {
       k = new BN(k0);
@@ -93,7 +92,6 @@ Schnorr.prototype._findSignature = function(d, e) {
     
     // e = int_from_bytes(tagged_hash("BIPSchnorr", bytes_from_point(R) + bytes_from_point(P) + msg)) % n
     let pointConcat= taggedHash("BIPSchnorr", Buffer.concat([R.getX().toBuffer(), P.getX().toBuffer(), e.toBuffer()])); //Buffer
-    BN.fromBuffer(pointConcat)
     let  e_sig = (BN.fromBuffer(pointConcat)).mod(N);
 
     let sig_operation = k.add(e_sig.mul(D)); // k + ed
@@ -128,8 +126,9 @@ Schnorr.prototype._findSignature = function(d, e) {
 
 
   function taggedHash(tag,bytesSecretKeyMessage) {
-    Buffer.concat([tag.toBuffer(), tag.toBuffer(), bytesSecretKeyMessage]);
-    return Hash.sha256(Buffer.concat([tag.toBuffer(), tag.toBuffer(), bytesSecretKeyMessage]))
+    return Hash.sha256(Buffer.concat([Hash.sha256(Buffer.from(tag, 'utf-8')), Hash.sha256(Buffer.from(tag, 'utf-8')), bytesSecretKeyMessage]))
   }
+
+  module.exports = Schnorr;
 
 
