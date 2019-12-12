@@ -23,21 +23,21 @@ function requireUncached(module) {
   return require(module);
 }
 
+const Erc20Decoder = requireUncached('abi-decoder');
+Erc20Decoder.addABI(ERC20Abi);
 function getErc20Decoder() {
-  const Erc20Decoder = requireUncached('abi-decoder');
-  Erc20Decoder.addABI(ERC20Abi);
   return Erc20Decoder;
 }
 
+const Erc721Decoder = requireUncached('abi-decoder');
+Erc721Decoder.addABI(ERC721Abi);
 function getErc721Decoder() {
-  const Erc721Decoder = requireUncached('abi-decoder');
-  Erc721Decoder.addABI(ERC721Abi);
   return Erc721Decoder;
 }
 
+const InvoiceDecoder = requireUncached('abi-decoder');
+InvoiceDecoder.addABI(InvoiceAbi);
 function getInvoiceDecoder() {
-  const InvoiceDecoder = requireUncached('abi-decoder');
-  InvoiceDecoder.addABI(InvoiceAbi);
   return InvoiceDecoder;
 }
 
