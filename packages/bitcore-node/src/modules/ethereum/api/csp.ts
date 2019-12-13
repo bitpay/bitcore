@@ -17,10 +17,10 @@ import { partition } from '../../../utils/partition';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import { Contract } from 'web3-eth-contract';
 type ContractAbiInput = ConstructorParameters<typeof Contract>[0];
-interface EventLog {
+interface EventLog<T> {
   event: string;
   address: string;
-  returnValues: any;
+  returnValues: T;
   logIndex: number;
   transactionIndex: number;
   transactionHash: string;
@@ -28,11 +28,9 @@ interface EventLog {
   blockNumber: number;
   raw?: {data: string; topics: any[]};
 }
-interface ERC20Transfer extends EventLog {
-  returnValues: {
+interface ERC20Transfer extends EventLog<{
     [key: string]: string;
-  };
-}
+}> {}
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -392,9 +390,9 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       transactionHash,
       transactionIndex,
       hash: transactionHash,
-      from: returnValues._from,
-      to: returnValues._to,
-      value: returnValues._value
+      from: returnValues['_from'],
+      to: returnValues['_to'],
+      value: returnValues['_value']
     } as Partial<Transaction>;
   }
 
