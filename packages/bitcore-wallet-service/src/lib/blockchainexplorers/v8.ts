@@ -25,7 +25,7 @@ function v8network(bwsNetwork) {
   if (bwsNetwork == 'livenet') return 'mainnet';
   if (
     bwsNetwork == 'testnet' &&
-    config.blockchainExplorerOpts.btc.testnet.regtestEnabled
+    config.blockchainExplorerOpts.chains.btc.testnet.regtestEnabled
   ) {
     return 'regtest';
   }
