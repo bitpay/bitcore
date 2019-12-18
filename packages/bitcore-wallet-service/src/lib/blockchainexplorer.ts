@@ -11,12 +11,12 @@ log.debug = log.verbose;
 const PROVIDERS = {
   v8: {
     btc: {
-      livenet: 'https://api.bitpay.com',
-      testnet: 'https://api.bitpay.com'
+      livenet: 'https://api.bitcore.io',
+      testnet: 'https://api.bitcore.io'
     },
     bch: {
-      livenet: 'https://api.bitpay.com',
-      testnet: 'https://api.bitpay.com'
+      livenet: 'https://api.bitcore.io',
+      testnet: 'https://api.bitcore.io'
     },
     eth: {
       livenet: 'https://api-eth.bitcore.io',

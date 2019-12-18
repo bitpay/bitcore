@@ -79,7 +79,7 @@ const Config = function(): ConfigType {
       },
       p2p: {},
       socket: {
-        bwsKeys: []
+        bwsKeys: ['02064c30a69f2954fde1a32355c3769cd812ae4339d814835467d0aed398617244']
       },
       storage: {}
     }
