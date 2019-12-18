@@ -1528,10 +1528,11 @@ export class WalletService {
     if (this.blockchainExplorer) return this.blockchainExplorer;
     if (this.blockchainExplorerOpts) {
       if (
-        this.blockchainExplorerOpts[coin] &&
-        this.blockchainExplorerOpts[coin][network]
+        this.blockchainExplorerOpts.chains &&
+        this.blockchainExplorerOpts.chains[coin] &&
+        this.blockchainExplorerOpts.chains[coin][network]
       ) {
-        opts = this.blockchainExplorerOpts[coin][network];
+        opts = this.blockchainExplorerOpts.chains[coin][network];
         provider = opts.provider;
       } else if (this.blockchainExplorerOpts[network]) {
         opts = this.blockchainExplorerOpts[network];

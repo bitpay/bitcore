@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import { V8 } from './blockchainexplorers/v8';
 import { ChainService } from './chain/index';
+const config = require('../config');
 
 const $ = require('preconditions').singleton();
 const Common = require('./common');
@@ -8,21 +9,19 @@ const Defaults = Common.Defaults;
 let log = require('npmlog');
 log.debug = log.verbose;
 
-const PROVIDERS = {
-  v8: {
-    btc: {
-      livenet: 'https://api.bitpay.com',
-      testnet: 'https://api.bitpay.com'
-    },
-    bch: {
-      livenet: 'https://api.bitpay.com',
-      testnet: 'https://api.bitpay.com'
-    },
-    eth: {
-      livenet: 'https://api-eth.bitcore.io',
-      testnet: 'https://api-eth.bitcore.io'
+const v8Providers = Object.keys(config.blockchainExplorerOpts.chains).reduce(
+  (obj, chain) => {
+    obj[chain] = {};
+    const networks = Object.keys(config.blockchainExplorerOpts.chains[chain]);
+    for (const network of networks) {
+      obj[chain][network] = config.blockchainExplorerOpts.chains[chain][network].url;
     }
-  }
+    return obj;
+  },
+  {}
+);
+const PROVIDERS = {
+  v8: v8Providers
 };
 
 export function BlockChainExplorer(opts) {
