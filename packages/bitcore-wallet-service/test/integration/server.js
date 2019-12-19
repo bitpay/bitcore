@@ -9,7 +9,7 @@ var should = chai.should();
 var log = require('npmlog');
 log.debug = log.verbose;
 
-var config = require('../../ts_build/config.js');
+var config = require('../../ts_build/config');
 
 var CWC = require('crypto-wallet-core');
 var Bitcore = require('bitcore-lib');
