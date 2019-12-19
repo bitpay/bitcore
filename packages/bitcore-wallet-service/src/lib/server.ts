@@ -2004,11 +2004,6 @@ export class WalletService {
             );
           }
 
-          if (failed > 0) {
-            this.logw('Not caching default values. Failed:' + failed);
-            return cb(null, values);
-          }
-
           this.storage.storeGlobalCache(cacheKey, values, err => {
             if (err) {
               this.logw('Could not store fee level cache');

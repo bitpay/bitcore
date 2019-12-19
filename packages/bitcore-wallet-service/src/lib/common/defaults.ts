@@ -159,7 +159,7 @@ module.exports = {
   BLOCKHEIGHT_CACHE_TIME: 30 * 60 * 1000,
 
   // Cache time fee levels (in ms)
-  FEE_LEVEL_CACHE_DURATION: 6 * 60 * 1000,
+  FEE_LEVEL_CACHE_DURATION: 1 * 60 * 1000,
 
   // Max allowed timespan for notification queries in seconds
   MAX_NOTIFICATIONS_TIMESPAN: 60 * 60 * 24 * 14, // ~ 2 weeks
