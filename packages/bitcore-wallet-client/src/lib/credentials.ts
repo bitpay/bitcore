@@ -1,6 +1,6 @@
 'use strict';
 
-import { BitcoreLib } from 'crypto-wallet-core';
+import { BitcoreLib, Deriver } from 'crypto-wallet-core';
 
 import { Constants, Utils } from './common';
 const $ = require('preconditions').singleton();
@@ -152,6 +152,7 @@ export class Credentials {
     var legacyRootPath = () => {
       // legacy base path schema
       var purpose;
+      let coin = this.coin;
       switch (this.derivationStrategy) {
         case Constants.DERIVATION_STRATEGIES.BIP45:
           return "m/45'";
@@ -162,24 +163,10 @@ export class Credentials {
           purpose = '48';
           break;
       }
-
-      var coin = '0';
-      if (this.network != 'livenet' && this.coin !== 'eth') {
-        coin = '1';
-      } else if (this.coin == 'bch') {
-        if (this.use145forBCH) {
-          coin = '145';
-        } else {
-          coin = '0';
-        }
-      } else if (this.coin == 'btc') {
-        coin = '0';
-      } else if (this.coin == 'eth') {
-        coin = '60';
-      } else {
-        throw new Error('unknown coin: ' + this.coin);
+      if (!this.use145forBCH && this.coin === 'bch') {
+        coin = 'btc';
       }
-      return 'm/' + purpose + "'/" + coin + "'/" + this.account + "'";
+      return Deriver.pathFor(coin, this.network, this.account).replace(/44/i, purpose);
     };
 
     if (!this.rootPath) {
