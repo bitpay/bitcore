@@ -92,7 +92,9 @@
     "compile": "npm run clean && npm run build",
     "lint": "tslint -c tslint.json 'src/**/*.ts'",
     "fix": "tslint --fix -c tslint.json 'src/**/*.ts'",
-    "pub": "npm run build && npm publish"
+    "pub": "npm run build && npm publish",
+    "env:prod": "rm -f src/config/index.ts && cp src/config/prod.ts src/config/index.ts \n\n# Config pointed to api.bitcore.io\n\n",
+    "env:dev": "rm -f src/config/index.ts && cp src/config/dev.ts src/config/index.ts \n\n# Config pointed to localhost:3000 and regtestEnabled\n\n"
   },
   "bitcoreNode": "./bitcorenode",
   "contributors": [

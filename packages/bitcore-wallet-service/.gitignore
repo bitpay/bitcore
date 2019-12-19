@@ -47,3 +47,6 @@ Session.vim
 .DS_Store
 .AppleDouble
 .LSOverride
+
+# Config
+src/config/index.ts
