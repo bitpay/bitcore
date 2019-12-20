@@ -152,6 +152,7 @@ module.exports = {
   BALANCE_CACHE_ADDRESS_THRESOLD: 100,
 
   BALANCE_CACHE_DURATION: 10,
+  UTXO_CACHE_DURATION: 10 * 1000,
 
   // Cache time for blockchain height (in ms)
   // this is actually erased on 'new block' notifications

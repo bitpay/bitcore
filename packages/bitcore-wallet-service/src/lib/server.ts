@@ -1553,14 +1553,16 @@ export class WalletService {
   _getUtxosForCurrentWallet(opts, cb) {
     opts = opts || {};
 
-    const utxoKey = (utxo) => {
+    const utxoKey = utxo => {
       return utxo.txid + '|' + utxo.vout;
     };
+
+    const getDustThreshold = coin => Bitcore_[coin].Transaction.DUST_AMOUNT;
 
     let coin, allAddresses, allUtxos, utxoIndex, addressStrs, bc, wallet;
     async.series(
       [
-        (next) => {
+        next => {
           this.getWallet({}, (err, w) => {
             if (err) return next(err);
 
@@ -1579,7 +1581,7 @@ export class WalletService {
             return next();
           });
         },
-        (next) => {
+        next => {
           if (_.isArray(opts.addresses)) {
             allAddresses = opts.addresses;
             return next();
@@ -1588,7 +1590,11 @@ export class WalletService {
           // even with Grouping we need address for pubkeys and path (see last step)
           this.storage.fetchAddresses(this.walletId, (err, addresses) => {
             _.each(addresses, x => {
-              ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
+              ChainService.addressFromStorageTransform(
+                wallet.coin,
+                wallet.network,
+                x
+              );
             });
             allAddresses = addresses;
             if (allAddresses.length == 0) return cb(null, []);
@@ -1596,41 +1602,67 @@ export class WalletService {
             return next();
           });
         },
-        (next) => {
+        next => {
           addressStrs = _.map(allAddresses, 'address');
           return next();
         },
-        (next) => {
+
+        next => {
+          const cacheKey =
+            'utxos|' + wallet.coin + '|' + wallet.network + '|' + wallet.id;
+
+          this.storage.checkAndUseGlobalCache(
+            cacheKey,
+            Defaults.UTXO_CACHE_DURATION,
+            (err, values, oldvalues) => {
+              if (err) return next(err);
+              if (values && values.length) {
+                allUtxos = _.filter(values, x => {
+                  return x.satoshis >= getDustThreshold(wallet.coin);
+                });
+                utxoIndex = _.keyBy(allUtxos, utxoKey);
+              }
+              return next();
+            }
+          );
+        },
+        next => {
           if (!wallet.isComplete()) return next();
 
-          this._getBlockchainHeight(wallet.coin, wallet.network, (
-            err,
-            height,
-            hash
-          ) => {
-            if (err) return next(err);
-
-            const dustThreshold = Bitcore_[wallet.coin].Transaction.DUST_AMOUNT;
-            bc.getUtxos(wallet, height, (err, utxos) => {
+          this._getBlockchainHeight(
+            wallet.coin,
+            wallet.network,
+            (err, height, hash) => {
               if (err) return next(err);
-              if (utxos.length == 0) return cb(null, []);
+              if (allUtxos) return next();
 
-              // filter out DUST
-              allUtxos = _.filter(utxos, (x) => {
-                return x.satoshis >= dustThreshold;
+              const dustThreshold = getDustThreshold(wallet.coin);
+              bc.getUtxos(wallet, height, (err, utxos) => {
+                if (err) return next(err);
+                if (utxos.length == 0) return cb(null, []);
+
+                // filter out DUST
+                allUtxos = _.filter(utxos, x => {
+                  return x.satoshis >= dustThreshold;
+                });
+
+                utxoIndex = _.keyBy(allUtxos, utxoKey);
+                const cacheKey =
+            'utxos|' + wallet.coin + '|' + wallet.network + '|' + wallet.id;
+                this.storage.storeGlobalCache(cacheKey, allUtxos, next);
               });
-
-              utxoIndex = _.keyBy(allUtxos, utxoKey);
-              return next();
-            });
-          });
+            }
+          );
         },
-        (next) => {
+        next => {
           this.getPendingTxs({}, (err, txps) => {
             if (err) return next(err);
 
-            const lockedInputs = _.map(_.flatten(_.map(txps, 'inputs')), utxoKey);
-            _.each(lockedInputs, (input) => {
+            const lockedInputs = _.map(
+              _.flatten(_.map(txps, 'inputs')),
+              utxoKey
+            );
+            _.each(lockedInputs, input => {
               if (utxoIndex[input]) {
                 utxoIndex[input].locked = true;
               }
@@ -1639,7 +1671,7 @@ export class WalletService {
             return next();
           });
         },
-        (next) => {
+        next => {
           const now = Math.floor(Date.now() / 1000);
           // Fetch latest broadcasted txs and remove any spent inputs from the
           // list of UTXOs returned by the block explorer. This counteracts any out-of-sync
@@ -1653,8 +1685,11 @@ export class WalletService {
             },
             (err, txs) => {
               if (err) return next(err);
-              const spentInputs = _.map(_.flatten(_.map(txs, 'inputs')), utxoKey);
-              _.each(spentInputs, (input) => {
+              const spentInputs = _.map(
+                _.flatten(_.map(txs, 'inputs')),
+                utxoKey
+              );
+              _.each(spentInputs, input => {
                 if (utxoIndex[input]) {
                   utxoIndex[input].spent = true;
                 }
@@ -1667,10 +1702,10 @@ export class WalletService {
             }
           );
         },
-        (next) => {
+        next => {
           // Needed for the clients to sign UTXOs
           const addressToPath = _.keyBy(allAddresses, 'address');
-          _.each(allUtxos, (utxo) => {
+          _.each(allUtxos, utxo => {
             if (!addressToPath[utxo.address]) {
               if (!opts.addresses) this.logw('Ignored UTXO!: ' + utxo.address);
               return;
