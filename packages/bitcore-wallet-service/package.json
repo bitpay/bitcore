@@ -80,10 +80,10 @@
     "typescript-eslint-parser": "^22.0.0"
   },
   "scripts": {
-    "start": "npm run clean && npm run env:prod && npm run tsc && ./start.sh",
+    "start": "npm run clean && npm run tsc && ./start.sh",
     "stop": "./stop.sh",
     "coverage": "npm run compile && ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha -- --reporter spec test",
-    "test": "npm run env:prod && npm run compile && mocha --exit",
+    "test": "npm run compile && mocha --exit",
     "test:ci": "npm run test",
     "coveralls": "./node_modules/.bin/istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- -R spec && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage",
     "tsc": "npm run clean && tsc",
@@ -93,8 +93,8 @@
     "lint": "tslint -c tslint.json 'src/**/*.ts'",
     "fix": "tslint --fix -c tslint.json 'src/**/*.ts'",
     "pub": "npm run build && npm publish",
-    "env:prod": "rm -f src/config/index.ts && cp src/config/prod.ts src/config/index.ts \n\n# Config pointed to api.bitcore.io\n\n",
-    "env:dev": "rm -f src/config/index.ts && cp src/config/dev.ts src/config/index.ts \n\n# Config pointed to localhost:3000 and regtestEnabled\n\n"
+    "env:prod": "NODE_ENV=prod \n\n# Config pointed to api.bitcore.io\n\n",
+    "env:dev": "NODE_ENV=dev \n\n# Config pointed to localhost:3000 and regtestEnabled\n\n"
   },
   "bitcoreNode": "./bitcorenode",
   "contributors": [
