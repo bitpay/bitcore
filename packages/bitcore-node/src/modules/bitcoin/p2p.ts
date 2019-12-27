@@ -39,9 +39,13 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
       [this.bitcoreP2p.Inventory.TYPE.BLOCK]: 100,
       [this.bitcoreP2p.Inventory.TYPE.TX]: 100000
     };
+    if (this.network === 'regtest' && chain === 'LTC') {
+      this.bitcoreLib.Networks.enableRegtest();
+    }
     this.messages = new this.bitcoreP2p.Messages({
       network: this.bitcoreLib.Networks.get(this.network)
     });
+
     this.pool = new this.bitcoreP2p.Pool({
       addrs: this.chainConfig.trustedPeers.map(peer => {
         return {

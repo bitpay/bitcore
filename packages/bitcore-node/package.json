@@ -46,6 +46,7 @@
     "bitcoin",
     "bitcoin-cash",
     "ethereum",
+    "litecoin",
     "node"
   ],
   "license": "MIT",
@@ -89,6 +90,8 @@
     "crypto-wallet-core": "^8.13.0",
     "heapdump": "0.3.12",
     "http": "0.0.0",
+    "litecore-lib": "git+ssh://git@github.com:litecoin-project/litecore-lib.git#c0aebd638a50bf378c2e3f364a251c29e8378ab8",
+    "litecore-p2p": "git+ssh://git@github.com:litecoin-project/litecore-p2p.git#f19e94c8e96ad40a71571e4cf5126ce0b06c4935",
     "lodash": "4.17.11",
     "lru-cache": "4.1.3",
     "mkdirp": "0.5.1",
