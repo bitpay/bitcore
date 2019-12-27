@@ -23,7 +23,8 @@ var MAX_FEE_PER_KB = {
 // PayPro Network Map
 export enum NetworkMap {
   main = 'livenet',
-  test = 'testnet'
+  test = 'testnet',
+  regtest = 'testnet'
 }
 
 export class PayProV2 {
