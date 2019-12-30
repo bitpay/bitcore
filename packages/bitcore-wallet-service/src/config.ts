@@ -73,6 +73,7 @@ module.exports = {
   maintenanceOpts: {
     maintenanceMode: false,
   },
+  staticRoot: '/tmp/static',
   // simplex: {
   //   sandbox: {
   //     apiKey: 'simplex_sandbox_api_key_here',
