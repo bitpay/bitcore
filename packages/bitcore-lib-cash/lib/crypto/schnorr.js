@@ -41,14 +41,14 @@ Schnorr.prototype.sign = function() {
   
     $.checkState(hashbuf && privkey && d, new Error('invalid parameters'));
     $.checkState(BufferUtil.isBuffer(hashbuf) && hashbuf.length === 32, new Error('hashbuf must be a 32 byte buffer'));
-  
+
     var e = BN.fromBuffer(hashbuf, this.endian ? {
       endian: this.endian
     } : undefined);
-  
+    
     var obj = this._findSignature(d, e);
     obj.compressed = this.pubkey.compressed;
-  
+    
     this.sig = new Signature(obj);
     return this;
 };
@@ -67,43 +67,36 @@ Schnorr.prototype._findSignature = function(d, e) {
     $.checkState(!d.gte(N), new Error('privkey out of field of curve'));
     P = G.mul(dPrime);
 
-
     if((P.hasSquare())) {
-      console.log('has square')
-      D = d; // D is secret key
+      console.log("private key", d);
+      D = d;
     } else {
       D = N.sub(dPrime);
-      //D = d;
     }
-    
-    let secretKeyMessageConcat =  Buffer.concat([D.toBuffer(), e.toBuffer()]);
-    let secretKeyMessageConcatBIPSchnorrHash = taggedHash("BIPSchnorrDerive", secretKeyMessageConcat);
-    let k0 = (BN.fromBuffer(secretKeyMessageConcatBIPSchnorrHash).mod(N));
-    
 
-    // k should be of type number here
-    $.checkState(!k0.eqn(0), new Error('Failure. This happens only with negligible probability.'));
+    let secretKeyMessageConcat =  Buffer.concat([D.toBuffer(), e.toBuffer()]);
+    //console.log("secretKeyMessageConcat", secretKeyMessageConcat);
+    let secretKeyMessageConcatBIPSchnorrHash = taggedHash("BIPSchnorrDerive", secretKeyMessageConcat);
+    //console.log(secretKeyMessageConcatBIPSchnorrHash, "SecretKeyMessageConcatBIPSchnorrDeriveHash");
+    let k0 = (BN.fromBuffer(secretKeyMessageConcatBIPSchnorrHash).umod(N));
     
+    // k should be of type number here.
+    $.checkState(!k0.eqn(0), new Error('Failure. This happens only with negligible probability.'));
+
     R = G.mul(k0);
 
     // Find deterministic k
     if(R.hasSquare()) {
-      console.log('has square');
       k = k0;
     } else {
       k = N.sub(k0);
-      //k = k0;
     }
     
-    // e = int_from_bytes(tagged_hash("BIPSchnorr", bytes_from_point(R) + bytes_from_point(P) + msg)) % n
     let concatBytes = Buffer.concat([R.getX().toBuffer(), P.getX().toBuffer(), e.toBuffer()]);
-    let pointConcat= taggedHash("BIPSchnorr", concatBytes); //Buffer
+    let pointConcat= taggedHash("BIPSchnorr", concatBytes);
     let eSig = BN.fromBuffer(pointConcat).mod(N);
-
-    console.log(eSig.toString());
     
     let a = (eSig.mul(D)).add(k);
-    // let sig_operation = k.add(a); // k + ed
     let half_sig = a.mod(N);
     
     let sig = Buffer.concat([R.getX().toBuffer(), half_sig.toBuffer()]);
@@ -124,37 +117,47 @@ Schnorr.prototype._findSignature = function(d, e) {
 
     var sigBuf = this.sig.toBuffer();
 
-    if(sigBuf.length !== 64) {
-      return 'signature must be a 64 byte array';
-    }
+    console.log("this.sig", this.sig)
+    console.log("sigBuf length", sigBuf.length);
 
-    if(this.pubkey.toBuffer().length !== 32) {
-      return 'public key must be a 32 bytes';
-    } 
+    // if(sigBuf.length !== 64 || sigBuf.length !==65) {
+    //   return 'signature must be a 64 byte or 65 byte array';
+    // }
 
-    //Check if point P is none.
-    var pointObj = this.pubkey.pointObject();
-    var pubkeyPoint = new Point(pointObj.x, pointObj.y);
-    if(pubkeyPoint.isInfinity()) return true;
+    // if(this.pubkey.toBuffer().length !== 32 || this.pubkey.toBuffer().length !== 33 ) {
+    //   return 'public key must be a 32 bytes';
+    // }
+    
+    var pubkeyObj = this.pubkey.toObject();
+    
+    var P = pubkeyPointfromX(BN.fromString(pubkeyObj.x, 'hex'));
+    var publicKey = PublicKey(P, { compressed: true } );
+    console.log(publicKey);
+    var G = Point.getG();
+
+    if(P.isInfinity()) return true;
     
     var r = this.sig.r;
     var s = this.sig.s;
 
-    let p = new BN('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 'hex');
+    let p = new BN('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 'hex');
     let n = Point.getN();
 
     if(r.gte(p) || s.gte(n)) {
+      console.log("Failed >= condition");
       return true;
     }
-
-    let e = BN.fromBuffer(taggedHash("BIPSchnorr", Buffer.concat([r.toBuffer(),this.pubkey.toBuffer(), this.hashbuf]))).mod(n);
-
-    // G.mul(s);
-    // P.mul(n.sub(e));
-    let R = (G.mul(s)).add(P.mul(n.sub(e)));
+    
+    let hash = taggedHash("BIPSchnorr", Buffer.concat([r.toBuffer(), this.pubkey.toBuffer().slice(1,33), this.hashbuf]));
+    let e = BN.fromBuffer(hash, 'big').umod(n);
+  
+    let sG = G.mul(s);
+    let eP = P.mul(new BN(n.sub(e)));
+    let R = sG.add(eP);
+    
     if(R.isInfinity() || !R.hasSquare() || !R.getX().eq(r)) {
       return true;
-    }
+    } 
     return false;
   };
 
@@ -167,12 +170,13 @@ Schnorr.prototype._findSignature = function(d, e) {
     return this;
   };
 
-  /*
-  ** @param {tag | string}
-  ** @param {bytesSecretKeyMessage | Buffer} buffer to be hashed
-  **/
+  /**
+  * @param {tag | string}
+  * @param {bytesSecretKeyMessage | Buffer} buffer to be hashed
+  */
   function taggedHash(tag,bytesSecretKeyMessage) {
     let tagHash = Hash.sha256(Buffer.from(tag, 'utf-8'));
+    // console.log("tagHash", tagHash);
     return Hash.sha256(Buffer.concat([tagHash, tagHash, bytesSecretKeyMessage]));
   }
 
@@ -192,6 +196,36 @@ Schnorr.prototype._findSignature = function(d, e) {
       pubkey: pubkey
     }).verify().verified;
   };
+
+  /**
+   * 
+   * @param {*} x | BN, public key curve
+   * @return undefined | Point(x,y) point for public key.
+   */
+  function pubkeyPointfromX(x) {
+    let p = new BN('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 'hex');
+    if (x.gte(p)) {
+      return undefined;
+    } 
+    let ySq = modPow(x,new BN(3),p).add(new BN(7)).mod(p);
+    let y = modPow(ySq, p.add(new BN(1)).div(new BN(4)), p);
+    if (!modPow(y, new BN(2), p).eq(ySq)) {
+      return undefined;
+    }
+    return new Point(x, y);
+  }
+  
+  /**
+   * use Red reduction for faster calculation modular exponentiation
+   * @param {*} base BN
+   * @param {*} exponent BN
+   * @param {*} moduloDivisor BN
+   * @return (base^power) % moduloDivisor
+   */
+  function modPow(base, power, moduloDivisor) {
+    let redMultiplier = base.toRed(BN.red(moduloDivisor));
+    return redMultiplier.redPow(power).fromRed();
+  }
 
   module.exports = Schnorr;
 

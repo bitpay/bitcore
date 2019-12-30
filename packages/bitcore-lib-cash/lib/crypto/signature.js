@@ -6,14 +6,15 @@ var $ = require('../util/preconditions');
 var BufferUtil = require('../util/buffer');
 var JSUtil = require('../util/js');
 
-var Signature = function Signature(r, s) {
+var Signature = function Signature(r, s, isSchnorr) {
   if (!(this instanceof Signature)) {
-    return new Signature(r, s);
+    return new Signature(r, s, isSchnorr);
   }
   if (r instanceof BN) {
     this.set({
       r: r,
-      s: s
+      s: s,
+      isSchnorr: isSchnorr,
     });
   } else if (r) {
     var obj = r;
@@ -28,7 +29,8 @@ Signature.prototype.set = function(obj) {
 
   this.i = typeof obj.i !== 'undefined' ? obj.i : this.i; //public key recovery parameter in range [0, 3]
   this.compressed = typeof obj.compressed !== 'undefined' ?
-    obj.compressed : this.compressed; //whether the recovered pubkey is compressed
+    obj.compressed : this.compressed; // whether the recovered pubkey is compressed
+  this.isSchnorr = obj.isSchnorr;
   this.nhashtype = obj.nhashtype || this.nhashtype || undefined;
   return this;
 };
@@ -177,6 +179,12 @@ Signature.prototype.toCompact = function(i, compressed) {
 Signature.prototype.toBuffer = Signature.prototype.toDER = function() {
   var rnbuf = this.r.toBuffer();
   var snbuf = this.s.toBuffer();
+
+  if(this.isSchnorr && !this.nhashtype) {
+    return Buffer.concat([rnbuf, snbuf]);
+  } else if (this.isSchnorr && this.nhashtype) {
+    return Buffer.concat([rnbuf, snbuf, this.nhashtype]);
+  }
 
   var rneg = rnbuf[0] & 0x80 ? true : false;
   var sneg = snbuf[0] & 0x80 ? true : false;
