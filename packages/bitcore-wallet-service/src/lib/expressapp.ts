@@ -38,6 +38,7 @@ export class ExpressApp {
 
     this.app.use(compression());
 
+    
     this.app.use((req, res, next) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader(
@@ -977,6 +978,11 @@ export class ExpressApp {
     });
 
     this.app.use(opts.basePath || '/bws/api', router);
+
+    if (config.staticRoot) {
+      log.info(`Serving static files from ${config.staticRoot}`);
+      this.app.use('/static', express.static(config.staticRoot));
+    }
 
     WalletService.initialize(opts, cb);
   }
