@@ -48,11 +48,13 @@ Schnorr.prototype.sign = function() {
     
     var obj = this._findSignature(d, e);
     obj.compressed = this.pubkey.compressed;
+    obj.isSchnorr = true;
     
     this.sig = new Signature(obj);
     return this;
 };
 
+// Changed to use the fool 
 Schnorr.prototype._findSignature = function(d, e) {
     // d is the private key;
     // e is the message to be signed
@@ -68,16 +70,13 @@ Schnorr.prototype._findSignature = function(d, e) {
     P = G.mul(dPrime);
 
     if((P.hasSquare())) {
-      console.log("private key", d);
       D = d;
     } else {
       D = N.sub(dPrime);
     }
 
     let secretKeyMessageConcat =  Buffer.concat([D.toBuffer(), e.toBuffer()]);
-    //console.log("secretKeyMessageConcat", secretKeyMessageConcat);
     let secretKeyMessageConcatBIPSchnorrHash = taggedHash("BIPSchnorrDerive", secretKeyMessageConcat);
-    //console.log(secretKeyMessageConcatBIPSchnorrHash, "SecretKeyMessageConcatBIPSchnorrDeriveHash");
     let k0 = (BN.fromBuffer(secretKeyMessageConcatBIPSchnorrHash).umod(N));
     
     // k should be of type number here.
@@ -104,6 +103,10 @@ Schnorr.prototype._findSignature = function(d, e) {
     let r = sig.slice(0, 32);
     let s = sig.slice(32, 64);
 
+    console.log("r", r);
+
+    console.log("s", s)
+
     return {
       r: BN.fromBuffer(r),
       s: BN.fromBuffer(s)
@@ -117,9 +120,6 @@ Schnorr.prototype._findSignature = function(d, e) {
 
     var sigBuf = this.sig.toBuffer();
 
-    console.log("this.sig", this.sig)
-    console.log("sigBuf length", sigBuf.length);
-
     // if(sigBuf.length !== 64 || sigBuf.length !==65) {
     //   return 'signature must be a 64 byte or 65 byte array';
     // }
@@ -132,7 +132,6 @@ Schnorr.prototype._findSignature = function(d, e) {
     
     var P = pubkeyPointfromX(BN.fromString(pubkeyObj.x, 'hex'));
     var publicKey = PublicKey(P, { compressed: true } );
-    console.log(publicKey);
     var G = Point.getG();
 
     if(P.isInfinity()) return true;
@@ -176,7 +175,6 @@ Schnorr.prototype._findSignature = function(d, e) {
   */
   function taggedHash(tag,bytesSecretKeyMessage) {
     let tagHash = Hash.sha256(Buffer.from(tag, 'utf-8'));
-    // console.log("tagHash", tagHash);
     return Hash.sha256(Buffer.concat([tagHash, tagHash, bytesSecretKeyMessage]));
   }
 
