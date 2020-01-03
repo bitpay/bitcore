@@ -34,6 +34,10 @@ Schnorr.prototype.privkey2pubkey = function() {
     this.pubkey = this.privkey.toPublicKey();
 };
 
+Schnorr.prototype.toPublicKey = function() {
+  return this.privkey.toPublicKey();
+}
+
 Schnorr.prototype.sign = function() {
     var hashbuf = this.hashbuf;
     var privkey = this.privkey;
@@ -59,57 +63,33 @@ Schnorr.prototype._findSignature = function(d, e) {
     // d is the private key;
     // e is the message to be signed
 
-    var dPrime, D, P, N, G, R, k;
-    N = Point.getN();
-    G = Point.getG();
-    dPrime = d;
-    D = d;
-
-    $.checkState(!d.lte(0), new Error('privkey out of field of curve'));
-    $.checkState(!d.gte(N), new Error('privkey out of field of curve'));
-    P = G.mul(dPrime);
-
-    if((P.hasSquare())) {
-      D = d;
-    } else {
-      D = N.sub(dPrime);
-    }
-
-    let secretKeyMessageConcat =  Buffer.concat([D.toBuffer(), e.toBuffer()]);
-    let secretKeyMessageConcatBIPSchnorrHash = taggedHash("BIPSchnorrDerive", secretKeyMessageConcat);
-    let k0 = (BN.fromBuffer(secretKeyMessageConcatBIPSchnorrHash).umod(N));
+    // $.checkState(!d.lte(0), new Error('privkey out of field of curve'));
+    // $.checkState(!d.gte(N), new Error('privkey out of field of curve'));
+    // P = G.mul(dPrime);
     
-    // k should be of type number here.
-    $.checkState(!k0.eqn(0), new Error('Failure. This happens only with negligible probability.'));
+    let n = Point.getN();
+    let G = Point.getG();
+    
+    let k = nonceFunctionRFC6979(d.toBuffer(), e.toBuffer());
 
-    R = G.mul(k0);
+    let P = G.mul(d);
+    let R = G.mul(k);
 
-    // Find deterministic k
+     // Find deterministic k
     if(R.hasSquare()) {
-      k = k0;
+      k = k;
     } else {
-      k = N.sub(k0);
+      k = n.sub(k);
     }
+
+    let r = R.getX();
+    let e0 = BN.fromBuffer(Hash.sha256(Buffer.concat([r.toBuffer(), Point.pointToCompressed(P), e.toBuffer()])));
     
-    let concatBytes = Buffer.concat([R.getX().toBuffer(), P.getX().toBuffer(), e.toBuffer()]);
-    let pointConcat= taggedHash("BIPSchnorr", concatBytes);
-    let eSig = BN.fromBuffer(pointConcat).mod(N);
+    let s = ((e0.mul(d)).add(k)).mod(n);
     
-    let a = (eSig.mul(D)).add(k);
-    let half_sig = a.mod(N);
-    
-    let sig = Buffer.concat([R.getX().toBuffer(), half_sig.toBuffer()]);
-
-    let r = sig.slice(0, 32);
-    let s = sig.slice(32, 64);
-
-    console.log("r", r);
-
-    console.log("s", s)
-
     return {
-      r: BN.fromBuffer(r),
-      s: BN.fromBuffer(s)
+      r: r,
+      s: s
     };
   };
 
@@ -118,26 +98,23 @@ Schnorr.prototype._findSignature = function(d, e) {
       return 'hashbuf must be a 32 byte buffer';
     }
 
-    var sigBuf = this.sig.toBuffer();
-
-    // if(sigBuf.length !== 64 || sigBuf.length !==65) {
-    //   return 'signature must be a 64 byte or 65 byte array';
-    // }
-
-    // if(this.pubkey.toBuffer().length !== 32 || this.pubkey.toBuffer().length !== 33 ) {
-    //   return 'public key must be a 32 bytes';
-    // }
+    let sigLength = this.sig.r.toBuffer().length + this.sig.s.toBuffer().length;
     
-    var pubkeyObj = this.pubkey.toObject();
+    if(!(sigLength === 64 || sigLength === 65)) {
+      return 'signature must be a 64 byte or 65 byte array';
+    } 
+
+    if(!(this.pubkey.toBuffer().length === 32 || this.pubkey.toBuffer().length === 33)) {
+      return 'pubkey must be 32 byte buffer';
+    }
     
-    var P = pubkeyPointfromX(BN.fromString(pubkeyObj.x, 'hex'));
-    var publicKey = PublicKey(P, { compressed: true } );
-    var G = Point.getG();
+    let P = this.pubkey.point;
+    let G = Point.getG();
 
     if(P.isInfinity()) return true;
     
-    var r = this.sig.r;
-    var s = this.sig.s;
+    let r = this.sig.r;
+    let s = this.sig.s;
 
     let p = new BN('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 'hex');
     let n = Point.getN();
@@ -146,10 +123,13 @@ Schnorr.prototype._findSignature = function(d, e) {
       console.log("Failed >= condition");
       return true;
     }
+
+    let Br = r.toBuffer();
+    let Bp = Point.pointToCompressed(P);
     
-    let hash = taggedHash("BIPSchnorr", Buffer.concat([r.toBuffer(), this.pubkey.toBuffer().slice(1,33), this.hashbuf]));
+    let hash = Hash.sha256(Buffer.concat([Br, Bp, this.hashbuf]));
     let e = BN.fromBuffer(hash, 'big').umod(n);
-  
+    
     let sG = G.mul(s);
     let eP = P.mul(new BN(n.sub(e)));
     let R = sG.add(eP);
@@ -170,12 +150,36 @@ Schnorr.prototype._findSignature = function(d, e) {
   };
 
   /**
-  * @param {tag | string}
-  * @param {bytesSecretKeyMessage | Buffer} buffer to be hashed
-  */
-  function taggedHash(tag,bytesSecretKeyMessage) {
-    let tagHash = Hash.sha256(Buffer.from(tag, 'utf-8'));
-    return Hash.sha256(Buffer.concat([tagHash, tagHash, bytesSecretKeyMessage]));
+   * RFC6979 deterministic nonce generation
+   * @param {Buffer} privkeybuf 
+   * @param {Buffer} msgbuf 
+   * @return k {BN}
+   */
+  function nonceFunctionRFC6979(privkey, msgbuf) {
+    let V = Buffer.from("0101010101010101010101010101010101010101010101010101010101010101","hex");
+    let K = Buffer.from("0000000000000000000000000000000000000000000000000000000000000000","hex");
+    
+    let blob = Buffer.concat([privkey, msgbuf, Buffer.from("Schnorr+SHA256  ", "utf-8")]);
+
+    K = Hash.sha256hmac(Buffer.concat([V, Buffer.from('00', 'hex'), blob]), K);
+    V = Hash.sha256hmac(V,K); 
+    K = Hash.sha256hmac(Buffer.concat([V,Buffer.from('01','hex'), blob]), K);
+    V = Hash.sha256hmac(V,K);
+
+    let k = new BN(0);
+    let T;
+    while (true) {
+      V = Hash.sha256hmac(V,K);
+      T = BN.fromBuffer(V);
+      
+      k = T;
+      if (k.gt(new BN(0) && k.lt(Point.getN()))) {
+        break;
+      }
+      K = Hash.sha256hmac(Buffer.concat([V, Buffer.from("00", 'hex')]), K);
+      V = Hash.hmac(Hash.sha256sha256, V, K);
+    }
+    return k;
   }
 
   Schnorr.sign = function(hashbuf, privkey, endian) {
@@ -194,36 +198,6 @@ Schnorr.prototype._findSignature = function(d, e) {
       pubkey: pubkey
     }).verify().verified;
   };
-
-  /**
-   * 
-   * @param {*} x | BN, public key curve
-   * @return undefined | Point(x,y) point for public key.
-   */
-  function pubkeyPointfromX(x) {
-    let p = new BN('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 'hex');
-    if (x.gte(p)) {
-      return undefined;
-    } 
-    let ySq = modPow(x,new BN(3),p).add(new BN(7)).mod(p);
-    let y = modPow(ySq, p.add(new BN(1)).div(new BN(4)), p);
-    if (!modPow(y, new BN(2), p).eq(ySq)) {
-      return undefined;
-    }
-    return new Point(x, y);
-  }
-  
-  /**
-   * use Red reduction for faster calculation modular exponentiation
-   * @param {*} base BN
-   * @param {*} exponent BN
-   * @param {*} moduloDivisor BN
-   * @return (base^power) % moduloDivisor
-   */
-  function modPow(base, power, moduloDivisor) {
-    let redMultiplier = base.toRed(BN.red(moduloDivisor));
-    return redMultiplier.redPow(power).fromRed();
-  }
 
   module.exports = Schnorr;
 

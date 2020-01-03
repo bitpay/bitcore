@@ -63,6 +63,16 @@ Signature.fromCompact = function(buf) {
 };
 
 Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
+  // Schnorr Signatures use 64/65 byte for in tx r [len] 32 , s [len] 32, nhashtype 
+  if((buf.length === 64 || buf.length === 65) && !Signature.isDER(buf)) {
+    let obj = Signature.parseSchnorrEncodedSig(buf);
+    let sig = new Signature();
+    sig.r = obj.r;
+    sig.s = obj.s;
+    sig.isSchnorr = true;
+    return sig;
+  }
+
   var obj = Signature.parseDER(buf, strict);
   var sig = new Signature();
 
@@ -92,9 +102,27 @@ Signature.fromDataFormat = function(buf) {
 
 Signature.fromString = function(str) {
   var buf = Buffer.from(str, 'hex');
+  
   return Signature.fromDER(buf);
 };
 
+
+Signature.parseSchnorrEncodedSig = function(buf) {
+  let r = buf.slice(0,32);
+  let s = buf.slice(32, 64);
+  let hashtype;
+  if (buf.length === 65) {
+    hashtype = buf.slice(64,66);
+    this.hashtype = hashtype;
+  }
+
+  var obj = {
+    r: BN.fromBuffer(r),
+    s: BN.fromBuffer(s)
+  };
+
+  return obj;
+};
 
 /**
  * In order to mimic the non-strict DER encoding of OpenSSL, set strict = false.
