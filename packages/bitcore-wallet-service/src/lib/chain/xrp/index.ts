@@ -8,7 +8,7 @@ const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
-export class EthChain implements IChain {
+export class XrpChain implements IChain {
   /**
    * Converts Bitcore Balance Response.
    * @param {Object} bitcoreBalance - { unconfirmed, confirmed, balance }
@@ -17,14 +17,20 @@ export class EthChain implements IChain {
    */
   private convertBitcoreBalance(bitcoreBalance, locked) {
     const { unconfirmed, confirmed, balance } = bitcoreBalance;
-    // we ASUME all locked as confirmed, for ETH.
+    let activatedBalance = balance;
+    let activatedConfirmed = confirmed;
+    // If XRP address has a min balance of 20 XRP, subtract activation fee for true spendable balance.
+    if (balance >= Defaults.MIN_XRP_BALANCE && confirmed >= Defaults.MIN_XRP_BALANCE) {
+      activatedBalance = balance - Defaults.MIN_XRP_BALANCE;
+      activatedConfirmed = confirmed - Defaults.MIN_XRP_BALANCE;
+    }
     const convertedBalance = {
-      totalAmount: balance,
-      totalConfirmedAmount: confirmed,
+      totalAmount: activatedBalance,
+      totalConfirmedAmount: activatedConfirmed,
       lockedAmount: locked,
       lockedConfirmedAmount: locked,
-      availableAmount: balance - locked,
-      availableConfirmedAmount: confirmed - locked,
+      availableAmount: activatedBalance - locked,
+      availableConfirmedAmount: activatedConfirmed - locked,
       byAddress: []
     };
     return convertedBalance;
@@ -32,11 +38,6 @@ export class EthChain implements IChain {
 
   getWalletBalance(server, wallet, opts, cb) {
     const bc = server._getBlockchainExplorer(wallet.coin, wallet.network);
-
-    if (opts.tokenAddress) {
-      wallet.tokenAddress = opts.tokenAddress;
-    }
-
     bc.getBalance(wallet, (err, balance) => {
       if (err) {
         return cb(err);
@@ -70,7 +71,7 @@ export class EthChain implements IChain {
     server.getBalance({}, (err, balance) => {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
-      let fee = opts.feePerKb * Defaults.MIN_GAS_LIMIT;
+      let fee = opts.feePerKb;
       return cb(null, {
         utxosBelowFee: 0,
         amountBelowFee: 0,
@@ -94,69 +95,37 @@ export class EthChain implements IChain {
     });
   }
 
-  getChangeAddress() { }
+  getChangeAddress() {}
 
-  checkDust(output, opts) { }
+  checkDust(output, opts) {}
 
   getFee(server, wallet, opts) {
-    return new Promise(resolve => {
-      server._getFeePerKb(wallet, opts, async (err, inFeePerKb) => {
+    return new Promise((resolve, reject) => {
+      server._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
+        if (err) {
+          return reject(err);
+        }
         let feePerKb = inFeePerKb;
-        let gasPrice = inFeePerKb;
-        const { from } = opts;
-        const { coin, network } = wallet;
-        let inGasLimit;
-        for (let output of opts.outputs) {
-          try {
-            inGasLimit = await server.estimateGas({
-              coin,
-              network,
-              from,
-              to: opts.tokenAddress || output.toAddress,
-              value: opts.tokenAddress ? 0 : output.amount,
-              data: output.data,
-              gasPrice
-            });
-            output.gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
-          } catch (err) {
-            output.gasLimit = Defaults.DEFAULT_GAS_LIMIT;
-          }
-        }
-        if (_.isNumber(opts.fee)) {
-          // This is used for sendmax
-          gasPrice = feePerKb = Number(
-            (opts.fee / (inGasLimit || Defaults.DEFAULT_GAS_LIMIT)).toFixed()
-          );
-        }
-
-        const gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
-        opts.fee = feePerKb * gasLimit;
-        return resolve({ feePerKb, gasPrice, gasLimit });
+        opts.fee = feePerKb;
+        return resolve({ feePerKb });
       });
     });
   }
 
   buildTx(txp) {
-    const { data, outputs, payProUrl, tokenAddress } = txp;
-    const isERC20 = tokenAddress && !payProUrl;
-    const chain = isERC20 ? 'ERC20' : 'ETH';
+    const { destinationTag, outputs } = txp;
+    const chain = 'XRP';
     const recipients = outputs.map(output => {
       return {
         amount: output.amount,
-        address: output.toAddress,
-        data: output.data,
-        gasLimit: output.gasLimit
+        address: output.toAddress
       };
     });
-    // Backwards compatibility BWC <= 8.9.0
-    if (data) {
-      recipients[0].data = data;
-    }
     const unsignedTxs = [];
     for (let index = 0; index < recipients.length; index++) {
       const rawTx = Transactions.create({
         ...txp,
-        ...recipients[index],
+        tag: destinationTag ? Number(destinationTag) : undefined,
         chain,
         nonce: Number(txp.nonce) + Number(index),
         recipients: [recipients[index]]
@@ -197,7 +166,7 @@ export class EthChain implements IChain {
 
   selectTxInputs(server, txp, wallet, opts, cb, next) {
     server.getBalance(
-      { wallet, tokenAddress: opts.tokenAddress },
+      { wallet },
       (err, balance) => {
         if (err) return next(err);
 
@@ -207,27 +176,13 @@ export class EthChain implements IChain {
         } else if (availableAmount < txp.getTotalAmount()) {
           return cb(Errors.LOCKED_FUNDS);
         } else {
-          if (opts.tokenAddress) {
-            // ETH wallet balance
-            server.getBalance({}, (err, ethBalance) => {
-              if (err) return next(err);
-              const { totalAmount, availableAmount } = ethBalance;
-              if (totalAmount < txp.fee) {
-                return cb(Errors.INSUFFICIENT_ETH_FEE);
-              } else if (availableAmount < txp.fee) {
-                return cb(Errors.LOCKED_ETH_FEE);
-              } else {
-                return next(server._checkTx(txp));
-              }
-            });
-          } else {
-            return next(server._checkTx(txp));
-          }
+          return next(server._checkTx(txp));
         }
-    });
+      }
+    );
   }
 
-  checkUtxos(opts) { }
+  checkUtxos(opts) {}
 
   checkValidTxAmount(output): boolean {
     if (
@@ -240,7 +195,7 @@ export class EthChain implements IChain {
     return true;
   }
 
-  setInputs() { }
+  setInputs() {}
 
   isUTXOCoin() {
     return false;
@@ -267,7 +222,8 @@ export class EthChain implements IChain {
       throw new Error('Signatures Required');
     }
 
-    const chain = 'ETH';
+    const chain = 'XRP';
+    const network = tx.network;
     const unsignedTxs = tx.uncheckedSerialize();
     const signedTxs = [];
     for (let index = 0; index < signatures.length; index++) {
@@ -279,23 +235,21 @@ export class EthChain implements IChain {
       signedTxs.push(signed);
 
       // bitcore users id for txid...
-      tx.id = Transactions.getHash({ tx: signed, chain });
+      tx.id = Transactions.getHash({ tx: signed, chain, network });
     }
     tx.uncheckedSerialize = () => signedTxs;
   }
 
   validateAddress(wallet, inaddr, opts) {
-    const chain = 'ETH';
-    try {
-      Validation.validateAddress(
-        chain,
-        wallet.network,  // not really used for ETH. wallet.network is 'livenet/testnet/regtest' in wallet.
-        inaddr,
-      );
-    } catch (ex) {
+    const chain = 'XRP';
+    const isValidAddress = Validation.validateAddress(
+      chain,
+      wallet.network,  // not really used for ETH. wallet.network is 'livenet/testnet/regtest' in wallet.
+      inaddr
+    );
+    if (!isValidAddress) {
       return Errors.INVALID_ADDRESS;
     }
-
     return;
   }
 }

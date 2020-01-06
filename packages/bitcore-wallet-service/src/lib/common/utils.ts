@@ -120,6 +120,11 @@ export class Utils {
         maxDecimals: 6,
         minDecimals: 2
       },
+      xrp: {
+        toSatoshis: 1e6,
+        maxDecimals: 6,
+        minDecimals: 2
+      },
       usdc: {
         toSatoshis: 1e6,
         maxDecimals: 6,
