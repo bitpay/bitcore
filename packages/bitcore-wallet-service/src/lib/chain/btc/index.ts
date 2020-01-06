@@ -348,6 +348,10 @@ export class BtcChain implements IChain {
     return info.inputs;
   }
 
+  supportsMultisig() {
+    return true;
+  }
+
   isUTXOCoin() {
     return true;
   }

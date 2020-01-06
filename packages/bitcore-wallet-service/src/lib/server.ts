@@ -540,9 +540,9 @@ export class WalletService {
       return cb(new ClientError('Invalid public key'));
     }
 
-    if (opts.coin === 'eth' && opts.n > 1) {
+    if (opts.n > 1 &&  !ChainService.supportsMultisig(opts.coin)) {
       return cb(
-        new ClientError('Multisig ETH wallet not supported')
+        new ClientError('Multisig wallets are not supported for this coin')
       );
     }
 
@@ -2643,6 +2643,7 @@ export class WalletService {
                   return next();
                 },
                 (next) => {
+
                   const txOpts = {
                     id: opts.txProposalId,
                     walletId: this.walletId,
