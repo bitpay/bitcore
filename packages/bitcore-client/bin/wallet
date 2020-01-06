@@ -13,6 +13,8 @@ program
   .command('utxos', 'get wallet utxos').alias('u')
   .command('broadcast', 'broadcast transaction')
   .command('tx', 'create transaction').alias('t')
+  .command('derive', 'derive an address').alias('d')
+  .command('check', 'check if wallet is registered and print last address').alias('h')
   .parse(process.argv);
 
 
