@@ -3408,7 +3408,6 @@ describe('Wallet service', function() {
   });
 
   let testSet = [
-/*
     {
       coin: 'btc',
       key: 'id44btc',
@@ -3421,7 +3420,6 @@ describe('Wallet service', function() {
       addr: 'qpgjyj728rhu4gca2dqfzlpl8acnhzequshhgvev53',
       flags: {},
     },
-*/
     {
       coin: 'bch',
       key: 'id44bch',
@@ -3451,7 +3449,7 @@ describe('Wallet service', function() {
     const flags = x.flags;
     let fromAddr;
 
-    describe.only('#createTx ' + coin + ' flags' + JSON.stringify(flags), function() {
+    describe('#createTx ' + coin + ' flags' + JSON.stringify(flags), function() {
 
       describe('Tx proposal creation & publishing ' + coin, function() {
         var server, wallet;
@@ -4156,12 +4154,14 @@ describe('Wallet service', function() {
                 level = 'economy';
                 expected = 40e2 * 0.9; //0.8 is the multiplier
                 break;
-
+              case 'xrp':
+                level = 'normal';
+                expected = 40e2 * 0.9; //0.8 is the multiplier
+                break;
               default:
                 level = 'economy';
                 expected = 180e2;
             };
-
 
             helpers.stubFeeLevels({
               1: 400e2,
@@ -4181,12 +4181,16 @@ describe('Wallet service', function() {
                   amount: ts,
                 }],
                 gasPrice: 1,
-                // ToDo
                 feeLevel: level,
                 form: fromAddr,
               };
               txOpts = Object.assign(txOpts, flags);
+
+
+              // TODO BROKEN ON XRP
+console.log('[server.js.4190:txOpts:]',txOpts); // TODO
               server.createTx(txOpts, function(err, txp) {
+console.log('[server.js.4187:err:]',err); // TODO
                 should.not.exist(err);
                 should.exist(txp);
                 txp.feeLevel.should.equal(level);
