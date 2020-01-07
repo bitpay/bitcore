@@ -30,6 +30,10 @@ export class EthChain implements IChain {
     return convertedBalance;
   }
 
+  supportsMultisig() {
+    return false;
+  }
+
   getWalletBalance(server, wallet, opts, cb) {
     const bc = server._getBlockchainExplorer(wallet.coin, wallet.network);
 

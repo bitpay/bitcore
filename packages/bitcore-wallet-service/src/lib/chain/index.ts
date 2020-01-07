@@ -25,6 +25,7 @@ export interface IChain {
   setInputs(info: { inputs: any[] });
   isUTXOCoin(): boolean;
   isSingleAddress(): boolean;
+  supportsMultisig(): boolean;
   addSignaturesToBitcoreTx(tx: string, inputs: any[], inputPaths: any[], signatures: any[], xpub: string);
   addressToStorageTransform(network: string, address: {}): void;
   addressFromStorageTransform(network: string, address: {}): void;
@@ -127,6 +128,10 @@ class ChainProxy {
 
   isSingleAddress(coin: string): boolean {
     return this.get(coin).isSingleAddress();
+  }
+
+  supportsMultisig(coin: string): boolean {
+    return this.get(coin).supportsMultisig();
   }
 
   addSignaturesToBitcoreTx(coin, tx, inputs, inputPaths, signatures, xpub) {

@@ -36,6 +36,10 @@ export class XrpChain implements IChain {
     return convertedBalance;
   }
 
+  supportsMultisig() {
+    return false;
+  }
+
   getWalletBalance(server, wallet, opts, cb) {
     const bc = server._getBlockchainExplorer(wallet.coin, wallet.network);
     bc.getBalance(wallet, (err, balance) => {
@@ -169,7 +173,6 @@ export class XrpChain implements IChain {
       { wallet },
       (err, balance) => {
         if (err) return next(err);
-
         const { totalAmount, availableAmount } = balance;
         if (totalAmount < txp.getTotalAmount()) {
           return cb(Errors.INSUFFICIENT_FUNDS);
