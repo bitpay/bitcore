@@ -6538,10 +6538,10 @@ describe('Wallet service', function() {
         blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
         server.getPendingTxs({}, function(err, txs) {
           var tx = txs[0];
-          tx.id.should.equal(txid);
+          tx.id.should.equal(txpid);
           should.not.exist(tx.raw);
           server.signTx({
-            txProposalId: txid,
+            txProposalId: txpid,
             signatures: '',
           }, function(err, txp) {
             err.code.should.contain('BAD_SIG');
@@ -6558,10 +6558,10 @@ describe('Wallet service', function() {
         blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
         server.getPendingTxs({}, function(err, txs) {
           var tx = txs[0];
-          tx.id.should.equal(txid);
+          tx.id.should.equal(txpid);
           should.not.exist(tx.raw);
           server.signTx({
-            txProposalId: txid,
+            txProposalId: txpid,
             signatures: 'a bad signature',
           }, function(err, txp) {
             err.code.should.contain('BAD_SIG');
