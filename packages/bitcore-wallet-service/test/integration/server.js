@@ -4141,28 +4141,34 @@ describe('Wallet service', function() {
         });
 
         describe('Fee levels', function() {
-          it('should create a tx specifying feeLevel', function(done) {
-            //ToDo
-            var level, expected;
-
+          var level, expected, expectedNormal;
+          before(() => {
             switch(coin) {
               case 'bch':
                 level = 'normal';
                 expected = 200e2;
+                expectedNormal = 200e2;
                 break;
               case 'eth':
                 level = 'economy';
                 expected = 40e2 * 0.9; //0.8 is the multiplier
+                expectedNormal = 200e2;
                 break;
               case 'xrp':
                 level = 'normal';
-                expected = 40e2 * 0.9; //0.8 is the multiplier
+                expected = 40e3;
+                expectedNormal = 400e2;
                 break;
               default:
                 level = 'economy';
                 expected = 180e2;
+                expectedNormal = 200e2;
             };
 
+
+          });
+          it('should create a tx specifying feeLevel', function(done) {
+            //ToDo
             helpers.stubFeeLevels({
               1: 400e2,
               2: 200e2,   // normal BCH
@@ -4182,15 +4188,10 @@ describe('Wallet service', function() {
                 }],
                 gasPrice: 1,
                 feeLevel: level,
-                form: fromAddr,
+                from: fromAddr,
               };
               txOpts = Object.assign(txOpts, flags);
-
-
-              // TODO BROKEN ON XRP
-console.log('[server.js.4190:txOpts:]',txOpts); // TODO
               server.createTx(txOpts, function(err, txp) {
-console.log('[server.js.4187:err:]',err); // TODO
                 should.not.exist(err);
                 should.exist(txp);
                 txp.feeLevel.should.equal(level);
@@ -4208,7 +4209,7 @@ console.log('[server.js.4187:err:]',err); // TODO
                   amount: ts,
                 }],
                 feeLevel: 'madeUpLevel',
-                form: fromAddr,
+                from: fromAddr,
               };
               txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, txp) {
@@ -4233,13 +4234,13 @@ console.log('[server.js.4187:err:]',err); // TODO
                   toAddress: addressStr,
                   amount: ts,
                 }],
-                form: fromAddr,
+                from: fromAddr,
               };
               txOpts = Object.assign(txOpts, flags);
               server.createTx(txOpts, function(err, txp) {
                 should.not.exist(err);
                 should.exist(txp);
-                txp.feePerKb.should.equal(200e2);
+                txp.feePerKb.should.equal(expectedNormal);
                 txp.feeLevel.should.equal('normal');
                 done();
               });
@@ -6474,7 +6475,7 @@ console.log('[server.js.4187:err:]',err); // TODO
     });
 
     describe('1-of-1 (BIP44 ETH)', function() {
-      var server, wallet, txid;
+      var server, wallet, txpid;
 
       beforeEach(function(done) {
         helpers.createAndJoinWallet(1, 1, { coin: 'eth' }, function(s, w) {
@@ -6491,22 +6492,24 @@ console.log('[server.js.4187:err:]',err); // TODO
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               should.exist(tx);
               tx.addressType.should.equal('P2PKH');
-              txid = tx.id;
+              txpid = tx.id;
               done();
             });
           });
         });
       });
 
-      it('should sign a TX and return raw', function(done) {
+      it.only('should sign a TX and return raw', function(done) {
+
+console.log('[server.js.6503]'); // TODO
         blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
         server.getPendingTxs({}, function(err, txs) {
           var tx = txs[0];
-          tx.id.should.equal(txid);
+          tx.id.should.equal(txpid);
           var signatures = helpers.clientSign(tx, TestData.copayers[0].xPrivKey_44H_0H_0H);
           should.not.exist(tx.raw);
           server.signTx({
-            txProposalId: txid,
+            txProposalId: txpid,
             signatures: signatures,
           }, function(err, txp) {
             should.not.exist(err);
