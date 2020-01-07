@@ -6499,9 +6499,7 @@ describe('Wallet service', function() {
         });
       });
 
-      it.only('should sign a TX and return raw', function(done) {
-
-console.log('[server.js.6503]'); // TODO
+      it('should sign a TX and return raw', function(done) {
         blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
         server.getPendingTxs({}, function(err, txs) {
           var tx = txs[0];
@@ -6519,7 +6517,8 @@ console.log('[server.js.6503]'); // TODO
             txp.raw[0].length.should.equal(208);
             // Array length of 1
             txp.raw.length.should.equal(1);
-            txp.txid.should.equal('0xf631c31299a9bbbc955d1e8310f61f8b7b2335b2fa9ca1e4b034911257af63a1');
+            // this depends on transaction count stub
+            txp.txid.should.equal('0x7805fbd1b393552dc3be013fcfdc00f5ba30a6c7931ca7c3b9832d9f69fbf7bc');
 
             // Get pending should also contains the raw TX
             server.getPendingTxs({}, function(err, txs) {
