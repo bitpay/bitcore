@@ -43,4 +43,11 @@ describe('Ethereum API', function() {
     expect(decoded2).to.exist;
     expect(decoded2.type).to.eq('ERC721');
   });
+
+  it('should not crash when called with almost correct data', () => {
+    const data =
+      '0xa9059cbb0000000000000000000000000797350000000000000000000000000000000000000000000005150ac4c39a6f3f0000';
+    const decoded = EthTransactionStorage.abiDecode(data);
+    expect(decoded).to.be.undefined;
+  });
 });

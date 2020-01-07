@@ -968,7 +968,8 @@ export class ExpressApp {
 
     router.get('/v1/service/simplex/events', (req, res) => {
       getServerWithAuth(req, res, (server) => {
-        server.simplexGetEvents(req).then(response => {
+        const opts = { env: req.query.env };
+        server.simplexGetEvents(opts).then(response => {
           res.json(response);
         }).catch(err => {
           if (err) return returnError(err, res, req);
@@ -977,6 +978,11 @@ export class ExpressApp {
     });
 
     this.app.use(opts.basePath || '/bws/api', router);
+
+    if (config.staticRoot) {
+      log.info(`Serving static files from ${config.staticRoot}`);
+      this.app.use('/static', express.static(config.staticRoot));
+    }
 
     WalletService.initialize(opts, cb);
   }

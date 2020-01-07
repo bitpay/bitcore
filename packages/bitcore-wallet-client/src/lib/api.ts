@@ -20,7 +20,8 @@ var Bitcore = CWC.BitcoreLib;
 var Bitcore_ = {
   btc: CWC.BitcoreLib,
   bch: CWC.BitcoreLibCash,
-  eth: CWC.BitcoreLib
+  eth: CWC.BitcoreLib,
+  xrp: CWC.BitcoreLib
 };
 var Mnemonic = require('bitcore-mnemonic');
 var url = require('url');
@@ -670,8 +671,10 @@ export class API extends EventEmitter {
   }
 
   _addSignaturesToBitcoreTx(txp, t, signatures, xpub) {
-    const chain = Utils.getChain(txp.coin);
+    const { coin, network } = txp;
+    const chain = Utils.getChain(coin);
     switch (chain) {
+      case 'XRP':
       case 'ETH':
         const unsignedTxs = t.uncheckedSerialize();
         const signedTxs = [];
@@ -684,7 +687,7 @@ export class API extends EventEmitter {
           signedTxs.push(signed);
 
           // bitcore users id for txid...
-          t.id = CWC.Transactions.getHash({ tx: signed, chain });
+          t.id = CWC.Transactions.getHash({ tx: signed, chain, network });
         }
         t.uncheckedSerialize = () => signedTxs;
         t.serialize = () => signedTxs;
@@ -2493,6 +2496,8 @@ export class API extends EventEmitter {
         ['bch', 'livenet'],
         ['eth', 'livenet'],
         ['eth', 'testnet'],
+        ['xrp', 'livenet'],
+        ['xrp', 'testnet'],
         ['btc', 'livenet', true],
         ['bch', 'livenet', true]
       ];
