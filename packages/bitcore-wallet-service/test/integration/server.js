@@ -6499,7 +6499,7 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should sign a TX and return raw', function(done) {
+      it.only('should sign a TX and return raw', function(done) {
         blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
         server.getPendingTxs({}, function(err, txs) {
           var tx = txs[0];
