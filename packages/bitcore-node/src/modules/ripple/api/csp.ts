@@ -93,7 +93,15 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
         if (err) {
           return reject(err);
         } else {
-          return resolve(body);
+          return resolve({
+            ...body.ledger,
+            chain: this.chain,
+            network,
+            hash: body.ledger.ledger_hash,
+            height: body.ledger.ledger_index,
+            previousBlockHash: body.ledger.parent_hash,
+            timeNormalized: new Date((body.ledger.close_time) * 1000)
+          });
         }
       });
     });
