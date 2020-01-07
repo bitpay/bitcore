@@ -31,7 +31,8 @@ const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
-  eth: Bitcore
+  eth: Bitcore,
+  xrp: Bitcore
 };
 
 const Common = require('./common');
@@ -539,9 +540,9 @@ export class WalletService {
       return cb(new ClientError('Invalid public key'));
     }
 
-    if (opts.coin === 'eth' && opts.n > 1) {
+    if (opts.n > 1 &&  !ChainService.supportsMultisig(opts.coin)) {
       return cb(
-        new ClientError('Multisig ETH wallet not supported')
+        new ClientError('Multisig wallets are not supported for this coin')
       );
     }
 
@@ -2642,6 +2643,7 @@ export class WalletService {
                   return next();
                 },
                 (next) => {
+
                   const txOpts = {
                     id: opts.txProposalId,
                     walletId: this.walletId,
@@ -2673,7 +2675,9 @@ export class WalletService {
                     nonce: opts.nonce,
                     gasLimit, // Backward compatibility for BWC < v7.1.1
                     data: opts.data, // Backward compatibility for BWC < v7.1.1
-                    tokenAddress: opts.tokenAddress
+                    tokenAddress: opts.tokenAddress,
+                    destinationTag: opts.destinationTag,
+                    invoiceID: opts.invoiceID
                   };
                   txp = TxProposal.create(txOpts);
                   next();
