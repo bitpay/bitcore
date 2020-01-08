@@ -254,6 +254,7 @@ export class Wallet {
     fee?: number;
     nonce?: number;
     tag? : number;
+    lastLedgerSequence? : number;
   }) {
     const payload = {
       network: this.network,
@@ -266,7 +267,8 @@ export class Wallet {
       wallet: this,
       utxos: params.utxos,
       nonce: params.nonce,
-      tag: params.tag
+      tag: params.tag,
+      lastLedgerSequence: params.lastLedgerSequence
     };
     return Transactions.create(payload);
   }
