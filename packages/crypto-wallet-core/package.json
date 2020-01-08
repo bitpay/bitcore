@@ -26,7 +26,7 @@
     "bitcore-lib-cash": "^8.13.2",
     "ethers": "4.0.37",
     "ripple-binary-codec": "0.2.4",
-    "ripple-keypairs": "git+https://git@github.com/bitpay/ripple-keypairs.git#27ee0765486555cfe6a1fd60e207e32765a078bb",
+    "ripple-keypairs": "git+https://git@github.com/bitpay/ripple-keypairs.git#81db98a4034c0d897999d9c5d3c90b3d601c5fa8",
     "ripple-lib": "1.4.2",
     "web3": "1.2.1"
   },
