@@ -22,7 +22,7 @@ var Schnorr = function Schnorr(obj) {
 /* jshint maxcomplexity: 9 */
 Schnorr.prototype.set = function(obj) {
     this.hashbuf = obj.hashbuf || this.hashbuf;
-    this.endian = obj.endian || this.endian; //the endianness of hashbuf
+    this.endian = obj.endian || this.endian; // the endianness of hashbuf
     this.privkey = obj.privkey || this.privkey;
     this.pubkey = obj.pubkey || (this.privkey ? this.privkey.publicKey : this.pubkey);
     this.sig = obj.sig || this.sig;
@@ -58,24 +58,26 @@ Schnorr.prototype.sign = function() {
     return this;
 };
 
-// Changed to use the fool 
+/**
+ * Schnorr implementation used from bitcoinabc at https://reviews.bitcoinabc.org/D2501
+ */
 Schnorr.prototype._findSignature = function(d, e) {
     // d is the private key;
     // e is the message to be signed
 
-    // $.checkState(!d.lte(0), new Error('privkey out of field of curve'));
-    // $.checkState(!d.gte(N), new Error('privkey out of field of curve'));
-    // P = G.mul(dPrime);
-    
     let n = Point.getN();
     let G = Point.getG();
+
+    $.checkState(!d.lte(new BN(0)), new Error('privkey out of field of curve'));
+    $.checkState(!d.gte(n), new Error('privkey out of field of curve'));
+  
     
     let k = nonceFunctionRFC6979(d.toBuffer(), e.toBuffer());
 
     let P = G.mul(d);
     let R = G.mul(k);
 
-     // Find deterministic k
+    // Find deterministic k
     if(R.hasSquare()) {
       k = k;
     } else {
@@ -86,7 +88,7 @@ Schnorr.prototype._findSignature = function(d, e) {
     let e0 = BN.fromBuffer(Hash.sha256(Buffer.concat([r.toBuffer(), Point.pointToCompressed(P), e.toBuffer()])));
     
     let s = ((e0.mul(d)).add(k)).mod(n);
-    
+
     return {
       r: r,
       s: s
@@ -120,10 +122,10 @@ Schnorr.prototype._findSignature = function(d, e) {
     let n = Point.getN();
 
     if(r.gte(p) || s.gte(n)) {
-      console.log("Failed >= condition");
+      // ("Failed >= condition") 
       return true;
     }
-
+    
     let Br = r.toBuffer();
     let Bp = Point.pointToCompressed(P);
     
@@ -131,7 +133,7 @@ Schnorr.prototype._findSignature = function(d, e) {
     let e = BN.fromBuffer(hash, 'big').umod(n);
     
     let sG = G.mul(s);
-    let eP = P.mul(new BN(n.sub(e)));
+    let eP = P.mul(e.neg());
     let R = sG.add(eP);
     
     if(R.isInfinity() || !R.hasSquare() || !R.getX().eq(r)) {
@@ -150,7 +152,7 @@ Schnorr.prototype._findSignature = function(d, e) {
   };
 
   /**
-   * RFC6979 deterministic nonce generation
+   * RFC6979 deterministic nonce generation used from https://reviews.bitcoinabc.org/D2501
    * @param {Buffer} privkeybuf 
    * @param {Buffer} msgbuf 
    * @return k {BN}
@@ -158,7 +160,7 @@ Schnorr.prototype._findSignature = function(d, e) {
   function nonceFunctionRFC6979(privkey, msgbuf) {
     let V = Buffer.from("0101010101010101010101010101010101010101010101010101010101010101","hex");
     let K = Buffer.from("0000000000000000000000000000000000000000000000000000000000000000","hex");
-    
+
     let blob = Buffer.concat([privkey, msgbuf, Buffer.from("Schnorr+SHA256  ", "utf-8")]);
 
     K = Hash.sha256hmac(Buffer.concat([V, Buffer.from('00', 'hex'), blob]), K);
@@ -171,7 +173,7 @@ Schnorr.prototype._findSignature = function(d, e) {
     while (true) {
       V = Hash.sha256hmac(V,K);
       T = BN.fromBuffer(V);
-      
+
       k = T;
       if (k.gt(new BN(0) && k.lt(Point.getN()))) {
         break;
