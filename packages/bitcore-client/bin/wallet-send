@@ -23,7 +23,8 @@ const main = async () => {
     const { lastAddress } = await wallet.checkWallet();
     const recipients = [{ address: to, amount: amount * 1e6 }];
     const feerate = await wallet.getNetworkFee({ target });
-    const fee = JSON.parse(feerate).feerate;
+    // const fee = JSON.parse(feerate).feerate;
+    const fee = 0.000012 * 1e6
     const nonce = await wallet.getNonce();
     const utxos = wallet.getUtxos();
     const params = {
