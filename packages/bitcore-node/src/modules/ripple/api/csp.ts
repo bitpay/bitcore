@@ -9,34 +9,10 @@ import Config from '../../../config';
 import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types';
 import { ICoin } from '../../../models/coin';
 import { RippleWalletTransactions } from './transform';
-import { SubmitResponse } from './types';
+import { SubmitResponse, SingleOutputTx } from './types';
 import { IBlock } from '../../../models/baseBlock';
 import { FormattedLedger } from 'ripple-lib/dist/npm/ledger/parse/ledger';
 
-type SingleOutputTx = {
-  engine_result: string;
-  engine_result_code: number;
-  engine_result_message: string;
-  ledger_current_index: number;
-  ledger_index?: number;
-  status: string;
-  transaction: {
-    Account: string;
-    Amount: string;
-    Destination: string;
-    DestinationTag: number;
-    Fee: string;
-    Flags: number;
-    LastLedgerSequence: number;
-    Sequence: number;
-    SigningPubKey: string;
-    TransactionType: string;
-    TxnSignature: string;
-    hash: string;
-  };
-  type: 'transaction';
-  validated: false;
-};
 
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
