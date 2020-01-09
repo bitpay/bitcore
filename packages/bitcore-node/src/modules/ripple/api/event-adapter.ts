@@ -8,10 +8,12 @@ import { WalletAddressStorage } from '../../../models/walletAddress';
 import { ICoin } from '../../../models/coin';
 
 export class RippleEventAdapter {
+  stopping = false;
   clients: RippleAPI[] = [];
   constructor(protected services: BaseModule['bitcoreServices']) {}
 
   async start() {
+    this.stopping = false;
     console.log('Starting websocket adapter for Ripple');
     const networks = this.services.Config.chainNetworks()
       .filter(c => c.chain === 'XRP')
@@ -40,7 +42,6 @@ export class RippleEventAdapter {
             });
             involvedAddress.push(...coins.map(c => c.address));
           }
-
           const walletAddresses = await WalletAddressStorage.collection
             .find({ chain, network, address: { $in: involvedAddress } })
             .toArray();
@@ -64,6 +65,12 @@ export class RippleEventAdapter {
           this.services.Event.blockEvent.emit('block', { chain, network, ...ledger });
         });
 
+        client.connection.on('disconnected', () => {
+          if (!this.stopping) {
+            client.connection.reconnect();
+          }
+        });
+
         await client.connection.request({
           method: 'subscribe',
           streams: ['ledger', 'transactions_proposed']
@@ -75,6 +82,7 @@ export class RippleEventAdapter {
   }
 
   async stop() {
+    this.stopping = true;
     for (const client of this.clients) {
       client.connection.removeAllListeners();
     }
