@@ -5,6 +5,7 @@ import { RippleStateProvider } from './csp';
 import { RippleAPI } from 'ripple-lib';
 import { StateStorage } from '../../../models/state';
 import { WalletAddressStorage } from '../../../models/walletAddress';
+import { ICoin } from '../../../models/coin';
 
 export class RippleEventAdapter {
   clients: RippleAPI[] = [];
@@ -29,15 +30,34 @@ export class RippleEventAdapter {
 
         client.connection.on('transaction', async tx => {
           const address = tx.transaction.Account;
-          const walletAddresses = await WalletAddressStorage.collection.find({ chain, network, address }).toArray();
+          const transaction = { ...csp.transform(tx, network), wallets: new Array<ObjectId>() };
+          const transformedCoins = csp.transformToCoins(tx, network);
+          let involvedAddress = [address];
+          let coins = new Array<Partial<ICoin>>();
+          if (Array.isArray(transformedCoins)) {
+            coins = transformedCoins.map(c => {
+              return { ...c, wallets: new Array<ObjectId>() };
+            });
+            involvedAddress.push(...coins.map(c => c.address));
+          }
 
-          const transformed = { ...csp.transform(tx, network), wallets: new Array<ObjectId>() };
-          const coin = { ...csp.transformToCoin(tx, network), wallets: new Array<ObjectId>() };
-          transformed.wallets = walletAddresses.map(wa => wa.wallet);
-          coin.wallets = walletAddresses.map(wa => wa.wallet);
+          const walletAddresses = await WalletAddressStorage.collection
+            .find({ chain, network, address: { $in: involvedAddress } })
+            .toArray();
 
-          this.services.Event.txEvent.emit('tx', { chain, network, ...transformed });
-          this.services.Event.addressCoinEvent.emit('coin', { address, coin });
+          transaction.wallets = walletAddresses.map(wa => wa.wallet);
+          this.services.Event.txEvent.emit('tx', { chain, network, ...transaction });
+          if (coins && coins.length) {
+            for (const coin of coins) {
+              const coinWalletAddresses = walletAddresses.filter(
+                wa => coin.address && wa.address.toLowerCase() === coin.address.toLowerCase()
+              );
+              if (coinWalletAddresses && coinWalletAddresses.length) {
+                coin.wallets = coinWalletAddresses.map(wa => wa.wallet);
+              }
+              this.services.Event.addressCoinEvent.emit('coin', { address, coin });
+            }
+          }
         });
 
         client.connection.on('ledger', ledger => {

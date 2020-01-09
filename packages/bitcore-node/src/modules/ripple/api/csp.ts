@@ -254,7 +254,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     }
   }
 
-  transformToCoin(tx: FormattedTransactionType, network: string) {
+  transformToCoins(tx: FormattedTransactionType, network: string) {
     if (tx.type === 'payment') {
       const changes = tx.outcome.balanceChanges;
       const coins: Array<Partial<ICoin>> = Object.entries(changes).map(([k, v]) => {
