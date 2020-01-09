@@ -1,8 +1,10 @@
 import logger from '../../../logger';
+import { ObjectId } from 'mongodb';
 import { BaseModule } from '../..';
 import { RippleStateProvider } from './csp';
 import { RippleAPI } from 'ripple-lib';
 import { StateStorage } from '../../../models/state';
+import { WalletAddressStorage } from '../../../models/walletAddress';
 
 export class RippleEventAdapter {
   clients: RippleAPI[] = [];
@@ -25,11 +27,16 @@ export class RippleEventAdapter {
         );
         const client = await csp.getClient(network);
 
-        client.connection.on('transaction', tx => {
-          const transformed = csp.transform(tx, network);
-          this.services.Event.txEvent.emit('tx', { chain, network, ...transformed });
+        client.connection.on('transaction', async tx => {
           const address = tx.transaction.Account;
-          const coin = csp.transformToCoin(tx, network);
+          const walletAddresses = await WalletAddressStorage.collection.find({ chain, network, address }).toArray();
+
+          const transformed = { ...csp.transform(tx, network), wallets: new Array<ObjectId>() };
+          const coin = { ...csp.transformToCoin(tx, network), wallets: new Array<ObjectId>() };
+          transformed.wallets = walletAddresses.map(wa => wa.wallet);
+          coin.wallets = walletAddresses.map(wa => wa.wallet);
+
+          this.services.Event.txEvent.emit('tx', { chain, network, ...transformed });
           this.services.Event.addressCoinEvent.emit('coin', { address, coin });
         });
 
