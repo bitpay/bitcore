@@ -2631,7 +2631,11 @@ export class WalletService {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
                     return next();
 
-                  ({ feePerKb, gasPrice, gasLimit } = await ChainService.getFee(this, wallet, opts));
+                  try {
+                    ({ feePerKb, gasPrice, gasLimit } = await ChainService.getFee(this, wallet, opts));
+                  } catch (error) {
+                    return next(error);
+                  }
                   next();
                 },
                 async (next) => {
