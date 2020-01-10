@@ -46,7 +46,9 @@ export class RippleEventAdapter {
             .find({ chain, network, address: { $in: involvedAddress } })
             .toArray();
 
-          transaction.wallets = walletAddresses.map(wa => wa.wallet);
+          if ('chain' in transaction) {
+            transaction.wallets = walletAddresses.map(wa => wa.wallet);
+          }
           this.services.Event.txEvent.emit('tx', { chain, network, ...transaction });
           if (coins && coins.length) {
             for (const coin of coins) {

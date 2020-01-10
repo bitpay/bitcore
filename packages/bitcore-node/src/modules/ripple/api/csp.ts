@@ -13,7 +13,6 @@ import { SubmitResponse, SingleOutputTx } from './types';
 import { IBlock } from '../../../models/baseBlock';
 import { FormattedLedger } from 'ripple-lib/dist/npm/ledger/parse/ledger';
 
-
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
   static clients: { [network: string]: RippleAPI } = {};
@@ -241,8 +240,8 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
         network,
         chain: this.chain,
         txid: tx.id,
-        blockHash: '',
-        blockHeight: tx.outcome.ledgerVersion,
+        blockHash: (tx as any).ledger_hash || '',
+        blockHeight: tx.outcome.ledgerVersion || -1,
         blockTime: new Date(tx.outcome.timestamp!),
         blockTimeNormalized: new Date(tx.outcome.timestamp!),
         value: Number(tx.outcome.deliveredAmount!.value),
@@ -261,8 +260,8 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
         network,
         chain: this.chain,
         txid: tx.transaction.hash,
-        blockHash: '',
-        blockHeight: tx.ledger_current_index,
+        blockHash: (tx as any).ledger_hash || '',
+        blockHeight: tx.ledger_index || -1,
         blockTime: new Date(),
         blockTimeNormalized: new Date(),
         value: Number(tx.transaction.Amount),
@@ -284,7 +283,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
           address: k,
           value: Number(v[0].value),
           coinbase: false,
-          mintHeight: tx.outcome.ledgerVersion,
+          mintHeight: tx.outcome.ledgerVersion || -1,
           mintIndex: tx.outcome.indexInLedger,
           mintTxid: tx.id,
           wallets: []
