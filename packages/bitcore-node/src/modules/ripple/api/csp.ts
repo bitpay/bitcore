@@ -246,7 +246,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
         blockHeight: tx.outcome.ledgerVersion || -1,
         blockTime: new Date(tx.outcome.timestamp!),
         blockTimeNormalized: new Date(tx.outcome.timestamp!),
-        value: Number(tx.outcome.deliveredAmount!.value),
+        value: Number(tx.outcome.deliveredAmount ? tx.outcome.deliveredAmount.value : 0),
         fee: Number(tx.outcome.fee),
         wallets: []
       };
