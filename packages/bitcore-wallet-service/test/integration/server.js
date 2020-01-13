@@ -3505,7 +3505,6 @@ describe('Wallet service', function() {
 
 
             server.createTx(txOpts, function(err, tx) {
-console.log('[server.js.3502:err:]',err); // TODO
               should.not.exist(err);
               should.exist(tx);
               tx.walletM.should.equal(1);
