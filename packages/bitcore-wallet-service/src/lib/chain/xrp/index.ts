@@ -174,7 +174,6 @@ export class XrpChain implements IChain {
       if (totalAmount < txp.getTotalAmount()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
       } else if (availableAmount < txp.getTotalAmount()) {
-
         return cb(Errors.LOCKED_FUNDS);
       } else {
         return next(server._checkTx(txp));
