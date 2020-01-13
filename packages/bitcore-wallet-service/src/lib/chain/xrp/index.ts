@@ -246,6 +246,10 @@ console.log('[index.ts.178]'); // TODO
     tx.uncheckedSerialize = () => signedTxs;
   }
 
+  notifyConfirmations() {
+    return false;
+  }
+
   validateAddress(wallet, inaddr, opts) {
     const chain = 'XRP';
     const isValidAddress = Validation.validateAddress(
