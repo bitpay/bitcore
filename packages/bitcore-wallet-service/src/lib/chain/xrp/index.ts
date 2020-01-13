@@ -103,6 +103,10 @@ export class XrpChain implements IChain {
 
   getFee(server, wallet, opts) {
     return new Promise((resolve, reject) => {
+      // This is used for sendmax flow
+      if (_.isNumber(opts.fee)) {
+        return resolve({ feePerKb: opts.fee });
+      }
       server._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
         if (err) {
           return reject(err);
