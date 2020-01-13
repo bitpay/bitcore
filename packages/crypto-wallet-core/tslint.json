@@ -7,7 +7,7 @@
   "rules": {
     // "interface-name": [true, "never-prefix"],
     "no-submodule-imports": [
-      true,
+      false,
       "src"
     ],
     // "no-any": true,
