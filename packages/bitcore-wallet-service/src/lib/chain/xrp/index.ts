@@ -41,15 +41,15 @@ export class XrpChain implements IChain {
   getWalletBalance(server, wallet, opts, cb) {
     const bc = server._getBlockchainExplorer(wallet.coin, wallet.network);
     bc.getBalance(wallet, (err, balance) => {
-console.log('[index.ts.43:balance:]',balance); // TODO
-      if (err) {
+console.log('[index.ts.43:balance:]', balance); // TODO
+if (err) {
         return cb(err);
       }
-      server.getPendingTxs(opts, (err, txps) => {
+server.getPendingTxs(opts, (err, txps) => {
         if (err) return cb(err);
         const lockedSum = _.sumBy(txps, 'amount') || 0;
         const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
-console.log('[index.ts.66:convertedBalance:]',convertedBalance); // TODO
+        console.log('[index.ts.66:convertedBalance:]', convertedBalance); // TODO
         server.storage.fetchAddresses(
           server.walletId,
           (err, addresses: IAddress[]) => {
@@ -172,15 +172,15 @@ console.log('[index.ts.66:convertedBalance:]',convertedBalance); // TODO
     server.getBalance(
       { wallet },
       (err, balance) => {
-console.log('[index.ts.172:balance:]',balance); // TODO
-        if (err) return next(err);
-        const { totalAmount, availableAmount } = balance;
-        if (totalAmount < txp.getTotalAmount()) {
+console.log('[index.ts.172:balance:]', balance); // TODO
+if (err) return next(err);
+const { totalAmount, availableAmount } = balance;
+if (totalAmount < txp.getTotalAmount()) {
           return cb(Errors.INSUFFICIENT_FUNDS);
         } else if (availableAmount < txp.getTotalAmount()) {
 
 console.log('[index.ts.178]'); // TODO
-          return cb(Errors.LOCKED_FUNDS);
+return cb(Errors.LOCKED_FUNDS);
         } else {
           return next(server._checkTx(txp));
         }

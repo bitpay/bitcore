@@ -324,7 +324,7 @@ export class BlockchainMonitor {
 
   _handleTxConfirmations(coin, network, hash) {
 
-    if (!ChainService.notifyConfirmations(coin, network)) 
+    if (!ChainService.notifyConfirmations(coin, network))
       return;
 
     const processTriggeredSubs = (subs, cb) => {
