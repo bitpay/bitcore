@@ -12,7 +12,7 @@ const validation: { [chain: string]: IValidation } = {
   BTC: new BtcValidation(),
   BCH: new BchValidation(),
   ETH: new EthValidation(),
-  XRP: new XrpValidation(),
+  XRP: new XrpValidation()
 };
 
 export class ValidationProxy {
