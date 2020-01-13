@@ -9,8 +9,10 @@
 
 - Trusted P2P Peer
 - MongoDB Server >= v3.4
+- make g++ gcc 
 
 ### Checkout the repo
+
 
 ```sh
 git clone git@github.com:bitpay/bitcore.git
