@@ -30,6 +30,10 @@ export class EthChain implements IChain {
     return convertedBalance;
   }
 
+  notifyConfirmations() {
+    return false;
+  }
+
   supportsMultisig() {
     return false;
   }
