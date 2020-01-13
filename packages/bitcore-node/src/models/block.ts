@@ -1,14 +1,14 @@
-import logger from '../logger';
-import { CoinStorage } from './coin';
-import { TransactionStorage } from './transaction';
-import { TransformOptions } from '../types/TransformOptions';
 import { LoggifyClass } from '../decorators/Loggify';
-import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { MongoBound } from './base';
-import { SpentHeightIndicators } from '../types/Coin';
-import { EventStorage } from './events';
+import logger from '../logger';
 import { StorageService } from '../services/storage';
+import { SpentHeightIndicators } from '../types/Coin';
+import { BitcoinBlock, BitcoinBlockHeaderObj } from '../types/namespaces/Bitcoin';
+import { TransformOptions } from '../types/TransformOptions';
+import { MongoBound } from './base';
 import { BaseBlock, IBlock } from './baseBlock';
+import { CoinStorage } from './coin';
+import { EventStorage } from './events';
+import { TransactionStorage } from './transaction';
 
 export type IBtcBlock = IBlock & {
   version: number;
@@ -18,13 +18,13 @@ export type IBtcBlock = IBlock & {
 };
 
 @LoggifyClass
-export class BitcoinBlock extends BaseBlock<IBtcBlock> {
+export class BitcoinBlockModel extends BaseBlock<IBtcBlock> {
   constructor(storage?: StorageService) {
     super(storage);
   }
 
   async addBlock(params: {
-    block: Bitcoin.Block;
+    block: BitcoinBlock;
     parentChain?: string;
     forkHeight?: number;
     initialSyncComplete: boolean;
@@ -43,7 +43,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
   }
 
   async processBlock(params: {
-    block: Bitcoin.Block;
+    block: BitcoinBlock;
     parentChain?: string;
     forkHeight?: number;
     initialSyncComplete: boolean;
@@ -71,7 +71,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
       blockHash: convertedBlock.hash,
       blockTime: new Date(time),
       blockTimeNormalized: new Date(timeNormalized),
-      height: height,
+      height,
       chain,
       network,
       parentChain,
@@ -86,7 +86,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
     await this.collection.updateOne({ hash: convertedBlock.hash, chain, network }, { $set: { processed: true } });
   }
 
-  async getBlockOp(params: { block: Bitcoin.Block; chain: string; network: string }) {
+  async getBlockOp(params: { block: BitcoinBlock; chain: string; network: string }) {
     const { block, chain, network } = params;
     const header = block.header.toObject();
     const blockTime = header.time * 1000;
@@ -138,7 +138,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
     };
   }
 
-  async handleReorg(params: { header?: Bitcoin.Block.HeaderObj; chain: string; network: string }): Promise<boolean> {
+  async handleReorg(params: { header?: BitcoinBlockHeaderObj; chain: string; network: string }): Promise<boolean> {
     const { header, chain, network } = params;
     let localTip = await this.getLocalTip(params);
     if (header && localTip && localTip.hash === header.prevHash) {
@@ -152,7 +152,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
       if (prevBlock) {
         localTip = prevBlock;
       } else {
-        logger.error(`Previous block isn't in the DB need to roll back until we have a block in common`);
+        logger.error("Previous block isn't in the DB need to roll back until we have a block in common");
       }
       logger.info(`Resetting tip to ${localTip.height - 1}`, { chain, network });
     }
@@ -210,4 +210,4 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
   }
 }
 
-export let BitcoinBlockStorage = new BitcoinBlock();
+export let BitcoinBlockStorage = new BitcoinBlockModel();

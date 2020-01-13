@@ -1,12 +1,12 @@
 import * as _ from 'lodash';
 import logger, { timestamp } from '../../logger';
-import { BitcoinBlockStorage } from '../../models/block';
-import { ChainStateProvider } from '../../providers/chain-state';
-import { BitcoinP2PWorker } from '../../modules/bitcoin/p2p';
-import { IVerificationPeer, ErrorType } from '../../services/verification';
-import { TransactionStorage } from '../../models/transaction';
-import { CoinStorage, ICoin } from '../../models/coin';
 import { ITransaction } from '../../models/baseTransaction';
+import { BitcoinBlockStorage } from '../../models/block';
+import { CoinStorage, ICoin } from '../../models/coin';
+import { TransactionStorage } from '../../models/transaction';
+import { BitcoinP2PWorker } from '../../modules/bitcoin/p2p';
+import { ChainStateProvider } from '../../providers/chain-state';
+import { ErrorType, IVerificationPeer } from '../../services/verification';
 
 export class VerificationPeer extends BitcoinP2PWorker implements IVerificationPeer {
   prevBlockNum = 0;
@@ -134,7 +134,7 @@ export class VerificationPeer extends BitcoinP2PWorker implements IVerificationP
         }
         currentHeight++;
         if (Date.now() - lastLog > 100) {
-          logger.info(`Re-Sync `, {
+          logger.info('Re-Sync ', {
             chain,
             network,
             height: currentHeight
@@ -382,7 +382,7 @@ export class VerificationPeer extends BitcoinP2PWorker implements IVerificationP
         console.log(JSON.stringify(error));
       }
     }
-    //blocks with same hash
+    // blocks with same hash
     if (blockTxs.length > 0) {
       const hashFromTx = blockTxs[0].blockHash;
       if (blocksForHash > 1) {

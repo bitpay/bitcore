@@ -1,9 +1,9 @@
+import { StorageService } from '../services/storage';
+import { IBlock } from '../types/Block';
 import { TransformOptions } from '../types/TransformOptions';
 import { BaseModel, MongoBound } from './base';
-import { IBlock } from '../types/Block';
-import { StorageService } from '../services/storage';
 
-export type IBlock = {
+export interface IBlock {
   chain: string;
   confirmations?: number;
   network: string;
@@ -17,7 +17,7 @@ export type IBlock = {
   size: number;
   reward: number;
   processed: boolean;
-};
+}
 
 export abstract class BaseBlock<T extends IBlock> extends BaseModel<T> {
   constructor(storage?: StorageService) {
@@ -39,7 +39,7 @@ export abstract class BaseBlock<T extends IBlock> extends BaseModel<T> {
   }
 
   getPoolInfo(coinbase: string) {
-    //TODO need to make this actually parse the coinbase input and map to miner strings
+    // TODO need to make this actually parse the coinbase input and map to miner strings
     // also should go somewhere else
     return coinbase;
   }

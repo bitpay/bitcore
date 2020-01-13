@@ -1,14 +1,15 @@
-import logger, { timestamp } from '../../logger';
-import { BaseP2PWorker } from '../../services/p2p';
 import { EventEmitter } from 'events';
-import { BitcoinBlock, BitcoinBlockStorage, IBtcBlock } from '../../models/block';
-import { Bitcoin } from '../../types/namespaces/Bitcoin';
-import { wait } from '../../utils/wait';
-import { TransactionStorage } from '../../models/transaction';
-import { SpentHeightIndicators } from '../../types/Coin';
+import logger, { timestamp } from '../../logger';
+import { BitcoinBlockModel, BitcoinBlockStorage, IBtcBlock } from '../../models/block';
 import { StateStorage } from '../../models/state';
+import { TransactionStorage } from '../../models/transaction';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { Libs } from '../../providers/libs';
+import { BaseP2PWorker } from '../../services/p2p';
+import { SpentHeightIndicators } from '../../types/Coin';
+import { BitcoinBlock } from '../../types/namespaces/Bitcoin';
+import { BitcoinBlockHeaderObj, BitcoinTransaction } from '../../types/namespaces/Bitcoin';
+import { wait } from '../../utils/wait';
 
 export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   protected bitcoreLib: any;
@@ -19,7 +20,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   protected invCache: any;
   protected invCacheLimits: any;
   protected initialSyncComplete: boolean;
-  protected blockModel: BitcoinBlock;
+  protected blockModel: BitcoinBlockModel;
   protected pool: any;
   public events: EventEmitter;
   public isSyncing: boolean;
@@ -175,9 +176,9 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     }
   }
 
-  public async getHeaders(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
+  public async getHeaders(candidateHashes: string[]): Promise<BitcoinBlockHeaderObj[]> {
     let received = false;
-    return new Promise<Bitcoin.Block.HeaderObj[]>(async resolve => {
+    return new Promise<BitcoinBlockHeaderObj[]>(async resolve => {
       this.events.once('headers', headers => {
         received = true;
         resolve(headers);
@@ -192,8 +193,8 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   public async getBlock(hash: string) {
     logger.debug('Getting block, hash:', hash);
     let received = false;
-    return new Promise<Bitcoin.Block>(async resolve => {
-      this.events.once(hash, (block: Bitcoin.Block) => {
+    return new Promise<BitcoinBlock>(async resolve => {
+      this.events.once(hash, (block: BitcoinBlock) => {
         logger.debug('Received block, hash:', hash);
         received = true;
         resolve(block);
@@ -215,7 +216,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     return best;
   }
 
-  async processBlock(block: Bitcoin.Block): Promise<any> {
+  async processBlock(block: BitcoinBlock): Promise<any> {
     await this.blockModel.addBlock({
       chain: this.chain,
       network: this.network,
@@ -226,7 +227,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     });
   }
 
-  async processTransaction(tx: Bitcoin.Transaction): Promise<any> {
+  async processTransaction(tx: BitcoinTransaction): Promise<any> {
     const now = new Date();
     await TransactionStorage.batchImport({
       chain: this.chain,

@@ -22,12 +22,8 @@ const serverOpts: {
 } = {};
 
 if (config.https) {
-  serverOpts.key = fs.readFileSync(
-    config.privateKeyFile || './ssl/privatekey.pem'
-  );
-  serverOpts.cert = fs.readFileSync(
-    config.certificateFile || './ssl/certificate.pem'
-  );
+  serverOpts.key = fs.readFileSync(config.privateKeyFile || './ssl/privatekey.pem');
+  serverOpts.cert = fs.readFileSync(config.certificateFile || './ssl/certificate.pem');
   if (config.ciphers) {
     serverOpts.ciphers = config.ciphers;
     serverOpts.honorCipherOrder = true;
@@ -44,14 +40,10 @@ if (config.https) {
 }
 
 if (config.cluster && !config.lockOpts.lockerServer)
-  throw new Error(
-    'When running in cluster mode, locker server need to be configured'
-  );
+  throw new Error('When running in cluster mode, locker server need to be configured');
 
 if (config.cluster && !config.messageBrokerOpts.messageBrokerServer)
-  throw new Error(
-    'When running in cluster mode, message broker server need to be configured'
-  );
+  throw new Error('When running in cluster mode, message broker server need to be configured');
 
 const expressApp = new ExpressApp();
 
@@ -60,7 +52,7 @@ function startInstance() {
     ? serverModule.createServer(serverOpts, expressApp.app)
     : serverModule.Server(expressApp.app);
 
-  expressApp.start(config, (err) => {
+  expressApp.start(config, err => {
     if (err) {
       log.error('Could not start BWS instance', err);
       return;
@@ -68,9 +60,7 @@ function startInstance() {
 
     server.listen(port);
 
-    const instanceInfo = cluster.worker
-      ? ' [Instance:' + cluster.worker.id + ']'
-      : '';
+    const instanceInfo = cluster.worker ? ' [Instance:' + cluster.worker.id + ']' : '';
     log.info('BWS running ' + instanceInfo);
     return;
   });
@@ -88,7 +78,7 @@ if (config.cluster && cluster.isMaster) {
   }
 
   // Listen for dying workers
-  cluster.on('exit', (worker) => {
+  cluster.on('exit', worker => {
     // Replace the dead worker,
     log.error('Worker ' + worker.id + ' died :(');
     cluster.fork();

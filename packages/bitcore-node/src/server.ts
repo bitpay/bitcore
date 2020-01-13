@@ -1,4 +1,4 @@
-import { FullClusteredWorker } from './workers/all';
 import './utils/polyfills';
+import { FullClusteredWorker } from './workers/all';
 require('heapdump');
 FullClusteredWorker();

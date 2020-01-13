@@ -1,5 +1,5 @@
-import request from 'request-promise-native';
 import requestStream from 'request';
+import request from 'request-promise-native';
 import * as secp256k1 from 'secp256k1';
 import * as stream from 'stream';
 import { URL } from 'url';
@@ -17,19 +17,13 @@ export class Client {
   getMessage(params: { method: string; url: string; payload?: any }) {
     const { method, url, payload = {} } = params;
     const parsedUrl = new URLClass(url);
-    return [
-      method,
-      parsedUrl.pathname + parsedUrl.search,
-      JSON.stringify(payload)
-    ].join('|');
+    return [method, parsedUrl.pathname + parsedUrl.search, JSON.stringify(payload)].join('|');
   }
 
   sign(params: { method: string; url: string; payload?: any }) {
     const message = this.getMessage(params);
     const privateKey = this.authKey.toBuffer();
-    const messageHash = bitcoreLib.crypto.Hash.sha256sha256(
-      Buffer.from(message)
-    );
+    const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
     return secp256k1.sign(messageHash, privateKey).signature.toString('hex');
   }
 
@@ -77,9 +71,7 @@ export class Client {
 
   getCoins(params: { payload?: any; pubKey: string; includeSpent: boolean }) {
     const { payload, pubKey, includeSpent } = params;
-    const url = `${
-      this.apiUrl
-    }/wallet/${pubKey}/utxos?includeSpent=${includeSpent}`;
+    const url = `${this.apiUrl}/wallet/${pubKey}/utxos?includeSpent=${includeSpent}`;
     const signature = this.sign({ method: 'GET', url, payload });
     return requestStream.get(url, {
       headers: { 'x-signature': signature },
@@ -89,15 +81,7 @@ export class Client {
   }
 
   listTransactions(params) {
-    const {
-      pubKey,
-      startBlock,
-      startDate,
-      endBlock,
-      endDate,
-      includeMempool,
-      payload
-    } = params;
+    const { pubKey, startBlock, startDate, endBlock, endDate, includeMempool, payload } = params;
     let url = `${this.apiUrl}/wallet/${pubKey}/transactions`;
     let query = '';
     if (startBlock) {

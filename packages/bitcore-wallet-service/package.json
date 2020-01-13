@@ -90,9 +90,14 @@
     "build": "tsc && npm run lint",
     "clean": "rm -rf ./ts_build",
     "compile": "npm run clean && npm run build",
-    "lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "fix": "tslint --fix -c tslint.json 'src/**/*.ts'",
-    "pub": "npm run build && npm publish"
+    "pub": "npm run build && npm publish",
+    "precommit": "npm run fix && npm run lint",
+    "lint": "npm run lint:ts && npm run lint:style",
+    "lint:ts": "tslint -c tslint.json 'src/**/*.ts'",
+    "lint:style": "prettier --check 'src/**/*.ts'",
+    "fix": "npm run fix:style && npm run fix:lint",
+    "fix:lint": "tslint --fix -c tslint.json 'src/**/*.ts'",
+    "fix:style": "prettier --write 'src/**/*.ts'"
   },
   "bitcoreNode": "./bitcorenode",
   "contributors": [

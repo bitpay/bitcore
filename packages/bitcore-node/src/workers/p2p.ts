@@ -1,11 +1,11 @@
+import 'source-map-support/register';
 import logger from '../logger';
-import { P2P } from '../services/p2p';
-import { Storage } from '../services/storage';
-import { Event } from '../services/event';
 import { Modules } from '../modules';
 import { Config } from '../services/config';
+import { Event } from '../services/event';
+import { P2P } from '../services/p2p';
+import { Storage } from '../services/storage';
 import '../utils/polyfills';
-import 'source-map-support/register';
 require('heapdump');
 const services: Array<any> = [];
 
