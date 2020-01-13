@@ -72,4 +72,5 @@ COPY  ./packages/crypto-wallet-core/package-lock.json ./packages/crypto-wallet-c
 RUN npm install
 RUN npm run bootstrap
 ADD . .
+RUN npm run lint
 RUN npm run compile
