@@ -3412,30 +3412,35 @@ describe('Wallet service', function() {
       coin: 'btc',
       key: 'id44btc',
       addr: '18PzpUFkFZE8zKWUPvfykkTxmB9oMR8qP7',
+      lockedFunds: 0,
       flags: {},
     },
     {
       coin: 'bch',
       key: 'id44bch',
       addr: 'qpgjyj728rhu4gca2dqfzlpl8acnhzequshhgvev53',
+      lockedFunds: 0,
       flags: {},
     },
     {
       coin: 'bch',
       key: 'id44bch',
       addr: 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X',
+      lockedFunds: 0,
       flags: { noCashAddr: true },
     },
     {
       coin: 'eth',
       key: 'id44btc',
       addr: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+      lockedFunds: 0,
       flags: { noChange: true, shortTests: true, },
-    },
+    }, 
     {
       coin: 'xrp',
       key: 'id44btc',
       addr: 'rDzTZxa7NwD9vmNf5dvTbW4FQDNSRsfPv6',
+      lockedFunds: Defaults.MIN_XRP_BALANCE,
       flags: { noChange: true , shortTests: true},
     }
   ];
@@ -3447,6 +3452,7 @@ describe('Wallet service', function() {
     const idKey = x.key;
     const addressStr = x.addr;
     const flags = x.flags;
+    const lockedFunds = x.lockedFunds;
     let fromAddr;
 
     describe('#createTx ' + coin + ' flags' + JSON.stringify(flags), function() {
@@ -3499,6 +3505,7 @@ describe('Wallet service', function() {
 
 
             server.createTx(txOpts, function(err, tx) {
+console.log('[server.js.3502:err:]',err); // TODO
               should.not.exist(err);
               should.exist(tx);
               tx.walletM.should.equal(1);
@@ -4396,9 +4403,9 @@ describe('Wallet service', function() {
             helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(tx) {
               server.getBalance({}, function(err, balance) {
                 should.not.exist(err);
-                balance.totalAmount.should.equal(2 * ts);
+                balance.totalAmount.should.equal(2 * ts + lockedFunds);
                 if(flags.noChange) {
-                  balance.lockedAmount.should.equal(txAmount);
+                  balance.lockedAmount.should.equal(txAmount + lockedFunds);
                   txOpts.outputs[0].amount = 2 * ts;
                 } else {
                   balance.lockedAmount.should.equal(2 * ts);
@@ -6499,7 +6506,7 @@ describe('Wallet service', function() {
         });
       });
 
-      it.only('should sign a TX and return raw', function(done) {
+      it('should sign a TX and return raw', function(done) {
         blockchainExplorer.getTransaction = sinon.stub().callsArgWith(1, null, null);
         server.getPendingTxs({}, function(err, txs) {
           var tx = txs[0];

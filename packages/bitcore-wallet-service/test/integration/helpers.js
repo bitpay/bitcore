@@ -378,6 +378,7 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
   if (wallet.coin == 'xrp') {
     amounts = _.isArray(amounts) ? amounts : [amounts];
     let conf =  _.sum(_.map(amounts, x =>  Number((x*1e6).toFixed(0))));
+    conf =  conf + Defaults.MIN_XRP_BALANCE;
     blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: conf, balance: conf });
     return cb();
   }
