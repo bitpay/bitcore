@@ -35,7 +35,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     this.chain = chain || 'ETH';
     this.network = network;
     this.chainConfig = chainConfig;
-    this.syncing = true;
+    this.syncing = false;
     this.initialSyncComplete = false;
     this.blockModel = blockModel;
     this.txModel = txModel;
@@ -197,6 +197,9 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   async sync() {
+    if (this.syncing) {
+      return false;
+    }
     const { chain, chainConfig, network } = this;
     const { parentChain, forkHeight } = chainConfig;
     this.syncing = true;
@@ -248,6 +251,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     } catch (err) {
       logger.error(`Error syncing ${chain} ${network}`, err.message);
       await wait(2000);
+      this.syncing = false;
       return this.sync();
     }
     logger.info(`${chain}:${network} up to date.`);
