@@ -239,6 +239,22 @@ export class Wallet {
     });
   }
 
+  getUtxosArray(params: { includeSpent?: boolean } = {}) {
+    return new Promise((resolve, reject) => {
+      const utxoArray = [];
+      const { includeSpent = false } = params;
+      const utxoRequest = this.client.getCoins({
+        pubKey: this.authPubKey,
+        includeSpent
+      });
+      utxoRequest
+        .pipe(new ParseApiStream())
+        .on('data', utxo => utxoArray.push(utxo))
+        .on('end', () => resolve())
+        .on('err', err => reject(err));
+    });
+  }
+
   listTransactions(params) {
     return this.client.listTransactions({
       ...params,

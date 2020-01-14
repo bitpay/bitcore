@@ -7,7 +7,7 @@ var bwc = require('bitcore-wallet-client');
 var Bitcore_ = {
   bch: bwc.BitcoreCash,
   btc: bwc.Bitcore,
-};  
+};
 
 program = utils.configureCommander(program);
 
@@ -19,9 +19,9 @@ program
 program.on('--help', function() {
   console.log('  Examples:');
   console.log('');
-  console.log('    $ wallet-send n2HRFgtoihgAhx1qAEXcdBMjoMvAx7AcDc 500bit');
-  console.log('    $ wallet-send mgWeRvUC6d1LRPKtdDbvYEpaUEmApS4XrY 0.2btc "dinner with friends"');
-  console.log('    $ wallet-send https://paypro.url/1234 # will ask for confirmation ');
+  console.log('$ wallet-send n2HRFgtoihgAhx1qAEXcdBMjoMvAx7AcDc 500bit');
+  console.log('$ wallet-send mgWeRvUC6d1LRPKtdDbvYEpaUEmApS4XrY 0.2btc "dinner with friends"');
+  console.log('$ wallet-send https://paypro.url/1234 # will ask for confirmation ');
   console.log('');
 });
 program.parse(process.argv);
@@ -46,7 +46,7 @@ function confirmDiag(amountStr, note, cb) {
 };
 
 
-function send(client, address, amount, fee, note, uri) { 
+function send(client, address, amount, fee, note, uri) {
   var amount;
 
   fee = fee || 'normal';
@@ -94,7 +94,7 @@ utils.getClient(program, {
   } else {
 
     // BIP21
-    try { 
+    try {
 
       var parsed = new bitcore.URI(arg1);
       if (!parsed.r) {

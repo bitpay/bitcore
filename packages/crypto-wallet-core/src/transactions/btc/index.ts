@@ -6,11 +6,16 @@ export class BTCTxProvider {
 
   selectCoins(
     recipients: Array<{ amount: number }>,
-    utxos: Array<{ value: number; utxo: { mintHeight: number } }>,
+    utxos: Array<{
+      value: number;
+      mintHeight: number;
+      txid?: string;
+      mintTxid?: string;
+    }>,
     fee: number
   ) {
     utxos = utxos.sort(function(a, b) {
-      return a.utxo.mintHeight - b.utxo.mintHeight;
+      return a.mintHeight - b.mintHeight;
     });
 
     let index = 0;
@@ -36,6 +41,7 @@ export class BTCTxProvider {
       const btcUtxo = Object.assign({}, utxo, {
         amount: utxo.value / 1e8
       });
+      btcUtxo.txid = btcUtxo.txid ? btcUtxo.txid : btcUtxo.mintTxid;
       return new this.lib.Transaction.UnspentOutput(btcUtxo);
     });
     let tx = new this.lib.Transaction().from(btcUtxos).fee(Number(fee));
