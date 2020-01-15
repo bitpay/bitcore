@@ -34,8 +34,7 @@ export class XRPTxProvider {
       invoiceID,
       fee,
       nonce,
-      maxLedgerVersionOffset,
-      maxLedgerVersion
+      maxLedgerVersionOffset
     } = params;
     const { address, amount } = recipients[0];
     const rippleAPI = new RippleAPI();
@@ -62,8 +61,7 @@ export class XRPTxProvider {
     const instructions: Instructions = {
       fee: feeStr,
       sequence: nonce,
-      maxLedgerVersion,
-      maxLedgerVersionOffset
+      maxLedgerVersionOffset: maxLedgerVersionOffset || 3
     };
     const txJSON: TransactionJSON = {
       TransactionType: 'Payment',
