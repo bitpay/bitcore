@@ -139,6 +139,11 @@ export class Utils {
         toSatoshis: 1e2,
         maxDecimals: 6,
         minDecimals: 2,
+      },
+      dai:{
+        toSatoshis: 1e18,
+        maxDecimals: 6,
+        minDecimals: 2,
       }
     };
 

@@ -108,8 +108,8 @@ export const Constants = {
       }
     },
   },
-  COINS: ['btc', 'bch', 'eth', 'xrp', 'usdc', 'pax', 'gusd'],
-  ERC20: ['usdc', 'pax', 'gusd'],
+  COINS: ['btc', 'bch', 'eth', 'xrp', 'usdc', 'pax', 'gusd', 'dai'],
+  ERC20: ['usdc', 'pax', 'gusd', 'dai'],
   UTXO_COINS: ['btc', 'bch'],
   TOKEN_OPTS: {
     '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': {
@@ -129,6 +129,12 @@ export const Constants = {
       symbol: 'GUSD',
       decimal: 2,
       address: '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'
+    },
+    '0xC4375B7De8af5a38a93548eb8453a498222C4fF2': {
+      name: 'Dai Stablecoin',
+      symbol: 'DAI',
+      decimal: 18,
+      address:'0xC4375B7De8af5a38a93548eb8453a498222C4fF2'
     },
   },
 };

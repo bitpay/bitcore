@@ -8,13 +8,15 @@ module.exports = {
     XRP: 'xrp',
     USDC: 'usdc',
     PAX: 'pax',
-    GUSD: 'gusd'
+    GUSD: 'gusd',
+    DAI: 'dai',
   },
 
   ERC20: {
     USDC: 'usdc',
     PAX: 'pax',
-    GUSD: 'gusd'
+    GUSD: 'gusd',
+    DAI: 'dai'
   },
 
   UTXO_COINS: {
@@ -65,6 +67,12 @@ module.exports = {
       symbol: 'GUSD',
       decimal: 2,
       address: '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'
+    },
+    '0xC4375B7De8af5a38a93548eb8453a498222C4fF2': {
+      name: 'Dai Stablecoin',
+      symbol: 'DAI',
+      decimal: 18,
+      address:'0xC4375B7De8af5a38a93548eb8453a498222C4fF2'
     },
   },
 };
