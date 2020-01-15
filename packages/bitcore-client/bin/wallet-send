@@ -27,7 +27,6 @@ const main = async () => {
   const currencies = JSON.parse(data);
   try {
     wallet = await Wallet.loadWallet({ name, path });
-    console.log(wallet);
     const chain = wallet.chain;
     const { decimals } = currencies.data.find(element => element.code === chain);
     const scale = Math.pow(10, decimals);
@@ -50,9 +49,9 @@ const main = async () => {
     };
     const tx = await wallet.newTx(params);
     console.log('unsignedRawTx: ', tx);
-    const password = await promptly.password('Wallet Password:');
-    wallet = await wallet.unlock(password);
-    const signedTx = await wallet.signTx({ tx });
+    const passphrase = await promptly.password('Wallet Password:');
+    wallet = await wallet.unlock(passphrase);
+    const signedTx = await wallet.signTx({ tx, passphrase });
     console.log('signedRawTx: ', signedTx);
     const confirmed = await promptly.confirm('broadcast? (y/n)');
     if (!confirmed) {

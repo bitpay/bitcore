@@ -23,6 +23,7 @@ export namespace Wallet {
     phrase: string;
     password: string;
     storage: Storage;
+    addressIndex: number;
   };
 }
 export class Wallet {
@@ -53,6 +54,7 @@ export class Wallet {
       apiUrl: this.getApiUrl(),
       authKey: this.getAuthSigningKey()
     });
+    this.addressIndex = this.addressIndex || 0;
   }
 
   getApiUrl() {
@@ -134,6 +136,22 @@ export class Wallet {
       console.debug(e);
       console.error('Failed to register wallet with bitcore-node.');
     });
+
+    //deriving address
+    let unusedAddressCounter = 0;
+    let index = wallet.addressIndex || 0;
+    while (unusedAddressCounter < 1) {
+      const address = await loadedWallet.nextAddressPair();
+      const hasTransactions = await loadedWallet.client.getAddressTxos({ address });
+      if (!hasTransactions.length) {
+        unusedAddressCounter++;
+      } else {
+        unusedAddressCounter = 0;
+      }
+      console.log(`Current address index: ${index}: ${address}`);
+      index++;
+    }
+
     return loadedWallet;
   }
 
@@ -250,7 +268,7 @@ export class Wallet {
       utxoRequest
         .pipe(new ParseApiStream())
         .on('data', utxo => utxoArray.push(utxo))
-        .on('end', () => resolve())
+        .on('end', () => resolve(utxoArray))
         .on('err', err => reject(err));
     });
   }
@@ -377,7 +395,7 @@ export class Wallet {
     return walletAddresses.map(walletAddress => walletAddress.address);
   }
 
-  async deriveAddress(addressIndex, isChange) {
+  deriveAddress(addressIndex, isChange) {
     const address = Deriver.deriveAddress(
       this.chain,
       this.network,
@@ -414,7 +432,7 @@ export class Wallet {
   }
 
   async getNonce(addressIndex: number = 0, isChange?: boolean) {
-    const address = await this.deriveAddress(0, isChange);
+    const address = this.deriveAddress(0, isChange);
     const count = await this.client.getNonce({ address });
     if (!count || !count.nonce) {
       throw new Error('Unable to get nonce');

@@ -11,6 +11,7 @@ export class BTCTxProvider {
       mintHeight: number;
       txid?: string;
       mintTxid?: string;
+      mintIndex?: number;
     }>,
     fee: number
   ) {
@@ -35,15 +36,16 @@ export class BTCTxProvider {
 
   create({ recipients, utxos = [], change, wallet, fee = 20000 }) {
     change = change || (wallet.deriveAddress(wallet.addressIndex, true));
-
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {
-        amount: utxo.value / 1e8
+        amount: utxo.value / 1e8,
+        txid: utxo.mintTxid,
+        outputIndex: utxo.mintIndex
       });
-      btcUtxo.txid = btcUtxo.txid ? btcUtxo.txid : btcUtxo.mintTxid;
       return new this.lib.Transaction.UnspentOutput(btcUtxo);
     });
+    console.log(btcUtxos);
     let tx = new this.lib.Transaction().from(btcUtxos).fee(Number(fee));
     if (change) {
       tx.change(change);
