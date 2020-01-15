@@ -45,7 +45,6 @@ export class BTCTxProvider {
       });
       return new this.lib.Transaction.UnspentOutput(btcUtxo);
     });
-    console.log(btcUtxos);
     let tx = new this.lib.Transaction().from(btcUtxos).fee(Number(fee));
     if (change) {
       tx.change(change);
@@ -86,10 +85,12 @@ export class BTCTxProvider {
 
   getRelatedUtxos({ outputs, utxos }) {
     let txids = outputs.map(output => output.toObject().prevTxId);
-    let applicableUtxos = utxos.filter(utxo => txids.includes(utxo.txid));
+    let applicableUtxos = utxos.filter(utxo => txids.includes(utxo.txid || utxo.mintTxid));
     return applicableUtxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {
-        amount: utxo.value / Math.pow(10, 8)
+        amount: utxo.value / Math.pow(10, 8),
+        txid: utxo.mintTxid,
+        outputIndex: utxo.mintIndex
       });
       return new this.lib.Transaction.UnspentOutput(btcUtxo);
     });
