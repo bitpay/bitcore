@@ -12,6 +12,9 @@ import { RippleWalletTransactions } from './transform';
 import { SubmitResponse, SingleOutputTx } from './types';
 import { IBlock } from '../../../models/baseBlock';
 import { FormattedLedger } from 'ripple-lib/dist/npm/ledger/parse/ledger';
+import { IXrpTransaction } from '../types';
+import { ObjectId } from 'mongodb';
+import { WalletAddressStorage } from '../../../models/walletAddress';
 
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -236,16 +239,19 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     };
   }
 
-  transform(tx: SingleOutputTx | FormattedTransactionType, network: string) {
+  transform(tx: SingleOutputTx | FormattedTransactionType, network: string, ledger?: { ledgerTimestamp: string }) {
     if (tx.type === 'payment' && 'outcome' in tx) {
+      const ledgerDate = ledger ? ledger.ledgerTimestamp : undefined;
+      const date = (tx.outcome && tx.outcome.timestamp ? tx.outcome.timestamp : ledgerDate) || '';
       return {
         network,
         chain: this.chain,
         txid: tx.id,
+        from: tx.address,
         blockHash: (tx as any).ledger_hash || '',
         blockHeight: tx.outcome.ledgerVersion || -1,
-        blockTime: new Date(tx.outcome.timestamp!),
-        blockTimeNormalized: new Date(tx.outcome.timestamp!),
+        blockTime: new Date(date),
+        blockTimeNormalized: new Date(date),
         value: Number(tx.outcome.deliveredAmount ? tx.outcome.deliveredAmount.value : 0),
         fee: Number(tx.outcome.fee),
         wallets: []
@@ -262,6 +268,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
         network,
         chain: this.chain,
         txid: tx.transaction.hash,
+        from: tx.transaction.Account,
         blockHash: (tx as any).ledger_hash || '',
         blockHeight: tx.ledger_index || -1,
         blockTime: new Date(),
@@ -316,6 +323,38 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     } else {
       return tx;
     }
+  }
+
+  async tag(chain: string, network: string, tx: IXrpTransaction, outputs: Array<ICoin> | any) {
+    const address = tx.from;
+    let involvedAddress = [address];
+    const transaction = { ...tx, wallets: new Array<ObjectId>() };
+    let coins = new Array<{ address: string } & Partial<ICoin>>();
+    if (Array.isArray(outputs)) {
+      coins = outputs.map(c => {
+        return { ...c, wallets: new Array<ObjectId>() };
+      });
+      involvedAddress.push(...coins.map(c => c.address));
+    }
+    const walletAddresses = await WalletAddressStorage.collection
+      .find({ chain, network, address: { $in: involvedAddress } })
+      .toArray();
+
+    if ('chain' in tx) {
+      transaction.wallets = walletAddresses.map(wa => wa.wallet);
+    }
+
+    if (coins && coins.length) {
+      for (const coin of coins) {
+        const coinWalletAddresses = walletAddresses.filter(
+          wa => coin.address && wa.address.toLowerCase() === coin.address.toLowerCase()
+        );
+        if (coinWalletAddresses && coinWalletAddresses.length) {
+          coin.wallets = coinWalletAddresses.map(wa => wa.wallet);
+        }
+      }
+    }
+    return { transaction, coins };
   }
 }
 
