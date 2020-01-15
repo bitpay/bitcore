@@ -345,12 +345,21 @@ Interpreter.castToBool = function(buf) {
   return false;
 };
 
+Interpreter.isSchnorrSig = function(buf) {
+  return (buf.length === 64);
+}
+
 /**
  * Translated from bitcoind's CheckSignatureEncoding
  */
 Interpreter.prototype.checkRawSignatureEncoding = function(buf) {
   var sig;
 
+  //TODO update interpreter.js and necessary functions to match bitcoin-abc interpreter.cpp
+  if(Interpreter.isSchnorrSig(buf)) {
+    return true;
+  }
+  
   if ((this.flags & (Interpreter.SCRIPT_VERIFY_DERSIG | Interpreter.SCRIPT_VERIFY_LOW_S | Interpreter.SCRIPT_VERIFY_STRICTENC)) !== 0 && !Signature.isDER(buf)) {
 
     this.errstr = 'SCRIPT_ERR_SIG_DER_INVALID_FORMAT';
@@ -1533,7 +1542,7 @@ Interpreter.prototype.step = function() {
           bufPubkey = stacktop(-1);
 
           if (!this.checkTxSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
-
+            console.log("Wrong tx sig encoding or pubkey encoding");
             return false;
           }
 
@@ -1551,7 +1560,9 @@ Interpreter.prototype.step = function() {
             sig = Signature.fromTxFormat(bufSig);
             pubkey = PublicKey.fromBuffer(bufPubkey, false);
 
+            
             fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags);
+            console.log("verify sig wrong", fSuccess);
           } catch (e) {
             //invalid sig or pubkey
             fSuccess = false;
@@ -1716,6 +1727,8 @@ Interpreter.prototype.step = function() {
             try {
               sig = Signature.fromTxFormat(bufSig);
               pubkey = PublicKey.fromBuffer(bufPubkey, false);
+              // console.log("sig", sig);
+              console.log("pubkey", pubkey);
               fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags);
             } catch (e) {
               //invalid sig or pubkey

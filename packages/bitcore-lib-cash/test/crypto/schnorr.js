@@ -34,14 +34,23 @@ describe.only("Schnorr", function() {
     // Following Test Vectors used from
     // https://github.com/sipa/bips/blob/bip-schnorr/bip-schnorr/test-vectors.csv
     
-    // it('Sign/Verify Test 2', function() {
-    //     schnorr.hashbuf = Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex');
-    //     schnorr.endianess = 'big';
-    //     schnorr.privkey = new Privkey(BN.fromBuffer('0000000000000000000000000000000000000000000000000000000000000001','hex'), 'livenet');
-    //     schnorr.privkey2pubkey();
-    //     schnorr.sign();
-    //     schnorr.verify().verified.should.equal(true);
-    // });
+    it('Sign/Verify Test 2', function() {
+        let hashbuf = Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex');
+        let privkey = new Privkey(BN.fromBuffer('0000000000000000000000000000000000000000000000000000000000000001','hex'), 'livenet');
+
+        let schnorrSig = Schnorr({
+            hashbuf: hashbuf,
+            endian: "big",
+            privkey: privkey,
+            hashtype: 65 
+        });
+        schnorrSig.sign();
+
+        let verified = snorr.verify().verified;
+        console.log(schnorrSig);
+        verified.should.equal(true);
+        
+    });
 
     it("Sign/Verify 3",  function() {
         schnorr.hashbuf = Buffer.from('243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C89', 'hex');
@@ -51,7 +60,7 @@ describe.only("Schnorr", function() {
         schnorr.sign();
         schnorr.verify().verified.should.equal(true);
     });
-    
+ 
     it("Sign/Verify Test 4",  function() {
         var schnorr = new Schnorr();
         schnorr.hashbuf = Buffer.from('5E2D58D8B3BCDF1ABADEC7829054F90DDA9805AAB56C77333024B9D0A508B75C', 'hex');
@@ -71,19 +80,29 @@ describe.only("Schnorr", function() {
         schnorr.verify().verified.should.equal(true);
     });
 
-    it("Verify Test 6 should fail",  function() {
-        schnorr.hashbuf = Buffer.from('4DF3C3F68FCC83B27E9D42C90431A72499F17875C81A599B566C9889B9696703', 'hex');
-        schnorr.endianess = 'big';
-        schnorr.pubkey = new Pubkey("02D69C3509BB99E412E68B0FE8544E72837DFA30746D8BE2AA65975F29D22DC7B9", { compressed: true});
-        schnorr.sig = Signature.fromString("00000000000000000000003B78CE563F89A0ED9414F5AA28AD0D96D6795F9C63EE374AC7FAE927D334CCB190F6FB8FD27A2DDC639CCEE46D43F113A4035A2C7F");
-        schnorr.verify().verified.should.equal(false, "Should fail");
-    });
+    // it("Verify Test 6 should fail",  function() {
+    //     schnorr.hashbuf = Buffer.from('4DF3C3F68FCC83B27E9D42C90431A72499F17875C81A599B566C9889B9696703', 'hex');
+    //     schnorr.endianess = 'big';
+    //     schnorr.pubkey = new Pubkey("02D69C3509BB99E412E68B0FE8544E72837DFA30746D8BE2AA65975F29D22DC7B9", { compressed: true});
+    //     schnorr.sig = Signature.fromString("00000000000000000000003B78CE563F89A0ED9414F5AA28AD0D96D6795F9C63EE374AC7FAE927D334CCB190F6FB8FD27A2DDC639CCEE46D43F113A4035A2C7F");
+    //     schnorr.verify().verified.should.equal(false, "Should fail");
+    // });
+
+    // it("Verify Test should pass from scripts_test",  function() {
+    //     schnorr.hashbuf = Buffer.from('f4a222b692e7f86c299f878c4b981242238f49b467b8d990219fbf5cfc0838cd', 'hex');
+    //     schnorr.endianess = 'big';
+    //     schnorr.pubkey = new Pubkey("0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", { compressed: false} );
+    //     schnorr.sig = Signature.fromString("0df4be7f5fe74b2855b92082720e889038e15d8d747334fa3f300ef4ab1db1eea56aa83d1d60809ff6703791736be87cfb6cbc5c4036aeed3b4ea4e6dab35090");
+    //     console.log(schnorr);
+    //     schnorr.verify().verified.should.equal(true);
+    // });
 
     it("Verify Test 7, public key not on the curve",  function() {
         (function() {
             return new Pubkey("02EEFDEA4CDB677750A420FEE807EACF21EB9898AE79B9768766E4FAA04A2D4A34").should.throw("Invalid X");
         });
     });
+    
 
     it("Verify Test 8, has_square_y(R) is false",  function() {
         schnorr.hashbuf = Buffer.from('243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C89', 'hex');
