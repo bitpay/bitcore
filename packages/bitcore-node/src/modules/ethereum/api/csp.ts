@@ -109,7 +109,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       gasPrices.push(blockGasPrices[lowGasPriceIndex]);
     }
     const estimate = Math.max(...gasPrices, gethGasPrice);
-    return estimate;
+    return { feerate: estimate, blocks: target };
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
@@ -293,17 +293,18 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       const query = {
         chain,
         network,
-        to: web3.utils.toChecksumAddress(args.tokenAddress),
         $or: [
           {
             wallets: wallet._id,
+            abiType: { $exists: true },
+            to: web3.utils.toChecksumAddress(args.tokenAddress),
             'abiType.type': 'ERC20',
             'abiType.name': 'transfer',
-            'wallets.0': { $exists: true },
-            abiType: { $exists: true }
+            'wallets.0': { $exists: true }
           },
           {
             abiType: { $exists: true },
+            to: web3.utils.toChecksumAddress(args.tokenAddress),
             'abiType.type': 'ERC20',
             'abiType.name': 'transfer',
             'abiType.params.0.value': { $in: walletAddresses.map(w => w.address.toLowerCase()) }
@@ -318,11 +319,21 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           new Transform({
             objectMode: true,
             transform: (tx: any, _, cb) => {
-              cb(null, {
-                ...tx,
-                value: tx.abiType!.params[1].value,
-                to: web3.utils.toChecksumAddress(tx.abiType!.params[0].value)
-              });
+              if (tx.abiType && tx.abiType.type === 'ERC20') {
+                return cb(null, {
+                  ...tx,
+                  value: tx.abiType!.params[1].value,
+                  to: web3.utils.toChecksumAddress(tx.abiType!.params[0].value)
+                });
+              }
+              if (tx.abiType && tx.abiType.type === 'INVOICE') {
+                return cb(null, {
+                  ...tx,
+                  value: tx.abiType!.params[0].value,
+                  to: tx.to
+                });
+              }
+              return cb(null, tx);
             }
           })
         );

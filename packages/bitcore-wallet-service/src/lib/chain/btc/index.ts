@@ -348,6 +348,16 @@ export class BtcChain implements IChain {
     return info.inputs;
   }
 
+  supportsMultisig() {
+    return true;
+  }
+
+  notifyConfirmations(network: string) {
+    if (network != 'livenet') return false;
+
+    return true;
+  }
+
   isUTXOCoin() {
     return true;
   }

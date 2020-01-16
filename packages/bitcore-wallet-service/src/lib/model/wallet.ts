@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { ChainService } from '../chain/index';
 import { Address } from './address';
 import { AddressManager } from './addressmanager';
 import { Copayer } from './copayer';
@@ -14,7 +15,8 @@ const Constants = Common.Constants,
 const Bitcore = {
   btc: require('bitcore-lib'),
   bch: require('bitcore-lib-cash'),
-  eth: require('bitcore-lib')
+  eth: require('bitcore-lib'),
+  xrp: require('bitcore-lib')
 };
 
 export interface IWallet {
@@ -195,7 +197,8 @@ export class Wallet {
   updateBEKeys() {
     $.checkState(this.isComplete());
 
-    const bitcore = Bitcore[this.coin];
+    const chain = ChainService.getChain(this.coin).toLowerCase();
+    const bitcore = Bitcore[chain];
     const salt = config.BE_KEY_SALT || Defaults.BE_KEY_SALT;
 
     var seed =

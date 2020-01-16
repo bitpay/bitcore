@@ -16,12 +16,30 @@ import { ERC721Abi } from '../abi/erc721';
 import { ERC20Abi } from '../abi/erc20';
 import { BaseTransaction } from '../../../models/baseTransaction';
 import { valueOrDefault } from '../../../utils/check';
+import { InvoiceAbi } from '../abi/invoice';
 
-const Erc20Decoder = require('abi-decoder');
+function requireUncached(module) {
+  delete require.cache[require.resolve(module)];
+  return require(module);
+}
+
+const Erc20Decoder = requireUncached('abi-decoder');
 Erc20Decoder.addABI(ERC20Abi);
+function getErc20Decoder() {
+  return Erc20Decoder;
+}
 
-const Erc721Decoder = require('abi-decoder');
+const Erc721Decoder = requireUncached('abi-decoder');
 Erc721Decoder.addABI(ERC721Abi);
+function getErc721Decoder() {
+  return Erc721Decoder;
+}
+
+const InvoiceDecoder = requireUncached('abi-decoder');
+InvoiceDecoder.addABI(InvoiceAbi);
+function getInvoiceDecoder() {
+  return InvoiceDecoder;
+}
 
 @LoggifyClass
 export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
@@ -179,28 +197,33 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
 
   abiDecode(input: string) {
     try {
-      try {
-        const decodedData = Erc20Decoder.decodeMethod(input);
-        if (!decodedData || decodedData.length === 0) {
-          throw new Error();
-        }
+      const erc20Data = getErc20Decoder().decodeMethod(input);
+      if (erc20Data) {
         return {
           type: 'ERC20',
-          ...decodedData
-        };
-      } catch {
-        const decodedData = Erc721Decoder.decodeMethod(input);
-        if (!decodedData || decodedData.length === 0) {
-          throw new Error();
-        }
-        return {
-          type: 'ERC721',
-          ...decodedData
+          ...erc20Data
         };
       }
-    } catch {
-      return undefined;
-    }
+    } catch (e) {}
+    try {
+      const erc721Data = getErc721Decoder().decodeMethod(input);
+      if (erc721Data) {
+        return {
+          type: 'ERC721',
+          ...erc721Data
+        };
+      }
+    } catch (e) {}
+    try {
+      const invoiceData = getInvoiceDecoder().decodeMethod(input);
+      if (invoiceData) {
+        return {
+          type: 'INVOICE',
+          ...invoiceData
+        };
+      }
+    } catch (e) {}
+    return undefined;
   }
 
   _apiTransform(

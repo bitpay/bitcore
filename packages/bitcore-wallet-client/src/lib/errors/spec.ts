@@ -74,6 +74,9 @@ var errorSpec = [{
   name: 'COPAYER_REGISTERED',
   message: 'Copayer already register on server.'
 }, {
+  name: 'INPUT_NOT_FOUND',
+  message: 'We could not find one or more inputs for your transaction on the blockchain. Make sure you\'re not trying to use unconfirmed change.'
+}, {
   name: 'UNCONFIRMED_INPUTS_NOT_ACCEPTED',
   message: 'Can not pay this invoice using unconfirmed inputs.'
 }, {
@@ -82,6 +85,30 @@ var errorSpec = [{
 }, {
   name: 'INVOICE_EXPIRED',
   message: 'The invoice is no longer receiving payments.'
+}, {
+  name: 'UNABLE_TO_PARSE_PAYMENT',
+  message: 'We were unable to parse your payment. Please try again or contact your wallet provider.'
+}, {
+  name: 'NO_TRASACTION',
+  message: 'Your request did not include a transaction. Please try again or contact your wallet provider.'
+}, {
+  name: 'INVALID_TX_FORMAT',
+  message: 'Your transaction was an in an invalid format, it must be a hexadecimal string. Contact your wallet provider.'
+}, {
+  name: 'UNABLE_TO_PARSE_TX',
+  message: 'We were unable to parse the transaction you sent. Please try again or contact your wallet provider.'
+}, {
+  name: 'WRONG_ADDRESS',
+  message: 'The transaction you sent does not have any output to the address on the invoice'
+}, {
+  name: 'WRONG_AMOUNT',
+  message: 'The amount on the transaction does not match the amount requested. This payment will not be accepted.'
+}, {
+  name: 'NOT_ENOUGH_FEE',
+  message: 'Transaction fee is below the current minimum threshold.'
+}, {
+  name: 'BTC_NOT_BCH',
+  message: 'This invoice is priced in BTC, not BCH. Please try with a BTC wallet instead.'
 }
 ];
 module.exports = errorSpec;

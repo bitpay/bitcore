@@ -11,14 +11,16 @@ program
   .option('--name <name>', 'REQUIRED - Wallet Name')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--nonce [nonce]', 'optional - Nonce')
-  .option('--from [frome]', 'optional - from account for XRP')
+  .option('--from [from]', 'optional - from account for XRP')
   .option('--payProUri [payProUri]', 'REQUIRED - payment protocol URI')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, nonce, payProUri, from } = program;
+  const { name, path, nonce: inputNonce, payProUri, from: inputFrom } = program;
   let wallet;
   wallet = await Wallet.loadWallet({ name, path });
+  const from = inputFrom || await wallet.deriveAddress(0);
+  const nonce = inputNonce || await wallet.getNonce();
   const { baseUrl, chain, network } = wallet;
   if (chain !== 'XRP') {
     console.error('Only XRP wallets supported for now');
@@ -72,7 +74,7 @@ const main = async () => {
     address: outputs[0].address,
     amount: outputs[0].amount
   }];
-  const fee = requiredFeeRate.satoshisPerByte;
+  const fee = requiredFeeRate;
   const invoiceID = outputs[0].invoiceID;
   const params = { recipients, fee, from, invoiceID };
   params.nonce = Number(nonce);

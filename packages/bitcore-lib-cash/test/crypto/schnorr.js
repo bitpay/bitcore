@@ -14,7 +14,9 @@ var vectors = require('../data/ecdsa');
 // Test Vectors used from
 // https://github.com/sipa/bips/blob/bip-schnorr/bip-schnorr/test-vectors.csv
 
-describe.only("Schnorr", function() {
+
+
+describe("Schnorr", function() {
     it('instantiation', function() {
         var schnorr = new Schnorr();
         should.exist(schnorr);
@@ -33,10 +35,12 @@ describe.only("Schnorr", function() {
 
     // Following Test Vectors used from
     // https://github.com/sipa/bips/blob/bip-schnorr/bip-schnorr/test-vectors.csv
-    
+
     it('Sign/Verify Test 2', function() {
-        let hashbuf = Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex');
-        let privkey = new Privkey(BN.fromBuffer('0000000000000000000000000000000000000000000000000000000000000001','hex'), 'livenet');
+        let hashbuf = (new BN(0)).toBuffer({ size: 32 });
+        let privbn = new BN(1);
+        
+        let privkey = new Privkey(privbn);
 
         let schnorrSig = Schnorr({
             hashbuf: hashbuf,
@@ -46,10 +50,8 @@ describe.only("Schnorr", function() {
         });
         schnorrSig.sign();
 
-        let verified = snorr.verify().verified;
-        console.log(schnorrSig);
-        verified.should.equal(true);
-        
+        let verified = schnorrSig.verify().verified;
+        verified.should.equal(true); 
     });
 
     it("Sign/Verify 3",  function() {

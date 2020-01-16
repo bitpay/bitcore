@@ -253,6 +253,7 @@ export class Wallet {
     invoiceID?: string;
     fee?: number;
     nonce?: number;
+    tag? : number;
   }) {
     const payload = {
       network: this.network,
@@ -264,7 +265,8 @@ export class Wallet {
       fee: params.fee,
       wallet: this,
       utxos: params.utxos,
-      nonce: params.nonce
+      nonce: params.nonce,
+      tag: params.tag
     };
     return Transactions.create(payload);
   }
@@ -392,5 +394,14 @@ export class Wallet {
     await this.importKeys({ keys });
     await this.saveWallet();
     return keys.map(key => key.address.toString());
+  }
+
+  async getNonce(addressIndex: number = 0, isChange?: boolean) {
+    const address = await this.deriveAddress(0, isChange);
+    const count = await this.client.getNonce({ address });
+    if (!count || !count.nonce) {
+      throw new Error('Unable to get nonce');
+    }
+    return count.nonce;
   }
 }
