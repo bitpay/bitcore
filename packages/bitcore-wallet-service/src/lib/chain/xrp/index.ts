@@ -103,6 +103,10 @@ export class XrpChain implements IChain {
 
   getFee(server, wallet, opts) {
     return new Promise((resolve, reject) => {
+      // This is used for sendmax flow
+      if (_.isNumber(opts.fee)) {
+        return resolve({ feePerKb: opts.fee });
+      }
       server._getFeePerKb(wallet, opts, (err, inFeePerKb) => {
         if (err) {
           return reject(err);
@@ -170,12 +174,13 @@ export class XrpChain implements IChain {
     server.getBalance(
       { wallet },
       (err, balance) => {
-        if (err) return next(err);
-        const { totalAmount, availableAmount } = balance;
-        if (totalAmount < txp.getTotalAmount()) {
+if (err) return next(err);
+const { totalAmount, availableAmount } = balance;
+if (totalAmount < txp.getTotalAmount()) {
           return cb(Errors.INSUFFICIENT_FUNDS);
         } else if (availableAmount < txp.getTotalAmount()) {
-          return cb(Errors.LOCKED_FUNDS);
+
+return cb(Errors.LOCKED_FUNDS);
         } else {
           return next(server._checkTx(txp));
         }
@@ -239,6 +244,10 @@ export class XrpChain implements IChain {
       tx.id = Transactions.getHash({ tx: signed, chain, network });
     }
     tx.uncheckedSerialize = () => signedTxs;
+  }
+
+  notifyConfirmations() {
+    return false;
   }
 
   validateAddress(wallet, inaddr, opts) {
