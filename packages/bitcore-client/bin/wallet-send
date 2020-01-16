@@ -32,8 +32,8 @@ const main = async () => {
     const scale = Math.pow(10, decimals);
     const { lastAddress } = await wallet.deriveAddress(0);
     const recipients = [{ address: to, amount: amount * scale }];
-    // const feerate = await wallet.getNetworkFee({ target });
-    const feerate = 20;
+    const feerate = await wallet.getNetworkFee({ target });
+    // const feerate = 20;
     const fee = JSON.parse(feerate).feerate;
     let nonce;
     if (!['BTC', 'BCH'].includes(chain)) {

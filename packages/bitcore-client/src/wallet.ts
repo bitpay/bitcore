@@ -138,19 +138,19 @@ export class Wallet {
     });
 
     //deriving address
-    let unusedAddressCounter = 0;
-    let index = wallet.addressIndex || 0;
-    while (unusedAddressCounter < 1) {
-      const address = await loadedWallet.nextAddressPair();
-      const hasTransactions = await loadedWallet.client.getAddressTxos({ address });
-      if (!hasTransactions.length) {
-        unusedAddressCounter++;
-      } else {
-        unusedAddressCounter = 0;
-      }
-      console.log(`Current address index: ${index}: ${address}`);
-      index++;
-    }
+    // let unusedAddressCounter = 0;
+    // let index = wallet.addressIndex || 0;
+    // while (unusedAddressCounter < 1) {
+    //   const address = await loadedWallet.nextAddressPair();
+    //   const hasTransactions = await loadedWallet.client.getAddressTxos({ address });
+    //   if (!hasTransactions.length) {
+    //     unusedAddressCounter++;
+    //   } else {
+    //     unusedAddressCounter = 0;
+    //   }
+    //   console.log(`Current address index: ${index}: ${address}`);
+    //   index++;
+    // }
 
     return loadedWallet;
   }
@@ -301,7 +301,9 @@ export class Wallet {
       wallet: this,
       utxos: params.utxos,
       nonce: params.nonce,
-      tag: params.tag
+      tag: params.tag,
+      gasPrice: params.fee,
+      gasLimit: 200000
     };
     return Transactions.create(payload);
   }
@@ -434,7 +436,7 @@ export class Wallet {
   async getNonce(addressIndex: number = 0, isChange?: boolean) {
     const address = this.deriveAddress(0, isChange);
     const count = await this.client.getNonce({ address });
-    if (!count || !count.nonce) {
+    if (!count || typeof count.nonce !== 'number') {
       throw new Error('Unable to get nonce');
     }
     return count.nonce;
