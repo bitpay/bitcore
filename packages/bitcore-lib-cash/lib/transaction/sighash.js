@@ -250,15 +250,15 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript,
  * @param {number} inputIndex
  * @param {Script} subscript
  * @param {satoshisBN} input's amount
- * @param {signingMethod} signingMethod "ECDSA" or "Schnorr" to sign a tx
+ * @param {signingMethod} signingMethod "ecdsa" or "schnorr" to sign a tx
  * @return {Signature}
  */
 function sign(transaction, privateKey, sighashType, inputIndex, subscript, satoshisBN, flags, signingMethod) {
   var hashbuf = sighash(transaction, sighashType, inputIndex, subscript, satoshisBN, flags);
 
-  signingMethod = signingMethod || "ECDSA";
+  signingMethod = signingMethod || "ecdsa";
 
-  if (signingMethod === "Schnorr") {
+  if (signingMethod === "schnorr") {
     let sig = Schnorr.sign(hashbuf, privateKey, 'big').set({
       nhashtype: sighashType
     });
@@ -283,7 +283,7 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript, satos
  * @param {Script} subscript
  * @param {satoshisBN} input's amount
  * @param {flags} verification flags
- * @param {signingMethod} signingMethod "ECDSA" or "Schnorr" to sign a tx
+ * @param {signingMethod} signingMethod "ecdsa" or "schnorr" to sign a tx
  * @return {boolean}
  */
 function verify(transaction, signature, publicKey, inputIndex, subscript, satoshisBN, flags, signingMethod) {
@@ -291,10 +291,10 @@ function verify(transaction, signature, publicKey, inputIndex, subscript, satosh
   $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
   var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript, satoshisBN, flags);
 
-  signingMethod = signingMethod || "ECDSA";
+  signingMethod = signingMethod || "ecdsa";
 
-  if (signingMethod === "Schnorr") {
-    return Schnorr.verify(hashbuf, signature, privateKey, 'big');
+  if (signingMethod === "schnorr") {
+    return Schnorr.verify(hashbuf, signature, publicKey, 'big');
   }
 
   return ECDSA.verify(hashbuf, signature, publicKey, 'little');

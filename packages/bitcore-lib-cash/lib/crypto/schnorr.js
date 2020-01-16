@@ -72,7 +72,7 @@ Schnorr.prototype._findSignature = function(d, e) {
     $.checkState(!d.gte(n), new Error('privkey out of field of curve'));
   
     
-    let k = nonceFunctionRFC6979(d.toBuffer(), e.toBuffer());
+    let k = nonceFunctionRFC6979(d.toBuffer(), e.toBuffer({ size: 32 }));
 
     let P = G.mul(d);
     let R = G.mul(k);
@@ -83,9 +83,9 @@ Schnorr.prototype._findSignature = function(d, e) {
     } else {
       k = n.sub(k);
     }
-
+    
     let r = R.getX();
-    let e0 = BN.fromBuffer(Hash.sha256(Buffer.concat([r.toBuffer(), Point.pointToCompressed(P), e.toBuffer()])));
+    let e0 = BN.fromBuffer(Hash.sha256(Buffer.concat([r.toBuffer(), Point.pointToCompressed(P), e.toBuffer({ size: 32 })])));
     
     let s = ((e0.mul(d)).add(k)).mod(n);
 
@@ -133,7 +133,7 @@ Schnorr.prototype._findSignature = function(d, e) {
     let e = BN.fromBuffer(hash, 'big').umod(n);
     
     let sG = G.mul(s);
-    let eP = P.mul(e.neg());
+    let eP = P.mul(n.sub(e));
     let R = sG.add(eP);
     
     if(R.isInfinity() || !R.hasSquare() || !R.getX().eq(r)) {

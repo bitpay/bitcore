@@ -35,15 +35,24 @@ describe("Schnorr", function() {
 
     // Following Test Vectors used from
     // https://github.com/sipa/bips/blob/bip-schnorr/bip-schnorr/test-vectors.csv
-    
-    // it('Sign/Verify Test 2', function() {
-    //     schnorr.hashbuf = Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex');
-    //     schnorr.endianess = 'big';
-    //     schnorr.privkey = new Privkey(BN.fromBuffer('0000000000000000000000000000000000000000000000000000000000000001','hex'), 'livenet');
-    //     schnorr.privkey2pubkey();
-    //     schnorr.sign();
-    //     schnorr.verify().verified.should.equal(true);
-    // });
+
+    it('Sign/Verify Test 2', function() {
+        let hashbuf = (new BN(0)).toBuffer({ size: 32 });
+        let privbn = new BN(1);
+        // privbn.toBuffer({ size: 32});
+        let privkey = new Privkey(privbn);
+
+        let schnorrSig = Schnorr({
+            hashbuf: hashbuf,
+            endian: "big",
+            privkey: privkey,
+            hashtype: 65 
+        });
+        schnorrSig.sign();
+
+        let verified = schnorrSig.verify().verified;
+        verified.should.equal(true); 
+    });
 
     it("Sign/Verify 3",  function() {
         schnorr.hashbuf = Buffer.from('243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C89', 'hex');
