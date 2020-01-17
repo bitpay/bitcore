@@ -25,7 +25,7 @@ describe("Schnorr", function() {
     var schnorr = new Schnorr();
 
     it("Sign/Verify bitcoin-abc-test-spec",  function() {
-        schnorr.hashbuf =  Hash.sha256sha256(Buffer.from('Very deterministic message', 'utf-8'));
+        schnorr.hashbuf =  Hash.sha256((Buffer.from('Very deterministic message', 'utf-8')));
         schnorr.endianess = 'big';
         schnorr.privkey = new Privkey(BN.fromBuffer('12b004fff7f4b69ef8650e767f18f11ede158148b425660723b9f9a66e61f747','hex'), 'livenet');
         schnorr.privkey2pubkey();
@@ -82,22 +82,23 @@ describe("Schnorr", function() {
         schnorr.verify().verified.should.equal(true);
     });
 
-    // it("Verify Test 6 should fail",  function() {
-    //     schnorr.hashbuf = Buffer.from('4DF3C3F68FCC83B27E9D42C90431A72499F17875C81A599B566C9889B9696703', 'hex');
-    //     schnorr.endianess = 'big';
-    //     schnorr.pubkey = new Pubkey("02D69C3509BB99E412E68B0FE8544E72837DFA30746D8BE2AA65975F29D22DC7B9", { compressed: true});
-    //     schnorr.sig = Signature.fromString("00000000000000000000003B78CE563F89A0ED9414F5AA28AD0D96D6795F9C63EE374AC7FAE927D334CCB190F6FB8FD27A2DDC639CCEE46D43F113A4035A2C7F");
-    //     schnorr.verify().verified.should.equal(false, "Should fail");
-    // });
+    it("Verify Test 6 should fail",  function() {
+        schnorr.hashbuf = Buffer.from('4DF3C3F68FCC83B27E9D42C90431A72499F17875C81A599B566C9889B9696703', 'hex');
+        schnorr.endianess = 'big';
+        schnorr.pubkey = new Pubkey("02D69C3509BB99E412E68B0FE8544E72837DFA30746D8BE2AA65975F29D22DC7B9", { compressed: true});
+        schnorr.sig = Signature.fromString("00000000000000000000003B78CE563F89A0ED9414F5AA28AD0D96D6795F9C63EE374AC7FAE927D334CCB190F6FB8FD27A2DDC639CCEE46D43F113A4035A2C7F");
+        schnorr.verify().verified.should.equal(false, "Should fail");
+    });
 
-    // it("Verify Test should pass from scripts_test",  function() {
-    //     schnorr.hashbuf = Buffer.from('f4a222b692e7f86c299f878c4b981242238f49b467b8d990219fbf5cfc0838cd', 'hex');
-    //     schnorr.endianess = 'big';
-    //     schnorr.pubkey = new Pubkey("0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", { compressed: false} );
-    //     schnorr.sig = Signature.fromString("0df4be7f5fe74b2855b92082720e889038e15d8d747334fa3f300ef4ab1db1eea56aa83d1d60809ff6703791736be87cfb6cbc5c4036aeed3b4ea4e6dab35090");
-    //     console.log(schnorr);
-    //     schnorr.verify().verified.should.equal(true);
-    // });
+    it("Verify Test should pass from scripts_test",  function() {
+        // schnorr.hashbuf = Buffer.from('f4a222b692e7f86c299f878c4b981242238f49b467b8d990219fbf5cfc0838cd', 'hex');
+        schnorr.hashbuf = Buffer.from('cd3808fc5cbf9f2190d9b867b4498f234212984b8c879f296cf8e792b622a2f4', 'hex');
+        schnorr.endianess = 'big';
+        schnorr.pubkey = new Pubkey("0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", { compressed: false} );
+        schnorr.sig = Signature.fromString("0df4be7f5fe74b2855b92082720e889038e15d8d747334fa3f300ef4ab1db1eea56aa83d1d60809ff6703791736be87cfb6cbc5c4036aeed3b4ea4e6dab35090");
+        console.log("Schnorr verify", schnorr.verify().verified);
+        schnorr.verify().verified.should.equal(true);
+    });
 
     it("Verify Test 7, public key not on the curve",  function() {
         (function() {
