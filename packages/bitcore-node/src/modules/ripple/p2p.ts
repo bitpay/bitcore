@@ -77,16 +77,6 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
 
   async disconnect() {
     this.disconnecting = true;
-    try {
-      if (this.txSubscription) {
-        this.txSubscription.unsubscribe();
-      }
-      if (this.blockSubscription) {
-        this.blockSubscription.unsubscribe();
-      }
-    } catch (e) {
-      console.error(e);
-    }
   }
 
   async handleReconnects() {
@@ -174,19 +164,19 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
             tx: this.provider.transform(tx, network, transformedBlock),
             coins: this.provider.transformToCoins(tx, network)
           }))
-          .filter(tx => 'chain' in tx.tx);
+          .filter(data => {
+            return 'txid' in data.tx && data.tx.txid != null;
+          }) as Array<{ tx: IXrpTransaction; coins: Array<IXrpCoin> }>;
         const blockTxs = new Array<IXrpTransaction>();
         const blockCoins = new Array<IXrpCoin>();
 
         for (const coinAndTx of coinsAndTxs) {
-          if ('chain' in coinAndTx.tx) {
-            const { transaction, coins } = await this.provider.tag(chain, network, coinAndTx.tx, coinAndTx.coins);
-            if (this.chainConfig.walletOnlySync && !transaction.wallets.length) {
-              break;
-            }
-            blockTxs.push(transaction);
-            blockCoins.push(...(coins as Array<IXrpCoin>));
+          const { transaction, coins } = await this.provider.tag(chain, network, coinAndTx.tx, coinAndTx.coins);
+          if (this.chainConfig.walletOnlySync && !transaction.wallets.length) {
+            continue;
           }
+          blockTxs.push(transaction);
+          blockCoins.push(...(coins as Array<IXrpCoin>));
         }
 
         await this.blockModel.processBlock({
@@ -197,6 +187,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
           coins: blockCoins,
           initialSyncComplete: true
         });
+
         this.maybeLog(chain, network, startHeight, currentHeight, startTime, lastLog);
         lastLog = Date.now();
         ourBestBlock = await this.provider.getLocalTip({ chain, network });

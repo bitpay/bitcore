@@ -231,7 +231,11 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
       blockTimeNormalized: tx.blockTimeNormalized ? tx.blockTimeNormalized.toISOString() : '',
       fee: valueOrDefault(tx.fee, -1),
       value: valueOrDefault(tx.value, -1),
-      from: tx.from || ''
+      from: tx.from || '',
+      nonce: valueOrDefault(tx.nonce, -1),
+      to: valueOrDefault(tx.to, ''),
+      currency: valueOrDefault(tx.currency, 'XRP'),
+      invoiceID: valueOrDefault(tx.invoiceID, '')
     };
     if (options && options.object) {
       return transaction;

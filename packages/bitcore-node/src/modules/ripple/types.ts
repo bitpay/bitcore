@@ -5,6 +5,10 @@ import { ICoin } from '../../models/coin';
 export type IXrpBlock = IBlock & {};
 export type IXrpTransaction = ITransaction & {
   from: string;
+  to?: string;
+  nonce: number;
+  currency?: string;
+  invoiceID?: string;
 };
 
 export type XrpTransactionJSON = {
@@ -18,6 +22,10 @@ export type XrpTransactionJSON = {
   fee: number;
   value: number;
   from: string;
+  to: string;
+  nonce: number;
+  currency?: string;
+  invoiceID?: string;
 };
 
 export type IXrpCoin = ICoin & {};
