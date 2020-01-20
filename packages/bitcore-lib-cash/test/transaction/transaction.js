@@ -10,6 +10,7 @@ var sinon = require('sinon');
 var bitcore = require('../..');
 var BN = bitcore.crypto.BN;
 var Transaction = bitcore.Transaction;
+var Signature = bitcore.Signature;
 var Input = bitcore.Transaction.Input;
 var Output = bitcore.Transaction.Output;
 var PrivateKey = bitcore.PrivateKey;
@@ -1211,6 +1212,81 @@ describe('Transaction', function() {
           getIndexOrder(outputSet.outputs, tx.outputs).should.deep.equal(outputSet.expected);
         });
       });
+
+    });
+
+    describe.only('signing tx with schnorr', function() {
+
+      it('multisig tx send ', function() {
+        var publicKeys = [
+          '034b9a924b9a9f1254ef59e40ba39c2f98f3e4c4a6be3c051faecbab2e19cd90e9',
+          '03c50eddf2ed2e94b39e01f983cfca27536938cfa5d2eb0a762f64d8e4609ad8fd',
+          '022e1bfee2a56bd5dfd680d42f199ed7ec86cf7fd8fd6749239a6ebba170000b32'
+        ];
+        var requiredSignatures = 2;
+        
+        var address = new bitcore.Address(publicKeys, requiredSignatures);
+        console.log(address);
+
+        let utxo = [{
+            txid: "0d18c22cd8381df3471a5892dcf5abe412b57b93b9040ff943e66dff1bc1af8b",
+            outputIndex: 1,
+            address: "pqthg2dw9tts9yp7rapsc7czrs2p42p2y5j0vzljsf",
+            script: "a914177429ae2ad702903e1f430c7b021c141aa82a2587",
+            satoshis: 614279
+          }
+        ];
+        
+        let publicKeysSpending = ["034b9a924b9a9f1254ef59e40ba39c2f98f3e4c4a6be3c051faecbab2e19cd90e9", "03c50eddf2ed2e94b39e01f983cfca27536938cfa5d2eb0a762f64d8e4609ad8fd", "022e1bfee2a56bd5dfd680d42f199ed7ec86cf7fd8fd6749239a6ebba170000b32"]
+        let myKeys = ["L3vfgBrusnL87xShsFqedKazqjnwpv5h3S7otdsUvMdXsPTSKuxY", "Kxe4vJFzqmNyVqT8vBq1UZRzwi8AToxVvRNockNg2uNZyM5WoRL1"]
+        var multiSigTx = new bitcore.Transaction()
+        .from(utxo, publicKeysSpending, 2)
+        .to("qqh4ln92fynku0wxt6d96e7ut7xy2cp2cydfj2dayk", 300000)
+        .sign(myKeys, 0x41, "schnorr");
+
+        console.log(multiSigTx)
+      })
+
+
+      it('testnet', function() {
+        let privateKey = new bitcore.PrivateKey('cTnfcsBxp6fHa6quQqb5Weowhv1mPsAs9MCpa8L5nNkcwd3DFd7R', 'testnet');
+        let utxo = {
+          "txId" : "548ea084ffcef7f0b60615667a6fe9ca353ee0724d3fb3b117d2c0bee7e656fd",
+          "outputIndex" : 1,
+          "address" : "qr7c8942n5frnkqkhwycdyxka2yhxzrfnylzc5lq9g",
+          "script" : "76a914fd8396aa9d1239d816bb898690d6ea897308699988ac",
+          "satoshis" : 10000000
+        };
+
+        let transaction = new bitcore.Transaction()
+            .from(utxo)
+            .to('qqmd9unmhkpx4pkmr6fkrr8rm6y77vckjvqe8aey35', 15000)
+            .sign(privateKey);
+        //console.log(transaction);
+      });
+     
+      it('mainnet', function() {
+        let privateKey = new bitcore.PrivateKey('L3jVYvyK8zQesV4GK9TbRDGrZRZNhG2nJ4r7ULdLFsTdZerDevRb');
+        let utxo = {
+          "txId" : "7fca7a215cd42f0ecf2911edf8e4be499857a0eb12939a3df60b650ff0d491de",
+          "outputIndex" : 0,
+          "address" : "qp3qf75zqt9dtd9rs2ggknpu8vnt53erecscqccnwf",
+          "script" : "76a9146204fa8202cad5b4a382908b4c3c3b26ba4723ce88ac",
+          "satoshis" : 584522
+        };
+
+        let transaction = new bitcore.Transaction()
+          .from(utxo)
+          .to('qzxxjs9zp7j2fhp2tgk4zd5n655s86esl5k6g95dm3', 200000)
+          .sign(privateKey);
+          //console.log(transaction);
+        });
+
+        it('new Address', function() {
+          var privateKey = new bitcore.PrivateKey('testnet');
+          var address = privateKey.toAddress(); 
+          //console.log(address);
+        });
 
     });
   });

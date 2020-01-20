@@ -58,7 +58,7 @@ Script.fromBitcoindString = function(str) {
 
 
 
-describe('Interpreter', function() {
+describe.only('Interpreter', function() {
 
   it('should make a new interp', function() {
     var interp = new Interpreter();
@@ -206,6 +206,10 @@ describe('Interpreter', function() {
 
     if (flagstr.indexOf('CHECKDATASIG') !== -1) {
       flags = flags | Interpreter.SCRIPT_ENABLE_CHECKDATASIG;
+    }
+
+    if (flagstr.indexOf('SCHNORR_MULTISIG') !== -1) {
+      flags = flags | Interpreter.SCRIPT_ENABLE_SCHNORR_MULTISIG;
     }
 
     if (flagstr.indexOf('MINIMALIF') !== -1) {

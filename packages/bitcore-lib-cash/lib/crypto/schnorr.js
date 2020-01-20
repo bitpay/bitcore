@@ -97,7 +97,6 @@ Schnorr.prototype._findSignature = function(d, e) {
 
   Schnorr.prototype.sigError = function() {
     if (!BufferUtil.isBuffer(this.hashbuf) || this.hashbuf.length !== 32) {
-      //console.log("hashbuf error");
       return 'hashbuf must be a 32 byte buffer';
     }
 
@@ -108,7 +107,7 @@ Schnorr.prototype._findSignature = function(d, e) {
     } 
 
 
-    hashbuf = this.endian === 'little' ? BufferUtil.reverse(this.hashbuf) : this.hashbuf
+    let hashbuf = this.endian === 'little' ? BufferUtil.reverse(this.hashbuf) : this.hashbuf
     
     let P = this.pubkey.point;
     let G = Point.getG();
@@ -136,8 +135,6 @@ Schnorr.prototype._findSignature = function(d, e) {
     let eP = P.mul(n.sub(e));
     let R = sG.add(eP);
     
-
-    // console.log("R result ", R.isInfinity(), !R.hasSquare(), !R.getX().eq(r));
     if(R.isInfinity() || !R.hasSquare() || !R.getX().eq(r)) {
       return true;
     } 
@@ -186,7 +183,6 @@ Schnorr.prototype._findSignature = function(d, e) {
       K = Hash.sha256hmac(Buffer.concat([V, Buffer.from("00", 'hex')]), K);
       V = Hash.hmac(Hash.sha256, V, K);
     }
-    console.log(k.toString());
     return k;
   }
 

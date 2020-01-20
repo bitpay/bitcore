@@ -173,7 +173,7 @@ Input.prototype.clearSignatures = function() {
   throw new errors.AbstractMethodInvoked('Input#clearSignatures');
 };
 
-Input.prototype.isValidSignature = function(transaction, signature) {
+Input.prototype.isValidSignature = function(transaction, signature, signingMethod) {
   // FIXME: Refactor signature so this is not necessary
   signature.signature.nhashtype = signature.sigtype;
   return Sighash.verify(
@@ -182,7 +182,8 @@ Input.prototype.isValidSignature = function(transaction, signature) {
     signature.publicKey,
     signature.inputIndex,
     this.output.script,
-    this.output.satoshisBN
+    this.output.satoshisBN,
+    signingMethod
   );
 };
 
