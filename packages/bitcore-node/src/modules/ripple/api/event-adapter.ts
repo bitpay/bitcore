@@ -38,7 +38,6 @@ export class RippleEventAdapter {
           if ('chain' in transformedTx) {
             const transformedCoins = csp.transformToCoins(tx, network);
             const { transaction, coins } = await csp.tag(chain, network, transformedTx, transformedCoins);
-            console.log('Tagged mempoolTx', transaction.from, coins.length);
             this.services.Event.txEvent.emit('tx', { chain, network, ...transaction });
             if (coins && coins.length) {
               for (const coin of coins) {
@@ -53,7 +52,6 @@ export class RippleEventAdapter {
           streams: ['ledger', 'transactions_proposed']
         });
       } catch (e) {
-        console.log(e);
         logger.error('Error connecting to XRP', e.message);
       }
     }

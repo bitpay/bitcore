@@ -6,7 +6,11 @@ import { timestamp } from '../../logger';
 import { wait } from '../../utils/wait';
 import { RippleStateProvider } from './api/csp';
 import { RippleAPI } from 'ripple-lib';
+import { XrpBlockModel, XrpBlockStorage } from './models/block';
+import { IXrpBlock, IXrpTransaction, IXrpCoin } from './types';
+import { LoggifyClass } from '../../decorators/Loggify';
 
+@LoggifyClass
 export class XrpP2pWorker extends BaseP2PWorker<any> {
   protected chainConfig: any;
   protected syncing: boolean;
@@ -19,9 +23,11 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
   public events: EventEmitter;
   public disconnecting: boolean;
   public client?: RippleAPI;
+  public blockModel: XrpBlockModel;
 
-  constructor({ chain, network, chainConfig }) {
-    super({ chain, network, chainConfig });
+  constructor({ chain, network, chainConfig, blockModel = XrpBlockStorage }) {
+    super({ chain, network, chainConfig, blockModel });
+    this.blockModel = blockModel;
     this.chain = chain || 'XRP';
     this.network = network;
     this.chainConfig = chainConfig;
@@ -62,30 +68,9 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
         }`
       );
     });
-    const chain = this.chain;
-    const network = this.network;
-    const csp = new RippleStateProvider(chain);
     this.events.on('connected', async () => {
-      const client = this.client || (await csp.getClient(network));
-
-      client.on('ledger', async ledger => {
-        const block = await client.getLedger({
-          ledgerHash: ledger.ledgerHash,
-          includeTransactions: true,
-          includeAllData: true
-        });
-        const coinsAndTxs = (block.transactions || [])
-          .map((tx: any) => ({
-            tx: csp.transform(tx, network, ledger),
-            coins: csp.transformToCoins(tx, network)
-          }))
-          .filter(tx => 'chain' in tx.tx);
-        for (const coinAndTx of coinsAndTxs) {
-          if ('chain' in coinAndTx.tx) {
-            const { transaction, coins } = await csp.tag(chain, network, coinAndTx.tx, coinAndTx.coins);
-            console.log('Tagged blockTx', transaction.from, coins.length);
-          }
-        }
+      this.client!.on('ledger', async () => {
+        this.sync();
       });
     });
   }
@@ -113,12 +98,9 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
     while (!this.disconnecting && !this.stopping) {
       try {
         try {
-          console.log('Checking connection');
           this.client = await this.provider.getClient(this.network);
           connected = this.client.isConnected();
-          console.log('Checked connection', connected);
         } catch (e) {
-          console.log('Disconnected');
           connected = false;
         }
         if (connected) {
@@ -165,15 +147,96 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
     const { chain, network } = this;
     this.syncing = true;
 
-    logger.info(`${chain}:${network} up to date.`);
-    this.syncing = false;
-    StateStorage.collection.findOneAndUpdate(
-      {},
-      { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
-      { upsert: true }
-    );
-    this.events.emit('SYNCDONE');
-    return true;
+    try {
+      const client = await this.provider.getClient(this.network);
+      let ourBestBlock = await this.provider.getLocalTip({ chain, network });
+      let chainBestBlock = await client.getLedgerVersion();
+
+      const startTime = Date.now();
+      let lastLog = Date.now();
+
+      if (!ourBestBlock) {
+        logger.info(`Starting XRP Sync @ ${chainBestBlock}`);
+        ourBestBlock = { height: chainBestBlock - 2000 } as IXrpBlock;
+      }
+      const startHeight = ourBestBlock.height;
+      let currentHeight = startHeight;
+      while (ourBestBlock.height <= chainBestBlock) {
+        currentHeight = ourBestBlock.height + 1;
+        const block = await client.getLedger({
+          ledgerVersion: currentHeight,
+          includeTransactions: true,
+          includeAllData: true
+        });
+        const transformedBlock = this.provider.transformLedger(block, network);
+        const coinsAndTxs = (block.transactions || [])
+          .map((tx: any) => ({
+            tx: this.provider.transform(tx, network, transformedBlock),
+            coins: this.provider.transformToCoins(tx, network)
+          }))
+          .filter(tx => 'chain' in tx.tx);
+        const blockTxs = new Array<IXrpTransaction>();
+        const blockCoins = new Array<IXrpCoin>();
+
+        for (const coinAndTx of coinsAndTxs) {
+          if ('chain' in coinAndTx.tx) {
+            const { transaction, coins } = await this.provider.tag(chain, network, coinAndTx.tx, coinAndTx.coins);
+            if (this.chainConfig.walletOnlySync && !transaction.wallets.length) {
+              break;
+            }
+            blockTxs.push(transaction);
+            blockCoins.push(...(coins as Array<IXrpCoin>));
+          }
+        }
+
+        await this.blockModel.processBlock({
+          chain,
+          network,
+          block: transformedBlock,
+          transactions: blockTxs,
+          coins: blockCoins,
+          initialSyncComplete: true
+        });
+        this.maybeLog(chain, network, startHeight, currentHeight, startTime, lastLog);
+        lastLog = Date.now();
+        ourBestBlock = await this.provider.getLocalTip({ chain, network });
+      }
+
+      logger.info(`${chain}:${network} up to date.`);
+      this.syncing = false;
+      StateStorage.collection.findOneAndUpdate(
+        {},
+        { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
+        { upsert: true }
+      );
+      this.events.emit('SYNCDONE');
+      return true;
+    } catch (e) {
+      this.syncing = false;
+      await wait(2000);
+      return this.sync();
+    }
+  }
+
+  maybeLog(
+    chain: string,
+    network: string,
+    startHeight: number,
+    currentHeight: number,
+    startTime: number,
+    lastLog: number
+  ) {
+    const oneSecond = 1000;
+    const now = Date.now();
+    if (now - lastLog > oneSecond || startHeight === currentHeight) {
+      const blocksProcessed = currentHeight - startHeight;
+      const elapsedMinutes = (now - startTime) / (60 * oneSecond);
+      logger.info(
+        `${timestamp()} | Syncing... | Chain: ${chain} | Network: ${network} |${(blocksProcessed / elapsedMinutes)
+          .toFixed(2)
+          .padStart(8)} blocks/min | Height: ${currentHeight.toString().padStart(7)}`
+      );
+    }
   }
 
   async syncDone() {
@@ -189,7 +252,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
   async start() {
     logger.debug(`Started worker for chain ${this.chain} ${this.network}`);
     this.connect();
-    this.setupListeners();
+    await this.setupListeners();
     this.sync();
   }
 }

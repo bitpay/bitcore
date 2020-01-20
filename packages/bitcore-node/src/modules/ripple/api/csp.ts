@@ -15,6 +15,7 @@ import { FormattedLedger } from 'ripple-lib/dist/npm/ledger/parse/ledger';
 import { IXrpTransaction } from '../types';
 import { ObjectId } from 'mongodb';
 import { WalletAddressStorage } from '../../../models/walletAddress';
+import { XrpBlockStorage } from '../models/block';
 
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -215,9 +216,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
   }
 
   async getLocalTip(params: ChainNetwork) {
-    const client = await this.getClient(params.network);
-    const ledger = await client.getLedger();
-    return this.transformLedger(ledger, params.network);
+    return XrpBlockStorage.getLocalTip(params);
   }
 
   transformLedger(ledger: FormattedLedger, network: string): IBlock {
@@ -225,7 +224,6 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     return {
       chain: this.chain,
       network: network,
-      confirmations: -1,
       hash: ledger.ledgerHash,
       height: ledger.ledgerVersion,
       previousBlockHash: ledger.parentLedgerHash,
@@ -239,21 +237,34 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     };
   }
 
-  transform(tx: SingleOutputTx | FormattedTransactionType, network: string, ledger?: { ledgerTimestamp: string }) {
+  transform(tx: SingleOutputTx | FormattedTransactionType, network: string, block?: IBlock) {
     if (tx.type === 'payment' && 'outcome' in tx) {
-      const ledgerDate = ledger ? ledger.ledgerTimestamp : undefined;
+      const ledgerDate = block ? block.time : undefined;
+      const ledgerHash = block ? block.hash : undefined;
+      const ledgerHeight = block ? block.height : undefined;
       const date = (tx.outcome && tx.outcome.timestamp ? tx.outcome.timestamp : ledgerDate) || '';
+      const specification = tx.specification;
+      const delivered = tx.outcome.deliveredAmount;
+
+      const destinationTag = 'destination' in specification &&
+        specification.destination.tag && { destinationTag: specification.destination.tag };
+
       return {
         network,
         chain: this.chain,
         txid: tx.id,
         from: tx.address,
-        blockHash: (tx as any).ledger_hash || '',
-        blockHeight: tx.outcome.ledgerVersion || -1,
+        blockHash: ledgerHash || (tx as any).ledger_hash || '',
+        blockHeight: ledgerHeight || tx.outcome.ledgerVersion || -1,
         blockTime: new Date(date),
         blockTimeNormalized: new Date(date),
-        value: Number(tx.outcome.deliveredAmount ? tx.outcome.deliveredAmount.value : 0),
-        fee: Number(tx.outcome.fee),
+        value: Number(delivered ? delivered.value : 0) * 1e6,
+        fee: Number(tx.outcome.fee) * 1e6,
+        nonce: Number(tx.sequence),
+        ...destinationTag,
+        ...(delivered && 'currency' in delivered && { currency: delivered.currency }),
+        ...('invoiceID' in specification && { invoiceID: specification.invoiceID }),
+        ...('destination' in specification && { to: specification.destination.address }),
         wallets: []
       };
     } else if (
@@ -273,8 +284,12 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
         blockHeight: tx.ledger_index || -1,
         blockTime: new Date(),
         blockTimeNormalized: new Date(),
-        value: Number(tx.transaction.Amount),
-        fee: Number(tx.transaction.Fee),
+        value: Number(tx.transaction.Amount) * 1e6,
+        fee: Number(tx.transaction.Fee) * 1e6,
+        nonce: Number(tx.transaction.Sequence),
+        to: tx.transaction.Destination,
+        ...(tx.transaction.DestinationTag && { destinationTag: tx.transaction.DestinationTag }),
+        ...(tx.transaction.InvoiceID && { invoiceID: tx.transaction.InvoiceID }),
         wallets: []
       };
     } else {
@@ -290,7 +305,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
           chain: this.chain,
           network,
           address: k,
-          value: Number(v[0].value),
+          value: Number(v[0].value) * 1e6,
           coinbase: false,
           mintHeight: tx.outcome.ledgerVersion || -1,
           mintIndex: tx.outcome.indexInLedger,
@@ -312,7 +327,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
         chain: this.chain,
         network,
         address: tx.transaction.Destination,
-        value: Number(tx.transaction.Amount),
+        value: Number(tx.transaction.Amount) * 1e6,
         coinbase: false,
         mintHeight: tx.validated ? tx.ledger_index : -1,
         mintIndex: tx.transaction.Sequence,

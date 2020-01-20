@@ -13,6 +13,7 @@ export interface SubmitResponse {
       value: string;
     };
     Destination: string;
+    InvoiceID?: string;
     Fee: string;
     Flags: number;
     Sequence: number;
@@ -43,6 +44,7 @@ export interface SingleOutputTx {
     TransactionType: string;
     TxnSignature: string;
     hash: string;
+    InvoiceID?: string;
   };
   type: 'transaction';
   validated: false;
