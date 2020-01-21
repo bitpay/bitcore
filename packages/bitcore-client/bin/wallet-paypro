@@ -62,13 +62,7 @@ const main = async () => {
   if (!['BTC', 'BCH'].includes(chain)) {
     nonce = inputNonce || await wallet.getNonce();
   }
-  let currency;
-  const differentCurrency = await promptly.confirm('Payment Currency different than wallet Currency? (y/n):');
-  if (differentCurrency) {
-    currency = await promptly.choose('Please choose currency (Enter ticker):', supportedCurrenciesArray);
-  } else {
-    currency = chain;
-  }
+  const currency = chain;
   console.log(`selecting ${currency}`);
   const paymentRequestResponse = await request({
     method: 'POST',
