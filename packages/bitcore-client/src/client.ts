@@ -46,8 +46,8 @@ export class Client {
     });
   }
 
-  async getBalance(params: { payload?: any; pubKey: string; time?: string }) {
-    const { payload, pubKey, time } = params;
+  async getBalance(params: { payload?: any; pubKey: string; time?: string; currency?: string }) {
+    const { payload, pubKey, time, currency } = params;
     let url = `${this.apiUrl}/wallet/${pubKey}/balance`;
     if (time) {
       url += `/${time}`;

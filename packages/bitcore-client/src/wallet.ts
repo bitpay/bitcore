@@ -225,8 +225,12 @@ export class Wallet {
     return new PrivateKey(this.authKey);
   }
 
-  getBalance(time?: string) {
-    return this.client.getBalance({ pubKey: this.authPubKey, time });
+  getBalance(time?: string, currency?: string) {
+    let payload;
+    if (currency) {
+      payload = { currency };
+    }
+    return this.client.getBalance({ payload, pubKey: this.authPubKey, time });
   }
 
   getNetworkFee(params: { target?: number } = {}) {

@@ -134,6 +134,10 @@ router.get('/:pubKey/transactions', Auth.authenticateMiddleware, async (req: Aut
 
 router.get('/:pubKey/balance', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
+  if (req.body.currency) {
+    req.query.currency = req.body.currency;
+  }
+  console.log(req.query);
   try {
     const result = await ChainStateProvider.getWalletBalance({
       chain,
@@ -141,6 +145,7 @@ router.get('/:pubKey/balance', Auth.authenticateMiddleware, async (req: Authenti
       wallet: req.wallet!,
       args: req.query
     });
+    console.log(result);
     return res.send(result || { confirmed: 0, unconfirmed: 0, balance: 0 });
   } catch (err) {
     return res.status(500).json(err);

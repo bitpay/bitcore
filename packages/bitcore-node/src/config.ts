@@ -62,6 +62,7 @@ const Config = function(): ConfigType {
     dbPass: process.env.DB_PASS || '',
     numWorkers: cpus().length,
     chains: {},
+    tokenContractAddresses: {},
     modules: ['./bitcoin', './bitcoin-cash', './ethereum', './ripple'],
     services: {
       api: {
@@ -102,6 +103,13 @@ const Config = function(): ConfigType {
           }
         }
       }
+    });
+  }
+  if (!Object.keys(config.tokenContractAddresses).length) {
+    Object.assign(config.tokenContractAddresses, {
+      GUSD: '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd',
+      USDC: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
+      PAX: '0x8e870d67f660d95d5be530380d0ec0bd388289e1'
     });
   }
   config = setTrustedPeers(config);

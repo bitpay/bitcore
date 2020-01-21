@@ -12,6 +12,9 @@ export interface ConfigType {
   chains: {
     [currency: string]: { [network: string]: any };
   };
+  tokenContractAddresses: {
+    [currency: string]: string;
+  }
   modules: string[];
   services: {
     api: {
