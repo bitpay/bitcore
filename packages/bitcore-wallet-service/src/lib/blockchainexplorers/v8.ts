@@ -14,7 +14,8 @@ const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
-  eth: Bitcore
+  eth: Bitcore,
+  xrp: Bitcore
 };
 const config = require('../../config');
 const Constants = Common.Constants,
@@ -408,7 +409,7 @@ export class V8 {
                 return icb();
               }
 
-              result[x] = ret.feerate ? ret.feerate : ret;
+              result[x] = ret.feerate;
             } catch (e) {
               log.warn('fee error:', e);
             }

@@ -3,6 +3,7 @@ import _ from 'lodash';
 import 'source-map-support/register';
 
 import { BlockChainExplorer } from './blockchainexplorer';
+import { ChainService } from './chain/index';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
 import { Notification } from './model';
@@ -50,7 +51,8 @@ export class BlockchainMonitor {
           this.explorers = {
             btc: {},
             bch: {},
-            eth: {}
+            eth: {},
+            xrp: {}
           };
 
           const coinNetworkPairs = [];
@@ -322,8 +324,8 @@ export class BlockchainMonitor {
 
   _handleTxConfirmations(coin, network, hash) {
 
-    // not Tx Confirmationsa notifications for ETH
-    if (coin == 'eth') return;
+    if (!ChainService.notifyConfirmations(coin, network))
+      return;
 
     const processTriggeredSubs = (subs, cb) => {
       async.each(subs, (sub: any) => {

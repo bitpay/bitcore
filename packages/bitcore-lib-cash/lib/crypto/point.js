@@ -149,4 +149,18 @@ Point.pointToCompressed = function pointToCompressed(point) {
   return BufferUtil.concat([prefix, xbuf]);
 };
 
+// todo: needs test case
+Point.prototype.hasSquare = function() {
+  return !this.isInfinity() && this.isSquare(this.getY());
+}
+
+// todo: needs test cases
+Point.prototype.isSquare = function(x) {
+  let p = new BN('FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F', 'hex');
+  let x0 = new BN(x);
+  let base = x0.toRed(BN.red(p));
+  let res = base.redPow(p.sub(BN.One).div(new BN(2))).fromRed(); //refactor to BN arithmetic operations
+  return res.eq(new BN(1));
+}
+
 module.exports = Point;

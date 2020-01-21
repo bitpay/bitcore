@@ -70,7 +70,9 @@ helpers.before = function(cb) {
     be.getBlockchainHeight = sinon.stub().callsArgWith(0, null, 1000, 'hash');
     be.estimateGas = sinon.stub().callsArgWith(1, null, Defaults.MIN_GAS_LIMIT);
     be.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: '10000000000', balance: '10000000000' });
-    be.getTransactionCount = sinon.stub().callsArgWith(1, null, '0');
+
+    // just a number >0 (xrp does not accept 0)
+    be.getTransactionCount = sinon.stub().callsArgWith(1, null, '5');
 
 
     var opts = {
@@ -373,6 +375,16 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
     return cb();
   }
 
+  if (wallet.coin == 'xrp') {
+    amounts = _.isArray(amounts) ? amounts : [amounts];
+    let conf =  _.sum(_.map(amounts, x =>  Number((x*1e6).toFixed(0))));
+    conf =  conf + Defaults.MIN_XRP_BALANCE;
+    blockchainExplorer.getBalance = sinon.stub().callsArgWith(1, null, {unconfirmed:0, confirmed: conf, balance: conf });
+    return cb();
+  }
+
+
+
   if (!helpers._utxos) helpers._utxos = {};
 
   var S = Bitcore_[wallet.coin].Script;
@@ -563,6 +575,7 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
 
   switch(txp.coin) {
     case 'eth':
+    case 'xrp':
 
       // For eth => account, 0, change = 0
       const priv =  xpriv.derive('m/0/0').privateKey;

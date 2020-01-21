@@ -65,6 +65,8 @@ export interface ITxProposal {
   gasLimit?: number; // Backward compatibility for BWC <= 8.9.0
   data?: string; // Backward compatibility for BWC <= 8.9.0
   tokenAddress?: string;
+  destinationTag?: string;
+  invoiceID?: string;
 }
 
 export class TxProposal {
@@ -118,6 +120,8 @@ export class TxProposal {
   gasLimit?: number; // Backward compatibility for BWC <= 8.9.0
   data?: string; // Backward compatibility for BWC <= 8.9.0
   tokenAddress?: string;
+  destinationTag?: string;
+  invoiceID?: string;
 
   static create(opts) {
     opts = opts || {};
@@ -174,12 +178,17 @@ export class TxProposal {
     x.setInputs(opts.inputs);
     x.fee = opts.fee;
 
+    // ETH
     x.gasPrice = opts.gasPrice;
     x.from = opts.from;
     x.nonce = opts.nonce;
     x.gasLimit = opts.gasLimit; // Backward compatibility for BWC <= 8.9.0
     x.data = opts.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = opts.tokenAddress;
+
+    // XRP
+    x.destinationTag = opts.destinationTag;
+    x.invoiceID = opts.invoiceID;
 
     return x;
   }
@@ -227,12 +236,17 @@ export class TxProposal {
     x.proposalSignaturePubKey = obj.proposalSignaturePubKey;
     x.proposalSignaturePubKeySig = obj.proposalSignaturePubKeySig;
 
+    // ETH
     x.gasPrice = obj.gasPrice;
     x.from = obj.from;
     x.nonce = obj.nonce;
     x.gasLimit = obj.gasLimit; // Backward compatibility for BWC <= 8.9.0
     x.data = obj.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = obj.tokenAddress;
+
+    // XRP
+    x.destinationTag = obj.destinationTag;
+    x.invoiceID = obj.invoiceID;
 
     if (x.status == 'broadcasted') {
       x.raw = obj.raw;
