@@ -172,8 +172,6 @@ export class HomePage {
         }
       }
     };
-    this.drawDailyTxChartHandler();
-    this.goToPriceChartHandler();
   }
 
   public numberWithCommas(x) {

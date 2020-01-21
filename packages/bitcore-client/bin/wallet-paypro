@@ -1,0 +1,124 @@
+#!/usr/bin/env node
+
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
+const request = require('request-promise-native');
+const promptly = require('promptly');
+const cwc = require('crypto-wallet-core');
+
+program
+  .version(require('../package.json').version)
+  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--nonce [nonce]', 'optional - Nonce')
+  .option('--from [from]', 'optional - from account for XRP')
+  .option('--payProUri [payProUri]', 'REQUIRED - payment protocol URI')
+  .parse(process.argv);
+
+const main = async () => {
+  const { name, path, nonce: inputNonce, payProUri, from: inputFrom } = program;
+  let wallet;
+  wallet = await Wallet.loadWallet({ name, path });
+  const from = inputFrom || await wallet.deriveAddress(0);
+  const nonce = inputNonce || await wallet.getNonce();
+  const { baseUrl, chain, network } = wallet;
+  if (chain !== 'XRP') {
+    console.error('Only XRP wallets supported for now');
+    process.exit(1);
+  }
+  const currency = chain; // Assumption being made here that chain === currency
+
+  // Payment-Options
+  const paymentOptionsResponse = await request({
+    method: 'GET',
+    uri: payProUri,
+    headers: {
+      'Accept' : 'application/payment-options',
+      'x-paypro-version' : '2'
+    },
+    agentOptions: {
+      rejectUnauthorized: false
+    },
+    json: true
+  });
+  let scaleMap = {};
+  const { expires, memo, paymentOptions } = paymentOptionsResponse;
+  console.log(memo);
+  console.log(`Payment expires at ${expires}`);
+  paymentOptions.forEach((paymentOption, index) => {
+    const { currency, network, estimatedAmount, requiredFeeRate, minerFee, decimals, selected } = paymentOption;
+    scaleMap[currency] = Math.pow(10, decimals);
+    const amount = estimatedAmount / scaleMap[currency];
+    console.log(`${index + 1}: ${amount} ${currency} (${network})`);
+  });
+
+  //  Payment-Request
+  console.log(`selecting ${currency}`);
+  const paymentRequestResponse = await request({
+    method: 'POST',
+    uri: payProUri,
+    json: { chain, currency },
+    headers: {
+      'Content-Type' : 'application/payment-request',
+      'x-paypro-version' : '2'
+    },
+    agentOptions: {
+      rejectUnauthorized: false
+    },
+  });
+  const { instructions } = paymentRequestResponse;
+  console.log(JSON.stringify(instructions, null, 2));
+  const instruction = instructions[0];
+  const { type, requiredFeeRate, outputs } = instruction;
+  const recipients = [{
+    address: outputs[0].address,
+    amount: outputs[0].amount
+  }];
+  const fee = requiredFeeRate;
+  const invoiceID = outputs[0].invoiceID;
+  const params = { recipients, fee, from, invoiceID };
+  params.nonce = Number(nonce);
+  const unsignedTx = await wallet.newTx(params);
+  console.log(`unsignedRawTx: ${unsignedTx}`);
+
+  //  Payment-verification
+  const paymentVerificationResponse = await request({
+    method: 'POST',
+    uri: payProUri,
+    json: { chain, currency, transactions: [{ tx: unsignedTx }]},
+    headers: {
+      'Content-Type' : 'application/payment-verification',
+      'x-paypro-version' : '2'
+    },
+    agentOptions: {
+      rejectUnauthorized: false
+    },
+  });
+  console.log(paymentVerificationResponse);
+
+  //  Sign tx
+  const password = await promptly.password('Wallet Password:');
+  wallet = await wallet.unlock(password);
+  const signedTx = await wallet.signTx({ tx: unsignedTx });
+  const txid = cwc.Transactions.getHash({chain, tx: signedTx});
+  console.log(`signedRawTx: ${signedTx}`);
+  console.log(`txid: ${txid}`);
+
+  //  send-payment
+  const sendPaymentResponse = await request({
+    method: 'POST',
+    uri: payProUri,
+    json: { chain, currency, transactions: [{ tx: signedTx }]},
+    headers: {
+      'Content-Type' : 'application/payment',
+      'x-paypro-version' : '2'
+    },
+    agentOptions: {
+      rejectUnauthorized: false
+    },
+  });
+  console.log(sendPaymentResponse);
+};
+
+main()
+  .catch(err => console.error(err));

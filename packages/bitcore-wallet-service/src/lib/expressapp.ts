@@ -83,7 +83,7 @@ export class ExpressApp {
         // send a 503 error, with a message to the bitpay status page
         let errorCode = 503;
         let errorMessage = 'BWS down for maintenance';
-        res.status(503).send({code: errorCode, message: errorMessage});
+        res.status(503).send({ code: errorCode, message: errorMessage });
       } else {
         next();
       }
@@ -345,7 +345,7 @@ export class ExpressApp {
 
     router.get('/v3/wallets/', (req, res) => {
       getServerWithAuth(req, res, (server) => {
-        const opts = { includeExtendedInfo: false, twoStep: false, includeServerMessages: false };
+        const opts = { includeExtendedInfo: false, twoStep: false, includeServerMessages: false, tokenAddress: req.query.tokenAddress };
         if (req.query.includeExtendedInfo == '1')
           opts.includeExtendedInfo = true;
         if (req.query.twoStep == '1') opts.twoStep = true;
@@ -518,9 +518,10 @@ export class ExpressApp {
 
     router.get('/v1/balance/', (req, res) => {
       getServerWithAuth(req, res, (server) => {
-        const opts: { coin?: string; twoStep?: boolean } = {};
+        const opts: { coin?: string; twoStep?: boolean, tokenAddress?: string } = {};
         if (req.query.coin) opts.coin = req.query.coin;
         if (req.query.twoStep == '1') opts.twoStep = true;
+        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
         server.getBalance(opts, (err, balance) => {
           if (err) return returnError(err, res, req);
           res.json(balance);
@@ -589,11 +590,13 @@ export class ExpressApp {
     });
 
     router.post('/v3/estimateGas/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
-        server.estimateGas(req.body, (err, gasLimit) => {
-          if (err) return returnError(err, res, req);
+      getServerWithAuth(req, res, async (server) => {
+        try {
+          const gasLimit = await server.estimateGas(req.body);
           res.json(gasLimit);
-        });
+        } catch (err) {
+          returnError(err, res, req);
+        }
       });
     });
 
@@ -729,9 +732,11 @@ export class ExpressApp {
           skip?: number;
           limit?: number;
           includeExtendedInfo?: boolean;
+          tokenAddress?: string;
         } = {};
         if (req.query.skip) opts.skip = +req.query.skip;
         if (req.query.limit) opts.limit = +req.query.limit;
+        if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
         if (req.query.includeExtendedInfo == '1')
           opts.includeExtendedInfo = true;
 
@@ -759,11 +764,13 @@ export class ExpressApp {
         coin?: string;
         from?: string;
         to?: string;
+        update?: boolean;
       } = {};
       if (req.query.network) opts.network = req.query.network;
       if (req.query.coin) opts.coin = req.query.coin;
       if (req.query.from) opts.from = req.query.from;
       if (req.query.to) opts.to = req.query.to;
+      if (req.query.update && (req.ip === '::1' || req.ip === '127.0.0.1')) opts.update = req.query.update;
 
       const stats = new Stats(opts);
       stats.run((err, data) => {
@@ -939,7 +946,43 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/service/simplex/quote', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.simplexGetQuote(req).then(response => {
+          res.json(response);
+        }).catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+      });
+    });
+
+    router.post('/v1/service/simplex/paymentRequest', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        server.simplexPaymentRequest(req).then(response => {
+          res.json(response);
+        }).catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+      });
+    });
+
+    router.get('/v1/service/simplex/events', (req, res) => {
+      getServerWithAuth(req, res, (server) => {
+        const opts = { env: req.query.env };
+        server.simplexGetEvents(opts).then(response => {
+          res.json(response);
+        }).catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+      });
+    });
+
     this.app.use(opts.basePath || '/bws/api', router);
+
+    if (config.staticRoot) {
+      log.info(`Serving static files from ${config.staticRoot}`);
+      this.app.use('/static', express.static(config.staticRoot));
+    }
 
     WalletService.initialize(opts, cb);
   }

@@ -5,7 +5,7 @@ import * as stream from 'stream';
 import { URL } from 'url';
 let usingBrowser = (global as any).window;
 const URLClass = usingBrowser ? usingBrowser.URL : URL;
-const bitcoreLib = require('bitcore-lib');
+const bitcoreLib = require('crypto-wallet-core').BitcoreLib;
 
 export class Client {
   apiUrl: string;
@@ -60,10 +60,16 @@ export class Client {
     });
   }
 
+  async getNonce(params) {
+    const { address } = params;
+    const url = `${this.apiUrl}/address/${address}/txs/count`;
+    return request.get(url, { json: true });
+  }
+
   getAddressTxos = async function(params) {
     const { unspent, address } = params;
     const args = unspent ? `?unspent=${unspent}` : '';
-    const url = `${this.baseUrl}/address/${address}${args}`;
+    const url = `${this.apiUrl}/address/${address}${args}`;
     return request.get(url, {
       json: true
     });
@@ -128,7 +134,7 @@ export class Client {
         .get(url, {
           json: true
         })
-        .on('data', d => resolve(d.toString()))
+        .on('data', d => resolve(d))
     );
   }
 

@@ -100,6 +100,7 @@ export class Request {
     r.timeout(this.timeout);
 
     r.end((err, res) => {
+
       if (!res) {
         return cb(new Errors.CONNECTION_ERROR());
       }
@@ -175,10 +176,12 @@ export class Request {
   //  @param {Object} args
   //  @param {Callback} cb
   post(url, args, cb) {
+    args = args || {};
     return this.doRequest('post', url, args, false, cb);
   }
 
   put(url, args, cb) {
+    args = args || {};
     return this.doRequest('put', url, args, false, cb);
   }
 
@@ -190,6 +193,7 @@ export class Request {
   get(url, cb) {
     url += url.indexOf('?') > 0 ? '&' : '?';
     url += 'r=' + _.random(10000, 99999);
+
     return this.doRequest('get', url, {}, false, cb);
   }
 

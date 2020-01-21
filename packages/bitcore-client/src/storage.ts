@@ -1,10 +1,12 @@
+import * as os from 'os';
+import * as fs from 'fs';
 import 'source-map-support/register'
 import { Encryption } from './encryption';
 import { Wallet } from './wallet';
 import { Mongo } from './storage/mongo';
 import { Level } from './storage/level';
 
-const bitcoreLib = require('bitcore-lib');
+const bitcoreLib = require('crypto-wallet-core').BitcoreLib;
 
 export class Storage {
   path: string;

@@ -3,7 +3,7 @@ import { Encryption } from './encryption';
 import { Client } from './client';
 import { Storage } from './storage';
 import { Transactions, Deriver } from 'crypto-wallet-core';
-const { PrivateKey } = require('bitcore-lib');
+const { PrivateKey } = require('crypto-wallet-core').BitcoreLib;
 const Mnemonic = require('bitcore-mnemonic');
 const { ParseApiStream } = require('./stream-util');
 
@@ -272,7 +272,10 @@ export class Wallet {
     recipients: { address: string; amount: number }[];
     from?: string;
     change?: string;
+    invoiceID?: string;
     fee?: number;
+    nonce?: number;
+    tag? : number;
   }) {
     const payload = {
       network: this.network,
@@ -280,9 +283,12 @@ export class Wallet {
       recipients: params.recipients,
       from: params.from,
       change: params.change,
+      invoiceID: params.invoiceID,
       fee: params.fee,
       wallet: this,
-      utxos: params.utxos
+      utxos: params.utxos,
+      nonce: params.nonce,
+      tag: params.tag
     };
     return Transactions.create(payload);
   }
@@ -393,7 +399,7 @@ export class Wallet {
       this.chain,
       this.network,
       this.unlocked.masterKey,
-      this.addressIndex,
+      this.addressIndex || 0,
       isChange
     );
     return keyToImport;
@@ -411,5 +417,14 @@ export class Wallet {
     await this.importKeys({ keys });
     await this.saveWallet();
     return keys.map(key => key.address.toString());
+  }
+
+  async getNonce(addressIndex: number = 0, isChange?: boolean) {
+    const address = await this.deriveAddress(0, isChange);
+    const count = await this.client.getNonce({ address });
+    if (!count || !count.nonce) {
+      throw new Error('Unable to get nonce');
+    }
+    return count.nonce;
   }
 }

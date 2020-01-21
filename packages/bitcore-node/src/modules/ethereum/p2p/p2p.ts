@@ -1,60 +1,100 @@
 import Web3 from 'web3';
-import logger from '../../logger';
-import { ChainStateProvider } from '../../providers/chain-state';
-import { StateStorage } from '../../models/state';
-import { EthBlockModel, EthBlockStorage } from './models/block';
-import { IEthTransaction, IEthBlock, Parity } from './types';
+import logger from '../../../logger';
+import { EventEmitter } from 'events';
+import { ChainStateProvider } from '../../../providers/chain-state';
+import { StateStorage } from '../../../models/state';
+import { EthBlockModel, EthBlockStorage } from '../models/block';
+import { IEthTransaction, IEthBlock, Parity } from '../types';
 import { ParityRPC } from './parityRpc';
-import { BaseP2PWorker } from '../../services/p2p';
-import { EthTransactionModel, EthTransactionStorage } from './models/transaction';
-import { timestamp } from '../../logger';
-import { ETHStateProvider } from './api/csp';
-import { valueOrDefault } from '../../utils/check';
-import { wait } from '../../utils/wait';
+import { BaseP2PWorker } from '../../../services/p2p';
+import { EthTransactionModel, EthTransactionStorage } from '../models/transaction';
+import { timestamp } from '../../../logger';
+import { ETHStateProvider } from '../api/csp';
+import { valueOrDefault } from '../../../utils/check';
+import { wait } from '../../../utils/wait';
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
-  private chainConfig: any;
-  private syncing: boolean;
-  private initialSyncComplete: boolean;
-  private blockModel: EthBlockModel;
-  private txModel: EthTransactionModel;
-  private txSubscription: any;
-  private blockSubscription: any;
-  private rpc?: ParityRPC;
-  private provider: ETHStateProvider;
-  private web3?: Web3;
+  protected chainConfig: any;
+  protected syncing: boolean;
+  protected initialSyncComplete: boolean;
+  protected blockModel: EthBlockModel;
+  protected txModel: EthTransactionModel;
+  protected txSubscription: any;
+  protected blockSubscription: any;
+  protected rpc?: ParityRPC;
+  protected provider: ETHStateProvider;
+  protected web3?: Web3;
+  protected invCache: any;
+  protected invCacheLimits: any;
+  public events: EventEmitter;
+  public disconnecting: boolean;
 
   constructor({ chain, network, chainConfig, blockModel = EthBlockStorage, txModel = EthTransactionStorage }) {
     super({ chain, network, chainConfig, blockModel });
     this.chain = chain || 'ETH';
     this.network = network;
     this.chainConfig = chainConfig;
-    this.syncing = true;
+    this.syncing = false;
     this.initialSyncComplete = false;
     this.blockModel = blockModel;
     this.txModel = txModel;
     this.provider = new ETHStateProvider();
+    this.events = new EventEmitter();
+    this.invCache = {};
+    this.invCacheLimits = {
+      TX: 100000
+    };
+    this.disconnecting = false;
+  }
+
+  cacheInv(type: 'TX', hash: string): void {
+    if (!this.invCache[type]) {
+      this.invCache[type] = [];
+    }
+    if (this.invCache[type].length > this.invCacheLimits[type]) {
+      this.invCache[type].shift();
+    }
+    this.invCache[type].push(hash);
+  }
+
+  isCachedInv(type: 'TX', hash: string): boolean {
+    if (!this.invCache[type]) {
+      this.invCache[type] = [];
+    }
+    return this.invCache[type].includes(hash);
   }
 
   async setupListeners() {
-    this.txSubscription = await this.web3!.eth.subscribe('pendingTransactions');
-    this.txSubscription.subscribe(async (_err, txid) => {
-      if (!this.syncing) {
-        const tx = (await this.web3!.eth.getTransaction(txid)) as Parity.Transaction;
-        if (tx) {
-          this.processTransaction(tx);
-        }
-      }
+    const { host, port } = this.chainConfig.provider;
+    this.events.on('disconnected', async () => {
+      logger.warn(
+        `${timestamp()} | Not connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
+      );
     });
-    this.blockSubscription = await this.web3!.eth.subscribe('newBlockHeaders');
-    this.blockSubscription.subscribe(() => {
-      if (!this.syncing) {
-        this.sync();
-      }
+    this.events.on('connected', async () => {
+      this.txSubscription = await this.web3!.eth.subscribe('pendingTransactions');
+      this.txSubscription.subscribe(async (_err, txid) => {
+        if (!this.isCachedInv('TX', txid)) {
+          this.cacheInv('TX', txid);
+          const tx = (await this.web3!.eth.getTransaction(txid)) as Parity.Transaction;
+          if (tx) {
+            await this.processTransaction(tx);
+            this.events.emit('transaction', tx);
+          }
+        }
+      });
+      this.blockSubscription = await this.web3!.eth.subscribe('newBlockHeaders');
+      this.blockSubscription.subscribe((_err, block) => {
+        this.events.emit('block', block);
+        if (!this.syncing) {
+          this.sync();
+        }
+      });
     });
   }
 
   async disconnect() {
+    this.disconnecting = true;
     try {
       if (this.txSubscription) {
         this.txSubscription.unsubscribe();
@@ -71,32 +111,55 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return this.provider.getWeb3(this.network);
   }
 
-  async connect() {
+  async handleReconnects() {
+    this.disconnecting = false;
+    let firstConnect = true;
     let connected = false;
-    let attempt = false;
+    let disconnected = false;
     const { host, port } = this.chainConfig.provider;
-    while (!connected) {
+    while (!this.disconnecting && !this.stopping) {
       try {
-        if (attempt) {
+        if (!this.web3) {
+          this.web3 = await this.getWeb3();
+          this.rpc = new ParityRPC(this.web3);
+        }
+        try {
+          connected = await this.web3.eth.net.isListening();
+        } catch (e) {
+          connected = false;
+        }
+        if (connected) {
+          if (disconnected || firstConnect) {
+            this.events.emit('connected');
+          }
+        } else {
+          this.web3 = await this.getWeb3();
+          this.rpc = new ParityRPC(this.web3);
+          this.events.emit('disconnected');
+        }
+        if (disconnected && connected && !firstConnect) {
           logger.warn(
-            `${timestamp()} | Not connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
+            `${timestamp()} | Reconnected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
           );
         }
-        attempt = true;
-        this.web3 = await this.getWeb3();
-        this.rpc = new ParityRPC(this.web3);
-        connected = await this.web3.eth.net.isListening();
+        if (connected && firstConnect) {
+          firstConnect = false;
+          logger.info(
+            `${timestamp()} | Connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
+          );
+        }
+        disconnected = !connected;
       } catch (e) {}
-      await wait(20000);
+      await wait(2000);
     }
+  }
 
-    logger.info(
-      `${timestamp()} | Connected to peer: ${host}:${port} | Chain: ${this.chain} | Network: ${this.network}`
-    );
+  async connect() {
+    this.handleReconnects();
   }
 
   public async getBlock(height: number) {
-    return this.rpc!.getBlock(height);
+    return (this.rpc!.getBlock(height) as unknown) as Parity.Block;
   }
 
   async processBlock(block: IEthBlock, transactions: IEthTransaction[]): Promise<any> {
@@ -133,6 +196,9 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   async sync() {
+    if (this.syncing) {
+      return false;
+    }
     const { chain, chainConfig, network } = this;
     const { parentChain, forkHeight } = chainConfig;
     this.syncing = true;
@@ -153,53 +219,21 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
 
     const startHeight = tip ? tip.height : 0;
     const startTime = Date.now();
-    let bestBlock = await this.web3!.eth.getBlockNumber();
-    let lastLog = 0;
-    let currentHeight = tip ? tip.height : 0;
-    logger.info(`Syncing ${bestBlock - currentHeight} blocks for ${chain} ${network}`);
-    while (startHeight < bestBlock && currentHeight <= bestBlock) {
-      tip = await ChainStateProvider.getLocalTip({ chain, network });
-      try {
-        const block = ((await this.getBlock(currentHeight)) as unknown) as Parity.Block;
-        const { convertedBlock, convertedTxs } = this.convertBlock(block);
-        const internalTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
-        for (const tx of internalTxs) {
-          if (tx.type === 'reward') {
-            if (tx.action.rewardType && tx.action.rewardType === 'block') {
-              const gasSum = convertedTxs.reduce((sum, e) => sum + e.fee, 0);
-              const totalReward = Number.parseInt(tx.action.value, 16) + gasSum;
-              convertedBlock.reward = totalReward;
-            }
-            if (tx.action.rewardType && tx.action.rewardType === 'uncle') {
-              const uncles = convertedBlock.uncleReward || [];
-              const uncleValue = Number.parseInt(tx.action.value, 16);
-              Object.assign(convertedBlock, { uncleReward: uncles.concat([uncleValue]) });
-            }
-          }
-          if (tx && tx.action) {
-            const foundIndex = convertedTxs.findIndex(
-              t =>
-                t.txid === tx.transactionHash &&
-                t.from !== tx.action.from &&
-                t.to.toLowerCase() !== (tx.action.to || '').toLowerCase()
-            );
-            if (foundIndex > -1) {
-              convertedTxs[foundIndex].internal.push(tx);
-            }
-            if (tx.error) {
-              const errorIndex = convertedTxs.findIndex(t => t.txid === tx.transactionHash);
-              if (errorIndex && errorIndex > -1) {
-                convertedTxs[errorIndex].error = tx.error;
-              }
-            }
-          }
-        }
-
+    try {
+      let bestBlock = await this.web3!.eth.getBlockNumber();
+      let lastLog = 0;
+      let currentHeight = tip ? tip.height : 0;
+      logger.info(`Syncing ${bestBlock - currentHeight} blocks for ${chain} ${network}`);
+      while (currentHeight <= bestBlock) {
+        const block = await this.getBlock(currentHeight);
+        const { convertedBlock, convertedTxs } = await this.convertBlock(block);
         await this.processBlock(convertedBlock, convertedTxs);
-        currentHeight++;
         if (currentHeight === bestBlock) {
           bestBlock = await this.web3!.eth.getBlockNumber();
         }
+        tip = await ChainStateProvider.getLocalTip({ chain, network });
+        currentHeight = tip ? tip.height + 1 : 0;
+
         const oneSecond = 1000;
         const now = Date.now();
         if (now - lastLog > oneSecond) {
@@ -212,10 +246,12 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
           );
           lastLog = Date.now();
         }
-      } catch (err) {
-        logger.error(`Error syncing ${chain} ${network}`, err);
-        return this.sync();
       }
+    } catch (err) {
+      logger.error(`Error syncing ${chain} ${network}`, err.message);
+      await wait(2000);
+      this.syncing = false;
+      return this.sync();
     }
     logger.info(`${chain}:${network} up to date.`);
     this.syncing = false;
@@ -224,10 +260,15 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
       { upsert: true }
     );
+    this.events.emit('SYNCDONE');
     return true;
   }
 
-  convertBlock(block: Parity.Block) {
+  async syncDone() {
+    return new Promise(resolve => this.events.once('SYNCDONE', resolve));
+  }
+
+  async convertBlock(block: Parity.Block) {
     const blockTime = Number(block.timestamp) * 1000;
     const hash = block.hash;
     const height = block.number;
@@ -270,6 +311,39 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     };
     const transactions = block.transactions as Array<Parity.Transaction>;
     const convertedTxs = transactions.map(t => this.convertTx(t, convertedBlock));
+    const internalTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
+    for (const tx of internalTxs) {
+      if (tx.type === 'reward') {
+        if (tx.action.rewardType && tx.action.rewardType === 'block') {
+          const gasSum = convertedTxs.reduce((sum, e) => sum + e.fee, 0);
+          const totalReward = Number.parseInt(tx.action.value, 16) + gasSum;
+          convertedBlock.reward = totalReward;
+        }
+        if (tx.action.rewardType && tx.action.rewardType === 'uncle') {
+          const uncles = convertedBlock.uncleReward || [];
+          const uncleValue = Number.parseInt(tx.action.value, 16);
+          Object.assign(convertedBlock, { uncleReward: uncles.concat([uncleValue]) });
+        }
+      }
+      if (tx && tx.action) {
+        const foundIndex = convertedTxs.findIndex(
+          t =>
+            t.txid === tx.transactionHash &&
+            t.from !== tx.action.from &&
+            t.to.toLowerCase() !== (tx.action.to || '').toLowerCase()
+        );
+        if (foundIndex > -1) {
+          convertedTxs[foundIndex].internal.push(tx);
+        }
+        if (tx.error) {
+          const errorIndex = convertedTxs.findIndex(t => t.txid === tx.transactionHash);
+          if (errorIndex && errorIndex > -1) {
+            convertedTxs[errorIndex].error = tx.error;
+          }
+        }
+      }
+    }
+
     return { convertedBlock, convertedTxs };
   }
 
@@ -328,7 +402,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
 
   async start() {
     logger.debug(`Started worker for chain ${this.chain} ${this.network}`);
-    await this.connect();
+    this.connect();
     this.setupListeners();
     this.sync();
   }

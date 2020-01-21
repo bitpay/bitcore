@@ -21,8 +21,8 @@ describe('Message', function() {
 
   var badSignatureString = 'H69qZ4mbZCcvXk7CWjptD5ypnYVLvQ3eMXLM8+1gX21SLH/GaFnAjQrDn37+TDw79i9zHhbiMMwhtvTwnPigZ6k=';
 
-  var signature = Signature.fromCompact(new Buffer(signatureString, 'base64'));
-  var badSignature = Signature.fromCompact(new Buffer(badSignatureString, 'base64'));
+  var signature = Signature.fromCompact(Buffer.from(signatureString, 'base64'));
+  var badSignature = Signature.fromCompact(Buffer.from(badSignatureString, 'base64'));
 
   var publicKey = privateKey.toPublicKey();
 

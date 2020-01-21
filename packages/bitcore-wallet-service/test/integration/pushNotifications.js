@@ -17,6 +17,8 @@ var { PushNotificationsService } = require('../../ts_build/lib/pushnotifications
 
 var TestData = require('../testdata');
 var helpers = require('./helpers');
+const TOKENS = ['0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0x8E870D67F660D95d5be530380D0eC0bd388289E1', '0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd'];
+
 
 describe('Push notifications', function() {
   var server, wallet, requestStub, pushNotificationsService, walletId;
@@ -433,7 +435,7 @@ describe('Push notifications', function() {
             }, next);
           },
           function(next) {
-            helpers.stubBroadcast();
+            helpers.stubBroadcast(txp.txid);
             server.broadcastTx({
               txProposalId: txp.id,
             }, next);
@@ -559,6 +561,188 @@ describe('Push notifications', function() {
             done();
           });
         }, 100);
+      });
+    });
+  });
+
+  describe('ERC20 wallet', () => {
+    beforeEach((done) => {
+
+      helpers.beforeEach((res) => {
+        helpers.createAndJoinWallet(1, 1, { coin: 'eth' }, (s, w) => {
+          server = s;
+          wallet = w;
+
+          var i = 0;
+          async.eachSeries(w.copayers, function(copayer, next) {
+            helpers.getAuthServer(copayer.id, function(server) {
+              async.parallel([
+
+                function(done) {
+                  server.savePreferences({
+                    email: 'copayer' + (++i) + '@domain.com',
+                    language: 'en',
+                    unit: 'bit',
+                    tokenAddresses: TOKENS,
+                  }, done);
+                },
+                function(done) {
+                  server.pushNotificationsSubscribe({
+                    token: '1234',
+                    packageName: 'com.wallet',
+                    platform: 'Android',
+                  }, done);
+                },
+              ], next);
+
+            });
+          }, function(err) {
+            should.not.exist(err);
+
+            requestStub = sinon.stub();
+            requestStub.yields();
+
+            pushNotificationsService = new PushNotificationsService();
+            pushNotificationsService.start({
+              lockOpts: {},
+              messageBroker: server.messageBroker,
+              storage: helpers.getStorage(),
+              request: requestStub,
+              pushNotificationsOpts: {
+                templatePath: 'templates',
+                defaultLanguage: 'en',
+                defaultUnit: 'eth',
+                subjectPrefix: '',
+                pushServerUrl: 'http://localhost:8000',
+                authorizationKey: 'secret',
+              },
+            }, function(err) {
+              should.not.exist(err);
+              done();
+            });
+          });
+        });
+      });
+    });
+
+    it('should send notification if the tx is USDC', (done) => {
+      server.savePreferences({
+        language: 'en',
+        unit: 'bit',
+      }, function(err) {
+        server.createAddress({}, (err, address) => {
+          should.not.exist(err);
+
+          // Simulate incoming tx notification
+          server._notify('NewIncomingTx', {
+            txid: '997',
+            address: address,
+            amount: 4e6, // ~ 4.00 USD
+            tokenAddress: TOKENS[0]
+          }, {
+            isGlobal: true
+          }, (err) => {
+            setTimeout(function() {
+              var calls = requestStub.getCalls();
+              calls.length.should.equal(1);
+              var args = _.map(_.takeRight(calls, 2), function(c) {
+                return c.args[0];
+              });
+              args[0].body.notification.title.should.contain('New payment received');
+              args[0].body.notification.body.should.contain('4.00');
+              done();
+            }, 100);
+          });
+        });
+      });
+    });
+    it('should send notification if the tx is PAX', (done) => {
+      server.savePreferences({
+        language: 'es',
+        unit: 'bit',
+      }, function(err) {
+        server.createAddress({}, (err, address) => {
+          should.not.exist(err);
+
+          // Simulate incoming tx notification
+          server._notify('NewIncomingTx', {
+            txid: '998',
+            address: address,
+            amount: 4e18, // ~ 4.00 USD
+            tokenAddress: TOKENS[1]
+          }, {
+            isGlobal: true
+          }, (err) => {
+            setTimeout(function() {
+              var calls = requestStub.getCalls();
+              calls.length.should.equal(1);
+              var args = _.map(_.takeRight(calls, 2), function(c) {
+                return c.args[0];
+              });
+              args[0].body.notification.title.should.contain('Nuevo pago recibido');
+              args[0].body.notification.body.should.contain('4.00');
+              done();
+            }, 100);
+          });
+        });
+      });
+    });
+    it('should send notification if the tx is GUSD', (done) => {
+      server.savePreferences({
+        language: 'en',
+        unit: 'bit',
+      }, function(err) {
+        server.createAddress({}, (err, address) => {
+          should.not.exist(err);
+
+          // Simulate incoming tx notification
+          server._notify('NewIncomingTx', {
+            txid: '999',
+            address: address,
+            amount: 4e2, // ~ 4.00 USD
+            tokenAddress: TOKENS[2]
+          }, {
+            isGlobal: true
+          }, (err) => {
+            setTimeout(function() {
+              var calls = requestStub.getCalls();
+              calls.length.should.equal(1);
+              var args = _.map(_.takeRight(calls, 2), function(c) {
+                return c.args[0];
+              });
+              args[0].body.notification.title.should.contain('New payment received');
+              args[0].body.notification.body.should.contain('4.00');
+              done();
+            }, 100);
+          });
+        });
+      });
+    });
+
+    it('should not send notification if the tokenAddress is not supported', (done) => {
+      server.savePreferences({
+        language: 'en',
+        unit: 'bit',
+      }, function(err) {
+        server.createAddress({}, (err, address) => {
+          should.not.exist(err);
+
+          // Simulate incoming tx notification
+          server._notify('NewIncomingTx', {
+            txid: '999',
+            address: address,
+            amount: 1230000000,
+            tokenAddress: 'notSupportedTokenAddress'
+          }, {
+            isGlobal: true
+          }, (err) => {
+            setTimeout(function() {
+              var calls = requestStub.getCalls();
+              calls.length.should.equal(0);
+              done();
+            }, 100);
+          });
+        });
       });
     });
   });

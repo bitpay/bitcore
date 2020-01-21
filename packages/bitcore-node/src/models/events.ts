@@ -23,10 +23,7 @@ export class EventModel extends BaseModel<IEvent> {
 
   async onConnect() {
     await this.collection.createIndex({ type: 1, emitTime: 1 }, { background: true });
-    const capped = await this.collection.isCapped();
-    if (!capped) {
-      await this.db!.createCollection('events', { capped: true, size: 500000 });
-    }
+    await this.collection.createIndex({ emitTime: 1 }, { background: true, expireAfterSeconds: 60 * 5 });
   }
 
   public signalBlock(block: IEvent.BlockEvent) {

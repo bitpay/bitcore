@@ -16,6 +16,8 @@ services:
     depends_on:
       - db
       - bitcoin
+      - parity
+      - rippled
 
   db:
     image: mongo
@@ -37,6 +39,28 @@ services:
       -rpcbind=0.0.0.0
       -rpcuser=bitcorenodetest
       -rpcpassword=local321
+
+  parity:
+    image: parity/parity:v2.4.6
+    ports:
+      - "8545:8545"
+      - "8546:8546"
+    volumes:
+      - ./.docker/parity-password:/data/pw
+    command:
+      --config=dev
+      --jsonrpc-interface=0.0.0.0
+      --ws-interface=0.0.0.0
+      --ws-port=8546
+      --jsonrpc-apis=all
+      --ws-apis=all
+      --unlock 00a329c0648769a73afac7f9381e08fb43dbea72
+      --password /data/pw
+
+  rippled:
+    build:
+      context: .
+      dockerfile: ./.docker/rippled.Dockerfile
 
 networks:
   default:

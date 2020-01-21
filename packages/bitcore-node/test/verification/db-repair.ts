@@ -5,9 +5,9 @@ import { CoinStorage } from '../../src/models/coin';
 import { Storage } from '../../src/services/storage';
 import { Config } from '../../src/services/config';
 import { BitcoinBlockStorage } from '../../src/models/block';
-import { validateDataForBlock } from './db-verify';
 import { TransactionStorage } from '../../src/models/transaction';
-import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
+import { Verification } from '../../src/services/verification';
+import { Modules } from '../../src/modules';
 
 (async () => {
   const { CHAIN, NETWORK, FILE, DRYRUN } = process.env;
@@ -18,11 +18,15 @@ import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
   const chain = CHAIN || '';
   const network = NETWORK || '';
   await Storage.start();
+  Modules.loadConfigured();
+
   const chainConfig = Config.chainConfig({ chain, network });
-  const worker = new BitcoinP2PWorker({ chain, network, chainConfig });
+  const workerClass = Verification.get(chain);
+  const worker = new workerClass({ chain, network, chainConfig });
   await worker.connect();
 
   const handleRepair = async data => {
+    const tip = await BitcoinBlockStorage.getLocalTip({ chain, network });
     switch (data.type) {
       case 'DUPE_TRANSACTION':
         {
@@ -58,7 +62,7 @@ import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
           const coin = data.payload.coin;
           const dupeCoins = await CoinStorage.collection
             .find({ chain, network, mintTxid: coin.mintTxid, mintIndex: coin.mintIndex })
-            .sort({ _id: -1 })
+            .sort({ mintHeight: -1, spentHeight: -1 })
             .toArray();
 
           if (dupeCoins.length < 2) {
@@ -97,16 +101,23 @@ import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
       case 'COIN_SHOULD_BE_SPENT':
       case 'NEG_FEE':
         const blockHeight = Number(data.payload.blockNum);
-        const { success } = await validateDataForBlock(blockHeight);
+        let { success } = await worker.validateDataForBlock(blockHeight, tip!.height);
+        if (success) {
+          console.log('No errors found, repaired previously');
+          return;
+        }
         if (DRYRUN) {
           console.log('WOULD RESYNC BLOCKS', blockHeight, 'to', blockHeight + 1);
           console.log(data.payload);
         } else {
-          if (!success) {
-            console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
-            await worker.resync(blockHeight - 1, blockHeight + 1);
+          console.log('Resyncing Blocks', blockHeight, 'to', blockHeight + 1);
+          await worker.resync(blockHeight - 1, blockHeight + 1);
+          let { success, errors } = await worker.validateDataForBlock(blockHeight, tip!.height);
+          if (success) {
+            console.log('REPAIR SOLVED ISSUE');
           } else {
-            console.log('No errors found, repaired previously');
+            console.log('REPAIR FAILED TO SOLVE ISSUE');
+            console.log(errors);
           }
         }
         break;

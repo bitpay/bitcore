@@ -15,8 +15,8 @@ const main = async () => {
   const storage = new Storage({createIfMissing: false, errorIfExists: false, path, dbName});
   const walletStream = await storage.listWallets();
   walletStream.on('data', (wallet) => {
-    const { name, chain, network } = JSON.parse(wallet.toString());
-    console.log({name, chain, network});
+    const { name, chain, network, baseUrl } = JSON.parse(wallet.toString());
+    console.log({name, chain, network, baseUrl});
   });
 };
 

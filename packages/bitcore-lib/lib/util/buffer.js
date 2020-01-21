@@ -68,7 +68,7 @@ module.exports = {
    */
   emptyBuffer: function emptyBuffer(bytes) {
     $.checkArgumentType(bytes, 'number', 'bytes');
-    var result = new buffer.Buffer(bytes);
+    var result = Buffer.alloc(bytes);
     for (var i = 0; i < bytes; i++) {
       result.write('\0', i);
     }
@@ -93,7 +93,7 @@ module.exports = {
    */
   integerAsSingleByteBuffer: function integerAsSingleByteBuffer(integer) {
     $.checkArgumentType(integer, 'number', 'integer');
-    return new buffer.Buffer([integer & 0xff]);
+    return Buffer.from([integer & 0xff]);
   },
 
   /**
@@ -152,25 +152,8 @@ module.exports = {
    * @return {Buffer}
    */
   reverse: function reverse(param) {
-    var ret = new buffer.Buffer(param.length);
-    for (var i = 0; i < param.length; i++) {
-      ret[i] = param[param.length - i - 1];
-    }
-    return ret;
+    return (Buffer.from(param)).reverse();
   },
-
-  /**
-   * Transforms an hexa encoded string into a Buffer with binary values
-   *
-   * Shorthand for <tt>Buffer(string, 'hex')</tt>
-   *
-   * @param {string} string
-   * @return {Buffer}
-   */
-  hexToBuffer: function hexToBuffer(string) {
-    assert(js.isHexa(string));
-    return new buffer.Buffer(string, 'hex');
-  }
 };
 
 module.exports.NULL_HASH = module.exports.fill(Buffer.alloc(32), 0);

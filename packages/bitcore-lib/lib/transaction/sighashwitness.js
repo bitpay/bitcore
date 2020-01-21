@@ -38,7 +38,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode
       var input = transaction.inputs[n];
       var prevTxIdBuffer = new BufferReader(input.prevTxId).readReverse();
       buffers.push(prevTxIdBuffer);
-      var outputIndexBuffer = new Buffer(new Array(4));
+      var outputIndexBuffer = Buffer.alloc(4);
       outputIndexBuffer.writeUInt32LE(input.outputIndex, 0);
       buffers.push(outputIndexBuffer);
     }
@@ -50,7 +50,7 @@ var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode
 
     var sequenceBuffers = [];
     for (var m = 0; m < transaction.inputs.length; m++) {
-      var sequenceBuffer = new Buffer(new Array(4));
+      var sequenceBuffer = Buffer.alloc(4);
       sequenceBuffer.writeUInt32LE(transaction.inputs[m].sequenceNumber, 0);
       sequenceBuffers.push(sequenceBuffer);
     }

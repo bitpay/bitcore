@@ -153,6 +153,20 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return blocks[0];
   }
 
+  async getBlockBeforeTime(params: { chain: string; network: string; time: Date }) {
+    const { chain, network, time } = params;
+    const [block] = await BitcoinBlockStorage.collection
+      .find({
+        chain,
+        network,
+        timeNormalized: { $lte: new Date(time) }
+      })
+      .limit(1)
+      .sort({ timeNormalized: -1 })
+      .toArray();
+    return block as IBlock;
+  }
+
   async streamTransactions(params: CSP.StreamTransactionsParams) {
     const { chain, network, req, res, args } = params;
     let { blockHash, blockHeight } = args;
@@ -406,7 +420,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     }
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
-    const utxoTransform = (c: ICoin): string => {
+    const utxoTransform = (c: Partial<ICoin>): string => {
       let confirmations = 0;
       if (c.mintHeight && c.mintHeight >= 0) {
         confirmations = tipHeight - c.mintHeight + 1;
@@ -527,13 +541,14 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async getLocalTip({ chain, network }) {
-    if (BitcoinBlockStorage.chainTips[chain] && BitcoinBlockStorage.chainTips[chain][network]) {
-      return BitcoinBlockStorage.chainTips[chain][network];
-    } else {
-      return BitcoinBlockStorage.getLocalTip({ chain, network });
-    }
+    return BitcoinBlockStorage.getLocalTip({ chain, network });
   }
 
+  /**
+   * Get a series of hashes that come before a given height, or the 30 most recent hashes
+   *
+   * @returns Array<string>
+   */
   async getLocatorHashes(params) {
     const { chain, network, startHeight, endHeight } = params;
     const query =
@@ -595,5 +610,13 @@ export class InternalStateProvider implements CSP.IChainStateService {
   private extractAddress(address: string): string {
     const extractedAddress = address.replace(/^(bitcoincash:|bchtest:|bitcoin:)/i, '').replace(/\?.*/, '');
     return extractedAddress || address;
+  }
+
+  async getWalletAddresses(walletId: ObjectId) {
+    let query = { chain: this.chain, wallet: walletId };
+    return WalletAddressStorage.collection
+      .find(query)
+      .addCursorFlag('noCursorTimeout', true)
+      .toArray();
   }
 }

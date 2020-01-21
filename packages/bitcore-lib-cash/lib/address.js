@@ -355,7 +355,7 @@ function decodeCashAddress(address) {
   //return { prefix, type, hash };
 //console.log('[address.js.339]', hash); //TODO
 
-  info.hashBuffer = new Buffer(hash);
+  info.hashBuffer = Buffer.from(hash);
   info.network = network;
   info.type = type;
   return info;
@@ -586,7 +586,7 @@ Address.prototype.isPayToScriptHash = function() {
  * @returns {Buffer} Bitcoin address buffer
  */
 Address.prototype.toBuffer = function() {
-  var version = new Buffer([this.network[this.type]]);
+  var version = Buffer.from([this.network[this.type]]);
   var buf = Buffer.concat([version, this.hashBuffer]);
   return buf;
 };
@@ -620,7 +620,7 @@ Address.prototype.inspect = function() {
  */
 
 Address.prototype.toCashBuffer = function() {
-  var version = new Buffer([this.network[this.type]]);
+  var version = Buffer.from([this.network[this.type]]);
   var buf = Buffer.concat([version, this.hashBuffer]);
   return buf;
 };

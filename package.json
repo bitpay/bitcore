@@ -1,5 +1,5 @@
 {
-  "version": "8.9.0",
+  "version": "8.13.0",
   "prettier": {
     "singleQuote": true
   },
@@ -47,10 +47,11 @@
     "cz-customizable": "^5.2.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
-    "lerna": "^3.6.0",
     "prettier": "^1.14.3",
     "typedoc": "^0.15.0",
     "typescript-eslint-parser": "^15.0.0"
   },
-  "dependencies": {}
+  "dependencies": {
+    "lerna": "^3.20.2"
+  }
 }

@@ -16,12 +16,30 @@ import { ERC721Abi } from '../abi/erc721';
 import { ERC20Abi } from '../abi/erc20';
 import { BaseTransaction } from '../../../models/baseTransaction';
 import { valueOrDefault } from '../../../utils/check';
+import { InvoiceAbi } from '../abi/invoice';
 
-const Erc20Decoder = require('abi-decoder');
+function requireUncached(module) {
+  delete require.cache[require.resolve(module)];
+  return require(module);
+}
+
+const Erc20Decoder = requireUncached('abi-decoder');
 Erc20Decoder.addABI(ERC20Abi);
+function getErc20Decoder() {
+  return Erc20Decoder;
+}
 
-const Erc721Decoder = require('abi-decoder');
+const Erc721Decoder = requireUncached('abi-decoder');
 Erc721Decoder.addABI(ERC721Abi);
+function getErc721Decoder() {
+  return Erc721Decoder;
+}
+
+const InvoiceDecoder = requireUncached('abi-decoder');
+InvoiceDecoder.addABI(InvoiceAbi);
+function getInvoiceDecoder() {
+  return InvoiceDecoder;
+}
 
 @LoggifyClass
 export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
@@ -34,7 +52,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     this.collection.createIndex({ chain: 1, network: 1, to: 1 }, { background: true, sparse: true });
     this.collection.createIndex({ chain: 1, network: 1, from: 1, nonce: 1 }, { background: true, sparse: true });
     this.collection.createIndex(
-      { chain: 1, network: 1, 'abiType.params.0.value': 1 },
+      { chain: 1, network: 1, 'abiType.params.0.value': 1, blockTimeNormalized: 1 },
       {
         background: true,
         partialFilterExpression: { chain: 'ETH', 'abiType.type': 'ERC20', 'abiType.name': 'transfer' }
@@ -55,14 +73,16 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     network: string;
     initialSyncComplete: boolean;
   }) {
-    await this.pruneMempool({ ...params });
+    const operations = [] as Array<Promise<any>>;
+    operations.push(this.pruneMempool({ ...params }));
     const txOps = await this.addTransactions({ ...params });
     logger.debug('Writing Transactions', txOps.length);
-    await Promise.all(
-      partition(txOps, txOps.length / Config.get().maxPoolSize).map(txBatch =>
+    operations.push(
+      ...partition(txOps, txOps.length / Config.get().maxPoolSize).map(txBatch =>
         this.collection.bulkWrite(txBatch.map(op => this.toMempoolSafeUpsert(op, params.height)), { ordered: false })
       )
     );
+    await Promise.all(operations);
 
     // Create events for mempool txs
     if (params.height < SpentHeightIndicators.minimum) {
@@ -151,34 +171,20 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     if (!initialSyncComplete) {
       return;
     }
-    const users = txs.map(tx => tx.from);
-    let invalidatedTxs = await this.collection
-      .find({
-        chain,
-        network,
-        from: { $in: users },
-        blockHeight: SpentHeightIndicators.pending
-      })
-      .toArray();
-
-    invalidatedTxs = invalidatedTxs.filter(
-      toFilter =>
-        txs.findIndex(
-          truth => toFilter.from === truth.from && toFilter.nonce === truth.nonce && toFilter.txid !== truth.txid
-        ) > -1
-    );
-
-    await this.collection.update(
-      {
-        chain,
-        network,
-        txid: { $in: invalidatedTxs.map(tx => tx.txid) },
-        blockHeight: SpentHeightIndicators.pending
-      },
-      { $set: { blockHeight: SpentHeightIndicators.conflicting } },
-      { w: 0, j: false, multi: true }
-    );
-
+    for (const tx of txs) {
+      await this.collection.update(
+        {
+          chain,
+          network,
+          from: tx.from,
+          nonce: tx.nonce,
+          txid: { $ne: tx.txid },
+          blockHeight: SpentHeightIndicators.pending
+        },
+        { $set: { blockHeight: SpentHeightIndicators.conflicting } },
+        { w: 0, j: false, multi: true }
+      );
+    }
     return;
   }
 
@@ -191,28 +197,33 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
 
   abiDecode(input: string) {
     try {
-      try {
-        const decodedData = Erc20Decoder.decodeMethod(input);
-        if (!decodedData || decodedData.length === 0) {
-          throw new Error();
-        }
+      const erc20Data = getErc20Decoder().decodeMethod(input);
+      if (erc20Data) {
         return {
           type: 'ERC20',
-          ...decodedData
-        };
-      } catch {
-        const decodedData = Erc721Decoder.decodeMethod(input);
-        if (!decodedData || decodedData.length === 0) {
-          throw new Error();
-        }
-        return {
-          type: 'ERC721',
-          ...decodedData
+          ...erc20Data
         };
       }
-    } catch {
-      return undefined;
-    }
+    } catch (e) {}
+    try {
+      const erc721Data = getErc721Decoder().decodeMethod(input);
+      if (erc721Data) {
+        return {
+          type: 'ERC721',
+          ...erc721Data
+        };
+      }
+    } catch (e) {}
+    try {
+      const invoiceData = getInvoiceDecoder().decodeMethod(input);
+      if (invoiceData) {
+        return {
+          type: 'INVOICE',
+          ...invoiceData
+        };
+      }
+    } catch (e) {}
+    return undefined;
   }
 
   _apiTransform(

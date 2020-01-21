@@ -16,6 +16,7 @@ program
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--mnemonic [phrase]', 'optional - Seed using existing backup phrase')
   .option('--dbName [dbName]', 'optional - name of the database to use (Mongo or Level)')
+  .option('--phrase [phrase]', 'optional - Seed using existing backup phrase')
   .parse(process.argv);
 
 const main = async () => {

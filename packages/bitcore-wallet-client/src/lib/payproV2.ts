@@ -17,8 +17,16 @@ var Bitcore_ = {
 var MAX_FEE_PER_KB = {
   btc: 10000 * 1000, // 10k sat/b
   bch: 10000 * 1000, // 10k sat/b
-  eth: 50000000000 // 50 Gwei
+  eth: 50000000000, // 50 Gwei
+  xrp: 50000000000
 };
+
+// PayPro Network Map
+export enum NetworkMap {
+  main = 'livenet',
+  test = 'testnet',
+  regtest = 'testnet'
+}
 
 export class PayProV2 {
   static options: { headers?: any; args?: string; agent?: boolean } = {
@@ -43,7 +51,7 @@ export class PayProV2 {
    * @return {Promise<Object{rawBody: String, headers: Object}>}
    * @private
    */
-  static async _asyncRequest(options): Promise<{rawBody: string, headers: object}> {
+  static async _asyncRequest(options): Promise<{ rawBody: string, headers: object }> {
     return new Promise((resolve, reject) => {
       let requestOptions = Object.assign({}, PayProV2.options, options);
 
@@ -52,12 +60,12 @@ export class PayProV2 {
         {},
         PayProV2.options.headers,
         options.headers
-        );
+      );
 
       var r = this.request[requestOptions.method](requestOptions.url);
       _.each(requestOptions.headers, (v, k) => {
         if (v)
-        r.set(k, v);
+          r.set(k, v);
       });
       r.agent(requestOptions.agent);
 
@@ -73,12 +81,10 @@ export class PayProV2 {
         if (err) {
           if (res && res.statusCode !== 200) {
             // some know codes
-            if (res.statusCode == 400) {
-              return reject(new Errors.INVOICE_EXPIRED);
+            if (res.statusCode == 400 || res.statusCode == 422) {
+              return reject(this.getError(res.body.msg));
             } else if (res.statusCode == 404) {
               return reject(new Errors.INVOICE_NOT_AVAILABLE);
-            } else if (res.statusCode == 422) {
-              return reject(new Errors.UNCONFIRMED_INPUTS_NOT_ACCEPTED);
             } else if (res.statusCode == 500 && res.body && res.body.msg) {
               return reject(new Error(res.body.msg));
             }
@@ -93,12 +99,41 @@ export class PayProV2 {
     });
   }
 
+  static getError(errMsg: string): Error {
+    switch (true) {
+      case errMsg.includes('Invoice no longer accepting payments'):
+        return new Errors.INVOICE_EXPIRED;
+      case errMsg.includes('We were unable to parse your payment.'):
+        return new Errors.UNABLE_TO_PARSE_PAYMENT;
+      case errMsg.includes('Request must include exactly one'):
+        return new Errors.NO_TRASACTION;
+      case errMsg.includes('Your transaction was an in an invalid format'):
+        return new Errors.INVALID_TX_FORMAT;
+      case errMsg.includes('We were unable to parse the transaction you sent'):
+        return new Errors.UNABLE_TO_PARSE_TX;
+      case errMsg.includes('The transaction you sent does not have any output to the bitcoin address on the invoice'):
+        return new Errors.WRONG_ADDRESS;
+      case errMsg.includes('The amount on the transaction (X BTC) does'):
+        return new Errors.WRONG_AMOUNT;
+      case errMsg.includes('Transaction fee (X sat/kb) is below'):
+        return new Errors.NOT_ENOUGH_FEE;
+      case errMsg.includes('This invoice is priced in BTC, not BCH.'):
+        return new Errors.BTC_NOT_BCH;
+      case errMsg.includes('	One or more input transactions for your transaction were not found on the blockchain.'):
+        return new Errors.INPUT_NOT_FOUND;
+      case errMsg.includes('One or more input transactions for your transactions are not yet confirmed in at least one block.'):
+        return new Errors.UNCONFIRMED_INPUTS_NOT_ACCEPTED;
+      default:
+        return new Error(errMsg);
+    }
+  }
+
   /**
    * Makes a request to the given url and returns the raw JSON string retrieved as well as the headers
    * @param {string} paymentUrl the payment protocol specific url
    * @param {boolean} unsafeBypassValidation bypasses signature verification on the request (DO NOT USE IN PRODUCTION)
    */
-  static async getPaymentOptions({paymentUrl, unsafeBypassValidation = false}) {
+  static async getPaymentOptions({ paymentUrl, unsafeBypassValidation = false }) {
     const paymentUrlObject = url.parse(paymentUrl);
 
     // Detect 'bitcoin:' urls and extract payment-protocol section
@@ -295,7 +330,7 @@ export class PayProV2 {
 
     try {
       host = url.parse(requestUrl).hostname;
-    } catch (e) {}
+    } catch (e) { }
 
     if (!host) {
       throw new Error('Invalid requestUrl');
@@ -331,7 +366,7 @@ export class PayProV2 {
     const keyData = PayProV2.trustedKeys[identity];
     const actualHash = sha256(Buffer.from(rawBody, 'utf8')).toString('hex');
     if (hash !== actualHash) {
-    throw new Error(
+      throw new Error(
         `Response body hash does not match digest header. Actual: ${actualHash} Expected: ${hash}`
       );
     }
@@ -376,12 +411,18 @@ export class PayProV2 {
     // otherwise, it returns err.
     payProDetails.verified = true;
 
-    // network
-    if (responseData.network == 'test')
-      payProDetails.network = 'testnet';
+    // getPaymentOptions
+    if (responseData.paymentOptions) {
+      payProDetails.paymentOptions = responseData.paymentOptions;
+      payProDetails.paymentOptions.forEach(option => {
+        option.network = NetworkMap[option.network];
+      });
+    }
 
-    if (responseData.network == 'main')
-      payProDetails.network = 'livenet';
+    // network
+    if (responseData.network) {
+      payProDetails.network = NetworkMap[responseData.network];
+    }
 
     if (responseData.chain) {
       payProDetails.coin = responseData.chain.toLowerCase();
@@ -395,50 +436,21 @@ export class PayProV2 {
       }
     }
 
-    let requiredFeeRate;
+    if (responseData.instructions) {
+      payProDetails.instructions = responseData.instructions;
+      payProDetails.instructions.forEach(output => {
+        output.toAddress = output.to || output.outputs[0].address;
+        output.amount = output.value !== undefined ? output.value : output.outputs[0].amount;
+      });
+      const { requiredFeeRate, gasPrice } = responseData.instructions[0];
+      payProDetails.requiredFeeRate = requiredFeeRate || gasPrice;
 
-    // BTC Response - BCH Response
-    if (_.has(responseData, 'instructions[0].requiredFeeRate')) {
-      requiredFeeRate = responseData.instructions[0].requiredFeeRate;
-    }
-    if (_.has(responseData, 'instructions[0].outputs[0].amount')) {
-      payProDetails.amount = responseData.instructions[0].outputs[0].amount;
-    }
-    if (_.has(responseData, 'instructions[0].outputs[0].address')) {
-      try {
-        const bitcore = Bitcore_[payProDetails.coin];
-        payProDetails.toAddress = (bitcore.Address(responseData.instructions[0].outputs[0].address)).toString(true);
-      } catch (e) {
-        return new Error('Bad output address ' + e);
+      if (payProDetails.requiredFeeRate) {
+        if (payProDetails.requiredFeeRate > MAX_FEE_PER_KB[payProDetails.coin]) {
+          throw new Error('Fee rate too high:' + payProDetails.requiredFeeRate);
+        }
       }
     }
-
-    // ETH Response
-    if (_.has(responseData, 'instructions[0].value')) {
-      payProDetails.amount = responseData.instructions[0].value;
-    }
-
-    if (_.has(responseData, 'instructions[0].to')) {
-      payProDetails.toAddress = responseData.instructions[0].to;
-    }
-
-    if (_.has(responseData, 'instructions[0].gasPrice')) {
-      requiredFeeRate = responseData.instructions[0].gasPrice;
-    }
-
-    if (_.has(responseData, 'instructions[0].data')) {
-      payProDetails.data = responseData.instructions[0].data;
-  }
-
-    // ERC20 TODO
-
-    if (requiredFeeRate) {
-      if (requiredFeeRate > MAX_FEE_PER_KB[payProDetails.coin]) {
-        throw new Error('Fee rate too high:' + requiredFeeRate);
-      }
-      payProDetails.requiredFeeRate = requiredFeeRate;
-    }
-
     return payProDetails;
   }
 }

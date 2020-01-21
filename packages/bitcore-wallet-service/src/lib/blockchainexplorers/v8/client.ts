@@ -13,14 +13,18 @@ export class Client {
     Object.assign(this, params);
   }
 
-  sign(params) {
+  getMessage(params: { method: string; url: string; payload?: any }) {
     const { method, url, payload = {} } = params;
     const parsedUrl = new URL(url);
-    const message = [
+    return [
       method,
       parsedUrl.pathname + parsedUrl.search,
       JSON.stringify(payload)
     ].join('|');
+  }
+
+  sign(params: { method: string; url: string; payload?: any }) {
+    const message = this.getMessage(params);
     const privateKey = this.authKey.bn.toBuffer({ size: 32 });
     const messageHash = bitcoreLib.crypto.Hash.sha256sha256(
       Buffer.from(message)
@@ -43,8 +47,9 @@ export class Client {
   }
 
   async getBalance(params) {
-    const { payload, pubKey } = params;
-    const url = `${this.baseUrl}/wallet/${pubKey}/balance`;
+    const { payload, pubKey, tokenAddress } = params;
+    const query = tokenAddress ? `?tokenAddress=${tokenAddress}` : '';
+    const url = `${this.baseUrl}/wallet/${pubKey}/balance${query}`;
     console.log('[client.js.37:url:]', url); // TODO
     const signature = this.sign({ method: 'GET', url, payload });
     return request.get(url, {
@@ -108,7 +113,8 @@ export class Client {
       startDate,
       endBlock,
       endDate,
-      includeMempool
+      includeMempool,
+      tokenAddress
     } = params;
     let url = `${this.baseUrl}/wallet/${pubKey}/transactions?`;
     if (startBlock) {
@@ -116,6 +122,9 @@ export class Client {
     }
     if (endBlock) {
       url += `endBlock=${endBlock}&`;
+    }
+    if (tokenAddress) {
+      url += `tokenAddress=${tokenAddress}&`;
     }
     if (includeMempool) {
       url += 'includeMempool=true';

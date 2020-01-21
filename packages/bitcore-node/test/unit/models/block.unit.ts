@@ -18,7 +18,8 @@ describe('Block Model', function() {
     network: 'regtest',
     block: TEST_BLOCK,
     height: 1355,
-    initialSyncComplete: false
+    initialSyncComplete: false,
+    processed: true
   };
 
   describe('addBlock', () => {
@@ -90,10 +91,11 @@ describe('Block Model', function() {
       sandbox.restore();
     });
     it('should return the new tip', async () => {
-      mockStorage(null);
+      let newBlock = Object.assign({ save: () => Promise.resolve() }, BitcoinBlockStorage, addBlockParams);
+      mockStorage(newBlock);
       const params = { chain: 'BTC', network: 'regtest' };
       const result = await ChainStateProvider.getLocalTip(params);
-      expect(result!.height).to.deep.equal(addBlockParams.height + 1);
+      expect(result!.height).to.deep.equal(addBlockParams.height);
       expect(result!.chain).to.deep.equal(addBlockParams.chain);
       expect(result!.network).to.deep.equal(addBlockParams.network);
     });
