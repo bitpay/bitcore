@@ -60,6 +60,12 @@ export class Client {
     });
   }
 
+  async getTransaction(params: { txid: string }) {
+    const { txid } = params;
+    let url = `${this.apiUrl}/tx/${txid}`;
+    return request.get(url);
+  }
+
   async getNonce(params) {
     const { address } = params;
     const url = `${this.apiUrl}/address/${address}/txs/count`;
@@ -164,6 +170,7 @@ export class Client {
   async broadcast(params) {
     const { payload } = params;
     const url = `${this.apiUrl}/tx/send`;
+    console.log(payload);
     return request.post(url, { body: payload, json: true });
   }
 

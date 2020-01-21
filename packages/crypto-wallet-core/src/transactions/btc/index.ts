@@ -45,7 +45,7 @@ export class BTCTxProvider {
       });
       return new this.lib.Transaction.UnspentOutput(btcUtxo);
     });
-    let tx = new this.lib.Transaction().from(btcUtxos).fee(Number(fee));
+    let tx = new this.lib.Transaction().from(btcUtxos).feePerByte(Number(fee) + 2);
     if (change) {
       tx.change(change);
     }
@@ -56,15 +56,16 @@ export class BTCTxProvider {
   }
 
   getSignature(params: { tx: string; keys: Array<Key>}) {
-    throw new Error('No implemented for UTXO coins');
+    throw new Error('function getSignature not implemented for UTXO coins');
   }
 
   applySignature(params: { tx: string; keys: Array<Key>}) {
-    throw new Error('No implemented for UTXO coins');
+    throw new Error('function applySignature not implemented for UTXO coins');
   }
 
   getHash(params: { tx: string}) {
-    throw new Error('No implemented for UTXO coins');
+    const bitcoreTx = new this.lib.Transaction(params.tx);
+    return bitcoreTx.hash;
   }
 
   sign(params: { tx: string; keys: Array<Key>; utxos: any[] }) {

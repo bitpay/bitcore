@@ -137,21 +137,6 @@ export class Wallet {
       console.error('Failed to register wallet with bitcore-node.');
     });
 
-    //deriving address
-    // let unusedAddressCounter = 0;
-    // let index = wallet.addressIndex || 0;
-    // while (unusedAddressCounter < 1) {
-    //   const address = await loadedWallet.nextAddressPair();
-    //   const hasTransactions = await loadedWallet.client.getAddressTxos({ address });
-    //   if (!hasTransactions.length) {
-    //     unusedAddressCounter++;
-    //   } else {
-    //     unusedAddressCounter = 0;
-    //   }
-    //   console.log(`Current address index: ${index}: ${address}`);
-    //   index++;
-    // }
-
     return loadedWallet;
   }
 
@@ -289,6 +274,7 @@ export class Wallet {
     fee?: number;
     nonce?: number;
     tag? : number;
+    data? : string;
   }) {
     const payload = {
       network: this.network,
@@ -303,7 +289,8 @@ export class Wallet {
       nonce: params.nonce,
       tag: params.tag,
       gasPrice: params.fee,
-      gasLimit: 200000
+      gasLimit: 200000,
+      data: params.data,
     };
     return Transactions.create(payload);
   }
