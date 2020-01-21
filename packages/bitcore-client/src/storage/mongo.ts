@@ -41,7 +41,6 @@ export class Mongo {
     try {
       this.client = new MongoClient(this.path, { useNewUrlParser: true });
       await this.client.connect();
-      console.log('connected');
       this.db = this.client.db(this.databaseName);
       if (wallet) {
         this.collection = this.db.collection(this.collectionName);
@@ -56,7 +55,6 @@ export class Mongo {
 
   async close() {
     await this.client.close();
-    console.log('closed connection');
   }
 
   async listWallets() {
@@ -97,7 +95,6 @@ export class Mongo {
     wallet.authKey = wallet.authKey.toString('hex');
     try {
       await this.collection.insertOne(wallet);
-      console.log('inserted');
       await this.close();
     } catch (error) {
       console.error(error);
