@@ -170,7 +170,6 @@ export class Client {
   async broadcast(params) {
     const { payload } = params;
     const url = `${this.apiUrl}/tx/send`;
-    console.log(payload);
     return request.post(url, { body: payload, json: true });
   }
 
