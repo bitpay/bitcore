@@ -23,8 +23,7 @@ export class Mongo {
     if (!path) {
       throw new Error('Must specify a mongo url as path');
     }
-    this.port = '27017';
-    this.path = path + ':' + this.port;
+    this.path = path;
     this.createIfMissing = createIfMissing;
     this.errorIfExists = errorIfExists;
     let databasePath = path.split('/');
