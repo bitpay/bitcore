@@ -6,6 +6,7 @@ import io = require('socket.io-client');
 import { ChainService } from '../chain/index';
 import { Client } from './v8/client';
 
+const LitecoreLib = require('litecore-lib');
 const $ = require('preconditions').singleton();
 const log = require('npmlog');
 log.debug = log.verbose;
@@ -15,7 +16,8 @@ const Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
   eth: Bitcore,
-  xrp: Bitcore
+  xrp: Bitcore,
+  ltc: LitecoreLib
 };
 const config = require('../../config');
 const Constants = Common.Constants,

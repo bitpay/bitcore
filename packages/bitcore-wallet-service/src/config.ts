@@ -64,6 +64,14 @@ module.exports = {
         url: 'https://api-xrp.bitcore.io',
       },
     },
+    ltc: {
+      livenet: {
+        url: 'http://localhost:3000',
+      },
+      testnet: {
+        url: 'http://localhost:3000',
+      },
+    },
     socketApiKey: 'socketApiKey'
   },
   pushNotificationsOpts: {

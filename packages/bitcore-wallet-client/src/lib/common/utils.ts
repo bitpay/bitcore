@@ -11,6 +11,8 @@ import * as _ from 'lodash';
 import { Constants } from './constants';
 import { Defaults } from './defaults';
 
+const LitecoreLib = require('litecore-lib');
+
 var $ = require('preconditions').singleton();
 var sjcl = require('sjcl');
 var Stringify = require('json-stable-stringify');
@@ -20,7 +22,8 @@ var Bitcore_ = {
   btc: Bitcore,
   bch: BitcoreLibCash,
   eth: Bitcore,
-  xrp: Bitcore
+  xrp: Bitcore,
+  ltc: LitecoreLib
 };
 var PrivateKey = Bitcore.PrivateKey;
 var PublicKey = Bitcore.PublicKey;

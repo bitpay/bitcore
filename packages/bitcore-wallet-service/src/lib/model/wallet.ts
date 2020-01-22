@@ -16,7 +16,8 @@ const Bitcore = {
   btc: require('bitcore-lib'),
   bch: require('bitcore-lib-cash'),
   eth: require('bitcore-lib'),
-  xrp: require('bitcore-lib')
+  xrp: require('bitcore-lib'),
+  ltc: require('litecore-lib')
 };
 
 export interface IWallet {

@@ -12,6 +12,8 @@ import { PayProV2 } from './payproV2';
 import { Request } from './request';
 import { Verifier } from './verifier';
 
+const LitecoreLib = require('litecore-lib');
+
 var $ = require('preconditions').singleton();
 var util = require('util');
 var async = require('async');
@@ -21,7 +23,8 @@ var Bitcore_ = {
   btc: CWC.BitcoreLib,
   bch: CWC.BitcoreLibCash,
   eth: CWC.BitcoreLib,
-  xrp: CWC.BitcoreLib
+  xrp: CWC.BitcoreLib,
+  ltc: LitecoreLib
 };
 var Mnemonic = require('bitcore-mnemonic');
 var url = require('url');
@@ -2498,6 +2501,7 @@ export class API extends EventEmitter {
         ['eth', 'testnet'],
         ['xrp', 'livenet'],
         ['xrp', 'testnet'],
+        ['ltc', 'livenet'],
         ['btc', 'livenet', true],
         ['bch', 'livenet', true]
       ];

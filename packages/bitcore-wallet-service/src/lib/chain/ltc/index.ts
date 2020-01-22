@@ -1,16 +1,16 @@
-import { BitcoreLibCash } from 'crypto-wallet-core';
+const LitcoreLib = require('litecore-lib');
 import { IChain } from '..';
 import { BtcChain } from '../btc';
 
 const Errors = require('../../errors/errordefinitions');
 
-export class BchChain extends BtcChain implements IChain {
+export class LtcChain extends BtcChain implements IChain {
   constructor() {
-    super(BitcoreLibCash);
+    super(LitcoreLib);
   }
 
   validateAddress(wallet, inaddr, opts) {
-    const A = BitcoreLibCash.Address;
+    const A = LitcoreLib.Address;
     let addr: {
       network?: string;
       toString?: (cashAddr: boolean) => string;

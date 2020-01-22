@@ -18,7 +18,8 @@ var MAX_FEE_PER_KB = {
   btc: 10000 * 1000, // 10k sat/b
   bch: 10000 * 1000, // 10k sat/b
   eth: 50000000000, // 50 Gwei
-  xrp: 50000000000
+  xrp: 50000000000,
+  ltc: 10000 * 1000
 };
 
 // PayPro Network Map

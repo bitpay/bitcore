@@ -35,6 +35,7 @@
     "inherits": "^2.0.1",
     "istanbul": "^0.4.5",
     "json-stable-stringify": "^1.0.0",
+    "litecore-lib": "^0.13.22",
     "lodash": "^4.17.15",
     "moment": "^2.10.3",
     "mongodb": "^2.0.27",

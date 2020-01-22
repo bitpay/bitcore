@@ -125,6 +125,11 @@ export class Utils {
         maxDecimals: 6,
         minDecimals: 2
       },
+      ltc: {
+        toSatoshis: 1e8,
+        maxDecimals: 6,
+        minDecimals: 2
+      },
       usdc: {
         toSatoshis: 1e6,
         maxDecimals: 6,

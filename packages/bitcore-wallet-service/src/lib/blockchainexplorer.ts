@@ -26,6 +26,10 @@ const PROVIDERS = {
       livenet: 'https://api-xrp.bitcore.io',
       testnet: 'https://api-xrp.bitcore.io'
     },
+    ltc: {
+      livenet: 'http://localhost:3000',
+      testnet: 'http://localhost:3000'
+    }
   }
 };
 
