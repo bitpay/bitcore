@@ -13,10 +13,11 @@ program
   .option('--to <to>', 'REQUIRED - string address')
   .option('--amount <amount>', 'REQUIRED - number amount (in btc/bch/eth/xrp)')
   .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--token [token]', 'opptional - ERC-20 token to send')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, to, amount, target } = program;
+  const { name, path, to, amount, target, token } = program;
   let wallet;
   let data;
   try {
@@ -27,6 +28,14 @@ const main = async () => {
   const currencies = JSON.parse(data);
   try {
     wallet = await Wallet.loadWallet({ name, path });
+    let tokenContractAddress;
+    if (token) {
+      const tokenObj = wallet.tokens.find(tok => Object.keys(tok).includes(token));
+      if (!tokenObj) {
+        throw new Error(`${token} not found on wallet ${name}`);
+      }
+      tokenContractAddress = tokenObj[token];
+    }
     const chain = wallet.chain;
     const { decimals } = currencies.data.find(element => element.code === chain);
     const scale = Math.pow(10, decimals);
@@ -45,7 +54,8 @@ const main = async () => {
       nonce: Number(nonce),
       utxos,
       recipients,
-      from: lastAddress
+      from: lastAddress,
+      tokenContractAddress
     };
     const tx = await wallet.newTx(params);
     console.log('unsignedRawTx: ', tx);

@@ -24,6 +24,7 @@ export namespace Wallet {
     password: string;
     storage: Storage;
     addressIndex: number;
+    tokens: [];
   };
 }
 export class Wallet {
@@ -44,6 +45,7 @@ export class Wallet {
   addressIndex?: number;
   authKey: string;
   derivationPath: string;
+  tokens?: [];
 
   constructor(params: Wallet | Wallet.WalletObj) {
     Object.assign(this, params);
@@ -68,7 +70,7 @@ export class Wallet {
   }
 
   static async create(params: Partial<Wallet.WalletObj>) {
-    const { chain, network, name, phrase, password, path } = params;
+    const { chain, network, name, phrase, password, path, tokens } = params;
     let { storage } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
@@ -123,14 +125,17 @@ export class Wallet {
       masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
       xPubKey: hdPrivKey.xpubkey,
-      pubKey
+      pubKey,
+      tokens
     });
+
     // save wallet to storage and then bitcore-node
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({
       storage,
       name
     });
+
     console.log(mnemonic.toString());
     await loadedWallet.register().catch(e => {
       console.debug(e);
@@ -216,7 +221,8 @@ export class Wallet {
       path: this.derivationPath,
       network: this.network,
       chain: this.chain,
-      apiUrl: this.getApiUrl()
+      apiUrl: this.getApiUrl(),
+      tokens: this.tokens
     };
     return this.client.register({ payload });
   }
@@ -225,10 +231,10 @@ export class Wallet {
     return new PrivateKey(this.authKey);
   }
 
-  getBalance(time?: string, currency?: string) {
+  getBalance(time?: string, tokenContractAddress?: string) {
     let payload;
-    if (currency) {
-      payload = { currency };
+    if (tokenContractAddress) {
+      payload = { tokenContractAddress };
     }
     return this.client.getBalance({ payload, pubKey: this.authPubKey, time });
   }
@@ -279,10 +285,12 @@ export class Wallet {
     nonce?: number;
     tag? : number;
     data? : string;
+    tokenContractAddress? : string;
   }) {
+    const chain = params.tokenContractAddress ? 'ERC20' : this.chain;
     const payload = {
       network: this.network,
-      chain: this.chain,
+      chain,
       recipients: params.recipients,
       from: params.from,
       change: params.change,
@@ -295,6 +303,7 @@ export class Wallet {
       gasPrice: params.fee,
       gasLimit: 200000,
       data: params.data,
+      tokenAddress: params.tokenContractAddress
     };
     return Transactions.create(payload);
   }

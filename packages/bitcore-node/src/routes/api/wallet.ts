@@ -10,7 +10,7 @@ function isTooLong(field, maxLength = 255) {
 // create wallet
 router.post('/', async function(req, res) {
   let { chain, network } = req.params;
-  let { name, pubKey, path, singleAddress } = req.body;
+  let { name, pubKey, path, singleAddress, tokens = [] } = req.body;
   try {
     const existingWallet = await ChainStateProvider.getWallet({
       chain,
@@ -29,7 +29,8 @@ router.post('/', async function(req, res) {
       singleAddress,
       name,
       pubKey,
-      path
+      path,
+      tokens
     });
     return res.send(result);
   } catch (err) {
@@ -134,10 +135,9 @@ router.get('/:pubKey/transactions', Auth.authenticateMiddleware, async (req: Aut
 
 router.get('/:pubKey/balance', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
-  if (req.body.currency) {
-    req.query.currency = req.body.currency;
+  if (req.body.tokenContractAddress) {
+    req.query.tokenAddress = req.body.tokenContractAddress;
   }
-  console.log(req.query);
   try {
     const result = await ChainStateProvider.getWalletBalance({
       chain,
@@ -145,7 +145,6 @@ router.get('/:pubKey/balance', Auth.authenticateMiddleware, async (req: Authenti
       wallet: req.wallet!,
       args: req.query
     });
-    console.log(result);
     return res.send(result || { confirmed: 0, unconfirmed: 0, balance: 0 });
   } catch (err) {
     return res.status(500).json(err);

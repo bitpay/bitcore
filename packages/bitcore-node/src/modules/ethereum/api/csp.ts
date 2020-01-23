@@ -33,7 +33,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   constructor(public chain: string = 'ETH') {
     super(chain);
     this.config = Config.chains[this.chain];
-    this.contractAddresses = Config.tokenContractAddresses;
   }
 
   async getWeb3(network: string) {
@@ -118,23 +117,14 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     const { network, address } = params;
     const web3 = await this.getWeb3(network);
     if (params.args) {
-      if (params.args.tokenAddress || params.args.currency) {
-        console.log(this.contractAddresses);
-        const token = await this.erc20For(network, params.args.tokenAddress || this.contractAddresses[params.args.currency]);
+      if (params.args.tokenAddress) {
+        const token = await this.erc20For(network, params.args.tokenAddress);
         const balance = Number(await token.methods.balanceOf(address).call());
-        console.log(balance);
         return { confirmed: balance, unconfirmed: 0, balance };
       }
     }
-    console.log(address);
-    try {
-      const bal = Number(await web3.eth.getBalance(address));
-      console.log(bal);
-    } catch (error) {
-      console.log('Error:', error);
-    }
+
     const balance = Number(await web3.eth.getBalance(address));
-    console.log(balance);
     return { confirmed: balance, unconfirmed: 0, balance };
   }
 

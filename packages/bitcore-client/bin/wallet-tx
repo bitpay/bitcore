@@ -10,40 +10,68 @@ program
     '--recipients <recipients>',
     'REQUIRED - JSON array \'[{"address": "abc1234", "amount": xxxxxx}]\''
   )
-  .option('--utxos <utxos>', 'REQUIRED - Unspent transactions that can be spent')
-  .option('--change <change>', 'REQUIRED - Change addresses')
+  .option('--utxos [utxos]', 'REQUIRED for BTC and BCH - Unspent transactions that can be spent')
+  .option('--change [change]', 'REQUIRED for BTC and BCH - Change addresses')
   .option('--fee [fee]', 'optional - custom transaction fee to pay')
   .option('--target [target]', 'optional - custom target block for confirmation')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--from [from]', 'optional - From Address')
   .option('--nonce [nonce]', 'optional - Nonce')
   .option('--invoiceID [invoiceID]', 'optional - invoiceId for XRP transactions')
+  .option('--token [currency]', 'optional - ERC20 token')
   .parse(process.argv);
 
 const main = async () => {
   const { name, path } = program;
   let wallet;
   try {
-    const { recipients, utxos, change, fee, target, from, nonce, invoiceID } = program;
+    let { recipients, utxos, change, fee, target, from, nonce, invoiceID, token } = program;
     wallet = await Wallet.loadWallet({ name, path });
 
-    const parsedUtxos = utxos.includes('[') ? JSON.parse(utxos) : [];
+    let tokenContractAddress;
+    if (token) {
+      const tokenObj = wallet.tokens.find(tok => Object.keys(tok).includes(token));
+      if (!tokenObj) {
+        throw new Error(`${token} not found on wallet ${name}`);
+      }
+      tokenContractAddress = tokenObj[token];
+    }
+
     const parsedRecipients = recipients.includes('[') ? JSON.parse(recipients) : [];
 
-    if (!parsedRecipients.length || !parsedUtxos.length) {
+    if (!parsedRecipients.length) {
       throw new Error('invalid arguments');
     }
 
-    const utxoBytes = 148;
-    const outputBytes = 34;
-    const transactionHeader = 10;
+    let parsedUtxos;
     const calculatedNetworkFeeKb = await wallet.getNetworkFee({ target });
-    const netWorkFeeSat = calculatedNetworkFeeKb.feerate * 1E8/1000;
+    if (['BTC', 'BCH'].includes(wallet.chain)) {
+      parsedUtxos = utxos.includes('[') ? JSON.parse(utxos) : [];
+      if (!parsedUtxos.length) {
+        throw new Error('invalid arguments');
+      }
 
-    const transactionSize = (parsedUtxos.length * utxoBytes + parsedRecipients.length * outputBytes + transactionHeader + parsedUtxos.length);
-    const totalTransactionFee = transactionSize * netWorkFeeSat;
+      if (!fee) {
+        const utxoBytes = 148;
+        const outputBytes = 34;
+        const transactionHeader = 10;
+        const netWorkFeeSat = calculatedNetworkFeeKb.feerate * 1E8/1000;
+        const transactionSize = (parsedUtxos.length * utxoBytes + parsedRecipients.length * outputBytes + transactionHeader + parsedUtxos.length);
+        fee = transactionSize * netWorkFeeSat;
+      }
+    } else {
+      if (!fee) {
+        fee = JSON.parse(calculatedNetworkFeeKb).feerate;
+      }
 
-    let params = { recipients, utxos, change, fee, from, nonce };
+      if (!nonce) {
+        nonce = await wallet.getNonce();
+      }
+    }
+
+
+
+    let params = { recipients, utxos, change, fee, from, nonce, tokenContractAddress };
     params.fee = Number(fee) || totalTransactionFee;
     params.nonce = Number(nonce);
     params.recipients = parsedRecipients;
@@ -60,5 +88,20 @@ const main = async () => {
     console.error(e);
   }
 };
+
+function getCurrencies() {
+  return new Promise((resolve, reject) => {
+    https.get('https://bitpay.com/currencies', res => {
+      if (res.statusCode !== 200) {
+        reject(new Error('Request Failed'));
+      }
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => resolve(data.toString()));
+    });
+  });
+}
 
 main();

@@ -239,7 +239,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   async createWallet(params: CSP.CreateWalletParams) {
-    const { chain, network, name, pubKey, path, singleAddress } = params;
+    const { chain, network, name, pubKey, path, singleAddress, tokens } = params;
     if (typeof name !== 'string' || !network) {
       throw 'Missing required param';
     }
@@ -257,7 +257,8 @@ export class InternalStateProvider implements CSP.IChainStateService {
       name,
       pubKey,
       path,
-      singleAddress
+      singleAddress,
+      tokens
     };
     await WalletStorage.collection.insertOne(wallet);
     return wallet;

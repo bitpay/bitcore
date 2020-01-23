@@ -17,10 +17,11 @@ program
   .option('--baseUrl [host]', 'optional - Specify custom Bitcore API URL')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--phrase [phrase]', 'optional - Seed using existing backup phrase')
+  .option('--tokens [tokens]', 'optional - ERC20 token contract addresses for ETH wallet')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, baseUrl, chain, network, path, phrase } = program;
+  const { name, baseUrl, chain, network, path, phrase, tokens } = program;
   try {
     const password = await promptly.password('Wallet Password:');
     await Wallet.create({
@@ -30,7 +31,8 @@ const main = async () => {
       network,
       path,
       phrase,
-      password
+      password,
+      tokens: tokens ? JSON.parse(tokens) : []
     });
     console.log('Wallet created!');
   } catch (e) {
