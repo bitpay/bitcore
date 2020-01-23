@@ -147,7 +147,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
 
       if (!ourBestBlock) {
         logger.info(`Starting XRP Sync @ ${chainBestBlock}`);
-        ourBestBlock = { height: chainBestBlock - 2000 } as IXrpBlock;
+        ourBestBlock = { height: chainBestBlock > 2000 ? chainBestBlock - 2000 : chainBestBlock } as IXrpBlock;
       }
       const startHeight = ourBestBlock.height;
       let currentHeight = startHeight;
