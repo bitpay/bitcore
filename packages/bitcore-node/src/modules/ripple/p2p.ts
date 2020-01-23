@@ -151,7 +151,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
       }
       const startHeight = ourBestBlock.height;
       let currentHeight = startHeight;
-      while (ourBestBlock.height <= chainBestBlock) {
+      while (ourBestBlock.height < chainBestBlock) {
         currentHeight = ourBestBlock.height + 1;
         const block = await client.getLedger({
           ledgerVersion: currentHeight,
@@ -191,6 +191,9 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
         this.maybeLog(chain, network, startHeight, currentHeight, startTime, lastLog);
         lastLog = Date.now();
         ourBestBlock = await this.provider.getLocalTip({ chain, network });
+        if (ourBestBlock.height === chainBestBlock) {
+          chainBestBlock = await client.getLedgerVersion();
+        }
       }
 
       logger.info(`${chain}:${network} up to date.`);
