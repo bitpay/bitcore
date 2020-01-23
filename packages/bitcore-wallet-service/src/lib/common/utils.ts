@@ -140,7 +140,7 @@ export class Utils {
         maxDecimals: 6,
         minDecimals: 2,
       },
-      dai:{
+      dai: {
         toSatoshis: 1e18,
         maxDecimals: 6,
         minDecimals: 2,

@@ -53,7 +53,7 @@ module.exports = {
         url: 'https://api-eth.bitcore.io',
       },
       testnet: {
-        url: 'https://api-eth.bitcore.io',
+        url: 'http://localhost:3000',
       },
     },
     xrp: {
@@ -95,26 +95,30 @@ module.exports = {
   //   }
   // },
   // To use email notifications uncomment this:
-  // emailOpts: {
-  //  host: 'localhost',
-  //  port: 25,
-  //  ignoreTLS: true,
-  //  subjectPrefix: '[Wallet Service]',
-  //  from: 'wallet-service@bitcore.io',
-  //  templatePath: 'templates',
-  //  defaultLanguage: 'en',
-  //  defaultUnit: 'btc',
-  //  publicTxUrlTemplate: {
-  //    btc: {
-  //      livenet: 'https://insight.bitcore.io/#/BTC/mainnet/tx/{{txid}}',
-  //      testnet: 'https://insight.bitcore.io/#/BTC/testnet/tx/{{txid}}',
-  //    },
-  //    bch: {
-  //      livenet: 'https://insight.bitcore.io/#/BCH/mainnet/tx/{{txid}}',
-  //      testnet: 'https://insight.bitcore.io/#/BCH/testnet/tx/{{txid}}',
-  //    }
-  //  },
-  // },
+  emailOpts: {
+   host: 'smtp.sendgrid.net',
+   port: 25,
+   auth: {
+     username: 'apikey',
+     password: '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'
+   },
+   ignoreTLS: true,
+   subjectPrefix: '[Wallet Service]',
+   from: 'wallet-service@muellners.org',
+   templatePath: 'templates',
+   defaultLanguage: 'en',
+   defaultUnit: 'btc',
+   publicTxUrlTemplate: {
+     btc: {
+       livenet: 'https://insight.bitcore.io/#/BTC/mainnet/tx/{{txid}}',
+       testnet: 'https://insight.bitcore.io/#/BTC/testnet/tx/{{txid}}',
+     },
+     bch: {
+       livenet: 'https://insight.bitcore.io/#/BCH/mainnet/tx/{{txid}}',
+       testnet: 'https://insight.bitcore.io/#/BCH/testnet/tx/{{txid}}',
+     }
+   },
+  },
   // To use sendgrid:
   // const sgMail = require('@sendgrid/mail');
   // sgMail.setApiKey(process.env.SENDGRID_API_KEY);

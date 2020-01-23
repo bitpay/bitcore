@@ -1,10 +1,20 @@
 import Web3 from 'web3';
 import { ETHTxProvider } from '../eth';
 import { ERC20Abi } from './abi';
+import { factoryABI } from './factory';
+import { exchangeABI } from './uniswap';
+
 export class ERC20TxProvider extends ETHTxProvider {
+
   getERC20Contract(tokenContractAddress: string) {
     const web3 = new Web3();
     const contract = new web3.eth.Contract(ERC20Abi, tokenContractAddress);
+    return contract;
+  }
+
+  getUniSwapExchange(tokenContractAddress) {
+    const web3 = new Web3();
+    const contract = new web3.eth.Contract(exchangeABI, tokenContractAddress);
     return contract;
   }
 
@@ -37,4 +47,26 @@ export class ERC20TxProvider extends ETHTxProvider {
       .encodeABI();
     return data;
   }
+
+  getExchange() {
+    return '0x613639E23E91fd54d50eAfd6925AF2Ed6701A46b';
+  }
+
+  getDeadline() {
+    return Date.now() + 300;
+  }
+  swapETHToDai(amount) {
+    const deadline = this.getDeadline();
+    const amountStr = Number(amount).toLocaleString('en', {useGrouping: false});
+    const data = this.getUniSwapExchange(this.getExchange())
+      .methods.ethToTokenSwapOutput(amountStr, deadline).encodeABI();
+    return data;
+  }
+
+  swapBackToETH(params: {
+
+  }) {
+
+  }
+
 }

@@ -142,6 +142,7 @@ router.post('/send', async function(req, res) {
     });
     return res.send({ txid });
   } catch (err) {
+    console.log(err);
     logger.error(err);
     return res.status(500).send(err.message);
   }

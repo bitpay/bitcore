@@ -68,11 +68,11 @@ module.exports = {
       decimal: 2,
       address: '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'
     },
-    '0xC4375B7De8af5a38a93548eb8453a498222C4fF2': {
+    '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa': {
       name: 'Dai Stablecoin',
       symbol: 'DAI',
       decimal: 18,
-      address:'0xC4375B7De8af5a38a93548eb8453a498222C4fF2'
+      address: '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa'
     },
   },
 };
