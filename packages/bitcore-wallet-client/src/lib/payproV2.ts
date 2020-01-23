@@ -72,6 +72,8 @@ export class PayProV2 {
       if (requestOptions.args) {
         if (requestOptions.method == 'post' || requestOptions.method == 'put') {
           r.send(requestOptions.args);
+        } else if (requestOptions.method === 'get') {
+          r.query(requestOptions.args).timeout({ response: 10000 });
         } else {
           r.query(requestOptions.args);
         }
@@ -85,6 +87,8 @@ export class PayProV2 {
               return reject(this.getError(res.body.msg));
             } else if (res.statusCode == 404) {
               return reject(new Errors.INVOICE_NOT_AVAILABLE);
+            } else if (res.statusCode == 504) {
+              return reject(new Errors.REQUEST_TIMEOUT);
             } else if (res.statusCode == 500 && res.body && res.body.msg) {
               return reject(new Error(res.body.msg));
             }
@@ -123,6 +127,8 @@ export class PayProV2 {
         return new Errors.INPUT_NOT_FOUND;
       case errMsg.includes('One or more input transactions for your transactions are not yet confirmed in at least one block.'):
         return new Errors.UNCONFIRMED_INPUTS_NOT_ACCEPTED;
+      case errMsg.includes('The PayPro request has timed out. Please connect to the internet or try again later.'):
+        return new Errors.REQUEST_TIMEOUT;
       default:
         return new Error(errMsg);
     }
