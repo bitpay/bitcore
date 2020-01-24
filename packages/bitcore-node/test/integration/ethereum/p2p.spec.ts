@@ -19,6 +19,7 @@ async function getWallet() {
   let wallet: BitcoreClient.Wallet;
   try {
     wallet = await BitcoreClient.Wallet.loadWallet({ name });
+    await wallet.register();
     return wallet;
   } catch (e) {
     console.log('Creating a new ethereum wallet');
@@ -77,13 +78,14 @@ describe('Ethereum', function() {
     const addresses = await wallet.getAddresses();
 
     const worker = new EthP2pWorker({ chain, network, chainConfig });
+    const done = worker.syncDone();
     await worker.start();
     const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
 
     const web3 = await worker.getWeb3();
     await web3.eth.sendTransaction({ to: addresses[0], value: web3.utils.toWei('.02', 'ether'), from: account });
     await sawBlock;
-    await worker.syncDone();
+    await done;
     await worker.stop();
 
     const dbBlocks = await EthBlockStorage.collection.count({ chain, network });
