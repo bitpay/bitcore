@@ -70,7 +70,7 @@ export class Wallet {
   }
 
   static async create(params: Partial<Wallet.WalletObj>) {
-    const { chain, network, name, phrase, password, path, tokens } = params;
+    const { chain, network, name, phrase, password, path, tokens = [] } = params;
     let { storage } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
@@ -273,6 +273,14 @@ export class Wallet {
       ...params,
       pubKey: this.authPubKey
     });
+  }
+
+  async getToken(contractAddress) {
+    return this.client.getToken(contractAddress);
+  }
+
+  async addToken(params) {
+    return this.client.addToken({ payload: params, pubKey: this.authPubKey });
   }
 
   async newTx(params: {

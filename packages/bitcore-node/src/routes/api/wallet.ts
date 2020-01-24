@@ -72,6 +72,10 @@ router.get('/:pubKey/addresses', Auth.authenticateMiddleware, async (req: Authen
   }
 });
 
+router.get('/:pubKey/token', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
+  
+});
+
 router.get('/:pubKey/check', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
   const { chain, network } = req.params;
   const wallet = req.wallet!._id!;

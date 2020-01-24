@@ -17,7 +17,6 @@ program
   .option('--baseUrl [host]', 'optional - Specify custom Bitcore API URL')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--phrase [phrase]', 'optional - Seed using existing backup phrase')
-  .option('--tokens [tokens]', 'optional - ERC20 token contract addresses for ETH wallet')
   .parse(process.argv);
 
 const main = async () => {
@@ -32,7 +31,6 @@ const main = async () => {
       path,
       phrase,
       password,
-      tokens: tokens ? JSON.parse(tokens) : []
     });
     console.log('Wallet created!');
   } catch (e) {

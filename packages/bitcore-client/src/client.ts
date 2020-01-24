@@ -46,6 +46,24 @@ export class Client {
     });
   }
 
+  async getToken(contractAddress) {
+    const url = `${this.apiUrl}/token/${contractAddress}`
+    return request.get(url, { json: true });
+  }
+
+  async addToken(params: {
+    payload: any;
+    pubKey: string;
+  }) {
+    const url = `${this.apiUrl}/wallet/${pubKey}/token`
+    const signature = this.sign({ method: 'GET', url, payload });
+    return request.get(url, {
+      headers: { 'x-signature': signature },
+      body: payload,
+      json: true
+    });
+  }
+
   async getBalance(params: { payload?: any; pubKey: string; time?: string; }) {
     const { payload, pubKey, time } = params;
     let url = `${this.apiUrl}/wallet/${pubKey}/balance`;
