@@ -118,5 +118,9 @@ class ChainStateProxy implements CSP.ChainStateProvider {
   isValid(params) {
     return this.get(params).isValid(params);
   }
+
+  async addToken(params) {
+    return this.get(params).addToken(params)
+  }
 }
 export let ChainStateProvider = new ChainStateProxy();

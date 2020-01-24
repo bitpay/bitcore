@@ -55,11 +55,11 @@ export class Client {
     payload: any;
     pubKey: string;
   }) {
-    const url = `${this.apiUrl}/wallet/${pubKey}/token`
-    const signature = this.sign({ method: 'GET', url, payload });
-    return request.get(url, {
+    const url = `${this.apiUrl}/wallet/${params.pubKey}/token`
+    const signature = this.sign({ method: 'POST', url, payload: params.payload });
+    return request.post(url, {
       headers: { 'x-signature': signature },
-      body: payload,
+      body: params.payload,
       json: true
     });
   }

@@ -38,6 +38,24 @@ router.post('/', async function(req, res) {
   }
 });
 
+router.post('/:pubKey/token', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
+  const { chain, network, pubKey } = req.params;
+  const { symbol, address, decimals } = req.body;
+  try {
+    await ChainStateProvider.addToken({
+      chain,
+      network,
+      symbol,
+      address,
+      decimals,
+      pubKey
+    });
+    return res.end();
+  } catch (error) {
+    return res.status(500).send(error);
+  }
+});
+
 router.get('/:pubKey/addresses/missing', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
   try {
     let { chain, network, pubKey } = req.params;
@@ -70,10 +88,6 @@ router.get('/:pubKey/addresses', Auth.authenticateMiddleware, async (req: Authen
   } catch (err) {
     return res.status(500).send(err);
   }
-});
-
-router.get('/:pubKey/token', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
-  
 });
 
 router.get('/:pubKey/check', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {

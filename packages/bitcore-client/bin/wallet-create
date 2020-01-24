@@ -20,7 +20,7 @@ program
   .parse(process.argv);
 
 const main = async () => {
-  const { name, baseUrl, chain, network, path, phrase, tokens } = program;
+  const { name, baseUrl, chain, network, path, phrase } = program;
   try {
     const password = await promptly.password('Wallet Password:');
     await Wallet.create({

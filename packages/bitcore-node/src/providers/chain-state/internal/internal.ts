@@ -264,6 +264,14 @@ export class InternalStateProvider implements CSP.IChainStateService {
     return wallet;
   }
 
+  async addToken(params: CSP.AddTokenParams) {
+    const { pubKey, symbol, address, decimals } = params;
+    await WalletStorage.collection.updateOne(
+      { pubKey },
+      { $push: { tokens: { symbol, address, decimals } } }
+    );
+  }
+
   async getWallet(params: CSP.GetWalletParams) {
     const { pubKey } = params;
     return WalletStorage.collection.findOne({ pubKey });

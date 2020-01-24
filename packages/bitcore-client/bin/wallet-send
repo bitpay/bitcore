@@ -30,11 +30,11 @@ const main = async () => {
     wallet = await Wallet.loadWallet({ name, path });
     let tokenContractAddress;
     if (token) {
-      const tokenObj = wallet.tokens.find(tok => Object.keys(tok).includes(token));
+      const tokenObj = wallet.tokens.find(tok => tok.symbol === token);
       if (!tokenObj) {
         throw new Error(`${token} not found on wallet ${name}`);
       }
-      tokenContractAddress = tokenObj[token];
+      tokenContractAddress = tokenObj.address;
     }
     const chain = wallet.chain;
     const { decimals } = currencies.data.find(element => element.code === chain);

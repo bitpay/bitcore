@@ -24,7 +24,7 @@ export namespace Wallet {
     password: string;
     storage: Storage;
     addressIndex: number;
-    tokens: [];
+    tokens: Array<any>;
   };
 }
 export class Wallet {
@@ -45,7 +45,7 @@ export class Wallet {
   addressIndex?: number;
   authKey: string;
   derivationPath: string;
-  tokens?: [];
+  tokens?: Array<any>;
 
   constructor(params: Wallet | Wallet.WalletObj) {
     Object.assign(this, params);
@@ -70,7 +70,7 @@ export class Wallet {
   }
 
   static async create(params: Partial<Wallet.WalletObj>) {
-    const { chain, network, name, phrase, password, path, tokens = [] } = params;
+    const { chain, network, name, phrase, password, path } = params;
     let { storage } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
@@ -126,7 +126,7 @@ export class Wallet {
       password: await Bcrypt.hash(password, 10),
       xPubKey: hdPrivKey.xpubkey,
       pubKey,
-      tokens
+      tokens: []
     });
 
     // save wallet to storage and then bitcore-node
@@ -137,6 +137,7 @@ export class Wallet {
     });
 
     console.log(mnemonic.toString());
+
     await loadedWallet.register().catch(e => {
       console.debug(e);
       console.error('Failed to register wallet with bitcore-node.');
@@ -280,6 +281,12 @@ export class Wallet {
   }
 
   async addToken(params) {
+    this.tokens.push({
+      symbol: params.symbol,
+      address: params.address,
+      decimals: params.decimals
+    });
+    await this.saveWallet();
     return this.client.addToken({ payload: params, pubKey: this.authPubKey });
   }
 

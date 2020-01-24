@@ -21,8 +21,11 @@ async function main() {
   const wallet = await Wallet.loadWallet({ name, path });
   let tokenContractAddress;
   if (token) {
-    const tokenObj = wallet.tokens.find(tok => Object.keys(tok).includes(token));
-    tokenContractAddress = tokenObj[token];
+    const tokenObj = wallet.tokens.find(tok => tok.symbol === token);
+    if (!tokenObj) {
+      throw new Error(`${token} not found on wallet ${name}`);
+    }
+    tokenContractAddress = tokenObj.address;
   }
   const balance = await wallet.getBalance(time, tokenContractAddress);
   return Object.assign(balance, {

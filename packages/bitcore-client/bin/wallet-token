@@ -19,7 +19,7 @@ const main = async () => {
     const wallet = await Wallet.loadWallet({ name, path });
     const token = await wallet.getToken(contractAddress);
     const tokenObj = {
-      symbol: token.sybol,
+      symbol: token.symbol,
       address: contractAddress,
       decimals: token.decimals
     }
