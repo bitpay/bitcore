@@ -1,4 +1,4 @@
-import { BitcoreLib } from 'crypto-wallet-core';
+import { Libs } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IChain } from '..';
 import { ClientError } from '../../errors/clienterror';
@@ -12,7 +12,7 @@ const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
 export class BtcChain implements IChain {
-  constructor(private bitcoreLib = BitcoreLib) { }
+  constructor(private bitcoreLib = Libs.BTC) { }
 
   getWalletBalance(server, wallet, opts, cb) {
     server._getUtxosForCurrentWallet(

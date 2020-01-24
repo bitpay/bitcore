@@ -70,6 +70,7 @@ module.exports = {
       },
       testnet: {
         url: 'http://localhost:3000',
+        regtestEnabled: true
       },
     },
     socketApiKey: 'socketApiKey'

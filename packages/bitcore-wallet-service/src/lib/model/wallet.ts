@@ -1,3 +1,4 @@
+import { Libs } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { ChainService } from '../chain/index';
 import { Address } from './address';
@@ -13,11 +14,11 @@ const Constants = Common.Constants,
   Defaults = Common.Defaults,
   Utils = Common.Utils;
 const Bitcore = {
-  btc: require('bitcore-lib'),
-  bch: require('bitcore-lib-cash'),
-  eth: require('bitcore-lib'),
-  xrp: require('bitcore-lib'),
-  ltc: require('litecore-lib')
+  btc: Libs.BTC,
+  bch: Libs.BCH,
+  eth: Libs.BTC,
+  xrp: Libs.BTC,
+  ltc: Libs.LTC
 };
 
 export interface IWallet {

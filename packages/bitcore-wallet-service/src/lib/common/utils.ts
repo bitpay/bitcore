@@ -1,13 +1,13 @@
 import _ from 'lodash';
 
 const $ = require('preconditions').singleton();
-const bitcore = require('bitcore-lib');
-const crypto = bitcore.crypto;
+const { Libs } = require('crypto-wallet-core');
 const secp256k1 = require('secp256k1');
-const Bitcore = require('bitcore-lib');
+const Bitcore = Libs.BTC;
+const crypto = Bitcore.crypto;
 const Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash')
+  bch: Libs.BCH
 };
 
 export class Utils {
@@ -37,7 +37,7 @@ export class Utils {
     const buf = new Buffer(text);
     let ret = crypto.Hash.sha256sha256(buf);
     if (!noReverse) {
-      ret = new bitcore.encoding.BufferReader(ret).readReverse();
+      ret = new Bitcore.encoding.BufferReader(ret).readReverse();
     }
     return ret;
   }

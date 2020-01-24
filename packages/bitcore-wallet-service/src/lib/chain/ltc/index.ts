@@ -1,31 +1,40 @@
-const LitcoreLib = require('litecore-lib');
+import { Libs } from 'crypto-wallet-core';
+import _ from 'lodash';
 import { IChain } from '..';
 import { BtcChain } from '../btc';
 
-const Errors = require('../../errors/errordefinitions');
-
 export class LtcChain extends BtcChain implements IChain {
   constructor() {
-    super(LitcoreLib);
+    super(Libs.LTC);
   }
 
-  validateAddress(wallet, inaddr, opts) {
-    const A = LitcoreLib.Address;
-    let addr: {
-      network?: string;
-      toString?: (cashAddr: boolean) => string;
-    } = {};
-    try {
-      addr = new A(inaddr);
-    } catch (ex) {
-      return Errors.INVALID_ADDRESS;
-    }
-    if (addr.network.toString() != wallet.network) {
-      return Errors.INCORRECT_ADDRESS_NETWORK;
-    }
-    if (!opts.noCashAddr) {
-      if (addr.toString(true) != inaddr) return Errors.ONLY_CASHADDR;
-    }
-    return;
+  addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub) {
+    if (signatures.length != inputs.length)
+      throw new Error('Number of signatures does not match number of inputs');
+
+    let i = 0;
+    const x = new Libs.BTC.HDPublicKey(xpub);
+
+    _.each(signatures, signatureHex => {
+      try {
+        const signature = Libs.LTC.crypto.Signature.fromString(
+          signatureHex
+        );
+        const pub = x.deriveChild(inputPaths[i]).publicKey;
+        const s = {
+          inputIndex: i,
+          signature,
+          sigtype:
+            // tslint:disable-next-line:no-bitwise
+            Libs.LTC.crypto.Signature.SIGHASH_ALL |
+            Libs.LTC.crypto.Signature.SIGHASH_FORKID,
+          publicKey: pub
+        };
+        tx.inputs[i].addSignature(tx, s);
+        i++;
+      } catch (e) {}
+    });
+
+    if (i != tx.inputs.length) throw new Error('Wrong signatures');
   }
 }

@@ -32,7 +32,6 @@
     "bitcore-mnemonic": "^8.14.4",
     "crypto-wallet-core": "^8.14.4",
     "json-stable-stringify": "^1.0.1",
-    "litecore-lib": "^0.13.22",
     "lodash": "^4.17.15",
     "preconditions": "^2.2.3",
     "sjcl": "1.0.3",

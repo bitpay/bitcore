@@ -12,10 +12,9 @@ log.debug = log.verbose;
 var config = require('../../ts_build/config.js');
 
 var CWC = require('crypto-wallet-core');
-var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
-  btc: Bitcore,
-  bch: require('bitcore-lib-cash')
+  btc: CWC.Libs.BTC,
+  bch: CWC.Libs.BCH
 };
 
 var { WalletService } = require('../../ts_build/lib/server');
@@ -4332,12 +4331,12 @@ describe('Wallet service', function() {
               message: 'dummy exception'
             });
             var bitcoreStub;
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLib, 'Transaction');
+            var bitcoreStub = sandbox.stub(Bitcore_.btc, 'Transaction');
             bitcoreStub.throws({
               name: 'dummy',
               message: 'dummy exception'
             });
-            var bitcoreStub = sandbox.stub(CWC.BitcoreLibCash, 'Transaction');
+            var bitcoreStub = sandbox.stub(Bitcore_.bch, 'Transaction');
             bitcoreStub.throws({
               name: 'dummy',
               message: 'dummy exception'

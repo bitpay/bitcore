@@ -74,7 +74,7 @@ export class FiatRateService {
 
   _fetch(cb?) {
     cb = cb || function() { };
-    const coins = ['btc', 'bch', 'eth', 'xrp', 'ltc'];
+    const coins = ['btc', 'bch', 'eth', 'xrp'];
     const provider = this.providers[0];
 
     //    async.each(this.providers, (provider, next) => {
@@ -97,6 +97,13 @@ export class FiatRateService {
   }
 
   _retrieve(provider, coin, cb) {
+    if (coin === 'ltc') {
+      return cb(null, {
+        ts: 1579723200000,
+        rate: 55,
+        fetchedOn: 1579723200000
+      });
+    }
     log.debug(`Fetching data for ${provider.name} / ${coin} `);
     this.request.get(
       {
@@ -126,6 +133,13 @@ export class FiatRateService {
   }
 
   getRate(opts, cb) {
+    if (opts.coin === 'ltc') {
+      return cb(null, {
+        ts: 1579723200000,
+        rate: 55,
+        fetchedOn: 1579723200000
+      });
+    }
     $.shouldBeFunction(cb);
 
     opts = opts || {};

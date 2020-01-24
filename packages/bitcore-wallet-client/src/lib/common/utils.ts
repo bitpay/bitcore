@@ -1,9 +1,8 @@
 'use strict';
 
 import {
-  BitcoreLib,
-  BitcoreLibCash,
   Deriver,
+  Libs,
   Transactions
 } from 'crypto-wallet-core';
 
@@ -11,19 +10,17 @@ import * as _ from 'lodash';
 import { Constants } from './constants';
 import { Defaults } from './defaults';
 
-const LitecoreLib = require('litecore-lib');
-
 var $ = require('preconditions').singleton();
 var sjcl = require('sjcl');
 var Stringify = require('json-stable-stringify');
 
-var Bitcore = BitcoreLib;
+var Bitcore = Libs.BTC;
 var Bitcore_ = {
   btc: Bitcore,
-  bch: BitcoreLibCash,
+  bch: Libs.BCH,
   eth: Bitcore,
   xrp: Bitcore,
-  ltc: LitecoreLib
+  ltc: Libs.LTC
 };
 var PrivateKey = Bitcore.PrivateKey;
 var PublicKey = Bitcore.PublicKey;
@@ -170,7 +167,7 @@ export class Utils {
     const chain = this.getChain(coin).toLowerCase();
     var bitcore = Bitcore_[chain];
     var publicKeys = _.map(publicKeyRing, item => {
-      var xpub = new bitcore.HDPublicKey(item.xPubKey);
+      var xpub = new Bitcore.HDPublicKey(item.xPubKey);
       return xpub.deriveChild(path).publicKey;
     });
 
@@ -181,22 +178,15 @@ export class Utils {
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
-        if (Constants.UTXO_COINS.includes(coin)) {
-          bitcoreAddress = bitcore.Address.fromPublicKey(
-            publicKeys[0],
-            network
-          );
-        } else {
-          const { addressIndex, isChange } = this.parseDerivationPath(path);
-          const [{ xPubKey }] = publicKeyRing;
-          bitcoreAddress = Deriver.deriveAddress(
-            chain.toUpperCase(),
-            network,
-            xPubKey,
-            addressIndex,
-            isChange
-          );
-        }
+        const { addressIndex, isChange } = this.parseDerivationPath(path);
+        const [{ xPubKey }] = publicKeyRing;
+        bitcoreAddress = Deriver.deriveAddress(
+          chain.toUpperCase(),
+          network,
+          xPubKey,
+          addressIndex,
+          isChange
+        );
         break;
     }
 

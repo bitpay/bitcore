@@ -1,9 +1,8 @@
+import { Libs } from 'crypto-wallet-core';
 import * as requestStream from 'request';
 import * as request from 'request-promise-native';
 import * as secp256k1 from 'secp256k1';
 import { URL } from 'url';
-
-const bitcoreLib = require('bitcore-lib');
 
 export class Client {
   authKey: { bn: { toBuffer: (arg) => Buffer } };
@@ -26,7 +25,7 @@ export class Client {
   sign(params: { method: string; url: string; payload?: any }) {
     const message = this.getMessage(params);
     const privateKey = this.authKey.bn.toBuffer({ size: 32 });
-    const messageHash = bitcoreLib.crypto.Hash.sha256sha256(
+    const messageHash = Libs.BTC.crypto.Hash.sha256sha256(
       Buffer.from(message)
     );
 

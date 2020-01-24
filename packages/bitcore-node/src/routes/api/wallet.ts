@@ -1,6 +1,5 @@
 import { Response, Router } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
-import { Validation } from 'crypto-wallet-core';
 import { Auth, AuthenticatedRequest } from '../../utils/auth';
 const router = Router({ mergeParams: true });
 
@@ -94,7 +93,7 @@ router.post('/:pubKey', Auth.authenticateMiddleware, async (req: AuthenticatedRe
   try {
     let addresses = addressLines.map(({ address }) => address);
     for (const address of addresses) {
-      if (isTooLong(address) || !Validation.validateAddress(chain, network, address)) {
+      if (isTooLong(address)) {
         return res.status(413).send('Invalid address');
       }
     }

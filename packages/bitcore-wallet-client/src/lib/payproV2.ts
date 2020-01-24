@@ -6,14 +6,12 @@ const query = require('querystring');
 const url = require('url');
 const Errors = require('./errors');
 const dfltTrustedKeys = require('../util/JsonPaymentProtocolKeys.js');
-const Bitcore = require('crypto-wallet-core').BitcoreLib;
+const { Libs } = require('crypto-wallet-core');
 const _ = require('lodash');
-const sha256 = Bitcore.crypto.Hash.sha256;
-const BN = Bitcore.crypto.BN;
-var Bitcore_ = {
-  btc: Bitcore,
-  bch: require('crypto-wallet-core').BitcoreLibCash,
-};
+const sha256 = Libs.BTC.crypto.Hash.sha256;
+const BN = Libs.BTC.crypto.BN;
+const Bitcore = Libs.BTC;
+
 var MAX_FEE_PER_KB = {
   btc: 10000 * 1000, // 10k sat/b
   bch: 10000 * 1000, // 10k sat/b

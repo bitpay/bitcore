@@ -1,23 +1,21 @@
 import * as async from 'async';
-import { Web3 } from 'crypto-wallet-core';
+import { Libs, Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
 import * as request from 'request-promise-native';
 import io = require('socket.io-client');
 import { ChainService } from '../chain/index';
 import { Client } from './v8/client';
 
-const LitecoreLib = require('litecore-lib');
 const $ = require('preconditions').singleton();
 const log = require('npmlog');
 log.debug = log.verbose;
 const Common = require('../common');
-const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
-  btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
-  eth: Bitcore,
-  xrp: Bitcore,
-  ltc: LitecoreLib
+  btc: Libs.BTC,
+  bch: Libs.BCH,
+  eth: Libs.BTC,
+  xrp: Libs.BTC,
+  ltc: Libs.LTC
 };
 const config = require('../../config');
 const Constants = Common.Constants,
@@ -28,7 +26,7 @@ function v8network(bwsNetwork) {
   if (bwsNetwork == 'livenet') return 'mainnet';
   if (
     bwsNetwork == 'testnet' &&
-    config.blockchainExplorerOpts.btc.testnet.regtestEnabled
+    config.blockchainExplorerOpts.ltc.testnet.regtestEnabled
   ) {
     return 'regtest';
   }
@@ -483,7 +481,7 @@ export class V8 {
       if (!authKey)
       throw new Error('provide authKey');
 
-      const authKeyObj =  new Bitcore.PrivateKey(authKey);
+      const authKeyObj =  new Bitcore_.btc.PrivateKey(authKey);
       const pubKey = authKeyObj.toPublicKey().toString();
       const authClient = new Client({ baseUrl: host, authKey: authKeyObj });
       const payload = { method: 'socket', url: host };

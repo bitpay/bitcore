@@ -16,7 +16,6 @@ import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
 import { StateStorage } from '../../../models/state';
 import { SpentHeightIndicators, CoinJSON } from '../../../types/Coin';
 import { Config } from '../../../services/config';
-import { Validation } from 'crypto-wallet-core';
 import { TransactionJSON } from '../../../types/Transaction';
 import { IBlock } from '../../../models/baseBlock';
 
@@ -598,9 +597,9 @@ export class InternalStateProvider implements CSP.IChainStateService {
   }
 
   private isValidAddress(params): boolean {
-    const { chain, network, input } = params;
+    const { input } = params;
     const addr = this.extractAddress(input);
-    return !!Validation.validateAddress(chain, network, addr);
+    return !!addr;
   }
 
   private isValidBlockIndex(inputValue): boolean {

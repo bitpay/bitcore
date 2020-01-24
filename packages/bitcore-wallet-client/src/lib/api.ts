@@ -12,19 +12,17 @@ import { PayProV2 } from './payproV2';
 import { Request } from './request';
 import { Verifier } from './verifier';
 
-const LitecoreLib = require('litecore-lib');
-
 var $ = require('preconditions').singleton();
 var util = require('util');
 var async = require('async');
 var events = require('events');
-var Bitcore = CWC.BitcoreLib;
+var Bitcore = CWC.Libs.BTC;
 var Bitcore_ = {
-  btc: CWC.BitcoreLib,
-  bch: CWC.BitcoreLibCash,
-  eth: CWC.BitcoreLib,
-  xrp: CWC.BitcoreLib,
-  ltc: LitecoreLib
+  btc: CWC.Libs.BTC,
+  bch: CWC.Libs.BCH,
+  eth: CWC.Libs.BTC,
+  xrp: CWC.Libs.BTC,
+  ltc: CWC.Libs.LTC
 };
 var Mnemonic = require('bitcore-mnemonic');
 var url = require('url');
@@ -67,8 +65,8 @@ export class API extends EventEmitter {
   static errors = Errors;
 
   // Expose bitcore
-  static Bitcore = CWC.BitcoreLib;
-  static BitcoreCash = CWC.BitcoreLibCash;
+  static Bitcore = CWC.Libs.BTC;
+  static BitcoreCash = CWC.Libs.BCH;
 
   constructor(opts?) {
     super();
@@ -650,7 +648,7 @@ export class API extends EventEmitter {
       throw new Error('Number of signatures does not match number of inputs');
 
     let i = 0;
-    const x = new bitcore.HDPublicKey(xpub);
+    const x = new Bitcore.HDPublicKey(xpub);
 
     _.each(signatures, signatureHex => {
       try {

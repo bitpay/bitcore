@@ -26,14 +26,14 @@ log.level = 'error';
 
 const EmailValidator = require('email-validator');
 
-import { Validation } from 'crypto-wallet-core';
-const Bitcore = require('bitcore-lib');
+import { Libs, Validation } from 'crypto-wallet-core';
+const Bitcore = Libs.BTC;
 const Bitcore_ = {
   btc: Bitcore,
-  bch: require('bitcore-lib-cash'),
+  bch: Libs.BCH,
   eth: Bitcore,
   xrp: Bitcore,
-  ltc: require('litecore-lib')
+  ltc: Libs.LTC
 };
 
 const Common = require('./common');
