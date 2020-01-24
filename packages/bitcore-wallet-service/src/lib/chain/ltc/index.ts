@@ -5,7 +5,7 @@ import { BtcChain } from '../btc';
 
 export class LtcChain extends BtcChain implements IChain {
   constructor() {
-    super(Libs.LTC);
+    super();
   }
 
   addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub) {
