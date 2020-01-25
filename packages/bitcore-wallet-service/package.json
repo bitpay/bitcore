@@ -1,7 +1,7 @@
 {
-  "name": "bitcore-wallet-service",
-  "description": "A service for Mutisig HD Bitcoin Wallets",
-  "author": "BitPay Inc",
+  "name": "@bitrupee/bitcore-wallet-service",
+  "description": "A service for Mutisig HD Bitcoin Wallets and Etc",
+  "author": "Muellners",
   "version": "8.14.4",
   "license": "MIT",
   "main": "ts_build/index.js",
@@ -15,11 +15,11 @@
     "BWS"
   ],
   "repository": {
-    "url": "git@github.com:bitpay/bitcore-wallet-service.git",
+    "url": "git@github.com:muellners/bitcore-wallet-service.git",
     "type": "git"
   },
   "bugs": {
-    "url": "https://github.com/bitpay/bitcore-wallet-service/issues"
+    "url": "https://github.com/muellners/bitcore-wallet-service/issues"
   },
   "dependencies": {
     "@sendgrid/mail": "^6.3.1",
@@ -28,7 +28,7 @@
     "bitcore-lib-cash": "^8.14.4",
     "body-parser": "^1.11.0",
     "compression": "^1.6.2",
-    "crypto-wallet-core": "^8.14.4",
+    "@bitrupee/crypto-wallet-core": "^8.14.5",
     "email-validator": "^1.0.1",
     "express": "^4.10.0",
     "express-rate-limit": "^2.6.0",
@@ -107,6 +107,10 @@
     {
       "name": "Matias Alejo Garcia",
       "email": "ematiu@gmail.com"
+    },
+    {
+      "name": "Saransh Sharma",
+      "email": "saransh@muellners.org"
     }
   ],
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"

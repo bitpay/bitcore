@@ -14493,7 +14493,7 @@ module.exports={
   "_args": [
     [
       "elliptic@6.4.1",
-      "/Users/ematiu/dev/v8/packages/bitcore-build"
+      "/Users/maektwain/bitcore/packages/bitcore-build"
     ]
   ],
   "_from": "elliptic@6.4.1",
@@ -14518,7 +14518,7 @@ module.exports={
   ],
   "_resolved": "https://registry.npmjs.org/elliptic/-/elliptic-6.4.1.tgz",
   "_spec": "6.4.1",
-  "_where": "/Users/ematiu/dev/v8/packages/bitcore-build",
+  "_where": "/Users/maektwain/bitcore/packages/bitcore-build",
   "author": {
     "name": "Fedor Indutny",
     "email": "fedor@indutny.com"

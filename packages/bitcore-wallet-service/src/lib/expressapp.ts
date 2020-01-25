@@ -885,6 +885,23 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v2/fiatrates/:code/', (req, res) => {
+      let server;
+      const opts = {
+        code: req.params['code'],
+        coin: req.query.coin || 'dai',
+        ts: (req.query.ts ? + req.query.ts : null),
+      };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getCoinTokenRate(opts, (rates) => {
+        res.json(rates);
+      });
+    });
+
     router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
       getServerWithAuth(req, res, (server) => {
         server.pushNotificationsSubscribe(req.body, (err, response) => {

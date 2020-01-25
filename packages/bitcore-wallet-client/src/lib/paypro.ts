@@ -1,5 +1,5 @@
 
-import { BitcoreLib, BitcoreLibCash } from 'crypto-wallet-core';
+import { BitcoreLib, BitcoreLibCash } from '@bitrupee/crypto-wallet-core';
 
 var $ = require('preconditions').singleton();
 const URL = require('url');

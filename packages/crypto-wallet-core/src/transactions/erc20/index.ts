@@ -49,7 +49,7 @@ export class ERC20TxProvider extends ETHTxProvider {
   }
 
   getExchange() {
-    return '0x613639E23E91fd54d50eAfd6925AF2Ed6701A46b';
+    return '0x2a1530C4C41db0B0b2bB646CB5Eb1A67b7158667';
   }
 
   getDeadline() {
@@ -57,16 +57,16 @@ export class ERC20TxProvider extends ETHTxProvider {
   }
   swapETHToDai(amount) {
     const deadline = this.getDeadline();
-    const amountStr = Number(amount).toLocaleString('en', {useGrouping: false});
     const data = this.getUniSwapExchange(this.getExchange())
-      .methods.ethToTokenSwapOutput(amountStr, deadline).encodeABI();
+      .methods.ethToTokenSwapOutput(amount, deadline).encodeABI();
     return data;
   }
 
-  swapBackToETH(params: {
-
-  }) {
-
+  swapBackToETH(amount) {
+    const deadline = this.getDeadline();
+    const data = this.getUniSwapExchange(this.getExchange())
+      .methods.tokenToEthSwapOutput(amount, deadline).encodeABI();
+    return data;
   }
 
 }

@@ -1,6 +1,6 @@
 'use strict';
 
-import * as CWC from 'crypto-wallet-core';
+import * as CWC from '@bitrupee/crypto-wallet-core';
 import { EventEmitter } from 'events';
 import _ from 'lodash';
 import sjcl from 'sjcl';
@@ -2097,6 +2097,33 @@ export class API extends EventEmitter {
     }
 
     this.request.get('/v1/fiatrates/' + opts.code + '/' + qs, (err, rates) => {
+      if (err) return cb(err);
+      return cb(null, rates);
+    });
+  }
+
+  // /**
+  // * Returns exchange rate for the specified currency & timestamp.
+  // * @param {Object} opts
+  // * @param {string} opts.code - Currency ISO code.
+  // * @param {Date} [opts.ts] - A timestamp to base the rate on (default Date.now()).
+  // * @param {String} [opts.coin] - Coin (detault: 'btc')
+  // * @returns {Object} rates - The exchange rate.
+  // */
+  getTokenRate(opts, cb) {
+    $.checkArgument(cb);
+
+    var opts = opts || {};
+
+    var args = [];
+    if (opts.ts) args.push('ts=' + opts.ts);
+    if (opts.coin) args.push('coin=' + opts.coin);
+    var qs = '';
+    if (args.length > 0) {
+      qs = '?' + args.join('&');
+    }
+
+    this.request.get('/v2/fiatrates/' + opts.code + '/' + qs, (err, rates) => {
       if (err) return cb(err);
       return cb(null, rates);
     });

@@ -15,7 +15,7 @@ var mongodb = require('mongodb');
 var config = require('./test-config');
 var oldCredentials = require('./legacyCredentialsExports');
 
-var CWC = require('crypto-wallet-core');
+var CWC = require('@bitrupee/crypto-wallet-core');
 
 var Bitcore = CWC.BitcoreLib;
 var Bitcore_ = {
@@ -23,7 +23,7 @@ var Bitcore_ = {
   bch: CWC.BitcoreLibCash,
 };
 
-var BWS = require('bitcore-wallet-service');
+var BWS = require('@bitrupee/bitcore-wallet-service');
 
 var { Constants } = require('../ts_build/lib/common');
 var Client = require('../ts_build').default;
@@ -2239,6 +2239,25 @@ describe('client API', () => {
         clients[0].getFiatRate({
           code: 'USD',
           ts: now,
+        }, (err, res) => {
+          should.not.exist(err);
+          should.exist(res);
+          res.ts.should.equal(now);
+          should.not.exist(res.rate);
+          done();
+        });
+      });
+    });
+  });
+
+  describe('Fiat rates for tokens', () => {
+    it('should get fiat exchange rate for dai', (done) => {
+      var now = Date.now();
+      helpers.createAndJoinWallet(clients, keys, 1, 1, {}, () => {
+        clients[0].getTokenRate({
+          code: 'eth',
+          ts: now,
+          coin: 'dai'
         }, (err, res) => {
           should.not.exist(err);
           should.exist(res);

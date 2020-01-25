@@ -1,4 +1,4 @@
-import { Transactions, Validation } from 'crypto-wallet-core';
+import { Transactions, Validation } from '@bitrupee/crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain } from '..';

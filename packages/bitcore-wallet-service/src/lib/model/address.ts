@@ -1,4 +1,4 @@
-import { Deriver } from 'crypto-wallet-core';
+import { Deriver } from '@bitrupee/crypto-wallet-core';
 import _ from 'lodash';
 import { AddressManager } from './addressmanager';
 

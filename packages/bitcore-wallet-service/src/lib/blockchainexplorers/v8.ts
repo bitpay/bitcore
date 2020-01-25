@@ -1,5 +1,5 @@
+import { Web3 } from '@bitrupee/crypto-wallet-core';
 import * as async from 'async';
-import { Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
 import * as request from 'request-promise-native';
 import io = require('socket.io-client');

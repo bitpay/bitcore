@@ -1,8 +1,8 @@
 {
-  "name": "bitcore-wallet-client",
-  "description": "Client for bitcore-wallet-service",
-  "author": "BitPay Inc",
-  "version": "8.14.4",
+  "name": "@bitrupee/bitrupee-wallet-client",
+  "description": "Client for bitrupee-wallet-service",
+  "author": "Muellners Inc",
+  "version": "8.14.8",
   "license": "MIT",
   "main": "ts_build/index.js",
   "types": "ts_build/index.d.js",
@@ -18,11 +18,11 @@
   ],
   "engine": "node >= 8.0.0",
   "repository": {
-    "url": "git@github.com:bitpay/bitcore-wallet-client.git",
+    "url": "git@github.com:ob-api/bitrupee-wallet-client.git",
     "type": "git"
   },
   "bugs": {
-    "url": "https://github.com/bitpay/bitcore-wallet-client/issues"
+    "url": "https://github.com/ob-api/bitrupee-wallet-client/issues"
   },
   "dependencies": {
     "ajv": "^6.10.0",
@@ -30,7 +30,7 @@
     "awesome-typescript-loader": "^5.2.1",
     "bip38": "^1.3.0",
     "bitcore-mnemonic": "^8.14.4",
-    "crypto-wallet-core": "^8.14.4",
+    "@bitrupee/crypto-wallet-core": "^8.14.6",
     "json-stable-stringify": "^1.0.1",
     "lodash": "^4.17.15",
     "preconditions": "^2.2.3",
@@ -41,7 +41,7 @@
   "devDependencies": {
     "@types/lodash": "^4.14.136",
     "@types/node": "^10.0.2",
-    "bitcore-wallet-service": "^8.14.4",
+    "@bitrupee/bitcore-wallet-service": "^8.14.4",
     "browserify": "^13.1.0",
     "chai": "^1.9.1",
     "coveralls": "^3.0.2",

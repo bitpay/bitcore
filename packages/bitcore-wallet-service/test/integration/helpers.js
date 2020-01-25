@@ -35,7 +35,7 @@ var storage, blockchainExplorer;
 
 // tinodb not longer supported
 var useMongoDb =  true; // !!process.env.USE_MONGO_DB;
-const CWC =  require('crypto-wallet-core');
+const CWC =  require('@bitrupee/crypto-wallet-core');
 
 var helpers = {};
 

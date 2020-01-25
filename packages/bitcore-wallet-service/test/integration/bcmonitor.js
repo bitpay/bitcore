@@ -1,8 +1,8 @@
-'use strict'; 
+'use strict';
 var _ = require('lodash');
 var async = require('async');
 
-const CWC = require('crypto-wallet-core');
+const CWC = require('@bitrupee/crypto-wallet-core');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
@@ -186,7 +186,7 @@ describe('Blockchain monitor', function() {
           tx: {
             chain: 'ETH',
             network: 'mainnet',
-            to:  address.address, 
+            to:  address.address,
             value: 0,
             txid: '123',
           },

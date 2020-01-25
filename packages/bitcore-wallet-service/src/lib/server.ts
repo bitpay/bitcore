@@ -26,7 +26,7 @@ log.level = 'error';
 
 const EmailValidator = require('email-validator');
 
-import { Validation } from 'crypto-wallet-core';
+import { Validation } from '@bitrupee/crypto-wallet-core';
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -4462,6 +4462,22 @@ export class WalletService {
     this.fiatRateService.getRate(opts, (err, rate) => {
       if (err) return cb(err);
       return cb(null, rate);
+    });
+  }
+
+  /**
+   * Returns exchange rate for the specified currency & timestamp.
+   * @param {Object} opts
+   * @param {string} opts.code - Currency ISO code.
+   * @param {Date} [opts.ts] - A timestamp to base the rate on (default Date.now()).
+   * @param {String} [opts.provider] - A provider of exchange rates (default 'BitPay').
+   * @returns {Object} rates - The exchange rate.
+   */
+  getCoinTokenRate(opts, cb) {
+    if (!checkRequired(opts, ['code'], cb)) return;
+    this.fiatRateService.getRateForToken(opts, (err, rate) => {
+      if (err) return cb(err);
+      return cb(rate);
     });
   }
 

@@ -11,7 +11,7 @@ log.debug = log.verbose;
 
 var config = require('../../ts_build/config.js');
 
-var CWC = require('crypto-wallet-core');
+var CWC = require('@bitrupee/crypto-wallet-core');
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
@@ -3435,7 +3435,7 @@ describe('Wallet service', function() {
       addr: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
       lockedFunds: 0,
       flags: { noChange: true, shortTests: true, },
-    }, 
+    },
     {
       coin: 'xrp',
       key: 'id44btc',
@@ -3478,7 +3478,7 @@ describe('Wallet service', function() {
               });
             } else {
               done();
-            } 
+            }
           });
         });
 
@@ -3490,7 +3490,7 @@ describe('Wallet service', function() {
           let old = blockchainExplorer.getTransactionCount;
           blockchainExplorer.getTransactionCount = sinon.stub().callsArgWith(1, null, '5');
           helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
-            let amount = 8000; 
+            let amount = 8000;
             var txOpts = {
               outputs: [{
                 toAddress: addressStr,

@@ -1,7 +1,7 @@
 {
-  "name": "bitcore-build",
-  "version": "8.14.4",
-  "description": "A helper for common tasks to build bitcore modules'",
+  "name": "bitrupee-build",
+  "version": "8.14.4-version1",
+  "description": "A helper for common tasks to build bitrupee modules'",
   "main": "index.js",
   "scripts": {
     "test": "gulp test",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/bitpay/bitcore-build"
+    "url": "git://github.com/OB-API/bitrupee-build"
   },
   "keywords": [
     "bitcore"
@@ -34,13 +34,17 @@
     {
       "name": "Matias Alejo Garcia",
       "email": "ematiu@gmail.com"
+    },
+    {
+      "name": "Saransh Sharma",
+      "email": "saransh@muellners.org"
     }
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/bitpay/bitcore-build/issues"
+    "url": "https://github.com/OB-API/bitrupee-build/issues"
   },
-  "homepage": "https://github.com/bitpay/bitcore-build",
+  "homepage": "https://github.com/OB-API/bitrupee-build",
   "dependencies": {
     "@kollavarsham/gulp-coveralls": "^0.2.2",
     "brfs": "^2.0.1",
