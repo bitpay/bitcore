@@ -15,7 +15,7 @@
     "compile": "./node_modules/.bin/lerna run compile",
     "lint": "lerna run lint",
     "fix": "lerna run fix",
-    "precommit": "lerna run --concurrency 1 --stream precommit --since master",
+    "precommit": "lerna run --concurrency 1 --stream precommit --since HEAD~",
     "test:ci": "npm run test:ci:build && npm run test:ci:unit && npm run test:ci:integration",
     "test:ci:build": "docker-compose -f docker-compose.test.yml build",
     "test:ci:unit": "./ci.sh 'npm run lerna:ci:unit'",
@@ -64,7 +64,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lerna run --concurrency 1 --stream precommit"
+      "pre-commit": "npm run precommit"
     }
   }
 }
