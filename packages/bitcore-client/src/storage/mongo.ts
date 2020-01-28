@@ -93,7 +93,10 @@ export class Mongo {
     }
     wallet.authKey = wallet.authKey.toString('hex');
     try {
-      await this.collection.insertOne(wallet);
+      delete wallet.storage;
+      delete wallet.client;
+      delete wallet._id;
+      await this.collection.updateOne({ name: wallet.name }, { $set: wallet }, { upsert: 1 });
       await this.close();
     } catch (error) {
       console.error(error);
