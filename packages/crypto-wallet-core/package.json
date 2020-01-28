@@ -25,10 +25,10 @@
     "bitcore-lib": "^8.14.4",
     "bitcore-lib-cash": "^8.14.4",
     "ethers": "4.0.37",
+    "litecore-lib": "git+https://git@github.com/justinkook/litecore-lib.git#update/dependencies",
     "ripple-binary-codec": "0.2.6",
     "ripple-keypairs": "git+https://git@github.com/bitpay/ripple-keypairs.git#8d3a4643a8ddfce8222786e1e5a3e85a89a5b7f5",
     "ripple-lib": "1.4.2",
-    "litecore-lib": "0.13.19",
     "web3": "1.2.1"
   },
   "devDependencies": {
