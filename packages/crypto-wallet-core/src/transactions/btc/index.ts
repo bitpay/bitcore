@@ -21,7 +21,10 @@ export class BTCTxProvider {
 
     let index = 0;
     let utxoSum = 0;
-    let recepientSum = recipients.reduce((sum, cur) => sum + Number(cur.amount), fee);
+    let recepientSum = recipients.reduce(
+      (sum, cur) => sum + Number(cur.amount),
+      fee
+    );
     while (utxoSum < recepientSum) {
       const utxo = utxos[index];
       utxoSum += Number(utxo.value);
@@ -32,7 +35,7 @@ export class BTCTxProvider {
   }
 
   create({ recipients, utxos = [], change, wallet, fee = 20000 }) {
-    change = change || wallet.deriveAddress(wallet.addressIndex, true);
+    change = change || (wallet.deriveAddress(wallet.addressIndex, true));
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {
@@ -52,15 +55,15 @@ export class BTCTxProvider {
     return tx.uncheckedSerialize();
   }
 
-  getSignature(params: { tx: string; keys: Array<Key> }) {
+  getSignature(params: { tx: string; keys: Array<Key>}) {
     throw new Error('function getSignature not implemented for UTXO coins');
   }
 
-  applySignature(params: { tx: string; keys: Array<Key> }) {
+  applySignature(params: { tx: string; keys: Array<Key>}) {
     throw new Error('function applySignature not implemented for UTXO coins');
   }
 
-  getHash(params: { tx: string }) {
+  getHash(params: { tx: string}) {
     const bitcoreTx = new this.lib.Transaction(params.tx);
     return bitcoreTx.hash;
   }
