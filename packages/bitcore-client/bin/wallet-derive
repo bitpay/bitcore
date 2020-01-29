@@ -26,7 +26,13 @@ const main = async () => {
     let index = wallet.addressIndex || 0;
 
     while (unusedAddressCounter < gap) {
-      const address = await wallet.nextAddressPair(change);
+      let address;
+      if (!wallet.lite) {
+        address = await wallet.nextAddressPair(change);
+      } else {
+        let index = wallet.addressIndex || -1 + 1;
+        address = await wallet.deriveAddress(index, null, true);
+      }
 
       const hasTransactions = await wallet.client.getAddressTxos({ address });
 

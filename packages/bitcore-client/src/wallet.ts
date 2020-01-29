@@ -46,6 +46,7 @@ export class Wallet {
   addressIndex?: number;
   authKey: string;
   derivationPath: string;
+  lite: boolean;
 
   constructor(params: Wallet | Wallet.WalletObj) {
     Object.assign(this, params);
@@ -207,16 +208,18 @@ export class Wallet {
       this.encryptionKey,
       password
     );
-    const masterKeyStr = await Encryption.decryptPrivateKey(
-      encMasterKey,
-      this.pubKey,
-      encryptionKey
-    );
-    const masterKey = JSON.parse(masterKeyStr);
-    this.unlocked = {
-      encryptionKey,
-      masterKey
-    };
+    if (!this.lite) {
+      const masterKeyStr = await Encryption.decryptPrivateKey(
+        encMasterKey,
+        this.pubKey,
+        encryptionKey
+      );
+      const masterKey = JSON.parse(masterKeyStr);
+      this.unlocked = {
+        encryptionKey,
+        masterKey
+      };
+    }
     return this;
   }
 
@@ -383,7 +386,7 @@ export class Wallet {
     return walletAddresses.map(walletAddress => walletAddress.address);
   }
 
-  async deriveAddress(addressIndex, isChange) {
+  async deriveAddress(addressIndex, isChange, register) {
     const address = Deriver.deriveAddress(
       this.chain,
       this.network,
@@ -391,6 +394,14 @@ export class Wallet {
       addressIndex,
       isChange
     );
+    if (register) {
+      console.log(this.authPubKey);
+      console.log(address);
+      await this.client.importAddresses({
+        pubKey: this.authPubKey,
+        payload: [{ address }]
+      });
+    }
     return address;
   }
 
@@ -420,7 +431,7 @@ export class Wallet {
   }
 
   async getNonce(addressIndex: number = 0, isChange?: boolean) {
-    const address = await this.deriveAddress(0, isChange);
+    const address = await this.deriveAddress(0, isChange, false);
     const count = await this.client.getNonce({ address });
     if (!count || !count.nonce) {
       throw new Error('Unable to get nonce');
