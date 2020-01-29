@@ -15,30 +15,30 @@ export class Storage {
   url?: string;
   errorIfExists?: boolean;
   createIfMissing: boolean;
-  dbName: string;
+  storageType: string;
   constructor(params: {
     path?: string;
     createIfMissing: boolean;
     errorIfExists: boolean;
-    dbName?: string;
+    storageType?: string;
   }) {
     const { path, createIfMissing, errorIfExists } = params;
-    let { dbName } = params;
+    let { storageType } = params;
     if (path && path.includes('mongo')) {
-      dbName = 'Mongo';
+      storageType = 'Mongo';
     }
     this.path = path;
     this.createIfMissing = createIfMissing;
     this.errorIfExists = errorIfExists;
-    this.dbName = dbName;
+    this.storageType = storageType;
     const dbMap = {
       Mongo: Mongo,
       Level: Level
     };
-    if (!dbName) {
-      dbName = 'Level'
+    if (!storageType) {
+      storageType = 'Level'
     }
-    this.db = new dbMap[dbName]({ createIfMissing, errorIfExists, path });
+    this.db = new dbMap[storageType]({ createIfMissing, errorIfExists, path });
   }
 
   async loadWallet(params: { name: string }) {

@@ -9,7 +9,7 @@ export class Mongo {
   collection: any;
   errorIfExists?: boolean;
   createIfMissing: boolean;
-  dbName: string;
+  storageType: string;
   databaseName: string;
   client: MongoClient;
   port: string;

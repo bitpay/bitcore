@@ -22,7 +22,7 @@ export namespace Wallet {
     phrase: string;
     password: string;
     storage: Storage;
-    dbName: string;
+    storageType: string;
     lite: boolean;
     authKey: any;
     xPubKey: any;
@@ -70,7 +70,7 @@ export class Wallet {
   }
 
   static async create(params: Partial<Wallet.WalletObj>) {
-    const { chain, network, name, phrase, password, path, dbName, lite } = params;
+    const { chain, network, name, phrase, password, path, storageType, lite } = params;
     let { storage, authKey, xPubKey } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
@@ -120,7 +120,7 @@ export class Wallet {
         path,
         errorIfExists: false,
         createIfMissing: true,
-        dbName
+        storageType
       });
     let alreadyExists;
     try {
@@ -180,13 +180,13 @@ export class Wallet {
     name: string;
     path?: string;
     storage?: Storage;
-    dbName?: string;
+    storageType?: string;
   }) {
-    const { name, path, dbName } = params;
+    const { name, path, storageType } = params;
     let { storage } = params;
     storage =
       storage ||
-      new Storage({ errorIfExists: false, createIfMissing: false, path, dbName });
+      new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
     const loadedWallet = await storage.loadWallet({ name });
     return new Wallet(Object.assign(loadedWallet, { storage }));
   }

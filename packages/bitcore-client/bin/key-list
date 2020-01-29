@@ -7,12 +7,12 @@ const program = require('../ts_build/program');
 program
   .version(require('../package.json').version)
   .option('--path [path]', 'optional - Where wallets are stored')
-  .option('--dbName [dbName]', 'optional - default Level - choose the database from where to list wallets')
+  .option('--storageType [storageType]', 'optional - default Level - choose the database from where to list wallets')
   .parse(process.argv);
 
 const main = async () => {
-  const { path, dbName } = program;
-  const storage = new Storage({createIfMissing: false, errorIfExists: false, path, dbName});
+  const { path, storageType } = program;
+  const storage = new Storage({createIfMissing: false, errorIfExists: false, path, storageType});
   const keyStream = await storage.listKeys();
   keyStream.on('data', (key) => {
     console.log(JSON.parse(JSON.stringify(key)));
