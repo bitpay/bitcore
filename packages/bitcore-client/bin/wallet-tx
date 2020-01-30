@@ -27,18 +27,7 @@ const main = async () => {
   try {
     let { recipients, utxos, change, fee, target, from, nonce, invoiceID, token } = program;
     wallet = await Wallet.loadWallet({ name, path });
-
-    let tokenContractAddress;
-    if (token) {
-      const tokenObj = wallet.tokens.find(tok => tok.symbol === token);
-      if (!tokenObj) {
-        throw new Error(`${token} not found on wallet ${name}`);
-      }
-      tokenContractAddress = tokenObj.address;
-    }
-
     const parsedRecipients = recipients.includes('[') ? JSON.parse(recipients) : [];
-
     if (!parsedRecipients.length) {
       throw new Error('invalid arguments');
     }
@@ -71,7 +60,7 @@ const main = async () => {
 
 
 
-    let params = { recipients, utxos, change, fee, from, nonce, tokenContractAddress };
+    let params = { recipients, utxos, change, fee, from, nonce, token };
     params.fee = Number(fee) || totalTransactionFee;
     params.nonce = Number(nonce);
     params.recipients = parsedRecipients;

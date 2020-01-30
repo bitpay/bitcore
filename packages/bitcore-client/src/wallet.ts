@@ -232,9 +232,15 @@ export class Wallet {
     return new PrivateKey(this.authKey);
   }
 
-  getBalance(time?: string, tokenContractAddress?: string) {
+  getBalance(time?: string, token?: string) {
     let payload;
-    if (tokenContractAddress) {
+    if (token) {
+      let tokenContractAddress;
+      const tokenObj = this.tokens.find(tok => tok.symbol === token);
+      if (!tokenObj) {
+        throw new Error(`${token} not found on wallet ${this.name}`);
+      }
+      tokenContractAddress = tokenObj.address;
       payload = { tokenContractAddress };
     }
     return this.client.getBalance({ payload, pubKey: this.authPubKey, time });
@@ -300,9 +306,17 @@ export class Wallet {
     nonce?: number;
     tag? : number;
     data? : string;
-    tokenContractAddress? : string;
+    token? : string;
   }) {
-    const chain = params.tokenContractAddress ? 'ERC20' : this.chain;
+    const chain = params.token ? 'ERC20' : this.chain;
+    let tokenContractAddress;
+    if (params.token) {
+      const tokenObj = this.tokens.find(tok => tok.symbol === params.token);
+      if (!tokenObj) {
+        throw new Error(`${params.token} not found on wallet ${this.name}`);
+      }
+      tokenContractAddress = tokenObj.address;
+    }
     const payload = {
       network: this.network,
       chain,
@@ -318,7 +332,7 @@ export class Wallet {
       gasPrice: params.fee,
       gasLimit: 200000,
       data: params.data,
-      tokenAddress: params.tokenContractAddress
+      tokenAddress: tokenContractAddress
     };
     return Transactions.create(payload);
   }

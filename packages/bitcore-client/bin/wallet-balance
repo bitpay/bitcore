@@ -19,15 +19,7 @@ try {
 async function main() {
   const { name, path, time, token } = program;
   const wallet = await Wallet.loadWallet({ name, path });
-  let tokenContractAddress;
-  if (token) {
-    const tokenObj = wallet.tokens.find(tok => tok.symbol === token);
-    if (!tokenObj) {
-      throw new Error(`${token} not found on wallet ${name}`);
-    }
-    tokenContractAddress = tokenObj.address;
-  }
-  const balance = await wallet.getBalance(time, tokenContractAddress);
+  const balance = await wallet.getBalance(time, token);
   return Object.assign(balance, {
     currency: token || wallet.chain,
     network: wallet.network
