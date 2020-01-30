@@ -91,12 +91,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     if (network === 'livenet') {
       network = 'mainnet';
     }
-    const web3 = await this.getWeb3(network);
-    const [gethGasPrice, bestBlock] = await Promise.all([web3.eth.getGasPrice(), this.getLocalTip({ chain, network })]);
-    if (!bestBlock) {
-      return gethGasPrice;
-    }
-
+    const bestBlock = (await this.getLocalTip({ chain, network })) || { height: target };
     const gasPrices: number[] = [];
     const txs = await EthTransactionStorage.collection
       .find({ chain, network, blockHeight: { $gte: bestBlock.height - target } })
@@ -108,8 +103,9 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     if (txCount > 0) {
       gasPrices.push(blockGasPrices[lowGasPriceIndex]);
     }
-    const estimate = Math.max(...gasPrices, gethGasPrice);
-    return { feerate: estimate, blocks: target };
+
+    const estimate = Math.max(...gasPrices);
+    return { feerate: estimate || 0, blocks: target };
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
