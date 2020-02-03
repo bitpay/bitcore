@@ -15,7 +15,7 @@ program
   .option('--baseUrl [host]', 'optional - Specify custom Bitcore API URL')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--mnemonic [phrase]', 'optional - Seed using existing backup phrase')
-  .option('--dbName [dbName]', 'optional - name of the database to use (Mongo or Level)')
+  .option('--storageType [storageType]', 'optional - name of the database to use (Mongo or Level)')
   .option('--phrase [phrase]', 'optional - Seed using existing backup phrase')
   .option('--lite [lite]', 'optional - create a lite version of the wallet with no private keys')
   .option('--authKey [authKey]', 'optional - specify an authkey to sign requests with, only for lite wallets')
@@ -23,7 +23,7 @@ program
   .parse(process.argv);
 
 const main = async () => {
-  const { name, baseUrl, chain, network, path, phrase, dbName, lite, authKey, xPubKey } = program;
+  const { name, baseUrl, chain, network, path, phrase, storageType, lite, authKey, xPubKey } = program;
   try {
     const password = await promptly.password('Wallet Password:');
     await Wallet.create({
@@ -34,7 +34,7 @@ const main = async () => {
       path,
       phrase,
       password,
-      dbName,
+      storageType,
       lite,
       authKey,
       xPubKey,
