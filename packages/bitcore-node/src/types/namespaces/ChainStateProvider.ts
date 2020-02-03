@@ -59,12 +59,6 @@ export declare namespace CSP {
   export type CreateWalletParams = IWallet;
   export type GetWalletParams = ChainNetwork & PubKey;
 
-  export type AddTokenParams = ChainNetwork & PubKey & {
-    symbol: string;
-    decimals: string;
-    address: string;
-  }
-
   export type UpdateWalletParams = ChainNetwork & {
     wallet: MongoBound<IWallet>;
     addresses: string[];
@@ -174,7 +168,6 @@ export declare namespace CSP {
     getLocalTip(params): Promise<IBlock | null>;
     getLocatorHashes(params): Promise<any>;
     isValid(params: isValidParams): { isValid: boolean; type: string };
-    addToken(params: AddTokenParams)
   }
 
   type ChainStateServices = { [key: string]: IChainStateService };

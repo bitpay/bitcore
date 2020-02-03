@@ -10,7 +10,7 @@ function isTooLong(field, maxLength = 255) {
 // create wallet
 router.post('/', async function(req, res) {
   let { chain, network } = req.params;
-  let { name, pubKey, path, singleAddress, tokens = [] } = req.body;
+  let { name, pubKey, path, singleAddress } = req.body;
   try {
     const existingWallet = await ChainStateProvider.getWallet({
       chain,
@@ -29,30 +29,11 @@ router.post('/', async function(req, res) {
       singleAddress,
       name,
       pubKey,
-      path,
-      tokens
+      path
     });
     return res.send(result);
   } catch (err) {
     return res.status(500).send(err);
-  }
-});
-
-router.post('/:pubKey/token', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
-  const { chain, network, pubKey } = req.params;
-  const { symbol, address, decimals } = req.body;
-  try {
-    await ChainStateProvider.addToken({
-      chain,
-      network,
-      symbol,
-      address,
-      decimals,
-      pubKey
-    });
-    return res.end();
-  } catch (error) {
-    return res.status(500).send(error);
   }
 });
 

@@ -51,19 +51,6 @@ export class Client {
     return request.get(url, { json: true });
   }
 
-  async addToken(params: {
-    payload: any;
-    pubKey: string;
-  }) {
-    const url = `${this.apiUrl}/wallet/${params.pubKey}/token`
-    const signature = this.sign({ method: 'POST', url, payload: params.payload });
-    return request.post(url, {
-      headers: { 'x-signature': signature },
-      body: params.payload,
-      json: true
-    });
-  }
-
   async getBalance(params: { payload?: any; pubKey: string; time?: string; }) {
     const { payload, pubKey, time } = params;
     let url = `${this.apiUrl}/wallet/${pubKey}/balance`;

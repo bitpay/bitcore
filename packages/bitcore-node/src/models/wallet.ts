@@ -12,7 +12,6 @@ export type IWallet = {
   singleAddress: boolean;
   pubKey: string;
   path: string;
-  tokens: [];
 };
 
 export class WalletModel extends BaseModel<IWallet> {

@@ -222,8 +222,7 @@ export class Wallet {
       path: this.derivationPath,
       network: this.network,
       chain: this.chain,
-      apiUrl: this.getApiUrl(),
-      tokens: this.tokens
+      apiUrl: this.getApiUrl()
     };
     return this.client.register({ payload });
   }
@@ -293,7 +292,6 @@ export class Wallet {
       decimals: params.decimals
     });
     await this.saveWallet();
-    return this.client.addToken({ payload: params, pubKey: this.authPubKey });
   }
 
   async newTx(params: {

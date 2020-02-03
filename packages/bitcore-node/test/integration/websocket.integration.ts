@@ -50,8 +50,7 @@ describe('Websockets', function() {
       name: 'WalletSocketTest',
       singleAddress: false,
       pubKey,
-      path: '',
-      tokens: []
+      path: ''
     });
 
     await WalletAddressStorage.collection.insertOne({

@@ -27,7 +27,6 @@ interface ERC20Transfer extends EventLog {
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
-  contractAddresses: any;
   static web3 = {} as { [network: string]: Web3 };
 
   constructor(public chain: string = 'ETH') {
