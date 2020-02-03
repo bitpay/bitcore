@@ -1,0 +1,3 @@
+FROM bitcore
+EXPOSE 3000
+CMD ["node", "/bitcore/packages/bitcore-node/build/src/workers/api.js"]

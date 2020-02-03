@@ -149,7 +149,7 @@ describe('Locks', function() {
     lock.acquire('123', {}, function(err, release) {
       should.not.exist(err);
       pushEvent(1);
-      lock.acquire('123', {waitTime: 0}, function(err, release2) {
+      lock.acquire('123', {waitTime:1}, function(err, release2) {
         release();
         expect(err).to.contain('LOCKED');
         done();

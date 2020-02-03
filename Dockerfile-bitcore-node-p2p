@@ -1,0 +1,3 @@
+FROM bitcore
+RUN cd ./packages/bitcore-node
+CMD ["npm", "run", "p2p"]
