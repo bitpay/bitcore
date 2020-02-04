@@ -1,3 +1,4 @@
+import logger from '../../../logger';
 import { Readable, Transform } from 'stream';
 import Config from '../../../config';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
@@ -165,7 +166,10 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           .sendSignedTransaction(tx)
           .on('transactionHash', resolve)
           .on('error', reject)
-          .catch(e => reject(e));
+          .catch(e => {
+            logger.error(e);
+            reject(e);
+          });
       });
       txids.push(txid);
     }
