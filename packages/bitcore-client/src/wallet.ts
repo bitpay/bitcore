@@ -28,6 +28,7 @@ export namespace Wallet {
     authKey: any;
     xPubKey: any;
     addressIndex: number;
+    tokens: Array<any>;
   };
 }
 export class Wallet {
@@ -49,6 +50,7 @@ export class Wallet {
   authKey: string;
   derivationPath: string;
   lite: boolean;
+  tokens?: Array<any>;
 
   constructor(params: Wallet | Wallet.WalletObj) {
     Object.assign(this, params);
@@ -139,8 +141,9 @@ export class Wallet {
       authPubKey,
       masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
-      xPubKey,
-      pubKey
+      xPubKey: hdPrivKey.xpubkey,
+      pubKey,
+      tokens: []
     });
 
     // save wallet to storage and then bitcore-node
@@ -250,8 +253,18 @@ export class Wallet {
     return new PrivateKey(this.authKey);
   }
 
-  getBalance(time?: string) {
-    return this.client.getBalance({ pubKey: this.authPubKey, time });
+  getBalance(time?: string, token?: string) {
+    let payload;
+    if (token) {
+      let tokenContractAddress;
+      const tokenObj = this.tokens.find(tok => tok.symbol === token);
+      if (!tokenObj) {
+        throw new Error(`${token} not found on wallet ${this.name}`);
+      }
+      tokenContractAddress = tokenObj.address;
+      payload = { tokenContractAddress };
+    }
+    return this.client.getBalance({ payload, pubKey: this.authPubKey, time });
   }
 
   getNetworkFee(params: { target?: number } = {}) {
@@ -290,6 +303,19 @@ export class Wallet {
     });
   }
 
+  async getToken(contractAddress) {
+    return this.client.getToken(contractAddress);
+  }
+
+  async addToken(params) {
+    this.tokens.push({
+      symbol: params.symbol,
+      address: params.address,
+      decimals: params.decimals
+    });
+    await this.saveWallet();
+  }
+
   async newTx(params: {
     utxos?: any[];
     recipients: { address: string; amount: number }[];
@@ -300,10 +326,20 @@ export class Wallet {
     nonce?: number;
     tag? : number;
     data? : string;
+    token? : string;
   }) {
+    const chain = params.token ? 'ERC20' : this.chain;
+    let tokenContractAddress;
+    if (params.token) {
+      const tokenObj = this.tokens.find(tok => tok.symbol === params.token);
+      if (!tokenObj) {
+        throw new Error(`${params.token} not found on wallet ${this.name}`);
+      }
+      tokenContractAddress = tokenObj.address;
+    }
     const payload = {
       network: this.network,
-      chain: this.chain,
+      chain,
       recipients: params.recipients,
       from: params.from,
       change: params.change,
@@ -316,6 +352,7 @@ export class Wallet {
       gasPrice: params.fee,
       gasLimit: 200000,
       data: params.data,
+      tokenAddress: tokenContractAddress
     };
     return Transactions.create(payload);
   }
