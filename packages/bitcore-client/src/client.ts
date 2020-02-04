@@ -40,18 +40,31 @@ export class Client {
     });
   }
 
-  async getBalance(params: { payload?: any; pubKey: string; time?: string }) {
+  async getToken(contractAddress) {
+    const url = `${this.apiUrl}/token/${contractAddress}`
+    return request.get(url, { json: true });
+  }
+
+  async getBalance(params: { payload?: any; pubKey: string; time?: string; }) {
     const { payload, pubKey, time } = params;
     let url = `${this.apiUrl}/wallet/${pubKey}/balance`;
     if (time) {
       url += `/${time}`;
     }
-    const signature = this.sign({ method: 'GET', url, payload });
+    if(payload && payload.tokenContractAddress) {
+      url += `?tokenAddress=${payload.tokenContractAddress}`
+    }
+    const signature = this.sign({ method: 'GET', url });
     return request.get(url, {
       headers: { 'x-signature': signature },
-      body: payload,
       json: true
     });
+  }
+
+  async getTransaction(params: { txid: string }) {
+    const { txid } = params;
+    let url = `${this.apiUrl}/tx/${txid}`;
+    return request.get(url);
   }
 
   async getNonce(params) {
