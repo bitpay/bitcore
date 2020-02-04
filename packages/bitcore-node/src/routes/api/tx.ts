@@ -50,7 +50,7 @@ router.get('/:txId', async (req, res) => {
       return res.status(404).send(`The requested txid ${txId} could not be found.`);
     } else {
       const tip = await ChainStateProvider.getLocalTip({ chain, network });
-      if (tx && tip && tip.height - tx.blockHeight > 100) {
+      if (tx && tip && tx.blockHeight > 0 && tip.height - tx.blockHeight > 100) {
         SetCache(res, CacheTimes.Month);
       }
       return res.send(tx);
@@ -69,17 +69,20 @@ router.get('/:txId/populated', async (req, res) => {
   }
 
   try {
-    let tx: ITransaction & { blockHeight: number, coins?: Array<ICoin> };
+    let tx: ITransaction & { blockHeight: number; coins?: Array<ICoin> };
     let coins: any;
     let tip: any;
 
-    [tx, coins, tip] = await Promise.all([ChainStateProvider.getTransaction({ chain, network, txId }), ChainStateProvider.getCoinsForTx({ chain, network, txid }),
-    ChainStateProvider.getLocalTip({ chain, network })]);
+    [tx, coins, tip] = await Promise.all([
+      ChainStateProvider.getTransaction({ chain, network, txId }),
+      ChainStateProvider.getCoinsForTx({ chain, network, txid }),
+      ChainStateProvider.getLocalTip({ chain, network })
+    ]);
 
     if (!tx) {
       return res.status(404).send(`The requested txid ${txid} could not be found.`);
     } else {
-      if (tx && tip && tip.height - tx.blockHeight > 100) {
+      if (tx && tip && tx.blockHeight > 0 && tip.height - tx.blockHeight > 100) {
         SetCache(res, CacheTimes.Month);
       }
 

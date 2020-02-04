@@ -159,7 +159,7 @@
     </ion-col>
   </ion-row>
 
-  <ion-row align-items-end text-uppercase class="small" *ngIf="showCoins">
+  <ion-row align-items-start text-uppercase class="small" *ngIf="showCoins">
     <ion-col col-6>
       <div *ngIf="!tx.isCoinBase && currencyProvider.getConvertedNumber(tx.fee) >= 0">
         <ion-chip>
@@ -171,16 +171,16 @@
       </div>
     </ion-col>
     <ion-col col-6 text-right>
-      <ion-chip color="danger" *ngIf="confirmations === -3 && page === 'transaction'">
+      <ion-chip color="danger" *ngIf="confirmations === -3">
         <ion-label>Invalid</ion-label>
       </ion-chip>
-      <ion-chip  color="warning" *ngIf="confirmations === -1 && page === 'transaction'">
+      <ion-chip  color="warning" *ngIf="confirmations === -1">
         <ion-label>Unconfirmed</ion-label>
       </ion-chip>
-      <ion-chip  color="primary" *ngIf="confirmations === 1 && page === 'transaction'">
+      <ion-chip  color="primary" *ngIf="confirmations === 1">
         <ion-label>1 Confirmation</ion-label>
       </ion-chip>
-      <ion-chip color="primary" *ngIf="confirmations > 1 && page === 'transaction'">
+      <ion-chip color="primary" *ngIf="confirmations > 1">
         <ion-label>{{ confirmations }} Confirmations
         </ion-label>
       </ion-chip>

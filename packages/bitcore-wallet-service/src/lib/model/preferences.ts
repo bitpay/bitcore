@@ -6,6 +6,7 @@ export interface IPreferences {
   email: string;
   language: string;
   unit: number;
+  tokenAddresses?: string[];
 }
 export class Preferences {
   version: string;
@@ -15,6 +16,7 @@ export class Preferences {
   email: string;
   language: string;
   unit: number;
+  tokenAddresses: string[];
 
   static create(opts) {
     opts = opts || {};
@@ -28,6 +30,7 @@ export class Preferences {
     x.email = opts.email;
     x.language = opts.language;
     x.unit = opts.unit;
+    x.tokenAddresses = opts.tokenAddresses;
     // you can't put useDust here since this is copayer's specific.
     return x;
   }
@@ -42,6 +45,7 @@ export class Preferences {
     x.email = obj.email;
     x.language = obj.language;
     x.unit = obj.unit;
+    x.tokenAddresses = obj.tokenAddresses;
     return x;
   }
 }

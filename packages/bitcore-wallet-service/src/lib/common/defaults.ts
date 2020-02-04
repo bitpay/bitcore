@@ -6,30 +6,37 @@ module.exports = {
   MAX_FEE_PER_KB: {
     btc: 10000 * 1000, // 10k sat/b
     bch: 10000 * 1000, // 10k sat/b
-    eth: 50000000000, // 50 Gwei
+    eth: 50000000000, // 50 Gwei,
+    xrp: 50000000000
   },
 
   MIN_TX_FEE: {
     btc: 0,
     bch: 0,
     eth: 0,
+    xrp: 0
   },
 
   MAX_TX_FEE: {
     btc: 0.05 * 1e8,
     bch: 0.05 * 1e8,
     eth: 1 * 1e18,  // 1 eth
+    xrp: 1 * 1e6,  // 1 xrp
   },
 
   MAX_TX_SIZE_IN_KB: {
     btc: 100,
     bch: 100,
     eth: 500,
+    xrp: 1000,
   },
 
   // ETH
   DEFAULT_GAS_LIMIT: 200000,
   MIN_GAS_LIMIT: 21000,
+
+  // XRP has a non-refundable mininum activation fee / balance
+  MIN_XRP_BALANCE: 20000000,
 
   MAX_KEYS: 100,
 
@@ -111,6 +118,13 @@ module.exports = {
         nbBlocks: 75, // 15 minutes
         multiplier: 0.8,
         defaultValue: 10000000000
+      }
+    ],
+    xrp: [
+      {
+        name: 'normal',
+        nbBlocks: 1, // 3 seconds
+        defaultValue: 12
       }
     ]
   },

@@ -56,7 +56,7 @@ describe('Address Derivation', () => {
       pubKey: '03dbeec5e9e76da09c5b502a67136bc2d73423e8902a7c35a8cbc0c5a6ac0469e8'
     };
     expect(result.address).to.equal(expectedResult.address);
-    expect(result.privKey).to.equal(expectedResult.privKey);
-    expect(result.pubKey).to.equal(expectedResult.pubKey);
+    expect(result.privKey).to.equal(expectedResult.privKey.toUpperCase());
+    expect(result.pubKey).to.equal(expectedResult.pubKey.toUpperCase());
   });
 });

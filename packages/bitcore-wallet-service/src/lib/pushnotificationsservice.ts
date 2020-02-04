@@ -13,6 +13,7 @@ const defaultRequest = require('request');
 const path = require('path');
 const Utils = require('./common/utils');
 const Defaults = require('./common/defaults');
+const Constants = require('./common/constants');
 const sjcl = require('sjcl');
 const log = require('npmlog');
 log.debug = log.verbose;
@@ -182,6 +183,7 @@ export class PushNotificationsService {
                       if (err) return next(err);
 
                       const notifications = _.map(subs, (sub) => {
+                        const tokenAddress = notification.data && notification.data.tokenAddress ? notification.data.tokenAddress : null;
                         return {
                           to: sub.token,
                           priority: 'high',
@@ -197,6 +199,7 @@ export class PushNotificationsService {
                             walletId: sjcl.codec.hex.fromBits(
                               sjcl.hash.sha256.hash(notification.walletId)
                             ),
+                            tokenAddress,
                             copayerId: sjcl.codec.hex.fromBits(
                               sjcl.hash.sha256.hash(recipient.copayerId)
                             ),
@@ -371,14 +374,17 @@ export class PushNotificationsService {
       btc: 'BTC',
       bit: 'bits',
       bch: 'BCH',
-      eth: 'ETH'
+      eth: 'ETH',
+      xrp: 'XRP',
+      usdc: 'USDC',
+      pax: 'PAX',
+      gusd: 'GUSD'
     };
-
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
     if (data.amount) {
       try {
-        const unit = recipient.unit.toLowerCase();
+        const unit = data.tokenAddress ? Constants.TOKEN_OPTS[data.tokenAddress.toLowerCase()].symbol.toLowerCase() : recipient.unit.toLowerCase();
         data.amount =
           Utils.formatAmount(+data.amount, unit) + ' ' + UNIT_LABELS[unit];
       } catch (ex) {

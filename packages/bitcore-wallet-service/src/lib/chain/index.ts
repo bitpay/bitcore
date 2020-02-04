@@ -3,36 +3,41 @@ import { WalletService } from '../server';
 import { BchChain } from './bch';
 import { BtcChain } from './btc';
 import { EthChain } from './eth';
+import { XrpChain } from './xrp';
 const Common = require('../common');
 const Constants = Common.Constants;
 
 export interface IChain {
-  getWalletBalance(server: WalletService, wallet: IWallet, opts: {coin: string, addresses: string[]} & any, cb);
-  getWalletSendMaxInfo(server: WalletService, wallet: IWallet, opts: {excludeUnconfirmedUtxos: string, returnInputs: string, from: string, feePerKb: number} & any, cb);
+  getWalletBalance(server: WalletService, wallet: IWallet, opts: { coin: string, addresses: string[] } & any, cb);
+  getWalletSendMaxInfo(server: WalletService, wallet: IWallet, opts: { excludeUnconfirmedUtxos: string, returnInputs: string, from: string, feePerKb: number } & any, cb);
   getDustAmountValue();
   getTransactionCount(server: WalletService, wallet: IWallet, from: string);
-  getChangeAddress(server: WalletService, wallet: IWallet, opts: {changeAddress: string} & any);
-  checkDust(output: {amount: number, toAddress: string, valid: boolean}, opts: {outputs: any[]} & any);
-  getFee(server: WalletService, wallet: IWallet, opts: {fee: number, feePerKb: number} & any);
+  getChangeAddress(server: WalletService, wallet: IWallet, opts: { changeAddress: string } & any);
+  checkDust(output: { amount: number, toAddress: string, valid: boolean }, opts: { outputs: any[] } & any);
+  getFee(server: WalletService, wallet: IWallet, opts: { fee: number, feePerKb: number } & any);
   buildTx(txp: TxProposal);
   convertFeePerKb(p: number, feePerKb: number);
   checkTx(server: WalletService, txp: ITxProposal);
-  checkTxUTXOs(server: WalletService, txp: ITxProposal, opts: {noCashAddr: boolean} & any, cb);
-  selectTxInputs(server: WalletService, txp: ITxProposal, wallet: IWallet, opts: {utxosToExclude: any[]} & any, cb, next);
-  checkUtxos(opts: { fee: number, inputs: any[]});
+  checkTxUTXOs(server: WalletService, txp: ITxProposal, opts: { noCashAddr: boolean } & any, cb);
+  selectTxInputs(server: WalletService, txp: ITxProposal, wallet: IWallet, opts: { utxosToExclude: any[] } & any, cb, next);
+  checkUtxos(opts: { fee: number, inputs: any[] });
   checkValidTxAmount(output): boolean;
-  setInputs(info: {inputs: any[]});
+  setInputs(info: { inputs: any[] });
   isUTXOCoin(): boolean;
   isSingleAddress(): boolean;
+  supportsMultisig(): boolean;
+  notifyConfirmations(network: string): boolean;
   addSignaturesToBitcoreTx(tx: string, inputs: any[], inputPaths: any[], signatures: any[], xpub: string);
   addressToStorageTransform(network: string, address: {}): void;
   addressFromStorageTransform(network: string, address: {}): void;
+  validateAddress(wallet: IWallet, inaddr: string, opts: { noCashAddr: boolean } & any);
 }
 
 const chain: { [chain: string]: IChain } = {
   BTC: new BtcChain(),
   BCH: new BchChain(),
-  ETH: new EthChain()
+  ETH: new EthChain(),
+  XRP: new XrpChain()
 };
 
 class ChainProxy {
@@ -126,8 +131,20 @@ class ChainProxy {
     return this.get(coin).isSingleAddress();
   }
 
+  notifyConfirmations(coin: string, network: string): boolean {
+    return this.get(coin).notifyConfirmations(network);
+  }
+
+  supportsMultisig(coin: string): boolean {
+    return this.get(coin).supportsMultisig();
+  }
+
   addSignaturesToBitcoreTx(coin, tx, inputs, inputPaths, signatures, xpub) {
     return this.get(coin).addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub);
+  }
+
+  validateAddress(wallet, inaddr, opts) {
+    return this.get(wallet.coin).validateAddress(wallet, inaddr, opts);
   }
 }
 

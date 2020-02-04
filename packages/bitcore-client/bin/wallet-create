@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+'use strict';
+
 const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
@@ -14,7 +16,7 @@ program
   )
   .option('--baseUrl [host]', 'optional - Specify custom Bitcore API URL')
   .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--mnemonic [phrase]', 'optional - Seed using existing backup phrase')
+  .option('--phrase [phrase]', 'optional - Seed using existing backup phrase')
   .parse(process.argv);
 
 const main = async () => {
@@ -28,7 +30,7 @@ const main = async () => {
       network,
       path,
       phrase,
-      password
+      password,
     });
     console.log('Wallet created!');
   } catch (e) {

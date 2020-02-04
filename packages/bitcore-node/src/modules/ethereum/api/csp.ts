@@ -1,6 +1,6 @@
-import { Readable } from 'stream';
+import logger from '../../../logger';
+import { Readable, Transform } from 'stream';
 import Config from '../../../config';
-import { WalletAddressStorage } from '../../../models/walletAddress';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { ObjectID } from 'mongodb';
 import Web3 from 'web3';
@@ -16,6 +16,7 @@ import { ERC20Abi } from '../abi/erc20';
 import { Transaction } from 'web3/eth/types';
 import { EventLog } from 'web3/types';
 import { partition } from '../../../utils/partition';
+import { WalletAddressStorage } from '../../../models/walletAddress';
 
 interface ERC20Transfer extends EventLog {
   returnValues: {
@@ -59,7 +60,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           ProviderType = Web3.providers.HttpProvider;
           break;
       }
-      console.log(connUrl);
       ETHStateProvider.web3[network] = new Web3(new ProviderType(connUrl));
     }
     return ETHStateProvider.web3[network];
@@ -92,12 +92,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     if (network === 'livenet') {
       network = 'mainnet';
     }
-    const web3 = await this.getWeb3(network);
-    const [gethGasPrice, bestBlock] = await Promise.all([web3.eth.getGasPrice(), this.getLocalTip({ chain, network })]);
-    if (!bestBlock) {
-      return gethGasPrice;
-    }
-
+    const bestBlock = (await this.getLocalTip({ chain, network })) || { height: target };
     const gasPrices: number[] = [];
     const txs = await EthTransactionStorage.collection
       .find({ chain, network, blockHeight: { $gte: bestBlock.height - target } })
@@ -109,19 +104,22 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     if (txCount > 0) {
       gasPrices.push(blockGasPrices[lowGasPriceIndex]);
     }
-    const estimate = Math.max(...gasPrices, gethGasPrice);
-    return estimate;
+
+    const estimate = Math.max(...gasPrices);
+    return { feerate: estimate || 0, blocks: target };
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { network, address } = params;
     const web3 = await this.getWeb3(network);
-    if (params.args && params.args.tokenAddress) {
-      const token = await this.erc20For(network, params.args.tokenAddress);
-
-      const balance = Number(await token.methods.balanceOf(address).call());
-      return { confirmed: balance, unconfirmed: 0, balance };
+    if (params.args) {
+      if (params.args.tokenAddress) {
+        const token = await this.erc20For(network, params.args.tokenAddress);
+        const balance = Number(await token.methods.balanceOf(address).call());
+        return { confirmed: balance, unconfirmed: 0, balance };
+      }
     }
+
     const balance = Number(await web3.eth.getBalance(address));
     return { confirmed: balance, unconfirmed: 0, balance };
   }
@@ -168,20 +166,16 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           .sendSignedTransaction(tx)
           .on('transactionHash', resolve)
           .on('error', reject)
-          .catch(e => reject(e));
+          .catch(e => {
+            logger.error(e);
+            reject(e);
+          });
       });
       txids.push(txid);
     }
     return txids.length === 1 ? txids[0] : txids;
   }
 
-  async getWalletAddresses(walletId: ObjectID) {
-    let query = { chain: this.chain, wallet: walletId };
-    return WalletAddressStorage.collection
-      .find(query)
-      .addCursorFlag('noCursorTimeout', true)
-      .toArray();
-  }
   async streamAddressTransactions(params: CSP.StreamAddressUtxosParams) {
     const { req, res, args, chain, network, address } = params;
     const { limit, since, tokenAddress } = args;
@@ -301,36 +295,50 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
       const query = {
         chain,
         network,
-        to: web3.utils.toChecksumAddress(args.tokenAddress),
         $or: [
           {
             wallets: wallet._id,
+            abiType: { $exists: true },
+            to: web3.utils.toChecksumAddress(args.tokenAddress),
             'abiType.type': 'ERC20',
             'abiType.name': 'transfer',
-            'wallets.0': { $exists: true },
-            abiType: { $exists: true }
+            'wallets.0': { $exists: true }
           },
           {
-            chain: 'ETH',
             abiType: { $exists: true },
+            to: web3.utils.toChecksumAddress(args.tokenAddress),
             'abiType.type': 'ERC20',
             'abiType.name': 'transfer',
             'abiType.params.0.value': { $in: walletAddresses.map(w => w.address.toLowerCase()) }
           }
         ]
       };
-      console.log(JSON.stringify(query));
-      const erc20 = await EthTransactionStorage.collection.find(query).toArray();
-      erc20.forEach(tx => {
-        const transformed = {
-          ...tx,
-          value: tx.abiType!.params[1].value,
-          to: web3.utils.toChecksumAddress(tx.abiType!.params[0].value)
-        };
-        console.log(transformed);
-        transactionStream.push(transformed);
-      });
-      transactionStream.push(null);
+      transactionStream = EthTransactionStorage.collection
+        .find(query)
+        .sort({ blockTimeNormalized: 1 })
+        .addCursorFlag('noCursorTimeout', true)
+        .pipe(
+          new Transform({
+            objectMode: true,
+            transform: (tx: any, _, cb) => {
+              if (tx.abiType && tx.abiType.type === 'ERC20') {
+                return cb(null, {
+                  ...tx,
+                  value: tx.abiType!.params[1].value,
+                  to: web3.utils.toChecksumAddress(tx.abiType!.params[0].value)
+                });
+              }
+              if (tx.abiType && tx.abiType.type === 'INVOICE') {
+                return cb(null, {
+                  ...tx,
+                  value: tx.abiType!.params[0].value,
+                  to: tx.to
+                });
+              }
+              return cb(null, tx);
+            }
+          })
+        );
     }
     const listTransactionsStream = new EthListTransactionsStream(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(res);
@@ -377,12 +385,17 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   }
 
   async getAccountNonce(network: string, address: string) {
-    return EthTransactionStorage.collection.countDocuments({
-      chain: 'ETH',
-      network,
-      from: address,
-      blockHeight: { $gt: -1 }
-    });
+    const web3 = await this.getWeb3(network);
+    const count = await web3.eth.getTransactionCount(address);
+    return count;
+    /*
+     *return EthTransactionStorage.collection.countDocuments({
+     *  chain: 'ETH',
+     *  network,
+     *  from: address,
+     *  blockHeight: { $gt: -1 }
+     *});
+     */
   }
 
   async getWalletTokenTransactions(

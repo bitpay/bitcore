@@ -19,6 +19,16 @@ module.exports = {
     ],
     publicKey: '03159069584176096f1c89763488b94dbc8d5e1fa7bf91f50b42f4befe4e45295a'
   },
+  'mjnih84Sb1dqvzA66GdUikT7k78WaZbRHv': {
+    owner: 'BitPay Staging (TESTNET ONLY - DO NOT TRUST FOR ACTUAL BITCOIN)',
+    networks: [
+      'test'
+    ],
+    domains: [
+      'staging.bitpay.com'
+    ],
+    publicKey: '02ed6fa908e51886dee9d39cae10c220d7e6ae08f634581c5aea019b5a7d9f590e'
+  },
   '1GA2vgw5byxqTpAUHEyyh7ahXnHU1FDDAy': {
     owner: 'BitPay, Inc.',
     networks: [

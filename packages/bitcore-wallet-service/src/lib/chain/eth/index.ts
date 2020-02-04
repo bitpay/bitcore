@@ -1,4 +1,4 @@
-import { Transactions } from 'crypto-wallet-core';
+import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain } from '..';
@@ -30,6 +30,14 @@ export class EthChain implements IChain {
     return convertedBalance;
   }
 
+  notifyConfirmations() {
+    return false;
+  }
+
+  supportsMultisig() {
+    return false;
+  }
+
   getWalletBalance(server, wallet, opts, cb) {
     const bc = server._getBlockchainExplorer(wallet.coin, wallet.network);
 
@@ -53,7 +61,7 @@ export class EthChain implements IChain {
               const byAddress = [
                 {
                   address: addresses[0].address,
-                  path: Constants.PATHS.SINGLE_ADDRESS,
+                  path: addresses[0].path,
                   amount: convertedBalance.totalAmount
                 }
               ];
@@ -94,9 +102,9 @@ export class EthChain implements IChain {
     });
   }
 
-  getChangeAddress() {}
+  getChangeAddress() { }
 
-  checkDust(output, opts) {}
+  checkDust(output, opts) { }
 
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
@@ -207,13 +215,27 @@ export class EthChain implements IChain {
         } else if (availableAmount < txp.getTotalAmount()) {
           return cb(Errors.LOCKED_FUNDS);
         } else {
-          return next(server._checkTx(txp));
+          if (opts.tokenAddress) {
+            // ETH wallet balance
+            server.getBalance({}, (err, ethBalance) => {
+              if (err) return next(err);
+              const { totalAmount, availableAmount } = ethBalance;
+              if (totalAmount < txp.fee) {
+                return cb(Errors.INSUFFICIENT_ETH_FEE);
+              } else if (availableAmount < txp.fee) {
+                return cb(Errors.LOCKED_ETH_FEE);
+              } else {
+                return next(server._checkTx(txp));
+              }
+            });
+          } else {
+            return next(server._checkTx(txp));
+          }
         }
-      }
-    );
+    });
   }
 
-  checkUtxos(opts) {}
+  checkUtxos(opts) { }
 
   checkValidTxAmount(output): boolean {
     if (
@@ -226,7 +248,7 @@ export class EthChain implements IChain {
     return true;
   }
 
-  setInputs() {}
+  setInputs() { }
 
   isUTXOCoin() {
     return false;
@@ -268,5 +290,20 @@ export class EthChain implements IChain {
       tx.id = Transactions.getHash({ tx: signed, chain });
     }
     tx.uncheckedSerialize = () => signedTxs;
+  }
+
+  validateAddress(wallet, inaddr, opts) {
+    const chain = 'ETH';
+    try {
+      Validation.validateAddress(
+        chain,
+        wallet.network,  // not really used for ETH. wallet.network is 'livenet/testnet/regtest' in wallet.
+        inaddr,
+      );
+    } catch (ex) {
+      return Errors.INVALID_ADDRESS;
+    }
+
+    return;
   }
 }

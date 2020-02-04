@@ -1,3 +1,4 @@
+import 'source-map-support/register'
 import * as Bcrypt from 'bcryptjs';
 import { Encryption } from './encryption';
 import { Client } from './client';
@@ -22,6 +23,8 @@ export namespace Wallet {
     phrase: string;
     password: string;
     storage: Storage;
+    addressIndex: number;
+    tokens: Array<any>;
   };
 }
 export class Wallet {
@@ -42,6 +45,7 @@ export class Wallet {
   addressIndex?: number;
   authKey: string;
   derivationPath: string;
+  tokens?: Array<any>;
 
   constructor(params: Wallet | Wallet.WalletObj) {
     Object.assign(this, params);
@@ -52,6 +56,7 @@ export class Wallet {
       apiUrl: this.getApiUrl(),
       authKey: this.getAuthSigningKey()
     });
+    this.addressIndex = this.addressIndex || 0;
   }
 
   getApiUrl() {
@@ -120,19 +125,24 @@ export class Wallet {
       masterKey: encPrivateKey,
       password: await Bcrypt.hash(password, 10),
       xPubKey: hdPrivKey.xpubkey,
-      pubKey
+      pubKey,
+      tokens: []
     });
+
     // save wallet to storage and then bitcore-node
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({
       storage,
       name
     });
+
     console.log(mnemonic.toString());
+
     await loadedWallet.register().catch(e => {
       console.debug(e);
       console.error('Failed to register wallet with bitcore-node.');
     });
+
     return loadedWallet;
   }
 
@@ -221,8 +231,18 @@ export class Wallet {
     return new PrivateKey(this.authKey);
   }
 
-  getBalance(time?: string) {
-    return this.client.getBalance({ pubKey: this.authPubKey, time });
+  getBalance(time?: string, token?: string) {
+    let payload;
+    if (token) {
+      let tokenContractAddress;
+      const tokenObj = this.tokens.find(tok => tok.symbol === token);
+      if (!tokenObj) {
+        throw new Error(`${token} not found on wallet ${this.name}`);
+      }
+      tokenContractAddress = tokenObj.address;
+      payload = { tokenContractAddress };
+    }
+    return this.client.getBalance({ payload, pubKey: this.authPubKey, time });
   }
 
   getNetworkFee(params: { target?: number } = {}) {
@@ -238,6 +258,22 @@ export class Wallet {
     });
   }
 
+  getUtxosArray(params: { includeSpent?: boolean } = {}) {
+    return new Promise((resolve, reject) => {
+      const utxoArray = [];
+      const { includeSpent = false } = params;
+      const utxoRequest = this.client.getCoins({
+        pubKey: this.authPubKey,
+        includeSpent
+      });
+      utxoRequest
+        .pipe(new ParseApiStream())
+        .on('data', utxo => utxoArray.push(utxo))
+        .on('end', () => resolve(utxoArray))
+        .on('err', err => reject(err));
+    });
+  }
+
   listTransactions(params) {
     return this.client.listTransactions({
       ...params,
@@ -245,22 +281,56 @@ export class Wallet {
     });
   }
 
+  async getToken(contractAddress) {
+    return this.client.getToken(contractAddress);
+  }
+
+  async addToken(params) {
+    this.tokens.push({
+      symbol: params.symbol,
+      address: params.address,
+      decimals: params.decimals
+    });
+    await this.saveWallet();
+  }
+
   async newTx(params: {
     utxos?: any[];
     recipients: { address: string; amount: number }[];
     from?: string;
     change?: string;
+    invoiceID?: string;
     fee?: number;
+    nonce?: number;
+    tag? : number;
+    data? : string;
+    token? : string;
   }) {
+    const chain = params.token ? 'ERC20' : this.chain;
+    let tokenContractAddress;
+    if (params.token) {
+      const tokenObj = this.tokens.find(tok => tok.symbol === params.token);
+      if (!tokenObj) {
+        throw new Error(`${params.token} not found on wallet ${this.name}`);
+      }
+      tokenContractAddress = tokenObj.address;
+    }
     const payload = {
       network: this.network,
-      chain: this.chain,
+      chain,
       recipients: params.recipients,
       from: params.from,
       change: params.change,
+      invoiceID: params.invoiceID,
       fee: params.fee,
       wallet: this,
-      utxos: params.utxos
+      utxos: params.utxos,
+      nonce: params.nonce,
+      tag: params.tag,
+      gasPrice: params.fee,
+      gasLimit: 200000,
+      data: params.data,
+      tokenAddress: tokenContractAddress
     };
     return Transactions.create(payload);
   }
@@ -354,7 +424,7 @@ export class Wallet {
     return walletAddresses.map(walletAddress => walletAddress.address);
   }
 
-  async deriveAddress(addressIndex, isChange) {
+  deriveAddress(addressIndex, isChange) {
     const address = Deriver.deriveAddress(
       this.chain,
       this.network,
@@ -370,7 +440,7 @@ export class Wallet {
       this.chain,
       this.network,
       this.unlocked.masterKey,
-      this.addressIndex,
+      this.addressIndex || 0,
       isChange
     );
     return keyToImport;
@@ -388,5 +458,14 @@ export class Wallet {
     await this.importKeys({ keys });
     await this.saveWallet();
     return keys.map(key => key.address.toString());
+  }
+
+  async getNonce(addressIndex: number = 0, isChange?: boolean) {
+    const address = this.deriveAddress(0, isChange);
+    const count = await this.client.getNonce({ address });
+    if (!count || typeof count.nonce !== 'number') {
+      throw new Error('Unable to get nonce');
+    }
+    return count.nonce;
   }
 }

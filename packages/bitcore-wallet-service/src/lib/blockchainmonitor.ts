@@ -3,6 +3,7 @@ import _ from 'lodash';
 import 'source-map-support/register';
 
 import { BlockChainExplorer } from './blockchainexplorer';
+import { ChainService } from './chain/index';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
 import { Notification } from './model';
@@ -39,8 +40,8 @@ export class BlockchainMonitor {
   start(opts, cb) {
     opts = opts || {};
 
-    // prevent checking same address if repeading with in 1000 events
-    this.N = opts.N || 1000;
+    // prevent checking same address if repeading with in 100 events
+    this.N = opts.N || 100;
     this.Ni = this.Nix = 0;
     this.last = this.lastTx = [];
 
@@ -50,7 +51,8 @@ export class BlockchainMonitor {
           this.explorers = {
             btc: {},
             bch: {},
-            eth: {}
+            eth: {},
+            xrp: {}
           };
 
           const coinNetworkPairs = [];
@@ -91,6 +93,7 @@ export class BlockchainMonitor {
               });
             }
             $.checkState(explorer);
+
             this._initExplorer(pair.coin, pair.network, explorer);
             this.explorers[pair.coin][pair.network] = explorer;
           });
@@ -223,15 +226,30 @@ export class BlockchainMonitor {
   _handleIncomingPayments(coin, network, data) {
     if (!data) return;
     let out = data.out;
-    if (!out || ! (out.amount > 0)) return;
-    if (!out.address || out.address.length < 10) return;
+    if (!out || !out.address || out.address.length < 10) return;
 
-    if (this.last.indexOf(out.address) >= 0) {
-      return;
+    // For eth, amount = 0 is ok, repeating addr payments are ok (no change).
+    if (coin != 'eth') {
+      if (! (out.amount > 0)) return;
+      if (this.last.indexOf(out.address) >= 0) {
+        log.debug(
+          'The incoming tx"s out ' + out.address + ' was already processed'
+        );
+        return;
+      }
+      this.last[this.Ni++] = out.address;
+      if (this.Ni >= this.N) this.Ni = 0;
+    } else if (coin == 'eth') {
+      if (this.lastTx.indexOf(data.txid) >= 0) {
+        log.debug(
+          'The incoming tx ' + data.txid + ' was already processed'
+        );
+        return;
+      }
+
+      this.lastTx[this.Nix++] = data.txid;
+      if (this.Nix >= this.N) this.Nix = 0;
     }
-
-    this.last[this.Ni++] = out.address;
-    if (this.Ni >= this.N) this.Ni = 0;
 
     log.debug(`Checking ${coin}:${network}:${out.address} ${out.amount}`);
     this.storage.fetchAddressByCoin(coin, out.address, ( err, address) => {
@@ -240,21 +258,11 @@ export class BlockchainMonitor {
         return;
       }
       if (!address || address.isChange) {
-        // no incomming paymen
+        // no incomming payment
         return this._handleThirdPartyBroadcasts(coin, network, data, null);
       }
 
       const walletId = address.walletId;
-      log.debug(
-        'Incoming tx for wallet ' +
-        walletId +
-        ' [' +
-        out.amount +
-        'amount -> ' +
-        out.address +
-        ']'
-      );
-
       const fromTs = Date.now() - 24 * 3600 * 1000;
       this.storage.fetchNotifications(walletId, null, fromTs, (
         err,
@@ -273,12 +281,23 @@ export class BlockchainMonitor {
           return;
         }
 
+        log.debug(
+          'Incoming tx for wallet ' +
+          walletId +
+          ' [' +
+          out.amount +
+          'amount -> ' +
+          out.address +
+          ']'
+        );
+
         const notification = Notification.create({
           type: 'NewIncomingTx',
           data: {
             txid: data.txid,
             address: out.address,
-            amount: out.amount
+            amount: out.amount,
+            tokenAddress: out.tokenAddress,
           },
           walletId
         });
@@ -305,8 +324,8 @@ export class BlockchainMonitor {
 
   _handleTxConfirmations(coin, network, hash) {
 
-    // not Tx Confirmationsa notifications for ETH
-    if (coin == 'eth') return;
+    if (!ChainService.notifyConfirmations(coin, network))
+      return;
 
     const processTriggeredSubs = (subs, cb) => {
       async.each(subs, (sub: any) => {

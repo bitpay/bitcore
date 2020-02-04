@@ -84,7 +84,6 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
     }
 
     await this.collection.updateOne({ hash: convertedBlock.hash, chain, network }, { $set: { processed: true } });
-    this.updateCachedChainTip({ block: convertedBlock, chain, network });
   }
 
   async getBlockOp(params: { block: Bitcoin.Block; chain: string; network: string }) {
@@ -152,9 +151,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
       const prevBlock = await this.collection.findOne({ chain, network, hash: header.prevHash });
       if (prevBlock) {
         localTip = prevBlock;
-        this.updateCachedChainTip({ chain, network, block: prevBlock });
       } else {
-        delete this.chainTips[chain][network];
         logger.error(`Previous block isn't in the DB need to roll back until we have a block in common`);
       }
       logger.info(`Resetting tip to ${localTip.height - 1}`, { chain, network });

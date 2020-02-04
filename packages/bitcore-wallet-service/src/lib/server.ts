@@ -13,6 +13,8 @@ import { MessageBroker } from './messagebroker';
 import { Copayer, INotification, ITxProposal, IWallet, Notification, Preferences, PushNotificationSub, Session, TxConfirmationSub, TxNote, TxProposal, Wallet } from './model';
 import { Storage } from './storage';
 
+const config = require('../config');
+const Uuid = require('uuid');
 const $ = require('preconditions').singleton();
 const deprecatedServerMessage = require('../deprecated-serverMessages');
 const serverMessages = require('../serverMessages');
@@ -29,7 +31,8 @@ const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash'),
-  eth: Bitcore
+  eth: Bitcore,
+  xrp: Bitcore
 };
 
 const Common = require('./common');
@@ -99,6 +102,7 @@ export class WalletService {
   parsedClientVersion: { agent: string; major: number; minor: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
+  request;
 
   constructor() {
     if (!initialized) {
@@ -112,6 +116,9 @@ export class WalletService {
     this.messageBroker = messageBroker;
     this.fiatRateService = fiatRateService;
     this.notifyTicker = 0;
+    // for testing
+    //
+    this.request = request;
   }
   /**
    * Gets the current version of BWS
@@ -205,7 +212,7 @@ export class WalletService {
           initFiatRateService(next);
         }
       ],
-    (err) => {
+      (err) => {
         lock = opts.lock || new Lock(storage, opts.lockOpts);
 
         if (err) {
@@ -533,9 +540,9 @@ export class WalletService {
       return cb(new ClientError('Invalid public key'));
     }
 
-    if (opts.coin === 'eth' && opts.n > 1) {
+    if (opts.n > 1 &&  !ChainService.supportsMultisig(opts.coin)) {
       return cb(
-        new ClientError( 'Multisig ETH wallet not supported')
+        new ClientError('Multisig wallets are not supported for this coin')
       );
     }
 
@@ -779,6 +786,9 @@ export class WalletService {
         (next) => {
           this.getPreferences({}, (err, preferences) => {
             if (err) return next(err);
+            if (!opts.includeExtendedInfo) {
+              preferences.tokenAddresses = null;
+            }
             status.preferences = preferences;
             next();
           });
@@ -1203,6 +1213,15 @@ export class WalletService {
             _.isString(value) && _.includes(['btc', 'bit'], value.toLowerCase())
           );
         }
+      },
+      {
+        name: 'tokenAddresses',
+        isValid(value) {
+          return (
+            _.isArray(value) && value.every(x =>
+              Validation.validateAddress('eth', 'mainnet', x))
+          );
+        }
       }
     ];
 
@@ -1219,22 +1238,38 @@ export class WalletService {
       return cb(new ClientError(ex));
     }
 
-    this._runLocked(cb, (cb) => {
-      this.storage.fetchPreferences(this.walletId, this.copayerId, (
-        err,
-        oldPref
-      ) => {
-        if (err) return cb(err);
+    this.getWallet({}, (err, wallet) => {
+      if (err) return cb(err);
 
-        const newPref = Preferences.create({
-          walletId: this.walletId,
-          copayerId: this.copayerId
-        });
-        const preferences = Preferences.fromObj(
-          _.defaults(newPref, opts, oldPref)
-        );
-        this.storage.storePreferences(preferences, (err) => {
-          return cb(err);
+      if (wallet.coin != 'eth') {
+        opts.tokenAddresses = null;
+      }
+
+      this._runLocked(cb, (cb) => {
+        this.storage.fetchPreferences(this.walletId, this.copayerId, (
+          err,
+          oldPref
+        ) => {
+          if (err) return cb(err);
+
+          const newPref = Preferences.create({
+            walletId: this.walletId,
+            copayerId: this.copayerId
+          });
+          const preferences = Preferences.fromObj(
+            _.defaults(newPref, opts, oldPref)
+          );
+
+          // merge tokenAddresses
+          if (opts.tokenAddresses) {
+            oldPref = oldPref || {};
+            oldPref.tokenAddresses = oldPref.tokenAddresses || [];
+            preferences.tokenAddresses = _.uniq(oldPref.tokenAddresses.concat(opts.tokenAddresses));
+          }
+
+          this.storage.storePreferences(preferences, (err) => {
+            return cb(err);
+          });
         });
       });
     });
@@ -1379,7 +1414,7 @@ export class WalletService {
       this.storage.fetchAddresses(this.walletId, (err, addresses) => {
         if (err) return cb(err);
         if (!_.isEmpty(addresses)) {
-          let x =  _.head(addresses);
+          let x = _.head(addresses);
           ChainService.addressFromStorageTransform(wallet.coin, wallet.network, x);
           return cb(null, x);
         }
@@ -1398,7 +1433,7 @@ export class WalletService {
         opts.singleAddress = true;
       }
 
-      this._canCreateAddress(opts.ignoreMaxGap || opts.singleAddress ||  wallet.singleAddress, (err, canCreate) => {
+      this._canCreateAddress(opts.ignoreMaxGap || opts.singleAddress || wallet.singleAddress, (err, canCreate) => {
         if (err) return cb(err);
         if (!canCreate) return cb(Errors.MAIN_ADDRESS_GAP_REACHED);
 
@@ -2317,42 +2352,6 @@ export class WalletService {
     );
   }
 
-  _validateAddr(wallet, inaddr, opts) {
-    if (!Constants.UTXO_COINS[wallet.coin.toUpperCase()]) {
-      const chain = ChainService.getChain(wallet.coin);
-      try {
-        Validation.validateAddress(
-          chain,
-          wallet.network,  // not really used for ETH. wallet.network is 'livenet/testnet/regtest' in wallet.
-          inaddr,
-        );
-      } catch (ex) {
-        return Errors.INVALID_ADDRESS;
-      }
-
-    } else {
-      const A = Bitcore_[wallet.coin].Address;
-      let addr: {
-        network?: string;
-        toString?: (cashAddr: boolean) => string;
-      } = {};
-      try {
-        addr = new A(inaddr);
-      } catch (ex) {
-        return Errors.INVALID_ADDRESS;
-      }
-      if (addr.network.toString() != wallet.network) {
-        return Errors.INCORRECT_ADDRESS_NETWORK;
-      }
-
-      if (wallet.coin == 'bch' && !opts.noCashAddr) {
-        if (addr.toString(true) != inaddr) return Errors.ONLY_CASHADDR;
-      }
-    }
-
-    return;
-  }
-
   _validateOutputs(opts, wallet, cb) {
     if (_.isEmpty(opts.outputs))
       return new ClientError('No outputs were specified');
@@ -2361,7 +2360,7 @@ export class WalletService {
       const output = opts.outputs[i];
       output.valid = false;
 
-      const addrErr = this._validateAddr(wallet, output.toAddress, opts);
+      const addrErr = ChainService.validateAddress(wallet, output.toAddress, opts);
       if (addrErr) return addrErr;
 
       if (!checkRequired(output, ['toAddress', 'amount'])) {
@@ -2632,7 +2631,11 @@ export class WalletService {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs))
                     return next();
 
-                  ({ feePerKb, gasPrice, gasLimit } = await ChainService.getFee(this, wallet, opts));
+                  try {
+                    ({ feePerKb, gasPrice, gasLimit } = await ChainService.getFee(this, wallet, opts));
+                  } catch (error) {
+                    return next(error);
+                  }
                   next();
                 },
                 async (next) => {
@@ -2644,6 +2647,7 @@ export class WalletService {
                   return next();
                 },
                 (next) => {
+
                   const txOpts = {
                     id: opts.txProposalId,
                     walletId: this.walletId,
@@ -2675,7 +2679,9 @@ export class WalletService {
                     nonce: opts.nonce,
                     gasLimit, // Backward compatibility for BWC < v7.1.1
                     data: opts.data, // Backward compatibility for BWC < v7.1.1
-                    tokenAddress: opts.tokenAddress
+                    tokenAddress: opts.tokenAddress,
+                    destinationTag: opts.destinationTag,
+                    invoiceID: opts.invoiceID
                   };
                   txp = TxProposal.create(txOpts);
                   next();
@@ -4516,6 +4522,123 @@ export class WalletService {
 
     this.storage.removeTxConfirmationSub(this.copayerId, opts.txid, cb);
   }
+
+  simplexGetQuote(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!config.simplex) return reject(new Error('Simplex missing credentials'));
+      if (!req.body.env || (req.body.env != 'sandbox' && req.body.env != 'production')) return reject(new Error('Simplex\'s request wrong environment'));
+
+      const API = config.simplex[req.body.env].api;
+      const API_KEY = config.simplex[req.body.env].apiKey;
+      const ip = Utils.getIpFromReq(req);
+
+      req.body.client_ip = ip;
+      req.body.wallet_id = config.simplex[req.body.env].appProviderId;
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'ApiKey ' + API_KEY
+      };
+      delete req.body.env;
+
+      this.request.post(API + '/wallet/merchant/v2/quote', {
+        headers,
+        body: req.body,
+        json: true
+      }, (err, data) => {
+        if (err) {
+          console.log('[simplexGetQuote.4542:err:]', err);
+          return reject(err.body ? err.body : null);
+        } else {
+          return resolve(data.body ? data.body : null);
+        }
+      });
+    });
+  }
+
+  simplexPaymentRequest(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!config.simplex) return reject(new Error('Simplex missing credentials'));
+      if (!req.body.env || (req.body.env != 'sandbox' && req.body.env != 'production')) return reject(new Error('Simplex\'s request wrong environment'));
+
+      const API = config.simplex[req.body.env].api;
+      const API_KEY = config.simplex[req.body.env].apiKey;
+      const appProviderId = config.simplex[req.body.env].appProviderId;
+      const paymentId = Uuid.v4();
+      const orderId = Uuid.v4();
+      const apiHost = config.simplex[req.body.env].api;
+      const ip = Utils.getIpFromReq(req);
+
+      if (!req.body.account_details || !req.body.transaction_details || !req.body.transaction_details.payment_details) {
+        return reject(new Error('Simplex\'s request missing arguments'));
+      }
+
+      req.body.account_details.app_provider_id = appProviderId;
+      req.body.account_details.signup_login = {
+        ip,
+        location: '',
+        uaid: '',
+        accept_language: 'de,en-US;q=0.7,en;q=0.3',
+        http_accept_language: 'de,en-US;q=0.7,en;q=0.3',
+        user_agent: req.body.account_details.signup_login ? req.body.account_details.signup_login.user_agent : '', // Format: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67.0) Gecko/20100101 Firefox/67.0'
+        cookie_session_id: '',
+        timestamp: req.body.account_details.signup_login ? req.body.account_details.signup_login.timestamp : '',
+      };
+
+      req.body.transaction_details.payment_details.payment_id = paymentId;
+      req.body.transaction_details.payment_details.order_id = orderId;
+      delete req.body.env;
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'ApiKey ' + API_KEY
+      };
+
+      this.request.post(API + '/wallet/merchant/v2/payments/partner/data', {
+        headers,
+        body: req.body,
+        json: true
+      }, (err, data) => {
+        if (err) {
+          console.log('[simplexGetQuote.4595:err:]', err);
+          return reject(err.body ? err.body : null);
+        } else {
+          data.body.payment_id = paymentId;
+          data.body.order_id = orderId;
+          data.body.app_provider_id = appProviderId;
+          data.body.api_host = apiHost;
+          return resolve(data.body);
+        }
+      });
+    });
+  }
+
+  simplexGetEvents(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!config.simplex) return reject(new Error('Simplex missing credentials'));
+      if (!req.env || (req.env != 'sandbox' && req.env != 'production')) return reject(new Error('Simplex\'s request wrong environment'));
+
+      const API = config.simplex[req.env].api;
+      const API_KEY = config.simplex[req.env].apiKey;
+      const headers = {
+        'Content-Type': 'application/json',
+        'Authorization': 'ApiKey ' + API_KEY
+      };
+
+      this.request.get(API + '/wallet/merchant/v2/events', {
+        headers,
+        json: true
+      }, (err, data) => {
+        if (err) {
+          console.log('[simplexGetEvents.4625:err:]', err);
+          return reject(err.body ? err.body : null);
+        } else {
+          return resolve(data.body ? data.body : null);
+        }
+      });
+    });
+  }
+
 }
 
 function checkRequired(obj, args, cb?: (e: any) => void) {

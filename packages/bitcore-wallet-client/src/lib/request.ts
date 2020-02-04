@@ -176,10 +176,12 @@ export class Request {
   //  @param {Object} args
   //  @param {Callback} cb
   post(url, args, cb) {
+    args = args || {};
     return this.doRequest('post', url, args, false, cb);
   }
 
   put(url, args, cb) {
+    args = args || {};
     return this.doRequest('put', url, args, false, cb);
   }
 
