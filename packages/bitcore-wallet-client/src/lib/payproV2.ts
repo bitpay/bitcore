@@ -178,6 +178,7 @@ export class PayProV2 {
     paymentUrl,
     chain,
     currency,
+    buyerProvidedEmail,
     unsafeBypassValidation = false
   }) {
 
@@ -190,7 +191,8 @@ export class PayProV2 {
       },
       args: JSON.stringify({
         chain,
-        currency
+        currency,
+        buyerProvidedEmail
       })
     });
 
