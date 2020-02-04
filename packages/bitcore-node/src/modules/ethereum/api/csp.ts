@@ -1,3 +1,4 @@
+import logger from '../../../logger';
 import { Readable, Transform } from 'stream';
 import Config from '../../../config';
 import { CSP } from '../../../types/namespaces/ChainStateProvider';
@@ -118,12 +119,14 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
     const { network, address } = params;
     const web3 = await this.getWeb3(network);
-    if (params.args && params.args.tokenAddress) {
-      const token = await this.erc20For(network, params.args.tokenAddress);
-
-      const balance = Number(await token.methods.balanceOf(address).call());
-      return { confirmed: balance, unconfirmed: 0, balance };
+    if (params.args) {
+      if (params.args.tokenAddress) {
+        const token = await this.erc20For(network, params.args.tokenAddress);
+        const balance = Number(await token.methods.balanceOf(address).call());
+        return { confirmed: balance, unconfirmed: 0, balance };
+      }
     }
+
     const balance = Number(await web3.eth.getBalance(address));
     return { confirmed: balance, unconfirmed: 0, balance };
   }
@@ -170,7 +173,10 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           .sendSignedTransaction(tx)
           .on('transactionHash', resolve)
           .on('error', reject)
-          .catch(e => reject(e));
+          .catch(e => {
+            logger.error(e);
+            reject(e);
+          });
       });
       txids.push(txid);
     }
