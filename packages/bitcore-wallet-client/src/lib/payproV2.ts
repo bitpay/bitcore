@@ -69,11 +69,11 @@ export class PayProV2 {
       });
       r.agent(requestOptions.agent);
 
+      r.timeout({ response: 15000 });
+
       if (requestOptions.args) {
         if (requestOptions.method == 'post' || requestOptions.method == 'put') {
           r.send(requestOptions.args);
-        } else if (requestOptions.method === 'get') {
-          r.query(requestOptions.args).timeout({ response: 10000 });
         } else {
           r.query(requestOptions.args);
         }
