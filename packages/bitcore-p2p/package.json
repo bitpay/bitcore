@@ -20,7 +20,6 @@
     "url": "https://github.com/bitpay/bitcore-p2p.git"
   },
   "dependencies": {
-    "bcoin": "1.0.0-beta.12",
     "bitcore-lib": "^8.14.4",
     "bloom-filter": "^0.2.0",
     "buffers": "bitpay/node-buffers#v0.1.2-bitpay",
