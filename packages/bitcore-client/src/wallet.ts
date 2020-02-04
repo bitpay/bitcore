@@ -1,6 +1,6 @@
-import 'source-map-support/register'
 import * as Bcrypt from 'bcryptjs';
 import { Deriver, Transactions } from 'crypto-wallet-core';
+import 'source-map-support/register';
 import { Client } from './client';
 import { Encryption } from './encryption';
 import { Storage } from './storage';
@@ -22,8 +22,8 @@ export interface WalletObj {
   phrase: string;
   password: string;
   storage: Storage;
-    addressIndex: number;
-    tokens: Array<any>;
+  addressIndex: number;
+  tokens: Array<any>;
 }
 
 export class Wallet {
@@ -274,8 +274,8 @@ export class Wallet {
     fee?: number;
     nonce?: number;
     tag?: number;
-    data? : string;
-    token? : string;
+    data?: string;
+    token?: string;
   }) {
     const chain = params.token ? 'ERC20' : this.chain;
     let tokenContractAddress;

@@ -1,10 +1,10 @@
-import logger from '../../../logger';
 import { ObjectID } from 'mongodb';
 import { Readable, Transform } from 'stream';
 import Web3 from 'web3';
 import { Transaction } from 'web3/eth/types';
 import { EventLog } from 'web3/types';
 import Config from '../../../config';
+import logger from '../../../logger';
 import { ITransaction } from '../../../models/baseTransaction';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';

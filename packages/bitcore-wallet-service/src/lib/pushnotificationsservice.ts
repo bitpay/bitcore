@@ -163,7 +163,8 @@ export class PushNotificationsService {
                     if (err) return next(err);
 
                     const notifications = _.map(subs, sub => {
-                        const tokenAddress = notification.data && notification.data.tokenAddress ? notification.data.tokenAddress : null;
+                      const tokenAddress =
+                        notification.data && notification.data.tokenAddress ? notification.data.tokenAddress : null;
                       return {
                         to: sub.token,
                         priority: 'high',
@@ -178,7 +179,7 @@ export class PushNotificationsService {
                         data: {
                           walletId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(notification.walletId)),
                           copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(recipient.copayerId)),
-                            tokenAddress,
+                          tokenAddress,
                           title: content.plain.subject,
                           body: content.plain.body,
                           notification_type: notification.type
