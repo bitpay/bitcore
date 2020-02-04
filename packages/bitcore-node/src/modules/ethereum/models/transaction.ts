@@ -23,21 +23,21 @@ function requireUncached(module) {
   return require(module);
 }
 
+const Erc20Decoder = requireUncached('abi-decoder');
+Erc20Decoder.addABI(ERC20Abi);
 function getErc20Decoder() {
-  const Erc20Decoder = requireUncached('abi-decoder');
-  Erc20Decoder.addABI(ERC20Abi);
   return Erc20Decoder;
 }
 
+const Erc721Decoder = requireUncached('abi-decoder');
+Erc721Decoder.addABI(ERC721Abi);
 function getErc721Decoder() {
-  const Erc721Decoder = requireUncached('abi-decoder');
-  Erc721Decoder.addABI(ERC721Abi);
   return Erc721Decoder;
 }
 
+const InvoiceDecoder = requireUncached('abi-decoder');
+InvoiceDecoder.addABI(InvoiceAbi);
 function getInvoiceDecoder() {
-  const InvoiceDecoder = requireUncached('abi-decoder');
-  InvoiceDecoder.addABI(InvoiceAbi);
   return InvoiceDecoder;
 }
 
@@ -196,27 +196,33 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   }
 
   abiDecode(input: string) {
-    const erc20Data = getErc20Decoder().decodeMethod(input);
-    if (erc20Data) {
-      return {
-        type: 'ERC20',
-        ...erc20Data
-      };
-    }
-    const erc721Data = getErc721Decoder().decodeMethod(input);
-    if (erc721Data) {
-      return {
-        type: 'ERC721',
-        ...erc721Data
-      };
-    }
-    const invoiceData = getInvoiceDecoder().decodeMethod(input);
-    if (invoiceData) {
-      return {
-        type: 'INVOICE',
-        ...invoiceData
-      };
-    }
+    try {
+      const erc20Data = getErc20Decoder().decodeMethod(input);
+      if (erc20Data) {
+        return {
+          type: 'ERC20',
+          ...erc20Data
+        };
+      }
+    } catch (e) {}
+    try {
+      const erc721Data = getErc721Decoder().decodeMethod(input);
+      if (erc721Data) {
+        return {
+          type: 'ERC721',
+          ...erc721Data
+        };
+      }
+    } catch (e) {}
+    try {
+      const invoiceData = getInvoiceDecoder().decodeMethod(input);
+      if (invoiceData) {
+        return {
+          type: 'INVOICE',
+          ...invoiceData
+        };
+      }
+    } catch (e) {}
     return undefined;
   }
 

@@ -56,6 +56,14 @@ module.exports = {
         url: 'https://api-eth.bitcore.io',
       },
     },
+    xrp: {
+      livenet: {
+        url: 'https://api-xrp.bitcore.io',
+      },
+      testnet: {
+        url: 'https://api-xrp.bitcore.io',
+      },
+    },
     socketApiKey: 'socketApiKey'
   },
   pushNotificationsOpts: {
@@ -73,6 +81,7 @@ module.exports = {
   maintenanceOpts: {
     maintenanceMode: false,
   },
+  staticRoot: '/tmp/static',
   // simplex: {
   //   sandbox: {
   //     apiKey: 'simplex_sandbox_api_key_here',

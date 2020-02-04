@@ -7,10 +7,9 @@ import { Storage } from '../../../services/storage';
 import { ChainNetwork } from '../../../types/ChainNetwork';
 import Config from '../../../config';
 import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types';
-import { ITransaction } from '../../../models/baseTransaction';
 import { ICoin } from '../../../models/coin';
 import { RippleWalletTransactions } from './transform';
-import { SubmitResponse } from './types';
+import { SubmitResponse, SingleOutputTx } from './types';
 import { IBlock } from '../../../models/baseBlock';
 import { FormattedLedger } from 'ripple-lib/dist/npm/ledger/parse/ledger';
 
@@ -93,7 +92,15 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
         if (err) {
           return reject(err);
         } else {
-          return resolve(body);
+          return resolve({
+            ...body.ledger,
+            chain: this.chain,
+            network,
+            hash: body.ledger.ledger_hash,
+            height: body.ledger.ledger_index,
+            previousBlockHash: body.ledger.parent_hash,
+            timeNormalized: new Date(body.ledger.close_time * 1000)
+          });
         }
       });
     });
@@ -101,9 +108,11 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
   }
 
   async getFee(params: CSP.GetEstimateSmartFeeParams) {
-    const client = await this.getClient(params.network);
+    const { network, target } = params;
+    const client = await this.getClient(network);
     const fee = await client.getFee();
-    return fee;
+    const scaledFee = parseFloat(fee) * 1e6;
+    return { feerate: scaledFee, blocks: target };
   }
 
   async broadcastTransaction(params: CSP.BroadcastTransactionParams) {
@@ -227,27 +236,47 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     };
   }
 
-  transform(tx: FormattedTransactionType, network: string): ITransaction | FormattedTransactionType {
-    if (tx.type === 'payment') {
+  transform(tx: SingleOutputTx | FormattedTransactionType, network: string) {
+    if (tx.type === 'payment' && 'outcome' in tx) {
       return {
         network,
         chain: this.chain,
         txid: tx.id,
-        blockHash: '',
-        blockHeight: tx.outcome.ledgerVersion,
+        blockHash: (tx as any).ledger_hash || '',
+        blockHeight: tx.outcome.ledgerVersion || -1,
         blockTime: new Date(tx.outcome.timestamp!),
         blockTimeNormalized: new Date(tx.outcome.timestamp!),
-        value: Number(tx.outcome.deliveredAmount!.value),
+        value: Number(tx.outcome.deliveredAmount ? tx.outcome.deliveredAmount.value : 0),
         fee: Number(tx.outcome.fee),
         wallets: []
       };
+    } else if (
+      'transaction' in tx &&
+      'Amount' in tx.transaction &&
+      typeof tx.transaction.Amount === 'string' &&
+      tx.type === 'transaction' &&
+      tx.transaction.TransactionType === 'Payment' &&
+      tx.transaction.Destination
+    ) {
+      return {
+        network,
+        chain: this.chain,
+        txid: tx.transaction.hash,
+        blockHash: (tx as any).ledger_hash || '',
+        blockHeight: tx.ledger_index || -1,
+        blockTime: new Date(),
+        blockTimeNormalized: new Date(),
+        value: Number(tx.transaction.Amount),
+        fee: Number(tx.transaction.Fee),
+        wallets: []
+      };
     } else {
-      return tx;
+      return tx as FormattedTransactionType;
     }
   }
 
-  transformToCoin(tx: FormattedTransactionType, network: string) {
-    if (tx.type === 'payment') {
+  transformToCoins(tx: SingleOutputTx | FormattedTransactionType, network: string) {
+    if ('outcome' in tx && tx.type === 'payment') {
       const changes = tx.outcome.balanceChanges;
       const coins: Array<Partial<ICoin>> = Object.entries(changes).map(([k, v]) => {
         const coin: Partial<ICoin> = {
@@ -256,7 +285,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
           address: k,
           value: Number(v[0].value),
           coinbase: false,
-          mintHeight: tx.outcome.ledgerVersion,
+          mintHeight: tx.outcome.ledgerVersion || -1,
           mintIndex: tx.outcome.indexInLedger,
           mintTxid: tx.id,
           wallets: []
@@ -264,6 +293,26 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
         return coin;
       });
       return coins;
+    } else if (
+      'transaction' in tx &&
+      'Amount' in tx.transaction &&
+      typeof tx.transaction.Amount === 'string' &&
+      tx.type === 'transaction' &&
+      tx.transaction.TransactionType === 'Payment' &&
+      tx.transaction.Destination
+    ) {
+      const coin = {
+        chain: this.chain,
+        network,
+        address: tx.transaction.Destination,
+        value: Number(tx.transaction.Amount),
+        coinbase: false,
+        mintHeight: tx.validated ? tx.ledger_index : -1,
+        mintIndex: tx.transaction.Sequence,
+        mintTxid: tx.transaction.hash,
+        wallets: []
+      } as Partial<ICoin>;
+      return [coin];
     } else {
       return tx;
     }

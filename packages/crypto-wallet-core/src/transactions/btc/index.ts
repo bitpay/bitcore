@@ -6,11 +6,17 @@ export class BTCTxProvider {
 
   selectCoins(
     recipients: Array<{ amount: number }>,
-    utxos: Array<{ value: number; utxo: { mintHeight: number } }>,
+    utxos: Array<{
+      value: number;
+      mintHeight: number;
+      txid?: string;
+      mintTxid?: string;
+      mintIndex?: number;
+    }>,
     fee: number
   ) {
     utxos = utxos.sort(function(a, b) {
-      return a.utxo.mintHeight - b.utxo.mintHeight;
+      return a.mintHeight - b.mintHeight;
     });
 
     let index = 0;
@@ -30,15 +36,16 @@ export class BTCTxProvider {
 
   create({ recipients, utxos = [], change, wallet, fee = 20000 }) {
     change = change || (wallet.deriveAddress(wallet.addressIndex, true));
-
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {
-        amount: utxo.value / 1e8
+        amount: utxo.value / 1e8,
+        txid: utxo.mintTxid,
+        outputIndex: utxo.mintIndex
       });
       return new this.lib.Transaction.UnspentOutput(btcUtxo);
     });
-    let tx = new this.lib.Transaction().from(btcUtxos).fee(Number(fee));
+    let tx = new this.lib.Transaction().from(btcUtxos).feePerByte(Number(fee) + 2);
     if (change) {
       tx.change(change);
     }
@@ -49,15 +56,16 @@ export class BTCTxProvider {
   }
 
   getSignature(params: { tx: string; keys: Array<Key>}) {
-    throw new Error('No implemented for UTXO coins');
+    throw new Error('function getSignature not implemented for UTXO coins');
   }
 
   applySignature(params: { tx: string; keys: Array<Key>}) {
-    throw new Error('No implemented for UTXO coins');
+    throw new Error('function applySignature not implemented for UTXO coins');
   }
 
   getHash(params: { tx: string}) {
-    throw new Error('No implemented for UTXO coins');
+    const bitcoreTx = new this.lib.Transaction(params.tx);
+    return bitcoreTx.hash;
   }
 
   sign(params: { tx: string; keys: Array<Key>; utxos: any[] }) {
@@ -78,10 +86,12 @@ export class BTCTxProvider {
 
   getRelatedUtxos({ outputs, utxos }) {
     let txids = outputs.map(output => output.toObject().prevTxId);
-    let applicableUtxos = utxos.filter(utxo => txids.includes(utxo.txid));
+    let applicableUtxos = utxos.filter(utxo => txids.includes(utxo.txid || utxo.mintTxid));
     return applicableUtxos.map(utxo => {
       const btcUtxo = Object.assign({}, utxo, {
-        amount: utxo.value / Math.pow(10, 8)
+        amount: utxo.value / Math.pow(10, 8),
+        txid: utxo.mintTxid,
+        outputIndex: utxo.mintIndex
       });
       return new this.lib.Transaction.UnspentOutput(btcUtxo);
     });

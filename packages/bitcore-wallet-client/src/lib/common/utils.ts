@@ -19,7 +19,8 @@ var Bitcore = BitcoreLib;
 var Bitcore_ = {
   btc: Bitcore,
   bch: BitcoreLibCash,
-  eth: Bitcore
+  eth: Bitcore,
+  xrp: Bitcore
 };
 var PrivateKey = Bitcore.PrivateKey;
 var PublicKey = Bitcore.PublicKey;
@@ -356,7 +357,7 @@ export class Utils {
 
       return t;
     } else {
-      const { data, outputs, payProUrl, tokenAddress } = txp;
+      const { data, destinationTag, outputs, payProUrl, tokenAddress } = txp;
       const recipients = outputs.map(output => {
         return {
           amount: output.amount,
@@ -376,6 +377,7 @@ export class Utils {
         const rawTx = Transactions.create({
           ...txp,
           ...recipients[index],
+          tag: destinationTag ? Number(destinationTag) : undefined,
           chain,
           nonce: Number(txp.nonce) + Number(index),
           recipients: [recipients[index]]

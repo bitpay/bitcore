@@ -98,12 +98,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     if (network === 'livenet') {
       network = 'mainnet';
     }
-    const web3 = await this.getWeb3(network);
-    const [gethGasPrice, bestBlock] = await Promise.all([web3.eth.getGasPrice(), this.getLocalTip({ chain, network })]);
-    if (!bestBlock) {
-      return gethGasPrice;
-    }
-
+    const bestBlock = (await this.getLocalTip({ chain, network })) || { height: target };
     const gasPrices: number[] = [];
     const txs = await EthTransactionStorage.collection
       .find({ chain, network, blockHeight: { $gte: bestBlock.height - target } })
@@ -115,8 +110,9 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     if (txCount > 0) {
       gasPrices.push(blockGasPrices[lowGasPriceIndex]);
     }
-    const estimate = Math.max(...gasPrices, Number(gethGasPrice));
-    return estimate;
+
+    const estimate = Math.max(...gasPrices);
+    return { feerate: estimate || 0, blocks: target };
   }
 
   async getBalanceForAddress(params: CSP.GetBalanceForAddressParams) {
@@ -315,13 +311,6 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
             'abiType.type': 'ERC20',
             'abiType.name': 'transfer',
             'abiType.params.0.value': { $in: walletAddresses.map(w => w.address.toLowerCase()) }
-          },
-          {
-            wallets: wallet._id,
-            abiType: { $exists: true },
-            'abiType.type': 'INVOICE',
-            'abiType.params.8.value': args.tokenAddress.toLowerCase(),
-            'wallets.0': { $exists: true }
           }
         ]
       };

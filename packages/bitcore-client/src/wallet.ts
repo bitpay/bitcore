@@ -1,3 +1,4 @@
+import 'source-map-support/register'
 import * as Bcrypt from 'bcryptjs';
 import { Encryption } from './encryption';
 import { Client } from './client';
@@ -22,6 +23,7 @@ export namespace Wallet {
     phrase: string;
     password: string;
     storage: Storage;
+    addressIndex: number;
   };
 }
 export class Wallet {
@@ -52,6 +54,7 @@ export class Wallet {
       apiUrl: this.getApiUrl(),
       authKey: this.getAuthSigningKey()
     });
+    this.addressIndex = this.addressIndex || 0;
   }
 
   getApiUrl() {
@@ -133,6 +136,7 @@ export class Wallet {
       console.debug(e);
       console.error('Failed to register wallet with bitcore-node.');
     });
+
     return loadedWallet;
   }
 
@@ -238,6 +242,22 @@ export class Wallet {
     });
   }
 
+  getUtxosArray(params: { includeSpent?: boolean } = {}) {
+    return new Promise((resolve, reject) => {
+      const utxoArray = [];
+      const { includeSpent = false } = params;
+      const utxoRequest = this.client.getCoins({
+        pubKey: this.authPubKey,
+        includeSpent
+      });
+      utxoRequest
+        .pipe(new ParseApiStream())
+        .on('data', utxo => utxoArray.push(utxo))
+        .on('end', () => resolve(utxoArray))
+        .on('err', err => reject(err));
+    });
+  }
+
   listTransactions(params) {
     return this.client.listTransactions({
       ...params,
@@ -253,6 +273,8 @@ export class Wallet {
     invoiceID?: string;
     fee?: number;
     nonce?: number;
+    tag? : number;
+    data? : string;
   }) {
     const payload = {
       network: this.network,
@@ -264,7 +286,11 @@ export class Wallet {
       fee: params.fee,
       wallet: this,
       utxos: params.utxos,
-      nonce: params.nonce
+      nonce: params.nonce,
+      tag: params.tag,
+      gasPrice: params.fee,
+      gasLimit: 200000,
+      data: params.data,
     };
     return Transactions.create(payload);
   }
@@ -358,7 +384,7 @@ export class Wallet {
     return walletAddresses.map(walletAddress => walletAddress.address);
   }
 
-  async deriveAddress(addressIndex, isChange) {
+  deriveAddress(addressIndex, isChange) {
     const address = Deriver.deriveAddress(
       this.chain,
       this.network,
@@ -395,9 +421,9 @@ export class Wallet {
   }
 
   async getNonce(addressIndex: number = 0, isChange?: boolean) {
-    const address = await this.deriveAddress(0, isChange);
+    const address = this.deriveAddress(0, isChange);
     const count = await this.client.getNonce({ address });
-    if (!count || !count.nonce) {
+    if (!count || typeof count.nonce !== 'number') {
       throw new Error('Unable to get nonce');
     }
     return count.nonce;

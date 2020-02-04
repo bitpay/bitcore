@@ -5,7 +5,7 @@ import * as _ from 'lodash';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
 
-import { BitcoreLib, Transactions } from 'crypto-wallet-core';
+import { BitcoreLib, Deriver, Transactions } from 'crypto-wallet-core';
 
 var Bitcore = BitcoreLib;
 var Mnemonic = require('bitcore-mnemonic');
@@ -280,7 +280,7 @@ export class Key {
     let purpose = opts.n == 1 || this.use44forMultisig ? '44' : '48';
     var coinCode = '0';
 
-    if (opts.network == 'testnet' && opts.coin !== 'eth') {
+    if (opts.network == 'testnet' && Constants.UTXO_COINS.includes(opts.coin)) {
       coinCode = '1';
     } else if (opts.coin == 'bch') {
       if (this.use0forBCH) {
@@ -292,6 +292,8 @@ export class Key {
       coinCode = '0';
     } else if (opts.coin == 'eth') {
       coinCode = '60';
+    } else if (opts.coin == 'xrp') {
+      coinCode = '144';
     } else {
       throw new Error('unknown coin: ' + opts.coin);
     }
@@ -412,18 +414,19 @@ export class Key {
 
       return signatures;
     } else {
-      const addressPath = Constants.PATHS.SINGLE_ADDRESS;
-      const privKey = xpriv.deriveChild(addressPath).privateKey;
       let tx = t.uncheckedSerialize();
       tx = typeof tx === 'string' ? [tx] : tx;
       const chain = Utils.getChain(txp.coin);
       const txArray = _.isArray(tx) ? tx : [tx];
+      const isChange = false;
+      const addressIndex = 0;
+      const { privKey, pubKey } = Deriver.derivePrivateKey(chain, txp.network, derived, addressIndex, isChange);
       let signatures = [];
       for (const rawTx of txArray) {
         const signed = Transactions.getSignature({
           chain,
           tx: rawTx,
-          key: { privKey: privKey.toString('hex') },
+          key: { privKey, pubKey },
         });
         signatures.push(signed);
       }

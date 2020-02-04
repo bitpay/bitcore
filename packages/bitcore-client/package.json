@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=8.0.0"
   },
-  "version": "8.13.0",
+  "version": "8.14.4",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "main": "./ts_build/index.js",
   "types": "./ts_build/index.d.ts",
@@ -24,9 +24,9 @@
     "async": "2.5.0",
     "bcrypt": "2.0.1",
     "bcryptjs": "2.4.3",
-    "bitcore-mnemonic": "^8.13.0",
+    "bitcore-mnemonic": "^8.14.4",
     "commander": "2.15.1",
-    "crypto-wallet-core": "^8.13.0",
+    "crypto-wallet-core": "^8.14.4",
     "elliptic": "6.4.1",
     "level-js": "4.0.0",
     "leveldown": "3.0.0",
@@ -36,7 +36,6 @@
     "promptly": "3.0.3",
     "request": "2.87.0",
     "request-promise-native": "1.0.5",
-    "scrypt": "6.0.3",
     "secp256k1": "3.5.0",
     "source-map-support": "0.5.13"
   },
