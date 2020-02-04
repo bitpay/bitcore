@@ -12,9 +12,6 @@ program
 
 const main = async () => {
   const { name, path, contractAddress } = program;
-  if (!contractAddress) {
-
-  }
   try {
     const wallet = await Wallet.loadWallet({ name, path });
     const token = await wallet.getToken(contractAddress);
