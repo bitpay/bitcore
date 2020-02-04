@@ -83,10 +83,8 @@ const main = async () => {
   console.log(JSON.stringify(instructions, null, 2));
   let unsignedTransactions = [];
   let signedTransactions = [];
-  nonce--;
   let password;
   for (const instruction of instructions) {
-    nonce++;
     const { type, requiredFeeRate, outputs, gasPrice, to, value, data } = instruction;
     const recipients = [{
       address: to || outputs[0].address,
@@ -121,6 +119,7 @@ const main = async () => {
       weightedSize = transaction._estimateSize();
     }
     unsignedTransactions.push({ tx: unsignedTx, weightedSize })
+    nonce++;
   }
 
     // Payment Verification
