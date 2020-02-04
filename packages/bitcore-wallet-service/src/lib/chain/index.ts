@@ -3,6 +3,7 @@ import { WalletService } from '../server';
 import { BchChain } from './bch';
 import { BtcChain } from './btc';
 import { EthChain } from './eth';
+import { XrpChain } from './xrp';
 const Common = require('../common');
 const Constants = Common.Constants;
 
@@ -24,6 +25,8 @@ export interface IChain {
   setInputs(info: { inputs: any[] });
   isUTXOCoin(): boolean;
   isSingleAddress(): boolean;
+  supportsMultisig(): boolean;
+  notifyConfirmations(network: string): boolean;
   addSignaturesToBitcoreTx(tx: string, inputs: any[], inputPaths: any[], signatures: any[], xpub: string);
   addressToStorageTransform(network: string, address: {}): void;
   addressFromStorageTransform(network: string, address: {}): void;
@@ -33,7 +36,8 @@ export interface IChain {
 const chain: { [chain: string]: IChain } = {
   BTC: new BtcChain(),
   BCH: new BchChain(),
-  ETH: new EthChain()
+  ETH: new EthChain(),
+  XRP: new XrpChain()
 };
 
 class ChainProxy {
@@ -125,6 +129,14 @@ class ChainProxy {
 
   isSingleAddress(coin: string): boolean {
     return this.get(coin).isSingleAddress();
+  }
+
+  notifyConfirmations(coin: string, network: string): boolean {
+    return this.get(coin).notifyConfirmations(network);
+  }
+
+  supportsMultisig(coin: string): boolean {
+    return this.get(coin).supportsMultisig();
   }
 
   addSignaturesToBitcoreTx(coin, tx, inputs, inputPaths, signatures, xpub) {

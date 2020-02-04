@@ -52,6 +52,17 @@ export const Constants = {
         minDecimals: 2,
       }
     },
+    xrp: {
+      toSatoshis: 1e6,
+      full: {
+        maxDecimals: 6,
+        minDecimals: 6,
+      },
+      short: {
+        maxDecimals: 6,
+        minDecimals: 2,
+      }
+    },
     usdc: {
       toSatoshis: 1e6,
       full: {
@@ -97,7 +108,7 @@ export const Constants = {
       }
     },
   },
-  COINS: ['btc', 'bch', 'eth', 'usdc', 'pax', 'gusd'],
+  COINS: ['btc', 'bch', 'eth', 'xrp', 'usdc', 'pax', 'gusd'],
   ERC20: ['usdc', 'pax', 'gusd'],
   UTXO_COINS: ['btc', 'bch'],
   TOKEN_OPTS: {
