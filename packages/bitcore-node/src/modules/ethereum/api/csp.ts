@@ -16,8 +16,7 @@ import { ERC20Abi } from '../abi/erc20';
 import { Transaction } from 'web3/eth/types';
 import { partition } from '../../../utils/partition';
 import { WalletAddressStorage } from '../../../models/walletAddress';
-import { Contract } from 'web3-eth-contract';
-type ContractAbiInput = ConstructorParameters<typeof Contract>[0];
+import { AbiItem } from 'web3-utils';
 interface EventLog<T> {
   event: string;
   address: string;
@@ -27,11 +26,12 @@ interface EventLog<T> {
   transactionHash: string;
   blockHash: string;
   blockNumber: number;
-  raw?: {data: string; topics: any[]};
+  raw?: { data: string; topics: any[] };
 }
-interface ERC20Transfer extends EventLog<{
-    [key: string]: string;
-}> {}
+interface ERC20Transfer
+  extends EventLog<{
+      [key: string]: string;
+    }> {}
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -74,7 +74,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
 
   async erc20For(network: string, address: string) {
     const web3 = await this.getWeb3(network);
-    const contract = new web3.eth.Contract(ERC20Abi as ContractAbiInput, address);
+    const contract = new web3.eth.Contract(ERC20Abi as AbiItem[], address);
     return contract;
   }
 
