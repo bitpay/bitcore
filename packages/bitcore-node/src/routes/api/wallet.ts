@@ -134,9 +134,6 @@ router.get('/:pubKey/transactions', Auth.authenticateMiddleware, async (req: Aut
 
 router.get('/:pubKey/balance', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
   let { chain, network } = req.params;
-  if (req.body.tokenContractAddress) {
-    req.query.tokenAddress = req.body.tokenContractAddress;
-  }
   try {
     const result = await ChainStateProvider.getWalletBalance({
       chain,

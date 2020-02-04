@@ -57,10 +57,12 @@ export class Client {
     if (time) {
       url += `/${time}`;
     }
-    const signature = this.sign({ method: 'GET', url, payload });
+    if(payload && payload.tokenContractAddress) {
+      url += `?tokenAddress=${payload.tokenContractAddress}`
+    }
+    const signature = this.sign({ method: 'GET', url });
     return request.get(url, {
       headers: { 'x-signature': signature },
-      body: payload,
       json: true
     });
   }
