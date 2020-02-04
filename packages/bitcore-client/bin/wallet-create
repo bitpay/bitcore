@@ -30,7 +30,7 @@ const main = async () => {
       network,
       path,
       phrase,
-      password
+      password,
     });
     console.log('Wallet created!');
   } catch (e) {

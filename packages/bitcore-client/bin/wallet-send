@@ -13,10 +13,11 @@ program
   .option('--to <to>', 'REQUIRED - string address')
   .option('--amount <amount>', 'REQUIRED - number amount (in btc/bch/eth/xrp)')
   .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--token [token]', 'opptional - ERC-20 token to send')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, to, amount, target } = program;
+  const { name, path, to, amount, target, token } = program;
   let wallet;
   let data;
   try {
@@ -45,7 +46,8 @@ const main = async () => {
       nonce: Number(nonce),
       utxos,
       recipients,
-      from: lastAddress
+      from: lastAddress,
+      token
     };
     const tx = await wallet.newTx(params);
     console.log('unsignedRawTx: ', tx);
