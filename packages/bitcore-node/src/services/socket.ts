@@ -65,9 +65,11 @@ export class SocketService {
         socket.on('room', (room: string, payload: VerificationPayload) => {
           const chainNetwork = room.slice(0, room.lastIndexOf('/') + 1);
           const roomName = room.slice(room.lastIndexOf('/') + 1);
+          const socketRooms = Object.keys(socket.rooms);
+          const inRoom = socketRooms.includes(room);
           switch (roomName) {
             case 'wallets':
-              if (bwsKeys.includes(payload.pubKey) && this.validateRequest(payload)) {
+              if (bwsKeys.includes(payload.pubKey) && this.validateRequest(payload) && !inRoom) {
                 socket.join(room);
               } else {
                 socket.emit('failure', { message: 'Authentication failed' });
@@ -82,7 +84,9 @@ export class SocketService {
               break;
             case 'inv':
             case 'address':
-              socket.join(room);
+              if (!inRoom) {
+                socket.join(room);
+              }
               break;
           }
         });
