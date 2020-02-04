@@ -5,7 +5,6 @@ var EventEmitter = require('events').EventEmitter;
 var Net = require('net');
 var Socks5Client = require('socks5-client');
 var bitcore = require('bitcore-lib');
-var bcoin = require('bcoin');
 var Networks = bitcore.Networks;
 var Messages = require('./messages');
 var $ = bitcore.util.preconditions;
@@ -66,8 +65,8 @@ function Peer(options) {
 
   this.messages = options.messages || new Messages({
     network: this.network,
-    Block: bcoin.block,
-    Transaction: bcoin.tx
+    Block: bitcore.Block,
+    Transaction: bitcore.Transaction
   });
 
   this.dataBuffer = new Buffers();
