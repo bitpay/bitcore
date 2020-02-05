@@ -36,6 +36,7 @@
     "promptly": "3.0.3",
     "request": "2.87.0",
     "request-promise-native": "1.0.5",
+    "scrypt": "^6.0.3",
     "secp256k1": "3.5.0",
     "source-map-support": "0.5.13"
   },
