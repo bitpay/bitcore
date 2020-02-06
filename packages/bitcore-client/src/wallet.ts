@@ -447,7 +447,27 @@ export class Wallet {
     return walletAddresses.map(walletAddress => walletAddress.address);
   }
 
-  async deriveAddress(addressIndex, isChange, register) {
+  async deriveAndStoreAddress(params: { addressIndexes: Array<number>, isChange: boolean, register: boolean }) {
+    const { addressIndexes, isChange, register } = params;
+    const addresses = [];
+    for (const index of addressIndexes) {
+      const address = this.deriveAddress(index, isChange);
+      const obj = { address, index }
+      addresses.push(obj);
+    }
+    await this.storage.addAddress({
+      name: this.name,
+      addresses,
+    });
+    if (register) {
+      await this.client.importAddresses({
+        pubKey: this.authPubKey,
+        payload: addresses
+      });
+    }
+  }
+
+  async deriveAddress(addressIndex, isChange) {
     const address = Deriver.deriveAddress(
       this.chain,
       this.network,
@@ -455,14 +475,6 @@ export class Wallet {
       addressIndex,
       isChange
     );
-    if (register) {
-      console.log(this.authPubKey);
-      console.log(address);
-      await this.client.importAddresses({
-        pubKey: this.authPubKey,
-        payload: [{ address }]
-      });
-    }
     return address;
   }
 

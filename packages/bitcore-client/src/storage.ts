@@ -1,6 +1,6 @@
 import * as os from 'os';
 import * as fs from 'fs';
-import 'source-map-support/register'
+import 'source-map-support/register';
 import { Encryption } from './encryption';
 import { Wallet } from './wallet';
 import { Mongo } from './storage/mongo';
@@ -36,7 +36,7 @@ export class Storage {
       Level: Level
     };
     if (!storageType) {
-      storageType = 'Level'
+      storageType = 'Level';
     }
     this.db = new dbMap[storageType]({ createIfMissing, errorIfExists, path });
   }
@@ -89,7 +89,7 @@ export class Storage {
   async getKeys(params: {
     addresses: string[];
     name: string;
-    encryptionKey: string
+    encryptionKey: string;
   }): Promise<Array<Wallet.KeyImport>> {
     const { addresses, name, encryptionKey } = params;
     const keys = new Array<Wallet.KeyImport>();
@@ -100,7 +100,13 @@ export class Storage {
         keepAlive = false;
       }
       try {
-        const key = await this.getKey({name, address, encryptionKey, keepAlive, open });
+        const key = await this.getKey({
+          name,
+          address,
+          encryptionKey,
+          keepAlive,
+          open
+        });
         keys.push(key);
       } catch (err) {
         console.error(err);
@@ -137,6 +143,30 @@ export class Storage {
         keepAlive = false;
       }
       await this.db.addKeys({name, key, toStore, keepAlive, open});
+      open = false;
+    }
+  }
+
+  async addAddress(params: {
+    name: string;
+    addresses: Array<{address:string, index: number}>;
+  }) {
+    const { name, addresses } = params;
+    let open = true;
+    for (const addr of addresses) {
+      let keepAlive = true;
+      if (addr === addresses[addresses.length - 1]) {
+        keepAlive = false;
+      }
+      let payload = {
+        name,
+        address: addr.address,
+        index: addr.index,
+        lite: true,
+        keepAlive,
+        open
+      };
+      await this.db.addAddress(payload);
       open = false;
     }
   }
