@@ -2360,8 +2360,11 @@ export class WalletService {
       const output = opts.outputs[i];
       output.valid = false;
 
-      const addrErr = ChainService.validateAddress(wallet, output.toAddress, opts);
-      if (addrErr) return addrErr;
+      try {
+        ChainService.validateAddress(wallet, output.toAddress, opts);
+      } catch (addrErr) {
+        return addrErr;
+      }
 
       if (!checkRequired(output, ['toAddress', 'amount'])) {
         return new ClientError('Argument missing in output #' + (i + 1) + '.');
@@ -2608,6 +2611,14 @@ export class WalletService {
 
             async.series(
               [
+                (next) => {
+                  if (ChainService.isUTXOCoin(wallet.coin)) return next();
+                  this.getMainAddresses({reverse: true, limit: 1}, (err, mainAddr) => {
+                    if (err) return next(err);
+                    opts.from = mainAddr[0].address;
+                    next();
+                  });
+                },
                 (next) => {
                   this._validateAndSanitizeTxOpts(wallet, opts, next);
                 },
