@@ -300,7 +300,7 @@ export class EthChain implements IChain {
         inaddr,
       );
     if (!isValidAddress) {
-      return Errors.INVALID_ADDRESS;
+      throw Errors.INVALID_ADDRESS;
     }
     return;
   }

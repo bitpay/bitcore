@@ -2360,9 +2360,12 @@ export class WalletService {
       const output = opts.outputs[i];
       output.valid = false;
 
-      let addrErr = ChainService.validateAddress(wallet, output.toAddress, opts);
-      addrErr = ChainService.validateAddress(wallet, opts.from, opts);
-      if (addrErr) return addrErr;
+      try {
+        ChainService.validateAddress(wallet, output.toAddress, opts);
+        ChainService.validateAddress(wallet, opts.from, opts);
+      } catch (addrErr) {
+        return addrErr;
+      }
 
       if (!checkRequired(output, ['toAddress', 'amount'])) {
         return new ClientError('Argument missing in output #' + (i + 1) + '.');

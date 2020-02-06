@@ -258,7 +258,7 @@ return cb(Errors.LOCKED_FUNDS);
       inaddr
     );
     if (!isValidAddress) {
-      return Errors.INVALID_ADDRESS;
+      throw Errors.INVALID_ADDRESS;
     }
     return;
   }
