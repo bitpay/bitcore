@@ -504,7 +504,7 @@ export class Wallet {
   }
 
   async getNonce(addressIndex: number = 0, isChange?: boolean) {
-    const address = await this.deriveAddress(0, isChange, false);
+    const address = await this.deriveAddress(0, isChange);
     const count = await this.client.getNonce({ address });
     if (!count || typeof count.nonce !== 'number') {
       throw new Error('Unable to get nonce');
