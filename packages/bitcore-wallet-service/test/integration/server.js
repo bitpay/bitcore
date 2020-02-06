@@ -3470,15 +3470,11 @@ describe('Wallet service', function() {
             wallet = w;
             fromAddr = null;
 
-            if (coin == 'xrp') {
-              server.createAddress({}, function(err, address) {
-                should.not.exist(err);
-                fromAddr = address.address;
-                done();
-              });
-            } else {
+            server.createAddress({}, function(err, address) {
+              should.not.exist(err);
+              fromAddr = address.address;
               done();
-            } 
+            });
           });
         });
 

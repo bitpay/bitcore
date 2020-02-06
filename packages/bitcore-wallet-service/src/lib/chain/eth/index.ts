@@ -294,16 +294,14 @@ export class EthChain implements IChain {
 
   validateAddress(wallet, inaddr, opts) {
     const chain = 'ETH';
-    try {
-      Validation.validateAddress(
+    const isValidAddress = Validation.validateAddress(
         chain,
         wallet.network,  // not really used for ETH. wallet.network is 'livenet/testnet/regtest' in wallet.
         inaddr,
       );
-    } catch (ex) {
+    if (!isValidAddress) {
       return Errors.INVALID_ADDRESS;
     }
-
     return;
   }
 }

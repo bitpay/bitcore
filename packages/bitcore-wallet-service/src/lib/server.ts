@@ -2360,7 +2360,8 @@ export class WalletService {
       const output = opts.outputs[i];
       output.valid = false;
 
-      const addrErr = ChainService.validateAddress(wallet, output.toAddress, opts);
+      let addrErr = ChainService.validateAddress(wallet, output.toAddress, opts);
+      addrErr = ChainService.validateAddress(wallet, opts.from, opts);
       if (addrErr) return addrErr;
 
       if (!checkRequired(output, ['toAddress', 'amount'])) {
@@ -2608,6 +2609,13 @@ export class WalletService {
 
             async.series(
               [
+                (next) => {
+                  this.getMainAddresses({reverse: true, limit: 1}, (err, mainAddr) => {
+                    if (err) return next(err);
+                    opts.from = mainAddr[0].address;
+                    next();
+                  });
+                },
                 (next) => {
                   this._validateAndSanitizeTxOpts(wallet, opts, next);
                 },
