@@ -2362,7 +2362,6 @@ export class WalletService {
 
       try {
         ChainService.validateAddress(wallet, output.toAddress, opts);
-        ChainService.validateAddress(wallet, opts.from, opts);
       } catch (addrErr) {
         return addrErr;
       }
@@ -2613,6 +2612,7 @@ export class WalletService {
             async.series(
               [
                 (next) => {
+                  if (ChainService.isUTXOCoin(wallet.coin)) return next();
                   this.getMainAddresses({reverse: true, limit: 1}, (err, mainAddr) => {
                     if (err) return next(err);
                     opts.from = mainAddr[0].address;
