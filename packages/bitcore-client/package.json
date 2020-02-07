@@ -28,8 +28,6 @@
     "commander": "2.15.1",
     "crypto-wallet-core": "^8.14.4",
     "elliptic": "6.4.1",
-    "ethereumjs-tx": "1.3.7",
-    "ethereumjs-util": "6.0.0",
     "level-js": "4.0.0",
     "leveldown": "3.0.0",
     "levelup": "2.0.2",
@@ -38,9 +36,9 @@
     "promptly": "3.0.3",
     "request": "2.87.0",
     "request-promise-native": "1.0.5",
+    "scrypt": "^6.0.3",
     "secp256k1": "3.5.0",
-    "source-map-support": "^0.5.13",
-    "web3": "1.0.0-beta.46"
+    "source-map-support": "0.5.13"
   },
   "devDependencies": {
     "@types/bcrypt": "3.0.0",
