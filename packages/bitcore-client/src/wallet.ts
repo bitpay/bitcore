@@ -468,6 +468,7 @@ export class Wallet {
         payload: [obj.address]
       });
     }
+    await this.saveWallet();
     return address;
   }
 
