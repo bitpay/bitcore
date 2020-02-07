@@ -31,7 +31,7 @@ const main = async () => {
         address = await wallet.nextAddressPair(change);
       } else {
         let index = wallet.addressIndex || -1 + 1;
-        address = await wallet.deriveAddress(index, null, true);
+        address = await wallet.deriveAndStoreAddress({ index, isChange: null, register: true });
       }
 
       const hasTransactions = await wallet.client.getAddressTxos({ address });

@@ -447,24 +447,28 @@ export class Wallet {
     return walletAddresses.map(walletAddress => walletAddress.address);
   }
 
-  async deriveAndStoreAddress(params: { addressIndexes: Array<number>, isChange: boolean, register: boolean }) {
-    const { addressIndexes, isChange, register } = params;
-    const addresses = [];
-    for (const index of addressIndexes) {
-      const address = this.deriveAddress(index, isChange);
-      const obj = { address, index }
-      addresses.push(obj);
+  async deriveAndStoreAddress(params: { index: number, isChange: boolean, register: boolean, open: boolean, keepAlive: boolean }) {
+    if (!this.lite) {
+      throw new Error('deriveAndStoreAddress is only for lite wallets, for a complete wallet use nextAddressPair');
     }
+    const { index, isChange, register } = params;
+    this.addressIndex = this.addressIndex || 0;
+    const address = await this.deriveAddress(index, isChange);
+    this.addressIndex++;
+    const obj = { address, index };
     await this.storage.addAddress({
       name: this.name,
-      addresses,
+      addressObj: obj,
+      keepAlive: false,
+      open: true
     });
     if (register) {
       await this.client.importAddresses({
         pubKey: this.authPubKey,
-        payload: addresses
+        payload: [obj.address]
       });
     }
+    return address;
   }
 
   async deriveAddress(addressIndex, isChange) {

@@ -149,25 +149,20 @@ export class Storage {
 
   async addAddress(params: {
     name: string;
-    addresses: Array<{address:string, index: number}>;
+    addressObj: { address:string, index: number };
+    keepAlive: boolean;
+    open: boolean;
   }) {
-    const { name, addresses } = params;
-    let open = true;
-    for (const addr of addresses) {
-      let keepAlive = true;
-      if (addr === addresses[addresses.length - 1]) {
-        keepAlive = false;
-      }
-      let payload = {
-        name,
-        address: addr.address,
-        index: addr.index,
-        lite: true,
-        keepAlive,
-        open
-      };
-      await this.db.addAddress(payload);
-      open = false;
-    }
+    const { name, addressObj, keepAlive, open } = params;
+    const { address, index } = addressObj;
+    let payload = {
+      name,
+      address,
+      index,
+      lite: true,
+      keepAlive,
+      open
+    };
+    await this.db.addAddress(payload);
   }
 }
