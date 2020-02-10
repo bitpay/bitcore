@@ -13,7 +13,7 @@ export abstract class AbstractBitcoreLibDeriver implements IDeriver {
   }
 
   derivePrivateKey(network, xPriv, addressIndex, isChange) {
-    const xpriv = new BitcoreLib.HDPrivateKey(xPriv, network);
+    const xpriv = new this.bitcoreLib.HDPrivateKey(xPriv, network);
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;
     const privKey = xpriv.derive(path).privateKey;
