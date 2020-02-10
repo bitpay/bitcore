@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { merge, shareReplay } from 'rxjs/operators';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
 
@@ -69,6 +70,10 @@ export interface AppEthBlock extends AppBlock {
 
 @Injectable()
 export class BlocksProvider {
+  public chainNetworkTipValues;
+  public currentChainNetwork;
+  public tipValue;
+
   constructor(
     public httpClient: HttpClient,
     public currency: CurrencyProvider,
@@ -120,6 +125,19 @@ export class BlocksProvider {
   }
 
   public getCurrentHeight(
+    chainNetwork: ChainNetwork
+  ): Observable<ApiEthBlock & ApiUtxoCoinBlock> {
+    if (!this.tipValue || !this.currentChainNetwork || this.currentChainNetwork !== chainNetwork) {
+      this.tipValue = this.requestCurrentHeight(chainNetwork).pipe(
+        merge(),
+        shareReplay(1)
+      );
+      this.currentChainNetwork = chainNetwork;
+    }
+    return this.tipValue;
+  }
+
+  public requestCurrentHeight(
     chainNetwork: ChainNetwork
   ): Observable<ApiEthBlock & ApiUtxoCoinBlock> {
     const heightUrl = `${this.api.getUrl(chainNetwork)}/block/tip`;
