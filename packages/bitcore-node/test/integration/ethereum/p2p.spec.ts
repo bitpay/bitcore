@@ -1,10 +1,10 @@
-import config from '../../../src/config';
 import * as BitcoreClient from 'bitcore-client';
 import { expect } from 'chai';
-import { resetDatabase } from '../../helpers';
-import { EthP2pWorker } from '../../../src/modules/ethereum/p2p/p2p';
+import config from '../../../src/config';
 import { EthBlockStorage } from '../../../src/modules/ethereum/models/block';
+import { EthP2pWorker } from '../../../src/modules/ethereum/p2p/p2p';
 import { Api } from '../../../src/services/api';
+import { resetDatabase } from '../../helpers';
 
 const chain = 'ETH';
 const network = 'testnet';
@@ -79,10 +79,12 @@ describe('Ethereum', function() {
 
     const worker = new EthP2pWorker({ chain, network, chainConfig });
     const done = worker.syncDone();
-    await worker.start();
     const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
+    await worker.start();
 
     const web3 = await worker.getWeb3();
+    await web3.eth.sendTransaction({ to: addresses[0], value: web3.utils.toWei('.02', 'ether'), from: account });
+    await web3.eth.sendTransaction({ to: addresses[0], value: web3.utils.toWei('.02', 'ether'), from: account });
     await web3.eth.sendTransaction({ to: addresses[0], value: web3.utils.toWei('.02', 'ether'), from: account });
     await sawBlock;
     await done;
