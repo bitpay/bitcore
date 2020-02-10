@@ -18,6 +18,6 @@ export class BchDeriver extends AbstractBitcoreLibDeriver {
     const privKey = xpriv.derive(path).privateKey;
     const pubKey = privKey.publicKey;
     const address = this.bitcoreLib.Address(pubKey, network).toString(true);
-    return { address, privKey: privKey.toString(true), pubKey: pubKey.toString(true) };
+    return { address, privKey: privKey.toString(), pubKey: pubKey.toString() };
   }
 }
