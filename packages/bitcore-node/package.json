@@ -104,7 +104,7 @@
     "source-map-support": "^0.5.13",
     "through2": "2.0.3",
     "underscore": "1.8.3",
-    "web3": "1.2.1",
+    "web3": "1.2.4",
     "winston": "3.2.0"
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"

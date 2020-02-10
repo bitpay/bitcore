@@ -28,7 +28,7 @@ export class EthDeriver implements IDeriver {
     const x = ecPoint.getX().toBuffer({ size: 32 });
     const y = ecPoint.getY().toBuffer({ size: 32 });
     const paddedBuffer = Buffer.concat([x, y]);
-    const address = utils.keccak256(paddedBuffer).slice(26);
+    const address = utils.keccak256(`0x${paddedBuffer.toString('hex')}`).slice(26);
     return utils.toChecksumAddress(address);
   }
 
