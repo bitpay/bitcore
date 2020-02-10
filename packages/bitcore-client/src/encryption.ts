@@ -24,7 +24,6 @@ export function shaHash(data, algo = 'sha256') {
 const SHA512 = data => shaHash(data, 'sha512');
 const SHA256 = data => shaHash(data, 'sha256');
 const algo = 'aes-256-cbc';
-const scrypt = require('scrypt');
 const _ = require('lodash');
 
 export function encryptEncryptionKey(encryptionKey, password) {
@@ -75,7 +74,7 @@ function sha512KDF(
   passphrase: string,
   salt: Buffer,
   derivationOptions: { rounds?: number }
-) {
+): string {
   let rounds = derivationOptions.rounds || 1;
   // if salt was sent in as a string, we will have to assume the default encoding type
   if (!Buffer.isBuffer(salt)) {
@@ -92,16 +91,7 @@ function sha512KDF(
       .update(derivation)
       .digest();
   }
-  return derivation;
-}
-
-function scryptKDF(
-  passphrase: string,
-  salt: Buffer | string,
-  derivationOptions: { rounds?: number }
-) {
-  let opts = _.assign({ N: Math.pow(2, 14), r: 8, p: 8 }, derivationOptions);
-  return scrypt.hash(passphrase, opts, 48, salt);
+  return derivation.toString('hex');
 }
 
 export function bitcoinCoreDecrypt(
@@ -109,7 +99,7 @@ export function bitcoinCoreDecrypt(
     cipherText?: string;
     derivationMethod?: string;
     rounds?: number;
-    salt?: Buffer | string;
+    salt?: Buffer;
     pubKey?: string;
     address?: string;
   }>,
@@ -148,7 +138,7 @@ export function bitcoinCoreDecrypt(
 }
 
 function hashPassphrase(opts: { method?: number }) {
-  return opts && opts.method === 0 ? sha512KDF : scryptKDF;
+  return sha512KDF;
 }
 
 function decrypt(opts: {

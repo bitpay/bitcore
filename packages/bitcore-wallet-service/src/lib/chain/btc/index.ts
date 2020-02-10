@@ -151,12 +151,11 @@ export class BtcChain implements IChain {
           });
         } else {
           if (opts.changeAddress) {
-            const addrErr = this.validateAddress(
-              wallet,
-              opts.changeAddress,
-              opts
-            );
-            if (addrErr) return cb(addrErr);
+            try {
+              this.validateAddress(wallet, opts.changeAddress, opts);
+            } catch (addrErr) {
+              return cb(addrErr);
+            }
 
             server.storage.fetchAddressByWalletId(
               wallet.id,
@@ -408,10 +407,10 @@ export class BtcChain implements IChain {
     try {
       addr = new A(inaddr);
     } catch (ex) {
-      return Errors.INVALID_ADDRESS;
+      throw Errors.INVALID_ADDRESS;
     }
     if (addr.network.toString() != wallet.network) {
-      return Errors.INCORRECT_ADDRESS_NETWORK;
+      throw Errors.INCORRECT_ADDRESS_NETWORK;
     }
     return;
   }

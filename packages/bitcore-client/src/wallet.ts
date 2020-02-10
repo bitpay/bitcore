@@ -1,5 +1,5 @@
 import 'source-map-support/register'
-import * as Bcrypt from 'bcryptjs';
+import * as Bcrypt from 'bcrypt';
 import { Encryption } from './encryption';
 import { Client } from './client';
 import { Storage } from './storage';
