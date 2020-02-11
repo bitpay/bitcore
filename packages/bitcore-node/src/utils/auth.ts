@@ -37,7 +37,7 @@ export type AuthenticatedRequest = {
 } & PreAuthRequest;
 
 const authenticateMiddleware: RequestHandler = async (req: Request, res: Response, next: any) => {
-  const { chain, network, pubKey } = req.params as SignedApiRequest;
+  const { chain, network, pubKey } = (req.params as unknown) as SignedApiRequest;
   logger.debug('Authenticating request with pubKey: ', pubKey);
   let wallet;
   try {
