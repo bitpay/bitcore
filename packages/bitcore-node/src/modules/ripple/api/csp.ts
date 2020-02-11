@@ -1,17 +1,17 @@
 import request from 'request';
-import { CSP } from '../../../types/namespaces/ChainStateProvider';
-import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
 import { RippleAPI } from 'ripple-lib';
+import { FormattedLedger } from 'ripple-lib/dist/npm/ledger/parse/ledger';
+import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types';
 import { Readable } from 'stream';
+import Config from '../../../config';
+import { IBlock } from '../../../models/baseBlock';
+import { ICoin } from '../../../models/coin';
+import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
 import { Storage } from '../../../services/storage';
 import { ChainNetwork } from '../../../types/ChainNetwork';
-import Config from '../../../config';
-import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types';
-import { ICoin } from '../../../models/coin';
+import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { RippleWalletTransactions } from './transform';
-import { SubmitResponse, SingleOutputTx } from './types';
-import { IBlock } from '../../../models/baseBlock';
-import { FormattedLedger } from 'ripple-lib/dist/npm/ledger/parse/ledger';
+import { SingleOutputTx, SubmitResponse } from './types';
 
 export class RippleStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -221,7 +221,7 @@ export class RippleStateProvider extends InternalStateProvider implements CSP.IC
     const txs = ledger.transactions || [];
     return {
       chain: this.chain,
-      network: network,
+      network,
       confirmations: -1,
       hash: ledger.ledgerHash,
       height: ledger.ledgerVersion,

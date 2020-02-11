@@ -1,22 +1,22 @@
-import logger from '../../../logger';
-import { Readable, Transform } from 'stream';
-import Config from '../../../config';
-import { CSP } from '../../../types/namespaces/ChainStateProvider';
 import { ObjectID } from 'mongodb';
+import { Readable, Transform } from 'stream';
 import Web3 from 'web3';
-import { Storage } from '../../../services/storage';
-import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
-import { EthTransactionStorage } from '../models/transaction';
-import { ITransaction } from '../../../models/baseTransaction';
-import { EthTransactionJSON, IEthBlock } from '../types';
-import { EthBlockStorage } from '../models/block';
-import { SpentHeightIndicators } from '../../../types/Coin';
-import { EthListTransactionsStream } from './transform';
-import { ERC20Abi } from '../abi/erc20';
-import { Transaction } from 'web3/eth/types';
-import { partition } from '../../../utils/partition';
-import { WalletAddressStorage } from '../../../models/walletAddress';
 import { AbiItem } from 'web3-utils';
+import { Transaction } from 'web3/eth/types';
+import Config from '../../../config';
+import logger from '../../../logger';
+import { ITransaction } from '../../../models/baseTransaction';
+import { WalletAddressStorage } from '../../../models/walletAddress';
+import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
+import { Storage } from '../../../services/storage';
+import { SpentHeightIndicators } from '../../../types/Coin';
+import { CSP } from '../../../types/namespaces/ChainStateProvider';
+import { partition } from '../../../utils/partition';
+import { ERC20Abi } from '../abi/erc20';
+import { EthBlockStorage } from '../models/block';
+import { EthTransactionStorage } from '../models/transaction';
+import { EthTransactionJSON, IEthBlock } from '../types';
+import { EthListTransactionsStream } from './transform';
 interface EventLog<T> {
   event: string;
   address: string;
@@ -30,8 +30,8 @@ interface EventLog<T> {
 }
 interface ERC20Transfer
   extends EventLog<{
-      [key: string]: string;
-    }> {}
+    [key: string]: string;
+  }> {}
 
 export class ETHStateProvider extends InternalStateProvider implements CSP.IChainStateService {
   config: any;
@@ -139,10 +139,10 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     try {
       let { chain, network, txId } = params;
       if (typeof txId !== 'string' || !chain || !network) {
-        throw 'Missing required param';
+        throw new Error('Missing required param');
       }
       network = network.toLowerCase();
-      let query = { chain: chain, network, txid: txId };
+      let query = { chain, network, txid: txId };
       const tip = await this.getLocalTip(params);
       const tipHeight = tip ? tip.height : 0;
       const found = await EthTransactionStorage.collection.findOne(query);
@@ -152,7 +152,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
           confirmations = tipHeight - found.blockHeight + 1;
         }
         const convertedTx = EthTransactionStorage._apiTransform(found, { object: true }) as EthTransactionJSON;
-        return { ...convertedTx, confirmations: confirmations } as any;
+        return { ...convertedTx, confirmations } as any;
       } else {
         return undefined;
       }
@@ -203,10 +203,10 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     const { chain, network, req, res, args } = params;
     let { blockHash, blockHeight } = args;
     if (!chain || !network) {
-      throw 'Missing chain or network';
+      throw new Error('Missing chain or network');
     }
     let query: any = {
-      chain: chain,
+      chain,
       network: network.toLowerCase()
     };
     if (blockHeight !== undefined) {
@@ -223,7 +223,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
         confirmations = tipHeight - t.blockHeight + 1;
       }
       const convertedTx = EthTransactionStorage._apiTransform(t, { object: true }) as Partial<ITransaction>;
-      return JSON.stringify({ ...convertedTx, confirmations: confirmations });
+      return JSON.stringify({ ...convertedTx, confirmations });
     });
   }
 

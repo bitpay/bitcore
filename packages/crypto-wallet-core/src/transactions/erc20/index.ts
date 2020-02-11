@@ -25,13 +25,10 @@ export class ERC20TxProvider extends ETHTxProvider {
     return super.create(newParams);
   }
 
-  encodeData(params: {
-    recipients: Array<{ address: string; amount: string }>;
-    tokenAddress: string;
-  }) {
+  encodeData(params: { recipients: Array<{ address: string; amount: string }>; tokenAddress: string }) {
     const { tokenAddress } = params;
     const [{ address, amount }] = params.recipients;
-    const amountStr = Number(amount).toLocaleString('en', {useGrouping: false});
+    const amountStr = Number(amount).toLocaleString('en', { useGrouping: false });
     const data = this.getERC20Contract(tokenAddress)
       .methods.transfer(address, amountStr)
       .encodeABI();

@@ -1,5 +1,5 @@
-import { CSP } from '../../types/namespaces/ChainStateProvider';
 import { Chain } from '../../types/ChainNetwork';
+import { CSP } from '../../types/namespaces/ChainStateProvider';
 
 const services: CSP.ChainStateServices = {};
 

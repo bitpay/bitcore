@@ -28,7 +28,10 @@ export const ERC721Abi = [
   },
   {
     constant: false,
-    inputs: [{ name: '_to', type: 'address' }, { name: '_tokenId', type: 'uint256' }],
+    inputs: [
+      { name: '_to', type: 'address' },
+      { name: '_tokenId', type: 'uint256' }
+    ],
     name: 'approve',
     outputs: [],
     payable: false,
@@ -68,7 +71,10 @@ export const ERC721Abi = [
   },
   {
     constant: true,
-    inputs: [{ name: '_owner', type: 'address' }, { name: '_index', type: 'uint256' }],
+    inputs: [
+      { name: '_owner', type: 'address' },
+      { name: '_index', type: 'uint256' }
+    ],
     name: 'tokenOfOwnerByIndex',
     outputs: [{ name: '', type: 'uint256' }],
     payable: false,
@@ -135,7 +141,10 @@ export const ERC721Abi = [
   },
   {
     constant: false,
-    inputs: [{ name: '_to', type: 'address' }, { name: '_approved', type: 'bool' }],
+    inputs: [
+      { name: '_to', type: 'address' },
+      { name: '_approved', type: 'bool' }
+    ],
     name: 'setApprovalForAll',
     outputs: [],
     payable: false,
@@ -167,7 +176,10 @@ export const ERC721Abi = [
   },
   {
     constant: true,
-    inputs: [{ name: '_owner', type: 'address' }, { name: '_operator', type: 'address' }],
+    inputs: [
+      { name: '_owner', type: 'address' },
+      { name: '_operator', type: 'address' }
+    ],
     name: 'isApprovedForAll',
     outputs: [{ name: '', type: 'bool' }],
     payable: false,
@@ -175,7 +187,10 @@ export const ERC721Abi = [
     type: 'function'
   },
   {
-    inputs: [{ name: '_name', type: 'string' }, { name: '_symbol', type: 'string' }],
+    inputs: [
+      { name: '_name', type: 'string' },
+      { name: '_symbol', type: 'string' }
+    ],
     payable: false,
     stateMutability: 'nonpayable',
     type: 'constructor'

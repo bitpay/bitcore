@@ -1,14 +1,14 @@
-import logger, { timestamp } from '../../logger';
-import { BaseP2PWorker } from '../../services/p2p';
 import { EventEmitter } from 'events';
+import logger, { timestamp } from '../../logger';
 import { BitcoinBlock, BitcoinBlockStorage, IBtcBlock } from '../../models/block';
-import { Bitcoin } from '../../types/namespaces/Bitcoin';
-import { wait } from '../../utils/wait';
-import { TransactionStorage } from '../../models/transaction';
-import { SpentHeightIndicators } from '../../types/Coin';
 import { StateStorage } from '../../models/state';
+import { TransactionStorage } from '../../models/transaction';
 import { ChainStateProvider } from '../../providers/chain-state';
 import { Libs } from '../../providers/libs';
+import { BaseP2PWorker } from '../../services/p2p';
+import { SpentHeightIndicators } from '../../types/Coin';
+import { Bitcoin } from '../../types/namespaces/Bitcoin';
+import { wait } from '../../utils/wait';
 
 export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   protected bitcoreLib: any;

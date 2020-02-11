@@ -1,1 +1,3 @@
-export type TransformOptions = {object: boolean};
+export interface TransformOptions {
+  object: boolean;
+}

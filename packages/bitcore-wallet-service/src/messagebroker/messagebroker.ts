@@ -7,12 +7,12 @@ log.debug = log.verbose;
 const DEFAULT_PORT = 3380;
 
 const opts = {
-  port: parseInt(process.argv[2]) || DEFAULT_PORT,
+  port: parseInt(process.argv[2]) || DEFAULT_PORT
 };
 
 const server = io(opts.port.toString());
-server.on('connection', (socket) => {
-  socket.on('msg', (data) => {
+server.on('connection', socket => {
+  socket.on('msg', data => {
     server.emit('msg', data);
   });
 });

@@ -1,5 +1,5 @@
-import logger from '../../../logger';
 import { Router } from 'express';
+import logger from '../../../logger';
 import { ETH } from './csp';
 export const EthRoutes = Router();
 

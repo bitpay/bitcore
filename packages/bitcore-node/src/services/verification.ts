@@ -1,11 +1,11 @@
 import { BaseP2PWorker } from './p2p';
 
-export type ErrorType = {
+export interface ErrorType {
   model: string;
   err: boolean;
   type: string;
   payload: any;
-};
+}
 
 export interface IVerificationPeer extends BaseP2PWorker<any> {
   connect(): Promise<void>;

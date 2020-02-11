@@ -9,7 +9,7 @@ module.exports = (wallet, appName, appVersion) => {
       id: 'bitpay1',
       dismissible: true,
       category: 'critical',
-      app: 'bitpay',
+      app: 'bitpay'
     };
   }
 };

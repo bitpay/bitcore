@@ -1,11 +1,11 @@
 import BN from 'bn.js';
 
+import { ITransaction } from '../../models/baseTransaction';
 import { IBlock } from '../../types/Block';
 import { ClassifiedTrace, TokenTransferResponse } from './p2p/parityRpc';
-import { ITransaction } from '../../models/baseTransaction';
 
 export declare namespace Parity {
-  export type Block = {
+  export interface Block {
     author: string;
     difficulty: string;
     extraData: string;
@@ -28,8 +28,8 @@ export declare namespace Parity {
     transactions: Array<Transaction>;
     transactionsRoot: string;
     uncles: Array<string>;
-  };
-  export type Transaction = {
+  }
+  export interface Transaction {
     blockHash: string;
     blockNumber: number;
     chainId: number;
@@ -50,21 +50,21 @@ export declare namespace Parity {
     transactionIndex: number;
     v: string;
     value: string;
-  };
+  }
 }
 
 export declare namespace Ethereum {
   export type Networks = 'mainnet' | 'ropsten' | 'rinkeby' | 'goerli' | 'kovan';
 
-  export type Block = {
+  export interface Block {
     header: Header;
     transactions: Transaction[];
     uncleHeaders: Header[];
     raw: Buffer[];
     txTrie: any;
-  };
+  }
 
-  export type Header = {
+  export interface Header {
     parentHash: Buffer;
     uncleHash: Buffer;
     coinbase: Buffer;
@@ -82,9 +82,9 @@ export declare namespace Ethereum {
     nonce: Buffer;
     raw: Array<Buffer>;
     hash: () => Buffer;
-  };
+  }
 
-  export type Transaction = {
+  export interface Transaction {
     hash: () => Buffer;
     nonce: Buffer;
     gasPrice: Buffer;
@@ -96,7 +96,7 @@ export declare namespace Ethereum {
     // EIP 155 chainId - mainnet: 1, ropsten: 3
     chainId: number;
     getUpfrontCost: () => BN;
-  };
+  }
 }
 
 export type IEthBlock = IBlock & {
@@ -131,7 +131,7 @@ export type IEthTransaction = ITransaction & {
   error?: string;
 };
 
-export type TransactionJSON = {
+export interface TransactionJSON {
   txid: string;
   chain: string;
   network: string;
@@ -142,11 +142,14 @@ export type TransactionJSON = {
   fee: number;
   size: number;
   value: number;
-};
+}
 
-export type AbiDecodedData = { type: string; decodedData: TokenTransferResponse };
+export interface AbiDecodedData {
+  type: string;
+  decodedData: TokenTransferResponse;
+}
 export type DecodedTrace = ClassifiedTrace & AbiDecodedData;
-export type EthTransactionJSON = {
+export interface EthTransactionJSON {
   txid: string;
   chain: string;
   network: string;
@@ -165,4 +168,4 @@ export type EthTransactionJSON = {
   decodedData?: AbiDecodedData;
   data: string;
   internal: Array<DecodedTrace>;
-};
+}

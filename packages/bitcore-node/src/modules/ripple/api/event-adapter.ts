@@ -1,11 +1,11 @@
-import logger from '../../../logger';
 import { ObjectId } from 'mongodb';
-import { BaseModule } from '../..';
-import { RippleStateProvider } from './csp';
 import { RippleAPI } from 'ripple-lib';
+import { BaseModule } from '../..';
+import logger from '../../../logger';
+import { ICoin } from '../../../models/coin';
 import { StateStorage } from '../../../models/state';
 import { WalletAddressStorage } from '../../../models/walletAddress';
-import { ICoin } from '../../../models/coin';
+import { RippleStateProvider } from './csp';
 
 export class RippleEventAdapter {
   stopping = false;

@@ -1,14 +1,14 @@
-import logger from '../logger';
-import SocketIO = require('socket.io');
 import * as http from 'http';
-import { LoggifyClass } from '../decorators/Loggify';
-import { EventStorage, EventModel, IEvent } from '../models/events';
-import { Event, EventService } from './event';
 import { ObjectID } from 'mongodb';
-import { Config, ConfigService } from './config';
-import { ConfigType } from '../types/Config';
+import SocketIO = require('socket.io');
+import { LoggifyClass } from '../decorators/Loggify';
+import logger from '../logger';
+import { EventModel, EventStorage, IEvent } from '../models/events';
 import { WalletStorage } from '../models/wallet';
-import { VerificationPayload, Auth } from '../utils/auth';
+import { ConfigType } from '../types/Config';
+import { Auth, VerificationPayload } from '../utils/auth';
+import { Config, ConfigService } from './config';
+import { Event, EventService } from './event';
 
 function SanitizeWallet(x: { wallets?: ObjectID[] }) {
   const sanitized = Object.assign({}, x, { wallets: new Array<ObjectID>() });

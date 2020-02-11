@@ -8,19 +8,31 @@ const Common = require('../common');
 const Constants = Common.Constants;
 
 export interface IChain {
-  getWalletBalance(server: WalletService, wallet: IWallet, opts: { coin: string, addresses: string[] } & any, cb);
-  getWalletSendMaxInfo(server: WalletService, wallet: IWallet, opts: { excludeUnconfirmedUtxos: string, returnInputs: string, from: string, feePerKb: number } & any, cb);
+  getWalletBalance(server: WalletService, wallet: IWallet, opts: { coin: string; addresses: string[] } & any, cb);
+  getWalletSendMaxInfo(
+    server: WalletService,
+    wallet: IWallet,
+    opts: { excludeUnconfirmedUtxos: string; returnInputs: string; from: string; feePerKb: number } & any,
+    cb
+  );
   getDustAmountValue();
   getTransactionCount(server: WalletService, wallet: IWallet, from: string);
   getChangeAddress(server: WalletService, wallet: IWallet, opts: { changeAddress: string } & any);
-  checkDust(output: { amount: number, toAddress: string, valid: boolean }, opts: { outputs: any[] } & any);
-  getFee(server: WalletService, wallet: IWallet, opts: { fee: number, feePerKb: number } & any);
+  checkDust(output: { amount: number; toAddress: string; valid: boolean }, opts: { outputs: any[] } & any);
+  getFee(server: WalletService, wallet: IWallet, opts: { fee: number; feePerKb: number } & any);
   buildTx(txp: TxProposal);
   convertFeePerKb(p: number, feePerKb: number);
   checkTx(server: WalletService, txp: ITxProposal);
   checkTxUTXOs(server: WalletService, txp: ITxProposal, opts: { noCashAddr: boolean } & any, cb);
-  selectTxInputs(server: WalletService, txp: ITxProposal, wallet: IWallet, opts: { utxosToExclude: any[] } & any, cb, next);
-  checkUtxos(opts: { fee: number, inputs: any[] });
+  selectTxInputs(
+    server: WalletService,
+    txp: ITxProposal,
+    wallet: IWallet,
+    opts: { utxosToExclude: any[] } & any,
+    cb,
+    next
+  );
+  checkUtxos(opts: { fee: number; inputs: any[] });
   checkValidTxAmount(output): boolean;
   setInputs(info: { inputs: any[] });
   isUTXOCoin(): boolean;
@@ -41,7 +53,6 @@ const chain: { [chain: string]: IChain } = {
 };
 
 class ChainProxy {
-
   get(coin: string) {
     const normalizedChain = this.getChain(coin);
     return chain[normalizedChain];

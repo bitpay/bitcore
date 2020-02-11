@@ -1,14 +1,14 @@
-import logger from '../logger';
-import { CoinStorage } from './coin';
-import { TransactionStorage } from './transaction';
-import { TransformOptions } from '../types/TransformOptions';
 import { LoggifyClass } from '../decorators/Loggify';
-import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { MongoBound } from './base';
-import { SpentHeightIndicators } from '../types/Coin';
-import { EventStorage } from './events';
+import logger from '../logger';
 import { StorageService } from '../services/storage';
+import { SpentHeightIndicators } from '../types/Coin';
+import { Bitcoin } from '../types/namespaces/Bitcoin';
+import { TransformOptions } from '../types/TransformOptions';
+import { MongoBound } from './base';
 import { BaseBlock, IBlock } from './baseBlock';
+import { CoinStorage } from './coin';
+import { EventStorage } from './events';
+import { TransactionStorage } from './transaction';
 
 export type IBtcBlock = IBlock & {
   version: number;
@@ -71,7 +71,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
       blockHash: convertedBlock.hash,
       blockTime: new Date(time),
       blockTimeNormalized: new Date(timeNormalized),
-      height: height,
+      height,
       chain,
       network,
       parentChain,
@@ -152,7 +152,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
       if (prevBlock) {
         localTip = prevBlock;
       } else {
-        logger.error(`Previous block isn't in the DB need to roll back until we have a block in common`);
+        logger.error("Previous block isn't in the DB need to roll back until we have a block in common");
       }
       logger.info(`Resetting tip to ${localTip.height - 1}`, { chain, network });
     }

@@ -12,7 +12,7 @@ const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
 export class BtcChain implements IChain {
-  constructor(private bitcoreLib = BitcoreLib) { }
+  constructor(private bitcoreLib = BitcoreLib) {}
 
   getWalletBalance(server, wallet, opts, cb) {
     server._getUtxosForCurrentWallet(
@@ -145,8 +145,7 @@ export class BtcChain implements IChain {
         if (wallet.singleAddress) {
           server.storage.fetchAddresses(server.walletId, (err, addresses) => {
             if (err) return cb(err);
-            if (_.isEmpty(addresses))
-              return cb(new ClientError('The wallet has no addresses'));
+            if (_.isEmpty(addresses)) return cb(new ClientError('The wallet has no addresses'));
             return cb(null, _.head(addresses));
           });
         } else {
@@ -157,14 +156,10 @@ export class BtcChain implements IChain {
               return cb(addrErr);
             }
 
-            server.storage.fetchAddressByWalletId(
-              wallet.id,
-              opts.changeAddress,
-              (err, address) => {
-                if (err || !address) return cb(Errors.INVALID_CHANGE_ADDRESS);
-                return cb(null, address);
-              }
-            );
+            server.storage.fetchAddressByWalletId(wallet.id, opts.changeAddress, (err, address) => {
+              if (err || !address) return cb(Errors.INVALID_CHANGE_ADDRESS);
+              return cb(null, address);
+            });
           } else {
             return cb(null, wallet.createAddress(true), true);
           }
@@ -179,10 +174,7 @@ export class BtcChain implements IChain {
   }
 
   checkDust(output) {
-    const dustThreshold = Math.max(
-      Defaults.MIN_OUTPUT_AMOUNT,
-      this.bitcoreLib.Transaction.DUST_AMOUNT
-    );
+    const dustThreshold = Math.max(Defaults.MIN_OUTPUT_AMOUNT, this.bitcoreLib.Transaction.DUST_AMOUNT);
 
     if (output.amount < dustThreshold) {
       return Errors.DUST_AMOUNT;
@@ -213,10 +205,7 @@ export class BtcChain implements IChain {
     }
 
     _.each(txp.outputs, o => {
-      $.checkState(
-        o.script || o.toAddress,
-        'Output should have either toAddress or script specified'
-      );
+      $.checkState(o.script || o.toAddress, 'Output should have either toAddress or script specified');
       if (o.script) {
         t.addOutput(
           new this.bitcoreLib.Transaction.Output({
@@ -252,14 +241,8 @@ export class BtcChain implements IChain {
     const totalInputs = _.sumBy(t.inputs, 'output.satoshis');
     const totalOutputs = _.sumBy(t.outputs, 'satoshis');
 
-    $.checkState(
-      totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs,
-      'not-enought-inputs'
-    );
-    $.checkState(
-      totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin],
-      'fee-too-high'
-    );
+    $.checkState(totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs, 'not-enought-inputs');
+    $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin], 'fee-too-high');
 
     return t;
   }
@@ -289,11 +272,9 @@ export class BtcChain implements IChain {
       return ex;
     }
 
-    if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.FeeError)
-      return Errors.INSUFFICIENT_FUNDS_FOR_FEE;
+    if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.FeeError) return Errors.INSUFFICIENT_FUNDS_FOR_FEE;
 
-    if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.DustOutputs)
-      return Errors.DUST_AMOUNT;
+    if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.DustOutputs) return Errors.DUST_AMOUNT;
     return bitcoreError;
   }
 
@@ -333,11 +314,7 @@ export class BtcChain implements IChain {
   }
 
   checkValidTxAmount(output): boolean {
-    if (
-      !_.isNumber(output.amount) ||
-      _.isNaN(output.amount) ||
-      output.amount <= 0
-    ) {
+    if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount <= 0) {
       return false;
     }
     return true;
@@ -364,35 +341,31 @@ export class BtcChain implements IChain {
     return false;
   }
 
-  addressFromStorageTransform(network, address) { }
+  addressFromStorageTransform(network, address) {}
 
-  addressToStorageTransform(network, address) { }
+  addressToStorageTransform(network, address) {}
 
   addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub) {
-    if (signatures.length != inputs.length)
-      throw new Error('Number of signatures does not match number of inputs');
+    if (signatures.length != inputs.length) throw new Error('Number of signatures does not match number of inputs');
 
     let i = 0;
     const x = new this.bitcoreLib.HDPublicKey(xpub);
 
     _.each(signatures, signatureHex => {
       try {
-        const signature = this.bitcoreLib.crypto.Signature.fromString(
-          signatureHex
-        );
+        const signature = this.bitcoreLib.crypto.Signature.fromString(signatureHex);
         const pub = x.deriveChild(inputPaths[i]).publicKey;
         const s = {
           inputIndex: i,
           signature,
           sigtype:
             // tslint:disable-next-line:no-bitwise
-            this.bitcoreLib.crypto.Signature.SIGHASH_ALL |
-            this.bitcoreLib.crypto.Signature.SIGHASH_FORKID,
+            this.bitcoreLib.crypto.Signature.SIGHASH_ALL | this.bitcoreLib.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub
         };
         tx.inputs[i].addSignature(tx, s);
         i++;
-      } catch (e) { }
+      } catch (e) {}
     });
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');
