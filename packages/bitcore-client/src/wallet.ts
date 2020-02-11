@@ -256,6 +256,9 @@ export class Wallet {
   }
 
   async addToken(params) {
+    if (!this.tokens) {
+      this.tokens = [];
+    }
     this.tokens.push({
       symbol: params.symbol,
       address: params.address,

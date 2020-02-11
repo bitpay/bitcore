@@ -104,10 +104,11 @@ export function bitcoinCoreDecrypt(
         iv: bitcore.crypto.Hash.sha256sha256(Buffer.from(line.pubKey, 'hex')),
         cipherText
       });
+      const address = line.address.split(':');
       let keyObj = {
         privKey,
         pubKey: line.pubKey,
-        address: line.address
+        address: address[address.length - 1]
       };
       jsonlDecrypted.push(keyObj);
     }

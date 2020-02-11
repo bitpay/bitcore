@@ -18,6 +18,7 @@ program
   .command('paypro', 'pay using payment protocol').alias('p')
   .command('send', 'simple send from wallet to an address').alias('s')
   .command('sign', 'sign a transaction')
+  .command('token', 'add an ERC20 token to an eth wallet')
   .parse(process.argv);
 
 
