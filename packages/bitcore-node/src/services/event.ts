@@ -1,7 +1,7 @@
 import { EventEmitter } from 'events';
 import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
-import { EventModel, EventStorage, IEvent } from '../models/events';
+import { BlockEvent, CoinEvent, EventModel, EventStorage, TxEvent } from '../models/events';
 import { Config, ConfigService } from './config';
 import { StorageService } from './storage';
 import { Storage } from './storage';
@@ -59,7 +59,7 @@ export class EventService {
       while (await txCursor.hasNext()) {
         const txEvent = await txCursor.next();
         if (txEvent) {
-          const tx = txEvent.payload as IEvent.TxEvent;
+          const tx = txEvent.payload as TxEvent;
           this.txEvent.emit('tx', tx);
           lastTxUpdate = new Date();
         }
@@ -75,7 +75,7 @@ export class EventService {
       while (await blockCursor.hasNext()) {
         const blockEvent = await blockCursor.next();
         if (blockEvent) {
-          const block = blockEvent.payload as IEvent.BlockEvent;
+          const block = blockEvent.payload as BlockEvent;
           this.blockEvent.emit('block', block);
           lastBlockUpdate = new Date();
         }
@@ -91,7 +91,7 @@ export class EventService {
       while (await addressTxCursor.hasNext()) {
         const addressTx = await addressTxCursor.next();
         if (addressTx) {
-          const addressCoin = addressTx.payload as IEvent.CoinEvent;
+          const addressCoin = addressTx.payload as CoinEvent;
           this.addressCoinEvent.emit('coin', addressCoin);
           lastAddressTxUpdate = new Date();
         }
@@ -103,15 +103,15 @@ export class EventService {
     retryAddressTxCursor();
   }
 
-  async signalBlock(block: IEvent.BlockEvent) {
+  async signalBlock(block: BlockEvent) {
     await this.eventModel.signalBlock(block);
   }
 
-  async signalTx(tx: IEvent.TxEvent) {
+  async signalTx(tx: TxEvent) {
     await this.eventModel.signalTx(tx);
   }
 
-  async signalAddressCoin(payload: IEvent.CoinEvent) {
+  async signalAddressCoin(payload: CoinEvent) {
     await this.eventModel.signalAddressCoin(payload);
   }
 }

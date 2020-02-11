@@ -422,7 +422,7 @@ export class ETHStateProvider extends InternalStateProvider implements CSP.IChai
     return txs.sort((tx1, tx2) => tx1.blockNumber! - tx2.blockNumber!);
   }
 
-  async estimateGas(params): Promise<Number> {
+  async estimateGas(params): Promise<number> {
     const { network, from, to, value, data, gasPrice } = params;
     const web3 = await this.getWeb3(network);
     const gasLimit = await web3.eth.estimateGas({ from, to, value, data, gasPrice });

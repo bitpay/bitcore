@@ -7,7 +7,7 @@ import { ChainStateProvider } from '../../providers/chain-state';
 import { Libs } from '../../providers/libs';
 import { BaseP2PWorker } from '../../services/p2p';
 import { SpentHeightIndicators } from '../../types/Coin';
-import { Bitcoin } from '../../types/namespaces/Bitcoin';
+import { BitcoinBlockType, BitcoinHeaderObj, BitcoinTransaction } from '../../types/namespaces/Bitcoin';
 import { wait } from '../../utils/wait';
 
 export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
@@ -175,9 +175,9 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     }
   }
 
-  public async getHeaders(candidateHashes: string[]): Promise<Bitcoin.Block.HeaderObj[]> {
+  public async getHeaders(candidateHashes: string[]): Promise<BitcoinHeaderObj[]> {
     let received = false;
-    return new Promise<Bitcoin.Block.HeaderObj[]>(async resolve => {
+    return new Promise<BitcoinHeaderObj[]>(async resolve => {
       this.events.once('headers', headers => {
         received = true;
         resolve(headers);
@@ -192,8 +192,8 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
   public async getBlock(hash: string) {
     logger.debug('Getting block, hash:', hash);
     let received = false;
-    return new Promise<Bitcoin.Block>(async resolve => {
-      this.events.once(hash, (block: Bitcoin.Block) => {
+    return new Promise<BitcoinBlockType>(async resolve => {
+      this.events.once(hash, (block: BitcoinBlockType) => {
         logger.debug('Received block, hash:', hash);
         received = true;
         resolve(block);
@@ -215,7 +215,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     return best;
   }
 
-  async processBlock(block: Bitcoin.Block): Promise<any> {
+  async processBlock(block: BitcoinBlockType): Promise<any> {
     await this.blockModel.addBlock({
       chain: this.chain,
       network: this.network,
@@ -226,7 +226,7 @@ export class BitcoinP2PWorker extends BaseP2PWorker<IBtcBlock> {
     });
   }
 
-  async processTransaction(tx: Bitcoin.Transaction): Promise<any> {
+  async processTransaction(tx: BitcoinTransaction): Promise<any> {
     const now = new Date();
     await TransactionStorage.batchImport({
       chain: this.chain,

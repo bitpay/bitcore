@@ -8,20 +8,14 @@ import {
   BitcoinTransactionType
 } from './Transaction';
 
-export declare namespace Bitcoin {
-  export type Block = BitcoinBlockType;
-  export type Transaction = BitcoinTransactionType;
-  export type Script = BitcoinScript;
-  export type Address = BitcoinAddress;
-}
+export type BitcoinBlockType = BitcoinBlockType;
+export type BitcoinTransaction = BitcoinTransactionType;
+export type BitcoinScript = BitcoinScript;
+export type BitcoinAddress = BitcoinAddress;
 
-export declare namespace Bitcoin.Transaction {
-  export type Output = BitcoinOutput;
-  export type Input = BitcoinInput;
-  export type InputObj = BitcoinInputObj;
-}
+export type TransactionOutput = BitcoinOutput;
+export type TransactionInput = BitcoinInput;
+export type TransactionInputObj = BitcoinInputObj;
 
-export declare namespace Bitcoin.Block {
-  export type Header = BlockHeader;
-  export type HeaderObj = BlockHeaderObj;
-}
+export type BitcoinHeader = BlockHeader;
+export type BitcoinHeaderObj = BlockHeaderObj;
