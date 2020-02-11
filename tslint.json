@@ -1,15 +1,10 @@
 {
   "defaultSeverity": "error",
-  "extends": [
-    "tslint:recommended"
-  ],
+  "extends": ["tslint:recommended", "tslint-config-prettier"],
   "jsRules": {},
   "rules": {
     // "interface-name": [true, "never-prefix"],
-    "no-submodule-imports": [
-      false,
-      "src"
-    ],
+    "no-submodule-imports": [false, "src"],
     // "no-any": true,
     // Temporarily relax rules
     "member-ordering": false,
@@ -32,12 +27,7 @@
     "no-var-keyword": false,
     "curly": false,
     "member-access": false,
-    "quotemark": [
-      true,
-      "single",
-      "avoid-escape",
-      "avoid-template"
-    ],
+    "quotemark": [true, "single", "avoid-escape", "avoid-template"],
     "trailing-comma": [
       true,
       {
@@ -53,10 +43,7 @@
     "no-console": false,
     "arrow-parens": false,
     "max-line-length": false,
-    "space-before-function-paren": [
-      false,
-      "never"
-    ],
+    "space-before-function-paren": [false, "never"],
     "array-type": false,
     "eofline": false,
     "new-parens": false
