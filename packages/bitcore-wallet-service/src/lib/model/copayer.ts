@@ -50,10 +50,7 @@ export class Copayer {
     opts = opts || {};
     $.checkArgument(opts.xPubKey, 'Missing copayer extended public key')
       .checkArgument(opts.requestPubKey, 'Missing copayer request public key')
-      .checkArgument(
-        opts.signature,
-        'Missing copayer request public key signature'
-      );
+      .checkArgument(opts.signature, 'Missing copayer request public key signature');
 
     $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
 
@@ -76,8 +73,7 @@ export class Copayer {
       }
     ];
 
-    const derivationStrategy =
-      opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
+    const derivationStrategy = opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
     if (AddressManager.supportsCopayerBranches(derivationStrategy)) {
       x.addressManager = AddressManager.fromObj({
         derivationStrategy,

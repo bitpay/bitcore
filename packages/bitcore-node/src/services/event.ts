@@ -1,10 +1,10 @@
 import { EventEmitter } from 'events';
-import logger from '../logger';
-import { StorageService } from './storage';
 import { LoggifyClass } from '../decorators/Loggify';
-import { EventStorage, IEvent, EventModel } from '../models/events';
-import { Storage } from './storage';
+import logger from '../logger';
+import { EventModel, EventStorage, IEvent } from '../models/events';
 import { Config, ConfigService } from './config';
+import { StorageService } from './storage';
+import { Storage } from './storage';
 
 @LoggifyClass
 export class EventService {
@@ -59,7 +59,7 @@ export class EventService {
       while (await txCursor.hasNext()) {
         const txEvent = await txCursor.next();
         if (txEvent) {
-          const tx = <IEvent.TxEvent>txEvent.payload;
+          const tx = txEvent.payload as IEvent.TxEvent;
           this.txEvent.emit('tx', tx);
           lastTxUpdate = new Date();
         }
@@ -75,7 +75,7 @@ export class EventService {
       while (await blockCursor.hasNext()) {
         const blockEvent = await blockCursor.next();
         if (blockEvent) {
-          const block = <IEvent.BlockEvent>blockEvent.payload;
+          const block = blockEvent.payload as IEvent.BlockEvent;
           this.blockEvent.emit('block', block);
           lastBlockUpdate = new Date();
         }
@@ -91,7 +91,7 @@ export class EventService {
       while (await addressTxCursor.hasNext()) {
         const addressTx = await addressTxCursor.next();
         if (addressTx) {
-          const addressCoin = <IEvent.CoinEvent>addressTx.payload;
+          const addressCoin = addressTx.payload as IEvent.CoinEvent;
           this.addressCoinEvent.emit('coin', addressCoin);
           lastAddressTxUpdate = new Date();
         }

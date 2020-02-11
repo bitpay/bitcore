@@ -1,24 +1,24 @@
 import through2 from 'through2';
 
-import { MongoBound } from '../../../models/base';
-import { ObjectId } from 'mongodb';
-import { CoinStorage, ICoin } from '../../../models/coin';
-import { BitcoinBlockStorage, IBtcBlock } from '../../../models/block';
-import { WalletStorage, IWallet } from '../../../models/wallet';
-import { WalletAddressStorage, IWalletAddress } from '../../../models/walletAddress';
-import { CSP } from '../../../types/namespaces/ChainStateProvider';
-import { Storage } from '../../../services/storage';
-import { RPC } from '../../../rpc';
-import { LoggifyClass } from '../../../decorators/Loggify';
-import { TransactionStorage, ITransaction } from '../../../models/transaction';
-import { ListTransactionsStream } from './transforms';
-import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
-import { StateStorage } from '../../../models/state';
-import { SpentHeightIndicators, CoinJSON } from '../../../types/Coin';
-import { Config } from '../../../services/config';
 import { Validation } from 'crypto-wallet-core';
-import { TransactionJSON } from '../../../types/Transaction';
+import { ObjectId } from 'mongodb';
+import { LoggifyClass } from '../../../decorators/Loggify';
+import { MongoBound } from '../../../models/base';
 import { IBlock } from '../../../models/baseBlock';
+import { BitcoinBlockStorage, IBtcBlock } from '../../../models/block';
+import { CoinStorage, ICoin } from '../../../models/coin';
+import { StateStorage } from '../../../models/state';
+import { ITransaction, TransactionStorage } from '../../../models/transaction';
+import { IWallet, WalletStorage } from '../../../models/wallet';
+import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
+import { RPC } from '../../../rpc';
+import { Config } from '../../../services/config';
+import { Storage } from '../../../services/storage';
+import { CoinJSON, SpentHeightIndicators } from '../../../types/Coin';
+import { CSP } from '../../../types/namespaces/ChainStateProvider';
+import { TransactionJSON } from '../../../types/Transaction';
+import { StringifyJsonStream } from '../../../utils/stringifyJsonStream';
+import { ListTransactionsStream } from './transforms';
 
 @LoggifyClass
 export class InternalStateProvider implements CSP.IChainStateService {
@@ -40,9 +40,9 @@ export class InternalStateProvider implements CSP.IChainStateService {
   private getAddressQuery(params: CSP.StreamAddressUtxosParams) {
     const { chain, network, address, args } = params;
     if (typeof address !== 'string' || !chain || !network) {
-      throw 'Missing required param';
+      throw new Error('Missing required param');
     }
-    const query = { chain: chain, network: network.toLowerCase(), address } as any;
+    const query = { chain, network: network.toLowerCase(), address } as any;
     if (args.unspent) {
       query.spentHeight = { $lt: SpentHeightIndicators.minimum };
     }
@@ -108,10 +108,10 @@ export class InternalStateProvider implements CSP.IChainStateService {
     let { limit = 10, sort = { height: -1 } } = args;
     let options = { limit, sort, since, direction, paging };
     if (!chain || !network) {
-      throw 'Missing required param';
+      throw new Error('Missing required param');
     }
     let query: any = {
-      chain: chain,
+      chain,
       network: network.toLowerCase(),
       processed: true
     };
@@ -121,7 +121,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
       } else {
         let height = parseInt(blockId, 10);
         if (Number.isNaN(height) || height.toString(10) !== blockId) {
-          throw 'invalid block id provided';
+          throw new Error('invalid block id provided');
         }
         query.height = height;
       }
@@ -129,7 +129,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
     if (sinceBlock) {
       let height = Number(sinceBlock);
       if (Number.isNaN(height) || height.toString(10) !== sinceBlock) {
-        throw 'invalid block id provided';
+        throw new Error('invalid block id provided');
       }
       query.height = { $gt: height };
     }
@@ -171,10 +171,10 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const { chain, network, req, res, args } = params;
     let { blockHash, blockHeight } = args;
     if (!chain || !network) {
-      throw 'Missing chain or network';
+      throw new Error('Missing chain or network');
     }
     let query: any = {
-      chain: chain,
+      chain,
       network: network.toLowerCase()
     };
     if (blockHeight !== undefined) {
@@ -191,17 +191,17 @@ export class InternalStateProvider implements CSP.IChainStateService {
         confirmations = tipHeight - t.blockHeight + 1;
       }
       const convertedTx = TransactionStorage._apiTransform(t, { object: true }) as Partial<ITransaction>;
-      return JSON.stringify({ ...convertedTx, confirmations: confirmations });
+      return JSON.stringify({ ...convertedTx, confirmations });
     });
   }
 
   async getTransaction(params: CSP.StreamTransactionParams) {
     let { chain, network, txId } = params;
     if (typeof txId !== 'string' || !chain || !network) {
-      throw 'Missing required param';
+      throw new Error('Missing required param');
     }
     network = network.toLowerCase();
-    let query = { chain: chain, network, txid: txId };
+    let query = { chain, network, txid: txId };
     const tip = await this.getLocalTip(params);
     const tipHeight = tip ? tip.height : 0;
     const found = await TransactionStorage.collection.findOne(query);
@@ -211,7 +211,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
         confirmations = tipHeight - found.blockHeight + 1;
       }
       const convertedTx = TransactionStorage._apiTransform(found, { object: true }) as TransactionJSON;
-      return { ...convertedTx, confirmations: confirmations } as any;
+      return { ...convertedTx, confirmations } as any;
     } else {
       return undefined;
     }
@@ -220,7 +220,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   async getAuthhead(params: CSP.StreamTransactionParams) {
     let { chain, network, txId } = params;
     if (typeof txId !== 'string') {
-      throw 'Missing required param';
+      throw new Error('Missing required param');
     }
     const found = (await CoinStorage.resolveAuthhead(txId, chain, network))[0];
     if (found) {
@@ -241,7 +241,7 @@ export class InternalStateProvider implements CSP.IChainStateService {
   async createWallet(params: CSP.CreateWalletParams) {
     const { chain, network, name, pubKey, path, singleAddress } = params;
     if (typeof name !== 'string' || !network) {
-      throw 'Missing required param';
+      throw new Error('Missing required param');
     }
     const state = await StateStorage.collection.findOne({});
     const initialSyncComplete =
@@ -249,10 +249,10 @@ export class InternalStateProvider implements CSP.IChainStateService {
     const walletConfig = Config.for('api').wallets;
     const canCreate = walletConfig && walletConfig.allowCreationBeforeCompleteSync;
     if (!initialSyncComplete && !canCreate) {
-      throw 'Wallet creation not permitted before intitial sync is complete';
+      throw new Error('Wallet creation not permitted before intitial sync is complete');
     }
     const wallet: IWallet = {
-      chain: chain,
+      chain,
       network,
       name,
       pubKey,

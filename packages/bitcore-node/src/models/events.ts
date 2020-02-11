@@ -1,13 +1,16 @@
-import { BaseModel } from './base';
-import { ITransaction } from './transaction';
-import { IBlock } from '../types/Block';
-import { ICoin } from './coin';
 import { StorageService } from '../services/storage';
+import { IBlock } from '../types/Block';
+import { BaseModel } from './base';
+import { ICoin } from './coin';
+import { ITransaction } from './transaction';
 
 export namespace IEvent {
   export type BlockEvent = IBlock;
   export type TxEvent = ITransaction;
-  export type CoinEvent = { coin: Partial<ICoin>; address: string };
+  export interface CoinEvent {
+    coin: Partial<ICoin>;
+    address: string;
+  }
 }
 interface IEvent {
   payload: IEvent.BlockEvent | IEvent.TxEvent | IEvent.CoinEvent;

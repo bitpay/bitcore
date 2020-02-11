@@ -2,7 +2,7 @@ import express = require('express');
 const router = express.Router({ mergeParams: true });
 import { ChainStateProvider } from '../../providers/chain-state';
 
-router.get('/:input',  async function(req, res) {
+router.get('/:input', async function(req, res) {
   let { input, chain, network } = req.params;
   try {
     let isValid = await ChainStateProvider.isValid({
@@ -16,8 +16,7 @@ router.get('/:input',  async function(req, res) {
   }
 });
 
-
 module.exports = {
-  router: router,
+  router,
   path: '/valid'
 };

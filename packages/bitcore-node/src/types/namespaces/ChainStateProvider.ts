@@ -1,16 +1,16 @@
-import { ObjectId } from 'mongodb';
-import { IBtcBlock } from '../../models/block';
 import { Request, Response } from 'express';
-import { IWallet } from '../../models/wallet';
-import { ChainNetwork } from '../../types/ChainNetwork';
-import { StreamingFindOptions } from '../../services/storage';
+import { ObjectId } from 'mongodb';
 import { MongoBound } from '../../models/base';
+import { IBlock } from '../../models/baseBlock';
+import { IBtcBlock } from '../../models/block';
+import { ICoin } from '../../models/coin';
 import { ITransaction } from '../../models/transaction';
+import { IWallet } from '../../models/wallet';
+import { StreamingFindOptions } from '../../services/storage';
+import { ChainNetwork } from '../../types/ChainNetwork';
 import { AuthheadJSON } from '../Authhead';
 import { CoinListingJSON } from '../Coin';
 import { DailyTransactionsJSON } from '../stats';
-import { ICoin } from '../../models/coin';
-import { IBlock } from '../../models/baseBlock';
 export declare namespace CSP {
   export type StreamWalletTransactionsArgs = {
     startBlock: number;
@@ -20,13 +20,17 @@ export declare namespace CSP {
     includeMempool: boolean;
   } & StreamingFindOptions<ITransaction>;
 
-  export type StreamAddressUtxosArgs = {
+  export interface StreamAddressUtxosArgs {
     unspent: boolean;
-  };
+  }
 
-  export type GetBlockArgs = { limit: null | number };
+  export interface GetBlockArgs {
+    limit: null | number;
+  }
 
-  export type PubKey = { pubKey: string };
+  export interface PubKey {
+    pubKey: string;
+  }
 
   export type GetBalanceForAddressParams = ChainNetwork & {
     address: string;
@@ -118,7 +122,9 @@ export declare namespace CSP {
     res: Response;
     args: StreamWalletTransactionsArgs & any;
   };
-  export type StreamWalletUtxosArgs = { includeSpent: 'true' | undefined };
+  export interface StreamWalletUtxosArgs {
+    includeSpent: 'true' | undefined;
+  }
   export type StreamWalletUtxosParams = ChainNetwork & {
     wallet: MongoBound<IWallet>;
     limit: number;
@@ -131,9 +137,15 @@ export declare namespace CSP {
     input: string;
   };
 
-  export type GetCoinsForTxParams = { chain: string; network: string; txid: string };
+  export interface GetCoinsForTxParams {
+    chain: string;
+    network: string;
+    txid: string;
+  }
 
-  export type Provider<T> = { get(params: { chain: string }): T };
+  export interface Provider<T> {
+    get(params: { chain: string }): T;
+  }
   export type ChainStateProvider = Provider<IChainStateService> & IChainStateService;
   export interface IChainStateService {
     getBalanceForAddress(
@@ -170,5 +182,7 @@ export declare namespace CSP {
     isValid(params: isValidParams): { isValid: boolean; type: string };
   }
 
-  type ChainStateServices = { [key: string]: IChainStateService };
+  interface ChainStateServices {
+    [key: string]: IChainStateService;
+  }
 }

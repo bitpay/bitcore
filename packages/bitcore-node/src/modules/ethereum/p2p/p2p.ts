@@ -1,17 +1,17 @@
-import Web3 from 'web3';
-import logger from '../../../logger';
 import { EventEmitter } from 'events';
-import { ChainStateProvider } from '../../../providers/chain-state';
-import { StateStorage } from '../../../models/state';
-import { EthBlockModel, EthBlockStorage } from '../models/block';
-import { IEthTransaction, IEthBlock, Parity } from '../types';
-import { ParityRPC } from './parityRpc';
-import { BaseP2PWorker } from '../../../services/p2p';
-import { EthTransactionModel, EthTransactionStorage } from '../models/transaction';
+import Web3 from 'web3';
 import { timestamp } from '../../../logger';
-import { ETHStateProvider } from '../api/csp';
+import logger from '../../../logger';
+import { StateStorage } from '../../../models/state';
+import { ChainStateProvider } from '../../../providers/chain-state';
+import { BaseP2PWorker } from '../../../services/p2p';
 import { valueOrDefault } from '../../../utils/check';
 import { wait } from '../../../utils/wait';
+import { ETHStateProvider } from '../api/csp';
+import { EthBlockModel, EthBlockStorage } from '../models/block';
+import { EthTransactionModel, EthTransactionStorage } from '../models/transaction';
+import { IEthBlock, IEthTransaction, Parity } from '../types';
+import { ParityRPC } from './parityRpc';
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   protected chainConfig: any;
@@ -374,7 +374,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         gasLimit: Number(tx.gas),
         gasPrice: Number(tx.gasPrice),
         // gasUsed: Number(tx.gasUsed),
-        nonce: nonce,
+        nonce,
         internal: []
       };
       if (abiType) {

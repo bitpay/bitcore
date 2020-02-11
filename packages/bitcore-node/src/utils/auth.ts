@@ -1,20 +1,20 @@
 import { Request, Response } from 'express';
-import { ChainNetwork } from '../types/ChainNetwork';
+import { RequestHandler } from 'express-serve-static-core';
+import logger from '../logger';
 import { MongoBound } from '../models/base';
 import { IWallet } from '../models/wallet';
 import { ChainStateProvider } from '../providers/chain-state';
-import { RequestHandler } from 'express-serve-static-core';
 import { Config } from '../services/config';
-import logger from '../logger';
+import { ChainNetwork } from '../types/ChainNetwork';
 
 const secp256k1 = require('secp256k1');
 const bitcoreLib = require('bitcore-lib');
 
-export type VerificationPayload = {
+export interface VerificationPayload {
   message: string;
   pubKey: string;
   signature: string | string[] | undefined;
-};
+}
 type SignedApiRequest = ChainNetwork & VerificationPayload;
 
 export function verifyRequestSignature(params: VerificationPayload): boolean {

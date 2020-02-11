@@ -7,9 +7,7 @@ export abstract class AbstractBitcoreLibDeriver implements IDeriver {
     const xpub = new this.bitcoreLib.HDPublicKey(pubKey, network);
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;
-    return this.bitcoreLib
-      .Address(xpub.derive(path).publicKey, network)
-      .toString();
+    return this.bitcoreLib.Address(xpub.derive(path).publicKey, network).toString();
   }
 
   derivePrivateKey(network, xPriv, addressIndex, isChange) {
