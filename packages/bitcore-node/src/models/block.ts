@@ -2,7 +2,7 @@ import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
 import { StorageService } from '../services/storage';
 import { SpentHeightIndicators } from '../types/Coin';
-import { BitcoinBlockType as BitcoinBlockType, BitcoinHeaderObj } from '../types/namespaces/Bitcoin';
+import { BitcoinBlockType, BitcoinHeaderObj } from '../types/namespaces/Bitcoin';
 import { TransformOptions } from '../types/TransformOptions';
 import { MongoBound } from './base';
 import { BaseBlock, IBlock } from './baseBlock';
