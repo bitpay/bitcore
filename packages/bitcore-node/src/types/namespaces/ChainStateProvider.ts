@@ -145,7 +145,7 @@ export interface GetCoinsForTxParams {
 export interface Provider<T> {
   get(params: { chain: string }): T;
 }
-export type ChainStateProvider = Provider<IChainStateService> & IChainStateService;
+export type IChainStateProvider = Provider<IChainStateService> & IChainStateService;
 export interface IChainStateService {
   getBalanceForAddress(
     params: GetBalanceForAddressParams
@@ -168,7 +168,7 @@ export interface IChainStateService {
   streamAddressTransactions(params: StreamAddressUtxosParams): any;
   streamTransactions(params: StreamTransactionsParams): any;
   getAuthhead(params: StreamTransactionParams): Promise<AuthheadJSON | undefined>;
-  getDailyTransactions(params: CSP.DailyTransactionsParams): Promise<DailyTransactionsJSON>;
+  getDailyTransactions(params: DailyTransactionsParams): Promise<DailyTransactionsJSON>;
   getTransaction(params: StreamTransactionParams): Promise<any | undefined>;
   streamWalletAddresses(params: StreamWalletAddressesParams): any;
   walletCheck(params: WalletCheckParams): any;
@@ -181,6 +181,6 @@ export interface IChainStateService {
   isValid(params: isValidParams): { isValid: boolean; type: string };
 }
 
-interface ChainStateServices {
+export interface ChainStateServices {
   [key: string]: IChainStateService;
 }
