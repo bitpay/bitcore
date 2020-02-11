@@ -3,7 +3,7 @@ import logger from '../../logger';
 import { ICoin } from '../../models/coin';
 import { ITransaction } from '../../models/transaction';
 import { ChainStateProvider } from '../../providers/chain-state';
-import { CSP } from '../../types/namespaces/ChainStateProvider';
+import { StreamTransactionsParams } from '../../types/namespaces/ChainStateProvider';
 import { SetCache } from '../middleware';
 import { CacheTimes } from '../middleware';
 
@@ -20,7 +20,7 @@ router.get('/', function(req, res) {
   }
   chain = chain.toUpperCase();
   network = network.toLowerCase();
-  let payload: CSP.StreamTransactionsParams = {
+  let payload: StreamTransactionsParams = {
     chain,
     network,
     req,

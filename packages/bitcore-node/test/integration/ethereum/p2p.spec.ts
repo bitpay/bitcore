@@ -74,7 +74,7 @@ describe('Ethereum', function() {
     await worker.disconnect();
   });
 
-  it('should be able to save blocks to the database', async () => {
+  it.skip('should be able to save blocks to the database', async () => {
     const wallet = await getWallet();
     const addresses = await wallet.getAddresses();
 

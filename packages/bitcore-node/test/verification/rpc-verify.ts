@@ -1,15 +1,15 @@
 #!/usr/bin/env node
-import { BitcoinBlockStorage, IBtcBlock } from '../../src/models/block';
-import { AsyncRPC } from '../../src/rpc';
 import { expect } from 'chai';
-import { TransactionStorage, IBtcTransaction } from '../../src/models/transaction';
-import { CoinStorage } from '../../src/models/coin';
-import { ChainNetwork } from '../../src/types/ChainNetwork';
-import { WalletAddressStorage } from '../../src/models/walletAddress';
-import { Storage } from '../../src/services/storage';
 import config from '../../src/config';
 import logger from '../../src/logger';
+import { BitcoinBlockStorage, IBtcBlock } from '../../src/models/block';
+import { CoinStorage } from '../../src/models/coin';
+import { IBtcTransaction, TransactionStorage } from '../../src/models/transaction';
+import { WalletAddressStorage } from '../../src/models/walletAddress';
 import { ChainStateProvider } from '../../src/providers/chain-state';
+import { AsyncRPC } from '../../src/rpc';
+import { Storage } from '../../src/services/storage';
+import { ChainNetwork } from '../../src/types/ChainNetwork';
 
 const SATOSHI = 100000000.0;
 

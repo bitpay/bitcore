@@ -39,7 +39,7 @@ export function LoggifyClass<T extends new (...args: any[]) => {}>(aClass: T) {
   };
 }
 
-export function LoggifyFunction(fn: Function, logPrefix: string = '', bind?: any) {
+export function LoggifyFunction(fn: (...args: any[]) => any, logPrefix: string = '', bind?: any) {
   if (!args.DEBUG) {
     return fn as (...methodargs: any[]) => any;
   }

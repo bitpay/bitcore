@@ -1,4 +1,4 @@
-import { CSP } from '../../../types/namespaces/ChainStateProvider';
+import { GetEstimateSmartFeeParams } from '../../../types/namespaces/ChainStateProvider';
 import { BTCStateProvider } from '../btc/btc';
 
 export class BCHStateProvider extends BTCStateProvider {
@@ -6,7 +6,7 @@ export class BCHStateProvider extends BTCStateProvider {
     super(chain);
   }
 
-  async getFee(params: CSP.GetEstimateSmartFeeParams) {
+  async getFee(params: GetEstimateSmartFeeParams) {
     const { chain, network } = params;
     return { feerate: await this.getRPC(chain, network).getEstimateFee() };
   }

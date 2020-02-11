@@ -8,7 +8,7 @@ import { Libs } from '../providers/libs';
 import { Config } from '../services/config';
 import { StorageService } from '../services/storage';
 import { SpentHeightIndicators } from '../types/Coin';
-import { Bitcoin } from '../types/namespaces/Bitcoin';
+import { BitcoinTransaction } from '../types/namespaces/Bitcoin';
 import { TransactionJSON } from '../types/Transaction';
 import { TransformOptions } from '../types/TransformOptions';
 import { partition } from '../utils/partition';
@@ -34,7 +34,7 @@ export type IBtcTransaction = ITransaction & {
   size: number;
 };
 
-export type TaggedBitcoinTx = Bitcoin.Transaction & { wallets: Array<ObjectID> };
+export type TaggedBitcoinTx = BitcoinTransaction & { wallets: Array<ObjectID> };
 
 export interface MintOp {
   updateOne: {
@@ -201,7 +201,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
   }
 
   async batchImport(params: {
-    txs: Array<Bitcoin.Transaction>;
+    txs: Array<BitcoinTransaction>;
     height: number;
     mempoolTime?: Date;
     blockTime?: Date;
@@ -403,7 +403,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     network: string;
     initialSyncComplete: boolean;
     mintBatch: Array<MintOp>;
-    txs: Array<Bitcoin.Transaction>;
+    txs: Array<BitcoinTransaction>;
   }) {
     const { chain, network, initialSyncComplete, mintBatch } = params;
     const walletConfig = Config.for('api').wallets;
@@ -454,7 +454,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
   }
 
   async streamMintOps(params: {
-    txs: Array<Bitcoin.Transaction>;
+    txs: Array<BitcoinTransaction>;
     height: number;
     parentChain?: string;
     forkHeight?: number;
@@ -545,7 +545,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
   }
 
   streamSpendOps(params: {
-    txs: Array<Bitcoin.Transaction>;
+    txs: Array<BitcoinTransaction>;
     height: number;
     parentChain?: string;
     forkHeight?: number;
