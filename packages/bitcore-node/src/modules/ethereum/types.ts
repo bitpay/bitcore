@@ -165,3 +165,51 @@ export interface EthTransactionJSON {
   data: string;
   internal: Array<DecodedTrace>;
 }
+
+export interface EthGasStationResp {
+  fast: number;
+  fastest: number;
+  safeLow: number;
+  average: number;
+  block_time: number;
+  blockNum: number;
+  speed: number;
+  safeLowWait: number;
+  avgWait: number;
+  fastWait: number;
+  fastestWait: number;
+  gasPriceRange: {
+    '4': number;
+    '6': number;
+    '8': number;
+    '10': number;
+    '15': number;
+    '20': number;
+    '25': number;
+    '30': number;
+    '35': number;
+    '40': number;
+    '45': number;
+    '50': number;
+    '55': number;
+    '60': number;
+    '65': number;
+    '70': number;
+    '75': number;
+    '80': number;
+    '85': number;
+    '90': number;
+    '95': number;
+    '100': number;
+    '105': number;
+    '110': number;
+    '115': number;
+    '120': number;
+    '125': number;
+    '130': number;
+    '135': number;
+    '140': number;
+    '145': number;
+    '150': number;
+  };
+}

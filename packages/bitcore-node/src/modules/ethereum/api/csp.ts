@@ -1,4 +1,5 @@
 import { ObjectID } from 'mongodb';
+import * as request from 'request-promise';
 import { Readable, Transform } from 'stream';
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
@@ -27,7 +28,7 @@ import { partition } from '../../../utils/partition';
 import { ERC20Abi } from '../abi/erc20';
 import { EthBlockStorage } from '../models/block';
 import { EthTransactionStorage } from '../models/transaction';
-import { EthTransactionJSON, IEthBlock } from '../types';
+import { EthGasStationResp, EthTransactionJSON, IEthBlock } from '../types';
 import { EthListTransactionsStream } from './transform';
 interface EventLog<T> {
   event: string;
@@ -105,6 +106,26 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     };
   }
 
+  /**
+   * fast: Recommended fast(expected to be mined in < 2 minutes) gas price in x10 Gwei(divite by 10 to convert it to gwei)
+   * fastest: Recommended fastest(expected to be mined in < 30 seconds) gas price in x10 Gwei(divite by 10 to convert it to gwei)
+   * safeLow: Recommended safe(expected to be mined in < 30 minutes) gas price in x10 Gwei(divite by 10 to convert it to gwei)
+   * average: Recommended average(expected to be mined in < 5 minutes) gas price in x10 Gwei(divite by 10 to convert it to gwei)
+   *
+   */
+  async ethGasStationEstimate() {
+    const req = (await request.get('https://ethgasstation.info/json/ethgasAPI.json', {
+      json: true
+    })) as EthGasStationResp;
+
+    const transformed = {
+      safeLow: req.safeLow * 1e8,
+      fast: req.fast * 1e8,
+      fastest: req.fastest * 1e8
+    };
+    return transformed;
+  }
+
   async getFee(params) {
     let { network, target = 4 } = params;
     const chain = this.chain;
@@ -116,6 +137,11 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     const txs = await EthTransactionStorage.collection
       .find({ chain, network, blockHeight: { $gte: bestBlock.height - target } })
       .toArray();
+
+    if (network === 'mainnet') {
+      const ethGasStation = await this.ethGasStationEstimate();
+      gasPrices.push(ethGasStation.safeLow);
+    }
 
     const blockGasPrices = txs.map(tx => Number(tx.gasPrice)).sort((a, b) => b - a);
     const txCount = txs.length;

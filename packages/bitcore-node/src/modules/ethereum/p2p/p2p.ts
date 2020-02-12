@@ -150,7 +150,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         }
         disconnected = !connected;
       } catch (e) {}
-      await wait(2000);
+      await wait(20000);
     }
   }
 
@@ -249,7 +249,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       }
     } catch (err) {
       logger.error(`Error syncing ${chain} ${network}`, err.message);
-      await wait(2000);
+      await wait(20000);
       this.syncing = false;
       return this.sync();
     }
