@@ -114,16 +114,20 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
    *
    */
   async ethGasStationEstimate() {
-    const req = (await request.get('https://ethgasstation.info/json/ethgasAPI.json', {
-      json: true
-    })) as EthGasStationResp;
+    try {
+      const req = (await request.get('https://ethgasstation.info/json/ethgasAPI.json', {
+        json: true
+      })) as EthGasStationResp;
 
-    const transformed = {
-      safeLow: req.safeLow * 1e8,
-      fast: req.fast * 1e8,
-      fastest: req.fastest * 1e8
-    };
-    return transformed;
+      const transformed = {
+        safeLow: req.safeLow * 1e8,
+        fast: req.fast * 1e8,
+        fastest: req.fastest * 1e8
+      };
+      return transformed;
+    } catch (e) {
+      return null;
+    }
   }
 
   async getFee(params) {
@@ -140,7 +144,9 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
     if (network === 'mainnet') {
       const ethGasStation = await this.ethGasStationEstimate();
-      gasPrices.push(ethGasStation.safeLow);
+      if (ethGasStation) {
+        gasPrices.push(ethGasStation.safeLow);
+      }
     }
 
     const blockGasPrices = txs.map(tx => Number(tx.gasPrice)).sort((a, b) => b - a);
