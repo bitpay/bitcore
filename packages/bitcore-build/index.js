@@ -342,6 +342,7 @@ function startGulp(name, opts) {
     task['test']= task['test:node'];
   }
   task['default']= task['test'];
+
   return  task;
 }
 

@@ -106,7 +106,7 @@ describe('Networks', function() {
 
   it('can test for multiple keys', function() {
     expect(networks.get(0x6f, ['pubkeyhash', 'scripthash'])).to.equal(networks.testnet);
-    expect(networks.get(0xc4, ['pubkeyhash', 'scripthash'])).to.equal(networks.testnet);
+    expect(networks.get(0x3a, ['pubkeyhash', 'scripthash'])).to.equal(networks.testnet);
     expect(networks.get(0x6f, ['privatekey', 'port'])).to.equal(undefined);
   });
 

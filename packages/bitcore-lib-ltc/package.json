@@ -1,14 +1,15 @@
 {
-  "name": "litecore-lib",
-  "version": "0.13.21",
+  "name": "bitcore-lib-ltc",
+  "version": "8.16.0",
   "description": "A pure and powerful JavaScript Litecoin library.",
   "author": "BitPay <dev@bitpay.com>",
   "main": "index.js",
   "scripts": {
-    "lint": "gulp lint",
     "test": "gulp test",
+    "test:ci": "npm run test",
     "coverage": "gulp coverage",
-    "build": "gulp"
+    "build": "gulp",
+    "pub": "npm run build && npm publish"
   },
   "contributors": [
     {
@@ -85,20 +86,20 @@
     "request": "browser-request"
   },
   "dependencies": {
-    "bn.js": "=2.0.4",
-    "bs58": "=2.0.0",
-    "buffer-compare": "=1.0.0",
-    "elliptic": "=3.0.3",
+    "bn.js": "=4.11.8",
+    "bs58": "^4.0.1",
+    "buffer-compare": "=1.1.1",
+    "elliptic": "=6.4.0",
     "inherits": "=2.0.1",
-    "lodash": "=3.10.1",
-    "scryptsy": "=2.0.0"
+    "lodash": "=4.17.15",
+    "scryptsy": "2.1.0"
   },
   "devDependencies": {
-    "brfs": "^1.2.0",
-    "chai": "^1.10.0",
-    "gulp": "^3.9.1",
-    "litecore-build": "litecoin-project/litecore-build",
-    "sinon": "^1.13.0"
+    "bitcore-build": "^8.16.0",
+    "brfs": "^2.0.1",
+    "chai": "^4.2.0",
+    "gulp": "^4.0.0",
+    "sinon": "^7.1.1"
   },
   "license": "MIT"
 }

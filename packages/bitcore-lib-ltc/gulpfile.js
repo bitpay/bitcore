@@ -1,5 +1,2 @@
-
-
-var litecoreTasks = require('litecore-build');
-
-litecoreTasks('lib');
+var startGulp = require('bitcore-build');
+Object.assign(exports, startGulp('lib'))

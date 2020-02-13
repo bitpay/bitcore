@@ -16,19 +16,19 @@ describe('Point', function() {
     x: 'ac242d242d23be966085a2b2b893d989f824e06c9ad0395a8a52f055ba39abb2',
     y: '0000000000000000000000000000000000000000000000000000000000000000',
   };
-  
+
   it('should create a point', function() {
     var p = Point(valid.x, valid.y);
     should.exist(p);
   });
-  
+
   it('should create a point when called with "new"', function() {
     var p = new Point(valid.x,valid.y);
     should.exist(p);
   });
 
   describe('#getX', function() {
-    
+
     it('should return x', function() {
       var p = Point(valid.x,valid.y);
       var x = p.getX();
@@ -45,7 +45,7 @@ describe('Point', function() {
   });
 
   describe('#getY', function() {
-    
+
     it('should return y', function() {
       var p = Point(valid.x,valid.y);
       p.getY().toString('hex', 64).should.equal(valid.y);
@@ -111,7 +111,7 @@ describe('Point', function() {
   });
 
   describe('@fromX', function() {
-    
+
     it('should return g', function() {
       var g = Point.getG();
       var p = Point.fromX(false, g.getX());
@@ -132,7 +132,7 @@ describe('Point', function() {
       var y = '0000000000000000000000000000000000000000000000000000000000000000';
       (function() {
         var p = Point(x, y);
-      }).should.throw('Invalid x,y value for curve, cannot equal 0.');
+      }).should.throw('Invalid y value for curve.');
     });
 
 
@@ -166,7 +166,7 @@ describe('Point', function() {
       (function() {
         // set the point
         var p = Point.fromX(false, x);
-      }).should.throw('Invalid x,y value for curve, cannot equal 0.');
+      }).should.throw('Invalid X');
     });
 
   });

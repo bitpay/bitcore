@@ -541,7 +541,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold) {
     });
     return this;
   }
-  var exists = _.any(this.inputs, function(input) {
+  var exists = _.some(this.inputs, function(input) {
     // TODO: Maybe prevTxId should be a string? Or defined as read only property?
     return input.prevTxId.toString('hex') === utxo.txId && input.outputIndex === utxo.outputIndex;
   });
@@ -647,7 +647,7 @@ Transaction.prototype.uncheckedAddInput = function(input) {
  * @return {boolean}
  */
 Transaction.prototype.hasAllUtxoInfo = function() {
-  return _.all(this.inputs.map(function(input) {
+  return _.every(this.inputs.map(function(input) {
     return !!input.output;
   }));
 };
@@ -1102,7 +1102,7 @@ Transaction.prototype.isFullySigned = function() {
       );
     }
   });
-  return _.all(_.map(this.inputs, function(input) {
+  return _.every(_.map(this.inputs, function(input) {
     return input.isFullySigned();
   }));
 };

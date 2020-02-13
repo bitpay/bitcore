@@ -184,9 +184,7 @@ describe('Output', function() {
       satoshis: 1000,
       script: new Script()
     });
-    (function() {
-      output.setScriptFromBuffer('bad');
-    }).should.throw('Invalid hex string');
+    expect(output.setScriptFromBuffer('bad')).to.be.undefined;
   });
 
 });

@@ -823,15 +823,15 @@ describe('Script', function() {
     it('for a P2PKH address', function() {
       var address = Address.fromString('LgoQm9q3J8Ydn26juwZSdrMUCHGk3xsfKW');
       var script = Script.buildPublicKeyHashOut(address);
-      expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.true();
+      expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.true;
     });
     it('for a P2SH address', function() {
       var address = Address.fromString('MNv2feaZTyL5u3QpKqmV46RQP7gw8bg6N4');
       var script = new Script(address);
-      expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.true();
+      expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.true;
     });
     it('for a standard opreturn output', function() {
-      expect(BufferUtil.equal(Script('OP_RETURN 1 0xFF').getData(), new Buffer([255]))).to.be.true();
+      expect(BufferUtil.equal(Script('OP_RETURN 1 0xFF').getData(), new Buffer([255]))).to.be.true;
     });
     it('fails if content is not recognized', function() {
       expect(function() {

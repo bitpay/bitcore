@@ -1,4 +1,4 @@
-# Litecore v0.1
+# Litecore v8.16.0
 
 ## Principles
 

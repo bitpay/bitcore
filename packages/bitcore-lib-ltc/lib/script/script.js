@@ -36,15 +36,17 @@ var Script = function Script(from) {
     return Script.fromAddress(from);
   } else if (from instanceof Script) {
     return Script.fromBuffer(from.toBuffer());
-  } else if (typeof from === 'string') {
+  } else if (_.isString(from)) {
     return Script.fromString(from);
-  } else if (typeof from !== 'undefined') {
+  } else if (_.isObject(from) && _.isArray(from.chunks)) {
     this.set(from);
   }
 };
 
 Script.prototype.set = function(obj) {
-  this.chunks = obj.chunks || this.chunks;
+  $.checkArgument(_.isObject(obj));
+  $.checkArgument(_.isArray(obj.chunks));
+  this.chunks = obj.chunks;
   return this;
 };
 
@@ -143,7 +145,7 @@ Script.fromASM = function(str) {
     var opcodenum = opcode.toNumber();
 
     if (_.isUndefined(opcodenum)) {
-      var buf = new Buffer(tokens[i], 'hex');
+      var buf = Buffer.from(tokens[i], 'hex');
       script.chunks.push({
         buf: buf,
         len: buf.length,
@@ -154,7 +156,7 @@ Script.fromASM = function(str) {
       opcodenum === Opcode.OP_PUSHDATA2 ||
       opcodenum === Opcode.OP_PUSHDATA4) {
       script.chunks.push({
-        buf: new Buffer(tokens[i + 2], 'hex'),
+        buf: Buffer.from(tokens[i + 2], 'hex'),
         len: parseInt(tokens[i + 1]),
         opcodenum: opcodenum
       });
@@ -170,12 +172,12 @@ Script.fromASM = function(str) {
 };
 
 Script.fromHex = function(str) {
-  return new Script(new buffer.Buffer(str, 'hex'));
+  return new Script(Buffer.from(str, 'hex'));
 };
 
 Script.fromString = function(str) {
   if (JSUtil.isHexa(str) || str.length === 0) {
-    return new Script(new buffer.Buffer(str, 'hex'));
+    return new Script(Buffer.from(str, 'hex'));
   }
   var script = new Script();
   script.chunks = [];
@@ -191,7 +193,7 @@ Script.fromString = function(str) {
       opcodenum = parseInt(token);
       if (opcodenum > 0 && opcodenum < Opcode.OP_PUSHDATA1) {
         script.chunks.push({
-          buf: new Buffer(tokens[i + 1].slice(2), 'hex'),
+          buf: Buffer.from(tokens[i + 1].slice(2), 'hex'),
           len: opcodenum,
           opcodenum: opcodenum
         });
@@ -206,7 +208,7 @@ Script.fromString = function(str) {
         throw new Error('Pushdata data must start with 0x');
       }
       script.chunks.push({
-        buf: new Buffer(tokens[i + 2].slice(2), 'hex'),
+        buf: Buffer.from(tokens[i + 2].slice(2), 'hex'),
         len: parseInt(tokens[i + 1]),
         opcodenum: opcodenum
       });
@@ -242,7 +244,7 @@ Script.prototype._chunkToString = function(chunk, type) {
     }
   } else {
     // data chunk
-    if (opcodenum === Opcode.OP_PUSHDATA1 ||
+    if (!asm && opcodenum === Opcode.OP_PUSHDATA1 ||
       opcodenum === Opcode.OP_PUSHDATA2 ||
       opcodenum === Opcode.OP_PUSHDATA4) {
       str = str + ' ' + Opcode(opcodenum).toString();
@@ -328,7 +330,7 @@ Script.prototype.isPublicKeyHashIn = function() {
 };
 
 Script.prototype.getPublicKey = function() {
-  $.checkState(this.isPublicKeyOut(), 'Can\'t retreive PublicKey from a non-PK output');
+  $.checkState(this.isPublicKeyOut(), 'Can\'t retrieve PublicKey from a non-PK output');
   return this.chunks[0].buf;
 };
 
@@ -464,13 +466,13 @@ Script.prototype.isDataOut = function() {
 Script.prototype.getData = function() {
   if (this.isDataOut() || this.isScriptHashOut()) {
     if (_.isUndefined(this.chunks[1])) {
-      return new Buffer(0);
+      return Buffer.alloc(0);
     } else {
-      return new Buffer(this.chunks[1].buf);
+      return Buffer.from(this.chunks[1].buf);
     }
   }
   if (this.isPublicKeyHashOut()) {
-    return new Buffer(this.chunks[2].buf);
+    return Buffer.from(this.chunks[2].buf);
   }
   throw new Error('Unrecognized script type to get data from');
 };

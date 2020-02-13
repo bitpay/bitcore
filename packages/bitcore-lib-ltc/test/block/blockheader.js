@@ -10,12 +10,13 @@ var fs = require('fs');
 var should = require('chai').should();
 
 // https://test-insight.bitpay.com/block/000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa11
+
 var dataRawBlockBuffer = fs.readFileSync('test/data/blk86756-testnet.dat');
 var dataRawBlockBinary = fs.readFileSync('test/data/blk86756-testnet.dat', 'binary');
-var dataRawId = '000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa11';
+var dataRawId = '7b0285712dc1c736d70150a84749b559a4d80271b79e87c0248265897a8d2372';
 var data = require('../data/blk86756-testnet');
 
-describe('BlockHeader', function() {
+describe.only('BlockHeader', function() {
 
   var version = data.version;
   var prevblockidbuf = new Buffer(data.prevblockidhex, 'hex');
@@ -31,7 +32,8 @@ describe('BlockHeader', function() {
     bits: bits,
     nonce: nonce
   });
-  var bhhex = data.blockheaderhex;
+  var b = bitcore.Block.fromString(data.blockhex);
+  var bhhex = b.header.toString();
   var bhbuf = new Buffer(bhhex, 'hex');
 
   it('should make a new blockheader', function() {
@@ -198,13 +200,13 @@ describe('BlockHeader', function() {
 
     it('should instantiate from a raw block binary', function() {
       var x = BlockHeader.fromRawBlock(dataRawBlockBinary);
-      x.version.should.equal(2);
-      new BN(x.bits).toString('hex').should.equal('1c3fffc0');
+      x.version.should.equal(data.version);
+      new BN(x.bits).toString('hex').should.equal(data.bits);
     });
 
     it('should instantiate from raw block buffer', function() {
       var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
-      x.version.should.equal(2);
+      x.version.should.equal(data.version);
       new BN(x.bits).toString('hex').should.equal('1c3fffc0');
     });
 
@@ -251,8 +253,8 @@ describe('BlockHeader', function() {
   describe('#getDifficulty', function() {
     it('should get the correct difficulty for block 86756', function() {
       var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
-      x.bits.should.equal(0x1c3fffc0);
-      x.getDifficulty().should.equal(4);
+      x.bits.should.equal(data.bits);
+      x.getDifficulty().should.equal(data.difficulty);
     });
 
     it('should get the correct difficulty for testnet block 552065', function() {

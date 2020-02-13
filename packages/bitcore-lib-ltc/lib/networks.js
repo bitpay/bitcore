@@ -38,7 +38,7 @@ function get(arg, keys) {
       return networks[index][key] === arg;
     };
     for (var index in networks) {
-      if (_.any(keys, containsArg)) {
+      if (_.some(keys, containsArg)) {
         return networks[index];
       }
     }
