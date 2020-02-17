@@ -113,8 +113,9 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     }
     const bestBlock = (await this.getLocalTip({ chain, network })) || { height: target };
     const gasPrices: number[] = [];
+    const limitedTarget = Math.min(target, 4);
     const txs = await EthTransactionStorage.collection
-      .find({ chain, network, blockHeight: { $gte: bestBlock.height - target } })
+      .find({ chain, network, blockHeight: { $gte: bestBlock.height - limitedTarget } })
       .toArray();
 
     const blockGasPrices = txs.map(tx => Number(tx.gasPrice)).sort((a, b) => b - a);
