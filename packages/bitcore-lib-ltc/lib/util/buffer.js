@@ -44,7 +44,7 @@ module.exports = {
    * @return {Buffer}
    */
   copy: function(original) {
-    var buffer = new Buffer(original.length);
+    var buffer = Buffer.alloc(original.length);
     original.copy(buffer);
     return buffer;
   },
@@ -68,7 +68,7 @@ module.exports = {
    */
   emptyBuffer: function emptyBuffer(bytes) {
     $.checkArgumentType(bytes, 'number', 'bytes');
-    var result = new buffer.Buffer(bytes);
+    var result = Buffer.alloc(bytes);
     for (var i = 0; i < bytes; i++) {
       result.write('\0', i);
     }
@@ -93,7 +93,7 @@ module.exports = {
    */
   integerAsSingleByteBuffer: function integerAsSingleByteBuffer(integer) {
     $.checkArgumentType(integer, 'number', 'integer');
-    return new buffer.Buffer([integer & 0xff]);
+    return Buffer.from([integer & 0xff]);
   },
 
   /**
@@ -109,7 +109,7 @@ module.exports = {
     bytes.push((integer >> 16) & 0xff);
     bytes.push((integer >> 8) & 0xff);
     bytes.push(integer & 0xff);
-    return new Buffer(bytes);
+    return Buffer.from(bytes);
   },
 
   /**
@@ -152,11 +152,7 @@ module.exports = {
    * @return {Buffer}
    */
   reverse: function reverse(param) {
-    var ret = new buffer.Buffer(param.length);
-    for (var i = 0; i < param.length; i++) {
-      ret[i] = param[param.length - i - 1];
-    }
-    return ret;
+    return (Buffer.from(param)).reverse();
   },
 
   /**
@@ -173,5 +169,5 @@ module.exports = {
   }
 };
 
-module.exports.NULL_HASH = module.exports.fill(new Buffer(32), 0);
-module.exports.EMPTY_BUFFER = new Buffer(0);
+module.exports.NULL_HASH = module.exports.fill(Buffer.alloc(32), 0);
+module.exports.EMPTY_BUFFER = Buffer.alloc(0);

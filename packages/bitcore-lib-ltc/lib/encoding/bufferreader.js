@@ -18,7 +18,7 @@ var BufferReader = function BufferReader(buf) {
     });
   } else if (_.isString(buf)) {
     this.set({
-      buf: new Buffer(buf, 'hex'),
+      buf: Buffer.from(buf, 'hex'),
     });
   } else if (_.isObject(buf)) {
     var obj = buf;
@@ -35,7 +35,11 @@ BufferReader.prototype.set = function(obj) {
 };
 
 BufferReader.prototype.eof = function() {
-  return this.pos >= this.buf.length;
+  if(this.buf) {
+    return this.pos >= this.buf.length;
+  } else {
+    return true;
+  }
 };
 
 BufferReader.prototype.finished = BufferReader.prototype.eof;
@@ -79,6 +83,12 @@ BufferReader.prototype.readUInt32BE = function() {
 
 BufferReader.prototype.readUInt32LE = function() {
   var val = this.buf.readUInt32LE(this.pos);
+  this.pos = this.pos + 4;
+  return val;
+};
+
+BufferReader.prototype.readInt32LE = function() {
+  var val = this.buf.readInt32LE(this.pos);
   this.pos = this.pos + 4;
   return val;
 };
@@ -172,7 +182,7 @@ BufferReader.prototype.readVarintBN = function() {
 };
 
 BufferReader.prototype.reverse = function() {
-  var buf = new Buffer(this.buf.length);
+  var buf = Buffer.alloc(this.buf.length);
   for (var i = 0; i < buf.length; i++) {
     buf[i] = this.buf[this.buf.length - 1 - i];
   }

@@ -117,7 +117,7 @@ Block.fromBuffer = function fromBuffer(buf) {
  * @returns {Block} - A hex encoded string of the block
  */
 Block.fromString = function fromString(str) {
-  var buf = new Buffer(str, 'hex');
+  var buf = Buffer.from(str, 'hex');
   return Block.fromBuffer(buf);
 };
 
@@ -127,7 +127,7 @@ Block.fromString = function fromString(str) {
  */
 Block.fromRawBlock = function fromRawBlock(data) {
   if (!BufferUtil.isBuffer(data)) {
-    data = new Buffer(data, 'binary');
+    data = Buffer.from(data, 'binary');
   }
   var br = BufferReader(data);
   br.pos = Block.Values.START_OF_BLOCK;
@@ -275,7 +275,7 @@ Block.prototype.inspect = function inspect() {
 
 Block.Values = {
   START_OF_BLOCK: 8, // Start of block in raw block data
-  NULL_HASH: new Buffer('0000000000000000000000000000000000000000000000000000000000000000', 'hex')
+  NULL_HASH: Buffer.from('0000000000000000000000000000000000000000000000000000000000000000', 'hex')
 };
 
 module.exports = Block;

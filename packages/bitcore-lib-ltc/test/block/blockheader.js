@@ -11,8 +11,8 @@ var should = require('chai').should();
 
 // https://test-insight.bitpay.com/block/000000000b99b16390660d79fcc138d2ad0c89a0d044c4201a02bdf1f61ffa11
 
-var dataRawBlockBuffer = fs.readFileSync('test/data/blk86756-testnet.dat');
-var dataRawBlockBinary = fs.readFileSync('test/data/blk86756-testnet.dat', 'binary');
+const rawBlock = "010000008cc11b2d615d5d4103f7cd78ff1f2bac83ee894c8e848e07bbca1fc39936b17e212f0badef8c9698bf86ac5b23fbf8cdcad1d27757def3705d9207024b14e9519b0c414f6999001ddb9b00800101000000010000000000000000000000000000000000000000000000000000000000000000ffffffff08049b0c414f020d08ffffffff0100f2052a01000000434104319c9899add53596dd3e02ff0e0c4196149fa16eb9316aebf84c78b7b4fc78f85241514b70a2439803d8b707bff97ea2f3b0903e1b080baa92459b740907646dac00000000"
+
 var dataRawId = '7b0285712dc1c736d70150a84749b559a4d80271b79e87c0248265897a8d2372';
 var data = require('../data/blk86756-testnet');
 
@@ -32,7 +32,9 @@ describe.only('BlockHeader', function() {
     bits: bits,
     nonce: nonce
   });
-  var b = bitcore.Block.fromString(data.blockhex);
+  var b = bitcore.Block.fromString(rawBlock);
+  var dataRawBlockBuffer = b.toBuffer();
+  var dataRawBlockBinary = dataRawBlockBuffer;
   var bhhex = b.header.toString();
   var bhbuf = new Buffer(bhhex, 'hex');
 
@@ -199,9 +201,10 @@ describe.only('BlockHeader', function() {
   describe('#fromRawBlock', function() {
 
     it('should instantiate from a raw block binary', function() {
-      var x = BlockHeader.fromRawBlock(dataRawBlockBinary);
-      x.version.should.equal(data.version);
-      new BN(x.bits).toString('hex').should.equal(data.bits);
+      var x = BlockHeader.fromRawBlock(b.toString());
+      console.log(JSON.stringify(x))
+      x.version.should.equal(1);
+      new BN(x.bits).toString('hex').should.equal('1d009969');
     });
 
     it('should instantiate from raw block buffer', function() {
@@ -253,7 +256,7 @@ describe.only('BlockHeader', function() {
   describe('#getDifficulty', function() {
     it('should get the correct difficulty for block 86756', function() {
       var x = BlockHeader.fromRawBlock(dataRawBlockBuffer);
-      x.bits.should.equal(data.bits);
+      x.bits.should.equal(0x1D009969);
       x.getDifficulty().should.equal(data.difficulty);
     });
 
@@ -287,8 +290,8 @@ describe.only('BlockHeader', function() {
   });
 
   it('coverage: caches the "_id" property', function() {
-      var blockHeader = BlockHeader.fromRawBlock(dataRawBlockBuffer);
-      blockHeader.id.should.equal(blockHeader.id);
+    var blockHeader = BlockHeader.fromRawBlock(dataRawBlockBuffer);
+    blockHeader.id.should.equal(blockHeader.id);
   });
 
 });
