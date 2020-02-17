@@ -16,7 +16,7 @@ const rawBlock = "010000008cc11b2d615d5d4103f7cd78ff1f2bac83ee894c8e848e07bbca1f
 var dataRawId = '7b0285712dc1c736d70150a84749b559a4d80271b79e87c0248265897a8d2372';
 var data = require('../data/blk86756-testnet');
 
-describe.only('BlockHeader', function() {
+describe('BlockHeader', function() {
 
   var version = data.version;
   var prevblockidbuf = new Buffer(data.prevblockidhex, 'hex');
