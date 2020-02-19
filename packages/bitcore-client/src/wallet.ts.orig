@@ -8,6 +8,30 @@ const { PrivateKey } = require('crypto-wallet-core').BitcoreLib;
 const Mnemonic = require('bitcore-mnemonic');
 const { ParseApiStream } = require('./stream-util');
 
+<<<<<<< HEAD
+export namespace Wallet {
+  export type KeyImport = {
+    address: string;
+    privKey?: string;
+    pubKey?: string;
+  };
+  export type WalletObj = {
+    name: string;
+    baseUrl: string;
+    chain: string;
+    network: string;
+    path: string;
+    phrase: string;
+    password: string;
+    storage: Storage;
+    storageType: string;
+    lite: boolean;
+    authKey: any;
+    xPubKey: any;
+    addressIndex: number;
+    tokens: Array<any>;
+  };
+=======
 export interface KeyImport {
   address: string;
   privKey?: string;
@@ -22,12 +46,9 @@ export interface WalletObj {
   phrase: string;
   password: string;
   storage: Storage;
-  storageType: string;
-  lite: boolean;
-  authKey: any;
-  xPubKey: any;
   addressIndex: number;
   tokens: Array<any>;
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
 }
 export class Wallet {
   masterKey: any;
@@ -72,7 +93,8 @@ export class Wallet {
     return this.storage.saveWallet({ wallet: walletInstance });
   }
 
-  static async create(params: Partial<WalletObj>) {
+<<<<<<< HEAD
+  static async create(params: Partial<Wallet.WalletObj>) {
     const { chain, network, name, phrase, password, path, storageType, lite } = params;
     let { storage, authKey, xPubKey } = params;
     if (!chain || !network || !name) {
@@ -85,10 +107,24 @@ export class Wallet {
     if (!lite) {
       // Generate wallet private keys
       mnemonic = new Mnemonic(phrase);
-      hdPrivKey = mnemonic.toHDPrivateKey().derive(Deriver.pathFor(chain, network));
+      hdPrivKey = mnemonic
+        .toHDPrivateKey()
+        .derive(Deriver.pathFor(chain, network));
       privKeyObj = hdPrivKey.toObject();
-      xPubKey = hdPrivKey.xpubkey;
+      xPubKey = hdPrivKey.xpubkey
     }
+=======
+  static async create(params: Partial<WalletObj>) {
+    const { chain, network, name, phrase, password, path } = params;
+    let { storage } = params;
+    if (!chain || !network || !name) {
+      throw new Error('Missing required parameter');
+    }
+    // Generate wallet private keys
+    const mnemonic = new Mnemonic(phrase);
+    const hdPrivKey = mnemonic.toHDPrivateKey().derive(Deriver.pathFor(chain, network));
+    const privKeyObj = hdPrivKey.toObject();
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
 
     // Generate authentication keys
     authKey = new PrivateKey(authKey);
@@ -103,11 +139,24 @@ export class Wallet {
 
     // Generate and encrypt the encryption key and private key
     const walletEncryptionKey = Encryption.generateEncryptionKey();
-    const encryptionKey = Encryption.encryptEncryptionKey(walletEncryptionKey, password);
+<<<<<<< HEAD
+    const encryptionKey = Encryption.encryptEncryptionKey(
+      walletEncryptionKey,
+      password
+    );
     let encPrivateKey;
     if (!lite) {
-      encPrivateKey = Encryption.encryptPrivateKey(JSON.stringify(privKeyObj), pubKey, walletEncryptionKey);
+      encPrivateKey = Encryption.encryptPrivateKey(
+        JSON.stringify(privKeyObj),
+        pubKey,
+        walletEncryptionKey
+      );
     }
+=======
+    const encryptionKey = Encryption.encryptEncryptionKey(walletEncryptionKey, password);
+    const encPrivateKey = Encryption.encryptPrivateKey(JSON.stringify(privKeyObj), pubKey, walletEncryptionKey);
+
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
     storage =
       storage ||
       new Storage({
@@ -168,10 +217,24 @@ export class Wallet {
     return alreadyExists != undefined && alreadyExists != [];
   }
 
-  static async loadWallet(params: { name: string; path?: string; storage?: Storage; storageType?: string }) {
+<<<<<<< HEAD
+  static async loadWallet(params: {
+    name: string;
+    path?: string;
+    storage?: Storage;
+    storageType?: string;
+  }) {
     const { name, path, storageType } = params;
     let { storage } = params;
-    storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
+    storage =
+      storage ||
+      new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
+=======
+  static async loadWallet(params: { name: string; path?: string; storage?: Storage }) {
+    const { name, path } = params;
+    let { storage } = params;
+    storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path });
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
     const loadedWallet = await storage.loadWallet({ name });
     return new Wallet(Object.assign(loadedWallet, { storage }));
   }
@@ -187,15 +250,32 @@ export class Wallet {
     if (!validPass) {
       throw new Error('Incorrect Password');
     }
-    const encryptionKey = await Encryption.decryptEncryptionKey(this.encryptionKey, password);
+<<<<<<< HEAD
+    const encryptionKey = await Encryption.decryptEncryptionKey(
+      this.encryptionKey,
+      password
+    );
     if (!this.lite) {
-      const masterKeyStr = await Encryption.decryptPrivateKey(encMasterKey, this.pubKey, encryptionKey);
+      const masterKeyStr = await Encryption.decryptPrivateKey(
+        encMasterKey,
+        this.pubKey,
+        encryptionKey
+      );
       const masterKey = JSON.parse(masterKeyStr);
       this.unlocked = {
         encryptionKey,
         masterKey
       };
     }
+=======
+    const encryptionKey = await Encryption.decryptEncryptionKey(this.encryptionKey, password);
+    const masterKeyStr = await Encryption.decryptPrivateKey(encMasterKey, this.pubKey, encryptionKey);
+    const masterKey = JSON.parse(masterKeyStr);
+    this.unlocked = {
+      encryptionKey,
+      masterKey
+    };
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
     return this;
   }
 
@@ -338,7 +418,12 @@ export class Wallet {
     };
     return this.client.broadcast({ payload });
   }
+<<<<<<< HEAD
+
+  async importKeys(params: { keys: Wallet.KeyImport[] }) {
+=======
   async importKeys(params: { keys: KeyImport[] }) {
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
     const { keys } = params;
     const { encryptionKey } = this.unlocked;
     const keysToSave = keys.filter(key => typeof key.privKey === 'string');
@@ -415,13 +500,8 @@ export class Wallet {
     return walletAddresses.map(walletAddress => walletAddress.address);
   }
 
-  async deriveAndStoreAddress(params: {
-    index: number;
-    isChange: boolean;
-    register: boolean;
-    open: boolean;
-    keepAlive: boolean;
-  }) {
+<<<<<<< HEAD
+  async deriveAndStoreAddress(params: { index: number, isChange: boolean, register: boolean, open: boolean, keepAlive: boolean }) {
     if (!this.lite) {
       throw new Error('deriveAndStoreAddress is only for lite wallets, for a complete wallet use nextAddressPair');
     }
@@ -447,7 +527,17 @@ export class Wallet {
   }
 
   async deriveAddress(addressIndex, isChange) {
+    const address = Deriver.deriveAddress(
+      this.chain,
+      this.network,
+      this.xPubKey,
+      addressIndex,
+      isChange
+    );
+=======
+  deriveAddress(addressIndex, isChange) {
     const address = Deriver.deriveAddress(this.chain, this.network, this.xPubKey, addressIndex, isChange);
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
     return address;
   }
 

@@ -1,6 +1,6 @@
-import 'source-map-support/register'
-import { MongoClient, Db } from 'mongodb'
-import {Transform} from "stream";
+import { Db, MongoClient } from 'mongodb';
+import 'source-map-support/register';
+import { Transform } from 'stream';
 
 export class Mongo {
   path: string;
@@ -14,11 +14,7 @@ export class Mongo {
   client: MongoClient;
   port: string;
   addressCollectionName: string;
-  constructor(params: {
-    path?: string;
-    createIfMissing: boolean;
-    errorIfExists: boolean;
-  }) {
+  constructor(params: { path?: string; createIfMissing: boolean; errorIfExists: boolean }) {
     const { path, createIfMissing, errorIfExists } = params;
     if (!path) {
       throw new Error('Must specify a mongo url as path');
@@ -27,7 +23,7 @@ export class Mongo {
     this.createIfMissing = createIfMissing;
     this.errorIfExists = errorIfExists;
     let databasePath = path.split('/');
-    if (databasePath[databasePath.length -1] === '') {
+    if (databasePath[databasePath.length - 1] === '') {
       databasePath.pop();
     }
     this.databaseName = databasePath.pop();
@@ -44,9 +40,9 @@ export class Mongo {
       if (wallet) {
         this.collection = this.db.collection(this.collectionName);
       } else if (addresses) {
-        this.collection = this.db.collection(this.addressCollectionName)
+        this.collection = this.db.collection(this.addressCollectionName);
       }
-      await this.collection.createIndex({ 'name': 1 });
+      await this.collection.createIndex({ name: 1 });
     } catch (error) {
       console.error(error);
     }
@@ -65,7 +61,7 @@ export class Mongo {
         next();
       }
     });
-    const cursor = this.collection.find({'name': { '$exists': true }}, { 'name': 1, 'chain': 1, 'network': 1 }).pipe(stream);
+    const cursor = this.collection.find({ name: { $exists: true } }, { name: 1, chain: 1, network: 1 }).pipe(stream);
     stream.on('end', async () => await this.close());
     return cursor;
   }
@@ -79,14 +75,14 @@ export class Mongo {
         next();
       }
     });
-    const cursor = this.collection.find({}, { 'name': 1, 'key': 1, toStore: 1 }).pipe(stream);
+    const cursor = this.collection.find({}, { name: 1, key: 1, toStore: 1 }).pipe(stream);
     stream.on('end', async () => await this.close());
     return cursor;
   }
 
   async saveWallet(params) {
     const { wallet } = params;
-    await this.init({wallet: 1});
+    await this.init({ wallet: 1 });
     if (wallet.lite) {
       delete wallet.masterKey;
       delete wallet.pubKey;
@@ -107,7 +103,7 @@ export class Mongo {
   async loadWallet(params: { name: string }) {
     await this.init({ wallet: 1 });
     const { name } = params;
-    const wallet = await this.collection.findOne({ name:name });
+    const wallet = await this.collection.findOne({ name });
     await this.close();
     if (!wallet) {
       return;
@@ -115,37 +111,25 @@ export class Mongo {
     return JSON.stringify(wallet);
   }
 
-  async getKey(params: {
-    address: string;
-    name: string;
-    keepAlive: boolean;
-    open: boolean;
-  }) {
+  async getKey(params: { address: string; name: string; keepAlive: boolean; open: boolean }) {
     if (params.open) {
       await this.init({ addresses: 1 });
     }
     const { address, name } = params;
-    const key = await this.collection.findOne({ name:name, address:address });
+    const key = await this.collection.findOne({ name, address });
     if (!params.keepAlive) {
       await this.close();
     }
     return key.data;
   }
 
-
-  async addKeys(params: {
-    name: string;
-    key: any
-    toStore: string;
-    keepAlive: boolean;
-    open: boolean;
-  }) {
+  async addKeys(params: { name: string; key: any; toStore: string; keepAlive: boolean; open: boolean }) {
     try {
       if (params.open) {
         await this.init({ addresses: 1 });
       }
       const { name, key, toStore } = params;
-      await this.collection.insertOne({ name, address:key.address, data:toStore });
+      await this.collection.insertOne({ name, address: key.address, data: toStore });
       if (!params.keepAlive) {
         await this.close();
       }
@@ -155,12 +139,12 @@ export class Mongo {
   }
 
   async addAddress(params: {
-    name: string,
-    address: string,
-    index: number,
-    lite: boolean,
-    keepAlive: boolean,
-    open: boolean
+    name: string;
+    address: string;
+    index: number;
+    lite: boolean;
+    keepAlive: boolean;
+    open: boolean;
   }) {
     try {
       if (params.open) {

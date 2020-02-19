@@ -1,39 +1,74 @@
 import * as fs from 'fs';
-import * as os from 'os';
+<<<<<<< HEAD
 import 'source-map-support/register';
+import { Encryption } from './encryption';
+import { Wallet } from './wallet';
+import { Mongo } from './storage/mongo';
+import { Level } from './storage/level';
+=======
+import { LevelDown } from 'leveldown';
+import levelup, { LevelUp } from 'levelup';
+import * as os from 'os';
 import { Transform } from 'stream';
 import { Encryption } from './encryption';
-import { Level } from './storage/level';
-import { Mongo } from './storage/mongo';
-import { Wallet } from './wallet';
 import { KeyImport } from './wallet';
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
 
 const bitcoreLib = require('crypto-wallet-core').BitcoreLib;
 
 export class Storage {
   path: string;
+<<<<<<< HEAD
   db: Mongo | Level;
   collection: 'bitcoreWallets';
   url?: string;
   errorIfExists?: boolean;
   createIfMissing: boolean;
   storageType: string;
-  constructor(params: { path?: string; createIfMissing: boolean; errorIfExists: boolean; storageType?: string }) {
+  constructor(params: {
+    path?: string;
+    createIfMissing: boolean;
+    errorIfExists: boolean;
+    storageType?: string;
+  }) {
+=======
+  db: LevelUp;
+  constructor(params: { path?: string; createIfMissing: boolean; errorIfExists: boolean }) {
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
     const { path, createIfMissing, errorIfExists } = params;
     let { storageType } = params;
     if (path && path.includes('mongo')) {
       storageType = 'Mongo';
     }
+<<<<<<< HEAD
     this.path = path;
     this.createIfMissing = createIfMissing;
     this.errorIfExists = errorIfExists;
     this.storageType = storageType;
     const dbMap = {
-      Mongo,
-      Level
+      Mongo: Mongo,
+      Level: Level
     };
     if (!storageType) {
       storageType = 'Level';
+=======
+    this.path = path || `${basePath}/bitcoreWallet`;
+    if (!createIfMissing && !usingBrowser) {
+      const walletExists =
+        fs.existsSync(this.path) && fs.existsSync(this.path + '/LOCK') && fs.existsSync(this.path + '/LOG');
+      if (!walletExists) {
+        throw new Error('Not a valid wallet path');
+      }
+    }
+    if (StorageCache[this.path]) {
+      this.db = StorageCache[this.path];
+    } else {
+      console.log('using wallets at', this.path);
+      this.db = StorageCache[this.path] = levelup(lvldwn(this.path), {
+        createIfMissing,
+        errorIfExists
+      });
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
     }
     this.db = new dbMap[storageType]({ createIfMissing, errorIfExists, path });
   }
@@ -48,11 +83,42 @@ export class Storage {
   }
 
   listWallets() {
+<<<<<<< HEAD
     return this.db.listWallets();
   }
 
   listKeys() {
     return this.db.listKeys();
+=======
+    return this.db.createReadStream().pipe(
+      new Transform({
+        objectMode: true,
+        write(data, enc, next) {
+          if (data.key.toString().startsWith('wallet')) {
+            this.push(data.value.toString());
+          }
+          next();
+        }
+      })
+    );
+  }
+
+  listKeys() {
+    return this.db.createReadStream().pipe(
+      new Transform({
+        objectMode: true,
+        write(data, enc, next) {
+          if (data.key.toString().startsWith('key')) {
+            this.push({
+              data: data.value.toString(),
+              key: data.key.toString()
+            });
+          }
+          next();
+        }
+      })
+    );
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
   }
 
   async saveWallet(params) {
@@ -60,15 +126,21 @@ export class Storage {
     return this.db.saveWallet({ wallet });
   }
 
+<<<<<<< HEAD
   async getKey(params: {
     address: string;
     name: string;
     encryptionKey: string;
     keepAlive: boolean;
     open: boolean;
-  }): Promise<KeyImport> {
+  }): Promise<Wallet.KeyImport> {
     const { address, name, encryptionKey, keepAlive, open } = params;
     const payload = await this.db.getKey({ name, address, keepAlive, open });
+=======
+  async getKey(params: { address: string; name: string; encryptionKey: string }): Promise<KeyImport> {
+    const { address, name, encryptionKey } = params;
+    const payload = (await this.db.get(`key|${name}|${address}`)) as string;
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
     const json = JSON.parse(payload) || payload;
     const { encKey, pubKey } = json;
     if (encryptionKey && pubKey) {
@@ -79,12 +151,17 @@ export class Storage {
     }
   }
 
-  async getKeys(params: { addresses: string[]; name: string; encryptionKey: string }): Promise<Array<KeyImport>> {
+<<<<<<< HEAD
+  async getKeys(params: {
+    addresses: string[];
+    name: string;
+    encryptionKey: string;
+  }): Promise<Array<Wallet.KeyImport>> {
     const { addresses, name, encryptionKey } = params;
-    const keys = new Array<KeyImport>();
+    const keys = new Array<Wallet.KeyImport>();
     let keepAlive = true;
     let open = true;
-    for (const address of addresses) {
+    for(const address of addresses) {
       if (address === addresses[addresses.length - 1]) {
         keepAlive = false;
       }
@@ -96,6 +173,14 @@ export class Storage {
           keepAlive,
           open
         });
+=======
+  async getKeys(params: { addresses: string[]; name: string; encryptionKey: string }): Promise<Array<KeyImport>> {
+    const { addresses, name, encryptionKey } = params;
+    const keys = new Array<KeyImport>();
+    for (const address of addresses) {
+      try {
+        const key = await this.getKey({ name, address, encryptionKey });
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
         keys.push(key);
       } catch (err) {
         console.error(err);
@@ -107,8 +192,12 @@ export class Storage {
 
   async addKeys(params: { name: string; keys: KeyImport[]; encryptionKey: string }) {
     const { name, keys, encryptionKey } = params;
+<<<<<<< HEAD
     let open = true;
+    for(const key of keys)  {
+=======
     for (const key of keys) {
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
       let { pubKey } = key;
       pubKey = pubKey || new bitcoreLib.PrivateKey(key.privKey).publicKey.toString();
       let payload = {};
@@ -118,18 +207,22 @@ export class Storage {
         payload = { encKey, pubKey };
       }
       const toStore = JSON.stringify(payload);
+<<<<<<< HEAD
       let keepAlive = true;
       if (key === keys[keys.length - 1]) {
         keepAlive = false;
       }
-      await this.db.addKeys({ name, key, toStore, keepAlive, open });
+      await this.db.addKeys({name, key, toStore, keepAlive, open});
       open = false;
+=======
+      await this.db.put(`key|${name}|${key.address}`, toStore);
+>>>>>>> abb901927213ca9d7000a04d04b4f1c08557df8b
     }
   }
 
   async addAddress(params: {
     name: string;
-    addressObj: { address: string; index: number };
+    addressObj: { address:string, index: number };
     keepAlive: boolean;
     open: boolean;
   }) {
