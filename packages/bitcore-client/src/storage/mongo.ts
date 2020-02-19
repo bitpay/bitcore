@@ -152,7 +152,7 @@ export class Mongo {
       }
       const { name, address, index, lite, keepAlive } = params;
       await this.collection.insertOne({ name, address, index, lite });
-      if (!params.keepAlive) {
+      if (!keepAlive) {
         await this.close();
       }
     } catch (error) {
