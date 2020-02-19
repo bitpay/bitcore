@@ -20,15 +20,15 @@ module.exports = {
   MAX_TX_FEE: {
     btc: 0.05 * 1e8,
     bch: 0.05 * 1e8,
-    eth: 1 * 1e18,  // 1 eth
-    xrp: 1 * 1e6,  // 1 xrp
+    eth: 1 * 1e18, // 1 eth
+    xrp: 1 * 1e6 // 1 xrp
   },
 
   MAX_TX_SIZE_IN_KB: {
     btc: 100,
     bch: 100,
     eth: 500,
-    xrp: 1000,
+    xrp: 1000
   },
 
   // ETH
@@ -187,8 +187,7 @@ module.exports = {
       delayAfter: 8, // begin slowing down responses after the 3rd request
       delayMs: 3000, // slow down subsequent responses by 3 seconds per request
       max: 15, // start blocking after 20 request
-      message:
-        'Too many wallets created from this IP, please try again after an hour'
+      message: 'Too many wallets created from this IP, please try again after an hour'
     },
     estimateFee: {
       windowMs: 60 * 10 * 1000, // 10 min window
@@ -219,5 +218,5 @@ module.exports = {
 
   NEW_BLOCK_THROTTLE_TIME_MIN: 5,
 
-  BROADCAST_RETRY_TIME: 350, // ms
+  BROADCAST_RETRY_TIME: 350 // ms
 };

@@ -1,16 +1,16 @@
-import { IBtcBlock } from '../../../src/models/block';
 import { expect } from 'chai';
-import { BitcoinBlockStorage } from '../../../src/models/block';
-import { TransactionStorage } from '../../../src/models/transaction';
-import { CoinStorage } from '../../../src/models/coin';
+import { ObjectID } from 'mongodb';
 import * as sinon from 'sinon';
-import { TEST_BLOCK } from '../../data/test-block';
+import { MongoBound } from '../../../src/models/base';
+import { BitcoinBlockStorage } from '../../../src/models/block';
+import { IBtcBlock } from '../../../src/models/block';
+import { CoinStorage } from '../../../src/models/coin';
+import { TransactionStorage } from '../../../src/models/transaction';
+import { ChainStateProvider } from '../../../src/providers/chain-state';
 import { Storage } from '../../../src/services/storage';
+import { TEST_BLOCK } from '../../data/test-block';
 import { mockStorage } from '../../helpers';
 import { mockCollection } from '../../helpers/index.js';
-import { ChainStateProvider } from '../../../src/providers/chain-state';
-import { ObjectID } from 'mongodb';
-import { MongoBound } from '../../../src/models/base';
 
 describe('Block Model', function() {
   let addBlockParams = {

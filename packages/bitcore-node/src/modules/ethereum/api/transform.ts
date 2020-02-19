@@ -1,8 +1,8 @@
 import { Transform } from 'stream';
-import { IWallet } from '../../../models/wallet';
-import { IEthTransaction } from '../types';
 import { MongoBound } from '../../../models/base';
+import { IWallet } from '../../../models/wallet';
 import { WalletAddressStorage } from '../../../models/walletAddress';
+import { IEthTransaction } from '../types';
 
 export class EthListTransactionsStream extends Transform {
   constructor(private wallet: IWallet) {

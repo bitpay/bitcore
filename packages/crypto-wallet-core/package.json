@@ -1,15 +1,20 @@
 {
   "name": "crypto-wallet-core",
-  "version": "8.14.4",
+  "version": "8.16.0",
   "description": "A multi-currency support library for address derivation, private key creation, and transaction creation",
   "main": "./ts_build/src/index.js",
   "types": "./ts_build/src/index.d.ts",
   "scripts": {
-    "build": "tsc && npm run lint",
+    "build": "tsc",
     "clean": "rm -rf ts_build",
     "compile": "npm run clean && npm run build",
-    "lint": "tslint -c tslint.json 'src/**/*.ts'",
-    "lint-fix": "tslint --fix -c tslint.json 'src/**/*.ts'",
+    "precommit": "npm run fix",
+    "lint": "npm run lint:ts && npm run lint:style",
+    "lint:ts": "tslint -c tslint.json 'src/**/*.ts'",
+    "lint:style": "prettier --check 'src/**/*.ts'",
+    "fix": "npm run fix:lint && npm run fix:style",
+    "fix:lint": "tslint --fix -c tslint.json 'src/**/*.ts'",
+    "fix:style": "prettier --write 'src/**/*.ts'",
     "test": "npm run compile && mocha -r ts-node/register test/*.ts",
     "pub": "npm run compile && npm publish"
   },
@@ -22,8 +27,8 @@
   "author": "Micah Riggan",
   "license": "MIT",
   "dependencies": {
-    "bitcore-lib": "^8.14.4",
-    "bitcore-lib-cash": "^8.14.4",
+    "bitcore-lib": "^8.16.0",
+    "bitcore-lib-cash": "^8.16.0",
     "ethers": "4.0.37",
     "ripple-binary-codec": "0.2.6",
     "ripple-keypairs": "git+https://git@github.com/bitpay/ripple-keypairs.git#8d3a4643a8ddfce8222786e1e5a3e85a89a5b7f5",
@@ -36,12 +41,21 @@
     "@types/node": "10.12.15",
     "@types/web3": "1.0.19",
     "chai": "4.2.0",
-    "eslint-config-airbnb-base": "12.1.0",
-    "eslint-plugin-import": "2.8.0",
     "mocha": "6.1.4",
     "ts-node": "8.1.0",
     "tslint": "5.14.0",
     "typescript": "3.3.4000"
   },
-  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1",
+  "lint-staged": {
+    "*.{ts}": [
+      "tslint --fix -c tslint.json",
+      "prettier --write",
+      "git add"
+    ],
+    "*.{js,ts,css,json,md}": [
+      "prettier --write",
+      "git add"
+    ]
+  }
 }

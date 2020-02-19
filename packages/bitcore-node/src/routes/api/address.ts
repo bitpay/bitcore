@@ -49,6 +49,6 @@ router.get('/:address/balance', async function(req, res) {
 });
 
 module.exports = {
-  router: router,
+  router,
   path: '/address'
 };

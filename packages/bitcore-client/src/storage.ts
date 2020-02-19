@@ -5,6 +5,8 @@ import { Encryption } from './encryption';
 import { Wallet } from './wallet';
 import { Mongo } from './storage/mongo';
 import { Level } from './storage/level';
+import { Transform } from 'stream';
+import { KeyImport } from './wallet';
 
 const bitcoreLib = require('crypto-wallet-core').BitcoreLib;
 
@@ -75,11 +77,7 @@ export class Storage {
     const json = JSON.parse(payload) || payload;
     const { encKey, pubKey } = json;
     if (encryptionKey && pubKey) {
-      const decrypted = Encryption.decryptPrivateKey(
-        encKey,
-        pubKey,
-        encryptionKey
-      );
+      const decrypted = Encryption.decryptPrivateKey(encKey, pubKey, encryptionKey);
       return JSON.parse(decrypted);
     } else {
       return json;
@@ -116,25 +114,16 @@ export class Storage {
     return keys;
   }
 
-  async addKeys(params: {
-    name: string;
-    keys: Wallet.KeyImport[];
-    encryptionKey: string;
-  }) {
+  async addKeys(params: { name: string; keys: KeyImport[]; encryptionKey: string }) {
     const { name, keys, encryptionKey } = params;
     let open = true;
     for(const key of keys)  {
       let { pubKey } = key;
-      pubKey =
-        pubKey || new bitcoreLib.PrivateKey(key.privKey).publicKey.toString();
+      pubKey = pubKey || new bitcoreLib.PrivateKey(key.privKey).publicKey.toString();
       let payload = {};
       if (pubKey && key.privKey && encryptionKey) {
         const toEncrypt = JSON.stringify(key);
-        const encKey = Encryption.encryptPrivateKey(
-          toEncrypt,
-          pubKey,
-          encryptionKey
-        );
+        const encKey = Encryption.encryptPrivateKey(toEncrypt, pubKey, encryptionKey);
         payload = { encKey, pubKey };
       }
       const toStore = JSON.stringify(payload);

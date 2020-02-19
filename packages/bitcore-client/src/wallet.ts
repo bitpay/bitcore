@@ -1,35 +1,33 @@
 import 'source-map-support/register'
 import * as Bcrypt from 'bcrypt';
-import { Encryption } from './encryption';
+import { Deriver, Transactions } from 'crypto-wallet-core';
 import { Client } from './client';
+import { Encryption } from './encryption';
 import { Storage } from './storage';
-import { Transactions, Deriver } from 'crypto-wallet-core';
 const { PrivateKey } = require('crypto-wallet-core').BitcoreLib;
 const Mnemonic = require('bitcore-mnemonic');
 const { ParseApiStream } = require('./stream-util');
 
-export namespace Wallet {
-  export type KeyImport = {
-    address: string;
-    privKey?: string;
-    pubKey?: string;
-  };
-  export type WalletObj = {
-    name: string;
-    baseUrl: string;
-    chain: string;
-    network: string;
-    path: string;
-    phrase: string;
-    password: string;
-    storage: Storage;
+export interface KeyImport {
+  address: string;
+  privKey?: string;
+  pubKey?: string;
+}
+export interface WalletObj {
+  name: string;
+  baseUrl: string;
+  chain: string;
+  network: string;
+  path: string;
+  phrase: string;
+  password: string;
+  storage: Storage;
     storageType: string;
     lite: boolean;
     authKey: any;
     xPubKey: any;
-    addressIndex: number;
-    tokens: Array<any>;
-  };
+  addressIndex: number;
+  tokens: Array<any>;
 }
 export class Wallet {
   masterKey: any;
@@ -52,10 +50,10 @@ export class Wallet {
   lite: boolean;
   tokens?: Array<any>;
 
-  constructor(params: Wallet | Wallet.WalletObj) {
+  constructor(params: Wallet | WalletObj) {
     Object.assign(this, params);
     if (!this.baseUrl) {
-      this.baseUrl = `https://api.bitcore.io/api`;
+      this.baseUrl = 'https://api.bitcore.io/api';
     }
     this.client = new Client({
       apiUrl: this.getApiUrl(),
@@ -74,7 +72,7 @@ export class Wallet {
     return this.storage.saveWallet({ wallet: walletInstance });
   }
 
-  static async create(params: Partial<Wallet.WalletObj>) {
+  static async create(params: Partial<Wallet>) {
     const { chain, network, name, phrase, password, path, storageType, lite } = params;
     let { storage, authKey, xPubKey } = params;
     if (!chain || !network || !name) {
@@ -165,11 +163,7 @@ export class Wallet {
     return loadedWallet;
   }
 
-  static async exists(params: {
-    name: string;
-    path?: string;
-    storage?: Storage;
-  }) {
+  static async exists(params: { name: string; path?: string; storage?: Storage }) {
     const { storage, name } = params;
     let alreadyExists;
     try {
@@ -191,9 +185,7 @@ export class Wallet {
   }) {
     const { name, path, storageType } = params;
     let { storage } = params;
-    storage =
-      storage ||
-      new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
+    storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
     const loadedWallet = await storage.loadWallet({ name });
     return new Wallet(Object.assign(loadedWallet, { storage }));
   }
@@ -205,9 +197,7 @@ export class Wallet {
 
   async unlock(password) {
     const encMasterKey = this.masterKey;
-    let validPass = await Bcrypt.compare(password, this.password).catch(
-      () => false
-    );
+    let validPass = await Bcrypt.compare(password, this.password).catch(() => false);
     if (!validPass) {
       throw new Error('Incorrect Password');
     }
@@ -308,6 +298,9 @@ export class Wallet {
   }
 
   async addToken(params) {
+    if (!this.tokens) {
+      this.tokens = [];
+    }
     this.tokens.push({
       symbol: params.symbol,
       address: params.address,
@@ -324,9 +317,9 @@ export class Wallet {
     invoiceID?: string;
     fee?: number;
     nonce?: number;
-    tag? : number;
-    data? : string;
-    token? : string;
+    tag?: number;
+    data?: string;
+    token?: string;
   }) {
     const chain = params.token ? 'ERC20' : this.chain;
     let tokenContractAddress;
@@ -366,8 +359,7 @@ export class Wallet {
     };
     return this.client.broadcast({ payload });
   }
-
-  async importKeys(params: { keys: Wallet.KeyImport[] }) {
+  async importKeys(params: { keys: KeyImport[] }) {
     const { keys } = params;
     const { encryptionKey } = this.unlocked;
     const keysToSave = keys.filter(key => typeof key.privKey === 'string');
@@ -417,10 +409,7 @@ export class Wallet {
         let keyToDecrypt = keys.find(key => key.address === element.address);
         addresses.push(keyToDecrypt);
       });
-      let decryptedParams = Encryption.bitcoinCoreDecrypt(
-        addresses,
-        passphrase
-      );
+      let decryptedParams = Encryption.bitcoinCoreDecrypt(addresses, passphrase);
       decryptedKeys = [...decryptedParams.jsonlDecrypted];
     }
     const payload = {
