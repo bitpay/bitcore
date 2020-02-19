@@ -169,6 +169,7 @@ export class Key {
     if (this.isPrivKeyEncrypted()) {
       try {
         sjcl.decrypt(password, this.xPrivKeyEncrypted);
+        if (password) password = '\0'.repeat(password.length);
       } catch (ex) {
         return false;
       }
@@ -185,7 +186,11 @@ export class Key {
       $.checkArgument(password, 'Private keys are encrypted, a password is needed');
       try {
         keys.xPrivKey = sjcl.decrypt(password, this.xPrivKeyEncrypted);
-
+        if (this.mnemonicEncrypted) {
+          keys.mnemonic = sjcl.decrypt(password, this.mnemonicEncrypted);
+        }
+        password = '\0'.repeat(password.length);
+ 
         // update fingerPrint if not set.
         if (!this.fingerPrint) {
           let xpriv = new Bitcore.HDPrivateKey(keys.xPrivKey);
@@ -193,10 +198,7 @@ export class Key {
           fingerPrintUpdated = true;
         }
 
-        if (this.mnemonicEncrypted) {
-          keys.mnemonic = sjcl.decrypt(password, this.mnemonicEncrypted);
-        }
-      } catch (ex) {
+     } catch (ex) {
         throw new Error('Could not decrypt');
       }
     } else {
@@ -218,6 +220,7 @@ export class Key {
     if (!this.xPrivKeyEncrypted) throw new Error('Could not encrypt');
 
     if (this.mnemonic) this.mnemonicEncrypted = sjcl.encrypt(password, this.mnemonic, opts);
+    password = '\0'.repeat(password.length);
 
     delete this.xPrivKey;
     delete this.mnemonic;
@@ -231,6 +234,7 @@ export class Key {
       if (this.mnemonicEncrypted) {
         this.mnemonic = sjcl.decrypt(password, this.mnemonicEncrypted);
       }
+      password = '\0'.repeat(password.length);
       delete this.xPrivKeyEncrypted;
       delete this.mnemonicEncrypted;
     } catch (ex) {
@@ -242,6 +246,7 @@ export class Key {
   derive = function(password, path) {
     $.checkArgument(path, 'no path at derive()');
     var xPrivKey = new Bitcore.HDPrivateKey(this.get(password).xPrivKey, NETWORK);
+    if (password) password = '\0'.repeat(password.length);
     var deriveFn = this.compliantDerivation
       ? _.bind(xPrivKey.deriveChild, xPrivKey)
       : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
@@ -313,6 +318,7 @@ export class Key {
     let path = this.getBaseAddressDerivationPath(opts);
     let xPrivKey = this.derive(password, path);
     let requestPrivKey = this.derive(password, Constants.PATHS.REQUEST_KEY).privateKey.toString();
+    if (password) password = '\0'.repeat(password.length);
 
     if (opts.network == 'testnet') {
       // Hacky: BTC/BCH xPriv depends on network: This code is to
@@ -353,6 +359,7 @@ export class Key {
     var requestPubKey = requestPrivKey.toPublicKey().toString();
 
     var xPriv = this.derive(password, opts.path);
+    if (password) password = '\0'.repeat(password.length);
     var signature = Utils.signRequestPubKey(requestPubKey, xPriv);
     requestPrivKey = requestPrivKey.toString();
 
@@ -371,6 +378,7 @@ export class Key {
     var derived: any = {};
 
     var derived = this.derive(password, rootPath);
+    if (password) password = '\0'.repeat(password.length);
     var xpriv = new Bitcore.HDPrivateKey(derived);
 
     var t = Utils.buildTx(txp);
