@@ -455,7 +455,7 @@ export class Wallet {
     return address;
   }
 
-  async deriveAddress(addressIndex, isChange) {
+  deriveAddress(addressIndex, isChange) {
     const address = Deriver.deriveAddress(this.chain, this.network, this.xPubKey, addressIndex, isChange);
     return address;
   }
