@@ -1,6 +1,6 @@
-import { CacheTimes } from '../middleware';
 import { Request, Response } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
+import { CacheTimes } from '../middleware';
 import { CacheMiddleware } from '../middleware';
 const router = require('express').Router({ mergeParams: true });
 const feeCache = {};
@@ -28,6 +28,6 @@ router.get('/:target', CacheMiddleware(CacheTimes.Second), async (req: Request, 
 });
 
 module.exports = {
-  router: router,
+  router,
   path: '/fee'
 };

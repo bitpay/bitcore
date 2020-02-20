@@ -1,8 +1,8 @@
-import { Storage } from '../services/storage';
+import 'source-map-support/register';
 import { Event } from '../services/event';
 import { Pruning } from '../services/pruning';
+import { Storage } from '../services/storage';
 import '../utils/polyfills';
-import 'source-map-support/register'
 require('heapdump');
 const services: Array<any> = [];
 

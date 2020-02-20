@@ -17,12 +17,12 @@ export class MessageBroker extends EventEmitter {
 
       this.remote = true;
       this.mq = require('socket.io-client').connect(url);
-      this.mq.on('connect', () => { });
+      this.mq.on('connect', () => {});
       this.mq.on('connect_error', () => {
         log.warn('Error connecting to message broker server @ ' + url);
       });
 
-      this.mq.on('msg', (data) => {
+      this.mq.on('msg', data => {
         this.emit('msg', data);
       });
 

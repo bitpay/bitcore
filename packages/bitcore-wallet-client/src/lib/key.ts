@@ -65,8 +65,7 @@ export class Key {
 
   static create = function(opts) {
     opts = opts || {};
-    if (opts.language && !wordsForLang[opts.language])
-      throw new Error('Unsupported language');
+    if (opts.language && !wordsForLang[opts.language]) throw new Error('Unsupported language');
 
     var m = new Mnemonic(wordsForLang[opts.language]);
     while (!Mnemonic.isValid(m.toString())) {
@@ -183,10 +182,7 @@ export class Key {
     let fingerPrintUpdated = false;
 
     if (this.isPrivKeyEncrypted()) {
-      $.checkArgument(
-        password,
-        'Private keys are encrypted, a password is needed'
-      );
+      $.checkArgument(password, 'Private keys are encrypted, a password is needed');
       try {
         keys.xPrivKey = sjcl.decrypt(password, this.xPrivKeyEncrypted);
 
@@ -214,24 +210,21 @@ export class Key {
   };
 
   encrypt = function(password, opts) {
-    if (this.xPrivKeyEncrypted)
-      throw new Error('Private key already encrypted');
+    if (this.xPrivKeyEncrypted) throw new Error('Private key already encrypted');
 
     if (!this.xPrivKey) throw new Error('No private key to encrypt');
 
     this.xPrivKeyEncrypted = sjcl.encrypt(password, this.xPrivKey, opts);
     if (!this.xPrivKeyEncrypted) throw new Error('Could not encrypt');
 
-    if (this.mnemonic)
-      this.mnemonicEncrypted = sjcl.encrypt(password, this.mnemonic, opts);
+    if (this.mnemonic) this.mnemonicEncrypted = sjcl.encrypt(password, this.mnemonic, opts);
 
     delete this.xPrivKey;
     delete this.mnemonic;
   };
 
   decrypt = function(password) {
-    if (!this.xPrivKeyEncrypted)
-      throw new Error('Private key is not encrypted');
+    if (!this.xPrivKeyEncrypted) throw new Error('Private key is not encrypted');
 
     try {
       this.xPrivKey = sjcl.decrypt(password, this.xPrivKeyEncrypted);
@@ -248,10 +241,7 @@ export class Key {
 
   derive = function(password, path) {
     $.checkArgument(path, 'no path at derive()');
-    var xPrivKey = new Bitcore.HDPrivateKey(
-      this.get(password).xPrivKey,
-      NETWORK
-    );
+    var xPrivKey = new Bitcore.HDPrivateKey(this.get(password).xPrivKey, NETWORK);
     var deriveFn = this.compliantDerivation
       ? _.bind(xPrivKey.deriveChild, xPrivKey)
       : _.bind(xPrivKey.deriveNonCompliantChild, xPrivKey);
@@ -263,8 +253,7 @@ export class Key {
   }
 
   _checkNetwork(network) {
-    if (!_.includes(['livenet', 'testnet'], network))
-      throw new Error('Invalid network');
+    if (!_.includes(['livenet', 'testnet'], network)) throw new Error('Invalid network');
   }
 
   /*
@@ -323,10 +312,7 @@ export class Key {
 
     let path = this.getBaseAddressDerivationPath(opts);
     let xPrivKey = this.derive(password, path);
-    let requestPrivKey = this.derive(
-      password,
-      Constants.PATHS.REQUEST_KEY
-    ).privateKey.toString();
+    let requestPrivKey = this.derive(password, Constants.PATHS.REQUEST_KEY).privateKey.toString();
 
     if (opts.network == 'testnet') {
       // Hacky: BTC/BCH xPriv depends on network: This code is to
@@ -391,10 +377,7 @@ export class Key {
 
     if (Constants.UTXO_COINS.includes(txp.coin)) {
       _.each(txp.inputs, function(i) {
-        $.checkState(
-          i.path,
-          'Input derivation path not available (signing transaction)'
-        );
+        $.checkState(i.path, 'Input derivation path not available (signing transaction)');
         if (!derived[i.path]) {
           derived[i.path] = xpriv.deriveChild(i.path).privateKey;
           privs.push(derived[i.path]);
@@ -405,12 +388,9 @@ export class Key {
         return t.getSignatures(priv);
       });
 
-      signatures = _.map(
-        _.sortBy(_.flatten(signatures), 'inputIndex'),
-        function(s) {
-          return s.signature.toDER().toString('hex');
-        }
-      );
+      signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
+        return s.signature.toDER().toString('hex');
+      });
 
       return signatures;
     } else {
@@ -426,7 +406,7 @@ export class Key {
         const signed = Transactions.getSignature({
           chain,
           tx: rawTx,
-          key: { privKey, pubKey },
+          key: { privKey, pubKey }
         });
         signatures.push(signed);
       }

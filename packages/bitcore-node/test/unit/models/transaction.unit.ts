@@ -1,13 +1,13 @@
+import { ObjectId } from 'bson';
+import { expect } from 'chai';
 import sinon from 'sinon';
 import { Readable } from 'stream';
-import { expect } from 'chai';
-import { TransactionStorage, MintOp, SpendOp, TaggedBitcoinTx, TxOp } from '../../../src/models/transaction';
-import { TransactionFixture } from '../../fixtures/transaction.fixture';
-import { Bitcoin } from '../../../src/types/namespaces/Bitcoin';
-import { mockStorage } from '../../helpers';
-import { WalletAddressStorage } from '../../../src/models/walletAddress';
-import { ObjectId } from 'bson';
 import { CoinStorage } from '../../../src/models/coin';
+import { MintOp, SpendOp, TaggedBitcoinTx, TransactionStorage, TxOp } from '../../../src/models/transaction';
+import { WalletAddressStorage } from '../../../src/models/walletAddress';
+import { BitcoinTransaction, TransactionInput } from '../../../src/types/namespaces/Bitcoin';
+import { TransactionFixture } from '../../fixtures/transaction.fixture';
+import { mockStorage } from '../../helpers';
 const bitcoreLib = require('bitcore-lib');
 
 describe('Transaction Model', function() {
@@ -22,7 +22,7 @@ describe('Transaction Model', function() {
   });
 
   it('should stream all the mint operations', async () => {
-    const tx = bitcoreLib.Transaction(TransactionFixture.transaction) as Bitcoin.Transaction;
+    const tx = bitcoreLib.Transaction(TransactionFixture.transaction) as BitcoinTransaction;
     let batches = 0;
 
     const mintStream = new Readable({ objectMode: true, read: () => {} });
@@ -50,7 +50,7 @@ describe('Transaction Model', function() {
   });
 
   it('should batch large amount of transactions', async () => {
-    const tx = bitcoreLib.Transaction(TransactionFixture.transaction) as Bitcoin.Transaction;
+    const tx = bitcoreLib.Transaction(TransactionFixture.transaction) as BitcoinTransaction;
     let batches = 0;
 
     const mintStream = new Readable({ objectMode: true, read: () => {} });
@@ -77,7 +77,7 @@ describe('Transaction Model', function() {
   });
 
   it('should stream all the spend operations', async () => {
-    const tx = bitcoreLib.Transaction(TransactionFixture.transaction) as Bitcoin.Transaction;
+    const tx = bitcoreLib.Transaction(TransactionFixture.transaction) as BitcoinTransaction;
     let batches = 0;
     const CURRENT_HEIGHT = 8534;
 
@@ -114,12 +114,10 @@ describe('Transaction Model', function() {
       sandbox.stub(WalletAddressStorage, 'collection').get(() => ({
         find: sandbox.stub().returnsThis(),
         project: sandbox.stub().returnsThis(),
-        toArray: sandbox
-          .stub()
-          .resolves([
-            { wallet: correctWalletId, address },
-            { wallet: new ObjectId('6d93abeba811051da3af9a35'), address: 'fakeaddress' }
-          ])
+        toArray: sandbox.stub().resolves([
+          { wallet: correctWalletId, address },
+          { wallet: new ObjectId('6d93abeba811051da3af9a35'), address: 'fakeaddress' }
+        ])
       }));
 
       const mintStream = new Readable({ objectMode: true, read: () => {} });
@@ -148,11 +146,11 @@ describe('Transaction Model', function() {
     });
 
     it('should tag the transaction ops, and calculate the fee', async () => {
-      function getCoinForInput(i: Bitcoin.Transaction.Input) {
+      function getCoinForInput(i: TransactionInput) {
         const input = i.toObject();
         const inputTxid = i.toObject().prevTxId;
         const fixtureInput = TransactionFixture.inputs[inputTxid];
-        const inputTx = new bitcoreLib.Transaction(fixtureInput) as Bitcoin.Transaction;
+        const inputTx = new bitcoreLib.Transaction(fixtureInput) as BitcoinTransaction;
         const coin = { spentTxid: tx.hash, value: inputTx.outputs[input.outputIndex].satoshis, wallets: [] };
         return coin;
       }

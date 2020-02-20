@@ -1,7 +1,7 @@
-import { homedir, cpus } from 'os';
-import parseArgv from './utils/parseArgv';
-import { ConfigType } from './types/Config';
 import * as _ from 'lodash';
+import { cpus, homedir } from 'os';
+import { ConfigType } from './types/Config';
+import parseArgv from './utils/parseArgv';
 let program = parseArgv([], ['config']);
 
 function findConfig(): ConfigType | undefined {

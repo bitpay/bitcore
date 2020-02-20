@@ -12,7 +12,7 @@ const sha256 = Bitcore.crypto.Hash.sha256;
 const BN = Bitcore.crypto.BN;
 var Bitcore_ = {
   btc: Bitcore,
-  bch: require('crypto-wallet-core').BitcoreLibCash,
+  bch: require('crypto-wallet-core').BitcoreLibCash
 };
 var MAX_FEE_PER_KB = {
   btc: 10000 * 1000, // 10k sat/b
@@ -51,25 +51,18 @@ export class PayProV2 {
    * @return {Promise<Object{rawBody: String, headers: Object}>}
    * @private
    */
-  static async _asyncRequest(options): Promise<{ rawBody: string, headers: object }> {
+  static async _asyncRequest(options): Promise<{ rawBody: string; headers: object }> {
     return new Promise((resolve, reject) => {
       let requestOptions = Object.assign({}, PayProV2.options, options);
 
       // Copy headers directly as they're objects
-      requestOptions.headers = Object.assign(
-        {},
-        PayProV2.options.headers,
-        options.headers
-      );
+      requestOptions.headers = Object.assign({}, PayProV2.options.headers, options.headers);
 
       var r = this.request[requestOptions.method](requestOptions.url);
       _.each(requestOptions.headers, (v, k) => {
-        if (v)
-          r.set(k, v);
+        if (v) r.set(k, v);
       });
       r.agent(requestOptions.agent);
-
-      r.timeout({ response: 15000 });
 
       if (requestOptions.args) {
         if (requestOptions.method == 'post' || requestOptions.method == 'put') {
@@ -86,9 +79,9 @@ export class PayProV2 {
             if (res.statusCode == 400 || res.statusCode == 422) {
               return reject(this.getError(res.body.msg));
             } else if (res.statusCode == 404) {
-              return reject(new Errors.INVOICE_NOT_AVAILABLE);
+              return reject(new Errors.INVOICE_NOT_AVAILABLE());
             } else if (res.statusCode == 504) {
-              return reject(new Errors.REQUEST_TIMEOUT);
+              return reject(new Errors.REQUEST_TIMEOUT());
             } else if (res.statusCode == 500 && res.body && res.body.msg) {
               return reject(new Error(res.body.msg));
             }
@@ -106,29 +99,31 @@ export class PayProV2 {
   static getError(errMsg: string): Error {
     switch (true) {
       case errMsg.includes('Invoice no longer accepting payments'):
-        return new Errors.INVOICE_EXPIRED;
+        return new Errors.INVOICE_EXPIRED();
       case errMsg.includes('We were unable to parse your payment.'):
-        return new Errors.UNABLE_TO_PARSE_PAYMENT;
+        return new Errors.UNABLE_TO_PARSE_PAYMENT();
       case errMsg.includes('Request must include exactly one'):
-        return new Errors.NO_TRASACTION;
+        return new Errors.NO_TRASACTION();
       case errMsg.includes('Your transaction was an in an invalid format'):
-        return new Errors.INVALID_TX_FORMAT;
+        return new Errors.INVALID_TX_FORMAT();
       case errMsg.includes('We were unable to parse the transaction you sent'):
-        return new Errors.UNABLE_TO_PARSE_TX;
+        return new Errors.UNABLE_TO_PARSE_TX();
       case errMsg.includes('The transaction you sent does not have any output to the bitcoin address on the invoice'):
-        return new Errors.WRONG_ADDRESS;
+        return new Errors.WRONG_ADDRESS();
       case errMsg.includes('The amount on the transaction (X BTC) does'):
-        return new Errors.WRONG_AMOUNT;
+        return new Errors.WRONG_AMOUNT();
       case errMsg.includes('Transaction fee (X sat/kb) is below'):
-        return new Errors.NOT_ENOUGH_FEE;
+        return new Errors.NOT_ENOUGH_FEE();
       case errMsg.includes('This invoice is priced in BTC, not BCH.'):
-        return new Errors.BTC_NOT_BCH;
+        return new Errors.BTC_NOT_BCH();
       case errMsg.includes('	One or more input transactions for your transaction were not found on the blockchain.'):
-        return new Errors.INPUT_NOT_FOUND;
-      case errMsg.includes('One or more input transactions for your transactions are not yet confirmed in at least one block.'):
-        return new Errors.UNCONFIRMED_INPUTS_NOT_ACCEPTED;
+        return new Errors.INPUT_NOT_FOUND();
       case errMsg.includes('The PayPro request has timed out. Please connect to the internet or try again later.'):
-        return new Errors.REQUEST_TIMEOUT;
+        return new Errors.REQUEST_TIMEOUT();
+      case errMsg.includes(
+        'One or more input transactions for your transactions are not yet confirmed in at least one block.'
+      ):
+        return new Errors.UNCONFIRMED_INPUTS_NOT_ACCEPTED();
       default:
         return new Error(errMsg);
     }
@@ -143,10 +138,7 @@ export class PayProV2 {
     const paymentUrlObject = url.parse(paymentUrl);
 
     // Detect 'bitcoin:' urls and extract payment-protocol section
-    if (
-      paymentUrlObject.protocol !== 'http:' &&
-      paymentUrlObject.protocol !== 'https:'
-    ) {
+    if (paymentUrlObject.protocol !== 'http:' && paymentUrlObject.protocol !== 'https:') {
       let uriQuery = query.decode(paymentUrlObject.query);
       if (!uriQuery.r) {
         throw new Error('Invalid payment protocol url');
@@ -159,17 +151,14 @@ export class PayProV2 {
       method: 'get',
       url: paymentUrl,
       headers: {
-        'Accept': 'application/payment-options',
-        'x-paypro-version': 2
+        Accept: 'application/payment-options',
+        'x-paypro-version': 2,
+        'Connection': 'Keep-Alive',
+        'Keep-Alive': 'timeout=30, max=10'
       }
     });
 
-    return await this.verifyResponse(
-      paymentUrl,
-      rawBody,
-      headers,
-      unsafeBypassValidation
-    );
+    return await this.verifyResponse(paymentUrl, rawBody, headers, unsafeBypassValidation);
   }
 
   /**
@@ -180,19 +169,15 @@ export class PayProV2 {
    * @param unsafeBypassValidation
    * @return {Promise<{payProDetails: Object}>}
    */
-  static async selectPaymentOption({
-    paymentUrl,
-    chain,
-    currency,
-    unsafeBypassValidation = false
-  }) {
-
+  static async selectPaymentOption({ paymentUrl, chain, currency, unsafeBypassValidation = false }) {
     let { rawBody, headers } = await PayProV2._asyncRequest({
       url: paymentUrl,
       method: 'post',
       headers: {
         'Content-Type': 'application/payment-request',
-        'x-paypro-version': 2
+        'x-paypro-version': 2,
+        'Connection': 'Keep-Alive',
+        'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
         chain,
@@ -200,12 +185,7 @@ export class PayProV2 {
       })
     });
 
-    return await PayProV2.verifyResponse(
-      paymentUrl,
-      rawBody,
-      headers,
-      unsafeBypassValidation
-    );
+    return await PayProV2.verifyResponse(paymentUrl, rawBody, headers, unsafeBypassValidation);
   }
 
   /**
@@ -225,13 +205,14 @@ export class PayProV2 {
     unsignedTransactions,
     unsafeBypassValidation = false
   }) {
-
     let { rawBody, headers } = await PayProV2._asyncRequest({
       url: paymentUrl,
       method: 'post',
       headers: {
         'Content-Type': 'application/payment-verification',
-        'x-paypro-version': 2
+        'x-paypro-version': 2,
+        'Connection': 'Keep-Alive',
+        'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
         chain,
@@ -240,12 +221,7 @@ export class PayProV2 {
       })
     });
 
-    return await this.verifyResponse(
-      paymentUrl,
-      rawBody,
-      headers,
-      unsafeBypassValidation
-    );
+    return await this.verifyResponse(paymentUrl, rawBody, headers, unsafeBypassValidation);
   }
 
   /**
@@ -266,15 +242,16 @@ export class PayProV2 {
     unsafeBypassValidation = false,
     bpPartner
   }) {
-
     let { rawBody, headers } = await this._asyncRequest({
       url: paymentUrl,
       method: 'post',
       headers: {
         'Content-Type': 'application/payment',
         'x-paypro-version': 2,
-        'BP_PARTNER': bpPartner.bp_partner,
-        'BP_PARTNER_VERSION': bpPartner.bp_partner_version
+        BP_PARTNER: bpPartner.bp_partner,
+        BP_PARTNER_VERSION: bpPartner.bp_partner_version,
+        'Connection': 'Keep-Alive',
+        'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
         chain,
@@ -283,12 +260,7 @@ export class PayProV2 {
       })
     });
 
-    return await this.verifyResponse(
-      paymentUrl,
-      rawBody,
-      headers,
-      unsafeBypassValidation
-    );
+    return await this.verifyResponse(paymentUrl, rawBody, headers, unsafeBypassValidation);
   }
 
   /**
@@ -336,7 +308,7 @@ export class PayProV2 {
 
     try {
       host = url.parse(requestUrl).hostname;
-    } catch (e) { }
+    } catch (e) {}
 
     if (!host) {
       throw new Error('Invalid requestUrl');
@@ -364,23 +336,17 @@ export class PayProV2 {
     }
 
     if (!PayProV2.trustedKeys[identity]) {
-      throw new Error(
-        `Response signed by unknown key (${identity}), unable to validate`
-      );
+      throw new Error(`Response signed by unknown key (${identity}), unable to validate`);
     }
 
     const keyData = PayProV2.trustedKeys[identity];
     const actualHash = sha256(Buffer.from(rawBody, 'utf8')).toString('hex');
     if (hash !== actualHash) {
-      throw new Error(
-        `Response body hash does not match digest header. Actual: ${actualHash} Expected: ${hash}`
-      );
+      throw new Error(`Response body hash does not match digest header. Actual: ${actualHash} Expected: ${hash}`);
     }
 
     if (!keyData.domains.includes(host)) {
-      throw new Error(
-        `The key on the response (${identity}) is not trusted for domain ${host}`
-      );
+      throw new Error(`The key on the response (${identity}) is not trusted for domain ${host}`);
     }
 
     const hashbuf = Buffer.from(hash, 'hex');
@@ -408,7 +374,6 @@ export class PayProV2 {
    */
 
   static processResponse(responseData) {
-
     let payProDetails: any = {
       payProUrl: responseData.paymentUrl,
       memo: responseData.memo
@@ -436,7 +401,7 @@ export class PayProV2 {
 
     if (responseData.expires) {
       try {
-        payProDetails.expires = (new Date(responseData.expires)).toISOString();
+        payProDetails.expires = new Date(responseData.expires).toISOString();
       } catch (e) {
         throw new Error('Bad expiration');
       }

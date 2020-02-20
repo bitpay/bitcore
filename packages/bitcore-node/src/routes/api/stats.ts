@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
-import { SetCache, CacheTimes } from '../middleware';
+import { CacheTimes, SetCache } from '../middleware';
 const router = require('express').Router({ mergeParams: true });
 
 router.get('/', async function(_: Request, res: Response) {
@@ -24,6 +24,6 @@ router.get('/daily-transactions', async function(req: Request, res: Response) {
 });
 
 module.exports = {
-  router: router,
+  router,
   path: '/stats'
 };

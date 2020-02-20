@@ -1,10 +1,10 @@
-import * as os from 'os';
 import * as fs from 'fs';
-import { Encryption } from './encryption';
-import levelup, { LevelUp } from 'levelup';
 import { LevelDown } from 'leveldown';
-import { Wallet } from './wallet';
+import levelup, { LevelUp } from 'levelup';
+import * as os from 'os';
 import { Transform } from 'stream';
+import { Encryption } from './encryption';
+import { KeyImport } from './wallet';
 
 let lvldwn: LevelDown;
 let usingBrowser = (global as any).window;
@@ -19,11 +19,7 @@ const StorageCache: { [path: string]: LevelUp } = {};
 export class Storage {
   path: string;
   db: LevelUp;
-  constructor(params: {
-    path?: string;
-    createIfMissing: boolean;
-    errorIfExists: boolean;
-  }) {
+  constructor(params: { path?: string; createIfMissing: boolean; errorIfExists: boolean }) {
     const { path, createIfMissing, errorIfExists } = params;
     let basePath;
     if (!path) {
@@ -41,9 +37,7 @@ export class Storage {
     this.path = path || `${basePath}/bitcoreWallet`;
     if (!createIfMissing && !usingBrowser) {
       const walletExists =
-        fs.existsSync(this.path) &&
-        fs.existsSync(this.path + '/LOCK') &&
-        fs.existsSync(this.path + '/LOG');
+        fs.existsSync(this.path) && fs.existsSync(this.path + '/LOCK') && fs.existsSync(this.path + '/LOG');
       if (!walletExists) {
         throw new Error('Not a valid wallet path');
       }
@@ -72,7 +66,7 @@ export class Storage {
     return this.db.createReadStream().pipe(
       new Transform({
         objectMode: true,
-        write: function(data, enc, next) {
+        write(data, enc, next) {
           if (data.key.toString().startsWith('wallet')) {
             this.push(data.value.toString());
           }
@@ -86,7 +80,7 @@ export class Storage {
     return this.db.createReadStream().pipe(
       new Transform({
         objectMode: true,
-        write: function(data, enc, next) {
+        write(data, enc, next) {
           if (data.key.toString().startsWith('key')) {
             this.push({
               data: data.value.toString(),
@@ -104,37 +98,25 @@ export class Storage {
     return this.db.put(`wallet|${wallet.name}`, JSON.stringify(wallet));
   }
 
-  async getKey(params: {
-    address: string;
-    name: string;
-    encryptionKey: string;
-  }): Promise<Wallet.KeyImport> {
+  async getKey(params: { address: string; name: string; encryptionKey: string }): Promise<KeyImport> {
     const { address, name, encryptionKey } = params;
     const payload = (await this.db.get(`key|${name}|${address}`)) as string;
     const json = JSON.parse(payload) || payload;
     const { encKey, pubKey } = json;
     if (encryptionKey && pubKey) {
-      const decrypted = Encryption.decryptPrivateKey(
-        encKey,
-        pubKey,
-        encryptionKey
-      );
+      const decrypted = Encryption.decryptPrivateKey(encKey, pubKey, encryptionKey);
       return JSON.parse(decrypted);
     } else {
       return json;
     }
   }
 
-  async getKeys(params: {
-    addresses: string[];
-    name: string;
-    encryptionKey: string
-  }): Promise<Array<Wallet.KeyImport>> {
+  async getKeys(params: { addresses: string[]; name: string; encryptionKey: string }): Promise<Array<KeyImport>> {
     const { addresses, name, encryptionKey } = params;
-    const keys = new Array<Wallet.KeyImport>();
-    for(const address of addresses) {
+    const keys = new Array<KeyImport>();
+    for (const address of addresses) {
       try {
-        const key = await this.getKey({name, address, encryptionKey});
+        const key = await this.getKey({ name, address, encryptionKey });
         keys.push(key);
       } catch (err) {
         console.error(err);
@@ -143,29 +125,19 @@ export class Storage {
     return keys;
   }
 
-  async addKeys(params: {
-    name: string;
-    keys: Wallet.KeyImport[];
-    encryptionKey: string;
-  }) {
+  async addKeys(params: { name: string; keys: KeyImport[]; encryptionKey: string }) {
     const { name, keys, encryptionKey } = params;
-    for(const key of keys)  {
+    for (const key of keys) {
       let { pubKey } = key;
-      pubKey =
-        pubKey || new bitcoreLib.PrivateKey(key.privKey).publicKey.toString();
+      pubKey = pubKey || new bitcoreLib.PrivateKey(key.privKey).publicKey.toString();
       let payload = {};
       if (pubKey && key.privKey && encryptionKey) {
         const toEncrypt = JSON.stringify(key);
-        const encKey = Encryption.encryptPrivateKey(
-          toEncrypt,
-          pubKey,
-          encryptionKey
-        );
+        const encKey = Encryption.encryptPrivateKey(toEncrypt, pubKey, encryptionKey);
         payload = { encKey, pubKey };
       }
       const toStore = JSON.stringify(payload);
       await this.db.put(`key|${name}|${key.address}`, toStore);
-
     }
   }
 }

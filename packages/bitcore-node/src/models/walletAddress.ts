@@ -1,20 +1,20 @@
-import { CoinStorage, ICoin } from './coin';
-import { TransformOptions } from '../types/TransformOptions';
 import { ObjectID } from 'mongodb';
-import { BaseModel } from './base';
-import { IWallet } from './wallet';
-import { TransactionStorage } from './transaction';
-import { StorageService } from '../services/storage';
-import { partition } from '../utils/partition';
 import { Readable, Transform, Writable } from 'stream';
+import { StorageService } from '../services/storage';
+import { TransformOptions } from '../types/TransformOptions';
+import { partition } from '../utils/partition';
+import { BaseModel } from './base';
+import { CoinStorage, ICoin } from './coin';
+import { TransactionStorage } from './transaction';
+import { IWallet } from './wallet';
 
-export type IWalletAddress = {
+export interface IWalletAddress {
   wallet: ObjectID;
   address: string;
   chain: string;
   network: string;
   processed: boolean;
-};
+}
 
 export class WalletAddressModel extends BaseModel<IWalletAddress> {
   constructor(storage?: StorageService) {
@@ -64,10 +64,12 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
       }
       async _transform(addressBatch, _, callback) {
         try {
-          let exists = (await WalletAddressStorage.collection
-            .find({ chain, network, wallet: wallet._id, address: { $in: addressBatch } })
-            .project({ address: 1, processed: 1 })
-            .toArray())
+          let exists = (
+            await WalletAddressStorage.collection
+              .find({ chain, network, wallet: wallet._id, address: { $in: addressBatch } })
+              .project({ address: 1, processed: 1 })
+              .toArray()
+          )
             .filter(walletAddress => walletAddress.processed)
             .map(walletAddress => walletAddress.address);
           this.push(
@@ -101,7 +103,6 @@ export class WalletAddressModel extends BaseModel<IWalletAddress> {
             })
           ),
             { ordered: false };
-
         } catch (err) {
           // Ignore duplicate keys, they may be half processed
           if (err.code !== 11000) {
