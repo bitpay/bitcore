@@ -359,7 +359,7 @@ export class Wallet {
   }
 
   async signTx(params) {
-    let { tx, keys, utxos, passphrase } = params;
+    let { tx, keys, utxos, passphrase, addressIndexes } = params;
     if (!utxos) {
       utxos = [];
       await new Promise((resolve, reject) => {
@@ -369,6 +369,15 @@ export class Wallet {
           .on('end', () => resolve())
           .on('err', err => reject(err));
       });
+    }
+    if (addressIndexes) {
+      let keysToImport = [];
+      for (let index of addressIndexes) {
+        const privateKey = await this.derivePrivateKey(false, index);
+        keysToImport.push(privateKey);
+      }
+      await this.importKeys({ keys: keysToImport });
+      await this.saveWallet();
     }
     let addresses = [];
     let decryptedKeys;
@@ -451,12 +460,12 @@ export class Wallet {
     return address;
   }
 
-  async derivePrivateKey(isChange) {
+  async derivePrivateKey(isChange, addressIndex) {
     const keyToImport = await Deriver.derivePrivateKey(
       this.chain,
       this.network,
       this.unlocked.masterKey,
-      this.addressIndex || 0,
+      addressIndex || 0,
       isChange
     );
     return keyToImport;
@@ -464,10 +473,10 @@ export class Wallet {
 
   async nextAddressPair(withChangeAddress?: boolean) {
     this.addressIndex = this.addressIndex || 0;
-    const newPrivateKey = await this.derivePrivateKey(false);
+    const newPrivateKey = await this.derivePrivateKey(false, this.addressIndex);
     const keys = [newPrivateKey];
     if (withChangeAddress) {
-      const newChangePrivateKey = await this.derivePrivateKey(true);
+      const newChangePrivateKey = await this.derivePrivateKey(true, this.addressIndex);
       keys.push(newChangePrivateKey);
     }
     this.addressIndex++;
