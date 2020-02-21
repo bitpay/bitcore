@@ -426,10 +426,10 @@ export class Wallet {
 
   async deriveAndStoreAddress(params: {
     index: number;
-    isChange: boolean;
-    register: boolean;
-    open: boolean;
-    keepAlive: boolean;
+    isChange?: boolean;
+    register?: boolean;
+    open?: boolean;
+    keepAlive?: boolean;
   }) {
     if (!this.lite) {
       throw new Error('deriveAndStoreAddress is only for lite wallets, for a complete wallet use nextAddressPair');
@@ -472,6 +472,9 @@ export class Wallet {
   }
 
   async nextAddressPair(withChangeAddress?: boolean) {
+    if (this.lite) {
+      throw new Error('nextAddressPair will not work for lite wallets');
+    }
     this.addressIndex = this.addressIndex || 0;
     const newPrivateKey = await this.derivePrivateKey(false, this.addressIndex);
     const keys = [newPrivateKey];

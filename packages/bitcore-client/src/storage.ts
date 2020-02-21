@@ -130,8 +130,8 @@ export class Storage {
   async addAddress(params: {
     name: string;
     addressObj: { address: string; index: number };
-    keepAlive: boolean;
-    open: boolean;
+    keepAlive?: boolean;
+    open?: boolean;
   }) {
     const { name, addressObj, keepAlive, open } = params;
     const { address, index } = addressObj;
