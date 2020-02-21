@@ -1,4 +1,7 @@
-export const exchangeABI = [
+import { Contract } from 'web3-eth-contract';
+export type ContractAbiInput = ConstructorParameters<typeof Contract>[0];
+
+export const exchangeABI: ContractAbiInput = [
   {
     name: 'TokenPurchase',
     inputs: [{ type: 'address', name: 'buyer', indexed: true }, {

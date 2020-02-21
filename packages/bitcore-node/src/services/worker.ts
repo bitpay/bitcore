@@ -1,11 +1,11 @@
-import { CallbackType } from '../types/Callback';
-import { WorkerType } from '../types/Worker';
+import cluster from 'cluster';
+import { EventEmitter } from 'events';
+import config from '../config';
 import { LoggifyClass } from '../decorators/Loggify';
 import logger from '../logger';
-import config from '../config';
+import { CallbackType } from '../types/Callback';
+import { WorkerType } from '../types/Worker';
 import parseArgv from '../utils/parseArgv';
-import { EventEmitter } from 'events';
-import cluster from 'cluster';
 
 let args = parseArgv([], ['DEBUG']);
 
@@ -57,7 +57,7 @@ export class WorkerService extends EventEmitter {
       this.once(id, function(result: { error: any }) {
         done(result.error);
       });
-      worker.worker.send({ task: task, argument: argument, id: id });
+      worker.worker.send({ task, argument, id });
     }
   }
 

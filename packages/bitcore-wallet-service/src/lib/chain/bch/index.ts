@@ -19,13 +19,13 @@ export class BchChain extends BtcChain implements IChain {
     try {
       addr = new A(inaddr);
     } catch (ex) {
-      return Errors.INVALID_ADDRESS;
+      throw Errors.INVALID_ADDRESS;
     }
     if (addr.network.toString() != wallet.network) {
-      return Errors.INCORRECT_ADDRESS_NETWORK;
+      throw Errors.INCORRECT_ADDRESS_NETWORK;
     }
     if (!opts.noCashAddr) {
-      if (addr.toString(true) != inaddr) return Errors.ONLY_CASHADDR;
+      if (addr.toString(true) != inaddr) throw Errors.ONLY_CASHADDR;
     }
     return;
   }

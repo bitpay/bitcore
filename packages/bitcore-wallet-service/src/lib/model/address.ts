@@ -58,9 +58,7 @@ export class Address {
     x.publicKeys = opts.publicKeys;
     x.coin = opts.coin;
     x.network = Address.Bitcore[opts.coin]
-      ? Address.Bitcore[opts.coin]
-        .Address(x.address)
-        .toObject().network
+      ? Address.Bitcore[opts.coin].Address(x.address).toObject().network
       : opts.network;
     x.type = opts.type || Constants.SCRIPT_TYPES.P2SH;
     x.hasActivity = undefined;
@@ -86,20 +84,10 @@ export class Address {
     return x;
   }
 
-  static _deriveAddress(
-    scriptType,
-    publicKeyRing,
-    path,
-    m,
-    coin,
-    network,
-    noNativeCashAddr
-  ) {
-    $.checkArgument(
-      Utils.checkValueInCollection(scriptType, Constants.SCRIPT_TYPES)
-    );
+  static _deriveAddress(scriptType, publicKeyRing, path, m, coin, network, noNativeCashAddr) {
+    $.checkArgument(Utils.checkValueInCollection(scriptType, Constants.SCRIPT_TYPES));
 
-    const publicKeys = _.map(publicKeyRing, (item) => {
+    const publicKeys = _.map(publicKeyRing, item => {
       const xpub = Address.Bitcore[coin]
         ? new Address.Bitcore[coin].HDPublicKey(item.xPubKey)
         : new Address.Bitcore.btc.HDPublicKey(item.xPubKey);
@@ -109,30 +97,17 @@ export class Address {
     let bitcoreAddress;
     switch (scriptType) {
       case Constants.SCRIPT_TYPES.P2SH:
-        bitcoreAddress = Address.Bitcore[coin].Address.createMultisig(
-          publicKeys,
-          m,
-          network
-        );
+        bitcoreAddress = Address.Bitcore[coin].Address.createMultisig(publicKeys, m, network);
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
 
         if (Address.Bitcore[coin]) {
-          bitcoreAddress = Address.Bitcore[coin].Address.fromPublicKey(
-            publicKeys[0],
-            network
-          );
+          bitcoreAddress = Address.Bitcore[coin].Address.fromPublicKey(publicKeys[0], network);
         } else {
           const { addressIndex, isChange } = new AddressManager().parseDerivationPath(path);
           const [{ xPubKey }] = publicKeyRing;
-          bitcoreAddress = Deriver.deriveAddress(
-            coin.toUpperCase(),
-            network,
-            xPubKey,
-            addressIndex,
-            isChange
-          );
+          bitcoreAddress = Deriver.deriveAddress(coin.toUpperCase(), network, xPubKey, addressIndex, isChange);
         }
         break;
     }
@@ -151,26 +126,8 @@ export class Address {
   }
 
   // noNativeCashAddr only for testing
-  static derive(
-    walletId,
-    scriptType,
-    publicKeyRing,
-    path,
-    m,
-    coin,
-    network,
-    isChange,
-    noNativeCashAddr = false
-  ) {
-    const raw = Address._deriveAddress(
-      scriptType,
-      publicKeyRing,
-      path,
-      m,
-      coin,
-      network,
-      noNativeCashAddr
-    );
+  static derive(walletId, scriptType, publicKeyRing, path, m, coin, network, isChange, noNativeCashAddr = false) {
+    const raw = Address._deriveAddress(scriptType, publicKeyRing, path, m, coin, network, noNativeCashAddr);
     return Address.create(
       _.extend(raw, {
         coin,

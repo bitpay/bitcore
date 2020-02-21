@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import logger from '../../../logger';
 import { ETH } from './csp';
 export const EthRoutes = Router();
 
@@ -8,6 +9,7 @@ EthRoutes.get('/api/ETH/:network/address/:address/txs/count', async (req, res) =
     const nonce = await ETH.getAccountNonce(network, address);
     res.json({ nonce });
   } catch (err) {
+    logger.error('Nonce Error::' + err);
     res.status(500).send(err);
   }
 });

@@ -6,7 +6,7 @@ const log = require('npmlog');
 log.debug = log.verbose;
 
 const emailService = new EmailService();
-emailService.start(config, (err) => {
+emailService.start(config, err => {
   if (err) throw err;
 
   console.log('Email service started');

@@ -1,10 +1,11 @@
-import config from '../../../src/config';
 import * as BitcoreClient from 'bitcore-client';
 import { expect } from 'chai';
-import { resetDatabase } from '../../helpers';
-import { EthP2pWorker } from '../../../src/modules/ethereum/p2p/p2p';
+import config from '../../../src/config';
 import { EthBlockStorage } from '../../../src/modules/ethereum/models/block';
+import { EthP2pWorker } from '../../../src/modules/ethereum/p2p/p2p';
 import { Api } from '../../../src/services/api';
+import { wait } from '../../../src/utils/wait';
+import { resetDatabase } from '../../helpers';
 
 const chain = 'ETH';
 const network = 'testnet';
@@ -19,6 +20,7 @@ async function getWallet() {
   let wallet: BitcoreClient.Wallet;
   try {
     wallet = await BitcoreClient.Wallet.loadWallet({ name });
+    await wallet.register();
     return wallet;
   } catch (e) {
     console.log('Creating a new ethereum wallet');
@@ -41,8 +43,8 @@ describe('Ethereum', function() {
   this.timeout(50000);
 
   before(async () => {
-    await Api.start();
     await resetDatabase();
+    await Api.start();
   });
 
   after(async () => {
@@ -72,18 +74,20 @@ describe('Ethereum', function() {
     await worker.disconnect();
   });
 
-  it('should be able to save blocks to the database', async () => {
+  it.skip('should be able to save blocks to the database', async () => {
     const wallet = await getWallet();
     const addresses = await wallet.getAddresses();
 
     const worker = new EthP2pWorker({ chain, network, chainConfig });
-    await worker.start();
+    const done = worker.syncDone();
     const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
+    await worker.start();
+    await wait(1000);
 
     const web3 = await worker.getWeb3();
     await web3.eth.sendTransaction({ to: addresses[0], value: web3.utils.toWei('.02', 'ether'), from: account });
     await sawBlock;
-    await worker.syncDone();
+    await done;
     await worker.stop();
 
     const dbBlocks = await EthBlockStorage.collection.count({ chain, network });

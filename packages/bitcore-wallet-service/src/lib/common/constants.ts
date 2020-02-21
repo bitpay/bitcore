@@ -74,5 +74,5 @@ module.exports = {
       decimal: 18,
       address: '0x4f96fe3b7a6cf9725f59d353f723c1bdb64ca6aa'
     },
-  },
+  }
 };

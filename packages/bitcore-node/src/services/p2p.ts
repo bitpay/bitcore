@@ -1,9 +1,9 @@
 import * as os from 'os';
 import logger from '../logger';
-import { Config, ConfigService } from './config';
 import { BaseBlock, IBlock } from '../models/baseBlock';
-import { wait } from '../utils/wait';
 import { StateStorage } from '../models/state';
+import { wait } from '../utils/wait';
+import { Config, ConfigService } from './config';
 
 export class P2pManager {
   workers = new Array<BaseP2PWorker>();

@@ -97,10 +97,7 @@ export class Credentials {
 
     // this allows to set P2SH in old n=1 wallets
     if (_.isUndefined(opts.addressType)) {
-      x.addressType =
-        opts.n == 1
-          ? Constants.SCRIPT_TYPES.P2PKH
-          : Constants.SCRIPT_TYPES.P2SH;
+      x.addressType = opts.n == 1 ? Constants.SCRIPT_TYPES.P2PKH : Constants.SCRIPT_TYPES.P2SH;
     } else {
       x.addressType = opts.addressType;
     }
@@ -117,9 +114,7 @@ export class Credentials {
     x.requestPubKey = priv.toPublicKey().toString();
 
     const prefix = 'personalKey';
-    const entropySource = Bitcore.crypto.Hash.sha256(priv.toBuffer()).toString(
-      'hex'
-    );
+    const entropySource = Bitcore.crypto.Hash.sha256(priv.toBuffer()).toString('hex');
     const b = Buffer.from(entropySource, 'hex');
     const b2 = Bitcore.crypto.Hash.sha256hmac(b, Buffer.from(prefix));
     x.personalEncryptingKey = b2.slice(0, 16).toString('base64');
@@ -137,7 +132,7 @@ export class Credentials {
   /*
    * creates an ERC20 wallet from a ETH wallet
    */
-  getTokenCredentials(token: { name: string, symbol: string, address: string }) {
+  getTokenCredentials(token: { name: string; symbol: string; address: string }) {
     const ret = _.cloneDeep(this);
     ret.walletId = `${ret.walletId}-${token.address}`;
     ret.coin = token.symbol.toLowerCase();
@@ -201,7 +196,7 @@ export class Credentials {
       throw new Error('Bad credentials version');
     }
 
-    _.each(Credentials.FIELDS, function (k) {
+    _.each(Credentials.FIELDS, function(k) {
       x[k] = obj[k];
     });
 
@@ -213,10 +208,7 @@ export class Credentials {
     x.addressType = x.addressType || Constants.SCRIPT_TYPES.P2SH;
     x.account = x.account || 0;
 
-    $.checkState(
-      x.xPrivKey || x.xPubKey || x.xPrivKeyEncrypted,
-      'invalid input'
-    );
+    $.checkState(x.xPrivKey || x.xPubKey || x.xPrivKeyEncrypted, 'invalid input');
     return x;
   }
 
@@ -224,7 +216,7 @@ export class Credentials {
     var self = this;
 
     var x = {};
-    _.each(Credentials.FIELDS, function (k) {
+    _.each(Credentials.FIELDS, function(k) {
       x[k] = self[k];
     });
     return x;
@@ -243,9 +235,7 @@ export class Credentials {
     if (this.n != n && !opts.allowOverwrite) {
       // we always allow multisig n overwrite
       if (this.n == 1 || n == 1) {
-        throw new Error(
-          `Bad nr of copayers in addWalletInfo: this: ${this.n} got: ${n}`
-        );
+        throw new Error(`Bad nr of copayers in addWalletInfo: this: ${this.n} got: ${n}`);
       }
     }
 
@@ -273,8 +263,7 @@ export class Credentials {
 
   isComplete() {
     if (!this.m || !this.n) return false;
-    if (!this.publicKeyRing || this.publicKeyRing.length != this.n)
-      return false;
+    if (!this.publicKeyRing || this.publicKeyRing.length != this.n) return false;
     return true;
   }
 }
