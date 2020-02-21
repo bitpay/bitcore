@@ -70,7 +70,6 @@
     "bitcore-build": "^8.16.0",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
-    "gulp": "^4.0.0",
     "sinon": "^1.12.2"
   },
   "license": "MIT",

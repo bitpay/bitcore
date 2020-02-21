@@ -46,6 +46,7 @@
     "brfs": "^2.0.1",
     "browserify": "^16.2.3",
     "chai": "^4.2.0",
+    "fsevents": "^2.1.2",
     "gulp": "^4.0.0",
     "gulp-mocha": "^7.0.1",
     "gulp-rename": "^1.4.0",
