@@ -1,10 +1,10 @@
-import { P2P } from '../services/p2p';
-import { Storage } from '../services/storage';
-import { Event } from '../services/event';
-import { Api } from '../services/api';
-import { Config } from '../services/config';
 import { ChainStateProvider } from '../providers/chain-state';
 import { Libs } from '../providers/libs';
+import { Api } from '../services/api';
+import { Config } from '../services/config';
+import { Event } from '../services/event';
+import { P2P } from '../services/p2p';
+import { Storage } from '../services/storage';
 import { Verification } from '../services/verification';
 
 export interface IService {

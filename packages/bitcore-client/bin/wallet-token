@@ -1,0 +1,33 @@
+#!/usr/bin/env node
+
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
+
+program
+  .version(require('../package.json').version)
+  .option('--name <name>', 'REQUIRED - Wallet name')
+  .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--contractAddress <contractAddress>', 'REQUIRED - Token contract address')
+  .parse(process.argv);
+
+const main = async () => {
+  const { name, path, contractAddress } = program;
+  try {
+    const wallet = await Wallet.loadWallet({ name, path });
+    if (wallet.chain !== 'ETH') {
+      throw new Error('Cannot add token to non-ETH wallet.');
+    }
+    const token = await wallet.getToken(contractAddress);
+    const tokenObj = {
+      symbol: token.symbol,
+      address: contractAddress,
+      decimals: token.decimals
+    }
+    await wallet.addToken(tokenObj);
+    console.log(`Successfully added ${token.symbol}`);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();

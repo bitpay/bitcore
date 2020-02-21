@@ -1,4 +1,3 @@
-
 module.exports = (wallet, appName, appVersion) => {
   if (!appVersion || !appName) return;
 

@@ -8,9 +8,7 @@ export class ParseApiStream extends Transform {
   _write(data, _encoding, cb) {
     const stringDatas = data.toString().split('\n');
     for (let stringData of stringDatas) {
-      const normalized = stringData.endsWith(',')
-        ? stringData.slice(0, stringData.length - 1)
-        : stringData;
+      const normalized = stringData.endsWith(',') ? stringData.slice(0, stringData.length - 1) : stringData;
       if (normalized.includes('{') && normalized.includes('}')) {
         this.push(JSON.parse(normalized));
       }
@@ -25,7 +23,7 @@ function signTxStream(wallet: any, keys: object, utxosPassedIn: object, passphra
     async transform(chunk, encoding, callback) {
       const rawTransaction = chunk.rawTransaction;
       const utxos = utxosPassedIn || chunk.utxos;
-      const signedTx = await wallet.signTx({tx: rawTransaction, utxos, keys, passphrase});
+      const signedTx = await wallet.signTx({ tx: rawTransaction, utxos, keys, passphrase });
       chunk.signedRawTransaction = signedTx;
       return callback(null, chunk);
     }
@@ -79,4 +77,4 @@ export const StreamUtil = {
   signTxStream,
   objectModeToJsonlBuffer,
   jsonlBufferToObjectMode
-}
+};

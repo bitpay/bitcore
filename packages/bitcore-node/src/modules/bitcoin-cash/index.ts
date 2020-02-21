@@ -1,6 +1,6 @@
-import { BitcoinP2PWorker } from '../bitcoin/p2p';
 import { BaseModule } from '..';
 import { BCHStateProvider } from '../../providers/chain-state/bch/bch';
+import { BitcoinP2PWorker } from '../bitcoin/p2p';
 import { VerificationPeer } from '../bitcoin/VerificationPeer';
 
 export default class BCHModule extends BaseModule {

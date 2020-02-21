@@ -1,14 +1,15 @@
-import logger from '../logger';
-import SocketIO = require('socket.io');
 import * as http from 'http';
-import { LoggifyClass } from '../decorators/Loggify';
-import { EventStorage, EventModel, IEvent } from '../models/events';
-import { Event, EventService } from './event';
 import { ObjectID } from 'mongodb';
-import { Config, ConfigService } from './config';
-import { ConfigType } from '../types/Config';
+import SocketIO = require('socket.io');
+import { LoggifyClass } from '../decorators/Loggify';
+import logger from '../logger';
+import { CoinEvent, EventModel, EventStorage, TxEvent } from '../models/events';
+import { BlockEvent } from '../models/events';
 import { WalletStorage } from '../models/wallet';
-import { VerificationPayload, Auth } from '../utils/auth';
+import { ConfigType } from '../types/Config';
+import { Auth, VerificationPayload } from '../utils/auth';
+import { Config, ConfigService } from './config';
+import { Event, EventService } from './event';
 
 function SanitizeWallet(x: { wallets?: ObjectID[] }) {
   const sanitized = Object.assign({}, x, { wallets: new Array<ObjectID>() });
@@ -101,7 +102,7 @@ export class SocketService {
   }
 
   async wireup() {
-    this.eventService.txEvent.on('tx', async (tx: IEvent.TxEvent) => {
+    this.eventService.txEvent.on('tx', async (tx: TxEvent) => {
       if (this.io) {
         const { chain, network } = tx;
         const sanitizedTx = SanitizeWallet(tx);
@@ -120,14 +121,14 @@ export class SocketService {
       }
     });
 
-    this.eventService.blockEvent.on('block', (block: IEvent.BlockEvent) => {
+    this.eventService.blockEvent.on('block', (block: BlockEvent) => {
       if (this.io) {
         const { chain, network } = block;
         this.io.sockets.in(`/${chain}/${network}/inv`).emit('block', block);
       }
     });
 
-    this.eventService.addressCoinEvent.on('coin', async (addressCoin: IEvent.CoinEvent) => {
+    this.eventService.addressCoinEvent.on('coin', async (addressCoin: CoinEvent) => {
       if (this.io) {
         const { coin, address } = addressCoin;
         const { chain, network } = coin;
@@ -148,15 +149,15 @@ export class SocketService {
     });
   }
 
-  async signalBlock(block: IEvent.BlockEvent) {
+  async signalBlock(block: BlockEvent) {
     await EventStorage.signalBlock(block);
   }
 
-  async signalTx(tx: IEvent.TxEvent) {
+  async signalTx(tx: TxEvent) {
     await EventStorage.signalTx(tx);
   }
 
-  async signalAddressCoin(payload: IEvent.CoinEvent) {
+  async signalAddressCoin(payload: CoinEvent) {
     await EventStorage.signalAddressCoin(payload);
   }
 }

@@ -46,33 +46,30 @@ export class Stats {
       uri = uri + '?';
     }
     uri = uri + 'readPreference=secondaryPreferred';
-    mongodb.MongoClient.connect(
-      uri,
-      (err, db) => {
-        if (err) {
-          log.error('Unable to connect to the mongoDB', err);
-          return cb(err, null);
-        }
-        this.db = db;
-        this._getStats((err, stats) => {
-          if (err) return cb(err);
-          return cb(null, stats);
-        });
+    mongodb.MongoClient.connect(uri, (err, db) => {
+      if (err) {
+        log.error('Unable to connect to the mongoDB', err);
+        return cb(err, null);
       }
-    );
+      this.db = db;
+      this._getStats((err, stats) => {
+        if (err) return cb(err);
+        return cb(null, stats);
+      });
+    });
   }
 
   _getStats(cb) {
     let result = {};
     async.series(
       [
-        (next) => {
+        next => {
           this._getNewWallets(next);
         },
-        (next) => {
+        next => {
           this._getTxProposals(next);
         },
-        (next) => {
+        next => {
           this._getFiatRates(next);
         }
       ],
@@ -85,31 +82,29 @@ export class Stats {
   }
 
   _getNewWallets(cb) {
-
-    const updateStats = (cb) => {
+    const updateStats = cb => {
       this.db
         .collection(storage.Storage.collections.WALLETS)
-        .aggregate(
-          [
-            {
-              $project: {
-                date: { $add: [new Date(0), { $multiply: ['$createdOn', 1000] }] },
-                network: '$network',
-                coin: '$coin',
-              }
-            },
-            {
-              $group: {
-                _id: {
-                  day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
-                  network: '$network',
-                  coin: '$coin'
-                },
-                count: { $sum: 1 },
-              }
+        .aggregate([
+          {
+            $project: {
+              date: { $add: [new Date(0), { $multiply: ['$createdOn', 1000] }] },
+              network: '$network',
+              coin: '$coin'
             }
-          ]
-        ).toArray(async (err, res) => {
+          },
+          {
+            $group: {
+              _id: {
+                day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+                network: '$network',
+                coin: '$coin'
+              },
+              count: { $sum: 1 }
+            }
+          }
+        ])
+        .toArray(async (err, res) => {
           if (err) {
             log.error('Update wallet stats throws error:', err);
             return cb(err);
@@ -117,10 +112,13 @@ export class Stats {
           if (res.length !== 0) {
             try {
               if (!this.db.collection('stats_wallets').find()) await this.db.createCollection('stats_wallets');
-              await this.db.collection('stats_wallets').remove({}).then(async () => {
-                const opts: any = { ordered: false };
-                await this.db.collection('stats_wallets').insert(res, opts);
-              });
+              await this.db
+                .collection('stats_wallets')
+                .remove({})
+                .then(async () => {
+                  const opts: any = { ordered: false };
+                  await this.db.collection('stats_wallets').insert(res, opts);
+                });
             } catch (err) {
               log.error('Cannot insert into stats_wallets:', err);
             }
@@ -129,7 +127,7 @@ export class Stats {
         });
     };
 
-    const queryStats = (cb) => {
+    const queryStats = cb => {
       this.db
         .collection('stats_wallets')
         .find({
@@ -146,7 +144,7 @@ export class Stats {
         .toArray((err, results) => {
           if (err) return cb(err);
           const stats = {
-            byDay: _.map(results, (record) => {
+            byDay: _.map(results, record => {
               const day = moment(record._id.day).format('YYYYMMDD');
               return {
                 day,
@@ -164,34 +162,33 @@ export class Stats {
   }
 
   _getFiatRates(cb) {
-    const updateStats = (cb) => {
+    const updateStats = cb => {
       this.db
         .collection(storage.Storage.collections.FIAT_RATES2)
-        .aggregate(
-          [
-            {
-              $match: {
-                code: 'USD'
-              }
-            },
-            {
-              $project: {
-                date: { $add: [new Date(0), '$ts'] },
-                coin: '$coin',
-                value: '$value'
-              }
-            },
-            {
-              $group: {
-                _id: {
-                  day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
-                  coin: '$coin'
-                },
-                value: { $first: '$value' }
-              }
+        .aggregate([
+          {
+            $match: {
+              code: 'USD'
             }
-          ]
-        ).toArray(async (err, res) => {
+          },
+          {
+            $project: {
+              date: { $add: [new Date(0), '$ts'] },
+              coin: '$coin',
+              value: '$value'
+            }
+          },
+          {
+            $group: {
+              _id: {
+                day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+                coin: '$coin'
+              },
+              value: { $first: '$value' }
+            }
+          }
+        ])
+        .toArray(async (err, res) => {
           if (err) {
             log.error('Update fiat rates stats throws error:', err);
             return cb(err);
@@ -199,10 +196,13 @@ export class Stats {
           if (res.length !== 0) {
             try {
               if (!this.db.collection('stats_fiat_rates').find()) await this.db.createCollection('stats_fiat_rates');
-              await this.db.collection('stats_fiat_rates').remove({}).then(async () => {
-                const opts: any = { ordered: false };
-                await this.db.collection('stats_fiat_rates').insert(res, opts);
-              });
+              await this.db
+                .collection('stats_fiat_rates')
+                .remove({})
+                .then(async () => {
+                  const opts: any = { ordered: false };
+                  await this.db.collection('stats_fiat_rates').insert(res, opts);
+                });
             } catch (err) {
               log.error('Cannot insert into stats_fiat_rates:', err);
             }
@@ -211,7 +211,7 @@ export class Stats {
         });
     };
 
-    const queryStats = (cb) => {
+    const queryStats = cb => {
       this.db
         .collection('stats_fiat_rates')
         .find({
@@ -227,12 +227,12 @@ export class Stats {
         .toArray((err, results) => {
           if (err) return cb(err);
           const stats = {
-            byDay: _.map(results, (record) => {
+            byDay: _.map(results, record => {
               const day = moment(record._id.day).format('YYYYMMDD');
               return {
                 day,
                 coin: record._id.coin,
-                value: record.value,
+                value: record.value
               };
             })
           };
@@ -243,33 +243,31 @@ export class Stats {
   }
 
   _getTxProposals(cb) {
-
-    const updateStats = (cb) => {
+    const updateStats = cb => {
       this.db
         .collection(storage.Storage.collections.TXS)
-        .aggregate(
-          [
-            {
-              $project: {
-                date: { $add: [new Date(0), { $multiply: ['$createdOn', 1000] }] },
-                network: '$network',
-                coin: '$coin',
-                amount: '$amount'
-              }
-            },
-            {
-              $group: {
-                _id: {
-                  day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
-                  network: '$network',
-                  coin: '$coin'
-                },
-                amount: { $sum: '$amount' },
-                count: { $sum: 1 },
-              }
+        .aggregate([
+          {
+            $project: {
+              date: { $add: [new Date(0), { $multiply: ['$createdOn', 1000] }] },
+              network: '$network',
+              coin: '$coin',
+              amount: '$amount'
             }
-          ]
-        ).toArray(async (err, res) => {
+          },
+          {
+            $group: {
+              _id: {
+                day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+                network: '$network',
+                coin: '$coin'
+              },
+              amount: { $sum: '$amount' },
+              count: { $sum: 1 }
+            }
+          }
+        ])
+        .toArray(async (err, res) => {
           if (err) {
             log.error('Update txps stats throws error:', err);
             return cb(err);
@@ -277,10 +275,13 @@ export class Stats {
           if (res.length !== 0) {
             try {
               if (!this.db.collection('stats_txps').find()) await this.db.createCollection('stats_txps');
-              await this.db.collection('stats_txps').remove({}).then(async () => {
-                const opts: any = { ordered: false };
-                await this.db.collection('stats_txps').insert(res, opts);
-              });
+              await this.db
+                .collection('stats_txps')
+                .remove({})
+                .then(async () => {
+                  const opts: any = { ordered: false };
+                  await this.db.collection('stats_txps').insert(res, opts);
+                });
             } catch (err) {
               log.error('Cannot insert into stats_txps:', err);
             }
@@ -289,7 +290,7 @@ export class Stats {
         });
     };
 
-    const queryStats = (cb) => {
+    const queryStats = cb => {
       this.db
         .collection('stats_txps')
         .find({
@@ -309,7 +310,7 @@ export class Stats {
             nbByDay: [],
             amountByDay: []
           };
-          _.each(results, (record) => {
+          _.each(results, record => {
             const day = moment(record._id.day).format('YYYYMMDD');
             stats.nbByDay.push({
               day,

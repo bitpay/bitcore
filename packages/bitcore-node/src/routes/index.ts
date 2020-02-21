@@ -1,10 +1,10 @@
-import config from '../config';
+import cors from 'cors';
 import { Request, Response } from 'express';
 import express from 'express';
-import cors from 'cors';
-import { LogMiddleware, CacheMiddleware, CacheTimes, RateLimiter } from './middleware';
-import { Web3Proxy } from "./web3";
-import { Config } from "../services/config";
+import config from '../config';
+import { Config } from '../services/config';
+import { CacheMiddleware, CacheTimes, LogMiddleware, RateLimiter } from './middleware';
+import { Web3Proxy } from './web3';
 
 const app = express();
 const bodyParser = require('body-parser');
@@ -18,7 +18,7 @@ app.use(
     limit: 100000000
   })
 );
-const chains = Config.chains()
+const chains = Config.chains();
 const networks: any = {};
 for (let chain of chains) {
   for (let network of Object.keys(config.chains[chain])) {

@@ -1,6 +1,6 @@
+import { Validation } from 'crypto-wallet-core';
 import { Response, Router } from 'express';
 import { ChainStateProvider } from '../../providers/chain-state';
-import { Validation } from 'crypto-wallet-core';
 import { Auth, AuthenticatedRequest } from '../../utils/auth';
 const router = Router({ mergeParams: true });
 
@@ -191,6 +191,6 @@ router.get('/:pubKey', Auth.authenticateMiddleware, async function(req: Authenti
 });
 
 module.exports = {
-  router: router,
+  router,
   path: '/wallet'
 };

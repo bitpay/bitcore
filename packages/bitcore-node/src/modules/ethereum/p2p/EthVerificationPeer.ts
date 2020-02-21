@@ -1,8 +1,8 @@
 import logger from '../../../logger';
-import { EthP2pWorker } from './p2p';
-import { IVerificationPeer, ErrorType } from '../../../services/verification';
-import { EthBlockStorage } from '../models/block';
 import { ITransaction } from '../../../models/baseTransaction';
+import { ErrorType, IVerificationPeer } from '../../../services/verification';
+import { EthBlockStorage } from '../models/block';
+import { EthP2pWorker } from './p2p';
 
 export class EthVerificationPeer extends EthP2pWorker implements IVerificationPeer {
   prevBlockNum = 0;
@@ -55,7 +55,7 @@ export class EthVerificationPeer extends EthP2pWorker implements IVerificationPe
       currentHeight++;
 
       if (Date.now() - lastLog > 100) {
-        logger.info(`Re-Sync `, {
+        logger.info('Re-Sync ', {
           chain,
           network,
           height: currentHeight
@@ -199,7 +199,7 @@ export class EthVerificationPeer extends EthP2pWorker implements IVerificationPe
         console.log(JSON.stringify(error));
       }
     }
-    //blocks with same hash
+    // blocks with same hash
     if (blockTxs.length > 0) {
       const hashFromTx = blockTxs[0].blockHash;
       if (blocksForHash > 1) {

@@ -1,12 +1,12 @@
-import { StorageService } from '../services/storage';
-import { BaseModel } from './base';
 import { ObjectID } from 'mongodb';
 import os from 'os';
+import { StorageService } from '../services/storage';
+import { BaseModel } from './base';
 
-export type IState = {
+export interface IState {
   _id?: ObjectID;
   initialSyncComplete: any;
-};
+}
 
 export class StateModel extends BaseModel<IState> {
   constructor(storage?: StorageService) {
