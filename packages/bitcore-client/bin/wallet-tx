@@ -1,0 +1,96 @@
+#!/usr/bin/env node
+
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
+
+program
+  .version(require('../package.json').version)
+  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option(
+    '--recipients <recipients>',
+    'REQUIRED - JSON array \'[{"address": "abc1234", "amount": xxxxxx}]\''
+  )
+  .option('--utxos [utxos]', 'REQUIRED for BTC and BCH - Unspent transactions that can be spent')
+  .option('--change [change]', 'REQUIRED for BTC and BCH - Change addresses')
+  .option('--fee [fee]', 'optional - custom transaction fee to pay')
+  .option('--target [target]', 'optional - custom target block for confirmation')
+  .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--from [from]', 'optional - From Address')
+  .option('--nonce [nonce]', 'optional - Nonce')
+  .option('--invoiceID [invoiceID]', 'optional - invoiceId for XRP transactions')
+  .option('--token [currency]', 'optional - ERC20 token')
+  .parse(process.argv);
+
+const main = async () => {
+  const { name, path } = program;
+  let wallet;
+  try {
+    let { recipients, utxos, change, fee, target, from, nonce, invoiceID, token } = program;
+    wallet = await Wallet.loadWallet({ name, path });
+    const parsedRecipients = recipients.includes('[') ? JSON.parse(recipients) : [];
+    if (!parsedRecipients.length) {
+      throw new Error('invalid arguments');
+    }
+
+    let parsedUtxos;
+    const calculatedNetworkFeeKb = await wallet.getNetworkFee({ target });
+    if (['BTC', 'BCH'].includes(wallet.chain)) {
+      parsedUtxos = utxos.includes('[') ? JSON.parse(utxos) : [];
+      if (!parsedUtxos.length) {
+        throw new Error('invalid arguments');
+      }
+
+      if (!fee) {
+        const utxoBytes = 148;
+        const outputBytes = 34;
+        const transactionHeader = 10;
+        const netWorkFeeSat = calculatedNetworkFeeKb.feerate * 1E8/1000;
+        const transactionSize = (parsedUtxos.length * utxoBytes + parsedRecipients.length * outputBytes + transactionHeader + parsedUtxos.length);
+        fee = transactionSize * netWorkFeeSat;
+      }
+    } else {
+      if (!fee) {
+        fee = JSON.parse(calculatedNetworkFeeKb).feerate;
+      }
+
+      if (!nonce) {
+        nonce = await wallet.getNonce();
+      }
+    }
+
+
+
+    let params = { recipients, utxos, change, fee, from, nonce, token };
+    params.fee = Number(fee) || totalTransactionFee;
+    params.nonce = Number(nonce);
+    params.recipients = parsedRecipients;
+    params.utxos = parsedUtxos;
+    params.invoiceID = invoiceID;
+    const tx = await wallet.newTx(params);
+
+    console.log(
+      JSON.stringify({
+        rawTx: tx
+      })
+    );
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+function getCurrencies() {
+  return new Promise((resolve, reject) => {
+    https.get('https://bitpay.com/currencies', res => {
+      if (res.statusCode !== 200) {
+        reject(new Error('Request Failed'));
+      }
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => resolve(data.toString()));
+    });
+  });
+}
+
+main();

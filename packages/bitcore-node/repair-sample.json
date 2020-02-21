@@ -1,0 +1,18 @@
+{
+    "model": "coin",
+    "err": false,
+    "type": "DUPE_COIN",
+    "payload": {
+        "_id": "5c48e2c2da7e008375b939a8",
+        "chain": "BTC",
+        "mintIndex": 0,
+        "mintTxid": "0a7884c351f3bd2fa7cea7ca2dad00948b766c634799d915ff67a51d5406ed01",
+        "network": "regtest",
+        "address": "mhv4A44iaS21xeegHxdCaCYWmeeve3Ungb",
+        "coinbase": true,
+        "mintHeight": 6,
+        "spentHeight": 4,
+        "value": 5000000000,
+        "wallets": []
+    }
+}

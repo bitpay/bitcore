@@ -1,0 +1,117 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const bitcoreLib = require('bitcore-lib');
+const program = require('commander');
+const { Wallet } = require('../../ts_build/wallet');
+const promptly = require('promptly');
+
+program
+  .version(require('../../package.json').version)
+  .option('--path <path>', 'REQUIRED - Filepath where wallet is stored')
+  .option('--m <m>', 'REQUIRED - Number of signers required')
+  .option('--depth <depth>', 'REQUIRED - Number of addresses to derive (will derive that many change addresses too)')
+  .option('--network <network>', 'REQUIRED - Network to derive for')
+  .option('--input [input]', 'OPTIONAL - A json string to parse in the form {"xpubkey": "mXy1234"}')
+  .option('--file [file]', 'OPTIONAL - A jsonl file with {"xpubkey": "mXy1234"} in it')
+  .option('--prompt', 'OPTIONAL - Ask for the xpubkeys to derive from')
+  .option('--importToWallet [importToWallet]', 'OPTIONAL flag - import the derived addresses. Requires path')
+  .option('--exportToFile [export]', 'OPTIONAL flag - File path to save derived addresses to')
+  .parse(process.argv);
+
+const getFileKeys = file => {
+  let contents = fs.readFileSync(file).toString();
+  let fileKeys = contents
+    .split('\n')
+    .filter(line => line !== '')
+    .map(line => JSON.parse(line));
+  return fileKeys;
+};
+
+const parseKeys = keys => {
+  let parsed = JSON.parse(keys);
+  if (typeof parsed === 'object') {
+    return [parsed];
+  } else {
+    return parsed;
+  }
+};
+
+function getAddress(publicKeyRing, addressIndex, isChange, m, network) {
+  const publicKeys = publicKeyRing.map(function(key) {
+    const xpub = new bitcoreLib.HDPublicKey(key);
+    const changeNum = isChange ? 1 : 0;
+    const path = `m/${changeNum}/${addressIndex}`;
+    return xpub.derive(path).publicKey;
+  });
+  return bitcoreLib.Address.createMultisig(publicKeys, m, network);
+}
+
+function getAllAddresses(publicKeyRing, numberOfAddresses, isChange, m, network) {
+  let addresses = [];
+  for (let i = 0; i < numberOfAddresses; i++) {
+    const address = getAddress(publicKeyRing, i, isChange, m, network);
+    addresses.push({ address: address.toString() });
+    console.log('address', address.toString(), i);
+  }
+  return addresses;
+}
+
+async function readFromPrompt() {
+  let counter = 1;
+  let xpubkey = await promptly.prompt(`Enter xpubkey ${counter} `);
+  let promptResults = [];
+  while (xpubkey.trim() != '') {
+    promptResults.push(xpubkey);
+    counter++;
+    xpubkey = await promptly.prompt(`Enter xpubkey ${counter} `, { default: '' });
+  }
+  return promptResults;
+}
+
+async function importAddressesToWallet(path, addresses) {
+  const password = await promptly.password('Wallet Password:');
+  if (!password) {
+    throw new Error('No password provided. Keys can\'t be imported without unlocking the wallet');
+  }
+  let wallet = await Wallet.loadWallet({ path });
+  wallet = await wallet.unlock(password);
+  await wallet.importKeys({ keys: addresses });
+  console.log(`${addresses.length} Adresses Imported`);
+}
+
+const main = async () => {
+  const { path, file, input, prompt, importToWallet, m, network, exportToFile, depth } = program;
+  let keyInput = [];
+  try {
+    if (file) {
+      keyInput = getFileKeys(file);
+    } else if (input) {
+      keyInput = parseKeys(input);
+    } else if (prompt) {
+      keyInput = await readFromPrompt();
+    }
+    const mOfN = Number(m);
+    let results = getAllAddresses(keyInput, depth, false, mOfN, network);
+    let changeResult = getAllAddresses(keyInput, depth, true, mOfN, network);
+    const allAddresses = [].concat(results, changeResult);
+    if (keyInput.length < mOfN) {
+      throw new Error(`You must enter at least ${m} xpubkeys`);
+    }
+
+    if (exportToFile) {
+      allAddresses.forEach(function(result) {
+        fs.appendFileSync(exportToFile, `${JSON.stringify(result)}\n`, 'utf8');
+      });
+      console.log(`Exported Addresses to ${exportToFile}`);
+    }
+
+    if (path && importToWallet) {
+      await importAddressesToWallet(path, allAddresses);
+    }
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();

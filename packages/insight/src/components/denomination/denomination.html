@@ -1,0 +1,32 @@
+<ion-list no-lines>
+  <ion-row>
+    <ion-item-divider>
+      Blockchain
+    </ion-item-divider>
+
+    <ion-item (click)="changeExplorer(chainNetwork)" *ngFor="let chainNetwork of availableNetworks">
+      <ion-avatar item-start>
+        <img *ngIf="chainNetwork.network === 'mainnet'" src="assets/img/currency_logos/{{ chainNetwork.chain.toLowerCase() }}.svg" class="logo" />
+        <img *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='BTC'" src="assets/img/btcicon-testnet.svg" class="logo" />
+        <img *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" />
+        <img [ngClass]="{'secondary': chainNetwork.network ==='testnet'}" *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" />
+      </ion-avatar>
+      <ion-label color="dark">
+       {{ chainNetwork.chain }} <small class="pill"> {{ chainNetwork.network }}</small>
+      </ion-label>
+    </ion-item>
+  </ion-row>
+</ion-list>
+
+<ion-list radio-group [(ngModel)]="currencySymbol" *ngIf="showUnits">
+  <ion-item-divider>
+    Units
+  </ion-item-divider>
+
+  <ion-item *ngFor="let unit of units">
+    <ion-label color="dark">{{ unit }}</ion-label>
+    <ion-radio value="{{ unit }}" [checked]="unit === currencySymbol" (click)="changeUnit(unit)">
+    </ion-radio>
+  </ion-item>
+</ion-list>
+

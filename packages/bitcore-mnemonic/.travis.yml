@@ -1,0 +1,20 @@
+language: node_js
+sudo: false
+node_js:
+- '8'
+install:
+  - npm install bitcore-lib
+  - npm ci
+after_script:
+  - gulp coveralls
+
+cache:
+  directories:
+  - "$HOME/.npm"
+
+dist: trusty # needs Ubuntu Trusty
+# Note: if you switch to sudo: false, you'll need to launch Chrome with --no-sandbox.
+# See https://github.com/travis-ci/travis-ci/issues/8836
+sudo: required
+addons:
+  chrome: stable # have Travis install Chrome stable.

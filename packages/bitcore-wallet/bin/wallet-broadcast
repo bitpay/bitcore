@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .usage('[options] <txpid>')
+  .parse(process.argv);
+
+var args = program.args;
+var txpid = args[0] || '';
+
+utils.getClient(program, { mustExist: true }, function (client) {
+  client.getTxProposals({}, function(err, txps) {
+    utils.die(err);
+
+    var txp = utils.findOneTxProposal(txps, txpid);
+    client.broadcastTxProposal(txp, function(err, txp) {
+      utils.die(err);
+      console.log('Transaction Broadcasted: TXID: ' + txp.txid);
+    });
+  });
+});

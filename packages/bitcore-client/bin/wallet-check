@@ -1,0 +1,24 @@
+#!/usr/bin/env node
+
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
+
+program
+  .version(require('../package.json').version)
+  .option('--name <name>', 'REQUIRED - Wallet name')
+  .option('--path [path]', 'optional - Custom wallet storage path')
+  .parse(process.argv);
+
+const main = async () => {
+  const { name, path } = program;
+  try {
+    const wallet = await Wallet.loadWallet({ name, path });
+    const registered = await wallet.checkWallet();
+    // TODO compare with local addresses
+    console.log(registered);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();

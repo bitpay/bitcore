@@ -1,0 +1,22 @@
+<loader *ngIf="loading" [type]="'tx-full-list'"></loader>
+
+<div *ngIf="!loading">
+  <ion-grid>
+    <ion-row *ngFor="let tx of transactions; let i = index">
+      <ion-col col-12 *ngIf="i < limit">
+        <transaction-details *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH'" [page]="tx-list" [showCoins]="true" [tx]="tx" [chainNetwork]="chainNetwork"></transaction-details>
+        <transaction-details-eth *ngIf="chainNetwork.chain === 'ETH'" [showCoins]="true" [tx]="tx" [chainNetwork]="chainNetwork"></transaction-details-eth>
+      </ion-col>
+    </ion-row>
+    <ion-row *ngIf="limit < transactions.length">
+      <ion-infinite-scroll (ionInfinite)="loadMore($event)">
+        <loader [type]="'tx-full-list'"></loader>
+      </ion-infinite-scroll>
+    </ion-row>
+    <ion-row *ngIf="transactions.length === 0" class="no-txs">
+      <ion-col col-12>
+        There are no transactions involving this block.
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</div>

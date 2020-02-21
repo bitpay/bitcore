@@ -1,0 +1,46 @@
+<div *ngIf="type == 'title'">
+  <h1 class="title animated-background"></h1>
+  <p class="subtitle animated-background"></p>
+</div>
+
+<ion-row *ngIf="type == 'grid'">
+  <ion-col col-2>
+    <div class="left-item animated-background"></div>
+  </ion-col>
+  <ion-col col-4>
+    <div class="right-item animated-background"></div>
+  </ion-col>
+  <ion-col text-right>
+    <div class="right-item animated-background"></div>
+  </ion-col>
+  <ion-col col-2 hideWhen="portrait">
+    <div class="animated-background"></div>
+  </ion-col>
+  <ion-col col-2 text-right>
+    <div class="right-item animated-background"></div>
+  </ion-col>
+</ion-row>
+
+<div *ngIf="type == 'tx-list' || type == 'tx-full-list'" class="box-loader">
+  <ion-grid>
+    <ion-row>
+      <ion-col col-7>
+        <div class="left-item animated-background"></div>
+      </ion-col>
+      <ion-col col-5 text-right>
+        <ion-note>
+          <div class="right-item animated-background"></div>
+        </ion-note>
+      </ion-col>
+    </ion-row>
+
+    <ion-row align-items-end class="small" *ngIf="type == 'tx-full-list'">
+      <ion-col col-12 text-right text-uppercase>
+        <ion-chip class="animated-background">
+        </ion-chip>
+        <ion-chip class="animated-background">
+        </ion-chip>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</div>

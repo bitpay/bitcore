@@ -1,0 +1,41 @@
+
+.blocks-container {
+
+  background: #fff;
+  border-radius: .9rem;
+  @media (max-width: map-get($grid-breakpoints, xs)) {
+    padding: 0;
+
+  }
+  box-shadow: 0 5px 20px -5px rgba(0, 0, 0, 0.08);
+
+  &__blocks {
+    ion-row:not(.blocks-cta) {
+      transition: transform 200ms ease, box-shadow 200ms ease;
+      border-bottom: 1px solid #f6f6f6;
+
+      &:hover:not(:last-child) {
+        cursor: pointer;
+        transform: scale(1.02);
+        background-color: #ffffff;
+        box-shadow: 0 5px 20px -5px rgba(0, 0, 0, 0.08);
+      }
+    }
+  }
+
+  ion-col, ion-col a {
+    text-align: center;
+    font-size: 11px;
+
+    @media (min-width: map-get($grid-breakpoints, lg)) {
+
+      font-size: 14px;
+
+    }
+  }
+
+}
+
+
+
+

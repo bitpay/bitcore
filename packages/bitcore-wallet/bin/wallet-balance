@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+program
+  .option('-c, --coin <coin>', 'coin (btc/bch)')
+  .parse(process.argv);
+
+
+program.option = function(){};;
+
+var args = program.args;
+
+
+var opts = {};
+if (program.coin) { 
+    opts.coin = program.coin
+}
+
+utils.getClient(program, {
+  mustExist: true
+}, function(client) {
+  client.getBalance(opts, function(err, x) {
+    const coin  = client.credentials.coin;
+    utils.die(err);
+    console.log('* Wallet balance %s (Locked %s)', utils.renderAmount(x.totalAmount, coin), utils.renderAmount(x.lockedAmount, coin));
+  });
+});

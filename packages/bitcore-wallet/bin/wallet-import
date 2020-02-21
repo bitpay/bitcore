@@ -1,0 +1,85 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var fs = require('fs');
+var sjcl = require('sjcl');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .option('-c, --coin <coin>', 'coin (btc/bch)')
+  .option('-t, --testnet', 'testnet network')
+  .option('-i, --input', 'import from file')
+  .option('-q, --qr', 'import from a QR code')
+  .option('-e, --exportpassword <password>', 'a password to decrypt the data being imported')
+  .option('-k, --keypassword <password>', 'password to decrypt private key from imported file')
+  .option('-p, --password', 'Encrypt wallet. Will ask password interactively')
+  .usage('[options]  [<"backup-words"> <passphrase> | <filename> ] ')
+  .parse(process.argv);
+
+var args = program.args;
+
+if (!args[0])
+  program.help();
+
+utils.getClient(program, {
+  mustBeNew: true
+}, function(client) {
+
+  if (program.input) {
+    var file = args[0];
+    console.log("Importing from file:" + file);
+    var str;
+
+    try {
+      str = fs.readFileSync(file, {
+        encoding: 'utf8'
+      });
+    } catch (e) {
+      utils.die('Could not import: ' + e);
+    };
+    if (str.substr(0,6) == '{"iv":')  {
+      console.log('Backup is encrypted');
+      if (!program.exportpassword) 
+        utils.die('Provide export\'s password with -e ');
+      try {
+        str = sjcl.decrypt( program.exportpassword, str);
+      } catch (e) {
+        utils.die('Could not decrypt import: ' + e);
+      };
+    };
+
+    try {
+      client.import(str, {
+        compressed: !!program.qr,
+        password: program.keypassword,
+      });
+    } catch (ex) {
+      utils.die('Could not import. Check input file and password:' + ex.message);
+    }
+
+    utils.saveClient(program, client, function() {
+      var access = client.canSign() ? 'with signing capability' : 'without signing capability';
+      console.log('Wallet Imported ' + access + '.');
+    });
+  } else {
+    console.log("Importing from mnemonic");
+    var mnemonics = args[0];
+    var passphrase = args[1];
+    var network = program.testnet ? 'testnet' : 'livenet';
+    var coin  = program.coin ? program.coin : 'btc';
+    client.importFromMnemonic(mnemonics, {
+      network: network,
+      passphrase: passphrase,
+      coin: coin,
+    }, function(err) {
+      if (err)
+        utils.die('Could not import' + err);
+
+      utils.saveClient(program, client, function() {
+        var access = client.canSign() ? 'with signing capability' : 'without signing capability';
+        console.log('Wallet Imported ' + access + '.');
+      });
+    });
+  }
+});

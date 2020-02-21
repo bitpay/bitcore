@@ -1,0 +1,142 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var utils = require('./cli-utils');
+var _ = require('lodash');
+var bwc = require('bitcore-wallet-client');
+var Bitcore_ = {
+  bch: bwc.BitcoreCash,
+  btc: bwc.Bitcore,
+};  
+
+program = utils.configureCommander(program);
+
+program
+  .option('--fee <fee-policy>', 'Fee policy to use (default "normal") [urgent, priority/normal/economy/superEconomy] ')
+  .usage('[options] <address> <amount> [note]')
+  .description('Create a proposal for sending bitcoins to a destination address.\n  The amount can be specified in bit, btc or sat (the default).');
+
+program.on('--help', function() {
+  console.log('  Examples:');
+  console.log('');
+  console.log('    $ wallet-send n2HRFgtoihgAhx1qAEXcdBMjoMvAx7AcDc 500bit');
+  console.log('    $ wallet-send mgWeRvUC6d1LRPKtdDbvYEpaUEmApS4XrY 0.2btc "dinner with friends"');
+  console.log('    $ wallet-send https://paypro.url/1234 # will ask for confirmation ');
+  console.log('');
+});
+program.parse(process.argv);
+
+var args = program.args;
+if (!args[0])
+  program.help();
+
+
+function confirmDiag(amountStr, note, cb) {
+  const readline = require('readline');
+
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+  });
+
+  rl.question(`Confirm send ${amountStr} to ${note}? (y/N)`, (answer) => {
+    rl.close();
+    return cb(answer =='y');
+  });
+};
+
+
+function send(client, address, amount, fee, note, uri) { 
+  var amount;
+
+  fee = fee || 'normal';
+  client.createTxProposal({
+    outputs: [{
+      toAddress: address,
+      amount: amount,
+    }],
+    message: note,
+    feeLevel: fee,
+    payProUrl: uri,
+  }, function(err, txp) {
+    utils.die(err);
+    client.publishTxProposal({
+      txp: txp
+    }, function(err) {
+      utils.die(err);
+      console.log(' * Tx created: ID %s [%s] RequiredSignatures:',
+        utils.shortID(txp.id), txp.status, txp.requiredSignatures);
+    });
+  });
+};
+
+
+var arg1 = args[0];
+var uri;
+
+
+
+utils.getClient(program, {
+  mustExist: true
+}, function(client) {
+  var coin = client.credentials.coin;
+  var bitcore = Bitcore_[coin];
+
+  var uri, addr, amount, note;
+
+  // no backwards compat uri
+  if ((/^bitcoin(cash)?:\?r=[\w+]/).exec(arg1)) {
+    var coin2 = 'btc';
+    if (arg1.indexOf('bitcoincash') === 0) coin2 = 'bch';
+    if (coin != coin2) utils.die('Wallet / Payment Coin mismatch');
+    uri  = arg1.replace(/bitcoin(cash)?:\?r=/, '');
+
+  } else {
+
+    // BIP21
+    try { 
+
+      var parsed = new bitcore.URI(arg1);
+      if (!parsed.r) {
+
+        addr = parsed.address ? parsed.address.toString() : '';
+        note = parsed.message;
+        amount = parsed.amount ? parsed.amount : '';
+
+      } else {
+        uri = parsed.r;
+      }
+    } catch (e) {
+      uri = null;
+    }
+  }
+
+  //Send to URI or addr
+
+  if (uri) {
+    console.log('Fetching Payment from: ' + uri);
+    client.fetchPayPro({
+      payProUrl: uri,
+    }, function(err, paypro) {
+      if (err) {
+        utils.die(' Failed to fetch payment: ' + (_.isObject(err)? JSON.stringify(err) : err));
+      } else if (!paypro.verified) {
+        utils.die('Failed to verify payment protocol signatures');
+      }
+
+      var amountStr = utils.renderAmount(paypro.amount, coin);
+      confirmDiag(amountStr, paypro.memo, function(confirmed) {
+        if (!confirmed) utils.die('User canceled');
+        send(client, paypro.toAddress, paypro.amount, program.fee, paypro.memo, uri);
+      });
+    });
+  } else {
+
+    // Grab data from CLI if not set before
+    addr = addr || arg1;
+    amount = amount || utils.parseAmount(args[1]);
+    note = note ||  args[2];
+
+    send(client, addr, amount, program.fee, note);
+  }
+});

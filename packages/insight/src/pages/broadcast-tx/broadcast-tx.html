@@ -1,0 +1,30 @@
+<head-nav [chainNetwork]="chainNetwork"></head-nav>
+<ion-content>
+  <ion-grid fixed>
+    <div class="page-content">
+      <h1>Broadcast Transaction</h1>
+      <form [formGroup]="txForm">
+        <ion-list>
+          <ion-item>
+            <p>This form can be used to broadcast a raw transaction in hex format over the Bitcoin network.</p>
+          </ion-item>
+
+          <ion-item>
+            <ion-label floating>Raw transaction data</ion-label>
+            <ion-input type="text" [(ngModel)]="transaction" formControlName="rawData"></ion-input>
+          </ion-item>
+
+          <ion-item *ngIf="!txForm.controls.rawData.valid">
+            <p>Raw transaction data must be a valid hexadecimal string.</p>
+          </ion-item>
+
+          <ion-item>
+            <button ion-button outline (click)="send()" [disabled]="!txForm.touched || !txForm.valid">Send
+              transaction</button>
+          </ion-item>
+        </ion-list>
+      </form>
+    </div>
+  </ion-grid>
+</ion-content>
+<footer [chainNetwork]="chainNetwork"></footer>

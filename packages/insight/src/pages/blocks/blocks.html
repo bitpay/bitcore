@@ -1,0 +1,17 @@
+<head-nav [chainNetwork]="chainNetwork"></head-nav>
+<ion-content>
+  <ion-grid fixed>
+    <div class="page-content">
+
+      <loader *ngIf="loading" [type]="'title'"></loader>
+
+      <div *ngIf="!loading">
+        <h1 class="content-container--heading">Blocks</h1>
+        <latest-blocks [numBlocks]="200" [showTimeAs]="'timestamp'" [showLoadMoreButton]="true"
+          [chainNetwork]="chainNetwork"></latest-blocks>
+      </div>
+
+    </div>
+  </ion-grid>
+</ion-content>
+<footer [chainNetwork]="chainNetwork"></footer>

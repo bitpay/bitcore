@@ -1,0 +1,41 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var utils = require('./cli-utils');
+var Bitcore = require('bitcore-wallet-client').Bitcore;
+
+program = utils.configureCommander(program);
+
+program
+  .usage('[options] <path>')
+  .description('Derive from an arbitrary path from a private key.');
+
+program.on('--help', function() {
+  console.log('  Examples:');
+  console.log('');
+  console.log('    $ wallet-derive "m/44\'/0\'/0\'"');
+  console.log('    $ wallet-derive "m/1/1"');
+  console.log('');
+});
+program.parse(process.argv);
+
+var args = program.args;
+if (!args[0])
+  program.help();
+
+var path = args[0];
+
+function getExtendedPublicKey(client, path) {
+  var xpriv = client.credentials.xPrivKey;
+  var derivedXPriv = new Bitcore.HDPrivateKey(xpriv).derive(path);
+  return derivedXPriv.hdPublicKey.toString();
+};
+
+utils.getClient(program, {
+  mustExist: true
+}, function(client) {
+  var xpub = getExtendedPublicKey(client, path);
+  var pub = new Bitcore.HDPublicKey(xpub).publicKey;
+  var address = pub.toAddress().toString();
+  console.log('Derived XPub:', xpub, '\nPublic key:', pub.toString(), '\nAddress:', address);
+});

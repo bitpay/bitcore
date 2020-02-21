@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .parse(process.argv);
+
+var args = program.args;
+
+utils.getClient(program, {
+  mustExist: true
+}, function(client) {
+  var mnemonic = client.getMnemonic();
+  console.log('* Wallet seed: %s', mnemonic);
+});

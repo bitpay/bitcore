@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .usage('[options] <secret> [copayerName]')
+  .option('-p, --password', 'Encrypt wallet. Will ask password interactively')
+  .parse(process.argv);
+
+var args = program.args;
+if (!args[0])
+  program.help();
+
+var secret = args[0];
+var copayerName = args[1] || process.env.USER;
+
+utils.getClient(program, { doNotComplete: true }, function (client) {
+  client.joinWallet(secret, copayerName, {}, function(err, wallet) {
+    utils.die(err);
+    console.log(' * Wallet Joined.', wallet.name);
+    utils.saveClient(program, client, function () {});
+  });
+});

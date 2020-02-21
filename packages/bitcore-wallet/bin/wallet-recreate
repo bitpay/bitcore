@@ -1,0 +1,19 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .usage('[options]')
+  .description('Creates a wallet on the remote server given the local information')
+  .parse(process.argv);
+
+var args = program.args;
+utils.getClient(program, { mustExist: true }, function (client) {
+  client.recreateWallet(function(err) {
+    utils.die(err);
+    console.log(' *  Wallet created.');
+  });
+});

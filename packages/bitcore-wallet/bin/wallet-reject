@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .usage('[options] <txpid> [reason]')
+  .parse(process.argv);
+
+var args = program.args;
+var txpid = args[0] || '';
+var reason = args[1] || '';
+
+utils.getClient(program, { mustExist: true }, function (client) {
+  client.getTxProposals({}, function(err, txps) {
+    utils.die(err);
+
+    var txp = utils.findOneTxProposal(txps, txpid);
+    client.rejectTxProposal(txp, reason, function(err, tx) {
+      utils.die(err);
+      if (tx.status == 'rejected')
+        console.log('Transaction finally rejected.');
+      else 
+        console.log('Transaction rejected by you.');
+    });
+  });
+});

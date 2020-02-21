@@ -1,0 +1,36 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var program = require('commander');
+var utils  = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .option('-v, --verbose', 'Show wallet raw data')
+  .parse(process.argv);
+
+var args = program.args;
+utils.getClient(program, { mustExist: true }, function (client) {
+  client.getStatus({}, function(err, res) {
+    utils.die(err);
+
+    var x = res.wallet;
+    console.log('* Wallet %s [%s]: %d-of-%d %s Coin:%s ', x.name, x.network, x.m, x.n, x.status, x.coin);
+
+    if (x.status != 'complete') {
+      console.log('  Missing copayers:', x.n - x.copayers.length);
+      console.log('  Wallet secret:', x.secret);
+    }
+    console.log('* Copayers:', _.map(x.copayers,'name').join(', '));
+
+
+    if (program.verbose) {
+        console.log('* Wallet Raw Data:', x);
+    }
+
+    var x = res.balance;
+    console.log('* Balance %s (Locked: %s)', utils.renderAmount(x.totalAmount, client.credentials.coin), utils.renderAmount(x.lockedAmount, client.credentials.coin));
+
+    utils.renderTxProposals(res.pendingTxps);
+  });
+});

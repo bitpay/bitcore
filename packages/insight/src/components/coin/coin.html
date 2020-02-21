@@ -1,0 +1,79 @@
+<ion-grid>
+  <ion-row *ngIf="coin?.mintTxid">
+    <ion-col col-7>
+      <div class="ellipsis">
+        <span *ngIf="coin.height >= -1">
+          <a (click)="goToTx(coin.mintTxid)">{{ coin.mintTxid }}</a>
+        </span>
+        <span ion-text color="danger" *ngIf="coin.height === -3">
+          Invalid
+        </span>
+      </div>
+    </ion-col>
+    <ion-col col-5 text-right>
+      <ion-chip item-end color="warning" *ngIf="confirmations === -1">
+        <ion-label>
+          Unconfirmed
+        </ion-label>
+      </ion-chip>
+      <ion-chip item-end color="primary" *ngIf="confirmations === 1">
+        <ion-label>
+          1 Confirmation
+        </ion-label>
+      </ion-chip>
+      <ion-chip item-end color="primary" *ngIf="confirmations > 1">
+        <ion-label>
+          {{ confirmations }} Confirmations
+        </ion-label>
+      </ion-chip>
+      <ion-chip item-end color="default" class="size-fixed">
+        <ion-label>
+          {{ currencyProvider.getConvertedNumber(coin.value, chainNetwork.chain) | number:'1.0-8' }}
+          {{ currencyProvider.currencySymbol }}
+        </ion-label>
+      </ion-chip>
+    </ion-col>
+  </ion-row>
+
+  <ion-row *ngIf="coin?.spentTxid">
+    <ion-col col-7>
+      <div class="ellipsis">
+        <span *ngIf="coin.height >= -1">
+          <a (click)="goToTx(coin.spentTxid)">{{ coin.spentTxid }}</a>
+        </span>
+        <span *ngIf="coin.height === -2">
+          Unspent
+        </span>
+        <span ion-text color="danger" *ngIf="coin.height === -3">
+          Invalid
+        </span>
+        <span ion-text color="danger" *ngIf="coin.height === -4">
+          Error
+        </span>
+      </div>
+    </ion-col>
+    <ion-col col-5 text-right>
+      <ion-chip item-end color="warning" *ngIf="confirmations === -1">
+        <ion-label>
+          Unconfirmed
+        </ion-label>
+      </ion-chip>
+      <ion-chip item-end color="primary" *ngIf="confirmations === 1">
+        <ion-label>
+          1 Confirmation
+        </ion-label>
+      </ion-chip>
+      <ion-chip item-end color="primary" *ngIf="confirmations > 1">
+        <ion-label>
+          {{ confirmations }} Confirmations
+        </ion-label>
+      </ion-chip>
+      <ion-chip item-end class="size-fixed">
+        <ion-label color="danger">
+          - {{ currencyProvider.getConvertedNumber(coin.value, chainNetwork.chain) | number:'1.0-8' }}
+          {{ currencyProvider.currencySymbol }}
+        </ion-label>
+      </ion-chip>
+    </ion-col>
+  </ion-row>
+</ion-grid>

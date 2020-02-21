@@ -1,0 +1,29 @@
+footer {
+  .pages {
+    padding-top: 5px;
+    color: #dde;
+    float: left;
+    a {
+      color: white;
+      font-size: 0.8em;
+    }
+  }
+  .about {
+    float: right;
+    a {
+      text-decoration: none;
+    }
+    .version {
+      color: grey;
+      font-style: italic;
+    }
+    .logo {
+      color: white;
+      font-weight: 700;
+      font-style: italic;
+      font-size: 1.5em;
+      font-family: 'Ubuntu';
+    }
+  }
+  
+}

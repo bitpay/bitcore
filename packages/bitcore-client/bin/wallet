@@ -1,0 +1,25 @@
+#!/usr/bin/env node
+
+const program = require('commander');
+
+program
+  .version(require('../package.json').version)
+  .description('CLI wallet utility for Bitcore-node')
+  .command('create', 'create a wallet').alias('c')
+  .command('list', 'list wallets').alias('l')
+  .command('import', 'import addresses/keys').alias('i')
+  .command('register', 'register a wallet with bitcore-node').alias('r')
+  .command('balance', 'check wallet balance').alias('b')
+  .command('utxos', 'get wallet utxos').alias('u')
+  .command('broadcast', 'broadcast transaction')
+  .command('tx', 'create transaction').alias('t')
+  .command('derive', 'derive an address').alias('d')
+  .command('check', 'check if wallet is registered and print last address').alias('h')
+  .command('paypro', 'pay using payment protocol').alias('p')
+  .command('send', 'simple send from wallet to an address').alias('s')
+  .command('sign', 'sign a transaction')
+  .command('token', 'add an ERC20 token to an eth wallet')
+  .parse(process.argv);
+
+
+

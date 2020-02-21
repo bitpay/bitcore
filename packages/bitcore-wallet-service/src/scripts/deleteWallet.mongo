@@ -1,0 +1,18 @@
+
+// json support
+a='84dd0fce-7c08-4696-beb2-308745e18a22';
+b= {'walletId':a};
+
+db.addresses.remove(b);
+db.cache.remove(b);
+db.copayers_lookup.remove(b);
+db.notifications.remove(b);
+db.preferences.remove(b);
+db.sessions.remove(b);
+db.tx_confirmation_subs.remove(b);
+db.txs.remove(b);
+db.tx_notes.remove(b);
+db.wallets.remove({'id':a});
+
+db.push_notification_subs.remove(b);
+db.email_queue.remove(b);

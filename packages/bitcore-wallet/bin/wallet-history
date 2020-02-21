@@ -1,0 +1,180 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var fs = require('fs');
+var moment = require('moment');
+var async = require('async');
+var program = require('commander');
+var utils = require('./cli-utils');
+program = utils.configureCommander(program);
+
+program
+  .option('-o, --output <file>', 'get JSON output in file')
+  .option('-l, --limit <n>', 'limit history to n transactions')
+  .option('-i, --info', 'get extra history info')
+  .option('-t, --format <json>', 'format csv / json')
+  .parse(process.argv);
+
+var args = program.args;
+
+var skip = 0, total = 0 ,
+  limit = program.limit, got, page = 1000;
+console.warn("* TX History:")
+
+let converter = JSON.stringify.bind();
+
+
+function formatDate(date) {
+  var dateObj = new Date(date);
+  if (!dateObj) {
+    this.logger.warn('Error formating a date');
+    return 'DateError';
+  }
+  if (!dateObj.toJSON()) {
+    return '';
+  }
+  return dateObj.toJSON();
+}
+
+
+
+if (program.format == 'csv') {
+  converter = function(txs) {
+
+    var ret = '';
+    var _amount, _note, _copayers, _creator, _comment;
+    var csvContent = [];
+
+    // from Copay
+    txs.forEach(it => {
+      var amount = it.amount;
+      if (it.action == 'moved') amount = 0;
+
+      _copayers = '';
+      _creator = '';
+
+      if (it.actions && it.actions.length > 1) {
+        for (var i = 0; i < it.actions.length; i++) {
+          _copayers +=
+          it.actions[i].copayerName + ':' + it.actions[i].type + ' - ';
+        }
+        _creator =
+        it.creatorName && it.creatorName != 'undefined'
+        ? it.creatorName
+        : '';
+      }
+      _amount = (it.action == 'sent' ? '-' : '') + (amount /1e8).toFixed(8);
+      _note = it.message || '';
+      _comment = it.note ? it.note.body : '';
+
+      if (it.action == 'moved')
+        _note += ' Moved:' + (it.amount /1e8).toFixed(8);
+
+      csvContent.push({
+        Date: formatDate(it.time * 1000),
+        Destination: it.addressTo || '',
+        Description: _note,
+        Amount: _amount,
+        Currency: this.currency,
+        Txid: it.txid,
+        Creator: _creator,
+        Copayers: _copayers,
+        Comment: _comment
+      });
+
+      if (it.fees && (it.action == 'moved' || it.action == 'sent')) {
+        var _fee = (it.fees / 1e8).toFixed(8);
+        csvContent.push({
+          Date: formatDate(it.time * 1000),
+          Destination: 'Bitcoin Network Fees',
+          Description: '',
+          Amount: '-' + _fee,
+          Currency: this.currency,
+          Txid: '',
+          Creator: '',
+          Copayers: ''
+        });
+      }
+
+    });
+
+    csvContent.forEach(it => {
+      ret = ret + `${it.Date},${it.Txid},${it.Destination},${it.Amount}` + "\n";
+    });
+    return ret;
+  };
+} else if (program.format == 'json') {
+} else if (program.format) { 
+  utils.die('Unknown format ' + program.format);
+}
+
+
+var allTxs=[];
+
+utils.getClient(program, { mustExist: true }, function (client) {
+ async.doWhilst(
+   function(cb) {
+     client.getTxHistory({
+       skip: skip,
+       limit: page+ 1,
+       includeExtendedInfo: program.info,
+     }, function(err, txs) {
+       if (err) return cb(err);
+
+       if (_.isEmpty(txs))
+        return;
+
+       got =  txs.length;
+       if (got > page) {
+         txs.pop();
+       }
+
+       if (program.output) {
+         allTxs = allTxs.concat(txs);
+         fs.writeFile(program.output,converter(allTxs), {
+           encoding: 'utf8'
+         }, function(err) {
+           if (err) console.error(err);
+           console.warn('Output file updated')
+         });
+       } else {
+         _.each(txs, function(tx) {
+           var time = moment(tx.time * 1000).fromNow();
+           var amount = utils.renderAmount(tx.amount);
+           var confirmations = tx.confirmations || 0;
+           var proposal = tx.proposalId ? '["' + tx.message + '" by ' + tx.creatorName + '] ' : '';
+           var direction;
+           switch (tx.action) {
+             case 'received':
+               direction = '<=';
+               break;
+             case 'moved':
+               direction = '==';
+               break;
+             case 'sent':
+               direction = '=>';
+               break;
+             default:
+               direction = tx.action;
+               break;
+           }
+           console.log("\t%s: %s %s %s %s(%s confirmations)", time, direction, tx.action, amount, proposal, confirmations);
+         });
+       }
+       return cb();
+     });
+   },
+   function() {
+     total = total + got;
+     var cont = got > page && (!limit || total < limit);
+     if (cont) {
+       skip+= page;
+       console.warn('* Skip:', skip);
+     }
+     return cont;
+   },
+   function (err) {
+     if (err) console.log(err);
+   }
+ );
+});

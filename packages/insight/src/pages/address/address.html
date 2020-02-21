@@ -1,0 +1,59 @@
+<head-nav [chainNetwork]="chainNetwork"></head-nav>
+
+<ion-content>
+  <ion-grid fixed>
+
+    <div class="page-content">
+
+      <loader *ngIf="loading" [type]="'title'"></loader>
+
+      <error [message]="errorMessage" *ngIf="!loading && errorMessage "></error>
+
+      <div *ngIf="!loading && !errorMessage">
+        <h1 class="content-container--heading">Address <small>{{ getConvertedNumber(address.balance, chainNetwork.chain) | number:'1.0-8' }}
+            {{ currencyProvider.currencySymbol }}</small></h1>
+        <p class="ellipsis">{{ address.addrStr }}
+          <button [copyToClipboard]="address.addrStr">
+            <ion-icon md="md-copy"></ion-icon>
+          </button>
+        </p>
+
+        <h2>Summary</h2>
+        <ion-grid>
+          <ion-row align-items-start justify-content-center>
+            <ion-col>
+              <ion-list class="list--summary">
+                <ion-item>
+                  Confirmed Balance
+                  <ion-note item-end>
+                    {{ getConvertedNumber(address.confirmed, chainNetwork.chain) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+                  </ion-note>
+                </ion-item>
+                <ion-item *ngIf="address.unconfirmed > 0">
+                  Unconfirmed Balance
+                  <ion-note item-end>
+                    {{ getConvertedNumber(address.unconfirmed, chainNetwork.chain) | number:'1.0-8' }} {{ currencyProvider.currencySymbol }}
+                  </ion-note>
+                </ion-item>
+                <ion-item>
+                  Nro. Transactions
+                  <ion-note item-end>
+                    {{ nroTransactions || 0 }}
+                  </ion-note>
+                </ion-item>
+              </ion-list>
+            </ion-col>
+            <ion-col col-auto text-center>
+              <qr-code [value]="address.addrStr" [size]="160"></qr-code>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+
+        <h1>Transactions</h1>
+        <coin-list  [addrStr]="address.addrStr" [chainNetwork]="chainNetwork"></coin-list>
+      </div>
+
+    </div>
+  </ion-grid>
+</ion-content>
+<footer [chainNetwork]="chainNetwork"></footer>
