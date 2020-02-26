@@ -26,10 +26,12 @@ const main = async () => {
     console.error(err);
   }
   const currencies = JSON.parse(data);
+  console.log(currencies);
   try {
     wallet = await Wallet.loadWallet({ name, path });
     const chain = wallet.chain;
-    const { decimals } = currencies.data.find(element => element.code === chain);
+    const { decimals } = currencies.data.find(element => element.code === (token || chain));
+    console.log(decimals);
     const scale = Math.pow(10, decimals);
     const lastAddress = await wallet.deriveAddress(0);
     const recipients = [{ address: to, amount: amount * scale }];

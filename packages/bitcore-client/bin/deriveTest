@@ -1,0 +1,55 @@
+#!/usr/bin/env node
+'use strict';
+
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
+const promptly = require('promptly');
+const fs = require('fs');
+const { StreamUtil } = require('../ts_build/stream-util');
+
+/**
+ * USAGE -
+ * Pass in a raw transaction or a jsonl file of rawTransactions
+ * Pass in the bitcore wallet name or a jsonl file of encrypted bitcoin core keys or
+ * Pass in the utxos if you want to use specific utxos
+ */
+program
+  .version(require('../package.json').version)
+  .parse(process.argv);
+
+const main = async () => {
+  try {
+    let wallet1 = await Wallet.loadWallet({ name: 'btc3'}) //, path: 'mongodb://localhost/bitpay-dev/', storageType: 'Mongo' }); // btcMongo2
+    let wallet2 = await Wallet.loadWallet({ name: 'btc2'}) //, path: 'mongodb://localhost/bitpay-dev/', storageType: 'Mongo' }); // btcMongo2Lite
+    let wallet3 = await Wallet.loadWallet({ name: 'btc' }) //, path: 'mongodb://localhost/bitpay-dev/', storageType: 'Mongo' }); // btcMongo
+    wallet1 = await wallet1.unlock('123');
+    wallet2 = await wallet2.unlock('123');
+    wallet3 = await wallet3.unlock('123');
+    let address = await wallet2.nextAddressPair(); // {index: 123456, isChange: false, keepAlive: false, open: true, register: true}
+    let utxos = await wallet3.getUtxosArray();
+    // console.log(utxos);
+    let unsignedTx = await wallet3.newTx({ utxos, fee: 20, recipients: [{address: address[0], amount: 500}]});
+    console.log('unsignedTx');
+    console.log(unsignedTx);
+    let signedTx = await wallet3.signTx({ tx: unsignedTx, passphrase: '123' });
+    console.log('signedTx');
+    console.log(signedTx);
+    await wallet3.broadcast({ tx: signedTx });
+    await promptly.prompt('confirmed?', 'y/n');
+    let utxox2 = await wallet2.getUtxos();
+    console.log(utxox2);
+    let utxo = utxox2.find(utx => utx.address === address);
+    let address3 = await wallet3.nextAddressPair();
+    console.log('found utxo: ', utxo);
+    let unsignedTx2 = await wallet2.newTx({ utxos: utxo, fee: 20, recipients: [{ address: address3, amount: 500 }]});
+    let signedTx2 = await wallet1.signTx({ tx: unsignedTx2, utxos: utxo, passphrase: '123', addressIndexes: [123456] });
+    console.log(signedTx2);
+    console.log('signed');
+    let txid = await wallet2.broadcast(signedTx2);
+    console.log(txid);
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();
