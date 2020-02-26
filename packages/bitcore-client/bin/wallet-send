@@ -14,10 +14,11 @@ program
   .option('--amount <amount>', 'REQUIRED - number amount (in btc/bch/eth/xrp)')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--token [token]', 'opptional - ERC-20 token to send')
+  .option('--useBech32 [useBech32]', 'opptional - use Segwit address')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, to, amount, target, token } = program;
+  const { name, path, to, amount, target, token, useBech32 } = program;
   let wallet;
   let data;
   try {
@@ -31,7 +32,7 @@ const main = async () => {
     const chain = wallet.chain;
     const { decimals } = currencies.data.find(element => element.code === chain);
     const scale = Math.pow(10, decimals);
-    const lastAddress = await wallet.deriveAddress(0);
+    const lastAddress = await wallet.deriveAddress(0, { isChange: false, useBech32 });
     const recipients = [{ address: to, amount: amount * scale }];
     const feerate = await wallet.getNetworkFee({ target });
     const fee = JSON.parse(feerate).feerate || 20 * scale;

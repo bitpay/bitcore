@@ -17,6 +17,7 @@ program
   .option('--prompt', 'OPTIONAL - Ask for the xpubkeys to derive from')
   .option('--importToWallet [importToWallet]', 'OPTIONAL flag - import the derived addresses. Requires path')
   .option('--exportToFile [export]', 'OPTIONAL flag - File path to save derived addresses to')
+  .option('--useBech32 [useBech32]', 'optional - use P2WSH Segwit address')
   .parse(process.argv);
 
 const getFileKeys = file => {
@@ -37,20 +38,22 @@ const parseKeys = keys => {
   }
 };
 
-function getAddress(publicKeyRing, addressIndex, isChange, m, network) {
+function getAddress(publicKeyRing, addressIndex, isChange, m, network, useBech32) {
   const publicKeys = publicKeyRing.map(function(key) {
     const xpub = new bitcoreLib.HDPublicKey(key);
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;
     return xpub.derive(path).publicKey;
   });
-  return bitcoreLib.Address.createMultisig(publicKeys, m, network);
+  const nestedWitness = false;
+  const type = useBech32 ? 'witnessscripthash' : 'scripthash';
+  return bitcoreLib.Address.createMultisig(publicKeys, m, network, nestedWitness, type);
 }
 
-function getAllAddresses(publicKeyRing, numberOfAddresses, isChange, m, network) {
+function getAllAddresses(publicKeyRing, numberOfAddresses, isChange, m, network, useBech32) {
   let addresses = [];
   for (let i = 0; i < numberOfAddresses; i++) {
-    const address = getAddress(publicKeyRing, i, isChange, m, network);
+    const address = getAddress(publicKeyRing, i, isChange, m, network, useBech32);
     addresses.push({ address: address.toString() });
     console.log('address', address.toString(), i);
   }
@@ -81,7 +84,7 @@ async function importAddressesToWallet(path, addresses) {
 }
 
 const main = async () => {
-  const { path, file, input, prompt, importToWallet, m, network, exportToFile, depth } = program;
+  const { path, file, input, prompt, importToWallet, m, network, exportToFile, depth, useBech32 } = program;
   let keyInput = [];
   try {
     if (file) {
@@ -92,8 +95,8 @@ const main = async () => {
       keyInput = await readFromPrompt();
     }
     const mOfN = Number(m);
-    let results = getAllAddresses(keyInput, depth, false, mOfN, network);
-    let changeResult = getAllAddresses(keyInput, depth, true, mOfN, network);
+    let results = getAllAddresses(keyInput, depth, false, mOfN, network, useBech32);
+    let changeResult = getAllAddresses(keyInput, depth, true, mOfN, network, useBech32);
     const allAddresses = [].concat(results, changeResult);
     if (keyInput.length < mOfN) {
       throw new Error(`You must enter at least ${m} xpubkeys`);

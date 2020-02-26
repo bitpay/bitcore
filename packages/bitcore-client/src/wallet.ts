@@ -394,28 +394,29 @@ export class Wallet {
     return walletAddresses.map(walletAddress => walletAddress.address);
   }
 
-  deriveAddress(addressIndex, isChange) {
-    const address = Deriver.deriveAddress(this.chain, this.network, this.xPubKey, addressIndex, isChange);
+  deriveAddress(addressIndex, options: { isChange?: boolean; useBech32?: boolean }) {
+    const address = Deriver.deriveAddress(this.chain, this.network, this.xPubKey, addressIndex, options);
     return address;
   }
 
-  async derivePrivateKey(isChange) {
+  async derivePrivateKey(options: { isChange?: boolean; useBech32?: boolean }) {
     const keyToImport = await Deriver.derivePrivateKey(
       this.chain,
       this.network,
       this.unlocked.masterKey,
       this.addressIndex || 0,
-      isChange
+      options
     );
     return keyToImport;
   }
 
-  async nextAddressPair(withChangeAddress?: boolean) {
+  async nextAddressPair(options: { isChange?: boolean; useBech32?: boolean }) {
+    const { isChange } = options;
     this.addressIndex = this.addressIndex || 0;
-    const newPrivateKey = await this.derivePrivateKey(false);
+    const newPrivateKey = await this.derivePrivateKey(options);
     const keys = [newPrivateKey];
-    if (withChangeAddress) {
-      const newChangePrivateKey = await this.derivePrivateKey(true);
+    if (isChange) {
+      const newChangePrivateKey = await this.derivePrivateKey(options);
       keys.push(newChangePrivateKey);
     }
     this.addressIndex++;
@@ -425,7 +426,7 @@ export class Wallet {
   }
 
   async getNonce(addressIndex: number = 0, isChange?: boolean) {
-    const address = this.deriveAddress(0, isChange);
+    const address = this.deriveAddress(0, { isChange });
     const count = await this.client.getNonce({ address });
     if (!count || typeof count.nonce !== 'number') {
       throw new Error('Unable to get nonce');

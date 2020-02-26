@@ -10,10 +10,11 @@ program
   .option('--gap [gap]', 'optional - Number of addresses to derive (will derive that many change addresses too)')
   .option('--change [change]', 'optional - should derive change addresses')
   .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--useBech32 [useBech32]', 'optional - use Segwit address')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, gap=20, change=false } = program;
+  const { name, path, gap=20, change=false, useBech32 } = program;
   let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
@@ -25,7 +26,7 @@ const main = async () => {
     let index = wallet.addressIndex || 0;
 
     while (unusedAddressCounter < gap) {
-      const address = await wallet.nextAddressPair(change);
+      const address = await wallet.nextAddressPair({ isChange: change, useBech32 });
 
       const hasTransactions = await wallet.client.getAddressTxos({ address });
 

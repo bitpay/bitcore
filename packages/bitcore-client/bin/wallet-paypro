@@ -18,10 +18,11 @@ program
   .option('--from [from]', 'optional - from account for XRP')
   .option('--payProUri [payProUri]', 'REQUIRED - payment protocol URI')
   .option('--token, [token]', 'optional - ERC-20 token to pay with')
+  .option('--useBech32 [useBech32]', 'optional - use Segwit address')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, token, nonce: inputNonce, from: inputFrom } = program;
+  const { name, path, token, nonce: inputNonce, from: inputFrom, useBech32 } = program;
   let { payProUri } = program;
   if (payProUri.includes('=')) {
     const split = payProUri.split('=');
@@ -57,7 +58,7 @@ const main = async () => {
   //  Payment-Request
   let wallet;
   wallet = await Wallet.loadWallet({ name, path });
-  const from = inputFrom || await wallet.deriveAddress(0);
+  const from = inputFrom || await wallet.deriveAddress(0, { isChange: false, useBech32 });
   let nonce;
   const { chain } = wallet;
   if (!['BTC', 'BCH'].includes(chain)) {
