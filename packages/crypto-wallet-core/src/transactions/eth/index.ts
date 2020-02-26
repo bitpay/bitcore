@@ -40,9 +40,6 @@ export class ETHTxProvider {
       case 'rinkeby':
         chainId = 4;
         break;
-      case 'regtest':
-        chainId = 17;
-        break;
       default:
         chainId = 1;
         break;
