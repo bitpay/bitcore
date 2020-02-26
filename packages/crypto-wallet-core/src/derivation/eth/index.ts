@@ -15,7 +15,8 @@ export class EthDeriver implements IDeriver {
     return msg;
   }
 
-  deriveAddress(network, xpubkey, addressIndex, isChange) {
+  deriveAddress(network, xpubkey, addressIndex, options) {
+    const { isChange } = options;
     const xpub = new BitcoreLib.HDPublicKey(xpubkey, network);
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;
@@ -32,7 +33,8 @@ export class EthDeriver implements IDeriver {
     return utils.toChecksumAddress(address);
   }
 
-  derivePrivateKey(network, xPriv, addressIndex, isChange) {
+  derivePrivateKey(network, xPriv, addressIndex, options) {
+    const { isChange } = options;
     const xpriv = new BitcoreLib.HDPrivateKey(xPriv, network);
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;

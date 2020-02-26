@@ -11,9 +11,19 @@ export interface Key {
 }
 
 export interface IDeriver {
-  deriveAddress(network: string, xPub: string, addressIndex: number, isChange: boolean): string;
+  deriveAddress(
+    network: string,
+    xPub: string,
+    addressIndex: number,
+    options: { isChange?: boolean; isBech32?: boolean }
+  ): string;
 
-  derivePrivateKey(network: string, xPriv: string, addressIndex: number, isChange: boolean): Key;
+  derivePrivateKey(
+    network: string,
+    xPriv: string,
+    addressIndex: number,
+    options: { isChange?: boolean; isBech32?: boolean }
+  ): Key;
 }
 
 const derivers: { [chain: string]: IDeriver } = {
@@ -28,12 +38,12 @@ export class DeriverProxy {
     return derivers[chain];
   }
 
-  deriveAddress(chain, network, xpubKey, addressIndex, isChange) {
-    return this.get(chain).deriveAddress(network, xpubKey, addressIndex, isChange);
+  deriveAddress(chain, network, xpubKey, addressIndex, options = {}) {
+    return this.get(chain).deriveAddress(network, xpubKey, addressIndex, options);
   }
 
-  derivePrivateKey(chain, network, privKey, addressIndex, isChange) {
-    return this.get(chain).derivePrivateKey(network, privKey, addressIndex, isChange);
+  derivePrivateKey(chain, network, privKey, addressIndex, options = {}) {
+    return this.get(chain).derivePrivateKey(network, privKey, addressIndex, options);
   }
 
   pathFor(chain, network, account = 0) {

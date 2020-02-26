@@ -2,6 +2,41 @@ import { expect } from 'chai';
 import { Deriver } from '../src';
 
 describe('Address Derivation', () => {
+  it('should be able to generate a valid BTC address', () => {
+    const xPub = 'xpub6D8rChqkgFuaZULuq2n6VrS4zB5Cmv24gcRc889dFRRgYAH1CGQmQZ9kcPfMAfWGPnyMd1X5foBYFmJ5ZPfvwhm6tXjaY13ao1rQHRtkKDv';
+    // 'select scout crash enforce riot rival spring whale hollow radar rule sentence';
+
+    const path = Deriver.pathFor('BTC', 'mainnet');
+    expect(path).to.equal("m/44'/0'/0'");
+
+    const address = Deriver.deriveAddress('BTC', 'mainnet', xPub, 0, { isChange: false });
+    const expectedAddress = '17nphPqQGLKDtKLTWwYW84yqJwwvG3gwBs';
+    expect(address).to.equal(expectedAddress);
+  });
+
+  it('should be able to generate a valid BTC P2WPKH address', () => {
+    const xPub = 'xpub6D8rChqkgFuaZULuq2n6VrS4zB5Cmv24gcRc889dFRRgYAH1CGQmQZ9kcPfMAfWGPnyMd1X5foBYFmJ5ZPfvwhm6tXjaY13ao1rQHRtkKDv';
+    // 'select scout crash enforce riot rival spring whale hollow radar rule sentence';
+
+    const path = Deriver.pathFor('BTC', 'mainnet');
+    expect(path).to.equal("m/44'/0'/0'");
+    const address = Deriver.deriveAddress('BTC', 'mainnet', xPub, 0, { isChange: false, isBech32: true });
+    const expectedAddress = 'bc1qffa5nwzj523dnlfamrz7fhgzl9ezxedvtc6uvm';
+    expect(address).to.equal(expectedAddress);
+  });
+
+  it('should be able to generate a valid BCH address', () => {
+    const xPub = 'xpub6D8rChqkgFuaZULuq2n6VrS4zB5Cmv24gcRc889dFRRgYAH1CGQmQZ9kcPfMAfWGPnyMd1X5foBYFmJ5ZPfvwhm6tXjaY13ao1rQHRtkKDv';
+    // 'select scout crash enforce riot rival spring whale hollow radar rule sentence';
+
+    const path = Deriver.pathFor('BCH', 'mainnet');
+    expect(path).to.equal("m/44'/145'/0'");
+
+    const address = Deriver.deriveAddress('BCH', 'mainnet', xPub, 0, { isChange: false });
+    const expectedAddress = 'qp98kjdc22329k0a8hvvtexaqtuhygm94sydplkvqz';
+    expect(address).to.equal(expectedAddress);
+  });
+
   it('should be able to generate a valid ETH address', () => {
     const xPub = 'xpub6D8rChqkgFuaZULuq2n6VrS4zB5Cmv24gcRc889dFRRgYAH1CGQmQZ9kcPfMAfWGPnyMd1X5foBYFmJ5ZPfvwhm6tXjaY13ao1rQHRtkKDv';
     // 'select scout crash enforce riot rival spring whale hollow radar rule sentence';
@@ -9,7 +44,7 @@ describe('Address Derivation', () => {
     const path = Deriver.pathFor('ETH', 'mainnet');
     expect(path).to.equal("m/44'/60'/0'");
 
-    const address = Deriver.deriveAddress('ETH', 'mainnet', xPub, 0, false);
+    const address = Deriver.deriveAddress('ETH', 'mainnet', xPub, 0, { isChange: false });
     const expectedAddress = '0x9dbfE221A6EEa27a0e2f52961B339e95426931F9';
     expect(address).to.equal(expectedAddress);
   });
@@ -21,7 +56,7 @@ describe('Address Derivation', () => {
     const path = Deriver.pathFor('XRP', 'mainnet');
     expect(path).to.equal("m/44'/144'/0'");
 
-    const address = Deriver.deriveAddress('XRP', 'mainnet', xPub, 0, false);
+    const address = Deriver.deriveAddress('XRP', 'mainnet', xPub, 0, { isChange: false });
     const expectedAddress = 'r9dmAJBfBe7JL2RRLiFWGJ8kM4CHEeTpgN';
     expect(address).to.equal(expectedAddress);
   });
@@ -32,7 +67,7 @@ describe('Address Derivation', () => {
     const path = Deriver.pathFor('ETH', 'mainnet');
     expect(path).to.equal("m/44'/60'/0'");
 
-    const result = Deriver.derivePrivateKey('ETH', 'mainnet', privKey, 0, false);
+    const result = Deriver.derivePrivateKey('ETH', 'mainnet', privKey, 0, { isChange: false });
     const expectedResult = {
       address: '0xb497281830dE4F19a3482AbF3D5C35c514e6fB36',
       privKey: '62b8311c71f355c5c07f6bffe9b1ae60aa20d90e2e2ec93ec11b6014b2ae6340',
@@ -49,7 +84,7 @@ describe('Address Derivation', () => {
     const path = Deriver.pathFor('XRP', 'mainnet');
     expect(path).to.equal("m/44'/144'/0'");
 
-    const result = Deriver.derivePrivateKey('XRP', 'mainnet', privKey, 0, false);
+    const result = Deriver.derivePrivateKey('XRP', 'mainnet', privKey, 0, { isChange: false });
     const expectedResult = {
       address: 'r9dmAJBfBe7JL2RRLiFWGJ8kM4CHEeTpgN',
       privKey: 'd02c6801d8f328ff2ead51d01f9580af36c8d74e2bd463963ac4adbe51ae5f2c',

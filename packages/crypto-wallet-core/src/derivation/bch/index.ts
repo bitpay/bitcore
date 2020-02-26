@@ -2,14 +2,16 @@ const BitcoreLibCash = require('bitcore-lib-cash');
 import { AbstractBitcoreLibDeriver } from '../btc';
 export class BchDeriver extends AbstractBitcoreLibDeriver {
   bitcoreLib = BitcoreLibCash;
-  deriveAddress(network, pubKey, addressIndex, isChange) {
+  deriveAddress(network, pubKey, addressIndex, options) {
+    const { isChange } = options;
     const xpub = new this.bitcoreLib.HDPublicKey(pubKey, network);
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;
     return this.bitcoreLib.Address(xpub.derive(path).publicKey, network).toString(true);
   }
 
-  derivePrivateKey(network, xPriv, addressIndex, isChange) {
+  derivePrivateKey(network, xPriv, addressIndex, options) {
+    const { isChange } = options;
     const xpriv = new this.bitcoreLib.HDPrivateKey(xPriv, network);
     const changeNum = isChange ? 1 : 0;
     const path = `m/${changeNum}/${addressIndex}`;
