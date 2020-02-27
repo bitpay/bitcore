@@ -137,26 +137,4 @@ export class Mongo {
       console.error(error);
     }
   }
-
-  async addAddress(params: {
-    name: string;
-    address: string;
-    index: number;
-    lite: boolean;
-    keepAlive: boolean;
-    open: boolean;
-  }) {
-    try {
-      if (params.open) {
-        await this.init({ addresses: 1 });
-      }
-      const { name, address, index, lite, keepAlive } = params;
-      await this.collection.insertOne({ name, address, index, lite });
-      if (!keepAlive) {
-        await this.close();
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  }
 }

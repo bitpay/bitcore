@@ -126,23 +126,4 @@ export class Storage {
       open = false;
     }
   }
-
-  async addAddress(params: {
-    name: string;
-    addressObj: { address: string; index: number };
-    keepAlive?: boolean;
-    open?: boolean;
-  }) {
-    const { name, addressObj, keepAlive, open } = params;
-    const { address, index } = addressObj;
-    let payload = {
-      name,
-      address,
-      index,
-      lite: true,
-      keepAlive,
-      open
-    };
-    await this.db.addAddress(payload);
-  }
 }

@@ -100,16 +100,4 @@ export class Level {
     const { name, key, toStore } = params;
     await this.db.put(`key|${name}|${key.address}`, toStore);
   }
-
-  async addAddress(params: {
-    name: string;
-    address: string;
-    index: number;
-    lite: boolean;
-    keepAlive: boolean;
-    open: boolean;
-  }) {
-    const { name, address, index, lite } = params;
-    await this.db.put(`key|${name}|${address}|${index}|${lite}`);
-  }
 }
