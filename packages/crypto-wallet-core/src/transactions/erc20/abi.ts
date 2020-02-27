@@ -1,7 +1,4 @@
-import { Contract } from 'web3-eth-contract';
-export type ContractAbiInput = ConstructorParameters<typeof Contract>[0];
-
-export const ERC20Abi: ContractAbiInput = [
+export const ERC20Abi = [
   {
     constant: true,
     inputs: [],
