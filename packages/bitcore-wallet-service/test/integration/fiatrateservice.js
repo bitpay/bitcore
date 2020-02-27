@@ -237,10 +237,10 @@ describe('Fiat rate service', function() {
       }];
       var xrp = [{
         code: 'USD',
-        rate: 0.22,
+        rate: 0.222222,
       }, {
         code: 'EUR',
-        rate: 0.20,
+        rate: 0.211111,
       }];
 
       request.get.withArgs({
@@ -288,7 +288,7 @@ describe('Fiat rate service', function() {
               }, function(err, res) {
                 should.not.exist(err);
                 res.fetchedOn.should.equal(100);
-                res.rate.should.equal(0.22);
+                res.rate.should.equal(0.222222);
                 service.getRate({
                   code: 'EUR'
                 }, function(err, res) {
