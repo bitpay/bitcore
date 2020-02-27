@@ -69,12 +69,12 @@ export class Wallet {
   }
 
   static async create(params: Partial<WalletObj>) {
-    const { chain, network, name, phrase, password, path, storageType} = params;
+    const { chain, network, name, phrase, password, path, storageType } = params;
     let { storage } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
-      // Generate wallet private keys
+    // Generate wallet private keys
     const mnemonic = new Mnemonic(phrase);
     const hdPrivKey = mnemonic.toHDPrivateKey().derive(Deriver.pathFor(chain, network));
     const privKeyObj = hdPrivKey.toObject();
@@ -83,8 +83,8 @@ export class Wallet {
     const authKey = new PrivateKey();
     const authPubKey = authKey.toPublicKey().toString();
 
-      // Generate public keys
-      // bip44 compatible pubKey
+    // Generate public keys
+    // bip44 compatible pubKey
     const pubKey = hdPrivKey.publicKey.toString();
 
     // Generate and encrypt the encryption key and private key
@@ -127,7 +127,7 @@ export class Wallet {
       name
     });
 
-      console.log(mnemonic.toString());
+    console.log(mnemonic.toString());
 
     await loadedWallet.register().catch(e => {
       console.debug(e);
@@ -171,12 +171,12 @@ export class Wallet {
       throw new Error('Incorrect Password');
     }
     const encryptionKey = await Encryption.decryptEncryptionKey(this.encryptionKey, password);
-      const masterKeyStr = await Encryption.decryptPrivateKey(encMasterKey, this.pubKey, encryptionKey);
-      const masterKey = JSON.parse(masterKeyStr);
-      this.unlocked = {
-        encryptionKey,
-        masterKey
-      };
+    const masterKeyStr = await Encryption.decryptPrivateKey(encMasterKey, this.pubKey, encryptionKey);
+    const masterKey = JSON.parse(masterKeyStr);
+    this.unlocked = {
+      encryptionKey,
+      masterKey
+    };
     return this;
   }
 
