@@ -16,6 +16,7 @@ describe('Witness Address', function() {
 
   var pubkeyhash = Buffer.from('2a9540f5cd929bf742d16b4e1bf1b0e874c907c9', 'hex');
   var str = 'bc1q9225pawdj2dlwsk3dd8phudsap6vjp7fg3nwdl';
+  var wrappedStr = '3LfTZncZYsaxGBWYfDg8MTTFVKHmUHoZyA';
   var buf = Buffer.from(str, 'utf8');
 
   it('should throw an error because of bad network param', function() {
@@ -218,6 +219,62 @@ describe('Witness Address', function() {
       }).should.throw('Unknown network');
     });
 
+    it('should error because of incorrect format for script hash', function() {
+      (function() {
+        return new Address.fromScriptHash('notascript', null, Address.PayToWitnessScriptHash);
+      }).should.throw('Address supplied is not a buffer.');
+    });
+
+    it('should error because of incorrect type for pubkey transform', function() {
+      (function() {
+        return Address._transformPublicKey(new Buffer(20), null, Address.PayToWitnessPublicKeyHash);
+      }).should.throw('Address must be an instance of PublicKey.');
+      (function() {
+        return Address._transformPublicKey(new Buffer(20), null, Address.PayToScriptHash);
+      }).should.throw('Address must be an instance of PublicKey.');
+    });
+
+    it('should make this address from a compressed pubkey', function() {
+      var pubkey = new PublicKey('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004');
+      var address = Address.fromPublicKey(pubkey, 'livenet', Address.PayToWitnessPublicKeyHash);
+      address.toString().should.equal('bc1qtuh205nkztchej8r84k8vna9upsjh7q8dvy576');
+    });
+
+    it('should make this wrapped address from a compressed pubkey', function() {
+      var pubkey = new PublicKey('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004');
+      var address = Address.fromPublicKey(pubkey, 'livenet', Address.PayToScriptHash);
+      address.toString().should.equal('3GNVVBik6S9Ux5ccS6ymmEeQELXGJdP8p8');
+    });
+
+    it('should use the default network for pubkey', function() {
+      var pubkey = new PublicKey('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004');
+      var address = Address.fromPublicKey(pubkey, null, Address.PayToWitnessPublicKeyHash);
+      address.network.should.equal(Networks.defaultNetwork);
+    });
+
+    it('should use the default network for pubkey', function() {
+      var pubkey = new PublicKey('0285e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b004');
+      var address = Address.fromPublicKey(pubkey, null, Address.PayToScriptHash);
+      address.network.should.equal(Networks.defaultNetwork);
+    });
+
+    it('should fail to make an address with an uncompressed pubkey', function() {
+      var pubkey = new PublicKey('0485e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b00' +
+        '4833fef26c8be4c4823754869ff4e46755b85d851077771c220e2610496a29d98');
+      (function() {
+        return Address.fromPublicKey(pubkey, 'livenet', Address.PayToWitnessPublicKeyHash);
+      }).should.throw('Witness addresses must use compressed public keys.');
+    });
+
+    it('should fail to make a wrapped address with an uncompressed pubkey', function() {
+      var pubkey = new PublicKey('0485e9737a74c30a873f74df05124f2aa6f53042c2fc0a130d6cbd7d16b944b00' +
+        '4833fef26c8be4c4823754869ff4e46755b85d851077771c220e2610496a29d98');
+      (function() {
+        return Address.fromPublicKey(pubkey, 'livenet', Address.PayToScriptHash);
+      }).should.throw('Witness addresses must use compressed public keys.');
+    });
+
+
     it('should classify from a custom network', function() {
       var custom = {
         name: 'customnetwork2',
@@ -377,4 +434,35 @@ describe('Witness Address', function() {
     address.network.should.equal(Networks.defaultNetwork);
   });
 
+  describe('creating a P2WSH address from public keys', function() {
+
+    var public1 = '02da5798ed0c055e31339eb9b5cef0d3c0ccdec84a62e2e255eb5c006d4f3e7f5b';
+    var public2 = '0272073bf0287c4469a2a011567361d42529cd1a72ab0d86aa104ecc89342ffeb0';
+    var public3 = '02738a516a78355db138e8119e58934864ce222c553a5407cf92b9c1527e03c1a2';
+    var publics = [public1, public2, public3];
+
+    it('can create an address from a set of public keys', function() {
+      var address = Address.createMultisig(publics, 2, Networks.livenet, null, Address.PayToWitnessScriptHash);
+      address.toString().should.equal('bc1qukwqyzxcjdykr0cfxghwkrx9rkmdvapc08syez75q5ewg3j5umvsu5w9yf');
+      address = new Address(publics, 2, Networks.livenet, Address.PayToWitnessScriptHash);
+      address.toString().should.equal('bc1qukwqyzxcjdykr0cfxghwkrx9rkmdvapc08syez75q5ewg3j5umvsu5w9yf');
+    });
+
+    it('works on testnet also', function() {
+      var address = Address.createMultisig(publics, 2, Networks.testnet, null, Address.PayToWitnessScriptHash);
+      address.toString().should.equal('tb1qukwqyzxcjdykr0cfxghwkrx9rkmdvapc08syez75q5ewg3j5umvstuc27x');
+    });
+
+    it('can also be created by Address.createMultisig', function() {
+      var address = Address.createMultisig(publics, 2, null, null, Address.PayToWitnessScriptHash);
+      var address2 = Address.createMultisig(publics, 2, null, null, Address.PayToWitnessScriptHash);
+      address.toString().should.equal(address2.toString());
+    });
+
+    it('fails if invalid array is provided', function() {
+      expect(function() {
+        return Address.createMultisig([], 3, 'testnet', null, Address.PayToWitnessScriptHash);
+      }).to.throw('Number of required signatures must be less than or equal to the number of public keys');
+    });
+  });
 });

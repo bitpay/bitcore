@@ -349,8 +349,13 @@ Script.prototype.getPublicKey = function() {
 };
 
 Script.prototype.getPublicKeyHash = function() {
-  $.checkState(this.isPublicKeyHashOut(), 'Can\'t retrieve PublicKeyHash from a non-PKH output');
-  return this.chunks[2].buf;
+  if (this.isPublicKeyHashOut()) {
+    return this.chunks[2].buf;
+  } else if (this.isWitnessPublicKeyHashOut()) {
+    return this.chunks[1].buf;
+  } else {
+    throw new Error('Can\'t retrieve PublicKeyHash from a non-PKH output');
+  }
 };
 
 /**
@@ -877,12 +882,14 @@ Script.buildPublicKeyHashOut = function(to) {
 /**
  * @returns {Script} a new pay to witness v0 output for the given
  * address
- * @param {Address} to - destination address
+ * @param {(Address|PublicKey)} to - destination address
  */
 Script.buildWitnessV0Out = function(to) {
   $.checkArgument(!_.isUndefined(to));
-  $.checkArgument(to instanceof Address || _.isString(to));
-  if (_.isString(to)) {
+  $.checkArgument(to instanceof PublicKey || to instanceof Address || _.isString(to));
+  if (to instanceof PublicKey) {
+    to = to.toAddress(null, Address.PayToWitnessPublicKeyHash);
+  } else if (_.isString(to)) {
     to = new Address(to);
   }
   var s = new Script();
