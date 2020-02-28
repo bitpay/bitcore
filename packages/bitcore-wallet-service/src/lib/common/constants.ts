@@ -31,7 +31,9 @@ module.exports = {
 
   SCRIPT_TYPES: {
     P2SH: 'P2SH',
-    P2PKH: 'P2PKH'
+    P2WSH: 'P2WSH',
+    P2PKH: 'P2PKH',
+    P2WPKH: 'P2WPKH'
   },
   DERIVATION_STRATEGIES: {
     BIP44: 'BIP44',

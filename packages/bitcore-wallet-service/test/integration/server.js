@@ -558,6 +558,46 @@ describe('Wallet service', function() {
       });
     });
 
+    it('should create a P2WPKH Segwit wallet', function(done) {
+      var opts = {
+        coin: 'btc',
+        name: 'my segwit wallet',
+        m: 1,
+        n: 1,
+        pubKey: TestData.keyPair.pub,
+        useBech32: true
+      };
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(err);
+        server.storage.fetchWallet(walletId, function(err, wallet) {
+          should.not.exist(err);
+          wallet.addressType.should.equal('P2WPKH');
+          wallet.coin.should.equal('btc');
+          done();
+        });
+      });
+    });
+
+    it('should create a P2WSH Segwit wallet', function(done) {
+      var opts = {
+        coin: 'btc',
+        name: 'my multisig segwit wallet',
+        m: 1,
+        n: 2,
+        pubKey: TestData.keyPair.pub,
+        useBech32: true
+      };
+      server.createWallet(opts, function(err, walletId) {
+        should.not.exist(err);
+        server.storage.fetchWallet(walletId, function(err, wallet) {
+          should.not.exist(err);
+          wallet.addressType.should.equal('P2WSH');
+          wallet.coin.should.equal('btc');
+          done();
+        });
+      });
+    });
+
     ['eth','xrp'].forEach(c => {
       it(`should  fail to create a multisig ${c}  wallet`, function(done) {
         var opts = {

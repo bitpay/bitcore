@@ -96,8 +96,21 @@ export class Address {
 
     let bitcoreAddress;
     switch (scriptType) {
+      case Constants.SCRIPT_TYPES.P2WSH:
+        const nestedWitness = false;
+        bitcoreAddress = Address.Bitcore[coin].Address.createMultisig(
+          publicKeys,
+          m,
+          network,
+          nestedWitness,
+          'witnessscripthash'
+        );
+        break;
       case Constants.SCRIPT_TYPES.P2SH:
         bitcoreAddress = Address.Bitcore[coin].Address.createMultisig(publicKeys, m, network);
+        break;
+      case Constants.SCRIPT_TYPES.P2WPKH:
+        bitcoreAddress = Address.Bitcore.btc.Address.fromPublicKey(publicKeys[0], network, 'witnesspubkeyhash');
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);

@@ -476,6 +476,7 @@ export class WalletService {
    * @param {string} opts.network[='livenet'] - The Bitcoin network for this wallet.
    * @param {string} opts.account[=0] - BIP44 account number
    * @param {string} opts.usePurpose48 - for Multisig wallet, use purpose=48
+   * @param {string} opts.useBech32 - for Segwit address, set addressType to P2WPKH or P2WSH
    */
   createWallet(opts, cb) {
     let pubKey;
@@ -517,7 +518,11 @@ export class WalletService {
     }
 
     const derivationStrategy = Constants.DERIVATION_STRATEGIES.BIP44;
-    const addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2PKH : Constants.SCRIPT_TYPES.P2SH;
+    let addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2PKH : Constants.SCRIPT_TYPES.P2SH;
+
+    if (opts.useBech32) {
+      addressType = opts.n === 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+    }
 
     try {
       pubKey = new Bitcore.PublicKey.fromString(opts.pubKey);
