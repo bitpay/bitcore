@@ -1,1 +1,3 @@
-type Mapping<V> = { [key: string]: V };
+interface Mapping<V> {
+  [key: string]: V;
+}

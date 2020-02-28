@@ -1,22 +1,22 @@
-import logger from '../logger';
-import * as lodash from 'lodash';
-import { CoinStorage } from './coin';
-import { WalletAddressStorage, IWalletAddress } from './walletAddress';
 import { ObjectID } from 'bson';
-import { TransformOptions } from '../types/TransformOptions';
-import { LoggifyClass } from '../decorators/Loggify';
-import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { MongoBound } from './base';
-import { StorageService } from '../services/storage';
-import { TransactionJSON } from '../types/Transaction';
-import { SpentHeightIndicators } from '../types/Coin';
-import { Config } from '../services/config';
-import { EventStorage } from './events';
-import { Libs } from '../providers/libs';
-import { BaseTransaction, ITransaction } from './baseTransaction';
-import { Readable, Transform } from 'stream';
+import * as lodash from 'lodash';
 import { Collection } from 'mongodb';
+import { Readable, Transform } from 'stream';
+import { LoggifyClass } from '../decorators/Loggify';
+import logger from '../logger';
+import { Libs } from '../providers/libs';
+import { Config } from '../services/config';
+import { StorageService } from '../services/storage';
+import { SpentHeightIndicators } from '../types/Coin';
+import { BitcoinTransaction } from '../types/namespaces/Bitcoin';
+import { TransactionJSON } from '../types/Transaction';
+import { TransformOptions } from '../types/TransformOptions';
 import { partition } from '../utils/partition';
+import { MongoBound } from './base';
+import { BaseTransaction, ITransaction } from './baseTransaction';
+import { CoinStorage } from './coin';
+import { EventStorage } from './events';
+import { IWalletAddress, WalletAddressStorage } from './walletAddress';
 
 export { ITransaction };
 
@@ -34,9 +34,9 @@ export type IBtcTransaction = ITransaction & {
   size: number;
 };
 
-export type TaggedBitcoinTx = Bitcoin.Transaction & { wallets: Array<ObjectID> };
+export type TaggedBitcoinTx = BitcoinTransaction & { wallets: Array<ObjectID> };
 
-export type MintOp = {
+export interface MintOp {
   updateOne: {
     filter: {
       mintTxid: string;
@@ -65,9 +65,9 @@ export type MintOp = {
     upsert: true;
     forceServerObjectId: true;
   };
-};
+}
 
-export type SpendOp = {
+export interface SpendOp {
   updateOne: {
     filter: {
       mintTxid: string;
@@ -78,7 +78,7 @@ export type SpendOp = {
     };
     update: { $set: { spentTxid: string; spentHeight: number } };
   };
-};
+}
 
 export interface TxOp {
   updateOne: {
@@ -201,7 +201,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
   }
 
   async batchImport(params: {
-    txs: Array<Bitcoin.Transaction>;
+    txs: Array<BitcoinTransaction>;
     height: number;
     mempoolTime?: Date;
     blockTime?: Date;
@@ -326,7 +326,9 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         .find(spentQuery)
         .project({ spentTxid: 1, value: 1, wallets: 1 })
         .toArray();
-      type CoinGroup = { [txid: string]: { total: number; wallets: Array<ObjectID> } };
+      interface CoinGroup {
+        [txid: string]: { total: number; wallets: Array<ObjectID> };
+      }
       const groupedSpends = spent.reduce<CoinGroup>((agg, coin) => {
         if (!agg[coin.spentTxid]) {
           agg[coin.spentTxid] = {
@@ -401,7 +403,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     network: string;
     initialSyncComplete: boolean;
     mintBatch: Array<MintOp>;
-    txs: Array<Bitcoin.Transaction>;
+    txs: Array<BitcoinTransaction>;
   }) {
     const { chain, network, initialSyncComplete, mintBatch } = params;
     const walletConfig = Config.for('api').wallets;
@@ -452,7 +454,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
   }
 
   async streamMintOps(params: {
-    txs: Array<Bitcoin.Transaction>;
+    txs: Array<BitcoinTransaction>;
     height: number;
     parentChain?: string;
     forkHeight?: number;
@@ -543,7 +545,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
   }
 
   streamSpendOps(params: {
-    txs: Array<Bitcoin.Transaction>;
+    txs: Array<BitcoinTransaction>;
     height: number;
     parentChain?: string;
     forkHeight?: number;
@@ -572,7 +574,9 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
               chain,
               network
             },
-            update: { $set: { spentTxid: tx._hash || tx.hash, spentHeight: height, sequenceNumber: inputObj.sequenceNumber } }
+            update: {
+              $set: { spentTxid: tx._hash || tx.hash, spentHeight: height, sequenceNumber: inputObj.sequenceNumber }
+            }
           }
         };
         spendOpsBatch.push(updateQuery);

@@ -1,102 +1,98 @@
 import BN from 'bn.js';
 
+import { ITransaction } from '../../models/baseTransaction';
 import { IBlock } from '../../types/Block';
 import { ClassifiedTrace, TokenTransferResponse } from './p2p/parityRpc';
-import { ITransaction } from '../../models/baseTransaction';
 
-export declare namespace Parity {
-  export type Block = {
-    author: string;
-    difficulty: string;
-    extraData: string;
-    gasLimit: number;
-    gasUsed: number;
-    hash: string;
-    logsBloom: string;
-    miner: string;
-    mixHash: string;
-    nonce: string;
-    number: number;
-    parentHash: string;
-    receiptsRoot: string;
-    sealFields: Array<string>;
-    sha3Uncles: string;
-    size: number;
-    stateRoot: string;
-    timestamp: number;
-    totalDifficulty: string;
-    transactions: Array<Transaction>;
-    transactionsRoot: string;
-    uncles: Array<string>;
-  };
-  export type Transaction = {
-    blockHash: string;
-    blockNumber: number;
-    chainId: number;
-    condition: number;
-    creates: number;
-    from: string;
-    gas: number;
-    gasPrice: string;
-    hash: string;
-    input: string;
-    nonce: number;
-    publicKey: string;
-    r: string;
-    raw: string;
-    s: string;
-    standardV: string;
-    to: string;
-    transactionIndex: number;
-    v: string;
-    value: string;
-  };
+export interface ParityBlock {
+  author: string;
+  difficulty: string;
+  extraData: string;
+  gasLimit: number;
+  gasUsed: number;
+  hash: string;
+  logsBloom: string;
+  miner: string;
+  mixHash: string;
+  nonce: string;
+  number: number;
+  parentHash: string;
+  receiptsRoot: string;
+  sealFields: Array<string>;
+  sha3Uncles: string;
+  size: number;
+  stateRoot: string;
+  timestamp: number;
+  totalDifficulty: string;
+  transactions: Array<ParityTransaction>;
+  transactionsRoot: string;
+  uncles: Array<string>;
+}
+export interface ParityTransaction {
+  blockHash: string;
+  blockNumber: number;
+  chainId: number;
+  condition: number;
+  creates: number;
+  from: string;
+  gas: number;
+  gasPrice: string;
+  hash: string;
+  input: string;
+  nonce: number;
+  publicKey: string;
+  r: string;
+  raw: string;
+  s: string;
+  standardV: string;
+  to: string;
+  transactionIndex: number;
+  v: string;
+  value: string;
 }
 
-export declare namespace Ethereum {
-  export type Networks = 'mainnet' | 'ropsten' | 'rinkeby' | 'goerli' | 'kovan';
+export type Networks = 'mainnet' | 'ropsten' | 'rinkeby' | 'goerli' | 'kovan';
 
-  export type Block = {
-    header: Header;
-    transactions: Transaction[];
-    uncleHeaders: Header[];
-    raw: Buffer[];
-    txTrie: any;
-  };
+export interface EthereumBlock {
+  header: EthereumHeader;
+  transactions: Transaction[];
+  uncleHeaders: EthereumHeader[];
+  raw: Buffer[];
+  txTrie: any;
+}
 
-  export type Header = {
-    parentHash: Buffer;
-    uncleHash: Buffer;
-    coinbase: Buffer;
-    stateRoot: Buffer;
-    transactionsTrie: Buffer;
-    receiptTrie: Buffer;
-    bloom: Buffer;
-    difficulty: Buffer;
-    number: Buffer;
-    gasLimit: Buffer;
-    gasUsed: Buffer;
-    timestamp: Buffer;
-    extraData: Buffer;
-    mixHash: Buffer;
-    nonce: Buffer;
-    raw: Array<Buffer>;
-    hash: () => Buffer;
-  };
+export interface EthereumHeader {
+  parentHash: Buffer;
+  uncleHash: Buffer;
+  coinbase: Buffer;
+  stateRoot: Buffer;
+  transactionsTrie: Buffer;
+  receiptTrie: Buffer;
+  bloom: Buffer;
+  difficulty: Buffer;
+  number: Buffer;
+  gasLimit: Buffer;
+  gasUsed: Buffer;
+  timestamp: Buffer;
+  extraData: Buffer;
+  mixHash: Buffer;
+  nonce: Buffer;
+  raw: Array<Buffer>;
+  hash: () => Buffer;
+}
 
-  export type Transaction = {
-    hash: () => Buffer;
-    nonce: Buffer;
-    gasPrice: Buffer;
-    gasLimit: Buffer;
-    to: Buffer;
-    from: Buffer;
-    value: Buffer;
-    data: Buffer;
-    // EIP 155 chainId - mainnet: 1, ropsten: 3
-    chainId: number;
-    getUpfrontCost: () => BN;
-  };
+export interface Transaction {
+  hash: () => Buffer;
+  nonce: Buffer;
+  gasPrice: Buffer;
+  gasLimit: Buffer;
+  to: Buffer;
+  from: Buffer;
+  value: Buffer;
+  data: Buffer;
+  // EIP 155 chainId - mainnet: 1, ropsten: 3
+  chainId: number;
+  getUpfrontCost: () => BN;
 }
 
 export type IEthBlock = IBlock & {
@@ -131,7 +127,7 @@ export type IEthTransaction = ITransaction & {
   error?: string;
 };
 
-export type TransactionJSON = {
+export interface TransactionJSON {
   txid: string;
   chain: string;
   network: string;
@@ -142,11 +138,14 @@ export type TransactionJSON = {
   fee: number;
   size: number;
   value: number;
-};
+}
 
-export type AbiDecodedData = { type: string; decodedData: TokenTransferResponse };
+export interface AbiDecodedData {
+  type: string;
+  decodedData: TokenTransferResponse;
+}
 export type DecodedTrace = ClassifiedTrace & AbiDecodedData;
-export type EthTransactionJSON = {
+export interface EthTransactionJSON {
   txid: string;
   chain: string;
   network: string;
@@ -165,4 +164,4 @@ export type EthTransactionJSON = {
   decodedData?: AbiDecodedData;
   data: string;
   internal: Array<DecodedTrace>;
-};
+}

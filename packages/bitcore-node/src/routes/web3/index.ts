@@ -1,6 +1,6 @@
 import * as express from 'express';
-import { Config } from '../../services/config';
 import request from 'request';
+import { Config } from '../../services/config';
 
 export function Web3Proxy(req: express.Request, res: express.Response) {
   const { chain, network } = req.params;

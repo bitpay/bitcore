@@ -100,7 +100,6 @@ export class Request {
     r.timeout(this.timeout);
 
     r.end((err, res) => {
-
       if (!res) {
         return cb(new Errors.CONNECTION_ERROR());
       }
@@ -124,8 +123,7 @@ export class Request {
         return cb(Request._parseError(res.body));
       }
 
-      if (res.body === '{"error":"read ECONNRESET"}')
-        return cb(new Errors.ECONNRESET_ERROR(JSON.parse(res.body)));
+      if (res.body === '{"error":"read ECONNRESET"}') return cb(new Errors.ECONNRESET_ERROR(JSON.parse(res.body)));
 
       return cb(null, res.body, res.header);
     });
@@ -154,13 +152,7 @@ export class Request {
         ret = new Errors[body.code]();
         if (body.message) ret.message = body.message;
       } else {
-        ret = new Error(
-          body.code +
-          ': ' +
-          (_.isObject(body.message)
-            ? JSON.stringify(body.message)
-            : body.message)
-        );
+        ret = new Error(body.code + ': ' + (_.isObject(body.message) ? JSON.stringify(body.message) : body.message));
       }
     } else {
       ret = new Error(body.error || JSON.stringify(body));

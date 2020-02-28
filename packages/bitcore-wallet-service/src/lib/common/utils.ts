@@ -128,17 +128,17 @@ export class Utils {
       usdc: {
         toSatoshis: 1e6,
         maxDecimals: 6,
-        minDecimals: 2,
+        minDecimals: 2
       },
       pax: {
         toSatoshis: 1e18,
         maxDecimals: 6,
-        minDecimals: 2,
+        minDecimals: 2
       },
       gusd: {
         toSatoshis: 1e2,
         maxDecimals: 6,
-        minDecimals: 2,
+        minDecimals: 2
       }
     };
 
@@ -164,12 +164,7 @@ export class Utils {
 
     const u = _.assign(UNITS[unit], opts);
     const amount = (satoshis / u.toSatoshis).toFixed(u.maxDecimals);
-    return addSeparators(
-      amount,
-      opts.thousandsSeparator || ',',
-      opts.decimalSeparator || '.',
-      u.minDecimals
-    );
+    return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u.minDecimals);
   }
 
   static formatAmountInBtc(amount) {

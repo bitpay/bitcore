@@ -1,11 +1,11 @@
-import { SetCache } from '../middleware';
 import { Router } from 'express';
-import { CSP } from '../../types/namespaces/ChainStateProvider';
-import { ChainStateProvider } from '../../providers/chain-state';
 import logger from '../../logger';
-import { CacheTimes } from '../middleware';
-import { ITransaction } from '../../models/transaction';
 import { ICoin } from '../../models/coin';
+import { ITransaction } from '../../models/transaction';
+import { ChainStateProvider } from '../../providers/chain-state';
+import { StreamTransactionsParams } from '../../types/namespaces/ChainStateProvider';
+import { SetCache } from '../middleware';
+import { CacheTimes } from '../middleware';
 
 const router = Router({ mergeParams: true });
 
@@ -20,7 +20,7 @@ router.get('/', function(req, res) {
   }
   chain = chain.toUpperCase();
   network = network.toLowerCase();
-  let payload: CSP.StreamTransactionsParams = {
+  let payload: StreamTransactionsParams = {
     chain,
     network,
     req,
@@ -151,6 +151,6 @@ router.post('/send', async function(req, res) {
 });
 
 module.exports = {
-  router: router,
+  router,
   path: '/tx'
 };

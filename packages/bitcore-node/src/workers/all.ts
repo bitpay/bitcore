@@ -1,13 +1,13 @@
+import cluster = require('cluster');
+import 'source-map-support/register';
+import { Modules } from '../modules';
+import { Api } from '../services/api';
+import { Event } from '../services/event';
 import { P2P } from '../services/p2p';
 import { Storage } from '../services/storage';
 import { Worker } from '../services/worker';
-import { Api } from '../services/api';
-import { Event } from '../services/event';
-import cluster = require('cluster');
 import parseArgv from '../utils/parseArgv';
-import { Modules } from '../modules';
 import '../utils/polyfills';
-import 'source-map-support/register'
 require('heapdump');
 let args = parseArgv([], ['DEBUG']);
 const services: Array<any> = [];

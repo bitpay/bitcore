@@ -1,8 +1,8 @@
 import { Request, Response } from 'express';
-import { ChainStateProvider } from '../../providers/chain-state';
-import { SetCache, CacheTimes, Confirmations } from '../middleware';
-import { TransactionStorage } from '../../models/transaction';
 import { CoinStorage, ICoin } from '../../models/coin';
+import { TransactionStorage } from '../../models/transaction';
+import { ChainStateProvider } from '../../providers/chain-state';
+import { CacheTimes, Confirmations, SetCache } from '../middleware';
 
 const router = require('express').Router({ mergeParams: true });
 
@@ -55,7 +55,7 @@ router.get('/:blockId', async function(req: Request, res: Response) {
   }
 });
 
-//return all { txids, inputs, ouputs} for a blockHash paginated at max 500 per page, to limit reqs and overload
+// return all { txids, inputs, ouputs} for a blockHash paginated at max 500 per page, to limit reqs and overload
 router.get('/:blockHash/coins/:limit/:pgnum', async function(req: Request, res: Response) {
   let { chain, network, blockHash, limit, pgnum } = req.params;
 
@@ -142,6 +142,6 @@ router.get('/before-time/:time', async function(req: Request, res: Response) {
 });
 
 module.exports = {
-  router: router,
+  router,
   path: '/block'
 };

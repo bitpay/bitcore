@@ -80,7 +80,7 @@ export class PushNotificationsService {
               return next(!err && stats.isDirectory());
             });
           },
-          (dirs) => {
+          dirs => {
             return cb(null, dirs);
           }
         );
@@ -88,8 +88,7 @@ export class PushNotificationsService {
     };
 
     this.templatePath = path.normalize(
-      (opts.pushNotificationsOpts.templatePath || __dirname + '../../templates') +
-      '/'
+      (opts.pushNotificationsOpts.templatePath || __dirname + '../../templates') + '/'
     );
     this.defaultLanguage = opts.pushNotificationsOpts.defaultLanguage || 'en';
     this.defaultUnit = opts.pushNotificationsOpts.defaultUnit || 'btc';
@@ -97,41 +96,32 @@ export class PushNotificationsService {
     this.pushServerUrl = opts.pushNotificationsOpts.pushServerUrl;
     this.authorizationKey = opts.pushNotificationsOpts.authorizationKey;
 
-    if (!this.authorizationKey)
-      return cb(
-        new Error('Missing authorizationKey attribute in configuration.')
-      );
+    if (!this.authorizationKey) return cb(new Error('Missing authorizationKey attribute in configuration.'));
 
     async.parallel(
       [
-        (done) => {
+        done => {
           _readDirectories(this.templatePath, (err, res) => {
             this.availableLanguages = res;
             done(err);
           });
         },
-        (done) => {
+        done => {
           if (opts.storage) {
             this.storage = opts.storage;
             done();
           } else {
             this.storage = new Storage();
-            this.storage.connect(
-              opts.storageOpts,
-              done
-            );
+            this.storage.connect(opts.storageOpts, done);
           }
         },
-        (done) => {
-          this.messageBroker =
-            opts.messageBroker || new MessageBroker(opts.messageBrokerOpts);
-          this.messageBroker.onMessage(
-            _.bind(this._sendPushNotifications, this)
-          );
+        done => {
+          this.messageBroker = opts.messageBroker || new MessageBroker(opts.messageBrokerOpts);
+          this.messageBroker.onMessage(_.bind(this._sendPushNotifications, this));
           done();
         }
       ],
-      (err) => {
+      err => {
         if (err) {
           log.error(err);
         }
@@ -141,7 +131,7 @@ export class PushNotificationsService {
   }
 
   _sendPushNotifications(notification, cb) {
-    cb = cb || function() { };
+    cb = cb || function() {};
 
     const notifType = PUSHNOTIFICATIONS_TYPES[notification.type];
     if (!notifType) return cb();
@@ -155,21 +145,13 @@ export class PushNotificationsService {
       log.debug('Should send notification: ', should);
       if (!should) return cb();
 
-      this._getRecipientsList(notification, notifType, (
-        err,
-        recipientsList
-      ) => {
+      this._getRecipientsList(notification, notifType, (err, recipientsList) => {
         if (err) return cb(err);
 
         async.waterfall(
           [
-            (next) => {
-              this._readAndApplyTemplates(
-                notification,
-                notifType,
-                recipientsList,
-                next
-              );
+            next => {
+              this._readAndApplyTemplates(notification, notifType, recipientsList, next);
             },
             (contents, next) => {
               async.map(
@@ -177,41 +159,35 @@ export class PushNotificationsService {
                 (recipient: IPreferences, next) => {
                   const content = contents[recipient.language];
 
-                  this.storage.fetchPushNotificationSubs(
-                    recipient.copayerId,
-                    (err, subs) => {
-                      if (err) return next(err);
+                  this.storage.fetchPushNotificationSubs(recipient.copayerId, (err, subs) => {
+                    if (err) return next(err);
 
-                      const notifications = _.map(subs, (sub) => {
-                        const tokenAddress = notification.data && notification.data.tokenAddress ? notification.data.tokenAddress : null;
-                        return {
-                          to: sub.token,
-                          priority: 'high',
-                          restricted_package_name: sub.packageName,
-                          notification: {
-                            title: content.plain.subject,
-                            body: content.plain.body,
-                            sound: 'default',
-                            click_action: 'FCM_PLUGIN_ACTIVITY',
-                            icon: 'fcm_push_icon'
-                          },
-                          data: {
-                            walletId: sjcl.codec.hex.fromBits(
-                              sjcl.hash.sha256.hash(notification.walletId)
-                            ),
-                            tokenAddress,
-                            copayerId: sjcl.codec.hex.fromBits(
-                              sjcl.hash.sha256.hash(recipient.copayerId)
-                            ),
-                            title: content.plain.subject,
-                            body: content.plain.body,
-                            notification_type: notification.type
-                          }
-                        };
-                      });
-                      return next(err, notifications);
-                    }
-                  );
+                    const notifications = _.map(subs, sub => {
+                      const tokenAddress =
+                        notification.data && notification.data.tokenAddress ? notification.data.tokenAddress : null;
+                      return {
+                        to: sub.token,
+                        priority: 'high',
+                        restricted_package_name: sub.packageName,
+                        notification: {
+                          title: content.plain.subject,
+                          body: content.plain.body,
+                          sound: 'default',
+                          click_action: 'FCM_PLUGIN_ACTIVITY',
+                          icon: 'fcm_push_icon'
+                        },
+                        data: {
+                          walletId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(notification.walletId)),
+                          tokenAddress,
+                          copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(recipient.copayerId)),
+                          title: content.plain.subject,
+                          body: content.plain.body,
+                          notification_type: notification.type
+                        }
+                      };
+                    });
+                    return next(err, notifications);
+                  });
                 },
                 (err, allNotifications) => {
                   if (err) return next(err);
@@ -233,13 +209,13 @@ export class PushNotificationsService {
                     next();
                   });
                 },
-                (err) => {
+                err => {
                   return next(err);
                 }
               );
             }
           ],
-          (err) => {
+          err => {
             if (err) {
               log.error('An error ocurred generating notification', err);
             }
@@ -266,22 +242,14 @@ export class PushNotificationsService {
         unit = wallet.coin;
       }
 
-      this.storage.fetchPreferences(notification.walletId, null, (
-        err,
-        preferences
-      ) => {
+      this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
         if (err) log.error(err);
         if (_.isEmpty(preferences)) preferences = [];
 
         const recipientPreferences = _.compact(
-          _.map(preferences, (p) => {
+          _.map(preferences, p => {
             if (!_.includes(this.availableLanguages, p.language)) {
-              if (p.language)
-                log.warn(
-                  'Language for notifications "' +
-                  p.language +
-                  '" not available.'
-                );
+              if (p.language) log.warn('Language for notifications "' + p.language + '" not available.');
               p.language = this.defaultLanguage;
             }
 
@@ -296,12 +264,10 @@ export class PushNotificationsService {
         const copayers = _.keyBy(recipientPreferences, 'copayerId');
 
         const recipientsList = _.compact(
-          _.map(wallet.copayers, (copayer) => {
+          _.map(wallet.copayers, copayer => {
             if (
-              (copayer.id == notification.creatorId &&
-                notificationType.notifyCreatorOnly) ||
-              (copayer.id != notification.creatorId &&
-                !notificationType.notifyCreatorOnly)
+              (copayer.id == notification.creatorId && notificationType.notifyCreatorOnly) ||
+              (copayer.id != notification.creatorId && !notificationType.notifyCreatorOnly)
             ) {
               const p = copayers[copayer.id] || {
                 language: this.defaultLanguage,
@@ -327,17 +293,14 @@ export class PushNotificationsService {
       (recipient: { language: string }, next) => {
         async.waterfall(
           [
-            (next) => {
+            next => {
               this._getDataForTemplate(notification, recipient, next);
             },
             (data, next) => {
               async.map(
                 ['plain', 'html'],
                 (type, next) => {
-                  this._loadTemplate(notifType, recipient, '.' + type, (
-                    err,
-                    template
-                  ) => {
+                  this._loadTemplate(notifType, recipient, '.' + type, (err, template) => {
                     if (err && type == 'html') return next();
                     if (err) return next(err);
 
@@ -347,10 +310,7 @@ export class PushNotificationsService {
                   });
                 },
                 (err, res) => {
-                  return next(
-                    err,
-                    _.fromPairs(res.filter(Boolean) as any[])
-                  );
+                  return next(err, _.fromPairs(res.filter(Boolean) as any[]));
                 }
               );
             },
@@ -384,9 +344,10 @@ export class PushNotificationsService {
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
     if (data.amount) {
       try {
-        const unit = data.tokenAddress ? Constants.TOKEN_OPTS[data.tokenAddress.toLowerCase()].symbol.toLowerCase() : recipient.unit.toLowerCase();
-        data.amount =
-          Utils.formatAmount(+data.amount, unit) + ' ' + UNIT_LABELS[unit];
+        const unit = data.tokenAddress
+          ? Constants.TOKEN_OPTS[data.tokenAddress.toLowerCase()].symbol.toLowerCase()
+          : recipient.unit.toLowerCase();
+        data.amount = Utils.formatAmount(+data.amount, unit) + ' ' + UNIT_LABELS[unit];
       } catch (ex) {
         return cb(new Error('Could not format amount' + ex));
       }
@@ -400,9 +361,7 @@ export class PushNotificationsService {
       data.walletM = wallet.m;
       data.walletN = wallet.n;
 
-      const copayer = wallet.copayers.find(
-        (c) => c.id === notification.creatorId
-      );
+      const copayer = wallet.copayers.find(c => c.id === notification.creatorId);
       /*
        *var copayer = _.find(wallet.copayers, {
        *  id: notification.creatorId
@@ -415,8 +374,8 @@ export class PushNotificationsService {
       }
 
       if (notification.type == 'TxProposalFinallyRejected' && data.rejectedBy) {
-        const rejectors = _.map(data.rejectedBy, (copayerId) => {
-          return wallet.copayers.find((c) => c.id === copayerId).name;
+        const rejectors = _.map(data.rejectedBy, copayerId => {
+          return wallet.copayers.find(c => c.id === copayerId).name;
         });
         data.rejectorsNames = rejectors.join(', ');
       }
@@ -429,7 +388,7 @@ export class PushNotificationsService {
     if (!data) return cb(new Error('Could not apply template to empty data'));
 
     let error;
-    const result = _.mapValues(template, (t) => {
+    const result = _.mapValues(template, t => {
       try {
         return Mustache.render(t, data);
       } catch (e) {
@@ -443,23 +402,17 @@ export class PushNotificationsService {
   }
 
   _loadTemplate(notifType, recipient, extension, cb) {
-    this._readTemplateFile(
-      recipient.language,
-      notifType.filename + extension,
-      (err, template) => {
-        if (err) return cb(err);
-        return cb(null, this._compileTemplate(template, extension));
-      }
-    );
+    this._readTemplateFile(recipient.language, notifType.filename + extension, (err, template) => {
+      if (err) return cb(err);
+      return cb(null, this._compileTemplate(template, extension));
+    });
   }
 
   _readTemplateFile(language, filename, cb) {
     const fullFilename = path.join(this.templatePath, language, filename);
     fs.readFile(fullFilename, 'utf8', (err, template) => {
       if (err) {
-        return cb(
-          new Error('Could not read template file ' + fullFilename + err)
-        );
+        return cb(new Error('Could not read template file ' + fullFilename + err));
       }
       return cb(null, template);
     });
@@ -484,7 +437,7 @@ export class PushNotificationsService {
         json: true,
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'key=' + this.authorizationKey
+          Authorization: 'key=' + this.authorizationKey
         },
         body: opts
       },
