@@ -35,8 +35,6 @@ function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, opts) {
   }
   this.redeemScript = Script.buildMultisigOut(this.publicKeys, threshold, opts);
   var nested = Script.buildWitnessMultisigOutFromScript(this.redeemScript);
-  this.nestedWitness;
-  this.type;
   if (nested.equals(this.output.script)) {
     this.nestedWitness = false;
     this.type = Address.PayToWitnessScriptHash;
