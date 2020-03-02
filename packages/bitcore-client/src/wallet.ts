@@ -33,6 +33,7 @@ export class Wallet {
   network: string;
   client: Client;
   storage: Storage;
+  storageType: string;
   unlocked?: { encryptionKey: string; masterKey: string };
   password: string;
   encryptionKey: string;
@@ -117,14 +118,16 @@ export class Wallet {
       password: await Bcrypt.hash(password, 10),
       xPubKey: hdPrivKey.xpubkey,
       pubKey,
-      tokens: []
+      tokens: [],
+      storageType
     });
 
     // save wallet to storage and then bitcore-node
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({
       storage,
-      name
+      name,
+      storageType
     });
 
     console.log(mnemonic.toString());
@@ -155,7 +158,7 @@ export class Wallet {
     const { name, path, storageType } = params;
     let { storage } = params;
     storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
-    const loadedWallet = await storage.loadWallet({ name });
+    const loadedWallet = await storage.loadWallet({ name, storageType });
     return new Wallet(Object.assign(loadedWallet, { storage }));
   }
 
@@ -327,7 +330,8 @@ export class Wallet {
       await this.storage.addKeys({
         keys: keysToSave,
         encryptionKey,
-        name: this.name
+        name: this.name,
+        storageType: this.storageType
       });
     }
     const addedAddresses = keys.map(key => {
@@ -361,7 +365,8 @@ export class Wallet {
       decryptedKeys = await this.storage.getKeys({
         addresses,
         name: this.name,
-        encryptionKey: this.unlocked.encryptionKey
+        encryptionKey: this.unlocked.encryptionKey,
+        storageType: this.storageType
       });
     } else {
       addresses.push(keys[0]);

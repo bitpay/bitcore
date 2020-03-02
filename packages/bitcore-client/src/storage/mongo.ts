@@ -16,19 +16,21 @@ export class Mongo {
   addressCollectionName: string;
   constructor(params: { path?: string; createIfMissing: boolean; errorIfExists: boolean }) {
     const { path, createIfMissing, errorIfExists } = params;
-    if (!path) {
-      throw new Error('Must specify a mongo url as path');
+    if (path) {
+      this.path = path;
+      let databasePath = path.split('/');
+      if (databasePath[databasePath.length - 1] === '') {
+        databasePath.pop();
+      }
+      this.databaseName = databasePath.pop();
+    } else {
+      this.path = 'mongodb://localhost/bitcoreWallet';
+      this.databaseName = 'bitcoreWallets'
     }
-    this.path = path;
     this.createIfMissing = createIfMissing;
     this.errorIfExists = errorIfExists;
-    let databasePath = path.split('/');
-    if (databasePath[databasePath.length - 1] === '') {
-      databasePath.pop();
-    }
-    this.databaseName = databasePath.pop();
-    this.collectionName = 'bitcoreWallets';
-    this.addressCollectionName = 'bitcoreWalletAddresses';
+    this.collectionName = 'wallets';
+    this.addressCollectionName = 'walletaddresses';
   }
 
   async init(params) {
@@ -61,7 +63,7 @@ export class Mongo {
         next();
       }
     });
-    const cursor = this.collection.find({ name: { $exists: true } }, { name: 1, chain: 1, network: 1 }).pipe(stream);
+    const cursor = this.collection.find({ name: { $exists: true } }, { name: 1, chain: 1, network: 1, storageType: 1 }).pipe(stream);
     stream.on('end', async () => await this.close());
     return cursor;
   }
@@ -75,7 +77,7 @@ export class Mongo {
         next();
       }
     });
-    const cursor = this.collection.find({}, { name: 1, key: 1, toStore: 1 }).pipe(stream);
+    const cursor = this.collection.find({}, { name: 1, key: 1, toStore: 1, storageType: 1 }).pipe(stream);
     stream.on('end', async () => await this.close());
     return cursor;
   }

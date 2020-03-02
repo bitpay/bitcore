@@ -61,7 +61,9 @@ export class Level {
         objectMode: true,
         write(data, enc, next) {
           if (data.key.toString().startsWith('wallet')) {
-            this.push(data.value.toString());
+            const jsonData = JSON.parse(data.value.toString());
+            jsonData.storageType = 'Level';
+            this.push(JSON.stringify(jsonData));
           }
           next();
         }
@@ -77,7 +79,8 @@ export class Level {
           if (data.key.toString().startsWith('key')) {
             this.push({
               data: data.value.toString(),
-              key: data.key.toString()
+              key: data.key.toString(),
+              storageType: 'Level'
             });
           }
           next();
