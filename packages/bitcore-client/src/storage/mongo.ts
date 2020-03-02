@@ -25,7 +25,7 @@ export class Mongo {
       this.databaseName = databasePath.pop();
     } else {
       this.path = 'mongodb://localhost/bitcoreWallet';
-      this.databaseName = 'bitcoreWallets'
+      this.databaseName = 'bitcoreWallets';
     }
     this.createIfMissing = createIfMissing;
     this.errorIfExists = errorIfExists;
@@ -63,7 +63,9 @@ export class Mongo {
         next();
       }
     });
-    const cursor = this.collection.find({ name: { $exists: true } }, { name: 1, chain: 1, network: 1, storageType: 1 }).pipe(stream);
+    const cursor = this.collection
+      .find({ name: { $exists: true } }, { name: 1, chain: 1, network: 1, storageType: 1 })
+      .pipe(stream);
     stream.on('end', async () => await this.close());
     return cursor;
   }

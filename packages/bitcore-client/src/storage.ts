@@ -36,7 +36,7 @@ export class Storage {
     }
   }
 
-  async loadWallet(params: { name: string, storageType: string }) {
+  async loadWallet(params: { name: string; storageType: string }) {
     const { name, storageType } = params;
     const wallet = await this.db[storageType].loadWallet({ name });
     if (!wallet) {
@@ -90,7 +90,12 @@ export class Storage {
     }
   }
 
-  async getKeys(params: { addresses: string[]; name: string; encryptionKey: string, storageType: string }): Promise<Array<KeyImport>> {
+  async getKeys(params: {
+    addresses: string[];
+    name: string;
+    encryptionKey: string;
+    storageType: string;
+  }): Promise<Array<KeyImport>> {
     const { addresses, name, encryptionKey, storageType } = params;
     const keys = new Array<KeyImport>();
     let keepAlive = true;
@@ -117,7 +122,7 @@ export class Storage {
     return keys;
   }
 
-  async addKeys(params: { name: string; keys: KeyImport[]; encryptionKey: string, storageType: string }) {
+  async addKeys(params: { name: string; keys: KeyImport[]; encryptionKey: string; storageType: string }) {
     const { name, keys, encryptionKey, storageType } = params;
     let open = true;
     for (const key of keys) {
