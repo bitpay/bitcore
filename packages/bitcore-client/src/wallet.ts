@@ -158,8 +158,13 @@ export class Wallet {
     const { name, path, storageType } = params;
     let { storage } = params;
     storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
-    const loadedWallet = await storage.loadWallet({ name, storageType });
-    return new Wallet(Object.assign(loadedWallet, { storage }));
+    const loadedWallet = await storage.loadWallet({ name });
+    try {
+      return new Wallet(Object.assign(loadedWallet, { storage }));
+    } catch (err) {
+      console.error(err);
+      throw new Error('Could not find wallet');
+    }
   }
 
   lock() {
@@ -331,7 +336,6 @@ export class Wallet {
         keys: keysToSave,
         encryptionKey,
         name: this.name,
-        storageType: this.storageType
       });
     }
     const addedAddresses = keys.map(key => {
@@ -366,7 +370,6 @@ export class Wallet {
         addresses,
         name: this.name,
         encryptionKey: this.unlocked.encryptionKey,
-        storageType: this.storageType
       });
     } else {
       addresses.push(keys[0]);

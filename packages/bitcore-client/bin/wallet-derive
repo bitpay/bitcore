@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+'use strict';
+
 const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
@@ -11,7 +13,6 @@ program
   .option('--change [change]', 'optional - should derive change addresses')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
-  .option('--index [index]', 'optional - Custom index to derive')
   .parse(process.argv);
 
 const main = async () => {

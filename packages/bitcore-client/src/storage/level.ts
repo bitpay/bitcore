@@ -91,6 +91,7 @@ export class Level {
 
   async saveWallet(params) {
     const { wallet } = params;
+    delete wallet.storage;
     return this.db.put(`wallet|${wallet.name}`, JSON.stringify(wallet));
   }
 
