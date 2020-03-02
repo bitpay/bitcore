@@ -249,7 +249,7 @@ Interpreter.SCRIPT_VERIFY_LOW_S = (1 << 3);
 // verify dummy stack item consumed by CHECKMULTISIG is of zero-length (softfork safe, BIP62 rule 7).
 Interpreter.SCRIPT_VERIFY_NULLDUMMY = (1 << 4);
 
-// Using a non-push operator in the scriptSig causes script failure (softfork safe, BIP62 rule 2).
+// Using a non-push operator in the scriptSig causes script failre (softfork safe, BIP62 rule 2).
 Interpreter.SCRIPT_VERIFY_SIGPUSHONLY = (1 << 5);
 
 // Require minimal encodings for all push operations (OP_0... OP_16, OP_1NEGATE where possible, direct
@@ -739,7 +739,7 @@ Interpreter.prototype.step = function() {
   var self = this;
 
   function stacktop(i) {
-    return self.stack[self.stack.length +i];
+    return self.stack[self.stack.length+i];
   }
 
   function isOpcodeDisabled(opcode) {
@@ -1722,12 +1722,14 @@ Interpreter.prototype.step = function() {
           // ([dummy] [sig ...] num_of_signatures [pubkey ...] num_of_pubkeys -- bool)
 
           var i = 1;
+          let idxTopKey = i + 1;
           if (this.stack.length < i) {
             this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
             return false;
           }
 
           var nKeysCount = BN.fromScriptNumBuffer(stacktop(-i), fRequireMinimal).toNumber();
+          var idxSigCount = idxTopKey + nKeysCount;
           if (nKeysCount < 0 || nKeysCount > 20) {
             this.errstr = 'SCRIPT_ERR_PUBKEY_COUNT';
             return false;
@@ -1737,10 +1739,10 @@ Interpreter.prototype.step = function() {
             this.errstr = 'SCRIPT_ERR_OP_COUNT';
             return false;
           }
+
+          // todo map interpreter.cpp variables with interpreter.js variables for future readability, maintainability
           // ikey maps to idxTopKey in interpreter.cpp (MULTISIG case)
           var ikey = ++i; // top pubkey
-
-          var idxSigCount = ikey + nKeysCount;
           var idxTopSig = idxSigCount + 1;
 
           // i maps to idxSigCount in interpreter.cpp (MULTISIG case) (stack depth of nSigsCount)
@@ -1757,7 +1759,12 @@ Interpreter.prototype.step = function() {
             return false;
           }
 
-          var nSigsCount = BN.fromScriptNumBuffer(stacktop(-i), fRequireMinimal).toNumber();
+          var nSigsCount = BN.fromScriptNumBuffer(stacktop(-idxSigCount), fRequireMinimal).toNumber();
+          var idxDummy = idxTopSig + nSigsCount;
+
+          if(nKeysCount === 7) {
+            console.log()
+          }
           if (nSigsCount < 0 || nSigsCount > nKeysCount) {
             this.errstr = 'SCRIPT_ERR_SIG_COUNT';
             return false;
@@ -1765,10 +1772,11 @@ Interpreter.prototype.step = function() {
           // int isig = ++i;
           var isig = ++i;
           i += nSigsCount;
-          if (this.stack.length < i) {
+          if (this.stack.length < idxDummy) {
             this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
             return false;
           }
+
 
           // Subset of script starting at the most recent codeseparator
           subscript = new Script().set({
@@ -1777,13 +1785,14 @@ Interpreter.prototype.step = function() {
 
           fSuccess = true;
 
-          if((this.flags & Interpreter.SCRIPT_ENABLE_SCHNORR_MULTISIG) && stacktop(-i).length !== 0) {
+          if((this.flags & Interpreter.SCRIPT_ENABLE_SCHNORR_MULTISIG) && stacktop(-idxDummy).length !== 0) {
             // SCHNORR MULTISIG
 
             let checkBits;
-            let dummy = stacktop(-(isig + nSigsCount));
+            let dummy = stacktop(-idxDummy);
 
             let bitfieldVal = DecodeBitfield(dummy, nKeysCount, checkBits);
+            console.log(nSigsCount, nKeysCount);
 
             if(!bitfieldVal) {
               fSuccess = false;
@@ -1796,7 +1805,7 @@ Interpreter.prototype.step = function() {
               this.errstr = "INVALID_BIT_COUNT";
               fSuccess = false;
             }
-
+            
             var bottomKey = ikey + nKeysCount - 1;
             var bottomSig = isig + nSigsCount - 1;
 
@@ -1853,13 +1862,13 @@ Interpreter.prototype.step = function() {
               }
           } 
           else {
+            // Drop the signatures, since there's no way for a signature to sign itself
+            for (var k = 0; k < nSigsCount; k++) {
+              bufSig = stacktop(-isig-k);
+              subscript.findAndDelete(new Script().add(bufSig));
+            }
+            
             while (fSuccess && nSigsCount > 0) {
-
-              // Drop the signatures, since there's no way for a signature to sign itself
-              for (var k = 0; k < nSigsCount; k++) {
-                bufSig = stacktop(-isig-k);
-                subscript.findAndDelete(new Script().add(bufSig));
-              }
 
                   // valtype& vchSig  = stacktop(-isig);
                 bufSig = stacktop(-isig);

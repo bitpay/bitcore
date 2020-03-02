@@ -63,7 +63,7 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
  */
 PublicKeyHashInput.prototype.addSignature = function(transaction, signature, signingMethod) {
 
-  $.checkState(this.isValidSignature(transaction, signature), 'Signature is invalid');
+  $.checkState(this.isValidSignature(transaction, signature, signingMethod), 'Signature is invalid');
 
   this.setScript(Script.buildPublicKeyHashIn(
     signature.publicKey,

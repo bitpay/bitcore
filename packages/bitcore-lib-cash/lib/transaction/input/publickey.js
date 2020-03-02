@@ -57,7 +57,7 @@ PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index
  * @return {PublicKeyInput} this, for chaining
  */
 PublicKeyInput.prototype.addSignature = function(transaction, signature, signingMethod) {
-  $.checkState(this.isValidSignature(transaction, signature), 'Signature is invalid');
+  $.checkState(this.isValidSignature(transaction, signature, signingMethod), 'Signature is invalid');
   this.setScript(Script.buildPublicKeyIn(
     signature.signature.toDER(signingMethod),
     signature.sigtype

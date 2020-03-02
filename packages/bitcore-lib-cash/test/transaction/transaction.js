@@ -1215,7 +1215,7 @@ describe('Transaction', function() {
 
     });
 
-    describe.only('signing tx with schnorr', function() {
+    describe('signing tx with schnorr', function() {
 
       it('multisig tx send ', function() {
         var publicKeys = [
@@ -1232,16 +1232,16 @@ describe('Transaction', function() {
             txid: "0d18c22cd8381df3471a5892dcf5abe412b57b93b9040ff943e66dff1bc1af8b",
             outputIndex: 1,
             address: "pqthg2dw9tts9yp7rapsc7czrs2p42p2y5j0vzljsf",
-            script: "a914177429ae2ad702903e1f430c7b021c141aa82a2587",
+            script: new bitcore.Script(address).toHex(),
             satoshis: 614279
           }
         ];
         
         let publicKeysSpending = ["034b9a924b9a9f1254ef59e40ba39c2f98f3e4c4a6be3c051faecbab2e19cd90e9", "03c50eddf2ed2e94b39e01f983cfca27536938cfa5d2eb0a762f64d8e4609ad8fd", "022e1bfee2a56bd5dfd680d42f199ed7ec86cf7fd8fd6749239a6ebba170000b32"]
-        let myKeys = ["L3vfgBrusnL87xShsFqedKazqjnwpv5h3S7otdsUvMdXsPTSKuxY", "Kxe4vJFzqmNyVqT8vBq1UZRzwi8AToxVvRNockNg2uNZyM5WoRL1"]
+        let myKeys = [ new bitcore.PrivateKey("KzCaV3GgSNQMACBZgAEMsQkRr1LQNG1PYVdFpvkZecY6NWrKTiY9"), new bitcore.PrivateKey("Kxe4vJFzqmNyVqT8vBq1UZRzwi8AToxVvRNockNg2uNZyM5WoRL1")]
         var multiSigTx = new bitcore.Transaction()
         .from(utxo, publicKeysSpending, 2)
-        .to("qqh4ln92fynku0wxt6d96e7ut7xy2cp2cydfj2dayk", 300000)
+        .to("qqh4ln92fynku0wxt6d96e7ut7xy2cp2cydfj2dayk", 10000)
         .sign(myKeys, 0x41, "schnorr");
 
         console.log(multiSigTx)

@@ -58,7 +58,7 @@ Script.fromBitcoindString = function(str) {
 
 
 
-describe.only('Interpreter', function() {
+describe('Interpreter', function() {
 
   it('should make a new interp', function() {
     var interp = new Interpreter();
@@ -225,8 +225,12 @@ describe.only('Interpreter', function() {
   };
 
   var testFixture = function(vector, expected, extraData) {
+  
     var scriptSig = Script.fromBitcoindString(vector[0]);
     var scriptPubkey = Script.fromBitcoindString(vector[1]);
+    if (vector[vector.length-3] === '1 0x21 0x0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798 1 CHECKMULTISIG NOT') {
+      console.log()
+    }
     var flags = getFlags(vector[2]);
     var inputAmount = 0;
     if (extraData) {

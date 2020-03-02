@@ -93,7 +93,7 @@ MultiSigInput.prototype.addSignature = function(transaction, signature, signingM
   $.checkState(!this.isFullySigned(), 'All needed signatures have already been added');
   $.checkArgument(!_.isUndefined(this.publicKeyIndex[signature.publicKey.toString()]),
     'Signature has no matching public key');
-  $.checkState(this.isValidSignature(transaction, signature));
+  $.checkState(this.isValidSignature(transaction, signature, signingMethod));
   this.signatures[this.publicKeyIndex[signature.publicKey.toString()]] = signature;
   this._updateScript(signingMethod);
   return this;
@@ -146,7 +146,7 @@ MultiSigInput.prototype.publicKeysWithoutSignature = function() {
   });
 };
 
-MultiSigInput.prototype.isValidSignature = function(transaction, signature) {
+MultiSigInput.prototype.isValidSignature = function(transaction, signature, signingMethod) {
   // FIXME: Refactor signature so this is not necessary
   signature.signature.nhashtype = signature.sigtype;
   return Sighash.verify(
@@ -155,7 +155,8 @@ MultiSigInput.prototype.isValidSignature = function(transaction, signature) {
     signature.publicKey,
     signature.inputIndex,
     this.output.script,
-    this.output.satoshisBN
+    this.output.satoshisBN,
+    signingMethod
   );
 };
 
