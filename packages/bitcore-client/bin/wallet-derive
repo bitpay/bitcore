@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+'use strict';
+
 const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
@@ -11,40 +13,22 @@ program
   .option('--change [change]', 'optional - should derive change addresses')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
-  .option('--index [index]', 'optional - Custom index to derive')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, gap=20, change=false, storageType, index } = program;
+  const { name, path, gap=20, change=false, storageType } = program;
   let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
     wallet = await Wallet.loadWallet({ name, path, storageType });
     wallet = await wallet.unlock(password);
-    if (index) {
-      const newPrivateKey = await wallet.derivePrivateKey(false, index);
-      const keys = [newPrivateKey];
-      if (change) {
-        const newChangePrivateKey = await wallet.derivePrivateKey(true, index);
-        keys.push(newChangePrivateKey);
-      }
-      await wallet.importKeys({ keys });
-      await wallet.saveWallet();
-      console.log(keys.map(key => key.address.toString()));
-      return;
-    }
+
     let unusedAddressCounter = 0;
 
-    let addressIndex = wallet.addressIndex || 0;
+    let index = wallet.addressIndex || 0;
 
     while (unusedAddressCounter < gap) {
-      let address;
-      if (!wallet.lite) {
-        address = await wallet.nextAddressPair(change);
-      } else {
-        let index = wallet.addressIndex || -1 + 1;
-        address = await wallet.deriveAndStoreAddress({ index, isChange: change, register: true });
-      }
+      const address = await wallet.nextAddressPair(change);
 
       const hasTransactions = await wallet.client.getAddressTxos({ address });
 
@@ -54,11 +38,11 @@ const main = async () => {
         unusedAddressCounter = 0;
       }
       if (change) {
-        console.log(`Current change index: ${addressIndex}: ${address}`);
+        console.log(`Current change index: ${index}: ${address}`);
       } else {
-        console.log(`Current address index: ${addressIndex}: ${address}`);
+        console.log(`Current address index: ${index}: ${address}`);
       }
-      addressIndex++;
+      index++;
     }
   } catch (e) {
     console.error(e);

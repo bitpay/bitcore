@@ -23,9 +23,6 @@ export interface WalletObj {
   password: string;
   storage: Storage;
   storageType: string;
-  lite: boolean;
-  authKey: any;
-  xPubKey: any;
   addressIndex: number;
   tokens: Array<any>;
 }
@@ -36,6 +33,7 @@ export class Wallet {
   network: string;
   client: Client;
   storage: Storage;
+  storageType: string;
   unlocked?: { encryptionKey: string; masterKey: string };
   password: string;
   encryptionKey: string;
@@ -47,7 +45,6 @@ export class Wallet {
   addressIndex?: number;
   authKey: string;
   derivationPath: string;
-  lite: boolean;
   tokens?: Array<any>;
 
   constructor(params: Wallet | WalletObj) {
@@ -73,41 +70,29 @@ export class Wallet {
   }
 
   static async create(params: Partial<WalletObj>) {
-    const { chain, network, name, phrase, password, path, storageType, lite } = params;
-    let { storage, authKey, xPubKey } = params;
+    const { chain, network, name, phrase, password, path, storageType } = params;
+    let { storage } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
-
-    let mnemonic;
-    let hdPrivKey;
-    let privKeyObj;
-    if (!lite) {
-      // Generate wallet private keys
-      mnemonic = new Mnemonic(phrase);
-      hdPrivKey = mnemonic.toHDPrivateKey().derive(Deriver.pathFor(chain, network));
-      privKeyObj = hdPrivKey.toObject();
-      xPubKey = hdPrivKey.xpubkey;
-    }
+    // Generate wallet private keys
+    const mnemonic = new Mnemonic(phrase);
+    const hdPrivKey = mnemonic.toHDPrivateKey().derive(Deriver.pathFor(chain, network));
+    const privKeyObj = hdPrivKey.toObject();
 
     // Generate authentication keys
-    authKey = new PrivateKey(authKey);
+    const authKey = new PrivateKey();
     const authPubKey = authKey.toPublicKey().toString();
 
-    let pubKey;
-    if (!lite) {
-      // Generate public keys
-      // bip44 compatible pubKey
-      pubKey = hdPrivKey.publicKey.toString();
-    }
+    // Generate public keys
+    // bip44 compatible pubKey
+    const pubKey = hdPrivKey.publicKey.toString();
 
     // Generate and encrypt the encryption key and private key
     const walletEncryptionKey = Encryption.generateEncryptionKey();
     const encryptionKey = Encryption.encryptEncryptionKey(walletEncryptionKey, password);
-    let encPrivateKey;
-    if (!lite) {
-      encPrivateKey = Encryption.encryptPrivateKey(JSON.stringify(privKeyObj), pubKey, walletEncryptionKey);
-    }
+    const encPrivateKey = Encryption.encryptPrivateKey(JSON.stringify(privKeyObj), pubKey, walletEncryptionKey);
+
     storage =
       storage ||
       new Storage({
@@ -116,6 +101,7 @@ export class Wallet {
         createIfMissing: true,
         storageType
       });
+
     let alreadyExists;
     try {
       alreadyExists = await this.loadWallet({ storage, name });
@@ -132,19 +118,19 @@ export class Wallet {
       password: await Bcrypt.hash(password, 10),
       xPubKey: hdPrivKey.xpubkey,
       pubKey,
-      tokens: []
+      tokens: [],
+      storageType
     });
 
     // save wallet to storage and then bitcore-node
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({
       storage,
-      name
+      name,
+      storageType
     });
 
-    if (!lite) {
-      console.log(mnemonic.toString());
-    }
+    console.log(mnemonic.toString());
 
     await loadedWallet.register().catch(e => {
       console.debug(e);
@@ -173,7 +159,12 @@ export class Wallet {
     let { storage } = params;
     storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
     const loadedWallet = await storage.loadWallet({ name });
-    return new Wallet(Object.assign(loadedWallet, { storage }));
+    try {
+      return new Wallet(Object.assign(loadedWallet, { storage }));
+    } catch (err) {
+      console.error(err);
+      throw new Error('Could not find wallet');
+    }
   }
 
   lock() {
@@ -188,14 +179,12 @@ export class Wallet {
       throw new Error('Incorrect Password');
     }
     const encryptionKey = await Encryption.decryptEncryptionKey(this.encryptionKey, password);
-    if (!this.lite) {
-      const masterKeyStr = await Encryption.decryptPrivateKey(encMasterKey, this.pubKey, encryptionKey);
-      const masterKey = JSON.parse(masterKeyStr);
-      this.unlocked = {
-        encryptionKey,
-        masterKey
-      };
-    }
+    const masterKeyStr = await Encryption.decryptPrivateKey(encMasterKey, this.pubKey, encryptionKey);
+    const masterKey = JSON.parse(masterKeyStr);
+    this.unlocked = {
+      encryptionKey,
+      masterKey
+    };
     return this;
   }
 
@@ -346,7 +335,7 @@ export class Wallet {
       await this.storage.addKeys({
         keys: keysToSave,
         encryptionKey,
-        name: this.name
+        name: this.name,
       });
     }
     const addedAddresses = keys.map(key => {
@@ -359,7 +348,7 @@ export class Wallet {
   }
 
   async signTx(params) {
-    let { tx, keys, utxos, passphrase, addressIndexes } = params;
+    let { tx, keys, utxos, passphrase } = params;
     if (!utxos) {
       utxos = [];
       await new Promise((resolve, reject) => {
@@ -369,15 +358,6 @@ export class Wallet {
           .on('end', () => resolve())
           .on('err', err => reject(err));
       });
-    }
-    if (addressIndexes) {
-      let keysToImport = [];
-      for (let index of addressIndexes) {
-        const privateKey = await this.derivePrivateKey(false, index);
-        keysToImport.push(privateKey);
-      }
-      await this.importKeys({ keys: keysToImport });
-      await this.saveWallet();
     }
     let addresses = [];
     let decryptedKeys;
@@ -389,7 +369,7 @@ export class Wallet {
       decryptedKeys = await this.storage.getKeys({
         addresses,
         name: this.name,
-        encryptionKey: this.unlocked.encryptionKey
+        encryptionKey: this.unlocked.encryptionKey,
       });
     } else {
       addresses.push(keys[0]);
@@ -424,62 +404,28 @@ export class Wallet {
     return walletAddresses.map(walletAddress => walletAddress.address);
   }
 
-  async deriveAndStoreAddress(params: {
-    index: number;
-    isChange?: boolean;
-    register?: boolean;
-    open?: boolean;
-    keepAlive?: boolean;
-  }) {
-    if (!this.lite) {
-      throw new Error('deriveAndStoreAddress is only for lite wallets, for a complete wallet use nextAddressPair');
-    }
-    const { index, isChange, register } = params;
-    this.addressIndex = this.addressIndex || 0;
-    const address = await this.deriveAddress(index, isChange);
-    this.addressIndex++;
-    const obj = { address, index };
-    await this.storage.addAddress({
-      name: this.name,
-      addressObj: obj,
-      keepAlive: false,
-      open: true
-    });
-    if (register) {
-      await this.client.importAddresses({
-        pubKey: this.authPubKey,
-        payload: [obj.address]
-      });
-    }
-    await this.saveWallet();
-    return address;
-  }
-
   deriveAddress(addressIndex, isChange) {
     const address = Deriver.deriveAddress(this.chain, this.network, this.xPubKey, addressIndex, isChange);
     return address;
   }
 
-  async derivePrivateKey(isChange, addressIndex) {
+  async derivePrivateKey(isChange) {
     const keyToImport = await Deriver.derivePrivateKey(
       this.chain,
       this.network,
       this.unlocked.masterKey,
-      addressIndex || 0,
+      this.addressIndex || 0,
       isChange
     );
     return keyToImport;
   }
 
   async nextAddressPair(withChangeAddress?: boolean) {
-    if (this.lite) {
-      throw new Error('nextAddressPair will not work for lite wallets');
-    }
     this.addressIndex = this.addressIndex || 0;
-    const newPrivateKey = await this.derivePrivateKey(false, this.addressIndex);
+    const newPrivateKey = await this.derivePrivateKey(false);
     const keys = [newPrivateKey];
     if (withChangeAddress) {
-      const newChangePrivateKey = await this.derivePrivateKey(true, this.addressIndex);
+      const newChangePrivateKey = await this.derivePrivateKey(true);
       keys.push(newChangePrivateKey);
     }
     this.addressIndex++;
@@ -489,7 +435,7 @@ export class Wallet {
   }
 
   async getNonce(addressIndex: number = 0, isChange?: boolean) {
-    const address = await this.deriveAddress(0, isChange);
+    const address = this.deriveAddress(0, isChange);
     const count = await this.client.getNonce({ address });
     if (!count || typeof count.nonce !== 'number') {
       throw new Error('Unable to get nonce');

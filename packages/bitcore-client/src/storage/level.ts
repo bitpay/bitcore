@@ -61,7 +61,9 @@ export class Level {
         objectMode: true,
         write(data, enc, next) {
           if (data.key.toString().startsWith('wallet')) {
-            this.push(data.value.toString());
+            const jsonData = JSON.parse(data.value.toString());
+            jsonData.storageType = 'Level';
+            this.push(JSON.stringify(jsonData));
           }
           next();
         }
@@ -77,7 +79,8 @@ export class Level {
           if (data.key.toString().startsWith('key')) {
             this.push({
               data: data.value.toString(),
-              key: data.key.toString()
+              key: data.key.toString(),
+              storageType: 'Level'
             });
           }
           next();
@@ -88,6 +91,7 @@ export class Level {
 
   async saveWallet(params) {
     const { wallet } = params;
+    delete wallet.storage;
     return this.db.put(`wallet|${wallet.name}`, JSON.stringify(wallet));
   }
 
@@ -99,17 +103,5 @@ export class Level {
   async addKeys(params: { name: string; key: any; toStore: string; keepAlive: boolean; open: boolean }) {
     const { name, key, toStore } = params;
     await this.db.put(`key|${name}|${key.address}`, toStore);
-  }
-
-  async addAddress(params: {
-    name: string;
-    address: string;
-    index: number;
-    lite: boolean;
-    keepAlive: boolean;
-    open: boolean;
-  }) {
-    const { name, address, index, lite } = params;
-    await this.db.put(`key|${name}|${address}|${index}|${lite}`);
   }
 }

@@ -22,11 +22,10 @@ program
   .option('--utxos', 'Pass in utxos to use to sign transaction')
   .option('--keys [keys]', 'jsonl file of {privKey, pubKey, address} pairs')
   .option('--storageType [storageType]', 'optional - name of the database (default - level)')
-  .option('--indexes [indexes]', 'optional - address indexes to derive at the time of signing')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, tx, txfile, keys, utxos, storageType, indexes } = program;
+  const { name, path, tx, txfile, keys, utxos, storageType } = program;
   let wallet;
   let encryptedKeys;
   let bitcoinCorePassword;
@@ -43,7 +42,7 @@ const main = async () => {
       bitcoinCorePassword = await promptly.password('Enter Bitcoin Core Password:');
     }
     if (tx) {
-      let signedTx = await wallet.signTx({ tx, keys: encryptedKeys, utxos, passphrase: bitcoinCorePassword, indexes });
+      let signedTx = await wallet.signTx({ tx, keys: encryptedKeys, utxos, passphrase: bitcoinCorePassword });
       console.log(JSON.stringify(signedTx));
     }
     if (txfile) {
