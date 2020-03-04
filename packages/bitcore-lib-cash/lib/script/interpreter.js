@@ -685,13 +685,14 @@ Interpreter.prototype.checkSequence = function(nSequence) {
 function DecodeBitfield(dummy, size) {
   if (size > 32) {
     this.errstr = "INVALID_BITFIELD_SIZE";
+    return {result: false};
   }
 
   let bitfieldSize = Math.floor((size + 7) / 8);
   let dummyBitlength = dummy.length;
   if (dummyBitlength !== bitfieldSize) {
     this.errstr = "INVALID_BITFIELD_SIZE";
-    return false;
+    return {result: false};
   }
 
   let bitfield = 0;
@@ -706,10 +707,10 @@ function DecodeBitfield(dummy, size) {
   let mask = (0x01 << size) - 1
   if((bitfield & mask) != bitfield) {
     this.errstr = "INVALID_BIT_RANGE";
-    return false;
+    return {result: false};
   }
   
-  return bitfield;
+  return {result: true, bitfield: bitfield};
 }
 
 /**
@@ -890,7 +891,7 @@ Interpreter.prototype.step = function() {
         // beyond the 2**32-1 limit of the nLockTime field itself.
         var nLockTime = BN.fromScriptNumBuffer(this.stack[this.stack.length - 1], fRequireMinimal, 5);
 
-        // In the rare event that the argument may be < 0 due to
+        // In the rare event that the argument may be < 0 due tod
         // some arithmetic being done first, you can always use
         // 0 MAX CHECKLOCKTIMEVERIFY.
         if (nLockTime.lt(new BN(0))) {
@@ -1788,36 +1789,34 @@ Interpreter.prototype.step = function() {
           if((this.flags & Interpreter.SCRIPT_ENABLE_SCHNORR_MULTISIG) && stacktop(-idxDummy).length !== 0) {
             // SCHNORR MULTISIG
 
-            let checkBits;
             let dummy = stacktop(-idxDummy);
 
-            let bitfieldVal = DecodeBitfield(dummy, nKeysCount, checkBits);
-            console.log(nSigsCount, nKeysCount);
+            let bitfieldObj = DecodeBitfield(dummy, nKeysCount);
 
-            if(!bitfieldVal) {
+            if(!bitfieldObj["result"]) {
               fSuccess = false;
             } 
 
             let nSigs8bit = new Uint8Array([nSigsCount]);
             let nSigs32 = Uint32Array.from(nSigs8bit);
 
-            if (countBits(bitfieldVal) !== nSigs32[0]) {
+            if (countBits(bitfieldObj["bitfield"]) !== nSigs32[0]) {
               this.errstr = "INVALID_BIT_COUNT";
               fSuccess = false;
             }
             
-            var bottomKey = ikey + nKeysCount - 1;
-            var bottomSig = isig + nSigsCount - 1;
+            var bottomKey = idxTopKey + nKeysCount - 1;
+            var bottomSig = idxTopSig + nSigsCount - 1;
 
             let iKey = 0;
             for(let iSig = 0; iSig < nSigsCount;
               iSig++, iKey++) {
-                if((bitfieldVal >> iKey) === 0) {
+                if((bitfieldObj["bitfield"] >> iKey) === 0) {
                   this.errstr = "INVALID_BIT_RANGE";
                   fSuccess = false;
                 }
 
-                while(((bitfieldVal >> iKey) & 0x01) == 0) {
+                while(((bitfieldObj["bitfield"] >> iKey) & 0x01) == 0) {
                   if(iKey >= nKeysCount) {
                     this.errstr = "wrong";
                     fSuccess = false;
@@ -1854,7 +1853,7 @@ Interpreter.prototype.step = function() {
                 }
               }
 
-              if ((bitfieldVal >> iKey) != 0) {
+              if ((bitfieldObj["bitfield"] >> iKey) != 0) {
                 // This is a sanity check and should be
                 // unreachable.
                 this.errstr = "INVALID_BIT_COUNT"

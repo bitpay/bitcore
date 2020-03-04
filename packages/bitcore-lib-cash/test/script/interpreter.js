@@ -228,9 +228,9 @@ describe('Interpreter', function() {
   
     var scriptSig = Script.fromBitcoindString(vector[0]);
     var scriptPubkey = Script.fromBitcoindString(vector[1]);
-    if (vector[vector.length-3] === '1 0x21 0x0279be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798 1 CHECKMULTISIG NOT') {
-      console.log()
-    }
+    // if (vector[vector.length-1] === 'CHECKMULTISIG 2-of-3 (110) Schnorr') {
+    //   console.log()
+    // }
     var flags = getFlags(vector[2]);
     var inputAmount = 0;
     if (extraData) {

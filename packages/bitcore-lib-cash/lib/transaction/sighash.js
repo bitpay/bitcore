@@ -268,7 +268,6 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript, satos
     sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
       nhashtype: sighashType
     });
-  
     return sig;
   }
 }

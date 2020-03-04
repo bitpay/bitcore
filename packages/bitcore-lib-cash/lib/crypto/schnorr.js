@@ -198,7 +198,7 @@ Schnorr.prototype._findSignature = function(d, e) {
     return Schnorr().set({
       hashbuf: hashbuf,
       endian: endian,
-      sig: sig,
+      sig: {...sig, isSchnorr: true },
       pubkey: pubkey
     }).verify().verified;
   };

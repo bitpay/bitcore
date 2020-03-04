@@ -1075,6 +1075,7 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
  */
 Transaction.prototype.sign = function(privateKey, sigtype, signingMethod) {
   signingMethod = signingMethod || "ecdsa"
+  
   $.checkState(this.hasAllUtxoInfo(), 'Not all utxo information is available to sign the transaction.');
   var self = this;
   if (_.isArray(privateKey)) {
@@ -1097,6 +1098,7 @@ Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) 
   sigtype = sigtype || (Signature.SIGHASH_ALL |  Signature.SIGHASH_FORKID);
   var transaction = this;
   var results = [];
+
   var hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
   _.each(this.inputs, function forEachInput(input, index) {
     _.each(input.getSignatures(transaction, privKey, index, sigtype, hashData, signingMethod), function(signature) {

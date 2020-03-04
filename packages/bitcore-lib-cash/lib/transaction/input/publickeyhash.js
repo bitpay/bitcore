@@ -43,7 +43,7 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
       prevTxId: this.prevTxId,
       outputIndex: this.outputIndex,
       inputIndex: index,
-      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, this.output.satoshisBN, signingMethod),
+      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, this.output.satoshisBN, undefined, signingMethod),
       sigtype: sigtype
     })];
   }

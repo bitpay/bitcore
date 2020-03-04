@@ -756,6 +756,7 @@ Script.buildMultisigIn = function(pubkeys, threshold, signatures, opts) {
   opts = opts || {};
   var s = new Script();
   s.add(Opcode.OP_0);
+  console.log(signatures);
   _.each(signatures, function(signature) {
     $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
     // TODO: allow signatures to be an array of Signature objects
@@ -1032,7 +1033,7 @@ Script.prototype.findAndDelete = function(script) {
  * @returns {boolean} if the chunk {i} is the smallest way to push that particular data.
  */
 Script.prototype.checkMinimalPush = function(i) {
-  var chunk = this.chunks[i];
+  var chunk = this.   chunks[i];
   var buf = chunk.buf;
   var opcodenum = chunk.opcodenum;
   if (!buf) {
@@ -1043,10 +1044,11 @@ Script.prototype.checkMinimalPush = function(i) {
     return opcodenum === Opcode.OP_0;
   } else if (buf.length === 1 && buf[0] >= 1 && buf[0] <= 16) {
     // Could have used OP_1 .. OP_16.
-    return opcodenum === Opcode.OP_1 + (buf[0] - 1);
+    // return opcodenum === Opcode.OP_1 + (buf[0] - 1);
+    return false;
   } else if (buf.length === 1 && buf[0] === 0x81) {
     // Could have used OP_1NEGATE
-    return opcodenum === Opcode.OP_1NEGATE;
+    return false;
   } else if (buf.length <= 75) {
     // Could have used a direct push (opcode indicating number of bytes pushed + those bytes).
     return opcodenum === buf.length;

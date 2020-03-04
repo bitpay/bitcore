@@ -29,7 +29,7 @@ inherits(PublicKeyInput, Input);
  * @param {String} signingMethod - the signing method used to sign tx "ecdsa" or "schnorr"
  * @return {Array} of objects that can be
  */
-PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, signingMethod) {
+PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   $.checkState(this.output instanceof Output);
   sigtype = sigtype || (Signature.SIGHASH_ALL |  Signature.SIGHASH_FORKID);
   var publicKey = privateKey.toPublicKey();
@@ -39,7 +39,7 @@ PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index
       prevTxId: this.prevTxId,
       outputIndex: this.outputIndex,
       inputIndex: index,
-      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, this.output.satoshisBN, signingMethod),
+      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, this.output.satoshisBN, undefined, signingMethod),
       sigtype: sigtype
     })];
   }

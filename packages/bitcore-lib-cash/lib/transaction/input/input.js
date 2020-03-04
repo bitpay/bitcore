@@ -148,6 +148,7 @@ Input.prototype.setScript = function(script) {
  * @param {number} sigType - defaults to Signature.SIGHASH_ALL
  * @param {Buffer} addressHash - if provided, don't calculate the hash of the
  *     public key associated with the private key provided
+ * @param {String} signingMethod "schnorr" or "ecdsa", default to "ecdsa" if not provided
  * @abstract
  */
 Input.prototype.getSignatures = function() {
@@ -183,6 +184,7 @@ Input.prototype.isValidSignature = function(transaction, signature, signingMetho
     signature.inputIndex,
     this.output.script,
     this.output.satoshisBN,
+    undefined,
     signingMethod
   );
 };

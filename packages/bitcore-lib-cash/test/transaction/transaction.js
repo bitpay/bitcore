@@ -1241,7 +1241,7 @@ describe('Transaction', function() {
         let myKeys = [ new bitcore.PrivateKey("KzCaV3GgSNQMACBZgAEMsQkRr1LQNG1PYVdFpvkZecY6NWrKTiY9"), new bitcore.PrivateKey("Kxe4vJFzqmNyVqT8vBq1UZRzwi8AToxVvRNockNg2uNZyM5WoRL1")]
         var multiSigTx = new bitcore.Transaction()
         .from(utxo, publicKeysSpending, 2)
-        .to("qqh4ln92fynku0wxt6d96e7ut7xy2cp2cydfj2dayk", 10000)
+        .to("qqh4ln92fynku0wxt6d96e7ut7xy2cp2cydfj2dayk", 40000)
         .sign(myKeys, 0x41, "schnorr");
 
         console.log(multiSigTx)

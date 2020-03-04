@@ -68,7 +68,7 @@ MultiSigScriptHashInput.prototype._serializeSignatures = function() {
   });
 };
 
-MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, signingMethod) {
+MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   $.checkState(this.output instanceof Output);
   sigtype = sigtype || (Signature.SIGHASH_ALL |  Signature.SIGHASH_FORKID);
 
@@ -81,7 +81,7 @@ MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateK
         prevTxId: self.prevTxId,
         outputIndex: self.outputIndex,
         inputIndex: index,
-        signature: Sighash.sign(transaction, privateKey, sigtype, index, self.redeemScript, self.output.satoshisBN, signingMethod),
+        signature: Sighash.sign(transaction, privateKey, sigtype, index, self.redeemScript, self.output.satoshisBN, undefined, signingMethod),
         sigtype: sigtype
       }));
     }
@@ -95,26 +95,26 @@ MultiSigScriptHashInput.prototype.addSignature = function(transaction, signature
                   'Signature has no matching public key');
   $.checkState(this.isValidSignature(transaction, signature, signingMethod));
   this.signatures[this.publicKeyIndex[signature.publicKey.toString()]] = signature;
-  this._updateScript();
+  this._updateScript(signingMethod);
   return this;
 };
 
-MultiSigScriptHashInput.prototype._updateScript = function() {
+MultiSigScriptHashInput.prototype._updateScript = function(signingMethod) {
   this.setScript(Script.buildP2SHMultisigIn(
     this.publicKeys,
     this.threshold,
-    this._createSignatures(),
+    this._createSignatures(signingMethod),
     { cachedMultisig: this.redeemScript }
   ));
   return this;
 };
 
-MultiSigScriptHashInput.prototype._createSignatures = function() {
+MultiSigScriptHashInput.prototype._createSignatures = function(signingMethod) {
   return _.map(
     _.filter(this.signatures, function(signature) { return !_.isUndefined(signature); }),
     function(signature) {
       return BufferUtil.concat([
-        signature.signature.toDER(),
+        signature.signature.toDER(signingMethod),
         BufferUtil.integerAsSingleByteBuffer(signature.sigtype)
       ]);
     }
@@ -158,6 +158,7 @@ MultiSigScriptHashInput.prototype.isValidSignature = function(transaction, signa
       signature.inputIndex,
       this.redeemScript,
       this.output.satoshisBN,
+      undefined,
       signingMethod
   );
 };

@@ -67,7 +67,7 @@ MultiSigInput.prototype._serializeSignatures = function() {
   });
 };
 
-MultiSigInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, signingMethod) {
+MultiSigInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   $.checkState(this.output instanceof Output);
   sigtype = sigtype || (Signature.SIGHASH_ALL |  Signature.SIGHASH_FORKID);
 
@@ -80,7 +80,7 @@ MultiSigInput.prototype.getSignatures = function(transaction, privateKey, index,
         prevTxId: self.prevTxId,
         outputIndex: self.outputIndex,
         inputIndex: index,
-        signature: Sighash.sign(transaction, privateKey, sigtype, index, self.output.script, self.output.satoshisBN, signingMethod),
+        signature: Sighash.sign(transaction, privateKey, sigtype, index, self.output.script, self.output.satoshisBN, undefined, signingMethod),
         sigtype: sigtype
       }));
     }
@@ -156,6 +156,7 @@ MultiSigInput.prototype.isValidSignature = function(transaction, signature, sign
     signature.inputIndex,
     this.output.script,
     this.output.satoshisBN,
+    undefined,
     signingMethod
   );
 };
@@ -193,6 +194,7 @@ MultiSigInput.normalizeSignatures = function(transaction, input, inputIndex, sig
           signature.publicKey,
           signature.inputIndex,
           input.output.script,
+          undefined,
           signingMethod
       );
 
