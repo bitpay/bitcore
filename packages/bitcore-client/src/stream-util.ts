@@ -17,6 +17,25 @@ export class ParseApiStream extends Transform {
   }
 }
 
+export class AppendInitVect extends Transform {
+  public appended: boolean;
+  public initVect: any;
+  constructor(initVect, opts) {
+    super(opts);
+    this.initVect = initVect;
+    this.appended = false;
+  }
+
+  _transform(chunk, encoding, cb) {
+    if (!this.appended) {
+      this.push(this.initVect);
+      this.appended = true;
+    }
+    this.push(chunk);
+    cb();
+  }
+}
+
 function signTxStream(wallet: any, keys: object, utxosPassedIn: object, passphrase: string) {
   return new Transform({
     objectMode: true,

@@ -25,6 +25,7 @@ export interface WalletObj {
   storageType: string;
   addressIndex: number;
   tokens: Array<any>;
+  lite: boolean;
 }
 export class Wallet {
   masterKey: any;
@@ -46,6 +47,7 @@ export class Wallet {
   authKey: string;
   derivationPath: string;
   tokens?: Array<any>;
+  lite: boolean;
 
   constructor(params: Wallet | WalletObj) {
     Object.assign(this, params);
@@ -70,7 +72,7 @@ export class Wallet {
   }
 
   static async create(params: Partial<WalletObj>) {
-    const { chain, network, name, phrase, password, path, storageType } = params;
+    const { chain, network, name, phrase, password, path, storageType, lite } = params;
     let { storage } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
@@ -121,6 +123,12 @@ export class Wallet {
       tokens: [],
       storageType
     });
+
+    if (lite) {
+      delete wallet.masterKey;
+      delete wallet.pubKey;
+      wallet.lite = true;
+    }
 
     // save wallet to storage and then bitcore-node
     await storage.saveWallet({ wallet });

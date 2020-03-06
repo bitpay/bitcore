@@ -1,4 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'crypto';
+import { AppendInitVect, StreamUtil } from './stream-util';
 const bitcore = require('crypto-wallet-core').BitcoreLib;
 const crypto = {
   createHash,
@@ -19,7 +20,58 @@ export function shaHash(data, algo = 'sha256') {
 const SHA512 = data => shaHash(data, 'sha512');
 const SHA256 = data => shaHash(data, 'sha256');
 const algo = 'aes-256-cbc';
-const _ = require('lodash');
+import fs from 'fs';
+import path from 'path';
+import zlib from 'zlib';
+
+function getCipherKey(password) {
+  return crypto.createHash('sha256').update(password).digest();
+}
+
+export function encryptWallet(name, walletStream, password, opts) {
+  // Generate a secure, pseudo random initialization vector.
+  const initVect = crypto.randomBytes(16);
+
+  // Generate a cipher key from the password.
+  const CIPHER_KEY = getCipherKey(password);
+  const gzip = zlib.createGzip();
+  const cipher = crypto.createCipheriv('aes256', CIPHER_KEY, initVect);
+  const appendInitVect = new AppendInitVect(initVect, opts);
+  // Create a write stream with a different file extension.
+  const writeStream = fs.createWriteStream(path.join(name + '.enc'));
+
+  walletStream
+    .pipe(StreamUtil.objectModeToJsonlBuffer())
+    .pipe(gzip)
+    .pipe(cipher)
+    .pipe(appendInitVect)
+    .pipe(writeStream);
+}
+
+export function decryptWallet(file, password) {
+  // First, get the initialization vector from the file.
+  const readInitVect = fs.createReadStream(file, { end: 15 });
+
+  let initVect;
+  readInitVect.on('data', (chunk) => {
+    initVect = chunk;
+  });
+
+  // Once we’ve got the initialization vector, we can decrypt the file.
+  readInitVect.on('close', () => {
+    const cipherKey = getCipherKey(password);
+    const readStream = fs.createReadStream(file, { start: 16 });
+    const decipher = crypto.createDecipheriv('aes256', cipherKey, initVect);
+    const unzip = zlib.createUnzip();
+
+    readStream
+      .pipe(decipher)
+      .pipe(unzip)
+      .pipe(StreamUtil.jsonlBufferToObjectMode());
+
+    readStream.on('data', (data) => {console.log(new Buffer(data).toString('hex'))});
+  });
+}
 
 export function encryptEncryptionKey(encryptionKey, password) {
   const password_hash = Buffer.from(SHA512(password));
@@ -151,5 +203,7 @@ export const Encryption = {
   encryptPrivateKey,
   decryptPrivateKey,
   generateEncryptionKey,
-  bitcoinCoreDecrypt
+  bitcoinCoreDecrypt,
+  encryptWallet,
+  decryptWallet
 };
