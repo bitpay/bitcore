@@ -99,11 +99,7 @@ export class Storage {
     }
   }
 
-  async getKeys(params: {
-    addresses: string[];
-    name: string;
-    encryptionKey: string;
-  }): Promise<Array<KeyImport>> {
+  async getKeys(params: { addresses: string[]; name: string; encryptionKey: string }): Promise<Array<KeyImport>> {
     const { addresses, name, encryptionKey } = params;
     const keys = new Array<KeyImport>();
     let keepAlive = true;
@@ -118,7 +114,7 @@ export class Storage {
           address,
           encryptionKey,
           keepAlive,
-          open,
+          open
         });
         keys.push(key);
       } catch (err) {

@@ -343,7 +343,7 @@ export class Wallet {
       await this.storage.addKeys({
         keys: keysToSave,
         encryptionKey,
-        name: this.name,
+        name: this.name
       });
     }
     const addedAddresses = keys.map(key => {
@@ -377,7 +377,7 @@ export class Wallet {
       decryptedKeys = await this.storage.getKeys({
         addresses,
         name: this.name,
-        encryptionKey: this.unlocked.encryptionKey,
+        encryptionKey: this.unlocked.encryptionKey
       });
     } else {
       addresses.push(keys[0]);

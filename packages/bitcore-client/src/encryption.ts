@@ -25,7 +25,10 @@ import path from 'path';
 import zlib from 'zlib';
 
 function getCipherKey(password) {
-  return crypto.createHash('sha256').update(password).digest();
+  return crypto
+    .createHash('sha256')
+    .update(password)
+    .digest();
 }
 
 export function encryptWallet(name, walletStream, password, opts) {
@@ -53,7 +56,7 @@ export function decryptWallet(file, password) {
   const readInitVect = fs.createReadStream(file, { end: 15 });
 
   let initVect;
-  readInitVect.on('data', (chunk) => {
+  readInitVect.on('data', chunk => {
     initVect = chunk;
   });
 
@@ -69,7 +72,9 @@ export function decryptWallet(file, password) {
       .pipe(unzip)
       .pipe(StreamUtil.jsonlBufferToObjectMode());
 
-    readStream.on('data', (data) => {console.log(new Buffer(data).toString('hex'))});
+    readStream.on('data', data => {
+      console.log(new Buffer(data).toString('hex'));
+    });
   });
 }
 
