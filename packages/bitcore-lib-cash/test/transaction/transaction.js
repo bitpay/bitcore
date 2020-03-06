@@ -1226,7 +1226,6 @@ describe('Transaction', function() {
         var requiredSignatures = 2;
         
         var address = new bitcore.Address(publicKeys, requiredSignatures);
-        console.log(address);
 
         let utxo = [{
             txid: "0d18c22cd8381df3471a5892dcf5abe412b57b93b9040ff943e66dff1bc1af8b",
@@ -1239,13 +1238,11 @@ describe('Transaction', function() {
         
         let publicKeysSpending = ["034b9a924b9a9f1254ef59e40ba39c2f98f3e4c4a6be3c051faecbab2e19cd90e9", "03c50eddf2ed2e94b39e01f983cfca27536938cfa5d2eb0a762f64d8e4609ad8fd", "022e1bfee2a56bd5dfd680d42f199ed7ec86cf7fd8fd6749239a6ebba170000b32"]
         let myKeys = [ new bitcore.PrivateKey("KzCaV3GgSNQMACBZgAEMsQkRr1LQNG1PYVdFpvkZecY6NWrKTiY9"), new bitcore.PrivateKey("Kxe4vJFzqmNyVqT8vBq1UZRzwi8AToxVvRNockNg2uNZyM5WoRL1")]
-        var multiSigTx = new bitcore.Transaction()
+        let multiSigTx = new bitcore.Transaction()
         .from(utxo, publicKeysSpending, 2)
         .to("qqh4ln92fynku0wxt6d96e7ut7xy2cp2cydfj2dayk", 40000)
         .sign(myKeys, 0x41, "schnorr");
-
-        console.log(multiSigTx)
-      })
+      });
 
 
       it('testnet', function() {

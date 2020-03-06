@@ -39,6 +39,7 @@ function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, opts) {
   this.threshold = threshold;
   // Empty array of signatures
   this.signatures = signatures ? this._deserializeSignatures(signatures) : new Array(this.publicKeys.length);
+  this.checkBitsField = new Uint8Array(this.publicKeys.length);
 }
 inherits(MultiSigScriptHashInput, Input);
 
@@ -95,16 +96,17 @@ MultiSigScriptHashInput.prototype.addSignature = function(transaction, signature
                   'Signature has no matching public key');
   $.checkState(this.isValidSignature(transaction, signature, signingMethod));
   this.signatures[this.publicKeyIndex[signature.publicKey.toString()]] = signature;
-  this._updateScript(signingMethod);
+  this.checkBitsField[this.publicKeyIndex[signature.publicKey.toString()]] = (signature !== undefined) ? 1 : 0;
+  this._updateScript(signingMethod, this.checkBitsField);
   return this;
 };
 
-MultiSigScriptHashInput.prototype._updateScript = function(signingMethod) {
+MultiSigScriptHashInput.prototype._updateScript = function(signingMethod, checkBitsField) {
   this.setScript(Script.buildP2SHMultisigIn(
     this.publicKeys,
     this.threshold,
     this._createSignatures(signingMethod),
-    { cachedMultisig: this.redeemScript }
+    { cachedMultisig: this.redeemScript, checkBits: checkBitsField, signingMethod }
   ));
   return this;
 };
