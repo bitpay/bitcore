@@ -1169,6 +1169,25 @@ export class Storage {
       });
   }
 
+  fetchHistoricalRates(coin, code, ts, cb) {
+    this.db
+      .collection(collections.FIAT_RATES2)
+      .find({
+        coin,
+        code,
+        ts: {
+          $gte: ts
+        }
+      })
+      .sort({
+        ts: -1
+      })
+      .toArray((err, result) => {
+        if (err || _.isEmpty(result)) return cb(err);
+        return cb(null, result);
+      });
+  }
+
   fetchTxNote(walletId, txid, cb) {
     this.db.collection(collections.TX_NOTES).findOne(
       {
