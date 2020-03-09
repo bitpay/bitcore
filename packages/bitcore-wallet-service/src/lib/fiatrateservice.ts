@@ -162,7 +162,8 @@ export class FiatRateService {
     const historicalRates = {};
 
     // Oldest date in timestamp range in epoch number ex. 24 hours ago
-    const ts = opts.ts;
+    const now = Date.now();
+    const ts = _.isNumber(opts.ts) ? opts.ts : now;
     const coins = ['btc', 'bch', 'eth', 'xrp'];
 
     async.map(
@@ -170,6 +171,7 @@ export class FiatRateService {
       (coin: string, cb) => {
         this.storage.fetchHistoricalRates(coin, opts.code, ts, (err, rates) => {
           if (err) return cb(err);
+          if (!rates) return cb();
           for (const rate of rates) {
             rate.rate = rate.value;
             rate.fetchedOn = rate.ts;

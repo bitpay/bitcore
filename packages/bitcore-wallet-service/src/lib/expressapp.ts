@@ -248,29 +248,33 @@ export class ExpressApp {
         } catch (ex) {
           return returnError(ex, res, req);
         }
-        server.storage.checkAndUseGlobalCache('latest-copay-version', Defaults.COPAY_VERSION_CACHE_DURATION, async (err, version) => {
-          if (err) {
-            res.send(err);
-          }
-          if (version)  {
-            res.json({ version });
-          } else {
-            try {
-              const htmlString = await rp(options);
-              if (htmlString['tag_name']) {
-                server.storage.storeGlobalCache('latest-copay-version', htmlString['tag_name'], (err) => {
-                  res.json({ version: htmlString['tag_name'] });
-                });
-              }
-            } catch (err) {
+        server.storage.checkAndUseGlobalCache(
+          'latest-copay-version',
+          Defaults.COPAY_VERSION_CACHE_DURATION,
+          async (err, version) => {
+            if (err) {
               res.send(err);
             }
+            if (version) {
+              res.json({ version });
+            } else {
+              try {
+                const htmlString = await rp(options);
+                if (htmlString['tag_name']) {
+                  server.storage.storeGlobalCache('latest-copay-version', htmlString['tag_name'], err => {
+                    res.json({ version: htmlString['tag_name'] });
+                  });
+                }
+              } catch (err) {
+                res.send(err);
+              }
+            }
           }
-        });
+        );
       } catch (err) {
         res.send(err);
       }
-  });
+    });
 
     // DEPRECATED
     router.post('/v1/wallets/', createWalletLimiter, (req, res) => {
