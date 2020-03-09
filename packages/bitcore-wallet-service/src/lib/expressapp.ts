@@ -12,6 +12,7 @@ const compression = require('compression');
 const config = require('../config');
 const RateLimit = require('express-rate-limit');
 const Common = require('./common');
+const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 
 log.disableColor();
@@ -228,6 +229,48 @@ export class ExpressApp {
         next();
       };
     }
+
+    // retrieve latest version of copay
+    router.get('/latest-version', async (req, res) => {
+      try {
+        res.setHeader('User-Agent', 'copay');
+        var options = {
+          uri: 'https://api.github.com/repos/bitpay/copay/releases/latest',
+          headers: {
+            'User-Agent': 'Copay'
+          },
+          json: true
+        };
+
+        let server;
+        try {
+          server = getServer(req, res);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+        server.storage.checkAndUseGlobalCache('latest-copay-version', Defaults.COPAY_VERSION_CACHE_DURATION, async (err, version) => {
+          if (err) {
+            res.send(err);
+          }
+          if (version)  {
+            res.json({ version });
+          } else {
+            try {
+              const htmlString = await rp(options);
+              if (htmlString['tag_name']) {
+                server.storage.storeGlobalCache('latest-copay-version', htmlString['tag_name'], (err) => {
+                  res.json({ version: htmlString['tag_name'] });
+                });
+              }
+            } catch (err) {
+              res.send(err);
+            }
+          }
+        });
+      } catch (err) {
+        res.send(err);
+      }
+  });
 
     // DEPRECATED
     router.post('/v1/wallets/', createWalletLimiter, (req, res) => {
