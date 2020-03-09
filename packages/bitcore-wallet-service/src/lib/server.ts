@@ -4054,7 +4054,6 @@ export class WalletService {
    */
   getHistoricalRates(opts, cb) {
     if (!checkRequired(opts, ['code'], cb)) return;
-    if (!checkRequired(opts, ['ts'], cb)) return;
 
     this.fiatRateService.getHistoricalRates(opts, (err, rates) => {
       if (err) return cb(err);
