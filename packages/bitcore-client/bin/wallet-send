@@ -17,7 +17,7 @@ program
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, to, amount, target, token } = program;
+  const { name, path, to, amount, token } = program;
   let wallet;
   let data;
   try {
@@ -29,12 +29,13 @@ const main = async () => {
   try {
     wallet = await Wallet.loadWallet({ name, path });
     const chain = wallet.chain;
-    const { decimals } = currencies.data.find(element => element.code === chain);
+    const currency = token || chain;
+    const { decimals } = currencies.data.find(element => element.code === currency);
     const scale = Math.pow(10, decimals);
     const lastAddress = await wallet.deriveAddress(0);
     const recipients = [{ address: to, amount: amount * scale }];
-    const feerate = await wallet.getNetworkFee({ target });
-    const fee = JSON.parse(feerate).feerate || 20 * scale;
+    const feerate = await wallet.getNetworkFee();
+    const fee = JSON.parse(feerate).feerate || 20;
     let nonce;
     if (!['BTC', 'BCH'].includes(chain)) {
       nonce = await wallet.getNonce();
