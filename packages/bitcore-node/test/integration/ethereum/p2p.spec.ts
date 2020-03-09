@@ -23,6 +23,7 @@ async function getWallet() {
     await wallet.register();
     return wallet;
   } catch (e) {
+    console.log(e);
     console.log('Creating a new ethereum wallet');
     wallet = await BitcoreClient.Wallet.create({
       name,

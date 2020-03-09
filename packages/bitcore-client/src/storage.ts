@@ -43,7 +43,9 @@ export class Storage {
     const { name } = params;
     let wallet;
     for (let db of this.db) {
-      wallet = await db.loadWallet({ name });
+      try {
+        wallet = await db.loadWallet({ name });
+      } catch (e) {} // do nothing with error
       if (wallet) {
         this.storageType = wallet.storageType;
         this.storageType = db;
