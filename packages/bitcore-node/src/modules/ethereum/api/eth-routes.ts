@@ -14,7 +14,7 @@ EthRoutes.get('/api/ETH/:network/address/:address/txs/count', async (req, res) =
   }
 });
 
-EthRoutes.post('/api/ETH/:network/fee/gas', async (req, res) => {
+EthRoutes.post('/api/ETH/:network/gas', async (req, res) => {
   const { from, to, value, data, gasPrice } = req.body;
   const { network } = req.params;
   try {

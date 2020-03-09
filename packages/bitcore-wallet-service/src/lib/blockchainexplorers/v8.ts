@@ -368,7 +368,7 @@ export class V8 {
   }
 
   estimateGas(opts, cb) {
-    const url = this.baseUrl + '/fee/gas';
+    const url = this.baseUrl + '/gas';
     console.log('[v8.js.378:url:] CHECKING GAS LIMIT', url);
     this.request
       .post(url, { body: opts, json: true })
