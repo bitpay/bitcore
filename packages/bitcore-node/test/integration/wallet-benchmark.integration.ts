@@ -282,13 +282,13 @@ describe('Wallet Benchmark', function() {
       expect(largeAddressBatch.length).to.deep.equal(1000);
 
       console.log('Checking');
-      const importedWallet1 = await createWallet(smallAddressBatch, 0, network);
-      const importedWallet2 = await createWallet(mediumAddressBatch, 1, network);
-      const importedWallet3 = await createWallet(largeAddressBatch, 2, network);
+      const importedWallet4 = await createWallet(smallAddressBatch, 4, network);
+      const importedWallet5 = await createWallet(mediumAddressBatch, 5, network);
+      const importedWallet6 = await createWallet(largeAddressBatch, 6, network);
 
-      expect(importedWallet1).to.not.be.null;
-      expect(importedWallet2).to.not.be.null;
-      expect(importedWallet3).to.not.be.null;
+      expect(importedWallet4).to.not.be.null;
+      expect(importedWallet5).to.not.be.null;
+      expect(importedWallet6).to.not.be.null;
 
       const foundSmallAddressBatch = await WalletAddressStorage.collection
         .find({
