@@ -43,12 +43,14 @@ export class Storage {
     const { name } = params;
     let wallet;
     for (let db of this.db) {
-      wallet = await db.loadWallet({ name });
-      if (wallet) {
-        this.storageType = wallet.storageType;
-        this.storageType = db;
-        break;
-      }
+      try {
+        wallet = await db.loadWallet({ name });
+        if (wallet) {
+          this.storageType = wallet.storageType;
+          this.storageType = db;
+          break;
+        }
+      } catch (e) {}
     }
     if (!wallet) {
       return;
