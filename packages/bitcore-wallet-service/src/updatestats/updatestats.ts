@@ -4,8 +4,8 @@ import { UpdateStats } from '../lib/updatestats';
 var config = require('../config');
 
 
-const script = new UpdateStats();
-script.run(config, err => {
+const updateStatsScript = new UpdateStats();
+updateStatsScript.run(config, err => {
   if (err) throw err;
   console.log('Update stats script finished');
 });

@@ -1,66 +1,21 @@
 import * as async from 'async';
-import * as _ from 'lodash';
 import moment from 'moment';
 import * as mongodb from 'mongodb';
 
-
-import { Storage } from './storage';
 const storage = require('./storage');
-
-let initialized = false;
-
 const INITIAL_DATE = '2015-01-01';
 
 export class UpdateStats {
   from: moment.MomentFormatSpecification;
   to: moment.MomentFormatSpecification;
   db: mongodb.Db;
-  storage: Storage;
-  initialized: boolean;
 
   constructor() {
-    this.storage = storage;
-    this.initialized = initialized;
-
     this.from = moment(INITIAL_DATE).format('YYYY-MM-DD');
     this.to = moment().format('YYYY-MM-DD');
   }
 
   run(config, cb) {
-    const initStorage = cb => {
-      if (config.storage) {
-        this.storage = config.storage;
-        return cb();
-      } else {
-        const newStorage = new Storage();
-        newStorage.connect(config.storageOpts, err => {
-          if (err) {
-            return cb(err);
-          }
-          this.storage = newStorage;
-          return cb();
-        });
-      }
-    };
-
-    async.series(
-      [
-        next => {
-          console.log("Initializing storage");
-          initStorage(next);
-        }
-      ],
-      err => {
-        if (err) {
-          console.log('Could not initialize', err);
-          throw err;
-        }
-        this.initialized = true;
-        console.log("Storage initialized successfully");
-      }
-    );
-
-
     let uri = config.storageOpts.mongoDb.uri;
 
     if (uri.indexOf('?') > 0) {
