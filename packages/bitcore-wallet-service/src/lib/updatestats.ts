@@ -32,36 +32,30 @@ export class UpdateStats {
       this.db = db;
       this.updateStats((err, stats) => {
         if (err) return cb(err);
-        console.log("--------------------------");
         return cb(null, stats);
       });
     });
   }
 
   updateStats(cb) {
-    let result = {};
     async.series(
       [
         next => {
-          console.log("--------------------------");
           console.log("Updating new wallets stats...");
           this._updateNewWallets(next);
         },
         next => {
-          console.log("--------------------------");
           console.log("Updating tx proposals stats...");
           this._updateTxProposals(next);
         },
         next => {
-          console.log("--------------------------");
           console.log("Updating fiat rates stats...");
           this._updateFiatRates(next);
         }
       ],
-      (err, results) => {
+      (err) => {
         if (err) return cb(err);
-        result = { newWallets: results[0], txProposals: results[1], fiatRates: results[2] };
-        return cb(null, result);
+        return cb();
       }
     );
   }
@@ -114,6 +108,8 @@ export class UpdateStats {
           } catch (err) {
             console.log('Cannot insert into stats_wallets:', err);
           }
+        } else {
+          console.log("No data to update in stats_wallets");
         }
         return cb();
       });
@@ -171,6 +167,8 @@ export class UpdateStats {
           } catch (err) {
             console.log('Cannot insert into stats_fiat_rates:', err);
           }
+        } else {
+          console.log("No data to update in stats_fiat_rates");
         }
         return cb();
       });
@@ -226,6 +224,8 @@ export class UpdateStats {
           } catch (err) {
             console.log('Cannot insert into stats_txps:', err);
           }
+        } else {
+          console.log("No data to update in stats_txps");
         }
         return cb();
       });
