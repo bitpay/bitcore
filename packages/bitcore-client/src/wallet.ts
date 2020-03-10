@@ -110,7 +110,6 @@ export class Wallet {
     if (alreadyExists) {
       throw new Error('Wallet already exists');
     }
-    console.log('Creating new wallet...');
     const wallet = Object.assign(params, {
       encryptionKey,
       authKey,
