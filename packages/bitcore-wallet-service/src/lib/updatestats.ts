@@ -54,6 +54,7 @@ export class UpdateStats {
         }
       ],
       (err) => {
+        this.db.close();
         if (err) return cb(err);
         return cb();
       }
