@@ -154,4 +154,34 @@ export class FiatRateService {
       }
     );
   }
+
+  getHistoricalRates(opts, cb) {
+    $.shouldBeFunction(cb);
+
+    opts = opts || {};
+    const historicalRates = {};
+
+    // Oldest date in timestamp range in epoch number ex. 24 hours ago
+    const ts = opts.ts;
+    const coins = ['btc', 'bch', 'eth', 'xrp'];
+
+    async.map(
+      coins,
+      (coin: string, cb) => {
+        this.storage.fetchHistoricalRates(coin, opts.code, ts, (err, rates) => {
+          if (err) return cb(err);
+          for (const rate of rates) {
+            rate.rate = rate.value;
+            rate.fetchedOn = rate.ts;
+          }
+          historicalRates[coin] = rates;
+          return cb(null, historicalRates);
+        });
+      },
+      (err, res: any) => {
+        if (err) return cb(err);
+        return cb(null, res[0]);
+      }
+    );
+  }
 }

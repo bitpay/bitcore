@@ -72,8 +72,8 @@ export class Wallet {
   }
 
   static async create(params: Partial<WalletObj>) {
-    const { chain, network, name, phrase, password, path, storageType, lite } = params;
-    let { storage } = params;
+    const { chain, network, name, phrase, password, path, lite } = params;
+    let { storageType, storage } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
@@ -95,6 +95,7 @@ export class Wallet {
     const encryptionKey = Encryption.encryptEncryptionKey(walletEncryptionKey, password);
     const encPrivateKey = Encryption.encryptPrivateKey(JSON.stringify(privKeyObj), pubKey, walletEncryptionKey);
 
+    storageType = storageType ? storageType : 'Level';
     storage =
       storage ||
       new Storage({
@@ -106,12 +107,12 @@ export class Wallet {
 
     let alreadyExists;
     try {
-      alreadyExists = await this.loadWallet({ storage, name });
+      alreadyExists = await this.loadWallet({ storage, name, storageType });
     } catch (err) {}
     if (alreadyExists) {
       throw new Error('Wallet already exists');
     }
-
+    console.log('Creating new wallet...');
     const wallet = Object.assign(params, {
       encryptionKey,
       authKey,
@@ -170,8 +171,8 @@ export class Wallet {
     try {
       return new Wallet(Object.assign(loadedWallet, { storage }));
     } catch (err) {
-      console.error(err);
-      throw new Error('Could not find wallet');
+      console.error('Could not find wallet');
+      throw new Error(err);
     }
   }
 

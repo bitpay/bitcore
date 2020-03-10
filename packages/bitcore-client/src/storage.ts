@@ -43,8 +43,11 @@ export class Storage {
     const { name } = params;
     let wallet;
     for (let db of this.db) {
-      wallet = await db.loadWallet({ name });
+      try {
+        wallet = await db.loadWallet({ name });
+      } catch (e) {} // do nothing with error
       if (wallet) {
+        this.storageType = wallet.storageType;
         this.storageType = db;
         break;
       }
@@ -77,7 +80,8 @@ export class Storage {
 
   async saveWallet(params) {
     const { wallet } = params;
-    return this.db.find(db => db === this.storageType).saveWallet({ wallet });
+    return this.storageType.saveWallet({ wallet });
+    // return this.db.find(db => db === this.storageType).saveWallet({ wallet });
   }
 
   async getKey(params: {
@@ -88,7 +92,8 @@ export class Storage {
     open: boolean;
   }): Promise<KeyImport> {
     const { address, name, encryptionKey, keepAlive, open } = params;
-    const payload = await this.db.find(db => db === this.storageType).getKey({ name, address, keepAlive, open });
+    // const payload = await this.db.find(db => db === this.storageType).getKey({ name, address, keepAlive, open });
+    const payload = await this.storageType.getKey({ name, address, keepAlive, open });
     const json = JSON.parse(payload) || payload;
     const { encKey, pubKey } = json;
     if (encryptionKey && pubKey) {
@@ -142,7 +147,8 @@ export class Storage {
       if (key === keys[keys.length - 1]) {
         keepAlive = false;
       }
-      await this.db.find(db => db == this.storageType).addKeys({ name, key, toStore, keepAlive, open });
+      await this.storageType.addKeys({ name, key, toStore, keepAlive, open });
+      // await this.db.find(db => db == this.storageType).addKeys({ name, key, toStore, keepAlive, open });
       open = false;
     }
   }
