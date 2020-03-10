@@ -110,7 +110,6 @@ export class Wallet {
     if (alreadyExists) {
       throw new Error('Wallet already exists');
     }
-    console.log('Creating new wallet...');
     const wallet = Object.assign(params, {
       encryptionKey,
       authKey,
@@ -160,12 +159,7 @@ export class Wallet {
     let { storage } = params;
     storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
     const loadedWallet = await storage.loadWallet({ name });
-    try {
-      return new Wallet(Object.assign(loadedWallet, { storage }));
-    } catch (err) {
-      console.error('Could not find wallet');
-      throw new Error(err);
-    }
+    return new Wallet(Object.assign(loadedWallet, { storage }));
   }
 
   lock() {
