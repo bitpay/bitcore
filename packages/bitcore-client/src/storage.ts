@@ -50,7 +50,7 @@ export class Storage {
           this.storageType = db;
           break;
         }
-      } catch (e) {} // do nothing with error
+      } catch (e) {}
     }
     if (!wallet) {
       return;

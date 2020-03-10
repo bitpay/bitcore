@@ -45,9 +45,7 @@ export class Mongo {
         this.collection = this.db.collection(this.addressCollectionName);
       }
       await this.collection.createIndex({ name: 1 });
-    } catch (error) {
-      console.error(error);
-    }
+    } catch (error) {}
   }
 
   async close() {
