@@ -16,4 +16,5 @@ stop_program pids/emailservice.pid
 stop_program pids/bcmonitor.pid
 stop_program pids/pushnotificationsservice.pid
 stop_program pids/messagebroker.pid
+stop_program pids/updatestats.pid
 
