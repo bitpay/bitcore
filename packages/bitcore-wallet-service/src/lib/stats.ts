@@ -4,7 +4,6 @@ import moment from 'moment';
 import * as mongodb from 'mongodb';
 
 const config = require('../config');
-const storage = require('./storage');
 let log = require('npmlog');
 log.debug = log.verbose;
 log.disableColor();
@@ -72,112 +71,98 @@ export class Stats {
   }
 
   _getNewWallets(cb) {
-
-    const queryStats = cb => {
-      this.db
-        .collection('stats_wallets')
-        .find({
-          '_id.network': this.network,
-          '_id.coin': this.coin,
-          '_id.day': {
-            $gte: this.from,
-            $lte: this.to
-          }
-        })
-        .sort({
-          '_id.day': 1
-        })
-        .toArray((err, results) => {
-          if (err) return cb(err);
-          const stats = {
-            byDay: _.map(results, record => {
-              const day = moment(record._id.day).format('YYYYMMDD');
-              return {
-                day,
-                coin: record._id.coin,
-                value: record._id.value,
-                count: record.count ? record.count : record.value.count
-              };
-            })
-          };
-          return cb(null, stats);
-        });
-    };
-
-    return queryStats(cb);
+    this.db
+      .collection('stats_wallets')
+      .find({
+        '_id.network': this.network,
+        '_id.coin': this.coin,
+        '_id.day': {
+          $gte: this.from,
+          $lte: this.to
+        }
+      })
+      .sort({
+        '_id.day': 1
+      })
+      .toArray((err, results) => {
+        if (err) return cb(err);
+        const stats = {
+          byDay: _.map(results, record => {
+            const day = moment(record._id.day).format('YYYYMMDD');
+            return {
+              day,
+              coin: record._id.coin,
+              value: record._id.value,
+              count: record.count ? record.count : record.value.count
+            };
+          })
+        };
+        return cb(null, stats);
+      });
   }
 
   _getFiatRates(cb) {
-
-    const queryStats = cb => {
-      this.db
-        .collection('stats_fiat_rates')
-        .find({
-          '_id.coin': this.coin,
-          '_id.day': {
-            $gte: this.from,
-            $lte: this.to
-          }
-        })
-        .sort({
-          '_id.day': 1
-        })
-        .toArray((err, results) => {
-          if (err) return cb(err);
-          const stats = {
-            byDay: _.map(results, record => {
-              const day = moment(record._id.day).format('YYYYMMDD');
-              return {
-                day,
-                coin: record._id.coin,
-                value: record.value
-              };
-            })
-          };
-          return cb(null, stats);
-        });
-    };
-    return queryStats(cb);
+    this.db
+      .collection('stats_fiat_rates')
+      .find({
+        '_id.coin': this.coin,
+        '_id.day': {
+          $gte: this.from,
+          $lte: this.to
+        }
+      })
+      .sort({
+        '_id.day': 1
+      })
+      .toArray((err, results) => {
+        if (err) return cb(err);
+        const stats = {
+          byDay: _.map(results, record => {
+            const day = moment(record._id.day).format('YYYYMMDD');
+            return {
+              day,
+              coin: record._id.coin,
+              value: record.value
+            };
+          })
+        };
+        return cb(null, stats);
+      });
   }
 
   _getTxProposals(cb) {
-
-    const queryStats = cb => {
-      this.db
-        .collection('stats_txps')
-        .find({
-          '_id.network': this.network,
-          '_id.coin': this.coin,
-          '_id.day': {
-            $gte: this.from,
-            $lte: this.to
-          }
-        })
-        .sort({
-          '_id.day': 1
-        })
-        .toArray((err, results) => {
-          if (err) return cb(err);
-          const stats = {
-            nbByDay: [],
-            amountByDay: []
-          };
-          _.each(results, record => {
-            const day = moment(record._id.day).format('YYYYMMDD');
-            stats.nbByDay.push({
-              day,
-              coin: record._id.coin,
-              count: record.count ? record.count : record.value.count
-            });
-            stats.amountByDay.push({
-              day,
-              amount: record.amount ? record.amount : record.value.amount
-            });
+    this.db
+      .collection('stats_txps')
+      .find({
+        '_id.network': this.network,
+        '_id.coin': this.coin,
+        '_id.day': {
+          $gte: this.from,
+          $lte: this.to
+        }
+      })
+      .sort({
+        '_id.day': 1
+      })
+      .toArray((err, results) => {
+        if (err) return cb(err);
+        const stats = {
+          nbByDay: [],
+          amountByDay: []
+        };
+        _.each(results, record => {
+          const day = moment(record._id.day).format('YYYYMMDD');
+          stats.nbByDay.push({
+            day,
+            coin: record._id.coin,
+            count: record.count ? record.count : record.value.count
           });
-          return cb(null, stats);
+          stats.amountByDay.push({
+            day,
+            amount: record.amount ? record.amount : record.value.amount
+          });
         });
-    };
-
-    return queryStats(cb);
+        return cb(null, stats);
+      });
   }
 }
