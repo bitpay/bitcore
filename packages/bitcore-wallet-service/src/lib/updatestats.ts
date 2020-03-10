@@ -67,179 +67,167 @@ export class UpdateStats {
   }
 
   _updateNewWallets(cb) {
-    const updateStats = cb => {
-      this.db
-        .collection(storage.Storage.collections.WALLETS)
-        .aggregate([
-          {
-            $project: {
-              date: { $add: [new Date(0), { $multiply: ['$createdOn', 1000] }] },
+    this.db
+      .collection(storage.Storage.collections.WALLETS)
+      .aggregate([
+        {
+          $project: {
+            date: { $add: [new Date(0), { $multiply: ['$createdOn', 1000] }] },
+            network: '$network',
+            coin: '$coin'
+          }
+        },
+        {
+          $group: {
+            _id: {
+              day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
               network: '$network',
               coin: '$coin'
-            }
-          },
-          {
-            $group: {
-              _id: {
-                day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
-                network: '$network',
-                coin: '$coin'
-              },
-              count: { $sum: 1 }
-            }
+            },
+            count: { $sum: 1 }
           }
-        ])
-        .toArray(async (err, res) => {
-          if (err) {
-            console.log('Update wallet stats throws error:', err);
-            return cb(err);
-          }
-          if (res.length !== 0) {
-            try {
-              console.log(`Checking if stats_wallets table exist.`);
-              if (!this.db.collection('stats_wallets').find()) {
-                console.log(`stats_wallets table does not exist.`);
-                console.log(`Creating stats_wallets table.`);
-                await this.db.createCollection('stats_wallets');
-              }
-              console.log(`Cleaning stats_wallets table.`);
-              await this.db
-                .collection('stats_wallets')
-                .remove({})
-                .then(async () => {
-                  console.log(`Trying to insert ${res.length} entries`);
-                  const opts: any = { ordered: false };
-                  await this.db.collection('stats_wallets').insert(res, opts);
-                  console.log(`${res.length} entries inserted in stats_wallets`);
-                });
-            } catch (err) {
-              console.log('Cannot insert into stats_wallets:', err);
+        }
+      ])
+      .toArray(async (err, res) => {
+        if (err) {
+          console.log('Update wallet stats throws error:', err);
+          return cb(err);
+        }
+        if (res.length !== 0) {
+          try {
+            console.log(`Checking if stats_wallets table exist.`);
+            if (!this.db.collection('stats_wallets').find()) {
+              console.log(`stats_wallets table does not exist.`);
+              console.log(`Creating stats_wallets table.`);
+              await this.db.createCollection('stats_wallets');
             }
+            console.log(`Cleaning stats_wallets table.`);
+            await this.db
+              .collection('stats_wallets')
+              .remove({})
+              .then(async () => {
+                console.log(`Trying to insert ${res.length} entries`);
+                const opts: any = { ordered: false };
+                await this.db.collection('stats_wallets').insert(res, opts);
+                console.log(`${res.length} entries inserted in stats_wallets`);
+              });
+          } catch (err) {
+            console.log('Cannot insert into stats_wallets:', err);
           }
-          return cb();
-        });
-    };
-
-    return updateStats(cb);
+        }
+        return cb();
+      });
   }
 
   _updateFiatRates(cb) {
-    const updateStats = cb => {
-      this.db
-        .collection(storage.Storage.collections.FIAT_RATES2)
-        .aggregate([
-          {
-            $match: {
-              code: 'USD'
-            }
-          },
-          {
-            $project: {
-              date: { $add: [new Date(0), '$ts'] },
-              coin: '$coin',
-              value: '$value'
-            }
-          },
-          {
-            $group: {
-              _id: {
-                day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
-                coin: '$coin'
-              },
-              value: { $first: '$value' }
-            }
+    this.db
+      .collection(storage.Storage.collections.FIAT_RATES2)
+      .aggregate([
+        {
+          $match: {
+            code: 'USD'
           }
-        ])
-        .toArray(async (err, res) => {
-          if (err) {
-            console.log('Update fiat rates stats throws error:', err);
-            return cb(err);
+        },
+        {
+          $project: {
+            date: { $add: [new Date(0), '$ts'] },
+            coin: '$coin',
+            value: '$value'
           }
-          if (res.length !== 0) {
-            try {
-              console.log(`Checking if stats_fiat_rates table exist.`);
-              if (!this.db.collection('stats_fiat_rates').find()) {
-                console.log(`stats_fiat_rates table does not exist.`);
-                console.log(`Creating stats_fiat_rates table.`);
-                await this.db.createCollection('stats_fiat_rates');
-              }
-              console.log(`Cleaning stats_fiat_rates table.`);
-              await this.db
-                .collection('stats_fiat_rates')
-                .remove({})
-                .then(async () => {
-                  console.log(`Trying to insert ${res.length} entries`);
-                  const opts: any = { ordered: false };
-                  await this.db.collection('stats_fiat_rates').insert(res, opts);
-                  console.log(`${res.length} entries inserted in stats_fiat_rates`);
-                });
-            } catch (err) {
-              console.log('Cannot insert into stats_fiat_rates:', err);
+        },
+        {
+          $group: {
+            _id: {
+              day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
+              coin: '$coin'
+            },
+            value: { $first: '$value' }
+          }
+        }
+      ])
+      .toArray(async (err, res) => {
+        if (err) {
+          console.log('Update fiat rates stats throws error:', err);
+          return cb(err);
+        }
+        if (res.length !== 0) {
+          try {
+            console.log(`Checking if stats_fiat_rates table exist.`);
+            if (!this.db.collection('stats_fiat_rates').find()) {
+              console.log(`stats_fiat_rates table does not exist.`);
+              console.log(`Creating stats_fiat_rates table.`);
+              await this.db.createCollection('stats_fiat_rates');
             }
+            console.log(`Cleaning stats_fiat_rates table.`);
+            await this.db
+              .collection('stats_fiat_rates')
+              .remove({})
+              .then(async () => {
+                console.log(`Trying to insert ${res.length} entries`);
+                const opts: any = { ordered: false };
+                await this.db.collection('stats_fiat_rates').insert(res, opts);
+                console.log(`${res.length} entries inserted in stats_fiat_rates`);
+              });
+          } catch (err) {
+            console.log('Cannot insert into stats_fiat_rates:', err);
           }
-          return cb();
-        });
-    };
-
-    return updateStats(cb);
+        }
+        return cb();
+      });
   }
 
   _updateTxProposals(cb) {
-    const updateStats = cb => {
-      this.db
-        .collection(storage.Storage.collections.TXS)
-        .aggregate([
-          {
-            $project: {
-              date: { $add: [new Date(0), { $multiply: ['$createdOn', 1000] }] },
+    this.db
+      .collection(storage.Storage.collections.TXS)
+      .aggregate([
+        {
+          $project: {
+            date: { $add: [new Date(0), { $multiply: ['$createdOn', 1000] }] },
+            network: '$network',
+            coin: '$coin',
+            amount: '$amount'
+          }
+        },
+        {
+          $group: {
+            _id: {
+              day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
               network: '$network',
-              coin: '$coin',
-              amount: '$amount'
-            }
-          },
-          {
-            $group: {
-              _id: {
-                day: { $dateToString: { format: '%Y-%m-%d', date: '$date' } },
-                network: '$network',
-                coin: '$coin'
-              },
-              amount: { $sum: '$amount' },
-              count: { $sum: 1 }
-            }
+              coin: '$coin'
+            },
+            amount: { $sum: '$amount' },
+            count: { $sum: 1 }
           }
-        ])
-        .toArray(async (err, res) => {
-          if (err) {
-            console.log('Update txps stats throws error:', err);
-            return cb(err);
-          }
-          if (res.length !== 0) {
-            try {
-              console.log(`Checking if stats_txps table exist.`);
-              if (!this.db.collection('stats_txps').find()) {
-                console.log(`stats_txps table does not exist.`);
-                console.log(`Creating stats_txps table.`);
-                await this.db.createCollection('stats_txps');
-              }
-              console.log(`Cleaning stats_txps table.`);
-              await this.db
-                .collection('stats_txps')
-                .remove({})
-                .then(async () => {
-                  console.log(`Trying to insert ${res.length} entries`);
-                  const opts: any = { ordered: false };
-                  await this.db.collection('stats_txps').insert(res, opts);
-                  console.log(`${res.length} entries inserted in stats_txps`);
-                });
-            } catch (err) {
-              console.log('Cannot insert into stats_txps:', err);
+        }
+      ])
+      .toArray(async (err, res) => {
+        if (err) {
+          console.log('Update txps stats throws error:', err);
+          return cb(err);
+        }
+        if (res.length !== 0) {
+          try {
+            console.log(`Checking if stats_txps table exist.`);
+            if (!this.db.collection('stats_txps').find()) {
+              console.log(`stats_txps table does not exist.`);
+              console.log(`Creating stats_txps table.`);
+              await this.db.createCollection('stats_txps');
             }
+            console.log(`Cleaning stats_txps table.`);
+            await this.db
+              .collection('stats_txps')
+              .remove({})
+              .then(async () => {
+                console.log(`Trying to insert ${res.length} entries`);
+                const opts: any = { ordered: false };
+                await this.db.collection('stats_txps').insert(res, opts);
+                console.log(`${res.length} entries inserted in stats_txps`);
+              });
+          } catch (err) {
+            console.log('Cannot insert into stats_txps:', err);
           }
-          return cb();
-        });
-    };
-
-    return updateStats(cb);
+        }
+        return cb();
+      });
   }
 }
