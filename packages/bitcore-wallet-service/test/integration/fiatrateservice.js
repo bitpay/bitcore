@@ -284,7 +284,7 @@ describe('Fiat rate service', function() {
       const coins = ['btc', 'bch', 'eth', 'xrp'];
       var clock = sinon.useFakeTimers({toFake: ['Date']});
       async.each([1.00, 2.00, 3.00, 4.00], function(value, next) {
-        clock.tick(100);
+        clock.tick(11 * 60 * 1000);
         async.map(
           coins,
           (coin, cb) => {
@@ -308,9 +308,9 @@ describe('Fiat rate service', function() {
           should.not.exist(err);
           for (const coin of coins) {
             res[coin].length.should.equal(1);
-            res[coin][0].ts.should.equal(400);
+            res[coin][0].ts.should.equal(2640000);
             res[coin][0].rate.should.equal(4.00);
-            res[coin][0].fetchedOn.should.equal(400);
+            res[coin][0].fetchedOn.should.equal(2640000);
           }
           clock.restore();
           done();

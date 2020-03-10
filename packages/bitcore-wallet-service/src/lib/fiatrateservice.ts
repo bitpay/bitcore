@@ -162,7 +162,7 @@ export class FiatRateService {
     const historicalRates = {};
 
     // Oldest date in timestamp range in epoch number ex. 24 hours ago
-    const now = Date.now();
+    const now = Date.now() - Defaults.FIAT_RATE_FETCH_INTERVAL * 60 * 1000;
     const ts = _.isNumber(opts.ts) ? opts.ts : now;
     const coins = ['btc', 'bch', 'eth', 'xrp'];
 
