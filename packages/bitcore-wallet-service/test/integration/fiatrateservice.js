@@ -209,10 +209,55 @@ describe('Fiat rate service', function() {
         }, function(err, res) {
           should.not.exist(err);
           should.exist(res);
+
+          for (const coin of coins) {
+            res[coin].length.should.equal(4);
+
+            res[coin][3].ts.should.equal(100);
+            res[coin][3].rate.should.equal(1.00);
+            res[coin][3].fetchedOn.should.equal(100);
+  
+            res[coin][2].ts.should.equal(200);
+            res[coin][2].rate.should.equal(2.00);
+            res[coin][2].fetchedOn.should.equal(200);
+  
+            res[coin][1].ts.should.equal(300);
+            res[coin][1].rate.should.equal(3.00);
+            res[coin][1].fetchedOn.should.equal(300);
+  
+            res[coin][0].ts.should.equal(400);
+            res[coin][0].rate.should.equal(4.00);
+            res[coin][0].fetchedOn.should.equal(400);
+          }
+          clock.restore();
+          done();
+        });
+      });
+    });
+
+    it('should not throw if missing historical rates for a coin', function(done) {
+      var clock = sinon.useFakeTimers({toFake: ['Date']});
+      async.each([1.00, 2.00, 3.00, 4.00], function(value, next) {
+        clock.tick(100);
+        service.storage.storeFiatRate('btc', [{
+          code: 'USD',
+          value: value,
+        }, {
+          code: 'EUR',
+          value: value,
+        }], next);
+      }, function(err) {
+        should.not.exist(err);
+        service.getHistoricalRates({
+          code: 'USD',
+          ts: 100,
+        }, function(err, res) {
+          should.not.exist(err);
+          should.exist(res);
           res['btc'].length.should.equal(4);
-          res['bch'].length.should.equal(4);
-          res['eth'].length.should.equal(4);
-          res['xrp'].length.should.equal(4);
+          should.not.exist(res['bch']);
+          should.not.exist(res['eth']);
+          should.not.exist(res['xrp']);
 
           res['btc'][3].ts.should.equal(100);
           res['btc'][3].rate.should.equal(1.00);
@@ -229,7 +274,44 @@ describe('Fiat rate service', function() {
           res['btc'][0].ts.should.equal(400);
           res['btc'][0].rate.should.equal(4.00);
           res['btc'][0].fetchedOn.should.equal(400);
+          clock.restore();
+          done();
+        });
+      });
+    });
 
+    it('should return current rates if missing opts.ts when fetching historical rates', function(done) {
+      const coins = ['btc', 'bch', 'eth', 'xrp'];
+      var clock = sinon.useFakeTimers({toFake: ['Date']});
+      async.each([1.00, 2.00, 3.00, 4.00], function(value, next) {
+        clock.tick(11 * 60 * 1000);
+        async.map(
+          coins,
+          (coin, cb) => {
+            service.storage.storeFiatRate(coin, [{
+              code: 'USD',
+              value: value,
+            }, {
+              code: 'EUR',
+              value: value,
+            }], cb)
+          },
+          () => {
+            return next();
+          }
+        );
+      }, function(err) {
+        should.not.exist(err);
+        service.getHistoricalRates({
+          code: 'USD'
+        }, function(err, res) {
+          should.not.exist(err);
+          for (const coin of coins) {
+            res[coin].length.should.equal(1);
+            res[coin][0].ts.should.equal(2640000);
+            res[coin][0].rate.should.equal(4.00);
+            res[coin][0].fetchedOn.should.equal(2640000);
+          }
           clock.restore();
           done();
         });
