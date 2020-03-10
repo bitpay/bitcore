@@ -22,6 +22,7 @@ export interface WalletObj {
   phrase: string;
   password: string;
   storage: Storage;
+  storageType: string;
   addressIndex: number;
   tokens: Array<any>;
 }
@@ -32,6 +33,7 @@ export class Wallet {
   network: string;
   client: Client;
   storage: Storage;
+  storageType: string;
   unlocked?: { encryptionKey: string; masterKey: string };
   password: string;
   encryptionKey: string;
@@ -69,7 +71,7 @@ export class Wallet {
 
   static async create(params: Partial<WalletObj>) {
     const { chain, network, name, phrase, password, path } = params;
-    let { storage } = params;
+    let { storageType, storage } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
@@ -91,22 +93,23 @@ export class Wallet {
     const encryptionKey = Encryption.encryptEncryptionKey(walletEncryptionKey, password);
     const encPrivateKey = Encryption.encryptPrivateKey(JSON.stringify(privKeyObj), pubKey, walletEncryptionKey);
 
+    storageType = storageType ? storageType : 'Level';
     storage =
       storage ||
       new Storage({
         path,
         errorIfExists: false,
-        createIfMissing: true
+        createIfMissing: true,
+        storageType
       });
 
     let alreadyExists;
     try {
-      alreadyExists = await this.loadWallet({ storage, name });
+      alreadyExists = await this.loadWallet({ storage, name, storageType });
     } catch (err) {}
     if (alreadyExists) {
       throw new Error('Wallet already exists');
     }
-
     const wallet = Object.assign(params, {
       encryptionKey,
       authKey,
@@ -115,14 +118,16 @@ export class Wallet {
       password: await Bcrypt.hash(password, 10),
       xPubKey: hdPrivKey.xpubkey,
       pubKey,
-      tokens: []
+      tokens: [],
+      storageType
     });
 
     // save wallet to storage and then bitcore-node
     await storage.saveWallet({ wallet });
     const loadedWallet = await this.loadWallet({
       storage,
-      name
+      name,
+      storageType
     });
 
     console.log(mnemonic.toString());
@@ -149,12 +154,16 @@ export class Wallet {
     return alreadyExists != undefined && alreadyExists != [];
   }
 
-  static async loadWallet(params: { name: string; path?: string; storage?: Storage }) {
-    const { name, path } = params;
+  static async loadWallet(params: { name: string; path?: string; storage?: Storage; storageType?: string }) {
+    const { name, path, storageType } = params;
     let { storage } = params;
-    storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path });
+    storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
     const loadedWallet = await storage.loadWallet({ name });
-    return new Wallet(Object.assign(loadedWallet, { storage }));
+    if (loadedWallet) {
+      return new Wallet(Object.assign(loadedWallet, { storage }));
+    } else {
+      throw new Error('No wallet could be found');
+    }
   }
 
   lock() {
