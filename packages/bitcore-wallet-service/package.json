@@ -98,7 +98,7 @@
     "fix": "npm run fix:style && npm run fix:lint",
     "fix:lint": "tslint --fix -c tslint.json 'src/**/*.ts'",
     "fix:style": "prettier --write 'src/**/*.ts'",
-    "update:stats": "npm run clean && npm run tsc && ./update_stats.sh"
+    "update:stats": "npm run clean && npm run tsc && chmod +x ./ts_build/updatestats/updatestats.js && ./ts_build/updatestats/updatestats.js "
   },
   "bitcoreNode": "./bitcorenode",
   "contributors": [

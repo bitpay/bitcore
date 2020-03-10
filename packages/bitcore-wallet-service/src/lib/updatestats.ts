@@ -1,21 +1,12 @@
-
-
 import * as async from 'async';
 import * as _ from 'lodash';
 import moment from 'moment';
 import * as mongodb from 'mongodb';
 
 
-import { Lock } from './lock';
 import { Storage } from './storage';
 const storage = require('./storage');
 
-
-let log = require('npmlog');
-log.debug = log.verbose;
-log.disableColor();
-
-let lock;
 let initialized = false;
 
 const INITIAL_DATE = '2015-01-01';
@@ -25,19 +16,17 @@ export class UpdateStats {
   to: moment.MomentFormatSpecification;
   db: mongodb.Db;
   storage: Storage;
-  lock: Lock;
   initialized: boolean;
 
   constructor() {
     this.storage = storage;
-    this.lock = lock;
     this.initialized = initialized;
 
     this.from = moment(INITIAL_DATE).format('YYYY-MM-DD');
     this.to = moment().format('YYYY-MM-DD');
   }
 
-  init(config, cb) {
+  run(config, cb) {
     const initStorage = cb => {
       if (config.storage) {
         this.storage = config.storage;
@@ -57,18 +46,17 @@ export class UpdateStats {
     async.series(
       [
         next => {
+          console.log("Initializing storage");
           initStorage(next);
         }
       ],
       err => {
-        this.lock = config.lock || new Lock(storage, config.lockOpts);
-
         if (err) {
-          log.error('Could not initialize', err);
+          console.log('Could not initialize', err);
           throw err;
         }
         this.initialized = true;
-        return cb();
+        console.log("Storage initialized successfully");
       }
     );
 
@@ -83,12 +71,13 @@ export class UpdateStats {
     uri = uri + 'readPreference=secondaryPreferred';
     mongodb.MongoClient.connect(uri, (err, db) => {
       if (err) {
-        log.error('Unable to connect to the mongoDB', err);
+        console.log('Unable to connect to the mongoDB', err);
         return cb(err, null);
       }
       this.db = db;
       this.updateStats((err, stats) => {
         if (err) return cb(err);
+        console.log("--------------------------");
         return cb(null, stats);
       });
     });
@@ -99,12 +88,18 @@ export class UpdateStats {
     async.series(
       [
         next => {
+          console.log("--------------------------");
+          console.log("Updating new wallets stats...");
           this._updateNewWallets(next);
         },
         next => {
+          console.log("--------------------------");
+          console.log("Updating tx proposals stats...");
           this._updateTxProposals(next);
         },
         next => {
+          console.log("--------------------------");
+          console.log("Updating fiat rates stats...");
           this._updateFiatRates(next);
         }
       ],
@@ -141,21 +136,29 @@ export class UpdateStats {
         ])
         .toArray(async (err, res) => {
           if (err) {
-            log.error('Update wallet stats throws error:', err);
+            console.log('Update wallet stats throws error:', err);
             return cb(err);
           }
           if (res.length !== 0) {
             try {
-              if (!this.db.collection('stats_wallets').find()) await this.db.createCollection('stats_wallets');
+              console.log(`Checking if stats_wallets table exist.`);
+              if (!this.db.collection('stats_wallets').find()) {
+                console.log(`stats_wallets table does not exist.`);
+                console.log(`Creating stats_wallets table.`);
+                await this.db.createCollection('stats_wallets');
+              }
+              console.log(`Cleaning stats_wallets table.`);
               await this.db
                 .collection('stats_wallets')
                 .remove({})
                 .then(async () => {
+                  console.log(`Trying to insert ${res.length} entries`);
                   const opts: any = { ordered: false };
                   await this.db.collection('stats_wallets').insert(res, opts);
+                  console.log(`${res.length} entries inserted in stats_wallets`);
                 });
             } catch (err) {
-              log.error('Cannot insert into stats_wallets:', err);
+              console.log('Cannot insert into stats_wallets:', err);
             }
           }
           return cb();
@@ -194,21 +197,29 @@ export class UpdateStats {
         ])
         .toArray(async (err, res) => {
           if (err) {
-            log.error('Update fiat rates stats throws error:', err);
+            console.log('Update fiat rates stats throws error:', err);
             return cb(err);
           }
           if (res.length !== 0) {
             try {
-              if (!this.db.collection('stats_fiat_rates').find()) await this.db.createCollection('stats_fiat_rates');
+              console.log(`Checking if stats_fiat_rates table exist.`);
+              if (!this.db.collection('stats_fiat_rates').find()) {
+                console.log(`stats_fiat_rates table does not exist.`);
+                console.log(`Creating stats_fiat_rates table.`);
+                await this.db.createCollection('stats_fiat_rates');
+              }
+              console.log(`Cleaning stats_fiat_rates table.`);
               await this.db
                 .collection('stats_fiat_rates')
                 .remove({})
                 .then(async () => {
+                  console.log(`Trying to insert ${res.length} entries`);
                   const opts: any = { ordered: false };
                   await this.db.collection('stats_fiat_rates').insert(res, opts);
+                  console.log(`${res.length} entries inserted in stats_fiat_rates`);
                 });
             } catch (err) {
-              log.error('Cannot insert into stats_fiat_rates:', err);
+              console.log('Cannot insert into stats_fiat_rates:', err);
             }
           }
           return cb();
@@ -245,21 +256,29 @@ export class UpdateStats {
         ])
         .toArray(async (err, res) => {
           if (err) {
-            log.error('Update txps stats throws error:', err);
+            console.log('Update txps stats throws error:', err);
             return cb(err);
           }
           if (res.length !== 0) {
             try {
-              if (!this.db.collection('stats_txps').find()) await this.db.createCollection('stats_txps');
+              console.log(`Checking if stats_txps table exist.`);
+              if (!this.db.collection('stats_txps').find()) {
+                console.log(`stats_txps table does not exist.`);
+                console.log(`Creating stats_txps table.`);
+                await this.db.createCollection('stats_txps');
+              }
+              console.log(`Cleaning stats_txps table.`);
               await this.db
                 .collection('stats_txps')
                 .remove({})
                 .then(async () => {
+                  console.log(`Trying to insert ${res.length} entries`);
                   const opts: any = { ordered: false };
                   await this.db.collection('stats_txps').insert(res, opts);
+                  console.log(`${res.length} entries inserted in stats_txps`);
                 });
             } catch (err) {
-              log.error('Cannot insert into stats_txps:', err);
+              console.log('Cannot insert into stats_txps:', err);
             }
           }
           return cb();

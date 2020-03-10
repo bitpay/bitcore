@@ -11,14 +11,6 @@ log.disableColor();
 
 const INITIAL_DATE = '2015-01-01';
 
-export interface IStats {
-  network: string;
-  coin: string;
-  from: Date;
-  to: Date;
-  fromTs: number;
-  toTs: number;
-}
 export class Stats {
   network: string;
   coin: string;
