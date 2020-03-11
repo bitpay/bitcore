@@ -33,8 +33,8 @@ export class Storage {
       this.db.push(new dbMap[storageType]({ createIfMissing, errorIfExists, path }));
       this.storageType = this.db[0];
     } else {
-      for (let dbMapKey in dbMap) {
-        this.db.push(new dbMap[dbMapKey]({ createIfMissing, errorIfExists, path }));
+      for (let DbType of Object.values(dbMap)) {
+        this.db.push(new DbType({ createIfMissing, errorIfExists, path }));
       }
     }
   }
@@ -45,12 +45,12 @@ export class Storage {
     for (let db of this.db) {
       try {
         wallet = await db.loadWallet({ name });
-      } catch (e) {} // do nothing with error
-      if (wallet) {
-        this.storageType = wallet.storageType;
-        this.storageType = db;
-        break;
-      }
+        if (wallet) {
+          this.storageType = wallet.storageType;
+          this.storageType = db;
+          break;
+        }
+      } catch (e) {}
     }
     if (!wallet) {
       return;
@@ -81,7 +81,6 @@ export class Storage {
   async saveWallet(params) {
     const { wallet } = params;
     return this.storageType.saveWallet({ wallet });
-    // return this.db.find(db => db === this.storageType).saveWallet({ wallet });
   }
 
   async getKey(params: {
@@ -92,7 +91,6 @@ export class Storage {
     open: boolean;
   }): Promise<KeyImport> {
     const { address, name, encryptionKey, keepAlive, open } = params;
-    // const payload = await this.db.find(db => db === this.storageType).getKey({ name, address, keepAlive, open });
     const payload = await this.storageType.getKey({ name, address, keepAlive, open });
     const json = JSON.parse(payload) || payload;
     const { encKey, pubKey } = json;
@@ -148,7 +146,6 @@ export class Storage {
         keepAlive = false;
       }
       await this.storageType.addKeys({ name, key, toStore, keepAlive, open });
-      // await this.db.find(db => db == this.storageType).addKeys({ name, key, toStore, keepAlive, open });
       open = false;
     }
   }
