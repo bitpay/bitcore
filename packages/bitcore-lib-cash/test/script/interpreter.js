@@ -228,9 +228,6 @@ describe('Interpreter', function() {
   
     var scriptSig = Script.fromBitcoindString(vector[0]);
     var scriptPubkey = Script.fromBitcoindString(vector[1]);
-    // if (vector[vector.length-1] === 'CHECKMULTISIG 1-of-13 Schnorr, third-to-last key') {
-    //   console.log()
-    // }
     var flags = getFlags(vector[2]);
     var inputAmount = 0;
     if (extraData) {

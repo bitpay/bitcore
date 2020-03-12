@@ -814,17 +814,24 @@ Script.buildP2SHMultisigIn = function(pubkeys, threshold, signatures, opts) {
   if (opts.signingMethod === "schnorr" && opts.checkBits) {
 
     // Spec according to https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/2019-11-15-schnorrmultisig.md#scriptsig-size
-    let checkBitsString = Buffer.from(opts.checkBits).join('');
+    let checkBitsString = Buffer.from(opts.checkBits).reverse().join('');
     let checkBitsDecimal = parseInt(checkBitsString, 2);
     let checkBitsHex = parseInt(checkBitsDecimal.toString(16), 16);
     let N = pubkeys.length;
     // N should only be 1-20
       if (N >= 1 && N <= 4) {
-        s.add(Opcode(checkBitsHex));
+        s.add(Opcode(checkBitsDecimal));
       }
       else if (N >= 5 && N <= 8) {
-        s.add(0x01);
-        s.add(checkBitsHex);
+       if(checkBitsHex === 0x81) {
+          s.add(Opcode("OP_1NEGATE")) // OP_1NEGATE
+        } else if(checkBitsHex > 0x10) {
+          s.add(0x01);
+          s.add(checkBitsHex);
+        } else {
+          s.add(Opcode(checkBitsDecimal));
+        }
+        
       }
       else if (N >= 9 && N <= 16) {
         s.add(0x02);

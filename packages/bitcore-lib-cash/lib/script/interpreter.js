@@ -357,7 +357,7 @@ Interpreter.castToBool = function(buf) {
 };
 
 Interpreter.isSchnorrSig = function(buf) {
-  return (buf.length === 64 || buf.length === 65);
+  return (buf.length === 64 || buf.length === 65) && (buf[0] !== 0x30);
 }
 
 /**
@@ -370,9 +370,9 @@ Interpreter.prototype.checkRawSignatureEncoding = function(buf) {
   if(Interpreter.isSchnorrSig(buf)) {
     return true;
   }
+
   
   if ((this.flags & (Interpreter.SCRIPT_VERIFY_DERSIG | Interpreter.SCRIPT_VERIFY_LOW_S | Interpreter.SCRIPT_VERIFY_STRICTENC)) !== 0 && !Signature.isDER(buf)) {
-
     this.errstr = 'SCRIPT_ERR_SIG_DER_INVALID_FORMAT';
     return false;
   } else if ((this.flags & Interpreter.SCRIPT_VERIFY_LOW_S) !== 0) {
@@ -440,12 +440,23 @@ Interpreter.prototype.checkDataSignatureEncoding = function(buf) {
  * Translated from bitcoind's CheckPubKeyEncoding
  */
 Interpreter.prototype.checkPubkeyEncoding = function(buf) {
-  if ((this.flags & Interpreter.SCRIPT_VERIFY_STRICTENC) !== 0 && !PublicKey.isValid(buf)) {
+  if ((this.flags & Interpreter.SCRIPT_VERIFY_STRICTENC) !== 0 && !(PublicKey.isValid(buf) || IsCompressedOrUncompressedPubkey(buf))) {
     this.errstr = 'SCRIPT_ERR_PUBKEYTYPE';
     return false;
   }
   return true;
 };
+
+function IsCompressedOrUncompressedPubkey(bufPubkey) {
+  switch(bufPubkey.length) {
+    case 33:
+      return bufPubkey[0] === 0x02 || bufPubkey[0] === 0x03;
+    case 64:
+      return bufPubkey[0] === 0x04;
+    default:
+      return false;
+  }
+}
 
 
 
