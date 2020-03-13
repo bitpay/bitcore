@@ -4045,6 +4045,23 @@ export class WalletService {
   }
 
   /**
+   * Returns historical exchange rates for the specified currency & timestamp range.
+   * @param {Object} opts
+   * @param {string} opts.code - Currency ISO code.
+   * @param {Date} opts.ts - The oldest timestamp in the range to Date.now().
+   * @param {String} [opts.provider] - A provider of exchange rates (default 'BitPay').
+   * @returns {Object} rates - The exchange rate.
+   */
+  getHistoricalRates(opts, cb) {
+    if (!checkRequired(opts, ['code'], cb)) return;
+
+    this.fiatRateService.getHistoricalRates(opts, (err, rates) => {
+      if (err) return cb(err);
+      return cb(null, rates);
+    });
+  }
+
+  /**
    * Subscribe this copayer to the Push Notifications service using the specified token.
    * @param {Object} opts
    * @param {string} opts.token - The token representing the app/device.

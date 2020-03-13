@@ -69,6 +69,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       const protocol = provider.protocol || 'http';
       const portString = provider.port || '8545';
       const connUrl = `${protocol}://${host}:${portString}`;
+      const providerOptions = provider.options || {}; 
       let ProviderType;
       switch (provider.protocol) {
         case 'ws':
@@ -79,7 +80,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
           ProviderType = Web3.providers.HttpProvider;
           break;
       }
-      ETHStateProvider.web3[network] = new Web3(new ProviderType(connUrl));
+      ETHStateProvider.web3[network] = new Web3(new ProviderType(connUrl, providerOptions));
     }
     return ETHStateProvider.web3[network];
   }
@@ -113,8 +114,9 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     }
     const bestBlock = (await this.getLocalTip({ chain, network })) || { height: target };
     const gasPrices: number[] = [];
+    const limitedTarget = Math.min(target, 4);
     const txs = await EthTransactionStorage.collection
-      .find({ chain, network, blockHeight: { $gte: bestBlock.height - target } })
+      .find({ chain, network, blockHeight: { $gte: bestBlock.height - limitedTarget } })
       .toArray();
 
     const blockGasPrices = txs.map(tx => Number(tx.gasPrice)).sort((a, b) => b - a);

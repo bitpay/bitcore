@@ -10,11 +10,12 @@ program
     '--recipients <recipients>',
     'REQUIRED - JSON array \'[{"address": "abc1234", "amount": xxxxxx}]\''
   )
-  .option('--utxos [utxos]', 'REQUIRED for BTC and BCH - Unspent transactions that can be spent')
-  .option('--change [change]', 'REQUIRED for BTC and BCH - Change addresses')
+  .option('--utxos <utxos>', 'REQUIRED - Unspent transactions that can be spent')
+  .option('--change <change>', 'REQUIRED - Change addresses')
   .option('--fee [fee]', 'optional - custom transaction fee to pay')
   .option('--target [target]', 'optional - custom target block for confirmation')
   .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--storageType [storageType]', 'optional - Name of the database to use (default Level)')
   .option('--from [from]', 'optional - From Address')
   .option('--nonce [nonce]', 'optional - Nonce')
   .option('--invoiceID [invoiceID]', 'optional - invoiceId for XRP transactions')
@@ -22,21 +23,19 @@ program
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path } = program;
+  const { name, path, storageType } = program;
   let wallet;
   try {
-    let { recipients, utxos, change, fee, target, from, nonce, invoiceID, token } = program;
-    wallet = await Wallet.loadWallet({ name, path });
+    const { recipients, utxos, change, fee, target, from, nonce, invoiceID, token } = program;
+    wallet = await Wallet.loadWallet({ name, path, storageType });
+
+    const parsedUtxos = utxos.includes('[') ? JSON.parse(utxos) : [];
     const parsedRecipients = recipients.includes('[') ? JSON.parse(recipients) : [];
     if (!parsedRecipients.length) {
       throw new Error('invalid arguments');
     }
 
-    let parsedUtxos;
-    const calculatedNetworkFeeKb = await wallet.getNetworkFee({ target });
-    if (['BTC', 'BCH'].includes(wallet.chain)) {
-      parsedUtxos = utxos.includes('[') ? JSON.parse(utxos) : [];
-      if (!parsedUtxos.length) {
+    if (!parsedRecipients.length || !parsedUtxos.length) {
         throw new Error('invalid arguments');
       }
 

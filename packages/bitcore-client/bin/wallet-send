@@ -13,11 +13,12 @@ program
   .option('--to <to>', 'REQUIRED - string address')
   .option('--amount <amount>', 'REQUIRED - number amount (in btc/bch/eth/xrp)')
   .option('--path [path]', 'optional - Custom wallet storage path')
-  .option('--token [token]', 'opptional - ERC-20 token to send')
+  .option('--token [token]', 'optional - ERC-20 token to send')
+  .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, to, amount, target, token } = program;
+  const { name, path, to, amount, target, token, storageType } = program;
   let wallet;
   let data;
   try {
@@ -27,13 +28,14 @@ const main = async () => {
   }
   const currencies = JSON.parse(data);
   try {
-    wallet = await Wallet.loadWallet({ name, path });
+    wallet = await Wallet.loadWallet({ name, path, storageType });
     const chain = wallet.chain;
-    const { decimals } = currencies.data.find(element => element.code === chain);
+    const currency = token || chain;
+    const { decimals } = currencies.data.find(element => element.code === currency);
     const scale = Math.pow(10, decimals);
     const lastAddress = await wallet.deriveAddress(0);
     const recipients = [{ address: to, amount: amount * scale }];
-    const feerate = await wallet.getNetworkFee({ target });
+    const feerate = await wallet.getNetworkFee();
     const fee = JSON.parse(feerate).feerate || 20 * scale;
     let nonce;
     if (!['BTC', 'BCH'].includes(chain)) {

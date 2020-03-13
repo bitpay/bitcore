@@ -4145,6 +4145,28 @@ describe('Wallet service', function() {
         describe('Fee levels', function() {
           var level, expected, expectedNormal;
           before(() => {
+            if (Constants.UTXO_COINS[coin.toUpperCase()]) {
+              helpers.stubFeeLevels({
+                1: 400e2,
+                2: 200e2,   // normal BCH
+                6: 180e2,   // economy BTC
+                10: 180e2,
+                15: 100e2,
+                24: 90e2,
+                25: 90e2
+              }, null, coin);
+            } else if (coin === 'eth') {
+              helpers.stubFeeLevels({
+                1: 10e9,   // urgent ETH
+                2: 5e9,    // priority ETH
+                3: 1e9,    // normal ETH
+                4: 1e9     // economy/superEconomy ETH
+              }, null, coin);
+            } else if (coin === 'xrp') {
+              helpers.stubFeeLevels({
+                1: 12
+              }, null, coin);
+            }
             switch(coin) {
               case 'bch':
                 level = 'normal';
@@ -4152,36 +4174,22 @@ describe('Wallet service', function() {
                 expectedNormal = 200e2;
                 break;
               case 'eth':
-                level = 'economy';
-                expected = 40e2 * 0.9; //0.8 is the multiplier
-                expectedNormal = 200e2;
+                level = 'normal';
+                expected = 1e9;
+                expectedNormal = 1e9;
                 break;
               case 'xrp':
                 level = 'normal';
-                expected = 40e3;
-                expectedNormal = 400e2;
+                expected = 12;
+                expectedNormal = 12;
                 break;
               default:
                 level = 'economy';
                 expected = 180e2;
                 expectedNormal = 200e2;
             };
-
-
           });
           it('should create a tx specifying feeLevel', function(done) {
-            //ToDo
-            helpers.stubFeeLevels({
-              1: 400e2,
-              2: 200e2,   // normal BCH
-              6: 180e2,   // economy BTC
-              10: 180e2,
-              15: 100e2,
-              24: 90e2,
-              25: 90e2,
-              50: 40e2,   // economy ETH
-              75: 20e2,
-            }, null, coin);
             helpers.stubUtxos(server, wallet, 2, function() {
               var txOpts = {
                 outputs: [{
@@ -4223,13 +4231,6 @@ describe('Wallet service', function() {
             });
           });
           it('should assume "normal" fee level if no feeLevel and no feePerKb/fee is specified', function(done) {
-            helpers.stubFeeLevels({
-              1: 400e2,
-              2: 200e2,
-              6: 180e2,
-              24: 90e2,
-              25: 200e2,  // ETH normal
-            }, null, coin);
             helpers.stubUtxos(server, wallet, 2, function() {
               var txOpts = {
                 outputs: [{
