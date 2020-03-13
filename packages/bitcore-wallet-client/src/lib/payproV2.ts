@@ -153,7 +153,7 @@ export class PayProV2 {
       headers: {
         Accept: 'application/payment-options',
         'x-paypro-version': 2,
-        'Connection': 'Keep-Alive',
+        Connection: 'Keep-Alive',
         'Keep-Alive': 'timeout=30, max=10'
       }
     });
@@ -176,7 +176,7 @@ export class PayProV2 {
       headers: {
         'Content-Type': 'application/payment-request',
         'x-paypro-version': 2,
-        'Connection': 'Keep-Alive',
+        Connection: 'Keep-Alive',
         'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
@@ -211,7 +211,7 @@ export class PayProV2 {
       headers: {
         'Content-Type': 'application/payment-verification',
         'x-paypro-version': 2,
-        'Connection': 'Keep-Alive',
+        Connection: 'Keep-Alive',
         'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
@@ -250,7 +250,7 @@ export class PayProV2 {
         'x-paypro-version': 2,
         BP_PARTNER: bpPartner.bp_partner,
         BP_PARTNER_VERSION: bpPartner.bp_partner_version,
-        'Connection': 'Keep-Alive',
+        Connection: 'Keep-Alive',
         'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
