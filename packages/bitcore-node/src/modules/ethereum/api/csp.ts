@@ -69,7 +69,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       const protocol = provider.protocol || 'http';
       const portString = provider.port || '8545';
       const connUrl = `${protocol}://${host}:${portString}`;
-      const providerOptions = provider.options || {}; 
+      const providerOptions = provider.options || {};
       let ProviderType;
       switch (provider.protocol) {
         case 'ws':
