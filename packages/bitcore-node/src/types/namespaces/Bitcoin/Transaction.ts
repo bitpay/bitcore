@@ -1,26 +1,26 @@
-export type BitcoinAddress = {
+export interface BitcoinAddress {
   toString: (stripCash: boolean) => string;
-};
-export type BitcoinScript = {
+}
+export interface BitcoinScript {
   toBuffer: () => Buffer;
   toHex: () => string;
   classify: () => string;
   chunks: Array<{ buf: Buffer }>;
   toAddress: (network: string) => BitcoinAddress;
-};
-export type BitcoinInputObj = {
+}
+export interface BitcoinInputObj {
   prevTxId: string;
   outputIndex: number;
   sequenceNumber: number;
-};
-export type BitcoinInput = {
+}
+export interface BitcoinInput {
   toObject: () => BitcoinInputObj;
-};
-export type BitcoinOutput = {
+}
+export interface BitcoinOutput {
   script: BitcoinScript;
   satoshis: number;
-};
-export type BitcoinTransactionType = {
+}
+export interface BitcoinTransactionType {
   outputAmount: number;
   hash: string;
   _hash: undefined | string;
@@ -29,4 +29,4 @@ export type BitcoinTransactionType = {
   inputs: BitcoinInput[];
   toBuffer: () => Buffer;
   nLockTime: number;
-};
+}

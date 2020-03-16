@@ -7,7 +7,7 @@ const log = require('npmlog');
 log.debug = log.verbose;
 
 const bcm = new BlockchainMonitor();
-bcm.start(config, (err) => {
+bcm.start(config, err => {
   if (err) throw err;
 
   log.level = 'verbose';

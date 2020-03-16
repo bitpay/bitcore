@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-import { BitcoinBlockStorage } from '../../src/models/block';
-import { Storage } from '../../src/services/storage';
 import * as _ from 'lodash';
-import { Config } from '../../src/services/config';
+import { BitcoinBlockStorage } from '../../src/models/block';
 import { Modules } from '../../src/modules';
-import { Verification, IVerificationPeer } from '../../src/services/verification';
+import { Config } from '../../src/services/config';
+import { Storage } from '../../src/services/storage';
+import { IVerificationPeer, Verification } from '../../src/services/verification';
 
 if (require.main === module) {
   (async () => {

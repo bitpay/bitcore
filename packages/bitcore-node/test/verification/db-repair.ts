@@ -1,20 +1,21 @@
 #!/usr/bin/env node
 import fs from 'fs';
 import { Transform } from 'stream';
-import { CoinStorage } from '../../src/models/coin';
-import { Storage } from '../../src/services/storage';
-import { Config } from '../../src/services/config';
 import { BitcoinBlockStorage } from '../../src/models/block';
+import { CoinStorage } from '../../src/models/coin';
 import { TransactionStorage } from '../../src/models/transaction';
-import { Verification } from '../../src/services/verification';
 import { Modules } from '../../src/modules';
+import { Config } from '../../src/services/config';
+import { Storage } from '../../src/services/storage';
+import { Verification } from '../../src/services/verification';
 
 (async () => {
-  const { CHAIN, NETWORK, FILE, DRYRUN } = process.env;
+  const { CHAIN, NETWORK, FILE, DRYRUN = true } = process.env;
   if (!CHAIN || !NETWORK || !FILE) {
     console.log('CHAIN, NETWORK, and FILE env variable are required');
     process.exit(1);
   }
+  const dry = DRYRUN && DRYRUN !== 'false';
   const chain = CHAIN || '';
   const network = NETWORK || '';
   await Storage.start();
@@ -44,12 +45,41 @@ import { Modules } from '../../src/modules';
           let toKeep = dupeTxs[0];
           const wouldBeDeleted = dupeTxs.filter(c => c._id != toKeep._id);
 
-          if (DRYRUN) {
+          if (dry) {
             console.log('WOULD DELETE');
             console.log(wouldBeDeleted);
           } else {
             console.log('Deleting', wouldBeDeleted.length, 'transactions');
             await TransactionStorage.collection.deleteMany({
+              chain,
+              network,
+              _id: { $in: wouldBeDeleted.map(c => c._id) }
+            });
+          }
+        }
+        break;
+
+      case 'FORK_PRUNE_COIN':
+        {
+          const coin = data.payload.coin;
+          const forkCoins = await CoinStorage.collection
+            .find({ chain, network, mintTxid: coin.mintTxid, mintIndex: coin.mintIndex, spentHeight: -2 })
+            .sort({ mintHeight: -1, spentHeight: -1 })
+            .toArray();
+
+          if (forkCoins.length === 0) {
+            console.log('No action required. Coin already pruned');
+            return;
+          }
+
+          const wouldBeDeleted = forkCoins;
+
+          if (dry) {
+            console.log('WOULD DELETE');
+            console.log(wouldBeDeleted);
+          } else {
+            console.log('Deleting', wouldBeDeleted.length, 'coins');
+            await CoinStorage.collection.deleteMany({
               chain,
               network,
               _id: { $in: wouldBeDeleted.map(c => c._id) }
@@ -75,7 +105,7 @@ import { Modules } from '../../src/modules';
           toKeep = spentCoin || toKeep;
           const wouldBeDeleted = dupeCoins.filter(c => c._id != toKeep._id);
 
-          if (DRYRUN) {
+          if (dry) {
             console.log('WOULD DELETE');
             console.log(wouldBeDeleted);
           } else {
@@ -106,7 +136,7 @@ import { Modules } from '../../src/modules';
           console.log('No errors found, repaired previously');
           return;
         }
-        if (DRYRUN) {
+        if (dry) {
           console.log('WOULD RESYNC BLOCKS', blockHeight, 'to', blockHeight + 1);
           console.log(data.payload);
         } else {
@@ -137,7 +167,7 @@ import { Modules } from '../../src/modules';
         toKeepBlock = processedBlock || toKeepBlock;
         const wouldBeDeletedBlock = dupeBlock.filter(c => c._id !== toKeepBlock._id);
 
-        if (DRYRUN) {
+        if (dry) {
           console.log('WOULD DELETE');
           console.log(wouldBeDeletedBlock);
         } else {

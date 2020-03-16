@@ -1,11 +1,11 @@
 import * as http from 'http';
-import app from '../routes';
-import logger from '../logger';
 import config from '../config';
 import { LoggifyClass } from '../decorators/Loggify';
-import { Storage, StorageService } from './storage';
+import logger from '../logger';
+import app from '../routes';
+import { Config, ConfigService } from './config';
 import { Socket, SocketService } from './socket';
-import { ConfigService, Config } from './config';
+import { Storage, StorageService } from './storage';
 
 @LoggifyClass
 export class ApiService {
@@ -36,7 +36,7 @@ export class ApiService {
 
   async start() {
     if (this.configService.isDisabled('api')) {
-      logger.info(`Disabled API Service`);
+      logger.info('Disabled API Service');
       return;
     }
     if (!this.storageService.connected) {

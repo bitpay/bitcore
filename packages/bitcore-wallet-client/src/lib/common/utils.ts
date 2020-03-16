@@ -1,11 +1,6 @@
 'use strict';
 
-import {
-  BitcoreLib,
-  BitcoreLibCash,
-  Deriver,
-  Transactions
-} from 'crypto-wallet-core';
+import { BitcoreLib, BitcoreLibCash, Deriver, Transactions } from 'crypto-wallet-core';
 
 import * as _ from 'lodash';
 import { Constants } from './constants';
@@ -126,10 +121,7 @@ export class Utils {
 
   static privateKeyToAESKey(privKey) {
     $.checkArgument(privKey && _.isString(privKey));
-    $.checkArgument(
-      Bitcore.PrivateKey.isValid(privKey),
-      'The private key received is invalid'
-    );
+    $.checkArgument(Bitcore.PrivateKey.isValid(privKey), 'The private key received is invalid');
     var pk = Bitcore.PrivateKey.fromString(privKey);
     return Bitcore.crypto.Hash.sha256(pk.toBuffer())
       .slice(0, 16)
@@ -179,20 +171,11 @@ export class Utils {
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
         if (Constants.UTXO_COINS.includes(coin)) {
-          bitcoreAddress = bitcore.Address.fromPublicKey(
-            publicKeys[0],
-            network
-          );
+          bitcoreAddress = bitcore.Address.fromPublicKey(publicKeys[0], network);
         } else {
           const { addressIndex, isChange } = this.parseDerivationPath(path);
           const [{ xPubKey }] = publicKeyRing;
-          bitcoreAddress = Deriver.deriveAddress(
-            chain.toUpperCase(),
-            network,
-            xPubKey,
-            addressIndex,
-            isChange
-          );
+          bitcoreAddress = Deriver.deriveAddress(chain.toUpperCase(), network, xPubKey, addressIndex, isChange);
         }
         break;
     }
@@ -222,16 +205,12 @@ export class Utils {
   }
 
   static signRequestPubKey(requestPubKey, xPrivKey) {
-    var priv = new Bitcore.HDPrivateKey(xPrivKey).deriveChild(
-      Constants.PATHS.REQUEST_KEY_AUTH
-    ).privateKey;
+    var priv = new Bitcore.HDPrivateKey(xPrivKey).deriveChild(Constants.PATHS.REQUEST_KEY_AUTH).privateKey;
     return this.signMessage(requestPubKey, priv);
   }
 
   static verifyRequestPubKey(requestPubKey, signature, xPubKey) {
-    var pub = new Bitcore.HDPublicKey(xPubKey).deriveChild(
-      Constants.PATHS.REQUEST_KEY_AUTH
-    ).publicKey;
+    var pub = new Bitcore.HDPublicKey(xPubKey).deriveChild(Constants.PATHS.REQUEST_KEY_AUTH).publicKey;
     return this.verifyMessage(requestPubKey, signature, pub.toString());
   }
 
@@ -264,10 +243,7 @@ export class Utils {
 
     var u = Constants.UNITS[unit];
     var precision = opts.fullPrecision ? 'full' : 'short';
-    var amount = clipDecimals(
-      satoshis / u.toSatoshis,
-      u[precision].maxDecimals
-    ).toFixed(u[precision].maxDecimals);
+    var amount = clipDecimals(satoshis / u.toSatoshis, u[precision].maxDecimals).toFixed(u[precision].maxDecimals);
     return addSeparators(
       amount,
       opts.thousandsSeparator || ',',
@@ -284,9 +260,7 @@ export class Utils {
 
       var t = new bitcore.Transaction();
 
-      $.checkState(
-        _.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType)
-      );
+      $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
 
       switch (txp.addressType) {
         case Constants.SCRIPT_TYPES.P2SH:
@@ -303,10 +277,7 @@ export class Utils {
         t.to(txp.toAddress, txp.amount);
       } else if (txp.outputs) {
         _.each(txp.outputs, o => {
-          $.checkState(
-            o.script || o.toAddress,
-            'Output should have either toAddress or script specified'
-          );
+          $.checkState(o.script || o.toAddress, 'Output should have either toAddress or script specified');
           if (o.script) {
             t.addOutput(
               new bitcore.Transaction.Output({

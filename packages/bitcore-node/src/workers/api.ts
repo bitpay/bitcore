@@ -1,12 +1,12 @@
-import { Worker } from '../services/worker';
-import { Storage } from '../services/storage';
+import cluster = require('cluster');
+import 'source-map-support/register';
+import { Modules } from '../modules';
 import { Api } from '../services/api';
 import { Event } from '../services/event';
-import cluster = require('cluster');
+import { Storage } from '../services/storage';
+import { Worker } from '../services/worker';
 import parseArgv from '../utils/parseArgv';
-import { Modules } from "../modules";
 import '../utils/polyfills';
-import 'source-map-support/register'
 require('heapdump');
 
 let args = parseArgv([], ['DEBUG', 'CLUSTER']);

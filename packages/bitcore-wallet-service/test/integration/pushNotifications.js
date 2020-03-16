@@ -649,7 +649,9 @@ describe('Push notifications', function() {
                 return c.args[0];
               });
               args[0].body.notification.title.should.contain('New payment received');
+              args[0].body.notification.title.should.contain('New payment received');
               args[0].body.notification.body.should.contain('4.00');
+              args[0].body.data.tokenAddress.should.equal('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48');
               done();
             }, 100);
           });
@@ -681,6 +683,7 @@ describe('Push notifications', function() {
               });
               args[0].body.notification.title.should.contain('Nuevo pago recibido');
               args[0].body.notification.body.should.contain('4.00');
+              args[0].body.data.tokenAddress.should.equal('0x8E870D67F660D95d5be530380D0eC0bd388289E1');
               done();
             }, 100);
           });
@@ -712,6 +715,7 @@ describe('Push notifications', function() {
               });
               args[0].body.notification.title.should.contain('New payment received');
               args[0].body.notification.body.should.contain('4.00');
+              args[0].body.data.tokenAddress.should.equal('0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd');
               done();
             }, 100);
           });

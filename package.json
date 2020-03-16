@@ -1,7 +1,8 @@
 {
-  "version": "8.13.0",
+  "version": "8.16.0",
   "prettier": {
-    "singleQuote": true
+    "singleQuote": true,
+    "printWidth": 120
   },
   "scripts": {
     "build": "docker build -t bitcore-node .",
@@ -12,6 +13,9 @@
     "node": "cd packages/bitcore-node && npm start",
     "bws": "cd packages/bitcore-wallet-service && npm start",
     "compile": "./node_modules/.bin/lerna run compile",
+    "lint": "lerna run lint",
+    "fix": "lerna run fix",
+    "precommit": "lerna run --concurrency 1 --stream precommit --since master",
     "test:ci": "npm run test:ci:build && npm run test:ci:unit && npm run test:ci:integration",
     "test:ci:build": "docker-compose -f docker-compose.test.yml build",
     "test:ci:unit": "./ci.sh 'npm run lerna:ci:unit'",
@@ -21,11 +25,15 @@
     "test:bitcore-wallet-client": "cd ./packages/bitcore-wallet-client && npm run test",
     "ci:bitcore-wallet-client": "./ci.sh 'npm run test:bitcore-wallet-client'",
     "test:bitcore-node": "cd ./packages/bitcore-node && npm run test",
+    "test:bitcore-node:int": "cd ./packages/bitcore-node && npm run test:integration",
     "ci:bitcore-node": "./ci.sh 'npm run test:bitcore-node'",
+    "ci:bitcore-node:int": "./ci.sh 'npm run test:bitcore-node:int'",
     "test:bitcore-lib": "cd ./packages/bitcore-lib && npm run test",
     "ci:bitcore-lib": "./ci.sh 'npm run test:bitcore-lib'",
     "test:bitcore-lib-cash": "cd ./packages/bitcore-lib-cash && npm run test",
     "ci:bitcore-lib-cash": "./ci.sh 'npm run test:bitcore-lib-cash'",
+    "test:bitcore-lib-ltc": "cd ./packages/bitcore-lib-ltc && npm run test",
+    "ci:bitcore-lib-ltc": "./ci.sh 'npm run test:bitcore-lib-ltc'",
     "test:bitcore-p2p": "cd ./packages/bitcore-p2p && npm run test",
     "ci:bitcore-p2p": "./ci.sh 'npm run test:bitcore-p2p'",
     "test:bitcore-p2p-cash": "cd ./packages/bitcore-p2p-cash && npm run test",
@@ -47,11 +55,20 @@
     "cz-customizable": "^5.2.0",
     "eslint-config-airbnb-base": "^12.1.0",
     "eslint-plugin-import": "^2.8.0",
-    "prettier": "^1.14.3",
+    "husky": "^2.4.0",
+    "lint-staged": "^9.5.0",
+    "prettier": "^1.19.1",
+    "tslint": "^5.20.1",
+    "tslint-config-prettier": "^1.18.0",
     "typedoc": "^0.15.0",
     "typescript-eslint-parser": "^15.0.0"
   },
   "dependencies": {
     "lerna": "^3.20.2"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run precommit"
+    }
   }
 }

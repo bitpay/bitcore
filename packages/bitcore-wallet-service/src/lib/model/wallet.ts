@@ -28,7 +28,7 @@ export interface IWallet {
   n: number;
   singleAddress: boolean;
   status: string;
-  publicKeyRing: Array<{ xPubKey: string, requestPubKey: string }>;
+  publicKeyRing: Array<{ xPubKey: string; requestPubKey: string }>;
   addressIndex: number;
   copayers: string[];
   pubKey: string;
@@ -55,7 +55,7 @@ export class Wallet {
   n: number;
   singleAddress: boolean;
   status: string;
-  publicKeyRing: Array<{ xPubKey: string, requestPubKey: string }>;
+  publicKeyRing: Array<{ xPubKey: string; requestPubKey: string }>;
   addressIndex: number;
   copayers: Array<Copayer>;
   pubKey: string;
@@ -83,9 +83,7 @@ export class Wallet {
     $.shouldBeNumber(opts.m);
     $.shouldBeNumber(opts.n);
     $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
-    $.checkArgument(
-      Utils.checkValueInCollection(opts.network, Constants.NETWORKS)
-    );
+    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
 
     x.version = '1.0.0';
     x.createdOn = Math.floor(Date.now() / 1000);
@@ -101,14 +99,13 @@ export class Wallet {
     x.pubKey = opts.pubKey;
     x.coin = opts.coin;
     x.network = opts.network;
-    x.derivationStrategy =
-      opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
+    x.derivationStrategy = opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
     x.addressType = opts.addressType || Constants.SCRIPT_TYPES.P2SH;
 
     x.addressManager = AddressManager.create({
       derivationStrategy: x.derivationStrategy
     });
-    x.usePurpose48  = opts.usePurpose48;
+    x.usePurpose48 = opts.usePurpose48;
 
     x.scanStatus = null;
 
@@ -118,11 +115,7 @@ export class Wallet {
     x.beAuthPublicKey2 = null;
 
     // x.nativeCashAddr opts is only for testing
-    x.nativeCashAddr = _.isUndefined(opts.nativeCashAddr)
-      ? x.coin == 'bch'
-        ? true
-        : null
-      : opts.nativeCashAddr;
+    x.nativeCashAddr = _.isUndefined(opts.nativeCashAddr) ? (x.coin == 'bch' ? true : null) : opts.nativeCashAddr;
 
     return x;
   }
@@ -142,7 +135,7 @@ export class Wallet {
     x.singleAddress = !!obj.singleAddress;
     x.status = obj.status;
     x.publicKeyRing = obj.publicKeyRing;
-    x.copayers = _.map(obj.copayers, (copayer) => {
+    x.copayers = _.map(obj.copayers, copayer => {
       return Copayer.fromObj(copayer);
     });
     x.pubKey = obj.pubKey;
@@ -151,8 +144,7 @@ export class Wallet {
     if (!x.network) {
       x.network = obj.isTestnet ? 'testnet' : 'livenet';
     }
-    x.derivationStrategy =
-      obj.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
+    x.derivationStrategy = obj.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
     x.addressType = obj.addressType || Constants.SCRIPT_TYPES.P2SH;
     x.addressManager = AddressManager.fromObj(obj.addressManager);
     x.scanStatus = obj.scanStatus;
@@ -183,7 +175,7 @@ export class Wallet {
   }
 
   static verifyCopayerLimits(m, n) {
-    return n >= 1 && n <= 15 && (m >= 1 && m <= n);
+    return n >= 1 && n <= 15 && m >= 1 && m <= n;
   }
 
   isShared() {
@@ -217,7 +209,7 @@ export class Wallet {
   }
 
   _updatePublicKeyRing() {
-    this.publicKeyRing = _.map(this.copayers, (copayer) => {
+    this.publicKeyRing = _.map(this.copayers, copayer => {
       return _.pick(copayer, ['xPubKey', 'requestPubKey']);
     });
   }
@@ -232,13 +224,7 @@ export class Wallet {
     this._updatePublicKeyRing();
   }
 
-  addCopayerRequestKey(
-    copayerId,
-    requestPubKey,
-    signature,
-    restrictions,
-    name
-  ) {
+  addCopayerRequestKey(copayerId, requestPubKey, signature, restrictions, name) {
     $.checkState(this.copayers.length == this.n);
 
     const c: any = this.getCopayer(copayerId);
@@ -254,7 +240,7 @@ export class Wallet {
   }
 
   getCopayer(copayerId): Copayer {
-    return this.copayers.find((c) => c.id == copayerId);
+    return this.copayers.find(c => c.id == copayerId);
   }
 
   isComplete() {

@@ -7,12 +7,13 @@ program
   .version(require('../package.json').version)
   .option('--name <name>', 'REQUIRED - Wallet name')
   .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path } = program;
+  const { name, path, storageType } = program;
   try {
-    const wallet = await Wallet.loadWallet({ name, path });
+    const wallet = await Wallet.loadWallet({ name, path, storageType });
     const registered = await wallet.checkWallet();
     // TODO compare with local addresses
     console.log(registered);

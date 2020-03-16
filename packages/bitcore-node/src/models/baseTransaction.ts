@@ -1,10 +1,10 @@
 import { ObjectID } from 'bson';
+import { Storage, StorageService, StreamingFindOptions } from '../services/storage';
+import { SpentHeightIndicators } from '../types/Coin';
 import { TransformOptions } from '../types/TransformOptions';
 import { BaseModel, MongoBound } from './base';
-import { StreamingFindOptions, Storage, StorageService } from '../services/storage';
-import { SpentHeightIndicators } from '../types/Coin';
 
-export type ITransaction = {
+export interface ITransaction {
   txid: string;
   chain: string;
   network: string;
@@ -15,7 +15,7 @@ export type ITransaction = {
   fee: number;
   value: number;
   wallets: ObjectID[];
-};
+}
 
 export abstract class BaseTransaction<T extends ITransaction> extends BaseModel<T> {
   constructor(storage?: StorageService) {

@@ -19,7 +19,7 @@ const fiatCodes = {
   NGN: 1,
   BRL: 1,
   ARS: 1,
-  AUD: 1,
+  AUD: 1
 };
 
 export class FiatRateService {
@@ -35,20 +35,17 @@ export class FiatRateService {
 
     async.parallel(
       [
-        (done) => {
+        done => {
           if (opts.storage) {
             this.storage = opts.storage;
             done();
           } else {
             this.storage = new Storage();
-            this.storage.connect(
-              opts.storageOpts,
-              done
-            );
+            this.storage.connect(opts.storageOpts, done);
           }
         }
       ],
-      (err) => {
+      err => {
         if (err) {
           log.error(err);
         }
@@ -73,27 +70,30 @@ export class FiatRateService {
   }
 
   _fetch(cb?) {
-    cb = cb || function() { };
+    cb = cb || function() {};
     const coins = ['btc', 'bch', 'eth', 'xrp'];
     const provider = this.providers[0];
 
     //    async.each(this.providers, (provider, next) => {
-    async.each(coins, (coin, next2) => {
-      this._retrieve(provider, coin, (err, res) => {
-        if (err) {
-          log.warn('Error retrieving data for ' + provider.name + coin, err);
-          return next2();
-        }
-        this.storage.storeFiatRate(coin, res, (err) => {
+    async.each(
+      coins,
+      (coin, next2) => {
+        this._retrieve(provider, coin, (err, res) => {
           if (err) {
-            log.warn('Error storing data for ' + provider.name, err);
+            log.warn('Error retrieving data for ' + provider.name + coin, err);
+            return next2();
           }
-          return next2();
+          this.storage.storeFiatRate(coin, res, err => {
+            if (err) {
+              log.warn('Error storing data for ' + provider.name, err);
+            }
+            return next2();
+          });
         });
-      });
-    },
+      },
       //        next),
-      cb);
+      cb
+    );
   }
 
   _retrieve(provider, coin, cb) {
@@ -111,14 +111,12 @@ export class FiatRateService {
         log.debug(`Data for ${provider.name} /  ${coin} fetched successfully`);
 
         if (!provider.parseFn) {
-          return cb(
-            new Error('No parse function for provider ' + provider.name)
-          );
+          return cb(new Error('No parse function for provider ' + provider.name));
         }
         try {
-          const rates = _.filter( provider.parseFn(body), (x) => fiatCodes[x.code] );
+          const rates = _.filter(provider.parseFn(body), x => fiatCodes[x.code]);
           return cb(null, rates);
-        } catch (e)  {
+        } catch (e) {
           return cb(e);
         }
       }
@@ -132,22 +130,15 @@ export class FiatRateService {
 
     const now = Date.now();
     const coin = opts.coin || 'btc';
-//    const provider = opts.provider || this.defaultProvider;
+    //    const provider = opts.provider || this.defaultProvider;
     const ts = _.isNumber(opts.ts) || _.isArray(opts.ts) ? opts.ts : now;
 
     async.map(
       [].concat(ts),
       (ts, cb) => {
-        this.storage.fetchFiatRate(coin, opts.code, ts, (
-          err,
-          rate
-        ) => {
+        this.storage.fetchFiatRate(coin, opts.code, ts, (err, rate) => {
           if (err) return cb(err);
-          if (
-            rate &&
-            ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000
-          )
-            rate = null;
+          if (rate && ts - rate.ts > Defaults.FIAT_RATE_MAX_LOOK_BACK_TIME * 60 * 1000) rate = null;
 
           return cb(null, {
             ts: +ts,
@@ -160,6 +151,38 @@ export class FiatRateService {
         if (err) return cb(err);
         if (!_.isArray(ts)) res = res[0];
         return cb(null, res);
+      }
+    );
+  }
+
+  getHistoricalRates(opts, cb) {
+    $.shouldBeFunction(cb);
+
+    opts = opts || {};
+    const historicalRates = {};
+
+    // Oldest date in timestamp range in epoch number ex. 24 hours ago
+    const now = Date.now() - Defaults.FIAT_RATE_FETCH_INTERVAL * 60 * 1000;
+    const ts = _.isNumber(opts.ts) ? opts.ts : now;
+    const coins = ['btc', 'bch', 'eth', 'xrp'];
+
+    async.map(
+      coins,
+      (coin: string, cb) => {
+        this.storage.fetchHistoricalRates(coin, opts.code, ts, (err, rates) => {
+          if (err) return cb(err);
+          if (!rates) return cb();
+          for (const rate of rates) {
+            rate.rate = rate.value;
+            rate.fetchedOn = rate.ts;
+          }
+          historicalRates[coin] = rates;
+          return cb(null, historicalRates);
+        });
+      },
+      (err, res: any) => {
+        if (err) return cb(err);
+        return cb(null, res[0]);
       }
     );
   }

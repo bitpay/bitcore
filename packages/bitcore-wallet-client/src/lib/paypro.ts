@@ -1,4 +1,3 @@
-
 import { BitcoreLib, BitcoreLibCash } from 'crypto-wallet-core';
 
 var $ = require('preconditions').singleton();
@@ -42,9 +41,7 @@ export class PayPro {
     if (network == 'livenet') network = 'main';
 
     if (!requestUrl) {
-      return callback(
-        new Error('You must provide the original payment request url')
-      );
+      return callback(new Error('You must provide the original payment request url'));
     }
     if (!trustedKeys) {
       return callback(new Error('You must provide a set of trusted keys'));
@@ -79,26 +76,14 @@ export class PayPro {
       return callback(new Error('Invalid identity header'));
     }
     if (!trustedKeys[identity]) {
-      return callback(
-        new Error(
-          `Response signed by unknown key (${identity}), unable to validate`
-        )
-      );
+      return callback(new Error(`Response signed by unknown key (${identity}), unable to validate`));
     }
 
     let keyData = trustedKeys[identity];
     if (keyData.domains.indexOf(host) === -1) {
-      return callback(
-        new Error(
-          `The key on the response (${identity}) is not trusted for domain ${host}`
-        )
-      );
+      return callback(new Error(`The key on the response (${identity}) is not trusted for domain ${host}`));
     } else if (!keyData.networks.includes(network)) {
-      return callback(
-        new Error(
-          `The key on the response is not trusted for transactions on the '${network}' network`
-        )
-      );
+      return callback(new Error(`The key on the response is not trusted for transactions on the '${network}' network`));
     }
 
     var hashbuf = Buffer.from(hash, 'hex');
@@ -130,15 +115,14 @@ export class PayPro {
   static runRequest(opts, cb) {
     $.checkArgument(opts.network, 'should pass network');
     var r = this.r[opts.method.toLowerCase()](opts.url);
-    _.each(opts.headers, function (v, k) {
-      if (v)
-        r.set(k, v);
+    _.each(opts.headers, function(v, k) {
+      if (v) r.set(k, v);
     });
     if (opts.args) {
       if (opts.method.toLowerCase() == 'post' || opts.method.toLowerCase() == 'put') {
-          r.send(opts.args);
+        r.send(opts.args);
       } else {
-          r.query(opts.args);
+        r.query(opts.args);
       }
     }
     r.end((err, res) => {
@@ -147,11 +131,11 @@ export class PayPro {
       if (!res || res.statusCode != 200) {
         // some know codes
         if (res.statusCode == 400) {
-          return cb(new Errors.INVOICE_EXPIRED);
+          return cb(new Errors.INVOICE_EXPIRED());
         } else if (res.statusCode == 404) {
-          return cb(new Errors.INVOICE_NOT_AVAILABLE);
+          return cb(new Errors.INVOICE_NOT_AVAILABLE());
         } else if (res.statusCode == 422) {
-          return cb(new Errors.UNCONFIRMED_INPUTS_NOT_ACCEPTED);
+          return cb(new Errors.UNCONFIRMED_INPUTS_NOT_ACCEPTED());
         }
 
         let m = res ? res.statusMessage || res.statusCode : '';
@@ -174,36 +158,24 @@ export class PayPro {
 
       // Step 1: Check digest from header
       let digest = res.headers.digest.toString().split('=')[1];
-      let hash = Bitcore.crypto.Hash.sha256(Buffer.from(body, 'utf8')).toString(
-        'hex'
-      );
+      let hash = Bitcore.crypto.Hash.sha256(Buffer.from(body, 'utf8')).toString('hex');
 
       if (digest !== hash) {
-        return cb(
-          new Error(
-            `Response body hash does not match digest header. Actual: ${hash} Expected: ${digest}`
-          )
-        );
+        return cb(new Error(`Response body hash does not match digest header. Actual: ${hash} Expected: ${digest}`));
       }
       // Step 2: verify digest's signature
-      PayPro._verify(
-        opts.url,
-        res.headers,
-        opts.network,
-        opts.trustedKeys,
-        err => {
-          if (err) return cb(err);
+      PayPro._verify(opts.url, res.headers, opts.network, opts.trustedKeys, err => {
+        if (err) return cb(err);
 
-          let ret;
-          try {
-            ret = JSON.parse(body);
-          } catch (e) {
-            return cb(new Error('Could not payment request:' + body));
-          }
-          ret.verified = 1;
-          return cb(null, ret);
+        let ret;
+        try {
+          ret = JSON.parse(body);
+        } catch (e) {
+          return cb(new Error('Could not payment request:' + body));
         }
-      );
+        ret.verified = 1;
+        return cb(null, ret);
+      });
     });
   }
 
@@ -216,7 +188,7 @@ export class PayPro {
 
     var COIN = coin.toUpperCase();
     opts.headers = opts.headers || {
-      'Accept': JSON_PAYMENT_REQUEST_CONTENT_TYPE,
+      Accept: JSON_PAYMENT_REQUEST_CONTENT_TYPE,
       'Content-Type': 'application/octet-stream'
     };
     opts.method = 'GET';
@@ -238,14 +210,12 @@ export class PayPro {
       if (!data.network) return cb(new Error('No network at payment request'));
 
       // currency
-      if (data.currency != COIN)
-        return cb(new Error('Currency mismatch. Expecting:' + COIN));
+      if (data.currency != COIN) return cb(new Error('Currency mismatch. Expecting:' + COIN));
 
       ret.coin = coin;
 
       // fee
-      if (data.requiredFeeRate > MAX_FEE_PER_KB)
-        return cb(new Error('Fee rate too high:' + data.requiredFeeRate));
+      if (data.requiredFeeRate > MAX_FEE_PER_KB) return cb(new Error('Fee rate too high:' + data.requiredFeeRate));
 
       ret.requiredFeeRate = data.requiredFeeRate;
 
@@ -260,9 +230,7 @@ export class PayPro {
       ret.amount = data.outputs[0].amount;
 
       try {
-        ret.toAddress = new bitcore.Address(data.outputs[0].address).toString(
-          true
-        );
+        ret.toAddress = new bitcore.Address(data.outputs[0].address).toString(true);
       } catch (e) {
         return cb(new Error('Bad output address ' + e));
       }
@@ -304,17 +272,13 @@ export class PayPro {
     // verify request
     PayPro.runRequest(opts, function(err, rawData) {
       if (err) {
-        console.log(
-          'Error at verify-payment:',
-          err.message ? err.message : '',
-          opts
-        );
+        console.log('Error at verify-payment:', err.message ? err.message : '', opts);
         return cb(err);
       }
 
       opts.headers = {
         'Content-Type': JSON_PAYMENT_CONTENT_TYPE,
-        'Accept': JSON_PAYMENT_ACK_CONTENT_TYPE
+        Accept: JSON_PAYMENT_ACK_CONTENT_TYPE
       };
 
       if (opts.bp_partner) {
@@ -334,11 +298,7 @@ export class PayPro {
 
       PayPro.runRequest(opts, function(err, rawData) {
         if (err) {
-          console.log(
-            'Error at payment:',
-            err.message ? err.message : '',
-            opts
-          );
+          console.log('Error at payment:', err.message ? err.message : '', opts);
           return cb(err);
         }
 
