@@ -69,6 +69,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       const protocol = provider.protocol || 'http';
       const portString = provider.port || '8545';
       const connUrl = `${protocol}://${host}:${portString}`;
+      const providerOptions = provider.options || {};
       let ProviderType;
       switch (provider.protocol) {
         case 'ws':
@@ -79,7 +80,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
           ProviderType = Web3.providers.HttpProvider;
           break;
       }
-      ETHStateProvider.web3[network] = new Web3(new ProviderType(connUrl));
+      ETHStateProvider.web3[network] = new Web3(new ProviderType(connUrl, providerOptions));
     }
     return ETHStateProvider.web3[network];
   }

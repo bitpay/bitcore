@@ -180,10 +180,9 @@ export class UpdateStats {
               .collection('stats_fiat_rates')
               .remove({ '_id.day': { $gte: lastDay } })
               .then(async err => {
-
                 // rm day = null
                 res = res.filter(x => x._id.day);
- 
+
                 console.log(`Trying to insert ${res.length} entries`);
                 const opts: any = { ordered: false };
                 await this.db.collection('stats_fiat_rates').insert(res, opts);
