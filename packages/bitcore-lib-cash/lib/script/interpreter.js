@@ -185,8 +185,6 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
       }
   }
 
- 
-
   return true;
 };
 
@@ -249,7 +247,7 @@ Interpreter.SCRIPT_VERIFY_LOW_S = (1 << 3);
 // verify dummy stack item consumed by CHECKMULTISIG is of zero-length (softfork safe, BIP62 rule 7).
 Interpreter.SCRIPT_VERIFY_NULLDUMMY = (1 << 4);
 
-// Using a non-push operator in the scriptSig causes script failre (softfork safe, BIP62 rule 2).
+// Using a non-push operator in the scriptSig causes script failure (softfork safe, BIP62 rule 2).
 Interpreter.SCRIPT_VERIFY_SIGPUSHONLY = (1 << 5);
 
 // Require minimal encodings for all push operations (OP_0... OP_16, OP_1NEGATE where possible, direct
@@ -1774,9 +1772,6 @@ Interpreter.prototype.step = function() {
           var nSigsCount = BN.fromScriptNumBuffer(stacktop(-idxSigCount), fRequireMinimal).toNumber();
           var idxDummy = idxTopSig + nSigsCount;
 
-          if(nKeysCount === 7) {
-            console.log()
-          }
           if (nSigsCount < 0 || nSigsCount > nKeysCount) {
             this.errstr = 'SCRIPT_ERR_SIG_COUNT';
             return false;

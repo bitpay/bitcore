@@ -196,6 +196,10 @@ describe('Interpreter', function() {
       flags = flags | Interpreter.SCRIPT_VERIFY_CLEANSTACK;
     }
 
+    if(flagstr.indexOf('DISALLOW_SEGWIT_RECOVERY') !== -1) {
+      flags = flags | Interpreter.SCRIPT_DISALLOW_SEGWIT_RECOVERY;
+    }
+
     if (flagstr.indexOf('FORKID') !== -1) {
       flags = flags | Interpreter.SCRIPT_ENABLE_SIGHASH_FORKID;
     }
