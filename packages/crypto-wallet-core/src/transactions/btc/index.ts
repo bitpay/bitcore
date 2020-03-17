@@ -32,6 +32,7 @@ export class BTCTxProvider {
   }
 
   create({ recipients, utxos = [], change, wallet, fee = 20000 }) {
+    console.log(recipients, wallet);
     change = change || wallet.deriveAddress(wallet.addressIndex, true);
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
@@ -47,7 +48,8 @@ export class BTCTxProvider {
       tx.change(change);
     }
     for (const recipient of recipients) {
-      tx.to(recipient.address, recipient.amount.toFixed(0));
+      console.log(recipient);
+      tx.to(recipient.address, parseInt(recipient.amount));
     }
     return tx.uncheckedSerialize();
   }
