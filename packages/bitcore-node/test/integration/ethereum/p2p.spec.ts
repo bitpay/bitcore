@@ -68,7 +68,7 @@ describe('Ethereum', function() {
     await worker.setupListeners();
     const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
 
-    const web3 = await worker.getWeb3();
+    const { web3 } = await worker.getWeb3();
     await web3.eth.sendTransaction({ to: addresses[0], value: web3.utils.toWei('.01', 'ether'), from: account });
     await sawBlock;
     await worker.disconnect();
@@ -84,7 +84,7 @@ describe('Ethereum', function() {
     await worker.start();
     await wait(1000);
 
-    const web3 = await worker.getWeb3();
+    const { web3 } = await worker.getWeb3();
     await web3.eth.sendTransaction({ to: addresses[0], value: web3.utils.toWei('.02', 'ether'), from: account });
     await sawBlock;
     await done;
