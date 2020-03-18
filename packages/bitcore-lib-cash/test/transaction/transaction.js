@@ -10,6 +10,7 @@ var sinon = require('sinon');
 var bitcore = require('../..');
 var BN = bitcore.crypto.BN;
 var Transaction = bitcore.Transaction;
+var Signature = bitcore.Signature;
 var Input = bitcore.Transaction.Input;
 var Output = bitcore.Transaction.Output;
 var PrivateKey = bitcore.PrivateKey;
@@ -1211,7 +1212,6 @@ describe('Transaction', function() {
           getIndexOrder(outputSet.outputs, tx.outputs).should.deep.equal(outputSet.expected);
         });
       });
-
     });
   });
 });

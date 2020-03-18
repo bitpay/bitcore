@@ -196,6 +196,10 @@ describe('Interpreter', function() {
       flags = flags | Interpreter.SCRIPT_VERIFY_CLEANSTACK;
     }
 
+    if(flagstr.indexOf('DISALLOW_SEGWIT_RECOVERY') !== -1) {
+      flags = flags | Interpreter.SCRIPT_DISALLOW_SEGWIT_RECOVERY;
+    }
+
     if (flagstr.indexOf('FORKID') !== -1) {
       flags = flags | Interpreter.SCRIPT_ENABLE_SIGHASH_FORKID;
     }
@@ -206,6 +210,10 @@ describe('Interpreter', function() {
 
     if (flagstr.indexOf('CHECKDATASIG') !== -1) {
       flags = flags | Interpreter.SCRIPT_ENABLE_CHECKDATASIG;
+    }
+
+    if (flagstr.indexOf('SCHNORR_MULTISIG') !== -1) {
+      flags = flags | Interpreter.SCRIPT_ENABLE_SCHNORR_MULTISIG;
     }
 
     if (flagstr.indexOf('MINIMALIF') !== -1) {
@@ -221,6 +229,7 @@ describe('Interpreter', function() {
   };
 
   var testFixture = function(vector, expected, extraData) {
+  
     var scriptSig = Script.fromBitcoindString(vector[0]);
     var scriptPubkey = Script.fromBitcoindString(vector[1]);
     var flags = getFlags(vector[2]);

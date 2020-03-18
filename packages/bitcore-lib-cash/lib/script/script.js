@@ -755,7 +755,42 @@ Script.buildMultisigIn = function(pubkeys, threshold, signatures, opts) {
   $.checkArgument(_.isArray(signatures));
   opts = opts || {};
   var s = new Script();
-  s.add(Opcode.OP_0);
+
+  if (opts.signingMethod === "schnorr" && opts.checkBits) {
+
+    // Spec according to https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/2019-11-15-schnorrmultisig.md#scriptsig-size
+    let checkBitsString = Buffer.from(opts.checkBits).reverse().join('');
+    let checkBitsDecimal = parseInt(checkBitsString, 2);
+    let checkBitsHex = parseInt(checkBitsDecimal.toString(16), 16);
+    let N = pubkeys.length;
+      // N should only be 1-20
+        if (N >= 1 && N <= 4) {
+          s.add(Opcode(checkBitsHex));
+        }
+        else if (N >= 5 && N <= 8) {
+        if(checkBitsHex === 0x81) {
+            s.add(Opcode("OP_1NEGATE")) // OP_1NEGATE
+          } else if(checkBitsHex > 0x10) {
+            s.add(0x01);
+            s.add(checkBitsHex);
+          } else {
+            s.add(Opcode(checkBitsHex));
+          }
+          
+        }
+        else if (N >= 9 && N <= 16) {
+          s.add(0x02);
+          s.add(checkBitsHex);
+        } 
+        else if (N >= 17 && N <= 20) {
+          s.add(0x03);
+          s.add(checkBitsHex);
+        }
+    } else {
+      s.add(Opcode.OP_0); // ecdsa schnorr mode; multisig dummy param of 0
+    }
+  
+  
   _.each(signatures, function(signature) {
     $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
     // TODO: allow signatures to be an array of Signature objects
@@ -773,6 +808,8 @@ Script.buildMultisigIn = function(pubkeys, threshold, signatures, opts) {
  * @param {Object=} opts
  * @param {boolean=} opts.noSorting don't sort the given public keys before creating the script (false by default)
  * @param {Script=} opts.cachedMultisig don't recalculate the redeemScript
+ * @param {Uint8Array} opts.checkBits bitfield map 1 or 0 to check which signatures to map against public keys for verification in schnorr multisig mode
+ * @param {String} opts.signingMethod method with which input will be signed "ecdsa" or "schnorr"
  *
  * @returns {Script}
  */
@@ -782,7 +819,41 @@ Script.buildP2SHMultisigIn = function(pubkeys, threshold, signatures, opts) {
   $.checkArgument(_.isArray(signatures));
   opts = opts || {};
   var s = new Script();
-  s.add(Opcode.OP_0);
+  
+  if (opts.signingMethod === "schnorr" && opts.checkBits) {
+
+    // Spec according to https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/2019-11-15-schnorrmultisig.md#scriptsig-size
+    let checkBitsString = Buffer.from(opts.checkBits).reverse().join('');
+    let checkBitsDecimal = parseInt(checkBitsString, 2);
+    let checkBitsHex = parseInt(checkBitsDecimal.toString(16), 16);
+    let N = pubkeys.length;
+    // N should only be 1-20
+      if (N >= 1 && N <= 4) {
+        s.add(Opcode(checkBitsDecimal));
+      }
+      else if (N >= 5 && N <= 8) {
+       if(checkBitsHex === 0x81) {
+          s.add(Opcode("OP_1NEGATE")) // OP_1NEGATE
+        } else if(checkBitsHex > 0x10) {
+          s.add(0x01);
+          s.add(checkBitsHex);
+        } else {
+          s.add(Opcode(checkBitsDecimal));
+        }
+        
+      }
+      else if (N >= 9 && N <= 16) {
+        s.add(0x02);
+        s.add(checkBitsHex);
+      } 
+      else if (N >= 17 && N <= 20) {
+        s.add(0x03);
+        s.add(checkBitsHex);
+      }
+  } else {
+    s.add(Opcode.OP_0); // ecdsa schnorr mode; multisig dummy param of 0
+  }
+  
   _.each(signatures, function(signature) {
     $.checkArgument(BufferUtil.isBuffer(signature), 'Signatures must be an array of Buffers');
     // TODO: allow signatures to be an array of Signature objects
@@ -1032,7 +1103,7 @@ Script.prototype.findAndDelete = function(script) {
  * @returns {boolean} if the chunk {i} is the smallest way to push that particular data.
  */
 Script.prototype.checkMinimalPush = function(i) {
-  var chunk = this.chunks[i];
+  var chunk = this.   chunks[i];
   var buf = chunk.buf;
   var opcodenum = chunk.opcodenum;
   if (!buf) {
@@ -1043,10 +1114,11 @@ Script.prototype.checkMinimalPush = function(i) {
     return opcodenum === Opcode.OP_0;
   } else if (buf.length === 1 && buf[0] >= 1 && buf[0] <= 16) {
     // Could have used OP_1 .. OP_16.
-    return opcodenum === Opcode.OP_1 + (buf[0] - 1);
+    // return opcodenum === Opcode.OP_1 + (buf[0] - 1);
+    return false;
   } else if (buf.length === 1 && buf[0] === 0x81) {
     // Could have used OP_1NEGATE
-    return opcodenum === Opcode.OP_1NEGATE;
+    return false;
   } else if (buf.length <= 75) {
     // Could have used a direct push (opcode indicating number of bytes pushed + those bytes).
     return opcodenum === buf.length;

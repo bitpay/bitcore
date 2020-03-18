@@ -39,6 +39,7 @@ function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, opts) {
   this.threshold = threshold;
   // Empty array of signatures
   this.signatures = signatures ? this._deserializeSignatures(signatures) : new Array(this.publicKeys.length);
+  this.checkBitsField = new Uint8Array(this.publicKeys.length);
 }
 inherits(MultiSigScriptHashInput, Input);
 
@@ -68,7 +69,7 @@ MultiSigScriptHashInput.prototype._serializeSignatures = function() {
   });
 };
 
-MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype) {
+MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   $.checkState(this.output instanceof Output);
   sigtype = sigtype || (Signature.SIGHASH_ALL |  Signature.SIGHASH_FORKID);
 
@@ -81,7 +82,7 @@ MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateK
         prevTxId: self.prevTxId,
         outputIndex: self.outputIndex,
         inputIndex: index,
-        signature: Sighash.sign(transaction, privateKey, sigtype, index, self.redeemScript, self.output.satoshisBN),
+        signature: Sighash.sign(transaction, privateKey, sigtype, index, self.redeemScript, self.output.satoshisBN, undefined, signingMethod),
         sigtype: sigtype
       }));
     }
@@ -89,32 +90,33 @@ MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateK
   return results;
 };
 
-MultiSigScriptHashInput.prototype.addSignature = function(transaction, signature) {
+MultiSigScriptHashInput.prototype.addSignature = function(transaction, signature, signingMethod) {
   $.checkState(!this.isFullySigned(), 'All needed signatures have already been added');
   $.checkArgument(!_.isUndefined(this.publicKeyIndex[signature.publicKey.toString()]),
                   'Signature has no matching public key');
-  $.checkState(this.isValidSignature(transaction, signature));
+  $.checkState(this.isValidSignature(transaction, signature, signingMethod));
   this.signatures[this.publicKeyIndex[signature.publicKey.toString()]] = signature;
-  this._updateScript();
+  this.checkBitsField[this.publicKeyIndex[signature.publicKey.toString()]] = (signature !== undefined) ? 1 : 0;
+  this._updateScript(signingMethod, this.checkBitsField);
   return this;
 };
 
-MultiSigScriptHashInput.prototype._updateScript = function() {
+MultiSigScriptHashInput.prototype._updateScript = function(signingMethod, checkBitsField) {
   this.setScript(Script.buildP2SHMultisigIn(
     this.publicKeys,
     this.threshold,
-    this._createSignatures(),
-    { cachedMultisig: this.redeemScript }
+    this._createSignatures(signingMethod),
+    { cachedMultisig: this.redeemScript, checkBits: checkBitsField, signingMethod }
   ));
   return this;
 };
 
-MultiSigScriptHashInput.prototype._createSignatures = function() {
+MultiSigScriptHashInput.prototype._createSignatures = function(signingMethod) {
   return _.map(
     _.filter(this.signatures, function(signature) { return !_.isUndefined(signature); }),
     function(signature) {
       return BufferUtil.concat([
-        signature.signature.toDER(),
+        signature.signature.toDER(signingMethod),
         BufferUtil.integerAsSingleByteBuffer(signature.sigtype)
       ]);
     }
@@ -147,8 +149,9 @@ MultiSigScriptHashInput.prototype.publicKeysWithoutSignature = function() {
   });
 };
 
-MultiSigScriptHashInput.prototype.isValidSignature = function(transaction, signature) {
+MultiSigScriptHashInput.prototype.isValidSignature = function(transaction, signature, signingMethod) {
   // FIXME: Refactor signature so this is not necessary
+  signingMethod = signingMethod || "ecdsa";
   signature.signature.nhashtype = signature.sigtype;
   return Sighash.verify(
       transaction,
@@ -156,7 +159,9 @@ MultiSigScriptHashInput.prototype.isValidSignature = function(transaction, signa
       signature.publicKey,
       signature.inputIndex,
       this.redeemScript,
-      this.output.satoshisBN
+      this.output.satoshisBN,
+      undefined,
+      signingMethod
   );
 };
 
