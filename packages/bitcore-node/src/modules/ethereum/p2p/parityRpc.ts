@@ -1,10 +1,10 @@
-import { LoggifyClass } from '../../../decorators/Loggify';
-import Web3 from 'web3';
 import AbiDecoder from 'abi-decoder';
-import { IEthTransaction } from '../types';
+import Web3 from 'web3';
+import { LoggifyClass } from '../../../decorators/Loggify';
 import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { EthTransactionStorage } from '../models/transaction';
+import { IEthTransaction } from '../types';
 
 AbiDecoder.addABI(ERC20Abi);
 AbiDecoder.addABI(ERC721Abi);
@@ -91,7 +91,8 @@ export class ParityRPC {
 
   public send<T>(data: JsonRPCRequest) {
     return new Promise<T>((resolve, reject) => {
-      this.web3.eth.currentProvider.send(data, function(err, data) {
+      const provider = this.web3.eth.currentProvider as any; // Import type HttpProvider web3-core
+      provider.send(data, function(err, data) {
         if (err) return reject(err);
         resolve(data.result as T);
       } as Callback<JsonRPCResponse>);

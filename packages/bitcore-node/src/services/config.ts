@@ -1,6 +1,6 @@
-import { ConfigType } from '../types/Config';
 import config from '../config';
 import { ChainNetwork } from '../types/ChainNetwork';
+import { ConfigType } from '../types/Config';
 import { valueOrDefault } from '../utils/check';
 
 type RecursivePartial<T> = { [P in keyof T]?: RecursivePartial<T[P]> };

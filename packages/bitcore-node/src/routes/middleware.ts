@@ -1,5 +1,5 @@
-import logger from '../logger';
 import * as express from 'express';
+import logger from '../logger';
 import { RateLimitStorage } from '../models/rateLimit';
 import { Config } from '../services/config';
 
@@ -9,9 +9,7 @@ type TimedRequest = {
 
 function LogObj(logOut: { [key: string]: string }) {
   logger.info(
-    `${logOut.time} | ${logOut.ip} | ${logOut.phase} | ${logOut.took} | ${logOut.method} | ${logOut.status} | ${
-      logOut.url
-    } | ${logOut.openConnections} open`
+    `${logOut.time} | ${logOut.ip} | ${logOut.phase} | ${logOut.took} | ${logOut.method} | ${logOut.status} | ${logOut.url} | ${logOut.openConnections} open`
   );
 }
 
@@ -38,7 +36,7 @@ function LogPhase(req: TimedRequest, res: express.Response, phase: string) {
     logOut.status = res.statusCode.toString().padStart(5, ' ');
   }
   LogObj(logOut);
-};
+}
 export function LogMiddleware() {
   return (req: TimedRequest, res: express.Response, next: express.NextFunction) => {
     req.startTime = new Date();

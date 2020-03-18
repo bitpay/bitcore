@@ -1,4 +1,4 @@
-import { ObjectId } from "bson";
+import { ObjectId } from 'bson';
 export const enum Direction {
   ascending = 1,
   descending = -1

@@ -363,11 +363,12 @@ PublicKey.prototype._getID = function _getID() {
  * Will return an address for the public key
  *
  * @param {String|Network=} network - Which network should the address be for
+ * @param {string} type - Either 'pubkeyhash', 'witnesspubkeyhash', or 'scripthash'
  * @returns {Address} An address generated from the public key
  */
-PublicKey.prototype.toAddress = function(network) {
+PublicKey.prototype.toAddress = function(network, type) {
   var Address = require('./address');
-  return Address.fromPublicKey(this, network || this.network);
+  return Address.fromPublicKey(this, network || this.network, type);
 };
 
 /**

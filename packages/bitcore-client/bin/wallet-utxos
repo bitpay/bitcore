@@ -8,12 +8,13 @@ program
   .option('--name <name>', 'REQUIRED - Wallet name')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--includeSpent', 'optional - Include spent transaction outputs')
+  .option('--storageType [storageType]', 'optional - name of database (default Level)')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, includeSpent } = program;
+  const { name, path, includeSpent, storageType } = program;
   try {
-    const wallet = await Wallet.loadWallet({ name, path });
+    const wallet = await Wallet.loadWallet({ name, path, storageType });
     wallet.getUtxos({ includeSpent }).pipe(process.stdout);
   } catch (e) {
     console.error(e);

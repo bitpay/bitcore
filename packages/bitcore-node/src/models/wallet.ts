@@ -1,10 +1,10 @@
-import { WalletAddressStorage } from '../models/walletAddress';
-import { BaseModel } from './base';
-import { TransformOptions } from '../types/TransformOptions';
 import { ObjectID } from 'mongodb';
+import { WalletAddressStorage } from '../models/walletAddress';
 import { StorageService } from '../services/storage';
+import { TransformOptions } from '../types/TransformOptions';
+import { BaseModel } from './base';
 
-export type IWallet = {
+export interface IWallet {
   _id?: ObjectID;
   chain: string;
   network: string;
@@ -12,7 +12,7 @@ export type IWallet = {
   singleAddress: boolean;
   pubKey: string;
   path: string;
-};
+}
 
 export class WalletModel extends BaseModel<IWallet> {
   constructor(storage?: StorageService) {
