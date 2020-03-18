@@ -471,6 +471,15 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v4/txproposals/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server.createTx(req.body, (err, txp) => {
+          if (err) return returnError(err, res, req);
+          res.json(txp);
+        });
+      });
+    });
+
     // DEPRECATED
     router.post('/v1/addresses/', (req, res) => {
       logDeprecated(req);

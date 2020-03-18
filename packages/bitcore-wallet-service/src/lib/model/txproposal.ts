@@ -131,7 +131,7 @@ export class TxProposal {
 
     const x = new TxProposal();
 
-    x.version = 3;
+    x.version = 4;
 
     const now = Date.now();
     x.createdOn = Math.floor(now / 1000);

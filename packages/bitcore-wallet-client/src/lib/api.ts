@@ -427,6 +427,8 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
+    var signingMethod = opts.signingMethod || "ecdsa";
+
     if (!_.includes(Constants.COINS, coin)) return cb(new Error('Invalid coin'));
 
     if (coin == 'eth') return cb(new Error('ETH not supported for this action'));
@@ -458,7 +460,11 @@ export class API extends EventEmitter {
           try {
             var toAddress = B.Address.fromString(destinationAddress);
 
-            tx = new B.Transaction()
+            tx = (opts.coin === 'bch') ? new B.Transaction()
+              .from(utxos)
+              .to(toAddress, amount)
+              .fee(fee)
+              .sign(privateKey, B.crypto.Signature.SIGHASH_ALL | B.crypto.Signature.SIGHASH_FORKID, signingMethod) : new B.Transaction()
               .from(utxos)
               .to(toAddress, amount)
               .fee(fee)
@@ -1232,6 +1238,7 @@ export class API extends EventEmitter {
   // * @param {Array} opts.inputs - Optional. Inputs for this TX
   // * @param {number} opts.fee - Optional. Use an fixed fee for this TX (only when opts.inputs is specified)
   // * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
+  // * @param {Boolean} opts.signingMethod - Optional. If set, either signs transaction via "ecdsa" or "schnorr"
   // * @returns {Callback} cb - Return error or the transaction proposal
   // */
   createTxProposal(opts, cb) {
