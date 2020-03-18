@@ -30,6 +30,7 @@ const main = async () => {
       if (lite) {
         delete wallet.masterKey;
         delete wallet.pubKey;
+        wallet.lite = true;
       }
       delete wallet.storage;
       const readStream = new stream.Readable({ objectMode: true });
