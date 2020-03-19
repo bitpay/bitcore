@@ -393,11 +393,11 @@ export class TxProposal {
     this._updateStatus();
   }
 
-  sign(copayerId, signatures, xpub) {
+  sign(copayerId, signatures, xpub, signingMethod) {
     try {
       // Tests signatures are OK
       const tx = this.getBitcoreTx();
-      ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub);
+      ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub, signingMethod);
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {
