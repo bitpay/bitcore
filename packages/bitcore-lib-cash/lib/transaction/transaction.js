@@ -540,7 +540,7 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
   if (_.isArray(utxo)) {
     var self = this;
     _.each(utxo, function(utxo) {
-      self.from(utxo, pubkeys, threshold);
+      self.from(utxo, pubkeys, threshold, opts);
     });
     return this;
   }
@@ -600,7 +600,7 @@ Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, opt
     prevTxId: utxo.txId,
     outputIndex: utxo.outputIndex,
     script: Script.empty()
-  }, pubkeys, threshold, opts));
+  }, pubkeys, threshold, undefined, opts));
 };
 
 /**
@@ -1073,32 +1073,34 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
  * @param {number} sigtype
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.sign = function(privateKey, sigtype) {
+Transaction.prototype.sign = function(privateKey, sigtype, signingMethod) {
+  signingMethod = signingMethod || "ecdsa"
+  
   $.checkState(this.hasAllUtxoInfo(), 'Not all utxo information is available to sign the transaction.');
   var self = this;
   if (_.isArray(privateKey)) {
     _.each(privateKey, function(privateKey) {
-      self.sign(privateKey, sigtype);
+      self.sign(privateKey, sigtype, signingMethod);
     });
     return this;
   }
-  _.each(this.getSignatures(privateKey, sigtype), function(signature) {
-    self.applySignature(signature);
+  _.each(this.getSignatures(privateKey, sigtype, signingMethod), function(signature) {
+    self.applySignature(signature, signingMethod);
   });
   return this;
 };
 
-Transaction.prototype.getSignatures = function(privKey, sigtype) {
+Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) {
   privKey = new PrivateKey(privKey);
-
 
   // By default, signs using ALL|FORKID
   sigtype = sigtype || (Signature.SIGHASH_ALL |  Signature.SIGHASH_FORKID);
   var transaction = this;
   var results = [];
+  
   var hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
   _.each(this.inputs, function forEachInput(input, index) {
-    _.each(input.getSignatures(transaction, privKey, index, sigtype, hashData), function(signature) {
+    _.each(input.getSignatures(transaction, privKey, index, sigtype, hashData, signingMethod), function(signature) {
       results.push(signature);
     });
   });
@@ -1113,10 +1115,11 @@ Transaction.prototype.getSignatures = function(privKey, sigtype) {
  * @param {number} signature.sigtype
  * @param {PublicKey} signature.publicKey
  * @param {Signature} signature.signature
+ * @param {String} signingMethod "ecdsa" or "schnorr"
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.applySignature = function(signature) {
-  this.inputs[signature.inputIndex].addSignature(this, signature);
+Transaction.prototype.applySignature = function(signature, signingMethod) {
+  this.inputs[signature.inputIndex].addSignature(this, signature, signingMethod);
   return this;
 };
 
@@ -1148,8 +1151,8 @@ Transaction.prototype.isValidSignature = function(signature) {
 /**
  * @returns {bool} whether the signature is valid for this transaction input
  */
-Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, satoshisBN, flags) {
-  return Sighash.verify(this, sig, pubkey, nin, subscript, satoshisBN, flags);
+Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, satoshisBN, flags, signingMethod) {
+  return Sighash.verify(this, sig, pubkey, nin, subscript, satoshisBN, flags, signingMethod);
 };
 
 /**
