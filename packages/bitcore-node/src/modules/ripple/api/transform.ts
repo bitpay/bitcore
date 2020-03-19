@@ -1,9 +1,9 @@
-import { Transform } from 'stream';
-import { IWallet } from '../../../models/wallet';
 import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types';
+import { Transform } from 'stream';
+import { ITransaction } from '../../../models/baseTransaction';
+import { IWallet } from '../../../models/wallet';
 import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
 import { RippleStateProvider } from './csp';
-import { ITransaction } from '../../../models/baseTransaction';
 export class RippleWalletTransactions extends Transform {
   walletAddresses?: Array<IWalletAddress>;
   constructor(private wallet: IWallet, private csp: RippleStateProvider) {
@@ -47,7 +47,7 @@ export class RippleWalletTransactions extends Transform {
                 category: 'send',
                 satoshis: -1 * Number(output.value) * 1e6,
                 height: transaction.blockHeight,
-                address: address,
+                address,
                 outputIndex: changed.indexOf(address),
                 blockTime: transaction.blockTimeNormalized
               }) + '\n'
@@ -62,7 +62,7 @@ export class RippleWalletTransactions extends Transform {
                 category: 'move',
                 satoshis: -1 * Number(output.value) * 1e6,
                 height: transaction.blockHeight,
-                address: address,
+                address,
                 outputIndex: changed.indexOf(address),
                 blockTime: transaction.blockTimeNormalized
               }) + '\n'
@@ -92,7 +92,7 @@ export class RippleWalletTransactions extends Transform {
                 category: 'receive',
                 satoshis: Number(output.value) * 1e6,
                 height: transaction.blockHeight,
-                address: address,
+                address,
                 outputIndex: changed.indexOf(address),
                 blockTime: transaction.blockTimeNormalized
               }) + '\n'

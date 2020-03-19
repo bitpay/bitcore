@@ -1,14 +1,17 @@
-import logger from '../../logger';
 import { EventEmitter } from 'events';
-import { StateStorage } from '../../models/state';
-import { BaseP2PWorker } from '../../services/p2p';
+import { RippleAPI } from 'ripple-lib';
+import { Transform } from 'stream';
+import { LoggifyClass } from '../../decorators/Loggify';
+import logger from '../../logger';
 import { timestamp } from '../../logger';
+import { StateStorage } from '../../models/state';
+import { IWalletAddress, WalletAddressStorage } from '../../models/walletAddress';
+import { BaseP2PWorker } from '../../services/p2p';
 import { wait } from '../../utils/wait';
 import { RippleStateProvider } from './api/csp';
-import { RippleAPI } from 'ripple-lib';
 import { XrpBlockModel, XrpBlockStorage } from './models/block';
-import { IXrpBlock, IXrpTransaction, IXrpCoin } from './types';
-import { LoggifyClass } from '../../decorators/Loggify';
+import { XrpTransactionStorage } from './models/transaction';
+import { IXrpBlock, IXrpCoin, IXrpTransaction } from './types';
 
 @LoggifyClass
 export class XrpP2pWorker extends BaseP2PWorker<any> {
@@ -130,73 +133,148 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
     return this.provider.getBlock({ chain: this.chain, network: this.network, blockId: height.toString() });
   }
 
+  async syncWallets() {
+    return new Promise(async resolve => {
+      try {
+        const { chain, network } = this;
+        const count = await WalletAddressStorage.collection.countDocuments({ chain, network });
+        let done = 0;
+        logger.info(`Syncing ${count} ${chain} ${network} wallets`);
+        let lastLog = Date.now();
+        const addressStream = WalletAddressStorage.collection.find({ chain, network }).stream();
+        addressStream
+          .pipe(
+            new Transform({
+              objectMode: true,
+              transform: async (data, _, cb) => {
+                if (Date.now() - 5000 > lastLog) {
+                  logger.info(`Syncing ${count - done} ${chain} ${network} wallets`);
+                }
+                const walletAddress = (data as any) as IWalletAddress;
+                const [lastTx] = await XrpTransactionStorage.collection
+                  .find({ chain, network, wallets: walletAddress.wallet })
+                  .sort({ blockTimeNormalized: -1 })
+                  .limit(1)
+                  .toArray();
+                const txs = await this.provider.getAddressTransactions({
+                  chain: this.chain,
+                  network: this.network,
+                  address: walletAddress.address,
+                  args: {
+                    startTx: lastTx.txid
+                  }
+                });
+                if (txs.length) {
+                  logger.info(`Saving ${txs.length} transactions`);
+                }
+                const blockTxs = new Array<IXrpTransaction>();
+                const blockCoins = new Array<IXrpCoin>();
+
+                for (const tx of txs) {
+                  const bitcoreTx = this.provider.transform(tx, network) as IXrpTransaction;
+                  const bitcoreCoins = this.provider.transformToCoins(tx, network);
+                  const { transaction, coins } = await this.provider.tag(chain, network, bitcoreTx, bitcoreCoins);
+                  blockTxs.push(transaction);
+                  blockCoins.push(...coins);
+                }
+
+                await XrpTransactionStorage.batchImport({
+                  txs: blockTxs,
+                  coins: blockCoins,
+                  chain,
+                  network,
+                  initialSyncComplete: false
+                });
+
+                done++;
+                cb();
+              }
+            })
+          )
+          .on('finish', () => {
+            logger.info(`FINISHED Syncing ${count} ${chain} ${network} wallets`);
+            resolve();
+          });
+      } catch (e) {
+        logger.error(e);
+      }
+    });
+  }
+
+  async syncBlocks() {
+    const { chain, network } = this;
+    const client = await this.provider.getClient(this.network);
+    let ourBestBlock = await this.provider.getLocalTip({ chain, network });
+    let chainBestBlock = await client.getLedgerVersion();
+
+    const startTime = Date.now();
+    let lastLog = Date.now();
+
+    if (!ourBestBlock) {
+      logger.info(`Starting XRP Sync @ ${chainBestBlock}`);
+      const startHeight = this.chainConfig.startHeight || chainBestBlock - 2000;
+      ourBestBlock = { height: chainBestBlock > 2000 ? startHeight : chainBestBlock } as IXrpBlock;
+    }
+    const startHeight = ourBestBlock.height;
+    let currentHeight = startHeight;
+    while (ourBestBlock.height < chainBestBlock) {
+      currentHeight = ourBestBlock.height + 1;
+      const block = await client.getLedger({
+        ledgerVersion: currentHeight,
+        includeTransactions: true,
+        includeAllData: true
+      });
+      const transformedBlock = this.provider.transformLedger(block, network);
+      const coinsAndTxs = (block.transactions || [])
+        .map((tx: any) => ({
+          tx: this.provider.transform(tx, network, transformedBlock),
+          coins: this.provider.transformToCoins(tx, network)
+        }))
+        .filter(data => {
+          return 'txid' in data.tx && data.tx.txid != null;
+        }) as Array<{ tx: IXrpTransaction; coins: Array<IXrpCoin> }>;
+      const blockTxs = new Array<IXrpTransaction>();
+      const blockCoins = new Array<IXrpCoin>();
+
+      for (const coinAndTx of coinsAndTxs) {
+        const { transaction, coins } = await this.provider.tag(chain, network, coinAndTx.tx, coinAndTx.coins);
+        if (this.chainConfig.walletOnlySync && !transaction.wallets.length) {
+          continue;
+        }
+        blockTxs.push(transaction);
+        blockCoins.push(...(coins as Array<IXrpCoin>));
+      }
+
+      await this.blockModel.processBlock({
+        chain,
+        network,
+        block: transformedBlock,
+        transactions: blockTxs,
+        coins: blockCoins,
+        initialSyncComplete: true
+      });
+
+      this.maybeLog(chain, network, startHeight, currentHeight, startTime, lastLog);
+      lastLog = Date.now();
+      ourBestBlock = await this.provider.getLocalTip({ chain, network });
+      if (ourBestBlock.height === chainBestBlock) {
+        chainBestBlock = await client.getLedgerVersion();
+      }
+    }
+  }
+
   async sync() {
     if (this.syncing) {
       return false;
     }
     const { chain, network } = this;
     this.syncing = true;
-
     try {
-      const client = await this.provider.getClient(this.network);
-      let ourBestBlock = await this.provider.getLocalTip({ chain, network });
-      let chainBestBlock = await client.getLedgerVersion();
-
-      const startTime = Date.now();
-      let lastLog = Date.now();
-
-      if (!ourBestBlock) {
-        logger.info(`Starting XRP Sync @ ${chainBestBlock}`);
-        const startHeight = this.chainConfig.startHeight || chainBestBlock - 2000;
-        ourBestBlock = { height: chainBestBlock > 2000 ? startHeight : chainBestBlock } as IXrpBlock;
+      if (this.chainConfig.walletOnlySync) {
+        await this.syncWallets();
+      } else {
+        await this.syncBlocks();
       }
-      const startHeight = ourBestBlock.height;
-      let currentHeight = startHeight;
-      while (ourBestBlock.height < chainBestBlock) {
-        currentHeight = ourBestBlock.height + 1;
-        const block = await client.getLedger({
-          ledgerVersion: currentHeight,
-          includeTransactions: true,
-          includeAllData: true
-        });
-        const transformedBlock = this.provider.transformLedger(block, network);
-        const coinsAndTxs = (block.transactions || [])
-          .map((tx: any) => ({
-            tx: this.provider.transform(tx, network, transformedBlock),
-            coins: this.provider.transformToCoins(tx, network)
-          }))
-          .filter(data => {
-            return 'txid' in data.tx && data.tx.txid != null;
-          }) as Array<{ tx: IXrpTransaction; coins: Array<IXrpCoin> }>;
-        const blockTxs = new Array<IXrpTransaction>();
-        const blockCoins = new Array<IXrpCoin>();
-
-        for (const coinAndTx of coinsAndTxs) {
-          const { transaction, coins } = await this.provider.tag(chain, network, coinAndTx.tx, coinAndTx.coins);
-          if (this.chainConfig.walletOnlySync && !transaction.wallets.length) {
-            continue;
-          }
-          blockTxs.push(transaction);
-          blockCoins.push(...(coins as Array<IXrpCoin>));
-        }
-
-        await this.blockModel.processBlock({
-          chain,
-          network,
-          block: transformedBlock,
-          transactions: blockTxs,
-          coins: blockCoins,
-          initialSyncComplete: true
-        });
-
-        this.maybeLog(chain, network, startHeight, currentHeight, startTime, lastLog);
-        lastLog = Date.now();
-        ourBestBlock = await this.provider.getLocalTip({ chain, network });
-        if (ourBestBlock.height === chainBestBlock) {
-          chainBestBlock = await client.getLedgerVersion();
-        }
-      }
-
       logger.info(`${chain}:${network} up to date.`);
       this.syncing = false;
       StateStorage.collection.findOneAndUpdate(
@@ -207,6 +285,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
       this.events.emit('SYNCDONE');
       return true;
     } catch (e) {
+      logger.error(e);
       this.syncing = false;
       await wait(2000);
       return this.sync();

@@ -1,12 +1,12 @@
-import { TransformOptions } from '../../../types/TransformOptions';
-import logger from '../../../logger';
 import { LoggifyClass } from '../../../decorators/Loggify';
-import { StorageService } from '../../../services/storage';
-import { XrpTransactionStorage } from './transaction';
-import { EventStorage } from '../../../models/events';
-import { BaseBlock, IBlock } from '../../../models/baseBlock';
+import logger from '../../../logger';
 import { MongoBound } from '../../../models/base';
-import { IXrpTransaction, IXrpBlock, IXrpCoin } from '../types';
+import { BaseBlock, IBlock } from '../../../models/baseBlock';
+import { EventStorage } from '../../../models/events';
+import { StorageService } from '../../../services/storage';
+import { TransformOptions } from '../../../types/TransformOptions';
+import { IXrpBlock, IXrpCoin, IXrpTransaction } from '../types';
+import { XrpTransactionStorage } from './transaction';
 
 @LoggifyClass
 export class XrpBlockModel extends BaseBlock<IBlock> {
@@ -70,7 +70,7 @@ export class XrpBlockModel extends BaseBlock<IBlock> {
       blockHash: convertedBlock.hash,
       blockTime: new Date(time),
       blockTimeNormalized: new Date(timeNormalized),
-      height: height,
+      height,
       chain,
       network,
       parentChain,
@@ -133,7 +133,7 @@ export class XrpBlockModel extends BaseBlock<IBlock> {
       if (prevBlock) {
         localTip = prevBlock;
       } else {
-        logger.error(`Previous block isn't in the DB need to roll back until we have a block in common`);
+        logger.error("Previous block isn't in the DB need to roll back until we have a block in common");
       }
       logger.info(`Resetting tip to ${localTip.height - 1}`, { chain, network });
     }

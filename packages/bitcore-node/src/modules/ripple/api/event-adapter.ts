@@ -1,8 +1,8 @@
-import logger from '../../../logger';
 import { ObjectId } from 'mongodb';
-import { BaseModule } from '../..';
-import { RippleStateProvider } from './csp';
 import { RippleAPI } from 'ripple-lib';
+import { BaseModule } from '../..';
+import logger from '../../../logger';
+import { RippleStateProvider } from './csp';
 
 export class RippleEventAdapter {
   stopping = false;

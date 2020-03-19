@@ -1,19 +1,19 @@
-import * as _ from 'lodash';
 import { ObjectID } from 'bson';
-import logger from '../../../logger';
+import * as _ from 'lodash';
 import { LoggifyClass } from '../../../decorators/Loggify';
-import { StorageService, Storage } from '../../../services/storage';
-import { partition } from '../../../utils/partition';
-import { TransformOptions } from '../../../types/TransformOptions';
+import logger from '../../../logger';
 import { MongoBound } from '../../../models/base';
-import { SpentHeightIndicators } from '../../../types/Coin';
+import { BaseTransaction } from '../../../models/baseTransaction';
+import { CoinStorage } from '../../../models/coin';
 import { EventStorage } from '../../../models/events';
 import { Config } from '../../../services/config';
+import { Storage, StorageService } from '../../../services/storage';
+import { SpentHeightIndicators } from '../../../types/Coin';
 import { StreamingFindOptions } from '../../../types/Query';
-import { BaseTransaction } from '../../../models/baseTransaction';
+import { TransformOptions } from '../../../types/TransformOptions';
 import { valueOrDefault } from '../../../utils/check';
-import { IXrpTransaction, XrpTransactionJSON, IXrpCoin } from '../types';
-import { CoinStorage } from '../../../models/coin';
+import { partition } from '../../../utils/partition';
+import { IXrpCoin, IXrpTransaction, XrpTransactionJSON } from '../types';
 
 @LoggifyClass
 export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
@@ -29,7 +29,7 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
   async batchImport(params: {
     txs: Array<IXrpTransaction>;
     coins: Array<IXrpCoin>;
-    height: number;
+    height?: number;
     mempoolTime?: Date;
     blockTime?: Date;
     blockHash?: string;
@@ -46,7 +46,10 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
     logger.debug('Writing Transactions', txOps.length);
     await Promise.all(
       partition(txOps, txOps.length / batchSize).map(txBatch =>
-        this.collection.bulkWrite(txBatch.map(op => this.toMempoolSafeUpsert(op, params.height)), { ordered: false })
+        this.collection.bulkWrite(
+          txBatch.map(op => this.toMempoolSafeUpsert(op, SpentHeightIndicators.minimum)),
+          { ordered: false }
+        )
       )
     );
 
@@ -57,7 +60,7 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
     );
 
     // Create events for mempool txs
-    if (params.height < SpentHeightIndicators.minimum) {
+    if (params.height != undefined && params.height < SpentHeightIndicators.minimum) {
       for (let op of txOps) {
         const filter = op.updateOne.filter;
         const tx = { ...op.updateOne.update.$set, ...filter } as IXrpTransaction;
@@ -82,7 +85,7 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
 
   async addTransactions(params: {
     txs: Array<IXrpTransaction>;
-    height: number;
+    height?: number;
     blockTime?: Date;
     blockHash?: string;
     blockTimeNormalized?: Date;
@@ -94,7 +97,7 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
     mempoolTime?: Date;
   }) {
     let { blockTimeNormalized, chain, height, network, parentChain, forkHeight } = params;
-    if (parentChain && forkHeight && height < forkHeight) {
+    if (parentChain && forkHeight && height != undefined && height < forkHeight) {
       const parentTxs = await XrpTransactionStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
         .toArray();
@@ -124,7 +127,7 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
               update: {
                 $set: {
                   ...tx,
-                  blockTimeNormalized,
+                  blockTimeNormalized: tx.blockTimeNormalized || blockTimeNormalized,
                   wallets
                 }
               },
@@ -139,7 +142,7 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
 
   async addCoins(params: {
     coins: Array<IXrpCoin>;
-    height: number;
+    height?: number;
     blockTime?: Date;
     blockHash?: string;
     blockTimeNormalized?: Date;
@@ -151,7 +154,7 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
     mempoolTime?: Date;
   }) {
     let { chain, height, network, parentChain, forkHeight } = params;
-    if (parentChain && forkHeight && height < forkHeight) {
+    if (parentChain && forkHeight && height != undefined && height < forkHeight) {
       const parentChainCoins = await CoinStorage.collection
         .find({ blockHeight: height, chain: parentChain, network })
         .toArray();
@@ -193,13 +196,13 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
                 chain,
                 network,
                 address,
-                mintHeight: height,
+                mintHeight: coin.mintHeight || height,
                 coinbase: coin.coinbase,
                 value: coin.value
               },
               $setOnInsert: {
                 spentHeight: SpentHeightIndicators.unspent,
-                wallets: wallets
+                wallets
               }
             },
             upsert: true,

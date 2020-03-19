@@ -1,5 +1,5 @@
-import { ITransaction } from '../../models/baseTransaction';
 import { IBlock } from '../../models/baseBlock';
+import { ITransaction } from '../../models/baseTransaction';
 import { ICoin } from '../../models/coin';
 
 export type IXrpBlock = IBlock & {};
@@ -11,7 +11,7 @@ export type IXrpTransaction = ITransaction & {
   invoiceID?: string;
 };
 
-export type XrpTransactionJSON = {
+export interface XrpTransactionJSON {
   txid: string;
   chain: string;
   network: string;
@@ -26,6 +26,6 @@ export type XrpTransactionJSON = {
   nonce: number;
   currency?: string;
   invoiceID?: string;
-};
+}
 
 export type IXrpCoin = ICoin & {};
