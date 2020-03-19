@@ -89,6 +89,7 @@
     "bitcore-wallet-client": "^8.16.0",
     "body-parser": "1.18.3",
     "cors": "2.8.4",
+    "crypto-rpc": "^1.1.0",
     "crypto-wallet-core": "^8.16.0",
     "heapdump": "0.3.12",
     "http": "0.0.0",
