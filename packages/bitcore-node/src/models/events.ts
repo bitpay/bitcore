@@ -1,16 +1,17 @@
-import { BaseModel } from './base';
-import { ITransaction } from './transaction';
-import { IBlock } from '../types/Block';
-import { ICoin } from './coin';
 import { StorageService } from '../services/storage';
+import { IBlock } from '../types/Block';
+import { BaseModel } from './base';
+import { ICoin } from './coin';
+import { ITransaction } from './transaction';
 
-export namespace IEvent {
-  export type BlockEvent = IBlock;
-  export type TxEvent = ITransaction;
-  export type CoinEvent = { coin: Partial<ICoin>; address: string };
+export type BlockEvent = IBlock;
+export type TxEvent = ITransaction;
+export interface CoinEvent {
+  coin: Partial<ICoin>;
+  address: string;
 }
 interface IEvent {
-  payload: IEvent.BlockEvent | IEvent.TxEvent | IEvent.CoinEvent;
+  payload: BlockEvent | TxEvent | CoinEvent;
   type: 'block' | 'tx' | 'coin';
   emitTime: Date;
 }
@@ -26,23 +27,23 @@ export class EventModel extends BaseModel<IEvent> {
     await this.collection.createIndex({ emitTime: 1 }, { background: true, expireAfterSeconds: 60 * 5 });
   }
 
-  public signalBlock(block: IEvent.BlockEvent) {
+  public signalBlock(block: BlockEvent) {
     return this.collection.insertOne({ payload: block, emitTime: new Date(), type: 'block' });
   }
 
-  public signalTx(tx: IEvent.TxEvent) {
+  public signalTx(tx: TxEvent) {
     return this.collection.insertOne({ payload: tx, emitTime: new Date(), type: 'tx' });
   }
 
-  public signalTxs(txs: IEvent.TxEvent[]) {
+  public signalTxs(txs: TxEvent[]) {
     this.collection.insertMany(txs.map(tx => ({ payload: tx, emitTime: new Date(), type: 'tx' as 'tx' })));
   }
 
-  public signalAddressCoin(payload: IEvent.CoinEvent) {
+  public signalAddressCoin(payload: CoinEvent) {
     return this.collection.insertOne({ payload, emitTime: new Date(), type: 'coin' });
   }
 
-  public signalAddressCoins(coins: IEvent.CoinEvent[]) {
+  public signalAddressCoins(coins: CoinEvent[]) {
     return this.collection.insertMany(
       coins.map(coin => ({ payload: coin, emitTime: new Date(), type: 'coin' as 'coin' }))
     );

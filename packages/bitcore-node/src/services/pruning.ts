@@ -1,8 +1,8 @@
-import { TransactionStorage, TransactionModel } from '../models/transaction';
-import { CoinStorage, CoinModel } from '../models/coin';
 import logger from '../logger';
-import { Config } from './config';
+import { CoinModel, CoinStorage } from '../models/coin';
+import { TransactionModel, TransactionStorage } from '../models/transaction';
 import '../utils/polyfills';
+import { Config } from './config';
 
 import parseArgv from '../utils/parseArgv';
 import { partition } from '../utils/partition';

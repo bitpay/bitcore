@@ -387,5 +387,8 @@ describe('ETH Transaction getChainId', () => {
 
     const ropstenId = Transactions.get({chain: 'ETH'}).getChainId('ropsten');
     expect(ropstenId).to.equal(3);
+
+    const regtestId = Transactions.get({chain: 'ETH'}).getChainId('regtest');
+    expect(regtestId).to.equal(17);
   });
 });

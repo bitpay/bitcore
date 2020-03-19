@@ -1,5 +1,5 @@
-import logger from '../logger';
 import util from 'util';
+import logger from '../logger';
 import parseArgv from '../utils/parseArgv';
 export const PerformanceTracker = {};
 let args = parseArgv([], ['DEBUG']);
@@ -21,7 +21,7 @@ export function SavePerformance(logPrefix, startTime, endTime) {
   }
 }
 
-export function LoggifyClass<T extends { new (...args: any[]): {} }>(aClass: T) {
+export function LoggifyClass<T extends new (...args: any[]) => {}>(aClass: T) {
   if (!args.DEBUG) {
     return aClass;
   }
@@ -39,7 +39,7 @@ export function LoggifyClass<T extends { new (...args: any[]): {} }>(aClass: T) 
   };
 }
 
-export function LoggifyFunction(fn: Function, logPrefix: string = '', bind?: any) {
+export function LoggifyFunction(fn: (...args: any[]) => any, logPrefix: string = '', bind?: any) {
   if (!args.DEBUG) {
     return fn as (...methodargs: any[]) => any;
   }
@@ -51,7 +51,7 @@ export function LoggifyFunction(fn: Function, logPrefix: string = '', bind?: any
     const startTime = new Date();
     logger.debug(`${logPrefix}::called::`);
     let returnVal = copy(...methodargs);
-    if (returnVal && <Promise<any>>returnVal.then) {
+    if (returnVal && (returnVal.then as Promise<any>)) {
       returnVal
         .catch((err: any) => {
           logger.error(`${logPrefix}::catch::${err}`);

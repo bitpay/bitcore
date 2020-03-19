@@ -8,6 +8,7 @@ var Input = require('./input');
 var Output = require('../output');
 var $ = require('../../util/preconditions');
 
+var Address = require('../../address');
 var Script = require('../../script');
 var Signature = require('../../crypto/signature');
 var Sighash = require('../sighash');
@@ -19,7 +20,7 @@ var TransactionSignature = require('../signature');
 /**
  * @constructor
  */
-function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, nestedWitness, opts) {
+function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, opts) {
   /* jshint maxstatements:20 */
   opts = opts || {};
   Input.apply(this, arguments);
@@ -27,23 +28,30 @@ function MultiSigScriptHashInput(input, pubkeys, threshold, signatures, nestedWi
   pubkeys = pubkeys || input.publicKeys;
   threshold = threshold || input.threshold;
   signatures = signatures || input.signatures;
-  this.nestedWitness = nestedWitness ? true : false;
   if (opts.noSorting) {
     this.publicKeys = pubkeys;
   } else  {
     this.publicKeys = _.sortBy(pubkeys, function(publicKey) { return publicKey.toString('hex'); });
   }
   this.redeemScript = Script.buildMultisigOut(this.publicKeys, threshold, opts);
+  var nested = Script.buildWitnessMultisigOutFromScript(this.redeemScript);
+  if (nested.equals(this.output.script)) {
+    this.nestedWitness = false;
+    this.type = Address.PayToWitnessScriptHash;
+  } else if (Script.buildScriptHashOut(nested).equals(this.output.script)) {
+    this.nestedWitness = true;
+    this.type = Address.PayToScriptHash;
+  } else if (Script.buildScriptHashOut(this.redeemScript).equals(this.output.script)) {
+    this.nestedWitness = false;
+    this.type = Address.PayToScriptHash;
+  } else {
+    throw new Error('Provided public keys don\'t hash to the provided output');
+  }
+
   if (this.nestedWitness) {
-    var nested = Script.buildWitnessMultisigOutFromScript(this.redeemScript);
-    $.checkState(Script.buildScriptHashOut(nested).equals(this.output.script),
-                 'Provided public keys don\'t hash to the provided output (nested witness)');
     var scriptSig = new Script();
     scriptSig.add(nested.toBuffer());
     this.setScript(scriptSig);
-  } else {
-    $.checkState(Script.buildScriptHashOut(this.redeemScript).equals(this.output.script),
-               'Provided public keys don\'t hash to the provided output');
   }
 
   this.publicKeyIndex = {};
@@ -97,7 +105,7 @@ MultiSigScriptHashInput.prototype.getScriptCode = function() {
 MultiSigScriptHashInput.prototype.getSighash = function(transaction, privateKey, index, sigtype) {
   var self = this;
   var hash;
-  if (self.nestedWitness) {
+  if (self.nestedWitness || self.type === Address.PayToWitnessScriptHash) {
     var scriptCode = self.getScriptCode();
     var satoshisBuffer = self.getSatoshisBuffer();
     hash = SighashWitness.sighash(transaction, sigtype, index, scriptCode, satoshisBuffer);
@@ -116,7 +124,7 @@ MultiSigScriptHashInput.prototype.getSignatures = function(transaction, privateK
   _.each(this.publicKeys, function(publicKey) {
     if (publicKey.toString() === privateKey.publicKey.toString()) {
       var signature;
-      if (self.nestedWitness) {
+      if (self.nestedWitness || self.type === Address.PayToWitnessScriptHash) {
         var scriptCode = self.getScriptCode();
         var satoshisBuffer = self.getSatoshisBuffer();
         signature = SighashWitness.sign(transaction, privateKey, sigtype, index, scriptCode, satoshisBuffer);
@@ -147,7 +155,7 @@ MultiSigScriptHashInput.prototype.addSignature = function(transaction, signature
 };
 
 MultiSigScriptHashInput.prototype._updateScript = function() {
-  if (this.nestedWitness) {
+  if (this.nestedWitness || this.type === Address.PayToWitnessScriptHash) {
     var stack = [
       Buffer.alloc(0),
     ];
@@ -208,7 +216,7 @@ MultiSigScriptHashInput.prototype.publicKeysWithoutSignature = function() {
 };
 
 MultiSigScriptHashInput.prototype.isValidSignature = function(transaction, signature) {
-  if (this.nestedWitness) {
+  if (this.nestedWitness || this.type === Address.PayToWitnessScriptHash) {
     signature.signature.nhashtype = signature.sigtype;
     var scriptCode = this.getScriptCode();
     var satoshisBuffer = this.getSatoshisBuffer();
@@ -236,11 +244,20 @@ MultiSigScriptHashInput.prototype.isValidSignature = function(transaction, signa
 MultiSigScriptHashInput.OPCODES_SIZE = 7; // serialized size (<=3) + 0 .. N .. M OP_CHECKMULTISIG
 MultiSigScriptHashInput.SIGNATURE_SIZE = 74; // size (1) + DER (<=72) + sighash (1)
 MultiSigScriptHashInput.PUBKEY_SIZE = 34; // size (1) + DER (<=33)
+MultiSigScriptHashInput.REDEEM_SCRIPT_SIZE = 34; // OP_0 (1) + scriptHash (1 + 32)
 
 MultiSigScriptHashInput.prototype._estimateSize = function() {
-  return MultiSigScriptHashInput.OPCODES_SIZE +
+  var WITNESS_DISCOUNT = 4;
+  var witnessSize = MultiSigScriptHashInput.OPCODES_SIZE +
     this.threshold * MultiSigScriptHashInput.SIGNATURE_SIZE +
     this.publicKeys.length * MultiSigScriptHashInput.PUBKEY_SIZE;
+  if (this.type === Address.PayToWitnessScriptHash) {
+    return witnessSize / WITNESS_DISCOUNT;
+  } else if (this.nestedWitness) {
+    return witnessSize / WITNESS_DISCOUNT + MultiSigScriptHashInput.REDEEM_SCRIPT_SIZE;
+  } else {
+    return witnessSize;
+  }
 };
 
 module.exports = MultiSigScriptHashInput;

@@ -1,17 +1,17 @@
-import Web3 from 'web3';
-import logger from '../../../logger';
 import { EventEmitter } from 'events';
-import { ChainStateProvider } from '../../../providers/chain-state';
-import { StateStorage } from '../../../models/state';
-import { EthBlockModel, EthBlockStorage } from '../models/block';
-import { IEthTransaction, IEthBlock, Parity } from '../types';
-import { ParityRPC } from './parityRpc';
-import { BaseP2PWorker } from '../../../services/p2p';
-import { EthTransactionModel, EthTransactionStorage } from '../models/transaction';
+import Web3 from 'web3';
 import { timestamp } from '../../../logger';
-import { ETHStateProvider } from '../api/csp';
+import logger from '../../../logger';
+import { StateStorage } from '../../../models/state';
+import { ChainStateProvider } from '../../../providers/chain-state';
+import { BaseP2PWorker } from '../../../services/p2p';
 import { valueOrDefault } from '../../../utils/check';
 import { wait } from '../../../utils/wait';
+import { ETHStateProvider } from '../api/csp';
+import { EthBlockModel, EthBlockStorage } from '../models/block';
+import { EthTransactionModel, EthTransactionStorage } from '../models/transaction';
+import { IEthBlock, IEthTransaction, ParityBlock, ParityTransaction } from '../types';
+import { ParityRPC } from './parityRpc';
 
 export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   protected chainConfig: any;
@@ -76,7 +76,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       this.txSubscription.subscribe(async (_err, txid) => {
         if (!this.isCachedInv('TX', txid)) {
           this.cacheInv('TX', txid);
-          const tx = (await this.web3!.eth.getTransaction(txid)) as Parity.Transaction;
+          const tx = (await this.web3!.eth.getTransaction(txid)) as ParityTransaction;
           if (tx) {
             await this.processTransaction(tx);
             this.events.emit('transaction', tx);
@@ -159,7 +159,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
   }
 
   public async getBlock(height: number) {
-    return (this.rpc!.getBlock(height) as unknown) as Parity.Block;
+    return (this.rpc!.getBlock(height) as unknown) as ParityBlock;
   }
 
   async processBlock(block: IEthBlock, transactions: IEthTransaction[]): Promise<any> {
@@ -180,7 +180,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     }
   }
 
-  async processTransaction(tx: Parity.Transaction) {
+  async processTransaction(tx: ParityTransaction) {
     const now = new Date();
     const convertedTx = this.convertTx(tx);
     this.txModel.batchImport({
@@ -268,7 +268,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return new Promise(resolve => this.events.once('SYNCDONE', resolve));
   }
 
-  async convertBlock(block: Parity.Block) {
+  async convertBlock(block: ParityBlock) {
     const blockTime = Number(block.timestamp) * 1000;
     const hash = block.hash;
     const height = block.number;
@@ -309,7 +309,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       gasUsed: block.gasUsed,
       stateRoot: Buffer.from(block.stateRoot)
     };
-    const transactions = block.transactions as Array<Parity.Transaction>;
+    const transactions = block.transactions as Array<ParityTransaction>;
     const convertedTxs = transactions.map(t => this.convertTx(t, convertedBlock));
     const internalTxs = await this.rpc!.getTransactionsFromBlock(convertedBlock.height);
     for (const tx of internalTxs) {
@@ -347,7 +347,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     return { convertedBlock, convertedTxs };
   }
 
-  convertTx(tx: Partial<Parity.Transaction>, block?: IEthBlock): IEthTransaction {
+  convertTx(tx: Partial<ParityTransaction>, block?: IEthBlock): IEthTransaction {
     if (!block) {
       const txid = tx.hash || '';
       const to = tx.to || '';
@@ -374,7 +374,7 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
         gasLimit: Number(tx.gas),
         gasPrice: Number(tx.gasPrice),
         // gasUsed: Number(tx.gasUsed),
-        nonce: nonce,
+        nonce,
         internal: []
       };
       if (abiType) {

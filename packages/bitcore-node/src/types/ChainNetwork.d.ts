@@ -1,3 +1,7 @@
-export type Chain = { chain: string };
-export type Network = { network: string };
+export interface Chain {
+  chain: string;
+}
+export interface Network {
+  network: string;
+}
 export type ChainNetwork = Chain & Network;

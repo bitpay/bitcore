@@ -1,12 +1,12 @@
+import { CollectionAggregationOptions, ObjectID } from 'mongodb';
 import { LoggifyClass } from '../decorators/Loggify';
-import { BaseModel, MongoBound } from './base';
-import { ObjectID, CollectionAggregationOptions } from 'mongodb';
-import { SpentHeightIndicators, CoinJSON } from '../types/Coin';
-import { valueOrDefault } from '../utils/check';
 import { StorageService } from '../services/storage';
+import { CoinJSON, SpentHeightIndicators } from '../types/Coin';
+import { valueOrDefault } from '../utils/check';
+import { BaseModel, MongoBound } from './base';
 import { BitcoinBlockStorage } from './block';
 
-export type ICoin = {
+export interface ICoin {
   network: string;
   chain: string;
   mintTxid: string;
@@ -21,7 +21,7 @@ export type ICoin = {
   spentHeight: number;
   confirmations?: number;
   sequenceNumber?: number;
-};
+}
 
 @LoggifyClass
 export class CoinModel extends BaseModel<ICoin> {

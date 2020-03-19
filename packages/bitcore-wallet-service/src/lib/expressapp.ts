@@ -12,6 +12,7 @@ const compression = require('compression');
 const config = require('../config');
 const RateLimit = require('express-rate-limit');
 const Common = require('./common');
+const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 
 log.disableColor();
@@ -40,10 +41,7 @@ export class ExpressApp {
 
     this.app.use((req, res, next) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
-      res.setHeader(
-        'Access-Control-Allow-Methods',
-        'GET, POST, OPTIONS, PUT, DELETE'
-      );
+      res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, DELETE');
       res.setHeader(
         'Access-Control-Allow-Headers',
         'x-signature,x-identity,x-session,x-client-version,x-wallet-id,X-Requested-With,Content-Type,Authorization'
@@ -113,10 +111,7 @@ export class ExpressApp {
     const returnError = (err, res, req) => {
       if (err instanceof ClientError) {
         const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
-        if (!opts.disableLogs)
-          log.info(
-            'Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err)
-          );
+        if (!opts.disableLogs) log.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
 
         res
           .status(status)
@@ -146,16 +141,11 @@ export class ExpressApp {
       }
     };
 
-    const logDeprecated = (req) => {
-      log.warn(
-        'DEPRECATED',
-        req.method,
-        req.url,
-        '(' + req.header('x-client-version') + ')'
-      );
+    const logDeprecated = req => {
+      log.warn('DEPRECATED', req.method, req.url, '(' + req.header('x-client-version') + ')');
     };
 
-    const getCredentials = (req) => {
+    const getCredentials = req => {
       const identity = req.header('x-identity');
       if (!identity) return;
 
@@ -174,12 +164,7 @@ export class ExpressApp {
       return WalletService.getInstance(opts);
     };
 
-    const getServerWithAuth = (
-      req,
-      res,
-      opts,
-      cb?: (err: any, data?: any) => void
-    ) => {
+    const getServerWithAuth = (req, res, opts, cb?: (err: any, data?: any) => void) => {
       if (_.isFunction(opts)) {
         cb = opts;
         opts = {};
@@ -198,12 +183,7 @@ export class ExpressApp {
 
       const auth = {
         copayerId: credentials.copayerId,
-        message:
-          req.method.toLowerCase() +
-          '|' +
-          req.url +
-          '|' +
-          JSON.stringify(req.body),
+        message: req.method.toLowerCase() + '|' + req.url + '|' + JSON.stringify(req.body),
         signature: credentials.signature,
         clientVersion: req.header('x-client-version'),
         userAgent: req.header('user-agent'),
@@ -240,13 +220,7 @@ export class ExpressApp {
       log.info(
         '',
         'Limiting wallet creation per IP: %d req/h',
-        (
-          (Defaults.RateLimit.createWallet.max /
-            Defaults.RateLimit.createWallet.windowMs) *
-          60 *
-          60 *
-          1000
-        ).toFixed(2)
+        ((Defaults.RateLimit.createWallet.max / Defaults.RateLimit.createWallet.windowMs) * 60 * 60 * 1000).toFixed(2)
       );
       createWalletLimiter = new RateLimit(Defaults.RateLimit.createWallet);
       // router.use(/\/v\d+\/wallets\/$/, createWalletLimiter)
@@ -255,6 +229,52 @@ export class ExpressApp {
         next();
       };
     }
+
+    // retrieve latest version of copay
+    router.get('/latest-version', async (req, res) => {
+      try {
+        res.setHeader('User-Agent', 'copay');
+        var options = {
+          uri: 'https://api.github.com/repos/bitpay/copay/releases/latest',
+          headers: {
+            'User-Agent': 'Copay'
+          },
+          json: true
+        };
+
+        let server;
+        try {
+          server = getServer(req, res);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+        server.storage.checkAndUseGlobalCache(
+          'latest-copay-version',
+          Defaults.COPAY_VERSION_CACHE_DURATION,
+          async (err, version) => {
+            if (err) {
+              res.send(err);
+            }
+            if (version) {
+              res.json({ version });
+            } else {
+              try {
+                const htmlString = await rp(options);
+                if (htmlString['tag_name']) {
+                  server.storage.storeGlobalCache('latest-copay-version', htmlString['tag_name'], err => {
+                    res.json({ version: htmlString['tag_name'] });
+                  });
+                }
+              } catch (err) {
+                res.send(err);
+              }
+            }
+          }
+        );
+      } catch (err) {
+        res.send(err);
+      }
+    });
 
     // DEPRECATED
     router.post('/v1/wallets/', createWalletLimiter, (req, res) => {
@@ -315,7 +335,7 @@ export class ExpressApp {
     // DEPRECATED
     router.get('/v1/wallets/', (req, res) => {
       logDeprecated(req);
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.getStatus(
           {
             includeExtendedInfo: true
@@ -330,10 +350,9 @@ export class ExpressApp {
 
     // DEPRECATED
     router.get('/v2/wallets/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         const opts = { includeExtendedInfo: false, twoStep: false };
-        if (req.query.includeExtendedInfo == '1')
-          opts.includeExtendedInfo = true;
+        if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
         if (req.query.twoStep == '1') opts.twoStep = true;
 
         server.getStatus(opts, (err, status) => {
@@ -344,10 +363,14 @@ export class ExpressApp {
     });
 
     router.get('/v3/wallets/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
-        const opts = { includeExtendedInfo: false, twoStep: false, includeServerMessages: false, tokenAddress: req.query.tokenAddress };
-        if (req.query.includeExtendedInfo == '1')
-          opts.includeExtendedInfo = true;
+      getServerWithAuth(req, res, server => {
+        const opts = {
+          includeExtendedInfo: false,
+          twoStep: false,
+          includeServerMessages: false,
+          tokenAddress: req.query.tokenAddress
+        };
+        if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
         if (req.query.twoStep == '1') opts.twoStep = true;
         if (req.query.serverMessageArray == '1') opts.includeServerMessages = true;
         server.getStatus(opts, (err, status) => {
@@ -364,7 +387,7 @@ export class ExpressApp {
         {
           onlySupportStaff: true
         },
-        (server) => {
+        server => {
           const opts = {
             identifier: req.params['identifier'],
             walletCheck: req.params['walletCheck']
@@ -375,8 +398,7 @@ export class ExpressApp {
 
             server.walletId = wallet.id;
             const opts = { includeExtendedInfo: false };
-            if (req.query.includeExtendedInfo == '1')
-              opts.includeExtendedInfo = true;
+            if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
             server.getStatus(opts, (err, status) => {
               if (err) return returnError(err, res, req);
               res.json(status);
@@ -387,7 +409,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/preferences/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.getPreferences({}, (err, preferences) => {
           if (err) return returnError(err, res, req);
           res.json(preferences);
@@ -396,7 +418,7 @@ export class ExpressApp {
     });
 
     router.put('/v1/preferences', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.savePreferences(req.body, (err, result) => {
           if (err) return returnError(err, res, req);
           res.json(result);
@@ -406,7 +428,7 @@ export class ExpressApp {
 
     // DEPRECATED (do not use cashaddr)
     router.get('/v1/txproposals/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.getPendingTxs({ noCashAddr: true }, (err, pendings) => {
           if (err) return returnError(err, res, req);
           res.json(pendings);
@@ -415,7 +437,7 @@ export class ExpressApp {
     });
 
     router.get('/v2/txproposals/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.getPendingTxs({}, (err, pendings) => {
           if (err) return returnError(err, res, req);
           res.json(pendings);
@@ -431,7 +453,7 @@ export class ExpressApp {
 
     // DEPRECATED, no cash addr
     router.post('/v2/txproposals/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         req.body.noCashAddr = true;
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
@@ -441,7 +463,7 @@ export class ExpressApp {
     });
 
     router.post('/v3/txproposals/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
@@ -452,7 +474,7 @@ export class ExpressApp {
     // DEPRECATED
     router.post('/v1/addresses/', (req, res) => {
       logDeprecated(req);
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.createAddress(
           {
             ignoreMaxGap: true
@@ -468,7 +490,7 @@ export class ExpressApp {
     // DEPRECATED
     router.post('/v2/addresses/', (req, res) => {
       logDeprecated(req);
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.createAddress(
           {
             ignoreMaxGap: true
@@ -483,7 +505,7 @@ export class ExpressApp {
 
     // DEPRECATED (no cashaddr by default)
     router.post('/v3/addresses/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         let opts = req.body;
         opts = opts || {};
         opts.noCashAddr = true;
@@ -495,7 +517,7 @@ export class ExpressApp {
     });
 
     router.post('/v4/addresses/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.createAddress(req.body, (err, address) => {
           if (err) return returnError(err, res, req);
           res.json(address);
@@ -504,7 +526,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/addresses/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         const opts: { limit?: number; reverse?: boolean } = {};
         if (req.query.limit) opts.limit = +req.query.limit;
         opts.reverse = req.query.reverse == '1';
@@ -517,8 +539,8 @@ export class ExpressApp {
     });
 
     router.get('/v1/balance/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
-        const opts: { coin?: string; twoStep?: boolean, tokenAddress?: string } = {};
+      getServerWithAuth(req, res, server => {
+        const opts: { coin?: string; twoStep?: boolean; tokenAddress?: string } = {};
         if (req.query.coin) opts.coin = req.query.coin;
         if (req.query.twoStep == '1') opts.twoStep = true;
         if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
@@ -535,13 +557,7 @@ export class ExpressApp {
       log.info(
         '',
         'Limiting estimate fee per IP: %d req/h',
-        (
-          (Defaults.RateLimit.estimateFee.max /
-            Defaults.RateLimit.estimateFee.windowMs) *
-          60 *
-          60 *
-          1000
-        ).toFixed(2)
+        ((Defaults.RateLimit.estimateFee.max / Defaults.RateLimit.estimateFee.windowMs) * 60 * 60 * 1000).toFixed(2)
       );
       estimateFeeLimiter = new RateLimit(Defaults.RateLimit.estimateFee);
       // router.use(/\/v\d+\/wallets\/$/, createWalletLimiter)
@@ -564,7 +580,7 @@ export class ExpressApp {
       }
       server.getFeeLevels(opts, (err, feeLevels) => {
         if (err) return returnError(err, res, req);
-        _.each(feeLevels, (feeLevel) => {
+        _.each(feeLevels, feeLevel => {
           feeLevel.feePerKB = feeLevel.feePerKb;
           delete feeLevel.feePerKb;
         });
@@ -590,7 +606,7 @@ export class ExpressApp {
     });
 
     router.post('/v3/estimateGas/', (req, res) => {
-      getServerWithAuth(req, res, async (server) => {
+      getServerWithAuth(req, res, async server => {
         try {
           const gasLimit = await server.estimateGas(req.body);
           res.json(gasLimit);
@@ -601,7 +617,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/sendmaxinfo/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         const q = req.query;
         const opts: {
           feePerKb?: number;
@@ -611,8 +627,7 @@ export class ExpressApp {
         } = {};
         if (q.feePerKb) opts.feePerKb = +q.feePerKb;
         if (q.feeLevel) opts.feeLevel = q.feeLevel;
-        if (q.excludeUnconfirmedUtxos == '1')
-          opts.excludeUnconfirmedUtxos = true;
+        if (q.excludeUnconfirmedUtxos == '1') opts.excludeUnconfirmedUtxos = true;
         if (q.returnInputs == '1') opts.returnInputs = true;
         server.getSendMaxInfo(opts, (err, info) => {
           if (err) return returnError(err, res, req);
@@ -624,9 +639,8 @@ export class ExpressApp {
     router.get('/v1/utxos/', (req, res) => {
       const opts: { addresses?: string[] } = {};
       const addresses = req.query.addresses;
-      if (addresses && _.isString(addresses))
-        opts.addresses = req.query.addresses.split(',');
-      getServerWithAuth(req, res, (server) => {
+      if (addresses && _.isString(addresses)) opts.addresses = req.query.addresses.split(',');
+      getServerWithAuth(req, res, server => {
         server.getUtxos(opts, (err, utxos) => {
           if (err) return returnError(err, res, req);
           res.json(utxos);
@@ -635,7 +649,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/broadcast_raw/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.broadcastRawTx(req.body, (err, txid) => {
           if (err) return returnError(err, res, req);
           res.json(txid);
@@ -645,7 +659,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/txproposals/:id/signatures/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         server.signTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
@@ -657,7 +671,7 @@ export class ExpressApp {
 
     //
     router.post('/v1/txproposals/:id/publish/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         req.body.noCashAddr = true;
         server.publishTx(req.body, (err, txp) => {
@@ -669,7 +683,7 @@ export class ExpressApp {
     });
 
     router.post('/v2/txproposals/:id/publish/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         server.publishTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
@@ -681,7 +695,7 @@ export class ExpressApp {
 
     // TODO Check HTTP verb and URL name
     router.post('/v1/txproposals/:id/broadcast/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         server.broadcastTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
@@ -692,7 +706,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/txproposals/:id/rejections', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         server.rejectTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
@@ -703,9 +717,9 @@ export class ExpressApp {
     });
 
     router.delete('/v1/txproposals/:id/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
-        server.removePendingTx(req.body, (err) => {
+        server.removePendingTx(req.body, err => {
           if (err) return returnError(err, res, req);
           res.json({
             success: true
@@ -716,7 +730,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/txproposals/:id/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         server.getTx(req.body, (err, tx) => {
           if (err) return returnError(err, res, req);
@@ -727,7 +741,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/txhistory/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         const opts: {
           skip?: number;
           limit?: number;
@@ -737,8 +751,7 @@ export class ExpressApp {
         if (req.query.skip) opts.skip = +req.query.skip;
         if (req.query.limit) opts.limit = +req.query.limit;
         if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
-        if (req.query.includeExtendedInfo == '1')
-          opts.includeExtendedInfo = true;
+        if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
 
         server.getTxHistory(opts, (err, txs) => {
           if (err) return returnError(err, res, req);
@@ -749,7 +762,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/addresses/scan/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.startScan(req.body, (err, started) => {
           if (err) return returnError(err, res, req);
           res.json(started);
@@ -764,13 +777,11 @@ export class ExpressApp {
         coin?: string;
         from?: string;
         to?: string;
-        update?: boolean;
       } = {};
       if (req.query.network) opts.network = req.query.network;
       if (req.query.coin) opts.coin = req.query.coin;
       if (req.query.from) opts.from = req.query.from;
       if (req.query.to) opts.to = req.query.to;
-      if (req.query.update && (req.ip === '::1' || req.ip === '127.0.0.1')) opts.update = req.query.update;
 
       const stats = new Stats(opts);
       stats.run((err, data) => {
@@ -788,7 +799,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/login/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.login({}, (err, session) => {
           if (err) return returnError(err, res, req);
           res.json(session);
@@ -797,8 +808,8 @@ export class ExpressApp {
     });
 
     router.post('/v1/logout/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
-        server.logout({}, (err) => {
+      getServerWithAuth(req, res, server => {
+        server.logout({}, err => {
           if (err) return returnError(err, res, req);
           res.end();
         });
@@ -812,12 +823,9 @@ export class ExpressApp {
         {
           allowSession: true
         },
-        (server) => {
+        server => {
           const timeSpan = req.query.timeSpan
-            ? Math.min(
-              +req.query.timeSpan || 0,
-              Defaults.MAX_NOTIFICATIONS_TIMESPAN
-            )
+            ? Math.min(+req.query.timeSpan || 0, Defaults.MAX_NOTIFICATIONS_TIMESPAN)
             : Defaults.NOTIFICATIONS_TIMESPAN;
           const opts = {
             minTs: +Date.now() - timeSpan * 1000,
@@ -833,7 +841,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/txnotes/:txid', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         const opts = {
           txid: req.params['txid']
         };
@@ -846,7 +854,7 @@ export class ExpressApp {
 
     router.put('/v1/txnotes/:txid/', (req, res) => {
       req.body.txid = req.params['txid'];
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.editTxNote(req.body, (err, note) => {
           if (err) return returnError(err, res, req);
           res.json(note);
@@ -855,7 +863,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/txnotes/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         const opts: { minTs?: number } = {};
         if (req.query.minTs && _.isNumber(+req.query.minTs)) {
           opts.minTs = +req.query.minTs;
@@ -872,7 +880,7 @@ export class ExpressApp {
       const opts = {
         code: req.params['code'],
         coin: req.query.coin || 'btc',
-        ts: (req.query.ts ? +req.query.ts : null),
+        ts: req.query.ts ? +req.query.ts : null
       };
       try {
         server = getServer(req, res);
@@ -885,8 +893,25 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v2/fiatrates/:code/', (req, res) => {
+      let server;
+      const opts = {
+        code: req.params['code'],
+        ts: req.query.ts ? +req.query.ts : null
+      };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getHistoricalRates(opts, (err, rates) => {
+        if (err) return returnError(err, res, req);
+        res.json(rates);
+      });
+    });
+
     router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.pushNotificationsSubscribe(req.body, (err, response) => {
           if (err) return returnError(err, res, req);
           res.json(response);
@@ -897,7 +922,7 @@ export class ExpressApp {
     // DEPRECATED
     router.delete('/v1/pushnotifications/subscriptions/', (req, res) => {
       logDeprecated(req);
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.pushNotificationsUnsubscribe(
           {
             token: 'dummy'
@@ -910,14 +935,11 @@ export class ExpressApp {
       });
     });
 
-    router.delete('/v2/pushnotifications/subscriptions/:token', (
-      req,
-      res
-    ) => {
+    router.delete('/v2/pushnotifications/subscriptions/:token', (req, res) => {
       const opts = {
         token: req.params['token']
       };
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.pushNotificationsUnsubscribe(opts, (err, response) => {
           if (err) return returnError(err, res, req);
           res.json(response);
@@ -926,7 +948,7 @@ export class ExpressApp {
     });
 
     router.post('/v1/txconfirmations/', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.txConfirmationSubscribe(req.body, (err, response) => {
           if (err) return returnError(err, res, req);
           res.json(response);
@@ -938,7 +960,7 @@ export class ExpressApp {
       const opts = {
         txid: req.params['txid']
       };
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         server.txConfirmationUnsubscribe(opts, (err, response) => {
           if (err) return returnError(err, res, req);
           res.json(response);
@@ -947,33 +969,42 @@ export class ExpressApp {
     });
 
     router.post('/v1/service/simplex/quote', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
-        server.simplexGetQuote(req).then(response => {
-          res.json(response);
-        }).catch(err => {
-          if (err) return returnError(err, res, req);
-        });
+      getServerWithAuth(req, res, server => {
+        server
+          .simplexGetQuote(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
       });
     });
 
     router.post('/v1/service/simplex/paymentRequest', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
-        server.simplexPaymentRequest(req).then(response => {
-          res.json(response);
-        }).catch(err => {
-          if (err) return returnError(err, res, req);
-        });
+      getServerWithAuth(req, res, server => {
+        server
+          .simplexPaymentRequest(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
       });
     });
 
     router.get('/v1/service/simplex/events', (req, res) => {
-      getServerWithAuth(req, res, (server) => {
+      getServerWithAuth(req, res, server => {
         const opts = { env: req.query.env };
-        server.simplexGetEvents(opts).then(response => {
-          res.json(response);
-        }).catch(err => {
-          if (err) return returnError(err, res, req);
-        });
+        server
+          .simplexGetEvents(opts)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
       });
     });
 

@@ -1,8 +1,8 @@
-import { BaseModel } from './base';
 import { ObjectID } from 'mongodb';
 import { StorageService } from '../services/storage';
+import { BaseModel } from './base';
 
-export type IRateLimit = {
+export interface IRateLimit {
   _id?: ObjectID;
   identifier: string;
   method: string;
@@ -10,7 +10,7 @@ export type IRateLimit = {
   count: number;
   time?: Date;
   expireAt?: Date;
-};
+}
 
 export enum RateLimitTimes {
   None = 0,

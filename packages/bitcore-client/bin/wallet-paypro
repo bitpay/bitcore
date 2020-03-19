@@ -5,6 +5,10 @@ const { Wallet } = require('../ts_build/wallet');
 const request = require('request-promise-native');
 const promptly = require('promptly');
 const cwc = require('crypto-wallet-core');
+const libs = {
+  BTC: cwc.BitcoreLib,
+  BCH: cwc.BitcoreLibCash
+}
 
 program
   .version(require('../package.json').version)
@@ -13,21 +17,17 @@ program
   .option('--nonce [nonce]', 'optional - Nonce')
   .option('--from [from]', 'optional - from account for XRP')
   .option('--payProUri [payProUri]', 'REQUIRED - payment protocol URI')
+  .option('--token, [token]', 'optional - ERC-20 token to pay with')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, nonce: inputNonce, payProUri, from: inputFrom } = program;
-  let wallet;
-  wallet = await Wallet.loadWallet({ name, path });
-  const from = inputFrom || await wallet.deriveAddress(0);
-  const nonce = inputNonce || await wallet.getNonce();
-  const { baseUrl, chain, network } = wallet;
-  if (chain !== 'XRP') {
-    console.error('Only XRP wallets supported for now');
-    process.exit(1);
+  const { name, path, token, nonce: inputNonce, from: inputFrom } = program;
+  let { payProUri } = program;
+  if (payProUri.includes('=')) {
+    const split = payProUri.split('=');
+    console.log(split.length);
+    payProUri = split[split.length - 1];
   }
-  const currency = chain; // Assumption being made here that chain === currency
-
   // Payment-Options
   const paymentOptionsResponse = await request({
     method: 'GET',
@@ -43,16 +43,27 @@ const main = async () => {
   });
   let scaleMap = {};
   const { expires, memo, paymentOptions } = paymentOptionsResponse;
+  const supportedCurrenciesArray = [];
   console.log(memo);
   console.log(`Payment expires at ${expires}`);
   paymentOptions.forEach((paymentOption, index) => {
     const { currency, network, estimatedAmount, requiredFeeRate, minerFee, decimals, selected } = paymentOption;
+    supportedCurrenciesArray.push(currency);
     scaleMap[currency] = Math.pow(10, decimals);
     const amount = estimatedAmount / scaleMap[currency];
     console.log(`${index + 1}: ${amount} ${currency} (${network})`);
   });
 
   //  Payment-Request
+  let wallet;
+  wallet = await Wallet.loadWallet({ name, path });
+  const from = inputFrom || await wallet.deriveAddress(0);
+  let nonce;
+  const { chain } = wallet;
+  if (!['BTC', 'BCH'].includes(chain)) {
+    nonce = inputNonce || await wallet.getNonce();
+  }
+  const currency = token || chain;
   console.log(`selecting ${currency}`);
   const paymentRequestResponse = await request({
     method: 'POST',
@@ -66,49 +77,71 @@ const main = async () => {
       rejectUnauthorized: false
     },
   });
+
+  // create transaction
   const { instructions } = paymentRequestResponse;
   console.log(JSON.stringify(instructions, null, 2));
-  const instruction = instructions[0];
-  const { type, requiredFeeRate, outputs } = instruction;
-  const recipients = [{
-    address: outputs[0].address,
-    amount: outputs[0].amount
-  }];
-  const fee = requiredFeeRate;
-  const invoiceID = outputs[0].invoiceID;
-  const params = { recipients, fee, from, invoiceID };
-  params.nonce = Number(nonce);
-  const unsignedTx = await wallet.newTx(params);
-  console.log(`unsignedRawTx: ${unsignedTx}`);
+  let unsignedTransactions = [];
+  let signedTransactions = [];
+  let password;
+  for (const instruction of instructions) {
+    const { type, requiredFeeRate, outputs, gasPrice, to, value, data } = instruction;
+    const recipients = [{
+      address: to || outputs[0].address,
+      amount: value >= 0 ? value : outputs[0].amount
+    }];
+    const fee = requiredFeeRate || gasPrice;
+    let invoiceID;
+    if (outputs) {
+      invoiceID = outputs[0].invoiceID;
+    }
+    const utxos = await wallet.getUtxosArray();
+    const params = { recipients, fee, from, invoiceID, data, value, utxos };
+    params.nonce = Number(nonce);
+    const unsignedTx = await wallet.newTx(params);
+    unsignedTransactions
+    console.log(`unsignedRawTx: ${unsignedTx}`);
+  
+    //  Sign tx
+    if (!password) {
+      password = await promptly.password('Wallet Password:');
+    }
+    wallet = await wallet.unlock(password);
+    const signedTx = await wallet.signTx({ tx: unsignedTx, passphrase: password });
+    const txid = cwc.Transactions.getHash({chain, tx: signedTx});
+    console.log(`signedRawTx: ${signedTx}`);
+    signedTransactions.push({ tx: signedTx });
+    console.log(`txid: ${txid}`);
 
-  //  Payment-verification
-  const paymentVerificationResponse = await request({
-    method: 'POST',
-    uri: payProUri,
-    json: { chain, currency, transactions: [{ tx: unsignedTx }]},
-    headers: {
-      'Content-Type' : 'application/payment-verification',
-      'x-paypro-version' : '2'
-    },
-    agentOptions: {
-      rejectUnauthorized: false
-    },
-  });
-  console.log(paymentVerificationResponse);
+    let weightedSize;
+    if (['BTC', 'BCH'].includes(chain)) {
+      const transaction = new libs[chain].Transaction(signedTx);
+      weightedSize = transaction._estimateSize();
+    }
+    unsignedTransactions.push({ tx: unsignedTx, weightedSize })
+    nonce++;
+  }
 
-  //  Sign tx
-  const password = await promptly.password('Wallet Password:');
-  wallet = await wallet.unlock(password);
-  const signedTx = await wallet.signTx({ tx: unsignedTx });
-  const txid = cwc.Transactions.getHash({chain, tx: signedTx});
-  console.log(`signedRawTx: ${signedTx}`);
-  console.log(`txid: ${txid}`);
+    // Payment Verification
+    const paymentVerificationResponse = await request({
+      method: 'POST',
+      uri: payProUri,
+      json: { chain, currency, transactions: unsignedTransactions},
+      headers: {
+        'Content-Type' : 'application/payment-verification',
+        'x-paypro-version' : '2'
+      },
+      agentOptions: {
+        rejectUnauthorized: false
+      },
+    });
+    console.log(paymentVerificationResponse);
 
   //  send-payment
   const sendPaymentResponse = await request({
     method: 'POST',
     uri: payProUri,
-    json: { chain, currency, transactions: [{ tx: signedTx }]},
+    json: { chain, currency, transactions: signedTransactions},
     headers: {
       'Content-Type' : 'application/payment',
       'x-paypro-version' : '2'

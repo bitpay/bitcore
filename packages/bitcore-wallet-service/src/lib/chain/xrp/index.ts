@@ -48,23 +48,20 @@ export class XrpChain implements IChain {
         if (err) return cb(err);
         const lockedSum = _.sumBy(txps, 'amount') || 0;
         const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
-        server.storage.fetchAddresses(
-          server.walletId,
-          (err, addresses: IAddress[]) => {
-            if (err) return cb(err);
-            if (addresses.length > 0) {
-              const byAddress = [
-                {
-                  address: addresses[0].address,
-                  path: addresses[0].path,
-                  amount: convertedBalance.totalAmount
-                }
-              ];
-              convertedBalance.byAddress = byAddress;
-            }
-            return cb(null, convertedBalance);
+        server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
+          if (err) return cb(err);
+          if (addresses.length > 0) {
+            const byAddress = [
+              {
+                address: addresses[0].address,
+                path: addresses[0].path,
+                amount: convertedBalance.totalAmount
+              }
+            ];
+            convertedBalance.byAddress = byAddress;
           }
-        );
+          return cb(null, convertedBalance);
+        });
       });
     });
   }
@@ -171,31 +168,23 @@ export class XrpChain implements IChain {
   }
 
   selectTxInputs(server, txp, wallet, opts, cb, next) {
-    server.getBalance(
-      { wallet },
-      (err, balance) => {
-if (err) return next(err);
-const { totalAmount, availableAmount } = balance;
-if (totalAmount < txp.getTotalAmount()) {
-          return cb(Errors.INSUFFICIENT_FUNDS);
-        } else if (availableAmount < txp.getTotalAmount()) {
-
-return cb(Errors.LOCKED_FUNDS);
-        } else {
-          return next(server._checkTx(txp));
-        }
+    server.getBalance({ wallet }, (err, balance) => {
+      if (err) return next(err);
+      const { totalAmount, availableAmount } = balance;
+      if (totalAmount < txp.getTotalAmount()) {
+        return cb(Errors.INSUFFICIENT_FUNDS);
+      } else if (availableAmount < txp.getTotalAmount()) {
+        return cb(Errors.LOCKED_FUNDS);
+      } else {
+        return next(server._checkTx(txp));
       }
-    );
+    });
   }
 
   checkUtxos(opts) {}
 
   checkValidTxAmount(output): boolean {
-    if (
-      !_.isNumber(output.amount) ||
-      _.isNaN(output.amount) ||
-      output.amount < 0
-    ) {
+    if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount < 0) {
       return false;
     }
     return true;
@@ -252,13 +241,13 @@ return cb(Errors.LOCKED_FUNDS);
 
   validateAddress(wallet, inaddr, opts) {
     const chain = 'XRP';
-    const isValidAddress = Validation.validateAddress(
-      chain,
-      wallet.network,  // not really used for ETH. wallet.network is 'livenet/testnet/regtest' in wallet.
-      inaddr
-    );
-    if (!isValidAddress) {
-      return Errors.INVALID_ADDRESS;
+    const isValidTo = Validation.validateAddress(chain, wallet.network, inaddr);
+    if (!isValidTo) {
+      throw Errors.INVALID_ADDRESS;
+    }
+    const isValidFrom = Validation.validateAddress(chain, wallet.network, opts.from);
+    if (!isValidFrom) {
+      throw Errors.INVALID_ADDRESS;
     }
     return;
   }
