@@ -1,9 +1,8 @@
 import { ObjectId } from 'mongodb';
 import { RippleAPI } from 'ripple-lib';
-import logger from '../../../logger';
 import { BaseModule } from '../..';
 import logger from '../../../logger';
-import { ICoin } from '../../../models/coin';
+import { RippleStateProvider } from './csp';
 
 export class RippleEventAdapter {
   stopping = false;
