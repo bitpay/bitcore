@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=8.0.0"
   },
-  "version": "8.16.1",
+  "version": "8.16.2",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "contributors": [
     "Justin Langston <nitsujlangston@gmail.com>",
@@ -81,16 +81,16 @@
   "dependencies": {
     "JSONStream": "~1.3.1",
     "abi-decoder": "2.0.1",
-    "bitcore-client": "^8.16.1",
-    "bitcore-lib": "^8.16.1",
-    "bitcore-lib-cash": "^8.16.1",
-    "bitcore-p2p": "^8.16.1",
-    "bitcore-p2p-cash": "^8.16.1",
-    "bitcore-wallet-client": "^8.16.1",
+    "bitcore-client": "^8.16.2",
+    "bitcore-lib": "^8.16.2",
+    "bitcore-lib-cash": "^8.16.2",
+    "bitcore-p2p": "^8.16.2",
+    "bitcore-p2p-cash": "^8.16.2",
+    "bitcore-wallet-client": "^8.16.2",
     "body-parser": "1.18.3",
     "cors": "2.8.4",
     "crypto-rpc": "^1.1.0",
-    "crypto-wallet-core": "^8.16.1",
+    "crypto-wallet-core": "^8.16.2",
     "heapdump": "0.3.12",
     "http": "0.0.0",
     "lodash": "4.17.11",

@@ -1,7 +1,7 @@
 {
   "name": "@bitpay/insight-previous",
   "description": "A blockchain explorer for Bitcore",
-  "version": "8.16.1",
+  "version": "8.16.2",
   "repository": "git://github.com/bitpay/bitcore.git",
   "bugs": {
     "url": "https://github.com/bitpay/bitcore/issues"
