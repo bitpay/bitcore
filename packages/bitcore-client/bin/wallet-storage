@@ -38,7 +38,7 @@ const main = async () => {
       readStream.push(wallet);
       readStream.push(null);
       readStream.pipe(StreamUtil.objectModeToJsonlBuffer()).pipe(writeStream);
-      console.log(`Encrypted wallet to ${name}.enc`);
+      console.log(`Exported wallet to ${name}.enc`);
     }
     if (imp) {
       const readStream = fs.createReadStream(fileName);
@@ -51,6 +51,9 @@ const main = async () => {
           delete wallet.masterKey;
           delete wallet.pubKey;
           wallet.lite = true;
+        }
+        if (name) {
+          wallet.name = name;
         }
         storageType = storageType ? storageType : 'Level';
         let storage = new Storage({

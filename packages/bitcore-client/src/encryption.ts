@@ -151,7 +151,5 @@ export const Encryption = {
   encryptPrivateKey,
   decryptPrivateKey,
   generateEncryptionKey,
-  bitcoinCoreDecrypt,
-  encryptWallet,
-  decryptWallet
+  bitcoinCoreDecrypt
 };

@@ -68,6 +68,9 @@ export class Wallet {
   saveWallet() {
     const walletInstance = Object.assign({}, this);
     delete walletInstance.unlocked;
+    if (walletInstance.masterKey) {
+      walletInstance.lite = false;
+    }
     return this.storage.saveWallet({ wallet: walletInstance });
   }
 
@@ -180,14 +183,17 @@ export class Wallet {
   }
 
   async unlock(password) {
-    const encMasterKey = this.masterKey;
     let validPass = await Bcrypt.compare(password, this.password).catch(() => false);
     if (!validPass) {
       throw new Error('Incorrect Password');
     }
     const encryptionKey = await Encryption.decryptEncryptionKey(this.encryptionKey, password);
-    const masterKeyStr = await Encryption.decryptPrivateKey(encMasterKey, this.pubKey, encryptionKey);
-    const masterKey = JSON.parse(masterKeyStr);
+    let masterKey;
+    if (!this.lite) {
+      const encMasterKey = this.masterKey;
+      const masterKeyStr = await Encryption.decryptPrivateKey(encMasterKey, this.pubKey, encryptionKey);
+      masterKey = JSON.parse(masterKeyStr);
+    }
     this.unlocked = {
       encryptionKey,
       masterKey
@@ -428,6 +434,9 @@ export class Wallet {
   }
 
   async nextAddressPair(withChangeAddress?: boolean) {
+    if (this.lite) {
+      throw new Error('Cannot derive private keys for lite wallet');
+    }
     this.addressIndex = this.addressIndex || 0;
     const newPrivateKey = await this.derivePrivateKey(false);
     const keys = [newPrivateKey];
@@ -439,6 +448,22 @@ export class Wallet {
     await this.importKeys({ keys });
     await this.saveWallet();
     return keys.map(key => key.address.toString());
+  }
+
+  async nextAddressPairLite(withChangeAddress?: boolean) {
+    this.addressIndex = this.addressIndex || 0;
+    const addresses = [];
+    addresses.push(this.deriveAddress(this.addressIndex, false));
+    if (withChangeAddress) {
+      addresses.push(this.deriveAddress(this.addressIndex, true));
+    }
+    this.addressIndex++;
+    await this.client.importAddresses({
+      pubKey: this.authPubKey,
+      payload: addresses
+    });
+    await this.saveWallet();
+    return addresses;
   }
 
   async getNonce(addressIndex: number = 0, isChange?: boolean) {
