@@ -55,7 +55,10 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
 
     await Promise.all(
       partition(coinOps, coinOps.length / batchSize).map(coinBatch =>
-        CoinStorage.collection.bulkWrite(coinBatch, { ordered: false })
+        CoinStorage.collection.bulkWrite(
+          coinBatch.map(op => this.toMempoolSafeUpsert(op, SpentHeightIndicators.minimum)),
+          { ordered: false }
+        )
       )
     );
 

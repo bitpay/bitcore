@@ -313,7 +313,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
   transformToCoins(tx: SingleOutputTx | FormattedTransactionType, network: string) {
     if ('outcome' in tx && tx.type === 'payment') {
       const changes = tx.outcome.balanceChanges;
-      const coins: Array<Partial<ICoin>> = Object.entries(changes).map(([k, v]) => {
+      const coins: Array<Partial<ICoin>> = Object.entries(changes).map(([k, v], index) => {
         const coin: Partial<ICoin> = {
           chain: this.chain,
           network,
@@ -321,7 +321,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
           value: Number(v[0].value) * 1e6,
           coinbase: false,
           mintHeight: tx.outcome.ledgerVersion || -1,
-          mintIndex: tx.outcome.indexInLedger,
+          mintIndex: index,
           mintTxid: tx.id,
           wallets: []
         };
@@ -343,7 +343,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
         value: Number(tx.transaction.Amount) * 1e6,
         coinbase: false,
         mintHeight: tx.validated ? tx.ledger_index : -1,
-        mintIndex: tx.transaction.Sequence,
+        mintIndex: 0,
         mintTxid: tx.transaction.hash,
         wallets: []
       } as Partial<ICoin>;
@@ -379,9 +379,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
 
     if (coins && coins.length) {
       for (const coin of coins) {
-        const coinWalletAddresses = walletAddresses.filter(
-          wa => coin.address && wa.address.toLowerCase() === coin.address.toLowerCase()
-        );
+        const coinWalletAddresses = walletAddresses.filter(wa => coin.address && wa.address === coin.address);
         if (coinWalletAddresses && coinWalletAddresses.length) {
           coin.wallets = coinWalletAddresses.map(wa => wa.wallet);
         }
