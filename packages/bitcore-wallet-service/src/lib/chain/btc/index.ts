@@ -365,7 +365,7 @@ export class BtcChain implements IChain {
             this.bitcoreLib.crypto.Signature.SIGHASH_ALL | this.bitcoreLib.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub
         }; 
-        tx.inputs[i].addSignature(tx, s);
+        tx.inputs[i].addSignature(tx, s, signingMethod);
         i++;
       } catch (e) {}
     });

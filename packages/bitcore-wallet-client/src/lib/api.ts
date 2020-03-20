@@ -1248,7 +1248,7 @@ export class API extends EventEmitter {
 
     var args = this._getCreateTxProposalArgs(opts);
 
-    this.request.post('/v3/txproposals/', args, (err, txp) => {
+    this.request.post('/v4/txproposals/', args, (err, txp) => {
       if (err) return cb(err);
 
       this._processTxps(txp);

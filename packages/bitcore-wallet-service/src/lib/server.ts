@@ -2404,6 +2404,7 @@ export class WalletService {
                   const txOpts = {
                     id: opts.txProposalId,
                     walletId: this.walletId,
+                    version: opts.version,
                     creatorId: this.copayerId,
                     coin: opts.coin || wallet.coin,
                     network: wallet.network,
@@ -2501,7 +2502,7 @@ export class WalletService {
 
           let raw;
           try {
-            raw = txp.getRawTx();
+            raw = (wallet.coin === "BCH" && txp.version === 4) ? txp.getRawTx("schnorr") : txp.getRawTx();
           } catch (ex) {
             return cb(ex);
           }
@@ -2830,7 +2831,7 @@ export class WalletService {
 
           let raw;
           try {
-            raw = txp.getRawTx();
+            raw = (wallet.coin === "BCH" && txp.version === 4) ? txp.getRawTx("schnorr") : txp.getRawTx();
           } catch (ex) {
             return cb(ex);
           }

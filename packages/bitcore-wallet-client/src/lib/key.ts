@@ -385,11 +385,14 @@ export class Key {
       });
 
       var signatures = _.map(privs, function(priv, i) {
-        return t.getSignatures(priv);
+        return (txp.coin === 'BCH' && txp.version === 4)  ?  t.getSignatures(priv, Bitcore.crypto.Signature.SIGHASH_ALL | Bitcore.crypto.Signature.SIGHASH_FORKID, "schnorr") :
+        t.getSignatures(priv);
       });
 
+      let signingMethod = (txp.coin === 'BCH' && txp.version === 4) ? "schnorr" : "ecdsa";
+
       signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
-        return s.signature.toDER().toString('hex');
+        return s.signature.toDER(signingMethod).toString('hex');
       });
 
       return signatures;

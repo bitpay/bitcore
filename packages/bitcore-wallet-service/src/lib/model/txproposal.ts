@@ -131,7 +131,7 @@ export class TxProposal {
 
     const x = new TxProposal();
 
-    x.version = 4;
+    x.version = opts.version || 4;
 
     const now = Date.now();
     x.createdOn = Math.floor(now / 1000);
@@ -286,18 +286,18 @@ export class TxProposal {
     });
   }
 
-  getBitcoreTx() {
+  getBitcoreTx(signingMethod) {
     const t = this._buildTx();
     const sigs = this._getCurrentSignatures();
     _.each(sigs, x => {
-      ChainService.addSignaturesToBitcoreTx(this.coin, t, this.inputs, this.inputPaths, x.signatures, x.xpub);
+      ChainService.addSignaturesToBitcoreTx(this.coin, t, this.inputs, this.inputPaths, x.signatures, x.xpub, signingMethod);
     });
 
     return t;
   }
 
-  getRawTx() {
-    const t = this.getBitcoreTx();
+  getRawTx(signingMethod) {
+    const t = this.getBitcoreTx(signingMethod);
 
     return t.uncheckedSerialize();
   }
@@ -396,7 +396,7 @@ export class TxProposal {
   sign(copayerId, signatures, xpub, signingMethod) {
     try {
       // Tests signatures are OK
-      const tx = this.getBitcoreTx();
+      const tx = this.getBitcoreTx(signingMethod);
       ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub, signingMethod);
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 

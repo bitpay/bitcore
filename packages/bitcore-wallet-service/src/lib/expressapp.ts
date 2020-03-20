@@ -455,6 +455,7 @@ export class ExpressApp {
     router.post('/v2/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.noCashAddr = true;
+        req.body.version = 2;
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
@@ -464,6 +465,7 @@ export class ExpressApp {
 
     router.post('/v3/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
+        req.body.version = 3;
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
@@ -474,6 +476,7 @@ export class ExpressApp {
     router.post('/v4/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.createTx(req.body, (err, txp) => {
+          req.body.version = 4;
           if (err) return returnError(err, res, req);
           res.json(txp);
         });
