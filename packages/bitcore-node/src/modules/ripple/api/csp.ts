@@ -26,13 +26,14 @@ import { GetBlockParams } from '../../../types/namespaces/ChainStateProvider';
 import { XrpBlockStorage } from '../models/block';
 import { IXrpTransaction } from '../types';
 import { SingleOutputTx, SubmitResponse } from './types';
+import { RippleDbWalletTransactions } from './wallet-tx-transform';
 
 export class RippleStateProvider extends InternalStateProvider implements IChainStateService {
   config: any;
   static clients: { [network: string]: RippleAPI } = {};
 
   constructor(public chain: string = 'XRP') {
-    super(chain);
+    super(chain, RippleDbWalletTransactions);
     this.config = Config.chains[this.chain];
   }
 
@@ -314,11 +315,12 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     if ('outcome' in tx && tx.type === 'payment') {
       const changes = tx.outcome.balanceChanges;
       const coins: Array<Partial<ICoin>> = Object.entries(changes).map(([k, v], index) => {
+        const value = Number(v[0].value) * 1e6;
         const coin: Partial<ICoin> = {
           chain: this.chain,
           network,
           address: k,
-          value: Number(v[0].value) * 1e6,
+          value,
           coinbase: false,
           mintHeight: tx.outcome.ledgerVersion || -1,
           mintIndex: index,
@@ -336,11 +338,12 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
       tx.transaction.TransactionType === 'Payment' &&
       tx.transaction.Destination
     ) {
+      const value = Number(tx.transaction.Amount) * 1e6;
       const coin = {
         chain: this.chain,
         network,
+        value,
         address: tx.transaction.Destination,
-        value: Number(tx.transaction.Amount) * 1e6,
         coinbase: false,
         mintHeight: tx.validated ? tx.ledger_index : -1,
         mintIndex: 0,

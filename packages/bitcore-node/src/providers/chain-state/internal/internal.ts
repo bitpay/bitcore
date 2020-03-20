@@ -44,7 +44,7 @@ import { ListTransactionsStream } from './transforms';
 @LoggifyClass
 export class InternalStateProvider implements IChainStateService {
   chain: string;
-  constructor(chain: string) {
+  constructor(chain: string, private WalletStreamTransform = ListTransactionsStream) {
     this.chain = chain;
     this.chain = this.chain.toUpperCase();
   }
@@ -409,7 +409,7 @@ export class InternalStateProvider implements IChainStateService {
       .find(query)
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
-    const listTransactionsStream = new ListTransactionsStream(wallet);
+    const listTransactionsStream = new this.WalletStreamTransform(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(res);
   }
 

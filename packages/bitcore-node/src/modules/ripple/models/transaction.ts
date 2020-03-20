@@ -201,10 +201,9 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
                 address,
                 mintHeight: coin.mintHeight || height,
                 coinbase: coin.coinbase,
-                value: coin.value
+                value: coin.value,
               },
               $setOnInsert: {
-                spentHeight: SpentHeightIndicators.unspent,
                 wallets
               }
             },
