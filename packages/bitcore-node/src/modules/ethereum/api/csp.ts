@@ -124,7 +124,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     };
 
     const stdDevScalar = feeMapping[limitedTarget];
-    const feerate = parseInt((stdDevScalar * stdDev).toString());
+    const feerate = Number((stdDevScalar * stdDev / 1e9).toFixed(2)) * 1e9;
     return { feerate, blocks: target };
   }
 
