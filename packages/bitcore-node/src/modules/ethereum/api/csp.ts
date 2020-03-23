@@ -100,28 +100,32 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       network = 'mainnet';
     }
 
-    if (target === 1) {
-      const { rpc } = await this.getWeb3(network);
-      const feerate = await rpc.estimateFee({ currency: this.chain, nBlocks: 1 });
-      return { feerate, blocks: target };
-    }
-
-    const bestBlock = (await this.getLocalTip({ chain, network })) || { height: target };
-    const gasPrices: number[] = [];
     const limitedTarget = Math.min(target, 4);
     const txs = await EthTransactionStorage.collection
-      .find({ chain, network, blockHeight: { $gte: bestBlock.height - limitedTarget } })
+      .find({ chain, network, blockHeight: { $gt: 0 } })
+      .project({ gasPrice: 1, blockHeight: 1 })
+      .sort({ blockHeight: -1 })
+      .limit(100 * 200)
       .toArray();
 
-    const blockGasPrices = txs.map(tx => Number(tx.gasPrice)).sort((a, b) => b - a);
-    const txCount = txs.length;
-    const lowGasPriceIndex = txCount > 1 ? txCount - 1 : 0;
-    if (txCount > 0) {
-      gasPrices.push(blockGasPrices[lowGasPriceIndex]);
-    }
+    const blockGasPrices = txs.map(tx => Number(tx.gasPrice)).filter(gasPrice => gasPrice);
+    const txCount = blockGasPrices.length;
+    const sumOfGasPrices = blockGasPrices.reduce((sum, gasPrice) => sum + gasPrice, 0);
+    const mean = sumOfGasPrices / txCount;
+    const varianceSum = blockGasPrices.reduce((sum, gasPrice) => sum + Math.pow(gasPrice - mean, 2), 0);
+    const variance = varianceSum / (txCount - 1);
+    const stdDev = Math.sqrt(variance);
 
-    const estimate = Math.max(...gasPrices);
-    return { feerate: estimate || 0, blocks: target };
+    const feeMapping = {
+      1: 1,
+      2: 0.66,
+      3: 0.33,
+      4: 0.16
+    };
+
+    const stdDevScalar = feeMapping[limitedTarget];
+    const feerate = parseInt((stdDevScalar * stdDev).toString());
+    return { feerate, blocks: target };
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
