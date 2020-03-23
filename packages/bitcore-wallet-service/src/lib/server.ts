@@ -2502,7 +2502,7 @@ export class WalletService {
 
           let raw;
           try {
-            raw = (wallet.coin === "BCH" && txp.version === 4) ? txp.getRawTx("schnorr") : txp.getRawTx();
+            raw = wallet.coin === 'bch' && txp.version >= 4 ? txp.getRawTx('schnorr') : txp.getRawTx();
           } catch (ex) {
             return cb(ex);
           }
@@ -2831,7 +2831,7 @@ export class WalletService {
 
           let raw;
           try {
-            raw = (wallet.coin === "BCH" && txp.version === 4) ? txp.getRawTx("schnorr") : txp.getRawTx();
+            raw = wallet.coin === 'bch' && txp.version >= 4 ? txp.getRawTx('schnorr') : txp.getRawTx();
           } catch (ex) {
             return cb(ex);
           }

@@ -1,4 +1,4 @@
-import { BitcoreLibCash } from 'crypto-wallet-core';
+import { BitcoreLib, BitcoreLibCash } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IChain } from '..';
 import { BtcChain } from '../btc';
@@ -28,5 +28,32 @@ export class BchChain extends BtcChain implements IChain {
       if (addr.toString(true) != inaddr) throw Errors.ONLY_CASHADDR;
     }
     return;
+  }
+
+  addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub, signingMethod) {
+    signingMethod = signingMethod || 'ecdsa';
+    if (signatures.length != inputs.length) throw new Error('Number of signatures does not match number of inputs');
+
+    let i = 0;
+    const x = new BitcoreLibCash.HDPublicKey(xpub);
+
+    _.each(signatures, signatureHex => {
+      try {
+        const signature = BitcoreLibCash.crypto.Signature.fromString(signatureHex);
+        const pub = x.deriveChild(inputPaths[i]).publicKey;
+        const s = {
+          inputIndex: i,
+          signature,
+          sigtype: BitcoreLibCash.crypto.Signature.SIGHASH_ALL | BitcoreLibCash.crypto.Signature.SIGHASH_FORKID,
+          publicKey: pub
+        };
+        tx.inputs[i].addSignature(tx, s, signingMethod);
+        i++;
+      } catch (e) {
+        console.log(e);
+      }
+    });
+
+    if (i != tx.inputs.length) throw new Error('Wrong signatures');
   }
 }

@@ -5,7 +5,7 @@ import * as _ from 'lodash';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
 
-import { BitcoreLib, Deriver, Transactions } from 'crypto-wallet-core';
+import { BitcoreLib, Deriver, Transactions, BitcoreLibCash } from 'crypto-wallet-core';
 
 var Bitcore = BitcoreLib;
 var Mnemonic = require('bitcore-mnemonic');
@@ -384,15 +384,17 @@ export class Key {
         }
       });
 
+      let signingMethod = (txp.coin === 'bch' && txp.version >= 4) ? "schnorr" : "ecdsa";
+
       var signatures = _.map(privs, function(priv, i) {
-        return (txp.coin === 'BCH' && txp.version === 4)  ?  t.getSignatures(priv, Bitcore.crypto.Signature.SIGHASH_ALL | Bitcore.crypto.Signature.SIGHASH_FORKID, "schnorr") :
+        return (txp.coin === 'bch' && txp.version >= 4)  ?  t.getSignatures(priv, BitcoreLibCash.crypto.Signature.SIGHASH_ALL | BitcoreLibCash.crypto.Signature.SIGHASH_FORKID, signingMethod) :
         t.getSignatures(priv);
       });
 
-      let signingMethod = (txp.coin === 'BCH' && txp.version === 4) ? "schnorr" : "ecdsa";
-
       signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
-        return s.signature.toDER(signingMethod).toString('hex');
+        return (txp.coin === 'bch') ? 
+        s.signature.toDER(signingMethod).toString('hex') : 
+        s.signature.toDER().toString('hex');
       });
 
       return signatures;

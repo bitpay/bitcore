@@ -1505,7 +1505,7 @@ export class API extends EventEmitter {
 
         if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
-        var url = '/v1/txproposals/' + txp.id + '/signatures/';
+        var url = (txp.version >= 4) ?  '/v4/txproposals/' + txp.id + '/signatures/' : '/v1/txproposals/' + txp.id + '/signatures/';
         var args = {
           signatures
         };

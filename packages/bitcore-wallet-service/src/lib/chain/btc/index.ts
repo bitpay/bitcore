@@ -346,8 +346,6 @@ export class BtcChain implements IChain {
   addressToStorageTransform(network, address) {}
 
   addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub, signingMethod) {
-    
-    signingMethod = signingMethod || "ecdsa";
     if (signatures.length != inputs.length) throw new Error('Number of signatures does not match number of inputs');
 
     let i = 0;
@@ -360,12 +358,10 @@ export class BtcChain implements IChain {
         const s = {
           inputIndex: i,
           signature,
-          sigtype:
-            // tslint:disable-next-line:no-bitwise
-            this.bitcoreLib.crypto.Signature.SIGHASH_ALL | this.bitcoreLib.crypto.Signature.SIGHASH_FORKID,
+          sigtype: this.bitcoreLib.crypto.Signature.SIGHASH_ALL | this.bitcoreLib.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub
-        }; 
-        tx.inputs[i].addSignature(tx, s, signingMethod);
+        };
+        tx.inputs[i].addSignature(tx, s);
         i++;
       } catch (e) {}
     });
