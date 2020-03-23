@@ -781,6 +781,7 @@ export class API extends EventEmitter {
   // * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
   // * @param {String} opts.walletPrivKey - set a walletPrivKey (instead of random)
   // * @param {String} opts.id - set a id for wallet (instead of server given)
+  // * @param {Boolean} opts.useNativeSegwit - set addressType to P2WPKH or P2WSH
   // * @param cb
   // * @return {undefined}
   // */
@@ -823,13 +824,14 @@ export class API extends EventEmitter {
       network,
       singleAddress: !!opts.singleAddress,
       id: opts.id,
-      usePurpose48: n > 1
+      usePurpose48: n > 1,
+      useNativeSegwit: !!opts.useNativeSegwit
     };
     this.request.post('/v2/wallets/', args, (err, res) => {
       if (err) return cb(err);
 
       var walletId = res.walletId;
-      c.addWalletInfo(walletId, walletName, m, n, copayerName);
+      c.addWalletInfo(walletId, walletName, m, n, copayerName, { useNativeSegwit: opts.useNativeSegwit });
       var secret = API._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
 
       this._doJoinWallet(
@@ -899,6 +901,7 @@ export class API extends EventEmitter {
         if (err) return cb(err);
         if (!opts.dryRun) {
           this.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, copayerName, {
+            useNativeSegwit: wallet.addressType === Constants.SCRIPT_TYPES.P2WSH,
             allowOverwrite: true
           });
         }
