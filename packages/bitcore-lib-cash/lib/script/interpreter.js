@@ -9,6 +9,8 @@ var Hash = require('../crypto/hash');
 var Signature = require('../crypto/signature');
 var PublicKey = require('../publickey');
 var ECDSA = require('../crypto/ecdsa');
+var Schnorr = require('../crypto/schnorr');
+
 
 
 /**
@@ -183,8 +185,6 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
       }
   }
 
- 
-
   return true;
 };
 
@@ -309,6 +309,15 @@ Interpreter.SCRIPT_ENABLE_REPLAY_PROTECTION = (1 << 17);
 Interpreter.SCRIPT_ENABLE_CHECKDATASIG = (1 << 18),
 
 
+// The exception to CLEANSTACK and P2SH for the recovery of coins sent
+// to p2sh segwit addresses is not allowed.
+    
+Interpreter.SCRIPT_DISALLOW_SEGWIT_RECOVERY = (1 << 20)
+
+
+// Whether to allow new OP_CHECKMULTISIG logic to trigger. (new multisig
+// logic verifies faster, and only allows Schnorr signatures)
+Interpreter.SCRIPT_ENABLE_SCHNORR_MULTISIG = (1 << 21),
 
 
 /* Below flags apply in the context of BIP 68*/
@@ -345,14 +354,23 @@ Interpreter.castToBool = function(buf) {
   return false;
 };
 
+Interpreter.isSchnorrSig = function(buf) {
+  return (buf.length === 64 || buf.length === 65) && (buf[0] !== 0x30);
+}
+
 /**
  * Translated from bitcoind's CheckSignatureEncoding
  */
 Interpreter.prototype.checkRawSignatureEncoding = function(buf) {
   var sig;
 
-  if ((this.flags & (Interpreter.SCRIPT_VERIFY_DERSIG | Interpreter.SCRIPT_VERIFY_LOW_S | Interpreter.SCRIPT_VERIFY_STRICTENC)) !== 0 && !Signature.isDER(buf)) {
+  //TODO update interpreter.js and necessary functions to match bitcoin-abc interpreter.cpp
+  if(Interpreter.isSchnorrSig(buf)) {
+    return true;
+  }
 
+  
+  if ((this.flags & (Interpreter.SCRIPT_VERIFY_DERSIG | Interpreter.SCRIPT_VERIFY_LOW_S | Interpreter.SCRIPT_VERIFY_STRICTENC)) !== 0 && !Signature.isDER(buf)) {
     this.errstr = 'SCRIPT_ERR_SIG_DER_INVALID_FORMAT';
     return false;
   } else if ((this.flags & Interpreter.SCRIPT_VERIFY_LOW_S) !== 0) {
@@ -420,12 +438,23 @@ Interpreter.prototype.checkDataSignatureEncoding = function(buf) {
  * Translated from bitcoind's CheckPubKeyEncoding
  */
 Interpreter.prototype.checkPubkeyEncoding = function(buf) {
-  if ((this.flags & Interpreter.SCRIPT_VERIFY_STRICTENC) !== 0 && !PublicKey.isValid(buf)) {
+  if ((this.flags & Interpreter.SCRIPT_VERIFY_STRICTENC) !== 0 && !(PublicKey.isValid(buf) || IsCompressedOrUncompressedPubkey(buf))) {
     this.errstr = 'SCRIPT_ERR_PUBKEYTYPE';
     return false;
   }
   return true;
 };
+
+function IsCompressedOrUncompressedPubkey(bufPubkey) {
+  switch(bufPubkey.length) {
+    case 33:
+      return bufPubkey[0] === 0x02 || bufPubkey[0] === 0x03;
+    case 64:
+      return bufPubkey[0] === 0x04;
+    default:
+      return false;
+  }
+}
 
 
 
@@ -656,6 +685,62 @@ Interpreter.prototype.checkSequence = function(nSequence) {
     return true;
   }
 
+/**
+ * Implemented from bitcoin-abc 
+ * https://github.com/Bitcoin-ABC/bitcoin-abc/blob/f8cbc0e2b439aa4030430a7b1ecbdafede0dd072/src/script/bitfield.cpp
+ * @param {*} dummy 
+ * @param {*} size  
+ */
+function DecodeBitfield(dummy, size) {
+  if (size > 32) {
+    this.errstr = "INVALID_BITFIELD_SIZE";
+    return {result: false};
+  }
+
+  let bitfieldSize = Math.floor((size + 7) / 8);
+  let dummyBitlength = dummy.length;
+  if (dummyBitlength !== bitfieldSize) {
+    this.errstr = "INVALID_BITFIELD_SIZE";
+    return {result: false};
+  }
+
+  let bitfield = 0;
+  let dummyAs32Bit = Uint32Array.from(dummy);
+  // let one = new Uint8Array([1]);
+  // let oneAs64Bit = BigUint64Array.from(one);
+  
+  for (let i = 0; i < bitfieldSize; i++) {
+    bitfield = bitfield | (dummyAs32Bit[i] << (8*i));
+  }
+
+  let mask = (0x01 << size) - 1
+  if((bitfield & mask) != bitfield) {
+    this.errstr = "INVALID_BIT_RANGE";
+    return {result: false};
+  }
+  
+  return {result: true, bitfield: bitfield};
+}
+
+/**
+ * countBits 
+ * Implemented from https://github.com/Bitcoin-ABC/bitcoin-abc/blob/f8cbc0e2b439aa4030430a7b1ecbdafede0dd072/src/util/bitmanip.h
+ * @param {*} v 
+ */
+
+function countBits(v) {
+  /**
+    * Computes the number of bits set in each group of 8bits then uses a
+    * multiplication to sum all of them in the 8 most significant bits and
+    * return these.
+    * More detailed explanation can be found at
+    * https://www.playingwithpointers.com/blog/swar.html
+  */
+   v = v - (((v) >> 1) & 0x55555555);
+   v = (v & 0x33333333) + ((v >> 2) & 0x33333333);
+   return ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
+}
+
 /** 
  * Based on the inner loop of bitcoind's EvalScript function
  * bitcoind commit: b5d1b1092998bc95313856d535c632ea5a8f9104
@@ -664,7 +749,7 @@ Interpreter.prototype.step = function() {
   var self = this;
 
   function stacktop(i) {
-    return self.stack[self.stack.length +i];
+    return self.stack[self.stack.length+i];
   }
 
   function isOpcodeDisabled(opcode) {
@@ -815,7 +900,7 @@ Interpreter.prototype.step = function() {
         // beyond the 2**32-1 limit of the nLockTime field itself.
         var nLockTime = BN.fromScriptNumBuffer(this.stack[this.stack.length - 1], fRequireMinimal, 5);
 
-        // In the rare event that the argument may be < 0 due to
+        // In the rare event that the argument may be < 0 due tod
         // some arithmetic being done first, you can always use
         // 0 MAX CHECKLOCKTIMEVERIFY.
         if (nLockTime.lt(new BN(0))) {
@@ -1533,7 +1618,6 @@ Interpreter.prototype.step = function() {
           bufPubkey = stacktop(-1);
 
           if (!this.checkTxSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
-
             return false;
           }
 
@@ -1551,7 +1635,11 @@ Interpreter.prototype.step = function() {
             sig = Signature.fromTxFormat(bufSig);
             pubkey = PublicKey.fromBuffer(bufPubkey, false);
 
-            fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags);
+            if(!sig.isSchnorr) {
+              fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags);
+            } else {
+              fSuccess = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags, "schnorr");
+            }
           } catch (e) {
             //invalid sig or pubkey
             fSuccess = false;
@@ -1583,12 +1671,6 @@ Interpreter.prototype.step = function() {
       case Opcode.OP_CHECKDATASIGVERIFY: 
         {
 
-          // Make sure this remains an error before activation.
-          if ((this.flags & Interpreter.SCRIPT_ENABLE_CHECKDATASIG) == 0) {
-            this.errstr = 'SCRIPT_ERR_CHECKDATASIG';
-            return false;
-          }
-
 
           // (sig message pubkey -- bool)
           if (this.stack.length < 3) {
@@ -1611,7 +1693,11 @@ Interpreter.prototype.step = function() {
             sig = Signature.fromDataFormat(bufSig);
             pubkey = PublicKey.fromBuffer(bufPubkey, false);
             bufHash = Hash.sha256(bufMessage);
-            fSuccess = ECDSA.verify(bufHash, sig, pubkey, 'big');
+            if (!sig.isSchnorr) {
+              fSuccess = ECDSA.verify(bufHash, sig, pubkey, 'big');
+            } else {
+              fSuccess = Schnorr.verify(bufHash, sig, pubkey, 'big');
+            }
           } catch (e) {
             //invalid sig or pubkey
             fSuccess = false;
@@ -1643,15 +1729,17 @@ Interpreter.prototype.step = function() {
       case Opcode.OP_CHECKMULTISIG:
       case Opcode.OP_CHECKMULTISIGVERIFY:
         {
-          // ([sig ...] num_of_signatures [pubkey ...] num_of_pubkeys -- bool)
+          // ([dummy] [sig ...] num_of_signatures [pubkey ...] num_of_pubkeys -- bool)
 
           var i = 1;
+          let idxTopKey = i + 1;
           if (this.stack.length < i) {
             this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
             return false;
           }
 
           var nKeysCount = BN.fromScriptNumBuffer(stacktop(-i), fRequireMinimal).toNumber();
+          var idxSigCount = idxTopKey + nKeysCount;
           if (nKeysCount < 0 || nKeysCount > 20) {
             this.errstr = 'SCRIPT_ERR_PUBKEY_COUNT';
             return false;
@@ -1661,22 +1749,29 @@ Interpreter.prototype.step = function() {
             this.errstr = 'SCRIPT_ERR_OP_COUNT';
             return false;
           }
-          // int ikey = ++i;
-          var ikey = ++i;
+
+          // todo map interpreter.cpp variables with interpreter.js variables for future readability, maintainability
+          // ikey maps to idxTopKey in interpreter.cpp (MULTISIG case)
+          var ikey = ++i; // top pubkey
+          var idxTopSig = idxSigCount + 1;
+
+          // i maps to idxSigCount in interpreter.cpp (MULTISIG case) (stack depth of nSigsCount)
           i += nKeysCount;
 
           // ikey2 is the position of last non-signature item in
           // the stack. Top stack item = 1. With
           // SCRIPT_VERIFY_NULLFAIL, this is used for cleanup if
           // operation fails.
-          var ikey2 = nKeysCount + 2;
+          var ikey2 = nKeysCount + 2; // ?dummy variable
 
           if (this.stack.length < i) {
             this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
             return false;
           }
 
-          var nSigsCount = BN.fromScriptNumBuffer(stacktop(-i), fRequireMinimal).toNumber();
+          var nSigsCount = BN.fromScriptNumBuffer(stacktop(-idxSigCount), fRequireMinimal).toNumber();
+          var idxDummy = idxTopSig + nSigsCount;
+
           if (nSigsCount < 0 || nSigsCount > nKeysCount) {
             this.errstr = 'SCRIPT_ERR_SIG_COUNT';
             return false;
@@ -1684,58 +1779,135 @@ Interpreter.prototype.step = function() {
           // int isig = ++i;
           var isig = ++i;
           i += nSigsCount;
-          if (this.stack.length < i) {
+          if (this.stack.length < idxDummy) {
             this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
             return false;
           }
+
 
           // Subset of script starting at the most recent codeseparator
           subscript = new Script().set({
             chunks: this.script.chunks.slice(this.pbegincodehash)
           });
 
-          // Drop the signatures, since there's no way for a signature to sign itself
-          for (var k = 0; k < nSigsCount; k++) {
-            bufSig = stacktop(-isig-k);
-            subscript.findAndDelete(new Script().add(bufSig));
-          }
-
           fSuccess = true;
-          while (fSuccess && nSigsCount > 0) {
-            // valtype& vchSig  = stacktop(-isig);
-            bufSig = stacktop(-isig);
-            // valtype& vchPubKey = stacktop(-ikey);
-            bufPubkey = stacktop(-ikey);
 
-            if (!this.checkTxSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
+          if((this.flags & Interpreter.SCRIPT_ENABLE_SCHNORR_MULTISIG) && stacktop(-idxDummy).length !== 0) {
+            // SCHNORR MULTISIG
 
-              return false;
-            }
+            let dummy = stacktop(-idxDummy);
 
-            var fOk;
-            try {
-              sig = Signature.fromTxFormat(bufSig);
-              pubkey = PublicKey.fromBuffer(bufPubkey, false);
-              fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags);
-            } catch (e) {
-              //invalid sig or pubkey
-              fOk = false;
-            }
+            let bitfieldObj = DecodeBitfield(dummy, nKeysCount);
 
-            if (fOk) {
-              isig++;
-              nSigsCount--;
-            }
-            ikey++;
-            nKeysCount--;
+            if(!bitfieldObj["result"]) {
+              fSuccess = false;
+            } 
 
-            // If there are more signatures left than keys left,
-            // then too many signatures have failed
-            if (nSigsCount > nKeysCount) {
+            let nSigs8bit = new Uint8Array([nSigsCount]);
+            let nSigs32 = Uint32Array.from(nSigs8bit);
+
+            if (countBits(bitfieldObj["bitfield"]) !== nSigs32[0]) {
+              this.errstr = "INVALID_BIT_COUNT";
               fSuccess = false;
             }
-          }
+            
+            var bottomKey = idxTopKey + nKeysCount - 1;
+            var bottomSig = idxTopSig + nSigsCount - 1;
 
+            let iKey = 0;
+            for(let iSig = 0; iSig < nSigsCount;
+              iSig++, iKey++) {
+                if((bitfieldObj["bitfield"] >> iKey) === 0) {
+                  this.errstr = "INVALID_BIT_RANGE";
+                  fSuccess = false;
+                }
+
+                while(((bitfieldObj["bitfield"] >> iKey) & 0x01) == 0) {
+                  if(iKey >= nKeysCount) {
+                    this.errstr = "wrong";
+                    fSuccess = false;
+                    break;
+                  }
+                  iKey++;
+                }
+
+                // this is a sanity check and should be 
+                // unreachable
+                if(iKey >= nKeysCount) {
+                  this.errstr = "PUBKEY_COUNT";
+                  fSuccess = false;
+                }
+
+                // Check the signature
+                let bufsig = stacktop(-bottomSig + iSig)
+                let bufPubkey = stacktop(-bottomKey + iKey)
+
+                // Note that only pubkeys associated with a 
+                // signature are check for validity
+
+                if(!this.checkRawSignatureEncoding(bufsig) || !this.checkPubkeyEncoding(bufPubkey)) {
+                  fSuccess = false;
+                }
+
+                let sig = Signature.fromTxFormat(bufsig);
+                let pubkey = PublicKey.fromBuffer(bufPubkey, false);
+                let fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags, "schnorr");
+
+                if(!fOk) {
+                  this.errstr = "SIG_NULLFAIL"
+                  fSuccess = false;
+                }
+              }
+
+              if ((bitfieldObj["bitfield"] >> iKey) != 0) {
+                // This is a sanity check and should be
+                // unreachable.
+                this.errstr = "INVALID_BIT_COUNT"
+                fSuccess = false;
+              }
+          } 
+          else {
+            // Drop the signatures, since there's no way for a signature to sign itself
+            for (var k = 0; k < nSigsCount; k++) {
+              bufSig = stacktop(-isig-k);
+              subscript.findAndDelete(new Script().add(bufSig));
+            }
+            
+            while (fSuccess && nSigsCount > 0) {
+
+                  // valtype& vchSig  = stacktop(-isig);
+                bufSig = stacktop(-isig);
+                // valtype& vchPubKey = stacktop(-ikey);
+                bufPubkey = stacktop(-ikey);
+
+                if (!this.checkTxSignatureEncoding(bufSig) || !this.checkPubkeyEncoding(bufPubkey)) {
+                  return false;
+                }
+
+                var fOk;
+                try {
+                  sig = Signature.fromTxFormat(bufSig);
+                  pubkey = PublicKey.fromBuffer(bufPubkey, false);
+                  fOk = this.tx.verifySignature(sig, pubkey, this.nin, subscript, this.satoshisBN, this.flags);
+                } catch (e) {
+                  //invalid sig or pubkey
+                  fOk = false;
+                }
+
+                if (fOk) {
+                  isig++;
+                  nSigsCount--;
+                }
+                ikey++;
+                nKeysCount--;
+
+                // If there are more signatures left than keys left,
+                // then too many signatures have failed
+                if (nSigsCount > nKeysCount) {
+                  fSuccess = false;
+                }
+              }
+          }
 
           // Clean up stack of actual arguments
           while (i-- > 1) {

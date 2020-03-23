@@ -47,7 +47,7 @@ export class BTCTxProvider {
       tx.change(change);
     }
     for (const recipient of recipients) {
-      tx.to(recipient.address, recipient.amount);
+      tx.to(recipient.address, parseInt(recipient.amount));
     }
     return tx.uncheckedSerialize();
   }

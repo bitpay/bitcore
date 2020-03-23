@@ -63,16 +63,18 @@ Signature.fromCompact = function(buf) {
 };
 
 Signature.fromDER = Signature.fromBuffer = function(buf, strict) {
-  // Schnorr Signatures use 64/65 byte for in tx r [len] 32 , s [len] 32, nhashtype 
-  if((buf.length === 64 || buf.length === 65)) {
+  // Schnorr Signatures use 65 byte for in tx r [len] 32 , s [len] 32, nhashtype 
+  if((buf.length === 64) && buf[0] != 0x30) {
     let obj = Signature.parseSchnorrEncodedSig(buf);
     let sig = new Signature();
     sig.r = obj.r;
     sig.s = obj.s;
     sig.isSchnorr = true;
     return sig;
+  } if (buf.length === 64 && buf[0] === 0x30) {
+    return "64 DER (ecdsa) signautres not allowed";
   }
-
+  
   var obj = Signature.parseDER(buf, strict);
   var sig = new Signature();
 
@@ -112,13 +114,14 @@ Signature.parseSchnorrEncodedSig = function(buf) {
   let s = buf.slice(32, 64);
   let hashtype;
   if (buf.length === 65) {
-    hashtype = buf.slice(64,66);
-    this.hashtype = hashtype;
+    hashtype = buf.slice(64,65);
+    this.nhashtype = hashtype;
   }
 
   var obj = {
     r: BN.fromBuffer(r),
-    s: BN.fromBuffer(s)
+    s: BN.fromBuffer(s),
+    nhashtype: hashtype
   };
 
   return obj;
@@ -204,11 +207,18 @@ Signature.prototype.toCompact = function(i, compressed) {
   return Buffer.concat([b1, b2, b3]);
 };
 
-Signature.prototype.toBuffer = Signature.prototype.toDER = function() {
+Signature.prototype.toBuffer = Signature.prototype.toDER = function(signingMethod) {
+
+  // Schnorr signatures use a 64 byte r,s format, where as ECDSA takes the form decribed
+  // below, above the isDER function signature.
+
+  signingMethod = signingMethod || "ecdsa";
+
+
   var rnbuf = this.r.toBuffer();
   var snbuf = this.s.toBuffer();
 
-  if(this.isSchnorr) {
+  if(signingMethod === "schnorr") {
     return Buffer.concat([rnbuf, snbuf]);
   }
   
@@ -411,8 +421,8 @@ Signature.prototype.hasDefinedHashtype = function() {
   return true;
 };
 
-Signature.prototype.toTxFormat = function() {
-  var derbuf = this.toDER();
+Signature.prototype.toTxFormat = function(signingMethod) {
+  var derbuf = this.toDER(signingMethod);
   var buf = Buffer.alloc(1);
   buf.writeUInt8(this.nhashtype, 0);
   return Buffer.concat([derbuf, buf]);

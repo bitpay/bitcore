@@ -120,7 +120,8 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
     while (!this.disconnecting && !this.stopping) {
       try {
         if (!this.web3) {
-          this.web3 = await this.getWeb3();
+          const { web3 } = await this.getWeb3();
+          this.web3 = web3;
           this.rpc = new ParityRPC(this.web3);
         }
         try {
@@ -133,7 +134,8 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
             this.events.emit('connected');
           }
         } else {
-          this.web3 = await this.getWeb3();
+          const { web3 } = await this.getWeb3();
+          this.web3 = web3;
           this.rpc = new ParityRPC(this.web3);
           this.events.emit('disconnected');
         }

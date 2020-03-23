@@ -1,3 +1,4 @@
+import { CryptoRpc } from 'crypto-rpc';
 import { ObjectID } from 'mongodb';
 import { Readable, Transform } from 'stream';
 import Web3 from 'web3';
@@ -47,45 +48,32 @@ interface ERC20Transfer
 
 export class ETHStateProvider extends InternalStateProvider implements IChainStateService {
   config: any;
-  static web3 = {} as { [network: string]: Web3 };
+  static rpcs = {} as { [network: string]: { rpc: CryptoRpc; web3: Web3 } };
 
   constructor(public chain: string = 'ETH') {
     super(chain);
     this.config = Config.chains[this.chain];
   }
 
-  async getWeb3(network: string) {
+  async getWeb3(network: string): Promise<{ rpc: CryptoRpc; web3: Web3 }> {
     try {
-      if (ETHStateProvider.web3[network]) {
-        await ETHStateProvider.web3[network].eth.getBlockNumber();
+      if (ETHStateProvider.rpcs[network]) {
+        await ETHStateProvider.rpcs[network].web3.eth.getBlockNumber();
       }
     } catch (e) {
-      delete ETHStateProvider.web3[network];
+      delete ETHStateProvider.rpcs[network];
     }
-    if (!ETHStateProvider.web3[network]) {
-      const networkConfig = this.config[network];
-      const provider = networkConfig.provider;
-      const host = provider.host || 'localhost';
-      const protocol = provider.protocol || 'http';
-      const portString = provider.port || '8545';
-      const connUrl = `${protocol}://${host}:${portString}`;
-      let ProviderType;
-      switch (provider.protocol) {
-        case 'ws':
-        case 'wss':
-          ProviderType = Web3.providers.WebsocketProvider;
-          break;
-        default:
-          ProviderType = Web3.providers.HttpProvider;
-          break;
-      }
-      ETHStateProvider.web3[network] = new Web3(new ProviderType(connUrl));
+    if (!ETHStateProvider.rpcs[network]) {
+      console.log('making a new connection');
+      const rpcConfig = { ...this.config[network].provider, chain: this.chain, currencyConfig: {} };
+      const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
+      ETHStateProvider.rpcs[network] = { rpc, web3: rpc.web3 };
     }
-    return ETHStateProvider.web3[network];
+    return ETHStateProvider.rpcs[network];
   }
 
   async erc20For(network: string, address: string) {
-    const web3 = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network);
     const contract = new web3.eth.Contract(ERC20Abi as AbiItem[], address);
     return contract;
   }
@@ -111,6 +99,13 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     if (network === 'livenet') {
       network = 'mainnet';
     }
+
+    if (target === 1) {
+      const { rpc } = await this.getWeb3(network);
+      const feerate = await rpc.estimateFee({ currency: this.chain, nBlocks: 1 });
+      return { feerate, blocks: target };
+    }
+
     const bestBlock = (await this.getLocalTip({ chain, network })) || { height: target };
     const gasPrices: number[] = [];
     const limitedTarget = Math.min(target, 4);
@@ -131,7 +126,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
     const { network, address } = params;
-    const web3 = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network);
     if (params.args) {
       if (params.args.tokenAddress) {
         const token = await this.erc20For(network, params.args.tokenAddress);
@@ -177,7 +172,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
   async broadcastTransaction(params: BroadcastTransactionParams) {
     const { network, rawTx } = params;
-    const web3 = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network);
     const rawTxs = typeof rawTx === 'string' ? [rawTx] : rawTx;
     const txids = new Array<string>();
     for (const tx of rawTxs) {
@@ -265,7 +260,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
     const { chain, network, wallet, res, args } = params;
-    const web3 = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network);
     const query: any = {
       chain,
       network,
@@ -405,7 +400,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
   }
 
   async getAccountNonce(network: string, address: string) {
-    const web3 = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network);
     const count = await web3.eth.getTransactionCount(address);
     return count;
     /*
@@ -437,7 +432,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
   async estimateGas(params): Promise<number> {
     const { network, from, to, value, data, gasPrice } = params;
-    const web3 = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network);
     const gasLimit = await web3.eth.estimateGas({ from, to, value, data, gasPrice });
     return gasLimit;
   }

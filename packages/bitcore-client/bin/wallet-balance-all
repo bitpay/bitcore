@@ -13,9 +13,10 @@ program
   .option('--network [network]', 'Network to get balances from')
   .option('--name [name]', 'regex matching wallet name')
   .option('--time [time]', 'optional - Get balance at specific time')
+  .option('--storageType [storageType]', 'optional - the name of the database (default Level)')
   .parse(process.argv);
 
-const { path, chain, network, time, name: regex } = program;
+const { path, chain, network, time, name: regex, storageType } = program;
 const regExp = new RegExp(regex);
 
 const parser = new Transform({
@@ -52,8 +53,8 @@ const getBalance = new Transform({
   writableObjectMode: true,
   readableObjectMode: false,
   transform (wallet, encoding, callback) {
-    const { name, chain, network } = wallet;
-    Wallet.loadWallet({ name, path })
+    const { name, chain, network, storageType } = wallet;
+    Wallet.loadWallet({ name, path, storageType })
       .then(wallet => wallet.getBalance(time))
       .then(balance => {
         const { confirmed } = balance;
@@ -63,7 +64,7 @@ const getBalance = new Transform({
   }
 });
 
-const storage = new Storage({createIfMissing: false, errorIfExists: false, path});
+const storage = new Storage({createIfMissing: false, errorIfExists: false, path, storageType});
 storage.listWallets()
   .pipe(parser)
   .on('error', err => console.log(err))

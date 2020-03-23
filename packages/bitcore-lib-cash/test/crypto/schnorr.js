@@ -25,7 +25,7 @@ describe("Schnorr", function() {
     var schnorr = new Schnorr();
 
     it("Sign/Verify bitcoin-abc-test-spec",  function() {
-        schnorr.hashbuf =  Hash.sha256sha256(Buffer.from('Very deterministic message', 'utf-8'));
+        schnorr.hashbuf =  Hash.sha256((Buffer.from('Very deterministic message', 'utf-8')));
         schnorr.endianess = 'big';
         schnorr.privkey = new Privkey(BN.fromBuffer('12b004fff7f4b69ef8650e767f18f11ede158148b425660723b9f9a66e61f747','hex'), 'livenet');
         schnorr.privkey2pubkey();
@@ -39,7 +39,7 @@ describe("Schnorr", function() {
     it('Sign/Verify Test 2', function() {
         let hashbuf = (new BN(0)).toBuffer({ size: 32 });
         let privbn = new BN(1);
-        // privbn.toBuffer({ size: 32});
+        
         let privkey = new Privkey(privbn);
 
         let schnorrSig = Schnorr({
@@ -62,7 +62,7 @@ describe("Schnorr", function() {
         schnorr.sign();
         schnorr.verify().verified.should.equal(true);
     });
-    
+ 
     it("Sign/Verify Test 4",  function() {
         var schnorr = new Schnorr();
         schnorr.hashbuf = Buffer.from('5E2D58D8B3BCDF1ABADEC7829054F90DDA9805AAB56C77333024B9D0A508B75C', 'hex');
@@ -90,11 +90,22 @@ describe("Schnorr", function() {
         schnorr.verify().verified.should.equal(false, "Should fail");
     });
 
+    it("Verify Test should pass from scripts_test",  function() {
+        // schnorr.hashbuf = Buffer.from('f4a222b692e7f86c299f878c4b981242238f49b467b8d990219fbf5cfc0838cd', 'hex');
+        schnorr.hashbuf = Buffer.from('cd3808fc5cbf9f2190d9b867b4498f234212984b8c879f296cf8e792b622a2f4', 'hex');
+        schnorr.endianess = 'big';
+        schnorr.pubkey = new Pubkey("0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", { compressed: false} );
+        schnorr.sig = Signature.fromString("0df4be7f5fe74b2855b92082720e889038e15d8d747334fa3f300ef4ab1db1eea56aa83d1d60809ff6703791736be87cfb6cbc5c4036aeed3b4ea4e6dab35090");
+        console.log("Schnorr verify", schnorr.verify().verified);
+        schnorr.verify().verified.should.equal(true);
+    });
+
     it("Verify Test 7, public key not on the curve",  function() {
         (function() {
             return new Pubkey("02EEFDEA4CDB677750A420FEE807EACF21EB9898AE79B9768766E4FAA04A2D4A34").should.throw("Invalid X");
         });
     });
+    
 
     it("Verify Test 8, has_square_y(R) is false",  function() {
         schnorr.hashbuf = Buffer.from('243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C89', 'hex');
