@@ -257,19 +257,19 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript, satos
   var hashbuf = sighash(transaction, sighashType, inputIndex, subscript, satoshisBN, flags);
 
   signingMethod = signingMethod || "ecdsa";
+  let sig;
 
   if (signingMethod === "schnorr") {
-    let sig = Schnorr.sign(hashbuf, privateKey, 'big').set({
+    sig = Schnorr.sign(hashbuf, privateKey, 'little').set({
+      nhashtype: sighashType
+    });
+    return sig;
+  } else if (signingMethod === "ecdsa") {
+    sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
       nhashtype: sighashType
     });
     return sig;
   }
-
-  var sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
-    nhashtype: sighashType
-  });
-
-  return sig;
 }
 
 /**
@@ -290,14 +290,14 @@ function verify(transaction, signature, publicKey, inputIndex, subscript, satosh
   $.checkArgument(!_.isUndefined(transaction));
   $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
   var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript, satoshisBN, flags);
-
+  
   signingMethod = signingMethod || "ecdsa";
 
   if (signingMethod === "schnorr") {
-    return Schnorr.verify(hashbuf, signature, publicKey, 'big');
+    return Schnorr.verify(hashbuf, signature, publicKey, 'little')
+  } else if(signingMethod === "ecdsa") {
+    return ECDSA.verify(hashbuf, signature, publicKey, 'little');
   }
-
-  return ECDSA.verify(hashbuf, signature, publicKey, 'little');
 }
 
 /**

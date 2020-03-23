@@ -211,6 +211,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     const addresses = await this.getWalletAddresses(params.wallet._id!);
     const readable = new Readable({ objectMode: true });
     const promises = new Array<Promise<FormattedTransactionType[]>>();
+    params.args.limit = 500;
     for (const walletAddress of addresses) {
       promises.push(this.getAddressTransactions({ ...params, address: walletAddress.address }));
     }

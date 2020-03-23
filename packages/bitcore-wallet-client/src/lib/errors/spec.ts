@@ -68,8 +68,16 @@ var errorSpec = [
     message: 'Insufficient funds for fee.'
   },
   {
+    name: 'INSUFFICIENT_ETH_FEE',
+    message: 'Your linked ETH wallet does not have enough ETH for fee.'
+  },
+  {
     name: 'LOCKED_FUNDS',
     message: 'Locked funds.'
+  },
+  {
+    name: 'LOCKED_ETH_FEE',
+    message: 'Your ETH linked wallet funds are locked by pending spend proposals.'
   },
   {
     name: 'DUST_AMOUNT',
