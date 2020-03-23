@@ -287,6 +287,8 @@ export class Wallet {
     tag?: number;
     data?: string;
     token?: string;
+    gasLimit?: number;
+    gasPrice?: number;
   }) {
     const chain = params.token ? 'ERC20' : this.chain;
     let tokenContractAddress;
@@ -309,8 +311,8 @@ export class Wallet {
       utxos: params.utxos,
       nonce: params.nonce,
       tag: params.tag,
-      gasPrice: params.fee,
-      gasLimit: 200000,
+      gasPrice: params.gasPrice || params.fee,
+      gasLimit: params.gasLimit || 200000,
       data: params.data,
       tokenAddress: tokenContractAddress
     };
