@@ -232,7 +232,7 @@ export class Credentials {
     this.walletName = walletName;
     this.m = m;
 
-    if (opts.useBech32) {
+    if (opts.useNativeSegwit) {
       this.addressType = n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
     }
 

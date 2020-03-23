@@ -132,7 +132,7 @@ helpers.createAndJoinWallet = (clients, keys, m, n, opts, cb) => {
     network: network,
     singleAddress: !!opts.singleAddress,
     doNotCheck: true,
-    useBech32: !!opts.useBech32
+    useNativeSegwit: !!opts.useNativeSegwit
   }, (err, secret) => {
     if (err) console.log(err);
     should.not.exist(err);
@@ -2158,7 +2158,7 @@ describe('client API', () => {
     });
 
     it('should create a P2WPKH wallet and derive a valid Segwit address', (done) => {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, { network: 'livenet', addressType: 'P2WPKH', useBech32: true }, (w) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { network: 'livenet', addressType: 'P2WPKH', useNativeSegwit: true }, (w) => {
         clients[0].createAddress((err, client) => {
           should.not.exist(err);
           client.address.should.include('bc1');
@@ -2170,7 +2170,7 @@ describe('client API', () => {
     });
 
     it('should create a P2WPKH testnet wallet and derive a valid Segwit testnet address', (done) => {
-      helpers.createAndJoinWallet(clients, keys, 1, 1, { network: 'testnet', addressType: 'P2WPKH', useBech32: true }, (w) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { network: 'testnet', addressType: 'P2WPKH', useNativeSegwit: true }, (w) => {
         clients[0].createAddress((err, client) => {
           should.not.exist(err);
           client.address.should.include('tb1');
@@ -2182,7 +2182,7 @@ describe('client API', () => {
     });
 
     it('should create a P2WSH wallet and derive a valid Segwit address', (done) => {
-      helpers.createAndJoinWallet(clients, keys, 1, 2, { network: 'livenet', addressType: 'P2WSH', useBech32: true }, (w) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 2, { network: 'livenet', addressType: 'P2WSH', useNativeSegwit: true }, (w) => {
         clients[0].createAddress((err, client) => {
           should.not.exist(err);
           client.address.should.include('bc1');
@@ -2194,7 +2194,7 @@ describe('client API', () => {
     });
 
     it('should create a P2WSH testnet wallet and derive a valid Segwit testnet address', (done) => {
-      helpers.createAndJoinWallet(clients, keys, 1, 2, { network: 'testnet', addressType: 'P2WSH', useBech32: true }, (w) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 2, { network: 'testnet', addressType: 'P2WSH', useNativeSegwit: true }, (w) => {
         clients[0].createAddress((err, client) => {
           should.not.exist(err);
           client.address.should.include('tb1');

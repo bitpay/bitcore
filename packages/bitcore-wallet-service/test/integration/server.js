@@ -565,7 +565,7 @@ describe('Wallet service', function() {
         m: 1,
         n: 1,
         pubKey: TestData.keyPair.pub,
-        useBech32: true
+        useNativeSegwit: true
       };
       server.createWallet(opts, function(err, walletId) {
         should.not.exist(err);
@@ -585,7 +585,7 @@ describe('Wallet service', function() {
         m: 1,
         n: 2,
         pubKey: TestData.keyPair.pub,
-        useBech32: true
+        useNativeSegwit: true
       };
       server.createWallet(opts, function(err, walletId) {
         should.not.exist(err);
