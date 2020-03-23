@@ -105,7 +105,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       .find({ chain, network, blockHeight: { $gt: 0 } })
       .project({ gasPrice: 1, blockHeight: 1 })
       .sort({ blockHeight: -1 })
-      .limit(100 * 200)
+      .limit(20 * 200)
       .toArray();
 
     const blockGasPrices = txs.map(tx => Number(tx.gasPrice)).filter(gasPrice => gasPrice);

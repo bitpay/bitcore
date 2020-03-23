@@ -29,7 +29,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
   }) {
     const { block, chain, network } = params;
 
-    const reorg = false && await this.handleReorg({ block, chain, network });
+    const reorg = await this.handleReorg({ block, chain, network });
 
     if (reorg) {
       return Promise.reject('reorg');
