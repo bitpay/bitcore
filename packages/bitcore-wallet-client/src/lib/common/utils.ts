@@ -1,11 +1,6 @@
 'use strict';
 
-import {
-  BitcoreLib,
-  BitcoreLibCash,
-  Deriver,
-  Transactions
-} from '@bitrupee/crypto-wallet-core';
+import { BitcoreLib, BitcoreLibCash, Deriver, Transactions } from '@bitrupee/crypto-wallet-core';
 
 import * as _ from 'lodash';
 import { Constants } from './constants';

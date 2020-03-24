@@ -5,6 +5,8 @@ import 'source-map-support/register';
 // This has been changed in favor of @sendgrid.  To use nodemail, change the
 // sending function from `.send` to `.sendMail`.
 // import * as nodemailer from nodemailer';
+
+
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
 import { Email } from './model';
@@ -64,6 +66,9 @@ const EMAIL_TYPES = {
   }
 };
 
+const  sgMail =  require('@sendgrid/mail');
+sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
 export class EmailService {
   defaultLanguage: string;
   defaultUnit: string;
@@ -75,7 +80,7 @@ export class EmailService {
   storage: Storage;
   messageBroker: MessageBroker;
   lock: Lock;
-  mailer: any;
+  mailer: typeof sgMail;
   //  mailer: nodemailer.Transporter;
 
   start(opts, cb) {
@@ -306,7 +311,7 @@ export class EmailService {
     if (email.bodyHtml) {
       mailOptions.html = email.bodyHtml;
     }
-    this.mailer
+    sgMail
       .send(mailOptions)
       .then(result => {
         log.debug('Message sent: ', result || '');

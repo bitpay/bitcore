@@ -3,7 +3,7 @@
 export const Constants = {
   SCRIPT_TYPES: {
     P2SH: 'P2SH',
-    P2PKH: 'P2PKH',
+    P2PKH: 'P2PKH'
   },
   // not used, since Credentials 2.0
   DERIVATION_STRATEGIES: {

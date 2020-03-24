@@ -4,7 +4,6 @@ import { ERC20Abi } from './abi';
 import { exchangeABI } from './uniswap';
 
 export class ERC20TxProvider extends ETHTxProvider {
-
   getERC20Contract(tokenContractAddress: string) {
     const web3 = new Web3();
     const contract = new web3.eth.Contract(ERC20Abi, tokenContractAddress);
@@ -54,15 +53,16 @@ export class ERC20TxProvider extends ETHTxProvider {
   swapETHToDai(amount) {
     const deadline = this.getDeadline();
     const data = this.getUniSwapExchange(this.getExchange())
-      .methods.ethToTokenSwapOutput(amount, deadline).encodeABI();
+      .methods.ethToTokenSwapOutput(amount, deadline)
+      .encodeABI();
     return data;
   }
 
   swapBackToETH(amount) {
     const deadline = this.getDeadline();
     const data = this.getUniSwapExchange(this.getExchange())
-      .methods.tokenToEthSwapOutput(amount, deadline).encodeABI();
+      .methods.tokenToEthSwapOutput(amount, deadline)
+      .encodeABI();
     return data;
   }
-
 }

@@ -1,4 +1,3 @@
-
 import { BitcoreLib, BitcoreLibCash } from '@bitrupee/crypto-wallet-core';
 
 var $ = require('preconditions').singleton();

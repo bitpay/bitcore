@@ -138,12 +138,12 @@ export class Utils {
       gusd: {
         toSatoshis: 1e2,
         maxDecimals: 6,
-        minDecimals: 2,
+        minDecimals: 2
       },
       dai: {
         toSatoshis: 1e18,
         maxDecimals: 6,
-        minDecimals: 2,
+        minDecimals: 2
       }
     };
 

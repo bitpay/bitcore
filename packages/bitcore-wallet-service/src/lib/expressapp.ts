@@ -853,14 +853,14 @@ export class ExpressApp {
       const opts = {
         code: req.params['code'],
         coin: req.query.coin || 'dai',
-        ts: (req.query.ts ? + req.query.ts : null),
+        ts: req.query.ts ? +req.query.ts : null
       };
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
       }
-      server.getCoinTokenRate(opts, (rates) => {
+      server.getCoinTokenRate(opts, rates => {
         res.json(rates);
       });
     });

@@ -146,8 +146,10 @@ export class PushNotificationsService {
       if (!should) return cb();
 
       this._getRecipientsList(notification, notifType, (err, recipientsList) => {
-        if (err) return cb(err);
-
+        if (err) {
+          log.debug(err);
+          return cb(err);
+        }
         async.waterfall(
           [
             next => {
@@ -160,7 +162,10 @@ export class PushNotificationsService {
                   const content = contents[recipient.language];
 
                   this.storage.fetchPushNotificationSubs(recipient.copayerId, (err, subs) => {
-                    if (err) return next(err);
+                    if (err) {
+                      log.debug(err);
+                      return next(err);
+                    }
 
                     const notifications = _.map(subs, sub => {
                       const tokenAddress =
@@ -200,7 +205,7 @@ export class PushNotificationsService {
                 notifications,
                 (notification, next) => {
                   this._makeRequest(notification, (err, response) => {
-                    if (err) log.error(err);
+                    if (err) log.debug(err);
                     if (response) {
                       log.debug('Request status: ', response.statusCode);
                       log.debug('Request message: ', response.statusMessage);
