@@ -25,6 +25,7 @@ import {
   UpdateWalletParams
 } from '../../../types/namespaces/ChainStateProvider';
 import { partition } from '../../../utils/partition';
+import { StatsUtil } from '../../../utils/stats';
 import { ERC20Abi } from '../abi/erc20';
 import { EthBlockStorage } from '../models/block';
 import { EthTransactionStorage } from '../models/transaction';
@@ -114,10 +115,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       .filter(gasPrice => gasPrice)
       .sort((a, b) => b - a);
 
-    const quartileLength = Math.floor(blockGasPrices.length / 4);
-    const quartileStartPoint = (limitedTarget - 1) * quartileLength;
-    const quartileMidpoint = quartileStartPoint + Math.floor(quartileLength / 2);
-    const quartileMedian = blockGasPrices[quartileMidpoint];
+    const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, limitedTarget);
 
     const roundedGwei = (quartileMedian / 1e9).toFixed(2);
     const feerate = Number(roundedGwei) * 1e9;
