@@ -100,6 +100,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       network = 'mainnet';
     }
 
+    target = target || 1;
     const limitedTarget = Math.min(target, 4);
     const txs = await EthTransactionStorage.collection
       .find({ chain, network, blockHeight: { $gt: 0 } })
@@ -108,23 +109,18 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       .limit(20 * 200)
       .toArray();
 
-    const blockGasPrices = txs.map(tx => Number(tx.gasPrice)).filter(gasPrice => gasPrice);
-    const txCount = blockGasPrices.length;
-    const sumOfGasPrices = blockGasPrices.reduce((sum, gasPrice) => sum + gasPrice, 0);
-    const mean = sumOfGasPrices / txCount;
-    const varianceSum = blockGasPrices.reduce((sum, gasPrice) => sum + Math.pow(gasPrice - mean, 2), 0);
-    const variance = varianceSum / (txCount - 1);
-    const stdDev = Math.sqrt(variance);
+    const blockGasPrices = txs
+      .map(tx => Number(tx.gasPrice))
+      .filter(gasPrice => gasPrice)
+      .sort((a, b) => b - a);
 
-    const feeMapping = {
-      1: 1,
-      2: 0.66,
-      3: 0.33,
-      4: 0.16
-    };
+    const quartileLength = Math.floor(blockGasPrices.length / 4);
+    const quartileStartPoint = (limitedTarget - 1) * quartileLength;
+    const quartileMidpoint = quartileStartPoint + quartileLength / 2;
+    const quartileMedian = blockGasPrices[quartileMidpoint];
 
-    const stdDevScalar = feeMapping[limitedTarget];
-    const feerate = Number((stdDevScalar * stdDev / 1e9).toFixed(2)) * 1e9;
+    const roundedGwei = (quartileMedian / 1e9).toFixed(2);
+    const feerate = Number(roundedGwei) * 1e9;
     return { feerate, blocks: target };
   }
 
