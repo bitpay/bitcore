@@ -116,7 +116,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
     const quartileLength = Math.floor(blockGasPrices.length / 4);
     const quartileStartPoint = (limitedTarget - 1) * quartileLength;
-    const quartileMidpoint = quartileStartPoint + quartileLength / 2;
+    const quartileMidpoint = quartileStartPoint + Math.floor(quartileLength / 2);
     const quartileMedian = blockGasPrices[quartileMidpoint];
 
     const roundedGwei = (quartileMedian / 1e9).toFixed(2);
