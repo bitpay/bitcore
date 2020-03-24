@@ -90,7 +90,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     const previousBlock = await this.collection.findOne({ hash: prevHash, chain, network });
 
     const timeNormalized = (() => {
-      const prevTime = previousBlock ? previousBlock.timeNormalized : null;
+      const prevTime = previousBlock ? new Date(previousBlock.timeNormalized) : null;
       if (prevTime && blockTime.getTime() <= prevTime.getTime()) {
         return new Date(prevTime.getTime() + 1);
       } else {
