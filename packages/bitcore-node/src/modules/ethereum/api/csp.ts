@@ -101,8 +101,6 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       network = 'mainnet';
     }
 
-    target = target || 1;
-    const limitedTarget = Math.min(target, 4);
     const txs = await EthTransactionStorage.collection
       .find({ chain, network, blockHeight: { $gt: 0 } })
       .project({ gasPrice: 1, blockHeight: 1 })
@@ -115,7 +113,8 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       .filter(gasPrice => gasPrice)
       .sort((a, b) => b - a);
 
-    const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, limitedTarget);
+    const whichQuartile = Math.min(target, 4) || 1;
+    const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, whichQuartile);
 
     const roundedGwei = (quartileMedian / 1e9).toFixed(2);
     const feerate = Number(roundedGwei) * 1e9;
