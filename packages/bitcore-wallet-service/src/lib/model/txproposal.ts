@@ -286,18 +286,20 @@ export class TxProposal {
     });
   }
 
-  getBitcoreTx(signingMethod) {
+  getBitcoreTx() {
+    let signMethod = (this.coin === 'bch' && this.version >= 4) ? "schnorr" : "ecdsa";
+    
     const t = this._buildTx();
     const sigs = this._getCurrentSignatures();
     _.each(sigs, x => {
-      ChainService.addSignaturesToBitcoreTx(this.coin, t, this.inputs, this.inputPaths, x.signatures, x.xpub, signingMethod);
+      ChainService.addSignaturesToBitcoreTx(this.coin, t, this.inputs, this.inputPaths, x.signatures, x.xpub, signMethod);
     });
 
     return t;
   }
 
-  getRawTx(signingMethod) {
-    const t = this.getBitcoreTx(signingMethod);
+  getRawTx() {
+    const t = this.getBitcoreTx();
 
     return t.uncheckedSerialize();
   }
@@ -394,10 +396,12 @@ export class TxProposal {
   }
 
   sign(copayerId, signatures, xpub, signingMethod) {
+    signingMethod = signingMethod || 'ecdsa';
     try {
       // Tests signatures are OK
-      const tx = this.getBitcoreTx(signingMethod);
-      ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub, signingMethod);
+      const tx = this.getBitcoreTx();
+      let signMethod = (this.coin === 'bch' && this.version >= 4) ? 'schnorr' : 'ecdsa';
+      ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub, signMethod);
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {

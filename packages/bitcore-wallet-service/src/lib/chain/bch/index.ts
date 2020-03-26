@@ -31,7 +31,7 @@ export class BchChain extends BtcChain implements IChain {
   }
 
   addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub, signingMethod) {
-    signingMethod = signingMethod || 'ecdsa';
+    
     if (signatures.length != inputs.length) throw new Error('Number of signatures does not match number of inputs');
 
     let i = 0;

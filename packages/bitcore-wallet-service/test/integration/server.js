@@ -3833,7 +3833,7 @@ describe('Wallet service', function() {
           });
         });
 
-        describe.only('Publishing', function() {
+        describe('Publishing', function() {
           it('should be able to publish a temporary tx proposal', function(done) {
             helpers.stubUtxos(server, wallet, [1, 2], function() {
               var txOpts = {

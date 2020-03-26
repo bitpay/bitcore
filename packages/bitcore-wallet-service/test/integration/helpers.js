@@ -602,8 +602,8 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
         }
       });
 
-      var signingMethod = (txp.coin === 'bch' && txp.version === 4) ? "schnorr" : "ecdsa";
-      var t = txp.getBitcoreTx(signingMethod);
+      var signingMethod = (txp.coin === 'bch' && txp.version >= 4) ? "schnorr" : "ecdsa";
+      var t = txp.getBitcoreTx();
       var defaultFlag = 0x41;
       signatures = _.map(privs, function(priv, i) {
         return (txp.coin === 'bch') ? t.getSignatures(priv, defaultFlag, signingMethod) :  t.getSignatures(priv);
