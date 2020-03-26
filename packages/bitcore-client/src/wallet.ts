@@ -435,7 +435,7 @@ export class Wallet {
 
   async nextAddressPair(withChangeAddress?: boolean) {
     if (this.lite) {
-      throw new Error('Cannot derive private keys for lite wallet');
+      return this.nextAddressPairLite(withChangeAddress);
     }
     this.addressIndex = this.addressIndex || 0;
     const newPrivateKey = await this.derivePrivateKey(false);

@@ -28,12 +28,8 @@ const main = async () => {
     let index = wallet.addressIndex || 0;
 
     while (unusedAddressCounter < gap) {
-      let address;
-      if (wallet.lite) {
-        address = await wallet.nextAddressPairLite(change);
-      } else {
-        address = await wallet.nextAddressPair(change);
-      }
+      const address = await wallet.nextAddressPair(change);
+
       const hasTransactions = await wallet.client.getAddressTxos({ address });
 
       if (!hasTransactions.length) {

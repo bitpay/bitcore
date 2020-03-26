@@ -14,18 +14,18 @@ program
   .option('--name [name]', 'REQUIRED - Wallet Name')
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--storageType [storageType]', 'optional - name of the database to use (Mongo or Level)')
-  .option('--exp [exp]', 'export an existing wallet into an encrypted json')
-  .option('--imp [imp]', 'import an existing wallet from an encrypted json')
+  .option('--export [export]', 'export an existing wallet into an encrypted json')
+  .option('--import [import]', 'import an existing wallet from an encrypted json')
   .option('--lite [lite]', 'optional - do a lite import or export')
   .option('--file [file]', 'optional - specify custom file name for import')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, lite, imp, exp, file } = program;
+  const { name, path, lite, file } = program;
   let { storageType } = program;
   try {
     const fileName = file || name + '.enc';
-    if (exp) {
+    if (program.export) {
       let wallet = await Wallet.loadWallet({ name, storageType, path });
       if (lite) {
         delete wallet.masterKey;
@@ -40,7 +40,7 @@ const main = async () => {
       readStream.pipe(StreamUtil.objectModeToJsonlBuffer()).pipe(writeStream);
       console.log(`Exported wallet to ${name}.enc`);
     }
-    if (imp) {
+    if (program.import) {
       const readStream = fs.createReadStream(fileName);
       readStream.pipe(StreamUtil.jsonlBufferToObjectMode()).on('data', async (data) => {
         if (!data) {
