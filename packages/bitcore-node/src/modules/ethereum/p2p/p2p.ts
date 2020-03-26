@@ -228,6 +228,10 @@ export class EthP2pWorker extends BaseP2PWorker<IEthBlock> {
       logger.info(`Syncing ${bestBlock - currentHeight} blocks for ${chain} ${network}`);
       while (currentHeight <= bestBlock) {
         const block = await this.getBlock(currentHeight);
+        if (!block) {
+          await wait(1000);
+          continue;
+        }
         const { convertedBlock, convertedTxs } = await this.convertBlock(block);
         await this.processBlock(convertedBlock, convertedTxs);
         if (currentHeight === bestBlock) {

@@ -193,12 +193,14 @@ export class BtcChain implements IChain {
     const t = new this.bitcoreLib.Transaction();
 
     switch (txp.addressType) {
+      case Constants.SCRIPT_TYPES.P2WSH:
       case Constants.SCRIPT_TYPES.P2SH:
         _.each(txp.inputs, i => {
           $.checkState(i.publicKeys, 'Inputs should include public keys');
           t.from(i, i.publicKeys, txp.requiredSignatures);
         });
         break;
+      case Constants.SCRIPT_TYPES.P2WPKH:
       case Constants.SCRIPT_TYPES.P2PKH:
         t.from(txp.inputs);
         break;

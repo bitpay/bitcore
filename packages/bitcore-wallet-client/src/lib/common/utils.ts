@@ -165,8 +165,15 @@ export class Utils {
 
     var bitcoreAddress;
     switch (scriptType) {
+      case Constants.SCRIPT_TYPES.P2WSH:
+        const nestedWitness = false;
+        bitcoreAddress = bitcore.Address.createMultisig(publicKeys, m, network, nestedWitness, 'witnessscripthash');
+        break;
       case Constants.SCRIPT_TYPES.P2SH:
         bitcoreAddress = bitcore.Address.createMultisig(publicKeys, m, network);
+        break;
+      case Constants.SCRIPT_TYPES.P2WPKH:
+        bitcoreAddress = Bitcore.Address.fromPublicKey(publicKeys[0], network, 'witnesspubkeyhash');
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
@@ -263,11 +270,13 @@ export class Utils {
       $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
 
       switch (txp.addressType) {
+        case Constants.SCRIPT_TYPES.P2WSH:
         case Constants.SCRIPT_TYPES.P2SH:
           _.each(txp.inputs, i => {
             t.from(i, i.publicKeys, txp.requiredSignatures);
           });
           break;
+        case Constants.SCRIPT_TYPES.P2WPKH:
         case Constants.SCRIPT_TYPES.P2PKH:
           t.from(txp.inputs);
           break;
