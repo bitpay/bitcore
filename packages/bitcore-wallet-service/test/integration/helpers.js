@@ -602,13 +602,15 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
         }
       });
 
-      var t = txp.getBitcoreTx();
+      var signingMethod = (txp.coin === 'bch' && txp.version === 4) ? "schnorr" : "ecdsa";
+      var t = txp.getBitcoreTx(signingMethod);
+      var defaultFlag = 0x41;
       signatures = _.map(privs, function(priv, i) {
-        return t.getSignatures(priv);
+        return (txp.coin === 'bch') ? t.getSignatures(priv, defaultFlag, signingMethod) :  t.getSignatures(priv);
       });
 
       signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
-        return s.signature.toDER().toString('hex');
+        return (txp.coin === 'bch')  ? s.signature.toDER(signingMethod).toString('hex') : s.signature.toDER().toString('hex');
       });
   };
 

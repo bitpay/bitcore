@@ -3833,7 +3833,7 @@ describe('Wallet service', function() {
           });
         });
 
-        describe('Publishing', function() {
+        describe.only('Publishing', function() {
           it('should be able to publish a temporary tx proposal', function(done) {
             helpers.stubUtxos(server, wallet, [1, 2], function() {
               var txOpts = {
@@ -4108,10 +4108,12 @@ describe('Wallet service', function() {
                 },
                 function(txp, next) {
                   // Sign & Broadcast txp1
+                  let signingMethod = (txp.coin === 'bch' && txp.version >= 4) ? "schnorr" : "ecdsa";
                   var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
                   server.signTx({
                     txProposalId: txp.id,
                     signatures: signatures,
+                    signingMethod
                   }, function(err, txp) {
                     should.not.exist(err);
 
