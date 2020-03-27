@@ -137,6 +137,12 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
     return new Promise(async resolve => {
       try {
         const { chain, network } = this;
+
+        // After wallet syncs, start block sync from the current height
+        const client = await this.provider.getClient(this.network);
+        let chainBestBlock = await client.getLedgerVersion();
+        this.chainConfig.startHeight = chainBestBlock;
+
         const count = await WalletAddressStorage.collection.countDocuments({ chain, network });
         let done = 0;
         logger.info(`Syncing ${count} ${chain} ${network} wallets`);
@@ -191,8 +197,9 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
               }
             })
           )
-          .on('finish', () => {
+          .on('finish', async () => {
             logger.info(`FINISHED Syncing ${count} ${chain} ${network} wallets`);
+            this.initialSyncComplete = true;
             resolve();
           });
       } catch (e) {
@@ -210,10 +217,17 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
     const startTime = Date.now();
     let lastLog = Date.now();
 
-    if (!ourBestBlock) {
-      logger.info(`Starting XRP Sync @ ${chainBestBlock}`);
-      const startHeight = this.chainConfig.startHeight || chainBestBlock - 2000;
-      ourBestBlock = { height: chainBestBlock > 2000 ? startHeight : chainBestBlock } as IXrpBlock;
+    if (!ourBestBlock || this.chainConfig.walletOnlySync) {
+      let configuredStart = this.chainConfig.startHeight;
+      if (ourBestBlock && configuredStart && ourBestBlock.height > configuredStart) {
+        configuredStart = ourBestBlock.height;
+      }
+      if (configuredStart === undefined) {
+        configuredStart = chainBestBlock;
+      }
+      const defaultBestBlock = { height: configuredStart } as IXrpBlock;
+      logger.info(`Starting XRP Sync @ ${configuredStart}`);
+      ourBestBlock = defaultBestBlock;
     }
     const startHeight = ourBestBlock.height;
     let currentHeight = startHeight;
@@ -224,6 +238,10 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
         includeTransactions: true,
         includeAllData: true
       });
+      if (!block) {
+        await wait(2000);
+        continue;
+      }
       const transformedBlock = this.provider.transformLedger(block, network);
       const coinsAndTxs = (block.transactions || [])
         .map((tx: any) => ({
@@ -270,7 +288,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
     const { chain, network } = this;
     this.syncing = true;
     try {
-      if (this.chainConfig.walletOnlySync) {
+      if (this.chainConfig.walletOnlySync && !this.initialSyncComplete) {
         await this.syncWallets();
       } else {
         await this.syncBlocks();
