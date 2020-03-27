@@ -85,9 +85,11 @@ helpers.generateUtxos = (scriptType, publicKeyRing, path, requiredSignatures, am
 
     var scriptPubKey;
     switch (scriptType) {
+      case Constants.SCRIPT_TYPES.P2WSH:
       case Constants.SCRIPT_TYPES.P2SH:
         scriptPubKey = new Bitcore.Script.buildMultisigOut(address.publicKeys, requiredSignatures).toScriptHashOut();
         break;
+      case Constants.SCRIPT_TYPES.P2WPKH:
       case Constants.SCRIPT_TYPES.P2PKH:
         scriptPubKey = new Bitcore.Script.buildPublicKeyHashOut(address.address);
         break;
@@ -121,7 +123,7 @@ helpers.createAndJoinWallet = (clients, keys, m, n, opts, cb) => {
   };
 
   keys[0] = opts.key || Key.create(keyOpts);
-  let cred = keys[0].createCredentials(null, { coin: coin, network: network, account: 0, n: n });
+  let cred = keys[0].createCredentials(null, { coin: coin, network: network, account: 0, n: n, addressType: opts.addressType });
   clients[0].fromObj(cred);
 
 
@@ -130,6 +132,7 @@ helpers.createAndJoinWallet = (clients, keys, m, n, opts, cb) => {
     network: network,
     singleAddress: !!opts.singleAddress,
     doNotCheck: true,
+    useNativeSegwit: !!opts.useNativeSegwit
   }, (err, secret) => {
     if (err) console.log(err);
     should.not.exist(err);
@@ -149,6 +152,7 @@ helpers.createAndJoinWallet = (clients, keys, m, n, opts, cb) => {
               network: network,
               account: 0,
               n: n,
+              addressType: opts.addressType
             })
           );
           clients[i].joinWallet(secret, 'copayer ' + i, {
@@ -230,9 +234,11 @@ blockchainExplorerMock.setUtxo = (address, amount, m, confirmations) => {
   var B = Bitcore_[address.coin];
   var scriptPubKey;
   switch (address.type) {
+    case Constants.SCRIPT_TYPES.P2WSH:
     case Constants.SCRIPT_TYPES.P2SH:
       scriptPubKey = address.publicKeys ? B.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut() : '';
       break;
+    case Constants.SCRIPT_TYPES.P2WPKH:
     case Constants.SCRIPT_TYPES.P2PKH:
       scriptPubKey = B.Script.buildPublicKeyHashOut(address.address);
       break;
@@ -714,6 +720,78 @@ describe('client API', () => {
           fee: 10050,
           derivationStrategy: 'BIP44',
           addressType: 'P2PKH',
+        };
+        var t = Utils.buildTx(txp);
+        var bitcoreError = t.getSerializationError({
+          disableIsFullySigned: true,
+          disableSmallFees: true,
+          disableLargeFees: true,
+        });
+
+        should.not.exist(bitcoreError);
+        t.getFee().should.equal(10050);
+      });
+      it('should build a P2WPKH tx correctly (BIP44)', () => {
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        const toAddress = Utils.deriveAddress('P2WPKH', publicKeyRing, 'm/0/0', 1, 'livenet', 'btc');
+        const changeAddress = Utils.deriveAddress('P2WPKH', publicKeyRing, 'm/0/1', 1, 'livenet', 'btc');
+
+        toAddress.address.should.equal('bc1qrshu7r9z9y22y3wrrghfmjrvn0xxasfl7qrmvf');
+        changeAddress.address.should.equal('bc1quhzpvcmllzm3kkf7jwsxdemgaec3dz2j0uuan0');
+
+        var utxos = helpers.generateUtxos('P2WPKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          version: '2.0.0',
+          inputs: utxos,
+          toAddress: toAddress.address,
+          amount: 1200,
+          changeAddress: {
+            address: changeAddress.address
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1],
+          fee: 10050,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2WPKH',
+        };
+        var t = Utils.buildTx(txp);
+        var bitcoreError = t.getSerializationError({
+          disableIsFullySigned: true,
+          disableSmallFees: true,
+          disableLargeFees: true,
+        });
+
+        should.not.exist(bitcoreError);
+        t.getFee().should.equal(10050);
+      });
+      it('should build a P2WSH tx correctly (BIP48)', () => {
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP48']),
+        }];
+
+        const toAddress = Utils.deriveAddress('P2WSH', publicKeyRing, 'm/0/0', 1, 'livenet', 'btc');
+        const changeAddress = Utils.deriveAddress('P2WSH', publicKeyRing, 'm/0/1', 1, 'livenet', 'btc');
+
+        toAddress.address.should.equal('bc1qxq4tyr7uhwprj4w8ayc8manv4t64g0hc74ka9w4qka0uygr7gplqqnlu24');
+        changeAddress.address.should.equal('bc1qk8q74mfp7mcldhvfu4azjyqnu7rnd0d9ghdnxkxye34utvp0fgvq50jl0v');
+
+        var utxos = helpers.generateUtxos('P2WSH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          version: '2.0.0',
+          inputs: utxos,
+          toAddress: toAddress.address,
+          amount: 1200,
+          changeAddress: {
+            address: changeAddress.address
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1],
+          fee: 10050,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2WSH',
         };
         var t = Utils.buildTx(txp);
         var bitcoreError = t.getSerializationError({
@@ -2071,12 +2149,59 @@ describe('client API', () => {
 
         clients[0].createAddress((err, x) => {
           should.not.exist(err);
-          should.not.exist(err);
           x.coin.should.equal('bch');
           x.network.should.equal('livenet');
           x.address.should.equal('qrvcdmgpk73zyfd8pmdl9wnuld36zh9n4gms8s0u59');
           done();
         })
+      });
+    });
+
+    it('should create a P2WPKH wallet and derive a valid Segwit address', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { network: 'livenet', addressType: 'P2WPKH', useNativeSegwit: true }, (w) => {
+        clients[0].createAddress((err, client) => {
+          should.not.exist(err);
+          client.address.should.include('bc1');
+          client.address.length.should.equal(42);
+          client.type.should.equal('P2WPKH');
+          done();
+        });
+      });
+    });
+
+    it('should create a P2WPKH testnet wallet and derive a valid Segwit testnet address', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { network: 'testnet', addressType: 'P2WPKH', useNativeSegwit: true }, (w) => {
+        clients[0].createAddress((err, client) => {
+          should.not.exist(err);
+          client.address.should.include('tb1');
+          client.address.length.should.equal(42);
+          client.type.should.equal('P2WPKH');
+          done();
+        });
+      });
+    });
+
+    it('should create a P2WSH wallet and derive a valid Segwit address', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 2, { network: 'livenet', addressType: 'P2WSH', useNativeSegwit: true }, (w) => {
+        clients[0].createAddress((err, client) => {
+          should.not.exist(err);
+          client.address.should.include('bc1');
+          client.address.length.should.equal(62);
+          client.type.should.equal('P2WSH');
+          done();
+        });
+      });
+    });
+
+    it('should create a P2WSH testnet wallet and derive a valid Segwit testnet address', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 2, { network: 'testnet', addressType: 'P2WSH', useNativeSegwit: true }, (w) => {
+        clients[0].createAddress((err, client) => {
+          should.not.exist(err);
+          client.address.should.include('tb1');
+          client.address.length.should.equal(62);
+          client.type.should.equal('P2WSH');
+          done();
+        });
       });
     });
   });

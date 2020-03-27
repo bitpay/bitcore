@@ -25,6 +25,7 @@ import {
   UpdateWalletParams
 } from '../../../types/namespaces/ChainStateProvider';
 import { partition } from '../../../utils/partition';
+import { StatsUtil } from '../../../utils/stats';
 import { ERC20Abi } from '../abi/erc20';
 import { EthBlockStorage } from '../models/block';
 import { EthTransactionStorage } from '../models/transaction';
@@ -100,28 +101,24 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       network = 'mainnet';
     }
 
-    if (target === 1) {
-      const { rpc } = await this.getWeb3(network);
-      const feerate = await rpc.estimateFee({ currency: this.chain, nBlocks: 1 });
-      return { feerate, blocks: target };
-    }
-
-    const bestBlock = (await this.getLocalTip({ chain, network })) || { height: target };
-    const gasPrices: number[] = [];
-    const limitedTarget = Math.min(target, 4);
     const txs = await EthTransactionStorage.collection
-      .find({ chain, network, blockHeight: { $gte: bestBlock.height - limitedTarget } })
+      .find({ chain, network, blockHeight: { $gt: 0 } })
+      .project({ gasPrice: 1, blockHeight: 1 })
+      .sort({ blockHeight: -1 })
+      .limit(20 * 200)
       .toArray();
 
-    const blockGasPrices = txs.map(tx => Number(tx.gasPrice)).sort((a, b) => b - a);
-    const txCount = txs.length;
-    const lowGasPriceIndex = txCount > 1 ? txCount - 1 : 0;
-    if (txCount > 0) {
-      gasPrices.push(blockGasPrices[lowGasPriceIndex]);
-    }
+    const blockGasPrices = txs
+      .map(tx => Number(tx.gasPrice))
+      .filter(gasPrice => gasPrice)
+      .sort((a, b) => b - a);
 
-    const estimate = Math.max(...gasPrices);
-    return { feerate: estimate || 0, blocks: target };
+    const whichQuartile = Math.min(target, 4) || 1;
+    const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, whichQuartile);
+
+    const roundedGwei = (quartileMedian / 1e9).toFixed(2);
+    const feerate = Number(roundedGwei) * 1e9;
+    return { feerate, blocks: target };
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
