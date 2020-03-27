@@ -627,7 +627,12 @@ export class API extends EventEmitter {
             bitcore.crypto.Signature.SIGHASH_ALL | bitcore.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub
         };
-        t.inputs[i].addSignature(t, s);
+        let signingMethod = (txp.coin === 'bch' && txp.version >= 4) ? 'schnorr' : 'ecdsa';
+        if (txp.coin === 'bch') { 
+          t.inputs[i].addSignature(t, s, signingMethod);
+        } else {
+          t.inputs[i].addSignature(t, s);
+        }
         i++;
       } catch (e) {}
     });

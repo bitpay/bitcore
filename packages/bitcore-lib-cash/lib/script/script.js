@@ -326,7 +326,6 @@ Script.prototype.isPublicKeyHashIn = function() {
     var pubkeyBuf = this.chunks[1].buf;
     if (signatureBuf &&
         signatureBuf.length &&
-        signatureBuf[0] === 0x30 &&
         pubkeyBuf &&
         pubkeyBuf.length
        ) {
