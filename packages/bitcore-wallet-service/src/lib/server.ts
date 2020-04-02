@@ -1069,6 +1069,17 @@ export class WalletService {
           }
         }
 
+        if (wallet.n > 1 && wallet.addressType === 'P2WSH') {
+          const version = Utils.parseVersion(this.clientVersion);
+          if (version && version.agent === 'bwc') {
+            if (version.major < 8 || (version.major === 8 && version.minor < 17)) {
+              return cb(
+                new ClientError(Errors.codes.UPGRADE_NEEDED, 'Please upgrade your client to join this multisig wallet')
+              );
+            }
+          }
+        }
+
         if (opts.coin != wallet.coin) {
           return cb(new ClientError('The wallet you are trying to join was created for a different coin'));
         }
