@@ -76,7 +76,7 @@ export class PayProV2 {
         if (err) {
           if (res && res.statusCode !== 200) {
             // some know codes
-            if (res.statusCode == 400 || res.statusCode == 422) {
+            if ((res.statusCode == 400 || res.statusCode == 422) && res.body && res.body.msg) {
               return reject(this.getError(res.body.msg));
             } else if (res.statusCode == 404) {
               return reject(new Errors.INVOICE_NOT_AVAILABLE());
@@ -151,9 +151,9 @@ export class PayProV2 {
       method: 'get',
       url: paymentUrl,
       headers: {
-        Accept: 'application/payment-options',
+        "Accept": 'application/payment-options',
         'x-paypro-version': 2,
-        Connection: 'Keep-Alive',
+        "Connection": 'Keep-Alive',
         'Keep-Alive': 'timeout=30, max=10'
       }
     });
@@ -176,7 +176,7 @@ export class PayProV2 {
       headers: {
         'Content-Type': 'application/payment-request',
         'x-paypro-version': 2,
-        Connection: 'Keep-Alive',
+        "Connection": 'Keep-Alive',
         'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
@@ -211,7 +211,7 @@ export class PayProV2 {
       headers: {
         'Content-Type': 'application/payment-verification',
         'x-paypro-version': 2,
-        Connection: 'Keep-Alive',
+        "Connection": 'Keep-Alive',
         'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
@@ -248,9 +248,9 @@ export class PayProV2 {
       headers: {
         'Content-Type': 'application/payment',
         'x-paypro-version': 2,
-        BP_PARTNER: bpPartner.bp_partner,
-        BP_PARTNER_VERSION: bpPartner.bp_partner_version,
-        Connection: 'Keep-Alive',
+        "BP_PARTNER": bpPartner.bp_partner,
+        "BP_PARTNER_VERSION": bpPartner.bp_partner_version,
+        "Connection": 'Keep-Alive',
         'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
@@ -308,7 +308,7 @@ export class PayProV2 {
 
     try {
       host = url.parse(requestUrl).hostname;
-    } catch (e) {}
+    } catch (e) { }
 
     if (!host) {
       throw new Error('Invalid requestUrl');
