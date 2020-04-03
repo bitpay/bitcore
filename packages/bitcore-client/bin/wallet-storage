@@ -1,0 +1,81 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const program = require('../ts_build/program');
+const fs = require('fs');
+const stream = require('stream');
+const { Wallet } = require('../ts_build/wallet');
+const { Storage } = require('../ts_build/storage');
+const { StreamUtil } = require('../ts_build/stream-util');
+
+program
+  .version(require('../package.json').version)
+  .option('--name [name]', 'REQUIRED - Wallet Name')
+  .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--storageType [storageType]', 'optional - name of the database to use (Mongo or Level)')
+  .option('--export [export]', 'export an existing wallet into an encrypted json')
+  .option('--import [import]', 'import an existing wallet from an encrypted json')
+  .option('--lite [lite]', 'optional - do a lite import or export')
+  .option('--file [file]', 'optional - specify custom file name for import')
+  .parse(process.argv);
+
+const main = async () => {
+  const { name, path, lite, file } = program;
+  let { storageType } = program;
+  try {
+    const fileName = file || name + '.enc';
+    if (program.export) {
+      let wallet = await Wallet.loadWallet({ name, storageType, path });
+      if (lite) {
+        delete wallet.masterKey;
+        delete wallet.pubKey;
+        wallet.lite = true;
+      }
+      delete wallet.storage;
+      const readStream = new stream.Readable({ objectMode: true });
+      const writeStream = fs.createWriteStream(fileName);
+      readStream.push(wallet);
+      readStream.push(null);
+      readStream.pipe(StreamUtil.objectModeToJsonlBuffer()).pipe(writeStream);
+      console.log(`Exported wallet to ${name}.enc`);
+    }
+    if (program.import) {
+      const readStream = fs.createReadStream(fileName);
+      readStream.pipe(StreamUtil.jsonlBufferToObjectMode()).on('data', async (data) => {
+        if (!data) {
+          throw new Error('Could not read wallet file');
+        }
+        const wallet = new Wallet(data);
+        if (lite) {
+          delete wallet.masterKey;
+          delete wallet.pubKey;
+          wallet.lite = true;
+        }
+        if (name) {
+          wallet.name = name;
+        }
+        storageType = storageType ? storageType : 'Level';
+        let storage = new Storage({
+            path,
+            errorIfExists: false,
+            createIfMissing: true,
+            storageType
+          });
+        let alreadyExists;
+        try {
+          alreadyExists = await this.loadWallet({ storage, name, storageType });
+        } catch (err) {}
+        if (alreadyExists) {
+          throw new Error('Wallet already exists');
+        }
+        await storage.saveWallet({ wallet });
+        console.log(`Imported ${fileName} into ${storageType} as ${wallet.name}`);
+      });
+    }
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+main();
