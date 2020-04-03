@@ -12,9 +12,17 @@ var Sighash = require('../sighash');
 var Output = require('../output');
 
 var MAXINT = 0xffffffff; // Math.pow(2, 32) - 1;
-var DEFAULT_RBF_SEQNUMBER = MAXINT - 2;
 var DEFAULT_SEQNUMBER = MAXINT;
 var DEFAULT_LOCKTIME_SEQNUMBER = MAXINT - 1;
+var DEFAULT_RBF_SEQNUMBER = MAXINT - 2;
+const SEQUENCE_LOCKTIME_DISABLE_FLAG =  Math.pow(2,31); // (1 << 31);
+const SEQUENCE_LOCKTIME_TYPE_FLAG = Math.pow(2,22); // (1 << 22);
+const SEQUENCE_LOCKTIME_MASK = 0xffff;
+const SEQUENCE_LOCKTIME_GRANULARITY = 512; // 512 seconds
+const SEQUENCE_BLOCKHEIGHT_LIMIT = Math.pow(2,16)-1; // 16 bits 
+const TIMESTAMP_MIN_LIMIT  = 1432851240 ; 
+              // 2015-5-28  BIP68 date, useless to allow less that this
+
 
 function Input(params) {
   if (!(this instanceof Input)) {
@@ -166,7 +174,7 @@ Input.prototype.isFullySigned = function() {
 };
 
 Input.prototype.isFinal = function() {
-  return this.sequenceNumber !== 4294967295;
+  return this.sequenceNumber !== Input.MAXINT;
 };
 
 Input.prototype.addSignature = function() {
@@ -215,5 +223,75 @@ Input.prototype.isNull = function() {
 Input.prototype._estimateSize = function() {
   return this.toBufferWriter().toBuffer().length;
 };
+
+
+/**
+ * Sets sequence number so that transaction is not valid until the desired date(a
+ * timestamp in seconds since UNIX epoch is also accepted)
+ *
+ * @param {Date | Number} time
+ * @return {Transaction} this
+ */
+Input.prototype.lockUntilDate = function(time) {
+  $.checkArgument(time);
+  if (_.isNumber(time) && time < TIMESTAMP_MIN_LIMIT ) {
+    throw new errors.Input.LockTimeTooEarly();
+  }
+  if (_.isDate(time)) {
+    time = time.getTime() / 1000 / SEQUENCE_LOCKTIME_GRANULARITY;
+  } else {
+    time = time / SEQUENCE_LOCKTIME_GRANULARITY;
+  }
+
+  // SEQUENCE_LOCKTIME_DISABLE_FLAG = 0
+  this.sequenceNumber = time & SEQUENCE_LOCKTIME_TYPE_FLAG ;
+  return this;
+};
+
+/**
+ * Sets sequence number so that transaction is not valid until the desired block * height.
+ *
+ * @param {Number} height
+ * @return {Transaction} this
+ */
+Input.prototype.lockUntilBlockHeight = function(height) {
+  $.checkArgument(_.isNumber(height));
+  if (height >= SEQUENCE_BLOCKHEIGHT_LIMIT) {
+    throw new errors.Input.BlockHeightOutOfRange();
+  }
+  if (height < 0) {
+    throw new errors.Input.BlockHeightOutOfRange();
+  }
+
+  // SEQUENCE_LOCKTIME_TYPE_FLAG = 0
+  // SEQUENCE_LOCKTIME_DISABLE_FLAG = 0
+  this.sequenceNumber = height ;
+  return this;
+};
+
+
+/**
+ *  Returns a semantic version of the input's sequence nLockTime.
+ *  @return {Number|Date}
+ *  If sequence lock is disabled  it returns null,
+ *  if is set to block height lock, returns a block height (number)
+ *  else it returns a Date object.
+ */
+Input.prototype.getLockTime = function() {
+  if (this.sequenceNumber & SEQUENCE_LOCKTIME_DISABLE_FLAG) {
+    return null;
+  }
+
+  if (this.sequenceNumber & SEQUENCE_LOCKTIME_TYPE_FLAG) {
+    var s = this.sequenceNumber & SEQUENCE_LOCKTIME_MASK;
+    return s;
+  } else {
+    var s = this.sequenceNumber & SEQUENCE_LOCKTIME_MASK;
+    return new Date(1000 * s * SEQUENCE_LOCKTIME_GRANULARITY);
+  }
+};
+
+
+
 
 module.exports = Input;
