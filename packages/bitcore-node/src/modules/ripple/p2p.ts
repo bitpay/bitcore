@@ -158,7 +158,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
                 }
                 const walletAddress = (data as any) as IWalletAddress;
                 const [lastTx] = await XrpTransactionStorage.collection
-                  .find({ chain, network, wallets: walletAddress.wallet })
+                  .find({ wallets: walletAddress.wallet, 'wallets.0': { $exists: true } })
                   .sort({ blockTimeNormalized: -1 })
                   .limit(1)
                   .toArray();
