@@ -14,7 +14,7 @@ import { TransformOptions } from '../types/TransformOptions';
 import { partition } from '../utils/partition';
 import { MongoBound } from './base';
 import { BaseTransaction, ITransaction } from './baseTransaction';
-import { CoinStorage } from './coin';
+import { CoinStorage, ICoin } from './coin';
 import { EventStorage } from './events';
 import { IWalletAddress, WalletAddressStorage } from './walletAddress';
 
@@ -593,6 +593,25 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     spendOpsBatch = new Array<SpendOp>();
   }
 
+  async findAllRelatedOutputs(forTx: string) {
+    const getOutputs = (txid: string) =>
+      CoinStorage.collection.find({ mintTxid: txid, mintHeight: { $ne: -3 } }).toArray();
+    let batch = await getOutputs(forTx);
+    let allRelatedCoins = new Array<ICoin>();
+    while (batch.length) {
+      allRelatedCoins = allRelatedCoins.concat(batch);
+      let newBatch = new Array<ICoin>();
+      for (const coin of batch) {
+        if (coin.spentTxid) {
+          const outputs = await getOutputs(coin.spentTxid);
+          newBatch = newBatch.concat(outputs);
+        }
+      }
+      batch = newBatch;
+    }
+    return allRelatedCoins;
+  }
+
   async pruneMempool(params: {
     chain: string;
     network: string;
@@ -624,18 +643,22 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
 
     const invalidatedTxids = Array.from(new Set(coins.map(c => c.spentTxid)));
 
-    await Promise.all([
-      this.collection.update(
-        { chain, network, txid: { $in: invalidatedTxids } },
-        { $set: { blockHeight: SpentHeightIndicators.conflicting } },
-        { multi: true }
-      ),
-      CoinStorage.collection.update(
-        { chain, network, mintTxid: { $in: invalidatedTxids } },
-        { $set: { mintHeight: SpentHeightIndicators.conflicting } },
-        { multi: true }
-      )
-    ]);
+    for (const txid of invalidatedTxids) {
+      const allRelatedCoins = await this.findAllRelatedOutputs(txid);
+      const txids = allRelatedCoins.map(c => c.spentTxid);
+      await Promise.all([
+        this.collection.update(
+          { chain, network, txid: { $in: txids } },
+          { $set: { blockHeight: SpentHeightIndicators.conflicting } },
+          { multi: true }
+        ),
+        CoinStorage.collection.update(
+          { chain, network, mintTxid: { $in: txids } },
+          { $set: { mintHeight: SpentHeightIndicators.conflicting } },
+          { multi: true }
+        )
+      ]);
+    }
 
     return;
   }
