@@ -4026,7 +4026,6 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
       it('Should send the signed tx in paypro', (done) => {
         clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
-          console.log(txps);
           let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
@@ -5215,7 +5214,6 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
                 return helpers.newClient(app)
               }
             }, (err, k, c) => {
-console.log('[api.test.js.5080:err:]',err); // TODO
               should.not.exist(err);
               c.length.should.equal(1);
               let recoveryClient = c[0];

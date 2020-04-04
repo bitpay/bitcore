@@ -136,7 +136,6 @@ export class TxProposal {
       $.checkArgument(opts.version === 3);
     }
 
-
     x.version = opts.version || 4;
     const now = Date.now();
     x.createdOn = Math.floor(now / 1000);

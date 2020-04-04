@@ -463,7 +463,7 @@ export class ExpressApp {
       });
     });
 
-    // DEPRECATED, BTC tx ver=1, txp ver = 3 
+    // DEPRECATED, BTC tx ver=1, txp ver = 3
     router.post('/v3/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.txpVersion = 3;
@@ -482,8 +482,6 @@ export class ExpressApp {
         });
       });
     });
-
-
 
     // DEPRECATED
     router.post('/v1/addresses/', (req, res) => {
@@ -695,7 +693,6 @@ export class ExpressApp {
         });
       });
     });
-
 
     //
     router.post('/v1/txproposals/:id/publish/', (req, res) => {

@@ -267,7 +267,7 @@ export class Utils {
 
       var t = new bitcore.Transaction();
 
-      if (txp.version>=4) {
+      if (txp.version >= 4) {
         t.setVersion(2);
       } else {
         t.setVersion(1);

@@ -2721,7 +2721,7 @@ export class WalletService {
    * Sign a transaction proposal.
    * @param {Object} opts
    * @param {string} opts.txProposalId - The identifier of the transaction.
-   * @param {string} opts.maxTxpVersion - Client's maximum supported txp version 
+   * @param {string} opts.maxTxpVersion - Client's maximum supported txp version
    * @param {string} opts.signatures - The signatures of the inputs of this tx for this copayer (in apperance order)
    */
   signTx(opts, cb) {
@@ -2742,11 +2742,10 @@ export class WalletService {
             return cb(
               new ClientError(
                 Errors.codes.UPGRADE_NEEDED,
-                'Your client does not support signing this transaction. Please upgrade',
+                'Your client does not support signing this transaction. Please upgrade'
               )
             );
-        }
- 
+          }
 
           const action = _.find(txp.actions, {
             copayerId: this.copayerId
