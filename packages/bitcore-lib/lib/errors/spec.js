@@ -67,12 +67,12 @@ module.exports = [{
       name: 'MissingPreviousOutput',
       message: 'No previous output information.'
     }, {
-        name: 'BlockHeightOutOfRange',
-        message: 'Block Height can only be between 0 and 1e16'
-      } , {
-        name: 'LockTimeTooEarly',
-        message: 'Timestamp needs to be more that 1432851240'
-      }
+      name: 'BlockHeightOutOfRange',
+      message: 'Block Height can only be between 0 and 65535'
+    } , {
+      name: 'LockTimeRange',
+      message: 'Seconds needs to be more that 0 and less that 33553920'
+    }
     ]
   }, {
     name: 'NeedMoreInfo',

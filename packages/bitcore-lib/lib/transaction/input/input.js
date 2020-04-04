@@ -2,7 +2,7 @@
 
 var _ = require('lodash');
 var $ = require('../../util/preconditions');
-var errors = require('../../errors');
+const errors = require('../../errors');
 var BufferWriter = require('../../encoding/bufferwriter');
 var buffer = require('buffer');
 var BufferUtil = require('../../util/buffer');
@@ -19,9 +19,7 @@ const SEQUENCE_LOCKTIME_DISABLE_FLAG =  Math.pow(2,31); // (1 << 31);
 const SEQUENCE_LOCKTIME_TYPE_FLAG = Math.pow(2,22); // (1 << 22);
 const SEQUENCE_LOCKTIME_MASK = 0xffff;
 const SEQUENCE_LOCKTIME_GRANULARITY = 512; // 512 seconds
-const SEQUENCE_BLOCKHEIGHT_LIMIT = Math.pow(2,16)-1; // 16 bits 
-const TIMESTAMP_MIN_LIMIT  = 1432851240 ; 
-              // 2015-5-28  BIP68 date, useless to allow less that this
+const SEQUENCE_BLOCKDIFF_LIMIT = Math.pow(2,16)-1; // 16 bits 
 
 
 function Input(params) {
@@ -37,6 +35,7 @@ Input.MAXINT = MAXINT;
 Input.DEFAULT_SEQNUMBER = DEFAULT_SEQNUMBER;
 Input.DEFAULT_LOCKTIME_SEQNUMBER = DEFAULT_LOCKTIME_SEQNUMBER;
 Input.DEFAULT_RBF_SEQNUMBER = DEFAULT_RBF_SEQNUMBER;
+Input.SEQUENCE_LOCKTIME_TYPE_FLAG = SEQUENCE_LOCKTIME_TYPE_FLAG;
 
 Object.defineProperty(Input.prototype, 'script', {
   configurable: false,
@@ -226,46 +225,38 @@ Input.prototype._estimateSize = function() {
 
 
 /**
- * Sets sequence number so that transaction is not valid until the desired date(a
- * timestamp in seconds since UNIX epoch is also accepted)
+ * Sets sequence number so that transaction is not valid until the desired seconds
+ *  since the transaction is mined
  *
- * @param {Date | Number} time
+ * @param {Number} time in seconds
  * @return {Transaction} this
  */
-Input.prototype.lockUntilDate = function(time) {
-  $.checkArgument(time);
-  if (_.isNumber(time) && time < TIMESTAMP_MIN_LIMIT ) {
-    throw new errors.Input.LockTimeTooEarly();
+Input.prototype.lockForSeconds = function(seconds) {
+  $.checkArgument(_.isNumber(seconds));
+  if (seconds < 0 ||  seconds >= SEQUENCE_LOCKTIME_GRANULARITY * SEQUENCE_LOCKTIME_MASK) {
+    throw new errors.Transaction.Input.LockTimeRange();
   }
-  if (_.isDate(time)) {
-    time = time.getTime() / 1000 / SEQUENCE_LOCKTIME_GRANULARITY;
-  } else {
-    time = time / SEQUENCE_LOCKTIME_GRANULARITY;
-  }
+  seconds = parseInt(Math.floor(seconds / SEQUENCE_LOCKTIME_GRANULARITY));
 
-  // SEQUENCE_LOCKTIME_DISABLE_FLAG = 0
-  this.sequenceNumber = time & SEQUENCE_LOCKTIME_TYPE_FLAG ;
+  // SEQUENCE_LOCKTIME_DISABLE_FLAG = 1 
+  this.sequenceNumber = seconds | SEQUENCE_LOCKTIME_TYPE_FLAG ;
   return this;
 };
 
 /**
- * Sets sequence number so that transaction is not valid until the desired block * height.
+ * Sets sequence number so that transaction is not valid until the desired block height differnece since the tx is mined
  *
  * @param {Number} height
  * @return {Transaction} this
  */
-Input.prototype.lockUntilBlockHeight = function(height) {
-  $.checkArgument(_.isNumber(height));
-  if (height >= SEQUENCE_BLOCKHEIGHT_LIMIT) {
-    throw new errors.Input.BlockHeightOutOfRange();
+Input.prototype.lockUntilBlockHeight = function(heightDiff) {
+  $.checkArgument(_.isNumber(heightDiff));
+  if (heightDiff < 0 || heightDiff >= SEQUENCE_BLOCKDIFF_LIMIT) {
+    throw new errors.Transaction.Input.BlockHeightOutOfRange();
   }
-  if (height < 0) {
-    throw new errors.Input.BlockHeightOutOfRange();
-  }
-
   // SEQUENCE_LOCKTIME_TYPE_FLAG = 0
   // SEQUENCE_LOCKTIME_DISABLE_FLAG = 0
-  this.sequenceNumber = height ;
+  this.sequenceNumber = heightDiff ;
   return this;
 };
 
@@ -283,11 +274,12 @@ Input.prototype.getLockTime = function() {
   }
 
   if (this.sequenceNumber & SEQUENCE_LOCKTIME_TYPE_FLAG) {
-    var s = this.sequenceNumber & SEQUENCE_LOCKTIME_MASK;
+    var seconds = SEQUENCE_LOCKTIME_GRANULARITY * (this.sequenceNumber & SEQUENCE_LOCKTIME_MASK);
+    return seconds;
     return s;
   } else {
-    var s = this.sequenceNumber & SEQUENCE_LOCKTIME_MASK;
-    return new Date(1000 * s * SEQUENCE_LOCKTIME_GRANULARITY);
+    var blockHeight = this.sequenceNumber & SEQUENCE_LOCKTIME_MASK;
+    return blockHeight;
   }
 };
 
