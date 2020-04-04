@@ -445,6 +445,7 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.post('/v1/txproposals/', (req, res) => {
       const Errors = require('./errors/errordefinitions');
       const err = Errors.UPGRADE_NEEDED;
@@ -462,7 +463,18 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED, BTC tx ver=1, txp ver = 3 
     router.post('/v3/txproposals/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        req.body.txpVersion = 3;
+        server.createTx(req.body, (err, txp) => {
+          if (err) return returnError(err, res, req);
+          res.json(txp);
+        });
+      });
+    });
+
+    router.post('/v4/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
@@ -470,6 +482,8 @@ export class ExpressApp {
         });
       });
     });
+
+
 
     // DEPRECATED
     router.post('/v1/addresses/', (req, res) => {
@@ -660,6 +674,7 @@ export class ExpressApp {
 
     router.post('/v1/txproposals/:id/signatures/', (req, res) => {
       getServerWithAuth(req, res, server => {
+        req.body.maxTxpVersion = 3;
         req.body.txProposalId = req.params['id'];
         server.signTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
@@ -668,6 +683,19 @@ export class ExpressApp {
         });
       });
     });
+
+    router.post('/v2/txproposals/:id/signatures/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        req.body.txProposalId = req.params['id'];
+        req.body.maxTxpVersion = 4;
+        server.signTx(req.body, (err, txp) => {
+          if (err) return returnError(err, res, req);
+          res.json(txp);
+          res.end();
+        });
+      });
+    });
+
 
     //
     router.post('/v1/txproposals/:id/publish/', (req, res) => {
@@ -1011,7 +1039,7 @@ export class ExpressApp {
     this.app.use(opts.basePath || '/bws/api', router);
 
     if (config.staticRoot) {
-      log.info(`Serving static files from ${config.staticRoot}`);
+      log.debug(`Serving static files from ${config.staticRoot}`);
       this.app.use('/static', express.static(config.staticRoot));
     }
 

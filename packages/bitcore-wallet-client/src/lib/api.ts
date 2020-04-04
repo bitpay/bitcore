@@ -1236,15 +1236,17 @@ export class API extends EventEmitter {
   // * @param {number} opts.fee - Optional. Use an fixed fee for this TX (only when opts.inputs is specified)
   // * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
   // * @returns {Callback} cb - Return error or the transaction proposal
+  // * @param {String} baseUrl - Optional. ONLY FOR TESTING
   // */
-  createTxProposal(opts, cb) {
+  createTxProposal(opts, cb, baseUrl) {
     $.checkState(this.credentials && this.credentials.isComplete());
     $.checkState(this.credentials.sharedEncryptingKey);
     $.checkArgument(opts);
 
     var args = this._getCreateTxProposalArgs(opts);
 
-    this.request.post('/v3/txproposals/', args, (err, txp) => {
+    baseUrl = baseUrl || '/v4/txproposals/';
+    this.request.post(baseUrl, args, (err, txp) => {
       if (err) return cb(err);
 
       this._processTxps(txp);
@@ -1482,10 +1484,11 @@ export class API extends EventEmitter {
   // *
   // * @param {Object} txp
   // * @param {Array} signatures
+  // * @param {base} base url (ONLY FOR TESTING)
   // * @param {Callback} cb
   // * @return {Callback} cb - Return error or object
   // */
-  pushSignatures(txp, signatures, cb) {
+  pushSignatures(txp, signatures, cb, base) {
     $.checkState(this.credentials && this.credentials.isComplete());
     $.checkArgument(txp.creatorId);
 
@@ -1501,7 +1504,8 @@ export class API extends EventEmitter {
 
         if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
-        var url = '/v1/txproposals/' + txp.id + '/signatures/';
+        base = base || '/v2/txproposals/';
+        var url = base + txp.id + '/signatures/';
         var args = {
           signatures
         };

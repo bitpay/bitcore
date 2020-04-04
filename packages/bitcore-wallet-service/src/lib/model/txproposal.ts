@@ -131,8 +131,13 @@ export class TxProposal {
 
     const x = new TxProposal();
 
-    x.version = 4;
+    // allow creating legacy tx version == 3 only
+    if (opts.version) {
+      $.checkArgument(opts.version === 3);
+    }
 
+
+    x.version = opts.version || 4;
     const now = Date.now();
     x.createdOn = Math.floor(now / 1000);
     x.id = opts.id || Uuid.v4();
