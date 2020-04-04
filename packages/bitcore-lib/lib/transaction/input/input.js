@@ -276,7 +276,6 @@ Input.prototype.getLockTime = function() {
   if (this.sequenceNumber & SEQUENCE_LOCKTIME_TYPE_FLAG) {
     var seconds = SEQUENCE_LOCKTIME_GRANULARITY * (this.sequenceNumber & SEQUENCE_LOCKTIME_MASK);
     return seconds;
-    return s;
   } else {
     var blockHeight = this.sequenceNumber & SEQUENCE_LOCKTIME_MASK;
     return blockHeight;
