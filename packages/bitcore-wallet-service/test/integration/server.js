@@ -6903,6 +6903,26 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    it('should broadcast a tx and set locktime & version', function(done) {
+      var clock = sinon.useFakeTimers({ now: 1234000, toFake: ['Date'] });
+      helpers.stubBroadcast(txid);
+      server.broadcastTx({
+        txProposalId: txpid
+      }, function(err) {
+        should.not.exist(err);
+        server.getTx({
+          txProposalId: txpid
+        }, function(err, txp) {
+          should.not.exist(err);
+
+          should.exist(txp.raw);
+          const tx = new Bitcore.Transaction(txp.raw);
+          clock.restore();
+          done();
+        });
+      });
+    });
     it('should broadcast a raw tx', function(done) {
       helpers.stubBroadcast(txid);
       server.broadcastRawTx({

@@ -192,6 +192,13 @@ export class BtcChain implements IChain {
   buildTx(txp) {
     const t = new this.bitcoreLib.Transaction();
 
+    // BTC tx version
+    if (txp.version <= 3) {
+      t.setVersion(1);
+    } else {
+      t.setVersion(2);
+    }
+
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2WSH:
       case Constants.SCRIPT_TYPES.P2SH:
