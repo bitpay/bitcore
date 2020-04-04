@@ -183,7 +183,7 @@ describe('Transaction', function() {
       index++;
       it('case ' + index, function() {
         var i = 0;
-        var transaction = new Transaction();
+        var transaction = (new Transaction()).setVersion(1);
         while (i < vector.length) {
           var command = vector[i];
           var args = vector[i + 1];
@@ -1217,7 +1217,7 @@ describe('Transaction', function() {
 });
 
 
-var tx_empty_hex = '01000000000000000000';
+var tx_empty_hex = '02000000000000000000';
 
 /* jshint maxlen: 1000 */
 var tx_1_hex = '01000000015884e5db9de218238671572340b207ee85b628074e7e467096c267266baf77a4000000006a473044022013fa3089327b50263029265572ae1b022a91d10ac80eb4f32f291c914533670b02200d8a5ed5f62634a7e1a0dc9188a3cc460a986267ae4d58faf50c79105431327501210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5effffffff0150690f00000000001976a9147821c0a3768aa9d1a37e16cf76002aef5373f1a888ac00000000';
