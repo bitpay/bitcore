@@ -198,8 +198,6 @@ export class BtcChain implements IChain {
     } else {
       t.setVersion(2);
     }
-    console.log('[txproposal.ts.141] BTC *TX* VERSION: ' + t.version); // TODO
-
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2WSH:
       case Constants.SCRIPT_TYPES.P2SH:
