@@ -384,10 +384,10 @@ export class Key {
         }
       });
 
-      let signingMethod = (txp.coin === 'bch' && txp.version >= 4) ? "schnorr" : "ecdsa";
+      let signingMethod = (txp.coin === 'bch' && txp.version >= 5) ? "schnorr" : "ecdsa";
 
       var signatures = _.map(privs, function(priv, i) {
-        return (txp.coin === 'bch' && txp.version >= 4)  ?  t.getSignatures(priv, BitcoreLibCash.crypto.Signature.SIGHASH_ALL | BitcoreLibCash.crypto.Signature.SIGHASH_FORKID, signingMethod) :
+        return (txp.coin === 'bch' && txp.version >= 5)  ?  t.getSignatures(priv, BitcoreLibCash.crypto.Signature.SIGHASH_ALL | BitcoreLibCash.crypto.Signature.SIGHASH_FORKID, signingMethod) :
         t.getSignatures(priv);
       });
 

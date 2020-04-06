@@ -473,10 +473,10 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v4/txproposals/', (req, res) => {
+    router.post('/v5/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.createTx(req.body, (err, txp) => {
-          req.body.version = 4;
+          req.body.version = 5;
           if (err) return returnError(err, res, req);
           res.json(txp);
         });
@@ -681,7 +681,18 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v4/txproposals/:id/signatures/', (req, res) => {
+    router.post('/v2/txproposals/:id/signatures/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        req.body.txProposalId = req.params['id'];
+        server.signTx(req.body, (err, txp) => {
+          if (err) return returnError(err, res, req);
+          res.json(txp);
+          res.end();
+        });
+      });
+    });
+
+    router.post('/v3/txproposals/:id/signatures/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         req.body.signingMethod = 'schnorr';

@@ -627,7 +627,7 @@ export class API extends EventEmitter {
             bitcore.crypto.Signature.SIGHASH_ALL | bitcore.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub
         };
-        let signingMethod = (txp.coin === 'bch' && txp.version >= 4) ? 'schnorr' : 'ecdsa';
+        let signingMethod = (txp.coin === 'bch' && txp.version >= 5) ? 'schnorr' : 'ecdsa';
         if (txp.coin === 'bch') { 
           t.inputs[i].addSignature(t, s, signingMethod);
         } else {
@@ -1256,7 +1256,7 @@ export class API extends EventEmitter {
 
     var args = this._getCreateTxProposalArgs(opts);
 
-    this.request.post('/v4/txproposals/', args, (err, txp) => {
+    this.request.post('/v5/txproposals/', args, (err, txp) => {
       if (err) return cb(err);
 
       this._processTxps(txp);
@@ -1513,7 +1513,7 @@ export class API extends EventEmitter {
 
         if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
-        var url = (txp.version >= 4) ?  '/v4/txproposals/' + txp.id + '/signatures/' : '/v1/txproposals/' + txp.id + '/signatures/';
+        var url = (txp.version >= 5) ?  '/v3/txproposals/' + txp.id + '/signatures/' : '/v1/txproposals/' + txp.id + '/signatures/';
         var args = {
           signatures
         };

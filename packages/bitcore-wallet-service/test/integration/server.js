@@ -4148,7 +4148,7 @@ describe('Wallet service', function() {
                 },
                 function(txp, next) {
                   // Sign & Broadcast txp1
-                  let signingMethod = (txp.coin === 'bch' && txp.version >= 4) ? "schnorr" : "ecdsa";
+                  let signingMethod = (txp.coin === 'bch' && txp.version >= 5) ? "schnorr" : "ecdsa";
                   var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
                   server.signTx({
                     txProposalId: txp.id,
