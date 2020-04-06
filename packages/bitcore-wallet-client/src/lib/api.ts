@@ -1203,6 +1203,29 @@ export class API extends EventEmitter {
     this.request.get(url, cb);
   }
 
+   // /**
+  // * Gets list of coins
+  // *
+  // * @param {Function} cb
+  // * @param {String} opts.coin - Current tx coin
+  // * @param {String} opts.network - Current tx network
+  // * @param {String} opts.txId - Current tx id
+  // * @returns {Callback} cb - Return error or the list of coins
+  // */
+  getCoinsForTx(opts, cb) {
+    $.checkState(this.credentials && this.credentials.isComplete());
+    opts = opts || {};
+    var url = '/v1/txcoins/';
+    url +=
+      '?' +
+      querystring.stringify({
+        coin: opts.coin,
+        network: opts.network,
+        txId: opts.txId
+      });
+    this.request.get(url, cb);
+  }
+
   _getCreateTxProposalArgs(opts) {
     var args = _.cloneDeep(opts);
     args.message = API._encryptMessage(opts.message, this.credentials.sharedEncryptingKey) || null;

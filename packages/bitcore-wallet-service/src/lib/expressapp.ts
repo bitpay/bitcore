@@ -648,6 +648,24 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v1/txcoins/', (req, res) => {
+      const opts: { network: string, coin: string, txId: string } = {
+        network : req.query.network,
+        coin : req.query.coin,
+        txId: req.query.txId
+      };
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getCoinsForTx(opts, (err, coins) => {
+        if (err) return returnError(err, res, req);
+        res.json(coins);
+      });
+    });
+
     router.post('/v1/broadcast_raw/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.broadcastRawTx(req.body, (err, txid) => {
