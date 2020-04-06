@@ -131,8 +131,12 @@ export class TxProposal {
 
     const x = new TxProposal();
 
-    x.version = opts.version || 5;
+    // allow creating legacy tx version == 3 only
+    if (opts.version) {
+      $.checkArgument(opts.version === 3);
+    }
 
+    x.version = opts.version || 5;
     const now = Date.now();
     x.createdOn = Math.floor(now / 1000);
     x.id = opts.id || Uuid.v4();
@@ -287,7 +291,7 @@ export class TxProposal {
   }
 
   getBitcoreTx() {
-    let signMethod = (this.coin === 'bch' && this.version >= 4) ? "schnorr" : "ecdsa";
+    let signMethod = (this.coin === 'bch' && this.version >= 4) ? 'schnorr' : 'ecdsa';
     
     const t = this._buildTx();
     const sigs = this._getCurrentSignatures();
@@ -400,7 +404,7 @@ export class TxProposal {
     try {
       // Tests signatures are OK
       const tx = this.getBitcoreTx();
-      let signMethod = (this.coin === 'bch' && this.version >= 4) ? 'schnorr' : 'ecdsa';
+      let signMethod = (this.coin === 'bch' && this.version >= 5) ? 'schnorr' : 'ecdsa';
       ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub, signMethod);
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
@@ -408,7 +412,7 @@ export class TxProposal {
         this.raw = tx.uncheckedSerialize();
         this.txid = tx.id;
       }
-
+      
       return true;
     } catch (e) {
       log.debug(e);

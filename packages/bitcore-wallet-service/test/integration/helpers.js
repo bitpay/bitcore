@@ -602,7 +602,7 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
         }
       });
 
-      var signingMethod = (txp.coin === 'bch' && txp.version >= 5) ? "schnorr" : "ecdsa";
+      var signingMethod = (txp.coin === 'bch' && txp.version >= 5) ? 'schnorr' : 'ecdsa';
       var t = txp.getBitcoreTx();
       var defaultFlag = 0x41;
       signatures = _.map(privs, function(priv, i) {

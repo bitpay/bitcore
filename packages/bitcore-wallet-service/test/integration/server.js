@@ -4148,7 +4148,7 @@ describe('Wallet service', function() {
                 },
                 function(txp, next) {
                   // Sign & Broadcast txp1
-                  let signingMethod = (txp.coin === 'bch' && txp.version >= 5) ? "schnorr" : "ecdsa";
+                  let signingMethod = (txp.coin === 'bch' && txp.version >= 5) ? 'schnorr' : 'ecdsa';
                   var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
                   server.signTx({
                     txProposalId: txp.id,
@@ -6900,6 +6900,26 @@ describe('Wallet service', function() {
           txp.txid.should.equal(txid);
           txp.isBroadcasted().should.be.true;
           txp.broadcastedOn.should.equal(1234);
+          clock.restore();
+          done();
+        });
+      });
+    });
+
+    it('should broadcast a tx and set locktime & version', function(done) {
+      var clock = sinon.useFakeTimers({ now: 1234000, toFake: ['Date'] });
+      helpers.stubBroadcast(txid);
+      server.broadcastTx({
+        txProposalId: txpid
+      }, function(err) {
+        should.not.exist(err);
+        server.getTx({
+          txProposalId: txpid
+        }, function(err, txp) {
+          should.not.exist(err);
+
+          should.exist(txp.raw);
+          const tx = new Bitcore.Transaction(txp.raw);
           clock.restore();
           done();
         });
