@@ -645,7 +645,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
 
     for (const txid of invalidatedTxids) {
       const allRelatedCoins = await this.findAllRelatedOutputs(txid);
-      const txids = allRelatedCoins.map(c => c.spentTxid);
+      const txids = [txid].concat(allRelatedCoins.map(c => c.spentTxid));
       await Promise.all([
         this.collection.update(
           { chain, network, txid: { $in: txids } },
