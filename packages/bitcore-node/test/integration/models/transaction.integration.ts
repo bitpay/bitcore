@@ -35,6 +35,7 @@ async function makeMempoolTxChain(chain: string, network: string, startingTxid: 
 }
 
 describe('Transaction Model', function() {
+  this.timeout(30000);
   beforeEach(async () => {
     await resetDatabase();
   });
@@ -148,7 +149,7 @@ describe('Transaction Model', function() {
     // insert a valid tx, with a valid output
     await TransactionStorage.collection.insertOne(blockTx as IBtcTransaction);
     await CoinStorage.collection.insertOne(blockTxOutputs as ICoin);
-    const chainLength = 20000;
+    const chainLength = 2000;
     const txids = await makeMempoolTxChain(chain, network, blockTxOutputs.spentTxid, chainLength);
 
     const allRelatedCoins = await TransactionStorage.findAllRelatedOutputs(blockTxOutputs.spentTxid);
