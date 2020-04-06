@@ -4,64 +4,75 @@ import { IBtcTransaction, SpendOp, TransactionStorage } from '../../../src/model
 import { SpentHeightIndicators } from '../../../src/types/Coin';
 import { resetDatabase } from '../../helpers';
 
-describe('Transaction Model', function() {
-  beforeEach(async () => {
-    await resetDatabase();
-  });
-
-  it('should mark transactions invalid that were in the mempool, but no longer valid', async () => {
-    const chain = 'BCH';
-    const network = 'integration';
-    const blockTx = {
-      chain,
-      network,
-      blockHeight: 1,
-      txid: '01234'
-    };
-    const blockTxOutputs = {
-      chain,
-      network,
-      mintHeight: 1,
-      mintTxid: '01234',
-      mintIndex: 0,
-      spentHeight: -1,
-      spentTxid: '12345'
-    };
-
-    // insert a valid tx, with a valid output
-    await TransactionStorage.collection.insertOne(blockTx as IBtcTransaction);
-    await CoinStorage.collection.insertOne(blockTxOutputs as ICoin);
-
+async function makeMempoolTxChain(chain: string, network: string, startingTxid: string, chainLength = 1) {
+  let txid = startingTxid;
+  let nextTxid = txid + 1;
+  let allTxids = new Array<string>();
+  for (let i = 1; i <= chainLength; i++) {
     const badMempoolTx = {
       chain,
       network,
       blockHeight: -1,
-      txid: '12345'
+      txid
     };
     const badMempoolOutputs = {
       chain,
       network,
       mintHeight: -1,
-      mintTxid: '12345',
+      mintTxid: txid,
+      spentTxid: i != chainLength ? nextTxid : '',
       mintIndex: 0,
       spentHeight: -1
     };
 
-    // insert a valid mempool tx, with a valid output, which will be marked invalid by block2 tx
     await TransactionStorage.collection.insertOne(badMempoolTx as IBtcTransaction);
     await CoinStorage.collection.insertOne(badMempoolOutputs as ICoin);
+    allTxids.push(txid);
+    txid = nextTxid;
+    nextTxid = txid + 1;
+  }
+  return allTxids;
+}
 
-    const block2TxOutputs = {
-      chain,
-      network,
-      mintHeight: 2,
-      mintTxid: '123456',
-      mintIndex: 0,
-      spentHeight: -1
-    };
+describe('Transaction Model', function() {
+  beforeEach(async () => {
+    await resetDatabase();
+  });
+  const chain = 'BCH';
+  const network = 'integration';
+  const blockTx = {
+    chain,
+    network,
+    blockHeight: 1,
+    txid: '01234'
+  };
+  const blockTxOutputs = {
+    chain,
+    network,
+    mintHeight: 1,
+    mintTxid: '01234',
+    mintIndex: 0,
+    spentHeight: -1,
+    spentTxid: '12345'
+  };
+  const block2TxOutputs = {
+    chain,
+    network,
+    mintHeight: 2,
+    mintTxid: '123456',
+    mintIndex: 0,
+    spentHeight: -1
+  };
+
+  it('should mark transactions invalid that were in the mempool, but no longer valid', async () => {
+    // insert a valid tx, with a valid output
+    await TransactionStorage.collection.insertOne(blockTx as IBtcTransaction);
+    await CoinStorage.collection.insertOne(blockTxOutputs as ICoin);
+
+    const chainLength = 1;
+    const txids = await makeMempoolTxChain(chain, network, blockTxOutputs.spentTxid, chainLength);
 
     const spentOps = new Array<SpendOp>();
-
     spentOps.push({
       updateOne: {
         filter: {
@@ -82,10 +93,9 @@ describe('Transaction Model', function() {
       spendOps: spentOps
     });
 
-    const badTxs = await TransactionStorage.collection.find({ chain, network, txid: badMempoolTx.txid }).toArray();
-    expect(badTxs.length).to.eq(1);
-    expect(badTxs[0].txid).to.eq(badMempoolTx.txid);
-    expect(badTxs[0].blockHeight).to.eq(SpentHeightIndicators.conflicting);
+    const badTxs = await TransactionStorage.collection.find({ chain, network, txid: { $in: txids } }).toArray();
+    expect(badTxs.length).to.eq(chainLength);
+    expect(badTxs.map(tx => tx.blockHeight)).to.deep.eq(new Array(chainLength).fill(SpentHeightIndicators.conflicting));
 
     const goodTxs = await TransactionStorage.collection.find({ chain, network, txid: blockTx.txid }).toArray();
     expect(goodTxs.length).to.eq(1);
@@ -94,94 +104,16 @@ describe('Transaction Model', function() {
   });
 
   it('should mark a chain of transactions invalid that were in the mempool, but no longer valid', async () => {
-    const chain = 'BCH';
-    const network = 'integration';
-    const blockTx = {
-      chain,
-      network,
-      blockHeight: 1,
-      txid: '01234'
-    };
-    const blockTxOutputs = {
-      chain,
-      network,
-      mintHeight: 1,
-      mintTxid: '01234',
-      mintIndex: 0,
-      spentHeight: -1,
-      spentTxid: '12345'
-    };
-
     // insert a valid tx, with a valid output
     await TransactionStorage.collection.insertOne(blockTx as IBtcTransaction);
     await CoinStorage.collection.insertOne(blockTxOutputs as ICoin);
+    const chainLength = 5;
+    const txids = await makeMempoolTxChain(chain, network, blockTxOutputs.spentTxid, chainLength);
 
-    const badMempoolTx1 = {
-      chain,
-      network,
-      blockHeight: -1,
-      txid: '12345'
-    };
-    const badMempoolOutputs1 = {
-      chain,
-      network,
-      mintHeight: -1,
-      mintTxid: '12345',
-      spentTxid: '22345',
-      mintIndex: 0,
-      spentHeight: -1
-    };
-
-    const badMempoolTx2 = {
-      chain,
-      network,
-      blockHeight: -1,
-      txid: '22345'
-    };
-    const badMempoolOutputs2 = {
-      chain,
-      network,
-      mintHeight: -1,
-      mintTxid: '22345',
-      spentTxid: '32345',
-      mintIndex: 0,
-      spentHeight: -1
-    };
-
-    const badMempoolTx3 = {
-      chain,
-      network,
-      blockHeight: -1,
-      txid: '32345'
-    };
-    const badMempoolOutputs3 = {
-      chain,
-      network,
-      mintHeight: -1,
-      mintTxid: '32345',
-      mintIndex: 0,
-      spentHeight: -1
-    };
-
-    // insert a valid mempool tx, with a valid output, which will be marked invalid by block2 tx
-    await TransactionStorage.collection.insertOne(badMempoolTx1 as IBtcTransaction);
-    await TransactionStorage.collection.insertOne(badMempoolTx2 as IBtcTransaction);
-    await TransactionStorage.collection.insertOne(badMempoolTx3 as IBtcTransaction);
-    await CoinStorage.collection.insertOne(badMempoolOutputs1 as ICoin);
-    await CoinStorage.collection.insertOne(badMempoolOutputs2 as ICoin);
-    await CoinStorage.collection.insertOne(badMempoolOutputs3 as ICoin);
-
-    const block2TxOutputs = {
-      chain,
-      network,
-      mintHeight: 2,
-      mintTxid: '123456',
-      mintIndex: 0,
-      spentHeight: -1
-    };
+    const allRelatedCoins = await TransactionStorage.findAllRelatedOutputs(blockTxOutputs.spentTxid);
+    expect(allRelatedCoins.length).to.eq(chainLength);
 
     const spentOps = new Array<SpendOp>();
-
     spentOps.push({
       updateOne: {
         filter: {
@@ -202,11 +134,50 @@ describe('Transaction Model', function() {
       spendOps: spentOps
     });
 
-    const badTxs = await TransactionStorage.collection
-      .find({ chain, network, txid: { $in: [badMempoolTx1.txid, badMempoolTx2.txid, badMempoolTx3.txid] } })
-      .toArray();
-    expect(badTxs.length).to.eq(3);
-    expect(badTxs.map(tx => tx.blockHeight)).to.deep.eq(new Array(3).fill(SpentHeightIndicators.conflicting));
+    const badTxs = await TransactionStorage.collection.find({ chain, network, txid: { $in: txids } }).toArray();
+    expect(badTxs.length).to.eq(chainLength);
+    expect(badTxs.map(tx => tx.blockHeight)).to.deep.eq(new Array(chainLength).fill(SpentHeightIndicators.conflicting));
+
+    const goodTxs = await TransactionStorage.collection.find({ chain, network, txid: blockTx.txid }).toArray();
+    expect(goodTxs.length).to.eq(1);
+    expect(goodTxs[0].txid).to.eq(blockTx.txid);
+    expect(goodTxs[0].blockHeight).to.eq(blockTx.blockHeight);
+  });
+
+  it('should mark a massive chain of transactions invalid that were in the mempool, but no longer valid', async () => {
+    // insert a valid tx, with a valid output
+    await TransactionStorage.collection.insertOne(blockTx as IBtcTransaction);
+    await CoinStorage.collection.insertOne(blockTxOutputs as ICoin);
+    const chainLength = 20000;
+    const txids = await makeMempoolTxChain(chain, network, blockTxOutputs.spentTxid, chainLength);
+
+    const allRelatedCoins = await TransactionStorage.findAllRelatedOutputs(blockTxOutputs.spentTxid);
+    expect(allRelatedCoins.length).to.eq(chainLength);
+
+    const spentOps = new Array<SpendOp>();
+    spentOps.push({
+      updateOne: {
+        filter: {
+          chain,
+          network,
+          mintIndex: blockTxOutputs.mintIndex,
+          mintTxid: blockTxOutputs.mintTxid,
+          spentHeight: { $lt: 0 }
+        },
+        update: { $set: { spentHeight: block2TxOutputs.mintHeight, spentTxid: block2TxOutputs.mintTxid } }
+      }
+    });
+
+    await TransactionStorage.pruneMempool({
+      chain,
+      network,
+      initialSyncComplete: true,
+      spendOps: spentOps
+    });
+
+    const badTxs = await TransactionStorage.collection.find({ chain, network, txid: { $in: txids } }).toArray();
+    expect(badTxs.length).to.eq(chainLength);
+    expect(badTxs.map(tx => tx.blockHeight)).to.deep.eq(new Array(chainLength).fill(SpentHeightIndicators.conflicting));
 
     const goodTxs = await TransactionStorage.collection.find({ chain, network, txid: blockTx.txid }).toArray();
     expect(goodTxs.length).to.eq(1);
