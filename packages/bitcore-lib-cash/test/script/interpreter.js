@@ -241,6 +241,7 @@ describe('Interpreter', function() {
     var hashbuf = Buffer.alloc(32);
     hashbuf.fill(0);
     var credtx = new Transaction();
+    credtx.setVersion(1);
     credtx.uncheckedAddInput(new Transaction.Input({
       prevTxId: '0000000000000000000000000000000000000000000000000000000000000000',
       outputIndex: 0xffffffff,
@@ -254,6 +255,7 @@ describe('Interpreter', function() {
     var idbuf = credtx.id;
 
     var spendtx = new Transaction();
+    spendtx.setVersion(1);
     spendtx.uncheckedAddInput(new Transaction.Input({
       prevTxId: idbuf.toString('hex'),
       outputIndex: 0,
@@ -323,6 +325,7 @@ describe('Interpreter', function() {
           });
 
           var tx = new Transaction(txhex);
+          tx.setVersion(1);
           var allInputsVerified = true;
           tx.inputs.forEach(function(txin, j) {
             if (txin.isNull()) {

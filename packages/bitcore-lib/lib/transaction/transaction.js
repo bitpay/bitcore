@@ -58,7 +58,7 @@ function Transaction(serialized, opts) {
     this._newTransaction();
   }
 }
-var CURRENT_VERSION = 1;
+var CURRENT_VERSION = 2;
 var DEFAULT_NLOCKTIME = 0;
 var MAX_BLOCK_SIZE = 1000000;
 
@@ -1352,5 +1352,15 @@ Transaction.prototype.enableRBF = function() {
   }
   return this;
 };
+
+Transaction.prototype.setVersion = function(version) {
+  $.checkArgument(
+    JSUtil.isNaturalNumber(version) && version <= CURRENT_VERSION, 
+    'Wrong version number');
+  this.version = version;
+  return this;
+};
+
+
 
 module.exports = Transaction;

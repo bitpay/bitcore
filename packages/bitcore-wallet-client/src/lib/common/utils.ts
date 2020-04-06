@@ -267,6 +267,12 @@ export class Utils {
 
       var t = new bitcore.Transaction();
 
+      if (txp.version >= 4) {
+        t.setVersion(2);
+      } else {
+        t.setVersion(1);
+      }
+
       $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
 
       switch (txp.addressType) {
