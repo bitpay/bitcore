@@ -654,15 +654,11 @@ export class ExpressApp {
         coin : req.query.coin,
         txId: req.query.txId
       };
-      let server;
-      try {
-        server = getServer(req, res);
-      } catch (ex) {
-        return returnError(ex, res, req);
-      }
-      server.getCoinsForTx(opts, (err, coins) => {
-        if (err) return returnError(err, res, req);
-        res.json(coins);
+      getServerWithAuth(req, res, server => {
+        server.getCoinsForTx(opts, (err, coins) => {
+          if (err) return returnError(err, res, req);
+          res.json(coins);
+        });
       });
     });
 
