@@ -76,7 +76,7 @@ export class PayProV2 {
         if (err) {
           if (res && res.statusCode !== 200) {
             // some know codes
-            if (res.statusCode == 400 || res.statusCode == 422) {
+            if ((res.statusCode == 400 || res.statusCode == 422) && res.body && res.body.msg) {
               return reject(this.getError(res.body.msg));
             } else if (res.statusCode == 404) {
               return reject(new Errors.INVOICE_NOT_AVAILABLE());
@@ -84,6 +84,8 @@ export class PayProV2 {
               return reject(new Errors.REQUEST_TIMEOUT());
             } else if (res.statusCode == 500 && res.body && res.body.msg) {
               return reject(new Error(res.body.msg));
+            } else {
+              return reject(new Errors.INVALID_REQUEST());
             }
           }
           return reject(err);
