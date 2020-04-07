@@ -199,15 +199,14 @@ export class BtcChain implements IChain {
       t.setVersion(2);
 
       // set nLockTime (only txp.version>=4)
-      if (txp.lockUntilBlockHeight)
-        t.lockUntilBlockHeight(txp.lockUntilBlockHeight);
+      if (txp.lockUntilBlockHeight) t.lockUntilBlockHeight(txp.lockUntilBlockHeight);
     }
 
     /*
-     * txp.inputs clean txp.input 
+     * txp.inputs clean txp.input
      * removes possible nSequence number (BIP68)
      */
-console.log('[index.ts.219]', txp.inputs); // TODO
+    console.log('[index.ts.219]', txp.inputs); // TODO
     let inputs = txp.inputs.map(x => {
       return {
         address: x.address,
@@ -216,11 +215,11 @@ console.log('[index.ts.219]', txp.inputs); // TODO
         outputIndex: x.outputIndex,
         scriptPubKey: x.scriptPubKey,
         satoshis: x.satoshis,
-        publicKeys: x.publicKeys,
+        publicKeys: x.publicKeys
       };
     });
 
-console.log('[index.ts.219]', inputs); // TODO
+    console.log('[index.ts.219]', inputs); // TODO
 
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2WSH:
