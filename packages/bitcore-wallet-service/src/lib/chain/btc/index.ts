@@ -206,7 +206,6 @@ export class BtcChain implements IChain {
      * txp.inputs clean txp.input
      * removes possible nSequence number (BIP68)
      */
-    console.log('[index.ts.219]', txp.inputs); // TODO
     let inputs = txp.inputs.map(x => {
       return {
         address: x.address,
@@ -218,8 +217,6 @@ export class BtcChain implements IChain {
         publicKeys: x.publicKeys
       };
     });
-
-    console.log('[index.ts.219]', inputs); // TODO
 
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2WSH:
