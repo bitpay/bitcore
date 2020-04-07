@@ -241,8 +241,8 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     this.streamSpendOps({ ...params, spentStream });
     await new Promise(r =>
       spentStream
-        .pipe(new MongoWriteStream(CoinStorage.collection))
         .pipe(new PruneMempoolStream(chain, network, initialSyncComplete))
+        .pipe(new MongoWriteStream(CoinStorage.collection))
         .on('finish', r)
     );
 
