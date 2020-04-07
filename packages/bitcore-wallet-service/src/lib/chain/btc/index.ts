@@ -197,18 +197,42 @@ export class BtcChain implements IChain {
       t.setVersion(1);
     } else {
       t.setVersion(2);
+
+      // set nLockTime (only txp.version>=4)
+      if (txp.lockUntilBlockHeight)
+        t.lockUntilBlockHeight(txp.lockUntilBlockHeight);
     }
+
+    /*
+     * txp.inputs clean txp.input 
+     * removes possible nSequence number (BIP68)
+     */
+console.log('[index.ts.219]', txp.inputs); // TODO
+    let inputs = txp.inputs.map(x => {
+      return {
+        address: x.address,
+        txid: x.txid,
+        vout: x.vout,
+        outputIndex: x.outputIndex,
+        scriptPubKey: x.scriptPubKey,
+        satoshis: x.satoshis,
+        publicKeys: x.publicKeys,
+      };
+    });
+
+console.log('[index.ts.219]', inputs); // TODO
+
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2WSH:
       case Constants.SCRIPT_TYPES.P2SH:
-        _.each(txp.inputs, i => {
+        _.each(inputs, i => {
           $.checkState(i.publicKeys, 'Inputs should include public keys');
           t.from(i, i.publicKeys, txp.requiredSignatures);
         });
         break;
       case Constants.SCRIPT_TYPES.P2WPKH:
       case Constants.SCRIPT_TYPES.P2PKH:
-        t.from(txp.inputs);
+        t.from(inputs);
         break;
     }
 
