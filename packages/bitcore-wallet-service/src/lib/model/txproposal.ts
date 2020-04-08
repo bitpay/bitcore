@@ -135,10 +135,10 @@ export class TxProposal {
 
     // allow creating legacy tx version == 3 only for testing
     if (opts.version) {
-      $.checkArgument(opts.version === 3);
+      $.checkArgument(opts.version >= 3);
     }
 
-    x.version = opts.version || 5;
+    x.version = opts.version || 4;
     const now = Date.now();
     x.createdOn = Math.floor(now / 1000);
     x.id = opts.id || Uuid.v4();
@@ -414,7 +414,7 @@ export class TxProposal {
     try {
       // Tests signatures are OK
       const tx = this.getBitcoreTx();
-      let signMethod = (this.coin === 'bch' && this.version >= 5) ? 'schnorr' : 'ecdsa';
+      let signMethod = (this.coin === 'bch' && this.version >= 4) ? 'schnorr' : 'ecdsa';
       ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub, signMethod);
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 

@@ -2747,7 +2747,7 @@ export class WalletService {
    */
   signTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId', 'signatures'], cb)) return;
-    opts.maxTxpVersion = opts.maxTxpVersion || 5;
+    opts.maxTxpVersion = opts.maxTxpVersion || 4;
 
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
