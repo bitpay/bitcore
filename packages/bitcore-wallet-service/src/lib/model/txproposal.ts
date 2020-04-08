@@ -67,6 +67,7 @@ export interface ITxProposal {
   tokenAddress?: string;
   destinationTag?: string;
   invoiceID?: string;
+  lockUntilBlockHeight?: number;
 }
 
 export class TxProposal {
@@ -122,6 +123,7 @@ export class TxProposal {
   tokenAddress?: string;
   destinationTag?: string;
   invoiceID?: string;
+  lockUntilBlockHeight?: number;
 
   static create(opts) {
     opts = opts || {};
@@ -131,7 +133,7 @@ export class TxProposal {
 
     const x = new TxProposal();
 
-    // allow creating legacy tx version == 3 only
+    // allow creating legacy tx version == 3 only for testing
     if (opts.version) {
       $.checkArgument(opts.version === 3);
     }
@@ -172,6 +174,12 @@ export class TxProposal {
 
     x.setInputs(opts.inputs);
     x.fee = opts.fee;
+
+    if (x.version === 4) {
+      x.lockUntilBlockHeight = opts.lockUntilBlockHeight;
+    }
+
+    // Coin specific features
 
     // ETH
     x.gasPrice = opts.gasPrice;
@@ -230,6 +238,8 @@ export class TxProposal {
     x.proposalSignature = obj.proposalSignature;
     x.proposalSignaturePubKey = obj.proposalSignaturePubKey;
     x.proposalSignaturePubKeySig = obj.proposalSignaturePubKeySig;
+
+    x.lockUntilBlockHeight = obj.lockUntilBlockHeight;
 
     // ETH
     x.gasPrice = obj.gasPrice;

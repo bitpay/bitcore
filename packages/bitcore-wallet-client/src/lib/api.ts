@@ -1268,7 +1268,8 @@ export class API extends EventEmitter {
 
     var args = this._getCreateTxProposalArgs(opts);
 
-    baseUrl = baseUrl || '/v4/txproposals/';
+    // baseUrl = baseUrl || '/v4/txproposals/'; // DISABLED 2020-04-07
+    baseUrl = '/v3/txproposals/';
     this.request.post(baseUrl, args, (err, txp) => {
       if (err) return cb(err);
 
@@ -1527,7 +1528,8 @@ export class API extends EventEmitter {
 
         if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
-        base = base || '/v2/txproposals/';
+//        base = base || '/v2/txproposals/'; // DISABLED 2020-04-07
+        base = '/v1/txproposals/';
         var url = base + txp.id + '/signatures/';
         var args = {
           signatures

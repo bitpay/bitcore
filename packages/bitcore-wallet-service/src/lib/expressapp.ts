@@ -463,7 +463,6 @@ export class ExpressApp {
       });
     });
 
-    // DEPRECATED, BTC tx ver=1, txp ver = 3
     router.post('/v3/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.txpVersion = 3;
@@ -474,6 +473,7 @@ export class ExpressApp {
       });
     });
 
+/* THIS WAS NEVED ENABLED YET NOW 2020-04-07
     router.post('/v4/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.createTx(req.body, (err, txp) => {
@@ -482,7 +482,7 @@ export class ExpressApp {
         });
       });
     });
-
+*/
     // DEPRECATED
     router.post('/v1/addresses/', (req, res) => {
       logDeprecated(req);
@@ -696,6 +696,7 @@ export class ExpressApp {
       });
     });
 
+/* THIS WAS NEVED ENABLED YET NOW 2020-04-07 (see above)
     router.post('/v2/txproposals/:id/signatures/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
@@ -707,6 +708,7 @@ export class ExpressApp {
         });
       });
     });
+*/
 
     //
     router.post('/v1/txproposals/:id/publish/', (req, res) => {
