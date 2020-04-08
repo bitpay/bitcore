@@ -110,7 +110,7 @@ export class API extends EventEmitter {
   }
 
   _fetchLatestNotifications(interval, cb) {
-    cb = cb || function() {};
+    cb = cb || function () { };
 
     var opts: any = {
       lastNotificationId: this.lastNotificationId,
@@ -283,7 +283,7 @@ export class API extends EventEmitter {
       var words;
       try {
         words = c.getMnemonic();
-      } catch (ex) {}
+      } catch (ex) { }
 
       var xpriv;
       if (words && (!c.mnemonicHasPassphrase || opts.passphrase)) {
@@ -427,7 +427,7 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
-    var signingMethod = opts.signingMethod || "ecdsa";
+    var signingMethod = opts.signingMethod || 'ecdsa';
 
     if (!_.includes(Constants.COINS, coin)) return cb(new Error('Invalid coin'));
 
@@ -634,7 +634,7 @@ export class API extends EventEmitter {
           t.inputs[i].addSignature(t, s);
         }
         i++;
-      } catch (e) {}
+      } catch (e) { }
     });
 
     if (i != txp.inputs.length) throw new Error('Wrong signatures');
@@ -1214,6 +1214,29 @@ export class API extends EventEmitter {
     this.request.get(url, cb);
   }
 
+   // /**
+  // * Gets list of coins
+  // *
+  // * @param {Function} cb
+  // * @param {String} opts.coin - Current tx coin
+  // * @param {String} opts.network - Current tx network
+  // * @param {String} opts.txId - Current tx id
+  // * @returns {Callback} cb - Return error or the list of coins
+  // */
+  getCoinsForTx(opts, cb) {
+    $.checkState(this.credentials && this.credentials.isComplete());
+    opts = opts || {};
+    var url = '/v1/txcoins/';
+    url +=
+      '?' +
+      querystring.stringify({
+        coin: opts.coin,
+        network: opts.network,
+        txId: opts.txId
+      });
+    this.request.get(url, cb);
+  }
+
   _getCreateTxProposalArgs(opts) {
     var args = _.cloneDeep(opts);
     args.message = API._encryptMessage(opts.message, this.credentials.sharedEncryptingKey) || null;
@@ -1257,7 +1280,9 @@ export class API extends EventEmitter {
 
     var args = this._getCreateTxProposalArgs(opts);
 
-    baseUrl = baseUrl || '/v5/txproposals/';
+    baseUrl = baseUrl || '/v4/txproposals/';
+    // baseUrl = baseUrl || '/v4/txproposals/'; // DISABLED 2020-04-07
+
     this.request.post(baseUrl, args, (err, txp) => {
       if (err) return cb(err);
 
@@ -1442,9 +1467,9 @@ export class API extends EventEmitter {
               encryptedPkr: opts.doNotEncryptPkr
                 ? null
                 : Utils.encryptMessage(
-                    JSON.stringify(this.credentials.publicKeyRing),
-                    this.credentials.personalEncryptingKey
-                  ),
+                  JSON.stringify(this.credentials.publicKeyRing),
+                  this.credentials.personalEncryptingKey
+                ),
               unencryptedPkr: opts.doNotEncryptPkr ? JSON.stringify(this.credentials.publicKeyRing) : null,
               m: this.credentials.m,
               n: this.credentials.n
@@ -1516,7 +1541,9 @@ export class API extends EventEmitter {
 
         if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
-        base = base || '/v3/txproposals/';
+        base = base || '/v4/txproposals/';
+//        base = base || '/v2/txproposals/'; // DISABLED 2020-04-07
+
         var url = base + txp.id + '/signatures/';
         var args = {
           signatures
@@ -2138,7 +2165,7 @@ export class API extends EventEmitter {
     var ret;
     try {
       ret = JSON.parse(decrypted);
-    } catch (e) {}
+    } catch (e) { }
     return ret;
   }
 
@@ -2329,6 +2356,9 @@ export class API extends EventEmitter {
 
         // Exists
         if (!err) {
+          if (opts.coin == 'btc' && (status.wallet.addressType == 'P2WPKH' || status.wallet.addressType == 'P2WSH')) {
+            client.credentials.addressType = status.wallet.n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+          }
           let clients = [client];
           // Eth wallet with tokens?
           const tokenAddresses = status.preferences.tokenAddresses;

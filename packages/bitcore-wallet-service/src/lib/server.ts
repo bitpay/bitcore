@@ -1624,6 +1624,26 @@ export class WalletService {
     return balance;
   }
 
+   /**
+   * Returns list of Coins for TX
+   * @param {Object} opts
+   * @param {string} opts.coin - The coin of the transaction.
+   * @param {string} opts.network - the network of the transaction.
+   * @param {string} opts.txId - the transaction id.
+   * @returns {Obejct} coins - Inputs and Outputs of the transaction.
+   */
+  getCoinsForTx(opts, cb) {
+    opts = opts || {};
+    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
+    if (!bc) {
+      return cb(new Error('Could not get blockchain explorer instance'));
+    }
+    bc.getCoinsForTx(opts.txId, (err, coins) => {
+      if (err) return cb(err);
+      return cb(null, coins);
+    });
+  }
+
   /**
    * Get wallet balance.
    * @param {Object} opts

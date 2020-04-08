@@ -3476,7 +3476,8 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         });
       });
 
-      it('Should sign proposal (legacy txp version 3)', (done) => {
+      // DISABLED 2020-04-07
+      it.skip('Should sign proposal (legacy txp version 3)', (done) => {
         var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
         var opts = {
           outputs: [{
@@ -3515,7 +3516,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         }, '/v3/txproposals');
       });
 
-      it('Should fail with need_update error if trying to sign a txp v4 on old client', (done) => {
+      it.skip('Should fail with need_update error if trying to sign a txp v4 on old client', (done) => {
         var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
         var opts = {
           outputs: [{
@@ -3547,7 +3548,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         });
       });
 
-      it('Should fail with wrong_signatires error if trying to push v3 signatures to  a v4 txp v', (done) => {
+      it.skip('Should fail with wrong_signatures error if trying to push v3 signatures to  a v4 txp v', (done) => {
         var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
         var opts = {
           outputs: [{
@@ -3620,7 +3621,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         });
       });
 
-      it('Should sign proposal (legacy txp version 3)', (done) => {
+      it.skip('Should sign proposal (legacy txp version 3)', (done) => {
         var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
         var opts = {
           outputs: [{
@@ -3656,7 +3657,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         }, '/v3/txproposals');
       });
 
-      it('Should fail with need_update error if trying to sign a txp v4 on old client', (done) => {
+      it.skip('Should fail with need_update error if trying to sign a txp v4 on old client', (done) => {
         var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
         var opts = {
           outputs: [{
@@ -3688,7 +3689,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         });
       });
 
-      it('Should fail with wrong_signatires error if trying to push v3 signatures to  a v4 txp v', (done) => {
+      it.skip('Should fail with wrong_signatures error if trying to push v3 signatures to  a v4 txp v', (done) => {
         var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
         var opts = {
           outputs: [{

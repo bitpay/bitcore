@@ -464,7 +464,6 @@ export class ExpressApp {
       });
     });
 
-    // DEPRECATED, BTC tx ver=1, txp ver = 3
     router.post('/v3/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.txpVersion = 3;
@@ -477,6 +476,17 @@ export class ExpressApp {
 
     router.post('/v4/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
+        server.createTx(req.body, (err, txp) => {
+          req.body.txpVersion = 4;
+          if (err) return returnError(err, res, req);
+          res.json(txp);
+        });
+      });
+    });
+
+/* THIS WAS NEVED ENABLED YET NOW 2020-04-07
+    router.post('/v5/txproposals/', (req, res) => {
+      getServerWithAuth(req, res, server => {
         req.body.txpVersion = 4;
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
@@ -485,15 +495,7 @@ export class ExpressApp {
       });
     });
 
-    router.post('/v5/txproposals/', (req, res) => {
-      getServerWithAuth(req, res, server => {
-        server.createTx(req.body, (err, txp) => {
-          req.body.txpVersion = 5;
-          if (err) return returnError(err, res, req);
-          res.json(txp);
-        });
-      });
-    });
+*/
 
     // DEPRECATED
     router.post('/v1/addresses/', (req, res) => {
@@ -672,6 +674,20 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v1/txcoins/', (req, res) => {
+      const opts: { network: string, coin: string, txId: string } = {
+        network : req.query.network,
+        coin : req.query.coin,
+        txId: req.query.txId
+      };
+      getServerWithAuth(req, res, server => {
+        server.getCoinsForTx(opts, (err, coins) => {
+          if (err) return returnError(err, res, req);
+          res.json(coins);
+        });
+      });
+    });
+
     router.post('/v1/broadcast_raw/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.broadcastRawTx(req.body, (err, txid) => {
@@ -694,6 +710,7 @@ export class ExpressApp {
       });
     });
 
+/* THIS WAS NEVED ENABLED YET NOW 2020-04-07 (see above)
     router.post('/v2/txproposals/:id/signatures/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
@@ -705,11 +722,12 @@ export class ExpressApp {
         });
       });
     });
+*/
 
-    router.post('/v3/txproposals/:id/signatures/', (req, res) => {
+    router.post('/v4/txproposals/:id/signatures/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
-        req.body.maxTxpVersion = 5;
+        req.body.maxTxpVersion = 4;
         req.body.signingMethod = 'schnorr';
         server.signTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);

@@ -173,7 +173,7 @@ export class Utils {
         bitcoreAddress = bitcore.Address.createMultisig(publicKeys, m, network);
         break;
       case Constants.SCRIPT_TYPES.P2WPKH:
-        bitcoreAddress = Bitcore.Address.fromPublicKey(publicKeys[0], network, 'witnesspubkeyhash');
+        bitcoreAddress = bitcore.Address.fromPublicKey(publicKeys[0], network, 'witnesspubkeyhash');
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
