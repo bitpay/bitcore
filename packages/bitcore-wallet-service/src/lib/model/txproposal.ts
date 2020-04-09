@@ -138,7 +138,7 @@ export class TxProposal {
       $.checkArgument(opts.version === 3);
     }
 
-//    x.version = opts.version || 4; // DISABLED 2020-04-07
+    //    x.version = opts.version || 4; // DISABLED 2020-04-07
     x.version = opts.version || 3;
     $.checkState(x.version <= 3, 'txp version 4 not allowed yet');
 

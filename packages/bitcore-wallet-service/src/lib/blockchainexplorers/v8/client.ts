@@ -108,7 +108,7 @@ export class Client {
       json: true
     });
   }
-  
+
   listTransactions(params) {
     const { pubKey, startBlock, startDate, endBlock, endDate, includeMempool, tokenAddress } = params;
     let url = `${this.baseUrl}/wallet/${pubKey}/transactions?`;

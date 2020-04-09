@@ -474,7 +474,7 @@ export class ExpressApp {
       });
     });
 
-/* THIS WAS NEVED ENABLED YET NOW 2020-04-07
+    /* THIS WAS NEVED ENABLED YET NOW 2020-04-07
     router.post('/v4/txproposals/', (req, res) => {
       req.body.txpVersion = 4;
       getServerWithAuth(req, res, server => {
@@ -663,9 +663,9 @@ export class ExpressApp {
     });
 
     router.get('/v1/txcoins/', (req, res) => {
-      const opts: { network: string, coin: string, txId: string } = {
-        network : req.query.network,
-        coin : req.query.coin,
+      const opts: { network: string; coin: string; txId: string } = {
+        network: req.query.network,
+        coin: req.query.coin,
         txId: req.query.txId
       };
       getServerWithAuth(req, res, server => {
@@ -698,7 +698,7 @@ export class ExpressApp {
       });
     });
 
-/* THIS WAS NEVED ENABLED YET NOW 2020-04-07 (see above)
+    /* THIS WAS NEVED ENABLED YET NOW 2020-04-07 (see above)
     router.post('/v2/txproposals/:id/signatures/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];

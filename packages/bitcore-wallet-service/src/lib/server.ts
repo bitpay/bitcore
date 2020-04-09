@@ -1624,7 +1624,7 @@ export class WalletService {
     return balance;
   }
 
-   /**
+  /**
    * Returns list of Coins for TX
    * @param {Object} opts
    * @param {string} opts.coin - The coin of the transaction.
