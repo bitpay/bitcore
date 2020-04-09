@@ -2463,7 +2463,7 @@ export class WalletService {
                     destinationTag: opts.destinationTag,
                     invoiceID: opts.invoiceID
                   };
-                  
+
                   txp = TxProposal.create(txOpts);
                   next();
                 },
