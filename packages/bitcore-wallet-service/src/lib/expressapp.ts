@@ -456,6 +456,7 @@ export class ExpressApp {
     router.post('/v2/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.noCashAddr = true;
+        req.body.txpVersion = 3;
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
@@ -475,6 +476,7 @@ export class ExpressApp {
 
 /* THIS WAS NEVED ENABLED YET NOW 2020-04-07
     router.post('/v4/txproposals/', (req, res) => {
+      req.body.txpVersion = 4;
       getServerWithAuth(req, res, server => {
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
