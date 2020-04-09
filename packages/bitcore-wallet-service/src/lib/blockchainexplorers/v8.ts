@@ -200,7 +200,7 @@ export class V8 {
     const client = this._getClient();
     console.time('V8getCoinsForTx');
     client
-      .getCoinsForTx({ txId: txId, payload: {} })
+      .getCoinsForTx({ txId, payload: {} })
       .then(coins => {
         console.timeEnd('V8getCoinsForTx');
         return cb(null, coins);
