@@ -1412,6 +1412,45 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         signatures[0].should.equal('304402200aa70dfe99e25792c4a7edf773477100b6659f1ba906e551e6e5218ec32d273402202e31c575edb55b2da824e8cafd02b4769017ef63d3c888718cf6f0243c570d41');
         signatures[1].should.equal('3045022100afde45e125f654453493b40d288cd66e8a011c66484509ae730a2686c9dff30502201bf34a6672c5848dd010b89ea1a5f040731acf78fec062f61b305e9ce32798a5');
       });
+      it('should sign BCH proposal correctly (schnorr)', () => {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          version: 4,
+          coin: 'bch',
+          inputs: utxos,
+          outputs: [{
+            toAddress: toAddress,
+            amount: 800,
+            message: 'first output'
+          }, {
+            toAddress: toAddress,
+            amount: 900,
+            message: 'second output'
+          }],
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2],
+          fee: 10000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        var path = 'm/44\'/1\'/0\'';
+        var key = Key.fromExtendedPrivateKey(masterPrivateKey);
+        var signatures = key.sign(path, txp);
+
+        signatures.length.should.be.equal(utxos.length);
+        signatures[0].should.equal('e6a2b9a2ad29ff75610e3c2eda894e7c077e19704c667ba37918f11453c09614bd06dc9c3c2c696f9021be0343d54305b9da85459b5a8103be03faa50f41c4e2');
+        signatures[1].should.equal('91e332f2271ea31b65c55ee4af7bfad1c8fbc402c0c0de650873254c44e8101fd51e52d6da06bab44a71caf60ce35b2bcfb1b579819bd1ee4a13ea66a1e4b437');
+      });
     });
   });
 
@@ -3583,6 +3622,89 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
  
     });
 
+    describe('BCH multisig', (done) => {
+      beforeEach((done) => {
+        setup(2, 3, 'bch', 'livenet', done);
+      });
+
+      it('(BCH) two incompatible clients try to sign txp v4. Should throw Error.UPGRADE_NEEDED', (done) => {
+        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            publishedTxp.status.should.equal('pending');
+
+
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.not.exist(err);
+              let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+              clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
+                should.exist(err);
+                console.log(err);
+                err.message.should.equal("UPGRADE_NEEDED: Your client does not support signing this transaction. Please upgrade")
+                done();
+              }, '/v1/txproposals/');
+            });
+          });
+        });
+      });
+
+      it('BCH Multisig Txp.version 4 should sign correctly', (done) => {
+        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            publishedTxp.status.should.equal('pending');
+
+
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.not.exist(err);
+              let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+              clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
+                should.not.exist(err);
+                txp.status.should.equal("accepted");
+                done();
+              });
+            });
+          });
+        });
+      });
+    })
+
     describe('BCH', (done) => {
       beforeEach((done) => {
         setup(1, 1, 'bch', 'livenet', done);
@@ -3619,6 +3741,40 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
             });
           });
         });
+      });
+
+      it('Should sign proposal v3', (done) => {
+        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+          txpVersion: 3,
+          coin: 'bch'
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            publishedTxp.status.should.equal('pending');
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.not.exist(err);
+              txp.status.should.equal('accepted');
+              done();
+            }, '/v1/txproposals/');
+          });
+        }, '/v3/txproposals');
       });
 
       it.skip('Should sign proposal (legacy txp version 3)', (done) => {
