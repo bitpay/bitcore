@@ -19,6 +19,7 @@ describe('Email notifications', function() {
   var storage, server, wallet, mailerStub, emailService;
 
   before(function(done) {
+    this.timeout(5000);
     log.level = 'error';
     helpers.before((res) => {
       storage = res.storage;
