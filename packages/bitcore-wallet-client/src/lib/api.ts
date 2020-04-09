@@ -110,7 +110,7 @@ export class API extends EventEmitter {
   }
 
   _fetchLatestNotifications(interval, cb) {
-    cb = cb || function () { };
+    cb = cb || function() {};
 
     var opts: any = {
       lastNotificationId: this.lastNotificationId,
@@ -283,7 +283,7 @@ export class API extends EventEmitter {
       var words;
       try {
         words = c.getMnemonic();
-      } catch (ex) { }
+      } catch (ex) {}
 
       var xpriv;
       if (words && (!c.mnemonicHasPassphrase || opts.passphrase)) {
@@ -634,7 +634,7 @@ export class API extends EventEmitter {
           t.inputs[i].addSignature(t, s);
         }
         i++;
-      } catch (e) { }
+      } catch (e) {}
     });
 
     if (i != txp.inputs.length) throw new Error('Wrong signatures');
@@ -1214,7 +1214,7 @@ export class API extends EventEmitter {
     this.request.get(url, cb);
   }
 
-   // /**
+  // /**
   // * Gets list of coins
   // *
   // * @param {Function} cb
@@ -1467,9 +1467,9 @@ export class API extends EventEmitter {
               encryptedPkr: opts.doNotEncryptPkr
                 ? null
                 : Utils.encryptMessage(
-                  JSON.stringify(this.credentials.publicKeyRing),
-                  this.credentials.personalEncryptingKey
-                ),
+                    JSON.stringify(this.credentials.publicKeyRing),
+                    this.credentials.personalEncryptingKey
+                  ),
               unencryptedPkr: opts.doNotEncryptPkr ? JSON.stringify(this.credentials.publicKeyRing) : null,
               m: this.credentials.m,
               n: this.credentials.n
@@ -2165,7 +2165,7 @@ export class API extends EventEmitter {
     var ret;
     try {
       ret = JSON.parse(decrypted);
-    } catch (e) { }
+    } catch (e) {}
     return ret;
   }
 
@@ -2357,7 +2357,8 @@ export class API extends EventEmitter {
         // Exists
         if (!err) {
           if (opts.coin == 'btc' && (status.wallet.addressType == 'P2WPKH' || status.wallet.addressType == 'P2WSH')) {
-            client.credentials.addressType = status.wallet.n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+            client.credentials.addressType =
+              status.wallet.n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
           }
           let clients = [client];
           // Eth wallet with tokens?
