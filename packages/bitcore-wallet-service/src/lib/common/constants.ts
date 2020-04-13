@@ -52,6 +52,5 @@ module.exports = {
 
   BIP45_SHARED_INDEX: 0x80000000 - 1,
 
-
-  TOKEN_OPTS:  BWC.Constants.TOKEN_OPTS
+  TOKEN_OPTS: BWC.Constants.TOKEN_OPTS
 };

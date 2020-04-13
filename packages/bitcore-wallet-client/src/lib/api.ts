@@ -54,6 +54,7 @@ export class API extends EventEmitter {
   bp_partner: string;
   bp_partner_version: string;
 
+  static Constants = Constants;
   static PayProV2 = PayProV2;
   static PayPro = PayPro;
   static Key = Key;
