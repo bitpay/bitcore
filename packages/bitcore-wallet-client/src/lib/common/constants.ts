@@ -128,7 +128,7 @@ export const Constants = {
     '0x4Fabb145d64652a948d72533023f6E7A623C7C53': {
       name: 'Binance USD Coin',
       symbol: 'BUSD',
-      decimal: 6,
+      decimal: 18,
       address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
     },
     '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': {
