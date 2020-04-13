@@ -338,16 +338,24 @@ export class PushNotificationsService {
       xrp: 'XRP',
       usdc: 'USDC',
       pax: 'PAX',
-      gusd: 'GUSD'
+      gusd: 'GUSD',
+      busd: 'BUSD'
     };
     const data = _.cloneDeep(notification.data);
     data.subjectPrefix = _.trim(this.subjectPrefix + ' ');
     if (data.amount) {
       try {
-        const unit = data.tokenAddress
-          ? Constants.TOKEN_OPTS[data.tokenAddress.toLowerCase()].symbol.toLowerCase()
-          : recipient.unit.toLowerCase();
-        data.amount = Utils.formatAmount(+data.amount, unit) + ' ' + UNIT_LABELS[unit];
+        let unit = recipient.unit.toLowerCase();
+        let label = UNIT_LABELS[unit];
+        if (data.tokenAddress) {
+          if (Constants.TOKEN_OPTS[data.tokenAddress.toLowerCase()]) {
+            unit = Constants.TOKEN_OPTS[data.tokenAddress.toLowerCase()].symbol.toLowerCase();
+            label = UNIT_LABELS[unit];
+          } else {
+            label = 'tokens';
+          }
+        }
+        data.amount = Utils.formatAmount(+data.amount, unit) + ' ' + label;
       } catch (ex) {
         return cb(new Error('Could not format amount' + ex));
       }
