@@ -65,6 +65,17 @@ export const Constants = {
         minDecimals: 2
       }
     },
+    busd: {
+      toSatoshis: 1e18,
+      full: {
+        maxDecimals: 8,
+        minDecimals: 8
+      },
+      short: {
+        maxDecimals: 6,
+        minDecimals: 2
+      }
+    },
     usdc: {
       toSatoshis: 1e6,
       full: {
@@ -110,10 +121,16 @@ export const Constants = {
       }
     }
   },
-  COINS: ['btc', 'bch', 'eth', 'xrp', 'usdc', 'pax', 'gusd'],
-  ERC20: ['usdc', 'pax', 'gusd'],
+  COINS: ['btc', 'bch', 'eth', 'xrp', 'usdc', 'pax', 'gusd', 'busd'],
+  ERC20: ['usdc', 'pax', 'gusd', 'busd'],
   UTXO_COINS: ['btc', 'bch'],
   TOKEN_OPTS: {
+    '0x4Fabb145d64652a948d72533023f6E7A623C7C53': {
+      name: 'Binance USD Coin',
+      symbol: 'BUSD',
+      decimal: 6,
+      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+    },
     '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': {
       name: 'USD Coin',
       symbol: 'USDC',
