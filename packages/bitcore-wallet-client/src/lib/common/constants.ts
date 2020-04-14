@@ -125,11 +125,11 @@ export const Constants = {
   ERC20: ['usdc', 'pax', 'gusd', 'busd'],
   UTXO_COINS: ['btc', 'bch'],
   TOKEN_OPTS: {
-    '0x4Fabb145d64652a948d72533023f6E7A623C7C53': {
+    '0x4fabb145d64652a948d72533023f6e7a623c7c53': {
       name: 'Binance USD Coin',
       symbol: 'BUSD',
       decimal: 18,
-      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+      address: '0x4fabb145d64652a948d72533023f6e7a623c7c53'
     },
     '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': {
       name: 'USD Coin',

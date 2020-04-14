@@ -348,8 +348,9 @@ export class PushNotificationsService {
         let unit = recipient.unit.toLowerCase();
         let label = UNIT_LABELS[unit];
         if (data.tokenAddress) {
-          if (Constants.TOKEN_OPTS[data.tokenAddress.toLowerCase()]) {
-            unit = Constants.TOKEN_OPTS[data.tokenAddress.toLowerCase()].symbol.toLowerCase();
+          const tokenAddress = data.tokenAddress.toLowerCase();
+          if (Constants.TOKEN_OPTS[tokenAddress]) {
+            unit = Constants.TOKEN_OPTS[tokenAddress].symbol.toLowerCase();
             label = UNIT_LABELS[unit];
           } else {
             label = 'tokens';
