@@ -62,23 +62,9 @@ export class PruningService {
     logger.info('Pruning worker found', coins.length, 'invalid coins for ', chain, network);
     for (let coin of coins) {
       if (coin.spentTxid) {
-        yield await this.scanForInvalid(coin.spentTxid);
+        yield await this.transactionModel.findAllRelatedOutputs(coin.spentTxid);
       }
     }
-  }
-
-  async scanForInvalid(spentTxid: string) {
-    const foundCoins = await this.coinModel.collection.find({ mintTxid: spentTxid, mintHeight: { $ne: -3 } }).toArray();
-    if (foundCoins.length === 0) {
-      return foundCoins;
-    } else {
-      for (let coin of foundCoins) {
-        if (coin.spentTxid) {
-          foundCoins.push(...(await this.scanForInvalid(coin.spentTxid)));
-        }
-      }
-    }
-    return foundCoins;
   }
 
   async clearInvalid(invalidTxids: Array<string>) {
