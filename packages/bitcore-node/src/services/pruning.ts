@@ -8,7 +8,6 @@ import '../utils/polyfills';
 import { Config } from './config';
 
 const MEMPOOL_AGE = Number(process.env.MEMPOOL_AGE) || 7;
-const DRYRUN = process.env.DRYRUN !== 'false';
 const args = parseArgv([], ['EXIT']);
 
 export class PruningService {
@@ -45,8 +44,8 @@ export class PruningService {
   async processOldMempoolTxs(chain: string, network: string, days: number) {
     const ONE_HOUR = 60 * 60 * 1000;
     const ONE_DAY = 24 * ONE_HOUR;
-    const oldTime = Date.now() - days * ONE_DAY;
-    const count = this.transactionModel.collection.countDocuments({
+    const oldTime = new Date(Date.now() - days * ONE_DAY);
+    const count = await this.transactionModel.collection.countDocuments({
       chain,
       network,
       blockHeight: -1,
@@ -71,7 +70,7 @@ export class PruningService {
                 const relatedTxids = [tx.txid].concat(spentTxids);
                 const uniqueTxids = Array.from(new Set(relatedTxids));
                 await this.removeOldMempool(chain, network, uniqueTxids);
-                logger.info(`Removed 1 transaction and ${outputs.length} coins`);
+                logger.info(`Removed 1 transaction and ${spentTxids.length} dependent txs`);
               }
               cb();
             }
@@ -84,7 +83,7 @@ export class PruningService {
   }
 
   async processAllInvalidTxs(chain, network) {
-    const count = this.transactionModel.collection.countDocuments({
+    const count = await this.transactionModel.collection.countDocuments({
       chain,
       network,
       blockHeight: -3
@@ -108,7 +107,7 @@ export class PruningService {
                 const relatedTxids = [tx.txid].concat(spentTxids);
                 const uniqueTxids = Array.from(new Set(relatedTxids));
                 await this.clearInvalid(uniqueTxids);
-                logger.info(`Invalidated 1 transaction and ${outputs.length} coins`);
+                logger.info(`Invalidated 1 transaction and ${spentTxids.length} dependent txs`);
               }
               cb();
             }
@@ -121,9 +120,6 @@ export class PruningService {
 
   async clearInvalid(invalidTxids: Array<string>) {
     logger.info(`Invalidating ${invalidTxids.length} txids`);
-    if (DRYRUN) {
-      return;
-    }
     return Promise.all([
       this.transactionModel.collection.updateMany({ txid: { $in: invalidTxids } }, { $set: { blockHeight: -3 } }),
       this.coinModel.collection.updateMany({ mintTxid: { $in: invalidTxids } }, { $set: { mintHeight: -3 } })
@@ -131,12 +127,9 @@ export class PruningService {
   }
 
   async removeOldMempool(chain, network, txids: Array<string>) {
-    if (DRYRUN) {
-      return;
-    }
     return Promise.all([
       this.transactionModel.collection.deleteMany({ chain, network, txid: { $in: txids }, blockHeight: -1 }),
-      this.coinModel.collection.deleteMany({ chain, network, mintTxid: { $in: txids }, blockHeight: -1 })
+      this.coinModel.collection.deleteMany({ chain, network, mintTxid: { $in: txids }, mintHeight: -1 })
     ]);
   }
 }
