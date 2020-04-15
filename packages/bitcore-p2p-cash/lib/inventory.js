@@ -32,7 +32,7 @@ function Inventory(obj) {
 Inventory.forItem = function(type, hash) {
   $.checkArgument(hash);
   if (_.isString(hash)) {
-    hash = new Buffer(hash, 'hex');
+    hash = Buffer.from(hash, 'hex');
     hash = BufferUtil.reverse(hash);
   }
   return new Inventory({type: type, hash: hash});

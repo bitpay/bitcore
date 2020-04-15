@@ -157,12 +157,14 @@ function removeNetwork(network) {
   unindexNetworkBy(network, Object.keys(networkMaps));
 }
 
+// from https://github.com/Bitcoin-ABC/bitcoin-abc/blob/master/src/chainparams.cpp#L212
 var dnsSeeds = [
   'seed.bitcoinabc.org',
   'seed-abc.bitcoinforks.org',
-  'seed.bitcoinunlimited.info',
-  'seed.bitprim.org ',
-  'seed.deadalnix.me'
+  'btccash-seeder.bitcoinunlimited.info',
+  'seeder.jasonbcox.com',
+  'seed.deadalnix.me',
+  'seed.bchd.cash'
 ];
 
 var liveNetwork = {
