@@ -354,6 +354,7 @@ export class PushNotificationsService {
             label = UNIT_LABELS[unit];
           } else {
             label = 'tokens';
+            throw new Error('Notifications for unsupported token are not allowed');
           }
         }
         data.amount = Utils.formatAmount(+data.amount, unit) + ' ' + label;
