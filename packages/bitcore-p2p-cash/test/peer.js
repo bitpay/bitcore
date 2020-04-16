@@ -172,6 +172,7 @@ describe('Peer', function() {
   });
 
   it('disconnect with max buffer length', function(done) {
+    this.timeout(5000);
     var peer = new Peer({host: 'localhost'});
     var socket = new EventEmitter();
     socket.connect = sinon.spy();
