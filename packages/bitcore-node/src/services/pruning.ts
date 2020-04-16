@@ -65,13 +65,14 @@ export class PruningService {
               const tx = data as ITransaction;
               const outputs = await this.transactionModel.findAllRelatedOutputs(tx.txid);
               const invalid = outputs.find(c => c.mintHeight >= 0 || c.spentHeight >= 0);
-              if (!invalid) {
-                const spentTxids = outputs.filter(c => c.spentTxid).map(c => c.spentTxid);
-                const relatedTxids = [tx.txid].concat(spentTxids);
-                const uniqueTxids = Array.from(new Set(relatedTxids));
-                await this.removeOldMempool(chain, network, uniqueTxids);
-                logger.info(`Removed 1 transaction and ${spentTxids.length} dependent txs`);
+              if (invalid) {
+                return cb(new Error(`Invalid coin! ${invalid.mintTxid} `));
               }
+              const spentTxids = outputs.filter(c => c.spentTxid).map(c => c.spentTxid);
+              const relatedTxids = [tx.txid].concat(spentTxids);
+              const uniqueTxids = Array.from(new Set(relatedTxids));
+              await this.removeOldMempool(chain, network, uniqueTxids);
+              logger.info(`Removed 1 transaction and ${spentTxids.length} dependent txs`);
               cb();
             }
           })
@@ -102,13 +103,14 @@ export class PruningService {
               const tx = data as ITransaction;
               const outputs = await this.transactionModel.findAllRelatedOutputs(tx.txid);
               const invalid = outputs.find(c => c.mintHeight >= 0 || c.spentHeight >= 0);
-              if (!invalid) {
-                const spentTxids = outputs.filter(c => c.spentTxid).map(c => c.spentTxid);
-                const relatedTxids = [tx.txid].concat(spentTxids);
-                const uniqueTxids = Array.from(new Set(relatedTxids));
-                await this.clearInvalid(uniqueTxids);
-                logger.info(`Invalidated 1 transaction and ${spentTxids.length} dependent txs`);
+              if (invalid) {
+                return cb(new Error(`Invalid coin! ${invalid.mintTxid} `));
               }
+              const spentTxids = outputs.filter(c => c.spentTxid).map(c => c.spentTxid);
+              const relatedTxids = [tx.txid].concat(spentTxids);
+              const uniqueTxids = Array.from(new Set(relatedTxids));
+              await this.clearInvalid(uniqueTxids);
+              logger.info(`Invalidated 1 transaction and ${spentTxids.length} dependent txs`);
               cb();
             }
           })
