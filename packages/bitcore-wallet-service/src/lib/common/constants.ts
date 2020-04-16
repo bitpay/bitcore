@@ -1,4 +1,5 @@
 'use strict';
+import * as CWC from 'crypto-wallet-core';
 
 module.exports = {
   COINS: {
@@ -8,13 +9,15 @@ module.exports = {
     XRP: 'xrp',
     USDC: 'usdc',
     PAX: 'pax',
-    GUSD: 'gusd'
+    GUSD: 'gusd',
+    BUSD: 'busd'
   },
 
   ERC20: {
     USDC: 'usdc',
     PAX: 'pax',
-    GUSD: 'gusd'
+    GUSD: 'gusd',
+    BUSD: 'busd'
   },
 
   UTXO_COINS: {
@@ -49,24 +52,5 @@ module.exports = {
 
   BIP45_SHARED_INDEX: 0x80000000 - 1,
 
-  TOKEN_OPTS: {
-    '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48': {
-      name: 'USD Coin',
-      symbol: 'USDC',
-      decimal: 6,
-      address: '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
-    },
-    '0x8e870d67f660d95d5be530380d0ec0bd388289e1': {
-      name: 'Paxos Standard',
-      symbol: 'PAX',
-      decimal: 18,
-      address: '0x8e870d67f660d95d5be530380d0ec0bd388289e1'
-    },
-    '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd': {
-      name: 'Gemini Dollar',
-      symbol: 'GUSD',
-      decimal: 2,
-      address: '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'
-    }
-  }
+  TOKEN_OPTS: CWC.Constants.TOKEN_OPTS
 };
