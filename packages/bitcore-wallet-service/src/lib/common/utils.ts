@@ -1,4 +1,4 @@
-import BWC from 'bitcore-wallet-client';
+import * as CWC from 'crypto-wallet-core';
 import _ from 'lodash';
 
 const $ = require('preconditions').singleton();
@@ -95,7 +95,7 @@ export class Utils {
   }
 
   static formatAmount(satoshis, unit, opts) {
-    const UNITS = Object.entries(BWC.Constants.UNITS).reduce((units, [currency, currencyConfig]) => {
+    const UNITS = Object.entries(CWC.Constants.UNITS).reduce((units, [currency, currencyConfig]) => {
       units[currency] = {
         toSatoshis: currencyConfig.toSatoshis,
         maxDecimals: currencyConfig.short.maxDecimals,
