@@ -1,7 +1,9 @@
 import { expect } from 'chai';
+import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types';
 import { XRP } from '../../../src/modules/ripple/api/csp';
 import { XrpBlockStorage } from '../../../src/modules/ripple/models/block';
 import { IXrpTransaction } from '../../../src/modules/ripple/types';
+import { RippleTxs } from '../../fixtures/rippletxs.fixture';
 const chain = 'XRP';
 const network = 'testnet';
 
@@ -36,22 +38,16 @@ describe.only('Ripple Api', () => {
   });
 
   it('should transform a ripple rpc response into a bitcore transaction', async () => {
-    const txs = await XRP.getAddressTransactions({
-      chain,
-      network: 'mainnet',
-      address: 'rN33DVnneYUUgTmcxXnXvgAL1BECuLZ8pm',
-      args: {}
-    });
+    const txs = (RippleTxs as any) as Array<FormattedTransactionType>;
     for (const tx of txs) {
       const bitcoreTx = (await XRP.transform(tx, 'mainnet')) as IXrpTransaction;
       expect(bitcoreTx).to.have.property('chain');
-      console.log(JSON.stringify({ tx, bitcoreTx }, null, 2));
       expect(tx.address).to.eq(bitcoreTx.from);
       expect(tx.outcome.ledgerVersion).to.eq(bitcoreTx.blockHeight);
       expect(tx.outcome.fee).to.eq((bitcoreTx.fee / 1e6).toString());
-      expect(Object.keys(tx.outcome.balanceChanges)).to.contain(bitcoreTx.to!);
       expect(Number(tx.outcome.balanceChanges[bitcoreTx.from][0].value)).to.be.lt(0);
       if (tx.outcome.deliveredAmount) {
+        expect(Object.keys(tx.outcome.balanceChanges)).to.contain(bitcoreTx.to!);
         expect(tx.outcome.deliveredAmount!.value).to.eq((bitcoreTx.value / 1e6).toString());
         expect(Number(tx.outcome.balanceChanges[bitcoreTx.to!][0].value)).to.be.gt(0);
       }
