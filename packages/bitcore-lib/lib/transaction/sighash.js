@@ -98,13 +98,20 @@ var sighash = function sighash(transaction, sighashType, inputNumber, subscript)
  * @param {number} sighash
  * @param {number} inputIndex
  * @param {Script} subscript
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
  * @return {Signature}
  */
-function sign(transaction, privateKey, sighashType, inputIndex, subscript) {
-  var hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
-  var sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
+function sign(transaction, privateKey, sighashType, inputIndex, subscript, signingMethod) {
+  signingMethod = signingMethod || 'ecdsa';
+
+  var sig;
+  if(signingMethod === 'ecdsa') {
+    var hashbuf = sighash(transaction, sighashType, inputIndex, subscript);
+    sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
     nhashtype: sighashType
   });
+ }
+  
   return sig;
 }
 
@@ -117,13 +124,18 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript) {
  * @param {PublicKey} publicKey
  * @param {number} inputIndex
  * @param {Script} subscript
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
  * @return {boolean}
  */
-function verify(transaction, signature, publicKey, inputIndex, subscript) {
+function verify(transaction, signature, publicKey, inputIndex, subscript, signingMethod) {
   $.checkArgument(!_.isUndefined(transaction));
   $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
-  var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
-  return ECDSA.verify(hashbuf, signature, publicKey, 'little');
+
+  signingMethod = signingMethod || 'ecdsa';
+  if (signingMethod === 'ecdsa') {
+    var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
+    return ECDSA.verify(hashbuf, signature, publicKey, 'little');
+  }
 }
 
 /**

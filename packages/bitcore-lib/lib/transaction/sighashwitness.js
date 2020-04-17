@@ -111,13 +111,19 @@ var sighash = function sighash(transaction, sighashType, inputNumber, scriptCode
  * @param {number} sighash
  * @param {number} inputIndex
  * @param {Script} subscript
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
  * @return {Signature}
  */
-function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, satoshisBuffer) {
-  var hashbuf = sighash(transaction, sighashType, inputIndex, scriptCode, satoshisBuffer);
-  var sig = ECDSA.sign(hashbuf, privateKey).set({
-    nhashtype: sighashType
-  });
+function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, satoshisBuffer, signingMethod) {
+  signingMethod = signingMethod || 'ecdsa';
+  var sig;
+
+  if (signingMethod === 'ecdsa') {
+    let hashbuf = sighash(transaction, sighashType, inputIndex, scriptCode, satoshisBuffer);
+    sig = ECDSA.sign(hashbuf, privateKey).set({
+      nhashtype: sighashType
+    });
+  }
   return sig;
 }
 
@@ -130,13 +136,18 @@ function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, sato
  * @param {PublicKey} publicKey
  * @param {number} inputIndex
  * @param {Script} subscript
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
  * @return {boolean}
  */
-function verify(transaction, signature, publicKey, inputIndex, scriptCode, satoshisBuffer) {
+function verify(transaction, signature, publicKey, inputIndex, scriptCode, satoshisBuffer, signingMethod) {
   $.checkArgument(!_.isUndefined(transaction));
   $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
-  var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, scriptCode, satoshisBuffer);
-  return ECDSA.verify(hashbuf, signature, publicKey);
+  signingMethod = signingMethod || 'ecdsa';
+
+  if (signingMethod === 'ecdsa') {
+    let hashbuf = sighash(transaction, signature.nhashtype, inputIndex, scriptCode, satoshisBuffer);
+    return ECDSA.verify(hashbuf, signature, publicKey);
+  }
 }
 
 /**

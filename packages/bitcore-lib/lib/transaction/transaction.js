@@ -1144,31 +1144,32 @@ Transaction.prototype.removeInput = function(txId, outputIndex) {
  *
  * @param {Array|String|PrivateKey} privateKey
  * @param {number} sigtype
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr'
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.sign = function(privateKey, sigtype) {
+Transaction.prototype.sign = function(privateKey, sigtype, signingMethod) {
   $.checkState(this.hasAllUtxoInfo(), 'Not all utxo information is available to sign the transaction.');
   var self = this;
   if (_.isArray(privateKey)) {
     _.each(privateKey, function(privateKey) {
-      self.sign(privateKey, sigtype);
+      self.sign(privateKey, sigtype, signingMethod);
     });
     return this;
   }
   _.each(this.getSignatures(privateKey, sigtype), function(signature) {
-    self.applySignature(signature);
+    self.applySignature(signature, signingMethod);
   });
   return this;
 };
 
-Transaction.prototype.getSignatures = function(privKey, sigtype) {
+Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) {
   privKey = new PrivateKey(privKey);
   sigtype = sigtype || Signature.SIGHASH_ALL;
   var transaction = this;
   var results = [];
   var hashData = Hash.sha256ripemd160(privKey.publicKey.toBuffer());
   _.each(this.inputs, function forEachInput(input, index) {
-    _.each(input.getSignatures(transaction, privKey, index, sigtype, hashData), function(signature) {
+    _.each(input.getSignatures(transaction, privKey, index, sigtype, hashData, signingMethod), function(signature) {
       results.push(signature);
     });
   });
@@ -1183,10 +1184,11 @@ Transaction.prototype.getSignatures = function(privKey, sigtype) {
  * @param {number} signature.sigtype
  * @param {PublicKey} signature.publicKey
  * @param {Signature} signature.signature
+ * @param {String} signingMethod - 'ecdsa' or 'schnorr' to sign transaction
  * @return {Transaction} this, for chaining
  */
-Transaction.prototype.applySignature = function(signature) {
-  this.inputs[signature.inputIndex].addSignature(this, signature);
+Transaction.prototype.applySignature = function(signature, signingMethod) {
+  this.inputs[signature.inputIndex].addSignature(this, signature, signingMethod);
   return this;
 };
 
@@ -1204,7 +1206,7 @@ Transaction.prototype.isFullySigned = function() {
   }));
 };
 
-Transaction.prototype.isValidSignature = function(signature) {
+Transaction.prototype.isValidSignature = function(signature, signingMethod) {
   var self = this;
   if (this.inputs[signature.inputIndex].isValidSignature === Input.prototype.isValidSignature) {
     throw new errors.Transaction.UnableToVerifySignature(
@@ -1212,13 +1214,14 @@ Transaction.prototype.isValidSignature = function(signature) {
       'This usually happens when creating a transaction from a serialized transaction'
     );
   }
-  return this.inputs[signature.inputIndex].isValidSignature(self, signature);
+  return this.inputs[signature.inputIndex].isValidSignature(self, signature, signingMethod);
 };
 
 /**
+ * @param {String} signingMethod method used to sign - 'ecdsa' or 'schnorr' (future signing method)
  * @returns {bool} whether the signature is valid for this transaction input
  */
-Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, sigversion, satoshis) {
+Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, sigversion, satoshis, signingMethod) {
 
   if (_.isUndefined(sigversion)) {
     sigversion = 0;
@@ -1243,12 +1246,13 @@ Transaction.prototype.verifySignature = function(sig, pubkey, nin, subscript, si
       pubkey,
       nin,
       scriptCodeWriter.toBuffer(),
-      satoshisBuffer
+      satoshisBuffer,
+      signingMethod
     );
     return verified;
   }
 
-  return Sighash.verify(this, sig, pubkey, nin, subscript);
+  return Sighash.verify(this, sig, pubkey, nin, subscript, signingMethod);
 };
 
 /**
