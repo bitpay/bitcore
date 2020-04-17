@@ -1,14 +1,20 @@
+import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types';
+import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { XRP } from '../../../src/modules/ripple/api/csp';
 import { XrpBlockStorage } from '../../../src/modules/ripple/models/block';
 import { IXrpTransaction } from '../../../src/modules/ripple/types';
 import { RippleTxs } from '../../fixtures/rippletxs.fixture';
-const chain = 'XRP';
-const network = 'testnet';
-
+import { resetDatabase } from '../../helpers';
 describe.only('Ripple Api', () => {
+  beforeEach(async () => {
+    await resetDatabase();
+  });
+
   it('should be able to get the ledger', async () => {
+    const network = 'testnet';
+
     const client = await XRP.getClient(network);
     const ledger = await client.getLedger();
     expect(ledger).to.exist;
@@ -16,6 +22,9 @@ describe.only('Ripple Api', () => {
   });
 
   it('should be able to get local tip', async () => {
+    const chain = 'XRP';
+    const network = 'testnet';
+
     await XrpBlockStorage.collection.insertOne({
       chain,
       network,
@@ -51,6 +60,38 @@ describe.only('Ripple Api', () => {
         expect(tx.outcome.deliveredAmount!.value).to.eq((bitcoreTx.value / 1e6).toString());
         expect(Number(tx.outcome.balanceChanges[bitcoreTx.to!][0].value)).to.be.gt(0);
       }
+    }
+  });
+
+  it('should tag txs from a wallet', async () => {
+    const chain = 'XRP';
+    const network = 'mainnet';
+
+    const txs = (RippleTxs as any) as Array<FormattedTransactionType>;
+    const wallet = new ObjectId();
+    const address = 'rN33DVnneYUUgTmcxXnXvgAL1BECuLZ8pm';
+    await WalletAddressStorage.collection.insertOne({
+      chain,
+      network,
+      wallet,
+      address,
+      processed: true
+    });
+    for (const tx of txs) {
+      const bitcoreTx = (await XRP.transform(tx, network)) as IXrpTransaction;
+      const bitcoreCoins = XRP.transformToCoins(tx, network);
+      const { transaction, coins } = await XRP.tag(chain, network, bitcoreTx, bitcoreCoins);
+      expect(transaction.wallets.length).eq(1);
+      expect(transaction.wallets[0].equals(wallet));
+      let hasACoin = false;
+      for (const coin of coins) {
+        if (coin.address == address) {
+          hasACoin = true;
+          expect(coin.wallets.length).eq(1);
+          expect(coin.wallets[0].equals(wallet));
+        }
+      }
+      expect(hasACoin).eq(true);
     }
   });
 });
