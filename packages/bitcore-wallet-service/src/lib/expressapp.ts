@@ -445,6 +445,7 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.post('/v1/txproposals/', (req, res) => {
       const Errors = require('./errors/errordefinitions');
       const err = Errors.UPGRADE_NEEDED;
@@ -455,6 +456,7 @@ export class ExpressApp {
     router.post('/v2/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.noCashAddr = true;
+        req.body.txpVersion = 3;
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
@@ -464,6 +466,7 @@ export class ExpressApp {
 
     router.post('/v3/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
+        req.body.txpVersion = 3;
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
@@ -471,6 +474,17 @@ export class ExpressApp {
       });
     });
 
+    /* THIS WAS NEVED ENABLED YET NOW 2020-04-07
+    router.post('/v4/txproposals/', (req, res) => {
+      req.body.txpVersion = 4;
+      getServerWithAuth(req, res, server => {
+        server.createTx(req.body, (err, txp) => {
+          if (err) return returnError(err, res, req);
+          res.json(txp);
+        });
+      });
+    });
+*/
     // DEPRECATED
     router.post('/v1/addresses/', (req, res) => {
       logDeprecated(req);
@@ -648,6 +662,20 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v1/txcoins/', (req, res) => {
+      const opts: { network: string; coin: string; txId: string } = {
+        network: req.query.network,
+        coin: req.query.coin,
+        txId: req.query.txId
+      };
+      getServerWithAuth(req, res, server => {
+        server.getCoinsForTx(opts, (err, coins) => {
+          if (err) return returnError(err, res, req);
+          res.json(coins);
+        });
+      });
+    });
+
     router.post('/v1/broadcast_raw/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.broadcastRawTx(req.body, (err, txid) => {
@@ -660,6 +688,7 @@ export class ExpressApp {
 
     router.post('/v1/txproposals/:id/signatures/', (req, res) => {
       getServerWithAuth(req, res, server => {
+        req.body.maxTxpVersion = 3;
         req.body.txProposalId = req.params['id'];
         server.signTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
@@ -668,6 +697,20 @@ export class ExpressApp {
         });
       });
     });
+
+    /* THIS WAS NEVED ENABLED YET NOW 2020-04-07 (see above)
+    router.post('/v2/txproposals/:id/signatures/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        req.body.txProposalId = req.params['id'];
+        req.body.maxTxpVersion = 4;
+        server.signTx(req.body, (err, txp) => {
+          if (err) return returnError(err, res, req);
+          res.json(txp);
+          res.end();
+        });
+      });
+    });
+*/
 
     //
     router.post('/v1/txproposals/:id/publish/', (req, res) => {
@@ -1011,7 +1054,7 @@ export class ExpressApp {
     this.app.use(opts.basePath || '/bws/api', router);
 
     if (config.staticRoot) {
-      log.info(`Serving static files from ${config.staticRoot}`);
+      log.debug(`Serving static files from ${config.staticRoot}`);
       this.app.use('/static', express.static(config.staticRoot));
     }
 

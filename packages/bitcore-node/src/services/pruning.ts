@@ -1,12 +1,14 @@
+import { Transform } from 'stream';
 import logger from '../logger';
+import { ITransaction } from '../models/baseTransaction';
 import { CoinModel, CoinStorage } from '../models/coin';
 import { TransactionModel, TransactionStorage } from '../models/transaction';
+import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 import { Config } from './config';
 
-import parseArgv from '../utils/parseArgv';
-import { partition } from '../utils/partition';
-let args = parseArgv([], ['EXIT']);
+const MEMPOOL_AGE = Number(process.env.MEMPOOL_AGE) || 7;
+const args = parseArgv([], ['EXIT']);
 
 export class PruningService {
   transactionModel: TransactionModel;
@@ -34,58 +36,102 @@ export class PruningService {
   async detectAndClear() {
     for (let chainNetwork of Config.chainNetworks()) {
       const { chain, network } = chainNetwork;
-      await this.detectInvalidMempoolCoins(chain, network);
-      const invalids = this.detectInvalidCoins(chain, network);
-      for await (const invalidCoins of invalids) {
-        if (this.stopping) {
-          return;
-        }
-        const txids = invalidCoins.map(c => c.mintTxid);
-        await this.clearInvalid(txids);
-      }
+      await this.processOldMempoolTxs(chain, network, MEMPOOL_AGE);
+      await this.processAllInvalidTxs(chain, network);
     }
   }
 
-  async detectInvalidMempoolCoins(chain, network) {
-    const txs = await this.transactionModel.collection.find({ chain, network, blockHeight: -3 }).toArray();
-    for (let groups of partition(txs, 1000)) {
-      const updated = await this.coinModel.collection.updateMany(
-        { chain, network, mintTxid: { $in: groups.map(tx => tx.txid) }, mintHeight: -1 },
-        { $set: { mintHeight: -3 } }
-      );
-      logger.info('Mempool coins updated', updated);
-    }
+  async processOldMempoolTxs(chain: string, network: string, days: number) {
+    const ONE_HOUR = 60 * 60 * 1000;
+    const ONE_DAY = 24 * ONE_HOUR;
+    const oldTime = new Date(Date.now() - days * ONE_DAY);
+    const count = await this.transactionModel.collection.countDocuments({
+      chain,
+      network,
+      blockHeight: -1,
+      blockTimeNormalized: { $lt: oldTime }
+    });
+    logger.info(`Found ${count} outdated ${chain} ${network} mempool txs`);
+    await new Promise((resolve, reject) => {
+      this.transactionModel.collection
+        .find({ chain, network, blockHeight: -1, blockTimeNormalized: { $lt: oldTime } })
+        .pipe(
+          new Transform({
+            objectMode: true,
+            transform: async (data: any, _, cb) => {
+              if (this.stopping) {
+                return cb(new Error('Stopping'));
+              }
+              const tx = data as ITransaction;
+              const outputs = await this.transactionModel.findAllRelatedOutputs(tx.txid);
+              const invalid = outputs.find(c => c.mintHeight >= 0 || c.spentHeight >= 0);
+              if (invalid) {
+                return cb(new Error(`Invalid coin! ${invalid.mintTxid} `));
+              }
+              const spentTxids = outputs.filter(c => c.spentTxid).map(c => c.spentTxid);
+              const relatedTxids = [tx.txid].concat(spentTxids);
+              const uniqueTxids = Array.from(new Set(relatedTxids));
+              await this.removeOldMempool(chain, network, uniqueTxids);
+              logger.info(`Removed 1 transaction and ${spentTxids.length} dependent txs`);
+              cb();
+            }
+          })
+        )
+        .on('finish', resolve)
+        .on('error', reject);
+    });
+    logger.info(`Removed all old mempool txs within the last ${days} days`);
   }
 
-  async *detectInvalidCoins(chain, network) {
-    const coins = await this.coinModel.collection.find({ chain, network, mintHeight: -3 }).toArray();
-    logger.info('Pruning worker found', coins.length, 'invalid coins for ', chain, network);
-    for (let coin of coins) {
-      if (coin.spentTxid) {
-        yield await this.scanForInvalid(coin.spentTxid);
-      }
-    }
-  }
-
-  async scanForInvalid(spentTxid: string) {
-    const foundCoins = await this.coinModel.collection.find({ mintTxid: spentTxid, mintHeight: { $ne: -3 } }).toArray();
-    if (foundCoins.length === 0) {
-      return foundCoins;
-    } else {
-      for (let coin of foundCoins) {
-        if (coin.spentTxid) {
-          foundCoins.push(...(await this.scanForInvalid(coin.spentTxid)));
-        }
-      }
-    }
-    return foundCoins;
+  async processAllInvalidTxs(chain, network) {
+    const count = await this.transactionModel.collection.countDocuments({
+      chain,
+      network,
+      blockHeight: -3
+    });
+    logger.info(`Found ${count} invalid ${chain} ${network} txs`);
+    await new Promise((resolve, reject) => {
+      this.transactionModel.collection
+        .find({ chain, network, blockHeight: -3 })
+        .pipe(
+          new Transform({
+            objectMode: true,
+            transform: async (data: any, _, cb) => {
+              if (this.stopping) {
+                return cb(new Error('Stopping'));
+              }
+              const tx = data as ITransaction;
+              const outputs = await this.transactionModel.findAllRelatedOutputs(tx.txid);
+              const invalid = outputs.find(c => c.mintHeight >= 0 || c.spentHeight >= 0);
+              if (invalid) {
+                return cb(new Error(`Invalid coin! ${invalid.mintTxid} `));
+              }
+              const spentTxids = outputs.filter(c => c.spentTxid).map(c => c.spentTxid);
+              const relatedTxids = [tx.txid].concat(spentTxids);
+              const uniqueTxids = Array.from(new Set(relatedTxids));
+              await this.clearInvalid(uniqueTxids);
+              logger.info(`Invalidated 1 transaction and ${spentTxids.length} dependent txs`);
+              cb();
+            }
+          })
+        )
+        .on('finish', resolve)
+        .on('error', reject);
+    });
   }
 
   async clearInvalid(invalidTxids: Array<string>) {
-    logger.info('Pruning worker clearing', invalidTxids.length, 'txids');
+    logger.info(`Invalidating ${invalidTxids.length} txids`);
     return Promise.all([
       this.transactionModel.collection.updateMany({ txid: { $in: invalidTxids } }, { $set: { blockHeight: -3 } }),
       this.coinModel.collection.updateMany({ mintTxid: { $in: invalidTxids } }, { $set: { mintHeight: -3 } })
+    ]);
+  }
+
+  async removeOldMempool(chain, network, txids: Array<string>) {
+    return Promise.all([
+      this.transactionModel.collection.deleteMany({ chain, network, txid: { $in: txids }, blockHeight: -1 }),
+      this.coinModel.collection.deleteMany({ chain, network, mintTxid: { $in: txids }, mintHeight: -1 })
     ]);
   }
 }

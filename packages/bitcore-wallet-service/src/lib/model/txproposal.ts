@@ -67,6 +67,7 @@ export interface ITxProposal {
   tokenAddress?: string;
   destinationTag?: string;
   invoiceID?: string;
+  lockUntilBlockHeight?: number;
 }
 
 export class TxProposal {
@@ -122,6 +123,7 @@ export class TxProposal {
   tokenAddress?: string;
   destinationTag?: string;
   invoiceID?: string;
+  lockUntilBlockHeight?: number;
 
   static create(opts) {
     opts = opts || {};
@@ -131,7 +133,14 @@ export class TxProposal {
 
     const x = new TxProposal();
 
-    x.version = 3;
+    // allow creating legacy tx version == 3 only for testing
+    if (opts.version) {
+      $.checkArgument(opts.version === 3);
+    }
+
+    //    x.version = opts.version || 4; // DISABLED 2020-04-07
+    x.version = opts.version || 3;
+    $.checkState(x.version <= 3, 'txp version 4 not allowed yet');
 
     const now = Date.now();
     x.createdOn = Math.floor(now / 1000);
@@ -168,6 +177,12 @@ export class TxProposal {
 
     x.setInputs(opts.inputs);
     x.fee = opts.fee;
+
+    if (x.version === 4) {
+      x.lockUntilBlockHeight = opts.lockUntilBlockHeight;
+    }
+
+    // Coin specific features
 
     // ETH
     x.gasPrice = opts.gasPrice;
@@ -226,6 +241,8 @@ export class TxProposal {
     x.proposalSignature = obj.proposalSignature;
     x.proposalSignaturePubKey = obj.proposalSignaturePubKey;
     x.proposalSignaturePubKeySig = obj.proposalSignaturePubKeySig;
+
+    x.lockUntilBlockHeight = obj.lockUntilBlockHeight;
 
     // ETH
     x.gasPrice = obj.gasPrice;

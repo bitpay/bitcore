@@ -195,6 +195,19 @@ export class V8 {
       .catch(cb);
   }
 
+  getCoinsForTx(txId, cb) {
+    $.checkArgument(cb);
+    const client = this._getClient();
+    console.time('V8getCoinsForTx');
+    client
+      .getCoinsForTx({ txId, payload: {} })
+      .then(coins => {
+        console.timeEnd('V8getCoinsForTx');
+        return cb(null, coins);
+      })
+      .catch(cb);
+  }
+
   /**
    * Check wallet addresses
    */

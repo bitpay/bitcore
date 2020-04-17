@@ -1162,6 +1162,120 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    describe('New clients 3', function() {
+      var server, walletId, walletIdForSegwit;
+
+      it('should join wallet segwit if BWC version is 8.17.0 or higher', function(done) {
+        server = new WalletService();
+        var walletOpts = {
+          coin: 'btc',
+          name: 'my wallet',
+          m: 1,
+          n: 2,
+          pubKey: TestData.keyPair.pub,
+          useNativeSegwit: true
+        };
+
+        server.clientVersion = 'bwc-8.17.0';
+
+        server.createWallet(walletOpts, function(err, wId) {
+          should.not.exist(err);
+          walletIdForSegwit = wId;
+          should.exist(walletIdForSegwit);
+
+          var copayerOpts = helpers.getSignedCopayerOpts({
+            coin: 'btc',
+            walletId: walletIdForSegwit,
+            name: 'me',
+            xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+            requestPubKey: TestData.copayers[0].pubKey_1H_0,
+            customData: 'dummy custom data'
+          });
+
+          server.clientVersion = 'bwc-8.17.0';
+
+          server.joinWallet(copayerOpts, function(err, result) {
+            should.not.exist(err);
+            should.exist(result);
+            should.exist(result.copayerId);
+            result.wallet.addressType.should.equal('P2WSH');
+            done();
+          });
+        });
+      });
+
+      it('should fail to join segwit wallets from old clients ', function(done) {
+        server = new WalletService();
+        var walletOpts = {
+          coin: 'btc',
+          name: 'my wallet',
+          m: 1,
+          n: 2,
+          pubKey: TestData.keyPair.pub,
+          walletId: walletId,
+          useNativeSegwit: true
+        };
+        server.createWallet(walletOpts, function(err, wId) {
+          should.not.exist(err);
+          walletIdForSegwit = wId;
+          should.exist(walletIdForSegwit);
+
+          var copayerOpts = helpers.getSignedCopayerOpts({
+            coin: 'btc',
+            walletId: walletIdForSegwit,
+            name: 'me',
+            m: 2,
+            n: 3,
+            xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+            requestPubKey: TestData.copayers[0].pubKey_1H_0
+          });
+
+          server.clientVersion = 'bwc-8.4.0';
+          server.joinWallet(copayerOpts, function(err, result) {
+            should.not.exist(result);
+            should.exist(err);
+            err.message.should.contain('upgrade');
+            done();
+          });
+        });
+      });
+
+      it('should join segwit wallets from new clients', function(done) {
+        server = new WalletService();
+        var walletOpts = {
+          coin: 'btc',
+          name: 'my wallet',
+          m: 1,
+          n: 2,
+          pubKey: TestData.keyPair.pub,
+          walletId: walletId,
+          useNativeSegwit: true,
+        };
+        server.createWallet(walletOpts, function(err, wId) {
+          should.not.exist(err);
+          walletIdForSegwit = wId;
+          should.exist(walletIdForSegwit);
+
+          var copayerOpts = helpers.getSignedCopayerOpts({
+            coin: 'btc',
+            walletId: walletIdForSegwit,
+            name: 'me',
+            m: 2,
+            n: 3,
+            xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+            requestPubKey: TestData.copayers[0].pubKey_1H_0
+          });
+
+          server.clientVersion = 'bwc-9.0.0';
+          server.joinWallet(copayerOpts, function(err, result) {
+            should.not.exist(err);
+            should.exist(result);
+            done();
+          });
+        });
+      });
+    });
   });
 
   describe('#removeWallet', function() {
@@ -6898,6 +7012,26 @@ describe('Wallet service', function() {
           txp.txid.should.equal(txid);
           txp.isBroadcasted().should.be.true;
           txp.broadcastedOn.should.equal(1234);
+          clock.restore();
+          done();
+        });
+      });
+    });
+
+    it('should broadcast a tx and set locktime & version', function(done) {
+      var clock = sinon.useFakeTimers({ now: 1234000, toFake: ['Date'] });
+      helpers.stubBroadcast(txid);
+      server.broadcastTx({
+        txProposalId: txpid
+      }, function(err) {
+        should.not.exist(err);
+        server.getTx({
+          txProposalId: txpid
+        }, function(err, txp) {
+          should.not.exist(err);
+
+          should.exist(txp.raw);
+          const tx = new Bitcore.Transaction(txp.raw);
           clock.restore();
           done();
         });

@@ -1203,6 +1203,29 @@ export class API extends EventEmitter {
     this.request.get(url, cb);
   }
 
+  // /**
+  // * Gets list of coins
+  // *
+  // * @param {Function} cb
+  // * @param {String} opts.coin - Current tx coin
+  // * @param {String} opts.network - Current tx network
+  // * @param {String} opts.txId - Current tx id
+  // * @returns {Callback} cb - Return error or the list of coins
+  // */
+  getCoinsForTx(opts, cb) {
+    $.checkState(this.credentials && this.credentials.isComplete());
+    opts = opts || {};
+    var url = '/v1/txcoins/';
+    url +=
+      '?' +
+      querystring.stringify({
+        coin: opts.coin,
+        network: opts.network,
+        txId: opts.txId
+      });
+    this.request.get(url, cb);
+  }
+
   _getCreateTxProposalArgs(opts) {
     var args = _.cloneDeep(opts);
     args.message = API._encryptMessage(opts.message, this.credentials.sharedEncryptingKey) || null;
@@ -1236,15 +1259,18 @@ export class API extends EventEmitter {
   // * @param {number} opts.fee - Optional. Use an fixed fee for this TX (only when opts.inputs is specified)
   // * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
   // * @returns {Callback} cb - Return error or the transaction proposal
+  // * @param {String} baseUrl - Optional. ONLY FOR TESTING
   // */
-  createTxProposal(opts, cb) {
+  createTxProposal(opts, cb, baseUrl) {
     $.checkState(this.credentials && this.credentials.isComplete());
     $.checkState(this.credentials.sharedEncryptingKey);
     $.checkArgument(opts);
 
     var args = this._getCreateTxProposalArgs(opts);
 
-    this.request.post('/v3/txproposals/', args, (err, txp) => {
+    // baseUrl = baseUrl || '/v4/txproposals/'; // DISABLED 2020-04-07
+    baseUrl = '/v3/txproposals/';
+    this.request.post(baseUrl, args, (err, txp) => {
       if (err) return cb(err);
 
       this._processTxps(txp);
@@ -1482,10 +1508,11 @@ export class API extends EventEmitter {
   // *
   // * @param {Object} txp
   // * @param {Array} signatures
+  // * @param {base} base url (ONLY FOR TESTING)
   // * @param {Callback} cb
   // * @return {Callback} cb - Return error or object
   // */
-  pushSignatures(txp, signatures, cb) {
+  pushSignatures(txp, signatures, cb, base) {
     $.checkState(this.credentials && this.credentials.isComplete());
     $.checkArgument(txp.creatorId);
 
@@ -1501,7 +1528,9 @@ export class API extends EventEmitter {
 
         if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
-        var url = '/v1/txproposals/' + txp.id + '/signatures/';
+        //        base = base || '/v2/txproposals/'; // DISABLED 2020-04-07
+        base = '/v1/txproposals/';
+        var url = base + txp.id + '/signatures/';
         var args = {
           signatures
         };
@@ -2313,6 +2342,10 @@ export class API extends EventEmitter {
 
         // Exists
         if (!err) {
+          if (opts.coin == 'btc' && (status.wallet.addressType == 'P2WPKH' || status.wallet.addressType == 'P2WSH')) {
+            client.credentials.addressType =
+              status.wallet.n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+          }
           let clients = [client];
           // Eth wallet with tokens?
           const tokenAddresses = status.preferences.tokenAddresses;

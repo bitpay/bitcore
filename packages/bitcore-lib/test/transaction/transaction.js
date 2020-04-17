@@ -210,8 +210,16 @@ describe('Transaction', function() {
 
   it('serializes an empty transaction', function() {
     var transaction = new Transaction();
+    transaction.setVersion(1);
     transaction.uncheckedSerialize().should.equal(tx_empty_hex);
   });
+
+  it('serializes an empty transaction v2', function() {
+    var transaction = new Transaction();
+    transaction.uncheckedSerialize().should.equal(tx_empty_hexV2);
+  });
+
+
 
   it('serializes and deserializes correctly', function() {
     var transaction = new Transaction(tx_1_hex);
@@ -226,6 +234,7 @@ describe('Transaction', function() {
       it('case ' + index, function() {
         var i = 0;
         var transaction = new Transaction();
+        transaction.setVersion(1);
         while (i < vector.length) {
           var command = vector[i];
           var args = vector[i + 1];
@@ -1864,6 +1873,7 @@ describe('Transaction', function() {
 
       it('will sign with nested p2sh witness program', function() {
         var tx = new Transaction()
+          .setVersion(1)
           .from(nestedUtxo, [publicKey1], 1)
           .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
           .fee(150000)
@@ -1875,6 +1885,7 @@ describe('Transaction', function() {
       });
       it('will sign with p2wpkh witness program', function() {
         var tx = new Transaction()
+          .setVersion(1)
           .from(simpleWitnessUtxoWith1BTC)
           .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
           .fee(150000)
@@ -1886,6 +1897,7 @@ describe('Transaction', function() {
       });
       it('will sign with p2sh-wrapped-p2wpkh witness program', function() {
         var tx = new Transaction()
+          .setVersion(1)
           .from(simpleWrappedWitnessUtxoWith1BTC)
           .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
           .fee(150000)
@@ -1897,6 +1909,7 @@ describe('Transaction', function() {
       });
       it('will sign with p2wsh witness program', function() {
         var tx = new Transaction()
+          .setVersion(1)
           .from(witnessUtxo, [publicKey1], 1)
           .to([{address: 'n3LsXgyStG2CkS2CnWZtDqxTfCnXB8PvD9', satoshis: 50000}])
           .fee(150000)
@@ -1908,6 +1921,7 @@ describe('Transaction', function() {
       });
       it('will sign with p2wsh, p2sh, and nested p2sh', function() {
         var tx = new Transaction()
+          .setVersion(1)
           .from(witnessUtxo, [publicKey1], 1)
           .from(utxo, [publicKey1], 1)
           .from(nestedUtxo, [publicKey1], 1)
@@ -1920,6 +1934,7 @@ describe('Transaction', function() {
       });
       it('will sign with p2pkh, p2wpkh, and wrapped p2wpkh', function() {
         var tx = new Transaction()
+          .setVersion(1)
           .from(simpleUtxoWith1BTC)
           .from(simpleWitnessUtxoWith1BTC)
           .from(simpleWrappedWitnessUtxoWith1BTC)
@@ -1937,6 +1952,7 @@ describe('Transaction', function() {
 
 
 var tx_empty_hex = '01000000000000000000';
+var tx_empty_hexV2 = '02000000000000000000';
 
 /* jshint maxlen: 1000 */
 var tx_1_hex = '01000000015884e5db9de218238671572340b207ee85b628074e7e467096c267266baf77a4000000006a473044022013fa3089327b50263029265572ae1b022a91d10ac80eb4f32f291c914533670b02200d8a5ed5f62634a7e1a0dc9188a3cc460a986267ae4d58faf50c79105431327501210223078d2942df62c45621d209fab84ea9a7a23346201b7727b9b45a29c4e76f5effffffff0150690f00000000001976a9147821c0a3768aa9d1a37e16cf76002aef5373f1a888ac00000000';

@@ -88,19 +88,19 @@ describe('TxProposal', function() {
   });
 
   describe('#sign', function() {
-    it('should sign 2-2', function() {
+    it('should sign 2-2 (txp version 3, btc tx version 1)', function() {
       var txp = TxProposal.fromObj(aTXP());
       txp.sign('1', theSignatures, theXPub);
       txp.isAccepted().should.equal(false);
       txp.isRejected().should.equal(false);
       txp.sign('2', theSignatures, theXPub);
-      txp.isAccepted().should.equal(true);
+      txp.isAccepted().should.equal(true); //<===
       txp.isRejected().should.equal(false);
     });
   });
 
   describe('#getRawTx', function() {
-    it('should generate correct raw transaction for signed 2-2', function() {
+    it('should generate correct raw transaction for signed 2-2, tx version 1', function() {
       var txp = TxProposal.fromObj(aTXP());
       txp.sign('1', theSignatures, theXPub);
       txp.getRawTx().should.equal(theRawTx);

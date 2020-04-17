@@ -1069,6 +1069,17 @@ export class WalletService {
           }
         }
 
+        if (wallet.n > 1 && wallet.addressType === 'P2WSH') {
+          const version = Utils.parseVersion(this.clientVersion);
+          if (version && version.agent === 'bwc') {
+            if (version.major < 8 || (version.major === 8 && version.minor < 17)) {
+              return cb(
+                new ClientError(Errors.codes.UPGRADE_NEEDED, 'Please upgrade your client to join this multisig wallet')
+              );
+            }
+          }
+        }
+
         if (opts.coin != wallet.coin) {
           return cb(new ClientError('The wallet you are trying to join was created for a different coin'));
         }
@@ -1622,6 +1633,26 @@ export class WalletService {
     balance.availableConfirmedAmount = balance.totalConfirmedAmount - balance.lockedConfirmedAmount;
 
     return balance;
+  }
+
+  /**
+   * Returns list of Coins for TX
+   * @param {Object} opts
+   * @param {string} opts.coin - The coin of the transaction.
+   * @param {string} opts.network - the network of the transaction.
+   * @param {string} opts.txId - the transaction id.
+   * @returns {Obejct} coins - Inputs and Outputs of the transaction.
+   */
+  getCoinsForTx(opts, cb) {
+    opts = opts || {};
+    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
+    if (!bc) {
+      return cb(new Error('Could not get blockchain explorer instance'));
+    }
+    bc.getCoinsForTx(opts.txId, (err, coins) => {
+      if (err) return cb(err);
+      return cb(null, coins);
+    });
   }
 
   /**
@@ -2331,6 +2362,7 @@ export class WalletService {
    * @param {Boolean} opts.validateOutputs[=true] - Optional. Perform validation on outputs.
    * @param {Boolean} opts.dryRun[=false] - Optional. Simulate the action but do not change server state.
    * @param {Array} opts.inputs - Optional. Inputs for this TX
+   * @param {Array} opts.txpVersion - Optional. Version for TX Proposal (current = 4, only =3 allowed).
    * @param {number} opts.fee - Optional. Use an fixed fee for this TX (only when opts.inputs is specified)
    * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
    * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch
@@ -2426,6 +2458,7 @@ export class WalletService {
                     addressType: wallet.addressType,
                     customData: opts.customData,
                     inputs: opts.inputs,
+                    version: opts.txpVersion,
                     fee:
                       opts.inputs && !_.isNumber(opts.feePerKb)
                         ? opts.fee
@@ -2441,6 +2474,7 @@ export class WalletService {
                     destinationTag: opts.destinationTag,
                     invoiceID: opts.invoiceID
                   };
+
                   txp = TxProposal.create(txOpts);
                   next();
                 },
@@ -2719,10 +2753,12 @@ export class WalletService {
    * Sign a transaction proposal.
    * @param {Object} opts
    * @param {string} opts.txProposalId - The identifier of the transaction.
+   * @param {string} opts.maxTxpVersion - Client's maximum supported txp version
    * @param {string} opts.signatures - The signatures of the inputs of this tx for this copayer (in apperance order)
    */
   signTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId', 'signatures'], cb)) return;
+    opts.maxTxpVersion = opts.maxTxpVersion || 4;
 
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
@@ -2733,6 +2769,15 @@ export class WalletService {
         },
         (err, txp) => {
           if (err) return cb(err);
+
+          if (opts.maxTxpVersion < txp.version) {
+            return cb(
+              new ClientError(
+                Errors.codes.UPGRADE_NEEDED,
+                'Your client does not support signing this transaction. Please upgrade'
+              )
+            );
+          }
 
           const action = _.find(txp.actions, {
             copayerId: this.copayerId
