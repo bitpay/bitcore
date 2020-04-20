@@ -59,6 +59,7 @@ export interface ITxProposal {
   proposalSignature: string;
   proposalSignaturePubKey: string;
   proposalSignaturePubKeySig: string;
+  signingMethod: string;
   lowFees: boolean;
   nonce?: number;
   gasPrice?: number;
@@ -115,6 +116,7 @@ export class TxProposal {
   proposalSignature: string;
   proposalSignaturePubKey: string;
   proposalSignaturePubKeySig: string;
+  signingMethod: string;
   raw?: Array<string> | string;
   nonce?: number;
   gasPrice?: number;
@@ -139,8 +141,8 @@ export class TxProposal {
     }
 
     // x.version = opts.version || 5; // DISABLED 2020-04-07
-    x.version = opts.version || 4;
-    $.checkState(x.version <= 4, 'txp version 5 not allowed yet');
+    x.version = opts.version || 3;
+    $.checkState(x.version <= 3, 'txp version 4 not allowed yet');
 
     const now = Date.now();
     x.createdOn = Math.floor(now / 1000);
@@ -149,6 +151,7 @@ export class TxProposal {
     x.creatorId = opts.creatorId;
     x.coin = opts.coin;
     x.network = opts.network;
+    x.signingMethod = opts.signingMethod;
     x.message = opts.message;
     x.payProUrl = opts.payProUrl;
     x.changeAddress = opts.changeAddress;
@@ -178,7 +181,7 @@ export class TxProposal {
     x.setInputs(opts.inputs);
     x.fee = opts.fee;
 
-    if (x.version === 4) {
+    if (x.version === 3) {
       x.lockUntilBlockHeight = opts.lockUntilBlockHeight;
     }
 
@@ -239,6 +242,7 @@ export class TxProposal {
     x.customData = obj.customData;
 
     x.proposalSignature = obj.proposalSignature;
+    x.signingMethod = obj.signingMethod;
     x.proposalSignaturePubKey = obj.proposalSignaturePubKey;
     x.proposalSignaturePubKeySig = obj.proposalSignaturePubKeySig;
 
@@ -304,12 +308,10 @@ export class TxProposal {
   }
 
   getBitcoreTx() {
-    let signMethod = (this.coin === 'bch' && this.version >= 4) ? 'schnorr' : 'ecdsa';
-    
     const t = this._buildTx();
     const sigs = this._getCurrentSignatures();
     _.each(sigs, x => {
-      ChainService.addSignaturesToBitcoreTx(this.coin, t, this.inputs, this.inputPaths, x.signatures, x.xpub, signMethod);
+      ChainService.addSignaturesToBitcoreTx(this.coin, t, this.inputs, this.inputPaths, x.signatures, x.xpub, this.signingMethod);
     });
 
     return t;
@@ -412,13 +414,11 @@ export class TxProposal {
     this._updateStatus();
   }
 
-  sign(copayerId, signatures, xpub, signingMethod) {
-    signingMethod = signingMethod || 'ecdsa';
+  sign(copayerId, signatures, xpub) {
     try {
       // Tests signatures are OK
       const tx = this.getBitcoreTx();
-      let signMethod = (this.coin === 'bch' && this.version >= 4) ? 'schnorr' : 'ecdsa';
-      ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub, signMethod);
+      ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub, this.signingMethod);
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {

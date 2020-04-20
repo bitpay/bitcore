@@ -1156,7 +1156,7 @@ Transaction.prototype.sign = function(privateKey, sigtype, signingMethod) {
     });
     return this;
   }
-  _.each(this.getSignatures(privateKey, sigtype), function(signature) {
+  _.each(this.getSignatures(privateKey, sigtype, signingMethod), function(signature) {
     self.applySignature(signature, signingMethod);
   });
   return this;

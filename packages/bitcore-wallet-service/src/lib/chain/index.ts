@@ -151,9 +151,7 @@ class ChainProxy {
   }
 
   addSignaturesToBitcoreTx(coin, tx, inputs, inputPaths, signatures, xpub, signingMethod) {
-    return (coin === 'bch' && signingMethod) ? 
-    this.get(coin).addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub, signingMethod) :
-    this.get(coin).addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub);
+    this.get(coin).addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub, signingMethod);
   }
 
   validateAddress(wallet, inaddr, opts) {

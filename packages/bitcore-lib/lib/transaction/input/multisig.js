@@ -92,9 +92,9 @@ MultiSigInput.prototype.getSignatures = function(transaction, privateKey, index,
 
 MultiSigInput.prototype.addSignature = function(transaction, signature, signingMethod) {
   $.checkState(!this.isFullySigned(), 'All needed signatures have already been added');
-  $.checkArgument(!_.isUndefined(this.publicKeyIndex[signature.publicKey.toString()]),
+  $.checkArgument(!_.isUndefined(this.publicKeyIndex[signature.publicKey.toString()], "Signature Undefined"),
     'Signature has no matching public key');
-  $.checkState(this.isValidSignature(transaction, signature, signingMethod));
+  $.checkState(this.isValidSignature(transaction, signature, signingMethod), "Invalid Signature");
   this.signatures[this.publicKeyIndex[signature.publicKey.toString()]] = signature;
   this._updateScript();
   return this;

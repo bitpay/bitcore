@@ -128,8 +128,8 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript, signi
  * @return {boolean}
  */
 function verify(transaction, signature, publicKey, inputIndex, subscript, signingMethod) {
-  $.checkArgument(!_.isUndefined(transaction));
-  $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype));
+  $.checkArgument(!_.isUndefined(transaction), "Transaction Undefined");
+  $.checkArgument(!_.isUndefined(signature) && !_.isUndefined(signature.nhashtype), "Signature Undefined");
 
   signingMethod = signingMethod || 'ecdsa';
   if (signingMethod === 'ecdsa') {

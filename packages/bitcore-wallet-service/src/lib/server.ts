@@ -2371,6 +2371,11 @@ export class WalletService {
   createTx(opts, cb) {
     opts = opts ? _.clone(opts) : {};
 
+    let signingMethod = 'ecdsa';
+    if (opts.coin === 'bch' && opts.useSchnorr) {
+      signingMethod = 'schnorr';
+    }
+
     const checkTxpAlreadyExists = (txProposalId, cb) => {
       if (!txProposalId) return cb();
       this.storage.fetchTx(this.walletId, txProposalId, cb);
@@ -2472,7 +2477,8 @@ export class WalletService {
                     data: opts.data, // Backward compatibility for BWC < v7.1.1
                     tokenAddress: opts.tokenAddress,
                     destinationTag: opts.destinationTag,
-                    invoiceID: opts.invoiceID
+                    invoiceID: opts.invoiceID,
+                    signingMethod
                   };
 
                   txp = TxProposal.create(txOpts);
@@ -2754,12 +2760,11 @@ export class WalletService {
    * @param {Object} opts
    * @param {string} opts.txProposalId - The identifier of the transaction.
    * @param {string} opts.signatures - The signatures of the inputs of this tx for this copayer (in appearance order)
-   * @param {string} opts.signingMethod - The method with which to sign the tx 'ecdsa' or 'schnorr'
    * @param {string} opts.maxTxpVersion - Client's maximum supported txp version
    */
   signTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId', 'signatures'], cb)) return;
-    opts.maxTxpVersion = opts.maxTxpVersion || 4;
+    opts.maxTxpVersion = opts.maxTxpVersion || 3;
 
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
@@ -2789,7 +2794,7 @@ export class WalletService {
           const copayer = wallet.getCopayer(this.copayerId);
 
           try {
-            if (!txp.sign(this.copayerId, opts.signatures, copayer.xPubKey, opts.signingMethod)) {
+            if (!txp.sign(this.copayerId, opts.signatures, copayer.xPubKey)) {
               this.logw('Error signing transaction (BAD_SIGNATURES)');
               this.logw('Client version:', this.clientVersion);
               this.logw('Arguments:', JSON.stringify(opts));
