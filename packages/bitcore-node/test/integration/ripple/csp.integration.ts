@@ -1,13 +1,16 @@
 import { ObjectId } from 'bson';
 import { expect } from 'chai';
+import * as _ from 'lodash';
 import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { XRP } from '../../../src/modules/ripple/api/csp';
 import { XrpBlockStorage } from '../../../src/modules/ripple/models/block';
-import { IXrpTransaction } from '../../../src/modules/ripple/types';
+import { XrpTransactionStorage } from '../../../src/modules/ripple/models/transaction';
+import { IXrpCoin, IXrpTransaction } from '../../../src/modules/ripple/types';
 import { RippleTxs } from '../../fixtures/rippletxs.fixture';
 import { resetDatabase } from '../../helpers';
-describe.only('Ripple Api', () => {
+
+describe('Ripple Api', () => {
   beforeEach(async () => {
     await resetDatabase();
   });
@@ -93,5 +96,42 @@ describe.only('Ripple Api', () => {
       }
       expect(hasACoin).eq(true);
     }
+  });
+
+  it('should save tagged transactions to the database', async () => {
+    const chain = 'XRP';
+    const network = 'mainnet';
+
+    const wallet = new ObjectId();
+    const address = 'rN33DVnneYUUgTmcxXnXvgAL1BECuLZ8pm';
+    await WalletAddressStorage.collection.insertOne({
+      chain,
+      network,
+      wallet,
+      address,
+      processed: true
+    });
+
+    const txs = (RippleTxs as any) as Array<FormattedTransactionType>;
+    const blockTxs = new Array<IXrpTransaction>();
+    const blockCoins = new Array<IXrpCoin>();
+
+    for (const tx of txs) {
+      const bitcoreTx = XRP.transform(tx, network) as IXrpTransaction;
+      const bitcoreCoins = XRP.transformToCoins(tx, network);
+      const { transaction, coins } = await XRP.tag(chain, network, bitcoreTx, bitcoreCoins);
+      blockTxs.push(transaction);
+      blockCoins.push(...coins);
+    }
+    await XrpTransactionStorage.batchImport({
+      txs: blockTxs,
+      coins: blockCoins,
+      chain,
+      network,
+      initialSyncComplete: false
+    });
+    const walletTxs = await XrpTransactionStorage.collection.find({ chain, network, wallets: wallet }).toArray();
+
+    expect(walletTxs.length).eq(txs.length);
   });
 });
