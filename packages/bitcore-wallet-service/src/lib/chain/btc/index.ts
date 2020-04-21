@@ -14,6 +14,8 @@ const Errors = require('../../errors/errordefinitions');
 export class BtcChain implements IChain {
   constructor(private bitcoreLib = BitcoreLib) {}
 
+  private MAX_TX_SIZE_IN_KB = 100;
+
   getWalletBalance(server, wallet, opts, cb) {
     server._getUtxosForCurrentWallet(
       {
@@ -103,7 +105,7 @@ export class BtcChain implements IChain {
 
         _.each(inputs, (input, i) => {
           const sizeInKb = (baseTxpSize + (i + 1) * sizePerInput) / 1000;
-          if (sizeInKb > Defaults.MAX_TX_SIZE_IN_KB[wallet.coin]) {
+          if (sizeInKb > this.MAX_TX_SIZE_IN_KB) {
             info.utxosAboveMaxSize = inputs.length - i;
             info.amountAboveMaxSize = _.sumBy(_.slice(inputs, i), 'satoshis');
             return false;
@@ -282,6 +284,9 @@ export class BtcChain implements IChain {
   checkTx(server, txp) {
     let bitcoreError;
 
+    if (txp.getEstimatedSize() / 1000 > this.MAX_TX_SIZE_IN_KB) 
+      return Errors.TX_MAX_SIZE_EXCEEDED;
+
     const serializationOpts = {
       disableIsFullySigned: true,
       disableSmallFees: true,
@@ -333,8 +338,267 @@ export class BtcChain implements IChain {
     );
   }
 
-  selectTxInputs(server, txp, wallet, opts, cb, next) {
-    return server._selectTxInputs(txp, opts.utxosToExclude, next);
+
+
+  selectTxInputs(server, txp, wallet, opts, cb) {
+    // todo: check inputs are ours and have enough value
+    if (txp.inputs && !_.isEmpty(txp.inputs)) {
+      if (!_.isNumber(txp.fee)) txp.estimateFee();
+
+      return cb(this.checkTx(txp));
+    }
+
+    const txpAmount = txp.getTotalAmount();
+    const baseTxpSize = txp.getEstimatedSize();
+    const baseTxpFee = (baseTxpSize * txp.feePerKb) / 1000;
+    const sizePerInput = txp.getEstimatedSizeForSingleInput();
+    const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
+
+    const sanitizeUtxos = utxos => {
+      const excludeIndex = _.reduce(
+        opts.utxosToExclude,
+        (res, val) => {
+          res[val] = val;
+          return res;
+        },
+        {}
+      );
+
+      return _.filter(utxos, utxo => {
+        if (utxo.locked) return false;
+        if (utxo.satoshis <= feePerInput) return false;
+        if (txp.excludeUnconfirmedUtxos && !utxo.confirmations) return false;
+        if (excludeIndex[utxo.txid + ':' + utxo.vout]) return false;
+        return true;
+      });
+    };
+
+    const select = (utxos, coin, cb) => {
+      const totalValueInUtxos = _.sumBy(utxos, 'satoshis');
+      const netValueInUtxos = totalValueInUtxos - baseTxpFee - utxos.length * feePerInput;
+
+      if (totalValueInUtxos < txpAmount) {
+        this.logd(
+          'Total value in all utxos (' +
+            Utils.formatAmountInBtc(totalValueInUtxos) +
+            ') is insufficient to cover for txp amount (' +
+            Utils.formatAmountInBtc(txpAmount) +
+            ')'
+        );
+        return cb(Errors.INSUFFICIENT_FUNDS);
+      }
+      if (netValueInUtxos < txpAmount) {
+        this.logd(
+          'Value after fees in all utxos (' +
+            Utils.formatAmountInBtc(netValueInUtxos) +
+            ') is insufficient to cover for txp amount (' +
+            Utils.formatAmountInBtc(txpAmount) +
+            ')'
+        );
+        return cb(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
+      }
+
+      const bigInputThreshold = txpAmount * Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR + (baseTxpFee + feePerInput);
+      this.logd('Big input threshold ' + Utils.formatAmountInBtc(bigInputThreshold));
+
+      const partitions = _.partition(utxos, utxo => {
+        return utxo.satoshis > bigInputThreshold;
+      });
+
+      const bigInputs = _.sortBy(partitions[0], 'satoshis');
+      const smallInputs = _.sortBy(partitions[1], utxo => {
+        return -utxo.satoshis;
+      });
+
+      // log.debug('Considering ' + bigInputs.length + ' big inputs (' + Utils.formatUtxos(bigInputs) + ')');
+      // log.debug('Considering ' + smallInputs.length + ' small inputs (' + Utils.formatUtxos(smallInputs) + ')');
+
+      let total = 0;
+      let netTotal = -baseTxpFee;
+      let selected = [];
+      let fee;
+      let error;
+
+      _.each(smallInputs, (input, i) => {
+        // log.debug('Input #' + i + ': ' + Utils.formatUtxos(input));
+
+        const netInputAmount = input.satoshis - feePerInput;
+
+        // log.debug('The input contributes ' + Utils.formatAmountInBtc(netInputAmount));
+
+        selected.push(input);
+
+        total += input.satoshis;
+        netTotal += netInputAmount;
+
+        const txpSize = baseTxpSize + selected.length * sizePerInput;
+        fee = Math.round(baseTxpFee + selected.length * feePerInput);
+
+        // log.debug('Tx size: ' + Utils.formatSize(txpSize) + ', Tx fee: ' + Utils.formatAmountInBtc(fee));
+
+        const feeVsAmountRatio = fee / txpAmount;
+        const amountVsUtxoRatio = netInputAmount / txpAmount;
+
+        // log.debug('Fee/Tx amount: ' + Utils.formatRatio(feeVsAmountRatio) + ' (max: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MAX_FEE_VS_TX_AMOUNT_FACTOR) + ')');
+        // log.debug('Tx amount/Input amount:' + Utils.formatRatio(amountVsUtxoRatio) + ' (min: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) + ')');
+
+        if (txpSize / 1000 > this.MAX_TX_SIZE_IN_KB) {
+          // log.debug('Breaking because tx size (' + Utils.formatSize(txpSize) + ') is too big (max: ' + Utils.formatSize(this.MAX_TX_SIZE_IN_KB * 1000.) + ')');
+          error = Errors.TX_MAX_SIZE_EXCEEDED;
+          return false;
+        }
+
+        if (!_.isEmpty(bigInputs)) {
+          if (amountVsUtxoRatio < Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) {
+            // log.debug('Breaking because utxo is too small compared to tx amount');
+            return false;
+          }
+
+          if (feeVsAmountRatio > Defaults.UTXO_SELECTION_MAX_FEE_VS_TX_AMOUNT_FACTOR) {
+            const feeVsSingleInputFeeRatio = fee / (baseTxpFee + feePerInput);
+            // log.debug('Fee/Single-input fee: ' + Utils.formatRatio(feeVsSingleInputFeeRatio) + ' (max: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MAX_FEE_VS_SINGLE_UTXO_FEE_FACTOR) + ')' + ' loses wrt single-input tx: ' + Utils.formatAmountInBtc((selected.length - 1) * feePerInput));
+            if (feeVsSingleInputFeeRatio > Defaults.UTXO_SELECTION_MAX_FEE_VS_SINGLE_UTXO_FEE_FACTOR) {
+              // log.debug('Breaking because fee is too significant compared to tx amount and it is too expensive compared to using single input');
+              return false;
+            }
+          }
+        }
+
+        // log.debug('Cumuled total so far: ' + Utils.formatAmountInBtc(total) + ', Net total so far: ' + Utils.formatAmountInBtc(netTotal));
+
+        if (netTotal >= txpAmount) {
+          const changeAmount = Math.round(total - txpAmount - fee);
+          // log.debug('Tx change: ', Utils.formatAmountInBtc(changeAmount));
+
+          const dustThreshold = Math.max(Defaults.MIN_OUTPUT_AMOUNT, Bitcore_[txp.coin].Transaction.DUST_AMOUNT);
+          if (changeAmount > 0 && changeAmount <= dustThreshold) {
+            // log.debug('Change below dust threshold (' + Utils.formatAmountInBtc(dustThreshold) + '). Incrementing fee to remove change.');
+            // Remove dust change by incrementing fee
+            fee += changeAmount;
+          }
+
+          return false;
+        }
+      });
+
+      if (netTotal < txpAmount) {
+        // log.debug('Could not reach Txp total (' + Utils.formatAmountInBtc(txpAmount) + '), still missing: ' + Utils.formatAmountInBtc(txpAmount - netTotal));
+
+        selected = [];
+        if (!_.isEmpty(bigInputs)) {
+          const input = _.head(bigInputs);
+          // log.debug('Using big input: ', Utils.formatUtxos(input));
+          total = input.satoshis;
+          fee = Math.round(baseTxpFee + feePerInput);
+          netTotal = total - fee;
+          selected = [input];
+        }
+      }
+
+      if (_.isEmpty(selected)) {
+        // log.debug('Could not find enough funds within this utxo subset');
+        return cb(error || Errors.INSUFFICIENT_FUNDS_FOR_FEE);
+      }
+
+      return cb(null, selected, fee);
+    };
+
+    // log.debug('Selecting inputs for a ' + Utils.formatAmountInBtc(txp.getTotalAmount()) + ' txp');
+
+    this._getUtxosForCurrentWallet({}, (err, utxos) => {
+      if (err) return cb(err);
+
+      let totalAmount;
+      let availableAmount;
+
+      const balance = this._totalizeUtxos(utxos);
+      if (txp.excludeUnconfirmedUtxos) {
+        totalAmount = balance.totalConfirmedAmount;
+        availableAmount = balance.availableConfirmedAmount;
+      } else {
+        totalAmount = balance.totalAmount;
+        availableAmount = balance.availableAmount;
+      }
+
+      if (totalAmount < txp.getTotalAmount()) return cb(Errors.INSUFFICIENT_FUNDS);
+      if (availableAmount < txp.getTotalAmount()) return cb(Errors.LOCKED_FUNDS);
+
+      utxos = sanitizeUtxos(utxos);
+
+      // log.debug('Considering ' + utxos.length + ' utxos (' + Utils.formatUtxos(utxos) + ')');
+
+      const groups = [6, 1];
+      if (!txp.excludeUnconfirmedUtxos) groups.push(0);
+
+      let inputs = [];
+      let fee;
+      let selectionError;
+      let i = 0;
+      let lastGroupLength;
+      async.whilst(
+        () => {
+          return i < groups.length && _.isEmpty(inputs);
+        },
+        next => {
+          const group = groups[i++];
+
+          const candidateUtxos = _.filter(utxos, utxo => {
+            return utxo.confirmations >= group;
+          });
+
+          // log.debug('Group >= ' + group);
+
+          // If this group does not have any new elements, skip it
+          if (lastGroupLength === candidateUtxos.length) {
+            // log.debug('This group is identical to the one already explored');
+            return next();
+          }
+
+          // log.debug('Candidate utxos: ' + Utils.formatUtxos(candidateUtxos));
+
+          lastGroupLength = candidateUtxos.length;
+
+          select(candidateUtxos, txp.coin, (err, selectedInputs, selectedFee) => {
+            if (err) {
+              // log.debug('No inputs selected on this group: ', err);
+              selectionError = err;
+              return next();
+            }
+
+            selectionError = null;
+            inputs = selectedInputs;
+            fee = selectedFee;
+
+            // log.debug('Selected inputs from this group: ' + Utils.formatUtxos(inputs));
+            // log.debug('Fee for this selection: ' + Utils.formatAmountInBtc(fee));
+
+            return next();
+          });
+        },
+        err => {
+          if (err) return cb(err);
+          if (selectionError || _.isEmpty(inputs)) return cb(selectionError || new Error('Could not select tx inputs'));
+
+          txp.setInputs(_.shuffle(inputs));
+          txp.fee = fee;
+
+          err = this.checkTx(txp);
+          if (!err) {
+            const change = _.sumBy(txp.inputs, 'satoshis') - _.sumBy(txp.outputs, 'amount') - txp.fee;
+            this.logd(
+              'Successfully built transaction. Total fees: ' +
+                Utils.formatAmountInBtc(txp.fee) +
+                ', total change: ' +
+                Utils.formatAmountInBtc(change)
+            );
+          } else {
+            this.logw('Error building transaction', err);
+          }
+
+          return cb(err);
+        }
+      );
+    });
   }
 
   checkUtxos(opts) {
@@ -415,4 +679,6 @@ export class BtcChain implements IChain {
     }
     return;
   }
+
+
 }

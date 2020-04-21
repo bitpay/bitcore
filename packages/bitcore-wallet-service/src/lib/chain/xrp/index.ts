@@ -2,6 +2,7 @@ import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain } from '..';
+import * as log from 'npmlog';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
@@ -9,6 +10,7 @@ const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
 export class XrpChain implements IChain {
+  private MAX_TX_SIZE_IN_KB = 1000;
   /**
    * Converts Bitcore Balance Response.
    * @param {Object} bitcoreBalance - { unconfirmed, confirmed, balance }
@@ -154,11 +156,14 @@ export class XrpChain implements IChain {
     return [p, feePerKb];
   }
 
-  checkTx(server, txp) {
+  checkTx(txp) {
+    if (txp.getEstimatedSize() / 1000 > this.MAX_TX_SIZE_IN_KB) 
+      return Errors.TX_MAX_SIZE_EXCEEDED;
+
     try {
       txp.getBitcoreTx();
     } catch (ex) {
-      server.logw('Error building Bitcore transaction', ex);
+      log.warn('Error building XRP  transaction', ex);
       return ex;
     }
   }
@@ -167,16 +172,16 @@ export class XrpChain implements IChain {
     return cb();
   }
 
-  selectTxInputs(server, txp, wallet, opts, cb, next) {
+  selectTxInputs(server, txp, wallet, opts, cb) {
     server.getBalance({ wallet }, (err, balance) => {
-      if (err) return next(err);
+      if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
       if (totalAmount < txp.getTotalAmount()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
       } else if (availableAmount < txp.getTotalAmount()) {
-        return cb(Errors.LOCKED_FUNDS);
+       return cb(Errors.LOCKED_FUNDS);
       } else {
-        return next(server._checkTx(txp));
+        return cb(this.checkTx(txp));
       }
     });
   }

@@ -30,7 +30,6 @@ export interface IChain {
     wallet: IWallet,
     opts: { utxosToExclude: any[] } & any,
     cb,
-    next
   );
   checkUtxos(opts: { fee: number; inputs: any[] });
   checkValidTxAmount(output): boolean;
@@ -118,8 +117,8 @@ class ChainProxy {
     return this.get(txp.coin).checkTxUTXOs(server, txp, opts, cb);
   }
 
-  selectTxInputs(server, txp, wallet, opts, cb, next) {
-    return this.get(txp.coin).selectTxInputs(server, txp, wallet, opts, cb, next);
+  selectTxInputs(server, txp, wallet, opts, cb) {
+    return this.get(txp.coin).selectTxInputs(server, txp, wallet, opts, cb);
   }
 
   checkUtxos(coin, opts) {
