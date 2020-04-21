@@ -28,7 +28,7 @@ export class TransactionDetailsComponent implements OnInit {
   public showCoins = true;
   @Input()
   public chainNetwork: ChainNetwork;
-  public confirmations: number;
+  public confirmations;
   @Input()
   public page: string;
 
@@ -46,8 +46,11 @@ export class TransactionDetailsComponent implements OnInit {
   ) {}
 
   public ngOnInit(): void {
+    this.getConfirmations();
     if (this.chainNetwork.chain !== 'ETH') {
-      this.getConfirmations();
+      if (!this.tx.vin || !this.tx.vin.length) {
+        this.getCoins();
+      }
     }
   }
 
@@ -65,7 +68,6 @@ export class TransactionDetailsComponent implements OnInit {
           return input.mintHeight < 0;
         });
         this.tx.valueOut = data.outputs.reduce((a, b) => a + b.value, 0);
-        this.getConfirmations();
       });
   }
 

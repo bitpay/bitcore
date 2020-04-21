@@ -7,6 +7,12 @@
         </span>
       </div>
     </ion-col>
+    <ion-col col-5 text-right>
+      <ion-note *ngIf="tx.time">
+        <span translate>mined on</span>
+        <time>{{ tx.time * 1000 | date:'medium' }}</time>
+      </ion-note>
+    </ion-col>
   </ion-row>
 
   <ion-row align-items-end class="small" *ngIf="!showCoins">
