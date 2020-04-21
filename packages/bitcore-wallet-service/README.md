@@ -221,7 +221,7 @@ See [Bitcore Wallet Client](https://github.com/bitpay/bitcore/tree/master/packag
 
 Returns:
 
-- Wallet object. (see [fields on the source code](https://github.com/bitpay/bitcore/blob/master/packages/bitcore-wallet-service/lib/model/wallet.js)).
+- Wallet object. (see [fields on the source code](https://github.com/bitpay/bitcore/blob/master/packages/bitcore-wallet-service/src/lib/model/wallet.ts)).
 
 ### `/v1/txhistory/`: Get Wallet's transaction history
 
