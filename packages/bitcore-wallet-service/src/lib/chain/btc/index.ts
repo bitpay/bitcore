@@ -392,9 +392,7 @@ export class BtcChain implements IChain {
         };
         tx.inputs[i].addSignature(tx, s, signingMethod);
         i++;
-      } catch (e) {
-        console.log("Help meme", e);
-      }
+      } catch (e) {}
     });
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');

@@ -1136,6 +1136,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         var txp = {
           inputs: utxos,
           coin: 'btc',
+          signingMethod: 'ecdsa',
           toAddress: toAddress,
           amount: 1200,
           changeAddress: {
@@ -1168,6 +1169,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
           toAddress: toAddress,
           coin: 'btc',
           amount: 1200,
+          signingMethod: 'ecdsa',
           changeAddress: {
             address: changeAddress
           },
@@ -1196,6 +1198,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         var txp = {
           inputs: utxos,
           coin: 'btc',
+          signingMethod: 'ecdsa',
           outputs: [{
             toAddress: toAddress,
             amount: 800,
@@ -1385,6 +1388,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         var txp = {
           version: 3,
           coin: 'bch',
+          signingMethod: 'ecdsa',
           inputs: utxos,
           outputs: [{
             toAddress: toAddress,
@@ -1422,8 +1426,9 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
 
         var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
         var txp = {
-          version: 4,
+          version: 3,
           coin: 'bch',
+          signingMethod: 'schnorr',
           inputs: utxos,
           outputs: [{
             toAddress: toAddress,
@@ -1448,8 +1453,8 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         var signatures = key.sign(path, txp);
 
         signatures.length.should.be.equal(utxos.length);
-        signatures[0].should.equal('e6a2b9a2ad29ff75610e3c2eda894e7c077e19704c667ba37918f11453c09614bd06dc9c3c2c696f9021be0343d54305b9da85459b5a8103be03faa50f41c4e2');
-        signatures[1].should.equal('91e332f2271ea31b65c55ee4af7bfad1c8fbc402c0c0de650873254c44e8101fd51e52d6da06bab44a71caf60ce35b2bcfb1b579819bd1ee4a13ea66a1e4b437');
+        signatures[0].should.equal('8127bbe9a3627fb307c3e919a2dd2dd69b22aaaa363abbda1d44a305fc8ec98ae082f3c3439c54c49ab20e6cc4ad0a077750583758de5a09b1d50d91befe30de');
+        signatures[1].should.equal('6b1494a6e8121215f40268f58b728585589c6933844b9bbcdae3fdd69be7c000d72c06143f554c5f9fd858a14e9d11cbb7c141901d8fc701c1f3c8c7328d6dc7');
       });
     });
   });
@@ -3627,7 +3632,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         setup(2, 3, 'bch', 'livenet', done);
       });
 
-      it('(BCH) two incompatible clients try to sign txp v4. Should throw Error.UPGRADE_NEEDED', (done) => {
+      it.skip('(BCH) two incompatible clients try to sign txp v4. Should throw Error.UPGRADE_NEEDED', (done) => {
         var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
         var opts = {
           outputs: [{

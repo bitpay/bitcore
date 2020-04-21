@@ -846,6 +846,7 @@ export class ExpressApp {
         from?: string;
         to?: string;
       } = {};
+      
       if (req.query.network) opts.network = req.query.network;
       if (req.query.coin) opts.coin = req.query.coin;
       if (req.query.from) opts.from = req.query.from;

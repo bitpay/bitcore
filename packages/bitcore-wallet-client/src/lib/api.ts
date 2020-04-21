@@ -460,15 +460,11 @@ export class API extends EventEmitter {
           try {
             var toAddress = B.Address.fromString(destinationAddress);
 
-            tx = (opts.coin === 'bch') ? new B.Transaction()
+            tx = new B.Transaction()
               .from(utxos)
               .to(toAddress, amount)
               .fee(fee)
-              .sign(privateKey, B.crypto.Signature.SIGHASH_ALL | B.crypto.Signature.SIGHASH_FORKID, signingMethod) : new B.Transaction()
-              .from(utxos)
-              .to(toAddress, amount)
-              .fee(fee)
-              .sign(privateKey);
+              .sign(privateKey, undefined, signingMethod);
 
             // Make sure the tx can be serialized
             tx.serialize();
@@ -609,6 +605,7 @@ export class API extends EventEmitter {
 
   _addSignaturesToBitcoreTxBitcoin(txp, t, signatures, xpub) {
     $.checkState(txp.coin);
+    $.checkState(txp.signingMethod);
     const bitcore = Bitcore_[txp.coin];
     if (signatures.length != txp.inputs.length) throw new Error('Number of signatures does not match number of inputs');
 
@@ -627,12 +624,7 @@ export class API extends EventEmitter {
             bitcore.crypto.Signature.SIGHASH_ALL | bitcore.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub
         };
-        let signingMethod = (txp.coin === 'bch' && txp.version >= 4) ? 'schnorr' : 'ecdsa';
-        if (txp.coin === 'bch') { 
-          t.inputs[i].addSignature(t, s, signingMethod);
-        } else {
-          t.inputs[i].addSignature(t, s);
-        }
+        t.inputs[i].addSignature(t, s, txp.signingMethod);
         i++;
       } catch (e) {}
     });

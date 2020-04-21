@@ -384,17 +384,12 @@ export class Key {
         }
       });
 
-      let signingMethod = (txp.coin === 'bch' && txp.version >= 4) ? 'schnorr' : 'ecdsa';
-
       var signatures = _.map(privs, function(priv, i) {
-        return (txp.coin === 'bch' && txp.version >= 4)  ?  t.getSignatures(priv, BitcoreLibCash.crypto.Signature.SIGHASH_ALL | BitcoreLibCash.crypto.Signature.SIGHASH_FORKID, signingMethod) :
-        t.getSignatures(priv);
+        return t.getSignatures(priv, undefined, txp.signingMethod);
       });
 
       signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
-        return (txp.coin === 'bch') ? 
-        s.signature.toDER(signingMethod).toString('hex') : 
-        s.signature.toDER().toString('hex');
+        return  s.signature.toDER(txp.signingMethod).toString('hex');
       });
 
       return signatures;
