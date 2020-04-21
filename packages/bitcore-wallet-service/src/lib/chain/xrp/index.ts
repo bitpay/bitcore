@@ -1,8 +1,8 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
+import * as log from 'npmlog';
 import { IAddress } from 'src/lib/model/address';
 import { IChain } from '..';
-import * as log from 'npmlog';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
@@ -157,8 +157,7 @@ export class XrpChain implements IChain {
   }
 
   checkTx(txp) {
-    if (txp.getEstimatedSize() / 1000 > this.MAX_TX_SIZE_IN_KB) 
-      return Errors.TX_MAX_SIZE_EXCEEDED;
+    if (txp.getEstimatedSize() / 1000 > this.MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
 
     try {
       txp.getBitcoreTx();
@@ -179,7 +178,7 @@ export class XrpChain implements IChain {
       if (totalAmount < txp.getTotalAmount()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
       } else if (availableAmount < txp.getTotalAmount()) {
-       return cb(Errors.LOCKED_FUNDS);
+        return cb(Errors.LOCKED_FUNDS);
       } else {
         return cb(this.checkTx(txp));
       }

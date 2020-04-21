@@ -187,9 +187,7 @@ export class EthChain implements IChain {
   }
 
   checkTx(server, txp) {
-
-    if (txp.getEstimatedSize() / 1000 > this.MAX_TX_SIZE_IN_KB) 
-      return Errors.TX_MAX_SIZE_EXCEEDED;
+    if (txp.getEstimatedSize() / 1000 > this.MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
 
     try {
       txp.getBitcoreTx();

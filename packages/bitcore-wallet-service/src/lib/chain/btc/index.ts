@@ -284,8 +284,7 @@ export class BtcChain implements IChain {
   checkTx(server, txp) {
     let bitcoreError;
 
-    if (txp.getEstimatedSize() / 1000 > this.MAX_TX_SIZE_IN_KB) 
-      return Errors.TX_MAX_SIZE_EXCEEDED;
+    if (txp.getEstimatedSize() / 1000 > this.MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
 
     const serializationOpts = {
       disableIsFullySigned: true,
@@ -337,8 +336,6 @@ export class BtcChain implements IChain {
       }
     );
   }
-
-
 
   selectTxInputs(server, txp, wallet, opts, cb) {
     // todo: check inputs are ours and have enough value
@@ -679,6 +676,4 @@ export class BtcChain implements IChain {
     }
     return;
   }
-
-
 }
