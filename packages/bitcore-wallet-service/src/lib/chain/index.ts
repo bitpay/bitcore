@@ -33,13 +33,7 @@ export interface IChain {
   convertFeePerKb(p: number, feePerKb: number);
   checkTx(server: WalletService, txp: ITxProposal);
   checkTxUTXOs(server: WalletService, txp: ITxProposal, opts: { noCashAddr: boolean } & any, cb);
-  selectTxInputs(
-    server: WalletService,
-    txp: ITxProposal,
-    wallet: IWallet,
-    opts: { utxosToExclude: any[] } & any,
-    cb,
-  );
+  selectTxInputs(server: WalletService, txp: ITxProposal, wallet: IWallet, opts: { utxosToExclude: any[] } & any, cb);
   checkUtxos(opts: { fee: number; inputs: any[] });
   checkValidTxAmount(output): boolean;
   setInputs(info: { inputs: any[] });

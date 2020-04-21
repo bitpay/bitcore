@@ -1874,8 +1874,6 @@ export class WalletService {
     });
   }
 
-
-
   _canCreateTx(cb) {
     this.storage.fetchLastTxs(this.walletId, this.copayerId, 5 + Defaults.BACKOFF_OFFSET, (err, txs) => {
       if (err) return cb(err);
