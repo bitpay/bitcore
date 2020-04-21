@@ -10,6 +10,7 @@ const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
 export class EthChain implements IChain {
+  private MAX_TX_SIZE_IN_KB = 500;
   /**
    * Converts Bitcore Balance Response.
    * @param {Object} bitcoreBalance - { unconfirmed, confirmed, balance }
@@ -187,21 +188,27 @@ export class EthChain implements IChain {
   }
 
   checkTx(server, txp) {
+
+    if (txp.getEstimatedSize() / 1000 > this.MAX_TX_SIZE_IN_KB) 
+      return Errors.TX_MAX_SIZE_EXCEEDED;
+
     try {
       txp.getBitcoreTx();
     } catch (ex) {
       server.logw('Error building Bitcore transaction', ex);
       return ex;
     }
+
+    return null;
   }
 
   checkTxUTXOs(server, txp, opts, cb) {
     return cb();
   }
 
-  selectTxInputs(server, txp, wallet, opts, cb, next) {
+  selectTxInputs(server, txp, wallet, opts, cb) {
     server.getBalance({ wallet, tokenAddress: opts.tokenAddress }, (err, balance) => {
-      if (err) return next(err);
+      if (err) return cb(err);
 
       const { totalAmount, availableAmount } = balance;
       if (totalAmount < txp.getTotalAmount()) {
@@ -212,18 +219,18 @@ export class EthChain implements IChain {
         if (opts.tokenAddress) {
           // ETH wallet balance
           server.getBalance({}, (err, ethBalance) => {
-            if (err) return next(err);
+            if (err) return cb(err);
             const { totalAmount, availableAmount } = ethBalance;
             if (totalAmount < txp.fee) {
               return cb(Errors.INSUFFICIENT_ETH_FEE);
             } else if (availableAmount < txp.fee) {
               return cb(Errors.LOCKED_ETH_FEE);
             } else {
-              return next(server._checkTx(txp));
+              return cb(server.checkTx(txp));
             }
           });
         } else {
-          return next(server._checkTx(txp));
+          return cb(server.checkTx(txp));
         }
       }
     });
