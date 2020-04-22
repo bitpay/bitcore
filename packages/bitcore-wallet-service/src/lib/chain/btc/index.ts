@@ -1,10 +1,10 @@
+import * as async from 'async';
 import { BitcoreLib } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IChain, INotificationData } from '..';
+import * as log from 'npmlog';
 import { ClientError } from '../../errors/clienterror';
 import { TxProposal } from '../../model';
-import * as log from 'npmlog';
-import * as async from 'async';
 
 const $ = require('preconditions').singleton();
 const Common = require('../../common');
@@ -16,7 +16,6 @@ log.debug = log.verbose;
 
 export class BtcChain implements IChain {
   constructor(private bitcoreLib = BitcoreLib) {}
-
 
   getWalletBalance(server, wallet, opts, cb) {
     server.getUtxosForCurrentWallet(
@@ -357,7 +356,6 @@ export class BtcChain implements IChain {
     return balance;
   }
 
-
   selectTxInputs(server, txp, wallet, opts, cb) {
     const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_BTC;
 
@@ -418,7 +416,7 @@ export class BtcChain implements IChain {
       }
 
       const bigInputThreshold = txpAmount * Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR + (baseTxpFee + feePerInput);
-        log.debug('Big input threshold ' + Utils.formatAmountInBtc(bigInputThreshold));
+      log.debug('Big input threshold ' + Utils.formatAmountInBtc(bigInputThreshold));
 
       const partitions = _.partition(utxos, utxo => {
         return utxo.satoshis > bigInputThreshold;
@@ -604,7 +602,7 @@ export class BtcChain implements IChain {
           err = this.checkTx(txp);
           if (!err) {
             const change = _.sumBy(txp.inputs, 'satoshis') - _.sumBy(txp.outputs, 'amount') - txp.fee;
-          log.debug(
+            log.debug(
               'Successfully built transaction. Total fees: ' +
                 Utils.formatAmountInBtc(txp.fee) +
                 ', total change: ' +

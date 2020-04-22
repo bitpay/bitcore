@@ -3006,7 +3006,7 @@ describe('Wallet service', function() {
 
   describe('#getFeeLevels', function() {
     var server, wallet, levels;
-    before(function() {
+    beforeEach(function() {
       levels = Defaults.FEE_LEVELS;
       Defaults.FEE_LEVELS = {
         btc: [{
@@ -5183,14 +5183,10 @@ describe('Wallet service', function() {
           });
         });
         it('should not fail with tx exceeded max size if there is at least 1 big input', function(done) {
-          var _old1 = Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR;
-          var _old2 = Defaults.MAX_TX_SIZE_IN_KB;
           Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR = 0.0001;
-          Defaults.MAX_TX_SIZE_IN_KB = {
-            'btc': 2,
-            'bch': 2,
-            'eth': 2,
-          },
+          Defaults.MAX_TX_SIZE_IN_KB_BTC = 2;
+          Defaults.MAX_TX_SIZE_IN_KB_ETH = 2;
+          Defaults.MAX_TX_SIZE_IN_KB_XRP = 2;
 
 
             helpers.stubUtxos(server, wallet, [100].concat(_.range(1, 20, 0)), function() {
@@ -5207,8 +5203,6 @@ describe('Wallet service', function() {
                 should.exist(txp);
                 txp.inputs.length.should.equal(1);
                 txp.inputs[0].satoshis.should.equal(100e8);
-                Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR = _old1;
-//                Defaults.MAX_TX_SIZE_IN_KB = _old2;
                 done();
               });
             });
@@ -6464,15 +6458,9 @@ describe('Wallet service', function() {
       });
     });
     it('should not go beyond max tx size', function(done) {
-      var _oldDefault = Defaults.MAX_TX_SIZE_IN_KB;
-      Defaults.MAX_TX_SIZE_IN_KB = {
-        'btc': 2,
-        'bch': 2,
-        'eth': 2,
-      },
-
-
-
+      Defaults.MAX_TX_SIZE_IN_KB_BTC =2;
+      Defaults.MAX_TX_SIZE_IN_KB_ETH =2;
+      Defaults.MAX_TX_SIZE_IN_KB_XRP =2;
         helpers.stubUtxos(server, wallet, _.range(1, 10, 0), function() {
           server.getSendMaxInfo({
             feePerKb: 10000,
@@ -6484,7 +6472,6 @@ describe('Wallet service', function() {
             info.inputs.length.should.be.below(9);
             info.utxosAboveMaxSize.should.equal(3);
             info.amountAboveMaxSize.should.equal(3e8);
-            Defaults.MAX_TX_SIZE_IN_KB = _oldDefault;
             sendTx(info, done);
           });
         });
