@@ -3632,7 +3632,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         setup(2, 3, 'bch', 'livenet', done);
       });
 
-      it.skip('(BCH) two incompatible clients try to sign txp v4. Should throw Error.UPGRADE_NEEDED', (done) => {
+      it.skip('(BCH) two incompatible clients try to sign txp v4.', (done) => {
         var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
         var opts = {
           outputs: [{
@@ -3671,7 +3671,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         });
       });
 
-      it('BCH Multisig Txp.version 4 should sign correctly', (done) => {
+      it('BCH Multisig Txp signingMethod = schnorr', (done) => {
         var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
         var opts = {
           outputs: [{
@@ -3703,8 +3703,8 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
                 should.not.exist(err);
                 txp.status.should.equal("accepted");
                 done();
-              });
-            });
+              }, '/v4/txproposals/');
+            }, '/v4/txproposals/');
           });
         });
       });

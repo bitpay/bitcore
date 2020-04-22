@@ -1272,7 +1272,11 @@ export class API extends EventEmitter {
 
     var args = this._getCreateTxProposalArgs(opts);
 
-    baseUrl = baseUrl || '/v4/txproposals/';
+    if (opts.coin === 'bch' && opts.network === 'testnet') {
+      baseUrl = '/v4/txproposals/';
+    } else {
+      baseUrl = baseUrl || '/v3/txproposals/';
+    }
     // baseUrl = baseUrl || '/v4/txproposals/'; // DISABLED 2020-04-07
 
     this.request.post(baseUrl, args, (err, txp) => {
@@ -1533,10 +1537,14 @@ export class API extends EventEmitter {
 
         if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
-        base = base || '/v4/txproposals/';
+        base = base || '/v1/txproposals/';
 //        base = base || '/v2/txproposals/'; // DISABLED 2020-04-07
 
         var url = base + txp.id + '/signatures/';
+
+        if (txp.coin === 'bch' && txp.network === 'testnet') {
+          url = '/v4/txproposals/' + txp.id + '/signatures/';
+        }
         var args = {
           signatures
         };

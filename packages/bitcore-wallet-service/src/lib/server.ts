@@ -2372,7 +2372,7 @@ export class WalletService {
     opts = opts ? _.clone(opts) : {};
 
     let signingMethod = 'ecdsa';
-    if (opts.coin === 'bch' && opts.useSchnorr) {
+    if (opts.coin === 'bch' && opts.useBchSchnorr) {
       signingMethod = 'schnorr';
     }
 
