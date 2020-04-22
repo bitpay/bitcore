@@ -117,7 +117,7 @@ export class XrpChain implements IChain {
     });
   }
 
-  buildTx(txp) {
+  getBitcoreTx(txp, opts = {unsigned: false} ) {
     const { destinationTag, outputs } = txp;
     const chain = 'XRP';
     const recipients = outputs.map(output => {
@@ -137,7 +137,7 @@ export class XrpChain implements IChain {
       });
       unsignedTxs.push(rawTx);
     }
-    return {
+    let tx =  {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
       toObject: () => {
@@ -150,6 +150,17 @@ export class XrpChain implements IChain {
       },
       getChangeOutput: () => null
     };
+
+
+    if (!opts.unsigned) {
+      const sigs = txp.getCurrentSignatures();
+      sigs.forEach((x) => {
+        this.addSignaturesToBitcoreTx(tx, txp.inputs, txp.inputPaths, x.signatures, x.xpub);
+      });
+    }
+
+    return tx;
+
   }
 
   convertFeePerKb(p, feePerKb) {
@@ -161,7 +172,7 @@ export class XrpChain implements IChain {
     if (txp.getEstimatedSize() / 1000 > MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
 
     try {
-      txp.getBitcoreTx();
+      this.getBitcoreTx(txp, {unsigned: false});
     } catch (ex) {
       log.warn('Error building XRP  transaction', ex);
       return ex;

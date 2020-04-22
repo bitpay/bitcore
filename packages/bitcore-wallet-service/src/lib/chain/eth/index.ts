@@ -142,7 +142,7 @@ export class EthChain implements IChain {
     });
   }
 
-  buildTx(txp) {
+  getBitcoreTx(txp, opts = {unsigned: false} ) {
     const { data, outputs, payProUrl, tokenAddress } = txp;
     const isERC20 = tokenAddress && !payProUrl;
     const chain = isERC20 ? 'ERC20' : 'ETH';
@@ -169,7 +169,8 @@ export class EthChain implements IChain {
       });
       unsignedTxs.push(rawTx);
     }
-    return {
+
+    let tx =  {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
       toObject: () => {
@@ -182,6 +183,15 @@ export class EthChain implements IChain {
       },
       getChangeOutput: () => null
     };
+
+    if (!opts.unsigned) {
+      const sigs = txp.getCurrentSignatures();
+      sigs.forEach((x) => {
+        this.addSignaturesToBitcoreTx(tx, txp.inputs, txp.inputPaths, x.signatures, x.xpub);
+      });
+    }
+
+    return tx;
   }
 
   convertFeePerKb(p, feePerKb) {
@@ -193,7 +203,7 @@ export class EthChain implements IChain {
     if (txp.getEstimatedSize() / 1000 > MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
 
     try {
-      txp.getBitcoreTx();
+      const tx = this.getBitcoreTx(txp);
     } catch (ex) {
       log.debug('Error building Bitcore transaction', ex);
       return ex;

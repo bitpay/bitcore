@@ -10,6 +10,7 @@ var log = require('npmlog');
 log.debug = log.verbose;
 
 var config = require('../../ts_build/config.js');
+const { ChainService } = require('../../ts_build/lib/chain/index');
 
 var CWC = require('crypto-wallet-core');
 var Bitcore = require('bitcore-lib');
@@ -3850,7 +3851,7 @@ describe('Wallet service', function() {
                 server.createTx(txOpts, function(err, tx) {
                   should.not.exist(err);
                   should.exist(tx);
-                  var t = tx.getBitcoreTx();
+                  var t = ChainService.getBitcoreTx(tx);
 
                   t.getChangeOutput().script.toAddress().toString(true).should.equal(txOpts.changeAddress);
                   done();
@@ -3896,7 +3897,7 @@ describe('Wallet service', function() {
                   tx.amount.should.equal(helpers.toSatoshi(0.8));
                   should.not.exist(tx.feePerKb);
                   tx.fee.should.equal(1000e2);
-                  var t = tx.getBitcoreTx();
+                  var t = ChainService.getBitcoreTx(tx);
                   t.getFee().should.equal(1000e2);
                   t.getChangeOutput().satoshis.should.equal(3e8 - 0.8e8 - 1000e2);
                   done();
@@ -4457,7 +4458,7 @@ describe('Wallet service', function() {
             server.createTx(txOpts, function(err, txp) {
               should.not.exist(err);
               should.exist(txp);
-              var t = txp.getBitcoreTx().toObject();
+              var t = ChainService.getBitcoreTx(txp).toObject();
               t.outputs.length.should.equal(1);
               t.outputs[0].satoshis.should.equal(max);
               done();
@@ -4615,7 +4616,7 @@ describe('Wallet service', function() {
               server.createTx(txOpts, function(err, tx) {
                 should.not.exist(err);
                 should.exist(tx);
-                var bitcoreTx = tx.getBitcoreTx();
+                var bitcoreTx = ChainService.getBitcoreTx(tx);
                 bitcoreTx.outputs.length.should.equal(1);
                 bitcoreTx.outputs[0].satoshis.should.equal(tx.amount);
                 done();
@@ -4716,7 +4717,7 @@ describe('Wallet service', function() {
               should.not.exist(tx.changeAddress);
               tx.amount.should.equal(3 * TO_SAT[coin] - tx.fee);
 
-              var t = tx.getBitcoreTx();
+              var t = ChainService.getBitcoreTx(tx);
               t.getFee().should.equal(tx.fee);
               should.not.exist(t.getChangeOutput());
               t.toObject().inputs.length.should.equal(tx.inputs.length);
@@ -4794,7 +4795,7 @@ describe('Wallet service', function() {
               server.createTx(txOpts, function(err, txp) {
                 should.not.exist(err);
                 should.exist(txp);
-                var t = txp.getBitcoreTx();
+                var t = ChainService.getBitcoreTx(txp);
                 var changeOutput = t.getChangeOutput().satoshis;
                 var outputs = _.without(_.map(t.outputs, 'satoshis'), changeOutput);
 
@@ -4805,7 +4806,7 @@ describe('Wallet service', function() {
                   should.not.exist(err);
                   should.exist(txp);
 
-                  t = txp.getBitcoreTx();
+                  t = ChainService.getBitcoreTx(txp);
                   changeOutput = t.getChangeOutput().satoshis;
                   outputs = _.without(_.map(t.outputs, 'satoshis'), changeOutput);
 
@@ -5362,7 +5363,7 @@ describe('Wallet service', function() {
               should.not.exist(err);
               txp.inputs.length.should.equal(1);
               (_.sumBy(txp.inputs, 'satoshis') - txp.outputs[0].amount - txp.fee).should.equal(0);
-              var changeOutput = txp.getBitcoreTx().getChangeOutput();
+              var changeOutput = ChainService.getBitcoreTx(txp).getChangeOutput();
               should.not.exist(changeOutput);
               done();
             });
@@ -6217,7 +6218,7 @@ describe('Wallet service', function() {
       server.createTx(txOpts, function(err, tx) {
         should.not.exist(err);
         should.exist(tx);
-        var t = tx.getBitcoreTx();
+        var t = ChainService.getBitcoreTx(tx);
         t.toObject().inputs.length.should.equal(info.inputs.length);
         t.getFee().should.equal(info.fee);
         should.not.exist(t.getChangeOutput());

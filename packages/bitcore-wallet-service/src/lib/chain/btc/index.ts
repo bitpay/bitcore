@@ -194,7 +194,7 @@ export class BtcChain implements IChain {
     });
   }
 
-  buildTx(txp) {
+  getBitcoreTx(txp, opts = {unsigned: false} ) {
     const t = new this.bitcoreLib.Transaction();
 
     // BTC tx version
@@ -277,12 +277,20 @@ export class BtcChain implements IChain {
     $.checkState(totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs, 'not-enought-inputs');
     $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin], 'fee-too-high');
 
+    if (!opts.unsigned) {
+      const sigs = txp.getCurrentSignatures();
+      _.each(sigs, x => {
+        this.addSignaturesToBitcoreTx(t, txp.inputs, txp.inputPaths, x.signatures, x.xpub, txp.signingMethod);
+      });
+    }
+
     return t;
   }
 
   convertFeePerKb(p, feePerKb) {
     return [p, Utils.strip(feePerKb * 1e8)];
   }
+
 
   checkTx(txp) {
     let bitcoreError;
@@ -298,7 +306,7 @@ export class BtcChain implements IChain {
     if (_.isEmpty(txp.inputPaths)) return Errors.NO_INPUT_PATHS;
 
     try {
-      const bitcoreTx = txp.getBitcoreTx();
+      const bitcoreTx = this.getBitcoreTx(txp);
       bitcoreError = bitcoreTx.getSerializationError(serializationOpts);
       if (!bitcoreError) {
         txp.fee = bitcoreTx.getFee();

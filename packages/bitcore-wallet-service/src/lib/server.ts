@@ -2545,7 +2545,7 @@ export class WalletService {
               this.logw('Client version:', this.clientVersion);
               this.logw('Arguments:', JSON.stringify(opts));
               this.logw('Transaction proposal:', JSON.stringify(txp));
-              const raw = txp.getBitcoreTx().uncheckedSerialize();
+              const raw = ChainService.getBitcoreTx(txp).uncheckedSerialize();
               this.logw('Raw tx:', raw);
               return cb(Errors.BAD_SIGNATURES);
             }

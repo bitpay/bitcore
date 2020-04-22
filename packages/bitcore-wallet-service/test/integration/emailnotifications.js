@@ -195,6 +195,7 @@ describe('Email notifications', function() {
                   txProposalId: txp.id,
                   signatures: signatures,
                 }, function(err, t) {
+                  should.not.exist(err, "Error signing ");
                   txp = t;
                   next();
                 });

@@ -185,15 +185,13 @@ module.exports = {
 
   BROADCAST_RETRY_TIME: 350, // ms
 
-
-  /* 
+  /*
    *      COIN SPECIFIC
    */
 
   MAX_TX_SIZE_IN_KB_BTC: 100,
 
   MAX_TX_SIZE_IN_KB_BCH: 100,
-
 
   MAX_TX_SIZE_IN_KB_ETH: 500,
   MAX_TX_SIZE_IN_KB_XRP: 1000,
@@ -224,8 +222,5 @@ module.exports = {
   MIN_GAS_LIMIT: 21000,
 
   // XRP has a non-refundable mininum activation fee / balance
-  MIN_XRP_BALANCE: 20000000,
-
-
-
+  MIN_XRP_BALANCE: 20000000
 };

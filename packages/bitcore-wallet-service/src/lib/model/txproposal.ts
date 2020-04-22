@@ -288,13 +288,7 @@ export class TxProposal {
     }
   }
 
-  /* this will build the Bitcoin-lib tx OR an adaptor for CWC transactions */
-  _buildTx() {
-    $.checkState(Utils.checkValueInCollection(this.addressType, Constants.SCRIPT_TYPES));
-    return ChainService.buildTx(this);
-  }
-
-  _getCurrentSignatures() {
+  getCurrentSignatures() {
     const acceptedActions = _.filter(this.actions, a => {
       return a.type == 'accept';
     });
@@ -307,27 +301,8 @@ export class TxProposal {
     });
   }
 
-  getBitcoreTx() {
-    const t = this._buildTx();
-    const sigs = this._getCurrentSignatures();
-    _.each(sigs, x => {
-      ChainService.addSignaturesToBitcoreTx(
-        this.coin,
-        t,
-        this.inputs,
-        this.inputPaths,
-        x.signatures,
-        x.xpub,
-        this.signingMethod
-      );
-    });
-
-    return t;
-  }
-
   getRawTx() {
-    const t = this.getBitcoreTx();
-
+    const t = ChainService.getBitcoreTx(this);
     return t.uncheckedSerialize();
   }
 
@@ -425,16 +400,8 @@ export class TxProposal {
   sign(copayerId, signatures, xpub) {
     try {
       // Tests signatures are OK
-      const tx = this.getBitcoreTx();
-      ChainService.addSignaturesToBitcoreTx(
-        this.coin,
-        tx,
-        this.inputs,
-        this.inputPaths,
-        signatures,
-        xpub,
-        this.signingMethod
-      );
+      const tx = ChainService.getBitcoreTx(this);
+      ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub, this.signingMethod);
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {
