@@ -3812,7 +3812,7 @@ export class WalletService {
           const indexedProposals = _.keyBy(res.txps, 'txid');
           const indexedNotes = _.keyBy(res.notes, 'txid');
 
-          const finalTxs = _.map(res.txs.items, tx => {
+          let finalTxs = _.map(res.txs.items, tx => {
             WalletService._addProposalInfo(tx, indexedProposals, opts);
             WalletService._addNotesInfo(tx, indexedNotes);
             return tx;
@@ -3829,6 +3829,8 @@ export class WalletService {
             } else {
               this.logd(`History from bc ${from}/${to}: ${finalTxs.length} txs`);
             }
+
+            finalTxs = _.sortBy(finalTxs, ['time']);
             return cb(null, finalTxs, !!res.txs.fromCache, !!res.txs.useStream);
           });
         }
