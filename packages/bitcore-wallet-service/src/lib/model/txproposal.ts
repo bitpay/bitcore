@@ -181,7 +181,7 @@ export class TxProposal {
     x.setInputs(opts.inputs);
     x.fee = opts.fee;
 
-    if (x.version === 3) {
+    if (x.version === 4) {
       x.lockUntilBlockHeight = opts.lockUntilBlockHeight;
     }
 
@@ -414,11 +414,16 @@ export class TxProposal {
     this._updateStatus();
   }
 
-  sign(copayerId, signatures, xpub) {
+  sign(copayerId, signatures, xpub, bchSchnorr) {
     try {
       // Tests signatures are OK
       const tx = this.getBitcoreTx();
-      ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub, this.signingMethod);
+      if(this.coin === 'bch' && this.signingMethod === 'schnorr' && !bchSchnorr) {
+        throw new Error('Need to upgrade - signingMethod not supported');
+      } else {
+        ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub, this.signingMethod);
+      }
+
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {

@@ -2761,6 +2761,7 @@ export class WalletService {
    * @param {string} opts.txProposalId - The identifier of the transaction.
    * @param {string} opts.signatures - The signatures of the inputs of this tx for this copayer (in appearance order)
    * @param {string} opts.maxTxpVersion - Client's maximum supported txp version
+   * @param {boolean} opts.useBchSchnorr - indication whether to use schnorr for signing tx
    */
   signTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId', 'signatures'], cb)) return;
@@ -2794,7 +2795,7 @@ export class WalletService {
           const copayer = wallet.getCopayer(this.copayerId);
 
           try {
-            if (!txp.sign(this.copayerId, opts.signatures, copayer.xPubKey)) {
+            if (!txp.sign(this.copayerId, opts.signatures, copayer.xPubKey, opts.useBchSchnorr)) {
               this.logw('Error signing transaction (BAD_SIGNATURES)');
               this.logw('Client version:', this.clientVersion);
               this.logw('Arguments:', JSON.stringify(opts));

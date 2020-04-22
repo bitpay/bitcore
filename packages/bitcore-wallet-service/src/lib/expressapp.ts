@@ -477,7 +477,7 @@ export class ExpressApp {
     router.post('/v4/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.txpVersion = 3;
-        req.body.useSchnorr= true;
+        req.body.useBchSchnorr= true;
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
@@ -725,10 +725,11 @@ export class ExpressApp {
     });
 */
 
-    router.post('/v4/txproposals/:id/signatures/', (req, res) => {
+    router.post('/v4/txproposals/:id/signatures/:bchSchnorr', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         req.body.maxTxpVersion = 3;
+        req.body.bchSchnorr = req.params['bchSchnorr'];
         server.signTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
