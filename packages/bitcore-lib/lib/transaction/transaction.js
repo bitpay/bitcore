@@ -1184,7 +1184,7 @@ Transaction.prototype.getSignatures = function(privKey, sigtype, signingMethod) 
  * @param {number} signature.sigtype
  * @param {PublicKey} signature.publicKey
  * @param {Signature} signature.signature
- * @param {String} signingMethod - 'ecdsa' or 'schnorr' to sign transaction
+ * @param {String} signingMethod - 'ecdsa' to sign transaction
  * @return {Transaction} this, for chaining
  */
 Transaction.prototype.applySignature = function(signature, signingMethod) {

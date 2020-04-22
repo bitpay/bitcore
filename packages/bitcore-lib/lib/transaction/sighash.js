@@ -110,9 +110,9 @@ function sign(transaction, privateKey, sighashType, inputIndex, subscript, signi
     sig = ECDSA.sign(hashbuf, privateKey, 'little').set({
     nhashtype: sighashType
   });
- }
-  
   return sig;
+ }
+  throw new Error("signingMethod not supported ", signingMethod);
 }
 
 /**
@@ -136,6 +136,7 @@ function verify(transaction, signature, publicKey, inputIndex, subscript, signin
     var hashbuf = sighash(transaction, signature.nhashtype, inputIndex, subscript);
     return ECDSA.verify(hashbuf, signature, publicKey, 'little');
   }
+  throw new Error("signingMethod not supported ", signingMethod);
 }
 
 /**

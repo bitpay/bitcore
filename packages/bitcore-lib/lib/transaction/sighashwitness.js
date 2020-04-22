@@ -123,8 +123,9 @@ function sign(transaction, privateKey, sighashType, inputIndex, scriptCode, sato
     sig = ECDSA.sign(hashbuf, privateKey).set({
       nhashtype: sighashType
     });
+    return sig;
   }
-  return sig;
+  throw new Error("signingMethod not supported ", signingMethod);
 }
 
 /**
@@ -148,6 +149,7 @@ function verify(transaction, signature, publicKey, inputIndex, scriptCode, satos
     let hashbuf = sighash(transaction, signature.nhashtype, inputIndex, scriptCode, satoshisBuffer);
     return ECDSA.verify(hashbuf, signature, publicKey);
   }
+  throw new Error("signingMethod not supported ", signingMethod);
 }
 
 /**
