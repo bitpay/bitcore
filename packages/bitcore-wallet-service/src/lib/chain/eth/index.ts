@@ -1,8 +1,8 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
+import * as log from 'npmlog';
 import { IAddress } from 'src/lib/model/address';
 import { IChain } from '..';
-import * as log from 'npmlog';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
@@ -10,7 +10,6 @@ const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
 export class EthChain implements IChain {
-
   /**
    * Converts Bitcore Balance Response.
    * @param {Object} bitcoreBalance - { unconfirmed, confirmed, balance }

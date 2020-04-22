@@ -1620,7 +1620,6 @@ export class WalletService {
     }
   }
 
-
   /**
    * Returns list of Coins for TX
    * @param {Object} opts
@@ -1668,11 +1667,11 @@ export class WalletService {
       if (!wallet.isComplete()) {
         const emptyBalance = {
           totalAmount: 0,
-          lockedAmount:0,
+          lockedAmount: 0,
           totalConfirmedAmount: 0,
           lockedConfirmedAmount: 0,
           availableAmount: 0,
-          availableConfirmedAmount: 0,
+          availableConfirmedAmount: 0
         };
         return cb(null, emptyBalance);
       }
