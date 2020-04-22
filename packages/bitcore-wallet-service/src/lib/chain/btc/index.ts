@@ -3,6 +3,8 @@ import _ from 'lodash';
 import { IChain } from '..';
 import { ClientError } from '../../errors/clienterror';
 import { TxProposal } from '../../model';
+import * as log from 'npmlog';
+import * as async from 'async';
 
 const $ = require('preconditions').singleton();
 const Common = require('../../common');
@@ -10,14 +12,14 @@ const Constants = Common.Constants;
 const Utils = Common.Utils;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
+log.debug = log.verbose;
 
 export class BtcChain implements IChain {
   constructor(private bitcoreLib = BitcoreLib) {}
 
-  private MAX_TX_SIZE_IN_KB = 100;
 
   getWalletBalance(server, wallet, opts, cb) {
-    server._getUtxosForCurrentWallet(
+    server.getUtxosForCurrentWallet(
       {
         coin: opts.coin,
         addresses: opts.addresses
@@ -26,7 +28,7 @@ export class BtcChain implements IChain {
         if (err) return cb(err);
 
         const balance = {
-          ...server._totalizeUtxos(utxos),
+          ...this.totalizeUtxos(utxos),
           byAddress: []
         };
 
@@ -52,8 +54,10 @@ export class BtcChain implements IChain {
   }
 
   getWalletSendMaxInfo(server, wallet, opts, cb) {
-    server._getUtxosForCurrentWallet({}, (err, utxos) => {
+    server.getUtxosForCurrentWallet({}, (err, utxos) => {
       if (err) return cb(err);
+
+      const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_BTC;
 
       const info = {
         size: 0,
@@ -105,7 +109,7 @@ export class BtcChain implements IChain {
 
         _.each(inputs, (input, i) => {
           const sizeInKb = (baseTxpSize + (i + 1) * sizePerInput) / 1000;
-          if (sizeInKb > this.MAX_TX_SIZE_IN_KB) {
+          if (sizeInKb > MAX_TX_SIZE_IN_KB) {
             info.utxosAboveMaxSize = inputs.length - i;
             info.amountAboveMaxSize = _.sumBy(_.slice(inputs, i), 'satoshis');
             return false;
@@ -281,10 +285,11 @@ export class BtcChain implements IChain {
     return [p, Utils.strip(feePerKb * 1e8)];
   }
 
-  checkTx(server, txp) {
+  checkTx(txp) {
     let bitcoreError;
+    const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_BTC;
 
-    if (txp.getEstimatedSize() / 1000 > this.MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
+    if (txp.getEstimatedSize() / 1000 > MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
 
     const serializationOpts = {
       disableIsFullySigned: true,
@@ -300,7 +305,7 @@ export class BtcChain implements IChain {
         txp.fee = bitcoreTx.getFee();
       }
     } catch (ex) {
-      server.logw('Error building Bitcore transaction', ex);
+      log.warn('Error building Bitcore transaction', ex);
       return ex;
     }
 
@@ -311,13 +316,13 @@ export class BtcChain implements IChain {
   }
 
   checkTxUTXOs(server, txp, opts, cb) {
-    server.logd('Rechecking UTXOs availability for publishTx');
+    log.debug('Rechecking UTXOs availability for publishTx');
 
     const utxoKey = utxo => {
       return utxo.txid + '|' + utxo.vout;
     };
 
-    server._getUtxosForCurrentWallet(
+    server.getUtxosForCurrentWallet(
       {
         addresses: txp.inputs
       },
@@ -337,11 +342,28 @@ export class BtcChain implements IChain {
     );
   }
 
+  totalizeUtxos(utxos) {
+    const balance = {
+      totalAmount: _.sumBy(utxos, 'satoshis'),
+      lockedAmount: _.sumBy(_.filter(utxos, 'locked'), 'satoshis'),
+      totalConfirmedAmount: _.sumBy(_.filter(utxos, 'confirmations'), 'satoshis'),
+      lockedConfirmedAmount: _.sumBy(_.filter(_.filter(utxos, 'locked'), 'confirmations'), 'satoshis'),
+      availableAmount: undefined,
+      availableConfirmedAmount: undefined
+    };
+    balance.availableAmount = balance.totalAmount - balance.lockedAmount;
+    balance.availableConfirmedAmount = balance.totalConfirmedAmount - balance.lockedConfirmedAmount;
+
+    return balance;
+  }
+
+
   selectTxInputs(server, txp, wallet, opts, cb) {
+    const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_BTC;
+
     // todo: check inputs are ours and have enough value
     if (txp.inputs && !_.isEmpty(txp.inputs)) {
       if (!_.isNumber(txp.fee)) txp.estimateFee();
-
       return cb(this.checkTx(txp));
     }
 
@@ -375,7 +397,7 @@ export class BtcChain implements IChain {
       const netValueInUtxos = totalValueInUtxos - baseTxpFee - utxos.length * feePerInput;
 
       if (totalValueInUtxos < txpAmount) {
-        this.logd(
+        log.debug(
           'Total value in all utxos (' +
             Utils.formatAmountInBtc(totalValueInUtxos) +
             ') is insufficient to cover for txp amount (' +
@@ -385,7 +407,7 @@ export class BtcChain implements IChain {
         return cb(Errors.INSUFFICIENT_FUNDS);
       }
       if (netValueInUtxos < txpAmount) {
-        this.logd(
+        log.debug(
           'Value after fees in all utxos (' +
             Utils.formatAmountInBtc(netValueInUtxos) +
             ') is insufficient to cover for txp amount (' +
@@ -396,7 +418,7 @@ export class BtcChain implements IChain {
       }
 
       const bigInputThreshold = txpAmount * Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR + (baseTxpFee + feePerInput);
-      this.logd('Big input threshold ' + Utils.formatAmountInBtc(bigInputThreshold));
+        log.debug('Big input threshold ' + Utils.formatAmountInBtc(bigInputThreshold));
 
       const partitions = _.partition(utxos, utxo => {
         return utxo.satoshis > bigInputThreshold;
@@ -439,7 +461,7 @@ export class BtcChain implements IChain {
         // log.debug('Fee/Tx amount: ' + Utils.formatRatio(feeVsAmountRatio) + ' (max: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MAX_FEE_VS_TX_AMOUNT_FACTOR) + ')');
         // log.debug('Tx amount/Input amount:' + Utils.formatRatio(amountVsUtxoRatio) + ' (min: ' + Utils.formatRatio(Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR) + ')');
 
-        if (txpSize / 1000 > this.MAX_TX_SIZE_IN_KB) {
+        if (txpSize / 1000 > MAX_TX_SIZE_IN_KB) {
           // log.debug('Breaking because tx size (' + Utils.formatSize(txpSize) + ') is too big (max: ' + Utils.formatSize(this.MAX_TX_SIZE_IN_KB * 1000.) + ')');
           error = Errors.TX_MAX_SIZE_EXCEEDED;
           return false;
@@ -467,7 +489,7 @@ export class BtcChain implements IChain {
           const changeAmount = Math.round(total - txpAmount - fee);
           // log.debug('Tx change: ', Utils.formatAmountInBtc(changeAmount));
 
-          const dustThreshold = Math.max(Defaults.MIN_OUTPUT_AMOUNT, Bitcore_[txp.coin].Transaction.DUST_AMOUNT);
+          const dustThreshold = Math.max(Defaults.MIN_OUTPUT_AMOUNT, this.bitcoreLib.Transaction.DUST_AMOUNT);
           if (changeAmount > 0 && changeAmount <= dustThreshold) {
             // log.debug('Change below dust threshold (' + Utils.formatAmountInBtc(dustThreshold) + '). Incrementing fee to remove change.');
             // Remove dust change by incrementing fee
@@ -502,13 +524,13 @@ export class BtcChain implements IChain {
 
     // log.debug('Selecting inputs for a ' + Utils.formatAmountInBtc(txp.getTotalAmount()) + ' txp');
 
-    this._getUtxosForCurrentWallet({}, (err, utxos) => {
+    server.getUtxosForCurrentWallet({}, (err, utxos) => {
       if (err) return cb(err);
 
       let totalAmount;
       let availableAmount;
 
-      const balance = this._totalizeUtxos(utxos);
+      const balance = this.totalizeUtxos(utxos);
       if (txp.excludeUnconfirmedUtxos) {
         totalAmount = balance.totalConfirmedAmount;
         availableAmount = balance.availableConfirmedAmount;
@@ -582,14 +604,14 @@ export class BtcChain implements IChain {
           err = this.checkTx(txp);
           if (!err) {
             const change = _.sumBy(txp.inputs, 'satoshis') - _.sumBy(txp.outputs, 'amount') - txp.fee;
-            this.logd(
+          log.debug(
               'Successfully built transaction. Total fees: ' +
                 Utils.formatAmountInBtc(txp.fee) +
                 ', total change: ' +
                 Utils.formatAmountInBtc(change)
             );
           } else {
-            this.logw('Error building transaction', err);
+            log.debug('Error building transaction', err);
           }
 
           return cb(err);

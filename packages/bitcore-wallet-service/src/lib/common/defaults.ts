@@ -24,6 +24,10 @@ module.exports = {
     xrp: 1 * 1e6 // 1 xrp
   },
 
+  MAX_TX_SIZE_IN_KB_BTC: 100,
+  MAX_TX_SIZE_IN_KB_ETH: 500,
+  MAX_TX_SIZE_IN_KB_XRP: 1000,
+
   // ETH
   DEFAULT_GAS_LIMIT: 200000,
   MIN_GAS_LIMIT: 21000,

@@ -2,6 +2,7 @@ import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain } from '..';
+import * as log from 'npmlog';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
@@ -9,7 +10,7 @@ const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
 export class EthChain implements IChain {
-  private MAX_TX_SIZE_IN_KB = 500;
+
   /**
    * Converts Bitcore Balance Response.
    * @param {Object} bitcoreBalance - { unconfirmed, confirmed, balance }
@@ -186,13 +187,14 @@ export class EthChain implements IChain {
     return [p, feePerKb];
   }
 
-  checkTx(server, txp) {
-    if (txp.getEstimatedSize() / 1000 > this.MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
+  checkTx(txp) {
+    const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_ETH;
+    if (txp.getEstimatedSize() / 1000 > MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
 
     try {
       txp.getBitcoreTx();
     } catch (ex) {
-      server.logw('Error building Bitcore transaction', ex);
+      log.debug('Error building Bitcore transaction', ex);
       return ex;
     }
 
@@ -223,11 +225,11 @@ export class EthChain implements IChain {
             } else if (availableAmount < txp.fee) {
               return cb(Errors.LOCKED_ETH_FEE);
             } else {
-              return cb(server.checkTx(txp));
+              return cb(this.checkTx(txp));
             }
           });
         } else {
-          return cb(server.checkTx(txp));
+          return cb(this.checkTx(txp));
         }
       }
     });
