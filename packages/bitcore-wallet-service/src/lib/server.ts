@@ -1438,7 +1438,7 @@ export class WalletService {
     return bc;
   }
 
-  _getUtxosForCurrentWallet(opts, cb) {
+  getUtxosForCurrentWallet(opts, cb) {
     opts = opts || {};
 
     const utxoKey = utxo => {
@@ -1616,24 +1616,10 @@ export class WalletService {
         });
       });
     } else {
-      this._getUtxosForCurrentWallet({}, cb);
+      this.getUtxosForCurrentWallet({}, cb);
     }
   }
 
-  _totalizeUtxos(utxos) {
-    const balance = {
-      totalAmount: _.sumBy(utxos, 'satoshis'),
-      lockedAmount: _.sumBy(_.filter(utxos, 'locked'), 'satoshis'),
-      totalConfirmedAmount: _.sumBy(_.filter(utxos, 'confirmations'), 'satoshis'),
-      lockedConfirmedAmount: _.sumBy(_.filter(_.filter(utxos, 'locked'), 'confirmations'), 'satoshis'),
-      availableAmount: undefined,
-      availableConfirmedAmount: undefined
-    };
-    balance.availableAmount = balance.totalAmount - balance.lockedAmount;
-    balance.availableConfirmedAmount = balance.totalConfirmedAmount - balance.lockedConfirmedAmount;
-
-    return balance;
-  }
 
   /**
    * Returns list of Coins for TX
@@ -1689,7 +1675,15 @@ export class WalletService {
 
     setWallet(() => {
       if (!wallet.isComplete()) {
-        return cb(null, this._totalizeUtxos([]));
+        const emptyBalance = {
+          totalAmount: 0,
+          lockedAmount:0,
+          totalConfirmedAmount: 0,
+          lockedConfirmedAmount: 0,
+          availableAmount: 0,
+          availableConfirmedAmount: 0,
+        };
+        return cb(null, emptyBalance);
       }
 
       this.syncWallet(wallet, err => {

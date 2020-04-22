@@ -24,6 +24,7 @@ var Common = require('../../ts_build/lib/common');
 var Utils = Common.Utils;
 var Constants = Common.Constants;
 var Defaults = Common.Defaults;
+const VanillaDefaults = _.cloneDeep(Defaults);
 
 var Model = require('../../ts_build/lib/model');
 var BCHAddressTranslator = require('../../ts_build/lib/bchaddresstranslator');
@@ -57,6 +58,12 @@ describe('Wallet service', function() {
   });
   beforeEach(function(done) {
     log.level = 'error';
+
+    // restore defaults, cp values
+    _.each(_.keys(VanillaDefaults), (x) => { 
+      Defaults[x] = VanillaDefaults[x];
+    });
+
     helpers.beforeEach(function(res) {
       done();
     });
@@ -64,6 +71,8 @@ describe('Wallet service', function() {
   after(function(done) {
     helpers.after(done);
   });
+
+    
 
   describe('#getServiceVersion', function() {
     it('should get version from package', function() {
@@ -4511,20 +4520,18 @@ describe('Wallet service', function() {
           });
         });
         it('should fail to create a tx exceeding max size in kb', function(done) {
-          var _oldDefault = Defaults.MAX_TX_SIZE_IN_KB;
-          Defaults.MAX_TX_SIZE_IN_KB = {
-            btc: 1,
-            bch: 1,
-            eth: 0.0001,
-            xrp: 0.0001
-          };
+          Defaults.MAX_TX_SIZE_IN_KB_BTC = 1;
+          Defaults.MAX_TX_SIZE_IN_KB_ETH = 0.001;
+          Defaults.MAX_TX_SIZE_IN_KB_XRP = 0.001;
 
           helpers.stubUtxos(server, wallet, _.range(1, 10, 0), { coin }, function() {
+            let x = [];
+            x.push({
+              toAddress:addressStr,
+              amount: 8*ts,
+            });
             var txOpts = {
-              outputs: [{
-                toAddress: addressStr,
-                amount: 8 * ts,
-              }],
+              outputs: x,
               feePerKb: 100e2,
               from: fromAddr,
             };
@@ -4532,7 +4539,6 @@ describe('Wallet service', function() {
             server.createTx(txOpts, function(err, tx) {
               should.exist(err);
               err.code.should.equal('TX_MAX_SIZE_EXCEEDED');
-              Defaults.MAX_TX_SIZE_IN_KB = _oldDefault;
               done();
             });
           });
@@ -5202,7 +5208,7 @@ describe('Wallet service', function() {
                 txp.inputs.length.should.equal(1);
                 txp.inputs[0].satoshis.should.equal(100e8);
                 Defaults.UTXO_SELECTION_MIN_TX_AMOUNT_VS_UTXO_FACTOR = _old1;
-                Defaults.MAX_TX_SIZE_IN_KB = _old2;
+//                Defaults.MAX_TX_SIZE_IN_KB = _old2;
                 done();
               });
             });

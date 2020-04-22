@@ -11,7 +11,8 @@ const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
 
 export class XrpChain implements IChain {
-  private MAX_TX_SIZE_IN_KB = 1000;
+
+
   /**
    * Converts Bitcore Balance Response.
    * @param {Object} bitcoreBalance - { unconfirmed, confirmed, balance }
@@ -158,7 +159,8 @@ export class XrpChain implements IChain {
   }
 
   checkTx(txp) {
-    if (txp.getEstimatedSize() / 1000 > this.MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
+    const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_XRP;
+    if (txp.getEstimatedSize() / 1000 > MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
 
     try {
       txp.getBitcoreTx();
