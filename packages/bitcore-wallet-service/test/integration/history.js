@@ -959,20 +959,20 @@ describe('History', function() {
         should.exist(txs)
         txs.length.should.equal(9);
         txs[2].should.deep.equal({
-          id: '5ddbf28d4ff191801711a948',
+          id: '5d92768d3fc0324dccc4ca05',
           txid:
-          '0xf992febe3257518c00c09ae96cafe988dfe5b625bbf5515b679807f650f58e88',
+          '0xe1d6adbad056def4abb4db4ce3d5f1a2f9b3b4e193b8ab2acf685f634161e804',
           confirmations: 0,
-          blockheight: 8999242,
-          fees: 1100740000000000,
-          time: 1574695599,
+          blockheight: 8652525,
+          fees: 252000000000000,
+          time: 1569879625,
           size: undefined,
-          amount: 0,
+          amount: 1000000000000000,
           action: 'sent',
-          addressTo: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+          addressTo: '0x93878cBE6a23aeBA4b1902E0B650b6dC61ee5823',
           outputs:
-          [ { address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-            amount: 0 } ],
+          [ { address: '0x93878cBE6a23aeBA4b1902E0B650b6dC61ee5823',
+            amount: 1000000000000000 } ],
           dust: false,
           lowFees: false,
         });
