@@ -63,6 +63,7 @@ export class PruningService {
                 return cb(new Error('Stopping'));
               }
               const tx = data as ITransaction;
+              logger.info(`Finding ${tx.txid} outputs and dependent outputs`);
               const outputs = await this.transactionModel.findAllRelatedOutputs(tx.txid);
               const invalid = outputs.find(c => c.mintHeight >= 0 || c.spentHeight >= 0);
               if (invalid) {
@@ -72,7 +73,7 @@ export class PruningService {
               const relatedTxids = [tx.txid].concat(spentTxids);
               const uniqueTxids = Array.from(new Set(relatedTxids));
               await this.removeOldMempool(chain, network, uniqueTxids);
-              logger.info(`Removed 1 transaction and ${spentTxids.length} dependent txs`);
+              logger.info(`Removed ${tx.txid} transaction and ${spentTxids.length} dependent txs`);
               cb();
             }
           })
