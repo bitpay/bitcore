@@ -102,6 +102,7 @@ export class PruningService {
                 return cb(new Error('Stopping'));
               }
               const tx = data as ITransaction;
+              logger.info(`Invalidating ${tx.txid} outputs and dependent outputs`);
               const outputs = await this.transactionModel.findAllRelatedOutputs(tx.txid);
               const invalid = outputs.find(c => c.mintHeight >= 0 || c.spentHeight >= 0);
               if (invalid) {
@@ -111,7 +112,7 @@ export class PruningService {
               const relatedTxids = [tx.txid].concat(spentTxids);
               const uniqueTxids = Array.from(new Set(relatedTxids));
               await this.clearInvalid(uniqueTxids);
-              logger.info(`Invalidated 1 transaction and ${spentTxids.length} dependent txs`);
+              logger.info(`Invalidated ${tx.txid} and ${spentTxids.length} dependent txs`);
               cb();
             }
           })
