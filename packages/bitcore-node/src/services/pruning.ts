@@ -77,12 +77,12 @@ export class PruningService {
                 if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
                   return cb(new Error(`Invalid coin! ${coin.mintTxid} `));
                 }
-                logger.info(`Found ${count++} dependent outputs`);
+                count++;
                 if (coin.spentTxid) {
                   spentTxids.add(coin.spentTxid);
                 }
-
                 if (spentTxids.size >= 1000) {
+                  logger.info(`Mempool Pruning: Found ${count} dependent outputs`);
                   const uniqueTxids = Array.from(spentTxids);
                   await this.removeOldMempool(chain, network, uniqueTxids);
                   spentTxids = new Set<string>();
@@ -158,6 +158,7 @@ export class PruningService {
   }
 
   async removeOldMempool(chain, network, txids: Array<string>) {
+    logger.info(`Removing ${txids.length} txids`);
     return Promise.all([
       this.transactionModel.collection.deleteMany({ chain, network, txid: { $in: txids }, blockHeight: -1 }),
       this.coinModel.collection.deleteMany({ chain, network, mintTxid: { $in: txids }, mintHeight: -1 })
