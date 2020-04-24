@@ -75,6 +75,12 @@ export class PruningService {
                 if (coin.spentTxid) {
                   spentTxids.add(coin.spentTxid);
                 }
+
+                if (spentTxids.size > 100000) {
+                  const uniqueTxids = Array.from(spentTxids);
+                  await this.removeOldMempool(chain, network, uniqueTxids);
+                  spentTxids.clear();
+                }
               }
               spentTxids.add(tx.txid);
               const uniqueTxids = Array.from(spentTxids);
@@ -110,13 +116,18 @@ export class PruningService {
               const tx = data as ITransaction;
               logger.info(`Invalidating ${tx.txid} outputs and dependent outputs`);
               const outputGenerator = this.transactionModel.yieldRelatedOutputs(tx.txid);
-              const spentTxids = new Set<string>();
+              let spentTxids = new Set<string>();
               for await (const coin of outputGenerator) {
                 if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
                   return cb(new Error(`Invalid coin! ${coin.mintTxid} `));
                 }
                 if (coin.spentTxid) {
                   spentTxids.add(coin.spentTxid);
+                }
+                if (spentTxids.size > 100000) {
+                  const uniqueTxids = Array.from(spentTxids);
+                  await this.clearInvalid(uniqueTxids);
+                  spentTxids.clear();
                 }
               }
               spentTxids.add(tx.txid);
