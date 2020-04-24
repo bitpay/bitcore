@@ -2114,7 +2114,7 @@ export class WalletService {
     this._runLocked(
       cb,
       cb => {
-        let changeAddress, feePerKb, gasPrice, gasLimit;
+        let changeAddress, feePerKb, gasPrice, gasLimit, fee;
         this.getWallet({}, (err, wallet) => {
           if (err) return cb(err);
           if (!wallet.isComplete()) return cb(Errors.WALLET_NOT_COMPLETE);
@@ -2158,7 +2158,7 @@ export class WalletService {
                   if (_.isNumber(opts.fee) && !_.isEmpty(opts.inputs)) return next();
 
                   try {
-                    ({ feePerKb, gasPrice, gasLimit } = await ChainService.getFee(this, wallet, opts));
+                    ({ feePerKb, gasPrice, gasLimit, fee } = await ChainService.getFee(this, wallet, opts));
                   } catch (error) {
                     return next(error);
                   }
@@ -2207,8 +2207,9 @@ export class WalletService {
                     customData: opts.customData,
                     inputs: opts.inputs,
                     version: opts.txpVersion,
-                    fee:
-                      opts.inputs && !_.isNumber(opts.feePerKb)
+                    fee: fee 
+                        ? fee
+                        :opts.inputs && !_.isNumber(opts.feePerKb)
                         ? opts.fee
                         : !ChainService.isUTXOCoin(wallet.coin)
                         ? opts.fee

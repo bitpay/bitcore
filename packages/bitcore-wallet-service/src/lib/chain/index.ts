@@ -52,9 +52,12 @@ export interface IChain {
   addressToStorageTransform(network: string, address: {}): void;
   addressFromStorageTransform(network: string, address: {}): void;
   validateAddress(wallet: IWallet, inaddr: string, opts: { noCashAddr: boolean } & any);
+<<<<<<< HEAD
   onCoin(coin: any): INotificationData | null;
   onTx(tx: any): INotificationData | null;
   getEstimatedSizeForSingleInput(txp: ITxProposal);
+=======
+>>>>>>> rm some not used fee functions from eth/xrp
   getEstimatedSize(txp: ITxProposal);
   getEstimatedFee(txp: ITxProposal);
 }
@@ -175,17 +178,6 @@ class ChainProxy {
   onTx(coin: string, tx: any) {
     return this.get(coin).onTx(tx);
   }
-  getEstimatedSizeForSingleInput(txp) {
-    return this.get(txp.coin).getEstimatedSizeForSingleInput(txp);
-  }
-
-  getEstimatedSize(txp) {
-    return this.get(txp.coin).getEstimatedSize(txp);
-  }
-
-  getEstimatedFee(txp) {
-    return this.get(txp.coin).getEstimatedFee(txp);
-  };
 }
 
 export let ChainService = new ChainProxy();

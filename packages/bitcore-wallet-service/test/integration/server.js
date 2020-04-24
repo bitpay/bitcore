@@ -3619,7 +3619,7 @@ describe('Wallet service', function() {
     const lockedFunds = x.lockedFunds;
     let fromAddr;
 
-    describe.only('#createTx ' + coin + ' flags' + JSON.stringify(flags), function() {
+    describe('#createTx ' + coin + ' flags' + JSON.stringify(flags), function() {
 
       describe('Tx proposal creation & publishing ' + coin, function() {
         var server, wallet;
@@ -4698,7 +4698,7 @@ describe('Wallet service', function() {
           });
         }
 
-        it.only('should be able to send max funds', function(done) {
+        it('should be able to send max funds', function(done) {
           helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
             var txOpts = {
               outputs: [{
@@ -4715,8 +4715,6 @@ describe('Wallet service', function() {
               should.not.exist(err);
               should.exist(tx);
               should.not.exist(tx.changeAddress);
-
-console.log('[server.js.4718]', tx.amount, tx.fee); // TODO
               tx.amount.should.equal(3 * TO_SAT[coin] - tx.fee);
 
               var t = ChainService.getBitcoreTx(tx);

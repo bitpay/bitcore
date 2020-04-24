@@ -166,9 +166,6 @@ export class XrpChain implements IChain {
   }
 
   checkTx(txp) {
-    const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_XRP;
-    if (txp.getEstimatedSize() / 1000 > MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
-
     try {
       this.getBitcoreTx(txp, { unsigned: false });
     } catch (ex) {
@@ -273,9 +270,4 @@ export class XrpChain implements IChain {
     // {address, amount}
     return null;
   }
-
-  // TODO this probably could be remove after refactor
-  getEstimatedSize(txp) {}
-  getEstimatedSizeForSingleInput(txp) {}
-  getEstimatedFee(txp) {}
 }
