@@ -612,6 +612,25 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     return allRelatedCoins;
   }
 
+  async *yieldRelatedOutputs(forTx: string) {
+    const getOutputs = (txid: string) =>
+      CoinStorage.collection.find({ mintTxid: txid, mintHeight: { $ne: -3 } }).toArray();
+    let batch = await getOutputs(forTx);
+    while (batch.length) {
+      for (const coin of batch) {
+        yield coin;
+      }
+      let newBatch = new Array<ICoin>();
+      for (const coin of batch) {
+        if (coin.spentTxid) {
+          const outputs = await getOutputs(coin.spentTxid);
+          newBatch = newBatch.concat(outputs);
+        }
+      }
+      batch = newBatch;
+    }
+  }
+
   async pruneMempool(params: {
     chain: string;
     network: string;

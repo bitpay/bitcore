@@ -64,16 +64,20 @@ export class PruningService {
               }
               const tx = data as ITransaction;
               logger.info(`Finding ${tx.txid} outputs and dependent outputs`);
-              const outputs = await this.transactionModel.findAllRelatedOutputs(tx.txid);
-              const invalid = outputs.find(c => c.mintHeight >= 0 || c.spentHeight >= 0);
-              if (invalid) {
-                return cb(new Error(`Invalid coin! ${invalid.mintTxid} `));
+              const outputGenerator = this.transactionModel.yieldRelatedOutputs(tx.txid);
+              const spentTxids = new Set<string>();
+              for await (const coin of outputGenerator) {
+                if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
+                  return cb(new Error(`Invalid coin! ${coin.mintTxid} `));
+                }
+                if (coin.spentTxid) {
+                  spentTxids.add(coin.spentTxid);
+                }
               }
-              const spentTxids = outputs.filter(c => c.spentTxid).map(c => c.spentTxid);
-              const relatedTxids = [tx.txid].concat(spentTxids);
-              const uniqueTxids = Array.from(new Set(relatedTxids));
+              spentTxids.add(tx.txid);
+              const uniqueTxids = Array.from(spentTxids);
               await this.removeOldMempool(chain, network, uniqueTxids);
-              logger.info(`Removed ${tx.txid} transaction and ${spentTxids.length} dependent txs`);
+              logger.info(`Removed ${tx.txid} transaction and ${spentTxids.size - 1} dependent txs`);
               cb();
             }
           })
@@ -103,16 +107,20 @@ export class PruningService {
               }
               const tx = data as ITransaction;
               logger.info(`Invalidating ${tx.txid} outputs and dependent outputs`);
-              const outputs = await this.transactionModel.findAllRelatedOutputs(tx.txid);
-              const invalid = outputs.find(c => c.mintHeight >= 0 || c.spentHeight >= 0);
-              if (invalid) {
-                return cb(new Error(`Invalid coin! ${invalid.mintTxid} `));
+              const outputGenerator = this.transactionModel.yieldRelatedOutputs(tx.txid);
+              const spentTxids = new Set<string>();
+              for await (const coin of outputGenerator) {
+                if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
+                  return cb(new Error(`Invalid coin! ${coin.mintTxid} `));
+                }
+                if (coin.spentTxid) {
+                  spentTxids.add(coin.spentTxid);
+                }
               }
-              const spentTxids = outputs.filter(c => c.spentTxid).map(c => c.spentTxid);
-              const relatedTxids = [tx.txid].concat(spentTxids);
-              const uniqueTxids = Array.from(new Set(relatedTxids));
+              spentTxids.add(tx.txid);
+              const uniqueTxids = Array.from(spentTxids);
               await this.clearInvalid(uniqueTxids);
-              logger.info(`Invalidated ${tx.txid} and ${spentTxids.length} dependent txs`);
+              logger.info(`Invalidated ${tx.txid} and ${spentTxids.size - 1} dependent txs`);
               cb();
             }
           })
