@@ -306,7 +306,6 @@ export class TxProposal {
     return t.uncheckedSerialize();
   }
 
-
   /**
    * getTotalAmount
    *

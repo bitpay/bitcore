@@ -194,9 +194,9 @@ export class BtcChain implements IChain {
 
       case Constants.SCRIPT_TYPES.P2WPKH:
         return 147;
-       case Constants.SCRIPT_TYPES.P2SH:
+      case Constants.SCRIPT_TYPES.P2SH:
         return 147;
- 
+
       default:
       case Constants.SCRIPT_TYPES.P2SH:
         return 32 + 4 + 1 + txp.requiredSignatures * 74 + txp.walletN * 34 + 4;

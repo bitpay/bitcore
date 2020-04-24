@@ -5,7 +5,6 @@ import { BtcChain } from './btc';
 import { EthChain } from './eth';
 import { XrpChain } from './xrp';
 
-
 const Common = require('../common');
 const Constants = Common.Constants;
 
@@ -68,7 +67,6 @@ const chain: { [chain: string]: IChain } = {
 };
 
 class ChainProxy {
-
   get(coin: string) {
     const normalizedChain = this.getChain(coin);
     return chain[normalizedChain];
@@ -170,7 +168,6 @@ class ChainProxy {
     return this.get(wallet.coin).validateAddress(wallet, inaddr, opts);
   }
 
-<<<<<<< HEAD
   onCoin(coin: string, coinData: any) {
     return this.get(coin).onCoin(coinData);
   }
@@ -178,19 +175,17 @@ class ChainProxy {
   onTx(coin: string, tx: any) {
     return this.get(coin).onTx(tx);
   }
-=======
   getEstimatedSizeForSingleInput(txp) {
     return this.get(txp.coin).getEstimatedSizeForSingleInput(txp);
   }
 
   getEstimatedSize(txp) {
     return this.get(txp.coin).getEstimatedSize(txp);
-  };
+  }
 
   getEstimatedFee(txp) {
     return this.get(txp.coin).getEstimatedFee(txp);
   };
->>>>>>> WIP: move estimate fee chainService
 }
 
 export let ChainService = new ChainProxy();

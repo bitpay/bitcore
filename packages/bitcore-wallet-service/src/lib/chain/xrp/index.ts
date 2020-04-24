@@ -275,8 +275,7 @@ export class XrpChain implements IChain {
   }
 
   // TODO this probably could be remove after refactor
-  getEstimatedSize(txp) {};
-  getEstimatedSizeForSingleInput(txp) {};
-  getEstimatedFee(txp) {};
-
+  getEstimatedSize(txp) {}
+  getEstimatedSizeForSingleInput(txp) {}
+  getEstimatedFee(txp) {}
 }

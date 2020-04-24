@@ -332,7 +332,7 @@ export class EthChain implements IChain {
     };
   }
   // TODO remove after refactor
-  getEstimatedSize(txp) {};
-  getEstimatedSizeForSingleInput(txp) {};
-  getEstimatedFee(txp) {};
+  getEstimatedSize(txp) {}
+  getEstimatedSizeForSingleInput(txp) {}
+  getEstimatedFee(txp) {}
 }
