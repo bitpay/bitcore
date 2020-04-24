@@ -306,40 +306,6 @@ export class TxProposal {
     return t.uncheckedSerialize();
   }
 
-  getEstimatedSizeForSingleInput() {
-    switch (this.addressType) {
-      case Constants.SCRIPT_TYPES.P2PKH:
-        return 147;
-      default:
-      case Constants.SCRIPT_TYPES.P2SH:
-        return this.requiredSignatures * 72 + this.walletN * 36 + 44;
-    }
-  }
-
-  getEstimatedSize() {
-    // Note: found empirically based on all multisig P2SH inputs and within m & n allowed limits.
-    const safetyMargin = 0.02;
-
-    const overhead = 4 + 4 + 9 + 9;
-    const inputSize = this.getEstimatedSizeForSingleInput();
-    const outputSize = 34;
-    const nbInputs = this.inputs.length;
-    const nbOutputs = (_.isArray(this.outputs) ? Math.max(1, this.outputs.length) : 1) + 1;
-
-    const size = overhead + inputSize * nbInputs + outputSize * nbOutputs;
-
-    return parseInt((size * (1 + safetyMargin)).toFixed(0));
-  }
-
-  getEstimatedFee() {
-    $.checkState(_.isNumber(this.feePerKb));
-    const fee = (this.feePerKb * this.getEstimatedSize()) / 1000;
-    return parseInt(fee.toFixed(0));
-  }
-
-  estimateFee() {
-    this.fee = this.getEstimatedFee();
-  }
 
   /**
    * getTotalAmount

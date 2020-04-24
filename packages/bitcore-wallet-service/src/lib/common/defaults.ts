@@ -193,7 +193,7 @@ module.exports = {
 
   MAX_TX_SIZE_IN_KB_BCH: 100,
 
-  MAX_TX_SIZE_IN_KB_ETH: 500,
+  //MAX_TX_SIZE_IN_KB_ETH: 500, // note used
   MAX_TX_SIZE_IN_KB_XRP: 1000,
 
   MAX_FEE_PER_KB: {

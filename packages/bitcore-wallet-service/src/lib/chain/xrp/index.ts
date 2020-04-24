@@ -117,7 +117,7 @@ export class XrpChain implements IChain {
     });
   }
 
-  getBitcoreTx(txp, opts = {unsigned: false} ) {
+  getBitcoreTx(txp, opts = { unsigned: false }) {
     const { destinationTag, outputs } = txp;
     const chain = 'XRP';
     const recipients = outputs.map(output => {
@@ -137,7 +137,7 @@ export class XrpChain implements IChain {
       });
       unsignedTxs.push(rawTx);
     }
-    let tx =  {
+    let tx = {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
       toObject: () => {
@@ -151,16 +151,14 @@ export class XrpChain implements IChain {
       getChangeOutput: () => null
     };
 
-
     if (!opts.unsigned) {
       const sigs = txp.getCurrentSignatures();
-      sigs.forEach((x) => {
+      sigs.forEach(x => {
         this.addSignaturesToBitcoreTx(tx, txp.inputs, txp.inputPaths, x.signatures, x.xpub);
       });
     }
 
     return tx;
-
   }
 
   convertFeePerKb(p, feePerKb) {
@@ -172,7 +170,7 @@ export class XrpChain implements IChain {
     if (txp.getEstimatedSize() / 1000 > MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
 
     try {
-      this.getBitcoreTx(txp, {unsigned: false});
+      this.getBitcoreTx(txp, { unsigned: false });
     } catch (ex) {
       log.warn('Error building XRP  transaction', ex);
       return ex;
@@ -205,8 +203,6 @@ export class XrpChain implements IChain {
     }
     return true;
   }
-
-  setInputs() {}
 
   isUTXOCoin() {
     return false;
@@ -277,4 +273,10 @@ export class XrpChain implements IChain {
     // {address, amount}
     return null;
   }
+
+  // TODO this probably could be remove after refactor
+  getEstimatedSize(txp) {};
+  getEstimatedSizeForSingleInput(txp) {};
+  getEstimatedFee(txp) {};
+
 }

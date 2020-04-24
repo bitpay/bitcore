@@ -3598,14 +3598,14 @@ describe('Wallet service', function() {
       key: 'id44btc',
       addr: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
       lockedFunds: 0,
-      flags: { noChange: true, shortTests: true, },
+      flags: { noChange: true, noUtxoTests: true, },
     }, 
     {
       coin: 'xrp',
       key: 'id44btc',
       addr: 'rDzTZxa7NwD9vmNf5dvTbW4FQDNSRsfPv6',
       lockedFunds: Defaults.MIN_XRP_BALANCE,
-      flags: { noChange: true , shortTests: true},
+      flags: { noChange: true , noUtxoTests: true},
     }
   ];
 
@@ -3619,7 +3619,7 @@ describe('Wallet service', function() {
     const lockedFunds = x.lockedFunds;
     let fromAddr;
 
-    describe('#createTx ' + coin + ' flags' + JSON.stringify(flags), function() {
+    describe.only('#createTx ' + coin + ' flags' + JSON.stringify(flags), function() {
 
       describe('Tx proposal creation & publishing ' + coin, function() {
         var server, wallet;
@@ -3791,7 +3791,7 @@ describe('Wallet service', function() {
           });
 
 
-          if( ! flags.shortTests ) {
+          if( ! flags.noUtxoTests ) {
             it('should fail to create tx for address of different network', function(done) {
               helpers.stubUtxos(server, wallet, 1, function() {
                 var txOpts = {
@@ -4163,7 +4163,7 @@ describe('Wallet service', function() {
             });
           });
 
-          if( ! flags.shortTests ) {
+          if( ! flags.noUtxoTests ) {
             it('should fail to publish a temporary tx proposal if utxos are locked by other pending proposals', function(done) {
               var txp1, txp2;
               var txOpts = {
@@ -4520,30 +4520,6 @@ describe('Wallet service', function() {
             });
           });
         });
-        it('should fail to create a tx exceeding max size in kb', function(done) {
-          Defaults.MAX_TX_SIZE_IN_KB_BTC = 1;
-          Defaults.MAX_TX_SIZE_IN_KB_ETH = 0.001;
-          Defaults.MAX_TX_SIZE_IN_KB_XRP = 0.001;
-
-          helpers.stubUtxos(server, wallet, _.range(1, 10, 0), { coin }, function() {
-            let x = [];
-            x.push({
-              toAddress:addressStr,
-              amount: 8*ts,
-            });
-            var txOpts = {
-              outputs: x,
-              feePerKb: 100e2,
-              from: fromAddr,
-            };
-            txOpts = Object.assign(txOpts, flags);
-            server.createTx(txOpts, function(err, tx) {
-              should.exist(err);
-              err.code.should.equal('TX_MAX_SIZE_EXCEEDED');
-              done();
-            });
-          });
-        });
         it('should fail with different error for insufficient funds and locked funds', function(done) {
           const ts = TO_SAT[coin];
           helpers.stubUtxos(server, wallet, [1, 1], { coin }, function() {
@@ -4581,7 +4557,31 @@ describe('Wallet service', function() {
           });
         });
 
-        if(!flags.shortTests) {
+        if(!flags.noUtxoTests) {
+
+        it('should fail to create a tx exceeding max size in kb', function(done) {
+          Defaults.MAX_TX_SIZE_IN_KB_BTC = 1;
+
+          helpers.stubUtxos(server, wallet, _.range(1, 10, 0), { coin }, function() {
+            let x = [];
+            x.push({
+              toAddress:addressStr,
+              amount: 8*ts,
+            });
+            var txOpts = {
+              outputs: x,
+              feePerKb: 100e2,
+              from: fromAddr,
+            };
+            txOpts = Object.assign(txOpts, flags);
+            server.createTx(txOpts, function(err, tx) {
+              should.exist(err);
+              err.code.should.equal('TX_MAX_SIZE_EXCEEDED');
+              done();
+            });
+          });
+        });
+
           it('should fail to create tx for dust amount in outputs', function(done) {
             helpers.stubUtxos(server, wallet, 1, function() {
               var txOpts = {
@@ -4698,7 +4698,7 @@ describe('Wallet service', function() {
           });
         }
 
-        it('should be able to send max funds', function(done) {
+        it.only('should be able to send max funds', function(done) {
           helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
             var txOpts = {
               outputs: [{
@@ -4715,6 +4715,8 @@ describe('Wallet service', function() {
               should.not.exist(err);
               should.exist(tx);
               should.not.exist(tx.changeAddress);
+
+console.log('[server.js.4718]', tx.amount, tx.fee); // TODO
               tx.amount.should.equal(3 * TO_SAT[coin] - tx.fee);
 
               var t = ChainService.getBitcoreTx(tx);
@@ -4728,7 +4730,7 @@ describe('Wallet service', function() {
         });
 
 
-        if(!flags.shortTests) {
+        if(!flags.noUtxoTests) {
           it('should accept a tx proposal signed with a custom key', function(done) {
             var reqPrivKey = new Bitcore.PrivateKey();
             var reqPubKey = reqPrivKey.toPublicKey().toString();

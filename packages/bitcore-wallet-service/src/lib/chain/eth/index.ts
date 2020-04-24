@@ -136,13 +136,12 @@ export class EthChain implements IChain {
         }
 
         const gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
-        opts.fee = feePerKb * gasLimit;
         return resolve({ feePerKb, gasPrice, gasLimit });
       });
     });
   }
 
-  getBitcoreTx(txp, opts = {unsigned: false} ) {
+  getBitcoreTx(txp, opts = { unsigned: false }) {
     const { data, outputs, payProUrl, tokenAddress } = txp;
     const isERC20 = tokenAddress && !payProUrl;
     const chain = isERC20 ? 'ERC20' : 'ETH';
@@ -170,7 +169,7 @@ export class EthChain implements IChain {
       unsignedTxs.push(rawTx);
     }
 
-    let tx =  {
+    let tx = {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
       toObject: () => {
@@ -186,7 +185,7 @@ export class EthChain implements IChain {
 
     if (!opts.unsigned) {
       const sigs = txp.getCurrentSignatures();
-      sigs.forEach((x) => {
+      sigs.forEach(x => {
         this.addSignaturesToBitcoreTx(tx, txp.inputs, txp.inputPaths, x.signatures, x.xpub);
       });
     }
@@ -199,9 +198,6 @@ export class EthChain implements IChain {
   }
 
   checkTx(txp) {
-    const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_ETH;
-    if (txp.getEstimatedSize() / 1000 > MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
-
     try {
       const tx = this.getBitcoreTx(txp);
     } catch (ex) {
@@ -254,8 +250,6 @@ export class EthChain implements IChain {
     }
     return true;
   }
-
-  setInputs() {}
 
   isUTXOCoin() {
     return false;
@@ -337,4 +331,8 @@ export class EthChain implements IChain {
       }
     };
   }
+  // TODO remove after refactor
+  getEstimatedSize(txp) {};
+  getEstimatedSizeForSingleInput(txp) {};
+  getEstimatedFee(txp) {};
 }

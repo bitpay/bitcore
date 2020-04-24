@@ -94,8 +94,8 @@ export class BtcChain implements IChain {
           feePerKb
         });
 
-        const baseTxpSize = txp.getEstimatedSize();
-        const sizePerInput = txp.getEstimatedSizeForSingleInput();
+        const baseTxpSize = this.getEstimatedSize(txp);
+        const sizePerInput = this.getEstimatedSizeForSingleInput(txp);
         const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
 
         const partitionedByAmount = _.partition(inputs, input => {
@@ -118,12 +118,12 @@ export class BtcChain implements IChain {
 
         if (_.isEmpty(txp.inputs)) return cb(null, info);
 
-        const fee = txp.getEstimatedFee();
+        const fee = this.getEstimatedFee(txp);
         const amount = _.sumBy(txp.inputs, 'satoshis') - fee;
 
         if (amount < Defaults.MIN_OUTPUT_AMOUNT) return cb(null, info);
 
-        info.size = txp.getEstimatedSize();
+        info.size = this.getEstimatedSize(txp);
         info.fee = fee;
         info.amount = amount;
 
@@ -186,6 +186,44 @@ export class BtcChain implements IChain {
     }
   }
 
+  // https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
+  getEstimatedSizeForSingleInput(txp) {
+    switch (txp.addressType) {
+      case Constants.SCRIPT_TYPES.P2PKH:
+        return 147;
+
+      case Constants.SCRIPT_TYPES.P2WPKH:
+        return 147;
+       case Constants.SCRIPT_TYPES.P2SH:
+        return 147;
+ 
+      default:
+      case Constants.SCRIPT_TYPES.P2SH:
+        return 32 + 4 + 1 + txp.requiredSignatures * 74 + txp.walletN * 34 + 4;
+    }
+  }
+
+  getEstimatedSize(txp) {
+    // Note: found empirically based on all multisig P2SH inputs and within m & n allowed limits.
+    const safetyMargin = 0.02;
+
+    const overhead = 4 + 4 + 9 + 9;
+
+    // This assumed ALL inputs of the wallet are the same time
+    const inputSize = this.getEstimatedSizeForSingleInput(txp);
+    const outputSize = 34;
+    const nbInputs = txp.inputs.length;
+    const nbOutputs = (_.isArray(txp.outputs) ? Math.max(1, txp.outputs.length) : 1) + 1;
+    const size = overhead + inputSize * nbInputs + outputSize * nbOutputs;
+    return parseInt((size * (1 + safetyMargin)).toFixed(0));
+  }
+
+  getEstimatedFee(txp) {
+    $.checkState(_.isNumber(txp.feePerKb));
+    const fee = (txp.feePerKb * this.getEstimatedSize(txp)) / 1000;
+    return parseInt(fee.toFixed(0));
+  }
+
   getFee(server, wallet, opts) {
     return new Promise(resolve => {
       server._getFeePerKb(wallet, opts, (err, feePerKb) => {
@@ -194,7 +232,7 @@ export class BtcChain implements IChain {
     });
   }
 
-  getBitcoreTx(txp, opts = {unsigned: false} ) {
+  getBitcoreTx(txp, opts = { unsigned: false }) {
     const t = new this.bitcoreLib.Transaction();
 
     // BTC tx version
@@ -291,12 +329,11 @@ export class BtcChain implements IChain {
     return [p, Utils.strip(feePerKb * 1e8)];
   }
 
-
   checkTx(txp) {
     let bitcoreError;
     const MAX_TX_SIZE_IN_KB = Defaults.MAX_TX_SIZE_IN_KB_BTC;
 
-    if (txp.getEstimatedSize() / 1000 > MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
+    if (this.getEstimatedSize(txp) / 1000 > MAX_TX_SIZE_IN_KB) return Errors.TX_MAX_SIZE_EXCEEDED;
 
     const serializationOpts = {
       disableIsFullySigned: true,
@@ -369,14 +406,14 @@ export class BtcChain implements IChain {
 
     // todo: check inputs are ours and have enough value
     if (txp.inputs && !_.isEmpty(txp.inputs)) {
-      if (!_.isNumber(txp.fee)) txp.estimateFee();
+      if (!_.isNumber(txp.fee)) txp.fee = this.getEstimatedFee(txp);
       return cb(this.checkTx(txp));
     }
 
     const txpAmount = txp.getTotalAmount();
-    const baseTxpSize = txp.getEstimatedSize();
+    const baseTxpSize = this.getEstimatedSize(txp);
     const baseTxpFee = (baseTxpSize * txp.feePerKb) / 1000;
-    const sizePerInput = txp.getEstimatedSizeForSingleInput();
+    const sizePerInput = this.getEstimatedSizeForSingleInput(txp);
     const feePerInput = (sizePerInput * txp.feePerKb) / 1000;
 
     const sanitizeUtxos = utxos => {
@@ -635,10 +672,6 @@ export class BtcChain implements IChain {
       return false;
     }
     return true;
-  }
-
-  setInputs(info) {
-    return info.inputs;
   }
 
   supportsMultisig() {

@@ -61,10 +61,27 @@ describe('TxProposal', function() {
     });
   });
 
-  describe('#getEstimatedSize', function() {
-    it('should return estimated size in bytes', function() {
-      var x = TxProposal.fromObj(aTXP());
-      x.getEstimatedSize().should.equal(396);
+  describe.skip('#getEstimatedSize', function() {
+    describe('#BTC', function() {
+
+      it('1  input, 2 P2PKH outputs:  ', function() {
+        let x = TxProposal.fromObj(aTXP());
+        x.getEstimatedSize().should.equal(396);
+      });
+
+      it('1  input, 3 P2PKH outputs:  ', function() {
+        let x = TxProposal.fromObj(aTXP());
+        x.outputs[2] = _.clone(x.outputs[1]);
+        x.getEstimatedSize().should.equal(430);
+      });
+
+      it('2  input, 2 P2PKH outputs:  ', function() {
+        let x = TxProposal.fromObj(aTXP());
+        x.inputs[1] = _.clone(x.inputs[0]);
+        x.getEstimatedSize().should.equal(661);
+      });
+
+ 
     });
   });
 

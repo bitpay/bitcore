@@ -1977,8 +1977,7 @@ export class WalletService {
             (err, info) => {
               if (err) return next(err);
               opts.outputs[0].amount = info.amount;
-
-              opts.inputs = ChainService.setInputs(wallet.coin, info);
+              opts.inputs = info.inputs;
               return next();
             }
           );
@@ -2224,7 +2223,6 @@ export class WalletService {
                     invoiceID: opts.invoiceID,
                     signingMethod: opts.signingMethod
                   };
-
                   txp = TxProposal.create(txOpts);
                   next();
                 },
