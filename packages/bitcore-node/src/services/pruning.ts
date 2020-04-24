@@ -81,12 +81,6 @@ export class PruningService {
                 if (coin.spentTxid) {
                   spentTxids.add(coin.spentTxid);
                 }
-                if (spentTxids.size >= 1000) {
-                  logger.info(`Mempool Pruning: Found ${count} dependent outputs`);
-                  const uniqueTxids = Array.from(spentTxids);
-                  await this.removeOldMempool(chain, network, uniqueTxids);
-                  spentTxids = new Set<string>();
-                }
               }
               spentTxids.add(tx.txid);
               const uniqueTxids = Array.from(spentTxids);
@@ -129,11 +123,6 @@ export class PruningService {
                 }
                 if (coin.spentTxid) {
                   spentTxids.add(coin.spentTxid);
-                }
-                if (spentTxids.size >= 1000) {
-                  const uniqueTxids = Array.from(spentTxids);
-                  await this.clearInvalid(uniqueTxids);
-                  spentTxids = new Set<string>();
                 }
               }
               spentTxids.add(tx.txid);
