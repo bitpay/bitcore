@@ -7,6 +7,7 @@ import parseArgv from '../utils/parseArgv';
 import '../utils/polyfills';
 import { Config } from './config';
 
+const { CHAIN, NETWORK } = process.env;
 const MEMPOOL_AGE = Number(process.env.MEMPOOL_AGE) || 7;
 const args = parseArgv([], ['EXIT']);
 
@@ -34,10 +35,15 @@ export class PruningService {
   }
 
   async detectAndClear() {
-    for (let chainNetwork of Config.chainNetworks()) {
-      const { chain, network } = chainNetwork;
-      await this.processOldMempoolTxs(chain, network, MEMPOOL_AGE);
-      await this.processAllInvalidTxs(chain, network);
+    if (CHAIN && NETWORK) {
+      await this.processOldMempoolTxs(CHAIN, NETWORK, MEMPOOL_AGE);
+      await this.processAllInvalidTxs(CHAIN, NETWORK);
+    } else {
+      for (let chainNetwork of Config.chainNetworks()) {
+        const { chain, network } = chainNetwork;
+        await this.processOldMempoolTxs(chain, network, MEMPOOL_AGE);
+        await this.processAllInvalidTxs(chain, network);
+      }
     }
   }
 
@@ -65,7 +71,7 @@ export class PruningService {
               const tx = data as ITransaction;
               logger.info(`Finding ${tx.txid} outputs and dependent outputs`);
               const outputGenerator = this.transactionModel.yieldRelatedOutputs(tx.txid);
-              const spentTxids = new Set<string>();
+              let spentTxids = new Set<string>();
               let count = 0;
               for await (const coin of outputGenerator) {
                 if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
@@ -76,16 +82,16 @@ export class PruningService {
                   spentTxids.add(coin.spentTxid);
                 }
 
-                if (spentTxids.size > 10000) {
+                if (spentTxids.size >= 1000) {
                   const uniqueTxids = Array.from(spentTxids);
                   await this.removeOldMempool(chain, network, uniqueTxids);
-                  spentTxids.clear();
+                  spentTxids = new Set<string>();
                 }
               }
               spentTxids.add(tx.txid);
               const uniqueTxids = Array.from(spentTxids);
               await this.removeOldMempool(chain, network, uniqueTxids);
-              logger.info(`Removed ${tx.txid} transaction and ${spentTxids.size - 1} dependent txs`);
+              logger.info(`Removed ${tx.txid} transaction and ${count} dependent txs`);
               cb();
             }
           })
@@ -116,7 +122,7 @@ export class PruningService {
               const tx = data as ITransaction;
               logger.info(`Invalidating ${tx.txid} outputs and dependent outputs`);
               const outputGenerator = this.transactionModel.yieldRelatedOutputs(tx.txid);
-              const spentTxids = new Set<string>();
+              let spentTxids = new Set<string>();
               for await (const coin of outputGenerator) {
                 if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
                   return cb(new Error(`Invalid coin! ${coin.mintTxid} `));
@@ -124,16 +130,16 @@ export class PruningService {
                 if (coin.spentTxid) {
                   spentTxids.add(coin.spentTxid);
                 }
-                if (spentTxids.size > 10000) {
+                if (spentTxids.size >= 1000) {
                   const uniqueTxids = Array.from(spentTxids);
                   await this.clearInvalid(uniqueTxids);
-                  spentTxids.clear();
+                  spentTxids = new Set<string>();
                 }
               }
               spentTxids.add(tx.txid);
               const uniqueTxids = Array.from(spentTxids);
               await this.clearInvalid(uniqueTxids);
-              logger.info(`Invalidated ${tx.txid} and ${spentTxids.size - 1} dependent txs`);
+              logger.info(`Invalidated ${tx.txid} and ${count} dependent txs`);
               cb();
             }
           })
