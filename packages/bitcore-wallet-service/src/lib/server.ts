@@ -2207,13 +2207,13 @@ export class WalletService {
                     customData: opts.customData,
                     inputs: opts.inputs,
                     version: opts.txpVersion,
-                    fee: fee 
-                        ? fee
-                        :opts.inputs && !_.isNumber(opts.feePerKb)
-                        ? opts.fee
-                        : !ChainService.isUTXOCoin(wallet.coin)
-                        ? opts.fee
-                        : null,
+                    fee: fee
+                      ? fee
+                      : opts.inputs && !_.isNumber(opts.feePerKb)
+                      ? opts.fee
+                      : !ChainService.isUTXOCoin(wallet.coin)
+                      ? opts.fee
+                      : null,
                     noShuffleOutputs: opts.noShuffleOutputs,
                     gasPrice,
                     nonce: opts.nonce,
