@@ -66,10 +66,12 @@ export class PruningService {
               logger.info(`Finding ${tx.txid} outputs and dependent outputs`);
               const outputGenerator = this.transactionModel.yieldRelatedOutputs(tx.txid);
               const spentTxids = new Set<string>();
+              let count = 0;
               for await (const coin of outputGenerator) {
                 if (coin.mintHeight >= 0 || coin.spentHeight >= 0) {
                   return cb(new Error(`Invalid coin! ${coin.mintTxid} `));
                 }
+                logger.info(`Found ${count++} dependent outputs`);
                 if (coin.spentTxid) {
                   spentTxids.add(coin.spentTxid);
                 }
