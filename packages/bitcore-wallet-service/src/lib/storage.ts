@@ -4,6 +4,7 @@ import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
 import {
   Address,
+  Advertisement,
   Email,
   Notification,
   Preferences,
@@ -26,6 +27,7 @@ const collections = {
   WALLETS: 'wallets',
   TXS: 'txs',
   ADDRESSES: 'addresses',
+  ADVERTISEMENTS: 'advertisements',
   NOTIFICATIONS: 'notifications',
   COPAYERS_LOOKUP: 'copayers_lookup',
   PREFERENCES: 'preferences',
@@ -84,7 +86,13 @@ export class Storage {
       walletId: 1,
       createdOn: 1
     });
-
+    db.collection(collections.ADVERTISEMENTS).createIndex(
+      {
+        advertisementId: 1,
+        title: 1
+      },
+      { unique: true }
+    );
     db.collection(collections.ADDRESSES).createIndex(
       {
         address: 1
@@ -512,6 +520,19 @@ export class Storage {
     );
   }
 
+  removeAdvert(advertId, adTitle, cb) {
+    this.db.collection(collections.ADVERTISEMENTS).remove(
+      {
+        advertisementId: advertId,
+        title: adTitle
+      },
+      {
+        w: 1
+      },
+      cb
+    );
+  }
+
   removeTx(walletId, txProposalId, cb) {
     this.db.collection(collections.TXS).remove(
       {
@@ -634,6 +655,35 @@ export class Storage {
       });
   }
 
+  storeAdvert(advert, cb) {
+    this.db.collection(collections.ADVERTISEMENTS).update(
+      {
+        advertisementId: advert.advertisementId,
+        title: advert.title
+      },
+      advert,
+      {
+        upsert: true
+      },
+      cb
+    );
+  }
+
+  fetchAdvert(adId, title, cb) {
+    this.db.collection(collections.ADVERTISEMENTS).findOne(
+      {
+        adId,
+        title
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb;
+
+        return cb(null, Advertisement.fromObj(result));
+      }
+    );
+  }
+
   storeAddress(address, cb) {
     this.db.collection(collections.ADDRESSES).update(
       {
@@ -658,8 +708,7 @@ export class Storage {
       {
         w: 1,
         upsert: false
-      },
-      cb
+      }
     );
   }
 
