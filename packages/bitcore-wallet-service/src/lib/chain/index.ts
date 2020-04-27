@@ -39,7 +39,7 @@ export interface IChain {
   isSingleAddress(): boolean;
   supportsMultisig(): boolean;
   notifyConfirmations(network: string): boolean;
-  addSignaturesToBitcoreTx(tx: string, inputs: any[], inputPaths: any[], signatures: any[], xpub: string);
+  addSignaturesToBitcoreTx(tx: string, inputs: any[], inputPaths: any[], signatures: any[], xpub: string, signingMethod?: string);
   addressToStorageTransform(network: string, address: {}): void;
   addressFromStorageTransform(network: string, address: {}): void;
   validateAddress(wallet: IWallet, inaddr: string, opts: { noCashAddr: boolean } & any);
@@ -150,8 +150,8 @@ class ChainProxy {
     return this.get(coin).supportsMultisig();
   }
 
-  addSignaturesToBitcoreTx(coin, tx, inputs, inputPaths, signatures, xpub) {
-    return this.get(coin).addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub);
+  addSignaturesToBitcoreTx(coin, tx, inputs, inputPaths, signatures, xpub, signingMethod) {
+    this.get(coin).addSignaturesToBitcoreTx(tx, inputs, inputPaths, signatures, xpub, signingMethod);
   }
 
   validateAddress(wallet, inaddr, opts) {

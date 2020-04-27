@@ -199,15 +199,17 @@ Input.prototype.setWitnesses = function(witnesses) {
   this.witnesses = witnesses;
 };
 
-Input.prototype.isValidSignature = function(transaction, signature) {
+Input.prototype.isValidSignature = function(transaction, signature, signingMethod) {
   // FIXME: Refactor signature so this is not necessary
+  signingMethod = signingMethod || 'ecdsa';
   signature.signature.nhashtype = signature.sigtype;
   return Sighash.verify(
     transaction,
     signature.signature,
     signature.publicKey,
     signature.inputIndex,
-    this.output.script
+    this.output.script,
+    signingMethod
   );
 };
 

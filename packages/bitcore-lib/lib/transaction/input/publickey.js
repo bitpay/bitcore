@@ -26,9 +26,10 @@ inherits(PublicKeyInput, Input);
  * @param {PrivateKey} privateKey - the private key with which to sign the transaction
  * @param {number} index - the index of the input in the transaction input vector
  * @param {number=} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
+ * @param {String} signingMethod - method used to sign input - 'ecdsa' or 'schnorr' (future signing method)
  * @return {Array} of objects that can be
  */
-PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype) {
+PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   $.checkState(this.output instanceof Output);
   sigtype = sigtype || Signature.SIGHASH_ALL;
   var publicKey = privateKey.toPublicKey();
@@ -38,7 +39,7 @@ PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index
       prevTxId: this.prevTxId,
       outputIndex: this.outputIndex,
       inputIndex: index,
-      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script),
+      signature: Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, signingMethod),
       sigtype: sigtype
     })];
   }
@@ -52,10 +53,11 @@ PublicKeyInput.prototype.getSignatures = function(transaction, privateKey, index
  * @param {PublicKey} signature.publicKey
  * @param {Signature} signature.signature
  * @param {number=} signature.sigtype
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
  * @return {PublicKeyInput} this, for chaining
  */
-PublicKeyInput.prototype.addSignature = function(transaction, signature) {
-  $.checkState(this.isValidSignature(transaction, signature), 'Signature is invalid');
+PublicKeyInput.prototype.addSignature = function(transaction, signature, signingMethod) {
+  $.checkState(this.isValidSignature(transaction, signature, signingMethod), 'Signature is invalid');
   this.setScript(Script.buildPublicKeyIn(
     signature.signature.toDER(),
     signature.sigtype

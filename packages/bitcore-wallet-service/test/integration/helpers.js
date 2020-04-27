@@ -604,11 +604,11 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
 
       var t = txp.getBitcoreTx();
       signatures = _.map(privs, function(priv, i) {
-        return t.getSignatures(priv);
+        return t.getSignatures(priv, undefined, txp.signingMethod);
       });
 
       signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
-        return s.signature.toDER().toString('hex');
+        return s.signature.toDER(txp.signingMethod).toString('hex');
       });
   };
 
