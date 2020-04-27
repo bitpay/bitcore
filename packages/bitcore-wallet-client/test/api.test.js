@@ -3683,15 +3683,18 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
           }],
           feePerKb: 100e2,
           message: 'just some message',
+          signingMethod: 'schnorr',       // forcing schnorr on BCH/livenet
         };
         clients[0].createTxProposal(opts, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
+          txp.signingMethod.should.equal('schnorr'); 
           clients[0].publishTxProposal({
             txp: txp,
           }, (err, publishedTxp) => {
             should.not.exist(err);
             should.exist(publishedTxp);
+            publishedTxp.signingMethod.should.equal('schnorr'); 
             publishedTxp.status.should.equal('pending');
 
 
@@ -3703,8 +3706,8 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
                 should.not.exist(err);
                 txp.status.should.equal("accepted");
                 done();
-              }, '/v4/txproposals/');
-            }, '/v4/txproposals/');
+              }, '/v2/txproposals/');
+            }, '/v2/txproposals/');
           });
         });
       });

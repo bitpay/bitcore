@@ -474,21 +474,10 @@ export class ExpressApp {
       });
     });
 
+    /* THIS WAS NEVED ENABLED YET NOW 2020-04-07
     router.post('/v4/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
-        req.body.txpVersion = 3;
-        req.body.useBchSchnorr= true;
-        server.createTx(req.body, (err, txp) => {
-          if (err) return returnError(err, res, req);
-          res.json(txp);
-        });
-      });
-    });
-
-/* THIS WAS NEVED ENABLED YET NOW 2020-04-07
-    router.post('/v5/txproposals/', (req, res) => {
-      getServerWithAuth(req, res, server => {
-        req.body.txpVersion = 5;
+        req.body.txpVersion = 4;
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
@@ -711,21 +700,7 @@ export class ExpressApp {
       });
     });
 
-    /* THIS WAS NEVED ENABLED YET NOW 2020-04-07 (see above)
     router.post('/v2/txproposals/:id/signatures/', (req, res) => {
-      getServerWithAuth(req, res, server => {
-        req.body.txProposalId = req.params['id'];
-        req.body.maxTxpVersion = 4;
-        server.signTx(req.body, (err, txp) => {
-          if (err) return returnError(err, res, req);
-          res.json(txp);
-          res.end();
-        });
-      });
-    });
-*/
-
-    router.post('/v4/txproposals/:id/signatures/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         req.body.maxTxpVersion = 3;
@@ -737,6 +712,20 @@ export class ExpressApp {
         });
       });
     });
+
+    /* THIS WAS NEVED ENABLED YET NOW 2020-04-07 (see above)
+    router.post('/v3/txproposals/:id/signatures/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        req.body.txProposalId = req.params['id'];
+        req.body.maxTxpVersion = 4;
+        server.signTx(req.body, (err, txp) => {
+          if (err) return returnError(err, res, req);
+          res.json(txp);
+          res.end();
+        });
+      });
+    });
+*/
 
     //
     router.post('/v1/txproposals/:id/publish/', (req, res) => {
@@ -847,7 +836,7 @@ export class ExpressApp {
         from?: string;
         to?: string;
       } = {};
-      
+
       if (req.query.network) opts.network = req.query.network;
       if (req.query.coin) opts.coin = req.query.coin;
       if (req.query.from) opts.from = req.query.from;

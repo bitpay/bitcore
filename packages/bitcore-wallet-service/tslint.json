@@ -3,10 +3,7 @@
   "extends": ["tslint:recommended", "tslint-config-prettier"],
   "jsRules": {},
   "rules": {
-    // "interface-name": [true, "never-prefix"],
     "no-submodule-imports": false,
-    // "no-any": true,
-    // Temporarily relax rules
     "member-ordering": false,
     "variable-name": false,
     "no-empty": false,
@@ -19,6 +16,7 @@
     "prefer-for-of": false,
     "forin": false,
     "prefer-const": false,
+    "no-bitwise": false,
     "no-unused-expression": false,
     "no-eval": false,
     "no-object-literal-type-assertion": false,
