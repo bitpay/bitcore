@@ -4359,7 +4359,7 @@ describe('client API', () => {
     describe('should get paginated transaction history', (done) => {
       let testCases = [{
         opts: {},
-        expected: [20, 10]
+        expected: [10, 20]
       }, {
         opts: {
           skip: 1,
