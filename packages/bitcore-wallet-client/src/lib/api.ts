@@ -1261,7 +1261,7 @@ export class API extends EventEmitter {
   // * @param {Array} opts.inputs - Optional. Inputs for this TX
   // * @param {number} opts.fee - Optional. Use an fixed fee for this TX (only when opts.inputs is specified)
   // * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
-  // * @param {Boolean} opts.signingMethod - Optional. If set, either signs transaction via "ecdsa" or "schnorr"
+  // * @param {String} opts.signingMethod - Optional. If set, force signing method (ecdsa or schnorr) otherwise use default for coin
   // * @returns {Callback} cb - Return error or the transaction proposal
   // * @param {String} baseUrl - Optional. ONLY FOR TESTING
   // */
@@ -1271,14 +1271,15 @@ export class API extends EventEmitter {
     $.checkArgument(opts);
 
     var args = this._getCreateTxProposalArgs(opts);
-
-    if (opts.coin === 'bch' && opts.network === 'testnet') {
-      baseUrl = '/v4/txproposals/';
-    } else {
-      baseUrl = baseUrl || '/v3/txproposals/';
-    }
+    
+    baseUrl = baseUrl || '/v3/txproposals/';
     // baseUrl = baseUrl || '/v4/txproposals/'; // DISABLED 2020-04-07
-
+   
+    // BCH schnorr deployment
+    if (!opts.signingMethod && this.credentials.coin == 'bch' && this.credentials.network == 'testnet') {
+      args.signingMethod == 'schnorr';
+    }
+    
     this.request.post(baseUrl, args, (err, txp) => {
       if (err) return cb(err);
 
