@@ -4,7 +4,7 @@
   "engines": {
     "node": ">=8.0.0"
   },
-  "version": "8.18.0",
+  "version": "8.19.0",
   "author": "Justin Langston <nitsujlangston@gmail.com>",
   "main": "./ts_build/index.js",
   "types": "./ts_build/index.d.ts",
@@ -30,7 +30,7 @@
     "bcrypt": "3.0.8",
     "bitcore-mnemonic": "^8.17.1",
     "commander": "2.15.1",
-    "crypto-wallet-core": "^8.18.0",
+    "crypto-wallet-core": "^8.19.0",
     "elliptic": "6.4.1",
     "level-js": "4.0.2",
     "leveldown": "5.4.1",
