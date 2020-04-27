@@ -1271,15 +1271,15 @@ export class API extends EventEmitter {
     $.checkArgument(opts);
 
     var args = this._getCreateTxProposalArgs(opts);
-    
+
     baseUrl = baseUrl || '/v3/txproposals/';
     // baseUrl = baseUrl || '/v4/txproposals/'; // DISABLED 2020-04-07
-   
+
     // BCH schnorr deployment
     if (!opts.signingMethod && this.credentials.coin == 'bch' && this.credentials.network == 'testnet') {
       args.signingMethod == 'schnorr';
     }
-    
+
     this.request.post(baseUrl, args, (err, txp) => {
       if (err) return cb(err);
 
@@ -1539,7 +1539,7 @@ export class API extends EventEmitter {
         if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
         base = base || '/v1/txproposals/';
-//        base = base || '/v2/txproposals/'; // DISABLED 2020-04-07
+        //        base = base || '/v2/txproposals/'; // DISABLED 2020-04-07
 
         var url = base + txp.id + '/signatures/';
 

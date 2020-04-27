@@ -2447,8 +2447,7 @@ export class WalletService {
                   }
 
                   //  schnorr only on BCH
-                  if (opts.coin != 'bch' && opts.signingMethod == 'schnorr')
-                    return next(Errors.WRONG_SIGNING_METHOD);
+                  if (opts.coin != 'bch' && opts.signingMethod == 'schnorr') return next(Errors.WRONG_SIGNING_METHOD);
 
                   return next();
                 },
