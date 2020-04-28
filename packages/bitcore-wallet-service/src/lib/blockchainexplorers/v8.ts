@@ -118,7 +118,7 @@ export class V8 {
     const client = this._getAuthClient(wallet);
     const payload = {
       name: wallet.id,
-      pubKey: wallet.beAuthPublicKey2,
+      pubKey: wallet.beAuthPublicKey2
     };
     client
       .register({
