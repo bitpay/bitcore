@@ -5,7 +5,7 @@ import * as _ from 'lodash';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
 
-import { BitcoreLib, Deriver, Transactions, BitcoreLibCash } from 'crypto-wallet-core';
+import { BitcoreLib, BitcoreLibCash, Deriver, Transactions } from 'crypto-wallet-core';
 
 var Bitcore = BitcoreLib;
 var Mnemonic = require('bitcore-mnemonic');
@@ -389,7 +389,7 @@ export class Key {
       });
 
       signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
-        return  s.signature.toDER(txp.signingMethod).toString('hex');
+        return s.signature.toDER(txp.signingMethod).toString('hex');
       });
 
       return signatures;

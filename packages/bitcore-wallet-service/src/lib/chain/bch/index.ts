@@ -29,5 +29,4 @@ export class BchChain extends BtcChain implements IChain {
     }
     return;
   }
-
 }

@@ -39,7 +39,14 @@ export interface IChain {
   isSingleAddress(): boolean;
   supportsMultisig(): boolean;
   notifyConfirmations(network: string): boolean;
-  addSignaturesToBitcoreTx(tx: string, inputs: any[], inputPaths: any[], signatures: any[], xpub: string, signingMethod?: string);
+  addSignaturesToBitcoreTx(
+    tx: string,
+    inputs: any[],
+    inputPaths: any[],
+    signatures: any[],
+    xpub: string,
+    signingMethod?: string
+  );
   addressToStorageTransform(network: string, address: {}): void;
   addressFromStorageTransform(network: string, address: {}): void;
   validateAddress(wallet: IWallet, inaddr: string, opts: { noCashAddr: boolean } & any);

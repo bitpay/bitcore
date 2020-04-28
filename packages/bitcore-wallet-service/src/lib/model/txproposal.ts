@@ -311,7 +311,15 @@ export class TxProposal {
     const t = this._buildTx();
     const sigs = this._getCurrentSignatures();
     _.each(sigs, x => {
-      ChainService.addSignaturesToBitcoreTx(this.coin, t, this.inputs, this.inputPaths, x.signatures, x.xpub, this.signingMethod);
+      ChainService.addSignaturesToBitcoreTx(
+        this.coin,
+        t,
+        this.inputs,
+        this.inputPaths,
+        x.signatures,
+        x.xpub,
+        this.signingMethod
+      );
     });
 
     return t;
@@ -414,23 +422,26 @@ export class TxProposal {
     this._updateStatus();
   }
 
-  sign(copayerId, signatures, xpub, bchSchnorr) {
+  sign(copayerId, signatures, xpub) {
     try {
       // Tests signatures are OK
       const tx = this.getBitcoreTx();
-      if(this.coin === 'bch' && this.signingMethod === 'schnorr' && !bchSchnorr) {
-        throw new Error('Need to upgrade - signingMethod not supported');
-      } else {
-        ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub, this.signingMethod);
-      }
-
+      ChainService.addSignaturesToBitcoreTx(
+        this.coin,
+        tx,
+        this.inputs,
+        this.inputPaths,
+        signatures,
+        xpub,
+        this.signingMethod
+      );
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {
         this.raw = tx.uncheckedSerialize();
         this.txid = tx.id;
       }
-      
+
       return true;
     } catch (e) {
       log.debug(e);
