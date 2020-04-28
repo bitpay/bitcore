@@ -119,8 +119,6 @@ export class V8 {
     const payload = {
       name: wallet.id,
       pubKey: wallet.beAuthPublicKey2,
-      network: this.v8network,
-      chain: this.coin // lowerCase?
     };
     client
       .register({
