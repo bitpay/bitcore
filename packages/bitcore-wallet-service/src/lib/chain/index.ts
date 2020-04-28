@@ -7,6 +7,15 @@ import { XrpChain } from './xrp';
 const Common = require('../common');
 const Constants = Common.Constants;
 
+export interface INotificationData {
+  out: {
+    address: any,
+      amount: any,
+      tokenAddress?: any,
+  },
+    txid: any,
+};
+
 export interface IChain {
   getWalletBalance(server: WalletService, wallet: IWallet, opts: { coin: string; addresses: string[] } & any, cb);
   getWalletSendMaxInfo(
@@ -50,6 +59,8 @@ export interface IChain {
   addressToStorageTransform(network: string, address: {}): void;
   addressFromStorageTransform(network: string, address: {}): void;
   validateAddress(wallet: IWallet, inaddr: string, opts: { noCashAddr: boolean } & any);
+  onCoin(coin: any): INotificationData | null;
+  onTx(tx: any): INotificationData | null;
 }
 
 const chain: { [chain: string]: IChain } = {
@@ -163,6 +174,14 @@ class ChainProxy {
 
   validateAddress(wallet, inaddr, opts) {
     return this.get(wallet.coin).validateAddress(wallet, inaddr, opts);
+  }
+
+  onCoin(coin: string, coinData: any) {
+    return this.get(coin).onCoin(coinData);
+  }
+
+  onTx(coin: string, tx: any) {
+    return this.get(coin).onTx(tx);
   }
 }
 

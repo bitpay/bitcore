@@ -1,6 +1,6 @@
 import { BitcoreLib } from 'crypto-wallet-core';
 import _ from 'lodash';
-import { IChain } from '..';
+import { IChain, INotificationData } from '..';
 import { ClientError } from '../../errors/clienterror';
 import { TxProposal } from '../../model';
 
@@ -414,4 +414,21 @@ export class BtcChain implements IChain {
     }
     return;
   }
+
+  // Push notification handling
+  onCoin(coin) {
+    // script output, or similar.
+    if (!coin || !coin.address) return;
+
+    return {
+      out: {
+        address: coin.address,
+        amount: coin.value,
+      },
+      txid: coin.mintTxid,
+    };
+  }
+
+  // Push notification handling
+  onTx(tx) { return null}
 }

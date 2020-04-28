@@ -1,7 +1,8 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
-import { IChain } from '..';
+import { IChain, INotificationData } from '..';
+import { Web3 } from 'crypto-wallet-core';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
@@ -292,5 +293,29 @@ export class EthChain implements IChain {
       throw Errors.INVALID_ADDRESS;
     }
     return;
+  }
+
+  onCoin(coin) { return null;}
+
+  onTx(tx) {
+    let tokenAddress;
+    let address;
+    let amount;
+    if (tx.abiType && tx.abiType.type === 'ERC20') {
+      tokenAddress = tx.to;
+      address = Web3.utils.toChecksumAddress(tx.abiType.params[0].value);
+      amount = tx.abiType.params[1].value;
+    } else {
+      address = tx.to;
+      amount = tx.value;
+    }
+    return {
+      txid: tx.txid,
+      out: {
+        address,
+        amount,
+        tokenAddress
+      }
+    };
   }
 }
