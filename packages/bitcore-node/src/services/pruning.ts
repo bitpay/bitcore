@@ -41,6 +41,9 @@ export class PruningService {
     } else {
       for (let chainNetwork of Config.chainNetworks()) {
         const { chain, network } = chainNetwork;
+        if (!chain || !network) {
+          throw new Error('Config structure should contain both a chain and network');
+        }
         await this.processOldMempoolTxs(chain, network, MEMPOOL_AGE);
         await this.processAllInvalidTxs(chain, network);
       }
@@ -78,6 +81,9 @@ export class PruningService {
                   return cb(new Error(`Invalid coin! ${coin.mintTxid} `));
                 }
                 count++;
+                if (count > 50) {
+                  throw new Error(`${tx.txid} has too many decendents`);
+                }
                 if (coin.spentTxid) {
                   spentTxids.add(coin.spentTxid);
                 }
@@ -123,6 +129,9 @@ export class PruningService {
                   return cb(new Error(`Invalid coin! ${coin.mintTxid} `));
                 }
                 count++;
+                if (count > 50) {
+                  throw new Error(`${tx.txid} has too many decendents`);
+                }
                 if (coin.spentTxid) {
                   spentTxids.add(coin.spentTxid);
                 }
