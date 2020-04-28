@@ -83,7 +83,7 @@ export class DailyTransactionChartComponent {
     const options = {
       maintainAspectRatio: false,
       legend: {
-        display: false,
+        display: false
       },
       scales: {
         yAxes: [
@@ -133,7 +133,7 @@ export class DailyTransactionChartComponent {
           responsive: true,
           label: '# Transactions Per Day',
           legend: {
-            display: false,
+            display: false
           }
         }
       ]
@@ -144,7 +144,7 @@ export class DailyTransactionChartComponent {
       data,
       options: {
         legend: {
-          display: false,
+          display: false
         }
       }
     });

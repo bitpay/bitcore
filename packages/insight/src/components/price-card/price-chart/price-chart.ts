@@ -20,7 +20,11 @@ export class PriceChartComponent {
   public coinPrice: string;
   public chainNetwork: ChainNetwork;
 
-  constructor(public nav: Nav, public navParams: NavParams, public events: Events) {}
+  constructor(
+    public nav: Nav,
+    public navParams: NavParams,
+    public events: Events
+  ) {}
 
   public numberWithCommas(x) {
     return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
@@ -28,7 +32,10 @@ export class PriceChartComponent {
 
   drawPriceChart(coin, numOfDays) {
     this.coinPrice = this.numberWithCommas(coin.currentPrice);
-    this.events.publish('LatestPrice', { coin: coin.name, latestPrice: coin.currentPrice });
+    this.events.publish('LatestPrice', {
+      coin: coin.name,
+      latestPrice: coin.currentPrice
+    });
     this.drawCanvas(coin, numOfDays);
   }
 
@@ -80,7 +87,7 @@ export class PriceChartComponent {
     const options = {
       maintainAspectRatio: false,
       legend: {
-        display: false,
+        display: false
       },
       scales: {
         yAxes: [

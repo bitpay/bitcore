@@ -9,6 +9,7 @@ import { LatestBlocksComponentModule } from '../components/latest-blocks/latest-
 import { PriceChartModule } from '../components/price-card/price-chart/price-chart.module';
 import { BlocksPageModule } from '../pages/blocks/blocks.module';
 import { BroadcastTxPageModule } from './broadcast-tx/broadcast-tx.module';
+import { ChainHomePageModule } from './chain-home/chain-home.module';
 import { HomePageModule } from './home/home.module';
 
 @NgModule({
@@ -18,6 +19,7 @@ import { HomePageModule } from './home/home.module';
     ComponentsModule,
     BlocksPageModule,
     BroadcastTxPageModule,
+    ChainHomePageModule,
     HomePageModule,
     FooterComponentModule,
     HeadNavComponentModule,
