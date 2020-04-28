@@ -4236,7 +4236,7 @@ describe('Wallet service', function() {
                 done();
               });
             });
-            it('should fail to publish a temporary tx proposal if utxos are already spent', function(done) {
+            it.only('should fail to publish a temporary tx proposal if utxos are already spent', function(done) {
               var txp1, txp2;
               var txOpts = {
                 outputs: [{
@@ -4277,6 +4277,7 @@ describe('Wallet service', function() {
                     txProposalId: txp.id,
                     signatures: signatures
                   }, function(err, txp) {
+console.log('[server.js.4279:txp:]',txp.toObject()); // TODO
                     should.not.exist(err);
 
                     helpers.stubBroadcast(txp.txid);

@@ -2186,6 +2186,20 @@ export class WalletService {
                   return next();
                 },
                 next => {
+
+
+                  let txOptsFee = fee;
+
+                  if ( !txOptsFee  ) {
+                    const useInputFee = opts.inputs && !_.isNumber(opts.feePerKb);
+                    const isNotUtxoCoin = !ChainService.isUTXOCoin(wallet.coin)
+                    const shouldUseOptsFee = useInputFee || isNotUtxoCoin;
+
+                    if (shouldUseOptsFee) {
+                      txOptsFee = opts.fee;
+                    }
+                  } 
+
                   const txOpts = {
                     id: opts.txProposalId,
                     walletId: this.walletId,
@@ -2207,13 +2221,7 @@ export class WalletService {
                     customData: opts.customData,
                     inputs: opts.inputs,
                     version: opts.txpVersion,
-                    fee: fee
-                      ? fee
-                      : opts.inputs && !_.isNumber(opts.feePerKb)
-                      ? opts.fee
-                      : !ChainService.isUTXOCoin(wallet.coin)
-                      ? opts.fee
-                      : null,
+                    fee: txOptsFee,
                     noShuffleOutputs: opts.noShuffleOutputs,
                     gasPrice,
                     nonce: opts.nonce,

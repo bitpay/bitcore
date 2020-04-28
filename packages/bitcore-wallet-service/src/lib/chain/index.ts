@@ -30,7 +30,7 @@ export interface IChain {
   getChangeAddress(server: WalletService, wallet: IWallet, opts: { changeAddress: string } & any);
   checkDust(output: { amount: number; toAddress: string; valid: boolean }, opts: { outputs: any[] } & any);
   getFee(server: WalletService, wallet: IWallet, opts: { fee: number; feePerKb: number } & any);
-  getBitcoreTx(txp: TxProposal, opts: { unsigned: boolean });
+  getBitcoreTx(txp: TxProposal, opts: { signed: boolean });
   convertFeePerKb(p: number, feePerKb: number);
   checkTx(server: WalletService, txp: ITxProposal);
   checkTxUTXOs(server: WalletService, txp: ITxProposal, opts: { noCashAddr: boolean } & any, cb);
@@ -105,8 +105,8 @@ class ChainProxy {
     return this.get(wallet.coin).getFee(server, wallet, opts);
   }
 
-  getBitcoreTx(txp: TxProposal, opts = { unsigned: false }) {
-    return this.get(txp.coin).getBitcoreTx(txp, { unsigned: opts.unsigned });
+  getBitcoreTx(txp: TxProposal, opts = { signed: true }) {
+    return this.get(txp.coin).getBitcoreTx(txp, { signed: opts.signed });
   }
 
   convertFeePerKb(coin, p, feePerKb) {

@@ -142,7 +142,7 @@ export class EthChain implements IChain {
     });
   }
 
-  getBitcoreTx(txp, opts = { unsigned: false }) {
+  getBitcoreTx(txp, opts = { signed: true }) {
     const { data, outputs, payProUrl, tokenAddress } = txp;
     const isERC20 = tokenAddress && !payProUrl;
     const chain = isERC20 ? 'ERC20' : 'ETH';
@@ -184,7 +184,7 @@ export class EthChain implements IChain {
       getChangeOutput: () => null
     };
 
-    if (!opts.unsigned) {
+    if (opts.signed) {
       const sigs = txp.getCurrentSignatures();
       sigs.forEach(x => {
         this.addSignaturesToBitcoreTx(tx, txp.inputs, txp.inputPaths, x.signatures, x.xpub);

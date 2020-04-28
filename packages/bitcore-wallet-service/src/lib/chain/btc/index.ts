@@ -234,7 +234,7 @@ export class BtcChain implements IChain {
     });
   }
 
-  getBitcoreTx(txp, opts = { unsigned: false }) {
+  getBitcoreTx(txp, opts = { signed: true }) {
     const t = new this.bitcoreLib.Transaction();
 
     // BTC tx version
@@ -317,7 +317,7 @@ export class BtcChain implements IChain {
     $.checkState(totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs, 'not-enought-inputs');
     $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin], 'fee-too-high');
 
-    if (!opts.unsigned) {
+    if (opts.signed) {
       const sigs = txp.getCurrentSignatures();
       _.each(sigs, x => {
         this.addSignaturesToBitcoreTx(t, txp.inputs, txp.inputPaths, x.signatures, x.xpub, txp.signingMethod);

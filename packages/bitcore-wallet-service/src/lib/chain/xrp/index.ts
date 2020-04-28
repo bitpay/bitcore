@@ -117,7 +117,7 @@ export class XrpChain implements IChain {
     });
   }
 
-  getBitcoreTx(txp, opts = { unsigned: false }) {
+  getBitcoreTx(txp, opts = { signed: true }) {
     const { destinationTag, outputs } = txp;
     const chain = 'XRP';
     const recipients = outputs.map(output => {
@@ -151,7 +151,7 @@ export class XrpChain implements IChain {
       getChangeOutput: () => null
     };
 
-    if (!opts.unsigned) {
+    if (opts.signed) {
       const sigs = txp.getCurrentSignatures();
       sigs.forEach(x => {
         this.addSignaturesToBitcoreTx(tx, txp.inputs, txp.inputPaths, x.signatures, x.xpub);
@@ -167,7 +167,7 @@ export class XrpChain implements IChain {
 
   checkTx(txp) {
     try {
-      this.getBitcoreTx(txp, { unsigned: false });
+      this.getBitcoreTx(txp);
     } catch (ex) {
       log.warn('Error building XRP  transaction', ex);
       return ex;
