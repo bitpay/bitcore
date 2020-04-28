@@ -11,7 +11,7 @@ var { TxProposal } = require('../../ts_build/lib/model/txproposal');
 
 describe('Chain BTC', function() {
  
-  describe.only('#getBitcoreTx', function() {
+  describe('#getBitcoreTx', function() {
     it('should create a valid bitcore TX', function() {
       var txp = TxProposal.fromObj(aTXP());
       var t = ChainService.getBitcoreTx(txp);
