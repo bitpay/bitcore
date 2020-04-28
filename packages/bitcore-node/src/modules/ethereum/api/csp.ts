@@ -193,13 +193,13 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     const { limit, since, tokenAddress } = args;
     if (!args.tokenAddress) {
       const query = { chain, network, $or: [{ from: address }, { to: address }] };
-      Storage.apiStreamingFind(EthTransactionStorage, query, { limit, since, paging: '_id' }, req, res);
+      Storage.apiStreamingFind(EthTransactionStorage, query, { limit, since, paging: '_id' }, req!, res!);
     } else {
       try {
         const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress);
-        res.json(tokenTransfers);
+        res!.json(tokenTransfers);
       } catch (e) {
-        res.status(500).send(e);
+        res!.status(500).send(e);
       }
     }
   }
