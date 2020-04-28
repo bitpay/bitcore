@@ -252,7 +252,9 @@ export class XrpChain implements IChain {
     return;
   }
 
-  onCoin(coin) { return null; }
+  onCoin(coin) {
+    return null;
+  }
   onTx(tx) {
     // TODO
     // format tx to

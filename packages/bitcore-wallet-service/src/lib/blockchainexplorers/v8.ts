@@ -120,7 +120,7 @@ export class V8 {
       name: wallet.id,
       pubKey: wallet.beAuthPublicKey2,
       network: this.v8network,
-      chain: this.coin      // lowerCase?
+      chain: this.coin // lowerCase?
     };
     client
       .register({
@@ -515,19 +515,18 @@ export class V8 {
       if (!data || !data.coin) return;
 
       const notification = ChainService.onCoin(this.coin, data.coin);
-      if (!notification)  return;
+      if (!notification) return;
 
-      return callbacks.onIncomingPayments( notification );
+      return callbacks.onIncomingPayments(notification);
     });
 
     walletsSocket.on('tx', data => {
       if (!data || !data.tx) return;
 
-
       const notification = ChainService.onTx(this.coin, data.tx);
-      if (!notification)  return;
+      if (!notification) return;
 
-      return callbacks.onIncomingPayments( notification );
+      return callbacks.onIncomingPayments(notification);
     });
   }
 }

@@ -1,8 +1,8 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
+import { Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain, INotificationData } from '..';
-import { Web3 } from 'crypto-wallet-core';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
@@ -295,7 +295,9 @@ export class EthChain implements IChain {
     return;
   }
 
-  onCoin(coin) { return null;}
+  onCoin(coin) {
+    return null;
+  }
 
   onTx(tx) {
     let tokenAddress;

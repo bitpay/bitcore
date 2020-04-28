@@ -423,12 +423,14 @@ export class BtcChain implements IChain {
     return {
       out: {
         address: coin.address,
-        amount: coin.value,
+        amount: coin.value
       },
-      txid: coin.mintTxid,
+      txid: coin.mintTxid
     };
   }
 
   // Push notification handling
-  onTx(tx) { return null}
+  onTx(tx) {
+    return null;
+  }
 }

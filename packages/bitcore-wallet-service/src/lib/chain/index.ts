@@ -9,12 +9,12 @@ const Constants = Common.Constants;
 
 export interface INotificationData {
   out: {
-    address: any,
-      amount: any,
-      tokenAddress?: any,
-  },
-    txid: any,
-};
+    address: any;
+    amount: any;
+    tokenAddress?: any;
+  };
+  txid: any;
+}
 
 export interface IChain {
   getWalletBalance(server: WalletService, wallet: IWallet, opts: { coin: string; addresses: string[] } & any, cb);
