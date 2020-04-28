@@ -2186,19 +2186,17 @@ export class WalletService {
                   return next();
                 },
                 next => {
-
-
                   let txOptsFee = fee;
 
-                  if ( !txOptsFee  ) {
+                  if (!txOptsFee) {
                     const useInputFee = opts.inputs && !_.isNumber(opts.feePerKb);
-                    const isNotUtxoCoin = !ChainService.isUTXOCoin(wallet.coin)
+                    const isNotUtxoCoin = !ChainService.isUTXOCoin(wallet.coin);
                     const shouldUseOptsFee = useInputFee || isNotUtxoCoin;
 
                     if (shouldUseOptsFee) {
                       txOptsFee = opts.fee;
                     }
-                  } 
+                  }
 
                   const txOpts = {
                     id: opts.txProposalId,
