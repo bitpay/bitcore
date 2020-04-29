@@ -72,7 +72,7 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     const client = await this.getClient(params.network);
     try {
       const info = await client.getAccountInfo(params.address);
-      const confirmed = Number(info.xrpBalance) * 1e6;
+      const confirmed = Math.round(Number(info.xrpBalance) * 1e6);
       const balance = confirmed;
       const unconfirmed = 0;
       return { confirmed, unconfirmed, balance };
