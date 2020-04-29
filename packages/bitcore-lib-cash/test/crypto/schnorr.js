@@ -16,7 +16,7 @@ var vectors = require('../data/ecdsa');
 
 
 
-describe("Schnorr", function() {
+describe("#Schnorr", function() {
     it('instantiation', function() {
         var schnorr = new Schnorr();
         should.exist(schnorr);
@@ -96,7 +96,6 @@ describe("Schnorr", function() {
         schnorr.endianess = 'big';
         schnorr.pubkey = new Pubkey("0479be667ef9dcbbac55a06295ce870b07029bfcdb2dce28d959f2815b16f81798483ada7726a3c4655da4fbfc0e1108a8fd17b448a68554199c47d08ffb10d4b8", { compressed: false} );
         schnorr.sig = Signature.fromString("0df4be7f5fe74b2855b92082720e889038e15d8d747334fa3f300ef4ab1db1eea56aa83d1d60809ff6703791736be87cfb6cbc5c4036aeed3b4ea4e6dab35090");
-        console.log("Schnorr verify", schnorr.verify().verified);
         schnorr.verify().verified.should.equal(true);
     });
 

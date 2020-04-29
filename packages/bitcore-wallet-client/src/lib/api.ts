@@ -430,6 +430,8 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
+    var signingMethod = opts.signingMethod || 'ecdsa';
+
     if (!_.includes(Constants.COINS, coin)) return cb(new Error('Invalid coin'));
 
     if (coin == 'eth') return cb(new Error('ETH not supported for this action'));
@@ -465,7 +467,7 @@ export class API extends EventEmitter {
               .from(utxos)
               .to(toAddress, amount)
               .fee(fee)
-              .sign(privateKey);
+              .sign(privateKey, undefined, signingMethod);
 
             // Make sure the tx can be serialized
             tx.serialize();
@@ -606,6 +608,7 @@ export class API extends EventEmitter {
 
   _addSignaturesToBitcoreTxBitcoin(txp, t, signatures, xpub) {
     $.checkState(txp.coin);
+    $.checkState(txp.signingMethod);
     const bitcore = Bitcore_[txp.coin];
     if (signatures.length != txp.inputs.length) throw new Error('Number of signatures does not match number of inputs');
 
@@ -624,7 +627,7 @@ export class API extends EventEmitter {
             bitcore.crypto.Signature.SIGHASH_ALL | bitcore.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub
         };
-        t.inputs[i].addSignature(t, s);
+        t.inputs[i].addSignature(t, s, txp.signingMethod);
         i++;
       } catch (e) {}
     });
@@ -1261,6 +1264,7 @@ export class API extends EventEmitter {
   // * @param {Array} opts.inputs - Optional. Inputs for this TX
   // * @param {number} opts.fee - Optional. Use an fixed fee for this TX (only when opts.inputs is specified)
   // * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
+  // * @param {String} opts.signingMethod - Optional. If set, force signing method (ecdsa or schnorr) otherwise use default for coin
   // * @returns {Callback} cb - Return error or the transaction proposal
   // * @param {String} baseUrl - Optional. ONLY FOR TESTING
   // */
@@ -1271,8 +1275,14 @@ export class API extends EventEmitter {
 
     var args = this._getCreateTxProposalArgs(opts);
 
+    baseUrl = baseUrl || '/v3/txproposals/';
     // baseUrl = baseUrl || '/v4/txproposals/'; // DISABLED 2020-04-07
-    baseUrl = '/v3/txproposals/';
+
+    // BCH schnorr deployment
+    if (!opts.signingMethod && this.credentials.coin == 'bch' && this.credentials.network == 'testnet') {
+      args.signingMethod == 'schnorr';
+    }
+
     this.request.post(baseUrl, args, (err, txp) => {
       if (err) return cb(err);
 
@@ -1531,9 +1541,14 @@ export class API extends EventEmitter {
 
         if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
+        base = base || '/v1/txproposals/';
         //        base = base || '/v2/txproposals/'; // DISABLED 2020-04-07
-        base = '/v1/txproposals/';
+
         var url = base + txp.id + '/signatures/';
+
+        if (txp.coin === 'bch' && txp.network === 'testnet') {
+          url = '/v4/txproposals/' + txp.id + '/signatures/';
+        }
         var args = {
           signatures
         };

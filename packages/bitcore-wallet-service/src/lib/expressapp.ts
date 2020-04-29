@@ -518,15 +518,17 @@ export class ExpressApp {
 
     /* THIS WAS NEVED ENABLED YET NOW 2020-04-07
     router.post('/v4/txproposals/', (req, res) => {
-      req.body.txpVersion = 4;
       getServerWithAuth(req, res, server => {
+        req.body.txpVersion = 4;
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
         });
       });
     });
-    */
+
+*/
+
     // DEPRECATED
     router.post('/v1/addresses/', (req, res) => {
       logDeprecated(req);
@@ -740,8 +742,21 @@ export class ExpressApp {
       });
     });
 
-    /* THIS WAS NEVED ENABLED YET NOW 2020-04-07 (see above)
     router.post('/v2/txproposals/:id/signatures/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        req.body.txProposalId = req.params['id'];
+        req.body.maxTxpVersion = 3;
+        req.body.useBchSchnorr = true;
+        server.signTx(req.body, (err, txp) => {
+          if (err) return returnError(err, res, req);
+          res.json(txp);
+          res.end();
+        });
+      });
+    });
+
+    /* THIS WAS NEVED ENABLED YET NOW 2020-04-07 (see above)
+    router.post('/v3/txproposals/:id/signatures/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.txProposalId = req.params['id'];
         req.body.maxTxpVersion = 4;
@@ -863,6 +878,7 @@ export class ExpressApp {
         from?: string;
         to?: string;
       } = {};
+
       if (req.query.network) opts.network = req.query.network;
       if (req.query.coin) opts.coin = req.query.coin;
       if (req.query.from) opts.from = req.query.from;

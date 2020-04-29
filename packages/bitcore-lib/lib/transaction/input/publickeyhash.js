@@ -66,12 +66,14 @@ PublicKeyHashInput.prototype.getSighash = function(transaction, privateKey, inde
  * @param {number} index - the index of the input in the transaction input vector
  * @param {number=} sigtype - the type of signature, defaults to Signature.SIGHASH_ALL
  * @param {Buffer=} hashData - the precalculated hash of the public key associated with the privateKey provided
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
  * @return {Array} of objects that can be
  */
-PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData) {
+PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, index, sigtype, hashData, signingMethod) {
   $.checkState(this.output instanceof Output);
   hashData = hashData || Hash.sha256ripemd160(privateKey.publicKey.toBuffer());
   sigtype = sigtype || Signature.SIGHASH_ALL;
+  signingMethod = signingMethod || 'ecdsa';
 
   var script;
   if (this.output.script.isScriptHashOut()) {
@@ -85,9 +87,9 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
     if (script.isWitnessPublicKeyHashOut()) {
       var satoshisBuffer = this.getSatoshisBuffer();
       var scriptCode = this.getScriptCode(privateKey.publicKey);
-      signature = SighashWitness.sign(transaction, privateKey, sigtype, index, scriptCode, satoshisBuffer);
+      signature = SighashWitness.sign(transaction, privateKey, sigtype, index, scriptCode, satoshisBuffer, signingMethod);
     } else {
-      signature = Sighash.sign(transaction, privateKey, sigtype, index, this.output.script);
+      signature = Sighash.sign(transaction, privateKey, sigtype, index, this.output.script, signingMethod);
     }
 
     return [new TransactionSignature({
@@ -110,10 +112,11 @@ PublicKeyHashInput.prototype.getSignatures = function(transaction, privateKey, i
  * @param {PublicKey} signature.publicKey
  * @param {Signature} signature.signature
  * @param {number=} signature.sigtype
+ * @param {String} signingMethod - method used to sign - 'ecdsa' or 'schnorr' (future signing method)
  * @return {PublicKeyHashInput} this, for chaining
  */
-PublicKeyHashInput.prototype.addSignature = function(transaction, signature) {
-  $.checkState(this.isValidSignature(transaction, signature), 'Signature is invalid');
+PublicKeyHashInput.prototype.addSignature = function(transaction, signature, signingMethod) {
+  $.checkState(this.isValidSignature(transaction, signature, signingMethod), 'Signature is invalid');
 
   if (this.output.script.isWitnessPublicKeyHashOut() || this.output.script.isScriptHashOut()) {
     this.setWitnesses([
@@ -151,7 +154,7 @@ PublicKeyHashInput.prototype.isFullySigned = function() {
   return this.script.isPublicKeyHashIn() || this.hasWitnesses();
 };
 
-PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature) {
+PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature, signingMethod) {
   // FIXME: Refactor signature so this is not necessary
   signature.signature.nhashtype = signature.sigtype;
   if (this.output.script.isWitnessPublicKeyHashOut() || this.output.script.isScriptHashOut()) {
@@ -163,7 +166,8 @@ PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature)
       signature.publicKey,
       signature.inputIndex,
       scriptCode,
-      satoshisBuffer
+      satoshisBuffer,
+      signingMethod
     );
   } else {
     return Sighash.verify(
@@ -171,7 +175,8 @@ PublicKeyHashInput.prototype.isValidSignature = function(transaction, signature)
       signature.signature,
       signature.publicKey,
       signature.inputIndex,
-      this.output.script
+      this.output.script,
+      signingMethod
     );
   }
 };

@@ -147,7 +147,7 @@ import { Verification } from '../../src/services/verification';
             console.log('REPAIR SOLVED ISSUE');
           } else {
             console.log('REPAIR FAILED TO SOLVE ISSUE');
-            console.log(errors);
+            console.log(JSON.stringify(errors, null, 2));
           }
         }
         break;

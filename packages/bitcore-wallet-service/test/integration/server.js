@@ -4265,7 +4265,7 @@ describe('Wallet service', function() {
                   var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
                   server.signTx({
                     txProposalId: txp.id,
-                    signatures: signatures,
+                    signatures: signatures
                   }, function(err, txp) {
                     should.not.exist(err);
 

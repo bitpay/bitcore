@@ -38,7 +38,8 @@ const errors = {
   WALLET_BUSY: 'Wallet is busy, try later',
   WALLET_NOT_COMPLETE: 'Wallet is not complete',
   WALLET_NOT_FOUND: 'Wallet not found',
-  WALLET_NEED_SCAN: 'Wallet needs addresses scan'
+  WALLET_NEED_SCAN: 'Wallet needs addresses scan',
+  WRONG_SIGNING_METHOD: 'Wrong signed method for coin/network'
 };
 
 const errorObjects = _.fromPairs(

@@ -1,5 +1,4 @@
 import * as async from 'async';
-import { Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
 import * as request from 'request-promise-native';
 import io = require('socket.io-client');
@@ -31,6 +30,7 @@ function v8network(bwsNetwork) {
 }
 
 export class V8 {
+  chain: string;
   coin: string;
   network: string;
   v8network: string;
@@ -50,17 +50,15 @@ export class V8 {
     $.checkArgument(opts.url);
 
     this.apiPrefix = _.isUndefined(opts.apiPrefix) ? '/api' : opts.apiPrefix;
-    this.coin = ChainService.getChain(opts.coin || Defaults.COIN).toLowerCase();
+    this.chain = ChainService.getChain(opts.coin || Defaults.COIN);
+    this.coin = this.chain.toLowerCase();
 
     this.network = opts.network || 'livenet';
     this.v8network = v8network(this.network);
 
     // v8 is always cashaddr
     this.addressFormat = this.coin == 'bch' ? 'cashaddr' : null;
-
-    const coin = this.coin.toUpperCase();
-
-    this.apiPrefix += `/${coin}/${this.v8network}`;
+    this.apiPrefix += `/${this.chain}/${this.v8network}`;
 
     this.host = opts.url;
     this.userAgent = opts.userAgent || 'bws';
@@ -120,9 +118,7 @@ export class V8 {
     const client = this._getAuthClient(wallet);
     const payload = {
       name: wallet.id,
-      pubKey: wallet.beAuthPublicKey2,
-      network: this.v8network,
-      chain: this.coin
+      pubKey: wallet.beAuthPublicKey2
     };
     client
       .register({
@@ -230,7 +226,7 @@ export class V8 {
     const payload = {
       rawTx,
       network: this.v8network,
-      chain: this.coin.toUpperCase()
+      chain: this.chain
     };
 
     const client = this._getClient();
@@ -489,7 +485,7 @@ export class V8 {
 
     blockSocket.on('connect', () => {
       log.info(`Connected to block ${this.getConnectionInfo()}`);
-      blockSocket.emit('room', `/${this.coin.toUpperCase()}/${this.v8network}/inv`);
+      blockSocket.emit('room', `/${this.chain}/${this.v8network}/inv`);
     });
 
     blockSocket.on('connect_error', () => {
@@ -502,49 +498,33 @@ export class V8 {
 
     walletsSocket.on('connect', () => {
       log.info(`Connected to wallets ${this.getConnectionInfo()}`);
-      walletsSocket.emit('room', `/${this.coin.toUpperCase()}/${this.v8network}/wallets`, getAuthPayload(this.host));
+      walletsSocket.emit('room', `/${this.chain}/${this.v8network}/wallets`, getAuthPayload(this.host));
     });
 
     walletsSocket.on('connect_error', () => {
-      log.error(`Error connecting to ${this.getConnectionInfo()}  ${this.coin.toUpperCase()}/${this.v8network}`);
+      log.error(`Error connecting to ${this.getConnectionInfo()}  ${this.chain}/${this.v8network}`);
     });
 
     walletsSocket.on('failure', err => {
-      log.error(`Error joining room ${err.message} ${this.coin.toUpperCase()}/${this.v8network}`);
+      log.error(`Error joining room ${err.message} ${this.chain}/${this.v8network}`);
     });
 
     walletsSocket.on('coin', data => {
-      const coin = data.coin;
-      // script output, or similar.
-      if (!coin || !coin.address || coin.chain === 'ETH') return;
-      const out = {
-        address: coin.address,
-        amount: coin.value
-      };
-      return callbacks.onIncomingPayments({ out, txid: coin.mintTxid });
+      if (!data || !data.coin) return;
+
+      const notification = ChainService.onCoin(this.coin, data.coin);
+      if (!notification) return;
+
+      return callbacks.onIncomingPayments(notification);
     });
 
     walletsSocket.on('tx', data => {
-      const tx = data.tx;
-      // script output, or similar.
-      if (!tx || tx.chain !== 'ETH') return;
-      let tokenAddress;
-      let address;
-      let amount;
-      if (tx.abiType && tx.abiType.type === 'ERC20') {
-        tokenAddress = tx.to;
-        address = Web3.utils.toChecksumAddress(tx.abiType.params[0].value);
-        amount = tx.abiType.params[1].value;
-      } else {
-        address = tx.to;
-        amount = tx.value;
-      }
-      const out = {
-        address,
-        amount,
-        tokenAddress
-      };
-      return callbacks.onIncomingPayments({ out, txid: tx.txid });
+      if (!data || !data.tx) return;
+
+      const notification = ChainService.onTx(this.coin, data.tx);
+      if (!notification) return;
+
+      return callbacks.onIncomingPayments(notification);
     });
   }
 }

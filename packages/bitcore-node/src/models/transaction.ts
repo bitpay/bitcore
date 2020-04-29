@@ -594,6 +594,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
   }
 
   async findAllRelatedOutputs(forTx: string) {
+    const seen = {};
     const getOutputs = (txid: string) =>
       CoinStorage.collection.find({ mintTxid: txid, mintHeight: { $ne: -3 } }).toArray();
     let batch = await getOutputs(forTx);
@@ -602,7 +603,8 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       allRelatedCoins = allRelatedCoins.concat(batch);
       let newBatch = new Array<ICoin>();
       for (const coin of batch) {
-        if (coin.spentTxid) {
+        seen[coin.mintTxid] = true;
+        if (coin.spentTxid && !seen[coin.spentTxid]) {
           const outputs = await getOutputs(coin.spentTxid);
           newBatch = newBatch.concat(outputs);
         }
@@ -610,6 +612,28 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
       batch = newBatch;
     }
     return allRelatedCoins;
+  }
+
+  async *yieldRelatedOutputs(forTx: string) {
+    const seen = {};
+    const getOutputs = (txid: string) =>
+      CoinStorage.collection.find({ mintTxid: txid, mintHeight: { $ne: -3 } }).toArray();
+    let batch = await getOutputs(forTx);
+    while (batch.length) {
+      for (const coin of batch) {
+        seen[coin.mintTxid] = true;
+        yield coin;
+      }
+      let newBatch = new Array<ICoin>();
+      for (const coin of batch) {
+        if (coin.spentTxid && !seen[coin.spentTxid]) {
+          const outputs = await getOutputs(coin.spentTxid);
+          seen[coin.spentTxid] = true;
+          newBatch = newBatch.concat(outputs);
+        }
+      }
+      batch = newBatch;
+    }
   }
 
   async pruneMempool(params: {

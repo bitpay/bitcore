@@ -326,7 +326,6 @@ Script.prototype.isPublicKeyHashIn = function() {
     var pubkeyBuf = this.chunks[1].buf;
     if (signatureBuf &&
         signatureBuf.length &&
-        signatureBuf[0] === 0x30 &&
         pubkeyBuf &&
         pubkeyBuf.length
        ) {
@@ -829,7 +828,7 @@ Script.buildP2SHMultisigIn = function(pubkeys, threshold, signatures, opts) {
     let N = pubkeys.length;
     // N should only be 1-20
       if (N >= 1 && N <= 4) {
-        s.add(Opcode(checkBitsDecimal));
+        s.add(Opcode.smallInt(checkBitsDecimal));
       }
       else if (N >= 5 && N <= 8) {
        if(checkBitsHex === 0x81) {
@@ -838,9 +837,8 @@ Script.buildP2SHMultisigIn = function(pubkeys, threshold, signatures, opts) {
           s.add(0x01);
           s.add(checkBitsHex);
         } else {
-          s.add(Opcode(checkBitsDecimal));
+          s.add(Opcode.smallInt(checkBitsDecimal));
         }
-        
       }
       else if (N >= 9 && N <= 16) {
         s.add(0x02);

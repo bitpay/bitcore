@@ -2375,7 +2375,8 @@ export class WalletService {
    * @param {Array} opts.txpVersion - Optional. Version for TX Proposal (current = 4, only =3 allowed).
    * @param {number} opts.fee - Optional. Use an fixed fee for this TX (only when opts.inputs is specified)
    * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
-   * @param {Boolean} [opts.noCashAddr] - do not use cashaddress for bch
+   * @param {Boolean} opts.noCashAddr - do not use cashaddress for bch
+   * @param {Boolean} opts.signingMethod[=ecdsa] - do not use cashaddress for bch
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */
   createTx(opts, cb) {
@@ -2447,12 +2448,25 @@ export class WalletService {
                   }
                   return next();
                 },
+                async next => {
+                  opts.signingMethod = opts.signingMethod || 'ecdsa';
+                  opts.coin = opts.coin || wallet.coin;
+
+                  if (!['ecdsa', 'schnorr'].includes(opts.signingMethod)) {
+                    return next(Errors.WRONG_SIGNING_METHOD);
+                  }
+
+                  //  schnorr only on BCH
+                  if (opts.coin != 'bch' && opts.signingMethod == 'schnorr') return next(Errors.WRONG_SIGNING_METHOD);
+
+                  return next();
+                },
                 next => {
                   const txOpts = {
                     id: opts.txProposalId,
                     walletId: this.walletId,
                     creatorId: this.copayerId,
-                    coin: opts.coin || wallet.coin,
+                    coin: opts.coin,
                     network: wallet.network,
                     outputs: opts.outputs,
                     message: opts.message,
@@ -2482,7 +2496,8 @@ export class WalletService {
                     data: opts.data, // Backward compatibility for BWC < v7.1.1
                     tokenAddress: opts.tokenAddress,
                     destinationTag: opts.destinationTag,
-                    invoiceID: opts.invoiceID
+                    invoiceID: opts.invoiceID,
+                    signingMethod: opts.signingMethod
                   };
 
                   txp = TxProposal.create(txOpts);
@@ -2763,12 +2778,13 @@ export class WalletService {
    * Sign a transaction proposal.
    * @param {Object} opts
    * @param {string} opts.txProposalId - The identifier of the transaction.
+   * @param {string} opts.signatures - The signatures of the inputs of this tx for this copayer (in appearance order)
    * @param {string} opts.maxTxpVersion - Client's maximum supported txp version
-   * @param {string} opts.signatures - The signatures of the inputs of this tx for this copayer (in apperance order)
+   * @param {boolean} opts.useBchSchnorr - indication whether to use schnorr for signing tx
    */
   signTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId', 'signatures'], cb)) return;
-    opts.maxTxpVersion = opts.maxTxpVersion || 4;
+    opts.maxTxpVersion = opts.maxTxpVersion || 3;
 
     this.getWallet({}, (err, wallet) => {
       if (err) return cb(err);
@@ -2794,6 +2810,7 @@ export class WalletService {
           });
           if (action) return cb(Errors.COPAYER_VOTED);
           if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
+          if (txp.signingMethod === 'schnorr' && !opts.useBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
 
           const copayer = wallet.getCopayer(this.copayerId);
 
