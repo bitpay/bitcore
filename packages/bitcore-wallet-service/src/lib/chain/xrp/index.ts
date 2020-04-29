@@ -1,7 +1,7 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
-import { IChain } from '..';
+import { IChain, INotificationData } from '..';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
@@ -250,5 +250,15 @@ export class XrpChain implements IChain {
       throw Errors.INVALID_ADDRESS;
     }
     return;
+  }
+
+  onCoin(coin) {
+    return null;
+  }
+  onTx(tx) {
+    // TODO
+    // format tx to
+    // {address, amount}
+    return null;
   }
 }
