@@ -6,7 +6,6 @@ import { FooterComponentModule } from '../../components/footer/footer.module';
 import { HeadNavComponentModule } from '../../components/head-nav/head-nav.module';
 import { LatestBlocksComponentModule } from '../../components/latest-blocks/latest-blocks.module';
 import { LoaderComponentModule } from '../../components/loader/loader.module';
-import { PriceChartModule } from '../../components/price-card/price-chart/price-chart.module';
 import { HomePage } from './home';
 
 @NgModule({
@@ -15,7 +14,6 @@ import { HomePage } from './home';
     IonicPageModule.forChild(HomePage),
     LatestBlocksComponentModule,
     DailyTransactionChartComponentModule,
-    PriceChartModule,
     FooterComponentModule,
     HeadNavComponentModule,
     LoaderComponentModule,

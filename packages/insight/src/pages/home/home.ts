@@ -1,5 +1,6 @@
 import { Component, Injectable, ViewChild } from '@angular/core';
 import { Events, IonicPage, Nav, NavParams } from 'ionic-angular';
+import * as _ from 'lodash';
 import { LatestBlocksComponent } from '../../components/latest-blocks/latest-blocks';
 import { ApiProvider, ChainNetwork } from '../../providers/api/api';
 import { CurrencyProvider } from '../../providers/currency/currency';
@@ -18,9 +19,9 @@ export class HomePage {
   @ViewChild('latestBlocks')
   public latestBlocks: LatestBlocksComponent;
   public chain: string;
-  public currentView: string;
   public chainNetwork: ChainNetwork;
   public network: string;
+  public availableNetworks;
 
   constructor(
     public nav: Nav,
@@ -30,20 +31,36 @@ export class HomePage {
     public events: Events,
     public currencyProvider: CurrencyProvider
   ) {
-    const chain: string =
-      navParams.get('chain') || this.apiProvider.getConfig().chain;
-    const network: string =
-      navParams.get('network') || this.apiProvider.getConfig().network;
+    this.nav.viewWillEnter.subscribe(view => {
+      if (view.data.chain === 'ALL') {
+        this.load();
+      }
+    });
+    this.load();
+  }
 
-    this.currentView = 'blocks';
+  private load() {
+    const chain: string =
+      this.navParams.get('chain') || this.apiProvider.getConfig().chain;
+    const network: string =
+      this.navParams.get('network') || this.apiProvider.getConfig().network;
+
     this.chainNetwork = {
       chain,
       network
     };
 
+    if (this.chainNetwork.chain === 'ALL') {
+      this.apiProvider.getAvailableNetworks().subscribe(data => {
+        const newNetworks = data
+          .map(x => x.supported)
+          .reduce((agg, arr) => [...agg].concat(arr), []);
+        this.availableNetworks = _.filter(newNetworks, o => o.chain !== 'ALL');
+      });
+    }
+    this.priceProvider.setCurrency();
     this.apiProvider.changeNetwork(this.chainNetwork);
     this.currencyProvider.setCurrency(this.chainNetwork);
-    this.priceProvider.setCurrency();
   }
 
   public openPage(page: string): void {
