@@ -43,6 +43,7 @@ export class API extends EventEmitter {
   timeout: any;
   logLevel: any;
   supportStaffWalletId: any;
+  marketingStaffWalletId: any;
   request: any;
   credentials: any;
   notificationIncludeOwn: boolean;
@@ -75,13 +76,15 @@ export class API extends EventEmitter {
     this.timeout = opts.timeout || 50000;
     this.logLevel = opts.logLevel || 'silent';
     this.supportStaffWalletId = opts.supportStaffWalletId;
+    this.marketingStaffWalletId = opts.marketingStaffWalletId;
 
     this.bp_partner = opts.bp_partner;
     this.bp_partner_version = opts.bp_partner_version;
 
     this.request = new Request(opts.baseUrl || BASE_URL, {
       r: opts.request,
-      supportStaffWalletId: opts.supportStaffWalletId
+      supportStaffWalletId: opts.supportStaffWalletId,
+      marketingStaffWalletId: opts.marketingStaffWalletId
     });
 
     log.setLevel(this.logLevel);
@@ -1545,6 +1548,35 @@ export class API extends EventEmitter {
         return cb(err);
       });
   }
+
+  /**
+   * Create advertisement for bitpay app - (limited to marketing staff)
+   * @param opts - options
+   */
+  createAdvertisement(opts, cb) {
+    // TODO add check for preconditions of title, imgUrl, linkUrl
+
+    var url = '/v1/advertisements/';
+    let args = opts;
+
+    this.request.post(url, args, (err, body) => {
+      if (err) {
+        console.log(err);
+        return cb(err);
+      }
+      return cb(null, body);
+    });
+  }
+
+  /**
+   * Delete Advertisement
+   * @param opts - options
+   */
+  deleteAdvertisement(opts) {
+    var url = '/v1/advertisements/'; // + adId or adTitle;
+  }
+
+  /*
 
   // /**
   // * Sign transaction proposal from AirGapped

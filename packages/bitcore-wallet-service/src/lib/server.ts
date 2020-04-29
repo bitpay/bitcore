@@ -11,6 +11,7 @@ import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
 import {
+  Advertisement,
   Copayer,
   INotification,
   ITxProposal,
@@ -91,6 +92,7 @@ export interface IWalletService {
   parsedClientVersion: { agent: number; major: number; minor: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
+  copayerIsMarketingStaff: boolean;
 }
 function boolToNum(x: boolean) {
   return x ? 1 : 0;
@@ -115,6 +117,7 @@ export class WalletService {
   parsedClientVersion: { agent: string; major: number; minor: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
+  copayerIsMarketingStaff: boolean;
   request;
 
   constructor() {
@@ -315,16 +318,23 @@ export class WalletService {
           return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Copayer not found'));
         }
 
-        if (!copayer.isSupportStaff) {
+        if (!copayer.isSupportStaff && !copayer.isMarketingStaff) {
+          // manually edits  isSupportStaff prop for that copayer with copayerId in database
           const isValid = !!server._getSigningKey(opts.message, opts.signature, copayer.requestPubKeys);
           if (!isValid) {
             return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Invalid signature'));
           }
 
           server.walletId = copayer.walletId;
-        } else {
+        } else if (copayer.isSupportStaff) {
+          $.checkState(!copayer.isMarketingStaff);
+
           server.walletId = opts.walletId || copayer.walletId;
           server.copayerIsSupportStaff = true;
+        } else if (copayer.isMarketingStaff) {
+          $.checkState(!copayer.isSupportStaff);
+          server.walletId = opts.walletId || copayer.walletId;
+          server.copayerIsMarketingStaff = true;
         }
 
         server.copayerId = opts.copayerId;
@@ -3563,6 +3573,57 @@ export class WalletService {
     if (note) {
       tx.note = _.pick(note, ['body', 'editedBy', 'editedByName', 'editedOn']);
     }
+  }
+
+  /**
+   * // Create Advertisement
+   * @param opts
+   * @param cb
+   */
+  createAdvert(opts, cb) {
+    opts = opts ? _.clone(opts) : {};
+
+    // Usually do error checking on preconditions
+    if (!checkRequired(opts, ['title'], cb)) {
+      return;
+    }
+    // Check if ad exists already
+
+    const checkIfAdvertExistsAlready = (title, cb) => {
+      this.storage.fetchAdvert(opts.title, (err, result) => {
+        if (err) return cb(err);
+
+        if (result) {
+          this.logw('Advert already exists');
+          throw new Error('Advertisement Already exists'); // TODO: add to errordefinitions Errors.ADVERTISEMENT already exists
+        }
+
+        if (!result) {
+          let x = new Advertisement();
+
+          x.advertisementId = Uuid.v4();
+          x.title = opts.title;
+          x.body = opts.body;
+          x.imgUrl = opts.imgUrl;
+          x.isAdActive = opts.isAdActive;
+          x.linkUrl = opts.linkUrl;
+
+          this.storage.storeAdvert(x, cb);
+        }
+      });
+    };
+
+    this._runLocked(
+      cb,
+      cb => {
+        checkIfAdvertExistsAlready(opts.title, cb);
+      },
+      10 * 1000
+    );
+  }
+
+  static removeAdvert(opts, cb) {
+    // not yet implemented
   }
 
   tagLowFeeTxs(wallet: IWallet, txs: any[], cb) {

@@ -206,6 +206,16 @@ export class ExpressApp {
           );
         }
 
+        if (opts.onlyMarketingStaff && !server.copayerIsMarketingStaff) {
+          return returnError(
+            new ClientError({
+              code: 'NOT_AUTHORIZED'
+            }),
+            res,
+            req
+          );
+        }
+
         // For logging
         req.walletId = server.walletId;
         req.copayerId = server.copayerId;
@@ -474,6 +484,38 @@ export class ExpressApp {
       });
     });
 
+    // create advertisement
+    router.post('/v1/advertisements/', (req, res) => {
+      getServerWithAuth(
+        req,
+        res,
+        {
+          onlyMarketingStaff: true
+        },
+        server => {
+          server.createAdvert(req.body, (err, advert) => {
+            if (err) {
+              return returnError(err, res, req);
+            }
+            res.json(advert);
+          });
+        }
+      );
+    });
+
+    router.delete('/v1/advertisments/:id', (req, res) => {
+      getServerWithAuth(
+        req,
+        res,
+        {
+          onlyMarketingStaff: true
+        },
+        server => {
+          // removeAdvertisement
+        }
+      );
+    });
+
     /* THIS WAS NEVED ENABLED YET NOW 2020-04-07
     router.post('/v4/txproposals/', (req, res) => {
       req.body.txpVersion = 4;
@@ -484,7 +526,7 @@ export class ExpressApp {
         });
       });
     });
-*/
+    */
     // DEPRECATED
     router.post('/v1/addresses/', (req, res) => {
       logDeprecated(req);
@@ -710,7 +752,7 @@ export class ExpressApp {
         });
       });
     });
-*/
+    */
 
     //
     router.post('/v1/txproposals/:id/publish/', (req, res) => {

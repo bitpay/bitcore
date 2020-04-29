@@ -669,15 +669,14 @@ export class Storage {
     );
   }
 
-  fetchAdvert(adId, title, cb) {
+  fetchAdvert(title, cb) {
     this.db.collection(collections.ADVERTISEMENTS).findOne(
       {
-        adId,
         title
       },
       (err, result) => {
         if (err) return cb(err);
-        if (!result) return cb;
+        if (!result) return cb();
 
         return cb(null, Advertisement.fromObj(result));
       }
