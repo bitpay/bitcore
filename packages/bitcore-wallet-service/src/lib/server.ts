@@ -1645,7 +1645,6 @@ export class WalletService {
    */
   getCoinsForTx(opts, cb) {
     this.getWallet({}, (err, wallet) => {
-
       if (!ChainService.isUTXOCoin(wallet.coin)) {
         return cb(null, []);
       }
@@ -1653,7 +1652,6 @@ export class WalletService {
       if (!bc) {
         return cb(new Error('Could not get blockchain explorer instance'));
       }
-
 
       bc.getCoinsForTx(opts.txId, (err, coins) => {
         if (err) return cb(err);

@@ -665,9 +665,9 @@ export class ExpressApp {
     });
 
     router.get('/v1/txcoins/', (req, res) => {
-      const txId  = req.query.txId;
+      const txId = req.query.txId;
       getServerWithAuth(req, res, server => {
-        server.getCoinsForTx({ txId } , (err, coins) => {
+        server.getCoinsForTx({ txId }, (err, coins) => {
           if (err) return returnError(err, res, req);
           res.json(coins);
         });
