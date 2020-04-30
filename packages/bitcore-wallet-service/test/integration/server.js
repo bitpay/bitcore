@@ -9311,4 +9311,40 @@ describe('Wallet service', function() {
 
   });
 
+
+  describe('#getCoinsForTx', function() {
+    let server, wallet;
+    beforeEach(function() {
+     blockchainExplorer.getCoinsForTx = sinon.stub().callsArgWith(1, null, [ { txid: '11'} ] );
+    });
+
+    it('should get Coins', function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, w) {
+        server = s;
+        wallet = w;
+        server.getCoinsForTx('abab', function(err, coins) {
+          should.not.exist(err);
+          coins[0].txid.should.equal('11');
+          done();
+        });
+      });
+    });
+    it('should get not get Coins for not utxo chain', function(done) {
+      helpers.createAndJoinWallet(1, 1, {coin: 'eth'},  function(s, w) {
+        server = s;
+        wallet = w;
+        server.getCoinsForTx('abab', function(err, coins) {
+          should.not.exist(err);
+          coins.should.deep.equal({ 
+            inputs: [],
+            outputs: [],
+          });
+          done();
+        });
+      });
+    });
+
+  });
+
+
 });

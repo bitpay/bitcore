@@ -1644,14 +1644,23 @@ export class WalletService {
    * @returns {Obejct} coins - Inputs and Outputs of the transaction.
    */
   getCoinsForTx(opts, cb) {
-    opts = opts || {};
-    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
-    if (!bc) {
-      return cb(new Error('Could not get blockchain explorer instance'));
-    }
-    bc.getCoinsForTx(opts.txId, (err, coins) => {
-      if (err) return cb(err);
-      return cb(null, coins);
+    this.getWallet({}, (err, wallet) => {
+      if (!ChainService.isUTXOCoin(wallet.coin)) {
+        // this prevents old BWC clients to break
+        return cb(null, {
+          inputs: [],
+          outputs: []
+        });
+      }
+      const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
+      if (!bc) {
+        return cb(new Error('Could not get blockchain explorer instance'));
+      }
+
+      bc.getCoinsForTx(opts.txId, (err, coins) => {
+        if (err) return cb(err);
+        return cb(null, coins);
+      });
     });
   }
 
