@@ -21,12 +21,14 @@ var title = args[0];
 var body = args[1];
 var imgUrl = args[2];
 var linkUrl = args[3];
+var isAdActive = true;
 
 let adArgs = {
   title,
   body,
   imgUrl,
-  linkUrl
+  linkUrl,
+  isAdActive
 };
 
 utils.getClient(clientArgs, { 

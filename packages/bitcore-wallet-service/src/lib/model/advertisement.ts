@@ -7,6 +7,7 @@ export interface IAdvertisement {
   imgUrl: string;
   linkUrl: string;
   isAdActive: boolean;
+  isTesting: boolean;
 }
 
 export class Advertisement {
@@ -16,6 +17,7 @@ export class Advertisement {
   imgUrl: string;
   linkUrl: string;
   isAdActive: boolean;
+  isTesting: boolean;
 
   static create(opts) {
     opts = opts || {};

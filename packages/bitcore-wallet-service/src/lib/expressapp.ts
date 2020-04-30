@@ -497,13 +497,29 @@ export class ExpressApp {
             if (err) {
               return returnError(err, res, req);
             }
-            res.json(advert);
+            if (advert) res.json(advert);
           });
         }
       );
     });
 
-    router.delete('/v1/advertisments/:id', (req, res) => {
+    router.get('/v1/advertisements/', (req, res) => {
+      getServerWithAuth(
+        req,
+        res,
+        {
+          onlyMarketingStaff: true
+        },
+        server => {
+          server.getAdverts(req.body, (err, ads) => {
+            if (err) returnError(err, res, req);
+            res.json(ads);
+          });
+        }
+      );
+    });
+
+    router.delete('/v1/advertisments/:title/', (req, res) => {
       getServerWithAuth(
         req,
         res,
@@ -512,6 +528,13 @@ export class ExpressApp {
         },
         server => {
           // removeAdvertisement
+          req.body.title = req.params['title'];
+          server.removeAdvert(req.body, (err, removedAd) => {
+            if (err) returnError(err, res, req);
+            if (removedAd) {
+              res.json(removedAd);
+            }
+          });
         }
       );
     });

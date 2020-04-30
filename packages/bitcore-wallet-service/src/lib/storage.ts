@@ -520,10 +520,19 @@ export class Storage {
     );
   }
 
-  removeAdvert(advertId, adTitle, cb) {
+  fetchActiveAdverts(cb) {
+    this.db.collection(collections.ADVERTISEMENTS).find({
+      isAdActive: true
+    });
+  }
+
+  fetchAllAdverts(cb) {
+    this.db.collection(collections.ADVERTISEMENTS).find({});
+  }
+
+  removeAdvert(adTitle, cb) {
     this.db.collection(collections.ADVERTISEMENTS).remove(
       {
-        advertisementId: advertId,
         title: adTitle
       },
       {

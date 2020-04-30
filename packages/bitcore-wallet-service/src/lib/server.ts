@@ -3625,7 +3625,12 @@ export class WalletService {
           x.isAdActive = opts.isAdActive;
           x.linkUrl = opts.linkUrl;
 
-          this.storage.storeAdvert(x, cb);
+          try {
+            this.storage.storeAdvert(x, cb);
+          } catch (err) {
+            throw err;
+          }
+          return cb(null, x);
         }
       });
     };
@@ -3639,8 +3644,65 @@ export class WalletService {
     );
   }
 
-  static removeAdvert(opts, cb) {
+  /**
+   * Get All active (live) advertisements
+   * @param opts
+   * @param cb
+   */
+  getAdverts(opts, cb) {
+    this._runLocked(cb, cb => {
+      this.getAdverts(opts, cb);
+    });
+  }
+
+  /**
+   * Get all adverts regardless of inactive or active.
+   * @param opts
+   * @param cb
+   */
+  getAllAdverts(opts, cb) {
+    this._runLocked(cb, cb => {
+      this.getAllAdverts(opts, cb);
+    });
+  }
+
+  removeAdvert(opts, cb) {
     // not yet implemented
+    opts = opts ? _.clone(opts) : {};
+
+    // Usually do error checking on preconditions
+    if (!checkRequired(opts, ['title'], cb)) {
+      throw new Error('Title is missing');
+    }
+    // Check if ad exists already
+
+    const checkIfAdvertExistsAlready = (title, cb) => {
+      this.storage.fetchAdvert(opts.title, (err, result) => {
+        if (err) return cb(err);
+
+        if (!result) {
+          throw new Error('Advertisement does not exist');
+        }
+
+        if (result) {
+          this.logw('Advert already exists');
+          this.storage.removeAdvert(title, cb); // TODO: add to errordefinitions Errors.ADVERTISEMENT already exists
+        }
+      });
+    };
+
+    try {
+      this._runLocked(
+        cb,
+        cb => {
+          checkIfAdvertExistsAlready(opts.title, cb);
+        },
+        10 * 1000
+      );
+    } catch (err) {
+      // Do something with error
+      throw err;
+    }
   }
 
   tagLowFeeTxs(wallet: IWallet, txs: any[], cb) {
