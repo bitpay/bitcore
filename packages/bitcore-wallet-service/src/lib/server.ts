@@ -1646,11 +1646,10 @@ export class WalletService {
   getCoinsForTx(opts, cb) {
     this.getWallet({}, (err, wallet) => {
       if (!ChainService.isUTXOCoin(wallet.coin)) {
-
         // this prevents old BWC clients to break
         return cb(null, {
           inputs: [],
-          outputs: [],
+          outputs: []
         });
       }
       const bc = this._getBlockchainExplorer(wallet.coin, wallet.network);
