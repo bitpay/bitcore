@@ -485,6 +485,13 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       );
     }
   }
+
+  async getCoinsForTx() {
+    return {
+      inputs: [],
+      outputs: []
+    };
+  }
 }
 
 export const ETH = new ETHStateProvider();

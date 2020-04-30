@@ -233,6 +233,13 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
     return XrpBlockStorage.getLocalTip(params);
   }
 
+  async getCoinsForTx() {
+    return {
+      inputs: [],
+      outputs: []
+    };
+  }
+
   transformLedger(ledger: FormattedLedger, network: string): IBlock {
     const txs = ledger.transactions || [];
     return {
