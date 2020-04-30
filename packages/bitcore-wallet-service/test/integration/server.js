@@ -9335,7 +9335,10 @@ describe('Wallet service', function() {
         wallet = w;
         server.getCoinsForTx('abab', function(err, coins) {
           should.not.exist(err);
-          coins.should.deep.equal([]);
+          coins.should.deep.equal({ 
+            inputs: [],
+            outputs: [],
+          });
           done();
         });
       });
