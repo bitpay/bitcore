@@ -521,9 +521,16 @@ export class Storage {
   }
 
   fetchActiveAdverts(cb) {
-    this.db.collection(collections.ADVERTISEMENTS).find({
-      isAdActive: true
-    });
+    this.db
+      .collection(collections.ADVERTISEMENTS)
+      .find({
+        isAdActive: true
+      })
+      .toArray((err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result.map(Advertisement.fromObj));
+      });
   }
 
   fetchAllAdverts(cb) {

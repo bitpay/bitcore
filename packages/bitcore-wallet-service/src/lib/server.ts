@@ -41,6 +41,7 @@ log.level = 'error';
 const EmailValidator = require('email-validator');
 
 import { Validation } from 'crypto-wallet-core';
+import { resolve } from 'dns';
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -3612,7 +3613,7 @@ export class WalletService {
 
         if (result) {
           this.logw('Advert already exists');
-          throw new Error('Advertisement Already exists'); // TODO: add to errordefinitions Errors.ADVERTISEMENT already exists
+          return cb(null, 'Advert already exists'); // TODO: add to errordefinitions Errors.ADVERTISEMENT already exists
         }
 
         if (!result) {
@@ -3625,11 +3626,6 @@ export class WalletService {
           x.isAdActive = opts.isAdActive;
           x.linkUrl = opts.linkUrl;
 
-          try {
-            this.storage.storeAdvert(x, cb);
-          } catch (err) {
-            throw err;
-          }
           return cb(null, x);
         }
       });
@@ -3638,7 +3634,16 @@ export class WalletService {
     this._runLocked(
       cb,
       cb => {
-        checkIfAdvertExistsAlready(opts.title, cb);
+        checkIfAdvertExistsAlready(opts.title, (err, advert) => {
+          if (err) throw err;
+          if (advert) {
+            try {
+              this.storage.storeAdvert(advert, cb);
+            } catch (err) {
+              throw err;
+            }
+          }
+        });
       },
       10 * 1000
     );
@@ -3650,8 +3655,9 @@ export class WalletService {
    * @param cb
    */
   getAdverts(opts, cb) {
-    this._runLocked(cb, cb => {
-      this.getAdverts(opts, cb);
+    this.storage.fetchActiveAdverts((err, adverts) => {
+      if (err) return cb(err);
+      return cb(null, adverts);
     });
   }
 
@@ -3686,7 +3692,7 @@ export class WalletService {
 
         if (result) {
           this.logw('Advert already exists');
-          this.storage.removeAdvert(title, cb); // TODO: add to errordefinitions Errors.ADVERTISEMENT already exists
+          return cb(null, title);
         }
       });
     };
@@ -3695,7 +3701,10 @@ export class WalletService {
       this._runLocked(
         cb,
         cb => {
-          checkIfAdvertExistsAlready(opts.title, cb);
+          checkIfAdvertExistsAlready(opts.title, (err, title) => {
+            if (err) throw err;
+            this.storage.removeAdvert(title, cb); // TODO: add to errordefinitions Errors.ADVERTISEMENT already exists
+          });
         },
         10 * 1000
       );

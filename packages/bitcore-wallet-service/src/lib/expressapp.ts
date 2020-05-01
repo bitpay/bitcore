@@ -519,7 +519,7 @@ export class ExpressApp {
       );
     });
 
-    router.delete('/v1/advertisments/:title/', (req, res) => {
+    router.delete('/v1/advertisements/:title/', (req, res) => {
       getServerWithAuth(
         req,
         res,
@@ -527,7 +527,6 @@ export class ExpressApp {
           onlyMarketingStaff: true
         },
         server => {
-          // removeAdvertisement
           req.body.title = req.params['title'];
           server.removeAdvert(req.body, (err, removedAd) => {
             if (err) returnError(err, res, req);

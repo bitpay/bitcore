@@ -1574,12 +1574,28 @@ export class API extends EventEmitter {
     var url = '/v1/advertisements/';
     let args = opts;
 
-    this.request.post(url, args, (err, body) => {
+    this.request.post(url, args, (err, createdAd) => {
       if (err) {
         console.log(err);
         return cb(err);
       }
-      return cb(null, body);
+      return cb(null, createdAd);
+    });
+  }
+
+  /**
+   * Get advertisements for bitpay app - (limited to marketing staff)
+   * @param opts - options
+   */
+  getAdvertisements(opts, cb) {
+    var url = '/v1/advertisements/';
+
+    this.request.get(url, (err, ads) => {
+      if (err) {
+        console.log(err);
+        return cb(err);
+      }
+      return cb(null, ads);
     });
   }
 
@@ -1587,8 +1603,14 @@ export class API extends EventEmitter {
    * Delete Advertisement
    * @param opts - options
    */
-  deleteAdvertisement(opts) {
-    var url = '/v1/advertisements/'; // + adId or adTitle;
+  deleteAdvertisement(opts, cb) {
+    var url = '/v1/advertisements/' + opts.title; // + adId or adTitle;
+    this.request.delete(url, (err, body) => {
+      if (err) {
+        console.log(err);
+      }
+      return cb(null, body);
+    });
   }
 
   /*

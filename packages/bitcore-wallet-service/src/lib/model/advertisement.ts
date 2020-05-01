@@ -1,4 +1,5 @@
 const $ = require('preconditions').singleton();
+var _ = require('lodash');
 
 export interface IAdvertisement {
   advertisementId: string;
@@ -39,6 +40,11 @@ export class Advertisement {
     x.linkUrl = obj.linkUrl;
     x.isAdActive = obj.isAdActive;
 
+    return x;
+  }
+
+  toObject() {
+    const x: any = _.cloneDeep(this);
     return x;
   }
 }
