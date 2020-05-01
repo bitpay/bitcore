@@ -202,21 +202,20 @@ export class BtcChain implements IChain {
         return 32 + 4 + 1 + (txp.requiredSignatures * 74 + txp.walletN * 34) / 4 + 4;
 
       case Constants.SCRIPT_TYPES.P2SH:
-        return 46 +  txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE ;
+        return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE;
 
       default:
         log.warn('Unknown address type at getEstimatedSizeForSingleInput:', txp.addressType);
-        return 46 +  txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE ;
+        return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE;
     }
   }
 
-
+  // Data from:
   // https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
   getEstimatedSizeForSingleOutput(address) {
     const a = this.bitcoreLib.Address(address);
     const addressType = a.type;
     switch (addressType) {
-
       case 'pubkeyhash':
         return 25;
 
@@ -227,7 +226,7 @@ export class BtcChain implements IChain {
         return 34;
 
       case 'witnessscripthash':
-        return 22; 
+        return 22;
 
       default:
         log.warn('Unknown address type at getEstimatedSizeForSingleOutput:', addressType);
@@ -235,12 +234,11 @@ export class BtcChain implements IChain {
     }
   }
 
-
   getEstimatedSize(txp) {
     // Note: found empirically based on all multisig P2SH inputs and within m & n allowed limits.
     const safetyMargin = 0.02;
 
-    const overhead = 4 + 4 + 9 + 9;
+    const overhead = 4 + 4 + 1 + 1;
 
     // This assumed ALL inputs of the wallet are the same time
     const inputSize = this.getEstimatedSizeForSingleInput(txp);
@@ -248,10 +246,9 @@ export class BtcChain implements IChain {
     const nbOutputs = (_.isArray(txp.outputs) ? Math.max(1, txp.outputs.length) : 1) + 1;
 
     let outputsSize = 0;
-    _.each(txp.outputs, (x) =>{ 
+    _.each(txp.outputs, x => {
       outputsSize += this.getEstimatedSizeForSingleOutput(x.toAddress);
     });
-
 
     const size = overhead + inputSize * nbInputs + outputsSize;
     return parseInt((size * (1 + safetyMargin)).toFixed(0));

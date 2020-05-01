@@ -68,32 +68,32 @@ describe('Chain BTC', function() {
     });
     it('1  input p2sh, 2 P2PKH outputs:  ', function() {
       let x = TxProposal.fromObj(aTXP());
-      btc.getEstimatedSize(x).should.equal(396);
+      btc.getEstimatedSize(x).should.equal(326);
     });
 
     it('1  input p2sh, 3 P2PKH outputs:  ', function() {
       let x = TxProposal.fromObj(aTXP());
       x.outputs[2] = _.clone(x.outputs[1]);
-      btc.getEstimatedSize(x).should.equal(430);
+      btc.getEstimatedSize(x).should.equal(352);
     });
 
     it('2  input p2sh, 2 P2PKH outputs:  ', function() {
       let x = TxProposal.fromObj(aTXP());
       x.inputs[1] = _.clone(x.inputs[0]);
-      btc.getEstimatedSize(x).should.equal(661);
+      btc.getEstimatedSize(x).should.equal(592);
     });
 
    it('2  input p2sh, 2 Native Segwit outputs:  ', function() {
       let x = TxProposal.fromObj(aTXP());
       x.outputs[0].toAddress = x.outputs[1].toAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
-      btc.getEstimatedSize(x).should.equal(661);
+      btc.getEstimatedSize(x).should.equal(345);
     });
 
    it('2  input p2pkh, 2 Native Segwit outputs:  ', function() {
       let x = TxProposal.fromObj(aTXP());
        x.addressType =   Constants.SCRIPT_TYPES.P2WPKH;
       x.outputs[0].toAddress = x.outputs[1].toAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
-      btc.getEstimatedSize(x).should.equal(661);
+      btc.getEstimatedSize(x).should.equal(230);
     });
  
  
@@ -101,7 +101,7 @@ describe('Chain BTC', function() {
       let x = TxProposal.fromObj(aTXP());
        x.addressType =   Constants.SCRIPT_TYPES.P2WSH;
       x.outputs[0].toAddress = x.outputs[1].toAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
-      btc.getEstimatedSize(x).should.equal(661);
+      btc.getEstimatedSize(x).should.equal(176);
     });
 
  
@@ -109,7 +109,7 @@ describe('Chain BTC', function() {
       let x = TxProposal.fromObj(aTXP());
        x.addressType =   Constants.SCRIPT_TYPES.P2WPKH;
       x.outputs[0].toAddress = x.outputs[1].toAddress = '3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH';
-      btc.getEstimatedSize(x).should.equal(661);
+      btc.getEstimatedSize(x).should.equal(207);
     });
   
 
