@@ -105,10 +105,10 @@ describe('Chain BTC', function() {
     });
 
  
-   it('2  input P2WPKH, 2 Native Segwit outputs:  ', function() {
+   it('2  input P2WPKH, 2 p2sh outputs:  ', function() {
       let x = TxProposal.fromObj(aTXP());
        x.addressType =   Constants.SCRIPT_TYPES.P2WPKH;
-      x.outputs[0].toAddress = x.outputs[1].toAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+      x.outputs[0].toAddress = x.outputs[1].toAddress = '3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH';
       btc.getEstimatedSize(x).should.equal(661);
     });
   

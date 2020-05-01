@@ -188,8 +188,9 @@ export class BtcChain implements IChain {
 
   // https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
   getEstimatedSizeForSingleInput(txp) {
+    const SIGNATURE_SIZE = 72 + 1; // 73 is for non standanrd, not our wallet. +1 OP_N
+    const PUBKEY_SIZE = 33 + 1; // +1 OP_M
 
-console.log('[index.ts.191]', txp.addressType); // TODO
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2PKH:
         return 147;
@@ -200,12 +201,40 @@ console.log('[index.ts.191]', txp.addressType); // TODO
       case Constants.SCRIPT_TYPES.P2WSH:
         return 32 + 4 + 1 + (txp.requiredSignatures * 74 + txp.walletN * 34) / 4 + 4;
 
-      default:
       case Constants.SCRIPT_TYPES.P2SH:
-        return txp.requiredSignatures * 72 + txp.walletN * 36 + 44;
-      //   return 32 + 4 + 1 + txp.requiredSignatures * 74 + txp.walletN * 34 + 4;
+        return 46 +  txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE ;
+
+      default:
+        log.warn('Unknown address type at getEstimatedSizeForSingleInput:', txp.addressType);
+        return 46 +  txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE ;
     }
   }
+
+
+  // https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
+  getEstimatedSizeForSingleOutput(address) {
+    const a = this.bitcoreLib.Address(address);
+    const addressType = a.type;
+    switch (addressType) {
+
+      case 'pubkeyhash':
+        return 25;
+
+      case 'scripthash':
+        return 23;
+
+      case 'witnesspubkeyhash':
+        return 34;
+
+      case 'witnessscripthash':
+        return 22; 
+
+      default:
+        log.warn('Unknown address type at getEstimatedSizeForSingleOutput:', addressType);
+        return 34;
+    }
+  }
+
 
   getEstimatedSize(txp) {
     // Note: found empirically based on all multisig P2SH inputs and within m & n allowed limits.
@@ -215,10 +244,16 @@ console.log('[index.ts.191]', txp.addressType); // TODO
 
     // This assumed ALL inputs of the wallet are the same time
     const inputSize = this.getEstimatedSizeForSingleInput(txp);
-    const outputSize = 34;
     const nbInputs = txp.inputs.length;
     const nbOutputs = (_.isArray(txp.outputs) ? Math.max(1, txp.outputs.length) : 1) + 1;
-    const size = overhead + inputSize * nbInputs + outputSize * nbOutputs;
+
+    let outputsSize = 0;
+    _.each(txp.outputs, (x) =>{ 
+      outputsSize += this.getEstimatedSizeForSingleOutput(x.toAddress);
+    });
+
+
+    const size = overhead + inputSize * nbInputs + outputsSize;
     return parseInt((size * (1 + safetyMargin)).toFixed(0));
   }
 
