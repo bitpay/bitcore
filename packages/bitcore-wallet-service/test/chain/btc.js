@@ -5,8 +5,13 @@ var async = require('async');
 var chai = require('chai');
 var mongodb = require('mongodb');
 var should = chai.should();
-var { ChainService } = require('../../ts_build/lib/chain');
-var { TxProposal } = require('../../ts_build/lib/model/txproposal');
+const { ChainService } = require('../../ts_build/lib/chain');
+const { BtcChain } = require('../../ts_build/lib/chain/btc');
+const { TxProposal } = require('../../ts_build/lib/model/txproposal');
+
+const Common = require('../../ts_build/lib/common');
+const Constants = Common.Constants;
+
 
 
 describe('Chain BTC', function() {
@@ -53,6 +58,65 @@ describe('Chain BTC', function() {
  
  
   });
+
+
+  describe.only('#getEstimatedSize', function() {
+
+    let btc;
+    before(function()  {
+      btc = new BtcChain();
+    });
+    it('1  input p2sh, 2 P2PKH outputs:  ', function() {
+      let x = TxProposal.fromObj(aTXP());
+      btc.getEstimatedSize(x).should.equal(396);
+    });
+
+    it('1  input p2sh, 3 P2PKH outputs:  ', function() {
+      let x = TxProposal.fromObj(aTXP());
+      x.outputs[2] = _.clone(x.outputs[1]);
+      btc.getEstimatedSize(x).should.equal(430);
+    });
+
+    it('2  input p2sh, 2 P2PKH outputs:  ', function() {
+      let x = TxProposal.fromObj(aTXP());
+      x.inputs[1] = _.clone(x.inputs[0]);
+      btc.getEstimatedSize(x).should.equal(661);
+    });
+
+   it('2  input p2sh, 2 Native Segwit outputs:  ', function() {
+      let x = TxProposal.fromObj(aTXP());
+      x.outputs[0].toAddress = x.outputs[1].toAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+      btc.getEstimatedSize(x).should.equal(661);
+    });
+
+   it('2  input p2pkh, 2 Native Segwit outputs:  ', function() {
+      let x = TxProposal.fromObj(aTXP());
+       x.addressType =   Constants.SCRIPT_TYPES.P2WPKH;
+      x.outputs[0].toAddress = x.outputs[1].toAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+      btc.getEstimatedSize(x).should.equal(661);
+    });
+ 
+ 
+   it('2  input P2WSH, 2 Native Segwit outputs:  ', function() {
+      let x = TxProposal.fromObj(aTXP());
+       x.addressType =   Constants.SCRIPT_TYPES.P2WSH;
+      x.outputs[0].toAddress = x.outputs[1].toAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+      btc.getEstimatedSize(x).should.equal(661);
+    });
+
+ 
+   it('2  input P2WPKH, 2 Native Segwit outputs:  ', function() {
+      let x = TxProposal.fromObj(aTXP());
+       x.addressType =   Constants.SCRIPT_TYPES.P2WPKH;
+      x.outputs[0].toAddress = x.outputs[1].toAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
+      btc.getEstimatedSize(x).should.equal(661);
+    });
+  
+
+  
+  });
+
+
 });
 
 var aTXP = function() {

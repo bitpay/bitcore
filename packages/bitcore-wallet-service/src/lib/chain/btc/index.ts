@@ -188,6 +188,8 @@ export class BtcChain implements IChain {
 
   // https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
   getEstimatedSizeForSingleInput(txp) {
+
+console.log('[index.ts.191]', txp.addressType); // TODO
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2PKH:
         return 147;

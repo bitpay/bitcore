@@ -61,30 +61,6 @@ describe('TxProposal', function() {
     });
   });
 
-  describe.skip('#getEstimatedSize', function() {
-    describe('#BTC', function() {
-
-      it('1  input, 2 P2PKH outputs:  ', function() {
-        let x = TxProposal.fromObj(aTXP());
-        x.getEstimatedSize().should.equal(396);
-      });
-
-      it('1  input, 3 P2PKH outputs:  ', function() {
-        let x = TxProposal.fromObj(aTXP());
-        x.outputs[2] = _.clone(x.outputs[1]);
-        x.getEstimatedSize().should.equal(430);
-      });
-
-      it('2  input, 2 P2PKH outputs:  ', function() {
-        let x = TxProposal.fromObj(aTXP());
-        x.inputs[1] = _.clone(x.inputs[0]);
-        x.getEstimatedSize().should.equal(661);
-      });
-
- 
-    });
-  });
-
   describe('#sign', function() {
     it('should sign 2-2 (txp version 3, btc tx version 1)', function() {
       var txp = TxProposal.fromObj(aTXP());
