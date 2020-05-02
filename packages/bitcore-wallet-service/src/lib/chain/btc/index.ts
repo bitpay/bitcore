@@ -188,8 +188,8 @@ export class BtcChain implements IChain {
 
   // https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
   getEstimatedSizeForSingleInput(txp) {
-    const SIGNATURE_SIZE = 72 + 1; // 73 is for non standanrd, not our wallet. +1 OP_N
-    const PUBKEY_SIZE = 33 + 1; // +1 OP_M
+    const SIGNATURE_SIZE = 72 + 1; // 73 is for non standanrd, not our wallet. +1 OP_DATA
+    const PUBKEY_SIZE = 33 + 1; // +1 OP_DATA
 
     switch (txp.addressType) {
       case Constants.SCRIPT_TYPES.P2PKH:
@@ -215,43 +215,52 @@ export class BtcChain implements IChain {
   getEstimatedSizeForSingleOutput(address) {
     const a = this.bitcoreLib.Address(address);
     const addressType = a.type;
+    let scriptSize;
+console.log('[index.ts.219:addressType:]',addressType); // TODO
     switch (addressType) {
       case 'pubkeyhash':
-        return 25;
-
+        scriptSize =  25;
+        break;
       case 'scripthash':
-        return 23;
-
+        scriptSize =  23;
+        break;
       case 'witnesspubkeyhash':
-        return 34;
-
+        scriptSize =  22;
+        break;
       case 'witnessscripthash':
-        return 22;
-
+        scriptSize =  34;
+        break;
       default:
         log.warn('Unknown address type at getEstimatedSizeForSingleOutput:', addressType);
-        return 34;
+        break;
     }
+console.log('[index.ts.239:scriptSize:]',scriptSize); // TODO
+    return scriptSize + 8 + 1; // value + script length
   }
 
   getEstimatedSize(txp) {
-    // Note: found empirically based on all multisig P2SH inputs and within m & n allowed limits.
     const safetyMargin = 0.02;
 
-    const overhead = 4 + 4 + 1 + 1;
+    const overhead = 4 + 4 + 1 + 1; // version, locktime, ninputs, noutputs
 
     // This assumed ALL inputs of the wallet are the same time
     const inputSize = this.getEstimatedSizeForSingleInput(txp);
     const nbInputs = txp.inputs.length;
-    const nbOutputs = (_.isArray(txp.outputs) ? Math.max(1, txp.outputs.length) : 1) + 1;
 
     let outputsSize = 0;
-    _.each(txp.outputs, x => {
-      outputsSize += this.getEstimatedSizeForSingleOutput(x.toAddress);
+    let outputs = _.isArray(txp.outputs) ? txp.outputs : [txp.toAddress];
+    let addresses =   outputs.map(x => x.toAddress);
+    if (txp.changeAddress) {
+      addresses.push(txp.changeAddress.address);
+    }
+console.log('[index.ts.260:inputSize:]',inputSize); // TODO
+    _.each(addresses, x => {
+      outputsSize += this.getEstimatedSizeForSingleOutput(x);
+console.log('[index.ts.256:outputsSize:]',outputsSize); // TODO
     });
 
     const size = overhead + inputSize * nbInputs + outputsSize;
-    return parseInt((size * (1 + safetyMargin)).toFixed(0));
+    return parseInt((size * (1 + safetyMargin) ).toFixed(0));
   }
 
   getEstimatedFee(txp) {

@@ -5,6 +5,7 @@ var async = require('async');
 var chai = require('chai');
 var mongodb = require('mongodb');
 var should = chai.should();
+const { BitcoreLib } = require ('crypto-wallet-core');
 const { ChainService } = require('../../ts_build/lib/chain');
 const { BtcChain } = require('../../ts_build/lib/chain/btc');
 const { TxProposal } = require('../../ts_build/lib/model/txproposal');
@@ -12,6 +13,7 @@ const { TxProposal } = require('../../ts_build/lib/model/txproposal');
 const Common = require('../../ts_build/lib/common');
 const Constants = Common.Constants;
 
+const segWitToAddress = 'BC1QW508D6QEJXTDG4Y5R3ZARVARY0C5XW7KV8F3T4'; //'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
 
 
 describe('Chain BTC', function() {
@@ -61,43 +63,128 @@ describe('Chain BTC', function() {
 
 
   describe.only('#getEstimatedSize', function() {
+    let btc, fromAddress, witnessFromAddress, simpleUtxoWith1BTC, simpleWitnessUtxoWith1BTC, changeAddress, toAddress, privateKey;
 
-    let btc;
     before(function()  {
       btc = new BtcChain();
+      fromAddress = 'mszYqVnqKoQx4jcTdJXxwKAissE3Jbrrc1';
+      toAddress = 'mrU9pEmAx26HcbKVrABvgL7AwA5fjNFoDc';
+      witnessFromAddress = 'tb1q3rvex84884sw4al9vu00cp2jhyffz8e2n2k4wp';
+      changeAddress = '2N2fk5hPbAPaMUs5No2kwy6xLdFL3CjUXMy';
+      privateKey = 'cSBnVM4xvxarwGQuAfQFwqDg9k5tErHUHzgWsEfD4zdwUasvqRVY';
+      simpleUtxoWith1BTC = {
+        address: fromAddress,
+        txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+        outputIndex: 0,
+        script: BitcoreLib.Script.buildPublicKeyHashOut(fromAddress).toString(),
+        satoshis: 1e8,
+      };
+
+       simpleWitnessUtxoWith1BTC = {
+         address: witnessFromAddress,
+         txId: '7e6b603779c8af58284566cf1b655395fffbefaf1c0a080d9aff43f0af05d873',
+         outputIndex: 0,
+         script: BitcoreLib.Script.fromAddress(witnessFromAddress).toString(),
+         satoshis: 1e8
+       };
+      const privKey = new BitcoreLib.PrivateKey();
+
     });
+    it('1  input p2pkh,  2 output p2pkh, 1 output p2sh  ', function() {
+      let x = TxProposal.fromObj(aTXP());
+      x.addressType =   Constants.SCRIPT_TYPES.P2PKH;
+      const estimatedLength = btc.getEstimatedSize(x);
+
+      // Create a similar TX.
+      let tx = new BitcoreLib.Transaction();
+      tx.from(simpleUtxoWith1BTC)
+        .to([{address: toAddress, satoshis: 1e7}, {address: toAddress, satoshis: 1e6}])
+        .change(changeAddress)
+        .sign(privateKey);
+
+      const actualLength = tx.serialize().length/2;
+      ((Math.abs(actualLength-estimatedLength))/actualLength).should.be.below(0.05);
+
+
+    });
+
+
+    const p2shPrivateKey1 = BitcoreLib.PrivateKey.fromWIF('cNuW8LX2oeQXfKKCGxajGvqwhCgBtacwTQqiCGHzzKfmpHGY4TE9');
+    const p2shPublicKey1 = p2shPrivateKey1.toPublicKey();
+    const p2shPrivateKey2 = BitcoreLib.PrivateKey.fromWIF('cTtLHt4mv6zuJytSnM7Vd6NLxyNauYLMxD818sBC8PJ1UPiVTRSs');
+    const p2shPublicKey2 = p2shPrivateKey2.toPublicKey();
+    const p2shPrivateKey3 = BitcoreLib.PrivateKey.fromWIF('cQFMZ5gP9CJtUZPc9X3yFae89qaiQLspnftyxxLGvVNvM6tS6mYY');
+    const p2shPublicKey3 = p2shPrivateKey3.toPublicKey();
+
+    const p2shAddress = BitcoreLib.Address.createMultisig([
+      p2shPublicKey1,
+      p2shPublicKey2,
+//      p2shPublicKey3
+    ], 2, 'testnet');
+    const p2shUtxoWith1BTC = {
+      address: p2shAddress.toString(),
+      txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+      outputIndex: 0,
+      script: BitcoreLib.Script(p2shAddress).toString(),
+      satoshis: 1e8
+    };
+
+    const p2wshAddress = BitcoreLib.Address.createMultisig([
+      p2shPublicKey1,
+      p2shPublicKey2,
+//      p2shPublicKey3
+    ], 2, 'testnet', null, BitcoreLib.Address.PayToWitnessScriptHash);
+    const p2wshUtxoWith1BTC = {
+      address: p2wshAddress.toString(),
+      txId: 'a477af6b2667c29670467e4e0728b685ee07b240235771862318e29ddbe58458',
+      outputIndex: 0,
+      script: BitcoreLib.Script(p2wshAddress).toString(),
+      satoshis: 1e8
+    };
+
     it('1  input p2sh, 2 P2PKH outputs:  ', function() {
       let x = TxProposal.fromObj(aTXP());
-      btc.getEstimatedSize(x).should.equal(326);
+
+      // Create a similar TX.
+      let tx = new BitcoreLib.Transaction();
+      tx.from(p2shUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2], 2)
+        .to([{address: toAddress, satoshis: 1e7}, {address: toAddress, satoshis: 1e6}])
+        .change(changeAddress)
+        .sign(p2shPrivateKey1)
+        .sign(p2shPrivateKey2);
+      const estimatedLength = btc.getEstimatedSize(x);
+
+      const actualLength = tx.serialize().length/2;
+      ((Math.abs(actualLength-estimatedLength))/actualLength).should.be.below(0.05);
+
     });
 
-    it('1  input p2sh, 3 P2PKH outputs:  ', function() {
+    it('1  input p2sh, 2 Native Segwit outputs, 1 P2PKH  ', function() {
       let x = TxProposal.fromObj(aTXP());
-      x.outputs[2] = _.clone(x.outputs[1]);
-      btc.getEstimatedSize(x).should.equal(352);
+      x.outputs[0].toAddress = x.outputs[1].toAddress = segWitToAddress;
+
+      // Create a similar TX.
+      let tx = new BitcoreLib.Transaction();
+      tx.from(p2shUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2], 2)
+        .to([{address: segWitToAddress, satoshis: 1e7}, {address: segWitToAddress, satoshis: 1e6}])
+        .change(changeAddress)
+        .sign(p2shPrivateKey1)
+        .sign(p2shPrivateKey2);
+      const estimatedLength = btc.getEstimatedSize(x);
+
+      const actualLength = tx.serialize().length/2;
+      ((Math.abs(actualLength-estimatedLength))/actualLength).should.be.below(0.05);
     });
 
-    it('2  input p2sh, 2 P2PKH outputs:  ', function() {
-      let x = TxProposal.fromObj(aTXP());
-      x.inputs[1] = _.clone(x.inputs[0]);
-      btc.getEstimatedSize(x).should.equal(592);
-    });
-
-   it('2  input p2sh, 2 Native Segwit outputs:  ', function() {
-      let x = TxProposal.fromObj(aTXP());
-      x.outputs[0].toAddress = x.outputs[1].toAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
-      btc.getEstimatedSize(x).should.equal(345);
-    });
-
-   it('2  input p2pkh, 2 Native Segwit outputs:  ', function() {
+   it.skip('2  input P2WPKH, 2 p2sh outputs:  ', function() {
       let x = TxProposal.fromObj(aTXP());
        x.addressType =   Constants.SCRIPT_TYPES.P2WPKH;
-      x.outputs[0].toAddress = x.outputs[1].toAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
-      btc.getEstimatedSize(x).should.equal(230);
+      x.outputs[0].toAddress = x.outputs[1].toAddress = '3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH';
+      btc.getEstimatedSize(x).should.equal(207);
     });
  
- 
-   it('2  input P2WSH, 2 Native Segwit outputs:  ', function() {
+
+   it.skip('1  input P2WSH, 2 Native Segwit outputs:  ', function() {
       let x = TxProposal.fromObj(aTXP());
        x.addressType =   Constants.SCRIPT_TYPES.P2WSH;
       x.outputs[0].toAddress = x.outputs[1].toAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
@@ -105,13 +192,7 @@ describe('Chain BTC', function() {
     });
 
  
-   it('2  input P2WPKH, 2 p2sh outputs:  ', function() {
-      let x = TxProposal.fromObj(aTXP());
-       x.addressType =   Constants.SCRIPT_TYPES.P2WPKH;
-      x.outputs[0].toAddress = x.outputs[1].toAddress = '3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH';
-      btc.getEstimatedSize(x).should.equal(207);
-    });
-  
+ 
 
   
   });
