@@ -4,7 +4,6 @@ import _ from 'lodash';
 import * as log from 'npmlog';
 import { IAddress } from 'src/lib/model/address';
 import { IChain, INotificationData } from '..';
-import * as log from 'npmlog';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
