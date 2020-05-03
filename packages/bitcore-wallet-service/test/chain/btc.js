@@ -62,7 +62,7 @@ describe('Chain BTC', function() {
   });
 
 
-  describe.only('#getEstimatedSize', function() {
+  describe('#getEstimatedSize', function() {
     let btc, fromAddress, witnessFromAddress, simpleUtxoWith1BTC, simpleWitnessUtxoWith1BTC, changeAddress, toAddress, privateKey;
 
     before(function()  {
@@ -159,42 +159,36 @@ describe('Chain BTC', function() {
 
     });
 
-    it('1  input p2sh, 2 Native Segwit outputs, 1 P2PKH  ', function() {
+    it('1  input p2wpkh, 1 Native Segwit output  ', function() {
       let x = TxProposal.fromObj(aTXP());
-      x.outputs[0].toAddress = x.outputs[1].toAddress = segWitToAddress;
 
-      // Create a similar TX.
-      let tx = new BitcoreLib.Transaction();
-      tx.from(p2shUtxoWith1BTC, [p2shPublicKey1, p2shPublicKey2], 2)
-        .to([{address: segWitToAddress, satoshis: 1e7}, {address: segWitToAddress, satoshis: 1e6}])
-        .change(changeAddress)
-        .sign(p2shPrivateKey1)
-        .sign(p2shPrivateKey2);
+      // just to force the desired calculation
+      x.addressType =   Constants.SCRIPT_TYPES.P2WPKH;
+
+      x.outputs[0].toAddress =  segWitToAddress;
+      x.outputs.pop();
+      delete x.changeAddress;
       const estimatedLength = btc.getEstimatedSize(x);
 
-      const actualLength = tx.serialize().length/2;
+      // https://bitcoin.stackexchange.com/questions/84004/how-do-virtual-size-stripped-size-and-raw-size-compare-between-legacy-address-f
+      //
+      const actualLength = 437 / 4; // this is the vsize
       ((Math.abs(actualLength-estimatedLength))/actualLength).should.be.below(0.05);
     });
 
-   it.skip('2  input P2WPKH, 2 p2sh outputs:  ', function() {
-      let x = TxProposal.fromObj(aTXP());
-       x.addressType =   Constants.SCRIPT_TYPES.P2WPKH;
-      x.outputs[0].toAddress = x.outputs[1].toAddress = '3CauZ5JUFfmSAx2yANvCRoNXccZ3YSUjXH';
-      btc.getEstimatedSize(x).should.equal(207);
-    });
- 
-
-   it.skip('1  input P2WSH, 2 Native Segwit outputs:  ', function() {
+   it('2  input multisig  p2wsh, 1 native segwit output :  ', function() {
       let x = TxProposal.fromObj(aTXP());
        x.addressType =   Constants.SCRIPT_TYPES.P2WSH;
-      x.outputs[0].toAddress = x.outputs[1].toAddress = 'bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq';
-      btc.getEstimatedSize(x).should.equal(176);
+      x.outputs[0].toAddress =  toAddress;
+      delete x.changeAddress;
+      x.outputs.pop();
+      const estimatedLength = btc.getEstimatedSize(x);
+
+      // from https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
+      const actualLength = (346 + 2*108) / 4; // this is the vsize
+      ((Math.abs(actualLength-estimatedLength))/actualLength).should.be.below(0.05);
     });
-
  
- 
-
-  
   });
 
 

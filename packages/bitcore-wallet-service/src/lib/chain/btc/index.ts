@@ -196,10 +196,10 @@ export class BtcChain implements IChain {
         return 147;
 
       case Constants.SCRIPT_TYPES.P2WPKH:
-        return 147;
+        return 69; // vsize
 
       case Constants.SCRIPT_TYPES.P2WSH:
-        return 32 + 4 + 1 + (txp.requiredSignatures * 74 + txp.walletN * 34) / 4 + 4;
+        return 32 + 4 + 1 + (txp.requiredSignatures * 74 + txp.walletN * 34) / 4 + 4; // vsize
 
       case Constants.SCRIPT_TYPES.P2SH:
         return 46 + txp.requiredSignatures * SIGNATURE_SIZE + txp.walletN * PUBKEY_SIZE;
@@ -216,25 +216,23 @@ export class BtcChain implements IChain {
     const a = this.bitcoreLib.Address(address);
     const addressType = a.type;
     let scriptSize;
-console.log('[index.ts.219:addressType:]',addressType); // TODO
     switch (addressType) {
       case 'pubkeyhash':
-        scriptSize =  25;
+        scriptSize = 25;
         break;
       case 'scripthash':
-        scriptSize =  23;
+        scriptSize = 23;
         break;
       case 'witnesspubkeyhash':
-        scriptSize =  22;
+        scriptSize = 22;
         break;
       case 'witnessscripthash':
-        scriptSize =  34;
+        scriptSize = 34;
         break;
       default:
         log.warn('Unknown address type at getEstimatedSizeForSingleOutput:', addressType);
         break;
     }
-console.log('[index.ts.239:scriptSize:]',scriptSize); // TODO
     return scriptSize + 8 + 1; // value + script length
   }
 
@@ -249,18 +247,16 @@ console.log('[index.ts.239:scriptSize:]',scriptSize); // TODO
 
     let outputsSize = 0;
     let outputs = _.isArray(txp.outputs) ? txp.outputs : [txp.toAddress];
-    let addresses =   outputs.map(x => x.toAddress);
+    let addresses = outputs.map(x => x.toAddress);
     if (txp.changeAddress) {
       addresses.push(txp.changeAddress.address);
     }
-console.log('[index.ts.260:inputSize:]',inputSize); // TODO
     _.each(addresses, x => {
       outputsSize += this.getEstimatedSizeForSingleOutput(x);
-console.log('[index.ts.256:outputsSize:]',outputsSize); // TODO
     });
 
     const size = overhead + inputSize * nbInputs + outputsSize;
-    return parseInt((size * (1 + safetyMargin) ).toFixed(0));
+    return parseInt((size * (1 + safetyMargin)).toFixed(0));
   }
 
   getEstimatedFee(txp) {
