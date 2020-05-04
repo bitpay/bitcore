@@ -1,8 +1,8 @@
 import * as async from 'async';
 import { BitcoreLib } from 'crypto-wallet-core';
 import _ from 'lodash';
-import { IChain, INotificationData } from '..';
 import * as log from 'npmlog';
+import { IChain, INotificationData } from '..';
 import { ClientError } from '../../errors/clienterror';
 import { TxProposal } from '../../model';
 
@@ -212,9 +212,14 @@ export class BtcChain implements IChain {
 
   // Data from:
   // https://bitcoin.stackexchange.com/questions/88226/how-to-calculate-the-size-of-multisig-transaction
-  getEstimatedSizeForSingleOutput(address) {
-    const a = this.bitcoreLib.Address(address);
-    const addressType = a.type;
+  getEstimatedSizeForSingleOutput(address?: string) {
+    let addressType = '';
+
+    if (address) {
+      const a = this.bitcoreLib.Address(address);
+      addressType = a.type;
+    }
+
     let scriptSize;
     switch (addressType) {
       case 'pubkeyhash':
@@ -230,6 +235,7 @@ export class BtcChain implements IChain {
         scriptSize = 34;
         break;
       default:
+        scriptSize = 34;
         log.warn('Unknown address type at getEstimatedSizeForSingleOutput:', addressType);
         break;
     }
@@ -255,13 +261,31 @@ export class BtcChain implements IChain {
       outputsSize += this.getEstimatedSizeForSingleOutput(x);
     });
 
+    // If there is no output yet defined, (eg: get sendmax info), add a single, default, output);
+    if (!outputsSize) {
+      outputsSize = this.getEstimatedSizeForSingleOutput();
+    }
+
     const size = overhead + inputSize * nbInputs + outputsSize;
     return parseInt((size * (1 + safetyMargin)).toFixed(0));
   }
 
   getEstimatedFee(txp) {
     $.checkState(_.isNumber(txp.feePerKb));
-    const fee = (txp.feePerKb * this.getEstimatedSize(txp)) / 1000;
+    let fee;
+
+    // if TX is ready? no estimation is needed.
+    if (txp.inputs.length && !txp.changeAddress && txp.outputs.length) {
+      const totalInputs = _.sumBy(txp.inputs, 'satoshis');
+      const totalOutputs = _.sumBy(txp.outputs, 'amount');
+      if (totalInputs && totalOutputs) {
+        fee = totalInputs - totalOutputs;
+      }
+    }
+
+    if (!fee) {
+      fee = (txp.feePerKb * this.getEstimatedSize(txp)) / 1000;
+    }
     return parseInt(fee.toFixed(0));
   }
 
@@ -353,7 +377,7 @@ export class BtcChain implements IChain {
     const totalInputs = _.sumBy(t.inputs, 'output.satoshis');
     const totalOutputs = _.sumBy(t.outputs, 'satoshis');
 
-    $.checkState(totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs, 'not-enought-inputs');
+    $.checkState(totalInputs > 0 && totalOutputs > 0 && totalInputs >= totalOutputs, 'not-enough-inputs');
     $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin], 'fee-too-high');
 
     if (opts.signed) {
@@ -394,7 +418,6 @@ export class BtcChain implements IChain {
     }
 
     if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.FeeError) return Errors.INSUFFICIENT_FUNDS_FOR_FEE;
-
     if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.DustOutputs) return Errors.DUST_AMOUNT;
     return bitcoreError;
   }
@@ -497,6 +520,7 @@ export class BtcChain implements IChain {
             Utils.formatAmountInBtc(txpAmount) +
             ')'
         );
+
         return cb(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
       }
 

@@ -3954,7 +3954,6 @@ export class WalletService {
         },
         (err, data) => {
           if (err) {
-            console.log('[simplexGetQuote.4542:err:]', err);
             return reject(err.body ? err.body : null);
           } else {
             return resolve(data.body ? data.body : null);
@@ -4012,7 +4011,6 @@ export class WalletService {
         },
         (err, data) => {
           if (err) {
-            console.log('[simplexGetQuote.4595:err:]', err);
             return reject(err.body ? err.body : null);
           } else {
             data.body.payment_id = paymentId;
@@ -4047,7 +4045,6 @@ export class WalletService {
         },
         (err, data) => {
           if (err) {
-            console.log('[simplexGetEvents.4625:err:]', err);
             return reject(err.body ? err.body : null);
           } else {
             return resolve(data.body ? data.body : null);

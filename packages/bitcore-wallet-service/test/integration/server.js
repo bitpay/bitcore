@@ -4277,7 +4277,6 @@ describe('Wallet service', function() {
                     txProposalId: txp.id,
                     signatures: signatures
                   }, function(err, txp) {
-console.log('[server.js.4279:txp:]',JSON.stringify(txp.toObject())); // TODO
                     should.not.exist(err);
 
                     helpers.stubBroadcast(txp.txid);
@@ -6254,7 +6253,7 @@ console.log('[server.js.4279:txp:]',JSON.stringify(txp.toObject())); // TODO
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(4);
-          info.size.should.equal(1304);
+          info.size.should.equal(1254);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
           info.utxosBelowFee.should.equal(0);
@@ -6273,9 +6272,9 @@ console.log('[server.js.4279:txp:]',JSON.stringify(txp.toObject())); // TODO
         }, function(err, info) {
           should.not.exist(err);
           should.exist(info);
-          info.size.should.equal(700);
-          info.fee.should.equal(350e2);
-          info.amount.should.equal(250e2);
+          info.size.should.equal(654);
+          info.fee.should.equal(32700);
+          info.amount.should.equal(27300);
 
           var _min_output_amount = Defaults.MIN_OUTPUT_AMOUNT;
           Defaults.MIN_OUTPUT_AMOUNT = 300e2;
@@ -6374,7 +6373,7 @@ console.log('[server.js.4279:txp:]',JSON.stringify(txp.toObject())); // TODO
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(3);
-          info.size.should.equal(1002);
+          info.size.should.equal(954);
           info.fee.should.equal(info.size * 10000 / 1000.);
           info.amount.should.equal(0.9e8 - info.fee);
           sendTx(info, done);
@@ -6400,7 +6399,7 @@ console.log('[server.js.4279:txp:]',JSON.stringify(txp.toObject())); // TODO
             should.not.exist(err);
             should.exist(info);
             info.inputs.length.should.equal(2);
-            info.size.should.equal(700);
+            info.size.should.equal(654);
             info.fee.should.equal(info.size * 10000 / 1000.);
             info.amount.should.equal(0.2e8 - info.fee);
             sendTx(info, done);
@@ -6419,7 +6418,7 @@ console.log('[server.js.4279:txp:]',JSON.stringify(txp.toObject())); // TODO
           should.not.exist(err);
           should.exist(info);
           info.inputs.length.should.equal(4);
-          info.size.should.equal(1304);
+          info.size.should.equal(1254);
           info.fee.should.equal(info.size * 0.001e8 / 1000.);
           info.amount.should.equal(1e8 - info.fee);
           info.utxosBelowFee.should.equal(3);
@@ -6431,7 +6430,7 @@ console.log('[server.js.4279:txp:]',JSON.stringify(txp.toObject())); // TODO
             should.not.exist(err);
             should.exist(info);
             info.inputs.length.should.equal(6);
-            info.size.should.equal(1907);
+            info.size.should.equal(1853);
             info.fee.should.equal(info.size * 0.0001e8 / 1000.);
             info.amount.should.equal(1.0003e8 - info.fee);
             info.utxosBelowFee.should.equal(1);
