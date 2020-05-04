@@ -37,7 +37,7 @@
     "test": "ng test --watch=false --code-coverage --no-progress",
     "fix:prettier": "prettier '{*,**/*}.{js,ts,md,json,css}' --write",
     "fix:tslint": "tslint --type-check --fix --project .",
-    "fix":"npm run fix:tslint && npm run fix:prettier"
+    "fix": "npm run fix:tslint && npm run fix:prettier"
   },
   "dependencies": {
     "@angular/common": "5.2.10",
@@ -50,7 +50,6 @@
     "angular2-moment": "1.7.1",
     "angular2-qrcode": "2.0.1",
     "bs58": "^4.0.1",
-    "chart.js": "^2.8.0",
     "ionic-angular": "3.9.2",
     "ionicons": "3.0.0",
     "lodash": "4.17.11",
