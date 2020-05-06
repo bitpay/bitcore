@@ -2540,7 +2540,9 @@ export class WalletService {
           });
           if (action) return cb(Errors.COPAYER_VOTED);
           if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
-          if (txp.signingMethod === 'schnorr' && !opts.useBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
+
+          if (txp.signingMethod === 'schnorr' && !opts.useBchSchnorr) 
+            return cb(Errors.UPGRADE_NEEDED);
 
           const copayer = wallet.getCopayer(this.copayerId);
 

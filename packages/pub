@@ -5,5 +5,5 @@ MODULES='bitcore-build bitcore-lib bitcore-lib-cash bitcore-mnemonic  crypto-wal
 
 for i in $MODULES; 
 do
-  cd $i && npm run pub  && cd ..|| exit
+  cd $i && npm run pub  ; cd ..
 done
