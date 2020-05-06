@@ -504,19 +504,31 @@ export class ExpressApp {
     });
 
     router.get('/v1/advertisements/', (req, res) => {
-      getServerWithAuth(
-        req,
-        res,
-        {
-          onlyMarketingStaff: true
-        },
-        server => {
-          server.getAdverts(req.body, (err, ads) => {
-            if (err) returnError(err, res, req);
-            res.json(ads);
-          });
-        }
-      );
+
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      } 
+
+      server.getAdverts(req.body, (err, ads) => {
+        if (err) returnError(err, res, req);
+        res.json(ads);
+      });
+      // getServerWithAuth(
+      //   req,
+      //   res,
+      //   {
+      //     onlyMarketingStaff: false
+      //   },
+      //   server => {
+      //     server.getAdverts(req.body, (err, ads) => {
+      //       if (err) returnError(err, res, req);
+      //       res.json(ads);
+      //     });
+      //   }
+      // );
     });
 
     router.delete('/v1/advertisements/:title/', (req, res) => {

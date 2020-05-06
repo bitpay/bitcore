@@ -3620,11 +3620,16 @@ export class WalletService {
           let x = new Advertisement();
 
           x.advertisementId = Uuid.v4();
+          x.name = opts.name;
           x.title = opts.title;
           x.body = opts.body;
           x.imgUrl = opts.imgUrl;
-          x.isAdActive = opts.isAdActive;
+          x.linkText = opts.linkText;
           x.linkUrl = opts.linkUrl;
+          x.isAdActive = opts.isAdActive;
+          x.dismissible = opts.dismissible;
+          x.app = opts.app;
+          x.isTesting = opts.isTesting;
 
           return cb(null, x);
         }

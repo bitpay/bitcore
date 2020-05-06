@@ -2,43 +2,61 @@ const $ = require('preconditions').singleton();
 var _ = require('lodash');
 
 export interface IAdvertisement {
+  name: string;
   advertisementId: string;
   title: string;
   body: string;
   imgUrl: string;
+  linkText: string;
   linkUrl: string;
+  app: string;
+  dismissible: boolean;
   isAdActive: boolean;
   isTesting: boolean;
 }
 
 export class Advertisement {
   advertisementId: string;
+  name: string;
   title: string;
   body: string;
   imgUrl: string;
+  linkText: string;
   linkUrl: string;
+  app: string;
+  dismissible: boolean;
   isAdActive: boolean;
   isTesting: boolean;
 
   static create(opts) {
     opts = opts || {};
     const x = new Advertisement();
+    x.name = opts.name;
     x.title = opts.title;
     x.body = opts.body;
     x.imgUrl = opts.imgUrl;
+    x.linkText = opts.linkText;
     x.linkUrl = opts.linkUrl;
+    x.app = opts.app;
+    x.dismissible = opts.dismissible;
     x.isAdActive = opts.isAdActive;
+    x.isTesting = opts.isTesting;
 
     return x;
   }
 
   static fromObj(obj) {
     const x = new Advertisement();
+    x.name = obj.name;
     x.title = obj.title;
     x.body = obj.body;
     x.imgUrl = obj.imgUrl;
+    x.linkText = obj.linkText;
     x.linkUrl = obj.linkUrl;
+    x.app = obj.app;
+    x.dismissible = obj.dismissible;
     x.isAdActive = obj.isAdActive;
+    x.isTesting = obj.isTesting;
 
     return x;
   }

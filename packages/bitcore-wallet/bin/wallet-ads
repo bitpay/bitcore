@@ -7,7 +7,7 @@ program = utils.configureCommander(program);
 
 // options, (isAdActive, isCurrentlyTesting)
 program
-  .usage('[options] [title] [body] [imgUrl] [linkUrl]')
+  .usage('[options] [name] [title] [body] [imgUrl] [linkText] [linkUrl] [app] [dismissible] [isAdActive] [isTesting]')
   .parse(process.argv);
 
 var args = program.args;
@@ -17,18 +17,29 @@ var clientArgs = {
   host
 }
 
-var title = args[0];
-var body = args[1];
-var imgUrl = args[2];
-var linkUrl = args[3];
+var name = args[0]
+var title = args[1];
+var body = args[2];
+var imgUrl = args[3];
+var linkText = args[4];
+var linkUrl = args[5];
+var app = args[6];
+var dismissible = args[7];
+var isAdActive = args[8];
+var isTesting = args[9]
 var isAdActive = true;
 
 let adArgs = {
+  name,
   title,
   body,
   imgUrl,
+  linkText,
   linkUrl,
-  isAdActive
+  app,
+  dismissible,
+  isAdActive,
+  isTesting
 };
 
 utils.getClient(clientArgs, { 
