@@ -3,41 +3,6 @@
 module.exports = {
   MIN_FEE_PER_KB: 0,
 
-  MAX_FEE_PER_KB: {
-    btc: 10000 * 1000, // 10k sat/b
-    bch: 10000 * 1000, // 10k sat/b
-    eth: 50000000000, // 50 Gwei,
-    xrp: 50000000000
-  },
-
-  MIN_TX_FEE: {
-    btc: 0,
-    bch: 0,
-    eth: 0,
-    xrp: 0
-  },
-
-  MAX_TX_FEE: {
-    btc: 0.05 * 1e8,
-    bch: 0.05 * 1e8,
-    eth: 1 * 1e18, // 1 eth
-    xrp: 1 * 1e6 // 1 xrp
-  },
-
-  MAX_TX_SIZE_IN_KB: {
-    btc: 100,
-    bch: 100,
-    eth: 500,
-    xrp: 1000
-  },
-
-  // ETH
-  DEFAULT_GAS_LIMIT: 200000,
-  MIN_GAS_LIMIT: 21000,
-
-  // XRP has a non-refundable mininum activation fee / balance
-  MIN_XRP_BALANCE: 20000000,
-
   MAX_KEYS: 100,
 
   // Time after which a tx proposal can be erased by any copayer. in seconds
@@ -218,5 +183,44 @@ module.exports = {
 
   NEW_BLOCK_THROTTLE_TIME_MIN: 5,
 
-  BROADCAST_RETRY_TIME: 350 // ms
+  BROADCAST_RETRY_TIME: 350, // ms
+
+  /*
+   *      COIN SPECIFIC
+   */
+
+  MAX_TX_SIZE_IN_KB_BTC: 100,
+
+  MAX_TX_SIZE_IN_KB_BCH: 100,
+
+  // MAX_TX_SIZE_IN_KB_ETH: 500, // not used
+  // MAX_TX_SIZE_IN_KB_XRP: 1000, // not used
+
+  MAX_FEE_PER_KB: {
+    btc: 10000 * 1000, // 10k sat/b
+    bch: 10000 * 1000, // 10k sat/b
+    eth: 50000000000, // 50 Gwei,
+    xrp: 50000000000
+  },
+
+  MIN_TX_FEE: {
+    btc: 0,
+    bch: 0,
+    eth: 0,
+    xrp: 0
+  },
+
+  MAX_TX_FEE: {
+    btc: 0.05 * 1e8,
+    bch: 0.05 * 1e8,
+    eth: 1 * 1e18, // 1 eth
+    xrp: 1 * 1e6 // 1 xrp
+  },
+
+  // ETH
+  DEFAULT_GAS_LIMIT: 200000,
+  MIN_GAS_LIMIT: 21000,
+
+  // XRP has a non-refundable mininum activation fee / balance
+  MIN_XRP_BALANCE: 20000000
 };

@@ -580,7 +580,7 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
       // For eth => account, 0, change = 0
       const priv =  xpriv.derive('m/0/0').privateKey;
       const privKey = priv.toString('hex');
-      let tx = txp.getBitcoreTx().uncheckedSerialize();
+      let tx = ChainService.getBitcoreTx(txp).uncheckedSerialize();
       const isERC20 = txp.tokenAddress && !txp.payProUrl;
       const chain = isERC20 ? 'ERC20' : ChainService.getChain(txp.coin);
       tx = typeof tx === 'string'? [tx] : tx;
@@ -602,7 +602,7 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
         }
       });
 
-      var t = txp.getBitcoreTx();
+      var t = ChainService.getBitcoreTx(txp);
       signatures = _.map(privs, function(priv, i) {
         return t.getSignatures(priv, undefined, txp.signingMethod);
       });

@@ -53,37 +53,11 @@ describe('TxProposal', function() {
     });
   });
 
-  describe('#getBitcoreTx', function() {
-    it('should create a valid bitcore TX', function() {
-      var txp = TxProposal.fromObj(aTXP());
-      var t = txp.getBitcoreTx();
-      should.exist(t);
-    });
-    it('should order outputs as specified by outputOrder', function() {
-      var txp = TxProposal.fromObj(aTXP());
-
-      txp.outputOrder = [0, 1, 2];
-      var t = txp.getBitcoreTx();
-      t.getChangeOutput().should.deep.equal(t.outputs[2]);
-
-      txp.outputOrder = [2, 0, 1];
-      var t = txp.getBitcoreTx();
-      t.getChangeOutput().should.deep.equal(t.outputs[0]);
-    });
-  });
-
   describe('#getTotalAmount', function() {
     it('should compute total amount', function() {
       var x = TxProposal.fromObj(aTXP());
       var total = x.getTotalAmount();
       total.should.equal(x.amount);
-    });
-  });
-
-  describe('#getEstimatedSize', function() {
-    it('should return estimated size in bytes', function() {
-      var x = TxProposal.fromObj(aTXP());
-      x.getEstimatedSize().should.equal(396);
     });
   });
 
