@@ -3712,7 +3712,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
       });
     })
 
-    describe('BCH testnet (schnoor activaton)', (done) => {
+    describe('BCH testnet (schnorr activaton)', (done) => {
       beforeEach((done) => {
         setup(1, 1, 'bch', 'testnet', done);
       });
