@@ -12,7 +12,6 @@ describe('Transaction Creation', () => {
         value: 0.02503422 * 1e8,
         script: '76a91457884dcfe2ab46d3354a42d97333c95e5b80cf0188ac',
         address: 'moVnNJpHHfssYJEnMTS5xXyGV8RhRQNRz5',
-        seqnum: 4294967294,
         sequenceNumber: 4294967294
       },
       {
@@ -21,7 +20,6 @@ describe('Transaction Creation', () => {
         value: 1e8,
         script: '76a9144e744a19a009a9dd43a23a7c12045c83e82ac9d288ac',
         address: 'mnfnJx2xWWptYmBzck3rdE851Dtu9GaZ3F',
-        seqnum: 4294967294,
         sequenceNumber: 4294967294
       }
     ];
@@ -51,7 +49,6 @@ describe('Transaction Creation', () => {
         value: 0.02503422 * 1e8,
         script: '76a91457884dcfe2ab46d3354a42d97333c95e5b80cf0188ac',
         address: 'moVnNJpHHfssYJEnMTS5xXyGV8RhRQNRz5',
-        seqnum: 4294967294,
         sequenceNumber: 4294967294
       }
     ];
