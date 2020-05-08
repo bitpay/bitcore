@@ -74,10 +74,9 @@ export class BTCTxProvider {
       outputs: bitcoreTx.inputs,
       utxos
     });
-    const outputs = this.getOutputsFromTx({ tx: bitcoreTx });
-    let newTx = new this.lib.Transaction().from(applicableUtxos).to(outputs);
+    bitcoreTx.associateInputs(applicableUtxos);
     const privKeys = _.uniq(keys.map(key => key.privKey.toString()));
-    const signedTx = newTx.sign(privKeys).toString();
+    const signedTx = bitcoreTx.sign(privKeys).toString();
     return signedTx;
   }
 

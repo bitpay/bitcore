@@ -632,7 +632,17 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
   return this;
 };
 
-Transaction.prototype._fromNonP2SH = function(utxo) {
+Transaction.prototype.associateInputs = function(utxos) {
+  for(let utxo of utxos) {
+    const index = this.inputs.findIndex(i => i.prevTxId.toString('hex') === utxo.txId && i.outputIndex === utxo.outputIndex);
+    if(index >= 0) {
+      this.inputs[index] = this._getInputFrom(utxo);
+    }
+  }
+}
+
+
+Transaction.prototype._selectInputType = function(utxo) {
   var clazz;
   utxo = new UnspentOutput(utxo);
   if (utxo.script.isPublicKeyHashOut() || utxo.script.isWitnessPublicKeyHashOut() || utxo.script.isScriptHashOut()) {
@@ -642,7 +652,13 @@ Transaction.prototype._fromNonP2SH = function(utxo) {
   } else {
     clazz = Input;
   }
-  this.addInput(new clazz({
+  return clazz;
+}
+
+
+Transaction.prototype._getInputFrom = function(utxo) {
+  const InputClass = this._selectInputType(utxo);
+  return new InputClass({
     output: new Output({
       script: utxo.script,
       satoshis: utxo.satoshis
@@ -650,7 +666,12 @@ Transaction.prototype._fromNonP2SH = function(utxo) {
     prevTxId: utxo.txId,
     outputIndex: utxo.outputIndex,
     script: Script.empty()
-  }));
+  });
+}
+
+Transaction.prototype._fromNonP2SH = function(utxo) {
+  const input = this._getInputFrom(utxo);
+  this.addInput(input);
 };
 
 Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, opts) {
@@ -1039,18 +1060,18 @@ Transaction.prototype.removeOutput = function(index) {
 Transaction.prototype.sort = function() {
   this.sortInputs(function(inputs) {
     var copy = Array.prototype.concat.apply([], inputs);
-    let i = 0; 
+    let i = 0;
     copy.forEach((x) => { x.i = i++});
     copy.sort(function(first, second) {
      return compare(first.prevTxId, second.prevTxId)
-        || first.outputIndex - second.outputIndex 
+        || first.outputIndex - second.outputIndex
         || first.i - second.i;  // to ensure stable sort
     });
     return copy;
   });
   this.sortOutputs(function(outputs) {
     var copy = Array.prototype.concat.apply([], outputs);
-    let i = 0; 
+    let i = 0;
     copy.forEach((x) => { x.i = i++});
     copy.sort(function(first, second) {
       return first.satoshis - second.satoshis
@@ -1359,7 +1380,7 @@ Transaction.prototype.enableRBF = function() {
 
 Transaction.prototype.setVersion = function(version) {
   $.checkArgument(
-    JSUtil.isNaturalNumber(version) && version <= CURRENT_VERSION, 
+    JSUtil.isNaturalNumber(version) && version <= CURRENT_VERSION,
     'Wrong version number');
   this.version = version;
   return this;
