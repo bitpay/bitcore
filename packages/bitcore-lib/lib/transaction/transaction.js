@@ -657,6 +657,7 @@ Transaction.prototype._selectInputType = function(utxo) {
 
 
 Transaction.prototype._getInputFrom = function(utxo) {
+  utxo = new UnspentOutput(utxo);
   const InputClass = this._selectInputType(utxo);
   return new InputClass({
     output: new Output({
