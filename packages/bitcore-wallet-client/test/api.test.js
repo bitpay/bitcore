@@ -1416,6 +1416,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         signatures[0].should.equal('304402200aa70dfe99e25792c4a7edf773477100b6659f1ba906e551e6e5218ec32d273402202e31c575edb55b2da824e8cafd02b4769017ef63d3c888718cf6f0243c570d41');
         signatures[1].should.equal('3045022100afde45e125f654453493b40d288cd66e8a011c66484509ae730a2686c9dff30502201bf34a6672c5848dd010b89ea1a5f040731acf78fec062f61b305e9ce32798a5');
       });
+
       it('should sign BCH proposal correctly (schnorr)', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
@@ -3629,11 +3630,11 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
 
     describe('BCH multisig', (done) => {
       beforeEach((done) => {
-        setup(2, 3, 'bch', 'livenet', done);
+        setup(2, 3, 'bch', 'testnet', done);
       });
 
-      it.skip('(BCH) two incompatible clients try to sign txp v4.', (done) => {
-        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+      it('(BCH) two incompatible clients try to sign schnorr txp', (done) => {
+        var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
         var opts = {
           outputs: [{
             amount: 1e8,
@@ -3655,15 +3656,13 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
             should.exist(publishedTxp);
             publishedTxp.status.should.equal('pending');
 
-
             let signatures = keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
               should.not.exist(err);
               let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
               clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                 should.exist(err);
-                console.log(err);
-                err.message.should.equal("UPGRADE_NEEDED: Your client does not support signing this transaction. Please upgrade")
+                err.message.should.contain("UPGRADE_NEEDED");
                 done();
               }, '/v1/txproposals/');
             });
@@ -3672,7 +3671,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
       });
 
       it('BCH Multisig Txp signingMethod = schnorr', (done) => {
-        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
         var opts = {
           outputs: [{
             amount: 1e8,
@@ -3712,6 +3711,50 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         });
       });
     })
+
+    describe('BCH testnet (schnorr activaton)', (done) => {
+      beforeEach((done) => {
+        setup(1, 1, 'bch', 'testnet', done);
+      });
+
+      it('should sign a tx', (done) => {
+        var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+          signingMethod: 'schnorr',       // forcing schnorr on BCH/livenet
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          txp.signingMethod.should.equal('schnorr'); 
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            publishedTxp.signingMethod.should.equal('schnorr'); 
+            publishedTxp.status.should.equal('pending');
+
+
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.not.exist(err);
+              txp.status.should.equal("accepted");
+              done();
+            });
+          });
+        });
+      });
+    })
+
 
     describe('BCH', (done) => {
       beforeEach((done) => {

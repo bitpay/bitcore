@@ -1270,15 +1270,14 @@ export class API extends EventEmitter {
     $.checkState(this.credentials.sharedEncryptingKey);
     $.checkArgument(opts);
 
-    var args = this._getCreateTxProposalArgs(opts);
-
-    baseUrl = baseUrl || '/v3/txproposals/';
-    // baseUrl = baseUrl || '/v4/txproposals/'; // DISABLED 2020-04-07
-
     // BCH schnorr deployment
     if (!opts.signingMethod && this.credentials.coin == 'bch' && this.credentials.network == 'testnet') {
-      args.signingMethod == 'schnorr';
+      opts.signingMethod = 'schnorr';
     }
+
+    var args = this._getCreateTxProposalArgs(opts);
+    baseUrl = baseUrl || '/v3/txproposals/';
+    // baseUrl = baseUrl || '/v4/txproposals/'; // DISABLED 2020-04-07
 
     this.request.post(baseUrl, args, (err, txp) => {
       if (err) return cb(err);
@@ -1538,18 +1537,19 @@ export class API extends EventEmitter {
 
         if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
-        base = base || '/v1/txproposals/';
+        let defaultBase = '/v1/txproposals/';
+        if (txp.coin === 'bch' && txp.network === 'testnet') {
+          defaultBase = '/v2/txproposals/';
+        }
+
+        base = base || defaultBase;
         //        base = base || '/v2/txproposals/'; // DISABLED 2020-04-07
 
-        var url = base + txp.id + '/signatures/';
+        let url = base + txp.id + '/signatures/';
 
-        if (txp.coin === 'bch' && txp.network === 'testnet') {
-          url = '/v4/txproposals/' + txp.id + '/signatures/';
-        }
         var args = {
           signatures
         };
-
         this.request.post(url, args, (err, txp) => {
           if (err) return cb(err);
           this._processTxps(txp);

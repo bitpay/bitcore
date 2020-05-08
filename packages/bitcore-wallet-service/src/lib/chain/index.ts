@@ -4,6 +4,7 @@ import { BchChain } from './bch';
 import { BtcChain } from './btc';
 import { EthChain } from './eth';
 import { XrpChain } from './xrp';
+
 const Common = require('../common');
 const Constants = Common.Constants;
 
@@ -29,21 +30,13 @@ export interface IChain {
   getChangeAddress(server: WalletService, wallet: IWallet, opts: { changeAddress: string } & any);
   checkDust(output: { amount: number; toAddress: string; valid: boolean }, opts: { outputs: any[] } & any);
   getFee(server: WalletService, wallet: IWallet, opts: { fee: number; feePerKb: number } & any);
-  buildTx(txp: TxProposal);
+  getBitcoreTx(txp: TxProposal, opts: { signed: boolean });
   convertFeePerKb(p: number, feePerKb: number);
   checkTx(server: WalletService, txp: ITxProposal);
   checkTxUTXOs(server: WalletService, txp: ITxProposal, opts: { noCashAddr: boolean } & any, cb);
-  selectTxInputs(
-    server: WalletService,
-    txp: ITxProposal,
-    wallet: IWallet,
-    opts: { utxosToExclude: any[] } & any,
-    cb,
-    next
-  );
+  selectTxInputs(server: WalletService, txp: ITxProposal, wallet: IWallet, opts: { utxosToExclude: any[] } & any, cb);
   checkUtxos(opts: { fee: number; inputs: any[] });
   checkValidTxAmount(output): boolean;
-  setInputs(info: { inputs: any[] });
   isUTXOCoin(): boolean;
   isSingleAddress(): boolean;
   supportsMultisig(): boolean;
@@ -112,8 +105,8 @@ class ChainProxy {
     return this.get(wallet.coin).getFee(server, wallet, opts);
   }
 
-  buildTx(txp: TxProposal) {
-    return this.get(txp.coin).buildTx(txp);
+  getBitcoreTx(txp: TxProposal, opts = { signed: true }) {
+    return this.get(txp.coin).getBitcoreTx(txp, { signed: opts.signed });
   }
 
   convertFeePerKb(coin, p, feePerKb) {
@@ -136,8 +129,8 @@ class ChainProxy {
     return this.get(txp.coin).checkTxUTXOs(server, txp, opts, cb);
   }
 
-  selectTxInputs(server, txp, wallet, opts, cb, next) {
-    return this.get(txp.coin).selectTxInputs(server, txp, wallet, opts, cb, next);
+  selectTxInputs(server, txp, wallet, opts, cb) {
+    return this.get(txp.coin).selectTxInputs(server, txp, wallet, opts, cb);
   }
 
   checkUtxos(coin, opts) {
@@ -146,10 +139,6 @@ class ChainProxy {
 
   checkValidTxAmount(coin: string, output): boolean {
     return this.get(coin).checkValidTxAmount(output);
-  }
-
-  setInputs(coin, info) {
-    return this.get(coin).setInputs(info);
   }
 
   isUTXOCoin(coin: string): boolean {

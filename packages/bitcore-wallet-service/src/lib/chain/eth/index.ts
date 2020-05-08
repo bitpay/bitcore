@@ -1,6 +1,7 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import { Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
+import * as log from 'npmlog';
 import { IAddress } from 'src/lib/model/address';
 import { IChain, INotificationData } from '..';
 
@@ -134,13 +135,13 @@ export class EthChain implements IChain {
         }
 
         const gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
-        opts.fee = feePerKb * gasLimit;
-        return resolve({ feePerKb, gasPrice, gasLimit });
+        const fee = feePerKb * gasLimit;
+        return resolve({ feePerKb, gasPrice, gasLimit, fee });
       });
     });
   }
 
-  buildTx(txp) {
+  getBitcoreTx(txp, opts = { signed: true }) {
     const { data, outputs, payProUrl, tokenAddress } = txp;
     const isERC20 = tokenAddress && !payProUrl;
     const chain = isERC20 ? 'ERC20' : 'ETH';
@@ -167,7 +168,8 @@ export class EthChain implements IChain {
       });
       unsignedTxs.push(rawTx);
     }
-    return {
+
+    let tx = {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
       toObject: () => {
@@ -180,28 +182,39 @@ export class EthChain implements IChain {
       },
       getChangeOutput: () => null
     };
+
+    if (opts.signed) {
+      const sigs = txp.getCurrentSignatures();
+      sigs.forEach(x => {
+        this.addSignaturesToBitcoreTx(tx, txp.inputs, txp.inputPaths, x.signatures, x.xpub);
+      });
+    }
+
+    return tx;
   }
 
   convertFeePerKb(p, feePerKb) {
     return [p, feePerKb];
   }
 
-  checkTx(server, txp) {
+  checkTx(txp) {
     try {
-      txp.getBitcoreTx();
+      const tx = this.getBitcoreTx(txp);
     } catch (ex) {
-      server.logw('Error building Bitcore transaction', ex);
+      log.debug('Error building Bitcore transaction', ex);
       return ex;
     }
+
+    return null;
   }
 
   checkTxUTXOs(server, txp, opts, cb) {
     return cb();
   }
 
-  selectTxInputs(server, txp, wallet, opts, cb, next) {
+  selectTxInputs(server, txp, wallet, opts, cb) {
     server.getBalance({ wallet, tokenAddress: opts.tokenAddress }, (err, balance) => {
-      if (err) return next(err);
+      if (err) return cb(err);
 
       const { totalAmount, availableAmount } = balance;
       if (totalAmount < txp.getTotalAmount()) {
@@ -212,18 +225,18 @@ export class EthChain implements IChain {
         if (opts.tokenAddress) {
           // ETH wallet balance
           server.getBalance({}, (err, ethBalance) => {
-            if (err) return next(err);
+            if (err) return cb(err);
             const { totalAmount, availableAmount } = ethBalance;
             if (totalAmount < txp.fee) {
               return cb(Errors.INSUFFICIENT_ETH_FEE);
             } else if (availableAmount < txp.fee) {
               return cb(Errors.LOCKED_ETH_FEE);
             } else {
-              return next(server._checkTx(txp));
+              return cb(this.checkTx(txp));
             }
           });
         } else {
-          return next(server._checkTx(txp));
+          return cb(this.checkTx(txp));
         }
       }
     });
@@ -237,8 +250,6 @@ export class EthChain implements IChain {
     }
     return true;
   }
-
-  setInputs() {}
 
   isUTXOCoin() {
     return false;
