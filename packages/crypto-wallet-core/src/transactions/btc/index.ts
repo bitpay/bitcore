@@ -31,7 +31,7 @@ export class BTCTxProvider {
     return filteredUtxos;
   }
 
-  create({ recipients, utxos = [], change, wallet, fee = 20000 }) {
+  create({ recipients, utxos = [], change, wallet, feePerByte, fee }) {
     change = change || wallet.deriveAddress(wallet.addressIndex, true);
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
@@ -42,7 +42,13 @@ export class BTCTxProvider {
       });
       return new this.lib.Transaction.UnspentOutput(btcUtxo);
     });
-    let tx = new this.lib.Transaction().from(btcUtxos).feePerByte(Number(fee) + 2);
+    let tx = new this.lib.Transaction().from(btcUtxos);
+    if (fee) {
+      tx.fee(fee);
+    }
+    if (feePerByte) {
+      tx.feePerByte(Number(feePerByte));
+    }
     if (change) {
       tx.change(change);
     }

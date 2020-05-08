@@ -665,6 +665,7 @@ Transaction.prototype._getInputFrom = function(utxo) {
     }),
     prevTxId: utxo.txId,
     outputIndex: utxo.outputIndex,
+    sequenceNumber: utxo.sequenceNumber,
     script: Script.empty()
   });
 }
