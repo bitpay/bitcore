@@ -53,10 +53,10 @@ export class HeadNavComponent implements OnInit {
     };
   }
 
-  public goHome(chainNetwork): void {
+  public goHome(chainNetwork?): void {
     this.navCtrl.setRoot('home', {
-      chain: chainNetwork.chain,
-      network: chainNetwork.network
+      chain: chainNetwork ? chainNetwork.chain : 'ALL',
+      network: chainNetwork ? chainNetwork.network : 'mainnet'
     });
   }
 
