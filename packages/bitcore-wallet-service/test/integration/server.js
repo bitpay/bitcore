@@ -4729,6 +4729,50 @@ describe('Wallet service', function() {
 
 
         if(!flags.noUtxoTests) {
+
+          it('should  send max with appropiate fee', function(done) {
+            helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
+              var txOpts = {
+                outputs: [{
+                  toAddress: addressStr,
+                  amount: null,
+                  gasLimit: 21000
+                }],
+                feePerKb: coin == 'bch' ? 1000 : 10000,
+                sendMax: true,
+                from: fromAddr,
+              };
+              txOpts = Object.assign(txOpts, flags);
+
+              helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
+                should.exist(txp);
+                should.not.exist(txp.changeAddress);
+                var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+                server.signTx({
+                  txProposalId: txp.id,
+                  signatures: signatures,
+                }, function(err, txp) {
+                  should.not.exist(err);
+                  should.exist(txp);
+
+                  helpers.stubBroadcast(txp.txid);
+                  server.broadcastTx({
+                    txProposalId: txp.id
+                  }, function(err, txp) {
+                    txp.amount.should.equal(3 * TO_SAT[coin] - txp.fee);
+
+                    var t = ChainService.getBitcoreTx(txp);
+                    t.getFee().should.equal(txp.fee);
+
+                    const actualFeeRate = t.getFee() / (txp.raw.length/2);
+                    done();
+                  });
+              });
+              });
+            });
+          });
+
+
           it('should accept a tx proposal signed with a custom key', function(done) {
             var reqPrivKey = new Bitcore.PrivateKey();
             var reqPubKey = reqPrivKey.toPublicKey().toString();
