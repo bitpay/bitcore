@@ -632,20 +632,29 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
   return this;
 };
 
-Transaction.prototype.associateInputs = function(utxos) {
+Transaction.prototype.associateInputs = function(utxos, pubkeys, threshold, opts) {
+  let indexes = [];
   for(let utxo of utxos) {
     const index = this.inputs.findIndex(i => i.prevTxId.toString('hex') === utxo.txId && i.outputIndex === utxo.outputIndex);
+    indexes.push(index);
     if(index >= 0) {
-      this.inputs[index] = this._getInputFrom(utxo);
+      this.inputs[index] = this._getInputFrom(utxo, pubkeys, threshold, opts);
     }
   }
+  return indexes;
 }
 
 
-Transaction.prototype._selectInputType = function(utxo) {
+Transaction.prototype._selectInputType = function(utxo, pubkeys, threshold) {
   var clazz;
   utxo = new UnspentOutput(utxo);
-  if (utxo.script.isPublicKeyHashOut() || utxo.script.isWitnessPublicKeyHashOut() || utxo.script.isScriptHashOut()) {
+  if(pubkeys && threshold) {
+    if (utxo.script.isMultisigOut()) {
+      clazz = MultiSigInput;
+    } else if (utxo.script.isScriptHashOut() || utxo.script.isWitnessScriptHashOut()) {
+      clazz = MultiSigScriptHashInput;
+    }
+  } else if (utxo.script.isPublicKeyHashOut() || utxo.script.isWitnessPublicKeyHashOut() || utxo.script.isScriptHashOut()) {
     clazz = PublicKeyHashInput;
   } else if (utxo.script.isPublicKeyOut()) {
     clazz = PublicKeyInput;
@@ -656,10 +665,10 @@ Transaction.prototype._selectInputType = function(utxo) {
 }
 
 
-Transaction.prototype._getInputFrom = function(utxo) {
+Transaction.prototype._getInputFrom = function(utxo, pubkeys, threshold, opts) {
   utxo = new UnspentOutput(utxo);
-  const InputClass = this._selectInputType(utxo);
-  return new InputClass({
+  const InputClass = this._selectInputType(utxo, pubkeys, threshold);
+  const input = {
     output: new Output({
       script: utxo.script,
       satoshis: utxo.satoshis
@@ -668,7 +677,9 @@ Transaction.prototype._getInputFrom = function(utxo) {
     outputIndex: utxo.outputIndex,
     sequenceNumber: utxo.sequenceNumber,
     script: Script.empty()
-  });
+  };
+  let args = pubkeys && threshold ? [pubkeys, threshold, false, opts] : []
+  return new InputClass(input, ...args);
 }
 
 Transaction.prototype._fromNonP2SH = function(utxo) {
@@ -679,24 +690,8 @@ Transaction.prototype._fromNonP2SH = function(utxo) {
 Transaction.prototype._fromMultisigUtxo = function(utxo, pubkeys, threshold, opts) {
   $.checkArgument(threshold <= pubkeys.length,
     'Number of required signatures must be greater than the number of public keys');
-  var clazz;
-  utxo = new UnspentOutput(utxo);
-  if (utxo.script.isMultisigOut()) {
-    clazz = MultiSigInput;
-  } else if (utxo.script.isScriptHashOut() || utxo.script.isWitnessScriptHashOut()) {
-    clazz = MultiSigScriptHashInput;
-  } else {
-    throw new Error("@TODO");
-  }
-  this.addInput(new clazz({
-    output: new Output({
-      script: utxo.script,
-      satoshis: utxo.satoshis
-    }),
-    prevTxId: utxo.txId,
-    outputIndex: utxo.outputIndex,
-    script: Script.empty()
-  }, pubkeys, threshold, false, opts));
+  const input = this._getInputFrom(utxo, pubkeys, threshold, opts);
+  this.addInput(input);
 };
 
 /**
