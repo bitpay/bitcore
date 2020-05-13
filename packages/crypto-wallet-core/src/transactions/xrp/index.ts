@@ -29,7 +29,8 @@ export class XRPTxProvider {
     const { schemaValidate } = RippleAPI._PRIVATE.schemaValidator;
     const Flags = 2147483648;
     const amountStr = rippleAPI.dropsToXrp(amount);
-    const feeStr = rippleAPI.dropsToXrp((fee || feeRate).toString());
+    const feeNum = fee || feeRate;
+    const feeStr = rippleAPI.dropsToXrp(feeNum.toString());
     const payment: Payment = {
       source: {
         address: from,
