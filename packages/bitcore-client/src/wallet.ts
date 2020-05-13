@@ -297,6 +297,7 @@ export class Wallet {
     change?: string;
     invoiceID?: string;
     fee?: number;
+    feePerByte?: number;
     nonce?: number;
     tag?: number;
     data?: string;
@@ -321,6 +322,7 @@ export class Wallet {
       change: params.change,
       invoiceID: params.invoiceID,
       fee: params.fee,
+      feePerByte: params.feePerByte,
       wallet: this,
       utxos: params.utxos,
       nonce: params.nonce,
