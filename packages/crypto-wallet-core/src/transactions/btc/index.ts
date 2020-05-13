@@ -71,8 +71,8 @@ export class BTCTxProvider {
     return bitcoreTx.hash;
   }
 
-  sign(params: { tx: string; keys: Array<Key>; utxos: any[] }) {
-    const { tx, keys } = params;
+  sign(params: { tx: string; keys: Array<Key>; utxos: any[]; pubkeys?: any[]; threshold?: number; opts: any }) {
+    const { tx, keys, pubkeys, threshold, opts } = params;
     let utxos = params.utxos || [];
     let inputAddresses = this.getSigningAddresses({ tx, utxos });
     let bitcoreTx = new this.lib.Transaction(tx);
@@ -80,7 +80,7 @@ export class BTCTxProvider {
       outputs: bitcoreTx.inputs,
       utxos
     });
-    bitcoreTx.associateInputs(applicableUtxos);
+    bitcoreTx.associateInputs(applicableUtxos, pubkeys, threshold, opts);
     const privKeys = _.uniq(keys.map(key => key.privKey.toString()));
     const signedTx = bitcoreTx.sign(privKeys).toString();
     return signedTx;
