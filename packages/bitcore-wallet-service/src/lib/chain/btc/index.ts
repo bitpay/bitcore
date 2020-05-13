@@ -15,7 +15,11 @@ const Errors = require('../../errors/errordefinitions');
 log.debug = log.verbose;
 
 export class BtcChain implements IChain {
-  constructor(private bitcoreLib = BitcoreLib) {}
+  protected feeSafetyMargin: number;
+
+  constructor(private bitcoreLib = BitcoreLib) {
+    this.feeSafetyMargin = 0.02;
+  }
 
   getWalletBalance(server, wallet, opts, cb) {
     server.getUtxosForCurrentWallet(
@@ -243,7 +247,6 @@ export class BtcChain implements IChain {
   }
 
   getEstimatedSize(txp) {
-    const safetyMargin = 0.02;
 
     const overhead = 4 + 4 + 1 + 1; // version, locktime, ninputs, noutputs
 
@@ -267,7 +270,7 @@ export class BtcChain implements IChain {
     }
 
     const size = overhead + inputSize * nbInputs + outputsSize;
-    return parseInt((size * (1 + safetyMargin)).toFixed(0));
+    return parseInt((size * (1 + this.feeSafetyMargin)).toFixed(0));
   }
 
   getEstimatedFee(txp) {
