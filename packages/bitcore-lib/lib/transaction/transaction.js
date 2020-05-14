@@ -632,6 +632,16 @@ Transaction.prototype.from = function(utxo, pubkeys, threshold, opts) {
   return this;
 };
 
+/**
+ * associateInputs - Update inputs with utxos, allowing you to specify value, and pubkey.
+ * Populating these inputs allows for them to be signed with .sign(privKeys)
+ *
+ * @param {Array<Object>} utxos
+ * @param {Array<string | PublicKey>} pubkeys
+ * @param {number} threshold
+ * @param {Object} opts
+ * @returns {Array<number>}
+ */
 Transaction.prototype.associateInputs = function(utxos, pubkeys, threshold, opts) {
   let indexes = [];
   for(let utxo of utxos) {
