@@ -36,14 +36,14 @@ const main = async () => {
     const lastAddress = await wallet.deriveAddress(0);
     const recipients = [{ address: to, amount: amount * scale }];
     const feerate = await wallet.getNetworkFee();
-    const fee = JSON.parse(feerate).feerate || 20 * scale;
+    const feeRate = JSON.parse(feerate).feerate || 20 * scale;
     let nonce;
     if (!['BTC', 'BCH'].includes(chain)) {
       nonce = await wallet.getNonce();
     }
     const utxos = await wallet.getUtxosArray();
     const params = {
-      fee,
+      feeRate,
       nonce: Number(nonce),
       utxos,
       recipients,
