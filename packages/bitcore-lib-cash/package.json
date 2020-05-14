@@ -45,7 +45,7 @@
   },
   "devDependencies": {
     "base-x": "=3.0.4",
-    "bitcore-build": "^8.17.1",
+    "bitcore-build": "^8.20.1",
     "brfs": "^2.0.1",
     "chai": "^4.2.0",
     "gulp": "^4.0.0",

@@ -67,7 +67,7 @@
     "socks5-client": "^0.3.6"
   },
   "devDependencies": {
-    "bitcore-build": "^8.17.1",
+    "bitcore-build": "^8.20.1",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
     "gulp": "^4.0.0",
