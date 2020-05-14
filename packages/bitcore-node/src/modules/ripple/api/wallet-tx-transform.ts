@@ -3,6 +3,7 @@ import { CoinStorage } from '../../../models/coin';
 import { IWallet } from '../../../models/wallet';
 import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
 import { IXrpTransaction } from '../types';
+
 export class RippleDbWalletTransactions extends Transform {
   walletAddresses?: Array<IWalletAddress>;
   constructor(public wallet: IWallet) {
@@ -50,7 +51,7 @@ export class RippleDbWalletTransactions extends Transform {
               fee: tx.fee,
               size: 0,
               category: 'send',
-              satoshis: -1 * output.value,
+              satoshis: -1 * Math.abs(output.value) + tx.fee,
               height: tx.blockHeight,
               address,
               outputIndex: output.mintIndex,
@@ -65,7 +66,7 @@ export class RippleDbWalletTransactions extends Transform {
               fee: tx.fee,
               size: 0,
               category: 'move',
-              satoshis: -1 * output.value,
+              satoshis: -1 * Math.abs(output.value),
               height: tx.blockHeight,
               address,
               outputIndex: output.mintIndex,
@@ -95,7 +96,7 @@ export class RippleDbWalletTransactions extends Transform {
               fee: tx.fee,
               size: 0,
               category: 'receive',
-              satoshis: output.value * 1e6,
+              satoshis: Math.abs(output.value),
               height: tx.blockHeight,
               address,
               outputIndex: output.mintIndex,
