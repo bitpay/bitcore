@@ -247,7 +247,6 @@ export class BtcChain implements IChain {
   }
 
   getEstimatedSize(txp) {
-
     const overhead = 4 + 4 + 1 + 1; // version, locktime, ninputs, noutputs
 
     // This assumed ALL inputs of the wallet are the same time
