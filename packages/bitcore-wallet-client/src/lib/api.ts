@@ -1753,16 +1753,16 @@ export class API extends EventEmitter {
 
           let i = 0;
 
-          let isBtcSegwit = txp.coin == 'btc' && ( txp.addressType == 'P2WSH' || txp.addressType=='P2WPKH');
+          let isBtcSegwit = txp.coin == 'btc' && (txp.addressType == 'P2WSH' || txp.addressType == 'P2WPKH');
           for (const unsigned of unserializedTxs) {
             let size = serializedTxs[i++].length / 2;
             if (isBtcSegwit) {
               let unsignedSize = unsigned.length / 2;
-              size = Math.floor(size - ( unsignedSize *  3 / 4));
+              size = Math.floor(size - (unsignedSize * 3) / 4);
             }
             unsignedTransactions.push({
               tx: unsigned,
-              weightedSize: size,
+              weightedSize: size
             });
           }
           for (const signed of serializedTxs) {
