@@ -1732,7 +1732,7 @@ export class API extends EventEmitter {
       .then(paypro => {
         if (paypro) {
           var t_unsigned = Utils.buildTx(txp);
-          var t = _.clone(t_unsigned);
+          var t = _.cloneDeep(t_unsigned);
 
           this._applyAllSignatures(txp, t);
 
@@ -1751,10 +1751,18 @@ export class API extends EventEmitter {
           const unserializedTxs = typeof rawTxUnsigned === 'string' ? [rawTxUnsigned] : rawTxUnsigned;
           const serializedTxs = typeof serializedTx === 'string' ? [serializedTx] : serializedTx;
 
+          let i = 0;
+
+          let isBtcSegwit = txp.coin == 'btc' && ( txp.addressType == 'P2WSH' || txp.addressType=='P2WPKH');
           for (const unsigned of unserializedTxs) {
+            let size = serializedTxs[i++].length / 2;
+            if (isBtcSegwit) {
+              let unsignedSize = unsigned.length / 2;
+              size = Math.floor(size - ( unsignedSize *  3 / 4));
+            }
             unsignedTransactions.push({
               tx: unsigned,
-              weightedSize: unsigned.length / 2
+              weightedSize: size,
             });
           }
           for (const signed of serializedTxs) {
