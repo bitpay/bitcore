@@ -90,6 +90,30 @@ describe('Key', function () {
 
   describe('Encryption', function () {
     describe('#encrypt', function () {
+      it('should create encrypted private key and remove cleartext', function () {
+        var c = Key.create({password: 'password'});
+        c.isPrivKeyEncrypted().should.be.true;
+        should.exist(c.xPrivKeyEncrypted);
+        should.exist(c.mnemonicEncrypted);
+        should.not.exist(c.xPrivKey);
+        should.not.exist(c.mnemonic);
+      });
+
+      it('should create encrypted private key and get', function () {
+        var c = Key.create({password: 'password'});
+        c.isPrivKeyEncrypted().should.be.true;
+        should.not.exist(c.xPrivKey);
+        should.not.exist(c.mnemonic);
+        should.exist(c.xPrivKeyEncrypted);
+        should.exist(c.mnemonicEncrypted);
+
+        const keys2 = c.get('password');
+        should.exist(keys2);
+        should.exist(keys2.mnemonic);
+        should.exist(keys2.xPrivKey);
+      });
+
+
       it('should encrypt private key and remove cleartext', function () {
         var c = Key.create();
         c.encrypt('password');

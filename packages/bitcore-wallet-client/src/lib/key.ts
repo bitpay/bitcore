@@ -63,28 +63,41 @@ export class Key {
     return a.id == b.id;
   }
 
+  /*
+// * @param {Object} opts
+// * @param {String} opts.password   encrypting password
+  */
+  
   static create = function(opts) {
     opts = opts || {};
     if (opts.language && !wordsForLang[opts.language]) throw new Error('Unsupported language');
 
-    var m = new Mnemonic(wordsForLang[opts.language]);
+    let m = new Mnemonic(wordsForLang[opts.language]);
     while (!Mnemonic.isValid(m.toString())) {
       m = new Mnemonic(wordsForLang[opts.language]);
     }
 
     let x: any = new Key();
-    let xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK);
-    x.xPrivKey = xpriv.toString();
+    const xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK);
     x.fingerPrint = xpriv.fingerPrint.toString('hex');
 
-    x.mnemonic = m.phrase;
-    x.mnemonicHasPassphrase = !!opts.passphrase;
 
     // bug backwards compatibility flags
     x.use0forBCH = opts.useLegacyCoinType;
     x.use44forMultisig = opts.useLegacyPurpose;
 
     x.compliantDerivation = !opts.nonCompliantDerivation;
+
+    if (opts.password) {
+      x.xPrivKeyEncrypted = sjcl.encrypt(opts.password, xpriv.toString(), opts);
+      if (!x.xPrivKeyEncrypted) throw new Error('Could not encrypt');
+      x.mnemonicEncrypted = sjcl.encrypt(opts.password, m.phrase, opts); 
+      if (!x.mnemonicEncrypted) throw new Error('Could not encrypt');
+    } else {
+      x.xPrivKey = xpriv.toString();
+      x.mnemonic = m.phrase;
+      x.mnemonicHasPassphrase = !!opts.passphrase;
+    }
 
     return x;
   };
@@ -248,11 +261,11 @@ export class Key {
     return deriveFn(path);
   };
 
-  _checkCoin(coin) {
+  _checkCoin = function (coin) {
     if (!_.includes(Constants.COINS, coin)) throw new Error('Invalid coin');
   }
 
-  _checkNetwork(network) {
+  _checkNetwork = function(network) {
     if (!_.includes(['livenet', 'testnet'], network)) throw new Error('Invalid network');
   }
 
@@ -262,7 +275,7 @@ export class Key {
    * BIP45
    */
 
-  getBaseAddressDerivationPath(opts) {
+  getBaseAddressDerivationPath = function(opts) {
     $.checkArgument(opts, 'Need to provide options');
     $.checkArgument(opts.n >= 1, 'n need to be >=1');
 
