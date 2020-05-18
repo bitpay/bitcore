@@ -29,11 +29,21 @@ const wordsForLang: any = {
 // other than the serialization
 const NETWORK: string = 'livenet';
 export class Key {
-  version: number;
-  use0forBCH: boolean;
-  use44forMultisig: boolean;
-  compliantDerivation: boolean;
-  id: any;
+  private version: number;
+
+  private xPrivKey: string;
+  private xPrivKeyEncrypted: string;
+  private mnemonic: string;
+  private mnemonicEncrypted: string;
+  private mnemonicHasPassphrase: boolean;
+
+  public id: any;
+  public use0forBCH: boolean;
+  public use44forMultisig: boolean;
+  public compliantDerivation: boolean;
+  public BIP45: boolean;
+
+  public fingerPrint: string;
 
   static FIELDS = [
     'xPrivKey', // obsolte
@@ -51,118 +61,98 @@ export class Key {
     'version',
     'id'
   ];
-  constructor() {
+  //*
+  //* @param {Object} opts
+  // * @param {String} opts.password   encrypting password
+  //* @param {String} seedType new|extendedPrivateKey|object|mnemonic
+  //* @param {String} seedData 
+  // */
+
+
+  constructor(opts = {} as any, seedType: string = 'new') {
     this.version = 1;
     this.use0forBCH = false;
     this.use44forMultisig = false;
     this.compliantDerivation = true;
     this.id = Uuid.v4();
+
+
+    // bug backwards compatibility flags
+    this.use0forBCH = opts.useLegacyCoinType;
+    this.use44forMultisig = opts.useLegacyPurpose;
+    this.compliantDerivation = !opts.nonCompliantDerivation;
+
+    function setFromMnemonic(m) {
+      const xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK);
+      this.fingerPrint = xpriv.fingerPrint.toString('hex');
+
+      if (opts.password) {
+        this.xPrivKeyEncrypted = sjcl.encrypt(opts.password, xpriv.toString(), opts);
+        if (!this.xPrivKeyEncrypted) throw new Error('Could not encrypt');
+        this.mnemonicEncrypted = sjcl.encrypt(opts.password, m.phrase, opts);
+        if (!this.mnemonicEncrypted) throw new Error('Could not encrypt');
+      } else {
+        this.xPrivKey = xpriv.toString();
+        this.mnemonic = m.phrase;
+        this.mnemonicHasPassphrase = !!opts.passphrase;
+      }
+    }
+
+    switch(seedType) {
+        case 'new':
+          if (opts.language && !wordsForLang[opts.language]) throw new Error('Unsupported language');
+
+        let m = new Mnemonic(wordsForLang[opts.language]);
+        while (!Mnemonic.isValid(m.toString())) {
+          m = new Mnemonic(wordsForLang[opts.language]);
+        }
+        setFromMnemonic(m);
+      break;
+      case 'mnemonic':
+        $.checkArgument(opts.seedData, 'Need to provide opts.seedData');
+        $.checkArgument(_.isString(opts.seedData) , 'sourceData need to be a string');
+        setFromMnemonic(new Mnemonic(opts.seedData));
+      break;
+      case 'extendedPrivateKey': 
+        $.checkArgument(opts.seedData, 'Need to provide opts.seedData');
+
+        let xpriv;
+        try {
+          xpriv = new Bitcore.HDPrivateKey(opts.seedData);
+        } catch (e) {
+          throw new Error('Invalid argument');
+        }
+        this.fingerPrint = xpriv.fingerPrint.toString('hex');
+
+        if (opts.password) {
+          this.xPrivKeyEncrypted = sjcl.encrypt(opts.password, xpriv.toString(), opts);
+          if (!this.xPrivKeyEncrypted) throw new Error('Could not encrypt');
+        } else {
+          this.xPrivKey = xpriv;
+        }
+        this.mnemonic = null;
+        this.mnemonicHasPassphrase = null;
+        break;
+      case 'object':
+        $.shouldBeObject(opts.seedData, 'Need to provide an object at opts.seedData');
+
+        if (this.version != opts.seedData.version) {
+          throw new Error('Bad Key version');
+        }
+
+        _.each(Key.FIELDS, function(k) {
+          this[k] = opts.seedData[k];
+        });
+
+        $.checkState(this.xPrivKey || this.xPrivKeyEncrypted, 'invalid input');
+      default:
+        throw new Error('Unknown seed source: ' + seedType);
+    }
   }
 
   static match(a, b) {
     return a.id == b.id;
   }
-
-  /*
-// * @param {Object} opts
-// * @param {String} opts.password   encrypting password
-  */
-  
-  static create = function(opts) {
-    opts = opts || {};
-    if (opts.language && !wordsForLang[opts.language]) throw new Error('Unsupported language');
-
-    let m = new Mnemonic(wordsForLang[opts.language]);
-    while (!Mnemonic.isValid(m.toString())) {
-      m = new Mnemonic(wordsForLang[opts.language]);
-    }
-
-    let x: any = new Key();
-    const xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK);
-    x.fingerPrint = xpriv.fingerPrint.toString('hex');
-
-
-    // bug backwards compatibility flags
-    x.use0forBCH = opts.useLegacyCoinType;
-    x.use44forMultisig = opts.useLegacyPurpose;
-
-    x.compliantDerivation = !opts.nonCompliantDerivation;
-
-    if (opts.password) {
-      x.xPrivKeyEncrypted = sjcl.encrypt(opts.password, xpriv.toString(), opts);
-      if (!x.xPrivKeyEncrypted) throw new Error('Could not encrypt');
-      x.mnemonicEncrypted = sjcl.encrypt(opts.password, m.phrase, opts); 
-      if (!x.mnemonicEncrypted) throw new Error('Could not encrypt');
-    } else {
-      x.xPrivKey = xpriv.toString();
-      x.mnemonic = m.phrase;
-      x.mnemonicHasPassphrase = !!opts.passphrase;
-    }
-
-    return x;
-  };
-
-  static fromMnemonic = function(words, opts) {
-    $.checkArgument(words);
-    if (opts) $.shouldBeObject(opts);
-    opts = opts || {};
-
-    var m = new Mnemonic(words);
-    var x: any = new Key();
-    let xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK);
-    x.xPrivKey = xpriv.toString();
-    x.fingerPrint = xpriv.fingerPrint.toString('hex');
-    x.mnemonic = words;
-    x.mnemonicHasPassphrase = !!opts.passphrase;
-
-    x.use0forBCH = opts.useLegacyCoinType;
-    x.use44forMultisig = opts.useLegacyPurpose;
-
-    x.compliantDerivation = !opts.nonCompliantDerivation;
-
-    return x;
-  };
-
-  static fromExtendedPrivateKey = function(xPriv, opts) {
-    $.checkArgument(xPriv);
-    opts = opts || {};
-
-    let xpriv;
-    try {
-      xpriv = new Bitcore.HDPrivateKey(xPriv);
-    } catch (e) {
-      throw new Error('Invalid argument');
-    }
-
-    var x: any = new Key();
-    x.xPrivKey = xpriv.toString();
-    x.fingerPrint = xpriv.fingerPrint.toString('hex');
-
-    x.mnemonic = null;
-    x.mnemonicHasPassphrase = null;
-
-    x.use44forMultisig = opts.useLegacyPurpose;
-    x.use0forBCH = opts.useLegacyCoinType;
-
-    x.compliantDerivation = !opts.nonCompliantDerivation;
-    return x;
-  };
-
-  static fromObj = function(obj) {
-    $.shouldBeObject(obj);
-
-    var x: any = new Key();
-    if (obj.version != x.version) {
-      throw new Error('Bad Key version');
-    }
-
-    _.each(Key.FIELDS, function(k) {
-      x[k] = obj[k];
-    });
-
-    $.checkState(x.xPrivKey || x.xPrivKeyEncrypted, 'invalid input');
-    return x;
-  };
 
   toObj = function() {
     var self = this;
@@ -261,13 +251,13 @@ export class Key {
     return deriveFn(path);
   };
 
-  _checkCoin = function (coin) {
+  _checkCoin = function(coin) {
     if (!_.includes(Constants.COINS, coin)) throw new Error('Invalid coin');
-  }
+  };
 
   _checkNetwork = function(network) {
     if (!_.includes(['livenet', 'testnet'], network)) throw new Error('Invalid network');
-  }
+  };
 
   /*
    * This is only used on "create"
@@ -301,7 +291,7 @@ export class Key {
     }
 
     return 'm/' + purpose + "'/" + coinCode + "'/" + opts.account + "'";
-  }
+  };
 
   /*
    * opts.coin

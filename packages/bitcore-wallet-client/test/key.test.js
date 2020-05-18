@@ -11,7 +11,8 @@ describe('Key', function () {
 
   describe('#create', function () {
     it('Should create', function () {
-      var c = Key.create();
+      const key = new Key();
+      const c = key.get();
       should.exist(c.xPrivKey);
       should.exist(c.mnemonic);
     });
@@ -19,7 +20,8 @@ describe('Key', function () {
     it('Should create random keys', function () {
       var all = {};
       for (var i = 0; i < 10; i++) {
-        var c = Key.create();
+        const key = new Key();
+        const c = key.get();
         var exist = all[c.xPrivKey];
         should.not.exist(exist);
         all[c.xPrivKey] = 1;
