@@ -528,5 +528,17 @@ describe('Block Model', function() {
       const invalidChain = await BitcoinBlockStorage.validateLocatorHashes({ chain, network });
       expect(invalidChain[1].hash).to.eq(badHash);
     });
+
+    it('should detect a missing block', async () => {
+      const chain = 'BTC';
+      const network = 'regtest';
+
+      await insertBlocks();
+      const badHash = '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312';
+      const lastKnown = '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86';
+      await BitcoinBlockStorage.collection.deleteOne({ chain, network, hash: badHash });
+      const invalidChain = await BitcoinBlockStorage.validateLocatorHashes({ chain, network });
+      expect(invalidChain[1].hash).to.eq(lastKnown);
+    });
   });
 });
