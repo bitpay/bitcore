@@ -22,6 +22,7 @@ export class TransactionDetailsEthComponent implements OnInit {
   public showCoins = false;
   @Input()
   public chainNetwork: ChainNetwork;
+   
   public confirmations: number;
 
   constructor(

@@ -1,3 +1,23 @@
 coin-list {
+
+    .orderUnselected {
+        color: black;
+        cursor: pointer;
+        opacity: 1.0;
+    }
+
+    .orderUnselected:hover {
+        opacity: 0.5;
+    }
+
+    .orderSelected {
+        opacity: 1.0;
+        color: color($colors, light-blue);;
+        cursor: pointer;
+    }
+
+    .orderSelected:hover {
+        opacity: 0.5;
+    }
   
 }

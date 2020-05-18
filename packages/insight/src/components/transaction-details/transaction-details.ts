@@ -28,10 +28,9 @@ export class TransactionDetailsComponent implements OnInit {
   public showCoins = true;
   @Input()
   public chainNetwork: ChainNetwork;
+  public confirmations;
   @Input()
   public page: string;
-
-  public confirmations;
 
   private COIN = 100000000;
   private DEFAULT_RBF_SEQNUMBER = 0xffffffff;
@@ -63,10 +62,7 @@ export class TransactionDetailsComponent implements OnInit {
         this.tx.vout = data.outputs;
         this.tx.fee = this.txProvider.getFee(this.tx);
         this.tx.isRBF = _.some(data.inputs, input => {
-          return (
-            input.sequenceNumber &&
-            input.sequenceNumber < this.DEFAULT_RBF_SEQNUMBER - 1
-          );
+          return input.sequenceNumber && input.sequenceNumber < this.DEFAULT_RBF_SEQNUMBER - 1;
         });
         this.tx.hasUnconfirmedInputs = _.some(data.inputs, input => {
           return input.mintHeight < 0;

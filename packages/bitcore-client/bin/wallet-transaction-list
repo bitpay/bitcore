@@ -12,12 +12,13 @@ program
   .option('--startBlock [startBlock]')
   .option('--endBlock [endBlock]')
   .option('--includeMempool')
+  .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, startBlock, startDate, endBlock, endDate, includeMempool } = program;
+  const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType } = program;
   try {
-    const wallet = await Wallet.loadWallet({ name, path });
+    const wallet = await Wallet.loadWallet({ name, path, storageType });
     wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool }).pipe(process.stdout);
   } catch (e) {
     console.error(e);

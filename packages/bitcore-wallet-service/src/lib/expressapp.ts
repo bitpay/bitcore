@@ -12,6 +12,7 @@ const compression = require('compression');
 const config = require('../config');
 const RateLimit = require('express-rate-limit');
 const Common = require('./common');
+const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
 
 log.disableColor();
@@ -229,6 +230,52 @@ export class ExpressApp {
       };
     }
 
+    // retrieve latest version of copay
+    router.get('/latest-version', async (req, res) => {
+      try {
+        res.setHeader('User-Agent', 'copay');
+        var options = {
+          uri: 'https://api.github.com/repos/bitpay/copay/releases/latest',
+          headers: {
+            'User-Agent': 'Copay'
+          },
+          json: true
+        };
+
+        let server;
+        try {
+          server = getServer(req, res);
+        } catch (ex) {
+          return returnError(ex, res, req);
+        }
+        server.storage.checkAndUseGlobalCache(
+          'latest-copay-version',
+          Defaults.COPAY_VERSION_CACHE_DURATION,
+          async (err, version) => {
+            if (err) {
+              res.send(err);
+            }
+            if (version) {
+              res.json({ version });
+            } else {
+              try {
+                const htmlString = await rp(options);
+                if (htmlString['tag_name']) {
+                  server.storage.storeGlobalCache('latest-copay-version', htmlString['tag_name'], err => {
+                    res.json({ version: htmlString['tag_name'] });
+                  });
+                }
+              } catch (err) {
+                res.send(err);
+              }
+            }
+          }
+        );
+      } catch (err) {
+        res.send(err);
+      }
+    });
+
     // DEPRECATED
     router.post('/v1/wallets/', createWalletLimiter, (req, res) => {
       logDeprecated(req);
@@ -398,6 +445,7 @@ export class ExpressApp {
       });
     });
 
+    // DEPRECATED
     router.post('/v1/txproposals/', (req, res) => {
       const Errors = require('./errors/errordefinitions');
       const err = Errors.UPGRADE_NEEDED;
@@ -408,6 +456,7 @@ export class ExpressApp {
     router.post('/v2/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
         req.body.noCashAddr = true;
+        req.body.txpVersion = 3;
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
@@ -417,12 +466,26 @@ export class ExpressApp {
 
     router.post('/v3/txproposals/', (req, res) => {
       getServerWithAuth(req, res, server => {
+        req.body.txpVersion = 3;
         server.createTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
           res.json(txp);
         });
       });
     });
+
+    /* THIS WAS NEVED ENABLED YET NOW 2020-04-07
+    router.post('/v4/txproposals/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        req.body.txpVersion = 4;
+        server.createTx(req.body, (err, txp) => {
+          if (err) return returnError(err, res, req);
+          res.json(txp);
+        });
+      });
+    });
+
+*/
 
     // DEPRECATED
     router.post('/v1/addresses/', (req, res) => {
@@ -601,6 +664,16 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v1/txcoins/', (req, res) => {
+      const txId = req.query.txId;
+      getServerWithAuth(req, res, server => {
+        server.getCoinsForTx({ txId }, (err, coins) => {
+          if (err) return returnError(err, res, req);
+          res.json(coins);
+        });
+      });
+    });
+
     router.post('/v1/broadcast_raw/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.broadcastRawTx(req.body, (err, txid) => {
@@ -613,6 +686,7 @@ export class ExpressApp {
 
     router.post('/v1/txproposals/:id/signatures/', (req, res) => {
       getServerWithAuth(req, res, server => {
+        req.body.maxTxpVersion = 3;
         req.body.txProposalId = req.params['id'];
         server.signTx(req.body, (err, txp) => {
           if (err) return returnError(err, res, req);
@@ -621,6 +695,33 @@ export class ExpressApp {
         });
       });
     });
+
+    router.post('/v2/txproposals/:id/signatures/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        req.body.txProposalId = req.params['id'];
+        req.body.maxTxpVersion = 3;
+        req.body.useBchSchnorr = true;
+        server.signTx(req.body, (err, txp) => {
+          if (err) return returnError(err, res, req);
+          res.json(txp);
+          res.end();
+        });
+      });
+    });
+
+    /* THIS WAS NEVED ENABLED YET NOW 2020-04-07 (see above)
+    router.post('/v3/txproposals/:id/signatures/', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        req.body.txProposalId = req.params['id'];
+        req.body.maxTxpVersion = 4;
+        server.signTx(req.body, (err, txp) => {
+          if (err) return returnError(err, res, req);
+          res.json(txp);
+          res.end();
+        });
+      });
+    });
+*/
 
     //
     router.post('/v1/txproposals/:id/publish/', (req, res) => {
@@ -730,13 +831,12 @@ export class ExpressApp {
         coin?: string;
         from?: string;
         to?: string;
-        update?: boolean;
       } = {};
+
       if (req.query.network) opts.network = req.query.network;
       if (req.query.coin) opts.coin = req.query.coin;
       if (req.query.from) opts.from = req.query.from;
       if (req.query.to) opts.to = req.query.to;
-      if (req.query.update && (req.ip === '::1' || req.ip === '127.0.0.1')) opts.update = req.query.update;
 
       const stats = new Stats(opts);
       stats.run((err, data) => {
@@ -848,6 +948,23 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v2/fiatrates/:code/', (req, res) => {
+      let server;
+      const opts = {
+        code: req.params['code'],
+        ts: req.query.ts ? +req.query.ts : null
+      };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getHistoricalRates(opts, (err, rates) => {
+        if (err) return returnError(err, res, req);
+        res.json(rates);
+      });
+    });
+
     router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.pushNotificationsSubscribe(req.body, (err, response) => {
@@ -949,7 +1066,7 @@ export class ExpressApp {
     this.app.use(opts.basePath || '/bws/api', router);
 
     if (config.staticRoot) {
-      log.info(`Serving static files from ${config.staticRoot}`);
+      log.debug(`Serving static files from ${config.staticRoot}`);
       this.app.use('/static', express.static(config.staticRoot));
     }
 

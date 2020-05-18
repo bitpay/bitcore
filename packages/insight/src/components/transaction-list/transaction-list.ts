@@ -23,6 +23,8 @@ export class TransactionListComponent implements OnInit {
   @Input()
   public transactions?: any = [];
   @Input()
+  public blocktime: any;
+  @Input()
   public chainNetwork: ChainNetwork;
   public blockPageNum = 1;
   public limit = 10;
@@ -121,6 +123,8 @@ export class TransactionListComponent implements OnInit {
       tx.vout = txidCoins.outputs.filter(output => output.mintTxid === txid);
       tx.fee = this.txProvider.getFee(tx);
       tx.blockheight = tx.vout[0].mintHeight;
+      tx.blocktime = new Date(tx.blockTime).getTime() / 1000;
+      tx.time =  (this.blocktime) ? this.blocktime : new Date(tx.blockTime).getTime() / 1000;
       tx.valueOut = tx.vout
         .filter(output => output.mintTxid === txid)
         .reduce((a, b) => a + b.value, 0);

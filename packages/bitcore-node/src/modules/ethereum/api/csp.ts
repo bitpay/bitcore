@@ -1,3 +1,4 @@
+import { CryptoRpc } from 'crypto-rpc';
 import { ObjectID } from 'mongodb';
 import { Readable, Transform } from 'stream';
 import Web3 from 'web3';
@@ -24,6 +25,7 @@ import {
   UpdateWalletParams
 } from '../../../types/namespaces/ChainStateProvider';
 import { partition } from '../../../utils/partition';
+import { StatsUtil } from '../../../utils/stats';
 import { ERC20Abi } from '../abi/erc20';
 import { EthBlockStorage } from '../models/block';
 import { EthTransactionStorage } from '../models/transaction';
@@ -47,45 +49,32 @@ interface ERC20Transfer
 
 export class ETHStateProvider extends InternalStateProvider implements IChainStateService {
   config: any;
-  static web3 = {} as { [network: string]: Web3 };
+  static rpcs = {} as { [network: string]: { rpc: CryptoRpc; web3: Web3 } };
 
   constructor(public chain: string = 'ETH') {
     super(chain);
     this.config = Config.chains[this.chain];
   }
 
-  async getWeb3(network: string) {
+  async getWeb3(network: string): Promise<{ rpc: CryptoRpc; web3: Web3 }> {
     try {
-      if (ETHStateProvider.web3[network]) {
-        await ETHStateProvider.web3[network].eth.getBlockNumber();
+      if (ETHStateProvider.rpcs[network]) {
+        await ETHStateProvider.rpcs[network].web3.eth.getBlockNumber();
       }
     } catch (e) {
-      delete ETHStateProvider.web3[network];
+      delete ETHStateProvider.rpcs[network];
     }
-    if (!ETHStateProvider.web3[network]) {
-      const networkConfig = this.config[network];
-      const provider = networkConfig.provider;
-      const host = provider.host || 'localhost';
-      const protocol = provider.protocol || 'http';
-      const portString = provider.port || '8545';
-      const connUrl = `${protocol}://${host}:${portString}`;
-      let ProviderType;
-      switch (provider.protocol) {
-        case 'ws':
-        case 'wss':
-          ProviderType = Web3.providers.WebsocketProvider;
-          break;
-        default:
-          ProviderType = Web3.providers.HttpProvider;
-          break;
-      }
-      ETHStateProvider.web3[network] = new Web3(new ProviderType(connUrl));
+    if (!ETHStateProvider.rpcs[network]) {
+      console.log('making a new connection');
+      const rpcConfig = { ...this.config[network].provider, chain: this.chain, currencyConfig: {} };
+      const rpc = new CryptoRpc(rpcConfig, {}).get(this.chain);
+      ETHStateProvider.rpcs[network] = { rpc, web3: rpc.web3 };
     }
-    return ETHStateProvider.web3[network];
+    return ETHStateProvider.rpcs[network];
   }
 
   async erc20For(network: string, address: string) {
-    const web3 = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network);
     const contract = new web3.eth.Contract(ERC20Abi as AbiItem[], address);
     return contract;
   }
@@ -111,27 +100,30 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     if (network === 'livenet') {
       network = 'mainnet';
     }
-    const bestBlock = (await this.getLocalTip({ chain, network })) || { height: target };
-    const gasPrices: number[] = [];
-    const limitedTarget = Math.min(target, 4);
+
     const txs = await EthTransactionStorage.collection
-      .find({ chain, network, blockHeight: { $gte: bestBlock.height - limitedTarget } })
+      .find({ chain, network, blockHeight: { $gt: 0 } })
+      .project({ gasPrice: 1, blockHeight: 1 })
+      .sort({ blockHeight: -1 })
+      .limit(20 * 200)
       .toArray();
 
-    const blockGasPrices = txs.map(tx => Number(tx.gasPrice)).sort((a, b) => b - a);
-    const txCount = txs.length;
-    const lowGasPriceIndex = txCount > 1 ? txCount - 1 : 0;
-    if (txCount > 0) {
-      gasPrices.push(blockGasPrices[lowGasPriceIndex]);
-    }
+    const blockGasPrices = txs
+      .map(tx => Number(tx.gasPrice))
+      .filter(gasPrice => gasPrice)
+      .sort((a, b) => b - a);
 
-    const estimate = Math.max(...gasPrices);
-    return { feerate: estimate || 0, blocks: target };
+    const whichQuartile = Math.min(target, 4) || 1;
+    const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, whichQuartile);
+
+    const roundedGwei = (quartileMedian / 1e9).toFixed(2);
+    const feerate = Number(roundedGwei) * 1e9;
+    return { feerate, blocks: target };
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
     const { network, address } = params;
-    const web3 = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network);
     if (params.args) {
       if (params.args.tokenAddress) {
         const token = await this.erc20For(network, params.args.tokenAddress);
@@ -177,7 +169,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
   async broadcastTransaction(params: BroadcastTransactionParams) {
     const { network, rawTx } = params;
-    const web3 = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network);
     const rawTxs = typeof rawTx === 'string' ? [rawTx] : rawTx;
     const txids = new Array<string>();
     for (const tx of rawTxs) {
@@ -201,13 +193,13 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     const { limit, since, tokenAddress } = args;
     if (!args.tokenAddress) {
       const query = { chain, network, $or: [{ from: address }, { to: address }] };
-      Storage.apiStreamingFind(EthTransactionStorage, query, { limit, since, paging: '_id' }, req, res);
+      Storage.apiStreamingFind(EthTransactionStorage, query, { limit, since, paging: '_id' }, req!, res!);
     } else {
       try {
         const tokenTransfers = await this.getErc20Transfers(network, address, tokenAddress);
-        res.json(tokenTransfers);
+        res!.json(tokenTransfers);
       } catch (e) {
-        res.status(500).send(e);
+        res!.status(500).send(e);
       }
     }
   }
@@ -265,7 +257,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
     const { chain, network, wallet, res, args } = params;
-    const web3 = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network);
     const query: any = {
       chain,
       network,
@@ -405,7 +397,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
   }
 
   async getAccountNonce(network: string, address: string) {
-    const web3 = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network);
     const count = await web3.eth.getTransactionCount(address);
     return count;
     /*
@@ -437,7 +429,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
   async estimateGas(params): Promise<number> {
     const { network, from, to, value, data, gasPrice } = params;
-    const web3 = await this.getWeb3(network);
+    const { web3 } = await this.getWeb3(network);
     const gasLimit = await web3.eth.estimateGas({ from, to, value, data, gasPrice });
     return gasLimit;
   }
@@ -492,6 +484,13 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
         { $set: { processed: true } }
       );
     }
+  }
+
+  async getCoinsForTx() {
+    return {
+      inputs: [],
+      outputs: []
+    };
   }
 }
 

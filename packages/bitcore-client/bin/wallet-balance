@@ -9,6 +9,7 @@ try {
     .option('--name <name>', 'REQUIRED - Wallet name')
     .option('--time [time]', 'optional - Get balance at specific time')
     .option('--path [path]', 'optional - Custom wallet storage path')
+    .option('--storageType [storageType]', 'optional - name of the database to use (default level)')
     .option('--token [token]', 'optional - Get balance of an ERC20 token')
     .parse(process.argv);
 } catch (e) {
@@ -17,8 +18,8 @@ try {
 }
 
 async function main() {
-  const { name, path, time, token } = program;
-  const wallet = await Wallet.loadWallet({ name, path });
+  const { name, path, time, storageType, token } = program;
+  const wallet = await Wallet.loadWallet({ name, path, storageType });
   const balance = await wallet.getBalance(time, token);
   return Object.assign(balance, {
     currency: token || wallet.chain,
