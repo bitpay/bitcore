@@ -504,13 +504,12 @@ export class ExpressApp {
     });
 
     router.get('/v1/advertisements/', (req, res) => {
-
       let server;
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
-      } 
+      }
 
       server.getAdverts(req.body, (err, ads) => {
         if (err) returnError(err, res, req);
@@ -531,7 +530,7 @@ export class ExpressApp {
       // );
     });
 
-    router.delete('/v1/advertisements/:title/', (req, res) => {
+    router.delete('/v1/advertisements/:adId/', (req, res) => {
       getServerWithAuth(
         req,
         res,
@@ -539,7 +538,7 @@ export class ExpressApp {
           onlyMarketingStaff: true
         },
         server => {
-          req.body.title = req.params['title'];
+          req.body.adId= req.params['adId'];
           server.removeAdvert(req.body, (err, removedAd) => {
             if (err) returnError(err, res, req);
             if (removedAd) {

@@ -3602,18 +3602,17 @@ export class WalletService {
     opts = opts ? _.clone(opts) : {};
 
     // Usually do error checking on preconditions
-    if (!checkRequired(opts, ['title'], cb)) {
+    if (!checkRequired(opts, ['title', 'body', 'imgUrl', 'linkText', 'linkUrl', 'app'], cb)) {
       return;
     }
     // Check if ad exists already
 
-    const checkIfAdvertExistsAlready = (title, cb) => {
-      this.storage.fetchAdvert(opts.title, (err, result) => {
+    const checkIfAdvertExistsAlready = (adId, cb) => {
+      this.storage.fetchAdvert(opts.adId, (err, result) => {
         if (err) return cb(err);
 
         if (result) {
-          this.logw('Advert already exists');
-          return cb(null, 'Advert already exists'); // TODO: add to errordefinitions Errors.ADVERTISEMENT already exists
+          return cb(Errors.AD_ALREADY_EXISTS);
         }
 
         if (!result) {
@@ -3639,7 +3638,7 @@ export class WalletService {
     this._runLocked(
       cb,
       cb => {
-        checkIfAdvertExistsAlready(opts.title, (err, advert) => {
+        checkIfAdvertExistsAlready(opts.adId, (err, advert) => {
           if (err) throw err;
           if (advert) {
             try {
@@ -3682,13 +3681,13 @@ export class WalletService {
     opts = opts ? _.clone(opts) : {};
 
     // Usually do error checking on preconditions
-    if (!checkRequired(opts, ['title'], cb)) {
-      throw new Error('Title is missing');
+    if (!checkRequired(opts, ['adId'], cb)) {
+      throw new Error('adId is missing');
     }
     // Check if ad exists already
 
-    const checkIfAdvertExistsAlready = (title, cb) => {
-      this.storage.fetchAdvert(opts.title, (err, result) => {
+    const checkIfAdvertExistsAlready = (adId, cb) => {
+      this.storage.fetchAdvert(opts.adId, (err, result) => {
         if (err) return cb(err);
 
         if (!result) {
@@ -3697,7 +3696,7 @@ export class WalletService {
 
         if (result) {
           this.logw('Advert already exists');
-          return cb(null, title);
+          return cb(null, adId);
         }
       });
     };
@@ -3706,9 +3705,9 @@ export class WalletService {
       this._runLocked(
         cb,
         cb => {
-          checkIfAdvertExistsAlready(opts.title, (err, title) => {
+          checkIfAdvertExistsAlready(opts.adId, (err, adId) => {
             if (err) throw err;
-            this.storage.removeAdvert(title, cb); // TODO: add to errordefinitions Errors.ADVERTISEMENT already exists
+            this.storage.removeAdvert(adId, cb); // TODO: add to errordefinitions Errors.ADVERTISEMENT already exists
           });
         },
         10 * 1000

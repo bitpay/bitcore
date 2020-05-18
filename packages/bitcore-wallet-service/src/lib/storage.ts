@@ -537,10 +537,10 @@ export class Storage {
     this.db.collection(collections.ADVERTISEMENTS).find({});
   }
 
-  removeAdvert(adTitle, cb) {
+  removeAdvert(adId, cb) {
     this.db.collection(collections.ADVERTISEMENTS).remove(
       {
-        title: adTitle
+        advertismentId: adId
       },
       {
         w: 1
@@ -685,10 +685,10 @@ export class Storage {
     );
   }
 
-  fetchAdvert(title, cb) {
+  fetchAdvert(adId, cb) {
     this.db.collection(collections.ADVERTISEMENTS).findOne(
       {
-        title
+        advertisementId: adId
       },
       (err, result) => {
         if (err) return cb(err);

@@ -1604,7 +1604,7 @@ export class API extends EventEmitter {
    * @param opts - options
    */
   deleteAdvertisement(opts, cb) {
-    var url = '/v1/advertisements/' + opts.title; // + adId or adTitle;
+    var url = '/v1/advertisements/' + opts.adId; // + adId or adTitle;
     this.request.delete(url, (err, body) => {
       if (err) {
         console.log(err);
