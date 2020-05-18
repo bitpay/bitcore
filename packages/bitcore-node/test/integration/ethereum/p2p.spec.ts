@@ -94,6 +94,8 @@ describe('Ethereum', function() {
     expect(dbBlocks).to.be.gt(0);
   });
 
+
+
   it('should be able to handle reorgs');
   it('should be able to handle a failed getBlock');
 

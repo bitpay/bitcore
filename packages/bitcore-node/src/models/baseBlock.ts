@@ -76,13 +76,9 @@ export abstract class BaseBlock<T extends IBlock> extends BaseModel<T> {
         prevMatch = prevMatch && locatorBlocks[i].hash === locatorBlocks[i + 1].nextBlockHash;
         nextMatch = nextMatch && locatorBlocks[i].previousBlockHash === locatorBlocks[i + 1].hash;
       }
-      console.log('Validated', locatorBlocks[i], prevMatch, nextMatch);
       if (!prevMatch || !nextMatch) {
         headers.push(locatorBlocks[i]);
       }
-    }
-    if (headers.length) {
-      console.log('HEADERS', headers);
     }
     return headers;
   }
