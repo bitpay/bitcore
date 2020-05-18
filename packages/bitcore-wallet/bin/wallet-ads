@@ -5,9 +5,9 @@ var program = require('commander');
 var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
-// options, (isAdActive, isCurrentlyTesting)
 program
-  .usage('[options] [name] [title] [body] [imgUrl] [linkText] [linkUrl] [app] [dismissible] [isAdActive] [isTesting]')
+  .option('-a, --active', 'Makes ad active', true)
+  .usage('[options] <name> <title> <body> <imgUrl> <linkText> <linkUrl> <app>')
   .parse(process.argv);
 
 var args = program.args;
@@ -17,29 +17,48 @@ var clientArgs = {
   host
 }
 
-var name = args[0]
+var name = args[0];
 var title = args[1];
 var body = args[2];
 var imgUrl = args[3];
 var linkText = args[4];
 var linkUrl = args[5];
 var app = args[6];
-var dismissible = args[7];
-var isAdActive = args[8];
-var isTesting = args[9]
-var isAdActive = true;
 
-let adArgs = {
+var requiredArgs = {
   name,
   title,
   body,
   imgUrl,
   linkText,
   linkUrl,
-  app,
+  app
+}
+
+let missingArgs = [];
+_.forEach(requiredArgs, (value, requiredArg) => {
+  if (value === undefined) {
+    missingArgs.push(requiredArg);
+  }
+});
+
+if (!_.isEmpty(missingArgs)) {
+  _.forEach(missingArgs, (arg) => {
+    console.log(arg + ' is missing. Please run again with correct arguments.')
+  });
+
+  throw new Error("Missing required arguments");
+}
+
+var dismissible = true;
+var isAdActive = program.active ? program.active : false;
+var isTesting = !isAdActive;
+
+let adArgs = {
   dismissible,
   isAdActive,
-  isTesting
+  isTesting,
+  ...requiredArgs
 };
 
 utils.getClient(clientArgs, { 
@@ -52,7 +71,7 @@ utils.getClient(clientArgs, {
       console.log('Couldn\'t create advertisement');
     }
     else {
-      console.log('Created advertisement ', result);
+      console.log('Succesfully Created advertisement ', result);
     }
   });
 });
