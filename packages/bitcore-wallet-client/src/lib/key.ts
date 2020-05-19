@@ -61,13 +61,12 @@ export class Key {
     'version',
     'id'
   ];
-  //*
-  //* @param {Object} opts
+  // *
+  // * @param {Object} opts
   // * @param {String} opts.password   encrypting password
-  //* @param {String} seedType new|extendedPrivateKey|object|mnemonic
-  //* @param {String} seedData 
+  // * @param {String} seedType new|extendedPrivateKey|object|mnemonic
+  // * @param {String} seedData
   // */
-
 
   constructor(opts = {} as any, seedType: string = 'new') {
     this.version = 1;
@@ -75,7 +74,6 @@ export class Key {
     this.use44forMultisig = false;
     this.compliantDerivation = true;
     this.id = Uuid.v4();
-
 
     // bug backwards compatibility flags
     this.use0forBCH = opts.useLegacyCoinType;
@@ -98,22 +96,22 @@ export class Key {
       }
     }
 
-    switch(seedType) {
-        case 'new':
-          if (opts.language && !wordsForLang[opts.language]) throw new Error('Unsupported language');
+    switch (seedType) {
+      case 'new':
+        if (opts.language && !wordsForLang[opts.language]) throw new Error('Unsupported language');
 
         let m = new Mnemonic(wordsForLang[opts.language]);
         while (!Mnemonic.isValid(m.toString())) {
           m = new Mnemonic(wordsForLang[opts.language]);
         }
         setFromMnemonic(m);
-      break;
+        break;
       case 'mnemonic':
         $.checkArgument(opts.seedData, 'Need to provide opts.seedData');
-        $.checkArgument(_.isString(opts.seedData) , 'sourceData need to be a string');
+        $.checkArgument(_.isString(opts.seedData), 'sourceData need to be a string');
         setFromMnemonic(new Mnemonic(opts.seedData));
-      break;
-      case 'extendedPrivateKey': 
+        break;
+      case 'extendedPrivateKey':
         $.checkArgument(opts.seedData, 'Need to provide opts.seedData');
 
         let xpriv;
