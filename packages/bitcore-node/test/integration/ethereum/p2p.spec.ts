@@ -1,6 +1,7 @@
 import * as BitcoreClient from 'bitcore-client';
 import { expect } from 'chai';
 import config from '../../../src/config';
+import { CacheStorage } from '../../../src/models/cache';
 import { EthBlockStorage } from '../../../src/modules/ethereum/models/block';
 import { EthP2pWorker } from '../../../src/modules/ethereum/p2p/p2p';
 import { Api } from '../../../src/services/api';
@@ -10,7 +11,7 @@ import { resetDatabase } from '../../helpers';
 const chain = 'ETH';
 const network = 'testnet';
 const chainConfig = config.chains[chain][network];
-const name = 'EthereumWallet';
+const name = 'EthereumWallet-Ci';
 const baseUrl = 'http://localhost:3000/api';
 const password = '';
 const phrase = 'kiss talent nerve fossil equip fault exile execute train wrist misery diet';
@@ -21,6 +22,7 @@ async function getWallet() {
   try {
     wallet = await BitcoreClient.Wallet.loadWallet({ name });
     await wallet.register();
+    await wallet.syncAddresses();
     return wallet;
   } catch (e) {
     console.log('Creating a new ethereum wallet');
@@ -39,7 +41,7 @@ async function getWallet() {
   }
 }
 
-describe('Ethereum', function() {
+describe.only('Ethereum', function() {
   this.timeout(50000);
 
   before(async () => {
@@ -74,6 +76,17 @@ describe('Ethereum', function() {
     await worker.disconnect();
   });
 
+  it('should be able to get the balance for the address', async () => {
+    const wallet = await getWallet();
+    const balance = await wallet.getBalance();
+    expect(balance.confirmed).to.be.gt(0);
+
+    const key = 'getBalanceForAddress-0xd8fd14fb0e0848cb931c1e54a73486c4b968be3d';
+    const cached = await CacheStorage.collection.findOne({ key });
+    expect(cached).to.exist;
+    expect(cached!.value).to.deep.eq(balance);
+  });
+
   it.skip('should be able to save blocks to the database', async () => {
     const wallet = await getWallet();
     const addresses = await wallet.getAddresses();
@@ -93,8 +106,6 @@ describe('Ethereum', function() {
     const dbBlocks = await EthBlockStorage.collection.count({ chain, network });
     expect(dbBlocks).to.be.gt(0);
   });
-
-
 
   it('should be able to handle reorgs');
   it('should be able to handle a failed getBlock');

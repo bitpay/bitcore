@@ -74,6 +74,13 @@ export class Wallet {
     return this.storage.saveWallet({ wallet: walletInstance });
   }
 
+  static async deleteWallet(params: { name: string; path?: string; storage?: Storage; storageType?: string }) {
+    const { name, path, storageType } = params;
+    let { storage } = params;
+    storage = storage || new Storage({ errorIfExists: false, createIfMissing: false, path, storageType });
+    await storage.deleteWallet({ name });
+  }
+
   static async create(params: Partial<WalletObj>) {
     const { chain, network, name, phrase, password, path, lite } = params;
     let { storageType, storage } = params;
@@ -344,6 +351,7 @@ export class Wallet {
     };
     return this.client.broadcast({ payload });
   }
+
   async importKeys(params: { keys: KeyImport[] }) {
     const { keys } = params;
     const { encryptionKey } = this.unlocked;
@@ -411,6 +419,22 @@ export class Wallet {
   async checkWallet() {
     return this.client.checkWallet({
       pubKey: this.authPubKey
+    });
+  }
+
+  async syncAddresses(withChangeAddress = false) {
+    const addresses = new Array<string>();
+    if (this.addressIndex !== undefined) {
+      for (let i = 0; i < this.addressIndex; i++) {
+        addresses.push(this.deriveAddress(i, false));
+        if (withChangeAddress) {
+          addresses.push(this.deriveAddress(i, true));
+        }
+      }
+    }
+    return this.client.importAddresses({
+      pubKey: this.authPubKey,
+      payload: addresses.map(a => ({ address: a }))
     });
   }
 
