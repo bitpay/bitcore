@@ -103,6 +103,7 @@ describe.only('Ethereum', function() {
     await worker.disconnect();
     const afterBalance = await wallet.getBalance();
     expect(afterBalance).to.not.deep.eq(beforeBalance);
+    expect(afterBalance.confirmed).to.be.gt(beforeBalance.confirmed);
   });
 
   it.skip('should be able to save blocks to the database', async () => {
