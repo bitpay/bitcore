@@ -27,10 +27,7 @@ export class CacheModel extends BaseModel<ICache<any>> {
   allowedPaging = [];
 
   async onConnect() {
-    await this.collection.createIndex(
-      { key: 1, wallet: 1 },
-      { background: true, expireAfterSeconds: 604800, unique: true }
-    );
+    await this.collection.createIndex({ key: 1, wallet: 1 }, { background: true, unique: true });
   }
 
   async expire(key: string, wallet?: ObjectId) {
