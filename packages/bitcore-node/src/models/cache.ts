@@ -57,9 +57,6 @@ export class CacheModel extends BaseModel<ICache<any>> {
     }
     if (found.created + found.expireTime >= Date.now()) {
       // cache hit
-      if (found.wallet) {
-        throw new Error('Cannot return wallet related cached info globally');
-      }
       return found.value as T;
     } else {
       // cache miss
