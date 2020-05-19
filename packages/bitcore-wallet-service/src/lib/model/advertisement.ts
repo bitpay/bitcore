@@ -4,6 +4,7 @@ var _ = require('lodash');
 export interface IAdvertisement {
   name: string;
   advertisementId: string;
+  type: string;
   title: string;
   body: string;
   imgUrl: string;
@@ -19,6 +20,7 @@ export class Advertisement {
   advertisementId: string;
   name: string;
   title: string;
+  type: string;
   body: string;
   imgUrl: string;
   linkText: string;
@@ -33,6 +35,7 @@ export class Advertisement {
     const x = new Advertisement();
     x.name = opts.name;
     x.title = opts.title;
+    x.type = opts.type;
     x.body = opts.body;
     x.imgUrl = opts.imgUrl;
     x.linkText = opts.linkText;
@@ -48,7 +51,9 @@ export class Advertisement {
   static fromObj(obj) {
     const x = new Advertisement();
     x.name = obj.name;
+    x.advertisementId = obj.advertisementId;
     x.title = obj.title;
+    x.type = obj.type;
     x.body = obj.body;
     x.imgUrl = obj.imgUrl;
     x.linkText = obj.linkText;

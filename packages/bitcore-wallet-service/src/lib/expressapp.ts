@@ -505,29 +505,25 @@ export class ExpressApp {
 
     router.get('/v1/advertisements/', (req, res) => {
       let server;
+      let testing = req.query.testing;
+
       try {
         server = getServer(req, res);
       } catch (ex) {
         return returnError(ex, res, req);
       }
 
-      server.getAdverts(req.body, (err, ads) => {
-        if (err) returnError(err, res, req);
-        res.json(ads);
-      });
-      // getServerWithAuth(
-      //   req,
-      //   res,
-      //   {
-      //     onlyMarketingStaff: false
-      //   },
-      //   server => {
-      //     server.getAdverts(req.body, (err, ads) => {
-      //       if (err) returnError(err, res, req);
-      //       res.json(ads);
-      //     });
-      //   }
-      // );
+      if (testing) {
+        server.getTestingAdverts(req.body, (err, ads) => {
+          if (err) returnError(err, res, req);
+          res.json(ads);
+        });
+      } else {
+        server.getAdverts(req.body, (err, ads) => {
+          if (err) returnError(err, res, req);
+          res.json(ads);
+        });
+      }
     });
 
     router.delete('/v1/advertisements/:adId/', (req, res) => {
@@ -538,7 +534,7 @@ export class ExpressApp {
           onlyMarketingStaff: true
         },
         server => {
-          req.body.adId= req.params['adId'];
+          req.body.adId = req.params['adId'];
           server.removeAdvert(req.body, (err, removedAd) => {
             if (err) returnError(err, res, req);
             if (removedAd) {

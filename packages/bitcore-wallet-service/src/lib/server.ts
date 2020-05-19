@@ -3630,7 +3630,7 @@ export class WalletService {
           x.app = opts.app;
           x.isTesting = opts.isTesting;
 
-          return cb(null, x);
+          return cb(null, x.advertisementId);
         }
       });
     };
@@ -3660,6 +3660,18 @@ export class WalletService {
    */
   getAdverts(opts, cb) {
     this.storage.fetchActiveAdverts((err, adverts) => {
+      if (err) return cb(err);
+      return cb(null, adverts);
+    });
+  }
+
+  /**
+   * Get All active (live) advertisements
+   * @param opts
+   * @param cb
+   */
+  getTestingAdverts(opts, cb) {
+    this.storage.fetchTestingAdverts((err, adverts) => {
       if (err) return cb(err);
       return cb(null, adverts);
     });

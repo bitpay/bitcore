@@ -7,7 +7,7 @@ program = utils.configureCommander(program);
 
 // options, (isAdActive, isCurrentlyTesting)
 program
-  .usage('[options] [title]')
+  .usage('[options] <adId>')
   .parse(process.argv);
 
 var args = program.args;
@@ -17,10 +17,10 @@ var clientArgs = {
   host
 }
 
-var title = args[0];
+var adId = args[0];
 
 let adArgs = {
-  title
+  adId
 };
 
 utils.getClient(clientArgs, { 

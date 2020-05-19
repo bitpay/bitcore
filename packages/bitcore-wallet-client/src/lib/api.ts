@@ -1586,9 +1586,13 @@ export class API extends EventEmitter {
   /**
    * Get advertisements for bitpay app - (limited to marketing staff)
    * @param opts - options
+   * @param opts.testing - fetches testing advertisements
    */
   getAdvertisements(opts, cb) {
     var url = '/v1/advertisements/';
+    if (opts.testing === true) {
+      url = '/v1/advertisements/' + '?testing=true';
+    }
 
     this.request.get(url, (err, ads) => {
       if (err) {

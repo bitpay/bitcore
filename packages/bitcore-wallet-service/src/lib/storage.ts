@@ -520,6 +520,19 @@ export class Storage {
     );
   }
 
+  fetchTestingAdverts(cb) {
+    this.db
+      .collection(collections.ADVERTISEMENTS)
+      .find({
+        isTesting: true
+      })
+      .toArray((err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result.map(Advertisement.fromObj));
+      });
+  }
+
   fetchActiveAdverts(cb) {
     this.db
       .collection(collections.ADVERTISEMENTS)
