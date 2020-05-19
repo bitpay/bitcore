@@ -3,19 +3,10 @@ items:
 - apiVersion: apps/v1
   kind: Deployment
   metadata:
-    annotations:
-      deployment.kubernetes.io/revision: "1"
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{"deployment.kubernetes.io/revision":"1"},"creationTimestamp":"2020-02-03T01:22:44Z","generation":1,"labels":{"app":"bitcore-node-api"},"name":"bitcore-node-api","namespace":"default","resourceVersion":"383241","selfLink":"/apis/apps/v1/namespaces/default/deployments/bitcore-node-api","uid":"5924aa17-efb0-476b-b428-1b40835407d2"},"spec":{"progressDeadlineSeconds":600,"replicas":4,"revisionHistoryLimit":10,"selector":{"matchLabels":{"app":"bitcore-node-api"}},"strategy":{"rollingUpdate":{"maxSurge":"25%","maxUnavailable":"25%"},"type":"RollingUpdate"},"template":{"metadata":{"creationTimestamp":null,"labels":{"app":"bitcore-node-api"}},"spec":{"containers":[{"env":[{"name":"DB_HOST","value":"mongo"}],"image":"bitcore-node-api","imagePullPolicy":"Never","name":"bitcore-node-api","resources":{},"terminationMessagePath":"/dev/termination-log","terminationMessagePolicy":"File"}],"dnsPolicy":"ClusterFirst","restartPolicy":"Always","schedulerName":"default-scheduler","securityContext":{},"terminationGracePeriodSeconds":30}}},"status":{"availableReplicas":4,"conditions":[{"lastTransitionTime":"2020-02-03T01:22:47Z","lastUpdateTime":"2020-02-03T01:22:47Z","message":"Deployment has minimum availability.","reason":"MinimumReplicasAvailable","status":"True","type":"Available"},{"lastTransitionTime":"2020-02-03T01:22:44Z","lastUpdateTime":"2020-02-03T01:22:47Z","message":"ReplicaSet \"bitcore-node-api-84b889b7b5\" has successfully progressed.","reason":"NewReplicaSetAvailable","status":"True","type":"Progressing"}],"observedGeneration":1,"readyReplicas":4,"replicas":4,"updatedReplicas":4}}
-    creationTimestamp: "2020-02-03T01:22:44Z"
     generation: 2
     labels:
       app: bitcore-node-api
     name: bitcore-node-api
-    namespace: default
-    resourceVersion: "383277"
-    selfLink: /apis/apps/v1/namespaces/default/deployments/bitcore-node-api
-    uid: 5924aa17-efb0-476b-b428-1b40835407d2
   spec:
     progressDeadlineSeconds: 600
     replicas: 4
@@ -71,14 +62,11 @@ items:
 - apiVersion: v1
   kind: Service
   metadata:
-    creationTimestamp: "2020-02-03T01:25:09Z"
     labels:
       app: bitcore-node-api
     name: api
     namespace: default
-    resourceVersion: "383431"
-    selfLink: /api/v1/namespaces/default/services/api
-    uid: 894dcf04-e105-4a5e-945a-498d7ecd8ff9
+    resourceVersion: "1"
   spec:
     clusterIP: 10.103.141.79
     externalTrafficPolicy: Cluster
@@ -96,18 +84,11 @@ items:
 - apiVersion: v1
   kind: Service
   metadata:
-    annotations:
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"creationTimestamp":"2019-03-28T21:21:57Z","labels":{"component":"apiserver","provider":"kubernetes"},"name":"kubernetes","namespace":"default","resourceVersion":"382228","selfLink":"/api/v1/namespaces/default/services/kubernetes","uid":"8499edd0-519f-11e9-b55b-08002792271d"},"spec":{"clusterIP":"10.96.0.1","ports":[{"name":"https","port":443,"protocol":"TCP","targetPort":8443}],"sessionAffinity":"None","type":"ClusterIP"},"status":{"loadBalancer":{}}}
-    creationTimestamp: "2019-03-28T21:21:57Z"
     labels:
       component: apiserver
       provider: kubernetes
     name: kubernetes
     namespace: default
-    resourceVersion: "383278"
-    selfLink: /api/v1/namespaces/default/services/kubernetes
-    uid: 8499edd0-519f-11e9-b55b-08002792271d
   spec:
     clusterIP: 10.96.0.1
     ports:
@@ -122,15 +103,9 @@ items:
 - apiVersion: v1
   kind: Service
   metadata:
-    annotations:
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"v1","kind":"Service","metadata":{"annotations":{},"creationTimestamp":"2020-02-02T20:22:23Z","name":"mongo","namespace":"default","resourceVersion":"382229","selfLink":"/api/v1/namespaces/default/services/mongo","uid":"ee7e3627-48b0-4bde-b529-8b66a20c7dab"},"spec":{"clusterIP":"10.109.47.104","ports":[{"port":27017,"protocol":"TCP","targetPort":27017}],"sessionAffinity":"None","type":"ClusterIP"},"status":{"loadBalancer":{}}}
-    creationTimestamp: "2020-02-02T20:22:23Z"
     name: mongo
     namespace: default
-    resourceVersion: "383279"
-    selfLink: /api/v1/namespaces/default/services/mongo
-    uid: ee7e3627-48b0-4bde-b529-8b66a20c7dab
+    resourceVersion: "1"
   spec:
     clusterIP: 10.109.47.104
     ports:
@@ -144,16 +119,10 @@ items:
 - apiVersion: v1
   kind: Endpoints
   metadata:
-    annotations:
-      endpoints.kubernetes.io/last-change-trigger-time: "2020-02-03T01:25:09Z"
-    creationTimestamp: "2020-02-03T01:25:09Z"
     labels:
       app: bitcore-node-api
     name: api
     namespace: default
-    resourceVersion: "383432"
-    selfLink: /api/v1/namespaces/default/endpoints/api
-    uid: 42934be9-2024-4fd2-aa50-6fbcafe3852a
   subsets:
   - addresses:
     - ip: 172.17.0.2
@@ -162,47 +131,32 @@ items:
         kind: Pod
         name: bitcore-node-api-84b889b7b5-bwzj5
         namespace: default
-        resourceVersion: "383238"
-        uid: 18e38e01-2dd4-49f1-b4f2-fa88b961d4d7
     - ip: 172.17.0.5
       nodeName: minikube
       targetRef:
         kind: Pod
         name: bitcore-node-api-84b889b7b5-rkcqw
         namespace: default
-        resourceVersion: "383228"
-        uid: 3a5dac82-c8d9-4df3-b4e6-7af6fcb3cae7
     - ip: 172.17.0.8
       nodeName: minikube
       targetRef:
         kind: Pod
         name: bitcore-node-api-84b889b7b5-z42xk
         namespace: default
-        resourceVersion: "383233"
-        uid: 426ad6b3-487b-41ce-8ba0-546d29039e7d
     - ip: 172.17.0.9
       nodeName: minikube
       targetRef:
         kind: Pod
         name: bitcore-node-api-84b889b7b5-ff5ds
         namespace: default
-        resourceVersion: "383225"
-        uid: de678b9d-1605-499b-ae6d-4313a4aa225b
     ports:
     - port: 3000
       protocol: TCP
 - apiVersion: v1
   kind: Endpoints
   metadata:
-    annotations:
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"v1","kind":"Endpoints","metadata":{"annotations":{},"creationTimestamp":"2019-03-28T21:21:57Z","name":"kubernetes","namespace":"default","resourceVersion":"382233","selfLink":"/api/v1/namespaces/default/endpoints/kubernetes","uid":"849c6445-519f-11e9-b55b-08002792271d"},"subsets":[{"addresses":[{"ip":"192.168.99.100"}],"ports":[{"name":"https","port":8443,"protocol":"TCP"}]}]}
-    creationTimestamp: "2019-03-28T21:21:57Z"
     name: kubernetes
     namespace: default
-    resourceVersion: "383281"
-    selfLink: /api/v1/namespaces/default/endpoints/kubernetes
-    uid: 849c6445-519f-11e9-b55b-08002792271d
   subsets:
   - addresses:
     - ip: 192.168.99.100
@@ -213,15 +167,8 @@ items:
 - apiVersion: v1
   kind: Endpoints
   metadata:
-    annotations:
-      kubectl.kubernetes.io/last-applied-configuration: |
-        {"apiVersion":"v1","kind":"Endpoints","metadata":{"annotations":{},"creationTimestamp":"2020-02-02T20:22:23Z","name":"mongo","namespace":"default","resourceVersion":"382235","selfLink":"/api/v1/namespaces/default/endpoints/mongo","uid":"ba583fec-11cd-45a3-a260-e488303ab8d0"},"subsets":[{"addresses":[{"ip":"10.0.2.2"}],"ports":[{"port":27017,"protocol":"TCP"}]}]}
-    creationTimestamp: "2020-02-02T20:22:23Z"
     name: mongo
     namespace: default
-    resourceVersion: "383282"
-    selfLink: /api/v1/namespaces/default/endpoints/mongo
-    uid: ba583fec-11cd-45a3-a260-e488303ab8d0
   subsets:
   - addresses:
     - ip: 10.0.2.2
