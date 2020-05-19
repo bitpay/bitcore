@@ -25,15 +25,15 @@ describe('Cache Model', function() {
 
   it('should get the value', async () => {
     await CacheStorage.setGlobal(key, value, CacheStorage.Times.Hour);
-    const found = await CacheStorage.getGlobal(key);
-    expect(found).to.deep.eq(value);
+    const got = await CacheStorage.getGlobal(key);
+    expect(got).to.deep.eq(value);
   });
 
   it('should expire the key', async () => {
     await CacheStorage.setGlobal(key, value, CacheStorage.Times.Hour);
     await CacheStorage.expire(key);
-    const found = await CacheStorage.getGlobal(key);
-    expect(found).to.eq(null);
+    const got = await CacheStorage.getGlobal(key);
+    expect(got).to.eq(null);
   });
 
   it('should cache the value returned by fn', async () => {
