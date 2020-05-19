@@ -6,19 +6,23 @@
 
     <ion-item (click)="changeExplorer(chainNetwork)" *ngFor="let chainNetwork of availableNetworks">
       <ion-avatar item-start>
-        <img *ngIf="chainNetwork.network === 'mainnet'" src="assets/img/currency_logos/{{ chainNetwork.chain.toLowerCase() }}.svg" class="logo" />
-        <img *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='BTC'" src="assets/img/btcicon-testnet.svg" class="logo" />
+        <img *ngIf="chainNetwork.network === 'mainnet' && chainNetwork.chain !=='ALL'" src="assets/img/currency_logos/{{ chainNetwork.chain.toLowerCase() }}.svg" class="logo" />
+        <img *ngIf="chainNetwork.network === 'mainnet' && chainNetwork.chain==='ALL'" src="assets/img/search.png" class="logo" />
+        <img *ngIf=" chainNetwork.network !=='mainnet' && chainNetwork.chain==='BTC'" src=" assets/img/btcicon-testnet.svg" class="logo" />
         <img *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" />
         <img [ngClass]="{'secondary': chainNetwork.network ==='testnet'}" *ngIf="chainNetwork.network !== 'mainnet' && chainNetwork.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" />
       </ion-avatar>
-      <ion-label color="dark">
-       {{ chainNetwork.chain }} <small class="pill"> {{ chainNetwork.network }}</small>
+      <ion-label color="dark" *ngIf="chainNetwork.chain !== 'ALL'">
+        {{ chainNetwork.chain }} <small class="pill"> {{ chainNetwork.network }}</small>
+      </ion-label>
+      <ion-label color="dark" *ngIf="chainNetwork.chain === 'ALL'">
+        All Blockchains
       </ion-label>
     </ion-item>
   </ion-row>
 </ion-list>
 
-<ion-list radio-group [(ngModel)]="currencySymbol" *ngIf="showUnits">
+<ion-list radio-group [(ngModel)]="currencySymbol" *ngIf="showUnits && api.networkSettings.selectedNetwork.chain !== 'ALL'">
   <ion-item-divider>
     Units
   </ion-item-divider>
@@ -29,4 +33,3 @@
     </ion-radio>
   </ion-item>
 </ion-list>
-

@@ -3,20 +3,18 @@ import { IonicPageModule } from 'ionic-angular';
 import { ErrorComponentModule } from '../../components/error/error.module';
 import { FooterComponentModule } from '../../components/footer/footer.module';
 import { HeadNavComponentModule } from '../../components/head-nav/head-nav.module';
-import { LatestBlocksComponentModule } from '../../components/latest-blocks/latest-blocks.module';
 import { LoaderComponentModule } from '../../components/loader/loader.module';
-import { HomePage } from './home';
+import { SearchPage } from './search';
 
 @NgModule({
-  declarations: [HomePage],
+  declarations: [SearchPage],
   imports: [
-    IonicPageModule.forChild(HomePage),
-    LatestBlocksComponentModule,
+    IonicPageModule.forChild(SearchPage),
     FooterComponentModule,
     HeadNavComponentModule,
     LoaderComponentModule,
     ErrorComponentModule
   ],
-  exports: [HomePage]
+  exports: [SearchPage]
 })
-export class HomePageModule {}
+export class SearchPageModule {}

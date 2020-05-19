@@ -229,7 +229,7 @@ export class TxsProvider {
       valueOut: coin.value,
       height: parseInt(coin.blockHeight, 10),
       blockheight: parseInt(coin.blockHeight, 10),
-      time: new Date(coin.blockTime).getTime() / 1000,
+      time: new Date(coin.blockTime).getTime() / 1000
     };
   }
 

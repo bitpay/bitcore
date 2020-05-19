@@ -1,17 +1,14 @@
 <head-nav [chainNetwork]="chainNetwork"></head-nav>
-<ion-content>
-  <ion-grid fixed>
-    <div class="page-content">
+<ion-content class="content-container">
+  <ion-grid class="page-content-grid">
 
-      <loader *ngIf="loading" [type]="'title'"></loader>
+    <loader *ngIf="loading" [type]="'title'"></loader>
 
-      <div *ngIf="!loading">
-        <h1 class="content-container--heading">Blocks</h1>
-        <latest-blocks [numBlocks]="200" [showTimeAs]="'timestamp'" [showLoadMoreButton]="true"
-          [chainNetwork]="chainNetwork"></latest-blocks>
-      </div>
-
+    <div *ngIf="!loading" class="page-content">
+      <h2 class="content-container--heading">Blocks</h2>
+      <latest-blocks [numBlocks]="200" [showTimeAs]="'timestamp'" [isHomePage]="true" [chainNetwork]="chainNetwork"></latest-blocks>
     </div>
+
   </ion-grid>
 </ion-content>
 <footer [chainNetwork]="chainNetwork"></footer>
