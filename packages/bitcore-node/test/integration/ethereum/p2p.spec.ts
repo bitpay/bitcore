@@ -87,6 +87,24 @@ describe.only('Ethereum', function() {
     expect(cached!.value).to.deep.eq(balance);
   });
 
+  it('should update after a send', async () => {
+    const wallet = await getWallet();
+    const addresses = await wallet.getAddresses();
+    const beforeBalance = await wallet.getBalance();
+
+    const worker = new EthP2pWorker({ chain, network, chainConfig });
+    await worker.connect();
+    await worker.setupListeners();
+    const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
+
+    const { web3 } = await worker.getWeb3();
+    await web3.eth.sendTransaction({ to: addresses[0], value: web3.utils.toWei('.01', 'ether'), from: account });
+    await sawBlock;
+    await worker.disconnect();
+    const afterBalance = await wallet.getBalance();
+    expect(afterBalance).to.not.deep.eq(beforeBalance);
+  });
+
   it.skip('should be able to save blocks to the database', async () => {
     const wallet = await getWallet();
     const addresses = await wallet.getAddresses();
