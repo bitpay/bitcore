@@ -2,9 +2,13 @@
 
 <div *ngIf="!loading">
   <ion-grid>
+    <div> Sort by: 
+      <span [ngClass]="mostRecentOrderSelected ? 'orderSelected' : 'orderUnselected'" (click)="sortBy('Most Recent')"> Most Recent </span> 
+      | <span [ngClass]="mostRecentOrderSelected ? 'orderUnselected' : 'orderSelected'" (click)="sortBy('Oldest')"> Oldest </span> 
+    </div>
     <ion-row *ngFor="let tx of txs; let i = index">
       <ion-col col-12 *ngIf="i < limit && (tx.spentTxid !== '' || tx.mintTxid)">
-        <coin *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH'" [coin]="tx" [chainNetwork]="chainNetwork"></coin>
+        <coin [blockTipHeight]="blockTipHeight" *ngIf="chainNetwork.chain === 'BTC' || chainNetwork.chain === 'BCH'" [coin]="tx" [chainNetwork]="chainNetwork"></coin>
         <transaction-details-eth *ngIf="chainNetwork.chain === 'ETH'" [tx]="tx" [showCoins]="true" [chainNetwork]="chainNetwork"></transaction-details-eth>
       </ion-col>
     </ion-row>

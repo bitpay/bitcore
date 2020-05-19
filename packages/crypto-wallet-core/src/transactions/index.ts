@@ -36,7 +36,6 @@ export class TransactionsProxy {
   getHash(params) {
     return this.get(params).getHash(params);
   }
-
 }
 
 export default new TransactionsProxy();

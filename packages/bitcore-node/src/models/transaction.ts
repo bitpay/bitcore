@@ -1,22 +1,22 @@
-import logger from '../logger';
-import * as lodash from 'lodash';
-import { CoinStorage } from './coin';
-import { WalletAddressStorage, IWalletAddress } from './walletAddress';
 import { ObjectID } from 'bson';
-import { TransformOptions } from '../types/TransformOptions';
-import { LoggifyClass } from '../decorators/Loggify';
-import { Bitcoin } from '../types/namespaces/Bitcoin';
-import { MongoBound } from './base';
-import { StorageService } from '../services/storage';
-import { TransactionJSON } from '../types/Transaction';
-import { SpentHeightIndicators } from '../types/Coin';
-import { Config } from '../services/config';
-import { EventStorage } from './events';
-import { Libs } from '../providers/libs';
-import { BaseTransaction, ITransaction } from './baseTransaction';
-import { Readable, Transform } from 'stream';
+import * as lodash from 'lodash';
 import { Collection } from 'mongodb';
+import { Readable, Transform } from 'stream';
+import { LoggifyClass } from '../decorators/Loggify';
+import logger from '../logger';
+import { Libs } from '../providers/libs';
+import { Config } from '../services/config';
+import { StorageService } from '../services/storage';
+import { SpentHeightIndicators } from '../types/Coin';
+import { BitcoinTransaction } from '../types/namespaces/Bitcoin';
+import { TransactionJSON } from '../types/Transaction';
+import { TransformOptions } from '../types/TransformOptions';
 import { partition } from '../utils/partition';
+import { MongoBound } from './base';
+import { BaseTransaction, ITransaction } from './baseTransaction';
+import { CoinStorage, ICoin } from './coin';
+import { EventStorage } from './events';
+import { IWalletAddress, WalletAddressStorage } from './walletAddress';
 
 export { ITransaction };
 
@@ -34,9 +34,9 @@ export type IBtcTransaction = ITransaction & {
   size: number;
 };
 
-export type TaggedBitcoinTx = Bitcoin.Transaction & { wallets: Array<ObjectID> };
+export type TaggedBitcoinTx = BitcoinTransaction & { wallets: Array<ObjectID> };
 
-export type MintOp = {
+export interface MintOp {
   updateOne: {
     filter: {
       mintTxid: string;
@@ -65,9 +65,9 @@ export type MintOp = {
     upsert: true;
     forceServerObjectId: true;
   };
-};
+}
 
-export type SpendOp = {
+export interface SpendOp {
   updateOne: {
     filter: {
       mintTxid: string;
@@ -78,7 +78,7 @@ export type SpendOp = {
     };
     update: { $set: { spentTxid: string; spentHeight: number } };
   };
-};
+}
 
 export interface TxOp {
   updateOne: {
@@ -201,7 +201,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
   }
 
   async batchImport(params: {
-    txs: Array<Bitcoin.Transaction>;
+    txs: Array<BitcoinTransaction>;
     height: number;
     mempoolTime?: Date;
     blockTime?: Date;
@@ -241,8 +241,8 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     this.streamSpendOps({ ...params, spentStream });
     await new Promise(r =>
       spentStream
-        .pipe(new MongoWriteStream(CoinStorage.collection))
         .pipe(new PruneMempoolStream(chain, network, initialSyncComplete))
+        .pipe(new MongoWriteStream(CoinStorage.collection))
         .on('finish', r)
     );
 
@@ -326,7 +326,9 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
         .find(spentQuery)
         .project({ spentTxid: 1, value: 1, wallets: 1 })
         .toArray();
-      type CoinGroup = { [txid: string]: { total: number; wallets: Array<ObjectID> } };
+      interface CoinGroup {
+        [txid: string]: { total: number; wallets: Array<ObjectID> };
+      }
       const groupedSpends = spent.reduce<CoinGroup>((agg, coin) => {
         if (!agg[coin.spentTxid]) {
           agg[coin.spentTxid] = {
@@ -401,7 +403,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     network: string;
     initialSyncComplete: boolean;
     mintBatch: Array<MintOp>;
-    txs: Array<Bitcoin.Transaction>;
+    txs: Array<BitcoinTransaction>;
   }) {
     const { chain, network, initialSyncComplete, mintBatch } = params;
     const walletConfig = Config.for('api').wallets;
@@ -452,7 +454,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
   }
 
   async streamMintOps(params: {
-    txs: Array<Bitcoin.Transaction>;
+    txs: Array<BitcoinTransaction>;
     height: number;
     parentChain?: string;
     forkHeight?: number;
@@ -543,7 +545,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
   }
 
   streamSpendOps(params: {
-    txs: Array<Bitcoin.Transaction>;
+    txs: Array<BitcoinTransaction>;
     height: number;
     parentChain?: string;
     forkHeight?: number;
@@ -572,7 +574,9 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
               chain,
               network
             },
-            update: { $set: { spentTxid: tx._hash || tx.hash, spentHeight: height, sequenceNumber: inputObj.sequenceNumber } }
+            update: {
+              $set: { spentTxid: tx._hash || tx.hash, spentHeight: height, sequenceNumber: inputObj.sequenceNumber }
+            }
           }
         };
         spendOpsBatch.push(updateQuery);
@@ -587,6 +591,49 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     }
     params.spentStream.push(null);
     spendOpsBatch = new Array<SpendOp>();
+  }
+
+  async findAllRelatedOutputs(forTx: string) {
+    const seen = {};
+    const getOutputs = (txid: string) =>
+      CoinStorage.collection.find({ mintTxid: txid, mintHeight: { $ne: -3 } }).toArray();
+    let batch = await getOutputs(forTx);
+    let allRelatedCoins = new Array<ICoin>();
+    while (batch.length) {
+      allRelatedCoins = allRelatedCoins.concat(batch);
+      let newBatch = new Array<ICoin>();
+      for (const coin of batch) {
+        seen[coin.mintTxid] = true;
+        if (coin.spentTxid && !seen[coin.spentTxid]) {
+          const outputs = await getOutputs(coin.spentTxid);
+          newBatch = newBatch.concat(outputs);
+        }
+      }
+      batch = newBatch;
+    }
+    return allRelatedCoins;
+  }
+
+  async *yieldRelatedOutputs(forTx: string) {
+    const seen = {};
+    const getOutputs = (txid: string) =>
+      CoinStorage.collection.find({ mintTxid: txid, mintHeight: { $ne: -3 } }).toArray();
+    let batch = await getOutputs(forTx);
+    while (batch.length) {
+      for (const coin of batch) {
+        seen[coin.mintTxid] = true;
+        yield coin;
+      }
+      let newBatch = new Array<ICoin>();
+      for (const coin of batch) {
+        if (coin.spentTxid && !seen[coin.spentTxid]) {
+          const outputs = await getOutputs(coin.spentTxid);
+          seen[coin.spentTxid] = true;
+          newBatch = newBatch.concat(outputs);
+        }
+      }
+      batch = newBatch;
+    }
   }
 
   async pruneMempool(params: {
@@ -620,18 +667,23 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
 
     const invalidatedTxids = Array.from(new Set(coins.map(c => c.spentTxid)));
 
-    await Promise.all([
-      this.collection.update(
-        { chain, network, txid: { $in: invalidatedTxids } },
-        { $set: { blockHeight: SpentHeightIndicators.conflicting } },
-        { multi: true }
-      ),
-      CoinStorage.collection.update(
-        { chain, network, mintTxid: { $in: invalidatedTxids } },
-        { $set: { mintHeight: SpentHeightIndicators.conflicting } },
-        { multi: true }
-      )
-    ]);
+    for (const txid of invalidatedTxids) {
+      const allRelatedCoins = await this.findAllRelatedOutputs(txid);
+      const spentTxids = new Set(allRelatedCoins.filter(c => c.spentTxid).map(c => c.spentTxid));
+      const txids = [txid].concat(Array.from(spentTxids));
+      await Promise.all([
+        this.collection.update(
+          { chain, network, txid: { $in: txids } },
+          { $set: { blockHeight: SpentHeightIndicators.conflicting } },
+          { multi: true }
+        ),
+        CoinStorage.collection.update(
+          { chain, network, mintTxid: { $in: txids } },
+          { $set: { mintHeight: SpentHeightIndicators.conflicting } },
+          { multi: true }
+        )
+      ]);
+    }
 
     return;
   }

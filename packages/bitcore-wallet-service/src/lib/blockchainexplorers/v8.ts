@@ -1,5 +1,4 @@
 import * as async from 'async';
-import { Web3 } from 'crypto-wallet-core';
 import _ from 'lodash';
 import * as request from 'request-promise-native';
 import io = require('socket.io-client');
@@ -24,16 +23,14 @@ const Constants = Common.Constants,
 
 function v8network(bwsNetwork) {
   if (bwsNetwork == 'livenet') return 'mainnet';
-  if (
-    bwsNetwork == 'testnet' &&
-    config.blockchainExplorerOpts.btc.testnet.regtestEnabled
-  ) {
+  if (bwsNetwork == 'testnet' && config.blockchainExplorerOpts.btc.testnet.regtestEnabled) {
     return 'regtest';
   }
   return bwsNetwork;
 }
 
 export class V8 {
+  chain: string;
   coin: string;
   network: string;
   v8network: string;
@@ -48,24 +45,20 @@ export class V8 {
 
   constructor(opts) {
     $.checkArgument(opts);
-    $.checkArgument(
-      Utils.checkValueInCollection(opts.network, Constants.NETWORKS)
-    );
+    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
     $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
     $.checkArgument(opts.url);
 
     this.apiPrefix = _.isUndefined(opts.apiPrefix) ? '/api' : opts.apiPrefix;
-    this.coin = ChainService.getChain(opts.coin || Defaults.COIN).toLowerCase();
+    this.chain = ChainService.getChain(opts.coin || Defaults.COIN);
+    this.coin = this.chain.toLowerCase();
 
     this.network = opts.network || 'livenet';
     this.v8network = v8network(this.network);
 
     // v8 is always cashaddr
     this.addressFormat = this.coin == 'bch' ? 'cashaddr' : null;
-
-    const coin = this.coin.toUpperCase();
-
-    this.apiPrefix += `/${coin}/${this.v8network}`;
+    this.apiPrefix += `/${this.chain}/${this.v8network}`;
 
     this.host = opts.url;
     this.userAgent = opts.userAgent || 'bws';
@@ -125,9 +118,7 @@ export class V8 {
     const client = this._getAuthClient(wallet);
     const payload = {
       name: wallet.id,
-      pubKey: wallet.beAuthPublicKey2,
-      network: this.v8network,
-      chain: this.coin
+      pubKey: wallet.beAuthPublicKey2
     };
     client
       .register({
@@ -200,6 +191,19 @@ export class V8 {
       .catch(cb);
   }
 
+  getCoinsForTx(txId, cb) {
+    $.checkArgument(cb);
+    const client = this._getClient();
+    console.time('V8getCoinsForTx');
+    client
+      .getCoinsForTx({ txId, payload: {} })
+      .then(coins => {
+        console.timeEnd('V8getCoinsForTx');
+        return cb(null, coins);
+      })
+      .catch(cb);
+  }
+
   /**
    * Check wallet addresses
    */
@@ -222,7 +226,7 @@ export class V8 {
     const payload = {
       rawTx,
       network: this.v8network,
-      chain: this.coin.toUpperCase()
+      chain: this.chain
     };
 
     const client = this._getClient();
@@ -235,7 +239,7 @@ export class V8 {
         return cb(null, ret.txid);
       })
       .catch(err => {
-        if (count > 3  ) {
+        if (count > 3) {
           log.error('FINAL Broadcast error:', err);
           return cb(err);
         } else {
@@ -335,10 +339,7 @@ export class V8 {
       });
       console.timeEnd('V8 getTxs');
       // blockTime on unconf is 'seenTime';
-      return cb(
-        null,
-        _.flatten(_.orderBy(unconf, 'blockTime', 'desc').concat(txs.reverse()))
-      );
+      return cb(null, _.flatten(_.orderBy(unconf, 'blockTime', 'desc').concat(txs.reverse())));
     });
 
     txStream.on('error', e => {
@@ -376,7 +377,7 @@ export class V8 {
   }
 
   estimateGas(opts, cb) {
-    const url = this.baseUrl + '/fee/gas';
+    const url = this.baseUrl + '/gas';
     console.log('[v8.js.378:url:] CHECKING GAS LIMIT', url);
     this.request
       .post(url, { body: opts, json: true })
@@ -420,7 +421,7 @@ export class V8 {
             return icb(err);
           });
       },
-      (err) => {
+      err => {
         if (err) {
           return cb(err);
         }
@@ -465,23 +466,16 @@ export class V8 {
   initSocket(callbacks) {
     log.info('V8 connecting socket at:' + this.host);
     // sockets always use the first server on the pull
-    const walletsSocket = io.connect(
-      this.host,
-      { transports: ['websocket'] }
-    );
+    const walletsSocket = io.connect(this.host, { transports: ['websocket'] });
 
-    const blockSocket = io.connect(
-      this.host,
-      { transports: ['websocket'] }
-    );
+    const blockSocket = io.connect(this.host, { transports: ['websocket'] });
 
-    const getAuthPayload = (host) => {
+    const getAuthPayload = host => {
       const authKey = config.blockchainExplorerOpts.socketApiKey;
 
-      if (!authKey)
-      throw new Error('provide authKey');
+      if (!authKey) throw new Error('provide authKey');
 
-      const authKeyObj =  new Bitcore.PrivateKey(authKey);
+      const authKeyObj = new Bitcore.PrivateKey(authKey);
       const pubKey = authKeyObj.toPublicKey().toString();
       const authClient = new Client({ baseUrl: host, authKey: authKeyObj });
       const payload = { method: 'socket', url: host };
@@ -491,69 +485,46 @@ export class V8 {
 
     blockSocket.on('connect', () => {
       log.info(`Connected to block ${this.getConnectionInfo()}`);
-      blockSocket.emit(
-        'room',
-        `/${this.coin.toUpperCase()}/${this.v8network}/inv`
-      );
+      blockSocket.emit('room', `/${this.chain}/${this.v8network}/inv`);
     });
 
     blockSocket.on('connect_error', () => {
       log.error(`Error connecting to ${this.getConnectionInfo()}`);
     });
 
-    blockSocket.on('block', (data) => {
+    blockSocket.on('block', data => {
       return callbacks.onBlock(data.hash);
     });
 
     walletsSocket.on('connect', () => {
       log.info(`Connected to wallets ${this.getConnectionInfo()}`);
-      walletsSocket.emit(
-        'room',
-        `/${this.coin.toUpperCase()}/${this.v8network}/wallets`,
-        getAuthPayload(this.host)
-      );
+      walletsSocket.emit('room', `/${this.chain}/${this.v8network}/wallets`, getAuthPayload(this.host));
     });
 
     walletsSocket.on('connect_error', () => {
-      log.error(`Error connecting to ${this.getConnectionInfo()}  ${this.coin.toUpperCase()}/${this.v8network}`);
+      log.error(`Error connecting to ${this.getConnectionInfo()}  ${this.chain}/${this.v8network}`);
     });
 
-    walletsSocket.on('failure', (err) => {
-      log.error(`Error joining room ${err.message} ${this.coin.toUpperCase()}/${this.v8network}`);
+    walletsSocket.on('failure', err => {
+      log.error(`Error joining room ${err.message} ${this.chain}/${this.v8network}`);
     });
 
     walletsSocket.on('coin', data => {
-      const coin = data.coin;
-      // script output, or similar.
-      if (!coin || !coin.address || coin.chain === 'ETH') return;
-      const out = {
-        address: coin.address,
-        amount: coin.value
-      };
-      return callbacks.onIncomingPayments({ out, txid: coin.mintTxid });
+      if (!data || !data.coin) return;
+
+      const notification = ChainService.onCoin(this.coin, data.coin);
+      if (!notification) return;
+
+      return callbacks.onIncomingPayments(notification);
     });
 
     walletsSocket.on('tx', data => {
-      const tx = data.tx;
-      // script output, or similar.
-      if (!tx || tx.chain !== 'ETH') return;
-      let tokenAddress;
-      let address;
-      let amount;
-      if (tx.abiType && tx.abiType.type === 'ERC20') {
-        tokenAddress = tx.to;
-        address = Web3.utils.toChecksumAddress(tx.abiType.params[0].value);
-        amount = tx.abiType.params[1].value;
-      } else {
-        address = tx.to;
-        amount = tx.value;
-      }
-      const out = {
-        address,
-        amount,
-        tokenAddress
-      };
-      return callbacks.onIncomingPayments({ out, txid: tx.txid });
+      if (!data || !data.tx) return;
+
+      const notification = ChainService.onTx(this.coin, data.tx);
+      if (!notification) return;
+
+      return callbacks.onIncomingPayments(notification);
     });
   }
 }

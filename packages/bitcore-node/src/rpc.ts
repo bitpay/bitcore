@@ -14,8 +14,8 @@ export class RPC {
         body: {
           jsonrpc: '1.0',
           id: Date.now(),
-          method: method,
-          params: params
+          method,
+          params
         },
         json: true
       },
@@ -161,7 +161,7 @@ export class AsyncRPC {
   }
 }
 
-export type RPCBlock<T> = {
+export interface RPCBlock<T> {
   hash: string;
   confirmations: number;
   size: number;
@@ -180,9 +180,9 @@ export type RPCBlock<T> = {
   chainwork: string;
   previousblockhash: string;
   nextblockhash: string;
-};
+}
 
-export type RPCTransaction = {
+export interface RPCTransaction {
   in_active_chain: boolean;
   hex: string;
   txid: string;
@@ -217,4 +217,4 @@ export type RPCTransaction = {
   confirmations: number;
   time: number;
   blocktime: number;
-};
+}

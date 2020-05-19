@@ -25,7 +25,7 @@ const PROVIDERS = {
     xrp: {
       livenet: 'https://api-xrp.bitcore.io',
       testnet: 'https://api-xrp.bitcore.io'
-    },
+    }
   }
 };
 
@@ -37,10 +37,7 @@ export function BlockChainExplorer(opts) {
   const network = opts.network || 'livenet';
 
   $.checkState(PROVIDERS[provider], 'Provider ' + provider + ' not supported');
-  $.checkState(
-    _.includes(_.keys(PROVIDERS[provider]), coin),
-    'Coin ' + coin + ' not supported by this provider'
-  );
+  $.checkState(_.includes(_.keys(PROVIDERS[provider]), coin), 'Coin ' + coin + ' not supported by this provider');
 
   $.checkState(
     _.includes(_.keys(PROVIDERS[provider][coin]), network),
@@ -49,8 +46,7 @@ export function BlockChainExplorer(opts) {
 
   const url = opts.url || PROVIDERS[provider][coin][network];
 
-  if (coin != 'bch' && opts.addressFormat)
-    throw new Error('addressFormat only supported for bch');
+  if (coin != 'bch' && opts.addressFormat) throw new Error('addressFormat only supported for bch');
 
   if (coin == 'bch' && !opts.addressFormat) opts.addressFormat = 'cashaddr';
 

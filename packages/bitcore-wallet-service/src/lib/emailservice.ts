@@ -91,7 +91,7 @@ export class EmailService {
               return next(!err && stats.isDirectory());
             });
           },
-          (dirs) => {
+          dirs => {
             return cb(null, dirs);
           }
         );
@@ -102,10 +102,8 @@ export class EmailService {
 
     this.defaultLanguage = opts.emailOpts.defaultLanguage || 'en';
     this.defaultUnit = opts.emailOpts.defaultUnit || 'btc';
-    log.info('Email templates at:' +
-      (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/');
-    this.templatePath = path.normalize(
-      (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/');
+    log.info('Email templates at:' + (opts.emailOpts.templatePath || __dirname + '/../../templates') + '/');
+    this.templatePath = path.normalize((opts.emailOpts.templatePath || __dirname + '/../../templates') + '/');
 
     this.publicTxUrlTemplate = opts.emailOpts.publicTxUrlTemplate || {};
     this.subjectPrefix = opts.emailOpts.subjectPrefix || '[Wallet service]';
@@ -113,41 +111,36 @@ export class EmailService {
 
     async.parallel(
       [
-        (done) => {
+        done => {
           _readDirectories(this.templatePath, (err, res) => {
             this.availableLanguages = res;
             done(err);
           });
         },
-        (done) => {
+        done => {
           if (opts.storage) {
             this.storage = opts.storage;
             done();
           } else {
             this.storage = new Storage();
-            this.storage.connect(
-              opts.storageOpts,
-              done
-            );
+            this.storage.connect(opts.storageOpts, done);
           }
         },
-        (done) => {
-          this.messageBroker =
-            opts.messageBroker || new MessageBroker(opts.messageBrokerOpts);
+        done => {
+          this.messageBroker = opts.messageBroker || new MessageBroker(opts.messageBrokerOpts);
           this.messageBroker.onMessage(_.bind(this.sendEmail, this));
           done();
         },
-        (done) => {
+        done => {
           this.lock = opts.lock || new Lock(this.storage, opts.lockOpts);
           done();
         },
-        (done) => {
-          this.mailer =
-            opts.mailer; // || nodemailer.createTransport(opts.emailOpts);
+        done => {
+          this.mailer = opts.mailer; // || nodemailer.createTransport(opts.emailOpts);
           done();
         }
       ],
-      (err) => {
+      err => {
         if (err) {
           log.error(err);
         }
@@ -171,9 +164,7 @@ export class EmailService {
     const fullFilename = path.join(this.templatePath, language, filename);
     fs.readFile(fullFilename, 'utf8', (err, template) => {
       if (err) {
-        return cb(
-          new Error('Could not read template file ' + fullFilename + err)
-        );
+        return cb(new Error('Could not read template file ' + fullFilename + err));
       }
       return cb(null, template);
     });
@@ -181,21 +172,17 @@ export class EmailService {
 
   // TODO: cache for X minutes
   _loadTemplate(emailType, recipient, extension, cb) {
-    this._readTemplateFile(
-      recipient.language,
-      emailType.filename + extension,
-      (err, template) => {
-        if (err) return cb(err);
-        return cb(null, this._compileTemplate(template, extension));
-      }
-    );
+    this._readTemplateFile(recipient.language, emailType.filename + extension, (err, template) => {
+      if (err) return cb(err);
+      return cb(null, this._compileTemplate(template, extension));
+    });
   }
 
   _applyTemplate(template, data, cb) {
     if (!data) return cb(new Error('Could not apply template to empty data'));
 
     let error;
-    const result = _.mapValues(template, (t) => {
+    const result = _.mapValues(template, t => {
       try {
         return Mustache.render(t, data);
       } catch (e) {
@@ -211,31 +198,21 @@ export class EmailService {
     this.storage.fetchWallet(notification.walletId, (err, wallet) => {
       if (err) return cb(err);
 
-      this.storage.fetchPreferences(notification.walletId, null, (
-        err,
-        preferences
-      ) => {
+      this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
         if (err) return cb(err);
         if (_.isEmpty(preferences)) return cb(null, []);
 
         const usedEmails = {};
         const recipients = _.compact(
-          _.map(preferences, (p) => {
+          _.map(preferences, p => {
             if (!p.email || usedEmails[p.email]) return;
 
             usedEmails[p.email] = true;
-            if (notification.creatorId == p.copayerId && !emailType.notifyDoer)
-              return;
-            if (
-              notification.creatorId != p.copayerId &&
-              !emailType.notifyOthers
-            )
-              return;
+            if (notification.creatorId == p.copayerId && !emailType.notifyDoer) return;
+            if (notification.creatorId != p.copayerId && !emailType.notifyOthers) return;
             if (!_.includes(this.availableLanguages, p.language)) {
               if (p.language) {
-                log.warn(
-                  'Language for email "' + p.language + '" not available.'
-                );
+                log.warn('Language for email "' + p.language + '" not available.');
               }
               p.language = this.defaultLanguage;
             }
@@ -276,8 +253,7 @@ export class EmailService {
     if (data.amount) {
       try {
         const unit = recipient.unit.toLowerCase();
-        data.amount =
-          Utils.formatAmount(+data.amount, unit) + ' ' + UNIT_LABELS[unit];
+        data.amount = Utils.formatAmount(+data.amount, unit) + ' ' + UNIT_LABELS[unit];
       } catch (ex) {
         return cb(new Error('Could not format amount' + ex));
       }
@@ -290,24 +266,21 @@ export class EmailService {
       data.walletName = wallet.name;
       data.walletM = wallet.m;
       data.walletN = wallet.n;
-      const copayer = wallet.copayers.find((c) => c.id == notification.creatorId);
+      const copayer = wallet.copayers.find(c => c.id == notification.creatorId);
       if (copayer) {
         data.copayerId = copayer.id;
         data.copayerName = copayer.name;
       }
 
       if (notification.type == 'TxProposalFinallyRejected' && data.rejectedBy) {
-        const rejectors = _.map(data.rejectedBy, (copayerId) => {
-          const copayer = wallet.copayers.find((c) => c.id == copayerId);
+        const rejectors = _.map(data.rejectedBy, copayerId => {
+          const copayer = wallet.copayers.find(c => c.id == copayerId);
           return copayer.name;
         });
         data.rejectorsNames = rejectors.join(', ');
       }
 
-      if (
-        _.includes(['NewIncomingTx', 'NewOutgoingTx'], notification.type) &&
-        data.txid
-      ) {
+      if (_.includes(['NewIncomingTx', 'NewOutgoingTx'], notification.type) && data.txid) {
         const urlTemplate = this.publicTxUrlTemplate[wallet.coin][wallet.network];
         if (urlTemplate) {
           try {
@@ -341,12 +314,11 @@ export class EmailService {
       })
       .catch(err => {
         let errStr;
-        try { errStr = err.toString().substr(0, 100); } catch (e) { }
+        try {
+          errStr = err.toString().substr(0, 100);
+        } catch (e) {}
 
-        log.warn(
-          'An error occurred when trying to send email to ' + email.to,
-          errStr || err
-        );
+        log.warn('An error occurred when trying to send email to ' + email.to, errStr || err);
         return cb(err);
       });
   }
@@ -357,17 +329,14 @@ export class EmailService {
       (recipient, next) => {
         async.waterfall(
           [
-            (next) => {
+            next => {
               this._getDataForTemplate(notification, recipient, next);
             },
             (data, next) => {
               async.map(
                 ['plain', 'html'],
                 (type, next) => {
-                  this._loadTemplate(emailType, recipient, '.' + type, (
-                    err,
-                    template
-                  ) => {
+                  this._loadTemplate(emailType, recipient, '.' + type, (err, template) => {
                     if (err && type == 'html') return next();
                     if (err) return next(err);
                     this._applyTemplate(template, data, (err, res) => {
@@ -403,7 +372,7 @@ export class EmailService {
   }
 
   sendEmail(notification, cb) {
-    cb = cb || function() { };
+    cb = cb || function() {};
 
     const emailType = EMAIL_TYPES[notification.type];
     if (!emailType) return cb();
@@ -412,32 +381,21 @@ export class EmailService {
       if (err) return cb(err);
       if (!should) return cb();
 
-      this._getRecipientsList(notification, emailType, (
-        err,
-        recipientsList: Recipient[]
-      ) => {
+      this._getRecipientsList(notification, emailType, (err, recipientsList: Recipient[]) => {
         if (_.isEmpty(recipientsList)) return cb();
 
         // TODO: Optimize so one process does not have to wait until all others are done
         // Instead set a flag somewhere in the db to indicate that this process is free
         // to serve another request.
-        this.lock.runLocked('email-' + notification.id, {}, cb, (cb) => {
-          this.storage.fetchEmailByNotification(notification.id, (
-            err,
-            email
-          ) => {
+        this.lock.runLocked('email-' + notification.id, {}, cb, cb => {
+          this.storage.fetchEmailByNotification(notification.id, (err, email) => {
             if (err) return cb(err);
             if (email) return cb();
 
             async.waterfall(
               [
-                (next) => {
-                  this._readAndApplyTemplates(
-                    notification,
-                    emailType,
-                    recipientsList,
-                    next
-                  );
+                next => {
+                  this._readAndApplyTemplates(notification, emailType, recipientsList, next);
                 },
                 (contents, next) => {
                   async.map(
@@ -454,7 +412,7 @@ export class EmailService {
                         bodyHtml: content.html ? content.html.body : null,
                         notificationId: notification.id
                       });
-                      this.storage.storeEmail(email, (err) => {
+                      this.storage.storeEmail(email, err => {
                         return next(err, email);
                       });
                     },
@@ -465,7 +423,7 @@ export class EmailService {
                   async.each(
                     emails,
                     (email: any, next) => {
-                      this._send(email, (err) => {
+                      this._send(email, err => {
                         if (err) {
                           email.setFail();
                         } else {
@@ -474,21 +432,20 @@ export class EmailService {
                         this.storage.storeEmail(email, next);
                       });
                     },
-                    (err) => {
+                    err => {
                       return next();
                     }
                   );
                 }
               ],
-              (err) => {
+              err => {
                 if (err) {
                   let errStr;
-                  try { errStr = err.toString().substr(0, 100); } catch (e) { }
+                  try {
+                    errStr = err.toString().substr(0, 100);
+                  } catch (e) {}
 
-                  log.warn(
-                    'An error ocurred generating email notification',
-                    errStr || err
-                  );
+                  log.warn('An error ocurred generating email notification', errStr || err);
                 }
                 return cb(err);
               }

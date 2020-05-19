@@ -1,18 +1,18 @@
-import { CoinStorage } from '../../../models/coin';
 import { Transform } from 'stream';
+import { CoinStorage } from '../../../models/coin';
 import { IWallet } from '../../../models/wallet';
 
 export class ListTransactionsStream extends Transform {
-  constructor(private wallet: IWallet) {
+  constructor(public wallet: IWallet) {
     super({ objectMode: true });
   }
 
   async _transform(transaction, _, done) {
-    const sending = !! await CoinStorage.collection.countDocuments({
+    const sending = !!(await CoinStorage.collection.countDocuments({
       wallets: this.wallet._id,
       'wallets.0': { $exists: true },
       spentTxid: transaction.txid
-    });
+    }));
 
     const wallet = this.wallet._id!.toString();
 
@@ -29,8 +29,8 @@ export class ListTransactionsStream extends Transform {
         .project({ address: 1, wallets: 1, value: 1, mintIndex: 1 })
         .addCursorFlag('noCursorTimeout', true)
         .toArray();
-      outputs.forEach((output) => {
-        const sendingToOurself = output.wallets.some((outputWallet) => {
+      outputs.forEach(output => {
+        const sendingToOurself = output.wallets.some(outputWallet => {
           return outputWallet.equals(wallet);
         });
         if (!sendingToOurself) {
@@ -79,16 +79,17 @@ export class ListTransactionsStream extends Transform {
       }
       return done();
     } else {
-      const outputs = await CoinStorage.collection.find({
-        wallets: this.wallet._id,
-        'wallets.0': { $exists: true },
-        mintTxid: transaction.txid
-      })
+      const outputs = await CoinStorage.collection
+        .find({
+          wallets: this.wallet._id,
+          'wallets.0': { $exists: true },
+          mintTxid: transaction.txid
+        })
         .project({ address: 1, wallets: 1, value: 1, mintIndex: 1 })
         .addCursorFlag('noCursorTimeout', true)
         .toArray();
-      outputs.forEach((output) => {
-        const weReceived = output.wallets.some((outputWallet) => {
+      outputs.forEach(output => {
+        const weReceived = output.wallets.some(outputWallet => {
           return outputWallet.equals(wallet);
         });
         if (weReceived) {

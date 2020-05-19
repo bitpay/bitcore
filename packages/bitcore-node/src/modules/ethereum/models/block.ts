@@ -1,12 +1,12 @@
-import { TransformOptions } from '../../../types/TransformOptions';
-import logger from '../../../logger';
 import { LoggifyClass } from '../../../decorators/Loggify';
+import logger from '../../../logger';
+import { MongoBound } from '../../../models/base';
+import { BaseBlock } from '../../../models/baseBlock';
+import { EventStorage } from '../../../models/events';
 import { StorageService } from '../../../services/storage';
+import { TransformOptions } from '../../../types/TransformOptions';
 import { IEthBlock, IEthTransaction } from '../types';
 import { EthTransactionStorage } from './transaction';
-import { EventStorage } from '../../../models/events';
-import { BaseBlock } from '../../../models/baseBlock';
-import { MongoBound } from '../../../models/base';
 
 @LoggifyClass
 export class EthBlockModel extends BaseBlock<IEthBlock> {
@@ -67,7 +67,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
       blockHash: convertedBlock.hash,
       blockTime: new Date(time),
       blockTimeNormalized: new Date(timeNormalized),
-      height: height,
+      height,
       chain,
       network,
       parentChain,
@@ -90,7 +90,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     const previousBlock = await this.collection.findOne({ hash: prevHash, chain, network });
 
     const timeNormalized = (() => {
-      const prevTime = previousBlock ? previousBlock.timeNormalized : null;
+      const prevTime = previousBlock ? new Date(previousBlock.timeNormalized) : null;
       if (prevTime && blockTime.getTime() <= prevTime.getTime()) {
         return new Date(prevTime.getTime() + 1);
       } else {
@@ -130,7 +130,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
       if (prevBlock) {
         localTip = prevBlock;
       } else {
-        logger.error(`Previous block isn't in the DB need to roll back until we have a block in common`);
+        logger.error("Previous block isn't in the DB need to roll back until we have a block in common");
       }
       logger.info(`Resetting tip to ${localTip.height - 1}`, { chain, network });
     }

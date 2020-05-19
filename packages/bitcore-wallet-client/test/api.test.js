@@ -85,9 +85,11 @@ helpers.generateUtxos = (scriptType, publicKeyRing, path, requiredSignatures, am
 
     var scriptPubKey;
     switch (scriptType) {
+      case Constants.SCRIPT_TYPES.P2WSH:
       case Constants.SCRIPT_TYPES.P2SH:
         scriptPubKey = new Bitcore.Script.buildMultisigOut(address.publicKeys, requiredSignatures).toScriptHashOut();
         break;
+      case Constants.SCRIPT_TYPES.P2WPKH:
       case Constants.SCRIPT_TYPES.P2PKH:
         scriptPubKey = new Bitcore.Script.buildPublicKeyHashOut(address.address);
         break;
@@ -121,7 +123,7 @@ helpers.createAndJoinWallet = (clients, keys, m, n, opts, cb) => {
   };
 
   keys[0] = opts.key || Key.create(keyOpts);
-  let cred = keys[0].createCredentials(null, { coin: coin, network: network, account: 0, n: n });
+  let cred = keys[0].createCredentials(null, { coin: coin, network: network, account: 0, n: n, addressType: opts.addressType });
   clients[0].fromObj(cred);
 
 
@@ -130,6 +132,7 @@ helpers.createAndJoinWallet = (clients, keys, m, n, opts, cb) => {
     network: network,
     singleAddress: !!opts.singleAddress,
     doNotCheck: true,
+    useNativeSegwit: !!opts.useNativeSegwit
   }, (err, secret) => {
     if (err) console.log(err);
     should.not.exist(err);
@@ -149,6 +152,7 @@ helpers.createAndJoinWallet = (clients, keys, m, n, opts, cb) => {
               network: network,
               account: 0,
               n: n,
+              addressType: opts.addressType
             })
           );
           clients[i].joinWallet(secret, 'copayer ' + i, {
@@ -230,9 +234,11 @@ blockchainExplorerMock.setUtxo = (address, amount, m, confirmations) => {
   var B = Bitcore_[address.coin];
   var scriptPubKey;
   switch (address.type) {
+    case Constants.SCRIPT_TYPES.P2WSH:
     case Constants.SCRIPT_TYPES.P2SH:
       scriptPubKey = address.publicKeys ? B.Script.buildMultisigOut(address.publicKeys, m).toScriptHashOut() : '';
       break;
+    case Constants.SCRIPT_TYPES.P2WPKH:
     case Constants.SCRIPT_TYPES.P2PKH:
       scriptPubKey = B.Script.buildPublicKeyHashOut(address.address);
       break;
@@ -379,8 +385,10 @@ helpers.newDb = (extra, cb) => {
 }
 
 var db;
-describe('client API', () => {
+describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackoverflow.com/questions/23492043/change-default-timeout-for-mocha, or this.timeout() will BREAK!
+  //
   var clients, app, sandbox, storage, keys, i;
+  this.timeout(8000);
 
   before((done) => {
     i = 0;
@@ -725,6 +733,78 @@ describe('client API', () => {
         should.not.exist(bitcoreError);
         t.getFee().should.equal(10050);
       });
+      it('should build a P2WPKH tx correctly (BIP44)', () => {
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        const toAddress = Utils.deriveAddress('P2WPKH', publicKeyRing, 'm/0/0', 1, 'livenet', 'btc');
+        const changeAddress = Utils.deriveAddress('P2WPKH', publicKeyRing, 'm/0/1', 1, 'livenet', 'btc');
+
+        toAddress.address.should.equal('bc1qrshu7r9z9y22y3wrrghfmjrvn0xxasfl7qrmvf');
+        changeAddress.address.should.equal('bc1quhzpvcmllzm3kkf7jwsxdemgaec3dz2j0uuan0');
+
+        var utxos = helpers.generateUtxos('P2WPKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          version: '2.0.0',
+          inputs: utxos,
+          toAddress: toAddress.address,
+          amount: 1200,
+          changeAddress: {
+            address: changeAddress.address
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1],
+          fee: 10050,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2WPKH',
+        };
+        var t = Utils.buildTx(txp);
+        var bitcoreError = t.getSerializationError({
+          disableIsFullySigned: true,
+          disableSmallFees: true,
+          disableLargeFees: true,
+        });
+
+        should.not.exist(bitcoreError);
+        t.getFee().should.equal(10050);
+      });
+      it('should build a P2WSH tx correctly (BIP48)', () => {
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP48']),
+        }];
+
+        const toAddress = Utils.deriveAddress('P2WSH', publicKeyRing, 'm/0/0', 1, 'livenet', 'btc');
+        const changeAddress = Utils.deriveAddress('P2WSH', publicKeyRing, 'm/0/1', 1, 'livenet', 'btc');
+
+        toAddress.address.should.equal('bc1qxq4tyr7uhwprj4w8ayc8manv4t64g0hc74ka9w4qka0uygr7gplqqnlu24');
+        changeAddress.address.should.equal('bc1qk8q74mfp7mcldhvfu4azjyqnu7rnd0d9ghdnxkxye34utvp0fgvq50jl0v');
+
+        var utxos = helpers.generateUtxos('P2WSH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          version: '2.0.0',
+          inputs: utxos,
+          toAddress: toAddress.address,
+          amount: 1200,
+          changeAddress: {
+            address: changeAddress.address
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1],
+          fee: 10050,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2WSH',
+        };
+        var t = Utils.buildTx(txp);
+        var bitcoreError = t.getSerializationError({
+          disableIsFullySigned: true,
+          disableSmallFees: true,
+          disableLargeFees: true,
+        });
+
+        should.not.exist(bitcoreError);
+        t.getFee().should.equal(10050);
+      });
       it('should build a tx correctly (BIP48)', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
@@ -1004,6 +1084,43 @@ describe('client API', () => {
         });
         should.not.exist(bitcoreError);
       });
+
+      it('should build a v4 tx proposal', () => {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          version: 4,
+          inputs: utxos,
+          outputs: [{
+            toAddress: toAddress,
+            amount: 800,
+            message: 'first output'
+          }, {
+            toAddress: toAddress,
+            amount: 900,
+            message: 'second output'
+          }],
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2],
+          fee: 10000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        var t = Utils.buildTx(txp);
+        var bitcoreError = t.getSerializationError({
+          disableIsFullySigned: true,
+        });
+        should.not.exist(bitcoreError);
+      });
     });
 
     describe('#pushSignatures', () => {
@@ -1019,6 +1136,7 @@ describe('client API', () => {
         var txp = {
           inputs: utxos,
           coin: 'btc',
+          signingMethod: 'ecdsa',
           toAddress: toAddress,
           amount: 1200,
           changeAddress: {
@@ -1051,6 +1169,7 @@ describe('client API', () => {
           toAddress: toAddress,
           coin: 'btc',
           amount: 1200,
+          signingMethod: 'ecdsa',
           changeAddress: {
             address: changeAddress
           },
@@ -1064,7 +1183,7 @@ describe('client API', () => {
         var key = Key.fromExtendedPrivateKey(masterPrivateKey);
         var signatures = key.sign(path, txp);
 
-        // This is a GOOD tests, since bitcore ONLY accept VALID signatures
+        // This is a GOOD test, since bitcore ONLY accept VALID signatures
         signatures.length.should.be.equal(utxos.length);
       });
       it('should sign multiple-outputs proposal correctly', () => {
@@ -1079,6 +1198,7 @@ describe('client API', () => {
         var txp = {
           inputs: utxos,
           coin: 'btc',
+          signingMethod: 'ecdsa',
           outputs: [{
             toAddress: toAddress,
             amount: 800,
@@ -1179,6 +1299,45 @@ describe('client API', () => {
         signatures[1].should.equal('3044022069cf6e5d8700ff117f754e4183e81690d99d6a6443e86c9589efa072ecb7d82c02204c254506ac38774a2176f9ef56cc239ef7867fbd24da2bef795128c75a063301');
       });
 
+      it('should sign btc proposal correctly (tx V2)', () => {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          version: 4,
+          coin: 'btc',
+          inputs: utxos,
+          outputs: [{
+            toAddress: toAddress,
+            amount: 800,
+            message: 'first output'
+          }, {
+            toAddress: toAddress,
+            amount: 900,
+            message: 'second output'
+          }],
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2],
+          fee: 10000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        var path = 'm/44\'/1\'/0\'';
+        var key = Key.fromExtendedPrivateKey(masterPrivateKey);
+        var signatures = key.sign(path, txp);
+
+        signatures.length.should.be.equal(utxos.length);
+        signatures[0].should.equal('3045022100da83ffb02ce0c5c7f2b30d0eb2fd62d1177d282fff5ce7deb9d3a8fd6e002c9d022030f0f0b29dd1fb9b602c50e8916568aa0dd68054523989291decfdbf36d70299');
+        signatures[1].should.equal('3045022100951f980ad2fcd764a7824575e18aa4f28309b7160c353a0e3d239bff83050184022039c4ab5be5c40d19cd2c8bfcbf42a6262df851454a494ad78668be7d35519f05');
+      });
 
       it('should sign eth proposal correctly', () => {
         const toAddress = '0xa062a07a0a56beb2872b12f388f511d694626730';
@@ -1229,6 +1388,7 @@ describe('client API', () => {
         var txp = {
           version: 3,
           coin: 'bch',
+          signingMethod: 'ecdsa',
           inputs: utxos,
           outputs: [{
             toAddress: toAddress,
@@ -1255,6 +1415,47 @@ describe('client API', () => {
         signatures.length.should.be.equal(utxos.length);
         signatures[0].should.equal('304402200aa70dfe99e25792c4a7edf773477100b6659f1ba906e551e6e5218ec32d273402202e31c575edb55b2da824e8cafd02b4769017ef63d3c888718cf6f0243c570d41');
         signatures[1].should.equal('3045022100afde45e125f654453493b40d288cd66e8a011c66484509ae730a2686c9dff30502201bf34a6672c5848dd010b89ea1a5f040731acf78fec062f61b305e9ce32798a5');
+      });
+
+      it('should sign BCH proposal correctly (schnorr)', () => {
+        var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+        var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
+
+        var publicKeyRing = [{
+          xPubKey: new Bitcore.HDPublicKey(derivedPrivateKey['BIP44']),
+        }];
+
+        var utxos = helpers.generateUtxos('P2PKH', publicKeyRing, 'm/1/0', 1, [1000, 2000]);
+        var txp = {
+          version: 3,
+          coin: 'bch',
+          signingMethod: 'schnorr',
+          inputs: utxos,
+          outputs: [{
+            toAddress: toAddress,
+            amount: 800,
+            message: 'first output'
+          }, {
+            toAddress: toAddress,
+            amount: 900,
+            message: 'second output'
+          }],
+          changeAddress: {
+            address: changeAddress
+          },
+          requiredSignatures: 1,
+          outputOrder: [0, 1, 2],
+          fee: 10000,
+          derivationStrategy: 'BIP44',
+          addressType: 'P2PKH',
+        };
+        var path = 'm/44\'/1\'/0\'';
+        var key = Key.fromExtendedPrivateKey(masterPrivateKey);
+        var signatures = key.sign(path, txp);
+
+        signatures.length.should.be.equal(utxos.length);
+        signatures[0].should.equal('8127bbe9a3627fb307c3e919a2dd2dd69b22aaaa363abbda1d44a305fc8ec98ae082f3c3439c54c49ab20e6cc4ad0a077750583758de5a09b1d50d91befe30de');
+        signatures[1].should.equal('6b1494a6e8121215f40268f58b728585589c6933844b9bbcdae3fdd69be7c000d72c06143f554c5f9fd858a14e9d11cbb7c141901d8fc701c1f3c8c7328d6dc7');
       });
     });
   });
@@ -2071,12 +2272,59 @@ describe('client API', () => {
 
         clients[0].createAddress((err, x) => {
           should.not.exist(err);
-          should.not.exist(err);
           x.coin.should.equal('bch');
           x.network.should.equal('livenet');
           x.address.should.equal('qrvcdmgpk73zyfd8pmdl9wnuld36zh9n4gms8s0u59');
           done();
         })
+      });
+    });
+
+    it('should create a P2WPKH wallet and derive a valid Segwit address', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { network: 'livenet', addressType: 'P2WPKH', useNativeSegwit: true }, (w) => {
+        clients[0].createAddress((err, client) => {
+          should.not.exist(err);
+          client.address.should.include('bc1');
+          client.address.length.should.equal(42);
+          client.type.should.equal('P2WPKH');
+          done();
+        });
+      });
+    });
+
+    it('should create a P2WPKH testnet wallet and derive a valid Segwit testnet address', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 1, { network: 'testnet', addressType: 'P2WPKH', useNativeSegwit: true }, (w) => {
+        clients[0].createAddress((err, client) => {
+          should.not.exist(err);
+          client.address.should.include('tb1');
+          client.address.length.should.equal(42);
+          client.type.should.equal('P2WPKH');
+          done();
+        });
+      });
+    });
+
+    it('should create a P2WSH wallet and derive a valid Segwit address', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 2, { network: 'livenet', addressType: 'P2WSH', useNativeSegwit: true }, (w) => {
+        clients[0].createAddress((err, client) => {
+          should.not.exist(err);
+          client.address.should.include('bc1');
+          client.address.length.should.equal(62);
+          client.type.should.equal('P2WSH');
+          done();
+        });
+      });
+    });
+
+    it('should create a P2WSH testnet wallet and derive a valid Segwit testnet address', (done) => {
+      helpers.createAndJoinWallet(clients, keys, 1, 2, { network: 'testnet', addressType: 'P2WSH', useNativeSegwit: true }, (w) => {
+        clients[0].createAddress((err, client) => {
+          should.not.exist(err);
+          client.address.should.include('tb1');
+          client.address.length.should.equal(62);
+          client.type.should.equal('P2WSH');
+          done();
+        });
       });
     });
   });
@@ -2623,17 +2871,14 @@ describe('client API', () => {
   describe('Transaction Proposals Creation and Locked funds', () => {
     var myAddress;
     beforeEach((done) => {
-      db.dropDatabase((err) => {
-        helpers.createAndJoinWallet(clients, keys, 2, 3, {}, (w) => {
-
-          clients[0].createAddress((err, address) => {
-            should.not.exist(err);
-            myAddress = address;
-            blockchainExplorerMock.setUtxo(address, 2, 2);
-            blockchainExplorerMock.setUtxo(address, 2, 2);
-            blockchainExplorerMock.setUtxo(address, 1, 2, 0);
-            done(err);
-          });
+      helpers.createAndJoinWallet(clients, keys, 2, 3, {}, (w) => {
+        clients[0].createAddress((err, address) => {
+          should.not.exist(err);
+          myAddress = address;
+          blockchainExplorerMock.setUtxo(address, 2, 2);
+          blockchainExplorerMock.setUtxo(address, 2, 2);
+          blockchainExplorerMock.setUtxo(address, 1, 2, 0);
+          done(err);
         });
       });
     });
@@ -2926,6 +3171,7 @@ describe('client API', () => {
         feePerKb: 800e2,
       };
       helpers.createAndPublishTxProposal(clients[0], opts, (err, x) => {
+
         should.exist(err);
         err.should.be.an.instanceOf(Errors.INSUFFICIENT_FUNDS_FOR_FEE);
         opts.feePerKb = 100e2;
@@ -3275,7 +3521,240 @@ describe('client API', () => {
         });
       });
 
+      // DISABLED 2020-04-07
+      it.skip('Should sign proposal (legacy txp version 3)', (done) => {
+        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          txp.version.should.equal(3);
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            publishedTxp.status.should.equal('pending');
+
+
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.not.exist(err);
+              let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+              clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
+                should.not.exist(err);
+                txp.status.should.equal('accepted');
+                done();
+              });
+            });
+          });
+        }, '/v3/txproposals');
+      });
+
+      it.skip('Should fail with need_update error if trying to sign a txp v4 on old client', (done) => {
+        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          txp.version.should.equal(4);
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.exist(err);
+              err.toString().should.contain('upgrade');
+              done();
+            }, '/v1/txproposals/');
+          });
+        });
+      });
+
+      it.skip('Should fail with wrong_signatures error if trying to push v3 signatures to  a v4 txp v', (done) => {
+        var toAddress = 'n2TBMPzPECGUfcT2EByiTJ12TPZkhN2mN5';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          txp.version.should.equal(4);
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            txp.version = 3; // get v3 signatures
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.exist(err);
+              err.toString().should.contain('BAD_SIGNATURES');
+              done();
+            }, '/v2/txproposals/');
+          });
+        });
+      });
+ 
     });
+
+    describe('BCH multisig', (done) => {
+      beforeEach((done) => {
+        setup(2, 3, 'bch', 'testnet', done);
+      });
+
+      it('(BCH) two incompatible clients try to sign schnorr txp', (done) => {
+        var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            publishedTxp.status.should.equal('pending');
+
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.not.exist(err);
+              let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+              clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
+                should.exist(err);
+                err.message.should.contain("UPGRADE_NEEDED");
+                done();
+              }, '/v1/txproposals/');
+            });
+          });
+        });
+      });
+
+      it('BCH Multisig Txp signingMethod = schnorr', (done) => {
+        var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+          signingMethod: 'schnorr',       // forcing schnorr on BCH/livenet
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          txp.signingMethod.should.equal('schnorr'); 
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            publishedTxp.signingMethod.should.equal('schnorr'); 
+            publishedTxp.status.should.equal('pending');
+
+
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.not.exist(err);
+              let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
+              clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
+                should.not.exist(err);
+                txp.status.should.equal("accepted");
+                done();
+              }, '/v2/txproposals/');
+            }, '/v2/txproposals/');
+          });
+        });
+      });
+    })
+
+    describe('BCH testnet (schnorr activaton)', (done) => {
+      beforeEach((done) => {
+        setup(1, 1, 'bch', 'testnet', done);
+      });
+
+      it('should sign a tx', (done) => {
+        var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+          signingMethod: 'schnorr',       // forcing schnorr on BCH/livenet
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          txp.signingMethod.should.equal('schnorr'); 
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            publishedTxp.signingMethod.should.equal('schnorr'); 
+            publishedTxp.status.should.equal('pending');
+
+
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.not.exist(err);
+              txp.status.should.equal("accepted");
+              done();
+            });
+          });
+        });
+      });
+    })
+
 
     describe('BCH', (done) => {
       beforeEach((done) => {
@@ -3314,10 +3793,145 @@ describe('client API', () => {
           });
         });
       });
+
+      it('Should sign proposal v3', (done) => {
+        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+          txpVersion: 3,
+          coin: 'bch'
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            publishedTxp.status.should.equal('pending');
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.not.exist(err);
+              txp.status.should.equal('accepted');
+              done();
+            }, '/v1/txproposals/');
+          });
+        }, '/v3/txproposals');
+      });
+
+      it.skip('Should sign proposal (legacy txp version 3)', (done) => {
+        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+          coin: 'bch',
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          txp.version.should.equal(3);
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            publishedTxp.status.should.equal('pending');
+
+
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.not.exist(err);
+              txp.status.should.equal('accepted');
+              done();
+            });
+          });
+        }, '/v3/txproposals');
+      });
+
+      it.skip('Should fail with need_update error if trying to sign a txp v4 on old client', (done) => {
+        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          txp.version.should.equal(4);
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.exist(err);
+              err.toString().should.contain('upgrade');
+              done();
+            }, '/v1/txproposals/');
+          });
+        });
+      });
+
+      it.skip('Should fail with wrong_signatures error if trying to push v3 signatures to  a v4 txp v', (done) => {
+        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          txp.version.should.equal(4);
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            txp.version = 3; // get v3 signatures
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.exist(err);
+              err.toString().should.contain('BAD_SIGNATURES');
+              done();
+            }, '/v2/txproposals/');
+          });
+        });
+      });
     });
   });
 
-  describe('Payment Protocol V2', () => {
+  describe('Payment Protocol V2', function() {
     var PP, oldreq, DATA, postArgs;
     var header = {};
     var mockRequest = (bodyBuf, headers) => {
@@ -3352,7 +3966,7 @@ describe('client API', () => {
             send: (opts) => {
               var _opts = JSON.parse(opts);
               if (_opts.transactions) {
-                postArgs = _opts;
+                postArgs.push(_opts);
               }
             },
             agent: (_opts) => { },
@@ -3370,6 +3984,7 @@ describe('client API', () => {
     };
     beforeEach(() => {
       oldreq = Client.PayProV2.request;
+      postArgs = [];
     });
     afterEach((done) => {
       Client.PayProV2.request = oldreq;
@@ -3377,6 +3992,80 @@ describe('client API', () => {
         done();
       })
     });
+
+
+    let tests = [{ 
+      name: 'weightedSize: Legacy BTC',
+      opts: { network: 'livenet' },
+      expectedUnsignedSize: 220,
+    }, 
+    { 
+      name: 'weightedSize: Segwit BTC',
+      opts: { network: 'livenet', useNativeSegwit: true },
+      expectedUnsignedSize: 132,
+    }]
+
+    _.each(tests, x => {
+      describe(x.name, () => {
+        // Tests will be considered slow after 1 second elapses
+        beforeEach(async () => {
+          await new Promise((resolve) => {
+            PP = TestData.payProJsonV2.btc;
+            DATA = JSON.parse(TestData.payProJsonV2Body.btc);
+
+            mockRequest(Buffer.from(TestData.payProJsonV2.btc.body, 'hex'), TestData.payProJsonV2.btc.headers);
+            helpers.createAndJoinWallet(clients, keys, 1, 1, x.opts, (w) => {
+              clients[0].createAddress((err, x0) => {
+                should.not.exist(err);
+                should.exist(x0.address);
+                blockchainExplorerMock.setUtxo(x0, 1, 2);
+                blockchainExplorerMock.setUtxo(x0, 1, 2);
+                var opts = {
+                  paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
+                };
+
+                Client.PayProV2.selectPaymentOption(opts).then((paypro) => {
+                  //              http.getCall(0).args[0].coin.should.equal('btc');
+                  helpers.createAndPublishTxProposal(clients[0], {
+                    toAddress: paypro.instructions[0].toAddress,
+                    amount: paypro.instructions[0].amount,
+                    message: paypro.memo,
+                    payProUrl: paypro.payProUrl,
+                  }, (err, x) => {
+                    should.not.exist(err);
+                    resolve();
+                  });
+                });
+              });
+            });
+          })
+        });
+        it('Should send the signed tx in paypro', function (done) {
+          clients[0].getTxProposals({}, (err, txps) => {
+            should.not.exist(err);
+            let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
+            clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
+              should.not.exist(err);
+              xx.status.should.equal('accepted');
+
+              let spy = sinon.spy(Client.PayProV2.request, 'post');
+              clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
+                should.not.exist(err);
+                spy.called.should.be.true;
+
+                // unsigned
+                postArgs[0].transactions[0].weightedSize.should.within(x.expectedUnsignedSize, x.expectedUnsignedSize + 10);
+
+                // signed 
+                postArgs[1].transactions[0].weightedSize.should.within(220, 230);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
 
     describe('Shared wallet BTC', () => {
       // Tests will be considered slow after 1 second elapses
@@ -3488,9 +4177,6 @@ describe('client API', () => {
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
                 spy.called.should.be.true;
-                postArgs.currency.should.equal('BTC');
-                postArgs.transactions.length.should.equal(1);
-                postArgs.transactions[0].tx.length.should.be.within(665, 680);
                 memo.should.equal('Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)');
                 zz.message.should.equal('Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)');
                 done();
@@ -3515,7 +4201,7 @@ describe('client API', () => {
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
                 spy.called.should.be.true;
-                var rawTx = Buffer.from(postArgs.transactions[0].tx, 'hex');
+                var rawTx = Buffer.from(postArgs[1].transactions[0].tx, 'hex');
                 var tx = new Bitcore.Transaction(rawTx);
                 var script = tx.inputs[0].script;
                 script.isScriptHashIn().should.equal(true);
@@ -3619,9 +4305,9 @@ describe('client API', () => {
                 try {
                   should.not.exist(err);
                   spy.called.should.be.true;
-                  postArgs.currency.should.equal('BTC');
-                  postArgs.transactions.length.should.equal(1);
-                  postArgs.transactions[0].tx.length.should.be.within(665, 680);
+                  postArgs[1].currency.should.equal('BTC');
+                  postArgs[1].transactions.length.should.equal(1);
+                  postArgs[1].transactions[0].tx.length.should.be.within(665, 680);
 
                   memo.should.equal('Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)');
                   zz.message.should.equal('Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)');
@@ -3697,7 +4383,7 @@ describe('client API', () => {
             clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
               should.not.exist(err);
               spy.called.should.be.true;
-              var rawTx = Buffer.from(postArgs.transactions[0].tx, 'hex');
+              var rawTx = Buffer.from(postArgs[1].transactions[0].tx, 'hex');
               var tx = new Bitcore.Transaction(rawTx);
               var script = tx.inputs[0].script;
               script.isPublicKeyHashIn().should.equal(true);
@@ -3755,7 +4441,6 @@ describe('client API', () => {
       it('Should send the signed tx in paypro', (done) => {
         clients[0].getTxProposals({}, (err, txps) => {
           should.not.exist(err);
-          console.log(txps);
           let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
           clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
             should.not.exist(err);
@@ -3765,7 +4450,7 @@ describe('client API', () => {
             clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
               should.not.exist(err);
               spy.called.should.be.true;
-              var rawTx = Buffer.from(postArgs.transactions[0].tx, 'hex');
+              var rawTx = Buffer.from(postArgs[1].transactions[0].tx, 'hex');
               var tx = Bitcore_['bch'].Transaction(rawTx);
               var script = tx.inputs[0].script;
               script.isPublicKeyHashIn().should.equal(true);
@@ -4935,6 +5620,7 @@ describe('client API', () => {
           var words = keys[0].get(null, true).mnemonic;
           var walletName = clients[0].credentials.walletName;
           var copayerName = clients[0].credentials.copayerName;
+
           clients[0].createAddress((err, addr) => {
             should.not.exist(err);
             should.exist(addr);
@@ -5243,7 +5929,6 @@ describe('client API', () => {
 
 
       it('should be able to gain access to a OLD 44\' 2-2 wallet from mnemonic', function (done) {
-        this.timeout(5000);
         helpers.createAndJoinWallet(clients, keys, 2, 2, {
           useLegacyPurpose: true,
         }, () => {

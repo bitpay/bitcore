@@ -16,19 +16,13 @@ export class Client {
   getMessage(params: { method: string; url: string; payload?: any }) {
     const { method, url, payload = {} } = params;
     const parsedUrl = new URL(url);
-    return [
-      method,
-      parsedUrl.pathname + parsedUrl.search,
-      JSON.stringify(payload)
-    ].join('|');
+    return [method, parsedUrl.pathname + parsedUrl.search, JSON.stringify(payload)].join('|');
   }
 
   sign(params: { method: string; url: string; payload?: any }) {
     const message = this.getMessage(params);
     const privateKey = this.authKey.bn.toBuffer({ size: 32 });
-    const messageHash = bitcoreLib.crypto.Hash.sha256sha256(
-      Buffer.from(message)
-    );
+    const messageHash = bitcoreLib.crypto.Hash.sha256sha256(Buffer.from(message));
 
     return secp256k1.sign(messageHash, privateKey).signature.toString('hex');
   }
@@ -106,16 +100,17 @@ export class Client {
     });
   }
 
+  async getCoinsForTx(params) {
+    const { txId } = params;
+    const url = `${this.baseUrl}/tx/${txId}/coins`;
+    console.log('GET COINS FOR TX:', url);
+    return request.get(url, {
+      json: true
+    });
+  }
+
   listTransactions(params) {
-    const {
-      pubKey,
-      startBlock,
-      startDate,
-      endBlock,
-      endDate,
-      includeMempool,
-      tokenAddress
-    } = params;
+    const { pubKey, startBlock, startDate, endBlock, endDate, includeMempool, tokenAddress } = params;
     let url = `${this.baseUrl}/wallet/${pubKey}/transactions?`;
     if (startBlock) {
       url += `startBlock=${startBlock}&`;

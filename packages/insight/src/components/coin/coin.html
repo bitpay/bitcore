@@ -33,6 +33,16 @@
         </ion-label>
       </ion-chip>
     </ion-col>
+    <ion-note>
+      <ion-col col-1>
+        <span translate *ngIf="timeHidden"> 
+          <a (click)="revealTimeReceived(coin.mintTxid)"> Tx Details </a> 
+        </span>
+        <span class="time" translate *ngIf="!timeHidden"> 
+          Mined on <time>{{ coin.time * 1000 | date:'medium' }}</time>
+        </span>
+      </ion-col>
+    </ion-note>
   </ion-row>
 
   <ion-row *ngIf="coin?.spentTxid">
@@ -75,5 +85,15 @@
         </ion-label>
       </ion-chip>
     </ion-col>
+    <ion-note>
+      <ion-col col-1>
+        <span translate *ngIf="timeHidden"> 
+          <a (click)="revealTimeReceived(coin.spentTxid)"> Tx Details </a> 
+        </span>
+        <span class="time" translate *ngIf="!timeHidden"> 
+          Mined on <time>{{ coin.time * 1000 | date:'medium' }}</time>
+        </span>
+      </ion-col>
+    </ion-note>
   </ion-row>
 </ion-grid>

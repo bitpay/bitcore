@@ -59,6 +59,7 @@ export interface ITxProposal {
   proposalSignature: string;
   proposalSignaturePubKey: string;
   proposalSignaturePubKeySig: string;
+  signingMethod: string;
   lowFees: boolean;
   nonce?: number;
   gasPrice?: number;
@@ -67,6 +68,7 @@ export interface ITxProposal {
   tokenAddress?: string;
   destinationTag?: string;
   invoiceID?: string;
+  lockUntilBlockHeight?: number;
 }
 
 export class TxProposal {
@@ -114,6 +116,7 @@ export class TxProposal {
   proposalSignature: string;
   proposalSignaturePubKey: string;
   proposalSignaturePubKeySig: string;
+  signingMethod: string;
   raw?: Array<string> | string;
   nonce?: number;
   gasPrice?: number;
@@ -122,18 +125,24 @@ export class TxProposal {
   tokenAddress?: string;
   destinationTag?: string;
   invoiceID?: string;
+  lockUntilBlockHeight?: number;
 
   static create(opts) {
     opts = opts || {};
 
     $.checkArgument(Utils.checkValueInCollection(opts.coin, Constants.COINS));
-    $.checkArgument(
-      Utils.checkValueInCollection(opts.network, Constants.NETWORKS)
-    );
+    $.checkArgument(Utils.checkValueInCollection(opts.network, Constants.NETWORKS));
 
     const x = new TxProposal();
 
-    x.version = 3;
+    // allow creating legacy tx version == 3 only for testing
+    if (opts.version) {
+      $.checkArgument(opts.version >= 3);
+    }
+
+    // x.version = opts.version || 5; // DISABLED 2020-04-07
+    x.version = opts.version || 3;
+    $.checkState(x.version <= 3, 'txp version 4 not allowed yet');
 
     const now = Date.now();
     x.createdOn = Math.floor(now / 1000);
@@ -142,10 +151,11 @@ export class TxProposal {
     x.creatorId = opts.creatorId;
     x.coin = opts.coin;
     x.network = opts.network;
+    x.signingMethod = opts.signingMethod;
     x.message = opts.message;
     x.payProUrl = opts.payProUrl;
     x.changeAddress = opts.changeAddress;
-    x.outputs = _.map(opts.outputs, (output) => {
+    x.outputs = _.map(opts.outputs, output => {
       return _.pick(output, ['amount', 'toAddress', 'message', 'data', 'gasLimit', 'script']);
     });
     x.outputOrder = _.range(x.outputs.length + 1);
@@ -155,21 +165,14 @@ export class TxProposal {
     x.walletM = opts.walletM;
     x.walletN = opts.walletN;
     x.requiredSignatures = x.walletM;
-    (x.requiredRejections = Math.min(x.walletM, x.walletN - x.walletM + 1)),
-      (x.status = 'temporary');
+    (x.requiredRejections = Math.min(x.walletM, x.walletN - x.walletM + 1)), (x.status = 'temporary');
     x.actions = [];
     x.feeLevel = opts.feeLevel;
     x.feePerKb = opts.feePerKb;
     x.excludeUnconfirmedUtxos = opts.excludeUnconfirmedUtxos;
 
-    x.addressType =
-      opts.addressType ||
-      (x.walletN > 1
-        ? Constants.SCRIPT_TYPES.P2SH
-        : Constants.SCRIPT_TYPES.P2PKH);
-    $.checkState(
-      Utils.checkValueInCollection(x.addressType, Constants.SCRIPT_TYPES)
-    );
+    x.addressType = opts.addressType || (x.walletN > 1 ? Constants.SCRIPT_TYPES.P2SH : Constants.SCRIPT_TYPES.P2PKH);
+    $.checkState(Utils.checkValueInCollection(x.addressType, Constants.SCRIPT_TYPES));
 
     x.customData = opts.customData;
 
@@ -177,6 +180,12 @@ export class TxProposal {
 
     x.setInputs(opts.inputs);
     x.fee = opts.fee;
+
+    if (x.version === 4) {
+      x.lockUntilBlockHeight = opts.lockUntilBlockHeight;
+    }
+
+    // Coin specific features
 
     // ETH
     x.gasPrice = opts.gasPrice;
@@ -221,7 +230,7 @@ export class TxProposal {
     x.txid = obj.txid;
     x.broadcastedOn = obj.broadcastedOn;
     x.inputPaths = obj.inputPaths;
-    x.actions = _.map(obj.actions, (action) => {
+    x.actions = _.map(obj.actions, action => {
       return TxProposalAction.fromObj(action);
     });
     x.outputOrder = obj.outputOrder;
@@ -233,8 +242,11 @@ export class TxProposal {
     x.customData = obj.customData;
 
     x.proposalSignature = obj.proposalSignature;
+    x.signingMethod = obj.signingMethod;
     x.proposalSignaturePubKey = obj.proposalSignaturePubKey;
     x.proposalSignaturePubKeySig = obj.proposalSignaturePubKeySig;
+
+    x.lockUntilBlockHeight = obj.lockUntilBlockHeight;
 
     // ETH
     x.gasPrice = obj.gasPrice;
@@ -276,20 +288,12 @@ export class TxProposal {
     }
   }
 
-  /* this will build the Bitcoin-lib tx OR an adaptor for CWC transactions */
-  _buildTx() {
-    $.checkState(
-      Utils.checkValueInCollection(this.addressType, Constants.SCRIPT_TYPES)
-    );
-    return ChainService.buildTx(this);
-  }
-
-  _getCurrentSignatures() {
-    const acceptedActions = _.filter(this.actions, (a) => {
+  getCurrentSignatures() {
+    const acceptedActions = _.filter(this.actions, a => {
       return a.type == 'accept';
     });
 
-    return _.map(acceptedActions, (x) => {
+    return _.map(acceptedActions, x => {
       return {
         signatures: x.signatures,
         xpub: x.xpub
@@ -297,56 +301,9 @@ export class TxProposal {
     });
   }
 
-  getBitcoreTx() {
-    const t = this._buildTx();
-    const sigs = this._getCurrentSignatures();
-    _.each(sigs, (x) => {
-      ChainService.addSignaturesToBitcoreTx(this.coin, t, this.inputs, this.inputPaths, x.signatures, x.xpub);
-    });
-
-    return t;
-  }
-
   getRawTx() {
-    const t = this.getBitcoreTx();
-
+    const t = ChainService.getBitcoreTx(this);
     return t.uncheckedSerialize();
-  }
-
-  getEstimatedSizeForSingleInput() {
-    switch (this.addressType) {
-      case Constants.SCRIPT_TYPES.P2PKH:
-        return 147;
-      default:
-      case Constants.SCRIPT_TYPES.P2SH:
-        return this.requiredSignatures * 72 + this.walletN * 36 + 44;
-    }
-  }
-
-  getEstimatedSize() {
-    // Note: found empirically based on all multisig P2SH inputs and within m & n allowed limits.
-    const safetyMargin = 0.02;
-
-    const overhead = 4 + 4 + 9 + 9;
-    const inputSize = this.getEstimatedSizeForSingleInput();
-    const outputSize = 34;
-    const nbInputs = this.inputs.length;
-    const nbOutputs =
-      (_.isArray(this.outputs) ? Math.max(1, this.outputs.length) : 1) + 1;
-
-    const size = overhead + inputSize * nbInputs + outputSize * nbOutputs;
-
-    return parseInt((size * (1 + safetyMargin)).toFixed(0));
-  }
-
-  getEstimatedFee() {
-    $.checkState(_.isNumber(this.feePerKb));
-    const fee = (this.feePerKb * this.getEstimatedSize()) / 1000;
-    return parseInt(fee.toFixed(0));
-  }
-
-  estimateFee() {
-    this.fee = this.getEstimatedFee();
   }
 
   /**
@@ -374,7 +331,7 @@ export class TxProposal {
    */
   getApprovers() {
     return _.map(
-      _.filter(this.actions, (a) => {
+      _.filter(this.actions, a => {
         return a.type == 'accept';
       }),
       'copayerId'
@@ -408,8 +365,16 @@ export class TxProposal {
   sign(copayerId, signatures, xpub) {
     try {
       // Tests signatures are OK
-      const tx = this.getBitcoreTx();
-      ChainService.addSignaturesToBitcoreTx(this.coin, tx, this.inputs, this.inputPaths, signatures, xpub);
+      const tx = ChainService.getBitcoreTx(this);
+      ChainService.addSignaturesToBitcoreTx(
+        this.coin,
+        tx,
+        this.inputs,
+        this.inputPaths,
+        signatures,
+        xpub,
+        this.signingMethod
+      );
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
       if (this.status == 'accepted') {

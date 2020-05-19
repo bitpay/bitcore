@@ -1,7 +1,8 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
+import * as log from 'npmlog';
 import { IAddress } from 'src/lib/model/address';
-import { IChain } from '..';
+import { IChain, INotificationData } from '..';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
@@ -48,23 +49,20 @@ export class XrpChain implements IChain {
         if (err) return cb(err);
         const lockedSum = _.sumBy(txps, 'amount') || 0;
         const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
-        server.storage.fetchAddresses(
-          server.walletId,
-          (err, addresses: IAddress[]) => {
-            if (err) return cb(err);
-            if (addresses.length > 0) {
-              const byAddress = [
-                {
-                  address: addresses[0].address,
-                  path: addresses[0].path,
-                  amount: convertedBalance.totalAmount
-                }
-              ];
-              convertedBalance.byAddress = byAddress;
-            }
-            return cb(null, convertedBalance);
+        server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
+          if (err) return cb(err);
+          if (addresses.length > 0) {
+            const byAddress = [
+              {
+                address: addresses[0].address,
+                path: addresses[0].path,
+                amount: convertedBalance.totalAmount
+              }
+            ];
+            convertedBalance.byAddress = byAddress;
           }
-        );
+          return cb(null, convertedBalance);
+        });
       });
     });
   }
@@ -118,7 +116,7 @@ export class XrpChain implements IChain {
     });
   }
 
-  buildTx(txp) {
+  getBitcoreTx(txp, opts = { signed: true }) {
     const { destinationTag, outputs } = txp;
     const chain = 'XRP';
     const recipients = outputs.map(output => {
@@ -138,7 +136,7 @@ export class XrpChain implements IChain {
       });
       unsignedTxs.push(rawTx);
     }
-    return {
+    let tx = {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
       toObject: () => {
@@ -151,17 +149,26 @@ export class XrpChain implements IChain {
       },
       getChangeOutput: () => null
     };
+
+    if (opts.signed) {
+      const sigs = txp.getCurrentSignatures();
+      sigs.forEach(x => {
+        this.addSignaturesToBitcoreTx(tx, txp.inputs, txp.inputPaths, x.signatures, x.xpub);
+      });
+    }
+
+    return tx;
   }
 
   convertFeePerKb(p, feePerKb) {
     return [p, feePerKb];
   }
 
-  checkTx(server, txp) {
+  checkTx(txp) {
     try {
-      txp.getBitcoreTx();
+      this.getBitcoreTx(txp);
     } catch (ex) {
-      server.logw('Error building Bitcore transaction', ex);
+      log.warn('Error building XRP  transaction', ex);
       return ex;
     }
   }
@@ -170,38 +177,28 @@ export class XrpChain implements IChain {
     return cb();
   }
 
-  selectTxInputs(server, txp, wallet, opts, cb, next) {
-    server.getBalance(
-      { wallet },
-      (err, balance) => {
-if (err) return next(err);
-const { totalAmount, availableAmount } = balance;
-if (totalAmount < txp.getTotalAmount()) {
-          return cb(Errors.INSUFFICIENT_FUNDS);
-        } else if (availableAmount < txp.getTotalAmount()) {
-
-return cb(Errors.LOCKED_FUNDS);
-        } else {
-          return next(server._checkTx(txp));
-        }
+  selectTxInputs(server, txp, wallet, opts, cb) {
+    server.getBalance({ wallet }, (err, balance) => {
+      if (err) return cb(err);
+      const { totalAmount, availableAmount } = balance;
+      if (totalAmount < txp.getTotalAmount()) {
+        return cb(Errors.INSUFFICIENT_FUNDS);
+      } else if (availableAmount < txp.getTotalAmount()) {
+        return cb(Errors.LOCKED_FUNDS);
+      } else {
+        return cb(this.checkTx(txp));
       }
-    );
+    });
   }
 
   checkUtxos(opts) {}
 
   checkValidTxAmount(output): boolean {
-    if (
-      !_.isNumber(output.amount) ||
-      _.isNaN(output.amount) ||
-      output.amount < 0
-    ) {
+    if (!_.isNumber(output.amount) || _.isNaN(output.amount) || output.amount < 0) {
       return false;
     }
     return true;
   }
-
-  setInputs() {}
 
   isUTXOCoin() {
     return false;
@@ -252,14 +249,24 @@ return cb(Errors.LOCKED_FUNDS);
 
   validateAddress(wallet, inaddr, opts) {
     const chain = 'XRP';
-    const isValidAddress = Validation.validateAddress(
-      chain,
-      wallet.network,  // not really used for ETH. wallet.network is 'livenet/testnet/regtest' in wallet.
-      inaddr
-    );
-    if (!isValidAddress) {
-      return Errors.INVALID_ADDRESS;
+    const isValidTo = Validation.validateAddress(chain, wallet.network, inaddr);
+    if (!isValidTo) {
+      throw Errors.INVALID_ADDRESS;
+    }
+    const isValidFrom = Validation.validateAddress(chain, wallet.network, opts.from);
+    if (!isValidFrom) {
+      throw Errors.INVALID_ADDRESS;
     }
     return;
+  }
+
+  onCoin(coin) {
+    return null;
+  }
+  onTx(tx) {
+    // TODO
+    // format tx to
+    // {address, amount}
+    return null;
   }
 }

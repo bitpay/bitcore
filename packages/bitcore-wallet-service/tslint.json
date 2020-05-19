@@ -1,14 +1,9 @@
 {
   "defaultSeverity": "error",
-  "extends": [
-    "tslint:recommended"
-  ],
+  "extends": ["tslint:recommended", "tslint-config-prettier"],
   "jsRules": {},
   "rules": {
-    // "interface-name": [true, "never-prefix"],
     "no-submodule-imports": false,
-    // "no-any": true,
-    // Temporarily relax rules
     "member-ordering": false,
     "variable-name": false,
     "no-empty": false,
@@ -21,6 +16,7 @@
     "prefer-for-of": false,
     "forin": false,
     "prefer-const": false,
+    "no-bitwise": false,
     "no-unused-expression": false,
     "no-eval": false,
     "no-object-literal-type-assertion": false,
@@ -29,12 +25,7 @@
     "no-var-keyword": false,
     "curly": false,
     "member-access": false,
-    "quotemark": [
-      true,
-      "single",
-      "avoid-escape",
-      "avoid-template"
-    ],
+    "quotemark": [true, "single", "avoid-escape", "avoid-template"],
     "trailing-comma": [
       true,
       {

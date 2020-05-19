@@ -1,0 +1,86 @@
+#!/usr/bin/env node
+
+'use strict';
+
+const program = require('../ts_build/program');
+const { Wallet } = require('../ts_build/wallet');
+const promptly = require('promptly');
+const https = require('https');
+
+program
+  .version(require('../package.json').version)
+  .option('--name <name>', 'REQUIRED - Wallet Name')
+  .option('--to <to>', 'REQUIRED - string address')
+  .option('--amount <amount>', 'REQUIRED - number amount (in btc/bch/eth/xrp)')
+  .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--token [token]', 'optional - ERC-20 token to send')
+  .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
+  .parse(process.argv);
+
+const main = async () => {
+  const { name, path, to, amount, target, token, storageType } = program;
+  let wallet;
+  let data;
+  try {
+    data = await getCurrencies();
+  } catch (err) {
+    console.error(err);
+  }
+  const currencies = JSON.parse(data);
+  try {
+    wallet = await Wallet.loadWallet({ name, path, storageType });
+    const chain = wallet.chain;
+    const currency = token || chain;
+    const { decimals } = currencies.data.find(element => element.code === currency);
+    const scale = Math.pow(10, decimals);
+    const lastAddress = await wallet.deriveAddress(0);
+    const recipients = [{ address: to, amount: amount * scale }];
+    const feerate = await wallet.getNetworkFee();
+    const feeRate = JSON.parse(feerate).feerate || 20 * scale;
+    let nonce;
+    if (!['BTC', 'BCH'].includes(chain)) {
+      nonce = await wallet.getNonce();
+    }
+    const utxos = await wallet.getUtxosArray();
+    const params = {
+      feeRate,
+      nonce: Number(nonce),
+      utxos,
+      recipients,
+      from: lastAddress,
+      token
+    };
+    const tx = await wallet.newTx(params);
+    console.log('unsignedRawTx: ', tx);
+    const passphrase = await promptly.password('Wallet Password:');
+    wallet = await wallet.unlock(passphrase);
+    const signedTx = await wallet.signTx({ tx, passphrase });
+    console.log('signedRawTx: ', signedTx);
+    const confirmed = await promptly.confirm('broadcast? (y/n)');
+    if (!confirmed) {
+      return;
+    }
+    const transaction = await wallet.broadcast({ tx:signedTx });
+    console.log('txid: ', transaction.txid);
+    console.log('Transaction broadcasted');
+  } catch (e) {
+    console.error(e);
+  }
+};
+
+function getCurrencies() {
+  return new Promise((resolve, reject) => {
+    https.get('https://bitpay.com/currencies', res => {
+      if (res.statusCode !== 200) {
+        reject(new Error('Request Failed'));
+      }
+      let data = '';
+      res.on('data', (chunk) => {
+        data += chunk;
+      });
+      res.on('end', () => resolve(data.toString()));
+    });
+  });
+}
+
+main();

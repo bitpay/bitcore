@@ -53,25 +53,6 @@ describe('TxProposal', function() {
     });
   });
 
-  describe('#getBitcoreTx', function() {
-    it('should create a valid bitcore TX', function() {
-      var txp = TxProposal.fromObj(aTXP());
-      var t = txp.getBitcoreTx();
-      should.exist(t);
-    });
-    it('should order outputs as specified by outputOrder', function() {
-      var txp = TxProposal.fromObj(aTXP());
-
-      txp.outputOrder = [0, 1, 2];
-      var t = txp.getBitcoreTx();
-      t.getChangeOutput().should.deep.equal(t.outputs[2]);
-
-      txp.outputOrder = [2, 0, 1];
-      var t = txp.getBitcoreTx();
-      t.getChangeOutput().should.deep.equal(t.outputs[0]);
-    });
-  });
-
   describe('#getTotalAmount', function() {
     it('should compute total amount', function() {
       var x = TxProposal.fromObj(aTXP());
@@ -80,27 +61,20 @@ describe('TxProposal', function() {
     });
   });
 
-  describe('#getEstimatedSize', function() {
-    it('should return estimated size in bytes', function() {
-      var x = TxProposal.fromObj(aTXP());
-      x.getEstimatedSize().should.equal(396);
-    });
-  });
-
   describe('#sign', function() {
-    it('should sign 2-2', function() {
+    it('should sign 2-2 (txp version 3, btc tx version 1)', function() {
       var txp = TxProposal.fromObj(aTXP());
       txp.sign('1', theSignatures, theXPub);
       txp.isAccepted().should.equal(false);
       txp.isRejected().should.equal(false);
       txp.sign('2', theSignatures, theXPub);
-      txp.isAccepted().should.equal(true);
+      txp.isAccepted().should.equal(true); //<===
       txp.isRejected().should.equal(false);
     });
   });
 
   describe('#getRawTx', function() {
-    it('should generate correct raw transaction for signed 2-2', function() {
+    it('should generate correct raw transaction for signed 2-2, tx version 1', function() {
       var txp = TxProposal.fromObj(aTXP());
       txp.sign('1', theSignatures, theXPub);
       txp.getRawTx().should.equal(theRawTx);
