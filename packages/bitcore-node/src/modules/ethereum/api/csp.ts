@@ -133,14 +133,13 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     const balances = await CacheStorage.getGlobalOrRefresh(
       cacheKey,
       async () => {
-        let balance = 0;
         if (tokenAddress) {
           const token = await this.erc20For(network, params.args.tokenAddress);
-          balance = Number(await token.methods.balanceOf(address).call());
-          return { confirmed: balance, unconfirmed: 0, balance };
+          const balance = await token.methods.balanceOf(address).call();
+          return { confirmed: balance, unconfirmed: 0, balance: Number(balance) };
         } else {
-          balance = Number(await web3.eth.getBalance(address));
-          const data = { confirmed: balance, unconfirmed: 0, balance };
+          const balance = await web3.eth.getBalance(address);
+          const data = { confirmed: balance, unconfirmed: 0, balance: Number(balance) };
           return data;
         }
       },
