@@ -123,25 +123,25 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
-    const { network, address } = params;
+    const { chain, network, address } = params;
     const { web3 } = await this.getWeb3(network);
     const tokenAddress = params.args && params.args.tokenAddress;
     const addressLower = address.toLowerCase();
     const cacheKey = tokenAddress
-      ? `getBalanceForAddress-${addressLower}-${tokenAddress.toLowerCase()}`
-      : `getBalanceForAddress-${addressLower}`;
+      ? `getBalanceForAddress-${chain}-${network}-${addressLower}-${tokenAddress.toLowerCase()}`
+      : `getBalanceForAddress-${chain}-${network}-${addressLower}`;
     const balances = await CacheStorage.getGlobalOrRefresh(
       cacheKey,
       async () => {
-        let balance = 0;
         if (tokenAddress) {
           const token = await this.erc20For(network, params.args.tokenAddress);
-          balance = Number(await token.methods.balanceOf(address).call());
-          return { confirmed: balance, unconfirmed: 0, balance };
+          const balance = await token.methods.balanceOf(address).call();
+          const numberBalance = Number(balance);
+          return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
         } else {
-          balance = Number(await web3.eth.getBalance(address));
-          const data = { confirmed: balance, unconfirmed: 0, balance };
-          return data;
+          const balance = await web3.eth.getBalance(address);
+          const numberBalance = Number(balance);
+          return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
         }
       },
       CacheStorage.Times.Day

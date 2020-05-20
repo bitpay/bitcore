@@ -109,6 +109,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   async expireBalanceCache(txOps: Array<any>) {
     for (const op of txOps) {
       let batch = new Array<{ tokenAddress?: string; address: string }>();
+      const { chain, network } = op.updateOne.filter;
       const { from, to, abiType } = op.updateOne.update.$set;
       batch = batch.concat([{ address: from }, { address: to }]);
       if (abiType && abiType.params.length) {
@@ -118,8 +119,8 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       for (const payload of batch) {
         const lowerAddress = payload.address.toLowerCase();
         const cacheKey = payload.tokenAddress
-          ? `getBalanceForAddress-${lowerAddress}-${to.toLowerCase()}`
-          : `getBalanceForAddress-${lowerAddress}`;
+          ? `getBalanceForAddress-${chain}-${network}-${lowerAddress}-${to.toLowerCase()}`
+          : `getBalanceForAddress-${chain}-${network}-${lowerAddress}`;
         await CacheStorage.expire(cacheKey);
       }
     }
