@@ -102,24 +102,31 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       network = 'mainnet';
     }
 
-    const txs = await EthTransactionStorage.collection
-      .find({ chain, network, blockHeight: { $gt: 0 } })
-      .project({ gasPrice: 1, blockHeight: 1 })
-      .sort({ blockHeight: -1 })
-      .limit(20 * 200)
-      .toArray();
+    const cacheKey = `getFee-${chain}-${network}-${target}`;
+    return CacheStorage.getGlobalOrRefresh(
+      cacheKey,
+      async () => {
+        const txs = await EthTransactionStorage.collection
+          .find({ chain, network, blockHeight: { $gt: 0 } })
+          .project({ gasPrice: 1, blockHeight: 1 })
+          .sort({ blockHeight: -1 })
+          .limit(20 * 200)
+          .toArray();
 
-    const blockGasPrices = txs
-      .map(tx => Number(tx.gasPrice))
-      .filter(gasPrice => gasPrice)
-      .sort((a, b) => b - a);
+        const blockGasPrices = txs
+          .map(tx => Number(tx.gasPrice))
+          .filter(gasPrice => gasPrice)
+          .sort((a, b) => b - a);
 
-    const whichQuartile = Math.min(target, 4) || 1;
-    const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, whichQuartile);
+        const whichQuartile = Math.min(target, 4) || 1;
+        const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, whichQuartile);
 
-    const roundedGwei = (quartileMedian / 1e9).toFixed(2);
-    const feerate = Number(roundedGwei) * 1e9;
-    return { feerate, blocks: target };
+        const roundedGwei = (quartileMedian / 1e9).toFixed(2);
+        const feerate = Number(roundedGwei) * 1e9;
+        return { feerate, blocks: target };
+      },
+      CacheStorage.Times.Minute
+    );
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
