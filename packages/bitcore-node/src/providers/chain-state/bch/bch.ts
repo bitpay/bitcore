@@ -15,7 +15,7 @@ export class BCHStateProvider extends BTCStateProvider {
       async () => {
         return { feerate: await this.getRPC(chain, network).getEstimateFee() };
       },
-      CacheStorage.Times.Minute
+      30 * CacheStorage.Times.Minute
     );
   }
 }

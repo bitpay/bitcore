@@ -462,7 +462,7 @@ export class InternalStateProvider implements IChainStateService {
       async () => {
         return this.getRPC(chain, network).getEstimateSmartFee(Number(target));
       },
-      CacheStorage.Times.Minute
+      5 * CacheStorage.Times.Minute
     );
   }
 
