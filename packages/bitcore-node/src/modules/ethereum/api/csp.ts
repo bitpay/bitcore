@@ -128,8 +128,8 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     const tokenAddress = params.args && params.args.tokenAddress;
     const addressLower = address.toLowerCase();
     const cacheKey = tokenAddress
-      ? `getBalanceForAddress-${addressLower}-${tokenAddress.toLowerCase()}`
-      : `getBalanceForAddress-${addressLower}`;
+      ? `getBalanceForAddress-${network}-${addressLower}-${tokenAddress.toLowerCase()}`
+      : `getBalanceForAddress-${network}-${addressLower}`;
     const balances = await CacheStorage.getGlobalOrRefresh(
       cacheKey,
       async () => {
