@@ -81,7 +81,7 @@ describe('Ethereum', function() {
     const balance = await wallet.getBalance();
     expect(balance.confirmed).to.be.gt(0);
 
-    const key = 'getBalanceForAddress-testnet-0xd8fd14fb0e0848cb931c1e54a73486c4b968be3d';
+    const key = 'getBalanceForAddress-ETH-testnet-0xd8fd14fb0e0848cb931c1e54a73486c4b968be3d';
     const cached = await CacheStorage.collection.findOne({ key });
     expect(cached).to.exist;
     expect(cached!.value).to.deep.eq(balance);
