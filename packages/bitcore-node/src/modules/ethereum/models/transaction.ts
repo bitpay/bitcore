@@ -4,6 +4,7 @@ import { LoggifyClass } from '../../../decorators/Loggify';
 import logger from '../../../logger';
 import { MongoBound } from '../../../models/base';
 import { BaseTransaction } from '../../../models/baseTransaction';
+import { CacheStorage } from '../../../models/cache';
 import { EventStorage } from '../../../models/events';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import { Config } from '../../../services/config';
@@ -87,6 +88,10 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     );
     await Promise.all(operations);
 
+    if (params.initialSyncComplete) {
+      await this.expireBalanceCache(txOps);
+    }
+
     // Create events for mempool txs
     if (params.height < SpentHeightIndicators.minimum) {
       for (let op of txOps) {
@@ -97,6 +102,25 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
           address: tx.to,
           coin: { value: tx.value, address: tx.to, chain: params.chain, network: params.network, mintTxid: tx.txid }
         });
+      }
+    }
+  }
+
+  async expireBalanceCache(txOps: Array<any>) {
+    for (const op of txOps) {
+      let batch = new Array<{ tokenAddress?: string; address: string }>();
+      const { from, to, abiType } = op.updateOne.update.$set;
+      batch = batch.concat([{ address: from }, { address: to }]);
+      if (abiType && abiType.params.length) {
+        batch.push({ address: from, tokenAddress: to });
+        batch.push({ address: abiType.params[0].value, tokenAddress: to });
+      }
+      for (const payload of batch) {
+        const lowerAddress = payload.address.toLowerCase();
+        const cacheKey = payload.tokenAddress
+          ? `getBalanceForAddress-${lowerAddress}-${to.toLowerCase()}`
+          : `getBalanceForAddress-${lowerAddress}`;
+        await CacheStorage.expire(cacheKey);
       }
     }
   }

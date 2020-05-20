@@ -113,6 +113,13 @@ export class Mongo {
     return JSON.stringify(wallet);
   }
 
+  async deleteWallet(params: { name: string }) {
+    await this.init({ wallet: 1 });
+    const { name } = params;
+    await this.collection.deleteOne({ name });
+    await this.close();
+  }
+
   async getKey(params: { address: string; name: string; keepAlive: boolean; open: boolean }) {
     if (params.open) {
       await this.init({ addresses: 1 });

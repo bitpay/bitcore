@@ -55,6 +55,11 @@ export class Level {
     return (await this.db.get(`wallet|${name}`)) as string;
   }
 
+  async deleteWallet(params: { name: string }) {
+    const { name } = params;
+    await this.db.del(`wallet|${name}`);
+  }
+
   async listWallets() {
     return this.db.createReadStream().pipe(
       new Transform({
