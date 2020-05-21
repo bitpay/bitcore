@@ -546,6 +546,19 @@ export class Storage {
       });
   }
 
+  fetchAdvertsByCountry(country, cb) {
+    this.db
+      .collection(collections.ADVERTISEMENTS)
+      .find({
+        country
+      })
+      .toArray((err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result.map(Advertisement.fromObj));
+      });
+  }
+
   fetchAllAdverts(cb) {
     this.db.collection(collections.ADVERTISEMENTS).find({});
   }
@@ -687,8 +700,7 @@ export class Storage {
   storeAdvert(advert, cb) {
     this.db.collection(collections.ADVERTISEMENTS).update(
       {
-        advertisementId: advert.advertisementId,
-        title: advert.title
+        advertisementId: advert.advertisementId
       },
       advert,
       {

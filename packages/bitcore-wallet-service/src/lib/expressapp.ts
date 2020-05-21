@@ -526,6 +526,24 @@ export class ExpressApp {
       }
     });
 
+    router.get('/v1/advertisements/:country', (req, res) => {
+      let server;
+      let country = req.params['country'];
+
+      let opts = { country };
+
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      server.getAdvertsByCountry(opts, (err, ads) => {
+        if (err) returnError(err, res, req);
+        res.json(ads);
+      });
+    });
+
     router.delete('/v1/advertisements/:adId/', (req, res) => {
       getServerWithAuth(
         req,

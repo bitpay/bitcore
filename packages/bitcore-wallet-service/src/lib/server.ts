@@ -3602,7 +3602,7 @@ export class WalletService {
     opts = opts ? _.clone(opts) : {};
 
     // Usually do error checking on preconditions
-    if (!checkRequired(opts, ['title', 'body', 'imgUrl', 'linkText', 'linkUrl', 'app'], cb)) {
+    if (!checkRequired(opts, ['title'], cb)) {
       return;
     }
     // Check if ad exists already
@@ -3621,6 +3621,8 @@ export class WalletService {
           x.advertisementId = Uuid.v4();
           x.name = opts.name;
           x.title = opts.title;
+          x.country = opts.country;
+          x.type = opts.type;
           x.body = opts.body;
           x.imgUrl = opts.imgUrl;
           x.linkText = opts.linkText;
@@ -3630,7 +3632,7 @@ export class WalletService {
           x.app = opts.app;
           x.isTesting = opts.isTesting;
 
-          return cb(null, x.advertisementId);
+          return cb(null, x);
         }
       });
     };
@@ -3660,6 +3662,18 @@ export class WalletService {
    */
   getAdverts(opts, cb) {
     this.storage.fetchActiveAdverts((err, adverts) => {
+      if (err) return cb(err);
+      return cb(null, adverts);
+    });
+  }
+
+  /**
+   * Get adverts by country
+   * @param opts.country
+   * @param cb
+   */
+  getAdvertsByCountry(opts, cb) {
+    this.storage.fetchAdvertsByCountry(opts.country, (err, adverts) => {
       if (err) return cb(err);
       return cb(null, adverts);
     });

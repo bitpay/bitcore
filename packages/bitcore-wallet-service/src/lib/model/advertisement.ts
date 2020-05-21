@@ -6,6 +6,7 @@ export interface IAdvertisement {
   advertisementId: string;
   type: string;
   title: string;
+  country: string;
   body: string;
   imgUrl: string;
   linkText: string;
@@ -20,6 +21,7 @@ export class Advertisement {
   advertisementId: string;
   name: string;
   title: string;
+  country: string;
   type: string;
   body: string;
   imgUrl: string;
@@ -35,6 +37,7 @@ export class Advertisement {
     const x = new Advertisement();
     x.name = opts.name;
     x.title = opts.title;
+    x.country = opts.country;
     x.type = opts.type;
     x.body = opts.body;
     x.imgUrl = opts.imgUrl;
@@ -53,6 +56,7 @@ export class Advertisement {
     x.name = obj.name;
     x.advertisementId = obj.advertisementId;
     x.title = obj.title;
+    x.country = obj.country;
     x.type = obj.type;
     x.body = obj.body;
     x.imgUrl = obj.imgUrl;

@@ -7,8 +7,26 @@ program = utils.configureCommander(program);
 
 program
   .option('-a, --active', 'Makes ad active', true)
-  .usage('[options] <name> <title> <body> <imgUrl> <linkText> <linkUrl> <app>')
+  .usage('[options] <name> <title> <country> <body> <imgUrl> <linkText> <linkUrl> <app>')
   .parse(process.argv);
+
+// Pseudo code
+// message, m
+// JSON.stringify (
+//  {
+//    id,
+//    name,
+//    title,
+//    country,
+//    body, 
+//    imgUrl,
+//    linkTest,
+//    linkUrl,
+//    app
+//  }
+
+// Sign (m, privkey)
+// Verify(signature, m, publicKey)
 
 var args = program.args;
 var host = 'http://localhost:3232/bws/api/';
@@ -19,15 +37,17 @@ var clientArgs = {
 
 var name = args[0];
 var title = args[1];
-var body = args[2];
-var imgUrl = args[3];
-var linkText = args[4];
-var linkUrl = args[5];
-var app = args[6];
+var country = args[2]
+var body = args[3];
+var imgUrl = args[4];
+var linkText = args[5];
+var linkUrl = args[6];
+var app = args[7];
 
 var requiredArgs = {
   name,
   title,
+  country,
   body,
   imgUrl,
   linkText,
@@ -58,6 +78,7 @@ let adArgs = {
   dismissible,
   isAdActive,
   isTesting,
+  type: 'standard',
   ...requiredArgs
 };
 
