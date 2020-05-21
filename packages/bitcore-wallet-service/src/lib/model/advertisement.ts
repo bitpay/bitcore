@@ -13,6 +13,7 @@ export interface IAdvertisement {
   linkUrl: string;
   app: string;
   dismissible: boolean;
+  signature: boolean;
   isAdActive: boolean;
   isTesting: boolean;
 }
@@ -29,6 +30,7 @@ export class Advertisement {
   linkUrl: string;
   app: string;
   dismissible: boolean;
+  signature: boolean;
   isAdActive: boolean;
   isTesting: boolean;
 
@@ -45,6 +47,7 @@ export class Advertisement {
     x.linkUrl = opts.linkUrl;
     x.app = opts.app;
     x.dismissible = opts.dismissible;
+    x.signature = opts.signature;
     x.isAdActive = opts.isAdActive;
     x.isTesting = opts.isTesting;
 
@@ -64,6 +67,7 @@ export class Advertisement {
     x.linkUrl = obj.linkUrl;
     x.app = obj.app;
     x.dismissible = obj.dismissible;
+    x.signature = obj.signature;
     x.isAdActive = obj.isAdActive;
     x.isTesting = obj.isTesting;
 

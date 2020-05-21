@@ -3618,7 +3618,7 @@ export class WalletService {
         if (!result) {
           let x = new Advertisement();
 
-          x.advertisementId = Uuid.v4();
+          x.advertisementId = opts.advertisementId || Uuid.v4();
           x.name = opts.name;
           x.title = opts.title;
           x.country = opts.country;
@@ -3629,6 +3629,7 @@ export class WalletService {
           x.linkUrl = opts.linkUrl;
           x.isAdActive = opts.isAdActive;
           x.dismissible = opts.dismissible;
+          x.signature = opts.signature;
           x.app = opts.app;
           x.isTesting = opts.isTesting;
 
