@@ -82,20 +82,30 @@ describe('Opcode', function() {
         Opcode('OP_NOTACODE').toString();
       }).to.throw('Opcode does not have a string representation');
     });
+
+    it('should work for every non-duplicate opcode', function() {
+      Object.keys(Opcode.map).forEach(function(key) {
+        if (key === 'OP_TRUE' || key === 'OP_FALSE') return;
+        if (key === 'OP_NOP2' || key === 'OP_NOP3') return;
+        Opcode.fromString(key).toString().should.equal(key);
+      })
+    })
   });
 
   describe('@map', function() {
-    it('should have a map containing 124 elements', function() {
-      _.size(Opcode.map).should.equal(124);
+    it('should have a map containing 125 elements', function() {
+      _.size(Opcode.map).should.equal(125);
     });
   });
 
   describe('@reverseMap', function() {
-    it('should exist and have op 185', function() {
+    it('should exist and have ops 185 and 188', function() {
       should.exist(Opcode.reverseMap);
       Opcode.reverseMap[185].should.equal('OP_NOP10');
+      Opcode.reverseMap[188].should.equal('OP_REVERSEBYTES');
     });
   });
+
   var smallints = [
     Opcode('OP_0'),
     Opcode('OP_1'),
@@ -138,6 +148,7 @@ describe('Opcode', function() {
       Opcode.smallInt.bind(null, 17).should.throw('Invalid Argument');
     });
   });
+
   describe('@isSmallIntOp', function() {
     var testIsSmallInt = function(op) {
       Opcode.isSmallIntOp(op).should.equal(true);

@@ -1416,6 +1416,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         signatures[0].should.equal('304402200aa70dfe99e25792c4a7edf773477100b6659f1ba906e551e6e5218ec32d273402202e31c575edb55b2da824e8cafd02b4769017ef63d3c888718cf6f0243c570d41');
         signatures[1].should.equal('3045022100afde45e125f654453493b40d288cd66e8a011c66484509ae730a2686c9dff30502201bf34a6672c5848dd010b89ea1a5f040731acf78fec062f61b305e9ce32798a5');
       });
+
       it('should sign BCH proposal correctly (schnorr)', () => {
         var toAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
         var changeAddress = 'msj42CCGruhRsFrGATiUuh25dtxYtnpbTx';
@@ -3629,11 +3630,11 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
 
     describe('BCH multisig', (done) => {
       beforeEach((done) => {
-        setup(2, 3, 'bch', 'livenet', done);
+        setup(2, 3, 'bch', 'testnet', done);
       });
 
-      it.skip('(BCH) two incompatible clients try to sign txp v4.', (done) => {
-        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+      it('(BCH) two incompatible clients try to sign schnorr txp', (done) => {
+        var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
         var opts = {
           outputs: [{
             amount: 1e8,
@@ -3655,15 +3656,13 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
             should.exist(publishedTxp);
             publishedTxp.status.should.equal('pending');
 
-
             let signatures = keys[0].sign(clients[0].getRootPath(), txp);
             clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
               should.not.exist(err);
               let signatures2 = keys[1].sign(clients[1].getRootPath(), txp);
               clients[1].pushSignatures(publishedTxp, signatures2, (err, txp) => {
                 should.exist(err);
-                console.log(err);
-                err.message.should.equal("UPGRADE_NEEDED: Your client does not support signing this transaction. Please upgrade")
+                err.message.should.contain("UPGRADE_NEEDED");
                 done();
               }, '/v1/txproposals/');
             });
@@ -3672,7 +3671,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
       });
 
       it('BCH Multisig Txp signingMethod = schnorr', (done) => {
-        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
         var opts = {
           outputs: [{
             amount: 1e8,
@@ -3712,6 +3711,50 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         });
       });
     })
+
+    describe('BCH testnet (schnorr activaton)', (done) => {
+      beforeEach((done) => {
+        setup(1, 1, 'bch', 'testnet', done);
+      });
+
+      it('should sign a tx', (done) => {
+        var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+          signingMethod: 'schnorr',       // forcing schnorr on BCH/livenet
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          txp.signingMethod.should.equal('schnorr'); 
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            publishedTxp.signingMethod.should.equal('schnorr'); 
+            publishedTxp.status.should.equal('pending');
+
+
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.not.exist(err);
+              txp.status.should.equal("accepted");
+              done();
+            });
+          });
+        });
+      });
+    })
+
 
     describe('BCH', (done) => {
       beforeEach((done) => {
@@ -3888,7 +3931,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
     });
   });
 
-  describe('Payment Protocol V2', () => {
+  describe('Payment Protocol V2', function() {
     var PP, oldreq, DATA, postArgs;
     var header = {};
     var mockRequest = (bodyBuf, headers) => {
@@ -3923,7 +3966,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
             send: (opts) => {
               var _opts = JSON.parse(opts);
               if (_opts.transactions) {
-                postArgs = _opts;
+                postArgs.push(_opts);
               }
             },
             agent: (_opts) => { },
@@ -3941,6 +3984,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
     };
     beforeEach(() => {
       oldreq = Client.PayProV2.request;
+      postArgs = [];
     });
     afterEach((done) => {
       Client.PayProV2.request = oldreq;
@@ -3948,6 +3992,80 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         done();
       })
     });
+
+
+    let tests = [{ 
+      name: 'weightedSize: Legacy BTC',
+      opts: { network: 'livenet' },
+      expectedUnsignedSize: 220,
+    }, 
+    { 
+      name: 'weightedSize: Segwit BTC',
+      opts: { network: 'livenet', useNativeSegwit: true },
+      expectedUnsignedSize: 132,
+    }]
+
+    _.each(tests, x => {
+      describe(x.name, () => {
+        // Tests will be considered slow after 1 second elapses
+        beforeEach(async () => {
+          await new Promise((resolve) => {
+            PP = TestData.payProJsonV2.btc;
+            DATA = JSON.parse(TestData.payProJsonV2Body.btc);
+
+            mockRequest(Buffer.from(TestData.payProJsonV2.btc.body, 'hex'), TestData.payProJsonV2.btc.headers);
+            helpers.createAndJoinWallet(clients, keys, 1, 1, x.opts, (w) => {
+              clients[0].createAddress((err, x0) => {
+                should.not.exist(err);
+                should.exist(x0.address);
+                blockchainExplorerMock.setUtxo(x0, 1, 2);
+                blockchainExplorerMock.setUtxo(x0, 1, 2);
+                var opts = {
+                  paymentUrl: 'https://bitpay.com/i/LanynqCPoL2JQb8z8s5Z3X'
+                };
+
+                Client.PayProV2.selectPaymentOption(opts).then((paypro) => {
+                  //              http.getCall(0).args[0].coin.should.equal('btc');
+                  helpers.createAndPublishTxProposal(clients[0], {
+                    toAddress: paypro.instructions[0].toAddress,
+                    amount: paypro.instructions[0].amount,
+                    message: paypro.memo,
+                    payProUrl: paypro.payProUrl,
+                  }, (err, x) => {
+                    should.not.exist(err);
+                    resolve();
+                  });
+                });
+              });
+            });
+          })
+        });
+        it('Should send the signed tx in paypro', function (done) {
+          clients[0].getTxProposals({}, (err, txps) => {
+            should.not.exist(err);
+            let signatures = keys[0].sign(clients[0].getRootPath(), txps[0]);
+            clients[0].pushSignatures(txps[0], signatures, (err, xx, paypro) => {
+              should.not.exist(err);
+              xx.status.should.equal('accepted');
+
+              let spy = sinon.spy(Client.PayProV2.request, 'post');
+              clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
+                should.not.exist(err);
+                spy.called.should.be.true;
+
+                // unsigned
+                postArgs[0].transactions[0].weightedSize.should.within(x.expectedUnsignedSize, x.expectedUnsignedSize + 10);
+
+                // signed 
+                postArgs[1].transactions[0].weightedSize.should.within(220, 230);
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
 
     describe('Shared wallet BTC', () => {
       // Tests will be considered slow after 1 second elapses
@@ -4059,9 +4177,6 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
                 spy.called.should.be.true;
-                postArgs.currency.should.equal('BTC');
-                postArgs.transactions.length.should.equal(1);
-                postArgs.transactions[0].tx.length.should.be.within(665, 680);
                 memo.should.equal('Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)');
                 zz.message.should.equal('Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)');
                 done();
@@ -4086,7 +4201,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
               clients[1].broadcastTxProposal(yy, (err, zz, memo) => {
                 should.not.exist(err);
                 spy.called.should.be.true;
-                var rawTx = Buffer.from(postArgs.transactions[0].tx, 'hex');
+                var rawTx = Buffer.from(postArgs[1].transactions[0].tx, 'hex');
                 var tx = new Bitcore.Transaction(rawTx);
                 var script = tx.inputs[0].script;
                 script.isScriptHashIn().should.equal(true);
@@ -4190,9 +4305,9 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
                 try {
                   should.not.exist(err);
                   spy.called.should.be.true;
-                  postArgs.currency.should.equal('BTC');
-                  postArgs.transactions.length.should.equal(1);
-                  postArgs.transactions[0].tx.length.should.be.within(665, 680);
+                  postArgs[1].currency.should.equal('BTC');
+                  postArgs[1].transactions.length.should.equal(1);
+                  postArgs[1].transactions[0].tx.length.should.be.within(665, 680);
 
                   memo.should.equal('Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)');
                   zz.message.should.equal('Payment request for BitPay invoice LanynqCPoL2JQb8z8s5Z3X for merchant BitPay Visa® Load (USD-USA)');
@@ -4268,7 +4383,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
             clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
               should.not.exist(err);
               spy.called.should.be.true;
-              var rawTx = Buffer.from(postArgs.transactions[0].tx, 'hex');
+              var rawTx = Buffer.from(postArgs[1].transactions[0].tx, 'hex');
               var tx = new Bitcore.Transaction(rawTx);
               var script = tx.inputs[0].script;
               script.isPublicKeyHashIn().should.equal(true);
@@ -4335,7 +4450,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
             clients[0].broadcastTxProposal(xx, (err, zz, memo) => {
               should.not.exist(err);
               spy.called.should.be.true;
-              var rawTx = Buffer.from(postArgs.transactions[0].tx, 'hex');
+              var rawTx = Buffer.from(postArgs[1].transactions[0].tx, 'hex');
               var tx = Bitcore_['bch'].Transaction(rawTx);
               var script = tx.inputs[0].script;
               script.isPublicKeyHashIn().should.equal(true);

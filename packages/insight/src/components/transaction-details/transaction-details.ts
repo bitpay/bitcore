@@ -62,7 +62,10 @@ export class TransactionDetailsComponent implements OnInit {
         this.tx.vout = data.outputs;
         this.tx.fee = this.txProvider.getFee(this.tx);
         this.tx.isRBF = _.some(data.inputs, input => {
-          return input.sequenceNumber && input.sequenceNumber < this.DEFAULT_RBF_SEQNUMBER - 1;
+          return (
+            input.sequenceNumber &&
+            input.sequenceNumber < this.DEFAULT_RBF_SEQNUMBER - 1
+          );
         });
         this.tx.hasUnconfirmedInputs = _.some(data.inputs, input => {
           return input.mintHeight < 0;

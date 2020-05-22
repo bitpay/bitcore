@@ -4,6 +4,7 @@ import { MongoBound } from '../../../models/base';
 import { BaseBlock } from '../../../models/baseBlock';
 import { EventStorage } from '../../../models/events';
 import { StorageService } from '../../../services/storage';
+import { IBlock } from '../../../types/Block';
 import { TransformOptions } from '../../../types/TransformOptions';
 import { IEthBlock, IEthTransaction } from '../types';
 import { EthTransactionStorage } from './transaction';
@@ -29,7 +30,14 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
   }) {
     const { block, chain, network } = params;
 
-    const reorg = await this.handleReorg({ block, chain, network });
+    let reorg = false;
+    const headers = await this.validateLocatorHashes({ chain, network });
+    if (headers.length) {
+      const last = headers[headers.length - 1];
+      reorg = await this.handleReorg({ block: last, chain, network });
+    }
+
+    reorg = reorg || (await this.handleReorg({ block, chain, network }));
 
     if (reorg) {
       return Promise.reject('reorg');
@@ -115,7 +123,7 @@ export class EthBlockModel extends BaseBlock<IEthBlock> {
     };
   }
 
-  async handleReorg(params: { block: IEthBlock; chain: string; network: string }): Promise<boolean> {
+  async handleReorg(params: { block: IBlock; chain: string; network: string }): Promise<boolean> {
     const { block, chain, network } = params;
     const prevHash = block.previousBlockHash;
     let localTip = await this.getLocalTip(params);

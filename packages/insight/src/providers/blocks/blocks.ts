@@ -127,7 +127,11 @@ export class BlocksProvider {
   public getCurrentHeight(
     chainNetwork: ChainNetwork
   ): Observable<ApiEthBlock & ApiUtxoCoinBlock> {
-    if (!this.tipValue || !this.currentChainNetwork || this.currentChainNetwork !== chainNetwork) {
+    if (
+      !this.tipValue ||
+      !this.currentChainNetwork ||
+      this.currentChainNetwork !== chainNetwork
+    ) {
       this.tipValue = this.requestCurrentHeight(chainNetwork).pipe(
         merge(),
         shareReplay(1)

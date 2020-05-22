@@ -20,15 +20,17 @@ export class XRPTxProvider {
     from: string;
     invoiceID?: string;
     fee: number;
+    feeRate: number;
     nonce: number;
   }) {
-    const { recipients, tag, from, invoiceID, fee, nonce } = params;
+    const { recipients, tag, from, invoiceID, fee, feeRate, nonce } = params;
     const { address, amount } = recipients[0];
     const rippleAPI = new RippleAPI();
     const { schemaValidate } = RippleAPI._PRIVATE.schemaValidator;
     const Flags = 2147483648;
     const amountStr = rippleAPI.dropsToXrp(amount);
-    const feeStr = rippleAPI.dropsToXrp(fee.toString());
+    const feeNum = fee || feeRate;
+    const feeStr = rippleAPI.dropsToXrp(feeNum.toString());
     const payment: Payment = {
       source: {
         address: from,

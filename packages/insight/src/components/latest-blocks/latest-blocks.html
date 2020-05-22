@@ -3,11 +3,21 @@
   <ion-grid class="grid--table blocks-container">
 
     <ion-row>
-      <ion-col><h6>Height</h6></ion-col>
-      <ion-col   *ngIf="showTimeAs === 'age'"><h6>Mined</h6></ion-col>
-      <ion-col  *ngIf="showTimeAs === 'timestamp'"><h6>Timestamp</h6></ion-col>
-      <ion-col ><h6>Transactions</h6></ion-col>
-      <ion-col><h6>Size</h6></ion-col>
+      <ion-col>
+        <h6>Height</h6>
+      </ion-col>
+      <ion-col *ngIf="showTimeAs === 'age'">
+        <h6>Mined</h6>
+      </ion-col>
+      <ion-col *ngIf="showTimeAs === 'timestamp'">
+        <h6>Timestamp</h6>
+      </ion-col>
+      <ion-col>
+        <h6>Transactions</h6>
+      </ion-col>
+      <ion-col>
+        <h6>Size</h6>
+      </ion-col>
     </ion-row>
 
     <loader *ngIf="loading" [type]="'grid'"></loader>
@@ -17,13 +27,13 @@
         <ion-col>
           <a (click)="goToBlock(block.hash)">{{ block.height }}</a>
         </ion-col>
-        <ion-col  *ngIf="showTimeAs === 'age'" >
+        <ion-col *ngIf="showTimeAs === 'age'">
           {{ block.time | amFromUnix | amTimeAgo:true }}
         </ion-col>
-        <ion-col  *ngIf="showTimeAs === 'timestamp'" >
+        <ion-col *ngIf="showTimeAs === 'timestamp'">
           {{ block.time * 1000 | date:'long' }}
         </ion-col>
-        <ion-col >
+        <ion-col>
           {{ block.txlength }}
         </ion-col>
         <ion-col>
@@ -33,11 +43,11 @@
 
       <ion-row *ngIf="showAllBlocksButton" class="blocks-cta">
         <ion-col text-center>
-          <button ion-button  (click)="goToBlocks()" [disabled]="blocks.length == 0">Load More</button>
+          <button ion-button (click)="goToBlocks()" [disabled]="blocks.length == 0">Load More</button>
         </ion-col>
       </ion-row>
 
-      <ion-row *ngIf="showLoadMoreButton">
+      <ion-row *ngIf="isHomePage">
         <ion-infinite-scroll (ionInfinite)="loadMoreBlocks($event)">
           <loader [type]="'grid'"></loader>
         </ion-infinite-scroll>

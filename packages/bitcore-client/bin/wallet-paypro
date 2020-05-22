@@ -90,18 +90,18 @@ const main = async () => {
       address: to || outputs[0].address,
       amount: value >= 0 ? value : outputs[0].amount
     }];
-    const fee = requiredFeeRate || gasPrice;
+    const feeRate = requiredFeeRate || gasPrice;
     let invoiceID;
     if (outputs) {
       invoiceID = outputs[0].invoiceID;
     }
     const utxos = await wallet.getUtxosArray();
-    const params = { recipients, fee, from, invoiceID, data, value, utxos };
+    const params = { recipients, feeRate, from, invoiceID, data, value, utxos };
     params.nonce = Number(nonce);
     const unsignedTx = await wallet.newTx(params);
     unsignedTransactions
     console.log(`unsignedRawTx: ${unsignedTx}`);
-  
+
     //  Sign tx
     if (!password) {
       password = await promptly.password('Wallet Password:');

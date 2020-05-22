@@ -1,11 +1,86 @@
 import { expect } from 'chai';
-import { resetDatabase } from '../../helpers';
-import { BitcoinBlockStorage } from '../../../src/models/block';
-import { TransactionStorage } from '../../../src/models/transaction';
-import { CoinStorage } from '../../../src/models/coin';
-import { TEST_BLOCK } from '../../data/test-block';
-import { SpentHeightIndicators } from '../../../src/types/Coin';
 import logger from '../../../src/logger';
+import { BitcoinBlockStorage } from '../../../src/models/block';
+import { CoinStorage } from '../../../src/models/coin';
+import { TransactionStorage } from '../../../src/models/transaction';
+import { SpentHeightIndicators } from '../../../src/types/Coin';
+import { TEST_BLOCK } from '../../data/test-block';
+import { resetDatabase } from '../../helpers';
+
+async function insertBlocks() {
+  await BitcoinBlockStorage.collection.insertOne({
+    chain: 'BTC',
+    network: 'regtest',
+    height: 5,
+    hash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
+    version: 100,
+    merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
+    time: new Date(1526326784),
+    timeNormalized: new Date(1526326784),
+    transactionCount: 1,
+    reward: 50,
+    nonce: 3,
+    previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
+    nextBlockHash: '',
+    size: 264,
+    bits: parseInt('207fffff', 16),
+    processed: true
+  });
+  await BitcoinBlockStorage.collection.insertOne({
+    chain: 'BTC',
+    network: 'regtest',
+    height: 6,
+    hash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
+    version: 100,
+    merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
+    time: new Date(1526326784),
+    timeNormalized: new Date(1526326784),
+    transactionCount: 1,
+    reward: 50,
+    nonce: 3,
+    previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
+    nextBlockHash: '',
+    size: 264,
+    bits: parseInt('207fffff', 16),
+    processed: true
+  });
+  await BitcoinBlockStorage.collection.insertOne({
+    chain: 'BTC',
+    network: 'regtest',
+    height: 7,
+    hash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
+    version: 100,
+    merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
+    time: new Date(1526326784),
+    timeNormalized: new Date(1526326784),
+    transactionCount: 1,
+    reward: 50,
+    nonce: 3,
+    previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
+    nextBlockHash: '',
+    size: 264,
+    bits: parseInt('207fffff', 16),
+    processed: true
+  });
+  await BitcoinBlockStorage.collection.insertOne({
+    chain: 'BTC',
+    network: 'regtest',
+    height: 8,
+    hash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9',
+    version: 100,
+    merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
+    time: new Date(1526326784),
+    timeNormalized: new Date(1526326784),
+    transactionCount: 1,
+    reward: 50,
+    nonce: 3,
+    previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
+    nextBlockHash: '',
+    size: 264,
+    bits: parseInt('207fffff', 16),
+    processed: true
+  });
+}
 
 describe('Block Model', function() {
   beforeEach(async () => {
@@ -14,80 +89,13 @@ describe('Block Model', function() {
 
   describe('addBlock', () => {
     it('should add a block when incoming block references previous block hash', async () => {
-      await BitcoinBlockStorage.collection.insertOne({
+      await insertBlocks();
+      await BitcoinBlockStorage.addBlock({
+        block: TEST_BLOCK,
         chain: 'BTC',
         network: 'regtest',
-        height: 5,
-        hash: '528f01c17829622ed6a4af51b3b3f6c062f304fa60e66499c9cbb8622c8407f7',
-        version: 100,
-        merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
-        time: new Date(1526326784),
-        timeNormalized: new Date(1526326784),
-        transactionCount: 1,
-        reward: 50,
-        nonce: 3,
-        previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
-        nextBlockHash: '',
-        size: 264,
-        bits: parseInt('207fffff', 16),
-        processed: true
+        initialSyncComplete: false
       });
-      await BitcoinBlockStorage.collection.insertOne({
-        chain: 'BTC',
-        network: 'regtest',
-        height: 6,
-        hash: '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86',
-        version: 100,
-        merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
-        time: new Date(1526326784),
-        timeNormalized: new Date(1526326784),
-        transactionCount: 1,
-        reward: 50,
-        nonce: 3,
-        previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
-        nextBlockHash: '',
-        size: 264,
-        bits: parseInt('207fffff', 16),
-        processed: true
-      });
-      await BitcoinBlockStorage.collection.insertOne({
-        chain: 'BTC',
-        network: 'regtest',
-        height: 7,
-        hash: '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312',
-        version: 100,
-        merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
-        time: new Date(1526326784),
-        timeNormalized: new Date(1526326784),
-        transactionCount: 1,
-        reward: 50,
-        nonce: 3,
-        previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
-        nextBlockHash: '',
-        size: 264,
-        bits: parseInt('207fffff', 16),
-        processed: true
-      });
-      await BitcoinBlockStorage.collection.insertOne({
-        chain: 'BTC',
-        network: 'regtest',
-        height: 8,
-        hash: '3420349f63d96f257d56dd970f6b9079af9cf2784c267a13b1ac339d47031fe9',
-        version: 100,
-        merkleRoot: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
-        time: new Date(1526326784),
-        timeNormalized: new Date(1526326784),
-        transactionCount: 1,
-        reward: 50,
-        nonce: 3,
-        previousBlockHash: '64bfb3eda276ae4ae5b64d9e36c9c0b629bc767fb7ae66f9d55d2c5c8103a929',
-        nextBlockHash: '',
-        size: 264,
-        bits: parseInt('207fffff', 16),
-        processed: true
-      });
-
-      await BitcoinBlockStorage.addBlock({ block: TEST_BLOCK, chain: 'BTC', network: 'regtest', initialSyncComplete: false });
 
       const blocks = await BitcoinBlockStorage.collection
         .find({ chain: 'BTC', network: 'regtest' })
@@ -110,7 +118,7 @@ describe('Block Model', function() {
       expect(ownBlock.transactionCount).to.equal(1);
       expect(ownBlock.processed).to.equal(true);
 
-      logger.info(`new block was successfully added with hash`, ownBlock.hash);
+      logger.info('new block was successfully added with hash', ownBlock.hash);
 
       const transaction = await TransactionStorage.collection
         .find({
@@ -505,6 +513,32 @@ describe('Block Model', function() {
       expect(unspentCoins[0].address).to.equal('mkjB6LmjiNfJWgH4aP4v1GkFjRcQTfDSfj');
       expect(unspentCoins[0].spentTxid).to.equal('');
       expect(unspentCoins[0].spentHeight).to.equal(SpentHeightIndicators.unspent);
+    });
+
+    it('should detect a fault in the block hashes', async () => {
+      const chain = 'BTC';
+      const network = 'regtest';
+
+      await insertBlocks();
+      const badHash = '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312';
+      await BitcoinBlockStorage.collection.updateOne(
+        { chain, network, hash: badHash },
+        { $set: { previousBlockHash: 'aaaaa' } }
+      );
+      const invalidChain = await BitcoinBlockStorage.validateLocatorHashes({ chain, network });
+      expect(invalidChain[1].hash).to.eq(badHash);
+    });
+
+    it('should detect a missing block', async () => {
+      const chain = 'BTC';
+      const network = 'regtest';
+
+      await insertBlocks();
+      const badHash = '3279069d22ce5af68ef38332d5b40e79e1964b154d466e7fa233015a34c27312';
+      const lastKnown = '2a883ff89c7d6e9302bb4a4634cd580319a4fd59d69e979b344972b0ba042b86';
+      await BitcoinBlockStorage.collection.deleteOne({ chain, network, hash: badHash });
+      const invalidChain = await BitcoinBlockStorage.validateLocatorHashes({ chain, network });
+      expect(invalidChain[1].hash).to.eq(lastKnown);
     });
   });
 });

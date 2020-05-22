@@ -7,6 +7,7 @@ import { Transaction } from 'web3/eth/types';
 import Config from '../../../config';
 import logger from '../../../logger';
 import { ITransaction } from '../../../models/baseTransaction';
+import { CacheStorage } from '../../../models/cache';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
 import { Storage } from '../../../services/storage';
@@ -101,39 +102,58 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       network = 'mainnet';
     }
 
-    const txs = await EthTransactionStorage.collection
-      .find({ chain, network, blockHeight: { $gt: 0 } })
-      .project({ gasPrice: 1, blockHeight: 1 })
-      .sort({ blockHeight: -1 })
-      .limit(20 * 200)
-      .toArray();
+    const cacheKey = `getFee-${chain}-${network}-${target}`;
+    return CacheStorage.getGlobalOrRefresh(
+      cacheKey,
+      async () => {
+        const txs = await EthTransactionStorage.collection
+          .find({ chain, network, blockHeight: { $gt: 0 } })
+          .project({ gasPrice: 1, blockHeight: 1 })
+          .sort({ blockHeight: -1 })
+          .limit(20 * 200)
+          .toArray();
 
-    const blockGasPrices = txs
-      .map(tx => Number(tx.gasPrice))
-      .filter(gasPrice => gasPrice)
-      .sort((a, b) => b - a);
+        const blockGasPrices = txs
+          .map(tx => Number(tx.gasPrice))
+          .filter(gasPrice => gasPrice)
+          .sort((a, b) => b - a);
 
-    const whichQuartile = Math.min(target, 4) || 1;
-    const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, whichQuartile);
+        const whichQuartile = Math.min(target, 4) || 1;
+        const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, whichQuartile);
 
-    const roundedGwei = (quartileMedian / 1e9).toFixed(2);
-    const feerate = Number(roundedGwei) * 1e9;
-    return { feerate, blocks: target };
+        const roundedGwei = (quartileMedian / 1e9).toFixed(2);
+        const feerate = Number(roundedGwei) * 1e9;
+        return { feerate, blocks: target };
+      },
+      CacheStorage.Times.Minute
+    );
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
-    const { network, address } = params;
+    const { chain, network, address } = params;
     const { web3 } = await this.getWeb3(network);
-    if (params.args) {
-      if (params.args.tokenAddress) {
-        const token = await this.erc20For(network, params.args.tokenAddress);
-        const balance = Number(await token.methods.balanceOf(address).call());
-        return { confirmed: balance, unconfirmed: 0, balance };
-      }
-    }
-
-    const balance = Number(await web3.eth.getBalance(address));
-    return { confirmed: balance, unconfirmed: 0, balance };
+    const tokenAddress = params.args && params.args.tokenAddress;
+    const addressLower = address.toLowerCase();
+    const cacheKey = tokenAddress
+      ? `getBalanceForAddress-${chain}-${network}-${addressLower}-${tokenAddress.toLowerCase()}`
+      : `getBalanceForAddress-${chain}-${network}-${addressLower}`;
+    const balances = await CacheStorage.getGlobalOrRefresh(
+      cacheKey,
+      async () => {
+        if (tokenAddress) {
+          const token = await this.erc20For(network, params.args.tokenAddress);
+          const balance = await token.methods.balanceOf(address).call();
+          const numberBalance = Number(balance);
+          return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
+        } else {
+          const balance = await web3.eth.getBalance(address);
+          const numberBalance = Number(balance);
+          return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
+        }
+      },
+      CacheStorage.Times.Day
+    );
+    return balances;
   }
 
   async getLocalTip({ chain, network }) {
@@ -484,6 +504,13 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
         { $set: { processed: true } }
       );
     }
+  }
+
+  async getCoinsForTx() {
+    return {
+      inputs: [],
+      outputs: []
+    };
   }
 }
 

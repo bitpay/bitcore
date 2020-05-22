@@ -6,6 +6,7 @@ import { FormattedTransactionType } from 'ripple-lib/dist/npm/transaction/types'
 import { Readable } from 'stream';
 import Config from '../../../config';
 import { IBlock } from '../../../models/baseBlock';
+import { CacheStorage } from '../../../models/cache';
 import { ICoin } from '../../../models/coin';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
@@ -69,25 +70,34 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
-    const client = await this.getClient(params.network);
-    try {
-      const info = await client.getAccountInfo(params.address);
-      const confirmed = Math.round(Number(info.xrpBalance) * 1e6);
-      const balance = confirmed;
-      const unconfirmed = 0;
-      return { confirmed, unconfirmed, balance };
-    } catch (e) {
-      if (e && e.data && e.data.error_code === 19) {
-        // Error code for when we have derived an address,
-        // but the account has not yet been funded
-        return {
-          confirmed: 0,
-          unconfirmed: 0,
-          balance: 0
-        };
-      }
-      throw e;
-    }
+    const { chain, network, address } = params;
+    const lowerAddress = address.toLowerCase();
+    const cacheKey = `getBalanceForAddress-${chain}-${network}-${lowerAddress}`;
+    return CacheStorage.getGlobalOrRefresh(
+      cacheKey,
+      async () => {
+        const client = await this.getClient(network);
+        try {
+          const info = await client.getAccountInfo(address);
+          const confirmed = Math.round(Number(info.xrpBalance) * 1e6);
+          const balance = confirmed;
+          const unconfirmed = 0;
+          return { confirmed, unconfirmed, balance };
+        } catch (e) {
+          if (e && e.data && e.data.error_code === 19) {
+            // Error code for when we have derived an address,
+            // but the account has not yet been funded
+            return {
+              confirmed: 0,
+              unconfirmed: 0,
+              balance: 0
+            };
+          }
+          throw e;
+        }
+      },
+      CacheStorage.Times.Day
+    );
   }
 
   async getBlock(params: GetBlockParams) {
@@ -123,11 +133,18 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
   }
 
   async getFee(params: GetEstimateSmartFeeParams) {
-    const { network, target } = params;
-    const client = await this.getClient(network);
-    const fee = await client.getFee();
-    const scaledFee = parseFloat(fee) * 1e6;
-    return { feerate: scaledFee, blocks: target };
+    const { chain, network, target } = params;
+    const cacheKey = `getFee-${chain}-${network}-${target}`;
+    return CacheStorage.getGlobalOrRefresh(
+      cacheKey,
+      async () => {
+        const client = await this.getClient(network);
+        const fee = await client.getFee();
+        const scaledFee = parseFloat(fee) * 1e6;
+        return { feerate: scaledFee, blocks: target };
+      },
+      CacheStorage.Times.Minute
+    );
   }
 
   async broadcastTransaction(params: BroadcastTransactionParams) {
@@ -231,6 +248,13 @@ export class RippleStateProvider extends InternalStateProvider implements IChain
 
   async getLocalTip(params: ChainNetwork) {
     return XrpBlockStorage.getLocalTip(params);
+  }
+
+  async getCoinsForTx() {
+    return {
+      inputs: [],
+      outputs: []
+    };
   }
 
   transformLedger(ledger: FormattedLedger, network: string): IBlock {

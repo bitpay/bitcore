@@ -1273,15 +1273,14 @@ export class API extends EventEmitter {
     $.checkState(this.credentials.sharedEncryptingKey);
     $.checkArgument(opts);
 
-    var args = this._getCreateTxProposalArgs(opts);
-
-    baseUrl = baseUrl || '/v3/txproposals/';
-    // baseUrl = baseUrl || '/v4/txproposals/'; // DISABLED 2020-04-07
-
     // BCH schnorr deployment
     if (!opts.signingMethod && this.credentials.coin == 'bch' && this.credentials.network == 'testnet') {
-      args.signingMethod == 'schnorr';
+      opts.signingMethod = 'schnorr';
     }
+
+    var args = this._getCreateTxProposalArgs(opts);
+    baseUrl = baseUrl || '/v3/txproposals/';
+    // baseUrl = baseUrl || '/v4/txproposals/'; // DISABLED 2020-04-07
 
     this.request.post(baseUrl, args, (err, txp) => {
       if (err) return cb(err);
@@ -1541,18 +1540,19 @@ export class API extends EventEmitter {
 
         if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
-        base = base || '/v1/txproposals/';
+        let defaultBase = '/v1/txproposals/';
+        if (txp.coin === 'bch' && txp.network === 'testnet') {
+          defaultBase = '/v2/txproposals/';
+        }
+
+        base = base || defaultBase;
         //        base = base || '/v2/txproposals/'; // DISABLED 2020-04-07
 
-        var url = base + txp.id + '/signatures/';
+        let url = base + txp.id + '/signatures/';
 
-        if (txp.coin === 'bch' && txp.network === 'testnet') {
-          url = '/v4/txproposals/' + txp.id + '/signatures/';
-        }
         var args = {
           signatures
         };
-
         this.request.post(url, args, (err, txp) => {
           if (err) return cb(err);
           this._processTxps(txp);
@@ -1807,7 +1807,7 @@ export class API extends EventEmitter {
       .then(paypro => {
         if (paypro) {
           var t_unsigned = Utils.buildTx(txp);
-          var t = _.clone(t_unsigned);
+          var t = _.cloneDeep(t_unsigned);
 
           this._applyAllSignatures(txp, t);
 
@@ -1826,10 +1826,18 @@ export class API extends EventEmitter {
           const unserializedTxs = typeof rawTxUnsigned === 'string' ? [rawTxUnsigned] : rawTxUnsigned;
           const serializedTxs = typeof serializedTx === 'string' ? [serializedTx] : serializedTx;
 
+          let i = 0;
+
+          let isBtcSegwit = txp.coin == 'btc' && (txp.addressType == 'P2WSH' || txp.addressType == 'P2WPKH');
           for (const unsigned of unserializedTxs) {
+            let size = serializedTxs[i++].length / 2;
+            if (isBtcSegwit) {
+              let unsignedSize = unsigned.length / 2;
+              size = Math.floor(size - (unsignedSize * 3) / 4);
+            }
             unsignedTransactions.push({
               tx: unsigned,
-              weightedSize: unsigned.length / 2
+              weightedSize: size
             });
           }
           for (const signed of serializedTxs) {

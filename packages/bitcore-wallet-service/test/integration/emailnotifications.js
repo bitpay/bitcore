@@ -16,10 +16,10 @@ var TestData = require('../testdata');
 var helpers = require('./helpers');
 
 describe('Email notifications', function() {
+  this.timeout(5000);
   var storage, server, wallet, mailerStub, emailService;
 
   before(function(done) {
-    this.timeout(5000);
     log.level = 'error';
     helpers.before((res) => {
       storage = res.storage;
@@ -195,6 +195,7 @@ describe('Email notifications', function() {
                   txProposalId: txp.id,
                   signatures: signatures,
                 }, function(err, t) {
+                  should.not.exist(err, "Error signing ");
                   txp = t;
                   next();
                 });

@@ -8,6 +8,7 @@ import { LoggifyClass } from '../../../decorators/Loggify';
 import { MongoBound } from '../../../models/base';
 import { IBlock } from '../../../models/baseBlock';
 import { BitcoinBlockStorage, IBtcBlock } from '../../../models/block';
+import { CacheStorage } from '../../../models/cache';
 import { CoinStorage, ICoin } from '../../../models/coin';
 import { StateStorage } from '../../../models/state';
 import { ITransaction, TransactionStorage } from '../../../models/transaction';
@@ -455,7 +456,14 @@ export class InternalStateProvider implements IChainStateService {
 
   async getFee(params: GetEstimateSmartFeeParams) {
     const { chain, network, target } = params;
-    return this.getRPC(chain, network).getEstimateSmartFee(Number(target));
+    const cacheKey = `getFee-${chain}-${network}-${target}`;
+    return CacheStorage.getGlobalOrRefresh(
+      cacheKey,
+      async () => {
+        return this.getRPC(chain, network).getEstimateSmartFee(Number(target));
+      },
+      5 * CacheStorage.Times.Minute
+    );
   }
 
   async broadcastTransaction(params: BroadcastTransactionParams) {
