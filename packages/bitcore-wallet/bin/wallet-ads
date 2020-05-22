@@ -28,7 +28,6 @@ program
 
 // Sign (m, privkey)
 // Verify(signature, m, publicKey)
-// publicKey xPubKey of wallet, ...determine Path later SINGLE_ADDRESS, REQUEST_KEY, etc
 
 var args = program.args;
 var host = 'http://localhost:3232/bws/api/';
@@ -115,8 +114,7 @@ utils.getClient(clientArgs, {
 }, function (client) {
 
   let finalAdStringMessage = JSON.stringify(uniqueMessageArgs);
-  let xPrivateKey = walletInfo.key.xPrivKey;
-  const signature = bwcUtils.signMessage(finalAdStringMessage, new Bitcore.HDPrivateKey(xPrivateKey).deriveChild("m/1'/0").privateKey);
+  const signature = bwcUtils.signMessage(finalAdStringMessage, new Bitcore.PrivateKey(walletInfo.cred.requestPrivKey));
 
   const finalAd = {...allAdArgs,  signature};
 
