@@ -16,6 +16,7 @@ export interface IAdvertisement {
   signature: boolean;
   isAdActive: boolean;
   isTesting: boolean;
+  appVersion: string;
 }
 
 export class Advertisement {
@@ -33,6 +34,7 @@ export class Advertisement {
   signature: boolean;
   isAdActive: boolean;
   isTesting: boolean;
+  appVersion: string;
 
   static create(opts) {
     opts = opts || {};
@@ -50,6 +52,7 @@ export class Advertisement {
     x.signature = opts.signature;
     x.isAdActive = opts.isAdActive;
     x.isTesting = opts.isTesting;
+    x.appVersion = opts.appVersion;
 
     return x;
   }
@@ -70,6 +73,7 @@ export class Advertisement {
     x.signature = obj.signature;
     x.isAdActive = obj.isAdActive;
     x.isTesting = obj.isTesting;
+    x.appVersion = obj.appVersion;
 
     return x;
   }

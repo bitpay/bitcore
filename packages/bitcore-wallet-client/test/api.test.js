@@ -65,7 +65,7 @@ helpers.stubRequest = (err, res) => {
     timeout: sinon.stub(),
     end: sinon.stub().yields(err, res),
   };
-  var reqFactory = _.reduce(['get', 'post', 'put', 'delete'], (mem, verb) => {
+ var reqFactory = _.reduce(['get', 'post', 'put', 'delete'], (mem, verb) => {
     mem[verb] = (url) => {
       return request;
     };
@@ -205,6 +205,7 @@ helpers.createAndPublishTxProposal = (client, opts, cb) => {
     }, cb);
   });
 };
+
 
 var blockchainExplorerMock = {
   register: sinon.stub().callsArgWith(1, null, null),
@@ -2865,6 +2866,20 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
           done();
         });
       });
+    });
+  });
+
+  describe('Advertisements routes', () => {
+    beforeEach( function(done) {
+      done();
+    });
+
+    it('Should create advertisement', (done) => {
+      clients[0].createAdvertisement({title: "hello", country: "US", body: "pretend body message", linkUrl: "https://google.com", 
+      linkText: "Go To", app: "bitpay", appVersion: ""}, (err, advert) => {
+        should.not.exist(err);
+      });
+      done();
     });
   });
 

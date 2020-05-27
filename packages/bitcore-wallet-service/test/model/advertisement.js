@@ -17,6 +17,15 @@ describe("#Advertisement", function() {
   });
 
   describe("#fromObj", function() {
-    // not yet implemented
+     it("should create Advertisement", function() {
+      var x = Advertisement.fromObj({ title: "Test Title" });
+      should.exist(x);
+    });
   });
+
+  // describe("#toObject", function() {
+  //   var x = Advertisement.toObject({ title: "Test Title" });
+
+  //     should.exist(x);
+  // })
 });

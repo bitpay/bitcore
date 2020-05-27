@@ -110,7 +110,7 @@ storage.load(function(err, walletData) {
 
 utils.getClient(clientArgs, { 
   mustExist: true, 
-  walletId: 'f48d485b-66f8-40d0-9db2-24fa0f707ea6'
+  marketingStaffWalletId: 'f48d485b-66f8-40d0-9db2-24fa0f707ea6'
 }, function (client) {
 
   let finalAdStringMessage = JSON.stringify(uniqueMessageArgs);
