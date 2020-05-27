@@ -63,6 +63,7 @@ export class Credentials {
   network: string;
   coin: string;
   use145forBCH: any;
+
   addressType: string;
   keyId: string;
   token?: string;

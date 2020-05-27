@@ -36,7 +36,9 @@
     "preconditions": "^2.2.3",
     "sjcl": "1.0.3",
     "source-map-loader": "^0.2.4",
-    "superagent": "^5.1.0"
+    "source-map-support": "^0.5.19",
+    "superagent": "^5.1.0",
+    "typescript": "^3.9.3"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.136",
@@ -54,7 +56,6 @@
     "supertest": "*",
     "ts-node": "^8.0.3",
     "tslint": "^5.14.0",
-    "typescript": "^3.3.4000",
     "typescript-eslint-parser": "^22.0.0",
     "uuid": "^2.0.1"
   },

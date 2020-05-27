@@ -4,8 +4,8 @@ var $ = require('preconditions').singleton();
 import * as _ from 'lodash';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
-
 import { BitcoreLib, BitcoreLibCash, Deriver, Transactions } from 'crypto-wallet-core';
+import 'source-map-support/register';
 
 var Bitcore = BitcoreLib;
 var Mnemonic = require('bitcore-mnemonic');
@@ -29,13 +29,12 @@ const wordsForLang: any = {
 // other than the serialization
 const NETWORK: string = 'livenet';
 export class Key {
-  private version: number;
-
-  private xPrivKey: string;
-  private xPrivKeyEncrypted: string;
-  private mnemonic: string;
-  private mnemonicEncrypted: string;
-  private mnemonicHasPassphrase: boolean;
+  #xPrivKey: string;
+  #xPrivKeyEncrypted: string;
+  #version: number;
+  #mnemonic: string;
+  #mnemonicEncrypted: string;
+  #mnemonicHasPassphrase: boolean;
 
   public id: any;
   public use0forBCH: boolean;
@@ -45,22 +44,24 @@ export class Key {
 
   public fingerPrint: string;
 
-  static FIELDS = [
-    'xPrivKey', // obsolte
-    'xPrivKeyEncrypted', // obsolte
-    'mnemonic',
-    'mnemonicEncrypted',
-    'mnemonicHasPassphrase',
-    'fingerPrint', // BIP32  32bit fingerprint
-    'compliantDerivation',
-    'BIP45',
-
-    // data for derived credentials.
-    'use0forBCH', // use the 0 coin' path element in BCH  (legacy)
-    'use44forMultisig', // use the purpose 44' for multisig wallts (legacy)
-    'version',
-    'id'
-  ];
+/*
+ *  public readonly exportFields = {
+ *    'xPrivKey': '#xPrivKey', 
+ *    'xPrivKeyEncrypted': '#xPrivKeyEncrypted', 
+ *    'mnemonic': '#mnemonic',
+ *    'mnemonicEncrypted': '#mnemonicEncrypted',
+ *    'version': '#version',
+ *    'mnemonicHasPassphrase': 'mnemonicHasPassphrase',
+ *    'fingerPrint': 'fingerPrint', //  32bit fingerprint
+ *    'compliantDerivation': 'compliantDerivation',
+ *    'BIP45': 'BIP45',
+ *
+ *    // data for derived credentials.
+ *    'use0forBCH': 'use0forBCH', // use the 0 coin' path element in BCH  (legacy)
+ *    'use44forMultisig': 'use44forMultisig', // use the purpose 44' for multisig wallts (legacy)
+ *    'id': 'id',
+ *  };
+ */
   // *
   // * @param {Object} opts
   // * @param {String} opts.password   encrypting password
@@ -68,11 +69,20 @@ export class Key {
   // * @param {String} seedData
   // */
 
-  constructor(opts = {} as any, seedType: string = 'new') {
-    this.version = 1;
-    this.use0forBCH = false;
-    this.use44forMultisig = false;
-    this.compliantDerivation = true;
+  constructor(  opts: {
+    seedType: string,
+    seedData?: any,
+    passphrase?: string, // seed passphrase
+    password?: string, // encrypting password
+    sjclOpts?: any, // options to SJCL encrypt
+    use0forBCH?: boolean,
+    useLegacyPurpose?: boolean,
+    useLegacyCoinType?: boolean,
+    nonCompliantDerivation?: boolean,
+    language?: string,
+  } = { seedType: 'new' } ,) {
+
+    this.#version = 1;
     this.id = Uuid.v4();
 
     // bug backwards compatibility flags
@@ -80,23 +90,7 @@ export class Key {
     this.use44forMultisig = opts.useLegacyPurpose;
     this.compliantDerivation = !opts.nonCompliantDerivation;
 
-    function setFromMnemonic(m) {
-      const xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK);
-      this.fingerPrint = xpriv.fingerPrint.toString('hex');
-
-      if (opts.password) {
-        this.xPrivKeyEncrypted = sjcl.encrypt(opts.password, xpriv.toString(), opts);
-        if (!this.xPrivKeyEncrypted) throw new Error('Could not encrypt');
-        this.mnemonicEncrypted = sjcl.encrypt(opts.password, m.phrase, opts);
-        if (!this.mnemonicEncrypted) throw new Error('Could not encrypt');
-      } else {
-        this.xPrivKey = xpriv.toString();
-        this.mnemonic = m.phrase;
-        this.mnemonicHasPassphrase = !!opts.passphrase;
-      }
-    }
-
-    switch (seedType) {
+    switch (opts.seedType) {
       case 'new':
         if (opts.language && !wordsForLang[opts.language]) throw new Error('Unsupported language');
 
@@ -104,12 +98,12 @@ export class Key {
         while (!Mnemonic.isValid(m.toString())) {
           m = new Mnemonic(wordsForLang[opts.language]);
         }
-        setFromMnemonic(m);
+        this.setFromMnemonic(m, opts);
         break;
       case 'mnemonic':
         $.checkArgument(opts.seedData, 'Need to provide opts.seedData');
         $.checkArgument(_.isString(opts.seedData), 'sourceData need to be a string');
-        setFromMnemonic(new Mnemonic(opts.seedData));
+        this.setFromMnemonic(new Mnemonic(opts.seedData), opts);
         break;
       case 'extendedPrivateKey':
         $.checkArgument(opts.seedData, 'Need to provide opts.seedData');
@@ -123,28 +117,40 @@ export class Key {
         this.fingerPrint = xpriv.fingerPrint.toString('hex');
 
         if (opts.password) {
-          this.xPrivKeyEncrypted = sjcl.encrypt(opts.password, xpriv.toString(), opts);
-          if (!this.xPrivKeyEncrypted) throw new Error('Could not encrypt');
+          this.#xPrivKeyEncrypted = sjcl.encrypt(opts.password, xpriv.toString(), opts);
+          if (!this.#xPrivKeyEncrypted) throw new Error('Could not encrypt');
         } else {
-          this.xPrivKey = xpriv;
+          this.#xPrivKey = xpriv;
         }
-        this.mnemonic = null;
-        this.mnemonicHasPassphrase = null;
+        this.#mnemonic = null;
+        this.#mnemonicHasPassphrase = null;
         break;
       case 'object':
         $.shouldBeObject(opts.seedData, 'Need to provide an object at opts.seedData');
 
-        if (this.version != opts.seedData.version) {
+        if (this.#version != opts.seedData.version) {
           throw new Error('Bad Key version');
         }
 
-        _.each(Key.FIELDS, function(k) {
-          this[k] = opts.seedData[k];
-        });
 
-        $.checkState(this.xPrivKey || this.xPrivKeyEncrypted, 'invalid input');
+ *    'xPrivKey': '#xPrivKey', 
+ *    'xPrivKeyEncrypted': '#xPrivKeyEncrypted', 
+ *    'mnemonic': '#mnemonic',
+ *    'mnemonicEncrypted': '#mnemonicEncrypted',
+ *    'version': '#version',
+ *    'mnemonicHasPassphrase': 'mnemonicHasPassphrase',
+ *    'fingerPrint': 'fingerPrint', //  32bit fingerprint
+ *    'compliantDerivation': 'compliantDerivation',
+ *    'BIP45': 'BIP45',
+ *
+ *    // data for derived credentials.
+ *    'use0forBCH': 'use0forBCH', // use the 0 coin' path element in BCH  (legacy)
+ *    'use44forMultisig': 'use44forMultisig', // use the purpose 44' for multisig wallts (legacy)
+ *    'id': 'id',
+ 
+        $.checkState(this.#xPrivKey || this.#xPrivKeyEncrypted, 'invalid input');
       default:
-        throw new Error('Unknown seed source: ' + seedType);
+        throw new Error('Unknown seed source: ' + opts.seedType);
     }
   }
 
@@ -152,24 +158,53 @@ export class Key {
     return a.id == b.id;
   }
 
-  toObj = function() {
-    var self = this;
+  private setFromMnemonic(m, opts: { passphrase?: string, password?: string, sjclOpts?: any }) {
+    const xpriv = m.toHDPrivateKey(opts.passphrase, NETWORK);
+    this.fingerPrint = xpriv.fingerPrint.toString('hex');
 
-    var x = {};
-    _.each(Key.FIELDS, function(k) {
-      x[k] = self[k];
-    });
-    return x;
+    if (opts.password) {
+      this.#xPrivKeyEncrypted = sjcl.encrypt(opts.password, xpriv.toString(), opts.sjclOpts);
+      if (!this.#xPrivKeyEncrypted) throw new Error('Could not encrypt');
+      this.#mnemonicEncrypted = sjcl.encrypt(opts.password, m.phrase, opts.sjclOpts);
+      if (!this.#mnemonicEncrypted) throw new Error('Could not encrypt');
+    } else {
+      this.#xPrivKey = xpriv.toString();
+      this.#mnemonic = m.phrase;
+      this.#mnemonicHasPassphrase = !!opts.passphrase;
+    }
+  }
+
+
+
+
+  toObj = function() {
+    const ret = {
+      'xPrivKey': this.#xPrivKey, 
+      'xPrivKeyEncrypted': this.#xPrivKeyEncrypted, 
+      'mnemonic': this.#mnemonic,
+      'mnemonicEncrypted': this.#mnemonicEncrypted,
+      'version': this.#version,
+      'mnemonicHasPassphrase': this.#mnemonicHasPassphrase,
+      'fingerPrint': this.fingerPrint, //  32bit fingerprint
+      'compliantDerivation': this.compliantDerivation,
+      'BIP45': this.BIP45,
+
+      // data for derived credentials.
+      'use0forBCH': this.use0forBCH, 
+      'use44forMultisig': this.use44forMultisig,
+      'id': this.id,
+    };
+    return _.clone(ret);
   };
 
   isPrivKeyEncrypted = function() {
-    return !!this.xPrivKeyEncrypted && !this.xPrivKey;
+    return !!this.#xPrivKeyEncrypted && !this.#xPrivKey;
   };
 
   checkPassword = function(password) {
     if (this.isPrivKeyEncrypted()) {
       try {
-        sjcl.decrypt(password, this.xPrivKeyEncrypted);
+        sjcl.decrypt(password, this.#xPrivKeyEncrypted);
       } catch (ex) {
         return false;
       }
@@ -179,13 +214,13 @@ export class Key {
   };
 
   get = function(password) {
-    var keys: any = {};
+    let keys: any = {};
     let fingerPrintUpdated = false;
 
     if (this.isPrivKeyEncrypted()) {
       $.checkArgument(password, 'Private keys are encrypted, a password is needed');
       try {
-        keys.xPrivKey = sjcl.decrypt(password, this.xPrivKeyEncrypted);
+        keys.xPrivKey = sjcl.decrypt(password, this.#xPrivKeyEncrypted);
 
         // update fingerPrint if not set.
         if (!this.fingerPrint) {
@@ -194,15 +229,16 @@ export class Key {
           fingerPrintUpdated = true;
         }
 
-        if (this.mnemonicEncrypted) {
-          keys.mnemonic = sjcl.decrypt(password, this.mnemonicEncrypted);
+        if (this.#mnemonicEncrypted) {
+          keys.mnemonic = sjcl.decrypt(password, this.#mnemonicEncrypted);
         }
       } catch (ex) {
         throw new Error('Could not decrypt');
       }
     } else {
-      keys.xPrivKey = this.xPrivKey;
-      keys.mnemonic = this.mnemonic;
+
+      keys.xPrivKey = this.#xPrivKey;
+      keys.mnemonic = this.#mnemonic;
       if (fingerPrintUpdated) {
         keys.fingerPrintUpdated = true;
       }
@@ -211,29 +247,29 @@ export class Key {
   };
 
   encrypt = function(password, opts) {
-    if (this.xPrivKeyEncrypted) throw new Error('Private key already encrypted');
+    if (this.#xPrivKeyEncrypted) throw new Error('Private key already encrypted');
 
-    if (!this.xPrivKey) throw new Error('No private key to encrypt');
+    if (!this.#xPrivKey) throw new Error('No private key to encrypt');
 
-    this.xPrivKeyEncrypted = sjcl.encrypt(password, this.xPrivKey, opts);
-    if (!this.xPrivKeyEncrypted) throw new Error('Could not encrypt');
+    this.#xPrivKeyEncrypted = sjcl.encrypt(password, this.#xPrivKey, opts);
+    if (!this.#xPrivKeyEncrypted) throw new Error('Could not encrypt');
 
-    if (this.mnemonic) this.mnemonicEncrypted = sjcl.encrypt(password, this.mnemonic, opts);
+    if (this.#mnemonic) this.#mnemonicEncrypted = sjcl.encrypt(password, this.#mnemonic, opts);
 
-    delete this.xPrivKey;
-    delete this.mnemonic;
+    this.#xPrivKey = null;
+    this.#mnemonic = null;
   };
 
   decrypt = function(password) {
-    if (!this.xPrivKeyEncrypted) throw new Error('Private key is not encrypted');
+    if (!this.#xPrivKeyEncrypted) throw new Error('Private key is not encrypted');
 
     try {
-      this.xPrivKey = sjcl.decrypt(password, this.xPrivKeyEncrypted);
-      if (this.mnemonicEncrypted) {
-        this.mnemonic = sjcl.decrypt(password, this.mnemonicEncrypted);
+      this.#xPrivKey = sjcl.decrypt(password, this.#xPrivKeyEncrypted);
+      if (this.#mnemonicEncrypted) {
+        this.#mnemonic = sjcl.decrypt(password, this.#mnemonicEncrypted);
       }
-      delete this.xPrivKeyEncrypted;
-      delete this.mnemonicEncrypted;
+      this.#xPrivKeyEncrypted = null;
+      this.#mnemonicEncrypted = null;
     } catch (ex) {
       log.error('error decrypting:', ex);
       throw new Error('Could not decrypt');

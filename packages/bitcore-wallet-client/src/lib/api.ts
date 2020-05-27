@@ -2358,7 +2358,7 @@ export class API extends EventEmitter {
     let k;
     if (x.xPrivKey || x.xPrivKeyEncrypted) {
       k = new Key();
-      _.each(Key.FIELDS, i => {
+      _.each(Key.exportFields, i => {
         if (!_.isUndefined(x[i])) {
           k[i] = x[i];
         }
