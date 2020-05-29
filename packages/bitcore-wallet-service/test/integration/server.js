@@ -212,7 +212,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it.only('should get server instance for marketing staff', function(done) {
+    it('should get server instance for marketing staff', function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, wallet) {
         var collections = Storage.collections;
         s.storage.db.collection(collections.COPAYERS_LOOKUP).update({

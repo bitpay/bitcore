@@ -392,10 +392,8 @@ describe('ExpressApp', function() {
                 'x-signature': 'signature'
               }
             };
-            request(requestOptions, function(err, res, body) {
-              
-            });
           });
+          done();
         });
         it('Server under maintenance check, should return 503 status code', function(done) {
           var server = {
