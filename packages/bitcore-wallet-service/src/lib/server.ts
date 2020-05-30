@@ -41,7 +41,6 @@ log.level = 'error';
 const EmailValidator = require('email-validator');
 
 import { Validation } from 'crypto-wallet-core';
-import { resolve } from 'dns';
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
   btc: Bitcore,
@@ -3468,6 +3467,8 @@ export class WalletService {
         }
       });
     };
+
+    
 
     try {
       this._runLocked(

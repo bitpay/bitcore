@@ -82,10 +82,6 @@ export class Storage {
       walletId: 1,
       id: 1
     });
-    db.collection(collections.ADDRESSES).createIndex({
-      walletId: 1,
-      createdOn: 1
-    });
     db.collection(collections.ADVERTISEMENTS).createIndex(
       {
         advertisementId: 1,
@@ -93,6 +89,11 @@ export class Storage {
       },
       { unique: true }
     );
+    db.collection(collections.ADDRESSES).createIndex({
+      walletId: 1,
+      createdOn: 1
+    });
+
     db.collection(collections.ADDRESSES).createIndex(
       {
         address: 1
@@ -520,61 +521,6 @@ export class Storage {
     );
   }
 
-  fetchTestingAdverts(cb) {
-    this.db
-      .collection(collections.ADVERTISEMENTS)
-      .find({
-        isTesting: true
-      })
-      .toArray((err, result) => {
-        if (err) return cb(err);
-        if (!result) return cb();
-        return cb(null, result.map(Advertisement.fromObj));
-      });
-  }
-
-  fetchActiveAdverts(cb) {
-    this.db
-      .collection(collections.ADVERTISEMENTS)
-      .find({
-        isAdActive: true
-      })
-      .toArray((err, result) => {
-        if (err) return cb(err);
-        if (!result) return cb();
-        return cb(null, result.map(Advertisement.fromObj));
-      });
-  }
-
-  fetchAdvertsByCountry(country, cb) {
-    this.db
-      .collection(collections.ADVERTISEMENTS)
-      .find({
-        country
-      })
-      .toArray((err, result) => {
-        if (err) return cb(err);
-        if (!result) return cb();
-        return cb(null, result.map(Advertisement.fromObj));
-      });
-  }
-
-  fetchAllAdverts(cb) {
-    this.db.collection(collections.ADVERTISEMENTS).find({});
-  }
-
-  removeAdvert(adId, cb) {
-    this.db.collection(collections.ADVERTISEMENTS).remove(
-      {
-        advertismentId: adId
-      },
-      {
-        w: 1
-      },
-      cb
-    );
-  }
-
   removeTx(walletId, txProposalId, cb) {
     this.db.collection(collections.TXS).remove(
       {
@@ -697,33 +643,6 @@ export class Storage {
       });
   }
 
-  storeAdvert(advert, cb) {
-    this.db.collection(collections.ADVERTISEMENTS).update(
-      {
-        advertisementId: advert.advertisementId
-      },
-      advert,
-      {
-        upsert: true
-      },
-      cb
-    );
-  }
-
-  fetchAdvert(adId, cb) {
-    this.db.collection(collections.ADVERTISEMENTS).findOne(
-      {
-        advertisementId: adId
-      },
-      (err, result) => {
-        if (err) return cb(err);
-        if (!result) return cb();
-
-        return cb(null, Advertisement.fromObj(result));
-      }
-    );
-  }
-
   storeAddress(address, cb) {
     this.db.collection(collections.ADDRESSES).update(
       {
@@ -748,7 +667,8 @@ export class Storage {
       {
         w: 1,
         upsert: false
-      }
+      },
+      cb
     );
   }
 
@@ -1607,6 +1527,88 @@ export class Storage {
           return this.releaseLock(key, cb);
         }
         return cb();
+      }
+    );
+  }
+
+  fetchTestingAdverts(cb) {
+    this.db
+      .collection(collections.ADVERTISEMENTS)
+      .find({
+        isTesting: true
+      })
+      .toArray((err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result.map(Advertisement.fromObj));
+      });
+  }
+
+  fetchActiveAdverts(cb) {
+    this.db
+      .collection(collections.ADVERTISEMENTS)
+      .find({
+        isAdActive: true
+      })
+      .toArray((err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result.map(Advertisement.fromObj));
+      });
+  }
+
+  fetchAdvertsByCountry(country, cb) {
+    this.db
+      .collection(collections.ADVERTISEMENTS)
+      .find({
+        country
+      })
+      .toArray((err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result.map(Advertisement.fromObj));
+      });
+  }
+
+  fetchAllAdverts(cb) {
+    this.db.collection(collections.ADVERTISEMENTS).find({});
+  }
+
+  removeAdvert(adId, cb) {
+    this.db.collection(collections.ADVERTISEMENTS).remove(
+      {
+        advertismentId: adId
+      },
+      {
+        w: 1
+      },
+      cb
+    );
+  }
+
+  storeAdvert(advert, cb) {
+    this.db.collection(collections.ADVERTISEMENTS).update(
+      {
+        advertisementId: advert.advertisementId
+      },
+      advert,
+      {
+        upsert: true
+      },
+      cb
+    );
+  }
+
+  fetchAdvert(adId, cb) {
+    this.db.collection(collections.ADVERTISEMENTS).findOne(
+      {
+        advertisementId: adId
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, Advertisement.fromObj(result));
       }
     );
   }
