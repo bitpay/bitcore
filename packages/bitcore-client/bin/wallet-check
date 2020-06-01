@@ -14,6 +14,7 @@ const main = async () => {
   const { name, path, storageType } = program;
   try {
     const wallet = await Wallet.loadWallet({ name, path, storageType });
+    await wallet.syncAddresses();
     const registered = await wallet.checkWallet();
     // TODO compare with local addresses
     console.log(registered);

@@ -13,13 +13,15 @@ program
   .option('--endBlock [endBlock]')
   .option('--includeMempool')
   .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
+  .option('--tokenContractAddress [tokenContractAddress]', 'optional - address of the token to query')
+  .option('--token [token]', 'optional - name of the token to query')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType } = program;
+  const { name, path, startBlock, startDate, endBlock, endDate, includeMempool, storageType, token, tokenContractAddress } = program;
   try {
     const wallet = await Wallet.loadWallet({ name, path, storageType });
-    wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool }).pipe(process.stdout);
+    wallet.listTransactions({ startBlock, startDate, endBlock, endDate, includeMempool, token, tokenContractAddress }).pipe(process.stdout);
   } catch (e) {
     console.error(e);
   }
