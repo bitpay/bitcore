@@ -15,6 +15,7 @@ export class Erc20RelatedFilterTransform extends Transform {
     } else if (
       tx.abiType &&
       tx.abiType.type === 'INVOICE' &&
+      tx.abiType.name === 'pay' &&
       tx.abiType.params[8].value.toLowerCase() === this.tokenAddress.toLowerCase()
     ) {
       tx.value = tx.abiType!.params[0].value as any;
