@@ -18,7 +18,7 @@ if (require.main === module) {
 
     const cursor = BitcoinBlockStorage.collection
       .find({ chain, network, height: { $gte: resumeHeight } })
-      .sort({ height: 1 });
+      .sort({ height: -1 });
     let prevMatch = true;
     let nextMatch = true;
     let previousBlock: IBlock | undefined;
@@ -39,8 +39,8 @@ if (require.main === module) {
         console.log(JSON.stringify(error));
         success = false;
       } else if (previousBlock) {
-        prevMatch = prevMatch && locatorBlock.previousBlockHash === previousBlock.hash;
-        nextMatch = nextMatch && locatorBlock.hash === previousBlock.nextBlockHash;
+        prevMatch = prevMatch && locatorBlock.nextBlockHash === previousBlock.hash;
+        nextMatch = nextMatch && locatorBlock.hash === previousBlock.previousBlockHash;
         if (!prevMatch || !nextMatch) {
           const error = {
             model: 'block',
