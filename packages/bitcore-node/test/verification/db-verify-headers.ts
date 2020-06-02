@@ -27,6 +27,7 @@ if (require.main === module) {
 
     console.log('Verifying headers for', chain, network, 'from height', resumeHeight);
     while (await cursor.hasNext()) {
+      let success = true;
       locatorBlock = (await cursor.next()) as IBlock;
       if (checkHeight !== locatorBlock.height) {
         const error = {
@@ -36,6 +37,7 @@ if (require.main === module) {
           payload: { blockNum: checkHeight }
         };
         console.log(JSON.stringify(error));
+        success = false;
       } else if (previousBlock) {
         prevMatch = prevMatch && locatorBlock.previousBlockHash === previousBlock.hash;
         nextMatch = nextMatch && locatorBlock.hash === previousBlock.nextBlockHash;
@@ -47,11 +49,13 @@ if (require.main === module) {
             payload: { blockNum: locatorBlock.height, txCount: locatorBlock.transactionCount }
           };
           console.log(JSON.stringify(error));
+          success = false;
         }
       }
 
       previousBlock = locatorBlock;
       checkHeight++;
+      console.log({ block: checkHeight, success });
     }
     process.exit(0);
   })();
