@@ -18,7 +18,8 @@ if (require.main === module) {
 
     const cursor = BitcoinBlockStorage.collection
       .find({ chain, network, height: { $gte: resumeHeight } })
-      .sort({ height: -1 });
+      .sort({ height: -1 })
+      .addCursorFlag('noCursorTimeout', true);
     let prevMatch = true;
     let nextMatch = true;
     let previousBlock: IBlock | undefined;
