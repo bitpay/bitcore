@@ -1,6 +1,6 @@
 import { CryptoRpc } from 'crypto-rpc';
 import { ObjectID } from 'mongodb';
-import { Readable, Transform } from 'stream';
+import { Readable } from 'stream';
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import { Transaction } from 'web3/eth/types';
@@ -31,6 +31,7 @@ import { ERC20Abi } from '../abi/erc20';
 import { EthBlockStorage } from '../models/block';
 import { EthTransactionStorage } from '../models/transaction';
 import { EthTransactionJSON, IEthBlock } from '../types';
+import { Erc20RelatedFilterTransform } from './erc20Transform';
 import { EthListTransactionsStream } from './transform';
 interface EventLog<T> {
   event: string;
@@ -317,63 +318,17 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     }
 
     let transactionStream = new Readable({ objectMode: true });
-    if (!args.tokenAddress) {
-      transactionStream = EthTransactionStorage.collection
-        .find(query)
-        .sort({ blockTimeNormalized: 1 })
-        .addCursorFlag('noCursorTimeout', true);
-    } else {
-      const walletAddresses = await this.getWalletAddresses(wallet._id!);
-      const query = {
-        chain,
-        network,
-        $or: [
-          {
-            wallets: wallet._id,
-            abiType: { $exists: true },
-            to: web3.utils.toChecksumAddress(args.tokenAddress),
-            'abiType.type': 'ERC20',
-            'abiType.name': 'transfer',
-            'wallets.0': { $exists: true }
-          },
-          {
-            abiType: { $exists: true },
-            to: web3.utils.toChecksumAddress(args.tokenAddress),
-            'abiType.type': 'ERC20',
-            'abiType.name': 'transfer',
-            'abiType.params.0.value': { $in: walletAddresses.map(w => w.address.toLowerCase()) }
-          }
-        ]
-      };
-      transactionStream = EthTransactionStorage.collection
-        .find(query)
-        .sort({ blockTimeNormalized: 1 })
-        .addCursorFlag('noCursorTimeout', true)
-        .pipe(
-          new Transform({
-            objectMode: true,
-            transform: (tx: any, _, cb) => {
-              if (tx.abiType && tx.abiType.type === 'ERC20') {
-                return cb(null, {
-                  ...tx,
-                  value: tx.abiType!.params[1].value,
-                  to: web3.utils.toChecksumAddress(tx.abiType!.params[0].value)
-                });
-              }
-              if (tx.abiType && tx.abiType.type === 'INVOICE') {
-                return cb(null, {
-                  ...tx,
-                  value: tx.abiType!.params[0].value,
-                  to: tx.to
-                });
-              }
-              return cb(null, tx);
-            }
-          })
-        );
+    const ethTransactionTransform = new EthListTransactionsStream(wallet);
+    transactionStream = EthTransactionStorage.collection
+      .find(query)
+      .sort({ blockTimeNormalized: 1 })
+      .addCursorFlag('noCursorTimeout', true);
+
+    if (args.tokenAddress) {
+      const erc20Transform = new Erc20RelatedFilterTransform(web3, args.tokenAddress);
+      transactionStream = transactionStream.pipe(erc20Transform);
     }
-    const listTransactionsStream = new EthListTransactionsStream(wallet);
-    transactionStream.pipe(listTransactionsStream).pipe(res);
+    transactionStream.pipe(ethTransactionTransform).pipe(res);
   }
 
   async getErc20Transfers(

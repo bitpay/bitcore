@@ -94,7 +94,7 @@ export class Client {
   }
 
   listTransactions(params) {
-    const { pubKey, startBlock, startDate, endBlock, endDate, includeMempool, payload } = params;
+    const { pubKey, startBlock, startDate, endBlock, endDate, includeMempool, payload, tokenContractAddress } = params;
     let url = `${this.apiUrl}/wallet/${pubKey}/transactions`;
     let query = '';
     if (startBlock) {
@@ -111,6 +111,9 @@ export class Client {
     }
     if (includeMempool) {
       query += 'includeMempool=true';
+    }
+    if (tokenContractAddress) {
+      query += `tokenAddress=${tokenContractAddress}`;
     }
     if (query) {
       url += '?' + query;
