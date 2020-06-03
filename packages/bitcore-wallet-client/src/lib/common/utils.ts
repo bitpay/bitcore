@@ -6,7 +6,7 @@ import * as _ from 'lodash';
 import { Constants } from './constants';
 import { Defaults } from './defaults';
 
-const  $ = require('preconditions').singleton();
+const $ = require('preconditions').singleton();
 const sjcl = require('sjcl');
 const Stringify = require('json-stable-stringify');
 
@@ -236,7 +236,7 @@ export class Utils {
       var x = str.split('.');
 
       var d = (x[1] || '0').substring(0, decimals);
-      const ret =  parseFloat(x[0] + '.' + d);
+      const ret = parseFloat(x[0] + '.' + d);
       return ret;
     };
 
