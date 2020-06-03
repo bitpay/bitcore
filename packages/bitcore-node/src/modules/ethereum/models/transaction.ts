@@ -284,7 +284,8 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       internal: tx.internal
         ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t.action.input || '0x') }))
         : [],
-      decodedData: valueOrDefault(decodedData, undefined)
+      decodedData: valueOrDefault(decodedData, undefined),
+      receipt: valueOrDefault(tx.receipt, undefined)
     };
     if (options && options.object) {
       return transaction;
