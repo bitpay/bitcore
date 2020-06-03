@@ -26,6 +26,7 @@
     "repair:db": "npm run tsc && node ./build/test/verification/db-repair.js",
     "verify:rpc": "npm run tsc && node ./build/test/verification/rpc-verify.js",
     "verify:db": "npm run tsc && node ./build/test/verification/db-verify.js",
+    "verify:headers": "npm run tsc && node ./build/test/verification/db-verify-headers.js",
     "resync": "npm run tsc && node ./build/test/verification/resync.js",
     "test:unit": "npm run tsc && node ./build/test/runners/unit.js",
     "test:integration": "npm run tsc && node ./build/test/runners/integration.js",
