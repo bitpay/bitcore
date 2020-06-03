@@ -61,11 +61,11 @@ export class SearchPage {
     });
   }
 
-  public goToAddress(addrStr: string): void {
+  public goToAddress(addr): void {
     this.redirProvider.redir('address', {
-      addrStr,
-      chain: this.chainNetwork.chain,
-      network: this.chainNetwork.network
+      addrStr: addr.address,
+      chain: addr.chain,
+      network: addr.network
     });
   }
 }
