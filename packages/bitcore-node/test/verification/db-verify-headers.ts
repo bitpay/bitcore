@@ -21,10 +21,10 @@ if (require.main === module) {
     let checkHeight = resumeHeight;
 
     console.log('Verifying headers for', chain, network, 'from height', resumeHeight);
-
     await BitcoinBlockStorage.collection
-      .find({ chain, network, height: { $gte: resumeHeight } })
-      .sort({ height: -1 })
+      .find({ chain, network, processed: true, height: { $gte: checkHeight } })
+      .project({ height: 1, nextBlockHash: 1, previousBlockHash: 1, hash: 1 })
+      .sort({ height: 1 })
       .forEach(locatorBlock => {
         let success = true;
         if (checkHeight !== locatorBlock.height) {
@@ -36,15 +36,16 @@ if (require.main === module) {
           };
           console.log(JSON.stringify(error));
           success = false;
+          checkHeight = locatorBlock.height;
         } else if (previousBlock) {
-          prevMatch = prevMatch && locatorBlock.nextBlockHash === previousBlock.hash;
-          nextMatch = nextMatch && locatorBlock.hash === previousBlock.previousBlockHash;
+          prevMatch = prevMatch && locatorBlock.previousBlockHash === previousBlock.hash;
+          nextMatch = nextMatch && locatorBlock.hash === previousBlock.nextBlockHash;
           if (!prevMatch || !nextMatch) {
             const error = {
               model: 'block',
               err: true,
               type: 'CORRUPTED_BLOCK',
-              payload: { blockNum: locatorBlock.height, txCount: locatorBlock.transactionCount }
+              payload: { blockNum: locatorBlock.height }
             };
             console.log(JSON.stringify(error));
             success = false;
@@ -53,7 +54,9 @@ if (require.main === module) {
 
         previousBlock = locatorBlock;
         checkHeight++;
-        console.log({ block: checkHeight, success });
+        if (success) {
+          console.log({ block: checkHeight, success });
+        }
       });
     process.exit(0);
   })();
