@@ -212,6 +212,11 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
           .on('finish', async () => {
             logger.info(`FINISHED Syncing ${count} ${chain} ${network} wallets`);
             this.initialSyncComplete = true;
+            await StateStorage.collection.findOneAndUpdate(
+              {},
+              { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
+              { upsert: true }
+            );
             resolve();
           });
       } catch (e) {
@@ -299,6 +304,9 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
     }
     const { chain, network } = this;
     this.syncing = true;
+    const state = await StateStorage.collection.findOne({});
+    this.initialSyncComplete =
+      state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
     try {
       if (this.chainConfig.walletOnlySync && !this.initialSyncComplete) {
         await this.syncWallets();
