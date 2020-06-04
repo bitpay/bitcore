@@ -32,6 +32,7 @@ import { EthBlockStorage } from '../models/block';
 import { EthTransactionStorage } from '../models/transaction';
 import { EthTransactionJSON, IEthBlock } from '../types';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
+import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { EthListTransactionsStream } from './transform';
 interface EventLog<T> {
   event: string;
@@ -324,6 +325,11 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
 
+    if (!args.tokenAddress && wallet._id) {
+      const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
+      transactionStream = transactionStream.pipe(internalTxTransform);
+    }
+
     if (args.tokenAddress) {
       const erc20Transform = new Erc20RelatedFilterTransform(web3, args.tokenAddress);
       transactionStream = transactionStream.pipe(erc20Transform);
@@ -450,7 +456,15 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       }
 
       await EthTransactionStorage.collection.updateMany(
-        { chain, network, $or: [{ from: { $in: addressBatch } }, { to: { $in: addressBatch } }] },
+        {
+          chain,
+          network,
+          $or: [
+            { from: { $in: addressBatch } },
+            { to: { $in: addressBatch } },
+            { 'internal.action.to': { $in: addressBatch } }
+          ]
+        },
         { $addToSet: { wallets: params.wallet._id } }
       );
 
