@@ -4,6 +4,7 @@ import { Transform } from 'stream';
 import { LoggifyClass } from '../../decorators/Loggify';
 import logger from '../../logger';
 import { timestamp } from '../../logger';
+import { CacheStorage } from '../../models/cache';
 import { StateStorage } from '../../models/state';
 import { IWalletAddress, WalletAddressStorage } from '../../models/walletAddress';
 import { BaseP2PWorker } from '../../services/p2p';
@@ -162,6 +163,11 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
                   .sort({ blockTimeNormalized: -1 })
                   .limit(1)
                   .toArray();
+                const synced = await CacheStorage.getForWallet(walletAddress.wallet, `sync-${walletAddress.address}`);
+                if (synced) {
+                  // if this is happening, it means initial sync wasn't completed the first time, likely due to a crash
+                  return cb();
+                }
                 const txs = await this.provider.getAddressTransactions({
                   chain: this.chain,
                   network: this.network,
@@ -192,6 +198,12 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
                   initialSyncComplete: false
                 });
 
+                await CacheStorage.setForWallet(
+                  walletAddress.wallet,
+                  `sync-${walletAddress.address}`,
+                  true,
+                  CacheStorage.Times.Hour / 2
+                );
                 done++;
                 cb();
               }
@@ -200,6 +212,11 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
           .on('finish', async () => {
             logger.info(`FINISHED Syncing ${count} ${chain} ${network} wallets`);
             this.initialSyncComplete = true;
+            await StateStorage.collection.findOneAndUpdate(
+              {},
+              { $addToSet: { initialSyncComplete: `${chain}:${network}` } },
+              { upsert: true }
+            );
             resolve();
           });
       } catch (e) {
@@ -223,7 +240,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
         configuredStart = ourBestBlock.height;
       }
       if (configuredStart === undefined) {
-        configuredStart = chainBestBlock;
+        configuredStart = chainBestBlock - 1;
       }
       const defaultBestBlock = { height: configuredStart } as IXrpBlock;
       logger.info(`Starting XRP Sync @ ${configuredStart}`);
@@ -287,6 +304,9 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
     }
     const { chain, network } = this;
     this.syncing = true;
+    const state = await StateStorage.collection.findOne({});
+    this.initialSyncComplete =
+      state && state.initialSyncComplete && state.initialSyncComplete.includes(`${chain}:${network}`);
     try {
       if (this.chainConfig.walletOnlySync && !this.initialSyncComplete) {
         await this.syncWallets();
