@@ -125,6 +125,17 @@ export type IEthTransaction = ITransaction & {
     params: Array<{ name: string; value: string; type: string }>;
   };
   error?: string;
+  receipt?: {
+    status: boolean;
+    transactionHash: string;
+    transactionIndex: number;
+    blockHash: string;
+    blockNumber: number;
+    contractAddress?: string;
+    cumulativeGasUsed: number;
+    gasUsed: number;
+    logs: Array<any>;
+  };
 };
 
 export interface TransactionJSON {
@@ -164,4 +175,5 @@ export interface EthTransactionJSON {
   decodedData?: AbiDecodedData;
   data: string;
   internal: Array<DecodedTrace>;
+  receipt?: IEthTransaction['receipt'];
 }

@@ -161,6 +161,11 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     return EthBlockStorage.getLocalTip({ chain, network });
   }
 
+  async getReceipt(network: string, txid: string) {
+    const { web3 } = await this.getWeb3(network);
+    return web3.eth.getTransactionReceipt(txid);
+  }
+
   async getTransaction(params: StreamTransactionParams) {
     try {
       let { chain, network, txId } = params;
@@ -176,6 +181,13 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
         let confirmations = 0;
         if (found.blockHeight && found.blockHeight >= 0) {
           confirmations = tipHeight - found.blockHeight + 1;
+        }
+        if (!found.receipt) {
+          const receipt = await this.getReceipt(network, found.txid);
+          if (receipt) {
+            await EthTransactionStorage.collection.updateOne({ _id: found._id }, { $set: { receipt } });
+            found.receipt = receipt;
+          }
         }
         const convertedTx = EthTransactionStorage._apiTransform(found, { object: true }) as EthTransactionJSON;
         return { ...convertedTx, confirmations } as any;
