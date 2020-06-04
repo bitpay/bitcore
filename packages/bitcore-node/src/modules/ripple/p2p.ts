@@ -240,7 +240,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
         configuredStart = ourBestBlock.height;
       }
       if (configuredStart === undefined) {
-        configuredStart = chainBestBlock;
+        configuredStart = chainBestBlock - 1;
       }
       const defaultBestBlock = { height: configuredStart } as IXrpBlock;
       logger.info(`Starting XRP Sync @ ${configuredStart}`);
