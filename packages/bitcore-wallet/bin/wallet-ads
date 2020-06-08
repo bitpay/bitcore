@@ -3,11 +3,11 @@
 var _ = require('lodash');
 var program = require('commander');
 var utils = require('./cli-utils');
-const crypto = require('crypto');
 var Client = require('bitcore-wallet-client').default;
-var bwcUtils = Client.Utils;
 var Bitcore = Client.Bitcore;
-const Key = Client.Key;
+const b = require('bitcore-lib');
+const ECDSA = b.crypto.ECDSA;
+const Hash = b.crypto.Hash;
 var FileStorage = require('./filestorage');
 var uuid = require('uuid');
 program = utils.configureCommander(program);
@@ -114,7 +114,9 @@ utils.getClient(clientArgs, {
 }, function (client) {
 
   let finalAdStringMessage = JSON.stringify(uniqueMessageArgs);
-  const signature = bwcUtils.signMessage(finalAdStringMessage, new Bitcore.PrivateKey(walletInfo.cred.requestPrivKey));
+  let buf = Buffer.from(finalAdStringMessage);
+  let messageHashBuf = Hash.sha256(buf);
+  const signature = ECDSA.sign(messageHashBuf, b.PrivateKey(walletInfo.cred.requestPrivKey), 'little').toString();
 
   const finalAd = {...allAdArgs,  signature};
 
