@@ -158,6 +158,15 @@ export class HeadNavComponent implements OnInit {
           : matches.addresses.push(res.addr[0]);
       });
 
+      // ETH addresses doesn't have 'address' property
+      if (matches.addresses.length > 0) {
+        matches.addresses.forEach(addr => {
+          if (!addr.address) {
+            addr.address = this.q;
+          }
+        });
+      }
+
       this.redirProvider.redir('search', {
         matches,
         chain: this.chainNetwork.chain,
