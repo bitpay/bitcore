@@ -419,7 +419,8 @@ export class BtcChain implements IChain {
       return ex;
     }
 
-    if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.FeeError) return Errors.INSUFFICIENT_FUNDS_FOR_FEE(txp.fee);
+    if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.FeeError)
+      return Errors.INSUFFICIENT_FUNDS_FOR_FEE(txp.feePerKb);
     if (bitcoreError instanceof this.bitcoreLib.errors.Transaction.DustOutputs) return Errors.DUST_AMOUNT;
     return bitcoreError;
   }
@@ -523,7 +524,7 @@ export class BtcChain implements IChain {
             ')'
         );
 
-        return cb(Errors.INSUFFICIENT_FUNDS_FOR_FEE((baseTxpFee - utxos.length * feePerInput)));
+        return cb(Errors.INSUFFICIENT_FUNDS_FOR_FEE(txp.feePerKb));
       }
 
       const bigInputThreshold = txpAmount * Defaults.UTXO_SELECTION_MAX_SINGLE_UTXO_FACTOR + (baseTxpFee + feePerInput);
@@ -625,7 +626,7 @@ export class BtcChain implements IChain {
 
       if (_.isEmpty(selected)) {
         // log.debug('Could not find enough funds within this utxo subset');
-        return cb(error || Errors.INSUFFICIENT_FUNDS_FOR_FEE(fee));
+        return cb(error || Errors.INSUFFICIENT_FUNDS_FOR_FEE(txp.feePerKb));
       }
 
       return cb(null, selected, fee);
