@@ -1,18 +1,18 @@
 import { EventEmitter } from 'events';
 import { RippleAPI } from 'ripple-lib';
 import { Transform } from 'stream';
-import { LoggifyClass } from '../../decorators/Loggify';
-import logger from '../../logger';
-import { timestamp } from '../../logger';
-import { CacheStorage } from '../../models/cache';
-import { StateStorage } from '../../models/state';
-import { IWalletAddress, WalletAddressStorage } from '../../models/walletAddress';
-import { BaseP2PWorker } from '../../services/p2p';
-import { wait } from '../../utils/wait';
-import { RippleStateProvider } from './api/csp';
-import { XrpBlockModel, XrpBlockStorage } from './models/block';
-import { XrpTransactionStorage } from './models/transaction';
-import { IXrpBlock, IXrpCoin, IXrpTransaction } from './types';
+import { LoggifyClass } from '../../../decorators/Loggify';
+import logger from '../../../logger';
+import { timestamp } from '../../../logger';
+import { CacheStorage } from '../../../models/cache';
+import { StateStorage } from '../../../models/state';
+import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
+import { BaseP2PWorker } from '../../../services/p2p';
+import { wait } from '../../../utils/wait';
+import { RippleStateProvider } from '../api/csp';
+import { XrpBlockModel, XrpBlockStorage } from '../models/block';
+import { XrpTransactionStorage } from '../models/transaction';
+import { IXrpBlock, IXrpCoin, IXrpTransaction } from '../types';
 
 @LoggifyClass
 export class XrpP2pWorker extends BaseP2PWorker<any> {
@@ -236,7 +236,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
 
     if (!ourBestBlock || this.chainConfig.walletOnlySync) {
       let configuredStart = this.chainConfig.startHeight;
-      const shouldResume = !configuredStart || ourBestBlock.height > configuredStart
+      const shouldResume = !configuredStart || ourBestBlock.height > configuredStart;
       if (ourBestBlock && shouldResume) {
         configuredStart = ourBestBlock.height;
       }
