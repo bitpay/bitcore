@@ -236,7 +236,8 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
 
     if (!ourBestBlock || this.chainConfig.walletOnlySync) {
       let configuredStart = this.chainConfig.startHeight;
-      if (ourBestBlock && configuredStart && ourBestBlock.height > configuredStart) {
+      const shouldResume = !configuredStart || ourBestBlock.height > configuredStart
+      if (ourBestBlock && shouldResume) {
         configuredStart = ourBestBlock.height;
       }
       if (configuredStart === undefined) {
