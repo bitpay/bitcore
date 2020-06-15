@@ -197,7 +197,9 @@ import { Verification } from '../../src/services/verification';
           console.log('Inspecting...');
           console.log(dataStr);
           await handleRepair(parsedData);
-        } catch (err) {}
+        } catch (err) {
+          console.error(err);
+        }
       }
     }
   }
