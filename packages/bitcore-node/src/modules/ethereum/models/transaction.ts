@@ -117,11 +117,17 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     for (const op of txOps) {
       let batch = new Array<{ tokenAddress?: string; address: string }>();
       const { chain, network } = op.updateOne.filter;
-      const { from, to, abiType } = op.updateOne.update.$set;
+      const { from, to, abiType, internal } = op.updateOne.update.$set;
       batch = batch.concat([{ address: from }, { address: to }]);
       if (abiType && abiType.params.length) {
         batch.push({ address: from, tokenAddress: to });
         batch.push({ address: abiType.params[0].value, tokenAddress: to });
+      }
+      if (internal && internal.length > 0) {
+        internal.forEach(i => {
+          if (i.action.to) batch.push({ address: i.action.to });
+          if (i.action.from) batch.push({ address: i.action.from });
+        });
       }
       for (const payload of batch) {
         const lowerAddress = payload.address.toLowerCase();
