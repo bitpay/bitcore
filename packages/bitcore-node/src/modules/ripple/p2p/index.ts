@@ -173,7 +173,7 @@ export class XrpP2pWorker extends BaseP2PWorker<any> {
                   network: this.network,
                   address: walletAddress.address,
                   args: {
-                    ...(lastTx && { startTx: lastTx.txid })
+                    ...(lastTx && !this.chainConfig.freshSync && { startTx: lastTx.txid })
                   }
                 });
                 if (txs.length) {
