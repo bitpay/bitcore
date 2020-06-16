@@ -91,6 +91,27 @@ describe('Transaction Creation', () => {
     expect(cryptoTx).to.equal(expectedTx);
   });
 
+  it('should be able to create a large livenet ETH tx', () => {
+    const rawEthTx = {
+      network: 'livenet',
+      value: '1606938044258990275541962092341162602522182703728804180901375',
+      to: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+      data: '',
+      gasPrice: 20000000000
+    };
+    const { value, to } = rawEthTx;
+    const recipients = [{ address: to, amount: value }];
+    const cryptoTx = Transactions.create({
+      ...rawEthTx,
+      chain: 'ETH',
+      recipients,
+      nonce: 0
+    });
+    const expectedTx =
+      '0xf90161808504a817c800809437d7b3bbd88efde6a93cf74d2f5b0385d3e3b08a99fffffffffffffffffffffffffffffffffee66b3f660cc1bdffb90124b6b4af05000000000000000000000000000000000000000000000000000dd764300b800000000000000000000000000000000000000000000000000000000004a817c8000000000000000000000000000000000000000000000000000000016ada606a26050bb49a5a8228599e0dd48c1368abd36f4f14d2b74a015b2d168dbcab0773ce399393220df874bb22ca961f351e038acd2ba5cc8c764385c9f23707622cc435000000000000000000000000000000000000000000000000000000000000001c7e247d684a635813267b10a63f7f3ba88b28ca2790c909110b28236cf1b9bba03451e83d5834189f28d4c77802fc76b7c760a42bc8bebf8dd15e6ead146805630000000000000000000000000000000000000000000000000000000000000000018080';
+    expect(cryptoTx).to.equal(expectedTx);
+  });
+
   it('should be able to create a testnet ETH tx', () => {
     const rawEthTx = {
       network: 'testnet',
