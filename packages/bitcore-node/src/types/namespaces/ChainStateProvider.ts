@@ -145,11 +145,20 @@ export interface GetCoinsForTxParams {
 export interface Provider<T> {
   get(params: { chain: string }): T;
 }
+export type Balance =
+  | {
+      confirmed: number;
+      unconfirmed: number;
+      balance: number;
+    }
+  | {
+      confirmed: string;
+      unconfirmed: string;
+      balance: string;
+    };
 export type IChainStateProvider = Provider<IChainStateService> & IChainStateService;
 export interface IChainStateService {
-  getBalanceForAddress(
-    params: GetBalanceForAddressParams
-  ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
+  getBalanceForAddress(params: GetBalanceForAddressParams): Promise<Balance>;
   getBlock(params: GetBlockParams): Promise<IBlock>;
   getBlockBeforeTime(params: GetBlockBeforeTimeParams): Promise<IBlock>;
   streamBlocks(params: StreamBlocksParams): any;
@@ -158,12 +167,8 @@ export interface IChainStateService {
   createWallet(params: CreateWalletParams): Promise<IWallet>;
   getWallet(params: GetWalletParams): Promise<IWallet | null>;
   updateWallet(params: UpdateWalletParams): Promise<void>;
-  getWalletBalance(
-    params: GetWalletBalanceParams
-  ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
-  getWalletBalanceAtTime(
-    params: GetWalletBalanceAtTimeParams
-  ): Promise<{ confirmed: number; unconfirmed: number; balance: number }>;
+  getWalletBalance(params: GetWalletBalanceParams): Promise<Balance>;
+  getWalletBalanceAtTime(params: GetWalletBalanceAtTimeParams): Promise<Balance>;
   streamAddressUtxos(params: StreamAddressUtxosParams): any;
   streamAddressTransactions(params: StreamAddressUtxosParams): any;
   streamTransactions(params: StreamTransactionsParams): any;

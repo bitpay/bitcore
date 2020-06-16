@@ -2,6 +2,7 @@ import { CollectionAggregationOptions, ObjectID } from 'mongodb';
 import { LoggifyClass } from '../decorators/Loggify';
 import { StorageService } from '../services/storage';
 import { CoinJSON, SpentHeightIndicators } from '../types/Coin';
+import { Balance } from '../types/namespaces/ChainStateProvider';
 import { valueOrDefault } from '../utils/check';
 import { BaseModel, MongoBound } from './base';
 import { BitcoinBlockStorage } from './block';
@@ -92,10 +93,10 @@ export class CoinModel extends BaseModel<ICoin> {
         options
       )
       .toArray();
-    return result.reduce<{ confirmed: number; unconfirmed: number; balance: number }>(
+    return result.reduce<Balance>(
       (acc, cur) => {
         acc[cur._id] = cur.balance;
-        acc.balance += cur.balance;
+        acc.balance = Number(acc.balance) + Number(cur.balance);
         return acc;
       },
       { confirmed: 0, unconfirmed: 0, balance: 0 }

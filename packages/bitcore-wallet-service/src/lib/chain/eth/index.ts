@@ -9,6 +9,7 @@ const Common = require('../../common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
+const toBN = Web3.utils.toBN;
 
 export class EthChain implements IChain {
   /**
@@ -25,8 +26,12 @@ export class EthChain implements IChain {
       totalConfirmedAmount: confirmed,
       lockedAmount: locked,
       lockedConfirmedAmount: locked,
-      availableAmount: balance - locked,
-      availableConfirmedAmount: confirmed - locked,
+      availableAmount: toBN(balance)
+        .sub(toBN(locked))
+        .toString(),
+      availableConfirmedAmount: toBN(confirmed)
+        .sub(locked)
+        .toString(),
       byAddress: []
     };
     return convertedBalance;
@@ -217,9 +222,9 @@ export class EthChain implements IChain {
       if (err) return cb(err);
 
       const { totalAmount, availableAmount } = balance;
-      if (totalAmount < txp.getTotalAmount()) {
+      if (toBN(totalAmount).lt(txp.getTotalAmount())) {
         return cb(Errors.INSUFFICIENT_FUNDS);
-      } else if (availableAmount < txp.getTotalAmount()) {
+      } else if (toBN(availableAmount).lt(txp.getTotalAmount())) {
         return cb(Errors.LOCKED_FUNDS);
       } else {
         if (opts.tokenAddress) {
@@ -227,9 +232,9 @@ export class EthChain implements IChain {
           server.getBalance({}, (err, ethBalance) => {
             if (err) return cb(err);
             const { totalAmount, availableAmount } = ethBalance;
-            if (totalAmount < txp.fee) {
+            if (toBN(totalAmount).lt(txp.fee)) {
               return cb(Errors.INSUFFICIENT_ETH_FEE);
-            } else if (availableAmount < txp.fee) {
+            } else if (toBN(availableAmount).lt(txp.fee)) {
               return cb(Errors.LOCKED_ETH_FEE);
             } else {
               return cb(this.checkTx(txp));

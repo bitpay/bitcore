@@ -13,6 +13,7 @@ import { InternalStateProvider } from '../../../providers/chain-state/internal/i
 import { Storage } from '../../../services/storage';
 import { SpentHeightIndicators } from '../../../types/Coin';
 import {
+  Balance,
   BroadcastTransactionParams,
   GetBalanceForAddressParams,
   GetBlockParams,
@@ -144,12 +145,10 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
         if (tokenAddress) {
           const token = await this.erc20For(network, params.args.tokenAddress);
           const balance = await token.methods.balanceOf(address).call();
-          const numberBalance = Number(balance);
-          return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
+          return { confirmed: balance, unconfirmed: '0', balance } as Balance;
         } else {
           const balance = await web3.eth.getBalance(address);
-          const numberBalance = Number(balance);
-          return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
+          return { confirmed: balance, unconfirmed: '0', balance } as Balance;
         }
       },
       CacheStorage.Times.Hour / 2
@@ -270,20 +269,26 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     if (params.wallet._id === undefined) {
       throw new Error('Wallet balance can only be retrieved for wallets with the _id property');
     }
+    const { web3 } = await this.getWeb3(network);
     let addresses = await this.getWalletAddresses(params.wallet._id);
     let addressBalancePromises = addresses.map(({ address }) =>
       this.getBalanceForAddress({ chain: this.chain, network, address, args: params.args })
     );
-    let addressBalances = await Promise.all<{ confirmed: number; unconfirmed: number; balance: number }>(
-      addressBalancePromises
-    );
+    let addressBalances = await Promise.all<Balance>(addressBalancePromises);
+    const toBN = web3.utils.toBN;
     let balance = addressBalances.reduce(
       (prev, cur) => ({
-        unconfirmed: prev.unconfirmed + Number(cur.unconfirmed),
-        confirmed: prev.confirmed + Number(cur.confirmed),
-        balance: prev.balance + Number(cur.balance)
+        unconfirmed: toBN(prev.unconfirmed)
+          .add(toBN(cur.unconfirmed))
+          .toString(),
+        confirmed: toBN(prev.confirmed)
+          .add(toBN(cur.confirmed))
+          .toString(),
+        balance: toBN(prev.balance)
+          .add(toBN(cur.balance))
+          .toString()
       }),
-      { unconfirmed: 0, confirmed: 0, balance: 0 }
+      { unconfirmed: '0', confirmed: '0', balance: '0' }
     );
     return balance;
   }
