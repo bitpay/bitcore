@@ -4715,7 +4715,7 @@ describe('Wallet service', function() {
               should.not.exist(err);
               should.exist(tx);
               should.not.exist(tx.changeAddress);
-              tx.amount.should.equal(3 * TO_SAT[coin] - tx.fee);
+              Number(tx.amount).should.equal(3 * TO_SAT[coin] - tx.fee);
 
               var t = ChainService.getBitcoreTx(tx);
               t.getFee().should.equal(tx.fee);
