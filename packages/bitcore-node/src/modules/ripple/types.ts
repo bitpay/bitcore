@@ -3,6 +3,7 @@ import { ITransaction } from '../../models/baseTransaction';
 import { ICoin } from '../../models/coin';
 
 export type IXrpBlock = IBlock & {};
+
 export type IXrpTransaction = ITransaction & {
   from: string;
   to?: string;

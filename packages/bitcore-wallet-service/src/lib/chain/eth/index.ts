@@ -86,7 +86,9 @@ export class EthChain implements IChain {
       return cb(null, {
         utxosBelowFee: 0,
         amountBelowFee: 0,
-        amount: toBN(availableAmount).sub(toBN(fee)).toString(),
+        amount: toBN(availableAmount)
+          .sub(toBN(fee))
+          .toString(),
         feePerKb: opts.feePerKb,
         fee
       });
@@ -250,7 +252,11 @@ export class EthChain implements IChain {
   checkUtxos(opts) {}
 
   checkValidTxAmount(output): boolean {
-    if (!_.isString(output.amount) || _.isNaN(output.amount) || toBN(output.amount).lt(toBN('0'))) {
+    if (
+      !(_.isString(output.amount) || _.isNumber(output.amount)) ||
+      _.isNaN(output.amount) ||
+      toBN(output.amount).lt(toBN('0'))
+    ) {
       return false;
     }
     return true;
