@@ -30,7 +30,7 @@ export class EthChain implements IChain {
         .sub(toBN(locked))
         .toString(),
       availableConfirmedAmount: toBN(confirmed)
-        .sub(locked)
+        .sub(toBN(locked))
         .toString(),
       byAddress: []
     };
@@ -222,9 +222,9 @@ export class EthChain implements IChain {
       if (err) return cb(err);
 
       const { totalAmount, availableAmount } = balance;
-      if (toBN(totalAmount).lt(txp.getTotalAmount())) {
+      if (toBN(totalAmount).lt(toBN(txp.getTotalAmount()))) {
         return cb(Errors.INSUFFICIENT_FUNDS);
-      } else if (toBN(availableAmount).lt(txp.getTotalAmount())) {
+      } else if (toBN(availableAmount).lt(toBN(txp.getTotalAmount()))) {
         return cb(Errors.LOCKED_FUNDS);
       } else {
         if (opts.tokenAddress) {
@@ -232,9 +232,9 @@ export class EthChain implements IChain {
           server.getBalance({}, (err, ethBalance) => {
             if (err) return cb(err);
             const { totalAmount, availableAmount } = ethBalance;
-            if (toBN(totalAmount).lt(txp.fee)) {
+            if (toBN(totalAmount).lt(toBN(txp.fee))) {
               return cb(Errors.INSUFFICIENT_ETH_FEE);
-            } else if (toBN(availableAmount).lt(txp.fee)) {
+            } else if (toBN(availableAmount).lt(toBN(txp.fee))) {
               return cb(Errors.LOCKED_ETH_FEE);
             } else {
               return cb(this.checkTx(txp));
