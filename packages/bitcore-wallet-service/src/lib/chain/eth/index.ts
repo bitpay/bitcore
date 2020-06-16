@@ -86,7 +86,7 @@ export class EthChain implements IChain {
       return cb(null, {
         utxosBelowFee: 0,
         amountBelowFee: 0,
-        amount: availableAmount - fee,
+        amount: toBN(availableAmount).sub(toBN(fee)),
         feePerKb: opts.feePerKb,
         fee
       });
