@@ -37,7 +37,7 @@ export class RippleDbWalletTransactions extends Transform {
     const relevantAddresses = walletAddresses.map(w => w.address);
     let sending = relevantAddresses.includes(tx.from);
     if (sending) {
-      const sends = outputs.filter(o => o.address != tx.from);
+      const sends = outputs.filter(o => !relevantAddresses.includes(o.address));
       sends.forEach(output => {
         this.push(
           JSON.stringify({
