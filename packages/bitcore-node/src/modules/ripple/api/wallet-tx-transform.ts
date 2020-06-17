@@ -36,75 +36,73 @@ export class RippleDbWalletTransactions extends Transform {
     const walletAddresses = await this.getAddresses();
     const relevantAddresses = walletAddresses.map(w => w.address);
     let sending = relevantAddresses.includes(tx.from);
-    for (const output of outputs) {
-      const { address } = output;
-      let receiving = false;
-      if (relevantAddresses.includes(output.address) && output.value > 0) {
-        receiving = true;
+    if (sending) {
+      const sends = outputs.filter(o => o.address != tx.from);
+      sends.forEach(output => {
+        this.push(
+          JSON.stringify({
+            id: tx.txid,
+            txid: tx.txid,
+            fee: tx.fee,
+            size: 0,
+            category: 'send',
+            satoshis: -1 * Math.abs(output.value),
+            height: tx.blockHeight,
+            address: output.address,
+            outputIndex: output.mintIndex,
+            blockTime: tx.blockTimeNormalized
+          }) + '\n'
+        );
+      });
+
+      const moves = outputs.filter(o => o.address != tx.from && relevantAddresses.includes(o.address));
+      moves.forEach(output => {
+        this.push(
+          JSON.stringify({
+            id: tx.txid,
+            txid: tx.txid,
+            fee: tx.fee,
+            size: 0,
+            category: 'move',
+            satoshis: -1 * Math.abs(output.value),
+            height: tx.blockHeight,
+            address: output.address,
+            outputIndex: output.mintIndex,
+            blockTime: tx.blockTimeNormalized
+          }) + '\n'
+        );
+      });
+
+      if (tx.fee > 0) {
+        this.push(
+          JSON.stringify({
+            id: tx.txid,
+            txid: tx.txid,
+            category: 'fee',
+            satoshis: -1 * tx.fee,
+            height: tx.blockHeight,
+            blockTime: tx.blockTimeNormalized
+          }) + '\n'
+        );
       }
-      if (sending) {
-        if (!receiving) {
-          this.push(
-            JSON.stringify({
-              id: tx.txid,
-              txid: tx.txid,
-              fee: tx.fee,
-              size: 0,
-              category: 'send',
-              satoshis: -1 * Math.abs(output.value) + tx.fee,
-              height: tx.blockHeight,
-              address,
-              outputIndex: output.mintIndex,
-              blockTime: tx.blockTimeNormalized
-            }) + '\n'
-          );
-        } else {
-          this.push(
-            JSON.stringify({
-              id: tx.txid,
-              txid: tx.txid,
-              fee: tx.fee,
-              size: 0,
-              category: 'move',
-              satoshis: -1 * Math.abs(output.value),
-              height: tx.blockHeight,
-              address,
-              outputIndex: output.mintIndex,
-              blockTime: tx.blockTimeNormalized
-            }) + '\n'
-          );
-        }
-        if (tx.fee > 0) {
-          this.push(
-            JSON.stringify({
-              id: tx.txid,
-              txid: tx.txid,
-              category: 'fee',
-              satoshis: -1 * tx.fee,
-              height: tx.blockHeight,
-              blockTime: tx.blockTimeNormalized
-            }) + '\n'
-          );
-        }
-        return done();
-      } else {
-        if (receiving) {
-          this.push(
-            JSON.stringify({
-              id: tx.txid,
-              txid: tx.txid,
-              fee: tx.fee,
-              size: 0,
-              category: 'receive',
-              satoshis: Math.abs(output.value),
-              height: tx.blockHeight,
-              address,
-              outputIndex: output.mintIndex,
-              blockTime: tx.blockTimeNormalized
-            }) + '\n'
-          );
-        }
-      }
+    } else {
+      const receives = outputs.filter(o => relevantAddresses.includes(o.address));
+      receives.forEach(output => {
+        this.push(
+          JSON.stringify({
+            id: tx.txid,
+            txid: tx.txid,
+            fee: tx.fee,
+            size: 0,
+            category: 'receive',
+            satoshis: Math.abs(output.value),
+            height: tx.blockHeight,
+            address: output.address,
+            outputIndex: output.mintIndex,
+            blockTime: tx.blockTimeNormalized
+          }) + '\n'
+        );
+      });
     }
     done();
   }
