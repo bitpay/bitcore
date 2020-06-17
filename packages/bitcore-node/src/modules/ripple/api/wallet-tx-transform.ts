@@ -33,11 +33,11 @@ export class RippleDbWalletTransactions extends Transform {
       .addCursorFlag('noCursorTimeout', true)
       .toArray();
 
-    const walletAddresses = await this.getAddresses();
-    const relevantAddresses = walletAddresses.map(w => w.address);
-    let sending = relevantAddresses.includes(tx.from);
+    const walletAddressesObjs = await this.getAddresses();
+    const walletAddresses = walletAddressesObjs.map(w => w.address);
+    let sending = walletAddresses.includes(tx.from);
     if (sending) {
-      const sends = outputs.filter(o => !relevantAddresses.includes(o.address));
+      const sends = outputs.filter(o => !walletAddresses.includes(o.address));
       sends.forEach(output => {
         this.push(
           JSON.stringify({
@@ -55,7 +55,7 @@ export class RippleDbWalletTransactions extends Transform {
         );
       });
 
-      const moves = outputs.filter(o => o.address != tx.from && relevantAddresses.includes(o.address));
+      const moves = outputs.filter(o => o.address != tx.from && walletAddresses.includes(o.address));
       moves.forEach(output => {
         this.push(
           JSON.stringify({
@@ -86,7 +86,7 @@ export class RippleDbWalletTransactions extends Transform {
         );
       }
     } else {
-      const receives = outputs.filter(o => relevantAddresses.includes(o.address));
+      const receives = outputs.filter(o => walletAddresses.includes(o.address));
       receives.forEach(output => {
         this.push(
           JSON.stringify({
