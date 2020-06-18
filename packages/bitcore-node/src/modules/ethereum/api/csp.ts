@@ -6,6 +6,7 @@ import { AbiItem } from 'web3-utils';
 import { Transaction } from 'web3/eth/types';
 import Config from '../../../config';
 import logger from '../../../logger';
+import { MongoBound } from '../../../models/base';
 import { ITransaction } from '../../../models/baseTransaction';
 import { CacheStorage } from '../../../models/cache';
 import { WalletAddressStorage } from '../../../models/walletAddress';
@@ -30,8 +31,9 @@ import { StatsUtil } from '../../../utils/stats';
 import { ERC20Abi } from '../abi/erc20';
 import { EthBlockStorage } from '../models/block';
 import { EthTransactionStorage } from '../models/transaction';
-import { EthTransactionJSON, IEthBlock } from '../types';
+import { EthTransactionJSON, IEthBlock, IEthTransaction } from '../types';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
+import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EthListTransactionsStream } from './transform';
 interface EventLog<T> {
   event: string;
@@ -166,6 +168,17 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     return web3.eth.getTransactionReceipt(txid);
   }
 
+  async populateReceipt(tx: MongoBound<IEthTransaction>) {
+    if (!tx.receipt) {
+      const receipt = await this.getReceipt(tx.network, tx.txid);
+      if (receipt) {
+        await EthTransactionStorage.collection.updateOne({ _id: tx._id }, { $set: { receipt } });
+        tx.receipt = receipt;
+      }
+    }
+    return tx;
+  }
+
   async getTransaction(params: StreamTransactionParams) {
     try {
       let { chain, network, txId } = params;
@@ -176,19 +189,13 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       let query = { chain, network, txid: txId };
       const tip = await this.getLocalTip(params);
       const tipHeight = tip ? tip.height : 0;
-      const found = await EthTransactionStorage.collection.findOne(query);
+      let found = await EthTransactionStorage.collection.findOne(query);
       if (found) {
         let confirmations = 0;
         if (found.blockHeight && found.blockHeight >= 0) {
           confirmations = tipHeight - found.blockHeight + 1;
         }
-        if (!found.receipt) {
-          const receipt = await this.getReceipt(network, found.txid);
-          if (receipt) {
-            await EthTransactionStorage.collection.updateOne({ _id: found._id }, { $set: { receipt } });
-            found.receipt = receipt;
-          }
-        }
+        found = await this.populateReceipt(found);
         const convertedTx = EthTransactionStorage._apiTransform(found, { object: true }) as EthTransactionJSON;
         return { ...convertedTx, confirmations } as any;
       } else {
@@ -331,6 +338,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
     let transactionStream = new Readable({ objectMode: true });
     const ethTransactionTransform = new EthListTransactionsStream(wallet);
+    const populateReceipt = new PopulateReceiptTransform();
     transactionStream = EthTransactionStorage.collection
       .find(query)
       .sort({ blockTimeNormalized: 1 })
@@ -340,7 +348,10 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       const erc20Transform = new Erc20RelatedFilterTransform(web3, args.tokenAddress);
       transactionStream = transactionStream.pipe(erc20Transform);
     }
-    transactionStream.pipe(ethTransactionTransform).pipe(res);
+    transactionStream
+      .pipe(populateReceipt)
+      .pipe(ethTransactionTransform)
+      .pipe(res);
   }
 
   async getErc20Transfers(
