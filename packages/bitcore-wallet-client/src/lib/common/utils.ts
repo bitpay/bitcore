@@ -352,7 +352,7 @@ export class Utils {
 
       return t;
     } else {
-      const { data, destinationTag, outputs, payProUrl, tokenAddress } = txp;
+      const { data, destinationTag, outputs, payProUrl, tokenAddress, multisigContractAddress } = txp;
       const recipients = outputs.map(output => {
         return {
           amount: output.amount,
@@ -367,7 +367,8 @@ export class Utils {
       }
       const unsignedTxs = [];
       const isERC20 = tokenAddress && !payProUrl;
-      const chain = isERC20 ? 'ERC20' : this.getChain(coin);
+      const isETHMULTISIG = multisigContractAddress && !payProUrl;
+      const chain = isERC20 ? 'ERC20' : isETHMULTISIG ? 'ETHMULTISIG' : this.getChain(coin);
       for (let index = 0; index < recipients.length; index++) {
         const rawTx = Transactions.create({
           ...txp,

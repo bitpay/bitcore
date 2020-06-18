@@ -132,9 +132,9 @@ export class V8 {
 
   async getBalance(wallet, cb) {
     const client = this._getAuthClient(wallet);
-    const { tokenAddress } = wallet;
+    const { tokenAddress, multisigContractAddress } = wallet;
     client
-      .getBalance({ pubKey: wallet.beAuthPublicKey2, payload: {}, tokenAddress })
+      .getBalance({ pubKey: wallet.beAuthPublicKey2, payload: {}, tokenAddress, multisigContractAddress })
       .then(ret => {
         return cb(null, ret);
       })
@@ -303,7 +303,8 @@ export class V8 {
       pubKey: wallet.beAuthPublicKey2,
       payload: {},
       startBlock: undefined,
-      tokenAddress: wallet.tokenAddress
+      tokenAddress: wallet.tokenAddress,
+      multisigContractAddress: wallet.multisigContractAddress
     };
 
     if (_.isNumber(startBlock)) opts.startBlock = startBlock;
@@ -383,6 +384,48 @@ export class V8 {
       .then(gasLimit => {
         gasLimit = JSON.parse(gasLimit);
         return cb(null, gasLimit);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
+  getMultisigContractInstantiationInfo(opts, cb) {
+    const url = this.baseUrl + '/ethmultisig/' + opts.sender;
+    console.log('[v8.js.378:url:] CHECKING CONTRACT INSTANTIATION INFO', url);
+    this.request
+      .get(url, {})
+      .then(contractInstantiationInfo => {
+        contractInstantiationInfo = JSON.parse(contractInstantiationInfo);
+        return cb(null, contractInstantiationInfo);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
+  getMultisigContractInfo(opts, cb) {
+    const url = this.baseUrl + '/ethmultisig/info/' + opts.multisigContractAddress;
+    console.log('[v8.js.378:url:] CHECKING CONTRACT INFO', url);
+    this.request
+      .get(url, {})
+      .then(contractInfo => {
+        contractInfo = JSON.parse(contractInfo);
+        return cb(null, contractInfo);
+      })
+      .catch(err => {
+        return cb(err);
+      });
+  }
+
+  getMultisigTxpsInfo(opts, cb) {
+    const url = this.baseUrl + '/ethmultisig/txps/' + opts.multisigContractAddress;
+    console.log('[v8.js.378:url:] CHECKING CONTRACT TXPS INFO', url);
+    this.request
+      .get(url, {})
+      .then(multisigTxpsInfo => {
+        multisigTxpsInfo = JSON.parse(multisigTxpsInfo);
+        return cb(null, multisigTxpsInfo);
       })
       .catch(err => {
         return cb(err);

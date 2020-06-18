@@ -17,6 +17,8 @@ import { partition } from '../../../utils/partition';
 import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
+import { MultisigAbi } from '../abi/multisig';
+
 import { EthTransactionJSON, IEthTransaction } from '../types';
 
 function requireUncached(module) {
@@ -42,21 +44,35 @@ function getInvoiceDecoder() {
   return InvoiceDecoder;
 }
 
+const MultisigDecoder = requireUncached('abi-decoder');
+MultisigDecoder.addABI(MultisigAbi);
+function getMultisigDecoder() {
+  return MultisigDecoder;
+}
+
 @LoggifyClass
 export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   constructor(storage: StorageService = Storage) {
     super(storage);
   }
 
-  onConnect() {
+  async onConnect() {
     super.onConnect();
     this.collection.createIndex({ chain: 1, network: 1, to: 1 }, { background: true, sparse: true });
+    this.collection.createIndex({ chain: 1, network: 1, from: 1 }, { background: true, sparse: true });
     this.collection.createIndex({ chain: 1, network: 1, from: 1, nonce: 1 }, { background: true, sparse: true });
     this.collection.createIndex(
       { chain: 1, network: 1, 'abiType.params.0.value': 1, blockTimeNormalized: 1 },
       {
         background: true,
         partialFilterExpression: { chain: 'ETH', 'abiType.type': 'ERC20', 'abiType.name': 'transfer' }
+      }
+    );
+    this.collection.createIndex(
+      { chain: 1, network: 1, 'internal.action.to': 1 },
+      {
+        background: true,
+        partialFilterExpression: { chain: 'ETH' }
       }
     );
   }
@@ -108,14 +124,22 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
 
   async expireBalanceCache(txOps: Array<any>) {
     for (const op of txOps) {
-      let batch = new Array<{ tokenAddress?: string; address: string }>();
+      let batch = new Array<{ multisigContractAdress?: string; tokenAddress?: string; address: string }>();
       const { chain, network } = op.updateOne.filter;
-      const { from, to, abiType } = op.updateOne.update.$set;
+      const { from, to, abiType, internal } = op.updateOne.update.$set;
       batch = batch.concat([{ address: from }, { address: to }]);
-      if (abiType && abiType.params.length) {
+      if (abiType && abiType.type === 'ERC20' && abiType.params.length) {
         batch.push({ address: from, tokenAddress: to });
         batch.push({ address: abiType.params[0].value, tokenAddress: to });
       }
+
+      if (internal && internal.length > 0) {
+        internal.forEach(i => {
+          if (i.action.to) batch.push({ address: i.action.to });
+          if (i.action.from) batch.push({ address: i.action.from });
+        });
+      }
+
       for (const payload of batch) {
         const lowerAddress = payload.address.toLowerCase();
         const cacheKey = payload.tokenAddress
@@ -251,6 +275,15 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
         return {
           type: 'INVOICE',
           ...invoiceData
+        };
+      }
+    } catch (e) {}
+    try {
+      const multisigData = getMultisigDecoder().decodeMethod(input);
+      if (multisigData) {
+        return {
+          type: 'MULTISIG',
+          ...multisigData
         };
       }
     } catch (e) {}

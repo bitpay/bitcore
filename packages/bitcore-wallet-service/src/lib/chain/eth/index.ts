@@ -47,6 +47,11 @@ export class EthChain implements IChain {
       wallet.tokenAddress = opts.tokenAddress;
     }
 
+    if (opts.multisigContractAddress) {
+      wallet.multisigContractAddress = opts.multisigContractAddress;
+      opts.network = wallet.network;
+    }
+
     bc.getBalance(wallet, (err, balance) => {
       if (err) {
         return cb(err);
@@ -119,8 +124,8 @@ export class EthChain implements IChain {
               coin,
               network,
               from,
-              to: opts.tokenAddress || output.toAddress,
-              value: opts.tokenAddress ? 0 : output.amount,
+              to: opts.tokenAddress || opts.multisigContractAddress || output.toAddress,
+              value: opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount,
               data: output.data,
               gasPrice
             });
@@ -142,9 +147,10 @@ export class EthChain implements IChain {
   }
 
   getBitcoreTx(txp, opts = { signed: true }) {
-    const { data, outputs, payProUrl, tokenAddress } = txp;
+    const { data, outputs, payProUrl, tokenAddress, multisigContractAddress } = txp;
     const isERC20 = tokenAddress && !payProUrl;
-    const chain = isERC20 ? 'ERC20' : 'ETH';
+    const isETHMULTISIG = multisigContractAddress && !payProUrl;
+    const chain = isERC20 ? 'ERC20' : isETHMULTISIG ? 'ETHMULTISIG' : 'ETH';
     const recipients = outputs.map(output => {
       return {
         amount: output.amount,
@@ -213,33 +219,36 @@ export class EthChain implements IChain {
   }
 
   selectTxInputs(server, txp, wallet, opts, cb) {
-    server.getBalance({ wallet, tokenAddress: opts.tokenAddress }, (err, balance) => {
-      if (err) return cb(err);
+    server.getBalance(
+      { wallet, tokenAddress: opts.tokenAddress, multisigContractAddress: opts.multisigContractAddress },
+      (err, balance) => {
+        if (err) return cb(err);
 
-      const { totalAmount, availableAmount } = balance;
-      if (totalAmount < txp.getTotalAmount()) {
-        return cb(Errors.INSUFFICIENT_FUNDS);
-      } else if (availableAmount < txp.getTotalAmount()) {
-        return cb(Errors.LOCKED_FUNDS);
-      } else {
-        if (opts.tokenAddress) {
-          // ETH wallet balance
-          server.getBalance({}, (err, ethBalance) => {
-            if (err) return cb(err);
-            const { totalAmount, availableAmount } = ethBalance;
-            if (totalAmount < txp.fee) {
-              return cb(Errors.INSUFFICIENT_ETH_FEE);
-            } else if (availableAmount < txp.fee) {
-              return cb(Errors.LOCKED_ETH_FEE);
-            } else {
-              return cb(this.checkTx(txp));
-            }
-          });
+        const { totalAmount, availableAmount } = balance;
+        if (totalAmount < txp.getTotalAmount()) {
+          return cb(Errors.INSUFFICIENT_FUNDS);
+        } else if (availableAmount < txp.getTotalAmount()) {
+          return cb(Errors.LOCKED_FUNDS);
         } else {
-          return cb(this.checkTx(txp));
+          if (opts.tokenAddress || opts.multisigContractAddress) {
+            // ETH wallet balance
+            server.getBalance({}, (err, ethBalance) => {
+              if (err) return cb(err);
+              const { totalAmount, availableAmount } = ethBalance;
+              if (totalAmount < txp.fee) {
+                return cb(Errors.INSUFFICIENT_ETH_FEE);
+              } else if (availableAmount < txp.fee) {
+                return cb(Errors.LOCKED_ETH_FEE);
+              } else {
+                return cb(this.checkTx(txp));
+              }
+            });
+          } else {
+            return cb(this.checkTx(txp));
+          }
         }
       }
-    });
+    );
   }
 
   checkUtxos(opts) {}
@@ -312,10 +321,15 @@ export class EthChain implements IChain {
 
   onTx(tx) {
     let tokenAddress;
+    let multisigContractAddress;
     let address;
     let amount;
     if (tx.abiType && tx.abiType.type === 'ERC20') {
       tokenAddress = tx.to;
+      address = Web3.utils.toChecksumAddress(tx.abiType.params[0].value);
+      amount = tx.abiType.params[1].value;
+    } else if (tx.abiType && tx.abiType.type === 'MULTISIG' && tx.abiType.name === 'submitTransaction') {
+      multisigContractAddress = tx.to;
       address = Web3.utils.toChecksumAddress(tx.abiType.params[0].value);
       amount = tx.abiType.params[1].value;
     } else {
@@ -327,7 +341,8 @@ export class EthChain implements IChain {
       out: {
         address,
         amount,
-        tokenAddress
+        tokenAddress,
+        multisigContractAddress
       }
     };
   }

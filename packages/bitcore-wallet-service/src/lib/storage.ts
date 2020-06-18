@@ -80,6 +80,10 @@ export class Storage {
     db.collection(collections.TXS).createIndex({
       txid: 1
     });
+    db.collection(collections.TXS).createIndex({
+      multisigContractAddress: 1,
+      txid: 1
+    });
     db.collection(collections.NOTIFICATIONS).createIndex({
       walletId: 1,
       id: 1
@@ -353,6 +357,45 @@ export class Storage {
         });
         return cb(null, txs);
       });
+  }
+
+  fetchEthPendingTxs(multisigContractAddress, multisigTxpsInfo) {
+    return new Promise((resolve, reject) => {
+      this.db
+        .collection(collections.TXS)
+        .find({
+          multisigContractAddress,
+          txid: { $in: multisigTxpsInfo.map(txpInfo => txpInfo.transactionHash) }
+        })
+        .sort({
+          createdOn: -1
+        })
+        .toArray(async (err, result) => {
+          if (err) return reject(err);
+          if (!result) return reject();
+          const multisigTxpsInfoByTransactionHash: any = _.groupBy(multisigTxpsInfo, 'transactionHash');
+          const actionsById = {};
+          const txs = _.compact(
+            _.map(result, tx => {
+              tx.status = 'pending';
+              tx.multisigTxId = multisigTxpsInfoByTransactionHash[tx.txid][0].transactionId;
+              if (tx.amount === 0) {
+                actionsById[tx.multisigTxId] = [...tx.actions, ...(actionsById[tx.multisigTxId] || [])];
+                return undefined;
+              }
+              return TxProposal.fromObj(tx);
+            })
+          );
+
+          txs.forEach((tx: TxProposal) => {
+            if (actionsById[tx.multisigTxId]) {
+              tx.actions = [...tx.actions, ...(actionsById[tx.multisigTxId] || [])];
+            }
+          });
+
+          return resolve(txs);
+        });
+    });
   }
 
   fetchPendingTxs(walletId, cb) {
