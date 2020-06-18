@@ -9,7 +9,9 @@ export class PopulateReceiptTransform extends Transform {
   }
 
   async _transform(tx: MongoBound<IEthTransaction>, _, done) {
-    tx = await ETH.populateReceipt(tx);
+    try {
+      tx = await ETH.populateReceipt(tx);
+    } catch (e) {}
     this.push(tx);
     return done();
   }
