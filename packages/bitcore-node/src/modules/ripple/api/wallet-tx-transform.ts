@@ -2,7 +2,7 @@ import { Transform } from 'stream';
 import { CoinStorage } from '../../../models/coin';
 import { IWallet } from '../../../models/wallet';
 import { IWalletAddress, WalletAddressStorage } from '../../../models/walletAddress';
-import { IXrpTransaction } from '../types';
+import { IXrpCoin, IXrpTransaction } from '../types';
 
 export class RippleDbWalletTransactions extends Transform {
   walletAddresses?: Array<IWalletAddress>;
@@ -16,6 +16,25 @@ export class RippleDbWalletTransactions extends Transform {
       this.walletAddresses = await WalletAddressStorage.collection.find({ chain, network, wallet: _id }).toArray();
     }
     return this.walletAddresses;
+  }
+
+  getHistoryEntry(category: string, value: number, tx: IXrpTransaction, o?: IXrpCoin) {
+    return (
+      JSON.stringify({
+        id: tx.txid,
+        txid: tx.txid,
+        fee: tx.fee,
+        size: 0,
+        category,
+        satoshis: value,
+        height: tx.blockHeight,
+        blockTime: tx.blockTimeNormalized,
+        ...(o && {
+          address: o.address,
+          outputIndex: o.mintIndex
+        })
+      }) + '\n'
+    );
   }
 
   async _transform(tx: IXrpTransaction, _, done) {
@@ -36,73 +55,26 @@ export class RippleDbWalletTransactions extends Transform {
     const walletAddressesObjs = await this.getAddresses();
     const walletAddresses = walletAddressesObjs.map(w => w.address);
     let sending = walletAddresses.includes(tx.from);
-    if (sending) {
-      const sends = outputs.filter(o => !walletAddresses.includes(o.address));
-      sends.forEach(output => {
-        this.push(
-          JSON.stringify({
-            id: tx.txid,
-            txid: tx.txid,
-            fee: tx.fee,
-            size: 0,
-            category: 'send',
-            satoshis: -1 * Math.abs(output.value),
-            height: tx.blockHeight,
-            address: output.address,
-            outputIndex: output.mintIndex,
-            blockTime: tx.blockTimeNormalized
-          }) + '\n'
-        );
-      });
-
-      const moves = outputs.filter(o => o.address != tx.from && walletAddresses.includes(o.address));
-      moves.forEach(output => {
-        this.push(
-          JSON.stringify({
-            id: tx.txid,
-            txid: tx.txid,
-            fee: tx.fee,
-            size: 0,
-            category: 'move',
-            satoshis: -1 * Math.abs(output.value),
-            height: tx.blockHeight,
-            address: output.address,
-            outputIndex: output.mintIndex,
-            blockTime: tx.blockTimeNormalized
-          }) + '\n'
-        );
-      });
-
-      if (tx.fee > 0) {
-        this.push(
-          JSON.stringify({
-            id: tx.txid,
-            txid: tx.txid,
-            category: 'fee',
-            satoshis: -1 * tx.fee,
-            height: tx.blockHeight,
-            blockTime: tx.blockTimeNormalized
-          }) + '\n'
-        );
+    for (const o of outputs) {
+      const isSend = !walletAddresses.includes(o.address);
+      const isMove = o.address != tx.from && walletAddresses.includes(o.address);
+      if (sending) {
+        const sendValue = -1 * Math.abs(o.value);
+        if (isSend) {
+          this.push(this.getHistoryEntry('send', sendValue, tx, o));
+        } else if (isMove) {
+          this.push(this.getHistoryEntry('move', sendValue, tx, o));
+        }
+      } else {
+        const isReceiving = walletAddresses.includes(o.address);
+        if (isReceiving) {
+          const receiveValue = Math.abs(o.value);
+          this.push(this.getHistoryEntry('receive', receiveValue, tx, o));
+        }
       }
-    } else {
-      const receives = outputs.filter(o => walletAddresses.includes(o.address));
-      receives.forEach(output => {
-        this.push(
-          JSON.stringify({
-            id: tx.txid,
-            txid: tx.txid,
-            fee: tx.fee,
-            size: 0,
-            category: 'receive',
-            satoshis: Math.abs(output.value),
-            height: tx.blockHeight,
-            address: output.address,
-            outputIndex: output.mintIndex,
-            blockTime: tx.blockTimeNormalized
-          }) + '\n'
-        );
-      });
+    }
+    if (sending && tx.fee > 0) {
+      this.push(this.getHistoryEntry('fee', -1 * tx.fee, tx));
     }
     done();
   }
