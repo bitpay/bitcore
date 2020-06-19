@@ -14,7 +14,6 @@ export class EthListTransactionsStream extends Transform {
       wallet: this.wallet._id,
       address: transaction.from
     });
-    const { receipt } = transaction;
     if (sending > 0) {
       const sendingToOurself = await WalletAddressStorage.collection.countDocuments({
         wallet: this.wallet._id,
@@ -25,7 +24,7 @@ export class EthListTransactionsStream extends Transform {
           JSON.stringify({
             id: transaction._id,
             txid: transaction.txid,
-            fee: receipt ? receipt.gasUsed * transaction.gasPrice : transaction.fee,
+            fee: transaction.fee,
             category: 'send',
             satoshis: -transaction.value,
             height: transaction.blockHeight,
@@ -45,7 +44,7 @@ export class EthListTransactionsStream extends Transform {
           JSON.stringify({
             id: transaction._id,
             txid: transaction.txid,
-            fee: receipt ? receipt.gasUsed * transaction.gasPrice : transaction.fee,
+            fee: transaction.fee,
             category: 'move',
             satoshis: transaction.value,
             height: transaction.blockHeight,
@@ -72,7 +71,7 @@ export class EthListTransactionsStream extends Transform {
           JSON.stringify({
             id: transaction._id,
             txid: transaction.txid,
-            fee: receipt ? receipt.gasUsed * transaction.gasPrice : transaction.fee,
+            fee: transaction.fee,
             category: 'receive',
             satoshis: transaction.value,
             height: transaction.blockHeight,

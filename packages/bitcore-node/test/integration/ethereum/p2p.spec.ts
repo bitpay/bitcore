@@ -42,7 +42,7 @@ async function getWallet() {
   }
 }
 
-describe.only('Ethereum', function() {
+describe('Ethereum', function() {
   this.timeout(50000);
 
   before(async () => {
