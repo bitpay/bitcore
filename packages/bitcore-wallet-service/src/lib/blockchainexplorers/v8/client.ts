@@ -100,6 +100,15 @@ export class Client {
     });
   }
 
+  async getCoinsForTx(params) {
+    const { txId } = params;
+    const url = `${this.baseUrl}/tx/${txId}/coins`;
+    console.log('GET COINS FOR TX:', url);
+    return request.get(url, {
+      json: true
+    });
+  }
+
   listTransactions(params) {
     const { pubKey, startBlock, startDate, endBlock, endDate, includeMempool, tokenAddress } = params;
     let url = `${this.baseUrl}/wallet/${pubKey}/transactions?`;

@@ -1,7 +1,7 @@
 {
   "name": "@bitpay/insight-previous",
   "description": "A blockchain explorer for Bitcore",
-  "version": "8.16.0",
+  "version": "8.20.4",
   "repository": "git://github.com/bitpay/bitcore.git",
   "bugs": {
     "url": "https://github.com/bitpay/bitcore/issues"
@@ -26,17 +26,18 @@
   },
   "scripts": {
     "clean": "ionic-app-scripts clean",
-    "build:prod": "ENV=prod CHAIN=BTC NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:build",
+    "build:prod": "ENV=prod CHAIN=ALL NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:build",
     "serve:prod": "npm run clean && npm run build:prod && npm run serve",
     "serve": "serve www",
     "ionic:build": "ionic-app-scripts build",
     "ionic:serve": "ionic-app-scripts serve --port 8200",
     "postinstall": "./node_modules/.bin/webdriver-manager update --gecko false",
     "start": "npm run ionic:serve",
-    "start:prod": "ENV=prod CHAIN=BTC NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:serve",
+    "start:prod": "ENV=prod CHAIN=ALL NETWORK=mainnet API_PREFIX=https://api.bitcore.io/api npm run ionic:serve",
     "test": "ng test --watch=false --code-coverage --no-progress",
     "fix:prettier": "prettier '{*,**/*}.{js,ts,md,json,css}' --write",
-    "fix:tslint": "tslint --type-check --fix --project ."
+    "fix:tslint": "tslint --type-check --fix --project .",
+    "fix": "npm run fix:tslint && npm run fix:prettier"
   },
   "dependencies": {
     "@angular/common": "5.2.10",
@@ -49,7 +50,6 @@
     "angular2-moment": "1.7.1",
     "angular2-qrcode": "2.0.1",
     "bs58": "^4.0.1",
-    "chart.js": "^2.8.0",
     "ionic-angular": "3.9.2",
     "ionicons": "3.0.0",
     "lodash": "4.17.11",

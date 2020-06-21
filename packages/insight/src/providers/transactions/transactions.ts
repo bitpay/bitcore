@@ -98,6 +98,9 @@ export interface AppEthCoin {
   txid: string;
   fee: number;
   valueOut: number;
+  height: number;
+  blockheight: number;
+  time: any;
 }
 
 export interface AppInput {
@@ -223,7 +226,10 @@ export class TxsProvider {
       from: coin.from,
       txid: coin.txid,
       fee: coin.fee,
-      valueOut: coin.value
+      valueOut: coin.value,
+      height: parseInt(coin.blockHeight, 10),
+      blockheight: parseInt(coin.blockHeight, 10),
+      time: new Date(coin.blockTime).getTime() / 1000
     };
   }
 

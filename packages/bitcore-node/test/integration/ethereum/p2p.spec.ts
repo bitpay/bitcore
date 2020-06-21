@@ -1,16 +1,18 @@
 import * as BitcoreClient from 'bitcore-client';
 import { expect } from 'chai';
 import config from '../../../src/config';
+import { CacheStorage } from '../../../src/models/cache';
 import { EthBlockStorage } from '../../../src/modules/ethereum/models/block';
 import { EthP2pWorker } from '../../../src/modules/ethereum/p2p/p2p';
 import { Api } from '../../../src/services/api';
 import { wait } from '../../../src/utils/wait';
 import { resetDatabase } from '../../helpers';
 
+const { StreamUtil } = BitcoreClient;
 const chain = 'ETH';
 const network = 'testnet';
 const chainConfig = config.chains[chain][network];
-const name = 'EthereumWallet';
+const name = 'EthereumWallet-Ci';
 const baseUrl = 'http://localhost:3000/api';
 const password = '';
 const phrase = 'kiss talent nerve fossil equip fault exile execute train wrist misery diet';
@@ -21,6 +23,7 @@ async function getWallet() {
   try {
     wallet = await BitcoreClient.Wallet.loadWallet({ name });
     await wallet.register();
+    await wallet.syncAddresses();
     return wallet;
   } catch (e) {
     console.log('Creating a new ethereum wallet');
@@ -68,10 +71,60 @@ describe('Ethereum', function() {
     await worker.setupListeners();
     const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
 
-    const web3 = await worker.getWeb3();
+    const { web3 } = await worker.getWeb3();
     await web3.eth.sendTransaction({ to: addresses[0], value: web3.utils.toWei('.01', 'ether'), from: account });
     await sawBlock;
     await worker.disconnect();
+  });
+
+  it('should be able to get the balance for the address', async () => {
+    const wallet = await getWallet();
+    const balance = await wallet.getBalance();
+    expect(balance.confirmed).to.be.gt(0);
+
+    const key = 'getBalanceForAddress-ETH-testnet-0xd8fd14fb0e0848cb931c1e54a73486c4b968be3d';
+    const cached = await CacheStorage.collection.findOne({ key });
+    expect(cached).to.exist;
+    expect(cached!.value).to.deep.eq(balance);
+  });
+
+  it('should update after a send', async () => {
+    const wallet = await getWallet();
+    const addresses = await wallet.getAddresses();
+    const beforeBalance = await wallet.getBalance();
+
+    const worker = new EthP2pWorker({ chain, network, chainConfig });
+    await worker.connect();
+    await worker.setupListeners();
+    const sawBlock = new Promise(resolve => worker.events.on('block', resolve));
+
+    const { web3 } = await worker.getWeb3();
+    await web3.eth.sendTransaction({ to: addresses[0], value: web3.utils.toWei('.01', 'ether'), from: account });
+    await sawBlock;
+    await worker.disconnect();
+    const afterBalance = await wallet.getBalance();
+    expect(afterBalance).to.not.deep.eq(beforeBalance);
+    expect(afterBalance.confirmed).to.be.gt(beforeBalance.confirmed);
+  });
+
+  it('should have receipts on tx history', async () => {
+    const wallet = await getWallet();
+    await new Promise(r =>
+      wallet
+        .listTransactions({})
+        .pipe(StreamUtil.jsonlBufferToObjectMode())
+        .on('data', (tx: any) => {
+          if (tx.height >= 0) {
+            expect(tx.receipt).to.exist;
+            expect(tx.receipt.gasUsed).to.exist;
+            expect(tx.receipt.gasUsed).to.be.lte(tx.gasLimit);
+            expect(tx.fee).to.eq(tx.gasPrice * tx.receipt.gasUsed);
+          }
+        })
+        .on('finish', () => {
+          r();
+        })
+    );
   });
 
   it.skip('should be able to save blocks to the database', async () => {
@@ -84,7 +137,7 @@ describe('Ethereum', function() {
     await worker.start();
     await wait(1000);
 
-    const web3 = await worker.getWeb3();
+    const { web3 } = await worker.getWeb3();
     await web3.eth.sendTransaction({ to: addresses[0], value: web3.utils.toWei('.02', 'ether'), from: account });
     await sawBlock;
     await done;

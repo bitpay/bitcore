@@ -20,6 +20,7 @@ program
   )
   .option('--path [path]', 'optional - Custom wallet storage path')
   .option('--encrypted', 'optional - Bitcoin Core specific keys in which case we need to decrypt them before import')
+  .option('--storageType [storageType]', 'optional - name of database (default Level)')
   .parse(process.argv);
 
 const getFileKeys = file => {
@@ -43,11 +44,11 @@ const parseKeys = keys => {
 };
 
 const main = async () => {
-  const { name, path, file, parse } = program;
+  const { name, path, file, parse, storageType } = program;
   let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
-    wallet = await Wallet.loadWallet({ name, path });
+    wallet = await Wallet.loadWallet({ name, path, storageType });
     wallet = await wallet.unlock(password);
     let keyInput = [];
     if (file) {

@@ -23,6 +23,7 @@ socket.on = function(eventName, handler) {
 };
 
 describe('Blockchain monitor', function() {
+  this.timeout(5000);
   var server, wallet;
 
   before(function(done) {

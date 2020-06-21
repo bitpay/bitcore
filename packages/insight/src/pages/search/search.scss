@@ -1,0 +1,9 @@
+page-search {
+  .page-content { transition: all .2s ease-in-out; }
+  .page-content:hover{
+    cursor: pointer;
+    transform: scale(1.02);
+  }
+}
+
+

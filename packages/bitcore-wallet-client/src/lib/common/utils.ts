@@ -6,22 +6,24 @@ import * as _ from 'lodash';
 import { Constants } from './constants';
 import { Defaults } from './defaults';
 
-var $ = require('preconditions').singleton();
-var sjcl = require('sjcl');
-var Stringify = require('json-stable-stringify');
+const $ = require('preconditions').singleton();
+const sjcl = require('sjcl');
+const Stringify = require('json-stable-stringify');
 
-var Bitcore = BitcoreLib;
-var Bitcore_ = {
+const Bitcore = BitcoreLib;
+const Bitcore_ = {
   btc: Bitcore,
   bch: BitcoreLibCash,
   eth: Bitcore,
   xrp: Bitcore
 };
-var PrivateKey = Bitcore.PrivateKey;
-var PublicKey = Bitcore.PublicKey;
-var crypto = Bitcore.crypto;
+const PrivateKey = Bitcore.PrivateKey;
+const PublicKey = Bitcore.PublicKey;
+const crypto = Bitcore.crypto;
 
 let SJCL = {};
+
+const MAX_DECIMAL_ANY_COIN = 18; // more that 14 gives rounding errors
 
 export class Utils {
   static getChain(coin: string): string {
@@ -165,8 +167,15 @@ export class Utils {
 
     var bitcoreAddress;
     switch (scriptType) {
+      case Constants.SCRIPT_TYPES.P2WSH:
+        const nestedWitness = false;
+        bitcoreAddress = bitcore.Address.createMultisig(publicKeys, m, network, nestedWitness, 'witnessscripthash');
+        break;
       case Constants.SCRIPT_TYPES.P2SH:
         bitcoreAddress = bitcore.Address.createMultisig(publicKeys, m, network);
+        break;
+      case Constants.SCRIPT_TYPES.P2WPKH:
+        bitcoreAddress = bitcore.Address.fromPublicKey(publicKeys[0], network, 'witnesspubkeyhash');
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
         $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
@@ -219,9 +228,16 @@ export class Utils {
     $.checkArgument(_.includes(_.keys(Constants.UNITS), unit));
 
     var clipDecimals = (number, decimals) => {
-      var x = number.toString().split('.');
+      let str = number.toString();
+      if (str.indexOf('e') >= 0) {
+        // fixes eth small balances
+        str = number.toFixed(MAX_DECIMAL_ANY_COIN);
+      }
+      var x = str.split('.');
+
       var d = (x[1] || '0').substring(0, decimals);
-      return parseFloat(x[0] + '.' + d);
+      const ret = parseFloat(x[0] + '.' + d);
+      return ret;
     };
 
     var addSeparators = (nStr, thousands, decimal, minDecimals) => {
@@ -260,14 +276,22 @@ export class Utils {
 
       var t = new bitcore.Transaction();
 
+      if (txp.version >= 4) {
+        t.setVersion(2);
+      } else {
+        t.setVersion(1);
+      }
+
       $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
 
       switch (txp.addressType) {
+        case Constants.SCRIPT_TYPES.P2WSH:
         case Constants.SCRIPT_TYPES.P2SH:
           _.each(txp.inputs, i => {
             t.from(i, i.publicKeys, txp.requiredSignatures);
           });
           break;
+        case Constants.SCRIPT_TYPES.P2WPKH:
         case Constants.SCRIPT_TYPES.P2PKH:
           t.from(txp.inputs);
           break;

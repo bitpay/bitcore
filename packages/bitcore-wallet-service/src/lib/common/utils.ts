@@ -1,3 +1,4 @@
+import * as CWC from 'crypto-wallet-core';
 import _ from 'lodash';
 
 const $ = require('preconditions').singleton();
@@ -94,53 +95,14 @@ export class Utils {
   }
 
   static formatAmount(satoshis, unit, opts) {
-    const UNITS = {
-      btc: {
-        toSatoshis: 100000000,
-        maxDecimals: 6,
-        minDecimals: 2
-      },
-      bit: {
-        toSatoshis: 100,
-        maxDecimals: 0,
-        minDecimals: 0
-      },
-      sat: {
-        toSatoshis: 1,
-        maxDecimals: 0,
-        minDecimals: 0
-      },
-      bch: {
-        toSatoshis: 100000000,
-        maxDecimals: 6,
-        minDecimals: 2
-      },
-      eth: {
-        toSatoshis: 1e18,
-        maxDecimals: 6,
-        minDecimals: 2
-      },
-      xrp: {
-        toSatoshis: 1e6,
-        maxDecimals: 6,
-        minDecimals: 2
-      },
-      usdc: {
-        toSatoshis: 1e6,
-        maxDecimals: 6,
-        minDecimals: 2
-      },
-      pax: {
-        toSatoshis: 1e18,
-        maxDecimals: 6,
-        minDecimals: 2
-      },
-      gusd: {
-        toSatoshis: 1e2,
-        maxDecimals: 6,
-        minDecimals: 2
-      }
-    };
+    const UNITS = Object.entries(CWC.Constants.UNITS).reduce((units, [currency, currencyConfig]) => {
+      units[currency] = {
+        toSatoshis: currencyConfig.toSatoshis,
+        maxDecimals: currencyConfig.short.maxDecimals,
+        minDecimals: currencyConfig.short.minDecimals
+      };
+      return units;
+    }, {} as { [currency: string]: { toSatoshis: number; maxDecimals: number; minDecimals: number } });
 
     $.shouldBeNumber(satoshis);
     $.checkArgument(_.includes(_.keys(UNITS), unit));
@@ -162,6 +124,9 @@ export class Utils {
 
     opts = opts || {};
 
+    if (!UNITS[unit]) {
+      return Number(satoshis).toLocaleString();
+    }
     const u = _.assign(UNITS[unit], opts);
     const amount = (satoshis / u.toSatoshis).toFixed(u.maxDecimals);
     return addSeparators(amount, opts.thousandsSeparator || ',', opts.decimalSeparator || '.', u.minDecimals);

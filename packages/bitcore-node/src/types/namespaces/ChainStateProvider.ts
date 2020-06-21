@@ -80,8 +80,8 @@ export type GetWalletBalanceAtTimeParams = ChainNetwork & {
 
 export type StreamAddressUtxosParams = ChainNetwork & {
   address: string;
-  req: Request;
-  res: Response;
+  req?: Request;
+  res?: Response;
   args: Partial<StreamAddressUtxosArgs & StreamingFindOptions<ICoin> & any>;
 };
 

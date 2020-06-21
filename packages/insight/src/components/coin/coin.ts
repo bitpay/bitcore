@@ -12,9 +12,18 @@ export class CoinComponent {
   @Input()
   public coin;
   @Input()
+  public blockTipHeight;
+  @Input()
   public chainNetwork: ChainNetwork;
 
-  public confirmations: number;
+  public mintTxid?: any;
+  public spentTxid?: any;
+  public mintHeight?: number;
+  public spentHeight?: number;
+  public time?: any;
+  public timeHidden = true;
+
+  public confirmations?: number;
 
   constructor(
     public apiProvider: ApiProvider,
@@ -24,18 +33,16 @@ export class CoinComponent {
   ) {}
 
   // tslint:disable-next-line:use-life-cycle-interface
-  ngAfterViewInit() {
-    if (this.chainNetwork.chain !== 'ETH') {
-      this.getConfirmations();
-    }
+  ngOnInit() {
+    this.time = new Date(this.coin.blockTime).getTime() / 1000;
+    this.confirmations = this.blockTipHeight - this.coin.height + 1;
   }
 
-  public getConfirmations() {
-    this.txProvider
-      .getConfirmations(this.coin.height, this.chainNetwork)
-      .subscribe(confirmations => {
-        this.confirmations = confirmations;
-      });
+  public revealTimeReceived(txid: string) {
+    this.txProvider.getTx(txid, this.chainNetwork).subscribe(tx => {
+      this.coin.time = new Date(tx.blockTime).getTime() / 1000;
+      this.timeHidden = false;
+    });
   }
 
   public goToTx(txId: string): void {

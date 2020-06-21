@@ -122,7 +122,15 @@ describe('Utils', () => {
           decimalSeparator: ','
         }],
         expected: '12 345,678999',
-      }];
+      }, {
+        args: [104236872411, 'eth'],
+        expected: '0.00',
+      }, {
+        args: [104236872412, 'eth'],
+        expected: '0.00',
+      }
+
+      ];
 
       _.each(cases, (testCase) => {
         Utils.formatAmount.apply(this, testCase.args).should.equal(testCase.expected);
@@ -175,7 +183,11 @@ describe('Utils', () => {
           decimalSeparator: ','
         }],
         expected: '12 345,67899999',
-      },];
+      }, {
+          args: [104236872412, 'eth'],
+          expected: '0.00000010',
+        }
+      ];
 
       _.each(cases, (testCase) => {
         testCase.args[2] = testCase.args[2] || {};
