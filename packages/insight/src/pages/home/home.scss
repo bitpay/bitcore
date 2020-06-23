@@ -17,13 +17,11 @@ page-home {
      }
   }
 
-  ion-item {
-     .item:hover {
-        cursor: default;
-        transform: none;
-        background-color: #fff;
-        box-shadow: none;
-     }
+  ion-item.item-md:hover {
+     cursor: default;
+     transform: none;
+     background-color: #fff;
+     box-shadow: none;
   }
 }
 
