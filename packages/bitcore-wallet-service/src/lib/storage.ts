@@ -379,6 +379,11 @@ export class Storage {
             _.map(result, tx => {
               tx.status = 'pending';
               tx.multisigTxId = multisigTxpsInfoByTransactionHash[tx.txid][0].transactionId;
+              tx.actions.forEach(action => {
+                if (_.some(multisigTxpsInfoByTransactionHash[tx.txid], { event: 'ExecutionFailure' })) {
+                  action.type = 'failed';
+                }
+              });
               if (tx.amount === 0) {
                 actionsById[tx.multisigTxId] = [...tx.actions, ...(actionsById[tx.multisigTxId] || [])];
                 return undefined;

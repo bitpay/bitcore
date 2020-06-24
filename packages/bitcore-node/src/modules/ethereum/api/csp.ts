@@ -489,7 +489,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
   async getMultisigTxpsInfo(network: string, multisigContractAddress: string): Promise<Partial<Transaction>[]> {
     const contract = await this.multisigFor(network, multisigContractAddress);
-    const [confirmationInfo, revocationInfo, executionInfo] = await Promise.all([
+    const [confirmationInfo, revocationInfo, executionInfo, executionFailure] = await Promise.all([
       contract.getPastEvents('Confirmation', {
         fromBlock: 0,
         toBlock: 'latest'
@@ -501,11 +501,15 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       contract.getPastEvents('Execution', {
         fromBlock: 0,
         toBlock: 'latest'
+      }),
+      contract.getPastEvents('ExecutionFailure', {
+        fromBlock: 0,
+        toBlock: 'latest'
       })
     ]);
 
     const executionTransactionIdArray = executionInfo.map(i => i.returnValues.transactionId);
-    const contractTransactionsInfo = [...confirmationInfo, ...revocationInfo];
+    const contractTransactionsInfo = [...confirmationInfo, ...revocationInfo, ...executionFailure];
     const multisigTxpsInfo = contractTransactionsInfo.filter(
       i => !executionTransactionIdArray.includes(i.returnValues.transactionId)
     );

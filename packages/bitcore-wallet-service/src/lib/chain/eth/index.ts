@@ -58,7 +58,8 @@ export class EthChain implements IChain {
       }
       server.getPendingTxs(opts, (err, txps) => {
         if (err) return cb(err);
-        const lockedSum = _.sumBy(txps, 'amount') || 0;
+        // Do not lock eth multisig amount
+        const lockedSum = opts.multisigContractAddress ? 0 : _.sumBy(txps, 'amount') || 0;
         const convertedBalance = this.convertBitcoreBalance(balance, lockedSum);
         server.storage.fetchAddresses(server.walletId, (err, addresses: IAddress[]) => {
           if (err) return cb(err);
