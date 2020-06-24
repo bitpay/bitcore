@@ -51,6 +51,12 @@ export class Storage {
 
   static createIndexes(db) {
     log.info('Creating DB indexes');
+    if (!db.collection) {
+
+console.log('[storage.ts.55] no db.collection'); // TODO
+      log.error('DB not ready');
+      return;
+    }
     db.collection(collections.WALLETS).createIndex({
       id: 1
     });
@@ -153,15 +159,23 @@ export class Storage {
       log.info('Read operations set to secondaryPreferred');
     }
 
-    mongodb.MongoClient.connect(config.uri, (err, db) => {
+    mongodb.MongoClient.connect(config.uri, (err, client) => {
       if (err) {
         log.error('Unable to connect to the mongoDB. Check the credentials.');
         return cb(err);
       }
-      this.db = db;
+      const uri = config.mongoDb.uri;
+      const start = uri.lastIndexOf('/');
+      let end = uri.lastIndexOf('?');
+      if (end == -1) end = uri.length;
+
+      const dbname = uri.substr(start+1, end-start);
+console.log('[storage.ts.168:dbname:]',dbname); // todo
+      this.db = client.db(dbname); 
 
       log.info('Connection established to mongoDB:' + config.uri);
-      Storage.createIndexes(db);
+
+      Storage.createIndexes(this.db);
       return cb();
     });
   }
@@ -190,7 +204,7 @@ export class Storage {
   }
 
   storeWallet(wallet, cb) {
-    this.db.collection(collections.WALLETS).update(
+    this.db.collection(collections.WALLETS).updateOne(
       {
         id: wallet.id
       },
@@ -218,7 +232,7 @@ export class Storage {
       };
     });
 
-    this.db.collection(collections.COPAYERS_LOOKUP).remove(
+    this.db.collection(collections.COPAYERS_LOOKUP).deleteMany(
       {
         walletId: wallet.id
       },
@@ -498,7 +512,7 @@ export class Storage {
 
   // TODO: remove walletId from signature
   storeTx(walletId, txp, cb) {
-    this.db.collection(collections.TXS).update(
+    this.db.collection(collections.TXS).updateOne(
       {
         id: txp.id,
         walletId
@@ -513,7 +527,7 @@ export class Storage {
   }
 
   removeTx(walletId, txProposalId, cb) {
-    this.db.collection(collections.TXS).remove(
+    this.db.collection(collections.TXS).deleteOne(
       {
         id: txProposalId,
         walletId
@@ -529,7 +543,7 @@ export class Storage {
     async.parallel(
       [
         next => {
-          this.db.collection(collections.WALLETS).remove(
+          this.db.collection(collections.WALLETS).deleteOne(
             {
               id: walletId
             },
@@ -541,7 +555,7 @@ export class Storage {
           async.each(
             otherCollections,
             (col, next) => {
-              this.db.collection(col).remove(
+              this.db.collection(col).deleteMany(
                 {
                   walletId
                 },
@@ -596,7 +610,7 @@ export class Storage {
         return cb(e);
       }
 
-      this.db.collection(collections.ADDRESSES).update({ _id: doc._id }, { $set: { address: x } }, { multi: true });
+      this.db.collection(collections.ADDRESSES).updateMany({ _id: doc._id }, { $set: { address: x } });
       cursor.resume();
     });
   }
@@ -635,7 +649,7 @@ export class Storage {
   }
 
   storeAddress(address, cb) {
-    this.db.collection(collections.ADDRESSES).update(
+    this.db.collection(collections.ADDRESSES).updateOne(
       {
         walletId: address.walletId,
         address: address.address
@@ -664,7 +678,7 @@ export class Storage {
   }
 
   deregisterWallet(walletId, cb) {
-    this.db.collection(collections.WALLETS).update(
+    this.db.collection(collections.WALLETS).updateOne(
       {
         id: walletId
       },
@@ -674,7 +688,7 @@ export class Storage {
         upsert: false
       },
       () => {
-        this.db.collection(collections.ADDRESSES).update(
+        this.db.collection(collections.ADDRESSES).updateMany(
           {
             walletId
           },
@@ -682,7 +696,6 @@ export class Storage {
           {
             w: 1,
             upsert: false,
-            multi: true
           },
           () => {
             this.clearWalletCache(walletId, cb);
@@ -1316,7 +1329,7 @@ export class Storage {
   }
 
   removePushNotificationSub(copayerId, token, cb) {
-    this.db.collection(collections.PUSH_NOTIFICATION_SUBS).remove(
+    this.db.collection(collections.PUSH_NOTIFICATION_SUBS).deleteMany(
       {
         copayerId,
         token
@@ -1372,7 +1385,7 @@ export class Storage {
   }
 
   removeTxConfirmationSub(copayerId, txid, cb) {
-    this.db.collection(collections.TX_CONFIRMATION_SUBS).remove(
+    this.db.collection(collections.TX_CONFIRMATION_SUBS).deleteMany(
       {
         copayerId,
         txid
@@ -1451,7 +1464,7 @@ export class Storage {
   }
 
   clearGlobalCache(key, cb) {
-    this.db.collection(collections.CACHE).remove(
+    this.db.collection(collections.CACHE).deleteMany(
       {
         key,
         walletId: null,
@@ -1496,7 +1509,7 @@ export class Storage {
   }
 
   releaseLock(key, cb) {
-    this.db.collection(collections.LOCKS).remove(
+    this.db.collection(collections.LOCKS).deleteMany(
       {
         _id: key
       },

@@ -99,7 +99,7 @@ describe('Blockchain monitor', function() {
 
 
     async.each(_.values(collections), (x, icb)=> {
-      storage.db.collection(x).remove({}, icb);
+      storage.db.collection(x).deleteMany({}, icb);
     }, (err) => {
       should.not.exist(err);
       helpers.createAndJoinWallet(2, 3, function(s, w) {

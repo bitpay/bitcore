@@ -45,9 +45,16 @@ helpers.before = function(cb) {
   function getDb(cb) {
     if (useMongoDb) {
       var mongodb = require('mongodb');
-      mongodb.MongoClient.connect(config.mongoDb.uri, function(err, db) {
+      mongodb.MongoClient.connect(config.mongoDb.uri, { useUnifiedTopology: true }, function(err, client) {
         if (err) throw err;
-        return cb(db);
+
+        const uri = config.mongoDb.uri;
+        const start = uri.lastIndexOf('/');
+        let end = uri.lastIndexOf('?');
+        if (end == -1) end = uri.length;
+
+        const dbname = uri.substr(start+1, end-start);
+        return cb(client.db(dbname));
       });
     } else {
       throw "tingodb not longer supported";
@@ -114,7 +121,7 @@ helpers.beforeEach = function(cb) {
 
 
   async.each(_.values(collections), (x, icb)=> {
-    storage.db.collection(x).remove({}, icb);
+    storage.db.collection(x).deleteMany({}, icb);
   }, (err) => {
     should.not.exist(err);
     var opts = {

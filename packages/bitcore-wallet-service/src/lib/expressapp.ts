@@ -1,6 +1,6 @@
 import express from 'express';
 import _ from 'lodash';
-import * as log from 'npmlog';
+import logger from './logger';
 import 'source-map-support/register';
 
 import { ClientError } from './errors/clienterror';
@@ -14,10 +14,6 @@ const RateLimit = require('express-rate-limit');
 const Common = require('./common');
 const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
-
-log.disableColor();
-log.debug = log.verbose;
-log.level = 'verbose';
 
 export class ExpressApp {
   app: express.Express;
@@ -63,7 +59,7 @@ export class ExpressApp {
     // handle `abort` https://nodejs.org/api/http.html#http_event_abort
     this.app.use((req, res, next) => {
       req.on('abort', () => {
-        log.warn('Request aborted by the client');
+        logger.warn('Request aborted by the client');
       });
       next();
     });
@@ -88,8 +84,9 @@ export class ExpressApp {
     });
 
     if (opts.disableLogs) {
-      log.level = 'silent';
+      // TODO
     } else {
+
       const morgan = require('morgan');
       morgan.token('walletId', function getId(req) {
         return req.walletId ? '<' + req.walletId + '>' : '<>';
@@ -101,8 +98,11 @@ export class ExpressApp {
         skip(req, res) {
           if (res.statusCode != 200) return false;
           return req.path.indexOf('/notifications/') >= 0;
-        }
+        },
+        stream: logger.stream,
+
       };
+
       this.app.use(morgan(logFormat, logOpts));
     }
 
@@ -111,7 +111,7 @@ export class ExpressApp {
     const returnError = (err, res, req) => {
       if (err instanceof ClientError) {
         const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
-        if (!opts.disableLogs) log.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
+        if (!opts.disableLogs) logger.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
 
         res
           .status(status)
@@ -130,7 +130,7 @@ export class ExpressApp {
 
         const m = message || err.toString();
 
-        if (!opts.disableLogs) log.error(req.url + ' :' + code + ':' + m);
+        if (!opts.disableLogs) logger.error(req.url + ' :' + code + ':' + m);
 
         res
           .status(code || 500)
@@ -142,7 +142,7 @@ export class ExpressApp {
     };
 
     const logDeprecated = req => {
-      log.warn('DEPRECATED', req.method, req.url, '(' + req.header('x-client-version') + ')');
+      logger.warn('DEPRECATED', req.method, req.url, '(' + req.header('x-client-version') + ')');
     };
 
     const getCredentials = req => {
@@ -217,7 +217,7 @@ export class ExpressApp {
     let createWalletLimiter;
 
     if (Defaults.RateLimit.createWallet && !opts.ignoreRateLimiter) {
-      log.info(
+      logger.info(
         '',
         'Limiting wallet creation per IP: %d req/h',
         ((Defaults.RateLimit.createWallet.max / Defaults.RateLimit.createWallet.windowMs) * 60 * 60 * 1000).toFixed(2)
@@ -570,7 +570,7 @@ export class ExpressApp {
     let estimateFeeLimiter;
 
     if (Defaults.RateLimit.estimateFee && !opts.ignoreRateLimiter) {
-      log.info(
+      logger.info(
         '',
         'Limiting estimate fee per IP: %d req/h',
         ((Defaults.RateLimit.estimateFee.max / Defaults.RateLimit.estimateFee.windowMs) * 60 * 60 * 1000).toFixed(2)
@@ -1066,7 +1066,7 @@ export class ExpressApp {
     this.app.use(opts.basePath || '/bws/api', router);
 
     if (config.staticRoot) {
-      log.debug(`Serving static files from ${config.staticRoot}`);
+      logger.debug(`Serving static files from ${config.staticRoot}`);
       this.app.use('/static', express.static(config.staticRoot));
     }
 
