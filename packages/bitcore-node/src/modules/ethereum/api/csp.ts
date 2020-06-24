@@ -344,7 +344,10 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       query = {
         chain,
         network,
-        to: web3.utils.toChecksumAddress(args.multisigContractAddress)
+        $or: [
+          { to: args.multisigContractAddress },
+          { 'internal.action.to': args.multisigContractAddress.toLowerCase() }
+        ]
       };
     } else {
       query = {
@@ -405,10 +408,10 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       transactionStream = transactionStream.pipe(erc20Transform);
     }
 
-        if (args.multisigContractAddress) {
-          const ethMultisigTransform = new EthMultisigRelatedFilterTransform(web3, args.multisigContractAddress);
-          transactionStream = transactionStream.pipe(ethMultisigTransform);
-        }
+    if (args.multisigContractAddress) {
+      const ethMultisigTransform = new EthMultisigRelatedFilterTransform(web3, args.multisigContractAddress);
+      transactionStream = transactionStream.pipe(ethMultisigTransform);
+    }
 
     transactionStream
       .pipe(populateReceipt)
