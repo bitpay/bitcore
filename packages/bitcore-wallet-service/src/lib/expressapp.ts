@@ -1,7 +1,7 @@
 import express from 'express';
 import _ from 'lodash';
-import logger from './logger';
 import 'source-map-support/register';
+import logger from './logger';
 
 import { ClientError } from './errors/clienterror';
 import { WalletService } from './server';
@@ -86,7 +86,6 @@ export class ExpressApp {
     if (opts.disableLogs) {
       // TODO
     } else {
-
       const morgan = require('morgan');
       morgan.token('walletId', function getId(req) {
         return req.walletId ? '<' + req.walletId + '>' : '<>';
@@ -99,8 +98,7 @@ export class ExpressApp {
           if (res.statusCode != 200) return false;
           return req.path.indexOf('/notifications/') >= 0;
         },
-        stream: logger.stream,
-
+        stream: logger.stream
       };
 
       this.app.use(morgan(logFormat, logOpts));

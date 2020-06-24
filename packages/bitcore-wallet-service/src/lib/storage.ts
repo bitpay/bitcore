@@ -43,6 +43,7 @@ export class Storage {
   static BCHEIGHT_KEY = 'bcheight';
   static collections = collections;
   db: Db;
+  client: any;
 
   constructor(opts: { db?: Db } = {}) {
     opts = opts || {};
@@ -52,8 +53,7 @@ export class Storage {
   static createIndexes(db) {
     log.info('Creating DB indexes');
     if (!db.collection) {
-
-console.log('[storage.ts.55] no db.collection'); // TODO
+      console.log('[storage.ts.55] no db.collection'); // TODO
       log.error('DB not ready');
       return;
     }
@@ -169,9 +169,9 @@ console.log('[storage.ts.55] no db.collection'); // TODO
       let end = uri.lastIndexOf('?');
       if (end == -1) end = uri.length;
 
-      const dbname = uri.substr(start+1, end-start);
-console.log('[storage.ts.168:dbname:]',dbname); // todo
-      this.db = client.db(dbname); 
+      const dbname = uri.substr(start + 1, end - start);
+      this.client = client;
+      this.db = client.db(dbname);
 
       log.info('Connection established to mongoDB:' + config.uri);
 
@@ -181,11 +181,16 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
   }
 
   disconnect(cb) {
-    this.db.close(true, err => {
-      if (err) return cb(err);
-      this.db = null;
+    if (this.client) {
+      this.client.close(err => {
+        if (err) return cb(err);
+        this.db = null;
+        this.client = null;
+        return cb();
+      });
+    } else {
       return cb();
-    });
+    }
   }
 
   fetchWallet(id, cb: (err?: any, wallet?: Wallet) => void) {
@@ -204,7 +209,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
   }
 
   storeWallet(wallet, cb) {
-    this.db.collection(collections.WALLETS).updateOne(
+    this.db.collection(collections.WALLETS).replaceOne(
       {
         id: wallet.id
       },
@@ -241,7 +246,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
       },
       err => {
         if (err) return cb(err);
-        this.db.collection(collections.COPAYERS_LOOKUP).insert(
+        this.db.collection(collections.COPAYERS_LOOKUP).insertMany(
           copayerLookups,
           {
             w: 1
@@ -501,7 +506,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
       return;
     }
 
-    this.db.collection(collections.NOTIFICATIONS).insert(
+    this.db.collection(collections.NOTIFICATIONS).insertOne(
       notification,
       {
         w: 1
@@ -512,7 +517,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
 
   // TODO: remove walletId from signature
   storeTx(walletId, txp, cb) {
-    this.db.collection(collections.TXS).updateOne(
+    this.db.collection(collections.TXS).replaceOne(
       {
         id: txp.id,
         walletId
@@ -649,7 +654,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
   }
 
   storeAddress(address, cb) {
-    this.db.collection(collections.ADDRESSES).updateOne(
+    this.db.collection(collections.ADDRESSES).replaceOne(
       {
         walletId: address.walletId,
         address: address.address
@@ -695,7 +700,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
           { $set: { beRegistered: null } },
           {
             w: 1,
-            upsert: false,
+            upsert: false
           },
           () => {
             this.clearWalletCache(walletId, cb);
@@ -710,7 +715,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
     if (_.isEmpty(addresses)) return cb();
     let duplicate;
 
-    this.db.collection(collections.ADDRESSES).insert(
+    this.db.collection(collections.ADDRESSES).insertMany(
       clonedAddresses,
       {
         w: 1
@@ -818,7 +823,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
   }
 
   storePreferences(preferences, cb) {
-    this.db.collection(collections.PREFERENCES).update(
+    this.db.collection(collections.PREFERENCES).replaceOne(
       {
         walletId: preferences.walletId,
         copayerId: preferences.copayerId
@@ -833,7 +838,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
   }
 
   storeEmail(email, cb) {
-    this.db.collection(collections.EMAIL_QUEUE).update(
+    this.db.collection(collections.EMAIL_QUEUE).replaceOne(
       {
         id: email.id
       },
@@ -919,7 +924,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
   }
 
   setWalletAddressChecked(walletId, totalAddresses, cb) {
-    this.db.collection(collections.CACHE).update(
+    this.db.collection(collections.CACHE).replaceOne(
       {
         walletId,
         type: 'addressChecked',
@@ -1003,7 +1008,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
    */
   storeTxHistoryStreamV8(walletId, streamKey, items, cb) {
     // only 1 per wallet is allowed
-    this.db.collection(collections.CACHE).update(
+    this.db.collection(collections.CACHE).replaceOne(
       {
         walletId,
         type: 'historyStream',
@@ -1077,7 +1082,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
         pos = item.position;
         delete item.position;
         // console.log('STORING [storage.js.804:at:]',pos, item.blockheight);
-        this.db.collection(collections.CACHE).insert(
+        this.db.collection(collections.CACHE).insertOne(
           {
             walletId,
             type: 'historyCacheV8',
@@ -1113,7 +1118,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
         }
 
         log.debug(`Cache Last Item: ${last.txid} blockh: ${last.blockheight} updatedh: ${updateHeight}`);
-        this.db.collection(collections.CACHE).update(
+        this.db.collection(collections.CACHE).replaceOne(
           {
             walletId,
             type: 'historyCacheStatusV8',
@@ -1150,7 +1155,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
           code: rate.code,
           value: rate.value
         };
-        this.db.collection(collections.FIAT_RATES2).insert(
+        this.db.collection(collections.FIAT_RATES2).insertOne(
           i,
           {
             w: 1
@@ -1255,7 +1260,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
   }
 
   storeTxNote(txNote, cb) {
-    this.db.collection(collections.TX_NOTES).update(
+    this.db.collection(collections.TX_NOTES).replaceOne(
       {
         txid: txNote.txid,
         walletId: txNote.walletId
@@ -1282,7 +1287,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
   }
 
   storeSession(session, cb) {
-    this.db.collection(collections.SESSIONS).update(
+    this.db.collection(collections.SESSIONS).replaceOne(
       {
         copayerId: session.copayerId
       },
@@ -1314,7 +1319,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
   }
 
   storePushNotificationSub(pushNotificationSub, cb) {
-    this.db.collection(collections.PUSH_NOTIFICATION_SUBS).update(
+    this.db.collection(collections.PUSH_NOTIFICATION_SUBS).replaceOne(
       {
         copayerId: pushNotificationSub.copayerId,
         token: pushNotificationSub.token
@@ -1370,7 +1375,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
   }
 
   storeTxConfirmationSub(txConfirmationSub, cb) {
-    this.db.collection(collections.TX_CONFIRMATION_SUBS).update(
+    this.db.collection(collections.TX_CONFIRMATION_SUBS).replaceOne(
       {
         copayerId: txConfirmationSub.copayerId,
         txid: txConfirmationSub.txid
@@ -1443,7 +1448,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
 
   storeGlobalCache(key, values, cb) {
     const now = Date.now();
-    this.db.collection(collections.CACHE).update(
+    this.db.collection(collections.CACHE).replaceOne(
       {
         key,
         walletId: null,
@@ -1498,7 +1503,7 @@ console.log('[storage.ts.168:dbname:]',dbname); // todo
   };
 
   acquireLock(key, expireTs, cb) {
-    this.db.collection(collections.LOCKS).insert(
+    this.db.collection(collections.LOCKS).insertOne(
       {
         _id: key,
         expireOn: expireTs

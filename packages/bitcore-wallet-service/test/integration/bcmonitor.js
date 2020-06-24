@@ -6,8 +6,6 @@ const CWC = require('crypto-wallet-core');
 var chai = require('chai');
 var sinon = require('sinon');
 var should = chai.should();
-var log = require('npmlog');
-log.debug = log.verbose;
 
 var { WalletService } = require('../../ts_build/lib/server');
 var { BlockchainMonitor } = require('../../ts_build/lib/blockchainmonitor');
@@ -27,7 +25,6 @@ describe('Blockchain monitor', function() {
   var server, wallet;
 
   before(function(done) {
-    log.level = 'warn';
     helpers.before(function(res) {
       storage = res.storage;
       blockchainExplorer = res.blockchainExplorer;

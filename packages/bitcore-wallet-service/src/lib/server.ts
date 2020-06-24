@@ -315,8 +315,7 @@ export class WalletService {
           return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Invalid signature'));
         }
 
-
-          server.walletId = copayer.walletId;
+        server.walletId = copayer.walletId;
 
         // allow overwrite walletid if the copayer is from the support team
         if (copayer.isSupportStaff) {
@@ -389,30 +388,22 @@ export class WalletService {
     logger.info.apply(this, argz);
   }
 
-  logw(...args) {
-    if (!this) {
-      return logger.warn.apply(this, args);
-    }
-    if (!this.walletId) {
-      return logger.warn.apply(this, arguments);
+  logw(message, ...args) {
+    if (!this || ! this.walletId) {
+      return logger.warn(message, ...args);
     }
 
-    const argz = [].slice.call(args);
-    argz.unshift('<' + this.walletId + '>');
-    logger.warn.apply(this, argz);
+    message = '<' + this.walletId + '>' + message  ;
+    return logger.warn(message, ...args);
   }
 
-  logd(...args) {
-    if (!this) {
-      return logger.verbose.apply(this, args);
-    }
-    if (!this.walletId) {
-      return logger.verbose.apply(this, arguments);
+  logd(message, ...args) {
+    if (!this || ! this.walletId) {
+      return logger.verbose(message, ...args);
     }
 
-    const argz = [].slice.call(args);
-    argz.unshift('<' + this.walletId + '>');
-    logger.verbose.apply(this, argz);
+    message = '<' + this.walletId + '>' + message  ;
+    return logger.verbose(message, ...args);
   }
 
   login(opts, cb) {

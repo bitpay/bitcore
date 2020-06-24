@@ -1,9 +1,9 @@
 import * as async from 'async';
 import { BitcoreLib } from 'crypto-wallet-core';
 import _ from 'lodash';
-import logger from '../../logger';
 import { IChain, INotificationData } from '..';
 import { ClientError } from '../../errors/clienterror';
+import logger from '../../logger';
 import { TxProposal } from '../../model';
 
 const $ = require('preconditions').singleton();

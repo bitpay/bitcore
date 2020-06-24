@@ -259,7 +259,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     walletOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
 
   server.createWallet(walletOpts, function(err, walletId) {
-    if (err) return cb(err);
+    if (err) throw err;
 
     async.eachSeries(_.range(n), function(i, cb) {
       var copayerData = TestData.copayers[i + offset];
@@ -287,8 +287,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
         copayerOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
 
       server.joinWallet(copayerOpts, function(err, result) {
-        if (err) console.log(err);
-        should.not.exist(err);
+        if (err) throw err;
         copayerIds.push(result.copayerId);
         return cb(err);
       });
