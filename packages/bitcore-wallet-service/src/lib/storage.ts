@@ -80,10 +80,6 @@ export class Storage {
     db.collection(collections.TXS).createIndex({
       txid: 1
     });
-    db.collection(collections.TXS).createIndex({
-      multisigContractAddress: 1,
-      txid: 1
-    });
     db.collection(collections.NOTIFICATIONS).createIndex({
       walletId: 1,
       id: 1
@@ -359,12 +355,11 @@ export class Storage {
       });
   }
 
-  fetchEthPendingTxs(multisigContractAddress, multisigTxpsInfo) {
+  fetchEthPendingTxs(multisigTxpsInfo) {
     return new Promise((resolve, reject) => {
       this.db
         .collection(collections.TXS)
         .find({
-          multisigContractAddress,
           txid: { $in: multisigTxpsInfo.map(txpInfo => txpInfo.transactionHash) }
         })
         .sort({

@@ -2085,7 +2085,7 @@ export class WalletService {
   }
 
   getMultisigContractInstantiationInfo(opts) {
-    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
+    const bc = this._getBlockchainExplorer('eth', opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getMultisigContractInstantiationInfo(opts, (err, contractInstantiationInfo) => {
@@ -2099,7 +2099,7 @@ export class WalletService {
   }
 
   getMultisigContractInfo(opts) {
-    const bc = this._getBlockchainExplorer(opts.coin, opts.network);
+    const bc = this._getBlockchainExplorer('eth', opts.network);
     return new Promise((resolve, reject) => {
       if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
       bc.getMultisigContractInfo(opts, (err, contractInfo) => {
@@ -2810,7 +2810,7 @@ export class WalletService {
    * @param {Boolean} opts.noCashAddr (do not use cashaddr, only for backwards compat)
    * @param {String} opts.tokenAddress ERC20 Token Contract Address
    * @param {String} opts.multisigContractAddress MULTISIG ETH Contract Address
-   * @param {String} opts.network  The network for the transactions
+   * @param {String} opts.network  The network of the MULTISIG ETH transactions
    * @returns {TxProposal[]} Transaction proposal.
    */
   async getPendingTxs(opts, cb) {
@@ -2819,7 +2819,7 @@ export class WalletService {
     } else if (opts.multisigContractAddress) {
       try {
         const multisigTxpsInfo = await this.getMultisigTxpsInfo(opts);
-        const txps = await this.storage.fetchEthPendingTxs(opts.multisigContractAddress, multisigTxpsInfo);
+        const txps = await this.storage.fetchEthPendingTxs(multisigTxpsInfo);
         return cb(null, txps);
       } catch (error) {
         return cb(error);

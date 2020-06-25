@@ -1090,7 +1090,6 @@ export class API extends EventEmitter {
   // * @param {Boolean} opts.includeExtendedInfo (optional: query extended status)
   // * @param {String} opts.tokenAddress (optional: ERC20 Token Contract Address)
   // * @param {String} opts.multisigContractAddress (optional: MULTISIG ETH Contract Address)
-  // * @param {String} opts.network (optional: MULTISIG ETH Contract Address network)
   // * @returns {Callback} cb - Returns error or an object with status information
   // */
   getStatus(opts, cb) {
@@ -1115,7 +1114,7 @@ export class API extends EventEmitter {
 
     if (opts.multisigContractAddress) {
       qs.push('multisigContractAddress=' + opts.multisigContractAddress);
-      qs.push('network=' + opts.network);
+      qs.push('network=' + this.credentials.network);
     }
 
     this.request.get('/v3/wallets/?' + qs.join('&'), (err, result) => {
@@ -2130,14 +2129,13 @@ export class API extends EventEmitter {
   }
 
   // /**
-  // * Returns contract instantiation info.
+  // * Returns contract instantiation info. (All contract addresses instantiated by that sender with the current transaction hash and block number)
   // * @param {string} opts.sender - sender eth wallet address
-  // * @param {string} opts.network - the network for this wallet
-  // * @param {string} opts.coin - the coin for this wallet
   // * @return {Callback} cb - Return error (if exists) instantiation info
   // */
   getMultisigContractInstantiationInfo(opts, cb) {
     var url = '/v1/ethmultisig/';
+    opts.network = this.credentials.network;
     this.request.post(url, opts, (err, contractInstantiationInfo) => {
       if (err) return cb(err);
       return cb(null, contractInstantiationInfo);
@@ -2145,14 +2143,13 @@ export class API extends EventEmitter {
   }
 
   // /**
-  // * Returns contract info.
+  // * Returns contract info. (owners addresses and required number of confirmations)
   // * @param {string} opts.multisigContractAddress - multisig contract address
-  // * @param {string} opts.network - the network for this wallet
-  // * @param {string} opts.coin - the coin for this wallet
   // * @return {Callback} cb - Return error (if exists) instantiation info
   // */
   getMultisigContractInfo(opts, cb) {
     var url = '/v1/ethmultisig/info';
+    opts.network = this.credentials.network;
     this.request.post(url, opts, (err, contractInfo) => {
       if (err) return cb(err);
       return cb(null, contractInfo);
@@ -2433,7 +2430,9 @@ export class API extends EventEmitter {
           const multisigEthInfo = status.preferences.multisigEthInfo;
           if (!_.isEmpty(multisigEthInfo)) {
             _.each(multisigEthInfo, info => {
-              log.info('Importing multisig wallet');
+              log.info(
+                `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
+              );
               const multisigEthCredentials = client.credentials.getMultisigEthCredentials({
                 walletName: info.walletName,
                 multisigContractAddress: info.multisigContractAddress,
