@@ -44,15 +44,17 @@ export class Client {
   async getBalance(params) {
     const { payload, pubKey, tokenAddress, multisigContractAddress } = params;
     let query = '';
+    let apiUrl = `${this.baseUrl}/wallet/${pubKey}/balance`;
 
     if (tokenAddress) {
       query = `?tokenAddress=${tokenAddress}`;
     }
 
     if (multisigContractAddress) {
-      query = `?multisigContractAddress=${multisigContractAddress}`;
+      apiUrl = `${this.baseUrl}/address/${multisigContractAddress}/balance`;
     }
-    const url = `${this.baseUrl}/wallet/${pubKey}/balance${query}`;
+
+    const url = apiUrl + query;
     const signature = this.sign({ method: 'GET', url, payload });
     return request.get(url, {
       headers: { 'x-signature': signature },
@@ -127,22 +129,24 @@ export class Client {
       tokenAddress,
       multisigContractAddress
     } = params;
-    let url = `${this.baseUrl}/wallet/${pubKey}/transactions?`;
+    let query = '';
+    let apiUrl = `${this.baseUrl}/wallet/${pubKey}/transactions?`;
     if (startBlock) {
-      url += `startBlock=${startBlock}&`;
+      query += `startBlock=${startBlock}&`;
     }
     if (endBlock) {
-      url += `endBlock=${endBlock}&`;
+      query += `endBlock=${endBlock}&`;
     }
     if (tokenAddress) {
-      url += `tokenAddress=${tokenAddress}&`;
+      query += `tokenAddress=${tokenAddress}&`;
     }
     if (multisigContractAddress) {
-      url += `multisigContractAddress=${multisigContractAddress}&`;
+      apiUrl = `${this.baseUrl}/ethmultisig/transactions/${multisigContractAddress}`;
     }
     if (includeMempool) {
-      url += 'includeMempool=true';
+      query += 'includeMempool=true';
     }
+    const url = apiUrl + query;
     const signature = this.sign({ method: 'GET', url });
     logger.info('List transactions', url);
     return requestStream.get(url, {
