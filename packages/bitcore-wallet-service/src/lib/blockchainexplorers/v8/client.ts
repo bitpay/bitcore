@@ -141,7 +141,7 @@ export class Client {
       query += `tokenAddress=${tokenAddress}&`;
     }
     if (multisigContractAddress) {
-      apiUrl = `${this.baseUrl}/ethmultisig/transactions/${multisigContractAddress}`;
+      apiUrl = `${this.baseUrl}/ethmultisig/transactions/${multisigContractAddress}?`;
     }
     if (includeMempool) {
       query += 'includeMempool=true';
