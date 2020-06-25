@@ -120,18 +120,18 @@ export class GnosisApi {
     };
   }
 
-  async streamGnosisWalletTransactions(params: StreamWalletTransactionsParams) {
-    const { network, res, args } = params;
+  async streamGnosisWalletTransactions(params: { multisigContractAddress: string } & StreamWalletTransactionsParams) {
+    const { multisigContractAddress, network, res, args } = params;
     const { web3 } = await ETH.getWeb3(network);
     const query = {
       ...ETH.getWalletTransactionQuery(params),
-      $or: [{ to: args.multisigContractAddress }, { 'internal.action.to': args.multisigContractAddress.toLowerCase() }]
+      $or: [{ to: multisigContractAddress }, { 'internal.action.to': multisigContractAddress.toLowerCase() }]
     };
     delete query.wallets;
     delete query['wallets.0'];
 
     let transactionStream = new Readable({ objectMode: true });
-    const ethTransactionTransform = new EthListTransactionsStream([args.multisigContractAddress]);
+    const ethTransactionTransform = new EthListTransactionsStream([multisigContractAddress]);
     const populateReceipt = new PopulateReceiptTransform();
 
     transactionStream = EthTransactionStorage.collection
@@ -144,8 +144,8 @@ export class GnosisApi {
       transactionStream = transactionStream.pipe(erc20Transform);
     }
 
-    if (args.multisigContractAddress) {
-      const ethMultisigTransform = new EthMultisigRelatedFilterTransform(web3, args.multisigContractAddress);
+    if (multisigContractAddress) {
+      const ethMultisigTransform = new EthMultisigRelatedFilterTransform(web3, multisigContractAddress);
       transactionStream = transactionStream.pipe(ethMultisigTransform);
     }
 
