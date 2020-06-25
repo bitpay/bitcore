@@ -2,6 +2,7 @@ import * as requestStream from 'request';
 import * as request from 'request-promise-native';
 import * as secp256k1 from 'secp256k1';
 import { URL } from 'url';
+import logger from '../../logger';
 
 const bitcoreLib = require('bitcore-lib');
 
@@ -44,7 +45,6 @@ export class Client {
     const { payload, pubKey, tokenAddress } = params;
     const query = tokenAddress ? `?tokenAddress=${tokenAddress}` : '';
     const url = `${this.baseUrl}/wallet/${pubKey}/balance${query}`;
-    console.log('[client.js.37:url:]', url); // TODO
     const signature = this.sign({ method: 'GET', url, payload });
     return request.get(url, {
       headers: { 'x-signature': signature },
@@ -56,7 +56,7 @@ export class Client {
   async getCheckData(params) {
     const { payload, pubKey } = params;
     const url = `${this.baseUrl}/wallet/${pubKey}/check`;
-    console.log('WALLET CHECK ', url); // TODO
+    logger.info('WALLET CHECK');
     const signature = this.sign({ method: 'GET', url, payload });
     return request.get(url, {
       headers: { 'x-signature': signature },
@@ -77,7 +77,6 @@ export class Client {
   async getTx(params) {
     const { txid } = params;
     const url = `${this.baseUrl}/tx/${txid}`;
-    console.log('[client.js.59:url:]', url); // TODO
     return request.get(url, {
       json: true
     });
@@ -91,7 +90,7 @@ export class Client {
       extra = `?includeSpent=${includeSpent}`;
     }
     const url = `${this.baseUrl}/wallet/${pubKey}/utxos${extra}`;
-    console.log('GET UTXOS:', url); // TODO
+    logger.info('GET UTXOS:', url);
     const signature = this.sign({ method: 'GET', url, payload });
     return request.get(url, {
       headers: { 'x-signature': signature },
@@ -103,7 +102,7 @@ export class Client {
   async getCoinsForTx(params) {
     const { txId } = params;
     const url = `${this.baseUrl}/tx/${txId}/coins`;
-    console.log('GET COINS FOR TX:', url);
+    logger.info('GET COINS FOR TX:', url);
     return request.get(url, {
       json: true
     });
@@ -125,7 +124,7 @@ export class Client {
       url += 'includeMempool=true';
     }
     const signature = this.sign({ method: 'GET', url });
-    console.log('[client.js.96:url:]', url); // TODO
+    logger.info('List transactions', url); 
     return requestStream.get(url, {
       headers: { 'x-signature': signature },
       json: true
@@ -136,7 +135,7 @@ export class Client {
     const { payload, pubKey } = params;
     const url = `${this.baseUrl}/wallet/${pubKey}`;
 
-    console.log('addAddresses:', url, payload); // TODO
+    logger.info('addAddresses:', url, payload); 
     const signature = this.sign({ method: 'POST', url, payload });
     const h = { 'x-signature': signature };
     return request.post(url, {
@@ -149,7 +148,7 @@ export class Client {
   async broadcast(params) {
     const { payload } = params;
     const url = `${this.baseUrl}/tx/send`;
-    console.log('[client.js.113:url:]', url); // TODO
+    logger.info('Broadcast', url); 
     return request.post(url, { body: payload, json: true });
   }
 }

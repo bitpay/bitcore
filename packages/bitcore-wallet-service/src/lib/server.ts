@@ -389,20 +389,20 @@ export class WalletService {
   }
 
   logw(message, ...args) {
-    if (!this || ! this.walletId) {
+    if (!this || !this.walletId) {
       return logger.warn(message, ...args);
     }
 
-    message = '<' + this.walletId + '>' + message  ;
+    message = '<' + this.walletId + '>' + message;
     return logger.warn(message, ...args);
   }
 
   logd(message, ...args) {
-    if (!this || ! this.walletId) {
+    if (!this || !this.walletId) {
       return logger.verbose(message, ...args);
     }
 
-    message = '<' + this.walletId + '>' + message  ;
+    message = '<' + this.walletId + '>' + message;
     return logger.verbose(message, ...args);
   }
 

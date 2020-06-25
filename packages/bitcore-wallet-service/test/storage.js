@@ -13,7 +13,7 @@ var db, client, storage;
 
 function resetDb(cb) {
   if (!client) return cb();
-  let db1 = client.db('bws_test');
+  let db1 = client.db(config.mongoDb.dbname);
   db1.dropDatabase(function(err) {
     return cb();
   });
@@ -25,7 +25,7 @@ describe('Storage', function() {
     mongodb.MongoClient.connect(config.mongoDb.uri,{ useUnifiedTopology: true }, function(err, inclient) {
       if (err) throw err;
       client = inclient;
-      let db1 = client.db('bws_test');
+      let db1 = client.db(config.mongoDb.dbname);
       storage = new Storage({
         db: db1,
       });

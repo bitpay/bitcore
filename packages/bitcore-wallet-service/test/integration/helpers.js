@@ -47,14 +47,7 @@ helpers.before = function(cb) {
       var mongodb = require('mongodb');
       mongodb.MongoClient.connect(config.mongoDb.uri, { useUnifiedTopology: true }, function(err, client) {
         if (err) throw err;
-
-        const uri = config.mongoDb.uri;
-        const start = uri.lastIndexOf('/');
-        let end = uri.lastIndexOf('?');
-        if (end == -1) end = uri.length;
-
-        const dbname = uri.substr(start+1, end-start);
-        return cb(client.db(dbname));
+        return cb(client.db(config.mongoDb.dbname));
       });
     } else {
       throw "tingodb not longer supported";

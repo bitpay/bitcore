@@ -2,6 +2,7 @@ import * as async from 'async';
 import _ from 'lodash';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
+import logger from './logger'; 
 import {
   Address,
   Email,
@@ -17,9 +18,6 @@ import {
 
 const BCHAddressTranslator = require('./bchaddresstranslator'); // only for migration
 const $ = require('preconditions').singleton();
-let log = require('npmlog');
-log.debug = log.verbose;
-log.disableColor();
 
 const collections = {
   // Duplciated in helpers.. TODO
@@ -51,10 +49,10 @@ export class Storage {
   }
 
   static createIndexes(db) {
-    log.info('Creating DB indexes');
+    logger.info('Creating DB indexes');
     if (!db.collection) {
       console.log('[storage.ts.55] no db.collection'); // TODO
-      log.error('DB not ready');
+      logger.error('DB not ready');
       return;
     }
     db.collection(collections.WALLETS).createIndex({
@@ -156,24 +154,23 @@ export class Storage {
         config.uri = config.uri + '?';
       }
       config.uri = config.uri + 'readPreference=secondaryPreferred';
-      log.info('Read operations set to secondaryPreferred');
+      logger.info('Read operations set to secondaryPreferred');
     }
 
-    mongodb.MongoClient.connect(config.uri, (err, client) => {
+    if (!config.dbname) {
+        logger.error('No dbname at config.');
+        return cb(new Error('No dbname at config.'));
+    }
+
+    mongodb.MongoClient.connect(config.uri,  { useUnifiedTopology: true } , (err, client) => {
       if (err) {
-        log.error('Unable to connect to the mongoDB. Check the credentials.');
+        logger.error('Unable to connect to the mongoDB. Check the credentials.');
         return cb(err);
       }
-      const uri = config.mongoDb.uri;
-      const start = uri.lastIndexOf('/');
-      let end = uri.lastIndexOf('?');
-      if (end == -1) end = uri.length;
-
-      const dbname = uri.substr(start + 1, end - start);
+      this.db = client.db(config.dbname);
       this.client = client;
-      this.db = client.db(dbname);
 
-      log.info('Connection established to mongoDB:' + config.uri);
+      logger.info(`Connection established to db: ${config.uri}`);
 
       Storage.createIndexes(this.db);
       return cb();
@@ -502,7 +499,7 @@ export class Storage {
   storeNotification(walletId, notification, cb) {
     // This should only happens in certain tests.
     if (!this.db) {
-      log.warn('Trying to store a notification with close DB', notification);
+      logger.warn('Trying to store a notification with close DB', notification);
       return;
     }
 
@@ -728,7 +725,7 @@ export class Storage {
           } else {
             // just return it
             duplicate = true;
-            log.warn('Found duplicate address: ' + _.join(_.map(clonedAddresses, 'address'), ','));
+            logger.warn('Found duplicate address: ' + _.join(_.map(clonedAddresses, 'address'), ','));
           }
         }
         this.storeWallet(wallet, err => {
@@ -1117,7 +1114,7 @@ export class Storage {
           return cb(e);
         }
 
-        log.debug(`Cache Last Item: ${last.txid} blockh: ${last.blockheight} updatedh: ${updateHeight}`);
+        logger.debug(`Cache Last Item: ${last.txid} blockh: ${last.blockheight} updatedh: ${updateHeight}`);
         this.db.collection(collections.CACHE).replaceOne(
           {
             walletId,
@@ -1349,7 +1346,7 @@ export class Storage {
   fetchActiveTxConfirmationSubs(copayerId, cb) {
     // This should only happens in certain tests.
     if (!this.db) {
-      log.warn('Trying to fetch notifications with closed DB');
+      logger.warn('Trying to fetch notifications with closed DB');
       return;
     }
 
@@ -1532,7 +1529,7 @@ export class Storage {
         if (err || !ret) return;
 
         if (ret.expireOn < Date.now()) {
-          log.info('Releasing expired lock : ' + key);
+          logger.info('Releasing expired lock : ' + key);
           return this.releaseLock(key, cb);
         }
         return cb();

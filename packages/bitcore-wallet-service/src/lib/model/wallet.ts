@@ -3,8 +3,8 @@ import { ChainService } from '../chain/index';
 import { Address } from './address';
 import { AddressManager } from './addressmanager';
 import { Copayer } from './copayer';
+import logger from '../logger';
 
-const log = require('npmlog');
 const $ = require('preconditions').singleton();
 const Uuid = require('uuid');
 const config = require('../../config');
@@ -255,7 +255,7 @@ export class Wallet {
     $.checkState(this.isComplete());
 
     const path = this.addressManager.getNewAddressPath(isChange, step);
-    log.verbose('Deriving addr:' + path);
+    logger.debug('Deriving addr:' + path);
     const address = Address.derive(
       this.id,
       this.addressType,

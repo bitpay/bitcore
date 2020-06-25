@@ -1,9 +1,7 @@
 import { EventEmitter } from 'events';
 import 'source-map-support/register';
+import logger from './logger';
 
-let log = require('npmlog');
-log.debug = log.verbose;
-log.disableColor();
 
 export class MessageBroker extends EventEmitter {
   remote: boolean;
@@ -19,14 +17,14 @@ export class MessageBroker extends EventEmitter {
       this.mq = require('socket.io-client').connect(url);
       this.mq.on('connect', () => {});
       this.mq.on('connect_error', () => {
-        log.warn('Error connecting to message broker server @ ' + url);
+        logger.warn('Error connecting to message broker server @ ' + url);
       });
 
       this.mq.on('msg', data => {
         this.emit('msg', data);
       });
 
-      log.info('Using message broker server at ' + url);
+      logger.info('Using message broker server at ' + url);
     }
   }
 

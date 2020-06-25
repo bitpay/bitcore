@@ -4,10 +4,9 @@ import * as request from 'request-promise-native';
 import io = require('socket.io-client');
 import { ChainService } from '../chain/index';
 import { Client } from './v8/client';
+import logger from '../logger';
 
 const $ = require('preconditions').singleton();
-const log = require('npmlog');
-log.debug = log.verbose;
 const Common = require('../common');
 const Bitcore = require('bitcore-lib');
 const Bitcore_ = {
@@ -240,13 +239,13 @@ export class V8 {
       })
       .catch(err => {
         if (count > 3) {
-          log.error('FINAL Broadcast error:', err);
+          logger.error('FINAL Broadcast error:', err);
           return cb(err);
         } else {
           count++;
           // retry
           setTimeout(() => {
-            log.info('Retrying broadcast after', count * Defaults.BROADCAST_RETRY_TIME);
+            logger.info('Retrying broadcast after', count * Defaults.BROADCAST_RETRY_TIME);
             return this.broadcast(rawTx, cb, count);
           }, count * Defaults.BROADCAST_RETRY_TIME);
         }
@@ -290,9 +289,9 @@ export class V8 {
   getTransactions(wallet, startBlock, cb) {
     console.time('V8 getTxs');
     if (startBlock) {
-      log.debug(`getTxs: startBlock ${startBlock}`);
+      logger.debug(`getTxs: startBlock ${startBlock}`);
     } else {
-      log.debug('getTxs: from 0');
+      logger.debug('getTxs: from 0');
     }
 
     const client = this._getAuthClient(wallet);
@@ -328,7 +327,7 @@ export class V8 {
         try {
           tx = JSON.parse(rawTx);
         } catch (e) {
-          log.error('v8 error at JSON.parse:' + e + ' Parsing:' + rawTx + ':');
+          logger.error('v8 error at JSON.parse:' + e + ' Parsing:' + rawTx + ':');
           return cb(e);
         }
         // v8 field name differences
@@ -343,7 +342,7 @@ export class V8 {
     });
 
     txStream.on('error', e => {
-      log.error('v8 error:' + e);
+      logger.error('v8 error:' + e);
       broken = true;
       return cb(e);
     });
@@ -406,13 +405,13 @@ export class V8 {
 
               // only process right responses.
               if (!_.isUndefined(ret.blocks) && ret.blocks != x) {
-                log.info(`Ignoring response for ${x}:` + JSON.stringify(ret));
+                logger.info(`Ignoring response for ${x}:` + JSON.stringify(ret));
                 return icb();
               }
 
               result[x] = ret.feerate;
             } catch (e) {
-              log.warn('fee error:', e);
+              logger.warn('fee error:', e);
             }
 
             return icb();
@@ -464,7 +463,7 @@ export class V8 {
   }
 
   initSocket(callbacks) {
-    log.info('V8 connecting socket at:' + this.host);
+    logger.info('V8 connecting socket at:' + this.host);
     // sockets always use the first server on the pull
     const walletsSocket = io.connect(this.host, { transports: ['websocket'] });
 
@@ -484,12 +483,12 @@ export class V8 {
     };
 
     blockSocket.on('connect', () => {
-      log.info(`Connected to block ${this.getConnectionInfo()}`);
+      logger.info(`Connected to block ${this.getConnectionInfo()}`);
       blockSocket.emit('room', `/${this.chain}/${this.v8network}/inv`);
     });
 
     blockSocket.on('connect_error', () => {
-      log.error(`Error connecting to ${this.getConnectionInfo()}`);
+      logger.error(`Error connecting to ${this.getConnectionInfo()}`);
     });
 
     blockSocket.on('block', data => {
@@ -497,16 +496,16 @@ export class V8 {
     });
 
     walletsSocket.on('connect', () => {
-      log.info(`Connected to wallets ${this.getConnectionInfo()}`);
+      logger.info(`Connected to wallets ${this.getConnectionInfo()}`);
       walletsSocket.emit('room', `/${this.chain}/${this.v8network}/wallets`, getAuthPayload(this.host));
     });
 
     walletsSocket.on('connect_error', () => {
-      log.error(`Error connecting to ${this.getConnectionInfo()}  ${this.chain}/${this.v8network}`);
+      logger.error(`Error connecting to ${this.getConnectionInfo()}  ${this.chain}/${this.v8network}`);
     });
 
     walletsSocket.on('failure', err => {
-      log.error(`Error joining room ${err.message} ${this.chain}/${this.v8network}`);
+      logger.error(`Error joining room ${err.message} ${this.chain}/${this.v8network}`);
     });
 
     walletsSocket.on('coin', data => {
@@ -531,9 +530,9 @@ export class V8 {
 
 const _parseErr = (err, res) => {
   if (err) {
-    log.warn('V8 error: ', err);
+    logger.warn('V8 error: ', err);
     return 'V8 Error';
   }
-  log.warn('V8 ' + res.request.href + ' Returned Status: ' + res.statusCode);
+  logger.warn('V8 ' + res.request.href + ' Returned Status: ' + res.statusCode);
   return 'Error querying the blockchain';
 };

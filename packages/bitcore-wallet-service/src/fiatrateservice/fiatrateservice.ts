@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-var config = require('../config');
+import logger from '../lib/logger';
+const config = require('../config');
 
 import { FiatRateService } from '../lib/fiatrateservice';
 
@@ -10,6 +11,6 @@ service.init(config, err => {
   service.startCron(config, err => {
     if (err) throw err;
 
-    console.log('Fiat rate service started');
+    logger.info('Fiat rate service started');
   });
 });

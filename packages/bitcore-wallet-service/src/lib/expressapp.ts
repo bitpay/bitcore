@@ -6,6 +6,7 @@ import logger from './logger';
 import { ClientError } from './errors/clienterror';
 import { WalletService } from './server';
 import { Stats } from './stats';
+import { LogMiddleware } from './middleware';
 
 const bodyParser = require('body-parser');
 const compression = require('compression');
@@ -84,24 +85,25 @@ export class ExpressApp {
     });
 
     if (opts.disableLogs) {
-      // TODO
+      logger.warn('Logs disabled');
     } else {
-      const morgan = require('morgan');
-      morgan.token('walletId', function getId(req) {
-        return req.walletId ? '<' + req.walletId + '>' : '<>';
-      });
 
-      const logFormat =
-        ':walletId :remote-addr :date[iso] ":method :url" :status :res[content-length] :response-time ":user-agent"  ';
-      const logOpts = {
-        skip(req, res) {
-          if (res.statusCode != 200) return false;
-          return req.path.indexOf('/notifications/') >= 0;
-        },
-        stream: logger.stream
-      };
+      this.app.use(LogMiddleware());
+       //morgan.token('walletId', function getId(req) {
+        //return req.walletId ? '<' + req.walletId + '>' : '<>';
+      //});
 
-      this.app.use(morgan(logFormat, logOpts));
+      //const logFormat =
+        //':walletId :remote-addr :date[iso] ":method :url" :status :res[content-length] :response-time ":user-agent"  ';
+      //const logOpts = {
+        //skip(req, res) {
+          //if (res.statusCode != 200) return false;
+          //return req.path.indexOf('/notifications/') >= 0;
+        //},
+        //stream: logger.stream
+      //};
+
+      //this.app.use(morgan(logFormat, logOpts));
     }
 
     const router = express.Router();
