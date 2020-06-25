@@ -34,7 +34,6 @@ import { EthBlockStorage } from '../models/block';
 import { EthTransactionStorage } from '../models/transaction';
 import { EthTransactionJSON, IEthBlock, IEthTransaction } from '../types';
 import { Erc20RelatedFilterTransform } from './erc20Transform';
-import { EthMultisigRelatedFilterTransform } from './ethMultisigTransform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EthListTransactionsStream } from './transform';
@@ -139,12 +138,9 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     const { chain, network, address } = params;
     const { web3 } = await this.getWeb3(network);
     const tokenAddress = params.args && params.args.tokenAddress;
-    const multisigContractAddress = params.args && params.args.multisigContractAddress;
     const addressLower = address.toLowerCase();
     const cacheKey = tokenAddress
       ? `getBalanceForAddress-${chain}-${network}-${addressLower}-${tokenAddress.toLowerCase()}`
-      : multisigContractAddress
-      ? `getBalanceForAddress-${chain}-${network}-${multisigContractAddress.toLowerCase()}`
       : `getBalanceForAddress-${chain}-${network}-${addressLower}`;
     const balances = await CacheStorage.getGlobalOrRefresh(
       cacheKey,
@@ -152,10 +148,6 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
         if (tokenAddress) {
           const token = await this.erc20For(network, params.args.tokenAddress);
           const balance = await token.methods.balanceOf(address).call();
-          const numberBalance = Number(balance);
-          return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
-        } else if (multisigContractAddress) {
-          const balance = await web3.eth.getBalance(multisigContractAddress);
           const numberBalance = Number(balance);
           return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
         } else {
@@ -309,24 +301,12 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
   getWalletTransactionQuery(params: StreamWalletTransactionsParams) {
     const { chain, network, wallet, args } = params;
-    let query = {} as any;
-    if (args.multisigContractAddress) {
-      query = {
-        chain,
-        network,
-        $or: [
-          { to: args.multisigContractAddress },
-          { 'internal.action.to': args.multisigContractAddress.toLowerCase() }
-        ]
-      };
-    } else {
-      query = {
-        chain,
-        network,
-        wallets: wallet._id,
-        'wallets.0': { $exists: true }
-      };
-    }
+    let query = {
+      chain,
+      network,
+      wallets: wallet._id,
+      'wallets.0': { $exists: true }
+    } as any;
     if (args) {
       if (args.startBlock || args.endBlock) {
         query.$or = [];
@@ -361,61 +341,13 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
   }
 
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
-    const { chain, network, wallet, res, args } = params;
+    const { network, wallet, res, args } = params;
     const { web3 } = await this.getWeb3(network);
-    let query;
-
-    if (args.multisigContractAddress) {
-      query = {
-        chain,
-        network,
-        $or: [
-          { to: args.multisigContractAddress },
-          { 'internal.action.to': args.multisigContractAddress.toLowerCase() }
-        ]
-      };
-    } else {
-      query = {
-        chain,
-        network,
-        wallets: wallet._id,
-        'wallets.0': { $exists: true }
-      };
-    }
-
-    if (args) {
-      if (args.startBlock || args.endBlock) {
-        query.$or = [];
-        if (args.includeMempool) {
-          query.$or.push({ blockHeight: SpentHeightIndicators.pending });
-        }
-        let blockRangeQuery = {} as any;
-        if (args.startBlock) {
-          blockRangeQuery.$gte = Number(args.startBlock);
-        }
-        if (args.endBlock) {
-          blockRangeQuery.$lte = Number(args.endBlock);
-        }
-        query.$or.push({ blockHeight: blockRangeQuery });
-      } else {
-        if (args.startDate) {
-          const startDate = new Date(args.startDate);
-          if (startDate.getTime()) {
-            query.blockTimeNormalized = { $gte: new Date(args.startDate) };
-          }
-        }
-        if (args.endDate) {
-          const endDate = new Date(args.endDate);
-          if (endDate.getTime()) {
-            query.blockTimeNormalized = query.blockTimeNormalized || {};
-            query.blockTimeNormalized.$lt = new Date(args.endDate);
-          }
-        }
-      }
-    }
+    const query = ETH.getWalletTransactionQuery(params);
 
     let transactionStream = new Readable({ objectMode: true });
-    const ethTransactionTransform = new EthListTransactionsStream(wallet, args.multisigContractAddress);
+    const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
+    const ethTransactionTransform = new EthListTransactionsStream(walletAddresses);
     const populateReceipt = new PopulateReceiptTransform();
 
     transactionStream = EthTransactionStorage.collection
@@ -423,7 +355,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
 
-    if (!args.tokenAddress && !args.multisigContractAddress && wallet._id) {
+    if (!args.tokenAddress && wallet._id) {
       const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
       transactionStream = transactionStream.pipe(internalTxTransform);
     }
@@ -431,11 +363,6 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     if (args.tokenAddress) {
       const erc20Transform = new Erc20RelatedFilterTransform(web3, args.tokenAddress);
       transactionStream = transactionStream.pipe(erc20Transform);
-    }
-
-    if (args.multisigContractAddress) {
-      const ethMultisigTransform = new EthMultisigRelatedFilterTransform(web3, args.multisigContractAddress);
-      transactionStream = transactionStream.pipe(ethMultisigTransform);
     }
 
     transactionStream

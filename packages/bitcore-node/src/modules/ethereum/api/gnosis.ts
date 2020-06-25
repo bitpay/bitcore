@@ -1,6 +1,7 @@
 import { Readable } from 'stream';
 import { AbiItem } from 'web3-utils';
 import { Transaction } from 'web3/eth/types';
+import { Config } from '../../../services/config';
 import { StreamWalletTransactionsParams } from '../../../types/namespaces/ChainStateProvider';
 import { MultisigAbi } from '../abi/multisig';
 import { EthTransactionStorage } from '../models/transaction';
@@ -21,7 +22,10 @@ interface MULTISIGTxInfo
   }> {}
 
 export class GnosisApi {
-  constructor(public GNOSIS_MULTISIG_ADDRESS: string) {}
+  public gnosisFactories = {
+    testnet: '0x2C992817e0152A65937527B774c7A99a84603045',
+    mainnet: '0x6e95C8E8557AbC08b46F3c347bA06F8dC012763f'
+  };
 
   async multisigFor(network: string, address: string) {
     const { web3 } = await ETH.getWeb3(network);
@@ -30,7 +34,9 @@ export class GnosisApi {
   }
 
   async getMultisigContractInstantiationInfo(network: string, sender: string): Promise<Partial<Transaction>[]> {
-    const contract = await this.multisigFor(network, this.GNOSIS_MULTISIG_ADDRESS);
+    const networkConfig = Config.chainConfig({ chain: 'ETH', network });
+    const { gnosisFactory = this.gnosisFactories[network] } = networkConfig;
+    const contract = await this.multisigFor(network, gnosisFactory);
     const contractInfo = await contract.getPastEvents('ContractInstantiation', {
       fromBlock: 0,
       toBlock: 'latest'
@@ -114,19 +120,18 @@ export class GnosisApi {
     };
   }
 
-  async streamWalletTransactions(params: StreamWalletTransactionsParams) {
-    const { network, wallet, res, args } = params;
+  async streamGnosisWalletTransactions(params: StreamWalletTransactionsParams) {
+    const { network, res, args } = params;
     const { web3 } = await ETH.getWeb3(network);
-    const query = ETH.getWalletTransactionQuery(params);
+    const query = {
+      ...ETH.getWalletTransactionQuery(params),
+      $or: [{ to: args.multisigContractAddress }, { 'internal.action.to': args.multisigContractAddress.toLowerCase() }]
+    };
     delete query.wallets;
     delete query['wallets.0'];
-    query.$or = (query.$or || []).concat([
-      { to: args.multisigContractAddress },
-      { 'internal.action.to': args.multisigContractAddress.toLowerCase() }
-    ]);
 
     let transactionStream = new Readable({ objectMode: true });
-    const ethTransactionTransform = new EthListTransactionsStream(wallet, args.multisigContractAddress);
+    const ethTransactionTransform = new EthListTransactionsStream([args.multisigContractAddress]);
     const populateReceipt = new PopulateReceiptTransform();
 
     transactionStream = EthTransactionStorage.collection
@@ -150,5 +155,5 @@ export class GnosisApi {
       .pipe(res);
   }
 }
-const GNOSIS_TESTNET_MULTISIG_ADDRESS = '0x2C992817e0152A65937527B774c7A99a84603045';
-export const Gnosis = new GnosisApi(GNOSIS_TESTNET_MULTISIG_ADDRESS);
+
+export const Gnosis = new GnosisApi();

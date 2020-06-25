@@ -65,3 +65,19 @@ EthRoutes.get('/api/ETH/:network/ethmultisig/txps/:multisigContractAddress', asy
     res.status(500).send(err);
   }
 });
+
+EthRoutes.get('/api/ETH/:network/ethmultisig/transactions/:multisigContractAddress', async (req, res) => {
+  let { chain, network } = req.params;
+  try {
+    return await Gnosis.streamGnosisWalletTransactions({
+      chain,
+      network,
+      wallet: {} as any,
+      req,
+      res,
+      args: req.query
+    });
+  } catch (err) {
+    return res.status(500).send(err);
+  }
+});

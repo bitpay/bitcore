@@ -1,32 +1,17 @@
 import { Transform } from 'stream';
 import { MongoBound } from '../../../models/base';
-import { IWallet } from '../../../models/wallet';
-import { WalletAddressStorage } from '../../../models/walletAddress';
 import { IEthTransaction } from '../types';
 
 export class EthListTransactionsStream extends Transform {
-  constructor(private wallet: IWallet, private multisigContractAddress) {
+  constructor(private walletAddresses: Array<string>) {
     super({ objectMode: true });
   }
 
   async _transform(transaction: MongoBound<IEthTransaction>, _, done) {
-    let sending;
-    if (!this.multisigContractAddress) {
-      sending = await WalletAddressStorage.collection.countDocuments({
-        wallet: this.wallet._id,
-        address: transaction.from
-      });
-    }
-
-    if (sending > 0 || transaction.from === this.multisigContractAddress) {
-      let sendingToOurself;
-      if (!this.multisigContractAddress) {
-        sendingToOurself = await WalletAddressStorage.collection.countDocuments({
-          wallet: this.wallet._id,
-          address: transaction.to
-        });
-      }
-      if (!sendingToOurself && transaction.to !== this.multisigContractAddress) {
+    let sending = this.walletAddresses.includes(transaction.from);
+    if (sending) {
+      let sendingToOurself = this.walletAddresses.includes(transaction.to);
+      if (!sendingToOurself) {
         this.push(
           JSON.stringify({
             id: transaction._id,
@@ -68,11 +53,8 @@ export class EthListTransactionsStream extends Transform {
         );
       }
     } else {
-      const weReceived = await WalletAddressStorage.collection.countDocuments({
-        wallet: this.wallet._id,
-        address: transaction.to
-      });
-      if (weReceived > 0 || transaction.to === this.multisigContractAddress) {
+      const weReceived = this.walletAddresses.includes(transaction.to);
+      if (weReceived) {
         this.push(
           JSON.stringify({
             id: transaction._id,
