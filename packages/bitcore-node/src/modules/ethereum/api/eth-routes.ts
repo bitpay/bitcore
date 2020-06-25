@@ -67,7 +67,8 @@ EthRoutes.get('/api/ETH/:network/ethmultisig/txps/:multisigContractAddress', asy
 });
 
 EthRoutes.get('/api/ETH/:network/ethmultisig/transactions/:multisigContractAddress', async (req, res) => {
-  let { chain, network, multisigContractAddress } = req.params;
+  let { network, multisigContractAddress } = req.params;
+  const chain = 'ETH';
   try {
     return await Gnosis.streamGnosisWalletTransactions({
       chain,

@@ -72,7 +72,7 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       { chain: 1, network: 1, 'internal.action.to': 1 },
       {
         background: true,
-        partialFilterExpression: { chain: 'ETH' }
+        sparse: true
       }
     );
   }
