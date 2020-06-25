@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import logger from '../../../logger';
 import { ETH } from './csp';
+import { Gnosis } from './gnosis';
 export const EthRoutes = Router();
 
 EthRoutes.get('/api/ETH/:network/address/:address/txs/count', async (req, res) => {
@@ -38,7 +39,7 @@ EthRoutes.get('/api/ETH/:network/token/:tokenAddress', async (req, res) => {
 EthRoutes.get('/api/ETH/:network/ethmultisig/info/:multisigContractAddress', async (req, res) => {
   const { network, multisigContractAddress } = req.params;
   try {
-    const multisigInfo = await ETH.getMultisigEthInfo(network, multisigContractAddress);
+    const multisigInfo = await Gnosis.getMultisigEthInfo(network, multisigContractAddress);
     res.json(multisigInfo);
   } catch (err) {
     res.status(500).send(err);
@@ -48,7 +49,7 @@ EthRoutes.get('/api/ETH/:network/ethmultisig/info/:multisigContractAddress', asy
 EthRoutes.get('/api/ETH/:network/ethmultisig/:sender', async (req, res) => {
   const { network, sender } = req.params;
   try {
-    const multisigInstantiationInfo = await ETH.getMultisigContractInstantiationInfo(network, sender);
+    const multisigInstantiationInfo = await Gnosis.getMultisigContractInstantiationInfo(network, sender);
     res.json(multisigInstantiationInfo);
   } catch (err) {
     res.status(500).send(err);
@@ -58,7 +59,7 @@ EthRoutes.get('/api/ETH/:network/ethmultisig/:sender', async (req, res) => {
 EthRoutes.get('/api/ETH/:network/ethmultisig/txps/:multisigContractAddress', async (req, res) => {
   const { network, multisigContractAddress } = req.params;
   try {
-    const multisigTxpsInfo = await ETH.getMultisigTxpsInfo(network, multisigContractAddress);
+    const multisigTxpsInfo = await Gnosis.getMultisigTxpsInfo(network, multisigContractAddress);
     res.json(multisigTxpsInfo);
   } catch (err) {
     res.status(500).send(err);

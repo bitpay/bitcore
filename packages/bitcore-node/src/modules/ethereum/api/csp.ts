@@ -30,7 +30,6 @@ import {
 import { partition } from '../../../utils/partition';
 import { StatsUtil } from '../../../utils/stats';
 import { ERC20Abi } from '../abi/erc20';
-import { MultisigAbi } from '../abi/multisig';
 import { EthBlockStorage } from '../models/block';
 import { EthTransactionStorage } from '../models/transaction';
 import { EthTransactionJSON, IEthBlock, IEthTransaction } from '../types';
@@ -39,7 +38,7 @@ import { EthMultisigRelatedFilterTransform } from './ethMultisigTransform';
 import { InternalTxRelatedFilterTransform } from './internalTxTransform';
 import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EthListTransactionsStream } from './transform';
-interface EventLog<T> {
+export interface EventLog<T> {
   event: string;
   address: string;
   returnValues: T;
@@ -55,17 +54,6 @@ interface ERC20Transfer
     [key: string]: string;
   }> {}
 
-interface MULTISIGInstantiation
-  extends EventLog<{
-    [key: string]: string;
-  }> {}
-
-interface MULTISIGTxInfo
-  extends EventLog<{
-    [key: string]: string;
-  }> {}
-
-const GNOSIS_MULTISIG_ADDRESS = '0x2C992817e0152A65937527B774c7A99a84603045';
 export class ETHStateProvider extends InternalStateProvider implements IChainStateService {
   config: any;
   static rpcs = {} as { [network: string]: { rpc: CryptoRpc; web3: Web3 } };
@@ -98,12 +86,6 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     return contract;
   }
 
-  async multisigFor(network: string, address: string) {
-    const { web3 } = await this.getWeb3(network);
-    const contract = new web3.eth.Contract(MultisigAbi as AbiItem[], address);
-    return contract;
-  }
-
   async getERC20TokenInfo(network: string, tokenAddress: string) {
     const token = await ETH.erc20For(network, tokenAddress);
     const [name, decimals, symbol] = await Promise.all([
@@ -116,16 +98,6 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       name,
       decimals,
       symbol
-    };
-  }
-
-  async getMultisigEthInfo(network: string, multisigContractAddress: string) {
-    const contract: any = await ETH.multisigFor(network, multisigContractAddress);
-    const owners = await contract.methods.getOwners().call();
-    const required = await contract.methods.required().call();
-    return {
-      owners,
-      required
     };
   }
 
@@ -335,6 +307,59 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     return balance;
   }
 
+  getWalletTransactionQuery(params: StreamWalletTransactionsParams) {
+    const { chain, network, wallet, args } = params;
+    let query = {} as any;
+    if (args.multisigContractAddress) {
+      query = {
+        chain,
+        network,
+        $or: [
+          { to: args.multisigContractAddress },
+          { 'internal.action.to': args.multisigContractAddress.toLowerCase() }
+        ]
+      };
+    } else {
+      query = {
+        chain,
+        network,
+        wallets: wallet._id,
+        'wallets.0': { $exists: true }
+      };
+    }
+    if (args) {
+      if (args.startBlock || args.endBlock) {
+        query.$or = [];
+        if (args.includeMempool) {
+          query.$or.push({ blockHeight: SpentHeightIndicators.pending });
+        }
+        let blockRangeQuery = {} as any;
+        if (args.startBlock) {
+          blockRangeQuery.$gte = Number(args.startBlock);
+        }
+        if (args.endBlock) {
+          blockRangeQuery.$lte = Number(args.endBlock);
+        }
+        query.$or.push({ blockHeight: blockRangeQuery });
+      } else {
+        if (args.startDate) {
+          const startDate = new Date(args.startDate);
+          if (startDate.getTime()) {
+            query.blockTimeNormalized = { $gte: new Date(args.startDate) };
+          }
+        }
+        if (args.endDate) {
+          const endDate = new Date(args.endDate);
+          if (endDate.getTime()) {
+            query.blockTimeNormalized = query.blockTimeNormalized || {};
+            query.blockTimeNormalized.$lt = new Date(args.endDate);
+          }
+        }
+      }
+    }
+    return query;
+  }
+
   async streamWalletTransactions(params: StreamWalletTransactionsParams) {
     const { chain, network, wallet, res, args } = params;
     const { web3 } = await this.getWeb3(network);
@@ -456,81 +481,6 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       from: returnValues['_from'],
       to: returnValues['_to'],
       value: returnValues['_value']
-    } as Partial<Transaction>;
-  }
-
-  async getMultisigContractInstantiationInfo(network: string, sender: string): Promise<Partial<Transaction>[]> {
-    const contract = await this.multisigFor(network, GNOSIS_MULTISIG_ADDRESS);
-    const contractInfo = await contract.getPastEvents('ContractInstantiation', {
-      fromBlock: 0,
-      toBlock: 'latest'
-    });
-    return this.convertMultisigContractInstantiationInfo(
-      contractInfo.filter(info => info.returnValues.sender === sender)
-    );
-  }
-
-  convertMultisigContractInstantiationInfo(contractInstantiationInfo: Array<MULTISIGInstantiation>) {
-    return contractInstantiationInfo.map(this.convertContractInstantiationInfo);
-  }
-
-  convertContractInstantiationInfo(transfer: MULTISIGInstantiation) {
-    const { blockHash, blockNumber, transactionHash, returnValues, transactionIndex } = transfer;
-    return {
-      blockHash,
-      blockNumber,
-      transactionHash,
-      transactionIndex,
-      hash: transactionHash,
-      sender: returnValues['sender'],
-      instantiation: returnValues['instantiation']
-    } as Partial<Transaction>;
-  }
-
-  async getMultisigTxpsInfo(network: string, multisigContractAddress: string): Promise<Partial<Transaction>[]> {
-    const contract = await this.multisigFor(network, multisigContractAddress);
-    const [confirmationInfo, revocationInfo, executionInfo, executionFailure] = await Promise.all([
-      contract.getPastEvents('Confirmation', {
-        fromBlock: 0,
-        toBlock: 'latest'
-      }),
-      contract.getPastEvents('Revocation', {
-        fromBlock: 0,
-        toBlock: 'latest'
-      }),
-      contract.getPastEvents('Execution', {
-        fromBlock: 0,
-        toBlock: 'latest'
-      }),
-      contract.getPastEvents('ExecutionFailure', {
-        fromBlock: 0,
-        toBlock: 'latest'
-      })
-    ]);
-
-    const executionTransactionIdArray = executionInfo.map(i => i.returnValues.transactionId);
-    const contractTransactionsInfo = [...confirmationInfo, ...revocationInfo, ...executionFailure];
-    const multisigTxpsInfo = contractTransactionsInfo.filter(
-      i => !executionTransactionIdArray.includes(i.returnValues.transactionId)
-    );
-    return this.convertMultisigTxpsInfo(multisigTxpsInfo);
-  }
-
-  convertMultisigTxpsInfo(multisigTxpsInfo: Array<MULTISIGTxInfo>) {
-    return multisigTxpsInfo.map(this.convertTxpsInfo);
-  }
-
-  convertTxpsInfo(transfer: MULTISIGTxInfo) {
-    const { blockHash, blockNumber, transactionHash, returnValues, transactionIndex, event } = transfer;
-    return {
-      blockHash,
-      blockNumber,
-      transactionHash,
-      transactionIndex,
-      hash: transactionHash,
-      sender: returnValues['sender'],
-      transactionId: returnValues['transactionId'],
-      event
     } as Partial<Transaction>;
   }
 
