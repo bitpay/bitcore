@@ -374,18 +374,14 @@ export class WalletService {
 
     this.lock.runLocked(this.walletId, { waitTime }, cb, task);
   }
-
-  logi(...args) {
-    if (!this) {
-      return logger.info.apply(this, args);
-    }
-    if (!this.walletId) {
-      return logger.info.apply(this, args);
+  logi(message, ...args) {
+    if (!this || !this.walletId) {
+      return logger.warn(message, ...args);
     }
 
-    const argz = [].slice.call(args);
-    argz.unshift('<' + this.walletId + '>');
-    logger.info.apply(this, argz);
+    message = '<' + this.walletId + '>' + message;
+    return logger.info(message, ...args);
+ 
   }
 
   logw(message, ...args) {
