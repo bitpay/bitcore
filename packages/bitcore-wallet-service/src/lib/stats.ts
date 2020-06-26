@@ -35,19 +35,18 @@ export class Stats {
     }
     uri = uri + 'readPreference=secondaryPreferred';
 
-
-    mongodb.MongoClient.connect(uri,  { useUnifiedTopology: true } , (err, client) => {
+    mongodb.MongoClient.connect(uri, { useUnifiedTopology: true }, (err, client) => {
       if (err) {
         logger.error('Unable to connect to the mongoDB. Check the credentials.');
         return cb(err);
       }
       this.client = client;
       this.db = client.db(config.dbname);
- 
+
       this._getStats((err, stats) => {
         if (err) return cb(err);
 
-        this.client.close((err) => {
+        this.client.close(err => {
           if (err) logger.error(err);
           return cb(null, stats);
         });

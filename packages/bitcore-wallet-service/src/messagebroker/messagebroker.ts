@@ -2,7 +2,6 @@
 import io from 'socket.io';
 import logger from '../lib/logger';
 
-
 const DEFAULT_PORT = 3380;
 
 const opts = {

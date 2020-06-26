@@ -5,11 +5,11 @@ import 'source-map-support/register';
 import { BlockChainExplorer } from './blockchainexplorer';
 import { ChainService } from './chain/index';
 import { Lock } from './lock';
+import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { Notification } from './model';
 import { WalletService } from './server';
 import { Storage } from './storage';
-import logger from './logger';
 
 const $ = require('preconditions').singleton();
 const Common = require('./common');

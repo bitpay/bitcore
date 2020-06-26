@@ -28,7 +28,7 @@ export class UpdateStats {
     }
     uri = uri + 'readPreference=secondaryPreferred';
     console.log('Connected to ', uri);
-    mongodb.MongoClient.connect(uri,{ useUnifiedTopology: true } , (err, client) => {
+    mongodb.MongoClient.connect(uri, { useUnifiedTopology: true }, (err, client) => {
       if (err) {
         console.log('Unable to connect to the mongoDB', err);
         return cb(err, null);
@@ -202,7 +202,7 @@ export class UpdateStats {
     // Grab last run
     let cursor = await this.db
       .collection(coll)
-      .find({})//, { _id: true }})  // not working on new mongo driver
+      .find({}) // , { _id: true }})  // not working on new mongo driver
       .sort({ _id: -1 })
       .limit(1);
 

@@ -13,7 +13,7 @@ const timezone = new Date()
   .split(' ')
   .pop();
 
-export const formatTimestamp = (date: Date):string =>
+export const formatTimestamp = (date: Date): string =>
   `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date
     .getDate()
     .toString()
@@ -29,7 +29,7 @@ export const formatTimestamp = (date: Date):string =>
     .padStart(2, '0')}.${date
     .getMilliseconds()
     .toString()
-    //.padEnd(3, '0')} ${timezone}`;
+    // .padEnd(3, '0')} ${timezone}`;
     .padEnd(3, '0')}`;
 
 export const timestamp = () => formatTimestamp(new Date());

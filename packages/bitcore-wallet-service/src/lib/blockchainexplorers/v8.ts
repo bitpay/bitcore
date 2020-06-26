@@ -3,8 +3,8 @@ import _ from 'lodash';
 import * as request from 'request-promise-native';
 import io = require('socket.io-client');
 import { ChainService } from '../chain/index';
-import { Client } from './v8/client';
 import logger from '../logger';
+import { Client } from './v8/client';
 
 const $ = require('preconditions').singleton();
 const Common = require('../common');

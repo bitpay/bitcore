@@ -124,7 +124,7 @@ export class Client {
       url += 'includeMempool=true';
     }
     const signature = this.sign({ method: 'GET', url });
-    logger.info('List transactions', url); 
+    logger.info('List transactions', url);
     return requestStream.get(url, {
       headers: { 'x-signature': signature },
       json: true
@@ -135,7 +135,7 @@ export class Client {
     const { payload, pubKey } = params;
     const url = `${this.baseUrl}/wallet/${pubKey}`;
 
-    logger.info('addAddresses:', url, payload); 
+    logger.info('addAddresses:', url, payload);
     const signature = this.sign({ method: 'POST', url, payload });
     const h = { 'x-signature': signature };
     return request.post(url, {
@@ -148,7 +148,7 @@ export class Client {
   async broadcast(params) {
     const { payload } = params;
     const url = `${this.baseUrl}/tx/send`;
-    logger.info('Broadcast', url); 
+    logger.info('Broadcast', url);
     return request.post(url, { body: payload, json: true });
   }
 }

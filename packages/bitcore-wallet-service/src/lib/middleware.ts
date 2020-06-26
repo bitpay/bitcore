@@ -1,5 +1,5 @@
 import express from 'express';
-import { logger, formatTimestamp } from './logger';
+import { formatTimestamp, logger } from './logger';
 
 type TimedRequest = {
   startTime?: Date;
@@ -42,7 +42,7 @@ export function LogMiddleware() {
   return (req: TimedRequest, res: express.Response, next: express.NextFunction) => {
     req.startTime = new Date();
     openConnections++;
-    //LogPhase(req, res, 'START');
+    // LogPhase(req, res, 'START');
     res.on('finish', () => {
       openConnections--;
       LogPhase(req, res, 'END');
@@ -54,5 +54,3 @@ export function LogMiddleware() {
     next();
   };
 }
-
-

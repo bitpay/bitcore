@@ -6,10 +6,10 @@ import 'source-map-support/register';
 // sending function from `.send` to `.sendMail`.
 // import * as nodemailer from nodemailer';
 import { Lock } from './lock';
+import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { Email } from './model';
 import { Storage } from './storage';
-import logger from './logger';
 
 export interface Recipient {
   copayerId: string;
@@ -23,7 +23,6 @@ const fs = require('fs');
 const path = require('path');
 const Utils = require('./common/utils');
 const Defaults = require('./common/defaults');
-
 
 const EMAIL_TYPES = {
   NewCopayer: {

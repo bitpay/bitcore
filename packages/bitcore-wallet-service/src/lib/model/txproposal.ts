@@ -1,9 +1,9 @@
 import { Transactions } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { ChainService } from '../chain/index';
+import logger from '../logger';
 import { TxProposalLegacy } from './txproposal_legacy';
 import { TxProposalAction } from './txproposalaction';
-import logger from '../logger';
 
 const $ = require('preconditions').singleton();
 const Uuid = require('uuid');

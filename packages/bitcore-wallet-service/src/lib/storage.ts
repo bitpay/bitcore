@@ -2,7 +2,7 @@ import * as async from 'async';
 import _ from 'lodash';
 import { Db } from 'mongodb';
 import * as mongodb from 'mongodb';
-import logger from './logger'; 
+import logger from './logger';
 import {
   Address,
   Email,
@@ -158,11 +158,11 @@ export class Storage {
     }
 
     if (!config.dbname) {
-        logger.error('No dbname at config.');
-        return cb(new Error('No dbname at config.'));
+      logger.error('No dbname at config.');
+      return cb(new Error('No dbname at config.'));
     }
 
-    mongodb.MongoClient.connect(config.uri,  { useUnifiedTopology: true } , (err, client) => {
+    mongodb.MongoClient.connect(config.uri, { useUnifiedTopology: true }, (err, client) => {
       if (err) {
         logger.error('Unable to connect to the mongoDB. Check the credentials.');
         return cb(err);

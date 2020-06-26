@@ -1,9 +1,9 @@
 import _ from 'lodash';
 import { ChainService } from '../chain/index';
+import logger from '../logger';
 import { Address } from './address';
 import { AddressManager } from './addressmanager';
 import { Copayer } from './copayer';
-import logger from '../logger';
 
 const $ = require('preconditions').singleton();
 const Uuid = require('uuid');

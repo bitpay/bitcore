@@ -4,10 +4,10 @@ import _ from 'lodash';
 import 'source-map-support/register';
 
 import request from 'request';
+import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { INotification, IPreferences } from './model';
 import { Storage } from './storage';
-import logger from './logger';
 
 const Mustache = require('mustache');
 const defaultRequest = require('request');

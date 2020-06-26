@@ -2,7 +2,6 @@ import { EventEmitter } from 'events';
 import 'source-map-support/register';
 import logger from './logger';
 
-
 export class MessageBroker extends EventEmitter {
   remote: boolean;
   mq: SocketIO.Socket;

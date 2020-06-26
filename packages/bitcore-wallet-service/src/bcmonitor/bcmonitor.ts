@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import _ from 'lodash';
-import logger from '../lib/logger';
 import { BlockchainMonitor } from '../lib/blockchainmonitor';
+import logger from '../lib/logger';
 
 const config = require('../config');
 const bcm = new BlockchainMonitor();
