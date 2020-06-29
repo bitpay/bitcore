@@ -123,7 +123,6 @@ Utils.getClient = function(args, opts, cb) {
     baseUrl: process.env['BWS_HOST'] || url.resolve(host, '/bws/api'),
     verbose: args.verbose,
     supportStaffWalletId: opts.walletId,
-    marketingStaffWalletId: opts.marketingStaffWalletId,
     timeout: 20 * 60 * 1000,
     // timeout: 1000,
   });

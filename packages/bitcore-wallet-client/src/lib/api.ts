@@ -43,7 +43,6 @@ export class API extends EventEmitter {
   timeout: any;
   logLevel: any;
   supportStaffWalletId: any;
-  marketingStaffWalletId: any;
   request: any;
   credentials: any;
   notificationIncludeOwn: boolean;
@@ -76,15 +75,13 @@ export class API extends EventEmitter {
     this.timeout = opts.timeout || 50000;
     this.logLevel = opts.logLevel || 'silent';
     this.supportStaffWalletId = opts.supportStaffWalletId;
-    this.marketingStaffWalletId = opts.marketingStaffWalletId;
 
     this.bp_partner = opts.bp_partner;
     this.bp_partner_version = opts.bp_partner_version;
 
     this.request = new Request(opts.baseUrl || BASE_URL, {
       r: opts.request,
-      supportStaffWalletId: opts.supportStaffWalletId,
-      marketingStaffWalletId: opts.marketingStaffWalletId
+      supportStaffWalletId: opts.supportStaffWalletId
     });
 
     log.setLevel(this.logLevel);

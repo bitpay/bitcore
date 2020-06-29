@@ -18,8 +18,7 @@ var clientArgs = {
 }
 
 utils.getClient(clientArgs, { 
-  mustExist: true, 
-  marketingStaffWalletId: 'f48d485b-66f8-40d0-9db2-24fa0f707ea6'
+  mustExist: true
 }, function (client) {
   client.getAdvertisements({}, (err, result) => {
     utils.die(err);

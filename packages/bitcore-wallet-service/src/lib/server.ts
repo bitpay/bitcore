@@ -318,20 +318,23 @@ export class WalletService {
           return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Copayer not found'));
         }
 
-        if (!copayer.isSupportStaff && !copayer.isMarketingStaff) {
-          // manually edits  isSupportStaff prop for that copayer with copayerId in database
+
+        // TODO: fix logic tree for next three if branches.
+        if (!copayer.isSupportStaff) {
           const isValid = !!server._getSigningKey(opts.message, opts.signature, copayer.requestPubKeys);
           if (!isValid) {
             return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Invalid signature'));
           }
 
           server.walletId = copayer.walletId;
-        } else if (copayer.isSupportStaff) {
+        } 
+        if (copayer.isSupportStaff) {
           $.checkState(!copayer.isMarketingStaff);
 
           server.walletId = opts.walletId || copayer.walletId;
           server.copayerIsSupportStaff = true;
-        } else if (copayer.isMarketingStaff) {
+        } 
+        if (copayer.isMarketingStaff) {
           $.checkState(!copayer.isSupportStaff);
           server.walletId = opts.walletId || copayer.walletId;
           server.copayerIsMarketingStaff = true;

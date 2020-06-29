@@ -15,16 +15,13 @@ export class Request {
   r: any;
   credentials: any;
   supportStaffWalletId: any;
-  marketingStaffWalletId: any;
   timeout: any;
 
   constructor(url?, opts?) {
     this.baseUrl = url;
 
-    // request can be overload only for testing
     this.r = opts.r || request;
     this.supportStaffWalletId = opts.supportStaffWalletId;
-    this.marketingStaffWalletId = opts.marketingStaffWalletId;
 
     this.session = null;
     this.credentials = null;
@@ -40,10 +37,6 @@ export class Request {
     };
     if (this.supportStaffWalletId) {
       headers['x-wallet-id'] = this.supportStaffWalletId;
-    }
-
-    if (this.marketingStaffWalletId && !this.supportStaffWalletId) {
-      headers['x-wallet-id'] = this.marketingStaffWalletId;
     }
 
     return headers;
