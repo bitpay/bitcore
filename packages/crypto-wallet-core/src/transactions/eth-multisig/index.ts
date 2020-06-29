@@ -149,6 +149,14 @@ export class ETHMULTISIGTxProvider extends ETHTxProvider {
     return data;
   }
 
+  executeTransactionEncodeData(params: { multisigContractAddress: string; transactionId: number }) {
+    const { multisigContractAddress, transactionId } = params;
+    const data = this.getMultisigContract(multisigContractAddress)
+      .methods.executeTransaction(transactionId)
+      .encodeABI();
+    return data;
+  }
+
   // data: It is used to invoke functionalities of a contract and can be left empty ('0x') or bytes(0) for regular value transfers.
   // address: It is used o invoke functionalities of a contract needs to be the address of the Smart Contract whose method you want to invoke.
   submitEncodeData(params: {
