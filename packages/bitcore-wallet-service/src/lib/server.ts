@@ -1,7 +1,7 @@
 import * as async from 'async';
 import * as _ from 'lodash';
-import * as log from 'npmlog';
 import 'source-map-support/register';
+import logger from './logger';
 
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
@@ -32,11 +32,6 @@ const $ = require('preconditions').singleton();
 const deprecatedServerMessage = require('../deprecated-serverMessages');
 const serverMessages = require('../serverMessages');
 const BCHAddressTranslator = require('./bchaddresstranslator');
-
-log.debug = log.verbose;
-log.disableColor();
-log.level = 'error';
-
 const EmailValidator = require('email-validator');
 
 import { Validation } from 'crypto-wallet-core';
@@ -225,7 +220,7 @@ export class WalletService {
         lock = opts.lock || new Lock(storage, opts.lockOpts);
 
         if (err) {
-          log.error('Could not initialize', err);
+          logger.error('Could not initialize', err);
           throw err;
         }
         initialized = true;
@@ -315,14 +310,15 @@ export class WalletService {
           return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Copayer not found'));
         }
 
-        if (!copayer.isSupportStaff) {
-          const isValid = !!server._getSigningKey(opts.message, opts.signature, copayer.requestPubKeys);
-          if (!isValid) {
-            return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Invalid signature'));
-          }
+        const isValid = !!server._getSigningKey(opts.message, opts.signature, copayer.requestPubKeys);
+        if (!isValid) {
+          return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Invalid signature'));
+        }
 
-          server.walletId = copayer.walletId;
-        } else {
+        server.walletId = copayer.walletId;
+
+        // allow overwrite walletid if the copayer is from the support team
+        if (copayer.isSupportStaff) {
           server.walletId = opts.walletId || copayer.walletId;
           server.copayerIsSupportStaff = true;
         }
@@ -378,44 +374,32 @@ export class WalletService {
 
     this.lock.runLocked(this.walletId, { waitTime }, cb, task);
   }
-
-  logi(...args) {
-    if (!this) {
-      return log.info.apply(this, args);
-    }
-    if (!this.walletId) {
-      return log.info.apply(this, args);
+  logi(message, ...args) {
+    if (!this || !this.walletId) {
+      return logger.warn(message, ...args);
     }
 
-    const argz = [].slice.call(args);
-    argz.unshift('<' + this.walletId + '>');
-    log.info.apply(this, argz);
+    message = '<' + this.walletId + '>' + message;
+    return logger.info(message, ...args);
+ 
   }
 
-  logw(...args) {
-    if (!this) {
-      return log.warn.apply(this, args);
-    }
-    if (!this.walletId) {
-      return log.warn.apply(this, arguments);
+  logw(message, ...args) {
+    if (!this || !this.walletId) {
+      return logger.warn(message, ...args);
     }
 
-    const argz = [].slice.call(args);
-    argz.unshift('<' + this.walletId + '>');
-    log.warn.apply(this, argz);
+    message = '<' + this.walletId + '>' + message;
+    return logger.warn(message, ...args);
   }
 
-  logd(...args) {
-    if (!this) {
-      return log.verbose.apply(this, args);
-    }
-    if (!this.walletId) {
-      return log.verbose.apply(this, arguments);
+  logd(message, ...args) {
+    if (!this || !this.walletId) {
+      return logger.verbose(message, ...args);
     }
 
-    const argz = [].slice.call(args);
-    argz.unshift('<' + this.walletId + '>');
-    log.verbose.apply(this, argz);
+    message = '<' + this.walletId + '>' + message;
+    return logger.verbose(message, ...args);
   }
 
   login(opts, cb) {
@@ -598,7 +582,7 @@ export class WalletService {
       if (opts.doNotMigrate) return cb(null, wallet);
 
       // remove someday...
-      log.info(`Migrating wallet ${wallet.id} to cashAddr`);
+      logger.info(`Migrating wallet ${wallet.id} to cashAddr`);
       this.storage.migrateToCashAddr(this.walletId, e => {
         if (e) return cb(e);
         wallet.nativeCashAddr = true;
@@ -1515,7 +1499,7 @@ export class WalletService {
                 utxoIndex[input].locked = true;
               }
             });
-            log.debug(`Got  ${lockedInputs.length} locked utxos`);
+            logger.debug(`Got  ${lockedInputs.length} locked utxos`);
             return next();
           });
         },
@@ -1542,7 +1526,7 @@ export class WalletService {
               allUtxos = _.reject(allUtxos, {
                 spent: true
               });
-              log.debug(`Got ${allUtxos.length} usable UTXOs`);
+              logger.debug(`Got ${allUtxos.length} usable UTXOs`);
               return next();
             }
           );
@@ -2258,7 +2242,7 @@ export class WalletService {
 
                 if (txp.coin == 'bch') {
                   if (opts.returnOrigAddrOutputs) {
-                    log.info('Returning Orig BCH address outputs for compat');
+                    logger.info('Returning Orig BCH address outputs for compat');
                     txp.outputs = opts.origAddrOutputs;
                   }
                 }
@@ -2644,9 +2628,9 @@ export class WalletService {
           this._broadcastRawTx(wallet.coin, wallet.network, raw, (err, txid) => {
             if (err || txid != txp.txid) {
               if (!err || txp.txid != txid) {
-                log.warn(`Broadcast failed for: ${raw}`);
+                logger.warn(`Broadcast failed for: ${raw}`);
               } else {
-                log.warn(`Broadcast failed: ${err}`);
+                logger.warn(`Broadcast failed: ${err}`);
               }
 
               const broadcastErr = err;
@@ -3080,7 +3064,7 @@ export class WalletService {
 
     this.storage.getWalletAddressChecked(wallet.id, (err, checkedTotal) => {
       if (checkedTotal == totalAddresses) {
-        log.debug('addresses checked already');
+        logger.debug('addresses checked already');
         return cb(null, true);
       }
 
@@ -3098,9 +3082,9 @@ export class WalletService {
           const isOK = serverCheck.sum == localCheck.sum;
 
           if (isOK) {
-            log.debug('Wallet Sync Check OK');
+            logger.debug('Wallet Sync Check OK');
           } else {
-            log.warn('ERROR: Wallet check failed:', localCheck, serverCheck);
+            logger.warn('ERROR: Wallet check failed:', localCheck, serverCheck);
             return cb(null, isOK);
           }
 
@@ -3164,10 +3148,10 @@ export class WalletService {
               if (isOK) return cb();
 
               if (count++ >= 1) {
-                log.warn('## ERROR: TRIED TO SYNC WALLET AND FAILED. GIVING UP');
+                logger.warn('## ERROR: TRIED TO SYNC WALLET AND FAILED. GIVING UP');
                 return cb();
               }
-              log.info('Trying to RESYNC wallet... count:' + count);
+              logger.info('Trying to RESYNC wallet... count:' + count);
 
               // Reset sync and sync again...
               wallet.beRegistered = false;
@@ -3395,18 +3379,18 @@ export class WalletService {
         next => {
           if (skip == 0 || !streamKey) return next();
 
-          log.debug('Checking streamKey/skip', streamKey, skip);
+          logger.debug('Checking streamKey/skip', streamKey, skip);
           this.storage.getTxHistoryStreamV8(walletCacheKey, (err, result) => {
             if (err) return next(err);
             if (!result) return next();
 
             if (result.streamKey != streamKey) {
-              log.debug('Deleting old stream cache:' + result.streamKey);
+              logger.debug('Deleting old stream cache:' + result.streamKey);
               return this.storage.clearTxHistoryStreamV8(walletCacheKey, next);
             }
 
             streamData = result.items;
-            log.debug(`Using stream cache: ${streamData.length} txs`);
+            logger.debug(`Using stream cache: ${streamData.length} txs`);
             return next();
           });
         },
@@ -3417,7 +3401,7 @@ export class WalletService {
           }
 
           const startBlock = cacheStatus.updatedHeight || 0;
-          log.debug(' ########### GET HISTORY v8 startBlock/bcH]', startBlock, bcHeight); // TODO
+          logger.debug(' ########### GET HISTORY v8 startBlock/bcH]', startBlock, bcHeight); // TODO
 
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
@@ -3435,7 +3419,7 @@ export class WalletService {
 
                 // only store stream IF cache is been used.
                 //
-                log.info(`Storing stream cache for ${walletCacheKey}: ${lastTxs.length} txs`);
+                logger.info(`Storing stream cache for ${walletCacheKey}: ${lastTxs.length} txs`);
                 return this.storage.storeTxHistoryStreamV8(walletCacheKey, streamKey, lastTxs, next);
               }
 
@@ -3513,7 +3497,7 @@ export class WalletService {
             return i.blockheight > cacheStatus.tipHeight;
           });
 
-          log.info(`Found ${lastTxs.length} new txs. Caching ${txsToCache.length}`);
+          logger.info(`Found ${lastTxs.length} new txs. Caching ${txsToCache.length}`);
           if (!txsToCache.length) {
             return next();
           }

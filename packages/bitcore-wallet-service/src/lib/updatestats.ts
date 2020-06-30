@@ -14,6 +14,7 @@ export class UpdateStats {
   from: moment.MomentFormatSpecification;
   to: moment.MomentFormatSpecification;
   db: mongodb.Db;
+  client: mongodb.MongoClient;
 
   constructor() {}
 
@@ -27,12 +28,13 @@ export class UpdateStats {
     }
     uri = uri + 'readPreference=secondaryPreferred';
     console.log('Connected to ', uri);
-    mongodb.MongoClient.connect(uri, (err, db) => {
+    mongodb.MongoClient.connect(uri, { useUnifiedTopology: true }, (err, client) => {
       if (err) {
         console.log('Unable to connect to the mongoDB', err);
         return cb(err, null);
       }
-      this.db = db;
+      this.client = client;
+      this.db = client.db(config.storageOpts.mongodb.dbname);
       this.updateStats((err, stats) => {
         if (err) return cb(err);
         return cb(null, stats);
@@ -57,9 +59,7 @@ export class UpdateStats {
         }
       ],
       err => {
-        this.db.close();
-        if (err) return cb(err);
-        return cb();
+        return this.client.close(cb);
       }
     );
   }
@@ -202,7 +202,7 @@ export class UpdateStats {
     // Grab last run
     let cursor = await this.db
       .collection(coll)
-      .find({}, { _id: true })
+      .find({}) // , { _id: true }})  // not working on new mongo driver
       .sort({ _id: -1 })
       .limit(1);
 

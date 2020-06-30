@@ -1,14 +1,12 @@
 import { Transactions } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { ChainService } from '../chain/index';
+import logger from '../logger';
 import { TxProposalLegacy } from './txproposal_legacy';
 import { TxProposalAction } from './txproposalaction';
 
 const $ = require('preconditions').singleton();
 const Uuid = require('uuid');
-const log = require('npmlog');
-log.debug = log.verbose;
-log.disableColor();
 
 const Common = require('../common');
 const Constants = Common.Constants,
@@ -384,7 +382,7 @@ export class TxProposal {
 
       return true;
     } catch (e) {
-      log.debug(e);
+      logger.debug(e);
       return false;
     }
   }
