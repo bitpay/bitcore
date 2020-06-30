@@ -17,8 +17,12 @@ const JSON_PAYMENT_CONTENT_TYPE = 'application/payment';
 const JSON_PAYMENT_ACK_CONTENT_TYPE = 'application/payment-ack';
 
 const dfltTrustedKeys = require('../util/JsonPaymentProtocolKeys.js');
-const MAX_FEE_PER_KB = 500000;
-
+var MAX_FEE_PER_KB = {
+  btc: 10000 * 1000, // 10k sat/b
+  bch: 10000 * 1000, // 10k sat/b
+  eth: 50000000000, // 50 Gwei
+  xrp: 50000000000
+};
 export class PayPro {
   // static request: request;
   static r = superagent;
@@ -188,7 +192,7 @@ export class PayPro {
 
     var COIN = coin.toUpperCase();
     opts.headers = opts.headers || {
-      Accept: JSON_PAYMENT_REQUEST_CONTENT_TYPE,
+      'Accept': JSON_PAYMENT_REQUEST_CONTENT_TYPE,
       'Content-Type': 'application/octet-stream'
     };
     opts.method = 'GET';
@@ -215,7 +219,7 @@ export class PayPro {
       ret.coin = coin;
 
       // fee
-      if (data.requiredFeeRate > MAX_FEE_PER_KB) return cb(new Error('Fee rate too high:' + data.requiredFeeRate));
+      if (data.requiredFeeRate > MAX_FEE_PER_KB[coin]) return cb(new Error('Fee rate too high:' + data.requiredFeeRate));
 
       ret.requiredFeeRate = data.requiredFeeRate;
 
@@ -278,7 +282,7 @@ export class PayPro {
 
       opts.headers = {
         'Content-Type': JSON_PAYMENT_CONTENT_TYPE,
-        Accept: JSON_PAYMENT_ACK_CONTENT_TYPE
+        'Accept': JSON_PAYMENT_ACK_CONTENT_TYPE
       };
 
       if (opts.bp_partner) {
