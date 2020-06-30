@@ -199,8 +199,8 @@ module.exports = {
   MAX_FEE_PER_KB: {
     btc: 10000 * 1000, // 10k sat/b
     bch: 10000 * 1000, // 10k sat/b
-    eth: 50000000000, // 50 Gwei,
-    xrp: 50000000000
+    eth: 1000000000000, // 50 Gwei,
+    xrp: 1000000000000
   },
 
   MIN_TX_FEE: {
