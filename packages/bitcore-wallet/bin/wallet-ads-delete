@@ -11,7 +11,7 @@ program
   .parse(process.argv);
 
 var args = program.args;
-var host = 'http://localhost:3232/bws/api/';
+var host = 'https://bws.bitpay.com/bws/api';
 
 var clientArgs = {
   host
