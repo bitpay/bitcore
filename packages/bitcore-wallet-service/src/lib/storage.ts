@@ -37,6 +37,8 @@ const collections = {
   LOCKS: 'locks'
 };
 
+const Common = require('../common');
+const Constants = Common.Constants;
 export class Storage {
   static BCHEIGHT_KEY = 'bcheight';
   static collections = collections;
@@ -372,6 +374,13 @@ export class Storage {
           const actionsById = {};
           const txs = _.compact(
             _.map(result, tx => {
+              // filter 48hrs+ transactions... To avoid "stuck" txps since delete and reject are not implemented on the contract
+              if (
+                !tx.multisigContractAddress ||
+                tx.createdOn < Math.floor(Date.now() / 1000) - Constants.ETH_MULTISIG_TX_PROPOSAL_EXPIRE_TIME
+              ) {
+                return undefined;
+              }
               tx.status = 'pending';
               tx.multisigTxId = multisigTxpsInfoByTransactionHash[tx.txid][0].transactionId;
               tx.actions.forEach(action => {

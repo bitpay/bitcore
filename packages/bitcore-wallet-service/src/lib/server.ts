@@ -381,7 +381,6 @@ export class WalletService {
 
     message = '<' + this.walletId + '>' + message;
     return logger.info(message, ...args);
- 
   }
 
   logw(message, ...args) {
