@@ -52,6 +52,7 @@ module.exports = {
       {
         name: 'normal',
         nbBlocks: 2,
+        multiplier: 1.05,        // To fix fees < 1sat/byte
         defaultValue: 2000
       }
     ],
