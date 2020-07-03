@@ -818,14 +818,14 @@ describe('Script', function() {
     });
 
     it('inherits network property from other script', function() {
-      var s1 = new Script.fromAddress(new Address('CWuF5o5ZGDwXNWe2eCPxPZPWwKMWuiixY2'));
+      var s1 = new Script.fromAddress(new Address('1FSMWkjVPAxzUNjbxT52p3mVKC971rfW3S'));
       var s2 = Script.buildScriptHashOut(s1);
       should.exist(s1._network);
       s1._network.should.equal(s2._network);
     });
 
     it('inherits network property form an address', function() {
-      var address = new Address('H9Ctbp1Y7th1TgkbabT19mpXGqEsTXggJE');
+      var address = new Address('34Nn91aTGaULqWsZiunrBPHzFBDrZ3B8XS');
       var script = Script.buildScriptHashOut(address);
       should.exist(script._network);
       script._network.should.equal(address.network);
@@ -846,7 +846,6 @@ describe('Script', function() {
     });
   });
 
-
   describe('#findAndDelete', function() {
     it('should find and delete this buffer', function() {
       Script('OP_RETURN 2 0xf0f0')
@@ -861,7 +860,6 @@ describe('Script', function() {
         .should.equal('OP_RETURN 2 0xf0f0');
     });
   });
-
 
   describe('#checkMinimalPush', function() {
 
@@ -900,7 +898,7 @@ describe('Script', function() {
       data.should.deep.equal(Buffer.alloc(0));
     });
     it('for a P2PKH address', function() {
-      var address = Address.fromString('Ce3M4ysH6XH7RMK1RYu4wLujcC7sv4EhNU');
+      var address = Address.fromString('1NaTVwXDDUJaXDQajoa9MqHhz4uTxtgK14');
       var script = Script.buildPublicKeyHashOut(address);
       expect(BufferUtil.equal(script.getData(), address.hashBuffer)).to.be.equal(true);
     });

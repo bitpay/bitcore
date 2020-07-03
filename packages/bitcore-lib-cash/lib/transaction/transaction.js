@@ -80,7 +80,6 @@ Transaction.NLOCKTIME_MAX_VALUE = 4294967295;
 // Value used for fee estimation (satoshis per kilobyte)
 Transaction.FEE_PER_KB = 100000;
 
-
 // Safe upper bound for change address script size in bytes
 Transaction.CHANGE_OUTPUT_MAX_SIZE = 20 + 4 + 34 + 4;
 Transaction.MAXIMUM_EXTRA_SIZE = 4 + 9 + 9 + 4;
@@ -451,7 +450,6 @@ Transaction.prototype.lockUntilBlockHeight = function(height) {
     }
   }
 
-
   this.nLockTime = height;
   return this;
 };
@@ -719,7 +717,6 @@ Transaction.prototype.change = function(address) {
   return this;
 };
 
-
 /**
  * @return {Output} change output, if it exists
  */
@@ -784,7 +781,6 @@ Transaction.prototype.addData = function(value) {
   return this;
 };
 
-
 /**
  * Add an output to the transaction.
  *
@@ -797,7 +793,6 @@ Transaction.prototype.addOutput = function(output) {
   this._updateChangeOutput();
   return this;
 };
-
 
 /**
  * Remove all outputs from the transaction.
@@ -813,12 +808,10 @@ Transaction.prototype.clearOutputs = function() {
   return this;
 };
 
-
 Transaction.prototype._addOutput = function(output) {
   this.outputs.push(output);
   this._outputAmount = undefined;
 };
-
 
 /**
  * Calculates or gets the total output amount in satoshis
@@ -835,7 +828,6 @@ Transaction.prototype._getOutputAmount = function() {
   }
   return this._outputAmount;
 };
-
 
 /**
  * Calculates or gets the total input amount in satoshis
@@ -1227,7 +1219,6 @@ Transaction.prototype.isCoinbase = function() {
   return (this.inputs.length === 1 && this.inputs[0].isNull());
 };
 
-
 Transaction.prototype.setVersion = function(version) {
   $.checkArgument(
     JSUtil.isNaturalNumber(version) && version <= CURRENT_VERSION, 
@@ -1235,6 +1226,5 @@ Transaction.prototype.setVersion = function(version) {
   this.version = version;
   return this;
 };
-
 
 module.exports = Transaction;

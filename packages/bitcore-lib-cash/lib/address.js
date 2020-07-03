@@ -272,7 +272,6 @@ Address.createMultisig = function(publicKeys, threshold, network) {
 
 function decodeCashAddress(address) {
 
-
   function hasSingleCase(string) {
     var lowerCase = string.toLowerCase();
     var upperCase = string.toUpperCase();
@@ -345,7 +344,6 @@ function decodeCashAddress(address) {
     }
   }
 
-
   var type = getType(versionByte);
   var network = Networks.get(prefix);
 //console.log('[address.js.336:network:]',network); //TODO
@@ -406,7 +404,6 @@ Address._transformString = function(data, network, type) {
     return Address._transformBuffer(addressBuffer, network, type);
   }
 };
-
 
 /**
  * Instantiate an address from a PublicKey instance
@@ -641,7 +638,6 @@ Address.prototype.toLegacyAddress = function () {
  * @returns {string} Bitcoin Cash address
  */
 
-
 Address.prototype.toCashAddress = function(stripPrefix) {
   function getTypeBits(type) {
     switch (type) {
@@ -724,7 +720,6 @@ function getHashSize(versionByte) {
     return 512;
   }
 }
-
 
 /***
  * Returns an array representation of the given checksum to be encoded

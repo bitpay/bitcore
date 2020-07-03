@@ -171,9 +171,9 @@ var liveNetwork = {
   name: 'livenet',
   alias: 'mainnet',
   prefix: 'bitcoincash',
-  pubkeyhash: 28,
+  pubkeyhash: 0x00,
   privatekey: 0x80,
-  scripthash: 40,
+  scripthash: 0x05,
   xpubkey: 0x0488b21e,
   xprivkey: 0x0488ade4,
   networkMagic: 0xe3e1f3e8,
@@ -213,9 +213,7 @@ var regtestNetwork = {
   ]
 };
 
-
 // Add configurable values for testnet/regtest
-
 
 addNetwork(testNetwork);
 addNetwork(regtestNetwork);
