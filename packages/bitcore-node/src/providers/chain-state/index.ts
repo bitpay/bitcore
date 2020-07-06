@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 import { Chain } from '../../types/ChainNetwork';
 import {
   BroadcastTransactionParams,
@@ -27,6 +28,22 @@ import {
 const services: ChainStateServices = {};
 
 class ChainStateProxy implements IChainStateProvider {
+  requestCache: Object;
+  constructor() {
+    this.requestCache = {};
+  }
+
+  private coalesceRequest(params: any, method: Function) {
+    const requestKey = crypto.createHash('sha256').update(JSON.stringify(params)).digest('hex');
+    if (!this.requestCache[requestKey]) {
+      this.requestCache[requestKey] = method(params)
+    }
+    this.requestCache[requestKey].then(() => {
+      delete this.requestCache[requestKey];
+    });
+    return this.requestCache[requestKey];
+  }
+
   get({ chain }: Chain) {
     if (services[chain] == undefined) {
       throw new Error(`Chain ${chain} doesn't have a ChainStateProvider registered`);
@@ -43,7 +60,7 @@ class ChainStateProxy implements IChainStateProvider {
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
-    return this.get(params).getBalanceForAddress(params);
+    return this.coalesceRequest(params, this.get(params).getBalanceForAddress);
   }
 
   async getBlock(params: GetBlockParams) {
