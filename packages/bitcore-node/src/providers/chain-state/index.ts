@@ -28,15 +28,18 @@ import {
 const services: ChainStateServices = {};
 
 class ChainStateProxy implements IChainStateProvider {
-  requestCache: Object;
+  requestCache: any;
   constructor() {
     this.requestCache = {};
   }
 
-  private coalesceRequest(params: any, method: Function) {
-    const requestKey = crypto.createHash('sha256').update(JSON.stringify(params)).digest('hex');
+  private coalesceRequest(params: any, method: any) {
+    const requestKey = crypto
+      .createHash('sha256')
+      .update(JSON.stringify(params))
+      .digest('hex');
     if (!this.requestCache[requestKey]) {
-      this.requestCache[requestKey] = method(params)
+      this.requestCache[requestKey] = method(params);
     }
     this.requestCache[requestKey].then(() => {
       delete this.requestCache[requestKey];
