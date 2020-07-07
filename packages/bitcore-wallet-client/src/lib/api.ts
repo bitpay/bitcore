@@ -2765,4 +2765,34 @@ export class API extends EventEmitter {
       });
     });
   }
+
+  wyreWalletOrderQuotation(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/wyre/walletOrderQuotation', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
+  wyreWalletOrderReservation(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/wyre/walletOrderReservation', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
+  wyreUrlParams(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      let qs = [];
+      qs.push('env=' + data.env);
+
+      this.request.get('/v1/service/wyre/urlParams?' + qs.join('&'), (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
 }

@@ -4318,6 +4318,136 @@ export class WalletService {
       );
     });
   }
+
+  walletOrderQuotation(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!config.wyre) return reject(new Error('Wyre missing credentials'));
+      if (!req.body.env || (req.body.env != 'sandbox' && req.body.env != 'production'))
+        return reject(new Error("Wyre's request wrong environment"));
+
+      const API = config.wyre[req.body.env].api;
+      const API_KEY = config.wyre[req.body.env].apiKey;
+      const SECRET_API_KEY = config.wyre[req.body.env].secretApiKey;
+      req.body.accountId = config.wyre[req.body.env].appProviderAccountId;
+
+      if (
+        !req.body.amount ||
+        !req.body.sourceCurrency ||
+        !req.body.destCurrency ||
+        !req.body.dest ||
+        !req.body.country
+      ) {
+        return reject(new Error("Wyre's request missing arguments"));
+      }
+
+      delete req.body.env;
+
+      const URL: string = `${API}/v3/orders/quote/partner?timestamp=${Date.now().toString()}`;
+      const XApiSignature: string = URL + JSON.stringify(req.body);
+      const XApiSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
+        Buffer.from(XApiSignature),
+        Buffer.from(SECRET_API_KEY)
+      ).toString('hex');
+
+      console.log('======= XApiSignature: ', XApiSignature);
+      console.log('======= XApiSignatureHash: ', XApiSignatureHash);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Api-Key': API_KEY,
+        'X-Api-Signature': XApiSignatureHash
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: req.body,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : null);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  walletOrderReservation(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!config.wyre) return reject(new Error('Wyre missing credentials'));
+      if (!req.body.env || (req.body.env != 'sandbox' && req.body.env != 'production'))
+        return reject(new Error("Wyre's request wrong environment"));
+
+      const API = config.wyre[req.body.env].api;
+      const API_KEY = config.wyre[req.body.env].apiKey;
+      const SECRET_API_KEY = config.wyre[req.body.env].secretApiKey;
+
+      if (!req.body.amount || !req.body.sourceCurrency || !req.body.destCurrency || !req.body.dest) {
+        return reject(new Error("Wyre's request missing arguments"));
+      }
+
+      delete req.body.env;
+
+      const URL: string = `${API}/v3/orders/reserve?timestamp=${Date.now().toString()}`;
+      const XApiSignature: string = URL + JSON.stringify(req.body);
+      const XApiSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
+        Buffer.from(XApiSignature),
+        Buffer.from(SECRET_API_KEY)
+      ).toString('hex');
+
+      console.log('======= XApiSignature: ', XApiSignature);
+      console.log('======= XApiSignatureHash: ', XApiSignatureHash);
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Api-Key': API_KEY,
+        'X-Api-Signature': XApiSignatureHash
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: req.body,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : null);
+          } else {
+            // data.body.payment_id = paymentId;
+            // data.body.order_id = orderId;
+            // data.body.app_provider_id = appProviderId;
+            // data.body.api_host = apiHost;
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  wyreUrlParams(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      if (!config.wyre) return reject(new Error('Wyre missing credentials'));
+      console.log('========================================== req: ');
+      console.log(req);
+      if (!req.env || (req.env != 'sandbox' && req.env != 'production'))
+        return reject(new Error("Wyre's request wrong environment"));
+
+      const WIDGET_URL = config.wyre[req.env].widgetUrl;
+      const ACCOUNT_ID = config.wyre[req.env].appProviderAccountId;
+
+      const data = {
+        accountId: ACCOUNT_ID,
+        widgetUrl: WIDGET_URL
+      };
+      return resolve(data);
+    });
+  }
 }
 
 function checkRequired(obj, args, cb?: (e: any) => void) {

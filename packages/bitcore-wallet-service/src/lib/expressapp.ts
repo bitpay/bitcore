@@ -1247,6 +1247,81 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/service/wyre/walletOrderQuotation', (req, res) => {
+      // getServerWithAuth(req, res, server => {
+      //   server
+      //     .walletOrderQuotation(req)
+      //     .then(response => {
+      //       res.json(response);
+      //     })
+      //     .catch(err => {
+      //       if (err) return returnError(err, res, req);
+      //     });
+      // });
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .walletOrderQuotation(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+    });
+
+    router.post('/v1/service/wyre/walletOrderReservation', (req, res) => {
+      // getServerWithAuth(req, res, server => {
+      //   server
+      //     .walletOrderReservation(req)
+      //     .then(response => {
+      //       res.json(response);
+      //     })
+      //     .catch(err => {
+      //       if (err) return returnError(err, res, req);
+      //     });
+      // });
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .walletOrderReservation(req)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+    });
+
+    router.get('/v1/service/wyre/urlParams', (req, res) => {
+      // getServerWithAuth(req, res, server => {
+      const opts = { env: req.query.env };
+      //   server
+      let server;
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .wyreUrlParams(opts)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+      // });
+    });
+
     this.app.use(opts.basePath || '/bws/api', router);
 
     if (config.staticRoot) {
