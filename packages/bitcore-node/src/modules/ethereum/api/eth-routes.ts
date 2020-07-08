@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import logger from '../../../logger';
 import { ETH } from './csp';
+import { Gnosis } from './gnosis';
 export const EthRoutes = Router();
 
 EthRoutes.get('/api/ETH/:network/address/:address/txs/count', async (req, res) => {
@@ -32,5 +33,53 @@ EthRoutes.get('/api/ETH/:network/token/:tokenAddress', async (req, res) => {
     res.json(tokenInfo);
   } catch (err) {
     res.status(500).send(err);
+  }
+});
+
+EthRoutes.get('/api/ETH/:network/ethmultisig/info/:multisigContractAddress', async (req, res) => {
+  const { network, multisigContractAddress } = req.params;
+  try {
+    const multisigInfo = await Gnosis.getMultisigEthInfo(network, multisigContractAddress);
+    res.json(multisigInfo);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+EthRoutes.get('/api/ETH/:network/ethmultisig/:sender', async (req, res) => {
+  const { network, sender } = req.params;
+  try {
+    const multisigInstantiationInfo = await Gnosis.getMultisigContractInstantiationInfo(network, sender);
+    res.json(multisigInstantiationInfo);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+EthRoutes.get('/api/ETH/:network/ethmultisig/txps/:multisigContractAddress', async (req, res) => {
+  const { network, multisigContractAddress } = req.params;
+  try {
+    const multisigTxpsInfo = await Gnosis.getMultisigTxpsInfo(network, multisigContractAddress);
+    res.json(multisigTxpsInfo);
+  } catch (err) {
+    res.status(500).send(err);
+  }
+});
+
+EthRoutes.get('/api/ETH/:network/ethmultisig/transactions/:multisigContractAddress', async (req, res) => {
+  let { network, multisigContractAddress } = req.params;
+  const chain = 'ETH';
+  try {
+    return await Gnosis.streamGnosisWalletTransactions({
+      chain,
+      network,
+      multisigContractAddress,
+      wallet: {} as any,
+      req,
+      res,
+      args: req.query
+    });
+  } catch (err) {
+    return res.status(500).send(err);
   }
 });

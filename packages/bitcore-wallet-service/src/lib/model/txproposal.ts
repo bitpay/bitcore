@@ -64,6 +64,7 @@ export interface ITxProposal {
   gasLimit?: number; // Backward compatibility for BWC <= 8.9.0
   data?: string; // Backward compatibility for BWC <= 8.9.0
   tokenAddress?: string;
+  multisigContractAddress?: string;
   destinationTag?: string;
   invoiceID?: string;
   lockUntilBlockHeight?: number;
@@ -121,6 +122,8 @@ export class TxProposal {
   gasLimit?: number; // Backward compatibility for BWC <= 8.9.0
   data?: string; // Backward compatibility for BWC <= 8.9.0
   tokenAddress?: string;
+  multisigContractAddress?: string;
+  multisigTxId?: string;
   destinationTag?: string;
   invoiceID?: string;
   lockUntilBlockHeight?: number;
@@ -192,6 +195,7 @@ export class TxProposal {
     x.gasLimit = opts.gasLimit; // Backward compatibility for BWC <= 8.9.0
     x.data = opts.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = opts.tokenAddress;
+    x.multisigContractAddress = opts.multisigContractAddress;
 
     // XRP
     x.destinationTag = opts.destinationTag;
@@ -253,6 +257,8 @@ export class TxProposal {
     x.gasLimit = obj.gasLimit; // Backward compatibility for BWC <= 8.9.0
     x.data = obj.data; // Backward compatibility for BWC <= 8.9.0
     x.tokenAddress = obj.tokenAddress;
+    x.multisigContractAddress = obj.multisigContractAddress;
+    x.multisigTxId = obj.multisigTxId;
 
     // XRP
     x.destinationTag = obj.destinationTag;

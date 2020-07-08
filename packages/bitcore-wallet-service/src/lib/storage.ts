@@ -37,6 +37,8 @@ const collections = {
   LOCKS: 'locks'
 };
 
+const Common = require('../common');
+const Constants = Common.Constants;
 export class Storage {
   static BCHEIGHT_KEY = 'bcheight';
   static collections = collections;
@@ -353,6 +355,56 @@ export class Storage {
         });
         return cb(null, txs);
       });
+  }
+
+  fetchEthPendingTxs(multisigTxpsInfo) {
+    return new Promise((resolve, reject) => {
+      this.db
+        .collection(collections.TXS)
+        .find({
+          txid: { $in: multisigTxpsInfo.map(txpInfo => txpInfo.transactionHash) }
+        })
+        .sort({
+          createdOn: -1
+        })
+        .toArray(async (err, result) => {
+          if (err) return reject(err);
+          if (!result) return reject();
+          const multisigTxpsInfoByTransactionHash: any = _.groupBy(multisigTxpsInfo, 'transactionHash');
+          const actionsById = {};
+          const txs = _.compact(
+            _.map(result, tx => {
+              // filter 48hrs+ transactions... To avoid "stuck" txps since delete and reject are not implemented on the contract
+              if (
+                !tx.multisigContractAddress ||
+                tx.createdOn < Math.floor(Date.now() / 1000) - Constants.ETH_MULTISIG_TX_PROPOSAL_EXPIRE_TIME
+              ) {
+                return undefined;
+              }
+              tx.status = 'pending';
+              tx.multisigTxId = multisigTxpsInfoByTransactionHash[tx.txid][0].transactionId;
+              tx.actions.forEach(action => {
+                if (_.some(multisigTxpsInfoByTransactionHash[tx.txid], { event: 'ExecutionFailure' })) {
+                  action.type = 'failed';
+                }
+              });
+              if (tx.amount === 0) {
+                actionsById[tx.multisigTxId] = [...tx.actions, ...(actionsById[tx.multisigTxId] || [])];
+                return undefined;
+              }
+              return TxProposal.fromObj(tx);
+            })
+          );
+
+          txs.forEach((tx: TxProposal) => {
+            if (actionsById[tx.multisigTxId]) {
+              tx.actions = [...tx.actions, ...(actionsById[tx.multisigTxId] || [])];
+            }
+          });
+
+          return resolve(txs);
+        });
+    });
   }
 
   fetchPendingTxs(walletId, cb) {

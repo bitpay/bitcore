@@ -43,7 +43,8 @@ export class Credentials {
     'version',
     'rootPath', // this is only for information
     'keyId', // this is only for information
-    'token' // is this wallet is for a ERC20 token
+    'token', // this is for a ERC20 token
+    'multisigEthInfo' // this is for a MULTISIG eth wallet
   ];
   version: number;
   account: number;
@@ -65,6 +66,7 @@ export class Credentials {
   addressType: string;
   keyId: string;
   token?: string;
+  multisigEthInfo?: any;
   externalSource?: boolean; // deprecated property?
 
   constructor() {
@@ -139,6 +141,24 @@ export class Credentials {
     ret.walletName = token.name;
     ret.token = token;
 
+    return ret;
+  }
+
+  /*
+   * creates a Multisig wallet from a ETH wallet
+   */
+  getMultisigEthCredentials(multisigEthInfo: {
+    multisigContractAddress: string;
+    walletName: string;
+    n: string;
+    m: string;
+  }) {
+    const ret = _.cloneDeep(this);
+    ret.walletId = `${ret.walletId}-${multisigEthInfo.multisigContractAddress}`;
+    ret.walletName = multisigEthInfo.walletName;
+    ret.n = multisigEthInfo.n;
+    ret.m = multisigEthInfo.m;
+    ret.multisigEthInfo = multisigEthInfo;
     return ret;
   }
 
@@ -267,7 +287,8 @@ export class Credentials {
 
   isComplete() {
     if (!this.m || !this.n) return false;
-    if (!this.publicKeyRing || this.publicKeyRing.length != this.n) return false;
+    if ((this.coin === 'btc' || this.coin === 'bch') && (!this.publicKeyRing || this.publicKeyRing.length != this.n))
+      return false;
     return true;
   }
 }

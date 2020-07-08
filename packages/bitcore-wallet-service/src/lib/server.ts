@@ -651,6 +651,8 @@ export class WalletService {
    * @param {Object} opts.includeExtendedInfo - Include PKR info & address managers for wallet & copayers
    * @param {Object} opts.includeServerMessages - Include server messages array
    * @param {Object} opts.tokenAddress - (Optional) Token contract address to pass in getBalance
+   * @param {Object} opts.multisigContractAddress - (Optional) Multisig ETH contract address to pass in getBalance
+   * @param {Object} opts.network - (Optional ETH MULTISIG) Multisig ETH contract address network
    * @returns {Object} status
    */
   getStatus(opts, cb) {
@@ -740,6 +742,7 @@ export class WalletService {
             if (err) return next(err);
             if (!opts.includeExtendedInfo) {
               preferences.tokenAddresses = null;
+              preferences.multisigEthInfo = null;
             }
             status.preferences = preferences;
             next();
@@ -1131,6 +1134,15 @@ export class WalletService {
         isValid(value) {
           return _.isArray(value) && value.every(x => Validation.validateAddress('eth', 'mainnet', x));
         }
+      },
+      {
+        name: 'multisigEthInfo',
+        isValid(value) {
+          return (
+            _.isArray(value) &&
+            value.every(x => Validation.validateAddress('eth', 'mainnet', x.multisigContractAddress))
+          );
+        }
       }
     ];
 
@@ -1152,6 +1164,7 @@ export class WalletService {
 
       if (wallet.coin != 'eth') {
         opts.tokenAddresses = null;
+        opts.multisigEthInfo = null;
       }
 
       this._runLocked(cb, cb => {
@@ -1169,6 +1182,16 @@ export class WalletService {
             oldPref = oldPref || {};
             oldPref.tokenAddresses = oldPref.tokenAddresses || [];
             preferences.tokenAddresses = _.uniq(oldPref.tokenAddresses.concat(opts.tokenAddresses));
+          }
+
+          // merge multisigEthInfo
+          if (opts.multisigEthInfo) {
+            oldPref = oldPref || {};
+            oldPref.multisigEthInfo = oldPref.multisigEthInfo || [];
+            preferences.multisigEthInfo = _.uniqBy(
+              oldPref.multisigEthInfo.concat(opts.multisigEthInfo),
+              'multisigContractAddress'
+            );
           }
 
           this.storage.storePreferences(preferences, err => {
@@ -2060,6 +2083,48 @@ export class WalletService {
     });
   }
 
+  getMultisigContractInstantiationInfo(opts) {
+    const bc = this._getBlockchainExplorer('eth', opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getMultisigContractInstantiationInfo(opts, (err, contractInstantiationInfo) => {
+        if (err) {
+          this.logw('Error getting contract instantiation info', err);
+          return reject(err);
+        }
+        return resolve(contractInstantiationInfo);
+      });
+    });
+  }
+
+  getMultisigContractInfo(opts) {
+    const bc = this._getBlockchainExplorer('eth', opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getMultisigContractInfo(opts, (err, contractInfo) => {
+        if (err) {
+          this.logw('Error getting contract instantiation info', err);
+          return reject(err);
+        }
+        return resolve(contractInfo);
+      });
+    });
+  }
+
+  getMultisigTxpsInfo(opts) {
+    const bc = this._getBlockchainExplorer('eth', opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getMultisigTxpsInfo(opts, (err, multisigTxpsInfo) => {
+        if (err) {
+          this.logw('Error getting contract txps hash', err);
+          return reject(err);
+        }
+        return resolve(multisigTxpsInfo);
+      });
+    });
+  }
+
   /**
    * Creates a new transaction proposal.
    * @param {Object} opts
@@ -2084,6 +2149,8 @@ export class WalletService {
    * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
    * @param {Boolean} opts.noCashAddr - do not use cashaddress for bch
    * @param {Boolean} opts.signingMethod[=ecdsa] - do not use cashaddress for bch
+   * @param {string} opts.tokenAddress - optional. ERC20 Token Contract Address
+   * @param {string} opts.multisigContractAddress - optional. MULTISIG ETH Contract Address
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */
   createTx(opts, cb) {
@@ -2209,6 +2276,7 @@ export class WalletService {
                     gasLimit, // Backward compatibility for BWC < v7.1.1
                     data: opts.data, // Backward compatibility for BWC < v7.1.1
                     tokenAddress: opts.tokenAddress,
+                    multisigContractAddress: opts.multisigContractAddress,
                     destinationTag: opts.destinationTag,
                     invoiceID: opts.invoiceID,
                     signingMethod: opts.signingMethod
@@ -2739,57 +2807,69 @@ export class WalletService {
    * Retrieves pending transaction proposals.
    * @param {Object} opts
    * @param {Boolean} opts.noCashAddr (do not use cashaddr, only for backwards compat)
+   * @param {String} opts.tokenAddress ERC20 Token Contract Address
+   * @param {String} opts.multisigContractAddress MULTISIG ETH Contract Address
+   * @param {String} opts.network  The network of the MULTISIG ETH transactions
    * @returns {TxProposal[]} Transaction proposal.
    */
-  getPendingTxs(opts, cb) {
+  async getPendingTxs(opts, cb) {
     if (opts.tokenAddress) {
       return cb();
-    }
-    this.storage.fetchPendingTxs(this.walletId, (err, txps) => {
-      if (err) return cb(err);
+    } else if (opts.multisigContractAddress) {
+      try {
+        const multisigTxpsInfo = await this.getMultisigTxpsInfo(opts);
+        const txps = await this.storage.fetchEthPendingTxs(multisigTxpsInfo);
+        return cb(null, txps);
+      } catch (error) {
+        return cb(error);
+      }
+    } else {
+      this.storage.fetchPendingTxs(this.walletId, (err, txps) => {
+        if (err) return cb(err);
 
-      _.each(txps, txp => {
-        txp.deleteLockTime = this.getRemainingDeleteLockTime(txp);
-      });
+        _.each(txps, txp => {
+          txp.deleteLockTime = this.getRemainingDeleteLockTime(txp);
+        });
 
-      async.each(
-        txps,
-        (txp: ITxProposal, next) => {
-          if (txp.status != 'accepted') return next();
+        async.each(
+          txps,
+          (txp: ITxProposal, next) => {
+            if (txp.status != 'accepted') return next();
 
-          this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
-            if (err || !isInBlockchain) return next(err);
-            this._processBroadcast(
-              txp,
-              {
-                byThirdParty: true
-              },
-              next
-            );
-          });
-        },
-        err => {
-          txps = _.reject(txps, txp => {
-            return txp.status == 'broadcasted';
-          });
-
-          if (opts.noCashAddr && txps[0] && txps[0].coin == 'bch') {
-            _.each(txps, x => {
-              if (x.changeAddress) {
-                x.changeAddress.address = BCHAddressTranslator.translate(x.changeAddress.address, 'copay');
-              }
-              _.each(x.outputs, x => {
-                if (x.toAddress) {
-                  x.toAddress = BCHAddressTranslator.translate(x.toAddress, 'copay');
-                }
-              });
+            this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
+              if (err || !isInBlockchain) return next(err);
+              this._processBroadcast(
+                txp,
+                {
+                  byThirdParty: true
+                },
+                next
+              );
             });
-          }
+          },
+          err => {
+            txps = _.reject(txps, txp => {
+              return txp.status == 'broadcasted';
+            });
 
-          return cb(err, txps);
-        }
-      );
-    });
+            if (opts.noCashAddr && txps[0] && txps[0].coin == 'bch') {
+              _.each(txps, x => {
+                if (x.changeAddress) {
+                  x.changeAddress.address = BCHAddressTranslator.translate(x.changeAddress.address, 'copay');
+                }
+                _.each(x.outputs, x => {
+                  if (x.toAddress) {
+                    x.toAddress = BCHAddressTranslator.translate(x.toAddress, 'copay');
+                  }
+                });
+              });
+            }
+
+            return cb(err, txps);
+          }
+        );
+      });
+    }
   }
 
   /**
@@ -3353,6 +3433,11 @@ export class WalletService {
       walletCacheKey = `${wallet.id}-${opts.tokenAddress}`;
     }
 
+    if (opts.multisigContractAddress) {
+      wallet.multisigContractAddress = opts.multisigContractAddress;
+      walletCacheKey = `${wallet.id}-${opts.multisigContractAddress}`;
+    }
+
     async.series(
       [
         next => {
@@ -3525,6 +3610,7 @@ export class WalletService {
    * @param {Number} opts.skip (defaults to 0)
    * @param {Number} opts.limit
    * @param {String} opts.tokenAddress ERC20 Token Contract Address
+   * @param {String} opts.multisigContractAddress MULTISIG ETH Contract Address
    * @param {Number} opts.includeExtendedInfo[=false] - Include all inputs/outputs for every tx.
    * @returns {TxProposal[]} Transaction proposals, first newer
    */

@@ -42,9 +42,19 @@ export class Client {
   }
 
   async getBalance(params) {
-    const { payload, pubKey, tokenAddress } = params;
-    const query = tokenAddress ? `?tokenAddress=${tokenAddress}` : '';
-    const url = `${this.baseUrl}/wallet/${pubKey}/balance${query}`;
+    const { payload, pubKey, tokenAddress, multisigContractAddress } = params;
+    let query = '';
+    let apiUrl = `${this.baseUrl}/wallet/${pubKey}/balance`;
+
+    if (tokenAddress) {
+      query = `?tokenAddress=${tokenAddress}`;
+    }
+
+    if (multisigContractAddress) {
+      apiUrl = `${this.baseUrl}/address/${multisigContractAddress}/balance`;
+    }
+
+    const url = apiUrl + query;
     const signature = this.sign({ method: 'GET', url, payload });
     return request.get(url, {
       headers: { 'x-signature': signature },
@@ -109,20 +119,34 @@ export class Client {
   }
 
   listTransactions(params) {
-    const { pubKey, startBlock, startDate, endBlock, endDate, includeMempool, tokenAddress } = params;
-    let url = `${this.baseUrl}/wallet/${pubKey}/transactions?`;
+    const {
+      pubKey,
+      startBlock,
+      startDate,
+      endBlock,
+      endDate,
+      includeMempool,
+      tokenAddress,
+      multisigContractAddress
+    } = params;
+    let query = '';
+    let apiUrl = `${this.baseUrl}/wallet/${pubKey}/transactions?`;
     if (startBlock) {
-      url += `startBlock=${startBlock}&`;
+      query += `startBlock=${startBlock}&`;
     }
     if (endBlock) {
-      url += `endBlock=${endBlock}&`;
+      query += `endBlock=${endBlock}&`;
     }
     if (tokenAddress) {
-      url += `tokenAddress=${tokenAddress}&`;
+      query += `tokenAddress=${tokenAddress}&`;
+    }
+    if (multisigContractAddress) {
+      apiUrl = `${this.baseUrl}/ethmultisig/transactions/${multisigContractAddress}?`;
     }
     if (includeMempool) {
-      url += 'includeMempool=true';
+      query += 'includeMempool=true';
     }
+    const url = apiUrl + query;
     const signature = this.sign({ method: 'GET', url });
     logger.info('List transactions', url);
     return requestStream.get(url, {
