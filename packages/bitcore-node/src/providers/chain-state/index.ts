@@ -41,10 +41,14 @@ class ChainStateProxy implements IChainStateProvider {
     if (!this.requestCache[requestKey]) {
       this.requestCache[requestKey] = method(params);
     }
-    this.requestCache[requestKey].then(() => {
+    const cleanup = (err) => {
       delete this.requestCache[requestKey];
-    });
-    return this.requestCache[requestKey];
+      if (err) throw err;
+    }
+    return this.requestCache[requestKey].then(
+      () => cleanup(null),
+      (err) => cleanup(err)
+    );
   }
 
   get({ chain }: Chain) {
