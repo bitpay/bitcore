@@ -34,20 +34,31 @@ class ChainStateProxy implements IChainStateProvider {
   }
 
   private coalesceRequest(params: any, method: any) {
-    const requestKey = crypto
+    const getCaller = () => {
+      const stack = (new Error()).stack;
+      if (!stack) {
+        throw new Error('Unable to determine caller');
+      }
+      return stack.split("\n")[3].trim().split(" ")[1];
+    }
+    let requestKey = getCaller() + JSON.stringify(params);
+    requestKey = crypto
       .createHash('sha256')
-      .update(JSON.stringify(params))
+      .update(requestKey)
       .digest('hex');
     if (!this.requestCache[requestKey]) {
       this.requestCache[requestKey] = method(params);
     }
-    const cleanup = err => {
+    const cleanup = (err, result) => {
       delete this.requestCache[requestKey];
-      if (err) throw err;
+      if (err) {
+        return Promise.reject(err);
+      };
+      return Promise.resolve(result)
     };
     return this.requestCache[requestKey].then(
-      () => cleanup(null),
-      err => cleanup(err)
+      (result) => cleanup(null, result),
+      err => cleanup(err, null)
     );
   }
 
