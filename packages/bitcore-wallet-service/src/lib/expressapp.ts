@@ -1,9 +1,10 @@
 import express from 'express';
 import _ from 'lodash';
-import * as log from 'npmlog';
 import 'source-map-support/register';
+import logger from './logger';
 
 import { ClientError } from './errors/clienterror';
+import { LogMiddleware } from './middleware';
 import { WalletService } from './server';
 import { Stats } from './stats';
 
@@ -14,10 +15,6 @@ const RateLimit = require('express-rate-limit');
 const Common = require('./common');
 const rp = require('request-promise-native');
 const Defaults = Common.Defaults;
-
-log.disableColor();
-log.debug = log.verbose;
-log.level = 'verbose';
 
 export class ExpressApp {
   app: express.Express;
@@ -63,7 +60,7 @@ export class ExpressApp {
     // handle `abort` https://nodejs.org/api/http.html#http_event_abort
     this.app.use((req, res, next) => {
       req.on('abort', () => {
-        log.warn('Request aborted by the client');
+        logger.warn('Request aborted by the client');
       });
       next();
     });
@@ -88,22 +85,24 @@ export class ExpressApp {
     });
 
     if (opts.disableLogs) {
-      log.level = 'silent';
+      logger.warn('Logs disabled');
     } else {
-      const morgan = require('morgan');
-      morgan.token('walletId', function getId(req) {
-        return req.walletId ? '<' + req.walletId + '>' : '<>';
-      });
+      this.app.use(LogMiddleware());
+      // morgan.token('walletId', function getId(req) {
+      // return req.walletId ? '<' + req.walletId + '>' : '<>';
+      // });
 
-      const logFormat =
-        ':walletId :remote-addr :date[iso] ":method :url" :status :res[content-length] :response-time ":user-agent"  ';
-      const logOpts = {
-        skip(req, res) {
-          if (res.statusCode != 200) return false;
-          return req.path.indexOf('/notifications/') >= 0;
-        }
-      };
-      this.app.use(morgan(logFormat, logOpts));
+      // const logFormat =
+      // ':walletId :remote-addr :date[iso] ":method :url" :status :res[content-length] :response-time ":user-agent"  ';
+      // const logOpts = {
+      // skip(req, res) {
+      // if (res.statusCode != 200) return false;
+      // return req.path.indexOf('/notifications/') >= 0;
+      // },
+      // stream: logger.stream
+      // };
+
+      // this.app.use(morgan(logFormat, logOpts));
     }
 
     const router = express.Router();
@@ -111,7 +110,7 @@ export class ExpressApp {
     const returnError = (err, res, req) => {
       if (err instanceof ClientError) {
         const status = err.code == 'NOT_AUTHORIZED' ? 401 : 400;
-        if (!opts.disableLogs) log.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
+        if (!opts.disableLogs) logger.info('Client Err: ' + status + ' ' + req.url + ' ' + JSON.stringify(err));
 
         res
           .status(status)
@@ -130,7 +129,7 @@ export class ExpressApp {
 
         const m = message || err.toString();
 
-        if (!opts.disableLogs) log.error(req.url + ' :' + code + ':' + m);
+        if (!opts.disableLogs) logger.error(req.url + ' :' + code + ':' + m);
 
         res
           .status(code || 500)
@@ -142,7 +141,7 @@ export class ExpressApp {
     };
 
     const logDeprecated = req => {
-      log.warn('DEPRECATED', req.method, req.url, '(' + req.header('x-client-version') + ')');
+      logger.warn('DEPRECATED', req.method, req.url, '(' + req.header('x-client-version') + ')');
     };
 
     const getCredentials = req => {
@@ -217,7 +216,7 @@ export class ExpressApp {
     let createWalletLimiter;
 
     if (Defaults.RateLimit.createWallet && !opts.ignoreRateLimiter) {
-      log.info(
+      logger.info(
         '',
         'Limiting wallet creation per IP: %d req/h',
         ((Defaults.RateLimit.createWallet.max / Defaults.RateLimit.createWallet.windowMs) * 60 * 60 * 1000).toFixed(2)
@@ -368,7 +367,9 @@ export class ExpressApp {
           includeExtendedInfo: false,
           twoStep: false,
           includeServerMessages: false,
-          tokenAddress: req.query.tokenAddress
+          tokenAddress: req.query.tokenAddress,
+          multisigContractAddress: req.query.multisigContractAddress,
+          network: req.query.network
         };
         if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
         if (req.query.twoStep == '1') opts.twoStep = true;
@@ -556,10 +557,12 @@ export class ExpressApp {
 
     router.get('/v1/balance/', (req, res) => {
       getServerWithAuth(req, res, server => {
-        const opts: { coin?: string; twoStep?: boolean; tokenAddress?: string } = {};
+        const opts: { coin?: string; twoStep?: boolean; tokenAddress?: string; multisigContractAddress?: string } = {};
         if (req.query.coin) opts.coin = req.query.coin;
         if (req.query.twoStep == '1') opts.twoStep = true;
         if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
+        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
+
         server.getBalance(opts, (err, balance) => {
           if (err) return returnError(err, res, req);
           res.json(balance);
@@ -570,7 +573,7 @@ export class ExpressApp {
     let estimateFeeLimiter;
 
     if (Defaults.RateLimit.estimateFee && !opts.ignoreRateLimiter) {
-      log.info(
+      logger.info(
         '',
         'Limiting estimate fee per IP: %d req/h',
         ((Defaults.RateLimit.estimateFee.max / Defaults.RateLimit.estimateFee.windowMs) * 60 * 60 * 1000).toFixed(2)
@@ -626,6 +629,28 @@ export class ExpressApp {
         try {
           const gasLimit = await server.estimateGas(req.body);
           res.json(gasLimit);
+        } catch (err) {
+          returnError(err, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/ethmultisig/', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        try {
+          const multisigContractInstantiationInfo = await server.getMultisigContractInstantiationInfo(req.body);
+          res.json(multisigContractInstantiationInfo);
+        } catch (err) {
+          returnError(err, res, req);
+        }
+      });
+    });
+
+    router.post('/v1/ethmultisig/info', (req, res) => {
+      getServerWithAuth(req, res, async server => {
+        try {
+          const multisigContractInfo = await server.getMultisigContractInfo(req.body);
+          res.json(multisigContractInfo);
         } catch (err) {
           returnError(err, res, req);
         }
@@ -801,10 +826,12 @@ export class ExpressApp {
           limit?: number;
           includeExtendedInfo?: boolean;
           tokenAddress?: string;
+          multisigContractAddress?: string;
         } = {};
         if (req.query.skip) opts.skip = +req.query.skip;
         if (req.query.limit) opts.limit = +req.query.limit;
         if (req.query.tokenAddress) opts.tokenAddress = req.query.tokenAddress;
+        if (req.query.multisigContractAddress) opts.multisigContractAddress = req.query.multisigContractAddress;
         if (req.query.includeExtendedInfo == '1') opts.includeExtendedInfo = true;
 
         server.getTxHistory(opts, (err, txs) => {
@@ -1066,7 +1093,7 @@ export class ExpressApp {
     this.app.use(opts.basePath || '/bws/api', router);
 
     if (config.staticRoot) {
-      log.debug(`Serving static files from ${config.staticRoot}`);
+      logger.debug(`Serving static files from ${config.staticRoot}`);
       this.app.use('/static', express.static(config.staticRoot));
     }
 

@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 import io from 'socket.io';
-
-const log = require('npmlog');
-log.debug = log.verbose;
+import logger from '../lib/logger';
 
 const DEFAULT_PORT = 3380;
 
@@ -17,4 +15,4 @@ server.on('connection', socket => {
   });
 });
 
-console.log('Message broker server listening on port ' + opts.port);
+logger.info('Message broker server listening on port ' + opts.port);
