@@ -8,6 +8,7 @@ import { Api } from '../../../src/services/api';
 import { wait } from '../../../src/utils/wait';
 import { resetDatabase } from '../../helpers';
 
+const { StreamUtil } = BitcoreClient;
 const chain = 'ETH';
 const network = 'testnet';
 const chainConfig = config.chains[chain][network];
@@ -104,6 +105,26 @@ describe('Ethereum', function() {
     const afterBalance = await wallet.getBalance();
     expect(afterBalance).to.not.deep.eq(beforeBalance);
     expect(afterBalance.confirmed).to.be.gt(beforeBalance.confirmed);
+  });
+
+  it('should have receipts on tx history', async () => {
+    const wallet = await getWallet();
+    await new Promise(r =>
+      wallet
+        .listTransactions({})
+        .pipe(StreamUtil.jsonlBufferToObjectMode())
+        .on('data', (tx: any) => {
+          if (tx.height >= 0) {
+            expect(tx.receipt).to.exist;
+            expect(tx.receipt.gasUsed).to.exist;
+            expect(tx.receipt.gasUsed).to.be.lte(tx.gasLimit);
+            expect(tx.fee).to.eq(tx.gasPrice * tx.receipt.gasUsed);
+          }
+        })
+        .on('finish', () => {
+          r();
+        })
+    );
   });
 
   it.skip('should be able to save blocks to the database', async () => {

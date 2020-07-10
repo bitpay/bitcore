@@ -275,6 +275,15 @@ export class Wallet {
   }
 
   listTransactions(params) {
+    const { token } = params;
+    if (token) {
+      let tokenContractAddress;
+      const tokenObj = this.tokens.find(tok => tok.symbol === token);
+      if (!tokenObj) {
+        throw new Error(`${token} not found on wallet ${this.name}`);
+      }
+      params.tokenContractAddress = tokenObj.address;
+    }
     return this.client.listTransactions({
       ...params,
       pubKey: this.authPubKey

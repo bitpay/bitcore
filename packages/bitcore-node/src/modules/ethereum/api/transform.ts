@@ -1,24 +1,16 @@
 import { Transform } from 'stream';
 import { MongoBound } from '../../../models/base';
-import { IWallet } from '../../../models/wallet';
-import { WalletAddressStorage } from '../../../models/walletAddress';
 import { IEthTransaction } from '../types';
 
 export class EthListTransactionsStream extends Transform {
-  constructor(private wallet: IWallet) {
+  constructor(private walletAddresses: Array<string>) {
     super({ objectMode: true });
   }
 
   async _transform(transaction: MongoBound<IEthTransaction>, _, done) {
-    const sending = await WalletAddressStorage.collection.countDocuments({
-      wallet: this.wallet._id,
-      address: transaction.from
-    });
-    if (sending > 0) {
-      const sendingToOurself = await WalletAddressStorage.collection.countDocuments({
-        wallet: this.wallet._id,
-        address: transaction.to
-      });
+    let sending = this.walletAddresses.includes(transaction.from);
+    if (sending) {
+      let sendingToOurself = this.walletAddresses.includes(transaction.to);
       if (!sendingToOurself) {
         this.push(
           JSON.stringify({
@@ -29,6 +21,9 @@ export class EthListTransactionsStream extends Transform {
             satoshis: -transaction.value,
             height: transaction.blockHeight,
             from: transaction.from,
+            gasPrice: transaction.gasPrice,
+            gasLimit: transaction.gasLimit,
+            receipt: transaction.receipt,
             address: transaction.to,
             blockTime: transaction.blockTimeNormalized,
             internal: transaction.internal,
@@ -46,6 +41,9 @@ export class EthListTransactionsStream extends Transform {
             satoshis: transaction.value,
             height: transaction.blockHeight,
             from: transaction.from,
+            gasPrice: transaction.gasPrice,
+            gasLimit: transaction.gasLimit,
+            receipt: transaction.receipt,
             address: transaction.to,
             blockTime: transaction.blockTimeNormalized,
             internal: transaction.internal,
@@ -54,13 +52,9 @@ export class EthListTransactionsStream extends Transform {
           }) + '\n'
         );
       }
-      return done();
     } else {
-      const weReceived = await WalletAddressStorage.collection.countDocuments({
-        wallet: this.wallet._id,
-        address: transaction.to
-      });
-      if (weReceived > 0) {
+      const weReceived = this.walletAddresses.includes(transaction.to);
+      if (weReceived) {
         this.push(
           JSON.stringify({
             id: transaction._id,
@@ -70,6 +64,9 @@ export class EthListTransactionsStream extends Transform {
             satoshis: transaction.value,
             height: transaction.blockHeight,
             from: transaction.from,
+            gasPrice: transaction.gasPrice,
+            gasLimit: transaction.gasLimit,
+            receipt: transaction.receipt,
             address: transaction.to,
             blockTime: transaction.blockTimeNormalized,
             internal: transaction.internal,
