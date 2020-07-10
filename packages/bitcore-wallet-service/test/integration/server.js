@@ -212,7 +212,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should get server instance for marketing staff', function(done) {
+    it.only('should get server instance for marketing staff', function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, wallet) {
         var collections = Storage.collections;
         s.storage.db.collection(collections.COPAYERS_LOOKUP).update({
@@ -236,7 +236,6 @@ describe('Wallet service', function() {
             }, function(err, server) {
               should.not.exist(err);
 
-              // AQUI
               server.walletId.should.equal('123');
               server.copayerId.should.equal(wallet.copayers[0].id);
               done();
@@ -247,7 +246,72 @@ describe('Wallet service', function() {
     });
   });
 
+  // tests for adding and retrieving adds from db
+  describe.only('Creating ads, retrieve ads, active/inactive', function(done) {
+    var server, wallet;
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
 
+    it('should create an ad', function(done) {
+      
+      let adOpts = {
+        advertisementId:  '123',
+        name: 'name',
+        title:'title',
+        body: 'body',
+        country: 'US',
+        type: 'standard',
+        linkText: 'linkText',
+        linkUrl: 'linkUrl',
+        dismissible: true,
+        isAdActive: true,
+        isTesting: true,
+        signature: '304050302480413401348a3b34902403434512535e435463',
+        app: 'bitpay'
+      };
+        
+      server.createAdvert(adOpts, (err, ad) => {
+        console.log(ad);
+        should.not.exist(err);
+        should.exist(ad);
+        console.log(ad);
+        // ad.advertisementId.should.equal('123');
+        // ad.name.should.equal('name');
+        // ad.title.should.equal('title');
+        // ad.body.should.equal('body');
+        // ad.country.should.equal('US');
+        // ad.type.should.equal('standard');
+        // ad.linkText.should.equal('lint');
+        // ad.dismissible.should.equal(true);
+        // ad.isAdActive.should.equal(false);
+        // ad.isTesting.should.equal(true);
+        // ad.signature.should.equal('304050302480413401348a3b34902403434512535e435463');
+        // ad.app.should.equal('bitpay');
+      });
+      done();
+     });
+
+    // it('should retrieve ads', function(done) {
+    //   // server.fetchAdvert(adId, (err, ad) => {
+    //        //should.not.exist(err);
+    //   // });
+    // });
+
+    // it('should make ad inactive/active again', function(done) {
+    //   // Will write some code to handle this situation.
+    // });
+
+    // it('should delete an ad', function(done) {
+    //   // server.removeAdvert((ad), () => {
+    //        // should.not.exist(err);
+    //   // })
+    // });
+  });
 
   describe('Session management (#login, #logout, #authenticate)', function() {
     var server, wallet;
