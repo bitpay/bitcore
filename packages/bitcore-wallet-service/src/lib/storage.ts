@@ -39,7 +39,7 @@ const collections = {
   LOCKS: 'locks'
 };
 
-const Common = require('../common');
+const Common = require('./common');
 const Constants = Common.Constants;
 export class Storage {
   static BCHEIGHT_KEY = 'bcheight';
