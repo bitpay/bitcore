@@ -66,9 +66,12 @@ const getBalance = new Transform({
 
 const storage = new Storage({createIfMissing: false, errorIfExists: false, path, storageType});
 storage.listWallets()
-  .pipe(parser)
-  .on('error', err => console.log(err))
-  .pipe(filterStream)
-  .pipe(getBalance)
-  .on('error', err => console.log(err))
-  .pipe(process.stdout);
+  .then(stream => {
+    stream
+      .pipe(parser)
+      .on('error', err => console.log(err))
+      .pipe(filterStream)
+      .pipe(getBalance)
+      .on('error', err => console.log(err))
+      .pipe(process.stdout);
+  });
