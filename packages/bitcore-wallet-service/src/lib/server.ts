@@ -3460,6 +3460,19 @@ export class WalletService {
   /**
    * Get All active (live) advertisements
    * @param opts
+   * @param opts.adId - adId of advert to get
+   * @param cb
+   */
+  getAdvert(opts, cb) {
+    this.storage.fetchAdvert(opts.adId, (err, advert) => {
+      if (err) return cb(err);
+      return cb(null, advert);
+    });
+  }
+
+  /**
+   * Get All active (live) advertisements
+   * @param opts
    * @param cb
    */
   getAdverts(opts, cb) {
@@ -3505,7 +3518,6 @@ export class WalletService {
   }
 
   removeAdvert(opts, cb) {
-    // not yet implemented
     opts = opts ? _.clone(opts) : {};
 
     // Usually do error checking on preconditions
@@ -3519,7 +3531,7 @@ export class WalletService {
         if (err) return cb(err);
 
         if (!result) {
-          throw new Error('Advertisement does not exist');
+          throw new Error('Advertisement does not exist: ' + opts.adId);
         }
 
         if (result) {
@@ -3529,8 +3541,6 @@ export class WalletService {
       });
     };
 
-
-    
     try {
       this._runLocked(
         cb,
@@ -3543,9 +3553,35 @@ export class WalletService {
         10 * 1000
       );
     } catch (err) {
-      // Do something with error
       throw err;
     }
+  }
+
+  activateAdvert(opts, cb) {
+    opts = opts ? _.clone(opts) : {};
+    // Usually do error checking on preconditions
+    if (!checkRequired(opts, ['adId'], cb)) {
+      throw new Error('adId is missing');
+    }
+
+    this.storage.activateAdvert(opts.adId, (err, result) => {
+      if (err) return cb(err);
+      return cb(null, result)
+    });
+
+  }
+
+  deactivateAdvert(opts, cb) {
+    opts = opts ? _.clone(opts) : {};
+    // Usually do error checking on preconditions
+    if (!checkRequired(opts, ['adId'], cb)) {
+      throw new Error('adId is missing');
+    }
+
+    this.storage.deactivateAdvert(opts.adId, (err, result) => {
+      if(err) return cb(err);
+      return cb(null, result);
+    });
   }
 
   tagLowFeeTxs(wallet: IWallet, txs: any[], cb) {

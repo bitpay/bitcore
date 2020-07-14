@@ -247,7 +247,7 @@ describe('Wallet service', function() {
   });
 
   // tests for adding and retrieving adds from db
-  describe.only('Creating ads, retrieve ads, active/inactive', function(done) {
+  describe('Creating ads, retrieve ads, active/inactive', function(done) {
     var server, wallet;
     beforeEach(function(done) {
       helpers.createAndJoinWallet(1, 2, function(s, w) {
@@ -257,60 +257,88 @@ describe('Wallet service', function() {
       });
     });
 
-    it('should create an ad', function(done) {
-      
-      let adOpts = {
-        advertisementId:  '123',
-        name: 'name',
-        title:'title',
-        body: 'body',
-        country: 'US',
-        type: 'standard',
-        linkText: 'linkText',
-        linkUrl: 'linkUrl',
-        dismissible: true,
-        isAdActive: true,
-        isTesting: true,
-        signature: '304050302480413401348a3b34902403434512535e435463',
-        app: 'bitpay'
-      };
-        
-      server.createAdvert(adOpts, (err, ad) => {
-        console.log(ad);
-        should.not.exist(err);
-        should.exist(ad);
-        console.log(ad);
-        // ad.advertisementId.should.equal('123');
-        // ad.name.should.equal('name');
-        // ad.title.should.equal('title');
-        // ad.body.should.equal('body');
-        // ad.country.should.equal('US');
-        // ad.type.should.equal('standard');
-        // ad.linkText.should.equal('lint');
-        // ad.dismissible.should.equal(true);
-        // ad.isAdActive.should.equal(false);
-        // ad.isTesting.should.equal(true);
-        // ad.signature.should.equal('304050302480413401348a3b34902403434512535e435463');
-        // ad.app.should.equal('bitpay');
-      });
+     it('should create/get ad', function(done) {
+        let adOpts = {
+          advertisementId:  '123',
+          name: 'name',
+          title:'title',
+          body: 'body',
+          country: 'US',
+          type: 'standard',
+          linkText: 'linkText',
+          linkUrl: 'linkUrl',
+          dismissible: true,
+          isAdActive: true,
+          isTesting: true,
+          signature: '304050302480413401348a3b34902403434512535e435463',
+          app: 'bitpay'
+        };
+
+        async.series([function(next) {
+          server.createAdvert(adOpts, function (err, ad) {
+            next();
+          });
+        }, function(next) {
+          server.getAdvert({adId: '123'}, function (err, ad) {
+            should.not.exist(err);
+            should.exist(ad);
+            console.log(ad);
+            next();
+          });
+        }], function(err) {
+          should.not.exist(err);
+        })
+
       done();
-     });
+    });
 
-    // it('should retrieve ads', function(done) {
-    //   // server.fetchAdvert(adId, (err, ad) => {
-    //        //should.not.exist(err);
-    //   // });
-    // });
+    it('should create/get/delete an ad', function(done) {
+      let adOpts = {
+          advertisementId:  '123',
+          name: 'name',
+          title:'title',
+          body: 'body',
+          country: 'US',
+          type: 'standard',
+          linkText: 'linkText',
+          linkUrl: 'linkUrl',
+          dismissible: true,
+          isAdActive: true,
+          isTesting: true,
+          signature: '304050302480413401348a3b34902403434512535e435463',
+          app: 'bitpay'
+        };
 
-    // it('should make ad inactive/active again', function(done) {
-    //   // Will write some code to handle this situation.
-    // });
+        async.series([function(next) {
+          server.createAdvert(adOpts, function (err, ad) {
+            next();
+          });
+        }, function(next) {
+          server.getAdvert({adId: '123'}, function (err, ad) {
+            should.not.exist(err);
+            should.exist(ad);
+            console.log(ad);
+            next();
+          });
+        }, 
+        server.removeAdvert({adId: '123'}, function(err, nextArg) {
+           should.not.exist(err);
+        })
+    ], function(err) {
+          should.not.exist(err);
+        })
 
-    // it('should delete an ad', function(done) {
-    //   // server.removeAdvert((ad), () => {
-    //        // should.not.exist(err);
-    //   // })
-    // });
+      done();
+    });
+
+    it('should create ad initially inactive, make active', function(done) {
+
+    });
+
+    it('should create ad initially inactive, make active, make inactive again', function(done) {
+
+    });
+
   });
 
   describe('Session management (#login, #logout, #authenticate)', function() {

@@ -5,13 +5,12 @@ var program = require('commander');
 var utils = require('./cli-utils');
 program = utils.configureCommander(program);
 
-// options, (isAdActive, isCurrentlyTesting)
 program
   .usage('[options] <adId>')
   .parse(process.argv);
 
 var args = program.args;
-var host = 'https://bws.bitpay.com/bws/api';
+var host = 'https://bws.bitpay.com'
 
 var clientArgs = {
   host

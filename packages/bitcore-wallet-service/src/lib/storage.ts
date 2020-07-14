@@ -1679,4 +1679,32 @@ export class Storage {
       }
     );
   }
+
+  activateAdvert(adId, cb) {
+    this.db.collection(collections.ADVERTISEMENTS).update(
+      {
+        advertisementId: adId,
+      },
+      { $set: {  isAdActive: true, isTesting: false }},
+      {
+        upsert: true
+      },
+      cb
+    );
+  }
+
+  deactivateAdvert(adId, cb) {
+    this.db.collection(collections.ADVERTISEMENTS).update(
+      {
+        advertisementId: adId,
+      },
+      {
+        $set: { isAdActive: false, isTesting: true },
+      },
+      {
+        upsert: true
+      },
+      cb
+    );
+  }
 }

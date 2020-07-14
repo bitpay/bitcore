@@ -30,7 +30,7 @@ program
 // Verify(signature, m, publicKey)
 
 var args = program.args;
-var host = 'https://bws.bitpay.com/bws/api'; // http://localhost:3232/bws/api
+var host = 'https://bws.bitpay.com';
 
 var clientArgs = {
   host
@@ -91,7 +91,6 @@ let allAdArgs = {
   ...requiredArgs
 };
 
-console.log('Unique args', uniqueMessageArgs);
 
 var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.json';
 

@@ -1613,10 +1613,10 @@ export class API extends EventEmitter {
   /**
    * Get advertisements for bitpay app, for specified country - (limited to marketing staff)
    * @param opts - options
-   * @param opts.country - if set, fetches ads by Country
+   * @param opts.country - if set, fetches ads for abbreivated country code e.g. [US]
    */
   getAdvertisementsByCountry(opts, cb) {
-    var url = '/v1/advertisements/' + opts.country;
+    var url = '/v1/advertisements/country/' + opts.country;
 
     this.request.get(url, (err, ads) => {
       if (err) {
@@ -1628,12 +1628,43 @@ export class API extends EventEmitter {
   }
 
   /**
-   * Delete Advertisement
+   * Get Advertisement
    * @param opts - options
+   * @param opts.adId - advertisementId of advert to retrieve
    */
-  deleteAdvertisement(opts, cb) {
+  getAdvertisement(opts, cb) {
     var url = '/v1/advertisements/' + opts.adId; // + adId or adTitle;
-    this.request.delete(url, (err, body) => {
+    this.request.get(url, (err, body) => {
+      if (err) {
+        console.log(err);
+      }
+      return cb(null, body);
+    });
+  }
+
+  /**
+   * Activate Advertisement, live to production
+   * @param opts - options
+   * @param opts.adId - advertisementId of advert to activate
+   */
+  activateAdvertisement(opts, cb) {
+    var url = '/v1/advertisements/' + opts.adId + '/activate'; // + adId or adTitle;
+    this.request.post(url, (err, body) => {
+      if (err) {
+        console.log(err);
+      }
+      return cb(null, body);
+    });
+  }
+
+  /**
+   * Deactivate ad, removing from live prod
+   * @param opts - options
+   * @param opts.adId - advertisementId of advert to deactivate
+   */
+  deactivateAdvertisement(opts, cb) {
+    var url = '/v1/advertisements/' + opts.adId + '/deactivate'; // + adId or adTitle;
+    this.request.post(url, (err, body) => {
       if (err) {
         console.log(err);
       }

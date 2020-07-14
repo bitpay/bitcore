@@ -527,7 +527,26 @@ export class ExpressApp {
       }
     });
 
-    router.get('/v1/advertisements/:country', (req, res) => {
+    router.get('/v1/advertisements/:adId/', (req, res) => {
+      let server;
+
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+     
+      let opts = { adId: req.params['adId'] };
+
+      if (req.params['adId']) {
+        server.getAdvert(opts, (err, ad) => {
+          if (err) returnError(err, res, req);
+          res.json(ad);
+        });
+      }
+    });
+
+    router.get('/v1/advertisements/country/:country', (req, res) => {
       let server;
       let country = req.params['country'];
 
@@ -545,23 +564,45 @@ export class ExpressApp {
       });
     });
 
-    router.delete('/v1/advertisements/:adId/', (req, res) => {
-      getServerWithAuth(
-        req,
-        res,
-        {
-          onlyMarketingStaff: true
-        },
-        server => {
-          req.body.adId = req.params['adId'];
-          server.removeAdvert(req.body, (err, removedAd) => {
-            if (err) returnError(err, res, req);
-            if (removedAd) {
-              res.json(removedAd);
-            }
-          });
-        }
-      );
+    router.post('/v1/advertisements/:adId/activate', (req, res) => {
+      let server;
+
+      logger.debug(req.params);
+
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      if (req.params['adId']) {
+        server.activateAdvert(opts, (err, ad) => {
+          if (err) returnError(err, res, req);
+          res.json(ad);
+        });
+      }
+    });
+
+    router.post('/v1/advertisements/:adId/deactivate', (req, res) => {
+      let server;
+
+      logger.debug(req.params);
+
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+
+      let opts = { adId: req.params['adId'] };
+
+      if (req.params['adId']) {
+        server.deactivateAdvert(opts, (err, ad) => {
+          if (err) returnError(err, res, req);
+          res.json(ad);
+        });
+      }
+
     });
 
     /* THIS WAS NEVED ENABLED YET NOW 2020-04-07
