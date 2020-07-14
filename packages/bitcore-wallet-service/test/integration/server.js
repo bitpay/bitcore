@@ -212,7 +212,7 @@ describe('Wallet service', function() {
       });
     });
 
-    it.only('should get server instance for marketing staff', function(done) {
+    it('should get server instance for marketing staff', function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, wallet) {
         var collections = Storage.collections;
         s.storage.db.collection(collections.COPAYERS_LOOKUP).update({
@@ -248,7 +248,24 @@ describe('Wallet service', function() {
 
   // tests for adding and retrieving adds from db
   describe('Creating ads, retrieve ads, active/inactive', function(done) {
-    var server, wallet;
+    var server, wallet, adOpts;
+
+    adOpts = {
+      advertisementId:  '123',
+      name: 'name',
+      title:'title',
+      body: 'body',
+      country: 'US',
+      type: 'standard',
+      linkText: 'linkText',
+      linkUrl: 'linkUrl',
+      dismissible: true,
+      isAdActive: false,
+      isTesting: true,
+      signature: '304050302480413401348a3b34902403434512535e435463',
+      app: 'bitpay'
+    };
+
     beforeEach(function(done) {
       helpers.createAndJoinWallet(1, 2, function(s, w) {
         server = s;
@@ -258,21 +275,6 @@ describe('Wallet service', function() {
     });
 
      it('should create/get ad', function(done) {
-        let adOpts = {
-          advertisementId:  '123',
-          name: 'name',
-          title:'title',
-          body: 'body',
-          country: 'US',
-          type: 'standard',
-          linkText: 'linkText',
-          linkUrl: 'linkUrl',
-          dismissible: true,
-          isAdActive: true,
-          isTesting: true,
-          signature: '304050302480413401348a3b34902403434512535e435463',
-          app: 'bitpay'
-        };
 
         async.series([function(next) {
           server.createAdvert(adOpts, function (err, ad) {
@@ -282,7 +284,19 @@ describe('Wallet service', function() {
           server.getAdvert({adId: '123'}, function (err, ad) {
             should.not.exist(err);
             should.exist(ad);
-            console.log(ad);
+            ad.advertisementId.should.equal('123');
+            ad.name.should.equal('name');
+            ad.title.should.equal('title');
+            ad.body.should.equal('body');
+            ad.country.should.equal('US');
+            ad.type.should.equal('standard');
+            ad.linkText.should.equal('linkText');
+            ad.linkUrl.should.equal('linkUrl');
+            ad.dismissible.should.equal(true);
+            ad.isAdActive.should.equal(false);
+            ad.isTesting.should.equal(true);
+            ad.signature.should.equal('304050302480413401348a3b34902403434512535e435463'),
+            ad.app.should.equal('bitpay');
             next();
           });
         }], function(err) {
@@ -293,21 +307,6 @@ describe('Wallet service', function() {
     });
 
     it('should create/get/delete an ad', function(done) {
-      let adOpts = {
-          advertisementId:  '123',
-          name: 'name',
-          title:'title',
-          body: 'body',
-          country: 'US',
-          type: 'standard',
-          linkText: 'linkText',
-          linkUrl: 'linkUrl',
-          dismissible: true,
-          isAdActive: true,
-          isTesting: true,
-          signature: '304050302480413401348a3b34902403434512535e435463',
-          app: 'bitpay'
-        };
 
         async.series([function(next) {
           server.createAdvert(adOpts, function (err, ad) {
@@ -317,7 +316,6 @@ describe('Wallet service', function() {
           server.getAdvert({adId: '123'}, function (err, ad) {
             should.not.exist(err);
             should.exist(ad);
-            console.log(ad);
             next();
           });
         }, 
@@ -331,14 +329,40 @@ describe('Wallet service', function() {
       done();
     });
 
-    it('should create ad initially inactive, make active', function(done) {
+    it('should create ad initially inactive, retrieve, make active, retrieve again', function(done) {
 
+      async.series([function(next) {
+        server.createAdvert(adOpts, function (err, ad) {
+          next();
+        });
+      }, function(next) {
+        server.getAdvert({adId: '123'}, function(err, ad) {
+          should.not.exist(err);
+          should.exist(ad);
+          ad.advertisementId.should.equal('123');
+          ad.isAdActive.should.equal(false);
+          ad.isTesting.should.equal(true);
+        });
+        next();
+      }, function(next) {
+        server.activateAdvert({adId: '123'}, function (err, ad) {
+          should.not.exist(err);
+          next();
+        });
+      }, function(next) {
+        server.getAdvert({adId: '123'}, function (err, ad) {
+          should.not.exist(err);
+          should.exist(ad);
+          ad.advertisementId.should.equal('123');
+          ad.isAdActive.should.equal(true);
+          ad.isTesting.should.equal(false);
+        });
+        next();
+      }], function(err) {
+        should.not.exist(err);
+      });
+      done();
     });
-
-    it('should create ad initially inactive, make active, make inactive again', function(done) {
-
-    });
-
   });
 
   describe('Session management (#login, #logout, #authenticate)', function() {

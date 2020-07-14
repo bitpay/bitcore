@@ -535,7 +535,7 @@ export class ExpressApp {
       } catch (ex) {
         return returnError(ex, res, req);
       }
-     
+
       let opts = { adId: req.params['adId'] };
 
       if (req.params['adId']) {
@@ -602,7 +602,6 @@ export class ExpressApp {
           res.json(ad);
         });
       }
-
     });
 
     /* THIS WAS NEVED ENABLED YET NOW 2020-04-07

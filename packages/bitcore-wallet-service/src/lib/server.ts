@@ -3566,9 +3566,8 @@ export class WalletService {
 
     this.storage.activateAdvert(opts.adId, (err, result) => {
       if (err) return cb(err);
-      return cb(null, result)
+      return cb(null, result);
     });
-
   }
 
   deactivateAdvert(opts, cb) {
@@ -3579,7 +3578,7 @@ export class WalletService {
     }
 
     this.storage.deactivateAdvert(opts.adId, (err, result) => {
-      if(err) return cb(err);
+      if (err) return cb(err);
       return cb(null, result);
     });
   }

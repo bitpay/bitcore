@@ -1683,9 +1683,9 @@ export class Storage {
   activateAdvert(adId, cb) {
     this.db.collection(collections.ADVERTISEMENTS).update(
       {
-        advertisementId: adId,
+        advertisementId: adId
       },
-      { $set: {  isAdActive: true, isTesting: false }},
+      { $set: { isAdActive: true, isTesting: false } },
       {
         upsert: true
       },
@@ -1696,10 +1696,10 @@ export class Storage {
   deactivateAdvert(adId, cb) {
     this.db.collection(collections.ADVERTISEMENTS).update(
       {
-        advertisementId: adId,
+        advertisementId: adId
       },
       {
-        $set: { isAdActive: false, isTesting: true },
+        $set: { isAdActive: false, isTesting: true }
       },
       {
         upsert: true
