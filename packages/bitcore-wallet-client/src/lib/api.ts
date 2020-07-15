@@ -1583,7 +1583,6 @@ export class API extends EventEmitter {
 
     this.request.post(url, args, (err, createdAd) => {
       if (err) {
-        console.log(err);
         return cb(err);
       }
       return cb(null, createdAd);
@@ -1603,7 +1602,6 @@ export class API extends EventEmitter {
 
     this.request.get(url, (err, ads) => {
       if (err) {
-        console.log(err);
         return cb(err);
       }
       return cb(null, ads);
@@ -1613,14 +1611,13 @@ export class API extends EventEmitter {
   /**
    * Get advertisements for bitpay app, for specified country - (limited to marketing staff)
    * @param opts - options
-   * @param opts.country - if set, fetches ads for abbreivated country code e.g. [US]
+   * @param opts.country - if set, fetches ads by Country
    */
   getAdvertisementsByCountry(opts, cb) {
     var url = '/v1/advertisements/country/' + opts.country;
 
     this.request.get(url, (err, ads) => {
       if (err) {
-        console.log(err);
         return cb(err);
       }
       return cb(null, ads);
@@ -1630,43 +1627,56 @@ export class API extends EventEmitter {
   /**
    * Get Advertisement
    * @param opts - options
-   * @param opts.adId - advertisementId of advert to retrieve
    */
   getAdvertisement(opts, cb) {
     var url = '/v1/advertisements/' + opts.adId; // + adId or adTitle;
     this.request.get(url, (err, body) => {
       if (err) {
-        console.log(err);
+        return cb(err);
       }
       return cb(null, body);
     });
   }
 
   /**
-   * Activate Advertisement, live to production
+   * Activate Advertisement
    * @param opts - options
-   * @param opts.adId - advertisementId of advert to activate
    */
   activateAdvertisement(opts, cb) {
     var url = '/v1/advertisements/' + opts.adId + '/activate'; // + adId or adTitle;
-    this.request.post(url, (err, body) => {
+    let args = opts;
+    this.request.post(url, args, (err, body) => {
       if (err) {
-        console.log(err);
+        return cb(err);
       }
       return cb(null, body);
     });
   }
 
   /**
-   * Deactivate ad, removing from live prod
+   * Deactivate Advertisement
    * @param opts - options
-   * @param opts.adId - advertisementId of advert to deactivate
    */
   deactivateAdvertisement(opts, cb) {
     var url = '/v1/advertisements/' + opts.adId + '/deactivate'; // + adId or adTitle;
-    this.request.post(url, (err, body) => {
+    let args = opts;
+    this.request.post(url, args, (err, body) => {
       if (err) {
-        console.log(err);
+        return cb(err);
+      }
+      return cb(null, body);
+    });
+  }
+
+  /**
+   * Delete Advertisement
+   * @param opts - options
+   */
+  deleteAdvertisement(opts, cb) {
+    var url = '/v1/advertisements/' + opts.adId; // + adId or adTitle;
+    this.request.delete(url, (err, body) => {
+      if (err) {
+        return cb(err);
       }
       return cb(null, body);
     });
