@@ -565,7 +565,6 @@ export class ExpressApp {
     });
 
     router.post('/v1/advertisements/:adId/activate', (req, res) => {
-
       let opts = { adId: req.params['adId'] };
 
       getServerWithAuth(
@@ -578,7 +577,7 @@ export class ExpressApp {
           if (req.params['adId']) {
             server.activateAdvert(opts, (err, ad) => {
               if (err) returnError(err, res, req);
-              res.json({ advertisementId: opts.adId, message: 'advert activated'});
+              res.json({ advertisementId: opts.adId, message: 'advert activated' });
             });
           }
         }
@@ -586,7 +585,6 @@ export class ExpressApp {
     });
 
     router.post('/v1/advertisements/:adId/deactivate', (req, res) => {
-
       let opts = { adId: req.params['adId'] };
 
       getServerWithAuth(
@@ -599,13 +597,12 @@ export class ExpressApp {
           if (req.params['adId']) {
             server.deactivateAdvert(opts, (err, ad) => {
               if (err) returnError(err, res, req);
-              res.json({ advertisementId: opts.adId, message: 'advert deactivated'});
+              res.json({ advertisementId: opts.adId, message: 'advert deactivated' });
             });
           }
         }
       );
     });
-
 
     router.delete('/v1/advertisements/:adId/', (req, res) => {
       getServerWithAuth(
@@ -622,7 +619,8 @@ export class ExpressApp {
               res.json(removedAd);
             }
           });
-        });
+        }
+      );
     });
 
     /* THIS WAS NEVED ENABLED YET NOW 2020-04-07
