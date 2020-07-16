@@ -4349,9 +4349,6 @@ export class WalletService {
         Buffer.from(SECRET_API_KEY)
       ).toString('hex');
 
-      console.log('======= XApiSignature: ', XApiSignature);
-      console.log('======= XApiSignatureHash: ', XApiSignatureHash);
-
       const headers = {
         'Content-Type': 'application/json',
         'X-Api-Key': API_KEY,
@@ -4399,9 +4396,6 @@ export class WalletService {
         Buffer.from(SECRET_API_KEY)
       ).toString('hex');
 
-      console.log('======= XApiSignature: ', XApiSignature);
-      console.log('======= XApiSignatureHash: ', XApiSignatureHash);
-
       const headers = {
         'Content-Type': 'application/json',
         'X-Api-Key': API_KEY,
@@ -4419,33 +4413,10 @@ export class WalletService {
           if (err) {
             return reject(err.body ? err.body : null);
           } else {
-            // data.body.payment_id = paymentId;
-            // data.body.order_id = orderId;
-            // data.body.app_provider_id = appProviderId;
-            // data.body.api_host = apiHost;
             return resolve(data.body);
           }
         }
       );
-    });
-  }
-
-  wyreUrlParams(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      if (!config.wyre) return reject(new Error('Wyre missing credentials'));
-      console.log('========================================== req: ');
-      console.log(req);
-      if (!req.env || (req.env != 'sandbox' && req.env != 'production'))
-        return reject(new Error("Wyre's request wrong environment"));
-
-      const WIDGET_URL = config.wyre[req.env].widgetUrl;
-      const ACCOUNT_ID = config.wyre[req.env].appProviderAccountId;
-
-      const data = {
-        accountId: ACCOUNT_ID,
-        widgetUrl: WIDGET_URL
-      };
-      return resolve(data);
     });
   }
 }

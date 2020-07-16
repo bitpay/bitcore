@@ -2783,16 +2783,4 @@ export class API extends EventEmitter {
       });
     });
   }
-
-  wyreUrlParams(data): Promise<any> {
-    return new Promise((resolve, reject) => {
-      let qs = [];
-      qs.push('env=' + data.env);
-
-      this.request.get('/v1/service/wyre/urlParams?' + qs.join('&'), (err, data) => {
-        if (err) return reject(err);
-        return resolve(data);
-      });
-    });
-  }
 }
