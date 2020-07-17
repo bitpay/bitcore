@@ -9,7 +9,12 @@ export class Erc20RelatedFilterTransform extends Transform {
   }
 
   async _transform(tx: MongoBound<IEthTransaction>, _, done) {
-    if (tx.abiType && tx.abiType.type === 'ERC20' && tx.abiType.name === 'transfer') {
+    if (
+      tx.abiType &&
+      tx.abiType.type === 'ERC20' &&
+      tx.abiType.name === 'transfer' &&
+      tx.abiType.params[0].value.toLowerCase() === this.tokenAddress.toLowerCase()
+    ) {
       tx.value = tx.abiType!.params[1].value as any;
       tx.to = this.web3.utils.toChecksumAddress(tx.abiType!.params[0].value);
     } else if (
