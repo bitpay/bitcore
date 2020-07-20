@@ -326,8 +326,6 @@ export class WalletService {
           server.copayerIsSupportStaff = true;
         }
         if (copayer.isMarketingStaff) {
-          $.checkState(!copayer.isSupportStaff);
-          server.walletId = opts.walletId || copayer.walletId;
           server.copayerIsMarketingStaff = true;
         }
 
