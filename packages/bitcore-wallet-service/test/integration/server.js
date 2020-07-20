@@ -1,34 +1,33 @@
 'use strict';
 
-var _ = require('lodash');
-var async = require('async');
+const _ = require('lodash');
+const async = require('async');
 
-var chai = require('chai');
-var sinon = require('sinon');
-var should = chai.should();
-var log = require('npmlog');
-log.debug = log.verbose;
+const chai = require('chai');
+const sinon = require('sinon');
+const  CWC = require('crypto-wallet-core');
 
-var config = require('../../ts_build/config.js');
+const should = chai.should();
+const { logger, transport } = require('../../ts_build/lib/logger.js');
 const { ChainService } = require('../../ts_build/lib/chain/index');
 
-var CWC = require('crypto-wallet-core');
+var config = require('../../ts_build/config.js');
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash')
 };
 
-var { WalletService } = require('../../ts_build/lib/server');
+const { WalletService } = require('../../ts_build/lib/server');
 const { Storage } = require('../../ts_build/lib/storage')
-var Common = require('../../ts_build/lib/common');
-var Utils = Common.Utils;
-var Constants = Common.Constants;
-var Defaults = Common.Defaults;
+const Common = require('../../ts_build/lib/common');
+const Utils = Common.Utils;
+const Constants = Common.Constants;
+const Defaults = Common.Defaults;
 const VanillaDefaults = _.cloneDeep(Defaults);
 
-var Model = require('../../ts_build/lib/model');
-var BCHAddressTranslator = require('../../ts_build/lib/bchaddresstranslator');
+const Model = require('../../ts_build/lib/model');
+const BCHAddressTranslator = require('../../ts_build/lib/bchaddresstranslator');
 
 var HugeTxs = require('./hugetx');
 var TestData = require('../testdata');
@@ -42,7 +41,6 @@ const TO_SAT = {
   'usdc': 1e6,
   'xrp': 1e6
 };
-
 
 const TOKENS = ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'];
 
@@ -58,7 +56,8 @@ describe('Wallet service', function() {
 
   });
   beforeEach(function(done) {
-    log.level = 'error';
+    transport.level= 'error';
+
 
     // restore defaults, cp values
     _.each(_.keys(VanillaDefaults), (x) => { 
@@ -4334,8 +4333,8 @@ describe('Wallet service', function() {
             switch(coin) {
               case 'bch':
                 level = 'normal';
-                expected = 200e2;
-                expectedNormal = 200e2;
+                expected = 210e2;
+                expectedNormal = 210e2;
                 break;
               case 'eth':
                 level = 'normal';
@@ -4967,7 +4966,7 @@ describe('Wallet service', function() {
       describe('UTXO Selection ' + coin, function() {
         var server, wallet;
         beforeEach(function(done) {
-          // log.level = 'debug';
+          // logger.level = 'debug';
           helpers.createAndJoinWallet(1, 2, function(s, w) {
             server = s;
             wallet = w;
@@ -4975,7 +4974,7 @@ describe('Wallet service', function() {
           });
         });
         afterEach(function() {
-          log.level = 'info';
+          transport.level= 'info';
         });
 
         it('should exclude unconfirmed utxos if specified', function(done) {
@@ -9123,7 +9122,9 @@ describe('Wallet service', function() {
   describe('Simplex', () => {
     let server, wallet, fakeRequest, req;
     beforeEach((done) => {
-      log.level = 'info';
+      transport.level= 'info';
+ 
+
       config.simplex = {
         sandbox: {
           apiKey: 'xxxx',

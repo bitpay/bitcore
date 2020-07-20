@@ -2434,7 +2434,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         should.not.exist(err);
         should.exist(levels);
         levels[0].level.should.equal('normal');
-        levels[0].feePerKb.should.equal(2000);
+        levels[0].feePerKb.should.equal(2100);
         done();
       });
     });

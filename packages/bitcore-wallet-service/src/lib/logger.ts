@@ -1,11 +1,12 @@
 import * as winston from 'winston';
 // const logLevel = args.DEBUG ? 'debug' : 'info';
+//
+export const transport = new winston.transports.Console({
+  level: 'debug' // TODO logLevel
+});
+
 export const logger = winston.createLogger({
-  transports: [
-    new winston.transports.Console({
-      level: 'debug' // TODO logLevel
-    })
-  ]
+  transports: [transport]
 });
 
 const timezone = new Date()
