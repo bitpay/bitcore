@@ -20,7 +20,6 @@ export class Request {
   constructor(url?, opts?) {
     this.baseUrl = url;
 
-    // request can be overload only for testing
     this.r = opts.r || request;
     this.supportStaffWalletId = opts.supportStaffWalletId;
 

@@ -112,6 +112,10 @@ describe('Storage', function() {
     });
   });
 
+  describe('Advertisments', function() {
+    // not yet implemented
+  });
+
   describe('Transaction proposals', function() {
     var wallet, proposals;
 

@@ -5,6 +5,7 @@ import * as mongodb from 'mongodb';
 import logger from './logger';
 import {
   Address,
+  Advertisement,
   Email,
   Notification,
   Preferences,
@@ -24,6 +25,7 @@ const collections = {
   WALLETS: 'wallets',
   TXS: 'txs',
   ADDRESSES: 'addresses',
+  ADVERTISEMENTS: 'advertisements',
   NOTIFICATIONS: 'notifications',
   COPAYERS_LOOKUP: 'copayers_lookup',
   PREFERENCES: 'preferences',
@@ -86,6 +88,13 @@ export class Storage {
       walletId: 1,
       id: 1
     });
+    db.collection(collections.ADVERTISEMENTS).createIndex(
+      {
+        advertisementId: 1,
+        title: 1
+      },
+      { unique: true }
+    );
     db.collection(collections.ADDRESSES).createIndex({
       walletId: 1,
       createdOn: 1
@@ -1586,6 +1595,116 @@ export class Storage {
         }
         return cb();
       }
+    );
+  }
+
+  fetchTestingAdverts(cb) {
+    this.db
+      .collection(collections.ADVERTISEMENTS)
+      .find({
+        isTesting: true
+      })
+      .toArray((err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result.map(Advertisement.fromObj));
+      });
+  }
+
+  fetchActiveAdverts(cb) {
+    this.db
+      .collection(collections.ADVERTISEMENTS)
+      .find({
+        isAdActive: true
+      })
+      .toArray((err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result.map(Advertisement.fromObj));
+      });
+  }
+
+  fetchAdvertsByCountry(country, cb) {
+    this.db
+      .collection(collections.ADVERTISEMENTS)
+      .find({
+        country
+      })
+      .toArray((err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+        return cb(null, result.map(Advertisement.fromObj));
+      });
+  }
+
+  fetchAllAdverts(cb) {
+    this.db.collection(collections.ADVERTISEMENTS).find({});
+  }
+
+  removeAdvert(adId, cb) {
+    this.db.collection(collections.ADVERTISEMENTS).remove(
+      {
+        advertismentId: adId
+      },
+      {
+        w: 1
+      },
+      cb
+    );
+  }
+
+  storeAdvert(advert, cb) {
+    this.db.collection(collections.ADVERTISEMENTS).update(
+      {
+        advertisementId: advert.advertisementId
+      },
+      advert,
+      {
+        upsert: true
+      },
+      cb
+    );
+  }
+
+  fetchAdvert(adId, cb) {
+    this.db.collection(collections.ADVERTISEMENTS).findOne(
+      {
+        advertisementId: adId
+      },
+      (err, result) => {
+        if (err) return cb(err);
+        if (!result) return cb();
+
+        return cb(null, Advertisement.fromObj(result));
+      }
+    );
+  }
+
+  activateAdvert(adId, cb) {
+    this.db.collection(collections.ADVERTISEMENTS).update(
+      {
+        advertisementId: adId
+      },
+      { $set: { isAdActive: true, isTesting: false } },
+      {
+        upsert: true
+      },
+      cb
+    );
+  }
+
+  deactivateAdvert(adId, cb) {
+    this.db.collection(collections.ADVERTISEMENTS).update(
+      {
+        advertisementId: adId
+      },
+      {
+        $set: { isAdActive: false, isTesting: true }
+      },
+      {
+        upsert: true
+      },
+      cb
     );
   }
 }

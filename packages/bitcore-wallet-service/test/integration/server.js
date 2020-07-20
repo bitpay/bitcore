@@ -210,6 +210,158 @@ describe('Wallet service', function() {
           });
       });
     });
+
+    it('should get server instance for marketing staff', function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, wallet) {
+        var collections = Storage.collections;
+        s.storage.db.collection(collections.COPAYERS_LOOKUP).update({
+          copayerId: wallet.copayers[0].id
+        }, {
+            $set: {
+              isMarketingStaff: true
+            }
+          }, () => {
+
+            var xpriv = TestData.copayers[0].xPrivKey;
+            var priv = TestData.copayers[0].privKey_1H_0;
+
+            var sig = helpers.signMessage('hello world', priv);
+
+            WalletService.getInstanceWithAuth({
+              copayerId: wallet.copayers[0].id,
+              message: 'hello world',
+              signature: sig,
+              walletId: '123',
+            }, function(err, server) {
+              should.not.exist(err);
+
+              server.walletId.should.equal('123');
+              server.copayerId.should.equal(wallet.copayers[0].id);
+              done();
+            });
+
+          });
+      });
+    });
+  });
+
+  // tests for adding and retrieving adds from db
+  describe('Creating ads, retrieve ads, active/inactive', function(done) {
+    var server, wallet, adOpts;
+
+    adOpts = {
+      advertisementId:  '123',
+      name: 'name',
+      title:'title',
+      body: 'body',
+      country: 'US',
+      type: 'standard',
+      linkText: 'linkText',
+      linkUrl: 'linkUrl',
+      dismissible: true,
+      isAdActive: false,
+      isTesting: true,
+      signature: '304050302480413401348a3b34902403434512535e435463',
+      app: 'bitpay'
+    };
+
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+     it('should create/get ad', function(done) {
+
+        async.series([function(next) {
+          server.createAdvert(adOpts, function (err, ad) {
+            next();
+          });
+        }, function(next) {
+          server.getAdvert({adId: '123'}, function (err, ad) {
+            should.not.exist(err);
+            should.exist(ad);
+            ad.advertisementId.should.equal('123');
+            ad.name.should.equal('name');
+            ad.title.should.equal('title');
+            ad.body.should.equal('body');
+            ad.country.should.equal('US');
+            ad.type.should.equal('standard');
+            ad.linkText.should.equal('linkText');
+            ad.linkUrl.should.equal('linkUrl');
+            ad.dismissible.should.equal(true);
+            ad.isAdActive.should.equal(false);
+            ad.isTesting.should.equal(true);
+            ad.signature.should.equal('304050302480413401348a3b34902403434512535e435463'),
+            ad.app.should.equal('bitpay');
+            next();
+          });
+        }], function(err) {
+          should.not.exist(err);
+        })
+
+      done();
+    });
+
+    it('should create/get/delete an ad', function(done) {
+
+        async.series([function(next) {
+          server.createAdvert(adOpts, function (err, ad) {
+            next();
+          });
+        }, function(next) {
+          server.getAdvert({adId: '123'}, function (err, ad) {
+            should.not.exist(err);
+            should.exist(ad);
+            next();
+          });
+        }, 
+        server.removeAdvert({adId: '123'}, function(err, nextArg) {
+           should.not.exist(err);
+        })
+    ], function(err) {
+          should.not.exist(err);
+        })
+
+      done();
+    });
+
+    it('should create ad initially inactive, retrieve, make active, retrieve again', function(done) {
+
+      async.series([function(next) {
+        server.createAdvert(adOpts, function (err, ad) {
+          next();
+        });
+      }, function(next) {
+        server.getAdvert({adId: '123'}, function(err, ad) {
+          should.not.exist(err);
+          should.exist(ad);
+          ad.advertisementId.should.equal('123');
+          ad.isAdActive.should.equal(false);
+          ad.isTesting.should.equal(true);
+        });
+        next();
+      }, function(next) {
+        server.activateAdvert({adId: '123'}, function (err, ad) {
+          should.not.exist(err);
+          next();
+        });
+      }, function(next) {
+        server.getAdvert({adId: '123'}, function (err, ad) {
+          should.not.exist(err);
+          should.exist(ad);
+          ad.advertisementId.should.equal('123');
+          ad.isAdActive.should.equal(true);
+          ad.isTesting.should.equal(false);
+        });
+        next();
+      }], function(err) {
+        should.not.exist(err);
+      });
+      done();
+    });
   });
 
   describe('Session management (#login, #logout, #authenticate)', function() {

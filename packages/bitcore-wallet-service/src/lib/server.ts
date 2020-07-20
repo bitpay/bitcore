@@ -11,6 +11,7 @@ import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
 import {
+  Advertisement,
   Copayer,
   INotification,
   ITxProposal,
@@ -86,6 +87,7 @@ export interface IWalletService {
   parsedClientVersion: { agent: number; major: number; minor: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
+  copayerIsMarketingStaff: boolean;
 }
 function boolToNum(x: boolean) {
   return x ? 1 : 0;
@@ -110,6 +112,7 @@ export class WalletService {
   parsedClientVersion: { agent: string; major: number; minor: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
+  copayerIsMarketingStaff: boolean;
   request;
 
   constructor() {
@@ -321,6 +324,11 @@ export class WalletService {
         if (copayer.isSupportStaff) {
           server.walletId = opts.walletId || copayer.walletId;
           server.copayerIsSupportStaff = true;
+        }
+        if (copayer.isMarketingStaff) {
+          $.checkState(!copayer.isSupportStaff);
+          server.walletId = opts.walletId || copayer.walletId;
+          server.copayerIsMarketingStaff = true;
         }
 
         server.copayerId = opts.copayerId;
@@ -3384,6 +3392,195 @@ export class WalletService {
     if (note) {
       tx.note = _.pick(note, ['body', 'editedBy', 'editedByName', 'editedOn']);
     }
+  }
+
+  /**
+   * // Create Advertisement
+   * @param opts
+   * @param cb
+   */
+  createAdvert(opts, cb) {
+    opts = opts ? _.clone(opts) : {};
+
+    // Usually do error checking on preconditions
+    if (!checkRequired(opts, ['title'], cb)) {
+      return;
+    }
+    // Check if ad exists already
+
+    const checkIfAdvertExistsAlready = (adId, cb) => {
+      this.storage.fetchAdvert(opts.adId, (err, result) => {
+        if (err) return cb(err);
+
+        if (result) {
+          return cb(Errors.AD_ALREADY_EXISTS);
+        }
+
+        if (!result) {
+          let x = new Advertisement();
+
+          x.advertisementId = opts.advertisementId || Uuid.v4();
+          x.name = opts.name;
+          x.title = opts.title;
+          x.country = opts.country;
+          x.type = opts.type;
+          x.body = opts.body;
+          x.imgUrl = opts.imgUrl;
+          x.linkText = opts.linkText;
+          x.linkUrl = opts.linkUrl;
+          x.isAdActive = opts.isAdActive;
+          x.dismissible = opts.dismissible;
+          x.signature = opts.signature;
+          x.app = opts.app;
+          x.isTesting = opts.isTesting;
+
+          return cb(null, x);
+        }
+      });
+    };
+
+    this._runLocked(
+      cb,
+      cb => {
+        checkIfAdvertExistsAlready(opts.adId, (err, advert) => {
+          if (err) throw err;
+          if (advert) {
+            try {
+              this.storage.storeAdvert(advert, cb);
+            } catch (err) {
+              throw err;
+            }
+          }
+        });
+      },
+      10 * 1000
+    );
+  }
+
+  /**
+   * Get All active (live) advertisements
+   * @param opts
+   * @param opts.adId - adId of advert to get
+   * @param cb
+   */
+  getAdvert(opts, cb) {
+    this.storage.fetchAdvert(opts.adId, (err, advert) => {
+      if (err) return cb(err);
+      return cb(null, advert);
+    });
+  }
+
+  /**
+   * Get All active (live) advertisements
+   * @param opts
+   * @param cb
+   */
+  getAdverts(opts, cb) {
+    this.storage.fetchActiveAdverts((err, adverts) => {
+      if (err) return cb(err);
+      return cb(null, adverts);
+    });
+  }
+
+  /**
+   * Get adverts by country
+   * @param opts.country
+   * @param cb
+   */
+  getAdvertsByCountry(opts, cb) {
+    this.storage.fetchAdvertsByCountry(opts.country, (err, adverts) => {
+      if (err) return cb(err);
+      return cb(null, adverts);
+    });
+  }
+
+  /**
+   * Get All active (live) advertisements
+   * @param opts
+   * @param cb
+   */
+  getTestingAdverts(opts, cb) {
+    this.storage.fetchTestingAdverts((err, adverts) => {
+      if (err) return cb(err);
+      return cb(null, adverts);
+    });
+  }
+
+  /**
+   * Get all adverts regardless of inactive or active.
+   * @param opts
+   * @param cb
+   */
+  getAllAdverts(opts, cb) {
+    this._runLocked(cb, cb => {
+      this.getAllAdverts(opts, cb);
+    });
+  }
+
+  removeAdvert(opts, cb) {
+    opts = opts ? _.clone(opts) : {};
+
+    // Usually do error checking on preconditions
+    if (!checkRequired(opts, ['adId'], cb)) {
+      throw new Error('adId is missing');
+    }
+    // Check if ad exists already
+
+    const checkIfAdvertExistsAlready = (adId, cb) => {
+      this.storage.fetchAdvert(opts.adId, (err, result) => {
+        if (err) return cb(err);
+
+        if (!result) {
+          throw new Error('Advertisement does not exist: ' + opts.adId);
+        }
+
+        if (result) {
+          this.logw('Advert already exists');
+          return cb(null, adId);
+        }
+      });
+    };
+
+    try {
+      this._runLocked(
+        cb,
+        cb => {
+          checkIfAdvertExistsAlready(opts.adId, (err, adId) => {
+            if (err) throw err;
+            this.storage.removeAdvert(adId, cb); // TODO: add to errordefinitions Errors.ADVERTISEMENT already exists
+          });
+        },
+        10 * 1000
+      );
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  activateAdvert(opts, cb) {
+    opts = opts ? _.clone(opts) : {};
+    // Usually do error checking on preconditions
+    if (!checkRequired(opts, ['adId'], cb)) {
+      throw new Error('adId is missing');
+    }
+
+    this.storage.activateAdvert(opts.adId, (err, result) => {
+      if (err) return cb(err);
+      return cb(null, result);
+    });
+  }
+
+  deactivateAdvert(opts, cb) {
+    opts = opts ? _.clone(opts) : {};
+    // Usually do error checking on preconditions
+    if (!checkRequired(opts, ['adId'], cb)) {
+      throw new Error('adId is missing');
+    }
+
+    this.storage.deactivateAdvert(opts.adId, (err, result) => {
+      if (err) return cb(err);
+      return cb(null, result);
+    });
   }
 
   tagLowFeeTxs(wallet: IWallet, txs: any[], cb) {

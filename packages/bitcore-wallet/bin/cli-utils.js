@@ -124,7 +124,7 @@ Utils.getClient = function(args, opts, cb) {
     verbose: args.verbose,
     supportStaffWalletId: opts.walletId,
     timeout: 20 * 60 * 1000,
-    //timeout: 1000,
+    // timeout: 1000,
   });
 
   storage.load(function(err, walletData) {

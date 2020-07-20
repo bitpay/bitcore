@@ -1571,6 +1571,119 @@ export class API extends EventEmitter {
       });
   }
 
+  /**
+   * Create advertisement for bitpay app - (limited to marketing staff)
+   * @param opts - options
+   */
+  createAdvertisement(opts, cb) {
+    // TODO add check for preconditions of title, imgUrl, linkUrl
+
+    var url = '/v1/advertisements/';
+    let args = opts;
+
+    this.request.post(url, args, (err, createdAd) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, createdAd);
+    });
+  }
+
+  /**
+   * Get advertisements for bitpay app - (limited to marketing staff)
+   * @param opts - options
+   * @param opts.testing - if set, fetches testing advertisements
+   */
+  getAdvertisements(opts, cb) {
+    var url = '/v1/advertisements/';
+    if (opts.testing === true) {
+      url = '/v1/advertisements/' + '?testing=true';
+    }
+
+    this.request.get(url, (err, ads) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, ads);
+    });
+  }
+
+  /**
+   * Get advertisements for bitpay app, for specified country - (limited to marketing staff)
+   * @param opts - options
+   * @param opts.country - if set, fetches ads by Country
+   */
+  getAdvertisementsByCountry(opts, cb) {
+    var url = '/v1/advertisements/country/' + opts.country;
+
+    this.request.get(url, (err, ads) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, ads);
+    });
+  }
+
+  /**
+   * Get Advertisement
+   * @param opts - options
+   */
+  getAdvertisement(opts, cb) {
+    var url = '/v1/advertisements/' + opts.adId; // + adId or adTitle;
+    this.request.get(url, (err, body) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, body);
+    });
+  }
+
+  /**
+   * Activate Advertisement
+   * @param opts - options
+   */
+  activateAdvertisement(opts, cb) {
+    var url = '/v1/advertisements/' + opts.adId + '/activate'; // + adId or adTitle;
+    let args = opts;
+    this.request.post(url, args, (err, body) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, body);
+    });
+  }
+
+  /**
+   * Deactivate Advertisement
+   * @param opts - options
+   */
+  deactivateAdvertisement(opts, cb) {
+    var url = '/v1/advertisements/' + opts.adId + '/deactivate'; // + adId or adTitle;
+    let args = opts;
+    this.request.post(url, args, (err, body) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, body);
+    });
+  }
+
+  /**
+   * Delete Advertisement
+   * @param opts - options
+   */
+  deleteAdvertisement(opts, cb) {
+    var url = '/v1/advertisements/' + opts.adId; // + adId or adTitle;
+    this.request.delete(url, (err, body) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, body);
+    });
+  }
+
+  /*
+
   // /**
   // * Sign transaction proposal from AirGapped
   // *
