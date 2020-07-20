@@ -41,7 +41,6 @@ describe('Chain BCH', function() {
       delete x.changeAddress;
       x.outputs.pop();
       x.addressType =   Constants.SCRIPT_TYPES.P2PKH;
-console.log('[bch.js.43]',x); // TODO
       const estimatedLength = bch.getEstimatedSize(x);
 
       // Create a similar TX.
