@@ -214,7 +214,7 @@ describe('Wallet service', function() {
     it('should get server instance for marketing staff', function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, wallet) {
         var collections = Storage.collections;
-        s.storage.db.collection(collections.COPAYERS_LOOKUP).update({
+        s.storage.db.collection(collections.COPAYERS_LOOKUP).updateOne({
           copayerId: wallet.copayers[0].id
         }, {
             $set: {
@@ -235,7 +235,8 @@ describe('Wallet service', function() {
             }, function(err, server) {
               should.not.exist(err);
 
-              server.walletId.should.equal('123');
+              server.walletId.should.not.equal('123');
+              server.copayerIsMarketingStaff.should.equal(true);
               server.copayerId.should.equal(wallet.copayers[0].id);
               done();
             });
@@ -274,9 +275,9 @@ describe('Wallet service', function() {
     });
 
      it('should create/get ad', function(done) {
-
         async.series([function(next) {
           server.createAdvert(adOpts, function (err, ad) {
+            should.not.exist(err);
             next();
           });
         }, function(next) {
@@ -296,13 +297,13 @@ describe('Wallet service', function() {
             ad.isTesting.should.equal(true);
             ad.signature.should.equal('304050302480413401348a3b34902403434512535e435463'),
             ad.app.should.equal('bitpay');
+
             next();
           });
         }], function(err) {
           should.not.exist(err);
+          done();
         })
-
-      done();
     });
 
     it('should create/get/delete an ad', function(done) {
