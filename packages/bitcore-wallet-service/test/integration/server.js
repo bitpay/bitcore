@@ -214,7 +214,7 @@ describe('Wallet service', function() {
     it('should get server instance for marketing staff', function(done) {
       helpers.createAndJoinWallet(1, 1, function(s, wallet) {
         var collections = Storage.collections;
-        s.storage.db.collection(collections.COPAYERS_LOOKUP).update({
+        s.storage.db.collection(collections.COPAYERS_LOOKUP).updateOne({
           copayerId: wallet.copayers[0].id
         }, {
             $set: {
@@ -235,7 +235,8 @@ describe('Wallet service', function() {
             }, function(err, server) {
               should.not.exist(err);
 
-              server.walletId.should.equal('123');
+              server.walletId.should.not.equal('123');
+              server.copayerIsMarketingStaff.should.equal(true);
               server.copayerId.should.equal(wallet.copayers[0].id);
               done();
             });

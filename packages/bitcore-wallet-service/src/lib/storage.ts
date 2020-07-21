@@ -1654,7 +1654,7 @@ export class Storage {
   }
 
   storeAdvert(advert, cb) {
-    this.db.collection(collections.ADVERTISEMENTS).update(
+    this.db.collection(collections.ADVERTISEMENTS).updateOne(
       {
         advertisementId: advert.advertisementId
       },
@@ -1681,7 +1681,7 @@ export class Storage {
   }
 
   activateAdvert(adId, cb) {
-    this.db.collection(collections.ADVERTISEMENTS).update(
+    this.db.collection(collections.ADVERTISEMENTS).updateOne(
       {
         advertisementId: adId
       },
@@ -1694,7 +1694,7 @@ export class Storage {
   }
 
   deactivateAdvert(adId, cb) {
-    this.db.collection(collections.ADVERTISEMENTS).update(
+    this.db.collection(collections.ADVERTISEMENTS).updateOne(
       {
         advertisementId: adId
       },
