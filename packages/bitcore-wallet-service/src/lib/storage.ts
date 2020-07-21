@@ -1642,7 +1642,7 @@ export class Storage {
   }
 
   removeAdvert(adId, cb) {
-    this.db.collection(collections.ADVERTISEMENTS).remove(
+    this.db.collection(collections.ADVERTISEMENTS).deleteOne(
       {
         advertismentId: adId
       },
@@ -1658,7 +1658,7 @@ export class Storage {
       {
         advertisementId: advert.advertisementId
       },
-      advert,
+      {$set: advert},
       {
         upsert: true
       },
