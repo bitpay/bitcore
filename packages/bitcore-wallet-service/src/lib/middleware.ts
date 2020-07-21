@@ -4,11 +4,14 @@ import { formatTimestamp, logger } from './logger';
 type TimedRequest = {
   startTime?: Date;
   walletId?: string;
+  isSupportStaff?: boolean;
 } & express.Request;
 
 function LogObj(logOut: { [key: string]: string }) {
   logger.info(
-    `${logOut.time} | ${logOut.ip} | ${logOut.userAgent || 'na'}  |  ${logOut.walletId || '-'}  | ${logOut.phase} | ${logOut.took} | ${logOut.method} | ${logOut.status} | ${logOut.url} | ${logOut.openConnections} open`
+    `${logOut.support}${logOut.time} | ${logOut.ip} | ${logOut.userAgent || 'na'}  |  ${logOut.walletId || '-'}  | ${logOut.phase} | ${
+      logOut.took
+    } | ${logOut.method} | ${logOut.status} | ${logOut.url} | ${logOut.openConnections} open`
   );
 }
 
@@ -19,7 +22,9 @@ function LogPhase(req: TimedRequest, res: express.Response, phase: string) {
   const time = req.startTime ? req.startTime : new Date();
   const ua = req.headers['user-agent'] || '-';
   const ver = req.headers['x-client-version'] || '-';
+  const support  = req.isSupportStaff ? 'SUPPORT:' : '';
   const logOut = {
+    support: support,
     time: formatTimestamp(time),
     walletId: req.walletId,
     userAgent: ua + ':' + ver,

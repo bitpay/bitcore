@@ -273,6 +273,7 @@ export class WalletService {
     const server = new WalletService();
     server._setClientVersion(opts.clientVersion);
     server._setAppVersion(opts.userAgent);
+    server.userAgent = opts.userAgent;
     return server;
   }
 
@@ -3775,7 +3776,7 @@ export class WalletService {
             return i.blockheight > cacheStatus.tipHeight;
           });
 
-          logger.info(`Found ${lastTxs.length} new txs. Caching ${txsToCache.length}`);
+          logger.debug(`Found ${lastTxs.length} new txs. Caching ${txsToCache.length}`);
           if (!txsToCache.length) {
             return next();
           }

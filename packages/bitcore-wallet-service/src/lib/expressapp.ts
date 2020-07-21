@@ -204,7 +204,9 @@ export class ExpressApp {
             req
           );
         }
-        if (opts.onlySupportStaff) {
+
+        if (server.copayerIsSupportStaff) {
+          req.isSupportStaff = true;
         }
 
         if (opts.onlyMarketingStaff && !server.copayerIsMarketingStaff) {
