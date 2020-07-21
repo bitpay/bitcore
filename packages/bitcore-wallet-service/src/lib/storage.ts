@@ -1658,7 +1658,7 @@ export class Storage {
       {
         advertisementId: advert.advertisementId
       },
-      {$set: advert},
+      { $set: advert },
       {
         upsert: true
       },

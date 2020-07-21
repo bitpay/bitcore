@@ -273,7 +273,6 @@ export class WalletService {
     const server = new WalletService();
     server._setClientVersion(opts.clientVersion);
     server._setAppVersion(opts.userAgent);
-    server.userAgent = opts.userAgent;
     return server;
   }
 
