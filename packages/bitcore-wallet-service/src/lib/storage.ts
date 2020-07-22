@@ -1644,7 +1644,7 @@ export class Storage {
   removeAdvert(adId, cb) {
     this.db.collection(collections.ADVERTISEMENTS).deleteOne(
       {
-        advertismentId: adId
+        advertisementId: adId
       },
       {
         w: 1
