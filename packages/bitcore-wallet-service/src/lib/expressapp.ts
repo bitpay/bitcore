@@ -1,7 +1,7 @@
 import express from 'express';
 import _ from 'lodash';
 import 'source-map-support/register';
-import logger from './logger';
+import { logger, transport } from './logger';
 
 import { ClientError } from './errors/clienterror';
 import { LogMiddleware } from './middleware';
@@ -85,7 +85,7 @@ export class ExpressApp {
     });
 
     if (opts.disableLogs) {
-      logger.warn('Logs disabled');
+      transport.level= 'error';
     } else {
       this.app.use(LogMiddleware());
       // morgan.token('walletId', function getId(req) {
