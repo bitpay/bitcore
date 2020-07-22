@@ -3776,7 +3776,7 @@ export class WalletService {
             return i.blockheight > cacheStatus.tipHeight;
           });
 
-          logger.info(`Found ${lastTxs.length} new txs. Caching ${txsToCache.length}`);
+          logger.debug(`Found ${lastTxs.length} new txs. Caching ${txsToCache.length}`);
           if (!txsToCache.length) {
             return next();
           }
