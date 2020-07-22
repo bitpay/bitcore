@@ -85,7 +85,7 @@ export class ExpressApp {
     });
 
     if (opts.disableLogs) {
-      transport.level= 'error';
+      transport.level = 'error';
     } else {
       this.app.use(LogMiddleware());
       // morgan.token('walletId', function getId(req) {
