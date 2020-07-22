@@ -4382,8 +4382,9 @@ export class WalletService {
       const API = config.wyre[req.body.env].api;
       const API_KEY = config.wyre[req.body.env].apiKey;
       const SECRET_API_KEY = config.wyre[req.body.env].secretApiKey;
+      req.body.referrerAccountId = config.wyre[req.body.env].appProviderAccountId;
 
-      if (!req.body.amount || !req.body.sourceCurrency || !req.body.destCurrency || !req.body.dest) {
+      if (!req.body.amount || !req.body.sourceCurrency || !req.body.destCurrency || !req.body.dest || !req.body.paymentMethod) {
         return reject(new Error("Wyre's request missing arguments"));
       }
 

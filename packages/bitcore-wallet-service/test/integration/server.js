@@ -9503,6 +9503,229 @@ describe('Wallet service', function() {
 
   });
 
+  describe('Wyre', () => {
+    let server, wallet, fakeRequest, req;
+    beforeEach((done) => {
+      config.wyre = {
+        sandbox: {
+          apiKey: 'xxxx',
+          secretApiKey: 'xxxx',
+          api: 'xxxx',
+          widgetUrl: 'xxxx',
+          appProviderAccountId: 'xxxx'
+        },
+        production: {
+          apiKey: 'xxxx',
+          secretApiKey: 'xxxx',
+          api: 'xxxx',
+          widgetUrl: 'xxxx',
+          appProviderAccountId: 'xxxx'
+        }
+      }
+
+      fakeRequest = {
+        get: (_url, _opts, _cb) => { return _cb(null, { data: 'data' }) },
+        post: (_url, _opts, _cb) => { return _cb(null, { data: 'data' }) },
+      };
+
+      helpers.createAndJoinWallet(1, 1, (s, w) => {
+        wallet = w;
+        var priv = TestData.copayers[0].privKey_1H_0;
+        var sig = helpers.signMessage('hello world', priv);
+
+        WalletService.getInstanceWithAuth({
+          // test assumes wallet's copayer[0] is TestData's copayer[0]
+          copayerId: wallet.copayers[0].id,
+          message: 'hello world',
+          signature: sig,
+          clientVersion: 'bwc-2.0.0',
+          walletId: '123',
+        }, (err, s) => {
+          should.not.exist(err);
+          server = s;
+          done();
+        });
+      });
+    });
+
+    describe('#walletOrderQuotation', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            amount: 50,
+            sourceCurrency: 'USD',
+            destCurrency: 'BTC',
+            dest: 'bitcoin:123123123',
+            country: 'US'
+          }
+        }
+      });
+
+      it('should work properly if req is OK', () => {
+        server.request = fakeRequest;
+        server.walletOrderQuotation(req).then(data => {
+          should.exist(data);
+        }).catch(err => {
+          should.not.exist(err);
+        });
+      });
+
+      it('should return error if there is some missing arguments', () => {
+        req.body.amount = null;
+
+        server.request = fakeRequest;
+        server.walletOrderQuotation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre\'s request missing arguments');
+        });
+      });
+
+      it('should return error if post returns error', () => {
+        const fakeRequest2 = {
+          post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+
+        server.request = fakeRequest2;
+        server.walletOrderQuotation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Error');
+        });
+      });
+
+      it('should return error if there is no environment', () => {
+        req.body.env = null;
+
+        server.request = fakeRequest;
+        server.walletOrderQuotation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre\'s request wrong environment');
+        });
+      });
+
+      it('should return error if environment is wrong', () => {
+        req.body.env = 'wrong';
+
+        server.request = fakeRequest;
+        server.walletOrderQuotation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre\'s request wrong environment');
+        });
+      });
+
+      it('should return error if Wyre is commented in config', () => {
+        config.wyre = undefined;
+
+        server.request = fakeRequest;
+        server.walletOrderQuotation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre missing credentials');
+        });
+      });
+    });
+
+    describe('#walletOrderReservation', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            amount: 50,
+            sourceCurrency: 'USD',
+            destCurrency: 'BTC',
+            dest: 'bitcoin:123123123'
+          }
+        }
+
+        fakeRequest = {
+          post: (_url, _opts, _cb) => { return _cb(null, { body: {} }) },
+        };
+      });
+
+      it('should work properly if req is OK', () => {
+        server.request = fakeRequest;
+        server.walletOrderReservation(req).then(data => {
+          should.exist(data);
+        }).catch(err => {
+          should.not.exist(err);
+        });
+      });
+
+      it('should return error if there is some missing arguments', () => {
+        req.body.amount = null;
+
+        server.request = fakeRequest;
+        server.walletOrderReservation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre\'s request missing arguments');
+        });
+      });
+
+      it('should return error if post returns error', () => {
+        const fakeRequest2 = {
+          post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+
+        server.request = fakeRequest2;
+        server.walletOrderReservation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Error');
+        });
+      });
+
+      it('should return error if there is no environment', () => {
+        req.body.env = null;
+
+        server.request = fakeRequest;
+        server.walletOrderReservation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre\'s request wrong environment');
+        });
+      });
+
+      it('should return error if environment is wrong', () => {
+        req.body.env = 'wrong';
+
+        server.request = fakeRequest;
+        server.walletOrderReservation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre\'s request wrong environment');
+        });
+      });
+
+      it('should return error if Wyre is commented in config', () => {
+        config.wyre = undefined;
+
+        server.request = fakeRequest;
+        server.walletOrderReservation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre missing credentials');
+        });
+      });
+    });
+  });
+
 
   describe('#getCoinsForTx', function() {
     let server, wallet;
