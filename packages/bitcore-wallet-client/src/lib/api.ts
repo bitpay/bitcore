@@ -1277,7 +1277,7 @@ export class API extends EventEmitter {
     $.checkArgument(opts);
 
     // BCH schnorr deployment
-    if (!opts.signingMethod && this.credentials.coin == 'bch' && this.credentials.network == 'testnet') {
+    if (!opts.signingMethod && this.credentials.coin == 'bch') {
       opts.signingMethod = 'schnorr';
     }
 
@@ -1547,11 +1547,7 @@ export class API extends EventEmitter {
 
         if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
-        let defaultBase = '/v1/txproposals/';
-        if (txp.coin === 'bch' && txp.network === 'testnet') {
-          defaultBase = '/v2/txproposals/';
-        }
-
+        let defaultBase = '/v2/txproposals/';
         base = base || defaultBase;
         //        base = base || '/v2/txproposals/'; // DISABLED 2020-04-07
 

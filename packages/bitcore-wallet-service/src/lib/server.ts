@@ -2567,7 +2567,7 @@ export class WalletService {
    * @param {string} opts.txProposalId - The identifier of the transaction.
    * @param {string} opts.signatures - The signatures of the inputs of this tx for this copayer (in appearance order)
    * @param {string} opts.maxTxpVersion - Client's maximum supported txp version
-   * @param {boolean} opts.useBchSchnorr - indication whether to use schnorr for signing tx
+   * @param {boolean} opts.supportBchSchnorr - indication whether to use schnorr for signing tx
    */
   signTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId', 'signatures'], cb)) return;
@@ -2598,7 +2598,7 @@ export class WalletService {
           if (action) return cb(Errors.COPAYER_VOTED);
           if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
 
-          if (txp.signingMethod === 'schnorr' && !opts.useBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
+          if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
 
           const copayer = wallet.getCopayer(this.copayerId);
 
