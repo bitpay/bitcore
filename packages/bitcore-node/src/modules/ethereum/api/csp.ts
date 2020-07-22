@@ -491,12 +491,10 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
 
       await EthTransactionStorage.collection.updateMany(
         {
-          chain,
-          network,
           $or: [
-            { from: { $in: addressBatch } },
-            { to: { $in: addressBatch } },
-            { 'internal.action.to': { $in: addressBatch } }
+            { chain, network, from: { $in: addressBatch } },
+            { chain, network, to: { $in: addressBatch } },
+            { chain, network, 'internal.action.to': { $in: addressBatch } }
           ]
         },
         { $addToSet: { wallets: params.wallet._id } }
