@@ -143,6 +143,7 @@ export class GnosisApi {
   async streamGnosisWalletTransactions(params: { multisigContractAddress: string } & StreamWalletTransactionsParams) {
     const { multisigContractAddress, network, res, args } = params;
     const { web3 } = await ETH.getWeb3(network);
+
     const transactionQuery = ETH.getWalletTransactionQuery(params);
     delete transactionQuery.wallets;
     delete transactionQuery['wallets.0'];
