@@ -1250,7 +1250,7 @@ export class ExpressApp {
     router.post('/v1/service/wyre/walletOrderQuotation', (req, res) => {
       getServerWithAuth(req, res, server => {
         server
-          .walletOrderQuotation(req)
+          .wyreWalletOrderQuotation(req)
           .then(response => {
             res.json(response);
           })
@@ -1263,7 +1263,7 @@ export class ExpressApp {
     router.post('/v1/service/wyre/walletOrderReservation', (req, res) => {
       getServerWithAuth(req, res, server => {
         server
-          .walletOrderReservation(req)
+          .wyreWalletOrderReservation(req)
           .then(response => {
             res.json(response);
           })

@@ -9548,7 +9548,7 @@ describe('Wallet service', function() {
       });
     });
 
-    describe('#walletOrderQuotation', () => {
+    describe('#wyreWalletOrderQuotation', () => {
       beforeEach(() => {
         req = {
           headers: {},
@@ -9565,7 +9565,7 @@ describe('Wallet service', function() {
 
       it('should work properly if req is OK', () => {
         server.request = fakeRequest;
-        server.walletOrderQuotation(req).then(data => {
+        server.wyreWalletOrderQuotation(req).then(data => {
           should.exist(data);
         }).catch(err => {
           should.not.exist(err);
@@ -9576,7 +9576,7 @@ describe('Wallet service', function() {
         req.body.amount = null;
 
         server.request = fakeRequest;
-        server.walletOrderQuotation(req).then(data => {
+        server.wyreWalletOrderQuotation(req).then(data => {
           should.not.exist(data);
         }).catch(err => {
           should.exist(err);
@@ -9590,7 +9590,7 @@ describe('Wallet service', function() {
         };
 
         server.request = fakeRequest2;
-        server.walletOrderQuotation(req).then(data => {
+        server.wyreWalletOrderQuotation(req).then(data => {
           should.not.exist(data);
         }).catch(err => {
           should.exist(err);
@@ -9602,7 +9602,7 @@ describe('Wallet service', function() {
         req.body.env = null;
 
         server.request = fakeRequest;
-        server.walletOrderQuotation(req).then(data => {
+        server.wyreWalletOrderQuotation(req).then(data => {
           should.not.exist(data);
         }).catch(err => {
           should.exist(err);
@@ -9614,7 +9614,7 @@ describe('Wallet service', function() {
         req.body.env = 'wrong';
 
         server.request = fakeRequest;
-        server.walletOrderQuotation(req).then(data => {
+        server.wyreWalletOrderQuotation(req).then(data => {
           should.not.exist(data);
         }).catch(err => {
           should.exist(err);
@@ -9626,7 +9626,7 @@ describe('Wallet service', function() {
         config.wyre = undefined;
 
         server.request = fakeRequest;
-        server.walletOrderQuotation(req).then(data => {
+        server.wyreWalletOrderQuotation(req).then(data => {
           should.not.exist(data);
         }).catch(err => {
           should.exist(err);
@@ -9635,7 +9635,7 @@ describe('Wallet service', function() {
       });
     });
 
-    describe('#walletOrderReservation', () => {
+    describe('#wyreWalletOrderReservation', () => {
       beforeEach(() => {
         req = {
           headers: {},
@@ -9655,7 +9655,7 @@ describe('Wallet service', function() {
 
       it('should work properly if req is OK', () => {
         server.request = fakeRequest;
-        server.walletOrderReservation(req).then(data => {
+        server.wyreWalletOrderReservation(req).then(data => {
           should.exist(data);
         }).catch(err => {
           should.not.exist(err);
@@ -9666,7 +9666,7 @@ describe('Wallet service', function() {
         req.body.amount = null;
 
         server.request = fakeRequest;
-        server.walletOrderReservation(req).then(data => {
+        server.wyreWalletOrderReservation(req).then(data => {
           should.not.exist(data);
         }).catch(err => {
           should.exist(err);
@@ -9680,7 +9680,7 @@ describe('Wallet service', function() {
         };
 
         server.request = fakeRequest2;
-        server.walletOrderReservation(req).then(data => {
+        server.wyreWalletOrderReservation(req).then(data => {
           should.not.exist(data);
         }).catch(err => {
           should.exist(err);
@@ -9692,7 +9692,7 @@ describe('Wallet service', function() {
         req.body.env = null;
 
         server.request = fakeRequest;
-        server.walletOrderReservation(req).then(data => {
+        server.wyreWalletOrderReservation(req).then(data => {
           should.not.exist(data);
         }).catch(err => {
           should.exist(err);
@@ -9704,7 +9704,7 @@ describe('Wallet service', function() {
         req.body.env = 'wrong';
 
         server.request = fakeRequest;
-        server.walletOrderReservation(req).then(data => {
+        server.wyreWalletOrderReservation(req).then(data => {
           should.not.exist(data);
         }).catch(err => {
           should.exist(err);
@@ -9716,7 +9716,7 @@ describe('Wallet service', function() {
         config.wyre = undefined;
 
         server.request = fakeRequest;
-        server.walletOrderReservation(req).then(data => {
+        server.wyreWalletOrderReservation(req).then(data => {
           should.not.exist(data);
         }).catch(err => {
           should.exist(err);

@@ -4319,16 +4319,29 @@ export class WalletService {
     });
   }
 
-  walletOrderQuotation(req): Promise<any> {
-    return new Promise((resolve, reject) => {
-      if (!config.wyre) return reject(new Error('Wyre missing credentials'));
-      if (!req.body.env || (req.body.env != 'sandbox' && req.body.env != 'production'))
-        return reject(new Error("Wyre's request wrong environment"));
+  wyreGetKeys(req) {
+    if (!config.wyre) throw new Error('Wyre missing credentials');
 
-      const API = config.wyre[req.body.env].api;
-      const API_KEY = config.wyre[req.body.env].apiKey;
-      const SECRET_API_KEY = config.wyre[req.body.env].secretApiKey;
-      req.body.accountId = config.wyre[req.body.env].appProviderAccountId;
+    let env  = 'sandbox';
+    if ( req.body.env && req.body.env=='production') {
+      env = 'production';
+    }
+    delete req.body.env;
+
+    const keys = {
+      API: config.wyre[env].api,
+      API_KEY: config.wyre[env].apiKey,
+      SECRET_API_KEY: config.wyre[env].secretApiKey,
+      ACCOUNT_ID: config.wyre[env].appProviderAccountId
+    }
+
+    return keys;
+  }
+
+  wyreWalletOrderQuotation(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.wyreGetKeys(req);
+      req.body.accountId = keys.ACCOUNT_ID;
 
       if (
         !req.body.amount ||
@@ -4342,16 +4355,16 @@ export class WalletService {
 
       delete req.body.env;
 
-      const URL: string = `${API}/v3/orders/quote/partner?timestamp=${Date.now().toString()}`;
+      const URL: string = `${keys.API}/v3/orders/quote/partner?timestamp=${Date.now().toString()}`;
       const XApiSignature: string = URL + JSON.stringify(req.body);
       const XApiSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
         Buffer.from(XApiSignature),
-        Buffer.from(SECRET_API_KEY)
+        Buffer.from(keys.SECRET_API_KEY)
       ).toString('hex');
 
       const headers = {
         'Content-Type': 'application/json',
-        'X-Api-Key': API_KEY,
+        'X-Api-Key': keys.API_KEY,
         'X-Api-Signature': XApiSignatureHash
       };
 
@@ -4373,33 +4386,33 @@ export class WalletService {
     });
   }
 
-  walletOrderReservation(req): Promise<any> {
+  wyreWalletOrderReservation(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      if (!config.wyre) return reject(new Error('Wyre missing credentials'));
-      if (!req.body.env || (req.body.env != 'sandbox' && req.body.env != 'production'))
-        return reject(new Error("Wyre's request wrong environment"));
+      const keys = this.wyreGetKeys(req);
+      req.body.referrerAccountId = keys.ACCOUNT_ID;
 
-      const API = config.wyre[req.body.env].api;
-      const API_KEY = config.wyre[req.body.env].apiKey;
-      const SECRET_API_KEY = config.wyre[req.body.env].secretApiKey;
-      req.body.referrerAccountId = config.wyre[req.body.env].appProviderAccountId;
-
-      if (!req.body.amount || !req.body.sourceCurrency || !req.body.destCurrency || !req.body.dest || !req.body.paymentMethod) {
+      if (
+        !req.body.amount ||
+        !req.body.sourceCurrency ||
+        !req.body.destCurrency ||
+        !req.body.dest ||
+        !req.body.paymentMethod
+      ) {
         return reject(new Error("Wyre's request missing arguments"));
       }
 
       delete req.body.env;
 
-      const URL: string = `${API}/v3/orders/reserve?timestamp=${Date.now().toString()}`;
+      const URL: string = `${keys.API}/v3/orders/reserve?timestamp=${Date.now().toString()}`;
       const XApiSignature: string = URL + JSON.stringify(req.body);
       const XApiSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
         Buffer.from(XApiSignature),
-        Buffer.from(SECRET_API_KEY)
+        Buffer.from(keys.SECRET_API_KEY)
       ).toString('hex');
 
       const headers = {
         'Content-Type': 'application/json',
-        'X-Api-Key': API_KEY,
+        'X-Api-Key': keys.API_KEY,
         'X-Api-Signature': XApiSignatureHash
       };
 
