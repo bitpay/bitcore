@@ -1,0 +1,26 @@
+{
+  "name": "bitcore-elastic",
+  "version": "8.21.0",
+  "description": "dump blockchain data to elastic search",
+  "main": "build/index.js",
+  "scripts": {
+    "build": "npx tsc",
+    "start": "node build/index.js",
+    "test": "test"
+  },
+  "keywords": [
+    "bitcore",
+    "elastic"
+  ],
+  "author": "Micah Riggan",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/elasticsearch": "^5.0.36",
+    "@types/mocha": "^8.0.1",
+    "@types/node": "^14.0.27"
+  },
+  "dependencies": {
+    "crypto-rpc": "^1.1.0",
+    "elasticsearch": "^16.7.1"
+  }
+}
