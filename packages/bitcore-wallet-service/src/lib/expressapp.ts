@@ -1247,6 +1247,32 @@ export class ExpressApp {
       });
     });
 
+    router.post('/v1/service/wyre/walletOrderQuotation', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .wyreWalletOrderQuotation(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
+      });
+    });
+
+    router.post('/v1/service/wyre/walletOrderReservation', (req, res) => {
+      getServerWithAuth(req, res, server => {
+        server
+          .wyreWalletOrderReservation(req)
+          .then(response => {
+            res.json(response);
+          })
+          .catch(err => {
+            if (err) return returnError(err, res, req);
+          });
+      });
+    });
+
     this.app.use(opts.basePath || '/bws/api', router);
 
     if (config.staticRoot) {
