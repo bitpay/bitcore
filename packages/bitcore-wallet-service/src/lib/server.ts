@@ -4322,8 +4322,8 @@ export class WalletService {
   wyreGetKeys(req) {
     if (!config.wyre) throw new Error('Wyre missing credentials');
 
-    let env  = 'sandbox';
-    if ( req.body.env && req.body.env=='production') {
+    let env = 'sandbox';
+    if (req.body.env && req.body.env == 'production') {
       env = 'production';
     }
     delete req.body.env;
@@ -4333,7 +4333,7 @@ export class WalletService {
       API_KEY: config.wyre[env].apiKey,
       SECRET_API_KEY: config.wyre[env].secretApiKey,
       ACCOUNT_ID: config.wyre[env].appProviderAccountId
-    }
+    };
 
     return keys;
   }

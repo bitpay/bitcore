@@ -46,7 +46,6 @@
     "brfs": "^2.0.1",
     "browserify": "^16.2.3",
     "chai": "^4.2.0",
-    "fsevents": "^2.1.2",
     "gulp": "^4.0.0",
     "gulp-mocha": "^7.0.1",
     "gulp-rename": "^1.4.0",
@@ -59,5 +58,8 @@
     "lodash": "^4.17.15",
     "mocha": "^6.2.0"
   },
-  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
+  "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1",
+  "optionalDependencies": {
+    "fsevents": "^2.1.3"
+  }
 }
