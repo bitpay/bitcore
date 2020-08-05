@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "bitcore-build": "^8.21.0",
+    "gulp": "^4.0.0",
     "brfs": "^1.2.0",
     "chai": "~1.10.0",
     "sinon": "^1.12.2"
