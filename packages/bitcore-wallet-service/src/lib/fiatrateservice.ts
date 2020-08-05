@@ -177,7 +177,6 @@ export class FiatRateService {
             delete rate['code'];
             delete rate['value'];
             delete rate['coin'];
-
           }
           historicalRates[coin] = rates;
           return cb(null, historicalRates);
