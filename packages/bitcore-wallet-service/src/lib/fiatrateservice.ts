@@ -6,8 +6,7 @@ import { Storage } from './storage';
 const $ = require('preconditions').singleton();
 const Common = require('./common');
 const Defaults = Common.Defaults;
-let log = require('npmlog');
-log.debug = log.verbose;
+import logger from './logger';
 
 const fiatCodes = {
   USD: 1,
@@ -47,7 +46,7 @@ export class FiatRateService {
       ],
       err => {
         if (err) {
-          log.error(err);
+          logger.error(err);
         }
         return cb(err);
       }
@@ -80,12 +79,12 @@ export class FiatRateService {
       (coin, next2) => {
         this._retrieve(provider, coin, (err, res) => {
           if (err) {
-            log.warn('Error retrieving data for ' + provider.name + coin, err);
+            logger.warn('Error retrieving data for ' + provider.name + coin, err);
             return next2();
           }
           this.storage.storeFiatRate(coin, res, err => {
             if (err) {
-              log.warn('Error storing data for ' + provider.name, err);
+              logger.warn('Error storing data for ' + provider.name, err);
             }
             return next2();
           });
@@ -97,7 +96,7 @@ export class FiatRateService {
   }
 
   _retrieve(provider, coin, cb) {
-    log.debug(`Fetching data for ${provider.name} / ${coin} `);
+    logger.debug(`Fetching data for ${provider.name} / ${coin} `);
     this.request.get(
       {
         url: provider.url + coin.toUpperCase(),
@@ -108,7 +107,7 @@ export class FiatRateService {
           return cb(err);
         }
 
-        log.debug(`Data for ${provider.name} /  ${coin} fetched successfully`);
+        logger.debug(`Data for ${provider.name} /  ${coin} fetched successfully`);
 
         if (!provider.parseFn) {
           return cb(new Error('No parse function for provider ' + provider.name));
@@ -151,6 +150,38 @@ export class FiatRateService {
         if (err) return cb(err);
         if (!_.isArray(ts)) res = res[0];
         return cb(null, res);
+      }
+    );
+  }
+
+  getHistoricalRates(opts, cb) {
+    $.shouldBeFunction(cb);
+
+    opts = opts || {};
+    const historicalRates = {};
+
+    // Oldest date in timestamp range in epoch number ex. 24 hours ago
+    const now = Date.now() - Defaults.FIAT_RATE_FETCH_INTERVAL * 60 * 1000;
+    const ts = _.isNumber(opts.ts) ? opts.ts : now;
+    const coins = ['btc', 'bch', 'eth', 'xrp'];
+
+    async.map(
+      coins,
+      (coin: string, cb) => {
+        this.storage.fetchHistoricalRates(coin, opts.code, ts, (err, rates) => {
+          if (err) return cb(err);
+          if (!rates) return cb();
+          for (const rate of rates) {
+            rate.rate = rate.value;
+            rate.fetchedOn = rate.ts;
+          }
+          historicalRates[coin] = rates;
+          return cb(null, historicalRates);
+        });
+      },
+      (err, res: any) => {
+        if (err) return cb(err);
+        return cb(null, res[0]);
       }
     );
   }

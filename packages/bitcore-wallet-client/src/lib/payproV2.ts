@@ -17,8 +17,8 @@ var Bitcore_ = {
 var MAX_FEE_PER_KB = {
   btc: 10000 * 1000, // 10k sat/b
   bch: 10000 * 1000, // 10k sat/b
-  eth: 50000000000, // 50 Gwei
-  xrp: 50000000000
+  eth: 1000000000000, // 1000 Gwei
+  xrp: 1000000000000
 };
 
 // PayPro Network Map
@@ -76,12 +76,16 @@ export class PayProV2 {
         if (err) {
           if (res && res.statusCode !== 200) {
             // some know codes
-            if (res.statusCode == 400 || res.statusCode == 422) {
+            if ((res.statusCode == 400 || res.statusCode == 422) && res.body && res.body.msg) {
               return reject(this.getError(res.body.msg));
             } else if (res.statusCode == 404) {
               return reject(new Errors.INVOICE_NOT_AVAILABLE());
+            } else if (res.statusCode == 504) {
+              return reject(new Errors.REQUEST_TIMEOUT());
             } else if (res.statusCode == 500 && res.body && res.body.msg) {
               return reject(new Error(res.body.msg));
+            } else {
+              return reject(new Errors.INVALID_REQUEST());
             }
           }
           return reject(err);
@@ -116,6 +120,8 @@ export class PayProV2 {
         return new Errors.BTC_NOT_BCH();
       case errMsg.includes('	One or more input transactions for your transaction were not found on the blockchain.'):
         return new Errors.INPUT_NOT_FOUND();
+      case errMsg.includes('The PayPro request has timed out. Please connect to the internet or try again later.'):
+        return new Errors.REQUEST_TIMEOUT();
       case errMsg.includes(
         'One or more input transactions for your transactions are not yet confirmed in at least one block.'
       ):
@@ -148,7 +154,9 @@ export class PayProV2 {
       url: paymentUrl,
       headers: {
         Accept: 'application/payment-options',
-        'x-paypro-version': 2
+        'x-paypro-version': 2,
+        Connection: 'Keep-Alive',
+        'Keep-Alive': 'timeout=30, max=10'
       }
     });
 
@@ -169,7 +177,9 @@ export class PayProV2 {
       method: 'post',
       headers: {
         'Content-Type': 'application/payment-request',
-        'x-paypro-version': 2
+        'x-paypro-version': 2,
+        Connection: 'Keep-Alive',
+        'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
         chain,
@@ -202,7 +212,9 @@ export class PayProV2 {
       method: 'post',
       headers: {
         'Content-Type': 'application/payment-verification',
-        'x-paypro-version': 2
+        'x-paypro-version': 2,
+        Connection: 'Keep-Alive',
+        'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
         chain,
@@ -239,7 +251,9 @@ export class PayProV2 {
         'Content-Type': 'application/payment',
         'x-paypro-version': 2,
         BP_PARTNER: bpPartner.bp_partner,
-        BP_PARTNER_VERSION: bpPartner.bp_partner_version
+        BP_PARTNER_VERSION: bpPartner.bp_partner_version,
+        Connection: 'Keep-Alive',
+        'Keep-Alive': 'timeout=30, max=10'
       },
       args: JSON.stringify({
         chain,

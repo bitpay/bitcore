@@ -4,6 +4,7 @@ import { LoggifyClass } from '../../../decorators/Loggify';
 import logger from '../../../logger';
 import { MongoBound } from '../../../models/base';
 import { BaseTransaction } from '../../../models/baseTransaction';
+import { CacheStorage } from '../../../models/cache';
 import { EventStorage } from '../../../models/events';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import { Config } from '../../../services/config';
@@ -16,6 +17,8 @@ import { partition } from '../../../utils/partition';
 import { ERC20Abi } from '../abi/erc20';
 import { ERC721Abi } from '../abi/erc721';
 import { InvoiceAbi } from '../abi/invoice';
+import { MultisigAbi } from '../abi/multisig';
+
 import { EthTransactionJSON, IEthTransaction } from '../types';
 
 function requireUncached(module) {
@@ -41,21 +44,35 @@ function getInvoiceDecoder() {
   return InvoiceDecoder;
 }
 
+const MultisigDecoder = requireUncached('abi-decoder');
+MultisigDecoder.addABI(MultisigAbi);
+function getMultisigDecoder() {
+  return MultisigDecoder;
+}
+
 @LoggifyClass
 export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
   constructor(storage: StorageService = Storage) {
     super(storage);
   }
 
-  onConnect() {
+  async onConnect() {
     super.onConnect();
     this.collection.createIndex({ chain: 1, network: 1, to: 1 }, { background: true, sparse: true });
+    this.collection.createIndex({ chain: 1, network: 1, from: 1 }, { background: true, sparse: true });
     this.collection.createIndex({ chain: 1, network: 1, from: 1, nonce: 1 }, { background: true, sparse: true });
     this.collection.createIndex(
       { chain: 1, network: 1, 'abiType.params.0.value': 1, blockTimeNormalized: 1 },
       {
         background: true,
         partialFilterExpression: { chain: 'ETH', 'abiType.type': 'ERC20', 'abiType.name': 'transfer' }
+      }
+    );
+    this.collection.createIndex(
+      { chain: 1, network: 1, 'internal.action.to': 1 },
+      {
+        background: true,
+        sparse: true
       }
     );
   }
@@ -87,6 +104,10 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
     );
     await Promise.all(operations);
 
+    if (params.initialSyncComplete) {
+      await this.expireBalanceCache(txOps);
+    }
+
     // Create events for mempool txs
     if (params.height < SpentHeightIndicators.minimum) {
       for (let op of txOps) {
@@ -97,6 +118,34 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
           address: tx.to,
           coin: { value: tx.value, address: tx.to, chain: params.chain, network: params.network, mintTxid: tx.txid }
         });
+      }
+    }
+  }
+
+  async expireBalanceCache(txOps: Array<any>) {
+    for (const op of txOps) {
+      let batch = new Array<{ multisigContractAdress?: string; tokenAddress?: string; address: string }>();
+      const { chain, network } = op.updateOne.filter;
+      const { from, to, abiType, internal } = op.updateOne.update.$set;
+      batch = batch.concat([{ address: from }, { address: to }]);
+      if (abiType && abiType.type === 'ERC20' && abiType.params.length) {
+        batch.push({ address: from, tokenAddress: to });
+        batch.push({ address: abiType.params[0].value, tokenAddress: to });
+      }
+
+      if (internal && internal.length > 0) {
+        internal.forEach(i => {
+          if (i.action.to) batch.push({ address: i.action.to });
+          if (i.action.from) batch.push({ address: i.action.from });
+        });
+      }
+
+      for (const payload of batch) {
+        const lowerAddress = payload.address.toLowerCase();
+        const cacheKey = payload.tokenAddress
+          ? `getBalanceForAddress-${chain}-${network}-${lowerAddress}-${to.toLowerCase()}`
+          : `getBalanceForAddress-${chain}-${network}-${lowerAddress}`;
+        await CacheStorage.expire(cacheKey);
       }
     }
   }
@@ -229,6 +278,15 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
         };
       }
     } catch (e) {}
+    try {
+      const multisigData = getMultisigDecoder().decodeMethod(input);
+      if (multisigData) {
+        return {
+          type: 'MULTISIG',
+          ...multisigData
+        };
+      }
+    } catch (e) {}
     return undefined;
   }
 
@@ -259,7 +317,8 @@ export class EthTransactionModel extends BaseTransaction<IEthTransaction> {
       internal: tx.internal
         ? tx.internal.map(t => ({ ...t, decodedData: this.abiDecode(t.action.input || '0x') }))
         : [],
-      decodedData: valueOrDefault(decodedData, undefined)
+      decodedData: valueOrDefault(decodedData, undefined),
+      receipt: valueOrDefault(tx.receipt, undefined)
     };
     if (options && options.object) {
       return transaction;

@@ -45,9 +45,9 @@ helpers.before = function(cb) {
   function getDb(cb) {
     if (useMongoDb) {
       var mongodb = require('mongodb');
-      mongodb.MongoClient.connect(config.mongoDb.uri, function(err, db) {
+      mongodb.MongoClient.connect(config.mongoDb.uri, { useUnifiedTopology: true }, function(err, client) {
         if (err) throw err;
-        return cb(db);
+        return cb(client.db(config.mongoDb.dbname));
       });
     } else {
       throw "tingodb not longer supported";
@@ -114,7 +114,7 @@ helpers.beforeEach = function(cb) {
 
 
   async.each(_.values(collections), (x, icb)=> {
-    storage.db.collection(x).remove({}, icb);
+    storage.db.collection(x).deleteMany({}, icb);
   }, (err) => {
     should.not.exist(err);
     var opts = {
@@ -252,7 +252,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
     walletOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
 
   server.createWallet(walletOpts, function(err, walletId) {
-    if (err) return cb(err);
+    if (err) throw err;
 
     async.eachSeries(_.range(n), function(i, cb) {
       var copayerData = TestData.copayers[i + offset];
@@ -280,8 +280,7 @@ helpers.createAndJoinWallet = function(m, n, opts, cb) {
         copayerOpts.supportBIP44AndP2PKH = opts.supportBIP44AndP2PKH;
 
       server.joinWallet(copayerOpts, function(err, result) {
-        if (err) console.log(err);
-        should.not.exist(err);
+        if (err) throw err;
         copayerIds.push(result.copayerId);
         return cb(err);
       });
@@ -580,7 +579,7 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
       // For eth => account, 0, change = 0
       const priv =  xpriv.derive('m/0/0').privateKey;
       const privKey = priv.toString('hex');
-      let tx = txp.getBitcoreTx().uncheckedSerialize();
+      let tx = ChainService.getBitcoreTx(txp).uncheckedSerialize();
       const isERC20 = txp.tokenAddress && !txp.payProUrl;
       const chain = isERC20 ? 'ERC20' : ChainService.getChain(txp.coin);
       tx = typeof tx === 'string'? [tx] : tx;
@@ -602,13 +601,13 @@ helpers.clientSign = function(txp, derivedXPrivKey) {
         }
       });
 
-      var t = txp.getBitcoreTx();
+      var t = ChainService.getBitcoreTx(txp);
       signatures = _.map(privs, function(priv, i) {
-        return t.getSignatures(priv);
+        return t.getSignatures(priv, undefined, txp.signingMethod);
       });
 
       signatures = _.map(_.sortBy(_.flatten(signatures), 'inputIndex'), function(s) {
-        return s.signature.toDER().toString('hex');
+        return s.signature.toDER(txp.signingMethod).toString('hex');
       });
   };
 

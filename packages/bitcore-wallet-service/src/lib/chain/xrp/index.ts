@@ -1,7 +1,8 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
-import { IChain } from '..';
+import { IChain, INotificationData } from '..';
+import logger from '../../logger';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
@@ -115,7 +116,7 @@ export class XrpChain implements IChain {
     });
   }
 
-  buildTx(txp) {
+  getBitcoreTx(txp, opts = { signed: true }) {
     const { destinationTag, outputs } = txp;
     const chain = 'XRP';
     const recipients = outputs.map(output => {
@@ -135,7 +136,7 @@ export class XrpChain implements IChain {
       });
       unsignedTxs.push(rawTx);
     }
-    return {
+    let tx = {
       uncheckedSerialize: () => unsignedTxs,
       txid: () => txp.txid,
       toObject: () => {
@@ -148,17 +149,26 @@ export class XrpChain implements IChain {
       },
       getChangeOutput: () => null
     };
+
+    if (opts.signed) {
+      const sigs = txp.getCurrentSignatures();
+      sigs.forEach(x => {
+        this.addSignaturesToBitcoreTx(tx, txp.inputs, txp.inputPaths, x.signatures, x.xpub);
+      });
+    }
+
+    return tx;
   }
 
   convertFeePerKb(p, feePerKb) {
     return [p, feePerKb];
   }
 
-  checkTx(server, txp) {
+  checkTx(txp) {
     try {
-      txp.getBitcoreTx();
+      this.getBitcoreTx(txp);
     } catch (ex) {
-      server.logw('Error building Bitcore transaction', ex);
+      logger.warn('Error building XRP  transaction', ex);
       return ex;
     }
   }
@@ -167,16 +177,17 @@ export class XrpChain implements IChain {
     return cb();
   }
 
-  selectTxInputs(server, txp, wallet, opts, cb, next) {
+  selectTxInputs(server, txp, wallet, opts, cb) {
     server.getBalance({ wallet }, (err, balance) => {
-      if (err) return next(err);
+      if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
-      if (totalAmount < txp.getTotalAmount()) {
+      const minXrpBalance = 20000000; // 20 XRP * 1e6
+      if (totalAmount - minXrpBalance < txp.getTotalAmount()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
       } else if (availableAmount < txp.getTotalAmount()) {
         return cb(Errors.LOCKED_FUNDS);
       } else {
-        return next(server._checkTx(txp));
+        return cb(this.checkTx(txp));
       }
     });
   }
@@ -189,8 +200,6 @@ export class XrpChain implements IChain {
     }
     return true;
   }
-
-  setInputs() {}
 
   isUTXOCoin() {
     return false;
@@ -250,5 +259,15 @@ export class XrpChain implements IChain {
       throw Errors.INVALID_ADDRESS;
     }
     return;
+  }
+
+  onCoin(coin) {
+    return null;
+  }
+  onTx(tx) {
+    // TODO
+    // format tx to
+    // {address, amount}
+    return null;
   }
 }

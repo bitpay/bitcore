@@ -69,10 +69,10 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
   protected network = '';
   public isSyncingNode = false;
 
-  constructor(protected params: { chain; network; chainConfig; blockModel: BaseBlock<T> }) {}
-  async start() {}
-  async stop() {}
-  async sync() {}
+  constructor(protected params: { chain; network; chainConfig; blockModel?: BaseBlock<T> }) {}
+  async start(): Promise<any> {}
+  async stop(): Promise<any> {}
+  async sync(): Promise<any> {}
 
   getIsSyncingNode(): boolean {
     if (!this.lastHeartBeat) {

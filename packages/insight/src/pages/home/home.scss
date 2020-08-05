@@ -1,144 +1,28 @@
 page-home {
-    .chart {
-        width: 500px;
-        height: 500px;
-    }
+  .chain {
+     margin-bottom: -18px;
+     border-bottom: 1px solid rgb(246, 246, 246) !important;
+     color: rgb(0, 0, 0);
+     padding-top: 1rem;
+     padding-bottom: 1rem;
+     border-radius: 9px 9px 0 0;
 
-    .menu {
-        display: flex;
-        flex-direction: column;
-        width: 150px;
-        flex-wrap: wrap;
-    }
+     :hover {
+        cursor: default !important;
+     }
 
-    .menu-button {
+     ion-label {
+        font-weight: 600;
         font-size: 18px;
-        margin-bottom: 5px;
-        color: color($colors, light-blue);
-        cursor: pointer;
-    }
+     }
+  }
 
-    .charts-container {
-        display: none;
-        flex-direction: row;
-        justify-content: space-between;
-        flex-wrap: wrap;
-    }
-
-    .price-chart-container {
-        display: flex;
-        flex: 1;
-    }
-
-    .body-container {
-        display: flex;
-        flex: 1;
-        flex-wrap: wrap;
-    }
-
-    .daily-tx-chart {
-        background-color: white;
-        border-radius: 8px;
-        padding: 32px 24px 24px 24px;
-
-    }
-
-    .price-chart {
-        background-color: white;
-        border-radius: 8px;
-        padding: 32px 24px 24px 24px;
-    }
-
-    .price-chart-header {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-    }
-
-    .price-chart-title {
-        display: flex;
-        flex: 1;
-        align-items: center;
-    }
-    
-    .price-chart-price {
-        display: flex;
-        margin-top: 44px;
-        margin-right: 6px;
-        font-weight: 500;
-        font-size: 20px;
-        opacity: 0.5;
-    }
-    
-    .page-content-grid-desktop {
-         display: flex;
-         flex: 1;
-         padding-right: calc((100% - #{map-get($grid-max-widths, lg)}) / 4);
-         padding-left: calc((100% - #{map-get($grid-max-widths, lg)}) / 4);
-    }
-
-    @media (min-width: map-get($grid-breakpoints, lg)) {
-
-      .page-content-grid-mobile {
-        display: none;
-
-      }
-    }
-
-    @media (min-width: map-get($grid-breakpoints, md)) {
-
-        .charts-container {
-            display: none;
-            flex-direction: row;
-            justify-content: space-evenly;
-            flex-wrap: wrap;
-            flex: 1;
-        }
-
-        .tx-chart-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-        }
-
-        .px-chart-container {
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-        }
-
-        .page-content-grid-mobile {
-          display: none;
-  
-        }
-      }
-
-    @media (max-width: map-get($grid-breakpoints, md)) {
-        .menu {
-            display: none;
-        }
-
-        .charts-container {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .daily-tx-chart {
-            background-color: white;
-            border-radius: 8px;
-            padding: 24px;
-        }
-    
-        .price-chart {
-            background-color: white;
-            border-radius: 8px;
-        }
-
-        .page-content-grid-desktop {
-          display: none;
-        }
-    }
+  ion-item.item-md:hover {
+     cursor: default;
+     transform: none;
+     background-color: #fff;
+     box-shadow: none;
+  }
 }
 
 

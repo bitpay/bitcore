@@ -28,10 +28,9 @@ export class TransactionDetailsComponent implements OnInit {
   public showCoins = true;
   @Input()
   public chainNetwork: ChainNetwork;
+  public confirmations;
   @Input()
   public page: string;
-
-  public confirmations;
 
   private COIN = 100000000;
   private DEFAULT_RBF_SEQNUMBER = 0xffffffff;

@@ -21,7 +21,8 @@ module.exports = {
 
   storageOpts: {
     mongoDb: {
-      uri: 'mongodb://localhost:27017/bws'
+      uri: 'mongodb://localhost:27017/bws',
+      dbname: 'bws'
     }
   },
   messageBrokerOpts: {
@@ -92,6 +93,22 @@ module.exports = {
   //     apiKey: 'simplex_production_api_key_here',
   //     api: 'https://backend-wallet-api.simplexcc.com',
   //     appProviderId: 'simplex_provider_id_here'
+  //   }
+  // },
+  // wyre: {
+  //   sandbox: {
+  //     apiKey: 'wyre_sandbox_api_key_here',
+  //     secretApiKey: 'wyre_sandbox_secret_api_key_here',
+  //     api: 'https://api.testwyre.com',
+  //     widgetUrl: 'https://pay.testwyre.com',
+  //     appProviderAccountId: 'wyre_provider_sandbox_account_id_here'
+  //   },
+  //   production: {
+  //     apiKey: 'wyre_production_api_key_here',
+  //     secretApiKey: 'wyre_production_secret_api_key_here',
+  //     api: 'https://api.sendwyre.com',
+  //     widgetUrl: 'https://pay.sendwyre.com/',
+  //     appProviderAccountId: 'wyre_provider_production_account_id_here'
   //   }
   // },
   // To use email notifications uncomment this:

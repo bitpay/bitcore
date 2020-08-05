@@ -427,6 +427,8 @@ export class API extends EventEmitter {
     opts = opts || {};
 
     var coin = opts.coin || 'btc';
+    var signingMethod = opts.signingMethod || 'ecdsa';
+
     if (!_.includes(Constants.COINS, coin)) return cb(new Error('Invalid coin'));
 
     if (coin == 'eth') return cb(new Error('ETH not supported for this action'));
@@ -462,7 +464,7 @@ export class API extends EventEmitter {
               .from(utxos)
               .to(toAddress, amount)
               .fee(fee)
-              .sign(privateKey);
+              .sign(privateKey, undefined, signingMethod);
 
             // Make sure the tx can be serialized
             tx.serialize();
@@ -603,6 +605,7 @@ export class API extends EventEmitter {
 
   _addSignaturesToBitcoreTxBitcoin(txp, t, signatures, xpub) {
     $.checkState(txp.coin);
+    $.checkState(txp.signingMethod);
     const bitcore = Bitcore_[txp.coin];
     if (signatures.length != txp.inputs.length) throw new Error('Number of signatures does not match number of inputs');
 
@@ -621,7 +624,7 @@ export class API extends EventEmitter {
             bitcore.crypto.Signature.SIGHASH_ALL | bitcore.crypto.Signature.SIGHASH_FORKID,
           publicKey: pub
         };
-        t.inputs[i].addSignature(t, s);
+        t.inputs[i].addSignature(t, s, txp.signingMethod);
         i++;
       } catch (e) {}
     });
@@ -781,6 +784,7 @@ export class API extends EventEmitter {
   // * @param {string} opts.singleAddress[=false] - The wallet will only ever have one address.
   // * @param {String} opts.walletPrivKey - set a walletPrivKey (instead of random)
   // * @param {String} opts.id - set a id for wallet (instead of server given)
+  // * @param {Boolean} opts.useNativeSegwit - set addressType to P2WPKH or P2WSH
   // * @param cb
   // * @return {undefined}
   // */
@@ -823,13 +827,14 @@ export class API extends EventEmitter {
       network,
       singleAddress: !!opts.singleAddress,
       id: opts.id,
-      usePurpose48: n > 1
+      usePurpose48: n > 1,
+      useNativeSegwit: !!opts.useNativeSegwit
     };
     this.request.post('/v2/wallets/', args, (err, res) => {
       if (err) return cb(err);
 
       var walletId = res.walletId;
-      c.addWalletInfo(walletId, walletName, m, n, copayerName);
+      c.addWalletInfo(walletId, walletName, m, n, copayerName, { useNativeSegwit: opts.useNativeSegwit });
       var secret = API._buildSecret(c.walletId, c.walletPrivKey, c.coin, c.network);
 
       this._doJoinWallet(
@@ -899,6 +904,7 @@ export class API extends EventEmitter {
         if (err) return cb(err);
         if (!opts.dryRun) {
           this.credentials.addWalletInfo(wallet.id, wallet.name, wallet.m, wallet.n, copayerName, {
+            useNativeSegwit: wallet.addressType === Constants.SCRIPT_TYPES.P2WSH,
             allowOverwrite: true
           });
         }
@@ -1083,6 +1089,7 @@ export class API extends EventEmitter {
   // * @param {Boolean} opts.twoStep[=false] - Optional: use 2-step balance computation for improved performance
   // * @param {Boolean} opts.includeExtendedInfo (optional: query extended status)
   // * @param {String} opts.tokenAddress (optional: ERC20 Token Contract Address)
+  // * @param {String} opts.multisigContractAddress (optional: MULTISIG ETH Contract Address)
   // * @returns {Callback} cb - Returns error or an object with status information
   // */
   getStatus(opts, cb) {
@@ -1103,6 +1110,11 @@ export class API extends EventEmitter {
 
     if (opts.tokenAddress) {
       qs.push('tokenAddress=' + opts.tokenAddress);
+    }
+
+    if (opts.multisigContractAddress) {
+      qs.push('multisigContractAddress=' + opts.multisigContractAddress);
+      qs.push('network=' + this.credentials.network);
     }
 
     this.request.get('/v3/wallets/?' + qs.join('&'), (err, result) => {
@@ -1200,6 +1212,29 @@ export class API extends EventEmitter {
     this.request.get(url, cb);
   }
 
+  // /**
+  // * Gets list of coins
+  // *
+  // * @param {Function} cb
+  // * @param {String} opts.coin - Current tx coin
+  // * @param {String} opts.network - Current tx network
+  // * @param {String} opts.txId - Current tx id
+  // * @returns {Callback} cb - Return error or the list of coins
+  // */
+  getCoinsForTx(opts, cb) {
+    $.checkState(this.credentials && this.credentials.isComplete());
+    opts = opts || {};
+    var url = '/v1/txcoins/';
+    url +=
+      '?' +
+      querystring.stringify({
+        coin: opts.coin,
+        network: opts.network,
+        txId: opts.txId
+      });
+    this.request.get(url, cb);
+  }
+
   _getCreateTxProposalArgs(opts) {
     var args = _.cloneDeep(opts);
     args.message = API._encryptMessage(opts.message, this.credentials.sharedEncryptingKey) || null;
@@ -1232,16 +1267,25 @@ export class API extends EventEmitter {
   // * @param {Array} opts.inputs - Optional. Inputs for this TX
   // * @param {number} opts.fee - Optional. Use an fixed fee for this TX (only when opts.inputs is specified)
   // * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
+  // * @param {String} opts.signingMethod - Optional. If set, force signing method (ecdsa or schnorr) otherwise use default for coin
   // * @returns {Callback} cb - Return error or the transaction proposal
+  // * @param {String} baseUrl - Optional. ONLY FOR TESTING
   // */
-  createTxProposal(opts, cb) {
+  createTxProposal(opts, cb, baseUrl) {
     $.checkState(this.credentials && this.credentials.isComplete());
     $.checkState(this.credentials.sharedEncryptingKey);
     $.checkArgument(opts);
 
-    var args = this._getCreateTxProposalArgs(opts);
+    // BCH schnorr deployment
+    if (!opts.signingMethod && this.credentials.coin == 'bch') {
+      opts.signingMethod = 'schnorr';
+    }
 
-    this.request.post('/v3/txproposals/', args, (err, txp) => {
+    var args = this._getCreateTxProposalArgs(opts);
+    baseUrl = baseUrl || '/v3/txproposals/';
+    // baseUrl = baseUrl || '/v4/txproposals/'; // DISABLED 2020-04-07
+
+    this.request.post(baseUrl, args, (err, txp) => {
       if (err) return cb(err);
 
       this._processTxps(txp);
@@ -1354,6 +1398,7 @@ export class API extends EventEmitter {
   // *
   // * @param {String} opts.coin - Optional: defaults to current wallet coin
   // * @param {String} opts.tokenAddress - Optional: ERC20 token contract address
+  // * @param {String} opts.multisigContractAddress optional: MULTISIG ETH Contract Address
   // * @param {Callback} cb
   // */
   getBalance(opts, cb) {
@@ -1374,6 +1419,9 @@ export class API extends EventEmitter {
     }
     if (opts.tokenAddress) {
       args.push('tokenAddress=' + opts.tokenAddress);
+    }
+    if (opts.multisigContractAddress) {
+      args.push('multisigContractAddress=' + opts.multisigContractAddress);
     }
     var qs = '';
     if (args.length > 0) {
@@ -1479,10 +1527,11 @@ export class API extends EventEmitter {
   // *
   // * @param {Object} txp
   // * @param {Array} signatures
+  // * @param {base} base url (ONLY FOR TESTING)
   // * @param {Callback} cb
   // * @return {Callback} cb - Return error or object
   // */
-  pushSignatures(txp, signatures, cb) {
+  pushSignatures(txp, signatures, cb, base) {
     $.checkState(this.credentials && this.credentials.isComplete());
     $.checkArgument(txp.creatorId);
 
@@ -1498,11 +1547,15 @@ export class API extends EventEmitter {
 
         if (!isLegit) return cb(new Errors.SERVER_COMPROMISED());
 
-        var url = '/v1/txproposals/' + txp.id + '/signatures/';
+        let defaultBase = '/v2/txproposals/';
+        base = base || defaultBase;
+        //        base = base || '/v2/txproposals/'; // DISABLED 2020-04-07
+
+        let url = base + txp.id + '/signatures/';
+
         var args = {
           signatures
         };
-
         this.request.post(url, args, (err, txp) => {
           if (err) return cb(err);
           this._processTxps(txp);
@@ -1513,6 +1566,119 @@ export class API extends EventEmitter {
         return cb(err);
       });
   }
+
+  /**
+   * Create advertisement for bitpay app - (limited to marketing staff)
+   * @param opts - options
+   */
+  createAdvertisement(opts, cb) {
+    // TODO add check for preconditions of title, imgUrl, linkUrl
+
+    var url = '/v1/advertisements/';
+    let args = opts;
+
+    this.request.post(url, args, (err, createdAd) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, createdAd);
+    });
+  }
+
+  /**
+   * Get advertisements for bitpay app - (limited to marketing staff)
+   * @param opts - options
+   * @param opts.testing - if set, fetches testing advertisements
+   */
+  getAdvertisements(opts, cb) {
+    var url = '/v1/advertisements/';
+    if (opts.testing === true) {
+      url = '/v1/advertisements/' + '?testing=true';
+    }
+
+    this.request.get(url, (err, ads) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, ads);
+    });
+  }
+
+  /**
+   * Get advertisements for bitpay app, for specified country - (limited to marketing staff)
+   * @param opts - options
+   * @param opts.country - if set, fetches ads by Country
+   */
+  getAdvertisementsByCountry(opts, cb) {
+    var url = '/v1/advertisements/country/' + opts.country;
+
+    this.request.get(url, (err, ads) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, ads);
+    });
+  }
+
+  /**
+   * Get Advertisement
+   * @param opts - options
+   */
+  getAdvertisement(opts, cb) {
+    var url = '/v1/advertisements/' + opts.adId; // + adId or adTitle;
+    this.request.get(url, (err, body) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, body);
+    });
+  }
+
+  /**
+   * Activate Advertisement
+   * @param opts - options
+   */
+  activateAdvertisement(opts, cb) {
+    var url = '/v1/advertisements/' + opts.adId + '/activate'; // + adId or adTitle;
+    let args = opts;
+    this.request.post(url, args, (err, body) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, body);
+    });
+  }
+
+  /**
+   * Deactivate Advertisement
+   * @param opts - options
+   */
+  deactivateAdvertisement(opts, cb) {
+    var url = '/v1/advertisements/' + opts.adId + '/deactivate'; // + adId or adTitle;
+    let args = opts;
+    this.request.post(url, args, (err, body) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, body);
+    });
+  }
+
+  /**
+   * Delete Advertisement
+   * @param opts - options
+   */
+  deleteAdvertisement(opts, cb) {
+    var url = '/v1/advertisements/' + opts.adId; // + adId or adTitle;
+    this.request.delete(url, (err, body) => {
+      if (err) {
+        return cb(err);
+      }
+      return cb(null, body);
+    });
+  }
+
+  /*
 
   // /**
   // * Sign transaction proposal from AirGapped
@@ -1685,7 +1851,7 @@ export class API extends EventEmitter {
       .then(paypro => {
         if (paypro) {
           var t_unsigned = Utils.buildTx(txp);
-          var t = _.clone(t_unsigned);
+          var t = _.cloneDeep(t_unsigned);
 
           this._applyAllSignatures(txp, t);
 
@@ -1704,10 +1870,18 @@ export class API extends EventEmitter {
           const unserializedTxs = typeof rawTxUnsigned === 'string' ? [rawTxUnsigned] : rawTxUnsigned;
           const serializedTxs = typeof serializedTx === 'string' ? [serializedTx] : serializedTx;
 
+          let i = 0;
+
+          let isBtcSegwit = txp.coin == 'btc' && (txp.addressType == 'P2WSH' || txp.addressType == 'P2WPKH');
           for (const unsigned of unserializedTxs) {
+            let size = serializedTxs[i++].length / 2;
+            if (isBtcSegwit) {
+              let unsignedSize = unsigned.length / 2;
+              size = Math.floor(size - (unsignedSize * 3) / 4);
+            }
             unsignedTransactions.push({
               tx: unsigned,
-              weightedSize: unsigned.length / 2
+              weightedSize: size
             });
           }
           for (const signed of serializedTxs) {
@@ -1778,6 +1952,7 @@ export class API extends EventEmitter {
   // * @param {Number} opts.skip (defaults to 0)
   // * @param {Number} opts.limit
   // * @param {String} opts.tokenAddress
+  // * @param {String} opts.multisigContractAddress (optional: MULTISIG ETH Contract Address)
   // * @param {Boolean} opts.includeExtendedInfo
   // * @param {Callback} cb
   // * @return {Callback} cb - Return error or array of transactions
@@ -1790,6 +1965,7 @@ export class API extends EventEmitter {
       if (opts.skip) args.push('skip=' + opts.skip);
       if (opts.limit) args.push('limit=' + opts.limit);
       if (opts.tokenAddress) args.push('tokenAddress=' + opts.tokenAddress);
+      if (opts.multisigContractAddress) args.push('multisigContractAddress=' + opts.multisigContractAddress);
       if (opts.includeExtendedInfo) args.push('includeExtendedInfo=1');
     }
     var qs = '';
@@ -2062,6 +2238,34 @@ export class API extends EventEmitter {
   }
 
   // /**
+  // * Returns contract instantiation info. (All contract addresses instantiated by that sender with the current transaction hash and block number)
+  // * @param {string} opts.sender - sender eth wallet address
+  // * @return {Callback} cb - Return error (if exists) instantiation info
+  // */
+  getMultisigContractInstantiationInfo(opts, cb) {
+    var url = '/v1/ethmultisig/';
+    opts.network = this.credentials.network;
+    this.request.post(url, opts, (err, contractInstantiationInfo) => {
+      if (err) return cb(err);
+      return cb(null, contractInstantiationInfo);
+    });
+  }
+
+  // /**
+  // * Returns contract info. (owners addresses and required number of confirmations)
+  // * @param {string} opts.multisigContractAddress - multisig contract address
+  // * @return {Callback} cb - Return error (if exists) instantiation info
+  // */
+  getMultisigContractInfo(opts, cb) {
+    var url = '/v1/ethmultisig/info';
+    opts.network = this.credentials.network;
+    this.request.post(url, opts, (err, contractInfo) => {
+      if (err) return cb(err);
+      return cb(null, contractInfo);
+    });
+  }
+
+  // /**
   // * Get wallet status based on a string identifier (one of: walletId, address, txid)
   // *
   // * @param {string} opts.identifier - The identifier
@@ -2310,6 +2514,10 @@ export class API extends EventEmitter {
 
         // Exists
         if (!err) {
+          if (opts.coin == 'btc' && (status.wallet.addressType == 'P2WPKH' || status.wallet.addressType == 'P2WSH')) {
+            client.credentials.addressType =
+              status.wallet.n == 1 ? Constants.SCRIPT_TYPES.P2WPKH : Constants.SCRIPT_TYPES.P2WSH;
+          }
           let clients = [client];
           // Eth wallet with tokens?
           const tokenAddresses = status.preferences.tokenAddresses;
@@ -2325,6 +2533,24 @@ export class API extends EventEmitter {
               let tokenClient = _.cloneDeep(client);
               tokenClient.credentials = tokenCredentials;
               clients.push(tokenClient);
+            });
+          }
+          // Eth wallet with mulsig wallets?
+          const multisigEthInfo = status.preferences.multisigEthInfo;
+          if (!_.isEmpty(multisigEthInfo)) {
+            _.each(multisigEthInfo, info => {
+              log.info(
+                `Importing multisig wallet. Address: ${info.multisigContractAddress} - m: ${info.m} - n: ${info.n}`
+              );
+              const multisigEthCredentials = client.credentials.getMultisigEthCredentials({
+                walletName: info.walletName,
+                multisigContractAddress: info.multisigContractAddress,
+                n: info.n,
+                m: info.m
+              });
+              let multisigEthClient = _.cloneDeep(client);
+              multisigEthClient.credentials = multisigEthCredentials;
+              clients.push(multisigEthClient);
             });
           }
           return icb(null, clients);
@@ -2534,6 +2760,24 @@ export class API extends EventEmitter {
       qs.push('env=' + data.env);
 
       this.request.get('/v1/service/simplex/events/?' + qs.join('&'), (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
+  wyreWalletOrderQuotation(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/wyre/walletOrderQuotation', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
+  wyreWalletOrderReservation(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/wyre/walletOrderReservation', data, (err, data) => {
         if (err) return reject(err);
         return resolve(data);
       });

@@ -2,7 +2,7 @@
 
 var _ = require('lodash');
 var $ = require('../../util/preconditions');
-var errors = require('../../errors');
+const errors = require('../../errors');
 var BufferWriter = require('../../encoding/bufferwriter');
 var buffer = require('buffer');
 var BufferUtil = require('../../util/buffer');
@@ -12,9 +12,15 @@ var Sighash = require('../sighash');
 var Output = require('../output');
 
 var MAXINT = 0xffffffff; // Math.pow(2, 32) - 1;
-var DEFAULT_RBF_SEQNUMBER = MAXINT - 2;
 var DEFAULT_SEQNUMBER = MAXINT;
 var DEFAULT_LOCKTIME_SEQNUMBER = MAXINT - 1;
+var DEFAULT_RBF_SEQNUMBER = MAXINT - 2;
+const SEQUENCE_LOCKTIME_DISABLE_FLAG =  Math.pow(2,31); // (1 << 31);
+const SEQUENCE_LOCKTIME_TYPE_FLAG = Math.pow(2,22); // (1 << 22);
+const SEQUENCE_LOCKTIME_MASK = 0xffff;
+const SEQUENCE_LOCKTIME_GRANULARITY = 512; // 512 seconds
+const SEQUENCE_BLOCKDIFF_LIMIT = Math.pow(2,16)-1; // 16 bits 
+
 
 function Input(params) {
   if (!(this instanceof Input)) {
@@ -29,6 +35,7 @@ Input.MAXINT = MAXINT;
 Input.DEFAULT_SEQNUMBER = DEFAULT_SEQNUMBER;
 Input.DEFAULT_LOCKTIME_SEQNUMBER = DEFAULT_LOCKTIME_SEQNUMBER;
 Input.DEFAULT_RBF_SEQNUMBER = DEFAULT_RBF_SEQNUMBER;
+Input.SEQUENCE_LOCKTIME_TYPE_FLAG = SEQUENCE_LOCKTIME_TYPE_FLAG;
 
 Object.defineProperty(Input.prototype, 'script', {
   configurable: false,
@@ -166,7 +173,7 @@ Input.prototype.isFullySigned = function() {
 };
 
 Input.prototype.isFinal = function() {
-  return this.sequenceNumber !== 4294967295;
+  return this.sequenceNumber !== Input.MAXINT;
 };
 
 Input.prototype.addSignature = function() {
@@ -192,15 +199,17 @@ Input.prototype.setWitnesses = function(witnesses) {
   this.witnesses = witnesses;
 };
 
-Input.prototype.isValidSignature = function(transaction, signature) {
+Input.prototype.isValidSignature = function(transaction, signature, signingMethod) {
   // FIXME: Refactor signature so this is not necessary
+  signingMethod = signingMethod || 'ecdsa';
   signature.signature.nhashtype = signature.sigtype;
   return Sighash.verify(
     transaction,
     signature.signature,
     signature.publicKey,
     signature.inputIndex,
-    this.output.script
+    this.output.script,
+    signingMethod
   );
 };
 
@@ -215,5 +224,67 @@ Input.prototype.isNull = function() {
 Input.prototype._estimateSize = function() {
   return this.toBufferWriter().toBuffer().length;
 };
+
+
+/**
+ * Sets sequence number so that transaction is not valid until the desired seconds
+ *  since the transaction is mined
+ *
+ * @param {Number} time in seconds
+ * @return {Transaction} this
+ */
+Input.prototype.lockForSeconds = function(seconds) {
+  $.checkArgument(_.isNumber(seconds));
+  if (seconds < 0 ||  seconds >= SEQUENCE_LOCKTIME_GRANULARITY * SEQUENCE_LOCKTIME_MASK) {
+    throw new errors.Transaction.Input.LockTimeRange();
+  }
+  seconds = parseInt(Math.floor(seconds / SEQUENCE_LOCKTIME_GRANULARITY));
+
+  // SEQUENCE_LOCKTIME_DISABLE_FLAG = 1 
+  this.sequenceNumber = seconds | SEQUENCE_LOCKTIME_TYPE_FLAG ;
+  return this;
+};
+
+/**
+ * Sets sequence number so that transaction is not valid until the desired block height differnece since the tx is mined
+ *
+ * @param {Number} height
+ * @return {Transaction} this
+ */
+Input.prototype.lockUntilBlockHeight = function(heightDiff) {
+  $.checkArgument(_.isNumber(heightDiff));
+  if (heightDiff < 0 || heightDiff >= SEQUENCE_BLOCKDIFF_LIMIT) {
+    throw new errors.Transaction.Input.BlockHeightOutOfRange();
+  }
+  // SEQUENCE_LOCKTIME_TYPE_FLAG = 0
+  // SEQUENCE_LOCKTIME_DISABLE_FLAG = 0
+  this.sequenceNumber = heightDiff ;
+  return this;
+};
+
+
+/**
+ *  Returns a semantic version of the input's sequence nLockTime.
+ *  @return {Number|Date}
+ *  If sequence lock is disabled  it returns null,
+ *  if is set to block height lock, returns a block height (number)
+ *  else it returns a Date object.
+ */
+Input.prototype.getLockTime = function() {
+  if (this.sequenceNumber & SEQUENCE_LOCKTIME_DISABLE_FLAG) {
+    return null;
+  }
+
+  if (this.sequenceNumber & SEQUENCE_LOCKTIME_TYPE_FLAG) {
+    var seconds = SEQUENCE_LOCKTIME_GRANULARITY * (this.sequenceNumber & SEQUENCE_LOCKTIME_MASK);
+    return seconds;
+  } else {
+    var blockHeight = this.sequenceNumber & SEQUENCE_LOCKTIME_MASK;
+    return blockHeight;
+  }
+};
+
+
+
 
 module.exports = Input;

@@ -124,7 +124,7 @@ Utils.getClient = function(args, opts, cb) {
     verbose: args.verbose,
     supportStaffWalletId: opts.walletId,
     timeout: 20 * 60 * 1000,
-    //timeout: 1000,
+    // timeout: 1000,
   });
 
   storage.load(function(err, walletData) {
@@ -278,7 +278,7 @@ Utils.configureCommander = function(program) {
   program
     .version('0.0.1')
     .option('-f, --file <filename>', 'Wallet file')
-    .option('-h, --host <host>', 'Bitcore Wallet Service URL (eg: http://localhost:3001/copay/api')
+    .option('-h, --host <host>', 'Bitcore Wallet Service URL (eg: http://localhost:3232/bws/api')
     .option('-v, --verbose', 'be verbose')
 
   return program;

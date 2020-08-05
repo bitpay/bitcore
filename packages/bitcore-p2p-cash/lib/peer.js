@@ -159,12 +159,15 @@ Peer.prototype._addSocketEventHandlers = function() {
 
   this.socket.on('data', function(data) {
     self.dataBuffer.push(data);
-
     if (self.dataBuffer.length > Peer.MAX_RECEIVE_BUFFER) {
       // TODO: handle this case better
       return self.disconnect();
     }
-    self._readMessage();
+    try {
+      self._readMessage();
+    } catch (e) {
+      return self.disconnect();
+    }
   });
 };
 

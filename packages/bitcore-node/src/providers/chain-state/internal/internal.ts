@@ -8,6 +8,7 @@ import { LoggifyClass } from '../../../decorators/Loggify';
 import { MongoBound } from '../../../models/base';
 import { IBlock } from '../../../models/baseBlock';
 import { BitcoinBlockStorage, IBtcBlock } from '../../../models/block';
+import { CacheStorage } from '../../../models/cache';
 import { CoinStorage, ICoin } from '../../../models/coin';
 import { StateStorage } from '../../../models/state';
 import { ITransaction, TransactionStorage } from '../../../models/transaction';
@@ -44,7 +45,7 @@ import { ListTransactionsStream } from './transforms';
 @LoggifyClass
 export class InternalStateProvider implements IChainStateService {
   chain: string;
-  constructor(chain: string) {
+  constructor(chain: string, private WalletStreamTransform = ListTransactionsStream) {
     this.chain = chain;
     this.chain = this.chain.toUpperCase();
   }
@@ -74,14 +75,14 @@ export class InternalStateProvider implements IChainStateService {
     const { req, res, args } = params;
     const { limit, since } = args;
     const query = this.getAddressQuery(params);
-    Storage.apiStreamingFind(CoinStorage, query, { limit, since, paging: '_id' }, req, res);
+    Storage.apiStreamingFind(CoinStorage, query, { limit, since, paging: '_id' }, req!, res!);
   }
 
   async streamAddressTransactions(params: StreamAddressUtxosParams) {
     const { req, res, args } = params;
     const { limit, since } = args;
     const query = this.getAddressQuery(params);
-    Storage.apiStreamingFind(CoinStorage, query, { limit, since, paging: '_id' }, req, res);
+    Storage.apiStreamingFind(CoinStorage, query, { limit, since, paging: '_id' }, req!, res!);
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
@@ -409,7 +410,7 @@ export class InternalStateProvider implements IChainStateService {
       .find(query)
       .sort({ blockTimeNormalized: 1 })
       .addCursorFlag('noCursorTimeout', true);
-    const listTransactionsStream = new ListTransactionsStream(wallet);
+    const listTransactionsStream = new this.WalletStreamTransform(wallet);
     transactionStream.pipe(listTransactionsStream).pipe(res);
   }
 
@@ -455,7 +456,14 @@ export class InternalStateProvider implements IChainStateService {
 
   async getFee(params: GetEstimateSmartFeeParams) {
     const { chain, network, target } = params;
-    return this.getRPC(chain, network).getEstimateSmartFee(Number(target));
+    const cacheKey = `getFee-${chain}-${network}-${target}`;
+    return CacheStorage.getGlobalOrRefresh(
+      cacheKey,
+      async () => {
+        return this.getRPC(chain, network).getEstimateSmartFee(Number(target));
+      },
+      5 * CacheStorage.Times.Minute
+    );
   }
 
   async broadcastTransaction(params: BroadcastTransactionParams) {

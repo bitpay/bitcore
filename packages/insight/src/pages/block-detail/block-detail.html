@@ -103,7 +103,7 @@
         </ion-list>
 
         <h2>Transactions</h2>
-        <transaction-list [queryType]="'blockHash'" [queryValue]="block.hash" [chainNetwork]="chainNetwork">
+        <transaction-list [blocktime]="block.time" [queryType]="'blockHash'" [queryValue]="block.hash" [chainNetwork]="chainNetwork">
         </transaction-list>
       </div>
 

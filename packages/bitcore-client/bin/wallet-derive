@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+'use strict';
+
 const program = require('../ts_build/program');
 const { Wallet } = require('../ts_build/wallet');
 const promptly = require('promptly');
@@ -10,14 +12,15 @@ program
   .option('--gap [gap]', 'optional - Number of addresses to derive (will derive that many change addresses too)')
   .option('--change [change]', 'optional - should derive change addresses')
   .option('--path [path]', 'optional - Custom wallet storage path')
+  .option('--storageType [storageType]', 'optional - name of the database to use (default Level)')
   .parse(process.argv);
 
 const main = async () => {
-  const { name, path, gap=20, change=false } = program;
+  const { name, path, gap=20, change=false, storageType } = program;
   let wallet;
   try {
     const password = await promptly.password('Wallet Password:');
-    wallet = await Wallet.loadWallet({ name, path });
+    wallet = await Wallet.loadWallet({ name, path, storageType });
     wallet = await wallet.unlock(password);
 
     let unusedAddressCounter = 0;

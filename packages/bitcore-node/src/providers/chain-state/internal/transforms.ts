@@ -3,7 +3,7 @@ import { CoinStorage } from '../../../models/coin';
 import { IWallet } from '../../../models/wallet';
 
 export class ListTransactionsStream extends Transform {
-  constructor(private wallet: IWallet) {
+  constructor(public wallet: IWallet) {
     super({ objectMode: true });
   }
 

@@ -11,14 +11,10 @@
         </span>
       </div>
     </ion-col>
-    <ion-col col-5 text-right *ngIf="page === 'transaction'">
-      <ion-note [hidden]="!tx.firstSeenTs">
-        <span translate>first seen on</span>
-        <time>{{ tx.firstSeenTs * 1000 | date:'long' }}</time>
-      </ion-note>
-      <ion-note [hidden]="!tx.blocktime && tx.firstSeenTs">
+    <ion-col col-5 text-right>
+      <ion-note *ngIf="tx.time">
         <span translate>mined on</span>
-        <time>{{ tx.time * 1000 | date:'long' }}</time>
+        <time>{{ tx.time * 1000 | date:'medium' }}</time>
       </ion-note>
     </ion-col>
   </ion-row>

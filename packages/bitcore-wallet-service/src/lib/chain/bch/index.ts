@@ -1,4 +1,4 @@
-import { BitcoreLibCash } from 'crypto-wallet-core';
+import { BitcoreLib, BitcoreLibCash } from 'crypto-wallet-core';
 import _ from 'lodash';
 import { IChain } from '..';
 import { BtcChain } from '../btc';
@@ -8,6 +8,7 @@ const Errors = require('../../errors/errordefinitions');
 export class BchChain extends BtcChain implements IChain {
   constructor() {
     super(BitcoreLibCash);
+    this.feeSafetyMargin = 0.1;
   }
 
   validateAddress(wallet, inaddr, opts) {

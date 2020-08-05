@@ -72,7 +72,7 @@ Schnorr.prototype._findSignature = function(d, e) {
     $.checkState(!d.gte(n), new Error('privkey out of field of curve'));
   
     
-    let k = nonceFunctionRFC6979(d.toBuffer(), e.toBuffer({ size: 32 }));
+    let k = nonceFunctionRFC6979(d.toBuffer({ size: 32 }), e.toBuffer({ size: 32 }));
 
     let P = G.mul(d);
     let R = G.mul(k);
@@ -106,9 +106,8 @@ Schnorr.prototype._findSignature = function(d, e) {
       return 'signature must be a 64 byte or 65 byte array';
     } 
 
-    if(!(this.pubkey.toBuffer().length === 32 || this.pubkey.toBuffer().length === 33)) {
-      return 'pubkey must be 32 byte buffer';
-    }
+
+    let hashbuf = this.endian === 'little' ? BufferUtil.reverse(this.hashbuf) : this.hashbuf
     
     let P = this.pubkey.point;
     let G = Point.getG();
@@ -129,7 +128,7 @@ Schnorr.prototype._findSignature = function(d, e) {
     let Br = r.toBuffer();
     let Bp = Point.pointToCompressed(P);
     
-    let hash = Hash.sha256(Buffer.concat([Br, Bp, this.hashbuf]));
+    let hash = Hash.sha256(Buffer.concat([Br, Bp, hashbuf]));
     let e = BN.fromBuffer(hash, 'big').umod(n);
     
     let sG = G.mul(s);
@@ -143,6 +142,7 @@ Schnorr.prototype._findSignature = function(d, e) {
   };
 
   Schnorr.prototype.verify = function() {
+
     if (!this.sigError()) {
       this.verified = true;
     } else {
@@ -161,10 +161,11 @@ Schnorr.prototype._findSignature = function(d, e) {
     let V = Buffer.from("0101010101010101010101010101010101010101010101010101010101010101","hex");
     let K = Buffer.from("0000000000000000000000000000000000000000000000000000000000000000","hex");
 
-    let blob = Buffer.concat([privkey, msgbuf, Buffer.from("Schnorr+SHA256  ", "utf-8")]);
+    let blob = Buffer.concat([privkey, msgbuf, Buffer.from("", "ascii"), Buffer.from("Schnorr+SHA256  ", "ascii")]);
 
     K = Hash.sha256hmac(Buffer.concat([V, Buffer.from('00', 'hex'), blob]), K);
     V = Hash.sha256hmac(V,K); 
+
     K = Hash.sha256hmac(Buffer.concat([V,Buffer.from('01','hex'), blob]), K);
     V = Hash.sha256hmac(V,K);
 
@@ -173,13 +174,14 @@ Schnorr.prototype._findSignature = function(d, e) {
     while (true) {
       V = Hash.sha256hmac(V,K);
       T = BN.fromBuffer(V);
-
+      $.checkState(T.toBuffer().length >= 32, "T failed test");
       k = T;
+      
       if (k.gt(new BN(0) && k.lt(Point.getN()))) {
         break;
       }
       K = Hash.sha256hmac(Buffer.concat([V, Buffer.from("00", 'hex')]), K);
-      V = Hash.hmac(Hash.sha256sha256, V, K);
+      V = Hash.hmac(Hash.sha256, V, K);
     }
     return k;
   }
@@ -202,5 +204,3 @@ Schnorr.prototype._findSignature = function(d, e) {
   };
 
   module.exports = Schnorr;
-
-
