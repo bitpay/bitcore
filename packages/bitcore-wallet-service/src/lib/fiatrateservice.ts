@@ -173,10 +173,10 @@ export class FiatRateService {
           if (!rates) return cb();
           for (const rate of rates) {
             rate.rate = rate.value;
-            delete rate[_id];
-            delete rate[code];
-            delete rate[value];
-            delete rate[coin];
+            delete rate['_id'];
+            delete rate['code'];
+            delete rate['value'];
+            delete rate['coin'];
 
           }
           historicalRates[coin] = rates;
