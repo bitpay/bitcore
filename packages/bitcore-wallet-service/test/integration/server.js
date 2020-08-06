@@ -9277,7 +9277,6 @@ describe('Wallet service', function() {
     beforeEach((done) => {
       transport.level= 'info';
  
-
       config.simplex = {
         sandbox: {
           apiKey: 'xxxx',
@@ -9293,7 +9292,7 @@ describe('Wallet service', function() {
 
       fakeRequest = {
         get: (_url, _opts, _cb) => { return _cb(null, { data: 'data' }) },
-        post: (_url, _opts, _cb) => { return _cb(null, { data: 'data' }) },
+        post: (_url, _opts, _cb) => { return _cb(null, { body: 'data' }) },
       };
 
       helpers.createAndJoinWallet(1, 1, (s, w) => {
@@ -9347,30 +9346,6 @@ describe('Wallet service', function() {
         }).catch(err => {
           should.exist(err);
           err.message.should.equal('Error');
-        });
-      });
-
-      it('should return error if there is not environment', () => {
-        req.body.env = null;
-
-        server.request = fakeRequest;
-        server.simplexGetQuote(req).then(data => {
-          should.not.exist(data);
-        }).catch(err => {
-          should.exist(err);
-          err.message.should.equal('Simplex\'s request wrong environment');
-        });
-      });
-
-      it('should return error if environment is wrong', () => {
-        req.body.env = 'wrong';
-
-        server.request = fakeRequest;
-        server.simplexGetQuote(req).then(data => {
-          should.not.exist(data);
-        }).catch(err => {
-          should.exist(err);
-          err.message.should.equal('Simplex\'s request wrong environment');
         });
       });
 
@@ -9431,32 +9406,8 @@ describe('Wallet service', function() {
         });
       });
 
-      it('should return error if there is not environment', () => {
-        req.body.env = null;
-
-        server.request = fakeRequest;
-        server.simplexPaymentRequest(req).then(data => {
-          should.not.exist(data);
-        }).catch(err => {
-          should.exist(err);
-          err.message.should.equal('Simplex\'s request wrong environment');
-        });
-      });
-
-      it('should return error if environment is wrong', () => {
-        req.body.env = 'wrong';
-
-        server.request = fakeRequest;
-        server.simplexPaymentRequest(req).then(data => {
-          should.not.exist(data);
-        }).catch(err => {
-          should.exist(err);
-          err.message.should.equal('Simplex\'s request wrong environment');
-        });
-      });
-
       it('should return error if there is some missing arguments', () => {
-        req.body.transaction_details = null;
+        delete req.body.transaction_details;
 
         server.request = fakeRequest;
         server.simplexPaymentRequest(req).then(data => {
@@ -9525,7 +9476,7 @@ describe('Wallet service', function() {
 
       fakeRequest = {
         get: (_url, _opts, _cb) => { return _cb(null, { data: 'data' }) },
-        post: (_url, _opts, _cb) => { return _cb(null, { data: 'data' }) },
+        post: (_url, _opts, _cb) => { return _cb(null, { body: 'data'}) },
       };
 
       helpers.createAndJoinWallet(1, 1, (s, w) => {
@@ -9573,7 +9524,7 @@ describe('Wallet service', function() {
       });
 
       it('should return error if there is some missing arguments', () => {
-        req.body.amount = null;
+        delete req.body.amount;
 
         server.request = fakeRequest;
         server.wyreWalletOrderQuotation(req).then(data => {
@@ -9585,8 +9536,9 @@ describe('Wallet service', function() {
       });
 
       it('should return error if post returns error', () => {
+        req.body.amount = 50;
         const fakeRequest2 = {
-          post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+          post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
         };
 
         server.request = fakeRequest2;
@@ -9595,30 +9547,6 @@ describe('Wallet service', function() {
         }).catch(err => {
           should.exist(err);
           err.message.should.equal('Error');
-        });
-      });
-
-      it('should return error if there is no environment', () => {
-        req.body.env = null;
-
-        server.request = fakeRequest;
-        server.wyreWalletOrderQuotation(req).then(data => {
-          should.not.exist(data);
-        }).catch(err => {
-          should.exist(err);
-          err.message.should.equal('Wyre\'s request wrong environment');
-        });
-      });
-
-      it('should return error if environment is wrong', () => {
-        req.body.env = 'wrong';
-
-        server.request = fakeRequest;
-        server.wyreWalletOrderQuotation(req).then(data => {
-          should.not.exist(data);
-        }).catch(err => {
-          should.exist(err);
-          err.message.should.equal('Wyre\'s request wrong environment');
         });
       });
 
@@ -9644,7 +9572,8 @@ describe('Wallet service', function() {
             amount: 50,
             sourceCurrency: 'USD',
             destCurrency: 'BTC',
-            dest: 'bitcoin:123123123'
+            dest: 'bitcoin:123123123',
+            paymentMethod: 'debit-card'
           }
         }
 
@@ -9663,7 +9592,7 @@ describe('Wallet service', function() {
       });
 
       it('should return error if there is some missing arguments', () => {
-        req.body.amount = null;
+        delete req.body.amount;
 
         server.request = fakeRequest;
         server.wyreWalletOrderReservation(req).then(data => {
@@ -9675,8 +9604,9 @@ describe('Wallet service', function() {
       });
 
       it('should return error if post returns error', () => {
+        req.body.amount = 50;
         const fakeRequest2 = {
-          post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+          post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
         };
 
         server.request = fakeRequest2;
@@ -9685,30 +9615,6 @@ describe('Wallet service', function() {
         }).catch(err => {
           should.exist(err);
           err.message.should.equal('Error');
-        });
-      });
-
-      it('should return error if there is no environment', () => {
-        req.body.env = null;
-
-        server.request = fakeRequest;
-        server.wyreWalletOrderReservation(req).then(data => {
-          should.not.exist(data);
-        }).catch(err => {
-          should.exist(err);
-          err.message.should.equal('Wyre\'s request wrong environment');
-        });
-      });
-
-      it('should return error if environment is wrong', () => {
-        req.body.env = 'wrong';
-
-        server.request = fakeRequest;
-        server.wyreWalletOrderReservation(req).then(data => {
-          should.not.exist(data);
-        }).catch(err => {
-          should.exist(err);
-          err.message.should.equal('Wyre\'s request wrong environment');
         });
       });
 
