@@ -19,22 +19,25 @@ export class UpdateStats {
   constructor() {}
 
   run(config, cb) {
-    let uri = config.storageOpts.mongoDb.uri;
+    let dbConfig = config.storageOpts.mongoDb;
 
-    if (uri.indexOf('?') > 0) {
-      uri = uri + '&';
-    } else {
-      uri = uri + '?';
-    }
+    let uri = dbConfig.uri;
+
+    // Always for stats!
     uri = uri + 'readPreference=secondaryPreferred';
     console.log('Connected to ', uri);
-    mongodb.MongoClient.connect(uri, { useUnifiedTopology: true }, (err, client) => {
+
+    if (!dbConfig.dbname) {
+      return cb(new Error('No dbname at config.'));
+    }
+
+    mongodb.MongoClient.connect(dbConfig.uri, { useUnifiedTopology: true }, (err, client) => {
       if (err) {
-        console.log('Unable to connect to the mongoDB', err);
-        return cb(err, null);
+        return cb(err);
       }
+      this.db = client.db(dbConfig.dbname);
       this.client = client;
-      this.db = client.db(config.storageOpts.mongodb.dbname);
+
       this.updateStats((err, stats) => {
         if (err) return cb(err);
         return cb(null, stats);
