@@ -250,6 +250,7 @@ export class ExpressApp {
       res.setHeader('Cache-Control', `public, max-age=${seconds}, stale-if-error=${10 * seconds}`);
     }
 
+
     // retrieve latest version of copay
     router.get('/latest-version', async (req, res) => {
       SetPublicCache(res, 10 * ONE_MINUTE);
@@ -1291,7 +1292,17 @@ export class ExpressApp {
       });
     });
 
+
+    // Set no-cache by default
+    this.app.use((req, res, next) => {
+      res.setHeader('Cache-Control', `no-store`);
+      next();
+    });
+
     this.app.use(opts.basePath || '/bws/api', router);
+
+
+ 
 
     if (config.staticRoot) {
       logger.debug(`Serving static files from ${config.staticRoot}`);
