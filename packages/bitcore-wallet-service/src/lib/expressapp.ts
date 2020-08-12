@@ -1009,6 +1009,8 @@ export class ExpressApp {
       });
     });
 
+    // Retrive stats DO NOT UPDATE THEM
+    // To update them run /updatestats
     router.get('/v1/stats/', (req, res) => {
       const opts: {
         network?: string;
