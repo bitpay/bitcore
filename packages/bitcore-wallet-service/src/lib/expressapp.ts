@@ -247,7 +247,7 @@ export class ExpressApp {
     // See https://support.cloudflare.com/hc/en-us/articles/115003206852-Understanding-Origin-Cache-Control
     // Case: "▶Cache an asset with revalidation, but allow stale responses if origin server is unreachable"
     function SetPublicCache(res: express.Response, seconds: number) {
-      res.setHeader('Cache-Control', `public, max-age=${seconds}, stale-if-error=${10*seconds}`);
+      res.setHeader('Cache-Control', `public, max-age=${seconds}, stale-if-error=${10 * seconds}`);
     }
 
     // retrieve latest version of copay
