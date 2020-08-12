@@ -243,8 +243,16 @@ export class ExpressApp {
       };
     }
 
+    const ONE_MINUTE = 60;
+    // See https://support.cloudflare.com/hc/en-us/articles/115003206852-Understanding-Origin-Cache-Control
+    // Case: "▶Cache an asset with revalidation, but allow stale responses if origin server is unreachable"
+    function SetPublicCache(res: express.Response, seconds: number) {
+      res.setHeader('Cache-Control', `public, max-age=${seconds}, stale-if-error=${10 * seconds}`);
+    }
+
     // retrieve latest version of copay
     router.get('/latest-version', async (req, res) => {
+      SetPublicCache(res, 10 * ONE_MINUTE);
       try {
         res.setHeader('User-Agent', 'copay');
         var options = {
@@ -524,6 +532,7 @@ export class ExpressApp {
           res.json(ads);
         });
       } else {
+        SetPublicCache(res, 5 * ONE_MINUTE);
         server.getAdverts(req.body, (err, ads) => {
           if (err) returnError(err, res, req);
           res.json(ads);
@@ -740,6 +749,7 @@ export class ExpressApp {
 
     // DEPRECATED
     router.get('/v1/feelevels/', estimateFeeLimiter, (req, res) => {
+      SetPublicCache(res, 1 * ONE_MINUTE);
       logDeprecated(req);
       const opts: { network?: string } = {};
       if (req.query.network) opts.network = req.query.network;
@@ -761,6 +771,7 @@ export class ExpressApp {
 
     router.get('/v2/feelevels/', (req, res) => {
       const opts: { coin?: string; network?: string } = {};
+      SetPublicCache(res, 1 * ONE_MINUTE);
       if (req.query.coin) opts.coin = req.query.coin;
       if (req.query.network) opts.network = req.query.network;
 
@@ -777,6 +788,7 @@ export class ExpressApp {
     });
 
     router.post('/v3/estimateGas/', (req, res) => {
+      SetPublicCache(res, 1 * ONE_MINUTE);
       getServerWithAuth(req, res, async server => {
         try {
           const gasLimit = await server.estimateGas(req.body);
@@ -1012,6 +1024,7 @@ export class ExpressApp {
     // Retrive stats DO NOT UPDATE THEM
     // To update them run /updatestats
     router.get('/v1/stats/', (req, res) => {
+      SetPublicCache(res, 1 * ONE_MINUTE);
       const opts: {
         network?: string;
         coin?: string;
@@ -1033,6 +1046,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/version/', (req, res) => {
+      SetPublicCache(res, 1 * ONE_MINUTE);
       res.json({
         serviceVersion: WalletService.getServiceVersion()
       });
@@ -1117,6 +1131,7 @@ export class ExpressApp {
     });
 
     router.get('/v1/fiatrates/:code/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
       const opts = {
         code: req.params['code'],
@@ -1135,6 +1150,7 @@ export class ExpressApp {
     });
 
     router.get('/v2/fiatrates/:code/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
       const opts = {
         code: req.params['code'],
