@@ -170,14 +170,12 @@ Schnorr.prototype._findSignature = function(d, e) {
     V = Hash.sha256hmac(V,K);
 
     let k = new BN(0);
-    let T;
     while (true) {
       V = Hash.sha256hmac(V,K);
-      T = BN.fromBuffer(V);
-      $.checkState(T.toBuffer().length >= 32, "T failed test");
-      k = T;
       
-      if (k.gt(new BN(0) && k.lt(Point.getN()))) {
+      k = BN.fromBuffer(V);
+      $.checkState(V.length >= 32, "V length should be >= 32");
+      if (k.gt(new BN(0)) && k.lt(Point.getN())) {
         break;
       }
       K = Hash.sha256hmac(Buffer.concat([V, Buffer.from("00", 'hex')]), K);
