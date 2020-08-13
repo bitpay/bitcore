@@ -789,7 +789,6 @@ export class ExpressApp {
     });
 
     router.post('/v3/estimateGas/', (req, res) => {
-      SetPublicCache(res, 1 * ONE_MINUTE);
       getServerWithAuth(req, res, async server => {
         try {
           const gasLimit = await server.estimateGas(req.body);
