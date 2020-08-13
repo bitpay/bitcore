@@ -132,21 +132,19 @@ export class Key {
           throw new Error('Bad Key version');
         }
 
+        this.#xPrivKey = opts.seedData.xPrivKey;
+        this.#xPrivKeyEncrypted = opts.seedData.xPrivKeyEncrypted;
 
- *    'xPrivKey': '#xPrivKey', 
- *    'xPrivKeyEncrypted': '#xPrivKeyEncrypted', 
- *    'mnemonic': '#mnemonic',
- *    'mnemonicEncrypted': '#mnemonicEncrypted',
- *    'version': '#version',
- *    'mnemonicHasPassphrase': 'mnemonicHasPassphrase',
- *    'fingerPrint': 'fingerPrint', //  32bit fingerprint
- *    'compliantDerivation': 'compliantDerivation',
- *    'BIP45': 'BIP45',
- *
- *    // data for derived credentials.
- *    'use0forBCH': 'use0forBCH', // use the 0 coin' path element in BCH  (legacy)
- *    'use44forMultisig': 'use44forMultisig', // use the purpose 44' for multisig wallts (legacy)
- *    'id': 'id',
+        this.#mnemonic = opts.seedData.mnemonic;
+        this.#mnemonicEncrypted = opts.seedData.mnemonicEncrypted;
+        this.#mnemonicHasPassphrase = opts.seedData.mnemonicHasPassphrase;
+        this.#version = opts.seedData.version;
+        this.fingerPrint = opts.seedData.fingerPrint;
+        this.compliantDerivation = opts.seedData.compliantDerivation;
+        this.BIP45 = opts.seedData.BIP45;
+        this.id = opts.seedData.id;
+        this.use0forBCH = opts.seedData.use0forBCH;
+        this.use44forMultisig = opts.seedData.use44forMultisig;
  
         $.checkState(this.#xPrivKey || this.#xPrivKeyEncrypted, 'invalid input');
       default:
@@ -155,7 +153,9 @@ export class Key {
   }
 
   static match(a, b) {
-    return a.id == b.id;
+    // fingerPrint is not always available (because xPriv could has
+    // been imported encrypted)
+    return (a.id == b.id || a.fingerPrint == b.fingerPrint);
   }
 
   private setFromMnemonic(m, opts: { passphrase?: string, password?: string, sjclOpts?: any }) {
