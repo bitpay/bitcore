@@ -38,14 +38,12 @@ export class BchChain extends BtcChain implements IChain {
     let i = 0;
     const x = new BitcoreLibCash.HDPublicKey(xpub);
     _.each(signatures, signatureHex => {
-console.log('##[index.ts.780:signatureHex:]',signatureHex.length); // TODO
+      console.log('##[index.ts.780:signatureHex:]', signatureHex.length); // TODO
 
       // fix padding issues
       if (signingMethod == 'schnorr' && signatureHex.length != 128) {
-        signatureHex= _.padStart(signatureHex,128,'0');
+        signatureHex = _.padStart(signatureHex, 128, '0');
       }
-
-
 
       try {
         const signature = BitcoreLibCash.crypto.Signature.fromString(signatureHex);
@@ -59,12 +57,10 @@ console.log('##[index.ts.780:signatureHex:]',signatureHex.length); // TODO
         tx.inputs[i].addSignature(tx, s, signingMethod);
         i++;
       } catch (e) {
-
-console.log('[index.ts.795] CASH', e); // TODO
+        console.log('[index.ts.795] CASH', e); // TODO
       }
     });
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');
   }
-
 }

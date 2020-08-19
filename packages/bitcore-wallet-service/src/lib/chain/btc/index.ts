@@ -299,11 +299,10 @@ export class BtcChain implements IChain {
   }
 
   getBitcoreTx(txp, opts = { signed: true }) {
-
-console.log('[index.ts.302] I AM BTC CHAIN'); // TODO
+    console.log('[index.ts.302] I AM BTC CHAIN'); // TODO
     const t = new this.bitcoreLib.Transaction();
 
-console.log('[index.ts.305]', txp.version); // TODO
+    console.log('[index.ts.305]', txp.version); // TODO
     // BTC tx version
     if (txp.version <= 3) {
       t.setVersion(1);
@@ -386,17 +385,16 @@ console.log('[index.ts.305]', txp.version); // TODO
     $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin], 'fee-too-high');
 
     if (opts.signed) {
-
-console.log('[index.ts.389] SIGNING'); // TODO
+      console.log('[index.ts.389] SIGNING'); // TODO
       const sigs = txp.getCurrentSignatures();
 
-console.log('[index.ts.392]'); // TODO
+      console.log('[index.ts.392]'); // TODO
       _.each(sigs, x => {
-console.log('[index.ts.389]',  t, txp.inputs, txp.inputPaths, x.signatures, x.xpub, txp.signingMethod); // TODO
+        console.log('[index.ts.389]', t, txp.inputs, txp.inputPaths, x.signatures, x.xpub, txp.signingMethod); // TODO
         this.addSignaturesToBitcoreTx(t, txp.inputs, txp.inputPaths, x.signatures, x.xpub, txp.signingMethod);
       });
 
-console.log('[index.ts.398 ] DONE'); // TODO
+      console.log('[index.ts.398 ] DONE'); // TODO
     }
     return t;
   }
@@ -790,7 +788,7 @@ console.log('[index.ts.398 ] DONE'); // TODO
         tx.inputs[i].addSignature(tx, s, signingMethod);
         i++;
       } catch (e) {
-console.log('[index.ts.795]', e); // TODO
+        console.log('[index.ts.795]', e); // TODO
       }
     });
 

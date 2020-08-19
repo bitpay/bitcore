@@ -164,7 +164,7 @@ export class TxProposal {
       x.outputOrder = _.shuffle(x.outputOrder);
     }
 
-console.log('### [txproposal.ts.166]',  x.outputOrder); // TODO
+    console.log('### [txproposal.ts.166]', x.outputOrder); // TODO
     x.walletM = opts.walletM;
     x.walletN = opts.walletN;
     x.requiredSignatures = x.walletM;
