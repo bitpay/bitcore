@@ -2240,6 +2240,7 @@ export class API extends EventEmitter {
   // /**
   // * Returns contract instantiation info. (All contract addresses instantiated by that sender with the current transaction hash and block number)
   // * @param {string} opts.sender - sender eth wallet address
+  // * @param {string} opts.txId - instantiation transaction id
   // * @return {Callback} cb - Return error (if exists) instantiation info
   // */
   getMultisigContractInstantiationInfo(opts, cb) {
