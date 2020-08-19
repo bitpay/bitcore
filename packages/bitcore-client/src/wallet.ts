@@ -26,6 +26,7 @@ export interface WalletObj {
   addressIndex: number;
   tokens: Array<any>;
   lite: boolean;
+  accountIndex: number;
 }
 export class Wallet {
   masterKey: any;
@@ -48,6 +49,7 @@ export class Wallet {
   derivationPath: string;
   tokens?: Array<any>;
   lite: boolean;
+  accountIndex: number;
 
   constructor(params: Wallet | WalletObj) {
     Object.assign(this, params);
@@ -75,14 +77,14 @@ export class Wallet {
   }
 
   static async create(params: Partial<WalletObj>) {
-    const { chain, network, name, phrase, password, path, lite } = params;
+    const { chain, network, name, phrase, password, path, lite, accountIndex } = params;
     let { storageType, storage } = params;
     if (!chain || !network || !name) {
       throw new Error('Missing required parameter');
     }
     // Generate wallet private keys
     const mnemonic = new Mnemonic(phrase);
-    const hdPrivKey = mnemonic.toHDPrivateKey().derive(Deriver.pathFor(chain, network));
+    const hdPrivKey = mnemonic.toHDPrivateKey().derive(Deriver.pathFor(chain, network, accountIndex || 0));
     const privKeyObj = hdPrivKey.toObject();
 
     // Generate authentication keys
@@ -124,7 +126,8 @@ export class Wallet {
       xPubKey: hdPrivKey.xpubkey,
       pubKey,
       tokens: [],
-      storageType
+      storageType,
+      accountIndex
     });
 
     if (lite) {
