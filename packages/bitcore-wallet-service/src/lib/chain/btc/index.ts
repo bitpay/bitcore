@@ -389,10 +389,14 @@ console.log('[index.ts.305]', txp.version); // TODO
 
 console.log('[index.ts.389] SIGNING'); // TODO
       const sigs = txp.getCurrentSignatures();
+
+console.log('[index.ts.392]'); // TODO
       _.each(sigs, x => {
 console.log('[index.ts.389]',  t, txp.inputs, txp.inputPaths, x.signatures, x.xpub, txp.signingMethod); // TODO
         this.addSignaturesToBitcoreTx(t, txp.inputs, txp.inputPaths, x.signatures, x.xpub, txp.signingMethod);
       });
+
+console.log('[index.ts.398 ] DONE'); // TODO
     }
     return t;
   }
@@ -773,7 +777,6 @@ console.log('[index.ts.389]',  t, txp.inputs, txp.inputPaths, x.signatures, x.xp
 
     let i = 0;
     const x = new this.bitcoreLib.HDPublicKey(xpub);
-
     _.each(signatures, signatureHex => {
       try {
         const signature = this.bitcoreLib.crypto.Signature.fromString(signatureHex);
@@ -786,7 +789,9 @@ console.log('[index.ts.389]',  t, txp.inputs, txp.inputPaths, x.signatures, x.xp
         };
         tx.inputs[i].addSignature(tx, s, signingMethod);
         i++;
-      } catch (e) {}
+      } catch (e) {
+console.log('[index.ts.795]', e); // TODO
+      }
     });
 
     if (i != tx.inputs.length) throw new Error('Wrong signatures');

@@ -193,6 +193,7 @@ console.log('[schnorr.js.187]',k.toString('hex')); // TODO
   }
 
   Schnorr.sign = function(hashbuf, privkey, endian) {
+console.log('[schnorr.js.193: SIGN hashuf]',hashbuf.toString('hex')); // TODO
     return Schnorr().set({
       hashbuf: hashbuf,
       endian: endian,
@@ -201,6 +202,7 @@ console.log('[schnorr.js.187]',k.toString('hex')); // TODO
   };
   
   Schnorr.verify = function(hashbuf, sig, pubkey, endian) {
+console.log('VERIFY',hashbuf.toString('hex')); // TODO
     return Schnorr().set({
       hashbuf: hashbuf,
       endian: endian,

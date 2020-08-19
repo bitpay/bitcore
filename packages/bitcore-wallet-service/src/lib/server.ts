@@ -2592,7 +2592,7 @@ export class WalletService {
             );
           }
 
-console.log('[server.ts.2594]'); // TODO
+          console.log('[server.ts.2594]'); // TODO
           const action = _.find(txp.actions, {
             copayerId: this.copayerId
           });
@@ -2603,7 +2603,7 @@ console.log('[server.ts.2594]'); // TODO
 
           const copayer = wallet.getCopayer(this.copayerId);
 
-console.log('[server.ts.2605]'); // TODO
+          console.log('[server.ts.2605]'); // TODO
           try {
             if (!txp.sign(this.copayerId, opts.signatures, copayer.xPubKey)) {
               this.logw('Error signing transaction (BAD_SIGNATURES)');
@@ -2611,12 +2611,12 @@ console.log('[server.ts.2605]'); // TODO
               this.logw('Arguments:', JSON.stringify(opts));
               this.logw('Transaction proposal:', JSON.stringify(txp));
               const raw = ChainService.getBitcoreTx(txp).uncheckedSerialize();
-console.log('[server.ts.2613:raw:]',raw); // TODO
+              console.log('[server.ts.2613:raw:]', raw); // TODO
               this.logw('Raw tx:', raw);
               return cb(Errors.BAD_SIGNATURES);
             }
           } catch (ex) {
-console.log('[server.ts.2617:ex:]',ex); // TODO
+            console.log('[server.ts.2617:ex:]', ex); // TODO
             this.logw('Error signing transaction proposal', ex);
             return cb(ex);
           }

@@ -163,6 +163,8 @@ export class TxProposal {
     if (!opts.noShuffleOutputs) {
       x.outputOrder = _.shuffle(x.outputOrder);
     }
+
+console.log('### [txproposal.ts.166]',  x.outputOrder); // TODO
     x.walletM = opts.walletM;
     x.walletN = opts.walletN;
     x.requiredSignatures = x.walletM;
@@ -381,7 +383,7 @@ export class TxProposal {
       );
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
-console.log('[txproposal.ts.383]',this.coin); // TODO
+      console.log('[txproposal.ts.383]', this.coin); // TODO
       if (this.status == 'accepted') {
         this.raw = tx.uncheckedSerialize();
         this.txid = tx.id;
@@ -389,7 +391,7 @@ console.log('[txproposal.ts.383]',this.coin); // TODO
 
       return true;
     } catch (e) {
-console.log('[txproposal.ts.391]',e); // TODO
+      console.log('[txproposal.ts.391]', e); // TODO
       logger.debug(e);
       return false;
     }

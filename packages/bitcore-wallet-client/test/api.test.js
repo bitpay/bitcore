@@ -3747,9 +3747,12 @@ console.log('[api.test.js.3734:txp:]',txp, keys[0].get()); // TODO
             should.exist(publishedTxp);
             publishedTxp.signingMethod.should.equal('schnorr'); 
             publishedTxp.status.should.equal('pending');
+console.log('#### [api.test.js.3743:signatures:] TO SIGN'); // TODO
             let signatures = keys[0].sign(clients[0].getRootPath(), txp);
-console.log('[api.test.js.3743:signatures:]',signatures); // TODO
+console.log('#### [api.test.js.3743:signatures:] TO PUSH',signatures); // TODO
             clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+
+console.log('[api.test.js.3754] END PUSH'); // TODO
               should.not.exist(err);
               txp.status.should.equal("accepted");
               done();
