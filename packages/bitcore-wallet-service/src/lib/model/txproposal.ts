@@ -381,6 +381,7 @@ export class TxProposal {
       );
       this.addAction(copayerId, 'accept', null, signatures, xpub);
 
+console.log('[txproposal.ts.383]',this.coin); // TODO
       if (this.status == 'accepted') {
         this.raw = tx.uncheckedSerialize();
         this.txid = tx.id;
@@ -388,6 +389,7 @@ export class TxProposal {
 
       return true;
     } catch (e) {
+console.log('[txproposal.ts.391]',e); // TODO
       logger.debug(e);
       return false;
     }

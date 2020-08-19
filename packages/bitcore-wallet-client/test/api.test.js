@@ -121,7 +121,6 @@ helpers.createAndJoinWallet = (clients, keys, m, n, opts, cb) => {
     useLegacyPurpose: opts.useLegacyPurpose,
     passphrase: opts.passphrase,
   };
-
   keys[0] = opts.key || Key.create(keyOpts);
   let cred = keys[0].createCredentials(null, { coin: coin, network: network, account: 0, n: n, addressType: opts.addressType });
   clients[0].fromObj(cred);
@@ -3379,10 +3378,11 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
 
   describe('Transaction Proposal signing', function () {
     this.timeout(5000);
-    var setup = (m, n, coin, network, cb) => {
+    var setup = (m, n, coin, network, cb, key) => {
       helpers.createAndJoinWallet(clients, keys, m, n, {
         coin: coin,
         network: network,
+        key: key,
       }, (w) => {
         clients[0].createAddress((err, address) => {
           should.not.exist(err);
@@ -3715,10 +3715,52 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
 
     describe('BCH testnet (schnorr activaton)', (done) => {
       beforeEach((done) => {
-        setup(1, 1, 'bch', 'testnet', done);
+       setup(1, 1, 'bch', 'testnet', done, Key.fromMnemonic('gauge manage arch tornado cart soccer elegant toward educate slight unique pause'));
+ //       setup(1, 1, 'bch', 'testnet', done);
       });
 
-      it.only('should sign a tx', (done) => {
+//      let i=0;
+//      while(i++<100) {
+      it.only('should sign a 1 input tx ', (done) => {
+        var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
+        var opts = {
+          outputs: [{
+            amount: 1e7,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+          signingMethod: 'schnorr',       // forcing schnorr on BCH/livenet
+        };
+        blockchainExplorerMock.utxos= [{"txid":"3a16672914831af3180f541c79ca4915149a13f0ec6be32c6f3f6f1f63fada25","outputIndex":0,"amount":2,"satoshis":200000000,"address":"qztnwfm8k76sdud2ug22lne333hwm5527vh8pr52a8","scriptPubKey":"76a91497372767b7b506f1aae214afcf318c6eedd28af388ac","confirmations":88},{"txid":"239dbc3a989c0abeff7c8c6dc6e5d4423174daa4c5951044cfd5c707308cecc3","outputIndex":0,"amount":2,"satoshis":200000000,"address":"qztnwfm8k76sdud2ug22lne333hwm5527vh8pr52a8","scriptPubKey":"76a91497372767b7b506f1aae214afcf318c6eedd28af388ac","confirmations":43},{"txid":"c8b72b7a23c3b0ecf6c1d59fa7ac6516d82ddcea448278f24618134ae638a1fc","outputIndex":0,"amount":1,"satoshis":100000000,"address":"qztnwfm8k76sdud2ug22lne333hwm5527vh8pr52a8","scriptPubKey":"76a91497372767b7b506f1aae214afcf318c6eedd28af388ac","confirmations":0}];
+
+console.log('[api.test.js.3732]', JSON.stringify(blockchainExplorerMock.utxos));
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+console.log('[api.test.js.3734:txp:]',txp, keys[0].get()); // TODO
+          txp.signingMethod.should.equal('schnorr'); 
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            publishedTxp.signingMethod.should.equal('schnorr'); 
+            publishedTxp.status.should.equal('pending');
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+console.log('[api.test.js.3743:signatures:]',signatures); // TODO
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              should.not.exist(err);
+              txp.status.should.equal("accepted");
+              done();
+            });
+          });
+        });
+      });
+ //     }
+
+
+      it('should sign a tx', (done) => {
         var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
         var opts = {
           outputs: [{
@@ -3732,6 +3774,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
           message: 'just some message',
           signingMethod: 'schnorr',       // forcing schnorr on BCH/livenet
         };
+console.log('[api.test.js.3768]'); // TODO
         clients[0].createTxProposal(opts, (err, txp) => {
           should.not.exist(err);
           should.exist(txp);
@@ -3739,14 +3782,20 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
           clients[0].publishTxProposal({
             txp: txp,
           }, (err, publishedTxp) => {
+
+console.log('[api.test.js.3776]'); // TODO
             should.not.exist(err);
             should.exist(publishedTxp);
             publishedTxp.signingMethod.should.equal('schnorr'); 
             publishedTxp.status.should.equal('pending');
 
 
+console.log('[api.test.js.3747] #################'); // TODO
             let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+
+console.log('[api.test.js.3786]', signatures); // TODO
             clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+console.log('[api.test.js.3747] #################'); // TODO
               should.not.exist(err);
               txp.status.should.equal("accepted");
               done();

@@ -299,12 +299,16 @@ export class BtcChain implements IChain {
   }
 
   getBitcoreTx(txp, opts = { signed: true }) {
+
+console.log('[index.ts.302] I AM BTC CHAIN'); // TODO
     const t = new this.bitcoreLib.Transaction();
 
+console.log('[index.ts.305]', txp.version); // TODO
     // BTC tx version
     if (txp.version <= 3) {
       t.setVersion(1);
     } else {
+      $.checkState('txp version>=4 not yet supported');
       t.setVersion(2);
 
       // set nLockTime (only txp.version>=4)
@@ -382,8 +386,11 @@ export class BtcChain implements IChain {
     $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE[txp.coin], 'fee-too-high');
 
     if (opts.signed) {
+
+console.log('[index.ts.389] SIGNING'); // TODO
       const sigs = txp.getCurrentSignatures();
       _.each(sigs, x => {
+console.log('[index.ts.389]',  t, txp.inputs, txp.inputPaths, x.signatures, x.xpub, txp.signingMethod); // TODO
         this.addSignaturesToBitcoreTx(t, txp.inputs, txp.inputPaths, x.signatures, x.xpub, txp.signingMethod);
       });
     }

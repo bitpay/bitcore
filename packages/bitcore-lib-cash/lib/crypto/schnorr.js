@@ -187,6 +187,8 @@ console.log('[schnorr.js.160:msgbuf:]',msgbuf.toString('hex')); // TODO
       V = Hash.hmac(Hash.sha256, V, K);
     }
 console.log('[schnorr.js.187]',k.toString('hex')); // TODO
+//    console.log(new Error().stack);
+
     return k;
   }
 
