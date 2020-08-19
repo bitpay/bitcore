@@ -26,22 +26,23 @@ export class Stats {
   }
 
   run(cb) {
-    let uri = config.storageOpts.mongoDb.uri;
+    let dbConfig = config.storageOpts.mongoDb;
+    let uri = dbConfig.uri;
 
-    if (uri.indexOf('?') > 0) {
-      uri = uri + '&';
-    } else {
-      uri = uri + '?';
-    }
+    // Always for stats!
     uri = uri + 'readPreference=secondaryPreferred';
+    console.log('Connected to ', uri);
 
-    mongodb.MongoClient.connect(uri, { useUnifiedTopology: true }, (err, client) => {
+    if (!dbConfig.dbname) {
+      return cb(new Error('No dbname at config.'));
+    }
+
+    mongodb.MongoClient.connect(dbConfig.uri, { useUnifiedTopology: true }, (err, client) => {
       if (err) {
-        logger.error('Unable to connect to the mongoDB. Check the credentials.');
         return cb(err);
       }
+      this.db = client.db(dbConfig.dbname);
       this.client = client;
-      this.db = client.db(config.dbname);
 
       this._getStats((err, stats) => {
         if (err) return cb(err);

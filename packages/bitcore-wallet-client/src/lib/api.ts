@@ -2765,4 +2765,22 @@ export class API extends EventEmitter {
       });
     });
   }
+
+  wyreWalletOrderQuotation(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/wyre/walletOrderQuotation', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
+
+  wyreWalletOrderReservation(data): Promise<any> {
+    return new Promise((resolve, reject) => {
+      this.request.post('/v1/service/wyre/walletOrderReservation', data, (err, data) => {
+        if (err) return reject(err);
+        return resolve(data);
+      });
+    });
+  }
 }
