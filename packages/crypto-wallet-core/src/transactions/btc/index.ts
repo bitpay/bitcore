@@ -31,7 +31,7 @@ export class BTCTxProvider {
     return filteredUtxos;
   }
 
-  create({ recipients, utxos = [], change, wallet, fee = 20000 }) {
+  create({ recipients, utxos = [], change, wallet, feeRate, fee }) {
     change = change || wallet.deriveAddress(wallet.addressIndex, true);
     const filteredUtxos = this.selectCoins(recipients, utxos, fee);
     const btcUtxos = filteredUtxos.map(utxo => {
@@ -42,7 +42,13 @@ export class BTCTxProvider {
       });
       return new this.lib.Transaction.UnspentOutput(btcUtxo);
     });
-    let tx = new this.lib.Transaction().from(btcUtxos).feePerByte(Number(fee) + 2);
+    let tx = new this.lib.Transaction().from(btcUtxos);
+    if (fee) {
+      tx.fee(fee);
+    }
+    if (feeRate) {
+      tx.feePerByte(Number(feeRate));
+    }
     if (change) {
       tx.change(change);
     }
@@ -65,8 +71,8 @@ export class BTCTxProvider {
     return bitcoreTx.hash;
   }
 
-  sign(params: { tx: string; keys: Array<Key>; utxos: any[] }) {
-    const { tx, keys } = params;
+  sign(params: { tx: string; keys: Array<Key>; utxos: any[]; pubkeys?: any[]; threshold?: number; opts: any }) {
+    const { tx, keys, pubkeys, threshold, opts } = params;
     let utxos = params.utxos || [];
     let inputAddresses = this.getSigningAddresses({ tx, utxos });
     let bitcoreTx = new this.lib.Transaction(tx);
@@ -74,10 +80,9 @@ export class BTCTxProvider {
       outputs: bitcoreTx.inputs,
       utxos
     });
-    const outputs = this.getOutputsFromTx({ tx: bitcoreTx });
-    let newTx = new this.lib.Transaction().from(applicableUtxos).to(outputs);
+    bitcoreTx.associateInputs(applicableUtxos, pubkeys, threshold, opts);
     const privKeys = _.uniq(keys.map(key => key.privKey.toString()));
-    const signedTx = newTx.sign(privKeys).toString();
+    const signedTx = bitcoreTx.sign(privKeys).toString();
     return signedTx;
   }
 

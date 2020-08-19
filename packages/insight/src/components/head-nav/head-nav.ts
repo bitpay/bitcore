@@ -53,10 +53,10 @@ export class HeadNavComponent implements OnInit {
     };
   }
 
-  public goHome(chainNetwork): void {
+  public goHome(chainNetwork?): void {
     this.navCtrl.setRoot('home', {
-      chain: chainNetwork.chain,
-      network: chainNetwork.network
+      chain: chainNetwork ? chainNetwork.chain : 'ALL',
+      network: chainNetwork ? chainNetwork.network : 'mainnet'
     });
   }
 
@@ -71,16 +71,22 @@ export class HeadNavComponent implements OnInit {
             .search(this.q, inputDetails.type, this.chainNetwork)
             .subscribe(
               res => {
-                const nextView = this.processResponse(res);
-                if (!_.includes(nextView, '')) {
-                  this.params[nextView.type] = nextView.params;
-                  this.redirTo = nextView.redirTo;
-                  this.navCtrl.setRoot('home', this.params, { animate: false });
-                  this.redirProvider.redir(this.redirTo, this.params);
+                if (this.chainNetwork.chain !== 'ALL') {
+                  const nextView = this.processResponse(res);
+                  if (!_.includes(nextView, '')) {
+                    this.params[nextView.type] = nextView.params;
+                    this.redirTo = nextView.redirTo;
+                    this.navCtrl.setRoot('home', this.params, {
+                      animate: false
+                    });
+                    this.redirProvider.redir(this.redirTo, this.params);
+                  } else {
+                    const message = 'No matching records found!';
+                    this.wrongSearch(message);
+                    this.logger.info(message);
+                  }
                 } else {
-                  const message = 'No matching records found!';
-                  this.wrongSearch(message);
-                  this.logger.info(message);
+                  this.processAllResponse(res);
                 }
               },
               err => {
@@ -122,6 +128,54 @@ export class HeadNavComponent implements OnInit {
         },
         { redirTo: '', params: '', type: '' }
       );
+    }
+  }
+
+  private processAllResponse(response) {
+    const resFiltered = _.filter(response, o => {
+      return (
+        !_.isString(o) &&
+        !(
+          (o.addr && o.addr.length === 0) ||
+          (o.block && o.block.length === 0) ||
+          (o.tx && o.tx.length === 0)
+        )
+      );
+    });
+
+    if (resFiltered.length !== 0) {
+      const matches = {
+        blocks: [],
+        txs: [],
+        addresses: []
+      };
+
+      resFiltered.map(res => {
+        res.block
+          ? matches.blocks.push(res.block)
+          : res.tx
+          ? matches.txs.push(res.tx)
+          : matches.addresses.push(res.addr[0]);
+      });
+
+      // ETH addresses doesn't have 'address' property
+      if (matches.addresses.length > 0) {
+        matches.addresses.forEach(addr => {
+          if (!addr.address) {
+            addr.address = this.q;
+          }
+        });
+      }
+
+      this.redirProvider.redir('search', {
+        matches,
+        chain: this.chainNetwork.chain,
+        network: this.chainNetwork.network
+      });
+    } else {
+      const message = 'No matching records found!';
+      this.wrongSearch(message);
+      this.logger.info(message);
     }
   }
 

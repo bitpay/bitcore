@@ -72,7 +72,7 @@ Schnorr.prototype._findSignature = function(d, e) {
     $.checkState(!d.gte(n), new Error('privkey out of field of curve'));
   
     
-    let k = nonceFunctionRFC6979(d.toBuffer({ size: 32 }), e.toBuffer({ size: 32 }));
+    let k = this.nonceFunctionRFC6979(d.toBuffer({ size: 32 }), e.toBuffer({ size: 32 }));
 
     let P = G.mul(d);
     let R = G.mul(k);
@@ -157,7 +157,7 @@ Schnorr.prototype._findSignature = function(d, e) {
    * @param {Buffer} msgbuf 
    * @return k {BN}
    */
-  function nonceFunctionRFC6979(privkey, msgbuf) {
+  Schnorr.prototype.nonceFunctionRFC6979 = function(privkey, msgbuf) {
     let V = Buffer.from("0101010101010101010101010101010101010101010101010101010101010101","hex");
     let K = Buffer.from("0000000000000000000000000000000000000000000000000000000000000000","hex");
 
@@ -174,10 +174,10 @@ Schnorr.prototype._findSignature = function(d, e) {
     while (true) {
       V = Hash.sha256hmac(V,K);
       T = BN.fromBuffer(V);
-      $.checkState(T.toBuffer().length >= 32, "T failed test");
+
       k = T;
-      
-      if (k.gt(new BN(0) && k.lt(Point.getN()))) {
+      $.checkState(V.length >= 32, "V length should be >= 32");
+      if (k.gt(new BN(0)) && k.lt(Point.getN())) {
         break;
       }
       K = Hash.sha256hmac(Buffer.concat([V, Buffer.from("00", 'hex')]), K);

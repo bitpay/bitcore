@@ -90,6 +90,25 @@ describe('Chain BTC', function() {
       const privKey = new BitcoreLib.PrivateKey();
 
     });
+    it('1  input p2pkh,1 output p2pkh  ', function() {
+      let x = TxProposal.fromObj(aTXP());
+      delete x.changeAddress;
+      x.outputs.pop();
+      x.addressType =   Constants.SCRIPT_TYPES.P2PKH;
+      const estimatedLength = btc.getEstimatedSize(x);
+
+      // Create a similar TX.
+      let tx = new BitcoreLib.Transaction();
+      tx.from(simpleUtxoWith1BTC)
+        .to([{address: toAddress, satoshis: 1e8-7000}])
+        .sign(privateKey);
+
+      const actualLength = tx.serialize().length/2;
+      ((Math.abs(actualLength-estimatedLength))/actualLength).should.be.below(0.05);
+    });
+
+
+
     it('1  input p2pkh,  2 output p2pkh, 1 output p2sh  ', function() {
       let x = TxProposal.fromObj(aTXP());
       x.addressType =   Constants.SCRIPT_TYPES.P2PKH;
@@ -104,8 +123,6 @@ describe('Chain BTC', function() {
 
       const actualLength = tx.serialize().length/2;
       ((Math.abs(actualLength-estimatedLength))/actualLength).should.be.below(0.05);
-
-
     });
 
 

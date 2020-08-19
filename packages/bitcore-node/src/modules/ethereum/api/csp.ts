@@ -1,12 +1,15 @@
 import { CryptoRpc } from 'crypto-rpc';
+import * as _ from 'lodash';
 import { ObjectID } from 'mongodb';
-import { Readable, Transform } from 'stream';
+import { Readable } from 'stream';
 import Web3 from 'web3';
 import { AbiItem } from 'web3-utils';
 import { Transaction } from 'web3/eth/types';
 import Config from '../../../config';
 import logger from '../../../logger';
+import { MongoBound } from '../../../models/base';
 import { ITransaction } from '../../../models/baseTransaction';
+import { CacheStorage } from '../../../models/cache';
 import { WalletAddressStorage } from '../../../models/walletAddress';
 import { InternalStateProvider } from '../../../providers/chain-state/internal/internal';
 import { Storage } from '../../../services/storage';
@@ -29,9 +32,12 @@ import { StatsUtil } from '../../../utils/stats';
 import { ERC20Abi } from '../abi/erc20';
 import { EthBlockStorage } from '../models/block';
 import { EthTransactionStorage } from '../models/transaction';
-import { EthTransactionJSON, IEthBlock } from '../types';
+import { EthTransactionJSON, IEthBlock, IEthTransaction } from '../types';
+import { Erc20RelatedFilterTransform } from './erc20Transform';
+import { InternalTxRelatedFilterTransform } from './internalTxTransform';
+import { PopulateReceiptTransform } from './populateReceiptTransform';
 import { EthListTransactionsStream } from './transform';
-interface EventLog<T> {
+export interface EventLog<T> {
   event: string;
   address: string;
   returnValues: T;
@@ -101,43 +107,80 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       network = 'mainnet';
     }
 
-    const txs = await EthTransactionStorage.collection
-      .find({ chain, network, blockHeight: { $gt: 0 } })
-      .project({ gasPrice: 1, blockHeight: 1 })
-      .sort({ blockHeight: -1 })
-      .limit(20 * 200)
-      .toArray();
+    const cacheKey = `getFee-${chain}-${network}-${target}`;
+    return CacheStorage.getGlobalOrRefresh(
+      cacheKey,
+      async () => {
+        const txs = await EthTransactionStorage.collection
+          .find({ chain, network, blockHeight: { $gt: 0 } })
+          .project({ gasPrice: 1, blockHeight: 1 })
+          .sort({ blockHeight: -1 })
+          .limit(20 * 200)
+          .toArray();
 
-    const blockGasPrices = txs
-      .map(tx => Number(tx.gasPrice))
-      .filter(gasPrice => gasPrice)
-      .sort((a, b) => b - a);
+        const blockGasPrices = txs
+          .map(tx => Number(tx.gasPrice))
+          .filter(gasPrice => gasPrice)
+          .sort((a, b) => b - a);
 
-    const whichQuartile = Math.min(target, 4) || 1;
-    const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, whichQuartile);
+        const whichQuartile = Math.min(target, 4) || 1;
+        const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, whichQuartile);
 
-    const roundedGwei = (quartileMedian / 1e9).toFixed(2);
-    const feerate = Number(roundedGwei) * 1e9;
-    return { feerate, blocks: target };
+        const roundedGwei = (quartileMedian / 1e9).toFixed(2);
+        const feerate = Number(roundedGwei) * 1e9;
+        return { feerate, blocks: target };
+      },
+      CacheStorage.Times.Minute
+    );
   }
 
   async getBalanceForAddress(params: GetBalanceForAddressParams) {
-    const { network, address } = params;
+    const { chain, network, address } = params;
     const { web3 } = await this.getWeb3(network);
-    if (params.args) {
-      if (params.args.tokenAddress) {
-        const token = await this.erc20For(network, params.args.tokenAddress);
-        const balance = Number(await token.methods.balanceOf(address).call());
-        return { confirmed: balance, unconfirmed: 0, balance };
-      }
-    }
-
-    const balance = Number(await web3.eth.getBalance(address));
-    return { confirmed: balance, unconfirmed: 0, balance };
+    const tokenAddress = params.args && params.args.tokenAddress;
+    const addressLower = address.toLowerCase();
+    const cacheKey = tokenAddress
+      ? `getBalanceForAddress-${chain}-${network}-${addressLower}-${tokenAddress.toLowerCase()}`
+      : `getBalanceForAddress-${chain}-${network}-${addressLower}`;
+    const balances = await CacheStorage.getGlobalOrRefresh(
+      cacheKey,
+      async () => {
+        if (tokenAddress) {
+          const token = await this.erc20For(network, params.args.tokenAddress);
+          const balance = await token.methods.balanceOf(address).call();
+          const numberBalance = Number(balance);
+          return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
+        } else {
+          const balance = await web3.eth.getBalance(address);
+          const numberBalance = Number(balance);
+          return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
+        }
+      },
+      CacheStorage.Times.Hour / 2
+    );
+    return balances;
   }
 
   async getLocalTip({ chain, network }) {
     return EthBlockStorage.getLocalTip({ chain, network });
+  }
+
+  async getReceipt(network: string, txid: string) {
+    const { web3 } = await this.getWeb3(network);
+    return web3.eth.getTransactionReceipt(txid);
+  }
+
+  async populateReceipt(tx: MongoBound<IEthTransaction>) {
+    if (!tx.receipt) {
+      const receipt = await this.getReceipt(tx.network, tx.txid);
+      if (receipt) {
+        const fee = receipt.gasUsed * tx.gasPrice;
+        await EthTransactionStorage.collection.updateOne({ _id: tx._id }, { $set: { receipt, fee } });
+        tx.receipt = receipt;
+        tx.fee = fee;
+      }
+    }
+    return tx;
   }
 
   async getTransaction(params: StreamTransactionParams) {
@@ -150,12 +193,13 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       let query = { chain, network, txid: txId };
       const tip = await this.getLocalTip(params);
       const tipHeight = tip ? tip.height : 0;
-      const found = await EthTransactionStorage.collection.findOne(query);
+      let found = await EthTransactionStorage.collection.findOne(query);
       if (found) {
         let confirmations = 0;
         if (found.blockHeight && found.blockHeight >= 0) {
           confirmations = tipHeight - found.blockHeight + 1;
         }
+        found = await this.populateReceipt(found);
         const convertedTx = EthTransactionStorage._apiTransform(found, { object: true }) as EthTransactionJSON;
         return { ...convertedTx, confirmations } as any;
       } else {
@@ -255,16 +299,14 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     return balance;
   }
 
-  async streamWalletTransactions(params: StreamWalletTransactionsParams) {
-    const { chain, network, wallet, res, args } = params;
-    const { web3 } = await this.getWeb3(network);
-    const query: any = {
+  getWalletTransactionQuery(params: StreamWalletTransactionsParams) {
+    const { chain, network, wallet, args } = params;
+    let query = {
       chain,
       network,
       wallets: wallet._id,
       'wallets.0': { $exists: true }
-    };
-
+    } as any;
     if (args) {
       if (args.startBlock || args.endBlock) {
         query.$or = [];
@@ -295,65 +337,38 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
         }
       }
     }
+    return query;
+  }
+
+  async streamWalletTransactions(params: StreamWalletTransactionsParams) {
+    const { network, wallet, res, args } = params;
+    const { web3 } = await this.getWeb3(network);
+    const query = ETH.getWalletTransactionQuery(params);
 
     let transactionStream = new Readable({ objectMode: true });
-    if (!args.tokenAddress) {
-      transactionStream = EthTransactionStorage.collection
-        .find(query)
-        .sort({ blockTimeNormalized: 1 })
-        .addCursorFlag('noCursorTimeout', true);
-    } else {
-      const walletAddresses = await this.getWalletAddresses(wallet._id!);
-      const query = {
-        chain,
-        network,
-        $or: [
-          {
-            wallets: wallet._id,
-            abiType: { $exists: true },
-            to: web3.utils.toChecksumAddress(args.tokenAddress),
-            'abiType.type': 'ERC20',
-            'abiType.name': 'transfer',
-            'wallets.0': { $exists: true }
-          },
-          {
-            abiType: { $exists: true },
-            to: web3.utils.toChecksumAddress(args.tokenAddress),
-            'abiType.type': 'ERC20',
-            'abiType.name': 'transfer',
-            'abiType.params.0.value': { $in: walletAddresses.map(w => w.address.toLowerCase()) }
-          }
-        ]
-      };
-      transactionStream = EthTransactionStorage.collection
-        .find(query)
-        .sort({ blockTimeNormalized: 1 })
-        .addCursorFlag('noCursorTimeout', true)
-        .pipe(
-          new Transform({
-            objectMode: true,
-            transform: (tx: any, _, cb) => {
-              if (tx.abiType && tx.abiType.type === 'ERC20') {
-                return cb(null, {
-                  ...tx,
-                  value: tx.abiType!.params[1].value,
-                  to: web3.utils.toChecksumAddress(tx.abiType!.params[0].value)
-                });
-              }
-              if (tx.abiType && tx.abiType.type === 'INVOICE') {
-                return cb(null, {
-                  ...tx,
-                  value: tx.abiType!.params[0].value,
-                  to: tx.to
-                });
-              }
-              return cb(null, tx);
-            }
-          })
-        );
+    const walletAddresses = (await this.getWalletAddresses(wallet._id!)).map(waddres => waddres.address);
+    const ethTransactionTransform = new EthListTransactionsStream(walletAddresses);
+    const populateReceipt = new PopulateReceiptTransform();
+
+    transactionStream = EthTransactionStorage.collection
+      .find(query)
+      .sort({ blockTimeNormalized: 1 })
+      .addCursorFlag('noCursorTimeout', true);
+
+    if (!args.tokenAddress && wallet._id) {
+      const internalTxTransform = new InternalTxRelatedFilterTransform(web3, wallet._id);
+      transactionStream = transactionStream.pipe(internalTxTransform);
     }
-    const listTransactionsStream = new EthListTransactionsStream(wallet);
-    transactionStream.pipe(listTransactionsStream).pipe(res);
+
+    if (args.tokenAddress) {
+      const erc20Transform = new Erc20RelatedFilterTransform(web3, args.tokenAddress);
+      transactionStream = transactionStream.pipe(erc20Transform);
+    }
+
+    transactionStream
+      .pipe(populateReceipt)
+      .pipe(ethTransactionTransform)
+      .pipe(res);
   }
 
   async getErc20Transfers(
@@ -475,7 +490,13 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       }
 
       await EthTransactionStorage.collection.updateMany(
-        { chain, network, $or: [{ from: { $in: addressBatch } }, { to: { $in: addressBatch } }] },
+        {
+          $or: [
+            { chain, network, from: { $in: addressBatch } },
+            { chain, network, to: { $in: addressBatch } },
+            { chain, network, 'internal.action.to': { $in: addressBatch } }
+          ]
+        },
         { $addToSet: { wallets: params.wallet._id } }
       );
 

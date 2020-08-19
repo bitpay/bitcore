@@ -35,11 +35,11 @@ export class CoinComponent {
   // tslint:disable-next-line:use-life-cycle-interface
   ngOnInit() {
     this.time = new Date(this.coin.blockTime).getTime() / 1000;
-    this.confirmations = (this.blockTipHeight - this.coin.height) + 1;
+    this.confirmations = this.blockTipHeight - this.coin.height + 1;
   }
 
   public revealTimeReceived(txid: string) {
-    this.txProvider.getTx(txid, this.chainNetwork).subscribe((tx) => {
+    this.txProvider.getTx(txid, this.chainNetwork).subscribe(tx => {
       this.coin.time = new Date(tx.blockTime).getTime() / 1000;
       this.timeHidden = false;
     });

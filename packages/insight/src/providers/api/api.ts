@@ -1,8 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Observable } from 'rxjs';
 import { DefaultProvider } from '../../providers/default/default';
-import { Logger } from '../../providers/logger/logger';
 
 import * as _ from 'lodash';
 
@@ -51,8 +50,7 @@ export class ApiProvider {
 
   constructor(
     public httpClient: HttpClient,
-    private defaults: DefaultProvider,
-    private logger: Logger
+    private defaults: DefaultProvider
   ) {
     this.getAvailableNetworks().subscribe(data => {
       const newNetworks = data

@@ -2,11 +2,9 @@ import * as async from 'async';
 import * as _ from 'lodash';
 import moment from 'moment';
 import * as mongodb from 'mongodb';
+import logger from './logger';
 
 const config = require('../config');
-let log = require('npmlog');
-log.debug = log.verbose;
-log.disableColor();
 
 const INITIAL_DATE = '2015-01-01';
 
@@ -16,6 +14,7 @@ export class Stats {
   from: moment.MomentFormatSpecification;
   to: moment.MomentFormatSpecification;
   db: mongodb.Db;
+  client: mongodb.MongoClient;
 
   constructor(opts) {
     opts = opts || {};
@@ -27,23 +26,31 @@ export class Stats {
   }
 
   run(cb) {
-    let uri = config.storageOpts.mongoDb.uri;
+    let dbConfig = config.storageOpts.mongoDb;
+    let uri = dbConfig.uri;
 
-    if (uri.indexOf('?') > 0) {
-      uri = uri + '&';
-    } else {
-      uri = uri + '?';
-    }
+    // Always for stats!
     uri = uri + 'readPreference=secondaryPreferred';
-    mongodb.MongoClient.connect(uri, (err, db) => {
+    console.log('Connected to ', uri);
+
+    if (!dbConfig.dbname) {
+      return cb(new Error('No dbname at config.'));
+    }
+
+    mongodb.MongoClient.connect(dbConfig.uri, { useUnifiedTopology: true }, (err, client) => {
       if (err) {
-        log.error('Unable to connect to the mongoDB', err);
-        return cb(err, null);
+        return cb(err);
       }
-      this.db = db;
+      this.db = client.db(dbConfig.dbname);
+      this.client = client;
+
       this._getStats((err, stats) => {
         if (err) return cb(err);
-        return cb(null, stats);
+
+        this.client.close(err => {
+          if (err) logger.error(err);
+          return cb(null, stats);
+        });
       });
     });
   }

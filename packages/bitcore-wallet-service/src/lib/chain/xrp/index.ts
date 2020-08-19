@@ -1,8 +1,8 @@
 import { Transactions, Validation } from 'crypto-wallet-core';
 import _ from 'lodash';
-import * as log from 'npmlog';
 import { IAddress } from 'src/lib/model/address';
 import { IChain, INotificationData } from '..';
+import logger from '../../logger';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
@@ -168,7 +168,7 @@ export class XrpChain implements IChain {
     try {
       this.getBitcoreTx(txp);
     } catch (ex) {
-      log.warn('Error building XRP  transaction', ex);
+      logger.warn('Error building XRP  transaction', ex);
       return ex;
     }
   }
@@ -181,7 +181,8 @@ export class XrpChain implements IChain {
     server.getBalance({ wallet }, (err, balance) => {
       if (err) return cb(err);
       const { totalAmount, availableAmount } = balance;
-      if (totalAmount < txp.getTotalAmount()) {
+      const minXrpBalance = 20000000; // 20 XRP * 1e6
+      if (totalAmount - minXrpBalance < txp.getTotalAmount()) {
         return cb(Errors.INSUFFICIENT_FUNDS);
       } else if (availableAmount < txp.getTotalAmount()) {
         return cb(Errors.LOCKED_FUNDS);

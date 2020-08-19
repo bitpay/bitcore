@@ -1,5 +1,7 @@
-import { EthTransactionStorage } from '../../../src/modules/ethereum/models/transaction';
 import { expect } from 'chai';
+import { CacheStorage } from '../../../src/models/cache';
+import { ETH } from '../../../src/modules/ethereum/api/csp';
+import { EthTransactionStorage } from '../../../src/modules/ethereum/models/transaction';
 describe('Ethereum API', function() {
   it('should return undefined for garbage data', () => {
     const data = 'garbage';
@@ -49,5 +51,16 @@ describe('Ethereum API', function() {
       '0xa9059cbb0000000000000000000000000797350000000000000000000000000000000000000000000005150ac4c39a6f3f0000';
     const decoded = EthTransactionStorage.abiDecode(data);
     expect(decoded).to.be.undefined;
+  });
+
+  it('should be able to get the fees', async () => {
+    const chain = 'ETH';
+    const network = 'testnet';
+    const target = 1;
+    const cacheKey = `getFee-${chain}-${network}-${target}`;
+    const fee = await ETH.getFee({ chain, network, target });
+    expect(fee).to.exist;
+    const cached = await CacheStorage.getGlobal(cacheKey);
+    expect(fee).to.deep.eq(cached);
   });
 });

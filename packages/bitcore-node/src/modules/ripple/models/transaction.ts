@@ -4,6 +4,7 @@ import { LoggifyClass } from '../../../decorators/Loggify';
 import logger from '../../../logger';
 import { MongoBound } from '../../../models/base';
 import { BaseTransaction } from '../../../models/baseTransaction';
+import { CacheStorage } from '../../../models/cache';
 import { CoinStorage } from '../../../models/coin';
 import { EventStorage } from '../../../models/events';
 import { Config } from '../../../services/config';
@@ -62,6 +63,10 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
       )
     );
 
+    if (params.initialSyncComplete) {
+      await this.expireBalanceCache(coinOps);
+    }
+
     // Create events for mempool txs
     if (params.height != undefined && params.height < SpentHeightIndicators.minimum) {
       for (let op of txOps) {
@@ -83,6 +88,22 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
           }
         });
       }
+    }
+  }
+
+  async expireBalanceCache(coinOps: Array<any>) {
+    let batch = new Array<{ address: string; chain: string; network: string }>();
+    for (const coinOp of coinOps) {
+      const coin = { ...coinOp.updateOne.filter, ...coinOp.updateOne.update.$set } as IXrpCoin;
+      const { address, chain, network } = coin;
+      batch.push({ address, chain, network });
+    }
+
+    for (const payload of batch) {
+      const { address, chain, network } = payload;
+      const lowerAddress = address.toLowerCase();
+      const cacheKey = `getBalanceForAddress-${chain}-${network}-${lowerAddress}`;
+      await CacheStorage.expire(cacheKey);
     }
   }
 

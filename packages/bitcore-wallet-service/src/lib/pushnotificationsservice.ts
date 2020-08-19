@@ -4,6 +4,7 @@ import _ from 'lodash';
 import 'source-map-support/register';
 
 import request from 'request';
+import logger from './logger';
 import { MessageBroker } from './messagebroker';
 import { INotification, IPreferences } from './model';
 import { Storage } from './storage';
@@ -15,8 +16,6 @@ const Utils = require('./common/utils');
 const Defaults = require('./common/defaults');
 const Constants = require('./common/constants');
 const sjcl = require('sjcl');
-const log = require('npmlog');
-log.debug = log.verbose;
 
 const PUSHNOTIFICATIONS_TYPES = {
   NewCopayer: {
@@ -123,7 +122,7 @@ export class PushNotificationsService {
       ],
       err => {
         if (err) {
-          log.error(err);
+          logger.error(err);
         }
         return cb(err);
       }
@@ -136,13 +135,13 @@ export class PushNotificationsService {
     const notifType = PUSHNOTIFICATIONS_TYPES[notification.type];
     if (!notifType) return cb();
 
-    log.debug('Notification received: ' + notification.type);
-    log.debug(JSON.stringify(notification));
+    logger.debug('Notification received: ' + notification.type);
+    logger.debug(JSON.stringify(notification));
 
     this._checkShouldSendNotif(notification, (err, should) => {
       if (err) return cb(err);
 
-      log.debug('Should send notification: ', should);
+      logger.debug('Should send notification: ', should);
       if (!should) return cb();
 
       this._getRecipientsList(notification, notifType, (err, recipientsList) => {
@@ -165,6 +164,10 @@ export class PushNotificationsService {
                     const notifications = _.map(subs, sub => {
                       const tokenAddress =
                         notification.data && notification.data.tokenAddress ? notification.data.tokenAddress : null;
+                      const multisigContractAddress =
+                        notification.data && notification.data.multisigContractAddress
+                          ? notification.data.multisigContractAddress
+                          : null;
                       return {
                         to: sub.token,
                         priority: 'high',
@@ -179,6 +182,7 @@ export class PushNotificationsService {
                         data: {
                           walletId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(notification.walletId)),
                           tokenAddress,
+                          multisigContractAddress,
                           copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(recipient.copayerId)),
                           title: content.plain.subject,
                           body: content.plain.body,
@@ -200,11 +204,11 @@ export class PushNotificationsService {
                 notifications,
                 (notification, next) => {
                   this._makeRequest(notification, (err, response) => {
-                    if (err) log.error(err);
+                    if (err) logger.error(err);
                     if (response) {
-                      log.debug('Request status: ', response.statusCode);
-                      log.debug('Request message: ', response.statusMessage);
-                      log.debug('Request body: ', response.request.body);
+                      logger.debug('Request status: ', response.statusCode);
+                      logger.debug('Request message: ', response.statusMessage);
+                      logger.debug('Request body: ', response.request.body);
                     }
                     next();
                   });
@@ -217,7 +221,7 @@ export class PushNotificationsService {
           ],
           err => {
             if (err) {
-              log.error('An error ocurred generating notification', err);
+              logger.error('An error ocurred generating notification', err);
             }
             return cb(err);
           }
@@ -243,13 +247,13 @@ export class PushNotificationsService {
       }
 
       this.storage.fetchPreferences(notification.walletId, null, (err, preferences) => {
-        if (err) log.error(err);
+        if (err) logger.error(err);
         if (_.isEmpty(preferences)) preferences = [];
 
         const recipientPreferences = _.compact(
           _.map(preferences, p => {
             if (!_.includes(this.availableLanguages, p.language)) {
-              if (p.language) log.warn('Language for notifications "' + p.language + '" not available.');
+              if (p.language) logger.warn('Language for notifications "' + p.language + '" not available.');
               p.language = this.defaultLanguage;
             }
 
@@ -402,7 +406,7 @@ export class PushNotificationsService {
       try {
         return Mustache.render(t, data);
       } catch (e) {
-        log.error('Could not apply data to template', e);
+        logger.error('Could not apply data to template', e);
         error = e;
       }
     });

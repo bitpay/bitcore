@@ -6,22 +6,24 @@ import * as _ from 'lodash';
 import { Constants } from './constants';
 import { Defaults } from './defaults';
 
-var $ = require('preconditions').singleton();
-var sjcl = require('sjcl');
-var Stringify = require('json-stable-stringify');
+const $ = require('preconditions').singleton();
+const sjcl = require('sjcl');
+const Stringify = require('json-stable-stringify');
 
-var Bitcore = BitcoreLib;
-var Bitcore_ = {
+const Bitcore = BitcoreLib;
+const Bitcore_ = {
   btc: Bitcore,
   bch: BitcoreLibCash,
   eth: Bitcore,
   xrp: Bitcore
 };
-var PrivateKey = Bitcore.PrivateKey;
-var PublicKey = Bitcore.PublicKey;
-var crypto = Bitcore.crypto;
+const PrivateKey = Bitcore.PrivateKey;
+const PublicKey = Bitcore.PublicKey;
+const crypto = Bitcore.crypto;
 
 let SJCL = {};
+
+const MAX_DECIMAL_ANY_COIN = 18; // more that 14 gives rounding errors
 
 export class Utils {
   static getChain(coin: string): string {
@@ -226,9 +228,16 @@ export class Utils {
     $.checkArgument(_.includes(_.keys(Constants.UNITS), unit));
 
     var clipDecimals = (number, decimals) => {
-      var x = number.toString().split('.');
+      let str = number.toString();
+      if (str.indexOf('e') >= 0) {
+        // fixes eth small balances
+        str = number.toFixed(MAX_DECIMAL_ANY_COIN);
+      }
+      var x = str.split('.');
+
       var d = (x[1] || '0').substring(0, decimals);
-      return parseFloat(x[0] + '.' + d);
+      const ret = parseFloat(x[0] + '.' + d);
+      return ret;
     };
 
     var addSeparators = (nStr, thousands, decimal, minDecimals) => {
@@ -343,7 +352,7 @@ export class Utils {
 
       return t;
     } else {
-      const { data, destinationTag, outputs, payProUrl, tokenAddress } = txp;
+      const { data, destinationTag, outputs, payProUrl, tokenAddress, multisigContractAddress } = txp;
       const recipients = outputs.map(output => {
         return {
           amount: output.amount,
@@ -358,7 +367,8 @@ export class Utils {
       }
       const unsignedTxs = [];
       const isERC20 = tokenAddress && !payProUrl;
-      const chain = isERC20 ? 'ERC20' : this.getChain(coin);
+      const isETHMULTISIG = multisigContractAddress && !payProUrl;
+      const chain = isERC20 ? 'ERC20' : isETHMULTISIG ? 'ETHMULTISIG' : this.getChain(coin);
       for (let index = 0; index < recipients.length; index++) {
         const rawTx = Transactions.create({
           ...txp,

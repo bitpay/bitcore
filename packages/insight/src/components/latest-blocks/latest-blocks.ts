@@ -1,6 +1,6 @@
 import { Component, Input, NgZone, OnDestroy, OnInit } from '@angular/core';
 import { Subscription } from 'rxjs';
-import { ApiProvider, ChainNetwork } from '../../providers/api/api';
+import { ChainNetwork } from '../../providers/api/api';
 import {
   ApiEthBlock,
   ApiUtxoCoinBlock,
@@ -21,7 +21,7 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   @Input()
   public showAllBlocksButton = false;
   @Input()
-  public showLoadMoreButton = false;
+  public isHomePage = false;
   @Input()
   public showTimeAs: string;
   @Input()
@@ -38,7 +38,6 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
     public defaults: DefaultProvider,
     public redirProvider: RedirProvider,
     private blocksProvider: BlocksProvider,
-    private apiProvider: ApiProvider,
     private ngZone: NgZone
   ) {
     this.numBlocks = parseInt(defaults.getDefault('%NUM_BLOCKS%'), 10);
@@ -57,37 +56,38 @@ export class LatestBlocksComponent implements OnInit, OnDestroy {
   }
 
   private loadBlocks(): void {
-    this.subscriber = this.blocksProvider
-      .getBlocks(this.chainNetwork, this.numBlocks)
-      .subscribe(
-        response => {
-          const blocks = response.map(
-            (block: ApiEthBlock & ApiUtxoCoinBlock) => {
-              if (
-                this.chainNetwork.chain === 'BTC' ||
-                this.chainNetwork.chain === 'BCH'
-              ) {
-                return this.blocksProvider.toUtxoCoinAppBlock(block);
+    if (this.chainNetwork.chain !== 'ALL') {
+      this.subscriber = this.blocksProvider
+        .getBlocks(this.chainNetwork, this.numBlocks)
+        .subscribe(
+          response => {
+            const blocks = response.map(
+              (block: ApiEthBlock & ApiUtxoCoinBlock) => {
+                if (
+                  this.chainNetwork.chain === 'BTC' ||
+                  this.chainNetwork.chain === 'BCH'
+                ) {
+                  return this.blocksProvider.toUtxoCoinAppBlock(block);
+                }
+                if (this.chainNetwork.chain === 'ETH') {
+                  return this.blocksProvider.toEthAppBlock(block);
+                }
               }
-              if (this.chainNetwork.chain === 'ETH') {
-                return this.blocksProvider.toEthAppBlock(block);
-              }
+            );
+            this.blocks = blocks;
+            this.loading = false;
+            if (this.blocks[this.blocks.length - 1].height < this.numBlocks) {
+              this.isHomePage = false;
             }
-          );
-          this.blocks = blocks;
-          this.loading = false;
-          if(this.blocks[this.blocks.length - 1].height < this.numBlocks) { 
-            this.showLoadMoreButton = false;
+          },
+          err => {
+            this.subscriber.unsubscribe();
+            clearInterval(this.reloadInterval);
+            this.errorMessage = err;
+            this.loading = false;
           }
-          
-        },
-        err => {
-          this.subscriber.unsubscribe();
-          clearInterval(this.reloadInterval);
-          this.errorMessage = err;
-          this.loading = false;
-        }
-      );
+        );
+    }
   }
 
   public loadMoreBlocks(infiniteScroll) {

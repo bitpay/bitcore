@@ -1,0 +1,80 @@
+<head-nav [chainNetwork]="chainNetwork"></head-nav>
+
+<ion-content class="content-container">
+    <ion-grid class="page-content-grid">
+        <ion-row *ngIf="matches?.blocks && matches.blocks.length > 0">
+            <ion-col col-12>
+                <h2 class="content-container--heading">Blocks:</h2>
+            </ion-col>
+            <ion-col col-md-6 col-12 class="page-content" *ngFor="let block of matches.blocks" (click)="goToBlock(block)">
+                <div ion-item no-lines>
+                    <ion-avatar item-start>
+                        <img *ngIf="block.network === 'mainnet'" src="assets/img/currency_logos/{{ block.chain.toLowerCase() }}.svg" class="logo" />
+                        <img *ngIf="block.network !== 'mainnet' && block.chain==='BTC'" src="assets/img/btcicon-testnet.svg" class="logo" />
+                        <img *ngIf="block.network !== 'mainnet' && block.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" />
+                        <img [ngClass]="{'secondary': block.network ==='testnet'}" *ngIf="block.network !== 'mainnet' && block.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" />
+                    </ion-avatar>
+                    <ion-label color="dark" item-end>
+                        {{ block.chain }} <small class="pill"> {{ block.network }}</small><span ion-text color="primary">
+                            #{{ block.height }}
+                        </span>
+                    </ion-label>
+                </div>
+                <div ion-item no-lines>
+                    <div ion-text color="primary">
+                        Block Hash {{ block.hash }}
+                    </div>
+                    <div ion-text color="dark-light">Mined on {{ block.time | date:'medium' }}</div>
+                </div>
+            </ion-col>
+        </ion-row>
+        <ion-row *ngIf="matches?.txs && matches.txs.length > 0">
+            <ion-col col-12>
+                <h2 class="content-container--heading">Transactions:</h2>
+            </ion-col>
+            <ion-col col-md-6 col-12 class="page-content" *ngFor="let tx of matches.txs" (click)="goToTx(tx)">
+                <div ion-item no-lines>
+                    <ion-avatar item-start>
+                        <img *ngIf="tx.network === 'mainnet'" src="assets/img/currency_logos/{{ tx.chain.toLowerCase() }}.svg" class="logo" />
+                        <img *ngIf="tx.network !== 'mainnet' && tx.chain==='BTC'" src="assets/img/btcicon-testnet.svg" class="logo" />
+                        <img *ngIf="tx.network !== 'mainnet' && tx.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" />
+                        <img [ngClass]="{'secondary': tx.network ==='testnet'}" *ngIf="tx.network !== 'mainnet' && tx.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" />
+                    </ion-avatar>
+                    <ion-label color="dark" item-end>
+                        {{ tx.chain }} <small class="pill"> {{ tx.network }}</small>
+                    </ion-label>
+                </div>
+                <div ion-item no-lines>
+                    <div ion-text color="primary">
+                        {{ tx.txid }}
+                    </div>
+                    <div ion-text color="dark-light">Received Time {{ tx.blockTime | date:'medium' }}</div>
+                </div>
+            </ion-col>
+        </ion-row>
+        <ion-row *ngIf="matches?.addresses && matches.addresses.length > 0">
+            <ion-col col-12>
+                <h2 class="content-container--heading">Addresses:</h2>
+            </ion-col>
+            <ion-col col-md-6 col-12 class="page-content" *ngFor="let addr of matches.addresses" (click)="goToAddress(addr)">
+                <div ion-item no-lines>
+                    <ion-avatar item-start>
+                        <img *ngIf="addr.network === 'mainnet'" src="assets/img/currency_logos/{{ addr.chain.toLowerCase() }}.svg" class="logo" />
+                        <img *ngIf="addr.network !== 'mainnet' && addr.chain==='BTC'" src="assets/img/btcicon-testnet.svg" class="logo" />
+                        <img *ngIf="addr.network !== 'mainnet' && addr.chain==='BCH'" src="assets/img/bchicon-testnet.svg" class="logo" />
+                        <img [ngClass]="{'secondary': addr.network ==='testnet'}" *ngIf="addr.network !== 'mainnet' && addr.chain==='ETH'" src="assets/img/currency_logos/eth.svg" class="logo" />
+                    </ion-avatar>
+                    <ion-label color="dark" item-end>
+                        {{ addr.chain }} <small class="pill"> {{ addr.network }}</small>
+                    </ion-label>
+                </div>
+                <div ion-item no-lines>
+                    <div ion-text color="primary">
+                        {{ addr.address }}
+                    </div>
+                </div>
+            </ion-col>
+        </ion-row>
+    </ion-grid>
+</ion-content>
+<footer [chainNetwork]="chainNetwork"></footer>

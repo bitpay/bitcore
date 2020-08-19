@@ -161,7 +161,48 @@ a.disabled-link{
   background: #f7f8fc !important; //override base ionic color
 }
 
-.content-container--heading {
-  padding-bottom: 2rem;
-  padding-top: 5rem;
+.page-content-grid {
+  display: flex;
+  flex: 1;
+  padding-right: calc((100% - #{map-get($grid-max-widths, lg)}) / 4);
+  padding-left: calc((100% - #{map-get($grid-max-widths, lg)}) / 4);
+  margin-bottom: 36px;
+  margin-top: 30px;
+  ion-col.page-content{
+      margin-top: 0;
+      margin-bottom: 0;
+  }
+}
+.content-container{
+  &--heading{
+      padding: 0;
+      margin-top: 10rem;
+      &.all-coins{
+          text-align: center;
+      }
+  }
+
+}
+
+@media (min-width: map-get($grid-breakpoints, lg)) {
+ .page-content-grid {
+   margin-top: 0px;
+}
+}
+
+@media (max-width: map-get($grid-breakpoints, lg)) {
+ .content-container{
+     &--heading.all-coins{
+         margin-top: 15rem;
+     }
+   }
+}
+
+
+@media (max-width: map-get($grid-breakpoints, md)) {
+ .content-container{
+   &--heading.all-coins{
+       margin-top: 15rem;
+   }
+ }
 }

@@ -1,14 +1,15 @@
-import { StateStorage } from '../../src/models/state';
 import sinon from 'sinon';
-import { BitcoinBlockStorage } from '../../src/models/block';
-import { TransactionStorage } from '../../src/models/transaction';
-import { CoinStorage } from '../../src/models/coin';
-import { WalletAddressStorage } from '../../src/models/walletAddress';
-import { WalletStorage } from '../../src/models/wallet';
-import { Storage } from '../../src/services/storage';
 import { BaseModel } from '../../src/models/base';
-import { RateLimitStorage } from '../../src/models/rateLimit';
+import { BitcoinBlockStorage } from '../../src/models/block';
+import { CacheStorage } from '../../src/models/cache';
+import { CoinStorage } from '../../src/models/coin';
 import { EventStorage } from '../../src/models/events';
+import { RateLimitStorage } from '../../src/models/rateLimit';
+import { StateStorage } from '../../src/models/state';
+import { TransactionStorage } from '../../src/models/transaction';
+import { WalletStorage } from '../../src/models/wallet';
+import { WalletAddressStorage } from '../../src/models/walletAddress';
+import { Storage } from '../../src/services/storage';
 
 export async function resetDatabase() {
   console.log('Resetting database');
@@ -20,7 +21,8 @@ export async function resetDatabase() {
     resetModel(WalletStorage),
     resetModel(StateStorage),
     resetModel(RateLimitStorage),
-    resetModel(EventStorage)
+    resetModel(EventStorage),
+    resetModel(CacheStorage)
   ]);
 }
 

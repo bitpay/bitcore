@@ -215,19 +215,15 @@ describe('Fiat rate service', function() {
 
             res[coin][3].ts.should.equal(100);
             res[coin][3].rate.should.equal(1.00);
-            res[coin][3].fetchedOn.should.equal(100);
   
             res[coin][2].ts.should.equal(200);
             res[coin][2].rate.should.equal(2.00);
-            res[coin][2].fetchedOn.should.equal(200);
   
             res[coin][1].ts.should.equal(300);
             res[coin][1].rate.should.equal(3.00);
-            res[coin][1].fetchedOn.should.equal(300);
   
             res[coin][0].ts.should.equal(400);
             res[coin][0].rate.should.equal(4.00);
-            res[coin][0].fetchedOn.should.equal(400);
           }
           clock.restore();
           done();
@@ -261,19 +257,15 @@ describe('Fiat rate service', function() {
 
           res['btc'][3].ts.should.equal(100);
           res['btc'][3].rate.should.equal(1.00);
-          res['btc'][3].fetchedOn.should.equal(100);
 
           res['btc'][2].ts.should.equal(200);
           res['btc'][2].rate.should.equal(2.00);
-          res['btc'][2].fetchedOn.should.equal(200);
 
           res['btc'][1].ts.should.equal(300);
           res['btc'][1].rate.should.equal(3.00);
-          res['btc'][1].fetchedOn.should.equal(300);
 
           res['btc'][0].ts.should.equal(400);
           res['btc'][0].rate.should.equal(4.00);
-          res['btc'][0].fetchedOn.should.equal(400);
           clock.restore();
           done();
         });
@@ -310,7 +302,6 @@ describe('Fiat rate service', function() {
             res[coin].length.should.equal(1);
             res[coin][0].ts.should.equal(2640000);
             res[coin][0].rate.should.equal(4.00);
-            res[coin][0].fetchedOn.should.equal(2640000);
           }
           clock.restore();
           done();

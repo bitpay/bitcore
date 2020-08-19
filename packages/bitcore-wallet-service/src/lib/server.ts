@@ -1,7 +1,7 @@
 import * as async from 'async';
 import * as _ from 'lodash';
-import * as log from 'npmlog';
 import 'source-map-support/register';
+import logger from './logger';
 
 import { BlockChainExplorer } from './blockchainexplorer';
 import { V8 } from './blockchainexplorers/v8';
@@ -11,6 +11,7 @@ import { FiatRateService } from './fiatrateservice';
 import { Lock } from './lock';
 import { MessageBroker } from './messagebroker';
 import {
+  Advertisement,
   Copayer,
   INotification,
   ITxProposal,
@@ -32,11 +33,6 @@ const $ = require('preconditions').singleton();
 const deprecatedServerMessage = require('../deprecated-serverMessages');
 const serverMessages = require('../serverMessages');
 const BCHAddressTranslator = require('./bchaddresstranslator');
-
-log.debug = log.verbose;
-log.disableColor();
-log.level = 'error';
-
 const EmailValidator = require('email-validator');
 
 import { Validation } from 'crypto-wallet-core';
@@ -91,6 +87,7 @@ export interface IWalletService {
   parsedClientVersion: { agent: number; major: number; minor: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
+  copayerIsMarketingStaff: boolean;
 }
 function boolToNum(x: boolean) {
   return x ? 1 : 0;
@@ -115,6 +112,7 @@ export class WalletService {
   parsedClientVersion: { agent: string; major: number; minor: number };
   clientVersion: string;
   copayerIsSupportStaff: boolean;
+  copayerIsMarketingStaff: boolean;
   request;
 
   constructor() {
@@ -225,7 +223,7 @@ export class WalletService {
         lock = opts.lock || new Lock(storage, opts.lockOpts);
 
         if (err) {
-          log.error('Could not initialize', err);
+          logger.error('Could not initialize', err);
           throw err;
         }
         initialized = true;
@@ -315,16 +313,20 @@ export class WalletService {
           return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Copayer not found'));
         }
 
-        if (!copayer.isSupportStaff) {
-          const isValid = !!server._getSigningKey(opts.message, opts.signature, copayer.requestPubKeys);
-          if (!isValid) {
-            return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Invalid signature'));
-          }
+        const isValid = !!server._getSigningKey(opts.message, opts.signature, copayer.requestPubKeys);
+        if (!isValid) {
+          return cb(new ClientError(Errors.codes.NOT_AUTHORIZED, 'Invalid signature'));
+        }
 
-          server.walletId = copayer.walletId;
-        } else {
+        server.walletId = copayer.walletId;
+
+        // allow overwrite walletid if the copayer is from the support team
+        if (copayer.isSupportStaff) {
           server.walletId = opts.walletId || copayer.walletId;
           server.copayerIsSupportStaff = true;
+        }
+        if (copayer.isMarketingStaff) {
+          server.copayerIsMarketingStaff = true;
         }
 
         server.copayerId = opts.copayerId;
@@ -378,44 +380,31 @@ export class WalletService {
 
     this.lock.runLocked(this.walletId, { waitTime }, cb, task);
   }
-
-  logi(...args) {
-    if (!this) {
-      return log.info.apply(this, args);
-    }
-    if (!this.walletId) {
-      return log.info.apply(this, args);
+  logi(message, ...args) {
+    if (!this || !this.walletId) {
+      return logger.warn(message, ...args);
     }
 
-    const argz = [].slice.call(args);
-    argz.unshift('<' + this.walletId + '>');
-    log.info.apply(this, argz);
+    message = '<' + this.walletId + '>' + message;
+    return logger.info(message, ...args);
   }
 
-  logw(...args) {
-    if (!this) {
-      return log.warn.apply(this, args);
-    }
-    if (!this.walletId) {
-      return log.warn.apply(this, arguments);
+  logw(message, ...args) {
+    if (!this || !this.walletId) {
+      return logger.warn(message, ...args);
     }
 
-    const argz = [].slice.call(args);
-    argz.unshift('<' + this.walletId + '>');
-    log.warn.apply(this, argz);
+    message = '<' + this.walletId + '>' + message;
+    return logger.warn(message, ...args);
   }
 
-  logd(...args) {
-    if (!this) {
-      return log.verbose.apply(this, args);
-    }
-    if (!this.walletId) {
-      return log.verbose.apply(this, arguments);
+  logd(message, ...args) {
+    if (!this || !this.walletId) {
+      return logger.verbose(message, ...args);
     }
 
-    const argz = [].slice.call(args);
-    argz.unshift('<' + this.walletId + '>');
-    log.verbose.apply(this, argz);
+    message = '<' + this.walletId + '>' + message;
+    return logger.verbose(message, ...args);
   }
 
   login(opts, cb) {
@@ -598,7 +587,7 @@ export class WalletService {
       if (opts.doNotMigrate) return cb(null, wallet);
 
       // remove someday...
-      log.info(`Migrating wallet ${wallet.id} to cashAddr`);
+      logger.info(`Migrating wallet ${wallet.id} to cashAddr`);
       this.storage.migrateToCashAddr(this.walletId, e => {
         if (e) return cb(e);
         wallet.nativeCashAddr = true;
@@ -668,6 +657,8 @@ export class WalletService {
    * @param {Object} opts.includeExtendedInfo - Include PKR info & address managers for wallet & copayers
    * @param {Object} opts.includeServerMessages - Include server messages array
    * @param {Object} opts.tokenAddress - (Optional) Token contract address to pass in getBalance
+   * @param {Object} opts.multisigContractAddress - (Optional) Multisig ETH contract address to pass in getBalance
+   * @param {Object} opts.network - (Optional ETH MULTISIG) Multisig ETH contract address network
    * @returns {Object} status
    */
   getStatus(opts, cb) {
@@ -757,6 +748,7 @@ export class WalletService {
             if (err) return next(err);
             if (!opts.includeExtendedInfo) {
               preferences.tokenAddresses = null;
+              preferences.multisigEthInfo = null;
             }
             status.preferences = preferences;
             next();
@@ -1148,6 +1140,15 @@ export class WalletService {
         isValid(value) {
           return _.isArray(value) && value.every(x => Validation.validateAddress('eth', 'mainnet', x));
         }
+      },
+      {
+        name: 'multisigEthInfo',
+        isValid(value) {
+          return (
+            _.isArray(value) &&
+            value.every(x => Validation.validateAddress('eth', 'mainnet', x.multisigContractAddress))
+          );
+        }
       }
     ];
 
@@ -1169,6 +1170,7 @@ export class WalletService {
 
       if (wallet.coin != 'eth') {
         opts.tokenAddresses = null;
+        opts.multisigEthInfo = null;
       }
 
       this._runLocked(cb, cb => {
@@ -1186,6 +1188,16 @@ export class WalletService {
             oldPref = oldPref || {};
             oldPref.tokenAddresses = oldPref.tokenAddresses || [];
             preferences.tokenAddresses = _.uniq(oldPref.tokenAddresses.concat(opts.tokenAddresses));
+          }
+
+          // merge multisigEthInfo
+          if (opts.multisigEthInfo) {
+            oldPref = oldPref || {};
+            oldPref.multisigEthInfo = oldPref.multisigEthInfo || [];
+            preferences.multisigEthInfo = _.uniqBy(
+              oldPref.multisigEthInfo.concat(opts.multisigEthInfo),
+              'multisigContractAddress'
+            );
           }
 
           this.storage.storePreferences(preferences, err => {
@@ -1515,7 +1527,7 @@ export class WalletService {
                 utxoIndex[input].locked = true;
               }
             });
-            log.debug(`Got  ${lockedInputs.length} locked utxos`);
+            logger.debug(`Got  ${lockedInputs.length} locked utxos`);
             return next();
           });
         },
@@ -1542,7 +1554,7 @@ export class WalletService {
               allUtxos = _.reject(allUtxos, {
                 spent: true
               });
-              log.debug(`Got ${allUtxos.length} usable UTXOs`);
+              logger.debug(`Got ${allUtxos.length} usable UTXOs`);
               return next();
             }
           );
@@ -2077,6 +2089,48 @@ export class WalletService {
     });
   }
 
+  getMultisigContractInstantiationInfo(opts) {
+    const bc = this._getBlockchainExplorer('eth', opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getMultisigContractInstantiationInfo(opts, (err, contractInstantiationInfo) => {
+        if (err) {
+          this.logw('Error getting contract instantiation info', err);
+          return reject(err);
+        }
+        return resolve(contractInstantiationInfo);
+      });
+    });
+  }
+
+  getMultisigContractInfo(opts) {
+    const bc = this._getBlockchainExplorer('eth', opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getMultisigContractInfo(opts, (err, contractInfo) => {
+        if (err) {
+          this.logw('Error getting contract instantiation info', err);
+          return reject(err);
+        }
+        return resolve(contractInfo);
+      });
+    });
+  }
+
+  getMultisigTxpsInfo(opts) {
+    const bc = this._getBlockchainExplorer('eth', opts.network);
+    return new Promise((resolve, reject) => {
+      if (!bc) return reject(new Error('Could not get blockchain explorer instance'));
+      bc.getMultisigTxpsInfo(opts, (err, multisigTxpsInfo) => {
+        if (err) {
+          this.logw('Error getting contract txps hash', err);
+          return reject(err);
+        }
+        return resolve(multisigTxpsInfo);
+      });
+    });
+  }
+
   /**
    * Creates a new transaction proposal.
    * @param {Object} opts
@@ -2101,6 +2155,8 @@ export class WalletService {
    * @param {Boolean} opts.noShuffleOutputs - Optional. If set, TX outputs won't be shuffled. Defaults to false
    * @param {Boolean} opts.noCashAddr - do not use cashaddress for bch
    * @param {Boolean} opts.signingMethod[=ecdsa] - do not use cashaddress for bch
+   * @param {string} opts.tokenAddress - optional. ERC20 Token Contract Address
+   * @param {string} opts.multisigContractAddress - optional. MULTISIG ETH Contract Address
    * @returns {TxProposal} Transaction proposal. outputs address format will use the same format as inpunt.
    */
   createTx(opts, cb) {
@@ -2226,6 +2282,7 @@ export class WalletService {
                     gasLimit, // Backward compatibility for BWC < v7.1.1
                     data: opts.data, // Backward compatibility for BWC < v7.1.1
                     tokenAddress: opts.tokenAddress,
+                    multisigContractAddress: opts.multisigContractAddress,
                     destinationTag: opts.destinationTag,
                     invoiceID: opts.invoiceID,
                     signingMethod: opts.signingMethod
@@ -2258,7 +2315,7 @@ export class WalletService {
 
                 if (txp.coin == 'bch') {
                   if (opts.returnOrigAddrOutputs) {
-                    log.info('Returning Orig BCH address outputs for compat');
+                    logger.info('Returning Orig BCH address outputs for compat');
                     txp.outputs = opts.origAddrOutputs;
                   }
                 }
@@ -2510,7 +2567,7 @@ export class WalletService {
    * @param {string} opts.txProposalId - The identifier of the transaction.
    * @param {string} opts.signatures - The signatures of the inputs of this tx for this copayer (in appearance order)
    * @param {string} opts.maxTxpVersion - Client's maximum supported txp version
-   * @param {boolean} opts.useBchSchnorr - indication whether to use schnorr for signing tx
+   * @param {boolean} opts.supportBchSchnorr - indication whether to use schnorr for signing tx
    */
   signTx(opts, cb) {
     if (!checkRequired(opts, ['txProposalId', 'signatures'], cb)) return;
@@ -2541,7 +2598,7 @@ export class WalletService {
           if (action) return cb(Errors.COPAYER_VOTED);
           if (!txp.isPending()) return cb(Errors.TX_NOT_PENDING);
 
-          if (txp.signingMethod === 'schnorr' && !opts.useBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
+          if (txp.signingMethod === 'schnorr' && !opts.supportBchSchnorr) return cb(Errors.UPGRADE_NEEDED);
 
           const copayer = wallet.getCopayer(this.copayerId);
 
@@ -2644,9 +2701,9 @@ export class WalletService {
           this._broadcastRawTx(wallet.coin, wallet.network, raw, (err, txid) => {
             if (err || txid != txp.txid) {
               if (!err || txp.txid != txid) {
-                log.warn(`Broadcast failed for: ${raw}`);
+                logger.warn(`Broadcast failed for: ${raw}`);
               } else {
-                log.warn(`Broadcast failed: ${err}`);
+                logger.warn(`Broadcast failed: ${err}`);
               }
 
               const broadcastErr = err;
@@ -2756,57 +2813,69 @@ export class WalletService {
    * Retrieves pending transaction proposals.
    * @param {Object} opts
    * @param {Boolean} opts.noCashAddr (do not use cashaddr, only for backwards compat)
+   * @param {String} opts.tokenAddress ERC20 Token Contract Address
+   * @param {String} opts.multisigContractAddress MULTISIG ETH Contract Address
+   * @param {String} opts.network  The network of the MULTISIG ETH transactions
    * @returns {TxProposal[]} Transaction proposal.
    */
-  getPendingTxs(opts, cb) {
+  async getPendingTxs(opts, cb) {
     if (opts.tokenAddress) {
       return cb();
-    }
-    this.storage.fetchPendingTxs(this.walletId, (err, txps) => {
-      if (err) return cb(err);
+    } else if (opts.multisigContractAddress) {
+      try {
+        const multisigTxpsInfo = await this.getMultisigTxpsInfo(opts);
+        const txps = await this.storage.fetchEthPendingTxs(multisigTxpsInfo);
+        return cb(null, txps);
+      } catch (error) {
+        return cb(error);
+      }
+    } else {
+      this.storage.fetchPendingTxs(this.walletId, (err, txps) => {
+        if (err) return cb(err);
 
-      _.each(txps, txp => {
-        txp.deleteLockTime = this.getRemainingDeleteLockTime(txp);
-      });
+        _.each(txps, txp => {
+          txp.deleteLockTime = this.getRemainingDeleteLockTime(txp);
+        });
 
-      async.each(
-        txps,
-        (txp: ITxProposal, next) => {
-          if (txp.status != 'accepted') return next();
+        async.each(
+          txps,
+          (txp: ITxProposal, next) => {
+            if (txp.status != 'accepted') return next();
 
-          this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
-            if (err || !isInBlockchain) return next(err);
-            this._processBroadcast(
-              txp,
-              {
-                byThirdParty: true
-              },
-              next
-            );
-          });
-        },
-        err => {
-          txps = _.reject(txps, txp => {
-            return txp.status == 'broadcasted';
-          });
-
-          if (opts.noCashAddr && txps[0] && txps[0].coin == 'bch') {
-            _.each(txps, x => {
-              if (x.changeAddress) {
-                x.changeAddress.address = BCHAddressTranslator.translate(x.changeAddress.address, 'copay');
-              }
-              _.each(x.outputs, x => {
-                if (x.toAddress) {
-                  x.toAddress = BCHAddressTranslator.translate(x.toAddress, 'copay');
-                }
-              });
+            this._checkTxInBlockchain(txp, (err, isInBlockchain) => {
+              if (err || !isInBlockchain) return next(err);
+              this._processBroadcast(
+                txp,
+                {
+                  byThirdParty: true
+                },
+                next
+              );
             });
-          }
+          },
+          err => {
+            txps = _.reject(txps, txp => {
+              return txp.status == 'broadcasted';
+            });
 
-          return cb(err, txps);
-        }
-      );
-    });
+            if (opts.noCashAddr && txps[0] && txps[0].coin == 'bch') {
+              _.each(txps, x => {
+                if (x.changeAddress) {
+                  x.changeAddress.address = BCHAddressTranslator.translate(x.changeAddress.address, 'copay');
+                }
+                _.each(x.outputs, x => {
+                  if (x.toAddress) {
+                    x.toAddress = BCHAddressTranslator.translate(x.toAddress, 'copay');
+                  }
+                });
+              });
+            }
+
+            return cb(err, txps);
+          }
+        );
+      });
+    }
   }
 
   /**
@@ -3080,7 +3149,7 @@ export class WalletService {
 
     this.storage.getWalletAddressChecked(wallet.id, (err, checkedTotal) => {
       if (checkedTotal == totalAddresses) {
-        log.debug('addresses checked already');
+        logger.debug('addresses checked already');
         return cb(null, true);
       }
 
@@ -3098,9 +3167,9 @@ export class WalletService {
           const isOK = serverCheck.sum == localCheck.sum;
 
           if (isOK) {
-            log.debug('Wallet Sync Check OK');
+            logger.debug('Wallet Sync Check OK');
           } else {
-            log.warn('ERROR: Wallet check failed:', localCheck, serverCheck);
+            logger.warn('ERROR: Wallet check failed:', localCheck, serverCheck);
             return cb(null, isOK);
           }
 
@@ -3164,10 +3233,10 @@ export class WalletService {
               if (isOK) return cb();
 
               if (count++ >= 1) {
-                log.warn('## ERROR: TRIED TO SYNC WALLET AND FAILED. GIVING UP');
+                logger.warn('## ERROR: TRIED TO SYNC WALLET AND FAILED. GIVING UP');
                 return cb();
               }
-              log.info('Trying to RESYNC wallet... count:' + count);
+              logger.info('Trying to RESYNC wallet... count:' + count);
 
               // Reset sync and sync again...
               wallet.beRegistered = false;
@@ -3323,6 +3392,195 @@ export class WalletService {
     }
   }
 
+  /**
+   * // Create Advertisement
+   * @param opts
+   * @param cb
+   */
+  createAdvert(opts, cb) {
+    opts = opts ? _.clone(opts) : {};
+
+    // Usually do error checking on preconditions
+    if (!checkRequired(opts, ['title'], cb)) {
+      return;
+    }
+    // Check if ad exists already
+
+    const checkIfAdvertExistsAlready = (adId, cb) => {
+      this.storage.fetchAdvert(opts.adId, (err, result) => {
+        if (err) return cb(err);
+
+        if (result) {
+          return cb(Errors.AD_ALREADY_EXISTS);
+        }
+
+        if (!result) {
+          let x = new Advertisement();
+
+          x.advertisementId = opts.advertisementId || Uuid.v4();
+          x.name = opts.name;
+          x.title = opts.title;
+          x.country = opts.country;
+          x.type = opts.type;
+          x.body = opts.body;
+          x.imgUrl = opts.imgUrl;
+          x.linkText = opts.linkText;
+          x.linkUrl = opts.linkUrl;
+          x.isAdActive = opts.isAdActive;
+          x.dismissible = opts.dismissible;
+          x.signature = opts.signature;
+          x.app = opts.app;
+          x.isTesting = opts.isTesting;
+
+          return cb(null, x);
+        }
+      });
+    };
+
+    this._runLocked(
+      cb,
+      cb => {
+        checkIfAdvertExistsAlready(opts.adId, (err, advert) => {
+          if (err) throw err;
+          if (advert) {
+            try {
+              this.storage.storeAdvert(advert, cb);
+            } catch (err) {
+              throw err;
+            }
+          }
+        });
+      },
+      10 * 1000
+    );
+  }
+
+  /**
+   * Get All active (live) advertisements
+   * @param opts
+   * @param opts.adId - adId of advert to get
+   * @param cb
+   */
+  getAdvert(opts, cb) {
+    this.storage.fetchAdvert(opts.adId, (err, advert) => {
+      if (err) return cb(err);
+      return cb(null, advert);
+    });
+  }
+
+  /**
+   * Get All active (live) advertisements
+   * @param opts
+   * @param cb
+   */
+  getAdverts(opts, cb) {
+    this.storage.fetchActiveAdverts((err, adverts) => {
+      if (err) return cb(err);
+      return cb(null, adverts);
+    });
+  }
+
+  /**
+   * Get adverts by country
+   * @param opts.country
+   * @param cb
+   */
+  getAdvertsByCountry(opts, cb) {
+    this.storage.fetchAdvertsByCountry(opts.country, (err, adverts) => {
+      if (err) return cb(err);
+      return cb(null, adverts);
+    });
+  }
+
+  /**
+   * Get All active (live) advertisements
+   * @param opts
+   * @param cb
+   */
+  getTestingAdverts(opts, cb) {
+    this.storage.fetchTestingAdverts((err, adverts) => {
+      if (err) return cb(err);
+      return cb(null, adverts);
+    });
+  }
+
+  /**
+   * Get all adverts regardless of inactive or active.
+   * @param opts
+   * @param cb
+   */
+  getAllAdverts(opts, cb) {
+    this._runLocked(cb, cb => {
+      this.getAllAdverts(opts, cb);
+    });
+  }
+
+  removeAdvert(opts, cb) {
+    opts = opts ? _.clone(opts) : {};
+
+    // Usually do error checking on preconditions
+    if (!checkRequired(opts, ['adId'], cb)) {
+      throw new Error('adId is missing');
+    }
+    // Check if ad exists already
+
+    const checkIfAdvertExistsAlready = (adId, cb) => {
+      this.storage.fetchAdvert(opts.adId, (err, result) => {
+        if (err) return cb(err);
+
+        if (!result) {
+          throw new Error('Advertisement does not exist: ' + opts.adId);
+        }
+
+        if (result) {
+          this.logw('Advert already exists');
+          return cb(null, adId);
+        }
+      });
+    };
+
+    try {
+      this._runLocked(
+        cb,
+        cb => {
+          checkIfAdvertExistsAlready(opts.adId, (err, adId) => {
+            if (err) throw err;
+            this.storage.removeAdvert(adId, cb); // TODO: add to errordefinitions Errors.ADVERTISEMENT already exists
+          });
+        },
+        10 * 1000
+      );
+    } catch (err) {
+      throw err;
+    }
+  }
+
+  activateAdvert(opts, cb) {
+    opts = opts ? _.clone(opts) : {};
+    // Usually do error checking on preconditions
+    if (!checkRequired(opts, ['adId'], cb)) {
+      throw new Error('adId is missing');
+    }
+
+    this.storage.activateAdvert(opts.adId, (err, result) => {
+      if (err) return cb(err);
+      return cb(null, result);
+    });
+  }
+
+  deactivateAdvert(opts, cb) {
+    opts = opts ? _.clone(opts) : {};
+    // Usually do error checking on preconditions
+    if (!checkRequired(opts, ['adId'], cb)) {
+      throw new Error('adId is missing');
+    }
+
+    this.storage.deactivateAdvert(opts.adId, (err, result) => {
+      if (err) return cb(err);
+      return cb(null, result);
+    });
+  }
+
   tagLowFeeTxs(wallet: IWallet, txs: any[], cb) {
     const unconfirmed = txs.filter(tx => tx.confirmations === 0);
     if (_.isEmpty(unconfirmed)) return cb();
@@ -3370,6 +3628,11 @@ export class WalletService {
       walletCacheKey = `${wallet.id}-${opts.tokenAddress}`;
     }
 
+    if (opts.multisigContractAddress) {
+      wallet.multisigContractAddress = opts.multisigContractAddress;
+      walletCacheKey = `${wallet.id}-${opts.multisigContractAddress}`;
+    }
+
     async.series(
       [
         next => {
@@ -3395,18 +3658,18 @@ export class WalletService {
         next => {
           if (skip == 0 || !streamKey) return next();
 
-          log.debug('Checking streamKey/skip', streamKey, skip);
+          logger.debug('Checking streamKey/skip', streamKey, skip);
           this.storage.getTxHistoryStreamV8(walletCacheKey, (err, result) => {
             if (err) return next(err);
             if (!result) return next();
 
             if (result.streamKey != streamKey) {
-              log.debug('Deleting old stream cache:' + result.streamKey);
+              logger.debug('Deleting old stream cache:' + result.streamKey);
               return this.storage.clearTxHistoryStreamV8(walletCacheKey, next);
             }
 
             streamData = result.items;
-            log.debug(`Using stream cache: ${streamData.length} txs`);
+            logger.debug(`Using stream cache: ${streamData.length} txs`);
             return next();
           });
         },
@@ -3417,7 +3680,7 @@ export class WalletService {
           }
 
           const startBlock = cacheStatus.updatedHeight || 0;
-          log.debug(' ########### GET HISTORY v8 startBlock/bcH]', startBlock, bcHeight); // TODO
+          logger.debug(' ########### GET HISTORY v8 startBlock/bcH]', startBlock, bcHeight); // TODO
 
           bc.getTransactions(wallet, startBlock, (err, txs) => {
             if (err) return cb(err);
@@ -3435,7 +3698,7 @@ export class WalletService {
 
                 // only store stream IF cache is been used.
                 //
-                log.info(`Storing stream cache for ${walletCacheKey}: ${lastTxs.length} txs`);
+                logger.info(`Storing stream cache for ${walletCacheKey}: ${lastTxs.length} txs`);
                 return this.storage.storeTxHistoryStreamV8(walletCacheKey, streamKey, lastTxs, next);
               }
 
@@ -3513,7 +3776,7 @@ export class WalletService {
             return i.blockheight > cacheStatus.tipHeight;
           });
 
-          log.info(`Found ${lastTxs.length} new txs. Caching ${txsToCache.length}`);
+          logger.debug(`Found ${lastTxs.length} new txs. Caching ${txsToCache.length}`);
           if (!txsToCache.length) {
             return next();
           }
@@ -3542,6 +3805,7 @@ export class WalletService {
    * @param {Number} opts.skip (defaults to 0)
    * @param {Number} opts.limit
    * @param {String} opts.tokenAddress ERC20 Token Contract Address
+   * @param {String} opts.multisigContractAddress MULTISIG ETH Contract Address
    * @param {Number} opts.includeExtendedInfo[=false] - Include all inputs/outputs for every tx.
    * @returns {TxProposal[]} Transaction proposals, first newer
    */
@@ -4049,6 +4313,121 @@ export class WalletService {
             return reject(err.body ? err.body : null);
           } else {
             return resolve(data.body ? data.body : null);
+          }
+        }
+      );
+    });
+  }
+
+  wyreGetKeys(req) {
+    if (!config.wyre) throw new Error('Wyre missing credentials');
+
+    let env = 'sandbox';
+    if (req.body.env && req.body.env == 'production') {
+      env = 'production';
+    }
+    delete req.body.env;
+
+    const keys = {
+      API: config.wyre[env].api,
+      API_KEY: config.wyre[env].apiKey,
+      SECRET_API_KEY: config.wyre[env].secretApiKey,
+      ACCOUNT_ID: config.wyre[env].appProviderAccountId
+    };
+
+    return keys;
+  }
+
+  wyreWalletOrderQuotation(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.wyreGetKeys(req);
+      req.body.accountId = keys.ACCOUNT_ID;
+
+      if (
+        !req.body.amount ||
+        !req.body.sourceCurrency ||
+        !req.body.destCurrency ||
+        !req.body.dest ||
+        !req.body.country
+      ) {
+        return reject(new Error("Wyre's request missing arguments"));
+      }
+
+      delete req.body.env;
+
+      const URL: string = `${keys.API}/v3/orders/quote/partner?timestamp=${Date.now().toString()}`;
+      const XApiSignature: string = URL + JSON.stringify(req.body);
+      const XApiSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
+        Buffer.from(XApiSignature),
+        Buffer.from(keys.SECRET_API_KEY)
+      ).toString('hex');
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Api-Key': keys.API_KEY,
+        'X-Api-Signature': XApiSignatureHash
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: req.body,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : null);
+          } else {
+            return resolve(data.body);
+          }
+        }
+      );
+    });
+  }
+
+  wyreWalletOrderReservation(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const keys = this.wyreGetKeys(req);
+      req.body.referrerAccountId = keys.ACCOUNT_ID;
+
+      if (
+        !req.body.amount ||
+        !req.body.sourceCurrency ||
+        !req.body.destCurrency ||
+        !req.body.dest ||
+        !req.body.paymentMethod
+      ) {
+        return reject(new Error("Wyre's request missing arguments"));
+      }
+
+      delete req.body.env;
+
+      const URL: string = `${keys.API}/v3/orders/reserve?timestamp=${Date.now().toString()}`;
+      const XApiSignature: string = URL + JSON.stringify(req.body);
+      const XApiSignatureHash: string = Bitcore.crypto.Hash.sha256hmac(
+        Buffer.from(XApiSignature),
+        Buffer.from(keys.SECRET_API_KEY)
+      ).toString('hex');
+
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-Api-Key': keys.API_KEY,
+        'X-Api-Signature': XApiSignatureHash
+      };
+
+      this.request.post(
+        URL,
+        {
+          headers,
+          body: req.body,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : null);
+          } else {
+            return resolve(data.body);
           }
         }
       );

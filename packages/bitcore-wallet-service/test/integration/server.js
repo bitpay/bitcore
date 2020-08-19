@@ -1,34 +1,33 @@
 'use strict';
 
-var _ = require('lodash');
-var async = require('async');
+const _ = require('lodash');
+const async = require('async');
 
-var chai = require('chai');
-var sinon = require('sinon');
-var should = chai.should();
-var log = require('npmlog');
-log.debug = log.verbose;
+const chai = require('chai');
+const sinon = require('sinon');
+const  CWC = require('crypto-wallet-core');
 
-var config = require('../../ts_build/config.js');
+const should = chai.should();
+const { logger, transport } = require('../../ts_build/lib/logger.js');
 const { ChainService } = require('../../ts_build/lib/chain/index');
 
-var CWC = require('crypto-wallet-core');
+var config = require('../../ts_build/config.js');
 var Bitcore = require('bitcore-lib');
 var Bitcore_ = {
   btc: Bitcore,
   bch: require('bitcore-lib-cash')
 };
 
-var { WalletService } = require('../../ts_build/lib/server');
+const { WalletService } = require('../../ts_build/lib/server');
 const { Storage } = require('../../ts_build/lib/storage')
-var Common = require('../../ts_build/lib/common');
-var Utils = Common.Utils;
-var Constants = Common.Constants;
-var Defaults = Common.Defaults;
+const Common = require('../../ts_build/lib/common');
+const Utils = Common.Utils;
+const Constants = Common.Constants;
+const Defaults = Common.Defaults;
 const VanillaDefaults = _.cloneDeep(Defaults);
 
-var Model = require('../../ts_build/lib/model');
-var BCHAddressTranslator = require('../../ts_build/lib/bchaddresstranslator');
+const Model = require('../../ts_build/lib/model');
+const BCHAddressTranslator = require('../../ts_build/lib/bchaddresstranslator');
 
 var HugeTxs = require('./hugetx');
 var TestData = require('../testdata');
@@ -42,7 +41,6 @@ const TO_SAT = {
   'usdc': 1e6,
   'xrp': 1e6
 };
-
 
 const TOKENS = ['0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48', '0x056fd409e1d7a124bd7017459dfea2f387b6d5cd'];
 
@@ -58,7 +56,8 @@ describe('Wallet service', function() {
 
   });
   beforeEach(function(done) {
-    log.level = 'error';
+    transport.level= 'error';
+
 
     // restore defaults, cp values
     _.each(_.keys(VanillaDefaults), (x) => { 
@@ -210,6 +209,159 @@ describe('Wallet service', function() {
 
           });
       });
+    });
+
+    it('should get server instance for marketing staff', function(done) {
+      helpers.createAndJoinWallet(1, 1, function(s, wallet) {
+        var collections = Storage.collections;
+        s.storage.db.collection(collections.COPAYERS_LOOKUP).updateOne({
+          copayerId: wallet.copayers[0].id
+        }, {
+            $set: {
+              isMarketingStaff: true
+            }
+          }, () => {
+
+            var xpriv = TestData.copayers[0].xPrivKey;
+            var priv = TestData.copayers[0].privKey_1H_0;
+
+            var sig = helpers.signMessage('hello world', priv);
+
+            WalletService.getInstanceWithAuth({
+              copayerId: wallet.copayers[0].id,
+              message: 'hello world',
+              signature: sig,
+              walletId: '123',
+            }, function(err, server) {
+              should.not.exist(err);
+
+              server.walletId.should.not.equal('123');
+              server.copayerIsMarketingStaff.should.equal(true);
+              server.copayerId.should.equal(wallet.copayers[0].id);
+              done();
+            });
+
+          });
+      });
+    });
+  });
+
+  // tests for adding and retrieving adds from db
+  describe('Creating ads, retrieve ads, active/inactive', function(done) {
+    var server, wallet, adOpts;
+
+    adOpts = {
+      advertisementId:  '123',
+      name: 'name',
+      title:'title',
+      body: 'body',
+      country: 'US',
+      type: 'standard',
+      linkText: 'linkText',
+      linkUrl: 'linkUrl',
+      dismissible: true,
+      isAdActive: false,
+      isTesting: true,
+      signature: '304050302480413401348a3b34902403434512535e435463',
+      app: 'bitpay'
+    };
+
+    beforeEach(function(done) {
+      helpers.createAndJoinWallet(1, 2, function(s, w) {
+        server = s;
+        wallet = w;
+        done();
+      });
+    });
+
+     it('should create/get ad', function(done) {
+        async.series([function(next) {
+          server.createAdvert(adOpts, function (err, ad) {
+            should.not.exist(err);
+            next();
+          });
+        }, function(next) {
+          server.getAdvert({adId: '123'}, function (err, ad) {
+            should.not.exist(err);
+            should.exist(ad);
+            ad.advertisementId.should.equal('123');
+            ad.name.should.equal('name');
+            ad.title.should.equal('title');
+            ad.body.should.equal('body');
+            ad.country.should.equal('US');
+            ad.type.should.equal('standard');
+            ad.linkText.should.equal('linkText');
+            ad.linkUrl.should.equal('linkUrl');
+            ad.dismissible.should.equal(true);
+            ad.isAdActive.should.equal(false);
+            ad.isTesting.should.equal(true);
+            ad.signature.should.equal('304050302480413401348a3b34902403434512535e435463'),
+            ad.app.should.equal('bitpay');
+
+            next();
+          });
+        }], function(err) {
+          should.not.exist(err);
+          done();
+        })
+    });
+
+    it('should create/get/delete an ad', function(done) {
+
+        async.series([function(next) {
+          server.createAdvert(adOpts, function (err, ad) {
+            next();
+          });
+        }, function(next) {
+          server.getAdvert({adId: '123'}, function (err, ad) {
+            should.not.exist(err);
+            should.exist(ad);
+            next();
+          });
+        }, 
+        server.removeAdvert({adId: '123'}, function(err, nextArg) {
+           should.not.exist(err);
+        })
+    ], function(err) {
+          should.not.exist(err);
+        })
+
+      done();
+    });
+
+    it('should create ad initially inactive, retrieve, make active, retrieve again', function(done) {
+
+      async.series([function(next) {
+        server.createAdvert(adOpts, function (err, ad) {
+          next();
+        });
+      }, function(next) {
+        server.getAdvert({adId: '123'}, function(err, ad) {
+          should.not.exist(err);
+          should.exist(ad);
+          ad.advertisementId.should.equal('123');
+          ad.isAdActive.should.equal(false);
+          ad.isTesting.should.equal(true);
+        });
+        next();
+      }, function(next) {
+        server.activateAdvert({adId: '123'}, function (err, ad) {
+          should.not.exist(err);
+          next();
+        });
+      }, function(next) {
+        server.getAdvert({adId: '123'}, function (err, ad) {
+          should.not.exist(err);
+          should.exist(ad);
+          ad.advertisementId.should.equal('123');
+          ad.isAdActive.should.equal(true);
+          ad.isTesting.should.equal(false);
+        });
+        next();
+      }], function(err) {
+        should.not.exist(err);
+      });
+      done();
     });
   });
 
@@ -4334,8 +4486,8 @@ describe('Wallet service', function() {
             switch(coin) {
               case 'bch':
                 level = 'normal';
-                expected = 200e2;
-                expectedNormal = 200e2;
+                expected = 210e2;
+                expectedNormal = 210e2;
                 break;
               case 'eth':
                 level = 'normal';
@@ -4729,6 +4881,50 @@ describe('Wallet service', function() {
 
 
         if(!flags.noUtxoTests) {
+
+          it('should  send max with appropiate fee', function(done) {
+            helpers.stubUtxos(server, wallet, [1, 2], { coin }, function() {
+              var txOpts = {
+                outputs: [{
+                  toAddress: addressStr,
+                  amount: null,
+                  gasLimit: 21000
+                }],
+                feePerKb: coin == 'bch' ? 1000 : 10000,
+                sendMax: true,
+                from: fromAddr,
+              };
+              txOpts = Object.assign(txOpts, flags);
+
+              helpers.createAndPublishTx(server, txOpts, TestData.copayers[0].privKey_1H_0, function(txp) {
+                should.exist(txp);
+                should.not.exist(txp.changeAddress);
+                var signatures = helpers.clientSign(txp, TestData.copayers[0].xPrivKey_44H_0H_0H);
+                server.signTx({
+                  txProposalId: txp.id,
+                  signatures: signatures,
+                }, function(err, txp) {
+                  should.not.exist(err);
+                  should.exist(txp);
+
+                  helpers.stubBroadcast(txp.txid);
+                  server.broadcastTx({
+                    txProposalId: txp.id
+                  }, function(err, txp) {
+                    txp.amount.should.equal(3 * TO_SAT[coin] - txp.fee);
+
+                    var t = ChainService.getBitcoreTx(txp);
+                    t.getFee().should.equal(txp.fee);
+
+                    const actualFeeRate = t.getFee() / (txp.raw.length/2);
+                    done();
+                  });
+              });
+              });
+            });
+          });
+
+
           it('should accept a tx proposal signed with a custom key', function(done) {
             var reqPrivKey = new Bitcore.PrivateKey();
             var reqPubKey = reqPrivKey.toPublicKey().toString();
@@ -4923,7 +5119,7 @@ describe('Wallet service', function() {
       describe('UTXO Selection ' + coin, function() {
         var server, wallet;
         beforeEach(function(done) {
-          // log.level = 'debug';
+          // logger.level = 'debug';
           helpers.createAndJoinWallet(1, 2, function(s, w) {
             server = s;
             wallet = w;
@@ -4931,7 +5127,7 @@ describe('Wallet service', function() {
           });
         });
         afterEach(function() {
-          log.level = 'info';
+          transport.level= 'info';
         });
 
         it('should exclude unconfirmed utxos if specified', function(done) {
@@ -9079,7 +9275,9 @@ describe('Wallet service', function() {
   describe('Simplex', () => {
     let server, wallet, fakeRequest, req;
     beforeEach((done) => {
-      log.level = 'info';
+      transport.level= 'info';
+ 
+
       config.simplex = {
         sandbox: {
           apiKey: 'xxxx',
@@ -9303,6 +9501,229 @@ describe('Wallet service', function() {
       });
     });
 
+  });
+
+  describe('Wyre', () => {
+    let server, wallet, fakeRequest, req;
+    beforeEach((done) => {
+      config.wyre = {
+        sandbox: {
+          apiKey: 'xxxx',
+          secretApiKey: 'xxxx',
+          api: 'xxxx',
+          widgetUrl: 'xxxx',
+          appProviderAccountId: 'xxxx'
+        },
+        production: {
+          apiKey: 'xxxx',
+          secretApiKey: 'xxxx',
+          api: 'xxxx',
+          widgetUrl: 'xxxx',
+          appProviderAccountId: 'xxxx'
+        }
+      }
+
+      fakeRequest = {
+        get: (_url, _opts, _cb) => { return _cb(null, { data: 'data' }) },
+        post: (_url, _opts, _cb) => { return _cb(null, { data: 'data' }) },
+      };
+
+      helpers.createAndJoinWallet(1, 1, (s, w) => {
+        wallet = w;
+        var priv = TestData.copayers[0].privKey_1H_0;
+        var sig = helpers.signMessage('hello world', priv);
+
+        WalletService.getInstanceWithAuth({
+          // test assumes wallet's copayer[0] is TestData's copayer[0]
+          copayerId: wallet.copayers[0].id,
+          message: 'hello world',
+          signature: sig,
+          clientVersion: 'bwc-2.0.0',
+          walletId: '123',
+        }, (err, s) => {
+          should.not.exist(err);
+          server = s;
+          done();
+        });
+      });
+    });
+
+    describe('#wyreWalletOrderQuotation', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            amount: 50,
+            sourceCurrency: 'USD',
+            destCurrency: 'BTC',
+            dest: 'bitcoin:123123123',
+            country: 'US'
+          }
+        }
+      });
+
+      it('should work properly if req is OK', () => {
+        server.request = fakeRequest;
+        server.wyreWalletOrderQuotation(req).then(data => {
+          should.exist(data);
+        }).catch(err => {
+          should.not.exist(err);
+        });
+      });
+
+      it('should return error if there is some missing arguments', () => {
+        req.body.amount = null;
+
+        server.request = fakeRequest;
+        server.wyreWalletOrderQuotation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre\'s request missing arguments');
+        });
+      });
+
+      it('should return error if post returns error', () => {
+        const fakeRequest2 = {
+          post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+
+        server.request = fakeRequest2;
+        server.wyreWalletOrderQuotation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Error');
+        });
+      });
+
+      it('should return error if there is no environment', () => {
+        req.body.env = null;
+
+        server.request = fakeRequest;
+        server.wyreWalletOrderQuotation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre\'s request wrong environment');
+        });
+      });
+
+      it('should return error if environment is wrong', () => {
+        req.body.env = 'wrong';
+
+        server.request = fakeRequest;
+        server.wyreWalletOrderQuotation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre\'s request wrong environment');
+        });
+      });
+
+      it('should return error if Wyre is commented in config', () => {
+        config.wyre = undefined;
+
+        server.request = fakeRequest;
+        server.wyreWalletOrderQuotation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre missing credentials');
+        });
+      });
+    });
+
+    describe('#wyreWalletOrderReservation', () => {
+      beforeEach(() => {
+        req = {
+          headers: {},
+          body: {
+            env: 'sandbox',
+            amount: 50,
+            sourceCurrency: 'USD',
+            destCurrency: 'BTC',
+            dest: 'bitcoin:123123123'
+          }
+        }
+
+        fakeRequest = {
+          post: (_url, _opts, _cb) => { return _cb(null, { body: {} }) },
+        };
+      });
+
+      it('should work properly if req is OK', () => {
+        server.request = fakeRequest;
+        server.wyreWalletOrderReservation(req).then(data => {
+          should.exist(data);
+        }).catch(err => {
+          should.not.exist(err);
+        });
+      });
+
+      it('should return error if there is some missing arguments', () => {
+        req.body.amount = null;
+
+        server.request = fakeRequest;
+        server.wyreWalletOrderReservation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre\'s request missing arguments');
+        });
+      });
+
+      it('should return error if post returns error', () => {
+        const fakeRequest2 = {
+          post: (_url, _opts, _cb) => { return _cb(new Error('Error'), null) },
+        };
+
+        server.request = fakeRequest2;
+        server.wyreWalletOrderReservation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Error');
+        });
+      });
+
+      it('should return error if there is no environment', () => {
+        req.body.env = null;
+
+        server.request = fakeRequest;
+        server.wyreWalletOrderReservation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre\'s request wrong environment');
+        });
+      });
+
+      it('should return error if environment is wrong', () => {
+        req.body.env = 'wrong';
+
+        server.request = fakeRequest;
+        server.wyreWalletOrderReservation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre\'s request wrong environment');
+        });
+      });
+
+      it('should return error if Wyre is commented in config', () => {
+        config.wyre = undefined;
+
+        server.request = fakeRequest;
+        server.wyreWalletOrderReservation(req).then(data => {
+          should.not.exist(data);
+        }).catch(err => {
+          should.exist(err);
+          err.message.should.equal('Wyre missing credentials');
+        });
+      });
+    });
   });
 
 

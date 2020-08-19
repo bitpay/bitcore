@@ -9,9 +9,10 @@ function isTooLong(field, maxLength = 255) {
 }
 // create wallet
 router.post('/', async function(req, res) {
-  let { chain, network } = req.params;
-  let { name, pubKey, path, singleAddress } = req.body;
   try {
+    let { chain, network } = req.params;
+    let { name, pubKey, path, singleAddress } = req.body;
+
     const existingWallet = await ChainStateProvider.getWallet({
       chain,
       network,
@@ -72,9 +73,9 @@ router.get('/:pubKey/addresses', Auth.authenticateMiddleware, async (req: Authen
 });
 
 router.get('/:pubKey/check', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
-  const { chain, network } = req.params;
-  const wallet = req.wallet!._id!;
   try {
+    const { chain, network } = req.params;
+    const wallet = req.wallet!._id!;
     const result = await ChainStateProvider.walletCheck({
       chain,
       network,
@@ -88,10 +89,11 @@ router.get('/:pubKey/check', Auth.authenticateMiddleware, async (req: Authentica
 
 // update wallet
 router.post('/:pubKey', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
-  let { chain, network } = req.params;
-  let addressLines: { address: string }[] = req.body.filter(line => !!line.address);
   let keepAlive;
   try {
+    let { chain, network } = req.params;
+    let addressLines: { address: string }[] = req.body.filter(line => !!line.address);
+
     let addresses = addressLines.map(({ address }) => address);
     for (const address of addresses) {
       if (isTooLong(address) || !Validation.validateAddress(chain, network, address)) {
@@ -117,8 +119,8 @@ router.post('/:pubKey', Auth.authenticateMiddleware, async (req: AuthenticatedRe
 });
 
 router.get('/:pubKey/transactions', Auth.authenticateMiddleware, async (req: AuthenticatedRequest, res) => {
-  let { chain, network } = req.params;
   try {
+    let { chain, network } = req.params;
     return await ChainStateProvider.streamWalletTransactions({
       chain,
       network,

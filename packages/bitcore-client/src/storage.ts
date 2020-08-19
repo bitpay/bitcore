@@ -58,6 +58,18 @@ export class Storage {
     return JSON.parse(wallet);
   }
 
+  async deleteWallet(params: { name: string }) {
+    const { name } = params;
+    let wallet;
+    for (let db of this.db) {
+      try {
+        await db.deleteWallet({ name });
+      } catch (e) {
+        console.log(e);
+      }
+    }
+  }
+
   async listWallets() {
     let passThrough = new PassThrough();
     for (let db of this.db) {

@@ -164,7 +164,7 @@ Interpreter.prototype.verify = function(scriptSig, scriptPubkey, tx, nin, flags,
     if (!Interpreter.castToBool(stackCopy[stackCopy.length - 1])) {
       this.errstr = 'SCRIPT_ERR_EVAL_FALSE_IN_P2SH_STACK';
       return false;
-    } 
+    }
   }
 
   // The CLEANSTACK check is only performed after potential P2SH evaluation,
@@ -311,7 +311,7 @@ Interpreter.SCRIPT_ENABLE_CHECKDATASIG = (1 << 18),
 
 // The exception to CLEANSTACK and P2SH for the recovery of coins sent
 // to p2sh segwit addresses is not allowed.
-    
+
 Interpreter.SCRIPT_DISALLOW_SEGWIT_RECOVERY = (1 << 20)
 
 
@@ -369,7 +369,7 @@ Interpreter.prototype.checkRawSignatureEncoding = function(buf) {
     return true;
   }
 
-  
+
   if ((this.flags & (Interpreter.SCRIPT_VERIFY_DERSIG | Interpreter.SCRIPT_VERIFY_LOW_S | Interpreter.SCRIPT_VERIFY_STRICTENC)) !== 0 && !Signature.isDER(buf)) {
     this.errstr = 'SCRIPT_ERR_SIG_DER_INVALID_FORMAT';
     return false;
@@ -379,14 +379,14 @@ Interpreter.prototype.checkRawSignatureEncoding = function(buf) {
       this.errstr = 'SCRIPT_ERR_SIG_DER_HIGH_S';
       return false;
     }
-  } 
- 
+  }
+
   return true;
 };
 
 
 // Back compat
-Interpreter.prototype.checkSignatureEncoding = 
+Interpreter.prototype.checkSignatureEncoding =
 Interpreter.prototype.checkTxSignatureEncoding = function(buf) {
 
     // Empty signature. Not strictly DER encoded, but allowed to provide a
@@ -398,7 +398,7 @@ Interpreter.prototype.checkTxSignatureEncoding = function(buf) {
     if (!this.checkRawSignatureEncoding(buf.slice(0,buf.length-1))) {
       return false;
     }
- 
+
     if ((this.flags & Interpreter.SCRIPT_VERIFY_STRICTENC) !== 0) {
       var sig = Signature.fromTxFormat(buf);
       if (!sig.hasDefinedHashtype()) {
@@ -632,7 +632,7 @@ Interpreter.prototype.checkLockTime = function(nLockTime) {
  * Checks a sequence parameter with the transaction's sequence.
  * @param {BN} nSequence the sequence read from the script
  * @return {boolean} true if the transaction's sequence is less than or equal to
- *                   the transaction's sequence 
+ *                   the transaction's sequence
  */
 Interpreter.prototype.checkSequence = function(nSequence) {
 
@@ -669,7 +669,7 @@ Interpreter.prototype.checkSequence = function(nSequence) {
     // of nSequenceMasked being tested is the same as the nSequenceMasked in the
     // transaction.
     var SEQUENCE_LOCKTIME_TYPE_FLAG_BN = new BN(Interpreter.SEQUENCE_LOCKTIME_TYPE_FLAG);
-    
+
     if (!((txToSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)  &&
            nSequenceMasked.lt(SEQUENCE_LOCKTIME_TYPE_FLAG_BN)) ||
           (txToSequenceMasked.gte(SEQUENCE_LOCKTIME_TYPE_FLAG_BN) &&
@@ -686,10 +686,10 @@ Interpreter.prototype.checkSequence = function(nSequence) {
   }
 
 /**
- * Implemented from bitcoin-abc 
+ * Implemented from bitcoin-abc
  * https://github.com/Bitcoin-ABC/bitcoin-abc/blob/f8cbc0e2b439aa4030430a7b1ecbdafede0dd072/src/script/bitfield.cpp
- * @param {*} dummy 
- * @param {*} size  
+ * @param {*} dummy
+ * @param {*} size
  */
 function DecodeBitfield(dummy, size) {
   if (size > 32) {
@@ -708,7 +708,7 @@ function DecodeBitfield(dummy, size) {
   let dummyAs32Bit = Uint32Array.from(dummy);
   // let one = new Uint8Array([1]);
   // let oneAs64Bit = BigUint64Array.from(one);
-  
+
   for (let i = 0; i < bitfieldSize; i++) {
     bitfield = bitfield | (dummyAs32Bit[i] << (8*i));
   }
@@ -718,14 +718,14 @@ function DecodeBitfield(dummy, size) {
     this.errstr = "INVALID_BIT_RANGE";
     return {result: false};
   }
-  
+
   return {result: true, bitfield: bitfield};
 }
 
 /**
- * countBits 
+ * countBits
  * Implemented from https://github.com/Bitcoin-ABC/bitcoin-abc/blob/f8cbc0e2b439aa4030430a7b1ecbdafede0dd072/src/util/bitmanip.h
- * @param {*} v 
+ * @param {*} v
  */
 
 function countBits(v) {
@@ -741,7 +741,7 @@ function countBits(v) {
    return ((v + (v >> 4) & 0xF0F0F0F) * 0x1010101) >> 24;
 }
 
-/** 
+/**
  * Based on the inner loop of bitcoind's EvalScript function
  * bitcoind commit: b5d1b1092998bc95313856d535c632ea5a8f9104
  */
@@ -1319,7 +1319,7 @@ Interpreter.prototype.step = function() {
       //
       case Opcode.OP_AND:
       case Opcode.OP_OR:
-      case Opcode.OP_XOR: 
+      case Opcode.OP_XOR:
         {
           // (x1 x2 - out)
           if (this.stack.length < 2) {
@@ -1358,7 +1358,7 @@ Interpreter.prototype.step = function() {
 
           // And pop vch2.
           this.stack.pop()
-        } 
+        }
         break;
 
       case Opcode.OP_EQUAL:
@@ -1668,7 +1668,7 @@ Interpreter.prototype.step = function() {
         break;
 
       case Opcode.OP_CHECKDATASIG:
-      case Opcode.OP_CHECKDATASIGVERIFY: 
+      case Opcode.OP_CHECKDATASIGVERIFY:
         {
 
 
@@ -1723,6 +1723,20 @@ Interpreter.prototype.step = function() {
             }
           }
 
+        }
+        break;
+
+      case Opcode.OP_REVERSEBYTES:
+        {
+          if (this.stack.length < 1) {
+            this.errstr = 'SCRIPT_ERR_INVALID_STACK_OPERATION';
+            return false;
+          }
+
+          buf1 = stacktop(-1);
+          var reversedBuf = Buffer.from(buf1).reverse();
+          this.stack.pop();
+          this.stack.push(reversedBuf);
         }
         break;
 
@@ -1801,7 +1815,7 @@ Interpreter.prototype.step = function() {
 
             if(!bitfieldObj["result"]) {
               fSuccess = false;
-            } 
+            }
 
             let nSigs8bit = new Uint8Array([nSigsCount]);
             let nSigs32 = Uint32Array.from(nSigs8bit);
@@ -1810,7 +1824,7 @@ Interpreter.prototype.step = function() {
               this.errstr = "INVALID_BIT_COUNT";
               fSuccess = false;
             }
-            
+
             var bottomKey = idxTopKey + nKeysCount - 1;
             var bottomSig = idxTopSig + nSigsCount - 1;
 
@@ -1831,7 +1845,7 @@ Interpreter.prototype.step = function() {
                   iKey++;
                 }
 
-                // this is a sanity check and should be 
+                // this is a sanity check and should be
                 // unreachable
                 if(iKey >= nKeysCount) {
                   this.errstr = "PUBKEY_COUNT";
@@ -1842,7 +1856,7 @@ Interpreter.prototype.step = function() {
                 let bufsig = stacktop(-bottomSig + iSig)
                 let bufPubkey = stacktop(-bottomKey + iKey)
 
-                // Note that only pubkeys associated with a 
+                // Note that only pubkeys associated with a
                 // signature are check for validity
 
                 if(!this.checkRawSignatureEncoding(bufsig) || !this.checkPubkeyEncoding(bufPubkey)) {
@@ -1865,14 +1879,14 @@ Interpreter.prototype.step = function() {
                 this.errstr = "INVALID_BIT_COUNT"
                 fSuccess = false;
               }
-          } 
+          }
           else {
             // Drop the signatures, since there's no way for a signature to sign itself
             for (var k = 0; k < nSigsCount; k++) {
               bufSig = stacktop(-isig-k);
               subscript.findAndDelete(new Script().add(bufSig));
             }
-            
+
             while (fSuccess && nSigsCount > 0) {
 
                   // valtype& vchSig  = stacktop(-isig);
@@ -1972,7 +1986,7 @@ Interpreter.prototype.step = function() {
           }
           this.stack[this.stack.length - 2] = Buffer.concat([buf1,buf2]);
           this.stack.pop();
-        } 
+        }
         break;
 
         case Opcode.OP_SPLIT: {
@@ -1997,7 +2011,7 @@ Interpreter.prototype.step = function() {
           // Replace existing stack values by the new values.
           this.stack[this.stack.length - 2] = n1.slice(0, position);
           this.stack[this.stack.length - 1] = n1.slice(position);
-        } 
+        }
         break;
 
         //
@@ -2054,7 +2068,7 @@ Interpreter.prototype.step = function() {
           num[l]=signbit;
 
           this.stack[this.stack.length-1] = num;
-        } 
+        }
         break;
 
 
@@ -2076,8 +2090,8 @@ Interpreter.prototype.step = function() {
             this.errstr = 'SCRIPT_ERR_INVALID_NUMBER_RANGE';
             return false;
           }
-        } 
-        break;        
+        }
+        break;
 
 
 

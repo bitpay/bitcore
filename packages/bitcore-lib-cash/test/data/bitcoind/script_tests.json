@@ -254,8 +254,8 @@
 
 ["0", "IF CHECKDATASIG ELSE 1 ENDIF", "P2SH,STRICTENC", "OK"],
 ["0", "IF CHECKDATASIGVERIFY ELSE 1 ENDIF", "P2SH,STRICTENC", "OK"],
-["0", "IF 0xbc ELSE 1 ENDIF", "P2SH,STRICTENC", "OK", "opcodes >= FIRST_UNDEFINED_OP_VALUE invalid if executed"],
-["0", "IF 0xbd ELSE 1 ENDIF", "P2SH,STRICTENC", "OK"],
+["0", "IF REVERSEBYTES ELSE 1 ENDIF", "P2SH,STRICTENC", "OK"],
+["0", "IF 0xbd ELSE 1 ENDIF", "P2SH,STRICTENC", "OK", "opcodes >= FIRST_UNDEFINED_OP_VALUE invalid if executed"],
 ["0", "IF 0xbe ELSE 1 ENDIF", "P2SH,STRICTENC", "OK"],
 ["0", "IF 0xbf ELSE 1 ENDIF", "P2SH,STRICTENC", "OK"],
 ["0", "IF 0xc0 ELSE 1 ENDIF", "P2SH,STRICTENC", "OK"],
@@ -961,6 +961,39 @@
     "P2SH,STRICTENC", "OK", "SPLIT, maximum length with empty string"
 ],
 
+["REVERSEBYTES"],
+["", "REVERSEBYTES 0 EQUAL", "P2SH", "INVALID_STACK_OPERATION", "REVERSEBYTES, empty stack"],
+["0", "REVERSEBYTES 0 EQUAL", "P2SH", "OK", "REVERSEBYTES, empty data"],
+["0x01 0x99", "REVERSEBYTES 0x01 0x99 EQUAL", "P2SH", "OK", "REVERSEBYTES, 1 byte"],
+["0x02 0xbeef", "REVERSEBYTES 0x02 0xefbe EQUAL", "P2SH", "OK", "REVERSEBYTES, 2 bytes"],
+["0x03 0xdeada1", "REVERSEBYTES 0x03 0xa1adde EQUAL", "P2SH", "OK", "REVERSEBYTES, 3 bytes"],
+["0x04 0xdeadbeef", "REVERSEBYTES 0x04 0xefbeadde EQUAL", "P2SH", "OK", "REVERSEBYTES, 4 bytes"],
+["0x41 0x1052a02f76cf6c3bc43e4671af4c6065f6d918c79f58ad7f90a49c4e2603a4728fc6d81d49087dd97bc43ae184da55dc5195553526ce076df092be27a398b68f41", "0x21 0xa8f459fbe84e0568ff03454d438183b0464e0c18ff73658ec0d2619b20ff29e502 REVERSEBYTES CHECKSIG", "NULLFAIL,STRICTENC,SIGHASH_FORKID", "OK", "REVERSEBYTES, reversed pubkey"],
+["'Bitcoin:_A_peer-to-peer_electronic_cash_system'", "REVERSEBYTES 'metsys_hsac_cinortcele_reep-ot-reep_A_:nioctiB' EQUAL", "P2SH", "OK", "REVERSEBYTES, whitepaper title"],
+[
+    "'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh'",
+    "REVERSEBYTES 'hhfanqyfcglncrriufjfvjgqcbbwrilaxeczpotsfzvmyrwlobpjtvtmhamvzoiwwjqazpyekvxpvsiiwuvertiqqiksmgkfplzamdvcelrrjsrvsxgojxngirwcoxhtmvtpzdjwzsuamlpudecziyiqkuukdbakbswcyelaksmudkgqccxpbobrkdpajsgogcuspzrptvrrsyuhrtxcftlpwlodgkavcqwofyxcwrsbovwojgznkiyijhohlyxevhqnqsibheuinifzybtbblzutjtsrotyqndybrncsdyrzlblxctejeyienvjeuslnzxomqzclruxceqispbntxngdpttfzzvqxshwlktvtkupouvjaugatahxgzzjidcauprbwdwakushoyhmogialwljyjrluudbkwjrkitxfsbtrvvyaesdosyzyxiysldhrybsxfrzpwwpubzncyzupdwoumfkfxnivdsryzlizjumarmlpqwfwqvngfegryrinviygnz' EQUAL",
+    "P2SH", "OK", "REVERSEBYTES, 520 bytes"
+],
+["0x03 0x123456", "REVERSEBYTES 0x03 0x563412 OP_EQUAL", "P2SH", "OK", "REVERSEBYTES, 3 bytes equal"],
+["0x06 0x020406080a0c", "DUP REVERSEBYTES REVERSEBYTES OP_EQUAL", "P2SH", "OK", "REVERSEBYTES, 3 bytes double reverse equal"],
+["'Bitcoin:_A_peer-to-peer_electronic_cash_system'", "DUP REVERSEBYTES REVERSEBYTES OP_EQUAL", "P2SH", "OK", "REVERSEBYTES, whitepaper title double reverse equal"],
+[
+    "'zngyivniryrgefgnvqwfwqplmramujzilzyrsdvinxfkfmuowdpuzycnzbupwwpzrfxsbyrhdlsyixyzysodseayvvrtbsfxtikrjwkbduulrjyjlwlaigomhyohsukawdwbrpuacdijzzgxhataguajvuopuktvtklwhsxqvzzfttpdgnxtnbpsiqecxurlczqmoxznlsuejvneiyejetcxlblzrydscnrbydnqytorstjtuzlbbtbyzfiniuehbisqnqhvexylhohjiyiknzgjowvobsrwcxyfowqcvakgdolwpltfcxtrhuysrrvtprzpsucgogsjapdkrbobpxccqgkdumskaleycwsbkabdkuukqiyizceduplmauszwjdzptvmthxocwrignxjogxsvrsjrrlecvdmazlpfkgmskiqqitrevuwiisvpxvkeypzaqjwwiozvmahmtvtjpbolwrymvzfstopzcexalirwbbcqgjvfjfuirrcnlgcfyqnafhh'",
+    "DUP REVERSEBYTES REVERSEBYTES OP_EQUAL",
+    "P2SH",
+    "OK",
+    "REVERSEBYTES, 520 bytes double reverse equal"
+],
+["0x05 0x0102030201", "DUP REVERSEBYTES OP_EQUAL", "P2SH", "OK", "REVERSEBYTES, palindrome 1"],
+["0x08 0x7766554444556677", "DUP REVERSEBYTES OP_EQUAL", "P2SH", "OK", "REVERSEBYTES, palindrome 2"],
+["'madam'", "DUP REVERSEBYTES OP_EQUAL", "P2SH", "OK", "REVERSEBYTES, palindrome 3"],
+["'racecar'", "DUP REVERSEBYTES OP_EQUAL", "P2SH", "OK", "REVERSEBYTES, palindrome 4"],
+["'redrum_siris_murder'", "DUP REVERSEBYTES OP_EQUAL", "P2SH", "OK", "REVERSEBYTES, palindrome 5"],
+["'step_on_no_pets'", "DUP REVERSEBYTES OP_EQUAL", "P2SH", "OK", "REVERSEBYTES, palindrome 6"],
+["'Bitcoin:_A_peer-to-peer_electronic_cash_system'", "DUP REVERSEBYTES OP_EQUAL", "P2SH", "EVAL_FALSE", "REVERSEBYTES, non-palindrome 1"],
+["0x02 0x1234", "DUP REVERSEBYTES OP_EQUAL", "P2SH", "EVAL_FALSE", "REVERSEBYTES, non-palindrome 2"],
+
 ["NUM2BIN"],
 ["", "NUM2BIN 0 EQUAL", "P2SH,STRICTENC", "INVALID_STACK_OPERATION", "NUM2BIN, empty stack"],
 ["0", "NUM2BIN 0 EQUAL", "P2SH,STRICTENC", "INVALID_STACK_OPERATION", "NUM2BIN, one parameter"],
@@ -1243,8 +1276,7 @@
  "P2SH,DISCOURAGE_UPGRADABLE_NOPS", "DISCOURAGE_UPGRADABLE_NOPS", "Discouraged NOP10 in redeemScript"],
 
 ["0x50","1", "P2SH,STRICTENC", "BAD_OPCODE", "opcode 0x50 is reserved"],
-["1", "IF 0xbc ELSE 1 ENDIF", "P2SH,STRICTENC", "BAD_OPCODE", "opcodes >= FIRST_UNDEFINED_OP_VALUE invalid if executed"],
-["1", "IF 0xbd ELSE 1 ENDIF", "P2SH,STRICTENC", "BAD_OPCODE"],
+["1", "IF 0xbd ELSE 1 ENDIF", "P2SH,STRICTENC", "BAD_OPCODE", "opcodes >= FIRST_UNDEFINED_OP_VALUE invalid if executed"],
 ["1", "IF 0xbe ELSE 1 ENDIF", "P2SH,STRICTENC", "BAD_OPCODE"],
 ["1", "IF 0xbf ELSE 1 ENDIF", "P2SH,STRICTENC", "BAD_OPCODE"],
 ["1", "IF 0xc0 ELSE 1 ENDIF", "P2SH,STRICTENC", "BAD_OPCODE"],
@@ -1364,7 +1396,7 @@
 ["1","RESERVED", "P2SH,STRICTENC", "BAD_OPCODE", "OP_RESERVED is reserved"],
 ["1","RESERVED1", "P2SH,STRICTENC", "BAD_OPCODE", "OP_RESERVED1 is reserved"],
 ["1","RESERVED2", "P2SH,STRICTENC", "BAD_OPCODE", "OP_RESERVED2 is reserved"],
-["1","0xbc", "P2SH,STRICTENC", "BAD_OPCODE", "0xbc == FIRST_UNDEFINED_OP_VALUE"],
+["1","0xbd", "P2SH,STRICTENC", "BAD_OPCODE", "0xbd == FIRST_UNDEFINED_OP_VALUE"],
 
 ["2147483648", "1ADD 1", "P2SH,STRICTENC", "UNKNOWN_ERROR", "We cannot do math on 5-byte integers"],
 ["2147483648", "NEGATE 1", "P2SH,STRICTENC", "UNKNOWN_ERROR", "We cannot do math on 5-byte integers"],

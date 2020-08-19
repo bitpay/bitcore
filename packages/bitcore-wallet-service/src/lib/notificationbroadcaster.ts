@@ -1,7 +1,4 @@
 import { EventEmitter } from 'events';
-
-let log = require('npmlog');
-log.debug = log.verbose;
 let _instance;
 
 export class NotificationBroadcaster extends EventEmitter {
