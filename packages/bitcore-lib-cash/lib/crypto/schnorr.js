@@ -158,6 +158,8 @@ Schnorr.prototype._findSignature = function(d, e) {
    * @return k {BN}
    */
   Schnorr.prototype.nonceFunctionRFC6979 = function(privkey, msgbuf) {
+console.log('[schnorr.js.160:privkey:]',privkey.toString('hex')); // TODO
+console.log('[schnorr.js.160:msgbuf:]',msgbuf.toString('hex')); // TODO
     let V = Buffer.from("0101010101010101010101010101010101010101010101010101010101010101","hex");
     let K = Buffer.from("0000000000000000000000000000000000000000000000000000000000000000","hex");
 
@@ -177,12 +179,14 @@ Schnorr.prototype._findSignature = function(d, e) {
 
       k = T;
       $.checkState(V.length >= 32, "V length should be >= 32");
+
       if (k.gt(new BN(0)) && k.lt(Point.getN())) {
         break;
       }
       K = Hash.sha256hmac(Buffer.concat([V, Buffer.from("00", 'hex')]), K);
       V = Hash.hmac(Hash.sha256, V, K);
     }
+console.log('[schnorr.js.187]',k.toString('hex')); // TODO
     return k;
   }
 

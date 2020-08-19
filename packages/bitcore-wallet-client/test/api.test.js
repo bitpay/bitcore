@@ -3718,7 +3718,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         setup(1, 1, 'bch', 'testnet', done);
       });
 
-      it('should sign a tx', (done) => {
+      it.only('should sign a tx', (done) => {
         var toAddress = 'qr5m6xul5nahlzczeaqkg5qe3mgt754djuug954tc3';
         var opts = {
           outputs: [{
