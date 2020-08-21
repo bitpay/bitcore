@@ -168,4 +168,19 @@ describe("#Schnorr", function() {
         var k = schnorr.nonceFunctionRFC6979(Buffer.from(privkey), Buffer.from(msgbuf));
         k.toString().should.equal('40736259912772382559816990380041422373693363729339996443093592104584195165');
     });
+
+    it('Schnorr Sign/Verify Test X, case previously produced 63 byte signature', function() {
+        let hashbuf = Buffer.from('a330930ce36be70a744d057dd2a2d0c55a8418ee706e662fcb8d4ab5ef845e03','hex');
+        let privbn = Buffer.from('ef209804744733771a07eac71d2288db0b3030c91fa49382037fb8a5aad0f1ca','hex');
+        let privkey = new Privkey(privbn);
+        let schnorrSig = Schnorr({
+            hashbuf: hashbuf,
+            endian: 'little',
+            privkey: privkey,
+            hashtype: 65 
+        });
+        schnorrSig.sign();
+        let verified = schnorrSig.verify().verified;
+        verified.should.equal(true); 
+    });
 });
