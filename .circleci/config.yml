@@ -1,6 +1,20 @@
 # Javascript Node CircleCI 2.0 configuration file
 # Check https://circleci.com/docs/2.0/language-javascript/ for more details
 version: 2
+workflows:
+  version: 2
+  master:
+    jobs:
+      - build
+      - unit:
+           requires:
+             - build
+      - integration:
+           requires:
+             - build
+      - coverage:
+           requires:
+             - build
 jobs:
   build:
     machine:
@@ -10,33 +24,21 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Build service
+          name: Build Service
           command: npm run test:ci:build
   unit:
-    machine:
-      image: circleci/classic:latest
-      docker_layer_caching: true
-    working_directory: ~/bitcore
-    steps:
+   steps:
       - run:
           name: Unit Test Service
           command: npm run test:ci:unit
 
   integration:
-    machine:
-      image: circleci/classic:latest
-      docker_layer_caching: true
-    working_directory: ~/bitcore
     steps:
       - run:
           name: Integration Test Service
           command: npm run test:ci:integration
 
   coverage:
-    machine:
-      image: circleci/classic:latest
-      docker_layer_caching: true
-    working_directory: ~/bitcore
     steps:
       - run:
           name: Coverage
