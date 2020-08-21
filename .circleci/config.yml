@@ -22,24 +22,61 @@ jobs:
       docker_layer_caching: true
     working_directory: ~/bitcore
     steps:
+      - attach_workspace:
+            at: ~/bitcore
       - checkout
       - run:
           name: Build Service
           command: npm run test:ci:build
+      - run:
+          name: Save Build Output
+          command: docker save -o ~/bitcore/image bitcore_test_runner
+      - persist_to_workspace:
+          root: ~/bitcore/
+          paths:
+            - image
+
   unit:
-   steps:
+    machine:
+      image: circleci/classic:latest
+      docker_layer_caching: true
+    working_directory: ~/bitcore
+    steps:
+      - attach_workspace:
+            at: ~/bitcore
+      - run:
+          name: Load Docker Image
+          command: docker load -i ~/bitcore/image
       - run:
           name: Unit Test Service
           command: npm run test:ci:unit
 
   integration:
+    machine:
+      image: circleci/classic:latest
+      docker_layer_caching: true
+    working_directory: ~/bitcore
     steps:
+      - attach_workspace:
+            at: ~/bitcore
+      - run:
+          name: Load Docker Image
+          command: docker load -i ~/bitcore/image
       - run:
           name: Integration Test Service
           command: npm run test:ci:integration
 
   coverage:
+    machine:
+      image: circleci/classic:latest
+      docker_layer_caching: true
+    working_directory: ~/bitcore
     steps:
+      - attach_workspace:
+            at: ~/bitcore
+      - run:
+          name: Load Docker Image
+          command: docker load -i ~/bitcore/image
       - run:
           name: Coverage
           command: npm run test:ci:coverage
