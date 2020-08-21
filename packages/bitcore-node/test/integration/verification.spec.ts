@@ -1,15 +1,15 @@
 import { expect } from 'chai';
-import { Modules } from '../../src/modules';
-import { Config } from '../../src/services/config';
-import { AsyncRPC } from '../../src/rpc';
 import config from '../../src/config';
-import { TransactionStorage } from '../../src/models/transaction';
-import { resetDatabase } from '../helpers';
-import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
-import { wait } from '../../src/utils/wait';
-import { VerificationPeer } from '../../src/modules/bitcoin/VerificationPeer';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { CoinStorage } from '../../src/models/coin';
+import { TransactionStorage } from '../../src/models/transaction';
+import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
+import { VerificationPeer } from '../../src/modules/bitcoin/VerificationPeer';
+import { AsyncRPC } from '../../src/rpc';
+import { Config } from '../../src/services/config';
+import { wait } from '../../src/utils/wait';
+import { resetDatabase } from '../helpers';
+import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
 
 const chain = 'BTC';
 const network = 'regtest';
@@ -92,13 +92,16 @@ function addCoin() {
 }
 
 describe('VerificationPeer', function() {
+  const suite = this;
   this.timeout(500000);
+  before(intBeforeHelper);
+  after(async () => intAfterHelper(suite));
+
   beforeEach(async () => {
     await resetDatabase();
   });
 
   it('should not save any mempoool transactions', async () => {
-    Modules.loadConfigured();
     const chainConfig = Config.chainConfig({ chain, network });
     const worker = new VerificationPeer({ chain, network, chainConfig });
     await worker.connect();
@@ -113,7 +116,6 @@ describe('VerificationPeer', function() {
   });
 
   it('should save any mempoool transactions', async () => {
-    Modules.loadConfigured();
     const chainConfig = Config.chainConfig({ chain, network });
     const worker = new BitcoinP2PWorker({ chain, network, chainConfig });
     worker.isSyncingNode = true;

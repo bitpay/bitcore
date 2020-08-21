@@ -2,12 +2,18 @@ import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import { CacheStorage } from '../../../src/models/cache';
 import { resetDatabase } from '../../helpers';
+import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 describe('Cache Model', function() {
   const key = 'key';
   const value = { hello: 'world' };
   const walletKey = 'wallet-key';
   const walletValue = { walletThing: 1 };
   const wallet = new ObjectId();
+
+  const suite = this;
+  this.timeout(30000);
+  before(intBeforeHelper);
+  after(async () => intAfterHelper(suite));
 
   beforeEach(async () => {
     await resetDatabase();

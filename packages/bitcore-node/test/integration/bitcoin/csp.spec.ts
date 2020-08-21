@@ -1,7 +1,13 @@
 import { expect } from 'chai';
 import { CacheStorage } from '../../../src/models/cache';
 import { ChainStateProvider } from '../../../src/providers/chain-state';
+import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 describe('Bitcoin API', function() {
+  const suite = this;
+  this.timeout(30000);
+  before(intBeforeHelper);
+  after(async () => intAfterHelper(suite));
+
   it('should be able to get the fees', async () => {
     const chain = 'BTC';
     const network = 'regtest';

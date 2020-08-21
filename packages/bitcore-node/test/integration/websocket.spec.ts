@@ -1,12 +1,12 @@
-import sinon from 'sinon';
 import { expect } from 'chai';
-import { resetDatabase } from '../helpers';
-import { AsyncRPC } from '../../src/rpc';
+import sinon from 'sinon';
 import io = require('socket.io-client');
 import config from '../../src/config';
-import { Event } from '../../src/services/event';
-import { Api } from '../../src/services/api';
 import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
+import { AsyncRPC } from '../../src/rpc';
+import { Api } from '../../src/services/api';
+import { Event } from '../../src/services/event';
+import { resetDatabase } from '../helpers';
 const { PrivateKey } = require('bitcore-lib');
 
 const chain = 'BTC';
@@ -18,12 +18,11 @@ import { Client } from 'bitcore-client';
 import { WalletStorage } from '../../src/models/wallet';
 import { WalletAddressStorage } from '../../src/models/walletAddress';
 import { Socket } from '../../src/services/socket';
+import { wait } from '../../src/utils/wait';
+import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
 
 function getSocket() {
-  const socket = io.connect(
-    'http://localhost:3000',
-    { transports: ['websocket'] }
-  );
+  const socket = io.connect('http://localhost:3000', { transports: ['websocket'] });
   return socket;
 }
 
@@ -37,9 +36,11 @@ const address = '2MuYKLUaKCenkEpwPkWUwYpBoDBNA2dgY3t';
 const sandbox = sinon.createSandbox();
 
 describe('Websockets', function() {
-  this.timeout(180000);
+  const suite = this;
+  this.timeout(60000);
 
   before(async () => {
+    intBeforeHelper();
     sandbox.stub(Socket.serviceConfig, 'bwsKeys').value([bwsKey]);
     await resetDatabase();
     await Event.start();
@@ -65,6 +66,8 @@ describe('Websockets', function() {
   after(async () => {
     await Event.stop();
     await Api.stop();
+    await resetDatabase();
+    await intAfterHelper(suite);
   });
 
   beforeEach(async () => {
@@ -81,16 +84,22 @@ describe('Websockets', function() {
       network,
       chainConfig
     });
+    console.log('Starting p2p worker');
     p2pWorker.start();
     if (p2pWorker.isSyncing) {
+      console.log('Worker is syncing. Waiting til done');
       await p2pWorker.syncDone();
     }
+    console.log('Waiting til p2p done');
     await p2pWorker.waitTilSync();
+    console.log('P2P done');
   });
 
   afterEach(async () => {
     try {
+      console.log('Stopping p2p worker');
       await p2pWorker.stop();
+      console.log('Disconnecting socket');
       await socket.disconnect();
     } catch (e) {
       console.log('Error stopping p2p worker');
@@ -103,7 +112,7 @@ describe('Websockets', function() {
     let hasSeenBlockEvent = false;
     let hasSeenCoinEvent = false;
     const anAddress = await rpc.getnewaddress('');
-    let sawEvents = new Promise(resolve => {
+    let sawEvents = new Promise(async resolve => {
       socket.on('block', () => {
         hasSeenBlockEvent = true;
         console.log('Block event received');
@@ -125,6 +134,13 @@ describe('Websockets', function() {
           resolve();
         }
       });
+      while (!hasSeenBlockEvent) {
+        console.log('WAITING FOR BLOCK EVENT ON SOCKET');
+        if (hasSeenTxEvent && hasSeenCoinEvent && hasSeenBlockEvent) {
+          return resolve();
+        }
+        await wait(1000);
+      }
     });
     console.log('Generating 100 blocks');
     await rpc.call('generatetoaddress', [101, anAddress]);
@@ -151,7 +167,7 @@ describe('Websockets', function() {
 
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
-    let sawEvents = new Promise(resolve => {
+    let sawEvents = new Promise(async resolve => {
       socket.on('tx', () => {
         hasSeenTxEvent = true;
         console.log('Transaction event received');
@@ -166,6 +182,14 @@ describe('Websockets', function() {
           resolve();
         }
       });
+
+      while (!hasSeenTxEvent) {
+        console.log('WAITING FOR TX EVENT ON SOCKET');
+        if (hasSeenTxEvent && hasSeenCoinEvent) {
+          return resolve();
+        }
+        await wait(1000);
+      }
     });
 
     await rpc.sendtoaddress(address, 0.1);
@@ -190,7 +214,7 @@ describe('Websockets', function() {
 
     let hasSeenTxEvent = false;
     let hasSeenCoinEvent = false;
-    let sawEvents = new Promise(resolve => {
+    let sawEvents = new Promise(async resolve => {
       socket.on('tx', () => {
         hasSeenTxEvent = true;
         console.log('Transaction event received');
@@ -205,6 +229,14 @@ describe('Websockets', function() {
           resolve();
         }
       });
+
+      while (!hasSeenTxEvent) {
+        console.log('WAITING FOR Wallet-TX EVENT ON SOCKET');
+        if (hasSeenTxEvent && hasSeenCoinEvent) {
+          return resolve();
+        }
+        await wait(1000);
+      }
     });
 
     await rpc.sendtoaddress(address, 0.1);

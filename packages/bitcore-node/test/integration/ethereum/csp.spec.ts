@@ -2,7 +2,13 @@ import { expect } from 'chai';
 import { CacheStorage } from '../../../src/models/cache';
 import { ETH } from '../../../src/modules/ethereum/api/csp';
 import { EthTransactionStorage } from '../../../src/modules/ethereum/models/transaction';
+import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 describe('Ethereum API', function() {
+  const suite = this;
+  this.timeout(30000);
+  before(intBeforeHelper);
+  after(async () => intAfterHelper(suite));
+
   it('should return undefined for garbage data', () => {
     const data = 'garbage';
     const decoded = EthTransactionStorage.abiDecode(data);

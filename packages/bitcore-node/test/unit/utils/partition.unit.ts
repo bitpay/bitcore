@@ -1,8 +1,12 @@
-import { describe } from 'mocha';
 import { expect } from 'chai';
+import { describe } from 'mocha';
 import { partition } from '../../../src/utils/partition';
+import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 
 describe('Partition', () => {
+  before(unitBeforeHelper);
+  after(unitAfterHelper);
+
   it('should split an array of 5 to 5 arrays', () => {
     let testArr = [1, 2, 3, 4, 5];
     let partitioned = partition(testArr, 5);
