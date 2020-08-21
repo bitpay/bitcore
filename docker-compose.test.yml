@@ -5,7 +5,7 @@ services:
   test_runner:
     build:
       context: .
-      dockerfile: Dockerfile-test
+      dockerfile: Dockerfile
     ports:
       - 8100:8100
       - 3000:3000
