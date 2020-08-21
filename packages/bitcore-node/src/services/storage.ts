@@ -68,6 +68,7 @@ export class StorageService {
 
   async stop() {
     if (this.client) {
+      logger.info('Stopping Storage Service');
       await wait(5000);
       this.connected = false;
       await Promise.all(this.modelsConnected);

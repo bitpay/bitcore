@@ -96,10 +96,9 @@ describe('Wallet Benchmark', function() {
   const suite = this;
   this.timeout(5000000);
   let p2pWorker: BitcoinP2PWorker;
-  before(intBeforeHelper);
-  after(async () => intAfterHelper(suite));
 
   before(async () => {
+await intBeforeHelper()
     await Event.start();
     await Api.start();
   });
@@ -107,6 +106,7 @@ describe('Wallet Benchmark', function() {
   after(async () => {
     await Event.stop();
     await Api.stop();
+await intAfterHelper(suite)
   });
 
   beforeEach(async () => {

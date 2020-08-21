@@ -1,8 +1,9 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    "target": "es5",
     "module": "commonjs",
     "lib": ["es2017", "esnext", "esnext.asynciterable"],
+    "downlevelIteration": true,
     "allowJs": true,
     "sourceMap": true,
     "outDir": "build",
