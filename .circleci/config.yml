@@ -32,9 +32,9 @@ jobs:
           name: Save Build Output
           command: docker save -o ~/bitcore/image bitcore_test_runner
       - persist_to_workspace:
-          root: ~/bitcore/
+          root: ~/bitcore
           paths:
-            - image
+            - ./*
 
   unit:
     machine:
