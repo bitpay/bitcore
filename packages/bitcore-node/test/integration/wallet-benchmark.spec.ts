@@ -49,12 +49,12 @@ async function getWalletUtxos(wallet: Wallet) {
   const utxos = new Array<MongoBound<ICoin>>();
   return new Promise<Array<MongoBound<ICoin>>>(resolve =>
     wallet
-      .getUtxos()
-      .pipe(new ParseApiStream())
-      .on('data', (utxo: MongoBound<ICoin>) => {
-        utxos.push(utxo);
-      })
-      .on('end', () => resolve(utxos))
+    .getUtxos()
+    .pipe(new ParseApiStream())
+    .on('data', (utxo: MongoBound<ICoin>) => {
+      utxos.push(utxo);
+    })
+    .on('end', () => resolve(utxos))
   );
 }
 
@@ -98,7 +98,7 @@ describe('Wallet Benchmark', function() {
   let p2pWorker: BitcoinP2PWorker;
 
   before(async () => {
-await intBeforeHelper()
+    await intBeforeHelper();
     await Event.start();
     await Api.start();
   });
@@ -106,7 +106,7 @@ await intBeforeHelper()
   after(async () => {
     await Event.stop();
     await Api.stop();
-await intAfterHelper(suite)
+    await intAfterHelper(suite);
   });
 
   beforeEach(async () => {
