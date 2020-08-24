@@ -631,6 +631,7 @@ export class BtcChain implements IChain {
         }
       }
 
+
       if (_.isEmpty(selected)) {
         // log.debug('Could not find enough funds within this utxo subset');
         return cb(

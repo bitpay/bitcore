@@ -4255,7 +4255,10 @@ export class WalletService {
       const apiHost = keys.API;
       const ip = Utils.getIpFromReq(req);
 
-      if (!checkRequired(req.body, ['account_details', 'transaction_details']) && !checkRequired(req.body.transaction_details, ['payment_details'])) {
+      if (
+        !checkRequired(req.body, ['account_details', 'transaction_details']) &&
+        !checkRequired(req.body.transaction_details, ['payment_details'])
+      ) {
         return reject(new ClientError("Simplex's request missing arguments"));
       }
 
@@ -4358,7 +4361,6 @@ export class WalletService {
       if (!checkRequired(req.body, ['amount', 'sourceCurrency', 'destCurrency', 'dest', 'country'])) {
         return reject(new ClientError("Wyre's request missing arguments"));
       }
-
 
       const URL: string = `${keys.API}/v3/orders/quote/partner?timestamp=${Date.now().toString()}`;
       const XApiSignature: string = URL + JSON.stringify(req.body);
