@@ -8,10 +8,14 @@ const storageArgs = {
   dbName: 'bitcore-integration'
 };
 
+let loaded = false;
 export async function intBeforeHelper() {
   try {
+    if (!loaded) {
+      Modules.loadConfigured();
+      loaded = true;
+    }
     await Storage.start(storageArgs);
-    Modules.loadConfigured();
     await wait(2000);
   } catch (e) {
     console.error(e);
