@@ -5131,6 +5131,7 @@ describe('Wallet service', function() {
         });
 
         it('should exclude unconfirmed utxos if specified', function(done) {
+          
           helpers.stubUtxos(server, wallet, [1.3, 'u2', 'u0.1', 1.2], function(utxos) {
             var txOpts = {
               outputs: [{
@@ -5150,7 +5151,7 @@ describe('Wallet service', function() {
               server.createTx(txOpts, function(err, tx) {
                 should.exist(err);
                 err.code.should.equal('INSUFFICIENT_FUNDS_FOR_FEE');
-                err.message.should.equal('Insufficient funds for fee');
+                err.message.should.equal('Insufficient funds for fee + coin: btc feePerKb: 10000');
                 done();
               });
             });

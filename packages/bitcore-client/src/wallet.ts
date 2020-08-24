@@ -122,7 +122,7 @@ export class Wallet {
     if (alreadyExists) {
       throw new Error('Wallet already exists');
     }
-    const wallet = Object.assign( {
+    const wallet = Object.assign({
       name,
       chain,
       network,
