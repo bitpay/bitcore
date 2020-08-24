@@ -1,7 +1,7 @@
 import * as BitcoreClient from 'bitcore-client';
 import { expect } from 'chai';
 import config from '../../../src/config';
-// import { CacheStorage } from '../../../src/models/cache';
+import { CacheStorage } from '../../../src/models/cache';
 import { EthBlockStorage } from '../../../src/modules/ethereum/models/block';
 import { EthP2pWorker } from '../../../src/modules/ethereum/p2p/p2p';
 import { Api } from '../../../src/services/api';
@@ -84,15 +84,13 @@ describe('Ethereum', function() {
 
   it('should be able to get the balance for the address', async () => {
     const wallet = await getWallet();
-    /*
-     *    const balance = await wallet.getBalance();
-     *    expect(balance.confirmed).to.be.gt(0);
-     *
-     *    const key = 'getBalanceForAddress-ETH-testnet-0xd8fd14fb0e0848cb931c1e54a73486c4b968be3d';
-     *    const cached = await CacheStorage.collection.findOne({ key });
-     *    expect(cached).to.exist;
-     *    expect(cached!.value).to.deep.eq(balance);
-     */
+    const balance = await wallet.getBalance();
+    expect(balance.confirmed).to.be.gt(0);
+
+    const key = 'getBalanceForAddress-ETH-testnet-0xd8fd14fb0e0848cb931c1e54a73486c4b968be3d';
+    const cached = await CacheStorage.collection.findOne({ key });
+    expect(cached).to.exist;
+    expect(cached!.value).to.deep.eq(balance);
     await wallet.lock();
   });
 
