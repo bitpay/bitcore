@@ -65,7 +65,7 @@ helpers.stubRequest = (err, res) => {
     timeout: sinon.stub(),
     end: sinon.stub().yields(err, res),
   };
-  var reqFactory = _.reduce(['get', 'post', 'put', 'delete'], (mem, verb) => {
+ var reqFactory = _.reduce(['get', 'post', 'put', 'delete'], (mem, verb) => {
     mem[verb] = (url) => {
       return request;
     };
@@ -205,6 +205,7 @@ helpers.createAndPublishTxProposal = (client, opts, cb) => {
     }, cb);
   });
 };
+
 
 var blockchainExplorerMock = {
   register: sinon.stub().callsArgWith(1, null, null),
@@ -2434,7 +2435,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         should.not.exist(err);
         should.exist(levels);
         levels[0].level.should.equal('normal');
-        levels[0].feePerKb.should.equal(2000);
+        levels[0].feePerKb.should.equal(2100);
         done();
       });
     });
@@ -3794,6 +3795,40 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
         });
       });
 
+
+      it('Should fail with "upgrade needed" trying to sign schnorr on old clients', (done) => {
+        var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
+        var opts = {
+          outputs: [{
+            amount: 1e8,
+            toAddress: toAddress,
+          }, {
+            amount: 2e8,
+            toAddress: toAddress,
+          }],
+          feePerKb: 100e2,
+          message: 'just some message',
+          txpVersion: 3,
+          coin: 'bch',
+        };
+        clients[0].createTxProposal(opts, (err, txp) => {
+          should.not.exist(err);
+          should.exist(txp);
+          clients[0].publishTxProposal({
+            txp: txp,
+          }, (err, publishedTxp) => {
+            should.not.exist(err);
+            should.exist(publishedTxp);
+            publishedTxp.status.should.equal('pending');
+            let signatures = keys[0].sign(clients[0].getRootPath(), txp);
+            clients[0].pushSignatures(publishedTxp, signatures, (err, txp) => {
+              err.message.should.contain('upgrade');
+              done();
+            }, '/v1/txproposals/');
+          });
+        }, '/v3/txproposals');
+      });
+
       it('Should sign proposal v3', (done) => {
         var toAddress = 'qran0w2c8x2n4wdr60s4nrle65s745wt4sakf9xa8e';
         var opts = {
@@ -3807,7 +3842,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
           feePerKb: 100e2,
           message: 'just some message',
           txpVersion: 3,
-          coin: 'bch'
+          coin: 'bch',
         };
         clients[0].createTxProposal(opts, (err, txp) => {
           should.not.exist(err);
@@ -3823,7 +3858,7 @@ describe('client API', function() { // DONT USE LAMBAS HERE!!! https://stackover
               should.not.exist(err);
               txp.status.should.equal('accepted');
               done();
-            }, '/v1/txproposals/');
+            }, '/v2/txproposals/');
           });
         }, '/v3/txproposals');
       });

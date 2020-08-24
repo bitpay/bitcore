@@ -161,4 +161,26 @@ describe("#Schnorr", function() {
         schnorr.sig = Signature.fromString("667C2F778E0616E611BD0C14B8A600C5884551701A949EF0EBFD72D452D64E844160BCFC3F466ECB8FACD19ADE57D8699D74E7207D78C6AEDC3799B52A8E0598");
         schnorr.verify().verified.should.equal(false, "Should fail");
     });
+
+    it("Schnorr nonceFunctionRFC6979", function() {
+        var privkey = [247,229,95,194,90,177,180,124,16,212,194,1,4,84,217,63,135,141,214,161,83,44,149,178,196,172,199,160,224,226,3,171]
+        var msgbuf = [203,64,126,5,128,46,163,26,233,17,17,84,85,232,237,114,254,233,21,23,122,3,27,106,32,178,75,75,119,76,13,176]
+        var k = schnorr.nonceFunctionRFC6979(Buffer.from(privkey), Buffer.from(msgbuf));
+        k.toString().should.equal('40736259912772382559816990380041422373693363729339996443093592104584195165');
+    });
+
+    it('Schnorr Sign/Verify Test X, case previously produced 63 byte signature', function() {
+        let hashbuf = Buffer.from('a330930ce36be70a744d057dd2a2d0c55a8418ee706e662fcb8d4ab5ef845e03','hex');
+        let privbn = Buffer.from('ef209804744733771a07eac71d2288db0b3030c91fa49382037fb8a5aad0f1ca','hex');
+        let privkey = new Privkey(privbn);
+        let schnorrSig = Schnorr({
+            hashbuf: hashbuf,
+            endian: 'little',
+            privkey: privkey,
+            hashtype: 65 
+        });
+        schnorrSig.sign();
+        let verified = schnorrSig.verify().verified;
+        verified.should.equal(true); 
+    });
 });

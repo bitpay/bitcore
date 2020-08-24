@@ -1,0 +1,130 @@
+#!/usr/bin/env node
+
+var _ = require('lodash');
+var program = require('commander');
+var utils = require('./cli-utils');
+var Client = require('bitcore-wallet-client').default;
+var Bitcore = Client.Bitcore;
+const b = require('bitcore-lib');
+const ECDSA = b.crypto.ECDSA;
+const Hash = b.crypto.Hash;
+var FileStorage = require('./filestorage');
+var uuid = require('uuid');
+program = utils.configureCommander(program);
+
+
+program
+  .option('-a, --active', 'Makes ad active', true)
+  .usage('[options] <name> <title> <country> <body> <imgUrl> <linkText> <linkUrl> <app>')
+  .parse(process.argv);
+
+// Pseudo code
+// message, m =
+// JSON.stringify (
+//  {
+//    advertisementId,
+//    ...requiredArgs
+//  }
+
+// Sign (m, privkey)
+// Verify(signature, m, publicKey)
+
+var args = program.args;
+var host = 'https://bws.bitpay.com';
+
+var clientArgs = {
+  host
+}
+
+var name = args[0];
+var title = args[1];
+var country = args[2]
+var body = args[3];
+var imgUrl = args[4];
+var linkText = args[5];
+var linkUrl = args[6];
+var app = args[7];
+
+var requiredArgs = {
+  name,
+  title,
+  type: 'standard',
+  country,
+  body,
+  imgUrl,
+  linkText,
+  linkUrl,
+  app
+}
+
+let missingArgs = [];
+_.forEach(requiredArgs, (value, requiredArg) => {
+  if (value === undefined) {
+    missingArgs.push(requiredArg);
+  }
+});
+
+if (!_.isEmpty(missingArgs)) {
+  _.forEach(missingArgs, (arg) => {
+    console.log(arg + ' is missing. Please run again with correct arguments.')
+  });
+
+  throw new Error('Missing required arguments');
+}
+
+var dismissible = true;
+var isAdActive = program.active ? program.active : false;
+var isTesting = !isAdActive;
+
+let advertisementId = uuid.v4();
+
+let uniqueMessageArgs = {
+  advertisementId,
+  ...requiredArgs
+}
+
+let allAdArgs = {
+  advertisementId,
+  dismissible,
+  isAdActive,
+  isTesting,
+  ...requiredArgs
+};
+
+
+var filename = args.file || process.env['WALLET_FILE'] || process.env['HOME'] + '/.wallet.json';
+
+var storage = new FileStorage({
+  filename
+});
+
+let walletInfo; // wallet Details
+storage.load(function(err, walletData) {
+  if (err) console.log(err);
+  else {
+    walletInfo = JSON.parse(walletData);
+  }
+});
+
+
+utils.getClient(clientArgs, { 
+  mustExist: true
+}, function (client) {
+
+  let finalAdStringMessage = JSON.stringify(uniqueMessageArgs);
+  let buf = Buffer.from(finalAdStringMessage);
+  let messageHashBuf = Hash.sha256(buf);
+  const signature = ECDSA.sign(messageHashBuf, b.PrivateKey(walletInfo.cred.requestPrivKey), 'little').toString();
+
+  const finalAd = {...allAdArgs,  signature};
+
+  client.createAdvertisement(finalAd, (err, result) => {
+    utils.die(err);
+    if(!result) {
+      console.log('Couldn\'t create advertisement');
+    }
+    else {
+      console.log('Succesfully Created advertisement ', result);
+    }
+  });
+});

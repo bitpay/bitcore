@@ -383,6 +383,18 @@ describe('ExpressApp', function() {
             });
           });
         });
+        it('v1/advertisements', function(done) {
+          start(TestExpressApp, function() {
+            var requestOptions = {
+              url: testHost + ':' + testPort + config.basePath + '/v1/advertisements',
+              headers: {
+                'x-identity': 'identity',
+                'x-signature': 'signature'
+              }
+            };
+          });
+          done();
+        });
         it('Server under maintenance check, should return 503 status code', function(done) {
           var server = {
             getStatus: sinon.stub().callsArgWith(1, null, {}),

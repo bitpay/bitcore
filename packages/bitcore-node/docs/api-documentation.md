@@ -2,6 +2,29 @@
 
 ## Transactions
 
+### Send Raw Transaction
+
+POST `/api/BTC/mainnet/tx/send`
+
+<details>
+<summary>
+<b>Response</b>
+</summary>
+<br>
+<b>Use Curl command in terminal to get a response</b>
+
+```sh
+curl -v POST -H "Content-Type: application/json" -d '{"rawTx":"02000000016ac3043549876ec53aa8bd4a0839c07f52211a6b880920418cbb20b54142f1cf000000006a473044022013bfe2132c843196c43993a3562868ed26b58b5667bc3f934216afcf1643b51102206d7676a5efca242255b4f9fbd1db41273164c82723b0e01f6a324e68971aacf80121035165d8ce5fa0890e14c76bdf22cdc8be9c5ee12080aad89f897cb2026b1aba2cffffffff02706f9800000000001976a914c7cb6d4f64bf68c37a052fb094f2e0ff385e8b0a88ac804a5d05000000001976a914bb89aec81ebb0812532c34d5ee997e7319012c5c88ac00000000"}' "http://localhost:3000/api/BTC/mainnet/tx/send"
+```
+
+```json
+{
+    "txid": "3b96bb7e197ef276b85131afd4a09c059cc368133a26ca04ebffb0ab4f75c8b8"
+}
+```
+
+</details>
+
 ### Get Transactions by blockHeight
 
 GET `/api/BTC/mainnet/tx?blockHeight=12`

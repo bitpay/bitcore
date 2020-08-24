@@ -1,5 +1,9 @@
 'use strict';
 
+// Important references for schnorr implementation
+// https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/2019-05-15-schnorr.md
+// https://github.com/bitcoincashorg/bitcoincash.org/blob/master/spec/2019-11-15-schnorrmultisig.md#wallet-implementation-guidelines
+
 var BN = require('./bn');
 var Point = require('./point');
 var Signature = require('./signature');
@@ -18,6 +22,51 @@ var Schnorr = function Schnorr(obj) {
     this.set(obj);
   }
 };
+
+/**
+   * Function written to ensure r part of signature is at least 32 bytes, when converting 
+   * from a BN to type Buffer.
+   * The BN type naturally cuts off leading zeros, e.g.
+   * <BN: 4f92d8094f710bc11b93935ac157730dda26c5c2a856650dbd8ebcd730d2d4> 31 bytes
+   * Buffer <00 4f 92 d8 09 4f 71 0b c1 1b 93 93 5a c1 57 73 0d da 26 c5 c2 a8 56 65 0d bd 8e bc d7 30 d2 d4> 32 bytes
+   * Both types are equal, however Schnorr signatures must be a minimum of 64 bytes.
+   * In a previous implementation of this schnorr module, was resulting in 63 byte signatures. 
+   * (Although it would have been verified, it's proper to ensure the min requirement)
+   * @param {*} s BN
+   * @return {Buffer}
+   */
+  function getrBuffer(r) {
+
+    let rNaturalLength = r.toBuffer().length;
+
+
+    if (rNaturalLength < 32) {
+      return r.toBuffer({size: 32});
+    }
+    return r.toBuffer();
+  }
+
+  /**
+   * Function written to ensure s part of signature is at least 32 bytes, when converting 
+   * from a BN to type Buffer.
+   * The BN type naturally cuts off leading zeros, e.g.
+   * <BN: 4f92d8094f710bc11b93935ac157730dda26c5c2a856650dbd8ebcd730d2d4> 31 bytes
+   * Buffer <00 4f 92 d8 09 4f 71 0b c1 1b 93 93 5a c1 57 73 0d da 26 c5 c2 a8 56 65 0d bd 8e bc d7 30 d2 d4> 32 bytes
+   * Both types are equal, however Schnorr signatures must be a minimum of 64 bytes.
+   * In a previous implementation of this schnorr module, was resulting in 63 byte signatures. 
+   * (Although it would have been verified, it's proper to ensure the min requirement)
+   * @param {*} s BN
+   * @return {Buffer}
+   */
+  function getsBuffer(s) {
+    let sNaturalLength = s.toBuffer().length;
+
+
+    if (sNaturalLength < 32) {
+      return s.toBuffer({size: 32});
+    }
+    return s.toBuffer();
+  }
 
 /* jshint maxcomplexity: 9 */
 Schnorr.prototype.set = function(obj) {
@@ -72,7 +121,7 @@ Schnorr.prototype._findSignature = function(d, e) {
     $.checkState(!d.gte(n), new Error('privkey out of field of curve'));
   
     
-    let k = nonceFunctionRFC6979(d.toBuffer({ size: 32 }), e.toBuffer({ size: 32 }));
+    let k = this.nonceFunctionRFC6979(d.toBuffer({ size: 32 }), e.toBuffer({ size: 32 }));
 
     let P = G.mul(d);
     let R = G.mul(k);
@@ -85,7 +134,7 @@ Schnorr.prototype._findSignature = function(d, e) {
     }
     
     let r = R.getX();
-    let e0 = BN.fromBuffer(Hash.sha256(Buffer.concat([r.toBuffer(), Point.pointToCompressed(P), e.toBuffer({ size: 32 })])));
+    let e0 = BN.fromBuffer(Hash.sha256(Buffer.concat([getrBuffer(r), Point.pointToCompressed(P), e.toBuffer({ size: 32 })])));
     
     let s = ((e0.mul(d)).add(k)).mod(n);
 
@@ -94,18 +143,18 @@ Schnorr.prototype._findSignature = function(d, e) {
       s: s
     };
   };
+  
 
   Schnorr.prototype.sigError = function() {
     if (!BufferUtil.isBuffer(this.hashbuf) || this.hashbuf.length !== 32) {
       return 'hashbuf must be a 32 byte buffer';
     }
 
-    let sigLength = this.sig.r.toBuffer().length + this.sig.s.toBuffer().length;
+    let sigLength = getrBuffer(this.sig.r).length + getsBuffer(this.sig.s).length;
     
     if(!(sigLength === 64 || sigLength === 65)) {
       return 'signature must be a 64 byte or 65 byte array';
     } 
-
 
     let hashbuf = this.endian === 'little' ? BufferUtil.reverse(this.hashbuf) : this.hashbuf
     
@@ -125,7 +174,7 @@ Schnorr.prototype._findSignature = function(d, e) {
       return true;
     }
     
-    let Br = r.toBuffer();
+    let Br = getrBuffer(this.sig.r);
     let Bp = Point.pointToCompressed(P);
     
     let hash = Hash.sha256(Buffer.concat([Br, Bp, hashbuf]));
@@ -157,7 +206,7 @@ Schnorr.prototype._findSignature = function(d, e) {
    * @param {Buffer} msgbuf 
    * @return k {BN}
    */
-  function nonceFunctionRFC6979(privkey, msgbuf) {
+  Schnorr.prototype.nonceFunctionRFC6979 = function(privkey, msgbuf) {
     let V = Buffer.from("0101010101010101010101010101010101010101010101010101010101010101","hex");
     let K = Buffer.from("0000000000000000000000000000000000000000000000000000000000000000","hex");
 
@@ -174,10 +223,10 @@ Schnorr.prototype._findSignature = function(d, e) {
     while (true) {
       V = Hash.sha256hmac(V,K);
       T = BN.fromBuffer(V);
-      $.checkState(T.toBuffer().length >= 32, "T failed test");
+
       k = T;
-      
-      if (k.gt(new BN(0) && k.lt(Point.getN()))) {
+      $.checkState(V.length >= 32, "V length should be >= 32");
+      if (k.gt(new BN(0)) && k.lt(Point.getN())) {
         break;
       }
       K = Hash.sha256hmac(Buffer.concat([V, Buffer.from("00", 'hex')]), K);
