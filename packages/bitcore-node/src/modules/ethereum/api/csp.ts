@@ -146,7 +146,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
       cacheKey,
       async () => {
         if (tokenAddress) {
-          const token = await this.erc20For(network, params.args.tokenAddress);
+          const token = await this.erc20For(network, tokenAddress);
           const balance = await token.methods.balanceOf(address).call();
           const numberBalance = Number(balance);
           return { confirmed: numberBalance, unconfirmed: 0, balance: numberBalance };
@@ -494,7 +494,8 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
           $or: [
             { chain, network, from: { $in: addressBatch } },
             { chain, network, to: { $in: addressBatch } },
-            { chain, network, 'internal.action.to': { $in: addressBatch } }
+            { chain, network, 'internal.action.to': { $in: addressBatch } },
+            { chain, network, 'abiType.params.0.value': { $in: addressBatch.map(address => address.toLowerCase()) } }
           ]
         },
         { $addToSet: { wallets: params.wallet._id } }

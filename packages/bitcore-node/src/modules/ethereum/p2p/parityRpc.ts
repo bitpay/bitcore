@@ -37,6 +37,7 @@ export interface ParityTraceResponse {
 
 export interface ClassifiedTrace extends ParityTraceResponse {
   abiType?: IEthTransaction['abiType'];
+  to?: string;
 }
 
 export interface TokenTransferResponse {
