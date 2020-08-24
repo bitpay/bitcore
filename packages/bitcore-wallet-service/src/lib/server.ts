@@ -4191,24 +4191,39 @@ export class WalletService {
     this.storage.removeTxConfirmationSub(this.copayerId, opts.txid, cb);
   }
 
+  simplexGetKeys(req) {
+    if (!config.simplex) throw new Error('Simplex missing credentials');
+
+    let env = 'sandbox';
+    if (req.body.env && req.body.env == 'production') {
+      env = 'production';
+    }
+    delete req.body.env;
+
+    const keys = {
+      API: config.simplex[env].api,
+      API_KEY: config.simplex[env].apiKey,
+      APP_PROVIDER_ID: config.simplex[env].appProviderId
+    };
+
+    return keys;
+  }
+
   simplexGetQuote(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      if (!config.simplex) return reject(new Error('Simplex missing credentials'));
-      if (!req.body.env || (req.body.env != 'sandbox' && req.body.env != 'production'))
-        return reject(new Error("Simplex's request wrong environment"));
+      const keys = this.simplexGetKeys(req);
 
-      const API = config.simplex[req.body.env].api;
-      const API_KEY = config.simplex[req.body.env].apiKey;
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
       const ip = Utils.getIpFromReq(req);
 
       req.body.client_ip = ip;
-      req.body.wallet_id = config.simplex[req.body.env].appProviderId;
+      req.body.wallet_id = keys.APP_PROVIDER_ID;
 
       const headers = {
         'Content-Type': 'application/json',
         Authorization: 'ApiKey ' + API_KEY
       };
-      delete req.body.env;
 
       this.request.post(
         API + '/wallet/merchant/v2/quote',
@@ -4219,7 +4234,7 @@ export class WalletService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : null);
+            return reject(err.body ? err.body : err);
           } else {
             return resolve(data.body ? data.body : null);
           }
@@ -4230,20 +4245,18 @@ export class WalletService {
 
   simplexPaymentRequest(req): Promise<any> {
     return new Promise((resolve, reject) => {
-      if (!config.simplex) return reject(new Error('Simplex missing credentials'));
-      if (!req.body.env || (req.body.env != 'sandbox' && req.body.env != 'production'))
-        return reject(new Error("Simplex's request wrong environment"));
+      const keys = this.simplexGetKeys(req);
 
-      const API = config.simplex[req.body.env].api;
-      const API_KEY = config.simplex[req.body.env].apiKey;
-      const appProviderId = config.simplex[req.body.env].appProviderId;
+      const API = keys.API;
+      const API_KEY = keys.API_KEY;
+      const appProviderId = keys.APP_PROVIDER_ID;
       const paymentId = Uuid.v4();
       const orderId = Uuid.v4();
-      const apiHost = config.simplex[req.body.env].api;
+      const apiHost = keys.API;
       const ip = Utils.getIpFromReq(req);
 
-      if (!req.body.account_details || !req.body.transaction_details || !req.body.transaction_details.payment_details) {
-        return reject(new Error("Simplex's request missing arguments"));
+      if (!checkRequired(req.body, ['account_details', 'transaction_details']) && !checkRequired(req.body.transaction_details, ['payment_details'])) {
+        return reject(new ClientError("Simplex's request missing arguments"));
       }
 
       req.body.account_details.app_provider_id = appProviderId;
@@ -4260,7 +4273,6 @@ export class WalletService {
 
       req.body.transaction_details.payment_details.payment_id = paymentId;
       req.body.transaction_details.payment_details.order_id = orderId;
-      delete req.body.env;
 
       const headers = {
         'Content-Type': 'application/json',
@@ -4276,7 +4288,7 @@ export class WalletService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : null);
+            return reject(err.body ? err.body : err);
           } else {
             data.body.payment_id = paymentId;
             data.body.order_id = orderId;
@@ -4343,17 +4355,10 @@ export class WalletService {
       const keys = this.wyreGetKeys(req);
       req.body.accountId = keys.ACCOUNT_ID;
 
-      if (
-        !req.body.amount ||
-        !req.body.sourceCurrency ||
-        !req.body.destCurrency ||
-        !req.body.dest ||
-        !req.body.country
-      ) {
-        return reject(new Error("Wyre's request missing arguments"));
+      if (!checkRequired(req.body, ['amount', 'sourceCurrency', 'destCurrency', 'dest', 'country'])) {
+        return reject(new ClientError("Wyre's request missing arguments"));
       }
 
-      delete req.body.env;
 
       const URL: string = `${keys.API}/v3/orders/quote/partner?timestamp=${Date.now().toString()}`;
       const XApiSignature: string = URL + JSON.stringify(req.body);
@@ -4377,7 +4382,7 @@ export class WalletService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : null);
+            return reject(err.body ? err.body : err);
           } else {
             return resolve(data.body);
           }
@@ -4391,17 +4396,9 @@ export class WalletService {
       const keys = this.wyreGetKeys(req);
       req.body.referrerAccountId = keys.ACCOUNT_ID;
 
-      if (
-        !req.body.amount ||
-        !req.body.sourceCurrency ||
-        !req.body.destCurrency ||
-        !req.body.dest ||
-        !req.body.paymentMethod
-      ) {
-        return reject(new Error("Wyre's request missing arguments"));
+      if (!checkRequired(req.body, ['amount', 'sourceCurrency', 'destCurrency', 'dest', 'paymentMethod'])) {
+        return reject(new ClientError("Wyre's request missing arguments"));
       }
-
-      delete req.body.env;
 
       const URL: string = `${keys.API}/v3/orders/reserve?timestamp=${Date.now().toString()}`;
       const XApiSignature: string = URL + JSON.stringify(req.body);
@@ -4425,7 +4422,7 @@ export class WalletService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : null);
+            return reject(err.body ? err.body : err);
           } else {
             return resolve(data.body);
           }
