@@ -15,8 +15,10 @@ export async function intBeforeHelper() {
       Modules.loadConfigured();
       loaded = true;
     }
-    await Storage.start(storageArgs);
-    await wait(2000);
+    if (!Storage.connected) {
+      await Storage.start(storageArgs);
+      await wait(2000);
+    }
   } catch (e) {
     console.error(e);
   }
@@ -24,7 +26,6 @@ export async function intBeforeHelper() {
 
 export async function intAfterHelper(describeContext?: any) {
   try {
-    await Storage.stop();
     describeContext = describeContext;
     if (describeContext && describeContext.timeout) {
       describeContext.timeout(1);
