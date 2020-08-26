@@ -125,7 +125,7 @@ export class EthChain implements IChain {
               coin,
               network,
               from,
-              to: opts.tokenAddress || opts.multisigContractAddress || output.toAddress,
+              to: opts.multisigContractAddress || opts.tokenAddress || output.toAddress,
               value: opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount,
               data: output.data,
               gasPrice
@@ -151,7 +151,7 @@ export class EthChain implements IChain {
     const { data, outputs, payProUrl, tokenAddress, multisigContractAddress } = txp;
     const isERC20 = tokenAddress && !payProUrl;
     const isETHMULTISIG = multisigContractAddress && !payProUrl;
-    const chain = isERC20 ? 'ERC20' : isETHMULTISIG ? 'ETHMULTISIG' : 'ETH';
+    const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ERC20' : 'ETH';
     const recipients = outputs.map(output => {
       return {
         amount: output.amount,
@@ -321,6 +321,7 @@ export class EthChain implements IChain {
   }
 
   onTx(tx) {
+    // TODO: Multisig ERC20 - Internal txs ¿?
     let tokenAddress;
     let multisigContractAddress;
     let address;
@@ -333,6 +334,10 @@ export class EthChain implements IChain {
       multisigContractAddress = tx.to;
       address = Web3.utils.toChecksumAddress(tx.abiType.params[0].value);
       amount = tx.abiType.params[1].value;
+    } else if (tx.abiType && tx.abiType.type === 'MULTISIG' && tx.abiType.name === 'confirmTransaction') {
+      multisigContractAddress = tx.to;
+      address = Web3.utils.toChecksumAddress(tx.internal[0].action.to);
+      amount = tx.internal[0].action.value;
     } else {
       address = tx.to;
       amount = tx.value;
