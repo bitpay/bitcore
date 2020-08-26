@@ -3,7 +3,6 @@ import { ChainNetwork } from '../types/ChainNetwork';
 import { ConfigType } from '../types/Config';
 import { valueOrDefault } from '../utils/check';
 
-type RecursivePartial<T> = { [P in keyof T]?: RecursivePartial<T[P]> };
 type ServiceName = keyof ConfigType['services'];
 
 export class ConfigService {
@@ -17,7 +16,7 @@ export class ConfigService {
     return this._config;
   }
 
-  public updateConfig(partialConfig: RecursivePartial<ConfigType>) {
+  public updateConfig(partialConfig: Partial<ConfigType>) {
     const newConfig = Object.assign({}, this.get(), partialConfig);
     this._config = newConfig;
   }
