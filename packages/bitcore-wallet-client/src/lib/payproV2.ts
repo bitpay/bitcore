@@ -171,7 +171,7 @@ export class PayProV2 {
    * @param unsafeBypassValidation
    * @return {Promise<{payProDetails: Object}>}
    */
-  static async selectPaymentOption({ paymentUrl, chain, currency, address, unsafeBypassValidation = false }) {
+  static async selectPaymentOption({ paymentUrl, chain, currency, payload, unsafeBypassValidation = false }) {
     let { rawBody, headers } = await PayProV2._asyncRequest({
       url: paymentUrl,
       method: 'post',
@@ -184,7 +184,7 @@ export class PayProV2 {
       args: JSON.stringify({
         chain,
         currency,
-        address
+        payload
       })
     });
 
