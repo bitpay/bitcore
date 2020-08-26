@@ -46,10 +46,10 @@ EthRoutes.get('/api/ETH/:network/ethmultisig/info/:multisigContractAddress', asy
   }
 });
 
-EthRoutes.get('/api/ETH/:network/ethmultisig/:sender', async (req, res) => {
-  const { network, sender } = req.params;
+EthRoutes.get('/api/ETH/:network/ethmultisig/:sender/instantiation/:txId', async (req, res) => {
+  const { network, sender, txId } = req.params;
   try {
-    const multisigInstantiationInfo = await Gnosis.getMultisigContractInstantiationInfo(network, sender);
+    const multisigInstantiationInfo = await Gnosis.getMultisigContractInstantiationInfo(network, sender, txId);
     res.json(multisigInstantiationInfo);
   } catch (err) {
     res.status(500).send(err);

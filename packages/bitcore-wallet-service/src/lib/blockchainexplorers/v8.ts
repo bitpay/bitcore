@@ -391,7 +391,7 @@ export class V8 {
   }
 
   getMultisigContractInstantiationInfo(opts, cb) {
-    const url = this.baseUrl + '/ethmultisig/' + opts.sender;
+    const url = `${this.baseUrl}/ethmultisig/${opts.sender}/instantiation/${opts.txId}`;
     console.log('[v8.js.378:url:] CHECKING CONTRACT INSTANTIATION INFO', url);
     this.request
       .get(url, {})
