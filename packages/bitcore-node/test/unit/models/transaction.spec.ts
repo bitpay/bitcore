@@ -8,9 +8,13 @@ import { WalletAddressStorage } from '../../../src/models/walletAddress';
 import { BitcoinTransaction, TransactionInput } from '../../../src/types/namespaces/Bitcoin';
 import { TransactionFixture } from '../../fixtures/transaction.fixture';
 import { mockStorage } from '../../helpers';
+import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 const bitcoreLib = require('bitcore-lib');
 
 describe('Transaction Model', function() {
+  before(unitBeforeHelper);
+  after(unitAfterHelper);
+
   let sandbox = sinon.sandbox.create();
   let address = 'mjVf6sFjt9q6aLY7M21Ap6CPSWdaoNHSf1';
   this.timeout(500000);

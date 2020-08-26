@@ -43,16 +43,6 @@
         }
       },
       "XRP": {
-        "mainnet": {
-          "chainSource": "rpc",
-          "walletOnlySync": true,
-          "startHeight": 52563951,
-          "provider": {
-            "host": "s2.ripple.com",
-            "protocol": "wss",
-            "dataHost": "https://data.ripple.com"
-          }
-        },
         "testnet": {
           "chainSource": "rpc",
           "provider": {

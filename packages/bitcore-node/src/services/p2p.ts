@@ -111,6 +111,7 @@ export class BaseP2PWorker<T extends IBlock = IBlock> {
       if (!this.lastHeartBeat || this.getIsSyncingNode()) {
         this.registerSyncingNode({ primary: true });
       } else {
+        logger.info('Another node is the primary syncing node');
         this.registerSyncingNode({ primary: false });
       }
       await wait(500);

@@ -9,15 +9,25 @@ import { XrpTransactionStorage } from '../../../src/modules/ripple/models/transa
 import { IXrpCoin, IXrpTransaction } from '../../../src/modules/ripple/types';
 import { RippleTxs } from '../../fixtures/rippletxs.fixture';
 import { resetDatabase } from '../../helpers';
+import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
-describe('Ripple Api', () => {
+describe('Ripple Api', function() {
+  const suite = this;
+  const network = 'testnet';
+  this.timeout(30000);
+
+  before(intBeforeHelper);
+  after(async () => {
+    await intAfterHelper(suite);
+    const client = await XRP.getClient(network);
+    await client.disconnect();
+  });
+
   beforeEach(async () => {
     await resetDatabase();
   });
 
   it('should be able to get the ledger', async () => {
-    const network = 'testnet';
-
     const client = await XRP.getClient(network);
     const ledger = await client.getLedger();
     expect(ledger).to.exist;
@@ -26,7 +36,6 @@ describe('Ripple Api', () => {
 
   it('should be able to get local tip', async () => {
     const chain = 'XRP';
-    const network = 'testnet';
 
     await XrpBlockStorage.collection.insertOne({
       chain,
@@ -52,7 +61,7 @@ describe('Ripple Api', () => {
   it('should transform a ripple rpc response into a bitcore transaction', async () => {
     const txs = (RippleTxs as any) as Array<FormattedTransactionType>;
     for (const tx of txs) {
-      const bitcoreTx = (await XRP.transform(tx, 'mainnet')) as IXrpTransaction;
+      const bitcoreTx = (await XRP.transform(tx, 'testnet')) as IXrpTransaction;
       expect(bitcoreTx).to.have.property('chain');
       expect(tx.address).to.eq(bitcoreTx.from);
       expect(tx.outcome.ledgerVersion).to.eq(bitcoreTx.blockHeight);
@@ -68,7 +77,7 @@ describe('Ripple Api', () => {
 
   it('should tag txs from a wallet', async () => {
     const chain = 'XRP';
-    const network = 'mainnet';
+    const network = 'testnet';
 
     const txs = (RippleTxs as any) as Array<FormattedTransactionType>;
     const wallet = new ObjectId();
@@ -100,7 +109,7 @@ describe('Ripple Api', () => {
 
   it('should save tagged transactions to the database', async () => {
     const chain = 'XRP';
-    const network = 'mainnet';
+    const network = 'testnet';
 
     const wallet = new ObjectId();
     const address = 'rN33DVnneYUUgTmcxXnXvgAL1BECuLZ8pm';

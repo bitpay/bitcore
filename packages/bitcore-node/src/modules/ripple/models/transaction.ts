@@ -49,7 +49,9 @@ export class XrpTransactionModel extends BaseTransaction<IXrpTransaction> {
       partition(txOps, txOps.length / batchSize).map(txBatch =>
         this.collection.bulkWrite(
           txBatch.map(op => this.toMempoolSafeUpsert(op, SpentHeightIndicators.minimum)),
-          { ordered: false }
+          {
+            ordered: false
+          }
         )
       )
     );

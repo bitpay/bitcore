@@ -65,8 +65,13 @@ export function mockStorage(toReturn, collectionMethods = {}) {
 }
 
 export function mockModel(collectionName: string, toReturn: any, collectionMethods = {}) {
-  const isStubbed: sinon.SinonStub = Storage.db!.collection as sinon.SinonStub;
-  if (isStubbed.withArgs) {
-    isStubbed.withArgs(collectionName).returns(mockCollection(toReturn, collectionMethods));
+  if (!Storage.db) {
+    Storage.db = {
+      collection: sinon.stub().returns(mockCollection(toReturn, collectionMethods))
+    } as any;
+  }
+  const collectionFn: sinon.SinonStub = Storage.db!.collection as sinon.SinonStub;
+  if (collectionFn.withArgs) {
+    collectionFn.withArgs(collectionName).returns(mockCollection(toReturn, collectionMethods));
   }
 }

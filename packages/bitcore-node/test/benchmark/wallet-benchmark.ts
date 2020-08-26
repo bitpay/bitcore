@@ -1,6 +1,6 @@
+import { Wallet } from 'bitcore-client';
 import * as _ from 'lodash';
 import { CoinStorage } from '../../src/models/coin';
-import { Wallet } from 'bitcore-client';
 import { Storage } from '../../src/services/storage';
 
 async function getAllAddressesFromBlocks(start, end) {
@@ -117,12 +117,12 @@ async function bench(iteration = 0, startBlock = 0, endBlock = 100) {
   await benchmarkComplete;
 }
 
-if(require.main === module ){
-  async function main() {
-    for (let i = 1; i < 6; i++) {
-      await bench(i, 0, Math.pow(10, i));
-    }
-    process.exit(0);
+async function main() {
+  for (let i = 1; i < 6; i++) {
+    await bench(i, 0, Math.pow(10, i));
   }
+  process.exit(0);
+}
+if (require.main === module) {
   main();
 }

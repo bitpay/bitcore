@@ -11,6 +11,7 @@ import { MongoBound } from '../models/base';
 import { ConfigType } from '../types/Config';
 import { StreamingFindOptions } from '../types/Query';
 import { TransformableModel } from '../types/TransformableModel';
+import { wait } from '../utils/wait';
 import { Config, ConfigService } from './config';
 
 export { StreamingFindOptions };
@@ -22,6 +23,7 @@ export class StorageService {
   connected: boolean = false;
   connection = new EventEmitter();
   configService: ConfigService;
+  modelsConnected = new Array<Promise<any>>();
 
   constructor({ configService = Config } = {}) {
     this.configService = configService;
@@ -64,7 +66,16 @@ export class StorageService {
     });
   }
 
-  async stop() {}
+  async stop() {
+    if (this.client) {
+      logger.info('Stopping Storage Service');
+      await wait(5000);
+      this.connected = false;
+      await Promise.all(this.modelsConnected);
+      await this.client.close();
+      this.connection.emit('DISCONNECTED');
+    }
+  }
 
   validPagingProperty<T>(model: TransformableModel<T>, property: keyof MongoBound<T>) {
     const defaultCase = property === '_id';

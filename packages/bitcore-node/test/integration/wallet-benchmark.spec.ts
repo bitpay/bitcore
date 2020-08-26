@@ -1,21 +1,22 @@
-import * as io from 'socket.io-client';
-import { wait } from '../../src/utils/wait';
-import { expect } from 'chai';
-import { AsyncRPC } from '../../src/rpc';
-import config from '../../src/config';
-import { createWallet } from '../benchmark/wallet-benchmark';
-import { Event } from '../../src/services/event';
-import { Api } from '../../src/services/api';
-import { WalletAddressStorage } from '../../src/models/walletAddress';
-import { WalletStorage, IWallet } from '../../src/models/wallet';
-import { ParseApiStream } from 'bitcore-client';
-import { resetDatabase } from '../helpers';
 import { Wallet } from 'bitcore-client';
-import { ICoin, CoinStorage } from '../../src/models/coin';
-import { MongoBound } from '../../src/models/base';
+import { ParseApiStream } from 'bitcore-client';
+import { expect } from 'chai';
 import { ObjectId } from 'mongodb';
+import * as io from 'socket.io-client';
+import config from '../../src/config';
+import { MongoBound } from '../../src/models/base';
+import { CoinStorage, ICoin } from '../../src/models/coin';
 import { TransactionStorage } from '../../src/models/transaction';
+import { IWallet, WalletStorage } from '../../src/models/wallet';
+import { WalletAddressStorage } from '../../src/models/walletAddress';
 import { BitcoinP2PWorker } from '../../src/modules/bitcoin/p2p';
+import { AsyncRPC } from '../../src/rpc';
+import { Api } from '../../src/services/api';
+import { Event } from '../../src/services/event';
+import { wait } from '../../src/utils/wait';
+import { createWallet } from '../benchmark/wallet-benchmark';
+import { resetDatabase } from '../helpers';
+import { intAfterHelper, intBeforeHelper } from '../helpers/integration';
 
 const chain = 'BTC';
 const network = 'regtest';
@@ -48,12 +49,12 @@ async function getWalletUtxos(wallet: Wallet) {
   const utxos = new Array<MongoBound<ICoin>>();
   return new Promise<Array<MongoBound<ICoin>>>(resolve =>
     wallet
-      .getUtxos()
-      .pipe(new ParseApiStream())
-      .on('data', (utxo: MongoBound<ICoin>) => {
-        utxos.push(utxo);
-      })
-      .on('end', () => resolve(utxos))
+    .getUtxos()
+    .pipe(new ParseApiStream())
+    .on('data', (utxo: MongoBound<ICoin>) => {
+      utxos.push(utxo);
+    })
+    .on('end', () => resolve(utxos))
   );
 }
 
@@ -74,7 +75,7 @@ async function checkWalletReceived(receivingWallet: IWallet, txid: string, addre
     chain,
     network,
     mintTxid: txid,
-    address: address
+    address
   });
 
   expect(broadcastedOutput!.address).to.eq(address);
@@ -92,10 +93,12 @@ async function checkWalletReceived(receivingWallet: IWallet, txid: string, addre
 }
 
 describe('Wallet Benchmark', function() {
+  const suite = this;
   this.timeout(5000000);
   let p2pWorker: BitcoinP2PWorker;
 
   before(async () => {
+    await intBeforeHelper();
     await Event.start();
     await Api.start();
   });
@@ -103,6 +106,7 @@ describe('Wallet Benchmark', function() {
   after(async () => {
     await Event.stop();
     await Api.stop();
+    await intAfterHelper(suite);
   });
 
   beforeEach(async () => {
@@ -116,10 +120,7 @@ describe('Wallet Benchmark', function() {
   describe('Wallet import', () => {
     it('should be able to create two wallets and have them interact', async () => {
       const seenCoins = new Set();
-      const socket = io.connect(
-        'http://localhost:3000',
-        { transports: ['websocket'] }
-      );
+      const socket = io.connect('http://localhost:3000', { transports: ['websocket'] });
       const connected = new Promise(r => {
         socket.on('connect', () => {
           const room = `/${chain}/${network}/inv`;
@@ -181,10 +182,7 @@ describe('Wallet Benchmark', function() {
 
     it('should be able to create two wallets and have them interact, while syncing', async () => {
       const seenCoins = new Set();
-      const socket = io.connect(
-        'http://localhost:3000',
-        { transports: ['websocket'] }
-      );
+      const socket = io.connect('http://localhost:3000', { transports: ['websocket'] });
       const connected = new Promise(r => {
         socket.on('connect', () => {
           const room = `/${chain}/${network}/inv`;

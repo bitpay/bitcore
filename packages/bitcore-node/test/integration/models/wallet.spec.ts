@@ -1,11 +1,12 @@
-import { expect } from 'chai';
 import { Wallet } from 'bitcore-client';
-import { Api } from '../../../src/services/api';
-import { AsyncRPC } from '../../../src/rpc';
-import { Event } from '../../../src/services/event';
-import { WalletStorage } from '../../../src/models/wallet';
+import { expect } from 'chai';
 import config from '../../../src/config';
+import { WalletStorage } from '../../../src/models/wallet';
 import { WalletAddressStorage } from '../../../src/models/walletAddress';
+import { AsyncRPC } from '../../../src/rpc';
+import { Api } from '../../../src/services/api';
+import { Event } from '../../../src/services/event';
+import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 let lockedWallet: Wallet;
 const walletName = 'Test Wallet';
@@ -17,7 +18,10 @@ const creds = chainConfig.rpc;
 const rpc = new AsyncRPC(creds.username, creds.password, creds.host, creds.port);
 
 describe('Wallet Model', function() {
+  const suite = this;
   this.timeout(50000);
+  before(intBeforeHelper);
+  after(async () => intAfterHelper(suite));
 
   before(async () => {
     await Event.start();

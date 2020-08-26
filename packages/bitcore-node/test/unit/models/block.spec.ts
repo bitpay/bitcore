@@ -11,8 +11,12 @@ import { Storage } from '../../../src/services/storage';
 import { TEST_BLOCK } from '../../data/test-block';
 import { mockStorage } from '../../helpers';
 import { mockCollection } from '../../helpers/index.js';
+import { unitAfterHelper, unitBeforeHelper } from '../../helpers/unit';
 
 describe('Block Model', function() {
+  before(unitBeforeHelper);
+  after(unitAfterHelper);
+
   let addBlockParams = {
     chain: 'BTC',
     network: 'regtest',

@@ -6,6 +6,7 @@ import { TransactionStorage } from '../../../src/models/transaction';
 import { SpentHeightIndicators } from '../../../src/types/Coin';
 import { TEST_BLOCK } from '../../data/test-block';
 import { resetDatabase } from '../../helpers';
+import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 async function insertBlocks() {
   await BitcoinBlockStorage.collection.insertOne({
@@ -83,6 +84,11 @@ async function insertBlocks() {
 }
 
 describe('Block Model', function() {
+  const suite = this;
+  this.timeout(30000);
+  before(intBeforeHelper);
+  after(() => intAfterHelper(suite));
+
   beforeEach(async () => {
     await resetDatabase();
   });

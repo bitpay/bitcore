@@ -1,12 +1,18 @@
 import { expect } from 'chai';
+import * as crypto from 'crypto';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
 import { IBtcTransaction, SpendOp, TransactionStorage } from '../../../src/models/transaction';
 import { SpentHeightIndicators } from '../../../src/types/Coin';
 import { resetDatabase } from '../../helpers';
+import { intAfterHelper, intBeforeHelper } from '../../helpers/integration';
 
 async function makeMempoolTxChain(chain: string, network: string, startingTxid: string, chainLength = 1) {
   let txid = startingTxid;
-  let nextTxid = txid + 1;
+  let nextTxid = crypto
+    .createHash('sha256')
+    .update(txid + 1)
+    .digest()
+    .toString('hex');
   let allTxids = new Array<string>();
   for (let i = 1; i <= chainLength; i++) {
     const badMempoolTx = {
@@ -29,13 +35,21 @@ async function makeMempoolTxChain(chain: string, network: string, startingTxid: 
     await CoinStorage.collection.insertOne(badMempoolOutputs as ICoin);
     allTxids.push(txid);
     txid = nextTxid;
-    nextTxid = txid + 1;
+    nextTxid = crypto
+      .createHash('sha256')
+      .update(txid + 1)
+      .digest()
+      .toString('hex');
   }
   return allTxids;
 }
 
 describe('Transaction Model', function() {
+  const suite = this;
   this.timeout(30000);
+  before(intBeforeHelper);
+  after(async () => intAfterHelper(suite));
+
   beforeEach(async () => {
     await resetDatabase();
   });
