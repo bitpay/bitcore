@@ -2554,6 +2554,21 @@ export class API extends EventEmitter {
               let multisigEthClient = _.cloneDeep(client);
               multisigEthClient.credentials = multisigEthCredentials;
               clients.push(multisigEthClient);
+              const tokenAddresses = info.tokenAddresses;
+              if (!_.isEmpty(tokenAddresses)) {
+                _.each(tokenAddresses, t => {
+                  const token = Constants.TOKEN_OPTS[t];
+                  if (!token) {
+                    log.warn(`Token ${t} unknown`);
+                    return;
+                  }
+                  log.info(`Importing multisig token: ${token.name}`);
+                  const tokenCredentials = multisigEthClient.credentials.getTokenCredentials(token);
+                  let tokenClient = _.cloneDeep(multisigEthClient);
+                  tokenClient.credentials = tokenCredentials;
+                  clients.push(tokenClient);
+                });
+              }
             });
           }
           return icb(null, clients);
