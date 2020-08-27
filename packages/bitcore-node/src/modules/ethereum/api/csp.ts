@@ -201,7 +201,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
         }
         found = await this.populateReceipt(found);
         const convertedTx = EthTransactionStorage._apiTransform(found, { object: true }) as EthTransactionJSON;
-        return { ...convertedTx, confirmations } as any;
+        return { ...convertedTx, confirmations };
       } else {
         return undefined;
       }
