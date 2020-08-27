@@ -4,7 +4,7 @@ import { EventEmitter } from 'events';
 import * as sinon from 'sinon';
 import { MongoBound } from '../../../../src/models/base';
 import { ETH, ETHStateProvider } from '../../../../src/modules/ethereum/api/csp';
-import { IEthTransaction } from '../../../../src/modules/ethereum/types';
+import { IEthBlock, IEthTransaction } from '../../../../src/modules/ethereum/types';
 import { mockModel } from '../../../helpers';
 
 describe('ETH Chain State Provider', function() {
@@ -157,6 +157,22 @@ describe('ETH Chain State Provider', function() {
     expect(thrown).to.eq(true);
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(web3Stub.eth.sendSignedTransaction.calledWith('456')).to.eq(false);
+    sandbox.restore();
+  });
+
+  it('should be able to find an ETH block', async () => {
+    const sandbox = sinon.createSandbox();
+    const mockBlock = {
+      _id: new ObjectId(),
+      hash: '55555',
+      height: 1
+    } as MongoBound<IEthBlock>;
+    mockModel('blocks', mockBlock);
+    const found = await ETH.getBlocks({ chain: 'ETH', network: 'testnet', blockId: mockBlock.hash });
+    expect(found).to.exist;
+    expect(found[0]).to.exist;
+    expect(found[0].hash).to.eq(mockBlock.hash);
+    expect(found[0].height).to.eq(mockBlock.height);
     sandbox.restore();
   });
 });
