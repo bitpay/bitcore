@@ -1514,13 +1514,15 @@ export class API extends EventEmitter {
 
     const chain = Utils.getChain(txp.coin);
     const currency = txp.coin.toUpperCase();
-    const address = txp.from;
+    const payload = {
+      address: txp.from
+    };
 
     return PayProV2.selectPaymentOption({
       paymentUrl: txp.payProUrl,
       chain,
       currency,
-      address
+      payload
     });
   }
 
