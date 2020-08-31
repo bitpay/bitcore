@@ -746,10 +746,6 @@ export class WalletService {
         next => {
           this.getPreferences({}, (err, preferences) => {
             if (err) return next(err);
-            if (!opts.includeExtendedInfo) {
-              preferences.tokenAddresses = null;
-              preferences.multisigEthInfo = null;
-            }
             status.preferences = preferences;
             next();
           });
@@ -1112,6 +1108,9 @@ export class WalletService {
    * @param {string} opts.email - Email address for notifications.
    * @param {string} opts.language - Language used for notifications.
    * @param {string} opts.unit - Bitcoin unit used to format amounts in notifications.
+   * @param {string} opts.tokenAddresses - Linked token addresses
+   * @param {string} opts.multisigEthInfo - Linked multisig eth wallet info
+   *
    */
   savePreferences(opts, cb) {
     opts = opts || {};
@@ -1194,9 +1193,21 @@ export class WalletService {
           if (opts.multisigEthInfo) {
             oldPref = oldPref || {};
             oldPref.multisigEthInfo = oldPref.multisigEthInfo || [];
-            preferences.multisigEthInfo = _.uniqBy(
-              oldPref.multisigEthInfo.concat(opts.multisigEthInfo),
-              'multisigContractAddress'
+
+            preferences.multisigEthInfo = _.uniq(
+              oldPref.multisigEthInfo.concat(opts.multisigEthInfo).reduce((x, y) => {
+                let exists = false;
+                x.forEach(e => {
+                  // add new token addresses linked to the multisig wallet
+                  if (e.multisigContractAddress === y.multisigContractAddress) {
+                    e.tokenAddresses = e.tokenAddresses || [];
+                    y.tokenAddresses = _.uniq(e.tokenAddresses.concat(y.tokenAddresses));
+                    e = Object.assign(e, y);
+                    exists = true;
+                  }
+                });
+                return exists ? x : [...x, y];
+              }, [])
             );
           }
 
