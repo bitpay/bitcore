@@ -1,5 +1,5 @@
 {
-  "version": "8.22.1",
+  "version": "8.22.2",
   "prettier": {
     "singleQuote": true,
     "printWidth": 120
@@ -71,7 +71,7 @@
     "typescript-eslint-parser": "^15.0.0"
   },
   "dependencies": {
-    "lerna": "^3.20.2"
+    "lerna": "^3.22.1"
   },
   "husky": {
     "hooks": {
