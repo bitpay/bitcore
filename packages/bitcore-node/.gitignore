@@ -24,3 +24,5 @@ build/
 build-test/
 config.json
 *bitcore.config.*
+.nyc_output
+coverage
