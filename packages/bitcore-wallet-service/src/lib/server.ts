@@ -233,7 +233,7 @@ export class WalletService {
   }
 
   static handleIncomingNotifications(notification, cb) {
-    cb = cb || function() {};
+    cb = cb || function () { };
 
     // do nothing here....
     // bc height cache is cleared on bcmonitor
@@ -808,7 +808,7 @@ export class WalletService {
 
     // this.logi('Notification', type);
 
-    cb = cb || function() {};
+    cb = cb || function () { };
 
     const walletId = this.walletId || data.walletId;
     const copayerId = this.copayerId || data.copayerId;
@@ -4122,6 +4122,24 @@ export class WalletService {
     if (!checkRequired(opts, ['code'], cb)) return;
 
     this.fiatRateService.getRate(opts, (err, rate) => {
+      if (err) return cb(err);
+      return cb(null, rate);
+    });
+  }
+
+  /**
+   * Returns exchange rates of the supported fiat currencies for the specified coin.
+   * @param {Object} opts
+   * @param {Object} opts.coin - The coin requested.
+   * @param {string} [opts.code] - Currency ISO code.
+   * @param {Date} [opts.ts] - A timestamp to base the rate on (default Date.now()).
+   * @param {String} [opts.provider] - A provider of exchange rates (default 'BitPay').
+   * @returns {Array} rates - The exchange rate.
+   */
+  getFiatRates(opts, cb) {
+    if (!checkRequired(opts, ['coin'], cb)) return;
+
+    this.fiatRateService.getRates(opts, (err, rate) => {
       if (err) return cb(err);
       return cb(null, rate);
     });
