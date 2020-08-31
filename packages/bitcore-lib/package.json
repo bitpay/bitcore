@@ -39,9 +39,9 @@
     "bn.js": "=4.11.8",
     "bs58": "^4.0.1",
     "buffer-compare": "=1.1.1",
-    "elliptic": "=6.4.0",
+    "elliptic": "^6.5.3",
     "inherits": "=2.0.1",
-    "lodash": "=4.17.15"
+    "lodash": "^4.17.20"
   },
   "devDependencies": {
     "bitcore-build": "^8.22.1",
