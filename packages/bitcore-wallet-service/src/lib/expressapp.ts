@@ -1167,6 +1167,7 @@ export class ExpressApp {
     });
 
     router.get('/v3/fiatrates/:coin/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
       let server;
       const opts = {
         coin: req.params['coin'],
