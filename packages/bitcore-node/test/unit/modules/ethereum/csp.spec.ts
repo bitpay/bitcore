@@ -7,7 +7,7 @@ import { ETH, ETHStateProvider } from '../../../../src/modules/ethereum/api/csp'
 import { IEthBlock, IEthTransaction } from '../../../../src/modules/ethereum/types';
 import { mockModel } from '../../../helpers';
 
-describe('ETH Chain State Provider', function() {
+describe.only('ETH Chain State Provider', function() {
   it('should be able to get web3', async () => {
     const sandbox = sinon.createSandbox();
     const network = 'testnet';
@@ -81,20 +81,21 @@ describe('ETH Chain State Provider', function() {
     const web3Stub = {
       eth: {
         getBlockNumber: sandbox.stub().resolves(1),
-        sendSignedTransaction: sandbox.stub().callsFake(() => {
+        sendSignedTransaction: sandbox.stub().callsFake(tx => {
           const emitter = new EventEmitter();
           (emitter as any).catch = sandbox.stub().returnsThis();
           setTimeout(() => {
-            emitter.emit('transactionHash');
+            emitter.emit('transactionHash', tx);
           }, 10);
           return emitter;
         })
       }
     };
     sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
-    await ETH.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
+    const txids = await ETH.broadcastTransaction({ chain, network, rawTx: ['123', '456'] });
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
     expect(web3Stub.eth.sendSignedTransaction.calledWith('456')).to.eq(true);
+    expect(txids).to.deep.eq(['123', '456']);
     sandbox.restore();
   });
 
@@ -105,19 +106,20 @@ describe('ETH Chain State Provider', function() {
     const web3Stub = {
       eth: {
         getBlockNumber: sandbox.stub().resolves(1),
-        sendSignedTransaction: sandbox.stub().callsFake(() => {
+        sendSignedTransaction: sandbox.stub().callsFake((tx) => {
           const emitter = new EventEmitter();
           (emitter as any).catch = sandbox.stub().returnsThis();
           setTimeout(() => {
-            emitter.emit('transactionHash');
+            emitter.emit('transactionHash', tx);
           }, 10);
           return emitter;
         })
       }
     };
     sandbox.stub(ETHStateProvider, 'rpcs').value({ [network]: { web3: web3Stub, rpc: sinon.stub() } });
-    await ETH.broadcastTransaction({ chain, network, rawTx: '123' });
+    const txid = await ETH.broadcastTransaction({ chain, network, rawTx: '123' });
     expect(web3Stub.eth.sendSignedTransaction.calledWith('123')).to.eq(true);
+    expect(txid).to.eq('123');
     sandbox.restore();
   });
 
