@@ -92,6 +92,7 @@ describe('Ethereum API', function() {
         gasPrice: 10 * 1e9
       } as IEthTransaction;
     });
+    await EthTransactionStorage.collection.deleteMany({});
     await EthTransactionStorage.collection.insertMany(txs);
     const estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ network, target })));
     for (const estimate of estimates) {
@@ -111,6 +112,7 @@ describe('Ethereum API', function() {
         gasPrice: 10 * 1e9
       } as IEthTransaction;
     });
+    await EthTransactionStorage.collection.deleteMany({});
     await EthTransactionStorage.collection.insertMany(txs);
     let estimates = await Promise.all([1, 2, 3, 4].map(target => ETH.getFee({ network, target })));
 

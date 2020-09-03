@@ -7,7 +7,7 @@ import { ETH, ETHStateProvider } from '../../../../src/modules/ethereum/api/csp'
 import { IEthBlock, IEthTransaction } from '../../../../src/modules/ethereum/types';
 import { mockModel } from '../../../helpers';
 
-describe.only('ETH Chain State Provider', function() {
+describe('ETH Chain State Provider', function() {
   it('should be able to get web3', async () => {
     const sandbox = sinon.createSandbox();
     const network = 'testnet';

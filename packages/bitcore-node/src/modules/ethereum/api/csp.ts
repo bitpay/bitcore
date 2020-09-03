@@ -127,7 +127,8 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
         const quartileMedian = StatsUtil.getNthQuartileMedian(blockGasPrices, whichQuartile);
 
         const roundedGwei = (quartileMedian / 1e9).toFixed(2);
-        const feerate = Number(roundedGwei) * 1e9;
+        const gwei = Number(roundedGwei) || 0;
+        const feerate = gwei * 1e9;
         return { feerate, blocks: target };
       },
       CacheStorage.Times.Minute
