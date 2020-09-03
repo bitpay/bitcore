@@ -4130,14 +4130,15 @@ export class WalletService {
   /**
    * Returns exchange rates of the supported fiat currencies for the specified coin.
    * @param {Object} opts
-   * @param {Object} opts.coin - The coin requested.
-   * @param {string} [opts.code] - Currency ISO code.
+   * @param {String} opts.coin - The coin requested (btc, bch, eth, xrp).
+   * @param {String} [opts.code] - Currency ISO code (e.g: USD, EUR, ARS).
    * @param {Date} [opts.ts] - A timestamp to base the rate on (default Date.now()).
    * @param {String} [opts.provider] - A provider of exchange rates (default 'BitPay').
    * @returns {Array} rates - The exchange rate.
    */
   getFiatRates(opts, cb) {
     if (!checkRequired(opts, ['coin'], cb)) return;
+    if (_.isNaN(opts.ts) || _.isArray(opts.ts)) return cb(new ClientError('Invalid timestamp'));
 
     this.fiatRateService.getRates(opts, (err, rate) => {
       if (err) return cb(err);

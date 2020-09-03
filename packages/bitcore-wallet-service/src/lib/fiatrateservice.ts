@@ -161,7 +161,7 @@ export class FiatRateService {
 
     const now = Date.now();
     const coin = opts.coin;
-    const ts = _.isNumber(opts.ts) ? opts.ts : now;
+    const ts = opts.ts ? opts.ts : now;
     let fiatFiltered = [];
 
     if (opts.code) {
@@ -188,8 +188,7 @@ export class FiatRateService {
       },
       (err, res: any) => {
         if (err) return cb(err);
-        if (!_.isArray(ts)) res = res[0];
-        return cb(null, res);
+        return cb(null, res[0]);
       }
     );
   }
