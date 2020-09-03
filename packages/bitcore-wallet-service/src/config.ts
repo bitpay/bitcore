@@ -77,7 +77,7 @@ module.exports = {
   },
   fiatRateServiceOpts: {
     defaultProvider: 'BitPay',
-    fetchInterval: 60 // in minutes
+    fetchInterval: 5 // in minutes
   },
   maintenanceOpts: {
     maintenanceMode: false

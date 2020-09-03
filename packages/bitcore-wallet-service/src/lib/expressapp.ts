@@ -1166,6 +1166,25 @@ export class ExpressApp {
       });
     });
 
+    router.get('/v3/fiatrates/:coin/', (req, res) => {
+      SetPublicCache(res, 5 * ONE_MINUTE);
+      let server;
+      const opts = {
+        coin: req.params['coin'],
+        code: req.query.code || null,
+        ts: req.query.ts ? +req.query.ts : null
+      };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server.getFiatRates(opts, (err, rates) => {
+        if (err) return returnError(err, res, req);
+        res.json(rates);
+      });
+    });
+
     router.post('/v1/pushnotifications/subscriptions/', (req, res) => {
       getServerWithAuth(req, res, server => {
         server.pushNotificationsSubscribe(req.body, (err, response) => {
