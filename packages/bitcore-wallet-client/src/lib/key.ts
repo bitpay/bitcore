@@ -153,7 +153,17 @@ export class Key {
 
       case 'objectV1':
 
-console.log('[key.ts.155] Input', x); // TODO
+        // Default Values for V1
+        this.use0forBCH = false;
+        this.use44forMultisig = false;
+        this.compliantDerivation = true;
+        this.id = Uuid.v4();
+
+        if (!_.isUndefined(x.compliantDerivation))
+          this.compliantDerivation =  x.compliantDerivation;
+        if (!_.isUndefined(x.id))
+          this.id = x.id;
+ 
         this.#xPrivKey = x.xPrivKey;
         this.#xPrivKeyEncrypted = x.xPrivKeyEncrypted;
 
@@ -162,9 +172,7 @@ console.log('[key.ts.155] Input', x); // TODO
         this.#mnemonicHasPassphrase = x.mnemonicHasPassphrase;
         this.#version = x.version || 1;
         this.fingerPrint = x.fingerPrint;
-        this.compliantDerivation = x.compliantDerivation;
-        this.id = x.id;
- 
+
         // If the wallet was single seed... multisig walelts accounts
         // will be 48'
         this.use44forMultisig = x.n > 1 ? true : false;

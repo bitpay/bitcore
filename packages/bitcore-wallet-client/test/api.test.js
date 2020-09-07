@@ -5962,7 +5962,7 @@ describe('client API', function() {
     });
   });
 
-  describe.only('from Old credentials', () => {
+  describe('from Old credentials', () => {
     describe(`#upgradeCredentialsV1`, () => {
       _.each(oldCredentials, x => {
         it(`should  import old ${x.name} credentials`, () => {
@@ -5975,8 +5975,6 @@ describe('client API', function() {
           }
 
           _.each(x.test.key, (expectedValue, expectedKey) => {
-console.log('[api.test.js.5979:expectedKey:]',expectedKey); // TODO
-console.log('[api.test.js.5979:expectedKey:]',expectedValue); // TODO
             k.toObj()[expectedKey].should.be.equal(expectedValue);
           });
           _.each(x.test.credentials, (expectedValue, expectedKey) => {
