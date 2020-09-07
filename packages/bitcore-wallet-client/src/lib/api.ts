@@ -2357,22 +2357,7 @@ export class API extends EventEmitter {
 
     let k;
     if (x.xPrivKey || x.xPrivKeyEncrypted) {
-      k = new Key();
-      _.each(Key.exportFields, i => {
-        if (!_.isUndefined(x[i])) {
-          k[i] = x[i];
-        }
-      });
-
-      // If the wallet was single seed... multisig walelts accounts
-      // will be 48'
-      k.use44forMultisig = x.n > 1 ? true : false;
-
-      // if old credentials had use145forBCH...use it.
-      // else,if the wallet is bch, set it to true.
-      k.use0forBCH = x.use145forBCH ? false : x.coin == 'bch' ? true : false;
-
-      k.BIP45 = x.derivationStrategy == 'BIP45';
+      k = new Key({ seedData: x, seedType: 'objectV1' });
     } else {
       // RO credentials
       k = false;
@@ -2727,9 +2712,9 @@ export class API extends EventEmitter {
               s.passphrase = opts.passphrase;
             }
 
-            k = Key.fromMnemonic(opts.words, s);
+            k = new Key({ seedData: opts.words, seedType: 'mnemonic', ...s });
           } else {
-            k = Key.fromExtendedPrivateKey(opts.xPrivKey, s);
+            k = new Key({ seedData: opts.xPrivKey, seedType: 'extendedPrivateKey', ...s });
           }
         } catch (e) {
           log.info('Backup error:', e);

@@ -90,6 +90,8 @@ export class Key {
     this.use44forMultisig = opts.useLegacyPurpose;
     this.compliantDerivation = !opts.nonCompliantDerivation;
 
+    let x = opts.seedData;
+
     switch (opts.seedType) {
       case 'new':
         if (opts.language && !wordsForLang[opts.language]) throw new Error('Unsupported language');
@@ -101,16 +103,16 @@ export class Key {
         this.setFromMnemonic(m, opts);
         break;
       case 'mnemonic':
-        $.checkArgument(opts.seedData, 'Need to provide opts.seedData');
-        $.checkArgument(_.isString(opts.seedData), 'sourceData need to be a string');
-        this.setFromMnemonic(new Mnemonic(opts.seedData), opts);
+        $.checkArgument(x, 'Need to provide opts.seedData');
+        $.checkArgument(_.isString(x), 'sourceData need to be a string');
+        this.setFromMnemonic(new Mnemonic(x), opts);
         break;
       case 'extendedPrivateKey':
-        $.checkArgument(opts.seedData, 'Need to provide opts.seedData');
+        $.checkArgument(x, 'Need to provide opts.seedData');
 
         let xpriv;
         try {
-          xpriv = new Bitcore.HDPrivateKey(opts.seedData);
+          xpriv = new Bitcore.HDPrivateKey(x);
         } catch (e) {
           throw new Error('Invalid argument');
         }
@@ -126,27 +128,54 @@ export class Key {
         this.#mnemonicHasPassphrase = null;
         break;
       case 'object':
-        $.shouldBeObject(opts.seedData, 'Need to provide an object at opts.seedData');
+        $.shouldBeObject(x, 'Need to provide an object at opts.seedData');
 
-        if (this.#version != opts.seedData.version) {
+        if (this.#version != x.version) {
           throw new Error('Bad Key version');
         }
 
-        this.#xPrivKey = opts.seedData.xPrivKey;
-        this.#xPrivKeyEncrypted = opts.seedData.xPrivKeyEncrypted;
+        this.#xPrivKey = x.xPrivKey;
+        this.#xPrivKeyEncrypted = x.xPrivKeyEncrypted;
 
-        this.#mnemonic = opts.seedData.mnemonic;
-        this.#mnemonicEncrypted = opts.seedData.mnemonicEncrypted;
-        this.#mnemonicHasPassphrase = opts.seedData.mnemonicHasPassphrase;
-        this.#version = opts.seedData.version;
-        this.fingerPrint = opts.seedData.fingerPrint;
-        this.compliantDerivation = opts.seedData.compliantDerivation;
-        this.BIP45 = opts.seedData.BIP45;
-        this.id = opts.seedData.id;
-        this.use0forBCH = opts.seedData.use0forBCH;
-        this.use44forMultisig = opts.seedData.use44forMultisig;
+        this.#mnemonic = x.mnemonic;
+        this.#mnemonicEncrypted = x.mnemonicEncrypted;
+        this.#mnemonicHasPassphrase = x.mnemonicHasPassphrase;
+        this.#version = x.version;
+        this.fingerPrint = x.fingerPrint;
+        this.compliantDerivation = x.compliantDerivation;
+        this.BIP45 = x.BIP45;
+        this.id = x.id;
+        this.use0forBCH = x.use0forBCH;
+        this.use44forMultisig = x.use44forMultisig;
  
         $.checkState(this.#xPrivKey || this.#xPrivKeyEncrypted, 'invalid input');
+        break;
+
+      case 'objectV1':
+
+console.log('[key.ts.155] Input', x); // TODO
+        this.#xPrivKey = x.xPrivKey;
+        this.#xPrivKeyEncrypted = x.xPrivKeyEncrypted;
+
+        this.#mnemonic = x.mnemonic;
+        this.#mnemonicEncrypted = x.mnemonicEncrypted;
+        this.#mnemonicHasPassphrase = x.mnemonicHasPassphrase;
+        this.#version = x.version || 1;
+        this.fingerPrint = x.fingerPrint;
+        this.compliantDerivation = x.compliantDerivation;
+        this.id = x.id;
+ 
+        // If the wallet was single seed... multisig walelts accounts
+        // will be 48'
+        this.use44forMultisig = x.n > 1 ? true : false;
+
+        // if old credentials had use145forBCH...use it.
+        // else,if the wallet is bch, set it to true.
+        this.use0forBCH = x.use145forBCH ? false : x.coin == 'bch' ? true : false;
+
+        this.BIP45 = x.derivationStrategy == 'BIP45';
+        break;
+
       default:
         throw new Error('Unknown seed source: ' + opts.seedType);
     }
