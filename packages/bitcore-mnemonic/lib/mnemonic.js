@@ -83,6 +83,9 @@ var Mnemonic = function(data, wordlist) {
 
   phrase = phrase || Mnemonic._mnemonic(ent, wordlist);
 
+  // this fixes spacing in JP
+  phrase = unorm.nfkd(phrase);
+
   Object.defineProperty(this, 'wordlist', {
     configurable: false,
     value: wordlist

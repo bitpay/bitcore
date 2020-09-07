@@ -122,17 +122,20 @@ export class Key {
           this.#xPrivKeyEncrypted = sjcl.encrypt(opts.password, xpriv.toString(), opts);
           if (!this.#xPrivKeyEncrypted) throw new Error('Could not encrypt');
         } else {
-          this.#xPrivKey = xpriv;
+          this.#xPrivKey = xpriv.toString();
         }
         this.#mnemonic = null;
         this.#mnemonicHasPassphrase = null;
         break;
       case 'object':
         $.shouldBeObject(x, 'Need to provide an object at opts.seedData');
+        $.shouldBeUndefined(opts.password, 'opts.password not allowed when source is object');
 
         if (this.#version != x.version) {
           throw new Error('Bad Key version');
         }
+
+
 
         this.#xPrivKey = x.xPrivKey;
         this.#xPrivKeyEncrypted = x.xPrivKeyEncrypted;
@@ -210,9 +213,6 @@ export class Key {
       this.#mnemonicHasPassphrase = !!opts.passphrase;
     }
   }
-
-
-
 
   toObj = function() {
     const ret = {
