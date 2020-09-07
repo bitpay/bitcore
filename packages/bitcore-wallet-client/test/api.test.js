@@ -6594,6 +6594,7 @@ describe('client API', function() {
                 }
               },
               (err, k, c) => {
+                k = k.toObj();
                 k.xPrivKey.should.equal(xPrivKey);
                 k.compliantDerivation.should.equal(true);
                 k.use0forBCH.should.equal(false);
