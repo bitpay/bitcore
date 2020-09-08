@@ -172,20 +172,47 @@ describe('Peer', function() {
   });
 
   it('disconnect with max buffer length', function(done) {
-    this.timeout(5000);
-    var peer = new Peer({host: 'localhost'});
+    var peer = new Peer({ host: 'localhost' });
     var socket = new EventEmitter();
     socket.connect = sinon.spy();
     peer._getSocket = function() {
       return socket;
     };
+    var error;
+    peer.on('error', function(err) {
+      error = err;
+    });
     peer.disconnect = function() {
+      error.should.include({
+        message: 'Data buffer exceeded MAX_RECEIVE_BUFFER, disconnecting.'
+      });
       done();
     };
     peer.connect();
-    var buffer = new Buffer(Array(Peer.MAX_RECEIVE_BUFFER + 1));
+    var buffer = Buffer.allocUnsafe(Peer.MAX_RECEIVE_BUFFER + 1);
     peer.socket.emit('data', buffer);
+  });
 
+  it('emits an error on unknown messages', function(done) {
+    var peer = new Peer({ host: 'localhost' });
+    var socket = new EventEmitter();
+    socket.connect = sinon.spy();
+    peer._getSocket = function() {
+      return socket;
+    };
+    var error;
+    peer.on('error', function(err) {
+      error = err;
+    });
+    peer.disconnect = function() {
+      error.should.include({
+        message: 'Unsupported message command: unknown'
+      });
+      done();
+    };
+    peer.connect();
+    var buf = Buffer.from('e3e1f3e8756e6b6e6f776e0000000000000000005df6e0e2', 'hex');
+    peer.socket.emit('data', buf);
   });
 
   it('should send version on version if not already sent', function(done) {
