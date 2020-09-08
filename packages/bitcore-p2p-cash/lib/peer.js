@@ -33,6 +33,8 @@ var util = require('util');
  * @param {Network} options.network - The network configuration
  * @param {Boolean=} options.relay - An option to disable automatic inventory relaying from the remote peer
  * @param {Socket=} options.socket - An existing connected socket
+ * @param {Socket=} options.subversion - Subversion (user agent) to share with the remote peer
+ * @param {Socket=} options.version - Protocol version to share with the remote peer
 
  * @returns {Peer} A new instance of Peer.
  * @constructor
@@ -70,6 +72,9 @@ function Peer(options) {
   });
 
   this.dataBuffer = new Buffers();
+  
+  this.ownVersion = options.version || undefined;
+  this.ownSubversion = options.subversion || undefined;
 
   this.version = 0;
   this.bestHeight = 0;
@@ -201,7 +206,11 @@ Peer.prototype.sendMessage = function(message) {
  */
 Peer.prototype._sendVersion = function() {
   // todo: include sending local ip address
-  var message = this.messages.Version({relay: this.relay});
+  var message = this.messages.Version({
+    relay: this.relay, subversion:
+    this.ownSubversion,
+    version: this.ownVersion
+  });
   this.versionSent = true;
   this.sendMessage(message);
 };

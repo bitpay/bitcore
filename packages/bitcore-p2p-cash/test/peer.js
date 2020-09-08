@@ -268,4 +268,43 @@ describe('Peer', function() {
     });
   });
 
+  it('version/subversion set properly', function() {
+    var peer = new Peer({ host: 'localhost' });
+    should.not.exist(peer.ownSubversion);
+    should.not.exist(peer.ownVersion);
+    var peer2 = new Peer({
+      host: 'localhost',
+      subversion: '/useragent:0.0.0/'
+    });
+    peer2.ownSubversion.should.equal('/useragent:0.0.0/');
+    should.not.exist(peer.ownVersion);
+    var peer3 = new Peer({ host: 'localhost', version: 70012 });
+    should.not.exist(peer.ownSubversion);
+    peer3.ownVersion.should.equal(70012);
+    var peer4 = new Peer({
+      host: 'localhost',
+      subversion: '/useragent:0.0.0/',
+      version: 70012
+    });
+    peer4.ownSubversion.should.equal('/useragent:0.0.0/');
+    peer4.ownVersion.should.equal(70012);
+  });
+
+  it('version/subversion settings respected', function(done) {
+  var socket = new EventEmitter();
+    var peer = new Peer({
+      socket: socket,
+      subversion: '/useragent:0.0.0/',
+      version: 70012
+    });
+    peer.sendMessage = function(message) {
+      message.version.should.equal(70012);
+      message.subversion.should.equal('/useragent:0.0.0/');
+      peer.disconnect();
+    };
+    peer.on('disconnect', () => {
+      done();
+    });
+    peer.connect();
+  });
 });
