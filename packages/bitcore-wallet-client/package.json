@@ -32,7 +32,7 @@
     "bitcore-mnemonic": "^8.22.2",
     "crypto-wallet-core": "^8.22.2",
     "json-stable-stringify": "^1.0.1",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.20",
     "preconditions": "^2.2.3",
     "sjcl": "1.0.3",
     "source-map-loader": "^0.2.4",
