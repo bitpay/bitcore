@@ -68,7 +68,7 @@ export class FiatRateService {
   }
 
   _fetch(cb?) {
-    cb = cb || function () { };
+    cb = cb || function() {};
     const coins = ['btc', 'bch', 'eth', 'xrp'];
     const provider = this.providers[0];
 
