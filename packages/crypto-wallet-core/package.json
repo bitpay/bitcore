@@ -6,7 +6,7 @@
   "types": "./ts_build/src/index.d.ts",
   "scripts": {
     "build": "tsc",
-    "clean": "rm -rf ts_build",
+    "clean": "rm -rf ts_build && tsc --version",
     "compile": "npm run clean && npm run build",
     "precommit": "npm run fix",
     "lint": "npm run lint:ts && npm run lint:style",
@@ -44,7 +44,7 @@
     "mocha": "6.1.4",
     "ts-node": "8.1.0",
     "tslint": "5.14.0",
-    "typescript": "3.3.4000"
+    "typescript": "3.9.3"
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1",
   "lint-staged": {
