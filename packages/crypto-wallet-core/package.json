@@ -30,21 +30,22 @@
     "bitcore-lib": "^8.22.2",
     "bitcore-lib-cash": "^8.22.2",
     "ethers": "^5.0.12",
+    "info": "0.0.6-beta.0",
     "ripple-binary-codec": "0.2.6",
     "ripple-keypairs": "git+https://git@github.com/bitpay/ripple-keypairs.git#8d3a4643a8ddfce8222786e1e5a3e85a89a5b7f5",
-    "ripple-lib": "1.4.2",
+    "ripple-lib": "^1.8.0",
     "web3": "1.2.11"
   },
   "devDependencies": {
     "@types/chai": "4.1.7",
     "@types/mocha": "5.2.6",
-    "@types/node": "10.12.15",
-    "@types/web3": "1.0.19",
+    "@types/node": "^14.10.0",
+    "@types/web3": "^1.0.19",
     "chai": "4.2.0",
     "mocha": "6.1.4",
     "ts-node": "8.1.0",
     "tslint": "5.14.0",
-    "typescript": "3.9.3"
+    "typescript": "^3.6.5"
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1",
   "lint-staged": {
