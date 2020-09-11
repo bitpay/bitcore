@@ -1,7 +1,7 @@
 import Web3 from 'web3';
+import { AbiItem } from 'web3-utils';
 import { ETHTxProvider } from '../eth';
 import { ERC20Abi } from './abi';
-import { AbiItem } from 'web3-utils';
 
 export class ERC20TxProvider extends ETHTxProvider {
   getERC20Contract(tokenContractAddress: string) {
