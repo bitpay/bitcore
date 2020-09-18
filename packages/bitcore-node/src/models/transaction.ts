@@ -86,6 +86,7 @@ export interface TxOp {
     filter: { txid: string; chain: string; network: string };
     update: {
       $set: {
+        _id: ObjectID;
         chain: string;
         network: string;
         blockHeight: number;
@@ -260,7 +261,7 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
   }
 
   async streamTxOps(params: {
-    txs: Array<TaggedBitcoinTx>;
+    txs: Array<MongoBound<TaggedBitcoinTx>>;
     height: number;
     blockTime?: Date;
     blockHash?: string;
@@ -366,9 +367,10 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
 
         txBatch.push({
           updateOne: {
-            filter: { txid, chain, network },
+            filter: {  txid, chain, network },
             update: {
               $set: {
+                _id: tx._id!,
                 chain,
                 network,
                 blockHeight: height,
@@ -487,8 +489,8 @@ export class TransactionModel extends BaseTransaction<IBtcTransaction> {
     }
     let mintBatch = new Array<MintOp>();
     for (let tx of params.txs) {
-      tx._id = new ObjectID();
       tx._hash = tx.hash;
+      tx._id = new ObjectID();
       let isCoinbase = tx.isCoinbase();
       for (let [index, output] of tx.outputs.entries()) {
         if (
