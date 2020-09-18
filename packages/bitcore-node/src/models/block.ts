@@ -57,7 +57,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
 
     const previousBlock = await this.collection.findOne({ hash: convertedBlock.previousBlockHash, chain, network });
 
-    await this.collection.bulkWrite([blockOp]);
+    const bulkInsert = await this.collection.bulkWrite([blockOp]);
     if (previousBlock) {
       await this.collection.updateOne(
         { chain, network, hash: previousBlock.hash },
@@ -68,6 +68,7 @@ export class BitcoinBlock extends BaseBlock<IBtcBlock> {
 
     await TransactionStorage.batchImport({
       txs: block.transactions,
+      _block: bulkInsert.insertedIds[0],
       blockHash: convertedBlock.hash,
       blockTime: new Date(time),
       blockTimeNormalized: new Date(timeNormalized),

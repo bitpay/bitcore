@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import { ObjectId } from 'mongodb';
 import config from '../../src/config';
 import { BitcoinBlockStorage } from '../../src/models/block';
 import { CoinStorage } from '../../src/models/coin';
@@ -80,6 +81,7 @@ function addCoin() {
     network,
     mintIndex: 0,
     mintTxid: '0e3e2357e806b6cdb1f70b54c3a3a17b6714ee1f0e68bebb44a74b1efd512098',
+    _mintTx: new ObjectId(),
     address: '12c6DSiU4Rq3P4ZxziKxzrL5LmMBrzjrJX',
     coinbase: true,
     mintHeight: 1,

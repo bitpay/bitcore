@@ -10,6 +10,7 @@ export interface ICoin {
   network: string;
   chain: string;
   mintTxid: string;
+  _mintTx: ObjectID;
   mintIndex: number;
   mintHeight: number;
   coinbase: boolean;
@@ -18,6 +19,7 @@ export interface ICoin {
   script: Buffer;
   wallets: Array<ObjectID>;
   spentTxid: string;
+  _spentTx?: ObjectID;
   spentHeight: number;
   confirmations?: number;
   sequenceNumber?: number;
@@ -35,7 +37,7 @@ export class CoinModel extends BaseModel<ICoin> {
   ];
 
   onConnect() {
-    this.collection.createIndex({ mintTxid: 1, mintIndex: 1 }, { background: true });
+    this.collection.createIndex({ _mintTx: 1, mintIndex: 1 }, { background: true });
     this.collection.createIndex(
       { address: 1, chain: 1, network: 1 },
       {
@@ -47,18 +49,18 @@ export class CoinModel extends BaseModel<ICoin> {
     );
     this.collection.createIndex({ address: 1 }, { background: true });
     this.collection.createIndex({ chain: 1, network: 1, mintHeight: 1 }, { background: true });
-    this.collection.createIndex({ spentTxid: 1 }, { background: true, sparse: true });
+    this.collection.createIndex({ _spentTx: 1 }, { background: true, sparse: true });
     this.collection.createIndex({ chain: 1, network: 1, spentHeight: 1 }, { background: true });
     this.collection.createIndex(
       { wallets: 1, spentHeight: 1, value: 1, mintHeight: 1 },
       { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } }
     );
     this.collection.createIndex(
-      { wallets: 1, spentTxid: 1 },
+      { wallets: 1, _spentTx: 1 },
       { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } }
     );
     this.collection.createIndex(
-      { wallets: 1, mintTxid: 1 },
+      { wallets: 1, _mintTx: 1 },
       { background: true, partialFilterExpression: { 'wallets.0': { $exists: true } } }
     );
   }

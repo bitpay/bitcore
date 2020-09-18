@@ -1,5 +1,7 @@
+import { ObjectId } from 'bson';
 import { expect } from 'chai';
 import * as crypto from 'crypto';
+import { MongoBound } from '../../../src/models/base';
 import { CoinStorage, ICoin } from '../../../src/models/coin';
 import { IBtcTransaction, SpendOp, TransactionStorage } from '../../../src/models/transaction';
 import { SpentHeightIndicators } from '../../../src/types/Coin';
@@ -59,29 +61,43 @@ describe('Transaction Model', function() {
     chain,
     network,
     blockHeight: 1,
+    _id: new ObjectId(),
     txid: '01234'
   };
+
+  const blockTx2 = {
+    chain,
+    network,
+    blockHeight: 1,
+    _id: new ObjectId(),
+    txid: '123456'
+  };
+
   const blockTxOutputs = {
     chain,
     network,
     mintHeight: 1,
-    mintTxid: '01234',
+    mintTxid: blockTx.txid,
+    _mintTx: blockTx._id,
     mintIndex: 0,
     spentHeight: -1,
-    spentTxid: '12345'
+    spentTxid: '12345', // to be invalidated by blockTx2
+    _spentTx: blockTx2._id
   };
+
   const block2TxOutputs = {
     chain,
     network,
     mintHeight: 2,
-    mintTxid: '123456',
+    mintTxid: blockTx2.txid,
+    _mintTx: blockTx2._id,
     mintIndex: 0,
     spentHeight: -1
   };
 
   it('should mark transactions invalid that were in the mempool, but no longer valid', async () => {
     // insert a valid tx, with a valid output
-    await TransactionStorage.collection.insertOne(blockTx as IBtcTransaction);
+    await TransactionStorage.collection.insertOne(blockTx as MongoBound<IBtcTransaction>);
     await CoinStorage.collection.insertOne(blockTxOutputs as ICoin);
 
     const chainLength = 1;
@@ -94,10 +110,12 @@ describe('Transaction Model', function() {
           chain,
           network,
           mintIndex: blockTxOutputs.mintIndex,
-          mintTxid: blockTxOutputs.mintTxid,
+          _mintTx: blockTx._id,
           spentHeight: { $lt: 0 }
         },
-        update: { $set: { spentHeight: block2TxOutputs.mintHeight, spentTxid: block2TxOutputs.mintTxid } }
+        update: {
+          $set: { spentHeight: block2TxOutputs.mintHeight, _spentTx: blockTx2._id, spentTxid: block2TxOutputs.mintTxid }
+        }
       }
     });
 
@@ -120,12 +138,12 @@ describe('Transaction Model', function() {
 
   it('should mark a chain of transactions invalid that were in the mempool, but no longer valid', async () => {
     // insert a valid tx, with a valid output
-    await TransactionStorage.collection.insertOne(blockTx as IBtcTransaction);
+    await TransactionStorage.collection.insertOne(blockTx as MongoBound<IBtcTransaction>);
     await CoinStorage.collection.insertOne(blockTxOutputs as ICoin);
     const chainLength = 5;
     const txids = await makeMempoolTxChain(chain, network, blockTxOutputs.spentTxid, chainLength);
 
-    const allRelatedCoins = await TransactionStorage.findAllRelatedOutputs(blockTxOutputs.spentTxid);
+    const allRelatedCoins = await TransactionStorage.findAllRelatedOutputs(blockTx._id);
     expect(allRelatedCoins.length).to.eq(chainLength);
 
     const spentOps = new Array<SpendOp>();
@@ -135,10 +153,12 @@ describe('Transaction Model', function() {
           chain,
           network,
           mintIndex: blockTxOutputs.mintIndex,
-          mintTxid: blockTxOutputs.mintTxid,
+          _mintTx: blockTx._id,
           spentHeight: { $lt: 0 }
         },
-        update: { $set: { spentHeight: block2TxOutputs.mintHeight, spentTxid: block2TxOutputs.mintTxid } }
+        update: {
+          $set: { spentHeight: block2TxOutputs.mintHeight, spentTxid: block2TxOutputs.mintTxid, _spentTx: blockTx2._id }
+        }
       }
     });
 
@@ -161,12 +181,12 @@ describe('Transaction Model', function() {
 
   it('should mark a massive chain of transactions invalid that were in the mempool, but no longer valid', async () => {
     // insert a valid tx, with a valid output
-    await TransactionStorage.collection.insertOne(blockTx as IBtcTransaction);
+    await TransactionStorage.collection.insertOne(blockTx as MongoBound<IBtcTransaction>);
     await CoinStorage.collection.insertOne(blockTxOutputs as ICoin);
     const chainLength = 2000;
     const txids = await makeMempoolTxChain(chain, network, blockTxOutputs.spentTxid, chainLength);
 
-    const allRelatedCoins = await TransactionStorage.findAllRelatedOutputs(blockTxOutputs.spentTxid);
+    const allRelatedCoins = await TransactionStorage.findAllRelatedOutputs(blockTxOutputs._spentTx);
     expect(allRelatedCoins.length).to.eq(chainLength);
 
     const spentOps = new Array<SpendOp>();
@@ -176,10 +196,16 @@ describe('Transaction Model', function() {
           chain,
           network,
           mintIndex: blockTxOutputs.mintIndex,
-          mintTxid: blockTxOutputs.mintTxid,
+          _mintTx: blockTxOutputs._mintTx,
           spentHeight: { $lt: 0 }
         },
-        update: { $set: { spentHeight: block2TxOutputs.mintHeight, spentTxid: block2TxOutputs.mintTxid } }
+        update: {
+          $set: {
+            spentHeight: block2TxOutputs.mintHeight,
+            spentTxid: block2TxOutputs.mintTxid,
+            _spentTx: blockTxOutputs._mintTx
+          }
+        }
       }
     });
 

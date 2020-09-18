@@ -333,7 +333,7 @@ describe('Block Model', function() {
         blockHeight: 6
       });
 
-      await TransactionStorage.collection.insertOne({
+      const tx1 = await TransactionStorage.collection.insertOne({
         txid: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
         chain: 'BTC',
         network: 'regtest',
@@ -350,7 +350,7 @@ describe('Block Model', function() {
         blockHeight: 7
       });
 
-      await TransactionStorage.collection.insertOne({
+      const tx2 = await TransactionStorage.collection.insertOne({
         txid: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
         chain: 'BTC',
         network: 'regtest',
@@ -372,6 +372,7 @@ describe('Block Model', function() {
         network: 'regtest',
         chain: 'BTC',
         mintTxid: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919g',
+        _mintTx: tx1.insertedId,
         spentTxid: '',
         mintIndex: 0,
         spentHeight: SpentHeightIndicators.unspent,
@@ -387,6 +388,7 @@ describe('Block Model', function() {
         network: 'regtest',
         chain: 'BTC',
         mintTxid: 'a2262b524615b6d2f409784ceff898fd46bdde6a584269788c41f26ac4b4919e',
+        _mintTx: tx1.insertedId,
         spentTxid: '',
         mintIndex: 0,
         spentHeight: SpentHeightIndicators.unspent,
@@ -401,6 +403,7 @@ describe('Block Model', function() {
         network: 'regtest',
         chain: 'BTC',
         mintTxid: '8a351fa9fc3fcd38066b4bf61a8b5f71f08aa224d7a86165557e6da7ee13a826',
+        _mintTx: tx2.insertedId,
         spentTxid: '',
         mintIndex: 0,
         spentHeight: SpentHeightIndicators.unspent,
@@ -415,6 +418,7 @@ describe('Block Model', function() {
         network: 'regtest',
         chain: 'BTC',
         mintTxid: '8c29860888b915715878b21ce14707a17b43f6c51dfb62a1e736e35bc5d8093f',
+        _mintTx: tx2.insertedId,
         mintIndex: 0,
         spentHeight: 8,
         mintHeight: 7,

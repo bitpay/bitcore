@@ -9,6 +9,7 @@ export interface ITransaction {
   chain: string;
   network: string;
   blockHeight?: number;
+  _block?: ObjectID;
   blockHash?: string;
   blockTime?: Date;
   blockTimeNormalized?: Date;
@@ -32,7 +33,7 @@ export abstract class BaseTransaction<T extends ITransaction> extends BaseModel<
   onConnect() {
     this.collection.createIndex({ txid: 1 }, { background: true });
     this.collection.createIndex({ chain: 1, network: 1, blockHeight: 1 }, { background: true });
-    this.collection.createIndex({ blockHash: 1 }, { background: true });
+    this.collection.createIndex({ _block: 1 }, { background: true });
     this.collection.createIndex({ chain: 1, network: 1, blockTimeNormalized: 1 }, { background: true });
     this.collection.createIndex(
       { wallets: 1, blockTimeNormalized: 1 },
