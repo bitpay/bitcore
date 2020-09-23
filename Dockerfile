@@ -57,6 +57,7 @@ ADD . .
 RUN npm run compile
 
 EXPOSE 3000
+EXPOSE 3232
 
 ENTRYPOINT [ "npm", "run" ]
 CMD [ "node" ]
