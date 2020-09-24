@@ -11,6 +11,7 @@
     "bootstrap": "./node_modules/.bin/lerna bootstrap",
     "insight": "cd ./packages/insight && npm start",
     "node": "cd packages/bitcore-node && npm start",
+    "node-p2p": "cd packages/bitcore-node && npm run p2p",
     "bws": "cd packages/bitcore-wallet-service && npm start",
     "compile": "./node_modules/.bin/lerna run compile",
     "lint": "lerna run lint",
