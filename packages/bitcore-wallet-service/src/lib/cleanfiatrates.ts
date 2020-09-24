@@ -8,7 +8,7 @@ const config = require('../config');
 const ObjectID = mongodb.ObjectID;
 const storage = require('./storage');
 
-var objectIdDate = function (date) {
+var objectIdDate = function(date) {
   return Math.floor(date.getTime() / 1000).toString(16) + '0000000000000000';
 };
 
@@ -18,7 +18,7 @@ export class CleanFiatRates {
   from: Date;
   to: Date;
 
-  constructor() { }
+  constructor() {}
 
   run(cb) {
     let dbConfig = config.storageOpts.mongoDb;
@@ -91,33 +91,39 @@ export class CleanFiatRates {
     this.db
       .collection(storage.Storage.collections.FIAT_RATES2)
       .find({
-        '_id': {
+        _id: {
           $gte: new ObjectID(objectIdFromDate),
           $lte: new ObjectID(objectIdToDate)
         }
-      }).toArray((err, results) => {
+      })
+      .sort({ _id: 1 })
+      .toArray((err, results) => {
         if (err) return cb(err);
 
         const datesToKeep = [];
 
         // Timestamps grouped by coin avoiding duplicates.
-        let tsGruopedByCoin = _.reduce(results, (r, a) => {
-          r[a.coin] = _.uniq([...r[a.coin] || [], a.ts]);
-          return r;
-        }, {});
+        let tsGruopedByCoin = _.reduce(
+          results,
+          (r, a) => {
+            r[a.coin] = _.uniq([...(r[a.coin] || []), a.ts]);
+            return r;
+          },
+          {}
+        );
 
         // keep one date every hour for each coin
         _.forEach(tsGruopedByCoin, (tsGroup, key) => {
           console.log(`\tFiltering times for ${key.toUpperCase()}`);
           let prevTime = null;
-          let isSameDay, isSameHour;
+          let isSameHour;
 
-          _.forEach(tsGroup, ts => {
+          _.forEach(tsGroup, (ts: number) => {
+            if (prevTime > ts + 60 * 10000) return cb(new Error('Results not in order'));
+
             if (prevTime) {
-              isSameDay = moment(prevTime).isSame(moment(ts), 'day');
               isSameHour = moment(prevTime).isSame(moment(ts), 'hour');
-
-              if (!isSameDay || (isSameDay && !isSameHour)) {
+              if (!isSameHour) {
                 datesToKeep.push(ts);
               }
             } else {
@@ -128,21 +134,24 @@ export class CleanFiatRates {
           });
         });
         return cb(null, datesToKeep);
-      })
+      });
   }
 
   async _cleanFiatRates(datesToKeep, cb) {
     try {
-      this.db.collection(storage.Storage.collections.FIAT_RATES2).remove({
-        ts: {
-          $nin: datesToKeep,
-          $gte: moment(this.from).valueOf(),
-          $lte: moment(this.to).valueOf()
-        }
-      }).then((data) => {
-        console.log(`\t${data.result.n} entries were removed from fiat_rates2`);
-        return cb(null, data.result);
-      })
+      this.db
+        .collection(storage.Storage.collections.FIAT_RATES2)
+        .remove({
+          ts: {
+            $nin: datesToKeep,
+            $gte: moment(this.from).valueOf(),
+            $lte: moment(this.to).valueOf()
+          }
+        })
+        .then(data => {
+          console.log(`\t${data.result.n} entries were removed from fiat_rates2`);
+          return cb(null, data.result);
+        });
     } catch (err) {
       console.log('\t!! Cannot remove data from fiat_rates2:', err);
       return cb(err);
