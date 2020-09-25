@@ -72,7 +72,7 @@ module.exports = {
     defaultLanguage: 'en',
     defaultUnit: 'btc',
     subjectPrefix: '',
-    pushServerUrl: 'https://fcm.googleapis.com/fcm',
+    pushServerUrl: 'https://fcm.googleapis.com/v1/projects/bitpay-wallet/messages:send',
     authorizationKey: 'You_have_to_put_something_here'
   },
   fiatRateServiceOpts: {
@@ -83,6 +83,9 @@ module.exports = {
     maintenanceMode: false
   },
   staticRoot: '/tmp/static'
+  // fcm_google_credentials: {
+  //   GOOGLE_APP_CREDENTIALS: 'path_to_service_account_file_here'
+  // },
   // simplex: {
   //   sandbox: {
   //     apiKey: 'simplex_sandbox_api_key_here',

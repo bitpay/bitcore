@@ -16,6 +16,8 @@ const Utils = require('./common/utils');
 const Defaults = require('./common/defaults');
 const Constants = require('./common/constants');
 const sjcl = require('sjcl');
+const google = require('googleapis');
+const config = require('../config')
 
 const PUSHNOTIFICATIONS_TYPES = {
   NewCopayer: {
@@ -169,24 +171,27 @@ export class PushNotificationsService {
                           ? notification.data.multisigContractAddress
                           : null;
                       return {
-                        to: sub.token,
-                        priority: 'high',
-                        restricted_package_name: sub.packageName,
-                        notification: {
-                          title: content.plain.subject,
-                          body: content.plain.body,
-                          sound: 'default',
-                          click_action: 'FCM_PLUGIN_ACTIVITY',
-                          icon: 'fcm_push_icon'
-                        },
-                        data: {
-                          walletId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(notification.walletId)),
-                          tokenAddress,
-                          multisigContractAddress,
-                          copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(recipient.copayerId)),
-                          title: content.plain.subject,
-                          body: content.plain.body,
-                          notification_type: notification.type
+                        message: 
+                          {
+                          topic: sub.token,
+                          priority: 'high',
+                          restricted_package_name: sub.packageName,
+                          notification: {
+                            title: content.plain.subject,
+                            body: content.plain.body,
+                            sound: 'default',
+                            click_action: 'FCM_PLUGIN_ACTIVITY',
+                            icon: 'fcm_push_icon'
+                          },
+                          data: {
+                            walletId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(notification.walletId)),
+                            tokenAddress,
+                            multisigContractAddress,
+                            copayerId: sjcl.codec.hex.fromBits(sjcl.hash.sha256.hash(recipient.copayerId)),
+                            title: content.plain.subject,
+                            body: content.plain.body,
+                            notification_type: notification.type
+                          }
                         }
                       };
                     });
@@ -443,15 +448,39 @@ export class PushNotificationsService {
     };
   }
 
-  _makeRequest(opts, cb) {
+  async _getAccessToken() {
+    const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
+    const SCOPES = [MESSAGING_SCOPE];
+
+    return new Promise(function(resolve, reject) {
+      const key = require(config.fcm_google_credentials.GOOGLE_APP_CREDENTIALS);
+      const jwtClient = new google.auth.JWT(
+        key.client_email,
+        null,
+        key.private_key,
+        SCOPES,
+        null
+      );
+      jwtClient.authorize(function(err, tokens) {
+        if (err) {
+          reject(err);
+          return;
+        }
+        resolve(tokens.access_token);
+      });
+    });
+  }
+
+  async _makeRequest(opts, cb) {
+    let accessToken = await this._getAccessToken();
     this.request(
       {
-        url: this.pushServerUrl + '/send',
+        url: this.pushServerUrl,
         method: 'POST',
         json: true,
         headers: {
           'Content-Type': 'application/json',
-          Authorization: 'key=' + this.authorizationKey
+          Authorization: 'Bearer ' + accessToken
         },
         body: opts
       },
