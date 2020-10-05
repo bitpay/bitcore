@@ -1,0 +1,35 @@
+{
+  "name": "bitcore-payid",
+  "version": "1.0.0",
+  "description": "Bitcore library for PayID",
+  "author": "BitPay Inc",
+  "license": "MIT",
+  "main": "ts_build/src/index.js",
+  "keywords": [
+    "bitcoin",
+    "payid",
+    "bitcore"
+  ],
+  "engine": "node >= 12.0.0",
+  "scripts": {
+    "start": "tsc && node ts_build/src/index.js",
+    "test": "npm run test:all",
+    "test:all": "npm run build && mocha 'ts_build/test/**/*.spec.js' --colors",
+    "test:unit": "npm run build && mocha 'ts_build/test/unit/**/*.spec.js' --colors",
+    "test:integration": "npm run build && mocha 'ts_build/test/integration/**/*.spec.js' --colors",
+    "build": "tsc"
+  },
+  "dependencies": {
+    "@payid-org/utils": "^1.2.0",
+    "bitcore-lib": "^8.22.2",
+    "jose": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/mocha": "^8.0.3",
+    "@types/node": "^14.11.2",
+    "chai": "^4.2.0",
+    "mocha": "^8.1.3",
+    "sinon": "^9.0.3",
+    "typescript": "^4.0.3"
+  }
+}
