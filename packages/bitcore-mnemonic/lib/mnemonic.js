@@ -1,17 +1,17 @@
 'use strict';
 
-var bitcore = require('bitcore-lib');
-var BN = bitcore.crypto.BN;
-var unorm = require('unorm');
-var _ = bitcore.deps._;
+const bitcore = require('bitcore-lib');
+const BN = bitcore.crypto.BN;
+const unorm = require('unorm');
+const _ = bitcore.deps._;
 
-var pbkdf2 = require('./pbkdf2');
-var errors = require('./errors');
+const pbkdf2 = require('./pbkdf2');
+const errors = require('./errors');
 
-var Hash = bitcore.crypto.Hash;
-var Random = bitcore.crypto.Random;
+const Hash = bitcore.crypto.Hash;
+const Random = bitcore.crypto.Random;
 
-var $ = bitcore.util.preconditions;
+const $ = bitcore.util.preconditions;
 
 
 /**
@@ -82,6 +82,9 @@ var Mnemonic = function(data, wordlist) {
   }
 
   phrase = phrase || Mnemonic._mnemonic(ent, wordlist);
+
+  // this fixes spacing in JP
+  phrase = unorm.nfkd(phrase);
 
   Object.defineProperty(this, 'wordlist', {
     configurable: false,

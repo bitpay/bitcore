@@ -4,7 +4,7 @@ var $ = require('preconditions').singleton();
 const URL = require('url');
 const _ = require('lodash');
 const superagent = require('superagent');
-var Bitcore = BitcoreLib;
+const Bitcore = BitcoreLib;
 const Errors = require('./errors');
 var Bitcore_ = {
   btc: Bitcore,

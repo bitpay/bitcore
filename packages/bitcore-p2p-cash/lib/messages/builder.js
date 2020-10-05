@@ -57,6 +57,7 @@ function builder(options) {
       filterclear: 'FilterClear',
       getblocks: 'GetBlocks',
       getheaders: 'GetHeaders',
+      sendheaders: 'SendHeaders',
       mempool: 'MemPool',
       getaddr: 'GetAddr',
       xversion: 'Xversion'
