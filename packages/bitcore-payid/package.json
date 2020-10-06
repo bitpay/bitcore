@@ -12,12 +12,13 @@
   ],
   "engine": "node >= 12.0.0",
   "scripts": {
-    "start": "tsc && node ts_build/src/index.js",
+    "start": "npm run build && node ts_build/src/index.js",
+    "build": "npm run clean && tsc",
+    "clean": "rm -rf ts_build",
     "test": "npm run test:all",
     "test:all": "npm run build && mocha 'ts_build/test/**/*.spec.js' --colors",
     "test:unit": "npm run build && mocha 'ts_build/test/unit/**/*.spec.js' --colors",
-    "test:integration": "npm run build && mocha 'ts_build/test/integration/**/*.spec.js' --colors",
-    "build": "tsc"
+    "test:integration": "npm run build && mocha 'ts_build/test/integration/**/*.spec.js' --colors"
   },
   "dependencies": {
     "@payid-org/utils": "^1.2.0",
