@@ -445,7 +445,9 @@ describe('Fiat rate service', function() {
       { code: "GBP", value: 201.62 },
       { code: "ARS", value: 19900.21 },
       { code: "AUD", value: 365.8 },
-      { code: "BRL", value: 1456.93 }
+      { code: "BRL", value: 1456.93 },
+      { code: "JPY", value: 1124900.43 },
+      { code: "NZD", value: 16119.66 }
     ]
     it('should get rates for all the supported fiat currencies of the specified coin', function(done) {
       service.storage.storeFiatRate('bch', bchRates, function(err) {
