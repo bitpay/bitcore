@@ -118,7 +118,7 @@ export class BlockchainMonitor {
           done();
         },
         done => {
-          this.lock = opts.lock || new Lock(opts.lockOpts);
+          this.lock = opts.lock || new Lock();
           done();
         }
       ],
