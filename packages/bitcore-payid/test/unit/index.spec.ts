@@ -1,11 +1,9 @@
-import {should} from 'chai';
+import { expect } from 'chai';
 import sinon from 'sinon';
 
-should();
-
-describe('test this', () => {
-  it('should hit this', () => {
-    console.log('here');
+describe('PayId', () => {
+  it('should hit this placeholder unit test', () => {
+    expect(true).to.be.true;
     return;
   });
 });

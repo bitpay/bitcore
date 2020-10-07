@@ -1,3 +1,5 @@
+import { JWS } from 'jose';
+
 export interface IVerifyPayId {
   address: string;
   currency: string;
@@ -5,3 +7,5 @@ export interface IVerifyPayId {
   protected?: string;
   header?: string | object;
 }
+
+export interface GeneralJWS extends JWS.GeneralJWS {}

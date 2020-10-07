@@ -1,4 +1,8 @@
-import { AddressDetailsType, IdentityKeySigningParams, sign } from '@payid-org/utils';
+import {
+  AddressDetailsType,
+  IdentityKeySigningParams,
+  sign
+} from '@payid-org/utils';
 import { expect } from 'chai';
 import crypto from 'crypto';
 import { JWK } from 'jose';

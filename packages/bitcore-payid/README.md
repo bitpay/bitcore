@@ -1,5 +1,7 @@
 # Bitcore PayID
 
+This is a library to assist [PayId](https://payid.org/) integration with Bitcore
+
 ## Setup
 > npm install
 
