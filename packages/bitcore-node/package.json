@@ -100,6 +100,8 @@
     "bitcore-p2p": "^8.22.2",
     "bitcore-p2p-cash": "^8.22.2",
     "bitcore-wallet-client": "^8.22.2",
+    "litecore-lib": "^0.13.0",
+    "litecore-p2p": "^1.1.0",
     "body-parser": "1.18.3",
     "cors": "2.8.4",
     "crypto-rpc": "^1.1.0",
