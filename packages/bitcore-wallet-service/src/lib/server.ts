@@ -4462,6 +4462,30 @@ export class WalletService {
       );
     });
   }
+
+  getPayId(req): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const URL: string = `https://${req.domain}/${req.handle}`;
+      const headers = {
+        'PayID-Version': '1.0',
+        Accept: 'application/payid+json'
+      };
+      this.request.get(
+        URL,
+        {
+          headers,
+          json: true
+        },
+        (err, data) => {
+          if (err) {
+            return reject(err.body ? err.body : null);
+          } else {
+            return resolve(data.body ? data.body : null);
+          }
+        }
+      );
+    });
+  }
 }
 
 function checkRequired(obj, args, cb?: (e: any) => void) {
