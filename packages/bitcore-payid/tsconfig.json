@@ -1,9 +1,10 @@
 {
   "compilerOptions": {
     "lib": [
+      "dom",
       "es5",
       "es6",
-      "es2017"
+      "es2020"
     ],
     "noImplicitAny": false,
     "removeComments": true,
@@ -15,7 +16,8 @@
     "allowSyntheticDefaultImports": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
-    "target": "es2015",
+    "resolveJsonModule": true,
+    "target": "es5",
     "typeRoots": [
       "./node_modules/@types"
     ],
@@ -32,8 +34,7 @@
   "include": [
     "./scripts/**/*.ts",
     "./src/**/*.ts",
-    "./tests/**/*.ts",
-    "./test/*.ts"
+    "./test/**/*.ts"
   ],
   "exclude": [
     "node_modules"

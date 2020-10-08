@@ -220,7 +220,7 @@ export class WalletService {
         }
       ],
       err => {
-        lock = opts.lock || new Lock(storage, opts.lockOpts);
+        lock = opts.lock || new Lock(storage);
 
         if (err) {
           logger.error('Could not initialize', err);
