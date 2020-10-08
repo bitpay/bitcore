@@ -1331,6 +1331,28 @@ export class ExpressApp {
         });
     });
 
+    router.get('/v1/service/discoverPayId/:payId', (req, res) => {
+      let server;
+      const payId = req.params['payId'];
+      const opts = {
+        handle: payId.split('$')[0],
+        domain: payId.split('$')[1]
+      };
+      try {
+        server = getServer(req, res);
+      } catch (ex) {
+        return returnError(ex, res, req);
+      }
+      server
+        .discoverPayId(opts)
+        .then(response => {
+          res.json(response);
+        })
+        .catch(err => {
+          if (err) return returnError(err, res, req);
+        });
+    });
+
     // Set no-cache by default
     this.app.use((req, res, next) => {
       res.setHeader('Cache-Control', 'no-store');
