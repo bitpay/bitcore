@@ -36,9 +36,6 @@ if (config.https) {
   }
 }
 
-if (config.cluster && !config.lockOpts.lockerServer)
-  throw new Error('When running in cluster mode, locker server need to be configured');
-
 if (config.cluster && !config.messageBrokerOpts.messageBrokerServer)
   throw new Error('When running in cluster mode, message broker server need to be configured');
 
