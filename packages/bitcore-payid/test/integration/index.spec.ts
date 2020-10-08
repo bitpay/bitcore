@@ -149,6 +149,43 @@ describe('PayId', () => {
       signingParams = new IdentityKeySigningParams(pk, pk.alg || 'ES256K');
     });
 
+    it('should fail verification if payId doesn\'t match', () => {
+      const signed = sign(payId, addressBTC, signingParams);
+
+      const verified = PayId.verify('malicious$example.com', signed);
+      expect(verified).be.false;
+    });
+
+    it('should fail verification if signature doesn\'t match', () => {
+      const signed = sign(payId, addressBTC, signingParams);
+
+      const address = {
+        address: addressETH.addressDetails.address,
+        currency: addressETH.paymentNetwork,
+        signature: 'NfhVzyoQmTv_tAo1QhFYN8GDSBRm-AvA9OzsVUmtaGr8hS-Or9k1dZVPUFvIW6E6rBt2BSngR54d2LdEPiW-2Q',
+        protected: signed.signatures[0].protected,
+        header: signed.signatures[0].header
+      };
+
+      const verified = PayId.verify(payId, address);
+      expect(verified).be.false;
+    });
+
+    it('should fail verification if protected doesn\'t contain correct public key', () => {
+      const signed = sign(payId, addressBTC, signingParams);
+
+      const address = {
+        address: addressETH.addressDetails.address,
+        currency: addressETH.paymentNetwork,
+        signature: signed.signatures[0].signature,
+        protected: 'eyJuYW1lIjoiaWRlbnRpdHlLZXkiLCJhbGciOiJFUzI1NksiLCJ0eXAiOiJKT1NFK0pTT04iLCJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCIsIm5hbWUiXSwiandrIjp7ImNydiI6InNlY3AyNTZrMSIsIngiOiI3dFpzS0h6SDZtSWJ1UnRaS1FLbE1LR1hFY1plbmlGTkVqQTM0TXc5eDk4IiwieSI6ImRDb0R2QnhpV3RJVDk0M3FtYU1TdDQyR0cyTFdsMkp2MzhaRGpCYmI5ekEiLCJrdHkiOiJFQyIsImtpZCI6Im00NldjeHN0Z29iTGR2NGpJbTNhcl9pUmJVa280QnZyU3FMR1NKM1pBSWMifX0',
+        header: signed.signatures[0].header
+      };
+
+      const verified = PayId.verify(payId, address);
+      expect(verified).be.false;
+    });
+
     describe('JWK.GeneralJWS', () => {
       it('should verify BTC', () => {
         const signed = sign(payId, addressBTC, signingParams);
