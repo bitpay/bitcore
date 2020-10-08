@@ -18,17 +18,18 @@ class PayId {
    * @param {string} payId e.g.: "alice.smith$bitpay.com", "bob123$example.com"
    * @param {string} address BTC, ETH, or XRP address to be signed
    * @param {string} currency Currency ticker (e.g. "BTC", "ETH", "XRP")
-   * @param {string} identityKey The private key to be used for signing.
+   * @param {string | Buffer} identityKey The private key to be used for signing.
    *      Must be an asynchronous (RSA, EC) key and can have any length.
    *      **If not from bitcore-lib and is a string, it must be a PEM string**
+   * @param {string} environment (Optional) Specify the chain environment. Default: 'mainnet'
    */
-  sign(payId: string, address: string, currency: string, identityKey: string | Buffer): GeneralJWS {
+  sign(payId: string, address: string, currency: string, identityKey: string | Buffer, environment: string = 'mainnet'): GeneralJWS {
     let jwk = this._convertIdentityKeyToJWK(identityKey);
 
     const signingParams = new IdentityKeySigningParams(jwk, getDefaultAlgorithm(jwk));
     const addy = {
       paymentNetwork: currency,
-      environment: 'mainnet',
+      environment,
       addressDetailsType: AddressDetailsType.CryptoAddress,
       addressDetails: {
         address
