@@ -9668,5 +9668,109 @@ describe('Wallet service', function() {
 
   });
 
+  describe('#getPayId', () => {
+    // payId: matias$ematiu.sandbox.payid.org
+    let server, fakeRequest, req;
+    beforeEach(() => {
+      server = new WalletService();
+      req = {
+        headers: {},
+        body: {
+          domain: 'ematiu.sandbox.payid.org',
+          handle: 'matias',
+        }
+      }
 
+      fakeRequest = {
+        post: (_url, _opts, _cb) => { return _cb(null, { body: {} }) },
+      };
+    });
+
+    it('should work properly if req is OK', () => {
+      server.request = fakeRequest;
+      server.getPayId(req).then(data => {
+        should.exist(data);
+      }).catch(err => {
+        should.not.exist(err);
+      });
+    });
+
+    it('should return error if there is some missing arguments', () => {
+      delete req.body.domain;
+
+      server.request = fakeRequest;
+      server.getPayId(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+      });
+    });
+
+    it('should return error if get returns error', () => {
+      const fakeRequest2 = {
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+      };
+
+      server.request = fakeRequest2;
+      server.getPayId(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('Error');
+      });
+    });
+  });
+
+  describe('#discoverPayId', () => {
+    // payId: matias$ematiu.sandbox.payid.org
+    let server, fakeRequest, req;
+    beforeEach(() => {
+      server = new WalletService();
+      req = {
+        headers: {},
+        body: {
+          domain: 'ematiu.sandbox.payid.org',
+          handle: 'matias',
+        }
+      }
+
+      fakeRequest = {
+        post: (_url, _opts, _cb) => { return _cb(null, { body: {} }) },
+      };
+    });
+
+    it('should work properly if req is OK', () => {
+      server.request = fakeRequest;
+      server.discoverPayId(req).then(data => {
+        should.exist(data);
+      }).catch(err => {
+        should.not.exist(err);
+      });
+    });
+
+    it('should return error if there is some missing arguments', () => {
+      delete req.body.domain;
+
+      server.request = fakeRequest;
+      server.discoverPayId(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+      });
+    });
+
+    it('should return error if get returns error', () => {
+      const fakeRequest2 = {
+        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+      };
+
+      server.request = fakeRequest2;
+      server.discoverPayId(req).then(data => {
+        should.not.exist(data);
+      }).catch(err => {
+        should.exist(err);
+        err.message.should.equal('Error');
+      });
+    });
+  });
 });
