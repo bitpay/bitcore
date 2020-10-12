@@ -247,6 +247,7 @@ Utils.UNITS2 = {
 };
 
 Utils.parseAmount = function(text, coin) {
+  if  (!text) return;
   if (!_.isString(text))
     text = text.toString();
 
