@@ -75,9 +75,9 @@
     "precommit": "npm run fix && npm run lint",
     "lint": "npm run lint:ts && npm run lint:style",
     "lint:ts": "tslint -c ../../tslint.json 'src/**/*.ts'",
-    "lint:style": "prettier --check 'src/**/*.ts'",
+    "lint:style": "echo 'prettier disabled, no EC2019 support' || prettier --check 'src/**/*.ts'",
     "fix:lint": "tslint --fix -c ../../tslint.json 'src/**/*.ts'",
-    "fix:style": "prettier --write 'src/**/*.ts'"
+    "fix:style": "echo 'prettier disabled, no EC2019 support' ||prettier --write 'src/**/*.ts'"
   },
   "gitHead": "012cc0216a9bc6b195035855bd17149bad41acd1"
 }
