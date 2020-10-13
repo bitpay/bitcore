@@ -9669,50 +9669,36 @@ describe('Wallet service', function() {
   });
 
   describe('#getPayId', () => {
-    // payId: matias$ematiu.sandbox.payid.org
+    const url = 'https://ematiu.sandbox.payid.org/matias';
     let server, fakeRequest, req;
     beforeEach(() => {
       server = new WalletService();
       req = {
         headers: {},
-        body: {
-          domain: 'ematiu.sandbox.payid.org',
-          handle: 'matias',
-        }
+        body: {}
       }
 
       fakeRequest = {
-        post: (_url, _opts, _cb) => { return _cb(null, { body: {} }) },
+        get: (_url, _opts, _cb) => { return _cb(null, { body: {} }) },
       };
     });
 
-    it('should work properly if req is OK', () => {
+    it('should work properly if url is OK', () => {
       server.request = fakeRequest;
-      server.getPayId(req).then(data => {
+      server.getPayId(url).then(data => {
         should.exist(data);
       }).catch(err => {
         should.not.exist(err);
       });
     });
 
-    it('should return error if there is some missing arguments', () => {
-      delete req.body.domain;
-
-      server.request = fakeRequest;
-      server.getPayId(req).then(data => {
-        should.not.exist(data);
-      }).catch(err => {
-        should.exist(err);
-      });
-    });
-
     it('should return error if get returns error', () => {
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
       server.request = fakeRequest2;
-      server.getPayId(req).then(data => {
+      server.getPayId(url).then(data => {
         should.not.exist(data);
       }).catch(err => {
         should.exist(err);
@@ -9735,7 +9721,7 @@ describe('Wallet service', function() {
       }
 
       fakeRequest = {
-        post: (_url, _opts, _cb) => { return _cb(null, { body: {} }) },
+        get: (_url, _opts, _cb) => { return _cb(null, { body: {} }) },
       };
     });
 
@@ -9761,7 +9747,7 @@ describe('Wallet service', function() {
 
     it('should return error if get returns error', () => {
       const fakeRequest2 = {
-        post: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
+        get: (_url, _opts, _cb) => { return _cb(new Error('Error')) },
       };
 
       server.request = fakeRequest2;
@@ -9770,6 +9756,57 @@ describe('Wallet service', function() {
       }).catch(err => {
         should.exist(err);
         err.message.should.equal('Error');
+      });
+    });
+
+    it('should call getPayId with a url obtained from the template field if it exists', () => {
+      const fakeRequest2 = {
+        get: (_url, _opts, _cb) => { return _cb(null, { 
+          body: {
+            subject: "payid:matias$ematiu.sandbox.payid.org",
+            links: [{
+                rel: "https://payid.org/ns/payid-easy-checkout-uri/1.0",
+                href: "https://xpring.io/portal/wallet/xrp/testnet/payto",
+                template: "https://ematiu.sandbox.payid.org/payid/{acctpart}"
+              }]
+          } 
+        })}
+      };
+
+      server.request = fakeRequest2;
+      var spy = sinon.spy(server, 'getPayId');
+      const url = 'https://ematiu.sandbox.payid.org/payid/matias';
+      server.discoverPayId(req.body).then(data => {
+        var calls = spy.getCalls();
+        calls[0].args[0].should.equal(url);
+        should.exist(data);
+      }).catch(err => {
+        should.not.exist(err);
+      });
+    });
+
+    it('should call getPayId with a default url if the template field does not exist', () => {
+      const fakeRequest2 = {
+        get: (_url, _opts, _cb) => { return _cb(null, { 
+          body: {
+            subject: "payid:matias$ematiu.sandbox.payid.org",
+            links: [{
+                rel: "https://payid.org/ns/payid-easy-checkout-uri/1.0",
+                href: "https://xpring.io/portal/wallet/xrp/testnet/payto",
+              }]
+          } 
+        })}
+      };
+      const url = 'https://ematiu.sandbox.payid.org/matias';
+      server.request = fakeRequest2;
+      var spy = sinon.spy(server, 'getPayId');
+
+      server.discoverPayId(req.body).then(data => {
+        var calls = spy.getCalls();
+        calls[0].args[0].should.equal(url);
+        should.exist(data);
+      }).catch(err => {
+        should.not.exist(err);
       });
     });
   });

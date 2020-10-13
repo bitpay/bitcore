@@ -4463,24 +4463,23 @@ export class WalletService {
     });
   }
 
-  getPayId(req): Promise<any> {
+  getPayId(url: string): Promise<any> {
     return new Promise((resolve, reject) => {
-      const URL: string = `https://${req.domain}/${req.handle}`;
       const headers = {
         'PayID-Version': '1.0',
         Accept: 'application/payid+json'
       };
       this.request.get(
-        URL,
+        url,
         {
           headers,
           json: true
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : null);
+            return reject(err.body ? err.body : err);
           } else {
-            return resolve(data.body ? data.body : null);
+            return resolve(data.body ? data.body : data);
           }
         }
       );
@@ -4502,9 +4501,22 @@ export class WalletService {
         },
         (err, data) => {
           if (err) {
-            return reject(err.body ? err.body : null);
+            return reject(err.body ? err.body : err);
           } else {
-            return resolve(data.body ? data.body : null);
+            let url;
+            if (data.body && data.body.links && data.body.links[0].template) {
+              const template: string = data.body.links[0].template;
+              url = template.replace('{acctpart}', req.handle);
+            } else {
+              url = `https://${req.domain}/${req.handle}`;
+            }
+            this.getPayId(url)
+              .then(data => {
+                return resolve(data);
+              })
+              .catch(err => {
+                return reject(err);
+              });
           }
         }
       );
