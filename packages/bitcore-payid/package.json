@@ -22,8 +22,7 @@
   },
   "dependencies": {
     "@payid-org/utils": "^1.2.0",
-    "bitcore-lib": "^8.22.2",
-    "jose": "^2.0.2"
+    "bitcore-lib": "^8.22.2"
   },
   "devDependencies": {
     "@types/mocha": "^8.0.3",

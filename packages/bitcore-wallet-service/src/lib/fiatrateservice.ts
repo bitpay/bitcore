@@ -18,8 +18,11 @@ const fiatCurrencies = [
   { code: 'NGN', name: 'Nigerian Naira' },
   { code: 'BRL', name: 'Brazilian Real' },
   { code: 'ARS', name: 'Argentine Peso' },
-  { code: 'AUD', name: 'Australian Dollar' }
+  { code: 'AUD', name: 'Australian Dollar' },
+  { code: 'JPY', name: 'Japanese Yen' },
+  { code: 'NZD', name: 'New Zealand Dollar' }
 ];
+
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
   defaultProvider: any;
