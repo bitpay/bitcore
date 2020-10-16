@@ -1267,7 +1267,7 @@ describe('client API', function() {
         var path = "m/45'";
         var signatures = key.sign(path, txp);
 
-        // This is a GOOD tests, since bitcore ONLY accept VALID signatures
+        // This is a GOOD test, since bitcore ONLY accept VALID signatures
         signatures.length.should.be.equal(utxos.length);
       });
       it('should sign BIP44 P2PKH correctly', () => {

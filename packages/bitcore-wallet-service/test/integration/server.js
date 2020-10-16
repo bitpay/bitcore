@@ -5754,6 +5754,66 @@ describe('Wallet service', function() {
       });
     });
 
+    /// CASHADDR MODE
+    it('should create a BCH tx proposal with cashaddr outputs (w/o prefix) and return CASH addr', function(done) {
+
+      let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
+      let cashAddr = BCHAddressTranslator.translate(copayAddr, 'cashaddr');
+      let amount = 0.8 * 1e8;
+      helpers.createAndJoinWallet(1, 1, {
+        coin: 'bch',
+      }, function(s, w) {
+        helpers.stubUtxos(s, w, [1, 2], function() {
+          var txOpts = {
+            outputs: [{
+              toAddress: copayAddr,
+              amount: amount,
+            }],
+            message: 'some message',
+            customData: 'some custom data',
+            feePerKb: 123e2,
+            noCashAddr: true,
+          };
+          s.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            tx.walletM.should.equal(1);
+            tx.walletN.should.equal(1);
+            tx.requiredRejections.should.equal(1);
+            tx.requiredSignatures.should.equal(1);
+            tx.isAccepted().should.equal.false;
+            tx.isRejected().should.equal.false;
+            tx.isPending().should.equal.true;
+            tx.isTemporary().should.equal.true;
+            tx.outputs.should.deep.equal([{
+              toAddress: copayAddr,
+              amount: amount,
+            }]);
+            tx.amount.should.equal(helpers.toSatoshi(0.8));
+            tx.feePerKb.should.equal(123e2);
+            should.not.exist(tx.feeLevel);
+            var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
+            publishOpts.noCashAddr = false;
+            s.publishTx(publishOpts, function(err, txp) {
+              txp.changeAddress.address.should.equal('qz0d6gueltx0feta7z9777yk97sz9p6peu98mg5vac');
+              s.getPendingTxs({ noCashAddr: false }, function(err, txs) {
+                should.not.exist(err);
+                txs.length.should.equal(1);
+                txs[0].changeAddress.address.should.equal('qz0d6gueltx0feta7z9777yk97sz9p6peu98mg5vac');
+                txs[0].outputs.should.deep.equal([{
+                  toAddress: cashAddr,
+                  amount: amount,
+                }]);
+
+                done();
+              });
+            });
+          });
+        });
+      });
+    });
+
+
     it('should create a BCH tx proposal with cashaddr outputs (w/ prefix) and return Copay addr', function(done) {
 
       let copayAddr = 'CPrtPWbp8cCftTQu5fzuLG5zPJNDHMMf8X';
@@ -5793,6 +5853,7 @@ describe('Wallet service', function() {
             should.not.exist(tx.feeLevel);
 
             var publishOpts = helpers.getProposalSignatureOpts(tx, TestData.copayers[0].privKey_1H_0);
+            publishOpts.noCashAddr = true;
             s.publishTx(publishOpts, function(err, txp) {
               txp.changeAddress.address.should.equal('CWwtFMy3GMr5qMEtvEdUDjePfShzkJXCnh');
               s.getPendingTxs({ noCashAddr: true }, function(err, txs) {

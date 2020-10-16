@@ -2312,10 +2312,9 @@ export class WalletService {
                 next => {
                   if (opts.dryRun) return next();
 
-                  if (txp.coin == 'bch') {
-                    if (opts.noCashAddr && txp.changeAddress) {
-                      txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, 'copay');
-                    }
+                  if (txp.coin == 'bch' && txp.changeAddress) {
+                    const format = opts.noCashAddr ? 'copay' : 'cashaddr';
+                    txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, format);
                   }
 
                   this.storage.storeTx(wallet.id, txp, next);
@@ -2386,10 +2385,9 @@ export class WalletService {
               if (err) return cb(err);
 
               this._notifyTxProposalAction('NewTxProposal', txp, () => {
-                if (opts.noCashAddr && txp.coin == 'bch') {
-                  if (txp.changeAddress) {
-                    txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, 'copay');
-                  }
+                if (txp.coin == 'bch' && txp.changeAddress) {
+                  const format = opts.noCashAddr ? 'copay' : 'cashaddr';
+                  txp.changeAddress.address = BCHAddressTranslator.translate(txp.changeAddress.address, format);
                 }
                 return cb(null, txp);
               });
@@ -2869,19 +2867,19 @@ export class WalletService {
               return txp.status == 'broadcasted';
             });
 
-            if (opts.noCashAddr && txps[0] && txps[0].coin == 'bch') {
+            if (txps[0] && txps[0].coin == 'bch') {
+              const format = opts.noCashAddr ? 'copay' : 'cashaddr';
               _.each(txps, x => {
                 if (x.changeAddress) {
-                  x.changeAddress.address = BCHAddressTranslator.translate(x.changeAddress.address, 'copay');
+                  x.changeAddress.address = BCHAddressTranslator.translate(x.changeAddress.address, format); 
                 }
                 _.each(x.outputs, x => {
                   if (x.toAddress) {
-                    x.toAddress = BCHAddressTranslator.translate(x.toAddress, 'copay');
+                    x.toAddress = BCHAddressTranslator.translate(x.toAddress, format);
                   }
                 });
               });
             }
-
             return cb(err, txps);
           }
         );
