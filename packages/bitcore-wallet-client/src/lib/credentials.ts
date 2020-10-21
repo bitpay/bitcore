@@ -229,7 +229,7 @@ export class Credentials {
     x.addressType = x.addressType || Constants.SCRIPT_TYPES.P2SH;
     x.account = x.account || 0;
 
-    $.checkState(x.xPrivKey || x.xPubKey || x.xPrivKeyEncrypted, 'invalid input');
+    $.checkState(x.xPrivKey || x.xPubKey || x.xPrivKeyEncrypted, 'Failed State: x.xPrivKey | x.xPubkey | x.xPrivKeyEncrypted at fromObj');
     return x;
   }
 

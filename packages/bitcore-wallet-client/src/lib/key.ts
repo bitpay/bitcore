@@ -151,7 +151,7 @@ export class Key {
         this.use0forBCH = x.use0forBCH;
         this.use44forMultisig = x.use44forMultisig;
  
-        $.checkState(this.#xPrivKey || this.#xPrivKeyEncrypted, 'invalid input');
+        $.checkState(this.#xPrivKey || this.#xPrivKeyEncrypted, 'Failed state:  #xPrivKey || #xPrivKeyEncrypted at Key constructor');
         break;
 
       case 'objectV1':
