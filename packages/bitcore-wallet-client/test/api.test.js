@@ -997,7 +997,7 @@ describe('client API', function() {
 
         (() => {
           var t = x.buildTx(txp);
-        }).should.throw('Illegal State');
+        }).should.throw('Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE at buildTx');
 
         x.newBitcoreTransaction = x;
       });

@@ -28,7 +28,10 @@ export class AddressManager {
 
     x.version = 2;
     x.derivationStrategy = opts.derivationStrategy || Constants.DERIVATION_STRATEGIES.BIP45;
-    $.checkState(Utils.checkValueInCollection(x.derivationStrategy, Constants.DERIVATION_STRATEGIES));
+    $.checkState(
+      Utils.checkValueInCollection(x.derivationStrategy, Constants.DERIVATION_STRATEGIES),
+      'Failed state: x.derivation Stategy not in DERIVATION_STRATEGIES at <create()>'
+    );
 
     x.receiveAddressIndex = 0;
     x.changeAddressIndex = 0;

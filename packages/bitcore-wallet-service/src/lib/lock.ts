@@ -55,7 +55,7 @@ export class Lock {
   }
 
   runLocked(token, opts, cb, task) {
-    $.shouldBeDefined(token);
+    $.shouldBeDefined(token, 'Failed state: token undefined at <runLocked()>');
 
     this.acquire(token, opts, (err, release) => {
       if (err == 'LOCKED') return cb(Errors.WALLET_BUSY);

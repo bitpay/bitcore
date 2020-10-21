@@ -125,7 +125,7 @@ export class FiatRateService {
   }
 
   getRate(opts, cb) {
-    $.shouldBeFunction(cb);
+    $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRate()>');
 
     opts = opts || {};
 
@@ -157,7 +157,7 @@ export class FiatRateService {
   }
 
   getRates(opts, cb) {
-    $.shouldBeFunction(cb);
+    $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRates()>');
 
     opts = opts || {};
     const rates = [];
