@@ -54,7 +54,7 @@ export class ETHTxProvider {
     const { tx, key } = params;
     // To complain with new ethers
     let k = key.privKey;
-    if (k.substr(0,2) != '0x') {
+    if (k.substr(0, 2) != '0x') {
       k = '0x' + k;
     }
 
