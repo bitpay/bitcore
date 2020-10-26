@@ -5,7 +5,7 @@
     "printWidth": 120
   },
   "scripts": {
-    "build": "docker build -t bitcore-node .",
+    "build": "docker build -t bitcore-node . ",
     "watch": "./node_modules/.bin/lerna run watch --parallel",
     "postinstall": "npm run bootstrap && npm run compile",
     "bootstrap": "./node_modules/.bin/lerna bootstrap",
