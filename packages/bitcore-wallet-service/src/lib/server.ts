@@ -2871,7 +2871,7 @@ export class WalletService {
               const format = opts.noCashAddr ? 'copay' : 'cashaddr';
               _.each(txps, x => {
                 if (x.changeAddress) {
-                  x.changeAddress.address = BCHAddressTranslator.translate(x.changeAddress.address, format); 
+                  x.changeAddress.address = BCHAddressTranslator.translate(x.changeAddress.address, format);
                 }
                 _.each(x.outputs, x => {
                   if (x.toAddress) {
