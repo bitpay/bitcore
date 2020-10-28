@@ -9,6 +9,8 @@ import {
 import Bitcore from 'bitcore-lib';
 import * as errors from './errors';
 import { GeneralJWS, IVerifyPayId, JWK } from './index.d';
+import Signer from './lib/sign';
+import Verifier from './lib/verify';
 
 class PayId {
   constructor() {}
@@ -26,7 +28,7 @@ class PayId {
   sign(payId: string, address: string, currency: string, identityKey: string | Buffer, environment: string = 'mainnet'): GeneralJWS {
     let jwk = this._convertIdentityKeyToJWK(identityKey);
 
-    const signingParams = new IdentityKeySigningParams(jwk, getDefaultAlgorithm(jwk));
+    // const signingParams = new IdentityKeySigningParams(jwk, getDefaultAlgorithm(jwk));
     const addy = {
       paymentNetwork: currency,
       environment,
@@ -36,8 +38,9 @@ class PayId {
       }
     };
 
-    const signed = signWithKeys(payId, addy, [signingParams]);
-    return signed;
+    const sig = Signer.sign({ payId, payIdAddress: addy }, 'ES256K', jwk);
+    // const signed = signWithKeys(payId, addy, [signingParams]);
+    return sig;
   }
 
   /**
@@ -51,7 +54,7 @@ class PayId {
    *      protected: 'base64StringGeneratedAtTheSignatureRunTime'
    *    }
    */
-  verify(payId: string, params: IVerifyPayId | GeneralJWS): boolean {
+  verify(payId: string, params: IVerifyPayId | GeneralJWS, identityKey): boolean {
     let payload: GeneralJWS = params as GeneralJWS;
 
     if ((params as IVerifyPayId).address) {
@@ -74,7 +77,8 @@ class PayId {
       };
     }
 
-    const retval = verifySignedAddress(payId, JSON.stringify(payload));
+    // const retval_bak = verifySignedAddress(payId, JSON.stringify(payload));
+    const retval = Verifier.verify(payId, payload);
     return retval;
   }
 
