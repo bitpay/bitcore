@@ -16,7 +16,7 @@ const Utils = require('./common/utils');
 const Defaults = require('./common/defaults');
 const Constants = require('./common/constants');
 const sjcl = require('sjcl');
-const google = require('googleapis');
+const {google} = require('googleapis');
 const config = require('../config')
 
 const PUSHNOTIFICATIONS_TYPES = {
@@ -448,7 +448,7 @@ export class PushNotificationsService {
     };
   }
 
-  async _getAccessToken() {
+  _getAccessToken() {
     const MESSAGING_SCOPE = 'https://www.googleapis.com/auth/firebase.messaging';
     const SCOPES = [MESSAGING_SCOPE];
 
@@ -471,8 +471,8 @@ export class PushNotificationsService {
     });
   }
 
-  async _makeRequest(opts, cb) {
-    let accessToken = await this._getAccessToken();
+   _makeRequest(opts, cb) {
+    let accessToken = this._getAccessToken();
     this.request(
       {
         url: this.pushServerUrl,
