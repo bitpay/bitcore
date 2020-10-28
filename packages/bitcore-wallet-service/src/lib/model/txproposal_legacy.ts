@@ -227,7 +227,7 @@ export class TxProposalLegacy {
   }
 
   setBroadcasted() {
-    $.checkState(this.txid);
+    $.checkState(this.txid, 'Failed state: this.txid at setBroadcasted()');
     this.status = 'broadcasted';
     this.broadcastedOn = Math.floor(Date.now() / 1000);
   }

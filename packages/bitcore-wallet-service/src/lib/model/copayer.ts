@@ -119,7 +119,7 @@ export class Copayer {
   }
 
   createAddress(wallet, isChange) {
-    $.checkState(wallet.isComplete());
+    $.checkState(wallet.isComplete(), 'Failed state: wallet incomplete at <createAddress()>');
 
     const path = this.addressManager.getNewAddressPath(isChange);
     const address = Address.derive(

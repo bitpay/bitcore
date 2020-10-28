@@ -5,7 +5,6 @@ var _ = require('lodash');
 var $ = require('../util/preconditions');
 var BufferUtil = require('../util/buffer');
 var JSUtil = require('../util/js');
-const { sign } = require('./ecdsa');
 
 var Signature = function Signature(r, s, isSchnorr) {
   if (!(this instanceof Signature)) {

@@ -1,11 +1,11 @@
 'use strict';
 
 var $ = require('preconditions').singleton();
+import { BitcoreLib, BitcoreLibCash, Deriver, Transactions } from 'crypto-wallet-core';
 import * as _ from 'lodash';
+import 'source-map-support/register';
 import { Constants, Utils } from './common';
 import { Credentials } from './credentials';
-import { BitcoreLib, BitcoreLibCash, Deriver, Transactions } from 'crypto-wallet-core';
-import 'source-map-support/register';
 
 var Bitcore = BitcoreLib;
 var Mnemonic = require('bitcore-mnemonic');
@@ -80,7 +80,7 @@ export class Key {
     useLegacyCoinType?: boolean,
     nonCompliantDerivation?: boolean,
     language?: string,
-  } = { seedType: 'new' } ,) {
+  } = { seedType: 'new' } ) {
 
     this.#version = 1;
     this.id = Uuid.v4();
@@ -151,7 +151,7 @@ export class Key {
         this.use0forBCH = x.use0forBCH;
         this.use44forMultisig = x.use44forMultisig;
  
-        $.checkState(this.#xPrivKey || this.#xPrivKeyEncrypted, 'invalid input');
+        $.checkState(this.#xPrivKey || this.#xPrivKeyEncrypted, 'Failed state:  #xPrivKey || #xPrivKeyEncrypted at Key constructor');
         break;
 
       case 'objectV1':

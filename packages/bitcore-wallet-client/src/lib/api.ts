@@ -97,7 +97,7 @@ export class API extends EventEmitter {
   }
 
   initialize(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(this.credentials, 'Failed state: this.credentials at <initialize()>');
 
     this.notificationIncludeOwn = !!opts.notificationIncludeOwn;
     this._initNotifications(opts);
@@ -318,7 +318,7 @@ export class API extends EventEmitter {
   // * @param {Object} opts
   // */
   toObj() {
-    $.checkState(this.credentials);
+    $.checkState(this.credentials, 'Failed state: this.credentials at <toObj()>');
     return this.credentials.toObj();
   }
 
@@ -328,7 +328,7 @@ export class API extends EventEmitter {
   // * @param {Object} opts
   // */
   toString(opts) {
-    $.checkState(this.credentials);
+    $.checkState(this.credentials, 'Failed state: this.credentials at <toString()>');
     $.checkArgument(!this.noSign, 'no Sign not supported');
     $.checkArgument(!this.password, 'password not supported');
 
@@ -491,7 +491,7 @@ export class API extends EventEmitter {
     }
     opts = opts || {};
 
-    $.checkState(this.credentials);
+    $.checkState(this.credentials, 'Failed state: this.credentials at <openWallet()>');
     if (this.credentials.isComplete() && this.credentials.hasWalletInfo()) return cb(null, true);
 
     var qs = [];
@@ -604,8 +604,8 @@ export class API extends EventEmitter {
   }
 
   _addSignaturesToBitcoreTxBitcoin(txp, t, signatures, xpub) {
-    $.checkState(txp.coin);
-    $.checkState(txp.signingMethod);
+    $.checkState(txp.coin, 'Failed state: txp.coin undefined at _addSignaturesToBitcoreTxBitcoin');
+    $.checkState(txp.signingMethod, 'Failed state: txp.signingMethod undefined at _addSignaturesToBitcoreTxBitcoin');
     const bitcore = Bitcore_[txp.coin];
     if (signatures.length != txp.inputs.length) throw new Error('Number of signatures does not match number of inputs');
 
@@ -660,7 +660,7 @@ export class API extends EventEmitter {
   }
 
   _applyAllSignatures(txp, t) {
-    $.checkState(txp.status == 'accepted');
+    $.checkState(txp.status == 'accepted', 'Failed state: txp.status at _applyAllSignatures');
 
     var sigs = this._getCurrentSignatures(txp);
     _.each(sigs, x => {
@@ -919,7 +919,7 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Returns the wallet
   // */
   recreateWallet(cb) {
-    $.checkState(this.credentials);
+    $.checkState(this.credentials, 'Failed state: this.credentials at <recreateWallet()>');
     $.checkState(this.credentials.isComplete());
     $.checkState(this.credentials.walletPrivKey);
     // $.checkState(this.credentials.hasWalletInfo());
@@ -1061,7 +1061,7 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Returns error or an array of notifications
   // */
   getNotifications(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(this.credentials, 'Failed state: this.credentials at <getNotifications()>');
 
     opts = opts || {};
 
@@ -1093,7 +1093,7 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Returns error or an object with status information
   // */
   getStatus(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(this.credentials, 'Failed state: this.credentials at <getStatus()>');
 
     if (!cb) {
       cb = opts;
@@ -1137,7 +1137,7 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or object
   // */
   getPreferences(cb) {
-    $.checkState(this.credentials);
+    $.checkState(this.credentials, 'Failed state: this.credentials at <getPreferences()>');
     $.checkArgument(cb);
 
     this.request.get('/v1/preferences/', (err, preferences) => {
@@ -1154,7 +1154,7 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or object
   // */
   savePreferences(preferences, cb) {
-    $.checkState(this.credentials);
+    $.checkState(this.credentials,'Failed state: this.credentials at <savePreferences()>');
     $.checkArgument(cb);
 
     this.request.put('/v1/preferences/', preferences, cb);
@@ -1199,7 +1199,7 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Return error or the list of utxos
   // */
   getUtxos(opts, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <getUtxos()>');
     opts = opts || {};
     var url = '/v1/utxos/';
     if (opts.addresses) {
@@ -1222,7 +1222,7 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Return error or the list of coins
   // */
   getCoinsForTx(opts, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <getCoinsForTx()>');
     opts = opts || {};
     var url = '/v1/txcoins/';
     url +=
@@ -1272,7 +1272,7 @@ export class API extends EventEmitter {
   // * @param {String} baseUrl - Optional. ONLY FOR TESTING
   // */
   createTxProposal(opts, cb, baseUrl) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <createTxProposal()>');
     $.checkState(this.credentials.sharedEncryptingKey);
     $.checkArgument(opts);
 
@@ -1305,7 +1305,7 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Return error or null
   // */
   publishTxProposal(opts, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <publishTxProposal()>');
     $.checkArgument(opts).checkArgument(opts.txp);
 
     $.checkState(parseInt(opts.txp.version) >= 3);
@@ -1333,7 +1333,7 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Return error or the address
   // */
   createAddress(opts, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <createAddress()>');
 
     if (!cb) {
       cb = opts;
@@ -1410,7 +1410,7 @@ export class API extends EventEmitter {
 
     opts = opts || {};
 
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <getBalance()>');
 
     var args = [];
     if (opts.coin) {
@@ -1442,7 +1442,7 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or array of transactions proposals
   // */
   getTxProposals(opts, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <getTxProposals()>');
 
     this.request.get('/v2/txproposals/', (err, txps) => {
       if (err) return cb(err);
@@ -1536,7 +1536,7 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or object
   // */
   pushSignatures(txp, signatures, cb, base) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <pushSignatures()>');
     $.checkArgument(txp.creatorId);
 
     if (_.isEmpty(signatures)) {
@@ -1796,7 +1796,7 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or object
   // */
   rejectTxProposal(txp, reason, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <rejectTxProposal()>');
     $.checkArgument(cb);
 
     var url = '/v1/txproposals/' + txp.id + '/rejections/';
@@ -1820,7 +1820,7 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or txid
   // */
   broadcastRawTx(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(this.credentials, 'Failed state: this.credentials at <broadcastRawTx()>');
     $.checkArgument(cb);
 
     opts = opts || {};
@@ -1849,7 +1849,7 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or object
   // */
   broadcastTxProposal(txp, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <broadcastTxProposal()>');
 
     this.getPayProV2(txp)
       .then(paypro => {
@@ -1941,7 +1941,7 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or empty
   // */
   removeTxProposal(txp, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <removeTxProposal()>');
 
     var url = '/v1/txproposals/' + txp.id;
     this.request.delete(url, err => {
@@ -1962,7 +1962,7 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or array of transactions
   // */
   getTxHistory(opts, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <getTxHistory()>');
 
     var args = [];
     if (opts) {
@@ -1992,7 +1992,7 @@ export class API extends EventEmitter {
   // * @return {Callback} cb - Return error or transaction
   // */
   getTx(id, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <getTx()>');
 
     var url = '/v1/txproposals/' + id;
     this.request.get(url, (err, txp) => {
@@ -2012,7 +2012,7 @@ export class API extends EventEmitter {
   // * @param {Callback} cb
   // */
   startScan(opts, cb) {
-    $.checkState(this.credentials && this.credentials.isComplete());
+    $.checkState(this.credentials && this.credentials.isComplete(), 'Failed state: this.credentials at <startScan()>');
 
     var args = {
       includeCopayerBranches: opts.includeCopayerBranches
@@ -2036,9 +2036,9 @@ export class API extends EventEmitter {
   // * return the accesses Wallet and the requestPrivateKey
   // */
   addAccess(opts, cb) {
-    $.checkState(this.credentials);
-    $.shouldBeString(opts.requestPrivKey, 'no requestPrivKey at addAccess() ');
-    $.shouldBeString(opts.signature, 'no signature at addAccess()');
+    $.checkState(this.credentials, 'Failed state: no this.credentials at <addAccess()>');
+    $.shouldBeString(opts.requestPrivKey, 'Failed state: no requestPrivKey at addAccess() ');
+    $.shouldBeString(opts.signature, 'Failed state: no signature at addAccess()');
 
     opts = opts || {};
     var requestPubKey = new Bitcore.PrivateKey(opts.requestPrivKey).toPublicKey().toString();
@@ -2067,7 +2067,7 @@ export class API extends EventEmitter {
   // * @param {string} opts.txid - The txid to associate this note with
   // */
   getTxNote(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(this.credentials, 'Failed state: this.credentials at <getTxNote()>');
 
     opts = opts || {};
     this.request.get('/v1/txnotes/' + opts.txid + '/', (err, note) => {
@@ -2084,7 +2084,7 @@ export class API extends EventEmitter {
   // * @param {string} opts.body - The contents of the note
   // */
   editTxNote(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(this.credentials, 'Failed state: this.credentials at <editTxNote()>');
 
     opts = opts || {};
     if (opts.body) {
@@ -2103,7 +2103,7 @@ export class API extends EventEmitter {
   // * @param {string} opts.minTs - The starting timestamp
   // */
   getTxNotes(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(this.credentials, 'Failed state: this.credentials at <getTxNotes()>');
 
     opts = opts || {};
     var args = [];
@@ -2279,7 +2279,7 @@ export class API extends EventEmitter {
   // * @returns {Callback} cb - Returns error or an object with status information
   // */
   getStatusByIdentifier(opts, cb) {
-    $.checkState(this.credentials);
+    $.checkState(this.credentials, 'Failed state: this.credentials at <getStatusByIdentifier()>');
 
     opts = opts || {};
 
@@ -2427,7 +2427,7 @@ export class API extends EventEmitter {
     if (newKeys.length > 0) {
       // Find and merge dup keys.
       let credGroups = _.groupBy(newCrededentials, x => {
-        $.checkState(x.xPubKey, 'no xPubKey at credentials!');
+        $.checkState(x.xPubKey, 'Failed state: no xPubKey at credentials!');
         let xpub = new Bitcore.HDPublicKey(x.xPubKey);
         let fingerPrint = xpub.fingerPrint.toString('hex');
         return fingerPrint;

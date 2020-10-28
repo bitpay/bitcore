@@ -91,7 +91,7 @@ export class BlockchainMonitor {
                 userAgent: WalletService.getServiceVersion()
               });
             }
-            $.checkState(explorer);
+            $.checkState(explorer, 'Failed State: explorer undefined at <start()>');
 
             this._initExplorer(pair.coin, pair.network, explorer);
             this.explorers[pair.coin][pair.network] = explorer;
