@@ -18,8 +18,11 @@ const fiatCurrencies = [
   { code: 'NGN', name: 'Nigerian Naira' },
   { code: 'BRL', name: 'Brazilian Real' },
   { code: 'ARS', name: 'Argentine Peso' },
-  { code: 'AUD', name: 'Australian Dollar' }
+  { code: 'AUD', name: 'Australian Dollar' },
+  { code: 'JPY', name: 'Japanese Yen' },
+  { code: 'NZD', name: 'New Zealand Dollar' }
 ];
+
 export class FiatRateService {
   request: request.RequestAPI<any, any, any>;
   defaultProvider: any;
@@ -122,7 +125,7 @@ export class FiatRateService {
   }
 
   getRate(opts, cb) {
-    $.shouldBeFunction(cb);
+    $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRate()>');
 
     opts = opts || {};
 
@@ -154,7 +157,7 @@ export class FiatRateService {
   }
 
   getRates(opts, cb) {
-    $.shouldBeFunction(cb);
+    $.shouldBeFunction(cb, 'Failed state: type error (cb not a function) at <getRates()>');
 
     opts = opts || {};
     const rates = [];

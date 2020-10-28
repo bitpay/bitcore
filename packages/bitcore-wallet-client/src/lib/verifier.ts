@@ -23,7 +23,7 @@ export class Verifier {
    * @returns {Boolean} true or false
    */
   static checkAddress(credentials, address) {
-    $.checkState(credentials.isComplete());
+    $.checkState(credentials.isComplete(), 'Failed state: credentials at <checkAddress>');
 
     var local = Utils.deriveAddress(
       address.type || credentials.addressType,
@@ -44,7 +44,7 @@ export class Verifier {
    * @returns {Boolean} true or false
    */
   static checkCopayers(credentials, copayers) {
-    $.checkState(credentials.walletPrivKey);
+    $.checkState(credentials.walletPrivKey, 'Failed state: credentials at <checkCopayers>');
     var walletPubKey = Bitcore.PrivateKey.fromString(credentials.walletPrivKey)
       .toPublicKey()
       .toString();
@@ -136,7 +136,7 @@ export class Verifier {
 
   static checkTxProposalSignature(credentials, txp) {
     $.checkArgument(txp.creatorId);
-    $.checkState(credentials.isComplete());
+    $.checkState(credentials.isComplete(), 'Failed state: credentials at checkTxProposalSignature');
 
     var creatorKeys = _.find(credentials.publicKeyRing, item => {
       if (Utils.xPubToCopayerId(txp.coin || 'btc', item.xPubKey) === txp.creatorId) return true;

@@ -187,7 +187,7 @@ export class Wallet {
   }
 
   updateBEKeys() {
-    $.checkState(this.isComplete());
+    $.checkState(this.isComplete(), 'Failed state: wallet incomplete at <updateBEKeys()>');
 
     const chain = ChainService.getChain(this.coin).toLowerCase();
     const bitcore = Bitcore[chain];
@@ -215,7 +215,7 @@ export class Wallet {
   }
 
   addCopayer(copayer) {
-    $.checkState(copayer.coin == this.coin);
+    $.checkState(copayer.coin == this.coin, 'Failed state: copayer.coin not equal to this.coin at <addCopayer()>');
 
     this.copayers.push(copayer);
     if (this.copayers.length < this.n) return;
@@ -225,7 +225,10 @@ export class Wallet {
   }
 
   addCopayerRequestKey(copayerId, requestPubKey, signature, restrictions, name) {
-    $.checkState(this.copayers.length == this.n);
+    $.checkState(
+      this.copayers.length == this.n,
+      'Failed state: this.copayers.length == this.n at addCopayerRequestKey()'
+    );
 
     const c: any = this.getCopayer(copayerId);
 
@@ -252,7 +255,7 @@ export class Wallet {
   }
 
   createAddress(isChange, step) {
-    $.checkState(this.isComplete());
+    $.checkState(this.isComplete(), 'Failed state: this.isComplete() at <createAddress()>');
 
     const path = this.addressManager.getNewAddressPath(isChange, step);
     logger.debug('Deriving addr:' + path);
@@ -272,7 +275,7 @@ export class Wallet {
 
   /// Only for power scan
   getSkippedAddress() {
-    $.checkState(this.isComplete());
+    $.checkState(this.isComplete(), 'Failed state: this.isComplete() at <getSkipeedAddress()>');
 
     const next = this.addressManager.getNextSkippedPath();
     if (!next) return;
