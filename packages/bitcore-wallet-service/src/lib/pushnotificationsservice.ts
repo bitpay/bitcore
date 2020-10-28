@@ -16,8 +16,8 @@ const Utils = require('./common/utils');
 const Defaults = require('./common/defaults');
 const Constants = require('./common/constants');
 const sjcl = require('sjcl');
-const {google} = require('googleapis');
-const config = require('../config')
+const { google } = require('googleapis');
+const config = require('../config');
 
 const PUSHNOTIFICATIONS_TYPES = {
   NewCopayer: {
@@ -171,8 +171,7 @@ export class PushNotificationsService {
                           ? notification.data.multisigContractAddress
                           : null;
                       return {
-                        message: 
-                          {
+                        message: {
                           topic: sub.token,
                           priority: 'high',
                           restricted_package_name: sub.packageName,
@@ -454,13 +453,7 @@ export class PushNotificationsService {
 
     return new Promise(function(resolve, reject) {
       const key = require(config.fcm_google_credentials.GOOGLE_APP_CREDENTIALS);
-      const jwtClient = new google.auth.JWT(
-        key.client_email,
-        null,
-        key.private_key,
-        SCOPES,
-        null
-      );
+      const jwtClient = new google.auth.JWT(key.client_email, null, key.private_key, SCOPES, null);
       jwtClient.authorize(function(err, tokens) {
         if (err) {
           reject(err);
@@ -471,7 +464,7 @@ export class PushNotificationsService {
     });
   }
 
-   _makeRequest(opts, cb) {
+  _makeRequest(opts, cb) {
     let accessToken = this._getAccessToken();
     this.request(
       {

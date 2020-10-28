@@ -20,7 +20,7 @@ var helpers = require('./helpers');
 const TOKENS = ['0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48', '0x8E870D67F660D95d5be530380D0eC0bd388289E1', '0x056Fd409E1d7A124BD7017459dFEa2F387b6d5Cd'];
 
 
-describe.only('Push notifications', function() {
+describe('Push notifications', function() {
   var server, wallet, requestStub, pushNotificationsService, walletId;
 
 
