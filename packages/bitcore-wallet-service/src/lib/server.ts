@@ -151,7 +151,7 @@ export class WalletService {
    * @param {Callback} cb
    */
   static initialize(opts, cb) {
-    $.shouldBeFunction(cb);
+    $.shouldBeFunction(cb, '');
 
     opts = opts || {};
     blockchainExplorer = opts.blockchainExplorer;
@@ -376,7 +376,7 @@ export class WalletService {
   }
 
   _runLocked(cb, task, waitTime?: number) {
-    $.checkState(this.walletId);
+    $.checkState(this.walletId, 'Failed state: this.walletId undefined at <_runLocked()>');
 
     this.lock.runLocked(this.walletId, { waitTime }, cb, task);
   }
@@ -813,7 +813,7 @@ export class WalletService {
     const walletId = this.walletId || data.walletId;
     const copayerId = this.copayerId || data.copayerId;
 
-    $.checkState(walletId);
+    $.checkState(walletId, 'Failed state: walletId undefined at <_notify()>');
 
     const notification = Notification.create({
       type,
@@ -2660,7 +2660,7 @@ export class WalletService {
   }
 
   _processBroadcast(txp, opts, cb) {
-    $.checkState(txp.txid);
+    $.checkState(txp.txid, 'Failed state: txp.txid undefined at <_processBroadcast()>');
     opts = opts || {};
 
     txp.setBroadcasted();
@@ -2871,7 +2871,7 @@ export class WalletService {
               const format = opts.noCashAddr ? 'copay' : 'cashaddr';
               _.each(txps, x => {
                 if (x.changeAddress) {
-                  x.changeAddress.address = BCHAddressTranslator.translate(x.changeAddress.address, format); 
+                  x.changeAddress.address = BCHAddressTranslator.translate(x.changeAddress.address, format);
                 }
                 _.each(x.outputs, x => {
                   if (x.toAddress) {

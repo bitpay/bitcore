@@ -178,7 +178,7 @@ export class Utils {
         bitcoreAddress = bitcore.Address.fromPublicKey(publicKeys[0], network, 'witnesspubkeyhash');
         break;
       case Constants.SCRIPT_TYPES.P2PKH:
-        $.checkState(_.isArray(publicKeys) && publicKeys.length == 1);
+        $.checkState(_.isArray(publicKeys) && publicKeys.length == 1, 'publicKeys array undefined');
         if (Constants.UTXO_COINS.includes(coin)) {
           bitcoreAddress = bitcore.Address.fromPublicKey(publicKeys[0], network);
         } else {
@@ -282,7 +282,7 @@ export class Utils {
         t.setVersion(1);
       }
 
-      $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType));
+      $.checkState(_.includes(_.values(Constants.SCRIPT_TYPES), txp.addressType), 'Failed state: addressType not in SCRIPT_TYPES');
 
       switch (txp.addressType) {
         case Constants.SCRIPT_TYPES.P2WSH:
@@ -323,7 +323,7 @@ export class Utils {
         var outputOrder = _.reject(txp.outputOrder, order => {
           return order >= t.outputs.length;
         });
-        $.checkState(t.outputs.length == outputOrder.length);
+        $.checkState(t.outputs.length == outputOrder.length, 'Failed state: t.ouputs.length == outputOrder.length at buildTx()');
         t.sortOutputs(outputs => {
           return _.map(outputOrder, i => {
             return outputs[i];
@@ -347,8 +347,8 @@ export class Utils {
         0
       );
 
-      $.checkState(totalInputs - totalOutputs >= 0);
-      $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE);
+      $.checkState(totalInputs - totalOutputs >= 0, 'Failed state: totalInputs - totalOutputs >= 0 at buildTx');
+      $.checkState(totalInputs - totalOutputs <= Defaults.MAX_TX_FEE, 'Failed state: totalInputs - totalOutputs <= Defaults.MAX_TX_FEE at buildTx');
 
       return t;
     } else {
