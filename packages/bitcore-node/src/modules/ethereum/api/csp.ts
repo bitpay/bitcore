@@ -239,7 +239,7 @@ export class ETHStateProvider extends InternalStateProvider implements IChainSta
     if (!args.tokenAddress) {
       const query = { $or: [
           { chain, network, from: address },
-          { chain, network, from: to },
+          { chain, network, to: address },
       ]};
       Storage.apiStreamingFind(EthTransactionStorage, query, { limit, since, paging: '_id' }, req!, res!);
     } else {
