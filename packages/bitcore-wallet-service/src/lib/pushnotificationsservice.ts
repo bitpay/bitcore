@@ -93,7 +93,7 @@ export class PushNotificationsService {
     this.defaultUnit = opts.pushNotificationsOpts.defaultUnit || 'btc';
     this.subjectPrefix = opts.pushNotificationsOpts.subjectPrefix || '';
     this.pushServerUrl = opts.pushNotificationsOpts.pushServerUrl;
-    
+
     async.parallel(
       [
         done => {
@@ -167,7 +167,7 @@ export class PushNotificationsService {
                           : null;
                       return {
                         message: {
-                          topic: sub.token,
+                          token: sub.token,
                           priority: 'high',
                           restricted_package_name: sub.packageName,
                           notification: {
