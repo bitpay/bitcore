@@ -51,7 +51,6 @@ export interface IPushNotificationService {
   subjectPrefix: string;
   pushServerUrl: string;
   availableLanguages: string;
-  authorizationKey: string;
   messageBroker: any;
 }
 
@@ -63,7 +62,6 @@ export class PushNotificationsService {
   subjectPrefix: string;
   pushServerUrl: string;
   availableLanguages: string;
-  authorizationKey: string;
   storage: Storage;
   messageBroker: any;
 
@@ -95,10 +93,7 @@ export class PushNotificationsService {
     this.defaultUnit = opts.pushNotificationsOpts.defaultUnit || 'btc';
     this.subjectPrefix = opts.pushNotificationsOpts.subjectPrefix || '';
     this.pushServerUrl = opts.pushNotificationsOpts.pushServerUrl;
-    this.authorizationKey = opts.pushNotificationsOpts.authorizationKey;
-
-    if (!this.authorizationKey) return cb(new Error('Missing authorizationKey attribute in configuration.'));
-
+    
     async.parallel(
       [
         done => {
@@ -452,7 +447,7 @@ export class PushNotificationsService {
     const SCOPES = [MESSAGING_SCOPE];
 
     return new Promise(function(resolve, reject) {
-      const key = require(config.fcm_google_credentials.GOOGLE_APP_CREDENTIALS);
+      const key = require(config.pushNotificationsOpts.fcmGoogleCredentialsPath);
       const jwtClient = new google.auth.JWT(key.client_email, null, key.private_key, SCOPES, null);
       jwtClient.authorize(function(err, tokens) {
         if (err) {

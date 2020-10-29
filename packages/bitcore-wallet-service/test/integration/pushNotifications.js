@@ -82,7 +82,7 @@ describe('Push notifications', function() {
                 defaultUnit: 'btc',
                 subjectPrefix: '',
                 pushServerUrl: 'http://localhost:8000',
-                authorizationKey: 'secret',
+                fcmGoogleCredentialsPath: 'path_to_service_account.json'
               },
             }, function(err) {
               should.not.exist(err);
@@ -238,7 +238,7 @@ describe('Push notifications', function() {
                 defaultUnit: 'btc',
                 subjectPrefix: '',
                 pushServerUrl: 'http://localhost:8000',
-                authorizationKey: 'secret',
+                fcmGoogleCredentialsPath: 'path_to_service_account.json'
               },
             }, function(err) {
               should.not.exist(err);
@@ -491,7 +491,7 @@ describe('Push notifications', function() {
               defaultUnit: 'btc',
               subjectPrefix: '',
               pushServerUrl: 'http://localhost:8000',
-              authorizationKey: 'secret',
+              fcmGoogleCredentialsPath: 'path_to_service_account.json'
             },
           }, function(err) {
             should.not.exist(err);
@@ -615,7 +615,7 @@ describe('Push notifications', function() {
                 defaultUnit: 'eth',
                 subjectPrefix: '',
                 pushServerUrl: 'http://localhost:8000',
-                authorizationKey: 'secret',
+                fcmGoogleCredentialsPath: 'path_to_service_account.json'
               },
             }, function(err) {
               should.not.exist(err);
