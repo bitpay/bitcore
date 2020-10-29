@@ -1,6 +1,6 @@
 {
   "name": "bitcore-payid",
-  "version": "1.0.0",
+  "version": "8.23.0",
   "description": "Bitcore library for PayID",
   "author": "BitPay Inc",
   "license": "MIT",
@@ -22,7 +22,7 @@
   },
   "dependencies": {
     "@payid-org/utils": "^1.2.0",
-    "bitcore-lib": "^8.22.2"
+    "bitcore-lib": "^8.23.0"
   },
   "devDependencies": {
     "@types/mocha": "^8.0.3",
