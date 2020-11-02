@@ -280,6 +280,7 @@ export class Key {
         keys.fingerPrintUpdated = true;
       }
     }
+    keys.mnemonicHasPassphrase = this.#mnemonicHasPassphrase || false;
     return keys;
   };
 
