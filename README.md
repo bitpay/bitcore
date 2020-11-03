@@ -1,6 +1,11 @@
 # Bitcore
-![Circle CI](https://circleci.com/gh/bitpay/bitcore/tree/master.svg?style=shield)
+![Circle ](https://circleci.com/gh/bitpay/bitcore/tree/master.svg?style=shield)CI
 
+
+  <br>
+  <a href="https://github.com/bitpay/bitcore/releases/latest"><img alt="undefined" src="https://img.shields.io/github/release/bitpay/bitcore.svg?style=popout"></a>
+  
+  
 **Infrastructure to build Bitcoin and blockchain-based applications for the next generation of financial technology.**
 
 ## Getting Started
