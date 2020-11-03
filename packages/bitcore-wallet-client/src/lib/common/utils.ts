@@ -367,7 +367,7 @@ export class Utils {
       }
       const unsignedTxs = [];
       const isERC20 = tokenAddress && !payProUrl;
-      const isETHMULTISIG = multisigContractAddress && !payProUrl;
+      const isETHMULTISIG = multisigContractAddress;
       const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ERC20' : this.getChain(coin);
       for (let index = 0; index < recipients.length; index++) {
         const rawTx = Transactions.create({

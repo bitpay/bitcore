@@ -4,11 +4,30 @@ import _ from 'lodash';
 import { IAddress } from 'src/lib/model/address';
 import { IChain, INotificationData } from '..';
 import logger from '../../logger';
+import { ERC20Abi } from './abi-erc20';
+import { InvoiceAbi } from './abi-invoice';
 
 const Common = require('../../common');
 const Constants = Common.Constants;
 const Defaults = Common.Defaults;
 const Errors = require('../../errors/errordefinitions');
+
+function requireUncached(module) {
+  delete require.cache[require.resolve(module)];
+  return require(module);
+}
+
+const Erc20Decoder = requireUncached('abi-decoder');
+Erc20Decoder.addABI(ERC20Abi);
+function getErc20Decoder() {
+  return Erc20Decoder;
+}
+
+const InvoiceDecoder = requireUncached('abi-decoder');
+InvoiceDecoder.addABI(InvoiceAbi);
+function getInvoiceDecoder() {
+  return InvoiceDecoder;
+}
 
 export class EthChain implements IChain {
   /**
@@ -119,6 +138,8 @@ export class EthChain implements IChain {
         const { from } = opts;
         const { coin, network } = wallet;
         let inGasLimit;
+        let gasLimit;
+        let fee = 0;
         for (let output of opts.outputs) {
           if (!output.gasLimit) {
             try {
@@ -126,7 +147,7 @@ export class EthChain implements IChain {
                 coin,
                 network,
                 from,
-                to: opts.multisigContractAddress || opts.tokenAddress || output.toAddress,
+                to: opts.multisigContractAddress || (opts.tokenAddress && !opts.payProUrl) || output.toAddress,
                 value: opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount,
                 data: output.data,
                 gasPrice
@@ -138,14 +159,13 @@ export class EthChain implements IChain {
           } else {
             inGasLimit = output.gasLimit;
           }
+          if (_.isNumber(opts.fee)) {
+            // This is used for sendmax
+            gasPrice = feePerKb = Number((opts.fee / (inGasLimit || Defaults.DEFAULT_GAS_LIMIT)).toFixed());
+          }
+          gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
+          fee += feePerKb * gasLimit;
         }
-        if (_.isNumber(opts.fee)) {
-          // This is used for sendmax
-          gasPrice = feePerKb = Number((opts.fee / (inGasLimit || Defaults.DEFAULT_GAS_LIMIT)).toFixed());
-        }
-
-        const gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
-        const fee = feePerKb * gasLimit;
         return resolve({ feePerKb, gasPrice, gasLimit, fee });
       });
     });
@@ -154,7 +174,7 @@ export class EthChain implements IChain {
   getBitcoreTx(txp, opts = { signed: true }) {
     const { data, outputs, payProUrl, tokenAddress, multisigContractAddress } = txp;
     const isERC20 = tokenAddress && !payProUrl;
-    const isETHMULTISIG = multisigContractAddress && !payProUrl;
+    const isETHMULTISIG = multisigContractAddress;
     const chain = isETHMULTISIG ? 'ETHMULTISIG' : isERC20 ? 'ERC20' : 'ETH';
     const recipients = outputs.map(output => {
       return {
@@ -229,14 +249,30 @@ export class EthChain implements IChain {
       (err, balance) => {
         if (err) return cb(err);
 
+        const getInvoiceValue = txp => {
+          let totalAmount;
+          txp.outputs.forEach(output => {
+            const decodedData = getInvoiceDecoder().decodeMethod(output.data);
+            if (decodedData && decodedData.name === 'pay') {
+              totalAmount = decodedData.params[0].value;
+            }
+          });
+          return totalAmount;
+        };
+
         const { totalAmount, availableAmount } = balance;
-        if (totalAmount < txp.getTotalAmount()) {
+        const txpTotalAmount =
+          (opts.multisigContractAddress || opts.tokenAddress) && txp.payProUrl
+            ? getInvoiceValue(txp)
+            : txp.getTotalAmount(opts);
+
+        if (totalAmount < txpTotalAmount) {
           return cb(Errors.INSUFFICIENT_FUNDS);
-        } else if (availableAmount < txp.getTotalAmount()) {
+        } else if (availableAmount < txpTotalAmount) {
           return cb(Errors.LOCKED_FUNDS);
         } else {
           if (opts.tokenAddress || opts.multisigContractAddress) {
-            // ETH wallet balance
+            // ETH linked wallet balance
             server.getBalance({}, (err, ethBalance) => {
               if (err) return cb(err);
               const { totalAmount, availableAmount } = ethBalance;
