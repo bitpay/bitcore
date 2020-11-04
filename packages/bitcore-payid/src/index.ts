@@ -9,6 +9,7 @@
 import Bitcore from 'bitcore-lib';
 import * as errors from './errors';
 import { GeneralJWS, IVerifyPayId, JWK } from './index.d';
+import { toUrlBase64 } from './lib/helpers/converters/base64';
 import { toJWK } from './lib/helpers/converters/key';
 import Signer from './lib/sign';
 import Verifier from './lib/verify';
@@ -128,11 +129,11 @@ class PayId {
     // No try-catch b/c if this doesn't succeed then the key won't be able to sign and it needs to blow up
     _key = toJWK(key as any, 'private');
 
-    if (_key.type === 'secret') {
-      throw new Error(errors.NO_SYNC_KEY__PRIVATE);
-    } else if (_key.type !== 'private') {
-      throw new Error(errors.REQUIRE_PRIVATE_KEY);
-    }
+    // if (_key.type === 'secret') {
+    //   throw new Error(errors.NO_SYNC_KEY__PRIVATE);
+    // } else if (_key.type !== 'private') {
+    //   throw new Error(errors.REQUIRE_PRIVATE_KEY);
+    // }
 
     return _key;
   }
@@ -146,7 +147,8 @@ class PayId {
       const toBase64 = (input) => {
         input = input.toString(16);
         input = input.length % 2 === 1 ? '0' + input : input; // Ensure it's padded
-        return Buffer.from(input, 'hex').toString('base64');
+        const buf = Buffer.from(input, 'hex');
+        return toUrlBase64(buf);
       };
       const d = toBase64(bitcoreKey.toBigNumber());
       const x = toBase64(bitcoreKey.publicKey.point.getX());

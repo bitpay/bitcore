@@ -14,9 +14,9 @@ interface PrivateKey {
   d: BN;
   p: BN;
   q: BN;
-  exponent1: BN;
-  exponent2: BN;
-  coefficient: BN;
+  dp: BN;
+  dq: BN;
+  qi: BN;
   other?: any;
 }
 
@@ -42,9 +42,9 @@ class Private {
       d: toUrlBase64(this.key.d.toBuffer()),
       p: toUrlBase64(this.key.p.toBuffer()),
       q: toUrlBase64(this.key.q.toBuffer()),
-      dp: toUrlBase64(this.key.exponent1.toBuffer()),
-      dq: toUrlBase64(this.key.exponent2.toBuffer()),
-      qi: toUrlBase64(this.key.coefficient.toBuffer()),
+      dp: toUrlBase64(this.key.dp.toBuffer()),
+      dq: toUrlBase64(this.key.dq.toBuffer()),
+      qi: toUrlBase64(this.key.qi.toBuffer()),
       length: this.key.n.toBuffer().length * 8,
       private: true,
       public: false

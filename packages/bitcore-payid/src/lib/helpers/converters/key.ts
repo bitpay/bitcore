@@ -9,10 +9,6 @@ import PKCS8 from '../keys/pkcs8';
 import SEC1 from '../keys/sec1';
 import SPKI from '../keys/spki';
 
-type PublicKeyFromat = 'PKCS1' | 'SPKI';
-type PrivateKeyFormat = 'PKCS1' | 'PKCS8' | 'SEC1';
-type KeyFormat = PublicKeyFromat | PrivateKeyFormat;
-
 export const toJWK = (input: string | Buffer, domain: 'private'|'public') => {
   let encoding: 'der' | 'pem' = 'der';
 
@@ -36,21 +32,17 @@ export const toJWK = (input: string | Buffer, domain: 'private'|'public') => {
   }
 
   let jwk;
-  let format: KeyFormat = null;
   switch (domain) {
     case 'private':
     default:
       try {
         jwk = PKCS8.decode(input, encoding, { label: 'private key' }).toJWK();
-        format = 'PKCS8';
       } catch (err) {
         try {
           jwk = SEC1.decode(input, encoding, { label: 'ec private key' }).toJWK();
-          format = 'SEC1';
         } catch (err) {
           try {
             jwk = PKCS1.private.decode(input, encoding, { label: 'rsa private key' }).toJWK();
-            format = 'PKCS1';
           } catch (err) {
             throw new Error(CANNOT_PARSE_PRIVATEKEY);
           }
@@ -60,11 +52,9 @@ export const toJWK = (input: string | Buffer, domain: 'private'|'public') => {
     case 'public':
       try {
         jwk = SPKI.decode(input, encoding).toJWK();
-        format = 'SPKI';
       } catch (err) {
         try {
           jwk = PKCS1.public.decode(input, encoding).toJWK();
-          format = 'PKCS1';
         } catch (err) {
           throw new Error(CANNOT_PARSE_PUBLICKEY);
         }
