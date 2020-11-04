@@ -13,7 +13,7 @@
   "engine": "node >= 12.0.0",
   "scripts": {
     "start": "npm run build && node ts_build/src/index.js",
-    "build": "npm run clean && node build.js",
+    "build": "npm run clean && tsc",
     "clean": "rm -rf ts_build",
     "test": "tsc && jest --debug",
     "test:all": "npm run build && mocha 'ts_build/test/**/*.spec.js' --colors",
@@ -23,20 +23,25 @@
   "dependencies": {
     "@payid-org/utils": "^1.2.0",
     "asn1.js": "^5.4.1",
-    "bitcore-lib": "^8.22.2",
+    "bitcore-lib": "^8.23.1",
+    "bn.js": "^4.11.8",
     "elliptic": "^6.5.3",
     "hash.js": "^1.1.7"
   },
   "devDependencies": {
-    "@types/jest": "^26.0.15",
+    "@types/jasmine": "^3.6.1",
     "@types/node": "^14.11.2",
-    "browserify": "^17.0.0",
     "chai": "^4.2.0",
-    "jest": "^26.6.1",
-    "mocha": "^8.1.3",
+    "jasmine-core": "^3.6.0",
+    "karma": "^5.2.3",
+    "karma-chrome-launcher": "^3.1.0",
+    "karma-jasmine": "^4.0.1",
+    "karma-typescript": "^5.2.0",
+    "karma-typescript-es6-transform": "^5.2.0",
     "sinon": "^9.0.3",
-    "tsify": "^5.0.2",
-    "typescript": "^4.0.3",
-    "uglify": "^0.1.5"
+    "typescript": "^4.0.3"
+  },
+  "peerDependencies": {
+    "bitcore-lib": "^8.23.1"
   }
 }

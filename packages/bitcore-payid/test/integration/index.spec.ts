@@ -1,15 +1,16 @@
-import {
-  AddressDetailsType,
-  IdentityKeySigningParams,
-  // sign,
-  // toKey
-} from '@payid-org/utils';
+// import {
+//   AddressDetailsType,
+//   IdentityKeySigningParams,
+//   // sign,
+//   // toKey
+// } from '@payid-org/utils';
 import Bitcore from 'bitcore-lib';
 import { expect } from 'chai';
 // import crypto from 'crypto';
 import sinon from 'sinon';
 import * as errors from '../../src/errors';
 import PayId from '../../src/index';
+import * as TestKeys from '../keys';
 
 describe('PayId', () => {
   let keys;
@@ -20,16 +21,17 @@ describe('PayId', () => {
 
   beforeAll(() => {
     keys = {
-      bitcoreHD: new Bitcore.HDPrivateKey(),
-      bitcore: new Bitcore.PrivateKey(),
-      // ec: crypto.generateKeyPairSync('ec', { namedCurve: 'secp256k1', privateKeyEncoding: { format: 'pem', type: 'pkcs8' }, publicKeyEncoding: { format: 'pem', type: 'spki' } }),
-      // rsa: crypto.generateKeyPairSync('rsa', { modulusLength: 2048, privateKeyEncoding: { format: 'pem', type: 'pkcs8' }, publicKeyEncoding: { format: 'pem', type: 'spki' } }),
-      // sym: crypto.createSecretKey(crypto.randomBytes(32)).export()
+      bitcoreHD: Bitcore.HDPrivateKey.fromString(TestKeys.BitcoreHD),
+      bitcore: Bitcore.PrivateKey.fromString(TestKeys.Bitcore),
+      ec: TestKeys.EC, // crypto.generateKeyPairSync('ec', { namedCurve: 'secp256k1', privateKeyEncoding: { format: 'pem', type: 'pkcs8' }, publicKeyEncoding: { format: 'pem', type: 'spki' } }),
+      ed25519: TestKeys.ED25519,
+      rsa: TestKeys.RSA, // crypto.generateKeyPairSync('rsa', { modulusLength: 2048, privateKeyEncoding: { format: 'pem', type: 'pkcs8' }, publicKeyEncoding: { format: 'pem', type: 'spki' } }),
+      sym: TestKeys.Symmetric // crypto.createSecretKey(crypto.randomBytes(32)).export()
     };
 
     addressBTC = {
       paymentNetwork: 'BTC',
-      addressDetailsType: AddressDetailsType.CryptoAddress,
+      addressDetailsType: 'CryptoAddressDetails',
       addressDetails: {
         address: 'mhjPjyyFgdMQwyhf2CnzEqfLS3LdAqkvkF'
       }
@@ -37,7 +39,7 @@ describe('PayId', () => {
 
     addressETH = {
       paymentNetwork: 'ETH',
-      addressDetailsType: AddressDetailsType.CryptoAddress,
+      addressDetailsType: 'CryptoAddressDetails',
       addressDetails: {
         address: '0x6c42f5bafcccdd517750d8c8bdcd9918fd1364ee'
       }
@@ -45,7 +47,7 @@ describe('PayId', () => {
 
     addressXRP = {
       paymentNetwork: 'XRP',
-      addressDetailsType: AddressDetailsType.CryptoAddress,
+      addressDetailsType: 'CryptoAddressDetails',
       addressDetails: {
         address: 'rGpbChk5UvgMSZFYmJzQcbh7DShEBbjcng'
       }
@@ -141,13 +143,7 @@ describe('PayId', () => {
   //   });
   // });
 
-  describe('verify', () => {
-    it('should test', () => {
-      const address = PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.bitcoreHD.toString());
-      // const address = {'payload':"{\"payId\":\"test$example.com\",\"payIdAddress\":{\"paymentNetwork\":\"BTC\",\"environment\":\"mainnet\",\"addressDetailsType\":\"CryptoAddressDetails\",\"addressDetails\":{\"address\":\"mhjPjyyFgdMQwyhf2CnzEqfLS3LdAqkvkF\"}}}","signatures":[{"protected":"eyJuYW1lIjoiaWRlbnRpdHlLZXkiLCJhbGciOiJFUzI1NksiLCJ0eXAiOiJKT1NFK0pTT04iLCJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCIsIm5hbWUiXSwiandrIjp7ImNydiI6InNlY3AyNTZrMSIsIngiOiI2VGt6a0toQklydFpFd0VWaVo3bVFsc2VjNE5RT1B4cThic0ozWjhFMEhBIiwieSI6Il9lWW4xalB0UFd5UkZtRUkzVTRCcUNhb2ZrTDNvSzE4WXpjbTh0dEt0NVEiLCJrdHkiOiJFQyIsImtpZCI6ImNPeU9EWU55aHdVaW9sdThIaXU0Z185ajhpLXRzTW1pVzBGcFlpUXdYQkkifX0","signature":"a21GoJCZcLv-2yT-sBxdebJ9jXOrVVvL6NXTxcR5zS2IID6pvazu2_2Q5GThd6bDGykSQad7LSMk4gjNR-d4eQ"}]};
-      PayId.verify('test$example.com', address, keys.bitcoreHD.toString());
-    });
-  });
+  // describe('verify', () => {
   //   let signingParams;
 
   //   beforeEach(() => {

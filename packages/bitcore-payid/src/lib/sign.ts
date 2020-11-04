@@ -1,13 +1,14 @@
 import Bitcore from 'bitcore-lib';
 import elliptic from 'elliptic';
 import hash from 'hash.js';
-import { Algorithm, toIEEEP1363 } from './converters/der';
-import { encodeBase64 } from './utils';
+import { GeneralJWS } from '../index.d';
+import { toUrlBase64 } from './helpers/converters/base64';
+import { Algorithm, toIEEEP1363 } from './helpers/converters/der';
 
 class Signer {
   constructor() {}
 
-  sign(payload: string | object, alg: Algorithm, jwk) {
+  async sign(payload: string | object, alg: Algorithm, jwk): Promise<GeneralJWS> {
     const protectedHeader = {
       name: 'identityKey',
       alg,
@@ -35,13 +36,13 @@ class Signer {
     // const toSign = encodedProt + '.' + Buffer.from(payload).toString('base64');
     const toSignHash = hash.sha256().update(toSign).digest();
     let sig = privKey.sign(toSignHash);
-    sig = toIEEEP1363(Buffer.from(sig.toDER()), alg).toString('base64');
+    sig = toIEEEP1363(Buffer.from(sig.toDER()), alg);
 
-    const retval = {
+    const retval: GeneralJWS = {
       payload,
       signatures: [{
-        protected: encodedProt,
-        signature: encodeBase64(sig)
+        protected: toUrlBase64(encodedProt),
+        signature: toUrlBase64(sig)
       }]
     };
     return retval;

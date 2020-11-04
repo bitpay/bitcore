@@ -1,14 +1,15 @@
-import {
-  AddressDetailsType,
-  getDefaultAlgorithm,
-  IdentityKeySigningParams,
-  signWithKeys,
-  toKey,
-  verifySignedAddress,
-} from '@payid-org/utils';
+// import {
+//   AddressDetailsType,
+//   getDefaultAlgorithm,
+//   IdentityKeySigningParams,
+//   signWithKeys,
+//   toKey,
+//   verifySignedAddress,
+// } from '@payid-org/utils';
 import Bitcore from 'bitcore-lib';
 import * as errors from './errors';
 import { GeneralJWS, IVerifyPayId, JWK } from './index.d';
+import { toJWK } from './lib/helpers/converters/key';
 import Signer from './lib/sign';
 import Verifier from './lib/verify';
 
@@ -25,20 +26,20 @@ class PayId {
    *      **If not from bitcore-lib and is a string, it must be a PEM string**
    * @param {string} environment (Optional) Specify the chain environment. Default: 'mainnet'
    */
-  sign(payId: string, address: string, currency: string, identityKey: string | Buffer, environment: string = 'mainnet'): GeneralJWS {
+  async sign(payId: string, address: string, currency: string, identityKey: string | Buffer, environment: string = 'mainnet'): Promise<GeneralJWS> {
     let jwk = this._convertIdentityKeyToJWK(identityKey);
 
     // const signingParams = new IdentityKeySigningParams(jwk, getDefaultAlgorithm(jwk));
     const addy = {
       paymentNetwork: currency,
       environment,
-      addressDetailsType: AddressDetailsType.CryptoAddress,
+      addressDetailsType: 'CryptoAddressDetails',
       addressDetails: {
         address
       }
     };
 
-    const sig = Signer.sign({ payId, payIdAddress: addy }, 'ES256K', jwk);
+    const sig = await Signer.sign({ payId, payIdAddress: addy }, 'ES256K', jwk);
     // const signed = signWithKeys(payId, addy, [signingParams]);
     return sig;
   }
@@ -64,7 +65,7 @@ class PayId {
           payId,
           payIdAddress: {
             paymentNetwork: params.currency,
-            addressDetailsType: AddressDetailsType.CryptoAddress,
+            addressDetailsType: 'CryptoAddressDetails',
             addressDetails: {
               address: params.address
             }
@@ -125,7 +126,7 @@ class PayId {
     }
 
     // No try-catch b/c if this doesn't succeed then the key won't be able to sign and it needs to blow up
-    _key = toKey(key as any);
+    _key = toJWK(key as any, 'private');
 
     if (_key.type === 'secret') {
       throw new Error(errors.NO_SYNC_KEY__PRIVATE);
@@ -152,7 +153,7 @@ class PayId {
       const y = toBase64(bitcoreKey.publicKey.point.getY());
 
       // ...then convert to JWK.
-      const jwk = toKey({ kty: 'EC', crv: 'secp256k1', x, y, d });
+      const jwk: JWK = { kty: 'EC', crv: 'secp256k1', x, y, d, private: true, public: false, use: 'sig' };
       return jwk;
   }
 }

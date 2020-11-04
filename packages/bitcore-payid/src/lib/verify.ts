@@ -1,7 +1,7 @@
 import elliptic from 'elliptic';
 import hash from 'hash.js';
 import { GeneralJWS } from '../index.d';
-import { toDER } from './converters/der';
+import { toDER } from './helpers/converters/der';
 
 class Verifier {
   constructor() {}
@@ -23,9 +23,8 @@ class Verifier {
       const y = Buffer.from(jwk.y, 'base64').toString('hex');
       const pubKey = keyCurve.keyFromPublic({ x, y }, 'hex');
       let _sig = signedAddressPayload.signatures[0].signature;
-      let sig = _sig.replace(/\-/g, '+').replace(/_/g, '/');
-      sig = Buffer.from(sig, 'base64');
-      const derSig = toDER(sig, parsedProt.alg);
+      const sigBuf = Buffer.from(_sig, 'base64');
+      const derSig = toDER(sigBuf, parsedProt.alg);
 
       const toCompare = Buffer.concat([
         Buffer.from(signedAddressPayload.signatures[0].protected),
