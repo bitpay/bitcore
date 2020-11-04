@@ -17,7 +17,8 @@
     "clean": "rm -rf ts_build",
     "test:all": "npm run build && ts-node ./node_modules/jasmine/bin/jasmine 'test/**/*.spec.ts'",
     "test:unit": "npm run build && ts-node ./node_modules/jasmine/bin/jasmine 'test/unit/**/*.spec.ts'",
-    "test:integration": "npm run build && ts-node ./node_modules/jasmine/bin/jasmine 'test/integration/**/*.spec.ts'"
+    "test:integration": "npm run build && ts-node ./node_modules/jasmine/bin/jasmine 'test/integration/**/*.spec.ts'",
+    "test:karma": "npm run build && karma start"
   },
   "dependencies": {
     "@payid-org/utils": "^1.2.0",

@@ -29,7 +29,8 @@
       ]
     },
     "outDir": "ts_build",
-    "sourceMap": true
+    "inlineSourceMap": true,
+    "sourceMap": false
   },
   "include": [
     "./scripts/**/*.ts",

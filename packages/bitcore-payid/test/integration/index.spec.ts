@@ -23,10 +23,10 @@ describe('PayId', () => {
     keys = {
       bitcoreHD: Bitcore.HDPrivateKey.fromString(TestKeys.BitcoreHD),
       bitcore: Bitcore.PrivateKey.fromString(TestKeys.Bitcore),
-      ec: TestKeys.EC, // crypto.generateKeyPairSync('ec', { namedCurve: 'secp256k1', privateKeyEncoding: { format: 'pem', type: 'pkcs8' }, publicKeyEncoding: { format: 'pem', type: 'spki' } }),
+      ec: TestKeys.EC,
       ed25519: TestKeys.ED25519,
-      rsa: TestKeys.RSA, // crypto.generateKeyPairSync('rsa', { modulusLength: 2048, privateKeyEncoding: { format: 'pem', type: 'pkcs8' }, publicKeyEncoding: { format: 'pem', type: 'spki' } }),
-      sym: TestKeys.Symmetric // crypto.createSecretKey(crypto.randomBytes(32)).export()
+      rsa: TestKeys.RSA,
+      sym: TestKeys.Symmetric
     };
 
     addressBTC = {

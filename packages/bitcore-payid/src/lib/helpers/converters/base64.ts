@@ -15,5 +15,5 @@ export const toUrlBase64 = (input: string | Buffer | Uint8Array | Array<any>, en
 
   input = (input as Buffer).toString('base64');
 
-  return input.replace(/=/, '').replace(/\//, '_').replace(/\+/, '-');
+  return input.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 };
