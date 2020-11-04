@@ -251,7 +251,27 @@ export class EthChain implements IChain {
 
         const getInvoiceValue = txp => {
           let totalAmount;
+
+          /* invoice outputs data example:
+          abiDecoder.decodeMethod(txp.outputs[0].data)
+          { name: 'approve',
+            params:
+            [ { name: '_spender',
+                value: '0xc27ed3df0de776246cdad5a052a9982473fceab8',
+                type: 'address' },
+              { name: '_value', value: '1380623310000000', type: 'uint256' } ] }
+
+          > abiDecoder.decodeMethod(txp.outputs[1].data)
+          { name: 'pay',
+            params:
+            [ { name: 'value', value: '1000000', type: 'uint256' },
+              { name: 'gasPrice', value: '40000000000', type: 'uint256' },
+              { name: 'expiration', value: '1604123733282', type: 'uint256' },
+              ... ] }
+          */
+
           txp.outputs.forEach(output => {
+            // We use a custom contract call (pay) instead of the transfer ERC20 method
             const decodedData = getInvoiceDecoder().decodeMethod(output.data);
             if (decodedData && decodedData.name === 'pay') {
               totalAmount = decodedData.params[0].value;
@@ -261,6 +281,22 @@ export class EthChain implements IChain {
         };
 
         const { totalAmount, availableAmount } = balance;
+
+        /* If its paypro its an already created ERC20 transaction and we need to get the actual invoice value from the data
+        invoice outputs example:
+        "outputs":[
+          {"amount":0,
+          "toAddress":"0x44d69d16C711BF966E3d00A46f96e02D16BDdf1f",
+          "message":null,
+          "data":"...",
+          "gasLimit":29041},
+          {"amount":0,
+          "toAddress":"0xc27eD3DF0DE776246cdAD5a052A9982473FceaB8",
+          "message":null,
+          "data":"...",
+          "gasLimit":200000
+        }]
+        */
         const txpTotalAmount =
           (opts.multisigContractAddress || opts.tokenAddress) && txp.payProUrl
             ? getInvoiceValue(txp)
