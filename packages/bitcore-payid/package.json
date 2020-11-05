@@ -17,7 +17,7 @@
     "clean": "rm -rf ts_build",
     "test:all": "npm run build && ts-node ./node_modules/jasmine/bin/jasmine 'test/**/*.spec.ts'",
     "test:unit": "npm run build && ts-node ./node_modules/jasmine/bin/jasmine 'test/unit/**/*.spec.ts'",
-    "test:integration": "npm run build && ts-node ./node_modules/jasmine/bin/jasmine 'test/integration/**/*.spec.ts'",
+    "test:integration": "npm run build && ts-node ./node_modules/jasmine/bin/jasmine 'test/integration/**/*.spec.ts' --config=jasmine.json",
     "test:karma": "npm run build && karma start"
   },
   "dependencies": {
@@ -33,6 +33,7 @@
     "@types/node": "^14.11.2",
     "chai": "^4.2.0",
     "jasmine": "^3.6.3",
+    "jasmine-ts-console-reporter": "^3.1.1",
     "karma": "^5.2.3",
     "karma-chrome-launcher": "^3.1.0",
     "karma-jasmine": "^4.0.1",

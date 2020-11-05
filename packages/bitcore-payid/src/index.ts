@@ -30,7 +30,6 @@ class PayId {
   async sign(payId: string, address: string, currency: string, identityKey: string | Buffer, environment: string = 'mainnet'): Promise<GeneralJWS> {
     let jwk = this._convertIdentityKeyToJWK(identityKey);
 
-    // const signingParams = new IdentityKeySigningParams(jwk, getDefaultAlgorithm(jwk));
     const addy = {
       paymentNetwork: currency,
       environment,
@@ -41,7 +40,6 @@ class PayId {
     };
 
     const sig = await Signer.sign({ payId, payIdAddress: addy }, 'ES256K', jwk);
-    // const signed = signWithKeys(payId, addy, [signingParams]);
     return sig;
   }
 
@@ -56,7 +54,7 @@ class PayId {
    *      protected: 'base64StringGeneratedAtTheSignatureRunTime'
    *    }
    */
-  verify(payId: string, params: IVerifyPayId | GeneralJWS, identityKey): boolean {
+  async verify(payId: string, params: IVerifyPayId | GeneralJWS): Promise<boolean> {
     let payload: GeneralJWS = params as GeneralJWS;
 
     if ((params as IVerifyPayId).address) {
@@ -79,8 +77,7 @@ class PayId {
       };
     }
 
-    // const retval_bak = verifySignedAddress(payId, JSON.stringify(payload));
-    const retval = Verifier.verify(payId, payload);
+    const retval = await Verifier.verify(payId, payload);
     return retval;
   }
 

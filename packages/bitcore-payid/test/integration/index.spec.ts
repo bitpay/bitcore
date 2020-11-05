@@ -1,16 +1,18 @@
-// import {
-//   AddressDetailsType,
-//   IdentityKeySigningParams,
-//   // sign,
-//   // toKey
-// } from '@payid-org/utils';
+import {
+  AddressDetailsType,
+  getDefaultAlgorithm,
+  IdentityKeySigningParams,
+  sign,
+  toKey
+} from '@payid-org/utils';
 import Bitcore from 'bitcore-lib';
 import { expect } from 'chai';
-// import crypto from 'crypto';
+import crypto from 'crypto';
 import sinon from 'sinon';
 import * as errors from '../../src/errors';
 import PayId from '../../src/index';
 import * as TestKeys from '../keys';
+import TestSignatures from '../signatures';
 
 describe('PayId', () => {
   let keys;
@@ -54,217 +56,212 @@ describe('PayId', () => {
     };
   });
 
-  describe('sign', () => {
-    it('should sign with Bitcore HD key', async () => {
-      const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.bitcoreHD.toString());
+  it('should', () => {
+    // const pk = crypto.createPrivateKey(TestKeys.EC.privateKey);
+    // const jwk = toKey(pk as any);
+    const pk = PayId['_convertIdentityKeyToJWK'](keys.bitcoreHD.toString());
+    const jwk = toKey(pk as any);
+    const sigParams = new IdentityKeySigningParams(jwk, getDefaultAlgorithm(jwk as any));
 
-      expect(signed).to.exist;
-      expect(signed).to.have.property('payload');
-      expect(signed.payload).to.be.a.string;
-      expect(signed).to.have.property('signatures');
-      expect(signed.signatures.length).to.equal(1);
-    });
+    const btcSig = sign(payId, addressBTC, sigParams);
+    // const ethSig = sign(payId, addressETH, sigParams);
+    // const xrpSig = sign(payId, addressXRP, sigParams);
 
-    it('should sign with Bitcore non-HD key', async () => {
-      const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.bitcore.toString());
-
-      expect(signed).to.exist;
-      expect(signed).to.have.property('payload');
-      expect(signed.payload).to.be.a.string;
-      expect(signed).to.have.property('signatures');
-      expect(signed.signatures.length).to.equal(1);
-    });
-
-    it('should sign with crypto-created EC key', async () => {
-      const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.ec.privateKey);
-
-      expect(signed).to.exist;
-      expect(signed).to.have.property('payload');
-      expect(signed.payload).to.be.a.string;
-      expect(signed).to.have.property('signatures');
-      expect(signed.signatures.length).to.equal(1);
-    });
-
-    it('should sign with crypto-created ED25519 key', async () => {
-      const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.ed25519.privateKey);
-
-      expect(signed).to.exist;
-      expect(signed).to.have.property('payload');
-      expect(signed.payload).to.be.a.string;
-      expect(signed).to.have.property('signatures');
-      expect(signed.signatures.length).to.equal(1);
-    });
-
-    it('should sign with crypto-created RSA key', async () => {
-      const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.rsa.privateKey);
-
-      expect(signed).to.exist;
-      expect(signed).to.have.property('payload');
-      expect(signed.payload).to.be.a.string;
-      expect(signed).to.have.property('signatures');
-      expect(signed.signatures.length).to.equal(1);
-    });
-
-    it('should fail signing with Bitcore HD public key', async () => {
-      try {
-        const pk = new Bitcore.HDPublicKey(keys.bitcoreHD);
-        await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', pk.toString());
-        throw new Error('Should have thrown');
-      } catch (err) {
-        expect(err.message).to.equal(errors.REQUIRE_PRIVATE_KEY);
-      }
-    });
-
-    it('should fail signing with Bitcore non-HD public key', async () => {
-      try {
-        const pk = new Bitcore.PublicKey(keys.bitcore);
-        await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', pk.toString());
-        throw new Error('Should have thrown');
-      } catch (err) {
-        expect(err.message).to.equal(errors.REQUIRE_PRIVATE_KEY);
-      }
-    });
-
-    it('should fail signing with EC public key', async () => {
-      try {
-        await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.ec.publicKey);
-        throw new Error('Should have thrown');
-      } catch (err) {
-        expect(err.message).to.equal(errors.REQUIRE_PRIVATE_KEY);
-      }
-    });
-
-    it('should fail signing with RSA public key', async () => {
-      try {
-        await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.rsa.publicKey);
-        throw new Error('Should have thrown');
-      } catch (err) {
-        expect(err.message).to.equal(errors.REQUIRE_PRIVATE_KEY);
-      }
-    });
-
-    it('should fail signing with symmetric key', async () => {
-      try {
-        await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.sym);
-        throw new Error('Should have thrown');
-      } catch (err) {
-        expect(err.message).to.equal(errors.CANNOT_PARSE_PRIVATEKEY);
-      }
-    });
   });
 
-  // describe('verify', () => {
-  //   let signingParams;
+  // describe('sign', () => {
+  //   it('should sign with Bitcore HD key', async () => {
+  //     const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.bitcoreHD.toString());
 
-  //   beforeEach(() => {
-  //     const pk = toKey(keys.ec.privateKey);
-  //     signingParams = new IdentityKeySigningParams(pk, pk.alg || 'ES256K');
+  //     expect(signed).to.exist;
+  //     expect(signed).to.have.property('payload');
+  //     expect(signed.payload).to.be.a.string;
+  //     expect(signed).to.have.property('signatures');
+  //     expect(signed.signatures.length).to.equal(1);
   //   });
 
-  //   it('should fail verification if payId doesn\'t match', () => {
-  //     const signed = sign(payId, addressBTC, signingParams);
+  //   it('should sign with Bitcore non-HD key', async () => {
+  //     const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.bitcore.toString());
 
-  //     const verified = PayId.verify('malicious$example.com', signed);
-  //     expect(verified).be.false;
+  //     expect(signed).to.exist;
+  //     expect(signed).to.have.property('payload');
+  //     expect(signed.payload).to.be.a.string;
+  //     expect(signed).to.have.property('signatures');
+  //     expect(signed.signatures.length).to.equal(1);
   //   });
 
-  //   it('should fail verification if signature doesn\'t match', () => {
-  //     const signed = sign(payId, addressBTC, signingParams);
+  //   it('should sign with crypto-created EC key', async () => {
+  //     const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.ec.privateKey);
 
-  //     const address = {
-  //       address: addressETH.addressDetails.address,
-  //       currency: addressETH.paymentNetwork,
-  //       signature: 'NfhVzyoQmTv_tAo1QhFYN8GDSBRm-AvA9OzsVUmtaGr8hS-Or9k1dZVPUFvIW6E6rBt2BSngR54d2LdEPiW-2Q',
-  //       protected: signed.signatures[0].protected,
-  //       header: signed.signatures[0].header
-  //     };
-
-  //     const verified = PayId.verify(payId, address);
-  //     expect(verified).be.false;
+  //     expect(signed).to.exist;
+  //     expect(signed).to.have.property('payload');
+  //     expect(signed.payload).to.be.a.string;
+  //     expect(signed).to.have.property('signatures');
+  //     expect(signed.signatures.length).to.equal(1);
   //   });
 
-  //   it('should fail verification if protected doesn\'t contain correct public key', () => {
-  //     const signed = sign(payId, addressBTC, signingParams);
+  //   it('should sign with crypto-created ED25519 key', async () => {
+  //     const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.ed25519.privateKey);
 
-  //     const address = {
-  //       address: addressETH.addressDetails.address,
-  //       currency: addressETH.paymentNetwork,
-  //       signature: signed.signatures[0].signature,
-  //       protected: 'eyJuYW1lIjoiaWRlbnRpdHlLZXkiLCJhbGciOiJFUzI1NksiLCJ0eXAiOiJKT1NFK0pTT04iLCJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCIsIm5hbWUiXSwiandrIjp7ImNydiI6InNlY3AyNTZrMSIsIngiOiI3dFpzS0h6SDZtSWJ1UnRaS1FLbE1LR1hFY1plbmlGTkVqQTM0TXc5eDk4IiwieSI6ImRDb0R2QnhpV3RJVDk0M3FtYU1TdDQyR0cyTFdsMkp2MzhaRGpCYmI5ekEiLCJrdHkiOiJFQyIsImtpZCI6Im00NldjeHN0Z29iTGR2NGpJbTNhcl9pUmJVa280QnZyU3FMR1NKM1pBSWMifX0',
-  //       header: signed.signatures[0].header
-  //     };
-
-  //     const verified = PayId.verify(payId, address);
-  //     expect(verified).be.false;
+  //     expect(signed).to.exist;
+  //     expect(signed).to.have.property('payload');
+  //     expect(signed.payload).to.be.a.string;
+  //     expect(signed).to.have.property('signatures');
+  //     expect(signed.signatures.length).to.equal(1);
   //   });
 
-  //   describe('JWK.GeneralJWS', () => {
-  //     it('should verify BTC', () => {
-  //       const signed = sign(payId, addressBTC, signingParams);
+  //   it('should sign with crypto-created RSA key', async () => {
+  //     const signed = await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.rsa.privateKey);
 
-  //       const verified = PayId.verify(payId, signed);
-  //       expect(verified).be.true;
-  //     });
-
-  //     it('should verify XRP', () => {
-  //       const signed = sign(payId, addressXRP, signingParams);
-
-  //       const verified = PayId.verify(payId, signed);
-  //       expect(verified).be.true;
-  //     });
-
-  //     it('should verify ETH', () => {
-  //       const signed = sign(payId, addressETH, signingParams);
-
-  //       const verified = PayId.verify(payId, signed);
-  //       expect(verified).be.true;
-  //     });
+  //     expect(signed).to.exist;
+  //     expect(signed).to.have.property('payload');
+  //     expect(signed.payload).to.be.a.string;
+  //     expect(signed).to.have.property('signatures');
+  //     expect(signed.signatures.length).to.equal(1);
   //   });
 
-  //   describe('IVerifyPayId', () => {
-  //     it('should verify BTC', () => {
-  //       const signed = sign(payId, addressBTC, signingParams);
+  //   it('should fail signing with Bitcore HD public key', async () => {
+  //     try {
+  //       const pk = new Bitcore.HDPublicKey(keys.bitcoreHD);
+  //       await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', pk.toString());
+  //       throw new Error('Should have thrown');
+  //     } catch (err) {
+  //       expect(err.message).to.equal(errors.REQUIRE_PRIVATE_KEY);
+  //     }
+  //   });
 
-  //       const address = {
-  //         address: addressBTC.addressDetails.address,
-  //         currency: addressBTC.paymentNetwork,
-  //         signature: signed.signatures[0].signature,
-  //         protected: signed.signatures[0].protected,
-  //         header: signed.signatures[0].header
-  //       };
-  //       const verified = PayId.verify(payId, address);
-  //       expect(verified).be.true;
-  //     });
+  //   it('should fail signing with Bitcore non-HD public key', async () => {
+  //     try {
+  //       const pk = new Bitcore.PublicKey(keys.bitcore);
+  //       await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', pk.toString());
+  //       throw new Error('Should have thrown');
+  //     } catch (err) {
+  //       expect(err.message).to.equal(errors.REQUIRE_PRIVATE_KEY);
+  //     }
+  //   });
 
-  //     it('should verify XRP', () => {
-  //       const signed = sign(payId, addressXRP, signingParams);
+  //   it('should fail signing with EC public key', async () => {
+  //     try {
+  //       await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.ec.publicKey);
+  //       throw new Error('Should have thrown');
+  //     } catch (err) {
+  //       expect(err.message).to.equal(errors.REQUIRE_PRIVATE_KEY);
+  //     }
+  //   });
 
-  //       const address = {
-  //         address: addressXRP.addressDetails.address,
-  //         currency: addressXRP.paymentNetwork,
-  //         signature: signed.signatures[0].signature,
-  //         protected: signed.signatures[0].protected,
-  //         header: signed.signatures[0].header
-  //       };
-  //       const verified = PayId.verify(payId, address);
-  //       expect(verified).be.true;
-  //     });
+  //   it('should fail signing with RSA public key', async () => {
+  //     try {
+  //       await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.rsa.publicKey);
+  //       throw new Error('Should have thrown');
+  //     } catch (err) {
+  //       expect(err.message).to.equal(errors.REQUIRE_PRIVATE_KEY);
+  //     }
+  //   });
 
-  //     it('should verify ETH', () => {
-  //       const signed = sign(payId, addressETH, signingParams);
-
-  //       const address = {
-  //         address: addressETH.addressDetails.address,
-  //         currency: addressETH.paymentNetwork,
-  //         signature: signed.signatures[0].signature,
-  //         protected: signed.signatures[0].protected,
-  //         header: signed.signatures[0].header
-  //       };
-  //       const verified = PayId.verify(payId, address);
-  //       expect(verified).be.true;
-  //     });
+  //   it('should fail signing with symmetric key', async () => {
+  //     try {
+  //       await PayId.sign(payId, addressBTC.addressDetails.address, 'BTC', keys.sym);
+  //       throw new Error('Should have thrown');
+  //     } catch (err) {
+  //       expect(err.message).to.equal(errors.CANNOT_PARSE_PRIVATEKEY);
+  //     }
   //   });
   // });
+
+  describe('verify', () => {
+    describe('PayId.org utils signatures', () => {
+      let signatures;
+      beforeAll(() => {
+        signatures = TestSignatures.payIdOrgUtils;
+      });
+
+      it('should fail verification if payId doesn\'t match', async () => {
+        const verified = await PayId.verify('malicious$example.com', signatures.bitcoreHD.BTC);
+        expect(verified).be.false;
+      });
+
+      it('should fail verification if signature doesn\'t match', async () => {
+        const address = {
+          address: addressETH.addressDetails.address,
+          currency: addressETH.paymentNetwork,
+          signature: 'NfhVzyoQmTv_tAo1QhFYN8GDSBRm-AvA9OzsVUmtaGr8hS-Or9k1dZVPUFvIW6E6rBt2BSngR54d2LdEPiW-2Q',
+          protected: signatures.secp256k1.ETH.signatures[0].protected,
+          header: signatures.secp256k1.ETH.signatures[0].header
+        };
+
+        const verified = await PayId.verify(payId, address);
+        expect(verified).be.false;
+      });
+
+      it('should fail verification if protected doesn\'t contain correct public key', async () => {
+        const address = {
+          address: addressETH.addressDetails.address,
+          currency: addressETH.paymentNetwork,
+          signature: signatures.secp256k1.ETH.signatures[0].signature,
+          protected: 'eyJuYW1lIjoiaWRlbnRpdHlLZXkiLCJhbGciOiJFUzI1NksiLCJ0eXAiOiJKT1NFK0pTT04iLCJiNjQiOmZhbHNlLCJjcml0IjpbImI2NCIsIm5hbWUiXSwiandrIjp7ImNydiI6InNlY3AyNTZrMSIsIngiOiI3dFpzS0h6SDZtSWJ1UnRaS1FLbE1LR1hFY1plbmlGTkVqQTM0TXc5eDk4IiwieSI6ImRDb0R2QnhpV3RJVDk0M3FtYU1TdDQyR0cyTFdsMkp2MzhaRGpCYmI5ekEiLCJrdHkiOiJFQyIsImtpZCI6Im00NldjeHN0Z29iTGR2NGpJbTNhcl9pUmJVa280QnZyU3FMR1NKM1pBSWMifX0',
+          header: signatures.secp256k1.ETH.signatures[0].header
+        };
+
+        const verified = await PayId.verify(payId, address);
+        expect(verified).be.false;
+      });
+
+      describe('GeneralJWS', () => {
+        it('should verify BTC', async () => {
+          const verified = await PayId.verify(payId, signatures.bitcoreHD.BTC);
+          expect(verified).be.true;
+        });
+
+        it('should verify XRP', async () => {
+          const verified = await PayId.verify(payId, signatures.secp256k1.XRP);
+          expect(verified).be.true;
+        });
+
+        it('should verify ETH', async () => {
+          const verified = await PayId.verify(payId, signatures.secp256k1.ETH);
+          expect(verified).be.true;
+        });
+      });
+
+      describe('IVerifyPayId', () => {
+        it('should verify BTC', async () => {
+          const address = {
+            address: addressBTC.addressDetails.address,
+            currency: addressBTC.paymentNetwork,
+            signature: signatures.bitcoreHD.BTC.signatures[0].signature,
+            protected: signatures.bitcoreHD.BTC.signatures[0].protected,
+            header: signatures.bitcoreHD.BTC.signatures[0].header
+          };
+          const verified = await PayId.verify(payId, address);
+          expect(verified).be.true;
+        });
+
+        it('should verify XRP', async () => {
+          const address = {
+            address: addressXRP.addressDetails.address,
+            currency: addressXRP.paymentNetwork,
+            signature: signatures.secp256k1.XRP.signatures[0].signature,
+            protected: signatures.secp256k1.XRP.signatures[0].protected,
+            header: signatures.secp256k1.XRP.signatures[0].header
+          };
+          const verified = await PayId.verify(payId, address);
+          expect(verified).be.true;
+        });
+
+        it('should verify ETH', async () => {
+          const address = {
+            address: addressETH.addressDetails.address,
+            currency: addressETH.paymentNetwork,
+            signature: signatures.secp256k1.ETH.signatures[0].signature,
+            protected: signatures.secp256k1.ETH.signatures[0].protected,
+            header: signatures.secp256k1.ETH.signatures[0].header
+          };
+          const verified = await PayId.verify(payId, address);
+          expect(verified).be.true;
+        });
+      });
+    });
+  });
 
   // describe('sign & verify', () => {
   //   it('should work with Bitcore HD key', () => {

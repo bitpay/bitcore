@@ -1,0 +1,4 @@
+{
+  "random": false,
+  "reporter": "jasmine-ts-console-reporter"
+}

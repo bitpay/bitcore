@@ -36,7 +36,7 @@ class Signer {
         sig = this._signEC(toSign, jwk, alg);
         break;
       case 'OKP':
-        sig = this._signEDDSA(toSign, jwk);
+        sig = this._signEdDSA(toSign, jwk);
         break;
       case 'RSA':
         sig = await this._signRSA(toSign, jwk);
@@ -66,7 +66,7 @@ class Signer {
     return sig;
   }
 
-  private _signEDDSA(toSign: Buffer, jwk: JWK): Buffer {
+  private _signEdDSA(toSign: Buffer, jwk: JWK): Buffer {
     const eddsa = new elliptic.eddsa(jwk.crv).keyFromSecret(jwk.d);
     let sig = eddsa.sign(toSign);
     sig = Buffer.from(sig.toBytes());
