@@ -1,13 +1,14 @@
 import asn from 'asn1.js';
-import { ASN1Encoding, JWK } from '../../../index.d';
+import { ASN1Encoding, BaseJWK, ECPrivateJWK } from '../../../index.d';
 import { toUrlBase64 } from '../converters/base64';
+import JsonWebKey from './jwk';
 import objIds from './objectIdentifiers';
 
 // Private EC only
 
 class PrivateKey {
-  asn = null;
-  key = null;
+  private asn = null;
+  private key = null;
 
   constructor() {
     this.asn = asn.define('sec1', function() {
@@ -25,20 +26,19 @@ class PrivateKey {
     return this;
   }
 
-  toJWK(): JWK {
+  toJWK(): ECPrivateJWK {
     const pubKey = this.key.publicKey;
     const pubKeyXYLen = (pubKey.length - 1) / 2;
-    return {
+    const jwk: BaseJWK.ECPrivate = {
       kty: 'EC',
       use: 'sig',
       crv: this.key.curve,
       d: toUrlBase64(this.key.privateKey),
       x: toUrlBase64(pubKey.slice(1, pubKeyXYLen + 1)),
-      y: toUrlBase64(pubKey.slice(pubKeyXYLen + 1)),
-      private: true,
-      public: false
+      y: toUrlBase64(pubKey.slice(pubKeyXYLen + 1))
     };
+    return new JsonWebKey(jwk, 'private');
   }
 }
 
-export default new PrivateKey();
+export default PrivateKey;

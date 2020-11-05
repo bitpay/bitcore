@@ -36,13 +36,13 @@ export const toJWK = (input: string | Buffer, domain: 'private'|'public') => {
     case 'private':
     default:
       try {
-        jwk = PKCS8.decode(input, encoding, { label: 'private key' }).toJWK();
+        jwk = new PKCS8().decode(input, encoding, { label: 'private key' }).toJWK();
       } catch (err) {
         try {
-          jwk = SEC1.decode(input, encoding, { label: 'ec private key' }).toJWK();
+          jwk = new SEC1().decode(input, encoding, { label: 'ec private key' }).toJWK();
         } catch (err) {
           try {
-            jwk = PKCS1.private.decode(input, encoding, { label: 'rsa private key' }).toJWK();
+            jwk = new PKCS1.Private().decode(input, encoding, { label: 'rsa private key' }).toJWK();
           } catch (err) {
             throw new Error(CANNOT_PARSE_PRIVATEKEY);
           }
@@ -51,10 +51,10 @@ export const toJWK = (input: string | Buffer, domain: 'private'|'public') => {
       break;
     case 'public':
       try {
-        jwk = SPKI.decode(input, encoding).toJWK();
+        jwk = new SPKI().decode(input, encoding).toJWK();
       } catch (err) {
         try {
-          jwk = PKCS1.public.decode(input, encoding).toJWK();
+          jwk = new PKCS1.Public().decode(input, encoding).toJWK();
         } catch (err) {
           throw new Error(CANNOT_PARSE_PUBLICKEY);
         }

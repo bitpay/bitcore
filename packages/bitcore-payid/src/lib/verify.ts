@@ -1,7 +1,7 @@
 import elliptic from 'elliptic';
 import hash from 'hash.js';
 import { UNSUPPPORTED_KEY_TYPE } from '../errors';
-import { GeneralJWS, JWK } from '../index.d';
+import { ECPublicJWK, EdDSAPublicJWK, GeneralJWS, PublicJWK, RSAPublicJWK } from '../index.d';
 import { Algorithm, toDER } from './helpers/converters/der';
 
 class Verifier {
@@ -18,7 +18,7 @@ class Verifier {
     try {
       const parsedProt = JSON.parse(Buffer.from(signedAddressPayload.signatures[0].protected, 'base64').toString());
 
-      const { jwk }: { jwk: JWK } = parsedProt;
+      const { jwk }: { jwk: PublicJWK } = parsedProt;
       const signature = signedAddressPayload.signatures[0].signature;
       const toCompare = Buffer.concat([
         Buffer.from(signedAddressPayload.signatures[0].protected),
@@ -29,13 +29,13 @@ class Verifier {
       let verified = false;
       switch (jwk.kty) {
         case 'EC':
-          verified = this._verifyEC(signature, toCompare, jwk, parsedProt.alg);
+          verified = this._verifyEC(signature, toCompare, jwk as ECPublicJWK, parsedProt.alg);
           break;
         case 'OKP':
-          verified = this._verifyEdDSA(signature, toCompare, jwk);
+          verified = this._verifyEdDSA(signature, toCompare, jwk as EdDSAPublicJWK);
           break;
         case 'RSA':
-          verified = await this._verifyRSA(signature, toCompare, jwk);
+          verified = await this._verifyRSA(signature, toCompare, jwk as RSAPublicJWK);
           break;
         default:
           throw new Error(UNSUPPPORTED_KEY_TYPE);
@@ -43,12 +43,12 @@ class Verifier {
 
       return verified;
     } catch (err) {
-      console.log(err);
+      console.error(err.message);
       return false;
     }
   }
 
-  private _verifyEC(signature: string, compareTo: Buffer, jwk: JWK, alg: Algorithm): boolean {
+  private _verifyEC(signature: string, compareTo: Buffer, jwk: ECPublicJWK, alg: Algorithm): boolean {
     const keyCurve = new elliptic.ec(jwk.crv);
     const x = Buffer.from(jwk.x, 'base64').toString('hex');
     const y = Buffer.from(jwk.y, 'base64').toString('hex');
@@ -60,14 +60,15 @@ class Verifier {
     return verified;
   }
 
-  private _verifyEdDSA(signature: string, compareTo: Buffer, jwk: JWK): boolean {
+  private _verifyEdDSA(signature: string, compareTo: Buffer, jwk: EdDSAPublicJWK): boolean {
     const eddsa = new elliptic.eddsa(jwk.crv).keyFromPublic(jwk.x);
     const verified = eddsa.verify(compareTo, Array.from(signature));
     return verified;
   }
 
-  private async _verifyRSA(signature: string, compareTo: Buffer, jwk: JWK): Promise<boolean> {
-    const key = await window.crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+  private async _verifyRSA(signature: string, compareTo: Buffer, jwk: RSAPublicJWK): Promise<boolean> {
+    console.log(jwk);
+    const key = await window.crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
     const verified = await window.crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, Buffer.from(signature), compareTo);
     return verified;
   }

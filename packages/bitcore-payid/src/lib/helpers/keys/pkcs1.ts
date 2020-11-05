@@ -1,6 +1,7 @@
 import BN from 'bn.js';
-import { ASN1Encoding, JWK } from '../../../index.d';
+import { ASN1Encoding, BaseJWK, RSAPrivateJWK, RSAPublicJWK } from '../../../index.d';
 import { toUrlBase64 } from '../converters/base64';
+import JsonWebKey from './jwk';
 import { RSAPrivateKey, RSAPublicKey } from './rsa';
 
 // RSA only
@@ -21,8 +22,8 @@ interface PrivateKey {
 }
 
 class Private {
-  asn = null;
-  key: PrivateKey = null;
+  private asn = null;
+  private key: PrivateKey = null;
 
   constructor() {
     this.asn = RSAPrivateKey;
@@ -33,8 +34,8 @@ class Private {
     return this;
   }
 
-  toJWK(): JWK {
-    return {
+  toJWK(): RSAPrivateJWK {
+    const jwk: BaseJWK.RSAPrivate = {
       kty: 'RSA',
       use: 'sig',
       n: toUrlBase64(this.key.n.toBuffer()),
@@ -45,10 +46,9 @@ class Private {
       dp: toUrlBase64(this.key.dp.toBuffer()),
       dq: toUrlBase64(this.key.dq.toBuffer()),
       qi: toUrlBase64(this.key.qi.toBuffer()),
-      length: this.key.n.toBuffer().length * 8,
-      private: true,
-      public: false
+      length: this.key.n.toBuffer().length * 8
     };
+    return new JsonWebKey(jwk, 'private');
   }
 }
 
@@ -60,8 +60,8 @@ interface PublicKey {
 }
 
 class Public {
-  asn = null;
-  key: PublicKey = null;
+  private asn = null;
+  private key: PublicKey = null;
 
   constructor() {
     this.asn = RSAPublicKey;
@@ -72,20 +72,19 @@ class Public {
     return this;
   }
 
-  toJWK(): JWK {
-    return {
+  toJWK(): RSAPublicJWK {
+    const jwk: BaseJWK.RSAPublic = {
       kty: 'RSA',
       use: 'sig',
       n: toUrlBase64(this.key.n.toBuffer()),
       e: toUrlBase64(this.key.e.toBuffer()),
-      length: this.key.n.toBuffer().length * 8,
-      private: false,
-      public: true
+      length: this.key.n.toBuffer().length * 8
     };
+    return new JsonWebKey(jwk, 'public');
   }
 }
 
 export default {
-  private: new Private(),
-  public: new Public()
+  Private,
+  Public
 };

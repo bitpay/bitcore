@@ -2,21 +2,22 @@ import Bitcore from 'bitcore-lib';
 import elliptic from 'elliptic';
 import hash from 'hash.js';
 import { UNSUPPPORTED_KEY_TYPE } from '../errors';
-import { GeneralJWS, JWK } from '../index.d';
+import { ECPrivateJWK, EdDSAPrivateJWK, GeneralJWS, PrivateJWK, RSAPrivateJWK, SlickJWK } from '../index.d';
 import { toUrlBase64 } from './helpers/converters/base64';
 import { Algorithm, toIEEEP1363 } from './helpers/converters/der';
 
 class Signer {
   constructor() {}
 
-  async sign(payload: string | object, alg: Algorithm, jwk): Promise<GeneralJWS> {
+  async sign(payload: string | object, alg: Algorithm, jwk: PrivateJWK): Promise<GeneralJWS> {
+    const pubJwk: SlickJWK = jwk.toPublic().toJSON();
     const protectedHeader = {
       name: 'identityKey',
       alg,
       typ: 'JOSE+JSON',
       b64: false,
       crit: ['b64', 'name'],
-      jwk,
+      jwk: pubJwk,
     };
 
     if (typeof payload === 'object') {
@@ -33,13 +34,13 @@ class Signer {
     let sig;
     switch (jwk.kty) {
       case 'EC':
-        sig = this._signEC(toSign, jwk, alg);
+        sig = this._signEC(toSign, jwk as ECPrivateJWK, alg);
         break;
       case 'OKP':
-        sig = this._signEdDSA(toSign, jwk);
+        sig = this._signEdDSA(toSign, jwk as EdDSAPrivateJWK);
         break;
       case 'RSA':
-        sig = await this._signRSA(toSign, jwk);
+        sig = await this._signRSA(toSign, jwk as RSAPrivateJWK);
         break;
       default:
         throw new Error(UNSUPPPORTED_KEY_TYPE);
@@ -55,7 +56,7 @@ class Signer {
     return retval;
   }
 
-  private _signEC(toSign: Buffer, jwk: JWK, alg: Algorithm): Buffer {
+  private _signEC(toSign: Buffer, jwk: ECPrivateJWK, alg: Algorithm): Buffer {
     const keyCurve = new elliptic.ec(jwk.crv);
     const d = Buffer.from(jwk.d, 'base64').toString('hex');
     const privKey = keyCurve.keyFromPrivate(d);
@@ -66,15 +67,15 @@ class Signer {
     return sig;
   }
 
-  private _signEdDSA(toSign: Buffer, jwk: JWK): Buffer {
+  private _signEdDSA(toSign: Buffer, jwk: EdDSAPrivateJWK): Buffer {
     const eddsa = new elliptic.eddsa(jwk.crv).keyFromSecret(jwk.d);
     let sig = eddsa.sign(toSign);
     sig = Buffer.from(sig.toBytes());
     return sig;
   }
 
-  private async _signRSA(toSign: Buffer, jwk: JWK): Promise<Buffer> {
-    const key = await window.crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
+  private async _signRSA(toSign: Buffer, jwk: RSAPrivateJWK): Promise<Buffer> {
+    const key = await window.crypto.subtle.importKey('jwk', jwk.toJSON(), { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['sign']);
     let sig = await window.crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, toSign);
     return Buffer.from(sig);
   }
