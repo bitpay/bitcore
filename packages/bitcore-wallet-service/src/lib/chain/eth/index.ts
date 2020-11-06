@@ -120,19 +120,23 @@ export class EthChain implements IChain {
         const { coin, network } = wallet;
         let inGasLimit;
         for (let output of opts.outputs) {
-          try {
-            inGasLimit = await server.estimateGas({
-              coin,
-              network,
-              from,
-              to: opts.multisigContractAddress || opts.tokenAddress || output.toAddress,
-              value: opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount,
-              data: output.data,
-              gasPrice
-            });
-            output.gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
-          } catch (err) {
-            output.gasLimit = Defaults.DEFAULT_GAS_LIMIT;
+          if (!output.gasLimit) {
+            try {
+              inGasLimit = await server.estimateGas({
+                coin,
+                network,
+                from,
+                to: opts.multisigContractAddress || opts.tokenAddress || output.toAddress,
+                value: opts.tokenAddress || opts.multisigContractAddress ? 0 : output.amount,
+                data: output.data,
+                gasPrice
+              });
+              output.gasLimit = inGasLimit || Defaults.DEFAULT_GAS_LIMIT;
+            } catch (err) {
+              output.gasLimit = Defaults.DEFAULT_GAS_LIMIT;
+            }
+          } else {
+            inGasLimit = output.gasLimit;
           }
         }
         if (_.isNumber(opts.fee)) {
