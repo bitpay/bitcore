@@ -5691,6 +5691,46 @@ describe('Wallet service', function() {
         });
       });
     });
+
+    it('should allow to create a TX with multiple outputs and set the correct fee', function(done) {
+      helpers.stubFeeLevels({
+      });
+      server.createAddress({}, from => {
+        helpers.stubUtxos(server, wallet, [1, 2], function() {
+          let amount = 0;
+          var txOpts = {
+            outputs: [{
+              toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+              amount: amount,
+            },{
+              toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+              amount: amount,
+            }],
+            from,
+            message: 'some message',
+            customData: 'some custom data'
+          };
+          txOpts = Object.assign(txOpts);
+          server.createTx(txOpts, function(err, tx) {
+            should.not.exist(err);
+            should.exist(tx);
+            tx.outputs.should.deep.equal([{
+              toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+              gasLimit: 21000,
+              amount: amount
+            },{
+              toAddress: '0x37d7B3bBD88EFdE6a93cF74D2F5b0385D3E3B08A',
+              gasLimit: 21000,
+              amount: amount
+            }]);
+            tx.gasPrice.should.equal(1000000000);
+            tx.outputs[0].gasLimit.should.equal(21000);
+            (tx.gasPrice * tx.outputs[0].gasLimit).should.equal(21000000000000);
+            done();
+          });
+        });
+      });
+    });
   });
 
 
@@ -9304,10 +9344,10 @@ describe('Wallet service', function() {
             coin: 'usdc',
             outputs: [{
               toAddress: addressStr,
-              amount: txAmount,
+              amount: txAmount
             }],
             from,
-            fee: 4.2e14,
+            fee: 4e18,
             tokenAddress: TOKENS[0]
           };
           txOpts = Object.assign(txOpts);
@@ -9323,11 +9363,37 @@ describe('Wallet service', function() {
               server.getBalance({}, function(err, ethBalance) {
                 should.not.exist(err);
                 ethBalance.should.not.equal(tokenBalance);
-                ethBalance.totalAmount.should.equal(0);
+                ethBalance.totalAmount.should.equal(2000000000000000000);
                 ethBalance.lockedAmount.should.equal(0);
                 done();
               });
             });
+          });
+        });
+      });
+    });
+
+    it('should decode ouput data correctly to get invoice value when paypro', function(done) {
+      const ts = TO_SAT['usdc'];
+      server.createAddress({}, from => {
+        helpers.stubUtxos(server, wallet, [1, 1], { tokenAddress: TOKENS[0] }, function() {
+          var txOpts = {
+            coin: 'usdc',
+            payProUrl: 'payProUrl',
+            outputs: [{
+              toAddress: addressStr,
+              amount: 0,
+              data: '0xb6b4af05000000000000000000000000000000000000000000000000000939f52e7b500000000000000000000000000000000000000000000000000000000006a5b66d80000000000000000000000000000000000000000000000000000001758d7da01d546ec66322bb962a8ba8c9c7c1b2ea37f0e4d5e92dfcd938796eeb41fb4aaa6efe746af63df9f38740a10c477b055f4f96fb26962d8d4050dac6d68280c28b60000000000000000000000000000000000000000000000000000000000000001cd7f7eb38ca6bd66b9006c66e42c1400f1921e5134adf77fcf577c267c9210a1d3230a734142b8810a7a7244f14da12fc052904fd68e885ce955f74ed57250bd50000000000000000000000000000000000000000000000000000000000000000'
+            }],
+            from,
+            tokenAddress: TOKENS[0]
+          };
+          txOpts = Object.assign(txOpts);
+          server.createTx(txOpts, function(err, tx) {
+            should.exist(err);
+            err.code.should.equal('INSUFFICIENT_FUNDS');
+            err.message.should.equal('Insufficient funds');
+            done();
           });
         });
       });

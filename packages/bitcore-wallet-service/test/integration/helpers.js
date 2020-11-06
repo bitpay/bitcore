@@ -361,7 +361,8 @@ helpers.stubUtxos = function(server, wallet, amounts, opts, cb) {
       if (opts.tokenAddress) {
         return cb(null, {unconfirmed:0, confirmed: 2e6, balance: 2e6 });
       }
-      return cb(null, {unconfirmed:0, confirmed: 0, balance: 0 });
+      let conf =  _.sum(_.map(amounts, x =>  Number((x*1e18).toFixed(0))));
+      return cb(null, {unconfirmed:0, confirmed: conf, balance: conf });
     }
     blockchainExplorer.estimateFee = sinon.stub().callsArgWith(1, null, 20000000000);
     return cb();

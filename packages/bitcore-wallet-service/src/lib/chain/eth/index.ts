@@ -284,17 +284,19 @@ export class EthChain implements IChain {
 
         /* If its paypro its an already created ERC20 transaction and we need to get the actual invoice value from the data
         invoice outputs example:
-        "outputs":[
-          {"amount":0,
-          "toAddress":"0x44d69d16C711BF966E3d00A46f96e02D16BDdf1f",
-          "message":null,
-          "data":"...",
-          "gasLimit":29041},
-          {"amount":0,
-          "toAddress":"0xc27eD3DF0DE776246cdAD5a052A9982473FceaB8",
-          "message":null,
-          "data":"...",
-          "gasLimit":200000
+        "outputs":[{
+            "amount":0,
+            "toAddress":"0x44d69d16C711BF966E3d00A46f96e02D16BDdf1f",
+            "message":null,
+            "data":"...",
+            "gasLimit":29041
+          },
+          {
+            "amount":0,
+            "toAddress":"0xc27eD3DF0DE776246cdAD5a052A9982473FceaB8",
+            "message":null,
+            "data":"...",
+            "gasLimit":200000
         }]
         */
         const txpTotalAmount =
