@@ -34,6 +34,7 @@ class PublicKey {
       kty: 'EC',
       use: 'sig',
       crv: this.key.attributes.curve,
+      version: this.key.version,
       x: toUrlBase64(pubKey.slice(1, pubKeyXYLen + 1)),
       y: toUrlBase64(pubKey.slice(pubKeyXYLen + 1))
     };

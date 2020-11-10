@@ -1,3 +1,5 @@
+import BN from 'bn.js';
+
 export interface IVerifyPayId {
   address: string;
   currency: string;
@@ -59,6 +61,7 @@ export interface JWK {
   key_ops?: [string];
   crv?: SupportedCurves;
   length?: number;
+  version?: BN;
 }
 
 /** Base JWKs (without added methods) */

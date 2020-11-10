@@ -75,6 +75,7 @@ class PrivateKeyClass {
       kty: 'EC',
       crv: this.key.attributes.curve as SupportedCurves,
       use: 'sig',
+      version: this.key.version,
       d: toUrlBase64(this.key.privateKey.privateKey),
       x: toUrlBase64(pubKey.slice(1, pubKeyXYLen + 1)),
       y: toUrlBase64(pubKey.slice(pubKeyXYLen + 1))
@@ -91,6 +92,7 @@ class PrivateKeyClass {
       kty: 'OKP',
       use: 'sig',
       crv: this.key.attributes.type.toLowerCase() as SupportedCurves,
+      version: this.key.version,
       d: toUrlBase64(this.key.privateKey),
       x: toUrlBase64(ecKey.getPublic())
     };

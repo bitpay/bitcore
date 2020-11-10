@@ -10,7 +10,7 @@ module.exports = (config) => {
 
     // frameworks to use
     // available frameworks: https://npmjs.org/browse/keyword/karma-adapter
-    frameworks: ['jasmine', 'karma-typescript'],
+    frameworks: ['mocha', 'karma-typescript'],
 
 
     // list of files / patterns to load in the browser
@@ -22,7 +22,6 @@ module.exports = (config) => {
 
     // list of files / patterns to exclude
     exclude: [
-      // '**/*.d.ts'
     ],
 
 
@@ -60,7 +59,7 @@ module.exports = (config) => {
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
     browsers: [
       'Chrome',
-      // 'ChromeDebugging',
+      'ChromeDebugging',
       // 'Firefox'
     ],
 

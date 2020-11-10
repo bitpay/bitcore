@@ -11,6 +11,7 @@ import { expect } from 'chai';
 import sinon from 'sinon';
 import * as errors from '../../src/errors';
 import PayId from '../../src/index';
+import { inBrowser } from '../../src/lib/utils';
 import * as TestKeys from '../keys';
 import TestSignatures from '../signatures';
 
@@ -21,7 +22,7 @@ describe('PayId', () => {
   let addressXRP;
   const payId = 'test$example.com';
 
-  beforeAll(() => {
+  before(() => {
     keys = {
       bitcoreHD: Bitcore.HDPrivateKey.fromString(TestKeys.BitcoreHD),
       bitcore: Bitcore.PrivateKey.fromString(TestKeys.Bitcore),
@@ -75,7 +76,7 @@ describe('PayId', () => {
 
       expect(signed).to.exist;
       expect(signed).to.have.property('payload');
-      expect(signed.payload).to.be.a.string;
+      expect(typeof signed.payload).to.equal('string');
       expect(signed).to.have.property('signatures');
       expect(signed.signatures.length).to.equal(1);
     });
@@ -85,7 +86,7 @@ describe('PayId', () => {
 
       expect(signed).to.exist;
       expect(signed).to.have.property('payload');
-      expect(signed.payload).to.be.a.string;
+      expect(typeof signed.payload).to.equal('string');
       expect(signed).to.have.property('signatures');
       expect(signed.signatures.length).to.equal(1);
     });
@@ -95,7 +96,7 @@ describe('PayId', () => {
 
       expect(signed).to.exist;
       expect(signed).to.have.property('payload');
-      expect(signed.payload).to.be.a.string;
+      expect(typeof signed.payload).to.equal('string');
       expect(signed).to.have.property('signatures');
       expect(signed.signatures.length).to.equal(1);
     });
@@ -105,7 +106,7 @@ describe('PayId', () => {
 
       expect(signed).to.exist;
       expect(signed).to.have.property('payload');
-      expect(signed.payload).to.be.a.string;
+      expect(typeof signed.payload).to.equal('string');
       expect(signed).to.have.property('signatures');
       expect(signed.signatures.length).to.equal(1);
     });
@@ -115,7 +116,7 @@ describe('PayId', () => {
 
       expect(signed).to.exist;
       expect(signed).to.have.property('payload');
-      expect(signed.payload).to.be.a.string;
+      expect(typeof signed.payload).to.equal('string');
       expect(signed).to.have.property('signatures');
       expect(signed.signatures.length).to.equal(1);
     });
@@ -171,7 +172,7 @@ describe('PayId', () => {
   describe('verify', () => {
     describe('PayId.org utils signatures', () => {
       let signatures;
-      beforeAll(() => {
+      before(() => {
         signatures = TestSignatures.payIdOrgUtils;
       });
 

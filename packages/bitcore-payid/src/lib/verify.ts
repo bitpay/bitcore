@@ -3,6 +3,8 @@ import hash from 'hash.js';
 import { UNSUPPPORTED_KEY_TYPE } from '../errors';
 import { ECPublicJWK, EdDSAPublicJWK, GeneralJWS, PublicJWK, RSAPublicJWK } from '../index.d';
 import { Algorithm, toDER } from './helpers/converters/der';
+import PKCS1 from './helpers/keys/pkcs1';
+import { inBrowser } from './utils';
 
 class Verifier {
   constructor() {}
@@ -67,9 +69,24 @@ class Verifier {
   }
 
   private async _verifyRSA(signature: string, compareTo: Buffer, jwk: RSAPublicJWK): Promise<boolean> {
-    console.log(jwk);
+    if (inBrowser()) {
+      return this._verifyInBrowserRSA(signature, compareTo, jwk);
+    }
+    return this._verifyNodeRSA(signature, compareTo, jwk);
+  }
+
+  private async _verifyInBrowserRSA(signature: string, compareTo: Buffer, jwk: RSAPublicJWK): Promise<boolean> {
     const key = await window.crypto.subtle.importKey('jwk', jwk, { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' }, false, ['verify']);
-    const verified = await window.crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, Buffer.from(signature), compareTo);
+    const verified = await window.crypto.subtle.verify('RSASSA-PKCS1-v1_5', key, Buffer.from(signature, 'base64'), compareTo);
+    return verified;
+  }
+
+  private _verifyNodeRSA(signature: string, compareTo: Buffer, jwk: RSAPublicJWK): boolean {
+    const crypto = require('crypto');
+    const pem = new PKCS1.Public(jwk).encode('pem');
+    const key = crypto.createPublicKey(pem);
+    const sigBuf = Buffer.from(signature, 'base64');
+    const verified = crypto.verify('SHA256', compareTo, key, sigBuf);
     return verified;
   }
 }

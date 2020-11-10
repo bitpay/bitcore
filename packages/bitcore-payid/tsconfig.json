@@ -29,13 +29,12 @@
       ]
     },
     "outDir": "ts_build",
-    "inlineSourceMap": true,
-    "sourceMap": false
+    // "inlineSourceMap": true,
+    "sourceMap": true
   },
   "include": [
-    "./scripts/**/*.ts",
-    "./src/**/*.ts",
-    "./test/**/*.ts"
+    "src/**/*.ts",
+    "test/**/*.ts"
   ],
   "exclude": [
     "node_modules"
