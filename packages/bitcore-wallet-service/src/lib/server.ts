@@ -2188,6 +2188,8 @@ export class WalletService {
 
           if (wallet.scanStatus == 'error') return cb(Errors.WALLET_NEED_SCAN);
 
+          if (wallet.coin == 'bch' && config.bchSuspended == true) return cb(Errors.BCH_SUSPENDED);
+
           checkTxpAlreadyExists(opts.txProposalId, (err, txp) => {
             if (err) return cb(err);
             if (txp) return cb(null, txp);

@@ -82,6 +82,7 @@ module.exports = {
   maintenanceOpts: {
     maintenanceMode: false
   },
+  bchSuspended: false,
   staticRoot: '/tmp/static'
   // simplex: {
   //   sandbox: {

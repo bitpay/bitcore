@@ -4,6 +4,7 @@ import { ClientError } from './clienterror';
 const errors = {
   AD_ALREADY_EXISTS: 'Ad already exists',
   BAD_SIGNATURES: 'Bad signatures',
+  BCH_SUSPENDED: 'BCH network is upgrading. Please try later.',
   COPAYER_DATA_MISMATCH: 'Copayer data mismatch',
   COPAYER_IN_WALLET: 'Copayer already in wallet',
   COPAYER_REGISTERED: 'Copayer ID already registered on server',

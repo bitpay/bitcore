@@ -57,7 +57,7 @@ describe('Wallet service', function() {
   });
   beforeEach(function(done) {
     transport.level= 'error';
-
+    config.bchSuspended = false;
 
     // restore defaults, cp values
     _.each(_.keys(VanillaDefaults), (x) => { 
@@ -3715,6 +3715,49 @@ describe('Wallet service', function() {
               should.not.exist(tx);
               should.exist(err);
               err.code.should.equal('WALLET_NOT_COMPLETE');
+              done();
+            });
+          });
+        });
+      });
+    });
+  });
+
+  describe('BCH suspended tests', function() {
+    it('should fail to create tx when wallet is BCH and bchSuspended flag is true', function(done) {
+      config.bchSuspended = true;
+
+      var server = new WalletService();
+      var walletOpts = {
+        coin: 'bch',
+        name: 'my wallet',
+        m: 1,
+        n: 1,
+        pubKey: TestData.keyPair.pub,
+      };
+      server.createWallet(walletOpts, function(err, walletId) {
+        should.not.exist(err);
+        var copayerOpts = helpers.getSignedCopayerOpts({
+        coin: 'bch',
+          walletId: walletId,
+          name: 'me',
+          xPubKey: TestData.copayers[0].xPubKey_44H_0H_0H,
+          requestPubKey: TestData.copayers[0].pubKey_1H_0,
+        });
+        server.joinWallet(copayerOpts, function(err, result) {
+          should.not.exist(err);
+          helpers.getAuthServer(result.copayerId, function(server, wallet) {
+            var txOpts = {
+              outputs: [{
+                toAddress: 'qz0d6gueltx0feta7z9777yk97sz9p6peu98mg5vac',
+                amount: 0.8e8
+              }],
+              feePerKb: 100e2
+            };
+            server.createTx(txOpts, function(err, tx) {
+              should.not.exist(tx);
+              should.exist(err);
+              err.code.should.equal('BCH_SUSPENDED');
               done();
             });
           });
