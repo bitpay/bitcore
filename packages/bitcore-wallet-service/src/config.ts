@@ -72,8 +72,8 @@ module.exports = {
     defaultLanguage: 'en',
     defaultUnit: 'btc',
     subjectPrefix: '',
-    pushServerUrl: 'https://fcm.googleapis.com/fcm',
-    authorizationKey: 'You_have_to_put_something_here'
+    pushServerUrl: 'https://fcm.googleapis.com/v1/projects/bitpay-wallet/messages:send',
+    fcmGoogleCredentialsPath: '../../test/test-google-credentials.json' // "replace with path to prod service_account.json"
   },
   fiatRateServiceOpts: {
     defaultProvider: 'BitPay',
