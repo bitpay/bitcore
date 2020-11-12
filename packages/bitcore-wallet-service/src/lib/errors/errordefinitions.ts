@@ -4,7 +4,6 @@ import { ClientError } from './clienterror';
 const errors = {
   AD_ALREADY_EXISTS: 'Ad already exists',
   BAD_SIGNATURES: 'Bad signatures',
-  BCH_SUSPENDED: 'BCH network is upgrading. Please try later.',
   COPAYER_DATA_MISMATCH: 'Copayer data mismatch',
   COPAYER_IN_WALLET: 'Copayer already in wallet',
   COPAYER_REGISTERED: 'Copayer ID already registered on server',
@@ -23,6 +22,7 @@ const errors = {
   LOCKED_ETH_FEE: 'Your linked ETH wallet does not have enough ETH for fee',
   HISTORY_LIMIT_EXCEEDED: 'Requested page limit is above allowed maximum',
   MAIN_ADDRESS_GAP_REACHED: 'Maximum number of consecutive addresses without activity reached',
+  NETWORK_SUSPENDED: '$network operations are currently suspended. Please check status.bitpay.com for further updates.',
   NOT_AUTHORIZED: 'Not authorized',
   TOO_MANY_KEYS: 'Too many keys registered',
   TX_ALREADY_BROADCASTED: 'The transaction proposal is already broadcasted',

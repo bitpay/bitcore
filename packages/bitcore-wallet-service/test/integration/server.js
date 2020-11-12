@@ -57,7 +57,7 @@ describe('Wallet service', function() {
   });
   beforeEach(function(done) {
     transport.level= 'error';
-    config.bchSuspended = false;
+    config.suspendedChains = [];
 
     // restore defaults, cp values
     _.each(_.keys(VanillaDefaults), (x) => { 
@@ -3723,9 +3723,9 @@ describe('Wallet service', function() {
     });
   });
 
-  describe('BCH suspended tests', function() {
-    it('should fail to create tx when wallet is BCH and bchSuspended flag is true', function(done) {
-      config.bchSuspended = true;
+  describe('Network suspended tests', function() {
+    it('should fail to create tx when wallet is BCH and suspendedChains includes bch', function(done) {
+      config.suspendedChains = ['bch', 'xrp'];
 
       var server = new WalletService();
       var walletOpts = {
@@ -3757,7 +3757,9 @@ describe('Wallet service', function() {
             server.createTx(txOpts, function(err, tx) {
               should.not.exist(tx);
               should.exist(err);
-              err.code.should.equal('BCH_SUSPENDED');
+
+              err.code.should.equal('NETWORK_SUSPENDED');
+              err.message.should.include('BCH');
               done();
             });
           });
