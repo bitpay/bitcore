@@ -33,6 +33,7 @@
     "email-validator": "^1.0.1",
     "express": "^4.10.0",
     "express-rate-limit": "^2.6.0",
+    "googleapis": "60.0.1",
     "inherits": "^2.0.1",
     "istanbul": "^0.4.5",
     "json-stable-stringify": "^1.0.0",
